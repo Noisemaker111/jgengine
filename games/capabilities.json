@@ -4683,6 +4683,16 @@
       "intent": "editor-authorable GPU grass patch"
     },
     {
+      "id": "grass-species",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/grass/grassSpecies",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "named grass, moss, reed, crop and ornamental looks for grass fields"
+    },
+    {
       "id": "grass-wind",
       "packages": [
         "@jgengine/core"

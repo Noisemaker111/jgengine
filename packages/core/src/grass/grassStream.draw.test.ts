@@ -416,3 +416,27 @@ test("a disposed stream that is updated again rebuilds its view", () => {
   expect(field.stats().cached).toBeGreaterThan(0);
   field.dispose();
 });
+
+test("cushion mounds clumps into domes over a low skin, so moss reads as cushions", () => {
+  const heights = (cushion: number) => {
+    const look = readGrassLook({ species: "cushion-moss", cushion, edgeFeather: 0 });
+    const tufts = bakeGrassNode(resolveGrassBake({ look, area: 8, edgeFeather: 0, heightAt: () => 0 }), 0, 0, 0, 1);
+    const values = Array.from({ length: tufts.count }, (_, i) => tufts.shape[i * 4 + 1] ?? 0).sort((a, b) => a - b);
+    return { median: values[Math.floor(values.length / 2)] ?? 0, top: values[values.length - 1] ?? 0 };
+  };
+  const flat = heights(0);
+  const domed = heights(0.9);
+  expect(domed.median).toBeLessThan(flat.median * 0.9);
+  expect(domed.top).toBeGreaterThan(domed.median * 1.3);
+});
+
+test("every species bakes a finite, bounded node", () => {
+  for (const preset of GRASS_PRESETS) {
+    const look = readGrassLook({ species: preset.id });
+    const bake = resolveGrassBake({ look, area: 8, heightAt: () => 0 });
+    const tufts = bakeGrassNode(bake, 0, 0, 0, 0.05);
+    expect(Number.isFinite(tufts.extent)).toBe(true);
+    expect(tufts.extent).toBeLessThanOrEqual(bake.maxHeight * 2 + 1);
+    createGrassMaterial(look).material.dispose();
+  }
+});

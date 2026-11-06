@@ -9,6 +9,7 @@ import type { VolumetricCloudsConfig } from "../sky/volumetricClouds";
 import { warnOnce } from "../devtools/warnOnce";
 import type { SurfaceMaterialSpec } from "../material/surfaceMaterialGenerator";
 import { flattenGrassLook, readGrassLook, type GrassLook, type GrassLookGroups } from "@jgengine/core/grass/grassKind";
+import type { GrassSpeciesId } from "@jgengine/core/grass/grassSpecies";
 
 export interface WorldBounds {
   w: number;
@@ -363,11 +364,14 @@ export interface SnowEnvironmentConfig {
 }
 
 /**
- * Config for {@link grass}: where the patch grows plus any group of {@link GrassLook} knobs (`blade`, `colour`,
- * `season`, `species`, `flowers`, `growth`, `wind`, ...). Set only the groups you care about; unset knobs take the
- * shared grass defaults and every knob is clamped to a range that still reads as full ground cover.
+ * Config for {@link grass}: where the patch grows, an optional named `species` to start from, plus any group of
+ * {@link GrassLook} knobs (`blade`, `tuft`, `colour`, `season`, `mix`, `flowers`, `growth`, `wind`, ...). Set only
+ * what you care about; unset knobs take the species (or the shared grass defaults) and every knob is clamped to a
+ * range that still reads as full ground cover.
  */
 export interface GrassEnvironmentConfig extends GrassLookGroups {
+  /** A shipped grass species (`"kentucky-bluegrass"`, `"cushion-moss"`, `"pampas"`, ...) whose knobs back every one this config leaves unset. */
+  species?: GrassSpeciesId;
   area?: EnvironmentArea;
   /** World-space center `[x, z]` of the band, matching `building()`/`ocean()` — sugar for `area.position`, letting a biome zone site its own vegetation away from the origin. */
   position?: EnvironmentVec2;
@@ -1149,11 +1153,11 @@ export function snow(config: SnowEnvironmentConfig = {}): SnowEnvironmentDescrip
 
 /** Declares a grass vegetation patch for `environment()` — the same blade field and knobs as an editor `grass_field` volume. */
 export function grass(config: GrassEnvironmentConfig = {}): GrassEnvironmentDescriptor {
-  const { area, position, ...groups } = config;
+  const { area, position, species, ...groups } = config;
   return {
     kind: "grass" as const,
     area: withAreaPosition(area ?? { w: 128, d: 128 }, position),
-    look: readGrassLook(flattenGrassLook(groups)),
+    look: readGrassLook({ ...(species === undefined ? {} : { species }), ...flattenGrassLook(groups) }),
   };
 }
 

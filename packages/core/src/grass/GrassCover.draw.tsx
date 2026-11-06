@@ -98,8 +98,8 @@ export interface GrassCoverProps {
   segments?: number;
   /** Metres the mat floats above the ground; keep it under the blade height or the mat hides the blades. Default 0.035. */
   lift?: number;
-  /** Patch-local mow-stripe shade times contrast, -1..1; omit for an unstriped mat. */
-  stripeAt?: TerrainHeightSampler | undefined;
+  /** Patch-local mat shade, about -1..1 (mow stripes, cushion mounds); omit for an even mat. */
+  shadeAt?: TerrainHeightSampler | undefined;
   position?: readonly [number, number, number];
 }
 
@@ -119,7 +119,7 @@ export function GrassCover({
   coverageAt,
   segments,
   lift,
-  stripeAt,
+  shadeAt,
   position,
 }: GrassCoverProps) {
   const geometry = useDisposable(() => {
@@ -134,7 +134,7 @@ export function GrassCover({
       coverageAt,
       ...(segments === undefined ? {} : { segments }),
       ...(lift === undefined ? {} : { lift }),
-      ...(stripeAt === undefined ? {} : { stripeAt }),
+      ...(shadeAt === undefined ? {} : { shadeAt }),
     });
     const next = new THREE.BufferGeometry();
     if (baked.positions.length === 0) return next;
@@ -145,7 +145,7 @@ export function GrassCover({
     next.setIndex(new THREE.BufferAttribute(baked.indices, 1));
     next.computeBoundingSphere();
     return next;
-  }, [area, seed, colorBase, colorTip, strength, edgeFeather, heightAt, coverageAt, segments, lift, stripeAt]);
+  }, [area, seed, colorBase, colorTip, strength, edgeFeather, heightAt, coverageAt, segments, lift, shadeAt]);
   const material = useDisposable(
     () =>
       new THREE.MeshStandardMaterial({

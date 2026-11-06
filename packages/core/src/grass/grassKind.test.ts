@@ -1,9 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
-import { defaultParamMeta, parseParams, randomizeGroupParams } from "@jgengine/core/generator/paramSchema";
+import { defaultParamMeta, parseParams, presetBackedMeta, randomizeGroupParams, validateParams } from "@jgengine/core/generator/paramSchema";
 import { bakeGeneratorVariants, generatorVariants, getGenerator, runGenerator } from "@jgengine/core/generator/generator";
 import { getSceneKind } from "@jgengine/core/scene/sceneKinds";
-import { grassBareAt, grassStripeAt } from "./grassField";
+import { createGrassTuftTemplate, grassBareAt, grassClumpCentre, grassCushionShadeAt, grassStripeAt } from "./grassField";
+import { GRASS_SPECIES } from "./grassSpecies";
+import { grass } from "@jgengine/core/world/features";
 import {
   GRASS_DEFAULTS,
   GRASS_FIELD_OUTPUT,
@@ -35,7 +37,7 @@ describe("readGrassLook", () => {
     const look = readGrassLook({ groundCover: 4, density: -3, bladeHeight: 90, tuftBlades: 4.6, clumping: 3, baseColor: "green", flowerColor: "#abcdef" });
     expect(look.growth.groundCover).toBe(1);
     expect(look.blade.density).toBe(0);
-    expect(look.blade.bladeHeight).toBe(2.5);
+    expect(look.blade.bladeHeight).toBe(4);
     expect(look.tuft.tuftBlades).toBe(5);
     expect(look.tuft.clumping).toBe(1);
     expect(look.colour.baseColor).toBe(GRASS_DEFAULTS.colour.baseColor);
@@ -136,5 +138,68 @@ describe("grass masks", () => {
     expect(share(0)).toBe(1);
     expect(share(0.3)).toBeGreaterThan(share(0.8));
     expect(share(0.8)).toBeLessThan(0.5);
+  });
+});
+
+describe("grass species", () => {
+  test("ships over a hundred distinct, grouped species, each inside the schema", () => {
+    expect(GRASS_SPECIES.length).toBeGreaterThanOrEqual(100);
+    expect(new Set(GRASS_SPECIES.map((species) => species.id)).size).toBe(GRASS_SPECIES.length);
+    expect(new Set(GRASS_SPECIES.map((species) => species.group)).size).toBeGreaterThanOrEqual(8);
+    for (const species of GRASS_SPECIES) expect({ id: species.id, issues: validateParams(GRASS_SCHEMA, species.values) }).toEqual({ id: species.id, issues: [] });
+    const looks = new Set(GRASS_SPECIES.map((species) => JSON.stringify(readGrassLook({ species: species.id }))));
+    expect(looks.size).toBe(GRASS_SPECIES.length);
+  });
+
+  test("a species backs every knob the meta leaves unset, and the meta's own knobs win", () => {
+    const look = readGrassLook({ species: "cushion-moss", bladeHeight: 0.05 });
+    expect(look.tuft.cushion).toBe(0.9);
+    expect(look.blade.bladeHeight).toBe(0.05);
+    expect(readGrassLook({ species: "not-a-grass" })).toEqual(readGrassLook({}));
+    expect(validateParams(GRASS_SCHEMA, { species: "not-a-grass" })).toEqual([{ key: "species", message: "not a known preset" }]);
+    expect(validateParams(GRASS_SCHEMA, { species: "pampas" })).toEqual([]);
+    expect(presetBackedMeta(GRASS_SCHEMA, { species: "pampas" })?.["headShape"]).toBe(0.9);
+  });
+
+  test("grass() takes a species and grouped overrides", () => {
+    const look = grass({ species: "wheat", blade: { bladeHeight: 0.7 } }).look;
+    expect(look.flowers.headShape).toBe(1);
+    expect(look.blade.bladeHeight).toBe(0.7);
+  });
+
+  test("moss species grow short, cushioned and fully covered", () => {
+    for (const id of ["cushion-moss", "sheet-moss", "haircap-moss", "sphagnum", "star-moss"]) {
+      const look = readGrassLook({ species: id });
+      expect(look.blade.bladeHeight).toBeLessThanOrEqual(0.1);
+      expect(look.tuft.cushion).toBeGreaterThan(0.3);
+      expect(look.growth.groundCover).toBe(1);
+    }
+  });
+});
+
+describe("tuft splay", () => {
+  test("splay leans blades out from the centre; none leaves the tuft unchanged", () => {
+    const leanOf = (splay: number) => {
+      const template = createGrassTuftTemplate({ look: readGrassLook({ splay }), seed: "s", segments: 2 });
+      let lean = 0;
+      for (let i = 1; i < template.bladeBend.length; i += 2) lean = Math.max(lean, template.bladeBend[i] ?? 0);
+      return { lean, template };
+    };
+    const still = leanOf(0);
+    expect(still.lean).toBe(0);
+    expect(leanOf(0.8).lean).toBeGreaterThan(0.5);
+    expect(leanOf(0.8).template.position).toEqual(still.template.position);
+  });
+});
+
+describe("cushion shading", () => {
+  test("the turf mat is light over each clump's dome and dark between, and flat without cushions", () => {
+    const look = readGrassLook({ species: "cushion-moss" });
+    const [cx, cz] = grassClumpCentre(5, 5, look.tuft.clumpSize, 77, 1.1, -2.3);
+    const top = grassCushionShadeAt(look, 77, 5, 5, cx, cz);
+    const crevice = grassCushionShadeAt(look, 77, 5, 5, cx + look.tuft.clumpSize * 1.05, cz);
+    expect(top).toBeGreaterThan(0.3);
+    expect(crevice).toBeLessThan(0);
+    expect(grassCushionShadeAt(readGrassLook({}), 77, 5, 5, cx, cz)).toBe(0);
   });
 });

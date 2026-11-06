@@ -65,9 +65,16 @@ const PROJECTILE_KINDS: ChoiceOption[] = [
 ];
 
 /** A few of the engine's grass look knobs, with ranges and labels read from its own schema. */
-const GRASS_KNOBS = ["bladeHeight", "density", "curvature", "season", "dryness", "mixShare", "flowerShare", "windStrength"];
+const GRASS_KNOBS = ["bladeHeight", "density", "curvature", "twist", "splay", "season", "dryness", "flowerShare", "windStrength"];
+/** A spread of the engine's grass species, from moss to pampas; the full library lives in the editor. */
+const GRASS_SHOWCASE = ["meadow", "lawn", "cushion-moss", "wheat", "pampas", "cattail", "zebra-grass", "feather-grass", "fern-glade", "savanna", "crystal-grass"];
 const GRASS_CONTROLS: Control[] = [
-  { kind: "choice", key: "preset", label: "preset", options: GRASS_PRESETS.map((p) => ({ value: p.id, label: p.label, patch: { ...p.values } })) },
+  {
+    kind: "choice",
+    key: "preset",
+    label: "species",
+    options: GRASS_PRESETS.filter((p) => GRASS_SHOWCASE.includes(p.id)).map((p) => ({ value: p.id, label: p.label, patch: { ...p.values } })),
+  },
   ...GRASS_KNOBS.flatMap((key): Control[] => {
     const f = GRASS_SCHEMA.fields.find((field) => field.key === key);
     if (f === undefined || f.type !== "range") return [];

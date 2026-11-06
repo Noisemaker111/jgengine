@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
 import { terrainField, world } from "../../world";
 import { findEditorMarker } from "@jgengine/core/editor/document";
+import { readGrassLook } from "@jgengine/core/grass/grassKind";
 import { enemyById } from "../entities/enemies/catalog";
 import { START_ZONE } from "../progression/unlocks";
 import { MAIN_QUEST_IDS, quests, scrapQuests, zoneOpener } from "../quests/catalog";
@@ -108,7 +109,7 @@ describe("scrap-signal world", () => {
       const half = patch.halfExtents!;
       const containsSpawn = Math.abs(patch.center.x - PLAYER_SPAWN[0]) < half.x && Math.abs(patch.center.z - PLAYER_SPAWN[2]) < half.z;
       expect(containsSpawn).toBe(false);
-      expect(patch.meta?.bladeHeight).toBeLessThanOrEqual(0.3);
+      expect(readGrassLook(patch.meta).blade.bladeHeight).toBeLessThanOrEqual(0.3);
     }
   });
 

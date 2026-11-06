@@ -8957,18 +8957,11 @@
       },
       "label": "crash scrub left",
       "meta": {
-        "bladeHeight": 0.21,
+        "species": "desert-bunchgrass",
         "baseColor": "#897344",
         "tipColor": "#b49a61",
-        "valueNoise": 0.18,
-        "windStrength": 0.32,
-        "roughness": 0.95,
-        "seed": "crash_scrub_left",
-        "bladeWidth": 0.03,
-        "widthVariation": 0.889,
-        "curvature": 0.042,
-        "tuftSpread": 0.09,
-        "normalLift": 0.45
+        "bladeHeight": 0.26,
+        "seed": "crash_scrub_left"
       }
     },
     {
@@ -8987,18 +8980,11 @@
       },
       "label": "crash scrub right",
       "meta": {
-        "bladeHeight": 0.23,
+        "species": "desert-bunchgrass",
         "baseColor": "#897344",
         "tipColor": "#b49a61",
-        "valueNoise": 0.18,
-        "windStrength": 0.32,
-        "roughness": 0.95,
-        "seed": "crash_scrub_right",
-        "bladeWidth": 0.03,
-        "widthVariation": 0.889,
-        "curvature": 0.042,
-        "tuftSpread": 0.09,
-        "normalLift": 0.45
+        "bladeHeight": 0.28,
+        "seed": "crash_scrub_right"
       }
     },
     {
@@ -9017,18 +9003,11 @@
       },
       "label": "relay scrub flank",
       "meta": {
-        "bladeHeight": 0.24,
+        "species": "desert-bunchgrass",
         "baseColor": "#897344",
         "tipColor": "#b49a61",
-        "valueNoise": 0.18,
-        "windStrength": 0.32,
-        "roughness": 0.95,
-        "seed": "relay_scrub_flank",
-        "bladeWidth": 0.03,
-        "widthVariation": 0.889,
-        "curvature": 0.042,
-        "tuftSpread": 0.09,
-        "normalLift": 0.45
+        "bladeHeight": 0.28,
+        "seed": "relay_scrub_flank"
       }
     },
     {
@@ -9047,18 +9026,10 @@
       },
       "label": "ridge scrub west",
       "meta": {
-        "bladeHeight": 0.3,
+        "species": "badlands-tufts",
         "baseColor": "#897344",
         "tipColor": "#b49a61",
-        "valueNoise": 0.18,
-        "windStrength": 0.32,
-        "roughness": 0.95,
-        "seed": "ridge_scrub_west",
-        "bladeWidth": 0.03,
-        "widthVariation": 0.889,
-        "curvature": 0.042,
-        "tuftSpread": 0.09,
-        "normalLift": 0.45
+        "seed": "ridge_scrub_west"
       }
     },
     {
@@ -9077,18 +9048,10 @@
       },
       "label": "ridge scrub east",
       "meta": {
-        "bladeHeight": 0.3,
+        "species": "badlands-tufts",
         "baseColor": "#897344",
         "tipColor": "#b49a61",
-        "valueNoise": 0.18,
-        "windStrength": 0.32,
-        "roughness": 0.95,
-        "seed": "ridge_scrub_east",
-        "bladeWidth": 0.03,
-        "widthVariation": 0.889,
-        "curvature": 0.042,
-        "tuftSpread": 0.09,
-        "normalLift": 0.45
+        "seed": "ridge_scrub_east"
       }
     }
   ],

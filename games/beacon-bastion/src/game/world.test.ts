@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
 import { TERRAIN_MATERIAL_PALETTES } from "@jgengine/core/terrain/terrain";
+import { readGrassLook } from "@jgengine/core/grass/grassKind";
 
 import { editorLayers } from "../editorLayers";
 import { world } from "../world";
@@ -22,7 +23,7 @@ describe("beacon-bastion world", () => {
     expect(summary.counts.vegetationFields).toBe(0);
     const grass = editorLayers.volumes.filter(volume => volume.kind === "grass_field");
     expect(grass.length).toBe(1);
-    expect(grass[0]!.meta?.widthVariation as number).toBeGreaterThan(0);
+    expect(readGrassLook(grass[0]!.meta).blade.widthVariation).toBeGreaterThan(0);
   });
 
   test("terrain has finite relief", () => {

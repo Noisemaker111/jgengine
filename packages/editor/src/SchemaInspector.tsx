@@ -3,6 +3,7 @@ import { useState } from "react";
 import {
   childParamGroups,
   parseParams,
+  presetBackedMeta,
   randomizeGroupParams,
   resetGroupParams,
   sampleCurve,
@@ -24,28 +25,42 @@ const BTN = `${CONTROL} px-2 py-1 text-[10px] disabled:opacity-40`;
 /** A patch to a single meta key, coalesced under a stable undo key. */
 export type MetaPatch = (patch: Record<string, unknown>, coalesce: string) => void;
 
-/** One-click archetype bundles: picking a preset writes its whole value bag as a single meta patch. */
-function PresetRow({ schema, onMeta }: { schema: ParamSchema; onMeta: MetaPatch }) {
+/**
+ * One-click archetype bundles: picking a preset writes its whole value bag as a single meta patch.
+ * Presets with a `group` list under that heading; a schema with a `presetKey` also records which
+ * preset backs the object and shows it as the current choice.
+ */
+function PresetRow({ schema, meta, onMeta }: { schema: ParamSchema; meta: Record<string, unknown> | undefined; onMeta: MetaPatch }) {
   const presets = schema.presets ?? [];
   if (presets.length === 0) return null;
+  const key = schema.presetKey;
+  const current = key === undefined ? undefined : meta?.[key];
+  const chosen = typeof current === "string" && presets.some((preset) => preset.id === current) ? current : "";
+  const headings = [...new Set(presets.flatMap((preset) => (preset.group === undefined ? [] : [preset.group])))];
+  const option = (preset: (typeof presets)[number]) => (
+    <option key={preset.id} value={preset.id}>
+      {preset.label ?? preset.id}
+    </option>
+  );
   return (
     <label className="flex items-center justify-between gap-2">
-      <span className={MICRO}>preset</span>
+      <span className={MICRO}>{key ?? "preset"}</span>
       <select
-        className={`w-32 ${INPUT}`}
-        value=""
+        className={`w-40 ${INPUT}`}
+        value={chosen}
         onChange={(event) => {
           const preset = presets.find((entry) => entry.id === event.target.value);
-          if (preset !== undefined) onMeta({ ...preset.values }, `preset:${preset.id}`);
+          if (preset !== undefined) onMeta(key === undefined ? { ...preset.values } : { ...preset.values, [key]: preset.id }, `preset:${preset.id}`);
         }}
       >
         <option value="" disabled>
           apply preset…
         </option>
-        {presets.map((preset) => (
-          <option key={preset.id} value={preset.id}>
-            {preset.label ?? preset.id}
-          </option>
+        {presets.filter((preset) => preset.group === undefined).map(option)}
+        {headings.map((heading) => (
+          <optgroup key={heading} label={heading}>
+            {presets.filter((preset) => preset.group === heading).map(option)}
+          </optgroup>
         ))}
       </select>
     </label>
@@ -501,6 +516,7 @@ export function SchemaInspector({
 }) {
   const groups = schema.groups ?? [];
   const grouped = new Set(groups.map((group) => group.id));
+  const backed = presetBackedMeta(schema, meta);
   const hidden = hideKeys === undefined || hideKeys.length === 0 ? null : new Set(hideKeys);
   const visible = hidden === null ? schema.fields : schema.fields.filter((field) => !hidden.has(field.key));
   // Fields with no group (or a group not declared in schema.groups) render first, headerless.
@@ -510,18 +526,18 @@ export function SchemaInspector({
       <div className="text-[9px] font-semibold uppercase tracking-[0.14em]" style={{ color: accent }}>
         {label}
       </div>
-      <PresetRow schema={schema} onMeta={onMeta} />
+      <PresetRow schema={schema} meta={backed} onMeta={onMeta} />
       {ungrouped.map((field) =>
         field.type === "action" ? (
           <ActionButton key={field.key} field={field} schema={schema} onMeta={onMeta} />
         ) : (
-          <FieldRow key={field.key} field={field} meta={meta} onMeta={onMeta} />
+          <FieldRow key={field.key} field={field} meta={backed} onMeta={onMeta} />
         ),
       )}
       {childParamGroups(schema, undefined)
         .filter((group) => groupHasFields(schema, group.id, visible))
         .map((group) => (
-          <GroupSection key={group.id} group={group} accent={accent} visible={visible} schema={schema} meta={meta} onMeta={onMeta} />
+          <GroupSection key={group.id} group={group} accent={accent} visible={visible} schema={schema} meta={backed} onMeta={onMeta} />
         ))}
       {note !== undefined && note.length > 0 ? <div className="text-[10px] text-neutral-500">{note}</div> : null}
     </div>

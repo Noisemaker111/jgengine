@@ -1372,18 +1372,11 @@
       },
       "label": "Maintained park lawn",
       "meta": {
-        "bladeHeight": 0.1,
-        "bladeWidth": 0.022,
-        "widthVariation": 0.758,
-        "curvature": 0.103,
-        "tuftSpread": 0.055,
-        "normalLift": 0.65,
+        "species": "kentucky-bluegrass",
         "baseColor": "#5b8a37",
         "tipColor": "#a3c262",
-        "valueNoise": 0.12,
-        "windStrength": 0.16,
-        "windSpeed": 1,
-        "roughness": 0.94,
+        "stripeWidth": 2.5,
+        "stripeContrast": 0.3,
         "seed": "brightway-maintained-lawn"
       }
     },

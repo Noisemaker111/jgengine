@@ -422,10 +422,10 @@ export function tillerCellLook(field: TillerField, species: readonly GroundCover
     },
     colour: { ...base.colour, baseColor: grass.colors.leaf, tipColor: grass.colors.tip },
     season: { ...base.season, season: autumn > 0 ? 0.5 + 0.5 * autumn : 0.5 * Math.min(1, seeded * 2) },
-    species: {
-      ...base.species,
-      mixHeight: second === undefined ? base.species.mixHeight : Math.min(30, Math.max(0.1, cohortHeight(cohorts[lead[1]]) / leadHeight)),
-      mixWidth: second === undefined ? base.species.mixWidth : Math.max(MIN_BLADE_WIDTH_M, second.leafWidthM * 1.5) / leadWidth,
+    mix: {
+      ...base.mix,
+      mixHeight: second === undefined ? base.mix.mixHeight : Math.min(30, Math.max(0.1, cohortHeight(cohorts[lead[1]]) / leadHeight)),
+      mixWidth: second === undefined ? base.mix.mixWidth : Math.max(MIN_BLADE_WIDTH_M, second.leafWidthM * 1.5) / leadWidth,
       mixShare: secondShare,
       mixColor: second?.colors.tip ?? grass.colors.tip,
     },

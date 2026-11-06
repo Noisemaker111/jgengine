@@ -28,8 +28,8 @@ export interface GrassCoverGeometryOptions {
   lift?: number;
   /** Grid segments per axis; defaults to one per 2 m, at least 16 so a small patch keeps its feathered edge, clamped to {@link GRASS_COVER_MAX_SEGMENTS}. */
   segments?: number;
-  /** Patch-local mow-stripe shade, -1..1, times its contrast (see `grassStripeAt`). Omit for no stripes. */
-  stripeAt?: TerrainHeightSampler;
+  /** Patch-local mat shade, about -1..1: mow stripes times their contrast (`grassStripeAt`) plus cushion mounds (`grassCushionShadeAt`). Omit for an even mat. */
+  shadeAt?: TerrainHeightSampler;
 }
 
 /** Bake result for {@link createGrassCoverGeometry}; empty arrays when the mat is switched off. */
@@ -142,7 +142,7 @@ export function createGrassCoverGeometry(options: GrassCoverGeometryOptions): Gr
       const g = root.g + (sheen.g - root.g) * light;
       const b = root.b + (sheen.b - root.b) * light;
       const tipMix = grain * 0.3;
-      const stripe = 1 + (options.stripeAt === undefined ? 0 : options.stripeAt(x, z) * 0.6);
+      const stripe = 1 + (options.shadeAt === undefined ? 0 : options.shadeAt(x, z) * 0.6);
       colors[index * 4] = (r + (tip.r - r) * tipMix) * stripe;
       colors[index * 4 + 1] = (g + (tip.g - g) * tipMix) * stripe;
       colors[index * 4 + 2] = (b + (tip.b - b) * tipMix) * stripe;
