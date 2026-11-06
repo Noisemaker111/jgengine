@@ -144,6 +144,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `spendDomesticLevel` (function) · `import { spendDomesticLevel } from "@jgengine/core/stats/spawnLevelStats"`
 
+## dose-table — per-receiver effects of each source (food, potion, dart, hit) as vital doses, with preference order
+
+- `createDoseTable` (function) · `import { createDoseTable } from "@jgengine/core/stats/doseTable"`
+
 ## dot-field — track stacking damage-over-time effects and drain damage each frame
 
 - `createDotField` (function) · `import { createDotField } from "@jgengine/core/combat"`
@@ -388,6 +392,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## status-unknown — reject a status id the runtime has no definition for
 
 - `UnknownStatusError` (class) · `import { UnknownStatusError } from "@jgengine/core/combat"`
+
+## survival-vitals — a body's linked meters — drain, delayed regen that costs other vitals, starvation links, knockout-style flags, and doses that land now or over time up to a cap
+
+- `createVitals` (function) · `import { createVitals } from "@jgengine/core/stats/vitals"`
 
 ## telegraph-hit-test — test whether a point is inside a circle, ring, cone or line telegraph, to resolve a dodgeable attack
 

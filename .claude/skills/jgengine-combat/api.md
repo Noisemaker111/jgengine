@@ -959,6 +959,14 @@
 - `MeterTier` (interface): interface MeterTier { id: string; at: number } — ⚠ undocumented
 - `createAccumulatorMeter` (function): function createAccumulatorMeter(config: AccumulatorMeterConfig): AccumulatorMeter — A raw accumulating gauge that crosses named tier thresholds as a value builds, with optional decay — the primitive under charge, rage, and combo meters.
 
+## @jgengine/core/stats/doseTable
+
+- `DoseTable` (interface): interface DoseTable — What each source does to each kind of receiver. Pure data; `retune` swaps the rows.
+- `DoseTableOptions` (interface): interface DoseTableOptions { fallback?: string } — ⚠ undocumented · used by `createDoseTable`: What each source does to each kind of receiver, as {@link VitalDose}s: a raptor's foods and how much taming, food and ineffectiveness each g…
+- `DoseTableRows` (type): type DoseTableRows = Readonly<Record<string, Readonly<Record<string, readonly VitalDose[]>>>> — Rows of a {@link DoseTable}: per kind of receiver, each source it takes and the doses that source gives it, listed in the receiver's order of preference. A `fallback` row answers for receivers with no row.
+- `createDoseTable` (function): function createDoseTable(rows: DoseTableRows, options: DoseTableOptions = {}): DoseTable — What each source does to each kind of receiver, as {@link VitalDose}s: a raptor's foods and how much taming, food and ineffectiveness each gives, a sim's meals and the needs they fill, a shooter's potions and the shield each pours in up to its cap, a dart's torpor by the body it lands in. Sources are listed in the receiver's order of preference, so "eats the first food it likes that it holds" is one `pick`.
+- `hasRoomFor` (function): function hasRoomFor(vitals: Pick<Vitals, "value" | "max">, doses: readonly VitalDose[], vital: string): boolean — Whether `vitals` has room for every gain the doses put into `vital` (a creature eats once its food has room for the meal).
+
 ## @jgengine/core/stats/eventMeter
 
 - `EventMeter` (interface): interface EventMeter { state(): EventMeterState; restore(next: EventMeterState): void; value(): number; fraction(): number; tier(): string | null; ready(): boolean; feed(tag: string, scale?: number): EventMeterFeedResult; consume(): boolean; drain(amount: numbe… — ⚠ undocumented · used by `createEventMeter`: A heat/hype gauge that rises as tagged events land and cools between them, firing when it fills or breaks — the streak/overdrive meter shoot…
@@ -1015,6 +1023,19 @@
 - `patchStatPool` (function): function patchStatPool(pool: StatPool, patch: StatPoolPatch): StatPool — Apply new bounds/current to a pool, clamping the result and leaving the input untouched.
 - `statPoolFraction` (function): function statPoolFraction(pool: StatPool): number — The pool's fill as `0..1` over its own `min..max`; `0` when the range is empty.
 - `tickMeter` (function): function tickMeter(meter: MeterState, rates: MeterRates, dt: number): { meter: MeterState; change: StatPoolChange } — Advance `dt` seconds: decay if its delay has passed, then regen if its delay has passed.
+
+## @jgengine/core/stats/vitals
+
+- `VitalDef` (interface): interface VitalDef — One survival vital: its range, how it moves on its own, what it costs and what it does when empty.
+- `VitalDose` (interface): interface VitalDose — A change to one vital: all at once, or spread evenly over `seconds`. With `upTo` it stops at that value (a ceiling for a gain, a floor for a loss), so a small shield potion fills only to 50 and a big one to 100. A meal, a potion, a narcotic, a tranquilizer dart and a hit are all doses; what a source gives each kind of receiver is a {@link DoseTable}'s job.
+- `VitalFlag` (interface): interface VitalFlag — A named condition a vital raises from its value, with optional hysteresis.
+- `VitalFlagChange` (interface): interface VitalFlagChange — A flag that changed this tick.
+- `VitalLink` (interface): interface VitalLink — A per-second change one vital applies to another while a condition holds.
+- `VitalRateModifier` (type): type VitalRateModifier = StatRateModifier — Per-tick rate scaling: one scalar for every vital, or per vital id (a cold body burns food twice as fast).
+- `Vitals` (interface): interface Vitals — One body's survival vitals over plain data; every write is bounded and every value retunable.
+- `VitalsState` (interface): interface VitalsState — Plain, JSON-safe vitals state: current values, current maxes (levelled), regen cooldowns, raised flags and doses still landing.
+- `VitalsTickOptions` (interface): interface VitalsTickOptions — Options for {@link Vitals.tick}.
+- `createVitals` (function): function createVitals(initial: readonly VitalDef[]): Vitals — Survival vitals for one body — health, stamina, food, water, oxygen, torpor or anything the game names. Each vital drains or regenerates per second, regen can wait out a delay and charge other vitals (health regen eats food), an empty vital pushes on others (starving drains health), and thresholds raise flags with hysteresis (torpor full knocks out until it wears off), and doses land now or over time up to a cap (a narcotic's torpor over 16 seconds, a shield potion to 50). Not only survival: a creature being tamed, a sim's needs and a shooter's shield are each one body of vitals. Plain data, deterministic, bounded by the number of vitals and doses.
 
 ## @jgengine/core/waves/encounter
 

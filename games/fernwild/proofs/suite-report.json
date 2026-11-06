@@ -86,6 +86,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/tame-clean.proof.ts",
+      "proves": [
+        "taming.effectiveness"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/tame-favourite.proof.ts",
       "proves": [
         "taming.preferred-food"
@@ -124,6 +131,13 @@
       "file": "proofs/sim/tame-ranged.proof.ts",
       "proves": [
         "taming.ranged-knockout"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/tame-wake.proof.ts",
+      "proves": [
+        "taming.wake-loses"
       ],
       "ok": true
     },

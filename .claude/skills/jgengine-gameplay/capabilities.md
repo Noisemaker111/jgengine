@@ -940,7 +940,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createMarket` (function) · `import { createMarket } from "@jgengine/core/gameplay"`
 
-## survival-vitals — linked survival meters — drain, delayed regen that costs other vitals, starvation links and knockout-style flags
+## survival-vitals — a body's linked meters — drain, delayed regen that costs other vitals, starvation links, knockout-style flags, and doses that land now or over time up to a cap
 
 - `createVitals` (function) · `import { createVitals } from "@jgengine/core/gameplay"`
 
