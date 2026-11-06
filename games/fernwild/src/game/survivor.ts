@@ -12,7 +12,7 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 import { resolveScatter } from "@jgengine/core/scatter/scatterRegion";
 import { scatterClearingOf } from "@jgengine/core/scatter/scatterClearing";
 import { bodyComfort, type BodyComfort } from "@jgengine/core/survival/bodyTemperature";
-import { createVitals, type Vitals, type VitalsState } from "@jgengine/core/survival/vitals";
+import { createVitals, type Vitals, type VitalsState } from "@jgengine/core/stats/vitals";
 import { cancelJob, createWorkQueue, enqueue, jobProgress, tick as tickQueue, type WorkQueueConfig, type WorkQueueState } from "@jgengine/core/work/jobQueue";
 
 import { editorLayers } from "../editorLayers";

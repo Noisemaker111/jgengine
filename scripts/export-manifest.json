@@ -1261,7 +1261,7 @@
     "./survival/decayMeter",
     "./survival/moodle",
     "./survival/regionHealth",
-    "./survival/vitals",
+    "./stats/vitals",
     "./talents/talentTree.view",
     "./talents/talentTreeView",
     "./talents/talents",

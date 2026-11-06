@@ -1,6 +1,6 @@
 import type { Curve } from "@jgengine/core/progression/leveling";
 import type { ComfortConfig } from "@jgengine/core/survival/bodyTemperature";
-import type { VitalDef } from "@jgengine/core/survival/vitals";
+import type { VitalDef } from "@jgengine/core/stats/vitals";
 
 /**
  * ARK's human survivor. Base values and per-point gains are ARK's (ark.wiki.gg, Human). Drain and

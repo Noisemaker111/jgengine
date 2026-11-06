@@ -1,5 +1,5 @@
 import { applyStatRate, type StatRateModifier } from "../progression/statGraph";
-import { changeStatPool, createStatPool, statPoolFraction, type StatPool } from "../stats/statPool";
+import { changeStatPool, createStatPool, statPoolFraction, type StatPool } from "./statPool";
 
 /** A per-second change one vital applies to another while a condition holds. */
 export interface VitalLink {
@@ -44,12 +44,31 @@ export interface VitalDef {
   flags?: readonly VitalFlag[];
 }
 
-/** Plain, JSON-safe vitals state: current values, current maxes (levelled), regen cooldowns and raised flags. */
+/**
+ * A change to one vital: all at once, or spread evenly over `seconds`. With `upTo` it stops at that value
+ * (a ceiling for a gain, a floor for a loss), so a small shield potion fills only to 50 and a big one to 100.
+ * A meal, a potion, a narcotic, a tranquilizer dart and a hit are all doses; what a source gives each
+ * kind of receiver is a {@link DoseTable}'s job.
+ */
+export interface VitalDose {
+  vital: string;
+  /** Units added; negative takes away. Over `seconds`, the amount still to land. */
+  amount: number;
+  /** Seconds to spread it over; absent or 0 lands it now. Over time, the seconds still to go. */
+  seconds?: number;
+  /** Stop at this value: no higher for a gain, no lower for a loss. */
+  upTo?: number;
+  /** What gave it (an item id, an attack), for reading back what is still working. */
+  source?: string;
+}
+
+/** Plain, JSON-safe vitals state: current values, current maxes (levelled), regen cooldowns, raised flags and doses still landing. */
 export interface VitalsState {
   values: Record<string, number>;
   maxes: Record<string, number>;
   cooldowns: Record<string, number>;
   flags: string[];
+  doses: VitalDose[];
 }
 
 /** Per-tick rate scaling: one scalar for every vital, or per vital id (a cold body burns food twice as fast). */
@@ -83,6 +102,10 @@ export interface Vitals {
   spend(id: string, amount: number): boolean;
   /** Add `delta` (clamped); a negative delta starts the regen delay. Returns the applied amount. */
   change(id: string, delta: number): number;
+  /** Take doses: each lands now or over its seconds, a loss starting the regen delay like {@link change}. */
+  dose(...doses: readonly VitalDose[]): void;
+  /** Doses still landing, with what is left of each. */
+  doses(): readonly VitalDose[];
   /** Set a vital's max (a level-up point, a buff). `fill` raises current by the same amount. */
   setMax(id: string, max: number, fill?: boolean): void;
   /** Advance `dt` seconds; returns flags raised or cleared during this tick. */
@@ -99,10 +122,12 @@ export interface Vitals {
  * Survival vitals for one body — health, stamina, food, water, oxygen, torpor or anything the game
  * names. Each vital drains or regenerates per second, regen can wait out a delay and charge other
  * vitals (health regen eats food), an empty vital pushes on others (starving drains health), and
- * thresholds raise flags with hysteresis (torpor full knocks out until it wears off). Plain data,
- * deterministic, bounded by the number of vitals.
+ * thresholds raise flags with hysteresis (torpor full knocks out until it wears off), and doses land
+ * now or over time up to a cap (a narcotic's torpor over 16 seconds, a shield potion to 50). Not only
+ * survival: a creature being tamed, a sim's needs and a shooter's shield are each one body of vitals.
+ * Plain data, deterministic, bounded by the number of vitals and doses.
  *
- * @capability survival-vitals linked survival meters — drain, delayed regen that costs other vitals, starvation links and knockout-style flags
+ * @capability survival-vitals a body's linked meters — drain, delayed regen that costs other vitals, starvation links, knockout-style flags, and doses that land now or over time up to a cap
  */
 export function createVitals(initial: readonly VitalDef[]): Vitals {
   let defs = [...initial];
@@ -110,6 +135,7 @@ export function createVitals(initial: readonly VitalDef[]): Vitals {
   const pools = new Map<string, StatPool>();
   const cooldowns = new Map<string, number>();
   const raised = new Set<string>();
+  let active: VitalDose[] = [];
 
   const def = (id: string): VitalDef => {
     const found = byId.get(id);
@@ -134,10 +160,33 @@ export function createVitals(initial: readonly VitalDef[]): Vitals {
     return change.applied;
   };
 
+  /** Add `delta` toward a dose's `upTo` (never past it, never backwards from beyond it); a loss starts the regen delay. */
+  const land = (id: string, delta: number, upTo: number | undefined): number => {
+    const current = valueOf(id);
+    let next = current + delta;
+    if (upTo !== undefined) next = delta >= 0 ? Math.min(next, Math.max(current, upTo)) : Math.max(next, Math.min(current, upTo));
+    const applied = write(id, next);
+    if (applied < 0 && def(id).regenDelay !== undefined) cooldowns.set(id, def(id).regenDelay ?? 0);
+    return applied;
+  };
+
+  const tickDoses = (dt: number): void => {
+    const still: VitalDose[] = [];
+    for (const entry of active) {
+      const seconds = entry.seconds ?? 0;
+      const step = seconds <= dt ? entry.amount : entry.amount * (dt / seconds);
+      if (byId.has(entry.vital)) land(entry.vital, step, entry.upTo);
+      const left = seconds - dt;
+      if (left > 1e-9 && Math.abs(entry.amount - step) > 1e-12) still.push({ ...entry, amount: entry.amount - step, seconds: left });
+    }
+    active = still;
+  };
+
   const seed = (): void => {
     pools.clear();
     cooldowns.clear();
     raised.clear();
+    active = [];
     for (const entry of defs) pools.set(entry.id, freshPool(entry));
     refreshFlags();
   };
@@ -184,10 +233,16 @@ export function createVitals(initial: readonly VitalDef[]): Vitals {
       return true;
     },
     change(id, delta) {
-      const applied = write(id, valueOf(id) + delta);
-      if (applied < 0 && def(id).regenDelay !== undefined) cooldowns.set(id, def(id).regenDelay ?? 0);
-      return applied;
+      return land(id, delta, undefined);
     },
+    dose(...doses) {
+      for (const entry of doses) {
+        def(entry.vital);
+        if ((entry.seconds ?? 0) > 0) active.push({ ...entry });
+        else land(entry.vital, entry.amount, entry.upTo);
+      }
+    },
+    doses: () => active.map((entry) => ({ ...entry })),
     setMax(id, max, fill = false) {
       const before = maxOf(id);
       const current = valueOf(id);
@@ -196,6 +251,7 @@ export function createVitals(initial: readonly VitalDef[]): Vitals {
     },
     tick(dt, options = {}) {
       if (!(dt > 0)) return [];
+      tickDoses(dt);
       for (const entry of defs) {
         const id = entry.id;
         const rate = entry.rate ?? 0;
@@ -243,6 +299,7 @@ export function createVitals(initial: readonly VitalDef[]): Vitals {
         maxes: Object.fromEntries([...pools].map(([id, pool]) => [id, pool.max])),
         cooldowns: Object.fromEntries(cooldowns),
         flags: [...raised],
+        doses: active.map((entry) => ({ ...entry })),
       };
     },
     restore(state) {
@@ -259,6 +316,7 @@ export function createVitals(initial: readonly VitalDef[]): Vitals {
       for (const [id, wait] of Object.entries(state.cooldowns)) if (byId.has(id) && Number.isFinite(wait)) cooldowns.set(id, wait);
       raised.clear();
       for (const flag of state.flags) raised.add(flag);
+      active = (state.doses ?? []).filter((entry) => byId.has(entry.vital) && Number.isFinite(entry.amount)).map((entry) => ({ ...entry }));
       refreshFlags();
     },
     reset: seed,

@@ -823,7 +823,7 @@ export {
   type Vitals,
   type VitalsState,
   type VitalsTickOptions,
-} from "./survival/vitals";
+} from "./stats/vitals";
 export {
   talentTreeView,
   talentTreeViewFrom,
