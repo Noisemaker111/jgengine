@@ -272,6 +272,18 @@ Implemented from the papers; no code copied from PFC, LIGGGHTS or YADE. Used by 
 - Published drop-weight A and b ranges: the DWi and A×b table collected by [911 Metallurgist](https://www.911metallurgist.com/blog/calculating-dwi-drop-weight-index-axb-test-result/).
 - Fragment energy and speed: A. Fujiwara and A. Tsukamoto, *Icarus* 44 (1980) 142–153; A. Nakamura and A. Fujiwara, *Icarus* 92 (1991) 132–146.
 
+## Grass reference photos
+
+Photos in `scripts/reference/grass/photos/`, from Wikimedia Commons, shown beside our grass on the
+reference boards (`bun run shoot --board`). Resized; otherwise unchanged.
+
+- `lawn-frog.jpg`: "The lawn from the sight of a frog" by carrotmadman6 from Mauritius, CC BY 2.0, https://commons.wikimedia.org/wiki/File:The_lawn_from_the_sight_of_a_frog_(4440182483).jpg
+- `pasture.jpg`: "Sheep pasture" by Richard Webb, CC BY-SA 2.0, https://commons.wikimedia.org/wiki/File:Sheep_pasture_-_geograph.org.uk_-_1211028.jpg
+- `hay-anglesey.jpg`: "Hay meadow on Anglesey" by Velella, CC BY-SA 4.0, https://commons.wikimedia.org/wiki/File:Hay_meadow_on_Anglesey.jpg
+- `hay-meadow.jpg`: "Hay Meadow" by Glyn Baker, CC BY-SA 2.0, https://commons.wikimedia.org/wiki/File:Hay_Meadow_-_geograph.org.uk_-_1319948.jpg
+- `prairie.jpg`: "Mixed-grass prairie in Badlands NP" by Krzysztof Ziarnek, Kenraiz, CC BY-SA 4.0, https://commons.wikimedia.org/wiki/File:Mixed-grass_prairie_in_Badlands_NP_kz01.jpg
+- `tussock-nz.jpg`: "Tussock Field at State Highway 94, New Zealand" by Ulrich Lange, Bochum, Germany, CC BY-SA 3.0, https://commons.wikimedia.org/wiki/File:Tussock_Field_at_State_Highway_94,_New_Zealand.jpg
+
 ## Plant growth simulation
 
 The plant simulator (`packages/core/src/plants/`) ports models and data, not code. Every source is

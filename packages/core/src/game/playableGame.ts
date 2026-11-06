@@ -799,7 +799,7 @@ export interface GameCaptureView {
   description?: string;
   /** `--look`: `x,z`, `x,y,z`, `@marker:<id>`, or `@entity:<id>`. */
   look?: string;
-  /** `--look-from`: `dist[,height[,angle]]`. */
+  /** `--look-from`: `dist[,height[,angle[,clearance]]]`; clearance is the least height above the ground, default 1.5 m. */
   lookFrom?: string;
   /** `--spawn`: `x,y,z` or `x,y,z,yaw`, for a shot framed from the player's vantage instead of a detached camera. */
   spawn?: string;

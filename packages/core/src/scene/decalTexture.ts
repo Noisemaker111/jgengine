@@ -34,8 +34,11 @@ function fbm(x: number, y: number, seed: number): number {
 }
 
 
-/** 5x7 stencil glyphs, one string of seven 5-bit rows per character. */
-const GLYPHS: Readonly<Record<string, string>> = {
+/**
+ * 5x7 stencil glyphs, one string of seven 5-bit rows per character: digits, capitals and `-/.`.
+ * @internal
+ */
+export const STENCIL_GLYPHS: Readonly<Record<string, string>> = {
   "0": "01110100011001110101100111000101110", "1": "00100011000010000100001000010001110", "2": "01110100010000100010001000100011111",
   "3": "11110000010000101110000010000111110", "4": "00010001100101010010111110001000010", "5": "11111100001111000001000011000101110",
   "6": "00110010001000011110100011000101110", "7": "11111000010001000100010000100001000", "8": "01110100011000101110100011000101110",
@@ -53,7 +56,7 @@ const GLYPHS: Readonly<Record<string, string>> = {
 
 /** Paint coverage of the stencil text at (u, v) in `0..1` texture space; 0 outside the lettering. */
 function stencilCoverage(text: string, u: number, v: number): number {
-  const chars = [...text.toUpperCase()].filter((char) => char === " " || GLYPHS[char] !== undefined);
+  const chars = [...text.toUpperCase()].filter((char) => char === " " || STENCIL_GLYPHS[char] !== undefined);
   if (chars.length === 0) return 0;
   const cell = Math.min(0.9 / (chars.length * 6 - 1), 0.16);
   const width = (chars.length * 6 - 1) * cell, height = 7 * cell;
@@ -61,7 +64,7 @@ function stencilCoverage(text: string, u: number, v: number): number {
   if (x < 0 || y < 0 || x >= chars.length * 6 - 1 || y >= 7 || width <= 0 || height <= 0) return 0;
   const index = Math.floor(x / 6), column = Math.floor(x - index * 6), row = Math.floor(y);
   if (column > 4) return 0;
-  const glyph = GLYPHS[chars[index] ?? ""];
+  const glyph = STENCIL_GLYPHS[chars[index] ?? ""];
   return glyph !== undefined && glyph[row * 5 + column] === "1" ? 1 : 0;
 }
 

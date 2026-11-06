@@ -9,7 +9,7 @@
 import type { GameCameraConfig } from "@jgengine/core/game/playableGame";
 import type { WorldBounds } from "@jgengine/core/world/features";
 
-/** Minimum clearance between the camera and the ground beneath it. Below this the shot is dirt. */
+/** Default least clearance between the camera and the ground beneath it; a fourth `lookFrom` number sets another (a grass close-up sits centimetres up). */
 export const LOOK_GROUND_CLEARANCE = 1.5;
 export const LOOK_DEFAULTS = { distance: 12, height: 5, angle: 0 } as const;
 
@@ -81,7 +81,7 @@ export function resolveLookCamera(args: {
   if (point.length < 2) {
     return { kind: "error", message: `look="${look}" needs x,z or x,y,z (got ${point.length} number)` };
   }
-  const vantage = lookFrom === null || lookFrom.length === 0 ? [] : parseFields("lookFrom", lookFrom, 3, true);
+  const vantage = lookFrom === null || lookFrom.length === 0 ? [] : parseFields("lookFrom", lookFrom, 4, true);
   if (typeof vantage === "string") return { kind: "error", message: vantage };
 
   const pick = (value: number | undefined, fallback: number): number =>
@@ -112,7 +112,9 @@ export function resolveLookCamera(args: {
   const cameraX = x + Math.sin(angle) * distance;
   const cameraZ = z + Math.cos(angle) * distance;
   const requestedHeight = pick(vantage[1], LOOK_DEFAULTS.height);
-  const clearHeight = terrain.sampleHeight(cameraX, cameraZ) + LOOK_GROUND_CLEARANCE - y;
+  const clearance = pick(vantage[3], LOOK_GROUND_CLEARANCE);
+  if (clearance <= 0) return { kind: "error", message: `lookFrom clearance must be positive (got ${clearance})` };
+  const clearHeight = terrain.sampleHeight(cameraX, cameraZ) + clearance - y;
   const height = Math.max(requestedHeight, clearHeight);
 
   return {
@@ -238,7 +240,7 @@ function observerCamera(opts: {
 
 /** Shared `?lookFrom=` decode for the subject forms, which skip the coordinate path. */
 function readVantage(lookFrom: string | null): { distance: number; height: number; angle: number } | string {
-  const vantage = lookFrom === null || lookFrom.length === 0 ? [] : parseFields("lookFrom", lookFrom, 3, true);
+  const vantage = lookFrom === null || lookFrom.length === 0 ? [] : parseFields("lookFrom", lookFrom, 4, true);
   if (typeof vantage === "string") return vantage;
   const pick = (value: number | undefined, fallback: number): number =>
     value !== undefined && Number.isFinite(value) ? value : fallback;

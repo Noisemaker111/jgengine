@@ -22,6 +22,8 @@ export interface LookAim {
   distance?: number;
   height?: number;
   angle?: number;
+  /** Least height above the ground under the camera, metres; the runner's default when unset. */
+  clearance?: number;
 }
 
 const SUBJECT_KINDS = ["marker", "entity"] as const;
@@ -29,7 +31,7 @@ const SUBJECT_KINDS = ["marker", "entity"] as const;
 const USAGE =
   "--look takes the aim subject only: x,z (ground height sampled), x,y,z, " +
   "@marker:<id>, or @entity:<id>. " +
-  "Distance, height, and orbit angle go in --look-from <dist[,height[,angle]]>";
+  "Distance, height, and orbit angle go in --look-from <dist[,height[,angle[,clearance]]]>";
 
 /**
  * Parse an `@kind:id` subject token. Aiming by id is the form a caller actually has —
@@ -94,17 +96,21 @@ export function parseLookAim(
 function parseVantage(from: string | undefined): Omit<LookAim, "point" | "subject"> {
   if (from === undefined || from.length === 0) return {};
   const vantage = parseNumbers("--look-from", from);
-  if (vantage.length > 3) {
-    throw new Error(`--look-from "${from}" takes at most dist,height,angle (got ${vantage.length} numbers)`);
+  if (vantage.length > 4) {
+    throw new Error(`--look-from "${from}" takes at most dist,height,angle,clearance (got ${vantage.length} numbers)`);
   }
-  const [distance, height, angle] = vantage;
+  const [distance, height, angle, clearance] = vantage;
   if (distance !== undefined && distance <= 0) {
     throw new Error(`--look-from distance must be positive (got ${distance}) — the camera would sit on the aim point`);
+  }
+  if (clearance !== undefined && clearance <= 0) {
+    throw new Error(`--look-from clearance must be positive (got ${clearance}) — the camera would sit in the ground`);
   }
   return {
     ...(distance === undefined ? {} : { distance }),
     ...(height === undefined ? {} : { height }),
     ...(angle === undefined ? {} : { angle }),
+    ...(clearance === undefined ? {} : { clearance }),
   };
 }
 
@@ -122,7 +128,7 @@ export function applyLookSearchParams(url: URL, aim: LookAim | undefined): void 
 export function lookSearchParams(aim: LookAim): Record<string, string> {
   const look = aim.subject !== undefined ? `@${aim.subject.kind}:${aim.subject.id}` : (aim.point ?? []).join(",");
   const params: Record<string, string> = look.length === 0 ? {} : { look };
-  const vantage = [aim.distance, aim.height, aim.angle];
+  const vantage = aim.clearance === undefined ? [aim.distance, aim.height, aim.angle] : [aim.distance, aim.height, aim.angle, aim.clearance];
   if (vantage.some((value) => value !== undefined)) {
     params["lookFrom"] = vantage.map((value) => (value === undefined ? "" : String(value))).join(",");
   }
