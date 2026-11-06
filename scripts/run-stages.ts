@@ -1,5 +1,7 @@
 import { spawnSync } from "node:child_process";
+import { existsSync, readdirSync } from "node:fs";
 import { availableParallelism } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { digestLines, writeStepLog } from "./failure-digest";
@@ -64,6 +66,18 @@ export interface CheckDef {
   readonly skipsTests?: boolean;
 }
 
+/**
+ * What the game suite score reads: the suite catalog and scorer, the shared reader, and each game's
+ * declarations, committed report and the README and PLAN it writes into. A game's own source never
+ * moves its score without its report changing too.
+ */
+const GAME_SUITE_READS: readonly string[] = (() => {
+  const gamesDir = join(fileURLToPath(new URL("..", import.meta.url)), "games");
+  const games = existsSync(gamesDir) ? readdirSync(gamesDir, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name) : [];
+  const perGame = games.flatMap((game) => ["jgengine.json", "proofs/suite-report.json", "README.md", "PLAN.md"].map((file) => `games/${game}/${file}`));
+  return ["packages/core/src/suite/", "games/shared/suiteReport.ts", "scripts/gen-game-suite.ts", ...perGame];
+})();
+
 export const CHECKS: readonly CheckDef[] = [
   { name: "artifacts", script: "scripts/check-no-src-artifacts.ts", jobs: ["types", "quick"], generated: true, reads: ["packages/"] },
   { name: "release-set", script: "scripts/check-release-set.ts", jobs: ["types"], reads: ["packages/"] },
@@ -85,7 +99,7 @@ export const CHECKS: readonly CheckDef[] = [
   { name: "games-save-states", script: "games/scripts/check-save-states.ts", jobs: ["games"], games: true, reads: ["games/"] },
   { name: "games-ledger", script: "games/scripts/capabilities-sync.ts", args: ["--check"], jobs: ["games"], games: true, generated: true, reads: ["packages/"], skipsTests: true },
   { name: "games-sync", script: "packages/jgengine/src/cli/index.ts", args: ["sync", "--check"], jobs: ["games"], games: true, reads: ["games/", "packages/jgengine/"] },
-  { name: "games-suite-score", script: "scripts/gen-game-suite.ts", args: ["--check"], jobs: ["games"], games: true, generated: true, reads: ["games/", "packages/core/src/suite/"] },
+  { name: "games-suite-score", script: "scripts/gen-game-suite.ts", args: ["--check"], jobs: ["games"], games: true, generated: true, reads: GAME_SUITE_READS },
   { name: "games-glb-textures", script: "games/scripts/check-glb-textures.ts", jobs: [], games: true, reads: ["games/"] },
   { name: "version", script: "scripts/set-version.ts", args: ["--check"], jobs: [], reads: ["packages/"] },
   // Reads the site build, so CI's web-build job runs it after `bun --cwd=apps/web run build`.
@@ -223,7 +237,7 @@ export const GEN_TARGETS: readonly GenTarget[] = [
   { name: "games-ledger", script: "games/scripts/capabilities-sync.ts", after: ["barrels"], outputs: [/^games\/capabilities\.json$/], reads: ["packages/"], skipsTests: true },
   { name: "part-stats", script: "scripts/part-stats.ts", after: ["barrels"], outputs: [/^scripts\/part-stats\.json$/], reads: ["packages/core/src/"], skipsTests: true },
   { name: "recipes", script: "scripts/gen-cookbook.ts", after: ["barrels"], outputs: [/^\.claude\/skills\/jgengine\/recipes\/cookbook\.md$/], reads: ["packages/core/src/recipes/"] },
-  { name: "game-suite", script: "scripts/gen-game-suite.ts", reads: ["games/", "packages/core/src/suite/"] },
+  { name: "game-suite", script: "scripts/gen-game-suite.ts", after: ["barrels"], reads: GAME_SUITE_READS },
 ];
 
 export function genPlan(targets: readonly GenTarget[]): Stage[] {
