@@ -25,12 +25,12 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | breeding | 2/4 | 0 | 0 | 2 | 0 |
 | spawns | 0/3 | 0 | 0 | 3 | 0 |
 | boss | 0/3 | 0 | 0 | 3 | 0 |
-| cave | 1/2 | 0 | 0 | 1 | 0 |
-| **total** | **26/67** | 3 | 0 | 38 | 0 |
+| cave | 2/2 | 0 | 0 | 0 | 0 |
+| **total** | **27/67** | 3 | 0 | 37 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: creature-survival. 26/67 proven · 3 failing · 38 missing.
+Genres: creature-survival. 27/67 proven · 3 failing · 37 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
@@ -100,7 +100,7 @@ Genres: creature-survival. 26/67 proven · 3 failing · 38 missing.
 | `boss.phases` | missing | A boss changes how it fights as it is hurt. |  |
 | `boss.unlocks-progression` | missing | Beating a boss unlocks something no other source gives. |  |
 | `cave.artifact-run` | proven | Enter a cave, survive it, and take the artifact from its end. | proofs/sim/cave-artifact.proof.ts |
-| `cave.hazards` | missing | Caves hold their own dangers: stronger creatures, cold, poison or dark. |  |
+| `cave.hazards` | proven | Caves hold their own dangers: stronger creatures, cold, poison or dark. | proofs/sim/cave-hazards.proof.ts |
 
 </details>
 <!-- /suite-score -->
