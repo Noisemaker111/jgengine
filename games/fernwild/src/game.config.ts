@@ -367,6 +367,9 @@ export const game = defineGame({
         broodHealth: brood.boss === null ? -1 : Math.round(brood.boss.health * 1000) / 10,
         broodPhase: brood.boss?.phase === null || brood.boss === null ? 0 : BROOD_PHASES.findIndex((phase) => phase.id === brood.boss!.phase) + 1,
         araneo: brood.brood,
+        // Where she stands, and 1 while her phase tell is on screen.
+        ...sight("brood", brood.boss?.at ?? null),
+        broodTell: brood.tell === null ? 0 : 1,
         webbed: view.webbed ? 1 : 0,
         lairTames: brood.companions,
         atObelisk: obeliskPrompts(ctx).length > 0 ? 1 : 0,
