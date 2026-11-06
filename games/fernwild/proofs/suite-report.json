@@ -128,6 +128,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/tame-gather.proof.ts",
+      "proves": [
+        "creatures.work.gather"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/tame-hunger.proof.ts",
       "proves": [
         "creatures.feed-starve"
@@ -159,6 +166,13 @@
       "file": "proofs/sim/tame-level-up.proof.ts",
       "proves": [
         "creatures.level-up"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/tame-lighter-loads.proof.ts",
+      "proves": [
+        "creatures.work.lighter-loads"
       ],
       "ok": true
     },
