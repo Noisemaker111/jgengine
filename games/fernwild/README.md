@@ -124,8 +124,9 @@ are drawn.
   pachy and iguanodon the parasaur, chalicotherium a ground sloth, paraceratherium a rhino,
   gigantopithecus a yeti, and so on (`src/game/data/creatureModels.ts` lists every one). Building has
   no metal tier, foundations snap edge to edge but not to cliffs, and storage boxes cannot be placed
-  yet; rain drops are thin streaks; no bolas, slingshot shots or tranq arrows yet, so a raptor is clubbed (or
-  punched) at close range; a tame's inventory holds slots, not weight; drain and regen rates where
+  yet; rain drops are thin streaks; shots from the slingshot (stones) and the bow (stone and tranquilizer
+  arrows) hit instantly along the aim, with no arrow flight, drop or pickup, and the bow always reaches for
+  tranquilizer arrows first; no bolas or traps yet; a tame's inventory holds slots, not weight; drain and regen rates where
   ARK publishes none are approximate; trees are stylized stand-ins, not palms. The Broodmother's lair is
 an open-sky walled islet rather than ARK's enclosed jungle cave, she is a tinted, enlarged spider
 model, the portal has no drag-weight limit, and the single-player boss damage cut is not applied.

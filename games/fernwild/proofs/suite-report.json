@@ -107,6 +107,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/tame-ranged.proof.ts",
+      "proves": [
+        "taming.ranged-knockout"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/tool-bias.proof.ts",
       "proves": [
         "harvest.tool-bias"
@@ -148,10 +155,8 @@
     },
     {
       "id": "content.weapons-have-ammo",
-      "ok": false,
-      "problems": [
-        "slingshot fires but takes no ammo"
-      ]
+      "ok": true,
+      "problems": []
     },
     {
       "id": "progression.runway",

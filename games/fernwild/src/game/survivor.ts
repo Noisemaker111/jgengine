@@ -22,7 +22,7 @@ import { gatheredBy, HARVESTABLES, type GatherBy } from "./data/harvestables";
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { FIST, GEAR_SLOTS, itemDef, itemLabel, itemTraits, PICK_UP, SPOILS, type ToolDef } from "./data/items";
 import { placeHeld, stations, strikeStructure } from "./base";
-import { mountCanSprint, strikeCreature } from "./creatures";
+import { mountCanSprint, shootCreature, strikeCreature } from "./creatures";
 import { climateAt, inWater, type ClimateHere } from "./climate";
 import { leaveBody } from "./deathBody";
 import { feedAdded, feedConsumed } from "./pickupFeed";
@@ -276,6 +276,30 @@ function aimAt(ctx: GameContext, survivor: Survivor, position: readonly [number,
   return { strike: label(strike), pick: label(pick), pickAt: pick === null ? null : { x: pick.x, z: pick.z }, water: inWater(ctx, position) };
 }
 
+/** Left click with a ranged weapon: spend the first carried ammo it takes and hit what lies along the aim. */
+function fire(ctx: GameContext, survivor: Survivor, tool: ToolDef, yaw: number): void {
+  const ranged = tool.ranged;
+  const me = ctx.scene.entity.get(ctx.player.userId);
+  if (ranged === undefined || me === null) return;
+  const ammo = Object.keys(ranged.ammo).find((id) => ctx.player.inventory.count(BAG, id) + ctx.player.inventory.count(HOTBAR, id) > 0);
+  const shot = ammo === undefined ? undefined : ranged.ammo[ammo];
+  if (ammo === undefined || shot === undefined) {
+    survivor.swingReady = ctx.time.now() + 0.5;
+    ctx.game.notices.push({ text: `No ammo: needs ${Object.keys(ranged.ammo).map((id) => itemDef(id)?.label ?? id).join(" or ")}`, tone: "deny" });
+    return;
+  }
+  if (!survivor.vitals.spend("stamina", tool.stamina)) {
+    ctx.game.notices.push({ text: "Too tired to draw", tone: "deny" });
+    return;
+  }
+  survivor.swingReady = ctx.time.now() + tool.cooldown;
+  if (ctx.player.inventory.take(BAG, ammo, 1).status !== "ok") ctx.player.inventory.take(HOTBAR, ammo, 1);
+  if (yaw !== me.rotationY) ctx.scene.entity.setPose(me.id, { position: me.position, rotationY: yaw });
+  ctx.game.playEntityAnimation(ctx.player.userId, "swing");
+  const hit = shootCreature(ctx, ctx.player.userId, yaw, ranged.range, shot);
+  if (hit?.killed === true) grantXp(ctx, hit.xp);
+}
+
 /** Left click: swing whatever is in hand at what is in front. */
 export function swing(ctx: GameContext, yaw?: number): void {
   const survivor = survivorOf(ctx);
@@ -290,6 +314,10 @@ export function swing(ctx: GameContext, yaw?: number): void {
     return;
   }
   const { tool } = heldTool(ctx, survivor);
+  if (tool.ranged !== undefined) {
+    fire(ctx, survivor, tool, yaw ?? me.rotationY);
+    return;
+  }
   if (!survivor.vitals.spend("stamina", tool.stamina)) {
     ctx.game.notices.push({ text: "Too tired to swing", tone: "deny" });
     return;

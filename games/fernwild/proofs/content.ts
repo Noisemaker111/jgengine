@@ -59,8 +59,8 @@ export const content: SuiteContent = {
   items: ITEMS.map((item) => ({
     id: item.id,
     ...(item.kind === "structure" ? { placeable: true } : {}),
-    // A tool that hits from range fires something; Fernwild's data names no ammo for it.
-    ...(item.tool?.damageClass === "ranged" ? { ammo: [] } : {}),
+    // A tool that hits from range fires the ammo its `ranged` profile names; one with none names nothing.
+    ...(item.tool?.damageClass === "ranged" ? { ammo: Object.keys(item.tool.ranged?.ammo ?? {}) } : {}),
   })),
   start: [...(START.unlocked ?? [])],
   sources: [...recipes.sources, ...harvest, ...carcasses, ...spoiling, ...crates, ...caves, ...bosses],

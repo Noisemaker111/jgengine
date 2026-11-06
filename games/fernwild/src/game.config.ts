@@ -317,6 +317,8 @@ export const game = defineGame({
         lairTames: brood.companions,
         atObelisk: obeliskPrompts(ctx).length > 0 ? 1 : 0,
         element: ctx.player.inventory.count(BAG, "element"),
+        tranqArrows: ctx.player.inventory.count(BAG, "tranq_arrow") + ctx.player.inventory.count(HOTBAR, "tranq_arrow"),
+        stones: ctx.player.inventory.count(BAG, "stone") + ctx.player.inventory.count(HOTBAR, "stone"),
       };
     },
   },

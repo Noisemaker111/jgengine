@@ -414,14 +414,56 @@ export function strikeCreature(ctx: GameContext, attackerId: string, yaw: number
     if (cut.depleted) target.rot = Math.min(target.rot, 2);
     return { label: `${def.label} body`, granted: cut.granted, killed: false, knockedOut: false, xp: 0 };
   }
-  const damage = tool.damage * melee;
+  return landHit(ctx, attackerId, target, tool.damage * melee, (tool.torpor ?? 0) * melee);
+}
+
+/**
+ * The first live wild creature along the aim within `range` metres: a shot passes a body whose radius
+ * (plus a little slack for aiming) reaches the line, the nearest such body taking it.
+ */
+function creatureAlongAim(ctx: GameContext, fromId: string, yaw: number, range: number): Creature | null {
+  const from = ctx.scene.entity.get(fromId);
+  if (from === null) return null;
+  const world = worldOf(ctx);
+  const ax = Math.sin(yaw);
+  const az = Math.cos(yaw);
+  let best: Creature | null = null;
+  let bestAlong = Infinity;
+  for (const creature of world.creatures.values()) {
+    if (creature.id === fromId || creature.dead || (creature.tamed && !creature.dead) || ridingOf(ctx).riderOf(creature.id) !== null) continue;
+    const entity = ctx.scene.entity.get(creature.id);
+    if (entity === null) continue;
+    const dx = entity.position[0] - from.position[0];
+    const dz = entity.position[2] - from.position[2];
+    const along = dx * ax + dz * az;
+    if (along <= 0 || along > range) continue;
+    const off = Math.abs(dx * az - dz * ax);
+    if (off > defOf(creature).radius + 0.6) continue;
+    if (along < bestAlong) {
+      best = creature;
+      bestAlong = along;
+    }
+  }
+  return best;
+}
+
+/** A shot from a ranged weapon: the first wild creature along the aim takes the ammo's damage and torpor. */
+export function shootCreature(ctx: GameContext, attackerId: string, yaw: number, range: number, shot: { damage: number; torpor: number }): CreatureStrike | null {
+  const target = creatureAlongAim(ctx, attackerId, yaw, range);
+  return target === null ? null : landHit(ctx, attackerId, target, shot.damage, shot.torpor);
+}
+
+/** One blow or shot on a live creature: damage, aggro, torpor (knocking it out), and death. */
+function landHit(ctx: GameContext, attackerId: string, target: Creature, damage: number, torpor: number): CreatureStrike {
+  const world = worldOf(ctx);
+  const def = defOf(target);
   target.lastHitBy = attackerId;
   ctx.scene.entity.effect({ from: attackerId, to: target.id, effect: "damage", via: { amount: damage } });
   world.driver.hurt(ctx, target.id, attackerId);
   world.lastTarget = { id: target.id, until: ctx.time.now() + 10 };
   const wasDown = world.taming.state(target.id)?.subdued === true;
   if (wasDown) world.taming.hurt(target.id, damage / maxHealth(target));
-  const knockedOut = !wasDown && def.torporImmune !== true && world.taming.subdue(target.id, (tool.torpor ?? 0) * melee);
+  const knockedOut = !wasDown && def.torporImmune !== true && world.taming.subdue(target.id, torpor);
   if (knockedOut) knockOut(ctx, target);
   const killed = (ctx.scene.entity.stats.get(target.id, "health")?.current ?? 1) <= 0;
   if (killed) kill(ctx, target);
