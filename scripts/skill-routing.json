@@ -96,6 +96,7 @@
     "spatial": "jgengine-world",
     "stats": "jgengine-combat",
     "store": "jgengine-gameplay",
+    "suite": "jgengine-gameplay",
     "survival": "jgengine-gameplay",
     "talents": "jgengine-gameplay",
     "terrain": "jgengine-world",

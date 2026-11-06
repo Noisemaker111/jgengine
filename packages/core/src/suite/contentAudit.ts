@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 import type { RecipeDef } from "@jgengine/core/crafting/recipe";
 import { validateContentProgression, type ContentProgressionRule } from "@jgengine/core/game/contentValidation";
 

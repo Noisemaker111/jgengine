@@ -271,6 +271,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `defineGameSpec` (function) · `import { defineGameSpec } from "@jgengine/core/worldModel/gameSpec"`
 
+## game-suite-run — run every suite proof and the content check of one game into the report its score is read from
+
+- `runGameSuite` (function) · `import { runGameSuite } from "@jgengine/core/suite/runSuiteProof.draw"`
+
+## game-suite-score — score a game against the engine's game suite: proven, failing, not simulatable, missing and cut, by area
+
+- `scoreGameSuite` (function) · `import { scoreGameSuite } from "@jgengine/core/suite/gameSuite"`
+
 ## game-system — declare a composable capability with its own schedule and lifecycle
 
 - `SystemDefinition` (interface) · `import { SystemDefinition } from "@jgengine/core/gameplay"`
@@ -833,6 +841,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `setValue` (function) · `import { setValue } from "@jgengine/core/gameplay"`
 
+## setup-window — hand setup code a live object that stops working when setup ends, so nothing it kept can write later
+
+- `openSetupWindow` (function) · `import { openSetupWindow } from "@jgengine/core/suite/setupWindow"`
+
 ## shaped-grid — a serializable inventory board with arbitrary cell footprints, rotation, overlap checks, and immutable placement
 
 - `canPlace` (function) · `import { canPlace } from "@jgengine/core/inventory/shapedGrid"`
@@ -907,6 +919,22 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## stat-points — level-up points spent into stats, each adding an amount or scaling the stat, with per-owner bases and a per-stat cap
 
 - `createStatPoints` (function) · `import { createStatPoints } from "@jgengine/core/progression/statPoints"`
+
+## suite-content-audit — prove the game suite's data entries (item sources and uses, placeables, ammo, unlock runway) from a game's content
+
+- `auditSuiteContent` (function) · `import { auditSuiteContent } from "@jgengine/core/suite/contentAudit"`
+
+## suite-proof — prove a game suite entry by simulating the real game headless, with setup that may cheat and play that may not
+
+- `defineProof` (function) · `import { defineProof } from "@jgengine/core/suite/suiteProof"`
+
+## suite-proof-run — run a game suite proof headless and refuse a proof whose outcome came from setup or a cheat
+
+- `runSuiteProof` (function) · `import { runSuiteProof } from "@jgengine/core/suite/runSuiteProof.draw"`
+
+## suite-recipe-content — turn engine recipes into the game suite's content sources and uses
+
+- `recipeContent` (function) · `import { recipeContent } from "@jgengine/core/suite/contentAudit"`
 
 ## supply-demand-pricing — price goods from finite stock and live demand on a stated curve
 
