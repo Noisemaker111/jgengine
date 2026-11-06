@@ -180,7 +180,7 @@ describe("grass species", () => {
 describe("tuft splay", () => {
   test("splay leans blades out from the centre; none leaves the tuft unchanged", () => {
     const leanOf = (splay: number) => {
-      const template = createGrassTuftTemplate({ look: readGrassLook({ splay }), seed: "s", segments: 2 });
+      const template = createGrassTuftTemplate({ look: readGrassLook({ splay }), seed: "s", segments: 2, bladesPerM2: 400 });
       let lean = 0;
       for (let i = 1; i < template.bladeBend.length; i += 2) lean = Math.max(lean, template.bladeBend[i] ?? 0);
       return { lean, template };

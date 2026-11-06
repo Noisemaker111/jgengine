@@ -11,7 +11,7 @@ import { pendingModelLoads } from "@jgengine/core/model/modelLoad.draw";
 import { registerGrassFieldRenderer } from "@jgengine/core/grass/GrassFieldRenderer.draw";
 import { getSceneKindRenderer, type SceneKindRenderContext } from "@jgengine/core/scene/sceneKindRenderers.draw";
 
-async function mounted(camera: THREE.Camera, element: ReactElement, run: (scene: THREE.Scene) => Promise<void> | void) {
+async function mounted(camera: THREE.Camera, element: ReactElement, run: (scene: THREE.Scene) => Promise<void> | void, frames = 1) {
   const environment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
   const previous = environment.IS_REACT_ACT_ENVIRONMENT;
   environment.IS_REACT_ACT_ENVIRONMENT = true;
@@ -22,7 +22,7 @@ async function mounted(camera: THREE.Camera, element: ReactElement, run: (scene:
   try {
     let scene!: THREE.Scene;
     await act(async () => { scene = root.render(element).getState().scene; });
-    await act(async () => { advance(performance.now()); });
+    for (let frame = 0; frame < frames; frame += 1) await act(async () => { advance(performance.now()); });
     scene.updateMatrixWorld(true);
     await run(scene);
   } finally {
@@ -179,7 +179,8 @@ test("authored grass keeps offset spawn pads and diagonal routes clear without c
     expect(routeSamples).toBeGreaterThan(0);
     expect(spawnSamples).toBeGreaterThan(0);
     expect(growing).toBeGreaterThan(0);
-  });
+    // The spawn pad sits in the cell beside the camera's, so the stream needs a few frames to bake it.
+  }, 12);
 });
 
 test("the turf mat drapes the ground on its own, with a zero-strength mat drawing nothing", async () => {

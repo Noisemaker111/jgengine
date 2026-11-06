@@ -453,7 +453,8 @@ export const GRASS_GENERATOR = defineGenerator({
   generate(params, context): GrassFieldBake {
     const look = groupGrassKnobs({ ...params, seed: context.seed });
     const segments = Math.max(1, Math.round(4 * context.detail));
-    return { look, seed: context.seed, segments, template: createGrassTuftTemplate({ look, seed: context.seed, segments }), bladesPerM2: grassBladeDensity(look) };
+    const bladesPerM2 = grassBladeDensity(look);
+    return { look, seed: context.seed, segments, template: createGrassTuftTemplate({ look, seed: context.seed, segments, bladesPerM2 }), bladesPerM2 };
   },
 });
 

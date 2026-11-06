@@ -1809,7 +1809,7 @@
 ## @jgengine/core/grass/grassField
 
 - `GrassTemplateLod` (interface): interface GrassTemplateLod — One draw-detail level of the tuft template: an index range drawing every blade at `segments`.
-- `GrassTuftInputs` (interface): interface GrassTuftInputs — What a tuft template is built from: the look, the patch seed and the full-detail blade segments.
+- `GrassTuftInputs` (interface): interface GrassTuftInputs — What a tuft template is built from: the look, the patch seed, the full-detail blade segments and the look's blade density.
 - `GrassTuftTemplate` (interface): interface GrassTuftTemplate — The shared tuft mesh every instance places: `tuftBlades` blades splayed around a root, each a strip of `segments` rows, plus one flower quad that only flowering tufts open. The index buffer holds the strips at full, half and single-segment detail back to back, so a far draw picks a cheaper range of the same vertices.
 - `createGrassTuftTemplate` (function): function createGrassTuftTemplate(inputs: GrassTuftInputs): GrassTuftTemplate — Build the shared tuft template for a patch. Pure and seeded: the same inputs give the same buffers.
 - `grassBareAt` (function): function grassBareAt(look: Pick<GrassLook, "growth" | "season">, seed: number, x: number, z: number): number — Share of the ground grass grows on at a patch-local point, 0..1: the `bareGround` mask that opens sand or soil between tufts. 1 everywhere when `bareGround` is 0.

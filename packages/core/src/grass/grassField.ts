@@ -106,11 +106,24 @@ export interface GrassTuftTemplate {
   radius: number;
 }
 
-/** What a tuft template is built from: the look, the patch seed and the full-detail blade segments. */
+/** What a tuft template is built from: the look, the patch seed, the full-detail blade segments and the look's blade density. */
 export interface GrassTuftInputs {
   look: GrassLook;
   seed: string;
   segments: number;
+  /** Blades per square metre at full detail (`grassBladeDensity`), which sets how far apart tufts stand. */
+  bladesPerM2: number;
+}
+
+/**
+ * Radius a tuft's blade roots fill, metres: the look's `tuftSpread`, or three quarters of the
+ * spacing between tufts when that is wider. Roots that stop short of the spacing leave every tuft
+ * an island on bare mat; filling it lets neighbouring tufts interleave into one sward.
+ * @internal
+ */
+export function grassTuftReach(look: Pick<GrassLook, "tuft">, bladesPerM2: number): number {
+  const spacing = Math.sqrt(look.tuft.tuftBlades / Math.max(1e-6, bladesPerM2));
+  return Math.max(look.tuft.tuftSpread, spacing * 0.75);
 }
 
 function wrapAngle(angle: number): number {
@@ -126,6 +139,7 @@ export function createGrassTuftTemplate(inputs: GrassTuftInputs): GrassTuftTempl
   // Splay draws from its own stream, so a look without it keeps the same tuft it always had.
   const splayRandom = seededRng(`${inputs.seed}/tuft-splay`);
   const splay = look.tuft.splay;
+  const tuftReach = grassTuftReach(look, inputs.bladesPerM2);
   const position: number[] = [];
   const uv: number[] = [];
   const bladeOffset: number[] = [];
@@ -134,7 +148,9 @@ export function createGrassTuftTemplate(inputs: GrassTuftInputs): GrassTuftTempl
   let heightScale = 0, widthScale = 0, radius = 0;
   for (let blade = 0; blade < blades; blade += 1) {
     const angle = blade === 0 ? 0 : ((blade - 1) / Math.max(1, blades - 1)) * Math.PI * 2 + random() * 1.4;
-    const reach = blade === 0 ? 0 : look.tuft.tuftSpread * (0.35 + 0.65 * random());
+    // Roots spread evenly over the tuft's disc (area-uniform), not on a ring round one centre blade,
+    // so a tuft reads as a patch of sward instead of a fountain with a hole beside it.
+    const reach = blade === 0 ? 0 : tuftReach * Math.sqrt(0.06 + 0.94 * random());
     const ox = Math.cos(angle) * reach;
     const oz = Math.sin(angle) * reach;
     // Each blade bends away from the tuft centre (plus jitter), so the clump splays open.
