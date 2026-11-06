@@ -18,3 +18,4 @@ Engine seam: packages/core/src/generator/paramSchema.ts, packages/core/src/grass
 ### Changed
 
 - beacon-bastion, brightway-park, ember-command, fernwild, harbor-heat and scrap-signal grass fields now name a species picked for their setting, and the grass-looks demo lays out every species.
+- the engine bundle budget rises to 1880 KiB for the grass species table every grass field reads.
