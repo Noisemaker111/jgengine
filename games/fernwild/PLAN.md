@@ -196,7 +196,7 @@ taming; gather and lighter loads; flying; fuel, preserve and tool wear; farming;
 | --- | --- |
 | taming.wake-loses | torpor drains at its rate, narcotic doses still landing keep it up; the flag clears only when all of it wears off, then affinity is zeroed (done, timed by the proof) |
 | taming.effectiveness | ineffectiveness meter; hits and meals dose it; effectiveness 1/(1+x) (done) |
-| taming.passive-feed | the same diet dose table, offered by the player to an awake creature that raises a `hungry` flag |
+| taming.passive-feed | `AWAKE_TAMES` (ARK's passive tames) in the same taming body: E hands it the first food it likes while its belly is empty, affinity builds awake, any hit scares the tame away (done, `knockoutTaming.offer`) |
 | taming.trap | a `held` meter in the creature's body, dosed by a bola, draining a second a second; while it holds the creature stays still. Every weapon hit is now a dose list (club and tranq torpor, bola hold) (done) |
 | creatures.feed-starve | a tame's food vital drains; core `eatWhileRoom` feeds it from its inventory through the `TAME_DIET` dose table; empty food starves it to death; a baby is the same meter at a faster pace (done, `tameHunger.ts`) |
 | survival.oxygen-swim | core swim `dive` (crouch down, jump up, telemetry `diveDepth`); oxygen drained by an `extra` rate while the head is under, `whenEmpty` drowns (done) |

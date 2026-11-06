@@ -154,3 +154,43 @@ test("a bola's hold is a dose like any other: it fills the held meter, wears off
   // Torpor and hold are separate meters: being held does not knock it out.
   expect(run.state("r1")?.subdued).toBe(false);
 });
+
+test("an Ovis tames awake: fed only while hungry, it builds the tame between meals, and one hit scares it all away", () => {
+  const run = taming();
+  run.track("ovis", "ovis", 1);
+  const stock = { mejoberry: 400 };
+  const feeder = pantry(stock);
+  expect(run.state("ovis")).toMatchObject({ awakeTame: true, subdued: false, progress: 0 });
+  expect(run.offer("ovis", pantry({ raw_meat: 5 }))).toEqual({ type: "refuses" });
+  expect(run.offer("ovis", feeder)).toEqual({ type: "ate", itemId: "mejoberry" });
+  // Full: it will not take another until it has digested the first.
+  expect(run.offer("ovis", feeder).type).toBe("full");
+  run.tick(1, () => null);
+  const once = run.state("ovis")!.progress;
+  expect(once).toBeGreaterThan(0);
+
+  // Awake, the progress stays between meals.
+  for (let s = 0; s < 5; s += 1) run.tick(1, () => null);
+  expect(run.state("ovis")!.progress).toBe(once);
+
+  // A blow scares it off: the tame so far is gone.
+  run.hit("ovis", []);
+  expect(run.state("ovis")!.progress).toBe(0);
+
+  // Fed every time it is hungry, it tames without ever going down.
+  let won: Won | null = null;
+  for (let s = 0; s < 3600 && won === null; s += 1) {
+    run.offer("ovis", feeder);
+    for (const { event } of run.tick(1, () => null)) if (event.type === "won") won = event;
+    expect(run.state("ovis")?.subdued ?? false).toBe(false);
+  }
+  expect(won).not.toBeNull();
+  expect(won!.effectiveness).toBeGreaterThan(0.5);
+});
+
+test("a knockout tame takes nothing by hand", () => {
+  const run = taming();
+  run.track("raptor", "raptor", 1);
+  expect(run.state("raptor")!.awakeTame).toBe(false);
+  expect(run.offer("raptor", pantry({ raw_meat: 5 }))).toEqual({ type: "not-awake-tame" });
+});

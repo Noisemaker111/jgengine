@@ -24,7 +24,15 @@ export interface TamingDef {
   torpor: Curve;
   affinity: Curve;
   foods: Readonly<Record<string, readonly VitalDose[]>>;
+  /** Tamed awake, by hand-feeding it whenever it is hungry, never by knocking it out (ARK's passive tames). */
+  awake?: boolean;
 }
+
+/**
+ * ARK's passive tames on the Island: walk up while it is hungry and hand it a food it likes, wait for it to
+ * digest, and feed it again; any hit scares it and the tame so far is lost.
+ */
+export const AWAKE_TAMES: ReadonlySet<string> = new Set(["ovis", "lystrosaurus", "moschops", "equus", "castoroides", "gigantopithecus"]);
 
 /**
  * One food: the affinity it gives (in the species' plain food, so raw meat is 1 for a carnivore), the
