@@ -1,5 +1,9 @@
 # Brightway Park
 
+<!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
+Game suite: **14/18 proven · 1 not simulatable · 3 missing** · `jgengine suite brightway-park`
+<!-- /suite-score -->
+
 A park-builder tycoon: buy rides and stalls, set the ticket and ride prices, keep guests fed and the
 rating climbing, and keep the crew on the breakdowns. Runs on engine source; start it with
 `bun --cwd=games/brightway-park run dev` from the repository root. Saves to `brightway-park.save.v1`;

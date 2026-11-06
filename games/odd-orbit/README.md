@@ -1,5 +1,9 @@
 # Odd Orbit
 
+<!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
+Game suite: **0/16 proven · 16 missing** · `jgengine suite odd-orbit`
+<!-- /suite-score -->
+
 A small alien household simulation about making room for different needs and rhythms. Four named household members share six furnishing types, a pantry, credits, debt and reciprocal bonds. The existing orbital habitat and body plans remain the game's canon; interface portraits are original SVG artwork.
 
 Run `bun run dev`, `bun run check-types` and `bun run test` here. Vite resolves `@jgengine/*` from engine source. On a clean checkout, provision the catalog's CC0 packs with the installed asset CLI before playing:

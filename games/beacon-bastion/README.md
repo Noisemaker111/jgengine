@@ -1,5 +1,9 @@
 # Beacon Bastion
 
+<!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
+Game suite: **0/17 proven · 17 missing** · `jgengine suite beacon-bastion`
+<!-- /suite-score -->
+
 Tower defense on a highland approach. Eleven authored plots sit beside two raider roads: the long main
 approach and a short east flank. The keep has twenty lives. A defense is twelve waves, six authored and
 six composed, played on one of three difficulties. Runs on engine source; start it

@@ -2,6 +2,54 @@
 
 Brief: a Borderlands-like looter-shooter with a thought-out loop and hours of content, modelled on how Borderlands 2's first hours work.
 
+<!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
+## Suite score
+
+What players must be able to do, proven by headless simulation in `bun test` (`jgengine suite scrap-signal`). This is the headline; the engine coverage table below only hints where the engine has a part.
+
+| Area | Proven | Failing | Not simulatable | Missing | Cut |
+| --- | --- | --- | --- | --- | --- |
+| onboarding | 1/2 | 0 | 0 | 1 | 0 |
+| failure | 1/1 | 0 | 0 | 0 | 0 |
+| save | 0/1 | 0 | 0 | 1 | 0 |
+| settings | 0/1 | 0 | 0 | 1 | 0 |
+| menu | 0/1 | 0 | 0 | 1 | 0 |
+| progression | 0/1 | 0 | 0 | 1 | 0 |
+| content | 0/5 | 0 | 0 | 5 | 0 |
+| shooter | 3/4 | 0 | 0 | 1 | 0 |
+| loot | 1/4 | 0 | 0 | 3 | 0 |
+| **total** | **6/20** | 0 | 0 | 14 | 0 |
+
+<details><summary>Every required entry</summary>
+
+Genres: shooter, looter. 6/20 proven · 14 missing.
+
+| Entry | Status | What the player does | Detail |
+| --- | --- | --- | --- |
+| `onboarding.first-goal` | proven | A new game shows a first goal, and the first player action toward it advances it. | proofs/sim/first-goal.proof.ts |
+| `onboarding.find-features` | missing | A player following the game's own guidance reaches the first use of every core feature. |  |
+| `failure.lose-and-recover` | proven | The player can fail (die, lose the run, go broke) and the game puts them back into play at a stated cost. | proofs/sim/downed-reconstruct.proof.ts |
+| `save.continue` | missing | Progress made by playing survives saving and continuing. |  |
+| `settings.controls` | missing | The player opens settings and a change (a binding, volume, sensitivity) takes effect. |  |
+| `menu.start-and-credits` | missing | The main menu starts a game and shows the credits. |  |
+| `progression.runway` | missing | Something new unlocks steadily across the first five hours, up to the progression cap. | no content sheet (proofs/content.ts) |
+| `content.item-source` | missing | Every item can be obtained by playing. | no content sheet (proofs/content.ts) |
+| `content.item-use` | missing | Every item does something: crafts, equips, eats, places, feeds, sells or summons. | no content sheet (proofs/content.ts) |
+| `content.recipes-reachable` | missing | Every recipe and source can actually be used: its inputs, station and unlock are all obtainable. | no content sheet (proofs/content.ts) |
+| `content.placeables-place` | missing | Every item that says it can be placed can be placed. | no content sheet (proofs/content.ts) |
+| `content.weapons-have-ammo` | missing | Every weapon that fires has obtainable ammo, or needs none. | no content sheet (proofs/content.ts) |
+| `shooter.aim-fire-hit` | proven | Aim, fire, and hurt an enemy. | proofs/sim/aim-fire-hit.proof.ts |
+| `shooter.reload-ammo` | proven | Weapons run dry and reload from carried ammo. | proofs/sim/reload.proof.ts |
+| `shooter.enemy-threat` | proven | Enemies find the player and hurt them. | proofs/sim/enemy-threat.proof.ts |
+| `shooter.weapon-swap` | missing | Switch between carried weapons. |  |
+| `loot.drops-rarity` | missing | Defeated enemies and containers drop loot of varied rarity. |  |
+| `loot.gear-upgrade` | missing | Equipping better gear changes the player's numbers. |  |
+| `loot.vendor-or-salvage` | missing | Unwanted loot sells or salvages into something useful. |  |
+| `loot.build-choices` | proven | Perks or skills let the player shape a build. | proofs/sim/skill-spend.proof.ts |
+
+</details>
+<!-- /suite-score -->
+
 ## Direction
 
 - References: Borderlands 2 (its opening hours: start unarmed, a guide robot, a chest with a plain pistol, quests one at a time from people, rolled guns from makers, a hub town with a vendor and a bank, a boss per act, "fight for your life"); Destiny 2 (gunfeel, a tracker that never covers the reticle); Diablo III (power you feel per level, loot you compare in the field).

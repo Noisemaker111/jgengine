@@ -1,5 +1,9 @@
 # Drift Foundry
 
+<!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
+Game suite: **0/17 proven · 17 missing** · `jgengine suite drift-foundry`
+<!-- /suite-score -->
+
 A physics racer down one industrial corridor: a welded buggy, twelve pieces of salvage and a compactor
 that never stops. Runs on engine source; start it with `bun --cwd=games/drift-foundry run dev`
 from the repository root.

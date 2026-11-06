@@ -1,5 +1,9 @@
 # Ember Command
 
+<!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
+Game suite: **0/17 proven · 17 missing** · `jgengine suite ember-command`
+<!-- /suite-score -->
+
 A highland RTS campaign: the Vanguard holds a keep against Marauder waves across five missions and
 wins by razing their warcamp. Runs on engine source; start it with
 `bun --cwd=games/ember-command run dev` from the repository root.

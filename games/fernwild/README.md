@@ -1,5 +1,9 @@
 # Fernwild
 
+<!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
+Game suite: **18/54 proven · 4 failing · 32 missing** · `jgengine suite fernwild`
+<!-- /suite-score -->
+
 ARK: Survival Evolved, rebuilt on JGengine as close to the real game as our own models and words
 allow: the same survivor stats and levelling, engrams, recipes, gathering and HUD. Start it with
 `bun --cwd=games/fernwild run dev` from the repository root.
