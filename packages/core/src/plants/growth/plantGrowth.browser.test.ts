@@ -53,6 +53,8 @@ test("Chrome computes the same plantMath bits and the same tree as bun", async (
   const page = await browser.newPage();
   await page.setContent("<html><body></body></html>");
   await page.addScriptTag({ content: script, type: "module" });
+  // An inline module runs after addScriptTag resolves, so wait for it to publish the check.
+  await page.waitForFunction("typeof globalThis.plantCheck === 'function'", undefined, { timeout: 10_000 });
   const chromeResult: unknown = await page.evaluate("globalThis.plantCheck()");
   await page.close();
   expect(typeof chromeResult).toBe("string");
