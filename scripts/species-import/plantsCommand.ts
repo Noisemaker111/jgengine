@@ -16,7 +16,7 @@ import { parseBechtoldCrownWidth, parseCarmeanCurves, parseEkCrownWidth, type Ca
 import { BAAD, FIA_SPECIES, FVS_LS_CROWN, FVS_LS_HEIGHT, TALLO, fiaSiteTrees, readRaw } from "./rawSources";
 import { siteTreesOf, standReference } from "./siteTrees";
 import type { CmaEsState } from "./cmaEs";
-import { FIT_PARAMETERS, fitSpecies, type Evaluate, type FitParameter } from "./speciesFit";
+import { FIT_PARAMETERS, fitSpecies, withFittedParameters, type Evaluate, type FitParameter } from "./speciesFit";
 import { buildSpeciesRecord, speciesRecordSource, type FittedParameters, type ImportedValues } from "./speciesRecord";
 import { scoreTrial, type FitTarget, type TrialScore } from "./speciesScore";
 import { SHADE_TOLERANCE, SPECIES_TRAITS, type SpeciesTraits } from "./speciesTraits";
@@ -44,6 +44,8 @@ const HELP = `bun run jgengine plants <verb> [species ids]
 
 fit flags: --generations <n> (40, more on top of a saved search) --lambda <n> (16) --workers <n> (at most 4) --seeds a,b
   --sigma <x>         step size (0.12 fresh, 0.04 around a saved best with no saved search)
+  --from <tree id>    a new tree search starts from that shipped tree's fitted parameters; without it, from
+                      whichever shipped tree of the same crown form (or its own start) misses least of the tree checks
   --until-pass        stop a tree's fit once it is inside the fit's height, DBH, Tallo, crown-shape and crown-architecture limits;
                       exit 1 when a fit runs its generations out still outside them
 
@@ -359,6 +361,49 @@ async function fitSetup(id: string, resumed: FitFile | undefined, seeds: readonl
   return { start, parameters: FIT_PARAMETERS, trial: { seeds, shade: target.shadeTolerant, habit: false }, score: (trial) => scoreTrial(target, trial), against: AGAINST };
 }
 
+/**
+ * Where a new tree search starts: its own start, or the fitted parameters of a shipped tree of the
+ * same crown form, whichever misses least of what the tree checks hold it to on this species (the
+ * crown-kind, stand-envelope and survival parts, each miss at its full cost), the total score breaking
+ * ties. CMA-ES searches near its start, and a start in the wrong basin stays there: black cherry
+ * fitted from its own record carried its crown at 29-34% of its height through 120 generations, and
+ * from paper birch's parameters, chosen while the fit-only crown-shape part still ranked the starts,
+ * kept two seeds' crowns 41-53% sky through 280 more; black oak's parameters on cherry's traits held
+ * its crown kind on two of three seeds and missed one stand limit on the first trial (2026-11-05).
+ * `donor` is the species whose parameters won, absent when the own start did.
+ */
+async function bestBasin(id: string, setup: FitSetup, evaluate: Evaluate, from?: string): Promise<{ start: PlantSpecies; donor?: string; line: string }> {
+  const { PLANT_LIBRARY } = await import("../../packages/core/src/plants/species/data/plantLibrary");
+  const form = setup.start.architecture.crownForm;
+  if (from !== undefined) {
+    const named = PLANT_LIBRARY.find((s) => s.id === from && s.habit === "tree");
+    if (named === undefined) throw new Error(`--from ${from}: no shipped tree has that id`);
+    return { start: withFittedParameters(setup.start, named, setup.parameters), donor: from, line: `a new search starts from ${from}'s fitted parameters (--from)` };
+  }
+  const donors = PLANT_LIBRARY.filter((s) => s.habit === "tree" && s.id !== id && s.architecture.crownForm === form);
+  const candidates = [{ start: setup.start, donor: undefined as string | undefined }, ...donors.map((d) => ({ start: withFittedParameters(setup.start, d, setup.parameters), donor: d.id }))];
+  const scored = await Promise.all(candidates.map(async (c) => {
+    const trial = await evaluate(c.start);
+    if (trial === null) return { checked: Number.POSITIVE_INFINITY, total: Number.POSITIVE_INFINITY };
+    const { parts, total } = setup.score(trial);
+    return { checked: BASIN_PARTS.reduce((sum, part) => sum + (parts[part] ?? 0), 0), total };
+  }));
+  let best = 0;
+  scored.forEach((s, i) => {
+    const b = scored[best]!;
+    if (s.checked < b.checked || (s.checked === b.checked && s.total < b.total)) best = i;
+  });
+  const winner = candidates[best] ?? candidates[0]!;
+  const show = (s: { checked: number; total: number } | undefined): string => `checked parts ${(s?.checked ?? 0).toFixed(2)}, total ${(s?.total ?? 0).toFixed(2)}`;
+  const line = winner.donor === undefined
+    ? `its own start (${show(scored[0])}) beats the fitted parameters of ${donors.length} shipped ${form} tree(s); the search starts there`
+    : `${winner.donor}'s fitted parameters (${show(scored[best])}) beat its own start (${show(scored[0])}) and ${donors.length - 1} other shipped ${form} tree(s); a new search starts there`;
+  return { start: winner.start, ...(winner.donor === undefined ? {} : { donor: winner.donor }), line };
+}
+
+/** The score parts the tree checks stand behind: crown kind on the checked seeds, the stand envelope, survival. */
+const BASIN_PARTS = ["architecture", "testMisses", "dead"] as const;
+
 /** What one species' fit ended as, for the run's summary and exit code. */
 interface FitOutcome {
   id: string;
@@ -391,9 +436,12 @@ async function runFit(ids: readonly string[], argv: readonly string[]): Promise<
       const out = join(FIT_DIR, `${id}.json`);
       const resumed = readFitFile(out);
       const setup = await fitSetup(id, resumed, seeds);
-      const { start, parameters } = setup;
-      const from = resumed === undefined ? `fresh from record v${start.version}` : resumed.search === undefined ? `from the best in ${relative(out)} (score ${resumed.score.toFixed(2)}, no saved search: a new one starts around it)` : `carrying on the search in ${relative(out)} (generation ${resumed.search.generation}, score ${resumed.score.toFixed(2)})`;
+      const { parameters } = setup;
+      const from = resumed === undefined ? `fresh from record v${setup.start.version}` : resumed.search === undefined ? `from the best in ${relative(out)} (score ${resumed.score.toFixed(2)}, no saved search: a new one starts around it or a better basin)` : `carrying on the search in ${relative(out)} (generation ${resumed.search.generation}, score ${resumed.score.toFixed(2)})`;
       console.log(`${id} (${index + 1}/${ids.length}): ${parameters.length} parameters, ${from}`);
+      const basin = resumed?.search === undefined && !setup.trial.habit ? await bestBasin(id, setup, pool.evaluator(setup.trial), flag(argv, "--from", "") || undefined) : undefined;
+      if (basin !== undefined) console.log(`${id}: ${basin.line}`);
+      const start = basin?.start ?? setup.start;
       const file: FitFile = { score: resumed?.score ?? Number.POSITIVE_INFINITY, parts: resumed?.parts ?? {}, against: setup.against, species: start, ...(resumed?.search === undefined ? {} : { search: resumed.search, generation: resumed.search.generation }) };
       const save = (): void => writeFileSync(out, JSON.stringify(file, null, 1));
       const started = Date.now();
@@ -403,7 +451,7 @@ async function runFit(ids: readonly string[], argv: readonly string[]): Promise<
       const result = await fitSpecies(start, setup.score, pool.evaluator(setup.trial), {
         generations,
         lambda,
-        sigma: Number(flag(argv, "--sigma", resumed === undefined ? FRESH_SIGMA : RESUMED_SIGMA)),
+        sigma: Number(flag(argv, "--sigma", resumed === undefined || basin?.donor !== undefined ? FRESH_SIGMA : RESUMED_SIGMA)),
         seed: 1,
         parameters,
         resume: resumed?.search,

@@ -1,9 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
 import { growthCurveAt } from "../../packages/core/src/plants/species/speciesReference";
+import { PLANT_LIBRARY } from "../../packages/core/src/plants/species/data/plantLibrary";
 import { createCmaEs } from "./cmaEs";
 import { csvNumber, parseCsv } from "./csv";
 import { parseBechtoldCrownWidth, parseCarmeanCurves, parseEkCrownWidth } from "./fvsSource";
+import { FIT_PARAMETERS, withFittedParameters } from "./speciesFit";
 import { fitGrowthCurve, siteTreesOf, standReference } from "./siteTrees";
 import { talloCrownWidthClasses } from "./tallo";
 
@@ -102,5 +104,18 @@ describe("species importer", () => {
       search.tell(population, population.map(f));
     }
     expect(f(search.mean)).toBeLessThan(1e-6);
+  });
+
+  test("a donor's fitted parameters move onto a species, which keeps its own traits", () => {
+    const [base, donor] = PLANT_LIBRARY.filter((s) => s.habit === "tree");
+    if (base === undefined || donor === undefined) throw new Error("the library has no two trees");
+    const read = (record: unknown, path: string): unknown => path.split(".").reduce<unknown>((at, k) => (at as Record<string, unknown> | undefined)?.[k], record);
+    const before = JSON.stringify(base);
+    const moved = withFittedParameters(base, donor);
+    for (const p of FIT_PARAMETERS) expect(read(moved, p.path)).toBe(read(donor, p.path) ?? p.absent);
+    expect(moved.id).toBe(base.id);
+    expect(moved.leaf).toEqual(base.leaf);
+    expect(moved.growth.lateralBudsPerNode).toBe(base.growth.lateralBudsPerNode);
+    expect(JSON.stringify(base)).toBe(before);
   });
 });
