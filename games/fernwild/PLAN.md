@@ -200,7 +200,7 @@ taming; gather and lighter loads; flying; fuel, preserve and tool wear; farming;
 | taming.trap | a `held` meter in the creature's body, dosed by a bola, draining a second a second; while it holds the creature stays still. Every weapon hit is now a dose list (club and tranq torpor, bola hold) (done) |
 | creatures.feed-starve | a tame's food vital drains; core `eatWhileRoom` feeds it from its inventory through the `TAME_DIET` dose table; empty food starves it to death; a baby is the same meter at a faster pace (done, `tameHunger.ts`) |
 | survival.oxygen-swim | core swim `dive` (crouch down, jump up, telemetry `diveDepth`); oxygen drained by an `extra` rate while the head is under, `whenEmpty` drowns (done) |
-| cave.hazards | an area doses who stands in it (gas: oxygen down; heat: health down) |
+| cave.hazards | core `areaEffectField`, one source per hostile cave carrying vital rates and a temperature shift; the survivor tick adds them (done: swamp gas, lava heat, snow cold) |
 | survival.temperature | `bodyTemperature` gives drain rates into the vitals tick |
 | creatures.work.gather | a tame's attack is a tool profile (`resourceNode` biases) per species, data only |
 | creatures.work.lighter-loads | a carrier x item weight multiplier, the same per-receiver table shape, read by `carryLoad` |

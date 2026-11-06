@@ -311,6 +311,8 @@ export const game = defineGame({
         acrossSpawn: acrossSpawn(me?.position, SPAWN_AT),
         // Metres into the cave the survivor stands in, to a decimetre; -1 outside every cave.
         caveDepth: caves.inside === null ? -1 : Math.round(caves.inside.depth * 10) / 10,
+        // How many hostile airs (a cave's gas, heat or cold) the survivor stands in.
+        hazards: view.hazards.length,
         // Artifacts carried in the bag and on the hotbar, and pedestals still holding one.
         artifacts: cavesOf(ctx).reduce((sum, cave) => sum + ctx.player.inventory.count(BAG, cave.artifact) + ctx.player.inventory.count(HOTBAR, cave.artifact), 0),
         pedestals: caves.caves.filter((cave) => cave.artifact !== null).length,

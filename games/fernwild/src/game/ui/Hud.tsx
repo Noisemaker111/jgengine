@@ -79,6 +79,11 @@ function Vitals(): ReactNode {
           ▲ Level up — press I
         </div>
       ) : null}
+      {view.hazards.length > 0 ? (
+        <div data-hazard={view.hazards.join(",")} style={{ color: "#ff8a6a", fontWeight: 800, fontSize: 13, textShadow: "0 1px 2px #000" }}>
+          {view.hazards.join(" · ")}
+        </div>
+      ) : null}
       <KitVitalIcons vitals={vitals} size={34} readout={detail} />
     </div>
   );
