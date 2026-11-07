@@ -97,7 +97,7 @@ describe("capture_run", () => {
         setDevtoolsOpen: () => {},
         getContext: () => live,
       });
-      const agent = (globals.window as { __jgengineAgent: { handle(request: { method: string; state?: string }): unknown } }).__jgengineAgent;
+      const agent = (globals.window as { __jgengineAgent: { handle(request: { method: string; state?: string; skipUnregistered?: boolean }): unknown } }).__jgengineAgent;
       expect(agent.handle({ method: "capture_run" })).toEqual({ ok: false, error: "no game context yet" });
       live = ctx;
       expect(agent.handle({ method: "capture_run" })).toEqual({ ok: true, ran: [{ name: "park.scenario", status: "ok" }, { name: "park.start", status: "ok" }] });
@@ -105,6 +105,7 @@ describe("capture_run", () => {
       expect(agent.handle({ method: "capture_run", state: "paused" })).toEqual({ ok: true, ran: [{ name: "park.start", status: "ok" }, { name: "locked", status: "rejected", reason: "not yet" }] });
       expect(agent.handle({ method: "capture_run", state: "nope" })).toEqual({ ok: false, error: 'unknown capture state "nope"; declared: broken, paused' });
       expect(agent.handle({ method: "capture_run", state: "broken" })).toEqual({ ok: false, error: 'capture command "missing" is not registered (ran 0 before it)' });
+      expect(agent.handle({ method: "capture_run", state: "broken", skipUnregistered: true }), "a dev-only helper is skipped and named").toEqual({ ok: true, ran: [{ name: "missing", status: "unregistered" }] });
       dispose();
     } finally {
       globals.window = previousWindow;
