@@ -45,7 +45,6 @@ const ITEM_ENGRAMS: readonly EngramDef[] = [
   engram("cloth_pants", 3, 3, { fiber: 40 }, 5),
   engram("cloth_shirt", 3, 3, { fiber: 40 }, 5),
   engram("waterskin", 3, 6, { hide: 4, fiber: 12 }, 5),
-  engram("hide_sleeping_bag", 4, 3, { hide: 15, fiber: 15 }, 5),
   engram("slingshot", 5, 6, { hide: 1, wood: 2, fiber: 20 }, 5),
   engram("sparkpowder", 6, 3, { flint: 2, stone: 1 }, 2, { station: "mortar_and_pestle" }),
   engram("narcotic", 6, 6, { narcoberry: 5, spoiled_meat: 1 }, 3, { station: "mortar_and_pestle" }),

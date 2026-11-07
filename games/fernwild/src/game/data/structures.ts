@@ -108,6 +108,7 @@ export const SHAPES: readonly StructureShapeDef[] = [
   { id: "storage_box", boxes: [{ min: [-0.5, 0, -0.35], max: [0.5, 0.6, 0.35] }], ground: { maxStep: 0.6 }, floor: true },
   { id: "crop_plot", boxes: [{ min: [-1, 0, -1], max: [1, 0.4, 1] }], ground: { maxStep: 0.6 }, floor: true },
   { id: "preserving_bin", boxes: [{ min: [-0.4, 0, -0.4], max: [0.4, 0.9, 0.4] }], ground: { maxStep: 0.6 }, floor: true },
+  { id: "hide_sleeping_bag", boxes: [{ min: [-0.45, 0, -1], max: [0.45, 0.15, 1] }], ground: { maxStep: 0.6 }, floor: true },
 ];
 
 /** Which socket kinds mate: candidate kind `a` onto placed kind `b`. */
@@ -152,6 +153,8 @@ export const STRUCTURES: readonly StructureDef[] = [
   piece("crop_plot", "Small Crop Plot", "crop_plot", "station", 400, 15, 12, { thatch: 40, fiber: 50, stone: 50 }, 10, "Plant a seed, keep it watered and fertilized, and pick its crop. E tends it."),
   // ARK's Preserving Bin: food kept in it goes off far slower (level and cost approx).
   piece("preserving_bin", "Preserving Bin", "preserving_bin", "station", 400, 9, 9, { stone: 30, wood: 30, thatch: 30, fiber: 20 }, 10, "Keeps 6 stacks of food fresh four times as long. E opens it."),
+  // ARK's Hide Sleeping Bag: wake on it once after death, and it is used up.
+  piece("hide_sleeping_bag", "Hide Sleeping Bag", "hide_sleeping_bag", "station", 100, 4, 3, { hide: 15, fiber: 15 }, 2, "A one-time respawn point: die and you wake here, once."),
   piece("thatch_foundation", "Thatch Foundation", "foundation", "thatch", 2400, 4, 3, { thatch: 20, wood: 6, fiber: 15 }, 6, "The floor every hut starts from."),
   piece("thatch_wall", "Thatch Wall", "wall", "thatch", 1600, 4, 3, { thatch: 10, wood: 2, fiber: 7 }, 4, "Snaps to a foundation edge."),
   piece("thatch_doorframe", "Thatch Doorframe", "doorframe", "thatch", 2400, 4, 3, { thatch: 8, wood: 6, fiber: 6 }, 4, "A wall with a door gap."),
@@ -192,6 +195,9 @@ export const BASE_BUILDING: BaseBuildingConfig = {
 
 /** Stations a recipe can need, by piece id. */
 export const STATIONS: ReadonlySet<string> = new Set(["campfire", "mortar_and_pestle", "cooking_pot"]);
+
+/** Pieces a dead survivor wakes on instead of the beach; each is used up by it. */
+export const BEDS: ReadonlySet<string> = new Set(["hide_sleeping_bag"]);
 
 /** A piece that holds items: how many stacks, how fast what it holds goes off (1 is as fast as carried), and whether it takes only perishables. */
 export interface ContainerSpec {

@@ -170,6 +170,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/respawn-point.proof.ts",
+      "proves": [
+        "survival.respawn-point"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/respawn-population.proof.ts",
       "proves": [
         "spawns.respawn-population"
@@ -341,7 +348,7 @@
       "id": "content.item-use",
       "ok": false,
       "problems": [
-        "no use for metal, obsidian, crystal, oil, mejoberry_seed, fertilizer, artifact_skylord, artifact_devourer, artifact_pack, artifact_immune, artifact_strong, element and 5 more"
+        "no use for metal, obsidian, crystal, oil, mejoberry_seed, fertilizer, artifact_skylord, artifact_devourer, artifact_pack, artifact_immune, artifact_strong, element and 4 more"
       ]
     },
     {
@@ -351,10 +358,8 @@
     },
     {
       "id": "content.placeables-place",
-      "ok": false,
-      "problems": [
-        "says it places but the placement catalog has none: hide_sleeping_bag"
-      ]
+      "ok": true,
+      "problems": []
     },
     {
       "id": "content.weapons-have-ammo",

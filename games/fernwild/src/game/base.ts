@@ -11,7 +11,7 @@ import { createVitals, type Vitals, type VitalsState } from "@jgengine/core/stat
 import { BAG, HOTBAR } from "./bags";
 import { emptyPlot, growPlot, PLOT, SEEDS, type Plot } from "./data/farm";
 import { FUEL, FUEL_MAX } from "./data/fuel";
-import { BASE_BUILDING, CONTAINERS, STATIONS, structureDef, TIER_COLORS } from "./data/structures";
+import { BASE_BUILDING, BEDS, CONTAINERS, STATIONS, structureDef, TIER_COLORS } from "./data/structures";
 import { itemLabel, itemTraits, SPOILS } from "./data/items";
 import { setScreen } from "./screens";
 
@@ -526,6 +526,21 @@ export function baseView(ctx: GameContext) {
 export type BaseView = ReturnType<typeof baseView>;
 
 /** How many pieces whose id starts with `prefix` stand in the base (`thatch_wall`, or `thatch_` for every thatch piece). */
+/** Where a dead survivor wakes: the last bed placed, used up as they wake on it; null with none. */
+export function takeBed(ctx: GameContext): BaseVec3 | null {
+  const base = baseOf(ctx);
+  const bed = base.building.list().filter((piece) => BEDS.has(piece.pieceId)).at(-1);
+  if (bed === undefined) return null;
+  base.building.remove(bed.id);
+  syncSolids(ctx, base);
+  return [bed.position[0], bed.position[1], bed.position[2]];
+}
+
+/** Where the last piece of this kind was placed, or undefined with none. */
+export function lastPiece(ctx: GameContext, pieceId: string): BaseVec3 | undefined {
+  return baseOf(ctx).building.list().filter((piece) => piece.pieceId === pieceId).at(-1)?.position;
+}
+
 export function piecesBuilt(ctx: GameContext, prefix: string): number {
   return baseOf(ctx).building.list().filter((piece) => piece.pieceId.startsWith(prefix)).length;
 }

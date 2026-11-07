@@ -9,7 +9,7 @@ import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/shell/gameKit";
 import { fernwildKit } from "./art/look";
 import { editorLayers } from "./editorLayers";
 import { assets } from "./game/assets";
-import { baseGhost, basePrompts, baseView, fuelNear, piecesBuilt, stations, storeView } from "./game/base";
+import { baseGhost, basePrompts, baseView, fuelNear, lastPiece, piecesBuilt, stations, storeView } from "./game/base";
 import { cavePrompts, cavesOf, cavesView } from "./game/caves";
 import { eggPrompts, eggsOnGround } from "./game/eggs";
 import { EGG_SIZES, eggItem, KIBBLE_TIERS, kibbleItem } from "./game/data/kibble";
@@ -239,6 +239,9 @@ export const game = defineGame({
         plotWater: base.plot === null ? -1 : Math.ceil(base.plot.water),
         plotFertilizer: base.plot === null ? -1 : Math.ceil(base.plot.fertilizer),
         mejoberries: ctx.player.inventory.count(BAG, "mejoberry") + ctx.player.inventory.count(HOTBAR, "mejoberry"),
+        // Sleeping bags placed, and where the last one lies (0, 0 with none).
+        bags: piecesBuilt(ctx, "hide_sleeping_bag"),
+        ...((at) => ({ bagX: at === undefined ? 0 : Math.round(at[0] * 10) / 10, bagZ: at === undefined ? 0 : Math.round(at[2] * 10) / 10 }))(lastPiece(ctx, "hide_sleeping_bag")),
         // The hotbar key (1-based) holding each tool; 0 when it is not on the hotbar.
         pickKey: keyOf("stone_pick"),
         hatchetKey: keyOf("stone_hatchet"),

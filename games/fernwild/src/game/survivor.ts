@@ -25,7 +25,7 @@ import { gatheredBy, HARVESTABLES, type GatherBy } from "./data/harvestables";
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { toolDurability } from "./data/toolWear";
 import { FIST, GEAR_SLOTS, itemDef, itemLabel, itemTraits, PICK_UP, SPOILS, type ToolDef } from "./data/items";
-import { placeHeld, stations, strikeStructure } from "./base";
+import { placeHeld, stations, strikeStructure, takeBed } from "./base";
 import { mountCanSprint, shootCreature, strikeCreature } from "./creatures";
 import { caveExposure } from "./caves";
 import { climateAt, inWater, type ClimateHere } from "./climate";
@@ -715,23 +715,27 @@ function spoil(ctx: GameContext, survivor: Survivor, dt: number): void {
 }
 
 /**
- * Death, as in ARK: everything carried stays with the body where the survivor fell, and they wake on the beach with
- * empty hands and full vitals, keeping their level and engrams. The body lasts an hour.
+ * Death, as in ARK: everything carried stays with the body where the survivor fell, and they wake on the beach (or
+ * the last sleeping bag they placed, which it uses up) with empty hands and full vitals, keeping their level and
+ * engrams. The body lasts an hour.
  */
 function die(ctx: GameContext, survivor: Survivor): void {
   survivor.dead = true;
   const me = ctx.scene.entity.get(ctx.player.userId);
   const left = me === null ? 0 : leaveBody(ctx, me.position, survivor.gear.worn().map((entry) => entry.itemId));
   survivor.gear.reset();
-  ctx.game.notices.push({ text: left > 0 ? "You died. Your things lie with your body where you fell." : "You died. You wake on the beach.", tone: "deny" });
-  respawn(ctx, survivor);
+  const bed = takeBed(ctx);
+  const wake = bed === null ? "You wake on the beach." : "You wake on your sleeping bag.";
+  ctx.game.notices.push({ text: left > 0 ? `You died. Your things lie with your body where you fell. ${wake}` : `You died. ${wake}`, tone: "deny" });
+  respawn(ctx, survivor, bed);
 }
 
-function respawn(ctx: GameContext, survivor: Survivor): void {
+function respawn(ctx: GameContext, survivor: Survivor, bed: readonly [number, number, number] | null): void {
   survivor.vitals.reset();
   survivor.web = null;
   applyMaxes(ctx, survivor, true);
   ctx.scene.entity.resetToSpawn(ctx.player.userId);
+  if (bed !== null) ctx.scene.entity.setPose(ctx.player.userId, { position: [bed[0], bed[1] + 0.5, bed[2]] });
   survivor.dead = false;
 }
 
