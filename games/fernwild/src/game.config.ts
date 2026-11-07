@@ -228,6 +228,8 @@ export const game = defineGame({
         ...sight("tree", nearestHarvestable(ctx, here, 80, "strike", "thatch")),
         ...sight("rock", nearestHarvestable(ctx, here, 80, "strike", "flint")),
         ...sight("bush", nearestHarvestable(ctx, here, 80, "pick", "mejoberry")),
+        // Where the nearest berry bush stands, to the decimetre, so a proof can tell it from the next one.
+        ...((at) => ({ bushX: at === null ? 0 : Math.round(at[0] * 10) / 10, bushZ: at === null ? 0 : Math.round(at[2] * 10) / 10 }))(nearestHarvestable(ctx, here, 80, "pick", "mejoberry")),
         // (passing over prey grazing within 30 m of a hunter, as a survivor with a spear would).
         ...sight("prey", nearestWild(ctx, PREY, here, 220, (at) => nearestThreat(ctx, at, 30) === null)),
         // The nearest wild Ovis within 30 m, a passive tame to follow and hand-feed.
