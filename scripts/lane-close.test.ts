@@ -188,6 +188,19 @@ describe("lane:close end to end", () => {
     expect(calls.indexOf("run preflight --no-verify")).toBeLessThan(calls.indexOf("run verify:fast --landing"));
   });
 
+  test("the suite scores the tests earned are written after them and before land commits", () => {
+    const calls: string[] = [];
+    const fake = io();
+    const sh = fake.sh;
+    fake.sh = (argv, inherit) => {
+      calls.push(argv.join(" "));
+      return sh(argv, inherit);
+    };
+    closeLane({}, fake);
+    expect(calls.indexOf("scripts/gen-game-suite.ts")).toBeGreaterThan(calls.indexOf("run verify:fast --landing"));
+    expect(calls.indexOf("scripts/gen-game-suite.ts")).toBeLessThan(calls.indexOf("run scripts/land.ts --commit"));
+  });
+
   test("by default the stage lines stay quiet and the report still prints; --verbose prints each stage", () => {
     const quiet = io();
     closeLane({}, quiet);
