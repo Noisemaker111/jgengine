@@ -372,6 +372,9 @@ async function measureAll(args: FpsGapArgs, engine: PerfRecord["engine"]): Promi
                 size: GATE_SIZE,
                 breakdownTop: BREAKDOWN_TOP,
               });
+              if (measured.record.breakdown === null || measured.record.breakdown === undefined) {
+                throw new Error("the page installed no frame breakdown, so CPU, GPU and their groups are unknown; measure it again");
+              }
               if (engine !== undefined) measured.record.engine = engine;
               const entry: FpsGapEntry = {
                 record: measured.record,
