@@ -41,6 +41,7 @@ import {
 import type { SystemProbeReading } from "../packages/core/src/devtools/types";
 import { renderBreakdownText, type FrameBreakdownSummary } from "../packages/core/src/devtools/frameBreakdown";
 import { compareBreakdowns, readBreakdown, resetBreakdown, startPath, type PerfPath } from "./perf-breakdown";
+import { provisionCapturedGame } from "./provisionCapture";
 import {
   ACCESSIBILITY_SETTING_IDS,
   COLORBLIND_OPTIONS,
@@ -489,7 +490,7 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
 
 
 
-interface ProfileNode {
+export interface ProfileNode {
   id: number;
   callFrame: { functionName: string; url: string; lineNumber: number; columnNumber: number };
   children?: number[];
@@ -1015,7 +1016,7 @@ export function baselineLogProblem(logs: ReportLogs | null): string | null {
 }
 export type { PerfReport };
 
-interface RawProfile {
+export interface RawProfile {
   nodes: ProfileNode[];
   samples: number[];
   timeDeltas: number[];
@@ -1051,6 +1052,8 @@ export interface MeasureOptions {
   path?: PerfPath;
   /** Viewport override in CSS pixels; the device default when omitted. */
   size?: { width: number; height: number };
+  /** CPU and call rows the breakdown keeps (default 15); a report that sums costs by group needs the tail too. */
+  breakdownTop?: number;
 }
 
 export interface PerfMeasure {
@@ -1133,6 +1136,10 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
   const params = options.params ?? [];
   const frameClock = options.frameClock ?? "capped";
 
+  // A game whose packs are not linked into this checkout draws placeholder boxes, and its frame
+  // times describe the boxes; link them first, the same as shoot and drive do.
+  await provisionCapturedGame(join(repoRoot, "games", game), (line) => console.error(`perf: ${line}`));
+
   let clockProbeMs: number | null = null;
   if (frameClock === "uncapped") {
     const clockMs = await probeFrameClockMs(session);
@@ -1183,7 +1190,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
   const movementEnd = await playerPosition(session);
   const windowMs = Date.now() - startedAt;
   const frameDraws = summarizeFrameDraws(drawFrames);
-  const breakdown = hasBreakdown ? await readBreakdown(session) : null;
+  const breakdown = hasBreakdown ? await readBreakdown(session, undefined, options.breakdownTop) : null;
 
   const snapshot = await session.evaluate<{
     frame: { avgSimMs?: number; avgOutsideMs?: number; phases?: unknown[] } | null;

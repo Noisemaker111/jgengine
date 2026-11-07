@@ -278,37 +278,50 @@ export function textureVariantMiddleware(publicDir: string, variantDir: string) 
   };
 }
 
+/** Run `games:provision` for one game in Bun (Vite runs under Node, which cannot load the catalogs' TypeScript). */
+function provisionInBun(gameDir: string): Promise<boolean> {
+  return new Promise<boolean>((resolve) => {
+    const child = spawn("bun", [provisionScript, basename(gameDir)], { cwd: gameDir, stdio: "inherit", windowsHide: true });
+    child.once("error", () => resolve(false));
+    child.once("exit", (code) => resolve(code === 0));
+  });
+}
+
 /**
- * Dev-only Vite plugin: before the game's dev server starts, pull any asset pack the game
- * references and does not have yet, so `bun run dev` on a fresh checkout shows real models instead
- * of placeholder boxes. `JG_DEV_PROVISION=0` skips it (offline work); CI skips it unless
- * `JG_DEV_PROVISION=1`, since a check booting a dev server must not wait on downloads. Once the
- * game is provisioned its textures' KTX2 twins are encoded in the background and served as they land.
+ * Vite plugin: before the game's dev server starts, or before a production build (`jgengine desktop`,
+ * a game's own `vite build`), pull any asset pack the game references and does not have yet, so a
+ * fresh checkout shows and ships real models instead of placeholder boxes. `JG_DEV_PROVISION=0`
+ * skips it (offline work); CI skips it unless `JG_DEV_PROVISION=1`, since a check booting a dev
+ * server must not wait on downloads. Once a served game is provisioned its textures' KTX2 twins are
+ * encoded in the background and served as they land.
  */
 export function viteProvisionAssets(): {
   name: string;
-  apply: "serve";
+  configResolved(config: { command: "build" | "serve"; root: string }): void;
+  buildStart(): Promise<void>;
   configureServer(server: {
     config: { root: string; publicDir: string };
     middlewares: { use(handler: ReturnType<typeof textureVariantMiddleware>): void; use(route: string, handler: ReturnType<typeof libraryPullMiddleware>): void };
   }): Promise<void>;
 } {
+  let build: { root: string } | null = null;
   return {
     name: "jg-dev-provision-assets",
-    apply: "serve",
+    configResolved(config) {
+      build = config.command === "build" ? { root: config.root } : null;
+    },
+    async buildStart() {
+      if (build === null || !shouldProvision(process.env)) return;
+      const game = basename(build.root);
+      if (!(await provisionInBun(build.root))) throw new Error(`build: some of ${game}'s models or textures could not be provisioned, so the build would ship placeholders; run: bun run games:provision ${game}`);
+    },
     async configureServer(server) {
       const repoRoot = resolve(server.config.root, "..", "..");
       if (server.config.publicDir) server.middlewares.use(textureVariantMiddleware(server.config.publicDir, textureVariantDir(assetStoreRoot(repoRoot))));
       server.middlewares.use(LIBRARY_PULL_ROUTE, libraryPullMiddleware(() => server.config.root));
       if (!shouldProvision(process.env)) return;
-      // Vite runs under Node, which cannot load the asset catalogs' TypeScript source, so the work
-      // runs in Bun: the same `games:provision` a lane would type.
       const game = basename(server.config.root);
-      const ok = await new Promise<boolean>((resolve) => {
-        const child = spawn("bun", [provisionScript, game], { cwd: server.config.root, stdio: "inherit", windowsHide: true });
-        child.once("error", () => resolve(false));
-        child.once("exit", (code) => resolve(code === 0));
-      });
+      const ok = await provisionInBun(server.config.root);
       if (!ok) console.error(`dev: some models are not on disk and will show as named MISSING boxes; run: bun run games:provision ${game}`);
       startTextureCompression(server.config.root, [game]);
     },
