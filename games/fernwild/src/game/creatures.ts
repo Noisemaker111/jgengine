@@ -387,8 +387,14 @@ function creatureInFront(ctx: GameContext, fromId: string, yaw: number, reach: n
   const from = ctx.scene.entity.get(fromId);
   if (from === null) return null;
   const world = worldOf(ctx);
-  let best: Creature | null = null;
-  let bestDistance = Infinity;
+  // A body the aim line passes through wins, the nearest along the line, as a crosshair picks; a smaller body inside
+  // a bigger one's reach along the line (a baby standing in its parent) wins over it. With the line through nothing,
+  // the nearest within 60° of it, or so close the body fills the view.
+  let hit: Creature | null = null;
+  let hitAlong = Infinity;
+  let hitBody = 0;
+  let near: Creature | null = null;
+  let nearDistance = Infinity;
   for (const creature of world.creatures.values()) {
     if (creature.id === fromId || !accept(creature)) continue;
     const entity = ctx.scene.entity.get(creature.id);
@@ -398,14 +404,23 @@ function creatureInFront(ctx: GameContext, fromId: string, yaw: number, reach: n
     const distance = Math.hypot(dx, dz);
     const radius = defOf(creature).radius;
     if (distance > reach + radius) continue;
-    // In front: within 60° of the facing, or so close the body fills the view.
-    const facing = distance < radius + 0.5 || (dx * Math.sin(yaw) + dz * Math.cos(yaw)) / Math.max(distance, 1e-6) > 0.5;
-    if (facing && distance < bestDistance) {
-      best = creature;
-      bestDistance = distance;
+    const along = dx * Math.sin(yaw) + dz * Math.cos(yaw);
+    const across = Math.abs(dx * Math.cos(yaw) - dz * Math.sin(yaw));
+    const body = radius * (entity.size ?? 1);
+    const inside = hit !== null && body < hitBody && Math.abs(along - hitAlong) <= hitBody;
+    const nearer = along < hitAlong && !(hit !== null && hitBody < body && Math.abs(along - hitAlong) <= body);
+    if (along > -body && across <= body && (inside || nearer)) {
+      hit = creature;
+      hitAlong = along;
+      hitBody = body;
+    }
+    const facing = distance < radius + 0.5 || along / Math.max(distance, 1e-6) > 0.5;
+    if (facing && distance < nearDistance) {
+      near = creature;
+      nearDistance = distance;
     }
   }
-  return best;
+  return hit ?? near;
 }
 
 /** What a swing at a creature did. */

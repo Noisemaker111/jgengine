@@ -137,6 +137,7 @@ export const game = defineGame({
       const body = bodyView(ctx);
       const crate = nearestSupplyDrop(ctx);
       const breeding = breedingView(ctx);
+      const babyAt = breeding.baby === null ? null : (ctx.scene.entity.get(breeding.baby.id)?.position ?? null);
       const brood = broodView(ctx);
       const me = ctx.scene.entity.get(ctx.player.userId);
       const pointing = onboardingOf(ctx)?.pointing() ?? null;
@@ -365,6 +366,7 @@ export const game = defineGame({
         babyWants: breeding.baby?.wants === null || breeding.baby === null ? 0 : 1,
         babySize: breeding.baby === null ? -1 : Math.round(breeding.baby.size * 100),
         atBaby: breedingPrompts(ctx).length > 0 ? 1 : 0,
+        ...sight("baby", babyAt),
         // The Broodmother: 0 nothing summoned, 1 the portal counting down, 2 the fight, 3 won and waiting to go back;
         // 1 while the survivor is in her lair; her health and phase (1-3) and her Araneo alive; 1 while webbed;
         // the tames in the fight with the survivor; 1 at the obelisk's terminal.
