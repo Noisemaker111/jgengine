@@ -30,7 +30,7 @@ import { createKnockoutTaming, type KnockoutTaming, type TamingRead, type Taming
 import { setScreen } from "./screens";
 import { strikeHarvestable } from "./survivor";
 import { biteProfile, loadShare } from "./data/tameWork";
-import { AIRBORNE, FLYERS } from "./data/flight";
+import { AIRBORNE, FLYERS, LIFT_HANG, LIFT_REACH } from "./data/flight";
 
 /** Slots in a creature's own inventory (ARK caps it by weight; slots are the simple stand-in). */
 const CREATURE_SLOTS = 30;
@@ -134,6 +134,10 @@ interface World {
   mountReady: number;
   /** The last tame's taming effectiveness and bonus levels, for the HUD and proofs. */
   lastTame: { effectiveness: number; bonus: number } | null;
+  /** The creature each flyer holds in its talons, by flyer. */
+  carried: Map<string, string>;
+  /** The last creature a flyer lifted and where it was lifted from, for the HUD and proofs. */
+  lastLift: { id: string; from: [number, number] } | null;
 }
 
 const TAMING = Object.fromEntries(Object.values(SPECIES).map((def) => [def.id, def.taming]));
@@ -190,6 +194,8 @@ function herds() {
 
 const worldOf = perContext((ctx: GameContext): World => {
   const authored = herds();
+  // After movement, as riding seats its rider: a lifted creature hangs under its flyer wherever it flew.
+  ctx.sim.addStage({ id: "airlift", phase: "afterMovement", run: () => holdLifted(ctx) });
   return {
     creatures: new Map(),
     driver: createCreatureDriver({ sight: 24, memorySeconds: 10, blocked: (context, x, z) => context.world.groundHeightAt(x, z) < SHORE }),
@@ -214,6 +220,8 @@ const worldOf = perContext((ctx: GameContext): World => {
     tamingSpeed: 1,
     mountReady: 0,
     lastTame: null,
+    carried: new Map(),
+    lastLift: null,
   };
 });
 
@@ -931,6 +939,7 @@ export function tickCreatures(ctx: GameContext, dt: number): CreatureEvent[] {
   const world = worldOf(ctx);
   const events: CreatureEvent[] = [];
   const riding = ridingOf(ctx);
+  const lifted = new Set(world.carried.values());
   const owner = ctx.scene.entity.get(ctx.player.userId);
   const ownerTarget = world.lastTarget !== null && world.lastTarget.until > ctx.time.now() && world.creatures.get(world.lastTarget.id)?.dead === false ? world.lastTarget.id : null;
 
@@ -978,7 +987,7 @@ export function tickCreatures(ctx: GameContext, dt: number): CreatureEvent[] {
     const taming = world.taming.state(creature.id);
     // Out cold, or tangled in a bola: it stays where it is.
     const down = taming !== null && (taming.subdued || taming.held > 0);
-    const ridden = riding.riderOf(creature.id) !== null;
+    const ridden = riding.riderOf(creature.id) !== null || lifted.has(creature.id);
     // Out past the survivor's notice a wild creature only grazes, so it can think a few times a second.
     const self = ctx.scene.entity.get(creature.id);
     const far = !creature.tamed && owner !== null && self !== null && Math.hypot(self.position[0] - owner.position[0], self.position[2] - owner.position[2]) > NEAR_RANGE;
@@ -1128,6 +1137,8 @@ export function isMounted(ctx: GameContext): boolean {
 export function creaturePrompts(ctx: GameContext): PositionedPrompt[] {
   const world = worldOf(ctx);
   const mounted = ridingOf(ctx).mountOf(ctx.player.userId);
+  const flyer = mounted === null ? undefined : world.creatures.get(mounted);
+  const lift = flyer === undefined ? undefined : FLYERS[flyer.species];
   const at = (id: string) => {
     const entity = ctx.scene.entity.get(id);
     return entity === null ? null : { x: entity.position[0], z: entity.position[2] };
@@ -1136,7 +1147,14 @@ export function creaturePrompts(ctx: GameContext): PositionedPrompt[] {
     const position = at(id);
     return position === null ? [] : [{ id: `creature:${id}`, position, priority: 2, prompt: proximityPrompt({ radius: USE_REACH + 4, display: keybind("interact", label), invoke: command("creatureUse") }) }];
   };
-  if (mounted !== null) return prompt(mounted, "Dismount");
+  if (mounted !== null) {
+    const held = world.carried.get(mounted);
+    const below = flyer === undefined || lift === undefined || held !== undefined ? null : liftable(ctx, world, flyer, lift.liftRadius);
+    const position = at(mounted);
+    const label = held !== undefined ? `Drop ${labelOf(world, held)}` : below !== null && below !== "too big" ? `Lift ${defOf(below).label}` : null;
+    const talons: PositionedPrompt[] = label === null || position === null ? [] : [{ id: `airlift:${mounted}`, position, priority: 3, prompt: proximityPrompt({ radius: USE_REACH + 4, display: keybind("airlift", label), invoke: command("airlift") }) }];
+    return [...talons, ...prompt(mounted, "Dismount")];
+  }
   const creature = world.aimed === null ? undefined : world.creatures.get(world.aimed);
   if (creature === undefined) return [];
   if (creature.dead) return holdsItems(creature) ? prompt(creature.id, "Access inventory") : [];
@@ -1149,6 +1167,110 @@ export function creaturePrompts(ctx: GameContext): PositionedPrompt[] {
     return prompt(creature.id, `${label} · tamed ${Math.round(taming.progress * 100)}%`);
   }
   return [];
+}
+
+// --- a flyer's talons ----------------------------------------------------------------------------
+
+const labelOf = (world: World, id: string): string => {
+  const creature = world.creatures.get(id);
+  return creature === undefined ? "it" : defOf(creature).label;
+};
+
+/**
+ * The creature a flyer can lift: the nearest living one under or beside its talons, not ridden or held;
+ * "too big" when the nearest is heavier than it lifts, null with none in reach.
+ */
+function liftable(ctx: GameContext, world: World, flyer: Creature, liftRadius: number): Creature | "too big" | null {
+  const body = ctx.scene.entity.get(flyer.id);
+  if (body === null) return null;
+  const held = new Set(world.carried.values());
+  let best: { creature: Creature; distance: number } | null = null;
+  for (const creature of world.creatures.values()) {
+    if (creature.id === flyer.id || creature.dead || held.has(creature.id) || ridingOf(ctx).riderOf(creature.id) !== null) continue;
+    const entity = ctx.scene.entity.get(creature.id);
+    if (entity === null) continue;
+    const drop = body.position[1] - entity.position[1];
+    const distance = Math.hypot(entity.position[0] - body.position[0], entity.position[2] - body.position[2]) - defOf(creature).radius;
+    if (drop < -LIFT_REACH.above || drop > LIFT_REACH.below || distance > LIFT_REACH.around + defOf(flyer).radius) continue;
+    if (best === null || distance < best.distance) best = { creature, distance };
+  }
+  if (best === null) return null;
+  return defOf(best.creature).radius > liftRadius ? "too big" : best.creature;
+}
+
+function holdStill(ctx: GameContext, id: string, frozen: boolean): void {
+  const entity = ctx.scene.entity.get(id);
+  if (entity !== null) ctx.scene.entity.update(id, { movement: { ...entity.movement, frozen } });
+  ctx.scene.entity.setVelocity(id, [0, 0, 0]);
+}
+
+/**
+ * F on a flyer (ARK's grab): lift the creature under or beside its talons, if it is small enough for this
+ * flyer, or let go of the one it holds, which drops to the ground beneath and stays there.
+ */
+export function airlift(ctx: GameContext): void {
+  const world = worldOf(ctx);
+  const flyerId = ridingOf(ctx).mountOf(ctx.player.userId);
+  const flyer = flyerId === null ? undefined : world.creatures.get(flyerId);
+  const lift = flyer === undefined ? undefined : FLYERS[flyer.species];
+  if (flyer === undefined || lift === undefined) return;
+  if (world.carried.has(flyer.id)) {
+    letGo(ctx, world, flyer.id);
+    return;
+  }
+  const target = liftable(ctx, world, flyer, lift.liftRadius);
+  if (target === null || target === "too big") {
+    ctx.game.notices.push({ text: target === null ? "Nothing below to lift" : `Too heavy for your ${defOf(flyer).label} to lift`, tone: "deny" });
+    return;
+  }
+  const at = ctx.scene.entity.get(target.id)!.position;
+  world.carried.set(flyer.id, target.id);
+  world.lastLift = { id: target.id, from: [at[0], at[2]] };
+  holdStill(ctx, target.id, true);
+  holdLifted(ctx);
+  ctx.game.notices.push({ text: `Your ${defOf(flyer).label} lifts the ${defOf(target).label}`, tone: "success" });
+}
+
+/** A flyer lets go: what it held drops to the ground under it and takes that spot as home. */
+function letGo(ctx: GameContext, world: World, flyerId: string): void {
+  const id = world.carried.get(flyerId);
+  world.carried.delete(flyerId);
+  const entity = id === undefined ? null : ctx.scene.entity.get(id);
+  if (id === undefined || entity === null) return;
+  const position: [number, number, number] = [entity.position[0], ctx.world.groundHeightAt(entity.position[0], entity.position[2]), entity.position[2]];
+  ctx.scene.entity.setPose(id, { position });
+  holdStill(ctx, id, false);
+  world.driver.setHome(id, position);
+  if (world.roster.get(id) !== null) world.roster.setHome(id, position);
+}
+
+/** Hang each lifted creature under its flyer; a flyer left unridden, or gone, lets go. */
+function holdLifted(ctx: GameContext): void {
+  const world = worldOf(ctx);
+  for (const [flyerId, id] of [...world.carried]) {
+    const flyer = ctx.scene.entity.get(flyerId);
+    const held = world.creatures.get(id);
+    if (flyer === null || held === undefined || held.dead || ridingOf(ctx).riderOf(flyerId) === null) {
+      letGo(ctx, world, flyerId);
+      continue;
+    }
+    const [x, y, z] = flyer.position;
+    ctx.scene.entity.setPose(id, { position: [x, Math.max(ctx.world.groundHeightAt(x, z), y - LIFT_HANG), z], rotationY: flyer.rotationY });
+  }
+}
+
+/** The creature the survivor's flyer holds, its height above the ground, and how far the last lifted creature now is from where it was lifted. */
+export function airliftView(ctx: GameContext): { holding: string | null; heldAlt: number; liftMoved: number } {
+  const world = worldOf(ctx);
+  const flyerId = ridingOf(ctx).mountOf(ctx.player.userId);
+  const holding = flyerId === null ? null : (world.carried.get(flyerId) ?? null);
+  const held = holding === null ? null : ctx.scene.entity.get(holding);
+  const last = world.lastLift === null ? null : ctx.scene.entity.get(world.lastLift.id);
+  return {
+    holding,
+    heldAlt: held === null ? -1 : held.position[1] - ctx.world.groundHeightAt(held.position[0], held.position[2]),
+    liftMoved: last === null || world.lastLift === null ? -1 : Math.hypot(last.position[0] - world.lastLift.from[0], last.position[2] - world.lastLift.from[1]),
+  };
 }
 
 // --- the creature's inventory ---------------------------------------------------------------------
@@ -1578,6 +1700,8 @@ export function resetCreatures(ctx: GameContext): void {
   world.viewing = null;
   world.lastTarget = null;
   world.lastTame = null;
+  world.carried.clear();
+  world.lastLift = null;
 }
 
 /** Hotbar too: ARK lets you drag from either. Exposed for the screen. */

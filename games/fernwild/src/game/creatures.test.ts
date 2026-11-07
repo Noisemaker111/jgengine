@@ -7,7 +7,7 @@ import { onNewPlayer, survivorStart, systems } from "../loop";
 import { world } from "../world";
 import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./bags";
 import { content } from "./content";
-import { creatureCard, creaturesView } from "./creatures";
+import { airliftView, creatureCard, creaturesView } from "./creatures";
 import { itemTraits } from "./data/items";
 import { openScreen } from "./screens";
 import { nearestHarvestable } from "./survivor";
@@ -360,4 +360,27 @@ test("a ridden Pteranodon climbs on Space and burns stamina in the air; out of s
   for (let t = 0; t < 60 && creaturesView(runner.ctx).riding!.stamina.value > 1; t += 0.05) runner.step(0.05, { held: ["jump"] });
   for (let t = 0; t < 6; t += 0.05) runner.step(0.05, { held: ["jump"] });
   expect(altitude()).toBeLessThan(AIRBORNE);
+});
+
+test("a ridden Pteranodon lifts a dodo beside it and lets it go, but is too small to lift a raptor", () => {
+  const runner = islandRunner();
+  tick(runner, 0.1);
+  runner.ui.tryInvoke("cheat", { give: { pteranodon_saddle: 1 }, summon: { species: "pteranodon", level: 1, distance: 2.5, tamed: true } });
+  tick(runner, 0.1);
+  runner.ui.tryInvoke("creatureUse", {});
+  runner.ui.tryInvoke("giveCreature", { inventoryId: BAG, slot: bagSlot(runner, "pteranodon_saddle") });
+  runner.ui.tryInvoke("closeCreature", {});
+  runner.ui.tryInvoke("creatureUse", {});
+  runner.ui.tryInvoke("cheat", { summon: { species: "raptor", level: 1, distance: 2 } });
+  tick(runner, 0.1);
+  runner.ui.tryInvoke("airlift", {});
+  expect(airliftView(runner.ctx).holding).toBeNull();
+  runner.ui.tryInvoke("cheat", { summon: { species: "dodo", level: 1, distance: 0.5 } });
+  tick(runner, 0.1);
+  runner.ui.tryInvoke("airlift", {});
+  const dodo = airliftView(runner.ctx).holding;
+  expect(dodo).toStartWith("dodo_");
+  runner.ui.tryInvoke("airlift", {});
+  tick(runner, 0.1);
+  expect(airliftView(runner.ctx).holding).toBeNull();
 });

@@ -9,7 +9,7 @@ import { bodiesSave, recoverBody, resetBodies, tickBodies } from "./game/deathBo
 import { breedingSave, careForBaby, resetBreeding, setBreedingSpeed, setMutationChance, tickBreeding } from "./game/breeding";
 import { resetTameHunger, setTameFood, tameHungerSave, tickTameHunger } from "./game/tameHunger";
 import { broodSave, resetBroodmother, setBroodHealth, summonBroodmother, tickBroodmother, useObelisk } from "./game/broodmother";
-import { closeCreature, creaturesSave, knockOutNow, destroyWild, feedNarcotic, forceTame, giveTameXp, giveToCreature, loadTame, levelTame, mountBite, resetCreatures, setTamingSpeed, spawnCreature, takeFromCreature, tames, tameSummoned, tickCreatures, toggleMating, unsaddle, useCreature, whistle } from "./game/creatures";
+import { airlift, closeCreature, creaturesSave, knockOutNow, destroyWild, feedNarcotic, forceTame, giveTameXp, giveToCreature, loadTame, levelTame, mountBite, resetCreatures, setTamingSpeed, spawnCreature, takeFromCreature, tames, tameSummoned, tickCreatures, toggleMating, unsaddle, useCreature, whistle } from "./game/creatures";
 import { TAME_STATS } from "./game/data/species";
 import { LEVEL_STATS, SURVIVOR } from "./game/data/survivor";
 import { BAG, HOTBAR } from "./game/bags";
@@ -97,6 +97,7 @@ export const systems = [
     create(ctx) {
       const commands = ctx.game.commands;
       commands.define("creatureUse", { apply: (state) => (useCreature(state), state) });
+      commands.define("airlift", { apply: (state) => (airlift(state), state) });
       commands.define("closeCreature", { apply: (state) => (closeCreature(state), state) });
       commands.define("whistleFollow", { apply: (state) => (whistle(state, "follow"), state) });
       commands.define("whistleStay", { apply: (state) => (whistle(state, "stay"), state) });

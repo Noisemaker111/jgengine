@@ -17,7 +17,7 @@ import { bodyPrompts, bodyView } from "./game/deathBody";
 import { breedingPrompts, breedingView } from "./game/breeding";
 import { broodView, obeliskPrompts } from "./game/broodmother";
 import { BROOD_PHASES } from "./game/data/bosses";
-import { awakeTamingProgress, creatureCard, creaturePrompts, lineageStrays, creaturesView, speciesNear, wildCountNear, wildHurtNear, nearestTameStance, wildLevelNear, mountCanFly, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
+import { airliftView, awakeTamingProgress, creatureCard, creaturePrompts, lineageStrays, creaturesView, speciesNear, wildCountNear, wildHurtNear, nearestTameStance, wildLevelNear, mountCanFly, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
 import { tameFood } from "./game/tameHunger";
 import { STRUCTURES } from "./game/data/structures";
 import { content } from "./game/content";
@@ -92,6 +92,8 @@ export const game = defineGame({
     // ARK's whistles: T for follow, U for stay.
     whistleFollow: ["KeyT"],
     whistleStay: ["KeyU"],
+    // ARK's flyer grab: F lifts the creature below in the talons, and lets it go.
+    airlift: ["KeyF"],
     inventory: ["KeyI", "Tab"],
     // ARK's extended HUD: the numbers under the vital icons.
     hudDetail: ["KeyH"],
@@ -257,6 +259,7 @@ export const game = defineGame({
         ...sight("prey", nearestWild(ctx, PREY, here, 220, (at) => nearestThreat(ctx, at, 30) === null)),
         // The nearest wild Ovis within 30 m, a passive tame to follow and hand-feed.
         ...sight("ovis", nearestWild(ctx, "ovis", here, 30)),
+        ...sight("dodo", nearestWild(ctx, "dodo", here, 30)),
         // Live wild creatures within 60 m: what the herd-refill proof counts.
         wildNear: wildCountNear(ctx, here, 60),
         // The nearest wild hunter within 60 m, and how many creatures a bola or trap holds still.
@@ -327,6 +330,9 @@ export const game = defineGame({
         primeSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "raw_prime_meat"),
         rawMeatSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "raw_meat"),
         riding: creatures.riding === null ? 0 : 1,
+        // Whether the ridden flyer holds a creature, that creature's height above the ground (-1 with none), and how far the
+        // last creature lifted now is from where it was lifted (-1 with none).
+        ...((lift) => ({ lifting: lift.holding === null ? 0 : 1, liftedAlt: Math.round(lift.heldAlt * 10) / 10, liftMoved: Math.round(lift.liftMoved * 10) / 10 }))(airliftView(ctx)),
         // The weight the open or ridden tame carries, and its stone (-1 with neither); the bag's stone slot.
         tameWeight: (creatures.viewing ?? creatures.riding)?.weight.value ?? -1,
         tameStone: ((card) => (card === null ? -1 : card.inventory.reduce((sum, slot) => sum + (slot?.itemId === "stone" ? slot.count : 0), 0)))(creatures.viewing ?? creatures.riding),
