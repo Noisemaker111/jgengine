@@ -23,6 +23,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/breed-imprint.proof.ts",
+      "proves": [
+        "breeding.raise-imprint"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/breed-incubate.proof.ts",
       "proves": [
         "breeding.incubate"
