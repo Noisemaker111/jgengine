@@ -16,6 +16,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/boss-phases.proof.ts",
+      "proves": [
+        "boss.phases"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/breed-incubate.proof.ts",
       "proves": [
         "breeding.incubate"

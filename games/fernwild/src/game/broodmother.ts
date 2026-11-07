@@ -263,7 +263,7 @@ export function broodView(ctx: GameContext) {
     tier: tier?.label ?? null,
     secondsLeft: brood.arena.secondsLeft(now),
     inside: brood.arena.inside(ctx.player.userId),
-    boss: brood.boss === null ? null : { id: brood.boss, health: creatureHealth(ctx, brood.boss) ?? 0, phase: brood.phase?.phaseId ?? null },
+    boss: brood.boss === null ? null : { id: brood.boss, health: creatureHealth(ctx, brood.boss) ?? 0, phase: brood.phase?.phaseId ?? null, at: ctx.scene.entity.get(brood.boss)?.position ?? null },
     brood: brood.brood.filter((id) => creatureAlive(ctx, id)).length,
     tell: brood.tell?.text ?? null,
     survivors: state.party["survivor"]?.length ?? 0,
