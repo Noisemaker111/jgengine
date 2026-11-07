@@ -34,15 +34,15 @@ export default defineProof(game, {
     await p.act("craft", { recipeId: "smelt_metal" });
     await p.waitFor((r) => r.ingots === 1, { timeoutMs: 40_000, note: "the lit forge smelts two ore into an ingot" });
     await p.act("craft", { recipeId: "metal_pick" });
-    await p.waitFor((r) => r.metalPickKey > 0, { timeoutMs: 15_000, note: "the ingot makes a metal pick, slotted on the hotbar" });
-    const pick = (await p.probe()).metalPickKey;
+    // The forge left the second hotbar key free, and a fresh tool takes the first free key.
+    await p.waitFor((r) => r.metalPickKey === 2, { timeoutMs: 15_000, note: "the ingot makes a metal pick, slotted on the hotbar" });
     await p.heading(facing);
     await p.press("Digit1");
     await p.hold("KeyW", { until: (r) => r.aimedStructureHealth === STONE_PILLAR, ms: 80, timeoutMs: 5000 });
     await p.hold("KeyW", { ms: 300 });
     await p.hold("mouse0", { ms: 3000 });
     await p.expect((r) => r.aimedStructureHealth === STONE_PILLAR && r.heldDurability < 40, "a stone hatchet lands on the stone pillar and leaves it whole");
-    await p.press(`Digit${pick}`);
+    await p.press("Digit2");
     await p.hold("mouse0", { until: (r) => r.aimedStructureHealth > 0 && r.aimedStructureHealth < STONE_PILLAR, ms: 80, timeoutMs: 3000 });
     await p.expect((r) => r.aimedStructureHealth > 0 && r.aimedStructureHealth < STONE_PILLAR, "the metal pick dents it");
   },
