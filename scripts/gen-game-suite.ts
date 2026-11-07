@@ -12,11 +12,10 @@ import { join } from "node:path";
 import { renderSuiteAreaTable, renderSuiteMarkdown, suiteScoreLine, type GameSuiteScore } from "@jgengine/core/suite/gameSuite";
 
 import { scoreCommittedSuite } from "../games/shared/suiteReport";
+import { SUITE_SCORE_END as END, SUITE_SCORE_START as START } from "./suite-score-block";
 
 const root = join(import.meta.dir, "..");
 const gamesDir = join(root, "games");
-const START = "<!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->";
-const END = "<!-- /suite-score -->";
 
 function block(lines: readonly string[]): string {
   return [START, ...lines, END].join("\n");

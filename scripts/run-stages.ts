@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import { digestLines, writeStepLog } from "./failure-digest";
 import { printHelpIfAsked, renderUsage, type Usage } from "./script-help";
+import { SUITE_SCORE_END, SUITE_SCORE_START } from "./suite-score-block";
 import { runSteps } from "./stepScheduler";
 
 /**
@@ -204,6 +205,11 @@ export interface GenTarget {
    * A file people also edit by hand (a tsconfig, a source file's `@skill` tag) is not listed.
    */
   readonly outputs?: readonly RegExp[];
+  /**
+   * Marked blocks this generator owns inside files people otherwise write by hand. A rebase conflict
+   * that lies wholly inside such a block takes the base's block and is regenerated, as for `outputs`.
+   */
+  readonly blocks?: readonly GeneratedBlock[];
   /** The repository paths it reads, as `CheckDef.reads`: a diff that reaches none leaves its files as they are. */
   readonly reads?: readonly string[];
   /** As `CheckDef.skipsTests`. */
@@ -214,6 +220,13 @@ export interface GenTarget {
  * Every committed derived artifact, regenerated in dependency order by one command. Every
  * generator reads package source, so no build runs first.
  */
+/** A generator's marked block inside the files `paths` matches: the text from `start` to `end`, both included. */
+export interface GeneratedBlock {
+  readonly paths: RegExp;
+  readonly start: string;
+  readonly end: string;
+}
+
 export const GEN_TARGETS: readonly GenTarget[] = [
   { name: "source-paths", script: "scripts/sourcePaths.ts", reads: ["packages/", "apps/", "examples/", "registry/", "games/llmville/packages/"] },
   {
@@ -237,7 +250,13 @@ export const GEN_TARGETS: readonly GenTarget[] = [
   { name: "games-ledger", script: "games/scripts/capabilities-sync.ts", after: ["barrels"], outputs: [/^games\/capabilities\.json$/], reads: ["packages/"], skipsTests: true },
   { name: "part-stats", script: "scripts/part-stats.ts", after: ["barrels"], outputs: [/^scripts\/part-stats\.json$/], reads: ["packages/core/src/"], skipsTests: true },
   { name: "recipes", script: "scripts/gen-cookbook.ts", after: ["barrels"], outputs: [/^\.claude\/skills\/jgengine\/recipes\/cookbook\.md$/], reads: ["packages/core/src/recipes/"] },
-  { name: "game-suite", script: "scripts/gen-game-suite.ts", after: ["barrels"], reads: GAME_SUITE_READS },
+  {
+    name: "game-suite",
+    script: "scripts/gen-game-suite.ts",
+    after: ["barrels"],
+    reads: GAME_SUITE_READS,
+    blocks: [{ paths: /^games\/[^/]+\/(?:README|PLAN)\.md$/, start: SUITE_SCORE_START, end: SUITE_SCORE_END }],
+  },
 ];
 
 export function genPlan(targets: readonly GenTarget[]): Stage[] {
