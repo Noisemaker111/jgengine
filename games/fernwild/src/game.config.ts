@@ -299,6 +299,7 @@ export const game = defineGame({
         tameWeight: (creatures.viewing ?? creatures.riding)?.weight.value ?? -1,
         tameStone: ((card) => (card === null ? -1 : card.inventory.reduce((sum, slot) => sum + (slot?.itemId === "stone" ? slot.count : 0), 0)))(creatures.viewing ?? creatures.riding),
         stoneSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "stone"),
+        woodSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "wood"),
         saddled: creatures.aimed?.saddled === true ? 1 : 0,
         tameLevel: creatures.viewing?.level ?? creatures.riding?.level ?? 0,
         tamePoints: creatures.viewing?.growth?.unspent ?? 0,

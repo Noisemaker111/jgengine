@@ -93,6 +93,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/encumbrance.proof.ts",
+      "proves": [
+        "survival.encumbrance"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/first-goal.proof.ts",
       "proves": [
         "onboarding.first-goal"
