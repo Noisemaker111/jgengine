@@ -16,7 +16,7 @@ import { EGG_SIZES, eggItem, KIBBLE_TIERS, kibbleItem } from "./game/data/kibble
 import { bodyPrompts, bodyView } from "./game/deathBody";
 import { breedingPrompts, breedingView } from "./game/breeding";
 import { broodView, obeliskPrompts } from "./game/broodmother";
-import { BROOD_PHASES } from "./game/data/bosses";
+import { BROOD_PHASES, BROOD_TIERS } from "./game/data/bosses";
 import { airliftView, mountSwim, awakeTamingProgress, creatureCard, creaturePrompts, lineageStrays, creaturesView, speciesNear, wildCountNear, wildHurtNear, nearestTameStance, wildLevelNear, mountCanFly, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
 import { tameFood } from "./game/tameHunger";
 import { STRUCTURES } from "./game/data/structures";
@@ -443,6 +443,9 @@ export const game = defineGame({
         lairTames: brood.companions,
         atObelisk: obeliskPrompts(ctx).length > 0 ? 1 : 0,
         element: ctx.player.inventory.count(BAG, "element"),
+        // Broodmother trophies carried, and brood gear (made only around one) carried.
+        broodTrophies: BROOD_TIERS.reduce((sum, tier) => sum + ctx.player.inventory.count(BAG, `broodmother_trophy_${tier.id}`), 0),
+        broodGear: ["brood_greaves", "brood_gauntlets", "brood_treads"].reduce((sum, item) => sum + [BAG, HOTBAR].reduce((n, id) => n + ctx.player.inventory.count(id, item), 0), 0),
         tranqArrows: ctx.player.inventory.count(BAG, "tranq_arrow") + ctx.player.inventory.count(HOTBAR, "tranq_arrow"),
         stones: ctx.player.inventory.count(BAG, "stone") + ctx.player.inventory.count(HOTBAR, "stone"),
       };

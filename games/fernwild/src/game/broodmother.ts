@@ -37,11 +37,13 @@ interface Brood {
   spit: { at: number; from: readonly [number, number, number]; to: readonly [number, number, number] } | null;
   /** The phase tell on screen and until when. */
   tell: { text: string; until: number } | null;
+  /** Her health as a share of her species' (1, ARK's; a server's boss difficulty, or a proof, turns it down). */
+  strength: number;
 }
 
 const broodOf = perContext((ctx: GameContext): Brood => {
   ctx.world.solids.set(SOLIDS_LAYER, lairWall(ctx));
-  return { arena: lairEncounter(), boss: null, phase: null, brood: [], nextSpit: 0, spit: null, tell: null };
+  return { arena: lairEncounter(), boss: null, phase: null, brood: [], nextSpit: 0, spit: null, tell: null, strength: 1 };
 });
 
 /** Her lair's fight: a survivor level the summon asks, the artifact cost, the portal, and the trip home. */
@@ -180,6 +182,8 @@ function enter(ctx: GameContext, brood: Brood, tierId: string, admitted: readonl
     .forEach((entry, index) => moveCreature(ctx, entry.id, lairSpot(0.8, Math.PI + (index % 2 === 0 ? 1 : -1) * (0.3 + Math.floor(index / 2) * 0.15))));
   // She waits in the middle of her lair.
   brood.boss = spawnCreature(ctx, tier.species, lairSpot(0, 0), { level: 1 });
+  const health = brood.boss === null || brood.strength === 1 ? null : ctx.scene.entity.stats.get(brood.boss, "health");
+  if (brood.boss !== null && health !== null) ctx.scene.entity.stats.set(brood.boss, "health", { max: health.max * brood.strength, current: health.max * brood.strength });
   brood.phase = createPhaseClock(BROOD_PHASES);
   // She greets them with a spit before she closes in.
   brood.nextSpit = ctx.time.now() + FIRST_SPIT;
@@ -290,6 +294,11 @@ export function setBroodHealth(ctx: GameContext, share: number): void {
   ctx.scene.entity.stats.set(boss, "health", { current: Math.max(0, Math.min(1, share)) * health.max });
 }
 
+/** ARK's server boss difficulty: each Broodmother summoned from now on has this share of her health. */
+export function setBroodStrength(ctx: GameContext, share: number): void {
+  broodOf(ctx).strength = Math.max(0.0001, Math.min(1, share));
+}
+
 interface BroodSave {
   arena: SummonedEncounterState;
   boss: string | null;
@@ -324,4 +333,5 @@ export function resetBroodmother(ctx: GameContext): void {
   brood.brood = [];
   brood.spit = null;
   brood.tell = null;
+  brood.strength = 1;
 }
