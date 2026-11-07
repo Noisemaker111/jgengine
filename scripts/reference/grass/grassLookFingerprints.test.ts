@@ -46,7 +46,7 @@ function randomMetas(count: number): Record<string, unknown>[] {
   const metas: Record<string, unknown>[] = [];
   for (let index = 0; index < count; index += 1) {
     const meta: Record<string, unknown> = { seed: `random-${index}` };
-    if (random() < 0.5) meta.species = GRASS_SPECIES[Math.floor(random() * GRASS_SPECIES.length)]!.id;
+    if (random() < 0.5) meta["species"] = GRASS_SPECIES[Math.floor(random() * GRASS_SPECIES.length)]!.id;
     for (const field of GRASS_SCHEMA.fields) {
       if (MOVED_TO_STYLE.has(field.key) || field.type === "seed") continue;
       if (random() > 0.3) continue;
@@ -110,7 +110,7 @@ function fingerprint(look: GrassLook, keys: readonly string[]): string {
 describe("grass look fingerprints", () => {
   test("every look the repo draws matches its fingerprint at the default style", () => {
     const all: [string, GrassLook][] = [...cases().map(([id, meta]): [string, GrassLook] => [id, readGrassLook(meta)]), ...bandLooks()];
-    if (process.env.GRASS_FINGERPRINTS === "write") {
+    if (process.env["GRASS_FINGERPRINTS"] === "write") {
       const keys = Object.keys(flatKnobs(readGrassLook({}))).sort();
       const fixture: Fixture = { keys, looks: Object.fromEntries(all.map(([id, look]) => [id, fingerprint(look, keys)])) };
       writeFileSync(FIXTURE, `${JSON.stringify(fixture, null, 2)}\n`);
