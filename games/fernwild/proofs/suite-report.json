@@ -240,6 +240,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/temperature.proof.ts",
+      "proves": [
+        "survival.temperature"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/tool-bias.proof.ts",
       "proves": [
         "harvest.tool-bias"
