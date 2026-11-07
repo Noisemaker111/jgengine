@@ -19,18 +19,18 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | survival | 7/9 | 0 | 0 | 2 | 0 |
 | building | 2/3 | 0 | 0 | 1 | 0 |
 | harvest | 3/3 | 0 | 0 | 0 | 0 |
-| crafting | 2/6 | 0 | 0 | 4 | 0 |
+| crafting | 3/6 | 0 | 0 | 3 | 0 |
 | taming | 9/9 | 0 | 0 | 0 | 0 |
 | creatures | 8/13 | 0 | 0 | 5 | 0 |
 | breeding | 3/4 | 0 | 0 | 1 | 0 |
 | spawns | 0/3 | 0 | 0 | 3 | 0 |
 | boss | 1/3 | 0 | 0 | 2 | 0 |
 | cave | 2/2 | 0 | 0 | 0 | 0 |
-| **total** | **42/67** | 3 | 0 | 22 | 0 |
+| **total** | **43/67** | 3 | 0 | 21 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: creature-survival. 42/67 proven · 3 failing · 22 missing.
+Genres: creature-survival. 43/67 proven · 3 failing · 21 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
@@ -65,7 +65,7 @@ Genres: creature-survival. 42/67 proven · 3 failing · 22 missing.
 | `crafting.unlock-spend` | proven | Level-ups give points the player spends to learn recipes. | proofs/sim/craft-learn.proof.ts |
 | `crafting.refine-tier` | missing | Raw ore smelts at a fuelled station into a material that opens a stronger tier of tools and building. |  |
 | `crafting.fuel` | proven | A station that burns consumes fuel and stops when it runs out. | proofs/sim/station-fuel.proof.ts |
-| `crafting.preserve` | missing | A preserving container slows spoilage. |  |
+| `crafting.preserve` | proven | A preserving container slows spoilage. | proofs/sim/preserve.proof.ts |
 | `crafting.tool-wear` | missing | Tools and weapons wear with use, break, and can be repaired with materials. |  |
 | `taming.knockout-melee` | proven | Knock a creature out by hitting it, feed it, and it becomes yours. | proofs/sim/tame-knockout.proof.ts |
 | `taming.ranged-knockout` | proven | Knock a creature out from range with sedative ammo, without standing in its reach. | proofs/sim/tame-ranged.proof.ts |
