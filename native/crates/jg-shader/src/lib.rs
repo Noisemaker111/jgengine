@@ -83,11 +83,17 @@ fn to_wgsl(src: &str, stage: naga::ShaderStage) -> Result<(naga::Module, String)
         msg
     })?;
     // Uniformity is relaxed in the WGSL with a diagnostic directive, as three's shaders sample in
-    // branches; everything else validates in full.
+    // branches; everything else validates in full, with only WebGPU's baseline capabilities (what
+    // the device enables).
     let flags = naga::valid::ValidationFlags::all() - naga::valid::ValidationFlags::CONTROL_FLOW_UNIFORMITY;
-    let info = naga::valid::Validator::new(flags, naga::valid::Capabilities::all()).validate(&module).map_err(|e| format!("{stage:?} validation: {}", e.emit_to_string(src)))?;
-    let wgsl = naga::back::wgsl::write_string(&module, &info, naga::back::wgsl::WriterFlags::empty()).map_err(|e| format!("{stage:?} wgsl: {e}"))?;
-    Ok((module, format!("diagnostic(off, derivative_uniformity);\n{wgsl}")))
+    let info = naga::valid::Validator::new(flags, naga::valid::Capabilities::default()).validate(&module).map_err(|e| format!("{stage:?} validation: {}", e.emit_to_string(src)))?;
+    let wgsl = format!("diagnostic(off, derivative_uniformity);\n{}", naga::back::wgsl::write_string(&module, &info, naga::back::wgsl::WriterFlags::empty()).map_err(|e| format!("{stage:?} wgsl: {e}"))?);
+    // The device parses this text, not the module above: parse and validate it the same way, so a
+    // WGSL the writer emits but the reader rejects fails here with its message, not as an invalid
+    // shader module at draw time.
+    let reread = naga::front::wgsl::parse_str(&wgsl).map_err(|e| format!("{stage:?} emitted WGSL does not parse: {}", e.emit_to_string(&wgsl)))?;
+    naga::valid::Validator::new(naga::valid::ValidationFlags::all(), naga::valid::Capabilities::default()).validate(&reread).map_err(|e| format!("{stage:?} emitted WGSL does not validate: {}", e.emit_to_string(&wgsl)))?;
+    Ok((module, wgsl))
 }
 
 /// Translate one program. `vert`/`frag` are the sources exactly as three passed them to GL.

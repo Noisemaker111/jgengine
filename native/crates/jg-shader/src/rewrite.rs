@@ -226,6 +226,40 @@ fn split_items(src: &str) -> Result<Vec<Item>, String> {
     Ok(items)
 }
 
+/// A struct definition padded at its end to a multiple of 16 bytes. std140 rounds a struct's
+/// alignment and size up to a vec4's, so an array of three's `DirectionalLightShadow` (four floats
+/// and a vec2, 24 bytes) strides 32 in GL; naga's GLSL reader keeps the natural 24, which WGSL
+/// rejects in a uniform buffer. Trailing padding moves no member. A struct with a member type this
+/// does not size is left as is (the emitted WGSL's validation then names it).
+fn std140_struct(def: &str) -> String {
+    let (Some(open), Some(close)) = (def.find('{'), def.rfind('}')) else { return def.to_string() };
+    let mut size = 0u32;
+    for member in def[open + 1..close].split(';').map(str::trim).filter(|m| !m.is_empty()) {
+        let mut words = member.split_whitespace().filter(|w| !matches!(*w, "highp" | "mediump" | "lowp"));
+        let Some(ty) = words.next() else { return def.to_string() };
+        let (bytes, align) = match ty {
+            "float" | "int" | "uint" | "bool" => (4, 4),
+            "vec2" | "ivec2" | "uvec2" => (8, 8),
+            "vec3" | "ivec3" | "uvec3" => (12, 16),
+            "vec4" | "ivec4" | "uvec4" => (16, 16),
+            "mat3" => (48, 16),
+            "mat4" => (64, 16),
+            _ => return def.to_string(),
+        };
+        // An array member strides 16 per element in std140; three's uniform structs have none.
+        if words.collect::<String>().contains('[') {
+            return def.to_string();
+        }
+        size = size.next_multiple_of(align) + bytes;
+    }
+    let pad = (size.next_multiple_of(16) - size) / 4;
+    if pad == 0 {
+        return def.to_string();
+    }
+    let fill: String = (0..pad).map(|i| format!(" float jg_pad{i};")).collect();
+    format!("{}{fill} {}", def[..close].trim_end(), &def[close..])
+}
+
 /// What a uniform type takes in std140 and how much a vec4-array rewrite needs.
 fn components(ty: &str) -> Option<(char, u32)> {
     Some(match ty {
@@ -590,8 +624,11 @@ pub fn rewrite(vert: &str, frag: &str) -> Result<Rewritten, String> {
     let uses_modf = vert.contains("modf") || frag.contains("modf");
     let header = |members: &str| -> String {
         let mut s = String::from("#version 450\n");
-        for (_, toks) in &structs {
-            s.push_str(&text(toks));
+        for (name, toks) in &structs {
+            // Only a struct the uniform block holds takes std140 padding; the others are built with
+            // constructors in the shader body, which padding would break.
+            let def = text(toks);
+            s.push_str(&if block.iter().any(|(ty, _, _)| ty == name) { std140_struct(&def) } else { def });
             s.push('\n');
         }
         if uses_modf {
@@ -730,6 +767,43 @@ fn drop_point_size(toks: Vec<Tok>) -> Vec<Tok> {
     out
 }
 
+/// A vertex shader's `texture(s, uv)` as `textureLod(s, uv, 0.0)`: GLSL samples level 0 outside a
+/// fragment shader (there are no derivatives to pick a level from), and WGSL allows only the
+/// explicit-level form there. The same lookup, so the same pixels.
+fn vertex_texture_lod(toks: Vec<Tok>) -> Vec<Tok> {
+    let mut out: Vec<Tok> = Vec::with_capacity(toks.len());
+    let mut close_at: Vec<usize> = Vec::new(); // paren depths whose `)` takes the level argument
+    let mut depth = 0usize;
+    let mut i = 0;
+    while i < toks.len() {
+        let t = &toks[i];
+        if t.is("texture") {
+            let mut j = i + 1;
+            while j < toks.len() && is_space(&toks[j]) {
+                j += 1;
+            }
+            if j < toks.len() && toks[j].is("(") {
+                out.extend(tokenize("textureLod"));
+                i += 1;
+                close_at.push(depth + 1);
+                continue;
+            }
+        }
+        if t.is("(") {
+            depth += 1;
+        } else if t.is(")") {
+            if close_at.last() == Some(&depth) {
+                close_at.pop();
+                out.extend(tokenize(", 0.0"));
+            }
+            depth = depth.saturating_sub(1);
+        }
+        out.push(t.clone());
+        i += 1;
+    }
+    out
+}
+
 fn emit_code(items: &[Item], rules: &Rules, out: &mut String, vertex: bool) -> Result<(), String> {
     let strip = |toks: Vec<Tok>| -> Vec<Tok> { toks.into_iter().filter(|t| !matches!(t, Tok::Ident(s) if s == "highp" || s == "mediump" || s == "lowp")).collect() };
     for it in items {
@@ -745,6 +819,7 @@ fn emit_code(items: &[Item], rules: &Rules, out: &mut String, vertex: bool) -> R
                     h = tokenize(&text(&h).replacen("main", "jg_main", 1));
                 }
                 let b = drop_point_size(apply(body, rules, &local)?);
+                let b = if vertex { vertex_texture_lod(b) } else { b };
                 out.push_str(&text(&strip(h)));
                 out.push_str(&text(&strip(b)));
                 out.push('\n');
@@ -833,5 +908,28 @@ fn walk(module: &naga::Module, ty: naga::Handle<naga::Type>, name: &str, offset:
             }
         }
         _ => {}
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_uniform_struct_pads_to_std140_size() {
+        let shadow = "struct DirectionalLightShadow { float shadowIntensity; float shadowBias; float shadowNormalBias; float shadowRadius; vec2 shadowMapSize; };";
+        assert!(std140_struct(shadow).contains("vec2 shadowMapSize; float jg_pad0; float jg_pad1; };"));
+        let light = "struct DirectionalLight { vec3 direction; vec3 color; };";
+        assert_eq!(std140_struct(light), "struct DirectionalLight { vec3 direction; vec3 color; float jg_pad0; };");
+        let even = "struct S { vec4 a; };";
+        assert_eq!(std140_struct(even), even);
+    }
+
+    #[test]
+    fn a_vertex_texture_call_samples_level_zero() {
+        let out = text(&vertex_texture_lod(tokenize("float h = texture( sampler2D(t, s), uv * (1.0 + f(x)) ).r;")));
+        assert_eq!(out, "float h = textureLod( sampler2D(t, s), uv * (1.0 + f(x)) , 0.0).r;");
+        let nested = text(&vertex_texture_lod(tokenize("texture(a, texture(b, uv).xy)")));
+        assert_eq!(nested, "textureLod(a, textureLod(b, uv, 0.0).xy, 0.0)");
     }
 }

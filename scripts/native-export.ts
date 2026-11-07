@@ -8,6 +8,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { applyDevice, cdpField, ensureDevServer, navigateCapturePage, openPageSession, remoteObjectId, watchPageExceptions, withBrowserSession, type CdpSession } from "./browser-lib";
 import { perfPageUrl } from "./perf-play";
+import { provisionCapturedGame } from "./provisionCapture";
 import { startPath } from "./perf-breakdown";
 import { installNativeRecorder } from "./native-export.page";
 
@@ -130,6 +131,8 @@ async function finish(session: CdpSession): Promise<unknown> {
 export async function exportNativeScene(options: NativeExportOptions): Promise<number> {
   const { game, seconds, out } = options;
   mkdirSync(join(out, "ref"), { recursive: true });
+  // The game's asset packs first, as `perf play` does: a fresh worktree otherwise records placeholders.
+  await provisionCapturedGame(join(repoRoot, "games", game), (line) => console.error(`native export: ${line}`));
   const receiver = startReceiver(out);
   const server = await ensureDevServer(repoRoot);
   try {

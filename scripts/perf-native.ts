@@ -2,7 +2,7 @@
 // `bun run perf native export <game> [--seconds 8]`
 //
 // The 360 fps experiment (native/README.md): the same scene, camera path and resolution four ways.
-//   A  the current engine: a diagnostic desktop build (WebView2) with vsync and the frame limit off
+//   A  the current engine: a diagnostic desktop build (WebView2) run with `--uncapped` (perf desktop --launch)
 //   B  jg-native: the wgpu replay of three's frames + Rune HUD + the real TypeScript tick in V8
 //   C  jg-native with the Rust port of the tick
 //   D  jg-web: the same replay in wasm32 + WebGPU in headless Chrome on the uncapped clock
@@ -10,15 +10,12 @@
 // diff of the native replay against three's own readbacks (and the web build's check for D).
 // Needs `cargo build --release` in native/ and, for D, the wasm package in native/web/pkg.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { spawn, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { CdpSession, openPageSession, withBrowserSession } from "./browser-lib";
-import { localGetJson } from "./localhostHttp";
-import { startPath, resetBreakdown } from "./perf-breakdown";
-import { summarizeFrameDeltas } from "./perf-play";
+import { openPageSession, withBrowserSession } from "./browser-lib";
+import { launchAndMeasure } from "./perf-desktop";
 import { exportNativeScene } from "./native-export";
-import type { FrameBreakdownSummary } from "../packages/core/src/devtools/frameBreakdown";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const nativeDir = join(repoRoot, "native");
@@ -65,66 +62,14 @@ function imageSummary(frames: DiffReport["frames"]): string {
   return `mean |d| ${mean.toFixed(2)}/255, PSNR ≥ ${psnr.toFixed(1)} dB, worst frame ${worst.frame}: ${(worst.over8 * 100).toFixed(2)}% px > 8 levels (${frames.length} frames)`;
 }
 
-/** Row A: launch the diagnostic desktop build uncapped at the export's size and walk the same path. */
-async function desktopRow(game: string, appExe: string, size: [number, number], seconds: number): Promise<Row> {
-  const port = 9391;
-  // WebView2 adds these to the app's own browser arguments: the debugger, and Chrome's vsync and frame-limit switches.
-  const env = { ...process.env, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${port} --disable-gpu-vsync --disable-frame-rate-limit` };
-  const child = spawn(appExe, [], { env, stdio: "ignore" });
-  try {
-    let wsUrl: string | null = null;
-    for (let i = 0; i < 240 && wsUrl === null; i += 1) {
-      const list = await localGetJson<{ type?: string; url?: string; webSocketDebuggerUrl?: string }[]>(`http://127.0.0.1:${port}/json/list`, 1_000).catch(() => null);
-      wsUrl = list?.find((t) => t.type === "page" && t.webSocketDebuggerUrl !== undefined)?.webSocketDebuggerUrl ?? null;
-      if (wsUrl === null) await Bun.sleep(500);
-    }
-    if (wsUrl === null) throw new Error(`${appExe} opened no debuggable page; build it with: bun run jgengine desktop games/${game} --diagnostics`);
-    const session = await CdpSession.connect(wsUrl, 10_000);
-    try {
-      await session.send("Page.enable");
-      await session.send("Emulation.setDeviceMetricsOverride", { width: size[0], height: size[1], deviceScaleFactor: 1, mobile: false });
-      const page = await session.evaluate<string>("location.href");
-      await session.send("Page.navigate", { url: new URL("index.html?telemetry=local&frameMembers=1&quality=high", page).toString() });
-      let ready = false;
-      for (let i = 0; i < 360 && !ready; i += 1) {
-        await Bun.sleep(500);
-        ready = (await session.evaluate<boolean>(`document.documentElement.dataset.jgQuality === "high" && typeof globalThis.__jgengineAgent?.handle === "function"`).catch(() => false)) === true;
-      }
-      if (!ready) throw new Error("the desktop build never reported its high tier and agent bridge");
-      // Past the start menu the way the game's own play capture goes: its `capture.play` commands.
-      type PlayEntry = string | { name: string; input?: unknown };
-      const status = await session.evaluate<{ capturePlay?: PlayEntry[] }>(`globalThis.__jgengineAgent.handle({ method: "agent_status" })`);
-      for (const entry of status?.capturePlay ?? []) {
-        const name = typeof entry === "string" ? entry : entry.name;
-        const request = { method: "run_command", name, ...(typeof entry === "string" || entry.input === undefined ? {} : { input: entry.input }) };
-        let reply: { ok?: boolean; error?: string } | null = null;
-        for (let i = 0; i < 120 && reply?.ok !== true; i += 1) {
-          reply = await session.evaluate<{ ok?: boolean; error?: string }>(`globalThis.__jgengineAgent.handle(${JSON.stringify(request)})`).catch(() => null) ?? null;
-          if (reply?.ok !== true) await Bun.sleep(500);
-        }
-        if (reply?.ok !== true) throw new Error(`run_command ${name}: ${reply?.error ?? "no answer"}`);
-      }
-      // The same settle and path as the export: 5 s warmup, stand 2 s, walk, stand 2 s.
-      await Bun.sleep(5_000);
-      if (!(await resetBreakdown(session))) throw new Error("the desktop page has no frame breakdown; build it with --diagnostics");
-      const sampling = session.evaluate<number[]>(`new Promise((done) => { const d = []; let last = null; const end = performance.now() + ${(seconds + 4) * 1000}; const step = (now) => { if (last !== null) d.push(now - last); last = now; if (now < end) requestAnimationFrame(step); else done(d); }; requestAnimationFrame(step); })`, { awaitPromise: true });
-      await Bun.sleep(2_000);
-      const release = await startPath(session, "walk");
-      await Bun.sleep(seconds * 1000);
-      await release();
-      const deltas = (await sampling) ?? [];
-      const b = await session.evaluate<FrameBreakdownSummary | null>("globalThis.__jgFrameBreakdown?.summary({ top: 5 }) ?? null");
-      const viewport = await session.evaluate<string>("innerWidth + 'x' + innerHeight");
-      const f = summarizeFrameDeltas(deltas);
-      const sorted = [...deltas].sort((x, y) => x - y);
-      const q = (p: number) => sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))] ?? NaN;
-      return { row: "A", label: "current engine, desktop WebView2 uncapped", fps: f.fps, frameP50: q(0.5), frameP99: q(0.99), cpuP50: b?.work.p50 ?? null, gpuP50: b?.gpu?.p50 ?? null, image: "reference (three.js)", note: `${viewport}, ${b?.counts.drawsAvg.toFixed(0) ?? "?"} draws avg` };
-    } finally {
-      await session.close();
-    }
-  } finally {
-    if (child.pid !== undefined) spawnSync("taskkill", ["/F", "/T", "/PID", String(child.pid)], { stdio: "ignore", windowsHide: true });
-  }
+/**
+ * Row A: `perf desktop --launch` on the diagnostic desktop build, uncapped and at the export's size:
+ * the game's `capture.play`, the settle, then the same "walk" path the export recorded.
+ */
+async function desktopRow(appExe: string, size: [number, number], seconds: number, out: string): Promise<Row> {
+  const r = await launchAndMeasure({ exe: appExe, uncapped: true, seconds, port: 9391, out, maps: `${dirname(appExe)}.private-maps`, size: { width: size[0], height: size[1] } });
+  const b = r.breakdown;
+  return { row: "A", label: "current engine, desktop WebView2 uncapped", fps: r.frame.fps, frameP50: r.rafP50Ms, frameP99: r.rafP99Ms, cpuP50: b?.work.p50 ?? null, gpuP50: b?.gpu?.p50 ?? null, image: "reference (three.js)", note: `${r.viewport}, ${b?.counts.drawsAvg.toFixed(0) ?? "?"} draws avg; ${r.start}` };
 }
 
 interface NativeResult { fps: number; frameP50: number; frameP99: number; cpuP50: number; gpuP50: number; gpuSamples: number; rulesP50: number; rulesTicks: number; presentMode: string; adapter: string; hudInstances: number; sceneP50: number }
@@ -216,7 +161,7 @@ async function main(argv: string[]): Promise<number> {
   mkdirSync(results, { recursive: true });
   if (args.rows.has("A")) {
     if (args.desktop === null) throw new Error(`row A needs --desktop <app.exe> from: bun run jgengine desktop games/${args.game} --diagnostics`);
-    rows.push(await desktopRow(args.game, resolve(args.desktop), manifest.canvas, args.seconds));
+    rows.push(await desktopRow(resolve(args.desktop), manifest.canvas, args.seconds, join(results, "A.json")));
   }
   if (args.rows.has("B")) rows.push(nativeRow("B", recording, hasRules ? "js" : "none", files, join(results, "B.json"), image));
   if (args.rows.has("C")) rows.push(nativeRow("C", recording, hasRules ? "rust" : "none", files, join(results, "C.json"), image));
