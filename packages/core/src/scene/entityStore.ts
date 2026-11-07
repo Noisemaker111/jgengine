@@ -260,12 +260,14 @@ export interface EntityStoreOptions {
   onChange?: (instanceId: string | undefined, membershipChanged: boolean) => void;
 }
 
+const HANDLE = Symbol("entityHandle");
+
 export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions = {}): EntityStore<TMeta> {
   const behaviorListeners = new Set<(id: string) => void>();
   const behaviorChanges = new Set<string>();
   const store = createObservableKeyedStore<SceneEntity<TMeta>>(undefined, (id, membershipChanged) => {
     options.onChange?.(id, membershipChanged);
-    if (id !== undefined && behaviorChanges.delete(id)) for (const listener of behaviorListeners) listener(id);
+    if (id !== undefined && behaviorChanges.size !== 0 && behaviorChanges.delete(id)) for (const listener of behaviorListeners) listener(id);
   });
   const spawnPoses = new Map<string, SpawnPose>();
   const constraints = new Map<string, PoseConstraint>();
@@ -330,6 +332,9 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       generations[handle] = generations[handle]! + 1;
     } else if (fresh) generations[handle] = generations[handle]! + 1;
     handleEntities[handle] = entity;
+    // The handle rides on the entity under a hidden key, so a write by id mirrors without a second id lookup.
+    // Non-enumerable and symbol-keyed: snapshots, spreads, JSON and structuredClone never see it.
+    Object.defineProperty(entity, HANDLE, { value: handle, writable: true, configurable: true });
     mirror(handle, entity);
   }
 
@@ -343,8 +348,8 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
   }
 
   function mirrorId(id: string, entity: SceneEntity<TMeta>): void {
-    const handle = handles.get(id);
-    if (handle !== undefined) mirror(handle, entity);
+    const handle = (entity as { [HANDLE]?: number })[HANDLE] ?? handles.get(id);
+    if (handle !== undefined && handleEntities[handle] === entity) mirror(handle, entity);
   }
 
   function writeEntity(entity: SceneEntity<TMeta>, previous = store.get(entity.id)?.behaviors, fresh = false): void {
@@ -419,7 +424,8 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       positionColumn[base] = position[0];
       positionColumn[base + 1] = position[1];
       positionColumn[base + 2] = position[2];
-      store.set(id, current);
+      // A live handle's entity is the stored object, changed in place: notify without the map lookups.
+      store.touch(id);
       return true;
     },
     setVelocity(handle, x, y, z) {
@@ -430,7 +436,7 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       velocityColumn[base] = x;
       velocityColumn[base + 1] = y;
       velocityColumn[base + 2] = z;
-      store.set(current.id, current);
+      store.touch(current.id);
       return true;
     },
   };
@@ -506,7 +512,7 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       if (patch.meta !== undefined) current.meta = patch.meta;
       if (patch.behaviors === undefined) {
         mirrorId(id, current);
-        store.set(id, current);
+        store.touch(id);
       } else writeEntity(current, previousBehaviors);
       return true;
     },
@@ -514,6 +520,8 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       if (constraint === null) constraints.delete(id);
       else constraints.set(id, constraint);
     },
+    // Pose writes change the stored entity in place, so they notify with `store.touch` instead of `store.set`,
+    // which would look the id up twice more to learn it is present and holds the same object.
     setPose(id, pose) {
       const current = store.get(id);
       if (!current) return false;
@@ -545,7 +553,7 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       if (pose.rotationX !== undefined) current.rotationX = pose.rotationX;
       if (pose.rotationZ !== undefined) current.rotationZ = pose.rotationZ;
       mirrorId(id, current);
-      store.set(id, current);
+      store.touch(id);
       return true;
     },
     setVelocity(id, velocity) {
@@ -554,7 +562,7 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
           !velocity.every((component) => typeof component === "number" && Number.isFinite(component))) return false;
       current.velocity = [velocity[0], velocity[1], velocity[2]];
       mirrorId(id, current);
-      store.set(id, current);
+      store.touch(id);
       return true;
     },
     get(id) {
@@ -637,7 +645,7 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       current.rotationY = pose.rotationY;
       current.velocity = [0, 0, 0];
       mirrorId(id, current);
-      store.set(id, current);
+      store.touch(id);
       return true;
     },
     blackboard,

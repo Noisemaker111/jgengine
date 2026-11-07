@@ -1,6 +1,7 @@
-// `bun run perf crowd`: one crowd step through the engine's entity store and spatial index, beside the same step over flat typed arrays.
+// `bun run perf crowd`: one crowd step through the engine's entity store and spatial index, through the store's handle columns and a point grid, and over flat typed arrays.
 import { seededRng } from "../packages/core/src/random/rng";
 import { createEntityStore, type EntityStore } from "../packages/core/src/scene/entityStore";
+import { createPointGrid } from "../packages/core/src/spatial/pointGrid";
 import { createSpatialIndex, type SpatialIndex } from "../packages/core/src/spatial/spatialIndex";
 import type { RenderBounds } from "../packages/core/src/visibility/bounds";
 import { printHelpIfAsked } from "./script-help";
@@ -109,6 +110,70 @@ export function createEngineCrowd(count: number, seed = "crowd"): Crowd {
   };
 }
 
+/**
+ * The same step through the store's fast path, the way an engine system steps many entities: ids resolve
+ * to handles once, pose is read from `store.columns`, neighbours come from a point grid rebuilt over the
+ * position column each tick, and writes go by handle (entity objects and notifications stay in step).
+ */
+export function createColumnCrowd(count: number, seed = "crowd"): Crowd {
+  const start = startState(count, seed);
+  const { side } = start;
+  const store: EntityStore = createEntityStore();
+  for (let i = 0; i < count; i += 1) {
+    const id = store.spawn("agent", { position: [start.xs[i]!, 0, start.zs[i]!], role: "npc" });
+    store.setVelocity(id, [start.vxs[i]!, 0, start.vzs[i]!]);
+  }
+  const { columns } = store;
+  const handles = Int32Array.from(store.ids(), (id) => columns.handleOf(id));
+  const grid = createPointGrid({ cellSize: CELL_SIZE });
+  const near = new Int32Array(count);
+  const radiusSq = CROWD_RADIUS * CROWD_RADIUS;
+  return {
+    count,
+    side,
+    step() {
+      const position = columns.positions();
+      const velocity = columns.velocities();
+      grid.rebuild(position, handles, count);
+      for (let i = 0; i < count; i += 1) {
+        const handle = handles[i]!;
+        const base = handle * 3;
+        const x = position[base]!, z = position[base + 2]!;
+        const found = grid.query(x, z, CROWD_RADIUS, near);
+        let pushX = 0, pushZ = 0;
+        for (let k = 0; k < found; k += 1) {
+          const other = near[k]!;
+          if (other === handle) continue;
+          const dx = x - position[other * 3]!, dz = z - position[other * 3 + 2]!;
+          const distSq = dx * dx + dz * dz;
+          if (distSq >= radiusSq || distSq === 0) continue;
+          const dist = Math.sqrt(distSq);
+          const strength = (CROWD_RADIUS - dist) / CROWD_RADIUS;
+          pushX += (dx / dist) * strength;
+          pushZ += (dz / dist) * strength;
+        }
+        let vx = velocity[base]! + pushX * PUSH * DT, vz = velocity[base + 2]! + pushZ * PUSH * DT;
+        const speed = Math.sqrt(vx * vx + vz * vz);
+        if (speed > MAX_SPEED) {
+          vx *= MAX_SPEED / speed;
+          vz *= MAX_SPEED / speed;
+        }
+        columns.setVelocity(handle, vx, 0, vz);
+        columns.setPosition(handle, Math.min(side, Math.max(0, x + vx * DT)), 0, Math.min(side, Math.max(0, z + vz * DT)));
+      }
+    },
+    positions() {
+      const out = new Float64Array(count * 2);
+      const position = columns.positions();
+      handles.forEach((handle, i) => {
+        out[i * 2] = position[handle * 3]!;
+        out[i * 2 + 1] = position[handle * 3 + 2]!;
+      });
+      return out;
+    },
+  };
+}
+
 /** The same step over Float32Array columns and a counting-sort grid rebuilt each tick: the floor the engine path is measured against. */
 export function createFlatCrowd(count: number, seed = "crowd"): Crowd {
   const start = startState(count, seed);
@@ -193,27 +258,23 @@ function summarize(samples: number[]): CrowdTiming {
 }
 
 /**
- * Warm both crowds up, then alternate their ticks until `budgetMs` of stepping has run (at least
- * `minTicks` each), so a busy machine slows both sides alike and the ratio stays meaningful.
+ * Warm every crowd up, then take turns ticking them until `budgetMs` of stepping has run (at least
+ * `minTicks` each), so a busy machine slows every side alike and the ratios stay meaningful.
  */
-export function timeCrowds(engine: Crowd, flat: Crowd, budgetMs: number, minTicks = 3, warmup = 3): { engine: CrowdTiming; flat: CrowdTiming } {
-  for (let i = 0; i < warmup; i += 1) {
-    engine.step();
-    flat.step();
-  }
-  const engineSamples: number[] = [];
-  const flatSamples: number[] = [];
+export function timeCrowds(crowds: readonly Crowd[], budgetMs: number, minTicks = 3, warmup = 3): CrowdTiming[] {
+  for (let i = 0; i < warmup; i += 1) for (const crowd of crowds) crowd.step();
+  const samples = crowds.map(() => [] as number[]);
   let spent = 0;
-  while ((engineSamples.length < minTicks || spent < budgetMs) && engineSamples.length < 200) {
-    for (const [crowd, samples] of [[engine, engineSamples], [flat, flatSamples]] as const) {
+  while ((samples[0]!.length < minTicks || spent < budgetMs) && samples[0]!.length < 200) {
+    crowds.forEach((crowd, k) => {
       const t0 = performance.now();
       crowd.step();
       const ms = performance.now() - t0;
-      samples.push(ms);
+      samples[k]!.push(ms);
       spent += ms;
-    }
+    });
   }
-  return { engine: summarize(engineSamples), flat: summarize(flatSamples) };
+  return samples.map(summarize);
 }
 
 function parseCounts(argv: readonly string[]): number[] {
@@ -227,11 +288,11 @@ if (import.meta.main) {
   const argv = process.argv.slice(2);
   if (
     printHelpIfAsked("perf-crowd", {
-      summary: "time one crowd tick (neighbours within 1.5 m, separation push, speed clamp, move, stay in bounds; 0.5 agents per m²) through createEntityStore + createSpatialIndex, beside the same step over Float32Array columns and a counting-sort grid",
+      summary: "time one crowd tick (neighbours within 1.5 m, separation push, speed clamp, move, stay in bounds; 0.5 agents per m²) by id through createEntityStore + createSpatialIndex, by handle through store.columns + createPointGrid, and over Float32Array columns with a counting-sort grid",
       usage: "bun run perf crowd [--counts 1000,10000,100000] [--budget <ms per row>]",
       flags: [
         { flag: "--counts <n,...>", detail: "agent counts to run (default 1000,10000,100000; 10k is accepted)" },
-        { flag: "--budget <ms>", detail: "stepping time per row after warmup, both sides together (default 3000)" },
+        { flag: "--budget <ms>", detail: "stepping time per row after warmup, all three together (default 3000)" },
       ],
       example: "bun run perf crowd --counts 10k",
     })
@@ -240,12 +301,12 @@ if (import.meta.main) {
   }
   const budgetFlag = argv.indexOf("--budget");
   const budget = budgetFlag >= 0 ? Number(argv[budgetFlag + 1]) : 3000;
-  console.log(`crowd step, Bun ${Bun.version}: engine and flat ticks alternate; median (min) ms per tick after warmup`);
-  console.log("agents        engine ms/tick          flat ms/tick   engine/flat median (min)");
-  const cell = (timing: CrowdTiming) => `${timing.medianMs.toFixed(2)} (${timing.minMs.toFixed(2)})`.padStart(20);
+  console.log(`crowd step, Bun ${Bun.version}: the three take turns ticking; median (min) ms per tick after warmup`);
+  console.log("agents     by id ms/tick  by handle ms/tick       flat ms/tick     by id/flat  by handle/flat");
+  const cell = (timing: CrowdTiming) => `${timing.medianMs.toFixed(2)} (${timing.minMs.toFixed(2)})`.padStart(18);
+  const ratio = (side: CrowdTiming, flat: CrowdTiming) => `${(side.medianMs / flat.medianMs).toFixed(1)}x (${(side.minMs / flat.minMs).toFixed(1)}x)`.padStart(14);
   for (const count of parseCounts(argv)) {
-    const { engine, flat } = timeCrowds(createEngineCrowd(count), createFlatCrowd(count), budget);
-    const ratio = `${(engine.medianMs / flat.medianMs).toFixed(1)}x (${(engine.minMs / flat.minMs).toFixed(1)}x)`;
-    console.log(`${String(count).padStart(6)}  ${cell(engine)}  ${cell(flat)}   ${ratio.padStart(22)}`);
+    const [byId, byHandle, flat] = timeCrowds([createEngineCrowd(count), createColumnCrowd(count), createFlatCrowd(count)], budget) as [CrowdTiming, CrowdTiming, CrowdTiming];
+    console.log(`${String(count).padStart(6)} ${cell(byId)} ${cell(byHandle)} ${cell(flat)} ${ratio(byId, flat)} ${ratio(byHandle, flat)}`);
   }
 }

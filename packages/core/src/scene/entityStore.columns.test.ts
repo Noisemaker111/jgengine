@@ -85,6 +85,21 @@ describe("entity columns", () => {
     expectMirrored(store);
   });
 
+  test("the handle kept on each entity never shows up in spreads, JSON, clones or a hydrated copy", () => {
+    const store = createEntityStore();
+    store.spawn("a", { id: "a", position: [1, 2, 3], meta: { hp: 3 } });
+    const entity = store.get("a")!;
+    const plain = JSON.parse(JSON.stringify(entity));
+    expect(JSON.stringify(entity)).not.toContain("andle");
+    expect(Object.getOwnPropertySymbols({ ...entity })).toEqual([]);
+    expect(Object.getOwnPropertySymbols(structuredClone(entity))).toEqual([]);
+    expect(entity).toEqual(plain);
+    const copy = createEntityStore();
+    copy.hydrate(JSON.parse(JSON.stringify(store.snapshot())));
+    expect(copy.get("a")).toEqual(entity);
+    expect(copy.columns.handleOf("a")).toBe(0);
+  });
+
   test("columns grow past their first allocation and keep every value", () => {
     const store = createEntityStore();
     for (let i = 0; i < 100; i += 1) store.spawn("p", { id: `p${i}`, position: [i, -i, i * 2] });

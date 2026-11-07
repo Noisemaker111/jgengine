@@ -1,10 +1,13 @@
 import { describe, expect, test } from "bun:test";
 
-import { createEngineCrowd, createFlatCrowd } from "./perf-crowd";
+import { createColumnCrowd, createEngineCrowd, createFlatCrowd, type Crowd } from "./perf-crowd";
 
 describe("perf crowd", () => {
-  test("the engine path and the flat reference step the same crowd to the same place", () => {
-    const engine = createEngineCrowd(400);
+  test.each([
+    ["by id", createEngineCrowd],
+    ["by handle", createColumnCrowd],
+  ] as [string, (count: number) => Crowd][])("the engine path %s and the flat reference step the same crowd to the same place", (_label, create) => {
+    const engine = create(400);
     const flat = createFlatCrowd(400);
     for (let tick = 0; tick < 20; tick += 1) {
       engine.step();
