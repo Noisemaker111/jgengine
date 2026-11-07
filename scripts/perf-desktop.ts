@@ -98,7 +98,7 @@ async function launchAndMeasure(args: LaunchArgs): Promise<void> {
       // A heavy game on a busy machine has taken just over two minutes to boot; three is the bound.
       for (let attempt = 0; attempt < 360 && tier === null; attempt += 1) {
         await Bun.sleep(500);
-        tier = await session.evaluate<string | null>(`location.search.includes("quality=high") ? (document.documentElement.dataset.jgQuality ?? null) : null`).catch(() => null);
+        tier = (await session.evaluate<string | null>(`location.search.includes("quality=high") ? (document.documentElement.dataset.jgQuality ?? null) : null`).catch(() => null)) ?? null;
       }
       if (tier === null) {
         const state = await session.evaluate<string>(`location.href + " | readyState " + document.readyState + " | " + (document.body?.innerText ?? "").replace(/\\s+/g, " ").slice(0, 300)`).catch((error: unknown) => String(error));
