@@ -712,13 +712,23 @@ impl Replayer {
                     }
                     let rp = pass.as_mut().unwrap();
                     self.apply_deltas(d);
-                    // WebGL rejects a draw whose instances read past an instanced attribute's buffer
-                    // (INVALID_OPERATION, "attempt to access out of range"), so three's frame has
-                    // nothing from it: skip it the same way.
+                    // A draw whose instances read past an instanced attribute's buffer: Chrome's WebGL
+                    // runs on robust buffer access, so it draws them, and the instances past the
+                    // buffer read zeros (D3D11 returns 0 for an out-of-range vertex fetch): a zero
+                    // instance matrix puts every vertex on one point, which rasterizes nothing.
+                    // WebGPU forbids the overrun, so draw the instances that fit.
                     let vb = self.vertex_binding(d.program, d.geometry)?;
-                    let instances = d.instances.max(1) as u64;
-                    if let Some(a) = vb.slots.iter().filter(|s| s.step == wgpu::VertexStepMode::Instance && s.stride > 0).find_map(|s| s.attribute.filter(|&a| self.res.buffer_sizes[a] / s.stride < instances)) {
-                        self.warn(format!("draw skipped as WebGL does: {instances} instances read past attribute {a}'s buffer"));
+                    let mut instances = d.instances.max(1);
+                    for s in vb.slots.iter().filter(|s| s.step == wgpu::VertexStepMode::Instance && s.stride > 0) {
+                        if let Some(a) = s.attribute {
+                            let fit = (self.res.buffer_sizes[a] / s.stride).min(u32::MAX as u64) as u32;
+                            if fit < instances {
+                                self.warn(format!("{} instances read past attribute {a}'s buffer: the {fit} that fit are drawn, the rest read zeros in Chrome and draw nothing", d.instances));
+                                instances = fit;
+                            }
+                        }
+                    }
+                    if instances == 0 {
                         continue;
                     }
                     let p = d.program;
@@ -791,7 +801,6 @@ impl Replayer {
                         rp.set_blend_constant(wgpu::Color { r: c[0] as f64, g: c[1] as f64, b: c[2] as f64, a: c[3] as f64 });
                         blend_constant = Some(c);
                     }
-                    let instances = d.instances.max(1);
                     match vb.index {
                         Some((a, format)) => {
                             if bound_index != Some(a) {
@@ -941,6 +950,11 @@ impl Replayer {
     pub fn present_to(&mut self, encoder: &mut wgpu::CommandEncoder, view: &wgpu::TextureView, format: wgpu::TextureFormat) {
         let src = self.canvas.create_view(&Default::default());
         self.copier.copy(&self.device, encoder, &src, view, format, true, false);
+    }
+
+    /// The recorded events of one frame.
+    pub fn frame_events(&self, index: usize) -> &[Event] {
+        &self.frames[index]
     }
 
     /// A program's uniforms as its block holds them now, by three's names (ints as floats), and

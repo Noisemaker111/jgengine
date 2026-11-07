@@ -10,7 +10,8 @@
 //! `jg-replay <recording-dir> --dump <frame>`: replay up to that frame and write every RGBA8 or
 //! half-float render target as `target-<framebuffer>-<texture>.png` into `--out`, to see which pass
 //! a difference starts in. `--uniforms <program>` also prints that program's uniform values and
-//! bound textures as they stand after the frame.
+//! bound textures as they stand after the frame; `--draws` lists every frame's clears and draws up
+//! to it, by framebuffer.
 
 use jg_render::diff;
 use std::path::PathBuf;
@@ -110,6 +111,24 @@ fn run() -> Result<(), String> {
                 println!("program {p} {name} = {v:?}");
             }
             println!("program {p} samplers bound to textures {bound:?}");
+        }
+        if args.iter().any(|a| a == "--draws") {
+            let m = &r.rec.manifest;
+            let mut fb = -1i64;
+            for f in 0..=stop.min(r.frame_count() - 1) {
+                for ev in r.frame_events(f) {
+                    match ev {
+                        jg_scene::Event::Framebuffer(h) => fb = *h,
+                        jg_scene::Event::Clear { mask, depth_mask, .. } => println!("frame {f} clear fb {fb} mask {mask:#x} depth mask {depth_mask}"),
+                        jg_scene::Event::Draw(d) => {
+                            let program = m.programs.get(d.program).map_or("?", |p| p.name.as_str());
+                            let object = m.objects.get(d.object).map_or("?", |o| o.name.as_str());
+                            println!("frame {f} draw fb {fb} program {} ({program}) object {} ({object}) count {} instances {}", d.program, d.object, d.count, d.instances);
+                        }
+                        _ => {}
+                    }
+                }
+            }
         }
         let [w, h] = r.rec.manifest.canvas;
         diff::write_png(&out.join("target-canvas.png"), w, h, &r.read_canvas())?;
