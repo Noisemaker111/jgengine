@@ -773,33 +773,23 @@ fn drop_point_size(toks: Vec<Tok>) -> Vec<Tok> {
     out
 }
 
-/// Noise corners hashed with exactly the values GL hashes. Games build value noise from a hash like
-/// `fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453)` called at a cell's four corners,
-/// `hash(i)`, `hash(i + vec2(1.0, 0.0))`, ... with `i = floor(p)`. The hash turns a rounding
-/// difference in its argument into a different value, so the noise is smooth only when a corner
-/// hashes bit for bit the same from both cells that share it. NVIDIA's Vulkan compiler folds the
-/// constant offset through the dot (`dot(i, k) + 127.1`), which rounds differently, and every cell
-/// edge jumps: Harbor Heat's clouds and wet patches came out as blocks where three (D3D through
-/// ANGLE) draws them smooth. Here such a corner is added in integers,
-/// `hash(vec2(ivec2(i) + ivec2(1, 0)))`: the same value (a floored coordinate plus a whole offset),
-/// which no compiler can fold into the dot. Only a call to a function shaped like that hash, on a
-/// variable assigned `floor(...)` in the same function, with whole-number offsets, is touched.
+/// Noise corners hashed with exactly the values GL hashes. Games build noise from a hash at a
+/// cell's corners, `hash(i)`, `hash(i + vec2(1.0, 0.0))`, ... with `i = floor(p)`, where the hash
+/// (`fract(sin(dot(p, k)) * 43758.5453)`, or `fract(p * 0.1031)` and friends) turns a rounding
+/// difference in its argument into a different value. The noise is smooth only when a corner hashes
+/// bit for bit the same from both cells that share it. NVIDIA's Vulkan compiler folds the constant
+/// offset into what follows (`dot(i, k) + 127.1`, `i * 0.1031 + 0.1031`), which rounds differently,
+/// and every cell edge jumps: Harbor Heat's clouds, wet patches and surfaces came out as blocks where
+/// three (D3D through ANGLE) draws them smooth. Here such a corner is added in integers,
+/// `vec2(ivec2(i) + ivec2(1, 0))`: the same value (a floored coordinate plus a whole offset), which
+/// no compiler can fold. Touched only when that value is provably the same: a whole operand (between
+/// `(`/`,` and `)`/`,`) adding whole numbers to a variable the function assigns once, from `floor(...)`.
 fn exact_hash_corners(items: Vec<Item>) -> Vec<Item> {
-    let hashes: HashSet<String> = items
-        .iter()
-        .filter_map(|it| match it {
-            Item::Function { name, body, .. } if text(&sig(body)).contains("fract(sin(dot(") => Some(name.clone()),
-            _ => None,
-        })
-        .collect();
-    if hashes.is_empty() {
-        return items;
-    }
     items
         .into_iter()
         .map(|it| match it {
             Item::Function { name, header, body } => {
-                let body = hash_corners_in(&body, &hashes);
+                let body = hash_corners_in(&body);
                 Item::Function { name, header, body }
             }
             other => other,
@@ -807,37 +797,47 @@ fn exact_hash_corners(items: Vec<Item>) -> Vec<Item> {
         .collect()
 }
 
-fn hash_corners_in(body: &[Tok], hashes: &HashSet<String>) -> Vec<Tok> {
+fn hash_corners_in(body: &[Tok]) -> Vec<Tok> {
     let at: Vec<usize> = (0..body.len()).filter(|&i| !is_space(&body[i])).collect();
     let s = |k: usize| at.get(k).map(|&i| &body[i]);
-    let floored: HashSet<String> = (0..at.len())
-        .filter(|&k| s(k + 1).is_some_and(|t| t.is("=")) && s(k + 2).is_some_and(|t| t.is("floor")) && s(k + 3).is_some_and(|t| t.is("(")))
-        .filter_map(|k| match s(k) {
-            Some(Tok::Ident(v)) => Some(v.clone()),
-            _ => None,
-        })
-        .collect();
+    let ident = |k: usize| match s(k) {
+        Some(Tok::Ident(v)) => Some(v.as_str()),
+        _ => None,
+    };
+    // Variables with exactly one write in the function, and that write `= floor(`.
+    let mut writes: HashMap<&str, u32> = HashMap::new();
+    let mut floored: HashSet<&str> = HashSet::new();
+    for k in 0..at.len() {
+        let Some(v) = ident(k) else { continue };
+        let next = s(k + 1);
+        let before = k.checked_sub(1).and_then(|b| s(b));
+        let written = next.is_some_and(|t| ["=", "+=", "-=", "*=", "/=", "%=", "++", "--"].iter().any(|o| t.is(o))) || before.is_some_and(|t| t.is("++") || t.is("--"));
+        if written {
+            *writes.entry(v).or_default() += 1;
+            if next.is_some_and(|t| t.is("=")) && ident(k + 2) == Some("floor") && s(k + 3).is_some_and(|t| t.is("(")) {
+                floored.insert(v);
+            }
+        }
+    }
+    floored.retain(|v| writes.get(v) == Some(&1));
+    if floored.is_empty() {
+        return body.to_vec();
+    }
     let whole = |t: Option<&Tok>| match t {
         Some(Tok::Num(n)) => n.trim_end_matches(['f', 'F']).parse::<f64>().ok().filter(|v| v.fract() == 0.0 && v.abs() < 1e6).map(|v| v as i64),
         _ => None,
     };
+    let edge = |t: Option<&Tok>, closing: &str| t.is_some_and(|t| t.is(",") || t.is(closing));
     let mut out = Vec::with_capacity(body.len());
     let mut copied = 0;
-    let mut k = 0;
+    let mut k = 1;
     while k < at.len() {
-        let call = matches!(s(k), Some(Tok::Ident(h)) if hashes.contains(h)) && s(k + 1).is_some_and(|t| t.is("("));
-        let var = match s(k + 2) {
-            Some(Tok::Ident(v)) if call && floored.contains(v) => Some(v.clone()),
-            _ => None,
-        };
-        let n = match s(k + 4) {
-            Some(Tok::Ident(t)) => t.strip_prefix("vec").and_then(|d| d.parse::<usize>().ok()).filter(|n| (2..=4).contains(n)),
-            _ => None,
-        };
+        let var = ident(k).filter(|v| floored.contains(v));
+        let n = ident(k + 2).and_then(|t| t.strip_prefix("vec")).and_then(|d| d.parse::<usize>().ok()).filter(|n| (2..=4).contains(n));
         if let (Some(var), Some(n)) = (var, n) {
-            if s(k + 3).is_some_and(|t| t.is("+")) && s(k + 5).is_some_and(|t| t.is("(")) {
+            if edge(s(k - 1), "(") && s(k + 1).is_some_and(|t| t.is("+")) && s(k + 3).is_some_and(|t| t.is("(")) {
                 let mut offsets = Vec::new();
-                let mut j = k + 6;
+                let mut j = k + 4;
                 for c in 0..n {
                     if c > 0 {
                         if !s(j).is_some_and(|t| t.is(",")) {
@@ -851,11 +851,11 @@ fn hash_corners_in(body: &[Tok], hashes: &HashSet<String>) -> Vec<Tok> {
                     }
                     j += 1;
                 }
-                if offsets.len() == n && s(j).is_some_and(|t| t.is(")")) && s(j + 1).is_some_and(|t| t.is(")")) {
-                    out.extend_from_slice(&body[copied..at[k + 1]]);
-                    out.extend(tokenize(&format!("(vec{n}(ivec{n}({var}) + ivec{n}({})))", offsets.join(", "))));
-                    copied = at[j + 1] + 1;
-                    k = j + 2;
+                if offsets.len() == n && s(j).is_some_and(|t| t.is(")")) && edge(s(j + 1), ")") {
+                    out.extend_from_slice(&body[copied..at[k]]);
+                    out.extend(tokenize(&format!("vec{n}(ivec{n}({var}) + ivec{n}({}))", offsets.join(", "))));
+                    copied = at[j] + 1;
+                    k = j + 1;
                     continue;
                 }
             }
@@ -1018,11 +1018,25 @@ mod tests {
 
     #[test]
     fn noise_corners_are_added_in_integers() {
-        let src = "float h(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }\nfloat n(vec2 p) { vec2 i = floor(p); vec2 f = fract(p); return mix(h(i), h(i + vec2(1.0, 0.0)), f.x) + h(f + vec2(1.0, 0.0)) + h(i + vec2(0.5, 1.0)); }\n";
-        let items = exact_hash_corners(split_items(src).unwrap());
-        let Item::Function { body, .. } = &items[1] else { panic!("not a function") };
-        // The floored corner goes through ints; a non-floored argument and a fractional offset stay.
-        assert_eq!(text(body), "{ vec2 i = floor(p); vec2 f = fract(p); return mix(h(i), h(vec2(ivec2(i) + ivec2(1, 0))), f.x) + h(f + vec2(1.0, 0.0)) + h(i + vec2(0.5, 1.0)); }");
+        let n = |body: &str| {
+            let items = exact_hash_corners(split_items(&format!("float n(vec3 p) {body}\n")).unwrap());
+            let Item::Function { body, .. } = &items[0] else { panic!("not a function") };
+            text(body)
+        };
+        // A corner passed to a hash, inside an inline dot, and with int-literal offsets.
+        assert_eq!(n("{ vec2 i = floor(p.xy); return h(i) + h(i + vec2(1.0, 0.0)); }"), "{ vec2 i = floor(p.xy); return h(i) + h(vec2(ivec2(i) + ivec2(1, 0))); }");
+        assert_eq!(n("{ vec2 i = floor(p.xy); return fract(sin(dot(i + vec2(0.0, 1.0), k)) * c); }"), "{ vec2 i = floor(p.xy); return fract(sin(dot(vec2(ivec2(i) + ivec2(0, 1)), k)) * c); }");
+        assert_eq!(n("{ vec3 i = floor(p); return g(i + vec3(1, 0, 1), 2.0); }"), "{ vec3 i = floor(p); return g(vec3(ivec3(i) + ivec3(1, 0, 1)), 2.0); }");
+        // Left alone: not floored, a fractional offset, part of a larger sum or product, or written twice.
+        for keep in [
+            "{ vec2 f = fract(p.xy); return h(f + vec2(1.0, 0.0)); }",
+            "{ vec2 i = floor(p.xy); return h(i + vec2(0.5, 1.0)); }",
+            "{ vec2 i = floor(p.xy); return h(2.0 * i + vec2(1.0, 0.0)); }",
+            "{ vec2 i = floor(p.xy); return h(i + vec2(1.0, 0.0) * s); }",
+            "{ vec2 i = floor(p.xy); i *= 0.5; return h(i + vec2(1.0, 0.0)); }",
+        ] {
+            assert_eq!(n(keep), keep);
+        }
     }
 
     #[test]
