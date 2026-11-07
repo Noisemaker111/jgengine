@@ -99,6 +99,25 @@ test("a settings surface is offered only the stages this chain can build", () =>
   expect(availablePostfxStages({ ao: false, bloom: false, aa: false, atmosphere: false })).toEqual([]);
 });
 
+test("every pass carries its class name, so a minified production build still reports post:BeautyPass", () => {
+  const original = globalThis.Image;
+  globalThis.Image = class {
+    src = "";
+    width = 0;
+    height = 0;
+  } as unknown as typeof Image;
+  try {
+    const plan = planPostStages({ ao: {}, bloom: {}, dof: { focus: 12 } }, "high", { ao: true, bloom: true, dof: true, smaa: true });
+    const graph = buildPostGraph(stubRenderer(), new THREE.Scene(), new THREE.PerspectiveCamera(), plan, 320, 180);
+    expect(graph.composer.passes.length).toBeGreaterThan(4);
+    // The breakdown drops the leading underscore three's bundler gives some classes (`_UnrealBloomPass`).
+    for (const pass of graph.composer.passes) expect(Reflect.get(pass, "name"), pass.constructor.name).toBe(pass.constructor.name.replace(/^_/, ""));
+    disposeGraph(graph);
+  } finally {
+    globalThis.Image = original;
+  }
+});
+
 test("AO reads the beauty pass depth instead of rendering the scene again", () => {
   const original = globalThis.Image;
   globalThis.Image = class {

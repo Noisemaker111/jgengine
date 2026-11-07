@@ -1,7 +1,7 @@
 # Fernwild
 
 <!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
-Game suite: **31/67 proven · 3 failing · 33 missing** · `jgengine suite fernwild`
+Game suite: **51/67 proven · 2 failing · 14 missing** · `jgengine suite fernwild`
 <!-- /suite-score -->
 
 ARK: Survival Evolved, rebuilt on JGengine as close to the real game as our own models and words
@@ -50,6 +50,10 @@ are drawn.
     Hatchet at 2, cloth at 3, thatch pieces and Storage Box at 4, Phiomia saddle at 5, Mortar and
     Pestle at 6, Wooden Club at 8.
   - Tools bias the yield like ARK: the pick takes thatch and flint, the hatchet wood and stone.
+  - Farming like ARK's Small Crop Plot (level 15): picking berry bushes now and then gives a Mejoberry
+    Seed; planted in a plot it grows only while the plot has water (rain, or a waterskin poured in) and
+    fertilizer (ground at the mortar from spoiled meat and thatch), ripening in ten minutes; E picks ten
+    mejoberries and it grows the next.
   - Dodo, Phiomia and Raptor with ARK's base stats, per-level gains, speeds, temperaments
     (oblivious, skittish, aggressive) and taming tables. Danger rises with distance: zones near the
     south beach roll wild levels up to 5, a level more every 50 m out, the full 30 from 1250 m.
@@ -130,8 +134,8 @@ are drawn.
   yutyrannus the T-Rex, diplodocus the apatosaurus, purlovia a fox, dilophosaur, troodon and compy the raptor,
   pachy and iguanodon the parasaur, chalicotherium a ground sloth, paraceratherium a rhino,
   gigantopithecus a yeti, and so on (`src/game/data/creatureModels.ts` lists every one). Building has
-  no metal tier, foundations snap edge to edge but not to cliffs, and storage boxes cannot be placed
-  yet; rain drops are thin streaks; shots from the slingshot (stones) and the bow (stone and tranquilizer
+  no metal tier, foundations snap edge to edge but not to cliffs, and the Storage Box and Preserving Bin are
+  the only containers (no larger boxes, and the bin burns no fuel); rain drops are thin streaks; shots from the slingshot (stones) and the bow (stone and tranquilizer
   arrows) hit instantly along the aim, with no arrow flight, drop or pickup, and the bow always reaches for
   tranquilizer arrows first; no bolas or traps yet; kibble recipes stand berries, meat and fiber in
 for ARK's crops, which do not grow yet, and wild laying times, the pot's engram and spoil times are

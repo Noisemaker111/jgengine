@@ -79,6 +79,26 @@ test("a texture the source swaps in after the batch is made reaches the batch be
   pool.dispose();
 });
 
+test("a shared material copy still takes a bake landing after the cell whose source made it streams out", () => {
+  const scene = new THREE.Scene();
+  const pool = new StaticDrawPool(scene);
+  const standIn = new THREE.Texture();
+  const first = palette();
+  first.map = standIn;
+  const second = palette();
+  second.map = standIn;
+  const near = pool.acquire({ geometry: box(), material: first }, "0,0", 1);
+  const far = pool.acquire({ geometry: box(), material: second }, "4,0", 1);
+  const owned = far!.mesh.material as THREE.MeshStandardMaterial;
+  expect(near?.mesh.material).toBe(owned);
+  near?.release();
+  const baked = new THREE.Texture();
+  second.map = baked;
+  mirrorPooledTextures(far!.mesh);
+  expect(owned.map).toBe(baked);
+  pool.dispose();
+});
+
 test("the model surface pass batches: its materials still share a signature", () => {
   const root = new THREE.Group();
   const first = new THREE.Mesh(box(), palette());
@@ -131,6 +151,27 @@ test("different models cut from one material draw once per cell", () => {
   const shadowed = pool.acquire({ geometry: box(), material: palette(), castShadow: true }, "0,0", 1);
   expect(shadowed?.mesh).not.toBe(crate?.mesh);
   pool.dispose();
+});
+
+test("batches of one material in different cells share one material copy, so drawing them switches material once", () => {
+  const scene = new THREE.Scene();
+  const pool = new StaticDrawPool(scene);
+  // Separate but identical materials, as every placed model clones its own.
+  const near = pool.acquire({ geometry: box(), material: palette() }, "0,0", 1);
+  const far = pool.acquire({ geometry: box(), material: palette() }, "4,0", 1);
+  const shadowed = pool.acquire({ geometry: box(), material: palette(), castShadow: true }, "8,0", 1);
+  const other = pool.acquire({ geometry: box(), material: palette("#203040") }, "4,0", 1);
+  expect(far?.mesh).not.toBe(near?.mesh);
+  expect(far?.mesh.material).toBe(near?.mesh.material);
+  expect(shadowed?.mesh.material).toBe(near?.mesh.material);
+  expect(other?.mesh.material).not.toBe(near?.mesh.material);
+  let disposals = 0;
+  const shared = near?.mesh.material;
+  if (shared instanceof THREE.Material) shared.addEventListener("dispose", () => (disposals += 1));
+  near?.release();
+  expect(disposals).toBe(0);
+  pool.dispose();
+  expect(disposals).toBe(1);
 });
 
 test("a slot shows this frame's placements, hides the rest, and its batch leaves the draw when nothing shows", () => {

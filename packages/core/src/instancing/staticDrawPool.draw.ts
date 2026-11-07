@@ -68,6 +68,8 @@ interface PoolGroup {
   readonly mesh: THREE.BatchedMesh;
   readonly slots: Set<StaticDrawSlot>;
   readonly material: THREE.Material;
+  /** Names the pool's copy of the source material this batch shares with its source's batches in other cells. */
+  readonly materialKey: string;
   /** Placement id per batch instance, read by picking. */
   readonly ids: string[];
   readonly geometries: Map<THREE.BufferGeometry, { id: number; refs: number }>;
@@ -266,7 +268,13 @@ export function shownPooledIds(mesh: THREE.BatchedMesh, into: Set<string>): void
 export class StaticDrawPool {
   private readonly groups = new Map<string, PoolGroup>();
   /** Emptied batches out of the scene, kept a moment so one refilled straight away keeps its linked material. */
-  private readonly emptied = new Lingering<string, PoolGroup>(disposeGroup);
+  private readonly emptied = new Lingering<string, PoolGroup>((group) => this.disposeGroup(group));
+  /**
+   * One material copy per material signature and vertex layout, shared by the batches of every cell.
+   * Three re-uploads every uniform of a material each time a draw switches to a different one, and a
+   * copy per cell made a street's lamps or facades switch at every batch for the same pixels.
+   */
+  private readonly materials = new Map<string, { material: THREE.Material; refs: number }>();
   private readonly cells = new Map<string, ProxyCell>();
   private hlod: HlodConfig | null = null;
   private hold: ((x: number, z: number) => boolean) | null = null;
@@ -386,7 +394,7 @@ export class StaticDrawPool {
     if (group === undefined) {
       const emptied = this.emptied.take(key);
       if (emptied !== undefined) this.parent.add(emptied.mesh);
-      group = emptied ?? this.createGroup(key, source, material, capacity);
+      group = emptied ?? this.createGroup(key, source, material, signature, layout, capacity);
       this.groups.set(key, group);
     }
     const geometryId = this.addGeometry(group, batchableGeometry(source.geometry));
@@ -410,7 +418,7 @@ export class StaticDrawPool {
   dispose(): void {
     this.building?.run.cancel();
     this.building = null;
-    for (const group of this.groups.values()) disposeGroup(group);
+    for (const group of this.groups.values()) this.disposeGroup(group);
     this.emptied.flush();
     for (const cell of this.cells.values()) this.dropProxy(cell);
     this.groups.clear();
@@ -538,12 +546,22 @@ export class StaticDrawPool {
     settleGroup(group);
   }
 
-  private createGroup(key: string, source: PooledSource, material: THREE.Material, capacity: number): PoolGroup {
+  private createGroup(key: string, source: PooledSource, material: THREE.Material, signature: string, layout: string, capacity: number): PoolGroup {
     const geometry = batchableGeometry(source.geometry);
     const vertexCapacity = Math.max(1024, vertexCount(geometry) * 2);
     const indexCapacity = Math.max(2048, (geometry.index?.count ?? 0) * 2);
     // The pool owns its copy, so a model batch disposing its harvested materials leaves this draw alone.
-    const owned = withoutCompileLayers(material);
+    // Shared by every batch whose signature matches, in any cell, as one cell's batch already shares
+    // one copy among its sources. Each batch mirrors its own source's textures into the copy, so a
+    // bake landing still arrives when the cell whose source made the copy has streamed out.
+    const materialKey = `${layout}#${signature}`;
+    let shared = this.materials.get(materialKey);
+    if (shared === undefined) {
+      shared = { material: withoutCompileLayers(material), refs: 0 };
+      this.materials.set(materialKey, shared);
+    }
+    shared.refs += 1;
+    const owned = shared.material;
     const mesh = new THREE.BatchedMesh(Math.max(16, capacity), vertexCapacity, indexCapacity, owned);
     mesh.castShadow = source.castShadow === true;
     mesh.receiveShadow = source.receiveShadow === true;
@@ -560,7 +578,16 @@ export class StaticDrawPool {
     this.parent.add(mesh);
     freezeStaticTransforms(mesh);
     showCulled(mesh, false);
-    return { key, mesh, slots: new Set(), material: owned, ids, geometries: new Map(), vertexCapacity, indexCapacity, instances: 0, shown: 0, boundsDirty: true };
+    return { key, mesh, slots: new Set(), material: owned, materialKey, ids, geometries: new Map(), vertexCapacity, indexCapacity, instances: 0, shown: 0, boundsDirty: true };
+  }
+
+  private disposeGroup(group: PoolGroup): void {
+    group.mesh.removeFromParent();
+    group.mesh.dispose();
+    const shared = this.materials.get(group.materialKey);
+    if (shared === undefined || --shared.refs > 0) return;
+    this.materials.delete(group.materialKey);
+    shared.material.dispose();
   }
 
   private addGeometry(group: PoolGroup, geometry: THREE.BufferGeometry): number {
@@ -639,12 +666,6 @@ function mirrorSourceTextures(mesh: THREE.BatchedMesh, source: THREE.Material, o
 /** Bring a pool batch's material copy up to its source's textures now; it also happens before every draw. @internal */
 export function mirrorPooledTextures(mesh: THREE.BatchedMesh): void {
   mirrors.get(mesh)?.();
-}
-
-function disposeGroup(group: PoolGroup): void {
-  group.mesh.removeFromParent();
-  group.mesh.dispose();
-  group.material.dispose();
 }
 
 /**

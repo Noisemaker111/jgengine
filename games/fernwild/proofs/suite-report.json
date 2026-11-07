@@ -2,6 +2,13 @@
   "game": "fernwild",
   "proofs": [
     {
+      "file": "proofs/sim/biome-spawns.proof.ts",
+      "proves": [
+        "spawns.biome-weighted"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/body-recover.proof.ts",
       "proves": [
         "failure.lose-and-recover"
@@ -12,6 +19,20 @@
       "file": "proofs/sim/bola.proof.ts",
       "proves": [
         "taming.trap"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/boss-phases.proof.ts",
+      "proves": [
+        "boss.phases"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/breed-imprint.proof.ts",
+      "proves": [
+        "breeding.raise-imprint"
       ],
       "ok": true
     },
@@ -33,6 +54,13 @@
       "file": "proofs/sim/build-snap.proof.ts",
       "proves": [
         "building.place-snap"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/build-tiers.proof.ts",
+      "proves": [
+        "building.tiers-durability"
       ],
       "ok": true
     },
@@ -65,6 +93,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/danger-distance.proof.ts",
+      "proves": [
+        "spawns.danger-by-distance"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/death-recover.proof.ts",
       "proves": [
         "failure.lose-and-recover"
@@ -86,6 +121,20 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/encumbrance.proof.ts",
+      "proves": [
+        "survival.encumbrance"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/farm.proof.ts",
+      "proves": [
+        "survival.farm"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/first-goal.proof.ts",
       "proves": [
         "onboarding.first-goal"
@@ -93,9 +142,51 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/follow-stay.proof.ts",
+      "proves": [
+        "creatures.follow-stay"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/food-spoils.proof.ts",
       "proves": [
         "survival.food-spoils"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/node-respawn.proof.ts",
+      "proves": [
+        "harvest.node-respawn"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/preserve.proof.ts",
+      "proves": [
+        "crafting.preserve"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/respawn-point.proof.ts",
+      "proves": [
+        "survival.respawn-point"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/respawn-population.proof.ts",
+      "proves": [
+        "spawns.respawn-population"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/ride-fly.proof.ts",
+      "proves": [
+        "creatures.ride.fly"
       ],
       "ok": true
     },
@@ -110,6 +201,20 @@
       "file": "proofs/sim/station-fuel.proof.ts",
       "proves": [
         "crafting.fuel"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/station-tiers.proof.ts",
+      "proves": [
+        "crafting.station-tiers"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/storage-place.proof.ts",
+      "proves": [
+        "survival.storage-place"
       ],
       "ok": true
     },
@@ -131,6 +236,13 @@
       "file": "proofs/sim/tame-gather.proof.ts",
       "proves": [
         "creatures.work.gather"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/tame-haul.proof.ts",
+      "proves": [
+        "creatures.work.haul"
       ],
       "ok": true
     },
@@ -177,6 +289,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/tame-passive.proof.ts",
+      "proves": [
+        "taming.passive-feed"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/tame-ranged.proof.ts",
       "proves": [
         "taming.ranged-knockout"
@@ -191,9 +310,23 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/temperature.proof.ts",
+      "proves": [
+        "survival.temperature"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/tool-bias.proof.ts",
       "proves": [
         "harvest.tool-bias"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/tool-wear.proof.ts",
+      "proves": [
+        "crafting.tool-wear"
       ],
       "ok": true
     },
@@ -215,7 +348,7 @@
       "id": "content.item-use",
       "ok": false,
       "problems": [
-        "no use for metal, obsidian, crystal, oil, artifact_skylord, artifact_devourer, artifact_pack, artifact_immune, artifact_strong, element, spider_flag, broodmother_trophy_gamma and 4 more"
+        "no use for metal, obsidian, crystal, oil, mejoberry_seed, fertilizer, artifact_skylord, artifact_devourer, artifact_pack, artifact_immune, artifact_strong, element and 4 more"
       ]
     },
     {
@@ -225,10 +358,8 @@
     },
     {
       "id": "content.placeables-place",
-      "ok": false,
-      "problems": [
-        "says it places but the placement catalog has none: storage_box, hide_sleeping_bag"
-      ]
+      "ok": true,
+      "problems": []
     },
     {
       "id": "content.weapons-have-ammo",

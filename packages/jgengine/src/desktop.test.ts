@@ -9,7 +9,10 @@ import {
   buildPlan,
   checkToolchains,
   defaultIdentifier,
+  defineGameName,
   desktopCodeHash,
+  desktopLibRs,
+  frontendBuildCommand,
   isAllowedDesktopOrigin,
   parseDesktopArgs,
   resolveMetadata,
@@ -198,6 +201,19 @@ describe("metadata defaults", () => {
     expect(meta.windowTitle).toBe("Probe Game");
   });
 
+  test("the product name is defineGame's own name, never a nested object's", () => {
+    const source = `const interactables = [{ prompt: { invoke: { name: "relay.start" } } }];
+export const game = defineGame({
+  scene: { name: "inner", props: [{ name: "crate" }] },
+  // name: "commented out"
+  hud: "a { brace",
+  name: "Scrap Signal",
+});`;
+    expect(defineGameName(source)).toBe("Scrap Signal");
+    expect(defineGameName(`export const game = defineGame({ scene: { name: "inner" } });`)).toBeNull();
+    expect(defineGameName(`export const config = { name: "Not A Game" };`)).toBeNull();
+  });
+
   test("url mode defaults name to hostname and version 0.1.0", () => {
     const meta = resolveMetadata({
       mode: "url",
@@ -318,6 +334,37 @@ describe("buildPlan + writeStaging", () => {
     expect(existsSync(join(stage.stagingDir, "src-tauri", "icons", "icon.png"))).toBe(true);
     expect(existsSync(join(stage.stagingDir, "src-tauri", "src", "main.rs"))).toBe(true);
     expect(readFileSync(join(dir, "package.json"), "utf8")).toBe(before);
+  });
+
+  test("the staged window is created by lib.rs, which uncaps the frame rate only on --uncapped", () => {
+    const dir = scaffoldGame();
+    const parsed = parseDesktopArgs([dir, "--dry-run", "--out", join(dir, "uncapped-stage")]);
+    if ("error" in parsed) throw new Error(parsed.error);
+    const plan = buildPlan(parsed, dir);
+    if ("error" in plan) throw new Error(plan.error);
+    const stage = writeStaging(plan);
+    const conf = JSON.parse(readFileSync(stage.tauriConfPath, "utf8")) as { app: { windows: { label?: string; create?: boolean }[] } };
+    expect(conf.app.windows[0]).toMatchObject({ label: "main", create: false });
+    const lib = readFileSync(join(stage.stagingDir, "src-tauri", "src", "lib.rs"), "utf8");
+    expect(lib).toBe(desktopLibRs());
+    expect(lib).toContain('arg == "--uncapped"');
+    expect(lib).toContain("--disable-gpu-vsync --disable-frame-rate-limit");
+    // Any browser argument replaces wry's defaults, so the uncapped launch must carry them itself.
+    expect(lib).toContain("--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection");
+  });
+
+  test("a diagnostic build asks for source maps through the project's own build script too", () => {
+    expect(frontendBuildCommand("bun", true, true)).toEqual({ command: "bun", args: ["run", "build", "--sourcemap"] });
+    expect(frontendBuildCommand("npm", true, true)).toEqual({ command: "npm", args: ["run", "build", "--", "--sourcemap"] });
+    expect(frontendBuildCommand("bun", false, true)).toEqual({ command: "bunx", args: ["vite", "build", "--sourcemap"] });
+    expect(frontendBuildCommand("bun", true, false)).toEqual({ command: "bun", args: ["run", "build"] });
+  });
+
+  test("apps/desktop runs the same Rust entry and window config as a staged game", () => {
+    const appRoot = join(import.meta.dirname, "..", "..", "..", "apps", "desktop", "src-tauri");
+    expect(readFileSync(join(appRoot, "src", "lib.rs"), "utf8")).toBe(desktopLibRs());
+    const conf = JSON.parse(readFileSync(join(appRoot, "tauri.conf.json"), "utf8")) as { app: { windows: { label?: string; create?: boolean }[] } };
+    expect(conf.app.windows[0]).toMatchObject({ label: "main", create: false });
   });
 
   test("rejects non-game directories", () => {

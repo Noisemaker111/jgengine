@@ -15,6 +15,7 @@ import {
   type LaneLockFs,
 } from "./lane-close";
 import { LOCK_STALE_MS } from "./land";
+import { EXIT_BOAT_SPENT } from "./verify-boat";
 
 /** The worktree's git directory, as `git rev-parse --absolute-git-dir` would print it. */
 const GIT_DIR = resolve("repo", ".git", "worktrees", "x");
@@ -84,9 +85,9 @@ function io(script: Script = {}): LaneIo & { lines: { out: string[]; err: string
       const key = argv.join(" ");
       if (key === "git rev-parse --abbrev-ref HEAD") return { ...run(), stdout: `${script.branch ?? "agent/x"}\n` };
       if (key === "git rev-parse --absolute-git-dir") return { ...run(), stdout: `${GIT_DIR}\n` };
-      if (key === "run preflight") return { ...run(), status: script.preflight ?? 0 };
+      if (key === "run preflight --no-verify") return { ...run(), status: script.preflight ?? 0 };
       if (key.startsWith("run background start")) return { ...run(), stdout: script.background ?? "" };
-      if (key === "run verify:fast") return { ...run(), status: script.verify ?? 0 };
+      if (key === "run verify:fast --landing") return { ...run(), status: script.verify ?? 0 };
       if (key === "run scripts/land.ts --commit") return { ...run(), status: script.land ?? 0 };
       if (key.startsWith("run ci:status")) {
         return { ...run(), stdout: script.ci ?? CI_OK, status: script.ciStatus ?? 0 };
@@ -159,6 +160,21 @@ describe("lane:close end to end", () => {
     expect(landed).not.toContain("run scripts/land.ts --commit");
   });
 
+  test("boat out of starts stops before land and says to close again later, never to run the suite here", () => {
+    const landed: string[] = [];
+    const fake = io({ verify: EXIT_BOAT_SPENT });
+    const sh = fake.sh;
+    fake.sh = (argv, inherit) => {
+      landed.push(argv.join(" "));
+      return sh(argv, inherit);
+    };
+    expect(closeLane({}, fake)).toBe(EXIT_VERIFY_FAILED);
+    expect(landed).not.toContain("run scripts/land.ts --commit");
+    const said = fake.lines.err.join("\n");
+    expect(said).toContain("had no start for the Linux steps");
+    expect(said).toContain("Do not set JG_VERIFY_BOAT=0");
+  });
+
   test("closing runs preflight (gen, type-checks, gates) before the tests, so a stale manifest or a type error stops it first", () => {
     const calls: string[] = [];
     const fake = io();
@@ -168,8 +184,8 @@ describe("lane:close end to end", () => {
       return sh(argv, inherit);
     };
     closeLane({}, fake);
-    expect(calls.indexOf("run preflight")).toBeGreaterThan(-1);
-    expect(calls.indexOf("run preflight")).toBeLessThan(calls.indexOf("run verify:fast"));
+    expect(calls.indexOf("run preflight --no-verify")).toBeGreaterThan(-1);
+    expect(calls.indexOf("run preflight --no-verify")).toBeLessThan(calls.indexOf("run verify:fast --landing"));
   });
 
   test("by default the stage lines stay quiet and the report still prints; --verbose prints each stage", () => {
@@ -182,8 +198,8 @@ describe("lane:close end to end", () => {
     verbose.env = { JG_VERBOSE: "1" };
     closeLane({}, verbose);
     const printed = verbose.lines.out.join("\n");
-    expect(printed).toContain("lane:close: agent/x — preflight (gen, type-checks, gates)");
-    expect(printed).toContain("lane:close: agent/x — verify:fast (tests and boots)");
+    expect(printed).toContain("lane:close: agent/x — preflight (install, conflict markers, gen)");
+    expect(printed).toContain("lane:close: agent/x — verify:fast --landing (type-checks, gates, tests and boots)");
     expect(printed).toContain("lane:close: land --commit");
   });
 
@@ -196,7 +212,7 @@ describe("lane:close end to end", () => {
       return sh(argv, inherit);
     };
     expect(closeLane({}, fake)).toBe(EXIT_VERIFY_FAILED);
-    expect(calls).not.toContain("run verify:fast");
+    expect(calls).not.toContain("run verify:fast --landing");
     expect(calls).not.toContain("run scripts/land.ts --commit");
     expect(fake.lines.err.join("\n")).toContain("preflight failed");
   });
@@ -290,8 +306,8 @@ describe("one lane:close per worktree", () => {
     expect(refusal).toContain("agent/first (pid 777");
     expect(refusal).toContain("90s ago");
     expect(refusal).toContain(LOCK_PATH);
-    expect(calls).not.toContain("run preflight");
-    expect(calls).not.toContain("run verify:fast");
+    expect(calls).not.toContain("run preflight --no-verify");
+    expect(calls).not.toContain("run verify:fast --landing");
     expect(calls).not.toContain("run scripts/land.ts --commit");
     // The first run's lock is left exactly as it was.
     expect(fake.locks.get(LOCK_PATH)).toEqual(liveLock(777));
@@ -318,7 +334,7 @@ describe("one lane:close per worktree", () => {
     const sh = fake.sh;
     let seen: unknown = null;
     fake.sh = (argv, inherit) => {
-      if (argv.join(" ") === "run verify:fast") seen = JSON.parse(fake.locks.get(LOCK_PATH)?.text ?? "null");
+      if (argv.join(" ") === "run verify:fast --landing") seen = JSON.parse(fake.locks.get(LOCK_PATH)?.text ?? "null");
       return sh(argv, inherit);
     };
     expect(closeLane({}, fake)).toBe(EXIT_CLOSED);
@@ -335,7 +351,7 @@ describe("one lane:close per worktree", () => {
     const thrown = io();
     const sh = thrown.sh;
     thrown.sh = (argv, inherit) => {
-      if (argv.join(" ") === "run preflight") throw new Error("spawn failed");
+      if (argv.join(" ") === "run preflight --no-verify") throw new Error("spawn failed");
       return sh(argv, inherit);
     };
     expect(() => closeLane({}, thrown)).toThrow("spawn failed");
@@ -347,7 +363,7 @@ describe("one lane:close per worktree", () => {
     const sh = fake.sh;
     fake.sh = (argv, inherit) => {
       // Someone replaced our lock mid-run (a stale-break race); release must not delete theirs.
-      if (argv.join(" ") === "run verify:fast") fake.locks.set(LOCK_PATH, liveLock(999, NOW));
+      if (argv.join(" ") === "run verify:fast --landing") fake.locks.set(LOCK_PATH, liveLock(999, NOW));
       return sh(argv, inherit);
     };
     closeLane({}, fake);

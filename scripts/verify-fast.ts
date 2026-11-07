@@ -37,13 +37,15 @@ import { siteGames } from "./siteGames";
 import { runSteps, type ScheduledStep, type StepResult } from "./stepScheduler";
 import { TEST_ROOTS, walkTestFiles } from "./test-shard";
 import { createVerifyReceipt } from "./verify-receipt";
+import { boatForThisRun, EXIT_BOAT_SPENT, localTestFiles, placeSteps, runPlaced, withHeavySlot, type BoatReceipt, type Where } from "./verify-boat";
 
 const VERIFY_FAST_USAGE = {
   summary: "run only the tests and static gates this branch's diff reaches, in seconds",
-  usage: "bun run verify:fast [--full] [--cheap] [--plan] [--json] [--base <ref>] [--jobs <n>] [--skill-api] [--no-cache] [--verbose]",
+  usage: "bun run verify:fast [--full] [--cheap] [--landing] [--plan] [--json] [--base <ref>] [--jobs <n>] [--skill-api] [--no-cache] [--verbose]",
   flags: [
     { flag: "--full", detail: "what CI runs; use to reproduce a CI failure" },
     { flag: "--cheap", detail: "only the type-checks and gates, no tests or boots; `bun run preflight` runs this" },
+    { flag: "--landing", detail: "every gate CI runs (as --cheap) and the tests and boots, in one run; `bun run lane:close` runs this" },
     { flag: "--plan", detail: "print the steps and their commands, run nothing" },
     { flag: "--json", detail: "one { ok, ms, checks } document on stdout" },
     { flag: "--base <ref>", detail: "diff against this ref (default: origin/beta)" },
@@ -100,6 +102,8 @@ export interface Step extends ScheduledStep {
    * lanes guessing and pushed them to CI to find out.
    */
   fix?: string | undefined;
+  /** This step needs this PC (a Windows-only test, the asset store), and why; absent, Linux can run it (scripts/verify-boat.ts). */
+  localBecause?: string | undefined;
   /** The units this step settles; each is remembered as passed when the step passes, and a test file also when its own tests all passed in a step that failed. */
   units?: Unit[];
 }
@@ -631,6 +635,8 @@ export interface FastOptions {
   reportDir?: string;
   /** Every file in the checkout, so a gate's pass is keyed on the files its row reads; absent, on the whole tree. */
   tree?: readonly string[];
+  /** Test files that must run on this PC, with why (`localTestFiles`): they get a step of their own. */
+  localTests?: ReadonlyMap<string, string>;
 }
 
 /**
@@ -657,8 +663,10 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
     // The tests named after the changed files, and the changed tests themselves, run first in a step
     // of their own: a break in `pick.ts` reaches a thousand files, the run stops at the first red,
     // and without this `pick.test.ts` sat in a chunk that never ran while the red named a loot table.
-    const own = new Set(plan.changed.flatMap((file) => ownTests(file, files)));
-    const rest = files.filter((file) => !own.has(file));
+    const here = files.filter((file) => options.localTests?.has(file) === true);
+    const linux = files.filter((file) => options.localTests?.has(file) !== true);
+    const own = new Set(plan.changed.flatMap((file) => ownTests(file, linux)));
+    const rest = linux.filter((file) => !own.has(file));
     const testStep = (group: readonly string[], name: string, index: number, first: boolean): Step => ({
       name,
       command: [
@@ -674,6 +682,12 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
       units: tests.filter((settles) => group.includes(settles.id.slice("test:".length))),
     });
     if (own.size > 0) steps.push(testStep([...own], `test ${own.size} own file(s)`, 0, true));
+    // The files that read this PC's models or depend on Windows run here, in one step of their own.
+    if (here.length > 0) {
+      const reasons = [...new Set(here.map((file) => options.localTests!.get(file)!))];
+      const isOwn = plan.changed.some((file) => ownTests(file, here).length > 0);
+      steps.push({ ...testStep(here, `test ${here.length} file(s) on this PC`, 999, isOwn), localBecause: reasons.join("; ") });
+    }
     if (rest.length > 0) {
       const total = rest.reduce((sum, file) => sum + cost[file]!, 0);
       const byCount = Math.min(lanes, Math.ceil(rest.length / TESTS_PER_LANE));
@@ -949,7 +963,11 @@ export function rerunFailing(step: Pick<Step, "name" | "command">, output: strin
 
 function printPlan(plan: Plan, steps: readonly Step[]): void {
   for (const path of plan.changed) console.log(`  changed  ${path}`);
-  for (const step of steps) console.log(`  step     ${step.name}  (${step.command.join(" ")})`);
+  const placement = placeSteps(steps);
+  for (const step of steps) {
+    const place = placement.get(step.name);
+    console.log(`  step     ${step.name}  [${place?.where === "boat" ? "boat" : `this PC: ${place?.why ?? "local"}`}]  (${step.command.join(" ")})`);
+  }
   if (plan.fallback.length > 0) {
     console.log(`  no test can be attributed to ${plan.fallback.length} changed file(s), so every test file and type-check runs:`);
     for (const path of plan.fallback) console.log(`    ${path}`);
@@ -971,9 +989,24 @@ function receiptPlan(root: string, base: string, argv: readonly string[], change
   };
 }
 
+/** One line on where the run went: the boat machine's id, cost and time, and how many steps ran here. */
+export function boatLine(boat: BoatReceipt, placement: ReadonlyMap<string, { where: Where }>): string | null {
+  const here = [...placement.values()].filter((place) => place.where === "local").length;
+  if (boat.status === "off") return null;
+  if (boat.status === "spent") {
+    const linux = placement.size - here;
+    return `verify:fast: boat had no start (${boat.why ?? "no reason given"}); ${linux} Linux step(s) not run, here or there${boat.until === undefined ? "" : `; boat takes starts again from ${boat.until}`}`;
+  }
+  if (boat.status === "unusable") return `verify:fast: boat unusable (${boat.why ?? "no reason given"}); all ${placement.size} step(s) ran on this PC`;
+  const cost = boat.costUsd === undefined ? "" : `, $${boat.costUsd.toFixed(4)}`;
+  const time = boat.seconds === undefined ? "" : `, ${boat.seconds} s`;
+  const waited = boat.waitedMs !== undefined && boat.waitedMs > 1000 ? `, waited ${Math.round(boat.waitedMs / 1000)} s for a machine` : "";
+  return `verify:fast: ${boat.steps.length} step(s) on boat ${boat.runId ?? "(no id)"} ${boat.status}${cost}${time}${waited}; ${here} on this PC${boat.why === undefined ? "" : ` (${boat.why})`}`;
+}
+
 export function parseVerifyArgs(argv: readonly string[]) {
   const parsed = parseArgs({ args: [...argv], strict: true, options: {
-    full: { type: "boolean" }, cheap: { type: "boolean" }, plan: { type: "boolean" }, json: { type: "boolean" },
+    full: { type: "boolean" }, cheap: { type: "boolean" }, landing: { type: "boolean" }, plan: { type: "boolean" }, json: { type: "boolean" },
     base: { type: "string" }, jobs: { type: "string" }, "skill-api": { type: "boolean" }, "no-cache": { type: "boolean" },
     help: { type: "boolean", short: "h" },
   } });
@@ -981,15 +1014,19 @@ export function parseVerifyArgs(argv: readonly string[]) {
   if (!base.trim() || base.startsWith("-")) throw new Error("--base needs a ref");
   const jobs = parsed.values.jobs === undefined ? DEFAULT_JOBS : Number(parsed.values.jobs);
   if (!/^\d+$/.test(parsed.values.jobs ?? String(DEFAULT_JOBS)) || !Number.isSafeInteger(jobs) || jobs < 1) throw new Error("--jobs needs a whole number at least 1");
-  const { full = false, plan: planOnly = false, json = false, cheap = false } = parsed.values;
+  const { full = false, plan: planOnly = false, json = false, cheap = false, landing = false } = parsed.values;
   if (full && cheap) throw new Error("--full and --cheap cannot be combined");
+  if (landing && (full || cheap)) throw new Error("--landing cannot be combined with --full or --cheap");
   if (planOnly && json) throw new Error("--plan and --json cannot be combined");
-  return { base, jobs, full, planOnly, json, cheap, skillApi: parsed.values["skill-api"] === true };
+  return { base, jobs, full, planOnly, json, cheap, landing, skillApi: parsed.values["skill-api"] === true };
 }
+
+/** Set when boat had no start for a run's Linux steps: the exit is then EXIT_BOAT_SPENT, not a plain failure. */
+let boatSpent = false;
 
 async function main(argv: readonly string[]): Promise<number> {
   const root = fileURLToPath(new URL("..", import.meta.url));
-  const { base, jobs, full, planOnly, json, cheap, skillApi } = parseVerifyArgs(argv);
+  const { base, jobs, full, planOnly, json, cheap, landing, skillApi } = parseVerifyArgs(argv);
   if (!planOnly) assertCheckoutReady("verify:fast");
   const started = Date.now();
   const runDir = `.scratch/verify-fast/runs/${crypto.randomUUID()}`;
@@ -999,6 +1036,43 @@ async function main(argv: readonly string[]): Promise<number> {
   // kept for --verbose, and for --plan, whose whole point is to show them.
   const say = (line: string): void => console.log(line);
   const note = planOnly || isVerbose() ? say : (): void => {};
+  // Where the steps run (scripts/verify-boat.ts): the Linux ones on a boat machine, the rest here in
+  // a fairshare slot. Its notes (waiting for a machine, boat unusable) always print: they explain the wait.
+  const tell = json ? (line: string): void => console.error(line) : say;
+  const boat = planOnly ? null : boatForThisRun(root);
+  const execute = async (steps: Step[], failFast: boolean, print: boolean): Promise<StepResult[]> => {
+    if (receipt === null) throw new Error("missing run receipt");
+    const placed = await runPlaced({
+      root,
+      steps,
+      jobs,
+      failFast,
+      baseRef: base,
+      runLocal: (step) => run(step, root),
+      schedule: (group, lanes, runOne, options) => runSteps(group, lanes, runOne, options),
+      onStart: (step, where) => {
+        receipt.start(step);
+        receipt.annotate(step.name, { where });
+      },
+      onSettle: (result, where) => {
+        receipt.settle(result);
+        receipt.annotate(result.name, { where });
+        if (!print || result.blockedBy !== undefined) return;
+        (result.ok ? note : say)(`${result.ok ? "PASS" : "FAIL"}  ${result.name}  ${(result.ms / 1000).toFixed(1)}s${where === "boat" ? "  (boat)" : ""}`);
+        const step = steps.find((candidate) => candidate.name === result.name);
+        if (!result.ok && step !== undefined) printFailure(root, step, result.output);
+      },
+      note: tell,
+      boat,
+      withSlot: (work) => withHeavySlot(work, { note: tell }),
+    });
+    for (const [name, place] of placed.placement) receipt.annotate(name, { where: place.where, placedBecause: place.why });
+    receipt.note({ boat: placed.boat });
+    if (placed.boat.status === "spent") boatSpent = true;
+    const line = boatLine(placed.boat, placed.placement);
+    if (line !== null) tell(line);
+    return placed.results;
+  };
 
   try {
   let changed: string[];
@@ -1041,7 +1115,7 @@ async function main(argv: readonly string[]): Promise<number> {
     if (receipt === null) throw new Error("missing run receipt");
     receipt.plan(receiptPlan(root, base, argv, changed, steps, [], jobs, started), steps);
     if (json) {
-      const runs = await withHeavyServer(root, steps, () => runSteps(steps, jobs, (step) => run(step, root), { onStart: receipt.start, onSettle: receipt.settle }));
+      const runs = await withHeavyServer(root, steps, () => execute(steps, false, false));
       for (const result of runs) if (!result.ok && result.output.length > 0) console.error(result.output);
       const checks = runs.map((result) => ({ name: result.name, ok: result.ok, ms: result.ms }));
       receipt.finish(checks.every((check) => check.ok));
@@ -1049,15 +1123,7 @@ async function main(argv: readonly string[]): Promise<number> {
       return checks.every((check) => check.ok) ? EXIT_VERIFIED : EXIT_FAILED;
     }
     const failures: string[] = [];
-    const runs = await withHeavyServer(root, steps, async () =>
-      runSteps(steps, jobs, async (step) => {
-        const result = await run(step, root);
-        const suffix = result.blockedBy === undefined ? "" : `  (${result.output})`;
-        (result.ok ? note : say)(`${result.ok ? "PASS" : "FAIL"}  ${step.name}  ${(result.ms / 1000).toFixed(1)}s${suffix}`);
-        if (!result.ok && result.blockedBy === undefined) printFailure(root, step, result.output);
-        return result;
-      }, { onStart: receipt.start, onSettle: receipt.settle }),
-    );
+    const runs = await withHeavyServer(root, steps, () => execute(steps, false, true));
     receipt.finish(runs.every((result) => result.ok));
     for (const result of runs) if (!result.ok) failures.push(result.name);
     const seconds = (Date.now() - started) / 1000;
@@ -1080,7 +1146,7 @@ async function main(argv: readonly string[]): Promise<number> {
     exempt: pureRenames(root, base),
   });
   // `--cheap` is the landing's half (`bun run preflight`): every CI gate, not the iteration subset.
-  const plan = cheap ? { ...planned, gates: landingGates(planned.changed) } : planned;
+  const plan = cheap || landing ? { ...planned, gates: landingGates(planned.changed) } : planned;
   const cache = argv.includes("--no-cache")
     ? null
     : openPassCache({
@@ -1106,6 +1172,7 @@ async function main(argv: readonly string[]): Promise<number> {
     testCosts,
     reportDir,
     tree,
+    localTests: localTestFiles(root, planned.tests),
     fresh: (unit, inputs) => {
       const hit = cache?.fresh(unit, inputs) === true;
       if (hit) skipped.push(unit);
@@ -1153,7 +1220,7 @@ async function main(argv: readonly string[]): Promise<number> {
   if (receipt === null) throw new Error("missing run receipt");
   receipt.plan(receiptPlan(root, base, argv, changed, steps, skipped, jobs, started, reportDir), steps);
   if (json) {
-    const results = await runSteps(steps, jobs, (step) => run(step, root), { failFast: !cheap, onStart: receipt.start, onSettle: receipt.settle });
+    const results = await execute(steps, !cheap, false);
     remember(results);
     receipt.finish(results.every((result) => result.ok));
     for (const result of results) if (!result.ok && result.output.length > 0) console.error(result.output);
@@ -1166,17 +1233,7 @@ async function main(argv: readonly string[]): Promise<number> {
   // already running finish, so the next run reuses their passes. Each result prints the moment
   // it is known. `--cheap` runs only those seconds-long steps, so it runs every one: a landing
   // that fixed one gate only to meet the next cost a close per gate.
-  const results = await runSteps(
-    steps,
-    jobs,
-    async (step) => {
-      const result = await run(step, root);
-      (result.ok ? note : say)(`${result.ok ? "PASS" : "FAIL"}  ${result.name}  ${(result.ms / 1000).toFixed(1)}s`);
-      if (!result.ok) printFailure(root, step, result.output);
-      return result;
-    },
-    { failFast: !cheap, onStart: receipt.start, onSettle: receipt.settle },
-  );
+  const results = await execute(steps, !cheap, true);
   remember(results);
   receipt.finish(results.every((result) => result.ok));
   const failures = results.filter((result) => !result.ok && result.blockedBy === undefined).map((result) => result.name);
@@ -1214,7 +1271,8 @@ if (import.meta.main) {
   try {
     parseVerifyArgs(argv);
     if (printHelpIfAsked("verify-fast", VERIFY_FAST_USAGE, argv)) process.exit(EXIT_VERIFIED);
-    process.exit(await main(argv));
+    const code = await main(argv);
+    process.exit(code === EXIT_FAILED && boatSpent ? EXIT_BOAT_SPENT : code);
   } catch (error) {
     console.error(`verify:fast: ${(error as Error).message}`);
     process.exit(EXIT_FAILED);

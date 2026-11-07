@@ -47,6 +47,8 @@ export interface ToolDef {
   damageClass?: "fist" | "primitive" | "ranged" | "metal";
   /** A weapon that fires instead of swinging: a click spends one ammo and hits the first creature along the aim. */
   ranged?: RangedDef;
+  /** Swings or shots that land before it breaks; absent for what never wears. */
+  durability?: number;
 }
 
 /** What one shot of an ammo lands: damage, and doses into the body it hits (a tranq arrow's torpor, a bola's hold). */
@@ -142,6 +144,8 @@ export const ITEMS: readonly ItemDef[] = [
   resource("crystal", "Crystal", 1, 100, "Clear shards from the highest peaks and the snow."),
   resource("oil", "Oil", 0.2, 100, "Thick black oil from the dark rocks on the frozen shore."),
   resource("sparkpowder", "Sparkpowder", 0.01, 100, "Ground flint and stone that lights fires."),
+  resource("mejoberry_seed", "Mejoberry Seed", 0.01, 100, "Picked from berry bushes now and then. Plant it in a crop plot."),
+  resource("fertilizer", "Fertilizer", 0.1, 20, "Ground from spoiled meat and thatch. A crop plot's crop grows only while it has some."),
   // ARK's cave artifacts: one on a pedestal at the end of each cave, back half an hour after it is taken.
   resource("artifact_clever", "Artifact of the Clever", 1, 1, "A glowing relic from the deepest chamber of the central cave; the island's guardian wants it."),
   resource("artifact_skylord", "Artifact of the Skylord", 1, 1, "A glowing relic from the deepest chamber of the north-west cave; the island's guardian wants it."),
@@ -178,25 +182,23 @@ export const ITEMS: readonly ItemDef[] = [
   { id: "stimulant", label: "Stimulant", kind: "consumable", weight: 0.1, stack: 100, consume: { stamina: 30, water: -10, torpor: -40 }, note: "Wakes the eater fast." },
   {
     id: "stone_pick", label: "Stone Pick", kind: "tool", weight: 1, stack: 1, note: "Thatch from trees, flint from rocks, ore from metal, obsidian, crystal and oil rocks.",
-    tool: { gather: { power: 1.5, biases: { thatch: 1.6, wood: 0.25, flint: 1.6, stone: 0.35, metal: 1.6, obsidian: 1.6, crystal: 1.6, oil: 1.6, raw_meat: 1.4, hide: 0.4 }, defaultBias: 0 }, reach: 2.2, damage: 15, stamina: 3, cooldown: 0.7 },
+    tool: { durability: 40, gather: { power: 1.5, biases: { thatch: 1.6, wood: 0.25, flint: 1.6, stone: 0.35, metal: 1.6, obsidian: 1.6, crystal: 1.6, oil: 1.6, raw_meat: 1.4, hide: 0.4 }, defaultBias: 0 }, reach: 2.2, damage: 15, stamina: 3, cooldown: 0.7 },
   },
   {
     id: "stone_hatchet", label: "Stone Hatchet", kind: "tool", weight: 1, stack: 1, note: "Wood from trees, stone from rocks.",
-    tool: { gather: { power: 1.5, biases: { wood: 2.2, thatch: 0.3, stone: 2.2, flint: 0.25, metal: 0.3, obsidian: 0.25, crystal: 0.25, oil: 0.25, hide: 1.4, raw_meat: 0.4 }, defaultBias: 0 }, reach: 2.2, damage: 10, stamina: 3, cooldown: 0.7 },
+    tool: { durability: 40, gather: { power: 1.5, biases: { wood: 2.2, thatch: 0.3, stone: 2.2, flint: 0.25, metal: 0.3, obsidian: 0.25, crystal: 0.25, oil: 0.25, hide: 1.4, raw_meat: 0.4 }, defaultBias: 0 }, reach: 2.2, damage: 10, stamina: 3, cooldown: 0.7 },
   },
   {
     id: "wooden_club", label: "Wooden Club", kind: "tool", weight: 1, stack: 1, note: "Knocks creatures out.",
     // ARK's club lands about 3.75x its damage as torpor: a level-1 raptor (180 torpor) sleeps in 9 hits, a
     // phiomia (240) in 12. Fists land more per swing than they did, but the club still outsleeps them.
-    tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2.3, damage: 5, hits: [{ vital: "torpor", amount: 20 }], stamina: 6, cooldown: 0.9 },
+    tool: { durability: 40, gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2.3, damage: 5, hits: [{ vital: "torpor", amount: 20 }], stamina: 6, cooldown: 0.9 },
   },
   {
     id: "spear", label: "Spear", kind: "tool", weight: 2, stack: 1, note: "A long, sharp stick for fighting.",
-    tool: { gather: { power: 1, biases: { raw_meat: 1, hide: 0.5 }, defaultBias: 0 }, reach: 2.8, damage: 25, stamina: 7, cooldown: 0.9 },
+    tool: { durability: 30, gather: { power: 1, biases: { raw_meat: 1, hide: 0.5 }, defaultBias: 0 }, reach: 2.8, damage: 25, stamina: 7, cooldown: 0.9 },
   },
   { id: "torch", label: "Torch", kind: "tool", weight: 0.5, stack: 1, note: "Light and a little warmth.", tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 1.8, damage: 8, stamina: 5, cooldown: 0.7 } },
-  { id: "storage_box", label: "Storage Box", kind: "structure", weight: 4, stack: 100, note: "Holds 15 stacks. Placing it comes later." },
-  { id: "hide_sleeping_bag", label: "Hide Sleeping Bag", kind: "structure", weight: 2, stack: 1, note: "A one-time respawn point." },
   cloth("cloth_shirt", "Cloth Shirt", "torso", 1),
   cloth("cloth_pants", "Cloth Pants", "legs", 1),
   cloth("cloth_hat", "Cloth Hat", "head", 0.5),
@@ -206,13 +208,13 @@ export const ITEMS: readonly ItemDef[] = [
   // ARK's slingshot throws the stones in the bag: little damage, a lot of torpor, a short range.
   {
     id: "slingshot", label: "Slingshot", kind: "tool", weight: 1, stack: 1, note: "Throws stones from the bag. Knocks small creatures out from a few metres away.",
-    tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2, damage: 0, damageClass: "ranged", stamina: 4, cooldown: 1, ranged: { range: 20, ammo: { stone: { damage: 4, doses: [{ vital: "torpor", amount: 25 }] } } } },
+    tool: { durability: 40, gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2, damage: 0, damageClass: "ranged", stamina: 4, cooldown: 1, ranged: { range: 20, ammo: { stone: { damage: 4, doses: [{ vital: "torpor", amount: 25 }] } } } },
   },
   // ARK's bow: stone arrows wound, tranquilizer arrows (a stone arrow dipped in narcotic) knock out from
   // range. A level-1 raptor (180 torpor) sleeps on two tranq arrows. Numbers approx.
   {
     id: "bow", label: "Bow", kind: "tool", weight: 1, stack: 1, note: "Fires arrows from the bag: tranquilizer arrows first, then stone arrows.",
-    tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2, damage: 0, damageClass: "ranged", stamina: 2, cooldown: 1.1, ranged: { range: 45, ammo: { tranq_arrow: { damage: 8, doses: [{ vital: "torpor", amount: 95 }] }, stone_arrow: { damage: 25, doses: [{ vital: "torpor", amount: 10 }] } } } },
+    tool: { durability: 50, gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2, damage: 0, damageClass: "ranged", stamina: 2, cooldown: 1.1, ranged: { range: 45, ammo: { tranq_arrow: { damage: 8, doses: [{ vital: "torpor", amount: 95 }] }, stone_arrow: { damage: 25, doses: [{ vital: "torpor", amount: 10 }] } } } },
   },
   // ARK's bola: thrown, it wraps a creature's legs and holds it still for a while; the biggest shrug it off.
   // The bola in hand is its own ammo. Hold time approx.

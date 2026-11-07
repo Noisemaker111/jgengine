@@ -394,11 +394,14 @@ export function landOne(pr: ReadyPr, args: QueueArgs, io: QueueIo): Drained {
     const view = read.value;
     if (view.state === "MERGED") return done("landed", "it was already merged");
     if (view.state !== "OPEN") return done("skipped", `state ${view.state}`);
-    if (view.mergeStateStatus === "DIRTY") return done("failed", "conflicts with the base; a person has to resolve it");
-
-    if (view.mergeStateStatus === "BEHIND") {
+    // A conflict only in generated files (two game-proof lanes both rescoring PLAN.md) is the rebase's
+    // to resolve, so DIRTY rebases like BEHIND; a real conflict comes back from it named.
+    if (view.mergeStateStatus === "BEHIND" || view.mergeStateStatus === "DIRTY") {
       const rebased = rebaseOntoBase({ branch: pr.branch, base: args.base, io });
-      if (rebased.refusal !== null) return done("failed", rebased.refusal);
+      if (rebased.refusal !== null) {
+        return done("failed", view.mergeStateStatus === "DIRTY" ? `conflicts with the base, and the rebase could not resolve them: ${rebased.refusal}` : rebased.refusal);
+      }
+      if (view.mergeStateStatus === "DIRTY" && !rebased.rebased) return done("failed", "conflicts with the base, though it is not behind it; a person has to resolve it");
       io.log(`#${pr.number} ${pr.branch} rebased onto origin/${args.base} before waiting`);
     }
 

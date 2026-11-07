@@ -3,7 +3,7 @@ import { authoredSpawnPosition, authoredSpawnRotation } from "@jgengine/core/wor
 import { defineSystem } from "@jgengine/shell/gameKit";
 
 import { editorLayers } from "./editorLayers";
-import { baseSave, demolish, fuelStations, resetBase, rotateBuild, tickBase, useStructure } from "./game/base";
+import { baseSave, closeStore, demolish, fuelStations, resetBase, rotateBuild, storePut, storeTake, tickBase, useStructure } from "./game/base";
 import { cavesOf, cavesSave, resetCaves, takeArtifact, tickCaves } from "./game/caves";
 import { bodiesSave, recoverBody, resetBodies, tickBodies } from "./game/deathBody";
 import { breedingSave, careForBaby, resetBreeding, setBreedingSpeed, tickBreeding } from "./game/breeding";
@@ -19,7 +19,7 @@ import { eggsSave, resetEggs, takeEgg, tickEggs } from "./game/eggs";
 import { callSupplyDrop, openCrate, resetSupplyDrops, supplyDropsSave, tickSupplyDrops } from "./game/supplyDrops";
 import type { NewGameConfig } from "@jgengine/core/game/newGame";
 import { START } from "./game/data/start";
-import { cancelCraft, consume, grantXp, heldItem, learn, learnFree, levelStat, resetSurvivor, selectSlot, setUpSurvivor, shuttle, startCraft, survivorSave, swing, takeOff, tickSurvivor, use, wearArmour } from "./game/survivor";
+import { cancelCraft, consume, grantXp, heldItem, learn, learnFree, levelStat, repairTool, resetSurvivor, selectSlot, setUpSurvivor, shuttle, startCraft, survivorSave, swing, takeOff, tickSurvivor, use, wearArmour } from "./game/survivor";
 import { setScreen, toggleExtendedHud, toggleScreen, type SurvivorScreen } from "./game/screens";
 
 const ORIGIN: [number, number, number] = [0, 0, 0];
@@ -84,6 +84,7 @@ export const systems = [
       });
       commands.define<{ inventoryId?: string; slot: number }>("consume", { apply: (state, input) => (consume(state, input.inventoryId ?? BAG, input.slot), state) });
       commands.define<{ inventoryId: string; slot: number }>("shuttle", { apply: (state, input) => (shuttle(state, input.inventoryId, input.slot), state) });
+      commands.define<{ itemId: string }>("repairTool", { apply: (state, input) => (repairTool(state, input.itemId), state) });
       commands.define<{ slot: string }>("takeOff", { apply: (state, input) => (takeOff(state, input.slot), state) });
     },
     update: tickSurvivor,
@@ -125,6 +126,9 @@ export const systems = [
     create(ctx) {
       const commands = ctx.game.commands;
       commands.define("structureUse", { apply: (state) => (useStructure(state), state) });
+      commands.define<{ inventoryId: string; slot: number }>("storePut", { apply: (state, input) => (storePut(state, input.inventoryId, input.slot), state) });
+      commands.define<{ slot: number }>("storeTake", { apply: (state, input) => (storeTake(state, input.slot), state) });
+      commands.define("closeStore", { apply: (state) => (closeStore(state), state) });
       commands.define("rotateBuild", { apply: (state) => (rotateBuild(state), state) });
       commands.define("demolish", { apply: (state) => (demolish(state), state) });
     },

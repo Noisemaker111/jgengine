@@ -1,0 +1,3 @@
+{
+  "ownSlot": ["bun run lane:close", "bun run verify:fast", "bun scripts/verify-fast.ts", "bun scripts/lane-close.ts"]
+}

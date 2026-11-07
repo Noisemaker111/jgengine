@@ -17,6 +17,7 @@ import type { MountedRider } from "@jgengine/core/scene/mount";
 import { scatterPoints } from "@jgengine/core/inheritance/inheritance";
 import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
 import { createResourceNodeField, type ResourceGrant, type ResourceNodeState, type ToolProfile } from "@jgengine/core/world/resourceNode";
+import { playerMovementHeading } from "@jgengine/core/movement/playerMovement";
 
 import { editorLayers } from "../editorLayers";
 import { BAG, HOTBAR } from "./bags";
@@ -29,6 +30,7 @@ import { createKnockoutTaming, type KnockoutTaming, type TamingRead, type Taming
 import { setScreen } from "./screens";
 import { strikeHarvestable } from "./survivor";
 import { biteProfile, loadShare } from "./data/tameWork";
+import { AIRBORNE, FLYERS } from "./data/flight";
 
 /** Slots in a creature's own inventory (ARK caps it by weight; slots are the simple stand-in). */
 const CREATURE_SLOTS = 30;
@@ -374,6 +376,17 @@ export function destroyWild(ctx: GameContext): void {
   for (const creature of [...world.creatures.values()]) if (!creature.tamed && !creature.dead) removeCreature(ctx, world, creature, RESPAWN_SECONDS);
 }
 
+/** How many live wild creatures stand within `within` metres of `from`. */
+export function wildCountNear(ctx: GameContext, from: readonly [number, number, number], within: number): number {
+  let count = 0;
+  for (const creature of worldOf(ctx).creatures.values()) {
+    if (creature.dead || creature.tamed) continue;
+    const at = ctx.scene.entity.get(creature.id)?.position;
+    if (at !== undefined && Math.hypot(at[0] - from[0], at[2] - from[2]) <= within) count += 1;
+  }
+  return count;
+}
+
 // --- aiming, striking -----------------------------------------------------------------------
 
 /** The live entity that acts for the survivor: their mount when riding, else themselves. */
@@ -386,8 +399,14 @@ function creatureInFront(ctx: GameContext, fromId: string, yaw: number, reach: n
   const from = ctx.scene.entity.get(fromId);
   if (from === null) return null;
   const world = worldOf(ctx);
-  let best: Creature | null = null;
-  let bestDistance = Infinity;
+  // A body the aim line passes through wins, the nearest along the line, as a crosshair picks; a smaller body inside
+  // a bigger one's reach along the line (a baby standing in its parent) wins over it. With the line through nothing,
+  // the nearest within 60° of it, or so close the body fills the view.
+  let hit: Creature | null = null;
+  let hitAlong = Infinity;
+  let hitBody = 0;
+  let near: Creature | null = null;
+  let nearDistance = Infinity;
   for (const creature of world.creatures.values()) {
     if (creature.id === fromId || !accept(creature)) continue;
     const entity = ctx.scene.entity.get(creature.id);
@@ -397,14 +416,23 @@ function creatureInFront(ctx: GameContext, fromId: string, yaw: number, reach: n
     const distance = Math.hypot(dx, dz);
     const radius = defOf(creature).radius;
     if (distance > reach + radius) continue;
-    // In front: within 60° of the facing, or so close the body fills the view.
-    const facing = distance < radius + 0.5 || (dx * Math.sin(yaw) + dz * Math.cos(yaw)) / Math.max(distance, 1e-6) > 0.5;
-    if (facing && distance < bestDistance) {
-      best = creature;
-      bestDistance = distance;
+    const along = dx * Math.sin(yaw) + dz * Math.cos(yaw);
+    const across = Math.abs(dx * Math.cos(yaw) - dz * Math.sin(yaw));
+    const body = radius * (entity.size ?? 1);
+    const inside = hit !== null && body < hitBody && Math.abs(along - hitAlong) <= hitBody;
+    const nearer = along < hitAlong && !(hit !== null && hitBody < body && Math.abs(along - hitAlong) <= body);
+    if (along > -body && across <= body && (inside || nearer)) {
+      hit = creature;
+      hitAlong = along;
+      hitBody = body;
+    }
+    const facing = distance < radius + 0.5 || along / Math.max(distance, 1e-6) > 0.5;
+    if (facing && distance < nearDistance) {
+      near = creature;
+      nearDistance = distance;
     }
   }
-  return best;
+  return hit ?? near;
 }
 
 /** What a swing at a creature did. */
@@ -586,22 +614,37 @@ function grantTameXp(ctx: GameContext, creature: Creature, amount: number): void
   ctx.game.notices.push({ text: `Your ${defOf(creature).label} reached level ${creature.level}. A point to spend in its inventory.`, tone: "success" });
 }
 
-/** A tame's second: the passive XP trickle, and stamina spent on a ridden sprint or won back at rest. */
+/** How high a creature stands above the ground under it, metres. */
+function heightAboveGround(ctx: GameContext, id: string): number {
+  const entity = ctx.scene.entity.get(id);
+  return entity === null ? 0 : entity.position[1] - ctx.world.groundHeightAt(entity.position[0], entity.position[2]);
+}
+
+/** A tame's second: the passive XP trickle, and stamina spent on a ridden sprint or in the air, or won back at rest. */
 function tickTame(ctx: GameContext, creature: Creature, ridden: boolean, dt: number): void {
   grantTameXp(ctx, creature, TAME_LEVELS.passivePerSecond * dt);
   const max = statOf(creature, "stamina");
   const entity = ctx.scene.entity.get(creature.id);
   const moving = entity !== null && Math.hypot(entity.velocity[0], entity.velocity[2]) > 0.5;
   const sprinting = ridden && moving && ctx.input.isDown("sprint") && creature.stamina > 1;
-  const rate = sprinting ? -defOf(creature).sprintStamina : moving ? 0 : max * STAMINA_REGEN;
+  const flyer = FLYERS[creature.species];
+  const flying = ridden && flyer !== undefined && heightAboveGround(ctx, creature.id) > AIRBORNE;
+  const rate = (sprinting ? -defOf(creature).sprintStamina : 0) + (flying ? -flyer.stamina : 0) || (moving ? 0 : max * STAMINA_REGEN);
   creature.stamina = Math.max(0, Math.min(max, creature.stamina + rate * dt));
   const def = defOf(creature);
-  // Loaded past its weight the mount slows, and at the limit it cannot move.
-  const walk = def.walk * statOf(creature, "speed") * loadOf(creature).moveMultiplier;
+  // Loaded past its weight the mount slows, and at the limit it cannot move. In the air a flyer flies at its flying speed.
+  const walk = (flying ? flyer.speed : def.walk * statOf(creature, "speed")) * loadOf(creature).moveMultiplier;
   // Ridden, the mount sprints at its own ARK ratio (a tamed raptor 11.04 / 4.8 m/s), not the survivor's.
   const run = (def.tamedSprint ?? def.sprint) / def.walk;
   const moved = entity === null ? null : entity.movement;
   if (ridden && moved !== null && (Math.abs((moved.walkSpeed ?? 0) - walk) > 0.01 || moved.runMultiplier !== run)) ctx.scene.entity.update(creature.id, { movement: { ...moved, walkSpeed: walk, runMultiplier: run } });
+}
+
+/** Whether the survivor rides a flyer with the stamina to hold itself up: false drops it out of the sky. */
+export function mountCanFly(ctx: GameContext): boolean {
+  const mountId = ridingOf(ctx).mountOf(ctx.player.userId);
+  const mount = mountId === null ? undefined : worldOf(ctx).creatures.get(mountId);
+  return mount !== undefined && FLYERS[mount.species] !== undefined && mount.stamina > 1 && !loadOf(mount).immobile;
 }
 
 /** Whether the mount under the survivor has the stamina to sprint; null on foot. */
@@ -925,7 +968,9 @@ export function tickCreatures(ctx: GameContext, dt: number): CreatureEvent[] {
 
   world.carcasses.tick(dt);
   const me = ctx.scene.entity.get(actor(ctx));
-  world.aimed = me === null ? null : (creatureInFront(ctx, me.id, me.rotationY, USE_REACH, (creature) => riding.riderOf(creature.id) === null)?.id ?? null);
+  // On foot the aim is where the camera looks, as for building: a survivor too loaded to walk can still turn to a tame.
+  const aim = me === null ? 0 : me.id === ctx.player.userId ? playerMovementHeading(ctx, me.id) || me.rotationY : me.rotationY;
+  world.aimed = me === null ? null : (creatureInFront(ctx, me.id, aim, USE_REACH, (creature) => riding.riderOf(creature.id) === null)?.id ?? null);
   return events;
 }
 
@@ -963,6 +1008,31 @@ export function useCreature(ctx: GameContext): void {
   if (creature.tamed || world.taming.state(creature.id)?.subdued === true) {
     world.viewing = creature.id;
     setScreen(ctx, "creature");
+    return;
+  }
+  if (world.taming.state(creature.id)?.awakeTame === true) handFeed(ctx, creature);
+}
+
+/** The survivor's bag, then hotbar, as something to take food from. */
+function survivorSupply(ctx: GameContext): DoseSupply {
+  const inv = ctx.player.inventory;
+  return {
+    count: (itemId) => inv.count(BAG, itemId) + inv.count(HOTBAR, itemId),
+    take: (itemId) => inv.take(BAG, itemId, 1).status === "ok" || inv.take(HOTBAR, itemId, 1).status === "ok",
+  };
+}
+
+/** E on an awake tame: hand it a food it likes from the bag, if it is hungry. */
+function handFeed(ctx: GameContext, creature: Creature): void {
+  const world = worldOf(ctx);
+  const def = defOf(creature);
+  const result = world.taming.offer(creature.id, survivorSupply(ctx));
+  if (result.type === "ate") {
+    ctx.scene.entity.floatText({ instanceId: creature.id, text: `Ate ${itemLabel(result.itemId)}`, kind: "pickup" });
+  } else if (result.type === "full") {
+    ctx.game.notices.push({ text: `The ${def.label} is not hungry yet (${Math.ceil(result.seconds / world.tamingSpeed)} s)`, tone: "deny" });
+  } else if (result.type === "refuses") {
+    ctx.game.notices.push({ text: `The ${def.label} eats ${world.taming.foods(creature.species).slice(0, 3).map(itemLabel).join(", ")}`, tone: "deny" });
   }
 }
 
@@ -1010,7 +1080,13 @@ export function creaturePrompts(ctx: GameContext): PositionedPrompt[] {
   if (creature === undefined) return [];
   if (creature.dead) return holdsItems(creature) ? prompt(creature.id, "Access inventory") : [];
   if (creature.tamed) return prompt(creature.id, creature.saddled ? "Ride" : "Access inventory");
-  if (world.taming.state(creature.id)?.subdued === true) return prompt(creature.id, "Access inventory");
+  const taming = world.taming.state(creature.id);
+  if (taming?.subdued === true) return prompt(creature.id, "Access inventory");
+  if (taming?.awakeTame === true) {
+    const food = world.taming.nextFood(creature.species, survivorSupply(ctx));
+    const label = taming.belly > 0 ? `Not hungry (${Math.ceil(taming.belly / world.tamingSpeed)} s)` : food === null ? `Wants ${itemLabel(world.taming.foods(creature.species)[0] ?? "food")}` : `Feed ${itemLabel(food)}`;
+    return prompt(creature.id, `${label} · tamed ${Math.round(taming.progress * 100)}%`);
+  }
   return [];
 }
 
@@ -1234,6 +1310,17 @@ export function speciesNear(ctx: GameContext, from: readonly [number, number, nu
     if (at !== undefined && Math.hypot(at[0] - from[0], at[2] - from[2]) <= within) near.add(creature.species);
   }
   return near;
+}
+
+/** The highest level among the live wild creatures within `within` metres of `from`; 0 with none there. */
+export function wildLevelNear(ctx: GameContext, from: readonly [number, number, number], within: number): number {
+  let top = 0;
+  for (const creature of worldOf(ctx).creatures.values()) {
+    if (creature.dead || creature.tamed || creature.level <= top) continue;
+    const at = ctx.scene.entity.get(creature.id)?.position;
+    if (at !== undefined && Math.hypot(at[0] - from[0], at[2] - from[2]) <= within) top = creature.level;
+  }
+  return top;
 }
 
 /**

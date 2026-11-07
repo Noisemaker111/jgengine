@@ -71,7 +71,7 @@ export type HostRouterOptions = {
   now?: () => number;
   /** How long a disconnected membership remains reclaimable. Defaults to 15 seconds. */
   graceMs?: number;
-  /** Starts a grace-window timer and returns its cancel; tests pass one they fire by hand. */
+  /** Starts a timer (reconnect grace windows, presence windows) and returns its cancel; tests pass one they fire by hand. */
   scheduleTimer?: (run: () => void, ms: number) => () => void;
 };
 
@@ -326,11 +326,24 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     }));
   };
 
+  /**
+   * Fan one message out to a subscription key, encoded once per codec. Broadcasts carry presence,
+   * chat and voice, never a world frame, so the stateless binary frame is the one each connection's
+   * encoder would write.
+   */
   const broadcast = (key: string, build: () => WsServerMessage) => {
     const targets = subscribersOf(key);
-    if (targets.length === 0) return;
+    if (closed || targets.length === 0) return;
     const message = build();
-    for (const connection of targets) send(connection, message);
+    let json: WsFrame | undefined;
+    let binary: WsFrame | undefined;
+    for (const connection of targets) {
+      if (connection.closed) continue;
+      const frame = connection.codec === "json"
+        ? (json ??= encodeWsFrame(message, "json"))
+        : (binary ??= encodeWsFrame(message, "binary"));
+      connection.transport.send(frame);
+    }
   };
 
   const broadcastPresence = (serverId: string) =>
@@ -341,6 +354,38 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
       serverId,
       data: presenceRows(serverId),
     }));
+
+  /**
+   * Rooms that sent a roster less than one pose interval ago. Moves inside that window only mark it
+   * dirty, so a room sends at most one roster per pose interval however many players move.
+   */
+  const presenceWindows = new Map<string, { dirty: boolean; cancel: () => void }>();
+  const presenceWindowMs = poseRules.minIntervalMs ?? DEFAULT_POSE_SYNC_RULES.minIntervalMs ?? 100;
+
+  /** Send the room's roster now and open its window if none is open. Joins and leaves call this directly. */
+  const flushPresence = (serverId: string) => {
+    if (closed) return;
+    broadcastPresence(serverId);
+    const open = presenceWindows.get(serverId);
+    if (open !== undefined) {
+      open.dirty = false;
+      return;
+    }
+    const window = { dirty: false, cancel: () => {} };
+    presenceWindows.set(serverId, window);
+    window.cancel = schedule(() => {
+      if (presenceWindows.get(serverId) !== window) return;
+      presenceWindows.delete(serverId);
+      if (window.dirty) flushPresence(serverId);
+    }, presenceWindowMs);
+  };
+
+  /** A move or appearance change goes out at once in a quiet room, else with the roster that closes the window. */
+  const markPresenceMoved = (serverId: string) => {
+    const window = presenceWindows.get(serverId);
+    if (window === undefined) flushPresence(serverId);
+    else window.dirty = true;
+  };
 
   const commandMiddleware = createCommandMiddleware({
     limits: options.limits ?? DEFAULT_COMMAND_LIMITS,
@@ -626,18 +671,17 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
       });
       historyFor(serverId).record(connection.userId, timestamp, decision.position);
     }
-    if (decision.changed || appearanceChanged || !hadRow) {
-      broadcastPresence(serverId);
-    }
+    if (!hadRow) flushPresence(serverId);
+    else if (decision.changed || appearanceChanged) markPresenceMoved(serverId);
   };
 
   const dropPresence = (connection: Connection) => {
     if (connection.userId === null) return;
-    dropUserFrom(presence, connection.userId, () => true, (serverId) => broadcastPresence(serverId));
+    dropUserFrom(presence, connection.userId, () => true, (serverId) => flushPresence(serverId));
   };
 
   const dropPresenceForServer = (userId: string, serverId: string) => {
-    dropUserFrom(presence, userId, (key) => key === serverId, () => broadcastPresence(serverId));
+    dropUserFrom(presence, userId, (key) => key === serverId, () => flushPresence(serverId));
   };
 
   const handleMessage = async (connection: Connection, message: WsClientMessage) => {
@@ -964,6 +1008,8 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
       unsubscribeHost();
       for (const cancel of pendingLeaves.values()) cancel();
       pendingLeaves.clear();
+      for (const window of presenceWindows.values()) window.cancel();
+      presenceWindows.clear();
       connections.clear();
       subscribers.clear();
     },

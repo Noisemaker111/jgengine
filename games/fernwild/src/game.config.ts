@@ -9,7 +9,7 @@ import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/shell/gameKit";
 import { fernwildKit } from "./art/look";
 import { editorLayers } from "./editorLayers";
 import { assets } from "./game/assets";
-import { baseGhost, basePrompts, baseView, fuelNear, piecesBuilt, stations } from "./game/base";
+import { baseGhost, basePrompts, baseView, fuelNear, lastPiece, piecesBuilt, stations, storeView } from "./game/base";
 import { cavePrompts, cavesOf, cavesView } from "./game/caves";
 import { eggPrompts, eggsOnGround } from "./game/eggs";
 import { EGG_SIZES, eggItem, KIBBLE_TIERS, kibbleItem } from "./game/data/kibble";
@@ -17,7 +17,7 @@ import { bodyPrompts, bodyView } from "./game/deathBody";
 import { breedingPrompts, breedingView } from "./game/breeding";
 import { broodView, obeliskPrompts } from "./game/broodmother";
 import { BROOD_PHASES } from "./game/data/bosses";
-import { awakeTamingProgress, creaturePrompts, creaturesView, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
+import { awakeTamingProgress, creaturePrompts, creaturesView, speciesNear, wildCountNear, wildLevelNear, mountCanFly, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
 import { tameFood } from "./game/tameHunger";
 import { STRUCTURES } from "./game/data/structures";
 import { content } from "./game/content";
@@ -27,6 +27,7 @@ import { entityModels, objectModels, scatterModels, rockSolids } from "./game/mo
 import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./game/bags";
 import { nearestSupplyDrop, supplyDropPrompts } from "./game/supplyDrops";
 import { canRun, nearestHarvestable, survivorPrompts, survivorView } from "./game/survivor";
+import { CLIMB_SPEED } from "./game/data/flight";
 import { firstDay, PREY } from "./game/onboarding";
 import { dossierView, nearestUnreadNote, notePrompts } from "./game/dossier";
 import { openScreen } from "./game/screens";
@@ -52,6 +53,10 @@ function nearestEgg(eggs: readonly { at: readonly [number, number, number] }[], 
 }
 
 const PIECES: ReadonlySet<string> = new Set(STRUCTURES.map((entry) => entry.id));
+
+/** Animals only the northern snow keeps, and only the south-coast beach keeps: what the biome probes count. */
+const SNOW_KINDS = new Set(["woolly_rhino", "mammoth", "sabertooth", "ovis", "kairuku", "yutyrannus", "purlovia"]);
+const COAST_KINDS = new Set(["dodo", "phiomia", "lystrosaurus", "parasaur", "dilophosaur", "moschops", "compy", "pachy"]);
 
 export const game = defineGame({
   name: "Fernwild",
@@ -99,7 +104,8 @@ export const game = defineGame({
     ...Object.fromEntries(Array.from({ length: HOTBAR_SLOTS }, (_, slot) => [`slot${slot + 1}`, [`Digit${(slot + 1) % 10}`]])),
   },
   controls: {
-    movement: { canSprint: canRun, swim: { speedMultiplier: 0.6, dive: true }, feel: { runMultiplier: SURVIVOR.runMultiplier } },
+    // A ridden flyer hovers: Space climbs, C dives, WASD flies at the mount's own speed; out of stamina it drops.
+    movement: { canSprint: canRun, swim: { speedMultiplier: 0.6, dive: true }, feel: { runMultiplier: SURVIVOR.runMultiplier }, flight: { mode: "hover", verticalSpeed: CLIMB_SPEED, canFly: mountCanFly } },
     // The camera starts behind the survivor on the authored spawn facing, so you wash up looking inland.
     prompts: (ctx) => [...survivorPrompts(ctx), ...creaturePrompts(ctx), ...basePrompts(ctx), ...cavePrompts(ctx), ...bodyPrompts(ctx), ...supplyDropPrompts(ctx), ...eggPrompts(ctx), ...breedingPrompts(ctx), ...obeliskPrompts(ctx), ...notePrompts(ctx)],
   },
@@ -137,6 +143,7 @@ export const game = defineGame({
       const body = bodyView(ctx);
       const crate = nearestSupplyDrop(ctx);
       const breeding = breedingView(ctx);
+      const babyAt = breeding.baby === null ? null : (ctx.scene.entity.get(breeding.baby.id)?.position ?? null);
       const brood = broodView(ctx);
       const me = ctx.scene.entity.get(ctx.player.userId);
       const pointing = onboardingOf(ctx)?.pointing() ?? null;
@@ -165,6 +172,8 @@ export const game = defineGame({
         taught: onboardingOf(ctx)?.run().snapshot().done.length ?? 0,
         unlocks: view.engrams.filter((engram) => engram.learned).length,
         // The dossier: species met, items held and notes read, each of how many the island has; engrams learned of all.
+        // The highest wild level within 120 m: what the danger-by-distance proof reads.
+        wildLevelNear: wildLevelNear(ctx, here, 120),
         speciesSeen: dossier.species.seen,
         speciesTotal: dossier.species.total,
         itemsSeen: dossier.items.seen,
@@ -183,6 +192,9 @@ export const game = defineGame({
         x: Math.round((me?.position[0] ?? 0) * 10) / 10,
         z: Math.round((me?.position[2] ?? 0) * 10) / 10,
         yaw: Math.round((me?.rotationY ?? 0) * 100) / 100,
+        // Whatever the survivor drives (them, or the mount under them): metres above the ground under it, and that ground's height.
+        alt: ((body) => (body === null ? 0 : Math.round((body.position[1] - ctx.world.groundHeightAt(body.position[0], body.position[2])) * 10) / 10))(ctx.scene.entity.get(ctx.player.possession.active(ctx.player.userId))),
+        groundY: ((body) => (body === null ? 0 : Math.round(ctx.world.groundHeightAt(body.position[0], body.position[2]) * 10) / 10))(ctx.scene.entity.get(ctx.player.possession.active(ctx.player.userId))),
         level: view.level,
         aimStrike: view.aim.strike === null ? 0 : 1,
         aimPick: view.aim.pick === null ? 0 : 1,
@@ -218,6 +230,18 @@ export const game = defineGame({
         pieceSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot !== null && PIECES.has(slot.itemId)),
         pieceKey: ctx.player.inventory.state(HOTBAR).slots.findIndex((slot) => slot !== null && PIECES.has(slot.itemId)) + 1,
         campfires: piecesBuilt(ctx, "campfire"),
+        boxes: piecesBuilt(ctx, "storage_box"),
+        bins: piecesBuilt(ctx, "preserving_bin"),
+        plots: piecesBuilt(ctx, "crop_plot"),
+        // The faced crop plot: 1 with a seed in it, its growth in percent, and its water and fertilizer; -1 with no plot faced.
+        plotSeeded: base.plot === null ? -1 : base.plot.seed === null ? 0 : 1,
+        plotGrowth: base.plot === null ? -1 : Math.floor(base.plot.growth * 100),
+        plotWater: base.plot === null ? -1 : Math.ceil(base.plot.water),
+        plotFertilizer: base.plot === null ? -1 : Math.ceil(base.plot.fertilizer),
+        mejoberries: ctx.player.inventory.count(BAG, "mejoberry") + ctx.player.inventory.count(HOTBAR, "mejoberry"),
+        // Sleeping bags placed, and where the last one lies (0, 0 with none).
+        bags: piecesBuilt(ctx, "hide_sleeping_bag"),
+        ...((at) => ({ bagX: at === undefined ? 0 : Math.round(at[0] * 10) / 10, bagZ: at === undefined ? 0 : Math.round(at[2] * 10) / 10 }))(lastPiece(ctx, "hide_sleeping_bag")),
         // The hotbar key (1-based) holding each tool; 0 when it is not on the hotbar.
         pickKey: keyOf("stone_pick"),
         hatchetKey: keyOf("stone_hatchet"),
@@ -227,8 +251,14 @@ export const game = defineGame({
         ...sight("tree", nearestHarvestable(ctx, here, 80, "strike", "thatch")),
         ...sight("rock", nearestHarvestable(ctx, here, 80, "strike", "flint")),
         ...sight("bush", nearestHarvestable(ctx, here, 80, "pick", "mejoberry")),
+        // Where the nearest berry bush stands, to the decimetre, so a proof can tell it from the next one.
+        ...((at) => ({ bushX: at === null ? 0 : Math.round(at[0] * 10) / 10, bushZ: at === null ? 0 : Math.round(at[2] * 10) / 10 }))(nearestHarvestable(ctx, here, 80, "pick", "mejoberry")),
         // (passing over prey grazing within 30 m of a hunter, as a survivor with a spear would).
         ...sight("prey", nearestWild(ctx, PREY, here, 220, (at) => nearestThreat(ctx, at, 30) === null)),
+        // The nearest wild Ovis within 30 m, a passive tame to follow and hand-feed.
+        ...sight("ovis", nearestWild(ctx, "ovis", here, 30)),
+        // Live wild creatures within 60 m: what the herd-refill proof counts.
+        wildNear: wildCountNear(ctx, here, 60),
         // The nearest wild hunter within 60 m, and how many creatures a bola or trap holds still.
         ...sight("threat", nearestThreat(ctx, here, 60)),
         held: creatures.held,
@@ -252,6 +282,11 @@ export const game = defineGame({
         craftProgress: view.queue[0] === undefined ? -1 : Math.round(view.queue[0].progress * 100),
         fuel: Math.round(fuelNear(ctx, here, 6) * 10) / 10,
         screen: openScreen(ctx) === null ? 0 : 1,
+        // Items in the open storage box (-1 with none open).
+        stored: ((store) => (store === null ? -1 : store.slots.reduce((sum, slot) => sum + (slot?.count ?? 0), 0)))(storeView(ctx)),
+        // The bag's raw meat slot, and the raw meat in the open container (-1 with none open).
+        meatSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "raw_meat"),
+        storedMeat: ((store) => (store === null ? -1 : store.slots.reduce((sum, slot) => sum + (slot?.itemId === "raw_meat" ? slot.count : 0), 0)))(storeView(ctx)),
         picks: ctx.player.inventory.count(HOTBAR, "stone_pick") + ctx.player.inventory.count(BAG, "stone_pick"),
         creatures: creatures.count,
         aimedDown: creatures.aimed?.taming?.unconscious === true ? 1 : 0,
@@ -292,6 +327,7 @@ export const game = defineGame({
         tameWeight: (creatures.viewing ?? creatures.riding)?.weight.value ?? -1,
         tameStone: ((card) => (card === null ? -1 : card.inventory.reduce((sum, slot) => sum + (slot?.itemId === "stone" ? slot.count : 0), 0)))(creatures.viewing ?? creatures.riding),
         stoneSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "stone"),
+        woodSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "wood"),
         saddled: creatures.aimed?.saddled === true ? 1 : 0,
         tameLevel: creatures.viewing?.level ?? creatures.riding?.level ?? 0,
         tamePoints: creatures.viewing?.growth?.unspent ?? 0,
@@ -305,6 +341,9 @@ export const game = defineGame({
         // Whole metres the ghost stands above the ground under it: a wall stacked on a wall shows 3.
         ghostLift: ghostPlan === null ? 0 : Math.round(ghostPlan.position[1] - ctx.world.groundHeightAt(ghostPlan.position[0], ghostPlan.position[2])),
         aimedStructureHealth: base.aimed?.health ?? 0,
+        // How many of the snow's own animals, and how many of the south-coast beach's, live within 120 m.
+        nearSnowKinds: [...speciesNear(ctx, here, 120)].filter((species) => SNOW_KINDS.has(species)).length,
+        nearCoastKinds: [...speciesNear(ctx, here, 120)].filter((species) => COAST_KINDS.has(species)).length,
         doorsOpen: base.open,
         // Metres the survivor stands past the first foundation's centre and past the first doorframe, along the
         // spawn facing: negative is short of it.
@@ -323,6 +362,11 @@ export const game = defineGame({
         pedestals: caves.caves.filter((cave) => cave.artifact !== null).length,
         // 1 while an artifact's pedestal is in reach, so E would take it.
         atPedestal: cavePrompts(ctx).length > 0 ? 1 : 0,
+        // Uses the tool in hand has left before it breaks, and its most; -1 for fists or what never wears.
+        heldDurability: view.held?.left ?? -1,
+        heldDurabilityMax: view.held?.max ?? -1,
+        // Carried tools that have worn and could be repaired.
+        wornTools: view.worn.length,
         // Hotbar slot in hand, 1-based; 0 bare-handed.
         holding: view.activeSlot === null ? 0 : view.activeSlot + 1,
         // Metres to the survivor's own body, to a decimetre, and the stacks it holds; -1 and 0 with no body lying.
@@ -357,6 +401,7 @@ export const game = defineGame({
         babyWants: breeding.baby?.wants === null || breeding.baby === null ? 0 : 1,
         babySize: breeding.baby === null ? -1 : Math.round(breeding.baby.size * 100),
         atBaby: breedingPrompts(ctx).length > 0 ? 1 : 0,
+        ...sight("baby", babyAt),
         // The Broodmother: 0 nothing summoned, 1 the portal counting down, 2 the fight, 3 won and waiting to go back;
         // 1 while the survivor is in her lair; her health and phase (1-3) and her Araneo alive; 1 while webbed;
         // the tames in the fight with the survivor; 1 at the obelisk's terminal.
@@ -365,6 +410,9 @@ export const game = defineGame({
         broodHealth: brood.boss === null ? -1 : Math.round(brood.boss.health * 1000) / 10,
         broodPhase: brood.boss?.phase === null || brood.boss === null ? 0 : BROOD_PHASES.findIndex((phase) => phase.id === brood.boss!.phase) + 1,
         araneo: brood.brood,
+        // Where she stands, and 1 while her phase tell is on screen.
+        ...sight("brood", brood.boss?.at ?? null),
+        broodTell: brood.tell === null ? 0 : 1,
         webbed: view.webbed ? 1 : 0,
         lairTames: brood.companions,
         atObelisk: obeliskPrompts(ctx).length > 0 ? 1 : 0,
