@@ -158,6 +158,61 @@ describe("spatialIndex", () => {
   });
 });
 
+describe("spatialIndex against a brute-force model", () => {
+  test.each([
+    ["spread over a wide field", 60],
+    ["packed into a few crowded cells, so cells outgrow and repack their member storage", 8],
+  ])("random inserts, moves, removes and restores return exactly the ids whose cells a query touches: %s", (_layout, extent) => {
+    const cellSize = 2;
+    const maxCellSpan = 3;
+    const idx = createSpatialIndex({ cellSize, maxCellSpan });
+    const model = new Map<string, RenderBounds>();
+    let seed = 7;
+    const random = () => {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      return seed / 0x100000000;
+    };
+    const cell = (value: number) => Math.floor(value / cellSize);
+    const touched = (b: RenderBounds, x0: number, y0: number, z0: number, x1: number, y1: number, z1: number) => {
+      const oversized =
+        cell(b.maxX) - cell(b.minX) > maxCellSpan || cell(b.maxY) - cell(b.minY) > maxCellSpan || cell(b.maxZ) - cell(b.minZ) > maxCellSpan;
+      if (oversized) return true;
+      return cell(b.maxX) >= x0 && cell(b.minX) <= x1 && cell(b.maxY) >= y0 && cell(b.minY) <= y1 && cell(b.maxZ) >= z0 && cell(b.minZ) <= z1;
+    };
+    const randomBounds = () => boxAt((random() - 0.5) * extent, (random() - 0.5) * 6, (random() - 0.5) * extent, random() < 0.05 ? 5 : random() * 1.5);
+    const out: string[] = [];
+    for (let step = 0; step < 6000; step += 1) {
+      const id = `id-${Math.floor(random() * 300)}`;
+      const roll = random();
+      if (roll < 0.15) {
+        idx.remove(id);
+        model.delete(id);
+      } else if (roll < 0.55) {
+        const bounds = randomBounds();
+        idx.insert(id, bounds, true);
+        model.set(id, bounds);
+      } else if (roll < 0.95 && model.has(id)) {
+        const previous = model.get(id)!;
+        const bounds = boxAt(previous.centerX + (random() - 0.5) * 3, previous.centerY, previous.centerZ + (random() - 0.5) * 3, random() < 0.03 ? 5 : 0.4);
+        idx.update(id, bounds);
+        model.set(id, bounds);
+      } else if (roll >= 0.995) {
+        idx.restore(JSON.parse(JSON.stringify(idx.snapshot())));
+      }
+      if (step % 10 !== 0) continue;
+      const cx = (random() - 0.5) * extent, cz = (random() - 0.5) * extent, r = random() * 8;
+      idx.querySphere(cx, 0, cz, r, out);
+      const expected = [...model].filter(([, b]) => touched(b, cell(cx - r), cell(-r), cell(cz - r), cell(cx + r), cell(r), cell(cz + r))).map(([key]) => key);
+      expect(new Set(out).size).toBe(out.length);
+      expect([...out].sort()).toEqual(expected.sort());
+      expect(idx.size()).toBe(model.size);
+    }
+    const cellTotal = idx.cells().reduce((sum, c) => sum + c.count, 0);
+    expect(cellTotal).toBe(idx.snapshot().cells.reduce((sum, [, , , ids]) => sum + ids.length, 0));
+    expect(idx.cells().every((c) => c.count > 0)).toBe(true);
+  });
+});
+
 describe("spatialIndex snapshot", () => {
   test("snapshot and restore replay bit-exactly", () => {
     const idx = createSpatialIndex({ cellSize: 8, maxCellSpan: 3 });

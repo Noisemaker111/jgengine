@@ -5415,8 +5415,8 @@
 - `SpatialCellRange` (interface): interface SpatialCellRange — Integer cell bounds an object covers, inclusive on both ends.
 - `SpatialIndex` (interface): interface SpatialIndex — A uniform 3D spatial hash the renderer and streaming system query for potentially-visible objects instead of scanning the whole scene. Objects are keyed by their world AABB into every overlapping cell; a moving object only rewrites the cells that actually changed. Static objects are inserted once and never touched again. Oversized objects (huge terrain chunks, world bounds) are held separately so they are always considered.
 - `SpatialIndexOptions` (interface): interface SpatialIndexOptions { readonly cellSize?: number; readonly maxCellSpan?: number } — ⚠ undocumented · used by `createSpatialIndex`: A uniform 3D spatial hash over bounded ids: insert, move and remove them, then query a frustum, a box or a sphere without scanning every ent…
-- `SpatialIndexState` (interface): interface SpatialIndexState — Plain JSON state of a {@link SpatialIndex}. Cells and their ids keep insertion order, so a restored index returns query results in the same order.
-- `createSpatialIndex` (function): function createSpatialIndex(options: SpatialIndexOptions = {}): SpatialIndex — A uniform 3D spatial hash over bounded ids: insert, move and remove them, then query a frustum, a box or a sphere without scanning every entry.
+- `SpatialIndexState` (interface): interface SpatialIndexState — Plain JSON state of a {@link SpatialIndex}. Cells keep the order they were created in and each cell keeps its ids' order, so a restored index returns query results in the same order.
+- `createSpatialIndex` (function): function createSpatialIndex(options: SpatialIndexOptions = {}): SpatialIndex — A uniform 3D spatial hash over bounded ids: insert, move and remove them, then query a frustum, a box or a sphere without scanning every entry. Ids map to integer handles and cells to numeric keys inside, so moving an object and querying allocate nothing in steady state.
 
 ## @jgengine/core/terrain/CarvedTerrain.draw
 
