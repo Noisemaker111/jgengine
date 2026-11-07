@@ -32,6 +32,7 @@ const quantile = (v, p) => { const s = [...v].sort((a, b) => a - b); return s.le
 async function load(canvas, files) {
   return start(canvas, files.stream, files.data, files.readbacks, files.programs);
 }
+const restart = (run, files) => run.restart(files.stream, files.data, files.readbacks, files.programs);
 
 async function main() {
   await init();
@@ -46,8 +47,25 @@ async function main() {
   const files = { stream, data: await get("stream.bin"), readbacks: await get("readbacks.bin"), programs };
   const canvas = document.getElementById("gpu");
 
-  say("timed run");
+  // Warm up as row A does: draw every frame once, untimed, so Chrome compiles each pipeline (WGSL to
+  // HLSL to DXC, seconds for three's largest shaders) before the clock starts. The timed run starts
+  // the replay over on the same device, where Chrome reuses what it compiled.
+  const phases = {};
+  let mark = performance.now();
+  const phase = (name) => { const now = performance.now(); phases[name] = now - mark; mark = now; };
+  say("warmup");
   let run = await load(canvas, files);
+  phase("warmupLoad");
+  for (let i = 0; i < run.frame_count(); i += 1) {
+    run.draw_in_order(i);
+    if (i % 20 === 19) await new Promise((r) => requestAnimationFrame(r));
+  }
+  await new Promise((r) => setTimeout(r, 1000));
+  phase("warmupDraw");
+
+  say("timed run");
+  restart(run, files);
+  phase("timedLoad");
   const adapter = run.adapter();
   const times = run.times();
   const duration = times[times.length - 1];
@@ -69,10 +87,10 @@ async function main() {
   });
   await new Promise((r) => setTimeout(r, 500));
   const gpu = run.gpu_ms();
-  run.free();
+  phase("timedRun");
 
   say("pixel check");
-  run = await load(canvas, files);
+  restart(run, files);
   const check = new Set(run.readback_frames());
   const probe = document.createElement("canvas");
   probe.width = canvas.width; probe.height = canvas.height;
@@ -105,12 +123,14 @@ async function main() {
     frames.push({ frame: i, meanAbs: sum / (n * 3), maxAbs: max, over2: over2 / n, over8: over8 / n, psnr: mse === 0 ? 99 : 10 * Math.log10(255 * 255 / mse) });
   }
   run.free();
+  phase("pixelCheck");
 
   const fps = deltas.length / (deltas.reduce((a, b) => a + b, 0) / 1000);
   window.__jgWebResult = {
     renderer: "jg-web", adapter, userAgent: navigator.userAgent, seconds: duration, frames: deltas.length + 1, fps,
     frameP50: quantile(deltas, 0.5), frameP99: quantile(deltas, 0.99), cpuP50: quantile(cpu, 0.5), cpuP99: quantile(cpu, 0.99),
     gpuP50: quantile(gpu, 0.5), gpuP99: quantile(gpu, 0.99), gpuSamples: gpu.length, pixels: frames,
+    phasesMs: phases, firstDeltas: deltas.slice(0, 20), firstCpu: cpu.slice(0, 20),
   };
   say(`done: ${fps.toFixed(1)} fps`);
 }

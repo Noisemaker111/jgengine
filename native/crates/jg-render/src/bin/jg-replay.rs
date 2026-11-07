@@ -13,6 +13,10 @@
 //! bound textures as they stand after the frame; `--draws` lists every frame's clears and draws up
 //! to it, by framebuffer.
 //!
+//! `--skip-between` draws only the frames three read back and skips the rest, as a real-time player
+//! that fell behind does: its diffs should match the default run's wherever the skipped frames only
+//! changed state. `--skip-timing` prints what skipping every frame costs.
+//!
 //! `--web-limits` holds the device to Chrome's WebGPU limit of 8 vertex buffers, so draws that bind
 //! more take the interleaved path the web build takes; its pixels should match the default run's.
 
@@ -93,6 +97,22 @@ fn run() -> Result<(), String> {
         println!("validated {} frames: {} distinct validation errors", r.frame_count(), seen.len());
         return if seen.is_empty() { Ok(()) } else { Err(format!("{} distinct validation errors", seen.len())) };
     }
+    if args.iter().any(|a| a == "--skip-timing") {
+        // What a real-time player pays to catch up: apply every frame's state without drawing it.
+        let mut worst = (0.0f64, 0usize);
+        let t = std::time::Instant::now();
+        for f in 0..r.frame_count() {
+            let s = std::time::Instant::now();
+            r.skip(f);
+            let ms = s.elapsed().as_secs_f64() * 1000.0;
+            if ms > worst.0 {
+                worst = (ms, f);
+            }
+        }
+        let total = t.elapsed().as_secs_f64() * 1000.0;
+        println!("skipped {} frames in {total:.1} ms ({:.3} ms each), slowest frame {} at {:.2} ms", r.frame_count(), total / r.frame_count() as f64, worst.1, worst.0);
+        return Ok(());
+    }
     if let Some(stop) = args.iter().position(|a| a == "--dump").and_then(|i| args.get(i + 1)).and_then(|v| v.parse::<usize>().ok()) {
         for f in 0..=stop.min(r.frame_count() - 1) {
             let mut encoder = device.create_command_encoder(&Default::default());
@@ -141,8 +161,13 @@ fn run() -> Result<(), String> {
     }
     let [w, h] = r.rec.manifest.canvas;
     let readback_frames: Vec<usize> = r.rec.manifest.readbacks.iter().map(|b| b.frame).collect();
+    let skip_between = args.iter().any(|a| a == "--skip-between");
     let mut report = Vec::new();
     for f in 0..r.frame_count() {
+        if skip_between && !readback_frames.contains(&f) {
+            r.skip(f);
+            continue;
+        }
         let mut encoder = device.create_command_encoder(&Default::default());
         let stats = r.frame(&mut encoder, f)?;
         r.finish_frame();

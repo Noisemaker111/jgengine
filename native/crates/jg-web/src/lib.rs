@@ -31,10 +31,7 @@ mod web {
     #[wasm_bindgen]
     pub async fn start(canvas: web_sys::HtmlCanvasElement, stream: String, data: js_sys::Uint8Array, readbacks: js_sys::Uint8Array, programs: JsValue) -> Result<WebRun, JsValue> {
         console_error_panic_hook::set_once();
-        let manifest: jg_scene::Manifest = serde_json::from_str(&stream).map_err(err)?;
-        let sources: HashMap<String, (String, String)> = serde_wasm(&programs)?;
-        let programs = sources.into_iter().map(|(k, v)| Ok((k.parse::<usize>().map_err(err)?, v))).collect::<Result<HashMap<_, _>, JsValue>>()?;
-        let rec = jg_scene::Recording::from_parts(manifest, data.to_vec(), readbacks.to_vec(), programs).map_err(err)?;
+        let rec = recording(stream, &data, &readbacks, &programs)?;
         let [w, h] = rec.manifest.canvas;
         canvas.set_width(w);
         canvas.set_height(h);
@@ -65,6 +62,13 @@ mod web {
         Ok(WebRun { surface, format, device, queue, replay, stamps, drawn: None, adapter: format!("{} ({:?})", info.name, info.backend), errors })
     }
 
+    fn recording(stream: String, data: &js_sys::Uint8Array, readbacks: &js_sys::Uint8Array, programs: &JsValue) -> Result<jg_scene::Recording, JsValue> {
+        let manifest: jg_scene::Manifest = serde_json::from_str(&stream).map_err(err)?;
+        let sources: HashMap<String, (String, String)> = serde_wasm(programs)?;
+        let programs = sources.into_iter().map(|(k, v)| Ok((k.parse::<usize>().map_err(err)?, v))).collect::<Result<HashMap<_, _>, JsValue>>()?;
+        jg_scene::Recording::from_parts(manifest, data.to_vec(), readbacks.to_vec(), programs).map_err(err)
+    }
+
     fn serde_wasm(v: &JsValue) -> Result<HashMap<String, (String, String)>, JsValue> {
         let text = js_sys::JSON::stringify(v)?.as_string().ok_or_else(|| err("programs did not stringify"))?;
         serde_json::from_str(&text).map_err(err)
@@ -72,6 +76,17 @@ mod web {
 
     #[wasm_bindgen]
     impl WebRun {
+        /// Start the replay over from the first frame on the same device, so the pipelines and
+        /// shaders Chrome compiled for the last run are still compiled (a new device compiles them
+        /// all again, seconds each for three's largest shaders).
+        pub fn restart(&mut self, stream: String, data: js_sys::Uint8Array, readbacks: js_sys::Uint8Array, programs: JsValue) -> Result<(), JsValue> {
+            let rec = recording(stream, &data, &readbacks, &programs)?;
+            self.replay = jg_render::Replayer::new(self.device.clone(), self.queue.clone(), rec).map_err(err)?;
+            self.stamps = jg_render::gpu_timer::GpuTimer::new(&self.device, &self.queue);
+            self.drawn = None;
+            Ok(())
+        }
+
         pub fn adapter(&self) -> String {
             self.adapter.clone()
         }

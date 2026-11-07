@@ -939,20 +939,7 @@ impl Replayer {
                         }
                     }
                 }
-                Event::TextureData { handle, data } => {
-                    let r = self.rec.manifest.texture_data[*data].clone();
-                    if let Some(t) = self.res.textures.get(handle) {
-                        let (bw, bh) = t.format.block_dimensions();
-                        let row = t.size[0].div_ceil(bw) * t.format.block_copy_size(None).unwrap_or(4);
-                        let layers = t.texture.depth_or_array_layers();
-                        self.queue.write_texture(
-                            wgpu::TexelCopyTextureInfo { texture: &t.texture, mip_level: 0, origin: wgpu::Origin3d::ZERO, aspect: wgpu::TextureAspect::All },
-                            &self.rec.data[r.offset..r.offset + r.bytes],
-                            wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(row), rows_per_image: Some(t.size[1].div_ceil(bh)) },
-                            wgpu::Extent3d { width: t.size[0].next_multiple_of(bw), height: t.size[1].next_multiple_of(bh), depth_or_array_layers: layers },
-                        );
-                    }
-                }
+                Event::TextureData { handle, data } => self.upload_texture(*handle, *data),
                 Event::Mipmap(h) => {
                     pass = None;
                     if let Some(t) = self.res.textures.get(h) {
@@ -977,11 +964,28 @@ impl Replayer {
         Ok(stats)
     }
 
-    /// Apply a frame's state changes (uniform values, buffer and texture uploads) without drawing it:
-    /// what a real-time player does with recorded frames it fell behind on, so the next drawn frame
-    /// sees the same state three had.
+    /// Write a recorded texture upload into its texture's first level.
+    fn upload_texture(&self, handle: i64, data: usize) {
+        let r = &self.rec.manifest.texture_data[data];
+        if let Some(t) = self.res.textures.get(&handle) {
+            let (bw, bh) = t.format.block_dimensions();
+            let row = t.size[0].div_ceil(bw) * t.format.block_copy_size(None).unwrap_or(4);
+            let layers = t.texture.depth_or_array_layers();
+            self.queue.write_texture(
+                wgpu::TexelCopyTextureInfo { texture: &t.texture, mip_level: 0, origin: wgpu::Origin3d::ZERO, aspect: wgpu::TextureAspect::All },
+                &self.rec.data[r.offset..r.offset + r.bytes],
+                wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(row), rows_per_image: Some(t.size[1].div_ceil(bh)) },
+                wgpu::Extent3d { width: t.size[0].next_multiple_of(bw), height: t.size[1].next_multiple_of(bh), depth_or_array_layers: layers },
+            );
+        }
+    }
+
+    /// Apply a frame's state changes (uniform values, buffer and texture uploads, mipmaps) without
+    /// drawing it: what a real-time player does with recorded frames it fell behind on, so the next
+    /// drawn frame sees the same state three had.
     pub fn skip(&mut self, index: usize) {
         let frames = self.frames.clone();
+        let mut mip_encoder: Option<wgpu::CommandEncoder> = None;
         for ev in frames[index].iter() {
             match ev {
                 Event::Framebuffer(h) => self.cur_fb = *h,
@@ -998,14 +1002,31 @@ impl Replayer {
                     let converted = self.res.float_attrs.contains(attribute).then(|| gl::to_f32(&self.rec.manifest.attributes[*attribute].array, self.rec.manifest.attributes[*attribute].normalized, raw));
                     let bytes: &[u8] = converted.as_deref().unwrap_or(raw);
                     self.res.changed(*attribute, r.offset, r.bytes);
-                    if bytes.len() % 4 == 0 &&(bytes.len() as u64) <= self.res.buffer_sizes[*attribute] {
+                    if bytes.len() % 4 == 0 && (bytes.len() as u64) <= self.res.buffer_sizes[*attribute] {
                         if let Some(b) = &self.res.buffers[*attribute] {
                             self.queue.write_buffer(b, 0, bytes);
                         }
                     }
                 }
+                Event::TextureData { handle, data } => {
+                    // Mipmaps already recorded for this frame read the upload, so they go first.
+                    if let Some(e) = mip_encoder.take() {
+                        self.queue.submit([e.finish()]);
+                    }
+                    self.upload_texture(*handle, *data);
+                }
+                Event::Mipmap(h) => {
+                    if let Some(t) = self.res.textures.get(h) {
+                        let tex = t.texture.clone();
+                        let e = mip_encoder.get_or_insert_with(|| self.device.create_command_encoder(&Default::default()));
+                        self.copier.mipmaps(&self.device, e, &tex);
+                    }
+                }
                 _ => {}
             }
+        }
+        if let Some(e) = mip_encoder {
+            self.queue.submit([e.finish()]);
         }
     }
 

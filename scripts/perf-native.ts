@@ -98,7 +98,7 @@ function nativeRow(row: string, recording: string, ported: boolean, rules: "js" 
 }
 
 /** Row D: serve native/web and the export, open it in headless Chrome on the uncapped clock, read its result. */
-async function webRow(recording: string): Promise<Row> {
+async function webRow(recording: string, out: string): Promise<Row> {
   const pkg = join(nativeDir, "web", "pkg", "jg_web.js");
   if (!existsSync(pkg)) throw new Error(`no ${pkg}: build it with cargo build --release --target wasm32-unknown-unknown -p jg-web and wasm-bindgen --target web --out-dir native/web/pkg`);
   const types: Record<string, string> = { ".html": "text/html", ".js": "text/javascript", ".wasm": "application/wasm", ".json": "application/json" };
@@ -131,6 +131,7 @@ async function webRow(recording: string): Promise<Row> {
     if (code !== 0 || result === null) throw new Error("the web harness gave no result");
     const r = result as Record<string, unknown> & { error?: string; pixels: DiffReport["frames"]; adapter: string };
     if (r.error !== undefined) throw new Error(`web harness: ${r.error}`);
+    writeFileSync(out, `${JSON.stringify(r, null, 1)}\n`);
     return { row: "D", label: "wasm + WebGPU, headless Chrome", fps: Number(r["fps"]), frameP50: Number(r["frameP50"]), frameP99: Number(r["frameP99"]), cpuP50: Number(r["cpuP50"]), gpuP50: Number(r["gpuP50"]), image: imageSummary(r.pixels), note: `${r.adapter}; uncapped clock (a normal tab is held to the display's refresh), no HUD or rules` };
   } finally {
     server.stop(true);
@@ -182,7 +183,7 @@ async function main(argv: string[]): Promise<number> {
   }
   if (args.rows.has("B")) rows.push(nativeRow("B", recording, hasRules, "js", files, join(results, "B.json"), image));
   if (args.rows.has("C") && hasRules) rows.push(nativeRow("C", recording, hasRules, "rust", files, join(results, "C.json"), image));
-  if (args.rows.has("D")) rows.push(await webRow(recording));
+  if (args.rows.has("D")) rows.push(await webRow(recording, join(results, "D.json")));
   const table = renderTable(args.game, rows);
   writeFileSync(join(recording, "compare.json"), `${JSON.stringify({ game: args.game, at: new Date().toISOString(), canvas: manifest.canvas, seconds: args.seconds, rows, diff }, null, 1)}\n`);
   console.log(table);
