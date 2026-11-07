@@ -114,6 +114,7 @@ describe("world features", () => {
           kind: "grass",
           area: { w: 128, d: 128 },
           look: readGrassLook({ seed: "field-1" }),
+          meta: { seed: "field-1" },
         },
       ],
       water: [

@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react";
 
 import { resolveGrassObject, type ResolvedGrass } from "@jgengine/core/grass/grassKind";
+import type { GrassStyleSettings } from "@jgengine/core/grass/grassStyle";
 import { resolveGroundCoverObject } from "@jgengine/core/plants/groundCover/groundCoverField";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 import type { TerrainField } from "@jgengine/core/terrain/terrain";
@@ -11,6 +12,9 @@ import { windField } from "@jgengine/core/world/wind";
 import { GrassPatch } from "@jgengine/core/grass/GrassPatch.draw";
 import type { GrassExclusion } from "@jgengine/core/grass/grassBake.draw";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "@jgengine/core/scene/sceneKindRenderers.draw";
+
+/** Resolves one grass or ground-cover volume, drawn in the scene's world grass style. */
+type GrassResolver = (object: SceneKindObject, worldStyle: GrassStyleSettings | undefined) => ResolvedGrass | null;
 
 /** Volume kinds turf yields to — blades never grow through cracked soil or out of open water. */
 const GRASS_YIELDS_TO = new Set(["soil", "water"]);
@@ -50,8 +54,10 @@ function sampleHeight(field: TerrainField, x: number, z: number): number {
  * live-sync document context object is recreated per render) rebuilds the blade stream and
  * shader material from scratch, which shows up as recurring render hitches.
  */
-function OneGrass({ object, context, resolve }: { object: SceneKindObject; context: SceneKindRenderContext; resolve: (object: SceneKindObject) => ResolvedGrass | null }) {
-  const resolved = useMemo(() => resolve(object), [object, resolve]);
+function OneGrass({ object, context, resolve }: { object: SceneKindObject; context: SceneKindRenderContext; resolve: GrassResolver }) {
+  // The scene's world grass style; a patch's own `style` overrides it.
+  const worldStyle = context.document.environment?.grassStyle;
+  const resolved = useMemo(() => resolve(object, worldStyle), [object, resolve, worldStyle]);
   const heightAt = useCallback((x: number, z: number) => resolved === null ? 0 :
     sampleHeight(context.field, x + resolved.center[0], z + resolved.center[2]) - resolved.center[1], [context.field, resolved]);
   const heightRevision = useCallback(() => context.field.heightRevision?.(), [context.field]);

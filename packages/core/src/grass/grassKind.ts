@@ -1,8 +1,9 @@
 /**
  * The one grass model. Every grass patch — an editor `grass_field` volume or an `environment({
  * vegetation: grass(...) })` band — resolves to the same {@link GrassLook}, and the shell draws it
- * with one camera-streamed blade field over a turf mat. The look is a set of bounded knobs (blade
- * shape, colour and season, species mix, flowers, masks, wind), each clamped to a range where any
+ * with one camera-streamed blade field over a turf mat. The look is what grows, a set of bounded knobs
+ * (blade shape, colour and season, species mix, flowers, masks, wind), plus how it is drawn, the
+ * {@link GrassStyle} (`grassStyle.ts`). Each knob is clamped to a range where any
  * combination still reads as healthy ground cover: blade count is derived from blade size so a
  * patch can never come out sparse, and draw cost follows the camera, not the patch area.
  *
@@ -12,7 +13,8 @@ import { registerSceneKind, type SceneKindObject } from "@jgengine/core/scene/sc
 import { defineParamSchema, parseParams, type ColorParamField, type RangeParamField } from "@jgengine/core/generator/paramSchema";
 import { defineGenerator, registerGenerator } from "@jgengine/core/generator/generator";
 import { createGrassTuftTemplate, type GrassTuftTemplate } from "@jgengine/core/grass/grassField";
-import { GRASS_SPECIES } from "@jgengine/core/grass/grassSpecies";
+import { GRASS_SPECIES, type GrassSpecies } from "@jgengine/core/grass/grassSpecies";
+import { GRASS_STYLE_DEFAULTS, GRASS_STYLE_SCHEMA, resolveGrassStyle, type GrassStyle, type GrassStyleSettings } from "@jgengine/core/grass/grassStyle";
 
 /** The editor volume kind marking a box as a GPU grass patch. */
 export const GRASS_FIELD_KIND = "grass_field";
@@ -157,8 +159,6 @@ export interface GrassWind {
 
 /** Blade material and light. */
 export interface GrassLighting {
-  /** 0..1 blend of blade normals toward straight-up, so the field lights as one soft surface. */
-  normalLift: number;
   /** 0..1 blade material roughness. */
   roughness: number;
   /** 0..1 warm glow where sun shines through blade tips. */
@@ -177,11 +177,13 @@ export interface GrassLook {
   mowing: GrassMowing;
   wind: GrassWind;
   lighting: GrassLighting;
+  /** How the field is drawn: realism and the style sliders, resolved from the patch, the world and the species. */
+  style: GrassStyle;
   /** Seed; the same seed reproduces the same layout. */
   seed: string;
 }
 
-/** Every grass knob flat, the shape a volume's `meta`, the inspector schema and presets use. */
+/** Every grass knob flat, the shape a volume's `meta`, the inspector schema and presets use. The style is not a knob: it nests under `style`. */
 export type GrassKnobs = GrassBlade & GrassTuft & GrassColour & GrassSeason & GrassSecondSpecies & GrassFlowers & GrassGrowth & GrassMowing & GrassWind & GrassLighting & { seed: string };
 
 /** A knob set a species writes: any knobs, never the seed. */
@@ -238,15 +240,14 @@ const FLAT_DEFAULTS: GrassKnobs = {
   windGust: 0.25,
   windDirection: 20,
   lean: 0,
-  normalLift: 0.6,
   roughness: 0.85,
   translucency: 0.5,
   groundCover: 0.9,
   seed: "",
 };
 
-/** Group a flat knob set into a {@link GrassLook}. @internal */
-export function groupGrassKnobs(knobs: GrassKnobs): GrassLook {
+/** Group a flat knob set and a style into a {@link GrassLook}. @internal */
+export function groupGrassKnobs(knobs: GrassKnobs, style: GrassStyle = GRASS_STYLE_DEFAULTS): GrassLook {
   return {
     blade: { density: knobs.density, bladeHeight: knobs.bladeHeight, heightVariation: knobs.heightVariation, bladeWidth: knobs.bladeWidth, widthVariation: knobs.widthVariation, profile: knobs.profile, curvature: knobs.curvature, stiffness: knobs.stiffness, twist: knobs.twist, droop: knobs.droop, fold: knobs.fold },
     tuft: { tuftSpread: knobs.tuftSpread, tuftBlades: knobs.tuftBlades, splay: knobs.splay, cushion: knobs.cushion, clumping: knobs.clumping, clumpSize: knobs.clumpSize },
@@ -257,22 +258,27 @@ export function groupGrassKnobs(knobs: GrassKnobs): GrassLook {
     growth: { patchiness: knobs.patchiness, slopeThin: knobs.slopeThin, bareGround: knobs.bareGround, growAbove: knobs.growAbove, groundCover: knobs.groundCover },
     mowing: { stripeWidth: knobs.stripeWidth, stripeContrast: knobs.stripeContrast, stripeAngle: knobs.stripeAngle },
     wind: { windStrength: knobs.windStrength, windSpeed: knobs.windSpeed, windGust: knobs.windGust, windDirection: knobs.windDirection, lean: knobs.lean },
-    lighting: { normalLift: knobs.normalLift, roughness: knobs.roughness, translucency: knobs.translucency },
+    lighting: { roughness: knobs.roughness, translucency: knobs.translucency },
+    style: { ...style },
     seed: knobs.seed,
   };
 }
 
-/** Grass defaults: a lush, lightly-swaying summer meadow. */
+/** Grass defaults: a lush, lightly-swaying summer meadow at the default style. */
 export const GRASS_DEFAULTS: GrassLook = groupGrassKnobs(FLAT_DEFAULTS);
 
-/** A partial {@link GrassLook}: any groups, each with any of its knobs. */
-export type GrassLookGroups = { [Group in Exclude<keyof GrassLook, "seed">]?: Partial<GrassLook[Group]> } & { seed?: string };
+/** A partial {@link GrassLook}: any groups, each with any of its knobs; `style` overrides the world style for this patch. */
+export type GrassLookGroups = { [Group in Exclude<keyof GrassLook, "seed" | "style">]?: Partial<GrassLook[Group]> } & { style?: GrassStyleSettings; seed?: string };
 
-/** The flat knobs of a grouped look or partial look, for a `meta` or schema parse. @internal */
-export function flattenGrassLook(look: GrassLookGroups): Partial<GrassKnobs> {
-  const { seed, ...groups } = look;
-  const flat: Partial<GrassKnobs> = seed === undefined ? {} : { seed };
+/** A flat grass `meta`: the knobs, plus the patch's own style nested under `style`. */
+export type GrassMeta = Partial<GrassKnobs> & { style?: GrassStyleSettings };
+
+/** The flat knobs of a grouped look or partial look, for a `meta` or schema parse; a `style` stays nested under `style`. @internal */
+export function flattenGrassLook(look: GrassLookGroups): GrassMeta {
+  const { seed, style, ...groups } = look;
+  const flat: GrassMeta = seed === undefined ? {} : { seed };
   for (const group of Object.values(groups)) Object.assign(flat, group);
+  if (style !== undefined) flat.style = { ...style };
   return flat;
 }
 
@@ -311,7 +317,6 @@ const GRASS_EXPLORE: Partial<Record<NumberKey, readonly [number, number]>> = {
   mixWidth: [0.5, 2.5],
   patchiness: [0, 0.35],
   bareGround: [0, 0.3],
-  normalLift: [0.3, 1],
   roughness: [0.4, 1],
   translucency: [0, 0.6],
 };
@@ -333,7 +338,8 @@ const { seed: _seed, ...LOOK_BASE } = FLAT_DEFAULTS;
 
 /**
  * Every grass species as an inspector preset: the full knob set over the defaults, listed under its
- * habitat. A field names one with `species` and any knob it also sets wins over the species.
+ * habitat. A field names one with `species` and any knob it also sets wins over the species. Presets
+ * hold what grows only; a species' style tuning is read through the `species` id (`readGrassLook`).
  */
 export const GRASS_PRESETS = GRASS_SPECIES.map((species) => ({ id: species.id, label: species.label, group: species.group, values: { ...LOOK_BASE, ...species.values } }));
 
@@ -401,7 +407,6 @@ export const GRASS_SCHEMA = defineParamSchema({
     range("windGust", "gust size", 0, 1, 0.01, "wind"),
     range("windDirection", "heading", 0, 360, 1, "wind", "°"),
     range("lean", "resting lean", 0, 1, 0.01, "wind"),
-    range("normalLift", "normal lift", 0, 1, 0.01, "light"),
     range("roughness", "roughness", 0, 1, 0.01, "light"),
     range("translucency", "translucency", 0, 1, 0.01, "light"),
     range("groundCover", "ground cover", 0, 1, 0.01),
@@ -409,9 +414,19 @@ export const GRASS_SCHEMA = defineParamSchema({
   ],
 });
 
-/** Parse a volume's `meta` (or a `grass()` config) into a fully-defaulted, clamped look; a `species` id backs every knob the meta leaves unset. @internal */
-export function readGrassLook(meta: Readonly<Record<string, unknown>> | undefined): GrassLook {
-  return groupGrassKnobs(parseParams(GRASS_SCHEMA, meta));
+const SPECIES_BY_ID: ReadonlyMap<string, GrassSpecies> = new Map(GRASS_SPECIES.map((species) => [species.id, species]));
+
+/**
+ * Parse a volume's `meta` (or a `grass()` config) into a fully-defaulted, clamped look; a `species` id
+ * backs every knob the meta leaves unset. The style comes from the meta's own `style`, then
+ * `worldStyle` (the scene's `environment.grassStyle`), then the species' style tuning, then the
+ * realism curves (`resolveGrassStyle`).
+ * @internal
+ */
+export function readGrassLook(meta: Readonly<Record<string, unknown>> | undefined, worldStyle?: GrassStyleSettings): GrassLook {
+  const id = meta?.["species"];
+  const species = typeof id === "string" ? SPECIES_BY_ID.get(id) : undefined;
+  return groupGrassKnobs(parseParams(GRASS_SCHEMA, meta), resolveGrassStyle(meta?.["style"], worldStyle, species?.style));
 }
 
 /**
@@ -469,8 +484,8 @@ function axis(value: unknown): number | undefined {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
-/** Resolve a grass volume into an area footprint (from box half-extents / radius) at the box base. @internal */
-export function resolveGrassObject(object: SceneKindObject): ResolvedGrass | null {
+/** Resolve a grass volume into an area footprint (from box half-extents / radius) at the box base, drawn in the world's grass style. @internal */
+export function resolveGrassObject(object: SceneKindObject, worldStyle?: GrassStyleSettings): ResolvedGrass | null {
   const center = object.center ?? object.position;
   if (center === undefined) return null;
   const he = object.halfExtents;
@@ -481,7 +496,7 @@ export function resolveGrassObject(object: SceneKindObject): ResolvedGrass | nul
   return {
     center: [center.x, center.y - halfY, center.z],
     size: [Math.max(0.5, halfX * 2), Math.max(0.5, halfZ * 2)],
-    look: readGrassLook(object.meta),
+    look: readGrassLook(object.meta, worldStyle),
   };
 }
 
@@ -497,6 +512,7 @@ export function registerGrassKind(): void {
     accent: "#7fbf4d",
     schema: GRASS_SCHEMA,
     coverage: { spec: "grass_field", densityKey: "density" },
+    nested: [{ key: "style", label: "Grass style", schema: GRASS_STYLE_SCHEMA, effective: (object, environment) => ({ ...readGrassLook(object.meta, environment?.grassStyle).style }) }],
     resolve: (object) => resolveGrassObject(object),
     note: (object) => {
       const resolved = resolveGrassObject(object);
