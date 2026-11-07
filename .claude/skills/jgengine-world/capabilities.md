@@ -682,6 +682,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `engineTorque` (function) · `import { engineTorque } from "@jgengine/core/physics/engineTorqueCurve"`
 
+## entity-columns — integer handles and typed-array pose columns for engine systems stepping many entities per tick
+
+- `EntityColumns` (interface) · `import { EntityColumns } from "@jgengine/core/scene/entityStore"`
+
 ## entity-meta — cast-free narrow of SceneEntity.meta via a type guard
 
 - `entityMetaOf` (function) · `import { entityMetaOf } from "@jgengine/core/world"`
@@ -1752,6 +1756,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## plot-permissions — Owner, editor and guild build rights on a plot
 
 - `createPlotPermissions` (function) · `import { createPlotPermissions } from "@jgengine/core/world"`
+
+## point-grid — per-tick counting-sort neighbour grid over typed-array positions, allocation-free once warm
+
+- `createPointGrid` (function) · `import { createPointGrid } from "@jgengine/core/spatial/pointGrid"`
 
 ## pole-line — editor-authorable poles + sagging cables along a path
 

@@ -706,7 +706,7 @@
 - `PoseHistory` (interface): interface PoseHistory — Previous-step pose buffer: capture at each fixed step, sample between steps for rendering.
 - `PoseHistoryState` (interface): interface PoseHistoryState — Serializable previous-step poses keyed by entity id.
 - `RenderPose` (type): type RenderPose = [x: number, y: number, z: number, rotationY: number] — A render pose sampled between two simulation steps: `[x, y, z, rotationY]`.
-- `createPoseHistory` (function): function createPoseHistory(options?: { snapDistance?: number }): PoseHistory — Previous-step pose buffer for render interpolation under a fixed-step loop. Reuses one 4-slot array per entity so a step over N entities allocates only for entities seen for the first time.
+- `createPoseHistory` (function): function createPoseHistory(options?: { snapDistance?: number }): PoseHistory — Previous-step pose buffer for render interpolation under a fixed-step loop. Reads poses straight from the store's {@link EntityStore.columns} into one flat array indexed by handle, so a step over N entities allocates nothing and does no id lookups. Each captured pose remembers its handle's generation: a handle reused by a new entity, or a body respawned under the same id, renders live until the next step.
 - `lerpAngle` (function): function lerpAngle(from: number, to: number, t: number): number — Shortest-arc interpolation between two yaw angles.
 
 ## @jgengine/core/runtime/prediction

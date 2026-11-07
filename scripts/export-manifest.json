@@ -1239,6 +1239,7 @@
     "./sky/worldSky",
     "./social/social",
     "./social/social.view",
+    "./spatial/pointGrid",
     "./spatial/spatialBuckets",
     "./spatial/spatialIndex",
     "./stats/accumulatorMeter",
