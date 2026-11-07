@@ -142,6 +142,8 @@ export const ITEMS: readonly ItemDef[] = [
   resource("crystal", "Crystal", 1, 100, "Clear shards from the highest peaks and the snow."),
   resource("oil", "Oil", 0.2, 100, "Thick black oil from the dark rocks on the frozen shore."),
   resource("sparkpowder", "Sparkpowder", 0.01, 100, "Ground flint and stone that lights fires."),
+  resource("mejoberry_seed", "Mejoberry Seed", 0.01, 100, "Picked from berry bushes now and then. Plant it in a crop plot."),
+  resource("fertilizer", "Fertilizer", 0.1, 20, "Ground from spoiled meat and thatch. A crop plot's crop grows only while it has some."),
   // ARK's cave artifacts: one on a pedestal at the end of each cave, back half an hour after it is taken.
   resource("artifact_clever", "Artifact of the Clever", 1, 1, "A glowing relic from the deepest chamber of the central cave; the island's guardian wants it."),
   resource("artifact_skylord", "Artifact of the Skylord", 1, 1, "A glowing relic from the deepest chamber of the north-west cave; the island's guardian wants it."),

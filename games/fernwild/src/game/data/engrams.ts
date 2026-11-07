@@ -56,6 +56,7 @@ const ITEM_ENGRAMS: readonly EngramDef[] = [
   engram("bow", 10, 9, { wood: 15, fiber: 50, hide: 8 }, 5),
   engram("stone_arrow", 10, 3, { thatch: 2, flint: 1, fiber: 2 }, 1, { count: 2 }),
   engram("tranq_arrow", 21, 12, { stone_arrow: 1, narcotic: 1 }, 1),
+  engram("fertilizer", 15, 3, { spoiled_meat: 3, thatch: 10 }, 5, { station: "mortar_and_pestle" }),
   engram("stimulant", 11, 6, { stimberry: 5, sparkpowder: 2 }, 3, { station: "mortar_and_pestle" }),
 ];
 

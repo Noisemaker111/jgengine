@@ -128,6 +128,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/farm.proof.ts",
+      "proves": [
+        "survival.farm"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/first-goal.proof.ts",
       "proves": [
         "onboarding.first-goal"
@@ -327,7 +334,7 @@
       "id": "content.item-use",
       "ok": false,
       "problems": [
-        "no use for metal, obsidian, crystal, oil, artifact_skylord, artifact_devourer, artifact_pack, artifact_immune, artifact_strong, element, spider_flag, broodmother_trophy_gamma and 3 more"
+        "no use for metal, obsidian, crystal, oil, mejoberry_seed, fertilizer, artifact_skylord, artifact_devourer, artifact_pack, artifact_immune, artifact_strong, element and 5 more"
       ]
     },
     {

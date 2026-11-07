@@ -232,6 +232,13 @@ export const game = defineGame({
         campfires: piecesBuilt(ctx, "campfire"),
         boxes: piecesBuilt(ctx, "storage_box"),
         bins: piecesBuilt(ctx, "preserving_bin"),
+        plots: piecesBuilt(ctx, "crop_plot"),
+        // The faced crop plot: 1 with a seed in it, its growth in percent, and its water and fertilizer; -1 with no plot faced.
+        plotSeeded: base.plot === null ? -1 : base.plot.seed === null ? 0 : 1,
+        plotGrowth: base.plot === null ? -1 : Math.floor(base.plot.growth * 100),
+        plotWater: base.plot === null ? -1 : Math.ceil(base.plot.water),
+        plotFertilizer: base.plot === null ? -1 : Math.ceil(base.plot.fertilizer),
+        mejoberries: ctx.player.inventory.count(BAG, "mejoberry") + ctx.player.inventory.count(HOTBAR, "mejoberry"),
         // The hotbar key (1-based) holding each tool; 0 when it is not on the hotbar.
         pickKey: keyOf("stone_pick"),
         hatchetKey: keyOf("stone_hatchet"),

@@ -50,6 +50,10 @@ are drawn.
     Hatchet at 2, cloth at 3, thatch pieces and Storage Box at 4, Phiomia saddle at 5, Mortar and
     Pestle at 6, Wooden Club at 8.
   - Tools bias the yield like ARK: the pick takes thatch and flint, the hatchet wood and stone.
+  - Farming like ARK's Small Crop Plot (level 15): picking berry bushes now and then gives a Mejoberry
+    Seed; planted in a plot it grows only while the plot has water (rain, or a waterskin poured in) and
+    fertilizer (ground at the mortar from spoiled meat and thatch), ripening in ten minutes; E picks ten
+    mejoberries and it grows the next.
   - Dodo, Phiomia and Raptor with ARK's base stats, per-level gains, speeds, temperaments
     (oblivious, skittish, aggressive) and taming tables. Danger rises with distance: zones near the
     south beach roll wild levels up to 5, a level more every 50 m out, the full 30 from 1250 m.
