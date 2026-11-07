@@ -16,21 +16,21 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | menu | 0/1 | 0 | 0 | 1 | 0 |
 | progression | 0/1 | 1 | 0 | 0 | 0 |
 | content | 3/5 | 2 | 0 | 0 | 0 |
-| survival | 4/9 | 0 | 0 | 5 | 0 |
+| survival | 6/9 | 0 | 0 | 3 | 0 |
 | building | 1/3 | 0 | 0 | 2 | 0 |
-| harvest | 2/3 | 0 | 0 | 1 | 0 |
+| harvest | 3/3 | 0 | 0 | 0 | 0 |
 | crafting | 2/6 | 0 | 0 | 4 | 0 |
 | taming | 9/9 | 0 | 0 | 0 | 0 |
-| creatures | 6/13 | 0 | 0 | 7 | 0 |
+| creatures | 7/13 | 0 | 0 | 6 | 0 |
 | breeding | 2/4 | 0 | 0 | 2 | 0 |
 | spawns | 0/3 | 0 | 0 | 3 | 0 |
-| boss | 0/3 | 0 | 0 | 3 | 0 |
+| boss | 1/3 | 0 | 0 | 2 | 0 |
 | cave | 2/2 | 0 | 0 | 0 | 0 |
-| **total** | **33/67** | 3 | 0 | 31 | 0 |
+| **total** | **38/67** | 3 | 0 | 26 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: creature-survival. 33/67 proven · 3 failing · 31 missing.
+Genres: creature-survival. 38/67 proven · 3 failing · 26 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
@@ -42,9 +42,9 @@ Genres: creature-survival. 33/67 proven · 3 failing · 31 missing.
 | `menu.start-and-credits` | missing | The main menu starts a game and shows the credits. |  |
 | `progression.runway` | FAILING | Something new unlocks steadily across the first five hours, up to the progression cap. | the last unlock is at level 60 of a cap of 105 |
 | `content.item-source` | proven | Every item can be obtained by playing. | content check |
-| `content.item-use` | FAILING | Every item does something: crafts, equips, eats, places, feeds, sells or summons. | no use for metal, obsidian, crystal, oil, artifact_skylord, artifact_devourer, artifact_pack, artifact_immune, artifact_strong, element, spider_flag, broodmother_trophy_gamma and 4 more |
+| `content.item-use` | FAILING | Every item does something: crafts, equips, eats, places, feeds, sells or summons. | no use for metal, obsidian, crystal, oil, artifact_skylord, artifact_devourer, artifact_pack, artifact_immune, artifact_strong, element, spider_flag, broodmother_trophy_gamma and 3 more |
 | `content.recipes-reachable` | proven | Every recipe and source can actually be used: its inputs, station and unlock are all obtainable. | content check |
-| `content.placeables-place` | FAILING | Every item that says it can be placed can be placed. | says it places but the placement catalog has none: storage_box, hide_sleeping_bag |
+| `content.placeables-place` | FAILING | Every item that says it can be placed can be placed. | says it places but the placement catalog has none: hide_sleeping_bag |
 | `content.weapons-have-ammo` | proven | Every weapon that fires has obtainable ammo, or needs none. | content check |
 | `survival.vitals-drain` | proven | Hunger and thirst fall over time and hurt the player at zero. | proofs/sim/vitals-drain.proof.ts |
 | `survival.eat-drink` | proven | Eating and drinking restore the meters. | proofs/sim/eat-drink.proof.ts |
@@ -52,14 +52,14 @@ Genres: creature-survival. 33/67 proven · 3 failing · 31 missing.
 | `survival.oxygen-swim` | proven | Swimming under water drains breath; surfacing refills it. | proofs/sim/dive-breath.proof.ts |
 | `survival.food-spoils` | proven | Carried food spoils over time into something else. | proofs/sim/food-spoils.proof.ts |
 | `survival.respawn-point` | missing | A placed bed or bag becomes where the player wakes after death. |  |
-| `survival.storage-place` | missing | A storage container can be placed and holds items. |  |
-| `survival.encumbrance` | missing | Carrying more slows the player, and past the limit they cannot move. |  |
+| `survival.storage-place` | proven | A storage container can be placed and holds items. | proofs/sim/storage-place.proof.ts |
+| `survival.encumbrance` | proven | Carrying more slows the player, and past the limit they cannot move. | proofs/sim/encumbrance.proof.ts |
 | `survival.farm` | missing | Plant a seed in a plot; with water and fertilizer it grows a harvest. |  |
 | `building.place-snap` | proven | Building pieces place, snap to each other and stand. | proofs/sim/build-snap.proof.ts |
 | `building.shelter` | missing | A built enclosure shelters the player from weather and cold. |  |
 | `building.tiers-durability` | missing | Stronger building tiers resist attacks a weaker tier does not. |  |
 | `harvest.tool-bias` | proven | The tool used changes what a tree, rock or body yields, and how much. | proofs/sim/tool-bias.proof.ts |
-| `harvest.node-respawn` | missing | Depleted trees, rocks and bushes come back after a while. |  |
+| `harvest.node-respawn` | proven | Depleted trees, rocks and bushes come back after a while. | proofs/sim/node-respawn.proof.ts |
 | `harvest.carcass` | proven | A killed creature's body yields meat and hide by tool. | proofs/sim/carcass-harvest.proof.ts |
 | `crafting.station-tiers` | missing | Placed stations craft recipes the bare inventory cannot. |  |
 | `crafting.unlock-spend` | proven | Level-ups give points the player spends to learn recipes. | proofs/sim/craft-learn.proof.ts |
@@ -76,10 +76,10 @@ Genres: creature-survival. 33/67 proven · 3 failing · 31 missing.
 | `taming.passive-feed` | proven | Some creatures tame awake, by offering food without being hit. | proofs/sim/tame-passive.proof.ts |
 | `taming.trap` | proven | A trap or snare holds a creature still for taming. | proofs/sim/bola.proof.ts |
 | `taming.effectiveness` | proven | A cleaner tame gives a better creature. | proofs/sim/tame-clean.proof.ts |
-| `creatures.follow-stay` | missing | Order a tame to follow, stay or guard. |  |
+| `creatures.follow-stay` | proven | Order a tame to follow, stay or guard. | proofs/sim/follow-stay.proof.ts |
 | `creatures.fight-alongside` | missing | Tames attack what threatens the player. |  |
 | `creatures.work.gather` | proven | Species have gather roles: a tame gathers its specialty resource far faster than the player's best tool. | proofs/sim/tame-gather.proof.ts |
-| `creatures.work.haul` | missing | A tame carries weight so the player can haul more. |  |
+| `creatures.work.haul` | proven | A tame carries weight so the player can haul more. | proofs/sim/tame-haul.proof.ts |
 | `creatures.work.lighter-loads` | proven | A specialist tame carries its specialty resource at reduced weight. | proofs/sim/tame-lighter-loads.proof.ts |
 | `creatures.work.airlift` | missing | A flying tame picks up a smaller creature or survivor and carries it. |  |
 | `creatures.feed-starve` | proven | Tames eat from their own inventory or a shared trough; an unfed tame starves and dies. | proofs/sim/tame-hunger.proof.ts |
@@ -87,7 +87,7 @@ Genres: creature-survival. 33/67 proven · 3 failing · 31 missing.
 | `creatures.behavior-modes` | missing | Set a tame passive, neutral or aggressive, and it fights accordingly. |  |
 | `creatures.level-up` | proven | Tames gain experience and the player spends their levels on stats. | proofs/sim/tame-level-up.proof.ts |
 | `creatures.ride.ground` | proven | Saddle a tame and ride it, steering and attacking from its back. | proofs/sim/ride-ground.proof.ts |
-| `creatures.ride.fly` | proven | Ride a flying tame: take off, climb, cross terrain that blocks walking, and land. | proofs/sim/ride-fly.proof.ts |
+| `creatures.ride.fly` | missing | Ride a flying tame: take off, climb, cross terrain that blocks walking, and land. |  |
 | `creatures.ride.swim` | missing | Ride a swimming tame through water. |  |
 | `breeding.pair-mate` | proven | Put a male and a female tame together and they produce an egg or a baby. | proofs/sim/breed-mate.proof.ts |
 | `breeding.incubate` | proven | An egg hatches only kept at the right temperature. | proofs/sim/breed-incubate.proof.ts |
@@ -97,7 +97,7 @@ Genres: creature-survival. 33/67 proven · 3 failing · 31 missing.
 | `spawns.danger-by-distance` | missing | Danger rises the further the player travels from the start. |  |
 | `spawns.respawn-population` | missing | Killed or tamed creatures are replaced over time. |  |
 | `boss.summon-arena-reward` | missing | Gather the offering, summon the boss at its altar, win the fight, take the reward. |  |
-| `boss.phases` | missing | A boss changes how it fights as it is hurt. |  |
+| `boss.phases` | proven | A boss changes how it fights as it is hurt. | proofs/sim/boss-phases.proof.ts |
 | `boss.unlocks-progression` | missing | Beating a boss unlocks something no other source gives. |  |
 | `cave.artifact-run` | proven | Enter a cave, survive it, and take the artifact from its end. | proofs/sim/cave-artifact.proof.ts |
 | `cave.hazards` | proven | Caves hold their own dangers: stronger creatures, cold, poison or dark. | proofs/sim/cave-hazards.proof.ts |
