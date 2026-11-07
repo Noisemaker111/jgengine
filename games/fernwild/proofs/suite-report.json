@@ -163,6 +163,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/station-tiers.proof.ts",
+      "proves": [
+        "crafting.station-tiers"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/storage-place.proof.ts",
       "proves": [
         "survival.storage-place"
