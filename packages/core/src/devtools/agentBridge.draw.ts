@@ -19,6 +19,12 @@ import { resetFrameTelemetry } from "./frameSampler.view";
 import { advanceSimulation } from "../sim/simStepper";
 import { teleportPlayer } from "../movement/teleport";
 
+/**
+ * The input a capture command named by a bare string runs with: a neutral look, so a command that
+ * reads an aim or heading gets one. Shared by the dev runner's capture mode and `capture_run`.
+ */
+export const CAPTURE_COMMAND_INPUT = { yaw: 0, pitch: 0, aim: { yaw: 0, pitch: 0 } } as const;
+
 /** One RPC call into the agent bridge: a verb name plus its verb-specific fields. */
 export type AgentBridgeRequest = { method: string } & Record<string, unknown>;
 
@@ -278,6 +284,27 @@ export function installAgentBridge(options: {
         return result.status === "rejected"
           ? { ok: true, status: result.status, reason: result.reason, ...(result.message === undefined ? {} : { message: result.message }) }
           : { ok: true, status: result.status };
+      }
+      case "capture_run": {
+        // The same commands the dev runner's capture mode runs, so a shipped build (a desktop app) can
+        // be put in the scene a capture or perf run plays: `capture.play`, or `capture.states[state]`.
+        const ctx = getContext();
+        if (ctx === null) return { ok: false, error: "no game context yet" };
+        const state = typeof request["state"] === "string" ? request["state"] : null;
+        const entries = state === null ? playable.capture?.play : playable.capture?.states?.[state];
+        if (entries === undefined) {
+          const known = Object.keys(playable.capture?.states ?? {}).sort();
+          return { ok: false, error: state === null ? "the game declares no capture.play" : `unknown capture state "${state}"; declared: ${known.join(", ") || "none"}` };
+        }
+        const ran: { name: string; status: string; reason?: string }[] = [];
+        for (const entry of entries) {
+          const name = typeof entry === "string" ? entry : entry.name;
+          const input = typeof entry === "string" ? CAPTURE_COMMAND_INPUT : (entry.input ?? CAPTURE_COMMAND_INPUT);
+          if (!ctx.game.commands.has(name)) return { ok: false, error: `capture command "${name}" is not registered (ran ${ran.length} before it)` };
+          const result = ctx.game.commands.run(name, input);
+          ran.push(result.status === "rejected" ? { name, status: result.status, reason: result.reason } : { name, status: result.status });
+        }
+        return { ok: true, ran };
       }
       case "debug_report":
         return { ok: true, report: buildFullReport(playable) };

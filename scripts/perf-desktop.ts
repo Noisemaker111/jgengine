@@ -69,6 +69,28 @@ export function parseLaunchArgs(argv: readonly string[]): LaunchArgs {
   return { exe, uncapped, seconds, port, out };
 }
 
+/**
+ * Run the game's `capture.play` through the agent bridge once its context is live, and return what
+ * ran. A game with no `capture.play` starts in its scene already; any other refusal fails the run,
+ * since its numbers would describe a menu.
+ */
+async function startCaptureScene(session: CdpSession): Promise<string> {
+  for (let attempt = 0; attempt < 120; attempt += 1) {
+    const reply = await session.evaluate<{ ok: boolean; error?: string; ran?: { name: string; status: string; reason?: string }[] } | null>(
+      `window.__jgengineAgent?.handle?.({ method: "capture_run" }) ?? null`,
+    ).catch(() => null);
+    if (reply?.ok === true) {
+      const rejected = (reply.ran ?? []).filter((entry) => entry.status === "rejected");
+      if (rejected.length > 0) throw new Error(`the game refused its capture.play: ${rejected.map((entry) => `${entry.name} (${entry.reason ?? "rejected"})`).join(", ")}`);
+      return `capture.play: ${(reply.ran ?? []).map((entry) => entry.name).join(", ")}`;
+    }
+    if (reply?.error === "the game declares no capture.play") return "no capture.play; the game starts in its scene";
+    if (reply != null && reply.error !== "no game context yet") throw new Error(`capture_run failed: ${reply.error ?? "unknown"}`);
+    await Bun.sleep(500);
+  }
+  throw new Error("the game context never came up for capture_run within 60 s");
+}
+
 /** The page a launched app is pointed at: its diagnostic telemetry, at the frame gate's tier. */
 const LAUNCH_URL = "index.html?telemetry=local&frameMembers=1&quality=high";
 
@@ -93,7 +115,9 @@ async function launchAndMeasure(args: LaunchArgs): Promise<void> {
       await session.send("Page.enable");
       await session.send("Page.addScriptToEvaluateOnNewDocument", { source: perfSettingsScript([parseSettingSpec("graphics.auto=false")]) });
       await session.send("Emulation.setDeviceMetricsOverride", { width: GATE_SIZE.width, height: GATE_SIZE.height, deviceScaleFactor: 1, mobile: false });
-      await session.evaluate(`location.href = ${JSON.stringify(LAUNCH_URL)}`);
+      // A navigation from the debugger, not `location.href`: an app still finishing its own first load
+      // cancelled the script-set one and kept its menu page.
+      await session.send("Page.navigate", { url: new URL(LAUNCH_URL, target.url).toString() });
       let tier: string | null = null;
       // A heavy game on a busy machine has taken just over two minutes to boot; three is the bound.
       for (let attempt = 0; attempt < 360 && tier === null; attempt += 1) {
@@ -104,6 +128,9 @@ async function launchAndMeasure(args: LaunchArgs): Promise<void> {
         const state = await session.evaluate<string>(`location.href + " | readyState " + document.readyState + " | " + (document.body?.innerText ?? "").replace(/\\s+/g, " ").slice(0, 300)`).catch((error: unknown) => String(error));
         throw new Error(`the game never reported a graphics tier after the reload (${state})`);
       }
+      // Into the scene the browser harness measures: the dev runner runs the game's `capture.play`
+      // (past its menus) itself; a shipped build is asked to through the agent bridge.
+      const start = await startCaptureScene(session);
       // The same settle the browser harness gives a game: shader warmup and streaming finish first.
       await Bun.sleep(10_000);
       const release = await startPath(session, "walk");
@@ -114,13 +141,13 @@ async function launchAndMeasure(args: LaunchArgs): Promise<void> {
       await release();
       const viewport = await session.evaluate<string>(`innerWidth + "x" + innerHeight`);
       const frame = summarizeFrameDeltas(deltas);
-      const record = { at: Date.now(), exe: args.exe, clock: args.uncapped ? "uncapped" : "vsync", tier, viewport, frame, breakdown };
+      const record = { at: Date.now(), exe: args.exe, clock: args.uncapped ? "uncapped" : "vsync", tier, viewport, start, frame, breakdown };
       if (args.out !== null) {
         mkdirSync(dirname(args.out), { recursive: true });
         writeFileSync(args.out, `${JSON.stringify(record, null, 2)}\n`);
       }
       const b = breakdown ?? null;
-      console.log(`desktop ${record.clock}: ${frame.fps} fps, frame avg ${frame.avgMs} ms, p95 ${frame.p95Ms} ms, frame p50 ${b?.frame.p50 ?? "?"} ms, CPU p50 ${b?.work.p50 ?? "?"} ms, GPU p50 ${b?.gpu?.p50 ?? "?"} ms, ${tier} tier, ${viewport}, walking`);
+      console.log(`desktop ${record.clock}: ${frame.fps} fps, frame avg ${frame.avgMs} ms, p95 ${frame.p95Ms} ms, frame p50 ${b?.frame.p50 ?? "?"} ms, CPU p50 ${b?.work.p50 ?? "?"} ms, GPU p50 ${b?.gpu?.p50 ?? "?"} ms, ${tier} tier, ${viewport}, walking; ${start}`);
     } finally {
       await session.close();
     }
