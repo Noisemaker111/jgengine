@@ -32,7 +32,7 @@ Skills ship inside this package under `skills/` and are installed into the proje
 | `drive [...]` | Play/test the current game headless — `--click`/`--click-at x,y` (CSS viewport pixels)/`--key`/`--wait`/`--shot` steps, `--rpc`, `--playtest --strict`; `--help` for all flags |
 
 Key holds restore focus to the game's keyboard surface after menu clicks and remain held until at least one rendered frame runs, with a bounded grace period for slow headless rendering. `shoot` and `drive` always run this CLI's own harness; a game carries no copy, so a newer CLI brings driver fixes.
-| `desktop [dir]` | Ship a Windows NSIS installer for a project or `--url` |
+| `desktop [dir]` | Ship a Windows NSIS installer for a project or `--url`; the built `<Game>.exe --uncapped` renders without the display's vsync |
 | `skills -p \| -g` | Re-install agent skills (project / global) |
 | `doctor [dir] [--workspace [--json]]` | Game diagnostics by default; opt-in aggregate workspace SDK installation checks |
 | `sync [dir...] [--check]` | Bring a game, or a workspace root and its games, to this CLI's engine version and each game's `jgengine.json`; prints the release notes crossed |

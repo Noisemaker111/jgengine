@@ -148,6 +148,8 @@ bun run perf <game>  # 1080p walk: frame p50/p95/p99, CPU per system, GPU per pa
 bun run perf live <game> # the same JSON for a game already open in a browser, ~0.3 s, fails on a GL allocation after warmup (its frame time is printed: an in-page clock is vsynced)
 bun run perf gate    # frame check, run by hand: plays every game under games/ with a web entry, one at a time, and fails a p95 frame over 16.7 ms on the RTX 3070 at 1600x900 (printed, not judged, on any other GPU), or any program/framebuffer created after warmup; draws are printed, not gated (--help)
 bun run perf server    # multiplayer host load, run by hand: 16/32/64/128 players posing in one room on the real host and router, one JSON line per size (wall and CPU ms, MB and messages out per game second); stderr names a size that falls behind real time (--players, --repeats, --json, --max-seconds)
+bun run perf fps-gap   # how far each game is from 360 fps (2.78 ms) at the gate's conditions, and its costs grouped into ranked engine work items; a report, not a gate (--markdown for a PR)
+bun run perf desktop --launch "<Game>.exe" --uncapped  # the fps a --diagnostics desktop build reaches without vsync at the gate's conditions
 bun run perf timing    # CPU timing check, run by hand: re-runs the benchmarks that carry wall-clock budgets (nav crowd, perception, utility, visibility, off-screen, flock, paths) and fails when one exceeds it
 # one game standalone:
 bun --cwd=games/harbor-heat run dev
