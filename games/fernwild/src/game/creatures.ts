@@ -17,6 +17,7 @@ import type { MountedRider } from "@jgengine/core/scene/mount";
 import { scatterPoints } from "@jgengine/core/inheritance/inheritance";
 import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
 import { createResourceNodeField, type ResourceGrant, type ResourceNodeState, type ToolProfile } from "@jgengine/core/world/resourceNode";
+import { playerMovementHeading } from "@jgengine/core/movement/playerMovement";
 
 import { editorLayers } from "../editorLayers";
 import { BAG, HOTBAR } from "./bags";
@@ -925,7 +926,9 @@ export function tickCreatures(ctx: GameContext, dt: number): CreatureEvent[] {
 
   world.carcasses.tick(dt);
   const me = ctx.scene.entity.get(actor(ctx));
-  world.aimed = me === null ? null : (creatureInFront(ctx, me.id, me.rotationY, USE_REACH, (creature) => riding.riderOf(creature.id) === null)?.id ?? null);
+  // On foot the aim is where the camera looks, as for building: a survivor too loaded to walk can still turn to a tame.
+  const aim = me === null ? 0 : me.id === ctx.player.userId ? playerMovementHeading(ctx, me.id) || me.rotationY : me.rotationY;
+  world.aimed = me === null ? null : (creatureInFront(ctx, me.id, aim, USE_REACH, (creature) => riding.riderOf(creature.id) === null)?.id ?? null);
   return events;
 }
 
