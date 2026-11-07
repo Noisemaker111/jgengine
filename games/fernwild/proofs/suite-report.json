@@ -163,6 +163,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/tame-haul.proof.ts",
+      "proves": [
+        "creatures.work.haul"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/tame-hunger.proof.ts",
       "proves": [
         "creatures.feed-starve"
