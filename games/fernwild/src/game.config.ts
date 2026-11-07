@@ -258,6 +258,7 @@ export const game = defineGame({
         ...sight("danger", nearestThreat(ctx, here, 40)),
         // The nearest tamed Phiomia, to walk back to with its saddle.
         ...sight("phiomia", nearestTame(ctx, here, "phiomia")),
+        ...sight("raptor", nearestTame(ctx, here, "raptor")),
         ...sight("doedicurus", nearestTame(ctx, here, "doedicurus")),
         // The nearest campfire and mortar the survivor placed, to walk back to and work at.
         ...sight("campfire", stationNear("campfire")),
