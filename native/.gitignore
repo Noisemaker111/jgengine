@@ -1,0 +1,3 @@
+target/
+# Local copies of exported programs for remote checks; regenerate with bun scripts/native-export.ts.
+testdata/

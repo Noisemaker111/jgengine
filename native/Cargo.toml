@@ -1,0 +1,27 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/jg-scene",
+    "crates/jg-shader",
+    "crates/jg-render",
+    "crates/jg-hud",
+    "crates/jg-v8",
+    "crates/jg-rules",
+    "crates/jg-native",
+]
+
+[workspace.package]
+edition = "2024"
+license = "MIT"
+
+[workspace.dependencies]
+wgpu = { version = "~30.0.1" }
+bytemuck = { version = "1.25", features = ["derive"] }
+glam = { version = "0.30", features = ["bytemuck"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+pollster = "1"
+
+[profile.release]
+codegen-units = 16
+debug = 1
