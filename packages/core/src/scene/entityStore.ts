@@ -109,6 +109,9 @@ export interface SpawnOptions<TMeta = unknown> {
   onExisting?: "throw" | "replace" | "keep" | undefined;
 }
 
+// A tuple is stored as given, so a pose write passing one allocates nothing. A point becomes a new tuple
+// rather than being written into the old one: renderers and React props see a move only as a new
+// position identity, and a caller may still hold the previous tuple as "where it was".
 function toEntityPosition(position: SpawnPositionInput | undefined): EntityPosition {
   if (position === undefined) return [0, 0, 0];
   if ("x" in position) return [position.x, position.y, position.z];
@@ -361,6 +364,8 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
         const replacement = constraint(frame);
         if (replacement !== undefined) position = toEntityPosition(replacement);
       }
+      // A derived velocity is a new tuple, never the old one rewritten: a caller holding the previous
+      // velocity (a "speed before" read) must not see it change under it.
       const velocity =
         pose.dt !== undefined && pose.dt > 0
           ? ([
