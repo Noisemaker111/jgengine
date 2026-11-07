@@ -1,3 +1,5 @@
+import { createPointGrid } from "../spatial/pointGrid";
+
 export type FlockVec3 = readonly [number, number, number];
 
 export interface FlockAgent {
@@ -127,58 +129,6 @@ export interface FlockStepAgent {
   velocity: FlockVec3;
 }
 
-const CELL_KEY_STRIDE = 1_048_576;
-
-function cellKey(cx: number, cz: number): number {
-  return cx * CELL_KEY_STRIDE + cz;
-}
-
-/**
- * Per-call spatial index + scratch — never module-global.
- * Two `stepFlock` worlds in one process must not share a grid (#1545 / sdk remediation Phase 3a).
- */
-function buildAgentGrid(agents: readonly FlockStepAgent[], invCell: number): Map<number, number[]> {
-  const gridCells = new Map<number, number[]>();
-  for (let i = 0; i < agents.length; i += 1) {
-    const position = agents[i]!.position;
-    const key = cellKey(Math.floor(position[0] * invCell), Math.floor(position[2] * invCell));
-    let bucket = gridCells.get(key);
-    if (bucket === undefined) {
-      bucket = [];
-      gridCells.set(key, bucket);
-    }
-    bucket.push(i);
-  }
-  return gridCells;
-}
-
-function fillNeighbors(
-  agents: readonly FlockStepAgent[],
-  agentIndex: number,
-  invCell: number,
-  gridCells: Map<number, number[]>,
-  neighborScratch: FlockAgent[],
-): number {
-  const agent = agents[agentIndex]!;
-  const cx = Math.floor(agent.position[0] * invCell);
-  const cz = Math.floor(agent.position[2] * invCell);
-  let count = 0;
-  for (let dz = -1; dz <= 1; dz += 1) {
-    for (let dx = -1; dx <= 1; dx += 1) {
-      const bucket = gridCells.get(cellKey(cx + dx, cz + dz));
-      if (bucket === undefined) continue;
-      for (let b = 0; b < bucket.length; b += 1) {
-        const otherIndex = bucket[b]!;
-        if (otherIndex === agentIndex) continue;
-        neighborScratch[count] = agents[otherIndex]!;
-        count += 1;
-      }
-    }
-  }
-  neighborScratch.length = count;
-  return count;
-}
-
 /** Integrate one tick in place: steer every agent, clamp to `maxSpeed`, advance positions.
  * @internal
  */
@@ -193,14 +143,31 @@ export function stepFlock(
   if (count === 0) return;
 
   const cellSize = config.neighborRadius > 1e-6 ? config.neighborRadius : 1;
-  const invCell = 1 / cellSize;
-  // All scratch is call-local so concurrent worlds (or re-entrant steps) never share a grid.
-  const gridCells = buildAgentGrid(agents, invCell);
+  // All scratch is call-local so concurrent worlds (or re-entrant steps) never share a grid. The grid
+  // hands back candidates by z row, then x, then agent order, so flockmates sum in a fixed order.
+  const positions = new Float64Array(count * 3);
+  for (let i = 0; i < count; i += 1) {
+    const position = agents[i]!.position;
+    positions[i * 3] = position[0];
+    positions[i * 3 + 1] = position[1];
+    positions[i * 3 + 2] = position[2];
+  }
+  const grid = createPointGrid({ cellSize });
+  grid.rebuild(positions, count);
+  const candidates = new Int32Array(count);
   const neighborScratch: FlockAgent[] = [];
   const steerScratch = new Float64Array(count * 3);
 
   for (let i = 0; i < count; i += 1) {
-    fillNeighbors(agents, i, invCell, gridCells, neighborScratch);
+    const found = grid.query(positions[i * 3]!, positions[i * 3 + 2]!, cellSize, candidates);
+    let neighbors = 0;
+    for (let k = 0; k < found; k += 1) {
+      const other = candidates[k]!;
+      if (other === i) continue;
+      neighborScratch[neighbors] = agents[other]!;
+      neighbors += 1;
+    }
+    neighborScratch.length = neighbors;
     const steer = flockSteer(agents[i]!, neighborScratch, config, target);
     const base = i * 3;
     const external = acceleration?.(agents[i]!, i);
