@@ -63,7 +63,7 @@ Genres: creature-survival. 51/67 proven · 2 failing · 14 missing.
 | `harvest.carcass` | proven | A killed creature's body yields meat and hide by tool. | proofs/sim/carcass-harvest.proof.ts |
 | `crafting.station-tiers` | proven | Placed stations craft recipes the bare inventory cannot. | proofs/sim/station-tiers.proof.ts |
 | `crafting.unlock-spend` | proven | Level-ups give points the player spends to learn recipes. | proofs/sim/craft-learn.proof.ts |
-| `crafting.refine-tier` | missing | Raw ore smelts at a fuelled station into a material that opens a stronger tier of tools and building. |  |
+| `crafting.refine-tier` | proven | Raw ore smelts at a fuelled station into a material that opens a stronger tier of tools and building. | proofs/sim/refine-tier.proof.ts |
 | `crafting.fuel` | proven | A station that burns consumes fuel and stops when it runs out. | proofs/sim/station-fuel.proof.ts |
 | `crafting.preserve` | proven | A preserving container slows spoilage. | proofs/sim/preserve.proof.ts |
 | `crafting.tool-wear` | proven | Tools and weapons wear with use, break, and can be repaired with materials. | proofs/sim/tool-wear.proof.ts |
