@@ -22,7 +22,7 @@ import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { boatExe, boatMaxMachines, deleteOwnMachinesSync, realBoatCli, registryPath, runOnBoat, type BoatCli, type RunFacts } from "./boat";
+import { boatExe, boatMaxMachines, deleteOwnMachinesSync, fairshareExe, realBoatCli, registryPath, runOnBoat, type BoatCli, type RunFacts } from "./boat";
 import { READY_MARK, SETUP_FAILED_MARK, writeSnapshot, type Snapshot } from "./boat-snapshot";
 import { DONE_MARK, parseResultLine, parseStartLine, type RemotePlan, type RemoteStep } from "./boat-steps";
 import type { RunStepsOptions, ScheduledStep, StepResult } from "./stepScheduler";
@@ -368,14 +368,6 @@ export async function runPlaced<S extends PlaceableStep>(input: PlacedRunInput<S
 
 // ---- The fairshare slot around this PC's own steps ----
 
-/** fairshare's CLI: `FAIRSHARE_EXE`, else its install path; null off Windows or when absent. */
-export function fairshareExe(env: Readonly<Record<string, string | undefined>> = process.env): string | null {
-  if (env["FAIRSHARE_EXE"] !== undefined) return env["FAIRSHARE_EXE"] === "off" || env["FAIRSHARE_EXE"] === "" ? null : env["FAIRSHARE_EXE"];
-  if (process.platform !== "win32" || env["LOCALAPPDATA"] === undefined) return null;
-  const path = join(env["LOCALAPPDATA"], "fairshare", "bin", "fairshare.exe");
-  return existsSync(path) ? path : null;
-}
-
 /** The holder `fairshare slot` runs: says it holds the slot, then waits for its stdin to close. */
 const HOLDER = 'console.log("held"); await Bun.stdin.text();';
 
@@ -430,7 +422,7 @@ export function boatForThisRun(root: string, env: Readonly<Record<string, string
       process.exit(130);
     });
   }
-  return realBoatCli(exe);
+  return realBoatCli(exe, fairshareExe(env));
 }
 
 /** The test files among `files` that must run on this PC, each with its reason. */

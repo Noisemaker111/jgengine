@@ -4,15 +4,19 @@
 // Ubuntu machine, copies `<dir>` in, runs the command, prints its output and cost, deletes the
 // machine and exits with the command's code. This module owns everything around that call:
 //
-// - Capacity. The account runs at most `BOAT_MAX_MACHINES` (2) machines at once, shared by every
-//   thread and repo on the PC (Jon, 2026-11-07), and boat never queues a start. A start refused for
-//   that limit or a start-rate window is waited for here, with backoff, until a machine frees: the
-//   work never moves back onto this PC because boat was busy.
+// - Capacity. This PC runs at most `BOAT_MAX_MACHINES` (2) machines at once, shared by every
+//   thread and repo (Jon, 2026-11-07); boat's paid plan itself allows 100, and boat never queues a
+//   start. A run first takes a lease from `fairshare lease boat` and holds it until its machine is
+//   deleted, and counts `boat list` only while holding it: counting and then starting let three
+//   machines run at once on 2026-11-07, since a machine is missing from the list while it is
+//   created. A lease is a lock file Windows frees when its holder dies, so a crash never keeps one.
+//   A busy lease, a full count or a start refused for a limit is waited for here: the work never
+//   moves back onto this PC because boat was busy.
 // - Spent. A start window that frees later than this run waits (the day's starts used, a rate
 //   limit hours away): `spent`, with when it frees. The caller stops; it never runs the Linux work
 //   on this PC for it, since every thread would then run its whole suite here at once.
-// - Unusable. Not logged in, out of hours, the trial over, the network down: `unusable` with the
-//   reason in plain words, and the caller runs the work locally, since a landing must still work.
+// - Unusable. Not logged in, out of hours, the trial over, the network down, no fairshare to hold
+//   the cap: `unusable` with the reason in plain words, and the caller runs the work locally, since a landing must still work.
 // - Cleanup. Every machine this PC starts is written to a registry in the git common dir with the
 //   pid that owns it. The owner deletes it on exit, Ctrl-C included; a machine whose owner died
 //   (killed, crashed) is deleted by the next run that looks. `boat list` ends empty.
@@ -52,6 +56,19 @@ export type BoatState =
   | { kind: "spent"; why: string; until?: number }
   /** Not usable for this run: the work goes to the local slot. */
   | { kind: "unusable"; why: string };
+
+/** fairshare, which holds this PC's heavy-job slots and boat machine leases: FAIRSHARE_EXE ("off" for none), else where `fairshare install` puts it. */
+export function fairshareExe(env: Readonly<Record<string, string | undefined>> = process.env): string | null {
+  if (env["FAIRSHARE_EXE"] !== undefined) return env["FAIRSHARE_EXE"] === "off" || env["FAIRSHARE_EXE"] === "" ? null : env["FAIRSHARE_EXE"];
+  if (process.platform !== "win32" || env["LOCALAPPDATA"] === undefined) return null;
+  const path = join(env["LOCALAPPDATA"], "fairshare", "bin", "fairshare.exe");
+  return existsSync(path) ? path : null;
+}
+
+/** One of this PC's boat machine leases, held; or why none can be. */
+export type BoatLease = HeldLease | { unusable: string };
+/** `claim` names the lease's machine once boat reports it, so fairshare never counts it twice. */
+export type HeldLease = { claim: (id: string) => void; release: () => void };
 
 /** The fields of `boat limits --json` this reads. */
 export interface BoatLimits {
@@ -152,6 +169,8 @@ export interface BoatCli {
   /** `boat run`: each stdout line goes to `onLine` as it arrives; resolves with the exit. */
   run: (args: readonly string[], onLine: (line: string) => void, onErr: (line: string) => void) => Promise<{ status: number }>;
   delete: (id: string) => Promise<CliResult>;
+  /** Wait its turn for one of this PC's boat machine leases (`fairshare lease boat`); `note` hears why it waits. */
+  lease: (what: string, note: (line: string) => void) => Promise<BoatLease>;
   sleep: (ms: number) => Promise<void>;
   now: () => number;
 }
@@ -397,8 +416,20 @@ export function lineJoiner(emit: (line: string) => void): { push: (data: string)
  * does not know is judged by `boat limits` read right after, so a newly full window is never unusable. `--timeout` is always passed, so a hung command never runs on plan hours.
  */
 export async function runOnBoat(cli: BoatCli, options: RunOptions): Promise<RunOutcome> {
+  const asked = cli.now();
+  // Held from before the first count of running machines until this run's machine is deleted.
+  const lease = await cli.lease(options.what, options.note);
+  if ("unusable" in lease) return { kind: "unusable", why: lease.unusable, waitedMs: cli.now() - asked };
+  try {
+    return await runLeased(cli, options, lease, cli.now() - asked);
+  } finally {
+    lease.release();
+  }
+}
+
+async function runLeased(cli: BoatCli, options: RunOptions, lease: HeldLease, leaseWaitMs: number): Promise<RunOutcome> {
   await reapOrphans(cli, options.registry);
-  let waitedMs = 0;
+  let waitedMs = leaseWaitMs;
   let first: BoatState | undefined;
   for (;;) {
     const waited = await waitForCapacity(cli, { max: options.max, note: options.note, ...(options.maxWaitMs === undefined ? {} : { maxWaitMs: Math.max(0, options.maxWaitMs - waitedMs) }), ...(first === undefined ? {} : { first }) });
@@ -411,6 +442,7 @@ export async function runOnBoat(cli: BoatCli, options: RunOptions): Promise<RunO
     const register = (id: string): void => {
       if (registered !== null) return;
       registered = id;
+      lease.claim(id);
       updateRegistry(options.registry, (entries) => [...entries.filter((entry) => entry.id !== id), { id, pid: process.pid, startedAt: cli.now(), what: options.what }]);
     };
     const stdout = lineJoiner(options.onLine);
@@ -473,8 +505,48 @@ export function deleteOwnMachinesSync(exe: string, registry: string): void {
   if (own.length > 0) updateRegistry(registry, (entries) => entries.filter((entry) => entry.pid !== process.pid));
 }
 
+/**
+ * `fairshare lease boat`: resolves once it prints "held". The lease ends when `release` closes its
+ * stdin, or when this process dies and Windows closes the pipe.
+ */
+export function fairshareLease(fairshare: string | null, what: string, note: (line: string) => void): Promise<BoatLease> {
+  if (fairshare === null) return Promise.resolve({ unusable: "fairshare is not installed, so this PC's boat machine cap cannot be held (run `fairshare install`)" });
+  return new Promise((resolve) => {
+    const child = spawn(fairshare, ["lease", "boat", "--label", what], { stdio: ["pipe", "pipe", "pipe"], windowsHide: true });
+    let out = "";
+    let err = "";
+    let held = false;
+    child.stdout.on("data", (chunk: Buffer) => {
+      out += chunk.toString("utf8");
+      if (!held && /^held\r?$/m.test(out)) {
+        held = true;
+        resolve({
+          claim: (id) => {
+            if (child.stdin.writable) child.stdin.write(`machine ${id}\n`);
+          },
+          release: () => {
+            child.stdin.end();
+            setTimeout(() => child.kill(), 5_000).unref();
+          },
+        });
+      }
+    });
+    child.stderr.on("data", (chunk: Buffer) => {
+      err += chunk.toString("utf8");
+      for (const line of chunk.toString("utf8").split(/\r?\n/)) if (line.trim().length > 0) note(line.trim());
+    });
+    child.on("error", (error) => {
+      if (!held) resolve({ unusable: `fairshare lease could not start: ${error.message}` });
+    });
+    child.on("close", (code) => {
+      const last = err.trim().split(/\r?\n/).at(-1) ?? "";
+      if (!held) resolve({ unusable: `fairshare lease ended before holding a lease (exit ${code ?? "none"})${last === "" ? "" : `: ${last}`}` });
+    });
+  });
+}
+
 /** The real CLI. */
-export function realBoatCli(exe: string): BoatCli {
+export function realBoatCli(exe: string, fairshare: string | null = fairshareExe()): BoatCli {
   const capture = (args: string[]): Promise<CliResult> =>
     new Promise((resolve) => {
       const child = spawn(exe, args, { stdio: ["ignore", "pipe", "pipe"], windowsHide: true });
@@ -521,6 +593,7 @@ export function realBoatCli(exe: string): BoatCli {
           resolve({ status: code ?? 1 });
         });
       }),
+    lease: (what, note) => fairshareLease(fairshare, what, note),
     sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
     now: Date.now,
   };
