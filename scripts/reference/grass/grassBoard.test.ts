@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
@@ -190,13 +190,20 @@ describe("grass board", () => {
       git("init", "-q");
       git("config", "user.email", "t@t");
       git("config", "user.name", "t");
+      // Git trusts a cached stat that matches: compare only size and mtime and give the edit the same
+      // mtime, which is what an edit in the same clock tick as the last add looks like.
+      git("config", "core.checkStat", "minimal");
+      git("config", "core.trustctime", "false");
+      const tick = new Date(Date.now() - 3_600_000);
       writeFileSync(join(out, "a.txt"), "one");
+      utimesSync(join(out, "a.txt"), tick, tick);
       const dirty = boardSource(out);
       expect(git("diff", "--cached", "--name-only").stdout.trim()).toBe("");
       git("add", "a.txt");
       git("commit", "-q", "-m", "a");
       expect(boardSource(out)).toBe(dirty);
       writeFileSync(join(out, "a.txt"), "two");
+      utimesSync(join(out, "a.txt"), tick, tick);
       expect(boardSource(out)).not.toBe(dirty);
     });
 
