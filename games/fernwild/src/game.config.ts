@@ -17,7 +17,7 @@ import { bodyPrompts, bodyView } from "./game/deathBody";
 import { breedingPrompts, breedingView } from "./game/breeding";
 import { broodView, obeliskPrompts } from "./game/broodmother";
 import { BROOD_PHASES } from "./game/data/bosses";
-import { awakeTamingProgress, creaturePrompts, creaturesView, speciesNear, wildLevelNear, mountCanFly, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
+import { awakeTamingProgress, creaturePrompts, creaturesView, speciesNear, wildHurtNear, nearestTameStance, wildLevelNear, mountCanFly, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
 import { tameFood } from "./game/tameHunger";
 import { STRUCTURES } from "./game/data/structures";
 import { content } from "./game/content";
@@ -350,6 +350,9 @@ export const game = defineGame({
         pedestals: caves.caves.filter((cave) => cave.artifact !== null).length,
         // 1 while an artifact's pedestal is in reach, so E would take it.
         atPedestal: cavePrompts(ctx).length > 0 ? 1 : 0,
+        // Wild creatures within 40 m that have been hurt or killed, and your nearest tame's stance (0 passive, 1 neutral, 2 aggressive; -1 with none).
+        wildHurt: wildHurtNear(ctx, here, 40),
+        tameStance: nearestTameStance(ctx, here),
         // Hotbar slot in hand, 1-based; 0 bare-handed.
         holding: view.activeSlot === null ? 0 : view.activeSlot + 1,
         // Metres to the survivor's own body, to a decimetre, and the stacks it holds; -1 and 0 with no body lying.

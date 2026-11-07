@@ -210,6 +210,16 @@ export function CreaturePanel(): ReactNode {
           </button>
         </div>
       ) : null}
+      {card.tamed ? (
+        <div data-stance={card.stance ?? ""} style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12 }}>
+          <span style={{ flex: 1 }}>{card.stance === "passive" ? "Never fights" : card.stance === "aggressive" ? "Attacks anything near" : "Fights back, and joins your fights"}</span>
+          {(["passive", "neutral", "aggressive"] as const).map((stance) => (
+            <button key={stance} style={{ ...BUTTON, opacity: card.stance === stance ? 1 : 0.6 }} onClick={() => void game.commands.run(`whistle${stance[0]!.toUpperCase()}${stance.slice(1)}`, {})}>
+              {stance[0]!.toUpperCase() + stance.slice(1)}
+            </button>
+          ))}
+        </div>
+      ) : null}
       {card.tamed ? <BreedingPanel mating={card.mating} /> : null}
       {card.growth !== null ? <TameSheet growth={card.growth} /> : null}
       <div style={{ display: "flex", flexDirection: "column", gap: 3, maxHeight: "34vh", overflowY: "auto" }}>

@@ -11,7 +11,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { leveling } from "@jgengine/core/progression/leveling";
 import { createStatPoints, type StatPointSheet } from "@jgengine/core/progression/statPoints";
-import { createCompanionRoster, type CompanionCommand, type CompanionRecord } from "@jgengine/core/scene/companion";
+import { createCompanionRoster, type CompanionCommand, type CompanionRecord, type CompanionStance } from "@jgengine/core/scene/companion";
 import { ridingOf, type SeatOffset } from "@jgengine/core/scene/riding";
 import type { MountedRider } from "@jgengine/core/scene/mount";
 import { scatterPoints } from "@jgengine/core/inheritance/inheritance";
@@ -40,6 +40,8 @@ const CARCASS_SECONDS = 300;
 const RESPAWN_SECONDS = 240;
 /** How far a whistle carries to your tames. */
 const WHISTLE_RANGE = 30;
+/** How far an aggressive tame looks for a wild creature to pick a fight with (approx ARK's aggro radius). */
+const AGGRESSIVE_RANGE = 15;
 /** How far E and a swing reach a creature, past its body. */
 const USE_REACH = 3;
 /** A bola wraps nothing bigger than this body radius, metres (ARK: big creatures shrug it off; approx). */
@@ -863,6 +865,18 @@ function feeder(creature: Creature): DoseSupply {
 
 // --- the tick ------------------------------------------------------------------------------
 
+/** Living wild creatures within `within` metres of `from`: what an aggressive tame picks fights with. */
+function wildAround(ctx: GameContext, world: World, from: readonly [number, number, number] | undefined, within: number): string[] {
+  if (from === undefined) return [];
+  const out: string[] = [];
+  for (const creature of world.creatures.values()) {
+    if (creature.dead || creature.tamed) continue;
+    const at = ctx.scene.entity.get(creature.id)?.position;
+    if (at !== undefined && Math.hypot(at[0] - from[0], at[2] - from[2]) <= within) out.push(creature.id);
+  }
+  return out;
+}
+
 function threatsTo(world: World, ids: readonly string[]): string[] {
   const out: string[] = [];
   for (const [id, step] of world.steps) if (step.targetId !== null && ids.includes(step.targetId) && !world.creatures.get(id)?.tamed) out.push(id);
@@ -938,7 +952,15 @@ export function tickCreatures(ctx: GameContext, dt: number): CreatureEvent[] {
     const mind = down || ridden
       ? ({ kind: "still" } as const)
       : record !== null
-        ? ({ kind: "tamed", intent: world.roster.resolveIntent(creature.id, { ownerPosition: owner?.position ?? null, ownerTargetId: ownerTarget, threats })! } as const)
+        ? ({
+            kind: "tamed",
+            intent: world.roster.resolveIntent(creature.id, {
+              ownerPosition: owner?.position ?? null,
+              ownerTargetId: ownerTarget,
+              threats,
+              nearby: record.stance === "aggressive" ? wildAround(ctx, world, self?.position, AGGRESSIVE_RANGE) : [],
+            })!,
+          } as const)
         : ({ kind: "wild", temperament: temperamentOf(def) } as const);
     const step = world.driver.step(ctx, creature.id, mind, body(world, creature), stepDt);
     world.steps.set(creature.id, step);
@@ -1030,8 +1052,13 @@ export function closeCreature(ctx: GameContext): void {
   setScreen(ctx, null);
 }
 
-/** ARK's whistles: every tame of yours in earshot follows you, or stays where it stands. */
-export function whistle(ctx: GameContext, order: Extract<CompanionCommand, "follow" | "stay">): void {
+const HEARD: Record<CompanionCommand | CompanionStance, string> = { follow: "following", stay: "staying", passive: "passive", neutral: "neutral", aggressive: "aggressive" };
+
+/**
+ * ARK's whistles: every tame of yours in earshot follows you or stays where it stands, or takes a stance:
+ * passive never fights, neutral fights what attacks it or you and joins your fights, aggressive also starts them.
+ */
+export function whistle(ctx: GameContext, order: CompanionCommand | CompanionStance): void {
   const world = worldOf(ctx);
   const me = ctx.scene.entity.get(ctx.player.userId);
   if (me === null) return;
@@ -1040,11 +1067,12 @@ export function whistle(ctx: GameContext, order: Extract<CompanionCommand, "foll
     const entity = ctx.scene.entity.get(record.id);
     if (entity === null || ridingOf(ctx).riderOf(record.id) !== null) continue;
     if (Math.hypot(entity.position[0] - me.position[0], entity.position[2] - me.position[2]) > WHISTLE_RANGE) continue;
-    world.roster.command(record.id, order);
+    if (order === "follow" || order === "stay") world.roster.command(record.id, order);
+    else world.roster.stance(record.id, order);
     if (order === "stay") world.roster.setHome(record.id, [entity.position[0], entity.position[1], entity.position[2]]);
     heard += 1;
   }
-  ctx.game.notices.push({ text: heard === 0 ? "No tames in earshot" : order === "follow" ? `${heard} following` : `${heard} staying`, tone: heard === 0 ? "deny" : "success" });
+  ctx.game.notices.push({ text: heard === 0 ? "No tames in earshot" : `${heard} ${HEARD[order]}`, tone: heard === 0 ? "deny" : "success" });
 }
 
 /** The E prompt for creatures, outranking a bush behind them. */
@@ -1248,6 +1276,7 @@ export function creatureCard(ctx: GameContext, id: string | null) {
     imprint: creature.imprint,
     mutations: creature.mutations,
     order: creature.tamed ? (world.roster.get(creature.id)?.command ?? null) : null,
+    stance: creature.tamed ? (world.roster.get(creature.id)?.stance ?? null) : null,
     taming: creature.tamed ? null : tamingView(world, creature, world.taming.state(creature.id)),
     stamina: { value: Math.floor(creature.stamina), max: Math.round(statOf(creature, "stamina")) },
     weight: { value: Math.round(loadOf(creature).mass * 10) / 10, max: Math.round(statOf(creature, "weight")) },
@@ -1302,6 +1331,34 @@ export function speciesNear(ctx: GameContext, from: readonly [number, number, nu
 }
 
 /** The highest level among the live wild creatures within `within` metres of `from`; 0 with none there. */
+/** Wild creatures within `within` metres of `from` that have been hurt, the dead among them. */
+export function wildHurtNear(ctx: GameContext, from: readonly [number, number, number], within: number): number {
+  let hurt = 0;
+  for (const creature of worldOf(ctx).creatures.values()) {
+    if (creature.tamed) continue;
+    const at = ctx.scene.entity.get(creature.id)?.position;
+    const health = ctx.scene.entity.stats.get(creature.id, "health");
+    if (at === undefined || health === null || health === undefined) continue;
+    if ((creature.dead || health.current < health.max) && Math.hypot(at[0] - from[0], at[2] - from[2]) <= within) hurt += 1;
+  }
+  return hurt;
+}
+
+/** The stance of your nearest tame: 0 passive, 1 neutral, 2 aggressive; -1 with none. */
+export function nearestTameStance(ctx: GameContext, from: readonly [number, number, number]): number {
+  const world = worldOf(ctx);
+  let best = -1;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const tame of tames(ctx)) {
+    const distance = Math.hypot(tame.at[0] - from[0], tame.at[2] - from[2]);
+    const stance = world.roster.get(tame.id)?.stance;
+    if (stance === undefined || distance >= bestDistance) continue;
+    best = stance === "passive" ? 0 : stance === "neutral" ? 1 : 2;
+    bestDistance = distance;
+  }
+  return best;
+}
+
 export function wildLevelNear(ctx: GameContext, from: readonly [number, number, number], within: number): number {
   let top = 0;
   for (const creature of worldOf(ctx).creatures.values()) {

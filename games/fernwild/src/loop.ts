@@ -99,6 +99,9 @@ export const systems = [
       commands.define("closeCreature", { apply: (state) => (closeCreature(state), state) });
       commands.define("whistleFollow", { apply: (state) => (whistle(state, "follow"), state) });
       commands.define("whistleStay", { apply: (state) => (whistle(state, "stay"), state) });
+      commands.define("whistlePassive", { apply: (state) => (whistle(state, "passive"), state) });
+      commands.define("whistleNeutral", { apply: (state) => (whistle(state, "neutral"), state) });
+      commands.define("whistleAggressive", { apply: (state) => (whistle(state, "aggressive"), state) });
       commands.define<{ inventoryId: string; slot: number }>("giveCreature", { apply: (state, input) => (giveToCreature(state, input.inventoryId, input.slot), state) });
       commands.define<{ slot: number }>("takeCreature", { apply: (state, input) => (takeFromCreature(state, input.slot), state) });
       commands.define<{ stat: string }>("levelTame", {
