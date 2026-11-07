@@ -6,6 +6,7 @@ import { BROOD_TIERS, TROPHY_DROPS } from "../src/game/data/bosses";
 import { incubationBand } from "../src/game/data/breeding";
 import { CRAFTING_RECIPES, ENGRAMS } from "../src/game/data/engrams";
 import { HARVESTABLES } from "../src/game/data/harvestables";
+import { SEEDS } from "../src/game/data/farm";
 import { eggItem, eggSizeFor } from "../src/game/data/kibble";
 import { FIST, ITEMS, PICK_UP, SPOILS, type ToolDef } from "../src/game/data/items";
 import { SPECIES } from "../src/game/data/species";
@@ -57,6 +58,8 @@ const uses: SuiteContentUse[] = [
   { id: "equip", path: "src/game/data/items.ts", items: ITEMS.filter((item) => item.tool !== undefined || item.wear !== undefined || item.kind === "saddle").map((item) => item.id) },
   { id: "tame-food", path: "src/game/data/species.ts", items: [...new Set(Object.values(SPECIES).flatMap((species) => Object.keys(species.taming.foods)))] },
   { id: "keep-under", path: "src/game/data/taming.ts", items: Object.keys(NARCOTICS) },
+  // A crop plot takes a seed to plant and fertilizer to grow it (src/game/base.ts).
+  { id: "plant", path: "src/game/data/farm.ts", items: [...Object.keys(SEEDS), "fertilizer"] },
   ...BROOD_TIERS.map((tier) => ({ id: `summon:${tier.id}`, path: `src/game/data/bosses.ts/${tier.id}`, items: Object.keys(tier.cost) })),
 ];
 

@@ -60,6 +60,15 @@ const ITEM_ENGRAMS: readonly EngramDef[] = [
   // ARK's metal tools: a pick is one ingot, a hatchet eight (levels and points approx).
   engram("metal_pick", 19, 12, { metal_ingot: 1, wood: 1, hide: 10 }, 5),
   engram("metal_hatchet", 19, 12, { metal_ingot: 8, wood: 1, hide: 10 }, 5),
+  // The climb from 60 to the cap (ours, levels and points approx): the far corners' obsidian, crystal and oil, then
+  // what the Broodmother leaves, one piece of brood gear per difficulty beaten.
+  engram("obsidian_arrow", 62, 20, { obsidian: 1, wood: 1, fiber: 3 }, 1, { count: 2 }),
+  engram("snow_mask", 70, 24, { crystal: 3, hide: 15, fiber: 10 }, 5),
+  engram("oilskin_coat", 78, 30, { oil: 8, hide: 25, fiber: 30 }, 5),
+  engram("element_pick", 86, 35, { element: 10, metal_ingot: 20, crystal: 10, obsidian: 10 }, 10),
+  engram("brood_greaves", 95, 40, { broodmother_trophy_gamma: 1, spider_flag: 1, artifact_pack: 1, artifact_strong: 1, element: 20, hide: 40 }, 10),
+  engram("brood_gauntlets", 100, 45, { broodmother_trophy_beta: 1, artifact_skylord: 1, artifact_immune: 1, element: 50, hide: 20 }, 10),
+  engram("brood_treads", 105, 50, { broodmother_trophy_alpha: 1, artifact_devourer: 1, element: 100, hide: 30 }, 10),
 ];
 
 /** Every engram in ARK's level order: items above, building pieces from their own table. Level 1 engrams cost nothing and are known from the start. */

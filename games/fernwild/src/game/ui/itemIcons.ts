@@ -54,6 +54,13 @@ const BY_ITEM: Readonly<Record<string, string>> = {
   bow: "gameicons:lorc/pocket-bow",
   stone_arrow: "gameicons:delapouite/plain-arrow",
   tranq_arrow: "gameicons:lorc/arrow-flights",
+  obsidian_arrow: "gameicons:lorc/broadhead-arrow",
+  element_pick: "gameicons:delapouite/pick-of-destiny",
+  snow_mask: "gameicons:delapouite/steampunk-goggles",
+  oilskin_coat: "gameicons:delapouite/pirate-coat",
+  brood_greaves: "gameicons:delapouite/greaves",
+  brood_gauntlets: "gameicons:delapouite/gauntlet",
+  brood_treads: "gameicons:lorc/steeltoe-boots",
 };
 
 /** Families sharing one icon, by id prefix or suffix. */

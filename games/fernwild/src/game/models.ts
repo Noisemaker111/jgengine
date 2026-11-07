@@ -66,6 +66,12 @@ const CLOTH_DYES: Record<string, string> = {
   cloth_pants: "#6c5034",
   cloth_gloves: "#5c432c",
   cloth_boots: "#4b3622",
+  // The late gear: grey-blue snow mask, black oilskin, and the brood set in the Broodmother's dark violet.
+  snow_mask: "#8fa3b3",
+  oilskin_coat: "#1f1d1b",
+  brood_greaves: "#3b2a4a",
+  brood_gauntlets: "#3b2a4a",
+  brood_treads: "#3b2a4a",
 };
 
 const WORN: Record<string, WornLayer> = Object.fromEntries(
