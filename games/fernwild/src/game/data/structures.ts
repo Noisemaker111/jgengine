@@ -106,6 +106,7 @@ export const SHAPES: readonly StructureShapeDef[] = [
   { id: "mortar_and_pestle", boxes: [{ min: [-0.3, 0, -0.3], max: [0.3, 0.55, 0.3] }], ground: { maxStep: 0.6 }, floor: true },
   { id: "cooking_pot", boxes: [{ min: [-0.55, 0, -0.55], max: [0.55, 0.8, 0.55] }], ground: { maxStep: 0.6 }, floor: true },
   { id: "storage_box", boxes: [{ min: [-0.5, 0, -0.35], max: [0.5, 0.6, 0.35] }], ground: { maxStep: 0.6 }, floor: true },
+  { id: "crop_plot", boxes: [{ min: [-1, 0, -1], max: [1, 0.4, 1] }], ground: { maxStep: 0.6 }, floor: true },
   { id: "preserving_bin", boxes: [{ min: [-0.4, 0, -0.4], max: [0.4, 0.9, 0.4] }], ground: { maxStep: 0.6 }, floor: true },
 ];
 
@@ -147,6 +148,8 @@ export const STRUCTURES: readonly StructureDef[] = [
   piece("campfire", "Campfire", "campfire", "station", 100, 2, 3, { thatch: 12, flint: 1, stone: 16, wood: 2 }, 4, "Cooks meat and keeps you warm."),
   // ARK's Small Storage Box: fifteen slots of things kept at home.
   piece("storage_box", "Storage Box", "storage_box", "station", 400, 4, 6, { wood: 25, thatch: 20, fiber: 10 }, 4, "Holds 15 stacks. E opens it."),
+  // ARK's Small Crop Plot (level and cost approx): a seed, water and fertilizer grow a crop picked again and again.
+  piece("crop_plot", "Small Crop Plot", "crop_plot", "station", 400, 15, 12, { thatch: 40, fiber: 50, stone: 50 }, 10, "Plant a seed, keep it watered and fertilized, and pick its crop. E tends it."),
   // ARK's Preserving Bin: food kept in it goes off far slower (level and cost approx).
   piece("preserving_bin", "Preserving Bin", "preserving_bin", "station", 400, 9, 9, { stone: 30, wood: 30, thatch: 30, fiber: 20 }, 10, "Keeps 6 stacks of food fresh four times as long. E opens it."),
   piece("thatch_foundation", "Thatch Foundation", "foundation", "thatch", 2400, 4, 3, { thatch: 20, wood: 6, fiber: 15 }, 6, "The floor every hut starts from."),

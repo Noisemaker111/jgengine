@@ -56,7 +56,11 @@ const bush = (label: string, berries: Record<string, number>): Harvestable => ({
   budget: 4,
   radius: 0.8,
   respawn: REGROW / 2,
-  resources: [{ kind: "fiber", amount: [2, 4] }, ...Object.entries(berries).map(([kind, most]) => ({ kind, amount: [0, most] as const }))],
+  resources: [
+    { kind: "fiber", amount: [2, 4] },
+    ...Object.entries(berries).map(([kind, most]) => ({ kind, amount: [0, most] as const })),
+    ...(berries["mejoberry"] === undefined ? [] : [{ kind: "mejoberry_seed", amount: [0, 1] as const }]),
+  ],
 });
 
 /** Scatter palette item → what it yields. Items not listed (grass) are scenery. */

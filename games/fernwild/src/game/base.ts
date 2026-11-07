@@ -9,6 +9,7 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 import { createVitals, type Vitals, type VitalsState } from "@jgengine/core/stats/vitals";
 
 import { BAG, HOTBAR } from "./bags";
+import { emptyPlot, growPlot, PLOT, SEEDS, type Plot } from "./data/farm";
 import { FUEL, FUEL_MAX } from "./data/fuel";
 import { BASE_BUILDING, CONTAINERS, STATIONS, structureDef, TIER_COLORS } from "./data/structures";
 import { itemLabel, itemTraits, SPOILS } from "./data/items";
@@ -44,9 +45,79 @@ interface Base {
   viewing: string | null;
   /** The spoil timers of what every container holds, each at its container's rate. */
   spoilage: Spoilage;
+  /** The crop plot the survivor faces within reach, found as fires are. */
+  plot: string | null;
+  /** Each crop plot's soil, by piece id. */
+  plots: Map<string, Plot>;
 }
 
-const baseOf = perContext((): Base => ({ building: createBaseBuilding(BASE_BUILDING), ghost: null, turn: 0, syncedVersion: -1, aimed: null, fire: null, fires: new Map(), store: null, stores: new Map(), viewing: null, spoilage: createSpoilage(SPOILS) }));
+const baseOf = perContext((): Base => ({ building: createBaseBuilding(BASE_BUILDING), ghost: null, turn: 0, syncedVersion: -1, aimed: null, fire: null, fires: new Map(), store: null, stores: new Map(), viewing: null, spoilage: createSpoilage(SPOILS), plot: null, plots: new Map() }));
+
+const isPlot = (pieceId: string): boolean => pieceId === "crop_plot";
+
+/** A crop plot's soil, made bare the first time it is asked for. */
+function plotOf(base: Base, piece: BasePiece): Plot {
+  let plot = base.plots.get(piece.id);
+  if (plot === undefined) {
+    plot = emptyPlot();
+    base.plots.set(piece.id, plot);
+  }
+  return plot;
+}
+
+/** How many of an item the survivor carries, hotbar and bag. */
+const carried = (ctx: GameContext, itemId: string): number => ctx.player.inventory.count(HOTBAR, itemId) + ctx.player.inventory.count(BAG, itemId);
+
+/** Take one of an item from the bag, else the hotbar. */
+function takeOne(ctx: GameContext, itemId: string): void {
+  ctx.player.inventory.take(ctx.player.inventory.count(BAG, itemId) > 0 ? BAG : HOTBAR, itemId, 1);
+}
+
+type PlotStep = { kind: "harvest"; crop: string } | { kind: "plant"; seed: string } | { kind: "fertilize" } | { kind: "water" } | { kind: "none"; why: string };
+
+/** What E does at a plot: pick it when ripe, else plant, fertilize or water it with what the survivor carries. */
+function plotStep(ctx: GameContext, plot: Plot): PlotStep {
+  if (plot.seed !== null && plot.growth >= 1) return { kind: "harvest", crop: SEEDS[plot.seed] ?? plot.seed };
+  if (plot.seed === null) {
+    const seed = Object.keys(SEEDS).find((id) => carried(ctx, id) > 0);
+    return seed === undefined ? { kind: "none", why: "needs a seed" } : { kind: "plant", seed };
+  }
+  if (plot.fertilizer <= PLOT.fertilizerMax - PLOT.fertilizerEach && carried(ctx, "fertilizer") > 0) return { kind: "fertilize" };
+  if (plot.water <= PLOT.waterMax - PLOT.pour && carried(ctx, "waterskin") > 0) return { kind: "water" };
+  const growing = `growing ${Math.floor(plot.growth * 100)}%, water ${Math.ceil(plot.water)}, fertilizer ${Math.ceil(plot.fertilizer)}`;
+  return { kind: "none", why: plot.water <= 0 ? `${growing}: needs water` : plot.fertilizer <= 0 ? `${growing}: needs fertilizer` : growing };
+}
+
+function plotLabel(step: PlotStep): string {
+  if (step.kind === "harvest") return `Harvest ${itemLabel(step.crop)}`;
+  if (step.kind === "plant") return `Plant ${itemLabel(step.seed)}`;
+  if (step.kind === "fertilize") return "Add Fertilizer";
+  if (step.kind === "water") return "Pour Waterskin";
+  return `Crop Plot: ${step.why}`;
+}
+
+function usePlot(ctx: GameContext, base: Base, piece: BasePiece): boolean {
+  const plot = plotOf(base, piece);
+  const step = plotStep(ctx, plot);
+  if (step.kind === "harvest") {
+    ctx.player.inventory.put(BAG, step.crop, PLOT.harvest);
+    base.plots.set(piece.id, { ...plot, growth: PLOT.regrow });
+    ctx.game.notices.push({ text: `+${PLOT.harvest} ${itemLabel(step.crop)}`, tone: "success" });
+  } else if (step.kind === "plant") {
+    takeOne(ctx, step.seed);
+    base.plots.set(piece.id, { ...plot, seed: step.seed, growth: 0 });
+  } else if (step.kind === "fertilize") {
+    takeOne(ctx, "fertilizer");
+    base.plots.set(piece.id, { ...plot, fertilizer: Math.min(PLOT.fertilizerMax, plot.fertilizer + PLOT.fertilizerEach) });
+  } else if (step.kind === "water") {
+    base.plots.set(piece.id, { ...plot, water: Math.min(PLOT.waterMax, plot.water + PLOT.pour) });
+  } else {
+    ctx.game.notices.push({ text: plotLabel(step), tone: "deny" });
+    return false;
+  }
+  ctx.touch();
+  return true;
+}
 
 const fireBody = (): Vitals => createVitals([{ id: "fuel", max: FUEL_MAX, start: 0, rate: -1 }]);
 
@@ -185,6 +256,13 @@ export function tickBase(ctx: GameContext, heldItemId: string | null, dt: number
   }
   for (const id of [...base.fires.keys()]) if (!standing.has(id)) base.fires.delete(id);
   for (const id of [...base.stores.keys()]) if (base.building.get(id) === null) base.stores.delete(id);
+  for (const piece of base.building.list()) {
+    if (!isPlot(piece.pieceId)) continue;
+    // A roof over the plot keeps the rain off it, as it does off the survivor.
+    const covered = base.building.list().some((other) => other.id !== piece.id && other.position[1] > piece.position[1] + 1 && Math.hypot(other.position[0] - piece.position[0], other.position[2] - piece.position[2]) < 2.5);
+    base.plots.set(piece.id, growPlot(plotOf(base, piece), dt, covered ? 0 : ctx.environment.sample(piece.position[0], piece.position[2]).rain));
+  }
+  for (const id of [...base.plots.keys()]) if (base.building.get(id) === null) base.plots.delete(id);
   if (base.viewing !== null && base.building.get(base.viewing) === null) closeStore(ctx);
   spoilStores(base, dt);
   const me = ctx.scene.entity.get(ctx.player.userId);
@@ -194,8 +272,9 @@ export function tickBase(ctx: GameContext, heldItemId: string | null, dt: number
   base.ghost = heldItemId !== null && structureDef(heldItemId) !== null ? planFor(ctx, base, heldItemId, yaw) : null;
   base.fire = facingPiece(base, me.position, yaw, burns);
   base.store = base.fire === null ? facingPiece(base, me.position, yaw, (pieceId) => CONTAINERS[pieceId] !== undefined) : null;
-  // A fire or a box sits under the eye-height ray, so the one faced is the one aimed at when the ray finds nothing.
-  base.aimed = base.building.raycast(eye(me.position), forward(yaw), USE_REACH)?.id ?? base.fire ?? base.store;
+  base.plot = base.fire === null && base.store === null ? facingPiece(base, me.position, yaw, isPlot) : null;
+  // A fire, a box or a plot sits under the eye-height ray, so the one faced is the one aimed at when the ray finds nothing.
+  base.aimed = base.building.raycast(eye(me.position), forward(yaw), USE_REACH)?.id ?? base.fire ?? base.store ?? base.plot;
   ctx.touch();
 }
 
@@ -323,7 +402,7 @@ export function storeView(ctx: GameContext) {
   return open === null ? null : { id: open.piece.id, label: itemLabel(open.piece.pieceId), slots: open.items.slots };
 }
 
-/** E on a fire (stoke it), a container (open it), or a door or its frame (swing it). */
+/** E on a fire (stoke it), a container (open it), a crop plot (tend it), or a door or its frame (swing it). */
 export function useStructure(ctx: GameContext): boolean {
   const base = baseOf(ctx);
   const fire = aimedFire(base);
@@ -334,6 +413,8 @@ export function useStructure(ctx: GameContext): boolean {
     setScreen(ctx, "storage");
     return true;
   }
+  const plot = base.plot === null ? null : base.building.get(base.plot);
+  if (plot !== null) return usePlot(ctx, base, plot);
   const door = aimedDoor(base);
   if (door === null) return false;
   const open = base.building.toggle(door.id);
@@ -348,6 +429,7 @@ function fell(ctx: GameContext, removed: readonly BasePiece[], refund: number): 
     // What a container held comes out with it, into the bag as far as it fits.
     for (const slot of base.stores.get(piece.id)?.slots ?? []) if (slot !== null) ctx.player.inventory.put(BAG, slot.itemId, slot.count);
     base.stores.delete(piece.id);
+    base.plots.delete(piece.id);
     for (const [itemId, count] of Object.entries(structureDef(piece.pieceId)?.cost ?? {})) {
       const back = Math.floor(count * refund);
       if (back > 0) ctx.player.inventory.put(BAG, itemId, back);
@@ -407,6 +489,10 @@ export function basePrompts(ctx: GameContext): PositionedPrompt[] {
   if (store !== null) {
     return [{ id: "store", position: { x: store.position[0], z: store.position[2] }, priority: 3, prompt: proximityPrompt({ radius: USE_REACH + 2, display: keybind("interact", `Open ${itemLabel(store.pieceId)}`), invoke: command("structureUse") }) }];
   }
+  const plot = base.plot === null ? null : base.building.get(base.plot);
+  if (plot !== null) {
+    return [{ id: "plot", position: { x: plot.position[0], z: plot.position[2] }, priority: 3, prompt: proximityPrompt({ radius: USE_REACH + 2, display: keybind("interact", plotLabel(plotStep(ctx, plotOf(base, plot)))), invoke: command("structureUse") }) }];
+  }
   const piece = aimedDoor(base);
   if (piece === null) return [];
   return [
@@ -432,6 +518,8 @@ export function baseView(ctx: GameContext) {
     /** Where the first foundation and doorframe stand, so a proof can measure the survivor against the hut. */
     floor: base.building.list().find((piece) => piece.pieceId === "thatch_foundation")?.position ?? null,
     doorway: base.building.list().find((piece) => piece.pieceId === "thatch_doorframe")?.position ?? null,
+    /** The faced crop plot's soil, for the look readout and proofs. */
+    plot: base.plot === null ? null : (base.plots.get(base.plot) ?? null),
   };
 }
 
@@ -447,14 +535,15 @@ interface BaseSave {
   fires: Record<string, VitalsState>;
   stores: Record<string, InventoryState>;
   spoilage: Record<string, number>;
+  plots: Record<string, Plot>;
 }
 
 export function baseSave(ctx: GameContext) {
   return {
-    key: "fernwild.base4",
+    key: "fernwild.base5",
     snapshot: (): BaseSave => {
       const base = baseOf(ctx);
-      return { building: base.building.snapshot(), fires: Object.fromEntries([...base.fires].map(([id, fire]) => [id, fire.state()])), stores: Object.fromEntries(base.stores), spoilage: base.spoilage.snapshot() };
+      return { building: base.building.snapshot(), fires: Object.fromEntries([...base.fires].map(([id, fire]) => [id, fire.state()])), stores: Object.fromEntries(base.stores), spoilage: base.spoilage.snapshot(), plots: Object.fromEntries(base.plots) };
     },
     hydrate: (data: BaseSave) => {
       const base = baseOf(ctx);
@@ -467,6 +556,7 @@ export function baseSave(ctx: GameContext) {
       }
       base.stores = new Map(Object.entries(data.stores));
       base.spoilage.restore(data.spoilage);
+      base.plots = new Map(Object.entries(data.plots));
       syncSolids(ctx, base);
     },
   };
@@ -478,6 +568,8 @@ export function resetBase(ctx: GameContext): void {
   base.fires.clear();
   base.stores.clear();
   base.spoilage.restore({});
+  base.plots.clear();
+  base.plot = null;
   base.viewing = null;
   base.store = null;
   base.ghost = null;
