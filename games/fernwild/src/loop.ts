@@ -8,7 +8,7 @@ import { cavesOf, cavesSave, resetCaves, takeArtifact, tickCaves } from "./game/
 import { bodiesSave, recoverBody, resetBodies, tickBodies } from "./game/deathBody";
 import { breedingSave, careForBaby, resetBreeding, setBreedingSpeed, setMutationChance, tickBreeding } from "./game/breeding";
 import { resetTameHunger, setTameFood, tameHungerSave, tickTameHunger } from "./game/tameHunger";
-import { broodSave, resetBroodmother, setBroodHealth, summonBroodmother, tickBroodmother, useObelisk } from "./game/broodmother";
+import { broodSave, resetBroodmother, setBroodHealth, setBroodStrength, summonBroodmother, tickBroodmother, useObelisk } from "./game/broodmother";
 import { airlift, closeCreature, creaturesSave, knockOutNow, destroyWild, feedNarcotic, forceTame, giveTameXp, giveToCreature, loadTame, levelTame, mountBite, resetCreatures, setTamingSpeed, spawnCreature, takeFromCreature, tames, tameSummoned, tickCreatures, toggleMating, unsaddle, useCreature, whistle } from "./game/creatures";
 import { TAME_STATS } from "./game/data/species";
 import { LEVEL_STATS, SURVIVOR } from "./game/data/survivor";
@@ -262,6 +262,8 @@ interface Cheat {
   drop?: string | true;
   /** ARK's admin SetHealth on the Broodmother in her lair: her health to this share of its max. */
   broodHealth?: number;
+  /** ARK's server boss difficulty: every Broodmother summoned after this has this share of her health. */
+  broodStrength?: number;
   /** Wear these armour items from the bag, as a double-click would. */
   wear?: readonly string[];
   /** Take off what these body slots hold, into the bag, as the inventory's take-off would. */
@@ -295,6 +297,7 @@ function cheat(ctx: GameContext, input: Cheat): void {
   }
   if (input.drop !== undefined) callSupplyDrop(ctx, input.drop === true ? undefined : input.drop);
   if (input.broodHealth !== undefined) setBroodHealth(ctx, input.broodHealth);
+  if (input.broodStrength !== undefined) setBroodStrength(ctx, input.broodStrength);
   const me = ctx.scene.entity.get(ctx.player.userId);
   if (input.summon !== undefined && me !== null) {
     const distance = input.summon.distance ?? 4;

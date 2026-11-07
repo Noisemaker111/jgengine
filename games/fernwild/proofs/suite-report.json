@@ -44,6 +44,14 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/boss-reward.proof.ts",
+      "proves": [
+        "boss.summon-arena-reward",
+        "boss.unlocks-progression"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/breed-imprint.proof.ts",
       "proves": [
         "breeding.raise-imprint"
