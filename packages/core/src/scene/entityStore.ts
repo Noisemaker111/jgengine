@@ -178,6 +178,41 @@ export interface EntityBlackboard {
   remaining(id: string, key: string, nowMs: number): number;
 }
 
+/**
+ * The store's fast path for engine systems that touch many entities per tick (crowds, flocks, pose
+ * interpolation, a server kernel): resolve an id to an integer handle once, then read pose straight from
+ * typed-array columns and write it by handle. The columns mirror every entity's `position`, `velocity`
+ * and rotations exactly — every write through the store, by id or by handle, updates both — so games
+ * keep using ids and entity objects and never need this.
+ *
+ * Columns are laid out `handle * 3` (x, y, z; rotations as x, y, z). A despawned handle is reused by a
+ * later spawn with its {@link generationOf} bumped, so a system caching handles across ticks checks the
+ * generation. Columns are reallocated as the store grows: read them again after spawning.
+ *
+ * @capability entity-columns integer handles and typed-array pose columns for engine systems stepping many entities per tick
+ */
+export interface EntityColumns {
+  /** The handle a live id holds, or -1. */
+  handleOf(id: string): number;
+  /** The id a live handle holds, or `undefined`. */
+  idOf(handle: number): string | undefined;
+  /** Bumped every time a handle is given to a new entity (a spawn, a replacing spawn, a hydrated newcomer). */
+  generationOf(handle: number): number;
+  isLive(handle: number): boolean;
+  /** One past the highest handle in use; iterate `0..span()` and skip handles that are not live. */
+  span(): number;
+  /** x, y, z per handle, equal to each entity's `position`. Read only: write through {@link setPosition}. */
+  positions(): Float64Array;
+  /** x, y, z per handle, equal to each entity's `velocity`. Read only: write through {@link setVelocity}. */
+  velocities(): Float64Array;
+  /** rotationX, rotationY, rotationZ per handle. Read only. */
+  rotations(): Float64Array;
+  /** `setPose(id, { position: [x, y, z], dt })` by handle: same constraint, derived velocity and notifications, no id lookup. False for a handle that is not live. */
+  setPosition(handle: number, x: number, y: number, z: number, dt?: number): boolean;
+  /** `setVelocity(id, [x, y, z])` by handle. False for a handle that is not live or a non-finite component. */
+  setVelocity(handle: number, x: number, y: number, z: number): boolean;
+}
+
 /** Entity state, pose writes, keyed behavior notifications and snapshot/hydration under stable instance IDs. */
 export interface EntityStore<TMeta = unknown> {
   spawn(name: string, options?: SpawnOptions<TMeta>): string;
@@ -214,6 +249,8 @@ export interface EntityStore<TMeta = unknown> {
   setSpawnPose(id: string, pose: SpawnPose): boolean;
   resetToSpawn(id: string): boolean;
   blackboard: EntityBlackboard;
+  /** Integer handles and typed-array pose columns for engine systems; see {@link EntityColumns}. */
+  columns: EntityColumns;
 }
 
 /** Commit hook for a derived index; runs after the write and before existing subscribers.
@@ -235,13 +272,90 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
   const blackboards = new Map<string, Map<string, unknown>>();
   let nextCounter = 1;
 
-  function writeEntity(entity: SceneEntity<TMeta>, previous = store.get(entity.id)?.behaviors): void {
+  // Handles and their pose columns. `handleEntities[h]` is the live object for handle h, so a handle
+  // write mirrors into it without an id lookup.
+  const handles = new Map<string, number>();
+  const handleIds: (string | undefined)[] = [];
+  const handleEntities: (SceneEntity<TMeta> | undefined)[] = [];
+  const freeHandles: number[] = [];
+  let capacity = 16;
+  let span = 0;
+  let positionColumn = new Float64Array(capacity * 3);
+  let velocityColumn = new Float64Array(capacity * 3);
+  let rotationColumn = new Float64Array(capacity * 3);
+  let generations = new Uint32Array(capacity);
+
+  function grow(): void {
+    capacity *= 2;
+    const position = new Float64Array(capacity * 3);
+    position.set(positionColumn);
+    positionColumn = position;
+    const velocity = new Float64Array(capacity * 3);
+    velocity.set(velocityColumn);
+    velocityColumn = velocity;
+    const rotation = new Float64Array(capacity * 3);
+    rotation.set(rotationColumn);
+    rotationColumn = rotation;
+    const generation = new Uint32Array(capacity);
+    generation.set(generations);
+    generations = generation;
+  }
+
+  function mirror(handle: number, entity: SceneEntity<TMeta>): void {
+    const base = handle * 3;
+    const { position, velocity } = entity;
+    positionColumn[base] = position[0];
+    positionColumn[base + 1] = position[1];
+    positionColumn[base + 2] = position[2];
+    velocityColumn[base] = velocity[0];
+    velocityColumn[base + 1] = velocity[1];
+    velocityColumn[base + 2] = velocity[2];
+    rotationColumn[base] = entity.rotationX;
+    rotationColumn[base + 1] = entity.rotationY;
+    rotationColumn[base + 2] = entity.rotationZ;
+  }
+
+  /** Bind `entity` to its id's handle (a new one for a new id, a bumped generation for a fresh body) and mirror it. */
+  function bindHandle(entity: SceneEntity<TMeta>, fresh: boolean): void {
+    let handle = handles.get(entity.id);
+    if (handle === undefined) {
+      handle = freeHandles.pop();
+      if (handle === undefined) {
+        if (span === capacity) grow();
+        handle = span;
+        span += 1;
+      }
+      handles.set(entity.id, handle);
+      handleIds[handle] = entity.id;
+      generations[handle] = generations[handle]! + 1;
+    } else if (fresh) generations[handle] = generations[handle]! + 1;
+    handleEntities[handle] = entity;
+    mirror(handle, entity);
+  }
+
+  function releaseHandle(id: string): void {
+    const handle = handles.get(id);
+    if (handle === undefined) return;
+    handles.delete(id);
+    handleIds[handle] = undefined;
+    handleEntities[handle] = undefined;
+    freeHandles.push(handle);
+  }
+
+  function mirrorId(id: string, entity: SceneEntity<TMeta>): void {
+    const handle = handles.get(id);
+    if (handle !== undefined) mirror(handle, entity);
+  }
+
+  function writeEntity(entity: SceneEntity<TMeta>, previous = store.get(entity.id)?.behaviors, fresh = false): void {
     if (!behaviorDataEqual(previous ?? [], entity.behaviors)) behaviorChanges.add(entity.id);
+    bindHandle(entity, fresh);
     store.set(entity.id, entity);
   }
 
   function deleteEntity(id: string): void {
     if ((store.get(id)?.behaviors.length ?? 0) > 0) behaviorChanges.add(id);
+    releaseHandle(id);
     store.delete(id);
   }
 
@@ -269,6 +383,55 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
     remaining(id, key, nowMs) {
       const until = blackboards.get(id)?.get(key);
       return typeof until === "number" ? Math.max(0, until - nowMs) : 0;
+    },
+  };
+
+  const columns: EntityColumns = {
+    handleOf: (id) => handles.get(id) ?? -1,
+    idOf: (handle) => handleIds[handle],
+    generationOf: (handle) => generations[handle] ?? 0,
+    isLive: (handle) => handleEntities[handle] !== undefined,
+    span: () => span,
+    positions: () => positionColumn,
+    velocities: () => velocityColumn,
+    rotations: () => rotationColumn,
+    setPosition(handle, x, y, z, dt) {
+      const current = handleEntities[handle];
+      if (current === undefined) return false;
+      const id = current.id;
+      let position: EntityPosition = [x, y, z];
+      const constraint = constraints.size === 0 ? undefined : constraints.get(id);
+      if (constraint !== undefined) {
+        const replacement = constraint({ entityId: id, current: current.position, next: position, ...(dt === undefined ? {} : { dt }) });
+        if (replacement !== undefined) position = toEntityPosition(replacement);
+      }
+      const base = handle * 3;
+      if (dt !== undefined && dt > 0) {
+        const vx = (position[0] - positionColumn[base]!) / dt;
+        const vy = (position[1] - positionColumn[base + 1]!) / dt;
+        const vz = (position[2] - positionColumn[base + 2]!) / dt;
+        current.velocity = [vx, vy, vz];
+        velocityColumn[base] = vx;
+        velocityColumn[base + 1] = vy;
+        velocityColumn[base + 2] = vz;
+      }
+      current.position = position;
+      positionColumn[base] = position[0];
+      positionColumn[base + 1] = position[1];
+      positionColumn[base + 2] = position[2];
+      store.set(id, current);
+      return true;
+    },
+    setVelocity(handle, x, y, z) {
+      const current = handleEntities[handle];
+      if (current === undefined || !Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return false;
+      current.velocity = [x, y, z];
+      const base = handle * 3;
+      velocityColumn[base] = x;
+      velocityColumn[base + 1] = y;
+      velocityColumn[base + 2] = z;
+      store.set(current.id, current);
+      return true;
     },
   };
 
@@ -309,7 +472,7 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
         ...(options.size === undefined ? {} : { size: options.size }),
         ...(options.look === undefined ? {} : { look: options.look }),
         meta: options.meta as TMeta,
-      });
+      }, undefined, true);
       return id;
     },
     despawn(id) {
@@ -341,8 +504,10 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       if (patch.look === null) delete current.look;
       else if (patch.look !== undefined) current.look = patch.look;
       if (patch.meta !== undefined) current.meta = patch.meta;
-      if (patch.behaviors === undefined) store.set(id, current);
-      else writeEntity(current, previousBehaviors);
+      if (patch.behaviors === undefined) {
+        mirrorId(id, current);
+        store.set(id, current);
+      } else writeEntity(current, previousBehaviors);
       return true;
     },
     setPoseConstraint(id, constraint) {
@@ -353,7 +518,7 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       const current = store.get(id);
       if (!current) return false;
       let position = toEntityPosition(pose.position);
-      const constraint = constraints.get(id);
+      const constraint = constraints.size === 0 ? undefined : constraints.get(id);
       if (constraint !== undefined) {
         const frame: PoseConstraintFrame = {
           entityId: id,
@@ -379,6 +544,7 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       if (pose.rotationY !== undefined) current.rotationY = pose.rotationY;
       if (pose.rotationX !== undefined) current.rotationX = pose.rotationX;
       if (pose.rotationZ !== undefined) current.rotationZ = pose.rotationZ;
+      mirrorId(id, current);
       store.set(id, current);
       return true;
     },
@@ -387,6 +553,7 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       if (current === undefined || !Array.isArray(velocity) || velocity.length !== 3 ||
           !velocity.every((component) => typeof component === "number" && Number.isFinite(component))) return false;
       current.velocity = [velocity[0], velocity[1], velocity[2]];
+      mirrorId(id, current);
       store.set(id, current);
       return true;
     },
@@ -430,6 +597,7 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
         }
       }
       for (const entity of entities) {
+        const fresh = !store.has(entity.id);
         writeEntity({
           id: entity.id,
           name: entity.name,
@@ -447,7 +615,7 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
           ...(entity.worn === undefined ? {} : { worn: [...entity.worn] }),
           ...(entity.look === undefined ? {} : { look: entity.look }),
           meta: entity.meta,
-        });
+        }, undefined, fresh);
         if (!spawnPoses.has(entity.id)) {
           spawnPoses.set(entity.id, { position: entity.position, rotationY: entity.rotationY });
         }
@@ -468,9 +636,11 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       current.position = pose.position;
       current.rotationY = pose.rotationY;
       current.velocity = [0, 0, 0];
+      mirrorId(id, current);
       store.set(id, current);
       return true;
     },
     blackboard,
+    columns,
   };
 }
