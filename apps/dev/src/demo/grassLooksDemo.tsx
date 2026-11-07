@@ -5,7 +5,6 @@ import type { PlayableGame } from "@jgengine/shell/registry";
 import { GrassPatch } from "@jgengine/core/grass/GrassPatch.draw";
 
 import { demoGame } from "./demoGame";
-import { grassStyleFromPage } from "./grassReference";
 
 const PATCH = 10;
 const GAP = 1.5;
@@ -27,10 +26,7 @@ const patchCenter = (index: number): [number, number] => {
 };
 
 function GrassLooks() {
-  const looks = useMemo(() => {
-    const worldStyle = grassStyleFromPage(typeof window === "undefined" ? "" : window.location.search);
-    return LOOKS.map((entry) => ({ ...entry, look: readGrassLook(entry.meta, worldStyle) }));
-  }, []);
+  const looks = useMemo(() => LOOKS.map((entry) => ({ ...entry, look: readGrassLook(entry.meta) })), []);
   const area = useMemo(() => [PATCH, PATCH] as const, []);
   return (
     <group>

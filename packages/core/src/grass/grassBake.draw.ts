@@ -2,6 +2,7 @@ import * as THREE from "three";
 
 import { seededRng } from "@jgengine/core/random/rng";
 import { grassBladeDensity, type GrassLook } from "@jgengine/core/grass/grassKind";
+import { drawnGrassLook } from "@jgengine/core/grass/grassDrawn";
 
 import { grassBareAt, grassClumpCentre, grassFieldNoise, grassTuftReach } from "@jgengine/core/grass/grassField";
 import { hashNoise2, seedToUint32, type TerrainSeed } from "@jgengine/core/terrain/terrainSeed";
@@ -42,6 +43,7 @@ export interface GrassBakeOptions {
 
 /** A patch ready to bake: the look plus every derived number the bake and stream share. */
 export interface ResolvedGrassBake {
+  /** The look as its style draws it (`drawnGrassLook`): blade width, tuft size and heights after `detail` and `exaggeration`. */
   look: GrassLook;
   width: number;
   depth: number;
@@ -80,7 +82,7 @@ function bareCoverage(look: GrassLook, seed: string, coverageAt: TerrainHeightSa
 /** Resolve a patch's bake inputs once; the stream and every node bake read the result. */
 export function resolveGrassBake(options: GrassBakeOptions): ResolvedGrassBake {
   const size = resolveTerrainSize(options.area);
-  const look = options.look;
+  const look = drawnGrassLook(options.look);
   const columns = Math.max(1, Math.ceil(size.width / GRASS_CELL_SIZE));
   const rows = Math.max(1, Math.ceil(size.depth / GRASS_CELL_SIZE));
   const bladesPerM2 = grassBladeDensity(look);

@@ -1,6 +1,7 @@
 import { seededRng } from "@jgengine/core/random/rng";
 import { hashNoise2 } from "@jgengine/core/terrain/terrainSeed";
 import type { GrassLook } from "@jgengine/core/grass/grassKind";
+import { grassExaggerationAmount } from "@jgengine/core/grass/grassStyle";
 
 function smooth(t: number): number {
   return t * t * (3 - 2 * t);
@@ -139,6 +140,10 @@ export function createGrassTuftTemplate(inputs: GrassTuftInputs): GrassTuftTempl
   // Splay draws from its own stream, so a look without it keeps the same tuft it always had.
   const splayRandom = seededRng(`${inputs.seed}/tuft-splay`);
   const splay = look.tuft.splay;
+  // The natural end of exaggeration lays blades every way: each leans out at its own angle and
+  // heading, from its own stream so the default tuft is the one it always was.
+  const lieRandom = seededRng(`${inputs.seed}/tuft-lie`);
+  const lie = Math.max(0, -grassExaggerationAmount(look.style.exaggeration));
   const tuftReach = grassTuftReach(look, inputs.bladesPerM2);
   const position: number[] = [];
   const uv: number[] = [];
@@ -157,8 +162,9 @@ export function createGrassTuftTemplate(inputs: GrassTuftInputs): GrassTuftTempl
     const curled = angle + Math.PI / 2 + (random() - 0.5) * 1.6;
     // Splayed blades turn to face straight out from the centre and lean that way from the root.
     const outward = Math.PI / 2 - angle + (splayRandom() - 0.5) * 0.5;
-    const yaw = blade === 0 ? curled : curled + wrapAngle(outward - curled) * splay;
-    const lean = blade === 0 ? splay * 0.15 : splay * (0.55 + 0.45 * splayRandom()) * 1.3;
+    const lieTurn = (lieRandom() - 0.5) * 2.4, lieLean = lieRandom() * 0.9;
+    const yaw = (blade === 0 ? curled : curled + wrapAngle(outward - curled) * splay) + lieTurn * lie;
+    const lean = (blade === 0 ? splay * 0.15 : splay * (0.55 + 0.45 * splayRandom()) * 1.3) + lieLean * lie;
     const h = blade === 0 ? 1 : 0.7 + random() * 0.45;
     const w = 0.8 + random() * 0.4;
     const phase = random();

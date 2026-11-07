@@ -8,6 +8,8 @@ import type { TerrainHeightSampler } from "@jgengine/core/terrain/terrainMath.dr
 interface CoverGrain {
   map: THREE.DataTexture;
   normalMap: THREE.DataTexture;
+  /** Mean of the colour map, 0..1: what the grain flattens to as `grain` falls to 0. */
+  mean: number;
 }
 
 let grain: CoverGrain | null = null;
@@ -60,11 +62,13 @@ function coverGrain(): CoverGrain {
   const at = (x: number, y: number) => height[(((y % size) + size) % size) * size + (((x % size) + size) % size)] ?? 0;
   const colour = new Uint8Array(size * size * 4);
   const normal = new Uint8Array(size * size * 4);
+  let total = 0;
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
       const i = (y * size + x) * 4;
       const clump = (grainHash(x >> 3, y >> 3) - 0.5) * 18;
       const value = Math.max(170, Math.min(255, Math.round(192 + at(x, y) * 72 + clump)));
+      total += value;
       colour[i] = value;
       colour[i + 1] = value;
       colour[i + 2] = value;
@@ -80,8 +84,33 @@ function coverGrain(): CoverGrain {
   }
   const normalMap = grainTexture(normal);
   normalMap.repeat.set(2, 2);
-  grain = { map: grainTexture(colour), normalMap };
+  grain = { map: grainTexture(colour), normalMap, mean: total / (size * size * 255) };
   return grain;
+}
+
+/**
+ * How a style's `detail` draws the mat's grain: `strength` scales the blade strokes' contrast (0 a
+ * flat painted colour, 1 the grain as generated, up to 1.6) and `scale` how finely they repeat (1,
+ * up to 2 at full detail). Detail 0.5 is the grain as it always was.
+ * @internal
+ */
+export function grassCoverGrain(detail: number): { strength: number; scale: number } {
+  const d = Math.max(0, Math.min(1, detail));
+  return { strength: Math.min(1.6, d * 2), scale: d > 0.5 ? 1 + (d - 0.5) * 2 : 1 };
+}
+
+/**
+ * The mat's map lookup with the grain's strength and scale applied: three's `map_fragment` sampling at
+ * `vMapUv * uGrainScale` and mixing the sample toward the grain's mean by `uGrain`.
+ * @internal
+ */
+export function grassCoverMapFragment(chunk: string): string {
+  const sample = "texture2D( map, vMapUv )";
+  const apply = "diffuseColor *= sampledDiffuseColor;";
+  if (!chunk.includes(sample) || !chunk.includes(apply)) throw new Error("GrassCover: three's map_fragment changed; update grassCoverMapFragment");
+  return chunk
+    .replace(sample, "texture2D( map, vMapUv * uGrainScale )")
+    .replace(apply, `sampledDiffuseColor.rgb = mix( vec3( uGrainMean ), sampledDiffuseColor.rgb, uGrain );\n\t${apply}`);
 }
 
 /** Props for {@link GrassCover}: one authored patch's footprint, colours and drape samplers. */
@@ -100,6 +129,8 @@ export interface GrassCoverProps {
   lift?: number;
   /** Patch-local mat shade, about -1..1 (mow stripes, cushion mounds); omit for an even mat. */
   shadeAt?: TerrainHeightSampler | undefined;
+  /** The style's `detail`, 0..1, which sets the grain ({@link grassCoverGrain}). Default 0.5. */
+  detail?: number;
   position?: readonly [number, number, number];
 }
 
@@ -120,6 +151,7 @@ export function GrassCover({
   segments,
   lift,
   shadeAt,
+  detail = 0.5,
   position,
 }: GrassCoverProps) {
   const geometry = useDisposable(() => {
@@ -146,23 +178,33 @@ export function GrassCover({
     next.computeBoundingSphere();
     return next;
   }, [area, seed, colorBase, colorTip, strength, edgeFeather, heightAt, coverageAt, segments, lift, shadeAt]);
-  const material = useDisposable(
-    () =>
-      new THREE.MeshStandardMaterial({
-        map: coverGrain().map,
-        normalMap: coverGrain().normalMap,
-        normalScale: new THREE.Vector2(0.5, 0.5),
-        vertexColors: true,
-        transparent: true,
-        depthWrite: false,
-        roughness: 0.96,
-        metalness: 0,
-        polygonOffset: true,
-        polygonOffsetFactor: -1,
-        polygonOffsetUnits: -1,
-      }),
-    [],
-  );
+  const material = useDisposable(() => {
+    const tile = coverGrain();
+    const { strength, scale } = grassCoverGrain(detail);
+    const next = new THREE.MeshStandardMaterial({
+      map: tile.map,
+      normalMap: tile.normalMap,
+      normalScale: new THREE.Vector2(0.5 * strength, 0.5 * strength),
+      vertexColors: true,
+      transparent: true,
+      depthWrite: false,
+      roughness: 0.96,
+      metalness: 0,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
+    });
+    next.onBeforeCompile = (shader) => {
+      shader.uniforms["uGrain"] = { value: strength };
+      shader.uniforms["uGrainScale"] = { value: scale };
+      shader.uniforms["uGrainMean"] = { value: tile.mean };
+      shader.fragmentShader = shader.fragmentShader
+        .replace("#include <common>", "#include <common>\nuniform float uGrain;\nuniform float uGrainScale;\nuniform float uGrainMean;")
+        .replace("#include <map_fragment>", grassCoverMapFragment(THREE.ShaderChunk.map_fragment));
+    };
+    next.customProgramCacheKey = () => "jgengine-grass-cover";
+    return next;
+  }, [detail]);
   if (strength <= 0) return null;
   return (
     <mesh
