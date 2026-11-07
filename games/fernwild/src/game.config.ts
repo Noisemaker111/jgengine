@@ -17,7 +17,7 @@ import { bodyPrompts, bodyView } from "./game/deathBody";
 import { breedingPrompts, breedingView } from "./game/breeding";
 import { broodView, obeliskPrompts } from "./game/broodmother";
 import { BROOD_PHASES } from "./game/data/bosses";
-import { airliftView, awakeTamingProgress, creatureCard, creaturePrompts, lineageStrays, creaturesView, speciesNear, wildCountNear, wildHurtNear, nearestTameStance, wildLevelNear, mountCanFly, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
+import { airliftView, mountSwim, awakeTamingProgress, creatureCard, creaturePrompts, lineageStrays, creaturesView, speciesNear, wildCountNear, wildHurtNear, nearestTameStance, wildLevelNear, mountCanFly, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
 import { tameFood } from "./game/tameHunger";
 import { STRUCTURES } from "./game/data/structures";
 import { content } from "./game/content";
@@ -28,6 +28,7 @@ import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./game/bags";
 import { nearestSupplyDrop, supplyDropPrompts } from "./game/supplyDrops";
 import { canRun, nearestHarvestable, survivorPrompts, survivorView } from "./game/survivor";
 import { CLIMB_SPEED } from "./game/data/flight";
+import { SWIM_SLOW } from "./game/data/swim";
 import { firstDay, PREY } from "./game/onboarding";
 import { dossierView, nearestUnreadNote, notePrompts } from "./game/dossier";
 import { openScreen } from "./game/screens";
@@ -107,7 +108,7 @@ export const game = defineGame({
   },
   controls: {
     // A ridden flyer hovers: Space climbs, C dives, WASD flies at the mount's own speed; out of stamina it drops.
-    movement: { canSprint: canRun, swim: { speedMultiplier: 0.6, dive: true }, feel: { runMultiplier: SURVIVOR.runMultiplier }, flight: { mode: "hover", verticalSpeed: CLIMB_SPEED, canFly: mountCanFly } },
+    movement: { canSprint: canRun, swim: { speedMultiplier: SWIM_SLOW, dive: true }, feel: { runMultiplier: SURVIVOR.runMultiplier }, flight: { mode: "hover", verticalSpeed: CLIMB_SPEED, canFly: mountCanFly } },
     // The camera starts behind the survivor on the authored spawn facing, so you wash up looking inland.
     prompts: (ctx) => [...survivorPrompts(ctx), ...creaturePrompts(ctx), ...basePrompts(ctx), ...cavePrompts(ctx), ...bodyPrompts(ctx), ...supplyDropPrompts(ctx), ...eggPrompts(ctx), ...breedingPrompts(ctx), ...obeliskPrompts(ctx), ...notePrompts(ctx)],
   },
@@ -330,6 +331,8 @@ export const game = defineGame({
         primeSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "raw_prime_meat"),
         rawMeatSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "raw_meat"),
         riding: creatures.riding === null ? 0 : 1,
+        // 1 while the ridden mount is in deep water, and 1 when it is one of the swimmers.
+        ...((swim) => ({ mountSwimming: swim.swimming ? 1 : 0, mountSwimmer: swim.swimmer ? 1 : 0 }))(mountSwim(ctx)),
         // Whether the ridden flyer holds a creature, that creature's height above the ground (-1 with none), and how far the
         // last creature lifted now is from where it was lifted (-1 with none).
         ...((lift) => ({ lifting: lift.holding === null ? 0 : 1, liftedAlt: Math.round(lift.heldAlt * 10) / 10, liftMoved: Math.round(lift.liftMoved * 10) / 10 }))(airliftView(ctx)),

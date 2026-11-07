@@ -31,6 +31,8 @@ import { setScreen } from "./screens";
 import { strikeHarvestable } from "./survivor";
 import { biteProfile, loadShare } from "./data/tameWork";
 import { AIRBORNE, FLYERS, LIFT_HANG, LIFT_REACH } from "./data/flight";
+import { SWIM_DEPTH, SWIM_SLOW, SWIMMERS } from "./data/swim";
+import { SEA_LEVEL } from "../world";
 
 /** Slots in a creature's own inventory (ARK caps it by weight; slots are the simple stand-in). */
 const CREATURE_SLOTS = 30;
@@ -663,6 +665,12 @@ function heightAboveGround(ctx: GameContext, id: string): number {
   return entity === null ? 0 : entity.position[1] - ctx.world.groundHeightAt(entity.position[0], entity.position[2]);
 }
 
+/** Whether a creature stands in water deep enough to swim. */
+function inDeepWater(ctx: GameContext, id: string): boolean {
+  const entity = ctx.scene.entity.get(id);
+  return entity !== null && SEA_LEVEL - ctx.world.groundHeightAt(entity.position[0], entity.position[2]) > SWIM_DEPTH;
+}
+
 /** A tame's second: the passive XP trickle, and stamina spent on a ridden sprint or in the air, or won back at rest. */
 function tickTame(ctx: GameContext, creature: Creature, ridden: boolean, dt: number): void {
   grantTameXp(ctx, creature, TAME_LEVELS.passivePerSecond * dt);
@@ -675,8 +683,11 @@ function tickTame(ctx: GameContext, creature: Creature, ridden: boolean, dt: num
   const rate = (sprinting ? -defOf(creature).sprintStamina : 0) + (flying ? -flyer.stamina : 0) || (moving ? 0 : max * STAMINA_REGEN);
   creature.stamina = Math.max(0, Math.min(max, creature.stamina + rate * dt));
   const def = defOf(creature);
+  // In water a swimmer swims at its own speed, which the water's slowing (applied to every swimmer) would otherwise cut.
+  const swimmer = SWIMMERS[creature.species];
+  const swimming = ridden && swimmer !== undefined && inDeepWater(ctx, creature.id);
   // Loaded past its weight the mount slows, and at the limit it cannot move. In the air a flyer flies at its flying speed.
-  const walk = (flying ? flyer.speed : def.walk * statOf(creature, "speed")) * loadOf(creature).moveMultiplier;
+  const walk = (flying ? flyer.speed : swimming ? swimmer.speed / SWIM_SLOW : def.walk * statOf(creature, "speed")) * loadOf(creature).moveMultiplier;
   // Ridden, the mount sprints at its own ARK ratio (a tamed raptor 11.04 / 4.8 m/s), not the survivor's.
   const run = (def.tamedSprint ?? def.sprint) / def.walk;
   const moved = entity === null ? null : entity.movement;
@@ -688,6 +699,13 @@ export function mountCanFly(ctx: GameContext): boolean {
   const mountId = ridingOf(ctx).mountOf(ctx.player.userId);
   const mount = mountId === null ? undefined : worldOf(ctx).creatures.get(mountId);
   return mount !== undefined && FLYERS[mount.species] !== undefined && mount.stamina > 1 && !loadOf(mount).immobile;
+}
+
+/** Whether the survivor rides through deep water, and whether their mount is one of the swimmers. */
+export function mountSwim(ctx: GameContext): { swimming: boolean; swimmer: boolean } {
+  const mountId = ridingOf(ctx).mountOf(ctx.player.userId);
+  const mount = mountId === null ? undefined : worldOf(ctx).creatures.get(mountId);
+  return { swimming: mount !== undefined && inDeepWater(ctx, mount.id), swimmer: mount !== undefined && SWIMMERS[mount.species] !== undefined };
 }
 
 /** Whether the mount under the survivor has the stamina to sprint; null on foot. */
