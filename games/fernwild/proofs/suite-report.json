@@ -114,6 +114,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/storage-place.proof.ts",
+      "proves": [
+        "survival.storage-place"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/tame-clean.proof.ts",
       "proves": [
         "taming.effectiveness"
@@ -222,7 +229,7 @@
       "id": "content.item-use",
       "ok": false,
       "problems": [
-        "no use for metal, obsidian, crystal, oil, artifact_skylord, artifact_devourer, artifact_pack, artifact_immune, artifact_strong, element, spider_flag, broodmother_trophy_gamma and 4 more"
+        "no use for metal, obsidian, crystal, oil, artifact_skylord, artifact_devourer, artifact_pack, artifact_immune, artifact_strong, element, spider_flag, broodmother_trophy_gamma and 3 more"
       ]
     },
     {
@@ -234,7 +241,7 @@
       "id": "content.placeables-place",
       "ok": false,
       "problems": [
-        "says it places but the placement catalog has none: storage_box, hide_sleeping_bag"
+        "says it places but the placement catalog has none: hide_sleeping_bag"
       ]
     },
     {
