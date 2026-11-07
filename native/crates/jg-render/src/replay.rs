@@ -133,6 +133,15 @@ struct Merged {
     generation: usize,
 }
 
+/// What a vertex buffer slot of the open pass has bound, to skip rebinding the same buffer.
+#[derive(Clone, Copy, PartialEq)]
+enum Bound {
+    Attribute(usize),
+    Default,
+    /// An interleaved buffer and the generation of its GPU buffer.
+    Merged(usize, usize),
+}
+
 struct VertexBinding {
     slots: Vec<VertexSlot>,
     index: Option<(usize, wgpu::IndexFormat)>,
@@ -737,7 +746,7 @@ impl Replayer {
         let mut bound_pipeline = u32::MAX;
         let mut bound_group: Option<wgpu::BindGroup> = None;
         let mut bound_uniform = (u32::MAX, u64::MAX);
-        let mut bound_vertex: Vec<Option<usize>> = Vec::new();
+        let mut bound_vertex: Vec<Option<Bound>> = Vec::new();
         let mut bound_index: Option<usize> = None;
         let mut bound_view = [i32::MIN; 4];
         let mut bound_scissor = [i32::MIN; 4];
@@ -853,7 +862,7 @@ impl Replayer {
                     for (i, s) in vb.slots.iter().enumerate() {
                         if let Some(m) = s.merged {
                             self.refresh_merged(m);
-                            let key = (1usize << 62) | (m << 20) | (self.merged[m].generation & 0xfffff);
+                            let key = Bound::Merged(m, self.merged[m].generation);
                             if bound_vertex[i] != Some(key) {
                                 if let Some(b) = &self.merged[m].buffer {
                                     rp.set_vertex_buffer(i as u32, b.slice(..));
@@ -862,7 +871,7 @@ impl Replayer {
                             }
                             continue;
                         }
-                        let key = s.attribute.unwrap_or(usize::MAX);
+                        let key = s.attribute.map_or(Bound::Default, Bound::Attribute);
                         if bound_vertex[i] != Some(key) {
                             match s.attribute.and_then(|a| self.res.buffers[a].as_ref()) {
                                 Some(b) => rp.set_vertex_buffer(i as u32, b.slice(..)),
