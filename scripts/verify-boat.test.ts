@@ -73,12 +73,12 @@ describe("placement", () => {
   test("the machine runs the steps with CI=1, as CI does, after the setup", () => {
     const [, , script] = remoteCommand();
     expect(script).toContain("bash setup.sh &&");
-    expect(script).toContain("CI=1 bun scripts/boat-steps.ts ../steps.json");
+    expect(script).toContain("CI=1 JGENGINE_SUITE_WRITE=1 bun scripts/boat-steps.ts ../steps.json");
   });
 });
 
 /** A boat that runs the remote steps by calling `remote` for each, printing what boat-steps.ts prints. */
-function fakeBoat(options: { remote?: (name: string) => StepResult; refuse?: { code: string; error: string; nextStartAt?: string }; setupFails?: string; running?: number; limits?: Record<string, unknown> }) {
+function fakeBoat(options: { remote?: (name: string) => StepResult; files?: { path: string; text: string }[]; refuse?: { code: string; error: string; nextStartAt?: string }; setupFails?: string; running?: number; limits?: Record<string, unknown> }) {
   const list = (n: number): CliResult => ({ status: 0, stdout: JSON.stringify({ sandboxes: Array.from({ length: n }, (_, i) => ({ id: `bx_other${i}` })) }), stderr: "" });
   let running = options.running ?? 0;
   let runs = 0;
@@ -115,6 +115,7 @@ function fakeBoat(options: { remote?: (name: string) => StepResult; refuse?: { c
         ok &&= result.ok;
         out(resultLine(result));
       }
+      for (const file of options.files ?? []) out(`@@boat-file ${JSON.stringify(file)}`);
       out(`@@boat-done ${ok}`);
       onLine(JSON.stringify({ event: "summary", deleted: true, dollars: 0.0042, elapsedSeconds: 130, exitCode: ok ? 0 : 1, id: "bx_verify" }));
       return { status: ok ? 0 : 1 };
@@ -196,6 +197,14 @@ describe("runPlaced", () => {
     const h = harness(boat.cli, steps);
     await h.run();
     expect(readFileSync(join(h.root, report), "utf8")).toBe("<testsuites/>");
+  });
+
+  test("a suite report the boat run rewrote lands in the lane, for land --commit to take", async () => {
+    const path = "games/fernwild/proofs/suite-report.json";
+    const boat = fakeBoat({ files: [{ path, text: '{"proven":1}\n' }] });
+    const h = harness(boat.cli, steps);
+    await h.run();
+    expect(readFileSync(join(h.root, path), "utf8")).toBe('{"proven":1}\n');
   });
 
   test("boat busy waits for a machine: the Linux steps never run here", async () => {

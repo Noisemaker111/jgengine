@@ -8,7 +8,7 @@
 // It runs `bun run preflight --no-verify` (the install, conflict markers and gen, on this PC), then
 // `verify:fast --landing`: the type-checks, every gate CI runs and the tests, on a boat.dev Linux
 // machine when boat is usable, with only the steps that need this PC (a game boot, a Windows-only
-// test) here in a fairshare slot (scripts/verify-boat.ts). Then it lands (staging and committing the lane's work first, with a `changes/` note written
+// test) here in a fairshare slot (scripts/verify-boat.ts). It writes the game suite scores those tests earned, then lands (staging and committing the lane's work first, with a `changes/` note written
 // from the -m messages, the API the diff changed and its engine seam - see scripts/change-note.ts), asks `ci:status` once for the truth about the checks, and
 // prints a report skeleton a lane can paste instead of writing prose. It exits 1 when
 // verify or land failed and 3 when it cannot answer (no PR, no branch).
@@ -267,6 +267,14 @@ function closeHeldLane(args: LaneCloseArgs, branch: string, io: LaneIo): number 
       `lane:close: verify:fast failed (exit ${verified.status}); nothing landed. ` +
         "Fix what it names and close again.",
     );
+    return EXIT_VERIFY_FAILED;
+  }
+
+  // The tests rewrote each game's suite report (here or on boat, which sends it back): write its score
+  // into the README and PLAN now, so the lane's commit carries the score its own proofs earned.
+  const scored = io.sh(["run", "scripts/gen-game-suite.ts"], true);
+  if (scored.status !== 0) {
+    io.err(`lane:close: writing the game suite scores failed (exit ${scored.status}); nothing landed.`);
     return EXIT_VERIFY_FAILED;
   }
 

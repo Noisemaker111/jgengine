@@ -7,6 +7,11 @@ import { parseSuiteReport, readGameSuiteConfig, scoreGameSuite, type GameSuiteSc
 export const SUITE_REPORT_FILE = "proofs/suite-report.json";
 /** Env var naming a file the suite test also writes its run to, regressed or not: how `jgengine suite` reads a fresh run. */
 export const SUITE_RUN_OUT_ENV = "JGENGINE_SUITE_RUN_OUT";
+/**
+ * Env var that, set to "1", has the suite test write the committed report under CI too. A boat machine runs
+ * verify:fast's tests as CI does, and its reports come back to the lane (`scripts/boat-steps.ts`), which commits them.
+ */
+export const SUITE_WRITE_ENV = "JGENGINE_SUITE_WRITE";
 /** Where a game's suite proofs live, relative to the game. */
 export const SUITE_PROOFS_DIR = "proofs/sim";
 

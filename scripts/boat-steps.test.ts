@@ -1,9 +1,9 @@
 import { afterEach, expect, test } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { DONE_MARK, OUTPUT_TAIL, parseResultLine, parseStartLine, reportPath, resultLine, type RemotePlan } from "./boat-steps";
+import { DONE_MARK, OUTPUT_TAIL, parseFileLine, parseResultLine, parseStartLine, reportPath, resultLine, type RemotePlan } from "./boat-steps";
 
 const made: string[] = [];
 afterEach(() => {
@@ -34,6 +34,27 @@ test("the runner reports each step as it settles, a failure with its output, and
   expect(results.find((result) => result.name === "after fails")?.blockedBy).toEqual(["fails"]);
   expect(lines.map(parseStartLine).filter((name) => name !== null).sort()).toEqual(["fails", "passes"]);
   expect(lines).toContain(`${DONE_MARK} false`);
+});
+
+test("the suite reports a run rewrote come back, and the ones it left alone do not", () => {
+  const dir = mkdtempSync(join(tmpdir(), "boat-steps-"));
+  made.push(dir);
+  for (const game of ["rewritten", "untouched"]) {
+    mkdirSync(join(dir, "games", game, "proofs"), { recursive: true });
+    writeFileSync(join(dir, "games", game, "proofs", "suite-report.json"), "old");
+  }
+  const bun = process.execPath;
+  const plan: RemotePlan = {
+    jobs: 1,
+    failFast: true,
+    steps: [{ name: "suite", command: [bun, "-e", "require('fs').writeFileSync('games/rewritten/proofs/suite-report.json', 'new')"], first: true }],
+  };
+  writeFileSync(join(dir, "steps.json"), JSON.stringify(plan));
+  const run = Bun.spawnSync([bun, join(import.meta.dir, "boat-steps.ts"), join(dir, "steps.json")], { cwd: dir });
+  expect(run.exitCode).toBe(0);
+  const files = run.stdout.toString().split("\n").map(parseFileLine).filter((file) => file !== null);
+  expect(files).toEqual([{ path: "games/rewritten/proofs/suite-report.json", text: "new" }]);
+  expect(parseFileLine("ordinary output")).toBeNull();
 });
 
 test("a runaway failure log is cut to its tail, so one line cannot swamp the run", () => {
