@@ -51,6 +51,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/build-tiers.proof.ts",
+      "proves": [
+        "building.tiers-durability"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/carcass-harvest.proof.ts",
       "proves": [
         "harvest.carcass"
