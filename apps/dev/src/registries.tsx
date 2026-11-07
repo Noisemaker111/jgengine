@@ -244,6 +244,7 @@ export const gameRegistry: GameRegistry = {
   fire: () => import("./demo/fireDemo").then((module) => module.fireDemoGame),
   "grass-field": () => import("./demo/grassFieldDemo").then((module) => module.grassFieldGame),
   "grass-looks": () => import("./demo/grassLooksDemo").then((module) => module.grassLooksGame),
+  "grass-reference": () => import("./demo/grassReferenceDemo").then((module) => module.grassReferenceGame),
   "generator-variants": () => import("./demo/generatorVariantsDemo").then((module) => module.generatorVariantsGame),
   "nature-variants": () => import("./demo/natureVariantsDemo").then((module) => module.natureVariantsGame),
   "plant-styles": () => import("./demo/plantStylesDemo").then((module) => module.plantStylesGame),
