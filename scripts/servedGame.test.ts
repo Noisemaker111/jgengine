@@ -67,10 +67,15 @@ describe("serveGameDir", () => {
     delete process.env["JG_DEV_PORT"];
     expect(devServerIdentity()).toBe(checkoutIdentity());
     const clonePort = resolveDevPort();
-    const dir = game("identity");
-    serveGameDir(dir, "harbor-heat");
-    expect(devServerIdentity()).not.toBe(checkoutIdentity());
-    expect(devServerIdentity()).toContain("game-dir:");
-    expect(resolveDevPort()).not.toBe(clonePort);
+    // The port hashes the served folder into 483 slots, so one random temp folder lands on the clone's port
+    // about once in 483 runs (it failed CI on #3034). Serve a few folders: a port that follows the folder
+    // leaves the clone's on at least one, while a port that ignored the folder would match it every time.
+    const ports = ["identity-a", "identity-b", "identity-c"].map((prefix) => {
+      serveGameDir(game(prefix), "harbor-heat");
+      expect(devServerIdentity()).not.toBe(checkoutIdentity());
+      expect(devServerIdentity()).toContain("game-dir:");
+      return resolveDevPort();
+    });
+    expect(ports.some((port) => port !== clonePort)).toBe(true);
   });
 });
