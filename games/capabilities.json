@@ -3396,6 +3396,16 @@
       "intent": "reserve inputs and add a timed job, honoring capacity and validation policy"
     },
     {
+      "id": "entity-columns",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/scene/entityStore",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "integer handles and typed-array pose columns for engine systems stepping many entities per tick"
+    },
+    {
       "id": "entity-frames",
       "packages": [
         "@jgengine/core",
@@ -8701,6 +8711,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "Owner, editor and guild build rights on a plot"
+    },
+    {
+      "id": "point-grid",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/spatial/pointGrid",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "per-tick counting-sort neighbour grid over typed-array positions, allocation-free once warm"
     },
     {
       "id": "pointer-commands",

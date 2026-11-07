@@ -5026,6 +5026,7 @@
 ## @jgengine/core/scene/entityStore
 
 - `EntityBlackboard` (interface): interface EntityBlackboard — Per-entity scratch and cooldown timers, auto-cleared on despawn (#533.8) — the home for AI state (next-shot-at, alert level) that would otherwise be smuggled through the serializable `meta` or a hand-pruned module-level map. Keys share one namespace per entity: `arm`/`ready`/`remaining` store a deadline under a key, `get`/`set` store arbitrary scratch.
+- `EntityColumns` (interface): interface EntityColumns — The store's fast path for engine systems that touch many entities per tick (crowds, flocks, pose interpolation, a server kernel): resolve an id to an integer handle once, then read pose straight from typed-array columns and write it by handle. The columns mirror every entity's `position`, `velocity` and rotations exactly — every write through the store, by id or by handle, updates both — so games keep using ids and entity objects and never need this.
 - `EntityMovement` (interface): interface EntityMovement { walkSpeed?: number; runMultiplier?: number; frozen?: boolean } — ⚠ undocumented
 - `EntityPose` (interface): interface EntityPose { position: SpawnPositionInput; rotationY?: number; rotationX?: number; rotationZ?: number; dt?: number } — ⚠ undocumented
 - `EntityPosition` (type): type EntityPosition = readonly [number, number, number] — ⚠ undocumented · used by `resolveSourceWalkerStep` (@jgengine/core/movement/solidObstacles): {@link resolveWalkerStep} with no `GameContext`: gather plus slide against a bare {@link SolidObstacleSource} and a caller-owned {@link Obst…
@@ -5409,6 +5410,12 @@
 - `VOLUMETRIC_CLOUDS_DEFAULTS` (const): const VOLUMETRIC_CLOUDS_DEFAULTS: Omit<VolumetricCloudsRules, "fade"> — Volumetric cloud defaults: a moderate, drifting cumulus layer.
 - `VolumetricCloudsConfig` (interface): interface VolumetricCloudsConfig — Volumetric cloud layer config for `sky()`: a raymarched cloud slab the sky mounts beside its dome (`VolumetricClouds.draw.tsx`). The sky's light colours and shades it through the day, and the weather's cloud cover thickens and greys it. Off by default: omit `volumetricClouds` on `sky({...})` and no layer mounts.
 - `VolumetricCloudsRules` (interface): interface VolumetricCloudsRules — Fully-defaulted volumetric cloud params, resolved from a `VolumetricCloudsConfig`.
+
+## @jgengine/core/spatial/pointGrid
+
+- `PointGrid` (interface): interface PointGrid — A flat XZ grid over points, rebuilt from scratch each tick by counting sort: the neighbour search for systems that move every point every tick (crowds, flocks, a server kernel), where keeping a hash up to date per move costs more than rebuilding. Cells sit on absolute `floor(x / cellSize)` boundaries and points within a cell keep their input order, so a query visits candidates rows-of-z first, then x, then input order: the same order a per-cell bucket walk gives.
+- `PointGridOptions` (interface): interface PointGridOptions — Options for {@link createPointGrid}.
+- `createPointGrid` (function): function createPointGrid(options: PointGridOptions): PointGrid — Build a {@link PointGrid}.
 
 ## @jgengine/core/spatial/spatialIndex
 
