@@ -21,16 +21,16 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | harvest | 3/3 | 0 | 0 | 0 | 0 |
 | crafting | 6/6 | 0 | 0 | 0 | 0 |
 | taming | 9/9 | 0 | 0 | 0 | 0 |
-| creatures | 12/13 | 0 | 0 | 1 | 0 |
+| creatures | 13/13 | 0 | 0 | 0 | 0 |
 | breeding | 4/4 | 0 | 0 | 0 | 0 |
 | spawns | 3/3 | 0 | 0 | 0 | 0 |
 | boss | 3/3 | 0 | 0 | 0 | 0 |
 | cave | 2/2 | 0 | 0 | 0 | 0 |
-| **total** | **63/67** | 0 | 0 | 4 | 0 |
+| **total** | **64/67** | 0 | 0 | 3 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: creature-survival. 63/67 proven · 4 missing.
+Genres: creature-survival. 64/67 proven · 3 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
@@ -88,7 +88,7 @@ Genres: creature-survival. 63/67 proven · 4 missing.
 | `creatures.level-up` | proven | Tames gain experience and the player spends their levels on stats. | proofs/sim/tame-level-up.proof.ts |
 | `creatures.ride.ground` | proven | Saddle a tame and ride it, steering and attacking from its back. | proofs/sim/ride-ground.proof.ts |
 | `creatures.ride.fly` | proven | Ride a flying tame: take off, climb, cross terrain that blocks walking, and land. | proofs/sim/ride-fly.proof.ts |
-| `creatures.ride.swim` | missing | Ride a swimming tame through water. |  |
+| `creatures.ride.swim` | proven | Ride a swimming tame through water. | proofs/sim/ride-swim.proof.ts |
 | `breeding.pair-mate` | proven | Put a male and a female tame together and they produce an egg or a baby. | proofs/sim/breed-mate.proof.ts |
 | `breeding.incubate` | proven | An egg hatches only kept at the right temperature. | proofs/sim/breed-incubate.proof.ts |
 | `breeding.raise-imprint` | proven | Feed and care for a baby; care raises its quality as it grows. | proofs/sim/breed-imprint.proof.ts |
