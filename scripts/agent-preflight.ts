@@ -7,7 +7,11 @@
 //      already run on these exact inputs, so a stale generated file never fails a landing and a
 //      game-only change pays for none of the engine's 35 s generators
 //   4. `bun run verify:fast --cheap`: the type-checks the change reaches and every gate CI's
-//      quick and types jobs run, all of them, so every failure shows in one pass
+//      quick and types jobs run, all of them, so every failure shows in one pass. Those run on a
+//      boat machine when boat is usable (scripts/verify-boat.ts).
+//
+// `--no-verify` stops after 3: lane:close runs it, then `verify:fast --landing`, which runs the
+// type-checks, every gate and the tests on one boat machine instead of two.
 //
 // 1 and 2 stop the run; 3 and 4 both run and report together.
 //
@@ -28,9 +32,10 @@ import { isVerbose, takeVerboseFlag } from "./verbosity";
 
 const PREFLIGHT_USAGE = {
   summary: "the cheap checks lane:close runs first: install, conflict markers, gen, type-checks and gates",
-  usage: "bun run preflight [--no-gen] [--verbose]",
+  usage: "bun run preflight [--no-gen] [--no-verify] [--verbose]",
   flags: [
     { flag: "--no-gen", detail: "check the install only, without gen or verify:fast (what agent:bootstrap runs)" },
+    { flag: "--no-verify", detail: "install, conflict markers and gen, without verify:fast --cheap (lane:close runs the gates in its verify:fast --landing)" },
     { flag: "--verbose", detail: "stream every step's output (by default a step's output prints only when it fails)" },
   ],
   example: "bun run preflight",
@@ -195,7 +200,7 @@ function step(label: string, args: string[]): boolean {
 function main(rawArgv: readonly string[]): number {
   const argv = takeVerboseFlag(rawArgv);
   if (printHelpIfAsked("agent-preflight", PREFLIGHT_USAGE, argv)) return 0;
-  const unknown = argv.filter((arg) => arg !== "--no-gen");
+  const unknown = argv.filter((arg) => arg !== "--no-gen" && arg !== "--no-verify");
   if (unknown.length > 0) {
     console.error(`preflight: unknown argument ${unknown.join(" ")} (bun run preflight --help)`);
     return 1;
@@ -219,12 +224,13 @@ function main(rawArgv: readonly string[]): number {
     if (step(`gen ${targets.map((target) => target.name).join(" ")}`, ["run", "gen", ...targets.map((target) => target.name)])) cache.record(targets);
     else failed.push("gen (a generator, or a file that gained a type escape)");
   }
-  if (!step("verify:fast --cheap", ["run", "verify:fast", "--cheap"])) failed.push("verify:fast --cheap (type-checks and every gate CI runs)");
+  const verify = !argv.includes("--no-verify");
+  if (verify && !step("verify:fast --cheap", ["run", "verify:fast", "--cheap"])) failed.push("verify:fast --cheap (type-checks and every gate CI runs)");
   if (failed.length > 0) {
     console.error(`preflight failed: ${failed.join("; ")}. Everything above is every failure, not the first; fix them all, then close again.`);
     return 1;
   }
-  console.log(`preflight ok in ${((Date.now() - started) / 1000).toFixed(1)}s: install, conflict markers, gen, type-checks and gates`);
+  console.log(`preflight ok in ${((Date.now() - started) / 1000).toFixed(1)}s: install, conflict markers, gen${verify ? ", type-checks and gates" : ""}`);
   return 0;
 }
 

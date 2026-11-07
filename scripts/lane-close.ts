@@ -5,8 +5,10 @@
 //   bun run lane:close --pr 2274
 //   bun run lane:close --allow bun.lock  # keep a file the commit guards refuse
 //
-// It runs `bun run preflight` (gen, type-checks, gates: the cheap checks, stopping at the first
-// failure), then `verify:fast` for the tests, then lands (staging and committing the lane's work first, with a `changes/` note written
+// It runs `bun run preflight --no-verify` (the install, conflict markers and gen, on this PC), then
+// `verify:fast --landing`: the type-checks, every gate CI runs and the tests, on a boat.dev Linux
+// machine when boat is usable, with only the steps that need this PC (a game boot, a Windows-only
+// test) here in a fairshare slot (scripts/verify-boat.ts). Then it lands (staging and committing the lane's work first, with a `changes/` note written
 // from the -m messages, the API the diff changed and its engine seam - see scripts/change-note.ts), asks `ci:status` once for the truth about the checks, and
 // prints a report skeleton a lane can paste instead of writing prose. It exits 1 when
 // verify or land failed and 3 when it cannot answer (no PR, no branch).
@@ -241,15 +243,16 @@ function closeHeldLane(args: LaneCloseArgs, branch: string, io: LaneIo): number 
   // A type error used to surface only after the whole test suite. land --commit stages what gen rewrote.
   // The stage lines are progress, kept for --verbose; each stage's own failure names the stage.
   const stage = isVerbose(io.env) ? io.out : (): void => {};
-  stage(`lane:close: ${branch} — preflight (gen, type-checks, gates)`);
-  const preflight = io.sh(["run", "preflight"], true);
+  stage(`lane:close: ${branch} — preflight (install, conflict markers, gen)`);
+  const preflight = io.sh(["run", "preflight", "--no-verify"], true);
   if (preflight.status !== 0) {
     io.err(`lane:close: preflight failed (exit ${preflight.status}); nothing landed, no tests run. Fix what it names and close again.`);
     return EXIT_VERIFY_FAILED;
   }
-  // The type-checks and gates that just passed are remembered by their inputs, so this runs the tests and boots.
-  stage(`lane:close: ${branch} — verify:fast (tests and boots)`);
-  const verified = io.sh(["run", "verify:fast"], true);
+  // One run for the type-checks, every gate and the tests: on one boat machine, not two. The
+  // type-checks and gates start first and all run; the tests stop at the first failure.
+  stage(`lane:close: ${branch} — verify:fast --landing (type-checks, gates, tests and boots)`);
+  const verified = io.sh(["run", "verify:fast", "--landing"], true);
   if (verified.status !== 0) {
     io.err(
       `lane:close: verify:fast failed (exit ${verified.status}); nothing landed. ` +
@@ -395,7 +398,7 @@ function main(rawArgv: readonly string[]): void {
 }
 
 export const LANE_CLOSE_DURATION =
-  "this takes several minutes (gen, every gate, the tests, then the hand-off). Run it in the foreground with a 10-minute timeout; if your shell moved it to the background, wait for it to finish before ending the turn.";
+  "this takes several minutes (gen, every gate, the tests on a boat machine, then the hand-off), longer while both boat machines are busy, which it waits for. Run it as a harness background command (Bash run_in_background) and wait for its exit before ending the turn; do not start a separate boat check first, this already uses boat.";
 
 /** `.scratch/lane-close.json` while a close runs: the repo's Stop hook reads it, so a turn cannot end mid-landing. */
 export const RUNNING_MARKER = join(".scratch", "lane-close.json");
