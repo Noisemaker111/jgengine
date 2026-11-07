@@ -17,7 +17,7 @@ import { bodyPrompts, bodyView } from "./game/deathBody";
 import { breedingPrompts, breedingView } from "./game/breeding";
 import { broodView, obeliskPrompts } from "./game/broodmother";
 import { BROOD_PHASES } from "./game/data/bosses";
-import { awakeTamingProgress, creaturePrompts, creaturesView, speciesNear, mountCanFly, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
+import { awakeTamingProgress, creaturePrompts, creaturesView, speciesNear, wildLevelNear, mountCanFly, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
 import { tameFood } from "./game/tameHunger";
 import { STRUCTURES } from "./game/data/structures";
 import { content } from "./game/content";
@@ -172,6 +172,8 @@ export const game = defineGame({
         taught: onboardingOf(ctx)?.run().snapshot().done.length ?? 0,
         unlocks: view.engrams.filter((engram) => engram.learned).length,
         // The dossier: species met, items held and notes read, each of how many the island has; engrams learned of all.
+        // The highest wild level within 120 m: what the danger-by-distance proof reads.
+        wildLevelNear: wildLevelNear(ctx, here, 120),
         speciesSeen: dossier.species.seen,
         speciesTotal: dossier.species.total,
         itemsSeen: dossier.items.seen,

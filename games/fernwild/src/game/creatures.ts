@@ -1301,6 +1301,17 @@ export function speciesNear(ctx: GameContext, from: readonly [number, number, nu
   return near;
 }
 
+/** The highest level among the live wild creatures within `within` metres of `from`; 0 with none there. */
+export function wildLevelNear(ctx: GameContext, from: readonly [number, number, number], within: number): number {
+  let top = 0;
+  for (const creature of worldOf(ctx).creatures.values()) {
+    if (creature.dead || creature.tamed || creature.level <= top) continue;
+    const at = ctx.scene.entity.get(creature.id)?.position;
+    if (at !== undefined && Math.hypot(at[0] - from[0], at[2] - from[2]) <= within) top = creature.level;
+  }
+  return top;
+}
+
 /**
  * Where to find a wild one of `species` (one id or several) from `from`: the nearest live untamed one
  * within `within` metres, else the centre of the nearest spawn zone it lives in that may hold one: an
