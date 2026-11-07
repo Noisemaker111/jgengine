@@ -40,7 +40,12 @@ describe("parseLookAim", () => {
   });
 
   it("rejects an over-long vantage", () => {
-    expect(() => parseLookAim("0,0", "1,2,3,4")).toThrow(/at most dist,height,angle/);
+    expect(() => parseLookAim("0,0", "1,2,3,4,5")).toThrow(/at most dist,height,angle,clearance/);
+  });
+
+  it("takes a ground clearance as the fourth vantage number", () => {
+    expect(parseLookAim("0,0", "1.2,0.1,0.4,0.05")).toEqual({ point: [0, 0], distance: 1.2, height: 0.1, angle: 0.4, clearance: 0.05 });
+    expect(() => parseLookAim("0,0", "1,2,3,0")).toThrow(/clearance must be positive/);
   });
 });
 
