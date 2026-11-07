@@ -1,10 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { GRASS_GAME_VIEWS, GRASS_REFERENCE_PHOTOS, GRASS_STYLE_TARGETS } from "../../../apps/dev/src/demo/grassReference";
 import { GRASS_PRESETS } from "../../../packages/core/src/grass/grassKind";
-import { boardShots, coverResize, drawLabel, labelWidth, parseBoardArgs, shotDifference } from "./grassBoard";
+import { boardShots, coverResize, drawLabel, labelWidth, parseBoardArgs, shotDifference, shotsToTake } from "./grassBoard";
 
 const root = resolve(import.meta.dir, "../../..");
 
@@ -50,10 +51,26 @@ describe("grass board", () => {
     expect(shots.filter((shot) => shot.file.startsWith("species/"))).toHaveLength(GRASS_PRESETS.length * 2);
   });
 
+  test("--resume shoots only the shots the board folder lacks", () => {
+    const out = mkdtempSync(join(tmpdir(), "grass-board-"));
+    try {
+      mkdirSync(join(out, "ref"), { recursive: true });
+      writeFileSync(join(out, "ref", "pasture-today.png"), "");
+      const shots = boardShots(parseBoardArgs(["--out", out]));
+      expect(shotsToTake(parseBoardArgs(["--out", out]), shots)).toHaveLength(shots.length);
+      const left = shotsToTake(parseBoardArgs(["--out", out, "--resume"]), shots).map((shot) => shot.file);
+      expect(left).toHaveLength(shots.length - 1);
+      expect(left).not.toContain("ref/pasture-today.png");
+    } finally {
+      rmSync(out, { recursive: true, force: true });
+    }
+  });
+
   test("flags are checked", () => {
     expect(() => parseBoardArgs(["--realism", "2"])).toThrow(/0\.\.1/);
     expect(() => parseBoardArgs(["--frobnicate"])).toThrow(/unknown flag/);
     expect(() => parseBoardArgs(["--out"])).toThrow(/needs a value/);
+    expect(parseBoardArgs(["--quality", "high", "--timeout", "300"]).shoot).toEqual(["--quality", "high", "--timeout", "300"]);
   });
 
   test("cover resize crops to the cell's aspect before sampling", () => {
