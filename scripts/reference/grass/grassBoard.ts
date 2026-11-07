@@ -28,13 +28,15 @@ export interface BoardArgs {
   only: string[];
   /** An earlier board to compare with. */
   diff?: string;
-  /** Extra arguments for every capture (`--quality high`). */
+  /** Keep shots already in the board folder and shoot only the missing ones (finish a board a guard cut short). */
+  resume: boolean;
+  /** Extra arguments for every capture (`--quality high`, `--timeout 240`). */
   shoot: string[];
 }
 
 /** Parse `--board` flags. @internal */
 export function parseBoardArgs(argv: readonly string[]): BoardArgs {
-  const args: BoardArgs = { out: join(root, ".scratch", "boards", "grass"), realism: [], views: false, species: false, only: [], shoot: [] };
+  const args: BoardArgs = { out: join(root, ".scratch", "boards", "grass"), realism: [], views: false, species: false, only: [], shoot: [], resume: false };
   for (let index = 0; index < argv.length; index += 1) {
     const flag = argv[index]!;
     const value = (): string => {
@@ -55,6 +57,8 @@ export function parseBoardArgs(argv: readonly string[]): BoardArgs {
     else if (flag === "--only") args.only = value().split(",").map((part) => part.trim()).filter((part) => part.length > 0);
     else if (flag === "--diff") args.diff = resolve(value());
     else if (flag === "--quality") args.shoot.push("--quality", value());
+    else if (flag === "--timeout") args.shoot.push("--timeout", value());
+    else if (flag === "--resume") args.resume = true;
     else throw new Error(`unknown flag ${flag} (bun run shoot --board --help lists them)`);
   }
   return args;
@@ -281,12 +285,19 @@ function diffBoards(args: BoardArgs, before: string): void {
   for (let i = 0; i < pairs.length; i += 6) save(join(args.out, `compare-${i / 6 + 1}.png`), composeSheet(pairs.slice(i, i + 6), 640, 360, `BEFORE AFTER ${i / 6 + 1}`));
 }
 
+/** The shots a run still has to take: all of them, or with `--resume` only those not already in the board folder. @internal */
+export function shotsToTake(args: BoardArgs, shots: readonly BoardShot[]): BoardShot[] {
+  return args.resume ? shots.filter((shot) => !existsSync(join(args.out, shot.file))) : [...shots];
+}
+
 /** Shoot what the flags ask for, then build the sheets. Returns the number of failed captures. */
 export function runBoard(args: BoardArgs): number {
   const shots = boardShots(args);
+  const todo = shotsToTake(args, shots);
+  if (todo.length < shots.length) console.log(`board: keeping ${shots.length - todo.length} shots already taken`);
   let failed = 0;
-  shots.forEach((shot, index) => {
-    console.log(`board: [${index + 1}/${shots.length}] ${shot.file}`);
+  todo.forEach((shot, index) => {
+    console.log(`board: [${index + 1}/${todo.length}] ${shot.file}`);
     if (!shoot(args, shot)) failed += 1;
   });
   const levels: (number | undefined)[] = args.realism.length === 0 ? [undefined] : args.realism;
@@ -321,7 +332,7 @@ export function runBoard(args: BoardArgs): number {
 
 const USAGE = {
   summary: "shoot the grass reference boards: real photos beside our matching views, our games' stylised art beside the realism ends, the 18 grass game views and every species",
-  usage: "bun run shoot --board [--realism 0,0.5,1] [--views] [--species] [--only ids] [--out dir] [--diff <earlier board>] [--quality tier]",
+  usage: "bun run shoot --board [--realism 0,0.5,1] [--views] [--species] [--only ids] [--out dir] [--diff <earlier board>] [--quality tier] [--timeout s] [--resume]",
   flags: [
     { flag: "--realism <list>", detail: "realism levels to shoot the reference views at (0 cartoon .. 1 photoreal); default the demo as it is" },
     { flag: "--views", detail: "also shoot the 18 grass game views (views.png)" },
@@ -330,6 +341,8 @@ const USAGE = {
     { flag: "--out <dir>", detail: "board folder (default .scratch/boards/grass)" },
     { flag: "--diff <dir>", detail: "compare every shot with the same one in an earlier board: diff.tsv and compare-*.png" },
     { flag: "--quality <tier>", detail: "pin the graphics tier of every capture" },
+    { flag: "--timeout <s>", detail: "readiness timeout for every capture, for heavy games on a busy machine (shoot default 60)" },
+    { flag: "--resume", detail: "keep shots already in the board folder and shoot only the missing ones" },
   ],
   example: "bun run shoot --board --views --out .scratch/boards/phase0",
 } as const;
