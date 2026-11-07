@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "bun:test";
 
 import {
+  boatLine,
   bootsFor,
   CI_ONLY_GATES,
   landingGates,
@@ -891,5 +892,14 @@ describe("local boots", () => {
   test("a boot that already passed with the same inputs is skipped, provision and all", () => {
     const plan = { ...emptyPlan, boots: ["scrap-signal"], inputs: { "boot:scrap-signal": ["games/scrap-signal/src/main.tsx"] } };
     expect(fastSteps(plan, { fresh: (id) => id === "boot:scrap-signal" })).toEqual([]);
+  });
+});
+
+describe("boatLine", () => {
+  test("boat out of starts says the Linux steps ran nowhere and when boat frees", () => {
+    const placement = new Map([["tests", { where: "boat" as const }], ["typecheck", { where: "boat" as const }], ["win tests", { where: "local" as const }]]);
+    expect(boatLine({ status: "spent", why: "boat's day start limit is used until 2026-11-08T03:00:00.000Z", until: "2026-11-08T03:00:00.000Z", steps: [] }, placement)).toBe(
+      "verify:fast: boat had no start (boat's day start limit is used until 2026-11-08T03:00:00.000Z); 2 Linux step(s) not run, here or there; boat takes starts again from 2026-11-08T03:00:00.000Z",
+    );
   });
 });

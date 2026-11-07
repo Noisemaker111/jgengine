@@ -15,22 +15,22 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | settings | 0/1 | 0 | 0 | 1 | 0 |
 | menu | 0/1 | 0 | 0 | 1 | 0 |
 | progression | 0/1 | 1 | 0 | 0 | 0 |
-| content | 3/5 | 2 | 0 | 0 | 0 |
-| survival | 8/9 | 0 | 0 | 1 | 0 |
+| content | 4/5 | 1 | 0 | 0 | 0 |
+| survival | 9/9 | 0 | 0 | 0 | 0 |
 | building | 2/3 | 0 | 0 | 1 | 0 |
 | harvest | 3/3 | 0 | 0 | 0 | 0 |
-| crafting | 4/6 | 0 | 0 | 2 | 0 |
+| crafting | 5/6 | 0 | 0 | 1 | 0 |
 | taming | 9/9 | 0 | 0 | 0 | 0 |
 | creatures | 8/13 | 0 | 0 | 5 | 0 |
 | breeding | 3/4 | 0 | 0 | 1 | 0 |
 | spawns | 3/3 | 0 | 0 | 0 | 0 |
 | boss | 1/3 | 0 | 0 | 2 | 0 |
 | cave | 2/2 | 0 | 0 | 0 | 0 |
-| **total** | **48/67** | 3 | 0 | 16 | 0 |
+| **total** | **51/67** | 2 | 0 | 14 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: creature-survival. 48/67 proven · 3 failing · 16 missing.
+Genres: creature-survival. 51/67 proven · 2 failing · 14 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
@@ -42,16 +42,16 @@ Genres: creature-survival. 48/67 proven · 3 failing · 16 missing.
 | `menu.start-and-credits` | missing | The main menu starts a game and shows the credits. |  |
 | `progression.runway` | FAILING | Something new unlocks steadily across the first five hours, up to the progression cap. | the last unlock is at level 60 of a cap of 105 |
 | `content.item-source` | proven | Every item can be obtained by playing. | content check |
-| `content.item-use` | FAILING | Every item does something: crafts, equips, eats, places, feeds, sells or summons. | no use for metal, obsidian, crystal, oil, mejoberry_seed, fertilizer, artifact_skylord, artifact_devourer, artifact_pack, artifact_immune, artifact_strong, element and 5 more |
+| `content.item-use` | FAILING | Every item does something: crafts, equips, eats, places, feeds, sells or summons. | no use for metal, obsidian, crystal, oil, mejoberry_seed, fertilizer, artifact_skylord, artifact_devourer, artifact_pack, artifact_immune, artifact_strong, element and 4 more |
 | `content.recipes-reachable` | proven | Every recipe and source can actually be used: its inputs, station and unlock are all obtainable. | content check |
-| `content.placeables-place` | FAILING | Every item that says it can be placed can be placed. | says it places but the placement catalog has none: hide_sleeping_bag |
+| `content.placeables-place` | proven | Every item that says it can be placed can be placed. | content check |
 | `content.weapons-have-ammo` | proven | Every weapon that fires has obtainable ammo, or needs none. | content check |
 | `survival.vitals-drain` | proven | Hunger and thirst fall over time and hurt the player at zero. | proofs/sim/vitals-drain.proof.ts |
 | `survival.eat-drink` | proven | Eating and drinking restore the meters. | proofs/sim/eat-drink.proof.ts |
 | `survival.temperature` | proven | Climate pushes body temperature; clothing, fire or shelter counter it. | proofs/sim/temperature.proof.ts |
 | `survival.oxygen-swim` | proven | Swimming under water drains breath; surfacing refills it. | proofs/sim/dive-breath.proof.ts |
 | `survival.food-spoils` | proven | Carried food spoils over time into something else. | proofs/sim/food-spoils.proof.ts |
-| `survival.respawn-point` | missing | A placed bed or bag becomes where the player wakes after death. |  |
+| `survival.respawn-point` | proven | A placed bed or bag becomes where the player wakes after death. | proofs/sim/respawn-point.proof.ts |
 | `survival.storage-place` | proven | A storage container can be placed and holds items. | proofs/sim/storage-place.proof.ts |
 | `survival.encumbrance` | proven | Carrying more slows the player, and past the limit they cannot move. | proofs/sim/encumbrance.proof.ts |
 | `survival.farm` | proven | Plant a seed in a plot; with water and fertilizer it grows a harvest. | proofs/sim/farm.proof.ts |
@@ -66,7 +66,7 @@ Genres: creature-survival. 48/67 proven · 3 failing · 16 missing.
 | `crafting.refine-tier` | missing | Raw ore smelts at a fuelled station into a material that opens a stronger tier of tools and building. |  |
 | `crafting.fuel` | proven | A station that burns consumes fuel and stops when it runs out. | proofs/sim/station-fuel.proof.ts |
 | `crafting.preserve` | proven | A preserving container slows spoilage. | proofs/sim/preserve.proof.ts |
-| `crafting.tool-wear` | missing | Tools and weapons wear with use, break, and can be repaired with materials. |  |
+| `crafting.tool-wear` | proven | Tools and weapons wear with use, break, and can be repaired with materials. | proofs/sim/tool-wear.proof.ts |
 | `taming.knockout-melee` | proven | Knock a creature out by hitting it, feed it, and it becomes yours. | proofs/sim/tame-knockout.proof.ts |
 | `taming.ranged-knockout` | proven | Knock a creature out from range with sedative ammo, without standing in its reach. | proofs/sim/tame-ranged.proof.ts |
 | `taming.keep-under` | proven | Keep an unconscious creature under with a sedative while it eats. | proofs/sim/tame-keep-under.proof.ts |

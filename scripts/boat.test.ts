@@ -93,10 +93,22 @@ describe("capacity", () => {
     expect(boatMaxMachines({ BOAT_MAX_MACHINES: "1" })).toBe(1);
   });
 
-  test("an hour start window waits until it frees; a day window or used hours are unusable", () => {
+  test("a start window that frees within the hour is waited for; one that frees later is spent, never unusable", () => {
     const hour = classifyLimits({ startWindowFull: { window: "hour", freesAt: "2026-11-07T09:20:00Z" } }, 0, 2, NOW);
     expect(hour).toMatchObject({ kind: "busy", retryAt: Date.parse("2026-11-07T09:20:00Z") });
-    expect(classifyLimits({ startWindowFull: { window: "day", freesAt: "2026-11-08T03:00:00Z" } }, 0, 2, NOW).kind).toBe("unusable");
+    // A rolling day window whose next start ages out in 40 minutes is waited for like the hour one.
+    expect(classifyLimits({ startWindowFull: { window: "day", freesAt: "2026-11-07T09:40:00Z" } }, 0, 2, NOW).kind).toBe("busy");
+    // Unusable would run the whole Linux suite on this PC; spent stops the landing and says when.
+    expect(classifyLimits({ startWindowFull: { window: "day", freesAt: "2026-11-08T03:00:00Z" } }, 0, 2, NOW)).toEqual({
+      kind: "spent",
+      why: "boat's day start limit is used until 2026-11-08T03:00:00.000Z",
+      until: Date.parse("2026-11-08T03:00:00Z"),
+    });
+    // Boat may name the full window as a start block too; the window decides, not the block.
+    expect(classifyLimits({ startBlockedReason: "Daily start limit reached", canStart: false, startWindowFull: { window: "day", freesAt: "2026-11-08T03:00:00Z" } }, 0, 2, NOW).kind).toBe("spent");
+    // Every start of the day used and no window named: spent, with no time to give.
+    expect(classifyLimits({ starts: { day: { limit: 75, used: 75, remaining: 0 } } }, 0, 2, NOW)).toMatchObject({ kind: "spent", why: expect.stringContaining("all 75 of the day's starts") });
+    expect(classifyLimits({ starts: { day: { limit: 75, used: 74, remaining: 1 } } }, 0, 2, NOW).kind).toBe("ready");
     expect(classifyLimits({ trialComputeCapSeconds: 90_000, trialComputeUsedSeconds: 90_000 }, 0, 2, NOW)).toMatchObject({ kind: "unusable", why: expect.stringContaining("compute hours") });
     expect(classifyLimits({ blockedReason: "trial ended" }, 0, 2, NOW)).toMatchObject({ kind: "unusable", why: expect.stringContaining("trial ended") });
   });
@@ -104,6 +116,7 @@ describe("capacity", () => {
   test("a refused start: the at-once limit and rate windows are busy, billing is unusable", () => {
     expect(classifyStartError({ code: "limit_reached", status: 429, error: "Trial accounts can run 2 concurrent sandboxes.\nBilling: …" }, NOW)).toEqual({ kind: "busy", why: "Trial accounts can run 2 concurrent sandboxes." });
     expect(classifyStartError({ code: "rate_limited", retryAfterSeconds: 120 }, NOW)).toMatchObject({ kind: "busy", retryAt: NOW + 120_000 });
+    expect(classifyStartError({ code: "rate_limited", error: "Daily start limit reached", nextStartAt: "2026-11-07T15:00:00Z" }, NOW)).toEqual({ kind: "spent", why: "Daily start limit reached", until: Date.parse("2026-11-07T15:00:00Z") });
     expect(classifyStartError({ code: "out_of_capacity", retryAfterSeconds: 120 }, NOW).kind).toBe("busy");
     expect(classifyStartError({ code: "billing_required", status: 402, error: "The included time is used" }, NOW).kind).toBe("unusable");
     expect(classifyStartError({ code: "trial_compute_limit_reached", status: 429 }, NOW).kind).toBe("unusable");
@@ -161,6 +174,28 @@ describe("runOnBoat", () => {
     expect(boat.calls).toHaveLength(3);
     expect(boat.sleeps()).toBeGreaterThanOrEqual(2);
     expect(notes.some((line) => line.includes("Trial accounts can run 2 concurrent sandboxes."))).toBe(true);
+  });
+
+  test("the day's starts used up stops without a start; a refusal boat's limits explain as spent is spent", async () => {
+    const day = { startWindowFull: { window: "day", freesAt: "2026-11-07T16:00:00Z" } };
+    const spent = fakeBoat({ limits: day });
+    const outcome = await runOnBoat(spent.cli, { ...base, registry: registry(), onLine: () => {} });
+    expect(outcome).toMatchObject({ kind: "spent", until: Date.parse("2026-11-07T16:00:00Z") });
+    expect(spent.calls).toHaveLength(0);
+
+    // The window filled between the capacity check and the start; boat refused with a code this
+    // module does not know. The limits read after the refusal decide, so it is not unusable.
+    let limitsRead = 0;
+    const raced = fakeBoat({});
+    const plainLimits = raced.cli.limits;
+    raced.cli.limits = async () => (limitsRead++ === 0 ? plainLimits() : ok(JSON.stringify({ activeSandboxes: 0, maxActiveSandboxes: 2, ...day })));
+    raced.cli.run = async (args, onLine) => {
+      raced.calls.push([...args]);
+      onLine('{"code":"start_limit_reached","error":"You have used today\'s starts.","event":"error","status":429}');
+      return { status: 1 };
+    };
+    expect(await runOnBoat(raced.cli, { ...base, registry: registry(), onLine: () => {} })).toMatchObject({ kind: "spent" });
+    expect(raced.calls).toHaveLength(1);
   });
 
   test("the command's exit code comes back as it is", async () => {

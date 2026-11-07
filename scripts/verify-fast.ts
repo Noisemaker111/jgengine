@@ -37,7 +37,7 @@ import { siteGames } from "./siteGames";
 import { runSteps, type ScheduledStep, type StepResult } from "./stepScheduler";
 import { TEST_ROOTS, walkTestFiles } from "./test-shard";
 import { createVerifyReceipt } from "./verify-receipt";
-import { boatForThisRun, localTestFiles, placeSteps, runPlaced, withHeavySlot, type BoatReceipt, type Where } from "./verify-boat";
+import { boatForThisRun, EXIT_BOAT_SPENT, localTestFiles, placeSteps, runPlaced, withHeavySlot, type BoatReceipt, type Where } from "./verify-boat";
 
 const VERIFY_FAST_USAGE = {
   summary: "run only the tests and static gates this branch's diff reaches, in seconds",
@@ -993,6 +993,10 @@ function receiptPlan(root: string, base: string, argv: readonly string[], change
 export function boatLine(boat: BoatReceipt, placement: ReadonlyMap<string, { where: Where }>): string | null {
   const here = [...placement.values()].filter((place) => place.where === "local").length;
   if (boat.status === "off") return null;
+  if (boat.status === "spent") {
+    const linux = placement.size - here;
+    return `verify:fast: boat had no start (${boat.why ?? "no reason given"}); ${linux} Linux step(s) not run, here or there${boat.until === undefined ? "" : `; boat takes starts again from ${boat.until}`}`;
+  }
   if (boat.status === "unusable") return `verify:fast: boat unusable (${boat.why ?? "no reason given"}); all ${placement.size} step(s) ran on this PC`;
   const cost = boat.costUsd === undefined ? "" : `, $${boat.costUsd.toFixed(4)}`;
   const time = boat.seconds === undefined ? "" : `, ${boat.seconds} s`;
@@ -1016,6 +1020,9 @@ export function parseVerifyArgs(argv: readonly string[]) {
   if (planOnly && json) throw new Error("--plan and --json cannot be combined");
   return { base, jobs, full, planOnly, json, cheap, landing, skillApi: parsed.values["skill-api"] === true };
 }
+
+/** Set when boat had no start for a run's Linux steps: the exit is then EXIT_BOAT_SPENT, not a plain failure. */
+let boatSpent = false;
 
 async function main(argv: readonly string[]): Promise<number> {
   const root = fileURLToPath(new URL("..", import.meta.url));
@@ -1061,6 +1068,7 @@ async function main(argv: readonly string[]): Promise<number> {
     });
     for (const [name, place] of placed.placement) receipt.annotate(name, { where: place.where, placedBecause: place.why });
     receipt.note({ boat: placed.boat });
+    if (placed.boat.status === "spent") boatSpent = true;
     const line = boatLine(placed.boat, placed.placement);
     if (line !== null) tell(line);
     return placed.results;
@@ -1263,7 +1271,8 @@ if (import.meta.main) {
   try {
     parseVerifyArgs(argv);
     if (printHelpIfAsked("verify-fast", VERIFY_FAST_USAGE, argv)) process.exit(EXIT_VERIFIED);
-    process.exit(await main(argv));
+    const code = await main(argv);
+    process.exit(code === EXIT_FAILED && boatSpent ? EXIT_BOAT_SPENT : code);
   } catch (error) {
     console.error(`verify:fast: ${(error as Error).message}`);
     process.exit(EXIT_FAILED);

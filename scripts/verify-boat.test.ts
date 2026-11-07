@@ -78,13 +78,13 @@ describe("placement", () => {
 });
 
 /** A boat that runs the remote steps by calling `remote` for each, printing what boat-steps.ts prints. */
-function fakeBoat(options: { remote?: (name: string) => StepResult; refuse?: { code: string; error: string }; setupFails?: string; running?: number }) {
+function fakeBoat(options: { remote?: (name: string) => StepResult; refuse?: { code: string; error: string; nextStartAt?: string }; setupFails?: string; running?: number; limits?: Record<string, unknown> }) {
   const list = (n: number): CliResult => ({ status: 0, stdout: JSON.stringify({ sandboxes: Array.from({ length: n }, (_, i) => ({ id: `bx_other${i}` })) }), stderr: "" });
   let running = options.running ?? 0;
   let runs = 0;
   let now = 0;
   const cli: BoatCli = {
-    limits: async () => ({ status: 0, stdout: JSON.stringify({ activeSandboxes: running, maxActiveSandboxes: 2 }), stderr: "" }),
+    limits: async () => ({ status: 0, stdout: JSON.stringify({ activeSandboxes: running, maxActiveSandboxes: 2, ...options.limits }), stderr: "" }),
     list: async () => list(running),
     delete: async () => ({ status: 0, stdout: "", stderr: "" }),
     sleep: async (ms) => {
@@ -215,6 +215,31 @@ describe("runPlaced", () => {
     expect(run.boat).toMatchObject({ status: "unusable", why: "The included time is used and the wallet is empty" });
     expect(run.placement.get("tests")).toEqual({ where: "local", why: "boat: The included time is used and the wallet is empty" });
     expect(h.notes.some((line) => line.includes("boat cannot be used: The included time is used"))).toBe(true);
+  });
+
+  test("boat's day of starts used up stops the Linux steps: none runs here, none starts a machine, and each says when boat frees", async () => {
+    const freesAt = new Date(5 * 3_600_000).toISOString();
+    const boat = fakeBoat({ limits: { startWindowFull: { window: "day", freesAt }, startBlockedReason: "Daily start limit reached", canStart: false } });
+    const h = harness(boat.cli, steps);
+    const run = await h.run();
+    expect(boat.runs()).toBe(0);
+    expect(h.ranHere).not.toContain("tests");
+    expect(h.ranHere).not.toContain("typecheck core");
+    expect(run.boat).toMatchObject({ status: "spent", why: `boat's day start limit is used until ${freesAt}`, until: freesAt });
+    const tests = run.results.find((result) => result.name === "tests")!;
+    expect(tests.ok).toBe(false);
+    expect(tests.output).toContain(freesAt);
+    expect(run.placement.get("tests")?.where).toBe("boat");
+    expect(h.notes.some((line) => line.includes("not run on this PC"))).toBe(true);
+  });
+
+  test("a start refused for the day's starts is spent too: the Linux steps do not move here", async () => {
+    const boat = fakeBoat({ refuse: { code: "rate_limited", error: "Daily start limit reached", nextStartAt: new Date(3 * 3_600_000).toISOString() } });
+    const h = harness(boat.cli, steps);
+    const run = await h.run();
+    expect(boat.runs()).toBe(1);
+    expect(h.ranHere).not.toContain("tests");
+    expect(run.boat.status).toBe("spent");
   });
 
   test("a machine whose setup broke runs the unreported steps here and says why", async () => {

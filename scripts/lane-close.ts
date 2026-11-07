@@ -33,6 +33,7 @@ import { gitHub, repoFromRemote } from "./github";
 import { parseLock, pidIsAlive, staleReason, type LandLock } from "./land";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose, takeVerboseFlag } from "./verbosity";
+import { EXIT_BOAT_SPENT } from "./verify-boat";
 
 const LANE_CLOSE_USAGE = {
   summary: "verify, land, ask the checks once, and print the lane report",
@@ -253,6 +254,14 @@ function closeHeldLane(args: LaneCloseArgs, branch: string, io: LaneIo): number 
   // type-checks and gates start first and all run; the tests stop at the first failure.
   stage(`lane:close: ${branch} — verify:fast --landing (type-checks, gates, tests and boots)`);
   const verified = io.sh(["run", "verify:fast", "--landing"], true);
+  if (verified.status === EXIT_BOAT_SPENT) {
+    io.err(
+      "lane:close: boat.dev had no start for the Linux steps (verify:fast says until when, above); they did not run here " +
+        "either, and nothing landed. Run lane:close again then, as a harness background command. Do not set JG_VERIFY_BOAT=0 " +
+        "to land sooner: that runs the whole Linux suite on Jon's PC. Any other failure printed above is real.",
+    );
+    return EXIT_VERIFY_FAILED;
+  }
   if (verified.status !== 0) {
     io.err(
       `lane:close: verify:fast failed (exit ${verified.status}); nothing landed. ` +

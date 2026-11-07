@@ -12,8 +12,10 @@
 // Everything else is what CI runs on ubuntu: type-checks, gates and test files. The machine runs
 // with `CI=1`, as CI does.
 //
-// Boat busy (both machines in use, a start window full) is waited for inside `runOnBoat`; the
-// Linux steps never move here for that. Boat unusable (no CLI, not logged in, out of hours, the
+// Boat busy (both machines in use, a start window that frees within the hour) is waited for inside
+// `runOnBoat`; the Linux steps never move here for that. Boat spent (the day's starts used, a window
+// hours away) stops the run: the Linux steps fail as not run, with when boat frees, and never run
+// here, or every landing on the PC would run its whole suite at once. Boat unusable (no CLI, not logged in, out of hours, the
 // network down, the run broke before any step reported) says why and runs them in the local slot,
 // since a landing must still work. While boat runs, this PC holds a slot only for its own steps.
 import { spawn } from "node:child_process";
@@ -104,7 +106,7 @@ export function isLight(group: readonly PlaceableStep[]): boolean {
 
 /** What the receipt keeps about the boat side of a run. */
 export interface BoatReceipt {
-  status: "passed" | "failed" | "unusable" | "broken" | "timed-out" | "off";
+  status: "passed" | "failed" | "spent" | "unusable" | "broken" | "timed-out" | "off";
   /** The boat machine's id: the run id `boat history`, `boat usage` and the dashboard know. */
   runId?: string | undefined;
   costUsd?: number | undefined;
@@ -116,6 +118,8 @@ export interface BoatReceipt {
   packBytes?: number | undefined;
   /** Why boat was not used, or why the run broke. */
   why?: string | undefined;
+  /** When boat takes starts again, for a spent run whose window boat named. */
+  until?: string | undefined;
   steps: string[];
 }
 
@@ -148,6 +152,13 @@ export interface PlacedRun {
   placement: Map<string, Placement>;
   boat: BoatReceipt;
 }
+
+/**
+ * verify:fast's exit when boat had no start for its Linux steps (the day's starts used): they did
+ * not run anywhere, so the run is unproven, not failed. lane:close says to land again when boat
+ * frees, never to run them here.
+ */
+export const EXIT_BOAT_SPENT = 75;
 
 /** Steps at once on a boat machine: its 4 cores. */
 export const BOAT_JOBS = 4;
@@ -302,6 +313,20 @@ export async function runPlaced<S extends PlaceableStep>(input: PlacedRunInput<S
     steps: boatSteps.map((step) => step.name),
   };
   const missing = boatSteps.filter((step) => !results.has(step.name));
+
+  if (outcome.kind === "spent") {
+    const until = outcome.until === undefined ? undefined : new Date(outcome.until).toISOString();
+    const when = until === undefined ? "" : ` Boat takes starts again from ${until}.`;
+    // The run fails whatever this PC does now: stop its own steps from starting too.
+    remoteFailure = "boat had no start for the Linux steps";
+    input.note(
+      `verify:fast: boat has no start for this run: ${outcome.why}. The ${missing.length} Linux step(s) did not run, and were not run on this PC either.${when} ` +
+        "Run again then. Do not set JG_VERIFY_BOAT=0 to get past this: that runs the whole Linux suite on this PC.",
+    );
+    for (const step of missing) settle({ name: step.name, ok: false, ms: 0, output: `not run: ${outcome.why}.${when}` }, "boat");
+    await localRun;
+    return { results: ordered(), placement, boat: { ...receipt, status: "spent", why: outcome.why, until, steps: [] } };
+  }
 
   if (outcome.kind === "unusable") {
     input.note(`verify:fast: boat cannot be used: ${outcome.why}. The ${missing.length} Linux step(s) run on this PC instead.`);
