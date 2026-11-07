@@ -229,3 +229,26 @@ test("meat goes off in a storage box as fast as carried, and four times slower i
   expect(bin.ctx.player.inventory.count(BAG, "stone")).toBe(5);
   expect(held(bin, "stone")).toBe(0);
 }, 60_000);
+
+test("a hide sleeping bag is where the survivor wakes after dying, once: it is used up and the next death wakes on the beach", () => {
+  const game = runner();
+  tick(game, 0.1);
+  const beach = [...game.ctx.scene.entity.get(game.userId)!.position];
+  hold(game, "hide_sleeping_bag");
+  game.ui.tryInvoke("cheat", { teleport: [beach[0]! + 40, beach[2]!] });
+  tick(game, 0.1);
+  place(game, game.ctx.scene.entity.get(game.userId)!.rotationY);
+  const [bag] = baseBuilding(game.ctx).list();
+  expect(bag?.pieceId).toBe("hide_sleeping_bag");
+  const flat = (a: readonly number[], b: readonly number[]) => Math.hypot(a[0]! - b[0]!, a[2]! - b[2]!);
+
+  game.ui.tryInvoke("cheat", { teleport: [beach[0]! + 80, beach[2]!] });
+  game.ui.tryInvoke("cheat", { kill: true });
+  tick(game, 0.2);
+  expect(flat(game.ctx.scene.entity.get(game.userId)!.position, bag!.position)).toBeLessThan(1);
+  expect(baseBuilding(game.ctx).list()).toHaveLength(0);
+
+  game.ui.tryInvoke("cheat", { kill: true });
+  tick(game, 0.2);
+  expect(flat(game.ctx.scene.entity.get(game.userId)!.position, beach)).toBeLessThan(1);
+});
