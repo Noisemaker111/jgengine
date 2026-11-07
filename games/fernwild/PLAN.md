@@ -13,7 +13,7 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | failure | 1/1 | 0 | 0 | 0 | 0 |
 | save | 0/1 | 0 | 0 | 1 | 0 |
 | settings | 0/1 | 0 | 0 | 1 | 0 |
-| menu | 0/1 | 0 | 0 | 1 | 0 |
+| menu | 1/1 | 0 | 0 | 0 | 0 |
 | progression | 1/1 | 0 | 0 | 0 | 0 |
 | content | 5/5 | 0 | 0 | 0 | 0 |
 | survival | 9/9 | 0 | 0 | 0 | 0 |
@@ -39,7 +39,7 @@ Genres: creature-survival. 64/67 proven · 3 missing.
 | `failure.lose-and-recover` | proven | The player can fail (die, lose the run, go broke) and the game puts them back into play at a stated cost. | proofs/sim/body-recover.proof.ts |
 | `save.continue` | missing | Progress made by playing survives saving and continuing. |  |
 | `settings.controls` | missing | The player opens settings and a change (a binding, volume, sensitivity) takes effect. |  |
-| `menu.start-and-credits` | missing | The main menu starts a game and shows the credits. |  |
+| `menu.start-and-credits` | proven | The main menu starts a game and shows the credits. | proofs/sim/menu-credits.proof.ts |
 | `progression.runway` | proven | Something new unlocks steadily across the first five hours, up to the progression cap. | content check |
 | `content.item-source` | proven | Every item can be obtained by playing. | content check |
 | `content.item-use` | proven | Every item does something: crafts, equips, eats, places, feeds, sells or summons. | content check |
