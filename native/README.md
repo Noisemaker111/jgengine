@@ -4,7 +4,7 @@ Can a jgengine game run much faster as a native Rust program than it does in the
 (TypeScript + three.js in WebView2), with the picture unchanged? This folder measures that on real
 frames from two games, Deepward and Harbor Heat.
 
-Nothing here ships. It is an experiment, and its verdict is below.
+Nothing here ships. It is an experiment, and its verdict is below and in issue #3041.
 
 ## How it measures
 
@@ -159,8 +159,8 @@ a different random value. The evidence:
   palms were missing.
 - Two of Harbor Heat's instanced meshes (recording geometries 62 and 71) draw more instances than their instance buffers hold (17–28 against 16, and 45–60 against 44).
   Chrome draws them anyway (robust buffer access), and the extra instances read zero matrices and
-  draw nothing. The replay draws the instances that fit. This is a bug in Harbor Heat, filed with
-  the verdict issue.
+  draw nothing. The replay draws the instances that fit. This is a bug in Harbor Heat, written up in
+  the verdict issue, #3041.
 - Chrome's WebGPU lets a draw bind 8 vertex buffers, and some of three's draws bind 9 or 10
   (3 program and geometry pairs in Deepward, 35 in Harbor Heat). For those draws, the replay interleaves the
   per-vertex attributes into one buffer, and the per-instance ones if needed. It rebuilds the
