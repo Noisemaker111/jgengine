@@ -1,0 +1,12 @@
+[package]
+name = "jg-shader"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Translates the GLSL ES 3.00 programs three.js linked into WGSL plus the uniform, texture and vertex layout to feed them."
+
+[dependencies]
+# naga 30.0.1 with glsl-in alone does not compile (front::interpolator is gated on spv-in or wgsl-in).
+naga = { version = "~30.0.1", features = ["glsl-in", "wgsl-in", "wgsl-out"] }
+serde.workspace = true
+serde_json.workspace = true

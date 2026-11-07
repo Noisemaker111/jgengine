@@ -1,0 +1,6 @@
+target/
+# Local copies of exported programs for remote checks; regenerate with bun scripts/native-export.ts.
+testdata/
+
+# wasm-bindgen output for row D's web harness; build steps in README.md.
+web/pkg/

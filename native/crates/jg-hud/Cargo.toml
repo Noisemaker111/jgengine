@@ -1,0 +1,11 @@
+[package]
+name = "jg-hud"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Deepward's HUD drawn with Rune in the native window, from the game's CSS and the captured HUD reference."
+
+[dependencies]
+# Rune is pre-release and takes no pull requests: pinned to a commit of `dev` (never rewritten).
+rune = { git = "https://github.com/anomalyco/rune", rev = "58eeef5f8974299aa5e471de0010123323e3127e", default-features = false }
+wgpu.workspace = true
