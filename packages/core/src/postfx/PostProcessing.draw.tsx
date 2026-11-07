@@ -429,6 +429,15 @@ export function availablePostfxStages(config: PostProcessingConfig): readonly Po
 }
 
 /**
+ * Give a pass the name the frame breakdown reports it by. A production build minifies class names,
+ * so without this a shipped game's passes read `post:cE` instead of `post:BeautyPass`.
+ */
+function passNamed<T extends Pass>(pass: T, name: string): T {
+  Reflect.set(pass, "name", name);
+  return pass;
+}
+
+/**
  * Build the composer for a plan. A stage the plan left out adds no pass, so it draws nothing and
  * allocates no render target.
  * @internal
@@ -455,13 +464,13 @@ export function buildPostGraph(
     composer.addPass(pass);
     effects.push(pass);
   };
-  const taa = plan.taa && beautyDepth !== null ? new TemporalAaPass(camera, beautyDepth, width, height) : null;
-  const scenePass = taa === null ? new RenderPass(scene, camera) : new JitteredRenderPass(scene, camera, taa);
-  composer.addPass(beautyDepth === null ? scenePass : new BeautyPass(scenePass, beautyDepth, width, height));
+  const taa = plan.taa && beautyDepth !== null ? passNamed(new TemporalAaPass(camera, beautyDepth, width, height), "TemporalAaPass") : null;
+  const scenePass = taa === null ? passNamed(new RenderPass(scene, camera), "RenderPass") : passNamed(new JitteredRenderPass(scene, camera, taa), "JitteredRenderPass");
+  composer.addPass(beautyDepth === null ? scenePass : passNamed(new BeautyPass(scenePass, beautyDepth, width, height), "BeautyPass"));
 
   let aoPass: OverlayAwareGTAOPass | null = null;
   if (plan.ao !== null) {
-    const ao = new OverlayAwareGTAOPass(scene, camera, width, height);
+    const ao = passNamed(new OverlayAwareGTAOPass(scene, camera, width, height), "OverlayAwareGTAOPass");
     aoPass = ao;
     if (beautyDepth !== null) ao.setGBuffer(beautyDepth);
     ao.blendIntensity = plan.ao.blend ?? 1;
@@ -477,48 +486,54 @@ export function buildPostGraph(
   }
 
   if (plan.contactShadows !== null && beautyDepth !== null) {
-    effect(new ContactShadowPass(scene, camera, beautyDepth, plan.contactShadows, plan.contactShadowSteps));
+    effect(passNamed(new ContactShadowPass(scene, camera, beautyDepth, plan.contactShadows, plan.contactShadowSteps), "ContactShadowPass"));
     built.push("contactShadows");
   }
   if (plan.ssr !== null && beautyDepth !== null) {
-    effect(new SsrPass(scene, camera, beautyDepth, plan.ssr, plan.ssrSteps));
+    effect(passNamed(new SsrPass(scene, camera, beautyDepth, plan.ssr, plan.ssrSteps), "SsrPass"));
     built.push("ssr");
   }
   if (plan.atmosphere !== null && beautyDepth !== null) {
-    effect(new AtmospherePass(scene, camera, beautyDepth, plan.atmosphere, plan.atmosphereSteps, plan.fogVariationTaps));
+    effect(passNamed(new AtmospherePass(scene, camera, beautyDepth, plan.atmosphere, plan.atmosphereSteps, plan.fogVariationTaps), "AtmospherePass"));
     built.push("atmosphere");
   }
 
   if (plan.bloom !== null) {
     effect(
-      new UnrealBloomPass(
-        new THREE.Vector2(width, height),
-        plan.bloom.strength ?? 0.32,
-        plan.bloom.radius ?? 0.55,
-        plan.bloom.threshold ?? 0.85,
+      passNamed(
+        new UnrealBloomPass(
+          new THREE.Vector2(width, height),
+          plan.bloom.strength ?? 0.32,
+          plan.bloom.radius ?? 0.55,
+          plan.bloom.threshold ?? 0.85,
+        ),
+        "UnrealBloomPass",
       ),
     );
     built.push("bloom");
   }
 
   if (plan.dof !== null) {
-    const dof = new OverlayAwareBokehPass(scene, camera, {
-      focus: plan.dof.focus ?? 18,
-      aperture: plan.dof.aperture ?? 0.00025,
-      maxblur: plan.dof.maxBlur ?? 0.01,
-    });
+    const dof = passNamed(
+      new OverlayAwareBokehPass(scene, camera, {
+        focus: plan.dof.focus ?? 18,
+        aperture: plan.dof.aperture ?? 0.00025,
+        maxblur: plan.dof.maxBlur ?? 0.01,
+      }),
+      "OverlayAwareBokehPass",
+    );
     effect(dof);
     built.push("dof");
   }
 
   if (plan.motionBlur !== null && beautyDepth !== null) {
-    effect(new MotionBlurPass(camera, beautyDepth, plan.motionBlur, plan.motionBlurSamples));
+    effect(passNamed(new MotionBlurPass(camera, beautyDepth, plan.motionBlur, plan.motionBlurSamples), "MotionBlurPass"));
     built.push("motionBlur");
   }
 
   // SMAA must run before OutputPass (linear-sRGB). Default on for post chains.
   if (plan.smaa) {
-    effect(new SMAAPass());
+    effect(passNamed(new SMAAPass(), "SMAAPass"));
     built.push("smaa");
   }
   if (taa !== null) {
@@ -533,7 +548,7 @@ export function buildPostGraph(
     const autoExposure = plan.autoExposure;
     let current = authoredExposure;
     let sampled = false;
-    composer.addPass(
+    composer.addPass(passNamed(
       new ExposureMeterPass((samples, seconds) => {
         const target = authoredExposure * exposureForKey(keyLuminanceFromSamples(samples), autoExposure, readSkyLight(scene)?.daylight ?? 1);
         // The first sample lands on its own target; fading in from the authored exposure would
@@ -542,31 +557,32 @@ export function buildPostGraph(
         sampled = true;
         gl.toneMappingExposure = quantizeExposure(current);
       }),
-    );
+      "ExposureMeterPass",
+    ));
     built.push("exposure");
   }
 
-  composer.addPass(new OutputPass());
+  composer.addPass(passNamed(new OutputPass(), "OutputPass"));
 
   if (plan.stylize !== null) {
     // AO's prepass already drew the scene's normals and depth this frame; drawing them again for
     // the outlines was a third full scene render in a comic-look game.
     const outlined = plan.stylize.outline !== undefined && plan.stylize.outline !== false;
-    effect(new StylizePass(scene, camera, plan.stylize, outlined ? (aoPass?.shareOutlinePrepass() ?? null) : null));
+    effect(passNamed(new StylizePass(scene, camera, plan.stylize, outlined ? (aoPass?.shareOutlinePrepass() ?? null) : null), "StylizePass"));
     built.push("stylize");
   }
 
   let reveal: BuiltGraph["reveal"] = null;
   if (effects.length > 0) {
-    const fade = new RevealFadePass(width, height);
-    reveal = { snapshot: new RevealSnapshotPass(fade), fade };
+    const fade = passNamed(new RevealFadePass(width, height), "RevealFadePass");
+    reveal = { snapshot: passNamed(new RevealSnapshotPass(fade), "RevealSnapshotPass"), fade };
     composer.addPass(fade);
     composer.insertPass(reveal.snapshot, 1);
   }
 
   let grade: ShaderPass | null = null;
   if (plan.grade !== null) {
-    grade = createGradePass(plan.grade);
+    grade = passNamed(createGradePass(plan.grade), "ShaderPass");
     composer.addPass(grade);
     built.push("grade");
   }
