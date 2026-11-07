@@ -376,6 +376,17 @@ export function destroyWild(ctx: GameContext): void {
   for (const creature of [...world.creatures.values()]) if (!creature.tamed && !creature.dead) removeCreature(ctx, world, creature, RESPAWN_SECONDS);
 }
 
+/** How many live wild creatures stand within `within` metres of `from`. */
+export function wildCountNear(ctx: GameContext, from: readonly [number, number, number], within: number): number {
+  let count = 0;
+  for (const creature of worldOf(ctx).creatures.values()) {
+    if (creature.dead || creature.tamed) continue;
+    const at = ctx.scene.entity.get(creature.id)?.position;
+    if (at !== undefined && Math.hypot(at[0] - from[0], at[2] - from[2]) <= within) count += 1;
+  }
+  return count;
+}
+
 // --- aiming, striking -----------------------------------------------------------------------
 
 /** The live entity that acts for the survivor: their mount when riding, else themselves. */
