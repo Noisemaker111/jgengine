@@ -169,6 +169,9 @@ async function launchAndMeasure(args: LaunchArgs): Promise<void> {
       await release();
       const viewport = await session.evaluate<string>(`innerWidth + "x" + innerHeight`);
       const frame = summarizeFrameDeltas(deltas);
+      // A window that drew nothing (a reload, a stall back to a blank page) measures an empty frame:
+      // Brightway Park once read 365 fps and Odd Orbit 86 fps with zero draws.
+      if (breakdown !== null && breakdown.counts.drawsAvg < 1) throw new Error(`the scene drew nothing while it was measured (${breakdown.counts.drawsAvg} draws a frame, longest frame ${frame.maxMs} ms); measure it again`);
       const record = { at: Date.now(), exe: args.exe, clock: args.uncapped ? "uncapped" : "vsync", tier, viewport, start, frame, breakdown };
       if (args.out !== null) {
         mkdirSync(dirname(args.out), { recursive: true });
