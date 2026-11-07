@@ -150,7 +150,7 @@ export function rebaseResolvingGenerated(git: (args: string[]) => Run, onto: str
   };
   const blockResolved = (path: string): string | null => {
     if (blocksOf(path).length === 0 || top.length === 0) return null;
-    const [base, ours, theirs] = [1, 2, 3].map((n) => stage(n, path));
+    const [base, ours, theirs] = [stage(1, path), stage(2, path), stage(3, path)];
     if (base === null || ours === null || theirs === null) return null;
     return resolveBlockConflict(path, { base, ours, theirs }, merge);
   };
