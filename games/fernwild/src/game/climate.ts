@@ -1,7 +1,7 @@
 import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { ambientTemperature } from "@jgengine/core/survival/bodyTemperature";
-import { solidOverhead } from "@jgengine/core/world/overhead";
+import { solidEnclosure } from "@jgengine/core/world/overhead";
 
 import { editorLayers } from "../editorLayers";
 import { stations } from "./base";
@@ -16,6 +16,13 @@ const BIOME_REACH = 200;
 /** A campfire's warmth at its heart, and how far it reaches (ARK: 800 units, about 8 m). The warmth is approximate. */
 const CAMPFIRE_C = 12;
 const CAMPFIRE_RANGE = 8;
+/**
+ * A closed room, roof and walls all round, holds the air this share of the way from outside toward INDOOR_C,
+ * so the snow's night is bearable in a hut and a heatwave milder. ARK's indoor insulation has no published
+ * figure; these are approximate.
+ */
+const INDOOR_HOLD = 0.5;
+const INDOOR_C = 20;
 /** Rain this heavy soaks a survivor under open sky. */
 const SOAKING_RAIN = 0.2;
 
@@ -65,6 +72,8 @@ export interface ClimateHere {
   precipitation: number;
   /** A ceiling, roof or cave rock overhead. */
   covered: boolean;
+  /** Shut in a room, roof and walls all round: the air is held toward indoor warmth. */
+  enclosed: boolean;
   wet: boolean;
   /** Air temperature in °C. */
   temperature: number;
@@ -73,25 +82,28 @@ export interface ClimateHere {
 /**
  * The air where a survivor stands, ARK-style: the biome's climate, colder with height and at night; the weather's
  * cooling (rain 3-5 °C, ARK says) unless something is overhead, which also keeps the rain off; soaked in water or
- * open rain; and warmed by campfires.
+ * open rain; held toward indoor warmth in a closed room; and warmed by campfires.
  */
 export function climateAt(ctx: GameContext, position: readonly [number, number, number]): ClimateHere {
   const [x, , z] = position;
   const biome = biomeAt(x, z);
   const sample = ctx.environment.sample(x, z);
-  const covered = solidOverhead(ctx.world.solids, position);
+  const shut = solidEnclosure(ctx.world.solids, position);
+  const covered = shut > 0;
+  const enclosed = shut >= 1;
   // A roof stops the rain and its chill; a heatwave or a cold snap reaches you indoors too.
   const sheltered = covered && sample.precipitation > 0;
   const wet = inWater(ctx, position) || (!covered && sample.rain >= SOAKING_RAIN);
-  const temperature = ambientTemperature({
+  const outside = ambientTemperature({
     baseC: BIOME_C[biome]!,
     daySwingC: 6,
     dayFraction: ctx.time.calendar().dayFraction,
     altitude: Math.max(0, position[1]),
     lapsePerMetre: 0.12,
     weatherC: sheltered ? 0 : (sample.temperatureOffset ?? 0),
-    heatC: campfireHeat(ctx, position),
     wet,
   });
-  return { biome, weather: sample.mode, precipitation: sample.precipitation, covered, wet, temperature };
+  const air = enclosed ? outside + (INDOOR_C - outside) * INDOOR_HOLD : outside;
+  const temperature = air + campfireHeat(ctx, position);
+  return { biome, weather: sample.mode, precipitation: sample.precipitation, covered, enclosed, wet, temperature };
 }

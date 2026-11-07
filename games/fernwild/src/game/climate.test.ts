@@ -145,3 +145,34 @@ test("a thatch roof keeps the rain off, and a campfire warms whoever stands by i
   tick(game, 0.1);
   expect(here(game).temperature).toBeGreaterThan(under.temperature + 5);
 });
+
+test("shut in a hut, roof and walls all round, the snow's night is held toward indoor warmth; an open door lets it back in", () => {
+  const game = runner();
+  tick(game, 0.1);
+  const snow = marker("herd_snow_");
+  stand(game, snow.x, snow.z);
+  tick(game, 0.1);
+  game.ui.tryInvoke("cheat", { hut: "thatch" });
+  tick(game, 0.1);
+  const outside = here(game);
+  expect(outside.enclosed).toBe(false);
+
+  // Stand on the floor inside the shut hut.
+  const pieces = baseBuilding(game.ctx).list();
+  const floor = pieces.find((piece) => piece.pieceId === "thatch_foundation")!;
+  const door = pieces.find((piece) => piece.pieceId === "thatch_door")!;
+  game.ctx.scene.entity.setPose(game.userId, { position: [floor.position[0], floor.position[1] + 0.2, floor.position[2]] });
+  tick(game, 0.1);
+  const inside = here(game);
+  expect(inside.enclosed).toBe(true);
+  expect(survivorView(game.ctx).indoors).toBe(true);
+  // Halfway from the outside air to 20 °C: the snow is well below it, so the room is many degrees warmer.
+  expect(inside.temperature - outside.temperature).toBeGreaterThan(8);
+
+  baseBuilding(game.ctx).toggle(door.id);
+  tick(game, 0.1);
+  const open = here(game);
+  expect(open.enclosed).toBe(false);
+  expect(open.covered).toBe(true);
+  expect(open.temperature).toBeLessThan(inside.temperature - 8);
+});

@@ -60,8 +60,9 @@ const DOOR_H = 2.3;
 const RAMP_STEPS = 10;
 
 export const SHAPES: readonly StructureShapeDef[] = [
-  // The slab's top is the floor; its block runs 2 m down so uneven ground stays covered.
-  { id: "foundation", boxes: [{ min: [-HALF, -2, -HALF], max: [HALF, 0, HALF] }], sockets: [...edges("floor_edge", 0), ...corners("floor_corner", 0)], ground: { lift: 0.3, maxStep: 1.6 } },
+  // The slab's top is the floor, flush with the highest ground under it so a survivor walks up onto it from that side;
+  // its block runs 2 m down so uneven ground stays covered.
+  { id: "foundation", boxes: [{ min: [-HALF, -2, -HALF], max: [HALF, 0, HALF] }], sockets: [...edges("floor_edge", 0), ...corners("floor_corner", 0)], ground: { lift: 0, maxStep: 1.6 } },
   { id: "wall", boxes: [{ min: [-HALF, 0, -THICK], max: [HALF, WALL, THICK] }], sockets: [...faces("wall_base", 0), ...faces("wall_top", WALL)] },
   {
     id: "doorframe",
@@ -90,7 +91,7 @@ export const SHAPES: readonly StructureShapeDef[] = [
     ground: { lift: 0, maxStep: 0.5 },
   },
   {
-    // Steps 0.3 m high and deep, under the survivor's 0.4 m step, rising one wall height over one grid cell.
+    // Steps 0.3 m high and deep, under the survivor's 0.35 m step, rising one wall height over one grid cell.
     id: "ramp",
     boxes: Array.from({ length: RAMP_STEPS }, (_, step) => {
       const rise = (WALL / RAMP_STEPS) * (step + 1);

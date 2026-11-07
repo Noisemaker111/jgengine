@@ -38,3 +38,46 @@ export function solidOverhead(solids: Pick<WorldSolids, "inBox">, at: readonly [
   }
   return false;
 }
+
+/** {@link solidEnclosure} knobs, beside {@link solidOverhead}'s for the roof. */
+export interface EnclosureOptions extends OverheadOptions {
+  /** How many ways round the compass to look for a wall. Default 8. */
+  directions?: number;
+  /** How far out a wall still counts. Default 6. */
+  wallReach?: number;
+  /** Height above the point the walls are looked for at (chest height, over a doorstep or a floor's lip). Default 1. */
+  wallHeight?: number;
+  /** Spacing of the samples along each way out. Default 0.25. */
+  step?: number;
+}
+
+/**
+ * How shut in a point is: the share of the ways round it that meet a wall within reach, and 0 under open sky.
+ * 1 is a closed room, roof and walls all round; an open door or a missing wall leaves it short of 1.
+ * What decides whether a building keeps out the weather and the cold.
+ *
+ * @capability solid-enclosure measure how enclosed a point is by a roof and walls, from the world's solids
+ */
+export function solidEnclosure(solids: Pick<WorldSolids, "inBox">, at: readonly [number, number, number], options: EnclosureOptions = {}): number {
+  if (!solidOverhead(solids, at, options)) return 0;
+  const directions = options.directions ?? 8;
+  const reach = options.wallReach ?? 6;
+  const step = options.step ?? 0.25;
+  const height = at[1] + (options.wallHeight ?? 1);
+  let walled = 0;
+  for (let way = 0; way < directions; way += 1) {
+    const angle = (way / directions) * Math.PI * 2;
+    const dx = Math.sin(angle);
+    const dz = Math.cos(angle);
+    for (let along = step; along <= reach + 1e-9; along += step) {
+      const x = at[0] + dx * along;
+      const z = at[2] + dz * along;
+      const hit = solids.inBox([x - 0.01, height - 0.01, z - 0.01], [x + 0.01, height + 0.01, z + 0.01]).some((solid) => covers(solid, x, z, height, height));
+      if (hit) {
+        walled += 1;
+        break;
+      }
+    }
+  }
+  return walled / directions;
+}
