@@ -222,6 +222,8 @@ export function createSpatialApi(options: SpatialApiOptions): SpatialApi {
     const oldKey = index.locations.get(instanceId);
     const newKey = position === undefined ? undefined
       : packCell(cellCoord(position[0], cellSize), cellCoord(position[2], cellSize));
+    // Most committed moves stay inside their cell: an indexed id that remains present and indexed there needs nothing.
+    if (present && oldKey !== undefined && oldKey === newKey) return;
     const had = index.order.has(instanceId);
     if (had !== present) {
       membershipChanges += 1;
