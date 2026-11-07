@@ -96,47 +96,46 @@ export const GRASS_STYLE_TARGETS: readonly GrassStyleTarget[] = [
   {
     id: "cartoon",
     realism: 0,
-    views: ["bb-moor", "bb-moor-low"],
+    views: ["bb-map"],
     target:
       "Beacon Bastion's toon moor. A few chunky blades per clump, wide with round or bold tips and even heights. Two to four flat colour bands with a strong dark-root to bright-tip gradient. Cel light from the engine toon ramp with a rim light, and an ink edge round each clump when outlines are on. The ground is one flat painted colour, flowers are flat oversized icons, and the field still reads full with no bare soil between clumps.",
   },
   {
     id: "animated",
     realism: 0.5,
-    views: ["hh-park", "hh-park-low"],
+    views: ["hh-park"],
     target:
       "Harbor Heat's sunset stylisation. Blades simplified but still countable, soft round tips and gentle irregularity. Smooth, saturated, warm colour with soft shading, a little sheen and glow through the leaf, no outline. Sway is springy, and flowers are simplified but known by their shape: a daisy's ring, a buttercup's cup, a bluebell's bells.",
   },
 ];
 
-/** One game view a grass change is judged on: `bun run shoot <game> --mode play --look <look> --look-from <lookFrom>`. */
+/**
+ * One game view a grass change is judged on, shot the way a player sees it: the game's own camera,
+ * with the player placed in grass when the game starts them elsewhere
+ * (`bun run shoot <game> --mode play [--spawn x,y,z[,yaw]]`).
+ */
 export interface GrassGameView {
   id: string;
   game: string;
-  look: string;
-  lookFrom: string;
+  /** `--spawn` for the player, when the game's start does not already show its grass. */
+  spawn?: string;
+  /** What the view shows, for a person reading the board. */
+  shows: string;
 }
 
-/** The 18 game views every grass phase reshoots when looks change. */
+/**
+ * One view per grass game, from its own player camera. The strategy games' start already frames the
+ * map's grass; the others put the player in a grass patch. (These replaced 18 close-up views from a
+ * detached camera 1 to 4 m off the ground, an angle the top-down games never show, three of which
+ * showed no grass at all; Jon, 2026-11-07.)
+ */
 export const GRASS_GAME_VIEWS: readonly GrassGameView[] = [
-  { id: "hh-park", game: "harbor-heat", look: "0,60", lookFrom: "12,2.2,0.6" },
-  { id: "hh-park-low", game: "harbor-heat", look: "-10,70", lookFrom: "4,0.8,0.3" },
-  { id: "hh-dune", game: "harbor-heat", look: "-224,210", lookFrom: "10,2.2,0.6" },
-  { id: "hh-dune-low", game: "harbor-heat", look: "-224,-180", lookFrom: "5,1.0,0.4" },
-  { id: "fw-plains", game: "fernwild", look: "-180,800", lookFrom: "12,2.4,0.6" },
-  { id: "fw-plains-low", game: "fernwild", look: "-150,780", lookFrom: "4,1.0,0.3" },
-  { id: "fw-downs", game: "fernwild", look: "-900,330", lookFrom: "12,2.4,0.6" },
-  { id: "fw-inland", game: "fernwild", look: "240,1120", lookFrom: "12,2.6,0.6" },
-  { id: "fw-jungle", game: "fernwild", look: "60,150", lookFrom: "10,2.2,0.6" },
-  { id: "fw-forest", game: "fernwild", look: "1010,280", lookFrom: "10,2.2,0.6" },
-  { id: "fw-redwood", game: "fernwild", look: "620,-250", lookFrom: "10,2.2,0.6" },
-  { id: "bb-moor", game: "beacon-bastion", look: "10,10", lookFrom: "12,3,0.6" },
-  { id: "bb-moor-low", game: "beacon-bastion", look: "-15,20", lookFrom: "4,1.0,0.3" },
-  { id: "bw-lawn", game: "brightway-park", look: "20,30", lookFrom: "10,2.5,0.6" },
-  { id: "ec-field", game: "ember-command", look: "15,15", lookFrom: "14,4,0.6" },
-  { id: "ec-field-low", game: "ember-command", look: "-20,10", lookFrom: "4,1.0,0.3" },
-  { id: "ss-crash", game: "scrap-signal", look: "-492,572", lookFrom: "9,2.0,0.6" },
-  { id: "ss-ridge", game: "scrap-signal", look: "-448,556", lookFrom: "10,2.4,0.6" },
+  { id: "hh-park", game: "harbor-heat", spawn: "0,2,60", shows: "third-person, standing in the central park's St Augustine lawn under palms" },
+  { id: "fw-plains", game: "fernwild", spawn: "-180,40,800", shows: "third-person, standing in the south plains' tallgrass prairie with wildflowers" },
+  { id: "bb-map", game: "beacon-bastion", shows: "the start's top-down camera over the highland-moor approach meadow" },
+  { id: "bw-park", game: "brightway-park", shows: "the start's park camera over the Kentucky bluegrass lot" },
+  { id: "ec-field", game: "ember-command", shows: "the start's commander camera over the autumn vale" },
+  { id: "ss-scrub", game: "scrap-signal", spawn: "-524,20,569,0", shows: "first-person, facing the crash site's west desert bunchgrass scrub" },
 ];
 
 /** The games that place grass, each measured by the board's perf pair. */

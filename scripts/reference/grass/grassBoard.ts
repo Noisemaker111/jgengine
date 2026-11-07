@@ -1,5 +1,5 @@
 // `bun run shoot --board`: the grass reference boards. Shoots the `grass-reference` demo's photo
-// views (at each requested realism), the 18 grass game views and, on request, every grass-looks
+// views (at each requested realism), one player-camera view per grass game and, on request, every grass-looks
 // species, then lays real photos beside our matching views and our games' stylised art beside the
 // realism ends they set. `--diff <board>` compares this board with an earlier one, shot by shot.
 //
@@ -112,7 +112,7 @@ export function boardShots(args: Pick<BoardArgs, "realism" | "views" | "species"
   const styled = new Set(GRASS_STYLE_TARGETS.flatMap((target) => target.views));
   for (const view of GRASS_GAME_VIEWS) {
     if (!(args.views || styled.has(view.id)) || !keep(view.id)) continue;
-    shots.push({ file: `views/${view.id}.png`, argv: [view.game, "--mode", "play", "--look", view.look, "--look-from", view.lookFrom] });
+    shots.push({ file: `views/${view.id}.png`, argv: [view.game, "--mode", "play", ...(view.spawn === undefined ? [] : ["--spawn", view.spawn])] });
   }
   if (args.species) {
     GRASS_PRESETS.forEach((_preset, index) => {
@@ -500,11 +500,11 @@ function composeBoard(args: BoardArgs, _shots: readonly BoardShot[]): void {
 }
 
 const USAGE = {
-  summary: `shoot the grass reference boards: real photos beside our matching views, our games' stylised art beside the realism ends, the 18 grass game views and every species. One run shoots for --budget seconds, records each shot in <out>/board.json and exits ${BOARD_MORE_EXIT} while shots remain: run the same command again to continue. The run that takes the last shot lays out the sheets and exits 0; a run whose capture failed names it and exits 1, the board unfinished until it lands. Shots taken with other code are retaken unless --resume`,
+  summary: `shoot the grass reference boards: real photos beside our matching views, our games' stylised art beside the realism ends, one player-camera view per grass game and every species. One run shoots for --budget seconds, records each shot in <out>/board.json and exits ${BOARD_MORE_EXIT} while shots remain: run the same command again to continue. The run that takes the last shot lays out the sheets and exits 0; a run whose capture failed names it and exits 1, the board unfinished until it lands. Shots taken with other code are retaken unless --resume`,
   usage: "bun run shoot --board [--realism 0,0.5,1] [--views] [--species] [--only ids] [--out dir] [--diff <earlier board>] [--quality tier] [--timeout s] [--budget s] [--resume]",
   flags: [
     { flag: "--realism <list>", detail: "realism levels to shoot the reference views at (0 cartoon .. 1 photoreal); default the demo as it is" },
-    { flag: "--views", detail: "also shoot the 18 grass game views (views.png)" },
+    { flag: "--views", detail: "also shoot one view per grass game from its own player camera (views.png)" },
     { flag: "--species", detail: "also shoot every grass-looks species, look and close (species-*.png)" },
     { flag: "--only <ids>", detail: "keep only these reference photos, game views or species numbers" },
     { flag: "--out <dir>", detail: "board folder (default .scratch/boards/grass)" },
