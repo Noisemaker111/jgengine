@@ -260,8 +260,6 @@ export interface EntityStoreOptions {
   onChange?: (instanceId: string | undefined, membershipChanged: boolean) => void;
 }
 
-const HANDLE = Symbol("entityHandle");
-
 export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions = {}): EntityStore<TMeta> {
   const behaviorListeners = new Set<(id: string) => void>();
   const behaviorChanges = new Set<string>();
@@ -332,9 +330,6 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       generations[handle] = generations[handle]! + 1;
     } else if (fresh) generations[handle] = generations[handle]! + 1;
     handleEntities[handle] = entity;
-    // The handle rides on the entity under a hidden key, so a write by id mirrors without a second id lookup.
-    // Non-enumerable and symbol-keyed: snapshots, spreads, JSON and structuredClone never see it.
-    Object.defineProperty(entity, HANDLE, { value: handle, writable: true, configurable: true });
     mirror(handle, entity);
   }
 
@@ -347,9 +342,12 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
     freeHandles.push(handle);
   }
 
-  /** Mirror a stored entity changed in place: every stored entity was bound, so it carries its handle. */
-  function mirrorStored(entity: SceneEntity<TMeta>): void {
-    mirror((entity as unknown as { [HANDLE]: number })[HANDLE], entity);
+  // Every write goes through writeEntity, so `handleEntities` holds exactly the stored objects. Pose writes
+  // find their entity here — one id lookup, where `store.get` then `store.set` took three — and notify
+  // with `store.touch`. Entity objects carry no handle: an extra property, even a hidden one, takes them
+  // off the engines' fast paths for spreads (8x slower in Bun), and games spread entities.
+  function handleFor(id: string): number {
+    return handles.get(id) ?? -1;
   }
 
   function writeEntity(entity: SceneEntity<TMeta>, previous = store.get(entity.id)?.behaviors, fresh = false): void {
@@ -490,7 +488,8 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       return existed;
     },
     update(id, patch) {
-      const current = store.get(id);
+      const handle = handleFor(id);
+      const current = handleEntities[handle];
       if (!current) return false;
       const previousBehaviors = current.behaviors;
       if (patch.position !== undefined) current.position = toEntityPosition(patch.position);
@@ -511,7 +510,7 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       else if (patch.look !== undefined) current.look = patch.look;
       if (patch.meta !== undefined) current.meta = patch.meta;
       if (patch.behaviors === undefined) {
-        mirrorStored(current);
+        mirror(handle, current);
         store.touch(id);
       } else writeEntity(current, previousBehaviors);
       return true;
@@ -520,10 +519,9 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       if (constraint === null) constraints.delete(id);
       else constraints.set(id, constraint);
     },
-    // Pose writes change the stored entity in place, so they notify with `store.touch` instead of `store.set`,
-    // which would look the id up twice more to learn it is present and holds the same object.
     setPose(id, pose) {
-      const current = store.get(id);
+      const handle = handleFor(id);
+      const current = handleEntities[handle];
       if (!current) return false;
       let position = toEntityPosition(pose.position);
       const constraint = constraints.size === 0 ? undefined : constraints.get(id);
@@ -552,16 +550,17 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       if (pose.rotationY !== undefined) current.rotationY = pose.rotationY;
       if (pose.rotationX !== undefined) current.rotationX = pose.rotationX;
       if (pose.rotationZ !== undefined) current.rotationZ = pose.rotationZ;
-      mirrorStored(current);
+      mirror(handle, current);
       store.touch(id);
       return true;
     },
     setVelocity(id, velocity) {
-      const current = store.get(id);
+      const handle = handleFor(id);
+      const current = handleEntities[handle];
       if (current === undefined || !Array.isArray(velocity) || velocity.length !== 3 ||
           !velocity.every((component) => typeof component === "number" && Number.isFinite(component))) return false;
       current.velocity = [velocity[0], velocity[1], velocity[2]];
-      mirrorStored(current);
+      mirror(handle, current);
       store.touch(id);
       return true;
     },
@@ -639,12 +638,13 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
     },
     resetToSpawn(id) {
       const pose = spawnPoses.get(id);
-      const current = store.get(id);
+      const handle = handleFor(id);
+      const current = handleEntities[handle];
       if (pose === undefined || current === undefined) return false;
       current.position = pose.position;
       current.rotationY = pose.rotationY;
       current.velocity = [0, 0, 0];
-      mirrorStored(current);
+      mirror(handle, current);
       store.touch(id);
       return true;
     },
