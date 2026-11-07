@@ -24,7 +24,7 @@ import { join } from "node:path";
 
 import { boatExe, boatMaxMachines, deleteOwnMachinesSync, fairshareExe, realBoatCli, registryPath, runOnBoat, type BoatCli, type RunFacts } from "./boat";
 import { READY_MARK, SETUP_FAILED_MARK, writeSnapshot, type Snapshot } from "./boat-snapshot";
-import { DONE_MARK, parseResultLine, parseStartLine, type RemotePlan, type RemoteStep } from "./boat-steps";
+import { DONE_MARK, parseFileLine, parseResultLine, parseStartLine, type RemotePlan, type RemoteStep } from "./boat-steps";
 import type { RunStepsOptions, ScheduledStep, StepResult } from "./stepScheduler";
 
 /** A test file that imports the CI skip for downloaded models (`games/shared/assetTest.ts`). */
@@ -170,7 +170,7 @@ export function boatWanted(env: Readonly<Record<string, string | undefined>>): b
 
 /** The command the machine runs in the pushed directory. */
 export function remoteCommand(): string[] {
-  return ["bash", "-lc", 'bash setup.sh && export PATH="$HOME/.bun/bin:$PATH" && cd repo && CI=1 bun scripts/boat-steps.ts ../steps.json'];
+  return ["bash", "-lc", 'bash setup.sh && export PATH="$HOME/.bun/bin:$PATH" && cd repo && CI=1 JGENGINE_SUITE_WRITE=1 bun scripts/boat-steps.ts ../steps.json'];
 }
 
 /**
@@ -261,6 +261,13 @@ export async function runPlaced<S extends PlaceableStep>(input: PlacedRunInput<S
       const { junit: _junit, ...plain } = result;
       settle(plain, "boat");
       if (!result.ok && result.blockedBy === undefined && remoteFailure === null) remoteFailure = `${result.name} (on boat)`;
+      return;
+    }
+    const returned = parseFileLine(line);
+    if (returned !== null) {
+      const target = join(input.root, returned.path);
+      mkdirSync(join(target, ".."), { recursive: true });
+      writeFileSync(target, returned.text, "utf8");
       return;
     }
     if (line.startsWith(READY_MARK)) {
