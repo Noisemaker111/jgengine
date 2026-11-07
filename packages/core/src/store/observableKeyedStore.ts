@@ -1,6 +1,8 @@
 /** @internal */
 export interface ObservableKeyedStore<T> {
   set(key: string, value: T): void;
+  /** Notify a value update for `key`, whose stored value the caller has already changed in place; skips the map lookups `set` does. The caller guarantees the key is present. */
+  touch(key: string): void;
   delete(key: string): void;
   get(key: string): T | undefined;
   has(key: string): boolean;
@@ -55,6 +57,9 @@ export function createObservableKeyedStore<T>(
       if (previous !== value) store.set(key, value);
       emit(key, !had);
       if (!had) emitMembership();
+    },
+    touch(key) {
+      emit(key, false);
     },
     delete(key) {
       if (!store.has(key)) return;
