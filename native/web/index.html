@@ -65,6 +65,18 @@ async function main() {
 
   say("timed run");
   restart(run, files);
+  // The restarted replay uploads every texture again; let the GPU finish that on frame 0 (two frames
+  // in a row under 50 ms, at most 20 s) so the clock starts on the path, not on the uploads.
+  await new Promise((done) => {
+    let last = null, calm = 0;
+    const settle = (now) => {
+      run.frame(0);
+      calm = last !== null && now - last < 50 ? calm + 1 : 0;
+      last = now;
+      if (calm >= 2 || performance.now() - mark > 20000) done(); else requestAnimationFrame(settle);
+    };
+    requestAnimationFrame(settle);
+  });
   phase("timedLoad");
   const adapter = run.adapter();
   const times = run.times();
@@ -87,6 +99,7 @@ async function main() {
   });
   await new Promise((r) => setTimeout(r, 500));
   const gpu = run.gpu_ms();
+  const gpuCounts = Array.from(run.gpu_counts());
   phase("timedRun");
 
   say("pixel check");
@@ -130,7 +143,7 @@ async function main() {
     renderer: "jg-web", adapter, userAgent: navigator.userAgent, seconds: duration, frames: deltas.length + 1, fps,
     frameP50: quantile(deltas, 0.5), frameP99: quantile(deltas, 0.99), cpuP50: quantile(cpu, 0.5), cpuP99: quantile(cpu, 0.99),
     gpuP50: quantile(gpu, 0.5), gpuP99: quantile(gpu, 0.99), gpuSamples: gpu.length, pixels: frames,
-    phasesMs: phases, firstDeltas: deltas.slice(0, 20), firstCpu: cpu.slice(0, 20),
+    phasesMs: phases, gpuCounts, firstDeltas: deltas.slice(0, 20), firstCpu: cpu.slice(0, 20),
   };
   say(`done: ${fps.toFixed(1)} fps`);
 }

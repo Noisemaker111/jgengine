@@ -132,7 +132,11 @@ async function webRow(recording: string, out: string): Promise<Row> {
     const r = result as Record<string, unknown> & { error?: string; pixels: DiffReport["frames"]; adapter: string };
     if (r.error !== undefined) throw new Error(`web harness: ${r.error}`);
     writeFileSync(out, `${JSON.stringify(r, null, 1)}\n`);
-    return { row: "D", label: "wasm + WebGPU, headless Chrome", fps: Number(r["fps"]), frameP50: Number(r["frameP50"]), frameP99: Number(r["frameP99"]), cpuP50: Number(r["cpuP50"]), gpuP50: Number(r["gpuP50"]), image: imageSummary(r.pixels), note: `${r.adapter}; uncapped clock (a normal tab is held to the display's refresh), no HUD or rules` };
+    // Chrome resolves only the first few timestamp readbacks of a run (rows/D.json's gpuCounts: frames
+    // stamped, left untimed with every slot in flight, failed, empty), too few to call a GPU time.
+    const gpuSamples = Number(r["gpuSamples"]);
+    const gpuNote = gpuSamples >= 30 ? "" : `; GPU ms n/a: Chrome returned ${gpuSamples} of the run's timestamp readbacks`;
+    return { row: "D", label: "wasm + WebGPU, headless Chrome", fps: Number(r["fps"]), frameP50: Number(r["frameP50"]), frameP99: Number(r["frameP99"]), cpuP50: Number(r["cpuP50"]), gpuP50: gpuSamples >= 30 ? Number(r["gpuP50"]) : null, image: imageSummary(r.pixels), note: `uncapped clock (a normal tab is held to the display's refresh), no HUD or rules${gpuNote}` };
   } finally {
     server.stop(true);
   }

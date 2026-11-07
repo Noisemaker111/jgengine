@@ -158,6 +158,11 @@ mod web {
             Ok(())
         }
 
+        /// The GPU timer's counts: frames stamped, untimed (slot in flight), failed maps, empty stamps.
+        pub fn gpu_counts(&self) -> Vec<u32> {
+            self.stamps.as_ref().map_or_else(Vec::new, |g| g.counts.to_vec())
+        }
+
         /// GPU ms per frame gathered so far.
         pub fn gpu_ms(&mut self) -> Vec<f64> {
             if let Some(g) = self.stamps.as_mut() {

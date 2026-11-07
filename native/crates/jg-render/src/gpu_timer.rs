@@ -24,6 +24,10 @@ pub struct GpuTimer {
     /// passes carry them, since WebGPU only writes timestamps at pass boundaries.
     in_encoder: bool,
     pub ms: Vec<f64>,
+    /// Frames stamped, frames left untimed because their slot was still in flight, readbacks that
+    /// failed to map, and readbacks whose end stamp was not after the start.
+    pub counts: [u32; 4],
+    failed: Arc<std::sync::atomic::AtomicU32>,
 }
 
 impl GpuTimer {
@@ -46,6 +50,8 @@ impl GpuTimer {
             period_ns: queue.get_timestamp_period() as f64,
             in_encoder: device.features().contains(wgpu::Features::TIMESTAMP_QUERY_INSIDE_ENCODERS),
             ms: Vec::new(),
+            counts: [0; 4],
+            failed: Arc::new(std::sync::atomic::AtomicU32::new(0)),
         })
     }
 
@@ -62,8 +68,10 @@ impl GpuTimer {
     pub fn begin(&mut self, encoder: &mut wgpu::CommandEncoder) -> Option<u32> {
         let s = self.next;
         if self.state[s as usize].load(Ordering::Acquire) != FREE {
+            self.counts[1] += 1;
             return None;
         }
+        self.counts[0] += 1;
         self.next = (self.next + 1) % SLOTS;
         self.stamp(encoder, s * 2, false);
         Some(s)
@@ -78,8 +86,12 @@ impl GpuTimer {
 
     pub fn after_submit(&mut self, s: u32) {
         let st = self.state[s as usize].clone();
+        let failed = self.failed.clone();
         st.store(MAPPING, Ordering::Release);
         self.readback[s as usize].map_async(wgpu::MapMode::Read, .., move |r| {
+            if r.is_err() {
+                failed.fetch_add(1, Ordering::Relaxed);
+            }
             st.store(if r.is_ok() { MAPPED } else { FREE }, Ordering::Release);
         });
     }
@@ -98,6 +110,7 @@ impl GpuTimer {
 
     /// Collect slots the browser (or a poll) has already mapped.
     pub fn collect(&mut self) {
+        self.counts[2] = self.failed.load(Ordering::Relaxed);
         for (i, st) in self.state.iter().enumerate() {
             if st.load(Ordering::Acquire) != MAPPED {
                 continue;
@@ -109,6 +122,8 @@ impl GpuTimer {
                 let t1 = u64::from_le_bytes(data[8..16].try_into().unwrap());
                 if t1 > t0 {
                     self.ms.push((t1 - t0) as f64 * self.period_ns / 1e6);
+                } else {
+                    self.counts[3] += 1;
                 }
             }
             b.unmap();
