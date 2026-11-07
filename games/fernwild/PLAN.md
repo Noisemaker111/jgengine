@@ -20,17 +20,17 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | building | 1/3 | 0 | 0 | 2 | 0 |
 | harvest | 2/3 | 0 | 0 | 1 | 0 |
 | crafting | 2/6 | 0 | 0 | 4 | 0 |
-| taming | 8/9 | 0 | 0 | 1 | 0 |
-| creatures | 5/13 | 0 | 0 | 8 | 0 |
+| taming | 9/9 | 0 | 0 | 0 | 0 |
+| creatures | 6/13 | 0 | 0 | 7 | 0 |
 | breeding | 2/4 | 0 | 0 | 2 | 0 |
 | spawns | 0/3 | 0 | 0 | 3 | 0 |
 | boss | 0/3 | 0 | 0 | 3 | 0 |
 | cave | 2/2 | 0 | 0 | 0 | 0 |
-| **total** | **31/67** | 3 | 0 | 33 | 0 |
+| **total** | **33/67** | 3 | 0 | 31 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: creature-survival. 31/67 proven · 3 failing · 33 missing.
+Genres: creature-survival. 33/67 proven · 3 failing · 31 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
@@ -73,7 +73,7 @@ Genres: creature-survival. 31/67 proven · 3 failing · 33 missing.
 | `taming.wake-loses` | proven | An unconscious creature stays out until its torpor, and any sedative still taking effect, wears off; then it wakes up wild and the taming progress is lost. | proofs/sim/tame-wake.proof.ts |
 | `taming.preferred-food` | proven | Each species ranks its foods; its favourite tames it several times faster and cleaner than ordinary food. | proofs/sim/tame-favourite.proof.ts |
 | `taming.crafted-bait` | proven | A cooked taming food, made from eggs and crops at a station, is the best food for creatures of its tier. | proofs/sim/tame-kibble.proof.ts |
-| `taming.passive-feed` | missing | Some creatures tame awake, by offering food without being hit. |  |
+| `taming.passive-feed` | proven | Some creatures tame awake, by offering food without being hit. | proofs/sim/tame-passive.proof.ts |
 | `taming.trap` | proven | A trap or snare holds a creature still for taming. | proofs/sim/bola.proof.ts |
 | `taming.effectiveness` | proven | A cleaner tame gives a better creature. | proofs/sim/tame-clean.proof.ts |
 | `creatures.follow-stay` | missing | Order a tame to follow, stay or guard. |  |
@@ -87,7 +87,7 @@ Genres: creature-survival. 31/67 proven · 3 failing · 33 missing.
 | `creatures.behavior-modes` | missing | Set a tame passive, neutral or aggressive, and it fights accordingly. |  |
 | `creatures.level-up` | proven | Tames gain experience and the player spends their levels on stats. | proofs/sim/tame-level-up.proof.ts |
 | `creatures.ride.ground` | proven | Saddle a tame and ride it, steering and attacking from its back. | proofs/sim/ride-ground.proof.ts |
-| `creatures.ride.fly` | missing | Ride a flying tame: take off, climb, cross terrain that blocks walking, and land. |  |
+| `creatures.ride.fly` | proven | Ride a flying tame: take off, climb, cross terrain that blocks walking, and land. | proofs/sim/ride-fly.proof.ts |
 | `creatures.ride.swim` | missing | Ride a swimming tame through water. |  |
 | `breeding.pair-mate` | proven | Put a male and a female tame together and they produce an egg or a baby. | proofs/sim/breed-mate.proof.ts |
 | `breeding.incubate` | proven | An egg hatches only kept at the right temperature. | proofs/sim/breed-incubate.proof.ts |
