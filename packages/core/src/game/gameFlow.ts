@@ -94,7 +94,8 @@ export interface GameFlowOptions {
  * the title straight into play, which is what a capture or a drive runs to skip the menu; the
  * `menu.pane` command shows a menu's Controls, Settings or Credits pane, as choosing that verb does,
  * so a proof reads the credits through {@link menuPane}; the `settings.rebind` command binds an action
- * to new keys (null restores the game's), as the Controls settings do. Pair it with `GameFlowUI` from
+ * to new keys (null restores the game's), as the Controls settings do; `save` and `continue` run the
+ * pause menu's Save and the title's Continue. Pair it with `GameFlowUI` from
  * `@jgengine/core/menu/gameFlowMenus.view`.
  *
  * @capability game-flow title, play, pause and autosave checkpoints as one system, with newGame/continueGame/saveNow for menus
@@ -114,6 +115,18 @@ export function createGameFlowSystem(options: GameFlowOptions = {}): SystemDefin
       ctx.game.commands.define<{ action: string; codes: ActionCodes | null }>("settings.rebind", {
         apply(state, input) {
           rebindAction(state, input.action, input.codes);
+          return state;
+        },
+      });
+      ctx.game.commands.define("save", {
+        apply(state) {
+          void saveNow(state);
+          return state;
+        },
+      });
+      ctx.game.commands.define("continue", {
+        apply(state) {
+          void continueGame(state);
           return state;
         },
       });
