@@ -9,7 +9,7 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 
 | Area | Proven | Failing | Not simulatable | Missing | Cut |
 | --- | --- | --- | --- | --- | --- |
-| onboarding | 1/2 | 0 | 0 | 1 | 0 |
+| onboarding | 2/2 | 0 | 0 | 0 | 0 |
 | failure | 1/1 | 0 | 0 | 0 | 0 |
 | save | 0/1 | 0 | 0 | 1 | 0 |
 | settings | 0/1 | 0 | 0 | 1 | 0 |
@@ -26,16 +26,16 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | spawns | 3/3 | 0 | 0 | 0 | 0 |
 | boss | 3/3 | 0 | 0 | 0 | 0 |
 | cave | 2/2 | 0 | 0 | 0 | 0 |
-| **total** | **62/67** | 0 | 0 | 5 | 0 |
+| **total** | **63/67** | 0 | 0 | 4 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: creature-survival. 62/67 proven · 5 missing.
+Genres: creature-survival. 63/67 proven · 4 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
 | `onboarding.first-goal` | proven | A new game shows a first goal, and the first player action toward it advances it. | proofs/sim/first-goal.proof.ts |
-| `onboarding.find-features` | missing | A player following the game's own guidance reaches the first use of every core feature. |  |
+| `onboarding.find-features` | proven | A player following the game's own guidance reaches the first use of every core feature. | proofs/sim/find-features.proof.ts |
 | `failure.lose-and-recover` | proven | The player can fail (die, lose the run, go broke) and the game puts them back into play at a stated cost. | proofs/sim/body-recover.proof.ts |
 | `save.continue` | missing | Progress made by playing survives saving and continuing. |  |
 | `settings.controls` | missing | The player opens settings and a change (a binding, volume, sensitivity) takes effect. |  |
