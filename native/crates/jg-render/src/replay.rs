@@ -84,6 +84,7 @@ pub struct Replayer {
     pipeline_memo: HashMap<(u32, u32, u32, u32, u32), u32>,
     layouts: HashMap<(usize, u32), (wgpu::BindGroupLayout, wgpu::PipelineLayout)>,
     vertex_memo: HashMap<(u32, u32), Arc<VertexBinding>>,
+    merged: Vec<Merged>,
     samplers: HashMap<(SamplerKey, u8), wgpu::Sampler>,
     bind_groups: HashMap<(usize, Vec<i64>), wgpu::BindGroup>,
     uniform_layout: wgpu::BindGroupLayout,
@@ -108,11 +109,28 @@ pub struct Replayer {
 
 /// One vertex buffer slot of a (program, geometry) pair.
 struct VertexSlot {
-    /// Attribute id, or None for GL's default attribute value.
+    /// Attribute id, or None for GL's default attribute value (or an interleaved copy, `merged`).
     attribute: Option<usize>,
+    /// Index into `Replayer::merged` when this slot reads several attributes interleaved.
+    merged: Option<usize>,
     stride: u64,
     step: wgpu::VertexStepMode,
     attributes: Vec<wgpu::VertexAttribute>,
+}
+
+/// Several per-vertex attributes interleaved into one buffer, for a draw that needs more vertex
+/// buffers than the device allows (WebGPU in Chrome allows 8; three's skinned, instanced, tangent
+/// meshes can bind 10). Rebuilt from the attributes' current contents whenever one changes.
+struct Merged {
+    /// (attribute, its bytes per vertex, its offset in an interleaved vertex)
+    parts: Vec<(usize, u64, u64)>,
+    stride: u64,
+    versions: Vec<u32>,
+    buffer: Option<wgpu::Buffer>,
+    size: u64,
+    /// Whole interleaved elements the buffer holds now (the fewest any part has).
+    count: u64,
+    generation: usize,
 }
 
 struct VertexBinding {
@@ -233,6 +251,7 @@ impl Replayer {
             pipeline_memo: HashMap::new(),
             layouts: HashMap::new(),
             vertex_memo: HashMap::new(),
+            merged: Vec::new(),
             samplers: HashMap::new(),
             bind_groups: HashMap::new(),
             uniform_layout,
@@ -417,7 +436,7 @@ impl Replayer {
         let geom = &self.rec.manifest.geometries[g];
         let prog = &self.programs[p];
         let mut slots: Vec<VertexSlot> = Vec::new();
-        for input in &prog.layout.vertex_inputs {
+        for input in &prog.layout.vertex_inputs.clone() {
             match geom.attributes.get(&input.name) {
                 Some(&a) => {
                     let attr = &self.rec.manifest.attributes[a];
@@ -432,7 +451,7 @@ impl Replayer {
                     let va = wgpu::VertexAttribute { format, offset, shader_location: input.location };
                     match slots.iter_mut().find(|s| s.attribute == Some(a)) {
                         Some(s) => s.attributes.push(va),
-                        None => slots.push(VertexSlot { attribute: Some(a), stride, step, attributes: vec![va] }),
+                        None => slots.push(VertexSlot { attribute: Some(a), merged: None, stride, step, attributes: vec![va] }),
                     }
                 }
                 None => {
@@ -443,13 +462,13 @@ impl Replayer {
                         (4, 'f') => wgpu::VertexFormat::Float32x4,
                         (n, k) => return Err(format!("missing {k}x{n} attribute {} has no default", input.name)),
                     };
-                    // Missing inputs share default slots, four to a slot, each at its own 16-byte copy.
-                    match slots.iter_mut().find(|s| s.attribute.is_none() && s.attributes.len() < 4) {
+                    // Missing inputs share one default slot, each at its own 16-byte copy.
+                    match slots.iter_mut().find(|s| s.attribute.is_none() && s.attributes.len() < crate::resources::DEFAULT_ATTRIBUTES) {
                         Some(s) => {
                             let offset = s.attributes.len() as u64 * 16;
                             s.attributes.push(wgpu::VertexAttribute { format, offset, shader_location: input.location });
                         }
-                        None => slots.push(VertexSlot { attribute: None, stride: 0, step: wgpu::VertexStepMode::Vertex, attributes: vec![wgpu::VertexAttribute { format, offset: 0, shader_location: input.location }] }),
+                        None => slots.push(VertexSlot { attribute: None, merged: None, stride: 0, step: wgpu::VertexStepMode::Vertex, attributes: vec![wgpu::VertexAttribute { format, offset: 0, shader_location: input.location }] }),
                     }
                 }
             }
@@ -466,12 +485,67 @@ impl Replayer {
             None
         };
         let limit = self.device.limits().max_vertex_buffers;
+        // Over the device's limit: interleave the per-vertex attributes into one buffer, then the
+        // per-instance ones if that is still not enough. Each part keeps its own layout, padded to
+        // 4 bytes as WebGPU's strides and offsets want.
+        for step in [wgpu::VertexStepMode::Vertex, wgpu::VertexStepMode::Instance] {
+            let before = slots.len();
+            if before as u32 <= limit {
+                break;
+            }
+            let (group, rest): (Vec<VertexSlot>, Vec<VertexSlot>) = slots.into_iter().partition(|s| s.attribute.is_some() && s.merged.is_none() && s.step == step && s.stride > 0);
+            slots = rest;
+            if group.len() < 2 {
+                slots.extend(group);
+                continue;
+            }
+            let mut parts = Vec::new();
+            let mut attributes = Vec::new();
+            let mut at = 0u64;
+            for s in &group {
+                parts.push((s.attribute.unwrap(), s.stride, at));
+                attributes.extend(s.attributes.iter().map(|va| wgpu::VertexAttribute { offset: va.offset + at, ..*va }));
+                at += s.stride.next_multiple_of(4);
+            }
+            self.warn(format!("program {p} with geometry {g} binds {before} vertex buffers, over this device's {limit}: {} per-{} attributes are interleaved into one buffer", group.len(), if step == wgpu::VertexStepMode::Vertex { "vertex" } else { "instance" }));
+            let m = self.merged.len();
+            self.merged.push(Merged { versions: vec![u32::MAX; parts.len()], parts, stride: at, buffer: None, size: 0, count: 0, generation: 0 });
+            slots.insert(0, VertexSlot { attribute: None, merged: Some(m), stride: at, step, attributes });
+        }
         if slots.len() as u32 > limit {
             return Err(format!("program {p} with geometry {g} needs {} vertex buffers; this device allows {limit}", slots.len()));
         }
         let v = Arc::new(VertexBinding { slots, index });
         self.vertex_memo.insert((p as u32, g as u32), v.clone());
         Ok(v)
+    }
+
+    /// Rebuild an interleaved buffer when any of its attributes changed since it was last built.
+    fn refresh_merged(&mut self, m: usize) {
+        let current: Vec<u32> = self.merged[m].parts.iter().map(|p| self.res.versions[p.0]).collect();
+        if current == self.merged[m].versions {
+            return;
+        }
+        let sources: Vec<Vec<u8>> = self.merged[m].parts.iter().map(|p| self.res.current_bytes(&self.rec, p.0)).collect();
+        let mg = &mut self.merged[m];
+        let vertices = mg.parts.iter().zip(&sources).map(|(p, b)| b.len() as u64 / p.1.max(1)).min().unwrap_or(0);
+        mg.count = vertices;
+        let mut data = vec![0u8; (vertices * mg.stride).max(4) as usize];
+        for ((_, stride, at), src) in mg.parts.iter().zip(&sources) {
+            for v in 0..vertices {
+                let from = (v * stride) as usize;
+                let to = (v * mg.stride + at) as usize;
+                data[to..to + *stride as usize].copy_from_slice(&src[from..from + *stride as usize]);
+            }
+        }
+        let size = data.len() as u64;
+        if mg.buffer.is_none() || size > mg.size {
+            mg.buffer = Some(self.device.create_buffer(&wgpu::BufferDescriptor { label: Some("interleaved attributes"), size, usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST, mapped_at_creation: false }));
+            mg.size = size;
+            mg.generation += 1;
+        }
+        self.queue.write_buffer(mg.buffer.as_ref().unwrap(), 0, &data);
+        mg.versions = current;
     }
 
     fn pipeline(&mut self, d: &Draw, fb_sig: u32, texsig: u32) -> Result<u32, String> {
@@ -720,6 +794,14 @@ impl Replayer {
                     let vb = self.vertex_binding(d.program, d.geometry)?;
                     let mut instances = d.instances.max(1);
                     for s in vb.slots.iter().filter(|s| s.step == wgpu::VertexStepMode::Instance && s.stride > 0) {
+                        if let Some(m) = s.merged {
+                            self.refresh_merged(m);
+                            let fit = self.merged[m].count.min(u32::MAX as u64) as u32;
+                            if fit < instances {
+                                self.warn(format!("{} instances read past interleaved instance attributes: the {fit} that fit are drawn, the rest read zeros in Chrome and draw nothing", d.instances));
+                                instances = fit;
+                            }
+                        }
                         if let Some(a) = s.attribute {
                             let fit = (self.res.buffer_sizes[a] / s.stride).min(u32::MAX as u64) as u32;
                             if fit < instances {
@@ -769,6 +851,17 @@ impl Replayer {
                         bound_vertex.resize(vb.slots.len(), None);
                     }
                     for (i, s) in vb.slots.iter().enumerate() {
+                        if let Some(m) = s.merged {
+                            self.refresh_merged(m);
+                            let key = (1usize << 62) | (m << 20) | (self.merged[m].generation & 0xfffff);
+                            if bound_vertex[i] != Some(key) {
+                                if let Some(b) = &self.merged[m].buffer {
+                                    rp.set_vertex_buffer(i as u32, b.slice(..));
+                                }
+                                bound_vertex[i] = Some(key);
+                            }
+                            continue;
+                        }
                         let key = s.attribute.unwrap_or(usize::MAX);
                         if bound_vertex[i] != Some(key) {
                             match s.attribute.and_then(|a| self.res.buffers[a].as_ref()) {
@@ -819,6 +912,7 @@ impl Replayer {
                     let raw = &self.rec.data[r.offset..r.offset + r.bytes];
                     let converted = self.res.float_attrs.contains(attribute).then(|| gl::to_f32(&self.rec.manifest.attributes[*attribute].array, self.rec.manifest.attributes[*attribute].normalized, raw));
                     let bytes: &[u8] = converted.as_deref().unwrap_or(raw);
+                    self.res.changed(*attribute, r.offset, r.bytes);
                     let size = (bytes.len() as u64).next_multiple_of(4);
                     if size > self.res.buffer_sizes[*attribute] {
                         pass = None;
@@ -894,7 +988,8 @@ impl Replayer {
                     let raw = &self.rec.data[r.offset..r.offset + r.bytes];
                     let converted = self.res.float_attrs.contains(attribute).then(|| gl::to_f32(&self.rec.manifest.attributes[*attribute].array, self.rec.manifest.attributes[*attribute].normalized, raw));
                     let bytes: &[u8] = converted.as_deref().unwrap_or(raw);
-                    if bytes.len() % 4 == 0 && (bytes.len() as u64) <= self.res.buffer_sizes[*attribute] {
+                    self.res.changed(*attribute, r.offset, r.bytes);
+                    if bytes.len() % 4 == 0 &&(bytes.len() as u64) <= self.res.buffer_sizes[*attribute] {
                         if let Some(b) = &self.res.buffers[*attribute] {
                             self.queue.write_buffer(b, 0, bytes);
                         }

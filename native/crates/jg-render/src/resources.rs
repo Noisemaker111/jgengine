@@ -123,6 +123,34 @@ pub struct Resources {
     pub default_attribute: wgpu::Buffer,
     /// Integer attributes a draw reads as floats, held as Float32 (see `gl::needs_float`).
     pub float_attrs: HashSet<usize>,
+    /// Where each attribute's current contents sit in the recording's data (offset, bytes), and how
+    /// many times they have changed: an interleaved copy (`Replayer::merged`) rebuilds from these.
+    pub latest: Vec<(usize, usize)>,
+    pub versions: Vec<u32>,
+}
+
+/// GL's default attribute value (0, 0, 0, 1), one 16-byte copy per input a program can leave
+/// unbound, so every missing input of a draw shares one vertex buffer slot.
+pub const DEFAULT_ATTRIBUTES: usize = 32;
+
+impl Resources {
+    /// An attribute's current contents as its vertex buffer holds them (Float32 when converted).
+    pub fn current_bytes(&self, rec: &Recording, a: usize) -> Vec<u8> {
+        let (offset, bytes) = self.latest[a];
+        let raw = rec.bytes(offset, bytes);
+        if self.float_attrs.contains(&a) {
+            let attr = &rec.manifest.attributes[a];
+            gl::to_f32(&attr.array, attr.normalized, raw)
+        } else {
+            raw.to_vec()
+        }
+    }
+
+    /// Note new contents for an attribute.
+    pub fn changed(&mut self, a: usize, offset: usize, bytes: usize) {
+        self.latest[a] = (offset, bytes);
+        self.versions[a] = self.versions[a].wrapping_add(1);
+    }
 }
 
 impl Resources {
@@ -236,9 +264,11 @@ impl Resources {
             buffers.push(Some(buffer));
             buffer_sizes.push(size);
         }
-        let default_attribute = device.create_buffer(&wgpu::BufferDescriptor { label: Some("default attribute"), size: 64, usage: wgpu::BufferUsages::VERTEX, mapped_at_creation: true });
-        default_attribute.slice(..).get_mapped_range_mut().expect("map default attribute").copy_from_slice(bytemuck::cast_slice(&[[0.0f32, 0.0, 0.0, 1.0]; 4]));
+        let latest = rec.manifest.attributes.iter().map(|a| (a.offset, a.bytes)).collect();
+        let versions = vec![0; rec.manifest.attributes.len()];
+        let default_attribute = device.create_buffer(&wgpu::BufferDescriptor { label: Some("default attribute"), size: 16 * DEFAULT_ATTRIBUTES as u64, usage: wgpu::BufferUsages::VERTEX, mapped_at_creation: true });
+        default_attribute.slice(..).get_mapped_range_mut().expect("map default attribute").copy_from_slice(bytemuck::cast_slice(&[[0.0f32, 0.0, 0.0, 1.0]; DEFAULT_ATTRIBUTES]));
         default_attribute.unmap();
-        Ok(Resources { textures, needs_mips, buffers, buffer_sizes, default_attribute, float_attrs })
+        Ok(Resources { textures, needs_mips, buffers, buffer_sizes, default_attribute, float_attrs, latest, versions })
     }
 }

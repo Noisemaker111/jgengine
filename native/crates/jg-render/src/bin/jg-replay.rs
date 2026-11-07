@@ -12,6 +12,9 @@
 //! a difference starts in. `--uniforms <program>` also prints that program's uniform values and
 //! bound textures as they stand after the frame; `--draws` lists every frame's clears and draws up
 //! to it, by framebuffer.
+//!
+//! `--web-limits` holds the device to Chrome's WebGPU limit of 8 vertex buffers, so draws that bind
+//! more take the interleaved path the web build takes; its pixels should match the default run's.
 
 use jg_render::diff;
 use std::path::PathBuf;
@@ -27,6 +30,7 @@ fn run() -> Result<(), String> {
     let args: Vec<String> = std::env::args().collect();
     let dir = PathBuf::from(args.get(1).ok_or("usage: jg-replay <recording-dir> [--out <dir>]")?);
     let validate = args.iter().any(|a| a == "--validate");
+    let web_limits = args.iter().any(|a| a == "--web-limits");
     let out = args.iter().position(|a| a == "--out").and_then(|i| args.get(i + 1)).map(PathBuf::from).unwrap_or_else(|| dir.join("diff"));
     std::fs::create_dir_all(&out).map_err(|e| e.to_string())?;
     let t0 = std::time::Instant::now();
@@ -41,7 +45,7 @@ fn run() -> Result<(), String> {
     } else {
         wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle_from_env())
     };
-    let (adapter, device, queue) = pollster::block_on(jg_render::device(&instance, None))?;
+    let (adapter, device, queue) = pollster::block_on(jg_render::device(&instance, None, web_limits))?;
     eprintln!("adapter: {:?}", adapter.get_info().name);
     let errors = std::sync::Arc::new(std::sync::Mutex::new(Vec::<String>::new()));
     {

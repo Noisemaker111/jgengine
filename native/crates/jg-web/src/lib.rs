@@ -40,7 +40,7 @@ mod web {
         canvas.set_height(h);
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor { backends: wgpu::Backends::BROWSER_WEBGPU, ..wgpu::InstanceDescriptor::new_without_display_handle() });
         let surface = instance.create_surface(wgpu::SurfaceTarget::Canvas(canvas)).map_err(err)?;
-        let (adapter, device, queue) = jg_render::device(&instance, Some(&surface)).await.map_err(err)?;
+        let (adapter, device, queue) = jg_render::device(&instance, Some(&surface), false).await.map_err(err)?;
         let info = adapter.get_info();
         let errors = Arc::new(std::sync::Mutex::new(Vec::<String>::new()));
         {

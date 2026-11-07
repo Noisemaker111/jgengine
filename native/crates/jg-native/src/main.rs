@@ -134,7 +134,7 @@ impl App {
         );
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle_from_env());
         let surface = instance.create_surface(window.clone()).map_err(|e| e.to_string())?;
-        let (adapter, device, queue) = pollster::block_on(jg_render::device(&instance, Some(&surface)))?;
+        let (adapter, device, queue) = pollster::block_on(jg_render::device(&instance, Some(&surface), false))?;
         let info = adapter.get_info();
         let errors = Arc::new(std::sync::Mutex::new(Vec::<String>::new()));
         {
