@@ -1,6 +1,7 @@
 import { createBaseBuilding, type BaseBuilding, type BaseBuildingState, type BaseVec3, type BasePiece, type StructurePlan } from "../engine-local/basebuilding/baseBuilding";
 import type { StationInstance } from "@jgengine/core/crafting/recipe";
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
+import { createEmptyInventory, putItem, takeItem, type InventoryState } from "@jgengine/core/inventory/inventoryModel";
 import { playerMovementHeading } from "@jgengine/core/movement/playerMovement";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
@@ -8,8 +9,9 @@ import { createVitals, type Vitals, type VitalsState } from "@jgengine/core/stat
 
 import { BAG, HOTBAR } from "./bags";
 import { FUEL, FUEL_MAX } from "./data/fuel";
-import { BASE_BUILDING, STATIONS, structureDef, TIER_COLORS } from "./data/structures";
-import { itemLabel } from "./data/items";
+import { BASE_BUILDING, CONTAINERS, STATIONS, structureDef, TIER_COLORS } from "./data/structures";
+import { itemLabel, itemTraits } from "./data/items";
+import { setScreen } from "./screens";
 
 /** ARK's build reach: the ghost sits this far in front of the survivor. */
 const BUILD_REACH = 3.5;
@@ -33,9 +35,15 @@ interface Base {
   fire: string | null;
   /** Each burning station's fire, by piece id: a fuel meter that drains while it has any. */
   fires: Map<string, Vitals>;
+  /** The container the survivor faces within reach, found as fires are. */
+  store: string | null;
+  /** Each container's items, by piece id. */
+  stores: Map<string, InventoryState>;
+  /** The container whose inventory is open. */
+  viewing: string | null;
 }
 
-const baseOf = perContext((): Base => ({ building: createBaseBuilding(BASE_BUILDING), ghost: null, turn: 0, syncedVersion: -1, aimed: null, fire: null, fires: new Map() }));
+const baseOf = perContext((): Base => ({ building: createBaseBuilding(BASE_BUILDING), ghost: null, turn: 0, syncedVersion: -1, aimed: null, fire: null, fires: new Map(), store: null, stores: new Map(), viewing: null }));
 
 const fireBody = (): Vitals => createVitals([{ id: "fuel", max: FUEL_MAX, start: 0, rate: -1 }]);
 
@@ -64,13 +72,13 @@ function aimedFire(base: Base): BasePiece | null {
 /** Half-angle of the cone in front of the survivor that a fire must sit in to be stoked. */
 const FIRE_FACING = Math.cos(Math.PI / 3);
 
-/** The nearest burning station within reach inside the survivor's forward cone, or null. */
-function facingFire(base: Base, at: BaseVec3, yaw: number): string | null {
+/** The nearest piece `wanted` within reach inside the survivor's forward cone, or null: low pieces sit under the eye-height ray. */
+function facingPiece(base: Base, at: BaseVec3, yaw: number, wanted: (pieceId: string) => boolean): string | null {
   const ahead = forward(yaw);
   let best: string | null = null;
   let nearest = USE_REACH;
   for (const piece of base.building.list()) {
-    if (!burns(piece.pieceId)) continue;
+    if (!wanted(piece.pieceId)) continue;
     const dx = piece.position[0] - at[0];
     const dz = piece.position[2] - at[2];
     const distance = Math.hypot(dx, dz);
@@ -173,13 +181,17 @@ export function tickBase(ctx: GameContext, heldItemId: string | null, dt: number
     fire.tick(dt);
   }
   for (const id of [...base.fires.keys()]) if (!standing.has(id)) base.fires.delete(id);
+  for (const id of [...base.stores.keys()]) if (base.building.get(id) === null) base.stores.delete(id);
+  if (base.viewing !== null && base.building.get(base.viewing) === null) closeStore(ctx);
   const me = ctx.scene.entity.get(ctx.player.userId);
   syncSolids(ctx, base);
   if (me === null) return;
   const yaw = aimYaw(ctx, me.rotationY);
   base.ghost = heldItemId !== null && structureDef(heldItemId) !== null ? planFor(ctx, base, heldItemId, yaw) : null;
-  base.aimed = base.building.raycast(eye(me.position), forward(yaw), USE_REACH)?.id ?? null;
-  base.fire = facingFire(base, me.position, yaw);
+  base.fire = facingPiece(base, me.position, yaw, burns);
+  base.store = base.fire === null ? facingPiece(base, me.position, yaw, (pieceId) => CONTAINERS[pieceId] !== undefined) : null;
+  // A fire or a box sits under the eye-height ray, so the one faced is the one aimed at when the ray finds nothing.
+  base.aimed = base.building.raycast(eye(me.position), forward(yaw), USE_REACH)?.id ?? base.fire ?? base.store;
   ctx.touch();
 }
 
@@ -223,11 +235,78 @@ function aimedDoor(base: Base): BasePiece | null {
   return base.building.list().find((piece) => openable(piece) && Math.hypot(piece.position[0] - aimed.position[0], piece.position[1] - aimed.position[1], piece.position[2] - aimed.position[2]) < 0.2) ?? null;
 }
 
-/** E on a door or its frame: swing it. */
+/** A container's items, made empty the first time it is asked for. */
+function storeOf(base: Base, piece: BasePiece): InventoryState | null {
+  const spec = CONTAINERS[piece.pieceId];
+  if (spec === undefined) return null;
+  let store = base.stores.get(piece.id);
+  if (store === undefined) {
+    store = createEmptyInventory({ slots: spec.slots });
+    base.stores.set(piece.id, store);
+  }
+  return store;
+}
+
+/** The open container, or null. */
+function viewedStore(base: Base): { piece: BasePiece; items: InventoryState; slots: number } | null {
+  const piece = base.viewing === null ? null : base.building.get(base.viewing);
+  const items = piece === null ? null : storeOf(base, piece);
+  return piece === null || items === null ? null : { piece, items, slots: CONTAINERS[piece.pieceId]!.slots };
+}
+
+/** A stack from the survivor's bag or hotbar into the open container. */
+export function storePut(ctx: GameContext, from: string, slot: number): void {
+  const base = baseOf(ctx);
+  const open = viewedStore(base);
+  const stack = ctx.player.inventory.state(from).slots[slot] ?? null;
+  if (open === null || stack === null) return;
+  const put = putItem(open.items, { slots: open.slots }, itemTraits, stack.itemId, stack.count);
+  if (put.status !== "ok") {
+    ctx.game.notices.push({ text: `The ${itemLabel(open.piece.pieceId)} is full`, tone: "deny" });
+    return;
+  }
+  ctx.player.inventory.take(from, stack.itemId, stack.count);
+  base.stores.set(open.piece.id, put.state);
+  ctx.touch();
+}
+
+/** A stack from the open container back into the survivor's bag. */
+export function storeTake(ctx: GameContext, slot: number): void {
+  const base = baseOf(ctx);
+  const open = viewedStore(base);
+  const stack = open?.items.slots[slot] ?? null;
+  if (open === null || stack === null) return;
+  if (ctx.player.inventory.put(BAG, stack.itemId, stack.count).status !== "ok") {
+    ctx.game.notices.push({ text: "Inventory is full", tone: "deny" });
+    return;
+  }
+  const taken = takeItem(open.items, stack.itemId, stack.count);
+  if (taken.status === "ok") base.stores.set(open.piece.id, taken.state);
+  ctx.touch();
+}
+
+export function closeStore(ctx: GameContext): void {
+  baseOf(ctx).viewing = null;
+  setScreen(ctx, null);
+}
+
+/** The open container for the screen: its label and slots; null with none open. */
+export function storeView(ctx: GameContext) {
+  const open = viewedStore(baseOf(ctx));
+  return open === null ? null : { id: open.piece.id, label: itemLabel(open.piece.pieceId), slots: open.items.slots };
+}
+
+/** E on a fire (stoke it), a container (open it), or a door or its frame (swing it). */
 export function useStructure(ctx: GameContext): boolean {
   const base = baseOf(ctx);
   const fire = aimedFire(base);
   if (fire !== null) return stoke(ctx, base, fire);
+  const store = base.store === null ? null : base.building.get(base.store);
+  if (store !== null) {
+    base.viewing = store.id;
+    setScreen(ctx, "storage");
+    return true;
+  }
   const door = aimedDoor(base);
   if (door === null) return false;
   const open = base.building.toggle(door.id);
@@ -237,7 +316,11 @@ export function useStructure(ctx: GameContext): boolean {
 
 function fell(ctx: GameContext, removed: readonly BasePiece[], refund: number): void {
   if (removed.length === 0) return;
+  const base = baseOf(ctx);
   for (const piece of removed) {
+    // What a container held comes out with it, into the bag as far as it fits.
+    for (const slot of base.stores.get(piece.id)?.slots ?? []) if (slot !== null) ctx.player.inventory.put(BAG, slot.itemId, slot.count);
+    base.stores.delete(piece.id);
     for (const [itemId, count] of Object.entries(structureDef(piece.pieceId)?.cost ?? {})) {
       const back = Math.floor(count * refund);
       if (back > 0) ctx.player.inventory.put(BAG, itemId, back);
@@ -293,6 +376,10 @@ export function basePrompts(ctx: GameContext): PositionedPrompt[] {
     const display = fuel > 0 ? `${label} (burning, ${fuel}s left)` : label;
     return [{ id: "fire", position: { x: fire.position[0], z: fire.position[2] }, priority: 3, prompt: proximityPrompt({ radius: USE_REACH + 2, display: keybind("interact", display), invoke: command("structureUse") }) }];
   }
+  const store = base.store === null ? null : base.building.get(base.store);
+  if (store !== null) {
+    return [{ id: "store", position: { x: store.position[0], z: store.position[2] }, priority: 3, prompt: proximityPrompt({ radius: USE_REACH + 2, display: keybind("interact", `Open ${itemLabel(store.pieceId)}`), invoke: command("structureUse") }) }];
+  }
   const piece = aimedDoor(base);
   if (piece === null) return [];
   return [
@@ -331,14 +418,15 @@ export function piecesBuilt(ctx: GameContext, prefix: string): number {
 interface BaseSave {
   building: BaseBuildingState;
   fires: Record<string, VitalsState>;
+  stores: Record<string, InventoryState>;
 }
 
 export function baseSave(ctx: GameContext) {
   return {
-    key: "fernwild.base2",
+    key: "fernwild.base3",
     snapshot: (): BaseSave => {
       const base = baseOf(ctx);
-      return { building: base.building.snapshot(), fires: Object.fromEntries([...base.fires].map(([id, fire]) => [id, fire.state()])) };
+      return { building: base.building.snapshot(), fires: Object.fromEntries([...base.fires].map(([id, fire]) => [id, fire.state()])), stores: Object.fromEntries(base.stores) };
     },
     hydrate: (data: BaseSave) => {
       const base = baseOf(ctx);
@@ -349,6 +437,7 @@ export function baseSave(ctx: GameContext) {
         fire.restore(state);
         base.fires.set(id, fire);
       }
+      base.stores = new Map(Object.entries(data.stores));
       syncSolids(ctx, base);
     },
   };
@@ -358,6 +447,9 @@ export function resetBase(ctx: GameContext): void {
   const base = baseOf(ctx);
   base.building.clear();
   base.fires.clear();
+  base.stores.clear();
+  base.viewing = null;
+  base.store = null;
   base.ghost = null;
   base.turn = 0;
   syncSolids(ctx, base);

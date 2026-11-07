@@ -3,7 +3,7 @@ import { authoredSpawnPosition, authoredSpawnRotation } from "@jgengine/core/wor
 import { defineSystem } from "@jgengine/shell/gameKit";
 
 import { editorLayers } from "./editorLayers";
-import { baseSave, demolish, fuelStations, resetBase, rotateBuild, tickBase, useStructure } from "./game/base";
+import { baseSave, closeStore, demolish, fuelStations, resetBase, rotateBuild, storePut, storeTake, tickBase, useStructure } from "./game/base";
 import { cavesOf, cavesSave, resetCaves, takeArtifact, tickCaves } from "./game/caves";
 import { bodiesSave, recoverBody, resetBodies, tickBodies } from "./game/deathBody";
 import { breedingSave, careForBaby, resetBreeding, setBreedingSpeed, tickBreeding } from "./game/breeding";
@@ -125,6 +125,9 @@ export const systems = [
     create(ctx) {
       const commands = ctx.game.commands;
       commands.define("structureUse", { apply: (state) => (useStructure(state), state) });
+      commands.define<{ inventoryId: string; slot: number }>("storePut", { apply: (state, input) => (storePut(state, input.inventoryId, input.slot), state) });
+      commands.define<{ slot: number }>("storeTake", { apply: (state, input) => (storeTake(state, input.slot), state) });
+      commands.define("closeStore", { apply: (state) => (closeStore(state), state) });
       commands.define("rotateBuild", { apply: (state) => (rotateBuild(state), state) });
       commands.define("demolish", { apply: (state) => (demolish(state), state) });
     },

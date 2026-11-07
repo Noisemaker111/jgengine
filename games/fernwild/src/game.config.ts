@@ -9,7 +9,7 @@ import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/shell/gameKit";
 import { fernwildKit } from "./art/look";
 import { editorLayers } from "./editorLayers";
 import { assets } from "./game/assets";
-import { baseGhost, basePrompts, baseView, fuelNear, piecesBuilt, stations } from "./game/base";
+import { baseGhost, basePrompts, baseView, fuelNear, piecesBuilt, stations, storeView } from "./game/base";
 import { cavePrompts, cavesOf, cavesView } from "./game/caves";
 import { eggPrompts, eggsOnGround } from "./game/eggs";
 import { EGG_SIZES, eggItem, KIBBLE_TIERS, kibbleItem } from "./game/data/kibble";
@@ -218,6 +218,7 @@ export const game = defineGame({
         pieceSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot !== null && PIECES.has(slot.itemId)),
         pieceKey: ctx.player.inventory.state(HOTBAR).slots.findIndex((slot) => slot !== null && PIECES.has(slot.itemId)) + 1,
         campfires: piecesBuilt(ctx, "campfire"),
+        boxes: piecesBuilt(ctx, "storage_box"),
         // The hotbar key (1-based) holding each tool; 0 when it is not on the hotbar.
         pickKey: keyOf("stone_pick"),
         hatchetKey: keyOf("stone_hatchet"),
@@ -254,6 +255,8 @@ export const game = defineGame({
         craftProgress: view.queue[0] === undefined ? -1 : Math.round(view.queue[0].progress * 100),
         fuel: Math.round(fuelNear(ctx, here, 6) * 10) / 10,
         screen: openScreen(ctx) === null ? 0 : 1,
+        // Items in the open storage box (-1 with none open).
+        stored: ((store) => (store === null ? -1 : store.slots.reduce((sum, slot) => sum + (slot?.count ?? 0), 0)))(storeView(ctx)),
         picks: ctx.player.inventory.count(HOTBAR, "stone_pick") + ctx.player.inventory.count(BAG, "stone_pick"),
         creatures: creatures.count,
         aimedDown: creatures.aimed?.taming?.unconscious === true ? 1 : 0,

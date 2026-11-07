@@ -130,8 +130,8 @@ are drawn.
   yutyrannus the T-Rex, diplodocus the apatosaurus, purlovia a fox, dilophosaur, troodon and compy the raptor,
   pachy and iguanodon the parasaur, chalicotherium a ground sloth, paraceratherium a rhino,
   gigantopithecus a yeti, and so on (`src/game/data/creatureModels.ts` lists every one). Building has
-  no metal tier, foundations snap edge to edge but not to cliffs, and storage boxes cannot be placed
-  yet; rain drops are thin streaks; shots from the slingshot (stones) and the bow (stone and tranquilizer
+  no metal tier, foundations snap edge to edge but not to cliffs, and the Storage Box is the only container
+  (no larger boxes, no preserving bin); rain drops are thin streaks; shots from the slingshot (stones) and the bow (stone and tranquilizer
   arrows) hit instantly along the aim, with no arrow flight, drop or pickup, and the bow always reaches for
   tranquilizer arrows first; no bolas or traps yet; kibble recipes stand berries, meat and fiber in
 for ARK's crops, which do not grow yet, and wild laying times, the pot's engram and spoil times are

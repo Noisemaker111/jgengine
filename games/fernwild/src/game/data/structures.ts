@@ -105,6 +105,7 @@ export const SHAPES: readonly StructureShapeDef[] = [
   { id: "campfire", boxes: [{ min: [-0.5, 0, -0.5], max: [0.5, 0.35, 0.5] }], ground: { maxStep: 0.6 }, floor: true },
   { id: "mortar_and_pestle", boxes: [{ min: [-0.3, 0, -0.3], max: [0.3, 0.55, 0.3] }], ground: { maxStep: 0.6 }, floor: true },
   { id: "cooking_pot", boxes: [{ min: [-0.55, 0, -0.55], max: [0.55, 0.8, 0.55] }], ground: { maxStep: 0.6 }, floor: true },
+  { id: "storage_box", boxes: [{ min: [-0.5, 0, -0.35], max: [0.5, 0.6, 0.35] }], ground: { maxStep: 0.6 }, floor: true },
 ];
 
 /** Which socket kinds mate: candidate kind `a` onto placed kind `b`. */
@@ -143,6 +144,8 @@ const piece = (id: string, label: string, shape: string, tier: TierId, health: n
 
 export const STRUCTURES: readonly StructureDef[] = [
   piece("campfire", "Campfire", "campfire", "station", 100, 2, 3, { thatch: 12, flint: 1, stone: 16, wood: 2 }, 4, "Cooks meat and keeps you warm."),
+  // ARK's Small Storage Box: fifteen slots of things kept at home.
+  piece("storage_box", "Storage Box", "storage_box", "station", 400, 4, 6, { wood: 25, thatch: 20, fiber: 10 }, 4, "Holds 15 stacks. E opens it."),
   piece("thatch_foundation", "Thatch Foundation", "foundation", "thatch", 2400, 4, 3, { thatch: 20, wood: 6, fiber: 15 }, 6, "The floor every hut starts from."),
   piece("thatch_wall", "Thatch Wall", "wall", "thatch", 1600, 4, 3, { thatch: 10, wood: 2, fiber: 7 }, 4, "Snaps to a foundation edge."),
   piece("thatch_doorframe", "Thatch Doorframe", "doorframe", "thatch", 2400, 4, 3, { thatch: 8, wood: 6, fiber: 6 }, 4, "A wall with a door gap."),
@@ -183,3 +186,8 @@ export const BASE_BUILDING: BaseBuildingConfig = {
 
 /** Stations a recipe can need, by piece id. */
 export const STATIONS: ReadonlySet<string> = new Set(["campfire", "mortar_and_pestle", "cooking_pot"]);
+
+/** Pieces that hold items, and how many stacks: E opens them beside your own inventory. */
+export const CONTAINERS: Readonly<Record<string, { slots: number }>> = {
+  storage_box: { slots: 15 },
+};

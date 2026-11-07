@@ -195,7 +195,6 @@ export const ITEMS: readonly ItemDef[] = [
     tool: { gather: { power: 1, biases: { raw_meat: 1, hide: 0.5 }, defaultBias: 0 }, reach: 2.8, damage: 25, stamina: 7, cooldown: 0.9 },
   },
   { id: "torch", label: "Torch", kind: "tool", weight: 0.5, stack: 1, note: "Light and a little warmth.", tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 1.8, damage: 8, stamina: 5, cooldown: 0.7 } },
-  { id: "storage_box", label: "Storage Box", kind: "structure", weight: 4, stack: 100, note: "Holds 15 stacks. Placing it comes later." },
   { id: "hide_sleeping_bag", label: "Hide Sleeping Bag", kind: "structure", weight: 2, stack: 1, note: "A one-time respawn point." },
   cloth("cloth_shirt", "Cloth Shirt", "torso", 1),
   cloth("cloth_pants", "Cloth Pants", "legs", 1),
