@@ -15,6 +15,7 @@ import {
   type LaneLockFs,
 } from "./lane-close";
 import { LOCK_STALE_MS } from "./land";
+import { EXIT_BOAT_SPENT } from "./verify-boat";
 
 /** The worktree's git directory, as `git rev-parse --absolute-git-dir` would print it. */
 const GIT_DIR = resolve("repo", ".git", "worktrees", "x");
@@ -157,6 +158,21 @@ describe("lane:close end to end", () => {
     };
     expect(closeLane({}, fake)).toBe(EXIT_VERIFY_FAILED);
     expect(landed).not.toContain("run scripts/land.ts --commit");
+  });
+
+  test("boat out of starts stops before land and says to close again later, never to run the suite here", () => {
+    const landed: string[] = [];
+    const fake = io({ verify: EXIT_BOAT_SPENT });
+    const sh = fake.sh;
+    fake.sh = (argv, inherit) => {
+      landed.push(argv.join(" "));
+      return sh(argv, inherit);
+    };
+    expect(closeLane({}, fake)).toBe(EXIT_VERIFY_FAILED);
+    expect(landed).not.toContain("run scripts/land.ts --commit");
+    const said = fake.lines.err.join("\n");
+    expect(said).toContain("had no start for the Linux steps");
+    expect(said).toContain("Do not set JG_VERIFY_BOAT=0");
   });
 
   test("closing runs preflight (gen, type-checks, gates) before the tests, so a stale manifest or a type error stops it first", () => {

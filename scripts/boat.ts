@@ -8,9 +8,11 @@
 //   thread and repo on the PC (Jon, 2026-11-07), and boat never queues a start. A start refused for
 //   that limit or a start-rate window is waited for here, with backoff, until a machine frees: the
 //   work never moves back onto this PC because boat was busy.
-// - Unusable. Not logged in, out of hours, the trial over, the network down, a day's starts used:
-//   `waitForCapacity` answers `unusable` with the reason in plain words, and the caller runs the
-//   work locally, since a landing must still work.
+// - Spent. A start window that frees later than this run waits (the day's starts used, a rate
+//   limit hours away): `spent`, with when it frees. The caller stops; it never runs the Linux work
+//   on this PC for it, since every thread would then run its whole suite here at once.
+// - Unusable. Not logged in, out of hours, the trial over, the network down: `unusable` with the
+//   reason in plain words, and the caller runs the work locally, since a landing must still work.
 // - Cleanup. Every machine this PC starts is written to a registry in the git common dir with the
 //   pid that owns it. The owner deletes it on exit, Ctrl-C included; a machine whose owner died
 //   (killed, crashed) is deleted by the next run that looks. `boat list` ends empty.
@@ -46,6 +48,8 @@ export type BoatState =
   | { kind: "ready" }
   /** Full for now: a machine or a start-rate window frees on its own. `retryAt` when boat said when. */
   | { kind: "busy"; why: string; retryAt?: number }
+  /** Out of starts for longer than a run waits: stop, and never move the work to this PC. `until` when boat said. */
+  | { kind: "spent"; why: string; until?: number }
   /** Not usable for this run: the work goes to the local slot. */
   | { kind: "unusable"; why: string };
 
@@ -59,19 +63,27 @@ export interface BoatLimits {
   trialComputeCapSeconds?: number;
   trialComputeUsedSeconds?: number;
   startWindowFull?: { window?: string; freesAt?: string; short?: string } | null;
+  starts?: Partial<Record<"day" | "hour" | "minute", { limit?: number; used?: number; remaining?: number }>>;
 }
 
-/** A start-rate window that frees later than this is treated as unusable, not waited for. */
+/** A start-rate window that frees within this is waited for; later, the run stops as spent. */
 export const LONGEST_WINDOW_WAIT_MS = 60 * 60_000;
+
+/** A full start window: waited for when it frees within the hour, otherwise spent. */
+function windowState(why: string, at: number, now: number): BoatState {
+  if (!Number.isFinite(at)) return { kind: "spent", why };
+  return at - now <= LONGEST_WINDOW_WAIT_MS ? { kind: "busy", why, retryAt: at } : { kind: "spent", why, until: at };
+}
 
 /**
  * What `boat limits` and `boat list` say about starting one machine now. Running machines at the
- * PC's cap, or a minute or hour start window that is full, is busy; a blocked account, used compute
- * or a day window that frees in more than an hour is unusable.
+ * PC's cap, or a start window that frees within the hour, is busy; a window that frees later (the
+ * day's starts used) is spent; a blocked account or used compute is unusable. The start windows are
+ * read before boat's start block, which can name the same full window.
  */
 export function classifyLimits(limits: BoatLimits, running: number, max: number, now: number): BoatState {
-  const blocked = limits.blockedReason ?? limits.startBlockedReason;
-  if (blocked !== undefined && blocked !== null && blocked !== "") return { kind: "unusable", why: `boat refuses starts: ${blocked}` };
+  const accountBlock = limits.blockedReason;
+  if (accountBlock !== undefined && accountBlock !== null && accountBlock !== "") return { kind: "unusable", why: `boat refuses starts: ${accountBlock}` };
   const cap = limits.trialComputeCapSeconds;
   if (cap !== undefined && cap > 0 && (limits.trialComputeUsedSeconds ?? 0) >= cap) {
     return { kind: "unusable", why: "the boat trial used all its compute hours" };
@@ -79,12 +91,15 @@ export function classifyLimits(limits: BoatLimits, running: number, max: number,
   const full = limits.startWindowFull;
   if (full !== undefined && full !== null) {
     const freesAt = full.freesAt === undefined ? Number.NaN : Date.parse(full.freesAt);
-    const window = full.window ?? "start";
-    if (!Number.isFinite(freesAt) || freesAt - now > LONGEST_WINDOW_WAIT_MS) {
-      return { kind: "unusable", why: `boat's ${window} start limit is used${Number.isFinite(freesAt) ? ` until ${new Date(freesAt).toISOString()}` : ""}` };
-    }
-    return { kind: "busy", why: `boat's ${window} start limit is used until ${new Date(freesAt).toISOString()}`, retryAt: freesAt };
+    return windowState(`boat's ${full.window ?? "start"} start limit is used${Number.isFinite(freesAt) ? ` until ${new Date(freesAt).toISOString()}` : ""}`, freesAt, now);
   }
+  const day = limits.starts?.day;
+  if (day?.remaining === 0) return { kind: "spent", why: day.limit === undefined ? "boat used all of the day's starts" : `boat used all ${day.limit} of the day's starts` };
+  for (const window of ["hour", "minute"] as const) {
+    if (limits.starts?.[window]?.remaining === 0) return { kind: "busy", why: `boat's ${window} start limit is used` };
+  }
+  const startBlock = limits.startBlockedReason;
+  if (startBlock !== undefined && startBlock !== null && startBlock !== "") return { kind: "unusable", why: `boat refuses starts: ${startBlock}` };
   const allowed = Math.min(max, limits.maxActiveSandboxes ?? max);
   const active = Math.max(running, limits.activeSandboxes ?? 0);
   if (active >= allowed) return { kind: "busy", why: `${active} boat machine(s) already run, the most this PC uses at once is ${allowed}` };
@@ -104,14 +119,12 @@ export interface BoatError {
 /** The codes boat answers when a start is refused for a limit that frees on its own. */
 const BUSY_CODES = new Set(["limit_reached", "member_limit_reached", "no_ready_machine", "out_of_capacity", "IP_RATE_LIMIT_EXCEEDED"]);
 
-/** What a refused start means: busy (wait, then start again) or unusable (run locally). */
+/** What a refused start means: busy (wait, then start again), spent (stop) or unusable (run locally). */
 export function classifyStartError(error: BoatError, now: number): BoatState {
   const code = error.code ?? "";
   const why = (error.error ?? code).split("\n")[0]!.trim() || `boat refused the start (${error.status ?? "no status"})`;
   if (code === "rate_limited") {
-    const at = error.nextStartAt === undefined ? now + (error.retryAfterSeconds ?? 60) * 1000 : Date.parse(error.nextStartAt);
-    if (Number.isFinite(at) && at - now <= LONGEST_WINDOW_WAIT_MS) return { kind: "busy", why, retryAt: at };
-    return { kind: "unusable", why };
+    return windowState(why, error.nextStartAt === undefined ? now + (error.retryAfterSeconds ?? 60) * 1000 : Date.parse(error.nextStartAt), now);
   }
   if (BUSY_CODES.has(code)) {
     return error.retryAfterSeconds === undefined ? { kind: "busy", why } : { kind: "busy", why, retryAt: now + error.retryAfterSeconds * 1000 };
@@ -184,8 +197,9 @@ export async function boatState(cli: BoatCli, max: number): Promise<BoatState> {
 
 /**
  * Wait until boat can take a start: every busy answer waits (`backoffMs`, or until the time boat
- * named), and the first note says what it waits for. Resolves `ready`, or `unusable` with why.
- * `maxWaitMs` bounds the wait; past it the answer is unusable, so a caller is never stuck forever.
+ * named), and the first note says what it waits for. Resolves `ready`, or `spent` / `unusable`
+ * with why. `maxWaitMs` bounds the wait; past it the answer is spent, so a caller is never stuck
+ * forever and never moves the work to this PC because boat stayed full.
  */
 export async function waitForCapacity(
   cli: BoatCli,
@@ -198,7 +212,7 @@ export async function waitForCapacity(
   while (state.kind === "busy") {
     const waited = cli.now() - started;
     if (options.maxWaitMs !== undefined && waited >= options.maxWaitMs) {
-      return { state: { kind: "unusable", why: `boat stayed full for ${Math.round(waited / 60_000)} min (${state.why})` }, waitedMs: waited };
+      return { state: { kind: "spent", why: `boat stayed full for ${Math.round(waited / 60_000)} min (${state.why})` }, waitedMs: waited };
     }
     if (state.why !== lastWhy) {
       options.note(`boat: waiting for a machine: ${state.why}. The Linux steps wait for boat; they do not run on this PC.`);
@@ -342,6 +356,7 @@ export interface RunOptions {
 
 export type RunOutcome =
   | { kind: "ran"; status: number; facts: RunFacts; waitedMs: number }
+  | { kind: "spent"; why: string; until?: number; waitedMs: number }
   | { kind: "unusable"; why: string; waitedMs: number };
 
 /** A line boat itself printed (an `event` or `type` record of `--json`); null for anything else. */
@@ -377,8 +392,9 @@ export function lineJoiner(emit: (line: string) => void): { push: (data: string)
 
 /**
  * Run one command on one boat machine: wait for capacity, start, stream, and make sure the machine
- * is deleted whatever happens. A start refused for capacity goes back to waiting; any other refusal
- * answers unusable. `--timeout` is always passed, so a hung command never runs on plan hours.
+ * is deleted whatever happens. A start refused for capacity goes back to waiting, one refused for
+ * starts used for hours answers spent, and any other refusal unusable. A refusal with a code this
+ * does not know is judged by `boat limits` read right after, so a newly full window is never unusable. `--timeout` is always passed, so a hung command never runs on plan hours.
  */
 export async function runOnBoat(cli: BoatCli, options: RunOptions): Promise<RunOutcome> {
   await reapOrphans(cli, options.registry);
@@ -387,7 +403,7 @@ export async function runOnBoat(cli: BoatCli, options: RunOptions): Promise<RunO
   for (;;) {
     const waited = await waitForCapacity(cli, { max: options.max, note: options.note, ...(options.maxWaitMs === undefined ? {} : { maxWaitMs: Math.max(0, options.maxWaitMs - waitedMs) }), ...(first === undefined ? {} : { first }) });
     waitedMs += waited.waitedMs;
-    if (waited.state.kind === "unusable") return { kind: "unusable", why: waited.state.why, waitedMs };
+    if (waited.state.kind === "spent" || waited.state.kind === "unusable") return { ...waited.state, waitedMs };
 
     const facts: RunFacts = {};
     let refused: BoatError | null = null;
@@ -427,8 +443,12 @@ export async function runOnBoat(cli: BoatCli, options: RunOptions): Promise<RunO
     }
     const refusal = refused as BoatError | null;
     if (refusal !== null && registered === null) {
-      const state = classifyStartError(refusal, cli.now());
-      if (state.kind === "unusable") return { kind: "unusable", why: state.why, waitedMs };
+      let state = classifyStartError(refusal, cli.now());
+      if (state.kind === "unusable") {
+        const now = await boatState(cli, options.max);
+        if (now.kind === "busy" || now.kind === "spent") state = now;
+      }
+      if (state.kind === "spent" || state.kind === "unusable") return { ...state, waitedMs };
       first = state;
       continue;
     }
