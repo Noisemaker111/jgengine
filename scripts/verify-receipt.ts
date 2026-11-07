@@ -40,6 +40,16 @@ export function createVerifyReceipt(root: string, data: Record<string, unknown>,
       entries[result.name] = { ...entries[result.name], status: result.blockedBy !== undefined ? "blocked" : result.ok ? "passed" : "failed", endedAt: new Date().toISOString(), ms: result.ms, ...(result.blockedBy === undefined ? {} : { blockedBy: result.blockedBy }), ...(outputFile === undefined ? {} : { outputFile }) };
       save();
     },
+    /** Add fields to one step's entry: where it ran (`boat` or `local`) and why. */
+    annotate(name: string, fields: Record<string, unknown>): void {
+      entries[name] = { ...entries[name], ...fields };
+      save();
+    },
+    /** Add top-level fields: the boat run's machine id, cost, time and status. */
+    note(data: Record<string, unknown>): void {
+      Object.assign(receipt, data);
+      save();
+    },
     finish(ok: boolean): void {
       receipt["status"] = ok ? "passed" : "failed";
       receipt["endedAt"] = new Date().toISOString();

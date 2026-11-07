@@ -39,6 +39,11 @@ export interface RunStepsOptions {
    * instead of paying for them again.
    */
   failFast?: boolean;
+  /**
+   * With `failFast`: a step that failed outside this run (another machine running the same
+   * verification), or null. Once it names one, this run starts nothing new, as if it failed here.
+   */
+  stopWhen?: () => string | null;
 }
 
 /**
@@ -114,6 +119,7 @@ export async function runSteps<S extends ScheduledStep>(
               `in flight ${[...inFlight.keys()].join(", ")}`,
           );
         }
+        if (stoppedBy === null && options.failFast === true) stoppedBy = options.stopWhen?.() ?? null;
         if (stoppedBy !== null) {
           const stopped = pending.filter((step) => step.first !== true);
           const kept = pending.filter((step) => step.first === true);
