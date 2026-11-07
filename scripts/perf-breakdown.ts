@@ -45,8 +45,8 @@ export async function resetBreakdown(session: CdpSession): Promise<boolean> {
  * Read the page's breakdown and give each `frame#<n>` callback its source (`frame#3 src/scene/Water.draw.tsx:41`),
  * read from the function's own location through the debugger, since an r3f callback has no name.
  */
-export async function readBreakdown(session: CdpSession, privateMap?: (scriptId: string) => Promise<string | null>): Promise<FrameBreakdownSummary | null> {
-  const summary = await session.evaluate<FrameBreakdownSummary | null>(`globalThis.__jgFrameBreakdown?.summary({ top: 15 }) ?? null`);
+export async function readBreakdown(session: CdpSession, privateMap?: (scriptId: string) => Promise<string | null>, top = 15): Promise<FrameBreakdownSummary | null> {
+  const summary = await session.evaluate<FrameBreakdownSummary | null>(`globalThis.__jgFrameBreakdown?.summary({ top: ${Math.max(1, Math.floor(top))} }) ?? null`);
   if (summary === null || summary === undefined) return null;
   const scripts = new Map<string, { url: string; map: string | null }>();
   const maps = new Map<string, SourceMap | null>();
