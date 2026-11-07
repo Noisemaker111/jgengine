@@ -93,6 +93,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/follow-stay.proof.ts",
+      "proves": [
+        "creatures.follow-stay"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/food-spoils.proof.ts",
       "proves": [
         "survival.food-spoils"
