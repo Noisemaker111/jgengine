@@ -1,7 +1,7 @@
 # Fernwild
 
 <!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
-Game suite: **60/67 proven · 7 missing** · `jgengine suite fernwild`
+Game suite: **62/67 proven · 5 missing** · `jgengine suite fernwild`
 <!-- /suite-score -->
 
 ARK: Survival Evolved, rebuilt on JGengine as close to the real game as our own models and words

@@ -24,13 +24,13 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | creatures | 12/13 | 0 | 0 | 1 | 0 |
 | breeding | 4/4 | 0 | 0 | 0 | 0 |
 | spawns | 3/3 | 0 | 0 | 0 | 0 |
-| boss | 1/3 | 0 | 0 | 2 | 0 |
+| boss | 3/3 | 0 | 0 | 0 | 0 |
 | cave | 2/2 | 0 | 0 | 0 | 0 |
-| **total** | **60/67** | 0 | 0 | 7 | 0 |
+| **total** | **62/67** | 0 | 0 | 5 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: creature-survival. 60/67 proven · 7 missing.
+Genres: creature-survival. 62/67 proven · 5 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
@@ -96,9 +96,9 @@ Genres: creature-survival. 60/67 proven · 7 missing.
 | `spawns.biome-weighted` | proven | Each region spawns its own creatures in its own mix. | proofs/sim/biome-spawns.proof.ts |
 | `spawns.danger-by-distance` | proven | Danger rises the further the player travels from the start. | proofs/sim/danger-distance.proof.ts |
 | `spawns.respawn-population` | proven | Killed or tamed creatures are replaced over time. | proofs/sim/respawn-population.proof.ts |
-| `boss.summon-arena-reward` | missing | Gather the offering, summon the boss at its altar, win the fight, take the reward. |  |
+| `boss.summon-arena-reward` | proven | Gather the offering, summon the boss at its altar, win the fight, take the reward. | proofs/sim/boss-reward.proof.ts |
 | `boss.phases` | proven | A boss changes how it fights as it is hurt. | proofs/sim/boss-phases.proof.ts |
-| `boss.unlocks-progression` | missing | Beating a boss unlocks something no other source gives. |  |
+| `boss.unlocks-progression` | proven | Beating a boss unlocks something no other source gives. | proofs/sim/boss-reward.proof.ts |
 | `cave.artifact-run` | proven | Enter a cave, survive it, and take the artifact from its end. | proofs/sim/cave-artifact.proof.ts |
 | `cave.hazards` | proven | Caves hold their own dangers: stronger creatures, cold, poison or dark. | proofs/sim/cave-hazards.proof.ts |
 
