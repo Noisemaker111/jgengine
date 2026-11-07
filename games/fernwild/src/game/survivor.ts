@@ -867,6 +867,7 @@ export function survivorView(ctx: GameContext) {
     gear: GEAR_SLOTS.map((slot) => ({ id: slot.id, label: slot.label, item: survivor.gear.worn().find((entry) => entry.slotId === slot.id)?.itemId ?? null })),
     insulation: insulation(survivor),
     sheltered: survivor.climate?.covered ?? false,
+    indoors: survivor.climate?.enclosed ?? false,
     webbed: survivor.web !== null && survivor.web.until > now,
     tally: survivor.tally,
     spentPoints: Object.values(survivor.points).reduce((sum, points) => sum + points, 0),

@@ -304,6 +304,37 @@ export function placeHeld(ctx: GameContext, itemId: string, yaw: number | undefi
   return true;
 }
 
+/**
+ * Stand a closed hut of one tier 4 m in front of the survivor, its door shut and facing them: a foundation, a
+ * doorframe on the near edge, walls on the other three, the door and the roof. Each piece is planned straight onto
+ * its socket. For proofs and tests about what a hut does, not how it is aimed together. False if any piece will not stand.
+ */
+export function buildHut(ctx: GameContext, tier: string): boolean {
+  const base = baseOf(ctx);
+  const me = ctx.scene.entity.get(ctx.player.userId);
+  if (me === null) return false;
+  const yaw = me.rotationY;
+  const ahead = forward(yaw);
+  const side: BaseVec3 = [ahead[2], 0, -ahead[0]];
+  const stand = (pieceId: string, cursor: BaseVec3, rotationY: number): boolean => {
+    const plan = base.building.plan(`${tier}_${pieceId}`, cursor, { rotationY, variant: 0, groundHeightAt: ctx.world.groundHeightAt });
+    return plan.valid && base.building.place(plan, { owner: ctx.player.userId }) !== null;
+  };
+  if (!stand("foundation", [me.position[0] + ahead[0] * 4, me.position[1], me.position[2] + ahead[2] * 4], yaw)) return false;
+  const floor = base.building.list().at(-1)!.position;
+  const edge = (way: BaseVec3): BaseVec3 => [floor[0] + way[0] * 1.6, floor[1] + 1, floor[2] + way[2] * 1.6];
+  const facing = (way: BaseVec3) => Math.atan2(way[0], way[2]);
+  const near: BaseVec3 = [-ahead[0], 0, -ahead[2]];
+  const ok = [
+    stand("doorframe", edge(near), facing(near)),
+    ...[ahead, side, [-side[0], 0, -side[2]] as BaseVec3].map((way) => stand("wall", edge(way), facing(way))),
+    stand("door", edge(near), facing(near)),
+    stand("ceiling", [floor[0], floor[1] + 3, floor[2]], yaw),
+  ].every(Boolean);
+  syncSolids(ctx, base);
+  return ok;
+}
+
 /** R: turn the ghost a quarter, or flip to the next way it can snap. */
 export function rotateBuild(ctx: GameContext): void {
   baseOf(ctx).turn += 1;
