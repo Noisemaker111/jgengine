@@ -156,6 +156,7 @@ impl App {
             desired_maximum_frame_latency: 2,
             alpha_mode: caps.alpha_modes[0],
             view_formats: vec![],
+            color_space: wgpu::SurfaceColorSpace::Auto,
         });
         let draws = rec.frames.iter().map(|f| f.iter().filter(|e| matches!(e, jg_scene::Event::Draw(_))).count()).max().unwrap_or(0);
         let objects = rec.manifest.objects.len();
@@ -285,7 +286,7 @@ impl Run {
             g.after_submit(s);
         }
         self.window.pre_present_notify();
-        frame.present();
+        self.queue.present(frame);
         let done = Instant::now();
         if let Some(g) = self.timer.as_mut() {
             g.poll(&self.device);

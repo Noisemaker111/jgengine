@@ -271,7 +271,8 @@ pub struct Recording {
     pub readbacks: Vec<u8>,
     /// `frames[i]` holds frame i's events in issue order.
     pub frames: Vec<Vec<Event>>,
-    pub dir: std::path::PathBuf,
+    /// Program sources by three's program index: (vertex, fragment).
+    pub programs: std::collections::HashMap<usize, (String, String)>,
 }
 
 fn view_at(r: &[f32], i: usize) -> ViewScissor {
@@ -321,11 +322,24 @@ fn decode(row: &[f32]) -> Result<Event, String> {
 }
 
 impl Recording {
+    /// Load an export directory (`stream.json`, `stream.bin`, `readbacks.bin`, `programs/NNN.vert|frag`).
     pub fn load(dir: &Path) -> Result<Recording, String> {
         let read = |name: &str| std::fs::read(dir.join(name)).map_err(|e| format!("{}: {e}", dir.join(name).display()));
-        let manifest: Manifest = serde_json::from_slice(&read("stream.json")?).map_err(|e| format!("stream.json: {e}"))?;
-        let data = read("stream.bin")?;
-        let readbacks = read("readbacks.bin").unwrap_or_default();
+        let stream = read("stream.json")?;
+        let manifest: Manifest = serde_json::from_slice(&stream).map_err(|e| format!("stream.json: {e}"))?;
+        let mut programs = std::collections::HashMap::new();
+        for p in &manifest.programs {
+            let src = |ext: &str| {
+                let path = dir.join("programs").join(format!("{:03}.{ext}", p.index));
+                std::fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))
+            };
+            programs.insert(p.index, (src("vert")?, src("frag")?));
+        }
+        Self::from_parts(manifest, read("stream.bin")?, read("readbacks.bin").unwrap_or_default(), programs)
+    }
+
+    /// Build from bytes already in memory (the web build fetches them).
+    pub fn from_parts(manifest: Manifest, data: Vec<u8>, readbacks: Vec<u8>, programs: std::collections::HashMap<usize, (String, String)>) -> Result<Recording, String> {
         let lens: &[i32] = bytemuck::cast_slice(&data[manifest.events.row_lengths.offset..manifest.events.row_lengths.offset + manifest.events.row_lengths.bytes]);
         let flat: &[f32] = bytemuck::cast_slice(&data[manifest.events.offset..manifest.events.offset + manifest.events.bytes]);
         let mut rows = Vec::with_capacity(lens.len());
@@ -339,7 +353,7 @@ impl Recording {
         for f in 0..manifest.frames.min(starts.len().saturating_sub(1)) {
             frames.push(rows[starts[f]..starts[f + 1]].to_vec());
         }
-        Ok(Recording { manifest, data, readbacks, frames, dir: dir.to_path_buf() })
+        Ok(Recording { manifest, data, readbacks, frames, programs })
     }
 
     pub fn bytes(&self, offset: usize, bytes: usize) -> &[u8] {
@@ -347,11 +361,7 @@ impl Recording {
     }
 
     pub fn program_source(&self, index: usize) -> Result<(String, String), String> {
-        let read = |ext: &str| {
-            let p = self.dir.join("programs").join(format!("{index:03}.{ext}"));
-            std::fs::read_to_string(&p).map_err(|e| format!("{}: {e}", p.display()))
-        };
-        Ok((read("vert")?, read("frag")?))
+        self.programs.get(&index).cloned().ok_or_else(|| format!("program {index} has no source"))
     }
 
     /// The RGBA8 canvas pixels three produced for `frame`, bottom row first (GL order).

@@ -117,7 +117,8 @@ pub struct Resources {
     pub needs_mips: Vec<i64>,
     pub buffers: Vec<Option<wgpu::Buffer>>,
     pub buffer_sizes: Vec<u64>,
-    /// [0, 0, 0, 1] for a vertex input the geometry lacks (GL's default attribute value).
+    /// [0, 0, 0, 1] four times over: GL's default value for up to four vertex inputs a geometry lacks,
+    /// all read from one vertex buffer slot (WebGPU allows eight slots a draw).
     pub default_attribute: wgpu::Buffer,
 }
 
@@ -228,8 +229,8 @@ impl Resources {
             buffers.push(Some(buffer));
             buffer_sizes.push(size);
         }
-        let default_attribute = device.create_buffer(&wgpu::BufferDescriptor { label: Some("default attribute"), size: 16, usage: wgpu::BufferUsages::VERTEX, mapped_at_creation: true });
-        default_attribute.slice(..).get_mapped_range_mut().expect("map default attribute").copy_from_slice(bytemuck::cast_slice(&[0.0f32, 0.0, 0.0, 1.0]));
+        let default_attribute = device.create_buffer(&wgpu::BufferDescriptor { label: Some("default attribute"), size: 64, usage: wgpu::BufferUsages::VERTEX, mapped_at_creation: true });
+        default_attribute.slice(..).get_mapped_range_mut().expect("map default attribute").copy_from_slice(bytemuck::cast_slice(&[[0.0f32, 0.0, 0.0, 1.0]; 4]));
         default_attribute.unmap();
         Ok(Resources { textures, needs_mips, buffers, buffer_sizes, default_attribute })
     }

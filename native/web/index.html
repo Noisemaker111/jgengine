@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>jg-web replay</title>
+<style>
+  html, body { margin: 0; background: #000; color: #ccc; font: 13px system-ui, sans-serif; }
+  canvas { display: block; width: 100vw; height: auto; }
+  #status { position: fixed; left: 8px; bottom: 8px; }
+</style>
+</head>
+<body>
+<canvas id="gpu"></canvas>
+<div id="status">loading</div>
+<script type="module">
+// Row D harness: `?rec=<export url>` (default /rec/). Writes the result to window.__jgWebResult:
+// a timed run along the recorded camera path on requestAnimationFrame, then a pixel check of
+// every readback frame against three's own pixels, replaying frames in order.
+import init, { start } from "./pkg/jg_web.js";
+
+const status = document.getElementById("status");
+const say = (text) => { status.textContent = text; };
+const rec = new URLSearchParams(location.search).get("rec") ?? "/rec/";
+const get = async (path, kind) => {
+  const r = await fetch(rec + path);
+  if (!r.ok) throw new Error(`${path}: HTTP ${r.status}`);
+  return kind === "text" ? r.text() : new Uint8Array(await r.arrayBuffer());
+};
+const quantile = (v, p) => { const s = [...v].sort((a, b) => a - b); return s.length ? s[Math.min(s.length - 1, Math.floor(p * s.length))] : NaN; };
+
+async function load(canvas, files) {
+  return start(canvas, files.stream, files.data, files.readbacks, files.programs);
+}
+
+async function main() {
+  await init();
+  say("fetching export");
+  const stream = await get("stream.json", "text");
+  const manifest = JSON.parse(stream);
+  const programs = {};
+  await Promise.all(manifest.programs.map(async (p) => {
+    const n = String(p.index).padStart(3, "0");
+    programs[p.index] = [await get(`programs/${n}.vert`, "text"), await get(`programs/${n}.frag`, "text")];
+  }));
+  const files = { stream, data: await get("stream.bin"), readbacks: await get("readbacks.bin"), programs };
+  const canvas = document.getElementById("gpu");
+
+  say("timed run");
+  let run = await load(canvas, files);
+  const adapter = run.adapter();
+  const times = run.times();
+  const duration = times[times.length - 1];
+  const deltas = [], cpu = [];
+  await new Promise((done, fail) => {
+    let t0 = null, last = null;
+    const step = (now) => {
+      try {
+        if (t0 === null) t0 = now;
+        const t = (now - t0) / 1000;
+        if (t >= duration) { done(); return; }
+        cpu.push(run.frame(t));
+        if (last !== null) deltas.push(now - last);
+        last = now;
+        requestAnimationFrame(step);
+      } catch (e) { fail(e); }
+    };
+    requestAnimationFrame(step);
+  });
+  await new Promise((r) => setTimeout(r, 500));
+  const gpu = run.gpu_ms();
+  run.free();
+
+  say("pixel check");
+  run = await load(canvas, files);
+  const check = new Set(run.readback_frames());
+  const probe = document.createElement("canvas");
+  probe.width = canvas.width; probe.height = canvas.height;
+  const ctx = probe.getContext("2d", { willReadFrequently: true });
+  const frames = [];
+  for (let i = 0; i < run.frame_count(); i += 1) {
+    run.draw_in_order(i);
+    if (!check.has(i)) continue;
+    // Read the canvas in the same task as the draw, while its texture is still the current one.
+    ctx.drawImage(canvas, 0, 0);
+    const mine = ctx.getImageData(0, 0, probe.width, probe.height).data;
+    const three = run.readback(i);
+    const w = probe.width, h = probe.height;
+    let sum = 0, max = 0, over2 = 0, over8 = 0, sq = 0;
+    for (let y = 0; y < h; y += 1) {
+      const a = y * w * 4, b = (h - 1 - y) * w * 4; // three's rows are bottom-first
+      for (let x = 0; x < w * 4; x += 4) {
+        let pixelMax = 0;
+        for (let c = 0; c < 3; c += 1) {
+          const d = Math.abs(mine[a + x + c] - three[b + x + c]);
+          sum += d; sq += d * d; if (d > pixelMax) pixelMax = d;
+        }
+        if (pixelMax > max) max = pixelMax;
+        if (pixelMax > 2) over2 += 1;
+        if (pixelMax > 8) over8 += 1;
+      }
+    }
+    const n = w * h;
+    const mse = sq / (n * 3);
+    frames.push({ frame: i, meanAbs: sum / (n * 3), maxAbs: max, over2: over2 / n, over8: over8 / n, psnr: mse === 0 ? 99 : 10 * Math.log10(255 * 255 / mse) });
+  }
+  run.free();
+
+  const fps = deltas.length / (deltas.reduce((a, b) => a + b, 0) / 1000);
+  window.__jgWebResult = {
+    renderer: "jg-web", adapter, userAgent: navigator.userAgent, seconds: duration, frames: deltas.length + 1, fps,
+    frameP50: quantile(deltas, 0.5), frameP99: quantile(deltas, 0.99), cpuP50: quantile(cpu, 0.5), cpuP99: quantile(cpu, 0.99),
+    gpuP50: quantile(gpu, 0.5), gpuP99: quantile(gpu, 0.99), gpuSamples: gpu.length, pixels: frames,
+  };
+  say(`done: ${fps.toFixed(1)} fps`);
+}
+
+main().catch((e) => { window.__jgWebResult = { error: String(e && e.stack || e) }; say(String(e)); });
+</script>
+</body>
+</html>

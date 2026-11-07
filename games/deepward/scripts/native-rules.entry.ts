@@ -8,9 +8,9 @@
  * the Rust port of the tick (jg-rules) reads and writes.
  */
 import "./native-rules.shims";
-import { createHeadlessRunner } from "../packages/core/src/runtime/headlessRunner";
-import { game } from "../games/deepward/src/game";
-import { stageMidDive, viewStore, whenReady } from "../games/deepward/src/game/controls";
+import { createHeadlessRunner } from "../../../packages/core/src/runtime/headlessRunner";
+import { game } from "../src/game";
+import { stageMidDive, viewStore, whenReady } from "../src/game/controls";
 
 /** Column layout, shared with native/crates/jg-rules (`Col`). */
 export const COL = { x: 0, y: 1, z: 2, heading: 3, food: 4, water: 5, scrip: 6, tick: 7, mode: 8, ready: 9 } as const;
@@ -35,7 +35,7 @@ export function createNativeRules(columns: Float64Array = new Float64Array(COLUM
   const ctx = runner.ctx;
   let ready = false;
   void whenReady(ctx).then(async () => {
-    viewStore.update(ctx, (v) => ({ ...v, mode: v.mode === "loading" || v.mode === "title" ? "home" : v.mode }));
+    viewStore.update(ctx, (v) => ({ ...v, mode: v.mode === "loading" ? "home" : v.mode }));
     ctx.time.play();
     if (scenario === "dive") await stageMidDive(ctx);
     ready = true;

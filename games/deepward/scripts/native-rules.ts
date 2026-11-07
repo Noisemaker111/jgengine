@@ -2,15 +2,15 @@
  * Deepward's real game tick for the native experiment: bundle it for the native app's embedded V8,
  * and bench it under Bun on the perf walk.
  *
- *   bun scripts/native-rules.ts bundle <out.js>   one IIFE file defining globalThis.__jgRules
- *   bun scripts/native-rules.ts bench [seconds]   60 Hz ticks along the walk, per-tick ms
+ *   bun games/deepward/scripts/native-rules.ts bundle <out.js>   one IIFE file defining globalThis.__jgRules
+ *   bun games/deepward/scripts/native-rules.ts bench [seconds]   60 Hz ticks along the walk, per-tick ms
  */
 import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import type { Scenario } from "./native-rules.entry";
 
-const repoRoot = join(import.meta.dir, "..");
+const repoRoot = join(import.meta.dir, "..", "..", "..");
 
 /** The perf walk as held-key bits per tick: W held, A and D swapped every 1.5 s (perf-breakdown's "walk"). */
 export function walkHeld(t: number): number {
@@ -20,7 +20,7 @@ export function walkHeld(t: number): number {
 export async function bundleRules(out: string): Promise<void> {
   mkdirSync(dirname(out), { recursive: true });
   const result = await Bun.build({
-    entrypoints: [join(repoRoot, "scripts", "native-rules.entry.ts")],
+    entrypoints: [join(import.meta.dir, "native-rules.entry.ts")],
     target: "browser",
     format: "iife",
     minify: false,
@@ -78,12 +78,12 @@ export async function benchRules(seconds: number, scenario: Scenario = "home"): 
  * body tuning, and where each scenario starts once the real tick has booted it.
  */
 export async function exportRulesWorld(out: string): Promise<void> {
-  const world = await import("../games/deepward/src/world");
-  const { clutterFootprint } = await import("../games/deepward/src/game/interiorPlan");
-  const { FITTER_SIGHT, FITTER_CONE_DEG, FITTER_HEARING } = await import("../games/deepward/src/game/controls");
-  const { BODY, HOME_DRAIN, GALLEY_FEEDS_BELOW, MEAL } = await import("../games/deepward/src/game/survival");
-  const { MOVEMENT_TUNING } = await import("../packages/core/src/movement/movementModel");
-  const { STRATA } = await import("../games/deepward/src/game/strata");
+  const world = await import("../src/world");
+  const { clutterFootprint } = await import("../src/game/interiorPlan");
+  const { FITTER_SIGHT, FITTER_CONE_DEG, FITTER_HEARING } = await import("../src/game/controls");
+  const { BODY, HOME_DRAIN, GALLEY_FEEDS_BELOW, MEAL } = await import("../src/game/survival");
+  const { MOVEMENT_TUNING } = await import("../../../packages/core/src/movement/movementModel");
+  const { STRATA } = await import("../src/game/strata");
   const { createNativeRules, COL } = await import("./native-rules.entry");
   const rect = (r: { x: number; z: number; w: number; d: number }) => ({ x: r.x, z: r.z, w: r.w, d: r.d });
   const places = ["home", "vault"] as const;
@@ -111,7 +111,8 @@ export async function exportRulesWorld(out: string): Promise<void> {
   };
   mkdirSync(dirname(out), { recursive: true });
   await Bun.write(out, JSON.stringify(data, null, 1));
-  console.log(`native rules: wrote ${out} (${data.rooms.home.length + data.rooms.vault.length} rooms, ${solids.home!.length + solids.vault!.length} solids)`);
+  const count = (m: Record<string, unknown[]>) => Object.values(m).reduce((n, v) => n + v.length, 0);
+  console.log(`native rules: wrote ${out} (${count(data.rooms)} rooms, ${count(solids)} solids)`);
 }
 
 if (import.meta.main) {
@@ -119,5 +120,5 @@ if (import.meta.main) {
   if (verb === "bundle") await bundleRules(arg ?? join(repoRoot, ".scratch", "native", "rules", "deepward.js"));
   else if (verb === "world") await exportRulesWorld(arg ?? join(repoRoot, ".scratch", "native", "rules", "deepward.world.json"));
   else if (verb === "bench") await benchRules(Number(arg ?? 13), (process.argv[4] ?? "home") as Scenario);
-  else { console.error("usage: bun scripts/native-rules.ts bundle <out.js> | world <out.json> | bench [seconds] [home|dive]"); process.exit(2); }
+  else { console.error("usage: bun games/deepward/scripts/native-rules.ts bundle <out.js> | world <out.json> | bench [seconds] [home|dive]"); process.exit(2); }
 }

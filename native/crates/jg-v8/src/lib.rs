@@ -1,4 +1,4 @@
-//! A game's real TypeScript tick, bundled into one script (`bun scripts/native-rules.ts bundle`), run
+//! A game's real TypeScript tick, bundled into one script (`bun games/deepward/scripts/native-rules.ts bundle`), run
 //! in embedded V8. The host crosses into JS once per tick (`__jgHostTick(dt, held, heading)`) and reads
 //! the results straight out of the script's `Float64Array` columns, which share memory with Rust.
 

@@ -1,6 +1,6 @@
-//! Deepward's 60 Hz tick in Rust, on the column layout of `scripts/native-rules.entry.ts` (`COL`).
+//! Deepward's 60 Hz tick in Rust, on the column layout of `games/deepward/scripts/native-rules.entry.ts` (`COL`).
 //!
-//! It runs on the data `bun scripts/native-rules.ts world` exports from the game's own modules (floors,
+//! It runs on the data `bun games/deepward/scripts/native-rules.ts world` exports from the game's own modules (floors,
 //! solids, the Fitter's senses, movement and body tuning, each scenario's booted start), so the port
 //! carries logic only. What it ports, against `games/deepward/src/game.tsx` and `controls.ts`:
 //! - movement: the engine's grounded walk (`advancePlayerMotion`: target speed, exponential acceleration,
@@ -14,7 +14,7 @@
 
 use serde::Deserialize;
 
-/// Column indices, shared with `COL` in scripts/native-rules.entry.ts.
+/// Column indices, shared with `COL` in games/deepward/scripts/native-rules.entry.ts.
 pub mod col {
     pub const X: usize = 0;
     pub const Y: usize = 1;

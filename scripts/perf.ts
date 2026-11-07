@@ -1,4 +1,4 @@
-// `bun run perf <game> | perf <gate|fps-gap|network|server|timing|flight|boat|fracture|live>`: every performance measurement.
+// `bun run perf <game> | perf <gate|fps-gap|network|server|timing|flight|boat|fracture|live|native>`: every performance measurement.
 import { runVerb, type VerbTable } from "./subcommands";
 
 export const PERF: VerbTable = {
@@ -16,6 +16,7 @@ export const PERF: VerbTable = {
     crowd: { script: "scripts/perf-crowd.ts", guardSeconds: 300, detail: "[--counts 1000,10000,100000]: time one crowd tick through createEntityStore + createSpatialIndex beside the same step over flat typed arrays" },
     fracture: { script: "scripts/fracture-compare.ts", guardSeconds: 120, detail: "break a granite block with fractureRock, StructureGraph.toDebris and toDebrisBodies; print pieces, t10 and energy into motion beside the JKMRC law" },
     live: { script: "scripts/debug-report.ts", guardSeconds: 60, detail: "<game>: read the report a game open in a browser is producing and gate it" },
+    native: { script: "scripts/perf-native.ts", guardSeconds: 1800, detail: "<game> [--rows A,B,C,D] [--desktop <app.exe>] [--reuse]: the 360 fps experiment, the same frames on the current engine, the Rust native renderer with TS or Rust rules, and wasm+WebGPU; prints the table (native/README.md)" },
     desktop: { script: "scripts/perf-desktop.ts", guardSeconds: 300, detail: "<debug-port> --out <file>: read a diagnostic desktop app's existing frame report; --launch <app.exe> [--uncapped] [--maps dir]: launch one at the gate's conditions and print the fps it reaches" },
   },
   fallback: "play",

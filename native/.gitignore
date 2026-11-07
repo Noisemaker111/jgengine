@@ -1,3 +1,6 @@
 target/
 # Local copies of exported programs for remote checks; regenerate with bun scripts/native-export.ts.
 testdata/
+
+# wasm-bindgen output for the web harness; built by bun run perf native.
+web/pkg/

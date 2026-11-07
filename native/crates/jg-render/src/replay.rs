@@ -131,10 +131,14 @@ impl Replayer {
         let res = Resources::load(&device, &queue, &rec, float32_filterable)?;
         // Translate every program (in parallel: naga is single-threaded per module).
         let sources: Vec<(String, String)> = (0..rec.manifest.programs.len()).map(|i| rec.program_source(rec.manifest.programs[i].index)).collect::<Result<_, _>>()?;
+        #[cfg(not(target_arch = "wasm32"))]
         let translated: Vec<Result<jg_shader::Translated, String>> = std::thread::scope(|s| {
             let handles: Vec<_> = sources.iter().map(|(v, f)| s.spawn(move || jg_shader::translate(v, f))).collect();
             handles.into_iter().map(|h| h.join().unwrap_or_else(|_| Err("translator panicked".into()))).collect()
         });
+        // The browser has no threads here: translate in turn.
+        #[cfg(target_arch = "wasm32")]
+        let translated: Vec<Result<jg_shader::Translated, String>> = sources.iter().map(|(v, f)| jg_shader::translate(v, f)).collect();
         let mut programs = Vec::new();
         for (i, t) in translated.into_iter().enumerate() {
             let p = &rec.manifest.programs[i];
@@ -404,7 +408,14 @@ impl Replayer {
                         (4, 'f') => wgpu::VertexFormat::Float32x4,
                         (n, k) => return Err(format!("missing {k}x{n} attribute {} has no default", input.name)),
                     };
-                    slots.push(VertexSlot { attribute: None, stride: 0, step: wgpu::VertexStepMode::Vertex, attributes: vec![wgpu::VertexAttribute { format, offset: 0, shader_location: input.location }] });
+                    // Missing inputs share default slots, four to a slot, each at its own 16-byte copy.
+                    match slots.iter_mut().find(|s| s.attribute.is_none() && s.attributes.len() < 4) {
+                        Some(s) => {
+                            let offset = s.attributes.len() as u64 * 16;
+                            s.attributes.push(wgpu::VertexAttribute { format, offset, shader_location: input.location });
+                        }
+                        None => slots.push(VertexSlot { attribute: None, stride: 0, step: wgpu::VertexStepMode::Vertex, attributes: vec![wgpu::VertexAttribute { format, offset: 0, shader_location: input.location }] }),
+                    }
                 }
             }
         }
@@ -419,6 +430,10 @@ impl Replayer {
         } else {
             None
         };
+        let limit = self.device.limits().max_vertex_buffers;
+        if slots.len() as u32 > limit {
+            return Err(format!("program {p} with geometry {g} needs {} vertex buffers; this device allows {limit}", slots.len()));
+        }
         let v = Arc::new(VertexBinding { slots, index });
         self.vertex_memo.insert((p as u32, g as u32), v.clone());
         Ok(v)

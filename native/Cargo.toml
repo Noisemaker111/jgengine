@@ -8,6 +8,7 @@ members = [
     "crates/jg-v8",
     "crates/jg-rules",
     "crates/jg-native",
+    "crates/jg-web",
 ]
 
 [workspace.package]
