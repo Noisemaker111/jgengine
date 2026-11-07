@@ -163,7 +163,7 @@ describe("MinimapChrome", () => {
   test("clampToEdge=false hides out-of-range markers instead of clamping", () => {
     const markers: MinimapChromeMarker[] = [{ id: "far", position: [500, 0], clampToEdge: false }];
     const html = renderSvg({ view, markers });
-    expect(html).not.toContain('data-minimap-marker="far"');
+    expect(html).toMatch(/data-minimap-marker="far" visibility="hidden"/);
   });
 });
 

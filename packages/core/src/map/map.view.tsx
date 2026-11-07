@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useImperativeHandle, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type RefObject } from "react";
 import type { FogCells, FogField } from "@jgengine/core/map/fog";
 import {
   DEFAULT_MARKER_KINDS,
@@ -474,6 +474,51 @@ export interface MinimapChromeProps {
   markerColor?: string;
   markerRadius?: number;
   className?: string;
+  /**
+   * Receives a handle that moves the drawn markers to a new view and positions without a React render
+   * (see {@link MinimapChromeHandle}); a map that follows the player each frame re-renders only when
+   * its markers change.
+   */
+  handle?: RefObject<MinimapChromeHandle | null>;
+}
+
+/**
+ * Moves an already-drawn `MinimapChrome`'s markers in place. `place` writes the same positions,
+ * rotations and visibility a render with these props would, to markers with the ids the chrome last
+ * rendered; markers it has not rendered yet need a render first.
+ */
+export interface MinimapChromeHandle {
+  place(view: MinimapView, markers: readonly MinimapChromeMarker[]): void;
+}
+
+/** Where a marker draws on the chart, or null when it is out of range and does not clamp. */
+function minimapMarkerPose(marker: MinimapChromeMarker, view: MinimapView): { x: number; y: number; deg: number } | null {
+  const projected = projectToMinimap(marker.position, view);
+  if (!projected.inside && (marker.clampToEdge ?? true) === false) return null;
+  const at = projected.inside ? projected : clampToMinimapEdge(projected, view.size);
+  const deg = marker.heading === undefined ? 0 : (marker.heading - (view.rotate ?? 0)) * (180 / Math.PI);
+  return { x: at.x, y: at.y, deg };
+}
+
+const GLYPH_DROP = 3.5;
+
+function placeMarkerNode(node: SVGGElement, marker: MinimapChromeMarker, view: MinimapView): void {
+  const pose = minimapMarkerPose(marker, view);
+  if (pose === null) {
+    node.setAttribute("visibility", "hidden");
+    return;
+  }
+  node.removeAttribute("visibility");
+  if (marker.heading !== undefined) {
+    node.setAttribute("transform", `translate(${pose.x} ${pose.y}) rotate(${pose.deg})`);
+    return;
+  }
+  const dot = node.firstElementChild;
+  dot?.setAttribute("cx", String(pose.x));
+  dot?.setAttribute("cy", String(pose.y));
+  const glyph = dot?.nextElementSibling;
+  glyph?.setAttribute("x", String(pose.x));
+  glyph?.setAttribute("y", String(pose.y + GLYPH_DROP));
 }
 
 /**
@@ -498,9 +543,22 @@ export function MinimapChrome({
   markerColor = "#e2e8f0",
   markerRadius = 5,
   className,
+  handle,
 }: MinimapChromeProps): ReactNode {
   const half = view.size / 2;
-  const rotate = view.rotate ?? 0;
+  const nodes = useRef(new Map<string, SVGGElement>());
+  useImperativeHandle(handle, () => ({
+    place(nextView, nextMarkers) {
+      for (const marker of nextMarkers) {
+        const node = nodes.current.get(marker.id);
+        if (node !== undefined) placeMarkerNode(node, marker, nextView);
+      }
+    },
+  }), []);
+  const keep = (id: string) => (node: SVGGElement | null) => {
+    if (node === null) nodes.current.delete(id);
+    else nodes.current.set(id, node);
+  };
   return (
     <g className={className} data-minimap-chrome>
       {frame ? (
@@ -514,16 +572,15 @@ export function MinimapChrome({
         </>
       ) : null}
       {markers.map((marker) => {
-        const projected = projectToMinimap(marker.position, view);
-        const clamp = marker.clampToEdge ?? true;
-        if (!projected.inside && !clamp) return null;
-        const at = projected.inside ? projected : clampToMinimapEdge(projected, view.size);
+        // Out of range and unclamped draws hidden rather than not at all, so `place` can bring it back.
+        const pose = minimapMarkerPose(marker, view);
+        const hidden = pose === null ? "hidden" : undefined;
+        const at = pose ?? { x: half, y: half, deg: 0 };
         const color = marker.color ?? markerColor;
         const radius = marker.radius ?? markerRadius;
         if (marker.heading !== undefined) {
-          const deg = (marker.heading - rotate) * (180 / Math.PI);
           return (
-            <g key={marker.id} data-minimap-marker={marker.id} transform={`translate(${at.x} ${at.y}) rotate(${deg})`}>
+            <g key={marker.id} ref={keep(marker.id)} data-minimap-marker={marker.id} visibility={hidden} transform={`translate(${at.x} ${at.y}) rotate(${at.deg})`}>
               <path
                 d={`M0,${-radius} L${radius * 0.7},${radius * 0.8} L0,${radius * 0.35} L${-radius * 0.7},${radius * 0.8} Z`}
                 fill={color}
@@ -534,10 +591,10 @@ export function MinimapChrome({
           );
         }
         return (
-          <g key={marker.id} data-minimap-marker={marker.id}>
+          <g key={marker.id} ref={keep(marker.id)} data-minimap-marker={marker.id} visibility={hidden}>
             <circle cx={at.x} cy={at.y} r={radius} fill={color} stroke={marker.strokeColor} strokeWidth={marker.strokeWidth} />
             {marker.glyph !== undefined ? (
-              <text x={at.x} y={at.y + 3.5} textAnchor="middle" fontSize={10} fill={marker.glyphColor ?? "#0f172a"} style={{ fontWeight: 700 }}>
+              <text x={at.x} y={at.y + GLYPH_DROP} textAnchor="middle" fontSize={10} fill={marker.glyphColor ?? "#0f172a"} style={{ fontWeight: 700 }}>
                 {marker.glyph}
               </text>
             ) : null}
