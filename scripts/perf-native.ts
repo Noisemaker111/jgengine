@@ -89,11 +89,12 @@ async function desktopRow(appExe: string, size: [number, number], seconds: numbe
 
 interface NativeResult { fps: number; frameP50: number; frameP99: number; cpuP50: number; gpuP50: number | null; gpuSamples: number; rulesP50: number; rulesTicks: number; presentMode: string; adapter: string; hudInstances: number; sceneP50: number; encodeP50: number }
 
-function nativeRow(row: string, recording: string, rules: "js" | "rust" | "none", files: { bundle: string; world: string }, out: string, image: string): Row {
-  const args = [recording, "--rules", rules, "--bundle", files.bundle, "--world", files.world, "--out", out];
+/** `ported`: the game's rules and HUD have native versions (Deepward); otherwise the row is the renderer alone. */
+function nativeRow(row: string, recording: string, ported: boolean, rules: "js" | "rust", files: { bundle: string; world: string }, out: string, image: string): Row {
+  const args = ported ? [recording, "--rules", rules, "--bundle", files.bundle, "--world", files.world, "--out", out] : [recording, "--rules", "none", "--no-hud", "--out", out];
   const r = lastJson<NativeResult>(run(exe("jg-native"), args, `jg-native --rules ${rules}`));
-  const rulesNote = rules === "none" ? "renderer + HUD only" : `rules ${rules === "js" ? "TS in V8" : "Rust"} p50 ${r.rulesP50.toFixed(3)} ms/tick`;
-  return { row, label: rules === "js" ? "Rust native + embedded TS rules + Rune HUD" : rules === "rust" ? "Rust native + Rust rules + Rune HUD" : "Rust native renderer + Rune HUD", fps: r.fps, frameP50: r.frameP50, frameP99: r.frameP99, cpuP50: r.cpuP50, gpuP50: r.gpuP50, image, note: `${r.presentMode}, ${rulesNote}, scene update p50 ${r.sceneP50.toFixed(3)} ms, encode p50 ${r.encodeP50.toFixed(2)} ms (CPU less submit and present)` };
+  const rulesNote = !ported ? "renderer only (rules and HUD not ported)" : `rules ${rules === "js" ? "TS in V8" : "Rust"} p50 ${r.rulesP50.toFixed(3)} ms/tick`;
+  return { row, label: !ported ? "Rust native renderer" : rules === "js" ? "Rust native + embedded TS rules + Rune HUD" : "Rust native + Rust rules + Rune HUD", fps: r.fps, frameP50: r.frameP50, frameP99: r.frameP99, cpuP50: r.cpuP50, gpuP50: r.gpuP50, image, note: `${r.presentMode}, ${rulesNote}, scene update p50 ${r.sceneP50.toFixed(3)} ms, encode p50 ${r.encodeP50.toFixed(2)} ms (CPU less submit and present)` };
 }
 
 /** Row D: serve native/web and the export, open it in headless Chrome on the uncapped clock, read its result. */
@@ -159,7 +160,8 @@ async function main(argv: string[]): Promise<number> {
   for (const bin of ["jg-replay", "jg-native"]) if (!existsSync(exe(bin))) throw new Error(`no ${exe(bin)}: run cargo build --release in native/`);
   const manifest = JSON.parse(readFileSync(join(recording, "stream.json"), "utf8")) as { canvas: [number, number] };
   const files = { bundle: join(repoRoot, ".scratch", "native", "rules", `${args.game}.js`), world: join(repoRoot, ".scratch", "native", "rules", `${args.game}.world.json`) };
-  // A game with native rules ships `scripts/native-rules.ts` (bundle the TS tick, export the Rust port's world).
+  // A ported game ships `scripts/native-rules.ts` (bundle the TS tick, export the Rust port's world)
+  // and has its HUD in jg-hud; any other game's native rows are the renderer alone.
   const rulesScript = join(repoRoot, "games", args.game, "scripts", "native-rules.ts");
   const hasRules = existsSync(rulesScript);
   if (hasRules && (args.rows.has("B") || args.rows.has("C"))) {
@@ -178,8 +180,8 @@ async function main(argv: string[]): Promise<number> {
     if (args.desktop === null) throw new Error(`row A needs --desktop <app.exe> from: bun run jgengine desktop games/${args.game} --diagnostics`);
     rows.push(await desktopRow(resolve(args.desktop), manifest.canvas, args.seconds, join(results, "A.json")));
   }
-  if (args.rows.has("B")) rows.push(nativeRow("B", recording, hasRules ? "js" : "none", files, join(results, "B.json"), image));
-  if (args.rows.has("C")) rows.push(nativeRow("C", recording, hasRules ? "rust" : "none", files, join(results, "C.json"), image));
+  if (args.rows.has("B")) rows.push(nativeRow("B", recording, hasRules, "js", files, join(results, "B.json"), image));
+  if (args.rows.has("C") && hasRules) rows.push(nativeRow("C", recording, hasRules, "rust", files, join(results, "C.json"), image));
   if (args.rows.has("D")) rows.push(await webRow(recording));
   const table = renderTable(args.game, rows);
   writeFileSync(join(recording, "compare.json"), `${JSON.stringify({ game: args.game, at: new Date().toISOString(), canvas: manifest.canvas, seconds: args.seconds, rows, diff }, null, 1)}\n`);

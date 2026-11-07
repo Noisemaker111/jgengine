@@ -943,24 +943,70 @@ impl Replayer {
         self.copier.copy(&self.device, encoder, &src, view, format, true, false);
     }
 
+    /// A program's uniforms as its block holds them now, by three's names (ints as floats), and
+    /// the texture bound to each sampler slot.
+    pub fn uniform_values(&self, program: usize) -> Option<(Vec<(String, Vec<f32>)>, Vec<i64>)> {
+        let p = self.programs.get(program)?;
+        let values = p
+            .layout
+            .uniforms
+            .iter()
+            .map(|s| {
+                let mut v = Vec::new();
+                for e in 0..s.count {
+                    for c in 0..s.columns {
+                        for r in 0..s.rows {
+                            let at = (s.offset + e * s.stride + c * s.column_stride + r * 4) as usize;
+                            let Some(b) = p.block.get(at..at + 4) else { continue };
+                            let b: [u8; 4] = b.try_into().unwrap();
+                            v.push(if s.kind == 'f' { f32::from_le_bytes(b) } else { i32::from_le_bytes(b) as f32 });
+                        }
+                    }
+                }
+                (s.name.clone(), v)
+            })
+            .collect();
+        Some((values, p.bound.clone()))
+    }
+
     /// The canvas as RGBA8, bottom row first (GL readback order). Blocks until the GPU is done.
     pub fn read_canvas(&self) -> Vec<u8> {
         let [w, h] = self.rec.manifest.canvas;
-        let row = (w * 4).next_multiple_of(256);
-        let buffer = self.device.create_buffer(&wgpu::BufferDescriptor { label: Some("canvas readback"), size: (row * h) as u64, usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ, mapped_at_creation: false });
+        self.read_level0(&self.canvas, w, h, 4)
+    }
+
+    /// A render target's colour texture as RGBA8, rows bottom first like the canvas (half floats
+    /// clamped to [0, 1]), to look at one pass's output; None for other formats.
+    pub fn read_target_texture(&self, handle: i64) -> Option<(u32, u32, Vec<u8>)> {
+        let t = self.res.textures.get(&handle)?;
+        let [w, h] = t.size;
+        match t.format {
+            wgpu::TextureFormat::Rgba8Unorm | wgpu::TextureFormat::Rgba8UnormSrgb => Some((w, h, self.read_level0(&t.texture, w, h, 4))),
+            wgpu::TextureFormat::Rgba16Float => {
+                let raw = self.read_level0(&t.texture, w, h, 8);
+                Some((w, h, raw.chunks_exact(2).map(|c| (half::f16::from_le_bytes([c[0], c[1]]).to_f32().clamp(0.0, 1.0) * 255.0).round() as u8).collect()))
+            }
+            _ => None,
+        }
+    }
+
+    /// Mip 0 of a 2D texture, tightly packed (`px` bytes per texel).
+    fn read_level0(&self, texture: &wgpu::Texture, w: u32, h: u32, px: u32) -> Vec<u8> {
+        let row = (w * px).next_multiple_of(256);
+        let buffer = self.device.create_buffer(&wgpu::BufferDescriptor { label: Some("readback"), size: (row * h) as u64, usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ, mapped_at_creation: false });
         let mut encoder = self.device.create_command_encoder(&Default::default());
         encoder.copy_texture_to_buffer(
-            wgpu::TexelCopyTextureInfo { texture: &self.canvas, mip_level: 0, origin: wgpu::Origin3d::ZERO, aspect: wgpu::TextureAspect::All },
+            wgpu::TexelCopyTextureInfo { texture, mip_level: 0, origin: wgpu::Origin3d::ZERO, aspect: wgpu::TextureAspect::All },
             wgpu::TexelCopyBufferInfo { buffer: &buffer, layout: wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(row), rows_per_image: Some(h) } },
             wgpu::Extent3d { width: w, height: h, depth_or_array_layers: 1 },
         );
         self.queue.submit([encoder.finish()]);
-        buffer.map_async(wgpu::MapMode::Read, .., |r| r.expect("map canvas readback"));
+        buffer.map_async(wgpu::MapMode::Read, .., |r| r.expect("map readback"));
         self.device.poll(wgpu::PollType::wait_indefinitely()).expect("poll");
-        let mapped = buffer.get_mapped_range(..).expect("mapped canvas readback");
-        let mut out = Vec::with_capacity((w * h * 4) as usize);
+        let mapped = buffer.get_mapped_range(..).expect("mapped readback");
+        let mut out = Vec::with_capacity((w * h * px) as usize);
         for y in 0..h {
-            out.extend_from_slice(&mapped[(y * row) as usize..(y * row + w * 4) as usize]);
+            out.extend_from_slice(&mapped[(y * row) as usize..(y * row + w * px) as usize]);
         }
         out
     }

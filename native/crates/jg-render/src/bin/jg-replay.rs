@@ -6,6 +6,11 @@
 //! `jg-replay <recording-dir> --validate`: replay every frame on wgpu's noop backend, which runs all
 //! of wgpu's validation without a GPU, and list every distinct validation error with the first
 //! frame it happened on. No pixels; exits non-zero when anything failed validation.
+//!
+//! `jg-replay <recording-dir> --dump <frame>`: replay up to that frame and write every RGBA8 or
+//! half-float render target as `target-<framebuffer>-<texture>.png` into `--out`, to see which pass
+//! a difference starts in. `--uniforms <program>` also prints that program's uniform values and
+//! bound textures as they stand after the frame.
 
 use jg_render::diff;
 use std::path::PathBuf;
@@ -82,6 +87,34 @@ fn run() -> Result<(), String> {
         }
         println!("validated {} frames: {} distinct validation errors", r.frame_count(), seen.len());
         return if seen.is_empty() { Ok(()) } else { Err(format!("{} distinct validation errors", seen.len())) };
+    }
+    if let Some(stop) = args.iter().position(|a| a == "--dump").and_then(|i| args.get(i + 1)).and_then(|v| v.parse::<usize>().ok()) {
+        for f in 0..=stop.min(r.frame_count() - 1) {
+            let mut encoder = device.create_command_encoder(&Default::default());
+            r.frame(&mut encoder, f)?;
+            r.finish_frame();
+            queue.submit([encoder.finish()]);
+        }
+        let mut written = 0;
+        for fb in r.rec.manifest.framebuffers.clone() {
+            for t in &fb.textures {
+                if let Some((tw, th, px)) = r.read_target_texture(*t) {
+                    diff::write_png(&out.join(format!("target-{}-{t}.png", fb.handle)), tw, th, &px)?;
+                    written += 1;
+                }
+            }
+        }
+        if let Some(p) = args.iter().position(|a| a == "--uniforms").and_then(|i| args.get(i + 1)).and_then(|v| v.parse::<usize>().ok()) {
+            let (values, bound) = r.uniform_values(p).ok_or(format!("no program {p}"))?;
+            for (name, v) in values {
+                println!("program {p} {name} = {v:?}");
+            }
+            println!("program {p} samplers bound to textures {bound:?}");
+        }
+        let [w, h] = r.rec.manifest.canvas;
+        diff::write_png(&out.join("target-canvas.png"), w, h, &r.read_canvas())?;
+        println!("frame {stop}: wrote {written} render targets and the canvas to {}", out.display());
+        return Ok(());
     }
     let [w, h] = r.rec.manifest.canvas;
     let readback_frames: Vec<usize> = r.rec.manifest.readbacks.iter().map(|b| b.frame).collect();
