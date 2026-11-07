@@ -149,23 +149,23 @@ export const ITEMS: readonly ItemDef[] = [
   resource("fertilizer", "Fertilizer", 0.1, 20, "Ground from spoiled meat and thatch. A crop plot's crop grows only while it has some."),
   // ARK's cave artifacts: one on a pedestal at the end of each cave, back half an hour after it is taken.
   resource("artifact_clever", "Artifact of the Clever", 1, 1, "A glowing relic from the deepest chamber of the central cave; the island's guardian wants it."),
-  resource("artifact_skylord", "Artifact of the Skylord", 1, 1, "A glowing relic from the deepest chamber of the north-west cave; the island's guardian wants it."),
+  resource("artifact_skylord", "Artifact of the Skylord", 1, 1, "A glowing relic from the deepest chamber of the north-west cave. The Broodmother never asks for it; brood gauntlets are made with it."),
   resource("artifact_hunter", "Artifact of the Hunter", 1, 1, "A glowing relic from the deepest chamber of the lower south cave; the island's guardian wants it."),
-  resource("artifact_devourer", "Artifact of the Devourer", 1, 1, "A glowing relic from the deepest chamber of the north-east cave; the island's guardian wants it."),
-  resource("artifact_pack", "Artifact of the Pack", 1, 1, "A glowing relic from the deepest chamber of the upper south cave; the island's guardian wants it."),
+  resource("artifact_devourer", "Artifact of the Devourer", 1, 1, "A glowing relic from the deepest chamber of the north-east cave. The Broodmother never asks for it; brood treads are made with it."),
+  resource("artifact_pack", "Artifact of the Pack", 1, 1, "A glowing relic from the deepest chamber of the upper south cave. The Broodmother never asks for it; brood greaves are made with it."),
   resource("artifact_massive", "Artifact of the Massive", 1, 1, "A glowing relic from the deepest chamber of the lava cave; the island's guardian wants it."),
-  resource("artifact_immune", "Artifact of the Immune", 1, 1, "A glowing relic from the deepest chamber of the swamp cave; the island's guardian wants it."),
-  resource("artifact_strong", "Artifact of the Strong", 1, 1, "A glowing relic from the deepest chamber of the snow cave; the island's guardian wants it."),
+  resource("artifact_immune", "Artifact of the Immune", 1, 1, "A glowing relic from the deepest chamber of the swamp cave. The Broodmother never asks for it; brood gauntlets are made with it."),
+  resource("artifact_strong", "Artifact of the Strong", 1, 1, "A glowing relic from the deepest chamber of the snow cave. The Broodmother never asks for it; brood greaves are made with it."),
   // The Broodmother's tribute trophies, found on the bodies of the creatures that carry them, and what she leaves.
   resource("argentavis_talon", "Argentavis Talon", 2, 100, "Found on a dead Argentavis. The Broodmother's Beta and Alpha tribute asks for them."),
   resource("sarcosuchus_skin", "Sarcosuchus Skin", 2, 100, "Found on a dead Sarco. The Broodmother's Beta and Alpha tribute asks for them."),
   resource("sauropod_vertebra", "Sauropod Vertebra", 2, 100, "Found on a dead Brontosaurus or Diplodocus. The Broodmother's Beta and Alpha tribute asks for them."),
   resource("titanoboa_venom", "Titanoboa Venom", 2, 100, "Found on a dead Titanoboa. The Broodmother's Beta and Alpha tribute asks for them."),
-  resource("element", "Element", 0.1, 100, "Strange glowing matter the guardians leave behind."),
-  resource("spider_flag", "Spider Flag", 2, 1, "A banner of the Broodmother, for whoever beat her. Placing it comes later."),
-  resource("broodmother_trophy_gamma", "Gamma Broodmother Trophy", 5, 1, "Proof you beat the Gamma Broodmother."),
-  resource("broodmother_trophy_beta", "Beta Broodmother Trophy", 5, 1, "Proof you beat the Beta Broodmother."),
-  resource("broodmother_trophy_alpha", "Alpha Broodmother Trophy", 5, 1, "Proof you beat the Alpha Broodmother."),
+  resource("element", "Element", 0.1, 100, "Strange glowing matter the guardians leave behind. The element pick and brood gear are made with it."),
+  resource("spider_flag", "Spider Flag", 2, 1, "A banner of the Broodmother, for whoever beat her. Brood greaves are sewn from it."),
+  resource("broodmother_trophy_gamma", "Gamma Broodmother Trophy", 5, 1, "Proof you beat the Gamma Broodmother. Brood greaves are made around it."),
+  resource("broodmother_trophy_beta", "Beta Broodmother Trophy", 5, 1, "Proof you beat the Beta Broodmother. Brood gauntlets are made around it."),
+  resource("broodmother_trophy_alpha", "Alpha Broodmother Trophy", 5, 1, "Proof you beat the Alpha Broodmother. Brood treads are made around it."),
   { id: "raw_meat", label: "Raw Meat", kind: "consumable", weight: 0.1, stack: 40, consume: { food: 10, health: -5 }, note: "Edible, barely. Cook it on a campfire." },
   { id: "raw_prime_meat", label: "Raw Prime Meat", kind: "consumable", weight: 0.1, stack: 20, consume: { food: 15, health: -5 }, note: "The best cut. Carnivores tame fastest on it." },
   { id: "cooked_meat", label: "Cooked Meat", kind: "consumable", weight: 0.1, stack: 40, consume: { food: 20, health: 8 }, note: "Filling and heals a little." },
@@ -198,6 +198,11 @@ export const ITEMS: readonly ItemDef[] = [
     id: "metal_hatchet", label: "Metal Hatchet", kind: "tool", weight: 1, stack: 1, note: "Far more wood and stone than a stone hatchet, and it breaks stone.",
     tool: { durability: 100, gather: { power: 2.5, biases: { wood: 2.2, thatch: 0.3, stone: 2.2, flint: 0.25, metal: 0.3, obsidian: 0.25, crystal: 0.25, oil: 0.25, hide: 1.4, raw_meat: 0.4 }, defaultBias: 0 }, reach: 2.2, damage: 18, damageClass: "metal", stamina: 3, cooldown: 0.7 },
   },
+  // Past the Broodmother (ours, not ARK's): Element in a metal head gets the most from every rock and lasts three metal picks.
+  {
+    id: "element_pick", label: "Element Pick", kind: "tool", weight: 1, stack: 1, note: "Element set in metal: the most flint, ore, obsidian, crystal and oil a swing gets, and it breaks stone.",
+    tool: { durability: 300, gather: { power: 4, biases: { thatch: 1.6, wood: 0.25, flint: 1.6, stone: 0.35, metal: 1.6, obsidian: 1.6, crystal: 1.6, oil: 1.6, raw_meat: 1.4, hide: 0.4 }, defaultBias: 0 }, reach: 2.2, damage: 30, damageClass: "metal", stamina: 3, cooldown: 0.7 },
+  },
   {
     id: "wooden_club", label: "Wooden Club", kind: "tool", weight: 1, stack: 1, note: "Knocks creatures out.",
     // ARK's club lands about 3.75x its damage as torpor: a level-1 raptor (180 torpor) sleeps in 9 hits, a
@@ -214,6 +219,14 @@ export const ITEMS: readonly ItemDef[] = [
   cloth("cloth_hat", "Cloth Hat", "head", 0.5),
   cloth("cloth_gloves", "Cloth Gloves", "hands", 0.5),
   cloth("cloth_boots", "Cloth Boots", "feet", 0.5),
+  // Gear for the far end of the climb (ours, not ARK's): crystal from the snow peaks and oil from the frozen shore keep
+  // the cold out, and past the Broodmother her trophies, flag and Element, with the five artifacts her tribute never
+  // asks for, make brood gear that widens the comfortable band at both ends.
+  { id: "snow_mask", label: "Snow Mask", kind: "armor", weight: 1, stack: 1, wear: { slot: "head", heatC: 1, coldC: 6 }, note: "Crystal lenses in thick hide: the peaks' cold and glare stay out. Double-click to wear it." },
+  { id: "oilskin_coat", label: "Oilskin Coat", kind: "armor", weight: 3, stack: 1, wear: { slot: "torso", heatC: 3, coldC: 7 }, note: "Hide sealed with oil: the frozen shore's wind runs off it. Double-click to wear it." },
+  { id: "brood_greaves", label: "Brood Greaves", kind: "armor", weight: 4, stack: 1, wear: { slot: "legs", heatC: 6, coldC: 6 }, note: "Built round the Gamma Broodmother's trophy. Double-click to wear it." },
+  { id: "brood_gauntlets", label: "Brood Gauntlets", kind: "armor", weight: 2, stack: 1, wear: { slot: "hands", heatC: 6, coldC: 6 }, note: "Built round the Beta Broodmother's trophy. Double-click to wear it." },
+  { id: "brood_treads", label: "Brood Treads", kind: "armor", weight: 3, stack: 1, wear: { slot: "feet", heatC: 8, coldC: 8 }, note: "Built round the Alpha Broodmother's trophy. Double-click to wear it." },
   { id: "waterskin", label: "Waterskin", kind: "consumable", weight: 0.5, stack: 1, consume: { water: 20 }, note: "Carry a drink with you." },
   // ARK's slingshot throws the stones in the bag: little damage, a lot of torpor, a short range.
   {
@@ -223,8 +236,8 @@ export const ITEMS: readonly ItemDef[] = [
   // ARK's bow: stone arrows wound, tranquilizer arrows (a stone arrow dipped in narcotic) knock out from
   // range. A level-1 raptor (180 torpor) sleeps on two tranq arrows. Numbers approx.
   {
-    id: "bow", label: "Bow", kind: "tool", weight: 1, stack: 1, note: "Fires arrows from the bag: tranquilizer arrows first, then stone arrows.",
-    tool: { durability: 50, gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2, damage: 0, damageClass: "ranged", stamina: 2, cooldown: 1.1, ranged: { range: 45, ammo: { tranq_arrow: { damage: 8, doses: [{ vital: "torpor", amount: 95 }] }, stone_arrow: { damage: 25, doses: [{ vital: "torpor", amount: 10 }] } } } },
+    id: "bow", label: "Bow", kind: "tool", weight: 1, stack: 1, note: "Fires arrows from the bag: tranquilizer arrows first, then obsidian, then stone arrows.",
+    tool: { durability: 50, gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2, damage: 0, damageClass: "ranged", stamina: 2, cooldown: 1.1, ranged: { range: 45, ammo: { tranq_arrow: { damage: 8, doses: [{ vital: "torpor", amount: 95 }] }, obsidian_arrow: { damage: 40, doses: [{ vital: "torpor", amount: 5 }] }, stone_arrow: { damage: 25, doses: [{ vital: "torpor", amount: 10 }] } } } },
   },
   // ARK's bola: thrown, it wraps a creature's legs and holds it still for a while; the biggest shrug it off.
   // The bola in hand is its own ammo. Hold time approx.
@@ -234,6 +247,7 @@ export const ITEMS: readonly ItemDef[] = [
   },
   { id: "stone_arrow", label: "Stone Arrow", kind: "ammo", weight: 0.05, stack: 100, note: "A flint-tipped arrow for the bow." },
   { id: "tranq_arrow", label: "Tranquilizer Arrow", kind: "ammo", weight: 0.06, stack: 100, note: "A stone arrow dipped in narcotic: knocks creatures out from range." },
+  { id: "obsidian_arrow", label: "Obsidian Arrow", kind: "ammo", weight: 0.05, stack: 100, note: "A volcanic-glass head that cuts deeper than flint. The bow fires it before stone arrows." },
   ...STRUCTURES.map((entry): ItemDef => ({ id: entry.id, label: entry.label, kind: "structure", weight: entry.weight, stack: 100, note: entry.note })),
   ...Object.values(SPECIES).flatMap((def): ItemDef[] =>
     def.saddle === null ? [] : [{ id: def.saddle, label: `${def.label} Saddle`, kind: "saddle", weight: Math.max(4, Math.round(def.weight.base / 40)), stack: 1, note: `Lets you ride a tamed ${def.label}.` }],

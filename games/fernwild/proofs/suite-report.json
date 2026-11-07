@@ -2,6 +2,13 @@
   "game": "fernwild",
   "proofs": [
     {
+      "file": "proofs/sim/airlift.proof.ts",
+      "proves": [
+        "creatures.work.airlift"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/behavior-modes.proof.ts",
       "proves": [
         "creatures.behavior-modes"
@@ -47,6 +54,13 @@
       "file": "proofs/sim/breed-incubate.proof.ts",
       "proves": [
         "breeding.incubate"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/breed-inherit.proof.ts",
+      "proves": [
+        "breeding.inherit-mutate"
       ],
       "ok": true
     },
@@ -381,10 +395,8 @@
     },
     {
       "id": "content.item-use",
-      "ok": false,
-      "problems": [
-        "no use for obsidian, crystal, oil, mejoberry_seed, fertilizer, artifact_skylord, artifact_devourer, artifact_pack, artifact_immune, artifact_strong, element, spider_flag and 3 more"
-      ]
+      "ok": true,
+      "problems": []
     },
     {
       "id": "content.recipes-reachable",
@@ -403,10 +415,8 @@
     },
     {
       "id": "progression.runway",
-      "ok": false,
-      "problems": [
-        "the last unlock is at level 60 of a cap of 105"
-      ]
+      "ok": true,
+      "problems": []
     }
   ]
 }
