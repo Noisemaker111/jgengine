@@ -16,21 +16,21 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | menu | 0/1 | 0 | 0 | 1 | 0 |
 | progression | 0/1 | 1 | 0 | 0 | 0 |
 | content | 3/5 | 2 | 0 | 0 | 0 |
-| survival | 7/9 | 0 | 0 | 2 | 0 |
+| survival | 8/9 | 0 | 0 | 1 | 0 |
 | building | 2/3 | 0 | 0 | 1 | 0 |
 | harvest | 3/3 | 0 | 0 | 0 | 0 |
 | crafting | 4/6 | 0 | 0 | 2 | 0 |
 | taming | 9/9 | 0 | 0 | 0 | 0 |
 | creatures | 8/13 | 0 | 0 | 5 | 0 |
 | breeding | 3/4 | 0 | 0 | 1 | 0 |
-| spawns | 2/3 | 0 | 0 | 1 | 0 |
+| spawns | 3/3 | 0 | 0 | 0 | 0 |
 | boss | 1/3 | 0 | 0 | 2 | 0 |
 | cave | 2/2 | 0 | 0 | 0 | 0 |
-| **total** | **46/67** | 3 | 0 | 18 | 0 |
+| **total** | **48/67** | 3 | 0 | 16 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: creature-survival. 46/67 proven · 3 failing · 18 missing.
+Genres: creature-survival. 48/67 proven · 3 failing · 16 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
@@ -42,7 +42,7 @@ Genres: creature-survival. 46/67 proven · 3 failing · 18 missing.
 | `menu.start-and-credits` | missing | The main menu starts a game and shows the credits. |  |
 | `progression.runway` | FAILING | Something new unlocks steadily across the first five hours, up to the progression cap. | the last unlock is at level 60 of a cap of 105 |
 | `content.item-source` | proven | Every item can be obtained by playing. | content check |
-| `content.item-use` | FAILING | Every item does something: crafts, equips, eats, places, feeds, sells or summons. | no use for metal, obsidian, crystal, oil, artifact_skylord, artifact_devourer, artifact_pack, artifact_immune, artifact_strong, element, spider_flag, broodmother_trophy_gamma and 3 more |
+| `content.item-use` | FAILING | Every item does something: crafts, equips, eats, places, feeds, sells or summons. | no use for metal, obsidian, crystal, oil, mejoberry_seed, fertilizer, artifact_skylord, artifact_devourer, artifact_pack, artifact_immune, artifact_strong, element and 5 more |
 | `content.recipes-reachable` | proven | Every recipe and source can actually be used: its inputs, station and unlock are all obtainable. | content check |
 | `content.placeables-place` | FAILING | Every item that says it can be placed can be placed. | says it places but the placement catalog has none: hide_sleeping_bag |
 | `content.weapons-have-ammo` | proven | Every weapon that fires has obtainable ammo, or needs none. | content check |
@@ -54,7 +54,7 @@ Genres: creature-survival. 46/67 proven · 3 failing · 18 missing.
 | `survival.respawn-point` | missing | A placed bed or bag becomes where the player wakes after death. |  |
 | `survival.storage-place` | proven | A storage container can be placed and holds items. | proofs/sim/storage-place.proof.ts |
 | `survival.encumbrance` | proven | Carrying more slows the player, and past the limit they cannot move. | proofs/sim/encumbrance.proof.ts |
-| `survival.farm` | missing | Plant a seed in a plot; with water and fertilizer it grows a harvest. |  |
+| `survival.farm` | proven | Plant a seed in a plot; with water and fertilizer it grows a harvest. | proofs/sim/farm.proof.ts |
 | `building.place-snap` | proven | Building pieces place, snap to each other and stand. | proofs/sim/build-snap.proof.ts |
 | `building.shelter` | missing | A built enclosure shelters the player from weather and cold. |  |
 | `building.tiers-durability` | proven | Stronger building tiers resist attacks a weaker tier does not. | proofs/sim/build-tiers.proof.ts |
@@ -95,7 +95,7 @@ Genres: creature-survival. 46/67 proven · 3 failing · 18 missing.
 | `breeding.inherit-mutate` | missing | Offspring inherit their parents' stats, with a chance of mutation. |  |
 | `spawns.biome-weighted` | proven | Each region spawns its own creatures in its own mix. | proofs/sim/biome-spawns.proof.ts |
 | `spawns.danger-by-distance` | proven | Danger rises the further the player travels from the start. | proofs/sim/danger-distance.proof.ts |
-| `spawns.respawn-population` | missing | Killed or tamed creatures are replaced over time. |  |
+| `spawns.respawn-population` | proven | Killed or tamed creatures are replaced over time. | proofs/sim/respawn-population.proof.ts |
 | `boss.summon-arena-reward` | missing | Gather the offering, summon the boss at its altar, win the fight, take the reward. |  |
 | `boss.phases` | proven | A boss changes how it fights as it is hurt. | proofs/sim/boss-phases.proof.ts |
 | `boss.unlocks-progression` | missing | Beating a boss unlocks something no other source gives. |  |
