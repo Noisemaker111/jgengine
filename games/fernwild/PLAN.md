@@ -19,18 +19,18 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | survival | 7/9 | 0 | 0 | 2 | 0 |
 | building | 2/3 | 0 | 0 | 1 | 0 |
 | harvest | 3/3 | 0 | 0 | 0 | 0 |
-| crafting | 3/6 | 0 | 0 | 3 | 0 |
+| crafting | 4/6 | 0 | 0 | 2 | 0 |
 | taming | 9/9 | 0 | 0 | 0 | 0 |
 | creatures | 8/13 | 0 | 0 | 5 | 0 |
 | breeding | 3/4 | 0 | 0 | 1 | 0 |
-| spawns | 0/3 | 0 | 0 | 3 | 0 |
+| spawns | 2/3 | 0 | 0 | 1 | 0 |
 | boss | 1/3 | 0 | 0 | 2 | 0 |
 | cave | 2/2 | 0 | 0 | 0 | 0 |
-| **total** | **43/67** | 3 | 0 | 21 | 0 |
+| **total** | **46/67** | 3 | 0 | 18 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: creature-survival. 43/67 proven · 3 failing · 21 missing.
+Genres: creature-survival. 46/67 proven · 3 failing · 18 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
@@ -93,8 +93,8 @@ Genres: creature-survival. 43/67 proven · 3 failing · 21 missing.
 | `breeding.incubate` | proven | An egg hatches only kept at the right temperature. | proofs/sim/breed-incubate.proof.ts |
 | `breeding.raise-imprint` | proven | Feed and care for a baby; care raises its quality as it grows. | proofs/sim/breed-imprint.proof.ts |
 | `breeding.inherit-mutate` | missing | Offspring inherit their parents' stats, with a chance of mutation. |  |
-| `spawns.biome-weighted` | missing | Each region spawns its own creatures in its own mix. |  |
-| `spawns.danger-by-distance` | missing | Danger rises the further the player travels from the start. |  |
+| `spawns.biome-weighted` | proven | Each region spawns its own creatures in its own mix. | proofs/sim/biome-spawns.proof.ts |
+| `spawns.danger-by-distance` | proven | Danger rises the further the player travels from the start. | proofs/sim/danger-distance.proof.ts |
 | `spawns.respawn-population` | missing | Killed or tamed creatures are replaced over time. |  |
 | `boss.summon-arena-reward` | missing | Gather the offering, summon the boss at its altar, win the fight, take the reward. |  |
 | `boss.phases` | proven | A boss changes how it fights as it is hurt. | proofs/sim/boss-phases.proof.ts |
