@@ -17,7 +17,7 @@ import { bodyPrompts, bodyView } from "./game/deathBody";
 import { breedingPrompts, breedingView } from "./game/breeding";
 import { broodView, obeliskPrompts } from "./game/broodmother";
 import { BROOD_PHASES } from "./game/data/bosses";
-import { awakeTamingProgress, creaturePrompts, creaturesView, speciesNear, wildCountNear, wildHurtNear, nearestTameStance, wildLevelNear, mountCanFly, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
+import { awakeTamingProgress, creatureCard, creaturePrompts, lineageStrays, creaturesView, speciesNear, wildCountNear, wildHurtNear, nearestTameStance, wildLevelNear, mountCanFly, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
 import { tameFood } from "./game/tameHunger";
 import { STRUCTURES } from "./game/data/structures";
 import { content } from "./game/content";
@@ -409,6 +409,14 @@ export const game = defineGame({
         babyImprint: breeding.baby === null ? -1 : Math.round(breeding.baby.imprint * 100),
         babyWants: breeding.baby?.wants === null || breeding.baby === null ? 0 : 1,
         babySize: breeding.baby === null ? -1 : Math.round(breeding.baby.size * 100),
+        // The newest baby's lineage as its card shows it: stats from its mother, from its father, and raised by a mutation, and
+        // its stats that match neither parent once mutations are taken off (-1 with no baby).
+        babyStrays: breeding.baby === null ? -1 : lineageStrays(ctx, breeding.baby.id),
+        ...((lineage) => ({
+          babyFromMother: lineage === null ? -1 : lineage.filter((row) => row.from === "mother").length,
+          babyFromFather: lineage === null ? -1 : lineage.filter((row) => row.from === "father").length,
+          babyMutated: lineage === null ? -1 : lineage.filter((row) => row.mutated).length,
+        }))(breeding.baby === null ? null : (creatureCard(ctx, breeding.baby.id)?.lineage ?? null)),
         atBaby: breedingPrompts(ctx).length > 0 ? 1 : 0,
         ...sight("baby", babyAt),
         // The Broodmother: 0 nothing summoned, 1 the portal counting down, 2 the fight, 3 won and waiting to go back;

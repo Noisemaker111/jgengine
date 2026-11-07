@@ -102,6 +102,25 @@ function TameSheet({ growth }: { growth: NonNullable<CreatureCard["growth"]> }):
   );
 }
 
+/** A bred creature's lineage: each wild stat's levels and the parent they came from, a mutation marked. */
+function LineageSheet({ rows }: { rows: NonNullable<CreatureCard["lineage"]> }): ReactNode {
+  return (
+    <div data-lineage="" style={{ display: "flex", flexDirection: "column", gap: 2, fontSize: 12 }}>
+      <span style={{ opacity: 0.75 }}>Inherited levels</span>
+      {rows.map((row) => (
+        <div key={row.stat} data-lineage-stat={row.stat} data-from={row.from} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ flex: 1 }}>{row.label}</span>
+          <span style={{ fontVariantNumeric: "tabular-nums", opacity: 0.9 }}>{row.levels}</span>
+          <span style={{ minWidth: 104, textAlign: "right", fontSize: 11, color: row.mutated ? "#d79cff" : undefined, opacity: row.mutated ? 1 : 0.8 }}>
+            {row.from === "both" ? "both parents" : `from ${row.from}`}
+            {row.mutated ? " +mutation" : ""}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /** Hours and minutes, the way ARK shows breeding timers. */
 function clock(seconds: number): string {
   const hours = Math.floor(seconds / 3600);
@@ -222,6 +241,7 @@ export function CreaturePanel(): ReactNode {
       ) : null}
       {card.tamed ? <BreedingPanel mating={card.mating} /> : null}
       {card.growth !== null ? <TameSheet growth={card.growth} /> : null}
+      {card.lineage !== null ? <LineageSheet rows={card.lineage} /> : null}
       <div style={{ display: "flex", flexDirection: "column", gap: 3, maxHeight: "34vh", overflowY: "auto" }}>
         {card.inventory.every((slot) => slot === null) ? <span style={{ fontSize: 12, opacity: 0.7 }}>Empty. Double-click your items to give them.</span> : null}
         {card.inventory.map((slot, index) =>

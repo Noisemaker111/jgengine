@@ -22,7 +22,7 @@ import { playerMovementHeading } from "@jgengine/core/movement/playerMovement";
 import { editorLayers } from "../editorLayers";
 import { BAG, HOTBAR } from "./bags";
 import { itemDef, itemLabel, itemTraits } from "./data/items";
-import { IMPRINT_BONUS, IMPRINTED_STATS } from "./data/breeding";
+import { IMPRINT_BONUS, IMPRINTED_STATS, MUTATIONS } from "./data/breeding";
 import { TROPHY_DROPS } from "./data/bosses";
 import { killXp, SPECIES, speciesDef, statAt, TAME_LEVELS, TAME_STATS, temperamentOf, WILD_LEVELS, wildLevelCap,WILD_STATS, type SpeciesDef, type TameStat, type WildStat } from "./data/species";
 import { bonusLevels, NARCOTICS } from "./data/taming";
@@ -74,6 +74,8 @@ interface Creature {
   wild: Record<WildStat, number>;
   /** Mutations in its line. */
   mutations: number;
+  /** A bred creature's lineage: which parent each wild stat came from, and which a mutation raised; null for one born wild. */
+  lineage: Lineage | null;
   /** A tame left to mate with tames of its kind nearby (ARK's Enable Mating). */
   mating: boolean;
   /** How much of its imprint it had as a baby, 0 to 1: every stat but stamina, oxygen and speed up to 20% more. */
@@ -283,6 +285,36 @@ export interface CreatureGenes {
   sex: "female" | "male";
   wild: Record<WildStat, number>;
   mutations: number;
+  lineage: Lineage | null;
+}
+
+/** Which parent a bred creature's wild levels in one stat came from: "both" when they had the same. */
+export type StatSource = "mother" | "father" | "both";
+
+/** A bred creature's lineage, as ARK's stat screen shows it: its parents, each stat's parent, and each mutation's stat. */
+export interface Lineage {
+  mother: string;
+  father: string;
+  from: Record<WildStat, StatSource>;
+  /** The stat each mutation raised, once per mutation (one stat can take two). */
+  mutated: WildStat[];
+}
+
+/**
+ * A bred creature's stats that match neither parent, its mutations taken off: 0 when it inherited every stat whole;
+ * -1 for one born wild or whose parents are gone.
+ */
+export function lineageStrays(ctx: GameContext, id: string): number {
+  const creatures = worldOf(ctx).creatures;
+  const lineage = creatures.get(id)?.lineage ?? null;
+  const child = creatures.get(id);
+  const mum = lineage === null ? undefined : creatures.get(lineage.mother);
+  const dad = lineage === null ? undefined : creatures.get(lineage.father);
+  if (child === undefined || lineage === null || mum === undefined || dad === undefined) return -1;
+  return WILD_STATS.filter((stat) => {
+    const levels = child.wild[stat] - lineage.mutated.filter((field) => field === stat).length * MUTATIONS.amount;
+    return levels !== mum.wild[stat] && levels !== dad.wild[stat];
+  }).length;
 }
 
 export function spawnCreature(
@@ -297,7 +329,7 @@ export function spawnCreature(
   const world = worldOf(ctx);
   const id = `${species}_${(world.seq += 1)}`;
   const sex = ctx.rng() < 0.5 ? "female" : "male";
-  const genes = options.genes ?? { sex: options.sex ?? sex, wild: scatterPoints((options.level ?? rollLevel(ctx, world.regions.get(options.region ?? "")?.maxLevel ?? WILD_LEVELS.max)) - 1, WILD_STATS, ctx.rng), mutations: 0 };
+  const genes = options.genes ?? { sex: options.sex ?? sex, wild: scatterPoints((options.level ?? rollLevel(ctx, world.regions.get(options.region ?? "")?.maxLevel ?? WILD_LEVELS.max)) - 1, WILD_STATS, ctx.rng), mutations: 0, lineage: null };
   const level = 1 + WILD_STATS.reduce((sum, stat) => sum + genes.wild[stat], 0);
   ctx.scene.entity.spawn(species, { id, position, rotationY: ctx.rng() * Math.PI * 2, role: "npc", ...(options.size === undefined ? {} : { size: options.size }) });
   const creature: Creature = {
@@ -316,6 +348,7 @@ export function spawnCreature(
     sex: genes.sex,
     wild: { ...genes.wild },
     mutations: genes.mutations,
+    lineage: genes.lineage,
     mating: false,
     imprint: 0,
   };
@@ -769,7 +802,7 @@ export function wildFemales(ctx: GameContext): { id: string; species: string; at
 /** A creature's genes, for its babies; null when it is gone. */
 export function genesOf(ctx: GameContext, id: string): CreatureGenes | null {
   const creature = worldOf(ctx).creatures.get(id);
-  return creature === undefined ? null : { sex: creature.sex, wild: { ...creature.wild }, mutations: creature.mutations };
+  return creature === undefined ? null : { sex: creature.sex, wild: { ...creature.wild }, mutations: creature.mutations, lineage: creature.lineage };
 }
 
 /** Set a bred tame's imprint: its imprinted stats grow, and its health with them. */
@@ -1286,6 +1319,11 @@ export function creatureCard(ctx: GameContext, id: string | null) {
     mating: creature.mating,
     imprint: creature.imprint,
     mutations: creature.mutations,
+    // Each wild stat's levels, the parent they came from and whether a mutation raised them; null for one born wild.
+    lineage:
+      creature.lineage === null
+        ? null
+        : WILD_STATS.map((stat) => ({ stat, label: TAME_STATS.find((entry) => entry.id === stat)?.label ?? stat, levels: creature.wild[stat], from: creature.lineage!.from[stat], mutated: creature.lineage!.mutated.includes(stat) })),
     order: creature.tamed ? (world.roster.get(creature.id)?.command ?? null) : null,
     stance: creature.tamed ? (world.roster.get(creature.id)?.stance ?? null) : null,
     taming: creature.tamed ? null : tamingView(world, creature, world.taming.state(creature.id)),
@@ -1508,6 +1546,7 @@ export function creaturesSave(ctx: GameContext) {
       world.creatures = new Map(data.creatures.map((saved) => {
         const creature = structuredClone(saved);
         creature.lastHitBy ??= null;
+        creature.lineage ??= null;
         creature.growth = creature.growth == null ? (creature.tamed ? { tamedAt: creature.level, gained: 0, xp: 0, points: TAME_POINTS.empty() } : null) : { ...creature.growth, points: TAME_POINTS.normalize(creature.growth.points) };
         creature.stamina ??= statOf(creature, "stamina");
         return [creature.id, creature];
