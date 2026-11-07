@@ -171,6 +171,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/find-features.proof.ts",
+      "proves": [
+        "onboarding.find-features"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/first-goal.proof.ts",
       "proves": [
         "onboarding.first-goal"
