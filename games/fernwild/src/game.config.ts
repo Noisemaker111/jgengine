@@ -279,7 +279,7 @@ export const game = defineGame({
         ...sight("floor", base.floor),
         ...sight("doorway", base.doorway),
         crafting: view.queue.length,
-        // The first queued craft's progress in percent (-1 with none), and the fuel left in the nearest campfire or pot within 6 m (-1 with none).
+        // The first queued craft's progress in percent (-1 with none), and the fuel left in the nearest burning station within 6 m (-1 with none).
         craftProgress: view.queue[0] === undefined ? -1 : Math.round(view.queue[0].progress * 100),
         fuel: Math.round(fuelNear(ctx, here, 6) * 10) / 10,
         screen: openScreen(ctx) === null ? 0 : 1,
@@ -316,6 +316,9 @@ export const game = defineGame({
         // Wild eggs and kibble carried, any size or tier.
         eggsCarried: EGG_SIZES.reduce((sum, size) => sum + ctx.player.inventory.count(BAG, eggItem(size)), 0),
         kibble: KIBBLE_TIERS.reduce((sum, tier) => sum + ctx.player.inventory.count(BAG, kibbleItem(tier)), 0),
+        // Metal ingots carried, and the hotbar key (1-based) a metal pick sits on, 0 with none there.
+        ingots: ctx.player.inventory.count(BAG, "metal_ingot"),
+        metalPickKey: keyOf("metal_pick"),
         // The nearest egg on the ground within 60 m, and the nearest cooking pot placed.
         ...sight("wildEgg", nearestEgg(eggsOnGround(ctx), here, 60)),
         ...sight("pot", stationNear("cooking_pot")),

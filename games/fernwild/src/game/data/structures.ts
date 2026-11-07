@@ -105,6 +105,7 @@ export const SHAPES: readonly StructureShapeDef[] = [
   },
   { id: "campfire", boxes: [{ min: [-0.5, 0, -0.5], max: [0.5, 0.35, 0.5] }], ground: { maxStep: 0.6 }, floor: true },
   { id: "mortar_and_pestle", boxes: [{ min: [-0.3, 0, -0.3], max: [0.3, 0.55, 0.3] }], ground: { maxStep: 0.6 }, floor: true },
+  { id: "refining_forge", boxes: [{ min: [-0.6, 0, -0.6], max: [0.6, 1.3, 0.6] }], ground: { maxStep: 0.6 }, floor: true },
   { id: "cooking_pot", boxes: [{ min: [-0.55, 0, -0.55], max: [0.55, 0.8, 0.55] }], ground: { maxStep: 0.6 }, floor: true },
   { id: "storage_box", boxes: [{ min: [-0.5, 0, -0.35], max: [0.5, 0.6, 0.35] }], ground: { maxStep: 0.6 }, floor: true },
   { id: "crop_plot", boxes: [{ min: [-1, 0, -1], max: [1, 0.4, 1] }], ground: { maxStep: 0.6 }, floor: true },
@@ -164,6 +165,8 @@ export const STRUCTURES: readonly StructureDef[] = [
   piece("mortar_and_pestle", "Mortar and Pestle", "mortar_and_pestle", "station", 1000, 6, 6, { stone: 65, hide: 15 }, 12, "Grinds sparkpowder and narcotics."),
   // ARK's Cooking Pot (level and points approximate): where eggs become kibble.
   piece("cooking_pot", "Cooking Pot", "cooking_pot", "station", 1000, 10, 9, { stone: 75, thatch: 15, wood: 10, flint: 8 }, 20, "Cooks kibble from an egg and food: the bait creatures tame fastest on."),
+  // ARK's Refining Forge (level, points and cost approx): fed wood, it smelts metal ore into ingots.
+  piece("refining_forge", "Refining Forge", "refining_forge", "station", 1000, 16, 12, { stone: 125, flint: 5, hide: 65, wood: 20, fiber: 40 }, 30, "Smelts metal ore into ingots while it burns. E feeds it wood."),
   piece("wooden_foundation", "Wooden Foundation", "foundation", "wood", 15000, 11, 6, { wood: 80, thatch: 20, fiber: 15 }, 4, "Fists and stone tools can't break it."),
   piece("wooden_wall", "Wooden Wall", "wall", "wood", 10000, 11, 7, { wood: 40, thatch: 10, fiber: 7 }, 4, "Fists and stone tools can't break it."),
   piece("wooden_doorframe", "Wooden Doorframe", "doorframe", "wood", 10000, 11, 6, { wood: 30, thatch: 8, fiber: 6 }, 4, "A wooden wall with a door gap."),
@@ -195,7 +198,7 @@ export const BASE_BUILDING: BaseBuildingConfig = {
 };
 
 /** Stations a recipe can need, by piece id. */
-export const STATIONS: ReadonlySet<string> = new Set(["campfire", "mortar_and_pestle", "cooking_pot"]);
+export const STATIONS: ReadonlySet<string> = new Set(["campfire", "mortar_and_pestle", "cooking_pot", "refining_forge"]);
 
 /** Pieces a dead survivor wakes on instead of the beach; each is used up by it. */
 export const BEDS: ReadonlySet<string> = new Set(["hide_sleeping_bag"]);

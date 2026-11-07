@@ -57,6 +57,9 @@ const ITEM_ENGRAMS: readonly EngramDef[] = [
   engram("tranq_arrow", 21, 12, { stone_arrow: 1, narcotic: 1 }, 1),
   engram("fertilizer", 15, 3, { spoiled_meat: 3, thatch: 10 }, 5, { station: "mortar_and_pestle" }),
   engram("stimulant", 11, 6, { stimberry: 5, sparkpowder: 2 }, 3, { station: "mortar_and_pestle" }),
+  // ARK's metal tools: a pick is one ingot, a hatchet eight (levels and points approx).
+  engram("metal_pick", 19, 12, { metal_ingot: 1, wood: 1, hide: 10 }, 5),
+  engram("metal_hatchet", 19, 12, { metal_ingot: 8, wood: 1, hide: 10 }, 5),
 ];
 
 /** Every engram in ARK's level order: items above, building pieces from their own table. Level 1 engrams cost nothing and are known from the start. */
@@ -66,9 +69,11 @@ export const ENGRAMS: readonly EngramDef[] = [
   ...STRUCTURES.map((entry) => engram(entry.id, entry.level, entry.points, entry.cost, entry.shape === "foundation" || entry.tier === "station" ? 5 : 2)),
 ].sort((a, b) => a.level - b.level);
 
-/** Station recipes that need no engram: cooking on a campfire, and kibble in a cooking pot. */
+/** Station recipes that need no engram: cooking on a campfire, kibble in a cooking pot, and smelting in a forge. */
 export const COOKING: readonly RecipeDef[] = [
   ...KIBBLE_RECIPES,
+  // ARK's forge: two ore make one ingot (seconds approx).
+  { id: "smelt_metal", inputs: [{ itemId: "metal", count: 2 }], outputs: [{ itemId: "metal_ingot", count: 1 }], seconds: 20, station: "refining_forge", stationRange: 4, category: "refining_forge" },
   { id: "cook_meat", inputs: [{ itemId: "raw_meat", count: 1 }], outputs: [{ itemId: "cooked_meat", count: 1 }], seconds: 20, station: "campfire", stationRange: 4, category: "campfire" },
 ];
 

@@ -140,6 +140,7 @@ export const ITEMS: readonly ItemDef[] = [
   resource("fiber", "Fiber", 0.01, 300, "Plant fiber pulled from bushes by hand."),
   resource("hide", "Hide", 0.01, 200, "Skin from a carcass."),
   resource("metal", "Metal", 1, 300, "Raw ore from the glinting rocks high in the mountains."),
+  resource("metal_ingot", "Metal Ingot", 1, 200, "Smelted from metal ore in a lit refining forge. Metal tools are made of it."),
   resource("obsidian", "Obsidian", 1, 100, "Black volcanic glass from the volcano and the high cliffs."),
   resource("crystal", "Crystal", 1, 100, "Clear shards from the highest peaks and the snow."),
   resource("oil", "Oil", 0.2, 100, "Thick black oil from the dark rocks on the frozen shore."),
@@ -187,6 +188,15 @@ export const ITEMS: readonly ItemDef[] = [
   {
     id: "stone_hatchet", label: "Stone Hatchet", kind: "tool", weight: 1, stack: 1, note: "Wood from trees, stone from rocks.",
     tool: { durability: 40, gather: { power: 1.5, biases: { wood: 2.2, thatch: 0.3, stone: 2.2, flint: 0.25, metal: 0.3, obsidian: 0.25, crystal: 0.25, oil: 0.25, hide: 1.4, raw_meat: 0.4 }, defaultBias: 0 }, reach: 2.2, damage: 10, stamina: 3, cooldown: 0.7 },
+  },
+  // ARK's metal tools: more of everything per swing, they last longer, and only metal breaks stone (numbers approx).
+  {
+    id: "metal_pick", label: "Metal Pick", kind: "tool", weight: 1, stack: 1, note: "Far more flint and ore than a stone pick, and it breaks stone.",
+    tool: { durability: 100, gather: { power: 2.5, biases: { thatch: 1.6, wood: 0.25, flint: 1.6, stone: 0.35, metal: 1.6, obsidian: 1.6, crystal: 1.6, oil: 1.6, raw_meat: 1.4, hide: 0.4 }, defaultBias: 0 }, reach: 2.2, damage: 20, damageClass: "metal", stamina: 3, cooldown: 0.7 },
+  },
+  {
+    id: "metal_hatchet", label: "Metal Hatchet", kind: "tool", weight: 1, stack: 1, note: "Far more wood and stone than a stone hatchet, and it breaks stone.",
+    tool: { durability: 100, gather: { power: 2.5, biases: { wood: 2.2, thatch: 0.3, stone: 2.2, flint: 0.25, metal: 0.3, obsidian: 0.25, crystal: 0.25, oil: 0.25, hide: 1.4, raw_meat: 0.4 }, defaultBias: 0 }, reach: 2.2, damage: 18, damageClass: "metal", stamina: 3, cooldown: 0.7 },
   },
   {
     id: "wooden_club", label: "Wooden Club", kind: "tool", weight: 1, stack: 1, note: "Knocks creatures out.",
