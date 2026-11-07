@@ -307,9 +307,45 @@ export function packageDisplayName(pkgName: string | undefined): string | null {
 export function readGameConfigName(projectDir: string): string | null {
   const configPath = join(projectDir, "src", "game.config.ts");
   if (!existsSync(configPath)) return null;
-  const source = readFileSync(configPath, "utf8");
-  const match = source.match(/name:\s*["'`]([^"'`]+)["'`]/);
-  return match?.[1] ?? null;
+  return defineGameName(readFileSync(configPath, "utf8"));
+}
+
+/**
+ * The top-level `name` of the object passed to `defineGame(...)`, skipping every nested object's
+ * `name` (a command's `invoke: { name: "relay.start" }` once named a whole desktop app). Strings
+ * and comments are stepped over so a brace inside one does not change the depth.
+ * @internal
+ */
+export function defineGameName(source: string): string | null {
+  const call = /\bdefineGame\s*\(\s*\{/.exec(source);
+  if (call === null) return null;
+  let depth = 1;
+  for (let index = call.index + call[0].length; index < source.length && depth > 0; index += 1) {
+    const char = source[index];
+    if (char === '"' || char === "'" || char === "`") {
+      const end = source.indexOf(char, index + 1);
+      if (end < 0) return null;
+      index = end;
+      continue;
+    }
+    if (char === "/" && source[index + 1] === "/") {
+      const end = source.indexOf("\n", index);
+      index = end < 0 ? source.length : end;
+      continue;
+    }
+    if (char === "/" && source[index + 1] === "*") {
+      const end = source.indexOf("*/", index + 2);
+      index = end < 0 ? source.length : end + 1;
+      continue;
+    }
+    if (char === "{" || char === "[" || char === "(") depth += 1;
+    else if (char === "}" || char === "]" || char === ")") depth -= 1;
+    else if (depth === 1) {
+      const match = /^name\s*:\s*(["'`])([^"'`]+)\1/.exec(source.slice(index, index + 200));
+      if (match !== null && !/[\w$]/.test(source[index - 1] ?? "")) return match[2] ?? null;
+    }
+  }
+  return null;
 }
 
 /** @internal */

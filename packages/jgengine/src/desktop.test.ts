@@ -9,6 +9,7 @@ import {
   buildPlan,
   checkToolchains,
   defaultIdentifier,
+  defineGameName,
   desktopCodeHash,
   desktopLibRs,
   frontendBuildCommand,
@@ -198,6 +199,19 @@ describe("metadata defaults", () => {
     expect(meta.version).toBe("0.1.0");
     expect(meta.identifier).toBe("com.jgengine.probegame");
     expect(meta.windowTitle).toBe("Probe Game");
+  });
+
+  test("the product name is defineGame's own name, never a nested object's", () => {
+    const source = `const interactables = [{ prompt: { invoke: { name: "relay.start" } } }];
+export const game = defineGame({
+  scene: { name: "inner", props: [{ name: "crate" }] },
+  // name: "commented out"
+  hud: "a { brace",
+  name: "Scrap Signal",
+});`;
+    expect(defineGameName(source)).toBe("Scrap Signal");
+    expect(defineGameName(`export const game = defineGame({ scene: { name: "inner" } });`)).toBeNull();
+    expect(defineGameName(`export const config = { name: "Not A Game" };`)).toBeNull();
   });
 
   test("url mode defaults name to hostname and version 0.1.0", () => {
