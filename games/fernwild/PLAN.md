@@ -16,21 +16,21 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | menu | 0/1 | 0 | 0 | 1 | 0 |
 | progression | 0/1 | 1 | 0 | 0 | 0 |
 | content | 3/5 | 2 | 0 | 0 | 0 |
-| survival | 6/9 | 0 | 0 | 3 | 0 |
-| building | 1/3 | 0 | 0 | 2 | 0 |
+| survival | 7/9 | 0 | 0 | 2 | 0 |
+| building | 2/3 | 0 | 0 | 1 | 0 |
 | harvest | 3/3 | 0 | 0 | 0 | 0 |
 | crafting | 2/6 | 0 | 0 | 4 | 0 |
 | taming | 9/9 | 0 | 0 | 0 | 0 |
-| creatures | 7/13 | 0 | 0 | 6 | 0 |
-| breeding | 2/4 | 0 | 0 | 2 | 0 |
+| creatures | 8/13 | 0 | 0 | 5 | 0 |
+| breeding | 3/4 | 0 | 0 | 1 | 0 |
 | spawns | 0/3 | 0 | 0 | 3 | 0 |
 | boss | 1/3 | 0 | 0 | 2 | 0 |
 | cave | 2/2 | 0 | 0 | 0 | 0 |
-| **total** | **38/67** | 3 | 0 | 26 | 0 |
+| **total** | **42/67** | 3 | 0 | 22 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: creature-survival. 38/67 proven · 3 failing · 26 missing.
+Genres: creature-survival. 42/67 proven · 3 failing · 22 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
@@ -48,7 +48,7 @@ Genres: creature-survival. 38/67 proven · 3 failing · 26 missing.
 | `content.weapons-have-ammo` | proven | Every weapon that fires has obtainable ammo, or needs none. | content check |
 | `survival.vitals-drain` | proven | Hunger and thirst fall over time and hurt the player at zero. | proofs/sim/vitals-drain.proof.ts |
 | `survival.eat-drink` | proven | Eating and drinking restore the meters. | proofs/sim/eat-drink.proof.ts |
-| `survival.temperature` | missing | Climate pushes body temperature; clothing, fire or shelter counter it. |  |
+| `survival.temperature` | proven | Climate pushes body temperature; clothing, fire or shelter counter it. | proofs/sim/temperature.proof.ts |
 | `survival.oxygen-swim` | proven | Swimming under water drains breath; surfacing refills it. | proofs/sim/dive-breath.proof.ts |
 | `survival.food-spoils` | proven | Carried food spoils over time into something else. | proofs/sim/food-spoils.proof.ts |
 | `survival.respawn-point` | missing | A placed bed or bag becomes where the player wakes after death. |  |
@@ -57,7 +57,7 @@ Genres: creature-survival. 38/67 proven · 3 failing · 26 missing.
 | `survival.farm` | missing | Plant a seed in a plot; with water and fertilizer it grows a harvest. |  |
 | `building.place-snap` | proven | Building pieces place, snap to each other and stand. | proofs/sim/build-snap.proof.ts |
 | `building.shelter` | missing | A built enclosure shelters the player from weather and cold. |  |
-| `building.tiers-durability` | missing | Stronger building tiers resist attacks a weaker tier does not. |  |
+| `building.tiers-durability` | proven | Stronger building tiers resist attacks a weaker tier does not. | proofs/sim/build-tiers.proof.ts |
 | `harvest.tool-bias` | proven | The tool used changes what a tree, rock or body yields, and how much. | proofs/sim/tool-bias.proof.ts |
 | `harvest.node-respawn` | proven | Depleted trees, rocks and bushes come back after a while. | proofs/sim/node-respawn.proof.ts |
 | `harvest.carcass` | proven | A killed creature's body yields meat and hide by tool. | proofs/sim/carcass-harvest.proof.ts |
@@ -87,11 +87,11 @@ Genres: creature-survival. 38/67 proven · 3 failing · 26 missing.
 | `creatures.behavior-modes` | missing | Set a tame passive, neutral or aggressive, and it fights accordingly. |  |
 | `creatures.level-up` | proven | Tames gain experience and the player spends their levels on stats. | proofs/sim/tame-level-up.proof.ts |
 | `creatures.ride.ground` | proven | Saddle a tame and ride it, steering and attacking from its back. | proofs/sim/ride-ground.proof.ts |
-| `creatures.ride.fly` | missing | Ride a flying tame: take off, climb, cross terrain that blocks walking, and land. |  |
+| `creatures.ride.fly` | proven | Ride a flying tame: take off, climb, cross terrain that blocks walking, and land. | proofs/sim/ride-fly.proof.ts |
 | `creatures.ride.swim` | missing | Ride a swimming tame through water. |  |
 | `breeding.pair-mate` | proven | Put a male and a female tame together and they produce an egg or a baby. | proofs/sim/breed-mate.proof.ts |
 | `breeding.incubate` | proven | An egg hatches only kept at the right temperature. | proofs/sim/breed-incubate.proof.ts |
-| `breeding.raise-imprint` | missing | Feed and care for a baby; care raises its quality as it grows. |  |
+| `breeding.raise-imprint` | proven | Feed and care for a baby; care raises its quality as it grows. | proofs/sim/breed-imprint.proof.ts |
 | `breeding.inherit-mutate` | missing | Offspring inherit their parents' stats, with a chance of mutation. |  |
 | `spawns.biome-weighted` | missing | Each region spawns its own creatures in its own mix. |  |
 | `spawns.danger-by-distance` | missing | Danger rises the further the player travels from the start. |  |
