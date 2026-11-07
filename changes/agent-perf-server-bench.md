@@ -1,7 +1,5 @@
 bun run perf server, a repeatable load benchmark for the multiplayer host: N players in one room on the real createGameServerHost and createHostRouter, each subscribed to presence and posing every 100 ms of a fake clock that also drives the router's timers; one JSON line per room size (wall and CPU ms per game second, MB and messages out per game second, average message bytes), and a stderr note when a size cannot keep up in real time
 
-Engine seam: none - repository tooling only
-
 ### Added
 
 - bun run perf server, a repeatable load benchmark for the multiplayer host: N players in one room on the real createGameServerHost and createHostRouter, each subscribed to presence and posing every 100 ms of a fake clock that also drives the router's timers; one JSON line per room size (wall and CPU ms per game second, MB and messages out per game second, average message bytes), and a stderr note when a size cannot keep up in real time
