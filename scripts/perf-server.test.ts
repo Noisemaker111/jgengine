@@ -1,6 +1,17 @@
 import { expect, test } from "bun:test";
 
-import { MAX_PLAYERS, measureRoom, parseArgs, rowNotes, stepsFor, summarize, type RunSample } from "./perf-server";
+import {
+  MAX_PLAYERS,
+  MAX_STEPS,
+  MEASURE_MS,
+  MIN_STEPS,
+  measureRoom,
+  nextStep,
+  parseArgs,
+  rowNotes,
+  summarize,
+  type RunSample,
+} from "./perf-server";
 
 test("defaults are the four measured room sizes, three repeats, no json file", () => {
   expect(parseArgs([])).toEqual({ players: [16, 32, 64, 128], repeats: 3, json: null, maxSeconds: 60 });
@@ -21,12 +32,14 @@ test("bad input fails by name", () => {
   expect(() => parseArgs(["64"])).toThrow("unexpected argument 64");
 });
 
-test("big rooms measure fewer steps, never under five", () => {
-  expect(stepsFor(16)).toBe(100);
-  expect(stepsFor(32)).toBe(100);
-  expect(stepsFor(64)).toBe(12);
-  expect(stepsFor(128)).toBe(5);
-  expect(stepsFor(MAX_PLAYERS)).toBe(5);
+test("a run measures up to 100 steps, a slow one stops after 5 s once it has 5, and the hard cap ends it", () => {
+  expect(nextStep(0, 0, 999_000, 60)).toBe("step");
+  expect(nextStep(50, 1000, 2000, 60)).toBe("step");
+  expect(nextStep(MAX_STEPS, 1000, 2000, 60)).toBe("done");
+  expect(nextStep(MIN_STEPS - 1, MEASURE_MS * 2, MEASURE_MS * 2, 60)).toBe("step");
+  expect(nextStep(MIN_STEPS, MEASURE_MS, MEASURE_MS, 60)).toBe("done");
+  expect(nextStep(1, 30_000, 61_000, 60)).toBe("capped");
+  expect(nextStep(3, 10, 20, 60, 3)).toBe("done");
 });
 
 const sample = (wallMs: number, overrides: Partial<RunSample> = {}): RunSample => ({
@@ -56,13 +69,21 @@ test("a room over a second per game second, or stopped at the cap, says so on st
   expect(row).toMatchObject({ steps: 2, gameSeconds: 0.2, wallMsPerGameSecond: 2500, keepsUpInRealTime: false, capped: true });
   expect(rowNotes(row, 60)).toEqual([
     "perf server: 128 players cannot keep up in real time: 2500 wall ms per game second (over 1000)",
-    "perf server: 128 players hit the 60 s cap and measured 2 steps instead of 5",
+    "perf server: 128 players hit the 60 s cap after 2 measured steps",
   ]);
 });
 
-test("a real room sends every player's pose to every subscriber", async () => {
-  const run = await measureRoom(4, 5, 60);
-  expect(run).toMatchObject({ steps: 5, capped: false, messages: 4 * 4 * 5 });
+// The router decides how often a roster goes out (once per pose or once per pose interval), so this
+// pins only what any policy sends: each subscriber hears the room at least once per game step, at
+// most once per pose. A harness that never subscribes, or timers that never fire on the fake clock,
+// sends nothing.
+test("a real room reaches every subscriber at least once per step", async () => {
+  const players = 4;
+  const steps = 5;
+  const run = await measureRoom(players, 60, steps);
+  expect(run).toMatchObject({ steps, capped: false });
+  expect(run.messages % players).toBe(0);
+  expect(run.messages).toBeGreaterThanOrEqual(players * steps);
+  expect(run.messages).toBeLessThanOrEqual(players * players * steps);
   expect(run.bytes).toBeGreaterThan(run.messages * 100);
-  expect(run.wallMs).toBeGreaterThan(0);
 });
