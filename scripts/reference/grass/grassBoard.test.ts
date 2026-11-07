@@ -18,7 +18,7 @@ function solid(width: number, height: number, rgb: readonly [number, number, num
 describe("grass board", () => {
   test("every reference photo is committed, credited in CREDITS.md and grows a shipped species", () => {
     const credits = readFileSync(join(root, "CREDITS.md"), "utf8");
-    const species = new Set(GRASS_PRESETS.map((preset) => preset.id));
+    const species = new Set<string>(GRASS_PRESETS.map((preset) => preset.id));
     for (const photo of GRASS_REFERENCE_PHOTOS) {
       expect(existsSync(join(import.meta.dir, "photos", photo.file))).toBe(true);
       expect(credits).toContain(photo.credit.source);
