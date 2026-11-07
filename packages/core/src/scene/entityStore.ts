@@ -347,9 +347,9 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
     freeHandles.push(handle);
   }
 
-  function mirrorId(id: string, entity: SceneEntity<TMeta>): void {
-    const handle = (entity as { [HANDLE]?: number })[HANDLE] ?? handles.get(id);
-    if (handle !== undefined && handleEntities[handle] === entity) mirror(handle, entity);
+  /** Mirror a stored entity changed in place: every stored entity was bound, so it carries its handle. */
+  function mirrorStored(entity: SceneEntity<TMeta>): void {
+    mirror((entity as unknown as { [HANDLE]: number })[HANDLE], entity);
   }
 
   function writeEntity(entity: SceneEntity<TMeta>, previous = store.get(entity.id)?.behaviors, fresh = false): void {
@@ -511,7 +511,7 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       else if (patch.look !== undefined) current.look = patch.look;
       if (patch.meta !== undefined) current.meta = patch.meta;
       if (patch.behaviors === undefined) {
-        mirrorId(id, current);
+        mirrorStored(current);
         store.touch(id);
       } else writeEntity(current, previousBehaviors);
       return true;
@@ -552,7 +552,7 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       if (pose.rotationY !== undefined) current.rotationY = pose.rotationY;
       if (pose.rotationX !== undefined) current.rotationX = pose.rotationX;
       if (pose.rotationZ !== undefined) current.rotationZ = pose.rotationZ;
-      mirrorId(id, current);
+      mirrorStored(current);
       store.touch(id);
       return true;
     },
@@ -561,7 +561,7 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       if (current === undefined || !Array.isArray(velocity) || velocity.length !== 3 ||
           !velocity.every((component) => typeof component === "number" && Number.isFinite(component))) return false;
       current.velocity = [velocity[0], velocity[1], velocity[2]];
-      mirrorId(id, current);
+      mirrorStored(current);
       store.touch(id);
       return true;
     },
@@ -644,7 +644,7 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       current.position = pose.position;
       current.rotationY = pose.rotationY;
       current.velocity = [0, 0, 0];
-      mirrorId(id, current);
+      mirrorStored(current);
       store.touch(id);
       return true;
     },
