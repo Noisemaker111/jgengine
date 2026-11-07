@@ -46,7 +46,7 @@ Use [capabilities.md](capabilities.md) for intent-to-import discovery, [api.md](
 - A viewer's interest is the game's `replication: { aoiRadius, aoiAlways }`. The host asks the scene spatial index for entities within `aoiRadius` of the viewer's own entity, adds `aoiAlways` ids (a list or a function), and sends each connection a diff of only what entered, changed or left its view. A viewer with no entity yet holds every entity.
 - A hosted world auto-saves a changed world at most once per `saveIntervalMs` (the node server and the browser host default to `DEFAULT_HOST_SAVE_INTERVAL_MS`, 1000); `0` saves after every changed tick, which copies the whole world 20 times a second. `bun scripts/multiplayer-load.ts` reports host ms per tick, and bytes allocated per tick under `BUN_JSC_useGC=false`.
 - A module that throttles itself with `priority` still gets a projected baseline each tick instead of diffs.
-- Measure with `bun scripts/multiplayer-load.ts` (bytes and host ms per tick for N clients and E entities) and `bun scripts/multiplayer-two-clients.ts` (a real game, two clients).
+- Measure with `bun run perf server` (N players posing in one room: host wall and CPU ms, MB and messages out per game second, from presence fan-out), `bun scripts/multiplayer-load.ts` (world replication: bytes and host ms per tick for N clients and E entities) and `bun scripts/multiplayer-two-clients.ts` (a real game, two clients).
 
 ## Traps
 
