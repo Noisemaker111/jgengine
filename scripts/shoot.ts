@@ -3,7 +3,8 @@
 // own captures, so it is not held to a single capture's time limit; `--at <commit>` captures that
 // commit and puts the checkout back (scripts/probe-commit.ts). `--load` times cold opens of games
 // on a production build of the site (scripts/load-check.ts), guarded per run of all games. `--board`
-// shoots the grass reference boards (scripts/reference/grass/grassBoard.ts), each capture guarded by shoot itself.
+// shoots the grass reference boards (scripts/reference/grass/grassBoard.ts) in bounded runs that
+// each carry on where the last stopped, each capture guarded by shoot itself.
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
@@ -20,8 +21,22 @@ export const AT_COMMIT_GUARD_SECONDS = 1200;
 /** A load run builds the site once and opens every game cold; the guard covers all of it. */
 export const LOAD_GUARD_SECONDS = 3600;
 
-/** A board run shoots up to a few hundred captures, each under its own shoot guard. */
-export const BOARD_GUARD_SECONDS = 5400;
+/** Seconds one board run shoots for by default before it leaves the rest of the board to the next run. */
+export const BOARD_BUDGET_SECONDS = 360;
+
+/** Laying out a full board's sheets and its comparison with an earlier board, after the last shot. */
+export const BOARD_SHEETS_SECONDS = 300;
+
+/**
+ * The guard on one board run: its budget, the capture it started just inside the budget (each under
+ * its own shoot guard), and the sheets. A run that outlasts this hung; a long board is many runs.
+ */
+export function boardGuardSeconds(argv: readonly string[]): number {
+  const at = argv.indexOf("--budget");
+  const asked = at < 0 ? Number.NaN : Number(argv[at + 1]);
+  const budget = Number.isFinite(asked) && asked > 0 ? asked : BOARD_BUDGET_SECONDS;
+  return Math.ceil(budget) + SHOOT_GUARD_SECONDS + BOARD_SHEETS_SECONDS;
+}
 
 const SHOOT_USAGE = {
   summary: "capture a game, a fixture or a page; --prove builds an evidence bundle instead",
@@ -41,7 +56,7 @@ const SHOOT_USAGE = {
 export function shootCommand(argv: readonly string[]): string[] {
   if (argv[0] === "--prove") return ["games/scripts/prove.ts", ...argv.slice(1)];
   if (argv[0] === "--at") return ["scripts/guard.ts", String(AT_COMMIT_GUARD_SECONDS), "bun scripts/probe-commit.ts", ...argv.slice(1, 2), "--", ...argv.slice(2)];
-  if (argv[0] === "--board") return ["scripts/guard.ts", String(BOARD_GUARD_SECONDS), "bun scripts/reference/grass/grassBoard.ts", ...argv.slice(1)];
+  if (argv[0] === "--board") return ["scripts/guard.ts", String(boardGuardSeconds(argv)), "bun scripts/reference/grass/grassBoard.ts", ...argv.slice(1)];
   if (argv[0] === "--load") return ["scripts/guard.ts", String(LOAD_GUARD_SECONDS), "bun scripts/load-check.ts", ...argv.slice(1)];
   return ["scripts/guard.ts", String(SHOOT_GUARD_SECONDS), "bun scripts/shoot-dev.ts", ...argv];
 }
