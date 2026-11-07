@@ -1130,6 +1130,7 @@ dependencies = [
  "jg-scene",
  "jg-v8",
  "pollster",
+ "serde_json",
  "wgpu",
  "winit",
 ]

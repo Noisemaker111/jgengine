@@ -15,6 +15,9 @@ export async function installNativeRecorder(port: number): Promise<{ ok: boolean
   // The game's renderer draws to the page's biggest canvas.
   const renderer = renderers.slice().sort((a, b) => b.domElement.width * b.domElement.height - a.domElement.width * a.domElement.height)[0];
   const gl: WebGL2RenderingContext = renderer.getContext();
+  // Draws through WEBGL_multi_draw bypass every hook below; the export hides the extension before
+  // the page loads, so three draws BatchedMesh items one by one. Refuse to record if it shows.
+  if (gl.getExtension("WEBGL_multi_draw") !== null) return { ok: false, error: "WEBGL_multi_draw is visible: its draws would be missing from the recording" };
   const base = `http://127.0.0.1:${port}`;
   const put = async (name: string, body: Blob | ArrayBuffer | Uint8Array | string): Promise<void> => {
     const res = await fetch(`${base}/put?name=${encodeURIComponent(name)}`, { method: "POST", body: body as BodyInit });

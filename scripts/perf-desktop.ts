@@ -179,7 +179,15 @@ export async function launchAndMeasure(args: LaunchArgs): Promise<DesktopRecord>
       // Into the scene the browser harness measures: the dev runner runs the game's `capture.play`
       // (past its menus) itself; a shipped build is asked to through the agent bridge.
       const start = await startCaptureScene(session);
-      // The same settle the browser harness gives a game: shader warmup and streaming finish first.
+      // The scene's shader warmup covers it ("Preparing scene (90 shaders)") until every program is
+      // compiled: Harbor Heat still had 597 to go ten seconds in, and that window drew nothing. Wait
+      // out the warmup (its own cap is 2.5 minutes), then the same settle the browser harness gives.
+      let warming = true;
+      for (let attempt = 0; attempt < 360 && warming; attempt += 1) {
+        warming = (await session.evaluate<boolean>(`document.querySelector("[data-shell-warmup]") !== null`).catch(() => true)) ?? true;
+        if (warming) await Bun.sleep(500);
+      }
+      if (warming) throw new Error("the scene's shader warmup did not finish within 3 minutes");
       await Bun.sleep(10_000);
       const release = await startPath(session, "walk");
       await Bun.sleep(2_000);
@@ -193,7 +201,10 @@ export async function launchAndMeasure(args: LaunchArgs): Promise<DesktopRecord>
       const frame = summarizeFrameDeltas(deltas);
       // A window that drew nothing (a reload, a stall back to a blank page) measures an empty frame:
       // Brightway Park once read 365 fps and Odd Orbit 86 fps with zero draws.
-      if (breakdown !== null && breakdown.counts.drawsAvg < 1) throw new Error(`the scene drew nothing while it was measured (${breakdown.counts.drawsAvg} draws a frame, longest frame ${frame.maxMs} ms); measure it again`);
+      if (breakdown !== null && breakdown.counts.drawsAvg < 1) {
+        const page = await session.evaluate<string>(`location.href + " | " + document.querySelectorAll("canvas").length + " canvas, visibility " + document.visibilityState + ", focus " + document.hasFocus() + " | " + (document.body?.innerText ?? "").replace(/\\s+/g, " ").slice(0, 200)`).catch((error: unknown) => String(error));
+        throw new Error(`the scene drew nothing while it was measured (${breakdown.counts.drawsAvg} draws a frame, longest frame ${frame.maxMs} ms, ${start}; page: ${page}); measure it again`);
+      }
       const sorted = [...deltas].sort((a, b) => a - b);
       const quantile = (p: number) => sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))] ?? Number.NaN;
       const record: DesktopRecord = { at: Date.now(), exe: args.exe, clock: args.uncapped ? "uncapped" : "vsync", tier, viewport: viewport ?? "unknown", start, frame, rafP50Ms: quantile(0.5), rafP99Ms: quantile(0.99), breakdown };

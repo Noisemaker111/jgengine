@@ -45,6 +45,7 @@ fn run() -> Result<(), String> {
     let overruns: Vec<String> = if validate { instance_overruns(&rec) } else { Vec::new() };
     let t1 = std::time::Instant::now();
     let mut r = jg_render::Replayer::new(device.clone(), queue.clone(), rec)?;
+    r.track_stale = true;
     eprintln!("replayer ready in {:.1} s", t1.elapsed().as_secs_f64());
     if validate {
         // Distinct errors (first line of each) with the first frame and how often.
@@ -102,21 +103,22 @@ fn run() -> Result<(), String> {
             let three = three.to_vec();
             let s = diff::compare(&native, &three);
             println!(
-                "frame {f:4}: mean |d| {:.3}, max {}, >2 levels {:.3}%, >8 levels {:.3}%, PSNR {:.1} dB ({} draws, {} passes)",
+                "frame {f:4}: mean |d| {:.3}, max {}, >2 levels {:.3}%, >8 levels {:.3}%, PSNR {:.1} dB ({} draws, {} passes){}",
                 s.mean_abs,
                 s.max_abs,
                 s.over_2 * 100.0,
                 s.over_8 * 100.0,
                 s.psnr,
                 stats.draws,
-                stats.passes
+                stats.passes,
+                if r.stale_reads.is_empty() { String::new() } else { format!("; samples framebuffers {:?} the recording had not drawn yet", r.stale_reads) }
             );
             diff::write_png(&out.join(format!("frame-{f:03}.native.png")), w, h, &native)?;
             diff::write_png(&out.join(format!("frame-{f:03}.three.png")), w, h, &three)?;
             diff::write_png(&out.join(format!("frame-{f:03}.diff.png")), w, h, &diff::heat(&native, &three))?;
             report.push(format!(
-                "{{\"frame\":{f},\"meanAbs\":{:.4},\"maxAbs\":{},\"over2\":{:.6},\"over8\":{:.6},\"psnr\":{:.2},\"draws\":{}}}",
-                s.mean_abs, s.max_abs, s.over_2, s.over_8, if s.psnr.is_finite() { s.psnr } else { 99.0 }, stats.draws
+                "{{\"frame\":{f},\"meanAbs\":{:.4},\"maxAbs\":{},\"over2\":{:.6},\"over8\":{:.6},\"psnr\":{:.2},\"draws\":{},\"staleTargets\":{:?}}}",
+                s.mean_abs, s.max_abs, s.over_2, s.over_8, if s.psnr.is_finite() { s.psnr } else { 99.0 }, stats.draws, r.stale_reads
             ));
         }
     }

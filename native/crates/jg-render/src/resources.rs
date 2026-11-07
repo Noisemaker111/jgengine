@@ -94,7 +94,8 @@ fn binding_of(format: wgpu::TextureFormat, float32_filterable: bool) -> Binding 
     use wgpu::TextureFormat as T;
     match format {
         T::Depth16Unorm | T::Depth24Plus | T::Depth24PlusStencil8 | T::Depth32Float => Binding::Depth,
-        T::R32Uint | T::Rgba32Uint => Binding::Uint,
+        f if f.sample_type(None, None) == Some(wgpu::TextureSampleType::Uint) => Binding::Uint,
+        f if f.sample_type(None, None) == Some(wgpu::TextureSampleType::Sint) => Binding::Sint,
         T::Rgba32Float | T::Rg32Float | T::R32Float if !float32_filterable => Binding::Unfilterable,
         _ => Binding::Filterable,
     }
@@ -120,7 +121,7 @@ pub struct Resources {
     /// [0, 0, 0, 1] four times over: GL's default value for up to four vertex inputs a geometry lacks,
     /// all read from one vertex buffer slot (WebGPU allows eight slots a draw).
     pub default_attribute: wgpu::Buffer,
-    /// Integer attributes a draw reads as floats, held as Float32 (see `gl::int_to_float`).
+    /// Integer attributes a draw reads as floats, held as Float32 (see `gl::needs_float`).
     pub float_attrs: HashSet<usize>,
 }
 
@@ -227,7 +228,7 @@ impl Resources {
                 continue;
             }
             let raw = rec.bytes(a.offset, a.bytes);
-            let mut bytes = if float_attrs.contains(&i) { gl::to_f32(&a.array, raw) } else { raw.to_vec() };
+            let mut bytes = if float_attrs.contains(&i) { gl::to_f32(&a.array, a.normalized, raw) } else { raw.to_vec() };
             let size = (bytes.len() as u64).next_multiple_of(4);
             let buffer = device.create_buffer(&wgpu::BufferDescriptor { label: None, size, usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST, mapped_at_creation: false });
             bytes.resize(size as usize, 0);

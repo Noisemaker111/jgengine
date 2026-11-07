@@ -167,8 +167,26 @@ pub fn texture_format(t: &Texture) -> Result<wgpu::TextureFormat, String> {
         (1030, 1009) => T::Rg8Unorm,
         (1030, 1016) => T::Rg16Float,
         (1030, 1015) => T::Rg32Float,
-        (1031, 1013) | (1031, 1014) => T::R32Uint,
-        (1033, 1013) | (1033, 1014) => T::Rgba32Uint,
+        // Integer formats: RedIntegerFormat 1029, RGIntegerFormat 1031, RGBAIntegerFormat 1033, by
+        // ByteType 1010 .. UnsignedIntType 1014 (BatchedMesh's index texture is R32Uint).
+        (1029, 1009) => T::R8Uint,
+        (1029, 1010) => T::R8Sint,
+        (1029, 1011) => T::R16Sint,
+        (1029, 1012) => T::R16Uint,
+        (1029, 1013) => T::R32Sint,
+        (1029, 1014) => T::R32Uint,
+        (1031, 1009) => T::Rg8Uint,
+        (1031, 1010) => T::Rg8Sint,
+        (1031, 1011) => T::Rg16Sint,
+        (1031, 1012) => T::Rg16Uint,
+        (1031, 1013) => T::Rg32Sint,
+        (1031, 1014) => T::Rg32Uint,
+        (1033, 1009) => T::Rgba8Uint,
+        (1033, 1010) => T::Rgba8Sint,
+        (1033, 1011) => T::Rgba16Sint,
+        (1033, 1012) => T::Rgba16Uint,
+        (1033, 1013) => T::Rgba32Sint,
+        (1033, 1014) => T::Rgba32Uint,
         (f, ty) => return Err(format!("texture format {f} type {ty}")),
     })
 }
@@ -193,24 +211,42 @@ pub fn vertex_format(array: &str, components: u32, normalized: bool, kind: char)
     })
 }
 
-/// Whether GL turns this attribute's integers into floats for a float input (`vertexAttribPointer`
-/// with `normalized` false: 7 reads as 7.0). WebGPU has no vertex format that does, so such an
-/// attribute is uploaded as Float32 ([`to_f32`]) and read with [`float_format`].
-pub fn int_to_float(array: &str, normalized: bool, kind: char) -> bool {
-    kind == 'f' && !normalized && !matches!(array, "Float32Array" | "Float64Array")
+/// Whether a float input reads this attribute through Float32 data ([`to_f32`], [`float_format`]):
+/// GL turns unnormalized integers into floats (`vertexAttribPointer` with `normalized` false: 7 reads
+/// as 7.0), which no WebGPU vertex format does, and WebGPU has no 8- or 16-bit three-component
+/// formats (a normalized Int16 x3 normal), so both go up converted the way GL reads them.
+pub fn needs_float(array: &str, components: u32, normalized: bool, kind: char) -> bool {
+    kind == 'f' && !matches!(array, "Float32Array" | "Float64Array") && (!normalized || vertex_format(array, components, normalized, kind).is_err())
 }
 
-/// An integer attribute's data as little-endian Float32, value for value.
-pub fn to_f32(array: &str, bytes: &[u8]) -> Vec<u8> {
-    let values: Vec<f32> = match array {
-        "Int8Array" => bytes.iter().map(|&b| b as i8 as f32).collect(),
-        "Uint16Array" => bytes.chunks_exact(2).map(|c| u16::from_le_bytes([c[0], c[1]]) as f32).collect(),
-        "Int16Array" => bytes.chunks_exact(2).map(|c| i16::from_le_bytes([c[0], c[1]]) as f32).collect(),
-        "Uint32Array" => bytes.chunks_exact(4).map(|c| u32::from_le_bytes([c[0], c[1], c[2], c[3]]) as f32).collect(),
-        "Int32Array" => bytes.chunks_exact(4).map(|c| i32::from_le_bytes([c[0], c[1], c[2], c[3]]) as f32).collect(),
-        _ => bytes.iter().map(|&b| b as f32).collect(),
+/// An integer attribute's data as little-endian Float32, as GL reads it: value for value, or
+/// normalized (unsigned to [0, 1], signed to [-1, 1] with the most negative value clamped).
+pub fn to_f32(array: &str, normalized: bool, bytes: &[u8]) -> Vec<u8> {
+    let (values, max): (Vec<f32>, f32) = match array {
+        "Int8Array" => (bytes.iter().map(|&b| b as i8 as f32).collect(), 127.0),
+        "Uint16Array" => (bytes.chunks_exact(2).map(|c| u16::from_le_bytes([c[0], c[1]]) as f32).collect(), 65535.0),
+        "Int16Array" => (bytes.chunks_exact(2).map(|c| i16::from_le_bytes([c[0], c[1]]) as f32).collect(), 32767.0),
+        "Uint32Array" => (bytes.chunks_exact(4).map(|c| u32::from_le_bytes([c[0], c[1], c[2], c[3]]) as f32).collect(), 4294967295.0),
+        "Int32Array" => (bytes.chunks_exact(4).map(|c| i32::from_le_bytes([c[0], c[1], c[2], c[3]]) as f32).collect(), 2147483647.0),
+        _ => (bytes.iter().map(|&b| b as f32).collect(), 255.0),
     };
+    let values: Vec<f32> = if normalized { values.into_iter().map(|v| (v / max).max(-1.0)).collect() } else { values };
     bytemuck::cast_slice(&values).to_vec()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_normalized_int16_triple_is_read_as_gl_reads_it() {
+        assert!(needs_float("Int16Array", 3, true, 'f'));
+        assert!(!needs_float("Int16Array", 4, true, 'f'));
+        assert!(needs_float("Uint8Array", 4, false, 'f'));
+        let bytes: Vec<u8> = [32767i16, -32768, 0].iter().flat_map(|v| v.to_le_bytes()).collect();
+        let f: Vec<f32> = bytemuck::cast_slice(&to_f32("Int16Array", true, &bytes)).to_vec();
+        assert_eq!(f, vec![1.0, -1.0, 0.0]);
+    }
 }
 
 pub fn float_format(components: u32) -> wgpu::VertexFormat {

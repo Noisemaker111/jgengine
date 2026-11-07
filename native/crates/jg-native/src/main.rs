@@ -7,7 +7,6 @@
 //! the same moment of the camera path, and draws the Rune HUD over it in the same pass as the
 //! present copy. Prints and writes one JSON result: frame ms p50/p99, CPU ms, GPU ms (timestamps), fps.
 
-mod gpu_timer;
 mod scene;
 
 use std::sync::Arc;
@@ -88,7 +87,7 @@ struct Run {
     hud_state: jg_hud::HudState,
     rules: RulesHost,
     scene: scene::SceneModel,
-    timer: Option<gpu_timer::GpuTimer>,
+    timer: Option<jg_render::gpu_timer::GpuTimer>,
     errors: Arc<std::sync::Mutex<Vec<String>>>,
     // Timing.
     started: Option<Instant>,
@@ -99,6 +98,9 @@ struct Run {
     duration: f64,
     frame_ms: Vec<f64>,
     cpu_ms: Vec<f64>,
+    /// The frame's work up to the swapchain acquire: rules, scene, replay encode and HUD, without
+    /// submit and present (which wait on the GPU when it is the bottleneck).
+    encode_ms: Vec<f64>,
     rules_ms: Vec<f64>,
     redrawn: u64,
     skipped: u64,
@@ -174,7 +176,7 @@ impl App {
             other => return Err(format!("unknown --rules {other}")),
         };
         let hud = self.args.hud.then(|| jg_hud::Hud::new(&device, format, (w, h)));
-        let timer = device.features().contains(wgpu::Features::TIMESTAMP_QUERY | wgpu::Features::TIMESTAMP_QUERY_INSIDE_ENCODERS).then(|| gpu_timer::GpuTimer::new(&device, &queue));
+        let timer = jg_render::gpu_timer::GpuTimer::new(&device, &queue);
         eprintln!("jg-native: {} ({:?}), {:?} {:?}, {w}x{h}, rules {}, hud {}, {objects} objects, up to {draws} draws a frame", info.name, info.backend, format, present_mode, self.args.rules, self.args.hud);
         self.run = Some(Run {
             window,
@@ -199,6 +201,7 @@ impl App {
             duration: self.args.seconds.unwrap_or(recorded),
             frame_ms: Vec::new(),
             cpu_ms: Vec::new(),
+            encode_ms: Vec::new(),
             rules_ms: Vec::new(),
             redrawn: 0,
             skipped: 0,
@@ -298,6 +301,7 @@ impl Run {
             }
         }
         // CPU ms: the frame's work on this thread, without time spent blocked acquiring the swapchain image.
+        self.encode_ms.push(cpu_before_acquire.as_secs_f64() * 1e3);
         self.cpu_ms.push((cpu_before_acquire + done.duration_since(acquired)).as_secs_f64() * 1e3);
         if let Some(last) = self.last_present {
             self.frame_ms.push(done.duration_since(last).as_secs_f64() * 1e3);
@@ -314,32 +318,36 @@ impl Run {
         let elapsed = self.frame_ms.iter().sum::<f64>() / 1000.0;
         let gpu = self.timer.as_ref().map(|g| g.ms.clone()).unwrap_or_default();
         let cols = self.rules.columns();
-        format!(
-            "{{\"renderer\":\"jg-native\",\"adapter\":{:?},\"presentMode\":\"{:?}\",\"rules\":\"{}\",\"scenario\":\"{}\",\"hud\":{},\"hudInstances\":{},\"seconds\":{:.2},\"frames\":{frames},\"fps\":{:.1},\"frameP50\":{:.3},\"frameP99\":{:.3},\"cpuP50\":{:.3},\"cpuP99\":{:.3},\"gpuP50\":{:.3},\"gpuP99\":{:.3},\"gpuSamples\":{},\"rulesTicks\":{},\"rulesP50\":{:.4},\"rulesP99\":{:.4},\"sceneP50\":{:.4},\"recordedFramesRedrawn\":{},\"recordedFramesSkipped\":{},\"player\":[{:.3},{:.3}]}}",
-            self.adapter,
-            self.present_mode,
-            args.rules,
-            args.scenario,
-            self.hud.is_some(),
-            self.hud.as_ref().map_or(0, |h| h.instances()),
-            elapsed,
-            (frames - 1) as f64 / elapsed.max(1e-9),
-            quantile(&self.frame_ms, 0.5),
-            quantile(&self.frame_ms, 0.99),
-            quantile(&self.cpu_ms, 0.5),
-            quantile(&self.cpu_ms, 0.99),
-            quantile(&gpu, 0.5),
-            quantile(&gpu, 0.99),
-            gpu.len(),
-            self.rules_ticks,
-            quantile(&self.rules_ms, 0.5),
-            quantile(&self.rules_ms, 0.99),
-            quantile(&self.scene.ms, 0.5),
-            self.redrawn,
-            self.skipped,
-            cols.first().copied().unwrap_or(f64::NAN),
-            cols.get(2).copied().unwrap_or(f64::NAN),
-        )
+        // serde_json writes a measure with no samples (NaN: no rules, no GPU timer) as null.
+        serde_json::json!({
+            "renderer": "jg-native",
+            "adapter": self.adapter,
+            "presentMode": format!("{:?}", self.present_mode),
+            "rules": args.rules.to_string(),
+            "scenario": args.scenario.to_string(),
+            "hud": self.hud.is_some(),
+            "hudInstances": self.hud.as_ref().map_or(0, |h| h.instances()),
+            "seconds": elapsed,
+            "frames": frames,
+            "fps": (frames - 1) as f64 / elapsed.max(1e-9),
+            "frameP50": quantile(&self.frame_ms, 0.5),
+            "frameP99": quantile(&self.frame_ms, 0.99),
+            "cpuP50": quantile(&self.cpu_ms, 0.5),
+            "cpuP99": quantile(&self.cpu_ms, 0.99),
+            "encodeP50": quantile(&self.encode_ms, 0.5),
+            "encodeP99": quantile(&self.encode_ms, 0.99),
+            "gpuP50": quantile(&gpu, 0.5),
+            "gpuP99": quantile(&gpu, 0.99),
+            "gpuSamples": gpu.len(),
+            "rulesTicks": self.rules_ticks,
+            "rulesP50": quantile(&self.rules_ms, 0.5),
+            "rulesP99": quantile(&self.rules_ms, 0.99),
+            "sceneP50": quantile(&self.scene.ms, 0.5),
+            "recordedFramesRedrawn": self.redrawn,
+            "recordedFramesSkipped": self.skipped,
+            "player": [cols.first().copied().unwrap_or(f64::NAN), cols.get(2).copied().unwrap_or(f64::NAN)],
+        })
+        .to_string()
     }
 }
 

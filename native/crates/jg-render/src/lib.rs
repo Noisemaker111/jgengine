@@ -3,6 +3,7 @@
 pub mod copy;
 pub mod diff;
 pub mod gl;
+pub mod gpu_timer;
 pub mod replay;
 pub mod resources;
 

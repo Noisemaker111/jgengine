@@ -95,6 +95,15 @@ pub struct Replayer {
     cur_fb: i64,
     frame_serial: u64,
     pub warnings: HashMap<String, u32>,
+    /// Render-target texture handle -> its framebuffer.
+    attachment_of: HashMap<i64, i64>,
+    /// Framebuffers the replay has not cleared or drawn into yet.
+    unwritten: HashSet<i64>,
+    /// Framebuffers whose textures the last replayed frame sampled before the recording ever wrote
+    /// them: three had their content from before the recording began, the replay an empty target.
+    pub stale_reads: Vec<i64>,
+    /// Fill `stale_reads` (the pixel diff does; timed playback leaves it off).
+    pub track_stale: bool,
 }
 
 /// One vertex buffer slot of a (program, geometry) pair.
@@ -175,7 +184,7 @@ impl Replayer {
                 uniform_size,
             });
         }
-        // Integer attributes some draw reads as floats go up as Float32 (gl::int_to_float).
+        // Attributes some draw reads as floats through Float32 data go up converted (gl::needs_float).
         let mut float_attrs = HashSet::new();
         for ev in rec.frames.iter().flatten() {
             if let Event::Draw(d) = ev {
@@ -183,7 +192,7 @@ impl Replayer {
                 for input in &programs[d.program].layout.vertex_inputs {
                     if let Some(&a) = geom.attributes.get(&input.name) {
                         let attr = &rec.manifest.attributes[a];
-                        if gl::int_to_float(&attr.array, attr.normalized, input.kind) {
+                        if gl::needs_float(&attr.array, input.components, attr.normalized, input.kind) {
                             float_attrs.insert(a);
                         }
                     }
@@ -235,6 +244,10 @@ impl Replayer {
             cur_fb: -1,
             frame_serial: 0,
             warnings: HashMap::new(),
+            attachment_of: HashMap::new(),
+            unwritten: HashSet::new(),
+            stale_reads: Vec::new(),
+            track_stale: false,
         };
         me.build_targets()?;
         Ok(me)
@@ -302,6 +315,10 @@ impl Replayer {
             };
             let sig = self.signature(colors.iter().map(|c| c.1).collect(), depth.as_ref().map(|d| d.1));
             self.targets.insert(fb.handle, Target { colors, depth, size: [fb.width, fb.height], signature: sig });
+            for &t in fb.textures.iter().chain((fb.depth >= 0).then_some(&fb.depth)) {
+                self.attachment_of.insert(t, fb.handle);
+            }
+            self.unwritten.insert(fb.handle);
         }
         Ok(())
     }
@@ -627,6 +644,7 @@ impl Replayer {
     pub fn frame(&mut self, encoder: &mut wgpu::CommandEncoder, index: usize) -> Result<FrameStats, String> {
         self.frame_serial += 1;
         self.staging.clear();
+        self.stale_reads.clear();
         for p in &mut self.programs {
             p.slot = None;
         }
@@ -663,6 +681,7 @@ impl Replayer {
                 }
                 Event::Clear { mask, color, depth, depth_mask, color_mask_all, view, .. } => {
                     pass = None;
+                    self.unwritten.remove(&self.cur_fb);
                     if view.scissor.is_some_and(|s| self.targets.get(&self.cur_fb).is_some_and(|t| s[0] > 0 || s[1] > 0 || (s[2] as u32) < t.size[0] || (s[3] as u32) < t.size[1])) {
                         self.warn("scissored clear drawn as a full clear".into());
                     }
@@ -714,6 +733,10 @@ impl Replayer {
                     }
                     let (offset, size) = self.programs[p].slot.unwrap();
                     let group = self.bind_group(p);
+                    if self.track_stale && !self.unwritten.is_empty() {
+                        self.note_stale_reads(p);
+                    }
+                    self.unwritten.remove(&self.cur_fb);
                     let texsig = self.programs[p].texsig;
                     let fb_sig = self.targets.get(&self.cur_fb).map(|t| t.signature).ok_or(format!("draw into unknown framebuffer {}", self.cur_fb))?;
                     let pipe = self.pipeline(d, fb_sig, texsig)?;
@@ -785,7 +808,7 @@ impl Replayer {
                 Event::Buffer { attribute, data } => {
                     let r = &self.rec.manifest.buffer_data[*data];
                     let raw = &self.rec.data[r.offset..r.offset + r.bytes];
-                    let converted = self.res.float_attrs.contains(attribute).then(|| gl::to_f32(&self.rec.manifest.attributes[*attribute].array, raw));
+                    let converted = self.res.float_attrs.contains(attribute).then(|| gl::to_f32(&self.rec.manifest.attributes[*attribute].array, self.rec.manifest.attributes[*attribute].normalized, raw));
                     let bytes: &[u8] = converted.as_deref().unwrap_or(raw);
                     let size = (bytes.len() as u64).next_multiple_of(4);
                     if size > self.res.buffer_sizes[*attribute] {
@@ -850,11 +873,17 @@ impl Replayer {
         for ev in frames[index].iter() {
             match ev {
                 Event::Framebuffer(h) => self.cur_fb = *h,
-                Event::Draw(d) => self.apply_deltas(d),
+                Event::Clear { .. } => {
+                    self.unwritten.remove(&self.cur_fb);
+                }
+                Event::Draw(d) => {
+                    self.apply_deltas(d);
+                    self.unwritten.remove(&self.cur_fb);
+                }
                 Event::Buffer { attribute, data } => {
                     let r = &self.rec.manifest.buffer_data[*data];
                     let raw = &self.rec.data[r.offset..r.offset + r.bytes];
-                    let converted = self.res.float_attrs.contains(attribute).then(|| gl::to_f32(&self.rec.manifest.attributes[*attribute].array, raw));
+                    let converted = self.res.float_attrs.contains(attribute).then(|| gl::to_f32(&self.rec.manifest.attributes[*attribute].array, self.rec.manifest.attributes[*attribute].normalized, raw));
                     let bytes: &[u8] = converted.as_deref().unwrap_or(raw);
                     if bytes.len() % 4 == 0 && (bytes.len() as u64) <= self.res.buffer_sizes[*attribute] {
                         if let Some(b) = &self.res.buffers[*attribute] {
@@ -863,6 +892,21 @@ impl Replayer {
                     }
                 }
                 _ => {}
+            }
+        }
+    }
+
+    /// Record each render target program `p` samples that no replayed frame has written yet.
+    fn note_stale_reads(&mut self, p: usize) {
+        for k in 0..self.programs[p].bound.len() {
+            let h = self.programs[p].bound[k];
+            if let Some(&fb) = self.attachment_of.get(&h)
+                && fb != self.cur_fb
+                && self.unwritten.contains(&fb)
+                && !self.stale_reads.contains(&fb)
+            {
+                self.stale_reads.push(fb);
+                self.warn(format!("frames sample framebuffer {fb} before the recording drew into it: three had its content from before the recording, the replay an empty target"));
             }
         }
     }

@@ -53,6 +53,15 @@ async function call<T>(session: CdpSession, expression: string): Promise<T> {
   return (result["result"] as { value?: T } | undefined)?.value as T;
 }
 
+const HIDE_MULTI_DRAW = `(() => {
+  for (const C of [globalThis.WebGL2RenderingContext, globalThis.WebGLRenderingContext]) {
+    if (C === undefined) continue;
+    const get = C.prototype.getExtension, list = C.prototype.getSupportedExtensions;
+    C.prototype.getExtension = function (name) { return /multi_draw/i.test(name) ? null : get.call(this, name); };
+    C.prototype.getSupportedExtensions = function () { return (list.call(this) ?? []).filter((n) => !/multi_draw/i.test(n)); };
+  }
+})();`;
+
 /** Put every live WebGLRenderer into `globalThis.__jgRenderers` (three defines `render` per instance, so it is patched there). */
 async function findRenderers(session: CdpSession): Promise<number> {
   const protoResult = await session.send("Runtime.evaluate", {
@@ -144,6 +153,11 @@ export async function exportNativeScene(options: NativeExportOptions): Promise<n
           await session.send("Page.enable");
           const throws = watchPageExceptions(session);
           await applyDevice(session, "desktop", "full", { width: options.width, height: options.height });
+          // BatchedMesh (the static draw pool) draws through WEBGL_multi_draw, which the recorder
+          // cannot see: Harbor Heat's palms, awnings and lamps were missing from its replay. Without
+          // the extension three draws each batch item with drawElements and a `_gl_DrawID` uniform,
+          // the same pixels, which the recorder records and the replay draws.
+          await session.send("Page.addScriptToEvaluateOnNewDocument", { source: HIDE_MULTI_DRAW });
           const url = perfPageUrl({ base: server.base, game, quality: "high" });
           console.error(`native export: ${url}`);
           await navigateCapturePage(session, url.toString(), 210_000);

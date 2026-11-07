@@ -52,14 +52,29 @@ function run(cmd: string, args: string[], what: string): string {
 
 const lastJson = <T>(stdout: string): T => JSON.parse(stdout.trim().split("\n").filter((l) => l.startsWith("{")).at(-1) ?? "null") as T;
 
-interface DiffReport { frames: { frame: number; meanAbs: number; maxAbs: number; over2: number; over8: number; psnr: number }[]; warnings: { warning: string; count: number }[] }
+interface DiffFrame { frame: number; meanAbs: number; maxAbs: number; over2: number; over8: number; psnr: number; staleTargets?: number[] }
+interface DiffReport { frames: DiffFrame[]; warnings: { warning: string; count: number }[] }
 
-function imageSummary(frames: DiffReport["frames"]): string {
-  if (frames.length === 0) return "no readbacks";
+function framesSummary(frames: DiffFrame[]): string {
   const mean = frames.reduce((a, f) => a + f.meanAbs, 0) / frames.length;
   const worst = frames.reduce((a, f) => (f.over8 > a.over8 ? f : a));
   const psnr = Math.min(...frames.map((f) => f.psnr));
   return `mean |d| ${mean.toFixed(2)}/255, PSNR ≥ ${psnr.toFixed(1)} dB, worst frame ${worst.frame}: ${(worst.over8 * 100).toFixed(2)}% px > 8 levels (${frames.length} frames)`;
+}
+
+/**
+ * Image match over the compared frames. Frames that sample a render target the recording had not
+ * drawn yet (a shadow map the game last rendered before recording began) are summarized apart:
+ * three had that content and the replay an empty target, so their difference is the recording's.
+ */
+function imageSummary(frames: DiffFrame[]): string {
+  if (frames.length === 0) return "no readbacks";
+  const stale = frames.filter((f) => (f.staleTargets ?? []).length > 0);
+  const clean = frames.filter((f) => (f.staleTargets ?? []).length === 0);
+  if (stale.length === 0) return framesSummary(frames);
+  const targets = [...new Set(stale.flatMap((f) => f.staleTargets ?? []))].join(", ");
+  const rest = `${stale.length} frame(s) sample render targets ${targets} drawn before the recording began: ${framesSummary(stale)}`;
+  return clean.length === 0 ? rest : `${framesSummary(clean)}; ${rest}`;
 }
 
 /**
@@ -72,13 +87,13 @@ async function desktopRow(appExe: string, size: [number, number], seconds: numbe
   return { row: "A", label: "current engine, desktop WebView2 uncapped", fps: r.frame.fps, frameP50: r.rafP50Ms, frameP99: r.rafP99Ms, cpuP50: b?.work.p50 ?? null, gpuP50: b?.gpu?.p50 ?? null, image: "reference (three.js)", note: `${r.viewport}, ${b?.counts.drawsAvg.toFixed(0) ?? "?"} draws avg; ${r.start}` };
 }
 
-interface NativeResult { fps: number; frameP50: number; frameP99: number; cpuP50: number; gpuP50: number; gpuSamples: number; rulesP50: number; rulesTicks: number; presentMode: string; adapter: string; hudInstances: number; sceneP50: number }
+interface NativeResult { fps: number; frameP50: number; frameP99: number; cpuP50: number; gpuP50: number | null; gpuSamples: number; rulesP50: number; rulesTicks: number; presentMode: string; adapter: string; hudInstances: number; sceneP50: number; encodeP50: number }
 
 function nativeRow(row: string, recording: string, rules: "js" | "rust" | "none", files: { bundle: string; world: string }, out: string, image: string): Row {
   const args = [recording, "--rules", rules, "--bundle", files.bundle, "--world", files.world, "--out", out];
   const r = lastJson<NativeResult>(run(exe("jg-native"), args, `jg-native --rules ${rules}`));
   const rulesNote = rules === "none" ? "renderer + HUD only" : `rules ${rules === "js" ? "TS in V8" : "Rust"} p50 ${r.rulesP50.toFixed(3)} ms/tick`;
-  return { row, label: rules === "js" ? "Rust native + embedded TS rules + Rune HUD" : rules === "rust" ? "Rust native + Rust rules + Rune HUD" : "Rust native renderer + Rune HUD", fps: r.fps, frameP50: r.frameP50, frameP99: r.frameP99, cpuP50: r.cpuP50, gpuP50: r.gpuP50, image, note: `${r.presentMode}, ${rulesNote}, scene update p50 ${r.sceneP50.toFixed(3)} ms` };
+  return { row, label: rules === "js" ? "Rust native + embedded TS rules + Rune HUD" : rules === "rust" ? "Rust native + Rust rules + Rune HUD" : "Rust native renderer + Rune HUD", fps: r.fps, frameP50: r.frameP50, frameP99: r.frameP99, cpuP50: r.cpuP50, gpuP50: r.gpuP50, image, note: `${r.presentMode}, ${rulesNote}, scene update p50 ${r.sceneP50.toFixed(3)} ms, encode p50 ${r.encodeP50.toFixed(2)} ms (CPU less submit and present)` };
 }
 
 /** Row D: serve native/web and the export, open it in headless Chrome on the uncapped clock, read its result. */

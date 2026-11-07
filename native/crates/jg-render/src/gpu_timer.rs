@@ -1,10 +1,13 @@
-//! GPU ms per frame from timestamps written at the start and end of the frame's encoder, read back
-//! a few frames later from a small ring of buffers so measuring never stalls the frame.
+//! GPU ms per frame from timestamps at the start and end of the frame's encoder, read back a few
+//! frames later from a small ring of buffers so measuring never stalls the frame. The native app and
+//! the wasm build both use it.
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU8, Ordering};
 
 const SLOTS: u32 = 8;
+/// Each slot's two timestamps resolve at an offset WebGPU requires to be a multiple of 256 bytes.
+const STRIDE: u64 = wgpu::QUERY_RESOLVE_BUFFER_ALIGNMENT;
 const FREE: u8 = 0;
 const RECORDED: u8 = 1;
 const MAPPING: u8 = 2;
@@ -17,17 +20,42 @@ pub struct GpuTimer {
     state: Vec<Arc<AtomicU8>>,
     next: u32,
     period_ns: f64,
+    /// Timestamps written straight into the encoder; without that feature (WebGPU) empty compute
+    /// passes carry them, since WebGPU only writes timestamps at pass boundaries.
+    in_encoder: bool,
     pub ms: Vec<f64>,
 }
 
 impl GpuTimer {
-    pub fn new(device: &wgpu::Device, queue: &wgpu::Queue) -> GpuTimer {
+    /// None when the device has no timestamp queries.
+    pub fn new(device: &wgpu::Device, queue: &wgpu::Queue) -> Option<GpuTimer> {
+        if !device.features().contains(wgpu::Features::TIMESTAMP_QUERY) {
+            return None;
+        }
         let set = device.create_query_set(&wgpu::QuerySetDescriptor { label: Some("frame timestamps"), ty: wgpu::QueryType::Timestamp, count: SLOTS * 2 });
-        let resolve = device.create_buffer(&wgpu::BufferDescriptor { label: None, size: (SLOTS * 16) as u64, usage: wgpu::BufferUsages::QUERY_RESOLVE | wgpu::BufferUsages::COPY_SRC, mapped_at_creation: false });
+        let resolve = device.create_buffer(&wgpu::BufferDescriptor { label: None, size: SLOTS as u64 * STRIDE, usage: wgpu::BufferUsages::QUERY_RESOLVE | wgpu::BufferUsages::COPY_SRC, mapped_at_creation: false });
         let readback = (0..SLOTS)
             .map(|_| device.create_buffer(&wgpu::BufferDescriptor { label: None, size: 16, usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ, mapped_at_creation: false }))
             .collect();
-        GpuTimer { set, resolve, readback, state: (0..SLOTS).map(|_| Arc::new(AtomicU8::new(FREE))).collect(), next: 0, period_ns: queue.get_timestamp_period() as f64, ms: Vec::new() }
+        Some(GpuTimer {
+            set,
+            resolve,
+            readback,
+            state: (0..SLOTS).map(|_| Arc::new(AtomicU8::new(FREE))).collect(),
+            next: 0,
+            period_ns: queue.get_timestamp_period() as f64,
+            in_encoder: device.features().contains(wgpu::Features::TIMESTAMP_QUERY_INSIDE_ENCODERS),
+            ms: Vec::new(),
+        })
+    }
+
+    fn stamp(&self, encoder: &mut wgpu::CommandEncoder, index: u32, end: bool) {
+        if self.in_encoder {
+            encoder.write_timestamp(&self.set, index);
+        } else {
+            let writes = wgpu::ComputePassTimestampWrites { query_set: &self.set, beginning_of_pass_write_index: (!end).then_some(index), end_of_pass_write_index: end.then_some(index) };
+            drop(encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None, timestamp_writes: Some(writes) }));
+        }
     }
 
     /// Stamp the frame's start; None when every slot is still in flight (that frame goes untimed).
@@ -37,14 +65,14 @@ impl GpuTimer {
             return None;
         }
         self.next = (self.next + 1) % SLOTS;
-        encoder.write_timestamp(&self.set, s * 2);
+        self.stamp(encoder, s * 2, false);
         Some(s)
     }
 
     pub fn end(&mut self, encoder: &mut wgpu::CommandEncoder, s: u32) {
-        encoder.write_timestamp(&self.set, s * 2 + 1);
-        encoder.resolve_query_set(&self.set, s * 2..s * 2 + 2, &self.resolve, (s * 16) as u64);
-        encoder.copy_buffer_to_buffer(&self.resolve, (s * 16) as u64, &self.readback[s as usize], 0, 16);
+        self.stamp(encoder, s * 2 + 1, true);
+        encoder.resolve_query_set(&self.set, s * 2..s * 2 + 2, &self.resolve, s as u64 * STRIDE);
+        encoder.copy_buffer_to_buffer(&self.resolve, s as u64 * STRIDE, &self.readback[s as usize], 0, 16);
         self.state[s as usize].store(RECORDED, Ordering::Release);
     }
 
@@ -68,7 +96,8 @@ impl GpuTimer {
         self.collect();
     }
 
-    fn collect(&mut self) {
+    /// Collect slots the browser (or a poll) has already mapped.
+    pub fn collect(&mut self) {
         for (i, st) in self.state.iter().enumerate() {
             if st.load(Ordering::Acquire) != MAPPED {
                 continue;

@@ -14,4 +14,5 @@ jg-rules = { path = "../jg-rules" }
 wgpu.workspace = true
 glam.workspace = true
 pollster.workspace = true
+serde_json.workspace = true
 winit = "=0.30.13"

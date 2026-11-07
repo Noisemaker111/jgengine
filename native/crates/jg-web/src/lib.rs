@@ -7,79 +7,10 @@
 mod web {
     use std::collections::HashMap;
     use std::sync::Arc;
-    use std::sync::atomic::{AtomicU8, Ordering};
     use wasm_bindgen::prelude::*;
 
     fn err(e: impl std::fmt::Display) -> JsValue {
         JsValue::from_str(&e.to_string())
-    }
-
-    /// GPU span of a frame: empty compute passes stamp the start and end of the frame's encoder
-    /// (WebGPU only writes timestamps at pass boundaries).
-    struct Stamps {
-        set: wgpu::QuerySet,
-        resolve: wgpu::Buffer,
-        readback: Vec<wgpu::Buffer>,
-        state: Vec<Arc<AtomicU8>>,
-        next: u32,
-        period: f64,
-        ms: Vec<f64>,
-    }
-
-    const SLOTS: u32 = 8;
-
-    impl Stamps {
-        fn new(device: &wgpu::Device, queue: &wgpu::Queue) -> Stamps {
-            Stamps {
-                set: device.create_query_set(&wgpu::QuerySetDescriptor { label: None, ty: wgpu::QueryType::Timestamp, count: SLOTS * 2 }),
-                resolve: device.create_buffer(&wgpu::BufferDescriptor { label: None, size: (SLOTS * 16) as u64, usage: wgpu::BufferUsages::QUERY_RESOLVE | wgpu::BufferUsages::COPY_SRC, mapped_at_creation: false }),
-                readback: (0..SLOTS).map(|_| device.create_buffer(&wgpu::BufferDescriptor { label: None, size: 16, usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ, mapped_at_creation: false })).collect(),
-                state: (0..SLOTS).map(|_| Arc::new(AtomicU8::new(0))).collect(),
-                next: 0,
-                period: queue.get_timestamp_period() as f64,
-                ms: Vec::new(),
-            }
-        }
-        fn stamp(&self, encoder: &mut wgpu::CommandEncoder, index: u32, end: bool) {
-            let writes = wgpu::ComputePassTimestampWrites { query_set: &self.set, beginning_of_pass_write_index: (!end).then_some(index), end_of_pass_write_index: end.then_some(index) };
-            drop(encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None, timestamp_writes: Some(writes) }));
-        }
-        fn begin(&mut self, encoder: &mut wgpu::CommandEncoder) -> Option<u32> {
-            let s = self.next;
-            if self.state[s as usize].load(Ordering::Acquire) != 0 {
-                return None;
-            }
-            self.next = (s + 1) % SLOTS;
-            self.stamp(encoder, s * 2, false);
-            Some(s)
-        }
-        fn end(&mut self, encoder: &mut wgpu::CommandEncoder, s: u32) {
-            self.stamp(encoder, s * 2 + 1, true);
-            encoder.resolve_query_set(&self.set, s * 2..s * 2 + 2, &self.resolve, (s * 16) as u64);
-            encoder.copy_buffer_to_buffer(&self.resolve, (s * 16) as u64, &self.readback[s as usize], 0, 16);
-        }
-        fn after_submit(&mut self, s: u32) {
-            let st = self.state[s as usize].clone();
-            st.store(1, Ordering::Release);
-            self.readback[s as usize].map_async(wgpu::MapMode::Read, .., move |r| st.store(if r.is_ok() { 2 } else { 0 }, Ordering::Release));
-        }
-        fn collect(&mut self) {
-            for (i, st) in self.state.iter().enumerate() {
-                if st.load(Ordering::Acquire) != 2 {
-                    continue;
-                }
-                {
-                    let d = self.readback[i].get_mapped_range(..).expect("mapped");
-                    let t0 = u64::from_le_bytes(d[0..8].try_into().unwrap());
-                    let t1 = u64::from_le_bytes(d[8..16].try_into().unwrap());
-                    if t1 > t0 {
-                        self.ms.push((t1 - t0) as f64 * self.period / 1e6);
-                    }
-                }
-                self.readback[i].unmap();
-                st.store(0, Ordering::Release);
-            }
-        }
     }
 
     #[wasm_bindgen]
@@ -89,7 +20,7 @@ mod web {
         device: wgpu::Device,
         queue: wgpu::Queue,
         replay: jg_render::Replayer,
-        stamps: Option<Stamps>,
+        stamps: Option<jg_render::gpu_timer::GpuTimer>,
         drawn: Option<usize>,
         adapter: String,
         errors: Arc<std::sync::Mutex<Vec<String>>>,
@@ -129,7 +60,7 @@ mod web {
             view_formats: vec![],
             color_space: wgpu::SurfaceColorSpace::Auto,
         });
-        let stamps = device.features().contains(wgpu::Features::TIMESTAMP_QUERY).then(|| Stamps::new(&device, &queue));
+        let stamps = jg_render::gpu_timer::GpuTimer::new(&device, &queue);
         let replay = jg_render::Replayer::new(device.clone(), queue.clone(), rec).map_err(err)?;
         Ok(WebRun { surface, format, device, queue, replay, stamps, drawn: None, adapter: format!("{} ({:?})", info.name, info.backend), errors })
     }
