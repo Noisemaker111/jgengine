@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type DependencyList } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type DependencyList } from "react";
 import { AxisChannel, type AxisChannelConfig } from "@jgengine/core/input/axisInput";
 import { createMarkerSet, type MarkerSet } from "@jgengine/core/map/markers";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
@@ -38,8 +38,14 @@ import { gamePhase, setGamePhase, type GamePhase } from "@jgengine/core/game/gam
 import { useGameContext, useOptionalGameContext } from "./provider";
 
 const noopSubscribe = (): (() => void) => () => undefined;
-import { createSelectCache, readSelectSnapshot } from "./selectSnapshot";
+import { createLiveSelectCache, createSelectCache, readLiveSnapshot, readSelectSnapshot, takeLiveLatest } from "./selectSnapshot";
 
+/**
+ * Select from the game store and re-render when the selection changes. The selector runs once per
+ * store version; `isEqual` (default `Object.is`) decides whether a new selection counts as a change, so
+ * a selector that builds a new object or array each time needs one, or it re-renders on every tick.
+ * For values that move every frame (a minimap following the player), use {@link useGameStoreLive}.
+ */
 export function useGameStore<T>(
   selector: (ctx: GameContext) => T,
   isEqual: (previous: T, next: T) => boolean = Object.is,
@@ -63,6 +69,48 @@ export function useGameStore<T>(
   );
 
   return useSyncExternalStore(ctx.subscribe, getSnapshot, getSnapshot);
+}
+
+/**
+ * Select from the game store at two speeds. The component re-renders only when `sameShape` says the
+ * selection's shape changed (which markers exist, a label), and returns the selection as of that
+ * render; `apply` receives every new selection to write the values that move each frame (a map's pan,
+ * a marker's position) straight to elements through refs, so a HUD that follows the player does not
+ * re-render and re-commit itself every frame. `apply` also runs after every render, so elements a
+ * render mounted carry the current values before they paint. The selector runs once per store version.
+ *
+ * @capability game-store-live re-render a HUD component only when its selection's shape changes and write per-frame values through refs
+ */
+export function useGameStoreLive<T>(
+  selector: (ctx: GameContext) => T,
+  sameShape: (previous: T, next: T) => boolean,
+  apply: (latest: T) => void,
+): T {
+  const ctx = useGameContext();
+  const selectorRef = useRef(selector);
+  selectorRef.current = selector;
+  const sameShapeRef = useRef(sameShape);
+  sameShapeRef.current = sameShape;
+  const applyRef = useRef(apply);
+  applyRef.current = apply;
+  const cacheRef = useRef(createLiveSelectCache<number, T>());
+
+  const getSnapshot = useCallback(
+    () => readLiveSnapshot(cacheRef.current, ctx.version(), () => selectorRef.current(ctx), (previous, next) => sameShapeRef.current(previous, next)),
+    [ctx],
+  );
+  const shaped = useSyncExternalStore(ctx.subscribe, getSnapshot, getSnapshot);
+  const write = useCallback(
+    (fresh: boolean) => {
+      getSnapshot();
+      const latest = takeLiveLatest(cacheRef.current, fresh);
+      if (latest !== null) applyRef.current(latest.value);
+    },
+    [getSnapshot],
+  );
+  useLayoutEffect(() => write(false));
+  useLayoutEffect(() => ctx.subscribe(() => write(true)), [ctx, write]);
+  return shaped;
 }
 
 /** Subscribe to a single keyed slice of the game store, returning `fallback` until the key is set. */

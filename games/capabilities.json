@@ -4553,6 +4553,16 @@
       "intent": "a whole game as one declaration the engine runs, with named code hooks for the rest"
     },
     {
+      "id": "game-store-live",
+      "packages": [
+        "@jgengine/react"
+      ],
+      "module": "@jgengine/react/hooks",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "re-render a HUD component only when its selection's shape changes and write per-frame values through refs"
+    },
+    {
       "id": "game-suite-run",
       "packages": [
         "@jgengine/core"

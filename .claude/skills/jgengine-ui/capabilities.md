@@ -265,6 +265,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `GameSlider` (function) · `import { GameSlider } from "@jgengine/react"`
 
+## game-store-live — re-render a HUD component only when its selection's shape changes and write per-frame values through refs
+
+- `useGameStoreLive` (function) · `import { useGameStoreLive } from "@jgengine/react"`
+
 ## group-credits — turn a flat list of credited things into ordered credit sections
 
 - `groupCredits` (function) · `import { groupCredits } from "@jgengine/core/menu/credits"`

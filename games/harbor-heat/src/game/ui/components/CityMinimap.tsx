@@ -1,8 +1,9 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { headingToBearing, projectToMinimap, type MinimapView } from "@jgengine/core/map/minimap";
 import type { WorldBlip } from "@jgengine/core/worldModel/worldModel";
-import { useGameStore } from "@jgengine/react/hooks";
-import { MinimapChrome, type MinimapChromeMarker } from "@jgengine/core/map/map.view";
+import { useRef } from "react";
+import { useGameStoreLive } from "@jgengine/react/hooks";
+import { MinimapChrome, type MinimapChromeHandle, type MinimapChromeMarker } from "@jgengine/core/map/map.view";
 import { cityOf } from "../../cityRuntime";
 import { safehouseStore } from "../../commands";
 import { drivingStore, raceStore, wantedStore } from "../../streetPlay";
@@ -49,8 +50,28 @@ function readMap(ctx: GameContext) {
   else for (const offer of gigs.offers) if (offer.kindId !== "taxi" || gigs.duty) markers.push(dot(`gig-${offer.id}`, [offer.pickup.x, offer.pickup.z], "#ffe066", 5.5));
   const heading = headingToBearing(body.rotationY);
   markers.push({ ...dot("player", [body.position[0], body.position[2]], "#fff0d2", 9), heading, clampToEdge: false });
-  return { at: [body.position[0], body.position[2]] as const, heading, markers, scared, search: wantedStore.read(ctx)?.search ?? null };
+  const at = [body.position[0], body.position[2]] as const;
+  return { at, heading, markers, scared, search: wantedStore.read(ctx)?.search ?? null, district: districtAt(at[0], at[1])?.label };
 }
+
+type ChartMap = NonNullable<ReturnType<typeof readMap>>;
+
+const sameMarker = (a: MinimapChromeMarker, b: MinimapChromeMarker) =>
+  a.id === b.id && a.color === b.color && a.radius === b.radius && a.strokeColor === b.strokeColor && a.strokeWidth === b.strokeWidth &&
+  a.glyph === b.glyph && a.glyphColor === b.glyphColor && (a.heading === undefined) === (b.heading === undefined) && a.clampToEdge === b.clampToEdge;
+
+/** What the chart's elements are, leaving out where they sit: the chart re-renders only when this changes. */
+function sameChart(a: ChartMap | null, b: ChartMap | null): boolean {
+  if (a === null || b === null) return a === b;
+  return a.district === b.district && (a.search === null) === (b.search === null) &&
+    a.scared.length === b.scared.length && a.scared.every((place, i) => place.radius === b.scared[i]!.radius) &&
+    a.markers.length === b.markers.length && a.markers.every((marker, i) => sameMarker(marker, b.markers[i]!));
+}
+
+const setAt = (node: Element | null | undefined, x: string, y: string, at: { x: number; y: number }) => {
+  node?.setAttribute(x, String(at.x));
+  node?.setAttribute(y, String(at.y));
+};
 
 /**
  * The harbor chart on the dash: a round sea chart under a brass bezel that turns with you, the north
@@ -60,18 +81,50 @@ export function CityMinimap() {
   const room = useRoom();
   const compact = room !== "wide";
   const size = room === "wide" ? 168 : room === "short" ? 100 : 116;
-  const map = useGameStore(readMap);
+  const scale = size / (RADIUS * 2);
+  const half = size / 2;
+  const sea = useRef<SVGPolygonElement>(null);
+  const beach = useRef<SVGPolygonElement>(null);
+  const districts = useRef<(SVGCircleElement | null)[]>([]);
+  const roads = useRef<(SVGLineElement | null)[]>([]);
+  const fears = useRef<(SVGCircleElement | null)[]>([]);
+  const searchRing = useRef<SVGCircleElement>(null);
+  const northPin = useRef<HTMLSpanElement>(null);
+  const chrome = useRef<MinimapChromeHandle>(null);
+  // The chart pans and turns with the player every frame; that is written here, and the chart only
+  // re-renders when what it draws changes.
+  const place = (latest: ChartMap | null) => {
+    if (latest === null) return;
+    const view: MinimapView = { center: latest.at, worldRadius: RADIUS, size, rotate: latest.heading };
+    sea.current?.setAttribute("points", points(SEA, view));
+    beach.current?.setAttribute("points", points(BEACH, view));
+    DISTRICTS.forEach((d, i) => setAt(districts.current[i], "cx", "cy", projectToMinimap(d.center, view)));
+    ROADS.forEach((seg, i) => {
+      const line = roads.current[i];
+      setAt(line, "x1", "y1", projectToMinimap(seg.from, view));
+      setAt(line, "x2", "y2", projectToMinimap(seg.to, view));
+    });
+    latest.scared.forEach((place, i) => {
+      const fear = fears.current[i];
+      setAt(fear, "cx", "cy", projectToMinimap(place.at, view));
+      fear?.setAttribute("fill-opacity", String(Math.min(0.45, place.fear / 160)));
+    });
+    if (latest.search !== null) {
+      setAt(searchRing.current, "cx", "cy", projectToMinimap(latest.search.center, view));
+      searchRing.current?.setAttribute("r", String(latest.search.radius * scale));
+    }
+    chrome.current?.place(view, latest.markers);
+    const north = projectToMinimap([latest.at[0], latest.at[1] - RADIUS], view);
+    const nx = north.x - half;
+    const ny = north.y - half;
+    const reach = Math.hypot(nx, ny) || 1;
+    const rim = half + (compact ? 7 : 9);
+    if (northPin.current !== null) northPin.current.style.transform = `translate(${(nx / reach) * rim}px, ${(ny / reach) * rim}px)`;
+  };
+  const map = useGameStoreLive(readMap, sameChart, place);
   if (map === null) return null;
   const view: MinimapView = { center: map.at, worldRadius: RADIUS, size, rotate: map.heading };
-  const scale = size / (RADIUS * 2);
-  const search = map.search === null ? null : projectToMinimap(map.search.center, view);
-  const half = size / 2;
-  const north = projectToMinimap([map.at[0], map.at[1] - RADIUS], view);
-  const nx = north.x - half;
-  const ny = north.y - half;
-  const reach = Math.hypot(nx, ny) || 1;
-  const rim = half + (compact ? 7 : 9);
-  const district = districtAt(map.at[0], map.at[1])?.label;
+  const district = map.district;
   return (
     <div className="hh-chart" style={{ width: size + (compact ? 18 : 24) }}>
       <span className="hh-chart-bezel" style={{ width: size + (compact ? 18 : 24), height: size + (compact ? 18 : 24) }}>
@@ -81,17 +134,17 @@ export function CityMinimap() {
           </defs>
           <g clipPath="url(#hh-chart-clip)">
             <rect width={size} height={size} fill="#c9bf9f" />
-            <polygon points={points(SEA, view)} fill="#12889f" />
-            <polygon points={points(BEACH, view)} fill="#e6d3a4" />
-            {DISTRICTS.map((d) => { const c = projectToMinimap(d.center, view); return <circle key={d.id} cx={c.x} cy={c.y} r={d.radius * scale} fill={TINTS[d.id] ?? "#8f8f86"} fillOpacity={0.85} />; })}
-            {ROADS.map((seg, i) => { const a = projectToMinimap(seg.from, view); const b = projectToMinimap(seg.to, view); return <line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#f4ead2" strokeWidth={4} strokeOpacity={0.8} strokeLinecap="round" />; })}
-            {map.scared.map((place, i) => { const c = projectToMinimap(place.at, view); return <circle key={`fear-${i}`} cx={c.x} cy={c.y} r={place.radius * scale} fill="#e23b3b" fillOpacity={Math.min(0.45, place.fear / 160)} />; })}
-            {search === null || map.search === null ? null : <circle cx={search.x} cy={search.y} r={map.search.radius * scale} fill="#ef5a3c" fillOpacity={0.14} stroke="#ef5a3c" strokeWidth={2} strokeDasharray="4 3" />}
-            <MinimapChrome view={view} markers={map.markers} />
+            <polygon ref={sea} fill="#12889f" />
+            <polygon ref={beach} fill="#e6d3a4" />
+            {DISTRICTS.map((d, i) => <circle key={d.id} ref={(node) => { districts.current[i] = node; }} r={d.radius * scale} fill={TINTS[d.id] ?? "#8f8f86"} fillOpacity={0.85} />)}
+            {ROADS.map((_, i) => <line key={i} ref={(node) => { roads.current[i] = node; }} stroke="#f4ead2" strokeWidth={4} strokeOpacity={0.8} strokeLinecap="round" />)}
+            {map.scared.map((place, i) => <circle key={`fear-${i}`} ref={(node) => { fears.current[i] = node; }} r={place.radius * scale} fill="#e23b3b" />)}
+            {map.search === null ? null : <circle ref={searchRing} fill="#ef5a3c" fillOpacity={0.14} stroke="#ef5a3c" strokeWidth={2} strokeDasharray="4 3" />}
+            <MinimapChrome view={view} markers={map.markers} handle={chrome} />
           </g>
           <circle cx={half} cy={half} r={half - 1} fill="none" stroke="rgba(7, 29, 37, 0.55)" strokeWidth={2} />
         </svg>
-        <span className="hh-chart-north" style={{ transform: `translate(${(nx / reach) * rim}px, ${(ny / reach) * rim}px)` }}>N</span>
+        <span ref={northPin} className="hh-chart-north">N</span>
       </span>
       {district === undefined ? null : <StreetSign className="hh-chart-sign">{district}</StreetSign>}
     </div>
