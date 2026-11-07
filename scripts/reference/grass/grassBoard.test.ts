@@ -51,6 +51,14 @@ describe("grass board", () => {
     expect(shots.filter((shot) => shot.file.startsWith("species/"))).toHaveLength(GRASS_PRESETS.length * 2);
   });
 
+  test("--views with realism levels shoots every game view at each level, and the stylised targets as the games stand", () => {
+    const shots = boardShots(parseBoardArgs(["--views", "--realism", "0,1"])).filter((shot) => shot.file.startsWith("views/"));
+    expect(shots).toHaveLength(4 + 18 * 2);
+    expect(shots.filter((shot) => !shot.argv.includes("--param")).map((shot) => shot.file)).toEqual(["views/hh-park.png", "views/hh-park-low.png", "views/bb-moor.png", "views/bb-moor-low.png"]);
+    const atOne = shots.find((shot) => shot.file === "views/fw-plains-r1.png");
+    expect(atOne?.argv).toEqual(["fernwild", "--mode", "play", "--look", "-180,800", "--look-from", "12,2.4,0.6", "--param", "realism=1"]);
+  });
+
   test("--resume shoots only the shots the board folder lacks", () => {
     const out = mkdtempSync(join(tmpdir(), "grass-board-"));
     try {

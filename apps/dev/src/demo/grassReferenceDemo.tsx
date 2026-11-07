@@ -5,15 +5,13 @@ import type { PlayableGame } from "@jgengine/shell/registry";
 import { GrassPatch } from "@jgengine/core/grass/GrassPatch.draw";
 
 import { demoGame } from "./demoGame";
-import { GRASS_REFERENCE_PATCH, GRASS_REFERENCE_PHOTOS, grassReferenceCentre, grassReferenceView, grassStyleFromPage } from "./grassReference";
+import { GRASS_REFERENCE_PATCH, GRASS_REFERENCE_PHOTOS, grassReferenceCentre, grassReferenceView } from "./grassReference";
 
 const GROUND = "#4a3f30";
 
 function GrassReferences() {
-  const patches = useMemo(() => {
-    const worldStyle = grassStyleFromPage(typeof window === "undefined" ? "" : window.location.search);
-    return GRASS_REFERENCE_PHOTOS.map((photo, index) => ({ photo, centre: grassReferenceCentre(index), look: readGrassLook({ species: photo.species, seed: photo.id }, worldStyle) }));
-  }, []);
+  // The page's `?realism=` (the board's `--realism`) reaches these looks through readGrassLook.
+  const patches = useMemo(() => GRASS_REFERENCE_PHOTOS.map((photo, index) => ({ photo, centre: grassReferenceCentre(index), look: readGrassLook({ species: photo.species, seed: photo.id }) })), []);
   const area = useMemo(() => [GRASS_REFERENCE_PATCH, GRASS_REFERENCE_PATCH] as const, []);
   return (
     <group>

@@ -13,6 +13,7 @@ import { registerSceneKind, type SceneKindObject } from "@jgengine/core/scene/sc
 import { defineParamSchema, parseParams, type ColorParamField, type RangeParamField } from "@jgengine/core/generator/paramSchema";
 import { defineGenerator, registerGenerator } from "@jgengine/core/generator/generator";
 import { createGrassTuftTemplate, type GrassTuftTemplate } from "@jgengine/core/grass/grassField";
+import { drawnGrassLook } from "@jgengine/core/grass/grassDrawn";
 import { GRASS_SPECIES, type GrassSpecies } from "@jgengine/core/grass/grassSpecies";
 import { GRASS_STYLE_DEFAULTS, GRASS_STYLE_SCHEMA, resolveGrassStyle, type GrassStyle, type GrassStyleSettings } from "@jgengine/core/grass/grassStyle";
 
@@ -468,8 +469,9 @@ export const GRASS_GENERATOR = defineGenerator({
   generate(params, context): GrassFieldBake {
     const look = groupGrassKnobs({ ...params, seed: context.seed });
     const segments = Math.max(1, Math.round(4 * context.detail));
-    const bladesPerM2 = grassBladeDensity(look);
-    return { look, seed: context.seed, segments, template: createGrassTuftTemplate({ look, seed: context.seed, segments, bladesPerM2 }), bladesPerM2 };
+    const drawn = drawnGrassLook(look);
+    const bladesPerM2 = grassBladeDensity(drawn);
+    return { look, seed: context.seed, segments, template: createGrassTuftTemplate({ look: drawn, seed: context.seed, segments, bladesPerM2 }), bladesPerM2 };
   },
 });
 
@@ -517,7 +519,7 @@ export function registerGrassKind(): void {
     note: (object) => {
       const resolved = resolveGrassObject(object);
       if (resolved === null) return "Give the volume a box footprint.";
-      const perArea = grassBladeDensity(resolved.look);
+      const perArea = grassBladeDensity(drawnGrassLook(resolved.look));
       return `${Math.round(resolved.size[0])}×${Math.round(resolved.size[1])} m · ${Math.round(perArea)} blades/m² near the camera, thinned with distance`;
     },
   });

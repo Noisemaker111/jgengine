@@ -1,6 +1,8 @@
 import * as THREE from "three";
 
 import type { GrassBlade, GrassLook } from "@jgengine/core/grass/grassKind";
+import { grassMownAmount } from "@jgengine/core/grass/grassDrawn";
+import { grassExaggerationAmount } from "@jgengine/core/grass/grassStyle";
 import type { GrassWindLook } from "./grassWind";
 
 /** Uniforms the grass shader reads; the stream rewrites the `uLod` row per camera. */
@@ -29,6 +31,8 @@ export interface GrassShaderUniforms {
   /** x variegated margins, y cross bands, z head shape. */
   uPattern: THREE.IUniform<THREE.Vector4>;
   uPatternColor: THREE.IUniform<THREE.Color>;
+  /** Style shape: x torn tips (mown blades at the natural end), y round tips (the cartoon end). */
+  uStyle: THREE.IUniform<THREE.Vector4>;
 }
 
 /** The grass blade material and the uniforms behind it. */
@@ -57,6 +61,7 @@ uniform vec4 uShape;
 uniform vec4 uForm;
 uniform float uFlower;
 uniform vec4 uStripe;
+uniform vec4 uStyle;
 varying float vGrassT;
 varying float vGrassU;
 varying float vGrassStripe;
@@ -67,11 +72,20 @@ varying float vGrassFade;
 varying vec2 vGrassPetal;
 vec3 jgGrassPosition;
 vec3 jgGrassNormal;
-float jgProfile(float t) {
+float jgSpeciesProfile(float t) {
   float needle = pow(max(1.0 - t, 0.0), 0.85);
   float strap = (1.0 - 0.25 * t) * (1.0 - smoothstep(0.6, 1.0, t) * 0.92);
   float leaf = clamp(sin(3.14159 * (0.12 + 0.88 * t)) * 1.25, 0.0, 1.0) * (1.0 - smoothstep(0.85, 1.0, t) * 0.8);
   return uShape.x < 0.5 ? mix(needle, strap, uShape.x * 2.0) : mix(strap, leaf, uShape.x * 2.0 - 1.0);
+}
+float jgProfile(float t) {
+  float width = jgSpeciesProfile(t);
+  float shoulder = jgSpeciesProfile(0.7);
+  // A cut blade keeps its width to a blunt end; a cartoon blade ends in a round cap.
+  width = mix(width, max(width, shoulder * 0.85), uStyle.x);
+  float cap = clamp((t - 0.7) / 0.3, 0.0, 1.0);
+  float rounded = t > 0.7 ? shoulder * sqrt(max(1.0 - cap * cap, 0.0)) : width;
+  return mix(width, max(width, rounded), uStyle.y);
 }
 void jgComputeGrassBlade() {
   bool petal = grassUv.y > 1.5;
@@ -159,6 +173,7 @@ uniform vec2 uLight;
 uniform vec4 uStripe;
 uniform vec4 uPattern;
 uniform vec3 uPatternColor;
+uniform vec4 uStyle;
 varying float vGrassT;
 varying float vGrassU;
 varying float vGrassStripe;
@@ -196,6 +211,9 @@ if (vGrassKind > 1.5) {
   float spikeShade = mix(0.7, 1.08, y) * (0.9 + 0.1 * ridge) * mix(0.78, 1.04, core) * (0.92 + 0.12 * grain);
   grassColor *= mix(blossomShade, spikeShade, uPattern.z);
 } else {
+  // A mown blade's cut end is ragged: a few teeth across its width stop short of the tip.
+  float tooth = fract(sin(floor(vGrassU * 5.0) * 12.9898 + vGrassRoll * 78.233) * 43758.5453);
+  if (uStyle.x > 0.0 && vGrassT > 1.0 - uStyle.x * (0.06 + 0.16 * tooth)) discard;
   float roll2 = fract(vGrassRoll * 13.7);
   float roll3 = fract(vGrassRoll * 29.3);
   vec3 tip = vGrassKind > 0.5 ? uMixColor : uTipColor;
@@ -216,6 +234,8 @@ if (vGrassKind > 1.5) {
   float dryReach = dry * smoothstep(-0.3, 1.0, vGrassT + dry * 0.6);
   grassColor = mix(grassColor, vec3(0.79, 0.70, 0.48) * (0.6 + lum), dryReach);
   grassColor *= 1.0 + vGrassStripe * uStripe.y * 0.6;
+  // Torn ends dry pale.
+  grassColor = mix(grassColor, grassColor * vec3(1.1, 1.05, 0.75) + vec3(0.04), uStyle.x * smoothstep(0.8, 1.0, vGrassT) * 0.6);
   // Roots take the ground colour so blades grow out of the terrain instead of floating on it.
   grassColor = mix(mix(uGroundColor, grassColor, 0.45), grassColor, smoothstep(0.0, 0.3, vGrassT));
   // The lower blade sits in the sward's own shade, the same for every blade, so a dense field
@@ -257,6 +277,16 @@ export function setGrassWindUniforms(uniforms: Pick<GrassShaderUniforms, "uWind"
   uniforms.uWindDirection.value.set(Math.cos(heading), Math.sin(heading));
 }
 
+/**
+ * The shader's style shape row for a look: x torn tips, the natural end of `exaggeration` on a mown
+ * look; y round tips, its cartoon end. Both 0 at the default style.
+ * @internal
+ */
+export function grassStyleShape(look: Pick<GrassLook, "blade" | "style">): THREE.Vector4 {
+  const amount = grassExaggerationAmount(look.style.exaggeration);
+  return new THREE.Vector4(Math.max(0, -amount) * grassMownAmount(look), Math.max(0, amount), 0, 0);
+}
+
 /** Build the one grass material for a look; `groundColor` is the terrain the roots blend into. */
 export function createGrassMaterial(look: GrassLook, groundColor?: THREE.ColorRepresentation): GrassMaterialHandle {
   const base = new THREE.Color(look.colour.baseColor);
@@ -285,6 +315,7 @@ export function createGrassMaterial(look: GrassLook, groundColor?: THREE.ColorRe
     uStripe: { value: new THREE.Vector4(look.mowing.stripeWidth, look.mowing.stripeContrast, Math.cos(stripeHeading), Math.sin(stripeHeading)) },
     uPattern: { value: new THREE.Vector4(look.colour.variegation, look.colour.banding, look.flowers.headShape, 0) },
     uPatternColor: { value: new THREE.Color(look.colour.variegationColor) },
+    uStyle: { value: grassStyleShape(look) },
   };
   const material = new THREE.MeshStandardMaterial({ color: "#ffffff", side: THREE.DoubleSide, roughness: look.lighting.roughness, metalness: 0 });
   material.onBeforeCompile = (shader) => {

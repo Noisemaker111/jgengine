@@ -74,6 +74,11 @@ function realismTag(level: number | undefined): string {
   return level === undefined ? "today" : `r${level}`;
 }
 
+/** A game view's file at a realism level: `views/<id>.png` as the game stands, `views/<id>-r<level>.png` at a level. */
+function viewFile(id: string, level: number | undefined): string {
+  return level === undefined ? `views/${id}.png` : `views/${id}-${realismTag(level)}.png`;
+}
+
 /** Every capture a board run takes, in order. @internal */
 export function boardShots(args: Pick<BoardArgs, "realism" | "views" | "species" | "only">): BoardShot[] {
   const keep = (id: string) => args.only.length === 0 || args.only.includes(id);
@@ -88,10 +93,15 @@ export function boardShots(args: Pick<BoardArgs, "realism" | "views" | "species"
       });
     }
   }
+  // The stylised targets are our games' art as they stand, so those views are always shot without a
+  // realism; with --views and --realism every view is shot again at each level.
   const styled = new Set(GRASS_STYLE_TARGETS.flatMap((target) => target.views));
+  const viewLevels: (number | undefined)[] = args.views && args.realism.length > 0 ? args.realism : [];
   for (const view of GRASS_GAME_VIEWS) {
-    if (!(args.views || styled.has(view.id)) || !keep(view.id)) continue;
-    shots.push({ file: `views/${view.id}.png`, argv: [view.game, "--mode", "play", "--look", view.look, "--look-from", view.lookFrom] });
+    if (!keep(view.id)) continue;
+    const argv = [view.game, "--mode", "play", "--look", view.look, "--look-from", view.lookFrom];
+    if ((args.views && args.realism.length === 0) || styled.has(view.id)) shots.push({ file: viewFile(view.id, undefined), argv });
+    for (const level of viewLevels) shots.push({ file: viewFile(view.id, level), argv: [...argv, "--param", `realism=${level}`] });
   }
   if (args.species) {
     GRASS_PRESETS.forEach((_preset, index) => {
@@ -319,10 +329,13 @@ export function runBoard(args: BoardArgs): number {
   save(join(args.out, "stylised.png"), composeSheet(stylised, 480, 270, "STYLISED TARGETS AND OURS"));
   writeFileSync(join(args.out, "targets.txt"), GRASS_STYLE_TARGETS.map((target) => `${target.id} (realism ${target.realism}, art from ${target.views.join(", ")}):\n${target.target}\n`).join("\n"));
   if (args.views) {
-    const cells = GRASS_GAME_VIEWS.map((view) => ({ path: join(args.out, "views", `${view.id}.png`), label: view.id }));
-    const rows: Cell[][] = [];
-    for (let i = 0; i < cells.length; i += 3) rows.push(cells.slice(i, i + 3));
-    save(join(args.out, "views.png"), composeSheet(rows, 640, 360, "GRASS GAME VIEWS"));
+    for (const level of levels) {
+      const cells = GRASS_GAME_VIEWS.map((view) => ({ path: join(args.out, viewFile(view.id, level)), label: view.id }));
+      const rows: Cell[][] = [];
+      for (let i = 0; i < cells.length; i += 3) rows.push(cells.slice(i, i + 3));
+      const sheet = level === undefined ? "views.png" : `views-${realismTag(level)}.png`;
+      save(join(args.out, sheet), composeSheet(rows, 640, 360, level === undefined ? "GRASS GAME VIEWS" : `GRASS GAME VIEWS AT REALISM ${level}`));
+    }
   }
   if (args.species) speciesSheets(args);
   if (args.diff !== undefined) diffBoards(args, args.diff);
@@ -334,8 +347,8 @@ const USAGE = {
   summary: "shoot the grass reference boards: real photos beside our matching views, our games' stylised art beside the realism ends, the 18 grass game views and every species",
   usage: "bun run shoot --board [--realism 0,0.5,1] [--views] [--species] [--only ids] [--out dir] [--diff <earlier board>] [--quality tier] [--timeout s] [--resume]",
   flags: [
-    { flag: "--realism <list>", detail: "realism levels to shoot the reference views at (0 cartoon .. 1 photoreal); default the demo as it is" },
-    { flag: "--views", detail: "also shoot the 18 grass game views (views.png)" },
+    { flag: "--realism <list>", detail: "realism levels to shoot the reference views (and with --views the game views) at (0 cartoon .. 1 photoreal); default as they are" },
+    { flag: "--views", detail: "also shoot the 18 grass game views (views.png; with --realism, views-r<level>.png per level)" },
     { flag: "--species", detail: "also shoot every grass-looks species, look and close (species-*.png)" },
     { flag: "--only <ids>", detail: "keep only these reference photos, game views or species numbers" },
     { flag: "--out <dir>", detail: "board folder (default .scratch/boards/grass)" },
