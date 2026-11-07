@@ -142,6 +142,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/preserve.proof.ts",
+      "proves": [
+        "crafting.preserve"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/ride-fly.proof.ts",
       "proves": [
         "creatures.ride.fly"
