@@ -2,6 +2,13 @@
   "game": "fernwild",
   "proofs": [
     {
+      "file": "proofs/sim/biome-spawns.proof.ts",
+      "proves": [
+        "spawns.biome-weighted"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/body-recover.proof.ts",
       "proves": [
         "failure.lose-and-recover"
