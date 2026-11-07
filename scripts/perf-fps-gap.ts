@@ -267,13 +267,18 @@ export function shortName(name: string): string {
 }
 
 /** The whole report: conditions, the per-game table, each game's top costs, and the ranked work items. */
-export function renderFpsGapReport(entries: readonly FpsGapEntry[], options: { markdown: boolean; engine?: string }): string {
+export function renderFpsGapReport(entries: readonly FpsGapEntry[], options: { markdown: boolean }): string {
   const { markdown } = options;
   const out: string[] = [];
   const first = entries[0]?.record;
+  // The engine each record was measured on, not the checkout printing it: `--reuse` reads old records.
+  const engines = [...new Set(entries.flatMap((entry) => {
+    const engine = entry.record.engine;
+    return engine?.commit == null ? [] : [`${engine.commit.slice(0, 9)}${engine.dirty === true ? " (dirty)" : ""}`];
+  }))];
   const budget = ms2(FPS_GAP_BUDGET_MS);
   out.push(`360 fps gap: every cost against the ${budget} ms frame (360 fps). ${entries.length} games.`);
-  if (first !== undefined) out.push(`Conditions: ${first.viewport}, ${first.quality} tier, ${first.frameClock} clock, path ${first.path ?? "still"}, ${first.gpu}${options.engine === undefined ? "" : `, engine ${options.engine}`}.`);
+  if (first !== undefined) out.push(`Conditions: ${first.viewport}, ${first.quality} tier, ${first.frameClock} clock, path ${first.path ?? "still"}, ${first.gpu}${engines.length === 0 ? "" : `, engine ${engines.join(" and ")}`}.`);
   out.push("CPU is main-thread work per frame and GPU the timer-query sum of the passes; cost is the larger p50, so 'x budget' and 'ceiling fps' assume the two overlap fully.");
   out.push("These are the dev server's build (development React, unminified modules) in headless Chrome; a production desktop build spends less CPU (`bun run perf desktop --launch <app.exe> --uncapped`).", "");
 
@@ -416,7 +421,7 @@ async function main(): Promise<void> {
   const engine = engineRecord(identity) ?? undefined;
   const failed = parsed.reuse ? [] : await measureAll(parsed, engine);
   const { entries, missing } = readEntries(parsed.records, parsed.games.filter((game) => !failed.includes(game)));
-  console.log(renderFpsGapReport(entries, { markdown: parsed.markdown, ...(engine?.commit === undefined || engine.commit === null ? {} : { engine: engine.commit.slice(0, 9) }) }));
+  console.log(renderFpsGapReport(entries, { markdown: parsed.markdown }));
   const absent = [...failed, ...missing];
   if (absent.length > 0) {
     console.error(`perf fps-gap: no measurement for ${absent.join(", ")}`);

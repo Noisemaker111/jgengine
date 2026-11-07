@@ -139,9 +139,10 @@ test("row names shorten to the file and the shared-task name", () => {
 
 test("the report prints every game against the budget, in text or Markdown", () => {
   const entries = [entry("harbor-heat", breakdown()), entry("deepward", null)];
-  const text = renderFpsGapReport(entries, { markdown: false, engine: "abc123" });
+  for (const each of entries) each.record.engine = { package: "@jgengine/core", version: "0.53.0", commit: "abc123def456", dirty: false, path: "/repo/" };
+  const text = renderFpsGapReport(entries, { markdown: false });
   expect(text).toContain("2.78 ms frame (360 fps)");
-  expect(text).toContain("engine abc123");
+  expect(text, "the engine the records were measured on, once").toContain("engine abc123def.");
   expect(text).toMatch(/harbor-heat\s+12\.00\s+16\.80\s+21\.60\s+9\.00\s+6\.00\s+CPU\s+3\.2x\s+111\s/);
   expect(text).toContain("deepward");
   expect(text).toContain("scene submission (three.js traversal, sort, draw calls)");
