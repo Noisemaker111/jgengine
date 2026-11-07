@@ -272,7 +272,7 @@ function closeHeldLane(args: LaneCloseArgs, branch: string, io: LaneIo): number 
 
   // The tests rewrote each game's suite report (here or on boat, which sends it back): write its score
   // into the README and PLAN now, so the lane's commit carries the score its own proofs earned.
-  const scored = io.sh(["scripts/gen-game-suite.ts"], true);
+  const scored = io.sh(["run", "scripts/gen-game-suite.ts"], true);
   if (scored.status !== 0) {
     io.err(`lane:close: writing the game suite scores failed (exit ${scored.status}); nothing landed.`);
     return EXIT_VERIFY_FAILED;

@@ -197,8 +197,8 @@ describe("lane:close end to end", () => {
       return sh(argv, inherit);
     };
     closeLane({}, fake);
-    expect(calls.indexOf("scripts/gen-game-suite.ts")).toBeGreaterThan(calls.indexOf("run verify:fast --landing"));
-    expect(calls.indexOf("scripts/gen-game-suite.ts")).toBeLessThan(calls.indexOf("run scripts/land.ts --commit"));
+    expect(calls.indexOf("run scripts/gen-game-suite.ts")).toBeGreaterThan(calls.indexOf("run verify:fast --landing"));
+    expect(calls.indexOf("run scripts/gen-game-suite.ts")).toBeLessThan(calls.indexOf("run scripts/land.ts --commit"));
   });
 
   test("by default the stage lines stay quiet and the report still prints; --verbose prints each stage", () => {
