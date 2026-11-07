@@ -5,6 +5,7 @@ import { resolveEncumbrance, totalLoad } from "@jgengine/core/inventory/encumbra
 import { createEquipment, type Equipment, type EquipmentState } from "@jgengine/core/inventory/equipment";
 import type { InventoryState } from "@jgengine/core/inventory/inventoryModel";
 import { createSpoilage, type Spoilage } from "@jgengine/core/inventory/spoilage";
+import { applyWear, createDurability, isBroken, repairQuote, type DurabilityState } from "@jgengine/core/item/durability";
 import { leveling } from "@jgengine/core/progression/leveling";
 import { createStatPoints, type StatPointLine } from "@jgengine/core/progression/statPoints";
 import { playerMovementTelemetry } from "@jgengine/core/movement/playerMovement";
@@ -22,6 +23,7 @@ import { BAG, BAG_SLOTS, HOTBAR } from "./bags";
 import { ENGRAMS, engramDef, CRAFTING_RECIPES, recipeDef } from "./data/engrams";
 import { gatheredBy, HARVESTABLES, type GatherBy } from "./data/harvestables";
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
+import { toolDurability } from "./data/toolWear";
 import { FIST, GEAR_SLOTS, itemDef, itemLabel, itemTraits, PICK_UP, SPOILS, type ToolDef } from "./data/items";
 import { placeHeld, stations, strikeStructure } from "./base";
 import { mountCanSprint, shootCreature, strikeCreature } from "./creatures";
@@ -67,6 +69,8 @@ interface Survivor {
   spoilage: Spoilage;
   /** Armour worn in ARK's five body slots. */
   gear: Equipment;
+  /** Each worn tool's durability, by item id: one carried pick or bow shares its kind's wear. Absent is like new. */
+  wear: Record<string, DurabilityState>;
 }
 
 interface Tally {
@@ -105,6 +109,7 @@ const survivorOf = perContext((ctx: GameContext): Survivor => ({
   tally: { ...NO_TALLY },
   spoilage: createSpoilage(SPOILS),
   gear: createGear(),
+  wear: {},
 }));
 
 function createGear(): Equipment {
@@ -318,6 +323,48 @@ function fire(ctx: GameContext, survivor: Survivor, tool: ToolDef, yaw: number):
   ctx.game.playEntityAnimation(ctx.player.userId, "swing");
   const hit = shootCreature(ctx, ctx.player.userId, yaw, ranged.range, shot);
   if (hit?.killed === true) grantXp(ctx, hit.xp);
+  wearHeld(ctx, survivor);
+}
+
+/** One point of wear on the tool in hand; at zero it breaks and is gone from the hotbar. */
+function wearHeld(ctx: GameContext, survivor: Survivor): void {
+  const { id } = heldTool(ctx, survivor);
+  const spec = id === null ? null : toolDurability(id);
+  if (id === null || spec === null) return;
+  const worn = applyWear(survivor.wear[id] ?? createDurability(spec), spec.wearPerUse ?? 1);
+  if (!isBroken(worn)) {
+    survivor.wear[id] = worn;
+    return;
+  }
+  delete survivor.wear[id];
+  ctx.player.inventory.take(HOTBAR, id, 1);
+  if (ctx.player.inventory.count(HOTBAR, id) === 0) survivor.activeSlot = null;
+  ctx.game.notices.push({ text: `Your ${itemLabel(id)} broke`, tone: "deny" });
+}
+
+/** What repairing a worn tool would restore and cost; null when it is like new or never wears. */
+function repairOf(survivor: Survivor, itemId: string) {
+  const spec = toolDurability(itemId);
+  const state = survivor.wear[itemId];
+  if (spec === null || state === undefined || state.current >= state.max) return null;
+  return repairQuote(spec, state);
+}
+
+/** Repair a worn tool with materials from the bag and hotbar, back to like new. */
+export function repairTool(ctx: GameContext, itemId: string): boolean {
+  const survivor = survivorOf(ctx);
+  const quote = repairOf(survivor, itemId);
+  if (quote === null) return false;
+  const short = quote.materials.find((cost) => ctx.player.inventory.count(BAG, cost.item) + ctx.player.inventory.count(HOTBAR, cost.item) < cost.count);
+  if (short !== undefined) {
+    ctx.game.notices.push({ text: `Repairing needs ${short.count} ${itemLabel(short.item)}`, tone: "deny" });
+    return false;
+  }
+  for (const cost of quote.materials) if (cost.count > 0) takeAnywhere(ctx, cost.item, cost.count);
+  delete survivor.wear[itemId];
+  ctx.game.notices.push({ text: `${itemLabel(itemId)} repaired`, tone: "success" });
+  ctx.touch();
+  return true;
 }
 
 /** Left click: swing whatever is in hand at what is in front. */
@@ -351,9 +398,13 @@ export function swing(ctx: GameContext, yaw?: number): void {
   if (struck !== null) {
     grantGather(ctx, survivor, struck.granted);
     if (struck.killed) grantXp(ctx, struck.xp);
+    wearHeld(ctx, survivor);
     return;
   }
-  if (strikeStructure(ctx, yaw ?? me.rotationY, tool.reach + 0.5, tool.damage * melee, tool.damageClass ?? "primitive")) return;
+  if (strikeStructure(ctx, yaw ?? me.rotationY, tool.reach + 0.5, tool.damage * melee, tool.damageClass ?? "primitive")) {
+    wearHeld(ctx, survivor);
+    return;
+  }
   ensurePlacements(ctx, survivor);
   const hit = survivor.harvest.strike({
     x: me.position[0],
@@ -366,6 +417,7 @@ export function swing(ctx: GameContext, yaw?: number): void {
   });
   if (hit === null) return;
   grantGather(ctx, survivor, hit.granted);
+  wearHeld(ctx, survivor);
 }
 
 /**
@@ -725,6 +777,8 @@ interface SurvivorSave {
   spoilage?: Record<string, number>;
   /** Worn armour; absent in saves from before armour could be worn. */
   gear?: EquipmentState;
+  /** Worn tools' durability; absent in saves from before tools wore. */
+  wear?: Record<string, DurabilityState>;
 }
 
 export function survivorSave(ctx: GameContext) {
@@ -732,7 +786,7 @@ export function survivorSave(ctx: GameContext) {
     key: "fernwild.survivor",
     snapshot: (): SurvivorSave => {
       const survivor = survivorOf(ctx);
-      return { vitals: survivor.vitals.state(), points: { ...survivor.points }, engrams: survivor.engrams.snapshot(), queue: survivor.queue, harvest: survivor.harvest.snapshot(), tally: { ...survivor.tally }, spoilage: survivor.spoilage.snapshot(), gear: survivor.gear.state() };
+      return { vitals: survivor.vitals.state(), points: { ...survivor.points }, engrams: survivor.engrams.snapshot(), queue: survivor.queue, harvest: survivor.harvest.snapshot(), tally: { ...survivor.tally }, spoilage: survivor.spoilage.snapshot(), gear: survivor.gear.state(), wear: { ...survivor.wear } };
     },
     hydrate: (data: SurvivorSave) => {
       const survivor = survivorOf(ctx);
@@ -745,6 +799,7 @@ export function survivorSave(ctx: GameContext) {
       survivor.tally = { ...data.tally };
       survivor.spoilage.restore(data.spoilage ?? {});
       if (!survivor.gear.restore(data.gear ?? { slots: [] })) survivor.gear.reset();
+      survivor.wear = { ...(data.wear ?? {}) };
       applyMaxes(ctx, survivor, false);
     },
   };
@@ -761,6 +816,7 @@ export function resetSurvivor(ctx: GameContext): void {
   survivor.tally = { ...NO_TALLY };
   survivor.spoilage = createSpoilage(SPOILS);
   survivor.gear.reset();
+  survivor.wear = {};
 }
 
 // --- what the HUD reads ----------------------------------------------------------------------
@@ -796,6 +852,14 @@ export function survivorView(ctx: GameContext) {
     hazards: survivor.hazards,
     comfort: survivor.comfort.band,
     weather: survivor.climate?.weather ?? "clear",
+    // Carried tools that have worn: how much is left, and what repairing them costs and whether it can be paid.
+    worn: Object.entries(survivor.wear)
+      .filter(([itemId]) => ctx.player.inventory.count(BAG, itemId) + ctx.player.inventory.count(HOTBAR, itemId) > 0)
+      .map(([itemId, state]) => {
+        const cost = repairOf(survivor, itemId)?.materials ?? [];
+        return { itemId, label: itemLabel(itemId), left: state.current, max: state.max, cost, canRepair: cost.every((entry) => ctx.player.inventory.count(BAG, entry.item) + ctx.player.inventory.count(HOTBAR, entry.item) >= entry.count) };
+      }),
+    held: ((id) => (id === null ? null : { itemId: id, left: survivor.wear[id]?.current ?? toolDurability(id)?.max ?? null, max: toolDurability(id)?.max ?? null }))(heldTool(ctx, survivor).id),
     gear: GEAR_SLOTS.map((slot) => ({ id: slot.id, label: slot.label, item: survivor.gear.worn().find((entry) => entry.slotId === slot.id)?.itemId ?? null })),
     insulation: insulation(survivor),
     sheltered: survivor.climate?.covered ?? false,

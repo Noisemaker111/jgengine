@@ -99,6 +99,17 @@ function Carried({ giveTo = null }: { giveTo?: "giveCreature" | "storePut" | nul
       </div>
       <span style={HEADING}>Hotbar</span>
       <InventoryGrid inventoryId={HOTBAR} columns={10} size={32} itemIcon={itemIcon} onActivate={(slot) => void game.commands.run(giveTo ?? "shuttle", { inventoryId: HOTBAR, slot })} />
+      {view.worn.map((tool) => (
+        <div key={tool.itemId} data-worn={tool.itemId} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+          <span style={{ flex: 1, color: tool.left / tool.max < 0.25 ? "#ff8a7a" : "#cfe" }}>
+            {tool.label} {tool.left} / {tool.max}
+          </span>
+          <span style={{ opacity: 0.7 }}>{tool.cost.map((entry) => `${entry.count} ${itemLabel(entry.item)}`).join(", ")}</span>
+          <button type="button" disabled={!tool.canRepair} onClick={() => void game.commands.run("repairTool", { itemId: tool.itemId })}>
+            Repair
+          </button>
+        </div>
+      ))}
       <span style={{ fontSize: 11, opacity: 0.7 }}>
         {giveTo === "giveCreature" ? "Double-click gives an item to the creature." : giveTo === "storePut" ? "Double-click puts an item in the box." : "Double-click moves an item between inventory and hotbar. Number keys use or equip hotbar items."}
       </span>
