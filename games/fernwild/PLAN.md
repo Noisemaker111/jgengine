@@ -17,20 +17,20 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | progression | 0/1 | 1 | 0 | 0 | 0 |
 | content | 4/5 | 1 | 0 | 0 | 0 |
 | survival | 9/9 | 0 | 0 | 0 | 0 |
-| building | 2/3 | 0 | 0 | 1 | 0 |
+| building | 3/3 | 0 | 0 | 0 | 0 |
 | harvest | 3/3 | 0 | 0 | 0 | 0 |
-| crafting | 5/6 | 0 | 0 | 1 | 0 |
+| crafting | 6/6 | 0 | 0 | 0 | 0 |
 | taming | 9/9 | 0 | 0 | 0 | 0 |
-| creatures | 8/13 | 0 | 0 | 5 | 0 |
+| creatures | 11/13 | 0 | 0 | 2 | 0 |
 | breeding | 3/4 | 0 | 0 | 1 | 0 |
 | spawns | 3/3 | 0 | 0 | 0 | 0 |
 | boss | 1/3 | 0 | 0 | 2 | 0 |
 | cave | 2/2 | 0 | 0 | 0 | 0 |
-| **total** | **51/67** | 2 | 0 | 14 | 0 |
+| **total** | **56/67** | 2 | 0 | 9 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: creature-survival. 51/67 proven · 2 failing · 14 missing.
+Genres: creature-survival. 56/67 proven · 2 failing · 9 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
@@ -42,7 +42,7 @@ Genres: creature-survival. 51/67 proven · 2 failing · 14 missing.
 | `menu.start-and-credits` | missing | The main menu starts a game and shows the credits. |  |
 | `progression.runway` | FAILING | Something new unlocks steadily across the first five hours, up to the progression cap. | the last unlock is at level 60 of a cap of 105 |
 | `content.item-source` | proven | Every item can be obtained by playing. | content check |
-| `content.item-use` | FAILING | Every item does something: crafts, equips, eats, places, feeds, sells or summons. | no use for metal, obsidian, crystal, oil, mejoberry_seed, fertilizer, artifact_skylord, artifact_devourer, artifact_pack, artifact_immune, artifact_strong, element and 4 more |
+| `content.item-use` | FAILING | Every item does something: crafts, equips, eats, places, feeds, sells or summons. | no use for obsidian, crystal, oil, mejoberry_seed, fertilizer, artifact_skylord, artifact_devourer, artifact_pack, artifact_immune, artifact_strong, element, spider_flag and 3 more |
 | `content.recipes-reachable` | proven | Every recipe and source can actually be used: its inputs, station and unlock are all obtainable. | content check |
 | `content.placeables-place` | proven | Every item that says it can be placed can be placed. | content check |
 | `content.weapons-have-ammo` | proven | Every weapon that fires has obtainable ammo, or needs none. | content check |
@@ -56,14 +56,14 @@ Genres: creature-survival. 51/67 proven · 2 failing · 14 missing.
 | `survival.encumbrance` | proven | Carrying more slows the player, and past the limit they cannot move. | proofs/sim/encumbrance.proof.ts |
 | `survival.farm` | proven | Plant a seed in a plot; with water and fertilizer it grows a harvest. | proofs/sim/farm.proof.ts |
 | `building.place-snap` | proven | Building pieces place, snap to each other and stand. | proofs/sim/build-snap.proof.ts |
-| `building.shelter` | missing | A built enclosure shelters the player from weather and cold. |  |
+| `building.shelter` | proven | A built enclosure shelters the player from weather and cold. | proofs/sim/shelter.proof.ts |
 | `building.tiers-durability` | proven | Stronger building tiers resist attacks a weaker tier does not. | proofs/sim/build-tiers.proof.ts |
 | `harvest.tool-bias` | proven | The tool used changes what a tree, rock or body yields, and how much. | proofs/sim/tool-bias.proof.ts |
 | `harvest.node-respawn` | proven | Depleted trees, rocks and bushes come back after a while. | proofs/sim/node-respawn.proof.ts |
 | `harvest.carcass` | proven | A killed creature's body yields meat and hide by tool. | proofs/sim/carcass-harvest.proof.ts |
 | `crafting.station-tiers` | proven | Placed stations craft recipes the bare inventory cannot. | proofs/sim/station-tiers.proof.ts |
 | `crafting.unlock-spend` | proven | Level-ups give points the player spends to learn recipes. | proofs/sim/craft-learn.proof.ts |
-| `crafting.refine-tier` | missing | Raw ore smelts at a fuelled station into a material that opens a stronger tier of tools and building. |  |
+| `crafting.refine-tier` | proven | Raw ore smelts at a fuelled station into a material that opens a stronger tier of tools and building. | proofs/sim/refine-tier.proof.ts |
 | `crafting.fuel` | proven | A station that burns consumes fuel and stops when it runs out. | proofs/sim/station-fuel.proof.ts |
 | `crafting.preserve` | proven | A preserving container slows spoilage. | proofs/sim/preserve.proof.ts |
 | `crafting.tool-wear` | proven | Tools and weapons wear with use, break, and can be repaired with materials. | proofs/sim/tool-wear.proof.ts |
@@ -77,14 +77,14 @@ Genres: creature-survival. 51/67 proven · 2 failing · 14 missing.
 | `taming.trap` | proven | A trap or snare holds a creature still for taming. | proofs/sim/bola.proof.ts |
 | `taming.effectiveness` | proven | A cleaner tame gives a better creature. | proofs/sim/tame-clean.proof.ts |
 | `creatures.follow-stay` | proven | Order a tame to follow, stay or guard. | proofs/sim/follow-stay.proof.ts |
-| `creatures.fight-alongside` | missing | Tames attack what threatens the player. |  |
+| `creatures.fight-alongside` | proven | Tames attack what threatens the player. | proofs/sim/fight-alongside.proof.ts |
 | `creatures.work.gather` | proven | Species have gather roles: a tame gathers its specialty resource far faster than the player's best tool. | proofs/sim/tame-gather.proof.ts |
 | `creatures.work.haul` | proven | A tame carries weight so the player can haul more. | proofs/sim/tame-haul.proof.ts |
 | `creatures.work.lighter-loads` | proven | A specialist tame carries its specialty resource at reduced weight. | proofs/sim/tame-lighter-loads.proof.ts |
 | `creatures.work.airlift` | missing | A flying tame picks up a smaller creature or survivor and carries it. |  |
 | `creatures.feed-starve` | proven | Tames eat from their own inventory or a shared trough; an unfed tame starves and dies. | proofs/sim/tame-hunger.proof.ts |
-| `creatures.guard-base` | missing | Tames left at the base defend it. |  |
-| `creatures.behavior-modes` | missing | Set a tame passive, neutral or aggressive, and it fights accordingly. |  |
+| `creatures.guard-base` | proven | Tames left at the base defend it. | proofs/sim/guard-base.proof.ts |
+| `creatures.behavior-modes` | proven | Set a tame passive, neutral or aggressive, and it fights accordingly. | proofs/sim/behavior-modes.proof.ts |
 | `creatures.level-up` | proven | Tames gain experience and the player spends their levels on stats. | proofs/sim/tame-level-up.proof.ts |
 | `creatures.ride.ground` | proven | Saddle a tame and ride it, steering and attacking from its back. | proofs/sim/ride-ground.proof.ts |
 | `creatures.ride.fly` | proven | Ride a flying tame: take off, climb, cross terrain that blocks walking, and land. | proofs/sim/ride-fly.proof.ts |

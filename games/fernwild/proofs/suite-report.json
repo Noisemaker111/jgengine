@@ -2,6 +2,13 @@
   "game": "fernwild",
   "proofs": [
     {
+      "file": "proofs/sim/behavior-modes.proof.ts",
+      "proves": [
+        "creatures.behavior-modes"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/biome-spawns.proof.ts",
       "proves": [
         "spawns.biome-weighted"
@@ -135,6 +142,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/fight-alongside.proof.ts",
+      "proves": [
+        "creatures.fight-alongside"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/first-goal.proof.ts",
       "proves": [
         "onboarding.first-goal"
@@ -156,6 +170,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/guard-base.proof.ts",
+      "proves": [
+        "creatures.guard-base"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/node-respawn.proof.ts",
       "proves": [
         "harvest.node-respawn"
@@ -166,6 +187,13 @@
       "file": "proofs/sim/preserve.proof.ts",
       "proves": [
         "crafting.preserve"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/refine-tier.proof.ts",
+      "proves": [
+        "crafting.refine-tier"
       ],
       "ok": true
     },
@@ -194,6 +222,13 @@
       "file": "proofs/sim/ride-ground.proof.ts",
       "proves": [
         "creatures.ride.ground"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/shelter.proof.ts",
+      "proves": [
+        "building.shelter"
       ],
       "ok": true
     },
@@ -348,7 +383,7 @@
       "id": "content.item-use",
       "ok": false,
       "problems": [
-        "no use for metal, obsidian, crystal, oil, mejoberry_seed, fertilizer, artifact_skylord, artifact_devourer, artifact_pack, artifact_immune, artifact_strong, element and 4 more"
+        "no use for obsidian, crystal, oil, mejoberry_seed, fertilizer, artifact_skylord, artifact_devourer, artifact_pack, artifact_immune, artifact_strong, element, spider_flag and 3 more"
       ]
     },
     {
