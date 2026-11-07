@@ -255,6 +255,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/ride-swim.proof.ts",
+      "proves": [
+        "creatures.ride.swim"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/shelter.proof.ts",
       "proves": [
         "building.shelter"

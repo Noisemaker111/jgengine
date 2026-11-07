@@ -240,11 +240,7 @@ export {
   type GrassLook,
   type GrassLookGroups,
 } from "./grass/grassKind";
-export {
-  GRASS_STYLE_SCHEMA,
-  type GrassStyle,
-  type GrassStyleSettings,
-} from "./grass/grassStyle";
+export { GRASS_STYLE_SCHEMA, type GrassStyle, type GrassStyleSettings } from "./grass/grassStyle";
 export {
   controlGroupKey,
   resolveControlGroupIntent,
