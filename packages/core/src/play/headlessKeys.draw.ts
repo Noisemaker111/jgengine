@@ -1,4 +1,4 @@
-import { actionContextStack, activeActionCodes } from "@jgengine/core/game/controlGate";
+import { actionContextStack, activeActionCodes, reboundActionCodes } from "@jgengine/core/game/controlGate";
 import { createActionStateTracker, toActionStateBindingMap } from "@jgengine/core/input/actionBindings";
 import type { HeadlessPlayable } from "@jgengine/core/runtime/headlessRunner";
 
@@ -7,7 +7,7 @@ import type { PlaySession } from "./playSession.draw";
 
 /** Keys held against a headless {@link PlaySession}, mapped through the game's own bindings. */
 export interface HeadlessKeys {
-  /** Press these keys; a key the game binds nowhere throws. */
+  /** Press these keys; a key the game (with the player's rebinds) binds nowhere throws. */
   down(keys: FlowKeys): void;
   up(keys: FlowKeys): void;
   /** One tick with the held keys' actions, rebinding first when a menu context changed them. */
@@ -30,15 +30,24 @@ export function createHeadlessKeys(game: HeadlessPlayable, session: PlaySession)
   const tracker = createActionStateTracker<string>(toActionStateBindingMap(activeActionCodes(ctx, baseInput)));
   const contexts = actionContextStack(ctx);
   let boundVersion = contexts.version();
-  const baseTracker = createActionStateTracker<string>(toActionStateBindingMap(baseInput));
+  // What each key is bound to with the player's rebinds, menus aside: a key a rebind freed is bound nowhere.
+  const baseTracker = createActionStateTracker<string>(toActionStateBindingMap(reboundActionCodes(ctx, baseInput)));
   const isBound = (key: string): boolean => {
     const bound = baseTracker.handleDown(key) !== null;
     baseTracker.reset();
     return bound;
   };
+  const rebindIfChanged = (): void => {
+    const version = contexts.version();
+    if (version === boundVersion) return;
+    boundVersion = version;
+    tracker.rebind(toActionStateBindingMap(activeActionCodes(ctx, baseInput)));
+    baseTracker.rebind(toActionStateBindingMap(reboundActionCodes(ctx, baseInput)));
+  };
   return {
     down(keys) {
       for (const key of flowKeyList(keys)) {
+        rebindIfChanged();
         if (!isBound(key)) throw new Error(`key ${key} is bound to no action in ${game.game.name}; bound actions: ${baseTracker.actions().join(", ")}`);
         tracker.handleDown(key);
       }
@@ -47,11 +56,7 @@ export function createHeadlessKeys(game: HeadlessPlayable, session: PlaySession)
       for (const key of flowKeyList(keys)) tracker.handleUp(key);
     },
     tick() {
-      const version = contexts.version();
-      if (version !== boundVersion) {
-        boundVersion = version;
-        tracker.rebind(toActionStateBindingMap(activeActionCodes(ctx, baseInput)));
-      }
+      rebindIfChanged();
       session.tick(tracker.actions().filter((action) => tracker.isDown(action)));
       tracker.endFrame();
     },
