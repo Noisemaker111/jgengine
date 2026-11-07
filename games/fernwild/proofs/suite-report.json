@@ -317,6 +317,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/tool-wear.proof.ts",
+      "proves": [
+        "crafting.tool-wear"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/vitals-drain.proof.ts",
       "proves": [
         "survival.vitals-drain"

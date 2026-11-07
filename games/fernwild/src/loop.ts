@@ -19,7 +19,7 @@ import { eggsSave, resetEggs, takeEgg, tickEggs } from "./game/eggs";
 import { callSupplyDrop, openCrate, resetSupplyDrops, supplyDropsSave, tickSupplyDrops } from "./game/supplyDrops";
 import type { NewGameConfig } from "@jgengine/core/game/newGame";
 import { START } from "./game/data/start";
-import { cancelCraft, consume, grantXp, heldItem, learn, learnFree, levelStat, resetSurvivor, selectSlot, setUpSurvivor, shuttle, startCraft, survivorSave, swing, takeOff, tickSurvivor, use, wearArmour } from "./game/survivor";
+import { cancelCraft, consume, grantXp, heldItem, learn, learnFree, levelStat, repairTool, resetSurvivor, selectSlot, setUpSurvivor, shuttle, startCraft, survivorSave, swing, takeOff, tickSurvivor, use, wearArmour } from "./game/survivor";
 import { setScreen, toggleExtendedHud, toggleScreen, type SurvivorScreen } from "./game/screens";
 
 const ORIGIN: [number, number, number] = [0, 0, 0];
@@ -84,6 +84,7 @@ export const systems = [
       });
       commands.define<{ inventoryId?: string; slot: number }>("consume", { apply: (state, input) => (consume(state, input.inventoryId ?? BAG, input.slot), state) });
       commands.define<{ inventoryId: string; slot: number }>("shuttle", { apply: (state, input) => (shuttle(state, input.inventoryId, input.slot), state) });
+      commands.define<{ itemId: string }>("repairTool", { apply: (state, input) => (repairTool(state, input.itemId), state) });
       commands.define<{ slot: string }>("takeOff", { apply: (state, input) => (takeOff(state, input.slot), state) });
     },
     update: tickSurvivor,

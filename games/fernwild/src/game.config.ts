@@ -359,6 +359,11 @@ export const game = defineGame({
         pedestals: caves.caves.filter((cave) => cave.artifact !== null).length,
         // 1 while an artifact's pedestal is in reach, so E would take it.
         atPedestal: cavePrompts(ctx).length > 0 ? 1 : 0,
+        // Uses the tool in hand has left before it breaks, and its most; -1 for fists or what never wears.
+        heldDurability: view.held?.left ?? -1,
+        heldDurabilityMax: view.held?.max ?? -1,
+        // Carried tools that have worn and could be repaired.
+        wornTools: view.worn.length,
         // Hotbar slot in hand, 1-based; 0 bare-handed.
         holding: view.activeSlot === null ? 0 : view.activeSlot + 1,
         // Metres to the survivor's own body, to a decimetre, and the stacks it holds; -1 and 0 with no body lying.
