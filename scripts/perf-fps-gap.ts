@@ -226,7 +226,9 @@ export function workItems(entries: readonly FpsGapEntry[]): WorkItem[] {
     const limit = item.side === "GC" ? 8 : threshold;
     item.blocks = [...item.perGame].filter(([, ms]) => ms >= limit).map(([game]) => game).sort();
   }
-  return [...items.values()].sort((a, b) => b.blocks.length - a.blocks.length || (a.side === "GC" ? 0 : b.totalMs) - (b.side === "GC" ? 0 : a.totalMs) || a.group.localeCompare(b.group));
+  // Garbage is megabytes, not ms, so among items blocking as many games it ranks after the timed ones.
+  const msKey = (item: WorkItem) => (item.side === "GC" ? -1 : item.totalMs);
+  return [...items.values()].sort((a, b) => b.blocks.length - a.blocks.length || msKey(b) - msKey(a) || a.group.localeCompare(b.group));
 }
 
 /** Megabytes the window's collections freed, scaled to 8 seconds of play. */
@@ -272,7 +274,8 @@ export function renderFpsGapReport(entries: readonly FpsGapEntry[], options: { m
   const budget = ms2(FPS_GAP_BUDGET_MS);
   out.push(`360 fps gap: every cost against the ${budget} ms frame (360 fps). ${entries.length} games.`);
   if (first !== undefined) out.push(`Conditions: ${first.viewport}, ${first.quality} tier, ${first.frameClock} clock, path ${first.path ?? "still"}, ${first.gpu}${options.engine === undefined ? "" : `, engine ${options.engine}`}.`);
-  out.push("CPU is main-thread work per frame and GPU the timer-query sum of the passes; cost is the larger p50, so 'x budget' and 'ceiling fps' assume the two overlap fully.", "");
+  out.push("CPU is main-thread work per frame and GPU the timer-query sum of the passes; cost is the larger p50, so 'x budget' and 'ceiling fps' assume the two overlap fully.");
+  out.push("These are the dev server's build (development React, unminified modules) in headless Chrome; a production desktop build spends less CPU (`bun run perf desktop --launch <app.exe> --uncapped`).", "");
 
   const summary: Table = { head: ["game", "frame p50", "p95", "p99", "CPU p50", "GPU p50", "bound", "x budget", "ceiling fps", "draws", "triangles", "nodes", "GC MB/8s", "hitches"], rows: [] };
   for (const { record } of entries) {
@@ -334,12 +337,21 @@ export function readEntries(dir: string, games: readonly string[]): { entries: F
 }
 
 async function measureAll(args: FpsGapArgs, engine: PerfRecord["engine"]): Promise<string[]> {
-  const server = await ensureDevServer(repoRoot);
+  const started: Awaited<ReturnType<typeof ensureDevServer>>[] = [];
   const failed: string[] = [];
+  let previous: string | null = null;
   try {
     for (const [index, game] of args.games.entries()) {
       console.error(`perf fps-gap: ${game} (${index + 1}/${args.games.length})`);
       try {
+        // Checked before every game: a dev server that died under the last one is restarted, and named,
+        // instead of every remaining game failing on a refused connection.
+        const server = await ensureDevServer(repoRoot);
+        if (server.pid !== undefined) {
+          if (index > 0) console.error(`perf fps-gap: the dev server was down after ${previous ?? "the previous game"}; started a new one`);
+          started.push(server);
+        }
+        previous = game;
         const exit = await withBrowserSession(
           { keep: false, debugPort: debugPortFor(index), timeoutMs: 180_000, hardDeadlineMs: 300_000, frameClock: "uncapped" },
           async ({ debugPort }) => {
@@ -367,8 +379,7 @@ async function measureAll(args: FpsGapArgs, engine: PerfRecord["engine"]): Promi
                 allocators: measured.allocators ?? [],
               };
               mkdirSync(args.records, { recursive: true });
-              writeFileSync(join(args.records, `${game}.json`), `${JSON.stringify(entry, null, 2)}
-`);
+              writeFileSync(join(args.records, `${game}.json`), `${JSON.stringify(entry, null, 2)}\n`);
               const b = measured.record.breakdown;
               console.error(`perf fps-gap: ${game} frame p50 ${b?.frame.p50 ?? measured.record.frame.avgMs} ms, CPU ${b?.work.p50 ?? "?"} ms, GPU ${b?.gpu?.p50 ?? "?"} ms`);
             } finally {
@@ -383,8 +394,10 @@ async function measureAll(args: FpsGapArgs, engine: PerfRecord["engine"]): Promi
       }
     }
   } finally {
-    killProcessTree(server.child ?? null);
-    killPid(server.pid, true);
+    for (const server of started) {
+      killProcessTree(server.child ?? null);
+      killPid(server.pid, true);
+    }
   }
   return failed;
 }
