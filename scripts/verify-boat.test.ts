@@ -87,6 +87,7 @@ function fakeBoat(options: { remote?: (name: string) => StepResult; refuse?: { c
     limits: async () => ({ status: 0, stdout: JSON.stringify({ activeSandboxes: running, maxActiveSandboxes: 2, ...options.limits }), stderr: "" }),
     list: async () => list(running),
     delete: async () => ({ status: 0, stdout: "", stderr: "" }),
+    lease: async () => ({ claim: () => {}, release: () => {} }),
     sleep: async (ms) => {
       now += ms;
       running = 0;

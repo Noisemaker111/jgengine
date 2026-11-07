@@ -47,6 +47,7 @@ function fakeBoat(options: { running?: string[]; freeAfterSleeps?: number; limit
   const mine: string[] = [];
   const calls: string[][] = [];
   const deleted: string[] = [];
+  const leases: string[] = [];
   let refusals = options.refuseFirst ?? 0;
   const running = (): string[] => [...others, ...mine];
   const cli: BoatCli = {
@@ -57,6 +58,10 @@ function fakeBoat(options: { running?: string[]; freeAfterSleeps?: number; limit
       const at = mine.indexOf(id);
       if (at >= 0) mine.splice(at, 1);
       return ok("");
+    },
+    lease: async (what) => {
+      leases.push(`take ${what}`);
+      return { claim: (id: string) => leases.push(`claim ${id}`), release: () => leases.push("release") };
     },
     run: async (args, onLine) => {
       calls.push([...args]);
@@ -81,7 +86,7 @@ function fakeBoat(options: { running?: string[]; freeAfterSleeps?: number; limit
     },
     now: () => now,
   };
-  return { cli, calls, deleted, sleeps: () => sleeps, waited: () => now - NOW };
+  return { cli, calls, deleted, leases, sleeps: () => sleeps, waited: () => now - NOW };
 }
 
 describe("capacity", () => {
@@ -196,6 +201,57 @@ describe("runOnBoat", () => {
     };
     expect(await runOnBoat(raced.cli, { ...base, registry: registry(), onLine: () => {} })).toMatchObject({ kind: "spent" });
     expect(raced.calls).toHaveLength(1);
+  });
+
+  test("the PC's boat lease is taken before machines are counted and released only after the machine is deleted", async () => {
+    const boat = fakeBoat({});
+    const order: string[] = [];
+    const { limits, list, run, delete: remove, lease } = boat.cli;
+    boat.cli.lease = async (what, note) => {
+      order.push("lease");
+      const held = await lease(what, note);
+      return "release" in held ? { claim: (id: string) => (order.push("claim"), held.claim(id)), release: () => (order.push("release"), held.release()) } : held;
+    };
+    boat.cli.limits = async () => (order.push("limits"), limits());
+    boat.cli.list = async () => (order.push("list"), list());
+    boat.cli.delete = async (id) => (order.push("delete"), remove(id));
+    boat.cli.run = async (args, onLine, onErr) => {
+      order.push("run");
+      // This boat forgets to delete its machine, so the run deletes it before letting go.
+      const result = await run(args, (line) => onLine(line.includes('"event":"summary"') ? line.replace('"deleted":true', '"deleted":false') : line), onErr);
+      return result;
+    };
+    boat.cli.list = async () => (order.push("list"), ok(listOf(["bx_mine1"])));
+    await runOnBoat(boat.cli, { ...base, what: "verify:fast beta abc", registry: registry(), onLine: () => {} });
+    expect(order[0]).toBe("lease");
+    expect(order.indexOf("list")).toBeGreaterThan(0);
+    expect(order.indexOf("delete")).toBeGreaterThan(order.indexOf("run"));
+    // Let go only after the machine was deleted.
+    expect(order.at(-1)).toBe("release");
+    expect(order.lastIndexOf("delete")).toBeLessThan(order.indexOf("release"));
+    // The machine is named to fairshare as soon as boat reports it, while the run goes on.
+    expect(order.indexOf("claim")).toBeGreaterThan(order.indexOf("run"));
+    expect(order.indexOf("claim")).toBeLessThan(order.indexOf("delete"));
+    expect(boat.leases).toHaveLength(3);
+    expect(boat.leases[0]).toBe("take verify:fast beta abc");
+    expect(boat.leases[1]).toMatch(/^claim bx_\w+$/);
+    expect(boat.leases[2]).toBe("release");
+  });
+
+  test("without fairshare to hold the cap boat is unusable for this run, and nothing starts", async () => {
+    const boat = fakeBoat({});
+    boat.cli.lease = async () => ({ unusable: "fairshare is not installed" });
+    expect(await runOnBoat(boat.cli, { ...base, registry: registry(), onLine: () => {} })).toMatchObject({ kind: "unusable", why: "fairshare is not installed" });
+    expect(boat.calls).toHaveLength(0);
+  });
+
+  test("the lease is released when the run throws", async () => {
+    const boat = fakeBoat({});
+    boat.cli.run = async () => {
+      throw new Error("boat crashed");
+    };
+    await expect(runOnBoat(boat.cli, { ...base, registry: registry(), onLine: () => {} })).rejects.toThrow("boat crashed");
+    expect(boat.leases.at(-1)).toBe("release");
   });
 
   test("the command's exit code comes back as it is", async () => {
