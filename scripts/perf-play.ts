@@ -776,7 +776,7 @@ export function summarizeFrameDraws(frames: readonly number[]): FrameDraws {
   };
 }
 
-const SAMPLE_FRAMES_SCRIPT = (windowMs: number): string => `new Promise((resolve) => {
+export const SAMPLE_FRAMES_SCRIPT = (windowMs: number): string => `new Promise((resolve) => {
   const deltas = [];
   let last = performance.now();
   const startedAt = last;

@@ -16,7 +16,7 @@ export const PERF: VerbTable = {
     crowd: { script: "scripts/perf-crowd.ts", guardSeconds: 300, detail: "[--counts 1000,10000,100000]: time one crowd tick through createEntityStore + createSpatialIndex beside the same step over flat typed arrays" },
     fracture: { script: "scripts/fracture-compare.ts", guardSeconds: 120, detail: "break a granite block with fractureRock, StructureGraph.toDebris and toDebrisBodies; print pieces, t10 and energy into motion beside the JKMRC law" },
     live: { script: "scripts/debug-report.ts", guardSeconds: 60, detail: "<game>: read the report a game open in a browser is producing and gate it" },
-    desktop: { script: "scripts/perf-desktop.ts", detail: "<debug-port> --out <file>: read a diagnostic desktop app's existing frame report" },
+    desktop: { script: "scripts/perf-desktop.ts", guardSeconds: 300, detail: "<debug-port> --out <file>: read a diagnostic desktop app's existing frame report; --launch <app.exe> [--uncapped]: launch one at the gate's conditions and print the fps it reaches" },
   },
   fallback: "play",
   example: "bun run perf deepward",
