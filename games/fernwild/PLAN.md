@@ -14,23 +14,23 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | save | 0/1 | 0 | 0 | 1 | 0 |
 | settings | 0/1 | 0 | 0 | 1 | 0 |
 | menu | 0/1 | 0 | 0 | 1 | 0 |
-| progression | 0/1 | 1 | 0 | 0 | 0 |
-| content | 4/5 | 1 | 0 | 0 | 0 |
+| progression | 1/1 | 0 | 0 | 0 | 0 |
+| content | 5/5 | 0 | 0 | 0 | 0 |
 | survival | 9/9 | 0 | 0 | 0 | 0 |
 | building | 3/3 | 0 | 0 | 0 | 0 |
 | harvest | 3/3 | 0 | 0 | 0 | 0 |
 | crafting | 6/6 | 0 | 0 | 0 | 0 |
 | taming | 9/9 | 0 | 0 | 0 | 0 |
-| creatures | 11/13 | 0 | 0 | 2 | 0 |
-| breeding | 3/4 | 0 | 0 | 1 | 0 |
+| creatures | 12/13 | 0 | 0 | 1 | 0 |
+| breeding | 4/4 | 0 | 0 | 0 | 0 |
 | spawns | 3/3 | 0 | 0 | 0 | 0 |
 | boss | 1/3 | 0 | 0 | 2 | 0 |
 | cave | 2/2 | 0 | 0 | 0 | 0 |
-| **total** | **56/67** | 2 | 0 | 9 | 0 |
+| **total** | **60/67** | 0 | 0 | 7 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: creature-survival. 56/67 proven · 2 failing · 9 missing.
+Genres: creature-survival. 60/67 proven · 7 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
@@ -40,9 +40,9 @@ Genres: creature-survival. 56/67 proven · 2 failing · 9 missing.
 | `save.continue` | missing | Progress made by playing survives saving and continuing. |  |
 | `settings.controls` | missing | The player opens settings and a change (a binding, volume, sensitivity) takes effect. |  |
 | `menu.start-and-credits` | missing | The main menu starts a game and shows the credits. |  |
-| `progression.runway` | FAILING | Something new unlocks steadily across the first five hours, up to the progression cap. | the last unlock is at level 60 of a cap of 105 |
+| `progression.runway` | proven | Something new unlocks steadily across the first five hours, up to the progression cap. | content check |
 | `content.item-source` | proven | Every item can be obtained by playing. | content check |
-| `content.item-use` | FAILING | Every item does something: crafts, equips, eats, places, feeds, sells or summons. | no use for obsidian, crystal, oil, mejoberry_seed, fertilizer, artifact_skylord, artifact_devourer, artifact_pack, artifact_immune, artifact_strong, element, spider_flag and 3 more |
+| `content.item-use` | proven | Every item does something: crafts, equips, eats, places, feeds, sells or summons. | content check |
 | `content.recipes-reachable` | proven | Every recipe and source can actually be used: its inputs, station and unlock are all obtainable. | content check |
 | `content.placeables-place` | proven | Every item that says it can be placed can be placed. | content check |
 | `content.weapons-have-ammo` | proven | Every weapon that fires has obtainable ammo, or needs none. | content check |
@@ -81,7 +81,7 @@ Genres: creature-survival. 56/67 proven · 2 failing · 9 missing.
 | `creatures.work.gather` | proven | Species have gather roles: a tame gathers its specialty resource far faster than the player's best tool. | proofs/sim/tame-gather.proof.ts |
 | `creatures.work.haul` | proven | A tame carries weight so the player can haul more. | proofs/sim/tame-haul.proof.ts |
 | `creatures.work.lighter-loads` | proven | A specialist tame carries its specialty resource at reduced weight. | proofs/sim/tame-lighter-loads.proof.ts |
-| `creatures.work.airlift` | missing | A flying tame picks up a smaller creature or survivor and carries it. |  |
+| `creatures.work.airlift` | proven | A flying tame picks up a smaller creature or survivor and carries it. | proofs/sim/airlift.proof.ts |
 | `creatures.feed-starve` | proven | Tames eat from their own inventory or a shared trough; an unfed tame starves and dies. | proofs/sim/tame-hunger.proof.ts |
 | `creatures.guard-base` | proven | Tames left at the base defend it. | proofs/sim/guard-base.proof.ts |
 | `creatures.behavior-modes` | proven | Set a tame passive, neutral or aggressive, and it fights accordingly. | proofs/sim/behavior-modes.proof.ts |
@@ -92,7 +92,7 @@ Genres: creature-survival. 56/67 proven · 2 failing · 9 missing.
 | `breeding.pair-mate` | proven | Put a male and a female tame together and they produce an egg or a baby. | proofs/sim/breed-mate.proof.ts |
 | `breeding.incubate` | proven | An egg hatches only kept at the right temperature. | proofs/sim/breed-incubate.proof.ts |
 | `breeding.raise-imprint` | proven | Feed and care for a baby; care raises its quality as it grows. | proofs/sim/breed-imprint.proof.ts |
-| `breeding.inherit-mutate` | missing | Offspring inherit their parents' stats, with a chance of mutation. |  |
+| `breeding.inherit-mutate` | proven | Offspring inherit their parents' stats, with a chance of mutation. | proofs/sim/breed-inherit.proof.ts |
 | `spawns.biome-weighted` | proven | Each region spawns its own creatures in its own mix. | proofs/sim/biome-spawns.proof.ts |
 | `spawns.danger-by-distance` | proven | Danger rises the further the player travels from the start. | proofs/sim/danger-distance.proof.ts |
 | `spawns.respawn-population` | proven | Killed or tamed creatures are replaced over time. | proofs/sim/respawn-population.proof.ts |
