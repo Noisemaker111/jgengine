@@ -79,11 +79,17 @@ export function takeEgg(ctx: GameContext): void {
   for (const stack of taken) ctx.game.notices.push({ text: `Took ${itemLabel(stack.item)}`, tone: "success" });
 }
 
+/**
+ * Below the creature in the crosshair (2), so E on a sleeping mother opens her and not the egg she just laid
+ * beside her; above a plain pick-up (1), so an egg beats the bush or stone it lies by.
+ */
+const EGG_PRIORITY = 1.5;
+
 export function eggPrompts(ctx: GameContext): PositionedPrompt[] {
   const entry = eggNear(ctx);
   const item = entry?.contents[0]?.item;
   if (entry === null || item === undefined) return [];
-  return [{ id: `egg:${entry.id}`, position: { x: entry.at[0], z: entry.at[2] }, priority: 4, prompt: proximityPrompt({ radius: TAKE_REACH + 1, display: keybind("interact", `Take ${itemLabel(item)}`), invoke: command("takeEgg") }) }];
+  return [{ id: `egg:${entry.id}`, position: { x: entry.at[0], z: entry.at[2] }, priority: EGG_PRIORITY, prompt: proximityPrompt({ radius: TAKE_REACH + 1, display: keybind("interact", `Take ${itemLabel(item)}`), invoke: command("takeEgg") }) }];
 }
 
 export function eggsSave(ctx: GameContext) {
