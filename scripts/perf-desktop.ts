@@ -77,12 +77,12 @@ export function parseLaunchArgs(argv: readonly string[]): LaunchArgs {
 async function startCaptureScene(session: CdpSession): Promise<string> {
   for (let attempt = 0; attempt < 120; attempt += 1) {
     const reply = await session.evaluate<{ ok: boolean; error?: string; ran?: { name: string; status: string; reason?: string }[] } | null>(
-      `window.__jgengineAgent?.handle?.({ method: "capture_run" }) ?? null`,
+      `window.__jgengineAgent?.handle?.({ method: "capture_run", skipUnregistered: true }) ?? null`,
     ).catch(() => null);
     if (reply?.ok === true) {
       const rejected = (reply.ran ?? []).filter((entry) => entry.status === "rejected");
       if (rejected.length > 0) throw new Error(`the game refused its capture.play: ${rejected.map((entry) => `${entry.name} (${entry.reason ?? "rejected"})`).join(", ")}`);
-      return `capture.play: ${(reply.ran ?? []).map((entry) => entry.name).join(", ")}`;
+      return `capture.play: ${(reply.ran ?? []).map((entry) => (entry.status === "unregistered" ? `${entry.name} (not in this build, skipped)` : entry.name)).join(", ")}`;
     }
     if (reply?.error === "the game declares no capture.play") return "no capture.play; the game starts in its scene";
     if (reply != null && reply.error !== "no game context yet") throw new Error(`capture_run failed: ${reply.error ?? "unknown"}`);

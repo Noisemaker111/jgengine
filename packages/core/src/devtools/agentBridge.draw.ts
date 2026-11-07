@@ -296,11 +296,20 @@ export function installAgentBridge(options: {
           const known = Object.keys(playable.capture?.states ?? {}).sort();
           return { ok: false, error: state === null ? "the game declares no capture.play" : `unknown capture state "${state}"; declared: ${known.join(", ") || "none"}` };
         }
+        // `skipUnregistered`: a production build lacks a game's dev-only capture helpers (an autopilot);
+        // run the rest and name what was skipped, rather than refusing the whole start.
+        const skipUnregistered = request["skipUnregistered"] === true;
         const ran: { name: string; status: string; reason?: string }[] = [];
         for (const entry of entries) {
           const name = typeof entry === "string" ? entry : entry.name;
           const input = typeof entry === "string" ? CAPTURE_COMMAND_INPUT : (entry.input ?? CAPTURE_COMMAND_INPUT);
-          if (!ctx.game.commands.has(name)) return { ok: false, error: `capture command "${name}" is not registered (ran ${ran.length} before it)` };
+          if (!ctx.game.commands.has(name)) {
+            if (skipUnregistered) {
+              ran.push({ name, status: "unregistered" });
+              continue;
+            }
+            return { ok: false, error: `capture command "${name}" is not registered (ran ${ran.length} before it)` };
+          }
           const result = ctx.game.commands.run(name, input);
           ran.push(result.status === "rejected" ? { name, status: result.status, reason: result.reason } : { name, status: result.status });
         }
