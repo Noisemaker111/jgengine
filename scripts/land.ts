@@ -1133,7 +1133,7 @@ function runningRunIds(checks: readonly GhCheck[], names: readonly string[]): st
  * rebase is what tells the two apart.
  */
 const BASE_MOVED =
-  /base branch was modified|base branch requires that the pull request is up to date|not up to date|out of date|branch is behind|merge commit cannot be cleanly created/i;
+  /base branch was modified|base branch requires that the pull request is up to date|not up to date|out of date|branch is behind|merge commit cannot be cleanly created|pull request has merge conflicts/i;
 
 export function baseMoved(detail: string): boolean {
   return BASE_MOVED.test(detail);
