@@ -17,7 +17,7 @@ import { bodyPrompts, bodyView } from "./game/deathBody";
 import { breedingPrompts, breedingView } from "./game/breeding";
 import { broodView, obeliskPrompts } from "./game/broodmother";
 import { BROOD_PHASES } from "./game/data/bosses";
-import { awakeTamingProgress, creaturePrompts, creaturesView, mountCanFly, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
+import { awakeTamingProgress, creaturePrompts, creaturesView, speciesNear, mountCanFly, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
 import { tameFood } from "./game/tameHunger";
 import { STRUCTURES } from "./game/data/structures";
 import { content } from "./game/content";
@@ -53,6 +53,10 @@ function nearestEgg(eggs: readonly { at: readonly [number, number, number] }[], 
 }
 
 const PIECES: ReadonlySet<string> = new Set(STRUCTURES.map((entry) => entry.id));
+
+/** Animals only the northern snow keeps, and only the south-coast beach keeps: what the biome probes count. */
+const SNOW_KINDS = new Set(["woolly_rhino", "mammoth", "sabertooth", "ovis", "kairuku", "yutyrannus", "purlovia"]);
+const COAST_KINDS = new Set(["dodo", "phiomia", "lystrosaurus", "parasaur", "dilophosaur", "moschops", "compy", "pachy"]);
 
 export const game = defineGame({
   name: "Fernwild",
@@ -323,6 +327,9 @@ export const game = defineGame({
         // Whole metres the ghost stands above the ground under it: a wall stacked on a wall shows 3.
         ghostLift: ghostPlan === null ? 0 : Math.round(ghostPlan.position[1] - ctx.world.groundHeightAt(ghostPlan.position[0], ghostPlan.position[2])),
         aimedStructureHealth: base.aimed?.health ?? 0,
+        // How many of the snow's own animals, and how many of the south-coast beach's, live within 120 m.
+        nearSnowKinds: [...speciesNear(ctx, here, 120)].filter((species) => SNOW_KINDS.has(species)).length,
+        nearCoastKinds: [...speciesNear(ctx, here, 120)].filter((species) => COAST_KINDS.has(species)).length,
         doorsOpen: base.open,
         // Metres the survivor stands past the first foundation's centre and past the first doorframe, along the
         // spawn facing: negative is short of it.
