@@ -93,6 +93,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/danger-distance.proof.ts",
+      "proves": [
+        "spawns.danger-by-distance"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/death-recover.proof.ts",
       "proves": [
         "failure.lose-and-recover"
