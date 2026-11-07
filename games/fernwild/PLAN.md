@@ -65,7 +65,7 @@ Genres: creature-survival. 43/67 proven · 3 failing · 21 missing.
 | `crafting.unlock-spend` | proven | Level-ups give points the player spends to learn recipes. | proofs/sim/craft-learn.proof.ts |
 | `crafting.refine-tier` | missing | Raw ore smelts at a fuelled station into a material that opens a stronger tier of tools and building. |  |
 | `crafting.fuel` | proven | A station that burns consumes fuel and stops when it runs out. | proofs/sim/station-fuel.proof.ts |
-| `crafting.preserve` | missing | A preserving container slows spoilage. |  |
+| `crafting.preserve` | proven | A preserving container slows spoilage. | proofs/sim/preserve.proof.ts |
 | `crafting.tool-wear` | missing | Tools and weapons wear with use, break, and can be repaired with materials. |  |
 | `taming.knockout-melee` | proven | Knock a creature out by hitting it, feed it, and it becomes yours. | proofs/sim/tame-knockout.proof.ts |
 | `taming.ranged-knockout` | proven | Knock a creature out from range with sedative ammo, without standing in its reach. | proofs/sim/tame-ranged.proof.ts |

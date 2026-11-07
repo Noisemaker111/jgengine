@@ -2,6 +2,7 @@ import { createBaseBuilding, type BaseBuilding, type BaseBuildingState, type Bas
 import type { StationInstance } from "@jgengine/core/crafting/recipe";
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { createEmptyInventory, putItem, takeItem, type InventoryState } from "@jgengine/core/inventory/inventoryModel";
+import { createSpoilage, type Spoilage } from "@jgengine/core/inventory/spoilage";
 import { playerMovementHeading } from "@jgengine/core/movement/playerMovement";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
@@ -10,7 +11,7 @@ import { createVitals, type Vitals, type VitalsState } from "@jgengine/core/stat
 import { BAG, HOTBAR } from "./bags";
 import { FUEL, FUEL_MAX } from "./data/fuel";
 import { BASE_BUILDING, CONTAINERS, STATIONS, structureDef, TIER_COLORS } from "./data/structures";
-import { itemLabel, itemTraits } from "./data/items";
+import { itemLabel, itemTraits, SPOILS } from "./data/items";
 import { setScreen } from "./screens";
 
 /** ARK's build reach: the ghost sits this far in front of the survivor. */
@@ -41,9 +42,11 @@ interface Base {
   stores: Map<string, InventoryState>;
   /** The container whose inventory is open. */
   viewing: string | null;
+  /** The spoil timers of what every container holds, each at its container's rate. */
+  spoilage: Spoilage;
 }
 
-const baseOf = perContext((): Base => ({ building: createBaseBuilding(BASE_BUILDING), ghost: null, turn: 0, syncedVersion: -1, aimed: null, fire: null, fires: new Map(), store: null, stores: new Map(), viewing: null }));
+const baseOf = perContext((): Base => ({ building: createBaseBuilding(BASE_BUILDING), ghost: null, turn: 0, syncedVersion: -1, aimed: null, fire: null, fires: new Map(), store: null, stores: new Map(), viewing: null, spoilage: createSpoilage(SPOILS) }));
 
 const fireBody = (): Vitals => createVitals([{ id: "fuel", max: FUEL_MAX, start: 0, rate: -1 }]);
 
@@ -183,6 +186,7 @@ export function tickBase(ctx: GameContext, heldItemId: string | null, dt: number
   for (const id of [...base.fires.keys()]) if (!standing.has(id)) base.fires.delete(id);
   for (const id of [...base.stores.keys()]) if (base.building.get(id) === null) base.stores.delete(id);
   if (base.viewing !== null && base.building.get(base.viewing) === null) closeStore(ctx);
+  spoilStores(base, dt);
   const me = ctx.scene.entity.get(ctx.player.userId);
   syncSolids(ctx, base);
   if (me === null) return;
@@ -254,12 +258,35 @@ function viewedStore(base: Base): { piece: BasePiece; items: InventoryState; slo
   return piece === null || items === null ? null : { piece, items, slots: CONTAINERS[piece.pieceId]!.slots };
 }
 
+/** What the containers hold goes off at each one's rate; what it spoils into takes its place if there is room. */
+function spoilStores(base: Base, dt: number): void {
+  const stacks = [...base.stores].flatMap(([id, items]) => {
+    const piece = base.building.get(id);
+    const rate = piece === null ? 1 : (CONTAINERS[piece.pieceId]?.spoil ?? 1);
+    return items.slots.flatMap((slot, index) => (slot === null ? [] : [{ key: `${id}:${index}`, itemId: slot.itemId, count: slot.count, rate }]));
+  });
+  for (const unit of base.spoilage.tick(dt, stacks)) {
+    const id = unit.key.slice(0, unit.key.lastIndexOf(":"));
+    const piece = base.building.get(id);
+    const items = base.stores.get(id);
+    if (piece === null || items === undefined) continue;
+    const taken = takeItem(items, unit.itemId, unit.count);
+    if (taken.status !== "ok") continue;
+    const into = unit.into === null ? null : putItem(taken.state, { slots: CONTAINERS[piece.pieceId]!.slots }, itemTraits, unit.into, unit.count);
+    base.stores.set(id, into?.status === "ok" ? into.state : taken.state);
+  }
+}
+
 /** A stack from the survivor's bag or hotbar into the open container. */
 export function storePut(ctx: GameContext, from: string, slot: number): void {
   const base = baseOf(ctx);
   const open = viewedStore(base);
   const stack = ctx.player.inventory.state(from).slots[slot] ?? null;
   if (open === null || stack === null) return;
+  if (CONTAINERS[open.piece.pieceId]!.foodOnly === true && SPOILS[stack.itemId] === undefined) {
+    ctx.game.notices.push({ text: `The ${itemLabel(open.piece.pieceId)} only keeps food`, tone: "deny" });
+    return;
+  }
   const put = putItem(open.items, { slots: open.slots }, itemTraits, stack.itemId, stack.count);
   if (put.status !== "ok") {
     ctx.game.notices.push({ text: `The ${itemLabel(open.piece.pieceId)} is full`, tone: "deny" });
@@ -419,14 +446,15 @@ interface BaseSave {
   building: BaseBuildingState;
   fires: Record<string, VitalsState>;
   stores: Record<string, InventoryState>;
+  spoilage: Record<string, number>;
 }
 
 export function baseSave(ctx: GameContext) {
   return {
-    key: "fernwild.base3",
+    key: "fernwild.base4",
     snapshot: (): BaseSave => {
       const base = baseOf(ctx);
-      return { building: base.building.snapshot(), fires: Object.fromEntries([...base.fires].map(([id, fire]) => [id, fire.state()])), stores: Object.fromEntries(base.stores) };
+      return { building: base.building.snapshot(), fires: Object.fromEntries([...base.fires].map(([id, fire]) => [id, fire.state()])), stores: Object.fromEntries(base.stores), spoilage: base.spoilage.snapshot() };
     },
     hydrate: (data: BaseSave) => {
       const base = baseOf(ctx);
@@ -438,6 +466,7 @@ export function baseSave(ctx: GameContext) {
         base.fires.set(id, fire);
       }
       base.stores = new Map(Object.entries(data.stores));
+      base.spoilage.restore(data.spoilage);
       syncSolids(ctx, base);
     },
   };
@@ -448,6 +477,7 @@ export function resetBase(ctx: GameContext): void {
   base.building.clear();
   base.fires.clear();
   base.stores.clear();
+  base.spoilage.restore({});
   base.viewing = null;
   base.store = null;
   base.ghost = null;

@@ -34,3 +34,14 @@ test("timers survive a save", () => {
   again.restore(spoilage.snapshot());
   expect(again.tick(100, [meat])).toHaveLength(1);
 });
+
+test("a stack's rate slows its timer: at a quarter it lasts four times as long, and at zero it keeps", () => {
+  const spoilage = createSpoilage(rules);
+  const kept = { key: "bin:0", itemId: "raw_meat", count: 2, rate: 0.25 };
+  expect(spoilage.tick(2399, [kept])).toEqual([]);
+  expect(spoilage.left(kept)).toBeCloseTo(1);
+  expect(spoilage.tick(1, [kept])).toEqual([{ key: "bin:0", itemId: "raw_meat", into: "spoiled_meat", count: 1 }]);
+  const frozen = { key: "bin:1", itemId: "berry", count: 1, rate: 0 };
+  expect(spoilage.tick(100_000, [frozen])).toEqual([]);
+  expect(spoilage.left(frozen)).toBeNull();
+});
