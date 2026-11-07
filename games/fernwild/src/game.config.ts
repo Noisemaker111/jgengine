@@ -17,7 +17,7 @@ import { bodyPrompts, bodyView } from "./game/deathBody";
 import { breedingPrompts, breedingView } from "./game/breeding";
 import { broodView, obeliskPrompts } from "./game/broodmother";
 import { BROOD_PHASES } from "./game/data/bosses";
-import { awakeTamingProgress, creaturePrompts, creaturesView, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
+import { awakeTamingProgress, creaturePrompts, creaturesView, mountCanFly, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
 import { tameFood } from "./game/tameHunger";
 import { STRUCTURES } from "./game/data/structures";
 import { content } from "./game/content";
@@ -27,6 +27,7 @@ import { entityModels, objectModels, scatterModels, rockSolids } from "./game/mo
 import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./game/bags";
 import { nearestSupplyDrop, supplyDropPrompts } from "./game/supplyDrops";
 import { canRun, nearestHarvestable, survivorPrompts, survivorView } from "./game/survivor";
+import { CLIMB_SPEED } from "./game/data/flight";
 import { firstDay, PREY } from "./game/onboarding";
 import { dossierView, nearestUnreadNote, notePrompts } from "./game/dossier";
 import { openScreen } from "./game/screens";
@@ -99,7 +100,8 @@ export const game = defineGame({
     ...Object.fromEntries(Array.from({ length: HOTBAR_SLOTS }, (_, slot) => [`slot${slot + 1}`, [`Digit${(slot + 1) % 10}`]])),
   },
   controls: {
-    movement: { canSprint: canRun, swim: { speedMultiplier: 0.6, dive: true }, feel: { runMultiplier: SURVIVOR.runMultiplier } },
+    // A ridden flyer hovers: Space climbs, C dives, WASD flies at the mount's own speed; out of stamina it drops.
+    movement: { canSprint: canRun, swim: { speedMultiplier: 0.6, dive: true }, feel: { runMultiplier: SURVIVOR.runMultiplier }, flight: { mode: "hover", verticalSpeed: CLIMB_SPEED, canFly: mountCanFly } },
     // The camera starts behind the survivor on the authored spawn facing, so you wash up looking inland.
     prompts: (ctx) => [...survivorPrompts(ctx), ...creaturePrompts(ctx), ...basePrompts(ctx), ...cavePrompts(ctx), ...bodyPrompts(ctx), ...supplyDropPrompts(ctx), ...eggPrompts(ctx), ...breedingPrompts(ctx), ...obeliskPrompts(ctx), ...notePrompts(ctx)],
   },
@@ -183,6 +185,9 @@ export const game = defineGame({
         x: Math.round((me?.position[0] ?? 0) * 10) / 10,
         z: Math.round((me?.position[2] ?? 0) * 10) / 10,
         yaw: Math.round((me?.rotationY ?? 0) * 100) / 100,
+        // Whatever the survivor drives (them, or the mount under them): metres above the ground under it, and that ground's height.
+        alt: ((body) => (body === null ? 0 : Math.round((body.position[1] - ctx.world.groundHeightAt(body.position[0], body.position[2])) * 10) / 10))(ctx.scene.entity.get(ctx.player.possession.active(ctx.player.userId))),
+        groundY: ((body) => (body === null ? 0 : Math.round(ctx.world.groundHeightAt(body.position[0], body.position[2]) * 10) / 10))(ctx.scene.entity.get(ctx.player.possession.active(ctx.player.userId))),
         level: view.level,
         aimStrike: view.aim.strike === null ? 0 : 1,
         aimPick: view.aim.pick === null ? 0 : 1,

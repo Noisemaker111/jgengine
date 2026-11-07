@@ -620,7 +620,7 @@ export interface BackdropConfig {
 export interface FlightConfig {
   /** Which free-flight family to use when flight is active. Default "creative". */
   mode?: "creative" | "spectator" | "noclip" | "hover";
-  /** Horizontal base speed (units/s). Default 8. */
+  /** Horizontal base speed (units/s). Default: the flying entity's own `movement.walkSpeed` (so each mount flies at its own pace), else 8. */
   speed?: number;
   /** Vertical base speed for ascend/descend. Default = `speed`. */
   verticalSpeed?: number;

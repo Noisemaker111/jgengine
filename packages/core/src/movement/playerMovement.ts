@@ -614,7 +614,7 @@ export function stepPlayerMovement(
     }
     const normalizedFlightTuning: FreeFlightTuning = {
       mode: flightTuning.mode,
-      speed: flightTuning.speed,
+      speed: flightTuning.speed ?? player.movement?.walkSpeed,
       verticalSpeed: flightTuning.verticalSpeed,
       sprintMultiplier: flightTuning.sprintMultiplier,
       acceleration: flightTuning.acceleration,

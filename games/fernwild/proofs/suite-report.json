@@ -128,6 +128,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/ride-fly.proof.ts",
+      "proves": [
+        "creatures.ride.fly"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/ride-ground.proof.ts",
       "proves": [
         "creatures.ride.ground"

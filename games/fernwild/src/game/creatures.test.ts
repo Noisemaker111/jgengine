@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createHeadlessRunner, type HeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 
+import { game } from "../game.config";
 import { onNewPlayer, survivorStart, systems } from "../loop";
 import { world } from "../world";
 import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./bags";
@@ -13,6 +14,7 @@ import { nearestHarvestable } from "./survivor";
 import { editorLayers } from "../editorLayers";
 import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
 import { speciesDef, wildLevelCap } from "./data/species";
+import { AIRBORNE } from "./data/flight";
 import { entityModels } from "./models";
 
 function islandRunner(): HeadlessRunner {
@@ -25,7 +27,8 @@ function islandRunner(): HeadlessRunner {
     newGame: survivorStart,
     loop: { onNewPlayer },
   });
-  return createHeadlessRunner({ definition, content, loop: definition.loop!, playerMovement: true });
+  // The game's own movement: sprint gating, swimming, and a ridden flyer's flight.
+  return createHeadlessRunner({ definition, content, loop: definition.loop!, playerMovement: true, movement: game.controls?.movement });
 }
 
 const tick = (runner: HeadlessRunner, seconds: number) => {
@@ -329,4 +332,32 @@ test("a Doedicurus carries stone at a quarter of its weight, bites stone from a 
   runner.ui.tryInvoke("fire", { yaw: toRock });
   tick(runner, 1.5);
   expect(stoneOn()).toBe(loaded);
+});
+
+test("a ridden Pteranodon climbs on Space and burns stamina in the air; out of stamina it drops to the ground", () => {
+  const runner = islandRunner();
+  tick(runner, 0.1);
+  runner.ui.tryInvoke("cheat", { give: { pteranodon_saddle: 1 }, summon: { species: "pteranodon", level: 1, distance: 2.5, tamed: true } });
+  tick(runner, 0.1);
+  const tame = creaturesView(runner.ctx).aimed!;
+  runner.ui.tryInvoke("creatureUse", {});
+  runner.ui.tryInvoke("giveCreature", { inventoryId: BAG, slot: bagSlot(runner, "pteranodon_saddle") });
+  runner.ui.tryInvoke("closeCreature", {});
+  runner.ui.tryInvoke("creatureUse", {});
+  expect(creaturesView(runner.ctx).riding?.id).toBe(tame.id);
+  const altitude = () => {
+    const at = runner.ctx.scene.entity.get(tame.id)!.position;
+    return at[1] - runner.ctx.world.groundHeightAt(at[0], at[2]);
+  };
+  const full = creaturesView(runner.ctx).riding!.stamina.value;
+  for (let t = 0; t < 3; t += 0.05) runner.step(0.05, { held: ["jump"] });
+  expect(altitude()).toBeGreaterThan(10);
+  // Hovering with no keys held still costs stamina while it is up.
+  for (let t = 0; t < 5; t += 0.05) runner.step(0.05);
+  expect(altitude()).toBeGreaterThan(10);
+  expect(creaturesView(runner.ctx).riding!.stamina.value).toBeLessThan(full - 25);
+  // Kept up until its stamina is spent, it falls out of the sky.
+  for (let t = 0; t < 60 && creaturesView(runner.ctx).riding!.stamina.value > 1; t += 0.05) runner.step(0.05, { held: ["jump"] });
+  for (let t = 0; t < 6; t += 0.05) runner.step(0.05, { held: ["jump"] });
+  expect(altitude()).toBeLessThan(AIRBORNE);
 });
