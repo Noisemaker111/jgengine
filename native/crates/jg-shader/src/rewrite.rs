@@ -694,7 +694,7 @@ pub fn rewrite(vert: &str, frag: &str) -> Result<Rewritten, String> {
             }
         }
     }
-    emit_code(&vitems, &rules, &mut vsrc, true)?;
+    emit_code(&vitems, &rules, &mut vsrc, true, true)?;
     vsrc.push_str(&format!(
         "void main() {{\n{setup}  jg_main();\n{copy_out}  gl_Position.y = -gl_Position.y;\n  gl_Position.z = (gl_Position.z + gl_Position.w) * 0.5;\n}}\n"
     ));
@@ -707,12 +707,18 @@ pub fn rewrite(vert: &str, frag: &str) -> Result<Rewritten, String> {
         match it {
             Item::In { flat, ty, name, arr } => {
                 let n = arr_len(arr)?;
-                let loc = match location_of(&varyings, name) {
-                    Some(l) => l,
-                    None => {
-                        varyings.push((name.clone(), n));
-                        location_of(&varyings, name).unwrap()
+                let Some(loc) = location_of(&varyings, name) else {
+                    // An input the vertex stage never declares: GLSL ES links that only when the
+                    // fragment shader never uses it (three's `#ifndef FLAT_SHADED` vNormal next to
+                    // a vertex shader without it). It is not part of the interface here, just a
+                    // private value nothing reads; WebGPU would demand the vertex stage supply it.
+                    match arr {
+                        None => fsrc.push_str(&format!("{ty} {name};
+")),
+                        Some(_) => fsrc.push_str(&format!("{ty} {name}[{n}];
+")),
                     }
+                    continue;
                 };
                 let q = if *flat { "flat " } else { "" };
                 match arr {
@@ -734,7 +740,7 @@ pub fn rewrite(vert: &str, frag: &str) -> Result<Rewritten, String> {
             _ => {}
         }
     }
-    emit_code(&fitems, &rules, &mut fsrc, !copy_in.is_empty())?;
+    emit_code(&fitems, &rules, &mut fsrc, !copy_in.is_empty(), false)?;
     if !copy_in.is_empty() {
         fsrc.push_str(&format!("void main() {{\n{copy_in}  jg_main();\n}}\n"));
     }
@@ -804,7 +810,9 @@ fn vertex_texture_lod(toks: Vec<Tok>) -> Vec<Tok> {
     out
 }
 
-fn emit_code(items: &[Item], rules: &Rules, out: &mut String, vertex: bool) -> Result<(), String> {
+/// `wrap_main`: rename `main` to `jg_main` for a wrapper `main` the caller adds; `vertex`: the
+/// vertex stage (its texture lookups sample level 0).
+fn emit_code(items: &[Item], rules: &Rules, out: &mut String, wrap_main: bool, vertex: bool) -> Result<(), String> {
     let strip = |toks: Vec<Tok>| -> Vec<Tok> { toks.into_iter().filter(|t| !matches!(t, Tok::Ident(s) if s == "highp" || s == "mediump" || s == "lowp")).collect() };
     for it in items {
         match it {
@@ -815,7 +823,7 @@ fn emit_code(items: &[Item], rules: &Rules, out: &mut String, vertex: bool) -> R
             }
             Item::Function { name, header, body } => {
                 let (mut h, _, local) = rewrite_params(header);
-                if vertex && name == "main" {
+                if wrap_main && name == "main" {
                     h = tokenize(&text(&h).replacen("main", "jg_main", 1));
                 }
                 let b = drop_point_size(apply(body, rules, &local)?);

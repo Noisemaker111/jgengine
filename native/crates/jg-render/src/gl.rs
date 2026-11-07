@@ -182,7 +182,6 @@ pub fn vertex_format(array: &str, components: u32, normalized: bool, kind: char)
         ("Float32Array", 4, _, 'f') => V::Float32x4,
         ("Uint16Array", 2, true, _) => V::Unorm16x2,
         ("Uint16Array", 4, true, _) => V::Unorm16x4,
-        ("Uint16Array", 2, false, 'f') => V::Uint16x2,
         ("Uint8Array", 4, true, _) => V::Unorm8x4,
         ("Uint8Array", 2, true, _) => V::Unorm8x2,
         ("Int16Array", 2, true, _) => V::Snorm16x2,
@@ -190,9 +189,37 @@ pub fn vertex_format(array: &str, components: u32, normalized: bool, kind: char)
         ("Int8Array", 4, true, _) => V::Snorm8x4,
         ("Uint32Array", 1, _, 'u') => V::Uint32,
         ("Int32Array", 1, _, 'i') => V::Sint32,
-        ("Uint32Array", 1, _, 'f') => V::Uint32,
         (a, n, norm, k) => return Err(format!("vertex format {a} x{n} normalized={norm} for {k}")),
     })
+}
+
+/// Whether GL turns this attribute's integers into floats for a float input (`vertexAttribPointer`
+/// with `normalized` false: 7 reads as 7.0). WebGPU has no vertex format that does, so such an
+/// attribute is uploaded as Float32 ([`to_f32`]) and read with [`float_format`].
+pub fn int_to_float(array: &str, normalized: bool, kind: char) -> bool {
+    kind == 'f' && !normalized && !matches!(array, "Float32Array" | "Float64Array")
+}
+
+/// An integer attribute's data as little-endian Float32, value for value.
+pub fn to_f32(array: &str, bytes: &[u8]) -> Vec<u8> {
+    let values: Vec<f32> = match array {
+        "Int8Array" => bytes.iter().map(|&b| b as i8 as f32).collect(),
+        "Uint16Array" => bytes.chunks_exact(2).map(|c| u16::from_le_bytes([c[0], c[1]]) as f32).collect(),
+        "Int16Array" => bytes.chunks_exact(2).map(|c| i16::from_le_bytes([c[0], c[1]]) as f32).collect(),
+        "Uint32Array" => bytes.chunks_exact(4).map(|c| u32::from_le_bytes([c[0], c[1], c[2], c[3]]) as f32).collect(),
+        "Int32Array" => bytes.chunks_exact(4).map(|c| i32::from_le_bytes([c[0], c[1], c[2], c[3]]) as f32).collect(),
+        _ => bytes.iter().map(|&b| b as f32).collect(),
+    };
+    bytemuck::cast_slice(&values).to_vec()
+}
+
+pub fn float_format(components: u32) -> wgpu::VertexFormat {
+    match components {
+        1 => wgpu::VertexFormat::Float32,
+        2 => wgpu::VertexFormat::Float32x2,
+        3 => wgpu::VertexFormat::Float32x3,
+        _ => wgpu::VertexFormat::Float32x4,
+    }
 }
 
 pub fn element_bytes(array: &str) -> u64 {

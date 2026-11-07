@@ -13,3 +13,7 @@ bytemuck.workspace = true
 half = "2.7"
 pollster.workspace = true
 png = "0.18"
+
+# `jg-replay --validate` replays on wgpu's noop backend: every validation, no GPU.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+wgpu = { workspace = true, features = ["noop"] }

@@ -11,7 +11,7 @@ use crate::gl;
 use crate::resources::{Binding, Resources, SamplerKey};
 use jg_scene::{Draw, Event, Recording, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT};
 use jg_shader::{ProgramLayout, SamplerKind, TextureDim, UniformSlot};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::num::NonZeroU64;
 use std::sync::Arc;
 
@@ -128,7 +128,6 @@ fn is_sampler_type(t: u32) -> bool {
 impl Replayer {
     pub fn new(device: wgpu::Device, queue: wgpu::Queue, mut rec: Recording) -> Result<Replayer, String> {
         let float32_filterable = device.features().contains(wgpu::Features::FLOAT32_FILTERABLE);
-        let res = Resources::load(&device, &queue, &rec, float32_filterable)?;
         // Translate every program (in parallel: naga is single-threaded per module).
         let sources: Vec<(String, String)> = (0..rec.manifest.programs.len()).map(|i| rec.program_source(rec.manifest.programs[i].index)).collect::<Result<_, _>>()?;
         #[cfg(not(target_arch = "wasm32"))]
@@ -176,6 +175,22 @@ impl Replayer {
                 uniform_size,
             });
         }
+        // Integer attributes some draw reads as floats go up as Float32 (gl::int_to_float).
+        let mut float_attrs = HashSet::new();
+        for ev in rec.frames.iter().flatten() {
+            if let Event::Draw(d) = ev {
+                let geom = &rec.manifest.geometries[d.geometry];
+                for input in &programs[d.program].layout.vertex_inputs {
+                    if let Some(&a) = geom.attributes.get(&input.name) {
+                        let attr = &rec.manifest.attributes[a];
+                        if gl::int_to_float(&attr.array, attr.normalized, input.kind) {
+                            float_attrs.insert(a);
+                        }
+                    }
+                }
+            }
+        }
+        let res = Resources::load(&device, &queue, &rec, float32_filterable, float_attrs)?;
         let [w, h] = rec.manifest.canvas;
         let canvas = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("canvas"),
@@ -389,8 +404,11 @@ impl Replayer {
             match geom.attributes.get(&input.name) {
                 Some(&a) => {
                     let attr = &self.rec.manifest.attributes[a];
-                    let el = gl::element_bytes(&attr.array);
-                    let format = gl::vertex_format(&attr.array, input.components, attr.normalized, input.kind)?;
+                    let (el, format) = if self.res.float_attrs.contains(&a) {
+                        (4, gl::float_format(input.components))
+                    } else {
+                        (gl::element_bytes(&attr.array), gl::vertex_format(&attr.array, input.components, attr.normalized, input.kind)?)
+                    };
                     let stride = attr.item_size as u64 * el;
                     let offset = input.column as u64 * input.components as u64 * el;
                     let step = if attr.instanced { wgpu::VertexStepMode::Instance } else { wgpu::VertexStepMode::Vertex };
@@ -675,6 +693,15 @@ impl Replayer {
                     }
                     let rp = pass.as_mut().unwrap();
                     self.apply_deltas(d);
+                    // WebGL rejects a draw whose instances read past an instanced attribute's buffer
+                    // (INVALID_OPERATION, "attempt to access out of range"), so three's frame has
+                    // nothing from it: skip it the same way.
+                    let vb = self.vertex_binding(d.program, d.geometry)?;
+                    let instances = d.instances.max(1) as u64;
+                    if let Some(a) = vb.slots.iter().filter(|s| s.step == wgpu::VertexStepMode::Instance && s.stride > 0).find_map(|s| s.attribute.filter(|&a| self.res.buffer_sizes[a] / s.stride < instances)) {
+                        self.warn(format!("draw skipped as WebGL does: {instances} instances read past attribute {a}'s buffer"));
+                        continue;
+                    }
                     let p = d.program;
                     // Uniforms: one aligned copy per change.
                     let size = self.programs[p].uniform_size;
@@ -757,8 +784,10 @@ impl Replayer {
                 }
                 Event::Buffer { attribute, data } => {
                     let r = &self.rec.manifest.buffer_data[*data];
-                    let bytes = &self.rec.data[r.offset..r.offset + r.bytes];
-                    let size = (r.bytes as u64).next_multiple_of(4);
+                    let raw = &self.rec.data[r.offset..r.offset + r.bytes];
+                    let converted = self.res.float_attrs.contains(attribute).then(|| gl::to_f32(&self.rec.manifest.attributes[*attribute].array, raw));
+                    let bytes: &[u8] = converted.as_deref().unwrap_or(raw);
+                    let size = (bytes.len() as u64).next_multiple_of(4);
                     if size > self.res.buffer_sizes[*attribute] {
                         pass = None;
                         let b = self.device.create_buffer(&wgpu::BufferDescriptor { label: None, size, usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST, mapped_at_creation: false });
@@ -766,7 +795,7 @@ impl Replayer {
                         self.res.buffer_sizes[*attribute] = size;
                     }
                     if let Some(b) = &self.res.buffers[*attribute] {
-                        if r.bytes % 4 == 0 {
+                        if bytes.len() % 4 == 0 {
                             self.queue.write_buffer(b, 0, bytes);
                         } else {
                             let mut padded = bytes.to_vec();
@@ -778,14 +807,14 @@ impl Replayer {
                 Event::TextureData { handle, data } => {
                     let r = self.rec.manifest.texture_data[*data].clone();
                     if let Some(t) = self.res.textures.get(handle) {
-                        let (bw, _) = t.format.block_dimensions();
+                        let (bw, bh) = t.format.block_dimensions();
                         let row = t.size[0].div_ceil(bw) * t.format.block_copy_size(None).unwrap_or(4);
                         let layers = t.texture.depth_or_array_layers();
                         self.queue.write_texture(
                             wgpu::TexelCopyTextureInfo { texture: &t.texture, mip_level: 0, origin: wgpu::Origin3d::ZERO, aspect: wgpu::TextureAspect::All },
                             &self.rec.data[r.offset..r.offset + r.bytes],
-                            wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(row), rows_per_image: Some(t.size[1]) },
-                            wgpu::Extent3d { width: t.size[0], height: t.size[1], depth_or_array_layers: layers },
+                            wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(row), rows_per_image: Some(t.size[1].div_ceil(bh)) },
+                            wgpu::Extent3d { width: t.size[0].next_multiple_of(bw), height: t.size[1].next_multiple_of(bh), depth_or_array_layers: layers },
                         );
                     }
                 }
@@ -824,9 +853,12 @@ impl Replayer {
                 Event::Draw(d) => self.apply_deltas(d),
                 Event::Buffer { attribute, data } => {
                     let r = &self.rec.manifest.buffer_data[*data];
-                    if r.bytes % 4 == 0 && (r.bytes as u64) <= self.res.buffer_sizes[*attribute] {
+                    let raw = &self.rec.data[r.offset..r.offset + r.bytes];
+                    let converted = self.res.float_attrs.contains(attribute).then(|| gl::to_f32(&self.rec.manifest.attributes[*attribute].array, raw));
+                    let bytes: &[u8] = converted.as_deref().unwrap_or(raw);
+                    if bytes.len() % 4 == 0 && (bytes.len() as u64) <= self.res.buffer_sizes[*attribute] {
                         if let Some(b) = &self.res.buffers[*attribute] {
-                            self.queue.write_buffer(b, 0, &self.rec.data[r.offset..r.offset + r.bytes]);
+                            self.queue.write_buffer(b, 0, bytes);
                         }
                     }
                 }

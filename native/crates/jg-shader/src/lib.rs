@@ -113,6 +113,7 @@ pub fn translate(vert: &str, frag: &str) -> Result<Translated, String> {
     let out = rewrite::rewrite(&v, &f)?;
     let (vmod, vertex_wgsl) = to_wgsl(&out.vertex, naga::ShaderStage::Vertex).map_err(|e| format!("{e}\n--- rewritten vertex ---\n{}", numbered(&out.vertex, &e)))?;
     let (fmod, fragment_wgsl) = to_wgsl(&out.fragment, naga::ShaderStage::Fragment).map_err(|e| format!("{e}\n--- rewritten fragment ---\n{}", numbered(&out.fragment, &e)))?;
+    check_interface(&vmod, &fmod)?;
     let mut uniforms = Vec::new();
     let mut size = 16;
     for module in [&vmod, &fmod] {
@@ -125,6 +126,34 @@ pub fn translate(vert: &str, frag: &str) -> Result<Translated, String> {
         }
     }
     Ok(Translated { vertex_wgsl, fragment_wgsl, layout: ProgramLayout { vertex_inputs: out.inputs, uniform_size: size.max(out.block_size_hint), uniforms, samplers: out.samplers, fragment_outputs: out.fragment_outputs } })
+}
+
+/// Locations an entry point's argument or result binds, through structs.
+fn locations(module: &naga::Module, ty: naga::Handle<naga::Type>, binding: Option<&naga::Binding>, out: &mut Vec<u32>) {
+    if let Some(naga::Binding::Location { location, .. }) = binding {
+        out.push(*location);
+    } else if let naga::TypeInner::Struct { members, .. } = &module.types[ty].inner {
+        for m in members {
+            locations(module, m.ty, m.binding.as_ref(), out);
+        }
+    }
+}
+
+/// Every location the fragment stage reads must be one the vertex stage writes, as a WebGPU
+/// pipeline demands; a mismatch fails here, at translation, not as an invalid pipeline at draw time.
+fn check_interface(vertex: &naga::Module, fragment: &naga::Module) -> Result<(), String> {
+    let main = |m: &naga::Module| m.entry_points.iter().find(|e| e.name == "main").map(|e| e.function.clone()).ok_or("no main entry point".to_string());
+    let (v, f) = (main(vertex)?, main(fragment)?);
+    let mut written = Vec::new();
+    if let Some(r) = &v.result {
+        locations(vertex, r.ty, r.binding.as_ref(), &mut written);
+    }
+    let mut read = Vec::new();
+    for a in &f.arguments {
+        locations(fragment, a.ty, a.binding.as_ref(), &mut read);
+    }
+    let missing: Vec<u32> = read.into_iter().filter(|l| !written.contains(l)).collect();
+    if missing.is_empty() { Ok(()) } else { Err(format!("the fragment stage reads locations {missing:?} the vertex stage never writes")) }
 }
 
 /// The lines around the first reported line number, numbered, for an error report.

@@ -2,7 +2,7 @@
 
 use crate::gl;
 use jg_scene::{Recording, Texture};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 /// How a texture can be bound: decides the bind group layout entry and the sampler type.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -120,10 +120,12 @@ pub struct Resources {
     /// [0, 0, 0, 1] four times over: GL's default value for up to four vertex inputs a geometry lacks,
     /// all read from one vertex buffer slot (WebGPU allows eight slots a draw).
     pub default_attribute: wgpu::Buffer,
+    /// Integer attributes a draw reads as floats, held as Float32 (see `gl::int_to_float`).
+    pub float_attrs: HashSet<usize>,
 }
 
 impl Resources {
-    pub fn load(device: &wgpu::Device, queue: &wgpu::Queue, rec: &Recording, float32_filterable: bool) -> Result<Resources, String> {
+    pub fn load(device: &wgpu::Device, queue: &wgpu::Queue, rec: &Recording, float32_filterable: bool, float_attrs: HashSet<usize>) -> Result<Resources, String> {
         let mut textures = HashMap::new();
         let mut needs_mips = Vec::new();
         for t in &rec.manifest.textures {
@@ -176,11 +178,14 @@ impl Resources {
             let view = texture.create_view(&wgpu::TextureViewDescriptor { dimension: Some(dim), aspect, ..Default::default() });
             let write = |level: u32, layer: u32, w: u32, h: u32, d: u32, bytes: &[u8]| {
                 let (row, rows) = layout(format, w, h);
+                // A compressed level smaller than a block (a 2x2 or 1x1 mip) still copies whole 4x4
+                // blocks: WebGPU takes the level's size rounded up to the block, as its data holds.
+                let (bw, bh) = format.block_dimensions();
                 queue.write_texture(
                     wgpu::TexelCopyTextureInfo { texture: &texture, mip_level: level, origin: wgpu::Origin3d { x: 0, y: 0, z: layer }, aspect: wgpu::TextureAspect::All },
                     bytes,
                     wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(row), rows_per_image: Some(rows) },
-                    wgpu::Extent3d { width: w, height: h, depth_or_array_layers: d },
+                    wgpu::Extent3d { width: w.next_multiple_of(bw), height: h.next_multiple_of(bh), depth_or_array_layers: d },
                 );
             };
             // Contents. Every upload keeps GL's memory row order (row 0 first): the shaders keep
@@ -215,15 +220,16 @@ impl Resources {
         }
         let mut buffers = Vec::new();
         let mut buffer_sizes = Vec::new();
-        for a in &rec.manifest.attributes {
+        for (i, a) in rec.manifest.attributes.iter().enumerate() {
             if a.bytes == 0 {
                 buffers.push(None);
                 buffer_sizes.push(0);
                 continue;
             }
-            let size = (a.bytes as u64).next_multiple_of(4);
+            let raw = rec.bytes(a.offset, a.bytes);
+            let mut bytes = if float_attrs.contains(&i) { gl::to_f32(&a.array, raw) } else { raw.to_vec() };
+            let size = (bytes.len() as u64).next_multiple_of(4);
             let buffer = device.create_buffer(&wgpu::BufferDescriptor { label: None, size, usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST, mapped_at_creation: false });
-            let mut bytes = rec.bytes(a.offset, a.bytes).to_vec();
             bytes.resize(size as usize, 0);
             queue.write_buffer(&buffer, 0, &bytes);
             buffers.push(Some(buffer));
@@ -232,6 +238,6 @@ impl Resources {
         let default_attribute = device.create_buffer(&wgpu::BufferDescriptor { label: Some("default attribute"), size: 64, usage: wgpu::BufferUsages::VERTEX, mapped_at_creation: true });
         default_attribute.slice(..).get_mapped_range_mut().expect("map default attribute").copy_from_slice(bytemuck::cast_slice(&[[0.0f32, 0.0, 0.0, 1.0]; 4]));
         default_attribute.unmap();
-        Ok(Resources { textures, needs_mips, buffers, buffer_sizes, default_attribute })
+        Ok(Resources { textures, needs_mips, buffers, buffer_sizes, default_attribute, float_attrs })
     }
 }
