@@ -10408,6 +10408,16 @@
       "intent": "editor-authorable terrain crack/moss material variation"
     },
     {
+      "id": "solid-enclosure",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/world/overhead",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "measure how enclosed a point is by a roof and walls, from the world's solids"
+    },
+    {
       "id": "solid-obstacles",
       "packages": [
         "@jgengine/core"
