@@ -314,6 +314,29 @@ test("nothing ready prints one line and exits 0, and a failed PR reports and exi
   expect(conflicted.errors[0]).toContain("conflicts with the base");
 });
 
+test("a PR the base moved into conflict is rebased and lands; one whose rebase is refused fails naming why", () => {
+  // Two Fernwild proof lanes both rescore PLAN.md: whichever lands second went DIRTY, and the queue gave
+  // up on it although its own rebase resolves a generated-only conflict.
+  const tip = "t1";
+  const laneTree = (branch: string): QueueIo["git"] => (_dir, args) => {
+    if (args[0] === "rev-list") return ok("2\n");
+    if (args[0] === "rev-parse" && args.includes("--abbrev-ref")) return ok(`${branch}\n`);
+    if (args[0] === "rev-parse") return ok(`${tip}\n`);
+    return ok();
+  };
+  const api = onePr(43, [{ name: "ci" }], { mergeableState: "dirty" });
+  const out = io({ github: api.github, git: laneTree("agent/43") });
+  expect(drain({ base: "beta", label: "land:queue", pr: 43 }, out).code).toBe(EXIT_DRAINED);
+  expect(out.lines).toContainEqual("#43 agent/43 rebased onto origin/beta before waiting");
+  expect(merges(api)).toEqual([43]);
+
+  const stuck = onePr(44, [{ name: "ci" }], { mergeableState: "dirty" });
+  const refused = io({ github: stuck.github, git: laneTree("elsewhere"), checkout: () => null });
+  expect(drain({ base: "beta", label: "land:queue", pr: 44 }, refused).code).toBe(EXIT_SOMETHING_FAILED);
+  expect(refused.errors[0]).toContain("conflicts with the base, and the rebase could not resolve them: could not check out agent/44");
+  expect(merges(stuck)).toEqual([]);
+});
+
 test("a PR merged before the queue reached it is reported as landed, and not merged again", () => {
   const api = onePr(50, [], { state: "closed", merged: true });
   const out = io({ github: api.github });
@@ -346,11 +369,11 @@ test("a merge GitHub refuses for a moved base is rebased and tried again; any ot
   const moved = fakeGitHub({
     pulls: [{ number: 70, head: "agent/70", sha: HEAD, mergeableState: "clean" }],
     checks: { [HEAD]: [{ name: "ci" }] },
-    fail: (call) => (call.method === "PUT" && (refusals += 1) === 1 ? "HTTP 405: Base branch was modified. Review and try the merge again." : undefined),
+    fail: (call) => (call.method === "PUT" && (refusals += 1) <= 2 ? (refusals === 1 ? "HTTP 405: Base branch was modified. Review and try the merge again." : "gh: Pull Request has merge conflicts (HTTP 405)") : undefined),
   });
   const out = io({ github: moved.github });
   expect(drain({ base: "beta", label: "land:queue", pr: 70 }, out).code).toBe(EXIT_DRAINED);
-  expect(refusals).toBe(2);
+  expect(refusals).toBe(3);
   expect(out.lines).toContainEqual(expect.stringContaining("#70 agent/70 merge refused because origin/beta moved"));
 
   const refused = fakeGitHub({
