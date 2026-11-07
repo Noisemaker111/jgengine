@@ -351,14 +351,15 @@ function writeManifest(out: string, manifest: BoardManifest): void {
 /**
  * The exact code a shot is taken with: the tree id of the working copy as it stands (tracked
  * changes and untracked, unignored files included), the same before and after it is committed.
- * Written through a copy of the index, so the checkout's own index is never touched.
+ * Hashed from the files themselves through a fresh, empty index (a few seconds, once a run), so the
+ * checkout's own index is never touched. A copy of that index carried its cached file stats, and git
+ * trusts a cached stat: an edit in the same clock tick as the last `git add`, same size, read as the
+ * code already shot (CI saw the old tree come back).
  */
 export function boardSource(cwd: string = root): string {
   const git = (args: string[], env: NodeJS.ProcessEnv = process.env) => spawnSync("git", args, { cwd, encoding: "utf8", env });
-  const index = git(["rev-parse", "--path-format=absolute", "--git-path", "index"]).stdout.trim();
   const scratch = join(tmpdir(), `jg-board-index-${process.pid}-${Date.now()}`);
   try {
-    if (index !== "" && existsSync(index)) copyFileSync(index, scratch);
     const env = { ...process.env, GIT_INDEX_FILE: scratch };
     const add = git(["add", "-A", "--", "."], env);
     const tree = git(["write-tree"], env);
