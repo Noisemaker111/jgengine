@@ -1,12 +1,12 @@
 import { createBreedingField, type BreedingField, type BreedingSnapshot, type BreedingSpeeds } from "@jgengine/core/breeding/breeding";
-import { inheritValues } from "@jgengine/core/inheritance/inheritance";
+import { inheritValues, type Inherited } from "@jgengine/core/inheritance/inheritance";
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 
 import { BAG, HOTBAR } from "./bags";
 import { climateAt } from "./climate";
-import { aimedCreature, creatureAlive, genesOf, setImprint, spawnBaby, tames, viewedCreature, type CreatureGenes } from "./creatures";
+import { aimedCreature, creatureAlive, genesOf, setImprint, spawnBaby, tames, viewedCreature, type CreatureGenes, type Lineage, type StatSource } from "./creatures";
 import {
   breedingOf,
   BREEDING_STAGES,
@@ -19,7 +19,7 @@ import {
   WALK_METRES,
 } from "./data/breeding";
 import { itemLabel } from "./data/items";
-import { speciesDef, WILD_STATS } from "./data/species";
+import { speciesDef, WILD_STATS, type WildStat } from "./data/species";
 import { BABY_FOOD_DRAIN_SECONDS, NEWBORN_FOOD, TAME_FOOD_DRAIN_SECONDS } from "./data/tameFood";
 import { setFoodPace, setTameFood } from "./tameHunger";
 
@@ -35,6 +35,8 @@ interface Nursery {
   field: BreedingField<CreatureGenes>;
   /** Metres each baby asking for a walk has followed the survivor, and where it last stood. */
   walked: Map<string, { metres: number; x: number; z: number }>;
+  /** The chance of each of a baby's mutation rolls: ARK's 2.5%, unless a cheat changed it. */
+  mutationChance: number;
 }
 
 const nurseryOf = perContext(
@@ -47,8 +49,8 @@ const nurseryOf = perContext(
       conceive(mother, father, rng) {
         const mum = genesOf(ctx, mother)!;
         const dad = genesOf(ctx, father)!;
-        const inherited = inheritValues(mum.wild, dad.wild, rng, { defaultRule: { pick: "either", higherChance: 0.55 }, mutation: { ...MUTATIONS, fields: WILD_STATS } });
-        return { sex: rng() < 0.5 ? "female" : "male", wild: inherited.values, mutations: mum.mutations + dad.mutations + inherited.mutations.length };
+        const inherited = inheritValues(mum.wild, dad.wild, rng, { defaultRule: { pick: "either", higherChance: 0.55 }, mutation: { ...MUTATIONS, chance: nurseryOf(ctx).mutationChance, fields: WILD_STATS } });
+        return { sex: rng() < 0.5 ? "female" : "male", wild: inherited.values, mutations: mum.mutations + dad.mutations + inherited.mutations.length, lineage: lineageOf(mother, father, mum.wild, dad.wild, inherited) };
       },
       careIntervalSeconds: CARE_INTERVAL,
       careKinds: CARE_KINDS,
@@ -56,8 +58,25 @@ const nurseryOf = perContext(
       litter: litterOf,
     }),
     walked: new Map(),
+    mutationChance: MUTATIONS.chance,
   }),
 );
+
+/** Which parent each of a baby's stats came from: its levels less what mutations added, matched to a parent's. */
+function lineageOf(mother: string, father: string, mum: Record<WildStat, number>, dad: Record<WildStat, number>, inherited: Inherited<WildStat>): Lineage {
+  const from = Object.fromEntries(
+    WILD_STATS.map((stat) => {
+      const levels = inherited.values[stat] - inherited.mutations.filter((field) => field === stat).length * MUTATIONS.amount;
+      return [stat, levels === mum[stat] && levels === dad[stat] ? "both" : levels === mum[stat] ? "mother" : "father"];
+    }),
+  ) as Record<WildStat, StatSource>;
+  return { mother, father, from, mutated: [...inherited.mutations] };
+}
+
+/** Set the chance of each mutation roll a baby gets (a cheat, for proofs: ARK's is 2.5%). */
+export function setMutationChance(ctx: GameContext, chance: number): void {
+  nurseryOf(ctx).mutationChance = Math.max(0, Math.min(1, chance));
+}
 
 const label = (species: string) => speciesDef(species)?.label ?? species;
 

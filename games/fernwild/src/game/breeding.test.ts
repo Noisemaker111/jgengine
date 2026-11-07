@@ -11,7 +11,7 @@ import { time, world } from "../world";
 import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./bags";
 import { breedingCard, breedingView, eggs } from "./breeding";
 import { content } from "./content";
-import { creatureCard, genesOf, tames } from "./creatures";
+import { creatureCard, genesOf, lineageStrays, tames } from "./creatures";
 import { breedingOf, BREEDING_STAGES, incubationBand, CARE_INTERVAL, CARE_KINDS, IMPRINT_BONUS, litterOf, NEWBORN_SIZE } from "./data/breeding";
 import { itemTraits } from "./data/items";
 import { WILD_STATS } from "./data/species";
@@ -109,6 +109,14 @@ test("a raptor pair left together mates and lays an egg that a campfire keeps wa
   const dad = genesOf(game.ctx, father)!;
   const genes = genesOf(game.ctx, baby.id)!;
   for (const stat of WILD_STATS) expect([mum.wild[stat], dad.wild[stat], mum.wild[stat] + 2, dad.wild[stat] + 2]).toContain(genes.wild[stat]);
+  // Its card names the parent each stat came from: the levels, less two per mutation, are that parent's.
+  expect(lineageStrays(game.ctx, baby.id)).toBe(0);
+  const mutations = genes.lineage!.mutated;
+  for (const row of creatureCard(game.ctx, baby.id)!.lineage!) {
+    const levels = row.levels - mutations.filter((stat) => stat === row.stat).length * 2;
+    if (row.from !== "father") expect(levels).toBe(mum.wild[row.stat]);
+    if (row.from !== "mother") expect(levels).toBe(dad.wild[row.stat]);
+  }
   expect(creatureCard(game.ctx, baby.id)?.tamed).toBe(true);
 
   // A newborn starts nearly empty and starves without meat; meat put in its inventory feeds it. At ARK's speed so it

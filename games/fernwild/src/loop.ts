@@ -6,7 +6,7 @@ import { editorLayers } from "./editorLayers";
 import { baseSave, buildHut, closeStore, demolish, fuelStations, resetBase, rotateBuild, storePut, storeTake, tickBase, useStructure } from "./game/base";
 import { cavesOf, cavesSave, resetCaves, takeArtifact, tickCaves } from "./game/caves";
 import { bodiesSave, recoverBody, resetBodies, tickBodies } from "./game/deathBody";
-import { breedingSave, careForBaby, resetBreeding, setBreedingSpeed, tickBreeding } from "./game/breeding";
+import { breedingSave, careForBaby, resetBreeding, setBreedingSpeed, setMutationChance, tickBreeding } from "./game/breeding";
 import { resetTameHunger, setTameFood, tameHungerSave, tickTameHunger } from "./game/tameHunger";
 import { broodSave, resetBroodmother, setBroodHealth, summonBroodmother, tickBroodmother, useObelisk } from "./game/broodmother";
 import { closeCreature, creaturesSave, knockOutNow, destroyWild, feedNarcotic, forceTame, giveTameXp, giveToCreature, loadTame, levelTame, mountBite, resetCreatures, setTamingSpeed, spawnCreature, takeFromCreature, tames, tameSummoned, tickCreatures, toggleMating, unsaddle, useCreature, whistle } from "./game/creatures";
@@ -237,6 +237,8 @@ interface Cheat {
   summon?: { species: string; level?: number; distance?: number; side?: number; sex?: "female" | "male"; tamed?: boolean; mating?: boolean; knockedOut?: boolean };
   /** ARK's breeding multipliers (hatch, maturation, mating interval, imprint interval) all at once. */
   breedingSpeed?: number;
+  /** The chance of each of a baby's three mutation rolls, 0 to 1 (ARK's is 0.025). */
+  mutationChance?: number;
   /** Tame the wild creature in front at once. */
   forceTame?: boolean;
   /** XP for the mount under you, or the tame whose inventory is open. */
@@ -278,6 +280,7 @@ function cheat(ctx: GameContext, input: Cheat): void {
   }
   if (input.tamingSpeed !== undefined) setTamingSpeed(ctx, input.tamingSpeed);
   if (input.breedingSpeed !== undefined) setBreedingSpeed(ctx, input.breedingSpeed);
+  if (input.mutationChance !== undefined) setMutationChance(ctx, input.mutationChance);
   if (input.tameFood !== undefined) for (const tame of tames(ctx)) setTameFood(ctx, tame.id, input.tameFood);
   if (input.fuel !== undefined) fuelStations(ctx, input.fuel);
   if (input.kill === true) ctx.scene.entity.stats.set(ctx.player.userId, "health", { current: 0 });
