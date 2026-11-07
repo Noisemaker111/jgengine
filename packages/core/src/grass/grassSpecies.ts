@@ -1,19 +1,24 @@
 /**
  * The grass species library: named starting looks for the one grass model, from putting greens and
  * hay meadows to reed beds, cushion moss, seed-headed crops and stylised fantasy turf. A species is
- * plain knob values over the grass defaults, so a field picks one by id (`species` in a volume's
- * `meta` or a `grass()` config) and overrides any knob on top; every knob stays tunable.
+ * what grows: plain knob values over the grass defaults, so a field picks one by id (`species` in a
+ * volume's `meta` or a `grass()` config) and overrides any knob on top; every knob stays tunable. How
+ * it is drawn is the style (`grassStyle.ts`); a species may tune a style slider (`style`), which then
+ * rides that slider's realism curve.
  *
  * @capability grass-species named grass, moss, reed, crop and ornamental looks for grass fields
  */
 import type { GrassSpeciesKnobs } from "@jgengine/core/grass/grassKind";
+import type { GrassStyleTuning } from "@jgengine/core/grass/grassStyle";
 
-/** One named grass look: an id a field selects, the label and heading the inspector lists it under, and its knobs. */
+/** One named grass: an id a field selects, the label and heading the inspector lists it under, its knobs, and any style sliders it tunes. */
 export interface GrassSpecies {
   id: string;
   label: string;
   group: string;
   values: GrassSpeciesKnobs;
+  /** Style sliders this species draws differently at the default realism (a putting green lit as one soft surface); realism still moves them. */
+  style?: GrassStyleTuning;
 }
 
 const LAWN = "Lawn & sport turf";
@@ -33,10 +38,10 @@ export const GRASS_SPECIES = [
   // Lawn & sport turf
   { id: "green", label: "Putting green", group: LAWN, values: { density: 1, bladeHeight: 0.02, heightVariation: 0.05, bladeWidth: 0.01, widthVariation: 0.2, profile: 0.3,
     curvature: 0.05, stiffness: 0.95, tuftSpread: 0.03, tuftBlades: 7, baseColor: "#2a5a26", tipColor: "#5fa040", gradient: 0.6, hueNoise: 0.05,
-    valueNoise: 0.15, seasonNoise: 0.05, clumping: 0, slopeThin: 0, windStrength: 0, normalLift: 0.85, groundCover: 1, stripeWidth: 1.2, stripeContrast: 0.25 } },
+    valueNoise: 0.15, seasonNoise: 0.05, clumping: 0, slopeThin: 0, windStrength: 0, groundCover: 1, stripeWidth: 1.2, stripeContrast: 0.25 }, style: { normalLift: 0.85 } },
   { id: "fairway", label: "Striped fairway", group: LAWN, values: { density: 0.9, bladeHeight: 0.035, heightVariation: 0.1, bladeWidth: 0.014, widthVariation: 0.25, profile: 0.3,
     curvature: 0.1, stiffness: 0.9, tuftSpread: 0.04, tuftBlades: 7, baseColor: "#335f2a", tipColor: "#76b44c", hueNoise: 0.08, valueNoise: 0.2,
-    seasonNoise: 0.1, clumping: 0.05, windStrength: 0.04, normalLift: 0.8, groundCover: 1, stripeWidth: 4, stripeContrast: 0.55, stripeAngle: 30 } },
+    seasonNoise: 0.1, clumping: 0.05, windStrength: 0.04, groundCover: 1, stripeWidth: 4, stripeContrast: 0.55, stripeAngle: 30 }, style: { normalLift: 0.8 } },
   { id: "lawn", label: "Mown lawn", group: LAWN, values: { bladeHeight: 0.12, heightVariation: 0.15, bladeWidth: 0.035, profile: 0.3, curvature: 0.15, stiffness: 0.8,
     tuftSpread: 0.06, tuftBlades: 6, baseColor: "#2f5a28", tipColor: "#78b048", density: 0.8, clumping: 0.1, windStrength: 0.08, seasonNoise: 0.1, groundCover: 0.8 } },
   { id: "kentucky-bluegrass", label: "Kentucky bluegrass", group: LAWN, values: { density: 0.85, bladeHeight: 0.09, heightVariation: 0.2, bladeWidth: 0.03, profile: 0.4, curvature: 0.2,
@@ -48,7 +53,7 @@ export const GRASS_SPECIES = [
   { id: "bermuda", label: "Bermuda grass", group: LAWN, values: { density: 0.95, bladeHeight: 0.05, heightVariation: 0.2, bladeWidth: 0.012, profile: 0.2, curvature: 0.2,
     stiffness: 0.75, splay: 0.35, tuftSpread: 0.05, tuftBlades: 8, baseColor: "#355e27", tipColor: "#8fbc52", hueNoise: 0.1, clumping: 0, windStrength: 0.05, groundCover: 1 } },
   { id: "zoysia", label: "Zoysia carpet", group: LAWN, values: { density: 1, bladeHeight: 0.045, heightVariation: 0.1, bladeWidth: 0.018, profile: 0.15, curvature: 0.1,
-    stiffness: 0.9, tuftSpread: 0.03, tuftBlades: 9, baseColor: "#2e5a24", tipColor: "#86b04a", valueNoise: 0.15, clumping: 0, windStrength: 0.02, normalLift: 0.8, groundCover: 1 } },
+    stiffness: 0.9, tuftSpread: 0.03, tuftBlades: 9, baseColor: "#2e5a24", tipColor: "#86b04a", valueNoise: 0.15, clumping: 0, windStrength: 0.02, groundCover: 1 }, style: { normalLift: 0.8 } },
   { id: "st-augustine", label: "St Augustine", group: LAWN, values: { density: 0.95, bladeHeight: 0.1, heightVariation: 0.35, bladeWidth: 0.035, profile: 0.5, curvature: 0.45,
     stiffness: 0.55, splay: 0.3, fold: 0.3, tuftSpread: 0.09, tuftBlades: 8, baseColor: "#24512a", tipColor: "#5e9a48", roughness: 0.55, clumping: 0.05, windStrength: 0.05, groundCover: 1 } },
   { id: "buffalo-grass", label: "Buffalo grass", group: LAWN, values: { density: 0.7, bladeHeight: 0.11, heightVariation: 0.35, bladeWidth: 0.012, profile: 0.15, curvature: 0.6,
@@ -59,8 +64,8 @@ export const GRASS_SPECIES = [
   { id: "shade-lawn", label: "Shaded lawn", group: LAWN, values: { density: 0.55, bladeHeight: 0.13, heightVariation: 0.3, bladeWidth: 0.025, profile: 0.35, curvature: 0.35,
     stiffness: 0.5, tuftSpread: 0.07, tuftBlades: 5, baseColor: "#244a26", tipColor: "#4f8a44", valueNoise: 0.35, patchiness: 0.3, bareGround: 0.15, groundCover: 0.8, windStrength: 0.08 } },
   { id: "sports-pitch", label: "Sports pitch", group: LAWN, values: { density: 0.95, bladeHeight: 0.03, heightVariation: 0.08, bladeWidth: 0.013, profile: 0.3, curvature: 0.08,
-    stiffness: 0.9, tuftSpread: 0.03, tuftBlades: 7, baseColor: "#2c6128", tipColor: "#6eb246", clumping: 0, slopeThin: 0, windStrength: 0.02, normalLift: 0.85,
-    groundCover: 1, stripeWidth: 6, stripeContrast: 0.45, stripeAngle: 90 } },
+    stiffness: 0.9, tuftSpread: 0.03, tuftBlades: 7, baseColor: "#2c6128", tipColor: "#6eb246", clumping: 0, slopeThin: 0, windStrength: 0.02, 
+    groundCover: 1, stripeWidth: 6, stripeContrast: 0.45, stripeAngle: 90 }, style: { normalLift: 0.85 } },
   { id: "worn-lawn", label: "Worn park lawn", group: LAWN, values: { density: 0.6, bladeHeight: 0.07, heightVariation: 0.4, bladeWidth: 0.03, curvature: 0.3, stiffness: 0.55,
     tuftSpread: 0.06, tuftBlades: 6, baseColor: "#4a5a30", tipColor: "#93a860", dryness: 0.3, seasonNoise: 0.5, patchiness: 0.4, bareGround: 0.3, groundCover: 0.75, windStrength: 0.06 } },
 
@@ -238,8 +243,8 @@ export const GRASS_SPECIES = [
 
   // Forest floor & tropics
   { id: "jungle", label: "Broadleaf jungle floor", group: FOREST, values: { bladeHeight: 0.5, heightVariation: 0.5, bladeWidth: 0.16, profile: 0.95, curvature: 0.7,
-    stiffness: 0.4, tuftSpread: 0.25, tuftBlades: 4, baseColor: "#1f4a24", tipColor: "#4f9a3c", hueNoise: 0.25, valueNoise: 0.4, normalLift: 0.45,
-    mixShare: 0.2, mixHeight: 1.8, mixWidth: 0.4, mixColor: "#6cae48", windStrength: 0.15 } },
+    stiffness: 0.4, tuftSpread: 0.25, tuftBlades: 4, baseColor: "#1f4a24", tipColor: "#4f9a3c", hueNoise: 0.25, valueNoise: 0.4, 
+    mixShare: 0.2, mixHeight: 1.8, mixWidth: 0.4, mixColor: "#6cae48", windStrength: 0.15 }, style: { normalLift: 0.45 } },
   { id: "woodland-sedge", label: "Woodland sedge", group: FOREST, values: { density: 0.6, bladeHeight: 0.35, heightVariation: 0.3, bladeWidth: 0.012, profile: 0.3, curvature: 0.7,
     stiffness: 0.3, droop: 0.5, fold: 0.5, tuftSpread: 0.1, tuftBlades: 14, splay: 0.5, baseColor: "#2a4a2a", tipColor: "#6a9a4a", clumping: 0.9, clumpSize: 0.6,
     bareGround: 0.3, windStrength: 0.12, groundCover: 0.6 } },
@@ -253,7 +258,7 @@ export const GRASS_SPECIES = [
     splay: 0.55, tuftSpread: 0.06, tuftBlades: 6, baseColor: "#2a5a28", tipColor: "#72ae46", hueNoise: 0.1, roughness: 0.6, windStrength: 0.06, groundCover: 1 } },
   { id: "rainforest-floor", label: "Rainforest floor", group: FOREST, values: { density: 0.5, bladeHeight: 0.6, heightVariation: 0.6, bladeWidth: 0.22, profile: 1, curvature: 0.55,
     stiffness: 0.5, droop: 0.35, fold: 0.6, tuftSpread: 0.3, tuftBlades: 5, splay: 0.6, baseColor: "#163a1c", tipColor: "#3e8a34", hueNoise: 0.2, valueNoise: 0.45,
-    mixShare: 0.25, mixHeight: 0.5, mixWidth: 0.6, mixColor: "#5a9a3a", roughness: 0.45, normalLift: 0.35, windStrength: 0.08, groundCover: 0.8 } },
+    mixShare: 0.25, mixHeight: 0.5, mixWidth: 0.6, mixColor: "#5a9a3a", roughness: 0.45, windStrength: 0.08, groundCover: 0.8 }, style: { normalLift: 0.35 } },
   { id: "bluebell-wood", label: "Bluebell woodland", group: FOREST, values: { density: 0.65, bladeHeight: 0.3, heightVariation: 0.35, bladeWidth: 0.02, profile: 0.5, curvature: 0.55,
     stiffness: 0.35, droop: 0.3, fold: 0.4, tuftBlades: 7, splay: 0.4, baseColor: "#24502a", tipColor: "#5e9648", flowerShare: 0.45, flowerSize: 0.035, headShape: 0.65,
     flowerColor: "#5a5ad2", flowerColor2: "#7a6ae2", windStrength: 0.1 } },
@@ -262,7 +267,7 @@ export const GRASS_SPECIES = [
     windStrength: 0.12, groundCover: 0.55 } },
   { id: "fern-glade", label: "Fern glade", group: FOREST, values: { density: 0.45, bladeHeight: 0.7, heightVariation: 0.4, bladeWidth: 0.12, profile: 0.8, curvature: 0.65, stiffness: 0.4,
     droop: 0.4, tuftSpread: 0.15, tuftBlades: 9, splay: 0.75, baseColor: "#1e4a20", tipColor: "#5ea23e", banding: 0.12, variegationColor: "#3a6a2e", hueNoise: 0.12,
-    clumping: 0.7, clumpSize: 1, normalLift: 0.4, windStrength: 0.12 } },
+    clumping: 0.7, clumpSize: 1, windStrength: 0.12 }, style: { normalLift: 0.4 } },
   { id: "pine-needle-floor", label: "Pine forest floor", group: FOREST, values: { density: 0.3, bladeHeight: 0.18, heightVariation: 0.5, bladeWidth: 0.008, profile: 0.15, curvature: 0.5,
     tuftBlades: 8, splay: 0.4, baseColor: "#4a4a2c", tipColor: "#8a8a4a", dryness: 0.35, clumping: 0.8, clumpSize: 0.6, bareGround: 0.7, windStrength: 0.08, groundCover: 0.2 } },
   { id: "mangrove-fringe", label: "Mangrove fringe", group: FOREST, values: { density: 0.5, bladeHeight: 0.9, heightVariation: 0.35, bladeWidth: 0.08, profile: 0.85, curvature: 0.35,
@@ -339,10 +344,10 @@ export const GRASS_SPECIES = [
   // Moss & groundcover
   { id: "cushion-moss", label: "Cushion moss", group: MOSS, values: { density: 1, bladeHeight: 0.06, heightVariation: 0.25, bladeWidth: 0.01, profile: 0.35, curvature: 0.25,
     stiffness: 0.6, tuftSpread: 0.02, tuftBlades: 12, splay: 0.3, cushion: 0.9, baseColor: "#2a4a1e", tipColor: "#86b040", gradient: 0.35, hueNoise: 0.12,
-    valueNoise: 0.25, clumping: 1, clumpSize: 0.25, slopeThin: 0, normalLift: 0.35, roughness: 0.95, translucency: 0.35, windStrength: 0, groundCover: 1 } },
+    valueNoise: 0.25, clumping: 1, clumpSize: 0.25, slopeThin: 0, roughness: 0.95, translucency: 0.35, windStrength: 0, groundCover: 1 }, style: { normalLift: 0.35 } },
   { id: "sheet-moss", label: "Sheet moss carpet", group: MOSS, values: { density: 1, bladeHeight: 0.03, heightVariation: 0.3, bladeWidth: 0.01, profile: 0.3, curvature: 0.25,
     stiffness: 0.5, tuftSpread: 0.015, tuftBlades: 10, splay: 0.45, cushion: 0.4, baseColor: "#2e4e1e", tipColor: "#7aa83c", valueNoise: 0.35, seasonNoise: 0.3,
-    clumping: 0.6, clumpSize: 0.4, slopeThin: 0, normalLift: 0.5, roughness: 1, windStrength: 0, groundCover: 1 } },
+    clumping: 0.6, clumpSize: 0.4, slopeThin: 0, roughness: 1, windStrength: 0, groundCover: 1 }, style: { normalLift: 0.5 } },
   { id: "haircap-moss", label: "Haircap moss", group: MOSS, values: { density: 1, bladeHeight: 0.09, heightVariation: 0.3, bladeWidth: 0.01, profile: 0.1, curvature: 0.2, stiffness: 0.7,
     tuftSpread: 0.02, tuftBlades: 12, splay: 0.2, cushion: 0.6, baseColor: "#24461c", tipColor: "#6a9a34", clumping: 0.9, clumpSize: 0.4, slopeThin: 0,
     flowerShare: 0.35, flowerSize: 0.012, headShape: 0.7, flowerColor: "#8a4a2a", flowerColor2: "#a65a32", roughness: 0.9, windStrength: 0.02, groundCover: 1 } },
@@ -380,11 +385,11 @@ export const GRASS_SPECIES = [
 
   // Stylised & fantasy
   { id: "toon-meadow", label: "Toon meadow", group: STYLISED, values: { density: 0.7, bladeHeight: 0.4, heightVariation: 0.2, bladeWidth: 0.09, widthVariation: 0.15, profile: 0.05,
-    curvature: 0.45, stiffness: 0.5, tuftBlades: 4, baseColor: "#3aa040", tipColor: "#b8f060", gradient: 0.3, hueNoise: 0.05, valueNoise: 0.1, normalLift: 1,
-    roughness: 1, translucency: 0.3, windStrength: 0.4, windGust: 0.1 } },
+    curvature: 0.45, stiffness: 0.5, tuftBlades: 4, baseColor: "#3aa040", tipColor: "#b8f060", gradient: 0.3, hueNoise: 0.05, valueNoise: 0.1, 
+    roughness: 1, translucency: 0.3, windStrength: 0.4, windGust: 0.1 }, style: { normalLift: 1 } },
   { id: "crystal-grass", label: "Crystal grass", group: STYLISED, values: { density: 0.45, bladeHeight: 0.35, heightVariation: 0.5, bladeWidth: 0.04, profile: 0, curvature: 0.05,
     stiffness: 1, twist: 0.2, fold: 1, tuftSpread: 0.1, tuftBlades: 6, splay: 0.4, baseColor: "#3a5a9a", tipColor: "#bcecff", gradient: 0.4, hueNoise: 0.3,
-    normalLift: 0, roughness: 0.15, translucency: 1, windStrength: 0, groundCover: 0.3 } },
+    roughness: 0.15, translucency: 1, windStrength: 0, groundCover: 0.3 }, style: { normalLift: 0 } },
   { id: "ember-grass", label: "Ember grass", group: STYLISED, values: { bladeHeight: 0.45, heightVariation: 0.4, bladeWidth: 0.025, profile: 0.1, curvature: 0.5, twist: 0.3,
     baseColor: "#2a1210", tipColor: "#ff7a24", gradient: 0.55, hueNoise: 0.12, flowerShare: 0.08, flowerSize: 0.02, flowerColor: "#ffd04a", flowerColor2: "#ff9a2a",
     translucency: 1, windStrength: 0.5, windSpeed: 2.6, groundCover: 0.8 } },
@@ -397,8 +402,8 @@ export const GRASS_SPECIES = [
   { id: "frost-spires", label: "Frost spires", group: STYLISED, values: { density: 0.5, bladeHeight: 0.3, heightVariation: 0.5, bladeWidth: 0.02, profile: 0, curvature: 0, stiffness: 1,
     fold: 0.8, tuftBlades: 7, splay: 0.3, baseColor: "#8aa8c4", tipColor: "#f4fbff", roughness: 0.2, translucency: 0.6, windStrength: 0, groundCover: 0.4 } },
   { id: "candy-grass", label: "Candy grass", group: STYLISED, values: { density: 0.65, bladeHeight: 0.35, heightVariation: 0.25, bladeWidth: 0.05, profile: 0.5, curvature: 0.6,
-    twist: 0.5, tuftBlades: 5, baseColor: "#e25a9a", tipColor: "#ffd2ea", banding: 0.5, variegationColor: "#ffffff", hueNoise: 0.15, normalLift: 0.8,
-    flowerShare: 0.1, flowerSize: 0.04, flowerColor: "#8ae0ff", flowerColor2: "#fff08a", windStrength: 0.3 } },
+    twist: 0.5, tuftBlades: 5, baseColor: "#e25a9a", tipColor: "#ffd2ea", banding: 0.5, variegationColor: "#ffffff", hueNoise: 0.15, 
+    flowerShare: 0.1, flowerSize: 0.04, flowerColor: "#8ae0ff", flowerColor2: "#fff08a", windStrength: 0.3 }, style: { normalLift: 0.8 } },
   { id: "shadow-grass", label: "Shadow grass", group: STYLISED, values: { bladeHeight: 0.55, heightVariation: 0.45, bladeWidth: 0.03, profile: 0.1, curvature: 0.6, twist: 0.4,
     baseColor: "#0e0e14", tipColor: "#3a3050", gradient: 0.6, valueNoise: 0.15, roughness: 0.4, translucency: 0.2, flowerShare: 0.05, flowerSize: 0.015,
     flowerColor: "#8a5aff", flowerColor2: "#c0a0ff", windStrength: 0.35, groundCover: 0.9 } },

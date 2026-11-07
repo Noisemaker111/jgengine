@@ -9,6 +9,7 @@
 
 import { parseParams, type ParamField, type ParamSchema, type ParsedParams } from "../generator/paramSchema";
 import type { WorldSolid } from "../world/worldSolids";
+import type { EditorEnvironment } from "../editor/types";
 
 /** Which document collection a scene kind lives in. Drives placement + which `meta` bag holds params. */
 export type SceneKindTarget = "path" | "marker" | "volume";
@@ -73,6 +74,21 @@ export interface SceneKindDefinition<TResolved = unknown> {
    * holds. When set, the editor adds the seeded variant grid (pick, keep, place) under the inspector.
    */
   generator?: string;
+  /** Settings bags this kind keeps nested under one `meta` key each (a grass patch's `style`), each shown as its own inspector section. */
+  nested?: readonly SceneKindNestedSettings[];
+}
+
+/**
+ * A settings bag nested under one `meta` key, not spread across top-level fields: an untouched field
+ * stays unset (so it can follow a curve or a world setting), and the editor writing a whole parsed
+ * param set into `meta` never pins it.
+ */
+export interface SceneKindNestedSettings {
+  key: string;
+  label: string;
+  schema: ParamSchema;
+  /** Every field's value in effect for this object, given the scene document's environment. */
+  effective: (object: SceneKindObject, environment: EditorEnvironment | undefined) => Readonly<Record<string, unknown>>;
 }
 
 /** The raw document object a resolver receives — shape shared by markers, volumes, and paths. */

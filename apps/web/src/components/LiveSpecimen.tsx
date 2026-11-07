@@ -73,7 +73,7 @@ const GRASS_CONTROLS: Control[] = [
     kind: "choice",
     key: "preset",
     label: "species",
-    options: GRASS_PRESETS.filter((p) => GRASS_SHOWCASE.includes(p.id)).map((p) => ({ value: p.id, label: p.label, patch: { ...p.values } })),
+    options: GRASS_PRESETS.filter((p) => GRASS_SHOWCASE.includes(p.id)).map((p) => ({ value: p.id, label: p.label, patch: { ...p.values, species: p.id } })),
   },
   ...GRASS_KNOBS.flatMap((key): Control[] => {
     const f = GRASS_SCHEMA.fields.find((field) => field.key === key);
@@ -217,7 +217,7 @@ const CONFIGS: Record<DemoKey, SpecimenConfig> = {
       const s = (await import("../live/specimens/grass")).createGrassSpecimen(el, trace);
       return { setDials: (d) => s.setDials(d), dispose: s.dispose };
     },
-    initial: { preset: "meadow", ...GRASS_PRESETS.find((p) => p.id === "meadow")?.values },
+    initial: { preset: "meadow", species: "meadow", ...GRASS_PRESETS.find((p) => p.id === "meadow")?.values },
     controls: GRASS_CONTROLS,
     nudges: [
       { key: "preset", text: "Pick another preset" },

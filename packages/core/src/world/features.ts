@@ -9,6 +9,7 @@ import type { VolumetricCloudsConfig } from "../sky/volumetricClouds";
 import { warnOnce } from "../devtools/warnOnce";
 import type { SurfaceMaterialSpec } from "../material/surfaceMaterialGenerator";
 import { flattenGrassLook, readGrassLook, type GrassLook, type GrassLookGroups } from "@jgengine/core/grass/grassKind";
+import type { GrassStyleSettings } from "@jgengine/core/grass/grassStyle";
 import type { GrassSpeciesId } from "@jgengine/core/grass/grassSpecies";
 
 export interface WorldBounds {
@@ -620,6 +621,8 @@ export interface GrassEnvironmentDescriptor {
   kind: "grass";
   area: EnvironmentArea;
   look: GrassLook;
+  /** The flat grass `meta` the look was read from, so `environment({ grassStyle })` redraws the band in the world's style. */
+  meta: Readonly<Record<string, unknown>>;
 }
 
 export type OceanEnvironmentDescriptor = { kind: "ocean" } & Required<
@@ -777,6 +780,12 @@ export interface EnvironmentWorldConfig {
    * `clearanceZonesFrom`.
    */
   clearings?: readonly AvoidZone[];
+  /**
+   * The world's grass style (realism 0 cartoon .. 1 photoreal, any slider by hand, or a preset): every
+   * `grass()` band draws with it unless its own `style` overrides it. A scene document's
+   * `environment.grassStyle` reaches here through `environmentContentFromDocument`.
+   */
+  grassStyle?: GrassStyleSettings;
 }
 
 export interface EnvironmentWorldFeature {
@@ -936,7 +945,9 @@ export function environment(config: EnvironmentWorldConfig = {}): EnvironmentWor
   const bandWeather = bandWeatherDescriptors(config.terrain);
   const weatherAll = [...(explicitWeather ?? []), ...bandWeather];
   const weather = weatherAll.length === 0 ? undefined : weatherAll;
-  const vegetation = list(config.vegetation);
+  const declared = list(config.vegetation);
+  const grassStyle = config.grassStyle;
+  const vegetation = declared === undefined || grassStyle === undefined ? declared : declared.map((band) => ({ ...band, look: readGrassLook(band.meta, grassStyle) }));
   const water = list(config.water);
   const structures = list(config.structures);
   const roads = list(config.roads);
@@ -1154,10 +1165,12 @@ export function snow(config: SnowEnvironmentConfig = {}): SnowEnvironmentDescrip
 /** Declares a grass vegetation patch for `environment()` — the same blade field and knobs as an editor `grass_field` volume. */
 export function grass(config: GrassEnvironmentConfig = {}): GrassEnvironmentDescriptor {
   const { area, position, species, ...groups } = config;
+  const meta = { ...(species === undefined ? {} : { species }), ...flattenGrassLook(groups) };
   return {
     kind: "grass" as const,
     area: withAreaPosition(area ?? { w: 128, d: 128 }, position),
-    look: readGrassLook({ ...(species === undefined ? {} : { species }), ...flattenGrassLook(groups) }),
+    look: readGrassLook(meta),
+    meta,
   };
 }
 

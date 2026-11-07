@@ -270,7 +270,7 @@ export function createGrassMaterial(look: GrassLook, groundColor?: THREE.ColorRe
     uLod: { value: new THREE.Vector4(1e6, 1, 1e6, 1) },
     uWind: { value: new THREE.Vector4(strength, look.wind.windSpeed, 0.04 + (1 - look.wind.windGust) * 0.02 + look.wind.windGust * 0.5, flutter) },
     uWindDirection: { value: new THREE.Vector2(Math.cos(heading), Math.sin(heading)) },
-    uShape: { value: new THREE.Vector4(look.blade.profile, look.lighting.normalLift, look.blade.twist, look.blade.fold) },
+    uShape: { value: new THREE.Vector4(look.blade.profile, look.style.normalLift, look.blade.twist, look.blade.fold) },
     uForm: { value: new THREE.Vector4(look.blade.droop, look.wind.lean, look.flowers.headShape, 0) },
     uFlower: { value: look.flowers.flowerSize },
     uBaseColor: { value: base },

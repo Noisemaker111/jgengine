@@ -3,7 +3,8 @@ import { decodeEditorSimulation, type EditorSimulation } from "./simulation";
 import { parseMaterialAssignments, validateMaterialAsset, validateMaterialAssignments, type MaterialAsset } from "../material/materialAsset";
 import { authoredHiddenNodes } from "./modelNodeVisibility";
 import { parseStaticPrefabBake } from "./staticPrefab";
-import type { ParamField, ParamSchema } from "../generator/paramSchema";
+import { validateParams, type ParamField, type ParamSchema } from "../generator/paramSchema";
+import { GRASS_STYLE_SCHEMA, type GrassStyleSettings } from "../grass/grassStyle";
 import { cloneEditorUiDocument, decodeEditorUiDocument } from "../hud/hudDocument";
 import { migrateTerrainSnapshot } from "../terrain/terraform";
 import {
@@ -80,6 +81,7 @@ function cloneEnvironment(environment: EditorEnvironment): EditorEnvironment {
     ...(environment.fog === undefined ? {} : { fog: { ...environment.fog } }),
     ...(environment.grading === undefined ? {} : { grading: cloneGrading(environment.grading) }),
     ...(environment.probes === undefined ? {} : { probes: cloneLightProbes(environment.probes) }),
+    ...(environment.grassStyle === undefined ? {} : { grassStyle: { ...environment.grassStyle } }),
   };
 }
 
@@ -1279,8 +1281,29 @@ function decodeEnvironment(
     if (grading === undefined) failed = true;
     else env.grading = grading;
   }
+  if (value["grassStyle"] !== undefined) {
+    const grassStyle = decodeGrassStyle(value["grassStyle"], `${path}.grassStyle`, errors);
+    if (grassStyle === undefined) failed = true;
+    else env.grassStyle = grassStyle;
+  }
   if (failed) return undefined;
   return env;
+}
+
+/** Validates the world grass style against its schema: known keys only, sliders in range, a known preset. */
+function decodeGrassStyle(value: unknown, path: string, errors: EditorDocumentDiagnostic[]): GrassStyleSettings | undefined {
+  if (!isPlainObject(value)) {
+    errors.push({ path, message: "expected an object" });
+    return undefined;
+  }
+  const known = new Set<string>([...GRASS_STYLE_SCHEMA.fields.map((field) => field.key), GRASS_STYLE_SCHEMA.presetKey ?? "preset"]);
+  const unknown = Object.keys(value).filter((key) => !known.has(key));
+  const issues = validateParams(GRASS_STYLE_SCHEMA, value);
+  for (const key of unknown) errors.push({ path: `${path}.${key}`, message: `not a grass style setting (${[...known].join(", ")})` });
+  for (const issue of issues) errors.push({ path: `${path}.${issue.key}`, message: issue.message });
+  if (unknown.length > 0 || issues.length > 0) return undefined;
+  // type-escape: validated above against GRASS_STYLE_SCHEMA, whose fields are GrassStyleSettings' keys.
+  return { ...value } as GrassStyleSettings;
 }
 
 /**

@@ -1,4 +1,5 @@
 import type { CreatorPolicy } from "@jgengine/core/editor/creatorStorage";
+import type { EditorEnvironment } from "@jgengine/core/editor/types";
 import { SimulationInspector } from "./SimulationInspector";
 import { useState } from "react";
 
@@ -26,6 +27,7 @@ import {
   hasMaterialAssignment,
 } from "./authoredComponentMeta";
 import { SchemaInspector, type MetaPatch } from "./SchemaInspector";
+import { NestedSchemaSection } from "./NestedSchemaSection";
 import { GeneratorVariants } from "./GeneratorVariants";
 import { generatorForObject, placedGeneratorFor } from "@jgengine/core/scene/assetGenerator";
 import { TriggerInspector } from "./TriggerInspector";
@@ -81,7 +83,7 @@ function pathObject(path: NonNullable<ReturnType<typeof findEditorPath>>): Scene
 }
 
 /** Auto-generated inspector for a registered scene kind's params (schema-driven, no per-kind JSX). */
-function KindInspector({ object, meta, onMeta }: { object: SceneKindObject; meta: Record<string, unknown> | undefined; onMeta: MetaPatch }) {
+function KindInspector({ object, meta, onMeta, environment }: { object: SceneKindObject; meta: Record<string, unknown> | undefined; onMeta: MetaPatch; environment: EditorEnvironment | undefined }) {
   const definition = getSceneKind(object.kind);
   if (definition === undefined) return null;
   const params = parseParams(definition.schema, object.meta);
@@ -110,6 +112,21 @@ function KindInspector({ object, meta, onMeta }: { object: SceneKindObject; meta
         {...(coverage === undefined && note !== undefined ? { note } : {})}
         {...(coverage === undefined ? {} : { hideKeys: [coverage.densityKey] })}
       />
+      {(definition.nested ?? []).map((nested) => {
+        const authored = meta?.[nested.key];
+        return (
+          <NestedSchemaSection
+            key={nested.key}
+            schema={nested.schema}
+            label={nested.label}
+            accent={accent}
+            note="Overrides the scene's world setting (Lighting) for this object."
+            authored={typeof authored === "object" && authored !== null && !Array.isArray(authored) ? (authored as Record<string, unknown>) : undefined}
+            effective={nested.effective(object, environment)}
+            onChange={(next, coalesce) => onMeta({ [nested.key]: next }, `${nested.key}:${coalesce}`)}
+          />
+        );
+      })}
     </div>
   );
 }
@@ -820,7 +837,7 @@ export function InspectorPanel({
         />
         {hasKindParams ? (
           <Section id="kindParams" title="Kind parameters" icon="settings" sections={sections}>
-            <KindInspector object={markerObject(marker)} meta={marker.meta} onMeta={onMeta} />
+            <KindInspector object={markerObject(marker)} meta={marker.meta} onMeta={onMeta} environment={document.environment} />
           </Section>
         ) : null}
         {hasTrigger ? (
@@ -993,7 +1010,7 @@ export function InspectorPanel({
         />
         {hasKindParams ? (
           <Section id="kindParams" title="Kind parameters" icon="settings" sections={sections}>
-            <KindInspector object={volumeObject(volume)} meta={volume.meta} onMeta={onMeta} />
+            <KindInspector object={volumeObject(volume)} meta={volume.meta} onMeta={onMeta} environment={document.environment} />
           </Section>
         ) : null}
         <VariantsSection
@@ -1219,7 +1236,7 @@ export function InspectorPanel({
           </>
         ) : isSceneKind(path.kind) ? (
           <Section id="kindParams" title="Kind parameters" icon="settings" sections={sections}>
-            <KindInspector object={pathObject(path)} meta={path.meta} onMeta={onMeta} />
+            <KindInspector object={pathObject(path)} meta={path.meta} onMeta={onMeta} environment={document.environment} />
           </Section>
         ) : (
           <EmptyState icon="settings" title="No components" description="This path's kind registers no parameter schema." />
