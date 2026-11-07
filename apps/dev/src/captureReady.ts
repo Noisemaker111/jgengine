@@ -6,6 +6,7 @@
 
 import { modelLoadIdleMs, modelLoadStarts, pendingModelLoads } from "@jgengine/core/model/modelLoad.draw";
 import { SHADER_WARMUP_DEFAULTS } from "@jgengine/core/render/shaderWarmup.draw";
+import { CAPTURE_COMMAND_INPUT } from "@jgengine/core/devtools/agentBridge.draw";
 
 import { resolvedLook } from "./appEnv";
 import { pickStartAction, waitForQuiescentView, type StartCandidate, type ViewActivity } from "./captureSettle";
@@ -365,14 +366,13 @@ export function createCaptureContextReady(opts: {
   if (stageScenario === undefined && captureRun.length === 0 && !aimsAtEntity) {
     return undefined;
   }
-  const defaultCommandInput = { yaw: 0, pitch: 0, aim: { yaw: 0, pitch: 0 } };
   return (ctx: GameContext) => {
     const subjectError = verifyLookSubject(resolvedLook(), (id) => ctx.scene.entity.get(id) !== null);
     if (subjectError !== null && captureArmed()) setCaptureStatus("error", `look override rejected: ${subjectError}`);
     stageScenario?.(ctx);
     for (const entry of captureRun) {
       const name = typeof entry === "string" ? entry : entry.name;
-      const input = typeof entry === "string" ? defaultCommandInput : (entry.input ?? defaultCommandInput);
+      const input = typeof entry === "string" ? CAPTURE_COMMAND_INPUT : (entry.input ?? CAPTURE_COMMAND_INPUT);
       if (ctx.game.commands.has(name)) {
         const result = ctx.game.commands.run(name, input);
         if (result.status === "rejected" && captureArmed()) {

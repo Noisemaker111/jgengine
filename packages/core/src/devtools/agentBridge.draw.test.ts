@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { canvasCover } from "@jgengine/core/ui/canvasCover.view";
 
-import { applyTimeScale, installAgentBridge, playerPoseReport, waitForEditorHost } from "./agentBridge.draw";
+import { applyTimeScale, CAPTURE_COMMAND_INPUT, installAgentBridge, playerPoseReport, waitForEditorHost } from "./agentBridge.draw";
 
 describe("waitForEditorHost", () => {
   test("resolves true as soon as the host goes live", async () => {
@@ -62,6 +62,50 @@ describe("canvas_cover", () => {
       agent.handle({ method: "canvas_cover", covered: true });
       dispose();
       expect(canvasCover.covered(), "disposing the shell must lift its cover").toBe(false);
+    } finally {
+      globals.window = previousWindow;
+    }
+  });
+});
+
+describe("capture_run", () => {
+  test("runs the game's capture.play or a named state in order, so a shipped build reaches the measured scene", () => {
+    const globals = globalThis as typeof globalThis & { window?: unknown };
+    const previousWindow = globals.window;
+    globals.window = {};
+    const calls: [string, unknown][] = [];
+    const ctx = {
+      game: {
+        commands: {
+          has: (name: string) => name !== "missing",
+          run: (name: string, input: unknown) => {
+            calls.push([name, input]);
+            return name === "locked" ? { status: "rejected", reason: "not yet" } : { status: "ok" };
+          },
+        },
+      },
+    } as unknown as GameContext;
+    let live: GameContext | null = null;
+    try {
+      const dispose = installAgentBridge({
+        playable: {
+          game: { name: "Park" },
+          capture: { play: [{ name: "park.scenario", input: { id: "first" } }, "park.start"], states: { paused: ["park.start", "locked"], broken: ["missing"] } },
+        } as never,
+        devtoolsEnabled: false,
+        isDevtoolsOpen: () => false,
+        setDevtoolsOpen: () => {},
+        getContext: () => live,
+      });
+      const agent = (globals.window as { __jgengineAgent: { handle(request: { method: string; state?: string }): unknown } }).__jgengineAgent;
+      expect(agent.handle({ method: "capture_run" })).toEqual({ ok: false, error: "no game context yet" });
+      live = ctx;
+      expect(agent.handle({ method: "capture_run" })).toEqual({ ok: true, ran: [{ name: "park.scenario", status: "ok" }, { name: "park.start", status: "ok" }] });
+      expect(calls).toEqual([["park.scenario", { id: "first" }], ["park.start", CAPTURE_COMMAND_INPUT]]);
+      expect(agent.handle({ method: "capture_run", state: "paused" })).toEqual({ ok: true, ran: [{ name: "park.start", status: "ok" }, { name: "locked", status: "rejected", reason: "not yet" }] });
+      expect(agent.handle({ method: "capture_run", state: "nope" })).toEqual({ ok: false, error: 'unknown capture state "nope"; declared: broken, paused' });
+      expect(agent.handle({ method: "capture_run", state: "broken" })).toEqual({ ok: false, error: 'capture command "missing" is not registered (ran 0 before it)' });
+      dispose();
     } finally {
       globals.window = previousWindow;
     }
