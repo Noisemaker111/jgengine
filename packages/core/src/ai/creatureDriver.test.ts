@@ -85,7 +85,7 @@ test("a tame follows its owner and holds still when told to stay or knocked out"
   ctx.scene.entity.spawn("raptor", { id: "r1", position: [20, 0, 0], role: "npc" });
   const driver = createCreatureDriver();
   driver.add("r1", [20, 0, 0]);
-  const record: CompanionRecord = { id: "r1", ownerId: "p1", sourceId: null, command: "follow", home: null, leash: 30, level: 1, unspentPoints: 0, stats: {} };
+  const record: CompanionRecord = { id: "r1", ownerId: "p1", sourceId: null, command: "follow", stance: "neutral", home: null, leash: 30, level: 1, unspentPoints: 0, stats: {} };
   run(ctx, 4, (dt) => driver.step(ctx, "r1", { kind: "tamed", intent: resolveCompanionIntent(record, { ownerPosition: [0, 0, 0] }) }, HUNTER, dt));
   expect(ctx.scene.entity.distance("r1", "p1")!).toBeLessThan(3.5);
 

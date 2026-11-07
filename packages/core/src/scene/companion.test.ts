@@ -13,12 +13,13 @@ const STATS_CONFIG: CompanionConfig = {
   upgrades: { hp: { increment: 20, maxCap: 160 }, damage: { increment: 5 } },
 };
 
-function recordOf(command: CompanionRecord["command"]): CompanionRecord {
+function recordOf(command: CompanionRecord["command"], stance: CompanionRecord["stance"] = "neutral"): CompanionRecord {
   return {
     id: "c1",
     ownerId: "hero",
     sourceId: null,
     command,
+    stance,
     home: [5, 0, 5],
     leash: 12,
     level: 1,
@@ -38,6 +39,7 @@ describe("createCompanionRoster", () => {
     expect(companion.ownerId).toBe("hero");
     expect(companion.sourceId).toBe(entry.id);
     expect(companion.command).toBe("follow");
+    expect(companion.stance).toBe("neutral");
     expect(companion.leash).toBe(12);
     expect(companion.stats.hp).toEqual({ current: 100, max: 100, min: 0 });
     expect(companions.ownerOf(companion.id)).toBe("hero");
@@ -55,13 +57,14 @@ describe("createCompanionRoster", () => {
     expect(companions.release(a.id)).toBe(false);
   });
 
-  test("command transitions overwrite the standing order", () => {
+  test("command and stance are set apart: a staying companion keeps its stance", () => {
     const companions = createCompanionRoster();
     const c = companions.adopt("hero");
-    expect(companions.command(c.id, "aggressive")?.command).toBe("aggressive");
+    expect(companions.stance(c.id, "aggressive")?.stance).toBe("aggressive");
     expect(companions.command(c.id, "stay")?.command).toBe("stay");
-    expect(companions.get(c.id)?.command).toBe("stay");
+    expect(companions.get(c.id)).toMatchObject({ command: "stay", stance: "aggressive" });
     expect(companions.command("missing", "follow")).toBeNull();
+    expect(companions.stance("missing", "passive")).toBeNull();
   });
 
   test("setHome and setLeash update anchor config", () => {
@@ -76,8 +79,8 @@ describe("createCompanionRoster", () => {
 describe("resolveCompanionIntent", () => {
   const ownerPosition = [1, 0, 1] as const;
 
-  test("follow with no owner target heels to the owner", () => {
-    const intent = resolveCompanionIntent(recordOf("follow"), { ownerPosition });
+  test("follow with nothing to fight heels to the owner", () => {
+    const intent = resolveCompanionIntent(recordOf("follow"), { ownerPosition, nearby: ["n1"] });
     expect(intent.kind).toBe("follow");
     expect(intent.anchor).toBe("owner");
     expect(intent.leashTo).toEqual([1, 0, 1]);
@@ -86,72 +89,37 @@ describe("resolveCompanionIntent", () => {
     expect(intent.leashDistance).toBe(12);
   });
 
-  test("follow assists the owner's current target", () => {
-    const intent = resolveCompanionIntent(recordOf("follow"), { ownerPosition, ownerTargetId: "boss" });
-    expect(intent.kind).toBe("assist");
-    expect(intent.candidates).toEqual(["boss"]);
-    expect(intent.targetId).toBe("boss");
-  });
-
-  test("stay holds at home and anchors there", () => {
-    const intent = resolveCompanionIntent(recordOf("stay"), { ownerPosition, threats: ["t1"] });
-    expect(intent.kind).toBe("hold");
-    expect(intent.anchor).toBe("home");
-    expect(intent.leashTo).toEqual([5, 0, 5]);
-    expect(intent.candidates).toEqual([]);
-  });
-
-  test("stay still assists the owner's target from home", () => {
-    const intent = resolveCompanionIntent(recordOf("stay"), { ownerPosition, ownerTargetId: "boss" });
-    expect(intent.kind).toBe("assist");
-    expect(intent.anchor).toBe("home");
-    expect(intent.targetId).toBe("boss");
-  });
-
-  test("passive never engages, even with threats and an owner target", () => {
-    const intent = resolveCompanionIntent(recordOf("passive"), {
-      ownerPosition,
-      ownerTargetId: "boss",
-      threats: ["t1", "t2"],
-    });
-    expect(intent.kind).toBe("follow");
-    expect(intent.candidates).toEqual([]);
-    expect(intent.targetId).toBeNull();
-  });
-
-  test("neutral fights back nearby threats but ignores the owner's target", () => {
-    const intent = resolveCompanionIntent(recordOf("neutral"), {
-      ownerPosition,
-      ownerTargetId: "boss",
-      threats: ["t1", "t2"],
-    });
-    expect(intent.kind).toBe("engage");
-    expect(intent.candidates).toEqual(["t1", "t2"]);
-    expect(intent.targetId).toBe("t1");
-  });
-
-  test("neutral with no threats just follows", () => {
-    const intent = resolveCompanionIntent(recordOf("neutral"), { ownerPosition, ownerTargetId: "boss" });
-    expect(intent.kind).toBe("follow");
-    expect(intent.candidates).toEqual([]);
-  });
-
-  test("aggressive engages nearby threats before the owner's target and dedupes", () => {
-    const intent = resolveCompanionIntent(recordOf("aggressive"), {
-      ownerPosition,
-      ownerTargetId: "boss",
-      threats: ["t1", "boss"],
-    });
+  test("neutral fights back threats first, then joins the owner's fight, and leaves the merely nearby alone", () => {
+    const intent = resolveCompanionIntent(recordOf("follow"), { ownerPosition, ownerTargetId: "boss", threats: ["t1", "boss"], nearby: ["n1"] });
     expect(intent.kind).toBe("engage");
     expect(intent.candidates).toEqual(["t1", "boss"]);
     expect(intent.targetId).toBe("t1");
   });
 
-  test("aggressive with only the owner's target assists it", () => {
-    const intent = resolveCompanionIntent(recordOf("aggressive"), { ownerPosition, ownerTargetId: "boss" });
+  test("neutral with only the owner's target assists it", () => {
+    const intent = resolveCompanionIntent(recordOf("follow"), { ownerPosition, ownerTargetId: "boss" });
     expect(intent.kind).toBe("assist");
-    expect(intent.candidates).toEqual(["boss"]);
     expect(intent.targetId).toBe("boss");
+  });
+
+  test("stay holds at home, and from there still defends itself and joins the owner's fight", () => {
+    expect(resolveCompanionIntent(recordOf("stay"), { ownerPosition })).toMatchObject({ kind: "hold", anchor: "home", leashTo: [5, 0, 5], candidates: [] });
+    expect(resolveCompanionIntent(recordOf("stay"), { ownerPosition, threats: ["t1"] })).toMatchObject({ kind: "engage", anchor: "home", targetId: "t1" });
+    expect(resolveCompanionIntent(recordOf("stay"), { ownerPosition, ownerTargetId: "boss" })).toMatchObject({ kind: "assist", anchor: "home", targetId: "boss" });
+  });
+
+  test("passive never engages, even with threats, an owner target and creatures nearby", () => {
+    for (const command of ["follow", "stay"] as const) {
+      const intent = resolveCompanionIntent(recordOf(command, "passive"), { ownerPosition, ownerTargetId: "boss", threats: ["t1"], nearby: ["n1"] });
+      expect(intent.candidates).toEqual([]);
+      expect(intent.targetId).toBeNull();
+    }
+  });
+
+  test("aggressive also picks fights with the nearby, after threats and the owner's target, deduped", () => {
+    const intent = resolveCompanionIntent(recordOf("follow", "aggressive"), { ownerPosition, ownerTargetId: "boss", threats: ["t1"], nearby: ["boss", "n1", "t1"] });
+    expect(intent.candidates).toEqual(["t1", "boss", "n1"]);
+    expect(resolveCompanionIntent(recordOf("stay", "aggressive"), { ownerPosition, nearby: ["n1"] })).toMatchObject({ kind: "engage", anchor: "home", targetId: "n1" });
   });
 
   test("owner anchor is null when the owner position is unknown", () => {
@@ -161,14 +129,14 @@ describe("resolveCompanionIntent", () => {
   });
 
   test("is deterministic for identical inputs", () => {
-    const record = recordOf("aggressive");
+    const record = recordOf("follow", "aggressive");
     const context = { ownerPosition, ownerTargetId: "boss", threats: ["t1", "t2"] };
     expect(resolveCompanionIntent(record, context)).toEqual(resolveCompanionIntent(record, context));
   });
 
   test("resolveIntent via the roster mirrors the pure function", () => {
     const companions = createCompanionRoster();
-    const c = companions.adopt("hero", { command: "aggressive" });
+    const c = companions.adopt("hero", { stance: "aggressive" });
     companions.setHome(c.id, null);
     const context = { ownerPosition, threats: ["t1"] };
     expect(companions.resolveIntent(c.id, context)).toEqual(
@@ -228,7 +196,7 @@ describe("companion leveling", () => {
 describe("companion serialization", () => {
   test("snapshot/hydrate round-trips through JSON without shared references", () => {
     const companions = createCompanionRoster(STATS_CONFIG);
-    const c = companions.adopt("hero", { command: "aggressive", home: [2, 0, 2] });
+    const c = companions.adopt("hero", { command: "stay", stance: "aggressive", home: [2, 0, 2] });
     companions.levelUp(c.id, 3);
     companions.spend(c.id, "damage");
 
@@ -241,10 +209,17 @@ describe("companion serialization", () => {
     expect(restored.get(c.id)).toEqual(companions.get(c.id));
 
     // Mutating the restored store must not touch the original snapshot's data.
-    restored.command(c.id, "passive");
+    restored.stance(c.id, "passive");
     restored.spend(c.id, "damage");
-    expect(companions.get(c.id)?.command).toBe("aggressive");
-    expect(snapshot[c.id]?.command).toBe("aggressive");
+    expect(companions.get(c.id)?.stance).toBe("aggressive");
+    expect(snapshot[c.id]?.stance).toBe("aggressive");
+  });
+
+  test("a record saved before stances existed hydrates as neutral", () => {
+    const companions = createCompanionRoster();
+    const { stance: _dropped, ...old } = recordOf("stay", "aggressive");
+    companions.hydrate({ c1: old as CompanionRecord });
+    expect(companions.get("c1")).toMatchObject({ command: "stay", stance: "neutral" });
   });
 
   test("hydrate replaces the whole store", () => {

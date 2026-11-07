@@ -4,14 +4,18 @@ import { seedStatValues, setStatValue } from "./entityStats";
 import type { StatCatalog, StatValue, StatValueMap } from "./entityStats";
 
 /**
- * A tamed companion's standing order. Genre-agnostic aggression + posture preset:
- * - `follow` — heel to the owner and assist whatever the owner is fighting.
- * - `stay` — hold at `home` and assist the owner's target from there.
- * - `passive` — heel to the owner and never engage (a pacifist escort).
- * - `neutral` — heel to the owner and only fight back nearby threats (defensive).
- * - `aggressive` — heel to the owner and proactively engage nearby threats and the owner's target.
+ * Where a tamed companion goes: `follow` heels to the owner, `stay` holds at `home`.
+ * What it fights is its {@link CompanionStance}, set apart, so a companion left on guard can still defend.
  */
-export type CompanionCommand = "follow" | "stay" | "passive" | "neutral" | "aggressive";
+export type CompanionCommand = "follow" | "stay";
+
+/**
+ * What a tamed companion fights, wherever its {@link CompanionCommand} keeps it:
+ * - `passive` — never engages, even when struck (a pacifist escort).
+ * - `neutral` — fights back whatever threatens it or the owner, and joins the owner's fight.
+ * - `aggressive` — all of that, and picks fights with anything `nearby` unprovoked.
+ */
+export type CompanionStance = "passive" | "neutral" | "aggressive";
 
 /**
  * Serializable per-companion state: who owns it, its standing order, where it holds, its
@@ -24,6 +28,7 @@ export interface CompanionRecord {
   /** The {@link RosterEntry.id} this companion was tamed from, or `null` when free-standing. */
   sourceId: string | null;
   command: CompanionCommand;
+  stance: CompanionStance;
   /** Hold/return anchor used by `stay`; `null` until the owner parks it somewhere. */
   home: MobVec3 | null;
   /** Radius the game keeps the companion within of its resolved anchor (feeds a brain's leash distance). */
@@ -41,8 +46,10 @@ export interface CompanionIntentContext {
   ownerPosition?: MobVec3 | null;
   /** The owner's current attack target — the companion assists/aggros it per its command. */
   ownerTargetId?: string | null;
-  /** Threat ids near the companion the game offers as engage candidates (already proximity-filtered upstream). */
+  /** Ids attacking the companion or its owner (already proximity-filtered upstream): neutral and aggressive fight these. */
   threats?: readonly string[];
+  /** Hostile ids near the companion that are not attacking: only an aggressive companion picks fights with these. */
+  nearby?: readonly string[];
 }
 
 /**
@@ -100,6 +107,8 @@ export interface CompanionAdoptOptions {
   /** The {@link RosterEntry.id} this companion springs from — the ownership/catalog tie. */
   sourceId?: string;
   command?: CompanionCommand;
+  /** Default `neutral`. */
+  stance?: CompanionStance;
   home?: MobVec3 | null;
   leash?: number;
   level?: number;
@@ -121,6 +130,8 @@ export interface CompanionRoster {
   list(ownerId: string): readonly CompanionRecord[];
   /** Set a companion's standing order; `null` if the id is unknown. */
   command(companionId: string, command: CompanionCommand): CompanionRecord | null;
+  /** Set what a companion fights; `null` if the id is unknown. */
+  stance(companionId: string, stance: CompanionStance): CompanionRecord | null;
   /** Park/clear a companion's `stay` anchor. */
   setHome(companionId: string, home: MobVec3 | null): CompanionRecord | null;
   setLeash(companionId: string, leash: number): CompanionRecord | null;
@@ -139,26 +150,13 @@ function dedupePush(out: string[], id: string): void {
   if (!out.includes(id)) out.push(id);
 }
 
-function candidatesFor(
-  command: CompanionCommand,
-  ownerTargetId: string | null,
-  threats: readonly string[],
-): string[] {
-  switch (command) {
-    case "passive":
-      return [];
-    case "follow":
-    case "stay":
-      return ownerTargetId === null ? [] : [ownerTargetId];
-    case "neutral":
-      return [...threats];
-    case "aggressive": {
-      const out: string[] = [];
-      for (const threat of threats) dedupePush(out, threat);
-      if (ownerTargetId !== null) dedupePush(out, ownerTargetId);
-      return out;
-    }
-  }
+function candidatesFor(stance: CompanionStance, ownerTargetId: string | null, threats: readonly string[], nearby: readonly string[]): string[] {
+  if (stance === "passive") return [];
+  const out: string[] = [];
+  for (const threat of threats) dedupePush(out, threat);
+  if (ownerTargetId !== null) dedupePush(out, ownerTargetId);
+  if (stance === "aggressive") for (const id of nearby) dedupePush(out, id);
+  return out;
 }
 
 /**
@@ -178,7 +176,7 @@ export function resolveCompanionIntent(
   const anchor: "owner" | "home" = record.command === "stay" ? "home" : "owner";
   const leashTo = anchor === "home" ? record.home : (context.ownerPosition ?? null);
 
-  const candidates = candidatesFor(record.command, ownerTargetId, threats);
+  const candidates = candidatesFor(record.stance, ownerTargetId, threats, context.nearby ?? []);
   const targetId = candidates.length > 0 ? candidates[0]! : null;
 
   let kind: CompanionIntent["kind"];
@@ -205,6 +203,8 @@ function cloneRecord(record: CompanionRecord): CompanionRecord {
     ownerId: record.ownerId,
     sourceId: record.sourceId,
     command: record.command,
+    // Records saved before stances existed fought like neutral ones.
+    stance: record.stance ?? "neutral",
     home: record.home === null ? null : [record.home[0], record.home[1], record.home[2]],
     leash: record.leash,
     level: record.level,
@@ -252,6 +252,7 @@ export function createCompanionRoster(config: CompanionConfig = {}): CompanionRo
         ownerId,
         sourceId: options.sourceId ?? null,
         command: options.command ?? "follow",
+        stance: options.stance ?? "neutral",
         home: options.home ?? null,
         leash: options.leash ?? defaultLeash,
         level: options.level ?? startLevel,
@@ -276,6 +277,9 @@ export function createCompanionRoster(config: CompanionConfig = {}): CompanionRo
     },
     command(companionId, command) {
       return patch(companionId, (record) => ({ ...record, command }));
+    },
+    stance(companionId, stance) {
+      return patch(companionId, (record) => ({ ...record, stance }));
     },
     setHome(companionId, home) {
       return patch(companionId, (record) => ({
