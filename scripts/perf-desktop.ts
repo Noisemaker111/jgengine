@@ -36,24 +36,28 @@ export interface LaunchArgs {
   seconds: number;
   port: number;
   out: string | null;
+  /** The private source maps the build wrote: `<app folder>.private-maps` unless `--maps` names them. */
+  maps: string;
 }
 
-/** Parse `--launch <exe> [--uncapped] [--seconds n] [--port n] [--out file]`. @internal */
+/** Parse `--launch <exe> [--uncapped] [--seconds n] [--port n] [--out file] [--maps dir]`. @internal */
 export function parseLaunchArgs(argv: readonly string[]): LaunchArgs {
   let exe: string | undefined;
   let uncapped = false;
   let seconds = 8;
   let port = 9390;
   let out: string | null = null;
+  let maps: string | null = null;
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index] ?? "";
     if (arg === "--uncapped") { uncapped = true; continue; }
-    if (arg !== "--launch" && arg !== "--seconds" && arg !== "--port" && arg !== "--out") throw new Error(`unknown argument ${arg}`);
+    if (arg !== "--launch" && arg !== "--seconds" && arg !== "--port" && arg !== "--out" && arg !== "--maps") throw new Error(`unknown argument ${arg}`);
     const value = argv[index + 1];
     if (value === undefined || value.startsWith("--")) throw new Error(`${arg} needs a value`);
     index += 1;
     if (arg === "--launch") exe = resolve(value);
     else if (arg === "--out") out = resolve(value);
+    else if (arg === "--maps") maps = resolve(value);
     else {
       const parsed = Number(value);
       if (arg === "--seconds") {
@@ -66,7 +70,8 @@ export function parseLaunchArgs(argv: readonly string[]): LaunchArgs {
     }
   }
   if (exe === undefined) throw new Error("--launch needs the desktop app's .exe");
-  return { exe, uncapped, seconds, port, out };
+  // `jgengine desktop --out <dir>` writes the app into <dir> and its private maps to <dir>.private-maps.
+  return { exe, uncapped, seconds, port, out, maps: maps ?? `${dirname(exe)}.private-maps` };
 }
 
 /**
@@ -89,6 +94,27 @@ async function startCaptureScene(session: CdpSession): Promise<string> {
     await Bun.sleep(500);
   }
   throw new Error("the game context never came up for capture_run within 60 s");
+}
+
+/**
+ * The running build's manifest and a reader that maps one of its scripts through the private source
+ * maps `jgengine desktop --diagnostics` wrote beside the app, so frame callbacks name their source file.
+ */
+async function privateMapReader(session: CdpSession, mapsDir: string): Promise<{ build: unknown; privateMap: (scriptId: string) => Promise<string> }> {
+  const build = await session.evaluate<unknown>(`fetch('./jgengine-build.json').then(r => r.ok ? r.json() : ({ error: 'build manifest HTTP ' + r.status })).catch(e => ({ error: String(e) }))`, { awaitPromise: true });
+  const digest = typeof build === "object" && build !== null ? Reflect.get(build, "privateMapsSha256") : undefined;
+  if (typeof digest !== "string") throw new Error("desktop build has no private map identity");
+  return {
+    build,
+    privateMap: async (scriptId) => {
+      const result = await session.send("Debugger.getScriptSource", { scriptId });
+      const source = result["scriptSource"];
+      if (typeof source !== "string") throw new Error("running script source unavailable");
+      const map = readPrivateDesktopMap(mapsDir, digest, source);
+      if (map === null) throw new Error("no private map matches the running script");
+      return map;
+    },
+  };
 }
 
 /** The page a launched app is pointed at: its diagnostic telemetry, at the frame gate's tier. */
@@ -137,7 +163,9 @@ async function launchAndMeasure(args: LaunchArgs): Promise<void> {
       await Bun.sleep(2_000);
       if (!(await resetBreakdown(session))) throw new Error("the page has no frame breakdown; build it with --diagnostics");
       const deltas = (await session.evaluate<number[]>(SAMPLE_FRAMES_SCRIPT(args.seconds * 1000), { awaitPromise: true })) ?? [];
-      const breakdown = await session.evaluate<FrameBreakdownSummary | null>("globalThis.__jgFrameBreakdown?.summary({ top: 15 }) ?? null");
+      // Frame callbacks name their source through the private maps the build wrote beside the app.
+      const { privateMap } = await privateMapReader(session, args.maps);
+      const breakdown = await readBreakdown(session, privateMap);
       await release();
       const viewport = await session.evaluate<string>(`innerWidth + "x" + innerHeight`);
       const frame = summarizeFrameDeltas(deltas);
@@ -159,7 +187,7 @@ async function launchAndMeasure(args: LaunchArgs): Promise<void> {
 async function main(argv: string[]): Promise<void> {
   if (argv[0] === "--launch") return launchAndMeasure(parseLaunchArgs(argv));
   const port = Number(argv[0]);
-  if (!Number.isInteger(port) || port < 1 || port > 65535 || argv[1] !== "--out" || argv[2] === undefined || argv[3] !== "--maps" || argv[4] === undefined || argv.length !== 5) throw new Error("usage: bun run perf desktop <debug-port> --out <file.json> --maps <private-maps-directory>\n       bun run perf desktop --launch <app.exe> [--uncapped] [--seconds n] [--port n] [--out <file.json>]");
+  if (!Number.isInteger(port) || port < 1 || port > 65535 || argv[1] !== "--out" || argv[2] === undefined || argv[3] !== "--maps" || argv[4] === undefined || argv.length !== 5) throw new Error("usage: bun run perf desktop <debug-port> --out <file.json> --maps <private-maps-directory>\n       bun run perf desktop --launch <app.exe> [--uncapped] [--seconds n] [--port n] [--out <file.json>] [--maps <private-maps-directory>]");
   const targets = await localGetJson<Target[]>(`http://127.0.0.1:${port}/json/list`, 5_000);
   const target = diagnosticDesktopTarget(targets);
   if (target.webSocketDebuggerUrl === undefined) throw new Error("desktop debugger URL unavailable");
@@ -168,17 +196,8 @@ async function main(argv: string[]): Promise<void> {
   const session = await CdpSession.connect(target.webSocketDebuggerUrl, 10_000);
   try {
     const { breakdown, report, build } = await desktopDeadline((async () => {
-      const build = await session.evaluate<unknown>(`fetch('./jgengine-build.json').then(r => r.ok ? r.json() : ({ error: 'build manifest HTTP ' + r.status })).catch(e => ({ error: String(e) }))`, { awaitPromise: true });
-      const digest = typeof build === "object" && build !== null ? Reflect.get(build, "privateMapsSha256") : undefined;
-      if (typeof digest !== "string") throw new Error("desktop build has no private map identity");
-      const breakdown = await readBreakdown(session, async (scriptId) => {
-        const result = await session.send("Debugger.getScriptSource", { scriptId });
-        const source = result["scriptSource"];
-        if (typeof source !== "string") throw new Error("running script source unavailable");
-        const map = readPrivateDesktopMap(resolve(argv[4] ?? ""), digest, source);
-        if (map === null) throw new Error("no private map matches the running script");
-        return map;
-      });
+      const { build, privateMap } = await privateMapReader(session, resolve(argv[4] ?? ""));
+      const breakdown = await readBreakdown(session, privateMap);
       if (breakdown === null) throw new Error("desktop frame report unavailable; diagnostic telemetry has not started");
       const report = await session.evaluate<unknown>("globalThis.__JG?.report?.() ?? null");
       return { breakdown, report, build };

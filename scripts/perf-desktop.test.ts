@@ -3,8 +3,8 @@ import { resolve } from "node:path";
 import { desktopDeadline, diagnosticDesktopTarget, parseLaunchArgs } from "./perf-desktop";
 
 test("a launch run names its app and defaults to the display's vsync", () => {
-  expect(parseLaunchArgs(["--launch", "Game.exe"])).toEqual({ exe: resolve("Game.exe"), uncapped: false, seconds: 8, port: 9390, out: null });
-  expect(parseLaunchArgs(["--launch", "Game.exe", "--uncapped", "--seconds", "4", "--port", "9400", "--out", "r.json"])).toEqual({ exe: resolve("Game.exe"), uncapped: true, seconds: 4, port: 9400, out: resolve("r.json") });
+  expect(parseLaunchArgs(["--launch", "out/game/Game.exe"])).toEqual({ exe: resolve("out/game/Game.exe"), uncapped: false, seconds: 8, port: 9390, out: null, maps: `${resolve("out/game")}.private-maps` });
+  expect(parseLaunchArgs(["--launch", "Game.exe", "--uncapped", "--seconds", "4", "--port", "9400", "--out", "r.json", "--maps", "m"])).toEqual({ exe: resolve("Game.exe"), uncapped: true, seconds: 4, port: 9400, out: resolve("r.json"), maps: resolve("m") });
   expect(() => parseLaunchArgs(["--uncapped"])).toThrow("--launch needs");
   expect(() => parseLaunchArgs(["--launch", "Game.exe", "--fps", "360"])).toThrow("unknown argument --fps");
   expect(() => parseLaunchArgs(["--launch", "Game.exe", "--port", "80"])).toThrow("--port must be");
