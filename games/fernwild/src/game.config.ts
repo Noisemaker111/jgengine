@@ -17,7 +17,7 @@ import { bodyPrompts, bodyView } from "./game/deathBody";
 import { breedingPrompts, breedingView } from "./game/breeding";
 import { broodView, obeliskPrompts } from "./game/broodmother";
 import { BROOD_PHASES } from "./game/data/bosses";
-import { awakeTamingProgress, creaturePrompts, creaturesView, speciesNear, wildLevelNear, mountCanFly, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
+import { awakeTamingProgress, creaturePrompts, creaturesView, speciesNear, wildCountNear, wildLevelNear, mountCanFly, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
 import { tameFood } from "./game/tameHunger";
 import { STRUCTURES } from "./game/data/structures";
 import { content } from "./game/content";
@@ -247,6 +247,8 @@ export const game = defineGame({
         ...sight("prey", nearestWild(ctx, PREY, here, 220, (at) => nearestThreat(ctx, at, 30) === null)),
         // The nearest wild Ovis within 30 m, a passive tame to follow and hand-feed.
         ...sight("ovis", nearestWild(ctx, "ovis", here, 30)),
+        // Live wild creatures within 60 m: what the herd-refill proof counts.
+        wildNear: wildCountNear(ctx, here, 60),
         // The nearest wild hunter within 60 m, and how many creatures a bola or trap holds still.
         ...sight("threat", nearestThreat(ctx, here, 60)),
         held: creatures.held,

@@ -163,6 +163,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/respawn-population.proof.ts",
+      "proves": [
+        "spawns.respawn-population"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/ride-fly.proof.ts",
       "proves": [
         "creatures.ride.fly"
