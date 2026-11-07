@@ -17,7 +17,7 @@ import { bodyPrompts, bodyView } from "./game/deathBody";
 import { breedingPrompts, breedingView } from "./game/breeding";
 import { broodView, obeliskPrompts } from "./game/broodmother";
 import { BROOD_PHASES } from "./game/data/bosses";
-import { awakeTamingProgress, creaturePrompts, creaturesView, speciesNear, wildCountNear, wildLevelNear, mountCanFly, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
+import { awakeTamingProgress, creaturePrompts, creaturesView, speciesNear, wildCountNear, wildHurtNear, nearestTameStance, wildLevelNear, mountCanFly, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
 import { tameFood } from "./game/tameHunger";
 import { STRUCTURES } from "./game/data/structures";
 import { content } from "./game/content";
@@ -270,6 +270,7 @@ export const game = defineGame({
         ...sight("danger", nearestThreat(ctx, here, 40)),
         // The nearest tamed Phiomia, to walk back to with its saddle.
         ...sight("phiomia", nearestTame(ctx, here, "phiomia")),
+        ...sight("raptor", nearestTame(ctx, here, "raptor")),
         ...sight("doedicurus", nearestTame(ctx, here, "doedicurus")),
         // The nearest campfire and mortar the survivor placed, to walk back to and work at.
         ...sight("campfire", stationNear("campfire")),
@@ -367,6 +368,9 @@ export const game = defineGame({
         heldDurabilityMax: view.held?.max ?? -1,
         // Carried tools that have worn and could be repaired.
         wornTools: view.worn.length,
+        // Wild creatures within 40 m that have been hurt or killed, and your nearest tame's stance (0 passive, 1 neutral, 2 aggressive; -1 with none).
+        wildHurt: wildHurtNear(ctx, here, 40),
+        tameStance: nearestTameStance(ctx, here),
         // Hotbar slot in hand, 1-based; 0 bare-handed.
         holding: view.activeSlot === null ? 0 : view.activeSlot + 1,
         // Metres to the survivor's own body, to a decimetre, and the stacks it holds; -1 and 0 with no body lying.
