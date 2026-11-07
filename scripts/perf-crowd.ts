@@ -187,21 +187,33 @@ export interface CrowdTiming {
   readonly minMs: number;
 }
 
-/** Warm up, then time ticks until `budgetMs` of stepping has run (at least `minTicks`); the median is the reported figure. */
-export function timeCrowd(crowd: Crowd, budgetMs: number, minTicks = 3, warmup = 3): CrowdTiming {
-  for (let i = 0; i < warmup; i += 1) crowd.step();
-  const samples: number[] = [];
-  let spent = 0;
-  while (samples.length < minTicks || spent < budgetMs) {
-    const t0 = performance.now();
-    crowd.step();
-    const ms = performance.now() - t0;
-    samples.push(ms);
-    spent += ms;
-    if (samples.length >= 200) break;
+function summarize(samples: number[]): CrowdTiming {
+  const sorted = [...samples].sort((x, y) => x - y);
+  return { ticks: sorted.length, medianMs: sorted[Math.floor(sorted.length / 2)]!, minMs: sorted[0]! };
+}
+
+/**
+ * Warm both crowds up, then alternate their ticks until `budgetMs` of stepping has run (at least
+ * `minTicks` each), so a busy machine slows both sides alike and the ratio stays meaningful.
+ */
+export function timeCrowds(engine: Crowd, flat: Crowd, budgetMs: number, minTicks = 3, warmup = 3): { engine: CrowdTiming; flat: CrowdTiming } {
+  for (let i = 0; i < warmup; i += 1) {
+    engine.step();
+    flat.step();
   }
-  samples.sort((a, b) => a - b);
-  return { ticks: samples.length, medianMs: samples[Math.floor(samples.length / 2)]!, minMs: samples[0]! };
+  const engineSamples: number[] = [];
+  const flatSamples: number[] = [];
+  let spent = 0;
+  while ((engineSamples.length < minTicks || spent < budgetMs) && engineSamples.length < 200) {
+    for (const [crowd, samples] of [[engine, engineSamples], [flat, flatSamples]] as const) {
+      const t0 = performance.now();
+      crowd.step();
+      const ms = performance.now() - t0;
+      samples.push(ms);
+      spent += ms;
+    }
+  }
+  return { engine: summarize(engineSamples), flat: summarize(flatSamples) };
 }
 
 function parseCounts(argv: readonly string[]): number[] {
@@ -219,7 +231,7 @@ if (import.meta.main) {
       usage: "bun run perf crowd [--counts 1000,10000,100000] [--budget <ms per row>]",
       flags: [
         { flag: "--counts <n,...>", detail: "agent counts to run (default 1000,10000,100000; 10k is accepted)" },
-        { flag: "--budget <ms>", detail: "stepping time per row after warmup (default 1500)" },
+        { flag: "--budget <ms>", detail: "stepping time per row after warmup, both sides together (default 3000)" },
       ],
       example: "bun run perf crowd --counts 10k",
     })
@@ -227,14 +239,13 @@ if (import.meta.main) {
     process.exit(0);
   }
   const budgetFlag = argv.indexOf("--budget");
-  const budget = budgetFlag >= 0 ? Number(argv[budgetFlag + 1]) : 1500;
-  console.log(`crowd step, Bun ${Bun.version}, median tick after warmup`);
-  console.log("agents   engine ms/tick   flat ms/tick   engine/flat");
+  const budget = budgetFlag >= 0 ? Number(argv[budgetFlag + 1]) : 3000;
+  console.log(`crowd step, Bun ${Bun.version}: engine and flat ticks alternate; median (min) ms per tick after warmup`);
+  console.log("agents        engine ms/tick          flat ms/tick   engine/flat median (min)");
+  const cell = (timing: CrowdTiming) => `${timing.medianMs.toFixed(2)} (${timing.minMs.toFixed(2)})`.padStart(20);
   for (const count of parseCounts(argv)) {
-    const engine = timeCrowd(createEngineCrowd(count), budget);
-    const flat = timeCrowd(createFlatCrowd(count), budget);
-    console.log(
-      `${String(count).padStart(6)}   ${engine.medianMs.toFixed(2).padStart(14)}   ${flat.medianMs.toFixed(2).padStart(12)}   ${(engine.medianMs / flat.medianMs).toFixed(1).padStart(10)}x`,
-    );
+    const { engine, flat } = timeCrowds(createEngineCrowd(count), createFlatCrowd(count), budget);
+    const ratio = `${(engine.medianMs / flat.medianMs).toFixed(1)}x (${(engine.minMs / flat.minMs).toFixed(1)}x)`;
+    console.log(`${String(count).padStart(6)}  ${cell(engine)}  ${cell(flat)}   ${ratio.padStart(22)}`);
   }
 }
