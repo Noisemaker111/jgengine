@@ -7505,7 +7505,9 @@
 
 ## @jgengine/core/world/overhead
 
+- `EnclosureOptions` (interface): interface EnclosureOptions extends OverheadOptions — {@link solidEnclosure} knobs, beside {@link solidOverhead}'s for the roof.
 - `OverheadOptions` (interface): interface OverheadOptions — {@link solidOverhead} knobs.
+- `solidEnclosure` (function): function solidEnclosure(solids: Pick<WorldSolids, "inBox">, at: readonly [number, number, number], options: EnclosureOptions = {}): number — How shut in a point is: the share of the ways round it that meet a wall within reach, and 0 under open sky. 1 is a closed room, roof and walls all round; an open door or a missing wall leaves it short of 1. What decides whether a building keeps out the weather and the cold.
 - `solidOverhead` (function): function solidOverhead(solids: Pick<WorldSolids, "inBox">, at: readonly [number, number, number], options: OverheadOptions = {}): boolean — Whether something solid is overhead: a ceiling, a roof, cave rock, anything in the world's solids straight above `at`, between `clearance` and `reach` over it. What keeps the rain off a survivor and lets a roof count as shelter.
 
 ## @jgengine/core/world/poleLineKind

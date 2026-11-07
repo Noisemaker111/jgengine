@@ -386,6 +386,8 @@ export const game = defineGame({
         snow: Math.round(ctx.environment.sample(me?.position[0] ?? 0, me?.position[2] ?? 0).snow * 100),
         // 1 while a roof, ceiling or rock is overhead.
         sheltered: view.sheltered ? 1 : 0,
+        // 1 shut in a room, roof and walls all round, where the air is held toward indoor warmth.
+        indoors: view.indoors ? 1 : 0,
         // The nearest supply crate: metres away, metres still to fall (0 once down), 1 once landed; -1, -1, 0 with none.
         crateDistance: crate === null ? -1 : Math.round(crate.distance),
         crateAltitude: crate === null ? -1 : Math.round(crate.altitude),

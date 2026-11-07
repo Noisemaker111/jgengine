@@ -58,7 +58,7 @@ const WEATHER_WORD: Record<string, string> = { rain: "Rain", snow: "Snow", mixed
 function Vitals(): ReactNode {
   const view = useSurvivor();
   const detail = useGameStore(extendedHud);
-  const weather = view.weather === "clear" ? "Temperature" : `${WEATHER_WORD[view.weather]}${view.sheltered ? " (sheltered)" : ""}`;
+  const weather = `${view.weather === "clear" ? "Temperature" : WEATHER_WORD[view.weather]}${view.indoors ? " (indoors)" : view.sheltered && view.weather !== "clear" ? " (sheltered)" : ""}`;
   const pool = (id: keyof typeof VITAL_ICON, label: string, value: number, max: number, warn = false): KitVitalIcon => ({ id, label, icon: libraryIconUrl(VITAL_ICON[id]), value, max, color: ARK_CYAN, warn });
   const vitals: KitVitalIcon[] = [
     { ...pool("temperature", weather, view.temperature - COLDEST, HOTTEST - COLDEST, view.comfort !== "comfortable"), text: `${view.temperature}°C` },

@@ -2063,6 +2063,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SOIL_KIND` (const) · `import { SOIL_KIND } from "@jgengine/core/world"`
 
+## solid-enclosure — measure how enclosed a point is by a roof and walls, from the world's solids
+
+- `solidEnclosure` (function) · `import { solidEnclosure } from "@jgengine/core/world/overhead"`
+
 ## solid-obstacles — the one blocking-geometry query the player resolver and NPC movers share
 
 - `obstacleFromSolid` (function) · `import { obstacleFromSolid } from "@jgengine/core/movement/solidObstacles"`
