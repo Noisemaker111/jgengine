@@ -27,14 +27,14 @@ describe("drawn grass", () => {
     for (const species of GRASS_SPECIES) {
       const look = readGrassLook({ species: species.id });
       expect(drawnGrassLook(look)).toBe(look);
-      expect(grassStyleShape(look).toArray()).toEqual([0, 0, 0, 0]);
+      expect(grassStyleShape(look).toArray()).toEqual([0, 0, 1, 0]);
     }
   });
 
-  test("detail trades blade count for width: six times the blades at 1, a third at 0, the same cover", () => {
+  test("detail trades blade count for width: six times the blades at 1, half at 0, the same cover", () => {
     expect(grassDetailScale(0.5)).toBe(1);
     expect(grassDetailScale(1)).toBeCloseTo(6, 10);
-    expect(grassDetailScale(0)).toBeCloseTo(1 / 3, 10);
+    expect(grassDetailScale(0)).toBeCloseTo(1 / 2, 10);
     for (const id of ["lawn", "meadow", "tallgrass-prairie", "green"]) {
       const look = readGrassLook({ species: id });
       for (const detail of [0, 0.25, 0.75, 1]) {
@@ -43,6 +43,15 @@ describe("drawn grass", () => {
         expect(cover(drawn)).toBeCloseTo(cover(look), 6);
       }
     }
+  });
+
+  test("flowers per square metre hold across detail, and far heads widen only as the default would", () => {
+    for (const id of ["poppy-field", "wildflower-meadow", "tallgrass-prairie"]) {
+      const perM2 = (look: ReturnType<typeof readGrassLook>) => (grassBladeDensity(look) / look.tuft.tuftBlades) * look.flowers.flowerShare;
+      const today = readGrassLook({ species: id });
+      for (const detail of [0.2, 0.8, 1]) expect(perM2(drawnGrassLook(readGrassLook({ species: id, style: { detail } })))).toBeCloseTo(perM2(today), 6);
+    }
+    expect(grassStyleShape(readGrassLook({ species: "meadow" }, { realism: 1 })).z).toBeCloseTo(6, 10);
   });
 
   test("cover holds across the whole realism range for every species", () => {
@@ -60,7 +69,7 @@ describe("drawn grass", () => {
     expect(real.bladesPerM2 / today.bladesPerM2).toBeCloseTo(6, 6);
     expect(real.look.tuft.tuftBlades).toBeGreaterThan(today.look.tuft.tuftBlades);
     expect(real.look.blade.bladeWidth).toBeCloseTo(today.look.blade.bladeWidth / 6, 10);
-    expect(toon.look.blade.bladeWidth).toBeCloseTo(today.look.blade.bladeWidth * 3, 10);
+    expect(toon.look.blade.bladeWidth).toBeCloseTo(today.look.blade.bladeWidth * 2, 10);
     expect(toon.look.tuft.tuftBlades).toBeLessThan(today.look.tuft.tuftBlades);
   });
 

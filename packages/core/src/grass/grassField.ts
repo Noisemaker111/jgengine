@@ -144,6 +144,8 @@ export function createGrassTuftTemplate(inputs: GrassTuftInputs): GrassTuftTempl
   // heading, from its own stream so the default tuft is the one it always was.
   const lieRandom = seededRng(`${inputs.seed}/tuft-lie`);
   const lie = Math.max(0, -grassExaggerationAmount(look.style.exaggeration));
+  // Round tips (the cartoon end) need rows near the tip to curve; rows bunch toward it as rounding grows.
+  const rounding = Math.max(0, grassExaggerationAmount(look.style.exaggeration));
   const tuftReach = grassTuftReach(look, inputs.bladesPerM2);
   const position: number[] = [];
   const uv: number[] = [];
@@ -162,7 +164,7 @@ export function createGrassTuftTemplate(inputs: GrassTuftInputs): GrassTuftTempl
     const curled = angle + Math.PI / 2 + (random() - 0.5) * 1.6;
     // Splayed blades turn to face straight out from the centre and lean that way from the root.
     const outward = Math.PI / 2 - angle + (splayRandom() - 0.5) * 0.5;
-    const lieTurn = (lieRandom() - 0.5) * 2.4, lieLean = lieRandom() * 0.9;
+    const lieTurn = (lieRandom() - 0.5) * 2.4, lieLean = lieRandom() * 0.3;
     const yaw = (blade === 0 ? curled : curled + wrapAngle(outward - curled) * splay) + lieTurn * lie;
     const lean = (blade === 0 ? splay * 0.15 : splay * (0.55 + 0.45 * splayRandom()) * 1.3) + lieLean * lie;
     const h = blade === 0 ? 1 : 0.7 + random() * 0.45;
@@ -173,7 +175,7 @@ export function createGrassTuftTemplate(inputs: GrassTuftInputs): GrassTuftTempl
     widthScale = Math.max(widthScale, w);
     radius = Math.max(radius, reach);
     for (let row = 0; row <= segments; row += 1) {
-      const t = row / segments;
+      const t = rounding > 0 ? 1 - (1 - row / segments) ** (1 + rounding) : row / segments;
       for (const side of [-0.5, 0.5]) {
         position.push(side, t, 0);
         uv.push(side + 0.5, t);

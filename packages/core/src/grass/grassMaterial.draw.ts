@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 import type { GrassBlade, GrassLook } from "@jgengine/core/grass/grassKind";
 import { grassMownAmount } from "@jgengine/core/grass/grassDrawn";
-import { grassExaggerationAmount } from "@jgengine/core/grass/grassStyle";
+import { grassDetailScale, grassExaggerationAmount } from "@jgengine/core/grass/grassStyle";
 import type { GrassWindLook } from "./grassWind";
 
 /** Uniforms the grass shader reads; the stream rewrites the `uLod` row per camera. */
@@ -31,7 +31,7 @@ export interface GrassShaderUniforms {
   /** x variegated margins, y cross bands, z head shape. */
   uPattern: THREE.IUniform<THREE.Vector4>;
   uPatternColor: THREE.IUniform<THREE.Color>;
-  /** Style shape: x torn tips (mown blades at the natural end), y round tips (the cartoon end). */
+  /** Style shape: x torn tips (mown blades at the natural end), y round tips (the cartoon end), z blades drawn per blade grown (`grassDetailScale`). */
   uStyle: THREE.IUniform<THREE.Vector4>;
 }
 
@@ -138,7 +138,10 @@ void jgComputeGrassBlade() {
     // The flower head billboards at the first blade's tip; non-flowering tufts collapse it.
     vec3 right = normalize(vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]));
     vec3 up = normalize(vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]));
-    float size = uFlower * flower * keep * mix(0.75, 1.25, instanceVary.y) * (1.0 + (widen - 1.0) * 0.5);
+    // Heads widen with the thinning the species would have at the default detail, not with the
+    // extra thinning of finer blades, so far heads never swell into blobs as detail rises.
+    float headWiden = pow(max(min(1.0, share * uStyle.z), 1e-4), -0.75);
+    float size = uFlower * flower * keep * mix(0.75, 1.25, instanceVary.y) * (1.0 + (headWiden - 1.0) * 0.5);
     // A spike stands upright on the tip and stretches tall and narrow; a blossom faces the camera.
     float spike = uForm.z;
     vec3 axis = normalize(mix(up, vec3(0.0, 1.0, 0.0), spike));
@@ -279,12 +282,13 @@ export function setGrassWindUniforms(uniforms: Pick<GrassShaderUniforms, "uWind"
 
 /**
  * The shader's style shape row for a look: x torn tips, the natural end of `exaggeration` on a mown
- * look; y round tips, its cartoon end. Both 0 at the default style.
+ * look; y round tips, its cartoon end (both 0 at the default style); z blades drawn per blade grown
+ * (`grassDetailScale`, 1 at the default style).
  * @internal
  */
 export function grassStyleShape(look: Pick<GrassLook, "blade" | "style">): THREE.Vector4 {
   const amount = grassExaggerationAmount(look.style.exaggeration);
-  return new THREE.Vector4(Math.max(0, -amount) * grassMownAmount(look), Math.max(0, amount), 0, 0);
+  return new THREE.Vector4(Math.max(0, -amount) * grassMownAmount(look), Math.max(0, amount), grassDetailScale(look.style.detail), 0);
 }
 
 /** Build the one grass material for a look; `groundColor` is the terrain the roots blend into. */

@@ -21,8 +21,8 @@ export interface GrassStyle {
   /** 0..1 blend of blade normals toward straight-up: high lights the field as one soft painted surface, low lights each blade on its own. */
   normalLift: number;
   /**
-   * 0..1 blade count against blade width at the same ground cover: 0 draws a third as many blades,
-   * each three times as wide; 1 draws six times as many, each a sixth as wide. 0.5 is the species as
+   * 0..1 blade count against blade width at the same ground cover: 0 draws half as many blades,
+   * each twice as wide; 1 draws six times as many, each a sixth as wide. 0.5 is the species as
    * it is. See {@link grassDetailScale}.
    */
   detail: number;
@@ -53,13 +53,13 @@ export const GRASS_STYLE_CURVES: Readonly<Record<GrassStyleSlider, (realism: num
 };
 
 /**
- * Blades drawn per blade a species grows, at a `detail`: 1 at 0.5, rising to 6 at 1 and falling to a
- * third at 0. Each blade's width divides by the same number, so count times width, the ground the
+ * Blades drawn per blade a species grows, at a `detail`: 1 at 0.5, rising to 6 at 1 and falling to
+ * half at 0. Each blade's width divides by the same number, so count times width, the ground the
  * blades cover, never changes with detail.
  */
 export function grassDetailScale(detail: number): number {
   const centred = 2 * Math.max(0, Math.min(1, detail)) - 1;
-  return centred >= 0 ? 6 ** centred : 3 ** centred;
+  return centred >= 0 ? 6 ** centred : 2 ** centred;
 }
 
 /** `exaggeration` as -1 (natural) .. 0 (the species as it is) .. 1 (cartoon). */

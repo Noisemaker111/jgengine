@@ -20,7 +20,8 @@ export function grassMownAmount(look: Pick<GrassLook, "blade">): number {
  * groups the extra blades partly into fuller tufts, partly into more tufts; blade count follows width
  * through `grassBladeDensity`, so the ground covered stays the same. `exaggeration` evens heights,
  * widths and deepens curls toward the cartoon end, and grows irregular lengths toward the natural end
- * (mown looks stay even: their tips are cut). At the default style this is the look itself.
+ * (mown looks stay even: their tips are cut). Flower share follows the tuft count, so flowers per m²
+ * hold. At the default style this is the look itself.
  *
  * The bake (`resolveGrassBake`) and the generator draw from this; the look itself stays what grows.
  */
@@ -34,6 +35,10 @@ export function drawnGrassLook(look: GrassLook): GrassLook {
     blade.bladeWidth = look.blade.bladeWidth / scale;
     tuft.tuftBlades = Math.max(1, Math.round(look.tuft.tuftBlades * Math.sqrt(scale)));
   }
+  // Heads ride one per flowering tuft; as detail changes the number of tufts, the share follows, so
+  // flowers per square metre stay the species' own.
+  const tuftsPerTuft = scale / (tuft.tuftBlades / look.tuft.tuftBlades);
+  const flowers = scale === 1 ? look.flowers : { ...look.flowers, flowerShare: Math.min(1, look.flowers.flowerShare / tuftsPerTuft) };
   if (amount > 0) {
     blade.heightVariation = look.blade.heightVariation * (1 - amount);
     blade.widthVariation = look.blade.widthVariation * (1 - amount);
@@ -41,5 +46,5 @@ export function drawnGrassLook(look: GrassLook): GrassLook {
   } else if (amount < 0) {
     blade.heightVariation = look.blade.heightVariation + (1 - look.blade.heightVariation) * -amount * 0.5 * (1 - grassMownAmount(look));
   }
-  return { ...look, blade, tuft };
+  return { ...look, blade, tuft, flowers };
 }
