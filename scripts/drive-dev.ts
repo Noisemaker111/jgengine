@@ -339,8 +339,8 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
       attach: daemon !== null,
       leaveWarm: args.keep || daemon !== null,
       chromePrefix: "jg-drive-",
-      // --hitches times every frame of the run, so the session holds the perf lock; a drive that times nothing does not wait for it.
-      turn: args.hitches ? perfLockTurn(`drive ${args.game}${args.flow === undefined ? "" : ` ${args.flow}`} --hitches`, brokerTurn(daemon)) : brokerTurn(daemon),
+      // --hitches and --trace time the run's frames, so the session holds the perf lock; a drive that times nothing does not wait for it.
+      turn: args.hitches || args.trace ? perfLockTurn(`drive ${args.game}${args.flow === undefined ? "" : ` ${args.flow}`}${args.hitches ? " --hitches" : ""}${args.trace ? " --trace" : ""}`, brokerTurn(daemon)) : brokerTurn(daemon),
       headed: args.headed,
       // One real render + capture per output frame — give the watchdog room.
       ...(lockstep ? { hardDeadlineMs: args.timeoutMs + 120_000 + lockstepProjected * 3_000 } : {}),

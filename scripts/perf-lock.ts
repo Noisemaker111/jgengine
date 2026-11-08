@@ -13,7 +13,7 @@ import { beginPause, endPause, markStep } from "./hangReport";
  * Held around page load, warmup and the measurement windows only: never around builds, installs or
  * Vite startup. Who takes it: `measureGame` in perf-play (perf play, gate, fps-gap, shadow-audit;
  * `perf play` holds it across its one-browser batch), perf network, perf desktop from app launch to
- * close, perf native's timed rows, and `drive --hitches`. Shoot and a plain drive time no frames,
+ * close, perf native's timed rows, and `drive --hitches` or `--trace`. Shoot and a plain drive time no frames,
  * and perf live only reads a page already open, so they do not wait for it. It is a mutex, not a
  * load check: a busy PC never stops a run, only another timed run does.
  *
