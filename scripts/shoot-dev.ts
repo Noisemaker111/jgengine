@@ -73,8 +73,8 @@ import {
 } from "./shotProvenance";
 import { markStep, SERVER_STEP_MS, withStepDeadline } from "./hangReport";
 import {
-  acquireWarmCapture,
-  daemonDiedUnder,
+  acquireWarmCaptureOrExit,
+  runWithDaemonRecovery,
   ensureDaemonTarget,
   isDaemonArgv,
   runDaemonCommand,
@@ -261,6 +261,11 @@ function parseArgs(argv: string[]): Args {
     throw new Error(
       "shoot: --look needs the dev-runner game shell, and --site renders a plain web page that never reads an aim. Serve the game from a dev runner and pass --url http://127.0.0.1:<port>/?game=<game> instead.",
     );
+  }
+  if (str("quality") !== undefined && args.mode === "ui" && args.view === undefined && args.look === undefined && args.url === undefined && args.site === undefined) {
+    // The HUD preview mounts no 3D scene, so no tier ever reaches the page; this used to fail after
+    // the whole boot as "never reported its tier".
+    throw new Error(`shoot: --quality pins the 3D render tier, but --mode ui (the default) is a HUD-only preview with no 3D scene. Add --mode play.`);
   }
   if (args.quick) {
     const preset = quickProfile(true);
@@ -790,7 +795,7 @@ const explicitTarget = args.connect !== undefined || args.port !== undefined || 
 const ownBrowser = args.headed ? "--headed needs its own browser window" : undefined;
 const warm = explicitTarget
   ? { daemon: null, mode: "cold" as const, seconds: 0 }
-  : await acquireWarmCapture({
+  : await acquireWarmCaptureOrExit({
       cold: args.cold || ownBrowser !== undefined,
       ...(ownBrowser === undefined ? {} : { because: ownBrowser }),
     });
@@ -804,11 +809,4 @@ async function attempt(daemon: ShootDaemonState | null): Promise<number> {
   }
 }
 
-let exitCode = await attempt(warm.daemon);
-if (warm.daemon !== null && exitCode !== 0 && (await daemonDiedUnder(warm.daemon))) {
-  console.error(
-    `cold: the daemon on :${warm.daemon.chromePort} died mid-run — falling back to a direct launch, no retry`,
-  );
-  exitCode = await attempt(null);
-}
-process.exit(exitCode);
+process.exit(await runWithDaemonRecovery(warm, (daemon) => attempt(daemon)));

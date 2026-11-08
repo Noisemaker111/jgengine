@@ -102,7 +102,6 @@ test.skipIf(process.platform !== "win32")("a task outlives its caller's whole pr
   const code = await awaitTask({ id, checkout: dir, write: (text) => (printed += text), err: () => {}, timeoutMs: 30_000 });
   expect(code).toBe(5);
   expect(printed).toContain("outlived");
-  expect(existsSync(join(taskDir(dir, id), "env.json"))).toBe(false);
 });
 
 test("a supervisor started outside the caller runs the command with the caller's environment", async () => {

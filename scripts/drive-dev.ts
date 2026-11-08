@@ -48,7 +48,7 @@ import {
   type ViewportOverride,
 } from "./browser-lib";
 import { markStep, SERVER_STEP_MS, withStepDeadline } from "./hangReport";
-import { acquireWarmCapture, daemonDiedUnder, ensureDaemonTarget, withDaemonWatch, brokerTurn, type ShootDaemonState } from "./shoot-daemon";
+import { acquireWarmCaptureOrExit, ensureDaemonTarget, runWithDaemonRecovery, withDaemonWatch, brokerTurn, type ShootDaemonState } from "./shoot-daemon";
 import { lookSearchParams, parseLookAim } from "./lookArg";
 import { driveTargetUrl, requireReusableCaptureStorage } from "./captureTarget";
 import { assertOneTarget, serveGameDir } from "./servedGame";
@@ -669,16 +669,9 @@ const explicitTarget = args.connect !== undefined || args.port !== undefined || 
 const ownBrowser = args.headed ? "--headed needs its own browser window" : undefined;
 const warm = explicitTarget
   ? { daemon: null, mode: "cold" as const, seconds: 0 }
-  : await acquireWarmCapture({
+  : await acquireWarmCaptureOrExit({
       cold: args.cold || ownBrowser !== undefined,
       ...(ownBrowser === undefined ? {} : { because: ownBrowser }),
     });
-let exitCode = await attempt(warm.daemon);
-if (warm.daemon !== null && exitCode !== 0 && (await daemonDiedUnder(warm.daemon))) {
-  console.error(
-    `cold: the daemon on :${warm.daemon.chromePort} died mid-run — falling back to a direct launch, no retry`,
-  );
-  exitCode = await attempt(null);
-}
-process.exit(exitCode);
+process.exit(await runWithDaemonRecovery(warm, (daemon) => attempt(daemon)));
 
