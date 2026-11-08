@@ -731,6 +731,15 @@
 - `PredictionStep` (type): type PredictionStep<S> = (state: S, input: InputFrame, dt: number) => S — Deterministic state transition used to advance one predicted input frame.
 - `createPredictionBuffer` (function): function createPredictionBuffer<S>(config: { initial: S; step: PredictionStep<S>; maxTicks: number; startTick?: number; dt?: number; /** Error above which a caller should snap its rendered pose to the reconciled result. */ snapThreshold?: number; }): PredictionBuffer<S> — Keeps local input predictions ahead of the last server confirmation. Reconciliation replaces the confirmed state and deterministically replays unconfirmed inputs through the supplied step function. `maxTicks` bounds retained work and memory; dropped inputs are folded into the confirmed baseline.
 
+## @jgengine/core/runtime/simAhead
+
+- `IdleTask` (interface): interface IdleTask — A task that runs once as its own macrotask after the current one, however often it is requested before then.
+- `RecordedTime` (interface): interface RecordedTime — Frame times for a replay of a loop that steps ahead. A step run between frames is recorded as a frame of its own whose time makes the step fall due; the frames after it give that time back, so a plain loop fed the recorded times runs every step in the same recorded frame as the live one did.
+- `STEP_AHEAD_MAX_FRAME_SHARE` (const): const STEP_AHEAD_MAX_FRAME_SHARE: 0.5 — Frames shorter than this share of a fixed step get their next step run ahead, between frames. Above it (under 120 fps at 60 Hz) most frames carry a step anyway, so running one early would only sample input sooner without taking a spike off any frame.
+- `createIdleTask` (function): function createIdleTask(run: () => void): IdleTask — Run `run` in its own task right after the current one: after a frame's callbacks and its commit, before the next frame's. A `MessageChannel` message is used where one exists, since timers are clamped and throttled.
+- `createRecordedTime` (function): function createRecordedTime(): RecordedTime — Create the {@link RecordedTime} ledger for one recording.
+- `shouldStepAhead` (function): function shouldStepAhead(loop: Pick<SimLoop, "untilStep" | "stepSeconds">, frameDt: number): boolean — Whether the frame after one that took `frameDt` real seconds will owe a fixed step, so the driver can run that step now, in the time the main thread waits for the next frame, instead of inside it. The prediction is that the next frame takes as long as this one; when it is shorter, {@link SimLoop.advance} still counts the early step and owes the difference, so the world a frame shows is at most that jitter early.
+
 ## @jgengine/core/runtime/simContext
 
 - `SimContext` (interface): interface SimContext — `ctx.sim`: the simulation stepper shared by every driver plus the render-side interpolation it enables. Drivers call {@link advance} with real elapsed seconds and do their per-step work inside the callback; renderers call {@link renderPose} each frame.

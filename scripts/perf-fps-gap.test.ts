@@ -82,6 +82,16 @@ test("CPU rows group into engine-level work by what they run", () => {
   expect(cpuGroupOf("frame#13")).toBe("frame callbacks (source unresolved)");
 });
 
+test("a step run between frames is its own group, taken out of the time between frames and not the frame's work", () => {
+  const base = breakdown();
+  const { cpu } = groupCosts(breakdown({ cpu: [...base.cpu, { name: "ahead:onTick", avgMs: 0.4, p95Ms: 0 }, { name: "ahead:pose", avgMs: 0.1, p95Ms: 0 }] }));
+  expect(cpuGroupOf("ahead:onTick")).toBe("60 Hz sim tick, run between frames");
+  expect(cpu.get("60 Hz sim tick, run between frames")).toBeCloseTo(0.5, 6);
+  expect(cpu.get("untimed work inside the frame (r3f loop, React effects)")).toBeCloseTo(0.5, 6);
+  expect(cpu.get("between frames (GPU wait, compositing, React commits, GC)")).toBeCloseTo(2.5, 6);
+  expect([...cpu.values()].reduce((sum, ms) => sum + ms, 0)).toBeCloseTo(12, 6);
+});
+
 test("a game's groups add up to its frame: named rows, untimed work, and the time between frames", () => {
   const { cpu, gpu } = groupCosts(breakdown());
   const total = [...cpu.values()].reduce((sum, ms) => sum + ms, 0);
@@ -161,7 +171,7 @@ test("the report prints every game against the budget, in text or Markdown", () 
   const text = renderFpsGapReport(entries, { markdown: false });
   expect(text).toContain("2.78 ms frame (360 fps)");
   expect(text, "the engine the records were measured on, once").toContain("engine abc123def.");
-  expect(text).toMatch(/harbor-heat\s+12\.00\s+16\.80\s+21\.60\s+9\.00\s+6\.00\s+6\.00\s+CPU\s+3\.2x\s+111\s/);
+  expect(text).toMatch(/harbor-heat\s+12\.00\s+16\.80\s+21\.60\s+-\s+-\s+-\s+9\.00\s+6\.00\s+6\.00\s+CPU\s+3\.2x\s+111\s/);
   expect(text).toContain("deepward");
   expect(text).toContain("scene submission (three.js traversal, sort, draw calls)");
   const markdown = renderFpsGapReport(entries, { markdown: true });

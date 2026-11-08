@@ -43,3 +43,18 @@ test("a paused step moves time by exactly one fixed step, whatever the frame len
   sim.advance(0.05, body);
   expect(time.now()).toBeCloseTo(4 / 60);
 });
+
+test("a step run ahead advances the clock and interpolation history once, and the frame that owes it does not rerun it", () => {
+  const time = createSimClock();
+  const entities = createEntityStore();
+  const sim = createSimContext({ config: { hz: 60 }, entities, time });
+  const ran: number[] = [];
+  sim.advance(0.015, () => ran.push(sim.tick()));
+  expect(sim.stepAhead((_dt, tick, gameDt) => ran.push(tick + gameDt))).toBe(true);
+  expect(ran).toEqual([1 + 1 / 60]);
+  expect(time.now()).toBeCloseTo(1 / 60, 9);
+  sim.advance(0.003, () => ran.push(-1));
+  expect(ran).toEqual([1 + 1 / 60]);
+  expect(time.now()).toBeCloseTo(1 / 60, 9);
+  expect(() => sim.advance(0.02, () => sim.stepAhead(() => {}))).toThrow("cannot run inside a step");
+});

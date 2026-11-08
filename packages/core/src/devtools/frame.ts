@@ -236,7 +236,7 @@ export const createFrameModule = (deps: {
 
     recordPhaseStats(phases);
     serial += 1;
-    lastSample = { serial, simMs, phases };
+    lastSample = sample.ahead === undefined ? { serial, simMs, phases } : { serial, simMs, phases, ahead: sample.ahead };
 
     if (frameMs > LONG_FRAME_MS) {
       const ranked = rankPhases(phases);

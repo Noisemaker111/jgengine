@@ -155,6 +155,7 @@ export function cpuGroupOf(name: string): string {
   if (name.startsWith("render:post:") || name.startsWith("post:")) return "post-processing CPU";
   if (name.startsWith("render:")) return "scene submission (three.js traversal, sort, draw calls)";
   if (name.startsWith("sim:")) return "60 Hz sim tick";
+  if (name.startsWith("ahead:")) return AHEAD;
   if (!name.startsWith("frame#")) return `other: ${name}`;
   const path = name.split(" | ")[0]?.split(" ")[1] ?? "";
   if (path === "") return "frame callbacks (source unresolved)";
@@ -180,6 +181,8 @@ export function gpuGroupOf(pass: string): string {
 
 const UNATTRIBUTED = "untimed work inside the frame (r3f loop, React effects)";
 const BETWEEN = "between frames (GPU wait, compositing, React commits, GC)";
+/** Fixed steps the driver ran between frames (`ctx.sim.stepAhead`): main-thread time inside the gap, not the frame. */
+const AHEAD = "60 Hz sim tick, run between frames";
 
 /**
  * Average ms per frame by group for one game: CPU groups, GPU groups, and the frame's unexplained time.
@@ -194,9 +197,10 @@ export function groupCosts(breakdown: FrameBreakdownSummary, gpuWork?: FrameBrea
     cpu.set(group, (cpu.get(group) ?? 0) + row.avgMs);
     named += row.avgMs;
   }
-  const untimed = breakdown.work.avg - named;
+  const ahead = cpu.get(AHEAD) ?? 0;
+  const untimed = breakdown.work.avg - (named - ahead);
   if (untimed > 0) cpu.set(UNATTRIBUTED, untimed);
-  const between = breakdown.frame.avg - breakdown.work.avg;
+  const between = breakdown.frame.avg - breakdown.work.avg - ahead;
   if (between > 0) cpu.set(BETWEEN, between);
   const gpu = new Map<string, number>();
   for (const pass of (gpuWork ?? breakdown).passes) {
@@ -301,11 +305,11 @@ export function renderFpsGapReport(entries: readonly FpsGapEntry[], options: { m
   out.push("GPU is the GPU's work: a second window on the same path times every draw and clear on its own ('GPU span' is the frame window's pass timers, which also count the GPU idle while the CPU submits; a record without the draw-timed window shows its span in both).");
   out.push("These are the dev server's build (development React, unminified modules) in headless Chrome; a production desktop build spends less CPU (`bun run perf desktop --launch <app.exe> --uncapped`).", "");
 
-  const summary: Table = { head: ["game", "frame p50", "p95", "p99", "CPU p50", "GPU p50", "GPU span p50", "bound", "x budget", "ceiling fps", "draws", "triangles", "nodes", "GC MB/8s", "hitches"], rows: [] };
+  const summary: Table = { head: ["game", "frame p50", "p95", "p99", "long %", "sim p99", "sim max", "CPU p50", "GPU p50", "GPU span p50", "bound", "x budget", "ceiling fps", "draws", "triangles", "nodes", "GC MB/8s", "hitches"], rows: [] };
   for (const { record } of entries) {
     const b = record.breakdown;
     if (b === null || b === undefined) {
-      summary.rows.push([record.game, `${ms2(record.frame.avgMs)} avg`, ms2(record.frame.p95Ms), "-", "-", "-", "-", "-", "-", "-", String(record.render.drawsFrame ?? "-"), String(record.render.triangles ?? "-"), String(record.render.nodes ?? "-"), "-", String(record.frame.longFrames)]);
+      summary.rows.push([record.game, `${ms2(record.frame.avgMs)} avg`, ms2(record.frame.p95Ms), "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", String(record.render.drawsFrame ?? "-"), String(record.render.triangles ?? "-"), String(record.render.nodes ?? "-"), "-", String(record.frame.longFrames)]);
       continue;
     }
     const gpu = (record.gpuWork ?? b).gpu;
@@ -313,6 +317,8 @@ export function renderFpsGapReport(entries: readonly FpsGapEntry[], options: { m
     summary.rows.push([
       record.game,
       ms2(b.frame.p50), ms2(b.frame.p95), ms2(b.frame.p99),
+      b.longShare === undefined ? "-" : (b.longShare * 100).toFixed(1),
+      b.sim === undefined ? "-" : ms2(b.sim.p99), b.sim === undefined ? "-" : ms2(b.sim.max),
       ms2(b.work.p50), gpu === null ? "n/a" : ms2(gpu.p50), b.gpu === null ? "n/a" : ms2(b.gpu.p50),
       cost.bound,
       `${(cost.ms / FPS_GAP_BUDGET_MS).toFixed(1)}x`,

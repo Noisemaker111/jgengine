@@ -16,7 +16,7 @@ describe("createSimLoop", () => {
     const seen: number[] = [];
     const result = loop.advance(0.033, (dt) => seen.push(dt));
     expect(seen).toEqual([0.033]);
-    expect(result).toEqual({ steps: 1, alpha: 1, tick: 1, dropped: 0 });
+    expect(result).toEqual({ steps: 1, alpha: 1, tick: 1, dropped: 0, early: 0 });
     expect(loop.isFixed()).toBe(false);
     expect(loop.stepSeconds()).toBeNull();
   });
@@ -71,5 +71,67 @@ describe("createSimLoop", () => {
     expect(loop.isFixed()).toBe(false);
     loop.advance(0.5, () => {});
     expect(loop.tick()).toBe(tick + 1);
+  });
+
+  test("a step run ahead is counted, not rerun, by the advance that owes it", () => {
+    const loop = createSimLoop({ hz: 60 });
+    const ran: number[] = [];
+    loop.advance(0.014, () => ran.push(loop.tick()));
+    expect(loop.untilStep()).toBeCloseTo(1 / 60 - 0.014, 9);
+    expect(loop.stepAhead((_dt, tick) => ran.push(tick))).toBe(true);
+    expect(loop.stepAhead(() => ran.push(-1))).toBe(false);
+    expect(loop.tick()).toBe(1);
+    expect(loop.untilStep()).toBeCloseTo(2 / 60 - 0.014, 9);
+    const result = loop.advance(0.003, () => ran.push(-2));
+    expect(ran).toEqual([1]);
+    expect(result).toMatchObject({ steps: 1, early: 1, tick: 1 });
+    expect(result.alpha).toBeCloseTo((0.017 - 1 / 60) * 60, 9);
+  });
+
+  test("a frame that ends short of the early step shows it and owes the time back", () => {
+    const loop = createSimLoop({ hz: 60 });
+    loop.advance(0.015, () => {});
+    loop.stepAhead(() => {});
+    const short = loop.advance(0.001, () => {});
+    expect(short).toMatchObject({ steps: 1, early: 1, alpha: 0 });
+    expect(loop.snapshot().accumulator).toBeCloseTo(0.016 - 1 / 60, 9);
+    let steps = 0;
+    loop.advance(1 / 60, () => (steps += 1));
+    expect(steps).toBe(0);
+    loop.advance(0.001, () => (steps += 1));
+    expect(steps).toBe(1);
+  });
+
+  test("stepping ahead at 360 fps runs the same steps with none inside a frame", () => {
+    const frame = 1 / 360;
+    const plain = createSimLoop({ hz: 60 });
+    const early = createSimLoop({ hz: 60 });
+    const plainTicks: number[] = [];
+    const earlyTicks: number[] = [];
+    let stepsInsideFrames = 0;
+    for (let index = 0; index < 360; index += 1) {
+      plain.advance(frame, (_dt, tick) => plainTicks.push(tick));
+      early.advance(frame, (_dt, tick) => {
+        earlyTicks.push(tick);
+        stepsInsideFrames += 1;
+      });
+      if ((early.untilStep() ?? 1) <= frame) early.stepAhead((_dt, tick) => earlyTicks.push(tick));
+    }
+    expect(stepsInsideFrames).toBe(0);
+    expect(early.tick()).toBe(plain.tick());
+    expect(earlyTicks.slice(0, plainTicks.length)).toEqual(plainTicks);
+    expect(early.alpha()).toBeCloseTo(plain.alpha(), 6);
+  });
+
+  test("snapshot and retune settle a step run ahead", () => {
+    const loop = createSimLoop({ hz: 60 });
+    loop.advance(0.016, () => {});
+    loop.stepAhead(() => {});
+    const state = loop.snapshot();
+    expect(state.tick).toBe(1);
+    expect(state.accumulator).toBeCloseTo(0.016 - 1 / 60, 9);
+    loop.retune({ hz: "variable" });
+    expect(loop.untilStep()).toBeNull();
+    expect(loop.stepAhead(() => {})).toBe(false);
   });
 });

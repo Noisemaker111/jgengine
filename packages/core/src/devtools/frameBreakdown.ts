@@ -24,6 +24,8 @@ export interface FrameBreakdownRecord {
   intervalMs: number;
   /** Main-thread work: from the first frame callback to the end of the last render call. */
   workMs: number;
+  /** Simulation milliseconds inside this frame (input, fixed steps, actions); absent when no sim driver ran. */
+  simMs?: number;
   /** CPU milliseconds by system: sim phases and stages, frame callbacks, render submission, passes. */
   cpu: Record<string, number>;
   /** Calls observed in timed scopes, not the number of items processed. */
@@ -361,6 +363,14 @@ export interface FrameBreakdownSummary {
   frame: Spread;
   /** Main-thread work per frame: what a frame costs the CPU, whatever the display's refresh. */
   work: Spread;
+  /**
+   * Simulation time inside each frame, 0 for a frame without the sim driver. Its p99 and max are the
+   * frames that carry a fixed step; `ahead:*` CPU rows are steps run between frames instead. Absent on
+   * older records.
+   */
+  sim?: Spread;
+  /** Share of frames, 0..1, whose interval is over twice the median: the stutters a player sees. Absent on older records. */
+  longShare?: number;
   /** GPU time per frame over the frames whose timers resolved; null where timer queries are unsupported. */
   gpu: Spread | null;
   /** Frames with complete GPU timings, or absent in an older saved record. */
@@ -423,6 +433,16 @@ const round = (value: number, digits = 2): number => {
   const scale = 10 ** digits;
   return Math.round(value * scale) / scale;
 };
+
+/** Share of `intervals` over twice their median, 0 for an empty list. @internal */
+export function longShareOf(intervals: readonly number[]): number {
+  if (intervals.length === 0) return 0;
+  const sorted = [...intervals].sort((a, b) => a - b);
+  const median = sorted[Math.floor(sorted.length / 2)] ?? 0;
+  let long = 0;
+  for (const ms of intervals) if (ms > median * 2) long += 1;
+  return round(long / intervals.length, 4);
+}
 
 /** p50/p95/p99/max/avg of a series; zeros for an empty one. @internal */
 export function spread(values: readonly number[]): Spread {
@@ -521,6 +541,8 @@ export function summarizeBreakdown(
     seconds: round(elapsed / 1000, 1),
     frame: spread(records.map((record) => record.intervalMs)),
     work: spread(records.map((record) => record.workMs)),
+    sim: spread(records.map((record) => record.simMs ?? 0)),
+    longShare: longShareOf(records.map((record) => record.intervalMs)),
     gpu: resolved.length === 0 ? null : spread(gpuTotals),
     gpuFrames: resolved.length,
     gpuTiming: options.gpuTiming ?? "span",
