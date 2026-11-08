@@ -1563,7 +1563,7 @@ export function launchPersistentChrome(
   ];
   let pid: number;
   try {
-    // Outside this run's tree and Windows job, so a fairshare slot ending does not end the daemon.
+    // Outside this run's tree and Windows job, so the job ending does not end the daemon.
     pid = startOutsideCaller(chrome, args, { cwd: userDataDir });
   } catch (error) {
     removeProfileDir(userDataDir);

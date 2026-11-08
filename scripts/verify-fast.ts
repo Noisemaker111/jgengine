@@ -40,9 +40,7 @@ import { isVerbose, takeVerboseFlag } from "./verbosity";
 import { siteGames } from "./siteGames";
 import { runSteps, type ScheduledStep, type StepResult } from "./stepScheduler";
 import { TEST_ROOTS, walkTestFiles } from "./test-shard";
-import { workingTree } from "./boat-snapshot";
-import { createVerifyReceipt, passingReceipt, type ReuseKey } from "./verify-receipt";
-import { boatForThisRun, EXIT_BOAT_SPENT, localTestFiles, MODEL_TEST_REASON, placeSteps, runPlaced, withHeavySlot, type BoatReceipt, type Where } from "./verify-boat";
+import { createVerifyReceipt, passingReceipt, workingTree, type ReuseKey } from "./verify-receipt";
 
 const VERIFY_FAST_USAGE = {
   summary: "run only the tests and static gates this branch's diff reaches, in seconds",
@@ -107,8 +105,6 @@ export interface Step extends ScheduledStep {
    * lanes guessing and pushed them to CI to find out.
    */
   fix?: string | undefined;
-  /** This step needs this PC (a Windows-only test, the asset store), and why; absent, Linux can run it (scripts/verify-boat.ts). */
-  localBecause?: string | undefined;
   /** The units this step settles; each is remembered as passed when the step passes, and a test file also when its own tests all passed in a step that failed. */
   units?: Unit[];
 }
@@ -674,8 +670,8 @@ export interface FastOptions {
   reportDir?: string;
   /** Every file in the checkout, so a gate's pass is keyed on the files its row reads; absent, on the whole tree. */
   tree?: readonly string[];
-  /** Test files that must run on this PC, with why (`localTestFiles`): they get a step of their own. */
-  localTests?: ReadonlyMap<string, string>;
+  /** Test files that read downloaded models (`modelTestFiles`): they get a step of their own, after the models are linked. */
+  modelTests?: ReadonlySet<string>;
 }
 
 /**
@@ -702,10 +698,10 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
     // The tests named after the changed files, and the changed tests themselves, run first in a step
     // of their own: a break in `pick.ts` reaches a thousand files, the run stops at the first red,
     // and without this `pick.test.ts` sat in a chunk that never ran while the red named a loot table.
-    const here = files.filter((file) => options.localTests?.has(file) === true);
-    const linux = files.filter((file) => options.localTests?.has(file) !== true);
-    const own = new Set(plan.changed.flatMap((file) => ownTests(file, linux)));
-    const rest = linux.filter((file) => !own.has(file));
+    const readers = files.filter((file) => options.modelTests?.has(file) === true);
+    const plain = files.filter((file) => options.modelTests?.has(file) !== true);
+    const own = new Set(plan.changed.flatMap((file) => ownTests(file, plain)));
+    const rest = plain.filter((file) => !own.has(file));
     const testStep = (group: readonly string[], name: string, index: number, first: boolean): Step => ({
       name,
       command: [
@@ -721,22 +717,16 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
       units: tests.filter((settles) => group.includes(settles.id.slice("test:".length))),
     });
     if (own.size > 0) steps.push(testStep([...own], `test ${own.size} own file(s)`, 0, true));
-    // The files that read this PC's models or depend on Windows run here, in one step of their own.
-    if (here.length > 0) {
-      const reasons = [...new Set(here.map((file) => options.localTests!.get(file)!))];
-      const isOwn = plan.changed.some((file) => ownTests(file, here).length > 0);
-      // A worktree starts with no models: link (or, once per machine, download) the packs those tests read
-      // first, or every model they check reads as missing. A test outside a game's folder gets every game's.
-      const readers = here.filter((file) => options.localTests!.get(file) === MODEL_TEST_REASON);
+    // The files that read downloaded models run in one step of their own. A worktree starts with no
+    // models: link (or, once per machine, download) the packs those tests read first, or every model
+    // they check reads as missing. A test outside a game's folder gets every game's.
+    if (readers.length > 0) {
+      const isOwn = plan.changed.some((file) => ownTests(file, readers).length > 0);
       const owners = readers.map((file) => /^games\/([^/]+)\//.exec(file)?.[1]);
       const provision = owners.includes(undefined) ? [] : [...new Set(owners as string[])].sort();
       const provisionStep = `provision models for tests${provision.length > 0 ? ` ${provision.join(" ")}` : ""}`;
-      if (readers.length > 0) steps.push({ name: provisionStep, command: ["bun", "games/scripts/provision-assets.ts", ...provision], cost: 2, localBecause: MODEL_TEST_REASON });
-      steps.push({
-        ...testStep(here, `test ${here.length} file(s) on this PC`, 999, isOwn),
-        localBecause: reasons.join("; "),
-        ...(readers.length > 0 ? { needs: [provisionStep] } : {}),
-      });
+      steps.push({ name: provisionStep, command: ["bun", "games/scripts/provision-assets.ts", ...provision], cost: 2 });
+      steps.push({ ...testStep(readers, `test ${readers.length} file(s) that read downloaded models`, 999, isOwn), needs: [provisionStep] });
     }
     if (rest.length > 0) {
       const total = rest.reduce((sum, file) => sum + cost[file]!, 0);
@@ -1021,11 +1011,7 @@ export function rerunFailing(step: Pick<Step, "name" | "command">, output: strin
 
 function printPlan(plan: Plan, steps: readonly Step[]): void {
   for (const path of plan.changed) console.log(`  changed  ${path}`);
-  const placement = placeSteps(steps);
-  for (const step of steps) {
-    const place = placement.get(step.name);
-    console.log(`  step     ${step.name}  [${place?.where === "boat" ? "boat" : `this PC: ${place?.why ?? "local"}`}]  (${step.command.join(" ")})`);
-  }
+  for (const step of steps) console.log(`  step     ${step.name}  (${step.command.join(" ")})`);
   if (plan.fallback.length > 0) {
     console.log(`  no test can be attributed to ${plan.fallback.length} changed file(s), so every test file and type-check runs:`);
     for (const path of plan.fallback) console.log(`    ${path}`);
@@ -1047,19 +1033,20 @@ function receiptPlan(root: string, base: string, argv: readonly string[], change
   };
 }
 
-/** One line on where the run went: the boat machine's id, cost and time, and how many steps ran here. */
-export function boatLine(boat: BoatReceipt, placement: ReadonlyMap<string, { where: Where }>): string | null {
-  const here = [...placement.values()].filter((place) => place.where === "local").length;
-  if (boat.status === "off") return null;
-  if (boat.status === "spent") {
-    const linux = placement.size - here;
-    return `verify:fast: boat had no start (${boat.why ?? "no reason given"}); ${linux} Linux step(s) not run, here or there${boat.until === undefined ? "" : `; boat takes starts again from ${boat.until}`}`;
+/** A test file that imports the CI skip for downloaded models (`games/shared/assetTest.ts`). */
+const MODEL_TEST_SOURCE = /from\s+["'][^"']*\/assetTest(\.ts)?["']/;
+
+/** The test files among `files` that read downloaded models, which verify:fast links before they run. */
+export function modelTestFiles(root: string, files: readonly string[], read: (path: string) => string = (path) => readFileSync(join(root, path), "utf8")): Set<string> {
+  const readers = new Set<string>();
+  for (const file of files) {
+    try {
+      if (MODEL_TEST_SOURCE.test(read(file))) readers.add(file);
+    } catch {
+      // A file that cannot be read is left to its own test step to report.
+    }
   }
-  if (boat.status === "unusable") return `verify:fast: boat unusable (${boat.why ?? "no reason given"}); all ${placement.size} step(s) ran on this PC`;
-  const cost = boat.costUsd === undefined ? "" : `, $${boat.costUsd.toFixed(4)}`;
-  const time = boat.seconds === undefined ? "" : `, ${boat.seconds} s`;
-  const waited = boat.waitedMs !== undefined && boat.waitedMs > 1000 ? `, waited ${Math.round(boat.waitedMs / 1000)} s for a machine` : "";
-  return `verify:fast: ${boat.steps.length} step(s) on boat ${boat.runId ?? "(no id)"} ${boat.status}${cost}${time}${waited}; ${here} on this PC${boat.why === undefined ? "" : ` (${boat.why})`}`;
+  return readers;
 }
 
 export function parseVerifyArgs(argv: readonly string[]) {
@@ -1079,9 +1066,6 @@ export function parseVerifyArgs(argv: readonly string[]) {
   return { base, jobs, full, planOnly, json, cheap, landing, skillApi: parsed.values["skill-api"] === true };
 }
 
-/** Set when boat had no start for a run's Linux steps: the exit is then EXIT_BOAT_SPENT, not a plain failure. */
-let boatSpent = false;
-
 async function main(argv: readonly string[]): Promise<number> {
   const root = fileURLToPath(new URL("..", import.meta.url));
   const { base, jobs, full, planOnly, json, cheap, landing, skillApi } = parseVerifyArgs(argv);
@@ -1094,42 +1078,19 @@ async function main(argv: readonly string[]): Promise<number> {
   // kept for --verbose, and for --plan, whose whole point is to show them.
   const say = (line: string): void => console.log(line);
   const note = planOnly || isVerbose() ? say : (): void => {};
-  // Where the steps run (scripts/verify-boat.ts): the Linux ones on a boat machine, the rest here in
-  // a fairshare slot. Its notes (waiting for a machine, boat unusable) always print: they explain the wait.
-  const tell = json ? (line: string): void => console.error(line) : say;
-  const boat = planOnly ? null : boatForThisRun(root);
   const execute = async (steps: Step[], failFast: boolean, print: boolean): Promise<StepResult[]> => {
     if (receipt === null) throw new Error("missing run receipt");
-    const placed = await runPlaced({
-      root,
-      steps,
-      jobs,
+    return runSteps(steps, jobs, (step) => run(step, root), {
       failFast,
-      baseRef: base,
-      runLocal: (step) => run(step, root),
-      schedule: (group, lanes, runOne, options) => runSteps(group, lanes, runOne, options),
-      onStart: (step, where) => {
-        receipt.start(step);
-        receipt.annotate(step.name, { where });
-      },
-      onSettle: (result, where) => {
+      onStart: (step) => receipt.start(step),
+      onSettle: (result) => {
         receipt.settle(result);
-        receipt.annotate(result.name, { where });
         if (!print || result.blockedBy !== undefined) return;
-        (result.ok ? note : say)(`${result.ok ? "PASS" : "FAIL"}  ${result.name}  ${(result.ms / 1000).toFixed(1)}s${where === "boat" ? "  (boat)" : ""}`);
+        (result.ok ? note : say)(`${result.ok ? "PASS" : "FAIL"}  ${result.name}  ${(result.ms / 1000).toFixed(1)}s`);
         const step = steps.find((candidate) => candidate.name === result.name);
         if (!result.ok && step !== undefined) printFailure(root, step, result.output);
       },
-      note: tell,
-      boat,
-      withSlot: (work) => withHeavySlot(work, { note: tell }),
     });
-    for (const [name, place] of placed.placement) receipt.annotate(name, { where: place.where, placedBecause: place.why });
-    receipt.note({ boat: placed.boat });
-    if (placed.boat.status === "spent") boatSpent = true;
-    const line = boatLine(placed.boat, placed.placement);
-    if (line !== null) tell(line);
-    return placed.results;
   };
 
   // The tree this run proves, and whether a passing run already proved it. Taken before planning, so
@@ -1233,7 +1194,7 @@ async function main(argv: readonly string[]): Promise<number> {
     landing,
   });
   // Every CI gate the change reaches, not the iteration subset: a passing hand run is then all a landing
-  // needs, and lane:close reuses it instead of running the rest on a boat machine.
+  // needs, and lane:close reuses it instead of running it again.
   const plan = { ...planned, gates: landingGates(planned.changed) };
   const cache = argv.includes("--no-cache")
     ? null
@@ -1260,7 +1221,7 @@ async function main(argv: readonly string[]): Promise<number> {
     testCosts,
     reportDir,
     tree,
-    localTests: localTestFiles(root, planned.tests),
+    modelTests: modelTestFiles(root, planned.tests),
     fresh: (unit, inputs) => {
       const hit = cache?.fresh(unit, inputs) === true;
       if (hit) skipped.push(unit);
@@ -1360,7 +1321,7 @@ if (import.meta.main) {
     parseVerifyArgs(argv);
     if (printHelpIfAsked("verify-fast", VERIFY_FAST_USAGE, argv)) process.exit(EXIT_VERIFIED);
     const code = await main(argv);
-    process.exit(code === EXIT_FAILED && boatSpent ? EXIT_BOAT_SPENT : code);
+    process.exit(code);
   } catch (error) {
     console.error(`verify:fast: ${(error as Error).message}`);
     process.exit(EXIT_FAILED);

@@ -6,7 +6,6 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "bun:test";
 
 import {
-  boatLine,
   bootsFor,
   CI_ONLY_GATES,
   landingGates,
@@ -21,6 +20,7 @@ import {
   jsonRun,
   junitCosts,
   junitPassedFiles,
+  modelTestFiles,
   opaqueScopes,
   ownTests,
   pureRenames,
@@ -34,7 +34,6 @@ import {
   type Step,
   type Workspace,
 } from "./verify-fast";
-import { MODEL_TEST_REASON } from "./verify-boat";
 import { runSteps, type StepResult } from "./stepScheduler";
 import { buildImportGraph, specifiers, type ImportGraph } from "./import-graph";
 import { matchingShard, walkTestFiles } from "./test-shard";
@@ -395,19 +394,27 @@ describe("attribution fails loudly", () => {
     expect(steps.slice(1).flatMap((step) => step.command)).toContain("packages/core/src/loot/lootGen.test.ts");
   });
 
-  test("tests that read this PC's models wait for those games' models to be linked, so a fresh worktree passes them", () => {
+  test("tests that read downloaded models wait for those games' models to be linked, so a fresh worktree passes them", () => {
     const model = "games/scrap-signal/src/game/world/scrap-signal.world.test.ts";
-    const windows = "scripts/windows-only.test.ts";
-    const plan: Plan = { ...emptyPlan, tests: [model, windows, "packages/core/src/random/pick.test.ts"] };
-    const localTests = new Map([[model, MODEL_TEST_REASON], [windows, "checks something only Windows has"]]);
-    const steps = fastSteps(plan, { lanes: 2, localTests });
+    const plain = "packages/core/src/random/pick.test.ts";
+    const plan: Plan = { ...emptyPlan, tests: [model, plain] };
+    const steps = fastSteps(plan, { lanes: 2, modelTests: new Set([model]) });
     const provision = steps.find((step) => step.name.startsWith("provision models"));
     expect(provision?.command).toEqual(["bun", "games/scripts/provision-assets.ts", "scrap-signal"]);
-    expect(provision?.localBecause).toBe(MODEL_TEST_REASON);
-    expect(steps.find((step) => step.name === "test 2 file(s) on this PC")?.needs).toEqual([provision!.name]);
-    const onlyWindows = fastSteps({ ...emptyPlan, tests: [windows] }, { localTests });
-    expect(onlyWindows.some((step) => step.name.startsWith("provision"))).toBe(false);
-    expect(onlyWindows.find((step) => step.name.endsWith("on this PC"))?.needs).toBeUndefined();
+    const readers = steps.find((step) => step.name === "test 1 file(s) that read downloaded models");
+    expect(readers?.needs).toEqual([provision!.name]);
+    expect(readers?.command).toContain(model);
+    expect(readers?.command).not.toContain(plain);
+    const none = fastSteps({ ...emptyPlan, tests: [plain] }, { modelTests: new Set([model]) });
+    expect(none.some((step) => step.name.startsWith("provision"))).toBe(false);
+  });
+
+  test("a test file that imports the downloaded-model skip is a model test; others are not", () => {
+    const sources: Record<string, string> = {
+      "games/a/x.test.ts": 'import { modelTest } from "../../shared/assetTest";\n',
+      "packages/core/y.test.ts": 'import { expect } from "bun:test";\n',
+    };
+    expect([...modelTestFiles("/", Object.keys(sources), (path) => sources[path]!)]).toEqual(["games/a/x.test.ts"]);
   });
 
   test("a pure rename and a demo never need a test", () => {
@@ -950,11 +957,3 @@ describe("local boots", () => {
   });
 });
 
-describe("boatLine", () => {
-  test("boat out of starts says the Linux steps ran nowhere and when boat frees", () => {
-    const placement = new Map([["tests", { where: "boat" as const }], ["typecheck", { where: "boat" as const }], ["win tests", { where: "local" as const }]]);
-    expect(boatLine({ status: "spent", why: "boat's day start limit is used until 2026-11-08T03:00:00.000Z", until: "2026-11-08T03:00:00.000Z", steps: [] }, placement)).toBe(
-      "verify:fast: boat had no start (boat's day start limit is used until 2026-11-08T03:00:00.000Z); 2 Linux step(s) not run, here or there; boat takes starts again from 2026-11-08T03:00:00.000Z",
-    );
-  });
-});
