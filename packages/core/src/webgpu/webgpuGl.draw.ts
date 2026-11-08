@@ -147,7 +147,13 @@ interface VertexSlot {
   /** Several GL buffers interleaved into one, built on the CPU when a draw has more buffers than WebGPU binds. */
   packed: { gpu: GPUBuffer | null; versions: string } | null;
 }
-interface VertexPlan { id: number; key: string; slots: VertexSlot[]; constants: number[]; instanceCapacity: (instances: number) => number }
+interface VertexPlan {
+  id: number; key: string; slots: VertexSlot[]; constants: number[]; instanceCapacity: (instances: number) => number;
+  /** Whether any GL attribute steps per instance (a multi-draw's firstInstance would offset it). */
+  perInstance: boolean;
+}
+/** A WEBGL_multi_draw call: item i draws counts[countsOffset + i] from starts[startsOffset + i] (elements: a byte offset). */
+interface MultiDraw { starts: ArrayLike<number>; startsOffset: number; counts: ArrayLike<number>; countsOffset: number; drawCount: number }
 
 const WEBGL_CONSTANTS: Record<string, number> = (() => {
   const out: Record<string, number> = {};
@@ -217,6 +223,26 @@ function asView(data: any): ArrayBufferView {
   if (ArrayBuffer.isView(data)) return data;
   if (data instanceof ArrayBuffer) return new Uint8Array(data);
   return new Uint8Array(0);
+}
+
+/** The vertex input a multi-draw program reads its `gl_DrawID` from. @internal */
+export const DRAW_ID_INPUT = "jgDrawId";
+const MULTI_DRAW_EXTENSION = /^[ \t]*#extension[ \t]+GL_ANGLE_multi_draw[ \t]*:[ \t]*\w+[ \t]*$/m;
+
+/**
+ * A vertex shader compiled against WEBGL_multi_draw (three's BatchedMesh), with `gl_DrawID` read
+ * from an integer instance attribute: each item of a multi-draw is drawn with `firstInstance` set
+ * to its index, and that attribute's buffer holds 0, 1, 2... so item i reads i. WGSL has no draw
+ * index of its own. Every line keeps its number, so a translation error still names the right one.
+ * Shaders without the extension come back unchanged. @internal
+ */
+export function withDrawIdInput(vertex: string): string {
+  if (!MULTI_DRAW_EXTENSION.test(vertex)) return vertex;
+  const lines = vertex.replace(MULTI_DRAW_EXTENSION, "#define GL_ANGLE_multi_draw 1").replace(/\bgl_DrawID\b/g, DRAW_ID_INPUT).split("\n");
+  // The declaration shares the first line of code, after the #version and #define lines.
+  const first = lines.findIndex((line) => line.trim() !== "" && !line.trimStart().startsWith("#"));
+  if (first >= 0) lines[first] = `in highp int ${DRAW_ID_INPUT}; ${lines[first]}`;
+  return lines.join("\n");
 }
 
 const PRESENT_WGSL = `
@@ -465,12 +491,12 @@ export class WebGpuGl extends GlConstants {
   getError(): number { const e = this.error; this.error = 0; return e; }
   makeXRCompatible(): Promise<void> { return Promise.resolve(); }
   /**
-   * No WEBGL_multi_draw: three compiles BatchedMesh shaders against it with gl_DrawID, which the
-   * translated WGSL has no value for, so every item drew with the first item's matrix (Harbor
-   * Heat's palms, plants and awnings stacked in one place). Without it three draws each item itself
-   * and sets `_gl_DrawID` as a uniform.
+   * WEBGL_multi_draw draws a BatchedMesh in one call: its items share every binding and only
+   * `gl_DrawID` changes, which the shader reads from an instance attribute ({@link withDrawIdInput}).
+   * Without it three drew each item itself with a `_gl_DrawID` uniform, so every item re-staged the
+   * program's whole uniform block and rebound it.
    */
-  getSupportedExtensions(): string[] { return ["EXT_color_buffer_float", "EXT_color_buffer_half_float", "EXT_texture_filter_anisotropic", "KHR_parallel_shader_compile", "WEBGL_lose_context", ...(this.float32Filterable ? ["OES_texture_float_linear"] : []), ...(this.float32Blendable ? ["EXT_float_blend"] : []), ...(this.stamps !== null ? ["EXT_disjoint_timer_query_webgl2"] : []), ...(this.device.features.has("texture-compression-bc") ? ["WEBGL_compressed_texture_s3tc", "WEBGL_compressed_texture_s3tc_srgb", "EXT_texture_compression_bptc", "EXT_texture_compression_rgtc"] : [])]; }
+  getSupportedExtensions(): string[] { return ["EXT_color_buffer_float", "EXT_color_buffer_half_float", "EXT_texture_filter_anisotropic", "KHR_parallel_shader_compile", "WEBGL_lose_context", "WEBGL_multi_draw", ...(this.float32Filterable ? ["OES_texture_float_linear"] : []), ...(this.float32Blendable ? ["EXT_float_blend"] : []), ...(this.stamps !== null ? ["EXT_disjoint_timer_query_webgl2"] : []), ...(this.device.features.has("texture-compression-bc") ? ["WEBGL_compressed_texture_s3tc", "WEBGL_compressed_texture_s3tc_srgb", "EXT_texture_compression_bptc", "EXT_texture_compression_rgtc"] : [])]; }
 
   getExtension(name: string): any {
     if (!this.getSupportedExtensions().includes(name)) return null;
@@ -479,6 +505,12 @@ export class WebGpuGl extends GlConstants {
       case "KHR_parallel_shader_compile": return { COMPLETION_STATUS_KHR: 0x91b1 };
       case "EXT_disjoint_timer_query_webgl2": return { QUERY_COUNTER_BITS_EXT: 0x8864, TIME_ELAPSED_EXT: 0x88bf, TIMESTAMP_EXT: 0x8e28, GPU_DISJOINT_EXT: 0x8fbb, queryCounterEXT: () => this.warn("queryCounterEXT (a single timestamp) is not supported on the WebGPU backend; use TIME_ELAPSED_EXT") };
       case "WEBGL_lose_context": return { loseContext: () => this.loseContext(), restoreContext: () => this.warn("degraded: restoreContext is not supported on the WebGPU backend; remount the canvas") };
+      // The instanced forms are left out: an item's firstInstance carries its draw id, which would
+      // also offset gl_InstanceID and every per-instance attribute. three draws only these two.
+      case "WEBGL_multi_draw": return {
+        multiDrawArraysWEBGL: (mode: number, firsts: ArrayLike<number>, firstsOffset: number, counts: ArrayLike<number>, countsOffset: number, drawCount: number) => this.draw(mode, 0, 1, 1, null, 0, { starts: firsts, startsOffset: firstsOffset, counts, countsOffset, drawCount }),
+        multiDrawElementsWEBGL: (mode: number, counts: ArrayLike<number>, countsOffset: number, type: number, offsets: ArrayLike<number>, offsetsOffset: number, drawCount: number) => this.draw(mode, 0, 1, 1, type, 0, { starts: offsets, startsOffset: offsetsOffset, counts, countsOffset, drawCount }),
+      };
       case "WEBGL_compressed_texture_s3tc": return { COMPRESSED_RGB_S3TC_DXT1_EXT: 0x83f0, COMPRESSED_RGBA_S3TC_DXT1_EXT: 0x83f1, COMPRESSED_RGBA_S3TC_DXT3_EXT: 0x83f2, COMPRESSED_RGBA_S3TC_DXT5_EXT: 0x83f3 };
       case "WEBGL_compressed_texture_s3tc_srgb": return { COMPRESSED_SRGB_S3TC_DXT1_EXT: 0x8c4c, COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT: 0x8c4d, COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT: 0x8c4e, COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT: 0x8c4f };
       case "EXT_texture_compression_bptc": return { COMPRESSED_RGBA_BPTC_UNORM_EXT: 0x8e8c, COMPRESSED_SRGB_ALPHA_BPTC_UNORM_EXT: 0x8e8d, COMPRESSED_RGB_BPTC_SIGNED_FLOAT_EXT: 0x8e8e, COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT_EXT: 0x8e8f };
@@ -743,7 +775,7 @@ export class WebGpuGl extends GlConstants {
     p.linked = false;
     p.translated = null;
     p.compiled = false;
-    const pending = translateGlslAsync(vs.source, fs.source);
+    const pending = translateGlslAsync(withDrawIdInput(vs.source), fs.source);
     p.pending = pending;
     // Settle as soon as the worker answers, so the browser's compile starts without waiting for a query.
     pending.onDone(() => { if (p.pending === pending) this.settle(p); });
@@ -1869,7 +1901,9 @@ struct O { ${outputs} };
     const constantAttrs: GPUVertexAttribute[] = [];
     let keyParts = "";
     const limits: (Omit<InstancedAttribute, "size"> & { buffer: GlBuffer })[] = [];
+    let drawIdLocation = -1;
     for (const input of inputs) {
+      if (input.name === DRAW_ID_INPUT) { drawIdLocation = input.location; continue; }
       const a = vao.attribs[input.location];
       if (a === undefined || !a.enabled || a.buffer === null) {
         constants.push(input.location);
@@ -1923,6 +1957,7 @@ struct O { ${outputs} };
       slots.length = 0;
       slots.push(packedSlot, ...kept);
     }
+    if (drawIdLocation >= 0) slots.push({ buffer: this.drawIds(1), offset: 0, stride: 4, step: "instance", attributes: [{ shaderLocation: drawIdLocation, offset: 0, format: "sint32" }], convert: null, constant: false, sources: [], packed: null });
     for (const s of slots) keyParts += `${s.stride}${s.step[0]}:${s.attributes.map((x) => `${x.shaderLocation}@${x.offset}${x.format}`).join(",")};`;
     const plan: VertexPlan = {
       id: nextId++,
@@ -1930,6 +1965,7 @@ struct O { ${outputs} };
       slots,
       constants,
       instanceCapacity: (instances: number) => instancesThatFit(instances, limits.map((l) => ({ ...l, size: l.buffer.data?.byteLength ?? l.buffer.size }))),
+      perInstance: limits.length > 0,
     };
     if (slots.length > max) this.warn(`a draw needs ${slots.length} vertex buffers, over WebGPU's ${max}; it is not drawn`);
     p.vertexCache.set(vao, { version: vao.version, plan });
@@ -2202,11 +2238,15 @@ struct O { ${outputs} };
     return gpu;
   }
 
-  private draw(mode: number, first: number, count: number, instances: number, indexType: number | null, offset: number): void {
+  private draw(mode: number, first: number, count: number, instances: number, indexType: number | null, offset: number, multi: MultiDraw | null = null): void {
     const p = this.program;
     if (p === null || !p.linked || count <= 0 || instances <= 0) return;
+    if (multi !== null && multi.drawCount <= 0) return;
     if (!this.openPass()) return;
+    // Grown before the plan's slots are bound, so the draw ids cover every item.
+    if (multi !== null) this.drawIds(multi.drawCount);
     const plan = this.vertexPlan(p);
+    if (multi !== null && plan?.perInstance === true) this.warn("degraded: a multi-draw program also reads per-instance attributes; each item's draw id offsets them");
     // Room for this draw's constant attributes, before any of its state is set on the pass.
     if (plan !== null && plan.constants.length > 0 && this.constantsUsed + plan.constants.length * 4 > this.constants.length) {
       this.submit();
@@ -2333,11 +2373,42 @@ struct O { ${outputs} };
         firstIndex = offset;
       }
       if (this.boundIndex !== gpu || this.boundIndexFormat !== format) { passNow.setIndexBuffer(gpu, format); this.boundIndex = gpu; this.boundIndexFormat = format; }
-      passNow.drawIndexed(count, instances, firstIndex, 0, 0);
-    } else {
+      if (multi === null) passNow.drawIndexed(count, instances, firstIndex, 0, 0);
+      else {
+        const bytes = indexType === 0x1405 ? 4 : indexType === 0x1403 ? 2 : 1;
+        for (let i = 0; i < multi.drawCount; i += 1) {
+          const n = multi.counts[multi.countsOffset + i] ?? 0;
+          if (n > 0) passNow.drawIndexed(n, 1, (multi.starts[multi.startsOffset + i] ?? 0) / bytes, 0, i);
+        }
+      }
+    } else if (multi === null) {
       passNow.draw(count, instances, first, 0);
+    } else {
+      for (let i = 0; i < multi.drawCount; i += 1) {
+        const n = multi.counts[multi.countsOffset + i] ?? 0;
+        if (n > 0) passNow.draw(n, 1, multi.starts[multi.startsOffset + i] ?? 0, i);
+      }
     }
     this.stats.draws += 1;
+  }
+
+  private drawIdBuffer: GlBuffer | null = null;
+
+  /** The buffer holding 0, 1, 2... that multi-draw items read their `gl_DrawID` from, grown to hold `count`. */
+  private drawIds(count: number): GlBuffer {
+    const b = (this.drawIdBuffer ??= this.createBuffer());
+    if (b.gpu !== null && b.size >= count * 4) return b;
+    const length = Math.max(1024, 2 ** Math.ceil(Math.log2(count)));
+    const ids = new Int32Array(length);
+    for (let i = 0; i < length; i += 1) ids[i] = i;
+    // The old buffer's ids are a prefix of the new one's, so draws already recorded with it stay right.
+    this.retire(b.gpu);
+    b.gpu = this.device.createBuffer({ size: ids.byteLength, usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST });
+    this.device.queue.writeBuffer(b.gpu, 0, ids);
+    b.size = ids.byteLength;
+    b.data = ids;
+    b.version += 1;
+    return b;
   }
 
   private floatCopyIndex(b: GlBuffer): GPUBuffer {

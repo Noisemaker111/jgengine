@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { failingLine, WebGpuGl } from "./webgpuGl.draw";
+import { loadGlslTranslator, translateGlsl } from "./glslToWgsl.draw";
+import { DRAW_ID_INPUT, failingLine, WebGpuGl, withDrawIdInput } from "./webgpuGl.draw";
 
 test("a translation error quotes the GLSL line it names", () => {
   const shaders = [{ type: 0x8b31, source: "void main() {}" }, { type: 0x8b30, source: "a\nb\n  float x = 1.0 * * 2.0;\n" }];
@@ -12,6 +13,8 @@ test("a translation error quotes the GLSL line it names", () => {
 function stubDevice(options: { features?: string[]; mapped?: (size: number) => ArrayBuffer } = {}) {
   const pendingMaps: (() => void)[] = [];
   const passes: { timestampWrites?: { beginningOfPassWriteIndex: number; endOfPassWriteIndex: number } }[] = [];
+  /** Every call made on a render pass, in order. */
+  const calls: [string, unknown[]][] = [];
   const views: { baseMipLevel?: number }[] = [];
   const buffers: { size: number; usage: number }[] = [];
   const anything = (): any => new Proxy(function () {}, {
@@ -28,7 +31,10 @@ function stubDevice(options: { features?: string[]; mapped?: (size: number) => A
   const device: any = new Proxy({
     features: new Set<string>(options.features ?? []),
     createCommandEncoder: () => new Proxy({
-      beginRenderPass: (desc: (typeof passes)[number]) => { passes.push(desc); return anything(); },
+      beginRenderPass: (desc: (typeof passes)[number]) => {
+        passes.push(desc);
+        return new Proxy({}, { get: (_t, key) => (key === "then" ? undefined : (...args: unknown[]) => { calls.push([String(key), args]); return anything(); }) });
+      },
     }, { get: (t: any, k) => t[k] ?? anything() }),
     limits: { minUniformBufferOffsetAlignment: 256, maxTextureDimension2D: 8192, maxVertexBuffers: 8 },
     createBuffer: ({ size, usage }: { size: number; usage: number }) => { buffers.push({ size, usage }); return buffer(size); },
@@ -42,7 +48,7 @@ function stubDevice(options: { features?: string[]; mapped?: (size: number) => A
     queue: new Proxy({ onSubmittedWorkDone: () => new Promise(() => {}) }, { get: (t: any, k) => t[k] ?? anything() }),
     destroy() {},
   }, { get: (t: any, k) => t[k] ?? anything() });
-  return { device, views, passes, buffers, landAllMaps: () => { for (const resolve of pendingMaps.splice(0)) resolve(); } };
+  return { device, views, passes, calls, buffers, landAllMaps: () => { for (const resolve of pendingMaps.splice(0)) resolve(); } };
 }
 
 function stubContext(width = 64, height = 64, features: string[] = []) {
@@ -124,19 +130,51 @@ describe("WebGpuGl readback fences", () => {
 });
 
 describe("WebGpuGl as three sees it", () => {
-  test("WEBGL_multi_draw is not offered, so three draws BatchedMesh items one by one with a _gl_DrawID uniform", () => {
-    // Offered, three compiles BatchedMesh against gl_DrawID, which the WGSL has no value for:
-    // every item drew with the first item's matrix (Harbor Heat's palms stacked in one place).
+  test("WEBGL_multi_draw is offered with the two calls three makes, so a BatchedMesh draws in one call", () => {
     const { gl } = stubContext();
-    expect(gl.getSupportedExtensions()).not.toContain("WEBGL_multi_draw");
-    expect(gl.getExtension("WEBGL_multi_draw")).toBeNull();
+    expect(gl.getSupportedExtensions()).toContain("WEBGL_multi_draw");
+    const ext = gl.getExtension("WEBGL_multi_draw");
+    expect(typeof ext.multiDrawElementsWEBGL).toBe("function");
+    expect(typeof ext.multiDrawArraysWEBGL).toBe("function");
+  });
+
+  test("a BatchedMesh vertex shader reads gl_DrawID from an integer input, with every line where it was", async () => {
+    // Without a value for gl_DrawID every item would draw with the first item's matrix (Harbor
+    // Heat's palms, plants and awnings stacked in one place). The shape of three's batching chunk.
+    const vs = [
+      "#version 300 es",
+      "#extension GL_ANGLE_multi_draw : require",
+      "precision highp float;",
+      "precision highp int;",
+      "#if ! defined( GL_ANGLE_multi_draw )",
+      "#define gl_DrawID _gl_DrawID",
+      "uniform int _gl_DrawID;",
+      "#endif",
+      "uniform highp sampler2D batchingTexture;",
+      "mat4 getBatchingMatrix( const in float i ) {",
+      "  vec4 v = texelFetch( batchingTexture, ivec2( int( i ) * 4, 0 ), 0 );",
+      "  return mat4( v, v, v, v );",
+      "}",
+      "uniform mat4 projectionMatrix;",
+      "in vec3 position;",
+      "void main() { gl_Position = projectionMatrix * getBatchingMatrix( float( gl_DrawID ) ) * vec4( position, 1.0 ); }",
+    ].join("\n");
+    const fs = "#version 300 es\nprecision highp float;\nout vec4 color;\nvoid main() { color = vec4(1.0); }";
+    const rewritten = withDrawIdInput(vs);
+    expect(rewritten.split("\n").length).toBe(vs.split("\n").length);
+    expect(withDrawIdInput(fs)).toBe(fs);
+    await loadGlslTranslator(new URL("./glslToWgsl.wasm", import.meta.url));
+    const result = translateGlsl(rewritten, fs);
+    if (!("ok" in result)) throw new Error(result.error);
+    expect(result.ok.layout.vertex_inputs.find((input) => input.name === DRAW_ID_INPUT)?.kind).toBe("i");
+    expect(result.ok.layout.uniforms.map((u) => u.name)).not.toContain("_gl_DrawID");
   });
 });
 
 // A linked one-sampler program without the naga translation, and a draw with no vertex buffers:
 // what the cache decides is which of bindGroupFor / pipelineFor a draw had to run again.
 const drawSetup = (features: string[] = []) => {
-  const { gl, passes } = stubContext(64, 64, features);
+  const { gl, passes, calls } = stubContext(64, 64, features);
   const program = {
     kind: "program", id: 900, shaders: [], linked: true, log: "", pending: null, compiled: true,
     translated: { layout: { samplers: [{ kind: "Float", dim: "D2", texture_binding: 0, sampler_binding: 1 }], fragment_outputs: 1 } },
@@ -159,8 +197,33 @@ const drawSetup = (features: string[] = []) => {
     gl.texStorage2D(0x0de1, 1, 0x8058, 4, 4);
     return t;
   };
-  return { gl, passes, groups, pipelines: () => pipelines, texture, draw: () => gl.drawArrays(4, 0, 3) };
+  return { gl, passes, calls, groups, pipelines: () => pipelines, texture, draw: () => gl.drawArrays(4, 0, 3) };
 };
+
+describe("WebGpuGl multi-draw", () => {
+  test("a multi-draw sets its bindings once and draws each item with firstInstance as its draw id", () => {
+    const { gl, calls, texture } = drawSetup();
+    texture();
+    // The real vertex plan, for a program whose one input is the draw id.
+    delete gl.vertexPlan;
+    gl.program.translated.layout.vertex_inputs = [{ name: DRAW_ID_INPUT, column: 0, location: 0, components: 1, kind: "i" }];
+    const indices = gl.createBuffer();
+    gl.bindBuffer(0x8893, indices);
+    gl.bufferData(0x8893, new Uint16Array(64), 0x88e4);
+    const ext = gl.getExtension("WEBGL_multi_draw");
+    ext.multiDrawElementsWEBGL(4, new Int32Array([9, 6, 0, 12]), 1, 0x1403, new Int32Array([99, 0, 12, 24]), 1, 3);
+    // Item 1 is empty and skipped; starts are byte offsets into 2-byte indices.
+    expect(calls.filter(([name]) => name === "drawIndexed").map(([, args]) => args)).toEqual([[6, 1, 0, 0, 0], [12, 1, 12, 0, 2]]);
+    expect(calls.filter(([name]) => name === "setBindGroup").length).toBe(2);
+    expect(calls.find(([name, args]) => name === "setVertexBuffer" && args[0] === 0)?.[1][1]).toBe(gl.drawIdBuffer.gpu);
+
+    // More items than the id buffer holds: it grows before the draw binds it.
+    calls.length = 0;
+    ext.multiDrawArraysWEBGL(4, new Int32Array(2000), 0, new Int32Array(2000).fill(3), 0, 2000);
+    expect(gl.drawIdBuffer.size).toBe(2048 * 4);
+    expect(calls.filter(([name]) => name === "draw").at(-1)?.[1]).toEqual([3, 1, 0, 1999]);
+  });
+});
 
 describe("WebGpuGl per-program draw caches", () => {
   const setup = () => drawSetup();
