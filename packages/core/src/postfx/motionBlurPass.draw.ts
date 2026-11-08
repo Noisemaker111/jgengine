@@ -3,7 +3,12 @@ import { FullScreenQuad, Pass } from "three-stdlib";
 
 import type { MotionBlurConfig } from "@jgengine/core/render/postProcessing";
 
+import { proxyGeometry } from "./proxyGeometry.draw";
+
 const bodies = new Set<THREE.Object3D>();
+/** What the velocity shader reads: every body shares one plain and one skinned program. */
+const VELOCITY_ATTRIBUTES = ["position"] as const;
+const SKINNED_VELOCITY_ATTRIBUTES = ["position", "skinIndex", "skinWeight"] as const;
 
 /**
  * Let motion blur follow a moving body (a character, a car, a thrown crate) along its own screen
@@ -250,10 +255,10 @@ export class MotionBlurPass extends Pass {
     });
     let copy: THREE.Mesh;
     if (mesh instanceof THREE.SkinnedMesh) {
-      const skinnedCopy = new THREE.SkinnedMesh(mesh.geometry, material);
+      const skinnedCopy = new THREE.SkinnedMesh(proxyGeometry(mesh.geometry, SKINNED_VELOCITY_ATTRIBUTES), material);
       skinnedCopy.bind(mesh.skeleton, mesh.bindMatrix);
       copy = skinnedCopy;
-    } else copy = new THREE.Mesh(mesh.geometry, material);
+    } else copy = new THREE.Mesh(proxyGeometry(mesh.geometry, VELOCITY_ATTRIBUTES), material);
     copy.matrixAutoUpdate = false;
     copy.matrixWorldAutoUpdate = false;
     return { source: mesh, mesh: copy, material, previousModel, previous: mesh.matrixWorld.clone(), seen: -1 };
@@ -346,7 +351,7 @@ export class MotionBlurPass extends Pass {
     for (const proxy of this.every) proxy.material.dispose();
     this.every.clear();
     for (const proxy of this.dryProxies ?? []) proxy.material.dispose();
-    this.dryProxies?.[0]?.mesh.geometry.dispose();
+    this.dryProxies?.[0]?.source.geometry.dispose();
     this.dryProxies = null;
   }
 }

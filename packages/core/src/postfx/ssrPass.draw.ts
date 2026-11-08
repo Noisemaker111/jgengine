@@ -4,7 +4,11 @@ import { FullScreenQuad, Pass } from "three-stdlib";
 import type { SsrConfig } from "@jgengine/core/render/postProcessing";
 import { visitVisible } from "@jgengine/core/visibility/visitVisible.draw";
 
+import { proxyGeometry } from "./proxyGeometry.draw";
+
 const maskClear = new THREE.Color();
+/** The only attribute the mask shader reads, so every glossy mesh shares its one program. */
+const MASK_ATTRIBUTES = ["position"] as const;
 
 const vertexShader = /* glsl */ `
   varying vec2 vUv;
@@ -255,7 +259,7 @@ export class SsrPass extends Pass {
       vertexShader: maskVertex,
       fragmentShader: maskFragment,
     });
-    const copy = new THREE.Mesh(mesh.geometry, material);
+    const copy = new THREE.Mesh(proxyGeometry(mesh.geometry, MASK_ATTRIBUTES), material);
     copy.matrixAutoUpdate = false;
     copy.matrixWorldAutoUpdate = false;
     proxy = { mesh: copy, material, gloss };
@@ -276,7 +280,7 @@ export class SsrPass extends Pass {
       if (mesh.parent === null || !mesh.visible) continue;
       const proxy = this.proxyFor(mesh);
       proxy.gloss.value = gloss;
-      proxy.mesh.geometry = mesh.geometry;
+      proxy.mesh.geometry = proxyGeometry(mesh.geometry, MASK_ATTRIBUTES);
       proxy.mesh.matrixWorld.copy(mesh.matrixWorld);
       this.maskScene.add(proxy.mesh);
     }
