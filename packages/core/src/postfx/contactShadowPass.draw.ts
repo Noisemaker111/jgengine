@@ -3,6 +3,7 @@ import { FullScreenQuad, Pass } from "three-stdlib";
 
 import { DEFAULT_CONTACT_SHADOWS, type ContactShadowConfig } from "@jgengine/core/render/postProcessing";
 import { visitVisible } from "@jgengine/core/visibility/visitVisible.draw";
+import type { SceneCompositePass } from "./sceneCompositePass.draw";
 
 const vertexShader = /* glsl */ `
   varying vec2 vUv;
@@ -115,8 +116,8 @@ export function towardLight(light: THREE.DirectionalLight, target: THREE.Vector3
 /** Frames between key-light searches; a light added or removed mid-play is picked up within this. */
 const LIGHT_RESCAN_FRAMES = 90;
 
-/** Multiplies the shadow factor onto the colour target it is drawn over. */
-const applyFragment = /* glsl */ `
+/** Multiplies the shadow factor onto the colour target it is drawn over. @internal */
+export const CONTACT_APPLY_FRAGMENT = /* glsl */ `
   uniform sampler2D tShadow;
   varying vec2 vUv;
   void main() {
@@ -141,6 +142,8 @@ export class ContactShadowPass extends Pass {
   readonly shadowTarget: THREE.WebGLRenderTarget;
   private readonly quad: FullScreenQuad;
   private readonly applyQuad: FullScreenQuad;
+  /** When set, the light factor goes to this pass instead of being multiplied onto the frame here. */
+  composite: SceneCompositePass | null = null;
   private light: THREE.DirectionalLight | null = null;
   private framesSinceScan = LIGHT_RESCAN_FRAMES;
   private frame = 0;
@@ -182,7 +185,7 @@ export class ContactShadowPass extends Pass {
     this.applyMaterial = new THREE.ShaderMaterial({
       uniforms: { tShadow: { value: this.shadowTarget.texture } },
       vertexShader,
-      fragmentShader: applyFragment,
+      fragmentShader: CONTACT_APPLY_FRAGMENT,
       depthTest: false,
       depthWrite: false,
       transparent: true,
@@ -223,6 +226,10 @@ export class ContactShadowPass extends Pass {
 
     renderer.setRenderTarget(this.shadowTarget);
     this.quad.render(renderer);
+    if (this.composite !== null) {
+      this.composite.takeShadow(this.shadowTarget.texture);
+      return;
+    }
     // Drawn over the frame, so the renderer must not clear the target first.
     const autoClear = renderer.autoClear;
     renderer.autoClear = false;

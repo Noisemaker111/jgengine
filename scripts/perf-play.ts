@@ -41,6 +41,7 @@ import {
 import type { SystemProbeReading } from "../packages/core/src/devtools/types";
 import { renderBreakdownText, type FrameBreakdownSummary } from "../packages/core/src/devtools/frameBreakdown";
 import { compareBreakdowns, readBreakdown, resetBreakdown, startPath, type PerfPath } from "./perf-breakdown";
+import { markStep } from "./hangReport";
 import { provisionCapturedGame } from "./provisionCapture";
 import {
   ACCESSIBILITY_SETTING_IDS,
@@ -1180,6 +1181,8 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
 
   // A game whose packs are not linked into this checkout draws placeholder boxes, and its frame
   // times describe the boxes; link them first, the same as shoot and drive do.
+  // Each phase is marked, so a hard deadline names the one that hung rather than the whole capture.
+  markStep(`perf ${game}: link its asset packs`);
   await (options.provision ?? provisionCapturedGame)(join(repoRoot, "games", game), (line) => console.error(`perf: ${line}`));
 
   let clockProbeMs: number | null = null;
@@ -1203,6 +1206,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
   // Same navigation the capture tools use: it fails on a page exception or a failed document
   // instead of waiting out the readiness timeout. The timeout outlasts the page's own readiness
   // budget (2.5 minutes, past the shader warmup's cap), so a slow load reports its own reason.
+  markStep(`perf ${game}: load the page`);
   await navigateCapturePage(session, url.toString(), 210_000);
   // The tier the game resolved, not the flag: a record that names a tier it never rendered at is
   // exactly the evidence gap this flag closes.
@@ -1216,6 +1220,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
     console.error(`perf: software rasterizer (${gpu}) — frame times are not a GPU measurement`);
   }
 
+  markStep(`perf ${game}: warm up`);
   await session.evaluate(`new Promise((r) => setTimeout(r, ${warmupMs}))`, { awaitPromise: true });
   const backend = await readBackend(session);
   const asked = settings.find((setting) => setting.id === "graphics.renderer")?.value;
@@ -1228,6 +1233,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
 
   // Frame timings are sampled without the profiler running, so the fps and
   // percentiles are the loop the player gets; the profile window is separate.
+  markStep(`perf ${game}: sample frames`);
   await session.evaluate(`globalThis.__jgPerfDraws?.start?.()`);
   const startedAt = Date.now();
   const deltas = (await session.evaluate<number[]>(SAMPLE_FRAMES_SCRIPT(seconds * 1000), { awaitPromise: true })) ?? [];
@@ -1263,6 +1269,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
   let allocators: AllocationEntry[] | null = null;
   let profiledMs = 0;
   if (profileRun) {
+    markStep(`perf ${game}: profile the main thread`);
     await session.send("Profiler.enable");
     await session.send("Profiler.setSamplingInterval", { interval: PROFILE_SAMPLING_US });
     // Only the `--profile` run samples allocations: the sampler itself costs a little per allocation.
