@@ -1216,9 +1216,10 @@ export function heightMapField(config: HeightMapFieldConfig): TerrainField {
 /**
  * Signed distance to a set of shore rings, positive inside: exact within `reach` of a shore (through each
  * ring's segment index, so a sample tests a handful of segments), and `reach` (land) or -Infinity (sea)
- * beyond it, read from a coarse land grid filled on demand.
+ * beyond it, read from a coarse land grid filled on demand. Land at least `landCap` inside every shore
+ * reads `reach` too: pass the distance past which the caller's answer no longer changes.
  */
-function outlineSignedDistance(rings: readonly (readonly (readonly [number, number])[])[], reach: number): (x: number, z: number) => number {
+function outlineSignedDistance(rings: readonly (readonly (readonly [number, number])[])[], reach: number, landCap = reach): (x: number, z: number) => number {
   const shores = rings.map((source) => {
     const ring = polygonSignedArea(source as readonly Vec2[]) >= 0 ? source : [...source].reverse();
     const closed = [...ring, ring[0]!] as Vec2[];
@@ -1298,6 +1299,30 @@ function outlineSignedDistance(rings: readonly (readonly (readonly [number, numb
     const row = Math.floor((z - minZ) / cell);
     return centreOnLand(row * columns + column, column, row) ? reach : Number.NEGATIVE_INFINITY;
   };
+  // A finer grid inside the near cells, for a caller that reads land distances only up to `landCap`:
+  // per fine cell, 0 unknown, 1 land at least `landCap` from every shore, 2 anything else. Most of an
+  // island's land near its shore is still that far from it, and one array read answers it.
+  // At most 1024 cells a side, so a short cap over a large map cannot claim a huge grid.
+  const fineCell = Math.max(landCap / 4, (Math.max(columns, rows) * cell) / 1024);
+  const fineColumns = landCap < reach ? Math.max(1, Math.ceil((columns * cell) / fineCell)) : 0;
+  const fineRows = landCap < reach ? Math.max(1, Math.ceil((rows * cell) / fineCell)) : 0;
+  const fine = new Uint8Array(fineColumns * fineRows);
+  const fineHalfDiagonal = fineCell * Math.SQRT1_2;
+  const deepLand = (x: number, z: number): boolean => {
+    const column = Math.floor((x - minX) / fineCell);
+    const row = Math.floor((z - minZ) / fineCell);
+    if (column < 0 || row < 0 || column >= fineColumns || row >= fineRows) return false;
+    const key = row * fineColumns + column;
+    if (fine[key] === 0) {
+      const cx = minX + (column + 0.5) * fineCell;
+      const cz = minZ + (row + 0.5) * fineCell;
+      // No shore within the cap plus half the cell's diagonal of its centre: every point in it is at
+      // least the cap from every shore, on the side its centre is on.
+      const clear = shores.every((shore) => shore.index.nearest(cx, cz, landCap + fineHalfDiagonal, scratch) === null);
+      fine[key] = clear && shores.some((shore) => pointInPolygon(shore.ring as readonly Vec2[], cx, cz)) ? 1 : 2;
+    }
+    return fine[key] === 1;
+  };
   return (x, z) => {
     const column = Math.floor((x - minX) / cell);
     const row = Math.floor((z - minZ) / cell);
@@ -1305,6 +1330,7 @@ function outlineSignedDistance(rings: readonly (readonly (readonly [number, numb
     const state = cellState(column, row);
     if (state === 1) return reach;
     if (state === 2) return Number.NEGATIVE_INFINITY;
+    if (fineColumns > 0 && deepLand(x, z)) return reach;
     return exact(x, z);
   };
 }
@@ -1348,8 +1374,10 @@ export function withCoast(height: (x: number, z: number) => number, coast: Terra
   if (rings.length > 0) {
     // Past this distance the outline no longer shapes the ground: land is full height, sea is the floor.
     const reach = Math.max(falloff, shelf) * (1 + wobble);
-    const signedDistance = outlineSignedDistance(rings, reach);
     const roughness = wobble * falloff * 0.35;
+    // `rough` stays within ±1, so land this far in keeps `inside` past the falloff, where `shape`'s ease
+    // is exactly 1 and the height no longer depends on the distance; the metre covers rounding.
+    const signedDistance = outlineSignedDistance(rings, reach, falloff + Math.abs(roughness) + 1);
     return (x, z) => {
       const signed = signedDistance(x, z);
       if (signed === Number.NEGATIVE_INFINITY) return floor;

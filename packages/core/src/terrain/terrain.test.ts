@@ -4,8 +4,10 @@ import { gateTimingMs } from "../../../../scripts/timing-budget";
 import type { TerrainMaterialMaps } from "../world/features";
 import { environment, island, road, terrain } from "../world/features";
 import { buildRoadRibbon, isOnRoad } from "../roads/roads";
+import { pointInPolygon } from "../world/polygon";
 import {
   withCoast,
+  seedPhase,
   arenaField,
   composeIslandFields,
   createBiomeBandSampler,
@@ -865,6 +867,52 @@ describe("withCoast", () => {
     expect(ground(50, 250)).toBe(20);
     expect(ground(250, 50)).toBe(20);
     expect(ground(250, 250)).toBe(-30);
+  });
+
+  test("every height within the shore's reach equals the one measured from every shore segment", () => {
+    // Land well inside the shore skips measuring the shore (its ease is already 1); this holds the
+    // result to the formula fed the exact distance, on a wobbly, rough coast with rolling land.
+    const ring: [number, number][] = [];
+    for (let i = 0; i < 40; i += 1) {
+      const angle = (i / 40) * Math.PI * 2;
+      const radius = 400 + 60 * Math.sin(angle * 5) + 25 * Math.cos(angle * 11);
+      ring.push([Math.cos(angle) * radius, Math.sin(angle) * radius]);
+    }
+    const land = (x: number, z: number) => 12 + 6 * Math.sin(x * 0.013) * Math.cos(z * 0.017);
+    const coast = { outlines: [ring], falloff: 50, shoreHeight: 0.8, seaFloor: -28, shelf: 90, wobble: 0.35, seed: "test-isle" };
+    const ground = withCoast(land, coast);
+    const reach = Math.max(coast.falloff, coast.shelf) * (1 + coast.wobble);
+    const roughness = coast.wobble * coast.falloff * 0.35;
+    const phase = seedPhase(coast.seed);
+    const smooth = (t: number) => { const c = Math.min(1, Math.max(0, t)); return c * c * (3 - 2 * c); };
+    const expected = (x: number, z: number): number => {
+      let best = Number.POSITIVE_INFINITY;
+      for (let i = 0; i < ring.length; i += 1) {
+        const a = ring[i]!, b = ring[(i + 1) % ring.length]!;
+        const abx = b[0] - a[0], abz = b[1] - a[1];
+        const t = Math.max(0, Math.min(1, ((x - a[0]) * abx + (z - a[1]) * abz) / (abx * abx + abz * abz)));
+        const px = a[0] + abx * t, pz = a[1] + abz * t;
+        best = Math.min(best, Math.hypot(x - px, z - pz));
+      }
+      const signed = best > reach ? reach : pointInPolygon(ring, x, z) ? best : -best;
+      const rough = 0.5 * Math.sin(x * 0.011 + phase) * Math.cos(z * 0.009 - phase) + 0.3 * Math.sin((x + z) * 0.023 + phase * 1.7) + 0.2 * Math.sin((x - z) * 0.047 + phase * 2.3);
+      const inside = signed + roughness * rough;
+      if (inside >= 0) {
+        const height = Math.max(land(x, z), coast.shoreHeight);
+        return coast.shoreHeight + (height - coast.shoreHeight) * smooth(inside / coast.falloff);
+      }
+      return coast.shoreHeight + (coast.seaFloor - coast.shoreHeight) * smooth(-inside / coast.shelf);
+    };
+    let seed = 7;
+    const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+    let compared = 0;
+    for (let i = 0; i < 20000; i += 1) {
+      const x = (random() - 0.5) * 900, z = (random() - 0.5) * 900;
+      if (!pointInPolygon(ring, x, z)) continue;
+      expect(ground(x, z)).toBe(expected(x, z));
+      compared += 1;
+    }
+    expect(compared).toBeGreaterThan(5000);
   });
 
   test("a coast with neither radius nor outline is refused", () => {

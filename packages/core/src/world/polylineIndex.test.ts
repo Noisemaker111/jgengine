@@ -66,6 +66,25 @@ describe("buildPolylineIndex", () => {
     }
   });
 
+  test("a bound exactly the nearest distance still hits, wherever the cell's clearance stands", () => {
+    // The per-cell miss shortcut must never hide a hit right at the bound: each query asks for exactly
+    // the distance a full scan measures, after other queries filled the cells' clearances.
+    const random = seeded(20261109);
+    for (let shape = 0; shape < 8; shape += 1) {
+      const points = randomPolyline(random, 4 + shape * 5, 400);
+      const index = buildPolylineIndex(points, shape % 2 === 0 ? 0 : 120);
+      for (let query = 0; query < 400; query += 1) {
+        const x = (random() - 0.5) * 700;
+        const z = (random() - 0.5) * 700;
+        const expected = scan(points, x, z, Number.POSITIVE_INFINITY)!;
+        const atBound = index.nearest(x, z, expected.distance);
+        expect(atBound).not.toBeNull();
+        expect(atBound!.distance).toBe(expected.distance);
+        expect(index.nearest(x, z, expected.distance * (1 - 1e-12) - 1e-12)).toBeNull();
+      }
+    }
+  });
+
   test("a hit written into the caller's object is the same hit a fresh object carries", () => {
     const random = seeded(20261108);
     const points = randomPolyline(random, 30, 400);
