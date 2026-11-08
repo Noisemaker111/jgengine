@@ -97,6 +97,7 @@ export const SETTING_IDS = {
   graphicsAnisotropy: "graphics.anisotropy",
   graphicsShowFps: "graphics.showFps",
   graphicsDisplayMode: "graphics.displayMode",
+  graphicsRenderer: "graphics.renderer",
   touchStyle: "controls.touchStyle",
   touchJoystick: "controls.touchJoystick",
 } as const;

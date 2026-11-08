@@ -88,7 +88,8 @@ export function giveStableShadowDepth(mesh: THREE.Mesh): void {
 /**
  * Clear `castShadow` on attached meshes under `minRadius` as nodes stream in, and put the
  * authored value back when they leave. Only clears: a mesh the game keeps out of the pass
- * is never turned back on. The casters it keeps get a stable depth material ({@link giveStableShadowDepth}).
+ * is never turned back on. Instanced and batched meshes always keep casting: they fill after they
+ * join the scene. The casters it keeps get a stable depth material ({@link giveStableShadowDepth}).
  * @internal
  */
 export function cullSmallShadowCasters(root: THREE.Object3D, minRadius = MIN_SHADOW_CASTER_RADIUS): ShadowCasterCull {
@@ -99,7 +100,11 @@ export function cullSmallShadowCasters(root: THREE.Object3D, minRadius = MIN_SHA
     const mesh = node as THREE.Mesh;
     if (mesh.isMesh !== true || cleared.has(mesh) || mesh.castShadow !== true) return;
     node.updateWorldMatrix(true, false);
-    if (!isUnderShadowCasterSize(mesh, minRadius)) {
+    // A batch joins the scene before its instances do, so its size here is not what it will draw:
+    // judged empty, the static scenery pool's batches lost their shadows for the session and only
+    // got them back when a remounted canvas found them full. Batches are never judged.
+    const batch = (mesh as THREE.InstancedMesh).isInstancedMesh === true || (mesh as THREE.BatchedMesh).isBatchedMesh === true;
+    if (batch || !isUnderShadowCasterSize(mesh, minRadius)) {
       giveStableShadowDepth(mesh);
       return;
     }

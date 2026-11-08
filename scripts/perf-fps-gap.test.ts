@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { join, resolve } from "node:path";
 
 import type { FrameBreakdownSummary } from "../packages/core/src/devtools/frameBreakdown";
 import type { PerfRecord } from "./perf-play";
@@ -11,6 +12,8 @@ import {
   parseFpsGapArgs,
   profileLayerOf,
   profileLayers,
+  recordsFor,
+  renderBackendComparison,
   renderFpsGapReport,
   shortName,
   workItems,
@@ -160,4 +163,34 @@ test("arguments default to every playable game and refuse unknown flags", () => 
   expect(parseFpsGapArgs(["-h"])).toBe("help");
   expect(() => parseFpsGapArgs(["--budget", "3"])).toThrow("unknown argument --budget");
   expect(() => parseFpsGapArgs(["--seconds", "0"])).toThrow("--seconds must be a positive number");
+});
+
+test("--renderer picks the backends, WebGL first when both", () => {
+  expect(parseFpsGapArgs([])).toMatchObject({ renderers: ["webgl"] });
+  expect(parseFpsGapArgs(["--renderer", "webgpu"])).toMatchObject({ renderers: ["webgpu"] });
+  expect(parseFpsGapArgs(["--renderer", "both"])).toMatchObject({ renderers: ["webgl", "webgpu"] });
+  expect(() => parseFpsGapArgs(["--renderer", "vulkan"])).toThrow("--renderer must be webgl, webgpu or both");
+  const root = resolve("records");
+  expect(recordsFor(root, "webgl")).toBe(root);
+  expect(recordsFor(root, "webgpu")).toBe(join(root, "webgpu"));
+});
+
+test("the backend table puts each game's frame times side by side and names a run that fell back", () => {
+  const webgl = entry("harbor-heat", breakdown({ frame: spread(4, 4) }));
+  const webgpu = entry("harbor-heat", breakdown({ frame: spread(3, 3) }));
+  webgpu.record.backend = { drawing: "webgpu", warnings: ["draw mode 6 (LINE_LOOP / TRIANGLE_FAN) is not drawn"] };
+  const fellBack = entry("deepward", breakdown());
+  fellBack.record.backend = { drawing: "webgl", warnings: [] };
+  const table = renderBackendComparison(new Map([["webgl", [webgl, entry("deepward", breakdown())]], ["webgpu", [webgpu, fellBack]]]), { markdown: true });
+  expect(table).toContain("| game | webgl p50 | webgl p99 | webgpu p50 | webgpu p99 | p50 change | notes |");
+  expect(table).toContain("| harbor-heat | 4.00 | 7.20 | 3.00 | 5.40 | -25% | webgpu: 1 warnings |");
+  expect(table).toContain("webgpu run drew with webgl");
+});
+
+test("a backend run with WebGPU errors is named not comparable and kept out of the change column", () => {
+  const webgl = entry("odd-orbit", breakdown({ frame: spread(4, 4) }));
+  const webgpu = entry("odd-orbit", breakdown({ frame: spread(2, 2) }));
+  webgpu.record.backend = { drawing: "webgpu", warnings: ["draw mode 6 (LINE_LOOP / TRIANGLE_FAN) is not drawn", "WebGPU: [Buffer] usage (BufferUsage::CopySrc) does not include BufferUsage::QueryResolve."] };
+  const table = renderBackendComparison(new Map([["webgl", [webgl]], ["webgpu", [webgpu]]]), { markdown: true });
+  expect(table).toContain("| odd-orbit | 4.00 | 7.20 | 2.00 | 3.60 | - | webgpu: 1 WebGPU errors, GPU work dropped, not comparable; webgpu: 1 warnings |");
 });

@@ -286,6 +286,25 @@ beforeAll(async () => {
       AnimationMixer.prototype.clipAction=originalAction;AnimationMixer.prototype.uncacheRoot=originalUncache;console.warn=originalWarn;
       return{before,after,beforeClock,afterClock,initialAcceptedProgress,acceptedProgress,records,offset,queued,peerAfter,driverErrors,warnings,cleanupBeforeUnmount,cleanupAfterUnmount:cleanups,subscriptionsAfterUnmount:callbacks.size};
     };
+    window.frozenMount=async(mode)=>{
+      gltf=await gltfPromise;
+      const scene=clone(gltf.scene),id='frozen-actor',bind=values(scene);
+      const ctx=createGameContext({definition:defineGameDefinition({name:'frozen-mount-proof',assets:createAssetCatalog(),multiplayer:'off'}),content:{},player:{userId:'player',isNew:true},rng:seededRng('frozen-mount')});
+      ctx.scene.entity.spawn('hero',{id,position:[0,0,0]});
+      if(mode==='pause')ctx.time.pause();
+      if(mode==='timescale-zero')ctx.time.setTimescale(0);
+      const callbacks=new Set(),state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};
+      const store=selector=>selector(state);store.getState=()=>state;
+      const element=document.createElement('div');document.body.append(element);const root=createRoot(element);
+      flushSync(()=>root.render(<GameProvider context={ctx}><FiberContext.Provider value={store}><Model scene={scene} id={id} animation={config}/></FiberContext.Provider></GameProvider>));
+      const frame=delta=>{ctx.sim.advance(delta,()=>{});for(const ref of callbacks)ref.current(state,delta)};
+      const mounted=values(scene);
+      frame(1/60);const first=values(scene);
+      for(let n=0;n<30;n++)frame(1/60);
+      const held=values(scene),clockHeld=ctx.time.now();
+      flushSync(()=>root.unmount());element.remove();
+      return{bind,mounted,first,held,clockHeld};
+    };
     window.ready=true;
   `);
   const script = buildBrowserFixture(`${scratch}/fixture.tsx`);
@@ -473,6 +492,20 @@ test("bound game animation freezes with pause and zero clock rate, retaining pen
     expect(result.cleanupWhileFrozen).toBe(0);
     expect(result.cleanupAfterUnmount).toBe(1);
     expect(result.subscriptionsAfterUnmount).toBe(0);
+  }
+  await page.close();
+}, 30000);
+
+test("a graph rig mounted while time is frozen shows its first pose, not the bind pose, and then holds it", async () => {
+  // A canvas remounted behind the pause menu (a renderer switch) stood every character in a T-pose.
+  const page = await browser.newPage();
+  await page.goto(`http://127.0.0.1:${server.port}`);
+  await page.waitForFunction(() => (window as any).ready);
+  for (const mode of ["pause", "timescale-zero"]) {
+    const result = await page.evaluate(mode => (window as any).frozenMount(mode), mode);
+    expect(result.first).not.toEqual(result.bind);
+    expect(result.held).toEqual(result.first);
+    expect(result.clockHeld).toBe(0);
   }
   await page.close();
 }, 30000);

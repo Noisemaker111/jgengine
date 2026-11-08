@@ -969,10 +969,10 @@ fn scalar_kind(s: naga::Scalar) -> char {
 /// `packed`: a float/vec2 array stored as vec4s keeps three's element width (`packed` components).
 fn walk(module: &naga::Module, ty: naga::Handle<naga::Type>, name: &str, offset: u32, out: &mut Vec<UniformSlot>, packed: Option<u32>) {
     match &module.types[ty].inner {
-        naga::TypeInner::Scalar(s) => out.push(UniformSlot { name: name.into(), offset, kind: scalar_kind(*s), columns: 1, rows: 1, column_stride: 0, count: 1, stride: 4 }),
-        naga::TypeInner::Vector { size, scalar } => out.push(UniformSlot { name: name.into(), offset, kind: scalar_kind(*scalar), columns: 1, rows: *size as u32, column_stride: 0, count: 1, stride: 16 }),
+        naga::TypeInner::Scalar(s) => out.push(UniformSlot { name: name.into(), offset, kind: scalar_kind(*s), columns: 1, rows: 1, column_stride: 0, count: 1, stride: 4, array: false }),
+        naga::TypeInner::Vector { size, scalar } => out.push(UniformSlot { name: name.into(), offset, kind: scalar_kind(*scalar), columns: 1, rows: *size as u32, column_stride: 0, count: 1, stride: 16, array: false }),
         naga::TypeInner::Matrix { columns, rows, scalar } => {
-            out.push(UniformSlot { name: name.into(), offset, kind: scalar_kind(*scalar), columns: *columns as u32, rows: *rows as u32, column_stride: if *rows as u32 == 2 { 8 } else { 16 }, count: 1, stride: 0 })
+            out.push(UniformSlot { name: name.into(), offset, kind: scalar_kind(*scalar), columns: *columns as u32, rows: *rows as u32, column_stride: if *rows as u32 == 2 { 8 } else { 16 }, count: 1, stride: 0, array: false })
         }
         naga::TypeInner::Array { base, size, stride } => {
             let count = match size {
@@ -997,6 +997,7 @@ fn walk(module: &naga::Module, ty: naga::Handle<naga::Type>, name: &str, offset:
                         }
                         slot.count = count;
                         slot.stride = *stride;
+                        slot.array = true;
                         out.push(slot);
                     }
                 }

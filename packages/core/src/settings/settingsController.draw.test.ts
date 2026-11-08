@@ -50,6 +50,16 @@ test("a game with no post chain gets no stage rows and keeps every other row", (
   expect(otherRows(undefined)).toEqual(otherRows({ ao: {}, bloom: {}, dof: { focus: 12 } }));
 });
 
+test("Graphics offers the renderer, WebGL by default, and picking one stores it", () => {
+  const store = createSettingsStore(null);
+  const row = graphicsSettingRows(store, undefined, undefined).find((entry) => entry.id === "graphics.renderer");
+  expect(row).toMatchObject({ label: "Renderer", kind: "select", value: "webgl" });
+  expect(row?.options?.map((option) => option.value)).toEqual(["webgl", "webgpu"]);
+  row?.set("webgpu");
+  expect(store.get("graphics.renderer", "webgl")).toBe("webgpu");
+  expect(graphicsSettingRows(store, undefined, undefined).find((entry) => entry.id === "graphics.renderer")?.value).toBe("webgpu");
+});
+
 test("on a desktop build Graphics adds Display mode and an Uncapped frame rate, and saves both to the shell", () => {
   const store = createSettingsStore(null);
   const browserRows = graphicsSettingRows(store, undefined, undefined, false, false, null);

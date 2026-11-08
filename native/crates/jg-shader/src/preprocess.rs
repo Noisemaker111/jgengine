@@ -87,6 +87,36 @@ pub fn tokenize(src: &str) -> Vec<Tok> {
     out
 }
 
+/// Replace every comment with a space, keeping each newline a block comment spans, so line
+/// numbers in later errors still match the source.
+pub fn strip_comments(src: &str) -> String {
+    let b = src.as_bytes();
+    let mut out = Vec::with_capacity(b.len());
+    let mut i = 0;
+    while i < b.len() {
+        if b[i] == b'/' && i + 1 < b.len() && b[i + 1] == b'/' {
+            while i < b.len() && b[i] != b'\n' {
+                i += 1;
+            }
+            out.push(b' ');
+        } else if b[i] == b'/' && i + 1 < b.len() && b[i + 1] == b'*' {
+            i += 2;
+            while i < b.len() && !(b[i] == b'*' && i + 1 < b.len() && b[i + 1] == b'/') {
+                if b[i] == b'\n' {
+                    out.push(b'\n');
+                }
+                i += 1;
+            }
+            i = (i + 2).min(b.len());
+            out.push(b' ');
+        } else {
+            out.push(b[i]);
+            i += 1;
+        }
+    }
+    String::from_utf8(out).unwrap_or_else(|e| String::from_utf8_lossy(e.as_bytes()).into_owned())
+}
+
 #[derive(Clone, Debug)]
 struct Macro {
     params: Option<Vec<String>>,
@@ -218,6 +248,9 @@ impl Preprocessor {
     /// Run over a whole source. Directives other than conditionals/defines are dropped, except
     /// `#version`/`#extension`, which the caller replaces.
     pub fn run(&mut self, src: &str) -> Result<String, String> {
+        // Comments go first, over the whole source: the loop below reads a line at a time, so a
+        // block comment spanning lines would otherwise leave its middle lines (" * note") as code.
+        let src = strip_comments(src);
         // Join continued lines.
         let src = src.replace("\\\r\n", " ").replace("\\\n", " ");
         let mut out = String::with_capacity(src.len());
@@ -404,5 +437,21 @@ impl Expr<'_> {
             Tok::Ident(_) => Ok(0),
             other => Err(format!("bad #if token {other:?}")),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_block_comment_over_several_lines_is_not_code() {
+        // three's SMAA weights shader documents a function with /** ... * @PSEUDO_GATHER4 ... */;
+        // read a line at a time, the " * " lines reached the parser and failed the whole program.
+        let src = "float f() {\n  /**\n   * @NOTE x * y\n   */\n  return 1.0; // done * here\n}\n";
+        let out = Preprocessor::new().run(src).unwrap();
+        assert!(!out.contains('@') && !out.contains("done"), "{out}");
+        assert_eq!(out.lines().count(), src.lines().count());
+        assert!(out.lines().nth(4).unwrap().contains("return 1.0;"));
     }
 }

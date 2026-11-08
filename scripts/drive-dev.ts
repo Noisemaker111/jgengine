@@ -212,7 +212,6 @@ if (flow !== null && !flow.browser && !args.browser) {
   process.exit(finishFlow(args.flow ?? "flow", await runFlowHeadless(flow, args.state === undefined ? {} : { state: args.state })));
 }
 
-sweepCaptureProfiles();
 // A game captured from this checkout pulls the packs it references first, the way its own `dev` does,
 // so a missing model in the shot is a real path bug rather than an unprovisioned checkout.
 if (args.url === undefined && args.site === undefined) await provisionCapturedGame(args.gameDir ?? resolve(import.meta.dir, "../games", args.game));
@@ -260,6 +259,22 @@ for (const step of args.steps) {
   const path = step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}${qualitySuffix(args.quality)}${draftSuffix(args.draft)}${quickSuffix(args.quick)}.png`);
   if (!preparedShots.has(path)) preparedShots.set(path, clearShotTarget(path));
 }
+// An external server that is down fails the run before the profile sweep, which lists every
+// browser process and took 3 to 4 s on a busy Windows PC (2026-11-08).
+// An external --url never attaches the daemon, so its storage refusal is known here too.
+if (args.url !== undefined) {
+  try {
+    requireReusableCaptureStorage(args.reuseStorage, args.connect !== undefined, false);
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : error);
+    process.exit(1);
+  }
+  if (!(await isUp(args.url))) {
+    console.error(`drive: nothing is listening at ${args.url} — start that external server first`);
+    process.exit(1);
+  }
+}
+sweepCaptureProfiles();
 
 const viewport: ViewportOverride = { width: args.width, height: args.height };
 const clickPoints = new Map<CaptureStep, { x: number; y: number }>();
@@ -295,9 +310,6 @@ function targetUrl(base: string): URL {
 
 async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
   requireReusableCaptureStorage(args.reuseStorage, args.connect !== undefined, daemon !== null);
-  if (args.url !== undefined && !(await isUp(args.url))) {
-    throw new Error(`drive: nothing is listening at ${args.url} — start that external server first`);
-  }
   const dev = args.url !== undefined
     ? { base: args.url, child: null, pid: undefined }
     : await withStepDeadline("start or reuse the dev server", SERVER_STEP_MS, async () =>

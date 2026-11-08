@@ -26,6 +26,7 @@ import { canvasCover } from "@jgengine/core/ui/canvasCover.view";
 import { ActionBindingsProvider } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { createSettingsStore } from "@jgengine/core/settings/settingsModel";
 import { parseGraphicsQuality, withGraphicsQualityOverride } from "@jgengine/core/settings/graphicsSettings";
+import { parseRendererBackend, withRendererBackendOverride } from "@jgengine/core/settings/rendererBackend";
 import {
   applyBindingOverrides,
   loadBindingOverrides,
@@ -164,6 +165,7 @@ export function GamePlayerShell({
         isDevtoolsOpen: () => devtoolsOpenRef.current,
         setDevtoolsOpen,
         getContext: () => ctxRef.current,
+        getSettings: () => settingsStore,
       }),
     [playable, devtoolsEnabled],
   );
@@ -190,8 +192,12 @@ export function GamePlayerShell({
   const settingsStore = useMemo(() => {
     const store = createSettingsStore();
     // `?quality=<tier>` pins the graphics tier for this page only (capture draft shots); never persisted.
-    const pinned = typeof window === "undefined" ? null : parseGraphicsQuality(new URLSearchParams(window.location.search).get("quality"));
-    return pinned === null ? store : withGraphicsQualityOverride(store, pinned, playable.rendering?.graphics);
+    // `?renderer=webgl|webgpu` pins the GPU backend the same way (perf runs and pixel diffs).
+    const search = typeof window === "undefined" ? null : new URLSearchParams(window.location.search);
+    const pinned = parseGraphicsQuality(search?.get("quality"));
+    const backend = parseRendererBackend(search?.get("renderer"));
+    const tiered = pinned === null ? store : withGraphicsQualityOverride(store, pinned, playable.rendering?.graphics);
+    return backend === null ? tiered : withRendererBackendOverride(tiered, backend);
   }, []);
   const [bindingOverrides, setBindingOverrides] = useState<BindingOverrides>(() =>
     loadBindingOverrides(playable.game.name),

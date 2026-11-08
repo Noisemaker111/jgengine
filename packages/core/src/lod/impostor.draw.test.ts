@@ -29,7 +29,7 @@ test("an impostor whose batches all leave is kept for the next one, and freed on
   const first = acquireImpostor("kept-tree", renderer, sources, settings);
   const baked = draws();
   expect(baked).toBeGreaterThan(0);
-  releaseImpostor("kept-tree", settings);
+  releaseImpostor("kept-tree", renderer, settings);
   // A grove burnt down and regrown long after: the same bake, no draws, links or render targets.
   expect(acquireImpostor("kept-tree", renderer, sources, settings)).toBe(first);
   expect(draws()).toBe(baked);
@@ -40,11 +40,32 @@ test("an impostor whose batches all leave is kept for the next one, and freed on
   });
   geometry.dispose();
   expect(freed, "a model disposed while a batch still draws its impostor keeps it until that batch goes").toBe(false);
-  releaseImpostor("kept-tree", settings);
+  releaseImpostor("kept-tree", renderer, settings);
   expect(freed).toBe(true);
   expect(acquireImpostor("kept-tree", renderer, sources, settings)).not.toBe(first);
   expect(draws()).toBeGreaterThan(baked);
-  releaseImpostor("kept-tree", settings);
+  releaseImpostor("kept-tree", renderer, settings);
+});
+
+test("a remounted canvas bakes its own impostor, and the old renderer's unused bake is freed", () => {
+  // The atlas is a render target of the context that baked it; Beacon Bastion's far trees vanished
+  // after a renderer switch because the new canvas drew the old, lost context's atlas.
+  const old = countingRenderer();
+  const fresh = countingRenderer();
+  const geometry = new THREE.BoxGeometry(1, 2, 1);
+  const sources = [{ geometry, material: new THREE.MeshStandardMaterial(), localMatrix: new THREE.Matrix4() }];
+  const settings = { frames: 2, cell: 8 };
+  const first = acquireImpostor("remounted-tree", old.renderer, sources, settings);
+  let freed = false;
+  first.materials?.material.addEventListener("dispose", () => {
+    freed = true;
+  });
+  releaseImpostor("remounted-tree", old.renderer, settings);
+  const second = acquireImpostor("remounted-tree", fresh.renderer, sources, settings);
+  expect(second).not.toBe(first);
+  expect(fresh.draws()).toBeGreaterThan(0);
+  expect(freed).toBe(true);
+  releaseImpostor("remounted-tree", fresh.renderer, settings);
 });
 
 test("hemi-octahedral directions round-trip for every view above the horizon", () => {

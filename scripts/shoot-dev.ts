@@ -646,6 +646,12 @@ if (args.gameDir !== null) {
   assertOneTarget({ served: args.gameDir, ...(args.url === undefined ? {} : { url: args.url }), ...(args.site === undefined ? {} : { site: args.site }) });
   serveGameDir(args.gameDir, args.game);
 }
+// An external server that is down fails the run before the profile sweep, which lists every
+// browser process and took 3 to 4 s on a busy Windows PC (2026-11-08).
+if (args.url !== undefined && !(await isUp(args.url))) {
+  console.error(`shoot: nothing is listening at ${args.url} — start that external server first`);
+  process.exit(1);
+}
 // Reclaim profiles that killed runs left behind before this one can add to them, and refuse to
 // start on a drive that cannot hold this capture.
 sweepCaptureProfiles();
@@ -665,9 +671,6 @@ interface ShootTarget {
 async function resolveTarget(daemon: ShootDaemonState | null): Promise<ShootTarget> {
   if (args.url !== undefined) {
     if (args.site !== undefined) throw new Error("shoot: --url and --site select different targets; pass one");
-    if (!(await isUp(args.url))) {
-      throw new Error(`shoot: nothing is listening at ${args.url} — start that external server first`);
-    }
     return { devBase: args.url, server: null, serverPid: undefined, attachedDaemon: daemon !== null };
   }
   if (daemon !== null) {

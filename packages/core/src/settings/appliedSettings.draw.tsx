@@ -15,6 +15,7 @@ import type { GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
 import { readGraphicsSettings, type GraphicsProfileOverrides } from "@jgengine/core/settings/graphicsSettings";
 import { readFrameRateLimit } from "@jgengine/core/settings/frameRateLimit";
 import { readDesktopShell, syncDesktopSettings } from "@jgengine/core/settings/desktopShell";
+import { readRendererBackend, type RendererBackend } from "@jgengine/core/settings/rendererBackend";
 
 import {
   DEFAULT_TOUCH_JOYSTICK_VARIANT,
@@ -70,6 +71,8 @@ export interface AppliedGraphicsSettings {
   /** Frames-per-second cap; 0 renders every display refresh. */
   frameRateLimit: number;
   showFps: boolean;
+  /** The GPU API that draws the game; changing it rebuilds the canvas. */
+  renderer: RendererBackend;
 }
 
 export function useGraphicsSettings(
@@ -92,6 +95,7 @@ export function useGraphicsSettings(
       profile,
       frameRateLimit: readFrameRateLimit(store),
       showFps: store.get(SETTING_IDS.graphicsShowFps, false),
+      renderer: readRendererBackend(store),
     };
   }, [store, rev, shadowsDefault, overrides]);
 }

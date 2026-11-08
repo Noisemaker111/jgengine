@@ -2215,6 +2215,12 @@
 - `PartitionInstancesOptions` (interface): interface PartitionInstancesOptions — Knobs for {@link partitionInstances}.
 - `partitionInstances` (function): function partitionInstances(geometry: THREE.BufferGeometry, matrices: readonly THREE.Matrix4[], options: PartitionInstancesOptions = {}): InstanceChunk[] — Split instance matrices into XZ cells by where each instance's geometry actually lands, so far or offscreen cells are culled as a unit. A batch that already fits one cell stays a single `compact` chunk, even across the grid origin. Instance order is kept within each chunk.
 
+## @jgengine/core/instancing/instanceCountGuard.draw
+
+- `clampInstanceCount` (function): function clampInstanceCount(mesh: InstancedMesh, report: (message: string) => void = console.error): boolean — Hold `mesh.count` to its instance buffers, and name the mesh once with an error so the code that set the count can be fixed (Harbor Heat asked 17-28 instances of a 16-instance buffer). Returns whether it clamped.
+- `guardInstanceCounts` (function): function guardInstanceCounts(renderer: WebGLRenderer): void — Clamp every InstancedMesh `renderer` draws, in the main and shadow passes alike: both go through `renderBufferDirect`, whatever `onBeforeRender` a mesh installs. Idempotent per renderer.
+- `instanceCapacity` (function): function instanceCapacity(mesh: Pick<InstancedMesh, "count" | "instanceMatrix" | "instanceColor">): number — Instances an InstancedMesh can draw: its `count`, held to what its instance buffers hold. three clamps an InstancedBufferGeometry's `instanceCount` to its attributes but draws an InstancedMesh's `count` as asked, so a count past `instanceMatrix` reads past the buffer: WebGL draws those instances from zero matrices (nothing shows), WebGPU and native backends reject or clamp the draw.
+
 ## @jgengine/core/instancing/instanceUpload.draw
 
 - `InstanceColors` (type): type InstanceColors = readonly THREE.Color[] | ((index: number, out: THREE.Color) => void) — Per-instance tint: a ready list of colors, or a writer that fills each one.
@@ -6221,6 +6227,51 @@
 - `WeatherUniformOptions` (interface): interface WeatherUniformOptions — Options for the shared weather uniforms: wind, lightning, time scale or an authoritative clock, and an authored weather sampler.
 - `WeatherUniformSet` (interface): interface WeatherUniformSet extends WeatherShelterUniforms — Uniforms every weather field shares: time, wind, lightning flash, rain, snow and dust amounts, and roof shelters.
 - `WeatherVector` (type): type WeatherVector = readonly [number, number, number] — An `[x, y, z]` world vector, such as the wind.
+
+## @jgengine/core/webgpu/engineRenderer.draw
+
+- `engineRendererFactory` (function): function engineRendererFactory(backend: RendererBackend): (defaults: WebGLRendererParameters) => Promise<WebGLRenderer> — React Three Fiber's `gl` factory for `backend`.
+- `rendererBackendOf` (function): function rendererBackendOf(renderer: WebGLRenderer): RendererBackend — Which backend actually draws `renderer` (`webgl` for one this module did not make).
+- `webGpuContextOf` (function): function webGpuContextOf(renderer: WebGLRenderer): WebGpuGl | null — The WebGPU context behind `renderer`, for counters and diagnostics; `null` on WebGL.
+
+## @jgengine/core/webgpu/glFormats.draw
+
+- `GlTextureFormat` (interface): interface GlTextureFormat { format: GPUTextureFormat; bytes: number; block: number; sourceBytes?: number; widen?: {channels: 3; alpha: number; element: 1 | 2 | 4}; renderable: boolean; binding: TextureBinding } — ⚠ undocumented · used by `glTextureFormat`: The WebGPU format for a GL internal format, or for an unsized one (`RGBA` + `UNSIGNED_BYTE`) with its type.
+- `InstancedAttribute` (interface): interface InstancedAttribute — One per-instance attribute of a draw, on its buffer's GL layout.
+- `TextureBinding` (type): type TextureBinding = "float" | "unfilterable" | "depth" | "uint" | "sint" — WebGL 2 enums mapped to WebGPU, for the GL-shaped WebGPU context three's WebGLRenderer drives (`webgpuGl.draw.ts`). GL numbers are written out so this file needs no browser globals.
+- `addressMode` (function): function addressMode(wrap: number): GPUAddressMode — ⚠ undocumented
+- `blendFactor` (function): function blendFactor(f: number): GPUBlendFactor — ⚠ undocumented
+- `blendOperation` (function): function blendOperation(e: number): GPUBlendOperation — ⚠ undocumented
+- `compareFunction` (function): function compareFunction(f: number): GPUCompareFunction — ⚠ undocumented
+- `componentBytes` (function): function componentBytes(type: number): number — Bytes of one component of a GL vertex attribute type.
+- `glTextureFormat` (function): function glTextureFormat(internal: number, format = 0, type = 0): GlTextureFormat | null — The WebGPU format for a GL internal format, or for an unsized one (`RGBA` + `UNSIGNED_BYTE`) with its type. `null` when WebGPU has no such format.
+- `hasStencil` (function): function hasStencil(format: GPUTextureFormat): boolean — ⚠ undocumented
+- `instancesThatFit` (function): function instancesThatFit(instances: number, attributes: readonly InstancedAttribute[]): number — How many of `instances` the draw's per-instance buffers hold. WebGL draws the instances past the end with zeroed attributes (robust access); WebGPU rejects or clamps such a draw by driver, so the backend draws only these and reports the overrun.
+- `isDepthFormat` (function): function isDepthFormat(format: GPUTextureFormat): boolean — ⚠ undocumented
+- `minFilter` (function): function minFilter(m: number): [GPUFilterMode, GPUMipmapFilterMode, boolean] — GL min filter: (filter, mipmap filter, samples mips).
+- `stencilOperation` (function): function stencilOperation(op: number): GPUStencilOperation — ⚠ undocumented
+- `textureBinding` (function): function textureBinding(format: GlTextureFormat, float32Filterable: boolean): TextureBinding — A texture format's bind type when `float32-filterable` is (or is not) enabled.
+- `topology` (function): function topology(mode: number): GPUPrimitiveTopology | null — GL draw mode to topology; LINE_LOOP and TRIANGLE_FAN have none (`null`).
+- `vertexFormat` (function): function vertexFormat(type: number, size: number, normalized: boolean, integer: boolean, shaderKind: "f" | "i" | "u"): GPUVertexFormat | null — The WebGPU vertex format GL reads this attribute as, or `null` when none matches and the data must be converted to Float32 (`readAsFloat`): unnormalized integers read by a float input (GL turns 7 into 7.0) and 3-component 8/16-bit data.
+
+## @jgengine/core/webgpu/glslToWgsl.draw
+
+- `PendingTranslation` (interface): interface PendingTranslation — A translation running on a worker.
+- `TranslateResult` (type): type TranslateResult = { ok: WgslProgram } | { error: string } — What translating one program gives: the program, or why it does not translate.
+- `WgslProgram` (interface): interface WgslProgram — The translated program and what feeding it takes.
+- `WgslSamplerSlot` (interface): interface WgslSamplerSlot — A sampler uniform split into a texture and a sampler binding in group 1.
+- `WgslUniformSlot` (interface): interface WgslUniformSlot — Where one of three's uniform names lives in the program's std140 block.
+- `WgslVertexInput` (interface): interface WgslVertexInput — three.js GLSL ES 3.00 programs translated to WGSL by `native/crates/jg-shader` (naga), built to `glslToWgsl.wasm` by `bun scripts/build-glsl-translator.ts`. Loaded once per page. {@link translateGlslAsync} translates on a few worker threads, as a GPU driver compiles WebGL programs in parallel; {@link translateGlsl} translates on the calling thread.
+- `loadGlslTranslator` (function): function loadGlslTranslator(url: URL | string = new URL("./glslToWgsl.wasm", import.meta.url)): Promise<void> — Fetch and compile the translator once. Resolves when {@link translateGlsl} can run.
+- `translateGlsl` (function): function translateGlsl(vertex: string, fragment: string): TranslateResult — Translate one program exactly as three passed it to GL. Returns the WGSL and layout, or the translator's error (what a failed `linkProgram` reports).
+- `translateGlslAsync` (function): function translateGlslAsync(vertex: string, fragment: string): PendingTranslation — Start translating one program on the least busy worker. Without workers the translation runs when {@link PendingTranslation.finish} is called.
+
+## @jgengine/core/webgpu/webgpuGl.draw
+
+- `WebGpuGl` (class): class WebGpuGl — The GL-shaped context. Construct through {@link createWebGpuGl}.
+- `WebGpuGlAttributes` (interface): interface WebGpuGlAttributes — Context attributes the canvas was asked for (WebGL's `getContextAttributes`).
+- `WebGpuGlStats` (interface): interface WebGpuGlStats — Counters a perf probe reads per frame.
+- `createWebGpuGl` (function): function createWebGpuGl(canvas: HTMLCanvasElement, attributes: Partial<WebGpuGlAttributes> = {}): Promise<WebGpuGl | null> — Create the WebGPU device and the GL-shaped context for `canvas`, or `null` when this browser has no usable WebGPU adapter.
 
 ## @jgengine/core/world
 
