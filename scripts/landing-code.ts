@@ -9,9 +9,14 @@
 //
 // Only the landing code moves: preflight, verify:fast, gen and the tests are the lane's own, since
 // they check the lane's code. One exception: a lane that itself changes the landing (lane-close, land,
-// this file, the GitHub client) runs its own copy, so a change to how lanes land lands through itself.
+// this file, the GitHub client, the receipt reader) runs its own copy, so a change to how lanes land
+// lands through itself.
+//
+// The seam between the two is the verify:fast receipt: the lane's verify:fast writes it and beta's
+// lane:close reads it to decide what may merge. A lane whose receipt module is not beta's is told to
+// merge beta before anything runs (`receiptsBehind`).
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -158,8 +163,32 @@ function prune(cache: string, keep: string, now: number): void {
   }
 }
 
+/** What a verify:fast receipt records and how lane:close finds the one that covers a tree (`ReuseKey`). */
+export const RECEIPT_MODULE = "scripts/verify-receipt.ts";
+
 /** The modules that decide how a lane lands; a lane that changes one lands with its own copy. */
-export const LANDING_MODULES = ["scripts/lane-close.ts", "scripts/land.ts", "scripts/landing-code.ts", "scripts/github.ts"] as const;
+export const LANDING_MODULES = ["scripts/lane-close.ts", "scripts/land.ts", "scripts/landing-code.ts", "scripts/github.ts", RECEIPT_MODULE] as const;
+
+/**
+ * Why the lane at `laneRoot` cannot merge through the landing code at `metaUrl` yet, or null. Only beta's
+ * copy can disagree with the lane: lane:close merges on a receipt it reads with its own
+ * `verify-receipt.ts`, while the receipt comes from the lane's verify:fast. When the two files differ,
+ * the lane writes receipts in a form beta's copy may not match, and no pass can let it merge. On
+ * 2026-11-08 a lane branched before receipts recorded their tree passed a 40-minute verify:fast and was
+ * then refused with "the files changed while verify:fast ran". Line endings are not a difference.
+ */
+export function receiptsBehind(metaUrl: string, laneRoot: string): string | null {
+  if (!isLandingCopy(metaUrl)) return null;
+  const read = (dir: string): string | null => {
+    try {
+      return readFileSync(join(dir, RECEIPT_MODULE), "utf8").replace(/\r\n/g, "\n");
+    } catch {
+      return null;
+    }
+  };
+  if (read(codeDir(metaUrl)) === read(laneRoot)) return null;
+  return `this lane's ${RECEIPT_MODULE} is older than beta's, so beta's landing code cannot read what its verify:fast records`;
+}
 
 /**
  * Where `lane:close` should run from: null to carry on here (this already is beta's landing code, beta
