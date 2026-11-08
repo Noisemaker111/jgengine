@@ -23,15 +23,15 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { attemptsOf, judgeChecks, runIdFrom } from "./ci-status";
 import type { RollupEntry } from "./ci-status";
 import { checkoutGitHub, sleepSync, type GhResult, type GitHub, type Pull } from "./github";
+import { landingRoot } from "./landing-code";
 import { needsRegenerate, rebaseResolvingGenerated, regenerateAndCommit } from "./generated-rebase";
 import { MERGE_ATTEMPTS, QUEUE_LABEL, baseMoved, checkVerdict, duration, formatFailures, retryServerErrors, runAt } from "./land";
 import type { GhCheck, Run } from "./land";
 
-const root = fileURLToPath(new URL("..", import.meta.url));
+const root = landingRoot(import.meta.url);
 
 export const EXIT_DRAINED = 0;
 export const EXIT_SOMETHING_FAILED = 1;

@@ -53,12 +53,12 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { bendsSection, findBends, withBends } from "./bends";
 import { FRAGMENT_PATTERN } from "./changelog-fragments";
 import { apiNoteBullets, engineSeamLine, noteMessages, renderChangeNote } from "./change-note";
 import { needsRegenerate, rebaseResolvingGenerated, regenerateAndCommit } from "./generated-rebase";
 import { assertCheckoutReady } from "./checkout-ready";
+import { landingRoot } from "./landing-code";
 import { checkoutGitHub, retryOutages, sleepSync, type GitHub } from "./github";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose } from "./verbosity";
@@ -87,7 +87,7 @@ const LAND_USAGE = {
   ],
 } as const;
 
-const root = fileURLToPath(new URL("..", import.meta.url));
+const root = landingRoot(import.meta.url);
 
 export const EXIT_LANDED = 0;
 export const EXIT_VERIFY_FAILED = 1;
