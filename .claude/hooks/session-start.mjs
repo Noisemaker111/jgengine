@@ -20,6 +20,17 @@ const branch = git("rev-parse", "--abbrev-ref", "HEAD");
 if (branch && branch !== "HEAD" && branch !== "beta" && branch !== "main") {
   const unpushed = Number(git("rev-list", "--count", "HEAD", "--not", "--remotes")) || 0;
   if (unpushed > 0) notes.push(`"${branch}" has ${unpushed} commit(s) not pushed yet.`);
+  // A lane resumed days later reads the rules as they were when it branched: one such lane still followed
+  // the landing queue removed on Nov 7. lane:close already runs beta's landing code; this tells the agent
+  // the rules moved too. It reads the last fetched origin/beta, so it never waits on the network.
+  const forked = git("merge-base", "HEAD", "origin/beta");
+  const rules = ["AGENTS.md", "games/AGENTS.md"];
+  if (forked && git("diff", "--quiet", forked, "origin/beta", "--", ...rules) === null) {
+    notes.push(
+      `AGENTS.md changed on beta since "${branch}" branched, so the copy in this checkout is out of date. ` +
+        "Beta's rules win: read what changed with `git diff HEAD...origin/beta -- AGENTS.md games/AGENTS.md`.",
+    );
+  }
 }
 
 const cold =
