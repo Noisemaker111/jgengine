@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import type { Vec2 } from "./geometry";
-import { buildPolylineIndex } from "./polylineIndex";
+import { buildPolylineIndex, createPolylineHit } from "./polylineIndex";
 
 /** Brute force over every segment — the answer the index must reproduce exactly. */
 function scan(points: readonly Vec2[], x: number, z: number, limit: number): { distance: number; point: Vec2 } | null {
@@ -63,6 +63,25 @@ describe("buildPolylineIndex", () => {
           expect(actual!.point).toEqual(expected.point);
         }
       }
+    }
+  });
+
+  test("a hit written into the caller's object is the same hit a fresh object carries", () => {
+    const random = seeded(20261108);
+    const points = randomPolyline(random, 30, 400);
+    const index = buildPolylineIndex(points);
+    const out = createPolylineHit();
+    for (let query = 0; query < 500; query += 1) {
+      const x = (random() - 0.5) * 900;
+      const z = (random() - 0.5) * 900;
+      const fresh = index.nearest(x, z, 120);
+      const written = index.nearest(x, z, 120, out);
+      if (fresh === null) {
+        expect(written).toBeNull();
+        continue;
+      }
+      expect(written).toBe(out);
+      expect({ ...written!, point: [...written!.point] }).toEqual(fresh as never);
     }
   });
 
