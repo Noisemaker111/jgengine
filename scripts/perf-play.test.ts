@@ -462,12 +462,15 @@ function fakePerfSession(options: { clock?: number[]; frames?: number[]; gpu?: s
 
 test("a record says which clock produced its frame times, so the two never get compared", async () => {
   const base = "http://127.0.0.1:4601";
-  const capped = await measureGame({ session: fakePerfSession(), base, game: "beacon-bastion", warmupMs: 0, seconds: 0.001, profile: false });
+  // A fake page draws nothing, so the game's asset packs are never pulled for it.
+  const provision = async () => {};
+  const capped = await measureGame({ session: fakePerfSession(), base, game: "beacon-bastion", warmupMs: 0, seconds: 0.001, profile: false, provision });
   expect(capped.record.frameClock).toBe("capped");
   expect(capped.record.frame.avgMs).toBe(6);
 
   const uncapped = await measureGame({
     session: fakePerfSession({ clock: [0.8, 0.9, 0.7] }),
+    provision,
     base,
     game: "beacon-bastion",
     warmupMs: 0,
@@ -480,6 +483,7 @@ test("a record says which clock produced its frame times, so the two never get c
   await expect(
     measureGame({
       session: fakePerfSession({ clock: [16.7, 16.7, 16.8] }),
+      provision,
       base,
       game: "beacon-bastion",
       warmupMs: 0,

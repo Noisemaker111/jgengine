@@ -1061,6 +1061,12 @@ export interface RawProfile {
 export interface MeasureOptions {
   /** Page target to measure; the caller owns opening and closing it. */
   session: CdpSession;
+  /**
+   * Links the game's asset packs before measuring (default: `provisionCapturedGame`, which pulls
+   * missing packs over the network). A test with a fake page passes a no-op: on a fresh machine
+   * the pull outlasted the test's 20 s limit.
+   */
+  provision?: (gameDir: string, log: (line: string) => void) => Promise<unknown>;
   /** Dev-server base URL, e.g. `http://127.0.0.1:4601`. */
   base: string;
   game: string;
@@ -1174,7 +1180,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
 
   // A game whose packs are not linked into this checkout draws placeholder boxes, and its frame
   // times describe the boxes; link them first, the same as shoot and drive do.
-  await provisionCapturedGame(join(repoRoot, "games", game), (line) => console.error(`perf: ${line}`));
+  await (options.provision ?? provisionCapturedGame)(join(repoRoot, "games", game), (line) => console.error(`perf: ${line}`));
 
   let clockProbeMs: number | null = null;
   if (frameClock === "uncapped") {
