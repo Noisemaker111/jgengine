@@ -9,6 +9,7 @@ import {
 import { shellDrivesPlayerPose } from "../movement/shellMovement";
 import type { ModelAssetRef } from "../scene/assetCatalog";
 import { advanceBehaviors } from "../scene/behaviorRuntime";
+import type { RuntimeSaveOptions } from "../save/snapshotSave";
 import { createGameContext, type GameContext, type GameContextContent, type GameContextModels } from "./gameContext";
 import type { InputFrame, InputSnapshot } from "./inputSnapshot";
 import { createContextSimSnapshot, type SimSnapshot } from "./simSnapshot";
@@ -79,6 +80,8 @@ export type HeadlessRunnerOptions<TAssetRef extends ModelAssetRef, TMultiplayer>
   pitch?: number;
   /** Render-model lookup for collider auto-fit — pass what the shell would derive from `entityModels`/`objectModels` so headless raycasts hit the same boxes as play. */
   models?: GameContextModels;
+  /** Where `ctx.game.save` keeps its saves; default the game's own (its `persist` setting). Two runs given one backend share their saves. */
+  save?: RuntimeSaveOptions;
 };
 
 /** Canvas-free command/intent surface for {@link HeadlessRunner} — invoke a game's registered UI commands and read the resulting reactive state off `ctx`. */
@@ -154,6 +157,7 @@ export function createHeadlessRunner<TAssetRef extends ModelAssetRef, TMultiplay
     ...(options.now === undefined ? {} : { now: options.now }),
     ...(options.seed === undefined ? {} : { seed: options.seed }),
     ...(options.models === undefined ? {} : { models: options.models }),
+    ...(options.save === undefined ? {} : { save: options.save }),
   });
 
   loop?.onInit?.(ctx);

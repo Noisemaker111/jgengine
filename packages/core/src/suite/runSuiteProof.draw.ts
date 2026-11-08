@@ -6,6 +6,7 @@ import { bootCaptureState } from "@jgengine/core/play/headlessFlow.draw";
 import { createHeadlessKeys } from "@jgengine/core/play/headlessKeys.draw";
 import { createPlaySession } from "@jgengine/core/play/playSession.draw";
 import { aliasContext } from "@jgengine/core/runtime/contextIdentity";
+import { memorySaveBackend } from "@jgengine/core/save/saveStore";
 
 import { auditSuiteContent, type SuiteContent } from "./contentAudit";
 import type { SuiteProofResult, SuiteReport } from "./gameSuite";
@@ -48,21 +49,28 @@ export async function runSuiteProof<TProbe extends ProbeReadings>(proof: SuitePr
   let cheated: string | null = null;
   /** The commands the game defined by the time setup starts; one setup defines is setup's code, so a cheat in play. */
   let gameCommands = new Set<string>();
-  const session = createPlaySession(game, {
-    seed: options.seed ?? "suite",
-    onCommand: ({ name }) => {
-      if (phase !== "play" || cheated !== null) return;
-      if (session.ctx.game.commands.isCheat(name) || CHEAT_COMMAND_NAME.test(name) || !gameCommands.has(name)) cheated = name;
-    },
-  });
-  const { ctx } = session;
+  // The proof's own save store, in memory: what the game saves there outlives a restart, and nothing else does.
+  const saves = memorySaveBackend();
+  const openSession = () =>
+    createPlaySession(game, {
+      seed: options.seed ?? "suite",
+      save: { backend: saves },
+      onCommand: ({ name }) => {
+        if (phase !== "play" || cheated !== null) return;
+        if (session.ctx.game.commands.isCheat(name) || CHEAT_COMMAND_NAME.test(name) || !gameCommands.has(name)) cheated = name;
+      },
+    });
+  let session = openSession();
+  let ctx = session.ctx;
   const closedMessage = "setup has ended: a proof's play may change the game only through player input and the game's commands";
   const window = openSetupWindow(ctx, closedMessage);
   // Game helpers setup hands the view to (a per-context model, a store) resolve it to the real context.
   aliasContext(window.view, ctx);
   // The game's own code (ticks, commands, the probe) runs as the window's owner: a store or system that
   // kept the setup's context keeps working, while proof code that kept it is refused.
-  const owner = window.owner;
+  let owner = window.owner;
+  // A command's async work (a save, a load) finishes before the next step, as it would between frames.
+  const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
   const probeHook = game.capture?.probe;
   const readProbe = (): TProbe => {
     if (probeHook === undefined) throw new Error(`${game.game.name} has no capture.probe; a proof checks the game through its probe`);
@@ -70,7 +78,7 @@ export async function runSuiteProof<TProbe extends ProbeReadings>(proof: SuitePr
   };
   const stepper = createFlowStepper(async () => (probeHook === undefined ? undefined : owner(() => probeHook(ctx))));
   const reports: { label: string; probe: unknown }[] = [];
-  const keys = createHeadlessKeys(game, session);
+  let keys = createHeadlessKeys(game, session);
 
   const assertNoCheat = (): void => {
     if (cheated === null) return;
@@ -186,11 +194,13 @@ export async function runSuiteProof<TProbe extends ProbeReadings>(proof: SuitePr
       stepper.run(`act ${name}`, async () => {
         const result = run(name, input);
         if (result.status === "rejected") throw new Error(`"${name}" was refused: ${result.reason}${result.message === undefined ? "" : ` (${result.message})`}`);
+        await settle();
         tick();
       }),
     tryAct: (name, input) =>
       stepper.run(`try ${name}`, async () => {
         const result = run(name, input);
+        await settle();
         tick();
         return result;
       }),
@@ -212,6 +222,21 @@ export async function runSuiteProof<TProbe extends ProbeReadings>(proof: SuitePr
         return readings;
       }),
     probe: async () => readProbe(),
+    restart: (state) =>
+      stepper.run(state === undefined ? "restart" : `restart into ${state}`, async () => {
+        await settle();
+        ctx.game.save?.dispose();
+        session = openSession();
+        ctx = session.ctx;
+        const reopened = openSetupWindow(ctx, closedMessage);
+        reopened.close();
+        owner = reopened.owner;
+        keys = createHeadlessKeys(game, session);
+        owner(() => bootCaptureState(session, game.capture, state));
+        gameCommands = new Set(ctx.game.commands.names());
+        await settle();
+        tick();
+      }),
   };
 
   // The proof owns this session: when it ends, the game's wall-clock autosave must not fire later
