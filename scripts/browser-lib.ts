@@ -1255,6 +1255,24 @@ export function daemonProfiles(root = tmpdir()): Set<string> {
   return profiles;
 }
 
+/**
+ * Kill `pid`'s tree and wait for it to exit; true once it has. The exit decides, not the kill
+ * command's status: on a PC at 100% CPU taskkill outlived its own 15 s limit while the browser it
+ * was ending died anyway, and the sweep then left that profile behind as a survivor (2026-11-08).
+ * A killed Chrome also holds its profile's files until it has exited, and Windows keeps a folder
+ * whose files are still open, so the wait comes before the profile is removed.
+ */
+export function killAndConfirmExit(
+  pid: number,
+  kill: (pid: number, tree: boolean) => unknown = killPid,
+  alive: (pid: number) => boolean = pidAlive,
+  waitForExit: (pid: number, timeoutMs: number) => void = waitForExitSync,
+): boolean {
+  kill(pid, true);
+  waitForExit(pid, 10_000);
+  return !alive(pid);
+}
+
 export interface StrayBrowserSweepOptions {
   now?: number;
   /** Age past which an unowned visible browser is leaked; defaults to {@link STRAY_BROWSER_MS}. */
@@ -1279,13 +1297,7 @@ export function sweepStrayBrowsers(root = tmpdir(), options: StrayBrowserSweepOp
   const now = options.now ?? Date.now();
   const maxAgeMs = options.maxAgeMs ?? STRAY_BROWSER_MS;
   const isAlive = options.isAlive ?? pidAlive;
-  // A killed Chrome holds its profile's files until it has exited, and Windows keeps a folder whose
-  // files are still open, so the real kill waits for the exit before the profile is removed.
-  const kill = options.kill ?? ((pid: number) => {
-    const ended = killPid(pid, true);
-    if (ended) waitForExitSync(pid, 10_000);
-    return ended;
-  });
+  const kill = options.kill ?? ((pid: number) => killAndConfirmExit(pid));
   const remove = options.remove ?? removeProfileDir;
   // A browser whose main process died leaves its helpers (GPU, renderers, utilities) as siblings
   // with no parent, so killing one helper's tree ends only that helper. Every process on a stray
