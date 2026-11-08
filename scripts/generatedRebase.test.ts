@@ -97,6 +97,14 @@ describe("keepBothInsertions", () => {
     expect(merged).toBe(imports(`${block("dossier")}${block("tranqs")}`));
   });
 
+  test("a lane that carries another lane's added lines and more keeps one copy of them", () => {
+    const imports = (names: string[]) => ["import {", "  a,", ...names.map((name) => `  ${name},`), '} from "./creatures";', ""].join("\n");
+    const merged = mergeFile(imports(["speciesNear"]), imports([]), imports(["speciesNear", "wildLevelNear"]));
+    expect(keepBothInsertions(merged)).toBe(imports(["speciesNear", "wildLevelNear"]));
+    const before = mergeFile(imports(["speciesNear"]), imports([]), imports(["wildLevelNear", "speciesNear"]));
+    expect(keepBothInsertions(before)).toBe(imports(["wildLevelNear", "speciesNear"]));
+  });
+
   test("a line both sides changed is a real conflict", () => {
     expect(keepBothInsertions(mergeFile(probe(["  y: 2,"]).replace("x: 1", "x: 2"), probe([]), probe([]).replace("x: 1", "x: 3")))).toBeNull();
   });
