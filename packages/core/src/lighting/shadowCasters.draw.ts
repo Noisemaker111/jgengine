@@ -45,6 +45,16 @@ export function isUnderShadowCasterSize(mesh: THREE.Mesh, minRadius = MIN_SHADOW
 }
 
 const depthMaterials = new WeakMap<THREE.Material, Map<string, THREE.MeshDepthMaterial>>();
+const stableDepths = new WeakSet<THREE.Material>();
+
+/**
+ * True for a depth material made by {@link giveStableShadowDepth}: a plain depth shader whose output
+ * follows only the caster's geometry, matrices and material, so the shadow cache may keep it.
+ * @internal
+ */
+export function isStableShadowDepth(material: THREE.Material): boolean {
+  return stableDepths.has(material);
+}
 
 /** What about a mesh picks a different depth shader: instancing, batching, skinning, morphing. */
 function depthKind(mesh: THREE.Mesh): string {
@@ -80,6 +90,7 @@ export function giveStableShadowDepth(mesh: THREE.Mesh): void {
   let depth = byKind.get(kind);
   if (depth === undefined) {
     depth = new THREE.MeshDepthMaterial();
+    stableDepths.add(depth);
     byKind.set(kind, depth);
   }
   mesh.customDepthMaterial = depth;

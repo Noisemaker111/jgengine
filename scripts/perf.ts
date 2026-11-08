@@ -1,4 +1,4 @@
-// `bun run perf <game> | perf <gate|fps-gap|network|server|timing|flight|boat|fracture|live|native>`: every performance measurement.
+// `bun run perf <game> | perf <gate|fps-gap|shadow-audit|network|server|timing|flight|boat|fracture|live|native>`: every performance measurement.
 import { runVerb, type VerbTable } from "./subcommands";
 
 export const PERF: VerbTable = {
@@ -8,6 +8,7 @@ export const PERF: VerbTable = {
     play: { script: "scripts/perf-play.ts", guardSeconds: 420, detail: "<game...>: play each headless in one browser and print its frame report (also `bun run perf <game>`)" },
     gate: { script: "scripts/perf-gate.ts", guardSeconds: 1500, detail: "measure every playable game; fail a p95 frame over 16.7 ms on the RTX 3070 at 1600x900, or GL objects allocated after warmup" },
     "fps-gap": { script: "scripts/perf-fps-gap.ts", guardSeconds: 900, detail: "[--games a,b] [--markdown]: measure every game at the gate's conditions and print each against 360 fps (2.78 ms), with its costs grouped into ranked engine work; a report, not a gate" },
+    "shadow-audit": { script: "scripts/perf-shadow-audit.ts", guardSeconds: 2700, detail: "[--games a,b] [--path walk|still]: play each game with the shadow cache's audit on and fail on any shadow-map texel that differs from a full redraw" },
     network: { script: "scripts/perf-network.ts", detail: "<game...>: bytes and requests per game, cold and cached" },
     server: { script: "scripts/perf-server.ts", guardSeconds: 540, detail: "[--players 16,32,64,128]: N players posing in one room on the real host and router; wall and CPU ms, MB and messages out per game second" },
     timing: { script: "scripts/bench-cpu.ts", guardSeconds: 900, detail: "run the test files that carry wall-clock budgets with the budgets enforced" },

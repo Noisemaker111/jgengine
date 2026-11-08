@@ -56,6 +56,7 @@ test("the all-games table puts each game against 360 fps and names a game it cou
     frame: { fps, avgMs: 1000 / fps, p95Ms: frameP50 * 1.5, maxMs: 20, samples: 100, longFrames: 0 },
     rafP50Ms: frameP50, rafP99Ms: frameP50 * 2, breakdown: null,
     backend: { asked: "webgl" as const, drawing: "webgl" as const, warnings: [] },
+    shadowCache: null,
   });
   const text = renderAllTable([
     { game: "fast", backend: "webgl", record: record(420, 2.4), error: null },
