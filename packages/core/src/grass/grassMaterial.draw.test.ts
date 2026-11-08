@@ -42,7 +42,8 @@ describe("grass style shading", () => {
     expect(cartoon.colour.y).toBeGreaterThan(1);
     const real = grassStyleLighting(readGrassLook({ species: "meadow" }, { realism: 1 }));
     expect(real.look.toArray()).toEqual([0, 1, 0, 0]);
-    expect(real.colour.x).toBeLessThan(1);
+    // Real grass keeps its saturation; only the gradient softens.
+    expect(real.colour.x).toBe(1);
     expect(real.colour.y).toBeLessThan(1);
   });
 

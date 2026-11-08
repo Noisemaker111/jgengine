@@ -309,10 +309,11 @@ if (uStyleLook.x > 0.0) {
 }
 #endif
 // Warm tip glow where sun shines through the blades, scaled by direct light; no extra lights. The
-// sheen end lets light through more of the leaf and glosses it.
-float jgTipMask = smoothstep(0.55 - 0.35 * uStyleLook.y, 1.0, vGrassT) * step(vGrassKind, 1.5);
+// sheen end lets light through a little more of the leaf and glosses it. A wider or stronger glow
+// bleached whole blades pale cream against the lawn photo (board, 2026-11-08).
+float jgTipMask = smoothstep(0.55 - 0.15 * uStyleLook.y, 1.0, vGrassT) * step(vGrassKind, 1.5);
 float jgLit = clamp(dot(reflectedLight.directDiffuse, vec3(0.3333)) * 1.6, 0.0, 1.0);
-reflectedLight.directDiffuse += vec3(0.34, 0.28, 0.12) * jgTipMask * jgLit * uLight.x * (1.0 + 0.8 * uStyleLook.y) * (1.0 - vGrassFade * 0.7);
+reflectedLight.directDiffuse += vec3(0.34, 0.28, 0.12) * jgTipMask * jgLit * uLight.x * (1.0 + 0.25 * uStyleLook.y) * (1.0 - vGrassFade * 0.7);
 if (uStyleLook.y > 0.0) reflectedLight.directSpecular *= 1.0 + 1.2 * uStyleLook.y;
 `;
 

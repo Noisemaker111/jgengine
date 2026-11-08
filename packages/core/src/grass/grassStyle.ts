@@ -67,7 +67,9 @@ export const GRASS_STYLE_CURVES: Readonly<Record<GrassStyleSlider, (realism: num
   shading: (realism) => realism,
   // Written as offsets from 0.5 so each lands on exactly 0.5 (or 0) at the default realism.
   colourSteps: (realism) => Math.max(0, 2 * (0.5 - realism)),
-  saturation: (realism) => 0.5 + 0.3 * (0.5 - realism),
+  // Rises toward cartoon only: real grass is a saturated green, and a greyer photoreal end read as
+  // faded next to the reference photos.
+  saturation: (realism) => 0.5 + 0.3 * Math.max(0, 0.5 - realism),
   contrast: (realism) => 0.5 + 0.5 * (0.5 - realism),
   outline: (realism) => Math.max(0, 1.2 * (0.5 - realism)),
 };
