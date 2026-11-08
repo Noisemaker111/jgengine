@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { sweepOrphanProfiles } from "./browser-lib";
-import { describeHang, readStepFile, STEP_FILE_ENV } from "./hangReport";
+import { describeHang, pausableDeadline, pausedTotal, readStepFile, STEP_FILE_ENV } from "./hangReport";
 
 /**
  * Split a shell-free command string into an argv array on whitespace. Used only
@@ -113,23 +113,24 @@ if (import.meta.main) {
     process.on(signal, () => killTree(signal));
   }
 
-  const timer = setTimeout(() => {
+  // Time the child spends queued for the perf lock is given back: the budget is for its own work.
+  const cancelDeadline = pausableDeadline(budgetSeconds * 1000, () => pausedTotal(readStepFile(stepFile)), () => {
     console.error(
       `\nguard: '${command}' exceeded the ${budgetSeconds}s hard limit, ${describeHang(readStepFile(stepFile))} — killing its process tree`,
     );
     killTree("SIGKILL");
     clearStepFile();
     process.exit(124);
-  }, budgetSeconds * 1000);
+  });
 
   child.on("exit", (code, signal) => {
-    clearTimeout(timer);
+    cancelDeadline();
     clearStepFile();
     process.exit(code ?? (signal === null ? 0 : 1));
   });
 
   child.on("error", (err) => {
-    clearTimeout(timer);
+    cancelDeadline();
     console.error(`guard: failed to spawn command: ${err.message}`);
     process.exit(1);
   });

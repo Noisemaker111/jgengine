@@ -1,9 +1,10 @@
 import { spawn, spawnSync } from "node:child_process";
 import { closeSync, cpSync, existsSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CdpSession, PRECISE_HEAP_ARG, removeProfileDir } from "./browser-lib";
+import { withPerfLock } from "./perf-lock";
 import { createBrowserFlow } from "./browserFlow";
 import { FRAME_GAMES } from "./ci-scope";
 import { flowsDirOf, loadFlow } from "./driveFlows";
@@ -221,6 +222,11 @@ interface LaunchedScene { tier: string; start: string }
 async function withLaunchedScene<T>(args: LaunchArgs, backend: RendererBackend, profile: string | null, work: (session: CdpSession, scene: LaunchedScene) => Promise<T>): Promise<T> {
   if (process.platform !== "win32") throw new Error("--launch measures a Windows (WebView2) desktop build");
   if (!existsSync(args.exe)) throw new Error(`no desktop app at ${args.exe}; build one with: bun run jgengine desktop games/<id> --diagnostics --no-installer`);
+  // From launch to close the app is timed; the build before it is not, and never holds the lock.
+  return withPerfLock(`perf desktop ${basename(args.exe)} on ${backend}`, () => launchedScene(args, backend, profile, work));
+}
+
+async function launchedScene<T>(args: LaunchArgs, backend: RendererBackend, profile: string | null, work: (session: CdpSession, scene: LaunchedScene) => Promise<T>): Promise<T> {
   // A port of its own: on a shared one, a diagnostic app another run left open answered in place of
   // this launch, and the flow played (and failed in) the wrong game.
   const port = args.port ?? freePort();

@@ -19,7 +19,7 @@ import { BUSY_PC_PERCENT, cpuBusyPercent, readinessTimeoutLine, retrySettleMs, s
 import { clearViteCaches, headRevision, revisionDrifted, shortRevision } from "./captureRevision";
 import { brokerServer } from "./devBrokerClient";
 import { checkMarkedServer, checkoutIdentity, devServerIdentity, isUp, listMarkers, markerPath, readMarker, readServerIdentity, writeMarker } from "./devServerMarker";
-import { currentStep, describeHang, markStep } from "./hangReport";
+import { currentStep, describeHang, markStep, pausableDeadline, pausedTotal } from "./hangReport";
 import { localGet } from "./localhostHttp";
 import { startOutsideCaller } from "./outsideCaller";
 import { computeShotMetrics, deadViewport } from "./shot-metrics";
@@ -2576,7 +2576,8 @@ export async function withBrowserSession(
     }
   }
 
-  const watchdog = setTimeout(() => {
+  // Time `fn` spends queued for the perf lock is given back: the deadline covers this run's own work.
+  const cancelWatchdog = pausableDeadline(hardDeadlineMs, () => pausedTotal(currentStep()), () => {
     console.error(
       `browser session: still running after the ${Math.round(hardDeadlineMs / 1000)}s hard deadline, ${describeHang(currentStep())} — force-killing Chrome and dev server`,
     );
@@ -2587,8 +2588,7 @@ export async function withBrowserSession(
     killPid(options.serverPid, true);
     if (chrome !== null) removeProfileDir(chrome.userDataDir);
     process.exit(124);
-  }, hardDeadlineMs);
-  watchdog.unref();
+  }, { unref: true });
 
   try {
     markStep(
@@ -2617,7 +2617,7 @@ export async function withBrowserSession(
     exitCode = 1;
     console.error(error instanceof Error ? error.message : error);
   } finally {
-    clearTimeout(watchdog);
+    cancelWatchdog();
     await releaseTurn?.().catch(() => {});
     if (!leaveWarm) {
       launchedProfiles.delete(debugPort);

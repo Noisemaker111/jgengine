@@ -1,9 +1,14 @@
 import { createServer, type Server } from "node:http";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { expect, test } from "bun:test";
 
 import { chromeFrameClockArgs, startBrowser, type ChromeLaunchOptions } from "./browser-lib";
+import { PERF_LOCK_ENV } from "./perf-lock";
+
+// measureGame takes the machine-wide perf lock; a fake page must never queue behind a real run.
+process.env[PERF_LOCK_ENV] = join(tmpdir(), `jg-perf-lock-test-${process.pid}`, "perf.lock");
 import {
   aggregateInclusiveTime,
   aggregateSelfTime,

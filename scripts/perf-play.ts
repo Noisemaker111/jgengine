@@ -41,6 +41,7 @@ import {
 import type { SystemProbeReading } from "../packages/core/src/devtools/types";
 import { renderBreakdownText, type FrameBreakdownSummary } from "../packages/core/src/devtools/frameBreakdown";
 import { compareBreakdowns, readBreakdown, resetBreakdown, startPath, type PerfPath } from "./perf-breakdown";
+import { perfLockTurn, withPerfLock } from "./perf-lock";
 import { provisionCapturedGame } from "./provisionCapture";
 import {
   ACCESSIBILITY_SETTING_IDS,
@@ -1168,19 +1169,23 @@ export function writePerfRecord(record: PerfRecord, path: string): void {
 
 /**
  * Play one game and measure it: warm up, sample frame deltas, snapshot renderer
- * and scene counts, and read the GL objects created after warmup.
+ * and scene counts, and read the GL objects created after warmup. Page load, warmup and the
+ * windows hold the machine-wide perf lock, so no other timed run shares the machine with them.
  */
 export async function measureGame(options: MeasureOptions): Promise<PerfMeasure> {
+  // A game whose packs are not linked into this checkout draws placeholder boxes, and its frame
+  // times describe the boxes; link them first, the same as shoot and drive do.
+  await (options.provision ?? provisionCapturedGame)(join(repoRoot, "games", options.game), (line) => console.error(`perf: ${line}`));
+  return withPerfLock(`perf ${options.game}`, () => measureProvisioned(options));
+}
+
+async function measureProvisioned(options: MeasureOptions): Promise<PerfMeasure> {
   const { session, base, game, quality, seconds = DEFAULT_SECONDS, warmupMs = WARMUP_MS } = options;
   const draft = options.draft ?? false;
   const profileRun = options.profile ?? true;
   const settings = options.settings ?? [];
   const params = options.params ?? [];
   const frameClock = options.frameClock ?? "capped";
-
-  // A game whose packs are not linked into this checkout draws placeholder boxes, and its frame
-  // times describe the boxes; link them first, the same as shoot and drive do.
-  await (options.provision ?? provisionCapturedGame)(join(repoRoot, "games", game), (line) => console.error(`perf: ${line}`));
 
   let clockProbeMs: number | null = null;
   if (frameClock === "uncapped") {
@@ -1467,7 +1472,8 @@ async function main(): Promise<void> {
         debugPort: daemon?.chromePort,
         attach: daemon !== null,
         leaveWarm: daemon !== null,
-        turn: brokerTurn(daemon, repoRoot),
+        // The batch holds the perf lock, taken before the shared browser's turn so waiting for it never stalls other captures.
+        turn: perfLockTurn(`perf ${pending.join(" ")}`, brokerTurn(daemon, repoRoot)),
       },
       async ({ debugPort }) => {
         const failed: string[] = [];

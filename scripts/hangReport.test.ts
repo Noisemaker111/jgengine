@@ -12,7 +12,7 @@ describe("hang reports", () => {
     try {
       const path = join(dir, "step.json");
       markStep("open /?game=harbor-heat", { [STEP_FILE_ENV]: path }, 1_000);
-      expect(readStepFile(path)).toEqual({ label: "open /?game=harbor-heat", since: 1_000, pid: process.pid });
+      expect(readStepFile(path)).toMatchObject({ label: "open /?game=harbor-heat", since: 1_000, pid: process.pid });
       expect(currentStep()?.label).toBe("open /?game=harbor-heat");
       expect(describeHang(readStepFile(path), 313_000)).toBe("hung in: open /?game=harbor-heat (312s in that step)");
     } finally {
