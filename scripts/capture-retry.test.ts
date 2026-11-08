@@ -5,6 +5,7 @@ import {
   retrySettleMs,
   shouldRetryCapture,
 } from "./capture-retry";
+import { captureTimeout } from "./browser-lib";
 
 describe("isStaleCaptureFailure", () => {
   test("matches the post-HMR start-menu symptom (case-insensitive)", () => {
@@ -82,4 +83,11 @@ describe("retrySettleMs", () => {
     expect(retrySettleMs(Number.NaN)).toBe(1_500);
     expect(retrySettleMs(2, -5)).toBe(3_000);
   });
+});
+
+test("a capture timeout says what the page was still waiting on, and still reads as a stale capture", () => {
+  const message = captureTimeout(210_000, "settling: models streaming; 2 pending: /models/car.glb (2)");
+  expect(message).toBe("timed out waiting for data-jg-capture=ready (210000ms); the page was settling: models streaming; 2 pending: /models/car.glb (2)");
+  expect(isStaleCaptureFailure(message)).toBe(true);
+  expect(captureTimeout(5_000, null)).toBe("timed out waiting for data-jg-capture=ready (5000ms)");
 });

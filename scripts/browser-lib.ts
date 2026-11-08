@@ -1909,17 +1909,20 @@ export async function captureViewportPng(
  */
 export async function waitCaptureReady(session: CdpSession, timeoutMs: number): Promise<void> {
   const deadline = Date.now() + timeoutMs;
+  let stage: string | null = null;
   while (Date.now() < deadline) {
-    const remote = await session.evaluate<{ status: string | null; error: string | null }>(`({
+    const remote = await session.evaluate<{ status: string | null; error: string | null; stage: string | null }>(`({
       status: document.documentElement.dataset.jgCapture ?? null,
-      error: document.documentElement.dataset.jgCaptureError ?? null
+      error: document.documentElement.dataset.jgCaptureError ?? null,
+      stage: document.documentElement.dataset.jgCaptureStage ?? null
     })`);
     const status = remote?.status;
+    stage = remote?.stage ?? stage;
     if (status === "ready") return;
     if (status === "error") throw new Error(`capture error: ${remote?.error ?? "unknown"}`);
     await new Promise((r) => setTimeout(r, 100));
   }
-  throw new Error(`timed out waiting for data-jg-capture=ready (${timeoutMs}ms)`);
+  throw new Error(captureTimeout(timeoutMs, stage));
 }
 
 /**
@@ -2210,11 +2213,17 @@ export interface CaptureReadinessOptions {
   legacyCanvas?: boolean;
 }
 
+/** A capture that never became ready, with what the page's gate was still waiting on when the host gave up. @internal */
+export function captureTimeout(timeoutMs: number, stage: string | null | undefined): string {
+  return `timed out waiting for data-jg-capture=ready (${timeoutMs}ms)${stage == null ? "" : `; the page was ${stage}`}`;
+}
+
 const CAPTURE_READINESS_EXPR = `(() => {
   const canvas = document.querySelector("canvas");
   return {
     status: document.documentElement.dataset.jgCapture ?? null,
     error: document.documentElement.dataset.jgCaptureError ?? null,
+    stage: document.documentElement.dataset.jgCaptureStage ?? null,
     sizedCanvas: canvas !== null && canvas.clientWidth > 10 && canvas.clientHeight > 10 && canvas.width > 10 && canvas.height > 10 &&
       document.querySelector("[data-shell-code-loading]") === null
   };
@@ -2230,7 +2239,7 @@ export async function navigateCapturePage(
   let handshakeSeen = false;
   let pageFailure: string | undefined;
   let frameId: string | undefined;
-  let signalled: { status: string | null; error: string | null; sizedCanvas?: boolean } | undefined;
+  let signalled: { status: string | null; error: string | null; stage?: string | null; sizedCanvas?: boolean } | undefined;
   const requestFrames = new Map<string, string>();
   const pendingDocumentFailures: Array<{ frameId?: string | undefined; message: string }> = [];
   const offSignal = session.on("Runtime.bindingCalled", (params) => {
@@ -2277,14 +2286,16 @@ export async function navigateCapturePage(
     // The pushed signal is the fast path; the evaluate below is the backstop, polled slowly
     // so it does not itself compete with the page for the main thread.
     let nextPollAt = Date.now();
+    let stage: string | null = null;
     while (Date.now() < deadline) {
       if (pageFailure !== undefined) throw new Error(pageFailure);
       const remote =
         (signalled?.status === "ready" || signalled?.status === "error" ? signalled : undefined) ??
         (Date.now() >= nextPollAt
           ? ((nextPollAt = Date.now() + 500),
-            await session.evaluate<{ status: string | null; error: string | null; sizedCanvas?: boolean }>(CAPTURE_READINESS_EXPR))
+            await session.evaluate<{ status: string | null; error: string | null; stage?: string | null; sizedCanvas?: boolean }>(CAPTURE_READINESS_EXPR))
           : undefined);
+      stage = remote?.stage ?? stage;
       if (remote?.status === "ready") return;
       if (remote?.status === "error") throw new Error(`capture error: ${remote.error ?? "unknown"}`);
       if (remote?.status != null) handshakeSeen = true;
@@ -2315,7 +2326,7 @@ export async function navigateCapturePage(
       await new Promise((resolve) => setTimeout(resolve, 25));
     }
     if (pageFailure !== undefined) throw new Error(pageFailure);
-    throw new Error(`timed out waiting for data-jg-capture=ready (${timeoutMs}ms)`);
+    throw new Error(captureTimeout(timeoutMs, stage));
   } finally {
     offSignal();
     offException();

@@ -672,7 +672,8 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
         active = null;
         activePasses = null;
       }
-      delete window.__jgFrameBreakdown;
+      // A remount installs the next breakdown before this one's cleanup runs: leave that one published.
+      if (window.__jgFrameBreakdown === breakdown) delete window.__jgFrameBreakdown;
     },
   };
   active = breakdown;
