@@ -16,9 +16,21 @@ export function grassMownAmount(look: Pick<GrassLook, "blade">): number {
 }
 
 /**
- * The blades a look's style draws. `detail` trades blade count for width (`grassDetailScale`) and
- * groups the extra blades partly into fuller tufts, partly into more tufts; blade count follows width
- * through `grassBladeDensity`, so the ground covered stays the same. `exaggeration` evens heights,
+ * How much fuller each tuft grows when `detail` multiplies the blades by `scale`; the rest of the
+ * scale becomes more tufts. A sward (`clumping` 0) splits it evenly, `sqrt(scale)` each way; a
+ * bunchgrass (`clumping` 1) puts it all in its tufts, so its clumps keep their place and their cover
+ * and only grow finer. Spreading a tussock's fine blades over more tufts thinned every clump into one
+ * even haze at realism 1.
+ */
+export function grassTuftGrowth(scale: number, clumping: number): number {
+  return scale ** (0.5 + 0.5 * Math.max(0, Math.min(1, clumping)));
+}
+
+/**
+ * The blades a look's style draws. `detail` trades blade count for width (`grassDetailScale`); blade
+ * count follows width through `grassBladeDensity`, so the ground covered stays the same. How the extra
+ * blades group follows the species' `clumping` ({@link grassTuftGrowth}): a sward spreads them over
+ * fuller and more tufts, a bunchgrass keeps its clumps and fills them. `exaggeration` evens heights,
  * widths and deepens curls toward the cartoon end, and grows irregular lengths toward the natural end
  * (mown looks stay even: their tips are cut). Flower share follows the tuft count, so flowers per m²
  * hold. At the default style this is the look itself.
@@ -33,7 +45,7 @@ export function drawnGrassLook(look: GrassLook): GrassLook {
   const tuft = { ...look.tuft };
   if (scale !== 1) {
     blade.bladeWidth = look.blade.bladeWidth / scale;
-    tuft.tuftBlades = Math.max(1, Math.round(look.tuft.tuftBlades * Math.sqrt(scale)));
+    tuft.tuftBlades = Math.max(1, Math.round(look.tuft.tuftBlades * grassTuftGrowth(scale, look.tuft.clumping)));
   }
   // Heads ride one per flowering tuft; as detail changes the number of tufts, the share follows, so
   // flowers per square metre stay the species' own.

@@ -45,6 +45,21 @@ describe("drawn grass", () => {
     }
   });
 
+  test("a bunchgrass keeps its clumps across detail and fills them; a sward spreads its blades over more tufts too", () => {
+    const tuftsPerM2 = (look: ReturnType<typeof readGrassLook>) => grassBladeDensity(look) / look.tuft.tuftBlades;
+    const tussock = readGrassLook({ species: "snow-tussock" });
+    for (const detail of [0, 1]) {
+      const drawn = drawnGrassLook(readGrassLook({ species: "snow-tussock", style: { detail } }));
+      // Within the rounding of a whole blade count, the tussock field has the same clumps at every detail.
+      expect(tuftsPerM2(drawn) / tuftsPerM2(tussock)).toBeGreaterThan(0.95);
+      expect(tuftsPerM2(drawn) / tuftsPerM2(tussock)).toBeLessThan(1.25);
+    }
+    const lawn = readGrassLook({ species: "lawn" });
+    const fine = drawnGrassLook(readGrassLook({ species: "lawn", style: { detail: 1 } }));
+    expect(tuftsPerM2(fine) / tuftsPerM2(lawn)).toBeGreaterThan(1.8);
+    expect(fine.tuft.tuftBlades).toBeGreaterThan(lawn.tuft.tuftBlades);
+  });
+
   test("flowers per square metre hold across detail, and far heads widen only as the default would", () => {
     for (const id of ["poppy-field", "wildflower-meadow", "tallgrass-prairie"]) {
       const perM2 = (look: ReturnType<typeof readGrassLook>) => (grassBladeDensity(look) / look.tuft.tuftBlades) * look.flowers.flowerShare;
