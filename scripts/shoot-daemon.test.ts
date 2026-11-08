@@ -28,10 +28,31 @@ import {
   startDaemon,
   waitForDaemonLive,
   worldChanged,
+  watchDaemon,
   writeDaemonState,
   type ShootDaemonState,
 } from "./shoot-daemon";
 import { checkoutIdentity } from "./browser-lib";
+
+describe("the daemon watch", () => {
+  const daemon = { chromePort: 9322 } as ShootDaemonState;
+  const probes = (answers: boolean[]) => {
+    let at = 0;
+    return { answer: async () => answers[Math.min(at++, answers.length - 1)]!, asked: () => at };
+  };
+  test("a browser slow to answer for a few probes is not called dead", async () => {
+    // Busy streaming a trace: three misses, then it answers again; the run keeps going.
+    const probe = probes([true, false, false, false, true, true, true]);
+    const outcome = await Promise.race([watchDaemon(daemon, process.cwd(), 1, 3, probe.answer).then(() => "dead", () => "dead"), new Promise((resolve) => setTimeout(() => resolve("alive"), 60))]);
+    expect(outcome).toBe("alive");
+    expect(probe.asked()).toBeGreaterThan(5);
+  });
+  test("a browser that stops answering is called dead after the allowed misses", async () => {
+    const probe = probes([true, false]);
+    await expect(watchDaemon(daemon, process.cwd(), 1, 3, probe.answer)).rejects.toThrow("stopped answering mid-run");
+    expect(probe.asked()).toBe(5);
+  });
+});
 
 describe("shoot daemon CLI routing", () => {
   test("isDaemonArgv recognizes daemon subcommand and --serve", () => {
