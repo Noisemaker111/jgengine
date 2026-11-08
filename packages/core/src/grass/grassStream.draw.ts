@@ -52,6 +52,20 @@ interface Leaf {
 }
 interface DesiredNode { level: number; ix: number; iz: number; share: number; distance: number }
 
+/** The tuft template's per-vertex attributes, which every leaf shares. */
+const TEMPLATE_ATTRIBUTES = ["position", "grassUv", "bladeOffset", "bladeVary", "bladeBend"] as const;
+
+/**
+ * Free a leaf's own GPU buffers and none of the shared template's: three's geometry dispose deletes
+ * the buffer of every attribute the geometry still holds, which would pull the tuft out from under
+ * every other leaf. @internal
+ */
+export function releaseLeafGeometry(geometry: THREE.BufferGeometry): void {
+  for (const name of TEMPLATE_ATTRIBUTES) geometry.deleteAttribute(name);
+  geometry.setIndex(null);
+  geometry.dispose();
+}
+
 class GrowingGrassAttribute extends THREE.InstancedBufferAttribute {
   override count = 0;
 
@@ -99,6 +113,12 @@ export class GrassStream {
   /** Parent of every leaf mesh; mount it inside the patch's transform. */
   readonly group = new THREE.Group();
   private readonly template: GrassTuftTemplate;
+  /**
+   * Holds the tuft template's attributes, shared by every leaf. Each leaf once wrapped the template
+   * arrays in its own attributes, so three uploaded a full copy per leaf; at realism 1 the template is
+   * several times larger and the extra uploads cost fernwild 14% of its frame (Nov 2026).
+   */
+  private readonly templateGeometry: THREE.BufferGeometry;
   private readonly cache = new Map<string, Leaf>();
   private readonly heights = new Map<string, [number, number]>();
   private drawn: Leaf[] = [];
@@ -125,6 +145,14 @@ export class GrassStream {
     private readonly options: GrassStreamOptions = {},
   ) {
     this.template = createGrassTuftTemplate(bake);
+    const t = this.template;
+    this.templateGeometry = new THREE.BufferGeometry();
+    this.templateGeometry.setAttribute("position", new THREE.BufferAttribute(t.position, 3));
+    this.templateGeometry.setAttribute("grassUv", new THREE.BufferAttribute(t.uv, 2));
+    this.templateGeometry.setAttribute("bladeOffset", new THREE.BufferAttribute(t.bladeOffset, 2));
+    this.templateGeometry.setAttribute("bladeVary", new THREE.BufferAttribute(t.bladeVary, 4));
+    this.templateGeometry.setAttribute("bladeBend", new THREE.BufferAttribute(t.bladeBend, 2));
+    this.templateGeometry.setIndex(new THREE.BufferAttribute(t.index, 1));
     this.group.name = "grass-stream";
     this.revision = options.heightRevision?.();
   }
@@ -269,7 +297,7 @@ export class GrassStream {
   private clearPreview(): void {
     if (this.preview === undefined) return;
     this.group.remove(this.preview.mesh);
-    this.preview.geometry.dispose();
+    releaseLeafGeometry(this.preview.geometry);
     this.preview = undefined;
   }
 
@@ -431,6 +459,8 @@ export class GrassStream {
     this.filledView = false;
     for (const leaf of this.cache.values()) this.drop(leaf);
     this.drawn = [];
+    // Frees the shared tuft buffers last, once no leaf points at them; a reused stream uploads them again.
+    this.templateGeometry.dispose();
   }
 
   private changed(camera: THREE.Camera): boolean {
@@ -497,12 +527,9 @@ export class GrassStream {
   private bakeLeaf(key: string, level: number, ix: number, iz: number, share: number, tufts: GrassTufts, cache = true): Leaf {
     const t = this.template;
     const geometry = new THREE.InstancedBufferGeometry();
-    geometry.setAttribute("position", new THREE.BufferAttribute(t.position, 3));
-    geometry.setAttribute("grassUv", new THREE.BufferAttribute(t.uv, 2));
-    geometry.setAttribute("bladeOffset", new THREE.BufferAttribute(t.bladeOffset, 2));
-    geometry.setAttribute("bladeVary", new THREE.BufferAttribute(t.bladeVary, 4));
-    geometry.setAttribute("bladeBend", new THREE.BufferAttribute(t.bladeBend, 2));
-    geometry.setIndex(new THREE.BufferAttribute(t.index, 1));
+    // The same attribute objects for every leaf, so the GPU holds one copy of the tuft (see `templateGeometry`).
+    for (const name of TEMPLATE_ATTRIBUTES) geometry.setAttribute(name, this.templateGeometry.getAttribute(name));
+    geometry.setIndex(this.templateGeometry.index);
     const growing: GrowingGrassAttribute[] = [];
     const instanceAttribute = (array: Float32Array, size: number): THREE.InstancedBufferAttribute => {
       if (cache) return new THREE.InstancedBufferAttribute(array, size);
@@ -548,7 +575,7 @@ export class GrassStream {
 
   private drop(leaf: Leaf): void {
     this.group.remove(leaf.mesh);
-    leaf.geometry.dispose();
+    releaseLeafGeometry(leaf.geometry);
     this.cache.delete(leaf.key);
   }
 

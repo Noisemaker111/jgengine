@@ -150,6 +150,7 @@ export function GrassPatch({
           heightAt={bake.heightAt}
           coverageAt={bake.turfAt}
           shadeAt={shadeAt}
+          detail={look.style.detail}
           lift={grassCoverLift(look)}
           {...(coverSegments === undefined ? {} : { segments: coverSegments })}
         />

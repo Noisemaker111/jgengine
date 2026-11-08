@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { GRASS_DEFAULTS, GRASS_PRESETS, readGrassLook, type GrassLook } from "@jgengine/core/grass/grassKind";
 import { observeFrameWork } from "@jgengine/core/devtools/frameBreakdown";
 
-import { bakeGrassNode, grassTuftsBelow, resolveGrassBake, type GrassBakeOptions } from "./grassBake.draw";
+import { bakeGrassNode, GRASS_CELL_SIZE, grassNodeRect, grassTuftsBelow, resolveGrassBake, type GrassBakeOptions } from "./grassBake.draw";
 import { createGrassTuftTemplate } from "./grassField";
 import { createGrassMaterial } from "./grassMaterial.draw";
 import { GrassStream } from "./grassStream.draw";
@@ -129,6 +129,30 @@ test("ground revision discards unfinished and cached grass before rebuilding", (
   }
   field.dispose();
   handle.material.dispose();
+});
+
+test("every leaf draws one shared copy of the tuft, and dropping a leaf frees only its own buffers", () => {
+  // Each leaf once wrapped the template in its own attributes, so the GPU took a full copy per leaf;
+  // at realism 1 that upload cost fernwild 14% of its frame.
+  const { stream: field } = stream({ area: 40 });
+  field.update(camera([0, 1.7, 0], [0, 0.5, -30]), VIEW_HEIGHT, Infinity);
+  const leaves = field.group.children.filter((child): child is THREE.Mesh => child instanceof THREE.Mesh);
+  expect(leaves.length).toBeGreaterThan(1);
+  const [first] = leaves;
+  for (const leaf of leaves) {
+    for (const name of ["position", "grassUv", "bladeOffset", "bladeVary", "bladeBend"]) expect(leaf.geometry.getAttribute(name)).toBe(first!.geometry.getAttribute(name));
+    expect(leaf.geometry.index).toBe(first!.geometry.index);
+  }
+  // three deletes the GPU buffer of every attribute a geometry still holds when it is disposed.
+  const freed: string[][] = [];
+  for (const leaf of leaves) {
+    leaf.geometry.addEventListener("dispose", () => {
+      freed.push([...Object.keys(leaf.geometry.attributes), ...(leaf.geometry.index === null ? [] : ["index"])]);
+    });
+  }
+  field.dispose();
+  expect(freed.length).toBe(leaves.length);
+  for (const names of freed) expect(names.sort()).toEqual(["instanceOffset", "instanceShape", "instanceTone", "instanceVary"]);
 });
 
 test("continuous movement keeps the cache bounded and settles when movement stops", () => {
@@ -466,6 +490,70 @@ test("tuft roots cover a cell evenly, at full detail and when thinned for distan
   expect(largestGap(full.offsets, full.count, inner, spacing / 3) / spacing).toBeLessThan(1.25);
   const thinned = bakeGrassNode(bake, 0, 0, 0, 0.25);
   expect(largestGap(thinned.offsets, thinned.count, inner, spacing / 1.5) / (spacing * 2)).toBeLessThan(1.25);
+});
+
+/** Spread of nearest-neighbour distances over their mean: near 0 for a lattice, about 0.5 for random roots. */
+/** Roots of each 8 m cell of a 4-cell-square field at `share`, as cell-local 0..1 points. */
+function cellRoots(bake: ReturnType<typeof resolveGrassBake>, share: number): [number, number][][] {
+  const cells: [number, number][][] = [];
+  for (let ix = 0; ix < 4; ix += 1) {
+    for (let iz = 0; iz < 4; iz += 1) {
+      const [x0, z0] = grassNodeRect(bake, 0, ix, iz);
+      const node = bakeGrassNode(bake, 0, ix, iz, share);
+      cells.push(Array.from({ length: node.count }, (_, i) => [(node.offsets[i * 3]! - x0) / GRASS_CELL_SIZE, (node.offsets[i * 3 + 2]! - z0) / GRASS_CELL_SIZE]));
+    }
+  }
+  return cells;
+}
+
+/**
+ * Strongest repeat in the cells' roots: the power of the largest 2D wave across them, per root. Roots
+ * scattered without rows score a few; a lattice of n roots a cell scores about n.
+ */
+function latticePower(cells: [number, number][][]): number {
+  const roots = cells.reduce((sum, cell) => sum + cell.length, 0);
+  const reach = Math.ceil(Math.sqrt(roots / cells.length) * 2.5);
+  let strongest = 0;
+  for (let a = -reach; a <= reach; a += 1) {
+    for (let b = 0; b <= reach; b += 1) {
+      if (b === 0 && a <= 0) continue;
+      let power = 0;
+      for (const cell of cells) {
+        let re = 0, im = 0;
+        for (const [x, z] of cell) { const angle = 2 * Math.PI * (a * x + b * z); re += Math.cos(angle); im += Math.sin(angle); }
+        power += re * re + im * im;
+      }
+      strongest = Math.max(strongest, power / roots);
+    }
+  }
+  return strongest;
+}
+
+/** Mean distance from each root to its nearest neighbour over what uniform random roots would have: 1 random, higher more even. */
+function evenness(cells: [number, number][][]): number {
+  let total = 0, roots = 0;
+  for (const cell of cells) {
+    for (const [x, z] of cell) {
+      let best = Infinity;
+      for (const [ox, oz] of cell) if (ox !== x || oz !== z) best = Math.min(best, Math.hypot(Math.min(Math.abs(x - ox), 1 - Math.abs(x - ox)), Math.min(Math.abs(z - oz), 1 - Math.abs(z - oz))));
+      total += best / (0.5 / Math.sqrt(cell.length));
+      roots += 1;
+    }
+  }
+  return total / roots;
+}
+
+test("a field thinned for distance stays evenly scattered and never falls into rows", () => {
+  // A far pasture at realism 1 keeps a few dozen tufts a cell. With R2 roots those formed a near-regular
+  // lattice (power 30 to 120 here) that drew rows like a planted crop; scattered roots score under 6.
+  // Uniform random roots would pass that but pile up (evenness 1.0); the field must stay more even.
+  const bake = resolveGrassBake({ look: readGrassLook({ species: "grazed-pasture" }, { realism: 1 }), area: 32, seed: "rows", edgeFeather: 0 });
+  for (const share of [0.003, 0.01, 0.03]) {
+    const cells = cellRoots(bake, share);
+    expect(cells.every((cell) => cell.length >= 12)).toBe(true);
+    expect(latticePower(cells)).toBeLessThan(6);
+    expect(evenness(cells)).toBeGreaterThan(1.18);
+  }
 });
 
 test("a tuft's blades reach far enough to meet the next tuft", () => {

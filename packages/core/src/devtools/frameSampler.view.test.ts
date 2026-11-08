@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { createLogBus } from "@jgengine/core/devtools/logBus";
@@ -183,6 +183,22 @@ describe("report route probe", () => {
       Promise.resolve(new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } }));
     expect(await probeReportRoute("/__jgengine/report", "deepward", (() => json({ error: "no report yet" }, 404)) as typeof fetch)).toBe(true);
     expect(await probeReportRoute("/__jgengine/report", "deepward", (() => json({ game: "deepward", frame: {} })) as typeof fetch)).toBe(true);
+  });
+
+  test("waits out a dev server slowed by the page's own loading, and says so when one never answers", async () => {
+    // Under load the probe queues behind the page's downloads; 1.5 s turned telemetry off at random.
+    const late = (_url: string, init?: RequestInit) => new Promise<Response>((resolve, reject) => {
+      const timer = setTimeout(() => resolve(new Response(JSON.stringify({ error: "no report yet" }), { status: 404, headers: { "content-type": "application/json" } })), 1_700);
+      init?.signal?.addEventListener("abort", () => { clearTimeout(timer); reject(init.signal?.reason); });
+    });
+    expect(await probeReportRoute("/__jgengine/report", "deepward", late as unknown as typeof fetch)).toBe(true);
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      expect(await probeReportRoute("/__jgengine/report", "deepward", late as unknown as typeof fetch, 20)).toBe(false);
+      expect(warn.mock.calls.map((call) => String(call[0]))).toContain("[jgengine:perf] degraded: dev telemetry is off: /__jgengine/report did not answer within 0.02 s");
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   test("stays off on a production host, which answers HTML or nothing", async () => {

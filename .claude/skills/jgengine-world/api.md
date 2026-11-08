@@ -1778,7 +1778,7 @@
 
 ## @jgengine/core/grass/GrassCover.draw
 
-- `GrassCover` (function): function GrassCover({ area, seed, colorBase, colorTip, strength, edgeFeather, heightAt, coverageAt, segments, lift, shadeAt, position, }: GrassCoverProps): React.JSX.Element | null — The turf surface under one authored `grass_field` patch: a ground-draped, edge-feathered mat that turns a bare pavement footprint into grass the blade field stands in. Bounded to one draw and a {@link GRASS_COVER_MAX_SEGMENTS}² grid, so a large park still costs a single mesh.
+- `GrassCover` (function): function GrassCover({ area, seed, colorBase, colorTip, strength, edgeFeather, heightAt, coverageAt, segments, lift, shadeAt, detail = 0.5, position, }: GrassCoverProps): React.JSX.Element | null — The turf surface under one authored `grass_field` patch: a ground-draped, edge-feathered mat that turns a bare pavement footprint into grass the blade field stands in. Bounded to one draw and a {@link GRASS_COVER_MAX_SEGMENTS}² grid, so a large park still costs a single mesh.
 - `GrassCoverProps` (interface): interface GrassCoverProps — Props for {@link GrassCover}: one authored patch's footprint, colours and drape samplers.
 
 ## @jgengine/core/grass/GrassPatch.draw
@@ -1805,6 +1805,12 @@
 - `GRASS_COVER_TILE_METRES` (const): const GRASS_COVER_TILE_METRES: 3 — World metres one cover-texture tile spans; the mat's own grain is sampled in world space.
 - `GrassCoverGeometry` (interface): interface GrassCoverGeometry — Bake result for {@link createGrassCoverGeometry}; empty arrays when the mat is switched off.
 - `GrassCoverGeometryOptions` (interface): interface GrassCoverGeometryOptions — Inputs for {@link createGrassCoverGeometry}.
+
+## @jgengine/core/grass/grassDrawn
+
+- `drawnGrassLook` (function): function drawnGrassLook(look: GrassLook): GrassLook — The blades a look's style draws. `detail` trades blade count for width (`grassDetailScale`); blade count follows width through `grassBladeDensity`, so the ground covered stays the same. How the extra blades group follows the species' `clumping` ({@link grassTuftGrowth}): a sward spreads them over fuller and more tufts, a bunchgrass keeps its clumps and fills them. `exaggeration` evens heights, widths and deepens curls toward the cartoon end, and grows irregular lengths toward the natural end (mown looks stay even: their tips are cut). Flower share follows the tuft count, so flowers per m² hold. At the default style this is the look itself.
+- `grassMownAmount` (function): function grassMownAmount(look: Pick<GrassLook, "blade">): number — How mown a look reads, 0..1: short blades cut to an even height (a lawn, a green, a pitch). The natural end of `exaggeration` keeps a mown look's heights even and ends its blades blunt and torn, where an unmown look grows irregular lengths with pointed tips.
+- `grassTuftGrowth` (function): function grassTuftGrowth(scale: number, clumping: number): number — How much fuller each tuft grows when `detail` multiplies the blades by `scale`; the rest of the scale becomes more tufts. A sward (`clumping` 0) splits it evenly, `sqrt(scale)` each way; a bunchgrass (`clumping` 1) puts it all in its tufts, so its clumps keep their place and their cover and only grow finer. Spreading a tussock's fine blades over more tufts thinned every clump into one even haze at realism 1.
 
 ## @jgengine/core/grass/grassField
 
@@ -1865,12 +1871,15 @@
 
 - `GRASS_REALISM_DEFAULT` (const): const GRASS_REALISM_DEFAULT: 0.5 — The realism a scene that sets none draws at: the look grass had before styles.
 - `GRASS_STYLE_CURVES` (const): const GRASS_STYLE_CURVES: Readonly<Record<GrassStyleSlider, (realism: number) => number>> — Each slider's value at a realism, when nothing sets it by hand. Every curve passes through the pre-style look at 0.5.
-- `GRASS_STYLE_DEFAULTS` (const): const GRASS_STYLE_DEFAULTS: GrassStyle — The style a scene that sets nothing draws with.
-- `GRASS_STYLE_SCHEMA` (const): const GRASS_STYLE_SCHEMA: ParamSchema<readonly [{ readonly type: "range"; readonly key: "realism"; readonly label: "realism (cartoon → photoreal)"; readonly min: 0; readonly max: 1; readonly step: 0.01; readonly default: 0.5; }, { readonly type: "range"; readonly key: "normalLift"; readonly label: "… — The grass style schema: the editor's grass style sections, their presets and every style parse.
+- `GRASS_STYLE_DEFAULTS` (const): const GRASS_STYLE_DEFAULTS: GrassStyle — The style a scene that sets nothing draws with (a page's `?realism=` aside).
+- `GRASS_STYLE_SCHEMA` (const): const GRASS_STYLE_SCHEMA: ParamSchema<readonly [{ readonly type: "range"; readonly key: "realism"; readonly label: "realism (cartoon → photoreal)"; readonly min: 0; readonly max: 1; readonly step: 0.01; readonly default: 0.5; }, { readonly type: "range"; readonly key: "detail"; readonly label: "deta… — The grass style schema: the editor's grass style sections, their presets and every style parse.
 - `GrassStyle` (interface): interface GrassStyle — How a grass field is drawn.
 - `GrassStyleSettings` (type): type GrassStyleSettings = Partial<GrassStyle> & { preset?: string } — A style as authored: any sliders, plus an optional named preset (`cartoon`, `painterly`, `animated`, `realistic`) backing the ones left unset.
 - `GrassStyleSlider` (type): type GrassStyleSlider = Exclude<keyof GrassStyle, "realism"> — The style sliders `realism` drives: every style knob but `realism` itself.
 - `GrassStyleTuning` (type): type GrassStyleTuning = Partial<Record<GrassStyleSlider, number>> — A species' own tuning of style sliders, as it would be drawn at the default realism.
+- `grassDetailScale` (function): function grassDetailScale(detail: number): number — Blades drawn per blade a species grows, at a `detail`: 1 at 0.5, rising to 6 at 1 and falling to half at 0. Each blade's width divides by the same number, so count times width, the ground the blades cover, never changes with detail.
+- `grassExaggerationAmount` (function): function grassExaggerationAmount(exaggeration: number): number — `exaggeration` as -1 (natural) .. 0 (the species as it is) .. 1 (cartoon).
+- `grassRealismFromPage` (function): function grassRealismFromPage(): number | undefined — The realism a page asks for with `?realism=<0..1>`, else undefined. It overrides every patch's and world's realism, so a board or perf run can draw any scene at any realism (`bun run shoot ... --param realism=1`, `bun run perf ... --param realism=1`); sliders set by hand still win.
 
 ## @jgengine/core/grass/grassWind
 
@@ -6409,7 +6418,7 @@
 - `GRASS_GENERATOR` (const): const GRASS_GENERATOR: GeneratorDefinition<ParamSchema<readonly [RangeParamField & { key: "density"; }, RangeParamField & { key: "bladeHeight"; }, RangeParamField & { key: "heightVariation"; }, RangeParamField & { key: "bladeWidth"; }, RangeParamField & { key: "widthVariation"; }, RangeParamField & … — The grass generator: one schema from cushion moss and putting greens to reed beds, crops and pampas plumes. Detail picks the blade segments (4 at full detail, 2 at half, 1 at a quarter), so a baked variant carries its LODs.
 - `GRASS_PRESETS` (const): const GRASS_PRESETS: { id: "green" | "fairway" | "lawn" | "kentucky-bluegrass" | "perennial-ryegrass" | "tall-fescue" | "bermuda" | "zoysia" | "st-augustine" | "buffalo-grass" | "overgrown-lawn" | "shade-lawn" | "sports-pitch" | "worn-lawn" | "meadow" | "hay-meadow" | "wildflower-meadow" | "timothy-… — Every grass species as an inspector preset: the full knob set over the defaults, listed under its habitat. A field names one with `species` and any knob it also sets wins over the species. Presets hold what grows only; a species' style tuning is read through the `species` id (`readGrassLook`).
 - `GRASS_SCHEMA` (const): const GRASS_SCHEMA: ParamSchema<readonly [RangeParamField & { key: "density"; }, RangeParamField & { key: "bladeHeight"; }, RangeParamField & { key: "heightVariation"; }, RangeParamField & { key: "bladeWidth"; }, RangeParamField & { key: "widthVariation"; }, RangeParamField & { key: "profile"; }, Ra… — The grass parameter schema: drives the inspector, the variant grid and every `meta` parse.
-- `GRASS_STYLE_SCHEMA` (const): const GRASS_STYLE_SCHEMA: ParamSchema<readonly [{ readonly type: "range"; readonly key: "realism"; readonly label: "realism (cartoon → photoreal)"; readonly min: 0; readonly max: 1; readonly step: 0.01; readonly default: 0.5; }, { readonly type: "range"; readonly key: "normalLift"; readonly label: "… — The grass style schema: the editor's grass style sections, their presets and every style parse.
+- `GRASS_STYLE_SCHEMA` (const): const GRASS_STYLE_SCHEMA: ParamSchema<readonly [{ readonly type: "range"; readonly key: "realism"; readonly label: "realism (cartoon → photoreal)"; readonly min: 0; readonly max: 1; readonly step: 0.01; readonly default: 0.5; }, { readonly type: "range"; readonly key: "detail"; readonly label: "deta… — The grass style schema: the editor's grass style sections, their presets and every style parse.
 - `GROUND_DECAL_LAYERS` (const): const GROUND_DECAL_LAYERS: { readonly road: 0.06; readonly junction: 0.06; readonly marking: 0.11; readonly glow: 0.14; } — The single owning table of ground-decal Y offsets, in world units above the sampled terrain.
 - `GeneratedAsset` (interface): interface GeneratedAsset — A resolved generator asset: its parts plus the overall local-space bounds (min/max corners).
 - `GeneratedPart` (interface): interface GeneratedPart — One generated primitive part — a box/panel placed in the asset's local space.
