@@ -46,6 +46,8 @@ export interface FrameBreakdownRecord {
    * process, so the frame stalls with nothing on the page's own clock.
    */
   firstDraws?: string[];
+  /** Where each program linked this frame was asked for: the first game or engine function on its stack. */
+  links?: string[];
   /** Texture and buffer uploads this frame: calls, bytes and main-thread milliseconds. */
   uploads: number;
   uploadBytes: number;
@@ -226,6 +228,33 @@ export function lightSetChange(before: readonly string[], after: readonly string
   if (changes.length === 0) return null;
   const shown = changes.slice(0, limit).map(([label, delta]) => `${delta > 0 ? "+" : ""}${delta} ${label}`);
   return changes.length > limit ? `${shown.join("; ")}; ${changes.length - limit} more` : shown.join("; ");
+}
+
+/**
+ * The first game or engine function on a link's call stack, past three, the breakdown's own wrapper
+ * and dependencies: `bakeImpostorLinked packages/core/src/lod/impostor.draw.ts:171`. Null when none
+ * is on it. Reads V8's `at fn (url:line:col)` frames.
+ * @internal
+ */
+export function linkCaller(stack: string): string | null {
+  for (const line of stack.split("\n")) {
+    const frame = /^\s*at (?:(?:async )?(\S+) \()?(.*?):(\d+):\d+\)?$/.exec(line);
+    if (frame === null) continue;
+    const url = frame[2]!.replace(/\?.*$/, "");
+    if (url.includes("node_modules") || url.includes("/devtools/frameBreakdown") || !/\/(packages|games)\//.test(url)) continue;
+    const path = url.replace(/^.*?\/((?:packages|games)\/.*)$/, "$1");
+    return `${frame[1] ?? "(anonymous)"} ${path}:${frame[3]}`;
+  }
+  return null;
+}
+
+/** "; linked from …" for a compile hitch no draw named: each caller once, with how many it linked. */
+function linkedFrom(links: readonly string[] | undefined): string {
+  if (links === undefined || links.length === 0) return "";
+  const counts = new Map<string, number>();
+  for (const link of links) counts.set(link, (counts.get(link) ?? 0) + 1);
+  const named = [...counts].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([link, count]) => (count > 1 ? `${link} ×${count}` : link));
+  return `, linked from ${named.join(", ")}`;
 }
 
 /** A vertex attribute as three keeps it: plain, or interleaved (its array on `data`). */
@@ -433,7 +462,7 @@ export function hitchCause(record: FrameBreakdownRecord): Pick<Hitch, "cause" | 
   const firsts = record.firstDraws !== undefined && record.firstDraws.length > 0 ? `; first draws of ${record.firstDraws.length} program and layout pair(s): ${record.firstDraws.slice(0, 3).join(", ")}` : "";
   if (systemMs >= 8 && systemMs >= passMs && systemMs >= share) return { cause: "system", detail: `${system} ${round(systemMs, 1)} ms on the CPU${firsts}` };
   if (passMs >= 8 && passMs >= share) return { cause: "gpu", detail: `${pass} ${round(passMs, 1)} ms on the GPU${firsts}` };
-  if (record.compiles > 0) return { cause: "compile", detail: `${record.compiles} shader program(s) linked${which}` };
+  if (record.compiles > 0) return { cause: "compile", detail: `${record.compiles} shader program(s) linked${which || linkedFrom(record.links)}` };
   const largest = Math.max(systemMs, passMs) >= 8 ? `; the largest game cost was ${systemMs >= passMs ? `${system} ${round(systemMs, 1)} ms on the CPU` : `${pass} ${round(passMs, 1)} ms on the GPU`}` : "";
   return { cause: "other", detail: `${round(record.intervalMs - record.workMs, 1)} ms outside the game's frame work (browser, compositor, OS)${largest}${firsts}` };
 }

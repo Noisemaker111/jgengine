@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { attributeHitch, fpsAt, hitchCause, lightSetChange, programVariantChange, renderBreakdownText, spread, summarizeBreakdown, targetLayout, vertexLayout, type FrameBreakdownRecord } from "./frameBreakdown";
+import { attributeHitch, fpsAt, hitchCause, lightSetChange, linkCaller, programVariantChange, renderBreakdownText, spread, summarizeBreakdown, targetLayout, vertexLayout, type FrameBreakdownRecord } from "./frameBreakdown";
 
 function frame(overrides: Partial<FrameBreakdownRecord> = {}): FrameBreakdownRecord {
   return {
@@ -50,6 +50,23 @@ test("a stall outside the game's work names the draws that fed a program a new l
     `454 ms outside the game's frame work (browser, compositor, OS); first draws of 4 program and layout pair(s): ${firstDraws.slice(0, 3).join(", ")}`,
   );
   expect(hitchCause(frame({ intervalMs: 460, workMs: 6 })).detail).not.toContain("first draws");
+});
+
+test("a link no draw used is named by the engine or game function that asked for it", () => {
+  const stack = [
+    "Error",
+    "    at http://127.0.0.1:4845/@fs/C:/repo/packages/core/src/devtools/frameBreakdown.draw.ts?t=1:530:19",
+    "    at WebGL2RenderingContext.wrapped (http://127.0.0.1:4845/@fs/C:/repo/packages/core/src/devtools/frameBreakdown.draw.ts:519:22)",
+    "    at new WebGLProgram (http://127.0.0.1:4845/@fs/C:/repo/node_modules/.bun/three@0.180.0/node_modules/three/build/three.module.js:20101:6)",
+    "    at compileBake (http://127.0.0.1:4845/@fs/C:/repo/packages/core/src/lod/impostor.draw.ts?t=9:236:16)",
+    "    at async bakeImpostorLinked (http://127.0.0.1:4845/@fs/C:/repo/packages/core/src/lod/impostor.draw.ts:171:5)",
+  ].join("\n");
+  expect(linkCaller(stack)).toBe("compileBake packages/core/src/lod/impostor.draw.ts:236");
+  expect(linkCaller("Error\n    at http://127.0.0.1:4845/node_modules/three/build/three.module.js:1:1")).toBeNull();
+  const links = ["compileBake packages/core/src/lod/impostor.draw.ts:236", "compileBake packages/core/src/lod/impostor.draw.ts:236", "probeBake packages/core/src/lighting/reflectionProbe.draw.ts:206"];
+  expect(hitchCause(frame({ intervalMs: 804, workMs: 4, compiles: 3, links })).detail).toBe(
+    "3 shader program(s) linked, linked from compileBake packages/core/src/lod/impostor.draw.ts:236 ×2, probeBake packages/core/src/lighting/reflectionProbe.draw.ts:206",
+  );
 });
 
 test("a draw's layout is the attributes its program reads, and its target the colour outputs", () => {

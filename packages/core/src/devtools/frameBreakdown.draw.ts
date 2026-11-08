@@ -11,6 +11,7 @@ import {
   hitchCause,
   HITCH_MS,
   lightSetChange,
+  linkCaller,
   observeFrameWork,
   programVariantChange,
   summarizeBreakdown,
@@ -524,6 +525,16 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     if (current === null) return;
     current.compiles += 1;
     current.compileMs += ms;
+    // Who asked for the link: a link no draw in the frame used (a bake or warmup linking ahead) is
+    // otherwise unnamed, and the GPU process may stall on it a frame later. Links are rare.
+    // three's own link path is about ten frames deep: past the default stack depth.
+    const depth = Error.stackTraceLimit;
+    Error.stackTraceLimit = 40;
+    const stack = new Error().stack ?? "";
+    Error.stackTraceLimit = depth;
+    const caller = linkCaller(stack);
+    const links = current.links ??= [];
+    if (caller !== null && links.length < FRAME_RETENTION_LIMIT) links.push(caller);
   });
   // three asks a program for its uniforms and attributes at its first draw; those queries wait for the link.
   for (const method of ["compileShader", "getShaderParameter", "getProgramParameter", "getProgramInfoLog", "getShaderInfoLog", "getActiveUniform", "getActiveAttrib", "getUniformLocation", "getAttribLocation"]) {
