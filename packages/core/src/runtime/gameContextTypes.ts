@@ -307,6 +307,8 @@ export interface SceneEntityContext {
   get(instanceId: string): SceneEntity | null;
   list(): readonly SceneEntity[];
   ids: EntityStore["ids"];
+  /** Notified after every entity write, pose writes included; for engine systems that skip work while no entity changed. */
+  subscribe: EntityStore["subscribe"];
   subscribeMembership: EntityStore["subscribeMembership"];
   subscribeBehaviors: EntityStore["subscribeBehaviors"];
   spawnPoseOf(instanceId: string): SpawnPose | null;

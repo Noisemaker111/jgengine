@@ -36,8 +36,21 @@ export interface Renderable {
   readonly assets?: readonly string[];
 }
 
-export interface VisibilitySystemOptions {
+/** One group of renderables a {@link VisibilitySystem} walks, such as the scene's actors or its props. */
+export interface RenderableSource {
+  /** Every renderable of the group. */
   readonly renderables: () => Iterable<Renderable>;
+  /**
+   * Moves whenever a renderable of the group is added, removed or changed. The group is walked only on
+   * an update where it moved, so still props cost nothing while actors walk. Without it the group is
+   * walked on every update.
+   */
+  readonly revision?: () => number;
+}
+
+export interface VisibilitySystemOptions {
+  /** The scene's renderables, in groups; an id belongs to one group. */
+  readonly sources: readonly RenderableSource[];
   readonly cameras: () => readonly CameraVisibilityContext[];
   readonly settings?: Partial<CullingSettings>;
   readonly sceneOverrides?: ObjectVisibilityOverrides;
@@ -95,6 +108,54 @@ interface ObjRecord {
   lastSeen: number;
   /** The spatial index already holds this version's bounds. */
   indexed: boolean;
+}
+
+/** What one source's last walk found: its revision then, its ids in walk order and its always-visible ones. */
+interface SourceWalk {
+  revision: number;
+  ids: string[];
+  spare: string[];
+  always: Renderable[];
+}
+
+/** Numbers per camera that {@link sameCameras} compares: everything an evaluation reads from it. */
+const CAMERA_STRIDE = 18;
+
+function writeCamera(out: Float64Array, offset: number, camera: CameraVisibilityContext): void {
+  const view = camera.view;
+  out[offset] = view.kind === "perspective" ? 1 : 2;
+  out[offset + 1] = view.position[0];
+  out[offset + 2] = view.position[1];
+  out[offset + 3] = view.position[2];
+  out[offset + 4] = view.target[0];
+  out[offset + 5] = view.target[1];
+  out[offset + 6] = view.target[2];
+  out[offset + 7] = view.up?.[0] ?? Number.NaN;
+  out[offset + 8] = view.up?.[1] ?? Number.NaN;
+  out[offset + 9] = view.up?.[2] ?? Number.NaN;
+  out[offset + 10] = (view.kind === "perspective" ? view.fovDeg : view.halfWidth) ?? Number.NaN;
+  out[offset + 11] = (view.kind === "perspective" ? view.aspect : view.halfHeight) ?? Number.NaN;
+  out[offset + 12] = view.near ?? Number.NaN;
+  out[offset + 13] = view.far ?? Number.NaN;
+  out[offset + 14] = camera.cullingDisabled === true ? 1 : 0;
+  out[offset + 15] = camera.maxRenderDistance ?? Number.NaN;
+  out[offset + 16] = cameraInfluencesStreaming(camera) ? 1 : 0;
+  out[offset + 17] = 0;
+}
+
+/** Whether `cameras` match the ones `written` holds, number for number (NaN matches NaN). */
+function sameCameras(written: Float64Array, count: number, cameras: readonly CameraVisibilityContext[], scratch: Float64Array): boolean {
+  if (count !== cameras.length) return false;
+  for (let index = 0; index < cameras.length; index += 1) {
+    const offset = index * CAMERA_STRIDE;
+    writeCamera(scratch, 0, cameras[index]!);
+    for (let field = 0; field < CAMERA_STRIDE; field += 1) {
+      const a = written[offset + field]!;
+      const b = scratch[field]!;
+      if (a !== b && !(a !== a && b !== b)) return false;
+    }
+  }
+  return true;
 }
 
 function round2(value: number): number {
@@ -155,6 +216,9 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
     return resolved.bounds ?? r.bounds ?? DEFAULT_BOUNDS;
   }
 
+  /** Records whose overrides carry a `customVisibility`, which may answer differently for the same inputs. */
+  let customRecords = 0;
+
   function recordFor(r: Renderable): ObjRecord {
     let record = records.get(r.id);
     if (record !== undefined && record.version === r.version) {
@@ -164,10 +228,12 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
     const resolved = resolveOverrides(r.overrides, r.layer !== undefined ? options.layerOverrides?.(r.layer) : undefined, options.sceneOverrides, options.globalOverrides);
     const alwaysVisible = resolved.alwaysVisible || r.alwaysVisible === true;
     const dynamic = resolved.classification !== "static";
+    if (resolved.customVisibility !== undefined) customRecords += 1;
     if (record === undefined) {
       record = { version: r.version, resolved, alwaysVisible, dynamic, assets: r.assets, lastSeen: updateCounter, indexed: false };
       records.set(r.id, record);
     } else {
+      if (record.resolved.customVisibility !== undefined) customRecords -= 1;
       record.version = r.version;
       record.resolved = resolved;
       record.alwaysVisible = alwaysVisible;
@@ -179,31 +245,66 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
     return record;
   }
 
-  function pruneUnseen(record: ObjRecord, id: string): void {
-    if (record.lastSeen === updateCounter) return;
+  function prune(id: string): void {
+    const record = records.get(id);
+    if (record === undefined || record.lastSeen === updateCounter) return;
+    if (record.resolved.customVisibility !== undefined) customRecords -= 1;
     index.remove(id);
     bounds.delete(id);
     records.delete(id);
     consideredStamp.delete(id);
   }
 
-  /** Refilled each update, so the per-frame pass over every object allocates nothing. */
-  const alwaysVisibleList: Renderable[] = [];
-  function maintain(): readonly Renderable[] {
-    alwaysVisibleList.length = 0;
-    for (const r of options.renderables()) {
-      const record = recordFor(r);
-      if (!record.indexed) {
-        index.insert(r.id, bounds.get(r.id, r.version, specOf(r, record.resolved), r.position), record.dynamic);
-        record.indexed = true;
+  const walks: SourceWalk[] = options.sources.map(() => ({ revision: Number.NaN, ids: [], spare: [], always: [] }));
+  let trackedObjects = 0;
+
+  /**
+   * Walk every source whose revision moved: refresh its records and index entries, and drop the ids its
+   * last walk had that this one did not. True when any source was walked.
+   */
+  function maintain(): boolean {
+    let walkedAny = false;
+    for (let s = 0; s < walks.length; s += 1) {
+      const source = options.sources[s]!;
+      const walk = walks[s]!;
+      const revision = source.revision?.();
+      if (revision !== undefined && revision === walk.revision) continue;
+      walk.revision = revision ?? Number.NaN;
+      walkedAny = true;
+      const ids = walk.spare;
+      ids.length = 0;
+      walk.always.length = 0;
+      for (const r of source.renderables()) {
+        const record = recordFor(r);
+        if (!record.indexed) {
+          index.insert(r.id, bounds.get(r.id, r.version, specOf(r, record.resolved), r.position), record.dynamic);
+          record.indexed = true;
+        }
+        ids.push(r.id);
+        if (record.alwaysVisible) walk.always.push(r);
       }
-      stats.totalObjects += 1;
-      if (record.alwaysVisible) alwaysVisibleList.push(r);
+      // Ids the last walk had and this one did not left the scene.
+      for (const id of walk.ids) prune(id);
+      walk.spare = walk.ids;
+      walk.ids = ids;
     }
-    // Prune objects that vanished this frame. `forEach` hands over each entry without the
-    // per-entry pair a `for…of` over the map allocates, every frame, for every object in the world.
-    records.forEach(pruneUnseen);
-    return alwaysVisibleList;
+    if (walkedAny) {
+      trackedObjects = 0;
+      for (const walk of walks) trackedObjects += walk.ids.length;
+    }
+    return walkedAny;
+  }
+
+  // What the last evaluation read, so an update with the same inputs can keep its result.
+  let cameraNumbers = new Float64Array(CAMERA_STRIDE);
+  const cameraScratch = new Float64Array(CAMERA_STRIDE);
+  let cameraCount = -1;
+  let settingsChanged = true;
+
+  function rememberCameras(cameras: readonly CameraVisibilityContext[]): void {
+    if (cameraNumbers.length < cameras.length * CAMERA_STRIDE) cameraNumbers = new Float64Array(cameras.length * CAMERA_STRIDE);
+    for (let index = 0; index < cameras.length; index += 1) writeCamera(cameraNumbers, index * CAMERA_STRIDE, cameras[index]!);
+    cameraCount = cameras.length;
   }
 
   function markConsidered(id: string): boolean {
@@ -301,8 +402,8 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
     );
   }
 
-  function addAlwaysVisible(list: readonly Renderable[]): void {
-    for (const r of list) {
+  function addAlwaysVisible(): void {
+    for (const walk of walks) for (const r of walk.always) {
       visible.add(r.id);
       preload.add(r.id);
       const record = records.get(r.id);
@@ -315,8 +416,21 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
   return {
     update() {
       updateCounter += 1;
+      const walked = maintain();
+      const cameras = options.cameras();
+      // The same objects, cameras and settings as the last evaluation give the same sets: an object it
+      // kept is tested against the wider hysteresis frustum and passes again, and one it dropped is
+      // tested against the narrower one and fails again (so it needs a margin of at least 0). Custom
+      // visibility and occlusion read state of their own, so with either in play every update evaluates.
+      const occluding = settings.occlusionCulling && occlusion.enabled;
+      if (!walked && !settingsChanged && customRecords === 0 && !occluding && settings.hysteresis >= 0 && sameCameras(cameraNumbers, cameraCount, cameras, cameraScratch)) {
+        return { visible, preload, stats, generation };
+      }
+      settingsChanged = false;
+      rememberCameras(cameras);
       consideredCounter += 1;
       resetCullingStats(stats);
+      stats.totalObjects = trackedObjects;
       // Swap current → prev, reuse the old prev as the new current (cleared).
       const swap = prevVisible;
       prevVisible = visible;
@@ -325,10 +439,8 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
       preload.clear();
       requiredAssets.clear();
 
-      const alwaysVisibleList = maintain();
-      const cameras = options.cameras();
       for (const camera of cameras) evaluateCamera(camera);
-      addAlwaysVisible(alwaysVisibleList);
+      addAlwaysVisible();
 
       stats.visible = visible.size;
       stats.preloaded = preload.size;
@@ -350,6 +462,7 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
     },
     setSettings(patch) {
       settings = mergeCullingSettings(settings, patch);
+      settingsChanged = true;
     },
     stats() {
       return stats;
@@ -391,6 +504,14 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
       preload.clear();
       requiredAssets.clear();
       consideredStamp.clear();
+      for (const walk of walks) {
+        walk.revision = Number.NaN;
+        walk.ids.length = 0;
+        walk.always.length = 0;
+      }
+      trackedObjects = 0;
+      customRecords = 0;
+      settingsChanged = true;
     },
   };
 }
