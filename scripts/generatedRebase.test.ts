@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "bun:test";
 
-import { keepBothInsertions, mergeSuiteReports, MERGE_FILE_LABELS, rebaseResolvingGenerated } from "./generated-rebase";
+import { keepBothInsertions, mergeSuiteReports, MERGE_FILE_ARGS, rebaseResolvingGenerated } from "./generated-rebase";
 import type { Run } from "./land";
 import { SUITE_SCORE_END, SUITE_SCORE_START } from "./suite-score-block";
 
@@ -71,7 +71,7 @@ describe("rebaseResolvingGenerated", () => {
   });
 });
 
-/** `git merge-file -p --zdiff3` of three texts, labelled as the rebase labels them. */
+/** `git merge-file -p` of three texts, in the style and with the labels the rebase uses. */
 function mergeFile(ours: string, base: string, theirs: string): string {
   const dir = mkdtempSync(join(tmpdir(), "gen-rebase-merge-"));
   dirs.push(dir);
@@ -79,7 +79,7 @@ function mergeFile(ours: string, base: string, theirs: string): string {
     writeFileSync(join(dir, name), text);
     return join(dir, name);
   });
-  return spawnSync("git", ["merge-file", "-p", "--zdiff3", ...MERGE_FILE_LABELS, ...files], { encoding: "utf8" }).stdout;
+  return spawnSync("git", ["merge-file", "-p", ...MERGE_FILE_ARGS, ...files], { encoding: "utf8" }).stdout;
 }
 
 describe("keepBothInsertions", () => {
@@ -88,6 +88,13 @@ describe("keepBothInsertions", () => {
   test("lines both sides appended at one place are both kept, the base's first", () => {
     const merged = mergeFile(probe(["  stones: 2,"]), probe([]), probe(["  arrows: 3,"]));
     expect(keepBothInsertions(merged)).toBe(probe(["  stones: 2,", "  arrows: 3,"]));
+  });
+
+  test("two added blocks that open and close with the same lines are both kept whole", () => {
+    const imports = (added: string) => `import {\n  world,\n} from "./world";\n${added}\nexport {};\n`;
+    const block = (name: string) => `import {\n  ${name},\n} from "./game/${name}";\n`;
+    const merged = keepBothInsertions(mergeFile(imports(block("dossier")), imports(""), imports(block("tranqs"))));
+    expect(merged).toBe(imports(`${block("dossier")}${block("tranqs")}`));
   });
 
   test("a line both sides changed is a real conflict", () => {

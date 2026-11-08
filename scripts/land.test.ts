@@ -511,7 +511,7 @@ test("two Fernwild lanes from one old beta, each adding a proof, a probe field, 
     writeFileSync(at("README.md"), rescore(readFileSync(at("README.md"), "utf8")));
     writeFileSync(at("PLAN.md"), `${rescore(readFileSync(at("PLAN.md"), "utf8")).trimEnd()}\n- [x] ${name}: a milestone this lane ticked\n`);
     const config = readFileSync(at("src/game.config.ts"), "utf8")
-      .replace('import { time, world } from "./world";\n', `import { time, world } from "./world";\nimport { ${name}Probe } from "./game/${name}";\n`)
+      .replace('} from "./world";\n', `} from "./world";\nimport {\n  ${name}Probe,\n} from "./game/${name}";\n`)
       .replace(/(\n\s*stones: ctx[^\n]*\n)/, `$1        ${name}: ${name}Probe(ctx),\n`);
     writeFileSync(at("src/game.config.ts"), config);
     gitOk(dir, ["add", "-A"]);
@@ -536,8 +536,82 @@ test("two Fernwild lanes from one old beta, each adding a proof, a probe field, 
   expect(report.proofs.map((proof) => proof.file).slice(-2)).toEqual(["proofs/sim/zz-dossier.proof.ts", "proofs/sim/zz-tranqs.proof.ts"]);
   expect(report.data.map((row) => row.id).slice(-2)).toEqual(["content.dossier", "content.tranqs"]);
   expect(landed("PLAN.md")).toMatch(/- \[x\] dossier: [^\n]*\n- \[x\] tranqs: /);
-  expect(landed("src/game.config.ts")).toMatch(/import \{ dossierProbe \}[^\n]*\nimport \{ tranqsProbe \}/);
+  expect(landed("src/game.config.ts")).toMatch(/import \{\n  dossierProbe,\n\} from "\.\/game\/dossier";\nimport \{\n  tranqsProbe,\n\}/);
   expect(landed("src/game.config.ts")).toMatch(/dossier: dossierProbe\(ctx\),\n\s*tranqs: tranqsProbe\(ctx\),/);
+}, 120_000);
+
+test("two lanes from one old beta, each adding a game-flow command and a Fernwild feature through game.config.ts, land back to back with no hand rebase", () => {
+  const { bare, work, partner } = originWithBeta();
+  const repo = join(import.meta.dir, "..");
+  const files = ["packages/core/src/game/gameFlow.ts", "packages/core/src/game/gameFlow.test.ts", "games/fernwild/src/game.config.ts"];
+  for (const file of files) {
+    mkdirSync(dirname(join(work, file)), { recursive: true });
+    writeFileSync(join(work, file), readFileSync(join(repo, file), "utf8"));
+  }
+  gitOk(work, ["add", "-A"]);
+  gitOk(work, ["commit", "-q", "-m", "game flow and fernwild as beta has them"]);
+  gitOk(work, ["push", "-q", "origin", "beta"]);
+  const oldBeta = gitOk(work, ["rev-parse", "HEAD"]);
+  gitOk(partner, ["fetch", "-q", "origin"]);
+
+  // Each insertion must find its anchor, so a layout change that moves one fails here instead of passing vacuously.
+  const insert = (text: string, anchor: string, added: string, before = false): string => {
+    expect(text).toContain(anchor);
+    return text.replace(anchor, before ? `${added}${anchor}` : `${anchor}${added}`);
+  };
+  // What the lanes that stopped on Nov 7-8 changed, each at the same spot as the other lane: a game-flow command
+  // and its name in the test's list (#3064's replay: save/continue against settings.rebind), and in game.config.ts
+  // a name added to an existing import (BROOD_TIERS beside BROOD_PHASES; wildLevelNear beside speciesNear), a new
+  // import, a prompt source, a system and a probe field.
+  const lane = (dir: string, name: string): void => {
+    gitOk(dir, ["checkout", "-q", "-b", `agent/${name}`, oldBeta]);
+    const edit = (file: string, change: (text: string) => string) => writeFileSync(join(dir, file), change(readFileSync(join(dir, file), "utf8")));
+    edit(files[0]!, (text) =>
+      insert(
+        text,
+        "];\n\n/**\n * Title, play",
+        `  // \`${name}\` does what the ${name} lane needed.\n  (ctx) =>\n    ctx.game.commands.define("${name}", {\n      apply(state) {\n        return state;\n      },\n    }),\n`,
+        true,
+      ),
+    );
+    edit(files[1]!, (text) => insert(text, '      "start",\n', `      "${name}",\n`));
+    edit(files[2]!, (text) => {
+      let config = insert(text, "  BROOD_TIERS,\n", `  ${name.toUpperCase()}_TIERS,\n`);
+      config = insert(config, "  speciesNear,\n", `  ${name}Near,\n`);
+      config = insert(config, '} from "./world";\n', `import {\n  ${name}Prompts,\n  ${name}System,\n} from "./game/${name}";\n`);
+      config = insert(config, "      ...notePrompts(ctx),\n", `      ...${name}Prompts(ctx),\n`);
+      config = insert(config, "    firstDay,\n", `    ${name}System,\n`);
+      return insert(config, /\n(\s*stones: ctx[^\n]*\n)/.exec(config)?.[1] ?? "stones: ctx", `        ${name}: ${name}Near(ctx),\n`);
+    });
+    gitOk(dir, ["add", "-A"]);
+    gitOk(dir, ["commit", "-q", "-m", `Feature: ${name}`]);
+  };
+  const close = (dir: string, name: string) => {
+    const sync = syncOntoBase({ branch: `agent/${name}`, base: "beta", git: (args) => gitIn(dir, args), exec: () => ({ status: 0, stdout: "", stderr: "" }) });
+    expect(sync.refusal).toBeNull();
+    gitOk(dir, ["push", "-q", "origin", `agent/${name}:beta`]);
+    return sync;
+  };
+
+  lane(partner, "rebind");
+  lane(work, "resume");
+  expect(close(partner, "rebind").rebased).toBe(false);
+  expect(close(work, "resume").rebased).toBe(true);
+
+  const landed = (file: string) => gitOk(bare, ["show", `beta:${file}`]);
+  for (const file of files) {
+    expect(landed(file)).not.toMatch(/^(<<<<<<<|>>>>>>>|\|\|\|\|\|\|\||=======$)/m);
+    // A union that kept a shared opening or closing line once still contains every added line but no longer parses.
+    expect(() => new Bun.Transpiler({ loader: "ts" }).transformSync(landed(file))).not.toThrow();
+  }
+  for (const name of ["rebind", "resume"]) {
+    expect(landed(files[0]!)).toContain(`ctx.game.commands.define("${name}", {`);
+    expect(landed(files[1]!)).toContain(`      "${name}",\n`);
+    const config = landed(files[2]!);
+    for (const line of [`  ${name.toUpperCase()}_TIERS,`, `  ${name}Near,`, `} from "./game/${name}";`, `      ...${name}Prompts(ctx),`, `    ${name}System,`, `        ${name}: ${name}Near(ctx),`]) {
+      expect(config).toContain(`${line}\n`);
+    }
+  }
 }, 120_000);
 
 test("a branch land did not push is refused, and the remote copy is left alone", () => {
