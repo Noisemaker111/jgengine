@@ -5,6 +5,7 @@ import { ShaderPass } from "three-stdlib";
 
 import type { GradeConfig, LutCube } from "@jgengine/core/render/postProcessing";
 import { parseCubeLut } from "./cubeLut";
+import { HALF_ROUNDING_GLSL } from "./halfPrecision.draw";
 
 const DEFAULT_LIFT: readonly [number, number, number] = [0.012, 0.01, 0.018];
 const DEFAULT_GAIN: readonly [number, number, number] = [1.05, 1.02, 0.98];
@@ -45,13 +46,45 @@ const fragmentShader = /* glsl */ `
     return mix(texture2D(uLut, uvA).rgb, texture2D(uLut, uvB).rgb, c.b - slice);
   }
 
+#ifdef FUSED_OUTPUT
+  // three's OutputShader, then the half-float write its target made (see GradePass).
+  #include <tonemapping_pars_fragment>
+  ${HALF_ROUNDING_GLSL}
+  vec3 outputPass(vec4 color) {
+    #ifdef LINEAR_TONE_MAPPING
+      color.rgb = LinearToneMapping( color.rgb );
+    #elif defined( REINHARD_TONE_MAPPING )
+      color.rgb = ReinhardToneMapping( color.rgb );
+    #elif defined( CINEON_TONE_MAPPING )
+      color.rgb = CineonToneMapping( color.rgb );
+    #elif defined( ACES_FILMIC_TONE_MAPPING )
+      color.rgb = ACESFilmicToneMapping( color.rgb );
+    #elif defined( AGX_TONE_MAPPING )
+      color.rgb = AgXToneMapping( color.rgb );
+    #elif defined( NEUTRAL_TONE_MAPPING )
+      color.rgb = NeutralToneMapping( color.rgb );
+    #elif defined( CUSTOM_TONE_MAPPING )
+      color.rgb = CustomToneMapping( color.rgb );
+    #endif
+    #ifdef SRGB_TRANSFER
+      color = sRGBTransferOETF( color );
+    #endif
+    return rtz16(color.rgb);
+  }
+#endif
+
   void main() {
+#ifdef FUSED_OUTPUT
+    // The frame is the same size as the screen, so the OutputPass's sample was this texel.
+    vec3 c = outputPass(texelFetch(tDiffuse, ivec2(gl_FragCoord.xy), 0));
+#else
     vec2 dir = vUv - 0.5;
     // Chromatic aberration: split RGB along the radial direction, growing toward the edges.
     vec2 shift = uChroma > 0.0 ? dir * uChroma * dot(dir, dir) * 4.0 : vec2(0.0);
     vec3 c = uChroma > 0.0
       ? vec3(texture2D(tDiffuse, vUv + shift).r, texture2D(tDiffuse, vUv).g, texture2D(tDiffuse, vUv - shift).b)
       : texture2D(tDiffuse, vUv).rgb;
+#endif
     c = c + uLift;
     c = c * uGain;
     c = pow(max(c, 0.0), vec3(uGamma));
@@ -104,26 +137,86 @@ function lutStripTexture(cube: LutCube): THREE.DataTexture {
   return texture;
 }
 
+/** The grade's shader sources, exported for the GPU check of its merged variant. @internal */
+export const GRADE_SHADER = { vertexShader, fragmentShader } as const;
+
+const TONE_MAPPING_DEFINES: ReadonlyMap<THREE.ToneMapping, string> = new Map([
+  [THREE.LinearToneMapping, "LINEAR_TONE_MAPPING"],
+  [THREE.ReinhardToneMapping, "REINHARD_TONE_MAPPING"],
+  [THREE.CineonToneMapping, "CINEON_TONE_MAPPING"],
+  [THREE.ACESFilmicToneMapping, "ACES_FILMIC_TONE_MAPPING"],
+  [THREE.AgXToneMapping, "AGX_TONE_MAPPING"],
+  [THREE.NeutralToneMapping, "NEUTRAL_TONE_MAPPING"],
+  [THREE.CustomToneMapping, "CUSTOM_TONE_MAPPING"],
+]);
+
+/**
+ * The display-space colour grade. With {@link fuseOutput} set it also does the OutputPass's work (tone
+ * mapping and sRGB encoding) on the HDR frame it then reads, so the chain skips one full-screen draw;
+ * the chain sets it on the frames whose OutputPass would hand the grade its result directly.
+ *
+ * The merged variant runs three's own OutputShader code with the defines the OutputPass picks from
+ * the renderer, and rounds the result the way the OutputPass's half-float target did, so the grade
+ * starts from the same bits. `bun run check postfx-exact` compares the two on the GPU.
+ * @internal
+ */
+export class GradePass extends ShaderPass {
+  /** Do the OutputPass's work too; the chain switches that pass off on the same frames. */
+  fuseOutput = false;
+  private readonly plain: THREE.ShaderMaterial;
+  private readonly fused: THREE.ShaderMaterial;
+  private fusedFor: { toneMapping: THREE.ToneMapping; colorSpace: string } | null = null;
+
+  constructor(uniforms: Record<string, THREE.IUniform>) {
+    super({ uniforms: { ...uniforms, toneMappingExposure: { value: 1 } }, vertexShader, fragmentShader });
+    this.plain = this.material;
+    // Its tone mapping is the OutputPass's, so three must not add the screen's on top.
+    this.fused = new THREE.ShaderMaterial({ uniforms: this.uniforms, vertexShader, fragmentShader, defines: { FUSED_OUTPUT: "" }, toneMapped: false });
+  }
+
+  override render(renderer: THREE.WebGLRenderer, writeBuffer: THREE.WebGLRenderTarget, readBuffer: THREE.WebGLRenderTarget): void {
+    if (this.fuseOutput) {
+      const toneMapping = renderer.toneMapping;
+      const colorSpace = renderer.outputColorSpace;
+      if (this.fusedFor?.toneMapping !== toneMapping || this.fusedFor.colorSpace !== colorSpace) {
+        // The OutputPass's own choice of defines, made from the same renderer state.
+        const defines: Record<string, string> = { FUSED_OUTPUT: "" };
+        if (THREE.ColorManagement.getTransfer(colorSpace) === THREE.SRGBTransfer) defines["SRGB_TRANSFER"] = "";
+        const toneDefine = TONE_MAPPING_DEFINES.get(toneMapping);
+        if (toneDefine !== undefined) defines[toneDefine] = "";
+        this.fused.defines = defines;
+        this.fused.needsUpdate = true;
+        this.fusedFor = { toneMapping, colorSpace };
+      }
+      requireUniform(this.uniforms, "toneMappingExposure").value = renderer.toneMappingExposure;
+    }
+    this.material = this.fuseOutput ? this.fused : this.plain;
+    super.render(renderer, writeBuffer, readBuffer);
+  }
+
+  override dispose(): void {
+    this.material = this.plain;
+    super.dispose();
+    this.fused.dispose();
+  }
+}
+
 /** Build the display-space colour-grade pass and load its optional LUT. Dispose the pass to release its LUT; advance `uniforms.uTime.value` each frame to animate grain. */
-export function createGradePass(config: GradeConfig = {}): ShaderPass {
+export function createGradePass(config: GradeConfig = {}): GradePass {
   const lift = config.lift ?? DEFAULT_LIFT;
   const gain = config.gain ?? DEFAULT_GAIN;
-  const pass = new ShaderPass({
-    uniforms: {
-      tDiffuse: { value: null },
-      uLift: { value: new THREE.Vector3(lift[0], lift[1], lift[2]) },
-      uGain: { value: new THREE.Vector3(gain[0], gain[1], gain[2]) },
-      uGamma: { value: config.gamma ?? DEFAULT_GAMMA },
-      uSaturation: { value: config.saturation ?? DEFAULT_SATURATION },
-      uVignette: { value: config.vignette ?? DEFAULT_VIGNETTE },
-      uGrain: { value: config.grain ?? DEFAULT_GRAIN },
-      uChroma: { value: config.chromaticAberration ?? DEFAULT_CHROMA },
-      uTime: { value: 0 },
-      uLut: { value: null },
-      uLutSize: { value: 0 },
-    },
-    vertexShader,
-    fragmentShader,
+  const pass = new GradePass({
+    tDiffuse: { value: null },
+    uLift: { value: new THREE.Vector3(lift[0], lift[1], lift[2]) },
+    uGain: { value: new THREE.Vector3(gain[0], gain[1], gain[2]) },
+    uGamma: { value: config.gamma ?? DEFAULT_GAMMA },
+    uSaturation: { value: config.saturation ?? DEFAULT_SATURATION },
+    uVignette: { value: config.vignette ?? DEFAULT_VIGNETTE },
+    uGrain: { value: config.grain ?? DEFAULT_GRAIN },
+    uChroma: { value: config.chromaticAberration ?? DEFAULT_CHROMA },
+    uTime: { value: 0 },
+    uLut: { value: null },
+    uLutSize: { value: 0 },
   });
   let disposed = false;
   let lutTexture: THREE.Texture | null = null;

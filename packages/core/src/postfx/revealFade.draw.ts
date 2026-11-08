@@ -50,7 +50,8 @@ export class RevealSnapshotPass extends Pass {
   private readonly quad: FullScreenQuad;
   private readonly material: THREE.ShaderMaterial;
 
-  constructor(private readonly fade: RevealFadePass) {
+  /** `source` is the beauty texture to copy, when the chain has one; otherwise the buffer this pass reads. */
+  constructor(private readonly fade: RevealFadePass, private readonly source: THREE.Texture | null = null) {
     super();
     this.needsSwap = false;
     this.material = new THREE.ShaderMaterial({ uniforms: { tDiffuse: { value: null } }, vertexShader, fragmentShader: copyShader, depthTest: false, depthWrite: false });
@@ -58,7 +59,7 @@ export class RevealSnapshotPass extends Pass {
   }
 
   override render(renderer: THREE.WebGLRenderer, _writeBuffer: THREE.WebGLRenderTarget, readBuffer: THREE.WebGLRenderTarget): void {
-    this.material.uniforms["tDiffuse"]!.value = readBuffer.texture;
+    this.material.uniforms["tDiffuse"]!.value = this.source ?? readBuffer.texture;
     renderer.setRenderTarget(this.fade.plain);
     this.quad.render(renderer);
   }
