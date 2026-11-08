@@ -33,6 +33,8 @@ export interface AwaitOptions {
   /** Replaces the folder watch; the test drives the wait without a real child. */
   untilExit?: (dir: string, id: string) => Promise<WaitResult>;
   timeoutMs?: number;
+  /** How often the wait asks whether the runner lives; {@link BEAT_MS} by default. */
+  beatMs?: number;
   /** The pid written as the task's awaiter; this process by default. */
   pid?: number;
 }
@@ -55,7 +57,7 @@ export function awaitTask(options: AwaitOptions): Promise<number> {
   }
   const untilExit =
     options.untilExit ??
-    ((target: string) => waitForExit(target, id, options.alive ?? pidIsAlive, err, options.timeoutMs));
+    ((target: string) => waitForExit(target, id, options.alive ?? pidIsAlive, err, options.timeoutMs, options.beatMs ?? BEAT_MS));
   return (async () => {
     let code: WaitResult | null = readExit(dir);
     if (code === null) {
@@ -98,6 +100,7 @@ function waitForExit(
   alive: (pid: number) => boolean,
   err: (text: string) => void,
   timeoutMs?: number,
+  beatMs: number = BEAT_MS,
 ): Promise<WaitResult> {
   return new Promise((resolve) => {
     let settled = false;
@@ -133,7 +136,7 @@ function waitForExit(
         err(`background await: the runner for ${id} is gone and left no exit code`);
         finish("lost");
       }
-    }, BEAT_MS);
+    }, beatMs);
     if (timeoutMs !== undefined) {
       deadline = setTimeout(() => {
         err(`background await: ${id} was still running after ${Math.round(timeoutMs / 1000)}s; it keeps running`);

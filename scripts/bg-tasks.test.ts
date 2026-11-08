@@ -286,7 +286,9 @@ test("the wait is the exit event: it returns as soon as the task exits, not on t
   const id = startTask({ command: `bun ${script.split("\\").join("/")}`, checkout: dir });
 
   let printed = "";
-  const code = await awaitTask({ id, checkout: dir, write: (text) => (printed += text), err: () => {} });
+  // A heartbeat a minute away, so only the exit event can end the wait in time. A bound of 800 ms
+  // against the real 2 s beat measured the PC's load instead: it failed at 1135 ms on a busy one.
+  const code = await awaitTask({ id, checkout: dir, write: (text) => (printed += text), err: () => {}, beatMs: 60_000 });
   const exitedAt = statSync(join(taskDir(dir, id), "exit")).mtimeMs;
   const late = Date.now() - exitedAt;
 
@@ -294,8 +296,8 @@ test("the wait is the exit event: it returns as soon as the task exits, not on t
   expect(readExit(taskDir(dir, id))).toBe(3);
   expect(readRunner(taskDir(dir, id))).not.toBeNull();
   expect(printed).toContain("exited 3");
-  expect(late).toBeLessThan(800);
-});
+  expect(late).toBeLessThan(10_000);
+}, { timeout: 30_000 });
 
 test("the documented commands run a real command in the background and report it", () => {
   const started = Bun.spawnSync({
