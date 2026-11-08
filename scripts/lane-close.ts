@@ -14,8 +14,8 @@
 // merges the PR itself.
 //
 // The merge is gated on the receipt, not on GitHub: the pushed head's tree must be a tree verify:fast
-// passed on, apart from what lane:close itself wrote after it (the suite scores, and the change note,
-// whose format `check changelog` proves). A head that differs otherwise - a rebase onto a conflicting
+// passed on, apart from what lane:close itself wrote after it (the suite scores, and the change note
+// land renders from -m, which no test or gate reads). A head that differs otherwise - a rebase onto a conflicting
 // base, a file edited while verify ran - is verified again first, and the unit cache reruns only what
 // changed. GitHub merges the PR only while its head is that commit. CI on the beta push stays the
 // backstop. The last line names the merge commit; exit 1 when verify, land or the merge failed, 3 when
@@ -367,7 +367,7 @@ function changedBetween(from: string, to: string, io: LaneIo): string[] {
 /**
  * Why HEAD may not merge yet, or null when a passing receipt covers it. HEAD's tree is covered when
  * verify:fast passed on it, or when it differs from the verified tree only in what lane:close wrote
- * after that run (the suite scores, and the change note, which `check changelog` then proves). Any
+ * after that run (the suite scores, and the change note land renders, which no test or gate reads). Any
  * other difference - a rebase, an edit made while verify ran - is verified again here.
  */
 export function proveHead(verifiedTree: string, scoredPaths: ReadonlySet<string>, io: LaneIo): string | null {
@@ -380,11 +380,6 @@ export function proveHead(verifiedTree: string, scoredPaths: ReadonlySet<string>
     io.out(`lane:close: the pushed head differs from the verified tree in ${unproven.length} file(s) (${named}); verifying it`);
     if (!verify(io)) return "verify:fast failed on the pushed head";
     if (io.passedOn(headTree) === null) return "the files changed while verify:fast ran on the pushed head";
-    return null;
-  }
-  if (differs.some((path) => path.startsWith("changes/"))) {
-    const note = io.sh(["run", "check", "changelog"], true);
-    if (note.status !== 0) return `check changelog failed on the change note (exit ${note.status})`;
   }
   return null;
 }

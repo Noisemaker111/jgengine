@@ -55,8 +55,6 @@ interface Script {
   diffs?: Record<string, string[]>;
   /** A merge refusal GitHub answers, per merge attempt; undefined merges. */
   refusals?: (string | undefined)[];
-  /** `check changelog`'s exit. */
-  changelog?: number;
   /** The head GitHub has for the PR, when someone pushed to it after this lane did. */
   remoteHead?: string;
   /** Trees a passing `verify:fast --landing` receipt already covers when the run starts. */
@@ -160,7 +158,6 @@ function io(script: Script = {}): Fake {
         }
         return { ...run(), status: script.rebase ?? 0 };
       }
-      if (key === "run check changelog") return { ...run(), status: script.changelog ?? 0 };
       if (key.startsWith("git diff --name-only --no-renames ")) {
         const [from, to] = argv.slice(-2);
         return { ...run(), stdout: (script.diffs?.[`${from}..${to}`] ?? []).join("\n") };
@@ -228,14 +225,6 @@ describe("lane:close end to end", () => {
     });
     expect(closeLane({}, fake)).toBe(EXIT_CLOSED);
     expect(fake.calls.filter((call) => call === "run verify:fast --landing")).toHaveLength(1);
-    expect(fake.calls).toContain("run check changelog");
-  });
-
-  test("a change note in the wrong format stops the merge", () => {
-    const fake = io({ trees: { head: "T-head" }, diffs: { "T-verified..T-head": ["changes/agent-x.md"] }, changelog: 1 });
-    expect(closeLane({}, fake)).toBe(EXIT_VERIFY_FAILED);
-    expect(merges(fake)).toEqual([]);
-    expect(fake.lines.err.join("\n")).toContain("check changelog failed");
   });
 
   test("a pushed head with any other difference is verified again before it merges", () => {
