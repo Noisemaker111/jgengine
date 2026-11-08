@@ -4723,6 +4723,16 @@
       "intent": "named grass, moss, reed, crop and ornamental looks for grass fields"
     },
     {
+      "id": "grass-style",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/grass/grassStyle",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "realism and style sliders for grass, from cartoon to photoreal"
+    },
+    {
       "id": "grass-wind",
       "packages": [
         "@jgengine/core"

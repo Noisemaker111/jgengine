@@ -9,6 +9,7 @@
  */
 import { defineParamSchema, parseParams, type ParamsOf } from "../../generator/paramSchema";
 import { GRASS_DEFAULTS, resolveGrassObject, type GrassLook, type ResolvedGrass } from "../../grass/grassKind";
+import { GRASS_STYLE_SCHEMA, resolveGrassStyle, type GrassStyleSettings } from "../../grass/grassStyle";
 import { registerSceneKind, type SceneKindObject } from "../../scene/sceneKinds";
 import { GROUND_COVER_LIBRARY, type GroundCoverSpecies } from "./groundCoverSpecies";
 import { createTillerField, tillerCellLook } from "./tillerSim";
@@ -65,12 +66,13 @@ export function growGroundCoverLook(params: GroundCoverParams): GrassLook {
   return look;
 }
 
-/** A ground-cover volume's footprint and grown look, the same shape a `grass_field` resolves to. */
-export function resolveGroundCoverObject(object: SceneKindObject): ResolvedGrass | null {
+/** A ground-cover volume's footprint and grown look, the same shape a `grass_field` resolves to, drawn in the world's grass style. */
+export function resolveGroundCoverObject(object: SceneKindObject, worldStyle?: GrassStyleSettings): ResolvedGrass | null {
   const footprint = resolveGrassObject({ ...object, meta: {} });
   if (footprint === null) return null;
   const params = parseParams(GROUND_COVER_SCHEMA, object.meta);
-  return { ...footprint, look: growGroundCoverLook({ ...params, seed: params.seed === "" ? object.id : params.seed }) };
+  const grown = growGroundCoverLook({ ...params, seed: params.seed === "" ? object.id : params.seed });
+  return { ...footprint, look: { ...grown, style: resolveGrassStyle(object.meta?.["style"], worldStyle, undefined) } };
 }
 
 /** Registers the `ground_cover` volume kind. Called by `registerBuiltinSceneKinds`. @internal */
@@ -82,6 +84,7 @@ export function registerGroundCoverKind(): void {
     addCategory: "Studios",
     accent: "#9cc76a",
     schema: GROUND_COVER_SCHEMA,
+    nested: [{ key: "style", label: "Grass style", schema: GRASS_STYLE_SCHEMA, effective: (object, environment) => ({ ...resolveGrassStyle(object.meta?.["style"], environment?.grassStyle, undefined) }) }],
     resolve: (object) => resolveGroundCoverObject(object),
     note: (object) => {
       const resolved = resolveGroundCoverObject(object);

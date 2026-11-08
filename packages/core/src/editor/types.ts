@@ -8,6 +8,7 @@ import type { TerraformSnapshot } from "../terrain/terraform";
 import type { EditorGridLayer } from "./grid";
 import type { EnvironmentSource } from "@jgengine/core/lighting/environmentLighting";
 import type { IrradianceBakeSettings, IrradianceVolume } from "@jgengine/core/lighting/lightProbes";
+import type { GrassStyleSettings } from "@jgengine/core/grass/grassStyle";
 import type { PointLightingConfig } from "../game/playableGame";
 /** Runtime point-light shape reused by authored editor light markers. */
 export type { PointLightingConfig } from "../game/playableGame";
@@ -306,6 +307,11 @@ export interface EditorEnvironment {
   /** Sun height above the horizon in degrees; runtime `SkySunConfig.elevation`. */
   sunElevation?: number;
   fog?: EditorFogConfig;
+  /**
+   * The world's grass style: realism (0 cartoon .. 1 photoreal) and any style slider set by hand, or
+   * a named preset. Every grass and ground-cover volume draws with it unless its own `style` overrides it.
+   */
+  grassStyle?: GrassStyleSettings;
 }
 
 /** The full authored scene: every marker, volume, path, note, and sculpted terrain for a game. */

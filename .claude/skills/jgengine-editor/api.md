@@ -566,6 +566,10 @@
 
 - `MaterialLibraryBrowserProps` (interface): interface MaterialLibraryBrowserProps — Adopting a library name writes a real, editable material asset into the scene document.
 
+## @jgengine/editor/NestedSchemaSection
+
+- `NestedSchemaSection` (function): function NestedSchemaSection({ schema, label, accent, note, authored, effective, onChange, }: { schema: ParamSchema; label: string; accent?: string; note?: string; /** The bag as authored; `undefined` when nothing is set here. */ authored: Readonly<Record<string, unknown>> | undefined; /** Every fie… — A settings bag that lives as one nested object (a world's `grassStyle`, a grass patch's `style`) rather than as top-level meta fields, shown through its schema. The sliders show the values in effect, including ones nothing sets by hand (a realism curve's), and each edit writes only the key it touched, so an untouched slider keeps following its curve. Clear removes the whole bag.
+
 ## @jgengine/editor/PerfProbe
 
 - `PerfProbe` (const): const PerfProbe: React.MemoExoticComponent<({ api }: { api: EditorHostApi; }) => null> — In-canvas frame counter: publishes fps/draw-call samples to the editor host every 500ms.

@@ -2,6 +2,7 @@ import type { SkyEnvironmentConfig, WorldBounds } from "../world/features";
 import type { AvoidZone } from "../world/geometry";
 import { clearanceZonesFrom, DEFAULT_CLEARANCE_KINDS, type ClearanceOptions } from "../scatter/scatterRegion";
 import type { TerraformSnapshot } from "../terrain/terraform";
+import type { GrassStyleSettings } from "../grass/grassStyle";
 import { editorDocumentBounds } from "./document";
 import type { EditorAutoExposure, EditorColorGrading, EditorDocument, EditorEnvironment, EditorLightProbe } from "./types";
 import { bakeIrradianceVolume, type IrradianceBakeSettings, type IrradianceVolume } from "@jgengine/core/lighting/lightProbes";
@@ -40,6 +41,8 @@ export interface EnvironmentContent {
    * so the lighting workspace owns the look without hardcoding coordinates in world.ts.
    */
   sky?: SkyEnvironmentConfig;
+  /** The document's world grass style, when authored — feed `environment({ grassStyle })` so code-side `grass()` bands match its volumes. */
+  grassStyle?: GrassStyleSettings;
 }
 
 /**
@@ -400,10 +403,12 @@ export function environmentContentFromDocument(
   // ground); otherwise water volumes derive their own lake-bed depression.
   const sculpt = doc.terrain ?? lakebedFromWaterVolumes(doc);
   const sky = skyFromDocument(doc);
+  const grassStyle = doc.environment?.grassStyle;
   return {
     bounds: terrainBoundsFromDocument(doc, options),
     clearings: clearanceZonesFrom(doc, clearanceOptions),
     ...(sculpt === undefined ? {} : { sculpt }),
     ...(sky === undefined ? {} : { sky }),
+    ...(grassStyle === undefined ? {} : { grassStyle: { ...grassStyle } }),
   };
 }

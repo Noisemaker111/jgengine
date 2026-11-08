@@ -133,7 +133,7 @@ test("a grass_field volume authored with groundCover 0 keeps bare ground", async
 test("the authored look reaches the blade shader", async () => {
   const Renderer = renderer();
   const object = { id: "authored-meadow", kind: "grass_field", center: { x: 0, y: 0.5, z: 0 }, halfExtents: { x: 16, y: 0.5, z: 10 },
-    meta: { baseColor: "#27492b", tipColor: "#8da652", roughness: 0.63, seed: "authored", bladeWidth: 0.025, widthVariation: 0, normalLift: 0.3, season: 0.7 } };
+    meta: { baseColor: "#27492b", tipColor: "#8da652", roughness: 0.63, seed: "authored", bladeWidth: 0.025, widthVariation: 0, style: { normalLift: 0.3 }, season: 0.7 } };
   const context = { document: { markers: [], paths: [], volumes: [object] }, field: { sampleHeight: (x: number) => x * 0.05 }, groundColorAt: () => "#554433" } as unknown as SceneKindRenderContext;
   await mounted(cameraAt(0, 2, 5, [0, 0, 0]), createElement(Renderer, { objects: [object], context }), (scene) => {
     const meshes = bladeMeshes(scene);
@@ -154,6 +154,22 @@ test("the authored look reaches the blade shader", async () => {
     expect(uniforms.uShape!.value.y).toBe(0.3);
     expect(uniforms.uTone!.value.y).toBe(0.7);
     expect(shader.vertexShader).toContain("jgComputeGrassBlade");
+  });
+});
+
+test("the scene's world grass style reaches every volume's blade shader unless the volume overrides it", async () => {
+  const Renderer = renderer();
+  const plain = { id: "plain", kind: "grass_field", center: { x: 0, y: 0, z: 0 }, halfExtents: { x: 6, y: 0.5, z: 6 }, meta: { seed: "plain" } };
+  const own = { id: "own", kind: "grass_field", center: { x: 20, y: 0, z: 0 }, halfExtents: { x: 6, y: 0.5, z: 6 }, meta: { seed: "own", style: { normalLift: 0.2 } } };
+  const context = { document: { markers: [], paths: [], volumes: [plain, own], environment: { grassStyle: { realism: 1 } } }, field: { sampleHeight: () => 0 } } as unknown as SceneKindRenderContext;
+  await mounted(cameraAt(10, 3, 10, [10, 0, 0]), createElement(Renderer, { objects: [plain, own], context }), (scene) => {
+    const lifts = new Set<number>();
+    for (const mesh of bladeMeshes(scene)) {
+      const shader = { uniforms: {}, vertexShader: "#include <common>\n#include <beginnormal_vertex>\n#include <begin_vertex>", fragmentShader: "#include <common>\n#include <color_fragment>\n#include <lights_fragment_end>" };
+      mesh.material.onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, {} as THREE.WebGLRenderer);
+      lifts.add(Math.round((shader.uniforms as Record<string, THREE.IUniform<THREE.Vector4>>).uShape!.value.y * 1000) / 1000);
+    }
+    expect([...lifts].sort()).toEqual([0.2, 0.35]);
   });
 });
 

@@ -3,8 +3,10 @@ import { useSyncExternalStore } from "react";
 import type { EditorColorGrading, EditorDocument, EditorEnvironment, EditorLightProbe, EditorSession, EditorSkyPreset, EnvironmentSource } from "@jgengine/core/editor/index";
 import { bakeLightProbe } from "@jgengine/core/editor/environment";
 import { editorDocumentBounds } from "@jgengine/core/editor/document";
+import { GRASS_STYLE_SCHEMA, resolveGrassStyle } from "@jgengine/core/grass/grassStyle";
 
 import { SliderRow } from "./chromeFields";
+import { NestedSchemaSection } from "./NestedSchemaSection";
 import { BORDER, CONTROL, CONTROL_ACTIVE, FOCUS_RING, INPUT_CLS, MICRO_LABEL, PANEL_BG } from "./shell/theme";
 
 const PRESETS: readonly { id: EditorSkyPreset; label: string; hint: string }[] = [
@@ -162,6 +164,23 @@ export function LightingPanel({ session }: { session: EditorSession }) {
           />
           Drive from time of day
         </label>
+      </section>
+
+      <section className="space-y-1.5 border-t border-white/[0.05] pt-2">
+        <NestedSchemaSection
+          schema={GRASS_STYLE_SCHEMA}
+          label="Grass style"
+          accent="#7fbf4d"
+          note="How every grass and ground-cover patch in the scene is drawn, cartoon to photoreal; a patch's own style overrides it."
+          authored={env?.grassStyle}
+          effective={{ ...resolveGrassStyle(undefined, env?.grassStyle, undefined) }}
+          onChange={(next, coalesce) => {
+            const base: EditorEnvironment = { ...(env ?? {}) };
+            if (next === undefined) delete base.grassStyle;
+            else base.grassStyle = next;
+            commit(Object.keys(base).length === 0 ? undefined : base, `env:grassStyle:${coalesce}`);
+          }}
+        />
       </section>
 
       <section className="space-y-1.5 border-t border-white/[0.05] pt-2">

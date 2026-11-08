@@ -1817,21 +1817,22 @@
 
 ## @jgengine/core/grass/grassKind
 
-- `GRASS_DEFAULTS` (const): const GRASS_DEFAULTS: GrassLook — Grass defaults: a lush, lightly-swaying summer meadow.
+- `GRASS_DEFAULTS` (const): const GRASS_DEFAULTS: GrassLook — Grass defaults: a lush, lightly-swaying summer meadow at the default style.
 - `GRASS_FIELD_KIND` (const): const GRASS_FIELD_KIND: "grass_field" — The editor volume kind marking a box as a GPU grass patch.
 - `GRASS_FIELD_OUTPUT` (const): const GRASS_FIELD_OUTPUT: "grass-field" — The generator output family a grass look bakes to: {@link GrassFieldBake}.
 - `GRASS_GENERATOR` (const): const GRASS_GENERATOR: GeneratorDefinition<ParamSchema<readonly [RangeParamField & { key: "density"; }, RangeParamField & { key: "bladeHeight"; }, RangeParamField & { key: "heightVariation"; }, RangeParamField & { key: "bladeWidth"; }, RangeParamField & { key: "widthVariation"; }, RangeParamField & … — The grass generator: one schema from cushion moss and putting greens to reed beds, crops and pampas plumes. Detail picks the blade segments (4 at full detail, 2 at half, 1 at a quarter), so a baked variant carries its LODs.
-- `GRASS_PRESETS` (const): const GRASS_PRESETS: { id: "green" | "fairway" | "lawn" | "kentucky-bluegrass" | "perennial-ryegrass" | "tall-fescue" | "bermuda" | "zoysia" | "st-augustine" | "buffalo-grass" | "overgrown-lawn" | "shade-lawn" | "sports-pitch" | "worn-lawn" | "meadow" | "hay-meadow" | "wildflower-meadow" | "timothy-… — Every grass species as an inspector preset: the full knob set over the defaults, listed under its habitat. A field names one with `species` and any knob it also sets wins over the species.
+- `GRASS_PRESETS` (const): const GRASS_PRESETS: { id: "green" | "fairway" | "lawn" | "kentucky-bluegrass" | "perennial-ryegrass" | "tall-fescue" | "bermuda" | "zoysia" | "st-augustine" | "buffalo-grass" | "overgrown-lawn" | "shade-lawn" | "sports-pitch" | "worn-lawn" | "meadow" | "hay-meadow" | "wildflower-meadow" | "timothy-… — Every grass species as an inspector preset: the full knob set over the defaults, listed under its habitat. A field names one with `species` and any knob it also sets wins over the species. Presets hold what grows only; a species' style tuning is read through the `species` id (`readGrassLook`).
 - `GRASS_SCHEMA` (const): const GRASS_SCHEMA: ParamSchema<readonly [RangeParamField & { key: "density"; }, RangeParamField & { key: "bladeHeight"; }, RangeParamField & { key: "heightVariation"; }, RangeParamField & { key: "bladeWidth"; }, RangeParamField & { key: "widthVariation"; }, RangeParamField & { key: "profile"; }, Ra… — The grass parameter schema: drives the inspector, the variant grid and every `meta` parse.
 - `GrassBlade` (interface): interface GrassBlade — Blade shape and cover.
 - `GrassColour` (interface): interface GrassColour — Blade colour and its jitter.
 - `GrassFieldBake` (interface): interface GrassFieldBake — One baked grass look: the look with its seed settled, and the tuft mesh every instance of it places.
 - `GrassFlowers` (interface): interface GrassFlowers — Flower and seed heads.
 - `GrassGrowth` (interface): interface GrassGrowth — Where the grass grows and how it covers the ground.
-- `GrassKnobs` (type): type GrassKnobs = GrassBlade & GrassTuft & GrassColour & GrassSeason & GrassSecondSpecies & GrassFlowers & GrassGrowth & GrassMowing & GrassWind & GrassLighting & { seed: string } — Every grass knob flat, the shape a volume's `meta`, the inspector schema and presets use.
+- `GrassKnobs` (type): type GrassKnobs = GrassBlade & GrassTuft & GrassColour & GrassSeason & GrassSecondSpecies & GrassFlowers & GrassGrowth & GrassMowing & GrassWind & GrassLighting & { seed: string } — Every grass knob flat, the shape a volume's `meta`, the inspector schema and presets use. The style is not a knob: it nests under `style`.
 - `GrassLighting` (interface): interface GrassLighting — Blade material and light.
 - `GrassLook` (interface): interface GrassLook — Fully-defaulted, clamped grass look, read from a volume's `meta` or a `grass()` config, grouped by the part of the field each knob shapes.
-- `GrassLookGroups` (type): type GrassLookGroups = { [Group in Exclude<keyof GrassLook, "seed">]?: Partial<GrassLook[Group]> } & { seed?: string } — A partial {@link GrassLook}: any groups, each with any of its knobs.
+- `GrassLookGroups` (type): type GrassLookGroups = { [Group in Exclude<keyof GrassLook, "seed" | "style">]?: Partial<GrassLook[Group]> } & { style?: GrassStyleSettings; seed?: string } — A partial {@link GrassLook}: any groups, each with any of its knobs; `style` overrides the world style for this patch.
+- `GrassMeta` (type): type GrassMeta = Partial<GrassKnobs> & { style?: GrassStyleSettings } — A flat grass `meta`: the knobs, plus the patch's own style nested under `style`.
 - `GrassMowing` (interface): interface GrassMowing — Mow stripes.
 - `GrassSeason` (interface): interface GrassSeason — Season, drought and the masks that vary them across the field.
 - `GrassSecondSpecies` (interface): interface GrassSecondSpecies — The optional second species mixed into the field.
@@ -1850,7 +1851,7 @@
 ## @jgengine/core/grass/grassSpecies
 
 - `GRASS_SPECIES` (const): const GRASS_SPECIES: readonly [{ readonly id: "green"; readonly label: "Putting green"; readonly group: "Lawn & sport turf"; readonly values: { readonly density: 1; readonly bladeHeight: 0.02; readonly heightVariation: 0.05; readonly bladeWidth: 0.01; readonly widthVariation: 0.2; readonly profile: … — Every shipped grass species, grouped by habitat. Ids are stable: scenes store them.
-- `GrassSpecies` (interface): interface GrassSpecies — One named grass look: an id a field selects, the label and heading the inspector lists it under, and its knobs.
+- `GrassSpecies` (interface): interface GrassSpecies — One named grass: an id a field selects, the label and heading the inspector lists it under, its knobs, and any style sliders it tunes.
 - `GrassSpeciesId` (type): type GrassSpeciesId = (typeof GRASS_SPECIES)[number]["id"] — A shipped grass species id.
 
 ## @jgengine/core/grass/grassStream.draw
@@ -1859,6 +1860,17 @@
 - `GrassStream` (class): class GrassStream — Camera-streamed grass for one patch. A quadtree over the patch's base cells splits near the camera and stays coarse far away; each leaf node bakes only the share of tufts its distance needs, so resident and drawn work follow what the camera sees rather than the patch area. Leaves are three meshes under {@link GrassStream.group}; three frustum-culls them per camera, and each draw trims its instance count and segment detail to that camera's distance.
 - `GrassStreamOptions` (interface): interface GrassStreamOptions — Options for {@link GrassStream}.
 - `GrassStreamStats` (interface): interface GrassStreamStats — Per-frame bookkeeping the stream reports, for tests and devtools.
+
+## @jgengine/core/grass/grassStyle
+
+- `GRASS_REALISM_DEFAULT` (const): const GRASS_REALISM_DEFAULT: 0.5 — The realism a scene that sets none draws at: the look grass had before styles.
+- `GRASS_STYLE_CURVES` (const): const GRASS_STYLE_CURVES: Readonly<Record<GrassStyleSlider, (realism: number) => number>> — Each slider's value at a realism, when nothing sets it by hand. Every curve passes through the pre-style look at 0.5.
+- `GRASS_STYLE_DEFAULTS` (const): const GRASS_STYLE_DEFAULTS: GrassStyle — The style a scene that sets nothing draws with.
+- `GRASS_STYLE_SCHEMA` (const): const GRASS_STYLE_SCHEMA: ParamSchema<readonly [{ readonly type: "range"; readonly key: "realism"; readonly label: "realism (cartoon → photoreal)"; readonly min: 0; readonly max: 1; readonly step: 0.01; readonly default: 0.5; }, { readonly type: "range"; readonly key: "normalLift"; readonly label: "… — The grass style schema: the editor's grass style sections, their presets and every style parse.
+- `GrassStyle` (interface): interface GrassStyle — How a grass field is drawn.
+- `GrassStyleSettings` (type): type GrassStyleSettings = Partial<GrassStyle> & { preset?: string } — A style as authored: any sliders, plus an optional named preset (`cartoon`, `painterly`, `animated`, `realistic`) backing the ones left unset.
+- `GrassStyleSlider` (type): type GrassStyleSlider = Exclude<keyof GrassStyle, "realism"> — The style sliders `realism` drives: every style knob but `realism` itself.
+- `GrassStyleTuning` (type): type GrassStyleTuning = Partial<Record<GrassStyleSlider, number>> — A species' own tuning of style sliders, as it would be drawn at the default realism.
 
 ## @jgengine/core/grass/grassWind
 
@@ -4027,7 +4039,7 @@
 - `GROUND_COVER_SCHEMA` (const): const GROUND_COVER_SCHEMA: ParamSchema<readonly [{ readonly type: "weightedList"; readonly key: "species"; readonly label: "sown (share)"; readonly itemLabel: "ground-cover species id"; readonly default: readonly [{ readonly item: "lolium-perenne"; readonly weight: 2; }, { readonly item: "trifolium-… — The `ground_cover` params.
 - `GroundCoverParams` (type): type GroundCoverParams = ParamsOf<typeof GROUND_COVER_SCHEMA> — Parsed `ground_cover` params.
 - `growGroundCoverLook` (function): function growGroundCoverLook(params: GroundCoverParams): GrassLook — Grow the sward for the params, a week at a time under its care, and return the look it renders with. Cached and deterministic.
-- `resolveGroundCoverObject` (function): function resolveGroundCoverObject(object: SceneKindObject): ResolvedGrass | null — A ground-cover volume's footprint and grown look, the same shape a `grass_field` resolves to.
+- `resolveGroundCoverObject` (function): function resolveGroundCoverObject(object: SceneKindObject, worldStyle?: GrassStyleSettings): ResolvedGrass | null — A ground-cover volume's footprint and grown look, the same shape a `grass_field` resolves to, drawn in the world's grass style.
 
 ## @jgengine/core/plants/groundCover/groundCoverSpecies
 
@@ -5172,6 +5184,7 @@
 
 - `SceneKindCoverage` (interface): interface SceneKindCoverage — Marks a kind as *scatterable* — it fills an authored area with instances at one density under a bounded budget — so the editor renders the shared `CoverageSection` (Area → Assets → Density slider + budget note) that gives grass/scatter/city one authoring gesture. `spec` selects the unit + budget from `@jgengine/core/scatter/scatterCoverage`; `densityKey` is the single density slider hoisted into the coverage header (and hidden from the schema body below); `assetsKey` is the optional weighted "what fills it" palette summarized in the header.
 - `SceneKindDefinition` (interface): interface SceneKindDefinition<TResolved = unknown> — A registered scene kind — everything the editor/engine need to author and render a studio without bespoke code. `schema` drives the inspector + parse; `resolve` (optional) turns one document object into pure renderable data a matching `shell` renderer consumes; `add*` fields build the `+ Add` menu.
+- `SceneKindNestedSettings` (interface): interface SceneKindNestedSettings — A settings bag nested under one `meta` key, not spread across top-level fields: an untouched field stays unset (so it can follow a curve or a world setting), and the editor writing a whole parsed param set into `meta` never pins it.
 - `SceneKindObject` (interface): interface SceneKindObject — The raw document object a resolver receives — shape shared by markers, volumes, and paths.
 - `SceneKindResolveContext` (interface): interface SceneKindResolveContext — Ground sampler + options a resolver may read (terrain height/normal snap).
 - `SceneKindTarget` (type): type SceneKindTarget = "path" | "marker" | "volume" — Which document collection a scene kind lives in. Drives placement + which `meta` bag holds params.
@@ -6393,8 +6406,9 @@
 - `FrustumTarget` (interface): interface FrustumTarget { id: string; position: EntityPosition; radius?: number | undefined } — ⚠ undocumented
 - `GRASS_FIELD_OUTPUT` (const): const GRASS_FIELD_OUTPUT: "grass-field" — The generator output family a grass look bakes to: {@link GrassFieldBake}.
 - `GRASS_GENERATOR` (const): const GRASS_GENERATOR: GeneratorDefinition<ParamSchema<readonly [RangeParamField & { key: "density"; }, RangeParamField & { key: "bladeHeight"; }, RangeParamField & { key: "heightVariation"; }, RangeParamField & { key: "bladeWidth"; }, RangeParamField & { key: "widthVariation"; }, RangeParamField & … — The grass generator: one schema from cushion moss and putting greens to reed beds, crops and pampas plumes. Detail picks the blade segments (4 at full detail, 2 at half, 1 at a quarter), so a baked variant carries its LODs.
-- `GRASS_PRESETS` (const): const GRASS_PRESETS: { id: "green" | "fairway" | "lawn" | "kentucky-bluegrass" | "perennial-ryegrass" | "tall-fescue" | "bermuda" | "zoysia" | "st-augustine" | "buffalo-grass" | "overgrown-lawn" | "shade-lawn" | "sports-pitch" | "worn-lawn" | "meadow" | "hay-meadow" | "wildflower-meadow" | "timothy-… — Every grass species as an inspector preset: the full knob set over the defaults, listed under its habitat. A field names one with `species` and any knob it also sets wins over the species.
+- `GRASS_PRESETS` (const): const GRASS_PRESETS: { id: "green" | "fairway" | "lawn" | "kentucky-bluegrass" | "perennial-ryegrass" | "tall-fescue" | "bermuda" | "zoysia" | "st-augustine" | "buffalo-grass" | "overgrown-lawn" | "shade-lawn" | "sports-pitch" | "worn-lawn" | "meadow" | "hay-meadow" | "wildflower-meadow" | "timothy-… — Every grass species as an inspector preset: the full knob set over the defaults, listed under its habitat. A field names one with `species` and any knob it also sets wins over the species. Presets hold what grows only; a species' style tuning is read through the `species` id (`readGrassLook`).
 - `GRASS_SCHEMA` (const): const GRASS_SCHEMA: ParamSchema<readonly [RangeParamField & { key: "density"; }, RangeParamField & { key: "bladeHeight"; }, RangeParamField & { key: "heightVariation"; }, RangeParamField & { key: "bladeWidth"; }, RangeParamField & { key: "widthVariation"; }, RangeParamField & { key: "profile"; }, Ra… — The grass parameter schema: drives the inspector, the variant grid and every `meta` parse.
+- `GRASS_STYLE_SCHEMA` (const): const GRASS_STYLE_SCHEMA: ParamSchema<readonly [{ readonly type: "range"; readonly key: "realism"; readonly label: "realism (cartoon → photoreal)"; readonly min: 0; readonly max: 1; readonly step: 0.01; readonly default: 0.5; }, { readonly type: "range"; readonly key: "normalLift"; readonly label: "… — The grass style schema: the editor's grass style sections, their presets and every style parse.
 - `GROUND_DECAL_LAYERS` (const): const GROUND_DECAL_LAYERS: { readonly road: 0.06; readonly junction: 0.06; readonly marking: 0.11; readonly glow: 0.14; } — The single owning table of ground-decal Y offsets, in world units above the sampled terrain.
 - `GeneratedAsset` (interface): interface GeneratedAsset — A resolved generator asset: its parts plus the overall local-space bounds (min/max corners).
 - `GeneratedPart` (interface): interface GeneratedPart — One generated primitive part — a box/panel placed in the asset's local space.
@@ -6406,7 +6420,9 @@
 - `GrassEnvironmentDescriptor` (interface): interface GrassEnvironmentDescriptor — A resolved grass patch: its area and the fully-defaulted {@link GrassLook} the shell draws.
 - `GrassFieldBake` (interface): interface GrassFieldBake — One baked grass look: the look with its seed settled, and the tuft mesh every instance of it places.
 - `GrassLook` (interface): interface GrassLook — Fully-defaulted, clamped grass look, read from a volume's `meta` or a `grass()` config, grouped by the part of the field each knob shapes.
-- `GrassLookGroups` (type): type GrassLookGroups = { [Group in Exclude<keyof GrassLook, "seed">]?: Partial<GrassLook[Group]> } & { seed?: string } — A partial {@link GrassLook}: any groups, each with any of its knobs.
+- `GrassLookGroups` (type): type GrassLookGroups = { [Group in Exclude<keyof GrassLook, "seed" | "style">]?: Partial<GrassLook[Group]> } & { style?: GrassStyleSettings; seed?: string } — A partial {@link GrassLook}: any groups, each with any of its knobs; `style` overrides the world style for this patch.
+- `GrassStyle` (interface): interface GrassStyle — How a grass field is drawn.
+- `GrassStyleSettings` (type): type GrassStyleSettings = Partial<GrassStyle> & { preset?: string } — A style as authored: any sliders, plus an optional named preset (`cartoon`, `painterly`, `animated`, `realistic`) backing the ones left unset.
 - `GravityField` (interface): interface GravityField — Position-dependent gravity source used by movement and vehicle simulations.
 - `GravityVector` (type): type GravityVector = readonly [number, number, number] — Three-dimensional acceleration vector sampled from a gravity field.
 - `GripCurve` (interface): interface GripCurve — A piecewise-linear curve of `[x, y]` points in ascending `x`: tire grip against slip, engine torque against rpm.

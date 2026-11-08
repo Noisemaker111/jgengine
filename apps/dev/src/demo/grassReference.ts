@@ -143,6 +143,17 @@ export const GRASS_GAMES = ["harbor-heat", "fernwild", "beacon-bastion", "bright
 
 /** Side of one reference patch, metres: deep enough that a standing view reaches its horizon over grass. */
 export const GRASS_REFERENCE_PATCH = 360;
+
+/**
+ * The world grass style a grass demo page asks for: `?realism=<0..1>` (the board's `--realism` passes
+ * it), else none, so the demo draws at the default style.
+ */
+export function grassStyleFromPage(search: string): { realism: number } | undefined {
+  const raw = new URLSearchParams(search).get("realism");
+  if (raw === null || raw.trim() === "") return undefined;
+  const realism = Number(raw);
+  return Number.isFinite(realism) ? { realism: Math.max(0, Math.min(1, realism)) } : undefined;
+}
 /** Spacing between reference patches along x, metres. */
 export const GRASS_REFERENCE_SPACING = 420;
 
