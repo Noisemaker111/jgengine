@@ -376,12 +376,14 @@ function ImpostorCards({ poolKey, atlas, materials, objects, assignment, level }
   atlas: ImpostorAtlas;
   materials: { material: THREE.MeshStandardMaterial; depth: THREE.MeshDepthMaterial };
   objects: readonly SceneObject[];
-  assignment: ReadonlyMap<string, number>;
+  assignment: LevelAssignment;
   level: number;
 }) {
   const ctx = useGameContext();
   const scene = useThree((state) => state.scene);
   const visibility = useRenderVisibility();
+  const changed = useObjectChanges();
+  const written = useRef<{ card: unknown; visible: unknown; revision: number; objects: unknown; level: number } | null>(null);
   const [card, setCard] = useState<{ pool: ImpostorCardPool; slice: ImpostorCardSlice } | null>(null);
   useEffect(() => {
     const pool = acquireImpostorCardPool(poolKey, scene, materials.material, () => new ImpostorCardPool(impostorCard(atlas), materials.material, materials.depth));
@@ -395,6 +397,12 @@ function ImpostorCards({ poolKey, atlas, materials, objects, assignment, level }
   }, [poolKey, atlas, materials, scene, objects.length]);
   useSharedFrame(() => {
     if (card === null) return;
+    // The cards follow their placements, the visible set and the level switch alone: rewritten only after one moved.
+    const objectsChanged = changed.take();
+    const last = written.current;
+    if (!objectsChanged && last !== null && last.card === card && last.visible === visibility.current && last.revision === assignment.revision &&
+      last.objects === objects && last.level === level) return;
+    written.current = { card, visible: visibility.current, revision: assignment.revision, objects, level };
     const { slice } = card;
     let count = 0;
     for (const object of objects) {
@@ -410,6 +418,7 @@ function ImpostorCards({ poolKey, atlas, materials, objects, assignment, level }
     }
     slice.count = count;
     slice.ids.length = count;
+    slice.version += 1;
   }, CAMERA_POST_FRAME_PRIORITY + 0.2);
   useSharedFrame((state) => card?.pool.pack(state.clock.elapsedTime), CAMERA_POST_FRAME_PRIORITY + 0.3);
   return null;
@@ -457,7 +466,7 @@ function VariantImpostorLevel({ model, meta, objects, level, assignment }: {
   meta: BuiltLodMeta;
   objects: readonly SceneObject[];
   level: number;
-  assignment: ReadonlyMap<string, number>;
+  assignment: LevelAssignment;
 }) {
   const atlas = useBakedImpostor(model, meta);
   const materials = useMemo(() => atlas === null ? null : createImpostorMaterials(atlas), [atlas]);
@@ -473,13 +482,20 @@ function VariantImpostorLevel({ model, meta, objects, level, assignment }: {
 export function LevelSingles({ objects, level, assignment, single }: {
   objects: readonly SceneObject[];
   level: number;
-  assignment: ReadonlyMap<string, number>;
+  assignment: LevelAssignment;
   single: (object: SceneObject) => ReactNode;
 }) {
   const ctx = useGameContext();
   const visibility = useRenderVisibility();
   const [members, setMembers] = useState<readonly SceneObject[]>(objects);
+  const changed = useObjectChanges();
+  const gathered = useRef<{ visible: unknown; revision: number; objects: unknown; level: number } | null>(null);
   useSharedFrame(() => {
+    const objectsChanged = changed.take();
+    const last = gathered.current;
+    if (!objectsChanged && last !== null && last.visible === visibility.current && last.revision === assignment.revision &&
+      last.objects === objects && last.level === level) return;
+    gathered.current = { visible: visibility.current, revision: assignment.revision, objects, level };
     const next = objects.flatMap((object) => {
       const live = ctx.scene.object.get(object.instanceId);
       if (live === null || !visibility.current(live.instanceId)) return [];
