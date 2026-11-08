@@ -7,6 +7,7 @@ import { CONTACT_APPLY_FRAGMENT } from "./contactShadowPass.draw";
 import { GRADE_SHADER } from "./gradeShader.draw";
 import { HALF_ROUNDING_GLSL } from "./halfPrecision.draw";
 import { COMPOSITE_FRAGMENT } from "./sceneCompositePass.draw";
+import { TAA_SHARPEN_FRAGMENT } from "./temporalAaPass.draw";
 
 /** three's `#include <chunk>` expansion, which it applies to every material before compiling. */
 function resolveIncludes(source: string): string {
@@ -35,5 +36,6 @@ export function postfxExactSources() {
     outputFragment: resolveIncludes(OutputShader.fragmentShader),
     gradeVertex: GRADE_SHADER.vertexShader,
     gradeFragment: resolveIncludes(GRADE_SHADER.fragmentShader),
+    sharpen: TAA_SHARPEN_FRAGMENT,
   };
 }

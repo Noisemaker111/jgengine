@@ -128,11 +128,9 @@ export class ExposureMeterPass extends Pass {
     const previous = renderer.getRenderTarget();
     let meter = false;
     if (!this.dry) {
+      meter = this.readsNextFrame();
       this.frames += 1;
       this.elapsed += deltaTime;
-      // The first few frames sample every frame so a load starts at its metered exposure, not at
-      // the authored one; after that a readback is queued on a schedule.
-      meter = this.fence === null && (this.taken < 4 || this.frames % this.sampleInterval === 0);
     }
     // A dry run still draws the reduction, so its program links with the rest of the chain.
     if (meter || this.dry) {
@@ -183,6 +181,15 @@ export class ExposureMeterPass extends Pass {
    * Mark the end of the frame's drawing while a readback waits, so the next {@link collect} can tell
    * whether the GPU has caught up with it. Call it after the frame's last draw.
    */
+  /**
+   * Whether the next render reads the frame it is handed. The first few frames sample every frame so a
+   * load starts at its metered exposure, not at the authored one; after that a readback is queued on a
+   * schedule. On the other frames the pass draws nothing, so the chain may skip what only it would read.
+   */
+  readsNextFrame(): boolean {
+    return !this.dry && this.fence === null && (this.taken < 4 || (this.frames + 1) % this.sampleInterval === 0);
+  }
+
   frameEnd(): void {
     const gl = this.gl;
     if (gl === null || this.fence === null) return;

@@ -71,12 +71,34 @@ const fragmentShader = /* glsl */ `
     #endif
     return rtz16(color.rgb);
   }
+#ifdef FUSED_SHARPEN
+  // Temporal AA's sharpen (TAA_SHARPEN_FRAGMENT) on its resolved history, then its half-float write.
+  // Its taps one texel away landed on texel centres, and past an edge they clamped to it.
+  uniform sampler2D tHistory;
+  uniform float uSharpness;
+  vec4 sharpenAt(ivec2 p) {
+    ivec2 edge = textureSize(tHistory, 0) - 1;
+    vec4 centre = texelFetch(tHistory, p, 0);
+    vec3 north = texelFetch(tHistory, min(p + ivec2(0, 1), edge), 0).rgb;
+    vec3 south = texelFetch(tHistory, max(p - ivec2(0, 1), ivec2(0)), 0).rgb;
+    vec3 east = texelFetch(tHistory, min(p + ivec2(1, 0), edge), 0).rgb;
+    vec3 west = texelFetch(tHistory, max(p - ivec2(1, 0), ivec2(0)), 0).rgb;
+    vec3 lo = min(centre.rgb, min(min(north, south), min(east, west)));
+    vec3 hi = max(centre.rgb, max(max(north, south), max(east, west)));
+    vec3 sharpened = centre.rgb + (centre.rgb * 4.0 - north - south - east - west) * uSharpness;
+    return rtz16(vec4(clamp(sharpened, lo, hi), centre.a));
+  }
+#endif
 #endif
 
   void main() {
 #ifdef FUSED_OUTPUT
     // The frame is the same size as the screen, so the OutputPass's sample was this texel.
+  #ifdef FUSED_SHARPEN
+    vec3 c = outputPass(sharpenAt(ivec2(gl_FragCoord.xy)));
+  #else
     vec3 c = outputPass(texelFetch(tDiffuse, ivec2(gl_FragCoord.xy), 0));
+  #endif
 #else
     vec2 dir = vUv - 0.5;
     // Chromatic aberration: split RGB along the radial direction, growing toward the edges.
@@ -157,21 +179,33 @@ const TONE_MAPPING_DEFINES: ReadonlyMap<THREE.ToneMapping, string> = new Map([
  *
  * The merged variant runs three's own OutputShader code with the defines the OutputPass picks from
  * the renderer, and rounds the result the way the OutputPass's half-float target did, so the grade
- * starts from the same bits. `bun run check postfx-exact` compares the two on the GPU.
+ * starts from the same bits. With {@link fuseSharpen} as well it first does temporal AA's sharpen on
+ * the history {@link takeSharpen} handed it, which saves a second full-screen draw.
+ * `bun run check postfx-exact` compares each merged variant with the draws it replaces on the GPU.
  * @internal
  */
 export class GradePass extends ShaderPass {
   /** Do the OutputPass's work too; the chain switches that pass off on the same frames. */
   fuseOutput = false;
+  /** With {@link fuseOutput}, also sharpen temporal AA's history; that pass then skips its sharpen. */
+  fuseSharpen = false;
   private readonly plain: THREE.ShaderMaterial;
   private readonly fused: THREE.ShaderMaterial;
+  private readonly fusedSharpen: THREE.ShaderMaterial;
   private fusedFor: { toneMapping: THREE.ToneMapping; colorSpace: string } | null = null;
 
   constructor(uniforms: Record<string, THREE.IUniform>) {
-    super({ uniforms: { ...uniforms, toneMappingExposure: { value: 1 } }, vertexShader, fragmentShader });
+    super({ uniforms: { ...uniforms, toneMappingExposure: { value: 1 }, tHistory: { value: null }, uSharpness: { value: 0 } }, vertexShader, fragmentShader });
     this.plain = this.material;
     // Its tone mapping is the OutputPass's, so three must not add the screen's on top.
-    this.fused = new THREE.ShaderMaterial({ uniforms: this.uniforms, vertexShader, fragmentShader, defines: { FUSED_OUTPUT: "" }, toneMapped: false });
+    this.fused = new THREE.ShaderMaterial({ uniforms: this.uniforms, vertexShader, fragmentShader, toneMapped: false });
+    this.fusedSharpen = new THREE.ShaderMaterial({ uniforms: this.uniforms, vertexShader, fragmentShader, toneMapped: false });
+  }
+
+  /** This frame's resolved temporal AA history and its sharpness, for {@link fuseSharpen}. */
+  takeSharpen(history: THREE.Texture, sharpness: number): void {
+    requireUniform(this.uniforms, "tHistory").value = history;
+    requireUniform(this.uniforms, "uSharpness").value = sharpness;
   }
 
   override render(renderer: THREE.WebGLRenderer, writeBuffer: THREE.WebGLRenderTarget, readBuffer: THREE.WebGLRenderTarget): void {
@@ -185,12 +219,14 @@ export class GradePass extends ShaderPass {
         const toneDefine = TONE_MAPPING_DEFINES.get(toneMapping);
         if (toneDefine !== undefined) defines[toneDefine] = "";
         this.fused.defines = defines;
+        this.fusedSharpen.defines = { ...defines, FUSED_SHARPEN: "" };
         this.fused.needsUpdate = true;
+        this.fusedSharpen.needsUpdate = true;
         this.fusedFor = { toneMapping, colorSpace };
       }
       requireUniform(this.uniforms, "toneMappingExposure").value = renderer.toneMappingExposure;
     }
-    this.material = this.fuseOutput ? this.fused : this.plain;
+    this.material = !this.fuseOutput ? this.plain : this.fuseSharpen ? this.fusedSharpen : this.fused;
     super.render(renderer, writeBuffer, readBuffer);
   }
 
@@ -198,6 +234,7 @@ export class GradePass extends ShaderPass {
     this.material = this.plain;
     super.dispose();
     this.fused.dispose();
+    this.fusedSharpen.dispose();
   }
 }
 
