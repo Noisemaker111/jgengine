@@ -63,17 +63,28 @@ export interface VisibilitySystemOptions {
   readonly now?: () => number;
 }
 
+/** A read-only set of ids: membership, count and iteration. */
+export interface IdSet extends Iterable<string> {
+  readonly size: number;
+  has(id: string): boolean;
+}
+
 export interface VisibilityResult {
   /** Objects to submit to the renderer this frame. Valid until the next `update()` (reused set). */
-  readonly visible: ReadonlySet<string>;
+  readonly visible: IdSet;
   /** Objects within the preload region — load their assets, whether or not they render. */
-  readonly preload: ReadonlySet<string>;
+  readonly preload: IdSet;
   readonly stats: VisibilityStats;
   /**
    * Counts the updates whose visible set differed from the one before. Unchanged means every id
    * visible last update is visible now and no other, so work keyed on the visible set can be skipped.
    */
   readonly generation: number;
+  /**
+   * The ids whose visibility differs from the update before: the ones that entered `visible` and the
+   * ones that left it. Empty when the set is unchanged. Valid until the next `update()` (reused array).
+   */
+  readonly changed: readonly string[];
 }
 
 export interface VisibilityDebugSnapshot {
@@ -115,6 +126,38 @@ interface ObjRecord {
   /** The last evaluation that drew it, and the one before that: the previous frame's set without a set lookup. */
   visibleIn: number;
   priorVisibleIn: number;
+  /** The last evaluation that put it in the preload set. */
+  preloadIn: number;
+}
+
+/**
+ * The ids one evaluation put in a set, listed once each: membership is read from a stamp on the id's
+ * record, so filling it costs a push, where a `Set` cleared and refilled every frame regrew its table
+ * from empty. Ids without a record (none in practice) go in `loose`.
+ */
+class StampedIds implements IdSet {
+  list: string[] = [];
+  readonly loose = new Set<string>();
+
+  constructor(private readonly stamped: (id: string) => boolean) {}
+
+  get size(): number {
+    return this.list.length + this.loose.size;
+  }
+
+  has(id: string): boolean {
+    return this.stamped(id) || (this.loose.size > 0 && this.loose.has(id));
+  }
+
+  reset(): void {
+    this.list.length = 0;
+    if (this.loose.size > 0) this.loose.clear();
+  }
+
+  *[Symbol.iterator](): Iterator<string> {
+    yield* this.list;
+    yield* this.loose;
+  }
 }
 
 /** What one source's last walk found: its revision then, its ids in walk order and its always-visible ones. */
@@ -179,14 +222,16 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
   const records = new Map<string, ObjRecord>();
   const stats = createVisibilityStats();
 
-  let visible = new Set<string>();
-  let prevVisible = new Set<string>();
+  let consideredCounter = 0;
+  const visible = new StampedIds((id) => records.get(id)?.visibleIn === consideredCounter);
+  // The previous evaluation's visible ids, for the ones that left and for record-less ids.
+  let prevList: string[] = [];
+  const prevLoose = new Set<string>();
   let generation = 0;
-  const preload = new Set<string>();
+  const preload = new StampedIds((id) => records.get(id)?.preloadIn === consideredCounter);
   const requiredAssets = new Set<string>();
 
   const candidateScratch: string[] = [];
-  let consideredCounter = 0;
 
   const baseFrustum = createFrustum();
   const preloadFrustum = createFrustum();
@@ -230,7 +275,7 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
     const dynamic = resolved.classification !== "static";
     if (resolved.customVisibility !== undefined) customRecords += 1;
     if (record === undefined) {
-      record = { version: r.version, resolved, alwaysVisible, dynamic, assets: r.assets, lastSeen: updateCounter, indexed: false, bounds: undefined, considered: -1, visibleIn: -1, priorVisibleIn: -1 };
+      record = { version: r.version, resolved, alwaysVisible, dynamic, assets: r.assets, lastSeen: updateCounter, indexed: false, bounds: undefined, considered: -1, visibleIn: -1, priorVisibleIn: -1, preloadIn: -1 };
       records.set(r.id, record);
     } else {
       if (record.resolved.customVisibility !== undefined) customRecords -= 1;
@@ -309,17 +354,36 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
 
   // Ids this evaluation drew that the last one did not: with equal sizes, none means the same set.
   let entered = 0;
+  // The entered ids, then (once the evaluation is done) the ones that left.
+  const changed: string[] = [];
 
   /** Draw `id` this evaluation; `record` carries the stamps that answer "drawn last frame?". */
   function show(id: string, record: ObjRecord | undefined): void {
     if (record === undefined) {
-      if (!visible.has(id) && !prevVisible.has(id)) entered += 1;
+      if (visible.loose.has(id)) return;
+      if (!prevLoose.has(id)) {
+        entered += 1;
+        changed.push(id);
+      }
+      visible.loose.add(id);
     } else if (record.visibleIn !== consideredCounter) {
-      if (record.visibleIn !== consideredCounter - 1) entered += 1;
+      if (record.visibleIn !== consideredCounter - 1) {
+        entered += 1;
+        changed.push(id);
+      }
       record.priorVisibleIn = record.visibleIn;
       record.visibleIn = consideredCounter;
+      visible.list.push(id);
     }
-    visible.add(id);
+  }
+
+  /** Preload `id` this evaluation. */
+  function preloadId(id: string, record: ObjRecord | undefined): void {
+    if (record === undefined) preload.loose.add(id);
+    else if (record.preloadIn !== consideredCounter) {
+      record.preloadIn = consideredCounter;
+      preload.list.push(id);
+    }
   }
 
   /** Whether the last evaluation drew it: the frame hysteresis holds an object in. */
@@ -399,7 +463,7 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
       // visible, or within the preload region and not distance-culled far past the margin, preloads.
       const inPreload = isVisible || resolved.pinned || (!cullingOff && withinPreloadDistance(camera, resolved, b));
       if (inPreload) {
-        preload.add(id);
+        preloadId(id, record);
         if (streaming && record.assets !== undefined) {
           for (const asset of record.assets) requiredAssets.add(asset);
         }
@@ -423,7 +487,7 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
     for (const walk of walks) for (const r of walk.always) {
       const record = records.get(r.id);
       show(r.id, record);
-      preload.add(r.id);
+      preloadId(r.id, record);
       if (record?.assets !== undefined) {
         for (const asset of record.assets) requiredAssets.add(asset);
       }
@@ -441,21 +505,26 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
       // visibility and occlusion read state of their own, so with either in play every update evaluates.
       const occluding = settings.occlusionCulling && occlusion.enabled;
       if (!walked && !settingsChanged && customRecords === 0 && !occluding && settings.hysteresis >= 0 && sameCameras(cameraNumbers, cameraCount, cameras, cameraScratch)) {
-        return { visible, preload, stats, generation };
+        changed.length = 0;
+        return { visible, preload, stats, generation, changed };
       }
       settingsChanged = false;
       rememberCameras(cameras);
       consideredCounter += 1;
       resetCullingStats(stats);
       stats.totalObjects = trackedObjects;
-      // Swap current → prev, reuse the old prev as the new current (cleared).
-      const swap = prevVisible;
-      prevVisible = visible;
-      visible = swap;
-      visible.clear();
-      preload.clear();
+      // The current list becomes the previous one, and the old previous list is reused for the new one.
+      const spare = prevList;
+      prevList = visible.list;
+      visible.list = spare;
+      prevLoose.clear();
+      for (const id of visible.loose) prevLoose.add(id);
+      const previousSize = prevList.length + prevLoose.size;
+      visible.reset();
+      preload.reset();
       requiredAssets.clear();
       entered = 0;
+      changed.length = 0;
 
       for (const camera of cameras) evaluateCamera(camera);
       addAlwaysVisible();
@@ -463,8 +532,12 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
       stats.visible = visible.size;
       stats.preloaded = preload.size;
       stats.drawCallsAvoided = Math.max(0, stats.totalObjects - visible.size);
-      if (entered > 0 || visible.size !== prevVisible.size) generation += 1;
-      return { visible, preload, stats, generation };
+      if (entered > 0 || visible.size !== previousSize) {
+        generation += 1;
+        for (const id of prevList) if (records.get(id)?.visibleIn !== consideredCounter) changed.push(id);
+        for (const id of prevLoose) if (!visible.has(id)) changed.push(id);
+      }
+      return { visible, preload, stats, generation, changed };
     },
     isVisible(id) {
       return visible.has(id);
@@ -517,9 +590,11 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
       index.clear();
       bounds.clear();
       records.clear();
-      visible.clear();
-      prevVisible.clear();
-      preload.clear();
+      visible.reset();
+      prevList.length = 0;
+      prevLoose.clear();
+      changed.length = 0;
+      preload.reset();
       requiredAssets.clear();
       for (const walk of walks) {
         walk.revision = Number.NaN;

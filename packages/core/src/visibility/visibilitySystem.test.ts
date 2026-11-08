@@ -258,3 +258,31 @@ describe("visibilitySystem skips unchanged inputs", () => {
     expect(sys.update().visible.has("plain")).toBe(false);
   });
 });
+
+describe("visibilitySystem changed ids", () => {
+  test("each update lists exactly the ids that entered or left the visible set", () => {
+    const objects: Renderable[] = [];
+    for (let i = 0; i < 900; i += 1) objects.push({ id: `p${i}`, position: [((i % 30) - 15) * 4, 0, (Math.floor(i / 30) - 15) * 4], version: 1 });
+    const view = { position: [0, 2, 0] as [number, number, number], target: [0, 2, 1] as [number, number, number] };
+    const sys = createVisibilitySystem({
+      sources: [{ renderables: () => objects, revision: () => 0 }],
+      cameras: () => [{ id: "main", view: { kind: "perspective", position: view.position, target: view.target, fovDeg: 70, aspect: 16 / 9, near: 0.1, far: 50 } }],
+    });
+    let before = new Set<string>();
+    let flips = 0;
+    for (let frame = 0; frame < 160; frame += 1) {
+      // Walk and turn, with held frames, so updates both skip and re-evaluate.
+      if (frame % 5 !== 0) {
+        view.position = [Math.sin(frame * 0.05) * 20, 2, frame * 0.3 - 24];
+        view.target = [view.position[0] + Math.sin(frame * 0.07), 2, view.position[2] + Math.cos(frame * 0.07)];
+      }
+      const result = sys.update();
+      const now = new Set(result.visible);
+      const expected = [...now].filter((id) => !before.has(id)).concat([...before].filter((id) => !now.has(id))).sort();
+      expect([...result.changed].sort()).toEqual(expected);
+      flips += expected.length;
+      before = now;
+    }
+    expect(flips).toBeGreaterThan(100);
+  });
+});

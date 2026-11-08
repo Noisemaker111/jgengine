@@ -6,6 +6,7 @@ import { useGameContext } from "@jgengine/react/provider";
 import type { CameraView } from "@jgengine/core/visibility/frustum";
 import type { VisibilityConfig } from "@jgengine/core/visibility/config";
 import { buildCullingDriver } from "./cullingDriver";
+import { createVisibilityChanges, type VisibilityChanges } from "./visibilityChanges";
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
 
 type VisiblePredicate = (id: string) => boolean;
@@ -23,6 +24,20 @@ const CullingContext = createContext<MutableRefObject<VisiblePredicate> | null>(
  */
 export function useRenderVisibility(): MutableRefObject<VisiblePredicate> {
   return useContext(CullingContext) ?? alwaysVisibleRef;
+}
+
+/** With no provider nothing is ever culled, so nothing ever changes. */
+const unchanging = createVisibilityChanges();
+const ChangesContext = createContext<VisibilityChanges>(unchanging);
+
+/**
+ * Call `mark` whenever one of `ids` enters or leaves the render-visible set (or the whole predicate is
+ * replaced), so work that reads the predicate for those ids alone redoes it only then. `ids` should keep
+ * its identity while its contents do. @internal
+ */
+export function useVisibilityChanges(ids: readonly string[], mark: () => void): void {
+  const changes = useContext(ChangesContext);
+  useEffect(() => changes.watch(ids, mark), [changes, ids, mark]);
 }
 
 const tmpDir = new THREE.Vector3();
@@ -96,28 +111,37 @@ export function CullingProvider({ config, drawDistance, children }: { config: Vi
   const published = useRef(-1);
   const publishedBy = useRef<object | null>(null);
   const viewScratch = useMemo(createViewScratch, []);
+  const changes = useMemo(createVisibilityChanges, []);
 
   useFrame(() => {
-    if (driver === null) {
-      predicateRef.current = ALWAYS_VISIBLE;
+    const view = driver === null ? null : viewFromCamera(camera, viewScratch);
+    if (driver === null || view === null) {
+      if (predicateRef.current !== ALWAYS_VISIBLE) {
+        predicateRef.current = ALWAYS_VISIBLE;
+        changes.notifyAll();
+      }
       published.current = -1;
-      return;
-    }
-    const view = viewFromCamera(camera, viewScratch);
-    if (view === null) {
-      predicateRef.current = ALWAYS_VISIBLE;
-      published.current = -1;
+      publishedBy.current = null;
       return;
     }
     driver.setView(view);
     const system = driver.system;
-    const { generation } = system.update();
-    if (generation === published.current && publishedBy.current === system) return;
-    published.current = generation;
+    const result = system.update();
+    if (result.generation === published.current && publishedBy.current === system) return;
+    const sameSystem = publishedBy.current === system;
+    published.current = result.generation;
     publishedBy.current = system;
     // Reads the system's current set, so the same predicate stays right while the set does not change.
     predicateRef.current = (id) => system.isVisible(id);
+    // Against the same system only the changed ids need telling; a new system (or the always-visible
+    // fallback before it) may answer differently for any id.
+    if (sameSystem) changes.notify(result.changed);
+    else changes.notifyAll();
   }, CAMERA_POST_FRAME_PRIORITY);
 
-  return <CullingContext.Provider value={predicateRef}>{children}</CullingContext.Provider>;
+  return (
+    <CullingContext.Provider value={predicateRef}>
+      <ChangesContext.Provider value={changes}>{children}</ChangesContext.Provider>
+    </CullingContext.Provider>
+  );
 }

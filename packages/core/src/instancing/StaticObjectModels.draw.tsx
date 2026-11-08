@@ -18,7 +18,7 @@ import { measureLocalBounds, reportMeasuredBounds } from "@jgengine/core/model/m
 import { recordRenderBounds } from "@jgengine/core/visibility/measuredBounds";
 import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "@jgengine/core/model/measureCollisionMesh.draw";
 import { buildScatterModelSources, disposeScatterModelSources, type ScatterModelSource } from "@jgengine/core/scatter/scatterModels.draw";
-import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.draw";
+import { useRenderVisibility, useVisibilityChanges } from "@jgengine/core/visibility/CullingProvider.draw";
 import { createImpostorMaterials, IMPOSTOR_MIN_RADIUS, impostorCard, impostorDistance, impostorSettingsForQuality, impostorSwitch, sourceRadius, useImpostorEntry, type ImpostorAtlas } from "@jgengine/core/lod/impostor.draw";
 import { acquireImpostorCardPool, ImpostorCardPool, releaseImpostorCardPool, type ImpostorCardSlice } from "@jgengine/core/lod/impostorCardPool.draw";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
@@ -94,14 +94,30 @@ interface StaticMembers {
  */
 function useObjectChanges(): { take(): boolean; mark(): void } {
   const ctx = useGameContext();
-  const flag = useMemo(() => {
-    let dirty = true;
-    return { mark: () => { dirty = true; }, take: () => { const was = dirty; dirty = false; return was; } };
-  }, []);
+  const flag = useMemo(createChangeFlag, []);
   useEffect(() => {
     flag.mark();
     return ctx.scene.object.subscribe(flag.mark);
   }, [ctx, flag]);
+  return flag;
+}
+
+/** A flag that `mark` raises and `take` answers and lowers; raised at first. */
+function createChangeFlag(): { take(): boolean; mark(): void } {
+  let dirty = true;
+  return { mark: () => { dirty = true; }, take: () => { const was = dirty; dirty = false; return was; } };
+}
+
+/**
+ * Whether one of `objects` entered or left the render-visible set since the owner last asked: `take()`
+ * answers and resets. True at first and for a new list. A batch reads the visibility of its own members
+ * alone, so it gathers them again only then, not on every frame a walking camera moved some other id.
+ */
+function useMemberVisibilityChanges(objects: readonly SceneObject[]): { take(): boolean } {
+  const flag = useMemo(createChangeFlag, []);
+  const ids = useMemo(() => objects.map((object) => object.instanceId), [objects]);
+  useEffect(() => flag.mark(), [flag, ids]);
+  useVisibilityChanges(ids, flag.mark);
   return flag;
 }
 
@@ -132,13 +148,15 @@ function useStaticMembers(batch: StaticObjectBatch, objects: readonly SceneObjec
   const visibility = useRenderVisibility();
   const members = useMemo((): StaticMembers => ({ current: [], version: 0 }), []);
   const changed = useObjectChanges();
-  const gathered = useRef<{ visible: unknown; objects: unknown; assignment: unknown; revision: number; level: unknown }>({ visible: null, objects: null, assignment: null, revision: -1, level: null });
+  const shown = useMemberVisibilityChanges(objects);
+  const gathered = useRef<{ objects: unknown; assignment: unknown; revision: number; level: unknown }>({ objects: null, assignment: null, revision: -1, level: null });
   useSharedFrame(() => {
     const last = gathered.current;
     const objectsChanged = changed.take();
+    const visibilityChanged = shown.take();
     const revision = assignment?.revision ?? 0;
-    if (!objectsChanged && last.visible === visibility.current && last.objects === objects && last.assignment === assignment && last.revision === revision && last.level === level) return;
-    gathered.current = { visible: visibility.current, objects, assignment, revision, level };
+    if (!objectsChanged && !visibilityChanged && last.objects === objects && last.assignment === assignment && last.revision === revision && last.level === level) return;
+    gathered.current = { objects, assignment, revision, level };
     members.version += 1;
     const accept = assignment !== undefined && level !== undefined
       ? (live: SceneObject) => assignment.get(live.instanceId) === level
@@ -383,7 +401,8 @@ function ImpostorCards({ poolKey, atlas, materials, objects, assignment, level }
   const scene = useThree((state) => state.scene);
   const visibility = useRenderVisibility();
   const changed = useObjectChanges();
-  const written = useRef<{ card: unknown; visible: unknown; revision: number; objects: unknown; level: number } | null>(null);
+  const shown = useMemberVisibilityChanges(objects);
+  const written = useRef<{ card: unknown; revision: number; objects: unknown; level: number } | null>(null);
   const [card, setCard] = useState<{ pool: ImpostorCardPool; slice: ImpostorCardSlice } | null>(null);
   useEffect(() => {
     const pool = acquireImpostorCardPool(poolKey, scene, materials.material, () => new ImpostorCardPool(impostorCard(atlas), materials.material, materials.depth));
@@ -399,10 +418,11 @@ function ImpostorCards({ poolKey, atlas, materials, objects, assignment, level }
     if (card === null) return;
     // The cards follow their placements, the visible set and the level switch alone: rewritten only after one moved.
     const objectsChanged = changed.take();
+    const visibilityChanged = shown.take();
     const last = written.current;
-    if (!objectsChanged && last !== null && last.card === card && last.visible === visibility.current && last.revision === assignment.revision &&
+    if (!objectsChanged && !visibilityChanged && last !== null && last.card === card && last.revision === assignment.revision &&
       last.objects === objects && last.level === level) return;
-    written.current = { card, visible: visibility.current, revision: assignment.revision, objects, level };
+    written.current = { card, revision: assignment.revision, objects, level };
     const { slice } = card;
     let count = 0;
     for (const object of objects) {
@@ -489,13 +509,15 @@ export function LevelSingles({ objects, level, assignment, single }: {
   const visibility = useRenderVisibility();
   const [members, setMembers] = useState<readonly SceneObject[]>(objects);
   const changed = useObjectChanges();
-  const gathered = useRef<{ visible: unknown; revision: number; objects: unknown; level: number } | null>(null);
+  const shown = useMemberVisibilityChanges(objects);
+  const gathered = useRef<{ revision: number; objects: unknown; level: number } | null>(null);
   useSharedFrame(() => {
     const objectsChanged = changed.take();
+    const visibilityChanged = shown.take();
     const last = gathered.current;
-    if (!objectsChanged && last !== null && last.visible === visibility.current && last.revision === assignment.revision &&
+    if (!objectsChanged && !visibilityChanged && last !== null && last.revision === assignment.revision &&
       last.objects === objects && last.level === level) return;
-    gathered.current = { visible: visibility.current, revision: assignment.revision, objects, level };
+    gathered.current = { revision: assignment.revision, objects, level };
     const next = objects.flatMap((object) => {
       const live = ctx.scene.object.get(object.instanceId);
       if (live === null || !visibility.current(live.instanceId)) return [];
