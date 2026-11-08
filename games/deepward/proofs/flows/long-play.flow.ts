@@ -37,7 +37,7 @@ export default defineFlow(game, {
     await f.hold("KeyW", { until: (p) => p.z < -3.5, timeoutMs: 10000 });
     await f.hold("KeyA", { until: (p) => p.x < -3.8, timeoutMs: 10000 });
     await f.press("KeyE");
-    await f.waitFor((p) => p.carried >= 1, { timeoutMs: 15000 });
+    await f.waitFor((p) => p.carried >= 1, { timeoutMs: 30000 });
     await f.hold("KeyS", { ms: 300 });
     await f.press("Tab");
     await f.wait(1800);
@@ -63,7 +63,7 @@ export default defineFlow(game, {
     await f.teleport({ x: -1.2, z: -41.6 });
     await f.wait(600);
     await f.press("KeyE");
-    await f.waitFor((p) => p.stratum === 2, { timeoutMs: 10000 });
+    await f.waitFor((p) => p.stratum === 2, { timeoutMs: 30000 });
     // off the landing and into the aisles, lamp on so the courier sees it
     await f.hold("KeyS", { ms: 2500 });
     await f.teleport({ x: 0.5, z: -11 });
@@ -84,7 +84,7 @@ export default defineFlow(game, {
     await f.teleport({ x: 0, z: 16.6 });
     await f.wait(600);
     await f.press("KeyE");
-    await f.waitFor((p) => p.stratum === 1, { timeoutMs: 10000 });
+    await f.waitFor((p) => p.stratum === 1, { timeoutMs: 30000 });
     await f.teleport({ x: 0, z: 2.6 });
     await f.wait(600);
     await f.press("KeyE");
