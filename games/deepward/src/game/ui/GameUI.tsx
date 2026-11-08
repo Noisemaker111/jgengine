@@ -161,9 +161,12 @@ export function GameUI() {
   }, [ctx, settings.isOpen]);
   // The title and the pause are one menu system: the live station stays behind both. A save
   // boundary or a pending reprint keeps its own sheet, so the menu steps aside for it.
-  if (phase === "menu" || (phase === "paused" && screen.panel === null && (screen.mode === "home" || screen.mode === "dive"))) return <DeepwardMenu />;
+  if (phase === "menu") return <DeepwardMenu />;
+  // The pause menu covers a HUD that stays mounted, only hidden: tearing the whole HUD down on
+  // Escape and building it again on resume froze each of those frames for ~45 ms.
+  const pauseMenu = phase === "paused" && screen.panel === null && (screen.mode === "home" || screen.mode === "dive");
   const close = () => { command("close"); grab(); };
-  return <div className={`dw-ui dw-hud ${screen.low ? "dw-low" : ""} ${screen.paused ? "dw-held" : ""}`} onKeyDown={event => {
+  return <>{pauseMenu ? <DeepwardMenu /> : null}<div className={`dw-ui dw-hud ${screen.low ? "dw-low" : ""} ${screen.paused ? "dw-held" : ""}`} style={pauseMenu ? HIDDEN : undefined} aria-hidden={pauseMenu || undefined} onKeyDown={event => {
     if (event.code === "Tab") event.stopPropagation();
     if ((event.code === "Space" || event.code === "Enter") && event.target instanceof HTMLElement && event.target.closest("button, a, input, select, textarea, [contenteditable=true]")) event.stopPropagation();
   }}>
@@ -199,8 +202,10 @@ export function GameUI() {
     {screen.panel === "cache" && screen.diving && <CacheSheet dialogRef={shiftDialogRef} command={command} close={close} />}
     {screen.mode === "reprinting" && <ReprintSheet dialogRef={shiftDialogRef} command={command} />}
     {(screen.mode === "saving" || screen.mode === "blocked") && <SaveSheet dialogRef={shiftDialogRef} command={command} />}
-  </div>;
+  </div></>;
 }
+
+const HIDDEN = { display: "none" } as const;
 
 /** The helmet glass: the low-air wash, the hurt wash and the reticle. */
 function VisorGlass({ low }: { low: boolean }) {
