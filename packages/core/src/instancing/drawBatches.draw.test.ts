@@ -230,3 +230,54 @@ test("a batch the matrix pass creates is under one of that pass's render walk st
   const starts = sceneWalkStarts(scene)?.starts ?? [];
   expect(starts.some((start) => start === batch || start === batch.parent)).toBe(true);
 });
+
+function poles(material: THREE.Material, count: number, x: number): THREE.InstancedMesh {
+  const mesh = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.1, 0.1, 4), material, count);
+  for (let index = 0; index < count; index += 1) mesh.setMatrixAt(index, new THREE.Matrix4().makeTranslation(index * 3, 2, 0));
+  mesh.position.x = x;
+  return mesh;
+}
+
+test("a small instanced mesh's instances join the batch of its material with plain meshes, at the instance's world place", () => {
+  const { scene, batcher } = setup();
+  const metal = new THREE.MeshStandardMaterial({ color: "#888" });
+  const street = poles(metal, 4, 100);
+  scene.add(street, new THREE.Mesh(new THREE.BoxGeometry(), metal));
+  scene.updateMatrixWorld();
+  const batches = batchesOf(scene);
+  expect(batches).toHaveLength(1);
+  expect(batcher.stats()).toMatchObject({ batched: 2, single: 0, drawn: 1, shown: 5 });
+  expect(street.layers.mask).toBe(1 << BATCHED_SOURCE_LAYER);
+  const placed = Array.from({ length: 5 }, (_, index) => instanceMatrix(batches[0] as THREE.BatchedMesh, index)[0]);
+  expect(placed).toContain(109);
+  street.visible = false;
+  scene.updateMatrixWorld();
+  expect(batcher.stats().shown).toBe(1);
+});
+
+test("an instanced mesh whose instances move draws on its own until they hold still; large, coloured and per-instance-attribute ones keep their own draw", () => {
+  const { scene, batcher } = setup();
+  const metal = new THREE.MeshStandardMaterial();
+  const moving = poles(metal, 3, 0);
+  scene.add(moving);
+  scene.updateMatrixWorld();
+  expect(batcher.stats()).toMatchObject({ batched: 1 });
+  moving.setMatrixAt(0, new THREE.Matrix4().makeTranslation(0, 5, 0));
+  moving.instanceMatrix.needsUpdate = true;
+  scene.updateMatrixWorld();
+  expect(moving.layers.mask).toBe(1);
+  expect(batcher.stats()).toMatchObject({ batched: 0, single: 1, reasons: { instancesMoving: 1 } });
+  for (let pass = 0; pass < 100; pass += 1) scene.updateMatrixWorld();
+  expect(batcher.stats()).toMatchObject({ batched: 1, single: 0 });
+  expect(moving.layers.mask).toBe(1 << BATCHED_SOURCE_LAYER);
+
+  const field = poles(metal, 500, 0);
+  const coloured = poles(metal, 2, 0);
+  coloured.setColorAt(0, new THREE.Color("red"));
+  const tagged = poles(metal, 2, 0);
+  tagged.geometry.setAttribute("tint", new THREE.InstancedBufferAttribute(new Float32Array(2), 1));
+  scene.add(field, coloured, tagged);
+  scene.updateMatrixWorld();
+  expect(batcher.stats().reasons).toMatchObject({ manyInstances: 1, instanceColor: 1, instanceAttribute: 1 });
+  expect([field, coloured, tagged].every((mesh) => mesh.layers.mask === 1)).toBe(true);
+});

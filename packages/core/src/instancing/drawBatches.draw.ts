@@ -160,9 +160,23 @@ const enum ValueKind {
   Vector2,
 }
 
+/**
+ * Most instances an instanced mesh may have to draw through a batch. A batch culls and sorts instance
+ * by instance on the CPU for every camera, shadow cascades included, which costs less than a draw for
+ * a few instances (a street's poles, a kit chunk) and more than one for a scatter field of thousands,
+ * which keeps its own instanced draw.
+ */
+const MAX_INSTANCED_SOURCE = 32;
+
+const instanceWorld = new THREE.Matrix4();
+
 class DrawEntry {
   group: BatchGroup | null = null;
-  instance = -1;
+  /** The batch instances it draws: one for a mesh, one per instance for an instanced mesh. */
+  readonly instances: number[] = [];
+  /** An instanced mesh's instance matrices and count as last placed; a change sends it to its own draw until they hold still. */
+  matrixVersion: number;
+  count: number;
   geometry: THREE.BufferGeometry;
   material: THREE.Material | THREE.Material[];
   record: MaterialRecord | null = null;
@@ -179,7 +193,9 @@ class DrawEntry {
   /** Why it draws on its own, when it does. */
   reason = "new";
 
-  constructor(readonly mesh: THREE.Mesh) {
+  constructor(readonly mesh: THREE.Mesh, readonly instanced: THREE.InstancedMesh | null) {
+    this.matrixVersion = instanced?.instanceMatrix.version ?? 0;
+    this.count = instanced?.count ?? 1;
     this.geometry = mesh.geometry;
     this.material = mesh.material;
     this.castShadow = mesh.castShadow;
@@ -227,8 +243,23 @@ function reject(reason: string): null {
   return null;
 }
 
+/** Whether an instanced mesh's instances can be a batch's instances: one plain matrix each, nothing else per instance. */
+function instancedRejection(mesh: THREE.InstancedMesh): string | null {
+  if (mesh.count === 0) return "empty";
+  if (mesh.count > MAX_INSTANCED_SOURCE) return "manyInstances";
+  if (mesh.instanceColor !== null || mesh.morphTexture !== null) return "instanceColor";
+  for (const name in mesh.geometry.attributes) {
+    if (mesh.geometry.attributes[name] instanceof THREE.InstancedBufferAttribute) return "instanceAttribute";
+  }
+  return null;
+}
+
 /** Whether a mesh's batch would draw exactly what three draws for it, and if so the batch it joins. */
-function batchKeyOf(mesh: THREE.Mesh): string | null {
+function batchKeyOf(mesh: THREE.Mesh, instanced: THREE.InstancedMesh | null): string | null {
+  if (instanced !== null) {
+    const reason = instancedRejection(instanced);
+    if (reason !== null) return reject(reason);
+  }
   if (mesh.layers.mask !== DEFAULT_MASK) return reject("layers");
   if (!mesh.matrixWorldAutoUpdate) return reject("handWorldMatrix");
   if (!isNeutralRenderHook(mesh.onBeforeRender) || mesh.onAfterRender !== BASE.onAfterRender) return reject("renderHook");
@@ -300,11 +331,23 @@ export class DrawBatcher implements ShownMeshVisitor {
   visit(mesh: THREE.Mesh, moved: boolean, shown: boolean): void {
     if (!this.enabled) return;
     const flags = mesh as THREE.Mesh & Partial<THREE.SkinnedMesh & THREE.InstancedMesh & THREE.BatchedMesh>;
-    if (flags.isSkinnedMesh === true || flags.isInstancedMesh === true || flags.isBatchedMesh === true) return;
+    if (flags.isSkinnedMesh === true || flags.isBatchedMesh === true) return;
+    const instanced = flags.isInstancedMesh === true ? mesh as THREE.InstancedMesh : null;
     const pass = this.pass;
     let entry = this.entries.get(mesh);
+    if (entry !== undefined && instanced !== null && (instanced.instanceMatrix.version !== entry.matrixVersion || instanced.count !== entry.count)) {
+      // Its system rewrote its instances: it draws on its own until they hold still, so moving
+      // instances (impacts, flocks) never rebuild batch instances every frame.
+      entry.matrixVersion = instanced.instanceMatrix.version;
+      entry.count = instanced.count;
+      this.unplace(entry);
+      entry.retryAt = pass + SETTLE_PASSES;
+      entry.reason = "instancesMoving";
+      entry.seen = pass;
+      return;
+    }
     if (entry === undefined) {
-      entry = new DrawEntry(mesh);
+      entry = new DrawEntry(mesh, instanced);
       entry.slot = this.list.length;
       this.list.push(entry);
       this.entries.set(mesh, entry);
@@ -342,16 +385,32 @@ export class DrawBatcher implements ShownMeshVisitor {
     }
     const group = entry.group;
     if (group === null) return;
-    if (moved) {
-      if (mesh.matrixWorld.determinant() <= 0) {
-        this.unplace(entry);
-        entry.retryAt = pass + RETRY_AFTER_PASSES;
-        entry.reason = "mirrored";
-        return;
-      }
-      group.mesh.setMatrixAt(entry.instance, mesh.matrixWorld);
+    if (moved && !this.writeMatrices(entry, group)) {
+      this.unplace(entry);
+      entry.retryAt = pass + RETRY_AFTER_PASSES;
+      entry.reason = "mirrored";
+      return;
     }
     if (shown !== entry.shown) this.show(entry, group, shown);
+  }
+
+  /** Write the entry's world matrices into its batch instances; false when one is mirrored, which a batch cannot draw. */
+  private writeMatrices(entry: DrawEntry, group: BatchGroup): boolean {
+    const world = entry.mesh.matrixWorld;
+    const instanced = entry.instanced;
+    const instances = entry.instances;
+    if (instanced === null) {
+      if (world.determinant() <= 0) return false;
+      group.mesh.setMatrixAt(instances[0] ?? -1, world);
+      return true;
+    }
+    const array = instanced.instanceMatrix.array;
+    for (let index = 0; index < instances.length; index += 1) {
+      instanceWorld.fromArray(array, index * 16).premultiply(world);
+      if (instanceWorld.determinant() <= 0) return false;
+      group.mesh.setMatrixAt(instances[index] ?? -1, instanceWorld);
+    }
+    return true;
   }
 
   endPass(): void {
@@ -411,8 +470,9 @@ export class DrawBatcher implements ShownMeshVisitor {
 
   private show(entry: DrawEntry, group: BatchGroup, shown: boolean): void {
     entry.shown = shown;
-    group.mesh.setVisibleAt(entry.instance, shown);
-    group.shown += shown ? 1 : -1;
+    const instances = entry.instances;
+    for (let index = 0; index < instances.length; index += 1) group.mesh.setVisibleAt(instances[index] ?? -1, shown);
+    group.shown += shown ? instances.length : -instances.length;
     group.mesh.visible = group.shown > 0;
   }
 
@@ -435,7 +495,7 @@ export class DrawBatcher implements ShownMeshVisitor {
       entry.reason = "settling";
       return;
     }
-    const key = batchKeyOf(mesh);
+    const key = batchKeyOf(mesh, entry.instanced);
     if (key === null || Array.isArray(material)) {
       entry.retryAt = this.pass + RETRY_AFTER_PASSES;
       entry.reason = key === null ? rejection : "multiMaterial";
@@ -456,12 +516,15 @@ export class DrawBatcher implements ShownMeshVisitor {
     const geometry = batchableGeometry(mesh.geometry);
     const geometryId = this.addGeometry(group, geometry);
     const batch = group.mesh;
-    if (batch.instanceCount >= batch.maxInstanceCount) batch.setInstanceCount(batch.maxInstanceCount * 2);
-    const instance = batch.addInstance(geometryId);
-    batch.setVisibleAt(instance, false);
-    group.instances += 1;
+    const count = entry.instanced?.count ?? 1;
+    if (batch.instanceCount + count > batch.maxInstanceCount) batch.setInstanceCount(Math.max(batch.maxInstanceCount * 2, batch.instanceCount + count));
+    for (let index = 0; index < count; index += 1) {
+      const instance = batch.addInstance(geometryId);
+      batch.setVisibleAt(instance, false);
+      entry.instances.push(instance);
+    }
+    group.instances += count;
     entry.group = group;
-    entry.instance = instance;
     entry.shown = false;
     entry.record = record;
     record.entries.add(entry);
@@ -472,8 +535,9 @@ export class DrawBatcher implements ShownMeshVisitor {
     const group = entry.group;
     if (group === null) return;
     if (entry.shown) this.show(entry, group, false);
-    group.mesh.deleteInstance(entry.instance);
-    group.instances -= 1;
+    const instances = entry.instances;
+    for (let index = 0; index < instances.length; index += 1) group.mesh.deleteInstance(instances[index] ?? -1);
+    group.instances -= instances.length;
     const geometry = batchableGeometry(entry.geometry);
     const known = group.geometries.get(geometry);
     if (known !== undefined && --known.refs === 0) {
@@ -483,7 +547,7 @@ export class DrawBatcher implements ShownMeshVisitor {
     entry.record?.entries.delete(entry);
     entry.record = null;
     entry.group = null;
-    entry.instance = -1;
+    instances.length = 0;
     if (entry.mesh.layers.mask === BATCHED_SOURCE_MASK) entry.mesh.layers.mask = DEFAULT_MASK;
     if (group.instances > 0) return;
     group.mesh.removeFromParent();
