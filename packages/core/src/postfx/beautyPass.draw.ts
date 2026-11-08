@@ -28,7 +28,8 @@ void main() {
  */
 export class BeautyPass extends Pass {
   readonly target: THREE.WebGLRenderTarget;
-  private readonly material: THREE.ShaderMaterial;
+  /** The copy into the chain; `bun run perf post-audit` draws it as the reference for the composite. */
+  readonly material: THREE.ShaderMaterial;
   private readonly quad: FullScreenQuad;
 
   constructor(

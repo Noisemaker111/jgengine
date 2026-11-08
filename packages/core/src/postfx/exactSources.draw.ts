@@ -1,13 +1,10 @@
 import { ShaderChunk } from "three";
 import { GTAOBlendShader } from "three/examples/jsm/shaders/GTAOShader.js";
-import { OutputShader } from "three/examples/jsm/shaders/OutputShader.js";
 
 import { BEAUTY_COPY_FRAGMENT } from "./beautyPass.draw";
 import { CONTACT_APPLY_FRAGMENT } from "./contactShadowPass.draw";
-import { GRADE_SHADER } from "./gradeShader.draw";
 import { HALF_ROUNDING_GLSL } from "./halfPrecision.draw";
 import { COMPOSITE_FRAGMENT } from "./sceneCompositePass.draw";
-import { TAA_SHARPEN_FRAGMENT } from "./temporalAaPass.draw";
 
 /** three's `#include <chunk>` expansion, which it applies to every material before compiling. */
 function resolveIncludes(source: string): string {
@@ -32,10 +29,5 @@ export function postfxExactSources() {
     aoBlend: GTAOBlendShader.fragmentShader,
     contactApply: CONTACT_APPLY_FRAGMENT,
     composite: COMPOSITE_FRAGMENT,
-    outputVertex: OutputShader.vertexShader,
-    outputFragment: resolveIncludes(OutputShader.fragmentShader),
-    gradeVertex: GRADE_SHADER.vertexShader,
-    gradeFragment: resolveIncludes(GRADE_SHADER.fragmentShader),
-    sharpen: TAA_SHARPEN_FRAGMENT,
   };
 }

@@ -3,9 +3,8 @@ import * as THREE from "three";
 import { EffectComposer } from "three-stdlib";
 import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass.js";
 import { DEFAULT_AO } from "@jgengine/core/render/postProcessing";
-import { requireUniform } from "@jgengine/core/render/uniformMaterial.draw";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
-import { advanceRevealFade, buildPostGraph, disposeGraph, planPostStages, resolveAoStage, showEffects, startRevealFade, syncSize, syncTail, availablePostfxStages } from "./PostProcessing.draw";
+import { advanceRevealFade, buildPostGraph, disposeGraph, planPostStages, resolveAoStage, showEffects, startRevealFade, syncSize, availablePostfxStages } from "./PostProcessing.draw";
 import { ExposureMeterPass } from "./autoExposure.draw";
 import { BeautyPass } from "./beautyPass.draw";
 import { RevealFadePass, RevealSnapshotPass } from "./revealFade.draw";
@@ -233,61 +232,6 @@ describe("effects after the reveal", () => {
   };
   const fullChain = () =>
     withImage(() => buildPostGraph(stubRenderer(), new THREE.Scene(), new THREE.PerspectiveCamera(), planPostStages({ toneMapping: "aces", ao: undefined, bloom: {} }, "high"), 320, 180));
-
-  test("the grade does the OutputPass's work on the frames nothing draws between them", () => {
-    const graph = fullChain();
-    const grade = graph.grade!;
-    grade.renderToScreen = true;
-    syncTail(graph);
-    expect(grade.fuseOutput).toBe(true);
-    expect(graph.output.enabled).toBe(false);
-    // The reveal fade draws between them.
-    startRevealFade(graph);
-    syncTail(graph);
-    expect(grade.fuseOutput).toBe(false);
-    expect(graph.output.enabled).toBe(true);
-    // One slow frame moves the fade only part way, so run it out.
-    for (let frame = 0; frame < 100 && graph.reveal!.fade.enabled; frame++) advanceRevealFade(graph, 0.1);
-    syncTail(graph);
-    expect(grade.fuseOutput).toBe(true);
-    // Chromatic aberration samples the tone-mapped frame away from its own texel.
-    requireUniform(grade.uniforms, "uChroma").value = 0.002;
-    syncTail(graph);
-    expect(grade.fuseOutput).toBe(false);
-    requireUniform(grade.uniforms, "uChroma").value = 0;
-    // A frame smaller than the screen is stretched by the grade's sample.
-    graph.composer.setSize(160, 90);
-    syncTail(graph);
-    expect(grade.fuseOutput).toBe(false);
-    expect(graph.output.enabled).toBe(true);
-    disposeGraph(graph);
-  });
-
-  test("the grade also sharpens temporal AA's history unless the exposure meter reads the sharpened frame", () => {
-    const build = (autoExposure: false | undefined) =>
-      withImage(() => buildPostGraph(stubRenderer(), new THREE.Scene(), new THREE.PerspectiveCamera(), planPostStages({ toneMapping: "aces", bloom: {}, autoExposure }, "high"), 320, 180));
-    const unmetered = build(false);
-    showEffects(unmetered, true);
-    unmetered.grade!.renderToScreen = true;
-    syncTail(unmetered);
-    expect(unmetered.grade!.fuseSharpen).toBe(true);
-    expect(unmetered.taa!.sharpenIn).toBe(unmetered.grade);
-    // With TAA off (the loading cover) there is nothing to sharpen.
-    showEffects(unmetered, false);
-    syncTail(unmetered);
-    expect(unmetered.grade!.fuseSharpen).toBe(false);
-    expect(unmetered.taa!.sharpenIn).toBeNull();
-    disposeGraph(unmetered);
-    // A fresh meter samples its first frames, so the sharpened frame must exist for it.
-    const metered = build(undefined);
-    showEffects(metered, true);
-    metered.grade!.renderToScreen = true;
-    syncTail(metered);
-    expect(metered.grade!.fuseOutput).toBe(true);
-    expect(metered.grade!.fuseSharpen).toBe(false);
-    expect(metered.taa!.sharpenIn).toBeNull();
-    disposeGraph(metered);
-  });
 
   test("the AO, contact-shadow and beauty-copy draws merge into one only at an AO blend of 1", () => {
     const build = (blend: number) =>

@@ -1,52 +1,51 @@
+import { POST_AUDIT_CHECKS } from "../packages/core/src/postfx/postAuditChecks";
 import { GATE_SIZE } from "./perf-gate";
 import { runAudit, type AuditKind, type AuditRow } from "./perf-shadow-audit";
 
 /**
- * Proves the post chain's merged ending draws what the separate draws would, on live game frames.
+ * Proves the post chain draws the bits three's own passes drew, on live game frames.
  *
  *   bun run perf post-audit [--games a,b] [--seconds n] [--path walk|still]
  *
- * Each game is played at the frame gate's conditions with `?postAudit=1`: every 20th frame on which
- * the grade also did the OutputPass's work (and temporal AA's sharpen), the page draws that frame's
- * ending both ways from the same inputs and counts the screen texels that differ. A texel off by more
- * than one level (of 255), or more than 1 texel in 1000 off at all, fails the run; that is the
- * allowance `bun run check postfx-exact` measures for the GPU compiler reordering the tone map.
+ * Each game is played at the frame gate's conditions with `?postAudit=1`: every 20th frame that drew
+ * one of the chain's changed draws (the beauty/AO/contact-shadow composite, the atmosphere's single
+ * blend, bloom without its clears, the grade doing the OutputPass's work and temporal AA's sharpen),
+ * the page draws each of them again both ways from the same inputs and counts the texels whose bits
+ * differ. Any differing texel fails the run: the frame must be the same image, not a close one.
  */
 
 const USAGE = `usage: bun run perf post-audit [--games a,b] [--seconds n] [--path walk|still]
 
   Plays each game (${GATE_SIZE.width}x${GATE_SIZE.height}, high tier, automatic quality off) with the post chain's audit on:
-  frames whose grade did the OutputPass's work (and temporal AA's sharpen) are drawn the separate way
-  too and compared texel by texel. Fails on a texel more than one level off, or more than 1 in 1000 off.
+  each draw the chain does differently from three's passes is drawn three's way too, from the same
+  inputs, and compared bit for bit. Fails on any differing texel.
 
   --games    comma-separated game ids (default: every game the frame gate measures)
   --seconds  measured window per game (default 8)
   --path     walk (default) or still`;
 
-/** The share of compared texels that may differ by one level: the compiler's reordering of the tone map. */
-export const POST_AUDIT_SHARE = 0.001;
+export type PostAuditVerdict = "identical" | "nothing changed" | "nothing compared" | "comparison failed" | `differs: ${string}` | "not measured";
 
-export function postAuditVerdict(row: AuditRow): "matches" | "nothing merged" | "nothing compared" | "comparison failed" | "differs by more than one level" | "differs on too many texels" | "not measured" {
+export function postAuditVerdict(row: AuditRow): PostAuditVerdict {
   if (row.counters === null) return "not measured";
   const count = (name: string) => row.counters?.[name] ?? 0;
   if (count("auditFailed") > 0) return "comparison failed";
-  if (count("auditTexelsOverOneLevel") > 0) return "differs by more than one level";
-  if (count("auditFrames") === 0) return count("tailFrames") === 0 ? "nothing merged" : "nothing compared";
-  if (count("auditDifferingTexels") > count("auditTexels") * POST_AUDIT_SHARE) return "differs on too many texels";
-  return "matches";
+  const differing = POST_AUDIT_CHECKS.filter((check) => count(`${check}Differing`) > 0);
+  if (differing.length > 0) return `differs: ${differing.join(", ")}`;
+  if (count("auditFrames") === 0) return count("changedFrames") === 0 ? "nothing changed" : "nothing compared";
+  return "identical";
 }
 
-/** A game whose chain never merged its ending (a stylized look, a chain with no grade) has nothing that could differ. */
-const PASSING: ReadonlySet<string> = new Set(["matches", "nothing merged"]);
+/** A game whose chain has none of the changed draws (no grade, no AO, no bloom) has nothing that could differ. */
+const PASSING: ReadonlySet<string> = new Set(["identical", "nothing changed"]);
 
 export function renderPostAudit(rows: readonly AuditRow[]): string {
-  const head = ["game", "merged frames", "with sharpen", "frames compared", "texels differing", "share", "over one level", "failed", "verdict"];
+  const head = ["game", "frames compared", "skipped", ...POST_AUDIT_CHECKS.map((check) => `${check} (frames: texels differing)`), "verdict"];
   const body = rows.map((row) => {
     const c = row.counters ?? {};
     const cell = (name: string) => (row.counters === null ? "-" : String(c[name] ?? 0));
-    const texels = c["auditTexels"] ?? 0;
-    const share = row.counters === null || texels === 0 ? "-" : `1 in ${Math.round(texels / Math.max(1, c["auditDifferingTexels"] ?? 0))}`;
-    return [row.game, cell("tailFrames"), cell("sharpenFrames"), cell("auditFrames"), cell("auditDifferingTexels"), share, cell("auditTexelsOverOneLevel"), cell("auditFailed"), row.error ?? postAuditVerdict(row)];
+    const check = (name: string) => (row.counters === null || (c[`${name}Frames`] ?? 0) === 0 ? "-" : `${c[`${name}Frames`]}: ${c[`${name}Differing`] ?? 0}`);
+    return [row.game, cell("auditFrames"), cell("auditSkipped"), ...POST_AUDIT_CHECKS.map(check), row.error ?? postAuditVerdict(row)];
   });
   const widths = head.map((cell, column) => Math.max(cell.length, ...body.map((line) => (line[column] ?? "").length)));
   const line = (cells: readonly string[]) => cells.map((cell, column) => cell.padEnd(widths[column] ?? 0)).join("  ").trimEnd();

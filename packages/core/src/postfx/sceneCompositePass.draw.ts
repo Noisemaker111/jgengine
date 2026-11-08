@@ -47,10 +47,12 @@ export const COMPOSITE_FRAGMENT = /* glsl */ `
  * @internal
  */
 export class SceneCompositePass extends Pass {
-  private readonly material: THREE.ShaderMaterial;
+  readonly material: THREE.ShaderMaterial;
   private readonly quad: FullScreenQuad;
   private ao: { texture: THREE.Texture; intensity: number } | null = null;
   private shadow: THREE.Texture | null = null;
+  /** What the last render multiplied on, for `bun run perf post-audit` to redraw both ways. */
+  readonly drawn: { ao: { texture: THREE.Texture; intensity: number } | null; shadow: THREE.Texture | null } = { ao: null, shadow: null };
 
   constructor(private readonly beauty: THREE.Texture) {
     super();
@@ -83,21 +85,33 @@ export class SceneCompositePass extends Pass {
   }
 
   override render(renderer: THREE.WebGLRenderer, _writeBuffer: THREE.WebGLRenderTarget, readBuffer: THREE.WebGLRenderTarget): void {
+    this.drawn.ao = this.ao;
+    this.drawn.shadow = this.shadow;
+    this.draw(renderer, this.renderToScreen ? null : readBuffer);
+    this.ao = null;
+    this.shadow = null;
+  }
+
+  /** Draw the last render's composite again into `target`, from the same inputs. */
+  redraw(renderer: THREE.WebGLRenderer, target: THREE.WebGLRenderTarget): void {
+    this.draw(renderer, target);
+  }
+
+  private draw(renderer: THREE.WebGLRenderer, target: THREE.WebGLRenderTarget | null): void {
     const uniforms = this.material.uniforms;
+    const { ao, shadow } = this.drawn;
     uniforms["tBeauty"]!.value = this.beauty;
-    uniforms["uAo"]!.value = this.ao !== null;
-    uniforms["tAo"]!.value = this.ao?.texture ?? null;
-    uniforms["uIntensity"]!.value = this.ao?.intensity ?? 1;
-    uniforms["uShadow"]!.value = this.shadow !== null;
-    uniforms["tShadow"]!.value = this.shadow;
+    uniforms["uAo"]!.value = ao !== null;
+    uniforms["tAo"]!.value = ao?.texture ?? null;
+    uniforms["uIntensity"]!.value = ao?.intensity ?? 1;
+    uniforms["uShadow"]!.value = shadow !== null;
+    uniforms["tShadow"]!.value = shadow;
     // Every texel is overwritten without blending, so clearing the target first would be wasted.
     const autoClear = renderer.autoClear;
     renderer.autoClear = false;
-    renderer.setRenderTarget(this.renderToScreen ? null : readBuffer);
+    renderer.setRenderTarget(target);
     this.quad.render(renderer);
     renderer.autoClear = autoClear;
-    this.ao = null;
-    this.shadow = null;
   }
 
   override dispose(): void {

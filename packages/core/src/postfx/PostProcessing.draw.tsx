@@ -4,7 +4,7 @@ import { requireUniform } from "../render/uniformMaterial.draw";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { EffectComposer, RenderPass, type Pass } from "three-stdlib";
+import { EffectComposer, RenderPass, type Pass, type ShaderPass } from "three-stdlib";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { GTAOPass } from "three/examples/jsm/postprocessing/GTAOPass.js";
 import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass.js";
@@ -45,7 +45,7 @@ import { AtmospherePass } from "./atmospherePass.draw";
 import { BeautyPass } from "./beautyPass.draw";
 import { BloomPass } from "./bloomPass.draw";
 import { ContactShadowPass } from "./contactShadowPass.draw";
-import { createGradePass, type GradePass } from "./gradeShader.draw";
+import { createGradePass } from "./gradeShader.draw";
 import { MotionBlurPass } from "./motionBlurPass.draw";
 import { SsrPass } from "./ssrPass.draw";
 import { postfxTierPolicy } from "./postfxTierPolicy";
@@ -275,11 +275,7 @@ export interface PostfxStagePlan {
 
 interface BuiltGraph {
   composer: EffectComposer;
-  grade: GradePass | null;
-  /** Tone mapping and sRGB encoding; the grade does its work instead on the frames {@link syncTail} picks. */
-  output: OutputPass;
-  /** Temporal AA, whose sharpen the grade also does on the frames {@link syncTail} picks; null without it. */
-  taa: TemporalAaPass | null;
+  grade: ShaderPass | null;
   /** Stages this chain actually built, in pass order. A stage absent here costs no draw. */
   stages: readonly PostfxStage[];
   /** The plan's {@link PostfxStagePlan.resolutionScale}, kept so a resize re-applies it. */
@@ -333,50 +329,6 @@ export function quantizeExposure(value: number): number {
   return Math.round(value * 32) / 32;
 }
 
-const drawingBuffer = new THREE.Vector2();
-
-/**
- * Let the grade do the OutputPass's work on the frames where nothing draws between them: no
- * stylize, no reveal fade on, no chromatic aberration (which samples the tone-mapped frame off its
- * own texel) and a frame the size of the screen. The OutputPass is off on those frames, so the chain
- * skips one full-screen read and write. On those frames the grade also does temporal AA's sharpen
- * whenever the exposure meter will not read the sharpened frame, which skips a second one.
- * @internal
- */
-export function syncTail(built: BuiltGraph): void {
-  const grade = built.grade;
-  if (grade === null) return;
-  const passes = built.composer.passes;
-  const from = passes.indexOf(built.output);
-  const to = passes.indexOf(grade);
-  let between = false;
-  for (let index = from + 1; index < to; index++) if (passes[index]!.enabled) between = true;
-  const target = built.composer.readBuffer;
-  built.composer.renderer.getDrawingBufferSize(drawingBuffer);
-  const fuse =
-    from >= 0 && to > from && !between && grade.renderToScreen && requireUniform(grade.uniforms, "uChroma").value === 0 &&
-    target.width === drawingBuffer.x && target.height === drawingBuffer.y;
-  grade.fuseOutput = fuse;
-  built.output.enabled = !fuse;
-
-  // Temporal AA's sharpen goes into the grade as well when only the exposure meter sits between them
-  // and it will not read the sharpened frame this time.
-  const taa = built.taa;
-  let sharpen = fuse && taa !== null && taa.enabled;
-  if (taa !== null && sharpen) {
-    const at = passes.indexOf(taa);
-    sharpen = at >= 0 && at < from;
-    for (let index = at + 1; sharpen && index < to; index++) {
-      const pass = passes[index]!;
-      if (pass === built.output || !pass.enabled) continue;
-      if (pass instanceof ExposureMeterPass && !pass.readsNextFrame()) continue;
-      sharpen = false;
-    }
-  }
-  grade.fuseSharpen = sharpen;
-  if (taa !== null) taa.sharpenIn = sharpen ? grade : null;
-}
-
 /** Release each pass and the composer's owned targets. @internal */
 export function disposeGraph(built: BuiltGraph): void {
   for (const pass of built.composer.passes) pass.dispose();
@@ -397,25 +349,8 @@ function dryRender(built: BuiltGraph, every = false): void {
   const enabled = passes.map((pass) => pass.enabled);
   for (const pass of dryable) pass.dry = true;
   if (every) for (const pass of passes) pass.enabled = true;
-  syncTail(built);
   try {
     built.composer.render(0);
-    // The grade's other variants link too, so the frame that switches between them does not.
-    const grade = built.grade;
-    if (grade !== null) {
-      const drawn = [grade.fuseOutput, grade.fuseSharpen] as const;
-      try {
-        for (const [output, sharpen] of [[false, false], [true, false], [true, true]] as const) {
-          if (output === drawn[0] && sharpen === drawn[1]) continue;
-          if (sharpen && built.taa === null) continue;
-          grade.fuseOutput = output;
-          grade.fuseSharpen = sharpen;
-          grade.render(built.composer.renderer, built.composer.writeBuffer, built.composer.readBuffer);
-        }
-      } finally {
-        [grade.fuseOutput, grade.fuseSharpen] = drawn;
-      }
-    }
   } finally {
     passes.forEach((pass, index) => {
       pass.enabled = enabled[index]!;
@@ -689,8 +624,7 @@ export function buildPostGraph(
     built.push("exposure");
   }
 
-  const output = passNamed(new OutputPass(), "OutputPass");
-  composer.addPass(output);
+  composer.addPass(passNamed(new OutputPass(), "OutputPass"));
 
   if (plan.stylize !== null) {
     // AO's prepass already drew the scene's normals and depth this frame; drawing them again for
@@ -708,14 +642,14 @@ export function buildPostGraph(
     composer.insertPass(reveal.snapshot, 1);
   }
 
-  let grade: GradePass | null = null;
+  let grade: ShaderPass | null = null;
   if (plan.grade !== null) {
-    grade = passNamed(createGradePass(plan.grade), "GradePass");
+    grade = passNamed(createGradePass(plan.grade), "ShaderPass");
     composer.addPass(grade);
     built.push("grade");
   }
 
-  const graph: BuiltGraph = { composer, grade, output, taa, stages: built, resolutionScale: plan.resolutionScale, effects, reveal };
+  const graph: BuiltGraph = { composer, grade, stages: built, resolutionScale: plan.resolutionScale, effects, reveal };
   showEffects(graph, false);
   if (reveal !== null) {
     reveal.snapshot.enabled = false;
@@ -764,7 +698,7 @@ export function PostProcessing({
   const auditRef = useRef<PostAudit | null>(null);
 
   useEffect(() => {
-    // `bun run perf post-audit` loads the page with this flag: the grade's merged draws are compared with the separate ones.
+    // `bun run perf post-audit` loads the page with this flag: every changed draw is compared with three's.
     const auditing = typeof window !== "undefined" && new URLSearchParams(window.location?.search ?? "").get("postAudit") === "1";
     const audit = new PostAudit(auditing);
     auditRef.current = audit;
@@ -829,9 +763,8 @@ export function PostProcessing({
     if (built.grade !== null) requireUniform(built.grade.uniforms, "uTime").value += delta;
     measureComposerPasses(built.composer);
     for (const pass of built.composer.passes) if (pass instanceof ExposureMeterPass) pass.collect();
-    syncTail(built);
     built.composer.render(delta);
-    auditRef.current?.afterFrame(gl, built.grade, built.taa, built.composer.readBuffer.width, built.composer.readBuffer.height);
+    auditRef.current?.afterFrame(gl, built.composer.passes);
     for (const pass of built.composer.passes) if (pass instanceof ExposureMeterPass) pass.frameEnd();
     advanceRevealFade(built, delta);
   }, 1);
