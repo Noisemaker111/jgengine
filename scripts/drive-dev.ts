@@ -80,6 +80,7 @@ import { readHitchSession, renderHitchSession, resetBreakdown } from "./perf-bre
 import { installPageRenderCounter, readRenderCounts, renderRenderCounts, resetRenderCounter } from "./perf-renders";
 import { aggregateAllocations, type HeapSampleNode } from "./perf-play";
 import { endTrace, markTraceAnchor, readTraceEvents, renderTracedHitches, startTrace, traceHitches } from "./perf-trace";
+import { profileHitches, renderProfiledHitches, startCpuProfile, stopCpuProfile } from "./perf-cpu";
 
 type Step = CaptureStep;
 
@@ -372,10 +373,13 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
         if (args.hitches && !(await resetBreakdown(session))) {
           throw new Error("drive: --hitches found no frame breakdown on the page (window.__jgFrameBreakdown); the game renders no 3D scene, or local telemetry did not start");
         }
+        // The page clock at the hitch log's zero, for lining a CPU profile up with its hitches.
+        const hitchZeroMs = (await session.evaluate<number>("performance.now()")) ?? 0;
         if (args.trace) {
           await startTrace(session);
           await markTraceAnchor(session);
         }
+        const cpuStartedAtMs = args.cpu ? await startCpuProfile(session) : 0;
         if (args.renders && !(await resetRenderCounter(session))) {
           throw new Error("drive: --renders found no render counter on the page; another React DevTools hook was installed first");
         }
@@ -548,6 +552,7 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
         });
         if (done.failed > 0) code = 1;
         const runName = `${args.game}-${args.flow ?? "drive"}${args.url === undefined ? "" : "-url"}`;
+        const cpuProfile = args.cpu ? await stopCpuProfile(session) : null;
         const hitchRead = args.hitches ? await readHitchSession(session) : null;
         if (args.hitches) {
           if (hitchRead === null) throw new Error("drive: --hitches lost the page's frame breakdown before the run ended");
@@ -563,6 +568,10 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
           await endTrace(session, out);
           console.log(`trace: ${out}`);
           if (hitchRead !== null) console.log(renderTracedHitches(traceHitches(await readTraceEvents(out), hitchRead.hitches)));
+        }
+        if (cpuProfile !== null) {
+          if (hitchRead === null) throw new Error("drive: --cpu names what ran in each hitch; pass --hitches too");
+          console.log(renderProfiledHitches(profileHitches(cpuProfile, cpuStartedAtMs, hitchZeroMs, hitchRead.hitches)));
         }
         if (args.renders) {
           const counts = await readRenderCounts(session);

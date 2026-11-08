@@ -8,8 +8,12 @@ import type { CdpSession } from "./browser-lib";
  * The trace names the slice that held each such frame.
  */
 
-/** Task-level slices in every process, the GPU service and ANGLE's own, and the page's marks. */
-const CATEGORIES = ["toplevel", "gpu", "gpu.angle", "gpu.service", "viz", "blink.user_timing", "disabled-by-default-gpu.service"];
+/**
+ * The GPU service and ANGLE's own slices, and the page's marks: where a draw-time shader variant, a
+ * raster program link or a long flush shows. Not "toplevel": every task of every process made a
+ * 700 MB trace that took minutes to save on a busy PC.
+ */
+const CATEGORIES = ["gpu", "gpu.angle", "gpu.service", "viz", "blink.user_timing", "disabled-by-default-gpu.service"];
 /** The page mark that ties the hitch log's clock to the trace's. */
 export const TRACE_ANCHOR = "jg-hitch-zero";
 
