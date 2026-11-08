@@ -17,11 +17,16 @@ import { beginPause, endPause, markStep } from "./hangReport";
  * and perf live only reads a page already open, so they do not wait for it. It is a mutex, not a
  * load check: a busy PC never stops a run, only another timed run does.
  *
+ * Taken before the browser launches (a session `turn`, see {@link perfLockTurn}), so a queued run
+ * has no uncapped Chrome idling while it waits.
+ *
  * The lock file lives once per machine (`%LOCALAPPDATA%\jgengine\perf.lock`), not per worktree,
  * because every worktree is its own checkout. A holder whose process is gone, or that stopped
- * touching the file for {@link STALE_HEARTBEAT_MS}, is taken over with a `degraded:` line. Time a
- * run spends waiting is credited back to the guard's and the browser session's deadlines
- * (`hangReport` pauses), so a long queue never kills a run that has not started.
+ * touching the file for {@link STALE_HEARTBEAT_MS}, is taken over with a `degraded:` line, so a
+ * run killed with `taskkill /F` frees it for the next waiter at once. Time a run spends waiting is
+ * credited back to the guard's and the browser session's deadlines (`hangReport` pauses), so a
+ * long queue never kills a run that has not started; the record it writes says how long it waited
+ * ({@link perfLockWaitedMs}). A queued run prints {@link waitingLine} once.
  */
 
 /** Overrides the lock file's path; tests point it at a scratch file so they never queue behind a real run. */
@@ -66,8 +71,20 @@ export function processAlive(pid: number): boolean {
 
 const clock = (ms: number): string => new Date(ms).toTimeString().slice(0, 5);
 
-export function waitingLine(holder: Pick<PerfLockHolder, "branch" | "pid" | "since">): string {
-  return `waiting for perf lock held by ${holder.branch} (pid ${holder.pid}, since ${clock(holder.since)})`;
+/**
+ * The one line a queued run prints: `perf lock: waiting for pid <n> (<branch>: <what>, since <hh:mm>) …`.
+ * AGENTS.md names it, so a thread that sees it lets the run wait instead of killing it.
+ */
+export function waitingLine(holder: Pick<PerfLockHolder, "branch" | "pid" | "since"> & { what?: string }): string {
+  const label = holder.what === undefined || holder.what === "" ? holder.branch : `${holder.branch}: ${holder.what}`;
+  return `perf lock: waiting for pid ${holder.pid} (${label}, since ${clock(holder.since)}) …`;
+}
+
+let waitedTotalMs = 0;
+
+/** Ms this process has spent queued for the lock so far; a record or report says it as seconds waited. */
+export function perfLockWaitedMs(): number {
+  return waitedTotalMs;
 }
 
 let cachedBranch: string | null = null;
@@ -186,6 +203,7 @@ export async function acquirePerfLock(what: string, options: PerfLockOptions = {
   const pollMs = options.pollMs ?? POLL_MS;
   mkdirSync(dirname(path), { recursive: true });
   const token = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+  const queuedAt = Date.now();
   let announced: string | null = null;
   try {
     for (;;) {
@@ -219,7 +237,7 @@ export async function acquirePerfLock(what: string, options: PerfLockOptions = {
         if (announced !== holder.token) {
           announced = holder.token;
           const line = waitingLine(holder);
-          log(holder.what === "" ? line : `${line}: ${holder.what}`);
+          log(line);
           beginPause(line);
         }
       }
@@ -228,7 +246,11 @@ export async function acquirePerfLock(what: string, options: PerfLockOptions = {
   } finally {
     if (announced !== null) endPause();
   }
-  if (announced !== null) log(`perf lock: taken for ${what}`);
+  if (announced !== null) {
+    const waitedMs = Date.now() - queuedAt;
+    waitedTotalMs += waitedMs;
+    log(`perf lock: taken for ${what} after waiting ${Math.round(waitedMs / 1000)} s`);
+  }
   markStep(`hold the perf lock: ${what}`);
   const heartbeat = setInterval(() => {
     try {

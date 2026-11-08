@@ -50,7 +50,8 @@ describe("perf lock", () => {
     const second = holder(path, "agent/second", 100);
     const [a, b] = await Promise.all([first, second]);
     expect(b.start).toBeGreaterThanOrEqual(a.end);
-    expect(b.stderr).toMatch(/^waiting for perf lock held by agent\/first \(pid \d+, since \d\d:\d\d\)/m);
+    expect(b.stderr).toMatch(/^perf lock: waiting for pid \d+ \(agent\/first: agent\/first, since \d\d:\d\d\) …$/m);
+    expect(b.stderr).toMatch(/^perf lock: taken for agent\/second after waiting \d+ s$/m);
     // It starts as soon as the lock frees, not on a slow poll.
     expect(b.start - a.end).toBeLessThan(1_000);
     expect(existsSync(path)).toBe(false);
@@ -105,9 +106,10 @@ describe("perf lock", () => {
     expect(perfLockHolder(path)).toBeNull();
   });
 
-  test("the waiting line names branch, pid and start time", () => {
+  test("the waiting line names pid, branch, run and start time in the form AGENTS.md quotes", () => {
     const since = new Date(2026, 10, 8, 21, 7).getTime();
-    expect(waitingLine({ branch: "agent/fps", pid: 4242, since })).toBe("waiting for perf lock held by agent/fps (pid 4242, since 21:07)");
+    expect(waitingLine({ branch: "agent/fps", pid: 4242, since, what: "perf gate harbor-heat" })).toBe("perf lock: waiting for pid 4242 (agent/fps: perf gate harbor-heat, since 21:07) …");
+    expect(waitingLine({ branch: "agent/fps", pid: 4242, since })).toBe("perf lock: waiting for pid 4242 (agent/fps, since 21:07) …");
   });
 });
 
@@ -142,14 +144,20 @@ describe("deadlines give back time queued for the lock", () => {
 
 test("every entry point that times frames takes the lock", () => {
   // Removing one of these calls lets two timed runs overlap again, the failure this lock exists for.
-  const takers: Record<string, string> = {
-    "perf-play.ts": "withPerfLock(`perf ${options.game}`",
-    "perf-network.ts": "withPerfLock(`perf network",
-    "perf-desktop.ts": "withPerfLock(`perf desktop",
-    "perf-native.ts": "withPerfLock(`perf native",
-    "drive-dev.ts": "perfLockTurn(`drive",
+  // The `turn` takers hold it before their Chrome launches, so a queued run has no uncapped browser idling.
+  const takers: Record<string, string[]> = {
+    "perf-play.ts": ["withPerfLock(`perf ${options.game}`", "turn: perfLockTurn(`perf ${pending.join"],
+    "perf-gate.ts": ["turn: perfLockTurn(`perf gate"],
+    "perf-fps-gap.ts": ["turn: perfLockTurn(`perf fps-gap"],
+    "perf-shadow-audit.ts": ["turn: perfLockTurn(`perf shadow-audit"],
+    "perf-network.ts": ["withPerfLock(`perf network", "turn: perfLockTurn(`perf network"],
+    "perf-desktop.ts": ["withPerfLock(`perf desktop"],
+    "perf-native.ts": ["withPerfLock(`perf native"],
+    "bench-cpu.ts": ["withPerfLock(\"perf timing\""],
+    "drive-dev.ts": ["perfLockTurn(`drive"],
   };
-  for (const [file, call] of Object.entries(takers)) {
-    expect(readFileSync(join(import.meta.dir, file), "utf8"), file).toContain(call);
+  for (const [file, calls] of Object.entries(takers)) {
+    const source = readFileSync(join(import.meta.dir, file), "utf8");
+    for (const call of calls) expect(source, `${file} lost ${call}`).toContain(call);
   }
 });

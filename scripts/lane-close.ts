@@ -31,6 +31,7 @@ import { assertCheckoutReady } from "./checkout-ready";
 import { gitHub, repoFromRemote, type GitHub } from "./github";
 import { MERGE_ATTEMPTS, mergeVerified, parseLock, pidIsAlive, staleReason, type LandLock } from "./land";
 import { betaLaneClose, gitIn, landingRoot, landingScript, receiptsBehind } from "./landing-code";
+import { stayOutOfTheWay } from "./machine-priority";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose, takeVerboseFlag } from "./verbosity";
 import { passingReceipt, workingTree } from "./verify-receipt";
@@ -400,6 +401,8 @@ export function landingMode(argv: readonly string[]): { script: string; rest: st
 }
 
 function main(rawArgv: readonly string[]): void {
+  // A landing's verify, install and merge run below normal priority: Jon's game first.
+  stayOutOfTheWay();
   // Every mode, --help included, runs beta's current landing code, so a landing fix reaches lanes
   // made before it (scripts/landing-code.ts).
   const beta = betaLaneClose(import.meta.url, root, gitIn(root), (line) => console.log(line));

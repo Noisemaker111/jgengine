@@ -4,6 +4,7 @@ import { ensureDevServer, killPid, killProcessTree, openPageSession, withBrowser
 import { FRAME_GAMES } from "./ci-scope";
 import { debugPortFor, GATE_SIZE } from "./perf-gate";
 import type { PerfPath } from "./perf-breakdown";
+import { perfLockTurn } from "./perf-lock";
 import { measureGame, parseSettingSpec } from "./perf-play";
 
 /**
@@ -102,7 +103,9 @@ async function auditGame(game: string, index: number, args: ShadowAuditArgs, sta
   if (server.pid !== undefined) started.push(server);
   let counters: Record<string, number> | null = null;
   let failure: unknown = null;
-  const exit = await withBrowserSession({ keep: false, debugPort: debugPortFor(index), timeoutMs: 240_000, hardDeadlineMs: 360_000 }, async ({ debugPort }) => {
+  // The lock is held from before this game's Chrome launches; texels are the product here, not frame
+  // times, so the browser keeps the inherited below-normal priority (scripts/perf.ts).
+  const exit = await withBrowserSession({ keep: false, debugPort: debugPortFor(index), timeoutMs: 240_000, hardDeadlineMs: 360_000, turn: perfLockTurn(`perf shadow-audit ${game}`, undefined) }, async ({ debugPort }) => {
     const session = await openPageSession(debugPort);
     try {
       const measured = await measureGame({

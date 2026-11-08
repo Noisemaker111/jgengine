@@ -10,7 +10,8 @@ import {
   withBrowserSession,
 } from "./browser-lib";
 import { FRAME_GAMES } from "./ci-scope";
-import { gameSessionDeadlineMs, measureGame, parseSettingSpec, writePerfRecord } from "./perf-play";
+import { perfLockTurn } from "./perf-lock";
+import { gameSessionDeadlineMs, machineClause, measureGame, parseSettingSpec, runMachine, writePerfRecord } from "./perf-play";
 import { parseGraphicsTier, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 import {
   checkBudget,
@@ -189,7 +190,10 @@ async function main(): Promise<void> {
     console.log(`perf gate: ${game} budget ${loaded.source}`);
     let outcome: GameOutcome = { game, summary: null, violations: [], error: null };
     const exitCode = await withBrowserSession(
-      { keep: false, debugPort: debugPortFor(index), timeoutMs: 180_000, hardDeadlineMs: gameSessionDeadlineMs(WARMUP_MS, seconds), frameClock: "uncapped" },
+      // The lock is taken before this game's Chrome launches and freed after it, so the gate and
+      // another worktree's run interleave game by game; the frame time is the product, so the
+      // browser draws at normal priority (scripts/perf.ts).
+      { keep: false, debugPort: debugPortFor(index), timeoutMs: 180_000, hardDeadlineMs: gameSessionDeadlineMs(WARMUP_MS, seconds), frameClock: "uncapped", turn: perfLockTurn(`perf gate ${game}`, undefined), chromePriority: "normal" },
       async ({ debugPort }) => {
         const session = await openPageSession(debugPort);
         try {
@@ -279,6 +283,7 @@ async function main(): Promise<void> {
 
   const knownCount = measured.filter((outcome) => outcome.known !== undefined).length;
   console.log(`\nperf gate: ${games.length} games inside budget (${lines.length} measured${knownCount > 0 ? `, ${knownCount} known over it in ${KNOWN_SLOW_PATH}` : ""})`);
+  console.log(`perf gate: machine${machineClause(runMachine())}`);
 }
 
 if (import.meta.main) {

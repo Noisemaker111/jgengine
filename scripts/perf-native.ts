@@ -117,7 +117,8 @@ async function webRow(recording: string, out: string): Promise<Row> {
   });
   try {
     let result: Record<string, unknown> | null = null;
-    const code = await withBrowserSession({ keep: false, timeoutMs: 600_000, frameClock: "uncapped" }, async ({ debugPort }) => {
+    // Inside the rows' perf lock; the frame time is the product, so the browser draws at normal priority (scripts/perf.ts).
+    const code = await withBrowserSession({ keep: false, timeoutMs: 600_000, frameClock: "uncapped", chromePriority: "normal" }, async ({ debugPort }) => {
       const session = await openPageSession(debugPort);
       try {
         await session.send("Page.navigate", { url: `http://127.0.0.1:${server.port}/` });

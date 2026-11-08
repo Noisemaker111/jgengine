@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CdpSession, PRECISE_HEAP_ARG, removeProfileDir } from "./browser-lib";
+import { restoreNormalPriority } from "./machine-priority";
 import { withPerfLock } from "./perf-lock";
 import { createBrowserFlow } from "./browserFlow";
 import { FRAME_GAMES } from "./ci-scope";
@@ -234,6 +235,8 @@ async function launchedScene<T>(args: LaunchArgs, backend: RendererBackend, prof
   // Muted: a measurement launch shares the PC with whoever is at it, and plays nothing worth hearing.
   const env = { ...process.env, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${port} --mute-audio ${PRECISE_HEAP_ARG}`, ...(profile === null ? {} : { WEBVIEW2_USER_DATA_FOLDER: profile }) };
   const child = spawn(args.exe, args.uncapped ? ["--uncapped"] : [], { env, stdio: "ignore" });
+  // The app's frame time is the product: it draws at normal priority while this process stays below (scripts/perf.ts).
+  restoreNormalPriority(child.pid);
   try {
     let target: Target | undefined;
     for (let attempt = 0; attempt < 120 && target === undefined; attempt += 1) {

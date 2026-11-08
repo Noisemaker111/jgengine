@@ -33,6 +33,7 @@ import { assertCheckoutReady } from "./checkout-ready";
 import { digestLines, failureDigest, writeStepLog } from "./failure-digest";
 import { FRAME_GAMES, REPRESENTATIVE_GAME, scopePattern } from "./ci-scope";
 import { buildImportGraph, closure, repoFiles, reverseReach, type ImportGraph } from "./import-graph";
+import { stayOutOfTheWay } from "./machine-priority";
 import { openPassCache, treeDigests, WHOLE_TREE } from "./verify-cache";
 import { checkCommand, findCheck, GEN_TARGETS, jobChecks, readsPath, reachedBy, type CheckDef } from "./run-stages";
 import { printHelpIfAsked } from "./script-help";
@@ -1317,6 +1318,8 @@ async function main(argv: readonly string[]): Promise<number> {
 
 if (import.meta.main) {
   const argv = takeVerboseFlag(process.argv.slice(2));
+  // The type-checks, gates and tests this starts inherit below-normal priority: Jon's game first.
+  stayOutOfTheWay();
   try {
     parseVerifyArgs(argv);
     if (printHelpIfAsked("verify-fast", VERIFY_FAST_USAGE, argv)) process.exit(EXIT_VERIFIED);

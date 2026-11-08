@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import { type CdpSession, ensureDevServer, openPageSession, withBrowserSession } from "./browser-lib";
 import { FRAME_GAMES } from "./ci-scope";
-import { withPerfLock } from "./perf-lock";
+import { perfLockTurn, withPerfLock } from "./perf-lock";
 
 /**
  * Per-game network audit, printed as one JSON line per game.
@@ -512,7 +512,9 @@ async function main(): Promise<void> {
   const lines: string[] = [];
 
   const exitCode = await withBrowserSession(
-    { keep: false, timeoutMs: browserTimeoutMs, server: server?.child ?? null, serverPid: server?.pid },
+    // The batch holds the lock from before its Chrome launches (the per-game take inside is re-entrant);
+    // bytes are the product, so the browser keeps the inherited below-normal priority (scripts/perf.ts).
+    { keep: false, timeoutMs: browserTimeoutMs, server: server?.child ?? null, serverPid: server?.pid, turn: perfLockTurn(`perf network ${games.join(" ")}`, undefined) },
     async ({ debugPort }) => {
       const session = await openPageSession(debugPort);
       try {
