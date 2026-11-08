@@ -1,8 +1,8 @@
 import { spawn, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { CdpSession } from "./browser-lib";
+import { CdpSession, removeProfileDir } from "./browser-lib";
 import { createBrowserFlow } from "./browserFlow";
 import { flowsDirOf, loadFlow } from "./driveFlows";
 import { pageFlowDriver, readProbe } from "./drivePage";
@@ -283,7 +283,8 @@ export async function launchAndPlayFlow(args: LaunchArgs, flow: { game: string; 
       return report.ok;
     });
   } finally {
-    rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 500 });
+    // WebView2 lets go of its files a moment after the app exits; a profile still locked is left to the sweep, not a failed run.
+    removeProfileDir(profile);
   }
 }
 

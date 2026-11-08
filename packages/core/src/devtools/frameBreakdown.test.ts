@@ -38,6 +38,10 @@ test("a hitch names its cause from what happened in that frame", () => {
   expect(hitchCause(frame({ intervalMs: 40, cpu: { "frame#4 src/water.ts:9": 30 } })).detail).toBe("frame#4 src/water.ts:9 30 ms on the CPU");
   expect(hitchCause(frame({ intervalMs: 40, gpu: { "post:GTAO": 25 } })).cause).toBe("gpu");
   expect(hitchCause(frame({ intervalMs: 40 })).cause).toBe("other");
+  // A 2 s frame with a 16 ms pass in it froze somewhere else.
+  expect(hitchCause(frame({ intervalMs: 1962, workMs: 16, gpu: { "post:BeautyPass": 15.6 } }))).toEqual({
+    cause: "other", detail: "1946 ms outside the game's frame work (browser, compositor, OS); the largest game cost was post:BeautyPass 15.6 ms on the GPU",
+  });
 });
 
 test("a window sums up: spreads, costliest systems and passes, per-frame draw costs, hitches", () => {

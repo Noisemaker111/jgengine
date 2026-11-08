@@ -1072,7 +1072,8 @@ export function removeProfileDir(userDataDir: string): void {
  */
 function isBrowserProfile(dir: string): boolean {
   const names = readdirSync(dir);
-  return names.length === 0 || [PROFILE_OWNER_FILE, PROFILE_RUN_FILE, "Local State", "Default"].some((name) => names.includes(name));
+  // `EBWebView` is a WebView2 user data folder (perf desktop launches an app on its own one).
+  return names.length === 0 || [PROFILE_OWNER_FILE, PROFILE_RUN_FILE, "Local State", "Default", "EBWebView"].some((name) => names.includes(name));
 }
 
 function readOwnerPid(dir: string): number | undefined {

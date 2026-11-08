@@ -380,10 +380,14 @@ export function hitchCause(record: FrameBreakdownRecord): Pick<Hitch, "cause" | 
   if (record.heapDropMb >= 2) return { cause: "gc", detail: `garbage collection freed ~${round(record.heapDropMb, 1)} MB` };
   const [system, systemMs] = Object.entries(record.cpu).sort((a, b) => b[1] - a[1])[0] ?? ["", 0];
   const [pass, passMs] = Object.entries(record.gpu ?? {}).sort((a, b) => b[1] - a[1])[0] ?? ["", 0];
-  if (systemMs >= 8 && systemMs >= passMs) return { cause: "system", detail: `${system} ${round(systemMs, 1)} ms on the CPU` };
-  if (passMs >= 8) return { cause: "gpu", detail: `${pass} ${round(passMs, 1)} ms on the GPU` };
+  // A system or pass is the cause only when it took a real share of the frame: a 2 s frame with a
+  // 16 ms GPU pass in it froze somewhere else (Deepward's desktop build blamed BeautyPass for one).
+  const share = record.intervalMs / 4;
+  if (systemMs >= 8 && systemMs >= passMs && systemMs >= share) return { cause: "system", detail: `${system} ${round(systemMs, 1)} ms on the CPU` };
+  if (passMs >= 8 && passMs >= share) return { cause: "gpu", detail: `${pass} ${round(passMs, 1)} ms on the GPU` };
   if (record.compiles > 0) return { cause: "compile", detail: `${record.compiles} shader program(s) linked` };
-  return { cause: "other", detail: `${round(record.intervalMs - record.workMs, 1)} ms outside the game's frame work (browser, compositor, OS)` };
+  const largest = Math.max(systemMs, passMs) >= 8 ? `; the largest game cost was ${systemMs >= passMs ? `${system} ${round(systemMs, 1)} ms on the CPU` : `${pass} ${round(passMs, 1)} ms on the GPU`}` : "";
+  return { cause: "other", detail: `${round(record.intervalMs - record.workMs, 1)} ms outside the game's frame work (browser, compositor, OS)${largest}` };
 }
 
 /** Summarize a window of frames plus the draw costs gathered over it. @internal */

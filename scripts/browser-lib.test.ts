@@ -876,17 +876,21 @@ describe("capture profile sweep", () => {  test("removes only stale jg dirs whos
       writeFileSync(file, "not a profile");
       const leakedChrome = mkdtempSync(join(root, "jg-shoot-"));
       writeFileSync(join(leakedChrome, "Local State"), "{}");
+      // A desktop app's WebView2 profile, left locked by perf desktop.
+      const leakedWebView = mkdtempSync(join(root, "jg-desktop-flow-"));
+      mkdirSync(join(leakedWebView, "EBWebView"));
       // An agent's own folder that happens to start with jg-: screenshots, no browser files.
       const agentScratch = join(root, "jg-scratch");
       mkdirSync(join(agentScratch, "shots"), { recursive: true });
       writeFileSync(join(agentScratch, "shots", "s1.png"), "png");
       const stale = new Date(Date.now() - 4 * 60 * 60 * 1000);
       const fresh = new Date(Date.now() - 20 * 60 * 1000);
-      for (const dir of [leaked, liveOwned, foreign, leakedChrome, agentScratch]) utimesSync(dir, stale, stale);
+      for (const dir of [leaked, liveOwned, foreign, leakedChrome, leakedWebView, agentScratch]) utimesSync(dir, stale, stale);
       utimesSync(recent, fresh, fresh);
       utimesSync(file, stale, stale);
 
-      expect(sweepStaleProfiles(root)).toBe(2);
+      expect(sweepStaleProfiles(root)).toBe(3);
+      expect(existsSync(leakedWebView)).toBe(false);
       expect(sweepOrphanProfiles(root)).toBe(0);
 
       expect(existsSync(agentScratch)).toBe(true);
