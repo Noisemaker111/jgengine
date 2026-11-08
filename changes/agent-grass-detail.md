@@ -11,6 +11,7 @@ Grass realism draws: finer, more numerous blades and natural shapes toward photo
 ### Fixed
 
 - A far grass field no longer draws faint rows like a planted crop: tuft roots follow a scrambled Sobol spread instead of R2, whose short prefixes (what a far field keeps) were a near-regular lattice
+- Dev telemetry no longer turns off at random on a busy PC: the page waits 30 s, not 1.5 s, for the dev server's report route, and says so in its log when it gives up (perf records had come back without a frame breakdown)
 
 ### Changed
 
