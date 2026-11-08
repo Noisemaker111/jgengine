@@ -168,7 +168,7 @@ interface LaunchedScene { tier: string; start: string }
  */
 async function withLaunchedScene<T>(args: LaunchArgs, profile: string | null, work: (session: CdpSession, scene: LaunchedScene) => Promise<T>): Promise<T> {
   if (process.platform !== "win32") throw new Error("--launch measures a Windows (WebView2) desktop build");
-  if (!existsSync(args.exe)) throw new Error(`no desktop app at ${args.exe}; build one with: bun run jgengine desktop games/<id> --diagnostics`);
+  if (!existsSync(args.exe)) throw new Error(`no desktop app at ${args.exe}; build one with: bun run jgengine desktop games/<id> --diagnostics --no-installer`);
   // Muted: a measurement launch shares the PC with whoever is at it, and plays nothing worth hearing.
   const env = { ...process.env, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${args.port} --mute-audio`, ...(profile === null ? {} : { WEBVIEW2_USER_DATA_FOLDER: profile }) };
   const child = spawn(args.exe, args.uncapped ? ["--uncapped"] : [], { env, stdio: "ignore" });

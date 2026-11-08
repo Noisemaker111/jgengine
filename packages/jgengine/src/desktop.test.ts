@@ -104,6 +104,11 @@ describe("parseDesktopArgs", () => {
     expect(parsed).toEqual({ error: "pass either a project directory or --url, not both" });
   });
 
+  test("--no-installer builds only the .exe; an installer is the default", () => {
+    expect(parseDesktopArgs(["./game", "--diagnostics", "--no-installer"])).toMatchObject({ diagnostics: true, installer: false });
+    expect(parseDesktopArgs(["./game"])).toMatchObject({ installer: true });
+  });
+
   test("rejects unknown flags", () => {
     const parsed = parseDesktopArgs(["--nope"]);
     expect(parsed).toEqual({ error: "unknown option: --nope" });
@@ -381,6 +386,7 @@ describe("buildPlan + writeStaging", () => {
 });
 
 describe("CI smoke-build (dry-run)", () => {
+  // Each runs a whole staging, which takes seconds on a busy machine (#1504), like the tests below.
   test("normal staging excludes frontend source maps", async () => {
     const dir = scaffoldGame();
     const out = join(dir, "ordinary-output");
@@ -393,7 +399,7 @@ describe("CI smoke-build (dry-run)", () => {
     writeFileSync(join(dir, "dist", "app.js.map"), "new private sources");
     expect(await runDesktopAsync([dir, "--dry-run", "--skip-frontend-build", "--out", out], dir)).toBe(0);
     expect(readdirSync(`${out}.private-maps`)).toEqual(expect.arrayContaining(before));
-  });
+  }, { timeout: 120_000 });
   test("diagnostic staging records a fingerprint but does not claim a dry run built the source", async () => {
     const dir = scaffoldGame();
     const out = join(dir, "diagnostic-output");
@@ -402,7 +408,7 @@ describe("CI smoke-build (dry-run)", () => {
     expect(manifest.sourceStatus).toBe("unverified");
     expect(manifest.codeSha256).toHaveLength(64);
     expect(manifest.codeSha256).toBe(desktopCodeHash(join(out, "dist")));
-  });
+  }, { timeout: 120_000 });
   test(
     "project dry-run stages a single-game installer project",
     async () => {

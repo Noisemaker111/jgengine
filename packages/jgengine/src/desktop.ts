@@ -43,6 +43,8 @@ export interface DesktopArgs {
   skipFrontendBuild: boolean;
   allowRemote: boolean;
   diagnostics: boolean;
+  /** `--no-installer`: build only the game's .exe (a perf or test build), skipping the NSIS installer. */
+  installer: boolean;
 }
 
 export interface DesktopPlan {
@@ -123,6 +125,8 @@ options:
   --dry-run           generate staging + config only; skip toolchain + Rust build
   --skip-frontend-build  reuse existing dist/ (local mode; for tests)
   --diagnostics       opt into local frame telemetry and WebView developer tools
+  --no-installer      build only the game's .exe, without the NSIS installer: for a build you
+                       run here (perf, a test) rather than ship; saves the installer's minutes
   --allow-remote      allow --url to point at a host outside the trusted allowlist
                        (localhost, jgengine.com and its subdomains) — only pass this
                        for a hosted URL you trust; the shipped app loads it live
@@ -159,6 +163,7 @@ export function parseDesktopArgs(argv: string[]): DesktopArgs | { error: string 
   const skipFrontendBuild = hasFlag(argv, "skip-frontend-build");
   const allowRemote = hasFlag(argv, "allow-remote");
   const diagnostics = hasFlag(argv, "diagnostics");
+  const installer = !hasFlag(argv, "no-installer");
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index]!;
@@ -168,6 +173,7 @@ export function parseDesktopArgs(argv: string[]): DesktopArgs | { error: string 
       arg === "--skip-frontend-build" ||
       arg === "--allow-remote" ||
       arg === "--diagnostics" ||
+      arg === "--no-installer" ||
       arg === "--help" ||
       arg === "-h"
     )
@@ -213,6 +219,7 @@ export function parseDesktopArgs(argv: string[]): DesktopArgs | { error: string 
       skipFrontendBuild,
       allowRemote,
       diagnostics,
+      installer,
     };
   }
 
@@ -229,6 +236,7 @@ export function parseDesktopArgs(argv: string[]): DesktopArgs | { error: string 
     skipFrontendBuild,
     allowRemote,
     diagnostics,
+    installer,
   };
 }
 
@@ -879,17 +887,19 @@ export function findNsisArtifact(targetDir: string, metadata: DesktopMetadata): 
 /** @internal */
 export interface DesktopArtifacts {
   app: string;
-  installer: string;
+  /** Null for a `--no-installer` build. */
+  installer: string | null;
 }
 
-/** @internal */
-export function runTauriNsisBuild(
+/** Build the game's .exe with Tauri, and its NSIS installer unless `installer` is false. @internal */
+export function runTauriBuild(
   stagingDir: string,
   metadata: DesktopMetadata,
+  installer: boolean,
 ): { ok: true; artifacts: DesktopArtifacts } | { ok: false; error: string } {
   const targetDir = desktopTargetDir();
   console.log(`  cargo target ${targetDir} (shared; later games reuse the compiled Tauri)`);
-  const result = spawnSync("npx", ["--yes", "@tauri-apps/cli@2", "build", "--bundles", "nsis"], {
+  const result = spawnSync("npx", ["--yes", "@tauri-apps/cli@2", "build", ...(installer ? ["--bundles", "nsis"] : ["--no-bundle"])], {
     cwd: stagingDir,
     stdio: "inherit",
     shell: process.platform === "win32",
@@ -905,15 +915,19 @@ export function runTauriNsisBuild(
   const crate = crateNameFromIdentifier(metadata.identifier);
   const builtApp = join(targetDir, "release", `${crate}.exe`);
   if (!existsSync(builtApp)) return { ok: false, error: `game executable not found: ${builtApp}` };
+  const app = join(stagingDir, `${artifactFileName(metadata.productName)}.exe`);
+  if (!installer) {
+    cpSync(builtApp, app);
+    return { ok: true, artifacts: { app, installer: null } };
+  }
   const builtInstaller = findNsisArtifact(targetDir, metadata);
   if (builtInstaller === null) {
     return { ok: false, error: `NSIS installer not found under ${join(targetDir, "release", "bundle", "nsis")}` };
   }
-  const app = join(stagingDir, `${artifactFileName(metadata.productName)}.exe`);
-  const installer = join(stagingDir, builtInstaller.slice(dirname(builtInstaller).length + 1));
+  const staged = join(stagingDir, builtInstaller.slice(dirname(builtInstaller).length + 1));
   cpSync(builtApp, app);
-  cpSync(builtInstaller, installer);
-  return { ok: true, artifacts: { app, installer } };
+  cpSync(builtInstaller, staged);
+  return { ok: true, artifacts: { app, installer: staged } };
 }
 
 /** @internal */
@@ -1026,15 +1040,15 @@ export async function runDesktopAsync(argv: string[], cwd: string = process.cwd(
     return 0;
   }
 
-  console.log("building the game .exe and NSIS installer with Tauri…");
-  const built = runTauriNsisBuild(plan.stagingDir, plan.metadata);
+  console.log(parsed.installer ? "building the game .exe and NSIS installer with Tauri…" : "building the game .exe with Tauri (no installer)…");
+  const built = runTauriBuild(plan.stagingDir, plan.metadata, parsed.installer);
   if (!built.ok) {
     console.error(`error: ${built.error}`);
     return 1;
   }
 
   console.log(`\ngame ready (runs without installing):\n  ${built.artifacts.app}`);
-  console.log(`installer:\n  ${built.artifacts.installer}`);
+  if (built.artifacts.installer !== null) console.log(`installer:\n  ${built.artifacts.installer}`);
   return 0;
 }
 
