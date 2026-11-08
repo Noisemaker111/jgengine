@@ -1,5 +1,7 @@
+import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import type { ScheduledStep, StepResult } from "./stepScheduler";
@@ -40,12 +42,7 @@ export function createVerifyReceipt(root: string, data: Record<string, unknown>,
       entries[result.name] = { ...entries[result.name], status: result.blockedBy !== undefined ? "blocked" : result.ok ? "passed" : "failed", endedAt: new Date().toISOString(), ms: result.ms, ...(result.blockedBy === undefined ? {} : { blockedBy: result.blockedBy }), ...(outputFile === undefined ? {} : { outputFile }) };
       save();
     },
-    /** Add fields to one step's entry: where it ran (`boat` or `local`) and why. */
-    annotate(name: string, fields: Record<string, unknown>): void {
-      entries[name] = { ...entries[name], ...fields };
-      save();
-    },
-    /** Add top-level fields: the boat run's machine id, cost, time and status. */
+    /** Add top-level fields: the tree the run proves, or the receipt it reused. */
     note(data: Record<string, unknown>): void {
       Object.assign(receipt, data);
       save();
@@ -73,7 +70,7 @@ const SCOPE_RANK: Readonly<Record<VerifyScope, number>> = { cheap: 0, fast: 1, l
 
 /** What a passing receipt must match for its pass to stand for a new run. */
 export interface ReuseKey {
-  /** The working tree's id (`workingTree` in boat-snapshot.ts): the same id is the same bytes. */
+  /** The working tree's id (`workingTree`): the same id is the same bytes. */
   tree: string;
   /** The commit the diff is taken from: the same tree against another merge base is another plan. */
   mergeBase: string;
@@ -120,4 +117,35 @@ export function passingReceipt(root: string, key: ReuseKey): { path: string; end
     return { path, endedAt: typeof receipt["endedAt"] === "string" ? receipt["endedAt"] : "" };
   }
   return null;
+}
+
+function git(root: string, args: readonly string[], env: Record<string, string> = {}): string {
+  const run = spawnSync("git", [...args], { cwd: root, encoding: "utf8", maxBuffer: 256 * 1024 * 1024, env: { ...process.env, ...env } });
+  if (run.status !== 0) throw new Error(`git ${args.join(" ")}: ${(run.stderr ?? "").trim()}`);
+  return run.stdout ?? "";
+}
+
+/**
+ * The tree id of the working tree as it stands, tracked changes and untracked files alike (ignored
+ * files left out). The branch, the index and the files are untouched: a private index, seeded from
+ * the real one so only changed files are hashed, builds it. Two checks that see the same id saw the
+ * same bytes.
+ */
+export function workingTree(root: string): { tree: string } {
+  const dirty = git(root, ["status", "--porcelain=v1", "--untracked-files=all"]).trim().length > 0;
+  if (!dirty) return { tree: git(root, ["rev-parse", "HEAD^{tree}"]).trim() };
+  const scratch = mkdtempSync(join(tmpdir(), "verify-index-"));
+  try {
+    const index = join(scratch, "index");
+    const realIndex = git(root, ["rev-parse", "--path-format=absolute", "--git-path", "index"]).trim();
+    try {
+      copyFileSync(realIndex, index);
+    } catch {
+      // No index yet: the private one starts empty and every file is hashed once.
+    }
+    git(root, ["add", "-A"], { GIT_INDEX_FILE: index });
+    return { tree: git(root, ["write-tree"], { GIT_INDEX_FILE: index }).trim() };
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
 }

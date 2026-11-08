@@ -44,8 +44,8 @@ export async function stopBroker(): Promise<boolean> {
 
 /**
  * Start the broker so it outlives this run and holds none of its handles. It must not share this
- * run's Windows job either: fairshare ends a slot's whole job when the command's shell exits, and a
- * broker started from a slotted `bun run shoot` died with it (about ten times in an hour on
+ * run's Windows job either: a runner that ends its whole job when the command's shell exits killed a
+ * broker started from `bun run shoot` with it (about ten times in an hour on
  * 2026-11-08), taking its Chrome, its dev servers and every capture on them along.
  */
 function launchBroker(script: string): void {

@@ -7,11 +7,10 @@
 //      already run on these exact inputs, so a stale generated file never fails a landing and a
 //      game-only change pays for none of the engine's 35 s generators
 //   4. `bun run verify:fast --cheap`: the type-checks the change reaches and every gate CI's
-//      quick and types jobs run, all of them, so every failure shows in one pass. Those run on a
-//      boat machine when boat is usable (scripts/verify-boat.ts).
+//      quick and types jobs run, all of them, so every failure shows in one pass.
 //
 // `--no-verify` stops after 3: lane:close runs it, then `verify:fast --landing`, which runs the
-// type-checks, every gate and the tests on one boat machine instead of two.
+// type-checks, every gate and the tests in one pass instead of two.
 //
 // 1 and 2 stop the run; 3 and 4 both run and report together.
 //

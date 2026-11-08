@@ -5,10 +5,8 @@
 //   bun run lane:close --allow bun.lock  # keep a file the commit guards refuse
 //
 // It runs `bun run preflight --no-verify` (the install, conflict markers and gen, on this PC), then
-// `verify:fast --landing`: the type-checks, every gate CI runs, the tests and the site build, on a
-// boat.dev Linux machine when boat is usable, with only the steps that need this PC (a game boot, a
-// Windows-only test) here in a fairshare slot (scripts/verify-boat.ts). A passing verify:fast --landing
-// of this exact tree, run by hand just before, is reused in one line instead of run again. It writes the
+// `verify:fast --landing`: the type-checks, every gate CI runs, the tests, boots and the site build,
+// on the machine the session runs on. A passing verify:fast --landing of this exact tree, run by hand just before, is reused in one line instead of run again. It writes the
 // game suite scores those tests earned, lands (staging and committing the lane's work with a `changes/`
 // note written from the -m messages - see scripts/change-note.ts - pushing and opening the PR), and then
 // merges the PR itself.
@@ -30,14 +28,12 @@ import { mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:f
 import { dirname, join } from "node:path";
 
 import { assertCheckoutReady } from "./checkout-ready";
-import { workingTree } from "./boat-snapshot";
 import { gitHub, repoFromRemote, type GitHub } from "./github";
 import { MERGE_ATTEMPTS, mergeVerified, parseLock, pidIsAlive, staleReason, type LandLock } from "./land";
 import { betaLaneClose, gitIn, landingRoot, landingScript, receiptsBehind } from "./landing-code";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose, takeVerboseFlag } from "./verbosity";
-import { EXIT_BOAT_SPENT } from "./verify-boat";
-import { passingReceipt } from "./verify-receipt";
+import { passingReceipt, workingTree } from "./verify-receipt";
 
 const LANE_CLOSE_USAGE = {
   summary: "verify, land and merge this lane's PR, and print the lane report",
@@ -279,7 +275,7 @@ function closeHeldLane(args: LaneCloseArgs, branch: string, io: LaneIo): number 
     return EXIT_VERIFY_FAILED;
   }
 
-  // The tests rewrote each game's suite report (here or on boat, which sends it back): write its score
+  // The tests rewrote each game's suite report: write its score
   // into the README and PLAN now, so the lane's commit carries the score its own proofs earned.
   const scored = io.sh(["run", "scripts/gen-game-suite.ts"], true);
   if (scored.status !== 0) {
@@ -352,14 +348,6 @@ function closeHeldLane(args: LaneCloseArgs, branch: string, io: LaneIo): number 
 /** `verify:fast --landing`, and what to do when it fails. */
 function verify(io: LaneIo): boolean {
   const verified = io.sh(["run", "verify:fast", "--landing"], true);
-  if (verified.status === EXIT_BOAT_SPENT) {
-    io.err(
-      "lane:close: boat.dev had no start for the Linux steps (verify:fast says until when, above); they did not run here " +
-        "either, and nothing landed. Run lane:close again then, as a harness background command. Do not set JG_VERIFY_BOAT=0 " +
-        "to land sooner: that runs the whole Linux suite on Jon's PC. Any other failure printed above is real.",
-    );
-    return false;
-  }
   if (verified.status !== 0) {
     io.err(`lane:close: verify:fast failed (exit ${verified.status}); nothing merged. Fix what it names and close again.`);
     return false;
@@ -445,7 +433,7 @@ function main(rawArgv: readonly string[]): void {
 }
 
 export const LANE_CLOSE_DURATION =
-  "this takes several minutes (gen, every gate, the tests and the site build on a boat machine, then the merge), longer while both boat machines are busy, which it waits for. Run it as a harness background command (Bash run_in_background) and wait for its exit before ending the turn; its last line names the merge commit. A passing verify:fast --landing of the same tree is reused, not run again.";
+  "this takes several minutes (gen, every gate, the tests and the site build, then the merge). Run it as a harness background command (Bash run_in_background) and wait for its exit before ending the turn; its last line names the merge commit. A passing verify:fast --landing of the same tree is reused, not run again.";
 
 /** `.scratch/lane-close.json` while a close runs: the repo's Stop hook reads it, so a turn cannot end mid-landing. */
 export const RUNNING_MARKER = join(".scratch", "lane-close.json");
