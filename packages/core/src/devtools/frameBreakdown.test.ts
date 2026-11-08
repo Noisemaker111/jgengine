@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { fpsAt, hitchCause, renderBreakdownText, spread, summarizeBreakdown, type FrameBreakdownRecord } from "./frameBreakdown";
+import { attributeHitch, fpsAt, hitchCause, renderBreakdownText, spread, summarizeBreakdown, type FrameBreakdownRecord } from "./frameBreakdown";
 
 function frame(overrides: Partial<FrameBreakdownRecord> = {}): FrameBreakdownRecord {
   return {
@@ -61,4 +61,23 @@ test("a window sums up: spreads, costliest systems and passes, per-frame draw co
   expect(text).toContain("not an FPS prediction");
   expect(text).toContain("70.0 ms  compile: 2 shader program(s) compiled");
   expect(fpsAt(6.94)).toBe(144);
+});
+
+test("a slow frame the loop cannot see into is named by the scripts the browser ran in it", () => {
+  const timings = [
+    { startTime: 1000, duration: 400, scripts: [
+      { startTime: 1010, duration: 380, invoker: "MessagePort.onmessage", source: "performWorkUntilDeadline react-dom.js:120", layoutMs: 30 },
+      { startTime: 1005, duration: 4, invoker: "FrameRequestCallback", source: "loop three.js:9", layoutMs: 0 },
+    ] },
+    { startTime: 5000, duration: 60, scripts: [{ startTime: 5000, duration: 60, invoker: "DOMWindow.onkeydown", source: "key game.js:4", layoutMs: 0 }] },
+  ];
+  const other = { cause: "other" as const, detail: "outside" };
+  const named = attributeHitch(other, 1420, 430, timings);
+  expect(named.cause).toBe("script");
+  expect(named.detail).toBe("MessagePort.onmessage performWorkUntilDeadline react-dom.js:120 380 ms (forced layout 30 ms)");
+  expect(named.scripts?.map((script) => script.ms)).toEqual([380, 4]);
+  // A frame whose record already names a cause keeps it, with the scripts beside it.
+  expect(attributeHitch({ cause: "compile", detail: "linked" }, 1420, 430, timings).cause).toBe("compile");
+  // Scripts outside the frame are not its cause.
+  expect(attributeHitch(other, 3000, 40, timings)).toEqual(other);
 });

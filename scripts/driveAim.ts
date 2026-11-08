@@ -146,7 +146,8 @@ export async function lookDrivePointer(
     await session.evaluate(RESET_MOVEMENT);
     await moveDrivePointer(session, { x: Math.round(centre.x + send.x), y: Math.round(centre.y + send.y) });
     let seen = await readMovement(session);
-    if (seen.seen === 0) {
+    // A locked page whose cursor is already pinned can see the move with zero movement in it.
+    if (seen.seen === 0 || (seen.x === 0 && seen.y === 0)) {
       await session.evaluate(
         "(() => {" +
           "  const event = new MouseEvent('mousemove', { bubbles: true, cancelable: true, view: window });" +

@@ -76,6 +76,8 @@ import { driveShotPath, shotsDir } from "./shotPath";
 import { detail, takeVerboseFlag } from "./verbosity";
 import { parseDriveArgs, projectDirOf, DRIVE_HELP } from "./driveArgs";
 import { LockstepRecorder } from "./driveLockstep";
+import { readHitchSession, renderHitchSession, resetBreakdown } from "./perf-breakdown";
+import { installPageRenderCounter, readRenderCounts, renderRenderCounts, resetRenderCounter } from "./perf-renders";
 
 type Step = CaptureStep;
 
@@ -281,6 +283,8 @@ function targetUrl(base: string): URL {
   if (args.run !== undefined) url.searchParams.set("run", args.run);
   if (args.style !== undefined) url.searchParams.set("style", args.style);
   if (args.settle !== undefined) url.searchParams.set("settle", String(args.settle));
+  // Local telemetry installs the frame breakdown in a dev page and a built one alike.
+  if (args.hitches) url.searchParams.set("telemetry", "local");
   const aim = parseLookAim(args.look, args.lookFrom, { withNamedView: args.view !== undefined });
   if (aim !== undefined) {
     for (const [key, value] of Object.entries(lookSearchParams(aim))) url.searchParams.set(key, value);
@@ -332,6 +336,7 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
         await session.send("Page.enable");
         await session.send("Runtime.enable");
         await applyDevice(session, args.device, args.size, viewport);
+        if (args.renders) await installPageRenderCounter(session);
         const url = targetUrl(dev.base);
         const aim = parseLookAim(args.look, args.lookFrom, { withNamedView: args.view !== undefined });
         if (!args.reuseStorage) await clearOriginStorage(session, new URL(url.toString()).origin);
@@ -350,6 +355,12 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
         }
         await new Promise((r) => setTimeout(r, 500));
         await installFrameCounter(session);
+        if (args.hitches && !(await resetBreakdown(session))) {
+          throw new Error("drive: --hitches found no frame breakdown on the page (window.__jgFrameBreakdown); the game renders no 3D scene, or local telemetry did not start");
+        }
+        if (args.renders && !(await resetRenderCounter(session))) {
+          throw new Error("drive: --renders found no render counter on the page; another React DevTools hook was installed first");
+        }
 
         let recorder: LockstepRecorder | null = null;
         if (lockstep) {
@@ -512,6 +523,25 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
           },
         });
         if (done.failed > 0) code = 1;
+        if (args.hitches) {
+          const read = await readHitchSession(session);
+          if (read === null) throw new Error("drive: --hitches lost the page's frame breakdown before the run ended");
+          const name = `${args.game}-${args.flow ?? "drive"}${args.url === undefined ? "" : "-url"}`;
+          const out = resolve(import.meta.dir, "..", ".scratch", "perf", "hitches", `${name}.json`);
+          mkdirSync(dirname(out), { recursive: true });
+          writeFileSync(out, JSON.stringify(read, null, 2));
+          console.log(renderHitchSession(read, `hitches ${name}`));
+          console.log(`hitch record: ${out}`);
+        }
+        if (args.renders) {
+          const counts = await readRenderCounts(session);
+          if (counts === null) throw new Error("drive: --renders lost the page's render counter before the run ended");
+          const out = resolve(import.meta.dir, "..", ".scratch", "perf", "renders", `${args.game}-${args.flow ?? "drive"}.json`);
+          mkdirSync(dirname(out), { recursive: true });
+          writeFileSync(out, JSON.stringify(counts, null, 2));
+          console.log(renderRenderCounts(counts, `renders ${args.game}-${args.flow ?? "drive"}`));
+          console.log(`render record: ${out}`);
+        }
 
         if (recorder !== null) {
           await recorder.stop();

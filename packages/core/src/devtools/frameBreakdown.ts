@@ -65,8 +65,70 @@ export interface Hitch {
   /** Seconds since the window started. */
   atS: number;
   ms: number;
-  cause: "compile" | "upload" | "gc" | "system" | "gpu" | "other";
+  cause: "compile" | "upload" | "gc" | "system" | "gpu" | "script" | "other";
   detail: string;
+  /** The scripts the browser's long-animation-frame timing saw run during this frame, longest first. */
+  scripts?: HitchScript[];
+}
+
+/** One script the browser ran inside a slow frame, as its long-animation-frame timing names it. */
+export interface HitchScript {
+  ms: number;
+  /** What called it: `FrameRequestCallback`, `MessagePort.onmessage` (React's scheduler), `DOMWindow.onkeydown`, a promise. */
+  invoker: string;
+  /** `function url:char` in the generated bundle; a harness rewrites it to a source line. */
+  source: string;
+  /** Style and layout the script forced synchronously. */
+  layoutMs: number;
+}
+
+/** The fields of one `PerformanceLongAnimationFrameTiming` the hitch log reads. @internal */
+export interface LongFrameTiming {
+  startTime: number;
+  duration: number;
+  scripts: readonly { startTime: number; duration: number; invoker: string; source: string; layoutMs: number }[];
+}
+
+/** Every hitch of a play session, not only the frames still in the breakdown's window. */
+export interface HitchSession {
+  /** Seconds since install or the last reset. */
+  seconds: number;
+  frames: number;
+  /** Megabytes the heap dropped between frames over the session (collections). */
+  gcMb: number;
+  hitches: Hitch[];
+  /** Hitches past the log's limit, counted but not kept. */
+  dropped: number;
+}
+
+/**
+ * The scripts that ran inside a frame that ended at `endMs` after `intervalMs`, longest first, and
+ * the cause they make it when the frame's own record named nothing: a slow frame with no compile,
+ * upload, collection, system or pass is the browser running something else, and this says what.
+ * @internal
+ */
+export function attributeHitch(
+  base: Pick<Hitch, "cause" | "detail">,
+  endMs: number,
+  intervalMs: number,
+  timings: readonly LongFrameTiming[],
+): Pick<Hitch, "cause" | "detail" | "scripts"> {
+  const start = endMs - intervalMs;
+  const scripts: HitchScript[] = [];
+  for (const timing of timings) {
+    if (timing.startTime + timing.duration < start || timing.startTime > endMs) continue;
+    for (const script of timing.scripts) {
+      if (script.startTime + script.duration < start || script.startTime > endMs) continue;
+      scripts.push({ ms: round(script.duration, 1), invoker: script.invoker, source: script.source, layoutMs: round(script.layoutMs, 1) });
+    }
+  }
+  scripts.sort((a, b) => b.ms - a.ms);
+  const top = scripts.slice(0, 5);
+  const longest = top[0];
+  if (base.cause === "other" && longest !== undefined && longest.ms >= 8) {
+    return { cause: "script", detail: `${longest.invoker} ${longest.source} ${longest.ms} ms${longest.layoutMs >= 1 ? ` (forced layout ${longest.layoutMs} ms)` : ""}`, scripts: top };
+  }
+  return top.length === 0 ? base : { ...base, scripts: top };
 }
 
 /** Percentiles of one series. */
@@ -134,6 +196,8 @@ export interface FrameBreakdown {
   records(): FrameBreakdownRecord[];
   /** Each `frame#<n>` label with the frame callback it times, so a harness can name its source file. */
   callbacks(): Record<string, (...args: never[]) => void>;
+  /** Every hitch since install or the last reset, however long ago, each with the scripts that ran in it. */
+  session(): HitchSession;
   reset(): void;
   dispose(): void;
 }

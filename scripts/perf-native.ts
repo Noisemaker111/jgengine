@@ -82,7 +82,7 @@ function imageSummary(frames: DiffFrame[]): string {
  * the game's `capture.play`, the settle, then the same "walk" path the export recorded.
  */
 async function desktopRow(appExe: string, size: [number, number], seconds: number, out: string): Promise<Row> {
-  const r = await launchAndMeasure({ exe: appExe, uncapped: true, seconds, port: 9391, out, maps: `${dirname(appExe)}.private-maps`, size: { width: size[0], height: size[1] } });
+  const r = await launchAndMeasure({ exe: appExe, uncapped: true, seconds, port: 9391, out, maps: `${dirname(appExe)}.private-maps`, size: { width: size[0], height: size[1] }, flow: null });
   const b = r.breakdown;
   return { row: "A", label: "current engine, desktop WebView2 uncapped", fps: r.frame.fps, frameP50: r.rafP50Ms, frameP99: r.rafP99Ms, cpuP50: b?.work.p50 ?? null, gpuP50: b?.gpu?.p50 ?? null, image: "reference (three.js)", note: `${r.viewport}, ${b?.counts.drawsAvg.toFixed(0) ?? "?"} draws avg; ${r.start}` };
 }

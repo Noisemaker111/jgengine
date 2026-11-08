@@ -5,11 +5,15 @@ import { devtools } from "@jgengine/core/devtools/devtools";
 import { observeSharedFrames } from "@jgengine/core/render/useSharedFrame.draw";
 
 import {
+  attributeHitch,
+  hitchCause,
+  HITCH_MS,
   observeFrameWork,
   summarizeBreakdown,
   type DrawCost,
   type FrameBreakdown,
   type FrameBreakdownRecord,
+  type LongFrameTiming,
 } from "./frameBreakdown";
 
 /**
@@ -32,6 +36,10 @@ const CAPACITY = 4320;
 const MAX_PENDING_QUERIES = 512;
 /** @internal */
 export const FRAME_RETENTION_LIMIT = 1024;
+/** Hitches a session keeps: an hour of one stall every two seconds. */
+const HITCH_LOG_LIMIT = 2000;
+/** Long animation frames kept to attribute hitches from. */
+const LONG_FRAME_LIMIT = 600;
 
 type Callable = (...args: unknown[]) => unknown;
 
@@ -145,6 +153,38 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     next = (next + 1) % CAPACITY;
   };
   const ordered = () => (records.length < CAPACITY ? records.slice() : [...records.slice(next), ...records.slice(0, next)]);
+
+  // The whole session's hitches, past the record window: a stall minutes ago is still the one the
+  // player felt. Each keeps its record (GPU times resolve into it later) and when it ended.
+  const hitchLog: { endMs: number; record: FrameBreakdownRecord }[] = [];
+  let hitchDropped = 0;
+  let sessionStart = performance.now();
+  let sessionFrames = 0;
+  let sessionGcMb = 0;
+  // What the browser ran in each long frame, for the frames the r3f loop cannot see into.
+  const longFrames: LongFrameTiming[] = [];
+  let observer: PerformanceObserver | null = null;
+  if (typeof PerformanceObserver !== "undefined" && PerformanceObserver.supportedEntryTypes.includes("long-animation-frame")) {
+    observer = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        const scripts: unknown = Reflect.get(entry, "scripts");
+        if (longFrames.length >= LONG_FRAME_LIMIT) longFrames.shift();
+        longFrames.push({
+          startTime: entry.startTime,
+          duration: entry.duration,
+          scripts: (Array.isArray(scripts) ? scripts : []).map((script: unknown) => ({
+            startTime: numberField(script, "startTime") ?? 0,
+            duration: numberField(script, "duration") ?? 0,
+            invoker: nameField(script, "invoker") ?? nameField(script, "invokerType") ?? "script",
+            source: `${nameField(script, "sourceFunctionName") ?? "(anonymous)"} ${nameField(script, "sourceURL") ?? "?"}:${numberField(script, "sourceCharPosition") ?? -1}`,
+            layoutMs: numberField(script, "forcedStyleAndLayoutDuration") ?? 0,
+          })),
+        });
+      }
+    });
+    observer.observe({ type: "long-animation-frame", buffered: false });
+    restore.push(() => observer?.disconnect());
+  }
 
   // The frame being filled.
   let current: FrameBreakdownRecord | null = null;
@@ -492,6 +532,12 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
       current.heapDropMb = heap !== null && lastHeap !== null && heap < lastHeap ? lastHeap - heap : 0;
       lastHeap = heap;
       pushRecord(current);
+      sessionFrames += 1;
+      sessionGcMb += current.heapDropMb;
+      if (current.intervalMs > HITCH_MS) {
+        if (hitchLog.length < HITCH_LOG_LIMIT) hitchLog.push({ endMs: now, record: current });
+        else hitchDropped += 1;
+      }
     }
     current = fresh();
     frameStart = now;
@@ -512,9 +558,32 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     },
     records: () => ordered().map((record) => unresolved.has(record) ? { ...record, gpu: null } : record),
     callbacks: () => ({ ...callbacks }),
+    session() {
+      const hitches = hitchLog.map(({ endMs, record }) => {
+        const complete = unresolved.has(record) ? { ...record, gpu: null } : record;
+        return {
+          atS: Math.round(((endMs - sessionStart) / 1000) * 100) / 100,
+          ms: Math.round(record.intervalMs * 10) / 10,
+          ...attributeHitch(hitchCause(complete), endMs, record.intervalMs, longFrames),
+        };
+      });
+      return {
+        seconds: Math.round((performance.now() - sessionStart) / 100) / 10,
+        frames: sessionFrames,
+        gcMb: Math.round(sessionGcMb * 10) / 10,
+        hitches,
+        dropped: hitchDropped,
+      };
+    },
     reset() {
       records.length = 0;
       next = 0;
+      hitchLog.length = 0;
+      hitchDropped = 0;
+      sessionStart = performance.now();
+      sessionFrames = 0;
+      sessionGcMb = 0;
+      longFrames.length = 0;
       objects.clear();
       materials.clear();
       current = null;
