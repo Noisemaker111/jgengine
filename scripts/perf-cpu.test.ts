@@ -6,7 +6,8 @@ const frame = (functionName: string, lineNumber: number) => ({ functionName, url
 test("a hitch lists the functions that ran inside it by self time, and nothing from outside it", () => {
   const profile: CpuProfile = {
     nodes: [
-      { id: 1, callFrame: { functionName: "(root)", url: "", lineNumber: -1, columnNumber: -1 } },
+      { id: 1, callFrame: { functionName: "(root)", url: "", lineNumber: -1, columnNumber: -1 }, children: [5, 4] },
+      { id: 5, callFrame: frame("openPause", 137), children: [2, 3] },
       { id: 2, callFrame: frame("rebuildHud", 41) },
       { id: 3, callFrame: frame("layoutDial", 90) },
       { id: 4, callFrame: { functionName: "(idle)", url: "", lineNumber: -1, columnNumber: -1 } },
@@ -23,4 +24,6 @@ test("a hitch lists the functions that ran inside it by self time, and nothing f
   // Only the 10 ms inside the hitch, not the 10 before it.
   expect(hitch!.top[1]!.ms).toBeCloseTo(10, 0);
   expect(hitch!.top[0]!.at).toBe("games/deepward/src/game/ui/GameUI.tsx:42");
+  // The handler that called both is credited with both.
+  expect(hitch!.ours[0]).toEqual({ fn: "openPause", at: "games/deepward/src/game/ui/GameUI.tsx:138", ms: 40 });
 });
