@@ -6,7 +6,7 @@ import { ensureDevServer, killPid, killProcessTree, openPageSession, withBrowser
 import { FRAME_GAMES } from "./ci-scope";
 import { engineRecord, resolveEngineIdentity } from "./engineIdentity";
 import { debugPortFor, GATE_SIZE } from "./perf-gate";
-import { gpuErrors, measureGame, parseSettingSpec, type AllocationEntry, type PerfRecord, type ProfileNode, type RawProfile } from "./perf-play";
+import { gameSessionDeadlineMs, GPU_WORK_SECONDS, gpuErrors, measureGame, parseSettingSpec, type AllocationEntry, type PerfRecord, type ProfileNode, type RawProfile } from "./perf-play";
 import type { FrameBreakdownSummary, NamedCost } from "../packages/core/src/devtools/frameBreakdown";
 import { parseRendererBackend, type RendererBackend } from "../packages/core/src/settings/rendererBackend";
 
@@ -416,7 +416,8 @@ async function measureAll(args: FpsGapArgs, backend: RendererBackend, engine: Pe
         }
         previous = game;
         const exit = await withBrowserSession(
-          { keep: false, debugPort: debugPortFor(index), timeoutMs: 180_000, hardDeadlineMs: 300_000, frameClock: "uncapped" },
+          // Frame window, profile window and the draw-timed GPU window.
+          { keep: false, debugPort: debugPortFor(index), timeoutMs: 180_000, hardDeadlineMs: gameSessionDeadlineMs(WARMUP_MS, args.seconds * 2 + GPU_WORK_SECONDS), frameClock: "uncapped" },
           async ({ debugPort }) => {
             const session = await openPageSession(debugPort);
             try {

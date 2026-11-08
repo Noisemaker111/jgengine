@@ -1108,7 +1108,24 @@ export interface MeasureOptions {
 }
 
 /** Seconds of draw-timed frames a `gpuWork` window keeps. */
-const GPU_WORK_SECONDS = 3;
+export const GPU_WORK_SECONDS = 3;
+
+/**
+ * One readiness window for the game page: it outlasts the page's own readiness budget (2.5 minutes,
+ * past the shader warmup's cap). A PC busy for the whole window gets a second one, so a caller's
+ * deadline for one game allows {@link PAGE_READY_MS} twice.
+ */
+export const PAGE_READY_MS = 210_000;
+
+/**
+ * The hard deadline of one game's browser session: two readiness windows, the warmup and every
+ * window the run measures (`windowSeconds` in all), and two minutes for the browser, provisioning
+ * and reads. A fixed 300 s killed a busy PC's page while the capture had just granted its second
+ * window, so the measurement never ran.
+ */
+export function gameSessionDeadlineMs(warmupMs: number, windowSeconds: number): number {
+  return 2 * PAGE_READY_MS + warmupMs + windowSeconds * 1000 + 120_000;
+}
 
 /**
  * Time every draw for a window and read it back, then return the page to pass timers. Null when the
@@ -1238,7 +1255,7 @@ async function measureProvisioned(options: MeasureOptions): Promise<PerfMeasure>
   // Same navigation the capture tools use: it fails on a page exception or a failed document
   // instead of waiting out the readiness timeout. The timeout outlasts the page's own readiness
   // budget (2.5 minutes, past the shader warmup's cap), so a slow load reports its own reason.
-  await navigateCapturePage(session, url.toString(), 210_000);
+  await navigateCapturePage(session, url.toString(), PAGE_READY_MS);
   // The tier the game resolved, not the flag: a record that names a tier it never rendered at is
   // exactly the evidence gap this flag closes.
   const reportedTier = await readReportedQuality(session);

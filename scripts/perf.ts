@@ -6,8 +6,10 @@ export const PERF: VerbTable = {
   summary: "measure performance: one game's frame report, the frame gate, the 360 fps gap, network, test timing, or an open game",
   verbs: {
     play: { script: "scripts/perf-play.ts", guardSeconds: 420, detail: "<game...>: play each headless in one browser and print its frame report (also `bun run perf <game>`)" },
-    gate: { script: "scripts/perf-gate.ts", guardSeconds: 1500, detail: "measure every playable game; fail a p95 frame over 16.7 ms on the RTX 3070 at 1600x900, or GL objects allocated after warmup" },
-    "fps-gap": { script: "scripts/perf-fps-gap.ts", guardSeconds: 900, detail: "[--games a,b] [--markdown]: measure every game at the gate's conditions and print each against 360 fps (2.78 ms), with its costs grouped into ranked engine work; a report, not a gate" },
+    // Every game's session has its own hard deadline (gameSessionDeadlineMs), up to about 10 minutes
+    // on a busy PC; these guards only back that up over a whole run of games.
+    gate: { script: "scripts/perf-gate.ts", guardSeconds: 5400, detail: "measure every playable game; fail a p95 frame over 16.7 ms on the RTX 3070 at 1600x900, or GL objects allocated after warmup" },
+    "fps-gap": { script: "scripts/perf-fps-gap.ts", guardSeconds: 5400, detail: "[--games a,b] [--markdown]: measure every game at the gate's conditions and print each against 360 fps (2.78 ms), with its costs grouped into ranked engine work and the GPU's work timed draw by draw; a report, not a gate" },
     "shadow-audit": { script: "scripts/perf-shadow-audit.ts", guardSeconds: 2700, detail: "[--games a,b] [--path walk|still]: play each game with the shadow cache's audit on and fail on any shadow-map texel that differs from a full redraw" },
     network: { script: "scripts/perf-network.ts", detail: "<game...>: bytes and requests per game, cold and cached" },
     server: { script: "scripts/perf-server.ts", guardSeconds: 540, detail: "[--players 16,32,64,128]: N players posing in one room on the real host and router; wall and CPU ms, MB and messages out per game second" },
