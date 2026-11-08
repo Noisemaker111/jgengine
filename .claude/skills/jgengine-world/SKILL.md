@@ -40,6 +40,8 @@ For existing `environment()` consumers, `defineGame` overlays only defined edito
 
 For environment-driven surface appearance, sample only selected targets through `material/appearanceSignals`; wetness already includes shelter. Capture the assigned material's dry baseline, apply explicit wet endpoints, and restore it on unbinding. Keep wind in geometry/simulation consumers and local card backlighting separate from scene exposure. See [reference.md](reference.md#environment-fields-weather-hooks--realm-composition).
 
+**Lights stay mounted; turn one off with `intensity={0}`.** Mounting, unmounting or hiding a light (its own `visible` or an ancestor's) changes the scene's light count, and three.js recompiles every lit material the first time each new count is seen: in Deepward a hit flash, a steam vent and a creature's alarm lamp each froze the game while every lit material rebuilt. A light that comes and goes with gameplay (a muzzle flash, an alarm, a vent) is mounted once and dimmed; a pool of N lights covers a varying number of sources. A stall hunt (`bun run drive <game> --hitches`) names such a recompile as `recompiled: point lights 3→2`.
+
 ### Movement and interaction
 
 Choose input intent, controller/motor, collision/navigation, and camera as separate seams. Commands express game intent; world systems resolve motion. Interaction targets come from bounded spatial/sensor queries, not full-world scans.
