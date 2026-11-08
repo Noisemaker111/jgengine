@@ -71,8 +71,10 @@ export function decodeMeterByte(value: number, target: Float32Array, targetIndex
 /**
  * Meters the pre-tone-map beauty buffer for auto-exposure. Every `sampleInterval` frames it reduces
  * the frame to a 16×16 grid of log-luminance (GPU) and reads that back (1 KB), then hands the decoded
- * samples to `onSample` with the wall time since the previous sample. The pass itself is a pass-through,
- * so it can sit anywhere before the tone-mapping output pass without changing the picture.
+ * samples to `onSample` with the wall time since the previous sample. The pass leaves the frame where
+ * it is (no swap, no copy), so it can sit anywhere before the tone-mapping output pass without
+ * changing the picture. The reduction is drawn only on the frames whose result is read back: a
+ * reduction nothing reads changes nothing on screen, so the frames between samples cost no draw.
  * @internal
  */
 export class ExposureMeterPass extends Pass {
@@ -104,6 +106,7 @@ export class ExposureMeterPass extends Pass {
     private readonly sampleInterval = 32,
   ) {
     super();
+    this.needsSwap = false;
     this.meterTarget = new THREE.WebGLRenderTarget(METER_SIZE, METER_SIZE, {
       type: THREE.UnsignedByteType,
       depthBuffer: false,
@@ -118,33 +121,31 @@ export class ExposureMeterPass extends Pass {
 
   override render(
     renderer: THREE.WebGLRenderer,
-    writeBuffer: THREE.WebGLRenderTarget,
+    _writeBuffer: THREE.WebGLRenderTarget,
     readBuffer: THREE.WebGLRenderTarget,
     deltaTime: number,
   ): void {
     const previous = renderer.getRenderTarget();
-    this.reduceUniforms.tDiffuse.value = readBuffer.texture;
-    renderer.setRenderTarget(this.meterTarget);
-    this.reduceQuad.render(renderer);
-
+    let meter = false;
     if (!this.dry) {
       this.frames += 1;
       this.elapsed += deltaTime;
       // The first few frames sample every frame so a load starts at its metered exposure, not at
       // the authored one; after that a readback is queued on a schedule.
-      if (this.fence === null && (this.taken < 4 || this.frames % this.sampleInterval === 0)) {
-        this.queueReadback(renderer);
-      }
+      meter = this.fence === null && (this.taken < 4 || this.frames % this.sampleInterval === 0);
     }
-
-    this.copyUniforms.tDiffuse.value = readBuffer.texture;
+    // A dry run still draws the reduction, so its program links with the rest of the chain.
+    if (meter || this.dry) {
+      this.reduceUniforms.tDiffuse.value = readBuffer.texture;
+      renderer.setRenderTarget(this.meterTarget);
+      this.reduceQuad.render(renderer);
+    }
+    if (meter) this.queueReadback(renderer);
     if (this.renderToScreen) {
+      this.copyUniforms.tDiffuse.value = readBuffer.texture;
       renderer.setRenderTarget(null);
-    } else {
-      renderer.setRenderTarget(writeBuffer);
-      if (this.clear) renderer.clear();
+      this.copyQuad.render(renderer);
     }
-    this.copyQuad.render(renderer);
     renderer.setRenderTarget(previous);
   }
 

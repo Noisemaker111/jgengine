@@ -135,11 +135,47 @@ class OverlayAwareGTAOPass extends GTAOPass {
   ): void {
     const rendersGbuffer = (this as unknown as { _renderGBuffer?: boolean })._renderGBuffer !== false;
     if (!rendersGbuffer) {
-      super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive);
+      this.renderAo(renderer, writeBuffer, readBuffer, deltaTime, maskActive);
       return;
     }
     renderShadowlessPrepass(renderer, this.scene, this.outlineReads ? gtaoAndOutlineExcludes : gtaoExcludes, () =>
-      super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive));
+      this.renderAo(renderer, writeBuffer, readBuffer, deltaTime, maskActive));
+  }
+
+  /**
+   * three's default output copies the whole frame into the other buffer and multiplies the AO onto
+   * the copy: a full-screen read and write that changes no pixel. The multiply is drawn onto the
+   * frame where it is instead, with three's own quad and blend material, so the result is the same
+   * bits for one full-screen pass less.
+   */
+  private renderAo(
+    renderer: THREE.WebGLRenderer,
+    writeBuffer: THREE.WebGLRenderTarget,
+    readBuffer: THREE.WebGLRenderTarget,
+    deltaTime: number,
+    maskActive: boolean,
+  ): void {
+    const quad = (this as unknown as { _fsQuad?: { material: THREE.Material; render(renderer: THREE.WebGLRenderer): void } })._fsQuad;
+    const inPlace = quad !== undefined && !this.renderToScreen && this.output === GTAOPass.OUTPUT.Default;
+    this.needsSwap = !inPlace;
+    if (!inPlace) {
+      super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive);
+      return;
+    }
+    this.output = GTAOPass.OUTPUT.Off;
+    try {
+      super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive);
+    } finally {
+      this.output = GTAOPass.OUTPUT.Default;
+    }
+    const autoClear = renderer.autoClear;
+    renderer.autoClear = false;
+    renderer.setRenderTarget(readBuffer);
+    requireUniform(this.blendMaterial.uniforms, "intensity").value = this.blendIntensity;
+    requireUniform(this.blendMaterial.uniforms, "tDiffuse").value = this.pdRenderTarget.texture;
+    quad.material = this.blendMaterial;
+    quad.render(renderer);
+    renderer.autoClear = autoClear;
   }
 }
 
