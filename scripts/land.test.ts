@@ -485,6 +485,61 @@ test("a conflict in source is still the lane's, named, and the branch is left as
   expect(gitOk(work, ["rev-parse", "HEAD"])).toBe(before);
 }, 120_000);
 
+test("two Fernwild lanes from one old beta, each adding a proof, a probe field, a PLAN tick and a rescore, land back to back with no hand rebase", () => {
+  const { bare, work, partner } = originWithBeta();
+  const real = (file: string): string => readFileSync(join(import.meta.dir, "..", "games/fernwild", file), "utf8");
+  const files = ["proofs/suite-report.json", "PLAN.md", "README.md", "src/game.config.ts"];
+  mkdirSync(join(work, "games/fernwild/proofs"), { recursive: true });
+  mkdirSync(join(work, "games/fernwild/src"), { recursive: true });
+  for (const file of files) writeFileSync(join(work, "games/fernwild", file), real(file));
+  gitOk(work, ["add", "-A"]);
+  gitOk(work, ["commit", "-q", "-m", "fernwild as beta has it"]);
+  gitOk(work, ["push", "-q", "origin", "beta"]);
+  const oldBeta = gitOk(work, ["rev-parse", "HEAD"]);
+  gitOk(partner, ["fetch", "-q", "origin"]);
+
+  // What one real Fernwild lane changes: a proof row (and a content row) in the report, the generated score in
+  // README and PLAN, a ticked milestone at the end of PLAN, and a probe field and its import in game.config.ts.
+  const lane = (dir: string, name: string): void => {
+    gitOk(dir, ["checkout", "-q", "-b", `agent/${name}`, oldBeta]);
+    const at = (file: string) => join(dir, "games/fernwild", file);
+    const report = JSON.parse(readFileSync(at("proofs/suite-report.json"), "utf8")) as { proofs: { file: string }[]; data: { id: string; ok: boolean; problems: string[] }[] };
+    report.proofs.push({ file: `proofs/sim/zz-${name}.proof.ts`, proves: [`lane.${name}`], ok: true } as { file: string });
+    report.data.push({ id: `content.${name}`, ok: true, problems: [] });
+    writeFileSync(at("proofs/suite-report.json"), `${JSON.stringify(report, null, 2)}\n`);
+    const rescore = (text: string) => text.replace(/(<!-- suite-score[^\n]*-->\n)[\s\S]*?(<!-- \/suite-score -->)/, `$1Rescored by ${name}.\n$2`);
+    writeFileSync(at("README.md"), rescore(readFileSync(at("README.md"), "utf8")));
+    writeFileSync(at("PLAN.md"), `${rescore(readFileSync(at("PLAN.md"), "utf8")).trimEnd()}\n- [x] ${name}: a milestone this lane ticked\n`);
+    const config = readFileSync(at("src/game.config.ts"), "utf8")
+      .replace('import { time, world } from "./world";\n', `import { time, world } from "./world";\nimport { ${name}Probe } from "./game/${name}";\n`)
+      .replace(/(\n\s*stones: ctx[^\n]*\n)/, `$1        ${name}: ${name}Probe(ctx),\n`);
+    writeFileSync(at("src/game.config.ts"), config);
+    gitOk(dir, ["add", "-A"]);
+    gitOk(dir, ["commit", "-q", "-m", `Fernwild: ${name}`]);
+  };
+  const close = (dir: string, name: string) => {
+    const sync = syncOntoBase({ branch: `agent/${name}`, base: "beta", git: (args) => gitIn(dir, args), exec: () => ({ status: 0, stdout: "", stderr: "" }) });
+    expect(sync.refusal).toBeNull();
+    // GitHub's merge: the pushed head goes onto beta.
+    gitOk(dir, ["push", "-q", "origin", `agent/${name}:beta`]);
+    return sync;
+  };
+
+  lane(partner, "dossier");
+  lane(work, "tranqs");
+  expect(close(partner, "dossier").rebased).toBe(false);
+  expect(close(work, "tranqs").rebased).toBe(true);
+
+  const landed = (file: string) => gitOk(bare, ["show", `beta:games/fernwild/${file}`]);
+  for (const file of files) expect(landed(file)).not.toMatch(/^(<<<<<<<|>>>>>>>|\|\|\|\|\|\|\|)/m);
+  const report = JSON.parse(landed("proofs/suite-report.json")) as { proofs: { file: string }[]; data: { id: string }[] };
+  expect(report.proofs.map((proof) => proof.file).slice(-2)).toEqual(["proofs/sim/zz-dossier.proof.ts", "proofs/sim/zz-tranqs.proof.ts"]);
+  expect(report.data.map((row) => row.id).slice(-2)).toEqual(["content.dossier", "content.tranqs"]);
+  expect(landed("PLAN.md")).toMatch(/- \[x\] dossier: [^\n]*\n- \[x\] tranqs: /);
+  expect(landed("src/game.config.ts")).toMatch(/import \{ dossierProbe \}[^\n]*\nimport \{ tranqsProbe \}/);
+  expect(landed("src/game.config.ts")).toMatch(/dossier: dossierProbe\(ctx\),\n\s*tranqs: tranqsProbe\(ctx\),/);
+}, 120_000);
+
 test("a branch land did not push is refused, and the remote copy is left alone", () => {
   const { bare, work, partner, base } = originWithBeta();
 

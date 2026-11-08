@@ -19,8 +19,9 @@
 //
 // A branch behind its base is pushed as it stands when it merges cleanly (`git merge-tree`): GitHub
 // merges it, and a rebase would only change the tree the lane verified. A branch that conflicts is
-// rebased here, generated files and the lane's note resolved and regenerated (`generated-rebase.ts`),
-// and lane:close verifies the rebased tree before it merges.
+// rebased here, every conflict with one right answer resolved (generated files regenerated, the lane's
+// note, suite reports, lines both sides only added: `generated-rebase.ts`), and lane:close verifies the
+// rebased tree before it merges.
 //
 // `changes/` is shared by every lane on a branch's base, so a fragment there is only this PR's when
 // `git diff origin/<base>...HEAD` adds it; land names the ones it skips, since a body built from a
@@ -898,8 +899,8 @@ export function syncOntoBase(options: {
   if (merge.status === 0) return { rebased: false, refusal: null };
   if (merge.status !== 1) console.log(`degraded: git cannot test the merge (${details(merge)}); rebasing onto origin/${base}`);
 
-  // Generated files (api.md, the export manifest, capabilities.json) and the lane's change note
-  // never stop a landing: they are resolved here and regenerated on the merged source.
+  // A conflict with one right answer (a generated file, the lane's change note, a suite report, lines
+  // both sides only added) never stops a landing: it is resolved here, and generated files are regenerated.
   const rebased = rebaseResolvingGenerated(runGit, `origin/${base}`);
   if (!rebased.ok) {
     const files = rebased.conflicts.length > 0 ? ` in ${rebased.conflicts.join(", ")}` : "";
