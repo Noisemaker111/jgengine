@@ -5,7 +5,6 @@ import { ShaderPass } from "three-stdlib";
 
 import type { GradeConfig, LutCube } from "@jgengine/core/render/postProcessing";
 import { parseCubeLut } from "./cubeLut";
-import { HALF_ROUNDING_GLSL } from "./halfPrecision.draw";
 
 const DEFAULT_LIFT: readonly [number, number, number] = [0.012, 0.01, 0.018];
 const DEFAULT_GAIN: readonly [number, number, number] = [1.05, 1.02, 0.98];
@@ -46,67 +45,13 @@ const fragmentShader = /* glsl */ `
     return mix(texture2D(uLut, uvA).rgb, texture2D(uLut, uvB).rgb, c.b - slice);
   }
 
-#ifdef FUSED_OUTPUT
-  // three's OutputShader, then the half-float write its target made (see GradePass).
-  #include <tonemapping_pars_fragment>
-  ${HALF_ROUNDING_GLSL}
-  vec3 outputPass(vec4 color) {
-    #ifdef LINEAR_TONE_MAPPING
-      color.rgb = LinearToneMapping( color.rgb );
-    #elif defined( REINHARD_TONE_MAPPING )
-      color.rgb = ReinhardToneMapping( color.rgb );
-    #elif defined( CINEON_TONE_MAPPING )
-      color.rgb = CineonToneMapping( color.rgb );
-    #elif defined( ACES_FILMIC_TONE_MAPPING )
-      color.rgb = ACESFilmicToneMapping( color.rgb );
-    #elif defined( AGX_TONE_MAPPING )
-      color.rgb = AgXToneMapping( color.rgb );
-    #elif defined( NEUTRAL_TONE_MAPPING )
-      color.rgb = NeutralToneMapping( color.rgb );
-    #elif defined( CUSTOM_TONE_MAPPING )
-      color.rgb = CustomToneMapping( color.rgb );
-    #endif
-    #ifdef SRGB_TRANSFER
-      color = sRGBTransferOETF( color );
-    #endif
-    return rtz16(color.rgb);
-  }
-#ifdef FUSED_SHARPEN
-  // Temporal AA's sharpen (TAA_SHARPEN_FRAGMENT) on its resolved history, then its half-float write.
-  // Its taps one texel away landed on texel centres, and past an edge they clamped to it.
-  uniform sampler2D tHistory;
-  uniform float uSharpness;
-  vec4 sharpenAt(ivec2 p) {
-    ivec2 edge = textureSize(tHistory, 0) - 1;
-    vec4 centre = texelFetch(tHistory, p, 0);
-    vec3 north = texelFetch(tHistory, min(p + ivec2(0, 1), edge), 0).rgb;
-    vec3 south = texelFetch(tHistory, max(p - ivec2(0, 1), ivec2(0)), 0).rgb;
-    vec3 east = texelFetch(tHistory, min(p + ivec2(1, 0), edge), 0).rgb;
-    vec3 west = texelFetch(tHistory, max(p - ivec2(1, 0), ivec2(0)), 0).rgb;
-    vec3 lo = min(centre.rgb, min(min(north, south), min(east, west)));
-    vec3 hi = max(centre.rgb, max(max(north, south), max(east, west)));
-    vec3 sharpened = centre.rgb + (centre.rgb * 4.0 - north - south - east - west) * uSharpness;
-    return rtz16(vec4(clamp(sharpened, lo, hi), centre.a));
-  }
-#endif
-#endif
-
   void main() {
-#ifdef FUSED_OUTPUT
-    // The frame is the same size as the screen, so the OutputPass's sample was this texel.
-  #ifdef FUSED_SHARPEN
-    vec3 c = outputPass(sharpenAt(ivec2(gl_FragCoord.xy)));
-  #else
-    vec3 c = outputPass(texelFetch(tDiffuse, ivec2(gl_FragCoord.xy), 0));
-  #endif
-#else
     vec2 dir = vUv - 0.5;
     // Chromatic aberration: split RGB along the radial direction, growing toward the edges.
     vec2 shift = uChroma > 0.0 ? dir * uChroma * dot(dir, dir) * 4.0 : vec2(0.0);
     vec3 c = uChroma > 0.0
       ? vec3(texture2D(tDiffuse, vUv + shift).r, texture2D(tDiffuse, vUv).g, texture2D(tDiffuse, vUv - shift).b)
       : texture2D(tDiffuse, vUv).rgb;
-#endif
     c = c + uLift;
     c = c * uGain;
     c = pow(max(c, 0.0), vec3(uGamma));
@@ -159,101 +104,26 @@ function lutStripTexture(cube: LutCube): THREE.DataTexture {
   return texture;
 }
 
-/** The grade's shader sources, exported for the GPU check of its merged variant. @internal */
-export const GRADE_SHADER = { vertexShader, fragmentShader } as const;
-
-const TONE_MAPPING_DEFINES: ReadonlyMap<THREE.ToneMapping, string> = new Map([
-  [THREE.LinearToneMapping, "LINEAR_TONE_MAPPING"],
-  [THREE.ReinhardToneMapping, "REINHARD_TONE_MAPPING"],
-  [THREE.CineonToneMapping, "CINEON_TONE_MAPPING"],
-  [THREE.ACESFilmicToneMapping, "ACES_FILMIC_TONE_MAPPING"],
-  [THREE.AgXToneMapping, "AGX_TONE_MAPPING"],
-  [THREE.NeutralToneMapping, "NEUTRAL_TONE_MAPPING"],
-  [THREE.CustomToneMapping, "CUSTOM_TONE_MAPPING"],
-]);
-
-/**
- * The display-space colour grade. With {@link fuseOutput} set it also does the OutputPass's work (tone
- * mapping and sRGB encoding) on the HDR frame it then reads, so the chain skips one full-screen draw;
- * the chain sets it on the frames whose OutputPass would hand the grade its result directly.
- *
- * The merged variant runs three's own OutputShader code with the defines the OutputPass picks from
- * the renderer, and rounds the result the way the OutputPass's half-float target did, so the grade
- * starts from the same bits. With {@link fuseSharpen} as well it first does temporal AA's sharpen on
- * the history {@link takeSharpen} handed it, which saves a second full-screen draw.
- * `bun run check postfx-exact` compares each merged variant with the draws it replaces on the GPU.
- * @internal
- */
-export class GradePass extends ShaderPass {
-  /** Do the OutputPass's work too; the chain switches that pass off on the same frames. */
-  fuseOutput = false;
-  /** With {@link fuseOutput}, also sharpen temporal AA's history; that pass then skips its sharpen. */
-  fuseSharpen = false;
-  private readonly plain: THREE.ShaderMaterial;
-  private readonly fused: THREE.ShaderMaterial;
-  private readonly fusedSharpen: THREE.ShaderMaterial;
-  private fusedFor: { toneMapping: THREE.ToneMapping; colorSpace: string } | null = null;
-
-  constructor(uniforms: Record<string, THREE.IUniform>) {
-    super({ uniforms: { ...uniforms, toneMappingExposure: { value: 1 }, tHistory: { value: null }, uSharpness: { value: 0 } }, vertexShader, fragmentShader });
-    this.plain = this.material;
-    // Its tone mapping is the OutputPass's, so three must not add the screen's on top.
-    this.fused = new THREE.ShaderMaterial({ uniforms: this.uniforms, vertexShader, fragmentShader, toneMapped: false });
-    this.fusedSharpen = new THREE.ShaderMaterial({ uniforms: this.uniforms, vertexShader, fragmentShader, toneMapped: false });
-  }
-
-  /** This frame's resolved temporal AA history and its sharpness, for {@link fuseSharpen}. */
-  takeSharpen(history: THREE.Texture, sharpness: number): void {
-    requireUniform(this.uniforms, "tHistory").value = history;
-    requireUniform(this.uniforms, "uSharpness").value = sharpness;
-  }
-
-  override render(renderer: THREE.WebGLRenderer, writeBuffer: THREE.WebGLRenderTarget, readBuffer: THREE.WebGLRenderTarget): void {
-    if (this.fuseOutput) {
-      const toneMapping = renderer.toneMapping;
-      const colorSpace = renderer.outputColorSpace;
-      if (this.fusedFor?.toneMapping !== toneMapping || this.fusedFor.colorSpace !== colorSpace) {
-        // The OutputPass's own choice of defines, made from the same renderer state.
-        const defines: Record<string, string> = { FUSED_OUTPUT: "" };
-        if (THREE.ColorManagement.getTransfer(colorSpace) === THREE.SRGBTransfer) defines["SRGB_TRANSFER"] = "";
-        const toneDefine = TONE_MAPPING_DEFINES.get(toneMapping);
-        if (toneDefine !== undefined) defines[toneDefine] = "";
-        this.fused.defines = defines;
-        this.fusedSharpen.defines = { ...defines, FUSED_SHARPEN: "" };
-        this.fused.needsUpdate = true;
-        this.fusedSharpen.needsUpdate = true;
-        this.fusedFor = { toneMapping, colorSpace };
-      }
-      requireUniform(this.uniforms, "toneMappingExposure").value = renderer.toneMappingExposure;
-    }
-    this.material = !this.fuseOutput ? this.plain : this.fuseSharpen ? this.fusedSharpen : this.fused;
-    super.render(renderer, writeBuffer, readBuffer);
-  }
-
-  override dispose(): void {
-    this.material = this.plain;
-    super.dispose();
-    this.fused.dispose();
-    this.fusedSharpen.dispose();
-  }
-}
-
 /** Build the display-space colour-grade pass and load its optional LUT. Dispose the pass to release its LUT; advance `uniforms.uTime.value` each frame to animate grain. */
-export function createGradePass(config: GradeConfig = {}): GradePass {
+export function createGradePass(config: GradeConfig = {}): ShaderPass {
   const lift = config.lift ?? DEFAULT_LIFT;
   const gain = config.gain ?? DEFAULT_GAIN;
-  const pass = new GradePass({
-    tDiffuse: { value: null },
-    uLift: { value: new THREE.Vector3(lift[0], lift[1], lift[2]) },
-    uGain: { value: new THREE.Vector3(gain[0], gain[1], gain[2]) },
-    uGamma: { value: config.gamma ?? DEFAULT_GAMMA },
-    uSaturation: { value: config.saturation ?? DEFAULT_SATURATION },
-    uVignette: { value: config.vignette ?? DEFAULT_VIGNETTE },
-    uGrain: { value: config.grain ?? DEFAULT_GRAIN },
-    uChroma: { value: config.chromaticAberration ?? DEFAULT_CHROMA },
-    uTime: { value: 0 },
-    uLut: { value: null },
-    uLutSize: { value: 0 },
+  const pass = new ShaderPass({
+    uniforms: {
+      tDiffuse: { value: null },
+      uLift: { value: new THREE.Vector3(lift[0], lift[1], lift[2]) },
+      uGain: { value: new THREE.Vector3(gain[0], gain[1], gain[2]) },
+      uGamma: { value: config.gamma ?? DEFAULT_GAMMA },
+      uSaturation: { value: config.saturation ?? DEFAULT_SATURATION },
+      uVignette: { value: config.vignette ?? DEFAULT_VIGNETTE },
+      uGrain: { value: config.grain ?? DEFAULT_GRAIN },
+      uChroma: { value: config.chromaticAberration ?? DEFAULT_CHROMA },
+      uTime: { value: 0 },
+      uLut: { value: null },
+      uLutSize: { value: 0 },
+    },
+    vertexShader,
+    fragmentShader,
   });
   let disposed = false;
   let lutTexture: THREE.Texture | null = null;

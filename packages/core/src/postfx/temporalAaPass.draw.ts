@@ -110,8 +110,8 @@ const resolveShader = /* glsl */ `
   }
 `;
 
-/** Light sharpening on the way out, giving back the detail the history blend softens. @internal */
-export const TAA_SHARPEN_FRAGMENT = /* glsl */ `
+/** Light sharpening on the way out, giving back the detail the history blend softens. */
+const sharpenShader = /* glsl */ `
   uniform sampler2D tDiffuse;
   uniform vec2 uTexel;
   uniform float uSharpness;
@@ -179,11 +179,6 @@ export class TemporalAaPass extends Pass {
   private readonly previousForward = new THREE.Vector3();
   /** The offset the beauty pass used for the frame being resolved, in pixels. */
   readonly jitter = new THREE.Vector2();
-  /**
-   * Set by the chain on frames where the grade sharpens (see `GradePass.fuseSharpen`): the resolved
-   * history goes to it and this pass skips its own sharpen draw.
-   */
-  sharpenIn: { takeSharpen(history: THREE.Texture, sharpness: number): void } | null = null;
 
   constructor(
     private readonly camera: THREE.Camera,
@@ -217,7 +212,7 @@ export class TemporalAaPass extends Pass {
         uSharpness: { value: sharpness },
       },
       vertexShader,
-      fragmentShader: TAA_SHARPEN_FRAGMENT,
+      fragmentShader: sharpenShader,
       depthTest: false,
       depthWrite: false,
     });
@@ -266,17 +261,10 @@ export class TemporalAaPass extends Pass {
     renderer.setRenderTarget(write);
     this.resolveQuad.render(renderer);
 
-    const sharpenIn = this.renderToScreen ? null : this.sharpenIn;
-    // Handed on, the frame stays where it was: the pass that sharpens reads the history instead.
-    this.needsSwap = sharpenIn === null;
-    if (sharpenIn !== null) {
-      sharpenIn.takeSharpen(write.texture, this.sharpenMaterial.uniforms["uSharpness"]!.value as number);
-    } else {
-      this.sharpenMaterial.uniforms["tDiffuse"]!.value = write.texture;
-      renderer.setRenderTarget(this.renderToScreen ? null : writeBuffer);
-      if (this.clear) renderer.clear();
-      this.sharpenQuad.render(renderer);
-    }
+    this.sharpenMaterial.uniforms["tDiffuse"]!.value = write.texture;
+    renderer.setRenderTarget(this.renderToScreen ? null : writeBuffer);
+    if (this.clear) renderer.clear();
+    this.sharpenQuad.render(renderer);
 
     this.previousViewProjection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
     this.previousPosition.copy(cameraPosition);

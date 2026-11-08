@@ -10,12 +10,7 @@ import { openPageSession, withBrowserSession } from "./browser-lib";
  * compares every channel:
  * - the half-precision helpers against the GPU's own target write and multiply blend, bit for bit;
  * - `SceneCompositePass` against the beauty copy, three's GTAO blend and the contact-shadow apply, in
- *   every combination, bit for bit;
- * - `GradePass` doing the OutputPass's work (and temporal AA's sharpen) against those draws then the
- *   grade, on the 8-bit screen, for each of three's tone mappings. Inside the larger shader the GPU compiler may order the tone
- *   map's arithmetic differently, so a channel may differ by one level (of 255) on at most 1 channel
- *   in 1000. On the RTX 3070 ACES, Neutral and Reinhard match exactly and AgX, Cineon and Linear
- *   differ on at most 1 channel in 6000, far under the grade's own per-frame film grain.
+ *   every combination, bit for bit.
  * It needs a GPU, so it runs only on demand (no CI job); the PR that changes a merged pass runs it
  * and quotes it.
  */
@@ -27,8 +22,6 @@ interface CaseResult {
   /** Largest difference of one channel, in the target's own units (half bits or 8-bit levels). */
   largest: number;
   sample: string | null;
-  /** The most a channel may differ, and the share of channels that may, when not every bit must match. */
-  allowance: { largest: number; share: number } | null;
 }
 
 const PAGE = String.raw`(async (sources) => {
@@ -109,14 +102,14 @@ const PAGE = String.raw`(async (sources) => {
   const draw = () => gl.drawArrays(gl.TRIANGLES, 0, 3);
   gl.viewport(0, 0, W, H);
   const results = [];
-  const compare = (name, expected, actual, allowance = null) => {
+  const compare = (name, expected, actual) => {
     let differing = 0, largest = 0, sample = null;
     for (let i = 0; i < expected.length; i++) if (expected[i] !== actual[i]) {
       differing++;
       largest = Math.max(largest, Math.abs(expected[i] - actual[i]));
       sample ??= "channel " + i + ": " + expected[i].toString(16) + " vs " + actual[i].toString(16);
     }
-    results.push({ name, channels: expected.length, differing, largest, sample, allowance });
+    results.push({ name, channels: expected.length, differing, largest, sample });
   };
 
   // The helpers: rtz16 against the target write, rne16(dst * rtz16(src)) against a multiply blend.
@@ -152,54 +145,6 @@ const PAGE = String.raw`(async (sources) => {
     draw();
     compare(name, expected, read());
   }
-  // The grade doing the OutputPass's work, against the OutputPass into a half-float target and the
-  // grade from it, compared on the 8-bit screen the grade draws to.
-  const target8 = () => {
-    const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t); gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, W, H);
-    const fb = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, fb); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
-    return { fb, t };
-  };
-  const read8 = () => { const out = new Uint8Array(W * H * 4); gl.readPixels(0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, out); return out; };
-  const gradeUniforms = (p, exposure) => {
-    const set = (name, f, ...v) => { const at = gl.getUniformLocation(p, name); if (at !== null) gl[f](at, ...v); };
-    set("uLift", "uniform3f", 0.012, 0.01, 0.018); set("uGain", "uniform3f", 1.05, 1.02, 0.98); set("uGamma", "uniform1f", 0.96);
-    set("uSaturation", "uniform1f", 1.12); set("uVignette", "uniform1f", 0.2); set("uGrain", "uniform1f", 0.012); set("uChroma", "uniform1f", 0);
-    set("uTime", "uniform1f", 12.375); set("uLutSize", "uniform1f", 0); set("toneMappingExposure", "uniform1f", exposure);
-  };
-  const tones = [["ACES_FILMIC_TONE_MAPPING", 1], ["AGX_TONE_MAPPING", 1], ["AGX_TONE_MAPPING", 1.40625], ["NEUTRAL_TONE_MAPPING", 0.8125], ["REINHARD_TONE_MAPPING", 1], ["CINEON_TONE_MAPPING", 1], ["LINEAR_TONE_MAPPING", 0.5]];
-  for (const [toneMapping, exposure] of tones) {
-    const defines = { [toneMapping]: "", SRGB_TRANSFER: "" };
-    const output = program(sources.outputFragment, { raw: true, vertex: sources.outputVertex, defines });
-    target(); bind(output, "tDiffuse", 0, beauty); gl.uniform1f(gl.getUniformLocation(output, "toneMappingExposure"), exposure); draw();
-    const tonedTexture = gl.getFramebufferAttachmentParameter(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.FRAMEBUFFER_ATTACHMENT_OBJECT_NAME);
-    gl.bindTexture(gl.TEXTURE_2D, tonedTexture); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    const plain = program(sources.gradeFragment, { vertex: sources.gradeVertex });
-    target8(); gradeUniforms(plain, exposure); bind(plain, "tDiffuse", 0, tonedTexture); drawPlane(); const expected = read8();
-    const fused = program(sources.gradeFragment, { vertex: sources.gradeVertex, defines: { FUSED_OUTPUT: "", ...defines } });
-    target8(); gradeUniforms(fused, exposure); bind(fused, "tDiffuse", 0, beauty); drawPlane();
-    const label = toneMapping.toLowerCase().replace(/_tone_mapping$/, "") + ", exposure " + exposure;
-    compare("grade with OutputPass (" + label + ") = OutputPass then grade", expected, read8(), { largest: 1, share: 0.001 });
-  }
-
-  // The grade also doing temporal AA's sharpen on the resolved history (the beauty frame stands in).
-  for (const [toneMapping, exposure] of [["AGX_TONE_MAPPING", 1], ["ACES_FILMIC_TONE_MAPPING", 1]]) {
-    const defines = { [toneMapping]: "", SRGB_TRANSFER: "" };
-    const attachment = () => gl.getFramebufferAttachmentParameter(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.FRAMEBUFFER_ATTACHMENT_OBJECT_NAME);
-    const linear = (t) => { gl.bindTexture(gl.TEXTURE_2D, t); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); return t; };
-    const sharpen = program(sources.sharpen);
-    target(); bind(sharpen, "tDiffuse", 0, beauty); gl.uniform2f(gl.getUniformLocation(sharpen, "uTexel"), 1 / W, 1 / H); gl.uniform1f(gl.getUniformLocation(sharpen, "uSharpness"), 0.3); drawPlane();
-    const sharpened = linear(attachment());
-    const output = program(sources.outputFragment, { raw: true, vertex: sources.outputVertex, defines });
-    target(); bind(output, "tDiffuse", 0, sharpened); gl.uniform1f(gl.getUniformLocation(output, "toneMappingExposure"), exposure); draw();
-    const toned = linear(attachment());
-    const plain = program(sources.gradeFragment, { vertex: sources.gradeVertex });
-    target8(); gradeUniforms(plain, exposure); bind(plain, "tDiffuse", 0, toned); drawPlane(); const expected = read8();
-    const fused = program(sources.gradeFragment, { vertex: sources.gradeVertex, defines: { FUSED_OUTPUT: "", FUSED_SHARPEN: "", ...defines } });
-    target8(); gradeUniforms(fused, exposure); bind(fused, "tDiffuse", 0, toned); bind(fused, "tHistory", 1, beauty); gl.uniform1f(gl.getUniformLocation(fused, "uSharpness"), 0.3); drawPlane();
-    const label = toneMapping.toLowerCase().replace(/_tone_mapping$/, "");
-    compare("grade with TAA sharpen and OutputPass (" + label + ") = sharpen, OutputPass, grade", expected, read8(), { largest: 1, share: 0.001 });
-  }
-
   const error = gl.getError();
   return error === 0 ? results : "GL error " + error;
 })`;
@@ -216,10 +161,9 @@ const exit = await withBrowserSession({ keep: false, timeoutMs: 120_000 }, async
   }
   let failed = 0;
   for (const row of result) {
-    const allowed = row.differing === 0 || (row.allowance !== null && row.largest <= row.allowance.largest && row.differing / row.channels <= row.allowance.share);
-    const verdict = row.differing === 0 ? "same bits" : `${row.differing} differing, by at most ${row.largest} (${row.sample})${allowed ? ", within its allowance" : ""}`;
+    const verdict = row.differing === 0 ? "same bits" : `${row.differing} differing, by at most ${row.largest} (${row.sample})`;
     console.log(`postfx-exact: ${row.name}: ${verdict} over ${row.channels} channels`);
-    if (!allowed) failed += 1;
+    if (row.differing > 0) failed += 1;
   }
   return failed === 0 ? 0 : 1;
 });
