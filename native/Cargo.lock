@@ -1175,6 +1175,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "jg-shader-wasm"
+version = "0.1.0"
+dependencies = [
+ "jg-shader",
+ "serde_json",
+]
+
+[[package]]
 name = "jg-v8"
 version = "0.1.0"
 dependencies = [

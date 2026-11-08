@@ -109,6 +109,7 @@
     "water": "jgengine-world",
     "waves": "jgengine-combat",
     "weather": "jgengine-world",
+    "webgpu": "jgengine-world",
     "work": "jgengine-gameplay",
     "world": "jgengine-world",
     "worldModel": "jgengine-gameplay"

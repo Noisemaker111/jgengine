@@ -12,10 +12,11 @@ import { localGetJson } from "./localhostHttp";
 import { readBreakdown, readHitchSession, renderHitchSession, resetBreakdown, startPath } from "./perf-breakdown";
 import { createFlowStepper, describeFlowReport, runFlowReport } from "../packages/core/src/play/flowSteps";
 import { GATE_SIZE } from "./perf-gate";
-import { parseSettingSpec, perfSettingsScript, SAMPLE_FRAMES_SCRIPT, summarizeFrameDeltas } from "./perf-play";
+import { BACKEND_READING_SCRIPT, gpuErrorLine, gpuErrors, parseSettingSpec, perfSettingsScript, SAMPLE_FRAMES_SCRIPT, summarizeFrameDeltas } from "./perf-play";
 import { renderBreakdownText, type FrameBreakdownSummary } from "../packages/core/src/devtools/frameBreakdown";
 import type { FrameWindow } from "../packages/core/src/devtools/report";
 import { readPrivateDesktopMap } from "../packages/jgengine/src/desktopMaps";
+import { parseRendererBackend, type RendererBackend } from "../packages/core/src/settings/rendererBackend";
 
 interface Target { type?: string; url?: string; webSocketDebuggerUrl?: string }
 
@@ -50,9 +51,11 @@ export interface LaunchArgs {
   size: { width: number; height: number };
   /** `--flow <game>/<name>`: play that game's flow instead of the walk and report every hitch in it. */
   flow: { game: string; name: string } | null;
+  /** The GPU backends to measure, one launch each (`--renderer webgl|webgpu|both`, default webgl). */
+  renderers: RendererBackend[];
 }
 
-/** Parse `--launch <exe> [--uncapped] [--seconds n] [--port n] [--size WxH] [--out file] [--maps dir] [--flow game/name]`. @internal */
+/** Parse `--launch <exe> [--uncapped] [--renderer webgl|webgpu|both] [--seconds n] [--port n] [--size WxH] [--out file] [--maps dir] [--flow game/name]`. @internal */
 export function parseLaunchArgs(argv: readonly string[]): LaunchArgs {
   let exe: string | undefined;
   let uncapped = false;
@@ -62,10 +65,11 @@ export function parseLaunchArgs(argv: readonly string[]): LaunchArgs {
   let maps: string | null = null;
   let size: { width: number; height: number } = { width: GATE_SIZE.width, height: GATE_SIZE.height };
   let flow: { game: string; name: string } | null = null;
+  let renderers: RendererBackend[] = ["webgl"];
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index] ?? "";
     if (arg === "--uncapped") { uncapped = true; continue; }
-    if (arg !== "--launch" && arg !== "--seconds" && arg !== "--port" && arg !== "--size" && arg !== "--out" && arg !== "--maps" && arg !== "--flow") throw new Error(`unknown argument ${arg}`);
+    if (arg !== "--launch" && arg !== "--seconds" && arg !== "--port" && arg !== "--size" && arg !== "--out" && arg !== "--maps" && arg !== "--flow" && arg !== "--renderer") throw new Error(`unknown argument ${arg}`);
     const value = argv[index + 1];
     if (value === undefined || value.startsWith("--")) throw new Error(`${arg} needs a value`);
     index += 1;
@@ -76,6 +80,11 @@ export function parseLaunchArgs(argv: readonly string[]): LaunchArgs {
       const match = /^([a-z0-9-]+)\/([a-z0-9-]+)$/.exec(value);
       if (match === null) throw new Error(`--flow takes <game>/<flow> (got ${value})`);
       flow = { game: match[1] ?? "", name: match[2] ?? "" };
+    }
+    else if (arg === "--renderer") {
+      const backend = parseRendererBackend(value);
+      if (value !== "both" && backend === null) throw new Error(`--renderer must be webgl, webgpu or both (got ${value})`);
+      renderers = backend === null ? ["webgl", "webgpu"] : [backend];
     }
     else if (arg === "--size") {
       const match = /^(\d+)x(\d+)$/.exec(value);
@@ -94,7 +103,7 @@ export function parseLaunchArgs(argv: readonly string[]): LaunchArgs {
   }
   if (exe === undefined) throw new Error("--launch needs the desktop app's .exe");
   // `jgengine desktop --out <dir>` writes the app into <dir> and its private maps to <dir>.private-maps.
-  return { exe, uncapped, seconds, port, out, maps: maps ?? `${dirname(exe)}.private-maps`, size, flow };
+  return { exe, uncapped, seconds, port, out, maps: maps ?? `${dirname(exe)}.private-maps`, size, flow, renderers };
 }
 
 /**
@@ -140,6 +149,13 @@ async function privateMapReader(session: CdpSession, mapsDir: string): Promise<{
   };
 }
 
+/** Where one backend's record is written: `--out` itself, or beside it as `<name>.webgpu.json` when both run. @internal */
+export function desktopOutFor(args: Pick<LaunchArgs, "out" | "renderers">, backend: RendererBackend): string {
+  const out = args.out ?? "";
+  if (backend === "webgl" || args.renderers.length === 1) return out;
+  return out.endsWith(".json") ? `${out.slice(0, -5)}.${backend}.json` : `${out}.${backend}.json`;
+}
+
 /** The page a launched app is pointed at: its diagnostic telemetry, at the frame gate's tier. */
 const LAUNCH_URL = "index.html?telemetry=local&frameMembers=1&quality=high";
 
@@ -155,6 +171,8 @@ export interface DesktopRecord {
   rafP50Ms: number;
   rafP99Ms: number;
   breakdown: FrameBreakdownSummary | null;
+  /** The backend the run asked for and the one that drew (WebGPU falls back to WebGL where it is missing). */
+  backend: { asked: RendererBackend; drawing: RendererBackend; warnings: string[] };
 }
 
 /** How a launched app got into its scene, and the tier it reports. */
@@ -168,7 +186,7 @@ interface LaunchedScene { tier: string; start: string }
  * `--uncapped` still reaches the browser. A `profile` folder gives WebView2 its own user data, so a
  * player's saves in the app's usual profile are never read or touched.
  */
-async function withLaunchedScene<T>(args: LaunchArgs, profile: string | null, work: (session: CdpSession, scene: LaunchedScene) => Promise<T>): Promise<T> {
+async function withLaunchedScene<T>(args: LaunchArgs, backend: RendererBackend, profile: string | null, work: (session: CdpSession, scene: LaunchedScene) => Promise<T>): Promise<T> {
   if (process.platform !== "win32") throw new Error("--launch measures a Windows (WebView2) desktop build");
   if (!existsSync(args.exe)) throw new Error(`no desktop app at ${args.exe}; build one with: bun run jgengine desktop games/<id> --diagnostics --no-installer`);
   // Muted: a measurement launch shares the PC with whoever is at it, and plays nothing worth hearing.
@@ -183,7 +201,7 @@ async function withLaunchedScene<T>(args: LaunchArgs, profile: string | null, wo
     const session = await CdpSession.connect(target.webSocketDebuggerUrl, 10_000);
     try {
       await session.send("Page.enable");
-      await session.send("Page.addScriptToEvaluateOnNewDocument", { source: perfSettingsScript([parseSettingSpec("graphics.auto=false")]) });
+      await session.send("Page.addScriptToEvaluateOnNewDocument", { source: perfSettingsScript([parseSettingSpec("graphics.auto=false"), parseSettingSpec(`renderer=${backend}`)]) });
       await session.send("Emulation.setDeviceMetricsOverride", { width: args.size.width, height: args.size.height, deviceScaleFactor: 1, mobile: false });
       // A navigation from the debugger, not `location.href`: an app still finishing its own first load
       // cancelled the script-set one and kept its menu page.
@@ -220,9 +238,21 @@ async function withLaunchedScene<T>(args: LaunchArgs, profile: string | null, wo
   }
 }
 
+/**
+ * Why a measured window does not show the scene, or null when it does. A window that drew nothing
+ * (a reload, a stall back to a blank page) measures an empty frame: Brightway Park once read 365 fps
+ * and Odd Orbit 86 fps with zero draws. A window the "Preparing scene" cover was over measures the
+ * cover: Harbor Heat on WebGPU read 5.4 ms at 8 draws a frame against 565 on WebGL (2026-11-08).
+ */
+export function unmeasuredSceneReason(drawsAvg: number | undefined, covered: boolean): string | null {
+  if (covered) return `the scene was still preparing shaders behind its cover while it was measured (${drawsAvg ?? "?"} draws a frame)`;
+  if (drawsAvg !== undefined && drawsAvg < 1) return `the scene drew nothing while it was measured (${drawsAvg} draws a frame)`;
+  return null;
+}
+
 /** Launch a diagnostic desktop build, walk at the frame gate's conditions, and print and return the frame rate it reaches. */
-export async function launchAndMeasure(args: LaunchArgs): Promise<DesktopRecord> {
-  return withLaunchedScene(args, null, async (session, { tier, start }) => {
+export async function launchAndMeasure(args: LaunchArgs, backend: RendererBackend): Promise<DesktopRecord> {
+  return withLaunchedScene(args, backend, null, async (session, { tier, start }) => {
     const release = await startPath(session, "walk");
     await Bun.sleep(2_000);
     if (!(await resetBreakdown(session))) throw new Error("the page has no frame breakdown; build it with --diagnostics");
@@ -238,22 +268,27 @@ export async function launchAndMeasure(args: LaunchArgs): Promise<DesktopRecord>
     if (presenting !== null && presenting !== (args.uncapped ? "uncapped" : "vsync")) {
       throw new Error(`asked for a ${args.uncapped ? "uncapped" : "vsync"} run but the app presents ${presenting} (its saved Frame rate setting); set it back in the game's Graphics settings`);
     }
+    const drew = (await session.evaluate<{ drawing: RendererBackend; warnings: string[] }>(BACKEND_READING_SCRIPT)) ?? { drawing: "webgl", warnings: [] };
+    if (drew.drawing !== backend) console.error(`degraded: asked for the ${backend} backend but ${drew.drawing} drew the page`);
+    const dropped = gpuErrorLine(drew);
+    if (dropped !== null) console.error(dropped);
     const frame = summarizeFrameDeltas(deltas);
-    // A window that drew nothing (a reload, a stall back to a blank page) measures an empty frame:
-    // Brightway Park once read 365 fps and Odd Orbit 86 fps with zero draws.
-    if (breakdown !== null && breakdown.counts.drawsAvg < 1) {
+    const covered = (await session.evaluate<boolean>(`document.querySelector("[data-shell-warmup]") !== null`).catch(() => false)) ?? false;
+    const unmeasured = unmeasuredSceneReason(breakdown?.counts.drawsAvg, covered);
+    if (unmeasured !== null) {
       const page = await session.evaluate<string>(`location.href + " | " + document.querySelectorAll("canvas").length + " canvas, visibility " + document.visibilityState + ", focus " + document.hasFocus() + " | " + (document.body?.innerText ?? "").replace(/\\s+/g, " ").slice(0, 200)`).catch((error: unknown) => String(error));
-      throw new Error(`the scene drew nothing while it was measured (${breakdown.counts.drawsAvg} draws a frame, longest frame ${frame.maxMs} ms, ${start}; page: ${page}); measure it again`);
+      throw new Error(`${unmeasured} (longest frame ${frame.maxMs} ms, ${start}; page: ${page}); measure it again`);
     }
     const sorted = [...deltas].sort((a, b) => a - b);
     const quantile = (p: number) => sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))] ?? Number.NaN;
-    const record: DesktopRecord = { at: Date.now(), exe: args.exe, clock: args.uncapped ? "uncapped" : "vsync", tier, viewport: viewport ?? "unknown", start, frame, rafP50Ms: quantile(0.5), rafP99Ms: quantile(0.99), breakdown };
+    const record: DesktopRecord = { at: Date.now(), exe: args.exe, clock: args.uncapped ? "uncapped" : "vsync", tier, viewport: viewport ?? "unknown", start, frame, rafP50Ms: quantile(0.5), rafP99Ms: quantile(0.99), breakdown, backend: { asked: backend, ...drew } };
     if (args.out !== null) {
-      mkdirSync(dirname(args.out), { recursive: true });
-      writeFileSync(args.out, `${JSON.stringify(record, null, 2)}\n`);
+      const out = desktopOutFor(args, backend);
+      mkdirSync(dirname(out), { recursive: true });
+      writeFileSync(out, `${JSON.stringify(record, null, 2)}\n`);
     }
     const b = breakdown ?? null;
-    console.log(`desktop ${record.clock}: ${frame.fps} fps, frame avg ${frame.avgMs} ms, p95 ${frame.p95Ms} ms, frame p50 ${b?.frame.p50 ?? "?"} ms, CPU p50 ${b?.work.p50 ?? "?"} ms, GPU p50 ${b?.gpu?.p50 ?? "?"} ms, ${tier} tier, ${viewport}, walking; ${start}`);
+    console.log(`desktop ${record.clock} ${drew.drawing}: ${frame.fps} fps, frame avg ${frame.avgMs} ms, p95 ${frame.p95Ms} ms, frame p50 ${b?.frame.p50 ?? "?"} ms, CPU p50 ${b?.work.p50 ?? "?"} ms, GPU p50 ${b?.gpu?.p50 ?? "?"} ms, ${tier} tier, ${viewport}, walking; ${start}`);
     return record;
   });
 }
@@ -263,11 +298,11 @@ export async function launchAndMeasure(args: LaunchArgs): Promise<DesktopRecord>
  * stay untouched), play one of the game's flows with real input, and print and write every frame of
  * 33 ms or more in it with its cause and the scripts that ran in it. False when the flow failed.
  */
-export async function launchAndPlayFlow(args: LaunchArgs, flow: { game: string; name: string }): Promise<boolean> {
+export async function launchAndPlayFlow(args: LaunchArgs, flow: { game: string; name: string }, backend: RendererBackend): Promise<boolean> {
   const proof = await loadFlow(flowsDirOf(resolve(import.meta.dir, "..", "games", flow.game)), flow.name);
   const profile = mkdtempSync(join(tmpdir(), "jg-desktop-flow-"));
   try {
-    return await withLaunchedScene(args, profile, async (session, { tier, start }) => {
+    return await withLaunchedScene(args, backend, profile, async (session, { tier, start }) => {
       if (!(await resetBreakdown(session))) throw new Error("the page has no frame breakdown; build it with --diagnostics");
       const driver = pageFlowDriver(session, {
         clock: null,
@@ -312,11 +347,13 @@ export interface AllArgs {
   /** Reprint the table from the records already saved, measuring nothing. */
   reuse: boolean;
   markdown: boolean;
+  /** The GPU backends each game is measured on, one launch each (`--renderer`, default webgl). */
+  renderers: RendererBackend[];
 }
 
-/** Parse `--all [--games a,b] [--uncapped] [--seconds n] [--records dir] [--skip-build] [--reuse] [--markdown]`. @internal */
+/** Parse `--all [--games a,b] [--uncapped] [--renderer webgl|webgpu|both] [--seconds n] [--records dir] [--skip-build] [--reuse] [--markdown]`. @internal */
 export function parseAllArgs(argv: readonly string[]): AllArgs {
-  const args: AllArgs = { games: [...FRAME_GAMES], uncapped: false, seconds: 8, records: DEFAULT_ALL_RECORDS, skipBuild: false, reuse: false, markdown: false };
+  const args: AllArgs = { games: [...FRAME_GAMES], uncapped: false, seconds: 8, records: DEFAULT_ALL_RECORDS, skipBuild: false, reuse: false, markdown: false, renderers: ["webgl"] };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index] ?? "";
     if (arg === "--all") continue;
@@ -324,11 +361,15 @@ export function parseAllArgs(argv: readonly string[]): AllArgs {
     if (arg === "--skip-build") { args.skipBuild = true; continue; }
     if (arg === "--reuse") { args.reuse = true; continue; }
     if (arg === "--markdown") { args.markdown = true; continue; }
-    if (arg !== "--games" && arg !== "--seconds" && arg !== "--records") throw new Error(`unknown argument ${arg}`);
+    if (arg !== "--games" && arg !== "--seconds" && arg !== "--records" && arg !== "--renderer") throw new Error(`unknown argument ${arg}`);
     const value = argv[index + 1];
     if (value === undefined || value.startsWith("--")) throw new Error(`${arg} needs a value`);
     index += 1;
-    if (arg === "--games") args.games = value.split(",").map((id) => id.trim()).filter((id) => id.length > 0);
+    if (arg === "--renderer") {
+      const backend = parseRendererBackend(value);
+      if (value !== "both" && backend === null) throw new Error(`--renderer must be webgl, webgpu or both (got ${value})`);
+      args.renderers = backend === null ? ["webgl", "webgpu"] : [backend];
+    } else if (arg === "--games") args.games = value.split(",").map((id) => id.trim()).filter((id) => id.length > 0);
     else if (arg === "--records") args.records = resolve(value);
     else {
       const seconds = Number(value);
@@ -340,28 +381,37 @@ export function parseAllArgs(argv: readonly string[]): AllArgs {
   return args;
 }
 
-/** One game's row in the all-games report: its record, or why it has none. */
-export interface AllRow { game: string; record: DesktopRecord | null; error: string | null }
+/** One game's row in the all-games report on one backend: its record, or why it has none. */
+export interface AllRow { game: string; backend: RendererBackend; record: DesktopRecord | null; error: string | null }
 
 const ms = (value: number | undefined): string => (value === undefined || !Number.isFinite(value) ? "?" : value.toFixed(2));
 
 /** The all-games desktop table against 360 fps. A report, not a gate. @internal */
 export function renderAllTable(rows: readonly AllRow[], markdown: boolean): string {
-  const header = ["game", "clock", "fps", "frame p50 ms", "frame p95 ms", "CPU p50 ms", "GPU p50 ms", "draws", "at 360 fps"];
+  const header = ["game", "renderer", "clock", "fps", "frame p50 ms", "frame p95 ms", "CPU p50 ms", "GPU p50 ms", "draws", "at 360 fps"];
   const body = rows.map((row) => {
-    if (row.record === null) return [row.game, "-", "-", "-", "-", "-", "-", "-", `no run: ${row.error ?? "unknown"}`];
+    if (row.record === null) return [row.game, row.backend, "-", "-", "-", "-", "-", "-", "-", `no run: ${row.error ?? "unknown"}`];
     const { record } = row;
     const b = record.breakdown;
     const frameP50 = b?.frame.p50 ?? record.rafP50Ms;
-    const verdict = record.frame.fps >= 360 ? "yes" : `${(Math.max(frameP50, BUDGET_360_MS) / BUDGET_360_MS).toFixed(1)}x short`;
-    return [row.game, record.clock, String(Math.round(record.frame.fps)), ms(frameP50), ms(record.frame.p95Ms), ms(b?.work.p50), ms(b?.gpu?.p50), b === null ? "?" : String(Math.round(b.counts.drawsAvg)), verdict];
+    const errors = gpuErrors(record.backend).length;
+    const verdict = errors > 0 ? `not comparable: ${errors} WebGPU errors dropped GPU work` : record.frame.fps >= 360 ? "yes" : `${(Math.max(frameP50, BUDGET_360_MS) / BUDGET_360_MS).toFixed(1)}x short`;
+    const drawn = record.backend?.drawing ?? row.backend;
+    return [row.game, drawn === row.backend ? drawn : `${row.backend} (drew ${drawn})`, record.clock, String(Math.round(record.frame.fps)), ms(frameP50), ms(record.frame.p95Ms), ms(b?.work.p50), ms(b?.gpu?.p50), b === null ? "?" : String(Math.round(b.counts.drawsAvg)), verdict];
   });
-  const holding = rows.filter((row) => row.record !== null && row.record.frame.fps >= 360).length;
-  const measured = rows.filter((row) => row.record !== null).length;
-  const summary = `${holding} of ${measured} measured games hold 360 fps (${rows.length - measured} not measured). Production desktop builds (WebView2), --diagnostics, ${GATE_SIZE.width}x${GATE_SIZE.height}, high tier, automatic quality off, walking.`;
+  const backends = [...new Set(rows.map((row) => row.backend))];
+  const counts = backends.map((backend) => {
+    const mine = rows.filter((row) => row.backend === backend);
+    // A run whose GPU work was dropped measured less than the game; it counts as not measured.
+    const valid = mine.filter((row) => row.record !== null && gpuErrors(row.record.backend).length === 0);
+    const holding = valid.filter((row) => row.record!.frame.fps >= 360).length;
+    const invalid = mine.filter((row) => row.record !== null).length - valid.length;
+    return `${backend}: ${holding} of ${valid.length} measured games hold 360 fps (${mine.length - valid.length} not measured${invalid > 0 ? `, ${invalid} with dropped GPU work` : ""})`;
+  });
+  const summary = `${counts.join("; ")}. Production desktop builds (WebView2), --diagnostics, ${GATE_SIZE.width}x${GATE_SIZE.height}, high tier, automatic quality off, walking.`;
   if (markdown) {
     const line = (cells: readonly string[]) => `| ${cells.join(" | ")} |`;
-    return [line(header), line(header.map((_, index) => (index >= 2 && index <= 7 ? "---:" : "---"))), ...body.map(line), "", summary].join("\n");
+    return [line(header), line(header.map((_, index) => (index >= 3 && index <= 8 ? "---:" : "---"))), ...body.map(line), "", summary].join("\n");
   }
   const widths = header.map((cell, index) => Math.max(cell.length, ...body.map((cells) => (cells[index] ?? "").length)));
   const pad = (cells: readonly string[]) => cells.map((cell, index) => cell.padEnd(widths[index] ?? 0)).join("  ").trimEnd();
@@ -400,28 +450,42 @@ function buildDesktopApp(game: string, records: string): string {
 export async function measureAll(args: AllArgs): Promise<AllRow[]> {
   const rows: AllRow[] = [];
   for (const game of args.games) {
-    const recordPath = join(args.records, game, `${args.uncapped ? "uncapped" : "vsync"}.json`);
+    const clock = args.uncapped ? "uncapped" : "vsync";
+    const recordPath = (backend: RendererBackend) => join(args.records, game, backend === "webgl" ? `${clock}.json` : `${clock}.${backend}.json`);
     if (args.reuse) {
-      rows.push(existsSync(recordPath) ? { game, record: JSON.parse(readFileSync(recordPath, "utf8")) as DesktopRecord, error: null } : { game, record: null, error: `no saved record at ${recordPath}` });
+      for (const backend of args.renderers) {
+        const path = recordPath(backend);
+        rows.push(existsSync(path) ? { game, backend, record: JSON.parse(readFileSync(path, "utf8")) as DesktopRecord, error: null } : { game, backend, record: null, error: `no saved record at ${path}` });
+      }
       continue;
     }
+    let app: string | null;
     try {
-      const app = args.skipBuild ? builtApp(join(args.records, game, "app")) : (console.error(`perf desktop: building ${game}`), buildDesktopApp(game, args.records));
+      app = args.skipBuild ? builtApp(join(args.records, game, "app")) : (console.error(`perf desktop: building ${game}`), buildDesktopApp(game, args.records));
       if (app === null) throw new Error(`no built app in ${join(args.records, game, "app")}; drop --skip-build`);
-      const launch = { exe: app, uncapped: args.uncapped, seconds: args.seconds, port: 9390, out: recordPath, maps: `${dirname(app)}.private-maps`, size: { width: GATE_SIZE.width, height: GATE_SIZE.height }, flow: null };
-      let record: DesktopRecord;
-      try {
-        record = await launchAndMeasure(launch);
-      } catch (first) {
-        // One more launch for a run a busy machine spoiled (a blank window, a slow boot); a second failure is the answer.
-        console.error(`perf desktop: ${game} run failed (${first instanceof Error ? first.message : String(first)}); launching once more`);
-        record = await launchAndMeasure(launch);
-      }
-      rows.push({ game, record, error: null });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.error(`perf desktop: ${game}: ${message}`);
-      rows.push({ game, record: null, error: message.slice(0, 160) });
+      for (const backend of args.renderers) rows.push({ game, backend, record: null, error: message.slice(0, 160) });
+      continue;
+    }
+    for (const backend of args.renderers) {
+      try {
+        const launch: LaunchArgs = { exe: app, uncapped: args.uncapped, seconds: args.seconds, port: 9390, out: recordPath(backend), maps: `${dirname(app)}.private-maps`, size: { width: GATE_SIZE.width, height: GATE_SIZE.height }, flow: null, renderers: [backend] };
+        let record: DesktopRecord;
+        try {
+          record = await launchAndMeasure(launch, backend);
+        } catch (first) {
+          // One more launch for a run a busy machine spoiled (a blank window, a slow boot); a second failure is the answer.
+          console.error(`perf desktop: ${game} on ${backend} failed (${first instanceof Error ? first.message : String(first)}); launching once more`);
+          record = await launchAndMeasure(launch, backend);
+        }
+        rows.push({ game, backend, record, error: null });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(`perf desktop: ${game} on ${backend}: ${message}`);
+        rows.push({ game, backend, record: null, error: message.slice(0, 160) });
+      }
     }
   }
   return rows;
@@ -430,8 +494,10 @@ export async function measureAll(args: AllArgs): Promise<AllRow[]> {
 async function main(argv: string[]): Promise<void> {
   if (argv[0] === "--launch") {
     const args = parseLaunchArgs(argv);
-    if (args.flow === null) await launchAndMeasure(args);
-    else if (!(await launchAndPlayFlow(args, args.flow))) process.exitCode = 1;
+    for (const backend of args.renderers) {
+      if (args.flow === null) await launchAndMeasure(args, backend);
+      else if (!(await launchAndPlayFlow(args, args.flow, backend))) process.exitCode = 1;
+    }
     return;
   }
   if (argv.includes("--all")) {
@@ -440,7 +506,7 @@ async function main(argv: string[]): Promise<void> {
     return;
   }
   const port = Number(argv[0]);
-  if (!Number.isInteger(port) || port < 1 || port > 65535 || argv[1] !== "--out" || argv[2] === undefined || argv[3] !== "--maps" || argv[4] === undefined || argv.length !== 5) throw new Error("usage: bun run perf desktop <debug-port> --out <file.json> --maps <private-maps-directory>\n       bun run perf desktop --launch <app.exe> [--uncapped] [--seconds n] [--port n] [--size WxH] [--out <file.json>] [--maps <private-maps-directory>] [--flow <game>/<flow>]\n       bun run perf desktop --all [--uncapped] [--games a,b] [--seconds n] [--records dir] [--skip-build] [--reuse] [--markdown]");
+  if (!Number.isInteger(port) || port < 1 || port > 65535 || argv[1] !== "--out" || argv[2] === undefined || argv[3] !== "--maps" || argv[4] === undefined || argv.length !== 5) throw new Error("usage: bun run perf desktop <debug-port> --out <file.json> --maps <private-maps-directory>\n       bun run perf desktop --launch <app.exe> [--uncapped] [--renderer webgl|webgpu|both] [--seconds n] [--port n] [--size WxH] [--out <file.json>] [--maps <private-maps-directory>] [--flow <game>/<flow>]\n       bun run perf desktop --all [--uncapped] [--renderer webgl|webgpu|both] [--games a,b] [--seconds n] [--records dir] [--skip-build] [--reuse] [--markdown]");
   const targets = await localGetJson<Target[]>(`http://127.0.0.1:${port}/json/list`, 5_000);
   const target = diagnosticDesktopTarget(targets);
   if (target.webSocketDebuggerUrl === undefined) throw new Error("desktop debugger URL unavailable");

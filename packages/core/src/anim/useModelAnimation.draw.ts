@@ -405,6 +405,8 @@ export function useModelAnimation(
   const advancedSecondsRef = useRef<number | undefined>(undefined);
   const pendingRef = useRef(0);
   const frameRef = useRef(0);
+  /** Whether the graph has been evaluated since it was built; a rig mounted while time is frozen is evaluated once, without advancing. */
+  const graphPosedRef = useRef(false);
   const states = animation?.states;
   const oneShots = animation?.oneShots;
   const authoredGraph = animation?.graph;
@@ -430,6 +432,7 @@ export function useModelAnimation(
       // reproducible visual stream, independent of other mounted models and gameplay draws.
       const visualRng = seededRng(JSON.stringify(["model-animation", instanceId ?? "preview", clips.map((clip) => clip.name).sort()]));
       graphRef.current = buildGraphPlayback(scene, mixer, graph, clips, visualRng);
+      graphPosedRef.current = false;
       mixer.update(0);
       mixerRef.current = mixer;
       animationPausedRef.current = animation.paused === true;
@@ -510,10 +513,14 @@ export function useModelAnimation(
     const advancedSeconds = usesGameClock ? ctx.time.advancedSeconds?.() : undefined;
     const previousSeconds = advancedSecondsRef.current;
     advancedSecondsRef.current = advancedSeconds;
-    if (animationPausedRef.current || animation?.timeScale === 0) return;
-    if (ctx !== null && instanceId !== undefined && (ctx.time.speed() === 0 || ctx.time.timescale() === 0)) return;
-    let playbackDelta = delta;
-    if (usesGameClock) {
+    const frozen = animationPausedRef.current || animation?.timeScale === 0 || (ctx !== null && instanceId !== undefined && (ctx.time.speed() === 0 || ctx.time.timescale() === 0));
+    // A graph built while time is frozen (a rig remounted behind the pause menu, such as after a
+    // renderer switch) has no clip weights until it is evaluated: pose it once, without advancing,
+    // so it shows its current state instead of the bind pose.
+    const firstFrozenPose = frozen && graphRef.current !== null && !graphPosedRef.current;
+    if (frozen && !firstFrozenPose) return;
+    let playbackDelta = firstFrozenPose ? 0 : delta;
+    if (usesGameClock && !firstFrozenPose) {
       if (advancedSeconds === undefined || previousSeconds === undefined || advancedSeconds <= previousSeconds) return;
       playbackDelta = advancedSeconds - previousSeconds;
     }
@@ -577,6 +584,7 @@ export function useModelAnimation(
       const out = playback.runtime.advance(playbackDelta * (animation?.timeScale ?? 1), params, playback.durations);
       applyGraphClips(playback.actions, out.clips);
       mixerRef.current.update(0);
+      graphPosedRef.current = true;
       if (instanceId !== undefined) {
         noteCharacterPose(instanceId);
         const phase = dominantPhase(out.clips, playback.phase);

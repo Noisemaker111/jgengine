@@ -2,6 +2,7 @@ import { devtools } from "@jgengine/core/devtools/devtools";
 import { getSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
 import { canvasCover } from "@jgengine/core/ui/canvasCover.view";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import type { SettingsStore } from "@jgengine/core/settings/settingsModel";
 import type { PlayableGame } from "@jgengine/shell/registry";
 import {
   isHudAnchor,
@@ -54,6 +55,23 @@ export function playerPoseReport(ctx: GameContext | null): { userId: string; pos
  * drive can fast-forward timers, economies and day cycles that never finish at capture frame rates.
  * Large scales take large steps — use it for clocks, not to judge movement. Omit `scale` to read.
  */
+/**
+ * `setting_set { id, value }`: change one setting on the live page as the settings menu would (the
+ * renderer backend remounts the canvas on the other GPU API with the game state kept, so a WebGL and a
+ * WebGPU shot can come from one frozen moment). `setting_get { id }` reads one back.
+ */
+export function applySetting(store: SettingsStore | undefined, request: AgentBridgeRequest, write: boolean): AgentBridgeResponse {
+  if (store === undefined) return { ok: false, error: "this page has no settings store" };
+  const id = request["id"];
+  if (typeof id !== "string" || id.length === 0) return { ok: false, error: `${write ? "setting_set" : "setting_get"} needs { id } (e.g. "graphics.renderer")` };
+  if (write) {
+    const value = request["value"];
+    if (typeof value !== "string" && typeof value !== "number" && typeof value !== "boolean") return { ok: false, error: "setting_set needs { value }: a string, number or boolean" };
+    store.set(id, value);
+  }
+  return { ok: true, id, value: store.get<string | number | boolean>(id, "") };
+}
+
 export function applyTimeScale(ctx: Pick<GameContext, "time">, scale: unknown): AgentBridgeResponse {
   if (scale !== undefined) {
     if (typeof scale !== "number" || !Number.isFinite(scale) || scale < 0 || scale > 120) {
@@ -178,6 +196,8 @@ export function installAgentBridge(options: {
   setDevtoolsOpen: (open: boolean) => void;
   /** Live game context, once mounted; feeds `player_pose`. */
   getContext?: () => GameContext | null;
+  /** The page's settings, for `setting_set` / `setting_get`. */
+  getSettings?: () => SettingsStore;
 }): () => void {
   const { playable, devtoolsEnabled, isDevtoolsOpen, setDevtoolsOpen } = options;
   const getContext = options.getContext ?? (() => null);
@@ -225,6 +245,9 @@ export function installAgentBridge(options: {
         const pose = playerPoseReport(getContext());
         return pose === null ? { ok: false, error: "no local player entity yet" } : { ok: true, ...pose };
       }
+      case "setting_set":
+      case "setting_get":
+        return applySetting(options.getSettings?.(), request, method === "setting_set");
       case "time_scale": {
         const ctx = getContext();
         if (ctx === null) return { ok: false, error: "no game context yet" };

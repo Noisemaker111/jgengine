@@ -216,9 +216,15 @@ export class PresentationRecovery extends Component<RecoveryProps, RecoveryState
   }
 }
 
-/** Report a canvas's WebGL context as lost or back; asks the browser to restore it. Returns the unsubscribe. @internal */
+/**
+ * Report a canvas's WebGL context as lost or back; asks the browser to restore it. Returns the
+ * unsubscribe. A canvas already taken out of the page is being retired, not reset by the driver:
+ * React Three Fiber force-loses an unmounted canvas's context 500 ms later (a renderer switch, a
+ * scene change), and that is not reported. @internal
+ */
 export function watchContextLoss(canvas: EventTarget, onChange: (lost: boolean) => void): () => void {
   const onLost = (event: Event) => {
+    if ((canvas as { isConnected?: boolean }).isConnected === false) return;
     // Without preventDefault the browser never offers the context back.
     event.preventDefault();
     onChange(true);
@@ -239,7 +245,11 @@ export function watchContextLoss(canvas: EventTarget, onChange: (lost: boolean) 
  */
 export function ContextLossScreen({ ctx, canvas }: { ctx: GameContext; canvas: HTMLCanvasElement | null }): ReactNode {
   const [lost, setLost] = useState(false);
-  useEffect(() => (canvas === null ? undefined : watchContextLoss(canvas, setLost)), [canvas]);
+  useEffect(() => {
+    // A new canvas has its own context: whatever the last one reported does not carry over.
+    setLost(false);
+    return canvas === null ? undefined : watchContextLoss(canvas, setLost);
+  }, [canvas]);
   useLayoutEffect(() => (lost ? suspendPlayControls(ctx) : undefined), [ctx, lost]);
   if (!lost) return null;
   return (

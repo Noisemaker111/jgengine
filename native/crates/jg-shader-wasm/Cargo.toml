@@ -1,0 +1,13 @@
+[package]
+name = "jg-shader-wasm"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "jg-shader for the engine's WebGPU backend: GLSL ES 3.00 to WGSL plus layout, as a wasm module with a pointer/length interface."
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+jg-shader = { path = "../jg-shader" }
+serde_json.workspace = true
