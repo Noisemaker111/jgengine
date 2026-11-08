@@ -19,23 +19,54 @@ const PROMOTION_INTERVAL_MS = 1000;
 const LIGHT_RETIRE_FRAMES = 240;
 
 type Drawable = THREE.Mesh | THREE.Line | THREE.Points;
-type Callable = (...args: never[]) => unknown;
 
-interface CasterEntry {
-  readonly object: Drawable;
-  /** What a depth pass reads from the caster, as of its last change. */
-  snapshot: unknown[];
+/** What one shared material or geometry reads like to a depth pass, and the stamp that moves when that changes. */
+interface SharedRecord {
+  parts: unknown[];
+  stamp: number;
+  /** The check that last described it; a record is described at most once per check. */
+  pass: number;
+}
+
+/** What kind of drawable a caster is, read once: it never changes for an object. */
+const enum CasterKind {
+  Plain,
+  Instanced,
+  Batched,
+}
+
+/** The node's tracker entry: a symbol slot is the cheapest per-node lookup in a walk over the scene. */
+const ENTRY = Symbol("jg.shadowCaster");
+type WithEntry = THREE.Object3D & { [ENTRY]?: CasterEntry | undefined };
+
+class CasterEntry {
+  readonly kind: CasterKind;
+  /** What a depth pass reads from the caster, as of its last change (see {@link describeCaster}). */
+  snapshot: unknown[] = [];
   /** World bounding sphere as of the snapshot; null when three never culls the caster. */
-  sphere: THREE.Sphere | null;
-  /** Visible through its ancestors and casting, as of the snapshot. */
-  drawable: boolean;
-  changedAt: number;
+  sphere: THREE.Sphere | null = null;
+  /** Reached by the last check (visible through its ancestors) and casting. */
+  drawable = false;
+  changedAt = 0;
   /** Drawn into the static layers instead of every frame. */
-  isStatic: boolean;
+  isStatic = false;
   /** Its depth can change with nothing the snapshot sees (skinning, morphs, custom depth shaders). */
-  alwaysDynamic: boolean;
-  /** Reads `_visibilityChanged` writes on a `BatchedMesh`. */
-  batchEdits: { count: number; release: () => void } | null;
+  alwaysDynamic = false;
+  /** The check that last reached it. */
+  seen = -1;
+  geometry: THREE.BufferGeometry | null = null;
+  geometryRecord: SharedRecord | null = null;
+  material: THREE.Material | THREE.Material[] | null = null;
+  materialRecords: SharedRecord[] = [];
+
+  constructor(
+    readonly object: Drawable,
+    /** Reads `_visibilityChanged` writes on a `BatchedMesh`. */
+    readonly batchEdits: { count: number; release: () => void } | null,
+  ) {
+    const mesh = object as Partial<THREE.InstancedMesh & THREE.BatchedMesh>;
+    this.kind = mesh.isInstancedMesh === true ? CasterKind.Instanced : mesh.isBatchedMesh === true ? CasterKind.Batched : CasterKind.Plain;
+  }
 }
 
 /** What the cache did, for the devtools probe and perf scripts. @internal */
@@ -43,6 +74,13 @@ export interface ShadowCacheStats {
   enabled: boolean;
   casters: number;
   staticCasters: number;
+  /** Caster checks run: one per shadow pass of the cache's scene that may serve a light from its layer. */
+  checks: number;
+  /**
+   * Milliseconds spent in the renderer's shadow step since the last reset, the cache's own checks
+   * included; with the cache off it is three's step alone, so the two compare directly.
+   */
+  cpuMs: number;
   passes: Record<ShadowPassPlan, number>;
   audit: { on: boolean; maps: number; mismatchedMaps: number; mismatchedTexels: number; /** Comparisons that did not run (the comparison shader wrote nothing). */ failed: number };
 }
@@ -69,7 +107,6 @@ export interface ShadowCacheRenderer {
   clear: (...args: never[]) => void;
   setRenderTarget: (target: THREE.WebGLRenderTarget | null, activeCubeFace?: number, activeMipmapLevel?: number) => void;
   copyTextureToTexture: (src: THREE.Texture, dst: THREE.Texture) => void;
-  renderBufferDirect: Callable;
   clippingPlanes: readonly THREE.Plane[];
   state: { buffers: { depth: { getReversed(): boolean } } };
 }
@@ -94,11 +131,6 @@ function targetId(target: object): number {
 function isDrawable(node: THREE.Object3D): node is Drawable {
   const drawable = node as Partial<THREE.Mesh & THREE.Line & THREE.Points>;
   return drawable.isMesh === true || drawable.isLine === true || drawable.isPoints === true;
-}
-
-function visibleThroughAncestors(node: THREE.Object3D): boolean {
-  for (let at: THREE.Object3D | null = node; at !== null; at = at.parent) if (!at.visible) return false;
-  return true;
 }
 
 function hasClipping(material: THREE.Material): boolean {
@@ -179,22 +211,8 @@ function putSphere(out: unknown[], at: number, sphere: THREE.Sphere | null | und
   return at + 5;
 }
 
-/**
- * Write what a depth pass reads from `object` into `out`; returns the length written. Two equal
- * descriptions draw the same depth: transform, visibility through every ancestor, casting, culling
- * bounds, geometry and instance buffer versions, and what three copies from each material.
- * @internal
- */
-export function describeCaster(object: Drawable, out: unknown[], batchEdits = 0): number {
-  const mesh = object as THREE.Mesh & Partial<THREE.InstancedMesh & THREE.BatchedMesh>;
-  out[0] = visibleThroughAncestors(object);
-  out[1] = object.castShadow;
-  out[2] = object.frustumCulled;
-  out[3] = object.layers.mask;
-  let at = 4;
-  for (const value of object.matrixWorld.elements) out[at++] = value;
-  const geometry = object.geometry as THREE.BufferGeometry;
-  out[at++] = geometry;
+/** What a depth draw reads from a geometry: index, draw range, attribute buffers, culling bounds, groups. */
+function putGeometry(out: unknown[], at: number, geometry: THREE.BufferGeometry): number {
   const index = geometry.index;
   out[at++] = index;
   if (index !== null) out[at++] = index.version;
@@ -209,31 +227,11 @@ export function describeCaster(object: Drawable, out: unknown[], batchEdits = 0)
       : (attribute as THREE.BufferAttribute).version;
   }
   at = putSphere(out, at, geometry.boundingSphere);
-  if (mesh.isInstancedMesh === true) {
-    out[at++] = mesh.instanceMatrix;
-    out[at++] = mesh.instanceMatrix!.version;
-    out[at++] = mesh.count;
-    at = putSphere(out, at, mesh.boundingSphere);
-  }
-  if (mesh.isBatchedMesh === true) {
-    const batch = object as THREE.BatchedMesh & { _matricesTexture?: THREE.DataTexture };
-    out[at++] = batchEdits;
-    out[at++] = batch._matricesTexture?.version ?? -1;
-    at = putSphere(out, at, batch.boundingSphere);
-  }
-  out[at++] = mesh.customDepthMaterial;
-  const material = mesh.material;
-  if (Array.isArray(material)) {
-    out[at++] = material.length;
-    for (const entry of material) at = putMaterial(out, at, entry);
-    out[at++] = geometry.groups.length;
-    for (const group of geometry.groups) {
-      out[at++] = group.start;
-      out[at++] = group.count;
-      out[at++] = group.materialIndex;
-    }
-  } else {
-    at = putMaterial(out, at, material);
+  out[at++] = geometry.groups.length;
+  for (const group of geometry.groups) {
+    out[at++] = group.start;
+    out[at++] = group.count;
+    out[at++] = group.materialIndex;
   }
   return at;
 }
@@ -242,6 +240,168 @@ function sameDescription(snapshot: readonly unknown[], scratch: readonly unknown
   if (snapshot.length !== length) return false;
   for (let index = 0; index < length; index += 1) if (snapshot[index] !== scratch[index]) return false;
   return true;
+}
+
+let nextStamp = 1;
+
+/**
+ * Stamps for what many casters share (a material, a geometry): each is described once per check
+ * however many casters use it, and its stamp moves only when that description changes. A caster
+ * keeps its record, so a check reads the stamp off it without a lookup.
+ */
+class SharedStamps<T extends object> {
+  private readonly records = new WeakMap<T, SharedRecord>();
+  private readonly scratch: unknown[] = [];
+
+  constructor(private readonly describe: (out: unknown[], at: number, value: T) => number) {}
+
+  record(value: T, pass: number): SharedRecord {
+    let record = this.records.get(value);
+    if (record === undefined) {
+      const length = this.describe(this.scratch, 0, value);
+      record = { parts: this.scratch.slice(0, length), stamp: nextStamp++, pass };
+      this.records.set(value, record);
+    }
+    return record;
+  }
+
+  stamp(value: T, record: SharedRecord, pass: number): number {
+    if (record.pass === pass) return record.stamp;
+    record.pass = pass;
+    const length = this.describe(this.scratch, 0, value);
+    if (!sameDescription(record.parts, this.scratch, length)) {
+      record.parts = this.scratch.slice(0, length);
+      record.stamp = nextStamp++;
+    }
+    return record.stamp;
+  }
+}
+
+/** The shared stamps a tracker's checks read, and the number of the check running. */
+interface CasterStamps {
+  materials: SharedStamps<THREE.Material>;
+  geometries: SharedStamps<THREE.BufferGeometry>;
+  pass: number;
+}
+
+function materialStamp(entry: CasterEntry, stamps: CasterStamps, index: number, material: THREE.Material): number {
+  let record = entry.materialRecords[index];
+  if (record === undefined || (Array.isArray(entry.material) ? entry.material[index] : entry.material) !== material) {
+    record = stamps.materials.record(material, stamps.pass);
+    entry.materialRecords[index] = record;
+  }
+  return stamps.materials.stamp(material, record, stamps.pass);
+}
+
+/**
+ * Write what a depth pass reads from a caster that the check reached (so visible through every
+ * ancestor) into `out`; returns the length written. Two equal descriptions draw the same depth:
+ * casting, culling, layers, transform, instance buffers, and the stamps of its geometry and
+ * materials (what three reads from each, described once per check however many casters share it).
+ */
+function describeCaster(entry: CasterEntry, out: unknown[], stamps: CasterStamps): number {
+  const object = entry.object;
+  const mesh = object as THREE.Mesh & Partial<THREE.InstancedMesh & THREE.BatchedMesh>;
+  out[0] = object.castShadow;
+  out[1] = object.frustumCulled;
+  out[2] = object.layers.mask;
+  const e = object.matrixWorld.elements;
+  out[3] = e[0]; out[4] = e[1]; out[5] = e[2]; out[6] = e[3];
+  out[7] = e[4]; out[8] = e[5]; out[9] = e[6]; out[10] = e[7];
+  out[11] = e[8]; out[12] = e[9]; out[13] = e[10]; out[14] = e[11];
+  out[15] = e[12]; out[16] = e[13]; out[17] = e[14]; out[18] = e[15];
+  const geometry = object.geometry as THREE.BufferGeometry;
+  if (geometry !== entry.geometry || entry.geometryRecord === null) {
+    entry.geometry = geometry;
+    entry.geometryRecord = stamps.geometries.record(geometry, stamps.pass);
+  }
+  out[19] = geometry;
+  out[20] = stamps.geometries.stamp(geometry, entry.geometryRecord, stamps.pass);
+  let at = 21;
+  if (entry.kind === CasterKind.Instanced) {
+    out[at++] = mesh.instanceMatrix;
+    out[at++] = mesh.instanceMatrix!.version;
+    out[at++] = mesh.count;
+    at = putSphere(out, at, mesh.boundingSphere);
+  } else if (entry.kind === CasterKind.Batched) {
+    const batch = object as THREE.BatchedMesh & { _matricesTexture?: THREE.DataTexture };
+    out[at++] = entry.batchEdits?.count ?? 0;
+    out[at++] = batch._matricesTexture?.version ?? -1;
+    at = putSphere(out, at, batch.boundingSphere);
+  }
+  out[at++] = mesh.customDepthMaterial;
+  const material = mesh.material;
+  if (Array.isArray(material)) {
+    out[at++] = material.length;
+    for (let index = 0; index < material.length; index += 1) {
+      const entryMaterial = material[index]!;
+      out[at++] = entryMaterial;
+      out[at++] = materialStamp(entry, stamps, index, entryMaterial);
+    }
+  } else {
+    out[at++] = material;
+    out[at++] = materialStamp(entry, stamps, 0, material);
+  }
+  entry.material = Array.isArray(material) ? [...material] : material;
+  return at;
+}
+
+function sameSphere(snapshot: readonly unknown[], at: number, sphere: THREE.Sphere | null | undefined): number {
+  if (sphere === null || sphere === undefined) return snapshot[at] === null ? at + 1 : -1;
+  return snapshot[at] === sphere && snapshot[at + 1] === sphere.center.x && snapshot[at + 2] === sphere.center.y &&
+    snapshot[at + 3] === sphere.center.z && snapshot[at + 4] === sphere.radius ? at + 5 : -1;
+}
+
+/**
+ * Whether the caster still reads as its snapshot, field by field in {@link describeCaster}'s order,
+ * stopping at the first difference: most casters stand still, and writing out a description only to
+ * compare it was most of a check's cost.
+ */
+function unchanged(entry: CasterEntry, stamps: CasterStamps): boolean {
+  const object = entry.object;
+  const s = entry.snapshot;
+  if (s[0] !== object.castShadow || s[1] !== object.frustumCulled || s[2] !== object.layers.mask) return false;
+  const e = object.matrixWorld.elements;
+  // Translation first: it is what moves most often.
+  if (s[15] !== e[12] || s[16] !== e[13] || s[17] !== e[14] ||
+    s[3] !== e[0] || s[4] !== e[1] || s[5] !== e[2] || s[6] !== e[3] ||
+    s[7] !== e[4] || s[8] !== e[5] || s[9] !== e[6] || s[10] !== e[7] ||
+    s[11] !== e[8] || s[12] !== e[9] || s[13] !== e[10] || s[14] !== e[11] || s[18] !== e[15]) return false;
+  const geometry = object.geometry as THREE.BufferGeometry;
+  if (s[19] !== geometry || entry.geometryRecord === null || entry.geometry !== geometry) return false;
+  if (s[20] !== stamps.geometries.stamp(geometry, entry.geometryRecord, stamps.pass)) return false;
+  const mesh = object as THREE.Mesh & Partial<THREE.InstancedMesh & THREE.BatchedMesh>;
+  let at = 21;
+  if (entry.kind === CasterKind.Instanced) {
+    if (s[at] !== mesh.instanceMatrix || s[at + 1] !== mesh.instanceMatrix!.version || s[at + 2] !== mesh.count) return false;
+    at = sameSphere(s, at + 3, mesh.boundingSphere);
+    if (at < 0) return false;
+  } else if (entry.kind === CasterKind.Batched) {
+    const batch = object as THREE.BatchedMesh & { _matricesTexture?: THREE.DataTexture };
+    if (s[at] !== (entry.batchEdits?.count ?? 0) || s[at + 1] !== (batch._matricesTexture?.version ?? -1)) return false;
+    at = sameSphere(s, at + 2, batch.boundingSphere);
+    if (at < 0) return false;
+  }
+  if (s[at++] !== mesh.customDepthMaterial) return false;
+  const material = mesh.material;
+  const records = entry.materialRecords;
+  if (Array.isArray(material)) {
+    const known = entry.material;
+    if (s[at++] !== material.length || !Array.isArray(known) || known.length !== material.length) return false;
+    for (let index = 0; index < material.length; index += 1) {
+      const value = material[index]!;
+      const record = records[index];
+      if (s[at] !== value || known[index] !== value || record === undefined) return false;
+      if (s[at + 1] !== stamps.materials.stamp(value, record, stamps.pass)) return false;
+      at += 2;
+    }
+  } else {
+    const record = records[0];
+    if (s[at] !== material || entry.material !== material || record === undefined) return false;
+    if (s[at + 1] !== stamps.materials.stamp(material, record, stamps.pass)) return false;
+    at += 2;
+  }
+  return at === s.length;
 }
 
 /** The caster's world bounding sphere as three culls it; null when three never culls it. */
@@ -286,46 +446,49 @@ function watchBatchEdits(batch: THREE.BatchedMesh): { count: number; release: ()
 
 /**
  * Every drawable in a scene, what its depth pass reads, and whether it has held still long enough to
- * live in the static layers. Streams with the scene through child events, never a per-frame walk.
+ * live in the static layers. Membership streams with the scene through child events; a check walks
+ * the scene the way three's shadow pass does, skipping hidden subtrees, so its cost follows what can
+ * draw rather than everything loaded.
  * @internal
  */
 export class ShadowCasterTracker {
   readonly entries = new Map<THREE.Object3D, CasterEntry>();
   /** Changed casters with no changed caster above them: the dynamic pass draws these subtrees. */
   readonly dynamicRoots: THREE.Object3D[] = [];
+  /** Every caster not in the static layers, drawable or not. */
+  private readonly dynamic = new Set<CasterEntry>();
   /** Every changed caster that is visible and casting. */
   private readonly dynamicCasters: CasterEntry[] = [];
+  /** Casters the last check reached that cast: the ones that stop drawing if a check misses them. */
+  private drawn: CasterEntry[] = [];
+  private nextDrawn: CasterEntry[] = [];
   private readonly listeners = new Map<THREE.Object3D, () => void>();
   private readonly scratch: unknown[] = [];
+  private readonly stamps: CasterStamps = { materials: new SharedStamps(putMaterial), geometries: new SharedStamps(putGeometry), pass: 0 };
+  private readonly stack: THREE.Object3D[] = [];
   private lastPromotion = Number.NEGATIVE_INFINITY;
 
   constructor(
     readonly scene: THREE.Object3D,
-    /** Called with a changed static caster's old and new bounds (null: unbounded). */
+    /** Called with a static caster's old or new bounds when what it draws changed (null: unbounded). */
     private readonly touch: (sphere: THREE.Sphere | null) => void,
     private readonly now: () => number,
   ) {
     this.attach(scene);
   }
 
-  private track(object: Drawable, isStatic: boolean): CasterEntry {
+  private track(object: Drawable): CasterEntry {
     const batchEdits = (object as THREE.BatchedMesh).isBatchedMesh === true ? watchBatchEdits(object as THREE.BatchedMesh) : null;
+    const entry = new CasterEntry(object, batchEdits);
     // Bounds first: a missing bounding sphere is computed here, as three's first cull would, before the snapshot reads it.
-    const sphere = worldSphere(object, null);
-    const length = describeCaster(object, this.scratch, batchEdits?.count ?? 0);
-    const snapshot = this.scratch.slice(0, length);
-    const entry: CasterEntry = {
-      object,
-      snapshot,
-      sphere,
-      drawable: snapshot[0] === true && snapshot[1] === true,
-      changedAt: this.now(),
-      isStatic: false,
-      alwaysDynamic: alwaysDynamic(object),
-      batchEdits,
-    };
-    entry.isStatic = isStatic && !entry.alwaysDynamic;
+    entry.sphere = worldSphere(object, null);
+    this.stamps.pass += 1;
+    entry.snapshot = this.scratch.slice(0, describeCaster(entry, this.scratch, this.stamps));
+    entry.changedAt = this.now();
+    entry.alwaysDynamic = alwaysDynamic(object);
     this.entries.set(object, entry);
+    (object as WithEntry)[ENTRY] = entry;
+    this.dynamic.add(entry);
     return entry;
   }
 
@@ -333,13 +496,16 @@ export class ShadowCasterTracker {
     const entry = this.entries.get(object);
     if (entry === undefined) return;
     this.entries.delete(object);
+    // Cleared rather than deleted: deleting a property sends the object's shape to a slow dictionary.
+    (object as WithEntry)[ENTRY] = undefined;
+    this.dynamic.delete(entry);
     entry.batchEdits?.release();
     if (entry.isStatic && entry.drawable) this.touch(entry.sphere);
   }
 
   private attach(node: THREE.Object3D): void {
     if (this.listeners.has(node)) return;
-    if (isDrawable(node)) this.track(node, false);
+    if (isDrawable(node)) this.track(node);
     const added = ({ child }: THREE.Object3DEventMap["childadded"]) => this.attach(child);
     const removed = ({ child }: THREE.Object3DEventMap["childremoved"]) => this.detach(child);
     node.addEventListener("childadded", added);
@@ -360,44 +526,79 @@ export class ShadowCasterTracker {
     for (const child of node.children) this.detach(child);
   }
 
-  /** A caster a static pass drew that no child event announced (its parent's `children` was edited directly). */
-  adopt(object: THREE.Object3D): void {
-    if (this.entries.has(object) || !isDrawable(object)) return;
-    this.track(object, true);
+  /** A caster that changed what it draws: off the static layers if it was on them, stamped now. */
+  private changed(entry: CasterEntry, now: number, oldSphere: THREE.Sphere | null, wasDrawn: boolean): void {
+    entry.changedAt = now;
+    if (!entry.isStatic) return;
+    entry.isStatic = false;
+    this.dynamic.add(entry);
+    if (wasDrawn) this.touch(oldSphere);
+    if (entry.drawable) this.touch(entry.sphere);
   }
 
   /**
-   * Compare every caster with its snapshot. A static one that changed leaves the layer (and stales
-   * the lights it reaches); casters unchanged for {@link SHADOW_STATIC_AFTER_MS} join it.
+   * Compare every caster three's shadow pass could reach with its snapshot: a hidden subtree is
+   * skipped as three skips it, and a caster that drew last check and was not reached now stopped
+   * drawing. A static caster whose own description changed leaves the layer (and stales the lights it
+   * reaches); one that only appeared or disappeared stays in it and stales them. Casters unchanged
+   * for {@link SHADOW_STATIC_AFTER_MS} join the layer.
    */
   check(): void {
     const now = this.now();
     const scratch = this.scratch;
-    for (const entry of this.entries.values()) {
-      // A mesh that casts nothing draws nothing whatever else changes; turning `castShadow` on is the change.
-      if (entry.snapshot[1] === false && !entry.object.castShadow) continue;
-      let length = describeCaster(entry.object, scratch, entry.batchEdits?.count ?? 0);
-      if (sameDescription(entry.snapshot, scratch, length)) continue;
-      const wasStatic = entry.isStatic;
-      const oldSphere = entry.sphere;
-      const oldDrawable = entry.drawable;
-      entry.sphere = worldSphere(entry.object, null);
-      length = describeCaster(entry.object, scratch, entry.batchEdits?.count ?? 0);
-      entry.snapshot = scratch.slice(0, length);
-      entry.drawable = scratch[0] === true && scratch[1] === true;
-      entry.changedAt = now;
-      entry.alwaysDynamic = alwaysDynamic(entry.object);
-      if (wasStatic) {
-        entry.isStatic = false;
-        if (oldDrawable) this.touch(oldSphere);
-        if (entry.drawable) this.touch(entry.sphere);
+    const stamps = this.stamps;
+    const pass = (stamps.pass += 1);
+    const next = this.nextDrawn;
+    next.length = 0;
+    const stack = this.stack;
+    stack.length = 0;
+    if (this.scene.visible) stack.push(this.scene);
+    for (let node = stack.pop(); node !== undefined; node = stack.pop()) {
+      const children = node.children;
+      for (let index = children.length - 1; index >= 0; index -= 1) {
+        const child = children[index]!;
+        if (child.visible) stack.push(child);
       }
+      let entry = (node as WithEntry)[ENTRY];
+      if (entry === undefined) {
+        if (!isDrawable(node)) continue;
+        // Reached without a child event (its parent's `children` was edited directly): track it now.
+        entry = this.track(node);
+      }
+      entry.seen = pass;
+      const casts = node.castShadow;
+      // A mesh that casts nothing draws nothing whatever else changes; turning `castShadow` on is the change.
+      if (!casts && !entry.drawable && entry.snapshot[0] === false) continue;
+      if (casts) next.push(entry);
+      const same = unchanged(entry, stamps);
+      if (same && casts === entry.drawable) continue;
+      const oldSphere = entry.sphere;
+      const wasDrawn = entry.drawable;
+      if (!same) {
+        entry.sphere = worldSphere(entry.object, null);
+        entry.snapshot = scratch.slice(0, describeCaster(entry, scratch, stamps));
+        entry.alwaysDynamic = alwaysDynamic(entry.object);
+      }
+      entry.drawable = casts;
+      if (!same) this.changed(entry, now, oldSphere, wasDrawn);
+      else if (entry.isStatic) this.touch(casts ? entry.sphere : oldSphere);
+      else entry.changedAt = now;
     }
+    // Drawn last check, not reached now: hidden through an ancestor, or gone from the graph.
+    for (const entry of this.drawn) {
+      if (entry.seen === pass || !entry.drawable) continue;
+      entry.drawable = false;
+      if (entry.isStatic) this.touch(entry.sphere);
+      else entry.changedAt = now;
+    }
+    this.nextDrawn = this.drawn;
+    this.drawn = next;
     if (now - this.lastPromotion >= PROMOTION_INTERVAL_MS) {
       this.lastPromotion = now;
-      for (const entry of this.entries.values()) {
-        if (entry.isStatic || entry.alwaysDynamic || now - entry.changedAt < SHADOW_STATIC_AFTER_MS) continue;
+      for (const entry of this.dynamic) {
+        if (entry.alwaysDynamic || now - entry.changedAt < SHADOW_STATIC_AFTER_MS) continue;
         entry.isStatic = true;
+        this.dynamic.delete(entry);
         if (entry.drawable) this.touch(entry.sphere);
       }
     }
@@ -409,8 +610,8 @@ export class ShadowCasterTracker {
     const casters = this.dynamicCasters;
     roots.length = 0;
     casters.length = 0;
-    for (const entry of this.entries.values()) {
-      if (entry.isStatic || !entry.drawable) continue;
+    for (const entry of this.dynamic) {
+      if (!entry.drawable) continue;
       casters.push(entry);
       // three's pass walks every descendant of a root, so a changed caster under another is already drawn.
       let covered = false;
@@ -438,8 +639,8 @@ export class ShadowCasterTracker {
   /** Turn off `castShadow` on every changed caster for a static pass; returns the restore. */
   hideDynamic(): () => void {
     const hidden: THREE.Object3D[] = [];
-    for (const entry of this.entries.values()) {
-      if (entry.isStatic || !entry.object.castShadow) continue;
+    for (const entry of this.dynamic) {
+      if (!entry.object.castShadow) continue;
       entry.object.castShadow = false;
       hidden.push(entry.object);
     }
@@ -449,16 +650,19 @@ export class ShadowCasterTracker {
   }
 
   staticCount(): number {
-    let count = 0;
-    for (const entry of this.entries.values()) if (entry.isStatic) count += 1;
-    return count;
+    return this.entries.size - this.dynamic.size;
   }
 
   dispose(): void {
     for (const off of this.listeners.values()) off();
     this.listeners.clear();
-    for (const entry of this.entries.values()) entry.batchEdits?.release();
+    for (const entry of this.entries.values()) {
+      entry.batchEdits?.release();
+      (entry.object as WithEntry)[ENTRY] = undefined;
+    }
     this.entries.clear();
+    this.dynamic.clear();
+    this.drawn.length = 0;
     this.dynamicRoots.length = 0;
     this.dynamicCasters.length = 0;
   }
@@ -716,18 +920,27 @@ class ShadowCache {
   private enabled = true;
   private audit = false;
   private frame = 0;
+  private checks = 0;
+  private cpuMs = 0;
   private lastType: number;
 
   constructor(
     private readonly renderer: ShadowCacheRenderer,
     scene: THREE.Object3D,
-    now: () => number,
+    private readonly now: () => number,
   ) {
     this.tracker = new ShadowCasterTracker(scene, (sphere) => this.stale(sphere), now);
     this.lastType = renderer.shadowMap.type;
     const shadowMap = renderer.shadowMap;
     this.original = shadowMap.render;
-    this.wrapper = (lights, renderScene, camera) => this.render(lights, renderScene, camera);
+    this.wrapper = (lights, renderScene, camera) => {
+      const start = this.now();
+      try {
+        this.render(lights, renderScene, camera);
+      } finally {
+        this.cpuMs += this.now() - start;
+      }
+    };
     shadowMap.render = this.wrapper;
   }
 
@@ -808,6 +1021,7 @@ class ShadowCache {
         const mayCache = record.state.cacheable || sameShadowKey(record.state.drawnKey, key);
         if (mayCache && !checked) {
           this.tracker.check();
+          this.checks += 1;
           checked = true;
         }
         const reaches = mayCache && this.tracker.dynamicReaches(shadow.getFrustum(), passLayers(shadow, camera));
@@ -849,21 +1063,13 @@ class ShadowCache {
 
   /** Draw every static caster, and nothing else, into the light's layer. */
   private drawStatic(light: THREE.Light, shadow: ManagedShadow, layer: THREE.WebGLRenderTarget, scene: THREE.Object3D, camera: THREE.Camera, needsUpdate: boolean): void {
-    const renderer = this.renderer;
     const map = shadow.map;
     const restoreDynamic = this.tracker.hideDynamic();
-    const draw = renderer.renderBufferDirect;
-    const tracker = this.tracker;
-    renderer.renderBufferDirect = function (this: unknown, ...args: never[]) {
-      tracker.adopt(args[4] as unknown as THREE.Object3D);
-      return draw.apply(this, args);
-    } as Callable;
     shadow.map = layer;
     try {
       this.passOf(light, shadow, scene, camera, needsUpdate);
     } finally {
       shadow.map = map;
-      renderer.renderBufferDirect = draw;
       restoreDynamic();
     }
   }
@@ -930,6 +1136,8 @@ class ShadowCache {
         enabled: this.enabled,
         casters: this.tracker.entries.size,
         staticCasters: this.tracker.staticCount(),
+        checks: this.checks,
+        cpuMs: this.cpuMs,
         passes: { ...this.passes },
         audit: { on: this.audit, ...this.auditStats },
       }),
@@ -943,6 +1151,8 @@ class ShadowCache {
       },
       resetStats: () => {
         for (const plan of Object.keys(this.passes) as ShadowPassPlan[]) this.passes[plan] = 0;
+        this.checks = 0;
+        this.cpuMs = 0;
         this.auditStats.maps = 0;
         this.auditStats.mismatchedMaps = 0;
         this.auditStats.mismatchedTexels = 0;

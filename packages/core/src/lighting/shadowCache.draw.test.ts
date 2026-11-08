@@ -38,7 +38,7 @@ class FakeRenderer implements ShadowCacheRenderer {
   renderBufferDirect = ((_camera: THREE.Camera, _scene: null, _geometry: THREE.BufferGeometry, material: THREE.Material, object: THREE.Object3D) => {
     this.draws += 1;
     this.images.get(this.target!.depthTexture!)!.add(depthState(object, material));
-  }) as unknown as ShadowCacheRenderer["renderBufferDirect"];
+  });
 
   imageOf(light: THREE.DirectionalLight): Set<string> {
     return this.images.get(light.shadow.map!.depthTexture!) ?? new Set();
@@ -58,7 +58,7 @@ class FakeRenderer implements ShadowCacheRenderer {
       this.setRenderTarget(shadow.map);
       this.clear();
       shadow.updateMatrices(light, camera);
-      visitCasters(scene, shadow.getFrustum(), layersOf(shadow, camera), (object, material) => this.renderBufferDirect(shadow.camera as never, null as never, object.geometry as never, material as never, object as never, null as never));
+      visitCasters(scene, shadow.getFrustum(), layersOf(shadow, camera), (object, material) => this.renderBufferDirect(shadow.camera, null, object.geometry, material, object));
       shadow.needsUpdate = false;
     }
     shadowMap.needsUpdate = false;
@@ -228,6 +228,49 @@ describe("shadow cache invalidation", () => {
       w.dispose();
     });
   }
+
+  test("a caster moved while its parent was hidden draws where it is when shown again", () => {
+    const w = world();
+    const group = new THREE.Group();
+    const mesh = box();
+    group.add(mesh);
+    w.scene.add(group, box());
+    w.settle();
+    group.visible = false;
+    w.frame();
+    expectSame(w);
+    w.settle();
+    mesh.position.set(4, 0, -3);
+    w.frame();
+    expectSame(w);
+    group.visible = true;
+    for (let index = 0; index < 20; index += 1) {
+      w.frame(100);
+      expectSame(w);
+    }
+    w.dispose();
+  });
+
+  test("a caster taken out of children without an event stops drawing, and one put in that way draws", () => {
+    const w = world();
+    const group = new THREE.Group();
+    const mesh = box();
+    group.add(mesh, box());
+    w.scene.add(group);
+    w.settle();
+    group.children.splice(group.children.indexOf(mesh), 1);
+    w.frame();
+    expectSame(w);
+    const stray = box();
+    stray.position.set(-4, 0, 2);
+    group.children.push(stray);
+    stray.parent = group;
+    for (let index = 0; index < 20; index += 1) {
+      w.frame(100);
+      expectSame(w);
+    }
+    w.dispose();
+  });
 
   test("adding a caster after the layer was built draws it", () => {
     const w = world();
