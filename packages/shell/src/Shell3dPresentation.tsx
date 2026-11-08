@@ -2,7 +2,7 @@ import { biomeBandsForSky } from "@jgengine/core/sky/skyBands";
 import { CharacterMotionContext } from "@jgengine/core/anim/characterMotion.draw";
 import { lightingHasSoftShadows } from "@jgengine/core/lighting/softShadows";
 import { Canvas } from "@react-three/fiber";
-import { engineRendererFactory } from "@jgengine/core/webgpu/engineRenderer.draw";
+import { useEngineRendererFactory } from "@jgengine/core/webgpu/engineRenderer.draw";
 import {
   useMemo,
   useEffect,
@@ -364,7 +364,8 @@ export function Shell3dPresentation({
   const sunFromLighting = lighting?.directional?.[0]?.position;
   const sceneLighting = useMemo(() => (cinematicLook ? balanceLightingForIbl(lighting) : lighting), [cinematicLook, lighting]);
   const worldProbe = useMemo(() => worldProbeForQuality(graphics.quality), [graphics.quality]);
-  const rendererFactory = useMemo(() => engineRendererFactory(graphics.renderer), [graphics.renderer]);
+  // Null while the backend is prepared: the canvas mounts once its renderer can be made without awaiting.
+  const rendererFactory = useEngineRendererFactory(graphics.renderer);
   const effectiveSky = useMemo(() => {
     if (authoredSky === undefined) return undefined;
     const bearing =
@@ -700,8 +701,9 @@ export function Shell3dPresentation({
           >
             <GameViewportProvider platforms={playable.controls?.platforms}>
               <ColorblindFrame mode={colorblind} style={{ position: "absolute", inset: 0 }}>
+                {rendererFactory === null ? null : (
                 <Canvas
-                  key={graphics.renderer}
+                  key={rendererFactory.backend}
                   onCreated={({ gl, scene }) => {
                     setCanvasElement(gl.domElement);
                     skipCulledMatrices(scene);
@@ -928,6 +930,7 @@ export function Shell3dPresentation({
                     />
                   )}
                 </Canvas>
+                )}
               </ColorblindFrame>
               <SceneWarmupCoverLive store={warmup} />
               {poster ? null : <BootDirector ctx={ctx} warmup={warmup} />}

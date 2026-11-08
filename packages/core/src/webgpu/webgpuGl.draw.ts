@@ -271,14 +271,22 @@ struct Out { @builtin(position) pos: vec4<f32>, @location(0) uv: vec2<f32> };
 }
 @fragment fn fs(o: Out) -> @location(0) vec4<f32> { return textureSampleLevel(src, smp, o.uv, 0.0); }`;
 
+/** A WebGPU device ready for one canvas, from {@link requestWebGpuDevice}. */
+export interface WebGpuDevice {
+  device: GPUDevice;
+  /** The adapter's description, reported as the GL renderer string. */
+  label: string;
+}
+
 /**
- * Create the WebGPU device and the GL-shaped context for `canvas`, or `null` when this browser has
- * no usable WebGPU adapter.
+ * Request the WebGPU device, or `null` when this browser has no usable WebGPU adapter. This is the
+ * only asynchronous step; {@link createWebGpuGl} then makes the context synchronously, so a renderer
+ * factory never awaits (see `engineRenderer.draw.ts` for why that matters).
  */
-export async function createWebGpuGl(canvas: HTMLCanvasElement, attributes: Partial<WebGpuGlAttributes> = {}): Promise<WebGpuGl | null> {
+export async function requestWebGpuDevice(powerPreference: WebGLPowerPreference = "high-performance"): Promise<WebGpuDevice | null> {
   const gpu = (globalThis.navigator as any)?.gpu as GPU | undefined;
   if (gpu === undefined) return null;
-  const adapter = await gpu.requestAdapter({ powerPreference: attributes.powerPreference === "low-power" ? "low-power" : "high-performance" });
+  const adapter = await gpu.requestAdapter({ powerPreference: powerPreference === "low-power" ? "low-power" : "high-performance" });
   if (adapter === null) return null;
   const wanted: GPUFeatureName[] = ["texture-compression-bc", "float32-filterable", "float32-blendable", "timestamp-query", "depth32float-stencil8", "rg11b10ufloat-renderable"];
   const requiredFeatures = wanted.filter((name) => adapter.features.has(name));
@@ -286,10 +294,15 @@ export async function createWebGpuGl(canvas: HTMLCanvasElement, attributes: Part
     requiredFeatures,
     requiredLimits: { maxColorAttachmentBytesPerSample: Math.min(adapter.limits.maxColorAttachmentBytesPerSample, 64), maxTextureDimension2D: adapter.limits.maxTextureDimension2D, maxBufferSize: adapter.limits.maxBufferSize, maxStorageBufferBindingSize: adapter.limits.maxStorageBufferBindingSize, maxSampledTexturesPerShaderStage: adapter.limits.maxSampledTexturesPerShaderStage, maxSamplersPerShaderStage: adapter.limits.maxSamplersPerShaderStage, maxUniformBufferBindingSize: adapter.limits.maxUniformBufferBindingSize, maxInterStageShaderVariables: adapter.limits.maxInterStageShaderVariables, maxVertexAttributes: adapter.limits.maxVertexAttributes, maxVertexBuffers: adapter.limits.maxVertexBuffers },
   });
+  const info = (adapter as any).info as GPUAdapterInfo | undefined;
+  return { device, label: info === undefined ? "WebGPU" : `${info.vendor} ${info.architecture} ${info.description}`.trim() };
+}
+
+/** The GL-shaped context for `canvas` on a device from {@link requestWebGpuDevice}, or `null` when the canvas gives no WebGPU context. */
+export function createWebGpuGl(canvas: HTMLCanvasElement, gpu: WebGpuDevice, attributes: Partial<WebGpuGlAttributes> = {}): WebGpuGl | null {
   const context = canvas.getContext("webgpu") as GPUCanvasContext | null;
   if (context === null) return null;
-  const info = (adapter as any).info as GPUAdapterInfo | undefined;
-  return new WebGpuGl(canvas, device, context, attributes, info === undefined ? "WebGPU" : `${info.vendor} ${info.architecture} ${info.description}`.trim());
+  return new WebGpuGl(canvas, gpu.device, context, attributes, gpu.label);
 }
 
 /**

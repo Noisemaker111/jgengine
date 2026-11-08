@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { decodePng, encodePng } from "../packages/assets/src/imageCodec";
 import { applyDevice, ensureDevServer, navigateCapturePage, openPageSession, withBrowserSession, type CdpSession } from "./browser-lib";
 import { GATE_SIZE } from "./perf-gate";
+import { perfLockTurn } from "./perf-lock";
 import { perfPageUrl, SAMPLE_FRAMES_SCRIPT } from "./perf-play";
 import { diffImages, type ShotDiff } from "./shot-diff";
 
@@ -231,7 +232,9 @@ async function main(): Promise<void> {
       const server = await ensureDevServer(repoRoot);
       // Uncapped so the timed windows measure each backend's cost rather than the display's refresh.
       // A failed capture comes back as a nonzero code (already reported), not a throw.
-      const code = await withBrowserSession({ keep: false, timeoutMs: 600_000, ...(args.seconds > 0 ? { frameClock: "uncapped" as const } : {}) }, async ({ debugPort }) => {
+      // Timed windows hold the machine-wide perf lock, so another thread's run never shares the GPU with them.
+      const timed = args.seconds > 0 ? { frameClock: "uncapped" as const, turn: perfLockTurn(`renderer-diff ${game}`, undefined) } : {};
+      const code = await withBrowserSession({ keep: false, timeoutMs: 600_000, ...timed }, async ({ debugPort }) => {
         const session = await openPageSession(debugPort);
         await session.send("Page.enable", {});
         await session.send("Page.addScriptToEvaluateOnNewDocument", { source: RENDERER_HOOK });
