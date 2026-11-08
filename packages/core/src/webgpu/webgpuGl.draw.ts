@@ -263,8 +263,16 @@ export async function createWebGpuGl(canvas: HTMLCanvasElement, attributes: Part
   return new WebGpuGl(canvas, device, context, attributes, info === undefined ? "WebGPU" : `${info.vendor} ${info.architecture} ${info.description}`.trim());
 }
 
+/**
+ * WebGL's constants (`gl.TEXTURE_2D` and the rest), on a prototype as the native context keeps them.
+ * Copied onto each instance instead, the ~560 properties put the context in V8's dictionary mode,
+ * so every method call three made on it and every field it read was a hash lookup.
+ */
+class GlConstants {}
+Object.assign(GlConstants.prototype, WEBGL_CONSTANTS);
+
 /** The GL-shaped context. Construct through {@link createWebGpuGl}. */
-export class WebGpuGl {
+export class WebGpuGl extends GlConstants {
   readonly canvas: HTMLCanvasElement;
   readonly device: GPUDevice;
   readonly stats: WebGpuGlStats = { frames: 0, draws: 0, passes: 0, submits: 0, pipelines: 0, bindGroups: 0, uniformBytes: 0, orderFlushes: 0, programs: 0, translateMs: 0, fences: 0, fenceMs: 0, reads: 0, readMs: 0, queueLagMs: 0, precompiles: 0, precompileMs: 0 };
@@ -387,7 +395,7 @@ export class WebGpuGl {
   private readonly defaultVertex: GPUBuffer;
 
   constructor(canvas: HTMLCanvasElement, device: GPUDevice, context: GPUCanvasContext, attributes: Partial<WebGpuGlAttributes>, renderer: string) {
-    Object.assign(this, WEBGL_CONSTANTS);
+    super();
     this.canvas = canvas;
     this.device = device;
     this.gpuContext = context;
@@ -1453,7 +1461,7 @@ export class WebGpuGl {
    */
   beginQuery(target: number, q: GlQuery): void {
     if (target !== 0x88bf || this.stamps === null) return;
-    this.endPass();
+    this.endPass("any");
     q.result = 0;
     q.available = false;
     q.start = -1;
@@ -1468,7 +1476,7 @@ export class WebGpuGl {
   endQuery(target: number): void {
     const q = this.timedQuery;
     if (target !== 0x88bf || q === null) return;
-    this.endPass();
+    this.endPass("any");
     this.timedQuery = null;
     q.ended = true;
     this.settleTimer(q);
@@ -1675,16 +1683,18 @@ export class WebGpuGl {
 
   /**
    * End the open pass, then run any pending clear nobody drew after (GL's order: the clear happened),
-   * unless it is for `keep`, the target about to be opened.
+   * unless it is for `keep`, the target about to be opened. `keep` of `"any"` holds every pending
+   * clear for the next pass's load op: a pass boundary that changes no target (a GPU timer starting
+   * or stopping) then costs no clear-only pass of its own.
    */
-  private endPass(keep?: GlFramebuffer | null): void {
+  private endPass(keep?: GlFramebuffer | null | "any"): void {
     if (this.pass !== null) {
       this.pass.end();
       this.pass = null;
       this.passTarget = null;
     }
     const pending = this.pendingClear;
-    if (pending === null || (keep !== undefined && pending.fb === keep)) return;
+    if (pending === null || keep === "any" || (keep !== undefined && pending.fb === keep)) return;
     this.pendingClear = null;
     if (this.beginPass(pending.fb, pending)) {
       this.pass!.end();

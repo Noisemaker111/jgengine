@@ -45,9 +45,9 @@ function stubDevice(options: { features?: string[]; mapped?: (size: number) => A
   return { device, views, passes, buffers, landAllMaps: () => { for (const resolve of pendingMaps.splice(0)) resolve(); } };
 }
 
-function stubContext(width = 64, height = 64) {
+function stubContext(width = 64, height = 64, features: string[] = []) {
   stubGlobals();
-  const stub = stubDevice();
+  const stub = stubDevice({ features });
   const canvas = { width, height } as HTMLCanvasElement;
   const context = { configure() {}, unconfigure() {}, getCurrentTexture: () => ({ createView: () => ({}) }) } as unknown as GPUCanvasContext;
   return { ...stub, gl: new WebGpuGl(canvas, stub.device, context, {}, "stub") as any };
@@ -133,35 +133,37 @@ describe("WebGpuGl as three sees it", () => {
   });
 });
 
-describe("WebGpuGl per-program draw caches", () => {
-  // A linked one-sampler program without the naga translation, and a draw with no vertex buffers:
-  // what the cache decides is which of bindGroupFor / pipelineFor a draw had to run again.
-  const setup = () => {
-    const { gl } = stubContext();
-    const program = {
-      kind: "program", id: 900, shaders: [], linked: true, log: "", pending: null, compiled: true,
-      translated: { layout: { samplers: [{ kind: "Float", dim: "D2", texture_binding: 0, sampler_binding: 1 }], fragment_outputs: 1 } },
-      vertex: {}, fragment: {}, uniforms: new Map(), samplerIndex: new Map(), active: [], attribs: [],
-      bytes: new Uint8Array(256), blockSize: 16, dirty: true, slotBatch: -1, slotOffset: 0,
-      units: new Int32Array(1), layouts: new Map(), vertexCache: new WeakMap(), textureSets: new Map(), lastTextures: null, pipelineSets: new Map(),
-    };
-    gl.program = program;
-    const plan = { id: 901, key: "none", slots: [], constants: [], instanceCapacity: (n: number) => n };
-    gl.vertexPlan = () => plan;
-    const groups: unknown[] = [];
-    const bindGroupFor = gl.bindGroupFor.bind(gl);
-    gl.bindGroupFor = (p: unknown, sig: string, list: unknown[]) => { groups.push(list[0]); return bindGroupFor(p, sig, list); };
-    let pipelines = 0;
-    const pipelineFor = gl.pipelineFor.bind(gl);
-    gl.pipelineFor = (...args: unknown[]) => { pipelines += 1; return pipelineFor(...args); };
-    const texture = () => {
-      const t = gl.createTexture();
-      gl.bindTexture(0x0de1, t);
-      gl.texStorage2D(0x0de1, 1, 0x8058, 4, 4);
-      return t;
-    };
-    return { gl, groups, pipelines: () => pipelines, texture, draw: () => gl.drawArrays(4, 0, 3) };
+// A linked one-sampler program without the naga translation, and a draw with no vertex buffers:
+// what the cache decides is which of bindGroupFor / pipelineFor a draw had to run again.
+const drawSetup = (features: string[] = []) => {
+  const { gl, passes } = stubContext(64, 64, features);
+  const program = {
+    kind: "program", id: 900, shaders: [], linked: true, log: "", pending: null, compiled: true,
+    translated: { layout: { samplers: [{ kind: "Float", dim: "D2", texture_binding: 0, sampler_binding: 1 }], fragment_outputs: 1 } },
+    vertex: {}, fragment: {}, uniforms: new Map(), samplerIndex: new Map(), active: [], attribs: [],
+    bytes: new Uint8Array(256), blockSize: 16, dirty: true, slotBatch: -1, slotOffset: 0,
+    units: new Int32Array(1), layouts: new Map(), vertexCache: new WeakMap(), textureSets: new Map(), lastTextures: null, pipelineSets: new Map(),
   };
+  gl.program = program;
+  const plan = { id: 901, key: "none", slots: [], constants: [], instanceCapacity: (n: number) => n };
+  gl.vertexPlan = () => plan;
+  const groups: unknown[] = [];
+  const bindGroupFor = gl.bindGroupFor.bind(gl);
+  gl.bindGroupFor = (p: unknown, sig: string, list: unknown[]) => { groups.push(list[0]); return bindGroupFor(p, sig, list); };
+  let pipelines = 0;
+  const pipelineFor = gl.pipelineFor.bind(gl);
+  gl.pipelineFor = (...args: unknown[]) => { pipelines += 1; return pipelineFor(...args); };
+  const texture = () => {
+    const t = gl.createTexture();
+    gl.bindTexture(0x0de1, t);
+    gl.texStorage2D(0x0de1, 1, 0x8058, 4, 4);
+    return t;
+  };
+  return { gl, passes, groups, pipelines: () => pipelines, texture, draw: () => gl.drawArrays(4, 0, 3) };
+};
+
+describe("WebGpuGl per-program draw caches", () => {
+  const setup = () => drawSetup();
 
   test("a repeated draw reuses its bind group and pipeline; rebinding, sampler state or GL state rebuild only what they change", () => {
     const { gl, groups, pipelines, texture, draw } = setup();
@@ -231,7 +233,7 @@ describe("WebGpuGl GPU timers", () => {
     expect(buffers.find((b) => b.size === 4096 * 8)?.usage).toBe(0x200 | 0x4);
 
     const untimed = passes.length;
-    gl.clear(0x4000); // a pass before the query is not timed
+    gl.clear(0x4000); // a clear before the query waits for the next pass's load op
     const q = gl.createQuery();
     gl.beginQuery(ext.TIME_ELAPSED_EXT, q);
     const tex = gl.createTexture();
@@ -242,7 +244,7 @@ describe("WebGpuGl GPU timers", () => {
     gl.framebufferTexture2D(0x8d40, 0x8ce0, 0x0de1, tex, 0);
     gl.clear(0x4000); // pass 1: the default framebuffer's clear lands when the target changes
     gl.bindFramebuffer(0x8d40, null);
-    gl.clear(0x4000); // pass 2
+    gl.clear(0x4000); // pass 2: fb's clear lands; this one waits past the query for the next pass
     gl.endQuery(ext.TIME_ELAPSED_EXT);
     const timed = passes.slice(untimed).filter((pass) => pass.timestampWrites !== undefined);
     expect(timed.length).toBe(2);
@@ -262,6 +264,27 @@ describe("WebGpuGl GPU timers", () => {
     gl.endQuery(ext.TIME_ELAPSED_EXT);
     expect(gl.getQueryParameter(empty, 0x8867)).toBe(true);
     expect(gl.getQueryParameter(empty, 0x8866)).toBe(0);
+  });
+
+  test("a timer starting or stopping between a clear and its draws keeps the clear as their pass's load op, not a pass of its own", () => {
+    // The frame breakdown times each shadow map from its first draw: every shadow map drew as a
+    // clear-only pass and then a pass of draws (47 passes a frame on Odd Orbit, 15 of them clears).
+    const { gl, passes, texture, draw } = drawSetup(["timestamp-query"]);
+    texture();
+    const ext = gl.getExtension("EXT_disjoint_timer_query_webgl2");
+    const before = passes.length;
+    gl.clear(0x4000 | 0x0100);
+    gl.beginQuery(ext.TIME_ELAPSED_EXT, gl.createQuery());
+    draw();
+    gl.endQuery(ext.TIME_ELAPSED_EXT);
+    gl.clear(0x4000);
+    gl.beginQuery(ext.TIME_ELAPSED_EXT, gl.createQuery());
+    draw();
+    gl.endQuery(ext.TIME_ELAPSED_EXT);
+    gl.finish();
+    const opened = passes.slice(before) as unknown as { colorAttachments: { loadOp: string }[]; depthStencilAttachment?: { depthLoadOp: string } }[];
+    expect(opened.map((pass) => pass.colorAttachments[0]!.loadOp)).toEqual(["clear", "clear"]);
+    expect(opened[0]!.depthStencilAttachment?.depthLoadOp).toBe("clear");
   });
 
   test("without timestamp queries the context offers no GPU timer", () => {
