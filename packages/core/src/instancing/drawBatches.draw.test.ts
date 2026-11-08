@@ -122,7 +122,7 @@ test("shapes a shared draw cannot take keep their own draw", () => {
   const multi = new THREE.Mesh(new THREE.BoxGeometry(), [opaque, opaque]);
   scene.add(transparent, hooked, mirrored, layered, multi);
   scene.updateMatrixWorld();
-  expect(batcher.stats()).toMatchObject({ batched: 0, single: 5 });
+  expect(batcher.stats()).toMatchObject({ batched: 0, single: 5, reasons: { transparent: 1, renderHook: 1, mirrored: 1, layers: 1, multiMaterial: 1 } });
   expect([transparent, hooked, mirrored, multi].every((mesh) => mesh.layers.mask === 1)).toBe(true);
   expect(layered.layers.mask).toBe(1 << 2);
 });

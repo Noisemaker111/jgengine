@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
-import { withoutCompileLayers } from "@jgengine/core/material/compileLayers.draw";
+import { compilesBatched, withoutCompileLayers } from "@jgengine/core/material/compileLayers.draw";
 import { freezeStaticTransforms } from "@jgengine/core/model/staticTransforms.draw";
 import { isPostfxOverlay } from "@jgengine/core/postfx/postfxOverlay.draw";
 import { Lingering } from "@jgengine/core/run/lingering";
@@ -156,6 +156,8 @@ class DrawEntry {
   retryAt = 0;
   /** Index in the batcher's entry list, for removal by swap. */
   slot = -1;
+  /** Why it draws on its own, when it does. */
+  reason = "new";
 
   constructor(readonly mesh: THREE.Mesh) {
     this.geometry = mesh.geometry;
@@ -184,6 +186,8 @@ export interface DrawBatchStats {
   drawn: number;
   /** Instances shown across every batch. */
   shown: number;
+  /** Meshes on their own draw by the first rule each broke (`settling` for a material whose look just changed). */
+  reasons: Record<string, number>;
 }
 
 /** The per-mesh hook the scene's matrix pass calls. @internal */
@@ -194,19 +198,33 @@ export interface ShownMeshVisitor {
   endPass(): void;
 }
 
+/** Why the last {@link batchKeyOf} call gave null, for the probe: the first rule the mesh broke. */
+let rejection = "";
+
+function reject(reason: string): null {
+  rejection = reason;
+  return null;
+}
+
 /** Whether a mesh's batch would draw exactly what three draws for it, and if so the batch it joins. */
 function batchKeyOf(mesh: THREE.Mesh): string | null {
-  if (mesh.layers.mask !== DEFAULT_MASK || !mesh.frustumCulled || !mesh.matrixWorldAutoUpdate) return null;
-  if (mesh.onBeforeRender !== BASE.onBeforeRender || mesh.onAfterRender !== BASE.onAfterRender) return null;
-  if (mesh.onBeforeShadow !== BASE.onBeforeShadow || mesh.onAfterShadow !== BASE.onAfterShadow) return null;
-  if (mesh.customDepthMaterial !== undefined || mesh.customDistanceMaterial !== undefined) return null;
-  if (mesh.matrixWorld.determinant() <= 0) return null;
-  const layout = geometryLayout(mesh.geometry);
-  if (layout === null) return null;
-  const signature = materialSignature(mesh.material);
-  if (signature === null) return null;
-  for (let node: THREE.Object3D | null = mesh; node !== null; node = node.parent) if (isPostfxOverlay(node)) return null;
-  return `${mesh.castShadow ? 1 : 0}${mesh.receiveShadow ? 1 : 0}#${mesh.renderOrder}#${layout}#${signature}`;
+  if (mesh.layers.mask !== DEFAULT_MASK) return reject("layers");
+  if (!mesh.frustumCulled) return reject("unculled");
+  if (!mesh.matrixWorldAutoUpdate) return reject("handWorldMatrix");
+  if (mesh.onBeforeRender !== BASE.onBeforeRender || mesh.onAfterRender !== BASE.onAfterRender) return reject("renderHook");
+  if (mesh.onBeforeShadow !== BASE.onBeforeShadow || mesh.onAfterShadow !== BASE.onAfterShadow) return reject("shadowHook");
+  if (mesh.customDepthMaterial !== undefined || mesh.customDistanceMaterial !== undefined) return reject("customDepth");
+  if (mesh.matrixWorld.determinant() <= 0) return reject("mirrored");
+  if (geometryLayout(mesh.geometry) === null) return reject("geometry");
+  const material = mesh.material;
+  if (Array.isArray(material)) return reject("multiMaterial");
+  if (material.transparent) return reject("transparent");
+  if (material instanceof THREE.ShaderMaterial) return reject("shaderMaterial");
+  if (!compilesBatched(material)) return reject("compileHook");
+  const signature = materialSignature(material);
+  if (signature === null) return reject("materialValue");
+  for (let node: THREE.Object3D | null = mesh; node !== null; node = node.parent) if (isPostfxOverlay(node)) return reject("overlay");
+  return `${mesh.castShadow ? 1 : 0}${mesh.receiveShadow ? 1 : 0}#${mesh.renderOrder}#${geometryLayout(mesh.geometry) ?? ""}#${signature}`;
 }
 
 function vertexCount(geometry: THREE.BufferGeometry): number {
@@ -291,6 +309,7 @@ export class DrawBatcher implements ShownMeshVisitor {
       if (mesh.matrixWorld.determinant() <= 0) {
         this.unplace(entry);
         entry.retryAt = pass + RETRY_AFTER_PASSES;
+        entry.reason = "mirrored";
         return;
       }
       group.mesh.setMatrixAt(entry.instance, mesh.matrixWorld);
@@ -321,7 +340,9 @@ export class DrawBatcher implements ShownMeshVisitor {
       if (group.shown > 0) drawn += 1;
       shown += group.shown;
     }
-    return { batched, single: this.list.length - batched, batches: this.groups.size, drawn, shown };
+    const reasons: Record<string, number> = {};
+    for (const entry of this.list) if (entry.group === null) reasons[entry.reason] = (reasons[entry.reason] ?? 0) + 1;
+    return { batched, single: this.list.length - batched, batches: this.groups.size, drawn, shown, reasons };
   }
 
   /** Give every mesh its own draw back and free every batch. */
@@ -363,6 +384,7 @@ export class DrawBatcher implements ShownMeshVisitor {
     for (const entry of [...record.entries]) {
       this.unplace(entry);
       entry.retryAt = record.settleUntil;
+      entry.reason = "settling";
     }
   }
 
@@ -372,11 +394,13 @@ export class DrawBatcher implements ShownMeshVisitor {
     const known = Array.isArray(material) ? undefined : this.records.get(material);
     if (known !== undefined && this.pass < known.settleUntil) {
       entry.retryAt = known.settleUntil;
+      entry.reason = "settling";
       return;
     }
     const key = batchKeyOf(mesh);
     if (key === null || Array.isArray(material)) {
       entry.retryAt = this.pass + RETRY_AFTER_PASSES;
+      entry.reason = key === null ? rejection : "multiMaterial";
       return;
     }
     let record = known;
@@ -512,7 +536,12 @@ export function batchSceneDraws(scene: THREE.Object3D, raycaster: THREE.Raycaste
     visitShownMeshes(scene, batcher);
     const probe = batcher;
     devtools.probes.registerSystem("render/drawBatches", {
-      counters: () => ({ ...probe.stats() }),
+      counters: () => {
+        const { reasons, ...stats } = probe.stats();
+        const counters: Record<string, number> = { ...stats };
+        for (const [reason, count] of Object.entries(reasons)) counters[`single.${reason}`] = count;
+        return counters;
+      },
       state: () => {
         const stats = probe.stats();
         return `${stats.batched} meshes in ${stats.batches} batches (${stats.drawn} drawn) · ${stats.single} on their own`;
