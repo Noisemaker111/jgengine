@@ -63,6 +63,8 @@ interface Script {
   locks?: Map<string, { text: string; mtimeMs: number }>;
   /** Which pids answer; default: only this run's. */
   alive?: (pid: number) => boolean;
+  /** Why the lane's verify:fast writes receipts this landing code cannot read; default none. */
+  receiptsBehind?: string;
 }
 
 const RUN_PID = 4242;
@@ -121,6 +123,7 @@ function io(script: Script = {}): Fake {
     alive: script.alive ?? ((pid) => pid === RUN_PID),
     tree: () => tree,
     passedOn: (id) => (passed.has(id) ? `.scratch/verify-fast/runs/${id}/receipt.json` : null),
+    receiptsBehind: () => script.receiptsBehind ?? null,
     github: () => github,
     pause: () => {},
     sh: (argv) => {
@@ -248,6 +251,16 @@ describe("lane:close end to end", () => {
     expect(closeLane({}, fake)).toBe(EXIT_VERIFY_FAILED);
     expect(fake.calls).not.toContain("run scripts/land.ts --commit");
     expect(fake.lines.err.join("\n")).toContain("the files changed while verify:fast ran");
+  });
+
+  test("a lane whose verify:fast writes receipts this landing code cannot read stops before anything runs and says to merge beta", () => {
+    const fake = io({ receiptsBehind: "this lane's scripts/verify-receipt.ts is older than beta's" });
+    expect(closeLane({}, fake)).toBe(EXIT_VERIFY_FAILED);
+    expect(fake.calls).not.toContain("run preflight --no-verify");
+    expect(fake.calls).not.toContain("run verify:fast --landing");
+    expect(fake.calls.some((call) => call.includes("land.ts"))).toBe(false);
+    expect(merges(fake)).toEqual([]);
+    expect(fake.lines.err.join("\n")).toContain("this lane's scripts/verify-receipt.ts is older than beta's; nothing ran and nothing landed. Merge beta into this branch (git merge origin/beta) and close again.");
   });
 
   test("a base that moved without a conflict merges at once: no rebase, no second verify", () => {

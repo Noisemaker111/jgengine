@@ -296,6 +296,8 @@ export function deferUnlinkedDraws(
       // Linked after the draw, not before it: a link only queues work, and the next frame draws it once it is ready.
       // One object per kind and material is enough; each is linked as the draw that met it would link it.
       for (const [material, objects] of missing) {
+        // A material patched lazily (wet ground, a scan) is patched now, so its first link is its last.
+        if (!isShadowMaterial(material)) prepareMaterial(scene, material);
         const kinds = new Map<Variant, Drawable>();
         for (const [object, variant] of objects) if (!kinds.has(variant)) kinds.set(variant, object);
         for (const [variant, object] of kinds) {
@@ -1002,6 +1004,35 @@ export function prepareBeforeWarmup(scene: Object3D, prepare: () => void): () =>
   }
   preparers.add(prepare);
   return () => preparers.delete(prepare);
+}
+
+const linkPreparers = new WeakMap<Object3D, Set<(material: Material) => void>>();
+
+/**
+ * Run `prepare` on each material of the scene just before its first program links in play: a model
+ * that streams in or spawns after the warmup is linked off the frame, and a layer that patches
+ * materials lazily (a periodic scan) would otherwise reach it after that link and make it compile
+ * again, in the frame it is drawn. `prepare` patches the material in place or leaves it alone.
+ * Returns the unregister. @internal
+ */
+export function prepareBeforeLink(scene: Object3D, prepare: (material: Material) => void): () => void {
+  let preparers = linkPreparers.get(scene);
+  if (preparers === undefined) {
+    preparers = new Set();
+    linkPreparers.set(scene, preparers);
+  }
+  preparers.add(prepare);
+  return () => preparers.delete(prepare);
+}
+
+function prepareMaterial(scene: Object3D, material: Material): void {
+  for (const prepare of linkPreparers.get(scene) ?? []) {
+    try {
+      prepare(material);
+    } catch {
+      /* a preparer that throws leaves the material to its own scan */
+    }
+  }
 }
 
 function runPreparers(scene: Object3D): void {

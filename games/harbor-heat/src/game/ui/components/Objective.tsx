@@ -199,7 +199,7 @@ export function Objective() {
   if (view?.distance !== undefined && view.distance < best.current.distance - 3) best.current.distance = view.distance;
   const progressKey = view === null ? "" : `${view.key}:${best.current.distance}`;
   const hasHint = view?.hint !== undefined;
-  const moving = useHudAwake([progressKey], 12_000, !hasHint);
+  const moving = useHudAwake(() => progressKey, 12_000, () => !hasHint);
   const stuck = hasHint && !moving;
   useEffect(() => {
     if (stuck) cue("notify");

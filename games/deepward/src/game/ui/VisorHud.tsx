@@ -1,12 +1,17 @@
-import type { CSSProperties, ReactNode } from "react";
+import { useRef, type CSSProperties, type ReactNode } from "react";
 import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { HudFade } from "@jgengine/core/hud/hudLayout.view";
+import { LiveText, useFrameBind } from "@jgengine/core/ui/liveBind.view";
 
 /*
  * The diver's helmet. Everything in a dive is read off the visor glass: the dive computer on the
  * left wrist edge, the depth strip on the brow, the kit counter on the right. Each readout dims when
  * it has nothing new to say and holds bright (and red) when the air is going.
+ *
+ * Values that move every tick (air, suit, the body, the rail distance, ammo, the load) arrive as
+ * getters and are written straight to their own text, arc, cell or bar node; a panel re-renders only
+ * when what it is showing changes shape (sealed tank, a reload starting, the cache filling up).
  */
 
 const TEAL = "#9cddd1";
@@ -20,6 +25,14 @@ const RED = "#ff6a52";
  */
 const plate = (rim: string): { edge: "none"; shadow: false; style: CSSProperties } => ({ edge: "none", shadow: false, style: { "--dw-rim": rim } as CSSProperties });
 
+/** A reading's colour as an index, so a live binding can key on value and colour as one number. */
+type Tone = 0 | 1 | 2;
+const TONES = [TEAL, AMBER, RED] as const;
+/** A meter's tone from its shown value: red at 15 and under, amber to 35, teal above. */
+const meterTone = (value: number): Tone => value <= 15 ? 2 : value <= 35 ? 1 : 0;
+/** The suit's tone from its shown integrity. */
+const suitTone = (value: number): Tone => value <= 35 ? 2 : value <= 60 ? 1 : 0;
+
 /** The helmet rim, glass glare and the low-air alarm wash; nothing in it takes a pointer. */
 export function Visor({ low, hurt }: { low: boolean; hurt: boolean }): ReactNode {
   return (
@@ -31,75 +44,111 @@ export function Visor({ low, hurt }: { low: boolean; hurt: boolean }): ReactNode
   );
 }
 
-/** A 270° dial: the arc is what remains, ticks every tenth. */
-function Dial({ fraction, color, children }: { fraction: number; color: string; children: ReactNode }): ReactNode {
-  const r = 46, c = 2 * Math.PI * r, sweep = 0.75;
-  const f = Math.round(Math.max(0, Math.min(1, fraction)) * 200) / 200;
-  const ticks = Array.from({ length: 11 }, (_, i) => {
-    const a = (135 + i * 27) * (Math.PI / 180);
-    const inner = i % 5 === 0 ? 34 : 37;
-    return <line key={i} x1={60 + Math.cos(a) * inner} y1={60 + Math.sin(a) * inner} x2={60 + Math.cos(a) * 40} y2={60 + Math.sin(a) * 40} />;
+const DIAL_R = 46, DIAL_C = 2 * Math.PI * DIAL_R, DIAL_SWEEP = 0.75;
+const DIAL_TICKS = Array.from({ length: 11 }, (_, i) => {
+  const a = (135 + i * 27) * (Math.PI / 180);
+  const inner = i % 5 === 0 ? 34 : 37;
+  return <line key={i} x1={60 + Math.cos(a) * inner} y1={60 + Math.sin(a) * inner} x2={60 + Math.cos(a) * 40} y2={60 + Math.sin(a) * 40} />;
+});
+
+/** A 270° dial: the arc is what remains, ticks every tenth. `steps` is the remaining fraction in 200ths. */
+function Dial({ steps, tone, children }: { steps: () => number; tone: () => Tone; children: ReactNode }): ReactNode {
+  const arcs = useRef<SVGGElement>(null);
+  useFrameBind(arcs, () => Math.max(0, Math.min(200, steps())) * 4 + tone(), (key, group) => {
+    const shown = Math.floor(key / 4);
+    const dash = `${DIAL_C * DIAL_SWEEP * (shown / 200)} ${DIAL_C}`, stroke = TONES[key % 4 as Tone];
+    for (const arc of Array.from(group.children)) {
+      arc.setAttribute("stroke-dasharray", dash);
+      arc.setAttribute("stroke", stroke);
+    }
   });
   return (
     <div className="dw-dial">
       <svg viewBox="0 0 120 120" aria-hidden="true">
         <circle cx="60" cy="60" r="56" className="dw-dial-bezel" />
-        <circle cx="60" cy="60" r={r} className="dw-dial-track" strokeDasharray={`${c * sweep} ${c}`} transform="rotate(135 60 60)" />
-        <circle cx="60" cy="60" r={r} className="dw-dial-glow" stroke={color} strokeDasharray={`${c * sweep * f} ${c}`} transform="rotate(135 60 60)" />
-        <circle cx="60" cy="60" r={r} className="dw-dial-arc" stroke={color} strokeDasharray={`${c * sweep * f} ${c}`} transform="rotate(135 60 60)" />
-        <g className="dw-dial-ticks">{ticks}</g>
+        <circle cx="60" cy="60" r={DIAL_R} className="dw-dial-track" strokeDasharray={`${DIAL_C * DIAL_SWEEP} ${DIAL_C}`} transform="rotate(135 60 60)" />
+        <g ref={arcs}>
+          <circle cx="60" cy="60" r={DIAL_R} className="dw-dial-glow" transform="rotate(135 60 60)" />
+          <circle cx="60" cy="60" r={DIAL_R} className="dw-dial-arc" transform="rotate(135 60 60)" />
+        </g>
+        <g className="dw-dial-ticks">{DIAL_TICKS}</g>
       </svg>
       <div className="dw-dial-read">{children}</div>
     </div>
   );
 }
 
-/** Ten cells of suit integrity. */
-function Cells({ value, max, color }: { value: number; max: number; color: string }): ReactNode {
-  const lit = Math.ceil((Math.max(0, value) / max) * 10);
-  return <span className="dw-cells" aria-hidden="true">{Array.from({ length: 10 }, (_, i) => <i key={i} style={i < lit ? { background: color, boxShadow: `0 0 6px ${color}` } : undefined} />)}</span>;
+const CELL_KEYS = Array.from({ length: 10 }, (_, i) => i);
+
+/** Ten cells of a 0–100 meter, lit to the shown value in the colour that value reads as. */
+function Cells({ value, tone }: { value: () => number; tone: (shown: number) => Tone }): ReactNode {
+  const cells = useRef<HTMLSpanElement>(null);
+  useFrameBind(cells, () => Math.ceil(Math.max(0, value())), (shown, row) => {
+    const lit = Math.ceil(shown / 10), color = TONES[tone(shown)];
+    Array.from(row.children).forEach((cell, i) => {
+      const style = (cell as HTMLElement).style;
+      style.background = i < lit ? color : "";
+      style.boxShadow = i < lit ? `0 0 6px ${color}` : "";
+    });
+  });
+  return <span ref={cells} className="dw-cells" aria-hidden="true">{CELL_KEYS.map(i => <i key={i} />)}</span>;
+}
+
+/** A whole-number reading in the colour its value reads as; `as` is the element it is. */
+function Figure({ value, tone, as: Tag = "b" }: { value: () => number; tone: (shown: number) => Tone; as?: "b" | "strong" }): ReactNode {
+  const figure = useRef<HTMLElement>(null);
+  const shown = (): number => Math.ceil(value());
+  useFrameBind(figure, shown, (current, element) => {
+    element.textContent = String(current);
+    element.style.color = TONES[tone(current)];
+  });
+  return <Tag ref={figure}>{shown()}</Tag>;
 }
 
 export interface DiveComputerProps {
-  oxygen: number;
+  /** Seconds of air left, read every frame. */
+  oxygen: () => number;
+  /** Suit integrity 0–100, read every frame. */
+  health: () => number;
+  /** Metres back to the rail, read every frame. */
+  rail: () => number;
   tank: number;
-  health: number;
-  rail: number;
   sealed: boolean;
   low: boolean;
   hurt: boolean;
-  /** The body and the suit below receiving: food, water, the seal against this floor's pressure, the belt. */
-  body?: { food: number; water: number };
+  /** The body below receiving: food and water 0–100, read every frame. */
+  body?: { food: () => number; water: () => number };
   seal?: { mark: number; pressure: number; crushing: boolean };
   belt?: { ration: number; water: number; lure: number; lamp: boolean };
 }
 
 /** The wrist dive computer: air dial, suit cells and the bearing back to the rail. */
-export function DiveComputer({ oxygen, tank, health, rail, sealed, low, hurt, body, seal, belt }: DiveComputerProps): ReactNode {
-  const meter = (value: number) => value <= 15 ? RED : value <= 35 ? AMBER : TEAL;
-  const fraction = oxygen / tank;
-  const color = low ? RED : fraction < 0.5 ? AMBER : TEAL;
-  const suit = health <= 35 ? RED : health <= 60 ? AMBER : TEAL;
+export function DiveComputer({ oxygen, health, rail, tank, sealed, low, hurt, body, seal, belt }: DiveComputerProps): ReactNode {
+  // Low air is 25 seconds and under; the whole number shown crosses it at the same moment.
+  const airTone = (shown: number): Tone => shown <= 25 ? 2 : shown / tank < 0.5 ? 1 : 0;
   return (
-    <HudFade watch={[Math.floor(oxygen / 15), Math.ceil(health / 10), Math.round(rail / 8), Math.ceil((body?.food ?? 0) / 10), Math.ceil((body?.water ?? 0) / 10), seal?.crushing, belt?.ration, belt?.water, belt?.lure, belt?.lamp]} hold={low || hurt || health <= 35 || seal?.crushing === true || (body !== undefined && Math.min(body.food, body.water) <= 15)} idleMs={4000} dimTo={0.6}>
+    <HudFade
+      watch={() => [Math.floor(oxygen() / 15), Math.ceil(health() / 10), Math.round(rail() / 8), Math.ceil((body?.food() ?? 0) / 10), Math.ceil((body?.water() ?? 0) / 10), seal?.crushing, belt?.ration, belt?.water, belt?.lure, belt?.lamp]}
+      hold={() => low || hurt || health() <= 35 || seal?.crushing === true || (body !== undefined && Math.min(body.food(), body.water()) <= 15)}
+      idleMs={4000} dimTo={0.6}>
       <section className="dw-computer" aria-label="Dive computer" data-low={low ? "" : undefined}>
         <KitPanel material="hull" cut="chamfer" depth={14} tint="#1b2c33" {...plate(low ? RED : "#04090b")} className="dw-rimmed" padding="10px 14px 10px 10px">
           <div className="dw-computer-face">
-            <Dial fraction={fraction} color={color}>
-              <strong style={{ color }}>{Math.ceil(oxygen)}</strong>
-              <small>{oxygen === 0 ? "NO AIR" : "SEC AIR"}</small>
+            <Dial steps={() => Math.round((oxygen() / tank) * 200)} tone={() => airTone(Math.ceil(oxygen()))}>
+              <Figure as="strong" value={oxygen} tone={airTone} />
+              <LiveText as="small" get={() => oxygen() === 0 ? "NO AIR" : "SEC AIR"} />
             </Dial>
             <div className="dw-computer-side">
               <span className="dw-tag">{sealed ? "Sealed tank" : "Issue tank"}</span>
-              <span className="dw-computer-alarm" role={low ? "alert" : undefined}>{oxygen === 0 ? "Suit bleeding" : low ? "Turn back" : " "}</span>
-              <div className="dw-computer-row"><span className="dw-tag">Suit</span><Cells value={health} max={100} color={suit} /><b style={{ color: suit }}>{Math.ceil(health)}</b></div>
+              <LiveText className="dw-computer-alarm" role={low ? "alert" : undefined} get={() => oxygen() === 0 ? "Suit bleeding" : low ? "Turn back" : " "} />
+              <div className="dw-computer-row"><span className="dw-tag">Suit</span><Cells value={health} tone={suitTone} /><Figure value={health} tone={suitTone} /></div>
               {body !== undefined && <>
-                <div className="dw-computer-row"><span className="dw-tag">Food</span><Cells value={body.food} max={100} color={meter(body.food)} /><b style={{ color: meter(body.food) }}>{Math.ceil(body.food)}</b></div>
-                <div className="dw-computer-row"><span className="dw-tag">Water</span><Cells value={body.water} max={100} color={meter(body.water)} /><b style={{ color: meter(body.water) }}>{Math.ceil(body.water)}</b></div>
+                <div className="dw-computer-row"><span className="dw-tag">Food</span><Cells value={body.food} tone={meterTone} /><Figure value={body.food} tone={meterTone} /></div>
+                <div className="dw-computer-row"><span className="dw-tag">Water</span><Cells value={body.water} tone={meterTone} /><Figure value={body.water} tone={meterTone} /></div>
               </>}
               {seal !== undefined && <div className="dw-computer-row"><span className="dw-tag">Seal Mk {seal.mark}</span><b style={{ color: seal.crushing ? RED : TEAL }}>P{seal.pressure}{seal.crushing ? "!" : ""}</b></div>}
               {belt !== undefined && belt.ration + belt.water + belt.lure > 0 && <div className="dw-computer-row"><span className="dw-tag">Belt</span><b>{belt.ration}<small>F</small> {belt.water}<small>W</small> {belt.lure}<small>L</small></b></div>}
-              <div className="dw-computer-row dw-computer-rail"><GameIcon name="flag" size={15} color={low ? RED : AMBER} /><span className="dw-tag">Rail</span><b>{Math.round(rail)}<small>m</small></b></div>
+              <div className="dw-computer-row dw-computer-rail"><GameIcon name="flag" size={15} color={low ? RED : AMBER} /><span className="dw-tag">Rail</span><b><LiveText get={() => Math.round(rail())} /><small>m</small></b></div>
             </div>
           </div>
         </KitPanel>
@@ -114,7 +163,7 @@ export function DepthStrip({ room }: { room: string }): ReactNode {
   const depth = match === null ? "00" : match[1]!.padStart(2, "0");
   const name = match === null ? room : match[2]!;
   return (
-    <HudFade watch={[room]} idleMs={4500} dimTo={0.3}>
+    <HudFade watch={() => room} idleMs={4500} dimTo={0.3}>
       <div className="dw-depth" aria-label={`Depth ${depth}, ${name}`}>
         <span className="dw-depth-rule" aria-hidden="true" />
         <span className="dw-depth-mark"><small>DEPTH</small><b>{depth}</b></span>
@@ -127,40 +176,49 @@ export function DepthStrip({ room }: { room: string }): ReactNode {
 
 export interface KitCounterProps {
   weapon: string;
-  loaded: number | null;
   capacity: number | null;
-  reserve: number;
-  reloading: number | null;
-  items: number;
-  mass: number;
+  /** Whether a reload is running; its seconds left come from `reloadLeft`. */
+  reloading: boolean;
+  /** Whether the cache is at its weight limit. */
+  full: boolean;
   capacityWeight: number;
+  /** Rounds in the hand (null for none), read every frame. */
+  loaded: () => number | null;
+  reserve: () => number;
+  /** Seconds left on the reload, read every frame. */
+  reloadLeft: () => number;
+  items: () => number;
+  mass: () => number;
   onCache: () => void;
 }
 
 /** The right edge: what is in the hand and what is on the back. The load half opens the cache. */
-export function KitCounter({ weapon, loaded, capacity, reserve, reloading, items, mass, capacityWeight, onCache }: KitCounterProps): ReactNode {
+export function KitCounter({ weapon, capacity, reloading, full, capacityWeight, loaded, reserve, reloadLeft, items, mass, onCache }: KitCounterProps): ReactNode {
   const short = weapon.includes("/") ? weapon.split("/").pop()!.trim() : weapon;
-  const emptyish = loaded !== null && capacity !== null && loaded <= Math.max(1, Math.floor(capacity / 4));
-  const full = mass >= capacityWeight;
+  const emptyish = (): boolean => { const rounds = loaded(); return rounds !== null && capacity !== null && rounds <= Math.max(1, Math.floor(capacity / 4)); };
+  const ammo = useRef<HTMLDivElement>(null);
+  useFrameBind(ammo, emptyish, (low, element) => element.toggleAttribute("data-low", low));
+  const bar = useRef<HTMLElement>(null);
+  useFrameBind(bar, () => Math.min(100, (mass() / capacityWeight) * 100), (width, element) => { element.style.width = `${width}%`; });
   return (
-    <HudFade watch={[loaded, reserve, reloading === null, items, mass]} hold={reloading !== null || emptyish} idleMs={4000} dimTo={0.6}>
+    <HudFade watch={() => [loaded(), reserve(), reloading, items(), mass()]} hold={() => reloading || emptyish()} idleMs={4000} dimTo={0.6}>
       <section className="dw-kit" aria-label="Hand and cache">
         <KitPanel material="hull" cut="chamfer" depth={14} tint="#1b2c33" {...plate("#04090b")} className="dw-rimmed" padding="12px 14px 10px 22px">
           <div className="dw-kit-hand">
             <span className="dw-tag">{short}</span>
-            <div className="dw-kit-ammo" data-low={emptyish ? "" : undefined}>
-              {reloading !== null ? <><b className="dw-kit-reload">LOAD</b><small>{reloading.toFixed(1)}s</small></>
-                : <><b>{loaded ?? "–"}</b><small>/{capacity ?? "–"}</small></>}
-              <span className="dw-kit-reserve"><GameIcon name="gun" size={14} color={TEAL} />{reserve}</span>
+            <div ref={ammo} className="dw-kit-ammo">
+              {reloading ? <><b className="dw-kit-reload">LOAD</b><LiveText as="small" get={reloadLeft} format={left => `${left.toFixed(1)}s`} /></>
+                : <><LiveText as="b" get={() => loaded() ?? "–"} /><small>/{capacity ?? "–"}</small></>}
+              <span className="dw-kit-reserve"><GameIcon name="gun" size={14} color={TEAL} /><LiveText get={reserve} /></span>
             </div>
           </div>
           <button type="button" className="dw-kit-load dw-hud-btn" aria-label="Open cache / Tab" onClick={onCache} data-full={full ? "" : undefined}>
             <GameIcon name="backpack" size={18} color={full ? AMBER : TEAL} />
-            <span className="dw-kit-bar" aria-hidden="true"><i style={{ width: `${Math.min(100, (mass / capacityWeight) * 100)}%` }} /></span>
-            <b>{mass}<small>/{capacityWeight}kg</small></b>
+            <span className="dw-kit-bar" aria-hidden="true"><i ref={bar} /></span>
+            <b><LiveText get={mass} /><small>/{capacityWeight}kg</small></b>
             <kbd>Tab</kbd>
           </button>
-          <span className="dw-kit-items">{items === 0 ? "Cache empty" : `${items} carried · lost if you die`}</span>
+          <LiveText className="dw-kit-items" get={items} format={count => count === 0 ? "Cache empty" : `${count} carried · lost if you die`} />
         </KitPanel>
       </section>
     </HudFade>
@@ -170,7 +228,7 @@ export function KitCounter({ weapon, loaded, capacity, reserve, reloading, items
 /** A small hull tab on the helmet edge that holds the dive. */
 export function HoldTab({ onPause, disabled }: { onPause: () => void; disabled: boolean }): ReactNode {
   return (
-    <HudFade watch={[disabled]} idleMs={3000} dimTo={0.6}>
+    <HudFade watch={() => disabled} idleMs={3000} dimTo={0.6}>
       <KitButton type="button" material="hull" cut="hex" depth={10} tint="#22363f" {...plate("#04090b")} padding="7px 26px" className="dw-hold dw-hud-btn dw-rimmed" aria-label="Pause / Esc" disabled={disabled} onClick={onPause}>
         <span className="dw-hold-face"><GameIcon name="pause" size={16} color={AMBER} /><kbd>Esc</kbd></span>
       </KitButton>
@@ -181,7 +239,7 @@ export function HoldTab({ onPause, disabled }: { onPause: () => void; disabled: 
 /** Marrow's radio: one line of advice on the lower glass, gone when it has been said. */
 export function CommsLine({ hint, error }: { hint: string; error: string | null }): ReactNode {
   return (
-    <HudFade watch={[hint, error]} hold={error !== null} idleMs={7000} dimTo={0.22}>
+    <HudFade watch={() => [hint, error]} hold={() => error !== null} idleMs={7000} dimTo={0.22}>
       <div className="dw-comms">
         <span className="dw-comms-tag"><i aria-hidden="true" />Marrow radio</span>
         <p role="status">{hint}</p>
@@ -255,11 +313,14 @@ export function ActionPlate({ label, onAct }: { label: string; onAct: () => void
   );
 }
 
-export function SearchBar({ remaining, total, label = "Searching" }: { remaining: number; total: number; label?: string }): ReactNode {
+/** A held search filling up; `done` is the fraction complete, read every frame. */
+export function SearchBar({ done, label = "Searching" }: { done: () => number; label?: string }): ReactNode {
+  const bar = useRef<HTMLElement>(null);
+  useFrameBind(bar, () => Math.round(Math.max(0, Math.min(1, done())) * 1000) / 10, (width, element) => { element.style.width = `${width}%`; });
   return (
     <div className="dw-search" role="status">
       <span className="dw-tag">{label} · hold still</span>
-      <span className="dw-search-bar" aria-hidden="true"><i style={{ width: `${Math.min(100, ((total - remaining) / total) * 100)}%` }} /></span>
+      <span className="dw-search-bar" aria-hidden="true"><i ref={bar} /></span>
       <small><kbd>E</kbd> cancel</small>
     </div>
   );

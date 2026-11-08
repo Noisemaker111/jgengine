@@ -169,12 +169,26 @@ function nextFrames(count: number): Promise<void> {
   });
 }
 
+/**
+ * What the gate is waiting on right now, on `data-jg-capture-stage`: a host that gives up first
+ * (its own timeout is shorter than the gate's worst case) reports this instead of only "timed out".
+ */
+function setCaptureStage(stage: string): void {
+  document.documentElement.dataset["jgCaptureStage"] = stage.slice(0, 300);
+}
+
 function viewActivity(): ViewActivity {
-  return {
+  const activity = {
     modelLoadStarts: modelLoadStarts(),
     viewLoading: document.querySelector("[data-shell-code-loading]") !== null,
     modelsIdle: modelLoadIdleMs() >= MODEL_IDLE_MS,
   };
+  setCaptureStage(
+    activity.viewLoading ? "settling: the loading screen is up"
+      : activity.modelsIdle ? `settling: models idle after ${activity.modelLoadStarts} load(s)`
+        : `settling: models streaming${pendingModelsNote()}`,
+  );
+  return activity;
 }
 
 async function settleView(): Promise<void> {
@@ -208,7 +222,9 @@ function addCaptureNote(note: string): void {
 }
 
 async function waitPlayFrames(settleMs: number): Promise<void> {
+  setCaptureStage("waiting for the canvas");
   await waitForSelector("canvas, [data-jg-frame-ready]", 25_000);
+  setCaptureStage("waiting for the capture run to apply");
   await waitForCaptureRun(25_000);
   await settleView();
   await delay(settleMs);

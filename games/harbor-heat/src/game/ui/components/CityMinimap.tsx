@@ -1,8 +1,10 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { headingToBearing, projectToMinimap, type MinimapView } from "@jgengine/core/map/minimap";
 import type { WorldBlip } from "@jgengine/core/worldModel/worldModel";
-import { useRef } from "react";
-import { useGameStoreLive } from "@jgengine/react/hooks";
+import { useLayoutEffect, useRef } from "react";
+import { useGameStore } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/react/provider";
+import { useFrameBind } from "@jgengine/core/ui/liveBind.view";
 import { MinimapChrome, type MinimapChromeHandle, type MinimapChromeMarker } from "@jgengine/core/map/map.view";
 import { cityOf } from "../../cityRuntime";
 import { safehouseStore } from "../../commands";
@@ -78,6 +80,7 @@ const setAt = (node: Element | null | undefined, x: string, y: string, at: { x: 
  * pin riding the rim, and the green street sign of the district you are standing in bolted beneath.
  */
 export function CityMinimap() {
+  const ctx = useGameContext();
   const room = useRoom();
   const compact = room !== "wide";
   const size = room === "wide" ? 168 : room === "short" ? 100 : 116;
@@ -91,6 +94,18 @@ export function CityMinimap() {
   const searchRing = useRef<SVGCircleElement>(null);
   const northPin = useRef<HTMLSpanElement>(null);
   const chrome = useRef<MinimapChromeHandle>(null);
+  const root = useRef<HTMLDivElement>(null);
+  // One read of the chart per store version, shared by the render and the per-frame writer.
+  const latest = useRef<{ version: number; map: ChartMap | null } | null>(null);
+  const read = (from: GameContext): ChartMap | null => {
+    const version = from.version();
+    let entry = latest.current;
+    if (entry === null || entry.version !== version) {
+      entry = { version, map: readMap(from) };
+      latest.current = entry;
+    }
+    return entry.map;
+  };
   // The chart pans and turns with the player every frame; that is written here, and the chart only
   // re-renders when what it draws changes.
   const place = (latest: ChartMap | null) => {
@@ -121,12 +136,15 @@ export function CityMinimap() {
     const rim = half + (compact ? 7 : 9);
     if (northPin.current !== null) northPin.current.style.transform = `translate(${(nx / reach) * rim}px, ${(ny / reach) * rim}px)`;
   };
-  const map = useGameStoreLive(readMap, sameChart, place);
+  const map = useGameStore(read, sameChart);
+  useFrameBind(root, () => ctx.version(), () => place(read(ctx)));
+  // A render that mounted new pins or rings places them before they paint.
+  useLayoutEffect(() => place(read(ctx)));
   if (map === null) return null;
   const view: MinimapView = { center: map.at, worldRadius: RADIUS, size, rotate: map.heading };
   const district = map.district;
   return (
-    <div className="hh-chart" style={{ width: size + (compact ? 18 : 24) }}>
+    <div ref={root} className="hh-chart" style={{ width: size + (compact ? 18 : 24) }}>
       <span className="hh-chart-bezel" style={{ width: size + (compact ? 18 : 24), height: size + (compact ? 18 : 24) }}>
         <svg className="hh-chart-map" width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label="City map">
           <defs>

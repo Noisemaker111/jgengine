@@ -43,7 +43,7 @@ export function AmmoPlate({ combat = false }: { combat?: boolean }) {
   const grenadeCount = Math.round(grenades?.current ?? 0);
   const buffs = activePerkBuffs(ctx, gun);
   return (
-    <HudFade watch={[gun.id, loaded, reloading, reserveCount, grenadeCount]} hold={combat || reloading || loaded === 0} dimTo={0.5} idleMs={5000}>
+    <HudFade watch={() => [gun.id, loaded, reloading, reserveCount, grenadeCount]} hold={() => combat || reloading || loaded === 0} dimTo={0.5} idleMs={5000}>
       <Plate material="hull" tint="#283135" cut="notch" depth={12} rim="#34444a" padding="0" className="ss-ammo" style={{ "--ss-rarity": rarity } as CSSProperties}>
         <span className="ss-ammo-label">
           <b>{gun.name}</b>
@@ -76,7 +76,7 @@ export function WeaponHotbar({ combat = false }: { combat?: boolean }) {
   const slots = useInventory("hotbar");
   const ids = [0, 1, 2, 3].map((index) => slots[index]?.itemId ?? "");
   return (
-    <HudFade watch={[selected, ...ids]} hold={combat} dimTo={0.4} idleMs={4000}>
+    <HudFade watch={() => [selected, ...ids]} hold={() => combat} dimTo={0.4} idleMs={4000}>
       <div className="ss-hotbar">
         {[0, 1, 2, 3].map((index) => {
           const stack = slots[index] ?? null;

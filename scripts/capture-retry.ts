@@ -97,6 +97,8 @@ export interface ReadinessTimeout {
   /** The URL the capture opened. */
   url: string;
   cpuBusy: number;
+  /** What the page's gate was still waiting on (`data-jg-capture-stage`): the canvas, the run, or models still streaming. */
+  stage?: string | null;
 }
 
 /**
@@ -110,7 +112,7 @@ export function readinessTimeoutLine(timeout: ReadinessTimeout): string {
     ? `the page never loaded: nothing answered at ${originOf(timeout.url)}, so the dev server is gone`
     : timeout.status === null
       ? "the page never started the capture handshake (no data-jg-capture), so it is still loading its code or is not a jgengine page"
-      : `the page was still "${timeout.status}"`;
+      : `the page was still "${timeout.status}"${timeout.stage == null ? "" : ` (${timeout.stage})`}`;
   const pc = timeout.cpuBusy >= BUSY_PC_PERCENT
     ? `; the PC's CPU was ${timeout.cpuBusy}% busy throughout, so rerun when it is quieter or pass a longer --timeout`
     : `; the PC's CPU was ${timeout.cpuBusy}% busy`;

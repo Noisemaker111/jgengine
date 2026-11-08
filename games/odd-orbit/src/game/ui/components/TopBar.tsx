@@ -51,7 +51,7 @@ export function FridgeMagnets({ compact = false }: { compact?: boolean }) {
   const short = household.credits < bill;
   const goal = dayGoal(household, objects).replace(/^Next:\s*/, "");
   return (
-    <HudFade watch={[Math.floor(household.credits), household.pantry, Math.round(bill), household.debt, goal]} hold={lowFood || short || household.debt > 0} dimTo={0.42} idleMs={6000} className="orbit-fridge-fade">
+    <HudFade watch={() => [Math.floor(household.credits), household.pantry, Math.round(bill), household.debt, goal]} hold={() => lowFood || short || household.debt > 0} dimTo={0.42} idleMs={6000} className="orbit-fridge-fade">
       <section className="orbit-fridge" aria-label="Household time and resources">
         <div className="orbit-magnets">
           <Enamel tone={short ? "coral" : "butter"} radius={16} padding="6px 12px 6px 8px" className="orbit-magnet" title="Credits">

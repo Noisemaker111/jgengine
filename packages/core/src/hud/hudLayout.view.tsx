@@ -53,6 +53,7 @@ import { useHudViewport } from "./hudViewport.view";
 import { hudFont, hudType } from "./hudTokens";
 import type { TextDirection } from "../i18n/textDirection";
 import { useTextDirection } from "../i18n/textDirection.view";
+import { subscribeFrameBind, useFrameBind } from "../ui/liveBind.view";
 
 /** Whether a HUD element opted into `showDuring` is visible in the current phase; `undefined` = always visible (default). */
 export function hudVisibleInPhase(showDuring: readonly GamePhase[] | undefined, phase: GamePhase): boolean {
@@ -1231,71 +1232,115 @@ export function HudPanel({
 /** Props for {@link HudFade}. */
 export interface HudFadeProps {
   /**
-   * Values the group shows. When any changes (health drops, cash comes in, ammo is spent) the group
-   * comes back to full strength, then fades again after `idleMs`.
+   * What the group shows, read every frame (`() => [health, ammo]`). When it changes (health drops,
+   * cash comes in, ammo is spent) the group comes back to full strength, then fades again after
+   * `idleMs`. Numbers count as changed past two decimals. Reading it per frame means the group needs
+   * no re-render to notice, so its values can be live leaves that never re-render it.
    */
-  watch: readonly unknown[];
+  watch: () => unknown;
   /** Quiet time before fading, in ms. Default 3500. */
   idleMs?: number;
   /** Opacity once faded; 0 hides it entirely. Default 0.18. */
   dimTo?: number;
-  /** Keep it at full strength (in combat, low health, aiming, a menu open). */
-  hold?: boolean;
+  /** Read every frame: keep it at full strength while true (in combat, low health, aiming, a menu open). */
+  hold?: () => boolean;
   children?: ReactNode;
   className?: string;
   style?: CSSProperties;
 }
 
+const rounded = (value: unknown): unknown => (typeof value === "number" ? Math.round(value * 100) / 100 : value);
+
+/** Whether two reads of a fade's `watch` show the same thing: equal values, element by element for arrays. @internal */
+export function sameWatched(previous: unknown, next: unknown): boolean {
+  if (Array.isArray(previous) && Array.isArray(next)) {
+    if (previous.length !== next.length) return false;
+    for (let index = 0; index < previous.length; index += 1) if (!sameWatched(previous[index], next[index])) return false;
+    return true;
+  }
+  if (typeof previous === "object" && previous !== null && typeof next === "object" && next !== null) return JSON.stringify(previous, (_, value: unknown) => rounded(value)) === JSON.stringify(next, (_, value: unknown) => rounded(value));
+  return Object.is(rounded(previous), rounded(next));
+}
+
 /**
- * Whether a HUD group should be at full strength: true for `idleMs` after any watched value
- * changes, and whenever `hold` is set.
+ * The per-frame awake test of {@link HudFade} and {@link useHudAwake}: true for `idleMs` after a read
+ * of `watch` differs from the last, and whenever `hold` says so. The first read starts awake.
+ * @internal
+ */
+export function createHudAwakeClock(idleMs: number, now: () => number = () => performance.now()): { awake(watched: unknown, holding: boolean): boolean } {
+  let seen: { value: unknown } | null = null;
+  let changedAt = 0;
+  return {
+    awake(watched, holding) {
+      const at = now();
+      if (seen === null || !sameWatched(seen.value, watched)) {
+        seen = { value: watched };
+        changedAt = at;
+      }
+      return holding || at - changedAt < idleMs;
+    },
+  };
+}
+
+const NEVER_HOLD = (): boolean => false;
+
+/**
+ * Whether a HUD group should be at full strength: true for `idleMs` after what `watch` reads
+ * changes, and whenever `hold` reads true. Both are read every frame; the component re-renders only
+ * when the answer flips.
  *
  * @capability hud-idle true while a HUD group's values are changing, false once they sit still
  */
-export function useHudAwake(watch: readonly unknown[], idleMs = 3500, hold = false): boolean {
+export function useHudAwake(watch: () => unknown, idleMs = 3500, hold: () => boolean = NEVER_HOLD): boolean {
   const [awake, setAwake] = useState(true);
-  const first = useRef(true);
-  const key = JSON.stringify(watch, (_, value: unknown) => (typeof value === "number" ? Math.round(value * 100) / 100 : value));
+  const read = useRef({ watch, hold });
+  read.current = { watch, hold };
   useEffect(() => {
-    if (hold) {
-      setAwake(true);
-      return;
-    }
-    if (!first.current) setAwake(true);
-    first.current = false;
-    const timer = setTimeout(() => setAwake(false), idleMs);
-    return () => clearTimeout(timer);
-  }, [key, idleMs, hold]);
-  return awake || hold;
+    const clock = createHudAwakeClock(idleMs);
+    const tick = () => setAwake(clock.awake(read.current.watch(), read.current.hold()));
+    tick();
+    return subscribeFrameBind(tick);
+  }, [idleMs]);
+  return awake;
 }
+
+const fadeTransition = (awake: boolean): string => `opacity calc(${awake ? 160 : 900}ms * var(--jg-motion-scale, 1)) ease`;
 
 /**
  * A HUD group that steps back when nothing is happening: it fades after a quiet spell and comes back
  * the moment a watched value changes, so the world fills the screen and the HUD speaks only when it
- * has news. Hovering it also brings it back.
+ * has news. Hovering it also brings it back. It reads `watch` and `hold` every frame and sets its own
+ * opacity, so it never re-renders, and neither do its children, for a value it watches.
  *
  * ```tsx
- * <HudFade watch={[health, armour]} hold={health < 30}>
- *   <KitMeter value={hp} max={100} />
+ * <HudFade watch={() => [vitals(ctx).health, vitals(ctx).armour]} hold={() => vitals(ctx).health < 30}>
+ *   <LiveText get={() => vitals(ctx).health} format={(hp) => String(Math.ceil(hp))} />
  * </HudFade>
  * ```
  *
  * @capability hud-fade HUD group that fades when idle and returns when its values change
  */
-export function HudFade({ watch, idleMs = 3500, dimTo = 0.18, hold = false, children, className, style }: HudFadeProps): ReactNode {
-  const [hovered, setHovered] = useState(false);
-  const awake = useHudAwake(watch, idleMs, hold || hovered);
+export function HudFade({ watch, idleMs = 3500, dimTo = 0.18, hold = NEVER_HOLD, children, className, style }: HudFadeProps): ReactNode {
+  const ref = useRef<HTMLDivElement>(null);
+  const hovered = useRef(false);
+  const clock = useMemo(() => createHudAwakeClock(idleMs), [idleMs]);
+  useFrameBind(ref, () => clock.awake(watch(), hovered.current || hold()), (awake, element) => {
+    element.dataset["jgHudFade"] = awake ? "awake" : "idle";
+    element.style.opacity = String(awake ? 1 : dimTo);
+    element.style.transition = fadeTransition(awake);
+  });
   return (
     <div
-      data-jg-hud-fade={awake ? "awake" : "idle"}
+      ref={ref}
+      data-jg-hud-fade="awake"
       className={className}
-      onPointerEnter={() => setHovered(true)}
-      onPointerLeave={() => setHovered(false)}
-      style={{
-        opacity: awake ? 1 : dimTo,
-        transition: `opacity calc(${awake ? 160 : 900}ms * var(--jg-motion-scale, 1)) ease`,
-        ...style,
+      onPointerEnter={() => {
+        hovered.current = true;
       }}
+      onPointerLeave={() => {
+        hovered.current = false;
+      }}
+      style={{ opacity: 1, transition: fadeTransition(true), ...style }}
     >
       {children}
     </div>

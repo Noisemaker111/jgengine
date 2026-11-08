@@ -33,7 +33,8 @@ export async function brokerStatusOrNull(timeoutMs = 1_500): Promise<BrokerStatu
 
 export async function stopBroker(): Promise<boolean> {
   if ((await brokerStatusOrNull()) === null) return false;
-  await localPostJson(`${brokerBase()}/v1/stop`, {}, 5_000).catch(() => null);
+  const by = `${process.argv.slice(1).join(" ")} in ${process.cwd()} (pid ${process.pid})`;
+  await localPostJson(`${brokerBase()}/v1/stop`, { by }, 5_000).catch(() => null);
   for (let attempt = 0; attempt < 40; attempt += 1) {
     if ((await brokerStatusOrNull(500)) === null) return true;
     await new Promise((resolve) => setTimeout(resolve, 250));

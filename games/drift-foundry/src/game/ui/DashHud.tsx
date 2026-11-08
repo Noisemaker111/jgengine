@@ -93,7 +93,7 @@ function Lamp({ on, tone, label }: { on: boolean; tone: "teal" | "red" | "yellow
 /** The pit-lane timing board: place, lap and the field in order. */
 export function TimingTower({ race, event, ghost }: { race: RaceSnapshot; event?: { label: string; next: { medal: string; text: string } | null }; ghost?: { best: number; aheadMetres: number | null } | null }): ReactNode {
   return (
-    <HudFade watch={[race.place, race.lap, race.standings.map((entry) => entry.id).join()]} idleMs={5000} dimTo={0.55} className="fd-tower-wrap">
+    <HudFade watch={() => [race.place, race.lap, race.standings.map((entry) => entry.id).join()]} idleMs={5000} dimTo={0.55} className="fd-tower-wrap">
       <section className="fd-tower" aria-label="Race position">
         <header className="fd-tower-head">
           <span className="fd-tower-pos"><small>P</small>{race.place}<em>/{race.total}</em></span>
@@ -124,7 +124,7 @@ export function TimingTower({ race, event, ghost }: { race: RaceSnapshot; event?
 export function GateSign({ eyebrow, call, sub, tone }: { eyebrow: string; call: string; sub: string; tone: "plow" | "jump" | "launch" | "stop" | "home" }): ReactNode {
   const tint = tone === "launch" ? TEAL : tone === "stop" ? "#e2452e" : YELLOW;
   return (
-    <HudFade watch={[call, eyebrow.replace(/\d+ ?m$/, "")]} hold={tone === "launch" || tone === "stop"} idleMs={6000} dimTo={0.7} className="fd-sign-wrap">
+    <HudFade watch={() => [call, eyebrow.replace(/\d+ ?m$/, "")]} hold={() => tone === "launch" || tone === "stop"} idleMs={6000} dimTo={0.7} className="fd-sign-wrap">
       <KitPanel material="enamel" cut="chamfer" depth={10} tint={tint} {...plate("#151515")} padding="0" className="fd-rimmed fd-sign" data-tone={tone}>
         <span className="fd-sign-band" aria-hidden="true" />
         <span className="fd-sign-body" role="status">
@@ -143,7 +143,7 @@ export function CrusherBar({ gap, surge }: { gap: number; surge: boolean }): Rea
   const danger = gap < 22;
   const closed = Math.round((1 - Math.min(60, Math.max(0, gap)) / 60) * 1000) / 10;
   return (
-    <HudFade watch={[Math.round(gap / 6), danger, surge]} hold={danger || surge} idleMs={4000} dimTo={0.5} className="fd-crusher-wrap">
+    <HudFade watch={() => [Math.round(gap / 6), danger, surge]} hold={() => danger || surge} idleMs={4000} dimTo={0.5} className="fd-crusher-wrap">
       <div className="fd-crusher" data-danger={danger ? "" : undefined} aria-label={`Compactor ${metres} metres behind`}>
         <span className="fd-crusher-label">COMPACTOR{surge ? <em> surge</em> : null}</span>
         <span className="fd-crusher-track" aria-hidden="true">
@@ -160,7 +160,7 @@ export function CrusherBar({ gap, surge }: { gap: number; surge: boolean }): Rea
 export function RouteRule({ z, cleared, next, atRisk, length = ROUTE_LENGTH, gates = ROUTE_GATES }: { z: number; cleared: ReadonlySet<string>; next: string; atRisk: number; length?: number; gates?: readonly RouteGate[] }): ReactNode {
   const along = Math.round((Math.min(length, Math.max(0, z)) / length) * 1000) / 10;
   return (
-    <HudFade watch={[cleared.size, next.replace(/\d+m/, ""), atRisk]} idleMs={5000} dimTo={0.55} className="fd-route-wrap">
+    <HudFade watch={() => [cleared.size, next.replace(/\d+m/, ""), atRisk]} idleMs={5000} dimTo={0.55} className="fd-route-wrap">
       <section className="fd-route" aria-label="Corridor">
         <header className="fd-route-head"><span><b>{gates.filter((gate) => cleared.has(gate.id)).length}</b>/{gates.length} barriers</span><span>{Math.floor(along)}%</span></header>
         <div className="fd-route-rule" aria-hidden="true">
@@ -181,7 +181,7 @@ export function RouteRule({ z, cleared, next, atRisk, length = ROUTE_LENGTH, gat
 export function BuildRack({ installed }: { installed: Readonly<Record<PartSlotId, DriftFoundryPartDef | null>> }): ReactNode {
   const count = PART_SLOTS.filter((slot) => installed[slot] !== null).length;
   return (
-    <HudFade watch={PART_SLOTS.map((slot) => installed[slot]?.id ?? null)} idleMs={5000} dimTo={0.5} className="fd-rack-wrap">
+    <HudFade watch={() => PART_SLOTS.map((slot) => installed[slot]?.id ?? null)} idleMs={5000} dimTo={0.5} className="fd-rack-wrap">
       <section className="fd-rack" aria-label={`Build ${count} of 4`}>
         <span className="fd-rack-label">BUILD {count}/4</span>
         <span className="fd-rack-sockets">

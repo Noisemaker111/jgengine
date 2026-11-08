@@ -85,7 +85,7 @@ export function Operations() {
     {/* An idle contract gives way to a live Overdrive run, as the mission log does. */}
     {!active && riftRun !== null && (riftRun.phase === "running" || riftRun.phase === "intermission") ? null : (
     <HudPanel id="dead-air" anchor="top-left" chip="dead air" interactive>
-      <HudFade watch={[relay.phase, relay.wave, relay.rewarded, relay.enemies.length, Math.round(distance / 20)]} hold={active} dimTo={0.55} idleMs={7000}>
+      <HudFade watch={() => [relay.phase, relay.wave, relay.rewarded, relay.enemies.length, Math.round(distance / 20)]} hold={() => active} dimTo={0.55} idleMs={7000}>
         <Plate material="hull" cut="notch" depth={10} rim="#22363c" padding="0" className={`ss-contract ${active ? "live" : ""}`}>
           <div className="ss-contract-head">
             <Stamp tone="phosphor">{relay.rewarded ? "Carrier restored" : "Salvage contract"}</Stamp>

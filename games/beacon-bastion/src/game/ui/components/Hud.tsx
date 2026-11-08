@@ -42,7 +42,7 @@ export function KeepSigns() {
   return (
     <div className="bb-signs">
       {unsaved ? <span role="status">Unsaved defense — save to a keep before leaving</span> : null}
-      <HudFade watch={[lives]} hold={danger} dimTo={0.45} idleMs={4000}>
+      <HudFade watch={() => [lives]} hold={() => danger} dimTo={0.45} idleMs={4000}>
         <div className="bb-beacon" data-danger={danger ? "" : undefined} aria-label={`Keep lives ${lives} of ${livesMax}`}>
           <Brazier size={46} strength={0.15 + ratio * 0.85} />
           <KitPanel material="stone" cut="chamfer" depth={8} padding="4px 12px 5px" className="bb-plinth">
@@ -51,7 +51,7 @@ export function KeepSigns() {
           </KitPanel>
         </div>
       </HudFade>
-      <HudFade watch={[gold, pay, lives]} dimTo={0.45} idleMs={4000}>
+      <HudFade watch={() => [gold, pay, lives]} dimTo={0.45} idleMs={4000}>
         <div className="bb-purse">
           <span className="bb-chains" aria-hidden />
           <KitPanel material="wood" cut="notch" depth={8} padding="5px 14px 6px 10px" className="bb-purse-sign" aria-label={`${gold} gold`}>
@@ -128,7 +128,7 @@ export function WaveBoard() {
   const bossText = bossLine(boss);
 
   return (
-    <HudFade watch={[shown, remaining, started, releasing]} hold={bossText !== null} dimTo={0.4} idleMs={5000}>
+    <HudFade watch={() => [shown, remaining, started, releasing]} hold={() => bossText !== null} dimTo={0.4} idleMs={5000}>
       <div className="bb-waveboard">
         <KitPanel material="wood" cut="banner" depth={12} padding="6px 22px 16px" className="bb-board">
           <span className="bb-board-label">Wave</span>

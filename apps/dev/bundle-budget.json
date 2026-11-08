@@ -1,4 +1,4 @@
 {
-  "engineKb": 1880,
-  "baseline": "2026-11-03 bun scripts/check-site-assets.ts --bundles on the runner built from fix/site-bundle-budgets: the JS and CSS every game downloads past the shell measured 1747.6 KiB, plus 5%. Raise it only for an engine feature every game needs, and say which here. 2026-11-06 agent/grass-species: the 128-entry grass species table (grassSpecies.ts) that every grass_field resolves its `species` id through took the runner measurement to 1846 KiB; raised to 1880 for that table plus headroom."
+  "engineKb": 1900,
+  "baseline": "2026-11-03 bun scripts/check-site-assets.ts --bundles on the runner built from fix/site-bundle-budgets: the JS and CSS every game downloads past the shell measured 1747.6 KiB, plus 5%. Raise it only for an engine feature every game needs, and say which here. 2026-11-06 agent/grass-species: the 128-entry grass species table (grassSpecies.ts) that every grass_field resolves its `species` id through took the runner measurement to 1846 KiB; raised to 1880 for that table plus headroom. 2026-11-08 agent/stutter-and-granular-ui: granular UI every game's HUD now uses (liveBind's shared frame tick, the scene swap, shallow store selection) and the frame breakdown's hitch log (frameBreakdown.ts loads with the shader warmup, so it ships) took it to 1883.9 KiB; raised to 1900."
 }

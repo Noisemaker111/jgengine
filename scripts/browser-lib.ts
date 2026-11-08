@@ -1060,7 +1060,8 @@ export function removeProfileDir(userDataDir: string): void {
  */
 function isBrowserProfile(dir: string): boolean {
   const names = readdirSync(dir);
-  return names.length === 0 || [PROFILE_OWNER_FILE, PROFILE_RUN_FILE, "Local State", "Default"].some((name) => names.includes(name));
+  // `EBWebView` is a WebView2 user data folder (perf desktop launches an app on its own one).
+  return names.length === 0 || [PROFILE_OWNER_FILE, PROFILE_RUN_FILE, "Local State", "Default", "EBWebView"].some((name) => names.includes(name));
 }
 
 function readOwnerPid(dir: string): number | undefined {
@@ -1874,18 +1875,19 @@ export async function captureViewportPng(
  */
 export async function waitCaptureReady(session: CdpSession, timeoutMs: number): Promise<void> {
   const wait = readinessWait(timeoutMs);
-  let last: { status: string | null; error: string | null; href: string | null } | undefined;
+  let last: { status: string | null; error: string | null; href: string | null; stage: string | null } | undefined;
   for (;;) {
-    last = (await session.evaluate<{ status: string | null; error: string | null; href: string | null }>(`({
+    last = (await session.evaluate<{ status: string | null; error: string | null; href: string | null; stage: string | null }>(`({
       status: document.documentElement.dataset.jgCapture ?? null,
       error: document.documentElement.dataset.jgCaptureError ?? null,
-      href: location.href
+      href: location.href,
+      stage: document.documentElement.dataset.jgCaptureStage ?? null
     })`)) ?? undefined;
     const status = last?.status;
     if (status === "ready") return;
     if (status === "error") throw new Error(`capture error: ${last?.error ?? "unknown"}`);
     if (typeof last?.href === "string" && last.href.startsWith("chrome-error://")) throw new Error(wait.failure(last.status, last.href, ""));
-    if (!wait.goOn(last?.status ?? null)) throw new Error(wait.failure(last?.status ?? null, last?.href ?? null, ""));
+    if (!wait.goOn(last?.status ?? null)) throw new Error(wait.failure(last?.status ?? null, last?.href ?? null, "", last?.stage));
     await new Promise((r) => setTimeout(r, 100));
   }
 }
@@ -1907,7 +1909,8 @@ function cpuSample(): CpuSample {
  */
 function readinessWait(timeoutMs: number): {
   goOn(status: string | null): boolean;
-  failure(status: string | null, href: string | null, url: string): string;
+  /** `stage` is what the page's gate was still waiting on (`data-jg-capture-stage`), when it said. */
+  failure(status: string | null, href: string | null, url: string, stage?: string | null): string;
 } {
   const startedAt = Date.now();
   const since = cpuSample();
@@ -1923,8 +1926,8 @@ function readinessWait(timeoutMs: number): {
       console.error(`capture: the PC's CPU is ${busy}% busy, so the page (${status === null ? "no capture status yet" : `still "${status}"`}) gets another ${Math.round(timeoutMs / 1000)}s`);
       return true;
     },
-    failure(status, href, url) {
-      return readinessTimeoutLine({ waitedMs: Date.now() - startedAt, status, href, url, cpuBusy: cpuBusyPercent(since, cpuSample()) });
+    failure(status, href, url, stage) {
+      return readinessTimeoutLine({ waitedMs: Date.now() - startedAt, status, href, url, cpuBusy: cpuBusyPercent(since, cpuSample()), stage: stage ?? null });
     },
   };
 }
@@ -2222,6 +2225,7 @@ const CAPTURE_READINESS_EXPR = `(() => {
   return {
     status: document.documentElement.dataset.jgCapture ?? null,
     error: document.documentElement.dataset.jgCaptureError ?? null,
+    stage: document.documentElement.dataset.jgCaptureStage ?? null,
     sizedCanvas: canvas !== null && canvas.clientWidth > 10 && canvas.clientHeight > 10 && canvas.width > 10 && canvas.height > 10 &&
       document.querySelector("[data-shell-code-loading]") === null
   };
@@ -2237,7 +2241,7 @@ export async function navigateCapturePage(
   let handshakeSeen = false;
   let pageFailure: string | undefined;
   let frameId: string | undefined;
-  let signalled: { status: string | null; error: string | null; sizedCanvas?: boolean } | undefined;
+  let signalled: { status: string | null; error: string | null; stage?: string | null; sizedCanvas?: boolean } | undefined;
   const requestFrames = new Map<string, string>();
   const pendingDocumentFailures: Array<{ frameId?: string | undefined; message: string }> = [];
   const offSignal = session.on("Runtime.bindingCalled", (params) => {
@@ -2284,6 +2288,7 @@ export async function navigateCapturePage(
 
     const wait = readinessWait(timeoutMs);
     let lastStatus: string | null = null;
+    let stage: string | null = null;
     // The pushed signal is the fast path; the evaluate below is the backstop, polled slowly
     // so it does not itself compete with the page for the main thread.
     let nextPollAt = Date.now();
@@ -2293,8 +2298,9 @@ export async function navigateCapturePage(
         (signalled?.status === "ready" || signalled?.status === "error" ? signalled : undefined) ??
         (Date.now() >= nextPollAt
           ? ((nextPollAt = Date.now() + 500),
-            await session.evaluate<{ status: string | null; error: string | null; sizedCanvas?: boolean }>(CAPTURE_READINESS_EXPR))
+            await session.evaluate<{ status: string | null; error: string | null; stage?: string | null; sizedCanvas?: boolean }>(CAPTURE_READINESS_EXPR))
           : undefined);
+      stage = remote?.stage ?? stage;
       if (remote?.status === "ready") return;
       if (remote?.status === "error") throw new Error(`capture error: ${remote.error ?? "unknown"}`);
       if (remote?.status != null) {
@@ -2329,7 +2335,7 @@ export async function navigateCapturePage(
     }
     if (pageFailure !== undefined) throw new Error(pageFailure);
     const href: unknown = await session.evaluate<unknown>("location.href").catch(() => null);
-    throw new Error(wait.failure(lastStatus, typeof href === "string" ? href : null, url));
+    throw new Error(wait.failure(lastStatus, typeof href === "string" ? href : null, url, stage));
   } finally {
     offSignal();
     offException();

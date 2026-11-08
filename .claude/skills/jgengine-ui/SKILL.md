@@ -43,7 +43,7 @@ Existing React games keep their entity store and use the focused
 - Layout and skin remain caller-controlled; shared primitives own reusable behavior, not product look.
 - Use `ScrollRail` for horizontal controls that can overflow: visible navigation and focus reveal keep every item reachable while the caller owns markup and selection. Keep item widths from shrinking when labels must stay readable.
 - SSR-visible output is hydration-stable; round computed SVG values at the boundary.
-- A HUD that follows the player every frame (a minimap, a compass, a tracker) reads through `useGameStoreLive(select, sameShape, apply)` from `@jgengine/react/hooks`: it re-renders only when `sameShape` says what it draws changed, and `apply` writes the moving values through refs. `useGameStore` with a selector that returns a new object re-renders and allocates on every tick. `MinimapChrome`'s `handle` places its markers the same way.
+- **A changing value updates only its own leaf, never the whole component.** `useGameStore` / `useStore` select only what a component shows (equal arrays and plain objects count as no change), so a panel re-renders when its structure changes, not when a number in it does. A value that moves every frame or tick (a timer, a meter, a position, a minimap's pan) never goes through React state: bind it to its own node with `LiveText` or `useFrameBind(ref, get, apply)` from `@jgengine/core/ui/liveBind.view`. `HudFade`'s `watch`/`hold` and `useHudAwake` take getters for the same reason. In a dev build a component whose selection changes about every frame warns in the console. `MinimapChrome`'s `handle` places markers the same way.
 
 ## Runtime health
 

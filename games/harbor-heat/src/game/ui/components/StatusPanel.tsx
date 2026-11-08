@@ -29,7 +29,7 @@ export function StatusPanel() {
   const max = health?.max ?? 100;
   const low = hp < max * 0.3;
   return (
-    <HudFade watch={[cash, cred, Math.round(hp), Math.round(armor)]} idleMs={6000} dimTo={0.72} hold={low} className="hh-wallet">
+    <HudFade watch={() => [cash, cred, Math.round(hp), Math.round(armor)]} idleMs={6000} dimTo={0.72} hold={() => low} className="hh-wallet">
       <span className="hh-wallet-top">
         <b className="hh-cash">{money(cash)}</b>
         <span className="hh-cred">Cred {cred}</span>

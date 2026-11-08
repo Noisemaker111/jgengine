@@ -4563,16 +4563,6 @@
       "intent": "a whole game as one declaration the engine runs, with named code hooks for the rest"
     },
     {
-      "id": "game-store-live",
-      "packages": [
-        "@jgengine/react"
-      ],
-      "module": "@jgengine/react/hooks",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "re-render a HUD component only when its selection's shape changes and write per-frame values through refs"
-    },
-    {
       "id": "game-suite-run",
       "packages": [
         "@jgengine/core"
@@ -6512,6 +6502,26 @@
       "gameFacing": false,
       "probe": null,
       "intent": "swap a road source's asphalt, sidewalk or kerb scan at runtime (wet at night, snow in winter)"
+    },
+    {
+      "id": "live-text",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/ui/liveBind.view",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "a HUD number or label that updates its own text node every tick without re-rendering its component"
+    },
+    {
+      "id": "live-value",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/ui/liveBind.view",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "write a per-frame HUD value (text, bar, dial, colour) straight to its DOM node, never through React state"
     },
     {
       "id": "loading-screen",
@@ -9931,6 +9941,26 @@
       "gameFacing": false,
       "probe": null,
       "intent": "classify an editor-visible object as expose/bake/reject with a diagnostic"
+    },
+    {
+      "id": "scene-swap",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/render/sceneSwap.draw",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "change place without a frozen frame: build and compile the new place in the background behind a travel card"
+    },
+    {
+      "id": "scene-swap-card",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/ui/sceneSwap.view",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "know when to show a travel card while the next place builds behind it"
     },
     {
       "id": "scoreboard",

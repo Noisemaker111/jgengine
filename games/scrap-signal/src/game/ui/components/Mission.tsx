@@ -44,7 +44,7 @@ export function MissionTracker() {
   const finished = primary !== undefined && primary.objectives.every((objective) => objective.progress >= objective.count);
   const returnTo = primaryDef === undefined || primaryDef.turnIn === "radio" ? null : NPCS[primaryDef.turnIn].name;
   return (
-    <HudFade watch={progress} dimTo={0.5} idleMs={9000}>
+    <HudFade watch={() => progress} dimTo={0.5} idleMs={9000}>
       <div className="ss-log">
         <div className="ss-log-head"><Stamp tone="amber">Mission log</Stamp></div>
         <MastCard />
@@ -91,7 +91,7 @@ export function CashPlate() {
 /** A small carbon counter with an odometer window, shared by the cash and cores readouts. */
 export function Counter({ icon, value, color, label }: { icon: GameIconName; value: number; color: string; label: string }) {
   return (
-    <HudFade watch={[value]} dimTo={0.5} idleMs={6000}>
+    <HudFade watch={() => [value]} dimTo={0.5} idleMs={6000}>
       <Plate material="carbon" cut="notch" depth={7} rim="#4a3b29" padding="0" className="ss-counter" title={label} aria-label={`${label} ${value}`}>
         <span className="ss-counter-icon" style={{ color }}><GameIcon name={icon} size={15} /></span>
         <span className="ss-counter-digits">{String(value).padStart(4, "0")}</span>
