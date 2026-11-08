@@ -7,7 +7,6 @@ import type { BiomeBand, SkyEnvironmentDescriptor } from "@jgengine/core/world/f
 import { createBiomeFogSampler, createBiomeSkySampler } from "@jgengine/core/terrain/terrain";
 import { resolveVolumetricClouds } from "@jgengine/core/sky/volumetricClouds";
 
-import { warnOnce } from "@jgengine/core/devtools/warnOnce";
 
 import { DisplayColorWriter } from "@jgengine/core/render/displayColor.draw";
 import type { DaylightModulation } from "@jgengine/core/lighting/SceneLighting.draw";
@@ -201,12 +200,23 @@ export function setSkyFogColor(fog: THREE.Fog, color: THREE.ColorRepresentation)
 
 const fogDisplayColors = new WeakMap<THREE.Fog, THREE.Color>();
 
+/**
+ * The dome draws after the opaque scene (default order 0), so the buildings and terrain that cover
+ * most of the screen have already written depth and the dome shades only the open sky; drawn first,
+ * it shaded every pixel and the scene painted over most of them (0.12-0.18 ms of GPU a frame in
+ * Harbor Heat and Fernwild, about 0.03 ms after). It writes no depth, so everything drawn later still
+ * lands as before; overlays sit far above it (997-999). An opaque mesh that writes no depth and must
+ * show over the sky needs an order above this one.
+ * @internal
+ */
+export const SKY_RENDER_ORDER = 0.5;
+
 /** Dome radius when the sky leaves it unset. */
 const DEFAULT_SKY_RADIUS = 260;
 
 /**
- * The dome's radius: the authored one, else the default pulled inside a short camera far plane so an
- * interior or close-camera game that never asked for a sky still gets one instead of a black clip.
+ * The dome's radius: the authored one, else the default pulled inside a short camera far plane, which
+ * shapes the gradient the way an interior or close-camera game has always shown it.
  * @internal
  */
 export function skyDomeRadius(authored: number | undefined, far: number | undefined): number {
@@ -261,6 +271,9 @@ export function SkyDome({
           vec4 worldPosition = modelMatrix * vec4(position, 1.0);
           vWorldPosition = worldPosition.xyz;
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          // On the far plane: drawn after the opaque scene (SKY_RENDER_ORDER), the depth test then
+          // shades only the pixels nothing covers, and no radius ever clips.
+          gl_Position.z = gl_Position.w;
         }
       `,
       fragmentShader: `
@@ -355,13 +368,6 @@ export function SkyDome({
     };
   }, [material, materialRef]);
   const writers = useMemo(() => ({ top: new DisplayColorWriter(), bottom: new DisplayColorWriter() }), []);
-  useEffect(() => {
-    if (authoredRadius === undefined || typeof far !== "number" || radius < far) return;
-    warnOnce(
-      "sky-dome-radius",
-      `[jgengine] sky radius ${radius} is at or beyond the camera far plane ${far}; the dome depth-clips to black. Lower sky.radius or raise camera.frustum.far.`,
-    );
-  }, [authoredRadius, far, radius]);
   useFrame((state) => {
     const display = material.userData as SkyDomeDisplay;
     writers.top.write(material.uniforms["topColor"]!.value as THREE.Color, display.top, state.gl);
@@ -372,7 +378,7 @@ export function SkyDome({
     mesh.position.z = state.camera.position.z;
   });
   return (
-    <mesh ref={meshRef} material={material} renderOrder={-1} frustumCulled={false}>
+    <mesh ref={meshRef} material={material} renderOrder={SKY_RENDER_ORDER} frustumCulled={false}>
       <sphereGeometry args={[radius, 32, 16]} />
     </mesh>
   );
