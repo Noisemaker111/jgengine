@@ -138,12 +138,16 @@ export interface GrassTufts {
   extent: number;
 }
 
-/** Patch-local XZ rectangle a node covers, clipped to the patch: `[x0, z0, x1, z1]`. */
-export function grassNodeRect(bake: ResolvedGrassBake, level: number, ix: number, iz: number): [number, number, number, number] {
+/** Patch-local XZ rectangle a node covers, clipped to the patch: `[x0, z0, x1, z1]`, written into `out` when given. */
+export function grassNodeRect(bake: ResolvedGrassBake, level: number, ix: number, iz: number, out: [number, number, number, number] = [0, 0, 0, 0]): [number, number, number, number] {
   const span = GRASS_CELL_SIZE * 2 ** level;
   const x0 = -bake.width / 2 + ix * span;
   const z0 = -bake.depth / 2 + iz * span;
-  return [x0, z0, Math.min(bake.width / 2, x0 + span), Math.min(bake.depth / 2, z0 + span)];
+  out[0] = x0;
+  out[1] = z0;
+  out[2] = Math.min(bake.width / 2, x0 + span);
+  out[3] = Math.min(bake.depth / 2, z0 + span);
+  return out;
 }
 
 function smoothstep(a: number, b: number, x: number): number {
@@ -201,6 +205,8 @@ export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: 
   const tuftReach = grassTuftReach(look, bake.bladesPerM2);
   let maxReach = 0;
   let n = 0;
+  /** Where each cell's tufts end: each cell grows its tufts in rising rank, so each is a sorted run. */
+  const runEnds: number[] = [];
   let partial: GrassTufts | undefined;
   for (const cell of cells) {
     const random = seededRng(`${bake.seed}|${cell.cx}|${cell.cz}`);
@@ -290,44 +296,62 @@ export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: 
       }
       if (!immediate) yield "tuft";
     }
+    runEnds.push(n);
   }
   const tufts = { count: total, offsets, shape, vary, tone, ranks: new Float32Array(total), roots, extent: maxReach + tuftReach };
   if (cells.length <= 1) {
-    for (let i = 0; i < total; i += 1) { tufts.ranks[i] = vary[i * 4 + 3]!; if (!immediate) yield "work"; }
+    for (let i = 0; i < total; i += 1) { tufts.ranks[i] = vary[i * 4 + 3]!; if (!immediate && i % SORT_CHUNK === SORT_CHUNK - 1) yield "work"; }
     return tufts;
   }
-  return yield* sortByRank(tufts, immediate);
+  return yield* sortByRank(tufts, runEnds, immediate);
 }
 
-function* sortByRank(tufts: GrassTufts, immediate: boolean): Generator<"work", GrassTufts> {
-  let order = new Array<number>(tufts.count);
-  let scratch = new Array<number>(tufts.count);
-  for (let i = 0; i < order.length; i += 1) { order[i] = i; if (!immediate) yield "work"; }
-  if (immediate) order.sort((a, b) => tufts.vary[a * 4 + 3]! - tufts.vary[b * 4 + 3]!);
-  for (let width = 1; !immediate && width < order.length; width *= 2) {
-    for (let start = 0; start < order.length; start += width * 2) {
-      const middle = Math.min(start + width, order.length), end = Math.min(start + width * 2, order.length);
+/** Sort items moved between yields: one yield per item cost more than the moves themselves. */
+const SORT_CHUNK = 64;
+
+/**
+ * Tufts in rank order, stable. Each cell's tufts were grown in rising rank, so `runEnds` (where each
+ * cell's run ends) marks sorted runs and only the runs are merged: the same order a stable sort of
+ * every tuft gives, in a few passes rather than one per doubling from single tufts.
+ */
+function* sortByRank(tufts: GrassTufts, runEnds: readonly number[], immediate: boolean): Generator<"work", GrassTufts> {
+  const count = tufts.count;
+  const rank = tufts.vary;
+  let order = new Int32Array(count);
+  let scratch = new Int32Array(count);
+  for (let i = 0; i < count; i += 1) order[i] = i;
+  // Run boundaries, merged pairwise each pass: [0, end0, end1, ...].
+  let bounds = [0, ...runEnds];
+  let moved = 0;
+  while (bounds.length > 2) {
+    const next = [0];
+    for (let r = 0; r + 1 < bounds.length; r += 2) {
+      const start = bounds[r]!, middle = bounds[r + 1]!, end = bounds[r + 2] ?? middle;
       let left = start, right = middle;
       for (let to = start; to < end; to += 1) {
-        if (right >= end || (left < middle && tufts.vary[order[left]! * 4 + 3]! <= tufts.vary[order[right]! * 4 + 3]!)) scratch[to] = order[left++]!;
+        if (right >= end || (left < middle && rank[order[left]! * 4 + 3]! <= rank[order[right]! * 4 + 3]!)) scratch[to] = order[left++]!;
         else scratch[to] = order[right++]!;
-        yield "work";
+        if (!immediate && ++moved === SORT_CHUNK) { moved = 0; yield "work"; }
       }
+      next.push(end);
     }
     [order, scratch] = [scratch, order];
+    bounds = next;
   }
   const offsets = new Float32Array(tufts.offsets.length);
   const shape = new Float32Array(tufts.shape.length);
   const vary = new Float32Array(tufts.vary.length);
   const tone = new Float32Array(tufts.tone.length);
-  for (let to = 0; to < order.length; to += 1) {
+  const fromOffsets = tufts.offsets, fromShape = tufts.shape, fromTone = tufts.tone;
+  for (let to = 0; to < count; to += 1) {
     const from = order[to]!;
-    offsets.set(tufts.offsets.subarray(from * 3, from * 3 + 3), to * 3);
-    shape.set(tufts.shape.subarray(from * 4, from * 4 + 4), to * 4);
-    vary.set(tufts.vary.subarray(from * 4, from * 4 + 4), to * 4);
-    tone[to] = tufts.tone[from]!;
-    tufts.ranks[to] = tufts.vary[from * 4 + 3]!;
-    if (!immediate) yield "work";
+    const o = from * 3, t3 = to * 3, f = from * 4, t4 = to * 4;
+    offsets[t3] = fromOffsets[o]!; offsets[t3 + 1] = fromOffsets[o + 1]!; offsets[t3 + 2] = fromOffsets[o + 2]!;
+    shape[t4] = fromShape[f]!; shape[t4 + 1] = fromShape[f + 1]!; shape[t4 + 2] = fromShape[f + 2]!; shape[t4 + 3] = fromShape[f + 3]!;
+    vary[t4] = rank[f]!; vary[t4 + 1] = rank[f + 1]!; vary[t4 + 2] = rank[f + 2]!; vary[t4 + 3] = rank[f + 3]!;
+    tone[to] = fromTone[from]!;
+    tufts.ranks[to] = rank[f + 3]!;
+    if (!immediate && ++moved === SORT_CHUNK) { moved = 0; yield "work"; }
   }
   return { ...tufts, offsets, shape, vary, tone };
 }

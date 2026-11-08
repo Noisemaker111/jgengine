@@ -52,6 +52,14 @@ interface Leaf {
 }
 interface DesiredNode { level: number; ix: number; iz: number; share: number; distance: number }
 
+/**
+ * One number per quadtree node: under 64 levels and 2^23 columns and rows (a patch 8 million cells
+ * across), so the key stays under 2^52 and exact.
+ */
+function nodeKey(level: number, ix: number, iz: number): number {
+  return (level * 8388608 + ix) * 8388608 + iz;
+}
+
 /** The tuft template's per-vertex attributes, which every leaf shares. */
 const TEMPLATE_ATTRIBUTES = ["position", "grassUv", "bladeOffset", "bladeVary", "bladeBend"] as const;
 
@@ -120,7 +128,9 @@ export class GrassStream {
    */
   private readonly templateGeometry: THREE.BufferGeometry;
   private readonly cache = new Map<string, Leaf>();
-  private readonly heights = new Map<string, [number, number]>();
+  /** Each node's ground height range, by {@link nodeKey}. */
+  private readonly heights = new Map<number, [number, number]>();
+  private readonly rect: [number, number, number, number] = [0, 0, 0, 0];
   private drawn: Leaf[] = [];
   private frame = 0;
   private pending = 0;
@@ -264,7 +274,7 @@ export class GrassStream {
     const iz = Math.max(0, Math.min(this.bake.rows - 1, Math.floor((local.z + this.bake.depth / 2) / GRASS_CELL_SIZE)));
     const key = `0:${ix}:${iz}`;
     const observe = frameWorkObserver();
-    if (!this.heights.has(key)) observe?.("grass selection height queries", 9);
+    if (observe != null && !this.heights.has(nodeKey(0, ix, iz))) observe("grass selection height queries", 9);
     observe?.("grass nodes visited", 1);
     const box = this.nodeWorldBox(0, ix, iz);
     const distance = box.distanceToPoint(this.cameraPosition);
@@ -319,30 +329,32 @@ export class GrassStream {
     const desired: DesiredNode[] = [];
     this.matrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
     this.frustum.setFromProjectionMatrix(this.matrix, camera.coordinateSystem);
-    const visit = function* (this: GrassStream, level: number, ix: number, iz: number): Generator<"selection", void> {
+    // Depth first, children in z-then-x order, from an explicit stack: the same nodes, yields and
+    // `desired` order a recursive walk gives, but each yield leaves one generator, not one per level.
+    const stack: number[] = [this.bake.rootLevel, 0, 0];
+    while (stack.length > 0) {
+      const iz = stack.pop()!, ix = stack.pop()!, level = stack.pop()!;
       const observe = frameWorkObserver();
-      if (!this.heights.has(`${level}:${ix}:${iz}`)) observe?.("grass selection height queries", 9);
+      if (observe != null && !this.heights.has(nodeKey(level, ix, iz))) observe("grass selection height queries", 9);
       observe?.("grass nodes visited", 1);
       const box = this.nodeWorldBox(level, ix, iz);
       yield "selection";
-      if (!lod.perspective && !this.frustum.intersectsBox(box)) return;
+      if (!lod.perspective && !this.frustum.intersectsBox(box)) continue;
       const distance = box.distanceToPoint(this.cameraPosition);
-      if (lod.perspective && distance > lod.reach) return;
+      if (lod.perspective && distance > lod.reach) continue;
       const size = Math.max(box.max.x - box.min.x, box.max.z - box.min.z);
       const split = lod.perspective ? distance < SPLIT * size : size > GRASS_CELL_SIZE * 4 * SPLIT;
       if (level > 0 && split) {
         const span = 2 ** (level - 1);
-        for (let dz = 0; dz < 2; dz += 1) {
-          for (let dx = 0; dx < 2; dx += 1) {
-            const cx = ix * 2 + dx, cz = iz * 2 + dz;
-            if (cx * span < this.bake.columns && cz * span < this.bake.rows) yield* visit.call(this, level - 1, cx, cz);
-          }
+        // Pushed last child first, so the first child is visited next.
+        for (let child = 3; child >= 0; child -= 1) {
+          const cx = ix * 2 + (child & 1), cz = iz * 2 + (child >> 1);
+          if (cx * span < this.bake.columns && cz * span < this.bake.rows) stack.push(level - 1, cx, cz);
         }
-        return;
+        continue;
       }
       desired.push({ level, ix, iz, share: shareAt(lod, distance), distance });
-    };
-    yield* visit.call(this, this.bake.rootLevel, 0, 0);
+    }
     // Merge incrementally so a large visible selection cannot monopolize a frame.
     let ordered = desired;
     let scratch = new Array<DesiredNode>(desired.length);
@@ -502,8 +514,9 @@ export class GrassStream {
   }
 
   private nodeWorldBox(level: number, ix: number, iz: number): THREE.Box3 {
-    const [x0, z0, x1, z1] = grassNodeRect(this.bake, level, ix, iz);
-    const key = `${level}:${ix}:${iz}`;
+    const rect = grassNodeRect(this.bake, level, ix, iz, this.rect);
+    const x0 = rect[0], z0 = rect[1], x1 = rect[2], z1 = rect[3];
+    const key = nodeKey(level, ix, iz);
     let range = this.heights.get(key);
     if (range === undefined) {
       let lo = Infinity, hi = -Infinity;
