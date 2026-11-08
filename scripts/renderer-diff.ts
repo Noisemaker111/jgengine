@@ -227,7 +227,8 @@ async function main(): Promise<void> {
     try {
       const server = await ensureDevServer(repoRoot);
       // Uncapped so the timed windows measure each backend's cost rather than the display's refresh.
-      await withBrowserSession({ keep: false, timeoutMs: 600_000, ...(args.seconds > 0 ? { frameClock: "uncapped" as const } : {}) }, async ({ debugPort }) => {
+      // A failed capture comes back as a nonzero code (already reported), not a throw.
+      const code = await withBrowserSession({ keep: false, timeoutMs: 600_000, ...(args.seconds > 0 ? { frameClock: "uncapped" as const } : {}) }, async ({ debugPort }) => {
         const session = await openPageSession(debugPort);
         await session.send("Page.enable", {});
         await session.send("Page.addScriptToEvaluateOnNewDocument", { source: RENDERER_HOOK });
@@ -239,6 +240,10 @@ async function main(): Promise<void> {
           await session.close();
         }
       });
+      if (code !== 0) {
+        console.error(`renderer-diff: ${game} could not be compared (the browser session exited ${code})`);
+        failed.push(game);
+      }
     } catch (error) {
       console.error(`renderer-diff: ${game} could not be compared: ${error instanceof Error ? error.message : String(error)}`);
       failed.push(game);
