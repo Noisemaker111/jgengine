@@ -48,7 +48,7 @@ describe("tooling reaches GitHub only through gh", () => {
       scan({
         "scripts/land.ts": 'const listed = io.gh(["pr", "list", "--head", branch]);\n',
         "scripts/ci-status.ts": 'const view = run("gh", ["api", `repos/${repo}/pulls/1`]);\nconst listed = ghRun(io, [\n  "pr",\n  "list",\n]);\n',
-        "scripts/land-queue.ts": "const listed = io.github.listPulls({ base, state: \"open\" });\n",
+        "scripts/land-batch.ts": "const listed = io.github.listPulls({ base, state: \"open\" });\n",
         "scripts/lane-close.ts": 'io.sh(["run", "preflight"], true);\nio.sh(["gh", "run", "rerun", id], false);\n',
         "scripts/release.ts": 'gh(["pr", "list"]);\n',
       }),

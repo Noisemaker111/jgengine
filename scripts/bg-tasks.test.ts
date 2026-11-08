@@ -75,7 +75,7 @@ test("starting a task returns an id at once and hands the supervisor only its ta
   expect(existsSync(join(taskDir(dir, id), "out.log"))).toBe(false);
 });
 
-// lane:close's land-queue runner died with an empty log when the `bun run` that started it exited
+// lane:close's background runner died with an empty log when the `bun run` that started it exited
 // (2026-11-03): a detached child was still in its caller's process tree. Ending the caller's whole
 // tree must leave the task running.
 test.skipIf(process.platform !== "win32")("a task outlives its caller's whole process tree", async () => {
@@ -115,6 +115,17 @@ test("a supervisor started outside the caller runs the command with the caller's
   } finally {
     delete process.env["BG_TEST_MARK"];
   }
+});
+
+const GIT_BASH = "C:/Program Files/Git/bin/bash.exe";
+
+test.skipIf(process.platform !== "win32" || !existsSync(GIT_BASH))("a Git Bash job's output reaches the log (MSYS writes nothing to an append-only handle)", async () => {
+  const dir = checkout();
+  const id = startTask({ command: `"${GIT_BASH}" -c "echo from-msys; echo to-stderr >&2; exit 4"`, checkout: dir });
+  let printed = "";
+  expect(await awaitTask({ id, checkout: dir, write: (text) => (printed += text), err: () => {}, timeoutMs: 30_000 })).toBe(4);
+  expect(printed).toContain("from-msys");
+  expect(printed).toContain("to-stderr");
 });
 
 test("bun's argument separator is not part of the command", () => {
@@ -184,7 +195,7 @@ test("a waiting await marks itself as the task's awaiter, and clears the mark wh
   const dir = checkout();
   const task = taskDir(dir, "20261023-204501-abc");
   mkdirSync(task, { recursive: true });
-  writeFileSync(join(task, "cmd.txt"), "bun scripts/land-queue.ts --pr 1\n");
+  writeFileSync(join(task, "cmd.txt"), "bun scripts/lane-close.ts\n");
 
   const seen: { awaiter: number | null } = { awaiter: null };
   const code = await awaitTask({
@@ -244,7 +255,7 @@ test("a wait that runs out says the task is still running, never that it was los
   const dir = checkout();
   const task = taskDir(dir, "20261023-204501-abc");
   mkdirSync(task, { recursive: true });
-  writeFileSync(join(task, "cmd.txt"), "bun scripts/land-queue.ts --pr 1\n");
+  writeFileSync(join(task, "cmd.txt"), "bun scripts/lane-close.ts\n");
   writeFileSync(join(task, "out.log"), "");
   // A pid nothing holds, so cleanup does not wait on it; `alive` says the runner lives.
   writeFileSync(join(task, "runner"), "999999\n");

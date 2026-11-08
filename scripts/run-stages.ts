@@ -201,7 +201,7 @@ export interface GenTarget {
   readonly after?: readonly string[];
   /**
    * The committed files this generator owns outright. A rebase conflict in one is no conflict: land
-   * and the landing queue take the base's copy and rerun `bun run gen` (`scripts/generated-rebase.ts`).
+   * and lane:close take the base's copy and rerun `bun run gen` (`scripts/generated-rebase.ts`).
    * A file people also edit by hand (a tsconfig, a source file's `@skill` tag) is not listed.
    */
   readonly outputs?: readonly RegExp[];

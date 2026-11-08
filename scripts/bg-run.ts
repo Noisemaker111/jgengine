@@ -14,7 +14,7 @@
 // its output to `.scratch/bg/<id>/out.log` and its exit code to `exit`, then exits itself.
 //
 // On Windows a detached child is still in its caller's process tree and job, and whatever ends the
-// caller's tree ends it too: `lane:close`'s land-queue runner died that way with an empty log, at
+// caller's tree ends it too: `lane:close`'s background runner died that way with an empty log, at
 // random, when the `bun run` that started it exited (2026-11-03). So on Windows the supervisor is
 // created by the WMI service instead (scripts/outsideCaller.ts): it has no parent here and no job to share.
 import { spawn } from "node:child_process";
@@ -55,7 +55,10 @@ export function startTask(options: StartOptions): string {
 
 /** The detached side: run the command, keep its output and its exit code, and outlive the caller. */
 export function supervise(dir: string): void {
-  const fd = openSync(join(dir, "out.log"), "a");
+  // Opened for writing, not append-only: MSYS programs (Git Bash, its grep and echo) write nothing,
+  // not even their errors, to a handle opened with append access alone, so a bash job's log came
+  // back empty. Nothing writes the log before this point.
+  const fd = openSync(join(dir, "out.log"), "w");
   writeFileSync(join(dir, "runner"), `${process.pid}\n`);
   const command = readFileSync(join(dir, "cmd.txt"), "utf8").trim();
   const [file, args] =

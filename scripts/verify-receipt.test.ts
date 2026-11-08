@@ -1,8 +1,9 @@
-import { existsSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "bun:test";
-import { createVerifyReceipt } from "./verify-receipt";
+import { createVerifyReceipt, passingReceipt, type ReuseKey } from "./verify-receipt";
 import { runSteps } from "./stepScheduler";
 import { parseVerifyArgs } from "./verify-fast";
 
@@ -53,5 +54,30 @@ test("a killed process leaves its active step in the receipt", async () => {
   } finally {
     child.kill();
     if (existsSync(dir)) rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("a passing run of the same tree stands for a new run that would prove no more; anything else does not", () => {
+  const fixture = mkdtempSync(join(tmpdir(), "verify-reuse-"));
+  try {
+    const key: ReuseKey = { tree: "t1", mergeBase: "b1", runtime: "bun 1", scope: "fast", skillApi: false };
+    const write = (name: string, receipt: Record<string, unknown>): void => {
+      mkdirSync(join(fixture, ".scratch", "verify-fast", "runs", name), { recursive: true });
+      writeFileSync(join(fixture, ".scratch", "verify-fast", "runs", name, "receipt.json"), JSON.stringify(receipt));
+    };
+    expect(passingReceipt(fixture, key)).toBeNull();
+    write("failed", { ...key, status: "failed", endedAt: "x" });
+    write("moved", { ...key, tree: null, status: "passed", endedAt: "x" });
+    write("cheap", { ...key, scope: "cheap", status: "passed", endedAt: "x" });
+    write("other-base", { ...key, mergeBase: "b2", status: "passed", endedAt: "x" });
+    expect(passingReceipt(fixture, key)).toBeNull();
+    write("good", { ...key, status: "passed", endedAt: "2026-11-08T00:00:00Z" });
+    expect(passingReceipt(fixture, key)?.path).toContain("good");
+    expect(passingReceipt(fixture, { ...key, scope: "cheap" })?.path).toBeDefined();
+    expect(passingReceipt(fixture, { ...key, scope: "full" })).toBeNull();
+    expect(passingReceipt(fixture, { ...key, skillApi: true })).toBeNull();
+    expect(passingReceipt(fixture, { ...key, tree: "t2" })).toBeNull();
+  } finally {
+    rmSync(fixture, { recursive: true, force: true });
   }
 });

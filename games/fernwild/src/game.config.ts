@@ -10,7 +10,18 @@ import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/shell/gameKit";
 import { fernwildKit } from "./art/look";
 import { editorLayers } from "./editorLayers";
 import { assets } from "./game/assets";
-import { baseGhost, basePrompts, baseView, fuelNear, lastPiece, piecesBuilt, stations, storeView } from "./game/base";
+// One name per line in the long imports: a lane that adds a name adds a line, which a rebase keeps beside
+// another lane's (scripts/generated-rebase.ts); two lanes editing one long line was a hand rebase each time.
+import {
+  baseGhost,
+  basePrompts,
+  baseView,
+  fuelNear,
+  lastPiece,
+  piecesBuilt,
+  stations,
+  storeView,
+} from "./game/base";
 import { cavePrompts, cavesOf, cavesView } from "./game/caves";
 import { eggPrompts, eggsOnGround } from "./game/eggs";
 import { EGG_SIZES, eggItem, KIBBLE_TIERS, kibbleItem } from "./game/data/kibble";
@@ -18,7 +29,26 @@ import { bodyPrompts, bodyView } from "./game/deathBody";
 import { breedingPrompts, breedingView } from "./game/breeding";
 import { broodView, obeliskPrompts } from "./game/broodmother";
 import { BROOD_PHASES, BROOD_TIERS } from "./game/data/bosses";
-import { airliftView, mountSwim, awakeTamingProgress, creatureCard, creaturePrompts, lineageStrays, creaturesView, speciesNear, wildCountNear, wildHurtNear, nearestTameStance, wildLevelNear, mountCanFly, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
+import {
+  airliftView,
+  awakeTamingProgress,
+  creatureCard,
+  creaturePrompts,
+  creaturesView,
+  lastTame,
+  lineageStrays,
+  mountCanFly,
+  mountSwim,
+  nearestCarcass,
+  nearestTame,
+  nearestTameStance,
+  nearestThreat,
+  nearestWild,
+  speciesNear,
+  wildCountNear,
+  wildHurtNear,
+  wildLevelNear,
+} from "./game/creatures";
 import { tameFood } from "./game/tameHunger";
 import { STRUCTURES } from "./game/data/structures";
 import { content } from "./game/content";

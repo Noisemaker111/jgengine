@@ -1,7 +1,6 @@
 // The one way repo tooling talks to GitHub: `gh api` against the REST API. `gh pr` speaks GraphQL,
 // which cloud sessions' proxy refuses, so the landing scripts never use it; REST works on this PC and
-// in the cloud alike. Auto-merge has no REST endpoint: a PR handed to the landing queue carries the
-// `land:queue` label instead.
+// in the cloud alike. `lane:close` merges its own PR through `mergePull` once its local receipt passed.
 import { spawnSync } from "node:child_process";
 
 import type { RollupEntry } from "./ci-status";
@@ -84,12 +83,14 @@ export interface GitHub {
   checks(sha: string): GhResult<RollupEntry[]>;
   createPull(input: { base: string; head: string; title: string; body: string }): GhResult<{ number: number; url: string }>;
   editPull(number: number, patch: { title?: string; body?: string }): GhResult<null>;
-  addLabel(number: number, label: string): GhResult<null>;
-  mergePull(number: number): GhResult<null>;
+  /**
+   * Merge the PR only while its head is still `headSha`, the commit the landing verified; the merge
+   * commit's sha on success.
+   */
+  mergePull(number: number, headSha: string): GhResult<{ sha: string }>;
   /** Leave a comment on the PR, then close it. */
   closePull(number: number, comment: string): GhResult<null>;
   branchRuns(branch: string, limit: number): GhResult<WorkflowRun[]>;
-  rerunRun(id: number): GhResult<null>;
 }
 
 /** `owner/repo` from a remote URL (github.com over https or ssh, or a proxy whose path ends in it), or `owner/repo` itself. */
@@ -214,11 +215,11 @@ export function gitHub(gh: GhRunner, repo: string, pause: (ms: number) => void =
       if (fields.length === 0) return { ok: true, value: null };
       return done(call(["-X", "PATCH", `repos/${repo}/pulls/${number}`, ...fields]));
     },
-    addLabel(number, label) {
-      return done(call(["-X", "POST", `repos/${repo}/issues/${number}/labels`, "-f", `labels[]=${label}`]));
-    },
-    mergePull(number) {
-      return done(call(["-X", "PUT", `repos/${repo}/pulls/${number}/merge`, "-f", "merge_method=merge"]));
+    mergePull(number, headSha) {
+      const merged = call(["-X", "PUT", `repos/${repo}/pulls/${number}/merge`, "-f", "merge_method=merge", "-f", `sha=${headSha}`]);
+      if (!merged.ok) return merged;
+      const sha = text(record(merged.value)["sha"]);
+      return sha.length > 0 ? { ok: true, value: { sha } } : { ok: false, error: "GitHub answered the merge without a commit sha" };
     },
     closePull(number, comment) {
       const commented = call(["-X", "POST", `repos/${repo}/issues/${number}/comments`, "-f", `body=${comment}`]);
@@ -233,9 +234,6 @@ export function gitHub(gh: GhRunner, repo: string, pause: (ms: number) => void =
         ok: true,
         value: Array.isArray(runs) ? runs.map((run: unknown) => ({ id: Number(record(run)["id"]), headSha: text(record(run)["head_sha"]) })) : [],
       };
-    },
-    rerunRun(id) {
-      return done(call(["-X", "POST", `repos/${repo}/actions/runs/${id}/rerun`]));
     },
   };
 }
