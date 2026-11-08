@@ -42,10 +42,18 @@ describe("the daemon watch", () => {
   };
   test("a browser slow to answer for a few probes is not called dead", async () => {
     // Busy streaming a trace: three misses, then it answers again; the run keeps going.
+    // "Alive" means the watch is still probing after the whole sequence, judged by probes, not by a
+    // wall-clock window: boat's coarser timers fit only five 1 ms probes in 60 ms (2026-11-08).
     const probe = probes([true, false, false, false, true, true, true]);
-    const outcome = await Promise.race([watchDaemon(daemon, process.cwd(), 1, 3, probe.answer).then(() => "dead", () => "dead"), new Promise((resolve) => setTimeout(() => resolve("alive"), 60))]);
+    let pastMisses: (value: string) => void = () => {};
+    const survived = new Promise<string>((resolve) => (pastMisses = resolve));
+    const answer = async () => {
+      const answered = await probe.answer();
+      if (probe.asked() >= 7) pastMisses("alive");
+      return answered;
+    };
+    const outcome = await Promise.race([watchDaemon(daemon, process.cwd(), 1, 3, answer).then(() => "dead", () => "dead"), survived]);
     expect(outcome).toBe("alive");
-    expect(probe.asked()).toBeGreaterThan(5);
   });
   test("a browser that stops answering is called dead after the allowed misses", async () => {
     const probe = probes([true, false]);
