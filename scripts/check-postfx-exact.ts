@@ -11,8 +11,8 @@ import { openPageSession, withBrowserSession } from "./browser-lib";
  * - the half-precision helpers against the GPU's own target write and multiply blend, bit for bit;
  * - `SceneCompositePass` against the beauty copy, three's GTAO blend and the contact-shadow apply, in
  *   every combination, bit for bit;
- * - `GradePass` doing the OutputPass's work against the OutputPass then the grade, on the 8-bit screen,
- *   for each of three's tone mappings. Inside the larger shader the GPU compiler may order the tone
+ * - `GradePass` doing the OutputPass's work (and temporal AA's sharpen) against those draws then the
+ *   grade, on the 8-bit screen, for each of three's tone mappings. Inside the larger shader the GPU compiler may order the tone
  *   map's arithmetic differently, so a channel may differ by one level (of 255) on at most 1 channel
  *   in 1000. On the RTX 3070 ACES, Neutral and Reinhard match exactly and AgX, Cineon and Linear
  *   differ on at most 1 channel in 6000, far under the grade's own per-frame film grain.
@@ -179,6 +179,25 @@ const PAGE = String.raw`(async (sources) => {
     target8(); gradeUniforms(fused, exposure); bind(fused, "tDiffuse", 0, beauty); drawPlane();
     const label = toneMapping.toLowerCase().replace(/_tone_mapping$/, "") + ", exposure " + exposure;
     compare("grade with OutputPass (" + label + ") = OutputPass then grade", expected, read8(), { largest: 1, share: 0.001 });
+  }
+
+  // The grade also doing temporal AA's sharpen on the resolved history (the beauty frame stands in).
+  for (const [toneMapping, exposure] of [["AGX_TONE_MAPPING", 1], ["ACES_FILMIC_TONE_MAPPING", 1]]) {
+    const defines = { [toneMapping]: "", SRGB_TRANSFER: "" };
+    const attachment = () => gl.getFramebufferAttachmentParameter(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.FRAMEBUFFER_ATTACHMENT_OBJECT_NAME);
+    const linear = (t) => { gl.bindTexture(gl.TEXTURE_2D, t); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); return t; };
+    const sharpen = program(sources.sharpen);
+    target(); bind(sharpen, "tDiffuse", 0, beauty); gl.uniform2f(gl.getUniformLocation(sharpen, "uTexel"), 1 / W, 1 / H); gl.uniform1f(gl.getUniformLocation(sharpen, "uSharpness"), 0.3); drawPlane();
+    const sharpened = linear(attachment());
+    const output = program(sources.outputFragment, { raw: true, vertex: sources.outputVertex, defines });
+    target(); bind(output, "tDiffuse", 0, sharpened); gl.uniform1f(gl.getUniformLocation(output, "toneMappingExposure"), exposure); draw();
+    const toned = linear(attachment());
+    const plain = program(sources.gradeFragment, { vertex: sources.gradeVertex });
+    target8(); gradeUniforms(plain, exposure); bind(plain, "tDiffuse", 0, toned); drawPlane(); const expected = read8();
+    const fused = program(sources.gradeFragment, { vertex: sources.gradeVertex, defines: { FUSED_OUTPUT: "", FUSED_SHARPEN: "", ...defines } });
+    target8(); gradeUniforms(fused, exposure); bind(fused, "tDiffuse", 0, toned); bind(fused, "tHistory", 1, beauty); gl.uniform1f(gl.getUniformLocation(fused, "uSharpness"), 0.3); drawPlane();
+    const label = toneMapping.toLowerCase().replace(/_tone_mapping$/, "");
+    compare("grade with TAA sharpen and OutputPass (" + label + ") = sharpen, OutputPass, grade", expected, read8(), { largest: 1, share: 0.001 });
   }
 
   const error = gl.getError();
