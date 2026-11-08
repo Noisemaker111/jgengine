@@ -1,7 +1,9 @@
 import * as THREE from "three";
 
 import { seededRng } from "@jgengine/core/random/rng";
+import { scrambledSobol2 } from "@jgengine/core/random/scrambledSobol";
 import { grassBladeDensity, type GrassLook } from "@jgengine/core/grass/grassKind";
+import { drawnGrassLook } from "@jgengine/core/grass/grassDrawn";
 
 import { grassBareAt, grassClumpCentre, grassFieldNoise, grassTuftReach } from "@jgengine/core/grass/grassField";
 import { hashNoise2, seedToUint32, type TerrainSeed } from "@jgengine/core/terrain/terrainSeed";
@@ -42,6 +44,7 @@ export interface GrassBakeOptions {
 
 /** A patch ready to bake: the look plus every derived number the bake and stream share. */
 export interface ResolvedGrassBake {
+  /** The look as its style draws it (`drawnGrassLook`): blade width, tuft size and heights after `detail` and `exaggeration`. */
   look: GrassLook;
   width: number;
   depth: number;
@@ -80,7 +83,7 @@ function bareCoverage(look: GrassLook, seed: string, coverageAt: TerrainHeightSa
 /** Resolve a patch's bake inputs once; the stream and every node bake read the result. */
 export function resolveGrassBake(options: GrassBakeOptions): ResolvedGrassBake {
   const size = resolveTerrainSize(options.area);
-  const look = options.look;
+  const look = drawnGrassLook(options.look);
   const columns = Math.max(1, Math.ceil(size.width / GRASS_CELL_SIZE));
   const rows = Math.max(1, Math.ceil(size.depth / GRASS_CELL_SIZE));
   const bladesPerM2 = grassBladeDensity(look);
@@ -148,14 +151,6 @@ function smoothstep(a: number, b: number, x: number): number {
   return t * t * (3 - 2 * t);
 }
 
-/** The R2 sequence's steps (1/g and 1/g² for the plastic number g): the most even 2D progressive spread. */
-const R2_X = 0.7548776662466927;
-const R2_Z = 0.5698402909980532;
-
-function fract(value: number): number {
-  return value - Math.floor(value);
-}
-
 /** Tufts a cell keeps at `share`, given its full count and its rank offset `u`. */
 function cellCount(full: number, u: number, share: number): number {
   if (full <= 0) return 0;
@@ -211,14 +206,16 @@ export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: 
     const random = seededRng(`${bake.seed}|${cell.cx}|${cell.cz}`);
     const u = random();
     const count = cellCount(cell.full, u, share);
-    // Roots follow the R2 low-discrepancy sequence from a seeded start, jittered by under half a
-    // spacing. Uniform random roots bunch into piles and leave bare holes; R2 spreads them evenly, and
-    // every prefix of it is still even, so thinning by rank for a far camera never opens holes.
-    const startX = random(), startZ = random();
-    const jitter = 0.45 / Math.sqrt(Math.max(1, cell.full));
+    // Roots follow a scrambled Sobol spread seeded per cell. Uniform random roots bunch into piles and
+    // leave bare holes; this spreads them evenly, and every prefix is still even, so thinning by rank
+    // for a far camera never opens holes. (R2, used before, is even too, but its short prefixes are a
+    // near-regular lattice, so a far field thinned to a few dozen tufts a cell drew rows like a
+    // planted crop; jitter big enough to hide that left the field as uneven as random.)
+    const scrambleX = Math.floor(random() * 4294967296), scrambleZ = Math.floor(random() * 4294967296);
     for (let j = 0; j < count; j += 1) {
-      let x = cell.x0 + fract(startX + j * R2_X + (random() - 0.5) * jitter) * cell.w;
-      let z = cell.z0 + fract(startZ + j * R2_Z + (random() - 0.5) * jitter) * cell.d;
+      const [sx, sz] = scrambledSobol2(j, scrambleX, scrambleZ);
+      let x = cell.x0 + sx * cell.w;
+      let z = cell.z0 + sz * cell.d;
       const clumpRoll = random(), clumpAngle = random() * Math.PI * 2, clumpReach = Math.sqrt(random()) * look.tuft.clumpSize;
       const speciesRoll = random(), flowerRoll = random(), yaw = random() * Math.PI * 2;
       const heightRoll = random(), widthRoll = random(), bendRoll = random(), gate = random(), settle = random();

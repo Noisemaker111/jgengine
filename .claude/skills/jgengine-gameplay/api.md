@@ -2805,6 +2805,10 @@
 - `seededStreams` (function): function seededStreams(seed: string | number): (stream: string) => () => number — Derives independent, deterministic {@link seededRng} streams from one base seed, keyed by stream name.
 - `stepRandomSeed` (function): function stepRandomSeed(seed: RandomSeed): readonly [value: number, next: RandomSeed] — One step of the {@link seededRng} recurrence in pure (seed in, seed out) form — the same mulberry32-style generator, shared by every state machine that persists its own PRNG cursor instead of closing over a generator.
 
+## @jgengine/core/random/scrambledSobol
+
+- `scrambledSobol2` (function): function scrambledSobol2(index: number, seedX: number, seedY: number): [number, number] — Point `index` (0, 1, 2, ...) of a 2D Sobol sequence Owen-scrambled by two 32-bit seeds, in [0, 1)². Every prefix is spread evenly (each first 2^m points fill every 1/2^m-area box of a net once), so thinning a field to its first n points never opens holes; unlike R2 or another rank-1 lattice, no prefix lines up in rows, because the scramble breaks the sequence's digit structure. One seed pair per field or cell gives that field its own independent spread (Burley 2020, "Practical Hash-based Owen Scrambling").
+
 ## @jgengine/core/random/seedLink
 
 - `DEFAULT_SEED_PARAM` (const): const DEFAULT_SEED_PARAM: "seed" — ⚠ undocumented
