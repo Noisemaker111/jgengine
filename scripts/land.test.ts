@@ -1,4 +1,4 @@
-import { afterEach, expect, test } from "bun:test";
+import { afterEach, expect, setDefaultTimeout, test } from "bun:test";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
@@ -38,6 +38,9 @@ import { attemptsOf, judgeChecks } from "./ci-status";
 import type { RollupEntry } from "./ci-status";
 import { fakeGitHub, type FakeCall, type FakeCheck, type FakeGitHub } from "./github.fixture";
 import { OUTAGE_ATTEMPTS } from "./github";
+
+// Many tests run real git repos; on a busy Windows PC a push-and-clone test took 5-6 s and failed bun's 5 s default.
+setDefaultTimeout(60_000);
 
 test("a command printing more than Node's 1 MiB default comes back whole, as `git show` of a big api.md does", () => {
   const size = 3 * 1024 * 1024;

@@ -2,11 +2,14 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, setDefaultTimeout, test } from "bun:test";
 
 import { keepBothInsertions, mergeSuiteReports, MERGE_FILE_ARGS, rebaseResolvingGenerated } from "./generated-rebase";
 import type { Run } from "./land";
 import { SUITE_SCORE_END, SUITE_SCORE_START } from "./suite-score-block";
+
+// Each test runs real git repos; on a busy Windows PC a rebase test took 5-6 s and failed bun's 5 s default.
+setDefaultTimeout(60_000);
 
 const README = "games/demo/README.md";
 const dirs: string[] = [];
