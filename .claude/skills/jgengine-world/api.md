@@ -1877,9 +1877,11 @@
 - `GrassStyleSettings` (type): type GrassStyleSettings = Partial<GrassStyle> & { preset?: string } — A style as authored: any sliders, plus an optional named preset (`cartoon`, `painterly`, `animated`, `realistic`) backing the ones left unset.
 - `GrassStyleSlider` (type): type GrassStyleSlider = Exclude<keyof GrassStyle, "realism"> — The style sliders `realism` drives: every style knob but `realism` itself.
 - `GrassStyleTuning` (type): type GrassStyleTuning = Partial<Record<GrassStyleSlider, number>> — A species' own tuning of style sliders, as it would be drawn at the default realism.
+- `grassColourFactor` (function): function grassColourFactor(value: number): number — `saturation` or `contrast` as the factor the shader scales by: 1 at 0.5, 0.4 at 0, 1.6 at 1.
 - `grassDetailScale` (function): function grassDetailScale(detail: number): number — Blades drawn per blade a species grows, at a `detail`: 1 at 0.5, rising to 6 at 1 and falling to half at 0. Each blade's width divides by the same number, so count times width, the ground the blades cover, never changes with detail.
 - `grassExaggerationAmount` (function): function grassExaggerationAmount(exaggeration: number): number — `exaggeration` as -1 (natural) .. 0 (the species as it is) .. 1 (cartoon).
 - `grassRealismFromPage` (function): function grassRealismFromPage(): number | undefined — The realism a page asks for with `?realism=<0..1>`, else undefined. It overrides every patch's and world's realism, so a board or perf run can draw any scene at any realism (`bun run shoot ... --param realism=1`, `bun run perf ... --param realism=1`); sliders set by hand still win.
+- `grassShadingAmounts` (function): function grassShadingAmounts(shading: number): { cel: number; sheen: number } — `shading` as the two blends the shader applies: `cel` toward flat bands and a rim light (1 at shading 0, 0 from 0.5 up) and `sheen` toward a glossy, see-through blade (0 up to 0.5, 1 at 1). Both are 0 at the default, where the blade lights exactly as before.
 
 ## @jgengine/core/grass/grassWind
 
