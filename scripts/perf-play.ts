@@ -42,6 +42,7 @@ import type { SystemProbeReading } from "../packages/core/src/devtools/types";
 import { renderBreakdownText, type FrameBreakdownSummary } from "../packages/core/src/devtools/frameBreakdown";
 import { compareBreakdowns, readBreakdown, resetBreakdown, startPath, type PerfPath } from "./perf-breakdown";
 import { perfLockTurn, withPerfLock } from "./perf-lock";
+import { markStep } from "./hangReport";
 import { provisionCapturedGame } from "./provisionCapture";
 import {
   ACCESSIBILITY_SETTING_IDS,
@@ -1222,6 +1223,8 @@ export function writePerfRecord(record: PerfRecord, path: string): void {
 export async function measureGame(options: MeasureOptions): Promise<PerfMeasure> {
   // A game whose packs are not linked into this checkout draws placeholder boxes, and its frame
   // times describe the boxes; link them first, the same as shoot and drive do.
+  // Each phase names itself, so a session killed at its deadline says which one hung.
+  markStep(`perf ${options.game}: link asset packs`);
   await (options.provision ?? provisionCapturedGame)(join(repoRoot, "games", options.game), (line) => console.error(`perf: ${line}`));
   return withPerfLock(`perf ${options.game}`, () => measureProvisioned(options));
 }
@@ -1255,6 +1258,7 @@ async function measureProvisioned(options: MeasureOptions): Promise<PerfMeasure>
   // Same navigation the capture tools use: it fails on a page exception or a failed document
   // instead of waiting out the readiness timeout. The timeout outlasts the page's own readiness
   // budget (2.5 minutes, past the shader warmup's cap), so a slow load reports its own reason.
+  markStep(`perf ${game}: load the page`);
   await navigateCapturePage(session, url.toString(), PAGE_READY_MS);
   // The tier the game resolved, not the flag: a record that names a tier it never rendered at is
   // exactly the evidence gap this flag closes.
@@ -1268,6 +1272,7 @@ async function measureProvisioned(options: MeasureOptions): Promise<PerfMeasure>
     console.error(`perf: software rasterizer (${gpu}) — frame times are not a GPU measurement`);
   }
 
+  markStep(`perf ${game}: warm up`);
   await session.evaluate(`new Promise((r) => setTimeout(r, ${warmupMs}))`, { awaitPromise: true });
   const backend = await readBackend(session);
   const asked = settings.find((setting) => setting.id === "graphics.renderer")?.value;
@@ -1282,12 +1287,15 @@ async function measureProvisioned(options: MeasureOptions): Promise<PerfMeasure>
   // percentiles are the loop the player gets; the profile window is separate.
   await session.evaluate(`globalThis.__jgPerfDraws?.start?.()`);
   const startedAt = Date.now();
+  markStep(`perf ${game}: frame window`);
   const deltas = (await session.evaluate<number[]>(SAMPLE_FRAMES_SCRIPT(seconds * 1000), { awaitPromise: true })) ?? [];
   const drawFrames = (await session.evaluate<number[]>(`globalThis.__jgPerfDraws?.stop?.() ?? []`)) ?? [];
   const movementEnd = await playerPosition(session);
   const windowMs = Date.now() - startedAt;
   const frameDraws = summarizeFrameDraws(drawFrames);
+  markStep(`perf ${game}: read the breakdown`);
   const breakdown = hasBreakdown ? await readBreakdown(session, undefined, options.breakdownTop) : null;
+  markStep(`perf ${game}: draw-timed GPU window`);
   const gpuWork = hasBreakdown && options.gpuWork === true ? await measureGpuWork(session, options.breakdownTop ?? 15) : undefined;
   if (gpuWork === null) console.error("degraded: the draw-timed GPU window resolved no timers, so the record has pass spans only");
 
@@ -1300,6 +1308,7 @@ async function measureProvisioned(options: MeasureOptions): Promise<PerfMeasure>
     longFrames?: unknown[];
   }>(`window.__jgengineAgent?.handle?.({ method: "debug_snapshot" })?.snapshot ?? null`);
   const gl = (await session.evaluate<GlCounts | null>(`globalThis.__jgPerfGl ?? null`)) ?? { counts: {}, since: {} };
+  markStep(`perf ${game}: count scene nodes`);
   const sceneNodes = await measureSceneNodes(session);
   const size = await session.evaluate<{ w: number; h: number }>(`({ w: innerWidth, h: innerHeight })`);
 
@@ -1326,6 +1335,7 @@ async function measureProvisioned(options: MeasureOptions): Promise<PerfMeasure>
       // Collected objects are the garbage itself; without these flags only survivors are counted.
       await session.send("HeapProfiler.startSampling", { samplingInterval: 16_384, includeObjectsCollectedByMajorGC: true, includeObjectsCollectedByMinorGC: true });
     }
+    markStep(`perf ${game}: CPU profile window`);
     await session.send("Profiler.start");
     const profiledAt = Date.now();
     await session.evaluate(`new Promise((r) => setTimeout(r, ${seconds * 1000}))`, { awaitPromise: true });
