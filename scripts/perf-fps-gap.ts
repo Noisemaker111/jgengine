@@ -392,6 +392,24 @@ export function readEntries(dir: string, games: readonly string[]): { entries: F
   return { entries, missing };
 }
 
+/**
+ * The browser session's watchdog, which ends the whole process; one game's own deadline fires first.
+ * Above the capture's own readiness wait, which on a busy PC grows by a second window (180 s + 210 s):
+ * at 300 s the watchdog ended runs whose page was still allowed to be loading.
+ */
+const GAME_HARD_DEADLINE_MS = 540_000;
+/** A game still measuring after this fails alone and the run moves on to the next game. */
+export const GAME_DEADLINE_MS = GAME_HARD_DEADLINE_MS - 45_000;
+
+/** `work`, or a rejection naming `game` once {@link GAME_DEADLINE_MS} passes. */
+export function withinDeadline<T>(game: string, work: Promise<T>, deadlineMs = GAME_DEADLINE_MS): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const expired = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${game} was still measuring after ${Math.round(deadlineMs / 1000)}s; the next game runs`)), deadlineMs);
+  });
+  return Promise.race([work, expired]).finally(() => clearTimeout(timer));
+}
+
 async function measureAll(args: FpsGapArgs, backend: RendererBackend, engine: PerfRecord["engine"]): Promise<string[]> {
   const started: Awaited<ReturnType<typeof ensureDevServer>>[] = [];
   const failed: string[] = [];
@@ -410,11 +428,11 @@ async function measureAll(args: FpsGapArgs, backend: RendererBackend, engine: Pe
         }
         previous = game;
         const exit = await withBrowserSession(
-          { keep: false, debugPort: debugPortFor(index), timeoutMs: 180_000, hardDeadlineMs: 300_000, frameClock: "uncapped" },
+          { keep: false, debugPort: debugPortFor(index), timeoutMs: 180_000, hardDeadlineMs: GAME_HARD_DEADLINE_MS, frameClock: "uncapped" },
           async ({ debugPort }) => {
             const session = await openPageSession(debugPort);
             try {
-              const measured = await measureGame({
+              const measured = await withinDeadline(game, measureGame({
                 session,
                 base: server.base,
                 game,
@@ -428,7 +446,7 @@ async function measureAll(args: FpsGapArgs, backend: RendererBackend, engine: Pe
                 settings: [parseSettingSpec("graphics.auto=false"), parseSettingSpec(`renderer=${backend}`)],
                 size: GATE_SIZE,
                 breakdownTop: BREAKDOWN_TOP,
-              });
+              }));
               if (measured.record.breakdown === null || measured.record.breakdown === undefined) {
                 throw new Error("the page installed no frame breakdown, so CPU, GPU and their groups are unknown; measure it again");
               }
@@ -443,7 +461,7 @@ async function measureAll(args: FpsGapArgs, backend: RendererBackend, engine: Pe
               const b = measured.record.breakdown;
               console.error(`perf fps-gap: ${game} frame p50 ${b?.frame.p50 ?? measured.record.frame.avgMs} ms, CPU ${b?.work.p50 ?? "?"} ms, GPU ${b?.gpu?.p50 ?? "?"} ms`);
             } finally {
-              await session.close();
+              await Promise.race([session.close(), new Promise<void>((settle) => setTimeout(settle, 5_000).unref())]);
             }
           },
         );

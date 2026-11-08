@@ -16,9 +16,15 @@ import {
   renderBackendComparison,
   renderFpsGapReport,
   shortName,
+  withinDeadline,
   workItems,
   type FpsGapEntry,
 } from "./perf-fps-gap";
+
+test("a game still measuring at its deadline fails alone, naming the game, and a finished one passes through", async () => {
+  await expect(withinDeadline("harbor-heat", new Promise<never>(() => {}), 10)).rejects.toThrow("harbor-heat was still measuring");
+  await expect(withinDeadline("fernwild", Promise.resolve(7), 10)).resolves.toBe(7);
+});
 
 const spread = (p50: number, avg = p50) => ({ p50, p95: p50 * 1.4, p99: p50 * 1.8, max: p50 * 3, avg });
 
