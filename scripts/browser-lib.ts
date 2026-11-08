@@ -1956,6 +1956,9 @@ function cpuSample(): CpuSample {
   return { idle, total };
 }
 
+/** Moves the running browser session's hard deadline back; set while {@link withBrowserSession} runs. */
+let extendHardDeadline: ((ms: number) => void) | null = null;
+
 /**
  * The deadline of one readiness wait. A PC busy past {@link BUSY_PC_PERCENT} for the whole window
  * gets one more window, said in a line: a fixed 60 s failed shots that only needed a quieter
@@ -1977,6 +1980,7 @@ function readinessWait(timeoutMs: number): {
       if (extended || busy < BUSY_PC_PERCENT) return false;
       extended = true;
       deadline = Date.now() + timeoutMs;
+      extendHardDeadline?.(timeoutMs);
       console.error(`capture: the PC's CPU is ${busy}% busy, so the page (${status === null ? "no capture status yet" : `still "${status}"`}) gets another ${Math.round(timeoutMs / 1000)}s`);
       return true;
     },
@@ -2576,9 +2580,11 @@ export async function withBrowserSession(
     }
   }
 
-  const watchdog = setTimeout(() => {
+  let allowedMs = hardDeadlineMs;
+  const startedAt = Date.now();
+  const expire = () => {
     console.error(
-      `browser session: still running after the ${Math.round(hardDeadlineMs / 1000)}s hard deadline, ${describeHang(currentStep())} — force-killing Chrome and dev server`,
+      `browser session: still running after the ${Math.round(allowedMs / 1000)}s hard deadline, ${describeHang(currentStep())} — force-killing Chrome and dev server`,
     );
     // Daemon-owned Chrome/server are never handed to us (both null here), so
     // these are no-ops when attached — safe to run unconditionally.
@@ -2587,8 +2593,19 @@ export async function withBrowserSession(
     killPid(options.serverPid, true);
     if (chrome !== null) removeProfileDir(chrome.userDataDir);
     process.exit(124);
-  }, hardDeadlineMs);
+  };
+  let watchdog = setTimeout(expire, allowedMs);
   watchdog.unref();
+  // A readiness wait a busy PC extends moves this deadline by as much, or the extension it printed
+  // was a promise the watchdog broke: fps-gap's 300 s deadline killed every capture the PC slowed.
+  const outerExtend = extendHardDeadline;
+  extendHardDeadline = (ms) => {
+    allowedMs += ms;
+    clearTimeout(watchdog);
+    watchdog = setTimeout(expire, Math.max(0, startedAt + allowedMs - Date.now()));
+    watchdog.unref();
+    outerExtend?.(ms);
+  };
 
   try {
     markStep(
@@ -2618,6 +2635,7 @@ export async function withBrowserSession(
     console.error(error instanceof Error ? error.message : error);
   } finally {
     clearTimeout(watchdog);
+    extendHardDeadline = outerExtend;
     await releaseTurn?.().catch(() => {});
     if (!leaveWarm) {
       launchedProfiles.delete(debugPort);
