@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { attributeHitch, fpsAt, hitchCause, lightSetChange, programVariantChange, renderBreakdownText, spread, summarizeBreakdown, type FrameBreakdownRecord } from "./frameBreakdown";
+import { attributeHitch, fpsAt, hitchCause, lightSetChange, programVariantChange, renderBreakdownText, spread, summarizeBreakdown, targetLayout, vertexLayout, type FrameBreakdownRecord } from "./frameBreakdown";
 
 function frame(overrides: Partial<FrameBreakdownRecord> = {}): FrameBreakdownRecord {
   return {
@@ -42,6 +42,27 @@ test("a hitch names its cause from what happened in that frame", () => {
   expect(hitchCause(frame({ intervalMs: 1962, workMs: 16, gpu: { "post:BeautyPass": 15.6 } }))).toEqual({
     cause: "other", detail: "1946 ms outside the game's frame work (browser, compositor, OS); the largest game cost was post:BeautyPass 15.6 ms on the GPU",
   });
+});
+
+test("a stall outside the game's work names the draws that fed a program a new layout or target", () => {
+  const firstDraws = ["Hull on Bellwether → half-float, new vertex layout position:3:Float32Array", "Glass on Visor → half-float", "Rock on Cliff → half-float", "Moss on Cliff → half-float"];
+  expect(hitchCause(frame({ intervalMs: 460, workMs: 6, firstDraws })).detail).toBe(
+    `454 ms outside the game's frame work (browser, compositor, OS); first draws of 4 program and layout pair(s): ${firstDraws.slice(0, 3).join(", ")}`,
+  );
+  expect(hitchCause(frame({ intervalMs: 460, workMs: 6 })).detail).not.toContain("first draws");
+});
+
+test("a draw's layout is the attributes its program reads, and its target the colour outputs", () => {
+  const float = { itemSize: 3, array: new Float32Array(3) };
+  const attributes: Record<string, object> = { position: float, normal: float, color: { itemSize: 4, normalized: true, array: new Uint8Array(4) } };
+  // Sorted, only what the program reads, and an attribute the draw lacks shows as missing.
+  expect(vertexLayout(["position", "color", "uv"], (name) => attributes[name])).toBe("color:4n:Uint8Array,position:3:Float32Array,uv:-");
+  // Interleaved attributes keep their array on `data`.
+  expect(vertexLayout(["position"], () => ({ itemSize: 3, data: { array: new Float32Array(6) } }))).toBe("position:3:Float32Array");
+  expect(targetLayout(null)).toBe("screen");
+  expect(targetLayout({ textures: [{ type: 1016 }], samples: 4 })).toBe("half-float msaa");
+  expect(targetLayout({ textures: [{ type: 1016 }, { type: 1016 }] })).toBe("2× half-float");
+  expect(targetLayout({ texture: { type: 1009 } })).toBe("rgba8");
 });
 
 test("a window sums up: spreads, costliest systems and passes, per-frame draw costs, hitches", () => {
