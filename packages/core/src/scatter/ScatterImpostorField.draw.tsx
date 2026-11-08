@@ -1,9 +1,9 @@
-import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useFrame } from "@react-three/fiber";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
-import { acquireImpostor, impostorCard, impostorDistance, impostorSettingsForQuality, impostorSwitch, releaseImpostor, type ImpostorEntry } from "@jgengine/core/lod/impostor.draw";
+import { impostorCard, impostorDistance, impostorSettingsForQuality, impostorSwitch, useImpostorEntry } from "@jgengine/core/lod/impostor.draw";
 import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import type { ScatterBatch } from "./InstancedScatter.draw";
@@ -64,21 +64,9 @@ export function ScatterImpostorField({ cacheKey, sources, farSources, batches, r
   batches: readonly ScatterBatch[];
   radius: number;
 }) {
-  const gl = useThree((state) => state.gl);
   const quality = useTerrainQuality();
   const settings = useMemo(() => impostorSettingsForQuality(quality), [quality]);
-  const [entry, setEntry] = useState<ImpostorEntry | null>(null);
-  useEffect(() => {
-    let live = true;
-    const acquired = acquireImpostor(cacheKey, gl, farSources ?? sources, settings);
-    // The bake links its programs off the frame first; the far placements draw as models until it lands.
-    setEntry(acquired.baked ? acquired : null);
-    if (!acquired.baked) void acquired.ready.then(() => { if (live) setEntry(acquired); });
-    return () => {
-      live = false;
-      releaseImpostor(cacheKey, gl, settings);
-    };
-  }, [cacheKey, gl, sources, farSources, settings]);
+  const entry = useImpostorEntry(cacheKey, farSources ?? sources, settings);
 
   // Near draws are cached per batch object: a batch that comes back unchanged (every chunk but the one
   // a felled tree stood in) keeps its mesh, so clearing a placement does not rebuild the species.

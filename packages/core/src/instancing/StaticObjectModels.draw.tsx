@@ -19,7 +19,7 @@ import { recordRenderBounds } from "@jgengine/core/visibility/measuredBounds";
 import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "@jgengine/core/model/measureCollisionMesh.draw";
 import { buildScatterModelSources, disposeScatterModelSources, type ScatterModelSource } from "@jgengine/core/scatter/scatterModels.draw";
 import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.draw";
-import { acquireImpostor, createImpostorMaterials, IMPOSTOR_MIN_RADIUS, impostorCard, impostorDistance, impostorSettingsForQuality, impostorSwitch, releaseImpostor, sourceRadius, type ImpostorAtlas, type ImpostorEntry } from "@jgengine/core/lod/impostor.draw";
+import { createImpostorMaterials, IMPOSTOR_MIN_RADIUS, impostorCard, impostorDistance, impostorSettingsForQuality, impostorSwitch, sourceRadius, useImpostorEntry, type ImpostorAtlas } from "@jgengine/core/lod/impostor.draw";
 import { acquireImpostorCardPool, ImpostorCardPool, releaseImpostorCardPool, type ImpostorCardSlice } from "@jgengine/core/lod/impostorCardPool.draw";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
@@ -334,22 +334,10 @@ function ImpostorStaticObjects({ batch, objects, sources, radius }: {
   radius: number;
 }) {
   const ctx = useGameContext();
-  const gl = useThree((state) => state.gl);
   const quality = useTerrainQuality();
   const settings = useMemo(() => impostorSettingsForQuality(quality), [quality]);
   const key = useMemo(() => `object:${batch.model.url}:${JSON.stringify(batch.model)}`, [batch.model]);
-  const [entry, setEntry] = useState<ImpostorEntry | null>(null);
-  useEffect(() => {
-    let live = true;
-    const acquired = acquireImpostor(key, gl, sources, settings);
-    // The bake links its programs off the frame first; the far placements draw as models until it lands.
-    setEntry(acquired.baked ? acquired : null);
-    if (!acquired.baked) void acquired.ready.then(() => { if (live) setEntry(acquired); });
-    return () => {
-      live = false;
-      releaseImpostor(key, gl, settings);
-    };
-  }, [key, gl, sources, settings]);
+  const entry = useImpostorEntry(key, sources, settings);
   const assignment = useMemo(() => new LevelAssignment(), []);
   const camera = useMemo(() => new THREE.Vector3(), []);
   const ready = entry?.atlas != null && entry.materials !== null;
