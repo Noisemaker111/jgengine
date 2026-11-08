@@ -139,7 +139,7 @@ describe("gameFontStacks", () => {
 describe("HudFade and GameCursor", () => {
   test("a HUD group starts awake at full strength", () => {
     const html = renderToStaticMarkup(
-      <HudFade watch={[100]}>
+      <HudFade watch={() => [100]}>
         <span>HP</span>
       </HudFade>,
     );

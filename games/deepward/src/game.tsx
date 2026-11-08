@@ -9,20 +9,21 @@ import type { GameContextContent, GameContextEntityEntry } from "@jgengine/core/
 import { defineGame } from "@jgengine/shell/defineGame";
 import { useGameContext } from "@jgengine/react/provider";
 import { useStore } from "@jgengine/react/store";
+import { useGameStore } from "@jgengine/react/hooks";
 import { groundDistance, GARAGE, EXIT, PROPS, PRINT_ID, SALVAGE, STEAM, STASH, walkable, world, physics, editorLayers, ROOMS, RETURN_SPINE, DECOR, decorPoint, type Place, type Point } from "./world";
 import { hazardsAt } from "./game/descent";
 import { marrowOf, marrowSpec } from "./game/marrow";
 import { STRATA } from "./game/strata";
-import { Headlamp, MarrowBays, StratumAtmosphere, StratumDressing } from "./game/strataArt";
+import { Headlamp, MarrowBays, StratumAtmosphere, StratumDressing, StratumLife, type StratumMarks } from "./game/strataArt";
 import { PALETTE as C, signTexture, IndustrialBox, SALVAGE_PLACARD, type Triple } from "./game/art";
 import { surfaceMaterial, type IndustrialSurface } from "./game/industrialMaterials";
 import { FitterModel } from "./game/fitterArt";
 import { ServiceWeapon, serviceWeaponPose } from "./game/weaponArt";
 import { activeRoomLamps, deriveRoomPresentation, isBayWall, lampFlicker, ROOM_LIGHT_BUDGET, ROOM_LIGHT_REACH, ROOM_LIGHT_INTENSITY } from "./game/roomPresentation";
-import { captureProbe, initialize, keybinds, seatPlayer, setAim, tickControls, viewStore } from "./game/controls";
+import { captureProbe, initialize, keybinds, seatPlayer, setAim, tickControls, viewStore, type View } from "./game/controls";
 import { registerCaptureCommands } from "./game/capture";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
-import { ITEMS } from "./game/state";
+import { ITEMS, type Dive } from "./game/state";
 import { StationStructure, StationBatch } from "./game/stationArt";
 import { ModularArchitecture } from "./game/modularArt";
 import { StencilDecals } from "./game/stencilDecals";
@@ -105,9 +106,10 @@ const ROOM_SPOT_GAIN = 1.3;
  * lamp is a downward spot, so it leaves a pool on the floor, dark corners between pools, and a beam in
  * the haze; the dock's work lights are near-hemispheres.
  */
+/** The floor the station is drawn for: Marrow at home, else the stratum the dive is on. */
+const placeOf = (view: View): Place => view.mode === "home" || view.dive === null ? "home" : view.dive.stratum;
 function RoomLights() {
-  const view = useStore(viewStore);
-  const place: Place = view.mode === "home" || view.dive === null ? "home" : view.dive.stratum;
+  const place = useStore(viewStore, placeOf);
   const lamps = useMemo(() => deriveRoomPresentation(place).lamps, [place]);
   const lights = useMemo(() => Array.from({ length: ROOM_LIGHT_BUDGET }, () => {
     const light = new SpotLight(place === "home" ? "#f3c390" : STRATA[place].lamp.color, 0, place === "home" ? ROOM_LIGHT_REACH : STRATA[place].lamp.reach, place === "home" ? 1.45 : 1.3, 0.8, 2);
@@ -148,10 +150,10 @@ function renderEntity(entity: SceneEntity): ReactNode {
   return entity.id === PRINT_ID ? <PrintPresentation /> : <group />;
 }
 function PrintPresentation() {
-  const view = useStore(viewStore);
-  const print = view.dive?.print;
-  if (!print || print.health <= 0) return null;
-  const hit = view.trace !== null && print.health < 80 && Math.hypot(view.trace.to[0] - print.at[0], view.trace.to[2] - print.at[2]) < 0.3;
+  const { print, trace } = useStore(viewStore, view => ({ print: view.dive?.print, trace: view.trace }));
+  // The Fitter's hit light outlives it, dark, so its death does not change the scene's lights.
+  if (!print || print.health <= 0) return <pointLight position={[0, 1.25, 0.3]} intensity={0} distance={2.2} />;
+  const hit = trace !== null && print.health < 80 && Math.hypot(trace.to[0] - print.at[0], trace.to[2] - print.at[2]) < 0.3;
   return <FitterModel print={print} hit={hit} />;
 }
 function Tracer({ from, to }: { from: Point; to: Point }) {
@@ -163,7 +165,9 @@ function Tracer({ from, to }: { from: Point; to: Point }) {
   return <group ref={ref} position={midpoint}><mesh><cylinderGeometry args={[0.018, 0.018, length, 6]} /><meshBasicMaterial color={C.amber} /></mesh></group>;
 }
 function Hand() {
-  const ctx = useGameContext(), view = useStore(viewStore), ref = useRef<Group>(null);
+  const ctx = useGameContext(), ref = useRef<Group>(null);
+  // Only what the weapon pose reads: these move during a reload, a hit or a shot, not every tick.
+  const view = useStore(viewStore, v => ({ mode: v.mode, hand: v.dive?.hand ?? null, reload: v.ammo?.reloadProgress ?? 0, hurt: v.dive?.hurt ?? 0, flash: v.dive?.flash ?? 0 }));
   const dir = useMemo(() => new Vector3(), []);
   useFrame(({ camera }) => {
     camera.getWorldDirection(dir);
@@ -173,30 +177,78 @@ function Hand() {
     hand.position.copy(camera.position); hand.quaternion.copy(camera.quaternion);
     hand.translateX(0.26); hand.translateY(-0.26); hand.translateZ(-0.55);
   });
-  const pose = view.dive === null ? null : serviceWeaponPose({
-    hand: view.dive.hand,
-    reload: view.ammo?.reloadProgress ?? 0,
-    hurt: view.dive.hurt,
-    flash: view.dive.flash,
-  });
+  const pose = view.hand === null ? null : serviceWeaponPose({ hand: view.hand, reload: view.reload, hurt: view.hurt, flash: view.flash });
   return <group ref={ref} visible={view.mode === "dive"}>
-    {pose !== null && view.dive !== null && <group position={pose.at} rotation={pose.turn}><ServiceWeapon kind={view.dive.hand} shadows="none" flash={pose.flash} kick={pose.kick} magazineOffset={pose.magazineOffset} /></group>}
+    {pose !== null && view.hand !== null && <group position={pose.at} rotation={pose.turn}><ServiceWeapon kind={view.hand} shadows="none" flash={pose.flash} kick={pose.kick} magazineOffset={pose.magazineOffset} /></group>}
   </group>;
 }
+/** The floor's fixed dressing, re-rendered only when something on it is worked, taken or scanned. */
+function FloorDressing({ place }: { place: Place }) {
+  const marks = useGameStore((ctx): StratumMarks => {
+    const view = viewStore.read(ctx), world = marrowOf(ctx);
+    return {
+      crawler: view.deep.gear.includes("crawler"),
+      harvested: view.dive?.harvested ?? NO_HARVEST,
+      collected: view.dive?.collected ?? NONE,
+      scanned: view.deep.scanned,
+      zeroTaken: world.fact("story.zero") === true,
+      signal: world.fact("story.signal") === true,
+      relay: world.fact("story.relay") === true,
+    };
+  });
+  return <StratumDressing place={place} marks={marks} />;
+}
+/** The floor's creatures and lures: the one part of the dressing that moves every tick. */
+function FloorLife({ place }: { place: Place }) {
+  const { fauna, thrown } = useStore(viewStore, view => ({ fauna: view.dive?.fauna ?? NO_FAUNA, thrown: view.dive?.thrown ?? NO_LURES }));
+  return <StratumLife place={place} fauna={fauna} thrown={thrown} />;
+}
+/** Marrow's bays, re-rendered when one is built, finishes or loses power. */
+function Bays() {
+  const ctx = useGameContext();
+  useGameStore(state => {
+    const world = marrowOf(state);
+    return `${world.num("marrow.power") >= 0}|${world.instances().map(instance => `${instance.slot}:${instance.kind}:${instance.ready}:${instance.label}`).join()}`;
+  });
+  return <MarrowBays world={marrowOf(ctx)} />;
+}
+/** The steam vent in the vault: it vents three seconds in every eight. */
+function SteamVent() {
+  const on = useStore(viewStore, view => view.dive !== null && view.dive.elapsed % 8 < 3);
+  return <group position={[STEAM.x, 0, STEAM.z]}>
+    <Block at={[0, 0.018, 0]} size={[STEAM.w, 0.025, STEAM.d]} color="#554437" />
+    {Array.from({ length: 9 }, (_, i) => <Block key={i} at={[0, 0.04, -3 + i * 0.7]} size={[STEAM.w, 0.025, 0.17]} color={C.amber} />)}
+    <Tube at={[1.6, 1.9, 0]} radius={0.14} height={3.8} />
+    <Sign at={[0, 2.7, -3.8]} title="HOT SUPPRESSANT" sub={on ? "VENTING / KEEP CLEAR" : "PRESSURE LOW / CROSS NOW"} color={C.danger} width={3.5} />
+    {/* Mounted either way: venting brightens it, rather than changing the scene's lights. */}
+    <pointLight position={[0, 1, 0]} color={C.danger} intensity={on ? 12 : 0} distance={7} />
+    {on && [-1, 0, 1].map(x => <mesh key={x} position={[x, 1.1, 0]}><cylinderGeometry args={[0.7, 0.25, 2.1, 10]} /><meshBasicMaterial color="#dec9b6" transparent opacity={0.16} depthWrite={false} /></mesh>)}
+  </group>;
+}
+const NO_HARVEST: Dive["harvested"] = {};
+const NONE: string[] = [];
+const NO_FAUNA: Dive["fauna"] = {};
+const NO_LURES: Dive["thrown"] = [];
 function WorldOverlay() {
-  const ctx = useGameContext(), view = useStore(viewStore), dive = view.dive;
-  const steamOn = dive !== null && dive.elapsed % 8 < 3;
-  const place: Place = dive === null ? "home" : dive.stratum;
-  const base = marrowOf(ctx);
+  // Only what the station's layout shows; the parts that move each tick subscribe on their own.
+  const view = useStore(viewStore, v => ({
+    place: v.dive === null ? "home" as Place : v.dive.stratum,
+    lamp: v.dive?.lamp === true,
+    stash: v.home.stash.length,
+    life: v.home.life,
+    collected: v.dive?.collected ?? NONE,
+    drop: v.dive?.print.drop ?? null,
+  }));
+  const place = view.place, diving = place !== "home";
   return <>
     <SceneCaptureBinding />
-    <StratumAtmosphere place={place} /><Headlamp on={dive?.lamp === true} />
+    <StratumAtmosphere place={place} /><Headlamp on={view.lamp} />
     {place === "home" ? <><Architecture place={place} /><StationStructure place={place} /></> : <><InteriorArt stratum={place} /><Architecture place={place} shell={false} /></>}
     <RoomLights /><StationModels place={place} assets={stationAssets} /><ModularArchitecture place={place} /><DamagedMachinery place={place} /><StencilDecals place={place} />
-    {dive === null && <MarrowBays world={base} />}
-    {dive !== null && <StratumDressing dive={dive} deep={view.deep} world={base} />}
+    {!diving && <Bays />}
+    {diving && <><FloorDressing place={place} /><FloorLife place={place} /></>}
     {editorLayers.markers.filter(m => m.kind === "deepward-station-sign" && m.meta?.["place"] === place).map(m => <Sign key={m.id} at={[m.position.x,m.position.y,m.position.z]} title={m.label ?? m.id} sub={String(m.meta?.["subtitle"] ?? "")} width={Number(m.meta?.["width"] ?? 2.6)} turn={m.rotationY ?? 0} color={C.amber} />)}
-    <group visible={dive === null}>
+    <group visible={!diving}>
     <RailCart at={[GARAGE[0], GARAGE[1], GARAGE[2] - 0.7]} home />
 
     <group position={[STASH[0] - 0.4, 0, STASH[2]]}>
@@ -204,17 +256,17 @@ function WorldOverlay() {
       <Block at={[0, 0.65, 0]} size={[1.7, 1.3, 1.3]} color={C.wall} />
       <Block at={[0.86, 0.82, 0]} size={[0.04, 0.15, 0.9]} color={C.cyan} glow />
       </>}
-      <Sign at={[0, 2.5, 0.7]} title="MARROW / STASH" sub={`${view.home.stash.length} ITEMS / SAVED AT HOME`} width={3.4} />
+      <Sign at={[0, 2.5, 0.7]} title="MARROW / STASH" sub={`${view.stash} ITEMS / SAVED AT HOME`} width={3.4} />
     </group>
     {!hasStationModel("home", "decor-home-printer") && <group position={decorPoint("decor-home-printer")}>
       <Block at={[0, 0.4, 0]} size={[2.6, 0.75, 1.5]} color={C.steel} />
       <Block at={[0, 1.1, -0.6]} size={[2.6, 1.5, 0.2]} color={C.wall} />
-      <Sign at={[0, 2.5, -0.45]} title="THE PRINTER" sub={`HALLOWAY / LIFE ${view.home.life}`} color={C.amber} width={3} />
+      <Sign at={[0, 2.5, -0.45]} title="THE PRINTER" sub={`HALLOWAY / LIFE ${view.life}`} color={C.amber} width={3} />
       <Tube at={[-0.85, 1.6, -0.4]} height={0.7} color={C.ink} />
     </group>
     }
     <Sign at={decorPoint("sign-marrow")} title="MARROW" sub="ONE OF THE LAST LIT VAULTS" color={C.amber} turn={Math.PI} width={5.5} />
-    </group><group visible={dive !== null && dive.stratum === "vault"}>
+    </group><group visible={place === "vault"}>
     <RailCart at={[EXIT[0], EXIT[1], EXIT[2] + 0.5]} />
     {DECOR.filter(entry => entry.id.startsWith("locker-shift-")).map(entry => <group key={entry.id} position={[entry.position.x, entry.position.y, entry.position.z]}>
       <ShiftLocker ajar={entry.id.endsWith("2") ? 0.35 : 0} />
@@ -222,7 +274,7 @@ function WorldOverlay() {
     </group>)}
     <Sign at={decorPoint("sign-shift")} title="SHIFT 406" sub="REPORT TO YOUR POST" color={C.amber} />
     {SALVAGE.map(s => <group key={s.id} position={[s.at[0], 0, s.at[2]]}>
-      <SalvageModel kind={s.kind} empty={dive?.collected.includes(s.id) ?? false} />
+      <SalvageModel kind={s.kind} empty={view.collected.includes(s.id)} />
       <SalvagePlacard id={s.id} kind={s.kind} />
     </group>)}
     {PROPS.filter(p => !hasStationModel("vault", p.id)).map((p, i) => <group key={i} position={[p.x, 0, p.z]}>
@@ -231,23 +283,19 @@ function WorldOverlay() {
       <Block at={[0, 1.1, p.d / 2 + 0.02]} size={[p.w * 0.6, 0.1, 0.05]} color={i === 2 ? C.ink : C.cyan} glow />
     </group>)}
     <Sign at={decorPoint("sign-printer")} title="PRINTER 06" sub="PATTERN: FITTER / COPY 406" color={C.ink} />
-    <group position={[STEAM.x, 0, STEAM.z]}>
-      <Block at={[0, 0.018, 0]} size={[STEAM.w, 0.025, STEAM.d]} color="#554437" />
-      {Array.from({ length: 9 }, (_, i) => <Block key={i} at={[0, 0.04, -3 + i * 0.7]} size={[STEAM.w, 0.025, 0.17]} color={C.amber} />)}
-      <Tube at={[1.6, 1.9, 0]} radius={0.14} height={3.8} />
-      <Sign at={[0, 2.7, -3.8]} title="HOT SUPPRESSANT" sub={steamOn ? "VENTING / KEEP CLEAR" : "PRESSURE LOW / CROSS NOW"} color={C.danger} width={3.5} />
-      {steamOn && <>
-        <pointLight position={[0, 1, 0]} color={C.danger} intensity={12} distance={7} />
-        {[-1, 0, 1].map(x => <mesh key={x} position={[x, 1.1, 0]}><cylinderGeometry args={[0.7, 0.25, 2.1, 10]} /><meshBasicMaterial color="#dec9b6" transparent opacity={0.16} depthWrite={false} /></mesh>)}
-      </>}
+    <SteamVent />
     </group>
-    </group>
-    {dive?.print.drop !== null && dive?.print.drop !== undefined && dive.stratum === "vault" && !dive.collected.includes("fitter") && <group position={[dive.print.drop[0], dive.print.drop[1] + 0.1, dive.print.drop[2]]} rotation={[0, Math.PI / 2, Math.PI / 2]} scale={1.35}>
+    {view.drop !== null && place === "vault" && !view.collected.includes("fitter") && <group position={[view.drop[0], view.drop[1] + 0.1, view.drop[2]]} rotation={[0, Math.PI / 2, Math.PI / 2]} scale={1.35}>
       <ServiceWeapon kind="service-rifle" />
     </group>}
-    {view.trace !== null && <Tracer from={view.trace.from} to={view.trace.to} />}
+    <ShotTrace />
     <Hand />
   </>;
+}
+/** The last shot's tracer, while it shows. */
+function ShotTrace() {
+  const trace = useStore(viewStore, view => view.trace === null ? null : { from: view.trace.from, to: view.trace.to });
+  return trace === null ? null : <Tracer from={trace.from} to={trace.to} />;
 }
 const content: GameContextContent = {
   entityById(id): GameContextEntityEntry | null {

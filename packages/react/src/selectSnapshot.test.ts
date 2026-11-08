@@ -1,41 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createLiveSelectCache, createSelectCache, readLiveSnapshot, readSelectSnapshot, takeLiveLatest } from "./selectSnapshot";
-
-describe("live selection (useGameStoreLive)", () => {
-  type Chart = { markers: string[]; x: number };
-  const sameShape = (a: Chart, b: Chart) => a.markers.join() === b.markers.join();
-
-  test("a render keeps one selection while the shape holds; the writer gets every new one exactly once", () => {
-    const cache = createLiveSelectCache<number, Chart>();
-    const at = (version: number, x: number, markers = ["player"]) => readLiveSnapshot(cache, version, () => ({ markers, x }), sameShape);
-    const first = at(1, 0);
-    expect(takeLiveLatest(cache, true)?.value.x).toBe(0);
-    expect(takeLiveLatest(cache, true)).toBeNull();
-    // The player moves: same shape, so a render keeps the first selection while the writer gets the move.
-    expect(at(2, 5)).toBe(first);
-    expect(takeLiveLatest(cache, true)?.value.x).toBe(5);
-    expect(takeLiveLatest(cache, true)).toBeNull();
-    // After a render the writer places the newest selection again, for elements that render mounted.
-    expect(takeLiveLatest(cache, false)?.value.x).toBe(5);
-    // A new marker changes the shape: a render now shows the new selection.
-    const grown = at(3, 6, ["player", "cop"]);
-    expect(grown).not.toBe(first);
-    expect(grown.x).toBe(6);
-  });
-
-  test("the selector runs once per store version", () => {
-    const cache = createLiveSelectCache<number, Chart>();
-    let calls = 0;
-    const select = () => {
-      calls += 1;
-      return { markers: [], x: calls };
-    };
-    readLiveSnapshot(cache, 1, select, sameShape);
-    readLiveSnapshot(cache, 1, select, sameShape);
-    readLiveSnapshot(cache, 2, select, sameShape);
-    expect(calls).toBe(2);
-  });
-});
+import { createSelectCache, createSelectionRate, HOT_SELECTION_CHANGES, readSelectSnapshot, shallowEqual } from "./selectSnapshot";
 
 describe("readSelectSnapshot", () => {
   test("returns the first computed value and caches it", () => {
@@ -94,13 +58,43 @@ describe("readSelectSnapshot", () => {
     expect(cache.snapshot).toBe(2);
   });
 
-  test("default equality is Object.is", () => {
-    const cache = createSelectCache<number, string>();
-    const a = readSelectSnapshot(cache, 1, () => "hp");
-    const b = readSelectSnapshot(cache, 2, () => "hp");
-    expect(b).toBe(a);
-    const c = readSelectSnapshot(cache, 3, () => "mp");
-    expect(c).toBe("mp");
-    expect(c).not.toBe(a);
+  test("a selection of the same fields in a new object or array is no change", () => {
+    const cache = createSelectCache<number, { mode: string; panel: string | null }>();
+    const first = readSelectSnapshot(cache, 1, () => ({ mode: "dive", panel: null }));
+    expect(readSelectSnapshot(cache, 2, () => ({ mode: "dive", panel: null }))).toBe(first);
+    expect(readSelectSnapshot(cache, 3, () => ({ mode: "home", panel: null }))).toEqual({ mode: "home", panel: null });
+  });
+});
+
+describe("shallowEqual", () => {
+  test("compares one level of arrays and plain objects by identity", () => {
+    const item = { id: "wire" };
+    expect(shallowEqual([1, item], [1, item])).toBe(true);
+    expect(shallowEqual([1, item], [1, { id: "wire" }])).toBe(false);
+    expect(shallowEqual({ a: 1, b: item }, { a: 1, b: item })).toBe(true);
+    expect(shallowEqual({ a: 1 }, { a: 1, b: 2 })).toBe(false);
+    expect(shallowEqual([1], { 0: 1 })).toBe(false);
+    expect(shallowEqual(new Map(), new Map())).toBe(false);
+    expect(shallowEqual(Number.NaN, Number.NaN)).toBe(true);
+  });
+});
+
+describe("createSelectionRate", () => {
+  test("says once when a selection changes about every frame, and not for a slow one", () => {
+    let at = 0;
+    const fast = createSelectionRate(() => at);
+    const reports: boolean[] = [];
+    for (let frame = 0; frame < HOT_SELECTION_CHANGES * 2; frame += 1) {
+      at += 16;
+      reports.push(fast.changed());
+    }
+    expect(reports.filter(Boolean).length).toBe(1);
+    const slow = createSelectionRate(() => at);
+    let said = false;
+    for (let tick = 0; tick < 200; tick += 1) {
+      at += 250;
+      said ||= slow.changed();
+    }
+    expect(said).toBe(false);
   });
 });

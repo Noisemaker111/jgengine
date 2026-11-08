@@ -16,6 +16,7 @@ export function FitterModel({print,hit=false}:{print:Dive['print'];hit?:boolean}
  if(!asset)throw Error('Missing original Fitter catalog asset');
  return <>
   <IsolatedEntityModel instanceId={PRINT_ID} model={{...asset,anchor:'origin',shadows:'both',animation:fitterAnimation(print)}} />
-  {hit && <pointLight position={[0,1.25,0.3]} color='#ff6654' intensity={3} distance={2.2} />}
+  {/* Mounted with the Fitter and dimmed between hits, so a hit never changes the scene's lights. */}
+  <pointLight position={[0,1.25,0.3]} color='#ff6654' intensity={hit ? 3 : 0} distance={2.2} />
  </>;
 }

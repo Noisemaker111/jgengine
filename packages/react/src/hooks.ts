@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type DependencyList } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type DependencyList } from "react";
 import { AxisChannel, type AxisChannelConfig } from "@jgengine/core/input/axisInput";
 import { createMarkerSet, type MarkerSet } from "@jgengine/core/map/markers";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
@@ -35,20 +35,34 @@ import {
   type PositionedPrompt,
 } from "@jgengine/core/interaction/proximityPrompt";
 import { gamePhase, setGamePhase, type GamePhase } from "@jgengine/core/game/gamePhase";
+import { readBuildEnv } from "@jgengine/core/devtools/saveEndpoint";
 import { useGameContext, useOptionalGameContext } from "./provider";
 
 const noopSubscribe = (): (() => void) => () => undefined;
-import { createLiveSelectCache, createSelectCache, readLiveSnapshot, readSelectSnapshot, takeLiveLatest } from "./selectSnapshot";
+import { createSelectCache, createSelectionRate, readSelectSnapshot, shallowEqual } from "./selectSnapshot";
+
+const DEV_BUILD = readBuildEnv().DEV === true;
+
+/** The component a hook runs in, read once off the stack for a warning. */
+function callerComponent(): string {
+  const lines = (new Error().stack ?? "").split("\n").map((line) => line.trim());
+  const frame = lines.find((line) => /^at [A-Z]/.test(line) && !/^at (useGameStore|useStore|useKeyedStore|Object\.|Array\.)/.test(line)) ?? lines.find((line) => /^[A-Z]\w*@/.test(line));
+  return frame === undefined ? "a component" : (/^(?:at )?([A-Z][\w$]*)/.exec(frame)?.[1] ?? "a component");
+}
 
 /**
  * Select from the game store and re-render when the selection changes. The selector runs once per
- * store version; `isEqual` (default `Object.is`) decides whether a new selection counts as a change, so
- * a selector that builds a new object or array each time needs one, or it re-renders on every tick.
- * For values that move every frame (a minimap following the player), use {@link useGameStoreLive}.
+ * store version; a selection equal to the last one (`isEqual`, default {@link shallowEqual}: the same
+ * value, or an array or plain object of the same values) is no change, so a component that picks
+ * `(ctx) => ({ mode: view(ctx).mode, panel: view(ctx).panel })` re-renders only when one of those does.
+ * Select only what the component shows. A value that moves every frame or tick (a timer, a meter, a
+ * position) never goes through here: bind it to its own node with `LiveText` or `useFrameBind`
+ * (`@jgengine/core/ui/liveBind.view`). In a dev build a component whose selection changes about every
+ * frame says so in the console.
  */
 export function useGameStore<T>(
   selector: (ctx: GameContext) => T,
-  isEqual: (previous: T, next: T) => boolean = Object.is,
+  isEqual: (previous: T, next: T) => boolean = shallowEqual,
 ): T {
   const ctx = useGameContext();
   const selectorRef = useRef(selector);
@@ -56,61 +70,27 @@ export function useGameStore<T>(
   const isEqualRef = useRef(isEqual);
   isEqualRef.current = isEqual;
   const cacheRef = useRef(createSelectCache<number, T>());
+  const rateRef = useRef<ReturnType<typeof createSelectionRate> | null>(null);
+  if (DEV_BUILD && rateRef.current === null) rateRef.current = createSelectionRate();
 
-  const getSnapshot = useCallback(
-    () =>
-      readSelectSnapshot(
-        cacheRef.current,
-        ctx.version(),
-        () => selectorRef.current(ctx),
-        (previous, next) => isEqualRef.current(previous, next),
-      ),
-    [ctx],
-  );
+  const getSnapshot = useCallback(() => {
+    const cache = cacheRef.current;
+    const before = cache.ready ? cache.value : undefined;
+    const value = readSelectSnapshot(
+      cache,
+      ctx.version(),
+      () => selectorRef.current(ctx),
+      (previous, next) => isEqualRef.current(previous, next),
+    );
+    if (rateRef.current !== null && before !== undefined && value !== before && rateRef.current.changed()) {
+      console.warn(
+        `[jgengine] ${callerComponent()} re-renders on almost every frame from the game store. Select only what it shows, and bind values that move every frame or tick with LiveText or useFrameBind (@jgengine/core/ui/liveBind.view), so only the changing text or bar updates.`,
+      );
+    }
+    return value;
+  }, [ctx]);
 
   return useSyncExternalStore(ctx.subscribe, getSnapshot, getSnapshot);
-}
-
-/**
- * Select from the game store at two speeds. The component re-renders only when `sameShape` says the
- * selection's shape changed (which markers exist, a label), and returns the selection as of that
- * render; `apply` receives every new selection to write the values that move each frame (a map's pan,
- * a marker's position) straight to elements through refs, so a HUD that follows the player does not
- * re-render and re-commit itself every frame. `apply` also runs after every render, so elements a
- * render mounted carry the current values before they paint. The selector runs once per store version.
- *
- * @capability game-store-live re-render a HUD component only when its selection's shape changes and write per-frame values through refs
- */
-export function useGameStoreLive<T>(
-  selector: (ctx: GameContext) => T,
-  sameShape: (previous: T, next: T) => boolean,
-  apply: (latest: T) => void,
-): T {
-  const ctx = useGameContext();
-  const selectorRef = useRef(selector);
-  selectorRef.current = selector;
-  const sameShapeRef = useRef(sameShape);
-  sameShapeRef.current = sameShape;
-  const applyRef = useRef(apply);
-  applyRef.current = apply;
-  const cacheRef = useRef(createLiveSelectCache<number, T>());
-
-  const getSnapshot = useCallback(
-    () => readLiveSnapshot(cacheRef.current, ctx.version(), () => selectorRef.current(ctx), (previous, next) => sameShapeRef.current(previous, next)),
-    [ctx],
-  );
-  const shaped = useSyncExternalStore(ctx.subscribe, getSnapshot, getSnapshot);
-  const write = useCallback(
-    (fresh: boolean) => {
-      getSnapshot();
-      const latest = takeLiveLatest(cacheRef.current, fresh);
-      if (latest !== null) applyRef.current(latest.value);
-    },
-    [getSnapshot],
-  );
-  useLayoutEffect(() => write(false));
-  useLayoutEffect(() => ctx.subscribe(() => write(true)), [ctx, write]);
-  return shaped;
 }
 
 /** Subscribe to a single keyed slice of the game store, returning `fallback` until the key is set. */

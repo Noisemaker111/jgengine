@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { attributeHitch, fpsAt, hitchCause, renderBreakdownText, spread, summarizeBreakdown, type FrameBreakdownRecord } from "./frameBreakdown";
+import { attributeHitch, fpsAt, hitchCause, programVariantChange, renderBreakdownText, spread, summarizeBreakdown, type FrameBreakdownRecord } from "./frameBreakdown";
 
 function frame(overrides: Partial<FrameBreakdownRecord> = {}): FrameBreakdownRecord {
   return {
@@ -80,4 +80,12 @@ test("a slow frame the loop cannot see into is named by the scripts the browser 
   expect(attributeHitch({ cause: "compile", detail: "linked" }, 1420, 430, timings).cause).toBe("compile");
   // Scripts outside the frame are not its cause.
   expect(attributeHitch(other, 3000, 40, timings)).toEqual(other);
+});
+
+test("a recompiled material names the scene change that forced it", () => {
+  // three's key: shader id, each define's name and value, then the scene-dependent parameters.
+  const key = (pointLights: number, toneMapping: number) => ["physical", "STANDARD", "", ...Array.from({ length: 53 }, (_, index) => (index === 36 ? pointLights : index === 49 ? toneMapping : 0)), "1,2,3", "srgb"].join();
+  expect(programVariantChange(key(3, 4), key(2, 4), 1)).toBe("point lights 3→2");
+  expect(programVariantChange(key(3, 4), key(3, 0), 1)).toBe("toneMapping 4→0");
+  expect(programVariantChange(key(3, 4), key(3, 4), 1)).toBeNull();
 });

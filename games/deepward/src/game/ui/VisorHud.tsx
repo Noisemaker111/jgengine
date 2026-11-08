@@ -81,7 +81,7 @@ export function DiveComputer({ oxygen, tank, health, rail, sealed, low, hurt, bo
   const color = low ? RED : fraction < 0.5 ? AMBER : TEAL;
   const suit = health <= 35 ? RED : health <= 60 ? AMBER : TEAL;
   return (
-    <HudFade watch={[Math.floor(oxygen / 15), Math.ceil(health / 10), Math.round(rail / 8), Math.ceil((body?.food ?? 0) / 10), Math.ceil((body?.water ?? 0) / 10), seal?.crushing, belt?.ration, belt?.water, belt?.lure, belt?.lamp]} hold={low || hurt || health <= 35 || seal?.crushing === true || (body !== undefined && Math.min(body.food, body.water) <= 15)} idleMs={4000} dimTo={0.6}>
+    <HudFade watch={() => [Math.floor(oxygen / 15), Math.ceil(health / 10), Math.round(rail / 8), Math.ceil((body?.food ?? 0) / 10), Math.ceil((body?.water ?? 0) / 10), seal?.crushing, belt?.ration, belt?.water, belt?.lure, belt?.lamp]} hold={() => low || hurt || health <= 35 || seal?.crushing === true || (body !== undefined && Math.min(body.food, body.water) <= 15)} idleMs={4000} dimTo={0.6}>
       <section className="dw-computer" aria-label="Dive computer" data-low={low ? "" : undefined}>
         <KitPanel material="hull" cut="chamfer" depth={14} tint="#1b2c33" {...plate(low ? RED : "#04090b")} className="dw-rimmed" padding="10px 14px 10px 10px">
           <div className="dw-computer-face">
@@ -114,7 +114,7 @@ export function DepthStrip({ room }: { room: string }): ReactNode {
   const depth = match === null ? "00" : match[1]!.padStart(2, "0");
   const name = match === null ? room : match[2]!;
   return (
-    <HudFade watch={[room]} idleMs={4500} dimTo={0.3}>
+    <HudFade watch={() => [room]} idleMs={4500} dimTo={0.3}>
       <div className="dw-depth" aria-label={`Depth ${depth}, ${name}`}>
         <span className="dw-depth-rule" aria-hidden="true" />
         <span className="dw-depth-mark"><small>DEPTH</small><b>{depth}</b></span>
@@ -143,7 +143,7 @@ export function KitCounter({ weapon, loaded, capacity, reserve, reloading, items
   const emptyish = loaded !== null && capacity !== null && loaded <= Math.max(1, Math.floor(capacity / 4));
   const full = mass >= capacityWeight;
   return (
-    <HudFade watch={[loaded, reserve, reloading === null, items, mass]} hold={reloading !== null || emptyish} idleMs={4000} dimTo={0.6}>
+    <HudFade watch={() => [loaded, reserve, reloading === null, items, mass]} hold={() => reloading !== null || emptyish} idleMs={4000} dimTo={0.6}>
       <section className="dw-kit" aria-label="Hand and cache">
         <KitPanel material="hull" cut="chamfer" depth={14} tint="#1b2c33" {...plate("#04090b")} className="dw-rimmed" padding="12px 14px 10px 22px">
           <div className="dw-kit-hand">
@@ -170,7 +170,7 @@ export function KitCounter({ weapon, loaded, capacity, reserve, reloading, items
 /** A small hull tab on the helmet edge that holds the dive. */
 export function HoldTab({ onPause, disabled }: { onPause: () => void; disabled: boolean }): ReactNode {
   return (
-    <HudFade watch={[disabled]} idleMs={3000} dimTo={0.6}>
+    <HudFade watch={() => [disabled]} idleMs={3000} dimTo={0.6}>
       <KitButton type="button" material="hull" cut="hex" depth={10} tint="#22363f" {...plate("#04090b")} padding="7px 26px" className="dw-hold dw-hud-btn dw-rimmed" aria-label="Pause / Esc" disabled={disabled} onClick={onPause}>
         <span className="dw-hold-face"><GameIcon name="pause" size={16} color={AMBER} /><kbd>Esc</kbd></span>
       </KitButton>
@@ -181,7 +181,7 @@ export function HoldTab({ onPause, disabled }: { onPause: () => void; disabled: 
 /** Marrow's radio: one line of advice on the lower glass, gone when it has been said. */
 export function CommsLine({ hint, error }: { hint: string; error: string | null }): ReactNode {
   return (
-    <HudFade watch={[hint, error]} hold={error !== null} idleMs={7000} dimTo={0.22}>
+    <HudFade watch={() => [hint, error]} hold={() => error !== null} idleMs={7000} dimTo={0.22}>
       <div className="dw-comms">
         <span className="dw-comms-tag"><i aria-hidden="true" />Marrow radio</span>
         <p role="status">{hint}</p>

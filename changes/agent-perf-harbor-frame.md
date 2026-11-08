@@ -4,10 +4,7 @@ Engine seam: packages/core/src/instancing/staticDrawPool.draw.ts, packages/core/
 
 ### Added
 
-- useGameStoreLive re-renders a HUD only when what it draws changes and writes per-frame values through refs
 - `MinimapChromeHandle` (`@jgengine/core/map/map.view`): Moves an already-drawn `MinimapChrome`'s markers in place.
-- `useGameStoreLive` (`@jgengine/react`): Select from the game store at two speeds. Also `MinimapChromeHandle`.
-- `useGameStoreLive` (`@jgengine/react/hooks`): Select from the game store at two speeds.
 
 ### Fixed
 

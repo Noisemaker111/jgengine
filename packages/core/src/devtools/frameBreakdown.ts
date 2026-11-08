@@ -101,6 +101,44 @@ export interface HitchSession {
   dropped: number;
 }
 
+/*
+ * The scene-dependent part of three's program cache key, in the order `getProgramCacheKeyParameters`
+ * pushes it after the shader id and the material's defines (three 0.187).
+ */
+const PROGRAM_KEY_PARAMETERS = [
+  "precision", "outputColorSpace", "envMapMode", "envMapPMREM", "envMapMaxLod", "envMapSize",
+  "mapUv", "alphaMapUv", "lightMapUv", "aoMapUv", "bumpMapUv", "normalMapUv", "displacementMapUv", "emissiveMapUv",
+  "metalnessMapUv", "roughnessMapUv", "anisotropyMapUv", "clearcoatMapUv", "clearcoatNormalMapUv", "clearcoatRoughnessMapUv",
+  "diffuseRoughnessMapUv", "iridescenceMapUv", "iridescenceThicknessMapUv", "sheenColorMapUv", "sheenRoughnessMapUv",
+  "specularMapUv", "specularColorMapUv", "specularIntensityMapUv", "transmissionMapUv", "thicknessMapUv",
+  "combine", "fogExp2", "sizeAttenuation", "morphTargetsCount",
+  "sun lights", "directional lights", "point lights", "spot lights", "spot light maps", "hemisphere lights", "rect area lights",
+  "sun light shadows", "directional light shadows", "point light shadows", "spot light shadows", "spot light shadows with maps",
+  "light probes", "light probe grids", "shadowMapType", "toneMapping", "clipping planes", "clip intersections", "depthPacking",
+] as const;
+
+/**
+ * Why a material that already had a program compiled another: the program cache key fields that
+ * differ between its previous program and the new one, as `point lights 3→2`. A material recompiles
+ * for the whole scene when a light is added or removed, so this names the change to avoid. `defines`
+ * is how many defines the material has; null when the keys are not three's layout.
+ * @internal
+ */
+export function programVariantChange(previousKey: string, nextKey: string, defines: number): string | null {
+  const before = previousKey.split(",");
+  const after = nextKey.split(",");
+  const offset = 1 + defines * 2;
+  const changes: string[] = [];
+  for (let index = 0; index < PROGRAM_KEY_PARAMETERS.length; index += 1) {
+    const was = before[offset + index];
+    const now = after[offset + index];
+    if (was === undefined || now === undefined) return null;
+    if (was !== now) changes.push(`${PROGRAM_KEY_PARAMETERS[index]} ${was}→${now}`);
+  }
+  if (changes.length > 0) return changes.join(", ");
+  return before.length === after.length && before.every((part, index) => part === after[index]) ? null : "material flags";
+}
+
 /**
  * The scripts that ran inside a frame that ended at `endMs` after `intervalMs`, longest first, and
  * the cause they make it when the frame's own record named nothing: a slow frame with no compile,

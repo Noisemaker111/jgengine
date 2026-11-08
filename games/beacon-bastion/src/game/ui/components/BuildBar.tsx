@@ -31,7 +31,7 @@ export function BuildBar() {
   );
 
   return (
-    <HudFade watch={[gold, selected, building]} hold={selected !== null || building.length > 0} dimTo={0.55} idleMs={6000}>
+    <HudFade watch={() => [gold, selected, building]} hold={() => selected !== null || building.length > 0} dimTo={0.55} idleMs={6000}>
       <div className="bb-rack">
         <span className="bb-rack-prompt">{building.length > 0 ? `Raising ${building}` : buildPrompt(selected !== null, selectedAffordable)}</span>
         <div className="bb-rack-row">

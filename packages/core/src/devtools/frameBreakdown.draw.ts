@@ -9,6 +9,7 @@ import {
   hitchCause,
   HITCH_MS,
   observeFrameWork,
+  programVariantChange,
   summarizeBreakdown,
   type DrawCost,
   type FrameBreakdown,
@@ -353,6 +354,20 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     }
     return label;
   };
+  // A material that already had a program and built another: which part of the scene changed under it.
+  const recompiledFor = (material: unknown): string | null => {
+    if (typeof material !== "object" || material === null) return null;
+    const properties: unknown = renderer.properties.get(material);
+    const programs: unknown = typeof properties === "object" && properties !== null ? Reflect.get(properties, "programs") : undefined;
+    const currentProgram: unknown = typeof properties === "object" && properties !== null ? Reflect.get(properties, "currentProgram") : undefined;
+    if (!(programs instanceof Map) || programs.size < 2 || typeof currentProgram !== "object" || currentProgram === null) return null;
+    const nextKey: unknown = Reflect.get(currentProgram, "cacheKey");
+    if (typeof nextKey !== "string") return null;
+    const previousKey = [...programs.keys()].reverse().find((key): key is string => typeof key === "string" && key !== nextKey);
+    if (previousKey === undefined) return null;
+    const defines: unknown = Reflect.get(material, "defines");
+    return programVariantChange(previousKey, nextKey, typeof defines === "object" && defines !== null ? Object.keys(defines).length : 0);
+  };
   wrap(renderer, "renderBufferDirect", (original) => (camera: unknown, scene: unknown, geometry: unknown, material: unknown, object: unknown, group: unknown) => {
     const start = performance.now();
     const compiledBefore = current?.compileMs ?? 0;
@@ -373,7 +388,8 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
       // This draw built or first used a program: name it, so a compile hitch says what to warm up.
       if (current !== null && current.compileMs - compiledBefore >= 1) {
         const shaders = current.shaders ??= [];
-        if (shaders.length < FRAME_RETENTION_LIMIT) shaders.push(`${materialName} on ${objectName}`);
+        const variant = recompiledFor(material);
+        if (shaders.length < FRAME_RETENTION_LIMIT) shaders.push(`${materialName} on ${objectName}${variant === null ? "" : ` (recompiled: ${variant})`}`);
         else retention.shaders += 1;
       }
     }
