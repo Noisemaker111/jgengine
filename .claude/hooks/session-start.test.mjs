@@ -9,12 +9,17 @@ const source = readFileSync(new URL('./session-start.mjs', import.meta.url), 'ut
   .replace(/^import .*;\r?\n/gm, '');
 
 /** Run the hook against a fake git: `rulesMoved` makes beta's AGENTS.md differ from the lane's fork point. */
-function runHook({ sourceOnly = false, rulesMoved = false, warm = false } = {}) {
+function runHook({ sourceOnly = false, rulesMoved = false, warm = false, startFails = false } = {}) {
   const commands = [], launches = [], messages = [];
   const stopped = {};
   const sandbox = {
     join,
-    execFileSync(_command, args) {
+    execFileSync(command, args, options) {
+      if (command === 'bun') {
+        launches.push({ command, args, options });
+        if (startFails) throw new Error('exit 1');
+        return Buffer.from('task-7\n');
+      }
       commands.push(args);
       const key = args.join(' ');
       if (key.startsWith('diff --quiet') && rulesMoved) throw new Error('exit 1');
@@ -24,11 +29,6 @@ function runHook({ sourceOnly = false, rulesMoved = false, warm = false } = {}) 
       return Buffer.from(answer);
     },
     existsSync: () => warm,
-    openSync: () => 7,
-    spawn(command, args, options) {
-      launches.push({ command, args, options });
-      return { pid: 42, unref() {} };
-    },
     process: { env: sourceOnly ? { JG_PARENT_SOURCE_ONLY: '1' } : {}, cwd: () => '/owned',
       stdout: { write: (message) => messages.push(JSON.parse(message)) }, exit: () => { throw stopped; } },
   };
@@ -36,12 +36,16 @@ function runHook({ sourceOnly = false, rulesMoved = false, warm = false } = {}) 
   return { commands, launches, context: messages[0]?.hookSpecificOutput.additionalContext ?? '' };
 }
 
-test('a cold checkout starts the bootstrap hidden and detached, and says so', () => {
+test('a cold checkout starts the bootstrap as a background task outside the hook, and names it', () => {
   const result = runHook();
   assert.equal(result.launches.length, 1);
+  assert.equal(result.launches[0].args.join(' '), 'scripts/bg-run.ts start bun scripts/agent-bootstrap.ts');
   assert.equal(result.launches[0].options.windowsHide, true);
-  assert.equal(result.launches[0].options.detached, true);
-  assert.match(result.context, /was started in the background/);
+  assert.match(result.context, /was started in the background as task task-7/);
+});
+
+test('a bootstrap that could not start says degraded', () => {
+  assert.match(runHook({ startFails: true }).context, /^degraded: the bootstrap could not be started/);
 });
 
 test('a source-only session never starts the bootstrap', () => {
