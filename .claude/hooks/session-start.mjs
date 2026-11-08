@@ -1,5 +1,6 @@
-// Session start on this PC: say whether the checkout is cold and whether this branch has
-// unpushed commits. Nothing else: the flow, worktrees and landing live in AGENTS.md.
+// Session start on this PC: say whether the checkout is cold, whether this branch has unpushed
+// commits, and whether beta's AGENTS.md moved since it branched. Nothing else: the flow, worktrees
+// and landing live in AGENTS.md.
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
