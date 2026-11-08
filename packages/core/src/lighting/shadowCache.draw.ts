@@ -910,6 +910,7 @@ class ShadowCache {
   private readonly tracker: ShadowCasterTracker;
   private readonly proxy = new THREE.Object3D();
   private readonly rest: THREE.Light[] = [];
+  private readonly planned: { light: THREE.Light; shadow: ManagedShadow; record: LightRecord; key: number[]; plan: ShadowPassPlan; reaches: boolean }[] = [];
   private readonly single: THREE.Light[] = [];
   private readonly original: ShadowCacheRenderer["shadowMap"]["render"];
   private readonly wrapper: ShadowCacheRenderer["shadowMap"]["render"];
@@ -1001,8 +1002,11 @@ class ShadowCache {
     this.frame += 1;
     const reversed = renderer.state.buffers.depth.getReversed();
     const rest = this.rest;
+    const planned = this.planned;
     rest.length = 0;
+    planned.length = 0;
     let checked = false;
+    let allFull = true;
     try {
       for (const light of lights) {
         const shadow = managedShadow(light);
@@ -1026,14 +1030,27 @@ class ShadowCache {
         }
         const reaches = mayCache && this.tracker.dynamicReaches(shadow.getFrustum(), passLayers(shadow, camera));
         const plan = planShadowPass(record.state, key, reaches);
-        this.run(plan, light, shadow, record, scene, camera, needsUpdate);
+        if (plan !== "full") allFull = false;
+        planned.push({ light, shadow, record, key, plan, reaches });
+      }
+      if (allFull) {
+        // Every light draws all its casters (a walking camera moves every cascade it updates): one
+        // call, exactly three's own pass, so a frame the cache cannot help costs what it did without it.
+        this.callOriginal(lights, scene, camera, needsUpdate);
+      } else {
+        for (const { light, shadow, record, plan } of planned) {
+          this.run(plan, light, shadow, record, scene, camera, needsUpdate);
+          if (this.audit && plan !== "full") this.auditPass(light, shadow, scene, camera, needsUpdate);
+        }
+        if (rest.length > 0) this.callOriginal(rest, scene, camera, needsUpdate);
+      }
+      for (const { record, key, plan, reaches } of planned) {
         recordShadowPass(record.state, key, plan, reaches);
         this.passes[plan] += 1;
-        if (this.audit && plan !== "full") this.auditPass(light, shadow, scene, camera, needsUpdate);
       }
-      if (rest.length > 0) this.callOriginal(rest, scene, camera, needsUpdate);
     } finally {
       rest.length = 0;
+      planned.length = 0;
       shadowMap.needsUpdate = false;
     }
     if (this.frame % LIGHT_RETIRE_FRAMES === 0) this.retire();

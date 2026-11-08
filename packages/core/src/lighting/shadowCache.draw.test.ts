@@ -13,6 +13,8 @@ class FakeRenderer implements ShadowCacheRenderer {
   readonly images = new Map<THREE.Texture, Set<string>>();
   target: THREE.WebGLRenderTarget | null = null;
   draws = 0;
+  /** Calls into three's own shadow pass. */
+  passes = 0;
   readonly clippingPlanes: THREE.Plane[] = [];
   readonly state = { buffers: { depth: { getReversed: () => false } } };
   readonly shadowMap = {
@@ -46,6 +48,7 @@ class FakeRenderer implements ShadowCacheRenderer {
 
   private shadowPass(lights: THREE.Light[], scene: THREE.Object3D, camera: THREE.Camera): void {
     const shadowMap = this.shadowMap;
+    this.passes += 1;
     if (!shadowMap.enabled || (!shadowMap.autoUpdate && !shadowMap.needsUpdate) || lights.length === 0) return;
     const previous = this.target;
     for (const light of lights) {
@@ -376,6 +379,40 @@ describe("shadow cache invalidation", () => {
         expect(w.renderer.draws - draws).toBe(1);
       }
     }
+    w.dispose();
+  });
+
+  test("a frame where every light draws in full is one call to three's own pass", () => {
+    const w = world();
+    for (let index = 0; index < 4; index += 1) w.scene.add(box());
+    const second = new THREE.DirectionalLight();
+    second.castShadow = true;
+    second.position.set(-10, 15, 5);
+    second.shadow.mapSize.set(32, 32);
+    w.scene.add(second, second.target);
+    w.settle();
+    // The first move after a hold rebuilds the layer; from the second on, a light moving every pass draws in full.
+    w.light.position.x += 0.5;
+    second.position.x += 0.5;
+    w.frame();
+    for (let index = 0; index < 5; index += 1) {
+      // A walking camera's cascades: both projections move every frame.
+      w.light.position.x += 0.5;
+      second.position.x += 0.5;
+      const calls = w.renderer.passes;
+      expect(w.frame()).toMatchObject({ full: 2 });
+      expect(w.renderer.passes - calls).toBe(1);
+      expectSame(w);
+      expectSame(w, second);
+    }
+    // One light holding again goes back to a pass per light.
+    w.frame();
+    w.light.position.x += 0.5;
+    const calls = w.renderer.passes;
+    w.frame();
+    expect(w.renderer.passes - calls).toBeGreaterThan(1);
+    expectSame(w);
+    expectSame(w, second);
     w.dispose();
   });
 
