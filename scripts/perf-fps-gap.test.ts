@@ -6,7 +6,9 @@ import type { PerfRecord } from "./perf-play";
 import {
   cpuGroupOf,
   FPS_GAP_BUDGET_MS,
+  fpsGapGuardSeconds,
   frameCost,
+  GAME_DEADLINE_MS,
   gcPer8s,
   groupCosts,
   parseFpsGapArgs,
@@ -70,6 +72,17 @@ function entry(game: string, summary: FrameBreakdownSummary | null): FpsGapEntry
   } as unknown as PerfRecord; // type-escape: a test record carries only the fields the report reads
   return { record, layers: [{ layer: "three.js", pct: 30 }], allocators: [{ fn: "updateMatrixWorld", at: "three.module.js:1:1", mbPerSecond: 12 }] };
 }
+
+test("the whole run's guard covers every game's deadline on every backend", () => {
+  const one = fpsGapGuardSeconds(["--games", "fernwild"]);
+  const five = fpsGapGuardSeconds(["--games", "a,b,c,d,e"]);
+  // Each extra game adds its full hard deadline, which itself outlasts the per-game deadline.
+  expect(five - one).toBe(4 * 540);
+  expect(one * 1000).toBeGreaterThan(GAME_DEADLINE_MS);
+  expect(fpsGapGuardSeconds(["--games", "a,b,c,d,e", "--renderer", "both"]) - five).toBe(5 * 540);
+  expect(fpsGapGuardSeconds(["--reuse"])).toBeLessThan(one);
+  expect(fpsGapGuardSeconds(["--bogus"])).toBeGreaterThan(0);
+});
 
 test("the budget is one frame at 360 Hz", () => {
   expect(FPS_GAP_BUDGET_MS).toBeCloseTo(2.778, 3);

@@ -11,8 +11,11 @@ export interface Verb {
   readonly script: string;
   /** Arguments put before the caller's own. */
   readonly args?: readonly string[];
-  /** Seconds `scripts/guard.ts` lets it run before ending it; none runs unguarded. */
-  readonly guardSeconds?: number;
+  /**
+   * Seconds `scripts/guard.ts` lets it run before ending it; none runs unguarded. A function reads the
+   * verb's own arguments, for a run whose length grows with them (one deadline per game measured).
+   */
+  readonly guardSeconds?: number | ((args: readonly string[]) => number);
   readonly detail: string;
 }
 
@@ -42,7 +45,8 @@ export function resolveVerb(table: VerbTable, argv: readonly string[]): string[]
   if (verb === undefined) return null;
   const args = [...(verb.args ?? []), ...(named !== undefined ? rest : argv)];
   if (verb.guardSeconds === undefined) return ["bun", verb.script, ...args];
-  return ["bun", "scripts/guard.ts", String(verb.guardSeconds), `bun ${verb.script}`, ...args];
+  const seconds = typeof verb.guardSeconds === "function" ? verb.guardSeconds(args) : verb.guardSeconds;
+  return ["bun", "scripts/guard.ts", String(seconds), `bun ${verb.script}`, ...args];
 }
 
 /** Run the verb `argv` names; prints the table's usage for `--help` or an unknown verb. */

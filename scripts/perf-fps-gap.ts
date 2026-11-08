@@ -401,6 +401,25 @@ const GAME_HARD_DEADLINE_MS = 540_000;
 /** A game still measuring after this fails alone and the run moves on to the next game. */
 export const GAME_DEADLINE_MS = GAME_HARD_DEADLINE_MS - 45_000;
 
+/** Start-up, the dev server and the report around the games, in the whole run's guard. */
+const RUN_OVERHEAD_S = 300;
+
+/**
+ * The guard on a whole `perf fps-gap` run: every game on every backend may take its own hard deadline.
+ * A fixed 900 s guard ended a five-game run on a busy PC mid-way, though each game kept its deadline.
+ */
+export function fpsGapGuardSeconds(argv: readonly string[]): number {
+  let parsed: FpsGapArgs | "help";
+  try {
+    parsed = parseFpsGapArgs(argv);
+  } catch {
+    // The script reports the bad argument itself, at once.
+    return RUN_OVERHEAD_S;
+  }
+  if (parsed === "help" || parsed.reuse) return RUN_OVERHEAD_S;
+  return Math.ceil((parsed.games.length * parsed.renderers.length * GAME_HARD_DEADLINE_MS) / 1000) + RUN_OVERHEAD_S;
+}
+
 /** `work`, or a rejection naming `game` once {@link GAME_DEADLINE_MS} passes. */
 export function withinDeadline<T>(game: string, work: Promise<T>, deadlineMs = GAME_DEADLINE_MS): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
