@@ -2412,10 +2412,7 @@ export async function navigateCapturePage(
           ? ((nextPollAt = Date.now() + 500),
             await session.evaluate<{ status: string | null; error: string | null; stage?: string | null; sizedCanvas?: boolean }>(CAPTURE_READINESS_EXPR))
           : undefined);
-      const reached = remote?.stage ?? stage;
-      // A load that hangs is then named by the readiness stage it stuck in.
-      if (reached !== stage && reached !== null) markStep(`load ${new URL(url).pathname}: ${reached}`);
-      stage = reached;
+      stage = remote?.stage ?? stage;
       if (remote?.status === "ready") return;
       if (remote?.status === "error") throw new Error(`capture error: ${remote.error ?? "unknown"}`);
       if (remote?.status != null) {

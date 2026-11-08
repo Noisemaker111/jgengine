@@ -155,8 +155,8 @@ const exit = await withBrowserSession({ keep: false, timeoutMs: 120_000 }, async
   const session = await openPageSession(debugPort);
   await session.send("Runtime.enable");
   const result = await session.evaluate<CaseResult[] | string>(`${PAGE}(${JSON.stringify(sources)})`, { awaitPromise: true });
-  if (typeof result === "string") {
-    console.error(`postfx-exact: could not run: ${result}`);
+  if (result === undefined || typeof result === "string") {
+    console.error(`postfx-exact: could not run: ${result ?? "the page returned nothing"}`);
     return 1;
   }
   let failed = 0;

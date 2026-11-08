@@ -39,7 +39,8 @@ export class TextureComparer {
       textures.forEach((texture, unit) => {
         gl.activeTexture(gl.TEXTURE0 + unit);
         gl.bindTexture(gl.TEXTURE_2D, handles[unit]!);
-        const compare = !raw && texture.compareFunction !== null && texture.compareFunction !== undefined;
+        // `in`: the scripts' three typings put compareFunction on DepthTexture only.
+        const compare = !raw && "compareFunction" in texture && texture.compareFunction != null;
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_COMPARE_MODE, compare ? gl.COMPARE_REF_TO_TEXTURE : gl.NONE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, raw || texture.minFilter === THREE.NearestFilter ? gl.NEAREST : gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, raw || texture.magFilter === THREE.NearestFilter ? gl.NEAREST : gl.LINEAR);
