@@ -23,6 +23,8 @@ export interface PublishRun {
   conclusion: string | null;
   headSha: string;
   url: string;
+  /** ISO time GitHub created the run. */
+  createdAt?: string | undefined;
 }
 
 export interface PublishJob {
@@ -51,10 +53,27 @@ export const POLL_INTERVAL_MS = 10_000;
  */
 export const START_GRACE_MS = 3 * 60_000;
 
-/** The newest run for `sha` by id, whatever order `gh` lists them in: a re-run replaces the attempt it retried. */
-export function pickRun(runs: readonly PublishRun[], sha: string): PublishRun | null {
+/**
+ * The publish run for `sha`. GitHub labels a `workflow_run` run with the default branch's tip when it was
+ * queued, not with the commit it publishes, so with `since` (when main's CI for `sha` started) the run is
+ * the first one queued after it, whatever commit it names, and nothing queued before it counts: 0.54.0's
+ * wait took an earlier refused run, labelled with beta's tip, as the verdict on main's new commit.
+ * Without `since`, the newest run labelled `sha` by id: a re-run replaces the attempt it retried.
+ */
+export function pickRun(runs: readonly PublishRun[], sha: string, since?: string): PublishRun | null {
+  if (since !== undefined) {
+    let first: PublishRun | null = null;
+    for (const run of runs) {
+      if (run.createdAt === undefined || run.createdAt < since) continue;
+      if (first === null || run.databaseId < first.databaseId) first = run;
+    }
+    if (first !== null) return first;
+  }
   let newest: PublishRun | null = null;
-  for (const run of runs) if (run.headSha === sha && (newest === null || run.databaseId > newest.databaseId)) newest = run;
+  for (const run of runs) {
+    if (run.headSha !== sha || (since !== undefined && run.createdAt !== undefined && run.createdAt < since)) continue;
+    if (newest === null || run.databaseId > newest.databaseId) newest = run;
+  }
   return newest;
 }
 
@@ -187,7 +206,7 @@ export async function awaitPublish(options: AwaitOptions): Promise<AwaitResult> 
       "--limit",
       "10",
       "--json",
-      "databaseId,status,conclusion,headSha,url",
+      "databaseId,status,conclusion,headSha,url,createdAt",
     ]);
     if (result.status !== 0) return [];
     return parseJson<PublishRun[]>(result.stdout) ?? [];
@@ -209,16 +228,16 @@ export async function awaitPublish(options: AwaitOptions): Promise<AwaitResult> 
       "--limit",
       "10",
       "--json",
-      "databaseId,status,conclusion,headSha,url",
+      "databaseId,status,conclusion,headSha,url,createdAt",
     ]);
     if (result.status !== 0) return null;
     return pickRun(parseJson<PublishRun[]>(result.stdout) ?? [], options.sha);
   };
 
-  let run = options.runId === undefined ? pickRun(listRuns(), options.sha) : readRun(options.runId);
+  let ci: PublishRun | null = options.runId === undefined ? readCiRun() : null;
+  let run = options.runId === undefined ? pickRun(listRuns(), options.sha, ci?.createdAt) : readRun(options.runId);
   // Publish starts only after main's CI for the commit finishes; until then a missing run is expected.
   // Once CI is done, a run not yet queued is normal for a few seconds; give it the grace window.
-  let ci: PublishRun | null = null;
   let graceFrom = started;
   while (run === null && options.runId === undefined && now() - started < timeout) {
     ci = readCiRun();
@@ -227,7 +246,7 @@ export async function awaitPublish(options: AwaitOptions): Promise<AwaitResult> 
     if (now() - graceFrom >= grace) break;
     // Bounded by the overall timeout while CI runs, then by the grace window
     await sleep(interval);
-    run = pickRun(listRuns(), options.sha);
+    run = pickRun(listRuns(), options.sha, ci?.createdAt);
   }
   while (run === null && options.runId !== undefined && now() - started < grace) {
     // The run id is known; reading it can fail briefly, and this window is bounded
