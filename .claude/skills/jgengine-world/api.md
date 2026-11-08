@@ -1985,6 +1985,7 @@
 - `clearBindingOverride` (function): function clearBindingOverride(gameId: string, action: string, storage: Pick<WebStorageLike, "getItem" | "setItem" | "removeItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
 - `loadBindingOverrides` (function): function loadBindingOverrides(gameId: string, storage: Pick<WebStorageLike, "getItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
 - `saveBindingOverride` (function): function saveBindingOverride(gameId: string, action: string, codes: ActionCodes, storage: Pick<WebStorageLike, "getItem" | "setItem" | "removeItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
+- `saveBindingOverrides` (function): function saveBindingOverrides(gameId: string, overrides: BindingOverrides, storage: Pick<WebStorageLike, "setItem" | "removeItem"> | null | undefined = defaultStorage()): void — Store a game's whole rebind map (an empty one clears it), as the shell does whenever the game's rebinds change.
 
 ## @jgengine/core/input/controlGroups
 

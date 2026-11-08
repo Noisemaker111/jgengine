@@ -19,9 +19,7 @@ const LANDING_SCRIPTS = [
   "scripts/lane-close.ts",
   "scripts/land.ts",
   "scripts/land-batch.ts",
-  "scripts/land-queue.ts",
   "scripts/ci-status.ts",
-  "scripts/pr-sweep.ts",
 ];
 /** `["gh", "pr", ...]`, or gh's argv alone (`["pr", ...]`, `["api", ...]`); `["run", ...]` alone is bun's. */
 const OWN_GH_CALL = /\[\s*["']gh["']\s*,\s*["'][\w-]+["']|\[\s*["'](?:pr|api|issue|label|repo)["']\s*,/g;

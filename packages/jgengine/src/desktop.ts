@@ -17,6 +17,7 @@ import { decodePng } from "@jgengine/assets/imageCodec";
 
 import { buildDesktopIcons, DESKTOP_ICON_FILES } from "./desktopIcons";
 import { extractDesktopMaps } from "./desktopMaps";
+import { findSteamApiDll, resolveSteamConfig, writeSteamDepot, type SteamConfig } from "./desktopSteam";
 import { escapeHtml } from "./escapeHtml";
 import { flag, hasFlag, readPackageJson } from "./pkg";
 import { displayNameFromId, GAME_ID_PATTERN } from "./templates";
@@ -43,8 +44,15 @@ export interface DesktopArgs {
   skipFrontendBuild: boolean;
   allowRemote: boolean;
   diagnostics: boolean;
-  /** `--no-installer`: build only the game's .exe (a perf or test build), skipping the NSIS installer. */
+  /** Lay out a SteamPipe depot and build scripts beside the app (`--steam`). */
+  steam: boolean;
+  /** Link the Steamworks API and the overlay surface (`--steamworks`, implies `--steam`). */
+  steamworks: boolean;
+  /** Build the NSIS installer; `--no-installer` and `--steam` build only the game executable. */
   installer: boolean;
+  steamApp: string | undefined;
+  steamDepot: string | undefined;
+  steamBranch: string | undefined;
 }
 
 export interface DesktopPlan {
@@ -58,6 +66,9 @@ export interface DesktopPlan {
   iconWarning: string | null;
   frontendDist: string;
   diagnostics: boolean;
+  /** The game's Steam identity when `--steam` was asked for. */
+  steam: SteamConfig | null;
+  installer: boolean;
 }
 
 export interface ToolchainReport {
@@ -98,7 +109,8 @@ export function desktopCodeHash(dist: string): string {
   return hash.digest("hex");
 }
 
-const VALUE_FLAGS = new Set(["--url", "--name", "--id", "--version", "--icon", "--out"]);
+const VALUE_FLAGS = new Set(["--url", "--name", "--id", "--version", "--icon", "--out", "--steam-app", "--steam-depot", "--steam-branch"]);
+const SWITCH_FLAGS = new Set(["--dry-run", "--skip-frontend-build", "--allow-remote", "--diagnostics", "--steam", "--steamworks", "--no-installer", "--help", "-h"]);
 
 const DEFAULT_VERSION = "0.1.0";
 
@@ -125,8 +137,18 @@ options:
   --dry-run           generate staging + config only; skip toolchain + Rust build
   --skip-frontend-build  reuse existing dist/ (local mode; for tests)
   --diagnostics       opt into local frame telemetry and WebView developer tools
-  --no-installer      build only the game's .exe, without the NSIS installer: for a build you
-                       run here (perf, a test) rather than ship; saves the installer's minutes
+  --no-installer      build only the game executable, without the NSIS installer
+  --steam             also lay out a SteamPipe build in <staging>/steam (implies --no-installer):
+                        content/  the game executable (and steam_api64.dll with --steamworks)
+                        scripts/  app_build_<appid>.vdf and depot_build_<depotid>.vdf
+                        output/   SteamPipe's build logs
+                      ids come from package.json "jgengine": { "steam": { "appId", "depotId",
+                      "branch", "steamworks" } }; without an app id the content is still built
+  --steam-app <id>    Steam app id (overrides package.json)
+  --steam-depot <id>  Windows depot id (default: app id + 1, the depot Steamworks creates first)
+  --steam-branch <b>  beta branch to set the build live on after upload
+  --steamworks        link the Steamworks API so the Steam overlay (Shift+Tab) works when Steam
+                      launches the game; implies --steam
   --allow-remote      allow --url to point at a host outside the trusted allowlist
                        (localhost, jgengine.com and its subdomains) — only pass this
                        for a hosted URL you trust; the shipped app loads it live
@@ -142,7 +164,8 @@ output:
   <staging>/<Name>.exe              the game itself; runs without installing
   <staging>/<Name>_<ver>_x64-setup.exe  the NSIS installer
   <Name>.exe --uncapped             run without the display's frame-rate cap on Windows
-                                    (WebView2); without it the game keeps vsync
+                                    (WebView2) whatever the player saved; otherwise the game
+                                    follows its Frame rate setting (default: match display)
   Rust builds share one cargo target dir (CARGO_TARGET_DIR, default
   %LOCALAPPDATA%/jgengine/desktop-target), so only the first game compiles Tauri.
 `;
@@ -163,21 +186,17 @@ export function parseDesktopArgs(argv: string[]): DesktopArgs | { error: string 
   const skipFrontendBuild = hasFlag(argv, "skip-frontend-build");
   const allowRemote = hasFlag(argv, "allow-remote");
   const diagnostics = hasFlag(argv, "diagnostics");
-  const installer = !hasFlag(argv, "no-installer");
+  const steamworks = hasFlag(argv, "steamworks");
+  const steam = steamworks || hasFlag(argv, "steam");
+  const installer = !steam && !hasFlag(argv, "no-installer");
+  const steamApp = flag(argv, "steam-app");
+  const steamDepot = flag(argv, "steam-depot");
+  const steamBranch = flag(argv, "steam-branch");
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index]!;
     if (!arg.startsWith("-")) continue;
-    if (
-      arg === "--dry-run" ||
-      arg === "--skip-frontend-build" ||
-      arg === "--allow-remote" ||
-      arg === "--diagnostics" ||
-      arg === "--no-installer" ||
-      arg === "--help" ||
-      arg === "-h"
-    )
-      continue;
+    if (SWITCH_FLAGS.has(arg)) continue;
     if (VALUE_FLAGS.has(arg)) {
       if (argv[index + 1] === undefined || argv[index + 1]!.startsWith("-")) {
         return { error: `${arg} requires a value` };
@@ -204,6 +223,10 @@ export function parseDesktopArgs(argv: string[]): DesktopArgs | { error: string 
     return { error: "pass either a project directory or --url, not both" };
   }
   if (url !== undefined && diagnostics) return { error: "--diagnostics requires a local project" };
+  if (url !== undefined && steam) return { error: "--steam requires a local project" };
+  if (!steam && (steamApp !== undefined || steamDepot !== undefined || steamBranch !== undefined)) {
+    return { error: "--steam-app, --steam-depot and --steam-branch need --steam" };
+  }
 
   if (url !== undefined) {
     return {
@@ -219,7 +242,12 @@ export function parseDesktopArgs(argv: string[]): DesktopArgs | { error: string 
       skipFrontendBuild,
       allowRemote,
       diagnostics,
+      steam,
+      steamworks,
       installer,
+      steamApp,
+      steamDepot,
+      steamBranch,
     };
   }
 
@@ -236,7 +264,12 @@ export function parseDesktopArgs(argv: string[]): DesktopArgs | { error: string 
     skipFrontendBuild,
     allowRemote,
     diagnostics,
+    steam,
+    steamworks,
     installer,
+    steamApp,
+    steamDepot,
+    steamBranch,
   };
 }
 
@@ -507,6 +540,8 @@ export function buildPlan(args: DesktopArgs, cwd: string = process.cwd()): Deskt
       iconWarning: null,
       frontendDist: validated.url.toString(),
       diagnostics: false,
+      steam: null,
+      installer: args.installer,
     };
   }
 
@@ -530,6 +565,10 @@ export function buildPlan(args: DesktopArgs, cwd: string = process.cwd()): Deskt
   const projectIconError = found === null ? null : iconError(found);
   if (projectIconError !== null && args.icon !== undefined) return { error: projectIconError };
   const iconSource = projectIconError === null ? found : null;
+  const steam = args.steam
+    ? resolveSteamConfig(readPackageJson(join(projectDir, "package.json")), { appId: args.steamApp, depotId: args.steamDepot, branch: args.steamBranch, steamworks: args.steamworks })
+    : null;
+  if (steam !== null && "error" in steam) return steam;
   return {
     mode: "project",
     projectDir,
@@ -540,6 +579,8 @@ export function buildPlan(args: DesktopArgs, cwd: string = process.cwd()): Deskt
     iconWarning: projectIconError,
     frontendDist: "../dist",
     diagnostics: args.diagnostics,
+    steam,
+    installer: args.installer,
   };
 }
 
@@ -587,7 +628,12 @@ function tauriConf(plan: DesktopPlan): string {
   )}\n`;
 }
 
-function cargoToml(crate: string, version: string, diagnostics: boolean): string {
+/** Exact versions: a Steam build links Valve's binaries and a third-party overlay surface. */
+const STEAMWORKS_CRATE = "=0.13.1";
+const STEAM_OVERLAY_SURFACE_CRATE = "=0.1.3";
+
+/** @internal */
+export function cargoToml(crate: string, version: string, diagnostics: boolean, steamworks: boolean): string {
   return `[package]
 name = "${crate}"
 version = "${version}"
@@ -600,40 +646,184 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
+[features]
+${steamworks
+    ? `default = ["steam"]
+# The Steamworks API and a transparent window Steam's overlay can draw into: WebView2 renders in its
+# own processes, so Steam's in-process hook finds no swapchain of the game's to draw on.
+steam = ["dep:steamworks", "dep:tauri-plugin-steam-overlay-surface", "tauri/unstable"]`
+    : `steam = []`}
+
 [dependencies]
 # Without "compression": game assets are mostly already-compressed models and textures, and brotli over
 # them at build time costs minutes per game. The NSIS installer compresses the whole app anyway.
 tauri = { version = "2", default-features = false, features = ["wry", "common-controls-v6", "dynamic-acl", "x11", "dbus"${diagnostics ? ', "devtools"' : ""}] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-`;
+${steamworks
+    ? `steamworks = { version = "${STEAMWORKS_CRATE}", optional = true }
+tauri-plugin-steam-overlay-surface = { version = "${STEAM_OVERLAY_SURFACE_CRATE}", optional = true }
+`
+    : ""}`;
 }
 
 /**
  * The desktop app's Rust entry, shared by every staged game and `apps/desktop` (a test keeps that
- * copy identical). The window is created here rather than from `tauri.conf.json` so the
- * `--uncapped` launch flag can add WebView2's frame-rate flags; without it the window keeps the
- * display's vsync, which laptops and batteries want. macOS and Linux webviews ignore the flags.
+ * copy identical). The window is created here rather than from `tauri.conf.json` so the frame-rate
+ * choice can reach WebView2, which takes browser flags only when it starts: the player's saved
+ * "Frame rate" setting (`frame-rate.txt` in the app's config folder, written by `set_frame_rate`),
+ * or `--uncapped` on the command line, adds the flags that stop it pacing to the display's vsync.
+ * The default keeps vsync, which laptops and batteries want; macOS and Linux webviews ignore the
+ * flags. The player's Display mode (`fullscreen.txt`, written by `set_fullscreen`) switches the
+ * window to borderless fullscreen at once and opens it that way next time; unlike the page's HTML
+ * fullscreen, it survives alt-tab. The page learns both from `window.__JG_DESKTOP__`. The `steam`
+ * feature (`jgengine desktop --steamworks`) starts Steamworks before any window, gives Steam's
+ * overlay a surface it can hook, and forwards Shift+Tab, which lands in WebView2's process.
  * @internal
  */
 export function desktopLibRs(): string {
   return `// Generated by \`jgengine desktop\` (packages/jgengine/src/desktop.ts desktopLibRs); apps/desktop keeps an identical copy.
 
+use tauri::Manager;
+
 /// What wry passes when no browser arguments are given; setting any replaces these, so they are kept.
 const DEFAULT_BROWSER_ARGS: &str = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection";
 /// WebView2 (Chromium) flags that stop it pacing frames to the display's vsync.
 const UNCAPPED_BROWSER_ARGS: &str = "--disable-gpu-vsync --disable-frame-rate-limit";
+/// The player's display choices, one small file each in the app's config folder: the frame rate
+/// ("vsync" or "uncapped") and whether the window is borderless fullscreen ("1" or "0").
+const FRAME_RATE_FILE: &str = "frame-rate.txt";
+const FULLSCREEN_FILE: &str = "fullscreen.txt";
 
-/// \`<game>.exe --uncapped\` renders as fast as the game can instead of at the display's refresh rate.
-fn uncapped_requested() -> bool {
+/// \`<game>.exe --uncapped\` renders as fast as the game can, whatever the player saved.
+fn uncapped_flag() -> bool {
     std::env::args().skip(1).any(|arg| arg == "--uncapped")
+}
+
+fn saved_choice(app: &tauri::AppHandle, file: &str) -> Option<String> {
+    let dir = app.path().app_config_dir().ok()?;
+    std::fs::read_to_string(dir.join(file)).ok().map(|value| value.trim().to_string())
+}
+
+fn save_choice(app: &tauri::AppHandle, file: &str, value: &str) -> Result<(), String> {
+    let dir = app.path().app_config_dir().map_err(|error| error.to_string())?;
+    std::fs::create_dir_all(&dir).map_err(|error| error.to_string())?;
+    std::fs::write(dir.join(file), value).map_err(|error| error.to_string())
+}
+
+fn saved_frame_rate(app: &tauri::AppHandle) -> &'static str {
+    if saved_choice(app, FRAME_RATE_FILE).as_deref() == Some("uncapped") {
+        "uncapped"
+    } else {
+        "vsync"
+    }
+}
+
+/// Saves the player's frame-rate choice; WebView2 applies it on the next launch.
+#[tauri::command]
+fn set_frame_rate(app: tauri::AppHandle, mode: String) -> Result<(), String> {
+    if mode != "vsync" && mode != "uncapped" {
+        return Err(format!("unknown frame rate {mode:?}; expected vsync or uncapped"));
+    }
+    save_choice(&app, FRAME_RATE_FILE, &mode)
+}
+
+/// Switches between a window and borderless fullscreen now, and opens the game that way next time.
+#[tauri::command]
+fn set_fullscreen(window: tauri::WebviewWindow, fullscreen: bool) -> Result<(), String> {
+    window.set_fullscreen(fullscreen).map_err(|error| error.to_string())?;
+    save_choice(window.app_handle(), FULLSCREEN_FILE, if fullscreen { "1" } else { "0" })
+}
+
+/// Opens the Steam overlay. The page forwards Shift+Tab here: keys land in WebView2's process,
+/// where Steam's input hook never sees them.
+#[tauri::command]
+fn steam_overlay(app: tauri::AppHandle) -> bool {
+    #[cfg(feature = "steam")]
+    return app.try_state::<steam::Steam>().map(|steam| steam.open_overlay()).unwrap_or(false);
+    #[cfg(not(feature = "steam"))]
+    {
+        let _ = app;
+        false
+    }
+}
+
+/// What the page reads as \`window.__JG_DESKTOP__\`, plus the Shift+Tab forward when Steam's overlay is live.
+fn desktop_script(running: &str, saved: &str, forced: bool, fullscreen: bool, steam_overlay: bool) -> String {
+    let shell = format!(
+        r#"Object.defineProperty(window, "__JG_DESKTOP__", {{ value: Object.freeze({{ frameRate: Object.freeze({{ running: "{running}", saved: "{saved}", forced: {forced} }}), fullscreen: {fullscreen}, steamOverlay: {steam_overlay} }}) }});"#
+    );
+    if !steam_overlay {
+        return shell;
+    }
+    shell
+        + r#"addEventListener("keydown", (event) => { if (event.key === "Tab" && event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey) { event.preventDefault(); event.stopImmediatePropagation(); window.__TAURI_INTERNALS__.invoke("steam_overlay"); } }, true);"#
+}
+
+#[cfg(feature = "steam")]
+mod steam {
+    pub struct Steam(steamworks::Client);
+
+    impl Steam {
+        /// Before any window: Steam's overlay hooks only swapchains created after it is up.
+        /// Fails, and the game runs without Steam, unless Steam launched it or steam_appid.txt names an app.
+        pub fn init() -> Option<Steam> {
+            let client = steamworks::Client::init().ok()?;
+            let pump = client.clone();
+            std::thread::spawn(move || loop {
+                pump.run_callbacks();
+                std::thread::sleep(std::time::Duration::from_millis(50));
+            });
+            Some(Steam(client))
+        }
+
+        pub fn open_overlay(&self) -> bool {
+            self.0.friends().activate_game_overlay("");
+            true
+        }
+
+        /// Hands input to the overlay surface while Steam's overlay is open, and back after.
+        pub fn forward_overlay_events(&self, app: &tauri::AppHandle) {
+            let handle = app.clone();
+            std::mem::forget(self.0.register_callback(move |event: steamworks::GameOverlayActivated| {
+                tauri_plugin_steam_overlay_surface::on_overlay_activated(&handle, event.active);
+            }));
+        }
+    }
+
+    /// Steam launched this process and injected its overlay renderer.
+    pub fn overlay_injected() -> bool {
+        #[link(name = "kernel32")]
+        extern "system" {
+            fn GetModuleHandleW(name: *const u16) -> isize;
+        }
+        let name: Vec<u16> = "GameOverlayRenderer64.dll".encode_utf16().chain(std::iter::once(0)).collect();
+        unsafe { GetModuleHandleW(name.as_ptr()) != 0 }
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let uncapped = uncapped_requested();
-    tauri::Builder::default()
+    let forced = uncapped_flag();
+    #[cfg(feature = "steam")]
+    let steam = steam::Steam::init();
+    #[cfg(feature = "steam")]
+    let overlay_surface = steam.is_some() || steam::overlay_injected();
+    #[cfg(not(feature = "steam"))]
+    let overlay_surface = false;
+    #[allow(unused_mut)]
+    let mut builder = tauri::Builder::default().invoke_handler(tauri::generate_handler![set_frame_rate, set_fullscreen, steam_overlay]);
+    #[cfg(feature = "steam")]
+    if overlay_surface {
+        builder = builder.plugin(tauri_plugin_steam_overlay_surface::init());
+    }
+    builder
         .setup(move |app| {
+            #[cfg(feature = "steam")]
+            if let Some(steam) = steam {
+                steam.forward_overlay_events(app.handle());
+                app.manage(steam);
+            }
             let config = app
                 .config()
                 .app
@@ -641,9 +831,17 @@ pub fn run() {
                 .first()
                 .cloned()
                 .ok_or("tauri.conf.json declares no window")?;
-            let mut window = tauri::WebviewWindowBuilder::from_config(app.handle(), &config)?;
+            let saved = saved_frame_rate(app.handle());
+            let uncapped = forced || saved == "uncapped";
+            let fullscreen = saved_choice(app.handle(), FULLSCREEN_FILE).as_deref() == Some("1");
+            let mut window = tauri::WebviewWindowBuilder::from_config(app.handle(), &config)?.fullscreen(fullscreen);
             if uncapped {
                 window = window.additional_browser_args(&format!("{DEFAULT_BROWSER_ARGS} {UNCAPPED_BROWSER_ARGS}"));
+            }
+            // A hosted page (--url) cannot call the app's commands, so it is not told about them.
+            if matches!(config.url, tauri::WebviewUrl::App(_)) {
+                let running = if uncapped { "uncapped" } else { "vsync" };
+                window = window.initialization_script(&desktop_script(running, saved, forced, fullscreen, overlay_surface));
             }
             window.build()?;
             Ok(())
@@ -726,7 +924,7 @@ export function writeStaging(plan: DesktopPlan): StageResult {
 
   writeFileSync(join(stagingDir, "package.json"), stagingPackageJson(plan.metadata.productName));
   writeFileSync(join(srcTauri, "tauri.conf.json"), tauriConf(plan));
-  writeFileSync(join(srcTauri, "Cargo.toml"), cargoToml(crate, plan.metadata.version, plan.diagnostics));
+  writeFileSync(join(srcTauri, "Cargo.toml"), cargoToml(crate, plan.metadata.version, plan.diagnostics, plan.steam?.steamworks === true));
   writeFileSync(join(srcTauri, "build.rs"), buildRs());
   writeFileSync(join(srcTauri, "src", "lib.rs"), desktopLibRs());
   writeFileSync(join(srcTauri, "src", "main.rs"), mainRs(crate));
@@ -887,11 +1085,11 @@ export function findNsisArtifact(targetDir: string, metadata: DesktopMetadata): 
 /** @internal */
 export interface DesktopArtifacts {
   app: string;
-  /** Null for a `--no-installer` build. */
+  /** The NSIS installer, or null for an executable-only build (`--no-installer`, `--steam`). */
   installer: string | null;
 }
 
-/** Build the game's .exe with Tauri, and its NSIS installer unless `installer` is false. @internal */
+/** Build the game executable, and its NSIS installer when `installer` is set. @internal */
 export function runTauriBuild(
   stagingDir: string,
   metadata: DesktopMetadata,
@@ -916,18 +1114,15 @@ export function runTauriBuild(
   const builtApp = join(targetDir, "release", `${crate}.exe`);
   if (!existsSync(builtApp)) return { ok: false, error: `game executable not found: ${builtApp}` };
   const app = join(stagingDir, `${artifactFileName(metadata.productName)}.exe`);
-  if (!installer) {
-    cpSync(builtApp, app);
-    return { ok: true, artifacts: { app, installer: null } };
-  }
+  cpSync(builtApp, app);
+  if (!installer) return { ok: true, artifacts: { app, installer: null } };
   const builtInstaller = findNsisArtifact(targetDir, metadata);
   if (builtInstaller === null) {
     return { ok: false, error: `NSIS installer not found under ${join(targetDir, "release", "bundle", "nsis")}` };
   }
-  const staged = join(stagingDir, builtInstaller.slice(dirname(builtInstaller).length + 1));
-  cpSync(builtApp, app);
-  cpSync(builtInstaller, staged);
-  return { ok: true, artifacts: { app, installer: staged } };
+  const installerCopy = join(stagingDir, builtInstaller.slice(dirname(builtInstaller).length + 1));
+  cpSync(builtInstaller, installerCopy);
+  return { ok: true, artifacts: { app, installer: installerCopy } };
 }
 
 /** @internal */
@@ -1040,8 +1235,8 @@ export async function runDesktopAsync(argv: string[], cwd: string = process.cwd(
     return 0;
   }
 
-  console.log(parsed.installer ? "building the game .exe and NSIS installer with Tauri…" : "building the game .exe with Tauri (no installer)…");
-  const built = runTauriBuild(plan.stagingDir, plan.metadata, parsed.installer);
+  console.log(`building the game .exe${plan.installer ? " and NSIS installer" : ""} with Tauri${plan.steam?.steamworks === true ? " and Steamworks" : ""}…`);
+  const built = runTauriBuild(plan.stagingDir, plan.metadata, plan.installer);
   if (!built.ok) {
     console.error(`error: ${built.error}`);
     return 1;
@@ -1049,6 +1244,29 @@ export async function runDesktopAsync(argv: string[], cwd: string = process.cwd(
 
   console.log(`\ngame ready (runs without installing):\n  ${built.artifacts.app}`);
   if (built.artifacts.installer !== null) console.log(`installer:\n  ${built.artifacts.installer}`);
+  if (plan.steam !== null) return reportSteamDepot(plan, plan.steam, built.artifacts.app);
+  return 0;
+}
+
+function reportSteamDepot(plan: DesktopPlan, steam: SteamConfig, app: string): number {
+  const dll = steam.steamworks ? findSteamApiDll(desktopTargetDir()) : null;
+  if (steam.steamworks && dll === null) {
+    console.error(`error: steam_api64.dll not found under ${join(desktopTargetDir(), "release", "build")} after a Steamworks build`);
+    return 1;
+  }
+  const source = plan.projectDir === null ? null : desktopBuildSource(plan.projectDir);
+  const commit = source === null || source.commit === null ? "" : ` ${source.commit.slice(0, 9)}${source.dirty === true ? "+dirty" : ""}`;
+  const depot = writeSteamDepot(plan.stagingDir, app, dll, steam, `${plan.metadata.productName} ${plan.metadata.version}${commit}`);
+  console.log(`\nSteam depot (SteamPipe layout):\n  ${depot.root}`);
+  console.log(`  content  ${depot.content}${steam.steamworks ? " (with steam_api64.dll)" : ""}`);
+  console.log(`  launch   ${artifactFileName(plan.metadata.productName)}.exe (set it as the Windows launch option in Steamworks)`);
+  if (depot.appBuild === null) {
+    console.log(`  scripts  not written: the Steam app id is missing. Add it to ${join(plan.projectDir ?? ".", "package.json")}:`);
+    console.log(`           "jgengine": { "steam": { "appId": <app id>, "depotId": <depot id> } }  (or pass --steam-app <id>)`);
+    return 0;
+  }
+  console.log(`  scripts  ${depot.appBuild} (app ${steam.appId}, depot ${steam.depotId}${steam.branch === null ? "" : `, sets branch ${steam.branch} live`})`);
+  console.log(`  upload   ${depot.upload}`);
   return 0;
 }
 

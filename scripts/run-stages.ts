@@ -2,9 +2,9 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
 import { availableParallelism } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { digestLines, writeStepLog } from "./failure-digest";
+import { landingRoot } from "./landing-code";
 import { printHelpIfAsked, renderUsage, type Usage } from "./script-help";
 import { SUITE_SCORE_END, SUITE_SCORE_START } from "./suite-score-block";
 import { runSteps } from "./stepScheduler";
@@ -73,7 +73,7 @@ export interface CheckDef {
  * moves its score without its report changing too.
  */
 const GAME_SUITE_READS: readonly string[] = (() => {
-  const gamesDir = join(fileURLToPath(new URL("..", import.meta.url)), "games");
+  const gamesDir = join(landingRoot(import.meta.url), "games");
   const games = existsSync(gamesDir) ? readdirSync(gamesDir, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name) : [];
   const perGame = games.flatMap((game) => ["jgengine.json", "proofs/suite-report.json", "README.md", "PLAN.md"].map((file) => `games/${game}/${file}`));
   return ["packages/core/src/suite/", "games/shared/suiteReport.ts", "scripts/gen-game-suite.ts", ...perGame];
@@ -201,7 +201,7 @@ export interface GenTarget {
   readonly after?: readonly string[];
   /**
    * The committed files this generator owns outright. A rebase conflict in one is no conflict: land
-   * and the landing queue take the base's copy and rerun `bun run gen` (`scripts/generated-rebase.ts`).
+   * and lane:close take the base's copy and rerun `bun run gen` (`scripts/generated-rebase.ts`).
    * A file people also edit by hand (a tsconfig, a source file's `@skill` tag) is not listed.
    */
   readonly outputs?: readonly RegExp[];
@@ -431,7 +431,7 @@ async function runStages(label: string, stages: readonly Stage[], root: string, 
 }
 
 async function main(argv: readonly string[]): Promise<number> {
-  const root = fileURLToPath(new URL("..", import.meta.url));
+  const root = landingRoot(import.meta.url);
   const [verb, ...rest] = argv;
   if (verb === "--help" || verb === "-h") {
     console.log(`run-stages: the one home of every check and generator

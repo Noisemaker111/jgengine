@@ -964,12 +964,29 @@
 - `useGraphicsSettings` (function): function useGraphicsSettings(store: SettingsStore, shadowsDefault: boolean, overrides?: GraphicsProfileOverrides): AppliedGraphicsSettings — ⚠ undocumented
 - `useSettingsRevision` (function): function useSettingsRevision(store: SettingsStore): number — ⚠ undocumented
 
+## @jgengine/core/settings/desktopShell
+
+- `DISPLAY_MODE_FULLSCREEN` (const): const DISPLAY_MODE_FULLSCREEN: "fullscreen" — ⚠ undocumented
+- `DISPLAY_MODE_OPTIONS` (const): const DISPLAY_MODE_OPTIONS: readonly SettingOption[] — Display mode choices: a window, or borderless fullscreen on the window's display.
+- `DISPLAY_MODE_WINDOWED` (const): const DISPLAY_MODE_WINDOWED: "windowed" — Stored values for a desktop build's Display mode.
+- `DesktopFrameRate` (interface): interface DesktopFrameRate — A desktop build's frame-rate state.
+- `DesktopPresentMode` (type): type DesktopPresentMode = "vsync" | "uncapped" — How a desktop build presents: on the display's vsync, or uncapped.
+- `DesktopShell` (interface): interface DesktopShell — What a desktop build (`jgengine desktop`) tells its page at launch, as `window.__JG_DESKTOP__`: its frame-rate state, whether its window opened fullscreen, and whether Steam's overlay is live.
+- `desktopPresentMode` (function): function desktopPresentMode(value: unknown): DesktopPresentMode — The present mode a stored frame-rate limit asks the desktop shell for.
+- `invokeDesktop` (function): function invokeDesktop(command: string, args: Record<string, unknown>, scope: object = globalThis): Promise<boolean> — Call one of the desktop shell's commands; resolves false outside a desktop build.
+- `readDesktopShell` (function): function readDesktopShell(scope: object = globalThis): DesktopShell | null — The desktop build's launch state, or null in a browser or a hosted (`--url`) desktop page.
+- `saveDesktopDisplayMode` (function): function saveDesktopDisplayMode(value: unknown, scope: object = globalThis): Promise<boolean> — Switch a desktop build between a window and borderless fullscreen now; the shell opens it the same way next launch. Resolves false outside a desktop build.
+- `saveDesktopFrameRate` (function): function saveDesktopFrameRate(value: unknown, scope: object = globalThis): Promise<boolean> — Save the present mode a frame-rate limit asks for to the desktop shell, which applies it on the next launch. Resolves false outside a desktop build.
+- `syncDesktopSettings` (function): function syncDesktopSettings(store: SettingsStore, desktop: DesktopShell | null): void — Bring the player's stored Frame rate limit and Display mode in line with what the desktop shell launched with: the shell's saved files decide a launch, so a store that disagrees (cleared, or written by an older build) would show a choice the game is not running.
+
 ## @jgengine/core/settings/frameRateLimit
 
 - `FRAME_RATE_LIMIT_DISPLAY` (const): const FRAME_RATE_LIMIT_DISPLAY: "display" — Stored value for "render every display refresh" — the browser's vsync-locked rate.
 - `FRAME_RATE_LIMIT_OPTIONS` (const): const FRAME_RATE_LIMIT_OPTIONS: readonly SettingOption[] — Frame-rate limit choices. Browsers always present on the display's vsync, so the uncapped option runs at the monitor's refresh rate; the numeric caps skip refreshes to save GPU and battery.
+- `FRAME_RATE_LIMIT_UNCAPPED` (const): const FRAME_RATE_LIMIT_UNCAPPED: "uncapped" — Stored value for "present without the display's vsync". Only a desktop build (`jgengine desktop`) offers it: a browser always presents on vsync, and WebView2 takes the flags at launch.
+- `frameRateLimitOptions` (function): function frameRateLimitOptions(desktop: DesktopFrameRate | null): readonly SettingOption[] — The frame-rate limit choices for this page: the browser's list, or on a desktop build "Match display (V-Sync)", the caps and "Uncapped". A choice that switches vsync says it applies after a restart, since WebView2 takes the flags only at launch.
 - `paceFrame` (function): function paceFrame(now: number, anchor: number, fps: number): number | null — Frame pacing for a capped render loop driven by display refreshes. Returns the new frame anchor when a frame should render at `now`, or `null` to skip this refresh. The anchor keeps the remainder so a 60 cap on a 144 Hz display averages 60 instead of drifting to 48.
-- `readFrameRateLimit` (function): function readFrameRateLimit(store: Pick<SettingsStore, "get">): number — The player's frame-rate cap in frames per second, or 0 for the display rate.
+- `readFrameRateLimit` (function): function readFrameRateLimit(store: Pick<SettingsStore, "get">): number — The player's frame-rate cap in frames per second, or 0 for the display rate (or uncapped).
 
 ## @jgengine/core/settings/graphicsProfile
 

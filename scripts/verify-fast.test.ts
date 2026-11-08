@@ -34,6 +34,7 @@ import {
   type Step,
   type Workspace,
 } from "./verify-fast";
+import { MODEL_TEST_REASON } from "./verify-boat";
 import { runSteps, type StepResult } from "./stepScheduler";
 import { buildImportGraph, specifiers, type ImportGraph } from "./import-graph";
 import { matchingShard, walkTestFiles } from "./test-shard";
@@ -65,7 +66,7 @@ function fixtureGraph(sources: Record<string, string>, others: readonly string[]
 
 const emptyGraph = fixtureGraph({});
 
-const emptyPlan: Plan = { changed: [], deleted: [], typechecks: [], tests: [], gates: [], unattributed: [], fallback: [], suites: [], boots: [], inputs: {} };
+const emptyPlan: Plan = { changed: [], deleted: [], typechecks: [], tests: [], gates: [], unattributed: [], fallback: [], suites: [], boots: [], webBuild: false, inputs: {} };
 
 describe("what changed", () => {
   test("counts committed, staged, unstaged and untracked paths", () => {
@@ -283,6 +284,44 @@ describe("test mapping", () => {
   });
 });
 
+describe("reach no import shows (each a PR CI catch from the 7 Nov audit)", () => {
+  const testFiles = [
+    "scripts/capture.test.ts",
+    "scripts/captureCliParity.test.ts",
+    "scripts/check-recipes.games.test.ts",
+    "packages/core/src/world/terrain.test.ts",
+    "packages/core/src/world/city.test.ts",
+    "games/scripts/check-suite.test.ts",
+    "games/shared/assetTest.test.ts",
+    "games/fernwild/src/game.test.ts",
+  ];
+  const plan = (changed: string[], landing = false) => verifyPlan({ changed, testFiles, workspaces: [...fakeWorkspaces, { dir: "games/fernwild", checkTypes: true }], graph: emptyGraph, landing });
+
+  test("a script change runs every scripts test, since they reach scripts by spawning them", () => {
+    expect(plan(["scripts/capture.ts"]).tests).toEqual(expect.arrayContaining(["scripts/capture.test.ts", "scripts/captureCliParity.test.ts"]));
+    expect(plan(["scripts/capture.ts"]).tests).not.toContain("packages/core/src/world/city.test.ts");
+  });
+
+  test("a package's data file runs that package's suite; its notes do not", () => {
+    expect(plan(["packages/core/src/world/materials.json"]).tests).toEqual(expect.arrayContaining(["packages/core/src/world/terrain.test.ts", "packages/core/src/world/city.test.ts"]));
+    expect(plan(["packages/core/README.md"]).tests).not.toContain("packages/core/src/world/city.test.ts");
+  });
+
+  test("a game change runs the games' own scripts, shared tests and every *.games.test file", () => {
+    expect(plan(["games/fernwild/PLAN.md"]).tests).toEqual(
+      expect.arrayContaining(["games/scripts/check-suite.test.ts", "games/shared/assetTest.test.ts", "scripts/check-recipes.games.test.ts"]),
+    );
+  });
+
+  test("only --landing builds the site, and only when the change reaches it", () => {
+    expect(plan(["packages/core/src/world/terrain.ts"]).webBuild).toBe(false);
+    expect(plan(["packages/core/src/world/terrain.ts"], true).webBuild).toBe(true);
+    expect(plan(["packages/core/README.md", "packages/core/src/world/terrain.test.ts"], true).webBuild).toBe(false);
+    const steps = fastSteps({ ...emptyPlan, webBuild: true }).map((step) => [step.name, step.needs ?? []]);
+    expect(steps).toEqual([["web-build", []], ["site-bundles", ["web-build"]]]);
+  });
+});
+
 describe("attribution fails loudly", () => {
   test("a package file no test names is covered by running its package's suite", () => {
     const plan = verifyPlan({
@@ -356,6 +395,21 @@ describe("attribution fails loudly", () => {
     expect(steps.slice(1).flatMap((step) => step.command)).toContain("packages/core/src/loot/lootGen.test.ts");
   });
 
+  test("tests that read this PC's models wait for those games' models to be linked, so a fresh worktree passes them", () => {
+    const model = "games/scrap-signal/src/game/world/scrap-signal.world.test.ts";
+    const windows = "scripts/windows-only.test.ts";
+    const plan: Plan = { ...emptyPlan, tests: [model, windows, "packages/core/src/random/pick.test.ts"] };
+    const localTests = new Map([[model, MODEL_TEST_REASON], [windows, "checks something only Windows has"]]);
+    const steps = fastSteps(plan, { lanes: 2, localTests });
+    const provision = steps.find((step) => step.name.startsWith("provision models"));
+    expect(provision?.command).toEqual(["bun", "games/scripts/provision-assets.ts", "scrap-signal"]);
+    expect(provision?.localBecause).toBe(MODEL_TEST_REASON);
+    expect(steps.find((step) => step.name === "test 2 file(s) on this PC")?.needs).toEqual([provision!.name]);
+    const onlyWindows = fastSteps({ ...emptyPlan, tests: [windows] }, { localTests });
+    expect(onlyWindows.some((step) => step.name.startsWith("provision"))).toBe(false);
+    expect(onlyWindows.find((step) => step.name.endsWith("on this PC"))?.needs).toBeUndefined();
+  });
+
   test("a pure rename and a demo never need a test", () => {
     const plan = verifyPlan({
       changed: ["scripts/moved.ts", "apps/dev/src/demo/scene.tsx"],
@@ -402,6 +456,7 @@ describe("static gates", () => {
       fallback: [],
       suites: [],
       boots: ["harbor-heat"],
+      webBuild: true,
       inputs: {},
     };
     expect(fastSteps(plan, { cheap: true }).map((step) => step.name)).toEqual(["typecheck packages/core", "layers"]);

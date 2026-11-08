@@ -12,7 +12,6 @@ import {
   landBranch,
   parseArgs,
   refusalFor,
-  QUEUE_LABEL,
   type FragmentFile,
   type LandIo,
   type Run,
@@ -380,9 +379,9 @@ function scriptedGit(options: {
 const PR_URL = "https://github.com/Noisemaker111/JGengine/pull/4242";
 
 /** GitHub with no PR yet: land opens #4242, whose head commit has one green check. */
-function scriptedGh(): { github: FakeGitHub; calls: FakeGitHub["calls"]; labelled: () => boolean } {
+function scriptedGh(): { github: FakeGitHub; calls: FakeGitHub["calls"]; opened: () => boolean } {
   const github = fakeGitHub({ repo: "Noisemaker111/JGengine", nextNumber: 4242, checks: { "sha-4242": [{ name: "ci" }] } });
-  return { github, calls: github.calls, labelled: () => (github.pulls.get(4242)?.labels ?? []).includes(QUEUE_LABEL) };
+  return { github, calls: github.calls, opened: () => github.pulls.has(4242) };
 }
 
 function handOffIo(git: (args: string[]) => Run, gh: FakeGitHub): { io: LandIo; logs: string[]; errors: string[] } {
@@ -405,7 +404,7 @@ const FRAGMENT = "### Changed\n\n- The lane closes itself in one command.\n";
 
 test("land --commit commits with the branch fragment, then hands the PR over in the same run", () => {
   const { git, calls } = scriptedGit({ status: " M scripts/land.ts\n", diff: "changes/agent-lane-x.md\n" });
-  const { github: gh, calls: ghCalls, labelled } = scriptedGh();
+  const { github: gh, calls: ghCalls, opened } = scriptedGh();
   const { io, logs } = handOffIo(git, gh);
 
   const code = landBranch({
@@ -420,10 +419,10 @@ test("land --commit commits with the branch fragment, then hands the PR over in 
   expect(calls).toContainEqual(["add", "-A"]);
   expect(calls).toContainEqual(["commit", "-m", "The lane closes itself in one command.", "-m", "- The lane closes itself in one command."]);
   expect(calls.some((call) => call.join(" ").startsWith("push -u origin HEAD"))).toBe(true);
-  expect(labelled()).toBe(true);
+  expect(opened()).toBe(true);
   expect(logs).toContain("committed The lane closes itself in one command. (changes/agent-lane-x.md)");
   expect(logs).toContain(PR_URL);
-  expect(logs).toContain("status: bun run ci:status --pr 4242");
+  expect(logs).toContain("lane:close merges it once its verify:fast receipt covers this head");
 });
 
 test("land --commit with nothing to commit lands what the branch already has", () => {
@@ -442,12 +441,12 @@ test("land --commit with nothing to commit lands what the branch already has", (
   expect(calls.some((call) => call[0] === "commit")).toBe(false);
   expect(calls.some((call) => call[0] === "add")).toBe(false);
   expect(logs).toContain("nothing to commit; landing what the branch already has");
-  expect(logs).toContain("status: bun run ci:status --pr 4242");
+  expect(logs).toContain("lane:close merges it once its verify:fast receipt covers this head");
 });
 
 test("a failed commit stops the landing before anything is pushed", () => {
   const { git, calls } = scriptedGit({ status: " M shared.txt\n" });
-  const { github: gh, calls: ghCalls, labelled } = scriptedGh();
+  const { github: gh, calls: ghCalls, opened } = scriptedGh();
   const { io } = handOffIo(git, gh);
   const failing = (args: string[]): Run =>
     args[0] === "commit" ? { status: 1, stdout: "", stderr: "nothing added to commit" } : git(args);
@@ -522,7 +521,7 @@ test("--commit prints every path it will commit, and refuses the whole set with 
     staged: ["scripts/land.ts", "changes/agent-lane-x.md"],
     added: ["changes/agent-lane-x.md"],
   });
-  const { github: gh, calls: ghCalls, labelled } = scriptedGh();
+  const { github: gh, calls: ghCalls, opened } = scriptedGh();
   const { io, logs, errors } = handOffIo(git, gh);
 
   const code = landBranch({
@@ -552,7 +551,7 @@ test("--allow keeps one refused file on purpose", () => {
     added: ["changes/agent-lane-x.md"],
     diff: "changes/agent-lane-x.md\n",
   });
-  const { github: gh, calls: ghCalls, labelled } = scriptedGh();
+  const { github: gh, calls: ghCalls, opened } = scriptedGh();
   const { io } = handOffIo(git, gh);
 
   const code = landBranch({
@@ -565,5 +564,5 @@ test("--allow keeps one refused file on purpose", () => {
 
   expect(code).toBe(EXIT_LANDED);
   expect(calls.some((call) => call[0] === "commit")).toBe(true);
-  expect(labelled()).toBe(true);
+  expect(opened()).toBe(true);
 });

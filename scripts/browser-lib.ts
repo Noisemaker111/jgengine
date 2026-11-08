@@ -12,15 +12,16 @@ import {
   unlinkSync,
   writeFileSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
+import { cpus, tmpdir } from "node:os";
 import { basename, dirname, join, parse, resolve } from "node:path";
 
-import { retrySettleMs, shouldRetryCapture } from "./capture-retry";
+import { BUSY_PC_PERCENT, cpuBusyPercent, readinessTimeoutLine, retrySettleMs, shouldRetryCapture, type CpuSample } from "./capture-retry";
 import { clearViteCaches, headRevision, revisionDrifted, shortRevision } from "./captureRevision";
 import { brokerServer } from "./devBrokerClient";
 import { checkMarkedServer, checkoutIdentity, devServerIdentity, isUp, listMarkers, markerPath, readMarker, readServerIdentity, writeMarker } from "./devServerMarker";
 import { currentStep, describeHang, markStep } from "./hangReport";
 import { localGet } from "./localhostHttp";
+import { startOutsideCaller } from "./outsideCaller";
 import { computeShotMetrics, deadViewport } from "./shot-metrics";
 import { removeDirSync } from "./removeDir";
 import { decodePng } from "../packages/assets/src/imageCodec";
@@ -418,27 +419,14 @@ export interface EnsureDevServerResult {
   base: string;
 }
 
+/** A dev server that outlives this run, outside its process tree and Windows job (scripts/outsideCaller.ts). */
 function launchPersistentCommand(
   file: string,
   args: readonly string[],
   cwd: string,
   env: Record<string, string>,
 ): number {
-  const assignments = Object.entries(env)
-    .map(([key, value]) => `$env:${key}=${powershellQuote(value)}`)
-    .join(";");
-  const command = `${assignments};$p=Start-Process -FilePath ${powershellQuote(file)} -ArgumentList @(${powershellArgumentList(args)}) -WorkingDirectory ${powershellQuote(cwd)} -WindowStyle Hidden -PassThru; [Console]::Out.Write($p.Id)`;
-  const encoded = Buffer.from(command, "utf16le").toString("base64");
-  const launched = spawnSync(
-    "powershell.exe",
-    ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-EncodedCommand", encoded],
-    { encoding: "utf8", windowsHide: true, timeout: 10_000 },
-  );
-  const pid = Number(launched.stdout.trim());
-  if (launched.status !== 0 || !Number.isFinite(pid) || pid <= 0) {
-    throw new Error(`Persistent process launch failed: ${launched.stderr.trim() || `exit ${launched.status}`}`);
-  }
-  return pid;
+  return startOutsideCaller(file, args, { cwd, env: { ...process.env, ...env } });
 }
 
 /**
@@ -1482,26 +1470,6 @@ export function launchChrome(
   return Object.assign(child, { userDataDir });
 }
 
-function powershellQuote(value: string): string {
-  return `'${value.replaceAll("'", "''")}'`;
-}
-
-function windowsCommandLineArg(value: string): string {
-  if (!/[\s"]/.test(value)) return value;
-  const escaped = value.replace(/(\\*)"/g, "$1$1\\\"").replace(/(\\+)$/g, "$1$1");
-  return `"${escaped}"`;
-}
-
-function powershellArgumentList(args: readonly string[]): string {
-  return args.map((arg) => powershellQuote(windowsCommandLineArg(arg))).join(",");
-}
-
-/** Hidden native Windows launcher used when Chrome must outlive the Bun process that starts it. */
-export function windowsPersistentChromeCommand(chrome: string, args: readonly string[]): string {
-  const argumentList = powershellArgumentList(args);
-  return `$p=Start-Process -FilePath ${powershellQuote(chrome)} -ArgumentList @(${argumentList}) -WindowStyle Hidden -PassThru; [Console]::Out.Write($p.Id)`;
-}
-
 /** Launch persistent headless Chrome without retaining a Windows child-process handle in Bun. */
 export function launchPersistentChrome(
   debugPort: number,
@@ -1539,16 +1507,13 @@ export function launchPersistentChrome(
     "--disable-dev-shm-usage",
     "about:blank",
   ];
-  const encoded = Buffer.from(windowsPersistentChromeCommand(chrome, args), "utf16le").toString("base64");
-  const launched = spawnSync(
-    "powershell.exe",
-    ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-EncodedCommand", encoded],
-    { encoding: "utf8", windowsHide: true, timeout: 10_000 },
-  );
-  const pid = Number(launched.stdout.trim());
-  if (launched.status !== 0 || !Number.isFinite(pid) || pid <= 0) {
+  let pid: number;
+  try {
+    // Outside this run's tree and Windows job, so a fairshare slot ending does not end the daemon.
+    pid = startOutsideCaller(chrome, args, { cwd: userDataDir });
+  } catch (error) {
     removeProfileDir(userDataDir);
-    throw new Error(`Persistent Chrome launch failed: ${launched.stderr.trim() || `exit ${launched.status}`}`);
+    throw new Error(`Persistent Chrome launch failed: ${error instanceof Error ? error.message : String(error)}`);
   }
   writeFileSync(join(userDataDir, PROFILE_OWNER_FILE), String(pid));
   detachProfileDir(userDataDir);
@@ -1909,21 +1874,62 @@ export async function captureViewportPng(
  * detail on error, or on timeout.
  */
 export async function waitCaptureReady(session: CdpSession, timeoutMs: number): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  let stage: string | null = null;
-  while (Date.now() < deadline) {
-    const remote = await session.evaluate<{ status: string | null; error: string | null; stage: string | null }>(`({
+  const wait = readinessWait(timeoutMs);
+  let last: { status: string | null; error: string | null; href: string | null; stage: string | null } | undefined;
+  for (;;) {
+    last = (await session.evaluate<{ status: string | null; error: string | null; href: string | null; stage: string | null }>(`({
       status: document.documentElement.dataset.jgCapture ?? null,
       error: document.documentElement.dataset.jgCaptureError ?? null,
+      href: location.href,
       stage: document.documentElement.dataset.jgCaptureStage ?? null
-    })`);
-    const status = remote?.status;
-    stage = remote?.stage ?? stage;
+    })`)) ?? undefined;
+    const status = last?.status;
     if (status === "ready") return;
-    if (status === "error") throw new Error(`capture error: ${remote?.error ?? "unknown"}`);
+    if (status === "error") throw new Error(`capture error: ${last?.error ?? "unknown"}`);
+    if (typeof last?.href === "string" && last.href.startsWith("chrome-error://")) throw new Error(wait.failure(last.status, last.href, ""));
+    if (!wait.goOn(last?.status ?? null)) throw new Error(wait.failure(last?.status ?? null, last?.href ?? null, "", last?.stage));
     await new Promise((r) => setTimeout(r, 100));
   }
-  throw new Error(captureTimeout(timeoutMs, stage));
+}
+
+function cpuSample(): CpuSample {
+  let idle = 0;
+  let total = 0;
+  for (const cpu of cpus()) {
+    idle += cpu.times.idle;
+    total += cpu.times.idle + cpu.times.user + cpu.times.sys + cpu.times.irq + cpu.times.nice;
+  }
+  return { idle, total };
+}
+
+/**
+ * The deadline of one readiness wait. A PC busy past {@link BUSY_PC_PERCENT} for the whole window
+ * gets one more window, said in a line: a fixed 60 s failed shots that only needed a quieter
+ * moment. The failure line names what the page was doing and how busy the PC was.
+ */
+function readinessWait(timeoutMs: number): {
+  goOn(status: string | null): boolean;
+  /** `stage` is what the page's gate was still waiting on (`data-jg-capture-stage`), when it said. */
+  failure(status: string | null, href: string | null, url: string, stage?: string | null): string;
+} {
+  const startedAt = Date.now();
+  const since = cpuSample();
+  let deadline = startedAt + timeoutMs;
+  let extended = false;
+  return {
+    goOn(status) {
+      if (Date.now() < deadline) return true;
+      const busy = cpuBusyPercent(since, cpuSample());
+      if (extended || busy < BUSY_PC_PERCENT) return false;
+      extended = true;
+      deadline = Date.now() + timeoutMs;
+      console.error(`capture: the PC's CPU is ${busy}% busy, so the page (${status === null ? "no capture status yet" : `still "${status}"`}) gets another ${Math.round(timeoutMs / 1000)}s`);
+      return true;
+    },
+    failure(status, href, url, stage) {
+      return readinessTimeoutLine({ waitedMs: Date.now() - startedAt, status, href, url, cpuBusy: cpuBusyPercent(since, cpuSample()), stage: stage ?? null });
+    },
+  };
 }
 
 /**
@@ -2214,11 +2220,6 @@ export interface CaptureReadinessOptions {
   legacyCanvas?: boolean;
 }
 
-/** A capture that never became ready, with what the page's gate was still waiting on when the host gave up. @internal */
-export function captureTimeout(timeoutMs: number, stage: string | null | undefined): string {
-  return `timed out waiting for data-jg-capture=ready (${timeoutMs}ms)${stage == null ? "" : `; the page was ${stage}`}`;
-}
-
 const CAPTURE_READINESS_EXPR = `(() => {
   const canvas = document.querySelector("canvas");
   return {
@@ -2265,7 +2266,9 @@ export async function navigateCapturePage(
     if (params["type"] !== "Document") return;
     const errorText = typeof params["errorText"] === "string" ? params["errorText"] : "unknown error";
     const failedFrameId = typeof params["requestId"] === "string" ? requestFrames.get(params["requestId"]) : undefined;
-    const message = `page load failed: ${errorText}`;
+    const message = /ERR_CONNECTION_REFUSED|ERR_CONNECTION_RESET|ERR_EMPTY_RESPONSE/.test(errorText)
+      ? `page load failed: nothing answered at ${new URL(url).origin} (${errorText}), so the dev server stopped before the page loaded`
+      : `page load failed: ${errorText}`;
     if (frameId === undefined) pendingDocumentFailures.push({ frameId: failedFrameId, message });
     else if (failedFrameId === undefined || failedFrameId === frameId) pageFailure ??= message;
   });
@@ -2283,12 +2286,13 @@ export async function navigateCapturePage(
     );
     if (matchingFailure !== undefined) pageFailure ??= matchingFailure.message;
 
-    const deadline = Date.now() + timeoutMs;
+    const wait = readinessWait(timeoutMs);
+    let lastStatus: string | null = null;
+    let stage: string | null = null;
     // The pushed signal is the fast path; the evaluate below is the backstop, polled slowly
     // so it does not itself compete with the page for the main thread.
     let nextPollAt = Date.now();
-    let stage: string | null = null;
-    while (Date.now() < deadline) {
+    while (wait.goOn(lastStatus)) {
       if (pageFailure !== undefined) throw new Error(pageFailure);
       const remote =
         (signalled?.status === "ready" || signalled?.status === "error" ? signalled : undefined) ??
@@ -2299,7 +2303,10 @@ export async function navigateCapturePage(
       stage = remote?.stage ?? stage;
       if (remote?.status === "ready") return;
       if (remote?.status === "error") throw new Error(`capture error: ${remote.error ?? "unknown"}`);
-      if (remote?.status != null) handshakeSeen = true;
+      if (remote?.status != null) {
+        handshakeSeen = true;
+        lastStatus = remote.status;
+      }
       if (options.legacyCanvas && !handshakeSeen && remote?.sizedCanvas) {
         const settled = await session.evaluate<{ status: string | null; error: string | null; sizedCanvas?: boolean }>(
           `new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve(${CAPTURE_READINESS_EXPR}))))`,
@@ -2327,7 +2334,8 @@ export async function navigateCapturePage(
       await new Promise((resolve) => setTimeout(resolve, 25));
     }
     if (pageFailure !== undefined) throw new Error(pageFailure);
-    throw new Error(captureTimeout(timeoutMs, stage));
+    const href: unknown = await session.evaluate<unknown>("location.href").catch(() => null);
+    throw new Error(wait.failure(lastStatus, typeof href === "string" ? href : null, url, stage));
   } finally {
     offSignal();
     offException();
@@ -2356,7 +2364,7 @@ export async function navigateCapturePageWithRetry(
       if (!shouldRetryCapture({ attempt, maxAttempts, message })) throw error;
       const settleMs = retrySettleMs(attempt);
       console.error(
-        `capture attempt ${attempt} hit a stale page after HMR (${message}) - settling ${settleMs}ms, then reloading fresh`,
+        `capture attempt ${attempt} failed (${message}) - reloading fresh once in case Vite was mid-rebuild, after ${settleMs}ms`,
       );
       await new Promise((resolve) => setTimeout(resolve, settleMs));
       const deadline = Date.now() + 5_000;

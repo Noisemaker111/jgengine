@@ -227,6 +227,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/rebind-inventory.proof.ts",
+      "proves": [
+        "settings.controls"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/refine-tier.proof.ts",
       "proves": [
         "crafting.refine-tier"
@@ -265,6 +272,13 @@
       "file": "proofs/sim/ride-swim.proof.ts",
       "proves": [
         "creatures.ride.swim"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/save-continue.proof.ts",
+      "proves": [
+        "save.continue"
       ],
       "ok": true
     },

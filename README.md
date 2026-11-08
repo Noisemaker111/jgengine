@@ -150,6 +150,7 @@ bun run perf gate    # frame check, run by hand: plays every game under games/ w
 bun run perf server    # multiplayer host load, run by hand: 16/32/64/128 players posing in one room on the real host and router, one JSON line per size (wall and CPU ms, MB and messages out per game second); stderr names a size that falls behind real time (--players, --repeats, --json, --max-seconds)
 bun run perf fps-gap   # how far each game is from 360 fps (2.78 ms) at the gate's conditions, and its costs grouped into ranked engine work items; a report, not a gate (--markdown for a PR)
 bun run perf desktop --launch "<Game>.exe" --uncapped  # the fps a --diagnostics desktop build reaches without vsync at the gate's conditions
+bun run perf desktop --all --uncapped  # build and measure every game's production desktop app in turn and print the 360 fps table (about 5 minutes a game; run it in the background)
 bun run perf timing    # CPU timing check, run by hand: re-runs the benchmarks that carry wall-clock budgets (nav crowd, perception, utility, visibility, off-screen, flock, paths) and fails when one exceeds it
 # one game standalone:
 bun --cwd=games/harbor-heat run dev

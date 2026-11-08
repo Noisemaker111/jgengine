@@ -14,16 +14,16 @@
 // its output to `.scratch/bg/<id>/out.log` and its exit code to `exit`, then exits itself.
 //
 // On Windows a detached child is still in its caller's process tree and job, and whatever ends the
-// caller's tree ends it too: `lane:close`'s land-queue runner died that way with an empty log, at
+// caller's tree ends it too: `lane:close`'s background runner died that way with an empty log, at
 // random, when the `bun run` that started it exited (2026-11-03). So on Windows the supervisor is
-// created by the WMI service instead (startOutsideCaller): it has no parent here and no job to share.
-// It then has WMI's environment, not ours, so it reads ours from the task folder.
-import { spawn, spawnSync } from "node:child_process";
+// created by the WMI service instead (scripts/outsideCaller.ts): it has no parent here and no job to share.
+import { spawn } from "node:child_process";
 import { closeSync, mkdirSync, openSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { newTaskId, taskDir, TASK_ID, tasksRoot } from "./bg-tasks";
+import { startOutsideCaller } from "./outsideCaller";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const self = fileURLToPath(import.meta.url);
@@ -46,51 +46,21 @@ export function startTask(options: StartOptions): string {
   const dir = taskDir(checkout, id);
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, "cmd.txt"), `${options.command.trim()}\n`);
-  if (process.platform === "win32") writeFileSync(join(dir, ENV_FILE), JSON.stringify(process.env));
-  const spawnDetached = options.spawnDetached ?? (process.platform === "win32" ? startOutsideCaller : startDetached);
+  const spawnDetached = options.spawnDetached ?? ((file, args, cwd) => void startOutsideCaller(file, args, { cwd }));
   // The command is read from cmd.txt, so no shell or WMI quoting ever touches it.
   spawnDetached(process.execPath, [self, "--supervise", dir], checkout);
   (options.log ?? (() => {}))(id);
   return id;
 }
 
-/** The caller's environment, for a supervisor WMI started with its own; removed once read. */
-const ENV_FILE = "env.json";
-
-function startDetached(file: string, args: string[], cwd: string): void {
-  spawn(file, args, { cwd, detached: true, stdio: "ignore", windowsHide: true }).unref();
-}
-
-/** Windows: have the WMI service create the process, outside this process's tree and job. */
-function startOutsideCaller(file: string, args: string[], cwd: string): void {
-  const line = [file, ...args].map((word) => (word.startsWith("--") ? word : `"${word}"`)).join(" ");
-  const ps =
-    "$s = New-CimInstance -ClassName Win32_ProcessStartup -ClientOnly -Property @{ShowWindow=[uint16]0}; " +
-    "$r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{CommandLine=$env:BG_LINE; CurrentDirectory=$env:BG_CWD; ProcessStartupInformation=$s}; " +
-    "exit $r.ReturnValue";
-  const run = spawnSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", ps], {
-    encoding: "utf8",
-    env: { ...process.env, BG_LINE: line, BG_CWD: cwd },
-    windowsHide: true,
-  });
-  if (run.status !== 0) {
-    throw new Error(`could not start the runner through WMI (Win32_Process.Create returned ${run.status ?? run.error}): ${run.stderr.trim()}`);
-  }
-}
-
 /** The detached side: run the command, keep its output and its exit code, and outlive the caller. */
 export function supervise(dir: string): void {
-  const fd = openSync(join(dir, "out.log"), "a");
+  // Opened for writing, not append-only: MSYS programs (Git Bash, its grep and echo) write nothing,
+  // not even their errors, to a handle opened with append access alone, so a bash job's log came
+  // back empty. Nothing writes the log before this point.
+  const fd = openSync(join(dir, "out.log"), "w");
   writeFileSync(join(dir, "runner"), `${process.pid}\n`);
   const command = readFileSync(join(dir, "cmd.txt"), "utf8").trim();
-  const envPath = join(dir, ENV_FILE);
-  let env: NodeJS.ProcessEnv = process.env;
-  try {
-    env = JSON.parse(readFileSync(envPath, "utf8")) as NodeJS.ProcessEnv;
-    rmSync(envPath, { force: true });
-  } catch {
-    // started directly (not through WMI): this process already has the caller's environment
-  }
   const [file, args] =
     // `chcp 65001` makes the console code page UTF-8, so a tool that encodes for the console
     // (git, cmd builtins) writes the same UTF-8 bytes into the log that bun does.
@@ -102,7 +72,7 @@ export function supervise(dir: string): void {
     cwd: root,
     stdio: ["ignore", fd, fd],
     windowsHide: true,
-    env: { ...env, PYTHONUTF8: "1", PYTHONIOENCODING: "utf-8" },
+    env: { ...process.env, PYTHONUTF8: "1", PYTHONIOENCODING: "utf-8" },
   });
   const finish = (code: number, note?: string): void => {
     if (note !== undefined) writeFileSync(join(dir, "out.log"), `${note}\n`, { flag: "a" });

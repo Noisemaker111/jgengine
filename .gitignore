@@ -22,6 +22,9 @@ shots/
 !apps/dev/public/models/quaternius-stylized-nature/
 !apps/dev/public/models/quaternius-textured-cute-monster-pack/
 **/.jgengine-assets-tmp/
+# jgengine desktop staging (the Tauri project, app, Steam depot and private source maps)
+**/.jgengine/desktop/
+**/.jgengine/desktop.private-maps/
 *.tsbuildinfo
 
 # Orphaned per-package API JSON dumped under the web app — build output, not source.

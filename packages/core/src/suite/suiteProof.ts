@@ -48,6 +48,12 @@ export interface ProofPlay<TProbe extends ProbeReadings> {
   waitFor(check: ProbeCheck<TProbe>, options?: FlowWaitOptions): Promise<TProbe>;
   expect(check: ProbeCheck<TProbe>, note: string): Promise<TProbe>;
   probe(): Promise<TProbe>;
+  /**
+   * Quit and open the game again: a new session on the same saves, booted into a `capture.states` entry (the
+   * title, for a proof that continues), or `capture.play` when none is named. Only what the game saved
+   * through its own save path is still there.
+   */
+  restart(state?: string): Promise<void>;
 }
 
 /** A proof as written: the suite entries it proves, its setup, and the play that proves them. */

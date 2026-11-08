@@ -10,6 +10,9 @@ import { join } from "node:path";
 import {
   acquireWarmCapture,
   brokerTurn,
+  DaemonUnavailable,
+  runWithDaemonRecovery,
+  type WarmCapture,
   clearDaemonState,
   daemonDiedUnder,
   daemonRevisionDrift,
@@ -432,18 +435,17 @@ async function captureStderr<T>(run: () => Promise<T>, verbose = true): Promise<
   }
 }
 
-test("by default a reused browser says nothing, and a fallback still says why", async () => {
+test("by default a reused browser says nothing, and a failed one says why before starting it again", async () => {
   const reused = await captureStderr(() =>
     acquireWarmCapture({ broker: null, cold: false, probe: async () => liveState("abc12345"), head: () => "abc12345", stop: async () => false }),
   false);
   expect(reused.value.mode).toBe("warm");
   expect(reused.lines).toEqual([]);
-  const fallback = await captureStderr(() =>
-    acquireWarmCapture({ broker: null, cold: false, probe: async () => { throw new Error("state file unreadable"); }, head: () => "abc12345" }),
+  const restarted = await captureStderr(() =>
+    acquireWarmCapture({ broker: null, cold: false, probe: async () => { throw new Error("state file unreadable"); }, start: async () => liveState("abc12345"), head: () => "abc12345" }),
   false);
-  expect(fallback.value.mode).toBe("cold");
-  expect(fallback.lines).toHaveLength(1);
-  expect(fallback.lines[0]).toContain("could not read the daemon (state file unreadable)");
+  expect(restarted.value.daemon?.chromePort).toBe(9261);
+  expect(restarted.lines[0]).toBe("daemon failure: could not read the daemon (state file unreadable) — starting it once more");
 });
 
 const liveState = (head?: string): ShootDaemonState => ({
@@ -544,27 +546,32 @@ describe("capture lanes acquire a warm daemon by default", () => {
     expect(lines[1]).toMatch(/^cold: started :9261/);
   });
 
-  test("falls back once, with one line, when the port is taken and no daemon can start", async () => {
+  test("a daemon that will not start gets one more start, then fails naming both causes, never a direct launch", async () => {
     let started = 0;
-    const { value, lines } = await captureStderr(() =>
-      acquireWarmCapture({
-        broker: null,
-        probe: async () => null,
-        start: async () => {
-          started += 1;
-          throw new Error("shoot daemon: Chrome debug port 9261 is already reachable without a live record");
-        },
-        head: () => "abc12345",
-        stop: async () => false,
-      }),
-    );
-    expect({ started, mode: value.mode, daemon: value.daemon }).toEqual({ started: 1, mode: "cold", daemon: null });
-    expect(lines).toHaveLength(1);
-    expect(lines[0]).toContain("cold: daemon unavailable");
-    expect(lines[0]).toContain("no retry");
+    let thrown: unknown;
+    const { lines } = await captureStderr(async () => {
+      try {
+        await acquireWarmCapture({
+          broker: null,
+          probe: async () => null,
+          start: async () => {
+            started += 1;
+            throw new Error("shoot daemon: Chrome debug port 9261 is already reachable without a live record");
+          },
+          head: () => "abc12345",
+          stop: async () => false,
+        });
+      } catch (error) {
+        thrown = error;
+      }
+    });
+    expect(started).toBe(2);
+    expect(lines).toEqual(["daemon failure: the daemon would not start (shoot daemon: Chrome debug port 9261 is already reachable without a live record) — starting it once more"]);
+    expect(thrown).toBeInstanceOf(DaemonUnavailable);
+    expect((thrown as Error).message).toMatch(/^daemon failure: the daemon would not start .* and starting it again failed .*--cold for a deliberate direct launch\.$/);
   });
 
-  test("falls back when the stale daemon refuses to stop", async () => {
+  test("a stale daemon that refuses to stop is a failure line, then one fresh start", async () => {
     const { value, lines } = await captureStderr(() =>
       acquireWarmCapture({
         broker: null,
@@ -576,9 +583,30 @@ describe("capture lanes acquire a warm daemon by default", () => {
         },
       }),
     );
-    expect(value).toMatchObject({ daemon: null, mode: "cold" });
-    expect(lines).toHaveLength(1);
-    expect(lines[0]).toContain("would not stop");
+    expect(value.daemon?.head).toBe("new11111");
+    expect(lines[0]).toBe("daemon failure: a stale daemon would not stop (would not die) — starting it once more");
+  });
+
+  test("a broker that fails is asked once more, then the run fails instead of switching browsers", async () => {
+    let asked = 0;
+    let thrown: unknown;
+    const { lines } = await captureStderr(async () => {
+      try {
+        await acquireWarmCapture({
+          broker: async () => {
+            asked += 1;
+            throw new Error("browser request answered 500");
+          },
+          probe: async () => liveState("abc12345"),
+          head: () => "abc12345",
+        });
+      } catch (error) {
+        thrown = error;
+      }
+    });
+    expect(asked).toBe(2);
+    expect(lines[0]).toContain("daemon failure: the broker gave no shared browser (browser request answered 500) — asking once more");
+    expect(thrown).toBeInstanceOf(DaemonUnavailable);
   });
 
   test("a daemon record with no recorded commit is unproven, not reused", () => {
@@ -605,6 +633,62 @@ describe("capture lanes acquire a warm daemon by default", () => {
     } finally {
       rmSync(cwd, { recursive: true, force: true });
     }
+  });
+});
+
+describe("a daemon that dies mid-run", () => {
+  const warmOn = (port: number): WarmCapture => ({ daemon: { ...liveState("abc12345"), chromePort: port }, mode: "warm", seconds: 0 });
+
+  test("is reported as a failure, restarted once, and the run repeated on the new one", async () => {
+    const ran: (number | null)[] = [];
+    const { value, lines } = await captureStderr(() =>
+      runWithDaemonRecovery(warmOn(9261), async (daemon) => {
+        ran.push(daemon?.chromePort ?? null);
+        return daemon?.chromePort === 9261 ? 1 : 0;
+      }, {
+        died: async (daemon) => daemon.chromePort === 9261,
+        describe: async () => "the dev broker died",
+        acquire: async () => warmOn(9300),
+      }),
+    );
+    expect(value).toBe(0);
+    expect(ran).toEqual([9261, 9300]);
+    expect(lines[0]).toBe("daemon failure: the dev broker died mid-run — restarting it once and running again");
+    expect(lines[1]).toContain("daemon recovered");
+  });
+
+  test("ends the run with exit 1 when the restarted daemon dies too, with no third attempt", async () => {
+    let runs = 0;
+    const { value, lines } = await captureStderr(() =>
+      runWithDaemonRecovery(warmOn(9261), async () => {
+        runs += 1;
+        return 1;
+      }, { died: async () => true, describe: async () => "the shared browser :9261 exited", acquire: async () => warmOn(9300) }),
+    );
+    expect({ value, runs }).toEqual({ value: 1, runs: 2 });
+    expect(lines[1]).toContain("again after the restart — giving up");
+  });
+
+  test("ends the run with exit 1 when the daemon will not restart, and never launches without it", async () => {
+    const ran: (number | null)[] = [];
+    const { value, lines } = await captureStderr(() =>
+      runWithDaemonRecovery(warmOn(9261), async (daemon) => {
+        ran.push(daemon?.chromePort ?? null);
+        return 1;
+      }, { died: async () => true, describe: async () => "the dev broker died", acquire: async () => { throw new DaemonUnavailable("the broker gave no shared browser twice"); } }),
+    );
+    expect(value).toBe(1);
+    expect(ran).toEqual([9261]);
+    expect(lines[1]).toMatch(/^daemon failure: the broker gave no shared browser twice/);
+  });
+
+  test("a failure with the daemon still alive is the run's own and is not retried", async () => {
+    let runs = 0;
+    const value = await runWithDaemonRecovery(warmOn(9261), async () => {
+      runs += 1;
+      return 1;
+    }, { died: async () => false });
+    expect({ value, runs }).toEqual({ value: 1, runs: 1 });
   });
 });
 
@@ -723,19 +807,17 @@ describe("capture lanes use the machine broker's shared browser first", () => {
     expect(brokerTurn(liveState("abc12345"))).toBeUndefined();
   });
 
-  test("a broker that fails falls back to this checkout's daemon", async () => {
-    const { value, lines } = await captureStderr(() =>
+  test("a broker that is off for this run (it said why) leaves the run to this checkout's daemon", async () => {
+    const { value } = await captureStderr(() =>
       acquireWarmCapture({
-        broker: async () => {
-          throw new Error("broker refused");
-        },
+        broker: async () => null,
         probe: async () => liveState("abc12345"),
         head: () => "abc12345",
         stop: async () => false,
       }),
     );
     expect(value.daemon?.chromePort).toBe(9261);
-    expect(lines[0]).toContain("broker refused");
+    expect(value.daemon?.broker).toBeUndefined();
   });
 
   test("a broker daemon gets its server from ensure directly, with no state file", async () => {

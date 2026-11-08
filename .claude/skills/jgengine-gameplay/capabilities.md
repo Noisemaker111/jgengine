@@ -371,6 +371,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## key-rebinding — conflict-aware key-remap session over the action-binding model — capture/reassign, conflict detection, reset-to-defaults, persist overrides, snapshot/restore
 
 - `createRebindSession` (function) · `import { createRebindSession } from "@jgengine/core/gameplay"`
+- `rebindAction` (function) · `import { rebindAction } from "@jgengine/core/game/controlGate"`
 
 ## kill-feed — vertical event/kill-feed ticker rendering a core event-ticker as a fading, newest-on-top stack of per-kind iconned, accent-colored rows over HudTheme tokens
 

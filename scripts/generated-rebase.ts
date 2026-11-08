@@ -1,15 +1,20 @@
-// A rebase whose only conflicts are generated files is not a conflict: both sides changed a file
-// that a command writes from source, so the answer is to run that command on the merged source.
-// Two lanes that each added an export both touched `api.md` and the export manifest, and each such
-// landing used to stop and ask the lane to merge generated text by hand.
+// A rebase conflict that has one right answer is not a conflict, so a landing never stops on one. Three
+// kinds resolve here; only a conflict that fits none of them is left to the lane.
+//
+// - Generated files: both sides changed a file a command writes from source (`api.md`, the export
+//   manifest), so the file takes the base's copy while the rebase runs and is regenerated once at the end.
+//   A generator may own only a marked block of a hand-written file (each game's suite score in its README
+//   and PLAN): such a file keeps both sides' hand-written text, takes the base's block, and is regenerated.
+// - Files merged by meaning: a game's `proofs/suite-report.json` is one row per proof, so the rows merge by
+//   proof file (each side keeps the rows it changed) and the README/PLAN score is regenerated from the result.
+//   Fernwild lanes each add a proof, and 37 of 98 PRs on Nov 6-8 touched that one file.
+// - Lines both sides added at one place: two lanes appending a probe field to `game.config.ts`, a tick to
+//   PLAN.md or a credit to CREDITS.md keep both, the base's first. An edit to a line the other side also
+//   changed or removed stays a real conflict. lane:close verifies the rebased tree, so a union that does not
+//   compile (two lanes adding the same key) stops there, never on beta.
 //
 // During `git rebase`, `--ours` is the base being rebased onto and `--theirs` is the lane's commit.
-// A generated file takes the base's copy while the rebase runs and is regenerated once at the end;
-// a change note (`changes/<branch>.md`) is the lane's own, so it keeps the lane's copy.
-//
-// A generator may own only a marked block of a hand-written file (each game's suite score in its
-// README and PLAN). Two game lanes that each rescored their game conflict only inside that block; such
-// a file keeps both sides' hand-written text, takes the base's block, and is regenerated too.
+// A change note (`changes/<branch>.md`) is the lane's own, so it keeps the lane's copy.
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -52,6 +57,118 @@ export function isRegenerated(path: string): boolean {
   return isGenerated(path) || blocksOf(path).length > 0;
 }
 
+/** The three sides of a conflicted file: the commits' common ancestor, the base rebased onto, and the lane's commit. */
+export interface ConflictStages {
+  base: string;
+  ours: string;
+  theirs: string;
+}
+
+/** A three-way merge of rows keyed by `key`: a row one side left as the base had it takes the other side's; both changed, the lane's. */
+function mergeRows<T>(base: readonly T[], ours: readonly T[], theirs: readonly T[], key: (row: T) => string): T[] {
+  const text = (row: T | undefined): string | undefined => (row === undefined ? undefined : JSON.stringify(row));
+  const index = (rows: readonly T[]): Map<string, T> => new Map(rows.map((row) => [key(row), row]));
+  const [was, mine, lane] = [index(base), index(ours), index(theirs)];
+  const merged: T[] = [];
+  for (const id of new Set([...ours, ...theirs].map(key))) {
+    const before = text(was.get(id));
+    const row = text(lane.get(id)) === before ? mine.get(id) : text(mine.get(id)) === before ? lane.get(id) : (lane.get(id) ?? mine.get(id));
+    if (row !== undefined) merged.push(row);
+  }
+  return merged;
+}
+
+/** A suite report's rows, keyed: proofs by `file`, content checks by `id`. Read here, not through `@jgengine/core`, because landing runs from an unpacked `scripts/` with no packages (`landing-code.ts`). */
+interface ReportRows {
+  game: unknown;
+  proofs: { key: string; row: unknown }[];
+  data: { key: string; row: unknown }[];
+}
+
+function reportRows(text: string): ReportRows | null {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  if (typeof raw !== "object" || raw === null) return null;
+  const { game, proofs, data } = raw as Record<string, unknown>;
+  const keyed = (rows: unknown, field: string): { key: string; row: unknown }[] | null => {
+    if (!Array.isArray(rows)) return null;
+    const out: { key: string; row: unknown }[] = [];
+    for (const row of rows) {
+      const key: unknown = typeof row === "object" && row !== null ? (row as Record<string, unknown>)[field] : undefined;
+      if (typeof key !== "string") return null;
+      out.push({ key, row });
+    }
+    return out;
+  };
+  const [proofRows, dataRows] = [keyed(proofs, "file"), keyed(data, "id")];
+  return proofRows === null || dataRows === null ? null : { game, proofs: proofRows, data: dataRows };
+}
+
+/**
+ * Two runs of one game's suite, merged: each proof row is that proof's own result, so a row only one side
+ * changed takes that side's. A row both changed takes the lane's run; the suite test on the merged tree,
+ * which lane:close runs, writes the true one. Null when a side is not a suite report.
+ */
+export function mergeSuiteReports({ base, ours, theirs }: ConflictStages): string | null {
+  const [was, mine, lane] = [reportRows(base), reportRows(ours), reportRows(theirs)];
+  if (was === null || mine === null || lane === null) return null;
+  const merged = (field: "proofs" | "data") => mergeRows(was[field], mine[field], lane[field], (entry) => entry.key);
+  const byFile = (a: { key: string }, b: { key: string }) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0);
+  const report = { game: mine.game, proofs: merged("proofs").sort(byFile).map((entry) => entry.row), data: merged("data").map((entry) => entry.row) };
+  return `${JSON.stringify(report, null, 2)}\n`;
+}
+
+/** Files a rebase merges by what they hold rather than by line; a resolved one is followed by `bun run gen`. */
+export const MEANING_MERGES: readonly { readonly paths: RegExp; readonly merge: (stages: ConflictStages) => string | null }[] = [
+  { paths: /^games\/[^/]+\/proofs\/suite-report\.json$/, merge: mergeSuiteReports },
+];
+
+function meaningMerge(path: string): ((stages: ConflictStages) => string | null) | undefined {
+  return MEANING_MERGES.find((entry) => entry.paths.test(path))?.merge;
+}
+
+/** The conflict labels `merge-file` is given, so a marker-like line in a file is never read as one. */
+const SIDE = "jg-rebase-side";
+const OPEN = `<<<<<<< ${SIDE}-ours`;
+const BASE_PART = `||||||| ${SIDE}-base`;
+const SPLIT = "=======";
+const CLOSE = `>>>>>>> ${SIDE}-theirs`;
+export const MERGE_FILE_LABELS: readonly string[] = ["ours", "base", "theirs"].flatMap((side) => ["-L", `${SIDE}-${side}`]);
+
+/**
+ * `git merge-file -p --zdiff3` output (labelled with `MERGE_FILE_LABELS`) with every conflict in which both
+ * sides only added lines resolved to the base's added lines, then the lane's. Null when any conflict changed
+ * or removed a line the common ancestor had: that one is the lane's to resolve.
+ */
+export function keepBothInsertions(merged: string): string | null {
+  const out: string[] = [];
+  let ours: string[] | null = null;
+  let base: string[] | null = null;
+  let theirs: string[] | null = null;
+  for (const line of merged.split("\n")) {
+    const bare = line.endsWith("\r") ? line.slice(0, -1) : line;
+    if (ours === null) {
+      if (bare === OPEN) ours = [];
+      else out.push(line);
+    } else if (base === null) {
+      if (bare === BASE_PART) base = [];
+      else ours.push(line);
+    } else if (theirs === null) {
+      if (bare === SPLIT) theirs = [];
+      else base.push(line);
+    } else if (bare === CLOSE) {
+      if (base.length > 0) return null;
+      out.push(...ours, ...theirs);
+      [ours, base, theirs] = [null, null, null];
+    } else theirs.push(line);
+  }
+  return ours === null ? out.join("\n") : null;
+}
+
 /** Each generated block in the text, markers included, in order. */
 function blocksIn(text: string, { start, end }: GeneratedBlock): { at: number; to: number }[] {
   const found: { at: number; to: number }[] = [];
@@ -73,13 +190,6 @@ function replaceBlocks(text: string, blocks: readonly GeneratedBlock[], fill: (b
     for (let index = found.length - 1; index >= 0; index -= 1) out = out.slice(0, found[index]!.at) + fill(block, index) + out.slice(found[index]!.to);
   }
   return out;
-}
-
-/** The three sides of a conflicted file: the commits' common ancestor, the base rebased onto, and the lane's commit. */
-export interface ConflictStages {
-  base: string;
-  ours: string;
-  theirs: string;
 }
 
 /**
@@ -123,7 +233,7 @@ const lines = (text: string): string[] =>
     .filter((line) => line.length > 0);
 
 /**
- * `git rebase <onto>`, resolving conflicts in generated and lane-owned files as it goes. A real
+ * `git rebase <onto>`, resolving every conflict with one right answer as it goes (see the header). A real
  * conflict aborts the rebase and is returned. The caller regenerates when `regenerate` is non-empty.
  */
 export function rebaseResolvingGenerated(git: (args: string[]) => Run, onto: string): GeneratedRebase {
@@ -134,6 +244,7 @@ export function rebaseResolvingGenerated(git: (args: string[]) => Run, onto: str
     const shown = git(["show", `:${n}:${path}`]);
     return shown.status === 0 ? shown.stdout : null;
   };
+  // A line merge in which lines both sides added at one place keep both; any other conflict is null.
   const merge = (ours: string, base: string, theirs: string): string | null => {
     const dir = mkdtempSync(join(tmpdir(), "jg-block-merge-"));
     try {
@@ -142,17 +253,24 @@ export function rebaseResolvingGenerated(git: (args: string[]) => Run, onto: str
         writeFileSync(file, text!);
         return file;
       });
-      const merged = git(["merge-file", "-p", ...files]);
-      return merged.status === 0 ? merged.stdout : null;
+      const merged = git(["merge-file", "-p", "--zdiff3", ...MERGE_FILE_LABELS, ...files]);
+      if (merged.status === 0) return merged.stdout;
+      // merge-file answers the number of conflicts, or a value of 128 and above for an error such as a binary file.
+      return merged.status > 0 && merged.status < 128 ? keepBothInsertions(merged.stdout) : null;
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
   };
-  const blockResolved = (path: string): string | null => {
-    if (blocksOf(path).length === 0 || top.length === 0) return null;
+  // A block file merges its hand-written text around its blocks, a file merged by meaning uses its own
+  // merge, and any other text file keeps the lines both sides added at one place.
+  const resolve = (path: string): string | null => {
+    if (top.length === 0) return null;
     const [base, ours, theirs] = [stage(1, path), stage(2, path), stage(3, path)];
     if (base === null || ours === null || theirs === null) return null;
-    return resolveBlockConflict(path, { base, ours, theirs }, merge);
+    if (blocksOf(path).length > 0) return resolveBlockConflict(path, { base, ours, theirs }, merge);
+    const byMeaning = meaningMerge(path);
+    if (byMeaning !== undefined) return byMeaning({ base, ours, theirs });
+    return merge(ours, base, theirs);
   };
   // One pass per replayed commit at most; the bound only stops a rebase that never progresses.
   for (let pass = 0; step.status !== 0 && pass < 500; pass += 1) {
@@ -167,21 +285,21 @@ export function rebaseResolvingGenerated(git: (args: string[]) => Run, onto: str
       git(["rebase", "--abort"]);
       return { ok: false, conflicts: [], regenerate: [], detail: (step.stderr || step.stdout).trim() };
     }
-    const inBlocks = new Map<string, string>();
+    const resolved = new Map<string, string>();
     for (const path of conflicted) {
-      const resolved = isGenerated(path) || isLaneOwned(path) ? null : blockResolved(path);
-      if (resolved !== null) inBlocks.set(path, resolved);
+      const text = isGenerated(path) || isLaneOwned(path) ? null : resolve(path);
+      if (text !== null) resolved.set(path, text);
     }
-    const real = conflicted.filter((path) => !isGenerated(path) && !isLaneOwned(path) && !inBlocks.has(path));
+    const real = conflicted.filter((path) => !isGenerated(path) && !isLaneOwned(path) && !resolved.has(path));
     if (real.length > 0) {
       git(["rebase", "--abort"]);
       return { ok: false, conflicts: real, regenerate: [], detail: (step.stderr || step.stdout).trim() };
     }
     for (const path of conflicted) {
-      const resolved = inBlocks.get(path);
-      if (resolved !== undefined) writeFileSync(join(top, path), resolved);
+      const text = resolved.get(path);
+      if (text !== undefined) writeFileSync(join(top, path), text);
       else git(["checkout", isGenerated(path) ? "--ours" : "--theirs", "--", path]);
-      if (isRegenerated(path)) regenerated.add(path);
+      if (isRegenerated(path) || meaningMerge(path) !== undefined) regenerated.add(path);
     }
     git(["add", "--", ...conflicted]);
     step = git(["-c", "core.editor=true", "rebase", "--continue"]);

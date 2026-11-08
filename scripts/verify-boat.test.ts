@@ -8,7 +8,7 @@ import type { Snapshot } from "./boat-snapshot";
 import { resultLine } from "./boat-steps";
 import { runSteps, type StepResult } from "./stepScheduler";
 import { isLight, localReason, localTestFiles, placeSteps, remoteCommand, runPlaced, type PlaceableStep, type Where } from "./verify-boat";
-import { fastSteps, provisionStepFor, type Plan } from "./verify-fast";
+import { fastSteps, type Plan } from "./verify-fast";
 
 const made: string[] = [];
 afterEach(() => {
@@ -62,17 +62,6 @@ describe("placement", () => {
     expect(local?.localBecause).toContain("models");
     expect(steps.filter((candidate) => candidate.command.includes("packages/core/src/a.test.ts"))).toHaveLength(1);
     expect(placeSteps(steps).get(local!.name)?.where).toBe("local");
-    // A model-reading test links its game's packs first, on this PC, so a fresh worktree is not red.
-    const provision = steps.find((candidate) => candidate.command.includes("games/scripts/provision-assets.ts"));
-    expect(provision?.command.slice(2)).toEqual(["x"]);
-    expect(local?.needs).toEqual([provision!.name]);
-    expect(placeSteps(steps).get(provision!.name)?.where).toBe("local");
-  });
-
-  test("a model-reading test outside a game links every game's packs; no model test, no provision", () => {
-    expect(provisionStepFor(["scripts/missingModels.test.ts", "games/x/a.test.ts"])?.command).toEqual(["bun", "games/scripts/provision-assets.ts"]);
-    expect(provisionStepFor(["games/b/a.test.ts", "games/a/a.test.ts", "games/a/b.test.ts"])?.command.slice(2)).toEqual(["a", "b"]);
-    expect(provisionStepFor([])).toBeNull();
   });
 
   test("a few local test files take no heavy-job slot; a game boot or a bigger set does", () => {
@@ -175,8 +164,8 @@ function harness(boat: BoatCli | null, steps: PlaceableStep[], localResult: (nam
 
 describe("runPlaced", () => {
   const steps = [
-    step("typecheck core", { command: ["bun", "--cwd=packages/core", "run", "check-types"], first: true }),
-    step("tests"),
+    step("typecheck core", { command: ["bun", "--cwd=packages/core", "run", "check-types"], first: true, cost: 12 }),
+    step("tests", { cost: 30 }),
     step("provision x", { command: ["bun", "games/scripts/provision-assets.ts", "x"] }),
     step("boot probe x", { command: ["bun", "games/scripts/capabilities-probe.ts", "x"], needs: ["provision x"] }),
   ];
@@ -269,6 +258,16 @@ describe("runPlaced", () => {
     const run = await h.run();
     expect(h.ranHere).toContain("tests");
     expect(run.boat).toMatchObject({ status: "broken", why: "setting up the machine failed: bun install --frozen-lockfile" });
+  });
+
+  test("a few seconds of Linux work runs here: a boat machine's start would cost more than the work", async () => {
+    const boat = fakeBoat({});
+    const gates = [step("gate a", { command: ["bun", "scripts/check-a.ts"] }), step("gate b", { command: ["bun", "scripts/check-b.ts"] })];
+    const h = harness(boat.cli, gates);
+    const run = await h.run();
+    expect(boat.runs()).toBe(0);
+    expect(h.ranHere.sort()).toEqual(["gate a", "gate b"]);
+    expect(run.boat).toMatchObject({ status: "off", why: "about 2 s of work, less than a boat machine's start" });
   });
 
   test("no boat CLI runs everything here", async () => {

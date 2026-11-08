@@ -3,20 +3,16 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node
 import { dirname, join } from "node:path";
 
 import {
-  EXIT_CHECKS_FAILED,
   EXIT_COULD_NOT_MERGE,
   EXIT_LANDED,
   EXIT_VERIFY_FAILED,
   LOCK_STALE_MS,
-  QUEUE_LABEL,
   acquireLock,
   baseMoved,
-  checkVerdict,
   chooseBody,
   duration,
   ensurePr,
   forcePushArgs,
-  formatFailures,
   formatTiming,
   handOffLines,
   landBody,
@@ -30,12 +26,14 @@ import {
   runAt,
   staleReason,
   ownFragments,
+  mergeVerified,
+  MERGE_ATTEMPTS,
   commitsBody,
   noteLines,
   syncOntoBase,
   retryServerErrors,
 } from "./land";
-import type { FragmentFile, GhCheck, LandIo, LockWait, Run } from "./land";
+import type { FragmentFile, LandIo, LockWait, Run } from "./land";
 import { attemptsOf, judgeChecks } from "./ci-status";
 import type { RollupEntry } from "./ci-status";
 import { fakeGitHub, type FakeCall, type FakeCheck, type FakeGitHub } from "./github.fixture";
@@ -343,46 +341,6 @@ test("opening a PR sends the explicit body rather than the fragment, over REST",
   expect(api.calls[1]?.fields).toEqual({ base: "beta", head: "agent/lane-x", title: "Menus", body: "the body I wrote" });
 });
 
-test("maps a green check list to no failures", () => {
-  expect(
-    checkVerdict([
-      { name: "ci", state: "SUCCESS", bucket: "pass" },
-      { name: "perf", state: "SKIPPED", bucket: "skipping" },
-      { name: "smoke", state: "SUCCESS" },
-    ]),
-  ).toEqual({ failures: [], pending: [] });
-});
-
-test("names every failing check with its url and lists pending separately", () => {
-  const verdict = checkVerdict([
-    { name: "ci", state: "SUCCESS", bucket: "pass" },
-    { name: "test (core-rest)", state: "FAILURE", bucket: "fail", link: "https://example.test/job/1" },
-    { name: "quick", state: "CANCELLED" },
-    { name: "perf", state: "PENDING", bucket: "pending" },
-  ]);
-  expect(verdict.failures).toEqual([
-    { name: "test (core-rest)", url: "https://example.test/job/1" },
-    { name: "quick", url: "" },
-  ]);
-  expect(verdict.pending).toEqual(["perf"]);
-  expect(formatFailures(verdict.failures)).toEqual([
-    "  test (core-rest) https://example.test/job/1",
-    "  quick",
-  ]);
-});
-
-test("a watch timeout with only pending checks blocks the merge", () => {
-  const verdict = checkVerdict([{ name: "test (ui)", state: "IN_PROGRESS", bucket: "pending" }]);
-  expect(verdict.failures).toEqual([]);
-  expect(verdict.pending).toEqual(["test (ui)"]);
-});
-
-test("a cancelled check blocks the merge like a failure", () => {
-  const verdict = checkVerdict([{ name: "test (sdk)", state: "CANCELLED", bucket: "cancel", link: "u" }]);
-  expect(verdict.failures).toEqual([{ name: "test (sdk)", url: "u" }]);
-  expect(verdict.pending).toEqual([]);
-});
-
 test("refuses main, the base branch and a dirty tree", () => {
   expect(landRefusal("main", "", "beta")).toContain("refusing to land main");
   expect(landRefusal("beta", "", "beta")).toContain("refusing to land beta");
@@ -440,7 +398,7 @@ function originWithBeta(): { bare: string; work: string; partner: string; base: 
   return { bare, work, partner, base };
 }
 
-test("a task branch pushed before beta moved is rebased and force-pushed instead of rejected", () => {
+test("a task branch behind a beta that moved without a conflict is pushed as it is: no rebase, the merge brings beta in", () => {
   const { bare, work, partner, base } = originWithBeta();
 
   gitOk(work, ["checkout", "-q", "-b", "agent/behind"]);
@@ -454,12 +412,16 @@ test("a task branch pushed before beta moved is rebased and force-pushed instead
   expect(gitOk(work, ["rev-list", "--count", "HEAD..origin/beta"])).toBe("0");
 
   const sync = syncOntoBase({ branch: "agent/behind", base: "beta", git: (args) => gitIn(work, args) });
-  expect(sync).toEqual({ rebased: true, refusal: null });
+  // A git before 2.38 cannot test a merge and rebases as land did before (boat's machines, 8 Nov).
+  if (gitIn(work, ["merge-tree", "--write-tree", "--quiet", "HEAD", "HEAD"]).status !== 0) {
+    expect(sync).toEqual({ rebased: true, refusal: null });
+    return;
+  }
+  expect(sync).toEqual({ rebased: false, refusal: null });
 
   const remoteTip = gitOk(bare, ["rev-parse", "refs/heads/agent/behind"]);
   expect(remoteTip).toBe(gitOk(work, ["rev-parse", "HEAD"]));
-  expect(gitIn(bare, ["merge-base", "--is-ancestor", movedBeta, remoteTip]).status).toBe(0);
-  expect(gitIn(work, ["rev-list", "--count", "HEAD..origin/beta"]).stdout.trim()).toBe("0");
+  expect(gitIn(bare, ["merge-base", "--is-ancestor", movedBeta, remoteTip]).status).toBe(1);
 });
 
 test("a rebase that conflicts only in generated files and the lane's change note resolves them and regenerates", () => {
@@ -521,6 +483,61 @@ test("a conflict in source is still the lane's, named, and the branch is left as
   expect(sync.rebased).toBe(false);
   expect(sync.refusal).toContain("conflict in shared.txt");
   expect(gitOk(work, ["rev-parse", "HEAD"])).toBe(before);
+}, 120_000);
+
+test("two Fernwild lanes from one old beta, each adding a proof, a probe field, a PLAN tick and a rescore, land back to back with no hand rebase", () => {
+  const { bare, work, partner } = originWithBeta();
+  const real = (file: string): string => readFileSync(join(import.meta.dir, "..", "games/fernwild", file), "utf8");
+  const files = ["proofs/suite-report.json", "PLAN.md", "README.md", "src/game.config.ts"];
+  mkdirSync(join(work, "games/fernwild/proofs"), { recursive: true });
+  mkdirSync(join(work, "games/fernwild/src"), { recursive: true });
+  for (const file of files) writeFileSync(join(work, "games/fernwild", file), real(file));
+  gitOk(work, ["add", "-A"]);
+  gitOk(work, ["commit", "-q", "-m", "fernwild as beta has it"]);
+  gitOk(work, ["push", "-q", "origin", "beta"]);
+  const oldBeta = gitOk(work, ["rev-parse", "HEAD"]);
+  gitOk(partner, ["fetch", "-q", "origin"]);
+
+  // What one real Fernwild lane changes: a proof row (and a content row) in the report, the generated score in
+  // README and PLAN, a ticked milestone at the end of PLAN, and a probe field and its import in game.config.ts.
+  const lane = (dir: string, name: string): void => {
+    gitOk(dir, ["checkout", "-q", "-b", `agent/${name}`, oldBeta]);
+    const at = (file: string) => join(dir, "games/fernwild", file);
+    const report = JSON.parse(readFileSync(at("proofs/suite-report.json"), "utf8")) as { proofs: { file: string }[]; data: { id: string; ok: boolean; problems: string[] }[] };
+    report.proofs.push({ file: `proofs/sim/zz-${name}.proof.ts`, proves: [`lane.${name}`], ok: true } as { file: string });
+    report.data.push({ id: `content.${name}`, ok: true, problems: [] });
+    writeFileSync(at("proofs/suite-report.json"), `${JSON.stringify(report, null, 2)}\n`);
+    const rescore = (text: string) => text.replace(/(<!-- suite-score[^\n]*-->\n)[\s\S]*?(<!-- \/suite-score -->)/, `$1Rescored by ${name}.\n$2`);
+    writeFileSync(at("README.md"), rescore(readFileSync(at("README.md"), "utf8")));
+    writeFileSync(at("PLAN.md"), `${rescore(readFileSync(at("PLAN.md"), "utf8")).trimEnd()}\n- [x] ${name}: a milestone this lane ticked\n`);
+    const config = readFileSync(at("src/game.config.ts"), "utf8")
+      .replace('import { time, world } from "./world";\n', `import { time, world } from "./world";\nimport { ${name}Probe } from "./game/${name}";\n`)
+      .replace(/(\n\s*stones: ctx[^\n]*\n)/, `$1        ${name}: ${name}Probe(ctx),\n`);
+    writeFileSync(at("src/game.config.ts"), config);
+    gitOk(dir, ["add", "-A"]);
+    gitOk(dir, ["commit", "-q", "-m", `Fernwild: ${name}`]);
+  };
+  const close = (dir: string, name: string) => {
+    const sync = syncOntoBase({ branch: `agent/${name}`, base: "beta", git: (args) => gitIn(dir, args), exec: () => ({ status: 0, stdout: "", stderr: "" }) });
+    expect(sync.refusal).toBeNull();
+    // GitHub's merge: the pushed head goes onto beta.
+    gitOk(dir, ["push", "-q", "origin", `agent/${name}:beta`]);
+    return sync;
+  };
+
+  lane(partner, "dossier");
+  lane(work, "tranqs");
+  expect(close(partner, "dossier").rebased).toBe(false);
+  expect(close(work, "tranqs").rebased).toBe(true);
+
+  const landed = (file: string) => gitOk(bare, ["show", `beta:games/fernwild/${file}`]);
+  for (const file of files) expect(landed(file)).not.toMatch(/^(<<<<<<<|>>>>>>>|\|\|\|\|\|\|\|)/m);
+  const report = JSON.parse(landed("proofs/suite-report.json")) as { proofs: { file: string }[]; data: { id: string }[] };
+  expect(report.proofs.map((proof) => proof.file).slice(-2)).toEqual(["proofs/sim/zz-dossier.proof.ts", "proofs/sim/zz-tranqs.proof.ts"]);
+  expect(report.data.map((row) => row.id).slice(-2)).toEqual(["content.dossier", "content.tranqs"]);
+  expect(landed("PLAN.md")).toMatch(/- \[x\] dossier: [^\n]*\n- \[x\] tranqs: /);
+  expect(landed("src/game.config.ts")).toMatch(/import \{ dossierProbe \}[^\n]*\nimport \{ tranqsProbe \}/);
+  expect(landed("src/game.config.ts")).toMatch(/dossier: dossierProbe\(ctx\),\n\s*tranqs: tranqsProbe\(ctx\),/);
 }, 120_000);
 
 test("a branch land did not push is refused, and the remote copy is left alone", () => {
@@ -753,7 +770,7 @@ test("only a moved base, not a failing check, sends a merge back to rebase", () 
 /**
  * A landing driven end to end by `scripts/land.ts` itself, in its own process so two of them really
  * run at once against a real throwaway remote; the fake GitHub answers PR calls and marks when it is
- * labelling, so a test can see whether two labellings overlapped.
+ * opening the PR, so a test can see whether two openings overlapped.
  */
 const HARNESS = `
 import { appendFileSync, writeFileSync } from "node:fs";
@@ -776,15 +793,14 @@ const github = {
   listPulls: () => ({ ok: true, value: created ? [pull] : [] }),
   pull: () => ({ ok: true, value: pull }),
   checks: () => ({ ok: true, value: [{ name: "ci", conclusion: "SUCCESS", status: "COMPLETED", detailsUrl: "https://example.test/actions/runs/1/job/2" }] }),
-  createPull: () => { created = true; return { ok: true, value: { number: cfg.number, url } }; },
-  editPull: () => done,
-  addLabel: (number, label) => {
-    at("LABEL-START");
-    pause(cfg.labelMs);
-    pull.labels.push(label);
-    at("LABEL-END");
-    return done;
+  createPull: () => {
+    at("OPEN-START");
+    pause(cfg.openMs);
+    created = true;
+    at("OPEN-END");
+    return { ok: true, value: { number: cfg.number, url } };
   },
+  editPull: () => done,
 };
 const waits = [];
 at("START");
@@ -850,7 +866,7 @@ function startLanding(options: {
   lane: Lane;
   lock: string;
   number: number;
-  labelMs?: number;
+  openMs?: number;
   verify?: string;
   verifyOk?: boolean;
   dir?: string;
@@ -863,7 +879,7 @@ function startLanding(options: {
     branch: options.lane.branch,
     lock: options.lock,
     number: options.number,
-    labelMs: options.labelMs ?? 150,
+    openMs: options.openMs ?? 150,
     verify: options.verify ?? undefined,
     verifyOk: options.verifyOk ?? true,
     events,
@@ -923,7 +939,7 @@ function printLanding(label: string, landing: Landing): void {
   for (const line of landing.logs) console.log(`  land: ${line}`);
 }
 
-test("two landings at once both hand over, and the lock keeps their labelling apart", async () => {
+test("two landings at once both hand over, and the lock keeps their PR openings apart", async () => {
   const pair = landingRepo(["a", "b"]);
   const lock = join(dirname(pair.lanes[0]!.clone), "land.lock");
   const shared = { lock };
@@ -937,8 +953,8 @@ test("two landings at once both hand over, and the lock keeps their labelling ap
   expect(a.code).toBe(0);
   expect(b.code).toBe(0);
 
-  const [aLabel, bLabel] = [windows(a.events, "LABEL-START", "LABEL-END")[0]!, windows(b.events, "LABEL-START", "LABEL-END")[0]!];
-  expect(overlap(aLabel, bLabel)).toBeLessThanOrEqual(0);
+  const [aOpen, bOpen] = [windows(a.events, "OPEN-START", "OPEN-END")[0]!, windows(b.events, "OPEN-START", "OPEN-END")[0]!];
+  expect(overlap(aOpen, bOpen)).toBeLessThanOrEqual(0);
 
   expect(a.logs.some((line) => /^worked .+, waited .+ for the lock/.test(line))).toBe(true);
   expect(b.logs.some((line) => /^worked .+, waited .+ for the lock/.test(line))).toBe(true);
@@ -965,7 +981,7 @@ test("a landing that queues prints what it waited for, and its summary splits wa
   await holder.child.exited;
 }, 120_000);
 
-test("a failed verify stops the landing before it labels", async () => {
+test("a failed verify stops the landing before it hands the PR over", async () => {
   const repo = landingRepo(["unverified"]);
   const landing = await startLanding({
     lane: repo.lanes[0]!,
@@ -978,7 +994,7 @@ test("a failed verify stops the landing before it labels", async () => {
   expect(landing.code).toBe(EXIT_VERIFY_FAILED);
   expect(landing.logs).toContain("verify the-command");
   expect(landing.errors).toContain("verify failed: the-command");
-  expect(windows(landing.events, "LABEL-START", "LABEL-END").length).toBe(0);
+  expect(landing.logs).not.toContain("lane:close merges it once its verify:fast receipt covers this head");
 }, 120_000);
 
 /** Git for a hand-off: the push, the fetch and a branch already on top of the base. */
@@ -1007,8 +1023,6 @@ function handOffApi(options: { checks?: FakeCheck[]; fail?: (call: FakeCall) => 
   });
 }
 
-const labelCalls = (api: FakeGitHub): FakeCall[] => api.calls.filter((call) => call.path.endsWith("/labels"));
-
 /** An io that records what a hand-off prints. */
 function handOffIo(parts: { git: (args: string[]) => Run; github: FakeGitHub; verifyOk?: boolean }): {
   io: LandIo;
@@ -1030,7 +1044,7 @@ function handOffIo(parts: { git: (args: string[]) => Run; github: FakeGitHub; ve
   };
 }
 
-test("land hands the PR over in one pass: the URL and the status command", () => {
+test("land hands the PR over in one pass: the URL and who merges it", () => {
   const { git } = scriptedGit();
   const api = handOffApi();
   const { io, logs } = handOffIo({ git, github: api });
@@ -1038,55 +1052,69 @@ test("land hands the PR over in one pass: the URL and the status command", () =>
   const code = landBranch({ args: { base: "beta", commit: false, allow: [], messages: [] }, branch: "agent/lane-x", lock: lockPathForTest(), io });
 
   expect(code).toBe(EXIT_LANDED);
-  expect(api.pulls.get(4242)?.labels).toEqual([QUEUE_LABEL]);
-  expect(logs).toContain(`labelled the PR ${QUEUE_LABEL}`);
+  expect(api.pulls.get(4242)?.labels ?? []).toEqual([]);
   expect(logs).toContain(URL_4242);
-  expect(logs).toContain("status: bun run ci:status --pr 4242");
-  expect(logs).toContainEqual(expect.stringContaining("waiting: bun run lane:close --queue"));
+  expect(logs).toContain("lane:close merges it once its verify:fast receipt covers this head");
   expect(logs.at(-1)).toMatch(/^worked (\d+s|<1s), waited 0s for the lock$/);
-  expect(handOffLines({ number: 7, url: "u" })[1]).toBe("status: bun run ci:status --pr 7");
 });
 
-test("a hand-off takes one path: every GitHub call is gh api, and nothing merges or arms auto-merge", () => {
+test("a hand-off takes one path: it opens the PR and never reads checks, labels or merges", () => {
   const api = handOffApi();
   const { io } = handOffIo({ git: scriptedGit().git, github: api });
   landBranch({ args: { base: "beta", commit: false, allow: [], messages: [] }, branch: "agent/lane-x", lock: lockPathForTest(), io });
   expect(api.calls.map((call) => `${call.method} ${call.path.split("?")[0]}`)).toEqual([
     `GET repos/${LAND_REPO}/pulls`,
     `POST repos/${LAND_REPO}/pulls`,
-    `GET repos/${LAND_REPO}/pulls/4242`,
-    `GET repos/${LAND_REPO}/commits/sha-4242/check-runs`,
-    `POST repos/${LAND_REPO}/issues/4242/labels`,
   ]);
 });
 
-test("a label GitHub refuses fails the hand-off with GitHub's words, and nothing routes around it", () => {
-  const api = handOffApi({ fail: (call) => (call.path.endsWith("/labels") ? "HTTP 403: Resource not accessible by integration" : undefined) });
-  const { io, errors } = handOffIo({ git: scriptedGit().git, github: api });
-  const code = landBranch({ args: { base: "beta", commit: false, allow: [], messages: [] }, branch: "agent/lane-x", lock: lockPathForTest(), io });
-  expect(code).toBe(EXIT_COULD_NOT_MERGE);
-  expect(errors).toContain(`could not add the ${QUEUE_LABEL} label to #4242: HTTP 403: Resource not accessible by integration`);
-  expect(labelCalls(api)).toHaveLength(1);
+test("a failed verify hands nothing over", () => {
+  const unverified = handOffApi();
+  const second = handOffIo({ git: scriptedGit().git, github: unverified, verifyOk: false });
+  expect(
+    landBranch({
+      args: { base: "beta", commit: false, allow: [], messages: [], verify: "bun run preflight" },
+      branch: "agent/lane-x",
+      lock: lockPathForTest(),
+      io: second.io,
+    }),
+  ).toBe(EXIT_VERIFY_FAILED);
+  expect(second.logs).not.toContain("lane:close merges it once its verify:fast receipt covers this head");
+  expect(unverified.calls.some((call) => call.path.endsWith("/merge"))).toBe(false);
+  expect(second.logs).toContain("verify bun run preflight");
 });
 
-test("a cancelled attempt from a superseded run is not a failure: the pass on this commit stands", () => {
-  // Two pulls of the same branch: the first suite passed, the second was cancelled when it was
-  // superseded. Every name has a green attempt on this commit, so the PR is ready to hand over.
-  const superseded: FakeCheck[] = [
-    { name: "ci", conclusion: "success", startedAt: "2026-10-24T04:12:44Z" },
-    { name: "ci", conclusion: "cancelled", startedAt: "2026-10-24T04:17:03Z" },
-    { name: "types", conclusion: "success", startedAt: "2026-10-24T04:10:17Z" },
-    { name: "types", conclusion: "cancelled", startedAt: "2026-10-24T04:15:15Z" },
-  ];
-  const api = handOffApi({ checks: superseded });
-  const { io, logs, errors } = handOffIo({ git: scriptedGit().git, github: api });
+test("mergeVerified merges the head it was given, and retries only while another merge moves the base", () => {
+  const api = fakeGitHub({ repo: LAND_REPO, nextNumber: 7 });
+  const pauses: number[] = [];
+  let refusals = 2;
+  const github = {
+    ...api.github,
+    mergePull: (number: number, sha: string) =>
+      refusals-- > 0 ? { ok: false as const, error: "HTTP 405: Base branch was modified. Review and try the merge again." } : { ok: true as const, value: { sha: `merge-of-${sha}-in-${number}` } },
+  };
+  const merged = mergeVerified(github, 7, "head1", (ms) => pauses.push(ms));
+  expect(merged).toEqual({ ok: true, sha: "merge-of-head1-in-7" });
+  expect(pauses).toEqual([3_000, 6_000]);
 
-  const code = landBranch({ args: { base: "beta", commit: false, allow: [], messages: [] }, branch: "agent/lane-x", lock: lockPathForTest(), io });
+  const refused = mergeVerified(
+    { ...api.github, mergePull: () => ({ ok: false as const, error: "HTTP 409: Head branch was modified" }) },
+    7,
+    "head1",
+    (ms) => pauses.push(ms),
+  );
+  expect(refused).toEqual({ ok: false, error: "HTTP 409: Head branch was modified", baseMoved: false });
+  expect(pauses).toHaveLength(2);
 
-  expect(code).toBe(EXIT_LANDED);
-  expect(errors).toEqual([]);
-  expect(labelCalls(api)).toHaveLength(1);
-  expect(logs).toContain(URL_4242);
+  let calls = 0;
+  const stuck = mergeVerified(
+    { ...api.github, mergePull: () => (calls++, { ok: false as const, error: "HTTP 405: Base branch was modified." }) },
+    7,
+    "head1",
+    () => {},
+  );
+  expect(stuck.ok).toBe(false);
+  expect(calls).toBe(MERGE_ATTEMPTS);
 });
 
 test("an attempt on an older commit contributes nothing to this commit's verdict", () => {
@@ -1106,47 +1134,6 @@ test("an attempt on an older commit contributes nothing to this commit's verdict
     "head1",
   );
   expect(older.map((check) => check.bucket)).toEqual(["pass"]);
-});
-
-test("checks still running are reported as running, with how many and the run, never as failed", () => {
-  const running: FakeCheck[] = [
-    { name: "ci", url: "https://example.test/actions/runs/700/job/1" },
-    { name: "test (ui)", status: "in_progress", conclusion: null, url: "https://example.test/actions/runs/701/job/2" },
-    { name: "types", status: "queued", conclusion: null, url: "https://example.test/actions/runs/701/job/3" },
-  ];
-  const api = handOffApi({ checks: running });
-  const { io, logs, errors } = handOffIo({ git: scriptedGit().git, github: api });
-
-  const code = landBranch({ args: { base: "beta", commit: false, allow: [], messages: [] }, branch: "agent/lane-x", lock: lockPathForTest(), io });
-
-  expect(code).toBe(EXIT_LANDED);
-  expect(errors).toEqual([]);
-  expect(logs).toContain("checks still running: 2 of 3 (run 701); the queue waits for them");
-  expect(api.pulls.get(4242)?.labels).toEqual([QUEUE_LABEL]);
-});
-
-test("checks that already failed stop the hand-off, and a failed verify never labels anything", () => {
-  const failedChecks = handOffApi({ checks: [{ name: "test (ui)", conclusion: "failure", url: "https://example.test/job/9" }] });
-  const first = handOffIo({ git: scriptedGit().git, github: failedChecks });
-  expect(
-    landBranch({ args: { base: "beta", commit: false, allow: [], messages: [] }, branch: "agent/lane-x", lock: lockPathForTest(), io: first.io }),
-  ).toBe(EXIT_CHECKS_FAILED);
-  expect(labelCalls(failedChecks)).toEqual([]);
-  expect(first.errors).toContain("checks failed: test (ui)");
-  expect(first.errors).toContain("  test (ui) https://example.test/job/9");
-
-  const unverified = handOffApi();
-  const second = handOffIo({ git: scriptedGit().git, github: unverified, verifyOk: false });
-  expect(
-    landBranch({
-      args: { base: "beta", commit: false, allow: [], messages: [], verify: "bun run preflight" },
-      branch: "agent/lane-x",
-      lock: lockPathForTest(),
-      io: second.io,
-    }),
-  ).toBe(EXIT_VERIFY_FAILED);
-  expect(labelCalls(unverified)).toEqual([]);
-  expect(second.logs).toContain("verify bun run preflight");
 });
 
 test("a reused PR keeps its body and gets the Bends section the diff now shows", () => {

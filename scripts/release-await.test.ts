@@ -46,6 +46,46 @@ describe("which run is this release's", () => {
     expect(pickRun([run({ databaseId: 1, headSha: shas }), run({ databaseId: 3, headSha: shas })], shas)?.databaseId).toBe(3);
   });
 
+  test("once main's CI for the commit started, the run is the first queued after it, whatever commit GitHub names", () => {
+    const sha = "a".repeat(40);
+    const since = "2026-11-08T02:45:47Z";
+    // 0.54.0: a refused run from before main's CI, labelled with beta's tip (the new main), was taken as its verdict.
+    const stale = run({ databaseId: 1, headSha: sha, conclusion: "failure", createdAt: "2026-11-08T02:30:31Z" });
+    expect(pickRun([stale], sha, since)).toBeNull();
+    // Beta moved during main's CI, so the real run names beta's newer tip.
+    const real = run({ databaseId: 2, headSha: "c".repeat(40), createdAt: "2026-11-08T02:58:00Z" });
+    const later = run({ databaseId: 3, headSha: "d".repeat(40), createdAt: "2026-11-08T03:30:00Z" });
+    expect(pickRun([later, stale, real], sha, since)?.databaseId).toBe(2);
+    expect(pickRun([stale], sha)?.databaseId).toBe(1);
+  });
+
+  test("a commit just pushed to main takes no run created before the push, even before its CI is listed", async () => {
+    const sha = "a".repeat(40);
+    const stale = run({ databaseId: 1, headSha: sha, conclusion: "failure", createdAt: "2026-11-08T02:58:00Z" });
+    const fresh = run({ databaseId: 2, headSha: sha, createdAt: "2026-11-08T03:20:00Z" });
+    let lists = 0;
+    const result = await awaitPublish({
+      version: "0.54.0",
+      sha,
+      notBefore: "2026-11-08T03:05:00Z",
+      gh: (args) => {
+        if (args[0] === "run" && args.includes("ci.yml")) return { status: 0, stdout: "[]", stderr: "" };
+        if (args[0] === "run") {
+          lists += 1;
+          return { status: 0, stdout: JSON.stringify(lists < 3 ? [stale] : [fresh, stale]), stderr: "" };
+        }
+        return { status: 0, stdout: JSON.stringify(fresh), stderr: "" };
+      },
+      registry: served,
+      graceMs: 60_000,
+      now: () => 0,
+      sleep: async () => {},
+      log: () => {},
+    });
+    expect(result.ok).toBe(true);
+    expect(result.runId).toBe(2);
+  });
+
   test("a commit with no publish run is null, not the newest run of anything", () => {
     expect(pickRun([run({ headSha: "b".repeat(40) })], "a".repeat(40))).toBeNull();
   });
@@ -237,7 +277,9 @@ describe("waiting on the publish run", () => {
       log: () => {},
     });
     expect(result.ok).toBe(true);
-    expect(listed[0]).not.toContain("--branch");
+    const publishLists = listed.filter((args) => args.includes("publish.yml"));
+    expect(publishLists.length).toBeGreaterThan(0);
+    for (const args of publishLists) expect(args).not.toContain("--branch");
   });
 
   test("a merge commit that never queued a run is reported by name, not waited on", async () => {

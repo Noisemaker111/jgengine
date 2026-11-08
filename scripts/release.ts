@@ -26,6 +26,7 @@ import { fileURLToPath } from "node:url";
 import { foldFragments, readFragments } from "./changelog-fragments";
 import { deploySite, publishThenDeploy, runStep } from "./deploy-site";
 import { checkoutGitHub } from "./github";
+import { mergeVerified } from "./land";
 import { awaitPublish, type AwaitResult, type RunGh } from "./release-await";
 
 export interface ChangelogSections {
@@ -215,6 +216,12 @@ export function checkReleaseAncestor(input: {
   ref?: string;
   target?: string | undefined;
   git?: GitRunner;
+  /**
+   * Publishing, not cutting: a target already on `ref` landed through it, so it holds everything `ref`
+   * had when it merged, and `ref` moving on since is no reason to refuse it. Publish refused 0.54.0
+   * because #3056 merged during main's CI; a cut still needs `ref`'s tip.
+   */
+  landed?: boolean;
 }): AncestorReport {
   const git = input.git ?? runGit;
   const ref = input.ref ?? "origin/beta";
@@ -231,6 +238,9 @@ export function checkReleaseAncestor(input: {
     return { ...base, ok: false, missing: [], reason: `cannot resolve ${ref}, so the release cannot prove it contains the branch everything lands on` };
   }
   if (git(["merge-base", "--is-ancestor", ref, target], input.cwd).status === 0) {
+    return { ...base, ok: true, missing: [], reason: null };
+  }
+  if (input.landed === true && git(["merge-base", "--is-ancestor", target, ref], input.cwd).status === 0) {
     return { ...base, ok: true, missing: [], reason: null };
   }
   const log = git(["log", "--format=%h %s", `${target}..${ref}`], input.cwd);
@@ -428,8 +438,9 @@ export function waitRequest(args: readonly string[]): WaitRequest | null {
 
 /**
  * `--wait <version>`: the version is already cut and on main. Wait for its Publish run, then deploy
- * jgengine.com from the commit that run published, the same tail `--wait` runs after a cut. A failed
- * deploy is retried by running this again, not by hand.
+ * jgengine.com from the commit that run published: the same tail `--wait` runs after a cut, following
+ * beta when Publish refused a commit beta had passed (0.54.0's resume only waited on main and stopped
+ * there). A failed deploy is retried by running this again, not by hand.
  */
 async function waitForVersion(root: string, version: string, wait: WaitRequest): Promise<never> {
   spawnSync("git", ["fetch", "--quiet", "origin", "main"], { cwd: root, stdio: "ignore", timeout: 20_000 });
@@ -438,11 +449,42 @@ async function waitForVersion(root: string, version: string, wait: WaitRequest):
     console.error(`release: cannot resolve ${wait.sha ?? "origin/main"} to a commit`);
     process.exit(1);
   }
-  const code = await publishThenDeploy(
-    () => awaitPublish({ version, sha, runId: wait.runId, gh: ghIn(root), log: (line) => console.log(line) }),
-    () => deploySite(root, runStep, sha),
+  process.exit(await publishAndDeploy(root, version, sha, wait.runId));
+}
+
+/**
+ * Wait for Publish on `sha` (pushing beta's tip to main and publishing that when beta passed it), then
+ * deploy jgengine.com from the commit that was published. The site deploy runs here, not in CI,
+ * because its build needs game models.
+ */
+async function publishAndDeploy(root: string, version: string, sha: string, runId?: number): Promise<number> {
+  const git = (args: readonly string[]) => spawnSync("git", [...args], { cwd: root, encoding: "utf8" });
+  const gh = ghIn(root);
+  let first = true;
+  let pushedAt: string | undefined;
+  const published = await publishFollowingBeta({
+    sha,
+    // A named run belongs to the first commit only; a commit pushed after it has its own run, created
+    // after the push.
+    publish: (target) => {
+      const run = first ? runId : undefined;
+      first = false;
+      return awaitPublish({ version, sha: target, runId: run, notBefore: pushedAt, gh, log: (line) => console.log(line) });
+    },
+    pushTip: () => {
+      pushedAt = new Date().toISOString();
+      return fastForwardMain(git);
+    },
+    log: (line) => console.log(line),
+  });
+  if (!published.ok) {
+    console.error(`release: ${published.error}`);
+    return 1;
+  }
+  return publishThenDeploy(
+    async () => published.result,
+    () => deploySite(root, runStep, published.sha),
   );
-  process.exit(code);
 }
 
 function resolveCommit(root: string, rev: string): string {
@@ -459,8 +501,8 @@ function ghIn(root: string): RunGh {
 }
 
 /**
- * The rest of a release that a lane used to do by hand: commit, hand the PR to `land` (which pushes,
- * opens it and labels it for the queue), merge it through the queue, fast-forward `main`, then wait for the Publish
+ * The rest of a release that a lane used to do by hand: commit, hand the PR to `land` (which pushes
+ * and opens it), merge it, fast-forward `main`, then wait for the Publish
  * run, deploy jgengine.com from the released commit, and answer with the version. `--wait` is what keeps a lane out of `Start-Sleep 480; gh run view`.
  */
 async function landAndAwait(root: string, version: string, cutFrom: string): Promise<never> {
@@ -480,12 +522,11 @@ async function landAndAwait(root: string, version: string, cutFrom: string): Pro
   }
   const land = spawnSync("bun", ["scripts/land.ts"], { cwd: root, stdio: "inherit" });
   if (land.status !== 0) {
-    console.error("release: land did not finish; the cut is committed on this branch and the PR is not in the landing queue");
+    console.error("release: land did not finish; the cut is committed on this branch and nothing was merged");
     process.exit(land.status ?? 1);
   }
 
-  if (mergeThroughQueue(root) === null) process.exit(1);
-  const gh = ghIn(root);
+  if (mergeRelease(root) === null) process.exit(1);
   const forward = fastForwardMain(git);
   if (!forward.ok) {
     console.error(`release: fast-forwarding main failed: ${forward.error}`);
@@ -493,22 +534,7 @@ async function landAndAwait(root: string, version: string, cutFrom: string): Pro
   }
   const back = git(["checkout", "--quiet", cutFrom]);
   if (back.status !== 0) console.error(`release: published, but this checkout did not switch back to ${cutFrom}: ${back.stderr.trim()}`);
-  // The site deploy runs here, not in CI, because its build needs game models.
-  const published = await publishFollowingBeta({
-    sha: forward.sha,
-    publish: (sha) => awaitPublish({ version, sha, gh, log: (line) => console.log(line) }),
-    pushTip: () => fastForwardMain(git),
-    log: (line) => console.log(line),
-  });
-  if (!published.ok) {
-    console.error(`release: ${published.error}`);
-    process.exit(1);
-  }
-  const code = await publishThenDeploy(
-    async () => published.result,
-    () => deploySite(root, runStep, published.sha),
-  );
-  process.exit(code);
+  process.exit(await publishAndDeploy(root, version, forward.sha));
 }
 
 /**
@@ -555,10 +581,11 @@ export function fastForwardMain(
 }
 
 /**
- * The release PR's merge is the event the publish run follows. It merges through the landing queue,
- * the one process that waits for CI and merges, run here in the foreground for this PR alone.
+ * The release PR's merge is the event the publish run follows. The release checked its own commit
+ * before cutting (the site build at the commit it releases), so it merges the head it pushed, as
+ * lane:close does; CI on the beta push and Publish's own check of that commit follow.
  */
-function mergeThroughQueue(root: string): number | null {
+function mergeRelease(root: string): number | null {
   const branch = spawnSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { cwd: root, encoding: "utf8" }).stdout.trim();
   const listed = checkoutGitHub(root).listPulls({ head: branch, state: "open", limit: 1 });
   const pr = listed.ok ? listed.value[0] : undefined;
@@ -566,11 +593,13 @@ function mergeThroughQueue(root: string): number | null {
     console.error(`release: no open PR for ${branch}${listed.ok ? "" : `: ${listed.error}`}; nothing was published`);
     return null;
   }
-  const queue = spawnSync("bun", ["scripts/land-queue.ts", "--pr", String(pr.number)], { cwd: root, stdio: "inherit" });
-  if (queue.status !== 0) {
-    console.error(`release: the landing queue did not merge #${pr.number}; nothing was published`);
+  const head = spawnSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).stdout.trim();
+  const merged = mergeVerified(checkoutGitHub(root), pr.number, head);
+  if (!merged.ok) {
+    console.error(`release: GitHub refused to merge #${pr.number}: ${merged.error}; nothing was published`);
     return null;
   }
+  console.log(`release: merged #${pr.number} as ${merged.sha}`);
   return pr.number;
 }
 

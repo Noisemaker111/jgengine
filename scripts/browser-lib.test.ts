@@ -31,7 +31,6 @@ import {
   resolveWarmChromePort,
   regionCarriesPicture,
   screencastCapturesFully,
-  windowsPersistentChromeCommand,
   applyCaptureQuality,
   assertQualityApplied,
   draftSuffix,
@@ -171,17 +170,6 @@ describe("Chrome launch mode", () => {
 });
 
 describe("Chrome graphics profile", () => {
-  test("persistent Windows Chrome uses a hidden native process boundary", () => {
-    const command = windowsPersistentChromeCommand("C:\\Program Files\\Chrome\\chrome.exe", [
-      "--headless=new",
-      "--user-data-dir=C:\\Users\\Test User\\Temp\\profile",
-    ]);
-    expect(command).toContain("Start-Process");
-    expect(command).toContain("-WindowStyle Hidden");
-    expect(command).toContain("-PassThru");
-    expect(command).toContain("'\"--user-data-dir=C:\\Users\\Test User\\Temp\\profile\"'");
-  });
-
   test("uses native GPU locally instead of forcing CPU-bound SwiftShader", () => {
     expect(chromeGraphicsArgs({}, "win32")).toEqual(["--ignore-gpu-blocklist"]);
   });

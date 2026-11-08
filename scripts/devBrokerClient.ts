@@ -1,4 +1,3 @@
-import { spawn, spawnSync } from "node:child_process";
 import { readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -7,6 +6,7 @@ import { headRevision } from "./captureRevision";
 import { checkoutIdentity } from "./devServerMarker";
 import { BROKER_PROTOCOL, brokerEnabled, brokerPort, type BrokerStatus, type CaptureGrant, type ServerGrant, type ServerKind } from "./devBroker";
 import { localPostJson, localRequest } from "./localhostHttp";
+import { startOutsideCaller } from "./outsideCaller";
 import { servedGameDir } from "./servedGame";
 import { detail } from "./verbosity";
 
@@ -42,27 +42,14 @@ export async function stopBroker(): Promise<boolean> {
   return false;
 }
 
-function powershellQuote(value: string): string {
-  return `'${value.replaceAll("'", "''")}'`;
-}
-
 /**
- * Start the broker so it outlives this run and holds none of its handles. On Windows a child Bun
- * spawns, even detached with stdio ignored, can inherit the caller's pipes and keep an agent's
- * shell command open for hours, so it goes through `Start-Process`, which inherits nothing.
+ * Start the broker so it outlives this run and holds none of its handles. It must not share this
+ * run's Windows job either: fairshare ends a slot's whole job when the command's shell exits, and a
+ * broker started from a slotted `bun run shoot` died with it (about ten times in an hour on
+ * 2026-11-08), taking its Chrome, its dev servers and every capture on them along.
  */
 function launchBroker(script: string): void {
-  if (process.platform === "win32") {
-    const command = `Start-Process -FilePath ${powershellQuote(process.execPath)} -ArgumentList @(${powershellQuote(script)},'serve') -WorkingDirectory ${powershellQuote(tmpdir())} -WindowStyle Hidden`;
-    spawnSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-EncodedCommand", Buffer.from(command, "utf16le").toString("base64")], {
-      stdio: "ignore",
-      windowsHide: true,
-      timeout: 15_000,
-    });
-    return;
-  }
-  const child = spawn(process.execPath, [script, "serve"], { cwd: tmpdir(), stdio: "ignore", detached: true });
-  child.unref();
+  startOutsideCaller(process.execPath, [script, "serve"], { cwd: tmpdir() });
 }
 
 let unavailable: string | null = null;
@@ -87,7 +74,13 @@ export async function ensureBroker(options: { log?: (line: string) => void; wait
     status = null;
   }
   if (status !== null) return status;
-  launchBroker(join(import.meta.dir, "devBroker.ts"));
+  try {
+    launchBroker(join(import.meta.dir, "devBroker.ts"));
+  } catch (error) {
+    unavailable = `could not start the broker (${error instanceof Error ? error.message : String(error)})`;
+    log(`daemon failure: ${unavailable} — this run starts its own servers`);
+    return null;
+  }
   const deadline = Date.now() + (options.waitMs ?? 20_000);
   while (Date.now() < deadline) {
     await new Promise((resolve) => setTimeout(resolve, 200));
@@ -95,7 +88,7 @@ export async function ensureBroker(options: { log?: (line: string) => void; wait
     if (status !== null) return status;
   }
   unavailable = `broker did not answer on :${brokerPort()} within ${Math.round((options.waitMs ?? 20_000) / 1000)}s (log: ${join(tmpdir(), "jgengine-broker.log")})`;
-  log(`broker: ${unavailable} — launching directly`);
+  log(`daemon failure: ${unavailable} — this run starts its own servers`);
   return null;
 }
 
@@ -207,18 +200,35 @@ export function captureWaitMs(env: NodeJS.ProcessEnv = process.env): number {
  */
 export async function brokerCaptureTurn(
   cwd = process.cwd(),
-  options: { waitMs?: number; log?: (line: string) => void } = {},
+  options: { waitMs?: number; log?: (line: string) => void; progressMs?: number } = {},
 ): Promise<{ release(): Promise<void>; waitedMs: number; chromePort: number }> {
   const log = options.log ?? ((line: string) => console.error(line));
   const waitMs = options.waitMs ?? captureWaitMs();
+  const startedAt = Date.now();
+  // A queued run says so, naming who holds the browser: a silent wait read the same as a hang.
+  const progress = setInterval(() => {
+    void brokerStatusOrNull(1_000).then((status) => {
+      const waited = Math.round((Date.now() - startedAt) / 1000);
+      log(status === null
+        ? `daemon failure: waited ${waited}s for the shared browser, and the broker stopped answering`
+        : `broker: waiting ${waited}s for the shared browser (gives up at ${Math.round(waitMs / 1000)}s), ${captureQueueLine(status)}`);
+    });
+  }, options.progressMs ?? 30_000);
+  progress.unref?.();
   const response = await localPostJson<CaptureGrant & { error?: string }>(
     `${brokerBase()}/v1/capture`,
     { clientPid: process.pid, label: label(cwd), waitMs },
     waitMs + 10_000,
-  );
+  ).finally(() => clearInterval(progress));
   if (response.status !== 200) throw new Error(`capture turn: ${response.body.error ?? `answered ${response.status}`}`);
   const grant = response.body;
   rememberLease(grant.leaseId);
   if (grant.waitedMs >= 1_000) log(`broker: waited ${(grant.waitedMs / 1000).toFixed(1)}s for the shared browser`);
   return { release: () => releaseLease(grant.leaseId), waitedMs: grant.waitedMs, chromePort: grant.chromePort };
+}
+
+/** Who holds the shared browser and who else waits, for a queued run's progress line. */
+export function captureQueueLine(status: Pick<BrokerStatus, "capture">): string {
+  const held = status.capture.holders.length === 0 ? "nobody holds it yet (the browser may be starting)" : `held by ${status.capture.holders.join(", ")}`;
+  return `${held}; ${status.capture.queued.length} in the queue`;
 }

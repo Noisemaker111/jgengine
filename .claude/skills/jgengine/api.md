@@ -6,7 +6,7 @@
 
 - `CHANGELOG` (const): const CHANGELOG: Record<string, ChangelogEntry> — Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`).
 - `ChangelogEntry` (interface): interface ChangelogEntry — One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md).
-- `VERSION` (const): const VERSION: "0.53.0" — Installed `@jgengine/core` semver - compare against {@link CHANGELOG} keys when migrating.
+- `VERSION` (const): const VERSION: "0.54.0" — Installed `@jgengine/core` semver - compare against {@link CHANGELOG} keys when migrating.
 
 ## @jgengine/core/authoring
 
@@ -457,7 +457,7 @@
 
 - `CHANGELOG` (const): const CHANGELOG: Record<string, ChangelogEntry> — Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`).
 - `ChangelogEntry` (interface): interface ChangelogEntry — One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md).
-- `VERSION` (const): const VERSION: "0.53.0" — Installed `@jgengine/core` semver - compare against {@link CHANGELOG} keys when migrating.
+- `VERSION` (const): const VERSION: "0.54.0" — Installed `@jgengine/core` semver - compare against {@link CHANGELOG} keys when migrating.
 
 ## @jgengine/core/runtime/adapter
 

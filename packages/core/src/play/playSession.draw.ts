@@ -1,5 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createHeadlessRunner, type HeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
+import type { RuntimeSaveOptions } from "@jgengine/core/save/snapshotSave";
 import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt";
 import type { HeadlessPlayable } from "@jgengine/core/runtime/headlessRunner";
 
@@ -20,6 +21,8 @@ export interface PlaySessionOptions {
   onCommand?: (entry: { name: string; input: unknown; label: string; result: ReturnType<GameContext["game"]["commands"]["run"]> }) => void;
   /** Records every tick and every {@link PlaySession.command} call, for a replay. Bound-action commands replay from the input and are not recorded. */
   recorder?: ReplayRecorder;
+  /** Where the game's saves go; default the game's own. */
+  save?: RuntimeSaveOptions;
 }
 
 /** A live headless play of one game, ticked by its caller. */
@@ -58,6 +61,7 @@ export function createPlaySession(playable: HeadlessPlayable, options: PlaySessi
     ...(options.seed === undefined ? {} : { seed: options.seed }),
     now: () => clockMs,
     maxStepSeconds: dt,
+    ...(options.save === undefined ? {} : { save: options.save }),
   });
   const ctx = runner.ctx;
 

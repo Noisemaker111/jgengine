@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 
-import { paceFrame, readFrameRateLimit } from "./frameRateLimit";
+import { readDesktopShell, saveDesktopFrameRate } from "./desktopShell";
+import { FRAME_RATE_LIMIT_UNCAPPED, frameRateLimitOptions, paceFrame, readFrameRateLimit } from "./frameRateLimit";
 import { createSettingsStore, SETTING_IDS } from "./settingsModel";
 
 function run(displayHz: number, fps: number, seconds: number): number {
@@ -48,5 +49,32 @@ describe("readFrameRateLimit", () => {
     const store = createSettingsStore(null);
     store.set(SETTING_IDS.graphicsFrameRateLimit, 60);
     expect(readFrameRateLimit(store)).toBe(60);
+  });
+});
+
+describe("desktop frame rate", () => {
+  const desktop = (running: "vsync" | "uncapped", forced = false) => ({ __JG_DESKTOP__: { frameRate: { running, saved: running, forced } } });
+
+  it("offers Uncapped only on a desktop build and says which choice waits for a restart", () => {
+    expect(frameRateLimitOptions(null).map((option) => option.value)).not.toContain(FRAME_RATE_LIMIT_UNCAPPED);
+    const vsync = frameRateLimitOptions(readDesktopShell(desktop("vsync"))?.frameRate ?? null);
+    expect(vsync[0]).toEqual({ value: "display", label: "Match display (V-Sync)" });
+    expect(vsync.at(-1)).toEqual({ value: "uncapped", label: "Uncapped (after restart)" });
+    const uncapped = frameRateLimitOptions(readDesktopShell(desktop("uncapped"))?.frameRate ?? null);
+    expect(uncapped[0]?.label).toBe("Match display (V-Sync) (after restart)");
+    expect(uncapped.at(-1)?.label).toBe("Uncapped");
+    expect(frameRateLimitOptions(readDesktopShell(desktop("uncapped", true))?.frameRate ?? null)[0]?.label).toBe("Match display (V-Sync) (not while --uncapped)");
+  });
+
+  it("an uncapped choice renders every frame and saves uncapped to the shell; every other choice saves vsync", async () => {
+    const store = createSettingsStore(null);
+    store.set(SETTING_IDS.graphicsFrameRateLimit, FRAME_RATE_LIMIT_UNCAPPED);
+    expect(readFrameRateLimit(store)).toBe(0);
+    const calls: unknown[][] = [];
+    const scope = { __TAURI_INTERNALS__: { invoke: (...args: unknown[]) => { calls.push(args); return Promise.resolve(); } } };
+    expect(await saveDesktopFrameRate("uncapped", scope)).toBe(true);
+    expect(await saveDesktopFrameRate("60", scope)).toBe(true);
+    expect(calls).toEqual([["set_frame_rate", { mode: "uncapped" }], ["set_frame_rate", { mode: "vsync" }]]);
+    expect(await saveDesktopFrameRate("uncapped", {})).toBe(false);
   });
 });

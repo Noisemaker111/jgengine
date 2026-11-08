@@ -1,11 +1,12 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  cpuBusyPercent,
+  readinessTimeoutLine,
   isStaleCaptureFailure,
   retrySettleMs,
   shouldRetryCapture,
 } from "./capture-retry";
-import { captureTimeout } from "./browser-lib";
 
 describe("isStaleCaptureFailure", () => {
   test("matches the post-HMR start-menu symptom (case-insensitive)", () => {
@@ -85,9 +86,32 @@ describe("retrySettleMs", () => {
   });
 });
 
-test("a capture timeout says what the page was still waiting on, and still reads as a stale capture", () => {
-  const message = captureTimeout(210_000, "settling: models streaming; 2 pending: /models/car.glb (2)");
-  expect(message).toBe("timed out waiting for data-jg-capture=ready (210000ms); the page was settling: models streaming; 2 pending: /models/car.glb (2)");
-  expect(isStaleCaptureFailure(message)).toBe(true);
-  expect(captureTimeout(5_000, null)).toBe("timed out waiting for data-jg-capture=ready (5000ms)");
+describe("a readiness timeout names its cause in one line", () => {
+  const base = { waitedMs: 120_000, url: "http://127.0.0.1:4845/?game=harbor-heat" };
+
+  test("a busy PC is named, with what to do", () => {
+    const line = readinessTimeoutLine({ ...base, status: "loading", href: "http://127.0.0.1:4845/?game=harbor-heat", cpuBusy: 96 });
+    expect(line).toBe('timed out waiting for data-jg-capture=ready after 120s: the page was still "loading"; the PC\'s CPU was 96% busy throughout, so rerun when it is quieter or pass a longer --timeout');
+    expect(isStaleCaptureFailure(line)).toBe(true);
+  });
+
+  test("a page that never loaded names the server that stopped answering", () => {
+    const line = readinessTimeoutLine({ ...base, status: null, href: "chrome-error://chromewebdata/", cpuBusy: 20 });
+    expect(line).toContain("the page never loaded: nothing answered at http://127.0.0.1:4845, so the dev server is gone");
+  });
+
+  test("the line says what the page's gate was still waiting on, when the page said", () => {
+    const line = readinessTimeoutLine({ ...base, status: "settling", href: base.url, cpuBusy: 20, stage: "models streaming; 2 pending: /models/car.glb (2)" });
+    expect(line).toContain('the page was still "settling" (models streaming; 2 pending: /models/car.glb (2))');
+    expect(isStaleCaptureFailure(line)).toBe(true);
+  });
+
+  test("a page that never started the handshake says so", () => {
+    expect(readinessTimeoutLine({ ...base, status: null, href: base.url, cpuBusy: 10 })).toContain("never started the capture handshake");
+  });
+
+  test("CPU busy share comes from idle time across the window", () => {
+    expect(cpuBusyPercent({ idle: 100, total: 1_000 }, { idle: 150, total: 2_000 })).toBe(95);
+    expect(cpuBusyPercent({ idle: 0, total: 0 }, { idle: 0, total: 0 })).toBe(0);
+  });
 });

@@ -1,72 +1,55 @@
-// One command that hands a branch to the landing queue, so landing is not a
-// hand-assembled sequence of push, open and wait:
-//   bun scripts/land.ts                    # bun run lane:close runs this; call it directly only from release.ts
-//   bun run lane:close                       # verify:fast, then the line below
-//   bun scripts/land.ts --commit                    # stage, commit, push, open, label
-//   bun scripts/land.ts --verify "bun run check layers"
+// Push a lane's branch and open or reuse its PR, so landing is not a hand-assembled sequence:
+//   bun run lane:close                      # verify:fast --landing, this, then the merge
+//   bun scripts/land.ts --commit            # stage, commit, push, open
 //   bun scripts/land.ts --title "Menus" --body-file .scratch/body.md
+//   bun scripts/land.ts                     # release.ts calls it this way
 //
-// `--commit` is what lets a lane end with one command: it stages this worktree's
-// changes (tracked and new - ignored files such as `.scratch/` stay out), prints every
-// path it will commit, and refuses the ones a lane did not author: scratch artifacts,
-// a path git ignores, a lockfile staged without its `package.json` manifest, and a new
-// `changes/` fragment whose name is not part of the branch's name. The commit message
-// comes from that fragment, which is written from the newest commit message when the diff
-// has none. `--allow <path>` keeps one refused file on purpose. Nothing to commit is not an
+// `--commit` is what lets a lane end with one command: it stages this worktree's changes (tracked and
+// new - ignored files such as `.scratch/` stay out), prints every path it will commit, and refuses the
+// ones a lane did not author: scratch artifacts, a path git ignores, a lockfile staged without its
+// `package.json` manifest, and a new `changes/` fragment whose name is not part of the branch's name.
+// The commit message comes from that fragment, which is written from the newest commit message when
+// the diff has none. `--allow <path>` keeps one refused file on purpose. Nothing to commit is not an
 // error: the landing runs as it does without the flag.
 //
-// It refuses on `main` or (without `--commit`) a dirty tree, pushes, rebases onto the base, reuses
-// an open PR or opens one (body: --body-file when given, else the `changes/`
-// fragment this branch's own diff adds, else the branch's commit messages, whole),
-// runs --verify, labels the PR `land:queue` and exits in seconds: it prints the PR URL and
-// `bun run ci:status --pr <n>`, the one command that answers status later. It
-// never polls and never sleeps.
+// It refuses on `main` or (without `--commit`) a dirty tree, pushes, and reuses an open PR or opens one
+// (body: --body-file when given, else the `changes/` fragment this branch's own diff adds, else the
+// branch's commit messages, whole). It never waits and never merges: `lane:close` merges once its local
+// receipt covers the pushed head.
 //
-// `changes/` is shared by every lane on a branch's base, so a fragment there is
-// only this PR's when `git diff origin/<base>...HEAD` adds it; land names the
-// ones it skips, since a body built from a stranger's note claims work the diff
-// does not contain.
+// A branch behind its base is pushed as it stands when it merges cleanly (`git merge-tree`): GitHub
+// merges it, and a rebase would only change the tree the lane verified. A branch that conflicts is
+// rebased here, every conflict with one right answer resolved (generated files regenerated, the lane's
+// note, suite reports, lines both sides only added: `generated-rebase.ts`), and lane:close verifies the
+// rebased tree before it merges.
 //
-// Waiting is `bun run lane:close --queue`'s job, and only its: a branch hands off when
-// land labels the PR `land:queue`. Every GitHub call goes through `gh api`
-// (`scripts/github.ts`), which has no auto-merge. The queue rebases a PR whose base moved, waits for its checks
-// once, merges it and prints one line per PR with that PR's wait time and run.
-// Exit codes: 0 handed to the queue, 1 verify failed, 2 checks already failed,
-// 3 could not hand off (including a refused branch or dirty tree).
+// `changes/` is shared by every lane on a branch's base, so a fragment there is only this PR's when
+// `git diff origin/<base>...HEAD` adds it; land names the ones it skips, since a body built from a
+// stranger's note claims work the diff does not contain. A body given on the command line is the
+// author's, so it wins over the fragment and is written over a reused PR's old body (#2200).
 //
-// A body given on the command line is the author's, so it wins over the
-// fragment and is written over a reused PR's old body (#2200).
+// The branch land pushed is land's to rewrite: land force-pushes a rebase with a lease on that branch,
+// and only after its own push in this run succeeded; a branch it did not push is refused (#2120).
 //
-// The branch land pushed is land's to rewrite: its own rebase would otherwise
-// leave the next push non-fast-forward and send the worker to a hand-typed
-// force (#2120). Land force-pushes with a lease on that branch, and only after
-// its own push in this run succeeded — a branch it did not push is refused.
-//
-// The lock covers only the moments two landings touch the same thing: the push,
-// rebase and PR for a branch and a base, and the hand-off label. Every wait,
-// and the work either side of it, is printed, so throughput is measured rather
-// than guessed.
-//
-// The lock is one file in the repo's git directory: every worktree of the repo
-// shares it (so lanes queue with each other, not just with themselves), and it
-// cannot show up in `git status` to trip land's own dirty-tree check.
+// The lock covers only the push, rebase and PR for a branch and a base: every worktree of the repo
+// shares it (one file in the git directory), and each wait on it is printed.
+// Exit codes: 0 pushed with its PR open, 1 verify failed, 3 could not land (a refused branch, a dirty
+// tree, a conflict the rebase could not resolve).
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { bendsSection, findBends, withBends } from "./bends";
 import { FRAGMENT_PATTERN } from "./changelog-fragments";
 import { apiNoteBullets, engineSeamLine, noteMessages, renderChangeNote } from "./change-note";
 import { needsRegenerate, rebaseResolvingGenerated, regenerateAndCommit } from "./generated-rebase";
 import { assertCheckoutReady } from "./checkout-ready";
+import { landingRoot } from "./landing-code";
 import { checkoutGitHub, retryOutages, sleepSync, type GitHub } from "./github";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose } from "./verbosity";
-import { attemptsOf, judgeChecks, runIdFrom } from "./ci-status";
-import type { RollupEntry } from "./ci-status";
 
 const LAND_USAGE = {
-  summary: "push this branch, open or reuse its PR, verify it and hand it to the landing queue",
+  summary: "push this branch and open or reuse its PR; lane:close merges it",
   usage: "bun scripts/land.ts [-m <message> ...] [--title <title>] [--body-file <path>] [--verify <command>] [--base <branch>] [--commit] [--allow <path>]",
   flags: [
     { flag: "-m, --message <text>", detail: "with --commit: what changed, in plain words; repeatable. `Fixed: ...`, `Added: ...`, `Removed: ...`, `Migrate: ...` pick the changelog heading (default Changed). Writes changes/<branch>.md" },
@@ -79,26 +62,18 @@ const LAND_USAGE = {
   ],
   example: 'bun scripts/land.ts --title "Menus" --body-file .scratch/body.md',
   exits: [
-    "0 handed to the landing queue",
+    "0 pushed, with its PR open",
     "1 --verify failed",
-    "2 the checks already failed",
-    "3 could not hand off (refused branch, dirty tree, no PR to reuse)",
+    "3 could not land (refused branch, dirty tree, unresolvable conflict, no PR)",
     "78 this checkout has no node_modules - run bun install, or bun run agent:bootstrap",
   ],
 } as const;
 
-const root = fileURLToPath(new URL("..", import.meta.url));
+const root = landingRoot(import.meta.url);
 
 export const EXIT_LANDED = 0;
 export const EXIT_VERIFY_FAILED = 1;
-export const EXIT_CHECKS_FAILED = 2;
 export const EXIT_COULD_NOT_MERGE = 3;
-
-/** How many times the queue rebases and merges again after the base moves under a PR. */
-export const MERGE_ATTEMPTS = 3;
-
-/** The label that hands a PR to the landing queue; REST has no auto-merge, so this is the only signal. */
-export const QUEUE_LABEL = "land:queue";
 
 export interface LandArgs {
   title?: string;
@@ -571,50 +546,6 @@ function lines(result: Run): string[] {
   return result.status === 0 ? result.stdout.split("\n").map((line) => line.trim()).filter(Boolean) : [];
 }
 
-export interface GhCheck {
-  name: string;
-  state: string;
-  bucket?: string;
-  link?: string;
-}
-
-export interface Verdict {
-  failures: { name: string; url: string }[];
-  pending: string[];
-}
-
-const PASS_BUCKETS = new Set(["pass", "skipping"]);
-const FAIL_BUCKETS = new Set(["fail", "cancel"]);
-const PASS_STATES = new Set(["SUCCESS", "NEUTRAL", "SKIPPED"]);
-const FAIL_STATES = new Set([
-  "FAILURE",
-  "ERROR",
-  "CANCELLED",
-  "TIMED_OUT",
-  "ACTION_REQUIRED",
-  "STALE",
-  "STARTUP_FAILURE",
-]);
-
-/** Which checks block a merge: a failing bucket/state is a failure, anything else is pending. */
-export function checkVerdict(checks: readonly GhCheck[]): Verdict {
-  const verdict: Verdict = { failures: [], pending: [] };
-  for (const check of checks) {
-    const bucket = check.bucket;
-    const failed =
-      (bucket !== undefined && FAIL_BUCKETS.has(bucket)) ||
-      (bucket === undefined && FAIL_STATES.has(check.state));
-    const passed = bucket !== undefined ? PASS_BUCKETS.has(bucket) : PASS_STATES.has(check.state);
-    if (failed) verdict.failures.push({ name: check.name, url: check.link ?? "" });
-    else if (!passed) verdict.pending.push(check.name);
-  }
-  return verdict;
-}
-
-export function formatFailures(failures: readonly { name: string; url: string }[]): string[] {
-  return failures.map((failure) => `  ${failure.name} ${failure.url}`.trimEnd());
-}
-
 /** A branch is landable when it is not `main` and has nothing uncommitted. */
 export function landRefusal(branch: string, dirty: string, base: string): string | null {
   if (branch === "main" || branch === base) return `refusing to land ${branch}: land a task branch into ${base}, never ${branch} itself.`;
@@ -915,9 +846,10 @@ export function retryServerErrors(git: Git, pause: (ms: number) => void = sleepS
 }
 
 /**
- * Push the branch, rebase it onto `origin/<base>`, and push it again when the rebase moved it.
- * Land owns a branch only once its own push succeeds; a branch that already exists on the remote
- * with commits this checkout lacks is refused rather than overwritten.
+ * Push the branch; when it conflicts with `origin/<base>`, rebase it and push again. A branch that is
+ * only behind is left as the lane verified it, since GitHub merges it cleanly. Land owns a branch only
+ * once its own push succeeds; a branch that already exists on the remote with commits this checkout
+ * lacks is refused rather than overwritten.
  */
 export function syncOntoBase(options: {
   branch: string;
@@ -960,9 +892,15 @@ export function syncOntoBase(options: {
     return { rebased: false, refusal: `could not count commits behind origin/${base}: ${details(behind)}` };
   }
   if (count === 0) return { rebased: false, refusal: null };
+  // Behind but mergeable: the merge commit GitHub makes is what beta's own CI then checks.
+  // `merge-tree --write-tree` answers 0 for a clean merge and 1 for a conflict; any other answer is a
+  // git older than 2.38, which cannot tell, so the branch is rebased as it was before this check.
+  const merge = runGit(["merge-tree", "--write-tree", "--quiet", "HEAD", `origin/${base}`]);
+  if (merge.status === 0) return { rebased: false, refusal: null };
+  if (merge.status !== 1) console.log(`degraded: git cannot test the merge (${details(merge)}); rebasing onto origin/${base}`);
 
-  // Generated files (api.md, the export manifest, capabilities.json) and the lane's change note
-  // never stop a landing: they are resolved here and regenerated on the merged source.
+  // A conflict with one right answer (a generated file, the lane's change note, a suite report, lines
+  // both sides only added) never stops a landing: it is resolved here, and generated files are regenerated.
   const rebased = rebaseResolvingGenerated(runGit, `origin/${base}`);
   if (!rebased.ok) {
     const files = rebased.conflicts.length > 0 ? ` in ${rebased.conflicts.join(", ")}` : "";
@@ -999,17 +937,6 @@ export interface LandIo {
   verify: (command: string) => boolean;
   log: (line: string) => void;
   error: (line: string) => void;
-}
-
-function readChecks(github: GitHub, number: number): { checks: GhCheck[]; error?: string } {
-  const pull = github.pull(number);
-  if (!pull.ok) return { checks: [], error: pull.error };
-  const rollup = github.checks(pull.value.headRefOid);
-  if (!rollup.ok) return { checks: [], error: rollup.error };
-  const judged = judgeChecks(attemptsOf(rollup.value), pull.value.headRefOid);
-  return {
-    checks: judged.map((check) => ({ name: check.name, state: check.state, bucket: check.bucket, link: check.url })),
-  };
 }
 
 function runVerify(command: string): boolean {
@@ -1104,29 +1031,6 @@ export function ensurePr(options: {
   return created.value;
 }
 
-/** The failure is a result: name every check that failed and let the run of each speak for itself. */
-function reportChecks(io: LandIo, checks: readonly GhCheck[]): number {
-  const verdict = checkVerdict(checks);
-  io.error(`checks failed: ${verdict.failures.map((failure) => failure.name).join(", ")}`);
-  for (const line of formatFailures(verdict.failures)) io.error(line);
-  if (verdict.pending.length > 0) io.log(`still running: ${verdict.pending.length} more check(s): ${verdict.pending.join(", ")}`);
-  return EXIT_CHECKS_FAILED;
-}
-
-/** ` (run 701)`, naming the Action runs the named checks are running on. */
-function runningRunIds(checks: readonly GhCheck[], names: readonly string[]): string {
-  const wanted = new Set(names);
-  const runs = [
-    ...new Set(
-      checks
-        .filter((check) => wanted.has(check.name))
-        .map((check) => runIdFrom(check.link ?? ""))
-        .filter((id): id is number => id !== null),
-    ),
-  ];
-  return runs.length > 0 ? ` (run ${runs.join(", ")})` : "";
-}
-
 /**
  * What GitHub says when a merge is refused because the base moved under the PR, so land rebases
  * instead of reporting a conflict the branch may not have. A real conflict also lands here: the
@@ -1137,6 +1041,31 @@ const BASE_MOVED =
 
 export function baseMoved(detail: string): boolean {
   return BASE_MOVED.test(detail);
+}
+
+/** How many times a merge is tried when GitHub answers that the base moved under it. */
+export const MERGE_ATTEMPTS = 3;
+
+/**
+ * Merge PR `number` only while its head is `headSha`, the commit whose tree was verified, and return
+ * the merge commit. A refusal because another merge just moved the base is tried again after a
+ * moment; a real conflict comes back as the refusal, for the caller to rebase.
+ */
+export function mergeVerified(
+  github: GitHub,
+  number: number,
+  headSha: string,
+  pause: (ms: number) => void = sleepSync,
+): { ok: true; sha: string } | { ok: false; error: string; baseMoved: boolean } {
+  let last = "";
+  for (let attempt = 1; attempt <= MERGE_ATTEMPTS; attempt += 1) {
+    const merged = github.mergePull(number, headSha);
+    if (merged.ok) return { ok: true, sha: merged.value.sha };
+    last = merged.error;
+    if (!baseMoved(last)) return { ok: false, error: firstLine(last), baseMoved: false };
+    if (attempt < MERGE_ATTEMPTS) pause(3_000 * attempt);
+  }
+  return { ok: false, error: firstLine(last), baseMoved: true };
 }
 
 /** Push, rebase and open or reuse the PR: the part that needs the lock, and nothing after it. */
@@ -1167,31 +1096,9 @@ function prepare(args: LandArgs, branch: string, io: LandIo): PrRef | number {
   return pr ?? EXIT_COULD_NOT_MERGE;
 }
 
-/**
- * Hand the PR to the queue: the `land:queue` label is what the queue reads as ready, and the queue
- * waits for the checks and merges. Returns an exit code when the hand-off failed.
- */
-function labelForQueue(io: LandIo, number: number): number | null {
-  const { checks } = readChecks(io.github, number);
-  const verdict = checkVerdict(checks);
-  if (verdict.failures.length > 0) return reportChecks(io, checks);
-  if (verdict.pending.length > 0) {
-    const on = runningRunIds(checks, verdict.pending);
-    io.log(`checks still running: ${verdict.pending.length} of ${checks.length}${on}; the queue waits for them`);
-  }
-  const labelled = io.github.addLabel(number, QUEUE_LABEL);
-  if (labelled.ok) return null;
-  io.error(`could not add the ${QUEUE_LABEL} label to #${number}: ${labelled.error}`);
-  return EXIT_COULD_NOT_MERGE;
-}
-
-/** What an author reads instead of a wait: the PR, how to ask later, and who waits now. */
+/** What an author reads when land is done: the PR, and who merges it. */
 export function handOffLines(pr: PrRef): string[] {
-  return [
-    pr.url,
-    `status: bun run ci:status --pr ${pr.number}`,
-    "waiting: bun run lane:close --queue (the queue owns the wait; this command is done)",
-  ];
+  return [pr.url, "lane:close merges it once its verify:fast receipt covers this head"];
 }
 
 export interface LandRun {
@@ -1207,8 +1114,8 @@ export interface LandRun {
 }
 
 /**
- * Land `branch`: push it, open or reuse its PR, label it for the queue and return. The lock is held
- * only around the shared moments: the push and PR, and the label.
+ * Land `branch`: push it, open or reuse its PR, and return. The lock is held only around the push,
+ * rebase and PR.
  */
 export function landBranch(run: LandRun): number {
   const waits = run.waits ?? [];
@@ -1241,7 +1148,7 @@ export function landBranch(run: LandRun): number {
   }
 }
 
-/** Push, open, verify, label: everything the author owes, and none of the waiting. */
+/** Push, open, verify: everything before the merge. */
 function handOff(run: LandRun, waits: LockWait[]): number {
   const { args, branch, io } = run;
   const prepared = landLocked({ path: run.lock, branch, log: io.log }, () => prepare(args, branch, io), waits);
@@ -1255,9 +1162,6 @@ function handOff(run: LandRun, waits: LockWait[]): number {
     }
   }
 
-  const failed = landLocked({ path: run.lock, branch, log: io.log }, () => labelForQueue(io, prepared.number), waits);
-  if (failed !== null) return failed;
-  io.log(`labelled the PR ${QUEUE_LABEL}`);
   for (const line of handOffLines(prepared)) io.log(line);
   return EXIT_LANDED;
 }

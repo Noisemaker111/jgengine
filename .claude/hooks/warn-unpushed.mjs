@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync, writeFileSync, statSync } from "node:fs";
+import { readFileSync, writeFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 
@@ -23,8 +23,8 @@ try {
 }
 if (input.stop_hook_active) process.exit(0);
 
-// A landing still in flight in this checkout: agents ended the turn while lane:close or its queue
-// was running, and Jon had to say "keep going". One nudge per stop; the second stop is let through.
+// A landing still in flight in this checkout: agents ended the turn while lane:close was running,
+// and Jon had to say "keep going". One nudge per stop; the second stop is let through.
 const alive = (pid) => {
   try {
     process.kill(pid, 0);
@@ -43,44 +43,7 @@ const readJson = (file) => {
 const top = git("rev-parse", "--show-toplevel");
 if (top !== null) {
   const closing = readJson(path.join(top, ".scratch", "lane-close.json"));
-  let landing = closing !== null && Number.isInteger(closing.pid) && alive(closing.pid) ? "bun run lane:close is still running" : null;
-  if (landing === null) {
-    const bg = path.join(top, ".scratch", "bg");
-    let ids = [];
-    try {
-      ids = readdirSync(bg);
-    } catch {
-      ids = [];
-    }
-    for (const id of ids) {
-      const dir = path.join(bg, id);
-      let command = "";
-      try {
-        command = readFileSync(path.join(dir, "cmd.txt"), "utf8");
-      } catch {
-        continue;
-      }
-      if (!command.includes("land-queue.ts") || existsSync(path.join(dir, "exit"))) continue;
-      let runner = Number.NaN;
-      try {
-        runner = Number(readFileSync(path.join(dir, "runner"), "utf8").trim());
-      } catch {
-        continue;
-      }
-      if (!Number.isInteger(runner) || !alive(runner)) continue;
-      // A `background await` on it is running: the harness is waiting and calls the turn back
-      // when the queue exits, so ending the turn now is the right thing.
-      let awaiter = Number.NaN;
-      try {
-        awaiter = Number(readFileSync(path.join(dir, "awaiter"), "utf8").trim());
-      } catch {
-        awaiter = Number.NaN;
-      }
-      if (Number.isInteger(awaiter) && awaiter > 0 && alive(awaiter)) continue;
-      landing = `the landing queue is still merging this branch's PR (task ${id}): run \`bun run background await ${id}\` as a harness background command (Bash run_in_background) and end the turn; its exit calls you back`;
-      break;
-    }
-  }
+  const landing = closing !== null && Number.isInteger(closing.pid) && alive(closing.pid) ? "bun run lane:close is still running" : null;
   if (landing !== null) {
     process.stdout.write(
       JSON.stringify({

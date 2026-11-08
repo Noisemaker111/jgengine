@@ -172,6 +172,25 @@ describe("release ancestor guard", () => {
     }
   });
 
+  test("publishing passes a release commit already on beta after beta moved on; cutting from it still fails", () => {
+    const repo = makeRepo("landed");
+    try {
+      repo.commit("version.txt", "0.54.0\n", "Release 0.54.0");
+      const release = repo.git("rev-parse", "HEAD");
+      repo.commit("daemon.txt", "export {};\n", "Merge pull request #3056");
+      repo.git("checkout", "-q", "-b", "main", release);
+
+      expect(checkReleaseAncestor({ cwd: repo.dir, ref: "beta", landed: true }).ok).toBe(true);
+      expect(checkReleaseAncestor({ cwd: repo.dir, ref: "beta" }).ok).toBe(false);
+      repo.git("checkout", "-q", "beta");
+      repo.git("checkout", "-q", "-b", "stale", `${release}~1`);
+      repo.commit("version.txt", "0.54.0\n", "Release 0.54.0 off a stale branch");
+      expect(checkReleaseAncestor({ cwd: repo.dir, ref: "beta", landed: true }).ok).toBe(false);
+    } finally {
+      repo.done();
+    }
+  });
+
   test("fails closed when the branch everything lands on is missing", () => {
     const repo = makeRepo("noref");
     try {
