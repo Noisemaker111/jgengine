@@ -16,7 +16,7 @@ import {
   type LaneLockFs,
 } from "./lane-close";
 import { LOCK_STALE_MS } from "./land";
-import { EXIT_BOAT_SPENT } from "./verify-boat";
+import { EXIT_BOAT_SPENT, EXIT_NEEDS_PC } from "./verify-boat";
 
 /** The worktree's git directory, as `git rev-parse --absolute-git-dir` would print it. */
 const GIT_DIR = resolve("repo", ".git", "worktrees", "x");
@@ -316,6 +316,16 @@ describe("lane:close end to end", () => {
     const said = fake.lines.err.join("\n");
     expect(said).toContain("had no start for the Linux steps");
     expect(said).toContain("Do not set JG_VERIFY_BOAT=0");
+  });
+
+  test("on the boat host, steps only Jon's PC can run push the lane and open its PR, merge nothing, and name the PC thread's command", () => {
+    const fake = io({ verify: [EXIT_NEEDS_PC] });
+    expect(closeLane({}, fake)).toBe(EXIT_NEEDS_PC);
+    expect(fake.calls).toContain("run scripts/land.ts --commit");
+    expect(merges(fake)).toEqual([]);
+    const said = fake.lines.err.join("\n");
+    expect(said).toContain("#2278 is pushed and open");
+    expect(said).toContain("Needs a PC thread: in a checkout of agent/x on the PC, `bun run lane:close --pr 2278`");
   });
 
   test("closing runs preflight (gen, type-checks, gates) before the tests, so a stale manifest or a type error stops it first", () => {

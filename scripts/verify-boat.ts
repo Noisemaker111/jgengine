@@ -18,6 +18,13 @@
 // here, or every landing on the PC would run its whole suite at once. Boat unusable (no CLI, not logged in, out of hours, the
 // network down, the run broke before any step reported) says why and runs them in the local slot,
 // since a landing must still work. While boat runs, this PC holds a slot only for its own steps.
+//
+// On the boat host (the boat.dev Linux machine Jon's T3 threads run on, `onBoatHost`) there is no
+// other machine to send to and no fairshare: every step runs right here, the game boots included
+// (headless Chrome on software WebGL, as CI's Linux runners boot them, against the host's own asset
+// store). Only what needs Jon's PC itself (`pcOnlyReason`: a Windows-only test file, a measurement of
+// the PC's GPU or CPU) does not run: it is placed `pc`, reported not run with its command, and the
+// run exits EXIT_NEEDS_PC instead of passing.
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -34,9 +41,45 @@ export const MODEL_TEST_SOURCE = /from\s+["'][^"']*\/assetTest(\.ts)?["']/;
 export const MODEL_TEST_REASON = "reads this PC's downloaded models (skipped in CI)";
 /** A test file that compares `process.platform` with "win32": it checks something only Windows has. */
 export const WINDOWS_TEST_SOURCE = /process\.platform\s*[!=]==?\s*["']win32["']|["']win32["']\s*[!=]==?\s*process\.platform/;
+/** Why a test file that branches on Windows runs on Jon's PC: Linux runs only its other half. */
+export const WINDOWS_TEST_REASON = "checks something only Windows has";
 
 /** Commands that boot a game against this PC's asset store and GPU. */
 const LOCAL_COMMAND = /(^|\/)(provision-assets|capabilities-probe|load-check|smoke-games|perf-gate|bench-cpu)\.ts$/;
+/** Commands that measure this PC's GPU or CPU against budgets set on it: no other machine can stand in. */
+const HARDWARE_COMMAND = /(^|\/)(perf-gate|bench-cpu)\.ts$/;
+
+/** The file Jon's host setup puts on the boat host, relative to the home folder (`~/.claude/CLAUDE.md` loads it). */
+export const BOAT_HOST_MARKER = join(".agents-pc", "host-AGENTS.md");
+
+/**
+ * Whether this checkout is on the boat host: `JG_BOAT_HOST=1` or `0` says so outright; otherwise the
+ * host's marker file under `HOME` decides. With no `HOME` (a test's empty env) it is not.
+ */
+export function onBoatHost(env: Readonly<Record<string, string | undefined>>): boolean {
+  const flag = env["JG_BOAT_HOST"];
+  if (flag === "1") return true;
+  if (flag === "0") return false;
+  const home = env["HOME"];
+  return home !== undefined && home !== "" && existsSync(join(home, BOAT_HOST_MARKER));
+}
+
+/**
+ * Why only Jon's PC can run this step, or null when the boat host runs it as well: a Windows-only
+ * test file, or a measurement of the PC's own hardware. A game boot and a model-reading test run on
+ * the host, which has its own asset store and boots games on software WebGL as CI does.
+ */
+export function pcOnlyReason(step: PlaceableStep): string | null {
+  if (step.localBecause?.includes(WINDOWS_TEST_REASON) === true) return `${WINDOWS_TEST_REASON}; Linux would run only its other half`;
+  const script = step.command.find((word) => word.endsWith(".ts"));
+  if (script !== undefined && HARDWARE_COMMAND.test(script)) return "measures Jon's PC's GPU or CPU against budgets set on it";
+  return null;
+}
+
+/** The command a PC thread runs for a `pc` step: the step's own, without this run's report files. */
+export function pcCommand(step: PlaceableStep): string {
+  return step.command.filter((word) => !word.startsWith("--reporter")).join(" ");
+}
 
 /** A step as placement reads it: the scheduler's fields and the command. */
 export interface PlaceableStep extends ScheduledStep {
@@ -45,7 +88,8 @@ export interface PlaceableStep extends ScheduledStep {
   localBecause?: string | undefined;
 }
 
-export type Where = "boat" | "local";
+/** `boat` a boat machine, `local` this machine, `pc` Jon's PC: the boat host leaves those steps unrun. */
+export type Where = "boat" | "local" | "pc";
 
 export interface Placement {
   where: Where;
@@ -109,7 +153,8 @@ export function isLight(group: readonly PlaceableStep[]): boolean {
 
 /** What the receipt keeps about the boat side of a run. */
 export interface BoatReceipt {
-  status: "passed" | "failed" | "spent" | "unusable" | "broken" | "timed-out" | "off";
+  /** `host`: the run was on the boat host, every step it could run ran there, and `pc` lists the rest. */
+  status: "passed" | "failed" | "spent" | "unusable" | "broken" | "timed-out" | "off" | "host";
   /** The boat machine's id: the run id `boat history`, `boat usage` and the dashboard know. */
   runId?: string | undefined;
   costUsd?: number | undefined;
@@ -124,7 +169,19 @@ export interface BoatReceipt {
   /** When boat takes starts again, for a spent run whose window boat named. */
   until?: string | undefined;
   steps: string[];
+  /** On the boat host: the steps only Jon's PC can run, which did not run, each with why and its command. */
+  pc?: PcStep[] | undefined;
 }
+
+/** A step the boat host left for Jon's PC. */
+export interface PcStep {
+  name: string;
+  why: string;
+  command: string;
+}
+
+/** What a `pc` step's result says in its `blockedBy`: it never ran, and only Jon's PC can run it. */
+export const NEEDS_PC = "Jon's PC";
 
 export interface PlacedRunInput<S extends PlaceableStep> {
   root: string;
@@ -164,6 +221,13 @@ export interface PlacedRun {
 export const EXIT_BOAT_SPENT = 75;
 
 /**
+ * verify:fast's exit on the boat host when every step it ran passed but some only Jon's PC can run
+ * (`pcOnlyReason`): the run is unproven, not failed. lane:close opens the PR, merges nothing and
+ * names the command a PC thread runs.
+ */
+export const EXIT_NEEDS_PC = 76;
+
+/**
  * Below this many seconds of estimated work (each step's `cost`, 1 s when unknown) the Linux steps run
  * here instead: a boat machine costs about two minutes to pack, push and start (130 s for eight gates
  * worth 4 s on 7 Nov), so a lane:close whose tests a hand verify:fast had already proven paid it for
@@ -196,6 +260,7 @@ export function remoteCommand(): string[] {
  */
 export async function runPlaced<S extends PlaceableStep>(input: PlacedRunInput<S>): Promise<PlacedRun> {
   const env = input.env ?? process.env;
+  if (onBoatHost(env)) return runOnHost(input);
   const placement = placeSteps(input.steps);
   const boatSteps = input.steps.filter((step) => placement.get(step.name)?.where === "boat");
   const results = new Map<string, StepResult>();
@@ -391,6 +456,65 @@ export async function runPlaced<S extends PlaceableStep>(input: PlacedRunInput<S
   return { results: ordered(), placement, boat: receipt };
 }
 
+/** Each step's place on the boat host: here, or Jon's PC for itself and for every step that needs it. */
+export function placeOnHost<S extends PlaceableStep>(steps: readonly S[]): Map<string, Placement> {
+  const placed = new Map<string, Placement>();
+  for (const step of steps) {
+    const reason = pcOnlyReason(step);
+    placed.set(step.name, reason === null ? { where: "local", why: "the boat host runs it" } : { where: "pc", why: reason });
+  }
+  for (let changed = true; changed; ) {
+    changed = false;
+    for (const step of steps) {
+      if (placed.get(step.name)?.where !== "local") continue;
+      const need = (step.needs ?? []).find((name) => placed.get(name)?.where === "pc");
+      if (need !== undefined) {
+        placed.set(step.name, { where: "pc", why: `needs ${need}, which only Jon's PC runs` });
+        changed = true;
+      }
+    }
+  }
+  return placed;
+}
+
+/**
+ * The boat host's run: every step it can run, here and without a slot (the host exists to take the
+ * load); the steps only Jon's PC can run settle as not run, blocked by NEEDS_PC, with their commands
+ * in the receipt. A `pc` step never stops the steps here, so the host proves all it can.
+ */
+async function runOnHost<S extends PlaceableStep>(input: PlacedRunInput<S>): Promise<PlacedRun> {
+  const placement = placeOnHost(input.steps);
+  const results = new Map<string, StepResult>();
+  const here = input.steps.filter((step) => placement.get(step.name)?.where === "local");
+  const pc = input.steps.filter((step) => placement.get(step.name)?.where === "pc");
+  for (const step of pc) {
+    const why = placement.get(step.name)?.why ?? "";
+    const result: StepResult = { name: step.name, ok: false, ms: 0, output: `not run: only Jon's PC can run it (${why}); a PC thread runs: ${pcCommand(step)}`, blockedBy: [NEEDS_PC] };
+    results.set(step.name, result);
+    input.onSettle(result, "pc");
+  }
+  if (here.length > 0) {
+    await input.schedule(here, input.jobs, input.runLocal, {
+      failFast: input.failFast,
+      onStart: (step) => input.onStart(step as S, "local"),
+      onSettle: (result) => {
+        results.set(result.name, result);
+        input.onSettle(result, "local");
+      },
+    });
+  }
+  return {
+    results: input.steps.map((step) => results.get(step.name)!),
+    placement,
+    boat: {
+      status: "host",
+      why: "on the boat host: every step it can run ran here",
+      steps: [],
+      pc: pc.map((step) => ({ name: step.name, why: placement.get(step.name)?.why ?? "", command: pcCommand(step) })),
+    },
+  };
+}
+
 // ---- The fairshare slot around this PC's own steps ----
 
 /** The holder `fairshare slot` runs: says it holds the slot, then waits for its stdin to close. */
@@ -461,7 +585,7 @@ export function localTestFiles(root: string, files: readonly string[], read: (pa
       continue;
     }
     if (MODEL_TEST_SOURCE.test(source)) local.set(file, MODEL_TEST_REASON);
-    else if (WINDOWS_TEST_SOURCE.test(source)) local.set(file, "checks something only Windows has");
+    else if (WINDOWS_TEST_SOURCE.test(source)) local.set(file, WINDOWS_TEST_REASON);
   }
   return local;
 }

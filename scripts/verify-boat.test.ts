@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -7,7 +7,7 @@ import type { BoatCli, CliResult } from "./boat";
 import type { Snapshot } from "./boat-snapshot";
 import { resultLine } from "./boat-steps";
 import { runSteps, type StepResult } from "./stepScheduler";
-import { isLight, localReason, localTestFiles, placeSteps, remoteCommand, runPlaced, type PlaceableStep, type Where } from "./verify-boat";
+import { BOAT_HOST_MARKER, isLight, localReason, localTestFiles, NEEDS_PC, onBoatHost, pcOnlyReason, placeOnHost, placeSteps, remoteCommand, runPlaced, WINDOWS_TEST_REASON, type PlaceableStep, type Where } from "./verify-boat";
 import { fastSteps, type Plan } from "./verify-fast";
 
 const made: string[] = [];
@@ -62,6 +62,17 @@ describe("placement", () => {
     expect(local?.localBecause).toContain("models");
     expect(steps.filter((candidate) => candidate.command.includes("packages/core/src/a.test.ts"))).toHaveLength(1);
     expect(placeSteps(steps).get(local!.name)?.where).toBe("local");
+  });
+
+  test("model-reading and Windows-only test files get a step each, so the boat host can run the first and leave only the second", () => {
+    const plan: Plan = { changed: ["scripts/a.ts"], deleted: [], typechecks: [], tests: ["games/x/models.test.ts", "scripts/paths.test.ts"], gates: [], fallback: [], suites: [], boots: [], inputs: {} } as unknown as Plan;
+    const steps = fastSteps(plan, { localTests: new Map([["games/x/models.test.ts", "reads this PC's downloaded models (skipped in CI)"], ["scripts/paths.test.ts", WINDOWS_TEST_REASON]]) });
+    const placed = placeOnHost(steps);
+    const models = steps.find((candidate) => candidate.command.includes("games/x/models.test.ts"))!;
+    const windows = steps.find((candidate) => candidate.command.includes("scripts/paths.test.ts"))!;
+    expect(models.name).not.toBe(windows.name);
+    expect(placed.get(models.name)?.where).toBe("local");
+    expect(placed.get(windows.name)).toMatchObject({ where: "pc" });
   });
 
   test("a few local test files take no heavy-job slot; a game boot or a bigger set does", () => {
@@ -124,7 +135,7 @@ function fakeBoat(options: { remote?: (name: string) => StepResult; files?: { pa
   return { cli, runs: () => runs, waited: () => now };
 }
 
-function harness(boat: BoatCli | null, steps: PlaceableStep[], localResult: (name: string) => StepResult = (name) => ({ name, ok: true, ms: 5, output: "" })) {
+function harness(boat: BoatCli | null, steps: PlaceableStep[], localResult: (name: string) => StepResult = (name) => ({ name, ok: true, ms: 5, output: "" }), env: Record<string, string> = {}) {
   const root = mkdtempSync(join(tmpdir(), "verify-boat-"));
   made.push(root);
   const where = new Map<string, Where>();
@@ -156,7 +167,7 @@ function harness(boat: BoatCli | null, steps: PlaceableStep[], localResult: (nam
         slots += 1;
         return work();
       },
-      env: {},
+      env,
       snapshot,
     });
   return { run, where, ranHere, notes, slots: () => slots, root };
@@ -298,5 +309,69 @@ describe("runPlaced", () => {
     expect(boat.runs()).toBe(0);
     expect(run.boat.status).toBe("off");
     expect(existsSync(join(h.root, "push"))).toBe(false);
+  });
+});
+
+describe("the boat host", () => {
+  const winStep = step("test 1 file(s) on this PC", { localBecause: WINDOWS_TEST_REASON });
+  const steps = [
+    step("typecheck core", { command: ["bun", "--cwd=packages/core", "run", "check-types"], first: true, cost: 12 }),
+    step("tests", { cost: 30 }),
+    step("provision x", { command: ["bun", "games/scripts/provision-assets.ts", "x"] }),
+    step("boot probe x", { command: ["bun", "games/scripts/capabilities-probe.ts", "x"], needs: ["provision x"] }),
+  ];
+
+  test("is found by JG_BOAT_HOST, else by the host's marker file under HOME", () => {
+    const home = mkdtempSync(join(tmpdir(), "boat-host-"));
+    made.push(home);
+    expect(onBoatHost({ HOME: home })).toBe(false);
+    expect(onBoatHost({})).toBe(false);
+    expect(onBoatHost({ JG_BOAT_HOST: "1" })).toBe(true);
+    mkdirSync(join(home, ".agents-pc"), { recursive: true });
+    writeFileSync(join(home, BOAT_HOST_MARKER), "# host\n");
+    expect(onBoatHost({ HOME: home })).toBe(true);
+    expect(onBoatHost({ HOME: home, JG_BOAT_HOST: "0" })).toBe(false);
+  });
+
+  test("runs game boots and model tests itself; only Windows-only tests and PC hardware measurements need Jon's PC", () => {
+    expect(pcOnlyReason(step("boot probe x", { command: ["bun", "games/scripts/capabilities-probe.ts", "x"] }))).toBeNull();
+    expect(pcOnlyReason(step("models", { localBecause: "reads this PC's downloaded models (skipped in CI)" }))).toBeNull();
+    expect(pcOnlyReason(step("tests"))).toBeNull();
+    expect(pcOnlyReason(winStep)).toContain("only Windows has");
+    expect(pcOnlyReason(step("perf", { command: ["bun", "scripts/perf-gate.ts"] }))).toContain("GPU or CPU");
+  });
+
+  test("every step it can run runs here, without boat or a slot", async () => {
+    const boat = fakeBoat({});
+    const h = harness(boat.cli, steps, undefined, { JG_BOAT_HOST: "1" });
+    const run = await h.run();
+    expect(boat.runs()).toBe(0);
+    expect(h.slots()).toBe(0);
+    expect(h.ranHere.sort()).toEqual(["boot probe x", "provision x", "tests", "typecheck core"]);
+    expect(run.results.every((result) => result.ok)).toBe(true);
+    expect(run.boat).toMatchObject({ status: "host", pc: [] });
+  });
+
+  test("a Windows-only test is not run, never passes, and is reported with its command for a PC thread", async () => {
+    const after = step("after win", { needs: [winStep.name] });
+    const h = harness(null, [...steps, winStep, after], undefined, { JG_BOAT_HOST: "1" });
+    const run = await h.run();
+    expect(h.ranHere).not.toContain(winStep.name);
+    expect(h.ranHere).not.toContain("after win");
+    expect(h.ranHere).toContain("boot probe x");
+    const win = run.results.find((result) => result.name === winStep.name)!;
+    expect(win.ok).toBe(false);
+    expect(win.blockedBy).toEqual([NEEDS_PC]);
+    expect(h.where.get(winStep.name)).toBe("pc");
+    expect(run.placement.get("after win")).toEqual({ where: "pc", why: `needs ${winStep.name}, which only Jon's PC runs` });
+    expect(run.boat.pc?.map((entry) => entry.name)).toEqual([winStep.name, "after win"]);
+    expect(run.boat.pc?.[0]?.command).toBe(`bun test ${winStep.name}.test.ts`);
+  });
+
+  test("JG_VERIFY_BOAT=0 there still leaves Windows-only tests unrun", async () => {
+    const h = harness(null, [winStep], undefined, { JG_BOAT_HOST: "1", JG_VERIFY_BOAT: "0" });
+    const run = await h.run();
+    expect(h.ranHere).toEqual([]);
+    expect(run.results[0]?.ok).toBe(false);
   });
 });

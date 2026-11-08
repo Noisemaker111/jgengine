@@ -21,6 +21,11 @@
 // backstop. The last line names the merge commit; exit 1 when verify, land or the merge failed, 3 when
 // it cannot answer (no PR, no branch).
 //
+// On the boat host (scripts/verify-boat.ts `onBoatHost`) verify:fast runs every step right there. When
+// some step only Jon's PC can run (a Windows-only test file) was reached, verify exits EXIT_NEEDS_PC:
+// lane:close still commits, pushes and opens the PR, merges nothing, and ends naming the command a PC
+// thread runs to verify and merge it there (exit 76).
+//
 // One run per worktree: a second lane:close started while the first is still verifying is
 // refused (exit 4) and told which run holds the worktree, instead of racing it for the same
 // files, browsers and commit. The lock names the run's pid and goes with it, so a run that
@@ -36,7 +41,7 @@ import { MERGE_ATTEMPTS, mergeVerified, parseLock, pidIsAlive, staleReason, type
 import { betaLaneClose, gitIn, landingRoot, landingScript, receiptsBehind } from "./landing-code";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose, takeVerboseFlag } from "./verbosity";
-import { EXIT_BOAT_SPENT } from "./verify-boat";
+import { EXIT_BOAT_SPENT, EXIT_NEEDS_PC } from "./verify-boat";
 import { passingReceipt } from "./verify-receipt";
 
 const LANE_CLOSE_USAGE = {
@@ -55,6 +60,8 @@ const LANE_CLOSE_USAGE = {
     "1 verify, land or the merge failed",
     "3 cannot answer (no PR, no branch)",
     "4 another lane:close is still running in this worktree",
+    "75 boat had no start for the Linux steps; close again when it frees",
+    "76 on the boat host: the PR is open and every step here passed, but steps only Jon's PC can run were reached; a PC thread closes it",
     "78 this checkout has no node_modules - run bun install, or bun run agent:bootstrap",
   ],
 } as const;
@@ -261,6 +268,7 @@ function closeHeldLane(args: LaneCloseArgs, branch: string, io: LaneIo): number 
   // proved what preflight and verify would: its gates fail on a stale generated file, so gen has
   // nothing to rewrite. Both are skipped, in one line, instead of spending minutes on the same answer.
   const already = io.passedOn(io.tree());
+  let needsPc = false;
   if (already !== null) {
     io.out(`lane:close: verify:fast --landing already passed on this exact tree (${already}); preflight and verify not run again`);
   } else {
@@ -271,10 +279,12 @@ function closeHeldLane(args: LaneCloseArgs, branch: string, io: LaneIo): number 
       return EXIT_VERIFY_FAILED;
     }
     stage(`lane:close: ${branch} — verify:fast --landing (type-checks, gates, tests, boots and the site build)`);
-    if (!verify(io)) return EXIT_VERIFY_FAILED;
+    const verified = verify(io);
+    if (verified === "failed") return EXIT_VERIFY_FAILED;
+    needsPc = verified === "needs-pc";
   }
   const verifiedTree = io.tree();
-  if (io.passedOn(verifiedTree) === null) {
+  if (!needsPc && io.passedOn(verifiedTree) === null) {
     io.err("lane:close: the files changed while verify:fast ran, so its pass covers no tree here; nothing landed. Close again.");
     return EXIT_VERIFY_FAILED;
   }
@@ -311,6 +321,14 @@ function closeHeldLane(args: LaneCloseArgs, branch: string, io: LaneIo): number 
   }
   const github = io.github?.(repo) ?? gitHub((ghArgs) => io.sh(["gh", ...ghArgs], false), repo);
   const files = filesChanged(io);
+  if (needsPc) {
+    io.err(
+      `lane:close: #${pr} is pushed and open, and every step this boat host could run passed; nothing merged, because the steps ` +
+        "verify:fast named above need Jon's PC. Needs a PC thread: in a checkout of " +
+        `${branch} on the PC, \`bun run lane:close --pr ${pr}\` (it verifies there, then merges).`,
+    );
+    return EXIT_NEEDS_PC;
+  }
 
   for (let attempt = 1; attempt <= MERGE_ATTEMPTS; attempt += 1) {
     const proof = proveHead(verifiedTree, scoredPaths, io);
@@ -349,22 +367,23 @@ function closeHeldLane(args: LaneCloseArgs, branch: string, io: LaneIo): number 
   return EXIT_VERIFY_FAILED;
 }
 
-/** `verify:fast --landing`, and what to do when it fails. */
-function verify(io: LaneIo): boolean {
+/** `verify:fast --landing`, and what to do when it fails; `needs-pc` when only Jon's PC's steps are left. */
+function verify(io: LaneIo): "passed" | "failed" | "needs-pc" {
   const verified = io.sh(["run", "verify:fast", "--landing"], true);
+  if (verified.status === EXIT_NEEDS_PC) return "needs-pc";
   if (verified.status === EXIT_BOAT_SPENT) {
     io.err(
       "lane:close: boat.dev had no start for the Linux steps (verify:fast says until when, above); they did not run here " +
         "either, and nothing landed. Run lane:close again then, as a harness background command. Do not set JG_VERIFY_BOAT=0 " +
         "to land sooner: that runs the whole Linux suite on Jon's PC. Any other failure printed above is real.",
     );
-    return false;
+    return "failed";
   }
   if (verified.status !== 0) {
     io.err(`lane:close: verify:fast failed (exit ${verified.status}); nothing merged. Fix what it names and close again.`);
-    return false;
+    return "failed";
   }
-  return true;
+  return "passed";
 }
 
 /** Paths whose content differs between two trees. */
@@ -387,7 +406,9 @@ export function proveHead(verifiedTree: string, scoredPaths: ReadonlySet<string>
   if (unproven.length > 0) {
     const named = `${unproven.slice(0, 3).join(", ")}${unproven.length > 3 ? ", ..." : ""}`;
     io.out(`lane:close: the pushed head differs from the verified tree in ${unproven.length} file(s) (${named}); verifying it`);
-    if (!verify(io)) return "verify:fast failed on the pushed head";
+    const verified = verify(io);
+    if (verified === "needs-pc") return "the pushed head reaches steps only Jon's PC can run (named above); a PC thread closes it";
+    if (verified === "failed") return "verify:fast failed on the pushed head";
     if (io.passedOn(headTree) === null) return "the files changed while verify:fast ran on the pushed head";
   }
   return null;
@@ -445,7 +466,7 @@ function main(rawArgv: readonly string[]): void {
 }
 
 export const LANE_CLOSE_DURATION =
-  "this takes several minutes (gen, every gate, the tests and the site build on a boat machine, then the merge), longer while both boat machines are busy, which it waits for. Run it as a harness background command (Bash run_in_background) and wait for its exit before ending the turn; its last line names the merge commit. A passing verify:fast --landing of the same tree is reused, not run again.";
+  "this takes several minutes (gen, every gate, the tests and the site build on a boat machine, or on the boat host itself, then the merge), longer while both boat machines are busy, which it waits for. Run it as a harness background command (Bash run_in_background) and wait for its exit before ending the turn; its last line names the merge commit. A passing verify:fast --landing of the same tree is reused, not run again.";
 
 /** `.scratch/lane-close.json` while a close runs: the repo's Stop hook reads it, so a turn cannot end mid-landing. */
 export const RUNNING_MARKER = join(".scratch", "lane-close.json");

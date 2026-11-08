@@ -42,7 +42,7 @@ import { runSteps, type ScheduledStep, type StepResult } from "./stepScheduler";
 import { TEST_ROOTS, walkTestFiles } from "./test-shard";
 import { workingTree } from "./boat-snapshot";
 import { createVerifyReceipt, passingReceipt, type ReuseKey } from "./verify-receipt";
-import { boatForThisRun, EXIT_BOAT_SPENT, localTestFiles, MODEL_TEST_REASON, placeSteps, runPlaced, withHeavySlot, type BoatReceipt, type Where } from "./verify-boat";
+import { boatForThisRun, EXIT_BOAT_SPENT, EXIT_NEEDS_PC, localTestFiles, MODEL_TEST_REASON, NEEDS_PC, onBoatHost, placeOnHost, placeSteps, runPlaced, withHeavySlot, type BoatReceipt, type PcStep, type Where } from "./verify-boat";
 
 const VERIFY_FAST_USAGE = {
   summary: "run only the tests and static gates this branch's diff reaches, in seconds",
@@ -63,6 +63,8 @@ const VERIFY_FAST_USAGE = {
   exits: [
     "0 verified",
     "1 a step failed",
+    "75 boat had no start for the Linux steps; run again when it frees",
+    "76 on the boat host: every step it ran passed, and the steps it names need Jon's PC (a PC thread runs them)",
     "78 this checkout has no node_modules - run bun install, or bun run agent:bootstrap",
   ],
 } as const;
@@ -721,21 +723,27 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
       units: tests.filter((settles) => group.includes(settles.id.slice("test:".length))),
     });
     if (own.size > 0) steps.push(testStep([...own], `test ${own.size} own file(s)`, 0, true));
-    // The files that read this PC's models or depend on Windows run here, in one step of their own.
-    if (here.length > 0) {
-      const reasons = [...new Set(here.map((file) => options.localTests!.get(file)!))];
-      const isOwn = plan.changed.some((file) => ownTests(file, here).length > 0);
-      // A worktree starts with no models: link (or, once per machine, download) the packs those tests read
-      // first, or every model they check reads as missing. A test outside a game's folder gets every game's.
-      const readers = here.filter((file) => options.localTests!.get(file) === MODEL_TEST_REASON);
+    // The files that read this PC's models or depend on Windows run here, one step per reason: the boat
+    // host runs the model readers and leaves only the Windows files to Jon's PC (scripts/verify-boat.ts).
+    // A worktree starts with no models: link (or, once per machine, download) the packs those tests read
+    // first, or every model they check reads as missing. A test outside a game's folder gets every game's.
+    const readers = here.filter((file) => options.localTests!.get(file) === MODEL_TEST_REASON);
+    if (readers.length > 0) {
       const owners = readers.map((file) => /^games\/([^/]+)\//.exec(file)?.[1]);
       const provision = owners.includes(undefined) ? [] : [...new Set(owners as string[])].sort();
       const provisionStep = `provision models for tests${provision.length > 0 ? ` ${provision.join(" ")}` : ""}`;
-      if (readers.length > 0) steps.push({ name: provisionStep, command: ["bun", "games/scripts/provision-assets.ts", ...provision], cost: 2, localBecause: MODEL_TEST_REASON });
+      steps.push({ name: provisionStep, command: ["bun", "games/scripts/provision-assets.ts", ...provision], cost: 2, localBecause: MODEL_TEST_REASON });
       steps.push({
-        ...testStep(here, `test ${here.length} file(s) on this PC`, 999, isOwn),
-        localBecause: reasons.join("; "),
-        ...(readers.length > 0 ? { needs: [provisionStep] } : {}),
+        ...testStep(readers, `test ${readers.length} file(s) on this PC (models)`, 999, plan.changed.some((file) => ownTests(file, readers).length > 0)),
+        localBecause: MODEL_TEST_REASON,
+        needs: [provisionStep],
+      });
+    }
+    const others = here.filter((file) => options.localTests!.get(file) !== MODEL_TEST_REASON);
+    if (others.length > 0) {
+      steps.push({
+        ...testStep(others, `test ${others.length} file(s) on this PC`, 998, plan.changed.some((file) => ownTests(file, others).length > 0)),
+        localBecause: [...new Set(others.map((file) => options.localTests!.get(file)!))].join("; "),
       });
     }
     if (rest.length > 0) {
@@ -1021,11 +1029,11 @@ export function rerunFailing(step: Pick<Step, "name" | "command">, output: strin
 
 function printPlan(plan: Plan, steps: readonly Step[]): void {
   for (const path of plan.changed) console.log(`  changed  ${path}`);
-  const placement = placeSteps(steps);
-  for (const step of steps) {
-    const place = placement.get(step.name);
-    console.log(`  step     ${step.name}  [${place?.where === "boat" ? "boat" : `this PC: ${place?.why ?? "local"}`}]  (${step.command.join(" ")})`);
-  }
+  const host = onBoatHost(process.env);
+  const placement = host ? placeOnHost(steps) : placeSteps(steps);
+  const label = (place: { where: Where; why: string } | undefined): string =>
+    place?.where === "boat" ? "boat" : place?.where === "pc" ? `Jon's PC, not run here: ${place.why}` : host ? "this boat host" : `this PC: ${place?.why ?? "local"}`;
+  for (const step of steps) console.log(`  step     ${step.name}  [${label(placement.get(step.name))}]  (${step.command.join(" ")})`);
   if (plan.fallback.length > 0) {
     console.log(`  no test can be attributed to ${plan.fallback.length} changed file(s), so every test file and type-check runs:`);
     for (const path of plan.fallback) console.log(`    ${path}`);
@@ -1051,6 +1059,10 @@ function receiptPlan(root: string, base: string, argv: readonly string[], change
 export function boatLine(boat: BoatReceipt, placement: ReadonlyMap<string, { where: Where }>): string | null {
   const here = [...placement.values()].filter((place) => place.where === "local").length;
   if (boat.status === "off") return null;
+  if (boat.status === "host") {
+    const pc = boat.pc?.length ?? 0;
+    return `verify:fast: on the boat host: ${placement.size - pc} step(s) ran here${pc > 0 ? `; ${pc} need Jon's PC and did not run` : ""}`;
+  }
   if (boat.status === "spent") {
     const linux = placement.size - here;
     return `verify:fast: boat had no start (${boat.why ?? "no reason given"}); ${linux} Linux step(s) not run, here or there${boat.until === undefined ? "" : `; boat takes starts again from ${boat.until}`}`;
@@ -1081,6 +1093,24 @@ export function parseVerifyArgs(argv: readonly string[]) {
 
 /** Set when boat had no start for a run's Linux steps: the exit is then EXIT_BOAT_SPENT, not a plain failure. */
 let boatSpent = false;
+
+/** The steps the boat host left for Jon's PC in this run; with no other failure the exit is EXIT_NEEDS_PC. */
+const needsPc: PcStep[] = [];
+
+/** A step only Jon's PC can run, which the boat host therefore did not: neither a pass nor a failure. */
+export function leftForPc(result: StepResult): boolean {
+  return result.blockedBy?.includes(NEEDS_PC) === true;
+}
+
+/** What to print about the steps the boat host left for Jon's PC: each with why and its command. */
+export function pcReport(pc: readonly PcStep[]): string[] {
+  if (pc.length === 0) return [];
+  return [
+    `verify:fast: ${pc.length} step(s) need Jon's PC and did not run on this boat host, so this run proves no tree (needs a PC thread):`,
+    ...pc.flatMap((step) => [`  ${step.name}: ${step.why}`, `    ${step.command}`]),
+    "verify:fast: a PC thread runs them with `bun run lane:close` in a checkout of this branch (it verifies and merges there), or the commands above.",
+  ];
+}
 
 async function main(argv: readonly string[]): Promise<number> {
   const root = fileURLToPath(new URL("..", import.meta.url));
@@ -1127,6 +1157,7 @@ async function main(argv: readonly string[]): Promise<number> {
     for (const [name, place] of placed.placement) receipt.annotate(name, { where: place.where, placedBecause: place.why });
     receipt.note({ boat: placed.boat });
     if (placed.boat.status === "spent") boatSpent = true;
+    needsPc.push(...(placed.boat.pc ?? []));
     const line = boatLine(placed.boat, placed.placement);
     if (line !== null) tell(line);
     return placed.results;
@@ -1205,17 +1236,19 @@ async function main(argv: readonly string[]): Promise<number> {
       for (const result of runs) if (!result.ok && result.output.length > 0) console.error(result.output);
       const checks = runs.map((result) => ({ name: result.name, ok: result.ok, ms: result.ms }));
       finish(checks.every((check) => check.ok));
+      for (const line of pcReport(needsPc)) console.error(line);
       console.log(JSON.stringify(jsonReport(checks, Date.now() - started)));
-      return checks.every((check) => check.ok) ? EXIT_VERIFIED : EXIT_FAILED;
+      return verdict(runs);
     }
     const failures: string[] = [];
     const runs = await withHeavyServer(root, steps, () => execute(steps, false, true));
     finish(runs.every((result) => result.ok));
-    for (const result of runs) if (!result.ok) failures.push(result.name);
+    for (const result of runs) if (!result.ok && !leftForPc(result)) failures.push(result.name);
     const seconds = (Date.now() - started) / 1000;
-    console.log(`\ntotal ${seconds.toFixed(1)}s — ${steps.length - failures.length} passed, ${failures.length} failed`);
+    console.log(`\ntotal ${seconds.toFixed(1)}s — ${steps.length - failures.length - needsPc.length} passed, ${failures.length} failed${needsPc.length > 0 ? `, ${needsPc.length} left for Jon's PC` : ""}`);
     if (failures.length > 0) console.log(`failed: ${failures.join(", ")}`);
-    return failures.length === 0 ? EXIT_VERIFIED : EXIT_FAILED;
+    for (const line of pcReport(needsPc)) console.log(line);
+    return verdict(runs);
   }
 
   const allWorkspaces = workspaces(root);
@@ -1312,8 +1345,9 @@ async function main(argv: readonly string[]): Promise<number> {
     remember(results);
     finish(results.every((result) => result.ok));
     for (const result of results) if (!result.ok && result.output.length > 0) console.error(result.output);
+    for (const line of pcReport(needsPc)) console.error(line);
     console.log(JSON.stringify(jsonReport(results, Date.now() - started)));
-    return results.every((result) => result.ok) ? EXIT_VERIFIED : EXIT_FAILED;
+    return verdict(results);
   }
 
   // The type-checks and gates start first and nothing new starts after a failure, so a type
@@ -1325,12 +1359,13 @@ async function main(argv: readonly string[]): Promise<number> {
   remember(results);
   finish(results.every((result) => result.ok));
   const failures = results.filter((result) => !result.ok && result.blockedBy === undefined).map((result) => result.name);
-  const notRun = results.filter((result) => result.blockedBy !== undefined).map((result) => result.name);
+  const notRun = results.filter((result) => result.blockedBy !== undefined && !leftForPc(result)).map((result) => result.name);
   const seconds = (Date.now() - started) / 1000;
-  const passed = results.length - failures.length - notRun.length;
+  const passed = results.length - failures.length - notRun.length - needsPc.length;
   console.log(
-    `\ntotal ${seconds.toFixed(1)}s — ${passed} passed, ${failures.length} failed${notRun.length > 0 ? `, ${notRun.length} not run` : ""}`,
+    `\ntotal ${seconds.toFixed(1)}s — ${passed} passed, ${failures.length} failed${notRun.length > 0 ? `, ${notRun.length} not run` : ""}${needsPc.length > 0 ? `, ${needsPc.length} left for Jon's PC` : ""}`,
   );
+  for (const line of pcReport(needsPc)) console.log(line);
   // The result is partial by design and says so either way: what it covered, what it left out, and
   // the command that runs CI's whole set.
   const covered = `${plan.tests.length} test file(s), ${plan.typechecks.length} type-check(s), ${plan.gates.length} gate(s)${plan.boots.length > 0 ? `, boot ${plan.boots.join(" ")}` : ""}${skipped.length > 0 ? `; ${skipped.length} unit(s) already proven on these bytes` : ""}`;
@@ -1346,12 +1381,22 @@ async function main(argv: readonly string[]): Promise<number> {
     console.log(`verify:fast: partial: only what this change reaches (${covered}). \`bun run verify:fast --full\` runs what CI runs.`);
     return EXIT_FAILED;
   }
+  if (needsPc.length > 0) {
+    console.log(`verify:fast: every step this boat host ran passed; not verified until a PC thread runs the ${needsPc.length} above (${covered}).`);
+    return EXIT_NEEDS_PC;
+  }
   console.log(`verify:fast: ${cheap ? "cheap checks passed" : "verified"} — partial: only what this change reaches (${covered}). \`bun run verify:fast --full\` runs what CI runs.`);
   return EXIT_VERIFIED;
   } catch (error) {
     receipt?.abort(error);
     throw error;
   }
+}
+
+/** The exit for a run's results: verified, failed, or (on the boat host, nothing else wrong) needs Jon's PC. */
+function verdict(results: readonly StepResult[]): number {
+  if (results.every((result) => result.ok)) return EXIT_VERIFIED;
+  return results.every((result) => result.ok || leftForPc(result)) ? EXIT_NEEDS_PC : EXIT_FAILED;
 }
 
 if (import.meta.main) {

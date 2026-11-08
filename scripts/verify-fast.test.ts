@@ -404,7 +404,8 @@ describe("attribution fails loudly", () => {
     const provision = steps.find((step) => step.name.startsWith("provision models"));
     expect(provision?.command).toEqual(["bun", "games/scripts/provision-assets.ts", "scrap-signal"]);
     expect(provision?.localBecause).toBe(MODEL_TEST_REASON);
-    expect(steps.find((step) => step.name === "test 2 file(s) on this PC")?.needs).toEqual([provision!.name]);
+    expect(steps.find((step) => step.name === "test 1 file(s) on this PC (models)")?.needs).toEqual([provision!.name]);
+    expect(steps.find((step) => step.name === "test 1 file(s) on this PC")?.needs).toBeUndefined();
     const onlyWindows = fastSteps({ ...emptyPlan, tests: [windows] }, { localTests });
     expect(onlyWindows.some((step) => step.name.startsWith("provision"))).toBe(false);
     expect(onlyWindows.find((step) => step.name.endsWith("on this PC"))?.needs).toBeUndefined();
