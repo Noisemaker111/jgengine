@@ -262,7 +262,7 @@ function parseArgs(argv: string[]): Args {
       "shoot: --look needs the dev-runner game shell, and --site renders a plain web page that never reads an aim. Serve the game from a dev runner and pass --url http://127.0.0.1:<port>/?game=<game> instead.",
     );
   }
-  if (str("quality") !== undefined && args.mode === "ui" && args.view === undefined && args.look === undefined && args.url === undefined && args.site === undefined) {
+  if (!args.help && str("quality") !== undefined && args.mode === "ui" && args.view === undefined && args.look === undefined && args.url === undefined && args.site === undefined) {
     // The HUD preview mounts no 3D scene, so no tier ever reaches the page; this used to fail after
     // the whole boot as "never reported its tier".
     throw new Error(`shoot: --quality pins the 3D render tier, but --mode ui (the default) is a HUD-only preview with no 3D scene. Add --mode play.`);
