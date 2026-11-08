@@ -570,6 +570,35 @@ describe("WebGpuGl framebuffer completeness", () => {
     expect(calls.filter(([name]) => name === "draw").at(-1)?.[1]).toEqual([3]);
   });
 
+  test("a framebuffer's pass is built once: a loading pass carries no clear values, a clear gets its own, and new storage for an attachment rebuilds it", () => {
+    const { gl, passes, draw } = drawSetup();
+    const tex = gl.createTexture();
+    gl.bindTexture(0x0de1, tex);
+    gl.texImage2D(0x0de1, 0, 0x8058, 64, 64, 0, 0x1908, 0x1401, null);
+    const fb = gl.createFramebuffer();
+    gl.bindFramebuffer(0x8d40, fb);
+    gl.framebufferTexture2D(0x8d40, 0x8ce0, 0x0de1, tex, 0);
+    type Color = { view: unknown; loadOp: string; clearValue?: unknown };
+    const color = (at: number) => (passes.at(at) as unknown as { colorAttachments: Color[] }).colorAttachments[0]!;
+    gl.clearColor(1, 0, 0, 1);
+    gl.clear(0x4000);
+    draw();
+    expect(color(-1).loadOp).toBe("clear");
+    expect(color(-1).clearValue).toEqual({ r: 1, g: 0, b: 0, a: 1 });
+    const first = color(-1).view;
+    gl.bindFramebuffer(0x8d40, null);
+    draw();
+    gl.bindFramebuffer(0x8d40, fb);
+    draw();
+    expect(color(-1)).toEqual({ view: first, loadOp: "load", storeOp: "store" } as Color);
+    // New storage: the old view is of a destroyed texture, so the pass must not reuse it.
+    gl.bindTexture(0x0de1, tex);
+    gl.texImage2D(0x0de1, 0, 0x8058, 32, 32, 0, 0x1908, 0x1401, null);
+    draw();
+    expect(color(-1).view).not.toBe(first);
+    expect(gl.passTarget.width).toBe(32);
+  });
+
   test("a framebuffer with nothing attached is incomplete; the default one is complete", () => {
     const { gl } = stubContext();
     gl.bindFramebuffer(0x8d40, gl.createFramebuffer());

@@ -99,7 +99,9 @@ interface GlTexture {
 }
 interface GlRenderbuffer { kind: "renderbuffer"; id: number; gpu: GPUTexture | null; format: GlTextureFormat | null; width: number; height: number; samples: number; view: GPUTextureView | null }
 interface Attachment { object: GlTexture | GlRenderbuffer; level: number; layer: number }
-interface GlFramebuffer { kind: "framebuffer"; id: number; colors: (Attachment | null)[]; depth: Attachment | null; stencil: Attachment | null; drawBuffers: number[]; version: number }
+interface GlFramebuffer { kind: "framebuffer"; id: number; colors: (Attachment | null)[]; depth: Attachment | null; stencil: Attachment | null; drawBuffers: number[]; version: number;
+  /** Its pass, built once per change (see WebGpuGl.passPlan). */
+  plan: PassPlan | null }
 interface GlShader { kind: "shader"; id: number; type: number; source: string; compiled: boolean }
 interface VertexAttrib { enabled: boolean; buffer: GlBuffer | null; size: number; type: number; normalized: boolean; stride: number; offset: number; divisor: number; integer: boolean }
 interface GlVertexArray { kind: "vao"; id: number; attribs: VertexAttrib[]; elements: GlBuffer | null; version: number }
@@ -168,6 +170,58 @@ const WEBGL_CONSTANTS: Record<string, number> = (() => {
   }
   return out;
 })();
+
+interface PassTarget { fb: GlFramebuffer | null; version: number; width: number; height: number; colorFormats: (GPUTextureFormat | null)[]; depthFormat: GPUTextureFormat | null; samples: number; key: string; id: number }
+interface PendingClear { fb: GlFramebuffer | null; color: (GPUColor | null)[]; depth: number | null; stencil: number | null }
+/** A framebuffer's pass, as {@link WebGpuGl.passPlan} builds it. */
+interface PassPlan {
+  /** What the attachments were when it was built (see {@link attachmentDeps}); the back buffer's views for the default framebuffer. */
+  deps: unknown[];
+  /** The GL color index each color attachment came from, for picking its clear value; -1 for a gap. */
+  colorIndex: number[];
+  /** Every attachment loaded and stored. */
+  descriptor: GPURenderPassDescriptor;
+  /** The attached textures, marked as used by each batch drawing into them. */
+  textures: GlTexture[];
+  target: PassTarget;
+}
+
+/** What makes an attachment's view stale: its texture's storage, or its renderbuffer's view. */
+function attachmentDep(a: Attachment | null | undefined): unknown {
+  return a == null ? null : a.object.kind === "texture" ? a.object.gpu : a.object.view;
+}
+function attachmentDeps(fb: GlFramebuffer): unknown[] {
+  const out = [attachmentDep(fb.depth), attachmentDep(fb.stencil)];
+  for (const a of fb.colors) out.push(attachmentDep(a));
+  return out;
+}
+/** Whether `fb`'s attachments are still those {@link attachmentDeps} saw, without building a list. */
+function sameDeps(fb: GlFramebuffer, deps: unknown[]): boolean {
+  if (deps.length !== fb.colors.length + 2 || deps[0] !== attachmentDep(fb.depth) || deps[1] !== attachmentDep(fb.stencil)) return false;
+  for (let i = 0; i < fb.colors.length; i += 1) if (deps[i + 2] !== attachmentDep(fb.colors[i])) return false;
+  return true;
+}
+/** A depth/stencil attachment that loads and stores whichever aspects `format` has. */
+function loadDepth(view: GPUTextureView, format: GPUTextureFormat): GPURenderPassDepthStencilAttachment {
+  const a: GPURenderPassDepthStencilAttachment = { view };
+  if (format !== "stencil8") { a.depthLoadOp = "load"; a.depthStoreOp = "store"; }
+  if (format === "stencil8" || hasStencil(format)) { a.stencilLoadOp = "load"; a.stencilStoreOp = "store"; }
+  return a;
+}
+/** `base` with `clear`'s values as clear load ops on the attachments it names. */
+function withClears(base: GPURenderPassDescriptor, colorIndex: number[], clear: PendingClear): GPURenderPassDescriptor {
+  const colors = [...base.colorAttachments].map((a, i) => {
+    const value = a == null ? null : clear.color[colorIndex[i]!] ?? null;
+    return a == null || value === null ? a : { ...a, loadOp: "clear" as const, clearValue: value };
+  });
+  let depth = base.depthStencilAttachment;
+  if (depth !== undefined && (clear.depth != null || clear.stencil != null)) {
+    depth = { ...depth };
+    if (clear.depth != null && depth.depthLoadOp !== undefined) { depth.depthLoadOp = "clear"; depth.depthClearValue = clear.depth; }
+    if (clear.stencil != null && depth.stencilLoadOp !== undefined) { depth.stencilLoadOp = "clear"; depth.stencilClearValue = clear.stencil; }
+  }
+  return depth === undefined ? { colorAttachments: colors } : { colorAttachments: colors, depthStencilAttachment: depth };
+}
 
 /** A small, stable number for a string, assigned on first sight. */
 function internId(ids: Map<string, number>, key: string): number {
@@ -408,8 +462,8 @@ export class WebGpuGl extends GlConstants {
   // WebGPU work.
   private encoder: GPUCommandEncoder | null = null;
   private pass: GPURenderPassEncoder | null = null;
-  private passTarget: { fb: GlFramebuffer | null; version: number; width: number; height: number; colorFormats: (GPUTextureFormat | null)[]; depthFormat: GPUTextureFormat | null; samples: number; key: string; id: number } | null = null;
-  private pendingClear: { fb: GlFramebuffer | null; color: (GPUColor | null)[]; depth: number | null; stencil: number | null } | null = null;
+  private passTarget: PassTarget | null = null;
+  private pendingClear: PendingClear | null = null;
   private batch = 1;
   private staging = new Uint8Array(UNIFORM_RING_BYTES);
   private stagingUsed = 0;
@@ -447,6 +501,8 @@ export class WebGpuGl extends GlConstants {
   private backColorMsaa: GPUTexture | null = null;
   private backDepth: GPUTexture | null = null;
   private backViews: { color: GPUTextureView; msaa: GPUTextureView | null; depth: GPUTextureView | null } | null = null;
+  /** The default framebuffer's pass, for the current {@link backViews}. */
+  private backPlan: PassPlan | null = null;
   private backSize = [0, 0];
   private presentPipeline: GPURenderPipeline | null = null;
   private presentGroup: GPUBindGroup | null = null;
@@ -1357,7 +1413,7 @@ export class WebGpuGl extends GlConstants {
 
   // ---------------------------------------------------------------- framebuffers
 
-  createFramebuffer(): GlFramebuffer { return { kind: "framebuffer", id: nextId++, colors: [], depth: null, stencil: null, drawBuffers: [0x8ce0], version: 1 }; }
+  createFramebuffer(): GlFramebuffer { return { kind: "framebuffer", id: nextId++, colors: [], depth: null, stencil: null, drawBuffers: [0x8ce0], version: 1, plan: null }; }
   deleteFramebuffer(fb: GlFramebuffer | null): void { if (fb !== null && this.drawFb === fb) this.drawFb = null; }
   isFramebuffer(fb: unknown): boolean { return (fb as GlFramebuffer | null)?.kind === "framebuffer"; }
   bindFramebuffer(target: number, fb: GlFramebuffer | null): void {
@@ -1750,84 +1806,99 @@ struct U { shift: vec2<i32> };
     return this.beginPass(fb, clear);
   }
 
-  /** Open a render pass on `fb`, with `clear`'s values as load ops. */
-  private beginPass(fb: GlFramebuffer | null, clear: NonNullable<typeof this.pendingClear> | null): boolean {
-    const version = fb === null ? -1 : fb.version;
-    const encoder = this.ensureEncoder();
-    if (fb === null) this.backDirty = true;
-    const colorAttachments: (GPURenderPassColorAttachment | null)[] = [];
+  /**
+   * What a pass on `fb` attaches, built once per framebuffer change (or back-buffer size) rather
+   * than at each of a frame's ~30 passes. Its attachments carry load ops and no clear values: the
+   * browser converts every member of a pass descriptor at each beginRenderPass, so a pass that only
+   * loads costs least with nothing more in it. Null for an incomplete framebuffer, rechecked each pass.
+   */
+  private passPlan(fb: GlFramebuffer | null): PassPlan | null {
+    if (fb === null) {
+      this.ensureBackBuffer();
+      const views = this.backViews!;
+      if (this.backPlan !== null && this.backPlan.deps[0] === views) return this.backPlan;
+      const color: GPURenderPassColorAttachment = { view: views.msaa ?? views.color, loadOp: "load", storeOp: "store" };
+      if (views.msaa !== null) color.resolveTarget = views.color;
+      const depthFormat = this.backDepth?.format ?? null;
+      const depth = depthFormat === null ? undefined : loadDepth(views.depth!, depthFormat);
+      const samples = views.msaa !== null ? 4 : 1;
+      this.backPlan = this.makePlan(null, [views], [color], [0], ["rgba8unorm"], depth, depthFormat, this.backSize[0]!, this.backSize[1]!, samples, []);
+      return this.backPlan;
+    }
+    const known = fb.plan;
+    if (known !== null && known.target.version === fb.version && sameDeps(fb, known.deps)) return known;
+    fb.plan = null;
+    const incomplete = this.incompleteness(fb);
+    if (incomplete !== null) {
+      this.warn(`a draw or clear into an incomplete framebuffer is skipped, as GL skips it: ${incomplete.reason}`);
+      return null;
+    }
+    const colors: (GPURenderPassColorAttachment | null)[] = [];
+    const colorIndex: number[] = [];
     const colorFormats: (GPUTextureFormat | null)[] = [];
-    let depthStencil: GPURenderPassDepthStencilAttachment | undefined;
+    const textures: GlTexture[] = [];
+    let depth: GPURenderPassDepthStencilAttachment | undefined;
     let depthFormat: GPUTextureFormat | null = null;
     let width = 0;
     let height = 0;
     let samples = 1;
-    if (fb === null) {
-      this.ensureBackBuffer();
-      const color = clear?.color[0] ?? null;
-      const msaa = this.backColorMsaa;
-      const views = this.backViews!;
-      const attachment: GPURenderPassColorAttachment = { view: views.msaa ?? views.color, loadOp: color !== null ? "clear" : "load", storeOp: "store", clearValue: color ?? [0, 0, 0, 0] };
-      if (views.msaa !== null) attachment.resolveTarget = views.color;
-      colorAttachments.push(attachment);
-      colorFormats.push("rgba8unorm");
-      if (msaa !== null && color === null) this.warn("the default framebuffer reloads its multisampled color between passes");
-      if (this.backDepth !== null) {
-        depthFormat = this.backDepth.format;
-        depthStencil = { view: views.depth!, depthLoadOp: clear?.depth != null ? "clear" : "load", depthStoreOp: "store", depthClearValue: clear?.depth ?? 1, ...(hasStencil(depthFormat) ? { stencilLoadOp: clear?.stencil != null ? "clear" : "load", stencilStoreOp: "store", stencilClearValue: clear?.stencil ?? 0 } : {}) };
-      }
-      width = this.backSize[0]!;
-      height = this.backSize[1]!;
-      samples = msaa !== null ? 4 : 1;
-    } else {
-      const incomplete = this.incompleteness(fb);
-      if (incomplete !== null) {
-        this.warn(`a draw or clear into an incomplete framebuffer is skipped, as GL skips it: ${incomplete.reason}`);
-        return false;
-      }
-      for (const buffer of fb.drawBuffers) {
-        const index = buffer - 0x8ce0;
-        const a = buffer === 0 ? null : fb.colors[index];
-        const view = a == null ? null : this.attachmentView(a);
-        if (a == null || view === null) { colorAttachments.push(null); colorFormats.push(null); continue; }
-        const object = a.object;
-        const fmt = object.format!.format;
-        const color = clear?.color[index] ?? null;
-        colorAttachments.push({ view, loadOp: color !== null ? "clear" : "load", storeOp: "store", clearValue: color ?? [0, 0, 0, 0] });
-        colorFormats.push(fmt);
-        width = Math.max(1, (object.kind === "texture" ? object.width >> a.level : object.width));
-        height = Math.max(1, (object.kind === "texture" ? object.height >> a.level : object.height));
-        samples = object.kind === "renderbuffer" ? object.samples : 1;
-        if (object.kind === "texture") object.usedBatch = this.batch;
-      }
-      const d = fb.depth ?? fb.stencil;
-      if (d !== null) {
-        const view = this.attachmentView(d);
-        if (view !== null) {
-          depthFormat = d.object.format!.format;
-          const stencil = hasStencil(depthFormat);
-          const depthOnly = depthFormat === "stencil8";
-          depthStencil = {
-            view,
-            ...(depthOnly ? {} : { depthLoadOp: clear?.depth != null ? "clear" : "load", depthStoreOp: "store", depthClearValue: clear?.depth ?? 1 }),
-            ...(stencil || depthOnly ? { stencilLoadOp: clear?.stencil != null ? "clear" : "load", stencilStoreOp: "store", stencilClearValue: clear?.stencil ?? 0 } : {}),
-          } as GPURenderPassDepthStencilAttachment;
-          if (width === 0) {
-            width = Math.max(1, d.object.kind === "texture" ? d.object.width >> d.level : d.object.width);
-            height = Math.max(1, d.object.kind === "texture" ? d.object.height >> d.level : d.object.height);
-            samples = d.object.kind === "renderbuffer" ? d.object.samples : 1;
-          }
-          if (d.object.kind === "texture") d.object.usedBatch = this.batch;
-        }
-      }
-      while (colorAttachments.length > 0 && colorAttachments[colorAttachments.length - 1] === null) { colorAttachments.pop(); colorFormats.pop(); }
-      if (colorAttachments.length === 0 && depthStencil === undefined) { this.warn("a draw into a framebuffer whose draw buffers name nothing attached"); return false; }
+    for (const buffer of fb.drawBuffers) {
+      const index = buffer - 0x8ce0;
+      const a = buffer === 0 ? null : fb.colors[index];
+      const view = a == null ? null : this.attachmentView(a);
+      if (a == null || view === null) { colors.push(null); colorIndex.push(-1); colorFormats.push(null); continue; }
+      const object = a.object;
+      colors.push({ view, loadOp: "load", storeOp: "store" });
+      colorIndex.push(index);
+      colorFormats.push(object.format!.format);
+      width = Math.max(1, (object.kind === "texture" ? object.width >> a.level : object.width));
+      height = Math.max(1, (object.kind === "texture" ? object.height >> a.level : object.height));
+      samples = object.kind === "renderbuffer" ? object.samples : 1;
+      if (object.kind === "texture") textures.push(object);
     }
+    const d = fb.depth ?? fb.stencil;
+    if (d !== null) {
+      const view = this.attachmentView(d);
+      if (view !== null) {
+        depthFormat = d.object.format!.format;
+        depth = loadDepth(view, depthFormat);
+        if (width === 0) {
+          width = Math.max(1, d.object.kind === "texture" ? d.object.width >> d.level : d.object.width);
+          height = Math.max(1, d.object.kind === "texture" ? d.object.height >> d.level : d.object.height);
+          samples = d.object.kind === "renderbuffer" ? d.object.samples : 1;
+        }
+        if (d.object.kind === "texture") textures.push(d.object);
+      }
+    }
+    while (colors.length > 0 && colors[colors.length - 1] === null) { colors.pop(); colorIndex.pop(); colorFormats.pop(); }
+    if (colors.length === 0 && depth === undefined) { this.warn("a draw into a framebuffer whose draw buffers name nothing attached"); return null; }
+    fb.plan = this.makePlan(fb, attachmentDeps(fb), colors, colorIndex, colorFormats, depth, depthFormat, width, height, samples, textures);
+    return fb.plan;
+  }
+
+  private makePlan(fb: GlFramebuffer | null, deps: unknown[], colors: (GPURenderPassColorAttachment | null)[], colorIndex: number[], colorFormats: (GPUTextureFormat | null)[], depth: GPURenderPassDepthStencilAttachment | undefined, depthFormat: GPUTextureFormat | null, width: number, height: number, samples: number, textures: GlTexture[]): PassPlan {
+    const key = `${colorFormats.join(",")}|${depthFormat}|${samples}`;
+    const descriptor: GPURenderPassDescriptor = depth === undefined ? { colorAttachments: colors } : { colorAttachments: colors, depthStencilAttachment: depth };
+    return { deps, colorIndex, descriptor, textures, target: { fb, version: fb === null ? -1 : fb.version, width, height, colorFormats, depthFormat, samples, key, id: internId(this.targetIds, key) } };
+  }
+
+  /** Open a render pass on `fb`, with `clear`'s values as load ops. */
+  private beginPass(fb: GlFramebuffer | null, clear: PendingClear | null): boolean {
+    const plan = this.passPlan(fb);
+    if (plan === null) return false;
+    const encoder = this.ensureEncoder();
+    if (fb === null) {
+      this.backDirty = true;
+      if (this.backColorMsaa !== null && clear?.color[0] == null) this.warn("the default framebuffer reloads its multisampled color between passes");
+    }
+    for (let i = 0; i < plan.textures.length; i += 1) plan.textures[i]!.usedBatch = this.batch;
+    let descriptor = plan.descriptor;
+    if (clear !== null) descriptor = withClears(descriptor, plan.colorIndex, clear);
     const timestampWrites = this.passStamps();
-    this.pass = encoder.beginRenderPass({ colorAttachments, ...(depthStencil !== undefined ? { depthStencilAttachment: depthStencil } : {}), ...(timestampWrites !== undefined ? { timestampWrites } : {}) });
+    if (timestampWrites !== undefined) descriptor = { ...descriptor, timestampWrites };
+    this.pass = encoder.beginRenderPass(descriptor);
     this.stats.passes += 1;
-    const targetKey = `${colorFormats.join(",")}|${depthFormat}|${samples}`;
-    this.passTarget = { fb, version, width, height, colorFormats, depthFormat, samples, key: targetKey, id: internId(this.targetIds, targetKey) };
+    this.passTarget = plan.target;
     this.boundPipeline = null;
     this.boundGroup1 = null;
     this.boundUniform = -1;
