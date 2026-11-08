@@ -59,10 +59,11 @@ export function loadBindingOverrides(
   }
 }
 
-function persist(
+/** Store a game's whole rebind map (an empty one clears it), as the shell does whenever the game's rebinds change. */
+export function saveBindingOverrides(
   gameId: string,
   overrides: BindingOverrides,
-  storage: Pick<WebStorageLike, "setItem" | "removeItem"> | null | undefined,
+  storage: Pick<WebStorageLike, "setItem" | "removeItem"> | null | undefined = defaultStorage(),
 ): void {
   if (storage == null) return;
   try {
@@ -80,7 +81,7 @@ export function saveBindingOverride(
   storage: Pick<WebStorageLike, "getItem" | "setItem" | "removeItem"> | null | undefined = defaultStorage(),
 ): BindingOverrides {
   const overrides = { ...loadBindingOverrides(gameId, storage ?? undefined), [action]: codes };
-  persist(gameId, overrides, storage);
+  saveBindingOverrides(gameId, overrides, storage);
   return overrides;
 }
 
@@ -91,7 +92,7 @@ export function clearBindingOverride(
 ): BindingOverrides {
   const overrides = { ...loadBindingOverrides(gameId, storage ?? undefined) };
   delete overrides[action];
-  persist(gameId, overrides, storage);
+  saveBindingOverrides(gameId, overrides, storage);
   return overrides;
 }
 

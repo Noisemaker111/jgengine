@@ -308,6 +308,7 @@ export {
   clearBindingOverride,
   loadBindingOverrides,
   saveBindingOverride,
+  saveBindingOverrides,
   type BindingOverrides,
 } from "./input/bindingOverrides";
 export { createGestureSurfaceTracker } from "./input/gestureSurface";

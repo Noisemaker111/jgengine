@@ -1,20 +1,43 @@
 import type { GameContext } from "../runtime/gameContext";
 import { createActionContextStack, type ActionContextStack } from "../input/actionContexts";
-import type { ActionCodesMap } from "../input/actionBindings";
+import type { ActionCodes, ActionCodesMap } from "../input/actionBindings";
+import { applyBindingOverrides, type BindingOverrides } from "../input/bindingOverrides";
 import { ContextMap } from "@jgengine/core/runtime/contextIdentity";
 
 export const PLAY_CONTROLS_STORE_KEY = "jg.playControls";
 const SUSPENSION_PREFIX = "__jg_control_suspension:";
-const ACTION_CONTEXTS = new ContextMap<{ stack: ActionContextStack; nextLease: number }>();
+interface ControlState {
+  stack: ActionContextStack;
+  nextLease: number;
+  /** The player's rebinds, layered over the game's authored input before any context. */
+  overrides: BindingOverrides;
+  overridesVersion: number;
+  listeners: Set<() => void>;
+}
 
-function contextsFor(ctx: GameContext): ActionContextStack {
+const ACTION_CONTEXTS = new ContextMap<ControlState>();
+
+function controlState(ctx: GameContext): ControlState {
   let state = ACTION_CONTEXTS.get(ctx);
   if (state === undefined) {
     const stack = createActionContextStack();
-    state = {
+    const made: ControlState = {
       nextLease: 0,
+      overrides: {},
+      overridesVersion: 0,
+      listeners: new Set(),
       stack: {
         ...stack,
+        // A rebind changes the live codes as a context does, so it bumps the same version and wakes the same listeners.
+        version: () => stack.version() + made.overridesVersion,
+        subscribe(listener) {
+          const off = stack.subscribe(listener);
+          made.listeners.add(listener);
+          return () => {
+            off();
+            made.listeners.delete(listener);
+          };
+        },
         snapshot: () => ({ contexts: stack.snapshot().contexts.filter((context) => !context.id.startsWith(SUSPENSION_PREFIX)) }),
         restore(snapshot) {
           const leases = stack.snapshot().contexts.filter((context) => context.id.startsWith(SUSPENSION_PREFIX));
@@ -22,9 +45,42 @@ function contextsFor(ctx: GameContext): ActionContextStack {
         },
       },
     };
+    state = made;
     ACTION_CONTEXTS.set(ctx, state);
   }
-  return state.stack;
+  return state;
+}
+
+function contextsFor(ctx: GameContext): ActionContextStack {
+  return controlState(ctx).stack;
+}
+
+/** The player's rebinds in this game context: action to the codes that now drive it. */
+export function bindingOverrides(ctx: GameContext): BindingOverrides {
+  return controlState(ctx).overrides;
+}
+
+/**
+ * Replace the player's rebinds (the shell seeds them from storage at boot). Live input picks them up through
+ * {@link activeActionCodes}; listeners of {@link actionContextStack} hear the change.
+ */
+export function setBindingOverrides(ctx: GameContext, overrides: BindingOverrides): void {
+  const state = controlState(ctx);
+  state.overrides = { ...overrides };
+  state.overridesVersion += 1;
+  for (const listener of [...state.listeners]) listener();
+}
+
+/**
+ * Bind an action to new codes, or back to the game's own with null. An action the game marks `locked` keeps its
+ * codes whatever is stored.
+ * @capability key-rebinding rebind a player action in the game itself, so menus, the shell and proofs all read the same keys
+ */
+export function rebindAction(ctx: GameContext, action: string, codes: ActionCodes | null): void {
+  const next = { ...bindingOverrides(ctx) };
+  if (codes === null) delete next[action];
+  else next[action] = codes;
+  setBindingOverrides(ctx, next);
 }
 
 /** Returns the context stack associated with a game context. */
@@ -32,12 +88,17 @@ export function actionContextStack(ctx: GameContext): ActionContextStack {
   return contextsFor(ctx);
 }
 
-/** Applies active contexts to a base action map for shell input tracking. */
+/** The game's authored input with the player's rebinds over it: what each action is bound to, menus aside. */
+export function reboundActionCodes(ctx: GameContext, base: ActionCodesMap): ActionCodesMap {
+  return applyBindingOverrides(base, bindingOverrides(ctx));
+}
+
+/** Applies the player's rebinds, then the active contexts, to a base action map for shell input tracking. */
 export function activeActionCodes(ctx: GameContext, base: ActionCodesMap): ActionCodesMap {
   const stack = contextsFor(ctx);
   if (stack.ids().some((id) => id.startsWith(SUSPENSION_PREFIX))) return {};
   const layered = createActionContextStack();
-  layered.push({ id: "__jg_base_actions", codes: base, passthrough: true });
+  layered.push({ id: "__jg_base_actions", codes: reboundActionCodes(ctx, base), passthrough: true });
   for (const context of stack.snapshot().contexts) layered.push(context);
   return layered.active();
 }
@@ -57,8 +118,8 @@ export function setPlayControlsActive(ctx: GameContext, active: boolean): void {
  * @capability control-suspension Suspend player input across overlapping menus without stopping shared simulation.
  */
 export function suspendPlayControls(ctx: GameContext): () => void {
-  const stack = contextsFor(ctx);
-  const state = ACTION_CONTEXTS.get(ctx)!;
+  const state = controlState(ctx);
+  const stack = state.stack;
   let id: string;
   do { id = `${SUSPENSION_PREFIX}${state.nextLease++}`; } while (stack.ids().includes(id));
   stack.push({ id, codes: {}, passthrough: false });

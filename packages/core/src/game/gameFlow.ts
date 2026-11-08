@@ -1,4 +1,6 @@
+import type { ActionCodes } from "../input/actionBindings";
 import type { GameContext } from "../runtime/gameContext";
+import { rebindAction } from "./controlGate";
 import { perContext } from "../runtime/perContext";
 import { defineSystem, type SystemDefinition } from "./defineSystem";
 import { gamePhase, setGamePhase } from "./gamePhase";
@@ -91,7 +93,8 @@ export interface GameFlowOptions {
  * `pause` command (bind it to Esc / P) opens and closes the pause menu; the `start` command leaves
  * the title straight into play, which is what a capture or a drive runs to skip the menu; the
  * `menu.pane` command shows a menu's Controls, Settings or Credits pane, as choosing that verb does,
- * so a proof reads the credits through {@link menuPane}. Pair it with `GameFlowUI` from
+ * so a proof reads the credits through {@link menuPane}; the `settings.rebind` command binds an action
+ * to new keys (null restores the game's), as the Controls settings do. Pair it with `GameFlowUI` from
  * `@jgengine/core/menu/gameFlowMenus.view`.
  *
  * @capability game-flow title, play, pause and autosave checkpoints as one system, with newGame/continueGame/saveNow for menus
@@ -105,6 +108,12 @@ export function createGameFlowSystem(options: GameFlowOptions = {}): SystemDefin
       ctx.game.commands.define("pause", {
         apply(state) {
           togglePause(state);
+          return state;
+        },
+      });
+      ctx.game.commands.define<{ action: string; codes: ActionCodes | null }>("settings.rebind", {
+        apply(state, input) {
+          rebindAction(state, input.action, input.codes);
           return state;
         },
       });

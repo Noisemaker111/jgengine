@@ -5838,10 +5838,10 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/input/rebindSession",
+      "module": "@jgengine/core/game/controlGate",
       "gameFacing": false,
       "probe": null,
-      "intent": "conflict-aware key-remap session over the action-binding model — capture/reassign, conflict detection, reset-to-defaults, persist overrides, snapshot/restore"
+      "intent": "rebind a player action in the game itself, so menus, the shell and proofs all read the same keys"
     },
     {
       "id": "keybinding-menu",
