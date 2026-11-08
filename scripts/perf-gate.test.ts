@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type { PerfRecord } from "./perf-play";
-import { DEBUG_PORT_BASE, checkBudget, debugPortFor, gateVerdicts, loadBudget, parseGateArgs, type PerfBudget } from "./perf-gate";
+import { checkBudget, gateVerdicts, loadBudget, parseGateArgs, type PerfBudget } from "./perf-gate";
 import { frameVerdict, knownSlowAdded, parseKnownSlow, readKnownSlow, summarizeRecord, unjudgedFrameTime } from "./perf-budget";
 import { FRAME_GAMES } from "./ci-scope";
 
@@ -253,22 +253,6 @@ describe("parseGateArgs", () => {
     expect(() => parseGateArgs(["--games", "harbor-heat", "--set", "colorblind=grayscale"])).toThrow(
       /--set measures a setting on top of the defaults; budgets describe the default build/,
     );
-  });
-});
-
-describe("debugPortFor", () => {
-  test("gives every game in a run its own browser, never one shared by two", () => {
-    const ports = FRAME_GAMES.map((_game, index) => debugPortFor(index));
-    expect(new Set(ports).size).toBe(ports.length);
-    expect(ports).toEqual(FRAME_GAMES.map((_game, index) => DEBUG_PORT_BASE + index));
-  });
-
-  test("stays outside the band the warm Chrome uses, so two runs cannot attach to each other", () => {
-    for (let index = 0; index < FRAME_GAMES.length; index += 1) {
-      const port = debugPortFor(index);
-      expect(port).toBeGreaterThanOrEqual(9900);
-      expect(DEBUG_PORT_BASE).toBeGreaterThan(9899);
-    }
   });
 });
 

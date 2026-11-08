@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { ensureDevServer, killPid, killProcessTree, openPageSession, withBrowserSession } from "./browser-lib";
 import { FRAME_GAMES } from "./ci-scope";
 import { engineRecord, resolveEngineIdentity } from "./engineIdentity";
-import { debugPortFor, GATE_SIZE } from "./perf-gate";
+import { GATE_SIZE } from "./perf-gate";
 import { acquirePerfLock } from "./perf-lock";
 import { gameSessionDeadlineMs, GPU_WORK_SECONDS, gpuErrors, machineClause, measureGame, parseSettingSpec, type AllocationEntry, type PerfRecord, type ProfileNode, type RawProfile } from "./perf-play";
 import type { FrameBreakdownSummary, NamedCost } from "../packages/core/src/devtools/frameBreakdown";
@@ -118,12 +118,14 @@ export function profileLayerOf(node: Pick<ProfileNode, "callFrame">): string {
     if (functionName === "(idle)") return "idle";
     if (functionName === "(program)") return "browser (layout, paint, compositing, GPU process)";
     if (functionName === "(root)" || functionName === "") return "idle";
-    return "native calls (WebGL and DOM)";
+    return "native calls (WebGL, WebGPU and DOM)";
   }
   if (/three\.module|\/three\/|three-stdlib|postprocessing/.test(url)) return "three.js";
   if (/react-three|@react-three/.test(url)) return "react-three-fiber";
   if (/react-dom|react_dom|scheduler|\/react\b|react\.js|react_jsx/.test(url)) return "React";
   if (/\/games\/[^/]+\/src\//.test(url)) return "game code";
+  // The engine's WebGL-shaped WebGPU context, apart: its JS is what the WebGPU backend adds over WebGL.
+  if (/\/packages\/core\/src\/webgpu\//.test(url)) return "WebGPU context";
   if (/\/packages\/[^/]+\/src\//.test(url) || /\/src\//.test(url)) return "engine code";
   if (/\/node_modules\/|\/\.vite\/deps\//.test(url)) return "other dependencies";
   return "other scripts";
@@ -423,7 +425,7 @@ async function measureAll(args: FpsGapArgs, backend: RendererBackend, engine: Pe
         const exit = await withBrowserSession(
           // Frame window, profile window and the draw-timed GPU window.
           // The frame time is the product, so the browser draws at normal priority (scripts/perf.ts).
-          { keep: false, debugPort: debugPortFor(index), timeoutMs: 180_000, hardDeadlineMs: gameSessionDeadlineMs(WARMUP_MS, args.seconds * 2 + GPU_WORK_SECONDS), frameClock: "uncapped", chromePriority: "normal" },
+          { keep: false, timeoutMs: 180_000, hardDeadlineMs: gameSessionDeadlineMs(WARMUP_MS, args.seconds * 2 + GPU_WORK_SECONDS), frameClock: "uncapped", chromePriority: "normal" },
           async ({ debugPort }) => {
             const session = await openPageSession(debugPort);
             try {

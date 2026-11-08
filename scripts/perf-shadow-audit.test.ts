@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { auditVerdict, parseShadowAuditArgs, renderShadowAudit, type ShadowAuditRow } from "./perf-shadow-audit";
+import { auditPageProblem, auditVerdict, parseShadowAuditArgs, renderShadowAudit, type ShadowAuditRow } from "./perf-shadow-audit";
 
 const counters = (overrides: Record<string, number>) => ({ casters: 10, static: 8, full: 1, rebuild: 1, reuse: 5, hold: 20, auditMaps: 26, auditMismatchedMaps: 0, auditMismatchedTexels: 0, auditFailed: 0, ...overrides });
 
@@ -24,10 +24,24 @@ describe("auditVerdict", () => {
     for (const [row, verdict] of rows) expect(auditVerdict(row)).toBe(verdict as ReturnType<typeof auditVerdict>);
   });
 
+  test("passes skipped while readbacks were in flight neither fail nor pass a game on their own", () => {
+    expect(auditVerdict({ game: "a", counters: counters({ auditSkipped: 40 }), error: null })).toBe("identical");
+    expect(auditVerdict({ game: "a", counters: counters({ auditMaps: 0, auditSkipped: 40 }), error: null })).toBe("nothing compared");
+    expect(renderShadowAudit([{ game: "a", counters: counters({ auditSkipped: 40 }), error: null }])).toMatch(/skipped[\s\S]*\b40\b/);
+  });
+
   test("the table names a failed game's error in place of a verdict", () => {
     const table = renderShadowAudit([{ game: "fernwild", counters: null, error: "timed out" }]);
     expect(table).toContain("fernwild");
     expect(table).toContain("timed out");
+  });
+});
+
+describe("auditPageProblem", () => {
+  test("a page another backend drew cannot stand for the audit", () => {
+    expect(auditPageProblem("webgpu", "webgl")).toBe("asked for webgpu but webgl drew the page");
+    expect(auditPageProblem("webgpu", "webgpu")).toBeNull();
+    expect(auditPageProblem("webgl", undefined)).toBeNull();
   });
 });
 

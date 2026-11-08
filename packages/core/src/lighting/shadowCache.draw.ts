@@ -78,7 +78,20 @@ export interface ShadowCacheStats {
    */
   cpuMs: number;
   passes: Record<ShadowPassPlan, number>;
-  audit: { on: boolean; maps: number; mismatchedMaps: number; mismatchedTexels: number; /** Comparisons that did not run (the comparison shader wrote nothing). */ failed: number };
+  audit: {
+    on: boolean;
+    maps: number;
+    mismatchedMaps: number;
+    mismatchedTexels: number;
+    /** Comparisons that did not run (the comparison shader wrote nothing, or its program would not link). */
+    failed: number;
+    /**
+     * Cached passes left uncompared because {@link AUDIT_PENDING_MAX} comparisons were still waiting on
+     * their readback: the audit samples rather than queueing without bound (WebGPU's readbacks land
+     * several frames late). Nothing was compared, so they prove nothing either way.
+     */
+    skipped: number;
+  };
 }
 
 /** The page handle perf and audit scripts drive (`window.__jgShadowCache`). @internal */
@@ -723,7 +736,7 @@ function disposeTarget(target: THREE.WebGLRenderTarget | null): void {
 /** Side of the square of texels one comparison fragment counts, so the readback is 1/256 of the map. */
 const AUDIT_BLOCK = 16;
 
-/** Comparisons still waiting on the GPU at most; one more is counted as failed rather than queued. */
+/** Comparisons still waiting on the GPU at most; while this many are, a cached pass goes uncompared (counted as skipped). */
 const AUDIT_PENDING_MAX = 16;
 
 /** One comparison's readback, waiting on its fence. */
@@ -752,14 +765,18 @@ class DepthComparer {
   private pending: PendingComparison[] = [];
   private spare: WebGLBuffer[] = [];
 
+  /** Whether {@link AUDIT_PENDING_MAX} comparisons are still waiting on their readback, after taking every one that landed. */
+  busy(): boolean {
+    this.poll();
+    return this.pending.length >= AUDIT_PENDING_MAX;
+  }
+
   /**
    * Compare the two maps on the GPU and call `done` with the texels whose depth bits differ once the
    * result is back, or -1 when the comparison did not run. False when it could not start.
    */
   compare(renderer: THREE.WebGLRenderer, cached: THREE.DepthTexture, full: THREE.DepthTexture, width: number, height: number, done: (differing: number) => void): boolean {
     const gl = renderer.getContext() as WebGL2RenderingContext;
-    this.poll();
-    if (this.pending.length >= AUDIT_PENDING_MAX) return false;
     const handles = [cached, full].map((texture) => (renderer.properties.get(texture) as { __webglTexture?: WebGLTexture }).__webglTexture);
     const blocksX = Math.ceil(width / AUDIT_BLOCK);
     const blocksY = Math.ceil(height / AUDIT_BLOCK);
@@ -953,7 +970,7 @@ class ShadowCache {
   private readonly original: ShadowCacheRenderer["shadowMap"]["render"];
   private readonly wrapper: ShadowCacheRenderer["shadowMap"]["render"];
   private readonly passes: Record<ShadowPassPlan, number> = { full: 0, rebuild: 0, reuse: 0, hold: 0 };
-  private readonly auditStats = { maps: 0, mismatchedMaps: 0, mismatchedTexels: 0, failed: 0 };
+  private readonly auditStats = { maps: 0, mismatchedMaps: 0, mismatchedTexels: 0, failed: 0, skipped: 0 };
   private comparer: DepthComparer | null = null;
   private auditTarget: THREE.WebGLRenderTarget | null = null;
   private enabled = true;
@@ -1154,6 +1171,12 @@ class ShadowCache {
     const renderer = this.renderer as unknown as THREE.WebGLRenderer;
     if (typeof renderer.readRenderTargetPixels !== "function") return;
     const map = shadow.map;
+    this.comparer ??= new DepthComparer();
+    // Checked before the redraw, so a pass that cannot be compared costs no second draw.
+    if (this.comparer.busy()) {
+      this.auditStats.skipped += 1;
+      return;
+    }
     if (this.auditTarget === null || this.auditTarget.width !== map.width || this.auditTarget.height !== map.height) {
       disposeTarget(this.auditTarget);
       this.auditTarget = makeLayer(map);
@@ -1164,7 +1187,6 @@ class ShadowCache {
     } finally {
       shadow.map = map;
     }
-    this.comparer ??= new DepthComparer();
     const started = this.comparer.compare(renderer, map.depthTexture!, this.auditTarget.depthTexture!, map.width, map.height, (differing) => {
       if (differing < 0) {
         this.auditStats.failed += 1;
@@ -1218,6 +1240,7 @@ class ShadowCache {
         this.auditStats.mismatchedMaps = 0;
         this.auditStats.mismatchedTexels = 0;
         this.auditStats.failed = 0;
+        this.auditStats.skipped = 0;
       },
     };
   }

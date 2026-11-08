@@ -181,6 +181,7 @@ export function ConfiguredLighting({
           auditMismatchedMaps: stats.audit.mismatchedMaps,
           auditMismatchedTexels: stats.audit.mismatchedTexels,
           auditFailed: stats.audit.failed,
+          auditSkipped: stats.audit.skipped,
         };
       },
       state: () => {

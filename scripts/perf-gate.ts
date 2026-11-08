@@ -49,13 +49,6 @@ const DEFAULT_SECONDS = 6;
 const WARMUP_MS = 5_000;
 /** Games measured at once by default: one, since games sharing a GPU measure each other's frames. */
 export const DEFAULT_JOBS = 1;
-/**
- * Debug ports for the games in flight, one per slot. Above the 9200-9899 band
- * the warm Chrome uses, so two games in one run - or a game beside a warm
- * capture - can never attach to each other's browser.
- */
-export const DEBUG_PORT_BASE = 9910;
-
 export { checkBudget, loadBudget, type BudgetViolation, type LoadedBudget, type PerfBudget } from "./perf-budget";
 
 /** The viewport the gate measures at: the reference one, so a frame time is comparable with the budget. */
@@ -71,10 +64,6 @@ export interface GateArgs {
   jobs: number;
 }
 
-/** The debug port game `index` of a run measures through, unique per game. */
-export function debugPortFor(index: number): number {
-  return DEBUG_PORT_BASE + index;
-}
 
 export function parseGateArgs(argv: readonly string[]): GateArgs {
   let games: string[] = [...FRAME_GAMES];
@@ -187,7 +176,7 @@ async function main(): Promise<void> {
   const started: Awaited<ReturnType<typeof ensureDevServer>>[] = [];
   let rasterizerPrinted = false;
 
-  const measureOne = async (game: string, index: number): Promise<GameOutcome> => {
+  const measureOne = async (game: string): Promise<GameOutcome> => {
     const loaded = budgets.get(game)!;
     console.log(`perf gate: ${game} budget ${loaded.source}`);
     let outcome: GameOutcome = { game, summary: null, violations: [], error: null };
@@ -204,7 +193,7 @@ async function main(): Promise<void> {
     }
     if (server.pid !== undefined) started.push(server);
     const exitCode = await withBrowserSession(
-      { keep: false, debugPort: debugPortFor(index), timeoutMs: 180_000, hardDeadlineMs: gameSessionDeadlineMs(WARMUP_MS, seconds), frameClock: "uncapped", chromePriority: "normal" },
+      { keep: false, timeoutMs: 180_000, hardDeadlineMs: gameSessionDeadlineMs(WARMUP_MS, seconds), frameClock: "uncapped", chromePriority: "normal" },
       async ({ debugPort }) => {
         const session = await openPageSession(debugPort);
         try {
@@ -264,7 +253,7 @@ async function main(): Promise<void> {
       jobs,
       async ({ game, index }) => {
         try {
-          outcomes[index] = await measureOne(game, index);
+          outcomes[index] = await measureOne(game);
         } catch (error) {
           const reason = error instanceof Error ? error.message : String(error);
           const message = `perf gate: ${game} could not be measured — ${reason}`;
