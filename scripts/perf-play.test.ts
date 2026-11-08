@@ -101,6 +101,21 @@ test("whole-frame draws include extension calls once, even when the extension or
   expect(calls).toBe(2);
 });
 
+test("the draw counter counts the WebGPU context's draws, which no native prototype sees", () => {
+  const ticks: (() => void)[] = [];
+  const stats = { draws: 40 };
+  const scope: { __jgWebGpu?: { stats: typeof stats }; __jgPerfDraws?: { start(): void; stop(): number[] } } = {};
+  new Function("globalThis", "requestAnimationFrame", DRAW_FRAME_COUNTER_SCRIPT)(scope, (tick: () => void) => ticks.push(tick));
+  scope.__jgWebGpu = { stats };
+  ticks.shift()?.();
+  scope.__jgPerfDraws?.start();
+  stats.draws += 116;
+  ticks.shift()?.();
+  stats.draws += 120;
+  ticks.shift()?.();
+  expect(scope.__jgPerfDraws?.stop()).toEqual([116, 120]);
+});
+
 test("parsePerfArgs reads one game with its flags", () => {
   expect(parsePerfArgs(["harbor-heat"])).toEqual({
     kind: "run",
