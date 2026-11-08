@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, w
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
-import { GRASS_GAME_VIEWS, GRASS_REFERENCE_PHOTOS, GRASS_STYLE_TARGETS } from "../../../apps/dev/src/demo/grassReference";
+import { GRASS_GAME_VIEWS, GRASS_GAMES, GRASS_REFERENCE_PHOTOS, GRASS_STYLE_TARGETS } from "../../../apps/dev/src/demo/grassReference";
 import { GRASS_PRESETS } from "../../../packages/core/src/grass/grassKind";
 import { readStepFile, STEP_FILE_ENV } from "../../hangReport";
 import { BOARD_MORE_EXIT, boardShots, boardSource, coverResize, drawLabel, fitsBudget, labelWidth, parseBoardArgs, readManifest, runBoard, shotDifference, shotsToTake, type BoardDeps } from "./grassBoard";
@@ -31,14 +31,22 @@ describe("grass board", () => {
   test("the stylised targets are set by game views the board shoots", () => {
     const views = new Set(GRASS_GAME_VIEWS.map((view) => view.id));
     for (const target of GRASS_STYLE_TARGETS) for (const view of target.views) expect(views.has(view)).toBe(true);
-    expect(GRASS_GAME_VIEWS).toHaveLength(18);
+  });
+
+  test("game views are one per grass game, each from the game's own player camera", () => {
+    expect(GRASS_GAME_VIEWS.map((view) => view.game).sort()).toEqual([...GRASS_GAMES].sort());
+    const shots = boardShots(parseBoardArgs(["--views"])).filter((shot) => shot.file.startsWith("views/"));
+    expect(shots).toHaveLength(GRASS_GAMES.length);
+    // A detached camera (--look / --look-from) frames an angle players never see.
+    for (const shot of shots) expect(shot.argv.some((arg) => arg.startsWith("--look"))).toBe(false);
   });
 
   test("a plain board shoots the photo views as they are and the stylised targets' game views", () => {
     const shots = boardShots(parseBoardArgs([]));
     expect(shots.filter((shot) => shot.file.startsWith("ref/")).map((shot) => shot.file)).toEqual(GRASS_REFERENCE_PHOTOS.map((photo) => `ref/${photo.id}-today.png`));
-    expect(shots.filter((shot) => shot.file.startsWith("views/")).map((shot) => shot.file)).toEqual(["views/hh-park.png", "views/hh-park-low.png", "views/bb-moor.png", "views/bb-moor-low.png"]);
-    expect(shots.find((shot) => shot.file === "views/hh-park.png")?.argv).toEqual(["harbor-heat", "--mode", "play", "--look", "0,60", "--look-from", "12,2.2,0.6"]);
+    expect(shots.filter((shot) => shot.file.startsWith("views/")).map((shot) => shot.file)).toEqual(["views/hh-park.png", "views/bb-map.png"]);
+    expect(shots.find((shot) => shot.file === "views/hh-park.png")?.argv).toEqual(["harbor-heat", "--mode", "play", "--spawn", "0,2,60"]);
+    expect(shots.find((shot) => shot.file === "views/bb-map.png")?.argv).toEqual(["beacon-bastion", "--mode", "play"]);
   });
 
   test("realism levels each reshoot the photo views with the level as a page parameter", () => {
@@ -47,9 +55,9 @@ describe("grass board", () => {
     expect(shots[1]!.argv).toEqual(["grass-reference", "--mode", "play", "--view", "ref-pasture", "--param", "realism=0.5"]);
   });
 
-  test("--views and --species add the 18 game views and a look and close shot per species", () => {
+  test("--views and --species add the game views and a look and close shot per species", () => {
     const shots = boardShots(parseBoardArgs(["--views", "--species"]));
-    expect(shots.filter((shot) => shot.file.startsWith("views/"))).toHaveLength(18);
+    expect(shots.filter((shot) => shot.file.startsWith("views/"))).toHaveLength(GRASS_GAME_VIEWS.length);
     expect(shots.filter((shot) => shot.file.startsWith("species/"))).toHaveLength(GRASS_PRESETS.length * 2);
   });
 
