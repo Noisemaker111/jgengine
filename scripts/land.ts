@@ -892,7 +892,11 @@ export function syncOntoBase(options: {
   }
   if (count === 0) return { rebased: false, refusal: null };
   // Behind but mergeable: the merge commit GitHub makes is what beta's own CI then checks.
-  if (runGit(["merge-tree", "--write-tree", "--quiet", "HEAD", `origin/${base}`]).status === 0) return { rebased: false, refusal: null };
+  // `merge-tree --write-tree` answers 0 for a clean merge and 1 for a conflict; any other answer is a
+  // git older than 2.38, which cannot tell, so the branch is rebased as it was before this check.
+  const merge = runGit(["merge-tree", "--write-tree", "--quiet", "HEAD", `origin/${base}`]);
+  if (merge.status === 0) return { rebased: false, refusal: null };
+  if (merge.status !== 1) console.log(`degraded: git cannot test the merge (${details(merge)}); rebasing onto origin/${base}`);
 
   // Generated files (api.md, the export manifest, capabilities.json) and the lane's change note
   // never stop a landing: they are resolved here and regenerated on the merged source.

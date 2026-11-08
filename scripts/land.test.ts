@@ -412,6 +412,11 @@ test("a task branch behind a beta that moved without a conflict is pushed as it 
   expect(gitOk(work, ["rev-list", "--count", "HEAD..origin/beta"])).toBe("0");
 
   const sync = syncOntoBase({ branch: "agent/behind", base: "beta", git: (args) => gitIn(work, args) });
+  // A git before 2.38 cannot test a merge and rebases as land did before (boat's machines, 8 Nov).
+  if (gitIn(work, ["merge-tree", "--write-tree", "--quiet", "HEAD", "HEAD"]).status !== 0) {
+    expect(sync).toEqual({ rebased: true, refusal: null });
+    return;
+  }
   expect(sync).toEqual({ rebased: false, refusal: null });
 
   const remoteTip = gitOk(bare, ["rev-parse", "refs/heads/agent/behind"]);
