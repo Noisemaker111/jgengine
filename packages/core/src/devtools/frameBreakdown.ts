@@ -371,9 +371,9 @@ function namedCosts(frames: readonly Record<string, number>[], top: number): Nam
  * @internal
  */
 export function hitchCause(record: FrameBreakdownRecord): Pick<Hitch, "cause" | "detail"> {
+  const which = record.shaders !== undefined && record.shaders.length > 0 ? ` for ${record.shaders.slice(0, 3).join(", ")}` : "";
   if (record.compileMs >= 2) {
     const what = record.compiles > 0 ? `${record.compiles} shader program(s) compiled` : "waited on shader programs at first use";
-    const which = record.shaders !== undefined && record.shaders.length > 0 ? ` for ${record.shaders.slice(0, 3).join(", ")}` : "";
     return { cause: "compile", detail: `${what}, ${round(record.compileMs, 1)} ms${which}` };
   }
   if (record.uploadMs >= 4 || record.uploadBytes >= 4 * 1024 * 1024) {
@@ -387,7 +387,7 @@ export function hitchCause(record: FrameBreakdownRecord): Pick<Hitch, "cause" | 
   const share = record.intervalMs / 4;
   if (systemMs >= 8 && systemMs >= passMs && systemMs >= share) return { cause: "system", detail: `${system} ${round(systemMs, 1)} ms on the CPU` };
   if (passMs >= 8 && passMs >= share) return { cause: "gpu", detail: `${pass} ${round(passMs, 1)} ms on the GPU` };
-  if (record.compiles > 0) return { cause: "compile", detail: `${record.compiles} shader program(s) linked` };
+  if (record.compiles > 0) return { cause: "compile", detail: `${record.compiles} shader program(s) linked${which}` };
   const largest = Math.max(systemMs, passMs) >= 8 ? `; the largest game cost was ${systemMs >= passMs ? `${system} ${round(systemMs, 1)} ms on the CPU` : `${pass} ${round(passMs, 1)} ms on the GPU`}` : "";
   return { cause: "other", detail: `${round(record.intervalMs - record.workMs, 1)} ms outside the game's frame work (browser, compositor, OS)${largest}` };
 }

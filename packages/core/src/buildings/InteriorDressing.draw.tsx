@@ -6,7 +6,7 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 import { nearestFixtures, type InteriorDecal, type InteriorDecalStyle, type InteriorDressingPlan, type InteriorFixture } from "@jgengine/core/world/interiorDressing";
 
 import type { AuthoredSurfaceConfig } from "@jgengine/core/material/authoredSurfaceMaterial.draw";
-import { createDecalTexture } from "@jgengine/core/scene/decalTexture";
+import { useDecalTexture } from "@jgengine/core/scene/useDecalTexture.draw";
 import { hashUnit } from "@jgengine/core/random/rng";
 import { StaticShapeInstances, type StaticShapeInstance } from "@jgengine/core/instancing/staticShapeInstances.draw";
 import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
@@ -144,16 +144,12 @@ export function writeInteriorDecals(mesh: THREE.InstancedMesh, decals: readonly 
 function DecalStyleBatch({ style, decals, seed }: { style: InteriorDecalStyle; decals: readonly InteriorDecal[]; seed: string }) {
   const ref = useRef<THREE.InstancedMesh>(null);
   const geometry = useDisposable(() => new THREE.PlaneGeometry(1, 1), []);
-  const texture = useDisposable(() => {
-    const { size, data } = createDecalTexture(style, `${seed}:${style}`);
-    const map = new THREE.DataTexture(data, size, size, THREE.RGBAFormat);
+  const texture = useDecalTexture(style, `${seed}:${style}`, 128, {}, (map) => {
     map.colorSpace = THREE.SRGBColorSpace;
     map.magFilter = THREE.LinearFilter;
     map.minFilter = THREE.LinearMipmapLinearFilter;
     map.generateMipmaps = true;
-    map.needsUpdate = true;
-    return map;
-  }, [style, seed]);
+  });
   const material = useDisposable(() => {
     // Instance colour carries each stain's opacity; the alpha map is the coverage.
     const wet = style === "wet";

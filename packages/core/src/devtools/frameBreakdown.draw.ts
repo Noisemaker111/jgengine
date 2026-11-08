@@ -423,6 +423,7 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     }
     const start = performance.now();
     const compiledBefore = current?.compileMs ?? 0;
+    const linkedBefore = current?.compiles ?? 0;
     try {
       return original(camera, scene, geometry, material, object, group);
     } finally {
@@ -437,8 +438,10 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
       const materialName = labelFor(materialLabels, material, labelOf, "material");
       tally(objects, objectName, triangles, ms, pass);
       tally(materials, materialName, triangles, ms, pass);
-      // This draw built or first used a program: name it, so a compile hitch says what to warm up.
-      if (current !== null && current.compileMs - compiledBefore >= 1) {
+      // This draw built or first used a program: name it, and the pass that drew it, so a compile
+      // hitch says what to warm up. A link the driver finished off the main thread still counts: the
+      // GPU process builds it before the frame can show, so "1 program linked" needs a name too.
+      if (current !== null && (current.compileMs - compiledBefore >= 1 || current.compiles > linkedBefore)) {
         const shaders = current.shaders ??= [];
         const variant = recompiledFor(material);
         // Every compile re-reads the lights (compiles are rare), so a new place's first materials keep
@@ -447,7 +450,8 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
         if (change !== null) untoldLights = change;
         const lights = variant !== null && variant.includes("light") ? untoldLights : null;
         if (lights !== null) untoldLights = null;
-        if (shaders.length < FRAME_RETENTION_LIMIT) shaders.push(`${materialName} on ${objectName}${variant === null ? "" : ` (recompiled: ${variant}${lights === null ? "" : `; lights ${lights}`})`}`);
+        const where = pass === "main" ? "" : ` [${pass}]`;
+        if (shaders.length < FRAME_RETENTION_LIMIT) shaders.push(`${materialName} on ${objectName}${where}${variant === null ? "" : ` (recompiled: ${variant}${lights === null ? "" : `; lights ${lights}`})`}`);
         else retention.shaders += 1;
       }
     }

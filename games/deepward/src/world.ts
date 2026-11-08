@@ -210,13 +210,24 @@ export function inside(x: number, z: number, r: { x: number; z: number; w: numbe
   return Math.abs(x - r.x) < r.w / 2 && Math.abs(z - r.z) < r.d / 2;
 }
 export function floorAt(x: number, z: number, place: Place): boolean {
-  return ROOMS.some(r => r.place === place && inside(x, z, r));
+  for (const r of ROOMS) if (r.place === place && inside(x, z, r)) return true;
+  return false;
 }
+/** `inside` the footprint grown by `radius` on every side. */
+function insideGrown(x: number, z: number, r: { x: number; z: number; w: number; d: number }, radius: number): boolean {
+  return Math.abs(x - r.x) < (r.w + radius * 2) / 2 && Math.abs(z - r.z) < (r.d + radius * 2) / 2;
+}
+/**
+ * Whether a body of `radius` can stand here. Movement, routes, sight lines and the AI ask it tens of
+ * thousands of times a second, so it builds nothing: its arrays and grown copies of every solid
+ * were 23 MB of garbage a second of play, and the collections that cleared them froze frames.
+ */
 export function walkable(x: number, z: number, place: Place, radius = 0.28): boolean {
-  if (![[radius, radius], [-radius, radius], [radius, -radius], [-radius, -radius]].every(([dx, dz]) => floorAt(x + dx!, z + dz!, place))) return false;
-  if (STATION_SOLIDS.some(r => r.place === place && inside(x, z, { ...r, w: r.w + radius * 2, d: r.d + radius * 2 }))) return false;
-  if (clutterAt(place).some(r => inside(x, z, { ...r, w: r.w + radius * 2, d: r.d + radius * 2 }))) return false;
-  return place !== "vault" || !PROPS.some(r => inside(x, z, { ...r, w: r.w + radius * 2, d: r.d + radius * 2 }));
+  if (!floorAt(x + radius, z + radius, place) || !floorAt(x - radius, z + radius, place) || !floorAt(x + radius, z - radius, place) || !floorAt(x - radius, z - radius, place)) return false;
+  for (const r of STATION_SOLIDS) if (r.place === place && insideGrown(x, z, r, radius)) return false;
+  for (const r of clutterAt(place)) if (insideGrown(x, z, r, radius)) return false;
+  if (place === "vault") for (const r of PROPS) if (insideGrown(x, z, r, radius)) return false;
+  return true;
 }
 /** Segment checks cover interior walls and machinery, also used for firing and looting. */
 export function lineOfSight(a: Point, b: Point, place: Place = "vault"): boolean {

@@ -147,6 +147,13 @@ export function buildBrowserFixture(entry: string): string {
  */
 const HARDWARE_GPU_ARGS = ["--ignore-gpu-blocklist", "--enable-webgpu-developer-features"];
 
+/**
+ * `performance.memory` reports the exact heap on every read instead of a bucketed, cached figure,
+ * so the frame breakdown sees a collection in the frame it happened and its hitch reads "gc"
+ * rather than "other". The desktop harness passes it to WebView2 too.
+ */
+export const PRECISE_HEAP_ARG = "--enable-precise-memory-info";
+
 /** Native GPU locally; deterministic software GL only when explicitly requested or in CI. */
 export function chromeGraphicsArgs(
   env: NodeJS.ProcessEnv = process.env,
@@ -1490,6 +1497,7 @@ export function launchChrome(
       "--disable-default-apps",
       "--mute-audio",
       "--hide-scrollbars",
+      PRECISE_HEAP_ARG,
       "--no-sandbox",
       "--disable-dev-shm-usage",
       "about:blank",
@@ -1540,6 +1548,7 @@ export function launchPersistentChrome(
     "--disable-default-apps",
     "--mute-audio",
     "--hide-scrollbars",
+    PRECISE_HEAP_ARG,
     ...chromeGraphicsArgs(),
     "--no-sandbox",
     "--disable-dev-shm-usage",

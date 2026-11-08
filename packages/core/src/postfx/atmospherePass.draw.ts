@@ -248,6 +248,8 @@ export class AtmospherePass extends Pass {
   private readonly quad: FullScreenQuad;
   private readonly applyQuad: FullScreenQuad;
   private light: THREE.DirectionalLight | null = null;
+  /** A dry run (the shader warmup's) draws even outdoors with no sun yet, so the programs link off the frame. */
+  dry = false;
   private lamps: HazeLamp[] = [];
   private framesSinceScan = LIGHT_RESCAN_FRAMES;
   private frame = 0;
@@ -344,7 +346,7 @@ export class AtmospherePass extends Pass {
 
   override render(renderer: THREE.WebGLRenderer, _writeBuffer: THREE.WebGLRenderTarget, readBuffer: THREE.WebGLRenderTarget): void {
     const light = this.keyLight();
-    if (light === null && !this.indoor) return;
+    if (light === null && !this.indoor && !this.dry) return;
     const uniforms = this.material.uniforms;
     // No sun indoors: the haze and the lamp glow still run, the shafts and the sun's warmth do not.
     const sun = light === null ? (uniforms["uSunDirection"]!.value as THREE.Vector3).set(0, 1, 0) : towardLight(light, uniforms["uSunDirection"]!.value as THREE.Vector3);

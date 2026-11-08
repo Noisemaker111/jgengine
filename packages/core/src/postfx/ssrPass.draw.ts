@@ -195,6 +195,14 @@ export class SsrPass extends Pass {
   private framesSinceScan = GLOSS_RESCAN_FRAMES;
   private frame = 0;
   private readonly maxRoughness: number;
+  /**
+   * A dry run (the shader warmup's) draws the mask and the march even with nothing glossy in view,
+   * so both programs link off the frame. Without it the first glossy floor to come into view linked
+   * them mid-play: a 120 ms freeze in the browser and 240 ms in the desktop app.
+   */
+  dry = false;
+  /** Drawn into the mask on a dry run: no glossy surface needs to exist for its program to link. */
+  private readonly standIn = new THREE.Mesh(new THREE.BufferGeometry().setAttribute("position", new THREE.Float32BufferAttribute(new Float32Array(9), 3)));
 
   constructor(
     private readonly scene: THREE.Scene,
@@ -272,6 +280,7 @@ export class SsrPass extends Pass {
       proxy.mesh.matrixWorld.copy(mesh.matrixWorld);
       this.maskScene.add(proxy.mesh);
     }
+    if (this.dry) this.maskScene.add(this.proxyFor(this.standIn).mesh);
     const clearColor = renderer.getClearColor(maskClear);
     const clearAlpha = renderer.getClearAlpha();
     renderer.setRenderTarget(this.mask);
@@ -290,6 +299,7 @@ export class SsrPass extends Pass {
   }
 
   override render(renderer: THREE.WebGLRenderer, writeBuffer: THREE.WebGLRenderTarget, readBuffer: THREE.WebGLRenderTarget): void {
+    // A dry run's stand-in is in the mask, so it marches too.
     if (!this.drawMask(renderer)) {
       // Nothing glossy in view: pass the frame through untouched instead of marching every pixel.
       this.needsSwap = false;
@@ -314,5 +324,6 @@ export class SsrPass extends Pass {
     for (const material of this.materials) material.dispose();
     this.materials.clear();
     this.maskScene.clear();
+    this.standIn.geometry.dispose();
   }
 }

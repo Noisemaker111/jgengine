@@ -54,9 +54,16 @@ export const STENCIL_GLYPHS: Readonly<Record<string, string>> = {
   "-": "00000000000000011111000000000000000", "/": "00001000010001000100010001000010000", ".": "00000000000000000000000000110001100",
 };
 
-/** Paint coverage of the stencil text at (u, v) in `0..1` texture space; 0 outside the lettering. */
-function stencilCoverage(text: string, u: number, v: number): number {
-  const chars = [...text.toUpperCase()].filter((char) => char === " " || STENCIL_GLYPHS[char] !== undefined);
+/** The characters of a stencil's text it can paint: known glyphs and spaces, upper-cased. */
+function stencilChars(text: string): string[] {
+  return [...text.toUpperCase()].filter((char) => char === " " || STENCIL_GLYPHS[char] !== undefined);
+}
+
+/**
+ * Paint coverage of the stencil lettering at (u, v) in `0..1` texture space; 0 outside it. Takes the
+ * text already split by {@link stencilChars}: splitting it per pixel was 16 MB of garbage a texture.
+ */
+function stencilCoverage(chars: readonly string[], u: number, v: number): number {
   if (chars.length === 0) return 0;
   const cell = Math.min(0.9 / (chars.length * 6 - 1), 0.16);
   const width = (chars.length * 6 - 1) * cell, height = 7 * cell;
@@ -73,13 +80,67 @@ function smoothstep(edge0: number, edge1: number, x: number): number {
   return t * t * (3 - 2 * t);
 }
 
+/** The paint a stencil or chevron decal is sprayed in. */
+export interface DecalPaint {
+  text?: string | undefined;
+  color?: string | undefined;
+}
+
+/** Baked decals kept for the next mount of the same look, newest last; capped by {@link BAKED_CACHE_BYTES}. */
+const bakedDecals = new Map<string, DecalTextureData>();
+let bakedBytes = 0;
+/** About 120 256-pixel stencils or 500 128-pixel stains: every look a floor or two shows. */
+const BAKED_CACHE_BYTES = 32 * 1024 * 1024;
+
+/** The cache key of one decal look. @internal */
+export function decalKey(style: DecalStyle, seed: string, size: number, paint: DecalPaint): string {
+  return `${style}\u0000${seed}\u0000${size}\u0000${paint.text ?? ""}\u0000${paint.color ?? ""}`;
+}
+
+/** The bytes of a look baked before, or undefined. @internal */
+export function knownDecal(key: string): DecalTextureData | undefined {
+  const known = bakedDecals.get(key);
+  if (known === undefined) return undefined;
+  bakedDecals.delete(key);
+  bakedDecals.set(key, known);
+  return known;
+}
+
+/** Keep a look's bytes for its next mount, dropping the longest-unused looks past the cap. @internal */
+export function keepDecal(key: string, baked: DecalTextureData): void {
+  if (bakedDecals.has(key)) return;
+  bakedDecals.set(key, baked);
+  bakedBytes += baked.data.byteLength;
+  for (const [oldest, entry] of bakedDecals) {
+    if (bakedBytes <= BAKED_CACHE_BYTES || oldest === key) break;
+    bakedDecals.delete(oldest);
+    bakedBytes -= entry.data.byteLength;
+  }
+}
+
 /**
  * The deterministic procedural texture behind one decal style. Same style+seed always bakes the
  * same bytes; the renderer uploads it once as a `DataTexture`, so no scan is pulled and no game
  * ships stain art it cannot inspect. Alpha is the coverage; colour is the stain itself.
+ *
+ * A look baked before is handed back as the same bytes rather than baked again: a place that is
+ * left and re-entered (a dive floor, a lift ride back) used to re-bake every decal on the main
+ * thread as it mounted. Callers only read the bytes. A component should bake through
+ * `useDecalTexture` instead, which bakes on a worker: a 256-pixel stencil is ~13 ms of main thread.
  * @internal
  */
-export function createDecalTexture(style: DecalStyle, seed: string, size = 128, paint: { text?: string; color?: string } = {}): DecalTextureData {
+export function createDecalTexture(style: DecalStyle, seed: string, size = 128, paint: DecalPaint = {}): DecalTextureData {
+  const key = decalKey(style, seed, size, paint);
+  const known = knownDecal(key);
+  if (known !== undefined) return known;
+  const baked = bakeDecalTexture(style, seed, size, paint);
+  keepDecal(key, baked);
+  return baked;
+}
+
+/** Bake one look, uncached: what a worker runs. @internal */
+export function bakeDecalTexture(style: DecalStyle, seed: string, size: number, paint: DecalPaint): DecalTextureData {
+  const lettering = style === "stencil" ? stencilChars(paint.text || "00") : [];
   const hexPaint = paint.color ?? "";
   const channel = (i: number): number => parseInt(hexPaint.slice(i, i + 2), 16) / 255;
   const rgb: readonly [number, number, number] = /^#[0-9a-f]{6}$/i.test(hexPaint) ? [channel(1), channel(3), channel(5)] : [0.88, 0.69, 0.25];
@@ -211,13 +272,15 @@ export function createDecalTexture(style: DecalStyle, seed: string, size = 128, 
         // Sprayed paint through a stencil: lettering or a band of arrowheads, flaked where it has worn.
         const wear = smoothstep(0.3, 0.55, fbm(u * 16 + 2.2, v * 16 - 6.1, seedNumber + 31));
         let coverage = 0;
-        if (style === "stencil") coverage = stencilCoverage(paint.text || "00", x / size, 1 - (y + 0.5) / size);
+        if (style === "stencil") coverage = stencilCoverage(lettering, x / size, 1 - (y + 0.5) / size);
         else {
           const row = (v + 0.5) * 3, local = row - Math.floor(row), arrow = Math.abs(u) * 1.2 + (1 - local) * 0.5;
           coverage = Math.abs(u) < 0.45 && arrow > 0.2 && arrow < 0.52 ? 1 : 0;
         }
         alpha = coverage * (0.45 + wear * 0.55);
-        [red, green, blue] = rgb;
+        red = rgb[0];
+        green = rgb[1];
+        blue = rgb[2];
       } else if (style === "hazard") {
         // A painted border of diagonal yellow-and-black bands, scuffed through where boots wear it.
         const edge = Math.max(Math.abs(u), Math.abs(v));

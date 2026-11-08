@@ -3,7 +3,7 @@ import { closeSync, existsSync, mkdirSync, mkdtempSync, openSync, readdirSync, r
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { CdpSession, removeProfileDir } from "./browser-lib";
+import { CdpSession, PRECISE_HEAP_ARG, removeProfileDir } from "./browser-lib";
 import { createBrowserFlow } from "./browserFlow";
 import { FRAME_GAMES } from "./ci-scope";
 import { flowsDirOf, loadFlow } from "./driveFlows";
@@ -190,7 +190,7 @@ async function withLaunchedScene<T>(args: LaunchArgs, backend: RendererBackend, 
   if (process.platform !== "win32") throw new Error("--launch measures a Windows (WebView2) desktop build");
   if (!existsSync(args.exe)) throw new Error(`no desktop app at ${args.exe}; build one with: bun run jgengine desktop games/<id> --diagnostics --no-installer`);
   // Muted: a measurement launch shares the PC with whoever is at it, and plays nothing worth hearing.
-  const env = { ...process.env, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${args.port} --mute-audio`, ...(profile === null ? {} : { WEBVIEW2_USER_DATA_FOLDER: profile }) };
+  const env = { ...process.env, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${args.port} --mute-audio ${PRECISE_HEAP_ARG}`, ...(profile === null ? {} : { WEBVIEW2_USER_DATA_FOLDER: profile }) };
   const child = spawn(args.exe, args.uncapped ? ["--uncapped"] : [], { env, stdio: "ignore" });
   try {
     let target: Target | undefined;

@@ -78,6 +78,7 @@ import { parseDriveArgs, projectDirOf, DRIVE_HELP } from "./driveArgs";
 import { LockstepRecorder } from "./driveLockstep";
 import { readHitchSession, renderHitchSession, resetBreakdown } from "./perf-breakdown";
 import { installPageRenderCounter, readRenderCounts, renderRenderCounts, resetRenderCounter } from "./perf-renders";
+import { aggregateAllocations, type HeapSampleNode } from "./perf-play";
 
 type Step = CaptureStep;
 
@@ -373,6 +374,12 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
         if (args.renders && !(await resetRenderCounter(session))) {
           throw new Error("drive: --renders found no render counter on the page; another React DevTools hook was installed first");
         }
+        const allocationsFrom = Date.now();
+        if (args.allocations) {
+          await session.send("HeapProfiler.enable");
+          // Collected objects are the garbage itself; without these flags only survivors are counted.
+          await session.send("HeapProfiler.startSampling", { samplingInterval: 16_384, includeObjectsCollectedByMajorGC: true, includeObjectsCollectedByMinorGC: true });
+        }
 
         let recorder: LockstepRecorder | null = null;
         if (lockstep) {
@@ -553,6 +560,14 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
           writeFileSync(out, JSON.stringify(counts, null, 2));
           console.log(renderRenderCounts(counts, `renders ${args.game}-${args.flow ?? "drive"}`));
           console.log(`render record: ${out}`);
+        }
+        if (args.allocations) {
+          const heap = await session.send("HeapProfiler.stopSampling");
+          const head = (heap["profile"] as { head?: HeapSampleNode } | undefined)?.head;
+          if (head === undefined) throw new Error("drive: --allocations got no heap profile back from the page");
+          const seconds = (Date.now() - allocationsFrom) / 1000;
+          console.log(`allocations ${args.game}-${args.flow ?? "drive"} over ${seconds.toFixed(1)} s, per second of play (sampled):`);
+          for (const entry of aggregateAllocations(head, seconds * 1000, 25)) console.log(`  ${entry.mbPerSecond.toFixed(2).padStart(7)} MB/s  ${entry.fn}  ${entry.at}`);
         }
 
         if (recorder !== null) {
