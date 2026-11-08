@@ -5,6 +5,7 @@ import type { AtmosphereConfig } from "@jgengine/core/render/postProcessing";
 
 import { windClock, windDirection, windGust } from "@jgengine/core/model/modelWind.draw";
 import { findKeyLight, towardLight } from "./contactShadowPass.draw";
+import { HALF_ROUNDING_GLSL } from "./halfPrecision.draw";
 import { visitVisible } from "@jgengine/core/visibility/visitVisible.draw";
 
 const vertexShader = /* glsl */ `
@@ -20,8 +21,9 @@ const vertexShader = /* glsl */ `
  * rgb and the haze cover in alpha, blended straight over the frame.
  * @internal
  */
-export function atmosphereFragment(steps: number, variationTaps = 0): string {
+export function atmosphereFragment(steps: number, variationTaps = 0, truncated = true): string {
   return /* glsl */ `
+  ${truncated ? HALF_ROUNDING_GLSL : ""}
   uniform sampler2D tDepth;
   uniform mat4 uProjectionInverse;
   uniform mat4 uCameraWorld;
@@ -165,7 +167,9 @@ export function atmosphereFragment(steps: number, variationTaps = 0): string {
       // Isotropic phase (1 / 4pi); the strength knob lets a game push a smoky interior further.
       glow *= uLampStrength * 0.0796;
     }
-    gl_FragColor = vec4(haze * cover + shafts + glow, cover);
+    // Truncated as the half-float target it once drew into truncated it: the blend reads a wider
+    // source than that target held, which moved a few texels a frame by one half-float step.
+    gl_FragColor = ${truncated ? "rtz16(vec4(haze * cover + shafts + glow, cover))" : "vec4(haze * cover + shafts + glow, cover)"};
   }
 `;
 }
@@ -229,14 +233,18 @@ export function sunShaftVisibility(uv: { x: number; y: number }, inFront: boolea
  * Sunlit air over the lit HDR frame: exponential height haze that fades distant ground into the sky
  * and brightens toward the sun, plus screen-space shafts where the sky shows through gaps. It reads
  * the beauty depth, which the composer's buffers never carry, so the march blends over the frame in
- * one draw. A half-float target of its own plus a second blended draw gives the same bits: the blend
- * unit truncates its source to half precision exactly as writing that target did (measured on the
- * RTX 3070), so the extra full-screen write and read bought nothing. With no shadow-casting sun it is skipped, unless the
- * config is `indoor`: then the shafts drop out and the haze and lamp glow keep running.
+ * one draw. It used to march into a half-float target of its own and blend that over the frame; the
+ * march now truncates its output the way that target write did (`rtz16`), so the blend sees the same
+ * source bits without the extra full-screen write and read (`bun run perf post-audit` checks it).
+ * With no shadow-casting sun it is skipped, unless the config is `indoor`: then the shafts drop out
+ * and the haze and lamp glow keep running.
  * @internal
  */
 export class AtmospherePass extends Pass {
   readonly material: THREE.ShaderMaterial;
+  /** The march's step and variation-tap counts, so the post audit can build the unrounded march to compare with. */
+  readonly marchSteps: number;
+  readonly marchTaps: number;
   private readonly quad: FullScreenQuad;
   private light: THREE.DirectionalLight | null = null;
   /** A dry run (the shader warmup's) draws even outdoors with no sun yet, so the programs link off the frame. */
@@ -264,6 +272,8 @@ export class AtmospherePass extends Pass {
     this.indoor = settings.indoor;
     this.tint = settings.color === "" ? null : new THREE.Color(settings.color);
     this.drift = settings.drift;
+    this.marchSteps = Math.max(1, steps);
+    this.marchTaps = settings.variation > 0 ? variationTaps : 0;
     this.material = new THREE.ShaderMaterial({
       uniforms: {
         tDepth: { value: depth },
@@ -294,7 +304,7 @@ export class AtmospherePass extends Pass {
         uDrift: { value: this.driftOffset },
       },
       vertexShader,
-      fragmentShader: atmosphereFragment(Math.max(1, steps), settings.variation > 0 ? variationTaps : 0),
+      fragmentShader: atmosphereFragment(this.marchSteps, this.marchTaps),
       depthTest: false,
       depthWrite: false,
       transparent: true,

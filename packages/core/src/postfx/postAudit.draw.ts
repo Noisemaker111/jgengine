@@ -4,7 +4,7 @@ import { FullScreenQuad } from "three/examples/jsm/postprocessing/Pass.js";
 import { GTAOPass } from "three/examples/jsm/postprocessing/GTAOPass.js";
 import { drawsHeld } from "../render/shaderWarmup.draw";
 import { TextureComparer } from "../render/textureComparer.draw";
-import { AtmospherePass } from "./atmospherePass.draw";
+import { AtmospherePass, atmosphereFragment } from "./atmospherePass.draw";
 import { BeautyPass } from "./beautyPass.draw";
 import { BloomPass } from "./bloomPass.draw";
 import { POST_AUDIT_CHECKS, type PostAuditCheck } from "./postAuditChecks";
@@ -71,7 +71,9 @@ type Quad = { material: THREE.Material | null; render(renderer: THREE.WebGLRende
  * - `atmosphere`: the march blended straight over a frame against the march into its own half-float
  *   target and a second blended draw;
  * - `bloom`: `BloomPass` against three-stdlib's `UnrealBloomPass` with the same settings.
- * The atmosphere and bloom start from this frame's beauty image, the HDR scene they draw over.
+ * The atmosphere starts from this frame's beauty image, the HDR scene it draws over; bloom from a copy
+ * of the very frame it read (its input tap), so a chain with no beauty pass is checked too. The
+ * atmosphere's reference is the march as it was, without the output truncation it now does itself.
  * A frame on which any program either way was still linking is dropped: the engine holds a draw whose
  * program is not ready, which would leave its target as it was. Nothing it draws reaches the screen.
  * @internal
@@ -100,9 +102,34 @@ export class PostAudit {
   private readonly triangle: Quad & { dispose(): void } = new FullScreenQuad();
   private readonly half = [0, 1, 2].map(() => new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, depthBuffer: false }));
   private bloom: UnrealBloomPass | null = null;
+  /** The atmosphere march as it was before it truncated its own output, sharing the pass's uniforms. */
+  private march: { pass: AtmospherePass; material: THREE.ShaderMaterial } | null = null;
+  /** What bloom read on the frame being audited, and whether that copy is this frame's and complete. */
+  private readonly bloomInput = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, depthBuffer: false });
+  private bloomInputFresh = false;
   private frame = 0;
 
   constructor(private readonly auditing: boolean) {}
+
+  /** Bloom's input tap: on a frame about to be audited, copy the frame bloom reads, before it draws. */
+  private copyBloomInput(renderer: THREE.WebGLRenderer, input: THREE.WebGLRenderTarget): void {
+    // afterFrame audits when this count is a multiple of AUDIT_EVERY, and counts the frame after this draw.
+    if (this.frame % AUDIT_EVERY !== 0) return;
+    const { width, height } = input;
+    if (this.bloomInput.width !== width || this.bloomInput.height !== height) this.bloomInput.setSize(width, height);
+    const previous = renderer.getRenderTarget();
+    const autoClear = renderer.autoClear;
+    const program = (renderer.properties.get(this.copyMaterial) as { currentProgram?: Program }).currentProgram;
+    const renders = renderer.info.render.frame;
+    this.copyMaterial.uniforms["tSource"]!.value = input.texture;
+    this.plane.material = this.copyMaterial;
+    renderer.setRenderTarget(this.bloomInput);
+    renderer.autoClear = false;
+    this.plane.render(renderer);
+    renderer.autoClear = autoClear;
+    renderer.setRenderTarget(previous);
+    this.bloomInputFresh = program !== undefined && program.isReady?.() !== false && renderer.info.render.frame !== renders;
+  }
 
   /** Count what the frame just drawn changed, and on an audit frame compare each changed draw with three's. */
   afterFrame(renderer: THREE.WebGLRenderer, passes: readonly Pass[]): void {
@@ -111,8 +138,9 @@ export class PostAudit {
     const beauty = find(BeautyPass);
     const atmosphere = find(AtmospherePass);
     const bloom = find(BloomPass);
-    if (beauty === null || (composite === null && atmosphere === null && bloom === null)) return;
+    if (composite === null && atmosphere === null && bloom === null) return;
     this.stats.changedFrames += 1;
+    if (this.auditing && bloom !== null && bloom.inputTap === null) bloom.inputTap = (r, input) => this.copyBloomInput(r, input);
     if (!this.auditing || (this.frame++ % AUDIT_EVERY) !== 0) return;
     // While the loading gate holds the frame's draws, every draw here would be swallowed too.
     if (drawsHeld(renderer)) {
@@ -152,10 +180,11 @@ export class PostAudit {
       found.push({ check, differing, texels: a.width * a.height });
     };
     try {
-      const { width, height } = beauty.target;
+      const { width, height } = beauty?.target ?? this.bloomInput;
       for (const target of this.half) if (target.width !== width || target.height !== height) target.setSize(width, height);
       const [a, b, scratch] = this.half as [THREE.WebGLRenderTarget, THREE.WebGLRenderTarget, THREE.WebGLRenderTarget];
       if (composite !== null) {
+        if (beauty === null) throw new Error("the composite ran without a beauty pass");
         // The three draws it replaced: the beauty copy, GTAO's multiply blend, the contact shadow's multiply.
         draw(this.plane, beauty.material, a);
         const ao = composite.drawn.ao;
@@ -177,15 +206,21 @@ export class PostAudit {
 
       if (atmosphere !== null) {
         // The draws it replaced: the march into a half-float target of its own, then that blended over the frame.
+        if (beauty === null) throw new Error("the atmosphere ran without a beauty pass");
         copy(beauty.target.texture, a);
         copy(beauty.target.texture, b);
-        const blending = atmosphere.material.blending;
-        atmosphere.material.blending = THREE.NoBlending;
-        try {
-          draw(this.plane, atmosphere.material, scratch, true);
-        } finally {
-          atmosphere.material.blending = blending;
+        if (this.march?.pass !== atmosphere) {
+          this.march?.material.dispose();
+          const material = new THREE.ShaderMaterial({
+            uniforms: atmosphere.material.uniforms,
+            vertexShader: atmosphere.material.vertexShader,
+            fragmentShader: atmosphereFragment(atmosphere.marchSteps, atmosphere.marchTaps, false),
+            depthTest: false,
+            depthWrite: false,
+          });
+          this.march = { pass: atmosphere, material };
         }
+        draw(this.plane, this.march.material, scratch, true);
         this.applyMaterial.uniforms["tAtmosphere"]!.value = scratch.texture;
         draw(this.plane, this.applyMaterial, a);
         draw(this.plane, atmosphere.material, b);
@@ -193,6 +228,10 @@ export class PostAudit {
       }
 
       if (bloom !== null) {
+        // The frame bloom read this frame, copied by its input tap; without it the check would not be from the same input.
+        // Not fresh on the first audited frame (the tap goes in after it) or when the copy was held: skip the frame.
+        if (!this.bloomInputFresh) held = true;
+        this.bloomInputFresh = false;
         const reference = (this.bloom ??= new UnrealBloomPass(bloom.resolution.clone(), bloom.strength, bloom.radius, bloom.threshold));
         reference.strength = bloom.strength;
         reference.radius = bloom.radius;
@@ -201,11 +240,17 @@ export class PostAudit {
           reference.resolution.copy(bloom.resolution);
           reference.setSize(bloom.resolution.x, bloom.resolution.y);
         }
-        copy(beauty.target.texture, a);
-        copy(beauty.target.texture, b);
+        copy(this.bloomInput.texture, a);
+        copy(this.bloomInput.texture, b);
         const materials = (pass: UnrealBloomPass) => [pass.materialHighPassFilter, ...pass.separableBlurMaterials, pass.compositeMaterial, pass.materialCopy];
         guarded(materials(reference), () => reference.render(renderer, scratch, a, 0, false));
-        guarded(materials(bloom), () => bloom.render(renderer, scratch, b, 0, false));
+        const tap = bloom.inputTap;
+        bloom.inputTap = null;
+        try {
+          guarded(materials(bloom), () => bloom.render(renderer, scratch, b, 0, false));
+        } finally {
+          bloom.inputTap = tap;
+        }
         compare("bloom", a, b);
       }
 
@@ -233,6 +278,8 @@ export class PostAudit {
     this.applyMaterial.dispose();
     this.triangle.dispose();
     this.bloom?.dispose();
+    this.march?.material.dispose();
     for (const target of this.half) target.dispose();
+    this.bloomInput.dispose();
   }
 }

@@ -24,7 +24,11 @@ export class BloomPass extends UnrealBloomPass {
     }
   }
 
+  /** Set by the post audit (`?postAudit=1` only): shown the frame bloom reads before it draws, so the audit can redraw bloom three's way from the same input. */
+  inputTap: ((renderer: THREE.WebGLRenderer, input: THREE.WebGLRenderTarget) => void) | null = null;
+
   override render(renderer: THREE.WebGLRenderer, writeBuffer: THREE.WebGLRenderTarget, readBuffer: THREE.WebGLRenderTarget, deltaTime: number, maskActive: boolean): void {
+    this.inputTap?.(renderer, readBuffer);
     if (this.renderToScreen) {
       // Drawing straight to the screen also shows the frame under the bloom; three's path does that.
       super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive);
