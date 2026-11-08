@@ -95,7 +95,8 @@ async function auditGame(game: string, index: number, args: ShadowAuditArgs, sta
   const server = await ensureDevServer(repoRoot);
   if (server.pid !== undefined) started.push(server);
   let counters: Record<string, number> | null = null;
-  await withBrowserSession({ keep: false, debugPort: debugPortFor(index), timeoutMs: 240_000, hardDeadlineMs: 360_000 }, async ({ debugPort }) => {
+  let failure: unknown = null;
+  const exit = await withBrowserSession({ keep: false, debugPort: debugPortFor(index), timeoutMs: 240_000, hardDeadlineMs: 360_000 }, async ({ debugPort }) => {
     const session = await openPageSession(debugPort);
     try {
       const measured = await measureGame({
@@ -111,10 +112,15 @@ async function auditGame(game: string, index: number, args: ShadowAuditArgs, sta
         size: GATE_SIZE,
       });
       counters = measured.record.systems["render/shadow-cache"]?.counters ?? null;
+    } catch (error) {
+      failure = error;
+      throw error;
     } finally {
       await session.close();
     }
   });
+  // The session logs a failed run and hands back its exit code instead of throwing.
+  if (exit !== 0) throw failure instanceof Error ? failure : new Error(`the browser session exited ${exit}`);
   return { game, counters, error: counters === null ? "no shadow cache on the page" : null };
 }
 
