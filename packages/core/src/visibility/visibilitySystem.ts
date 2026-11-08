@@ -108,6 +108,13 @@ interface ObjRecord {
   lastSeen: number;
   /** The spatial index already holds this version's bounds. */
   indexed: boolean;
+  /** The bounds the index holds for it, kept here so the per-frame loop does no second lookup. */
+  bounds: RenderBounds | undefined;
+  /** The last evaluation that considered it, so several cameras count it once. */
+  considered: number;
+  /** The last evaluation that drew it, and the one before that: the previous frame's set without a set lookup. */
+  visibleIn: number;
+  priorVisibleIn: number;
 }
 
 /** What one source's last walk found: its revision then, its ids in walk order and its always-visible ones. */
@@ -162,12 +169,6 @@ function round2(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-function sameMembers(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
-  if (a.size !== b.size) return false;
-  for (const id of a) if (!b.has(id)) return false;
-  return true;
-}
-
 export function createVisibilitySystem(options: VisibilitySystemOptions): VisibilitySystem {
   let settings = mergeCullingSettings(DEFAULT_CULLING_SETTINGS, options.settings ?? {});
   const occlusion = options.occlusion ?? noOcclusion;
@@ -185,7 +186,6 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
   const requiredAssets = new Set<string>();
 
   const candidateScratch: string[] = [];
-  const consideredStamp = new Map<string, number>();
   let consideredCounter = 0;
 
   const baseFrustum = createFrustum();
@@ -230,7 +230,7 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
     const dynamic = resolved.classification !== "static";
     if (resolved.customVisibility !== undefined) customRecords += 1;
     if (record === undefined) {
-      record = { version: r.version, resolved, alwaysVisible, dynamic, assets: r.assets, lastSeen: updateCounter, indexed: false };
+      record = { version: r.version, resolved, alwaysVisible, dynamic, assets: r.assets, lastSeen: updateCounter, indexed: false, bounds: undefined, considered: -1, visibleIn: -1, priorVisibleIn: -1 };
       records.set(r.id, record);
     } else {
       if (record.resolved.customVisibility !== undefined) customRecords -= 1;
@@ -252,7 +252,6 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
     index.remove(id);
     bounds.delete(id);
     records.delete(id);
-    consideredStamp.delete(id);
   }
 
   const walks: SourceWalk[] = options.sources.map(() => ({ revision: Number.NaN, ids: [], spare: [], always: [] }));
@@ -277,7 +276,8 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
       for (const r of source.renderables()) {
         const record = recordFor(r);
         if (!record.indexed) {
-          index.insert(r.id, bounds.get(r.id, r.version, specOf(r, record.resolved), r.position), record.dynamic);
+          record.bounds = bounds.get(r.id, r.version, specOf(r, record.resolved), r.position);
+          index.insert(r.id, record.bounds, record.dynamic);
           record.indexed = true;
         }
         ids.push(r.id);
@@ -307,10 +307,25 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
     cameraCount = cameras.length;
   }
 
-  function markConsidered(id: string): boolean {
-    if (consideredStamp.get(id) === consideredCounter) return false;
-    consideredStamp.set(id, consideredCounter);
-    return true;
+  // Ids this evaluation drew that the last one did not: with equal sizes, none means the same set.
+  let entered = 0;
+
+  /** Draw `id` this evaluation; `record` carries the stamps that answer "drawn last frame?". */
+  function show(id: string, record: ObjRecord | undefined): void {
+    if (record === undefined) {
+      if (!visible.has(id) && !prevVisible.has(id)) entered += 1;
+    } else if (record.visibleIn !== consideredCounter) {
+      if (record.visibleIn !== consideredCounter - 1) entered += 1;
+      record.priorVisibleIn = record.visibleIn;
+      record.visibleIn = consideredCounter;
+    }
+    visible.add(id);
+  }
+
+  /** Whether the last evaluation drew it: the frame hysteresis holds an object in. */
+  function shownLastFrame(record: ObjRecord): boolean {
+    const last = consideredCounter - 1;
+    return record.visibleIn === last || (record.visibleIn === consideredCounter && record.priorVisibleIn === last);
   }
 
   /** Written by `distanceLimits` for every candidate, every frame: one object, read before the next call. */
@@ -334,15 +349,17 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
     stats.spatialQueryMs += clock() - t0;
 
     const t1 = clock();
-    for (const id of candidateScratch) {
+    const cx = camera.view.position[0], cy = camera.view.position[1], cz = camera.view.position[2];
+    for (let candidate = 0; candidate < candidateScratch.length; candidate += 1) {
+      const id = candidateScratch[candidate]!;
       const record = records.get(id);
       if (record === undefined) continue;
-      const b = bounds.peek(id);
+      const b = record.bounds;
       if (b === undefined) continue;
-      const fresh = markConsidered(id);
+      const fresh = record.considered !== consideredCounter;
+      record.considered = consideredCounter;
       if (fresh) stats.consideredForRender += 1;
       const resolved = record.resolved;
-      const cx = camera.view.position[0], cy = camera.view.position[1], cz = camera.view.position[2];
 
       let isVisible: boolean;
       if (cullingOff || record.alwaysVisible || resolved.cullingDisabled) {
@@ -352,7 +369,7 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
         if (custom !== undefined) {
           isVisible = custom;
         } else {
-          const frustum = prevVisible.has(id) ? hysteresisFrustum : baseFrustum;
+          const frustum = shownLastFrame(record) ? hysteresisFrustum : baseFrustum;
           if (settings.frustumCulling && !boundsInFrustum(frustum, b)) {
             if (fresh) stats.rejectedByFrustum += 1;
             isVisible = false;
@@ -387,7 +404,7 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
           for (const asset of record.assets) requiredAssets.add(asset);
         }
       }
-      if (isVisible) visible.add(id);
+      if (isVisible) show(id, record);
     }
     stats.cullingMs += clock() - t1;
   }
@@ -404,9 +421,9 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
 
   function addAlwaysVisible(): void {
     for (const walk of walks) for (const r of walk.always) {
-      visible.add(r.id);
-      preload.add(r.id);
       const record = records.get(r.id);
+      show(r.id, record);
+      preload.add(r.id);
       if (record?.assets !== undefined) {
         for (const asset of record.assets) requiredAssets.add(asset);
       }
@@ -438,6 +455,7 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
       visible.clear();
       preload.clear();
       requiredAssets.clear();
+      entered = 0;
 
       for (const camera of cameras) evaluateCamera(camera);
       addAlwaysVisible();
@@ -445,7 +463,7 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
       stats.visible = visible.size;
       stats.preloaded = preload.size;
       stats.drawCallsAvoided = Math.max(0, stats.totalObjects - visible.size);
-      if (!sameMembers(visible, prevVisible)) generation += 1;
+      if (entered > 0 || visible.size !== prevVisible.size) generation += 1;
       return { visible, preload, stats, generation };
     },
     isVisible(id) {
@@ -503,7 +521,6 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
       prevVisible.clear();
       preload.clear();
       requiredAssets.clear();
-      consideredStamp.clear();
       for (const walk of walks) {
         walk.revision = Number.NaN;
         walk.ids.length = 0;

@@ -7,7 +7,6 @@ import type { CameraView } from "@jgengine/core/visibility/frustum";
 import type { VisibilityConfig } from "@jgengine/core/visibility/config";
 import { buildCullingDriver } from "./cullingDriver";
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
-import type { Vec3 } from "@jgengine/core/world/geometry";
 
 type VisiblePredicate = (id: string) => boolean;
 
@@ -28,29 +27,50 @@ export function useRenderVisibility(): MutableRefObject<VisiblePredicate> {
 
 const tmpDir = new THREE.Vector3();
 
-function viewFromCamera(camera: THREE.Camera): CameraView | null {
+type Mutable<T> = { -readonly [Key in keyof T]: T[Key] };
+type PerspectiveView = Mutable<Extract<CameraView, { kind: "perspective" }>>;
+type OrthographicView = Mutable<Extract<CameraView, { kind: "orthographic" }>>;
+
+/** One provider's camera views, rewritten in place each frame: the culling core copies what it keeps. */
+function createViewScratch(): { perspective: PerspectiveView; orthographic: OrthographicView } {
+  return {
+    perspective: { kind: "perspective", position: [0, 0, 0], target: [0, 0, 0], up: [0, 1, 0], fovDeg: 0, aspect: 1, near: 0, far: 0 },
+    orthographic: { kind: "orthographic", position: [0, 0, 0], target: [0, 0, 0], up: [0, 1, 0], halfWidth: 0, halfHeight: 0, near: 0, far: 0 },
+  };
+}
+
+function writeAxes(view: PerspectiveView | OrthographicView, camera: THREE.Camera): void {
   camera.getWorldDirection(tmpDir);
   const p = camera.position;
-  const position: Vec3 = [p.x, p.y, p.z];
-  const target: Vec3 = [p.x + tmpDir.x, p.y + tmpDir.y, p.z + tmpDir.z];
-  const up: Vec3 = [camera.up.x, camera.up.y, camera.up.z];
+  const position = view.position as [number, number, number];
+  const target = view.target as [number, number, number];
+  const up = view.up as [number, number, number];
+  position[0] = p.x; position[1] = p.y; position[2] = p.z;
+  target[0] = p.x + tmpDir.x; target[1] = p.y + tmpDir.y; target[2] = p.z + tmpDir.z;
+  up[0] = camera.up.x; up[1] = camera.up.y; up[2] = camera.up.z;
+}
+
+function viewFromCamera(camera: THREE.Camera, scratch: ReturnType<typeof createViewScratch>): CameraView | null {
   if ((camera as THREE.PerspectiveCamera).isPerspectiveCamera) {
     const c = camera as THREE.PerspectiveCamera;
-    return { kind: "perspective", position, target, up, fovDeg: c.fov, aspect: c.aspect, near: c.near, far: c.far };
+    const view = scratch.perspective;
+    writeAxes(view, c);
+    view.fovDeg = c.fov;
+    view.aspect = c.aspect;
+    view.near = c.near;
+    view.far = c.far;
+    return view;
   }
   if ((camera as THREE.OrthographicCamera).isOrthographicCamera) {
     const c = camera as THREE.OrthographicCamera;
     const zoom = c.zoom || 1;
-    return {
-      kind: "orthographic",
-      position,
-      target,
-      up,
-      halfWidth: Math.abs((c.right - c.left) / 2 / zoom),
-      halfHeight: Math.abs((c.top - c.bottom) / 2 / zoom),
-      near: c.near,
-      far: c.far,
-    };
+    const view = scratch.orthographic;
+    writeAxes(view, c);
+    view.halfWidth = Math.abs((c.right - c.left) / 2 / zoom);
+    view.halfHeight = Math.abs((c.top - c.bottom) / 2 / zoom);
+    view.near = c.near;
+    view.far = c.far;
+    return view;
   }
   return null;
 }
@@ -75,6 +95,7 @@ export function CullingProvider({ config, drawDistance, children }: { config: Vi
   useEffect(() => () => driver?.dispose(), [driver]);
   const published = useRef(-1);
   const publishedBy = useRef<object | null>(null);
+  const viewScratch = useMemo(createViewScratch, []);
 
   useFrame(() => {
     if (driver === null) {
@@ -82,7 +103,7 @@ export function CullingProvider({ config, drawDistance, children }: { config: Vi
       published.current = -1;
       return;
     }
-    const view = viewFromCamera(camera);
+    const view = viewFromCamera(camera, viewScratch);
     if (view === null) {
       predicateRef.current = ALWAYS_VISIBLE;
       published.current = -1;
