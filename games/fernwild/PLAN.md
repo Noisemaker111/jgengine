@@ -11,7 +11,7 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | --- | --- | --- | --- | --- | --- |
 | onboarding | 2/2 | 0 | 0 | 0 | 0 |
 | failure | 1/1 | 0 | 0 | 0 | 0 |
-| save | 0/1 | 0 | 0 | 1 | 0 |
+| save | 1/1 | 0 | 0 | 0 | 0 |
 | settings | 1/1 | 0 | 0 | 0 | 0 |
 | menu | 1/1 | 0 | 0 | 0 | 0 |
 | progression | 1/1 | 0 | 0 | 0 | 0 |
@@ -26,18 +26,18 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | spawns | 3/3 | 0 | 0 | 0 | 0 |
 | boss | 3/3 | 0 | 0 | 0 | 0 |
 | cave | 2/2 | 0 | 0 | 0 | 0 |
-| **total** | **66/67** | 0 | 0 | 1 | 0 |
+| **total** | **67/67** | 0 | 0 | 0 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: creature-survival. 66/67 proven · 1 missing.
+Genres: creature-survival. 67/67 proven.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
 | `onboarding.first-goal` | proven | A new game shows a first goal, and the first player action toward it advances it. | proofs/sim/first-goal.proof.ts |
 | `onboarding.find-features` | proven | A player following the game's own guidance reaches the first use of every core feature. | proofs/sim/find-features.proof.ts |
 | `failure.lose-and-recover` | proven | The player can fail (die, lose the run, go broke) and the game puts them back into play at a stated cost. | proofs/sim/body-recover.proof.ts |
-| `save.continue` | missing | Progress made by playing survives saving and continuing. |  |
+| `save.continue` | proven | Progress made by playing survives saving and continuing. | proofs/sim/save-continue.proof.ts |
 | `settings.controls` | proven | The player opens settings and a change (a binding, volume, sensitivity) takes effect. | proofs/sim/rebind-inventory.proof.ts |
 | `menu.start-and-credits` | proven | The main menu starts a game and shows the credits. | proofs/sim/menu-credits.proof.ts |
 | `progression.runway` | proven | Something new unlocks steadily across the first five hours, up to the progression cap. | content check |

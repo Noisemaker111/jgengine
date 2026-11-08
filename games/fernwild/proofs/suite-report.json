@@ -276,6 +276,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/save-continue.proof.ts",
+      "proves": [
+        "save.continue"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/shelter.proof.ts",
       "proves": [
         "building.shelter"
