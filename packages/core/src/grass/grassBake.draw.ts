@@ -136,6 +136,25 @@ export interface GrassTufts {
   roots: THREE.Box3;
   /** Furthest a blade reaches from its root, metres. */
   extent: number;
+  /** What a bake of the same node at a larger share needs to keep these tufts and grow only the rest. */
+  resume?: GrassBakeResume;
+}
+
+/**
+ * A finished bake's own bookkeeping. A cell's tufts at a smaller share are the first ones of its tufts
+ * at any larger share (the same seeded stream, read in the same order), so a re-bake for a nearer
+ * camera copies these and grows the rest from where each cell's stream stopped.
+ * @internal
+ */
+export interface GrassBakeResume {
+  /** Where each cell's tufts end, in bake order (before the rank sort). */
+  cellEnds: Int32Array;
+  /** Each cell's random stream cursor after its last tuft. */
+  cellCursors: Int32Array;
+  /** Bake-order index to rank-order index; absent when the bake was not reordered. */
+  rankIndex: Int32Array | undefined;
+  /** Furthest any of these tufts reaches, before the tuft template's own reach is added. */
+  reach: number;
 }
 
 /** Patch-local XZ rectangle a node covers, clipped to the patch: `[x0, z0, x1, z1]`, written into `out` when given. */
@@ -172,14 +191,18 @@ export function bakeGrassNode(bake: ResolvedGrassBake, level: number, ix: number
   return step.value;
 }
 
-/** Incremental form of {@link bakeGrassNode}; each step processes at most one cell, tuft or sort item. @internal */
-export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: number, iz: number, share: number, immediate = false, progress?: (tufts: GrassTufts) => void): Generator<"work" | "tuft", GrassTufts> {
+/**
+ * Incremental form of {@link bakeGrassNode}; each step grows at most one tuft or processes one cell or
+ * a chunk of copy and sort items. `from`, an earlier bake of this node and bake at a smaller share, is
+ * kept: only the tufts it lacks are grown, and the result is the one a fresh bake gives. @internal
+ */
+export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: number, iz: number, share: number, immediate = false, progress?: (tufts: GrassTufts) => void, from?: GrassTufts): Generator<"work" | "tuft", GrassTufts> {
   const { look } = bake;
   const span = 2 ** level;
   const cx0 = ix * span, cz0 = iz * span;
   const cx1 = Math.min(bake.columns, cx0 + span), cz1 = Math.min(bake.rows, cz0 + span);
   const halfW = bake.width / 2, halfD = bake.depth / 2;
-  type Cell = { cx: number; cz: number; x0: number; z0: number; w: number; d: number; full: number };
+  type Cell = { cx: number; cz: number; x0: number; z0: number; w: number; d: number; full: number; count: number };
   const cells: Cell[] = [];
   let total = 0;
   for (let cz = cz0; cz < cz1; cz += 1) {
@@ -188,37 +211,69 @@ export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: 
       const w = Math.min(halfW, x0 + GRASS_CELL_SIZE) - x0, d = Math.min(halfD, z0 + GRASS_CELL_SIZE) - z0;
       const full = bake.tuftsPerM2 * Math.max(0, w) * Math.max(0, d);
       const u = seededRng(`${bake.seed}|${cx}|${cz}`)();
-      total += cellCount(full, u, share);
-      cells.push({ cx, cz, x0, z0, w, d, full });
+      const count = cellCount(full, u, share);
+      total += count;
+      cells.push({ cx, cz, x0, z0, w, d, full, count });
       if (!immediate) yield "work";
     }
   }
+  // An earlier bake is kept only when it is this node's at a share no larger than this one, cell by
+  // cell. A preview (`progress`) always grows from nothing.
+  let resume = progress === undefined ? from?.resume : undefined;
+  if (resume !== undefined && resume.cellEnds.length === cells.length) {
+    for (let k = 0; k < cells.length; k += 1) {
+      if (resume.cellEnds[k]! - (k === 0 ? 0 : resume.cellEnds[k - 1]!) > cells[k]!.count) { resume = undefined; break; }
+    }
+  } else resume = undefined;
+  const kept = resume === undefined ? undefined : from;
   const offsets = new Float32Array(total * 3);
   const shape = new Float32Array(total * 4);
   const vary = new Float32Array(total * 4);
   const tone = new Float32Array(total);
-  const roots = new THREE.Box3();
+  // A box grown over every root is the same box however the roots are split: start from the kept ones'.
+  const roots = kept === undefined ? new THREE.Box3() : kept.roots.clone();
   const seedNumber = seedToUint32(bake.seed);
   const clumpSeed = bake.clumpSeed;
   const point = new THREE.Vector3();
   const flutterStiff = 1 - look.blade.stiffness;
   const tuftReach = grassTuftReach(look, bake.bladesPerM2);
-  let maxReach = 0;
+  let maxReach = resume?.reach ?? 0;
   let n = 0;
+  let copied = 0;
   /** Where each cell's tufts end: each cell grows its tufts in rising rank, so each is a sorted run. */
-  const runEnds: number[] = [];
+  const cellEnds = new Int32Array(cells.length);
+  const cellCursors = new Int32Array(cells.length);
   let partial: GrassTufts | undefined;
-  for (const cell of cells) {
+  for (let k = 0; k < cells.length; k += 1) {
+    const cell = cells[k]!;
     const random = seededRng(`${bake.seed}|${cell.cx}|${cell.cz}`);
     const u = random();
-    const count = cellCount(cell.full, u, share);
+    const count = cell.count;
     // Roots follow a scrambled Sobol spread seeded per cell. Uniform random roots bunch into piles and
     // leave bare holes; this spreads them evenly, and every prefix is still even, so thinning by rank
     // for a far camera never opens holes. (R2, used before, is even too, but its short prefixes are a
     // near-regular lattice, so a far field thinned to a few dozen tufts a cell drew rows like a
     // planted crop; jitter big enough to hide that left the field as uneven as random.)
     const scrambleX = Math.floor(random() * 4294967296), scrambleZ = Math.floor(random() * 4294967296);
-    for (let j = 0; j < count; j += 1) {
+    let first = 0;
+    if (resume !== undefined && kept !== undefined) {
+      const start = k === 0 ? 0 : resume.cellEnds[k - 1]!;
+      first = resume.cellEnds[k]! - start;
+      const index = resume.rankIndex;
+      for (let j = 0; j < first; j += 1) {
+        const from3 = index === undefined ? start + j : index[start + j]!;
+        const o = from3 * 3, f = from3 * 4, t3 = n * 3, t4 = n * 4;
+        offsets[t3] = kept.offsets[o]!; offsets[t3 + 1] = kept.offsets[o + 1]!; offsets[t3 + 2] = kept.offsets[o + 2]!;
+        shape[t4] = kept.shape[f]!; shape[t4 + 1] = kept.shape[f + 1]!; shape[t4 + 2] = kept.shape[f + 2]!; shape[t4 + 3] = kept.shape[f + 3]!;
+        vary[t4] = kept.vary[f]!; vary[t4 + 1] = kept.vary[f + 1]!; vary[t4 + 2] = kept.vary[f + 2]!; vary[t4 + 3] = kept.vary[f + 3]!;
+        tone[n] = kept.tone[from3]!;
+        n += 1;
+        if (!immediate && ++copied === SORT_CHUNK) { copied = 0; yield "work"; }
+      }
+      // The kept tufts read the cell's stream this far: carry on from there.
+      if (first > 0) random.restore(resume.cellCursors[k]!);
+    }
+    for (let j = first; j < count; j += 1) {
       const [sx, sz] = scrambledSobol2(j, scrambleX, scrambleZ);
       let x = cell.x0 + sx * cell.w;
       let z = cell.z0 + sz * cell.d;
@@ -296,14 +351,17 @@ export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: 
       }
       if (!immediate) yield "tuft";
     }
-    runEnds.push(n);
+    cellEnds[k] = n;
+    cellCursors[k] = random.state();
   }
-  const tufts = { count: total, offsets, shape, vary, tone, ranks: new Float32Array(total), roots, extent: maxReach + tuftReach };
-  if (cells.length <= 1) {
+  const sorted = cells.length > 1;
+  const resumeOut: GrassBakeResume = { cellEnds, cellCursors, rankIndex: sorted ? new Int32Array(total) : undefined, reach: maxReach };
+  const tufts: GrassTufts = { count: total, offsets, shape, vary, tone, ranks: new Float32Array(total), roots, extent: maxReach + tuftReach, resume: resumeOut };
+  if (!sorted) {
     for (let i = 0; i < total; i += 1) { tufts.ranks[i] = vary[i * 4 + 3]!; if (!immediate && i % SORT_CHUNK === SORT_CHUNK - 1) yield "work"; }
     return tufts;
   }
-  return yield* sortByRank(tufts, runEnds, immediate);
+  return yield* sortByRank(tufts, cellEnds, resumeOut.rankIndex!, immediate);
 }
 
 /** Sort items moved between yields: one yield per item cost more than the moves themselves. */
@@ -312,16 +370,17 @@ const SORT_CHUNK = 64;
 /**
  * Tufts in rank order, stable. Each cell's tufts were grown in rising rank, so `runEnds` (where each
  * cell's run ends) marks sorted runs and only the runs are merged: the same order a stable sort of
- * every tuft gives, in a few passes rather than one per doubling from single tufts.
+ * every tuft gives, in a few passes rather than one per doubling from single tufts. `rankIndex`
+ * receives where each tuft landed.
  */
-function* sortByRank(tufts: GrassTufts, runEnds: readonly number[], immediate: boolean): Generator<"work", GrassTufts> {
+function* sortByRank(tufts: GrassTufts, runEnds: ArrayLike<number>, rankIndex: Int32Array, immediate: boolean): Generator<"work", GrassTufts> {
   const count = tufts.count;
   const rank = tufts.vary;
   let order = new Int32Array(count);
   let scratch = new Int32Array(count);
   for (let i = 0; i < count; i += 1) order[i] = i;
   // Run boundaries, merged pairwise each pass: [0, end0, end1, ...].
-  let bounds = [0, ...runEnds];
+  let bounds = [0, ...Array.from(runEnds)];
   let moved = 0;
   while (bounds.length > 2) {
     const next = [0];
@@ -351,6 +410,7 @@ function* sortByRank(tufts: GrassTufts, runEnds: readonly number[], immediate: b
     vary[t4] = rank[f]!; vary[t4 + 1] = rank[f + 1]!; vary[t4 + 2] = rank[f + 2]!; vary[t4 + 3] = rank[f + 3]!;
     tone[to] = fromTone[from]!;
     tufts.ranks[to] = rank[f + 3]!;
+    rankIndex[from] = to;
     if (!immediate && ++moved === SORT_CHUNK) { moved = 0; yield "work"; }
   }
   return { ...tufts, offsets, shape, vary, tone };

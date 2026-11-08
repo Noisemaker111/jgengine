@@ -381,7 +381,8 @@ export class GrassStream {
       if (leaf === undefined || leaf.share < node.share) {
         {
           const share = Math.min(1, node.share * BAKE_HEADROOM);
-          const job = bakeGrassNodeSteps(this.bake, node.level, node.ix, node.iz, share, immediate);
+          // A leaf baked thinner for a farther camera keeps its tufts; only the new ones are grown.
+          const job = bakeGrassNodeSteps(this.bake, node.level, node.ix, node.iz, share, immediate, undefined, leaf?.tufts);
           let step = job.next();
           while (!step.done) { yield step.value; step = job.next(); }
           if (leaf !== undefined) this.drop(leaf);
