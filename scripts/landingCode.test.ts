@@ -56,6 +56,7 @@ beforeAll(() => {
 
   fixOnBeta(seed, "lane-close.ts", 'summary: "verify, land and merge', 'summary: "BETA LANDING FIX verify, land and merge');
   fixOnBeta(seed, "land-batch.ts", 'summary: "land several finished branches', 'summary: "BETA BATCH FIX land several finished branches');
+  fixOnBeta(seed, "verify-receipt.ts", "/** A separate receipt", "/** BETA RECEIPT FORMAT. A separate receipt");
   git(seed, ["commit", "-q", "-am", "a landing fix lands on beta"]);
   git(seed, ["push", "-q", "origin", "beta"]);
 }, 60_000);
@@ -92,6 +93,31 @@ describe("lane:close runs beta's landing code", () => {
     const seen = JSON.parse(ran.out.trim().split("\n").pop()!) as { root: string; land: string };
     expect(realpathSync(seen.root)).toBe(realpathSync(lane));
     expect(seen.land).toBe(join(cache, copy!, "scripts", "land.ts").split("\\").join("/"));
+  }, 30_000);
+
+  test("a lane whose receipt module is older than beta's is told so by beta's copy, and one that matches is not", () => {
+    const cache = join(git(lane, ["rev-parse", "--path-format=absolute", "--git-common-dir"]), "jg-landing");
+    const copy = readdirSync(cache).find((name) => existsSync(join(cache, name, ".jg-landing-code")));
+    expect(copy).toBeDefined();
+    const module = join(cache, copy!, "scripts", "landing-code.ts");
+    const probe = join(top, "receipts-probe.ts");
+    writeFileSync(
+      probe,
+      `import { receiptsBehind } from ${JSON.stringify(module)};\n` +
+        `const url = new URL("file:///" + ${JSON.stringify(module.split("\\").join("/"))}).href;\n` +
+        `console.log(JSON.stringify({ behind: receiptsBehind(url, ${JSON.stringify(lane)}) }));\n`,
+    );
+    const seen = (): string | null => (JSON.parse(bun(lane, [probe]).out.trim().split("\n").pop()!) as { behind: string | null }).behind;
+    expect(seen()).toBe("this lane's scripts/verify-receipt.ts is older than beta's, so beta's landing code cannot read what its verify:fast records");
+    const path = join(lane, "scripts", "verify-receipt.ts");
+    const before = readFileSync(path, "utf8");
+    // The lane catches up with beta's receipts; Windows line endings alone are not a difference.
+    writeFileSync(path, readFileSync(join(seed, "scripts", "verify-receipt.ts"), "utf8").replace(/\n/g, "\r\n"));
+    try {
+      expect(seen()).toBeNull();
+    } finally {
+      writeFileSync(path, before);
+    }
   }, 30_000);
 
   test("a lane that changes the landing code itself lands with its own copy", () => {
