@@ -1,6 +1,14 @@
 import { expect, test } from "bun:test";
 import { resolve } from "node:path";
-import { desktopDeadline, desktopOutFor, diagnosticDesktopTarget, parseAllArgs, parseLaunchArgs, renderAllTable } from "./perf-desktop";
+import { desktopDeadline, desktopOutFor, diagnosticDesktopTarget, parseAllArgs, parseLaunchArgs, renderAllTable, unmeasuredSceneReason } from "./perf-desktop";
+
+test("a window measured under the preparing cover, or with nothing drawn, is not a measurement", () => {
+  expect(unmeasuredSceneReason(8, true)).toContain("still preparing shaders");
+  expect(unmeasuredSceneReason(0.1, false)).toContain("drew nothing");
+  expect(unmeasuredSceneReason(undefined, true)).toContain("still preparing shaders");
+  expect(unmeasuredSceneReason(565, false)).toBeNull();
+  expect(unmeasuredSceneReason(undefined, false)).toBeNull();
+});
 
 test("a launch run names its app and defaults to the display's vsync", () => {
   expect(parseLaunchArgs(["--launch", "out/game/Game.exe"])).toEqual({ exe: resolve("out/game/Game.exe"), uncapped: false, seconds: 8, port: 9390, out: null, maps: `${resolve("out/game")}.private-maps`, size: { width: 1600, height: 900 }, flow: null, renderers: ["webgl"] });

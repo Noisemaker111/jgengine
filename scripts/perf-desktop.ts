@@ -238,6 +238,18 @@ async function withLaunchedScene<T>(args: LaunchArgs, backend: RendererBackend, 
   }
 }
 
+/**
+ * Why a measured window does not show the scene, or null when it does. A window that drew nothing
+ * (a reload, a stall back to a blank page) measures an empty frame: Brightway Park once read 365 fps
+ * and Odd Orbit 86 fps with zero draws. A window the "Preparing scene" cover was over measures the
+ * cover: Harbor Heat on WebGPU read 5.4 ms at 8 draws a frame against 565 on WebGL (2026-11-08).
+ */
+export function unmeasuredSceneReason(drawsAvg: number | undefined, covered: boolean): string | null {
+  if (covered) return `the scene was still preparing shaders behind its cover while it was measured (${drawsAvg ?? "?"} draws a frame)`;
+  if (drawsAvg !== undefined && drawsAvg < 1) return `the scene drew nothing while it was measured (${drawsAvg} draws a frame)`;
+  return null;
+}
+
 /** Launch a diagnostic desktop build, walk at the frame gate's conditions, and print and return the frame rate it reaches. */
 export async function launchAndMeasure(args: LaunchArgs, backend: RendererBackend): Promise<DesktopRecord> {
   return withLaunchedScene(args, backend, null, async (session, { tier, start }) => {
@@ -261,11 +273,11 @@ export async function launchAndMeasure(args: LaunchArgs, backend: RendererBacken
     const dropped = gpuErrorLine(drew);
     if (dropped !== null) console.error(dropped);
     const frame = summarizeFrameDeltas(deltas);
-    // A window that drew nothing (a reload, a stall back to a blank page) measures an empty frame:
-    // Brightway Park once read 365 fps and Odd Orbit 86 fps with zero draws.
-    if (breakdown !== null && breakdown.counts.drawsAvg < 1) {
+    const covered = (await session.evaluate<boolean>(`document.querySelector("[data-shell-warmup]") !== null`).catch(() => false)) ?? false;
+    const unmeasured = unmeasuredSceneReason(breakdown?.counts.drawsAvg, covered);
+    if (unmeasured !== null) {
       const page = await session.evaluate<string>(`location.href + " | " + document.querySelectorAll("canvas").length + " canvas, visibility " + document.visibilityState + ", focus " + document.hasFocus() + " | " + (document.body?.innerText ?? "").replace(/\\s+/g, " ").slice(0, 200)`).catch((error: unknown) => String(error));
-      throw new Error(`the scene drew nothing while it was measured (${breakdown.counts.drawsAvg} draws a frame, longest frame ${frame.maxMs} ms, ${start}; page: ${page}); measure it again`);
+      throw new Error(`${unmeasured} (longest frame ${frame.maxMs} ms, ${start}; page: ${page}); measure it again`);
     }
     const sorted = [...deltas].sort((a, b) => a - b);
     const quantile = (p: number) => sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))] ?? Number.NaN;
