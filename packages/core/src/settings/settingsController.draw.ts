@@ -30,7 +30,16 @@ import {
   RENDER_SCALE_STEP,
   type GraphicsProfileOverrides,
 } from "@jgengine/core/settings/graphicsSettings";
-import { FRAME_RATE_LIMIT_DISPLAY, FRAME_RATE_LIMIT_OPTIONS } from "@jgengine/core/settings/frameRateLimit";
+import { FRAME_RATE_LIMIT_DISPLAY, frameRateLimitOptions } from "@jgengine/core/settings/frameRateLimit";
+import {
+  DISPLAY_MODE_FULLSCREEN,
+  DISPLAY_MODE_OPTIONS,
+  DISPLAY_MODE_WINDOWED,
+  readDesktopShell,
+  saveDesktopDisplayMode,
+  saveDesktopFrameRate,
+  type DesktopShell,
+} from "@jgengine/core/settings/desktopShell";
 import { accessibilitySettingRows } from "@jgengine/core/settings/accessibilitySettings";
 import type { PostProcessingConfig } from "@jgengine/core/render/postProcessing";
 import { busMuteSettingId, MASTER_MUTE_SETTING_ID } from "@jgengine/core/audio/busMix";
@@ -268,6 +277,8 @@ export function keybindSettingRows(
 /**
  * The built-in Graphics rows: tier, scale, filtering, shadows, soft shadows when a light sets
  * `lightSize`, one toggle per postfx stage this game's chain can build, then UI scale and FPS.
+ * On a desktop build a Display mode row (windowed or borderless fullscreen) comes first, and the
+ * frame-rate row adds Uncapped; both save the choice to the desktop shell too.
  * @internal
  */
 export function graphicsSettingRows(
@@ -276,10 +287,24 @@ export function graphicsSettingRows(
   postProcessing: PostProcessingConfig | undefined,
   softShadows = false,
   autoQuality = false,
+  desktop: DesktopShell | null = readDesktopShell(),
 ): SettingsRow[] {
   const graphics = readGraphicsSettings(store, overrides, autoQuality);
   const stages = postProcessing === undefined || postProcessing.enabled === false ? [] : availablePostfxStages(postProcessing);
   return [
+    ...(desktop === null
+      ? []
+      : [{
+          id: SETTING_IDS.graphicsDisplayMode,
+          label: "Display mode",
+          kind: "select",
+          value: store.get(SETTING_IDS.graphicsDisplayMode, desktop.fullscreen ? DISPLAY_MODE_FULLSCREEN : DISPLAY_MODE_WINDOWED),
+          options: DISPLAY_MODE_OPTIONS,
+          set: (value) => {
+            store.set(SETTING_IDS.graphicsDisplayMode, String(value));
+            saveDesktopDisplayMode(value).catch((error: unknown) => console.warn("display mode not applied", error));
+          },
+        } satisfies SettingsRow]),
     {
       id: SETTING_IDS.graphicsQuality,
       label: "Quality",
@@ -317,8 +342,13 @@ export function graphicsSettingRows(
       label: "Frame rate limit",
       kind: "select",
       value: store.get(SETTING_IDS.graphicsFrameRateLimit, FRAME_RATE_LIMIT_DISPLAY),
-      options: FRAME_RATE_LIMIT_OPTIONS,
-      set: (value) => store.set(SETTING_IDS.graphicsFrameRateLimit, String(value)),
+      options: frameRateLimitOptions(desktop?.frameRate ?? null),
+      set: (value) => {
+        store.set(SETTING_IDS.graphicsFrameRateLimit, String(value));
+        if (desktop !== null) {
+          saveDesktopFrameRate(value).catch((error: unknown) => console.warn("frame rate not saved for the next launch", error));
+        }
+      },
     },
     {
       id: SETTING_IDS.graphicsAnisotropy,

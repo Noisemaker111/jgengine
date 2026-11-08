@@ -1,7 +1,9 @@
 import { spawn, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { existsSync, mkdirSync, openSync, closeSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { CdpSession } from "./browser-lib";
+import { FRAME_GAMES } from "./ci-scope";
 import { localGetJson } from "./localhostHttp";
 import { readBreakdown, resetBreakdown, startPath } from "./perf-breakdown";
 import { GATE_SIZE } from "./perf-gate";
@@ -198,6 +200,12 @@ export async function launchAndMeasure(args: LaunchArgs): Promise<DesktopRecord>
       const breakdown = await readBreakdown(session, privateMap);
       await release();
       const viewport = await session.evaluate<string>(`innerWidth + "x" + innerHeight`);
+      // The app presents the way the player saved it unless --uncapped forces it: a vsync run on an
+      // app whose saved choice is Uncapped would be labelled vsync and measure uncapped frames.
+      const presenting = await session.evaluate<string | null>(`window.__JG_DESKTOP__?.frameRate?.running ?? null`).catch(() => null);
+      if (presenting !== null && presenting !== (args.uncapped ? "uncapped" : "vsync")) {
+        throw new Error(`asked for a ${args.uncapped ? "uncapped" : "vsync"} run but the app presents ${presenting} (its saved Frame rate setting); set it back in the game's Graphics settings`);
+      }
       const frame = summarizeFrameDeltas(deltas);
       // A window that drew nothing (a reload, a stall back to a blank page) measures an empty frame:
       // Brightway Park once read 365 fps and Odd Orbit 86 fps with zero draws.
@@ -223,10 +231,146 @@ export async function launchAndMeasure(args: LaunchArgs): Promise<DesktopRecord>
   }
 }
 
+const repoRoot = fileURLToPath(new URL("..", import.meta.url));
+/** One frame at 360 Hz, in ms. */
+const BUDGET_360_MS = 1000 / 360;
+const DEFAULT_ALL_RECORDS = join(repoRoot, ".scratch", "perf-desktop");
+
+export interface AllArgs {
+  games: string[];
+  uncapped: boolean;
+  seconds: number;
+  /** Each game's build, build log and record go in `<records>/<game>/`. */
+  records: string;
+  /** Measure the apps already built in `records` instead of building each game first. */
+  skipBuild: boolean;
+  /** Reprint the table from the records already saved, measuring nothing. */
+  reuse: boolean;
+  markdown: boolean;
+}
+
+/** Parse `--all [--games a,b] [--uncapped] [--seconds n] [--records dir] [--skip-build] [--reuse] [--markdown]`. @internal */
+export function parseAllArgs(argv: readonly string[]): AllArgs {
+  const args: AllArgs = { games: [...FRAME_GAMES], uncapped: false, seconds: 8, records: DEFAULT_ALL_RECORDS, skipBuild: false, reuse: false, markdown: false };
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index] ?? "";
+    if (arg === "--all") continue;
+    if (arg === "--uncapped") { args.uncapped = true; continue; }
+    if (arg === "--skip-build") { args.skipBuild = true; continue; }
+    if (arg === "--reuse") { args.reuse = true; continue; }
+    if (arg === "--markdown") { args.markdown = true; continue; }
+    if (arg !== "--games" && arg !== "--seconds" && arg !== "--records") throw new Error(`unknown argument ${arg}`);
+    const value = argv[index + 1];
+    if (value === undefined || value.startsWith("--")) throw new Error(`${arg} needs a value`);
+    index += 1;
+    if (arg === "--games") args.games = value.split(",").map((id) => id.trim()).filter((id) => id.length > 0);
+    else if (arg === "--records") args.records = resolve(value);
+    else {
+      const seconds = Number(value);
+      if (!Number.isFinite(seconds) || seconds <= 0) throw new Error(`--seconds must be a positive number (got ${value})`);
+      args.seconds = seconds;
+    }
+  }
+  if (args.games.length === 0) throw new Error("--games needs at least one game id");
+  return args;
+}
+
+/** One game's row in the all-games report: its record, or why it has none. */
+export interface AllRow { game: string; record: DesktopRecord | null; error: string | null }
+
+const ms = (value: number | undefined): string => (value === undefined || !Number.isFinite(value) ? "?" : value.toFixed(2));
+
+/** The all-games desktop table against 360 fps. A report, not a gate. @internal */
+export function renderAllTable(rows: readonly AllRow[], markdown: boolean): string {
+  const header = ["game", "clock", "fps", "frame p50 ms", "frame p95 ms", "CPU p50 ms", "GPU p50 ms", "draws", "at 360 fps"];
+  const body = rows.map((row) => {
+    if (row.record === null) return [row.game, "-", "-", "-", "-", "-", "-", "-", `no run: ${row.error ?? "unknown"}`];
+    const { record } = row;
+    const b = record.breakdown;
+    const frameP50 = b?.frame.p50 ?? record.rafP50Ms;
+    const verdict = record.frame.fps >= 360 ? "yes" : `${(Math.max(frameP50, BUDGET_360_MS) / BUDGET_360_MS).toFixed(1)}x short`;
+    return [row.game, record.clock, String(Math.round(record.frame.fps)), ms(frameP50), ms(record.frame.p95Ms), ms(b?.work.p50), ms(b?.gpu?.p50), b === null ? "?" : String(Math.round(b.counts.drawsAvg)), verdict];
+  });
+  const holding = rows.filter((row) => row.record !== null && row.record.frame.fps >= 360).length;
+  const measured = rows.filter((row) => row.record !== null).length;
+  const summary = `${holding} of ${measured} measured games hold 360 fps (${rows.length - measured} not measured). Production desktop builds (WebView2), --diagnostics, ${GATE_SIZE.width}x${GATE_SIZE.height}, high tier, automatic quality off, walking.`;
+  if (markdown) {
+    const line = (cells: readonly string[]) => `| ${cells.join(" | ")} |`;
+    return [line(header), line(header.map((_, index) => (index >= 2 && index <= 7 ? "---:" : "---"))), ...body.map(line), "", summary].join("\n");
+  }
+  const widths = header.map((cell, index) => Math.max(cell.length, ...body.map((cells) => (cells[index] ?? "").length)));
+  const pad = (cells: readonly string[]) => cells.map((cell, index) => cell.padEnd(widths[index] ?? 0)).join("  ").trimEnd();
+  return [pad(header), ...body.map(pad), "", summary].join("\n");
+}
+
+/** The game executable `jgengine desktop --out <dir>` wrote: the one .exe that is not an installer. */
+function builtApp(dir: string): string | null {
+  if (!existsSync(dir)) return null;
+  const apps = readdirSync(dir).filter((name) => name.toLowerCase().endsWith(".exe") && !name.toLowerCase().endsWith("-setup.exe"));
+  return apps.length === 1 && apps[0] !== undefined ? join(dir, apps[0]) : null;
+}
+
+/** Build one game's diagnostic desktop app (no installer) into `<records>/<game>/app`, logging to build.log. */
+function buildDesktopApp(game: string, records: string): string {
+  const dir = join(records, game);
+  mkdirSync(dir, { recursive: true });
+  const log = join(dir, "build.log");
+  const fd = openSync(log, "w");
+  try {
+    const result = spawnSync("bun", [join(repoRoot, "packages", "jgengine", "src", "cli", "index.ts"), "desktop", join(repoRoot, "games", game), "--diagnostics", "--no-installer", "--out", join(dir, "app")], { cwd: repoRoot, stdio: ["ignore", fd, fd], windowsHide: true, timeout: 20 * 60_000 });
+    if (result.status !== 0) {
+      const tail = readFileSync(log, "utf8").trim().split("\n").slice(-6).join(" | ");
+      throw new Error(`desktop build failed (${result.error?.message ?? `exit ${result.status}`}); ${log}: ${tail}`);
+    }
+  } finally { closeSync(fd); }
+  const app = builtApp(join(dir, "app"));
+  if (app === null) throw new Error(`the build left no app in ${join(dir, "app")}`);
+  return app;
+}
+
+/**
+ * Build every game's production desktop app and measure it in turn (one at a time: each run
+ * owns the GPU), then print each against 360 fps. A failed game is a row saying why, not a stop.
+ */
+export async function measureAll(args: AllArgs): Promise<AllRow[]> {
+  const rows: AllRow[] = [];
+  for (const game of args.games) {
+    const recordPath = join(args.records, game, `${args.uncapped ? "uncapped" : "vsync"}.json`);
+    if (args.reuse) {
+      rows.push(existsSync(recordPath) ? { game, record: JSON.parse(readFileSync(recordPath, "utf8")) as DesktopRecord, error: null } : { game, record: null, error: `no saved record at ${recordPath}` });
+      continue;
+    }
+    try {
+      const app = args.skipBuild ? builtApp(join(args.records, game, "app")) : (console.error(`perf desktop: building ${game}`), buildDesktopApp(game, args.records));
+      if (app === null) throw new Error(`no built app in ${join(args.records, game, "app")}; drop --skip-build`);
+      const launch = { exe: app, uncapped: args.uncapped, seconds: args.seconds, port: 9390, out: recordPath, maps: `${dirname(app)}.private-maps`, size: { width: GATE_SIZE.width, height: GATE_SIZE.height } };
+      let record: DesktopRecord;
+      try {
+        record = await launchAndMeasure(launch);
+      } catch (first) {
+        // One more launch for a run a busy machine spoiled (a blank window, a slow boot); a second failure is the answer.
+        console.error(`perf desktop: ${game} run failed (${first instanceof Error ? first.message : String(first)}); launching once more`);
+        record = await launchAndMeasure(launch);
+      }
+      rows.push({ game, record, error: null });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`perf desktop: ${game}: ${message}`);
+      rows.push({ game, record: null, error: message.slice(0, 160) });
+    }
+  }
+  return rows;
+}
+
 async function main(argv: string[]): Promise<void> {
   if (argv[0] === "--launch") { await launchAndMeasure(parseLaunchArgs(argv)); return; }
+  if (argv.includes("--all")) {
+    const args = parseAllArgs(argv);
+    console.log(renderAllTable(await measureAll(args), args.markdown));
+    return;
+  }
   const port = Number(argv[0]);
-  if (!Number.isInteger(port) || port < 1 || port > 65535 || argv[1] !== "--out" || argv[2] === undefined || argv[3] !== "--maps" || argv[4] === undefined || argv.length !== 5) throw new Error("usage: bun run perf desktop <debug-port> --out <file.json> --maps <private-maps-directory>\n       bun run perf desktop --launch <app.exe> [--uncapped] [--seconds n] [--port n] [--size WxH] [--out <file.json>] [--maps <private-maps-directory>]");
+  if (!Number.isInteger(port) || port < 1 || port > 65535 || argv[1] !== "--out" || argv[2] === undefined || argv[3] !== "--maps" || argv[4] === undefined || argv.length !== 5) throw new Error("usage: bun run perf desktop <debug-port> --out <file.json> --maps <private-maps-directory>\n       bun run perf desktop --launch <app.exe> [--uncapped] [--seconds n] [--port n] [--size WxH] [--out <file.json>] [--maps <private-maps-directory>]\n       bun run perf desktop --all [--uncapped] [--games a,b] [--seconds n] [--records dir] [--skip-build] [--reuse] [--markdown]");
   const targets = await localGetJson<Target[]>(`http://127.0.0.1:${port}/json/list`, 5_000);
   const target = diagnosticDesktopTarget(targets);
   if (target.webSocketDebuggerUrl === undefined) throw new Error("desktop debugger URL unavailable");

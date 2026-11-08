@@ -9,6 +9,16 @@
       "file": "packages/core/src/devtools/tunableSchema.test.ts",
       "match": "escapePathSegment(",
       "reason": "escapePathSegment escapes the separator character itself, so a backslash is its subject; the assertion is the same string on either OS"
+    },
+    {
+      "file": "packages/jgengine/src/desktopSteam.test.ts",
+      "match": "\"ContentRoot\"",
+      "reason": "a SteamPipe build script is Windows-format text that steamcmd reads with backslash paths on every OS; the assertion is the file's fixed text, not a path built for this machine"
+    },
+    {
+      "file": "packages/jgengine/src/desktopSteam.test.ts",
+      "match": "\"BuildOutput\"",
+      "reason": "a SteamPipe build script is Windows-format text that steamcmd reads with backslash paths on every OS; the assertion is the file's fixed text, not a path built for this machine"
     }
   ]
 }
