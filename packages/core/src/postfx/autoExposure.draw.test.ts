@@ -51,13 +51,25 @@ describe("ExposureMeterPass", () => {
     expect(calls.reads).toBe(4);
     expect(seconds).toEqual([0.25, 0.25, 0.25, 0.25]);
     expect(samples[0]?.length).toBe(256);
-    // One reduction draw and one pass-through draw per frame.
-    expect(calls.rendered).toBe(8);
-    expect(pass.needsSwap).toBe(true);
+    // One reduction draw per sampled frame; the frame itself stays where it is, with no copy.
+    expect(calls.rendered).toBe(4);
+    expect(pass.needsSwap).toBe(false);
     pass.dispose();
   });
 
-  it("a dry run draws both quads but neither meters nor reads back", () => {
+  it("draws nothing on the frames between samples", () => {
+    const pass = new ExposureMeterPass(() => {}, 8);
+    const { renderer, calls } = fakeRenderer(200);
+    const write = new THREE.WebGLRenderTarget(8, 8);
+    const read = new THREE.WebGLRenderTarget(8, 8);
+    for (let frame = 0; frame < 16; frame += 1) pass.render(renderer, write, read, 1 / 60);
+    // Frames 1-4 warm up, then frames 8 and 16 sample: a reduction per readback and no other draw.
+    expect(calls.reads).toBe(6);
+    expect(calls.rendered).toBe(6);
+    pass.dispose();
+  });
+
+  it("a dry run draws the reduction but neither meters nor reads back", () => {
     const samples: Float32Array[] = [];
     const pass = new ExposureMeterPass((frame) => samples.push(Float32Array.from(frame)));
     const { renderer, calls } = fakeRenderer(200);
@@ -65,7 +77,7 @@ describe("ExposureMeterPass", () => {
     const read = new THREE.WebGLRenderTarget(8, 8);
     pass.dry = true;
     pass.render(renderer, write, read, 0.25);
-    expect(calls.rendered).toBe(2);
+    expect(calls.rendered).toBe(1);
     expect(calls.reads).toBe(0);
     expect(samples).toEqual([]);
     pass.dry = false;

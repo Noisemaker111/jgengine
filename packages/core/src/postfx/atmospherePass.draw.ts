@@ -17,7 +17,7 @@ const vertexShader = /* glsl */ `
 
 /**
  * Height haze plus light shafts in one full-screen pass. Writes premultiplied haze-and-shaft light in
- * rgb and the haze cover in alpha, so one blended draw composites it over the frame.
+ * rgb and the haze cover in alpha, blended straight over the frame.
  * @internal
  */
 export function atmosphereFragment(steps: number, variationTaps = 0): string {
@@ -170,14 +170,6 @@ export function atmosphereFragment(steps: number, variationTaps = 0): string {
 `;
 }
 
-const applyFragment = /* glsl */ `
-  uniform sampler2D tAtmosphere;
-  varying vec2 vUv;
-  void main() {
-    gl_FragColor = texture2D(tAtmosphere, vUv);
-  }
-`;
-
 const LIGHT_RESCAN_FRAMES = 90;
 /** Point and spot lights the haze glows around at once, nearest the camera first. */
 export const MAX_HAZE_LAMPS = 8;
@@ -236,17 +228,16 @@ export function sunShaftVisibility(uv: { x: number; y: number }, inFront: boolea
 /**
  * Sunlit air over the lit HDR frame: exponential height haze that fades distant ground into the sky
  * and brightens toward the sun, plus screen-space shafts where the sky shows through gaps. It reads
- * the beauty depth, so like contact shadows it draws into a target of its own and blends that over the
- * frame. With no shadow-casting sun it is skipped, unless the config is `indoor`: then the shafts drop
- * out and the haze and lamp glow keep running.
+ * the beauty depth, which the composer's buffers never carry, so the march blends over the frame in
+ * one draw. A half-float target of its own plus a second blended draw gives the same bits: the blend
+ * unit truncates its source to half precision exactly as writing that target did (measured on the
+ * RTX 3070), so the extra full-screen write and read bought nothing. With no shadow-casting sun it is skipped, unless the
+ * config is `indoor`: then the shafts drop out and the haze and lamp glow keep running.
  * @internal
  */
 export class AtmospherePass extends Pass {
   readonly material: THREE.ShaderMaterial;
-  readonly applyMaterial: THREE.ShaderMaterial;
-  readonly target: THREE.WebGLRenderTarget;
   private readonly quad: FullScreenQuad;
-  private readonly applyQuad: FullScreenQuad;
   private light: THREE.DirectionalLight | null = null;
   private lamps: HazeLamp[] = [];
   private framesSinceScan = LIGHT_RESCAN_FRAMES;
@@ -271,7 +262,6 @@ export class AtmospherePass extends Pass {
     this.indoor = settings.indoor;
     this.tint = settings.color === "" ? null : new THREE.Color(settings.color);
     this.drift = settings.drift;
-    this.target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, depthBuffer: false });
     this.material = new THREE.ShaderMaterial({
       uniforms: {
         tDepth: { value: depth },
@@ -305,13 +295,6 @@ export class AtmospherePass extends Pass {
       fragmentShader: atmosphereFragment(Math.max(1, steps), settings.variation > 0 ? variationTaps : 0),
       depthTest: false,
       depthWrite: false,
-    });
-    this.applyMaterial = new THREE.ShaderMaterial({
-      uniforms: { tAtmosphere: { value: this.target.texture } },
-      vertexShader,
-      fragmentShader: applyFragment,
-      depthTest: false,
-      depthWrite: false,
       transparent: true,
       blending: THREE.CustomBlending,
       blendEquation: THREE.AddEquation,
@@ -321,7 +304,6 @@ export class AtmospherePass extends Pass {
       blendDstAlpha: THREE.OneFactor,
     });
     this.quad = new FullScreenQuad(this.material);
-    this.applyQuad = new FullScreenQuad(this.applyMaterial);
   }
 
   private keyLight(): THREE.DirectionalLight | null {
@@ -338,7 +320,6 @@ export class AtmospherePass extends Pass {
   }
 
   override setSize(width: number, height: number): void {
-    this.target.setSize(width, height);
     this.aspect = width / Math.max(1, height);
   }
 
@@ -372,12 +353,11 @@ export class AtmospherePass extends Pass {
     this.frame = (this.frame + 1) % 64;
     uniforms["uFrame"]!.value = this.frame;
 
-    renderer.setRenderTarget(this.target);
-    this.quad.render(renderer);
+    // Drawn over the frame, so the renderer must not clear the target first.
     const autoClear = renderer.autoClear;
     renderer.autoClear = false;
     renderer.setRenderTarget(readBuffer);
-    this.applyQuad.render(renderer);
+    this.quad.render(renderer);
     renderer.autoClear = autoClear;
   }
 
@@ -416,10 +396,7 @@ export class AtmospherePass extends Pass {
   }
 
   override dispose(): void {
-    this.target.dispose();
     this.material.dispose();
-    this.applyMaterial.dispose();
     this.quad.dispose();
-    this.applyQuad.dispose();
   }
 }
