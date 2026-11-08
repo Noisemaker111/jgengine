@@ -276,6 +276,8 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
   const gpuStack: string[] = [];
   type Timer = { query: WebGLQuery; label: string; record: FrameBreakdownRecord; material: string | null };
   let running: Timer | null = null;
+  // The material of the draw three is submitting, so a draw-timed call is credited to it.
+  let drawingMaterial: string | null = null;
   const pending: Timer[] = [];
   // Ended queries are reused: draw timing ends hundreds a frame, and a create and delete for each
   // would be driver work of its own inside the very frames it measures.
@@ -493,15 +495,14 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     }
     const pass = gpuStack[gpuStack.length - 1] ?? "main";
     const materialName = labelFor(materialLabels, material, labelOf, "material");
-    const timeDraw = gpuMode === "draws" && running === null;
     const start = performance.now();
     const compiledBefore = current?.compileMs ?? 0;
     const linkedBefore = current?.compiles ?? 0;
-    if (timeDraw) startTimer(pass, materialName);
+    drawingMaterial = materialName;
     try {
       return original(camera, scene, geometry, material, object, group);
     } finally {
-      if (timeDraw) stopTimer();
+      drawingMaterial = null;
       const ms = performance.now() - start;
       const triangles = trianglesOf(geometry, group, object);
       if (current !== null) {
@@ -536,16 +537,20 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     }
   });
 
-  // Clears are GPU work of the pass that issues them; draw timing times them like a draw.
-  wrap(renderer, "clear", (original) => (...args) => {
-    const timeClear = gpuMode === "draws" && running === null;
-    if (timeClear) startTimer(gpuStack[gpuStack.length - 1] ?? "main");
-    try {
-      return original(...args);
-    } finally {
-      if (timeClear) stopTimer();
-    }
-  });
+  // Draw timing brackets the context's own draw, clear and blit calls, not three's state setup around
+  // them: a query opened before that setup also counts the GPU idle while the CPU binds uniforms and
+  // textures (Harbor Heat's scene pass read 6.6 ms that way against 2.75 ms of draws).
+  for (const method of ["drawElements", "drawArrays", "drawElementsInstanced", "drawArraysInstanced", "drawRangeElements", "clear", "clearBufferfv", "clearBufferiv", "clearBufferuiv", "clearBufferfi", "blitFramebuffer"]) {
+    wrap(context, method, (original) => (...args) => {
+      const timeCall = gpuMode === "draws" && running === null;
+      if (timeCall) startTimer(gpuStack[gpuStack.length - 1] ?? "main", drawingMaterial);
+      try {
+        return original(...args);
+      } finally {
+        if (timeCall) stopTimer();
+      }
+    });
+  }
 
   // Shader compiles and links, and uploads, on the context itself.
   const timed = (method: string, onCall: (ms: number, args: unknown[], result: unknown) => void) =>

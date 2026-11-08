@@ -265,14 +265,19 @@ test("draw timing credits each draw's GPU time to its pass and material, never t
     deleteQuery() {},
     getParameter: () => false,
     getQueryParameter: (query: object, name: number) => name === 1 ? result.has(query) : result.get(query),
+    drawElements() { clock += 1; },
+    clear() { clock += 0.5; },
   };
   const mesh = { name: "Rock", type: "Mesh", id: 1, parent: null };
   const geometry = { type: "BoxGeometry", index: { count: 36 } };
   const material = { name: "Stone", type: "MeshStandardMaterial", id: 7 };
   const renderer = {
     getContext: () => gl, shadowMap: {}, info: { programs: [] },
-    renderBufferDirect(_c: unknown, _s: unknown, _g: unknown, _m: unknown, _o: unknown, _gr: unknown) { clock += 1; },
-    clear() { clock += 0.5; },
+    renderBufferDirect(_c: unknown, _s: unknown, _g: unknown, _m: unknown, _o: unknown, _gr: unknown) {
+      clock += 2; // three binds the program, uniforms and textures: the GPU idles again
+      gl.drawElements();
+    },
+    clear() { gl.clear(); },
     render() {
       renderer.clear();
       for (let draw = 0; draw < 3; draw += 1) {
@@ -287,7 +292,7 @@ test("draw timing credits each draw's GPU time to its pass and material, never t
   const frame = () => { for (const { ref } of subscribers) ref.current({}, 1 / 60); };
   try {
     frame(); frame(); frame();
-    expect(breakdown.records()[0]?.gpu?.["main"]).toBe(12.5);
+    expect(breakdown.records()[0]?.gpu?.["main"]).toBe(18.5);
     breakdown.gpuTiming("draws");
     breakdown.reset();
     frame(); frame(); frame();
