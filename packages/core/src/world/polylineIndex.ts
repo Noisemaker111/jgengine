@@ -22,10 +22,19 @@ export interface PolylineIndexHit {
   point: Vec2;
 }
 
+/** A hit to pass as `out` to {@link PolylineIndex.nearest}, one per caller that reads it before its next query. @internal */
+export function createPolylineHit(): PolylineIndexHit {
+  return { segment: 0, t: 0, distance: 0, point: [0, 0] };
+}
+
 /** @internal */
 export interface PolylineIndex {
-  /** Exact nearest segment sample within `limit`, or null when the polyline stays farther away. */
-  nearest(x: number, z: number, limit: number): PolylineIndexHit | null;
+  /**
+   * Exact nearest segment sample within `limit`, or null when the polyline stays farther away. With
+   * `out` the hit is written into it (its `point` array too) and returned, so a sampler that reads the
+   * hit before its next query allocates nothing; without it every hit is a new object.
+   */
+  nearest(x: number, z: number, limit: number, out?: PolylineIndexHit): PolylineIndexHit | null;
   /** Segments tested by the most recent query — the bounded-work invariant tests assert on. */
   examined(): number;
 }
@@ -74,7 +83,7 @@ export function buildPolylineIndex(points: readonly Vec2[], reach = 0): Polyline
   let examined = 0;
 
   return {
-    nearest(x, z, limit) {
+    nearest(x, z, limit, out) {
       if (count === 0 || !(limit >= 0)) {
         examined = 0;
         return null;
@@ -96,9 +105,10 @@ export function buildPolylineIndex(points: readonly Vec2[], reach = 0): Polyline
       examined = 0;
       for (let r = Math.min(limit, cell * 2); ; r = Math.min(limit, r * 2)) {
         const reach = r * (1 + 1e-9) + 1e-9;
-        buckets.query(Math.max(minX, x - reach), Math.max(minZ, z - reach), Math.min(maxX, x + reach), Math.min(maxZ, z + reach), candidates);
-        examined += candidates.length;
-        for (const segment of candidates) {
+        const found = buckets.query(Math.max(minX, x - reach), Math.max(minZ, z - reach), Math.min(maxX, x + reach), Math.min(maxZ, z + reach), candidates);
+        examined += found;
+        for (let k = 0; k < found; k += 1) {
+          const segment = candidates[k]!;
           const offsetX = x - ax[segment]!;
           const offsetZ = z - az[segment]!;
           const segLengthSq = lengthSq[segment]!;
@@ -123,7 +133,14 @@ export function buildPolylineIndex(points: readonly Vec2[], reach = 0): Polyline
       }
       if (bestSegment >= 0) bestDistance = Math.hypot(x - bestX, z - bestZ);
       if (bestSegment < 0 || bestDistance > limit) return null;
-      return { segment: bestSegment, t: bestT, distance: bestDistance, point: [bestX, bestZ] };
+      if (out === undefined) return { segment: bestSegment, t: bestT, distance: bestDistance, point: [bestX, bestZ] };
+      out.segment = bestSegment;
+      out.t = bestT;
+      out.distance = bestDistance;
+      const point = out.point as [number, number];
+      point[0] = bestX;
+      point[1] = bestZ;
+      return out;
     },
     examined: () => examined,
   };

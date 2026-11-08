@@ -1,6 +1,6 @@
 import type { EnvironmentVec2, TerrainCoast, TerrainColors, TerrainMaterial, TerrainMaterialRegion } from "../world/features";
 import { pointInPolygon } from "../world/polygon";
-import { buildPolylineIndex, type PolylineIndex } from "../world/polylineIndex";
+import { buildPolylineIndex, createPolylineHit, type PolylineIndex } from "../world/polylineIndex";
 import type { SceneDocumentLike, ScenePathLike } from "../world/sceneShapes";
 import type { TerrainPathProfile } from "./pathTerrain";
 import { fractalNoise, seedFrom, seedPhase } from "./terrain";
@@ -294,10 +294,13 @@ function gully(x: number, z: number, size: number, seed: number): number {
   return 0.5 + 0.5 * fractalNoise(x, z, { seed, frequency: 1 / size, octaves: 3, lacunarity: 2.1, persistence: 0.5, ridged: true });
 }
 
+/** The hit every survey query writes into: each reads its hit before the next query. */
+const surveyHit = createPolylineHit();
+
 function hillsRise(entry: IndexedHills, x: number, z: number): number {
   const { hills } = entry;
   if (!inBounds(entry.bounds, x, z) || !pointInPolygon(hills.ring, x, z)) return 0;
-  const edge = entry.edge.nearest(x, z, hills.falloff);
+  const edge = entry.edge.nearest(x, z, hills.falloff, surveyHit);
   const mask = edge === null ? 1 : smooth01(edge.distance / hills.falloff);
   if (mask <= 0) return 0;
   // Separate hills with plains between them: negative noise stays at plains level, so no outline shows.
@@ -315,7 +318,7 @@ function cliffRise(entry: IndexedCliff, x: number, z: number): number {
   const { cliff } = entry;
   if (!inBounds(entry.bounds, x, z)) return 0;
   const half = cliff.face / 2;
-  const hit = entry.index.nearest(x, z, half + cliff.reach);
+  const hit = entry.index.nearest(x, z, half + cliff.reach, surveyHit);
   if (hit === null) return 0;
   const a = cliff.points[hit.segment];
   const b = cliff.points[hit.segment + 1] ?? a;
@@ -382,7 +385,11 @@ export function surveyHeightField(survey: Survey, plains: SurveyPlains = {}): (x
     for (const entry of cliffs) ground += cliffRise(entry, x, z);
     let mountain = 0;
     for (const { peak, seed } of peaks) {
-      const distance = Math.hypot(x - peak.at[0], z - peak.at[1]);
+      const dx = x - peak.at[0];
+      const dz = z - peak.at[1];
+      // A hypot is never below its larger side, so a point outside the peak's square is outside its circle.
+      if (Math.abs(dx) >= peak.radius || Math.abs(dz) >= peak.radius) continue;
+      const distance = Math.hypot(dx, dz);
       if (distance >= peak.radius) continue;
       let rise = peak.height * Math.pow(1 - smooth01(distance / peak.radius), peak.sharpness ?? 1.4);
       if (peak.erosion !== undefined && peak.erosion > 0) rise *= 1 - peak.erosion * GULLY_DEPTH * gully(x, z, peak.radius * 0.3, seed);
@@ -394,7 +401,7 @@ export function surveyHeightField(survey: Survey, plains: SurveyPlains = {}): (x
     }
     for (const { ridge, index, seed } of ridges) {
       const half = ridge.width / 2;
-      const hit = index.nearest(x, z, half);
+      const hit = index.nearest(x, z, half, surveyHit);
       if (hit === null) continue;
       const a = ridge.points[hit.segment];
       const b = ridge.points[hit.segment + 1] ?? a;
