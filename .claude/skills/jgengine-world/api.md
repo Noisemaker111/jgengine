@@ -6064,10 +6064,11 @@
 ## @jgengine/core/visibility/visibilitySystem
 
 - `Renderable` (interface): interface Renderable — A scene object the visibility system considers. A normal game object already carries a position and a version counter, so it becomes cullable automatically — no separate "cullable" component. Everything else is optional override.
+- `RenderableSource` (interface): interface RenderableSource — One group of renderables a {@link VisibilitySystem} walks, such as the scene's actors or its props.
 - `VisibilityDebugSnapshot` (interface): interface VisibilityDebugSnapshot { cameras: {id: string; kind: CameraKind; corners: number[]; preloadMargin: number}[]; bounds: {id: string; minX: number; minY: number; minZ: number; maxX: number; maxY: number; maxZ: number; visible: boolean}[]; partitions: {key: string; c… — ⚠ undocumented
 - `VisibilityResult` (interface): interface VisibilityResult { readonly visible: ReadonlySet<string>; readonly preload: ReadonlySet<string>; readonly stats: VisibilityStats; readonly generation: number } — ⚠ undocumented
 - `VisibilitySystem` (interface): interface VisibilitySystem { update(): VisibilityResult; isVisible(id: string): boolean; isPreloaded(id: string): boolean; boundsOf(id: string): RenderBounds | undefined; settings(): CullingSettings; setSettings(patch: Partial<CullingSettings>): void; stats(): Visibi… — ⚠ undocumented
-- `VisibilitySystemOptions` (interface): interface VisibilitySystemOptions { readonly renderables: () => Iterable<Renderable>; readonly cameras: () => readonly CameraVisibilityContext[]; readonly settings?: Partial<CullingSettings>; readonly sceneOverrides?: ObjectVisibilityOverrides; readonly globalOverrides?: Ob… — ⚠ undocumented
+- `VisibilitySystemOptions` (interface): interface VisibilitySystemOptions { readonly sources: readonly RenderableSource[]; readonly cameras: () => readonly CameraVisibilityContext[]; readonly settings?: Partial<CullingSettings>; readonly sceneOverrides?: ObjectVisibilityOverrides; readonly globalOverrides?: Objec… — ⚠ undocumented
 - `createVisibilitySystem` (function): function createVisibilitySystem(options: VisibilitySystemOptions): VisibilitySystem — ⚠ undocumented
 
 ## @jgengine/core/water/Ocean.draw

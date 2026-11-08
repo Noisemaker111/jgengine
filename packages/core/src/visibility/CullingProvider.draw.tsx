@@ -1,5 +1,5 @@
 // @skill jgengine-world
-import { createContext, useContext, useMemo, useRef, type ReactNode, type MutableRefObject } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode, type MutableRefObject } from "react";
 import { useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useGameContext } from "@jgengine/react/provider";
@@ -72,6 +72,7 @@ export function CullingProvider({ config, drawDistance, children }: { config: Vi
     return { ...config, culling: { ...config?.culling, defaultMaxRenderDistance: config?.culling?.defaultMaxRenderDistance ?? drawDistance } };
   }, [config, drawDistance]);
   const driver = useMemo(() => (enabled ? buildCullingDriver(ctx, resolvedConfig) : null), [ctx, resolvedConfig, enabled]);
+  useEffect(() => () => driver?.dispose(), [driver]);
   const published = useRef(-1);
   const publishedBy = useRef<object | null>(null);
 
