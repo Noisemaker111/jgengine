@@ -27,11 +27,9 @@ describe("the GitHub client", () => {
       github.checks("abc"),
       github.createPull({ base: "beta", head: "agent/x", title: "t", body: "b" }),
       github.editPull(1, { body: "b" }),
-      github.addLabel(1, "land:queue"),
-      github.mergePull(1),
+      github.mergePull(1, "abc"),
       github.closePull(1, "c"),
       github.branchRuns("beta", 3),
-      github.rerunRun(9),
     ];
     expect(seen.length).toBe(results.length);
     expect(seen.every((args) => args[0] === "api")).toBe(true);
@@ -56,7 +54,7 @@ describe("the GitHub client", () => {
     expect(down).toBe(OUTAGE_ATTEMPTS);
 
     let refusals = 0;
-    const refused = gitHub(() => (refusals++, { status: 1, stdout: "", stderr: "HTTP 405: Pull Request is not mergeable" }), "me/game", () => {}).mergePull(3);
+    const refused = gitHub(() => (refusals++, { status: 1, stdout: "", stderr: "HTTP 405: Pull Request is not mergeable" }), "me/game", () => {}).mergePull(3, "abc");
     expect(refused.ok).toBe(false);
     expect(refusals).toBe(1);
   });
@@ -64,12 +62,12 @@ describe("the GitHub client", () => {
   test("a PR reads its state, head, merge state and labels from the REST answer", () => {
     const api = fakeGitHub({
       pulls: [
-        { number: 5, head: "agent/x", sha: "s5", labels: ["land:queue"], mergeableState: "behind", draft: true },
+        { number: 5, head: "agent/x", sha: "s5", labels: ["bug"], mergeableState: "behind", draft: true },
         { number: 6, head: "agent/y", state: "closed", merged: true, crossRepo: true },
       ],
     });
     const open = api.github.pull(5);
-    expect(open.ok && open.value).toMatchObject({ state: "OPEN", headRefName: "agent/x", headRefOid: "s5", mergeStateStatus: "BEHIND", labels: ["land:queue"], isDraft: true });
+    expect(open.ok && open.value).toMatchObject({ state: "OPEN", headRefName: "agent/x", headRefOid: "s5", mergeStateStatus: "BEHIND", labels: ["bug"], isDraft: true });
     const merged = api.github.pull(6);
     expect(merged.ok && merged.value).toMatchObject({ state: "MERGED", isCrossRepository: true });
     const listed = api.github.listPulls({ state: "all" });

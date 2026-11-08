@@ -48,7 +48,6 @@ export interface FakeGitHub {
   /** Check runs per commit sha; a test changes them between polls. */
   checks: Record<string, FakeCheck[]>;
   comments: { number: number; body: string }[];
-  reruns: number[];
 }
 
 export function fakeGitHub(seed: {
@@ -68,7 +67,6 @@ export function fakeGitHub(seed: {
   const checks: Record<string, FakeCheck[]> = { ...seed.checks };
   const calls: FakeCall[] = [];
   const comments: { number: number; body: string }[] = [];
-  const reruns: number[] = [];
 
   const ok = (value: unknown): GhRun => ({ status: 0, stdout: value === null ? "" : JSON.stringify(value), stderr: "" });
   const refuse = (stderr: string): GhRun => ({ status: 1, stdout: "", stderr });
@@ -147,14 +145,12 @@ export function fakeGitHub(seed: {
       }
     }
     if (parts[0] === "pulls" && parts[2] === "merge" && call.method === "PUT" && pull !== undefined) {
+      // GitHub merges only while the head is the sha the caller names.
+      const head = pull.sha ?? `sha-${pull.number}`;
+      if (call.fields["sha"] !== undefined && call.fields["sha"] !== head) return refuse("HTTP 409: Head branch was modified. Review and try the merge again.");
       pull.merged = true;
       pull.state = "closed";
-      return ok({ merged: true });
-    }
-    if (parts[0] === "issues" && parts[2] === "labels" && call.method === "POST" && pull !== undefined) {
-      const label = call.fields["labels[]"] ?? "";
-      pull.labels = [...new Set([...(pull.labels ?? []), label])];
-      return ok(pull.labels.map((name) => ({ name })));
+      return ok({ merged: true, sha: `merge-${pull.number}` });
     }
     if (parts[0] === "issues" && parts[2] === "comments" && call.method === "POST" && pull !== undefined) {
       comments.push({ number, body: call.fields["body"] ?? "" });
@@ -179,12 +175,8 @@ export function fakeGitHub(seed: {
       const runs = (seed.runs ?? []).filter((run) => branch === null || run.branch === branch).slice(0, limit);
       return ok({ workflow_runs: runs.map((run) => ({ id: run.id, head_sha: run.headSha })) });
     }
-    if (parts[0] === "actions" && parts[1] === "runs" && parts[3] === "rerun" && call.method === "POST") {
-      reruns.push(Number(parts[2]));
-      return ok(null);
-    }
     return refuse(`HTTP 404: the fake has no ${call.method} ${call.path}`);
   };
 
-  return { github: gitHub(gh, repo, () => {}), gh, calls, pulls, checks, comments, reruns };
+  return { github: gitHub(gh, repo, () => {}), gh, calls, pulls, checks, comments };
 }

@@ -26,6 +26,7 @@ import { fileURLToPath } from "node:url";
 import { foldFragments, readFragments } from "./changelog-fragments";
 import { deploySite, publishThenDeploy, runStep } from "./deploy-site";
 import { checkoutGitHub } from "./github";
+import { mergeVerified } from "./land";
 import { awaitPublish, type AwaitResult, type RunGh } from "./release-await";
 
 export interface ChangelogSections {
@@ -500,8 +501,8 @@ function ghIn(root: string): RunGh {
 }
 
 /**
- * The rest of a release that a lane used to do by hand: commit, hand the PR to `land` (which pushes,
- * opens it and labels it for the queue), merge it through the queue, fast-forward `main`, then wait for the Publish
+ * The rest of a release that a lane used to do by hand: commit, hand the PR to `land` (which pushes
+ * and opens it), merge it, fast-forward `main`, then wait for the Publish
  * run, deploy jgengine.com from the released commit, and answer with the version. `--wait` is what keeps a lane out of `Start-Sleep 480; gh run view`.
  */
 async function landAndAwait(root: string, version: string, cutFrom: string): Promise<never> {
@@ -521,11 +522,11 @@ async function landAndAwait(root: string, version: string, cutFrom: string): Pro
   }
   const land = spawnSync("bun", ["scripts/land.ts"], { cwd: root, stdio: "inherit" });
   if (land.status !== 0) {
-    console.error("release: land did not finish; the cut is committed on this branch and the PR is not in the landing queue");
+    console.error("release: land did not finish; the cut is committed on this branch and nothing was merged");
     process.exit(land.status ?? 1);
   }
 
-  if (mergeThroughQueue(root) === null) process.exit(1);
+  if (mergeRelease(root) === null) process.exit(1);
   const forward = fastForwardMain(git);
   if (!forward.ok) {
     console.error(`release: fast-forwarding main failed: ${forward.error}`);
@@ -580,10 +581,11 @@ export function fastForwardMain(
 }
 
 /**
- * The release PR's merge is the event the publish run follows. It merges through the landing queue,
- * the one process that waits for CI and merges, run here in the foreground for this PR alone.
+ * The release PR's merge is the event the publish run follows. The release checked its own commit
+ * before cutting (the site build at the commit it releases), so it merges the head it pushed, as
+ * lane:close does; CI on the beta push and Publish's own check of that commit follow.
  */
-function mergeThroughQueue(root: string): number | null {
+function mergeRelease(root: string): number | null {
   const branch = spawnSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { cwd: root, encoding: "utf8" }).stdout.trim();
   const listed = checkoutGitHub(root).listPulls({ head: branch, state: "open", limit: 1 });
   const pr = listed.ok ? listed.value[0] : undefined;
@@ -591,11 +593,13 @@ function mergeThroughQueue(root: string): number | null {
     console.error(`release: no open PR for ${branch}${listed.ok ? "" : `: ${listed.error}`}; nothing was published`);
     return null;
   }
-  const queue = spawnSync("bun", ["scripts/land-queue.ts", "--pr", String(pr.number)], { cwd: root, stdio: "inherit" });
-  if (queue.status !== 0) {
-    console.error(`release: the landing queue did not merge #${pr.number}; nothing was published`);
+  const head = spawnSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).stdout.trim();
+  const merged = mergeVerified(checkoutGitHub(root), pr.number, head);
+  if (!merged.ok) {
+    console.error(`release: GitHub refused to merge #${pr.number}: ${merged.error}; nothing was published`);
     return null;
   }
+  console.log(`release: merged #${pr.number} as ${merged.sha}`);
   return pr.number;
 }
 

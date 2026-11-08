@@ -164,8 +164,8 @@ function harness(boat: BoatCli | null, steps: PlaceableStep[], localResult: (nam
 
 describe("runPlaced", () => {
   const steps = [
-    step("typecheck core", { command: ["bun", "--cwd=packages/core", "run", "check-types"], first: true }),
-    step("tests"),
+    step("typecheck core", { command: ["bun", "--cwd=packages/core", "run", "check-types"], first: true, cost: 12 }),
+    step("tests", { cost: 30 }),
     step("provision x", { command: ["bun", "games/scripts/provision-assets.ts", "x"] }),
     step("boot probe x", { command: ["bun", "games/scripts/capabilities-probe.ts", "x"], needs: ["provision x"] }),
   ];
@@ -258,6 +258,16 @@ describe("runPlaced", () => {
     const run = await h.run();
     expect(h.ranHere).toContain("tests");
     expect(run.boat).toMatchObject({ status: "broken", why: "setting up the machine failed: bun install --frozen-lockfile" });
+  });
+
+  test("a few seconds of Linux work runs here: a boat machine's start would cost more than the work", async () => {
+    const boat = fakeBoat({});
+    const gates = [step("gate a", { command: ["bun", "scripts/check-a.ts"] }), step("gate b", { command: ["bun", "scripts/check-b.ts"] })];
+    const h = harness(boat.cli, gates);
+    const run = await h.run();
+    expect(boat.runs()).toBe(0);
+    expect(h.ranHere.sort()).toEqual(["gate a", "gate b"]);
+    expect(run.boat).toMatchObject({ status: "off", why: "about 2 s of work, less than a boat machine's start" });
   });
 
   test("no boat CLI runs everything here", async () => {

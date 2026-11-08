@@ -5,7 +5,7 @@
  * On Windows a child stays in its caller's job object even when detached or started through
  * `Start-Process`, and agent harnesses end a whole job when a command times out or is stopped. That
  * killed the machine's dev broker about ten times in one hour on 2026-11-08 with no log line, and
- * every capture borrowing its browser failed mid-run. The land-queue runner died the same way on
+ * every capture borrowing its browser failed mid-run. lane:close's background runner died the same way on
  * 2026-11-03. So on Windows the WMI service creates the process: it has no parent here and no job to
  * share, and it gets exactly the environment passed in.
  */

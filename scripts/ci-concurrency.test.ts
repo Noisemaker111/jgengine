@@ -4,8 +4,8 @@ import { join } from "node:path";
 
 // The concurrency block decides whether a run finishes. On 24 Oct a push to beta cancelled the
 // previous beta run 6 times in 13 minutes: 122 runner-minutes were spent on runs that never
-// reached a verdict, and "is beta green" was answered by a run that never finished. A pull
-// request may still cancel its own superseded run; the two branches whose green is a fact do not.
+// reached a verdict, and "is beta green" was answered by a run that never finished. CI runs only
+// on those two branches now, and never cancels.
 const workflow = readFileSync(join(import.meta.dir, "..", ".github", "workflows", "ci.yml"), "utf8");
 
 function concurrencyBlock(text: string): { group: string; cancel: string } {
@@ -16,34 +16,16 @@ function concurrencyBlock(text: string): { group: string; cancel: string } {
   };
 }
 
-/** The refs a `github.ref != '<ref>'` expression names, in order. */
-function serialisedRefs(expression: string): string[] {
-  return [...expression.matchAll(/github\.ref != '([^']+)'/g)].map((match) => match[1]!);
-}
-
-test("beta serialises instead of cancelling, so a batched push gets a verdict", () => {
-  const { cancel } = concurrencyBlock(workflow);
-  expect(cancel).not.toBe("true");
-  expect(cancel).not.toBe("${{ !cancelled() }}");
-  expect(serialisedRefs(cancel)).toContain("refs/heads/beta");
+test("beta and main serialise instead of cancelling, so every push gets a verdict", () => {
+  expect(concurrencyBlock(workflow).cancel).toBe("false");
 });
 
-test("main keeps the behaviour it had: never cancelled", () => {
-  expect(serialisedRefs(concurrencyBlock(workflow).cancel)).toContain("refs/heads/main");
-});
-
-test("a pull request still cancels its own superseded run", () => {
-  const { cancel } = concurrencyBlock(workflow);
-  expect(cancel.startsWith("${{")).toBe(true);
-  expect(cancel.endsWith("}}")).toBe(true);
-  expect(cancel).not.toContain("refs/pull");
-  expect(serialisedRefs(cancel)).toEqual(["refs/heads/main", "refs/heads/beta"]);
-});
-
-test("a PR body edit starts no run, so it cannot cancel the run on the same commit", () => {
-  const types = /pull_request:\s*\n(?:\s*#.*\n)*\s*types:\s*\[([^\]]*)\]/.exec(workflow)?.[1] ?? "";
-  expect(types.split(",").map((type) => type.trim())).toEqual(["opened", "synchronize", "reopened"]);
-  expect(workflow).not.toMatch(/github\.event\.pull_request\.body|PR_BODY/);
+test("CI runs on pushes to beta and main, never on a pull request: lane:close's receipt gates a PR", () => {
+  const on = /^on:\n((?: {2}.*\n|\s*\n)+?)(?=^\S)/m.exec(workflow)?.[1] ?? "";
+  expect(on).toContain("push:");
+  expect(on).toMatch(/branches:\s*\[main, beta\]/);
+  expect(on).not.toContain("pull_request");
+  expect(workflow).not.toMatch(/github\.event\.pull_request|github\.base_ref/);
 });
 
 test("the group still keys on the ref, so one branch cannot cancel another", () => {
