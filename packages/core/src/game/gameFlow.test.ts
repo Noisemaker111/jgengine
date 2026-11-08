@@ -87,7 +87,16 @@ describe("gameFlow", () => {
     (ctx.game as unknown as { commands: unknown }).commands = { define: (id: string, c: unknown) => commands.set(id, c) };
     const system = createGameFlowSystem({ checkpointEverySeconds: 2 });
     system.create?.(ctx);
-    expect([...commands.keys()].sort()).toEqual(["continue", "menu.pane", "pause", "save", "settings.rebind", "start"]);
+    // One name per line in any order, so a change that adds a command adds a line here.
+    const expected = [
+      "continue",
+      "menu.pane",
+      "pause",
+      "save",
+      "settings.rebind",
+      "start",
+    ];
+    expect([...commands.keys()].sort()).toEqual(expected.sort());
     expect(gamePhase(ctx)).toBe("menu");
     system.update?.(ctx, 5);
     expect(calls).not.toContain("checkpoint");

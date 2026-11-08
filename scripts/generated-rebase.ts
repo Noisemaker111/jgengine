@@ -137,12 +137,31 @@ const OPEN = `<<<<<<< ${SIDE}-ours`;
 const BASE_PART = `||||||| ${SIDE}-base`;
 const SPLIT = "=======";
 const CLOSE = `>>>>>>> ${SIDE}-theirs`;
-export const MERGE_FILE_LABELS: readonly string[] = ["ours", "base", "theirs"].flatMap((side) => ["-L", `${SIDE}-${side}`]);
+/**
+ * The `git merge-file` style and labels {@link keepBothInsertions} reads. Plain `--diff3`, not `--zdiff3`: zdiff3
+ * lifts the lines two insertions share at their start or end (an `import {`, a closing `}),`) out of the
+ * conflict, so keeping both sides kept those lines once and broke the code.
+ */
+export const MERGE_FILE_ARGS: readonly string[] = ["--diff3", ...["ours", "base", "theirs"].flatMap((side) => ["-L", `${SIDE}-${side}`])];
 
 /**
- * `git merge-file -p --zdiff3` output (labelled with `MERGE_FILE_LABELS`) with every conflict in which both
- * sides only added lines resolved to the base's added lines, then the lane's. Null when any conflict changed
- * or removed a line the common ancestor had: that one is the lane's to resolve.
+ * Both sides' added lines, the base's first. When one side's lines open or close with every line the other
+ * added (a lane branched from another unlanded lane carries that lane's additions), the longer is kept alone,
+ * since two copies of one import name or field would not compile.
+ */
+function unionOfInsertions(ours: readonly string[], theirs: readonly string[]): string[] {
+  const holds = (long: readonly string[], short: readonly string[]): boolean =>
+    short.length <= long.length &&
+    (short.every((line, index) => line === long[index]) || short.every((line, index) => line === long[long.length - short.length + index]));
+  if (holds(theirs, ours)) return [...theirs];
+  if (holds(ours, theirs)) return [...ours];
+  return [...ours, ...theirs];
+}
+
+/**
+ * `git merge-file -p` output (with `MERGE_FILE_ARGS`) with every conflict in which both sides only added
+ * lines resolved to the base's added lines, then the lane's ({@link unionOfInsertions}). Null when any
+ * conflict changed or removed a line the common ancestor had: that one is the lane's to resolve.
  */
 export function keepBothInsertions(merged: string): string | null {
   const out: string[] = [];
@@ -162,7 +181,7 @@ export function keepBothInsertions(merged: string): string | null {
       else base.push(line);
     } else if (bare === CLOSE) {
       if (base.length > 0) return null;
-      out.push(...ours, ...theirs);
+      out.push(...unionOfInsertions(ours, theirs));
       [ours, base, theirs] = [null, null, null];
     } else theirs.push(line);
   }
@@ -253,7 +272,7 @@ export function rebaseResolvingGenerated(git: (args: string[]) => Run, onto: str
         writeFileSync(file, text!);
         return file;
       });
-      const merged = git(["merge-file", "-p", "--zdiff3", ...MERGE_FILE_LABELS, ...files]);
+      const merged = git(["merge-file", "-p", ...MERGE_FILE_ARGS, ...files]);
       if (merged.status === 0) return merged.stdout;
       // merge-file answers the number of conflicts, or a value of 128 and above for an error such as a binary file.
       return merged.status > 0 && merged.status < 128 ? keepBothInsertions(merged.stdout) : null;

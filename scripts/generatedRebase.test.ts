@@ -2,11 +2,14 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, setDefaultTimeout, test } from "bun:test";
 
-import { keepBothInsertions, mergeSuiteReports, MERGE_FILE_LABELS, rebaseResolvingGenerated } from "./generated-rebase";
+import { keepBothInsertions, mergeSuiteReports, MERGE_FILE_ARGS, rebaseResolvingGenerated } from "./generated-rebase";
 import type { Run } from "./land";
 import { SUITE_SCORE_END, SUITE_SCORE_START } from "./suite-score-block";
+
+// Each test runs real git repos; on a busy Windows PC a rebase test took 5-6 s and failed bun's 5 s default.
+setDefaultTimeout(60_000);
 
 const README = "games/demo/README.md";
 const dirs: string[] = [];
@@ -71,7 +74,7 @@ describe("rebaseResolvingGenerated", () => {
   });
 });
 
-/** `git merge-file -p --zdiff3` of three texts, labelled as the rebase labels them. */
+/** `git merge-file -p` of three texts, in the style and with the labels the rebase uses. */
 function mergeFile(ours: string, base: string, theirs: string): string {
   const dir = mkdtempSync(join(tmpdir(), "gen-rebase-merge-"));
   dirs.push(dir);
@@ -79,7 +82,7 @@ function mergeFile(ours: string, base: string, theirs: string): string {
     writeFileSync(join(dir, name), text);
     return join(dir, name);
   });
-  return spawnSync("git", ["merge-file", "-p", "--zdiff3", ...MERGE_FILE_LABELS, ...files], { encoding: "utf8" }).stdout;
+  return spawnSync("git", ["merge-file", "-p", ...MERGE_FILE_ARGS, ...files], { encoding: "utf8" }).stdout;
 }
 
 describe("keepBothInsertions", () => {
@@ -88,6 +91,21 @@ describe("keepBothInsertions", () => {
   test("lines both sides appended at one place are both kept, the base's first", () => {
     const merged = mergeFile(probe(["  stones: 2,"]), probe([]), probe(["  arrows: 3,"]));
     expect(keepBothInsertions(merged)).toBe(probe(["  stones: 2,", "  arrows: 3,"]));
+  });
+
+  test("two added blocks that open and close with the same lines are both kept whole", () => {
+    const imports = (added: string) => `import {\n  world,\n} from "./world";\n${added}\nexport {};\n`;
+    const block = (name: string) => `import {\n  ${name},\n} from "./game/${name}";\n`;
+    const merged = keepBothInsertions(mergeFile(imports(block("dossier")), imports(""), imports(block("tranqs"))));
+    expect(merged).toBe(imports(`${block("dossier")}${block("tranqs")}`));
+  });
+
+  test("a lane that carries another lane's added lines and more keeps one copy of them", () => {
+    const imports = (names: string[]) => ["import {", "  a,", ...names.map((name) => `  ${name},`), '} from "./creatures";', ""].join("\n");
+    const merged = mergeFile(imports(["speciesNear"]), imports([]), imports(["speciesNear", "wildLevelNear"]));
+    expect(keepBothInsertions(merged)).toBe(imports(["speciesNear", "wildLevelNear"]));
+    const before = mergeFile(imports(["speciesNear"]), imports([]), imports(["wildLevelNear", "speciesNear"]));
+    expect(keepBothInsertions(before)).toBe(imports(["wildLevelNear", "speciesNear"]));
   });
 
   test("a line both sides changed is a real conflict", () => {
