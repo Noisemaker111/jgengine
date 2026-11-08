@@ -34,6 +34,7 @@ import {
   type Step,
   type Workspace,
 } from "./verify-fast";
+import { MODEL_TEST_REASON } from "./verify-boat";
 import { runSteps, type StepResult } from "./stepScheduler";
 import { buildImportGraph, specifiers, type ImportGraph } from "./import-graph";
 import { matchingShard, walkTestFiles } from "./test-shard";
@@ -354,6 +355,21 @@ describe("attribution fails loudly", () => {
     expect(steps[0]?.command).toContain("packages/core/src/random/pick.test.ts");
     expect(steps.slice(1).flatMap((step) => step.command)).not.toContain("packages/core/src/random/pick.test.ts");
     expect(steps.slice(1).flatMap((step) => step.command)).toContain("packages/core/src/loot/lootGen.test.ts");
+  });
+
+  test("tests that read this PC's models wait for those games' models to be linked, so a fresh worktree passes them", () => {
+    const model = "games/scrap-signal/src/game/world/scrap-signal.world.test.ts";
+    const windows = "scripts/windows-only.test.ts";
+    const plan: Plan = { ...emptyPlan, tests: [model, windows, "packages/core/src/random/pick.test.ts"] };
+    const localTests = new Map([[model, MODEL_TEST_REASON], [windows, "checks something only Windows has"]]);
+    const steps = fastSteps(plan, { lanes: 2, localTests });
+    const provision = steps.find((step) => step.name.startsWith("provision models"));
+    expect(provision?.command).toEqual(["bun", "games/scripts/provision-assets.ts", "scrap-signal"]);
+    expect(provision?.localBecause).toBe(MODEL_TEST_REASON);
+    expect(steps.find((step) => step.name === "test 2 file(s) on this PC")?.needs).toEqual([provision!.name]);
+    const onlyWindows = fastSteps({ ...emptyPlan, tests: [windows] }, { localTests });
+    expect(onlyWindows.some((step) => step.name.startsWith("provision"))).toBe(false);
+    expect(onlyWindows.find((step) => step.name.endsWith("on this PC"))?.needs).toBeUndefined();
   });
 
   test("a pure rename and a demo never need a test", () => {

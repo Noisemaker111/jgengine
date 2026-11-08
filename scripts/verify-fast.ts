@@ -37,7 +37,7 @@ import { siteGames } from "./siteGames";
 import { runSteps, type ScheduledStep, type StepResult } from "./stepScheduler";
 import { TEST_ROOTS, walkTestFiles } from "./test-shard";
 import { createVerifyReceipt } from "./verify-receipt";
-import { boatForThisRun, EXIT_BOAT_SPENT, localTestFiles, placeSteps, runPlaced, withHeavySlot, type BoatReceipt, type Where } from "./verify-boat";
+import { boatForThisRun, EXIT_BOAT_SPENT, localTestFiles, MODEL_TEST_REASON, placeSteps, runPlaced, withHeavySlot, type BoatReceipt, type Where } from "./verify-boat";
 
 const VERIFY_FAST_USAGE = {
   summary: "run only the tests and static gates this branch's diff reaches, in seconds",
@@ -686,7 +686,18 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
     if (here.length > 0) {
       const reasons = [...new Set(here.map((file) => options.localTests!.get(file)!))];
       const isOwn = plan.changed.some((file) => ownTests(file, here).length > 0);
-      steps.push({ ...testStep(here, `test ${here.length} file(s) on this PC`, 999, isOwn), localBecause: reasons.join("; ") });
+      // A worktree starts with no models: link (or, once per machine, download) the packs those tests read
+      // first, or every model they check reads as missing. A test outside a game's folder gets every game's.
+      const readers = here.filter((file) => options.localTests!.get(file) === MODEL_TEST_REASON);
+      const owners = readers.map((file) => /^games\/([^/]+)\//.exec(file)?.[1]);
+      const provision = owners.includes(undefined) ? [] : [...new Set(owners as string[])].sort();
+      const provisionStep = `provision models for tests${provision.length > 0 ? ` ${provision.join(" ")}` : ""}`;
+      if (readers.length > 0) steps.push({ name: provisionStep, command: ["bun", "games/scripts/provision-assets.ts", ...provision], cost: 2, localBecause: MODEL_TEST_REASON });
+      steps.push({
+        ...testStep(here, `test ${here.length} file(s) on this PC`, 999, isOwn),
+        localBecause: reasons.join("; "),
+        ...(readers.length > 0 ? { needs: [provisionStep] } : {}),
+      });
     }
     if (rest.length > 0) {
       const total = rest.reduce((sum, file) => sum + cost[file]!, 0);
