@@ -23,8 +23,8 @@ import { engineRecord, resolveEngineIdentity, type EngineRecord } from "./engine
 import { checkoutIdentity, readServerIdentityResult, type ServerIdentityReport } from "./devServerMarker";
 import { baselinePath, cleanCommitFor, conditionsKey, readBaselineAt, resolveCommit, saveBaseline } from "./perf-baselines";
 import {
-  acquireWarmCapture,
-  daemonDiedUnder,
+  acquireWarmCaptureOrExit,
+  runWithDaemonRecovery,
   ensureDaemonTarget,
   withDaemonWatch,
   brokerTurn,
@@ -1338,7 +1338,7 @@ async function main(): Promise<void> {
     : headed
       ? "--headed needs its own browser window"
       : undefined;
-  const warm = await acquireWarmCapture({
+  const warm = await acquireWarmCaptureOrExit({
     cold: parsed.args.cold === true || ownBrowser !== undefined,
     ...(ownBrowser === undefined ? {} : { because: ownBrowser }),
   });
@@ -1457,19 +1457,12 @@ async function main(): Promise<void> {
     ));
   };
 
-  let exitCode = await runPerf(warm.daemon, warm.mode).catch((error: unknown) => {
-    console.error(error instanceof Error ? error.message : error);
-    return 1;
-  });
-  if (warm.daemon !== null && exitCode !== 0 && (await daemonDiedUnder(warm.daemon))) {
-    console.error(
-      `cold: the daemon on :${warm.daemon.chromePort} died mid-run — falling back to a direct launch for ${pending.join(", ")}, no retry`,
-    );
-    exitCode = await runPerf(null, "cold").catch((error: unknown) => {
+  const exitCode = await runWithDaemonRecovery(warm, (daemon, mode) =>
+    runPerf(daemon, mode).catch((error: unknown) => {
       console.error(error instanceof Error ? error.message : error);
       return 1;
-    });
-  }
+    }),
+  );
   process.exit(exitCode);
 }
 

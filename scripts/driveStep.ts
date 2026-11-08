@@ -6,7 +6,7 @@
  */
 import { localGetJson } from "./localhostHttp";
 import { CdpSession, applyDevice, closePageTarget, navigateCapturePageWithRetry, withBrowserSession, type Device, type SizeMode, type ViewportOverride } from "./browser-lib";
-import { acquireWarmCapture, brokerTurn, ensureDaemonTarget, withDaemonWatch } from "./shoot-daemon";
+import { acquireWarmCaptureOrExit, brokerTurn, ensureDaemonTarget, runWithDaemonRecovery, withDaemonWatch, type ShootDaemonState } from "./shoot-daemon";
 import { createBrowserFlow } from "./browserFlow";
 import { clearOriginStorage, installFrameCounter, pageFlowDriver, readProbe } from "./drivePage";
 import { closestHint } from "./closestMatch";
@@ -135,12 +135,21 @@ export function guardFlowCalls<F extends object>(flow: F): F {
 
 /** Run every step on the live page; 0 when all pass, 1 at the first failure. */
 export async function runLiveSteps(options: LiveStepOptions): Promise<number> {
-  const warm = await acquireWarmCapture({});
-  const daemon = warm.daemon;
-  if (daemon === null) {
-    console.error("drive --step: needs the warm browser, and it is not running (see the line above); run any `bun run drive` once to start it");
-    return 1;
-  }
+  const warm = await acquireWarmCaptureOrExit({});
+  return runWithDaemonRecovery(warm, async (daemon) => {
+    if (daemon === null) {
+      console.error("drive --step: needs the warm browser, and it is not running (see the line above); run any `bun run drive` once to start it");
+      return 1;
+    }
+    return liveStepsOn(daemon, options).catch((error: unknown) => {
+      console.error(error instanceof Error ? error.message : error);
+      return 1;
+    });
+  });
+}
+
+/** The steps on one warm browser; a function so a browser that dies under them is restarted once. */
+async function liveStepsOn(daemon: ShootDaemonState, options: LiveStepOptions): Promise<number> {
   const dev = await ensureDaemonTarget(daemon, "dev");
   return withDaemonWatch(daemon, withBrowserSession(
     {
