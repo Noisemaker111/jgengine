@@ -4,7 +4,7 @@ import { requireUniform } from "../render/uniformMaterial.draw";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { EffectComposer, RenderPass, UnrealBloomPass, type Pass } from "three-stdlib";
+import { EffectComposer, RenderPass, type Pass } from "three-stdlib";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { GTAOPass } from "three/examples/jsm/postprocessing/GTAOPass.js";
 import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass.js";
@@ -43,6 +43,7 @@ import { readSkyLight } from "@jgengine/core/sky/skyLight.draw";
 import { ExposureMeterPass } from "./autoExposure.draw";
 import { AtmospherePass } from "./atmospherePass.draw";
 import { BeautyPass } from "./beautyPass.draw";
+import { BloomPass } from "./bloomPass.draw";
 import { ContactShadowPass } from "./contactShadowPass.draw";
 import { createGradePass, type GradePass } from "./gradeShader.draw";
 import { MotionBlurPass } from "./motionBlurPass.draw";
@@ -275,6 +276,8 @@ interface BuiltGraph {
   grade: GradePass | null;
   /** Tone mapping and sRGB encoding; the grade does its work instead on the frames {@link syncTail} picks. */
   output: OutputPass;
+  /** Temporal AA, whose sharpen the grade also does on the frames {@link syncTail} picks; null without it. */
+  taa: TemporalAaPass | null;
   /** Stages this chain actually built, in pass order. A stage absent here costs no draw. */
   stages: readonly PostfxStage[];
   /** The plan's {@link PostfxStagePlan.resolutionScale}, kept so a resize re-applies it. */
@@ -334,7 +337,8 @@ const drawingBuffer = new THREE.Vector2();
  * Let the grade do the OutputPass's work on the frames where nothing draws between them: no
  * stylize, no reveal fade on, no chromatic aberration (which samples the tone-mapped frame off its
  * own texel) and a frame the size of the screen. The OutputPass is off on those frames, so the chain
- * skips one full-screen read and write.
+ * skips one full-screen read and write. On those frames the grade also does temporal AA's sharpen
+ * whenever the exposure meter will not read the sharpened frame, which skips a second one.
  * @internal
  */
 export function syncTail(built: BuiltGraph): void {
@@ -343,7 +347,8 @@ export function syncTail(built: BuiltGraph): void {
   const passes = built.composer.passes;
   const from = passes.indexOf(built.output);
   const to = passes.indexOf(grade);
-  const between = passes.slice(from + 1, to).some((pass) => pass.enabled);
+  let between = false;
+  for (let index = from + 1; index < to; index++) if (passes[index]!.enabled) between = true;
   const target = built.composer.readBuffer;
   built.composer.renderer.getDrawingBufferSize(drawingBuffer);
   const fuse =
@@ -351,6 +356,23 @@ export function syncTail(built: BuiltGraph): void {
     target.width === drawingBuffer.x && target.height === drawingBuffer.y;
   grade.fuseOutput = fuse;
   built.output.enabled = !fuse;
+
+  // Temporal AA's sharpen goes into the grade as well when only the exposure meter sits between them
+  // and it will not read the sharpened frame this time.
+  const taa = built.taa;
+  let sharpen = fuse && taa !== null && taa.enabled;
+  if (taa !== null && sharpen) {
+    const at = passes.indexOf(taa);
+    sharpen = at >= 0 && at < from;
+    for (let index = at + 1; sharpen && index < to; index++) {
+      const pass = passes[index]!;
+      if (pass === built.output || !pass.enabled) continue;
+      if (pass instanceof ExposureMeterPass && !pass.readsNextFrame()) continue;
+      sharpen = false;
+    }
+  }
+  grade.fuseSharpen = sharpen;
+  if (taa !== null) taa.sharpenIn = sharpen ? grade : null;
 }
 
 /** Release each pass and the composer's owned targets. @internal */
@@ -376,14 +398,20 @@ function dryRender(built: BuiltGraph, every = false): void {
   syncTail(built);
   try {
     built.composer.render(0);
-    // The grade's other variant links too, so the frame that switches between them does not.
+    // The grade's other variants link too, so the frame that switches between them does not.
     const grade = built.grade;
     if (grade !== null) {
-      grade.fuseOutput = !grade.fuseOutput;
+      const drawn = [grade.fuseOutput, grade.fuseSharpen] as const;
       try {
-        grade.render(built.composer.renderer, built.composer.writeBuffer, built.composer.readBuffer);
+        for (const [output, sharpen] of [[false, false], [true, false], [true, true]] as const) {
+          if (output === drawn[0] && sharpen === drawn[1]) continue;
+          if (sharpen && built.taa === null) continue;
+          grade.fuseOutput = output;
+          grade.fuseSharpen = sharpen;
+          grade.render(built.composer.renderer, built.composer.writeBuffer, built.composer.readBuffer);
+        }
       } finally {
-        grade.fuseOutput = !grade.fuseOutput;
+        [grade.fuseOutput, grade.fuseSharpen] = drawn;
       }
     }
   } finally {
@@ -598,13 +626,13 @@ export function buildPostGraph(
   if (plan.bloom !== null) {
     effect(
       passNamed(
-        new UnrealBloomPass(
+        new BloomPass(
           new THREE.Vector2(width, height),
           plan.bloom.strength ?? 0.32,
           plan.bloom.radius ?? 0.55,
           plan.bloom.threshold ?? 0.85,
         ),
-        "UnrealBloomPass",
+        "BloomPass",
       ),
     );
     built.push("bloom");
@@ -685,7 +713,7 @@ export function buildPostGraph(
     built.push("grade");
   }
 
-  const graph: BuiltGraph = { composer, grade, output, stages: built, resolutionScale: plan.resolutionScale, effects, reveal };
+  const graph: BuiltGraph = { composer, grade, output, taa, stages: built, resolutionScale: plan.resolutionScale, effects, reveal };
   showEffects(graph, false);
   if (reveal !== null) {
     reveal.snapshot.enabled = false;

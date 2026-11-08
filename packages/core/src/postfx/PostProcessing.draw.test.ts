@@ -263,6 +263,32 @@ describe("effects after the reveal", () => {
     disposeGraph(graph);
   });
 
+  test("the grade also sharpens temporal AA's history unless the exposure meter reads the sharpened frame", () => {
+    const build = (autoExposure: false | undefined) =>
+      withImage(() => buildPostGraph(stubRenderer(), new THREE.Scene(), new THREE.PerspectiveCamera(), planPostStages({ toneMapping: "aces", bloom: {}, autoExposure }, "high"), 320, 180));
+    const unmetered = build(false);
+    showEffects(unmetered, true);
+    unmetered.grade!.renderToScreen = true;
+    syncTail(unmetered);
+    expect(unmetered.grade!.fuseSharpen).toBe(true);
+    expect(unmetered.taa!.sharpenIn).toBe(unmetered.grade);
+    // With TAA off (the loading cover) there is nothing to sharpen.
+    showEffects(unmetered, false);
+    syncTail(unmetered);
+    expect(unmetered.grade!.fuseSharpen).toBe(false);
+    expect(unmetered.taa!.sharpenIn).toBeNull();
+    disposeGraph(unmetered);
+    // A fresh meter samples its first frames, so the sharpened frame must exist for it.
+    const metered = build(undefined);
+    showEffects(metered, true);
+    metered.grade!.renderToScreen = true;
+    syncTail(metered);
+    expect(metered.grade!.fuseOutput).toBe(true);
+    expect(metered.grade!.fuseSharpen).toBe(false);
+    expect(metered.taa!.sharpenIn).toBeNull();
+    disposeGraph(metered);
+  });
+
   test("the AO, contact-shadow and beauty-copy draws merge into one only at an AO blend of 1", () => {
     const build = (blend: number) =>
       withImage(() => buildPostGraph(stubRenderer(), new THREE.Scene(), new THREE.PerspectiveCamera(), planPostStages({ toneMapping: "aces", ao: { blend }, bloom: {} }, "high"), 320, 180));
