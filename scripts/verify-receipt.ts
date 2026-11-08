@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { mkdirSync, renameSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import type { ScheduledStep, StepResult } from "./stepScheduler";
@@ -62,4 +62,62 @@ export function createVerifyReceipt(root: string, data: Record<string, unknown>,
       save();
     },
   };
+}
+
+/**
+ * How much a run proves: `--cheap` the type-checks and gates, a plain run those and the tests and
+ * boots, `--landing` also the site build, `--full` what CI runs.
+ */
+export type VerifyScope = "cheap" | "fast" | "landing" | "full";
+const SCOPE_RANK: Readonly<Record<VerifyScope, number>> = { cheap: 0, fast: 1, landing: 2, full: 3 };
+
+/** What a passing receipt must match for its pass to stand for a new run. */
+export interface ReuseKey {
+  /** The working tree's id (`workingTree` in boat-snapshot.ts): the same id is the same bytes. */
+  tree: string;
+  /** The commit the diff is taken from: the same tree against another merge base is another plan. */
+  mergeBase: string;
+  runtime: string;
+  scope: VerifyScope;
+  skillApi: boolean;
+}
+
+/** The receipts this many newest runs left are read; an older pass is not looked for. */
+const REUSE_LOOKBACK = 40;
+
+/**
+ * The newest passing receipt under `.scratch/verify-fast/runs/` that proved at least what this run
+ * would, on this exact tree: a run whose tree changed while it ran records no tree and never matches.
+ */
+export function passingReceipt(root: string, key: ReuseKey): { path: string; endedAt: string } | null {
+  const runs = join(root, ".scratch", "verify-fast", "runs");
+  let dirs: { path: string; at: number }[];
+  try {
+    dirs = readdirSync(runs).map((name) => {
+      const path = join(runs, name, "receipt.json");
+      try {
+        return { path, at: statSync(path).mtimeMs };
+      } catch {
+        return { path, at: 0 };
+      }
+    });
+  } catch {
+    return null;
+  }
+  for (const { path, at } of dirs.sort((a, b) => b.at - a.at).slice(0, REUSE_LOOKBACK)) {
+    if (at === 0) continue;
+    let receipt: Record<string, unknown>;
+    try {
+      receipt = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+    } catch {
+      continue;
+    }
+    const scope = receipt["scope"];
+    if (receipt["status"] !== "passed" || typeof scope !== "string" || !(scope in SCOPE_RANK)) continue;
+    if (receipt["tree"] !== key.tree || receipt["mergeBase"] !== key.mergeBase || receipt["runtime"] !== key.runtime) continue;
+    if (SCOPE_RANK[scope as VerifyScope] < SCOPE_RANK[key.scope]) continue;
+    if (key.skillApi && receipt["skillApi"] !== true && scope !== "full") continue;
+    return { path, endedAt: typeof receipt["endedAt"] === "string" ? receipt["endedAt"] : "" };
+  }
+  return null;
 }

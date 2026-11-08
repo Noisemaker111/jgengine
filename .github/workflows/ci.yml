@@ -1,21 +1,19 @@
 name: CI
 
 # Default every job's GITHUB_TOKEN to read-only; jobs that need more (the
-# red-main reporter's issues: write) escalate at the job level.
+# red-branch reporter's issues: write) escalate at the job level.
 permissions:
   contents: read
 
+# Pushes to beta and main only. A PR is gated by lane:close's verify:fast receipt on the pushed head
+# (scripts/lane-close.ts), which covers every class PR CI caught in the week of 1-7 Nov 2026; the
+# rest were beta already red or runner timeouts. This run on the beta push is the backstop, and a red
+# one opens the "CI red on beta" issue below.
 on:
   push:
     branches: [main, beta]
-  # No `edited`: no step reads the PR body, and a body edit started a second run on the same commit
-  # that cancelled the running one, which the queue then read as a failure.
-  pull_request:
-    types: [opened, synchronize, reopened]
 
-# One run per ref at a time. A pull request cancels its own superseded run: nobody reads the
-# old one, and the newest commit is the one that matters. `main` and `beta` do not cancel,
-# because their green is a fact someone asks about: on 24 Oct 11 of 44 pushes to beta were
+# One run per ref at a time, never cancelled, because a branch's green is a fact someone asks about: on 24 Oct 11 of 44 pushes to beta were
 # cancelled, 122 runner-minutes went on runs killed after they started (40115639711,
 # 40115766928, 40116041724, 40111249236), and "is beta green" was answered by a run that never
 # finished. GitHub still keeps only the newest pending run when a burst arrives, which costs
@@ -23,7 +21,7 @@ on:
 # reports was reached.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/beta' }}
+  cancel-in-progress: false
 
 jobs:
   # Decides which games the `games` job type-checks and tests. `scripts/ci-scope.ts` owns the
@@ -52,17 +50,9 @@ jobs:
         with:
           bun-version: 1.4.2
       - id: scope
-        env:
-          EVENT: ${{ github.event_name }}
-          BASE: ${{ github.base_ref }}
         run: |
-          if [ "$EVENT" != "pull_request" ]; then
-            echo "push to ${{ github.ref }} runs the full gate"
-            bun scripts/ci-scope.ts --all --github-output
-            exit 0
-          fi
-          git fetch --no-tags origin "$BASE"
-          bun scripts/ci-scope.ts --base "origin/$BASE" --github-output
+          echo "push to ${{ github.ref }} runs the full gate"
+          bun scripts/ci-scope.ts --all --github-output
 
   quick:
     runs-on: ubuntu-latest
@@ -91,7 +81,6 @@ jobs:
       # Needs the `bun run build` above.
       - run: bun run check export-manifest
 
-  # PRs run everything main runs, split into parallel jobs, so the landing queue cannot land a red main.
   # The type-check stages used to run one after another: 59 s on a runner, of
   # which the tsc fan-out was 21 s and three generators 23 s. scripts/type-shard.ts runs the
   # checks the table in scripts/run-stages.ts gives the `types` job, four in flight, heaviest first, and keeps this one
@@ -208,7 +197,7 @@ jobs:
   # symlink cases, and `Bun.build` returning `EINVAL: failed to open root directory: /C:/...` in
   # narrativeAuthoring.test.ts). The Ubuntu jobs cannot see them, so beta learned about them from
   # whoever ran the suite on a PC. This job runs that suite on windows-latest for a push to beta
-  # and for workflow_dispatch; a pull request skips it in seconds through `windows`, and no
+  # and for workflow_dispatch; a main push skips it in seconds through `windows`, and no
   # `continue-on-error` or allow-list hides a failure - red here is the point until #2119 closes.
   windows-tests:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/beta')
@@ -227,7 +216,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun --cwd=packages/jgengine run test
 
-  # The `windows` check branch protection reads: green in seconds on a pull request and on a main
+  # The `windows` check branch protection reads: green in seconds on a main
   # push, and green on a beta push or manual run only when the Windows suite passed.
   windows:
     needs: [windows-tests]
@@ -246,7 +235,7 @@ jobs:
             exit 0
           fi
           test "$TESTS" = "skipped"
-          echo "windows suite skipped: pull requests and main pushes run the Ubuntu suite; a push to beta or a manual run covers Windows"
+          echo "windows suite skipped: main pushes run the Ubuntu suite; a push to beta or a manual run covers Windows"
 
   ci:
     needs: [changes, quick, types, test, web-build, games, windows]
@@ -288,19 +277,20 @@ jobs:
             echo "ran: every test shard"
           fi
           echo "game scope $GAMES: boots run locally in lane:close ($REASON)"
-      - name: Track red main in one issue
-        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Track a red main or beta in one issue each
+        if: always() && github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           VERDICT: ${{ job.status }}
+          BRANCH: ${{ github.ref_name }}
         run: |
-          title="CI red on main"
+          title="CI red on $BRANCH"
           n=$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number' || true)
           run="[Run ${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
           if [ "$VERDICT" = "success" ]; then
             [ -z "$n" ] || gh issue close "$n" --comment "Green again: $run on \`${{ github.sha }}\`."
             exit 0
           fi
-          body="Latest failure: $run on \`${{ github.sha }}\`. Fix forward from origin/main on a fresh branch. This issue closes itself when main goes green."
+          body="Latest failure: $run on \`${{ github.sha }}\`. Fix forward from origin/$BRANCH on a fresh branch. This issue closes itself when $BRANCH goes green."
           if [ -n "$n" ]; then gh issue edit "$n" --body "$body"; else gh issue create --title "$title" --body "$body"; fi

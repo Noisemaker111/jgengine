@@ -4,7 +4,7 @@
 // tests that can reach it and the cheap static gates the `quick` CI job runs, then
 // runs only those.
 //
-//   bun run verify:fast              # the loop while iterating: seconds
+//   bun run verify:fast              # the loop while iterating, and what lane:close runs
 //   bun run verify:fast --full       # everything CI runs; reproduce CI failures
 //   bun run verify:fast --plan       # the steps and their commands, nothing run
 //   bun run verify:fast --json       # one { ok, ms, checks } document on stdout
@@ -14,6 +14,10 @@
 // type error is reported in seconds instead of after minutes of tests that were never the problem.
 // `--cheap` (the landing's preflight) runs every gate CI's quick and types jobs run and reports
 // every failure in one pass instead.
+//
+// A passing run records the working tree's id in its receipt. A later run on the same tree, against
+// the same merge base, with no more to prove, prints one line naming that receipt and runs nothing:
+// a hand run that passed is the landing's proof, and lane:close does not pay for it again.
 //
 // Exit: 0 verified, 1 a step failed. A change no test can be attributed to (a root config, the lockfile, a source
 // file under no tested root) runs every test file and type-check; `--plan` names it.
@@ -36,7 +40,8 @@ import { isVerbose, takeVerboseFlag } from "./verbosity";
 import { siteGames } from "./siteGames";
 import { runSteps, type ScheduledStep, type StepResult } from "./stepScheduler";
 import { TEST_ROOTS, walkTestFiles } from "./test-shard";
-import { createVerifyReceipt } from "./verify-receipt";
+import { workingTree } from "./boat-snapshot";
+import { createVerifyReceipt, passingReceipt, type ReuseKey } from "./verify-receipt";
 import { boatForThisRun, EXIT_BOAT_SPENT, localTestFiles, MODEL_TEST_REASON, placeSteps, runPlaced, withHeavySlot, type BoatReceipt, type Where } from "./verify-boat";
 
 const VERIFY_FAST_USAGE = {
@@ -45,13 +50,13 @@ const VERIFY_FAST_USAGE = {
   flags: [
     { flag: "--full", detail: "what CI runs; use to reproduce a CI failure" },
     { flag: "--cheap", detail: "only the type-checks and gates, no tests or boots; `bun run preflight` runs this" },
-    { flag: "--landing", detail: "every gate CI runs (as --cheap) and the tests and boots, in one run; `bun run lane:close` runs this" },
+    { flag: "--landing", detail: "also build the site and check its bundle budgets when the change reaches them; `bun run lane:close` runs this, and reuses a passing --landing run of the same tree" },
     { flag: "--plan", detail: "print the steps and their commands, run nothing" },
     { flag: "--json", detail: "one { ok, ms, checks } document on stdout" },
     { flag: "--base <ref>", detail: "diff against this ref (default: origin/beta)" },
     { flag: "--jobs <n>", detail: "steps to run at once (default: half the cores, at most 6)" },
     { flag: "--skill-api", detail: "also run `check skill-api`, the 21 s generated api.md check (`bun run gen` regenerates it before a landing)" },
-    { flag: "--no-cache", detail: "run every unit, including those that passed before with the same inputs" },
+    { flag: "--no-cache", detail: "run every unit, including those that passed before with the same inputs, and never reuse a passing run of the same tree" },
     { flag: "--verbose", detail: "also print the plan, each PASS line and the cache notes (by default only failures and the total)" },
   ],
   example: "bun run verify:fast --plan",
@@ -152,6 +157,11 @@ export interface Plan {
    * boots a game, so this is the only place a boot regression is caught before merge.
    */
   boots: string[];
+  /**
+   * `--landing` only: build the site and hold each game's download to its budget, as CI's web-build
+   * job did for every PR (a game's first download over budget, and a build that broke, reached it).
+   */
+  webBuild: boolean;
   /**
    * The files whose content decides each unit's result, keyed `test:<file>`, `typecheck:<dir>` and
    * `boot:<game>` (see `unitInputs`; `*` is the whole tree). A unit whose inputs are byte-identical
@@ -438,6 +448,8 @@ export function verifyPlan(input: {
   graph: ImportGraph;
   /** Changed paths that need no test (pure renames). */
   exempt?: readonly string[];
+  /** What `lane:close` runs: also the site build and its bundle budgets when the change reaches them. */
+  landing?: boolean;
 }): Plan {
   const changed = [...new Set(input.changed)].sort();
   const deleted = [...new Set(input.deleted ?? [])].sort();
@@ -495,11 +507,31 @@ export function verifyPlan(input: {
   }
 
   // A file no test reaches is still covered when its package's whole suite runs: that is the suite
-  // CI runs for it. A root script's suite is every `scripts/` test (CI's shard i), since those tests
-  // reach the scripts by spawning them, which no import shows. Only a file under no tested root at
-  // all stays unattributed, and the run says so rather than passing it.
+  // CI runs for it. Only a file under no tested root at all stays unattributed, and the run says so
+  // rather than passing it.
   const unattributed: string[] = [];
   const suites: string[] = [];
+  const addSuite = (dir: string, match: (test: string) => boolean = (test) => test.startsWith(`${dir}/`)): void => {
+    for (const test of input.testFiles) if (match(test)) tests.add(test);
+    if (!suites.includes(dir)) suites.push(dir);
+  };
+  // Reach the graph cannot see, each found by PR CI after this command had passed (7 Nov audit):
+  // - a root script's tests reach other scripts by spawning them, so any script change runs every
+  //   `scripts/` test (CI's shard i): a capture flag change broke captureCliParity's spawned run;
+  // - a package's tests read its data files from disk, so a changed non-source file in a package
+  //   runs that package's suite: a material manifest edit broke assets' verifyData;
+  // - the games' own scripts and the `*.games.test.ts` checks read every game from disk, so a game
+  //   change runs them, as CI's games job does: a game's PLAN broke the suite score check.
+  if (touchedPaths.some((path) => path.startsWith("scripts/") && SOURCE_FILE.test(path) && !DECLARATION.test(path))) addSuite("scripts");
+  for (const path of touchedPaths) {
+    const workspace = workspaceOf(path, input.workspaces);
+    if (workspace === null || !CONTAINED.test(workspace.dir) || GAME_DIR.test(workspace.dir)) continue;
+    if ((!SOURCE_FILE.test(path) || DECLARATION.test(path)) && !path.endsWith(".md")) addSuite(workspace.dir);
+  }
+  if (touchedPaths.some((path) => /^games\/[^/]+\//.test(path))) {
+    for (const dir of ["games/scripts", "games/shared"]) addSuite(dir);
+    addSuite("*.games.test", (test) => /\.games\.test\.[cm]?[jt]sx?$/.test(test));
+  }
   for (const path of runtime) {
     if (ownTests(path, input.testFiles).length > 0 || (testedBy.get(path) ?? []).length > 0) continue;
     const suiteDir = workspaceOf(path, input.workspaces)?.dir ?? (path.startsWith("scripts/") ? "scripts" : null);
@@ -549,8 +581,15 @@ export function verifyPlan(input: {
     fallback,
     suites: suites.sort(),
     boots,
+    webBuild: input.landing === true && reachesSite(touchedPaths),
     inputs,
   };
+}
+
+/** Whether a change can alter the built site: a source or asset under apps/, packages/ or games/, not a note. */
+export function reachesSite(paths: readonly string[]): boolean {
+  const check = findCheck("site-bundles");
+  return check !== undefined && paths.some((path) => !path.endsWith(".md") && !isTestFile(path) && reachedBy(check, [path]));
 }
 
 /**
@@ -737,6 +776,14 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
       cost: 40,
       units: boots,
     });
+  }
+  if (plan.webBuild) {
+    const built = unit("web-build", [WHOLE_TREE]);
+    const budget = unit("gate:site-bundles", [WHOLE_TREE]);
+    if (!fresh(built.id, built.inputs) || !fresh(budget.id, budget.inputs)) {
+      steps.push({ name: "web-build", command: ["bun", "--cwd=apps/web", "run", "build"], cost: 40, units: [built] });
+      steps.push({ name: "site-bundles", command: ["bun", "run", "check", "site-bundles"], needs: ["web-build"], units: [budget] });
+    }
   }
   return options.cheap === true ? steps.filter((step) => step.first === true && step.command[1] !== "test") : steps;
 }
@@ -1085,13 +1132,41 @@ async function main(argv: readonly string[]): Promise<number> {
     return placed.results;
   };
 
+  // The tree this run proves, and whether a passing run already proved it. Taken before planning, so
+  // a reused run costs a git write-tree and nothing else.
+  const key: ReuseKey | null = planOnly
+    ? null
+    : { tree: workingTree(root).tree, mergeBase: git(root, ["merge-base", "HEAD", base]).trim(), runtime: `bun ${Bun.version}`, scope: full ? "full" : cheap ? "cheap" : landing ? "landing" : "fast", skillApi };
+  /** Settle the receipt; a pass keeps its tree only when the files did not change while it ran. */
+  const finish = (ok: boolean): void => {
+    if (receipt === null) return;
+    if (ok && key !== null && workingTree(root).tree !== key.tree) {
+      receipt.note({ tree: null, treeChanged: "the files changed while this ran, so this pass stands for no tree" });
+    }
+    receipt.finish(ok);
+  };
+  if (key !== null && receipt !== null) {
+    receipt.note({ ...key });
+    const reused = argv.includes("--no-cache") ? null : passingReceipt(root, key);
+    if (reused !== null) {
+      receipt.note({ reusedFrom: reused.path });
+      receipt.finish(true);
+      const line = `verify:fast: this exact tree already passed (${relative(root, reused.path).replaceAll("\\", "/")}, ${reused.endedAt}); not run again. --no-cache runs it.`;
+      if (json) {
+        console.error(line);
+        console.log(JSON.stringify(jsonReport([], Date.now() - started)));
+      } else console.log(line);
+      return EXIT_VERIFIED;
+    }
+  }
+
   try {
   let changed: string[];
   try {
     changed = changedFiles(root, base);
   } catch (error) {
     const message = (error as Error).message;
-    receipt?.finish(false);
+    finish(false);
     if (json) {
       console.log(JSON.stringify(jsonReport([{ name: "changed files", ok: false, ms: 0 }], Date.now() - started)));
       console.error(message);
@@ -1103,7 +1178,7 @@ async function main(argv: readonly string[]): Promise<number> {
 
   if (changed.length === 0) {
     receipt?.plan(receiptPlan(root, base, argv, changed, [], [], jobs, started), []);
-    receipt?.finish(true);
+    finish(true);
     if (json) {
       console.log(JSON.stringify(jsonReport([], Date.now() - started)));
       return EXIT_VERIFIED;
@@ -1129,13 +1204,13 @@ async function main(argv: readonly string[]): Promise<number> {
       const runs = await withHeavyServer(root, steps, () => execute(steps, false, false));
       for (const result of runs) if (!result.ok && result.output.length > 0) console.error(result.output);
       const checks = runs.map((result) => ({ name: result.name, ok: result.ok, ms: result.ms }));
-      receipt.finish(checks.every((check) => check.ok));
+      finish(checks.every((check) => check.ok));
       console.log(JSON.stringify(jsonReport(checks, Date.now() - started)));
       return checks.every((check) => check.ok) ? EXIT_VERIFIED : EXIT_FAILED;
     }
     const failures: string[] = [];
     const runs = await withHeavyServer(root, steps, () => execute(steps, false, true));
-    receipt.finish(runs.every((result) => result.ok));
+    finish(runs.every((result) => result.ok));
     for (const result of runs) if (!result.ok) failures.push(result.name);
     const seconds = (Date.now() - started) / 1000;
     console.log(`\ntotal ${seconds.toFixed(1)}s — ${steps.length - failures.length} passed, ${failures.length} failed`);
@@ -1155,9 +1230,11 @@ async function main(argv: readonly string[]): Promise<number> {
     workspaces: allWorkspaces,
     graph,
     exempt: pureRenames(root, base),
+    landing,
   });
-  // `--cheap` is the landing's half (`bun run preflight`): every CI gate, not the iteration subset.
-  const plan = cheap || landing ? { ...planned, gates: landingGates(planned.changed) } : planned;
+  // Every CI gate the change reaches, not the iteration subset: a passing hand run is then all a landing
+  // needs, and lane:close reuses it instead of running the rest on a boat machine.
+  const plan = { ...planned, gates: landingGates(planned.changed) };
   const cache = argv.includes("--no-cache")
     ? null
     : openPassCache({
@@ -1233,7 +1310,7 @@ async function main(argv: readonly string[]): Promise<number> {
   if (json) {
     const results = await execute(steps, !cheap, false);
     remember(results);
-    receipt.finish(results.every((result) => result.ok));
+    finish(results.every((result) => result.ok));
     for (const result of results) if (!result.ok && result.output.length > 0) console.error(result.output);
     console.log(JSON.stringify(jsonReport(results, Date.now() - started)));
     return results.every((result) => result.ok) ? EXIT_VERIFIED : EXIT_FAILED;
@@ -1246,7 +1323,7 @@ async function main(argv: readonly string[]): Promise<number> {
   // that fixed one gate only to meet the next cost a close per gate.
   const results = await execute(steps, !cheap, true);
   remember(results);
-  receipt.finish(results.every((result) => result.ok));
+  finish(results.every((result) => result.ok));
   const failures = results.filter((result) => !result.ok && result.blockedBy === undefined).map((result) => result.name);
   const notRun = results.filter((result) => result.blockedBy !== undefined).map((result) => result.name);
   const seconds = (Date.now() - started) / 1000;

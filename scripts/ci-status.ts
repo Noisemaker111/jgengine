@@ -20,16 +20,14 @@
 // is judged from its attempts on that commit, so a superseded run that was cancelled
 // is not a failure and a still-running attempt is not a pass.
 import { spawnSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
 
 import { ghCli, gitHub, repoFromRemote, type GhRunner, type Pull } from "./github";
 import { printHelpIfAsked } from "./script-help";
 
 const CI_STATUS_USAGE = {
   summary: "answer where this PR's checks stand right now, in a second, without watching",
-  usage: "bun run ci:status [--pr <number>] [--branch <name>] [--repo <owner/name>] [--json] | bun run ci:status --sweep [--json]",
+  usage: "bun run ci:status [--pr <number>] [--branch <name>] [--repo <owner/name>] [--json]",
   flags: [
-    { flag: "--sweep", detail: "instead: every open PR in the landing queue (land:queue label) but red, and on which check (exit 1 when any)" },
     { flag: "--pr <number>", detail: "a merged or open PR by number; default: the PR for this branch" },
     { flag: "--branch <name>", detail: "look up the PR for this branch instead of the current one" },
     { flag: "--repo <owner/name>", detail: "another repo; default: the one this checkout names" },
@@ -288,7 +286,7 @@ export function verdictLine(status: CiStatus): string {
     if (failing.every((check) => NO_RESULT_STATES.has(check.state.toUpperCase()))) {
       const runs = [...new Set(failing.map((check) => check.runId).filter((id): id is number => id !== null))];
       const rerun = runs.length > 0 ? `gh run rerun ${runs.join(" ")}` : "push again";
-      return `${counts} — cancelled before a verdict, nothing failed: ${named.join(", ")}; the landing queue runs it again (by hand: ${rerun})`;
+      return `${counts} — cancelled before a verdict, nothing failed: ${named.join(", ")}; run it again with ${rerun}`;
     }
     return `${counts} — fail: ${named.join(", ")}`;
   }
@@ -451,10 +449,6 @@ function run(command: string, args: string[]): Run {
 
 function main(argv: readonly string[]): void {
   if (printHelpIfAsked("ci-status", CI_STATUS_USAGE, argv)) process.exit(EXIT_GREEN);
-  if (argv[0] === "--sweep") {
-    const sweep = spawnSync("bun", [fileURLToPath(new URL("./pr-sweep.ts", import.meta.url)), ...argv.slice(1)], { stdio: "inherit" });
-    process.exit(sweep.status ?? 1);
-  }
   const result = cli(argv, {
     gh: ghCli(),
     git: (gitArgs) => run("git", gitArgs),

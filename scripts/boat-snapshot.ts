@@ -57,16 +57,16 @@ function git(root: string, args: readonly string[], options: { env?: Record<stri
 const lines = (text: string): string[] => text.split("\n").map((line) => line.trim()).filter((line) => line.length > 0);
 
 /**
- * The commit holding the working tree as it stands, tracked changes and untracked files alike, on
- * top of HEAD; HEAD itself when nothing changed. The branch, the index and the files are untouched:
- * a private index (seeded from the real one, so only changed files are hashed) builds the tree.
+ * The tree id of the working tree as it stands, tracked changes and untracked files alike (ignored
+ * files and names that look like secrets left out), and those left-out names. The branch, the index
+ * and the files are untouched: a private index, seeded from the real one so only changed files are
+ * hashed, builds it. Two checks that see the same id saw the same bytes.
  */
-export function workingCommit(root: string): { commit: string; leftOut: string[] } {
-  const head = git(root, ["rev-parse", "HEAD"]).trim();
+export function workingTree(root: string): { tree: string; leftOut: string[] } {
   const untracked = lines(git(root, ["ls-files", "--others", "--exclude-standard"]));
   const leftOut = untracked.filter((path) => SECRET_NAME.test(path));
   const dirty = lines(git(root, ["status", "--porcelain=v1", "--untracked-files=all"])).length > 0;
-  if (!dirty) return { commit: head, leftOut };
+  if (!dirty) return { tree: git(root, ["rev-parse", "HEAD^{tree}"]).trim(), leftOut };
   const scratch = mkdtempSync(join(tmpdir(), "boat-index-"));
   try {
     const index = join(scratch, "index");
@@ -79,15 +79,21 @@ export function workingCommit(root: string): { commit: string; leftOut: string[]
     const env = { GIT_INDEX_FILE: index };
     git(root, ["add", "-A"], { env });
     if (leftOut.length > 0) git(root, ["rm", "-q", "--cached", "--ignore-unmatch", "--", ...leftOut], { env });
-    const tree = git(root, ["write-tree"], { env }).trim();
-    if (tree === git(root, ["rev-parse", "HEAD^{tree}"]).trim()) return { commit: head, leftOut };
-    const commit = git(root, ["commit-tree", tree, "-p", head, "-m", "boat: the working tree as verified"], {
-      env: { GIT_AUTHOR_NAME: "verify", GIT_AUTHOR_EMAIL: "verify@localhost", GIT_COMMITTER_NAME: "verify", GIT_COMMITTER_EMAIL: "verify@localhost" },
-    }).trim();
-    return { commit, leftOut };
+    return { tree: git(root, ["write-tree"], { env }).trim(), leftOut };
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }
+}
+
+/** The commit holding the working tree as it stands on top of HEAD; HEAD itself when nothing changed. */
+export function workingCommit(root: string): { commit: string; leftOut: string[] } {
+  const head = git(root, ["rev-parse", "HEAD"]).trim();
+  const { tree, leftOut } = workingTree(root);
+  if (tree === git(root, ["rev-parse", "HEAD^{tree}"]).trim()) return { commit: head, leftOut };
+  const commit = git(root, ["commit-tree", tree, "-p", head, "-m", "boat: the working tree as verified"], {
+    env: { GIT_AUTHOR_NAME: "verify", GIT_AUTHOR_EMAIL: "verify@localhost", GIT_COMMITTER_NAME: "verify", GIT_COMMITTER_EMAIL: "verify@localhost" },
+  }).trim();
+  return { commit, leftOut };
 }
 
 /**

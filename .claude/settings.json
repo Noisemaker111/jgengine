@@ -29,7 +29,7 @@
           {
             "type": "command",
             "shell": "bash",
-            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Monitor is banned in this repo: a monitor dies when the turn ends. Never watch CI: lane:close hands the PR to the landing queue. For a long job (the queue, a fit, a perf run): bun run background start -- <cmd>, then bun run background await <id> as a harness background command (Bash run_in_background), and end the turn; its exit calls you back.\"}}'"
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Monitor is banned in this repo: a monitor dies when the turn ends. Never watch CI: lane:close merges on its own verify receipt. For a long job (lane:close, a fit, a perf run): bun run background start -- <cmd>, then bun run background await <id> as a harness background command (Bash run_in_background), and end the turn; its exit calls you back.\"}}'"
           }
         ]
       },

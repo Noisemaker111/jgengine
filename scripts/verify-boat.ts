@@ -163,6 +163,19 @@ export interface PlacedRun {
  */
 export const EXIT_BOAT_SPENT = 75;
 
+/**
+ * Below this many seconds of estimated work (each step's `cost`, 1 s when unknown) the Linux steps run
+ * here instead: a boat machine costs about two minutes to pack, push and start (130 s for eight gates
+ * worth 4 s on 7 Nov), so a lane:close whose tests a hand verify:fast had already proven paid it for
+ * the landing gates alone.
+ */
+export const BOAT_WORTH_SECONDS = 30;
+
+/** The estimated seconds of work in `steps`, as placement weighs it against a boat start. */
+export function estimatedWork(steps: readonly ScheduledStep[]): number {
+  return steps.reduce((sum, step) => sum + (step.cost ?? 1), 0);
+}
+
 /** Steps at once on a boat machine: its 4 cores. */
 export const BOAT_JOBS = 4;
 
@@ -209,6 +222,8 @@ export async function runPlaced<S extends PlaceableStep>(input: PlacedRunInput<S
   };
 
   if (boatSteps.length === 0) return allLocal("no step here needs Linux", "off");
+  const work = estimatedWork(boatSteps);
+  if (work < BOAT_WORTH_SECONDS) return allLocal(`about ${Math.ceil(work)} s of work, less than a boat machine's start`, "off");
   if (!boatWanted(env)) return allLocal("JG_VERIFY_BOAT=0 keeps every step on this PC", "off");
   if (input.boat === null) {
     input.note("verify:fast: no boat CLI on this PC (~/.ascii/bin/boat.exe, or BOAT_EXE); every step runs here.");
