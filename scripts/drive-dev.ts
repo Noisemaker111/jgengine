@@ -77,6 +77,7 @@ import { detail, takeVerboseFlag } from "./verbosity";
 import { parseDriveArgs, projectDirOf, DRIVE_HELP } from "./driveArgs";
 import { LockstepRecorder } from "./driveLockstep";
 import { readHitchSession, renderHitchSession, resetBreakdown } from "./perf-breakdown";
+import { perfLockTurn } from "./perf-lock";
 import { installPageRenderCounter, readRenderCounts, renderRenderCounts, resetRenderCounter } from "./perf-renders";
 import { aggregateAllocations, type HeapSampleNode } from "./perf-play";
 import { describeFirstPaints, endTrace, markTraceAnchor, readTraceEvents, renderTracedHitches, startTrace, traceHitches } from "./perf-trace";
@@ -338,7 +339,8 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
       attach: daemon !== null,
       leaveWarm: args.keep || daemon !== null,
       chromePrefix: "jg-drive-",
-      turn: brokerTurn(daemon),
+      // --hitches and --trace time the run's frames, so the session holds the perf lock; a drive that times nothing does not wait for it.
+      turn: args.hitches || args.trace ? perfLockTurn(`drive ${args.game}${args.flow === undefined ? "" : ` ${args.flow}`}${args.hitches ? " --hitches" : ""}${args.trace ? " --trace" : ""}`, brokerTurn(daemon)) : brokerTurn(daemon),
       headed: args.headed,
       // One real render + capture per output frame — give the watchdog room.
       ...(lockstep ? { hardDeadlineMs: args.timeoutMs + 120_000 + lockstepProjected * 3_000 } : {}),

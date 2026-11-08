@@ -15,13 +15,19 @@ export interface StepMark {
   /** Epoch ms the step began. */
   since: number;
   pid: number;
+  /** Ms this process has spent waiting in a queue (the perf lock), which deadlines give back. */
+  pausedMs?: number;
+  /** Epoch ms the wait in progress began. */
+  pausedSince?: number;
 }
 
 let current: StepMark | null = null;
+let pausedMs = 0;
+let pausedSince: number | null = null;
 
 /** Record the step this process is in; cheap enough to call before every phase. */
 export function markStep(label: string, env: NodeJS.ProcessEnv = process.env, now = Date.now()): void {
-  current = { label, since: now, pid: process.pid };
+  current = { label, since: now, pid: process.pid, ...(pausedMs > 0 ? { pausedMs } : {}), ...(pausedSince === null ? {} : { pausedSince }) };
   const path = env[STEP_FILE_ENV];
   if (path === undefined || path === "") return;
   try {
@@ -39,10 +45,60 @@ export function readStepFile(path: string): StepMark | null {
   try {
     const parsed = JSON.parse(readFileSync(path, "utf8")) as Partial<StepMark>;
     if (typeof parsed.label !== "string" || typeof parsed.since !== "number") return null;
-    return { label: parsed.label, since: parsed.since, pid: typeof parsed.pid === "number" ? parsed.pid : 0 };
+    return {
+      label: parsed.label,
+      since: parsed.since,
+      pid: typeof parsed.pid === "number" ? parsed.pid : 0,
+      ...(typeof parsed.pausedMs === "number" ? { pausedMs: parsed.pausedMs } : {}),
+      ...(typeof parsed.pausedSince === "number" ? { pausedSince: parsed.pausedSince } : {}),
+    };
   } catch {
     return null;
   }
+}
+
+/** Start waiting in a queue: the wait is marked as the step, and deadlines stop counting until {@link endPause}. */
+export function beginPause(label: string, now = Date.now()): void {
+  if (pausedSince === null) pausedSince = now;
+  markStep(label, process.env, now);
+}
+
+export function endPause(now = Date.now()): void {
+  if (pausedSince === null) return;
+  pausedMs += now - pausedSince;
+  pausedSince = null;
+  if (current !== null) markStep(current.label, process.env, now);
+}
+
+/** Every ms a step mark says its process has waited in a queue, the wait in progress included. */
+export function pausedTotal(step: StepMark | null, now = Date.now()): number {
+  if (step === null) return 0;
+  return (step.pausedMs ?? 0) + (step.pausedSince === undefined ? 0 : Math.max(0, now - step.pausedSince));
+}
+
+/**
+ * A deadline that gives back time spent waiting in a queue: when it fires, any pause that
+ * `readPaused` reports since it was armed pushes it back by that much, so a run queued behind
+ * another timed run is never killed for the wait. Returns the cancel.
+ */
+export function pausableDeadline(ms: number, readPaused: () => number, onExpire: () => void, options: { unref?: boolean } = {}): () => void {
+  let credited = readPaused();
+  let timer: ReturnType<typeof setTimeout>;
+  const arm = (delay: number): void => {
+    timer = setTimeout(() => {
+      const paused = readPaused();
+      if (paused > credited) {
+        const extra = paused - credited;
+        credited = paused;
+        arm(extra);
+        return;
+      }
+      onExpire();
+    }, delay);
+    if (options.unref === true) timer.unref?.();
+  };
+  arm(ms);
+  return () => clearTimeout(timer);
 }
 
 /** One line naming the step that hung and how long it sat there. */

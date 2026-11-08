@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import { type CdpSession, ensureDevServer, openPageSession, withBrowserSession } from "./browser-lib";
 import { FRAME_GAMES } from "./ci-scope";
+import { withPerfLock } from "./perf-lock";
 
 /**
  * Per-game network audit, printed as one JSON line per game.
@@ -517,13 +518,16 @@ async function main(): Promise<void> {
       try {
         for (const game of games) {
           console.error(`perf:network ${game} — ${seconds}s play to measure…`);
-          const measurement = await measureGame(session, {
-            base,
-            game,
-            seconds,
-            timeoutMs: timeoutSeconds * 1000,
-            ...(dump === undefined ? {} : { dump }),
-          });
+          // Bytes are not frame times, but a game loading here would spoil another run's frames.
+          const measurement = await withPerfLock(`perf network ${game}`, () =>
+            measureGame(session, {
+              base,
+              game,
+              seconds,
+              timeoutMs: timeoutSeconds * 1000,
+              ...(dump === undefined ? {} : { dump }),
+            }),
+          );
           const line = JSON.stringify(measurement);
           lines.push(line);
           console.log(line);
