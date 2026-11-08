@@ -1197,7 +1197,13 @@ export function listBrowserProcesses(): BrowserProcess[] {
       console.error(`degraded: pwsh is not installed (${query.error.message}); listing browsers with Windows PowerShell, which starts seconds slower`);
       query = run("powershell.exe");
     }
-    return query.status === 0 ? parseRows(query.stdout ?? "") : [];
+    if (query.status !== 0) {
+      // Silent before: on a loaded PC the 20 s query timed out, the sweep saw no browsers, and a
+      // test read that as "nothing stray" (2026-11-08).
+      console.error(`degraded: could not list browser processes (${query.error?.message ?? `exit ${query.status}`}); no stray browser is swept this time`);
+      return [];
+    }
+    return parseRows(query.stdout ?? "");
   }
   const withElapsed = spawnSync("ps", ["-eo", "pid=,ppid=,etimes=,args="], { encoding: "utf8", timeout: 20_000 });
   const ps = withElapsed.status === 0 ? withElapsed : spawnSync("ps", ["-axo", "pid=,ppid=,command="], { encoding: "utf8", timeout: 20_000 });
