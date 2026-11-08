@@ -8,6 +8,7 @@ import {
   drawSubset,
   createShaderWarmup,
   deferUnlinkedDraws,
+  prepareBeforeLink,
   gpuFence,
   drawsHeld,
   firstUnlinkedDrawable,
@@ -1390,6 +1391,22 @@ describe("deferUnlinkedDraws", () => {
     renderer.render(scene, camera);
     expect(drawn.at(-1), "both kinds draw once each has a program, though only one is current at a time").toEqual(["depth:rock", "depth:unit", "rock", "unit"]);
     expect(compiled).toEqual(["depth skinned"]);
+  });
+
+  test("a material that streams in mid-play is prepared before its first link, so a lazy patch never recompiles it", () => {
+    const { renderer, scene, camera, add, compiled } = deferringFixture();
+    deferUnlinkedDraws(renderer as never, scene, () => true, () => 0);
+    // Stands in for the wet layer: it patches a material in place, which changes the program it compiles.
+    const unregister = prepareBeforeLink(scene, (material) => {
+      if (!material.name.endsWith(" wet")) material.name += " wet";
+    });
+    add("car", false);
+    renderer.render(scene, camera);
+    expect(compiled, "the car links once, already patched").toEqual(["car wet"]);
+    unregister();
+    add("crate", false);
+    renderer.render(scene, camera);
+    expect(compiled.at(-1), "an unregistered preparer no longer runs").toBe("crate");
   });
 
   test("a caster that arrives unlinked links its shadow program with its lit one, before it walks into the shadow's reach", () => {

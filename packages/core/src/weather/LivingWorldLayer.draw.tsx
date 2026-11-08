@@ -9,8 +9,8 @@ import { findKeyLight, towardLight } from "@jgengine/core/postfx/contactShadowPa
 import { advanceLivingWorld, livingWorld, resetLivingWorld } from "./livingWorld.draw";
 import { windDirection, windGust } from "@jgengine/core/model/modelWind.draw";
 import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
-import { prepareBeforeWarmup } from "@jgengine/core/render/shaderWarmup.draw";
-import { applyWetnessToScene } from "@jgengine/core/material/wetSurfaces.draw";
+import { prepareBeforeLink, prepareBeforeWarmup } from "@jgengine/core/render/shaderWarmup.draw";
+import { applyWetness, applyWetnessToScene, takesWetness } from "@jgengine/core/material/wetSurfaces.draw";
 
 const LIGHT_RESCAN_SECONDS = 1.5;
 const WET_SCAN_SECONDS = 2;
@@ -51,6 +51,15 @@ function LivingWorldDriver() {
     () =>
       prepareBeforeWarmup(scene, () => {
         if (livingWorld.wetness > 0) applyWetnessToScene(scene);
+      }),
+    [scene],
+  );
+  // A car or prop that streams in while it is wet is patched before its first link, not drawn dry
+  // and recompiled wet at the next scan (Harbor Heat: 0.9 to 1.4 s getting into a car in the rain).
+  useEffect(
+    () =>
+      prepareBeforeLink(scene, (material) => {
+        if (livingWorld.wetness > 0 && takesWetness(material)) applyWetness(material as THREE.MeshStandardMaterial);
       }),
     [scene],
   );

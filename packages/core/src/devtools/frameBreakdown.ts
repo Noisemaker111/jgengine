@@ -122,26 +122,88 @@ const PROGRAM_KEY_PARAMETERS = [
   "light probes", "light probe grids", "shadowMapType", "toneMapping", "clipping planes", "clip intersections", "depthPacking",
 ] as const;
 
+/*
+ * The two flag masks `getProgramCacheKeyBooleans` pushes after the parameters, each bit's name by
+ * its layer index (three 0.187): an object drawn instanced in one place and plain in another, or a
+ * material flipped to double-sided, recompiles with no parameter changed.
+ */
+const PROGRAM_KEY_FLAGS: readonly (readonly string[])[] = [
+  ["instancing", "instancingColor", "instancingMorph", "matcap", "envMap", "normalMapObjectSpace", "normalMapTangentSpace",
+    "clearcoat", "iridescence", "alphaTest", "vertexColors", "vertexAlphas", "vertexUv1s", "vertexUv2s", "vertexUv3s",
+    "vertexTangents", "anisotropy", "alphaHash", "batching", "dispersion", "batchingColor", "gradientMap", "packedNormalMap",
+    "vertexNormals", "retroreflection", "diffuseRoughness"],
+  ["fog", "useFog", "flatShading", "logarithmicDepthBuffer", "reversedDepthBuffer", "skinning", "morphTargets", "morphNormals",
+    "morphColors", "premultipliedAlpha", "shadowMapEnabled", "doubleSided", "flipSided", "useDepthPacking", "dithering",
+    "transmission", "sheen", "opaque", "pointsUvs", "decodeVideoTexture", "decodeVideoTextureEmissive", "alphaToCoverage",
+    "light probe grids", "hasPositionAttribute"],
+];
+const PRECISIONS = new Set(["highp", "mediump", "lowp"]);
+
+/** The defines in a key's `name,value` pairs, as `NAME=value`. */
+function definesOf(parts: readonly string[], end: number): Map<string, string> {
+  const defines = new Map<string, string>();
+  for (let index = 1; index + 1 < end; index += 2) defines.set(parts[index] ?? "", parts[index + 1] ?? "");
+  return defines;
+}
+
 /**
- * Why a material that already had a program compiled another: the program cache key fields that
- * differ between its previous program and the new one, as `point lights 3→2`. A material recompiles
- * for the whole scene when a light is added or removed, so this names the change to avoid. `defines`
- * is how many defines the material has; null when the keys are not three's layout.
+ * Why a material that already had a program compiled another: what differs between its previous
+ * program's cache key and the new one, as `point lights 3→2`, `instancing on→off` or `+define USE_X`.
+ * A material recompiles for the whole scene when a light is added or removed, and per object when it
+ * is drawn instanced in one place and plain in another, so this names the change to avoid. The
+ * parameters start at the precision; `defines` (how many the material has now) places them when a
+ * key carries none. Null when the keys are not three's layout.
  * @internal
  */
 export function programVariantChange(previousKey: string, nextKey: string, defines: number): string | null {
+  if (previousKey === nextKey) return null;
   const before = previousKey.split(",");
   const after = nextKey.split(",");
-  const offset = 1 + defines * 2;
+  const start = (parts: readonly string[]) => {
+    const found = parts.findIndex((part, index) => index >= 1 && PRECISIONS.has(part));
+    return found === -1 ? 1 + defines * 2 : found;
+  };
+  const was = start(before);
+  const now = start(after);
   const changes: string[] = [];
-  for (let index = 0; index < PROGRAM_KEY_PARAMETERS.length; index += 1) {
-    const was = before[offset + index];
-    const now = after[offset + index];
-    if (was === undefined || now === undefined) return null;
-    if (was !== now) changes.push(`${PROGRAM_KEY_PARAMETERS[index]} ${was}→${now}`);
+  if (before[0] !== after[0]) changes.push(`shader ${before[0]}→${after[0]}`);
+  const oldDefines = definesOf(before, was);
+  const newDefines = definesOf(after, now);
+  for (const [name, value] of newDefines) {
+    const previous = oldDefines.get(name);
+    if (previous === undefined) changes.push(`+define ${name}`);
+    else if (previous !== value) changes.push(`define ${name} ${previous}→${value}`);
   }
-  if (changes.length > 0) return changes.join(", ");
-  return before.length === after.length && before.every((part, index) => part === after[index]) ? null : "material flags";
+  for (const name of oldDefines.keys()) if (!newDefines.has(name)) changes.push(`-define ${name}`);
+  for (let index = 0; index < PROGRAM_KEY_PARAMETERS.length; index += 1) {
+    const a = before[was + index];
+    const b = after[now + index];
+    if (a === undefined || b === undefined) return changes.length > 0 ? changes.join(", ") : null;
+    if (a !== b) changes.push(`${PROGRAM_KEY_PARAMETERS[index]} ${a}→${b}`);
+  }
+  PROGRAM_KEY_FLAGS.forEach((names, mask) => {
+    const a = Number(before[was + PROGRAM_KEY_PARAMETERS.length + mask]);
+    const b = Number(after[now + PROGRAM_KEY_PARAMETERS.length + mask]);
+    if (!Number.isInteger(a) || !Number.isInteger(b) || a === b) return;
+    names.forEach((name, bit) => {
+      const on = (b >>> bit) & 1;
+      if (((a >>> bit) & 1) !== on) changes.push(`${name} ${on === 1 ? "off→on" : "on→off"}`);
+    });
+  });
+  const tail = PROGRAM_KEY_PARAMETERS.length + PROGRAM_KEY_FLAGS.length;
+  if (before[was + tail] !== after[now + tail]) changes.push(`output color space ${before[was + tail]}→${after[now + tail]}`);
+  const oldCustom = before.slice(was + tail + 1).join();
+  const newCustom = after.slice(now + tail + 1).join();
+  if (oldCustom !== newCustom) {
+    // Engine patches chain their keys with `|`: name the segments one key has and the other lacks.
+    const oldParts = oldCustom.split("|");
+    const newParts = newCustom.split("|");
+    const gone = oldParts.filter((part) => !newParts.includes(part));
+    const came = newParts.filter((part) => !oldParts.includes(part));
+    const clip = (part: string) => (part.length > 60 ? `${part.slice(0, 60)}…` : part);
+    changes.push(`custom key ${[...gone.map((part) => `-${clip(part)}`), ...came.map((part) => `+${clip(part)}`)].join(" ")}`);
+  }
+  return changes.length > 0 ? changes.join(", ") : "material flags";
 }
 
 /**

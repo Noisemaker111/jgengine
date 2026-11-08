@@ -84,10 +84,23 @@ test("a slow frame the loop cannot see into is named by the scripts the browser 
 
 test("a recompiled material names the scene change that forced it", () => {
   // three's key: shader id, each define's name and value, then the scene-dependent parameters.
-  const key = (pointLights: number, toneMapping: number) => ["physical", "STANDARD", "", ...Array.from({ length: 53 }, (_, index) => (index === 36 ? pointLights : index === 49 ? toneMapping : 0)), "1,2,3", "srgb"].join();
+  // three's key: shader id, each define's name and value, the scene-dependent parameters from the
+  // precision on, two flag masks, the output colour space and the custom key.
+  const key = (pointLights: number, toneMapping: number, flags = [0, 0], defines = ["STANDARD", ""], custom = "jg-surface:v1:full") => [
+    "physical", ...defines,
+    ...Array.from({ length: 53 }, (_, index) => (index === 0 ? "highp" : index === 36 ? pointLights : index === 49 ? toneMapping : 0)),
+    ...flags, "srgb", custom,
+  ].join();
   expect(programVariantChange(key(3, 4), key(2, 4), 1)).toBe("point lights 3→2");
   expect(programVariantChange(key(3, 4), key(3, 0), 1)).toBe("toneMapping 4→0");
   expect(programVariantChange(key(3, 4), key(3, 4), 1)).toBeNull();
+  // A parked car drawn instanced, then plain once entered; a material made double-sided.
+  expect(programVariantChange(key(3, 4, [1, 0]), key(3, 4, [0, 0]), 1)).toBe("instancing on→off");
+  expect(programVariantChange(key(3, 4, [0, 0]), key(3, 4, [0, 1 << 11]), 1)).toBe("doubleSided off→on");
+  // A define added shifts every later field; the parameters still line up from the precision.
+  expect(programVariantChange(key(3, 4), key(2, 4, [0, 0], ["STANDARD", "", "USE_TINT", "1"]), 2)).toBe("+define USE_TINT, point lights 3→2");
+  // An engine patch chained onto the material's key: the segment that came or went.
+  expect(programVariantChange(key(3, 4), key(3, 4, [0, 0], ["STANDARD", ""], "jg-surface:v1:off|jg-wet:v1"), 1)).toBe("custom key -jg-surface:v1:full +jg-surface:v1:off +jg-wet:v1");
 });
 
 test("a light recompile names the lights that came and went", () => {
