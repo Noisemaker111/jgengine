@@ -460,15 +460,20 @@ async function publishAndDeploy(root: string, version: string, sha: string, runI
   const git = (args: readonly string[]) => spawnSync("git", [...args], { cwd: root, encoding: "utf8" });
   const gh = ghIn(root);
   let first = true;
+  let pushedAt: string | undefined;
   const published = await publishFollowingBeta({
     sha,
-    // A named run belongs to the first commit only; a commit pushed after it has its own run.
+    // A named run belongs to the first commit only; a commit pushed after it has its own run, created
+    // after the push.
     publish: (target) => {
       const run = first ? runId : undefined;
       first = false;
-      return awaitPublish({ version, sha: target, runId: run, gh, log: (line) => console.log(line) });
+      return awaitPublish({ version, sha: target, runId: run, notBefore: pushedAt, gh, log: (line) => console.log(line) });
     },
-    pushTip: () => fastForwardMain(git),
+    pushTip: () => {
+      pushedAt = new Date().toISOString();
+      return fastForwardMain(git);
+    },
     log: (line) => console.log(line),
   });
   if (!published.ok) {
