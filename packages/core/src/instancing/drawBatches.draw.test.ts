@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import * as THREE from "three";
 
 import { giveStableShadowDepth, isStableShadowDepth } from "@jgengine/core/lighting/shadowCasters.draw";
-import { setCulled, skipCulledMatrices } from "@jgengine/core/visibility/culledTransforms.draw";
+import { sceneWalkStarts, setCulled, skipCulledMatrices } from "@jgengine/core/visibility/culledTransforms.draw";
 import { BATCHED_SOURCE_LAYER, batchSceneDraws, DRAW_BATCH_MESH_KEY, markNeutralRenderHook, sceneRaycaster } from "./drawBatches.draw";
 
 function setup() {
@@ -13,7 +13,11 @@ function setup() {
 }
 
 function batchesOf(scene: THREE.Scene): THREE.BatchedMesh[] {
-  return scene.children.filter((child): child is THREE.BatchedMesh => child.userData[DRAW_BATCH_MESH_KEY] === true);
+  const batches: THREE.BatchedMesh[] = [];
+  scene.traverse((node) => {
+    if (node.userData[DRAW_BATCH_MESH_KEY] === true) batches.push(node as THREE.BatchedMesh);
+  });
+  return batches;
 }
 
 function car(scene: THREE.Object3D, x: number, body: THREE.Material, glass: THREE.Material) {
@@ -213,4 +217,16 @@ test("a batch draws with its material's own shader switches, which three's mater
   scene.updateMatrixWorld();
   const [batch] = batchesOf(scene);
   expect((batch?.material as THREE.Material | undefined)?.defines).toMatchObject({ STANDARD: "", JG_TERRAIN_PAINT: "", JG_SURFACE_CLASSES: "7" });
+});
+
+test("a batch the matrix pass creates is under one of that pass's render walk starts, so its sources never miss a frame", () => {
+  const { scene } = setup();
+  const material = new THREE.MeshStandardMaterial();
+  scene.add(new THREE.Mesh(new THREE.BoxGeometry(), material), new THREE.Mesh(new THREE.BoxGeometry(), material));
+  scene.updateMatrixWorld();
+  const [batch] = batchesOf(scene);
+  if (batch === undefined) throw new Error("no batch");
+  expect(batch.visible).toBe(true);
+  const starts = sceneWalkStarts(scene)?.starts ?? [];
+  expect(starts.some((start) => start === batch || start === batch.parent)).toBe(true);
 });

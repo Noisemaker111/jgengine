@@ -276,7 +276,19 @@ export class DrawBatcher implements ShownMeshVisitor {
   private pass = 0;
   private enabled = true;
 
-  constructor(private readonly parent: THREE.Object3D) {}
+  /**
+   * The batches' one frozen, always-shown parent. The scene's matrix pass lists it as a start of
+   * three's render walk, so a batch the pass's own visits create or show draws in that same render;
+   * a batch hung on the scene itself was listed only once it was visible at the next pass, and its
+   * sources, already on the source layer, drew nothing for one frame.
+   */
+  private readonly parent = new THREE.Group();
+
+  constructor(scene: THREE.Object3D) {
+    this.parent.name = "draw-batches";
+    scene.add(this.parent);
+    freezeStaticTransforms(this.parent);
+  }
 
   /** Turn batching on or off; off gives every mesh its own draw back. */
   setEnabled(enabled: boolean): void {
@@ -374,6 +386,7 @@ export class DrawBatcher implements ShownMeshVisitor {
   dispose(): void {
     this.releaseAll();
     this.emptied.flush();
+    this.parent.removeFromParent();
   }
 
   private releaseAll(): void {
@@ -504,7 +517,6 @@ export class DrawBatcher implements ShownMeshVisitor {
     mirrorSourceTextures(batch, material, shared.material);
     batch.visible = false;
     this.parent.add(batch);
-    freezeStaticTransforms(batch);
     if (batch.castShadow) giveStableShadowDepth(batch);
     return { key, mesh: batch, material: shared.material, geometries: new Map(), vertexCapacity, indexCapacity, instances: 0, shown: 0 };
   }
