@@ -391,6 +391,10 @@ export class WebGpuGl extends GlConstants {
   /** The one dynamic offset a uniform bind takes, passed as a typed array: an array literal per draw allocated and went through the binding's slow sequence conversion. */
   private readonly dynamicOffset = new Uint32Array(1);
   private readonly uniformAlign: number;
+  /** `device.limits.maxVertexBuffers`, read once: each read of it is two native getter calls, and a draw read it every time. */
+  private readonly maxVertexBuffers: number;
+  /** `device.queue`, read once for the same reason. */
+  private readonly queue: GPUQueue;
   private constants = new Float32Array(1 << 16);
   private constantsUsed = 0;
   private constantRing: GPUBuffer;
@@ -438,6 +442,8 @@ export class WebGpuGl extends GlConstants {
     this.canvasFormat = (globalThis.navigator as any).gpu.getPreferredCanvasFormat();
     context.configure({ device, format: this.canvasFormat, alphaMode: this.attributes.alpha ? "premultiplied" : "opaque", usage: GPUTextureUsage.RENDER_ATTACHMENT });
     this.uniformAlign = device.limits.minUniformBufferOffsetAlignment;
+    this.maxVertexBuffers = device.limits.maxVertexBuffers;
+    this.queue = device.queue;
     this.uniformLayout = device.createBindGroupLayout({ entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: "uniform", hasDynamicOffset: true } }] });
     this.emptyLayout = device.createBindGroupLayout({ entries: [] });
     this.emptyGroup = device.createBindGroup({ layout: this.emptyLayout, entries: [] });
@@ -683,13 +689,13 @@ export class WebGpuGl extends GlConstants {
 
   private writeBuffer(gpu: GPUBuffer, offset: number, view: ArrayBufferView): void {
     const bytes = new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
-    if (offset % 4 === 0 && bytes.byteLength % 4 === 0) { this.device.queue.writeBuffer(gpu, offset, bytes); return; }
+    if (offset % 4 === 0 && bytes.byteLength % 4 === 0) { this.queue.writeBuffer(gpu, offset, bytes); return; }
     // WebGPU writes whole 4-byte words: widen the range and fill it from the CPU copy where known.
     const start = offset - (offset % 4);
     const end = Math.min(gpu.size, Math.ceil((offset + bytes.byteLength) / 4) * 4);
     const padded = new Uint8Array(end - start);
     padded.set(bytes.subarray(0, Math.min(bytes.byteLength, padded.byteLength - (offset - start))), offset - start);
-    this.device.queue.writeBuffer(gpu, start, padded);
+    this.queue.writeBuffer(gpu, start, padded);
   }
 
   copyBufferSubData(readTarget: number, writeTarget: number, readOffset: number, writeOffset: number, size: number): void {
@@ -1189,7 +1195,7 @@ export class WebGpuGl extends GlConstants {
     // A level smaller than a block still copies whole blocks.
     const copyW = Math.min(bw * 4, Math.ceil(mipW / 4) * 4 - x);
     const copyH = Math.min(bh * 4, Math.ceil(mipH / 4) * 4 - y);
-    this.device.queue.writeTexture({ texture: t.gpu, mipLevel: level, origin: { x, y, z } }, bytes, { bytesPerRow: bw * t.format.bytes, rowsPerImage: bh }, { width: copyW, height: copyH, depthOrArrayLayers: depth });
+    this.queue.writeTexture({ texture: t.gpu, mipLevel: level, origin: { x, y, z } }, bytes, { bytesPerRow: bw * t.format.bytes, rowsPerImage: bh }, { width: copyW, height: copyH, depthOrArrayLayers: depth });
     t.definedLevels = Math.max(t.definedLevels, level + 1);
   }
 
@@ -1211,10 +1217,10 @@ export class WebGpuGl extends GlConstants {
         rowBytes = width * fmt.bytes;
       }
       if (flipY) bytes = flipRows(bytes, rowBytes, height, depth);
-      this.device.queue.writeTexture({ texture: t.gpu, mipLevel: level, origin: { x, y, z } }, bytes, { bytesPerRow: rowBytes, rowsPerImage: height }, { width, height, depthOrArrayLayers: depth });
+      this.queue.writeTexture({ texture: t.gpu, mipLevel: level, origin: { x, y, z } }, bytes, { bytesPerRow: rowBytes, rowsPerImage: height }, { width, height, depthOrArrayLayers: depth });
     } else {
       try {
-        this.device.queue.copyExternalImageToTexture({ source, flipY }, { texture: t.gpu, mipLevel: level, origin: { x, y, z }, premultipliedAlpha: premultiply, colorSpace: "srgb" }, { width, height });
+        this.queue.copyExternalImageToTexture({ source, flipY }, { texture: t.gpu, mipLevel: level, origin: { x, y, z }, premultipliedAlpha: premultiply, colorSpace: "srgb" }, { width, height });
       } catch (error) {
         this.warn(`texture upload from ${source?.constructor?.name ?? typeof source} failed: ${error instanceof Error ? error.message : String(error)}`);
       }
@@ -1917,14 +1923,14 @@ struct O { ${outputs} };
       const cached = known.plan;
       let ready = true;
       for (let i = 0; i < cached.slots.length; i += 1) { const b = cached.slots[i]!.buffer; if (b !== null && b.gpu === null) { ready = false; break; } }
-      if (ready) return cached.slots.length > this.device.limits.maxVertexBuffers ? null : cached;
+      if (ready) return cached.slots.length > this.maxVertexBuffers ? null : cached;
     }
     const inputs = p.translated!.layout.vertex_inputs;
     const slots: VertexSlot[] = [];
     const constants: number[] = [];
     const constantAttrs: GPUVertexAttribute[] = [];
     let keyParts = "";
-    const limits: (Omit<InstancedAttribute, "size"> & { buffer: GlBuffer })[] = [];
+    const limits: (InstancedAttribute & { buffer: GlBuffer })[] = [];
     let drawIdLocation = -1;
     for (const input of inputs) {
       if (input.name === DRAW_ID_INPUT) { drawIdLocation = input.location; continue; }
@@ -1959,12 +1965,12 @@ struct O { ${outputs} };
       slot.attributes.push({ shaderLocation: input.location, offset: convert === null ? offset - slot.offset : 0, format });
       slot.sources.push({ buffer: a.buffer, offset: a.offset, stride, type: a.type, size: a.size, normalized: a.normalized, convert: convert !== null, location: input.location, format });
       // Measured on the GL layout (the source buffer), whether or not this attribute reads a Float32 copy.
-      if (a.divisor > 0) limits.push({ stride, offset: a.offset, bytes: a.size * elementBytes, buffer: a.buffer, divisor: a.divisor });
+      if (a.divisor > 0) limits.push({ stride, offset: a.offset, bytes: a.size * elementBytes, buffer: a.buffer, divisor: a.divisor, size: 0 });
     }
     if (constantAttrs.length > 0) slots.push({ buffer: null, offset: 0, stride: 0, step: "instance", attributes: constantAttrs, convert: null, constant: true, sources: [], packed: null });
     // More buffers than WebGPU binds: interleave the per-vertex ones (static geometry, packed once),
     // then if still over, the per-instance ones, into one buffer each.
-    const max = this.device.limits.maxVertexBuffers;
+    const max = this.maxVertexBuffers;
     for (const step of ["vertex", "instance"] as const) {
       if (slots.length <= max) break;
       const group = slots.filter((x) => !x.constant && x.step === step);
@@ -1988,7 +1994,11 @@ struct O { ${outputs} };
       key: keyParts,
       slots,
       constants,
-      instanceCapacity: (instances: number) => instancesThatFit(instances, limits.map((l) => ({ ...l, size: l.buffer.data?.byteLength ?? l.buffer.size }))),
+      // Sizes read at each draw (a buffer can be re-sized under a cached plan), in place: a copy per draw was most of the context's garbage.
+      instanceCapacity: (instances: number) => {
+        for (const l of limits) l.size = l.buffer.data?.byteLength ?? l.buffer.size;
+        return instancesThatFit(instances, limits);
+      },
       perInstance: limits.length > 0,
     };
     if (slots.length > max) this.warn(`a draw needs ${slots.length} vertex buffers, over WebGPU's ${max}; it is not drawn`);
@@ -2234,7 +2244,7 @@ struct O { ${outputs} };
       packed.gpu = this.device.createBuffer({ size: out.byteLength, usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST });
     }
     // A source changing submitted the batch first (its upload saw it in use), so this write lands in order.
-    this.device.queue.writeBuffer(packed.gpu, 0, out);
+    this.queue.writeBuffer(packed.gpu, 0, out);
     packed.versions = versions;
     return packed.gpu;
   }
@@ -2257,7 +2267,7 @@ struct O { ${outputs} };
       this.retire(gpu);
       gpu = this.device.createBuffer({ size: Math.max(4, out.byteLength), usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST });
     }
-    this.device.queue.writeBuffer(gpu, 0, out);
+    this.queue.writeBuffer(gpu, 0, out);
     b.floatCopies.set(key, { version: b.version, gpu });
     return gpu;
   }
@@ -2277,7 +2287,7 @@ struct O { ${outputs} };
       if (!this.openPass()) return;
     }
     if (plan === null) return;
-    const fit = plan.instanceCapacity(instances);
+    const fit = plan.perInstance ? plan.instanceCapacity(instances) : instances;
     if (fit < instances) {
       this.warn(`a draw asked for ${instances} instances but its instance buffers hold ${fit}; drawing ${fit} (WebGL draws the rest with zero attributes, which shows nothing)`);
       instances = fit;
@@ -2429,7 +2439,7 @@ struct O { ${outputs} };
     // The old buffer's ids are a prefix of the new one's, so draws already recorded with it stay right.
     this.retire(b.gpu);
     b.gpu = this.device.createBuffer({ size: ids.byteLength, usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST });
-    this.device.queue.writeBuffer(b.gpu, 0, ids);
+    this.queue.writeBuffer(b.gpu, 0, ids);
     b.size = ids.byteLength;
     b.data = ids;
     b.version += 1;
@@ -2444,7 +2454,7 @@ struct O { ${outputs} };
     const out = new Uint16Array(Math.max(2, src.length + (src.length % 2)));
     out.set(src);
     const gpu = known?.gpu !== undefined && known.gpu.size >= out.byteLength ? known.gpu : this.device.createBuffer({ size: out.byteLength, usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST });
-    this.device.queue.writeBuffer(gpu, 0, out);
+    this.queue.writeBuffer(gpu, 0, out);
     b.floatCopies.set("u8index", { version: b.version, gpu });
     return gpu;
   }
@@ -2464,17 +2474,17 @@ struct O { ${outputs} };
     this.endPass();
     if (this.encoder === null) return;
     if (this.stagingUsed > 0) {
-      this.device.queue.writeBuffer(this.ring, 0, this.staging, 0, Math.ceil(this.stagingUsed / 4) * 4);
+      this.queue.writeBuffer(this.ring, 0, this.staging, 0, Math.ceil(this.stagingUsed / 4) * 4);
       this.stats.uniformBytes += this.stagingUsed;
     }
-    if (this.constantsUsed > 0) this.device.queue.writeBuffer(this.constantRing, 0, this.constants, 0, this.constantsUsed);
+    if (this.constantsUsed > 0) this.queue.writeBuffer(this.constantRing, 0, this.constants, 0, this.constantsUsed);
     this.resolveStamps(this.encoder);
-    this.device.queue.submit([this.encoder.finish()]);
+    this.queue.submit([this.encoder.finish()]);
     this.stats.submits += 1;
     if (!this.lagSampling) {
       this.lagSampling = true;
       const sent = performance.now();
-      void this.device.queue.onSubmittedWorkDone().then(() => {
+      void this.queue.onSubmittedWorkDone().then(() => {
         this.stats.queueLagMs = performance.now() - sent;
         this.lagSampling = false;
       });
