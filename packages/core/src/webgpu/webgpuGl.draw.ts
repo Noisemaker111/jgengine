@@ -138,22 +138,25 @@ interface TextureSet {
   sigId: number;
   group: GPUBindGroup;
 }
-interface PipelineEntry { plan: VertexPlan; stateId: number; targetId: number; mode: number; indexType: number | null; sigId: number; pipeline: GPURenderPipeline }
+interface PipelineEntry { layoutId: number; stateId: number; targetId: number; mode: number; indexType: number | null; sigId: number; pipeline: GPURenderPipeline }
 /** One attribute as GL reads it from its buffer. */
 interface AttribSource { buffer: GlBuffer; offset: number; stride: number; type: number; size: number; normalized: boolean; convert: boolean; location: number; format: GPUVertexFormat }
 interface VertexSlot {
   buffer: GlBuffer | null; offset: number; stride: number; step: GPUVertexStepMode; attributes: GPUVertexAttribute[]; convert: { type: number; size: number; normalized: boolean } | null; constant: boolean;
   sources: AttribSource[];
   /** Several GL buffers interleaved into one, built on the CPU when a draw has more buffers than WebGPU binds. */
-  packed: { gpu: GPUBuffer | null; versions: string } | null;
+  packed: { gpu: GPUBuffer | null; ids: number[]; versions: number[] } | null;
 }
 interface VertexPlan {
+  /** The interned vertex layout (`key`): a plan rebuilt with the same layout keeps its pipelines. */
   id: number; key: string; slots: VertexSlot[]; constants: number[]; instanceCapacity: (instances: number) => number;
   /** Whether any GL attribute steps per instance (a multi-draw's firstInstance would offset it). */
   perInstance: boolean;
 }
 /** A WEBGL_multi_draw call: item i draws counts[countsOffset + i] from starts[startsOffset + i] (elements: a byte offset). */
 interface MultiDraw { starts: ArrayLike<number>; startsOffset: number; counts: ArrayLike<number>; countsOffset: number; drawCount: number }
+/** How many numbers describe the fixed-function state a pipeline bakes in (see `stateId`). */
+const STATE_FIELDS = 29;
 
 const WEBGL_CONSTANTS: Record<string, number> = (() => {
   const out: Record<string, number> = {};
@@ -359,8 +362,15 @@ export class WebGpuGl extends GlConstants {
    */
   private textureEpoch = 1;
   private stateKeyVersion = 0;
-  private stateKeyValue = "";
   private stateKeyId = 0;
+  /**
+   * The pipeline state's fields, written in place and interned by value: three flips depth, blend
+   * and stencil state hundreds of times a frame (Fernwild: 214), and building a string key each time
+   * was a fifth of the context's garbage.
+   */
+  private readonly stateFields = new Float64Array(STATE_FIELDS);
+  private readonly stateTable = new Map<number, { fields: Float64Array; id: number }[]>();
+  private stateCount = 0;
 
   // GPU timers: a render pass that runs while a TIME_ELAPSED query is open writes a timestamp at its
   // start and end. Serials count stamps across batches; a batch's stamps are its serials from
@@ -374,8 +384,8 @@ export class WebGpuGl extends GlConstants {
   /** TIME_ELAPSED queries begun and not yet answered. */
   private readonly timedPending = new Set<GlQuery>();
   /** Small numbers for the strings a pipeline depends on, so a draw compares numbers instead of building a key. */
-  private readonly stateIds = new Map<string, number>();
   private readonly targetIds = new Map<string, number>();
+  private readonly layoutIds = new Map<string, number>();
   private readonly sigIds = new Map<string, number>();
 
   // WebGPU work.
@@ -419,6 +429,7 @@ export class WebGpuGl extends GlConstants {
   private backColor: GPUTexture | null = null;
   private backColorMsaa: GPUTexture | null = null;
   private backDepth: GPUTexture | null = null;
+  private backViews: { color: GPUTextureView; msaa: GPUTextureView | null; depth: GPUTextureView | null } | null = null;
   private backSize = [0, 0];
   private presentPipeline: GPURenderPipeline | null = null;
   private presentGroup: GPUBindGroup | null = null;
@@ -624,7 +635,8 @@ export class WebGpuGl extends GlConstants {
   bindBuffer(target: number, b: GlBuffer | null): void {
     switch (target) {
       case 0x8892: this.arrayBuffer = b; break;
-      case 0x8893: this.vao.elements = b; this.vao.version += 1; break;
+      // A vertex plan reads only the attributes, so the index buffer leaves the vao's version alone.
+      case 0x8893: this.vao.elements = b; break;
       case 0x8f36: this.copyRead = b; break;
       case 0x8f37: this.copyWrite = b; break;
       case 0x88eb: this.pixelPack = b; break;
@@ -731,12 +743,14 @@ export class WebGpuGl extends GlConstants {
   bindVertexArray(v: GlVertexArray | null): void { this.vao = v ?? this.defaultVao; }
   enableVertexAttribArray(i: number): void { const a = this.vao.attribs[i]!; if (!a.enabled) { a.enabled = true; this.vao.version += 1; } }
   disableVertexAttribArray(i: number): void { const a = this.vao.attribs[i]!; if (a.enabled) { a.enabled = false; this.vao.version += 1; } }
-  vertexAttribPointer(i: number, size: number, type: number, normalized: boolean, stride: number, offset: number): void {
-    Object.assign(this.vao.attribs[i]!, { buffer: this.arrayBuffer, size, type, normalized, stride, offset, integer: false });
-    this.vao.version += 1;
-  }
-  vertexAttribIPointer(i: number, size: number, type: number, stride: number, offset: number): void {
-    Object.assign(this.vao.attribs[i]!, { buffer: this.arrayBuffer, size, type, normalized: false, stride, offset, integer: true });
+  vertexAttribPointer(i: number, size: number, type: number, normalized: boolean, stride: number, offset: number): void { this.setAttrib(i, size, type, normalized, stride, offset, false); }
+  vertexAttribIPointer(i: number, size: number, type: number, stride: number, offset: number): void { this.setAttrib(i, size, type, false, stride, offset, true); }
+  /** Point attribute `i` at the bound array buffer. Re-pointing it where it already points (three does every frame for some objects) keeps the vao's vertex plan. */
+  private setAttrib(i: number, size: number, type: number, normalized: boolean, stride: number, offset: number, integer: boolean): void {
+    const a = this.vao.attribs[i]!;
+    const buffer = this.arrayBuffer;
+    if (a.buffer === buffer && a.size === size && a.type === type && a.normalized === normalized && a.stride === stride && a.offset === offset && a.integer === integer) return;
+    a.buffer = buffer; a.size = size; a.type = type; a.normalized = normalized; a.stride = stride; a.offset = offset; a.integer = integer;
     this.vao.version += 1;
   }
   vertexAttribDivisor(i: number, d: number): void { const a = this.vao.attribs[i]!; if (a.divisor !== d) { a.divisor = d; this.vao.version += 1; } }
@@ -1341,15 +1355,18 @@ export class WebGpuGl extends GlConstants {
    */
   private incompleteness(fb: GlFramebuffer | null): { status: number; reason: string } | null {
     if (fb === null) return null;
-    const attached = [...fb.colors, fb.depth, fb.stencil].filter((a): a is Attachment => a != null);
-    if (attached.length === 0) return { status: 0x8cd7, reason: "nothing is attached" };
-    for (const a of attached) {
+    // Checked at every pass, so without building a list of the attachments.
+    let attached = 0;
+    for (let i = -2; i < fb.colors.length; i += 1) {
+      const a = i === -2 ? fb.depth : i === -1 ? fb.stencil : fb.colors[i];
+      if (a == null) continue;
+      attached += 1;
       if (a.object.kind !== "texture") continue;
       const t = a.object;
       if (t.gpu === null) return { status: 0x8cd6, reason: "a texture attached to it has no storage yet" };
       if (a.level >= t.levels) return { status: 0x8cd6, reason: `it attaches mip level ${a.level} of a ${t.width}x${t.height} texture that has ${t.levels}` };
     }
-    return null;
+    return attached === 0 ? { status: 0x8cd7, reason: "nothing is attached" } : null;
   }
   private fbFor(target: number): GlFramebuffer | null { return target === 0x8ca8 ? this.readFb : this.drawFb; }
   private attach(fb: GlFramebuffer | null, point: number, a: Attachment | null): void {
@@ -1624,6 +1641,8 @@ export class WebGpuGl extends GlConstants {
     this.backColorMsaa = samples > 1 ? this.device.createTexture({ size: { width: w, height: h }, format: "rgba8unorm", sampleCount: samples, usage: GPUTextureUsage.RENDER_ATTACHMENT }) : null;
     this.backDepth = this.attributes.depth || this.attributes.stencil ? this.device.createTexture({ size: { width: w, height: h }, format: this.attributes.stencil ? "depth24plus-stencil8" : "depth24plus", sampleCount: samples, usage: GPUTextureUsage.RENDER_ATTACHMENT }) : null;
     this.backSize = [w, h];
+    // Made once per size: a view per pass was two native calls and garbage every pass.
+    this.backViews = { color: this.backColor.createView(), msaa: this.backColorMsaa?.createView() ?? null, depth: this.backDepth?.createView() ?? null };
     this.presentGroup = null;
   }
 
@@ -1669,12 +1688,15 @@ export class WebGpuGl extends GlConstants {
       this.ensureBackBuffer();
       const color = clear?.color[0] ?? null;
       const msaa = this.backColorMsaa;
-      colorAttachments.push({ view: (msaa ?? this.backColor!).createView(), ...(msaa !== null ? { resolveTarget: this.backColor!.createView() } : {}), loadOp: color !== null ? "clear" : "load", storeOp: "store", clearValue: color ?? [0, 0, 0, 0] });
+      const views = this.backViews!;
+      const attachment: GPURenderPassColorAttachment = { view: views.msaa ?? views.color, loadOp: color !== null ? "clear" : "load", storeOp: "store", clearValue: color ?? [0, 0, 0, 0] };
+      if (views.msaa !== null) attachment.resolveTarget = views.color;
+      colorAttachments.push(attachment);
       colorFormats.push("rgba8unorm");
       if (msaa !== null && color === null) this.warn("the default framebuffer reloads its multisampled color between passes");
       if (this.backDepth !== null) {
         depthFormat = this.backDepth.format;
-        depthStencil = { view: this.backDepth.createView(), depthLoadOp: clear?.depth != null ? "clear" : "load", depthStoreOp: "store", depthClearValue: clear?.depth ?? 1, ...(hasStencil(depthFormat) ? { stencilLoadOp: clear?.stencil != null ? "clear" : "load", stencilStoreOp: "store", stencilClearValue: clear?.stencil ?? 0 } : {}) };
+        depthStencil = { view: views.depth!, depthLoadOp: clear?.depth != null ? "clear" : "load", depthStoreOp: "store", depthClearValue: clear?.depth ?? 1, ...(hasStencil(depthFormat) ? { stencilLoadOp: clear?.stencil != null ? "clear" : "load", stencilStoreOp: "store", stencilClearValue: clear?.stencil ?? 0 } : {}) };
       }
       width = this.backSize[0]!;
       height = this.backSize[1]!;
@@ -1894,26 +1916,57 @@ struct O { ${outputs} };
   drawElementsInstanced(mode: number, count: number, type: number, offset: number, instances: number): void { this.draw(mode, 0, count, instances, type, offset); }
   drawRangeElements(mode: number, _start: number, _end: number, count: number, type: number, offset: number): void { this.draw(mode, 0, count, 1, type, offset); }
 
-  private stateKey(): string {
-    if (this.stateKeyVersion === this.stateVersion) return this.stateKeyValue;
+  /**
+   * The pipeline state's interned id; computed once per state change, without allocating. A part
+   * that is switched off (blend, depth test, cull, offset, stencil) records only that, as a string
+   * key once did, so its leftover values do not split pipelines.
+   */
+  private stateId(): number {
+    if (this.stateKeyVersion === this.stateVersion) return this.stateKeyId;
+    const f = this.stateFields;
     const e = this.enabled;
-    const blend = e.has(0x0be2) ? `${this.blendEq.join(",")}|${this.blendFn.join(",")}` : "-";
-    const depth = e.has(0x0b71) ? `${this.depthFn}|${this.depthWrite ? 1 : 0}` : "-";
-    const cull = e.has(0x0b44) ? this.cull : 0;
-    const off = e.has(0x8037) ? this.offset.join(",") : "-";
+    const blend = e.has(0x0be2);
+    f[0] = blend ? 1 : 0;
+    f[1] = blend ? this.blendEq[0]! : 0;
+    f[2] = blend ? this.blendEq[1]! : 0;
+    for (let i = 0; i < 4; i += 1) f[3 + i] = blend ? this.blendFn[i]! : 0;
+    const depth = e.has(0x0b71);
+    f[7] = depth ? 1 : 0;
+    f[8] = depth ? this.depthFn : 0;
+    f[9] = depth && this.depthWrite ? 1 : 0;
+    f[10] = e.has(0x0b44) ? this.cull : 0;
+    f[11] = this.front;
+    const off = e.has(0x8037);
+    f[12] = off ? 1 : 0;
+    f[13] = off ? this.offset[0]! : 0;
+    f[14] = off ? this.offset[1]! : 0;
+    const stencil = e.has(0x0b90);
+    f[15] = stencil ? 1 : 0;
     const s = this.stencilFront;
     const b = this.stencilBack;
-    const stencil = e.has(0x0b90) ? `${s.func},${s.mask},${s.fail},${s.zfail},${s.zpass},${s.writeMask}|${b.func},${b.mask},${b.fail},${b.zfail},${b.zpass},${b.writeMask}` : "-";
-    this.stateKeyValue = `${blend}|${depth}|${cull},${this.front}|${off}|${stencil}|${this.colorWrite.map((x) => (x ? 1 : 0)).join("")}`;
-    this.stateKeyId = internId(this.stateIds, this.stateKeyValue);
+    f[16] = stencil ? s.func : 0; f[17] = stencil ? s.mask : 0; f[18] = stencil ? s.fail : 0; f[19] = stencil ? s.zfail : 0; f[20] = stencil ? s.zpass : 0; f[21] = stencil ? s.writeMask : 0;
+    f[22] = stencil ? b.func : 0; f[23] = stencil ? b.mask : 0; f[24] = stencil ? b.fail : 0; f[25] = stencil ? b.zfail : 0; f[26] = stencil ? b.zpass : 0; f[27] = stencil ? b.writeMask : 0;
+    f[28] = (this.colorWrite[0] ? 1 : 0) | (this.colorWrite[1] ? 2 : 0) | (this.colorWrite[2] ? 4 : 0) | (this.colorWrite[3] ? 8 : 0);
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < STATE_FIELDS; i += 1) hash = Math.imul(hash ^ (Math.round(f[i]! * 4096) | 0), 0x01000193);
+    let bucket = this.stateTable.get(hash);
+    let id = 0;
+    if (bucket !== undefined) {
+      for (let k = 0; k < bucket.length && id === 0; k += 1) {
+        const held = bucket[k]!.fields;
+        let same = true;
+        for (let i = 0; i < STATE_FIELDS && same; i += 1) same = held[i] === f[i];
+        if (same) id = bucket[k]!.id;
+      }
+    }
+    if (id === 0) {
+      id = ++this.stateCount;
+      if (bucket === undefined) { bucket = []; this.stateTable.set(hash, bucket); }
+      bucket.push({ fields: f.slice(), id });
+    }
+    this.stateKeyId = id;
     this.stateKeyVersion = this.stateVersion;
-    return this.stateKeyValue;
-  }
-
-  /** The pipeline state's interned id; computed once per state change. */
-  private stateId(): number {
-    if (this.stateKeyVersion !== this.stateVersion) this.stateKey();
-    return this.stateKeyId;
+    return id;
   }
 
   private vertexPlan(p: GlProgram): VertexPlan | null {
@@ -1982,7 +2035,7 @@ struct O { ${outputs} };
         attributes.push({ shaderLocation: src.location, offset: at, format: src.format });
         at += Math.ceil(formatBytes(src.format) / 4) * 4;
       }
-      const packedSlot: VertexSlot = { buffer: null, offset: 0, stride: at, step, attributes, convert: null, constant: false, sources, packed: { gpu: null, versions: "" } };
+      const packedSlot: VertexSlot = { buffer: null, offset: 0, stride: at, step, attributes, convert: null, constant: false, sources, packed: { gpu: null, ids: [], versions: [] } };
       const kept = slots.filter((x) => !group.includes(x));
       slots.length = 0;
       slots.push(packedSlot, ...kept);
@@ -1990,7 +2043,7 @@ struct O { ${outputs} };
     if (drawIdLocation >= 0) slots.push({ buffer: this.drawIds(1), offset: 0, stride: 4, step: "instance", attributes: [{ shaderLocation: drawIdLocation, offset: 0, format: "sint32" }], convert: null, constant: false, sources: [], packed: null });
     for (const s of slots) keyParts += `${s.stride}${s.step[0]}:${s.attributes.map((x) => `${x.shaderLocation}@${x.offset}${x.format}`).join(",")};`;
     const plan: VertexPlan = {
-      id: nextId++,
+      id: internId(this.layoutIds, keyParts),
       key: keyParts,
       slots,
       constants,
@@ -2010,7 +2063,7 @@ struct O { ${outputs} };
     const target = this.passTarget!;
     const topo = topology(mode);
     if (topo === null) { this.warn(`draw mode ${mode} (LINE_LOOP / TRIANGLE_FAN) is not drawn`); return null; }
-    const key = `${p.id}|${plan.key}|${this.stateKey()}|${target.key}|${topo}|${texsig}${topo.endsWith("strip") ? indexType : ""}`;
+    const key = `${p.id}|${plan.key}|s${this.stateId()}|${target.key}|${topo}|${texsig}${topo.endsWith("strip") ? indexType : ""}`;
     let pipeline = this.pipelines.get(key);
     if (pipeline !== undefined) return pipeline;
     const e = this.enabled;
@@ -2212,13 +2265,16 @@ struct O { ${outputs} };
   /** Interleave a packed slot's sources into one buffer, rebuilt when any source changes. */
   private packedCopy(slot: VertexSlot): GPUBuffer | null {
     const packed = slot.packed!;
-    let versions = "";
-    for (const src of slot.sources) {
-      if (src.buffer.data === null) return null;
-      versions += `${src.buffer.id}.${src.buffer.version},`;
-      src.buffer.usedBatch = this.batch;
+    const sources = slot.sources;
+    // Compared number by number: a string of the versions per draw was most of its garbage.
+    let current = packed.gpu !== null && packed.ids.length === sources.length;
+    for (let k = 0; k < sources.length; k += 1) {
+      const b = sources[k]!.buffer;
+      if (b.data === null) return null;
+      b.usedBatch = this.batch;
+      if (current && (packed.ids[k] !== b.id || packed.versions[k] !== b.version)) current = false;
     }
-    if (packed.gpu !== null && packed.versions === versions) return packed.gpu;
+    if (current) return packed.gpu;
     let count = Infinity;
     for (const src of slot.sources) {
       const bytes = src.size * componentBytes(src.type);
@@ -2245,7 +2301,9 @@ struct O { ${outputs} };
     }
     // A source changing submitted the batch first (its upload saw it in use), so this write lands in order.
     this.queue.writeBuffer(packed.gpu, 0, out);
-    packed.versions = versions;
+    packed.ids.length = sources.length;
+    packed.versions.length = sources.length;
+    for (let k = 0; k < sources.length; k += 1) { packed.ids[k] = sources[k]!.buffer.id; packed.versions[k] = sources[k]!.buffer.version; }
     return packed.gpu;
   }
 
@@ -2311,13 +2369,13 @@ struct O { ${outputs} };
     if (pipelineBucket !== undefined) {
       for (let k = 0; k < pipelineBucket.length; k += 1) {
         const e = pipelineBucket[k]!;
-        if (e.plan === plan && e.stateId === stateId && e.targetId === target.id && e.mode === mode && e.indexType === indexType && e.sigId === tc.sigId) { pipeline = e.pipeline; break; }
+        if (e.layoutId === plan.id && e.stateId === stateId && e.targetId === target.id && e.mode === mode && e.indexType === indexType && e.sigId === tc.sigId) { pipeline = e.pipeline; break; }
       }
     }
     if (pipeline === null) {
       pipeline = this.pipelineFor(p, plan, mode, indexType, sig);
       if (pipeline === null) return;
-      const entry: PipelineEntry = { plan, stateId, targetId: target.id, mode, indexType, sigId: tc.sigId, pipeline };
+      const entry: PipelineEntry = { layoutId: plan.id, stateId, targetId: target.id, mode, indexType, sigId: tc.sigId, pipeline };
       if (pipelineBucket === undefined) p.pipelineSets.set(pipelineHash, [entry]);
       else pipelineBucket.push(entry);
     }

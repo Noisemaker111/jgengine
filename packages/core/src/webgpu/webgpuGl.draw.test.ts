@@ -294,6 +294,80 @@ describe("WebGpuGl per-program draw caches", () => {
     expect(groups).toEqual([a, b, b, null]);
   });
 
+  test("GL state a pipeline does not use (blend factors with blending off) shares its pipeline; a polygon offset of -1 is a state of its own", () => {
+    const { gl, pipelines, texture, draw } = setup();
+    texture();
+    draw();
+    gl.blendFunc(0x0302, 0x0303);
+    gl.depthFunc(0x0203); // depth test off: its function does not matter either
+    draw();
+    expect(pipelines()).toBe(1);
+    gl.enable(0x8037);
+    gl.polygonOffset(-1, -1);
+    draw();
+    expect(pipelines()).toBe(2);
+    gl.polygonOffset(1, 1);
+    draw();
+    expect(pipelines()).toBe(3);
+    gl.polygonOffset(-1, -1);
+    draw();
+    expect(pipelines()).toBe(3);
+  });
+
+  test("re-pointing an attribute where it already points, or binding an index buffer, keeps the vertex plan; a new buffer in the same layout keeps the pipeline", () => {
+    const { gl, pipelines, texture, draw } = setup();
+    texture();
+    delete gl.vertexPlan;
+    gl.program.translated.layout.vertex_inputs = [{ name: "position", column: 0, location: 0, components: 3, kind: "f" }];
+    const plans = new Set<unknown>();
+    const vertexPlan = gl.vertexPlan.bind(gl);
+    gl.vertexPlan = (p: unknown) => { const plan = vertexPlan(p); plans.add(plan); return plan; };
+    const buffer = () => { const b = gl.createBuffer(); gl.bindBuffer(0x8892, b); gl.bufferData(0x8892, new Float32Array(9), 0x88e4); return b; };
+    const point = (b: unknown) => { gl.bindBuffer(0x8892, b); gl.vertexAttribPointer(0, 3, 0x1406, false, 12, 0); };
+    const a = buffer();
+    gl.enableVertexAttribArray(0);
+    point(a);
+    draw();
+    point(a);
+    gl.bindBuffer(0x8893, gl.createBuffer());
+    draw();
+    expect(plans.size).toBe(1);
+    point(buffer());
+    draw();
+    expect(plans.size).toBe(2);
+    expect(pipelines()).toBe(1);
+  });
+
+  test("a draw over WebGPU's 8 vertex buffers packs them into one once, and again only when one of them changes", () => {
+    const { gl, texture, draw } = setup();
+    texture();
+    delete gl.vertexPlan;
+    const inputs = Array.from({ length: 9 }, (_, i) => ({ name: `a${i}`, column: 0, location: i, components: 1, kind: "f" }));
+    gl.program.translated.layout.vertex_inputs = inputs;
+    const sources = inputs.map((_, i) => {
+      const b = gl.createBuffer();
+      gl.bindBuffer(0x8892, b);
+      gl.bufferData(0x8892, new Float32Array([i, i, i]), 0x88e4);
+      gl.enableVertexAttribArray(i);
+      gl.vertexAttribPointer(i, 1, 0x1406, false, 4, 0);
+      return b;
+    });
+    // Three vertices of nine floats: the packed buffer is the only 108-byte write.
+    const packs: number[][] = [];
+    const queue = gl.queue;
+    gl.queue = new Proxy(queue, { get: (t, k) => (k === "writeBuffer" ? (target: unknown, offset: number, data: ArrayBufferView) => {
+      if (data.byteLength === 108) packs.push([...new Float32Array(data.buffer, data.byteOffset, 9)]);
+      return t.writeBuffer(target, offset, data);
+    } : t[k]) });
+    draw();
+    draw();
+    expect(packs).toEqual([[0, 1, 2, 3, 4, 5, 6, 7, 8]]);
+    gl.bindBuffer(0x8892, sources[4]);
+    gl.bufferSubData(0x8892, 0, new Float32Array([7, 7, 7]));
+    draw();
+    expect(packs).toEqual([[0, 1, 2, 3, 4, 5, 6, 7, 8], [0, 1, 2, 3, 7, 5, 6, 7, 8]]);
+  });
+
   test("a cached draw still marks its textures as used by the current batch, so an upload after it submits first", () => {
     const { gl, groups, texture, draw } = setup();
     const t = texture();
