@@ -372,7 +372,7 @@ export class WebGpuGl extends GlConstants {
   private readonly stateTable = new Map<number, { fields: Float64Array; id: number }[]>();
   private stateCount = 0;
 
-  // GPU timers: a render pass that runs while a TIME_ELAPSED query is open writes a timestamp at its
+  // GPU timers: once a page has begun a TIME_ELAPSED query, every render pass writes a timestamp at its
   // start and end. Serials count stamps across batches; a batch's stamps are its serials from
   // `stampFirst`, resolved and read back after it is submitted.
   private readonly stamps: GPUQuerySet | null = null;
@@ -381,6 +381,10 @@ export class WebGpuGl extends GlConstants {
   private stampFirst = 0;
   private stampOverflowed = false;
   private timedQuery: GlQuery | null = null;
+  /** A TIME_ELAPSED query has been begun: from then on every pass writes stamps. */
+  private timersInUse = false;
+  /** The open pass's begin stamp serial, or -1 when no pass is open or it writes none. */
+  private openPassStamp = -1;
   /** TIME_ELAPSED queries begun and not yet answered. */
   private readonly timedPending = new Set<GlQuery>();
   /** Small numbers for the strings a pipeline depends on, so a draw compares numbers instead of building a key. */
@@ -1583,13 +1587,17 @@ struct U { shift: vec2<i32> };
     if (this.timedQuery === q) this.timedQuery = null;
   }
   /**
-   * A TIME_ELAPSED query times the render passes between begin and end: the open pass ends at each,
-   * so the query covers whole passes, from the first one's start to the last one's end (GPU time,
-   * not the gaps between passes). Other query kinds answer 0 at once.
+   * A TIME_ELAPSED query times the render passes it overlaps, whole, from the first one's start to the
+   * last one's end (GPU time, not the gaps between passes). Once a page uses timers, every pass writes
+   * its stamps, so starting or stopping a timer never ends a pass: a split would add a store and a load
+   * of the target that WebGL never pays, and the timers would slow the frame they measure. A timer
+   * started and stopped inside one pass reads that whole pass. Other query kinds answer 0 at once.
    */
   beginQuery(target: number, q: GlQuery): void {
     if (target !== 0x88bf || this.stamps === null) return;
-    this.endPass("any");
+    this.timersInUse = true;
+    // Only the first timer can find an unstamped pass open; it starts with the next pass.
+    if (this.pass !== null && this.openPassStamp < 0) this.endPass("any");
     q.result = 0;
     q.available = false;
     q.start = -1;
@@ -1598,13 +1606,16 @@ struct U { shift: vec2<i32> };
     q.startNs = null;
     q.endNs = null;
     q.endNsSerial = -1;
+    if (this.openPassStamp >= 0) {
+      q.start = this.openPassStamp;
+      q.end = this.openPassStamp + 1;
+    }
     this.timedQuery = q;
     this.timedPending.add(q);
   }
   endQuery(target: number): void {
     const q = this.timedQuery;
     if (target !== 0x88bf || q === null) return;
-    this.endPass("any");
     this.timedQuery = null;
     q.ended = true;
     this.settleTimer(q);
@@ -1624,10 +1635,10 @@ struct U { shift: vec2<i32> };
     this.timedPending.delete(q);
   }
 
-  /** The timestamp writes for a pass about to begin, when a timer query is open. */
+  /** The timestamp writes for a pass about to begin, once the page uses timers. */
   private passStamps(): GPURenderPassTimestampWrites | undefined {
-    const q = this.timedQuery;
-    if (q === null || this.stamps === null) return undefined;
+    this.openPassStamp = -1;
+    if (!this.timersInUse || this.stamps === null) return undefined;
     if (this.stampSerial - this.stampFirst + 2 > STAMPS_PER_BATCH) {
       if (!this.stampOverflowed) this.warn(`degraded: a batch ran over ${STAMPS_PER_BATCH / 2} timed passes; the GPU timer leaves out the passes after it`);
       this.stampOverflowed = true;
@@ -1635,8 +1646,12 @@ struct U { shift: vec2<i32> };
     }
     const begin = this.stampSerial;
     this.stampSerial += 2;
-    if (q.start < 0) q.start = begin;
-    q.end = begin + 1;
+    this.openPassStamp = begin;
+    const q = this.timedQuery;
+    if (q !== null) {
+      if (q.start < 0) q.start = begin;
+      q.end = begin + 1;
+    }
     return { querySet: this.stamps, beginningOfPassWriteIndex: begin - this.stampFirst, endOfPassWriteIndex: begin + 1 - this.stampFirst };
   }
 
@@ -1825,6 +1840,7 @@ struct U { shift: vec2<i32> };
       this.pass.end();
       this.pass = null;
       this.passTarget = null;
+      this.openPassStamp = -1;
     }
     const pending = this.pendingClear;
     if (pending === null || keep === "any" || (keep !== undefined && pending.fb === keep)) return;
@@ -1833,6 +1849,7 @@ struct U { shift: vec2<i32> };
       this.pass!.end();
       this.pass = null;
       this.passTarget = null;
+      this.openPassStamp = -1;
     }
   }
 
