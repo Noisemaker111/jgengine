@@ -31,6 +31,20 @@ export interface GrassStyle {
    * lengths lying every way, and mown blades end blunt and torn. 0.5 is the species as it is.
    */
   exaggeration: number;
+  /**
+   * 0..1 lighting model: 0 flat cel bands with a rim light (the engine's toon look), 0.5 standard
+   * lighting as the species is, 1 standard lighting with a blade sheen and light shining through the
+   * whole leaf. See {@link grassShadingAmounts}.
+   */
+  shading: number;
+  /** 0..1 how stepped the colour runs root to tip: 0 continuous, 1 three flat tones with little blade-to-blade noise. */
+  colourSteps: number;
+  /** 0..1 colour saturation: 0.5 the species' colours as they are, higher brighter and purer, lower greyer and more natural. */
+  saturation: number;
+  /** 0..1 root-to-tip contrast: 0.5 the species' gradient as it is, higher pushes root and tip apart, lower brings them together. */
+  contrast: number;
+  /** 0..1 dark ink along each blade's edges, so clumps read as outlined shapes; 0 none. */
+  outline: number;
 }
 
 /** The style sliders `realism` drives: every style knob but `realism` itself. */
@@ -50,7 +64,30 @@ export const GRASS_STYLE_CURVES: Readonly<Record<GrassStyleSlider, (realism: num
   normalLift: (realism) => 0.85 - 0.5 * realism,
   detail: (realism) => realism,
   exaggeration: (realism) => 1 - realism,
+  shading: (realism) => realism,
+  // Written as offsets from 0.5 so each lands on exactly 0.5 (or 0) at the default realism.
+  colourSteps: (realism) => Math.max(0, 2 * (0.5 - realism)),
+  // Rises toward cartoon only: real grass is a saturated green, and a greyer photoreal end read as
+  // faded next to the reference photos.
+  saturation: (realism) => 0.5 + 0.3 * Math.max(0, 0.5 - realism),
+  contrast: (realism) => 0.5 + 0.5 * (0.5 - realism),
+  outline: (realism) => Math.max(0, 1.2 * (0.5 - realism)),
 };
+
+/**
+ * `shading` as the two blends the shader applies: `cel` toward flat bands and a rim light (1 at
+ * shading 0, 0 from 0.5 up) and `sheen` toward a glossy, see-through blade (0 up to 0.5, 1 at 1).
+ * Both are 0 at the default, where the blade lights exactly as before.
+ */
+export function grassShadingAmounts(shading: number): { cel: number; sheen: number } {
+  const value = Math.max(0, Math.min(1, shading));
+  return { cel: Math.max(0, 1 - 2 * value), sheen: Math.max(0, 2 * value - 1) };
+}
+
+/** `saturation` or `contrast` as the factor the shader scales by: 1 at 0.5, 0.4 at 0, 1.6 at 1. */
+export function grassColourFactor(value: number): number {
+  return 1 + (Math.max(0, Math.min(1, value)) - 0.5) * 1.2;
+}
 
 /**
  * Blades drawn per blade a species grows, at a `detail`: 1 at 0.5, rising to 6 at 1 and falling to
@@ -87,7 +124,7 @@ function clamp01(value: number): number {
 
 /** The grass style schema: the editor's grass style sections, their presets and every style parse. */
 export const GRASS_STYLE_SCHEMA = defineParamSchema({
-  groups: [{ id: "shape", label: "Detail and shape", collapsed: true }, { id: "light", label: "Light", collapsed: true }],
+  groups: [{ id: "shape", label: "Detail and shape", collapsed: true }, { id: "light", label: "Light", collapsed: true }, { id: "colour", label: "Colour and outline", collapsed: true }],
   presets: [
     { id: "cartoon", label: "Cartoon", values: { realism: 0 } },
     { id: "painterly", label: "Painterly", values: { realism: 0.3 } },
@@ -100,6 +137,11 @@ export const GRASS_STYLE_SCHEMA = defineParamSchema({
     { type: "range", key: "detail", label: "detail (few wide → many thin blades)", min: 0, max: 1, step: 0.01, default: GRASS_STYLE_CURVES.detail(GRASS_REALISM_DEFAULT), group: "shape" },
     { type: "range", key: "exaggeration", label: "exaggeration (natural → cartoon shapes)", min: 0, max: 1, step: 0.01, default: GRASS_STYLE_CURVES.exaggeration(GRASS_REALISM_DEFAULT), group: "shape" },
     { type: "range", key: "normalLift", label: "normal lift (per blade → soft)", min: 0, max: 1, step: 0.01, default: GRASS_STYLE_CURVES.normalLift(GRASS_REALISM_DEFAULT), group: "light" },
+    { type: "range", key: "shading", label: "shading (cel bands → sheen)", min: 0, max: 1, step: 0.01, default: GRASS_STYLE_CURVES.shading(GRASS_REALISM_DEFAULT), group: "light" },
+    { type: "range", key: "colourSteps", label: "colour steps (continuous → flat tones)", min: 0, max: 1, step: 0.01, default: GRASS_STYLE_CURVES.colourSteps(GRASS_REALISM_DEFAULT), group: "colour" },
+    { type: "range", key: "saturation", label: "saturation (natural → bright)", min: 0, max: 1, step: 0.01, default: GRASS_STYLE_CURVES.saturation(GRASS_REALISM_DEFAULT), group: "colour" },
+    { type: "range", key: "contrast", label: "root-to-tip contrast", min: 0, max: 1, step: 0.01, default: GRASS_STYLE_CURVES.contrast(GRASS_REALISM_DEFAULT), group: "colour" },
+    { type: "range", key: "outline", label: "outline (none → ink edges)", min: 0, max: 1, step: 0.01, default: GRASS_STYLE_CURVES.outline(GRASS_REALISM_DEFAULT), group: "colour" },
   ],
 });
 
@@ -109,6 +151,11 @@ export const GRASS_STYLE_DEFAULTS: GrassStyle = {
   normalLift: GRASS_STYLE_CURVES.normalLift(GRASS_REALISM_DEFAULT),
   detail: GRASS_STYLE_CURVES.detail(GRASS_REALISM_DEFAULT),
   exaggeration: GRASS_STYLE_CURVES.exaggeration(GRASS_REALISM_DEFAULT),
+  shading: GRASS_STYLE_CURVES.shading(GRASS_REALISM_DEFAULT),
+  colourSteps: GRASS_STYLE_CURVES.colourSteps(GRASS_REALISM_DEFAULT),
+  saturation: GRASS_STYLE_CURVES.saturation(GRASS_REALISM_DEFAULT),
+  contrast: GRASS_STYLE_CURVES.contrast(GRASS_REALISM_DEFAULT),
+  outline: GRASS_STYLE_CURVES.outline(GRASS_REALISM_DEFAULT),
 };
 
 type StyleInput = Readonly<Record<string, unknown>> | undefined;
@@ -132,7 +179,7 @@ export function resolveGrassStyle(patch: unknown, world: unknown, species: Grass
   const own = readStyle(patch);
   const shared = readStyle(world);
   const realism = grassRealismFromPage() ?? (own.has("realism") ? own.values.realism : shared.has("realism") ? shared.values.realism : GRASS_REALISM_DEFAULT);
-  const style: GrassStyle = { realism, normalLift: 0, detail: 0, exaggeration: 0 };
+  const style: GrassStyle = { ...GRASS_STYLE_DEFAULTS, realism };
   for (const slider of SLIDERS) {
     const curve = GRASS_STYLE_CURVES[slider];
     const tuned = species?.[slider];
