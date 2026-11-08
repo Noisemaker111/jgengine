@@ -171,7 +171,7 @@ describe("Chrome launch mode", () => {
 
 describe("Chrome graphics profile", () => {
   test("uses native GPU locally instead of forcing CPU-bound SwiftShader", () => {
-    expect(chromeGraphicsArgs({}, "win32")).toEqual(["--ignore-gpu-blocklist"]);
+    expect(chromeGraphicsArgs({}, "win32")).toEqual(["--ignore-gpu-blocklist", "--enable-webgpu-developer-features"]);
   });
 
   test("uses SwiftShader in CI or when explicitly requested", () => {
@@ -611,7 +611,7 @@ describe("software GL backend", () => {
     expect(chromeRenderArgs("llvmpipe")).toContain("--use-angle=gl");
     expect(chromeRenderArgs("llvmpipe")).not.toContain("--headless=new");
     expect(chromeRenderArgs("swiftshader")).toEqual(expect.arrayContaining(["--headless=new", "--use-angle=swiftshader"]));
-    expect(chromeRenderArgs(null)).toEqual(["--headless=new", "--ignore-gpu-blocklist"]);
+    expect(chromeRenderArgs(null)).toEqual(["--headless=new", "--ignore-gpu-blocklist", "--enable-webgpu-developer-features"]);
   });
 });
 

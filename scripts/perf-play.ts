@@ -967,6 +967,42 @@ export interface PerfRecord extends Omit<PerfReport, "quality"> {
   movement?: { start: readonly number[] | null; end: readonly number[] | null; displacement: number | null; focus: readonly (string | null)[]; errors: string[] };
   /** Where each frame went over the measured window; null when the page has no dev telemetry. */
   breakdown?: FrameBreakdownSummary | null;
+  /** The GPU API that actually drew the window, and the WebGPU backend's warnings when it was that one. */
+  backend?: BackendReading;
+}
+
+/** Which backend drew the page: `webgpu` only when the engine's WebGPU context is live. */
+export interface BackendReading {
+  drawing: "webgl" | "webgpu";
+  /** The WebGPU context's distinct warnings (what it could not draw as WebGL would), first 20. */
+  warnings: string[];
+}
+
+/**
+ * Page expression for a {@link BackendReading}. WebGPU errors come first so the first-20 cut never
+ * hides one behind ordinary warnings.
+ */
+export const BACKEND_READING_SCRIPT = `(() => { const g = globalThis.__jgWebGpu; if (!g) return { drawing: "webgl", warnings: [] }; const keys = [...g.warnings.keys()]; return { drawing: "webgpu", warnings: [...keys.filter((k) => k.startsWith("WebGPU:")), ...keys.filter((k) => !k.startsWith("WebGPU:"))].slice(0, 20) }; })()`;
+
+/**
+ * The warnings that are WebGPU errors (the device's uncaptured errors, `WebGPU: ...`). One means a
+ * command buffer failed validation and its GPU work was dropped, so the run drew less than the
+ * game asked for and its frame times are not comparable: a broken timestamp resolve once made
+ * every WebGPU frame look faster this way.
+ */
+export function gpuErrors(backend: { warnings: readonly string[] } | undefined): string[] {
+  return backend?.warnings.filter((warning) => warning.startsWith("WebGPU:")) ?? [];
+}
+
+/** The `degraded:` line for a run whose GPU work was dropped, or null when it was not. */
+export function gpuErrorLine(backend: { warnings: readonly string[] } | undefined): string | null {
+  const errors = gpuErrors(backend);
+  return errors.length === 0 ? null : `degraded: ${errors.length} WebGPU error(s) dropped GPU work, so this run's frame times are not comparable; first: ${errors[0]}`;
+}
+
+async function readBackend(session: CdpSession): Promise<BackendReading> {
+  const reading = await session.evaluate<BackendReading>(BACKEND_READING_SCRIPT);
+  return reading ?? { drawing: "webgl", warnings: [] };
 }
 
 async function playerPosition(session: CdpSession): Promise<{ position: number[] | null; error: string | null; focus: string | null }> {
@@ -1175,6 +1211,9 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
   }
 
   await session.evaluate(`new Promise((r) => setTimeout(r, ${warmupMs}))`, { awaitPromise: true });
+  const backend = await readBackend(session);
+  const asked = settings.find((setting) => setting.id === "graphics.renderer")?.value;
+  if (asked !== undefined && asked !== backend.drawing) console.error(`degraded: asked for the ${String(asked)} backend but ${backend.drawing} drew the page`);
   const movementStart = await playerPosition(session);
   const releasePath = await startPath(session, options.path ?? "still");
   await session.evaluate(`window.__jgPerfGl?.reset?.()`);
@@ -1242,10 +1281,15 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
 
   await releasePath();
   const top = raw === null ? [] : aggregateSelfTime(raw, profiledMs);
+  // Read again after the window: a WebGPU error raised while it was measured belongs to this run.
+  const drew = await readBackend(session);
+  const dropped = gpuErrorLine(drew);
+  if (dropped !== null) console.error(dropped);
 
   const record: PerfRecord = {
     game,
     gpu,
+    backend: drew,
     quality: reportedTier ?? quality ?? "unknown",
     viewport: `${size?.w ?? 0}x${size?.h ?? 0}`,
     seconds: Math.round((windowMs / 1000) * 10) / 10,

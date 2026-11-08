@@ -2,6 +2,7 @@ import { biomeBandsForSky } from "@jgengine/core/sky/skyBands";
 import { CharacterMotionContext } from "@jgengine/core/anim/characterMotion.draw";
 import { lightingHasSoftShadows } from "@jgengine/core/lighting/softShadows";
 import { Canvas } from "@react-three/fiber";
+import { engineRendererFactory } from "@jgengine/core/webgpu/engineRenderer.draw";
 import {
   useMemo,
   useEffect,
@@ -362,6 +363,7 @@ export function Shell3dPresentation({
   const sunFromLighting = lighting?.directional?.[0]?.position;
   const sceneLighting = useMemo(() => (cinematicLook ? balanceLightingForIbl(lighting) : lighting), [cinematicLook, lighting]);
   const worldProbe = useMemo(() => worldProbeForQuality(graphics.quality), [graphics.quality]);
+  const rendererFactory = useMemo(() => engineRendererFactory(graphics.renderer), [graphics.renderer]);
   const effectiveSky = useMemo(() => {
     if (authoredSky === undefined) return undefined;
     const bearing =
@@ -698,6 +700,7 @@ export function Shell3dPresentation({
             <GameViewportProvider platforms={playable.controls?.platforms}>
               <ColorblindFrame mode={colorblind} style={{ position: "absolute", inset: 0 }}>
                 <Canvas
+                  key={graphics.renderer}
                   onCreated={({ gl, scene }) => {
                     setCanvasElement(gl.domElement);
                     skipCulledMatrices(scene);
@@ -722,7 +725,7 @@ export function Shell3dPresentation({
                   }
                   shadows={graphics.shadows ? "percentage" : false}
                   dpr={[Math.min(1, graphics.dpr), graphics.dpr]}
-                  gl={{ powerPreference: "high-performance" }}
+                  gl={rendererFactory}
                   style={{ touchAction: "none" }}
                 >
                   <CanvasCoverFrameloop authored={canvasFrameloop} />

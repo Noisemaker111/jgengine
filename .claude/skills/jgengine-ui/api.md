@@ -1022,6 +1022,15 @@
 - `KeybindingMenuTheme` (interface): interface KeybindingMenuTheme — Reskin tokens for {@link KeybindingMenu}. All fall back to HudTheme `--jg-*` vars.
 - `useRebindSession` (function): function useRebindSession(session: RebindSession): RebindSession — Subscribe to a rebind session and re-render on every change (capture, reset, arm/disarm, restore). Returns the session unchanged for convenient inline use.
 
+## @jgengine/core/settings/rendererBackend
+
+- `DEFAULT_RENDERER_BACKEND` (const): const DEFAULT_RENDERER_BACKEND: RendererBackend — ⚠ undocumented
+- `RENDERER_BACKEND_OPTIONS` (const): const RENDERER_BACKEND_OPTIONS: readonly SettingOption[] — ⚠ undocumented
+- `RendererBackend` (type): type RendererBackend = "webgl" | "webgpu" — Which GPU API draws the game. Both draw the same scene with the same shaders: `webgpu` runs three's WebGL renderer on a WebGPU device (`@jgengine/core/webgpu`) and falls back to `webgl` where the browser has no WebGPU.
+- `parseRendererBackend` (function): function parseRendererBackend(raw: unknown): RendererBackend | null — A backend name from a URL or stored value, or `null` when it names none.
+- `readRendererBackend` (function): function readRendererBackend(store: Pick<SettingsStore, "get">): RendererBackend — The player's stored backend, falling back to the default when missing or unknown.
+- `withRendererBackendOverride` (function): function withRendererBackendOverride(store: SettingsStore, backend: RendererBackend): SettingsStore — Wrap a settings store so the backend reads as `backend` for this page only (`?renderer=webgpu` in perf runs and captures); nothing is persisted until the player picks one.
+
 ## @jgengine/core/settings/settings.view
 
 - `SETTINGS_TRIGGER_CLASSNAME` (const): const SETTINGS_TRIGGER_CLASSNAME: "pointer-events-auto flex h-8 w-8 items-center justify-center rounded-md border border-[var(--jg-edge-bright)] bg-[var(--jg-surface)]/80 text-base text-[var(--jg-text-dim)] shadow-[0_1px_2px_rgba(0,0,0,0.6)] transition hover:bg-[var(--jg-surface-deep)] hover:text-[v… — Default HudTheme-token skin for {@link SettingsTrigger} — the 8×8 chrome button games re-authored seven times. Pass your own `className` only to override placement or brand chrome; the gear glyph already scales with `text-base` / `1em`.

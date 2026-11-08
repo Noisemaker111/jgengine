@@ -6,13 +6,14 @@ import { ensureDevServer, killPid, killProcessTree, openPageSession, withBrowser
 import { FRAME_GAMES } from "./ci-scope";
 import { engineRecord, resolveEngineIdentity } from "./engineIdentity";
 import { debugPortFor, GATE_SIZE } from "./perf-gate";
-import { measureGame, parseSettingSpec, type AllocationEntry, type PerfRecord, type ProfileNode, type RawProfile } from "./perf-play";
+import { gpuErrors, measureGame, parseSettingSpec, type AllocationEntry, type PerfRecord, type ProfileNode, type RawProfile } from "./perf-play";
 import type { FrameBreakdownSummary, NamedCost } from "../packages/core/src/devtools/frameBreakdown";
+import { parseRendererBackend, type RendererBackend } from "../packages/core/src/settings/rendererBackend";
 
 /**
  * How far each game is from 360 fps, and what stands in the way, grouped into engine-level work.
  *
- *   bun run perf fps-gap [--games a,b] [--seconds n] [--records <dir>] [--markdown]
+ *   bun run perf fps-gap [--games a,b] [--renderer webgl|webgpu|both] [--seconds n] [--records <dir>] [--markdown]
  *
  * Every game is measured the way the frame gate measures it (1600x900, high tier, automatic
  * quality off, walking, uncapped clock), with a CPU and allocation profile after the frame window.
@@ -51,9 +52,11 @@ export interface FpsGapArgs {
   /** Read saved entries from `records` instead of measuring. */
   reuse: boolean;
   markdown: boolean;
+  /** The backends each game is measured on, in order; `both` compares them side by side. */
+  renderers: RendererBackend[];
 }
 
-const USAGE = `usage: bun run perf fps-gap [--games a,b] [--seconds n] [--records <dir>] [--markdown]
+const USAGE = `usage: bun run perf fps-gap [--games a,b] [--renderer webgl|webgpu|both] [--seconds n] [--records <dir>] [--markdown]
 
   Measures every playable game at the frame gate's conditions (${GATE_SIZE.width}x${GATE_SIZE.height}, high tier,
   automatic quality off, walking, uncapped clock) and prints each against the ${FPS_GAP_BUDGET_MS.toFixed(2)} ms
@@ -63,6 +66,8 @@ const USAGE = `usage: bun run perf fps-gap [--games a,b] [--seconds n] [--record
   A report, not a gate: nothing fails for being slow.
 
   --games      comma-separated game ids (default: every game under games/ with a web entry)
+  --renderer   the GPU backend to draw with (default webgl); both measures each game on WebGL then
+               WebGPU and adds a table comparing their frame times. WebGPU records go in <records>/webgpu
   --seconds    measured window per game (default ${DEFAULT_SECONDS}); the profile window is as long again
   --records    directory each game's entry is written to (default .scratch/perf-fps-gap)
   --reuse      print the report from the entries already in --records instead of measuring
@@ -74,16 +79,22 @@ export function parseFpsGapArgs(argv: readonly string[]): FpsGapArgs | "help" {
   let records = DEFAULT_RECORDS;
   let reuse = false;
   let markdown = false;
+  let renderers: RendererBackend[] = ["webgl"];
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index] ?? "";
     if (arg === "--help" || arg === "-h") return "help";
     if (arg === "--markdown") { markdown = true; continue; }
     if (arg === "--reuse") { reuse = true; continue; }
-    if (arg === "--games" || arg === "--seconds" || arg === "--records") {
+    if (arg === "--games" || arg === "--seconds" || arg === "--records" || arg === "--renderer") {
       const value = argv[index + 1];
       if (value === undefined || value.startsWith("--")) throw new Error(`${arg} needs a value`);
       index += 1;
       if (arg === "--games") games = value.split(",").map((id) => id.trim()).filter((id) => id.length > 0);
+      else if (arg === "--renderer") {
+        const backend = parseRendererBackend(value);
+        if (value !== "both" && backend === null) throw new Error(`--renderer must be webgl, webgpu or both (got ${value})`);
+        renderers = backend === null ? ["webgl", "webgpu"] : [backend];
+      }
       else if (arg === "--records") records = resolve(value);
       else {
         const parsed = Number(value);
@@ -95,7 +106,7 @@ export function parseFpsGapArgs(argv: readonly string[]): FpsGapArgs | "help" {
     throw new Error(`unknown argument ${arg}`);
   }
   if (games !== undefined && games.length === 0) throw new Error("--games needs at least one game id");
-  return { games: games ?? [...FRAME_GAMES], seconds, records, reuse, markdown };
+  return { games: games ?? [...FRAME_GAMES], seconds, records, reuse, markdown, renderers };
 }
 
 /** The layer a sampled function belongs to, from its script URL. */
@@ -329,6 +340,46 @@ export function renderFpsGapReport(entries: readonly FpsGapEntry[], options: { m
   return out.join("\n");
 }
 
+/** Where one backend's entries are saved: WebGL at the records root as before, WebGPU in a folder of its own. */
+export function recordsFor(records: string, backend: RendererBackend): string {
+  return backend === "webgl" ? records : join(records, backend);
+}
+
+/**
+ * Frame times per game on each backend side by side. A backend that fell back to WebGL is named,
+ * so a WebGPU column never silently holds WebGL numbers.
+ */
+export function renderBackendComparison(byBackend: ReadonlyMap<RendererBackend, readonly FpsGapEntry[]>, options: { markdown: boolean }): string {
+  const backends = [...byBackend.keys()];
+  const games = [...new Set(backends.flatMap((backend) => byBackend.get(backend)!.map((entry) => entry.record.game)))];
+  const head = ["game", ...backends.flatMap((backend) => [`${backend} p50`, `${backend} p99`]), ...(backends.length === 2 ? [`p50 change`] : []), "notes"];
+  const rows = games.map((game) => {
+    const cells: string[] = [game];
+    const p50s: (number | null)[] = [];
+    const notes: string[] = [];
+    for (const backend of backends) {
+      const record = byBackend.get(backend)!.find((entry) => entry.record.game === game)?.record;
+      const frame = record?.breakdown?.frame;
+      cells.push(frame === undefined ? "-" : ms2(frame.p50), frame === undefined ? "-" : ms2(frame.p99));
+      const drawing = record?.backend?.drawing;
+      if (record !== undefined && drawing !== undefined && drawing !== backend) notes.push(`${backend} run drew with ${drawing}`);
+      // Dropped GPU work draws less than the game asked for, so its frame times are kept out of the change.
+      const errors = gpuErrors(record?.backend).length;
+      const warnings = (record?.backend?.warnings.length ?? 0) - errors;
+      if (errors > 0) notes.push(`${backend}: ${errors} WebGPU errors, GPU work dropped, not comparable`);
+      if (warnings > 0) notes.push(`${backend}: ${warnings} warnings`);
+      p50s.push(errors > 0 ? null : frame?.p50 ?? null);
+    }
+    if (backends.length === 2) {
+      const [a, b] = p50s;
+      cells.push(a == null || b == null ? "-" : `${b <= a ? "" : "+"}${Math.round(((b - a) / a) * 100)}%`);
+    }
+    cells.push(notes.join("; ") || "-");
+    return cells;
+  });
+  return renderTable({ head, rows }, options.markdown);
+}
+
 /** Saved entries in `dir`, one per game asked for; a missing one is named rather than skipped. */
 export function readEntries(dir: string, games: readonly string[]): { entries: FpsGapEntry[]; missing: string[] } {
   const entries: FpsGapEntry[] = [];
@@ -341,13 +392,14 @@ export function readEntries(dir: string, games: readonly string[]): { entries: F
   return { entries, missing };
 }
 
-async function measureAll(args: FpsGapArgs, engine: PerfRecord["engine"]): Promise<string[]> {
+async function measureAll(args: FpsGapArgs, backend: RendererBackend, engine: PerfRecord["engine"]): Promise<string[]> {
   const started: Awaited<ReturnType<typeof ensureDevServer>>[] = [];
   const failed: string[] = [];
+  const records = recordsFor(args.records, backend);
   let previous: string | null = null;
   try {
     for (const [index, game] of args.games.entries()) {
-      console.error(`perf fps-gap: ${game} (${index + 1}/${args.games.length})`);
+      console.error(`perf fps-gap: ${game} on ${backend} (${index + 1}/${args.games.length})`);
       try {
         // Checked before every game: a dev server that died under the last one is restarted, and named,
         // instead of every remaining game failing on a refused connection.
@@ -373,7 +425,7 @@ async function measureAll(args: FpsGapArgs, engine: PerfRecord["engine"]): Promi
                 allocations: true,
                 frameClock: "uncapped",
                 path: "walk",
-                settings: [parseSettingSpec("graphics.auto=false")],
+                settings: [parseSettingSpec("graphics.auto=false"), parseSettingSpec(`renderer=${backend}`)],
                 size: GATE_SIZE,
                 breakdownTop: BREAKDOWN_TOP,
               });
@@ -386,8 +438,8 @@ async function measureAll(args: FpsGapArgs, engine: PerfRecord["engine"]): Promi
                 layers: measured.profile === null ? [] : profileLayers(measured.profile),
                 allocators: measured.allocators ?? [],
               };
-              mkdirSync(args.records, { recursive: true });
-              writeFileSync(join(args.records, `${game}.json`), `${JSON.stringify(entry, null, 2)}\n`);
+              mkdirSync(records, { recursive: true });
+              writeFileSync(join(records, `${game}.json`), `${JSON.stringify(entry, null, 2)}\n`);
               const b = measured.record.breakdown;
               console.error(`perf fps-gap: ${game} frame p50 ${b?.frame.p50 ?? measured.record.frame.avgMs} ms, CPU ${b?.work.p50 ?? "?"} ms, GPU ${b?.gpu?.p50 ?? "?"} ms`);
             } finally {
@@ -419,14 +471,20 @@ async function main(): Promise<void> {
   const identity = resolveEngineIdentity();
   console.error(identity.line);
   const engine = engineRecord(identity) ?? undefined;
-  const failed = parsed.reuse ? [] : await measureAll(parsed, engine);
-  const { entries, missing } = readEntries(parsed.records, parsed.games.filter((game) => !failed.includes(game)));
-  console.log(renderFpsGapReport(entries, { markdown: parsed.markdown }));
-  const absent = [...failed, ...missing];
-  if (absent.length > 0) {
-    console.error(`perf fps-gap: no measurement for ${absent.join(", ")}`);
-    process.exitCode = 1;
+  const byBackend = new Map<RendererBackend, FpsGapEntry[]>();
+  for (const backend of parsed.renderers) {
+    const failed = parsed.reuse ? [] : await measureAll(parsed, backend, engine);
+    const { entries, missing } = readEntries(recordsFor(parsed.records, backend), parsed.games.filter((game) => !failed.includes(game)));
+    byBackend.set(backend, entries);
+    if (parsed.renderers.length > 1) console.log(`\n## ${backend}\n`);
+    console.log(renderFpsGapReport(entries, { markdown: parsed.markdown }));
+    const absent = [...failed, ...missing];
+    if (absent.length > 0) {
+      console.error(`perf fps-gap: no ${backend} measurement for ${absent.join(", ")}`);
+      process.exitCode = 1;
+    }
   }
+  if (byBackend.size > 1) console.log(`\nFrame time by backend (same walk, same conditions):\n\n${renderBackendComparison(byBackend, { markdown: parsed.markdown })}`);
 }
 
 if (import.meta.main) await main();

@@ -141,6 +141,12 @@ export function buildBrowserFixture(entry: string): string {
   return build.stdout;
 }
 
+/**
+ * A capture Chrome on the real GPU. WebGPU developer features keep GPU timestamps exact: Chrome
+ * otherwise rounds them to 100 µs, which buries a 0.3 ms pass in rounding.
+ */
+const HARDWARE_GPU_ARGS = ["--ignore-gpu-blocklist", "--enable-webgpu-developer-features"];
+
 /** Native GPU locally; deterministic software GL only when explicitly requested or in CI. */
 export function chromeGraphicsArgs(
   env: NodeJS.ProcessEnv = process.env,
@@ -150,7 +156,7 @@ export function chromeGraphicsArgs(
     (env["JG_CAPTURE_SOFTWARE_GL"] !== "0" && (env["CI"] !== undefined || platform === "linux"));
   return software
     ? ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"]
-    : ["--ignore-gpu-blocklist"];
+    : [...HARDWARE_GPU_ARGS];
 }
 
 /** Frame clock a capture browser runs requestAnimationFrame on. */
@@ -209,7 +215,7 @@ export function chromeRenderArgs(backend: SoftwareGl | null, headed = false): st
   if (backend === "llvmpipe") {
     return ["--ozone-platform=x11", "--use-angle=gl", "--ignore-gpu-blocklist", "--window-size=2560,2560"];
   }
-  return ["--headless=new", ...(backend === "swiftshader" ? chromeGraphicsArgs({ JG_CAPTURE_SOFTWARE_GL: "1" }) : ["--ignore-gpu-blocklist"])];
+  return ["--headless=new", ...(backend === "swiftshader" ? chromeGraphicsArgs({ JG_CAPTURE_SOFTWARE_GL: "1" }) : [...HARDWARE_GPU_ARGS])];
 }
 
 /**

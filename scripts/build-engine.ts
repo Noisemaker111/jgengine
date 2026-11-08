@@ -3,7 +3,7 @@
 // package-by-package order exists. Each package's tsconfig.build.json still names what it emits; this
 // compiles their union once and moves each package's slice into its own dist/.
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -64,6 +64,28 @@ export function escapingSpecifiers(distDir: string): string[] {
   return found;
 }
 
+/** Files the source loads at runtime by URL (`new URL("./x.wasm", import.meta.url)`), which tsgo does not emit. */
+const RUNTIME_ASSET = /\.wasm$/;
+
+/** Copy every runtime asset under `src` to the same place under `dist`. */
+export function copyAssets(src: string, dist: string): string[] {
+  const copied: string[] = [];
+  const walk = (dir: string): void => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const from = join(dir, entry.name);
+      if (entry.isDirectory()) walk(from);
+      else if (RUNTIME_ASSET.test(entry.name)) {
+        const to = join(dist, relative(src, from));
+        mkdirSync(dirname(to), { recursive: true });
+        copyFileSync(from, to);
+        copied.push(relative(src, from));
+      }
+    }
+  };
+  walk(src);
+  return copied;
+}
+
 function run(command: string[], cwd: string): void {
   const result = spawnSync(command[0]!, command.slice(1), { cwd, stdio: "inherit", shell: process.platform === "win32" });
   if (result.status !== 0) {
@@ -96,6 +118,7 @@ function main(): void {
       process.exit(1);
     }
     run(["bun", join(root, "scripts", "fix-extensions.ts"), dist], root);
+    copyAssets(join(root, "packages", pkg, "src"), dist);
   }
   run(["bun", join(root, "packages", "react", "scripts", "styles.ts")], root);
   rmSync(work, { recursive: true, force: true });

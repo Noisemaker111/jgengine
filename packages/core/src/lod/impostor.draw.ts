@@ -355,10 +355,22 @@ export interface ImpostorEntry {
   users: number;
 }
 
-const cache = new Map<string, ImpostorEntry & { modelGone: boolean }>();
+type CachedImpostor = ImpostorEntry & { modelGone: boolean; renderer: THREE.WebGLRenderer };
 
-function freeImpostor(id: string, entry: ImpostorEntry): void {
-  if (cache.get(id) === entry) cache.delete(id);
+/**
+ * Bakes by model and quality, one per renderer: an atlas is a render target of the context that
+ * baked it, and a remounted canvas (a renderer switch, a scene change) has a new context that
+ * cannot draw it.
+ */
+const cache = new Map<string, CachedImpostor[]>();
+
+function freeImpostor(id: string, entry: CachedImpostor): void {
+  const held = cache.get(id);
+  if (held !== undefined) {
+    const rest = held.filter((other) => other !== entry);
+    if (rest.length === 0) cache.delete(id);
+    else cache.set(id, rest);
+  }
   entry.atlas?.dispose();
   entry.materials?.material.dispose();
   entry.materials?.depth.dispose();
@@ -368,8 +380,9 @@ function freeImpostor(id: string, entry: ImpostorEntry): void {
  * The shared impostor for a model: baked once per model and quality, and kept for as long as the
  * model's own geometry is, so batches that come and go as a game plays (a grove burnt down and
  * regrown, a district streamed out and back) take the same bake instead of baking again mid-play.
- * It is freed once the model's geometry is disposed and its last user has gone. Returns null when
- * the model has nothing to bake.
+ * It is freed once the model's geometry is disposed and its last user has gone. A bake belongs to
+ * the renderer that made it: another renderer bakes its own, and an unused bake of a renderer that
+ * is gone is freed then. Returns null when the model has nothing to bake.
  * @internal
  */
 export function acquireImpostor(
@@ -379,12 +392,13 @@ export function acquireImpostor(
   settings: ImpostorSettings,
 ): ImpostorEntry {
   const id = `${key}|${settings.frames}x${settings.cell}`;
-  let entry = cache.get(id);
+  let entry = cache.get(id)?.find((held) => held.renderer === renderer);
   if (entry === undefined) {
+    for (const stale of cache.get(id) ?? []) if (stale.users === 0) freeImpostor(id, stale);
     const atlas = bakeImpostor(renderer, sources, settings);
-    const made = { atlas, materials: atlas === null ? null : createImpostorMaterials(atlas), users: 0, modelGone: false };
+    const made: CachedImpostor = { atlas, materials: atlas === null ? null : createImpostorMaterials(atlas), users: 0, modelGone: false, renderer };
     entry = made;
-    cache.set(id, made);
+    cache.set(id, [...(cache.get(id) ?? []), made]);
     const model = sources[0]?.geometry;
     const gone = () => {
       model?.removeEventListener("dispose", gone);
@@ -398,9 +412,9 @@ export function acquireImpostor(
 }
 
 /** Drop one user of a shared impostor; the bake stays for the next user unless its model is gone. @internal */
-export function releaseImpostor(key: string, settings: ImpostorSettings): void {
+export function releaseImpostor(key: string, renderer: THREE.WebGLRenderer, settings: ImpostorSettings): void {
   const id = `${key}|${settings.frames}x${settings.cell}`;
-  const entry = cache.get(id);
+  const entry = cache.get(id)?.find((held) => held.renderer === renderer);
   if (entry === undefined) return;
   entry.users = Math.max(0, entry.users - 1);
   if (entry.users === 0 && entry.modelGone) freeImpostor(id, entry);

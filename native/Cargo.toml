@@ -3,6 +3,7 @@ resolver = "3"
 members = [
     "crates/jg-scene",
     "crates/jg-shader",
+    "crates/jg-shader-wasm",
     "crates/jg-render",
     "crates/jg-hud",
     "crates/jg-v8",
@@ -26,3 +27,13 @@ pollster = "1"
 [profile.release]
 codegen-units = 16
 debug = 1
+
+# The engine's shipped translator (crates/jg-shader-wasm): small over fast, no debug info.
+[profile.wasm]
+inherits = "release"
+opt-level = "s"
+lto = true
+codegen-units = 1
+debug = 0
+strip = true
+panic = "unwind"

@@ -341,7 +341,7 @@ function ImpostorStaticObjects({ batch, objects, sources, radius }: {
   const [entry, setEntry] = useState<ImpostorEntry | null>(null);
   useEffect(() => {
     setEntry(acquireImpostor(key, gl, sources, settings));
-    return () => releaseImpostor(key, settings);
+    return () => releaseImpostor(key, gl, settings);
   }, [key, gl, sources, settings]);
   const assignment = useMemo(() => new LevelAssignment(), []);
   const camera = useMemo(() => new THREE.Vector3(), []);

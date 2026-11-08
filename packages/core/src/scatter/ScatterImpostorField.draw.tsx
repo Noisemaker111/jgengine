@@ -71,7 +71,7 @@ export function ScatterImpostorField({ cacheKey, sources, farSources, batches, r
   useEffect(() => {
     const acquired = acquireImpostor(cacheKey, gl, farSources ?? sources, settings);
     setEntry(acquired);
-    return () => releaseImpostor(cacheKey, settings);
+    return () => releaseImpostor(cacheKey, gl, settings);
   }, [cacheKey, gl, sources, farSources, settings]);
 
   // Near draws are cached per batch object: a batch that comes back unchanged (every chunk but the one
