@@ -26,8 +26,16 @@ import { join } from "node:path";
 import { clearViteCaches } from "./captureRevision";
 import { localRequest } from "./localhostHttp";
 
-/** Bumped when the HTTP contract changes, so a client never talks to a broker it cannot read. */
-export const BROKER_PROTOCOL = 1;
+/**
+ * Bumped when the HTTP contract changes, so a client never talks to a broker it cannot read, and when
+ * what a broker promises changes, so a client never leans on a broker that lacks the promise. 2: the
+ * broker runs outside its starter's Windows job (`outsideCaller`, #3056). A protocol 1 broker started
+ * by an older checkout's fairshare-slotted run died when that run ended, silently, taking every
+ * other run's dev servers and browser with it: 15 deaths in 3 hours on 2026-11-08, each right after a
+ * run from a checkout without #3056. A busy older broker is now passed by (this run launches its own
+ * servers) and an idle one replaced.
+ */
+export const BROKER_PROTOCOL = 2;
 
 export type ServerKind = "runner" | "website";
 
