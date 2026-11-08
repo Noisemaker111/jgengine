@@ -1,6 +1,8 @@
 import { expect, test } from "bun:test";
-import { resolve } from "node:path";
-import { desktopDeadline, desktopOutFor, diagnosticDesktopTarget, parseAllArgs, parseLaunchArgs, renderAllTable, unmeasuredSceneReason } from "./perf-desktop";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { carryShaderCaches, desktopDeadline, desktopOutFor, diagnosticDesktopTarget, freePort, parseAllArgs, parseLaunchArgs, portAnswers, renderAllTable, unmeasuredSceneReason } from "./perf-desktop";
 
 test("a window measured under the preparing cover, or with nothing drawn, is not a measurement", () => {
   expect(unmeasuredSceneReason(8, true)).toContain("still preparing shaders");
@@ -11,10 +13,10 @@ test("a window measured under the preparing cover, or with nothing drawn, is not
 });
 
 test("a launch run names its app and defaults to the display's vsync", () => {
-  expect(parseLaunchArgs(["--launch", "out/game/Game.exe"])).toEqual({ exe: resolve("out/game/Game.exe"), uncapped: false, seconds: 8, port: 9390, out: null, maps: `${resolve("out/game")}.private-maps`, size: { width: 1600, height: 900 }, flow: null, renderers: ["webgl"] });
+  expect(parseLaunchArgs(["--launch", "out/game/Game.exe"])).toEqual({ exe: resolve("out/game/Game.exe"), uncapped: false, seconds: 8, port: null, out: null, maps: `${resolve("out/game")}.private-maps`, size: { width: 1600, height: 900 }, flow: null, renderers: ["webgl"], returning: false, trace: false });
   expect(parseLaunchArgs(["--launch", "Game.exe", "--flow", "deepward/long-play"]).flow).toEqual({ game: "deepward", name: "long-play" });
   expect(() => parseLaunchArgs(["--launch", "Game.exe", "--flow", "long-play"])).toThrow("--flow takes");
-  expect(parseLaunchArgs(["--launch", "Game.exe", "--uncapped", "--seconds", "4", "--port", "9400", "--out", "r.json", "--maps", "m", "--size", "1920x1080"])).toEqual({ exe: resolve("Game.exe"), uncapped: true, seconds: 4, port: 9400, out: resolve("r.json"), maps: resolve("m"), size: { width: 1920, height: 1080 }, flow: null, renderers: ["webgl"] });
+  expect(parseLaunchArgs(["--launch", "Game.exe", "--uncapped", "--seconds", "4", "--port", "9400", "--out", "r.json", "--maps", "m", "--size", "1920x1080"])).toEqual({ exe: resolve("Game.exe"), uncapped: true, seconds: 4, port: 9400, out: resolve("r.json"), maps: resolve("m"), size: { width: 1920, height: 1080 }, flow: null, renderers: ["webgl"], returning: false, trace: false });
   expect(() => parseLaunchArgs(["--uncapped"])).toThrow("--launch needs");
   expect(parseLaunchArgs(["--launch", "Game.exe", "--renderer", "both"]).renderers).toEqual(["webgl", "webgpu"]);
   expect(parseLaunchArgs(["--launch", "Game.exe", "--renderer", "webgpu"]).renderers).toEqual(["webgpu"]);
@@ -76,4 +78,34 @@ test("the all-games table puts each game against 360 fps and names a game it cou
   ], true);
   expect(dropped).toContain("not comparable: 1 WebGPU errors dropped GPU work");
   expect(dropped).toContain("webgpu: 0 of 1 measured games hold 360 fps (1 not measured, 1 with dropped GPU work)");
+});
+
+test("each launch gets a debugger port nothing answers on, and a taken one is seen as taken", async () => {
+  const port = freePort();
+  expect(await portAnswers(port)).toBe(false);
+  const server = Bun.serve({ hostname: "127.0.0.1", port, fetch: () => Response.json({ Browser: "another app" }) });
+  try {
+    expect(await portAnswers(port)).toBe(true);
+  } finally {
+    server.stop(true);
+  }
+  expect(parseLaunchArgs(["--launch", "Game.exe", "--flow", "deepward/long-play", "--returning"]).returning).toBe(true);
+  expect(() => parseLaunchArgs(["--launch", "Game.exe", "--returning"])).toThrow("--returning plays a --flow");
+});
+
+test("a returning session carries the shader caches and nothing of a save", () => {
+  const from = mkdtempSync(join(tmpdir(), "jg-carry-from-"));
+  const to = mkdtempSync(join(tmpdir(), "jg-carry-to-"));
+  try {
+    mkdirSync(join(from, "EBWebView", "GrShaderCache"), { recursive: true });
+    writeFileSync(join(from, "EBWebView", "GrShaderCache", "data_0"), "skia");
+    mkdirSync(join(from, "EBWebView", "Default", "Local Storage"), { recursive: true });
+    writeFileSync(join(from, "EBWebView", "Default", "Local Storage", "save"), "a save");
+    expect(carryShaderCaches(from, to)).toBe(1);
+    expect(existsSync(join(to, "EBWebView", "GrShaderCache", "data_0"))).toBe(true);
+    expect(existsSync(join(to, "EBWebView", "Default", "Local Storage"))).toBe(false);
+  } finally {
+    rmSync(from, { recursive: true, force: true });
+    rmSync(to, { recursive: true, force: true });
+  }
 });

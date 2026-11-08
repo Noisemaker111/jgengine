@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
-import { closeSync, existsSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { closeSync, cpSync, existsSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -10,6 +10,7 @@ import { flowsDirOf, loadFlow } from "./driveFlows";
 import { pageFlowDriver, readProbe } from "./drivePage";
 import { localGetJson } from "./localhostHttp";
 import { readBreakdown, readHitchSession, renderHitchSession, resetBreakdown, startPath } from "./perf-breakdown";
+import { endTrace, markTraceAnchor, readTraceEvents, renderTracedHitches, startTrace, traceHitches } from "./perf-trace";
 import { createFlowStepper, describeFlowReport, runFlowReport } from "../packages/core/src/play/flowSteps";
 import { GATE_SIZE } from "./perf-gate";
 import { BACKEND_READING_SCRIPT, gpuErrorLine, gpuErrors, parseSettingSpec, perfSettingsScript, SAMPLE_FRAMES_SCRIPT, summarizeFrameDeltas } from "./perf-play";
@@ -28,6 +29,24 @@ export async function desktopDeadline<T>(work: Promise<T>, ms: number): Promise<
   } finally { if (timer !== undefined) clearTimeout(timer); }
 }
 
+/** A local port nothing listens on now, from the OS. @internal */
+export function freePort(): number {
+  const server = Bun.listen({ hostname: "127.0.0.1", port: 0, socket: { data() {} } });
+  const port = server.port;
+  server.stop(true);
+  return port;
+}
+
+/** Whether a debugger already answers on `port`. @internal */
+export async function portAnswers(port: number): Promise<boolean> {
+  try {
+    await localGetJson<unknown>(`http://127.0.0.1:${port}/json/version`, 1_000);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Select only an explicitly diagnostic local desktop page. @internal */
 export function diagnosticDesktopTarget(targets: readonly Target[]): Target {
   const matching = targets.filter((target) => {
@@ -43,7 +62,8 @@ export interface LaunchArgs {
   /** Launch with the app's `--uncapped` flag; without it the app keeps the display's vsync. */
   uncapped: boolean;
   seconds: number;
-  port: number;
+  /** The debugger port `--port` asked for; null picks a free one per launch. */
+  port: number | null;
   out: string | null;
   /** The private source maps the build wrote: `<app folder>.private-maps` unless `--maps` names them. */
   maps: string;
@@ -53,6 +73,10 @@ export interface LaunchArgs {
   flow: { game: string; name: string } | null;
   /** The GPU backends to measure, one launch each (`--renderer webgl|webgpu|both`, default webgl). */
   renderers: RendererBackend[];
+  /** `--trace`: with `--flow`, record a Chrome trace of every process and name what held each hitch. */
+  trace: boolean;
+  /** `--returning`: play the flow once first and measure a second session that has its shader caches. */
+  returning: boolean;
 }
 
 /** Parse `--launch <exe> [--uncapped] [--renderer webgl|webgpu|both] [--seconds n] [--port n] [--size WxH] [--out file] [--maps dir] [--flow game/name]`. @internal */
@@ -60,15 +84,19 @@ export function parseLaunchArgs(argv: readonly string[]): LaunchArgs {
   let exe: string | undefined;
   let uncapped = false;
   let seconds = 8;
-  let port = 9390;
+  let port: number | null = null;
   let out: string | null = null;
   let maps: string | null = null;
   let size: { width: number; height: number } = { width: GATE_SIZE.width, height: GATE_SIZE.height };
   let flow: { game: string; name: string } | null = null;
   let renderers: RendererBackend[] = ["webgl"];
+  let returning = false;
+  let trace = false;
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index] ?? "";
     if (arg === "--uncapped") { uncapped = true; continue; }
+    if (arg === "--returning") { returning = true; continue; }
+    if (arg === "--trace") { trace = true; continue; }
     if (arg !== "--launch" && arg !== "--seconds" && arg !== "--port" && arg !== "--size" && arg !== "--out" && arg !== "--maps" && arg !== "--flow" && arg !== "--renderer") throw new Error(`unknown argument ${arg}`);
     const value = argv[index + 1];
     if (value === undefined || value.startsWith("--")) throw new Error(`${arg} needs a value`);
@@ -103,7 +131,8 @@ export function parseLaunchArgs(argv: readonly string[]): LaunchArgs {
   }
   if (exe === undefined) throw new Error("--launch needs the desktop app's .exe");
   // `jgengine desktop --out <dir>` writes the app into <dir> and its private maps to <dir>.private-maps.
-  return { exe, uncapped, seconds, port, out, maps: maps ?? `${dirname(exe)}.private-maps`, size, flow, renderers };
+  if (returning && flow === null) throw new Error("--returning plays a --flow twice; name one");
+  return { exe, uncapped, seconds, port, out, maps: maps ?? `${dirname(exe)}.private-maps`, size, flow, renderers, returning, trace };
 }
 
 /**
@@ -189,15 +218,19 @@ interface LaunchedScene { tier: string; start: string }
 async function withLaunchedScene<T>(args: LaunchArgs, backend: RendererBackend, profile: string | null, work: (session: CdpSession, scene: LaunchedScene) => Promise<T>): Promise<T> {
   if (process.platform !== "win32") throw new Error("--launch measures a Windows (WebView2) desktop build");
   if (!existsSync(args.exe)) throw new Error(`no desktop app at ${args.exe}; build one with: bun run jgengine desktop games/<id> --diagnostics --no-installer`);
+  // A port of its own: on a shared one, a diagnostic app another run left open answered in place of
+  // this launch, and the flow played (and failed in) the wrong game.
+  const port = args.port ?? freePort();
+  if (await portAnswers(port)) throw new Error(`debugger port ${port} already answers (another desktop app is open on it); close it or pass another --port`);
   // Muted: a measurement launch shares the PC with whoever is at it, and plays nothing worth hearing.
-  const env = { ...process.env, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${args.port} --mute-audio ${PRECISE_HEAP_ARG}`, ...(profile === null ? {} : { WEBVIEW2_USER_DATA_FOLDER: profile }) };
+  const env = { ...process.env, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${port} --mute-audio ${PRECISE_HEAP_ARG}`, ...(profile === null ? {} : { WEBVIEW2_USER_DATA_FOLDER: profile }) };
   const child = spawn(args.exe, args.uncapped ? ["--uncapped"] : [], { env, stdio: "ignore" });
   try {
     let target: Target | undefined;
     for (let attempt = 0; attempt < 120 && target === undefined; attempt += 1) {
-      try { target = diagnosticDesktopTarget(await localGetJson<Target[]>(`http://127.0.0.1:${args.port}/json/list`, 1_000)); } catch { await Bun.sleep(500); }
+      try { target = diagnosticDesktopTarget(await localGetJson<Target[]>(`http://127.0.0.1:${port}/json/list`, 1_000)); } catch { await Bun.sleep(500); }
     }
-    if (target?.webSocketDebuggerUrl === undefined) throw new Error(`the app opened no diagnostic page on port ${args.port} within 60 s; build it with --diagnostics`);
+    if (target?.webSocketDebuggerUrl === undefined) throw new Error(`the app opened no diagnostic page on port ${port} within 60 s; build it with --diagnostics`);
     const session = await CdpSession.connect(target.webSocketDebuggerUrl, 10_000);
     try {
       await session.send("Page.enable");
@@ -294,16 +327,61 @@ export async function launchAndMeasure(args: LaunchArgs, backend: RendererBacken
 }
 
 /**
+ * The WebView2 profile folders that hold compiled shaders and code, and nothing of a save: Skia's
+ * programs, ANGLE's program binaries, Dawn's pipelines and V8's code cache. A returning player
+ * has these from the last session, so a stall that only a first session pays is told apart.
+ * @internal
+ */
+export const SHADER_CACHE_DIRS = ["EBWebView/GrShaderCache", "EBWebView/ShaderCache", "EBWebView/GPUPersistentCache", "EBWebView/GraphiteDawnCache", "EBWebView/Default/GPUCache", "EBWebView/Default/DawnGraphiteCache", "EBWebView/Default/DawnWebGPUCache", "EBWebView/Default/Code Cache"];
+
+/** Copy the shader caches of one profile into a new one; how many folders it found. @internal */
+export function carryShaderCaches(from: string, to: string): number {
+  let carried = 0;
+  for (const dir of SHADER_CACHE_DIRS) {
+    if (!existsSync(join(from, dir))) continue;
+    cpSync(join(from, dir), join(to, dir), { recursive: true });
+    carried += 1;
+  }
+  return carried;
+}
+
+/**
  * Launch a diagnostic desktop build on a fresh WebView2 profile (a first play, and a player's saves
  * stay untouched), play one of the game's flows with real input, and print and write every frame of
  * 33 ms or more in it with its cause and the scripts that ran in it. False when the flow failed.
+ * With `--returning` the flow plays once unmeasured first, and the measured play starts from a new
+ * profile holding only that session's shader caches: the stalls a player sees on a second launch.
  */
 export async function launchAndPlayFlow(args: LaunchArgs, flow: { game: string; name: string }, backend: RendererBackend): Promise<boolean> {
   const proof = await loadFlow(flowsDirOf(resolve(import.meta.dir, "..", "games", flow.game)), flow.name);
   const profile = mkdtempSync(join(tmpdir(), "jg-desktop-flow-"));
   try {
+    if (args.returning) {
+      const first = mkdtempSync(join(tmpdir(), "jg-desktop-flow-"));
+      try {
+        console.log(`${flow.game}/${flow.name}: first session, to fill the shader caches (not measured)`);
+        await withLaunchedScene(args, backend, first, async (session) => {
+          const stepper = createFlowStepper(() => readProbe(session));
+          const reports: { label: string; probe: unknown }[] = [];
+          const driver = pageFlowDriver(session, { clock: null, reload: async () => { throw new Error("a desktop flow cannot reload the app"); }, shot: async () => {} });
+          const report = await runFlowReport(stepper, reports, () => proof.run(createBrowserFlow(driver, stepper, reports)));
+          if (!report.ok) for (const line of describeFlowReport(`${flow.game}/${flow.name} (first session)`, report)) console.error(line);
+        });
+        // WebView2 writes its caches as it exits; a moment for the last of them to land.
+        await Bun.sleep(2_000);
+        const carried = carryShaderCaches(first, profile);
+        if (carried === 0) throw new Error("the first session left no shader caches to carry; the returning play would measure a first play again");
+        console.log(`${flow.game}/${flow.name}: returning session with ${carried} shader cache folder(s) from the first`);
+      } finally {
+        removeProfileDir(first);
+      }
+    }
     return await withLaunchedScene(args, backend, profile, async (session, { tier, start }) => {
       if (!(await resetBreakdown(session))) throw new Error("the page has no frame breakdown; build it with --diagnostics");
+      if (args.trace) {
+        await startTrace(session);
+        await markTraceAnchor(session);
+      }
       const driver = pageFlowDriver(session, {
         clock: null,
         reload: async () => { throw new Error("a desktop flow cannot reload the app"); },
@@ -320,9 +398,15 @@ export async function launchAndPlayFlow(args: LaunchArgs, flow: { game: string; 
       const clock = args.uncapped ? "uncapped" : "vsync";
       const out = args.out ?? resolve(import.meta.dir, "..", ".scratch", "perf", "hitches", `${flow.game}-${flow.name}-desktop.json`);
       mkdirSync(dirname(out), { recursive: true });
-      writeFileSync(out, `${JSON.stringify({ at: Date.now(), exe: args.exe, clock, tier, start, flow: name, ok: report.ok, hitches }, null, 2)}\n`);
+      writeFileSync(out, `${JSON.stringify({ at: Date.now(), exe: args.exe, clock, tier, start, flow: name, session: args.returning ? "returning" : "first", ok: report.ok, hitches }, null, 2)}\n`);
       console.log(renderHitchSession(hitches, `desktop ${clock} ${name}`));
       console.log(`hitch record: ${out}`);
+      if (args.trace) {
+        const tracePath = out.replace(/\.json$/, "") + ".trace.json";
+        await endTrace(session, tracePath);
+        console.log(`trace: ${tracePath}`);
+        console.log(renderTracedHitches(traceHitches(await readTraceEvents(tracePath), hitches.hitches)));
+      }
       return report.ok;
     });
   } finally {
@@ -471,7 +555,7 @@ export async function measureAll(args: AllArgs): Promise<AllRow[]> {
     }
     for (const backend of args.renderers) {
       try {
-        const launch: LaunchArgs = { exe: app, uncapped: args.uncapped, seconds: args.seconds, port: 9390, out: recordPath(backend), maps: `${dirname(app)}.private-maps`, size: { width: GATE_SIZE.width, height: GATE_SIZE.height }, flow: null, renderers: [backend] };
+        const launch: LaunchArgs = { exe: app, uncapped: args.uncapped, seconds: args.seconds, port: null, out: recordPath(backend), maps: `${dirname(app)}.private-maps`, size: { width: GATE_SIZE.width, height: GATE_SIZE.height }, flow: null, renderers: [backend], returning: false, trace: false };
         let record: DesktopRecord;
         try {
           record = await launchAndMeasure(launch, backend);

@@ -75,6 +75,8 @@ export type DriveArgs = {
   renders: boolean;
   /** `--allocations`: sample who allocated what over the run and print the biggest allocators. */
   allocations: boolean;
+  /** `--trace`: record a Chrome trace of every process (GPU process included) and name the long slices in each hitch. */
+  trace: boolean;
 };
 
 export const DRIVE_HELP = `bun run drive <gameId> --flow <name>     (a TypeScript route from <game>/proofs/flows/)
@@ -142,6 +144,9 @@ Notes:
   --allocations samples every allocation over the run, the garbage included, and prints the
   functions that allocated most per second: what the garbage collection pauses in --hitches
   are collecting. The sampler costs a little per allocation, so measure stalls without it.
+  --trace records a Chrome trace of every process over the run (.scratch/perf/traces/) and, with
+  --hitches, names the longest slices of the GPU process and the browser in each hitch: the
+  stalls --hitches can only call "outside the game's frame work".
   --quick is the iteration preset: 960x540, one settled frame in a 2s window, no
   video, no perf pass. It cannot support a 1600x900 pixel claim or a frame-time
   claim, so asking for either alongside it fails; re-run without --quick for
@@ -188,6 +193,7 @@ export function parseDriveArgs(argv: string[]): DriveArgs {
   const hitches = quick.argv.includes("--hitches");
   const renders = quick.argv.includes("--renders");
   const allocations = quick.argv.includes("--allocations");
+  const trace = quick.argv.includes("--trace");
   // `--game-dir` is parsed here, not in CAPTURE_FLAGS: the portable harness has no `games/` to swap.
   const served = splitGameDir(quick.argv);
   // Flows resolve inside parseCaptureArgs, so the served folder must be known first or `--flow`
@@ -195,7 +201,7 @@ export function parseDriveArgs(argv: string[]): DriveArgs {
   if (served.dir !== null) process.env["JG_GAME_DIR"] = resolve(served.dir);
   const parsed = parseCaptureArgs(
     "drive",
-    served.argv.filter((arg) => arg !== "--headed" && arg !== "--cold" && arg !== "--hitches" && arg !== "--renders" && arg !== "--allocations"),
+    served.argv.filter((arg) => arg !== "--headed" && arg !== "--cold" && arg !== "--hitches" && arg !== "--renders" && arg !== "--allocations" && arg !== "--trace"),
     CAPTURE_FLAGS,
   );
   const o = parsed.options;
@@ -261,6 +267,7 @@ export function parseDriveArgs(argv: string[]): DriveArgs {
     hitches,
     renders,
     allocations,
+    trace,
   };
   if (args.help) return args;
   if (args.flows && (args.flow !== undefined || args.steps.length > 0)) {
