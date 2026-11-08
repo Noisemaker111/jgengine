@@ -70,13 +70,19 @@ export interface ShadowAuditRow {
 }
 
 /** A row's verdict: a game with no compared map proved nothing, so it fails like a mismatch does. */
-export function auditVerdict(row: ShadowAuditRow): "identical" | "differs" | "comparison failed" | "nothing compared" | "not measured" {
+export function auditVerdict(row: ShadowAuditRow): "identical" | "identical (every pass full)" | "differs" | "comparison failed" | "nothing compared" | "not measured" {
   if (row.counters === null) return "not measured";
-  if ((row.counters["auditMismatchedMaps"] ?? 0) > 0) return "differs";
-  if ((row.counters["auditFailed"] ?? 0) > 0) return "comparison failed";
-  if ((row.counters["auditMaps"] ?? 0) === 0) return "nothing compared";
-  return "identical";
+  const count = (name: string) => row.counters?.[name] ?? 0;
+  if (count("auditMismatchedMaps") > 0) return "differs";
+  if (count("auditFailed") > 0) return "comparison failed";
+  if (count("auditMaps") > 0) return "identical";
+  // A game whose camera never stops (a racer) moves every cascade every frame: each pass is three's
+  // own full draw, so there is no cached map to compare and nothing that could differ.
+  const cached = count("rebuild") + count("reuse") + count("hold");
+  return cached === 0 && count("full") > 0 ? "identical (every pass full)" : "nothing compared";
 }
+
+const PASSING_VERDICTS: ReadonlySet<string> = new Set(["identical", "identical (every pass full)"]);
 
 export function renderShadowAudit(rows: readonly ShadowAuditRow[]): string {
   const head = ["game", "casters", "static", "full", "rebuild", "reuse", "hold", "maps compared", "maps differing", "texels differing", "failed", "verdict"];
@@ -159,7 +165,7 @@ async function main(): Promise<void> {
     }
   }
   console.log(renderShadowAudit(rows));
-  if (rows.some((row) => auditVerdict(row) !== "identical")) process.exitCode = 1;
+  if (rows.some((row) => !PASSING_VERDICTS.has(auditVerdict(row)))) process.exitCode = 1;
 }
 
 if (import.meta.main) await main();

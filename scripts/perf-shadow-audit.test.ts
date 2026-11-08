@@ -9,11 +9,16 @@ describe("auditVerdict", () => {
     expect(auditVerdict({ game: "a", counters: counters({}), error: null })).toBe("identical");
   });
 
+  test("a game whose every pass drew in full has nothing cached to compare and passes", () => {
+    expect(auditVerdict({ game: "a", counters: counters({ auditMaps: 0, rebuild: 0, reuse: 0, hold: 0, full: 1634 }), error: null })).toBe("identical (every pass full)");
+  });
+
   test("a differing texel, a comparison that did not run, or nothing compared all fail", () => {
     const rows: [ShadowAuditRow, string][] = [
       [{ game: "a", counters: counters({ auditMismatchedMaps: 1, auditMismatchedTexels: 3 }), error: null }, "differs"],
       [{ game: "a", counters: counters({ auditFailed: 1 }), error: null }, "comparison failed"],
       [{ game: "a", counters: counters({ auditMaps: 0 }), error: null }, "nothing compared"],
+      [{ game: "a", counters: counters({ auditMaps: 0, rebuild: 0, reuse: 0, hold: 0, full: 0 }), error: null }, "nothing compared"],
       [{ game: "a", counters: null, error: "timed out" }, "not measured"],
     ];
     for (const [row, verdict] of rows) expect(auditVerdict(row)).toBe(verdict as ReturnType<typeof auditVerdict>);
