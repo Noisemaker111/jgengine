@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { AmbientLight, Color, Fog, HemisphereLight, SpotLight, type Object3D } from "three";
+import { AmbientLight, Color, Fog, HemisphereLight, SpotLight, type Group, type Object3D } from "three";
+import { useGameStore } from "@jgengine/react/hooks";
 import { IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";
 import type { ModelAnimationConfig } from "@jgengine/core/game/playableGame";
 import { stationAssets } from "./assets";
@@ -113,27 +114,42 @@ function PrinterZero({ taken }: { taken: boolean }) {
     <IndustrialBox at={[0, 2.8, -0.4]} size={[3.6, 1.2, 1.4]} color={C.steel} surface="steel" />
     <IndustrialBox at={[0, 1.3, 1.22]} size={[2.4, 0.6, 0.04]} color={taken ? C.panel : C.danger} emission={taken ? 0.1 : 1.3} />
     {[-1.6, 1.6].map(x => <IndustrialCylinder key={x} at={[x, 2.4, 0.6]} radius={0.22} length={4.8} color={C.ink} />)}
-    {/* Mounted either way: taking the pattern dims it, rather than changing the scene's lights. */}
-    <pointLight position={[0, 2, 2]} color={C.danger} intensity={taken ? 0 : 9} distance={9} />
     <Sign at={[0, 4.1, 0.3]} title="PRINTER ZERO" sub={taken ? "PATTERN COPIED" : "PATTERN 406 / ORIGINAL"} color={C.danger} width={3.2} />
   </group>;
 }
 const FAUNA_MODEL: Readonly<Record<Creature["species"], string>> = { hand: "deepward/fauna/hand", courier: "deepward/fauna/courier", overrun: "deepward/fauna/tank-crawler" };
 /** The creature's clip: the strike's own countdown holds the windup pose, otherwise it walks or idles. */
-export function faunaAnimation(creature: Creature): ModelAnimationConfig {
+export function faunaAnimation(creature: Pick<Creature, "species" | "mode" | "windup">): ModelAnimationConfig {
   const def = SPECIES[creature.species];
   if (creature.mode === "winding" && def.strike !== null) return { clip: "windup", paused: true, time: 0.7 * (1 - Math.max(0, Math.min(1, creature.windup / def.strike.windup))), loop: false };
   const moving = creature.mode === "flee" || creature.mode === "stalk" || creature.mode === "attack";
   return { clip: moving ? "walk" : "idle", loop: true, timeScale: moving ? Math.max(0.6, def.run / 3) : 1 };
 }
 const hunting = (creature: Creature): boolean => creature.mode === "winding" || creature.mode === "attack" || creature.mode === "stalk";
-/** A creature's body: a rigged hand, courier or tank-crawler from the same pipeline as the Fitter. */
-function CreatureModel({ creature }: { creature: Creature }) {
-  const def = SPECIES[creature.species], asset = stationAssets.resolve(FAUNA_MODEL[creature.species]);
-  if (asset === null) throw new Error(`Deepward is missing the ${creature.species} model`);
-  return <group position={[creature.at[0], 0, creature.at[2]]} rotation-y={creature.facing}>
-    <IsolatedEntityModel instanceId={creature.id} model={{ ...asset, anchor: "origin", shadows: "both", animation: faunaAnimation(creature) }} />
-    {creature.health < def.health && <IndustrialBox at={[0, def.size * 2.4 + 0.4, 0]} size={[0.8 * Math.max(0.05, creature.health / def.health), 0.06, 0.06]} color={C.danger} emission={0.9} />}
+/** Reads one creature as it is now, or undefined once it is gone. */
+export type CreatureRead = (id: string) => Creature | undefined;
+/**
+ * A creature's body: a rigged hand, courier or tank-crawler from the same pipeline as the Fitter. It
+ * walks on the render frame; React re-renders it only when its clip or its health bar changes.
+ */
+function CreatureModel({ id, read }: { id: string; read: CreatureRead }) {
+  const body = useRef<Group>(null);
+  const look = useGameStore(() => {
+    const creature = read(id);
+    return creature === undefined ? null : { species: creature.species, mode: creature.mode, windup: creature.mode === "winding" ? creature.windup : 0, health: creature.health };
+  });
+  useFrame(() => {
+    const creature = read(id), group = body.current;
+    if (creature === undefined || group === null) return;
+    group.position.set(creature.at[0], 0, creature.at[2]);
+    group.rotation.y = creature.facing;
+  });
+  if (look === null) return null;
+  const def = SPECIES[look.species], asset = stationAssets.resolve(FAUNA_MODEL[look.species]);
+  if (asset === null) throw new Error(`Deepward is missing the ${look.species} model`);
+  return <group ref={body}>
+    <IsolatedEntityModel instanceId={id} model={{ ...asset, anchor: "origin", shadows: "both", animation: faunaAnimation(look) }} />
+    {look.health < def.health && <IndustrialBox at={[0, def.size * 2.4 + 0.4, 0]} size={[0.8 * Math.max(0.05, look.health / def.health), 0.06, 0.06]} color={C.danger} emission={0.9} />}
   </group>;
 }
 function Lures({ thrown }: { thrown: Dive["thrown"] }) {
@@ -168,18 +184,27 @@ export function StratumDressing({ place, marks }: { place: Place; marks: Stratum
   </>;
 }
 /** The overrun crawlers' alarm lamps: a fixed pair, so a crawler arriving or dying never changes the scene's lights. */
-const ALARM_LAMPS = 2;
-/** What moves on the floor: its creatures, their alarm lamps, and thrown lures. */
-export function StratumLife({ place, fauna, thrown }: { place: Place; fauna: Dive["fauna"]; thrown: Dive["thrown"] }) {
-  const alive = Object.values(fauna).filter(creature => creature.place === place && creature.health > 0);
-  const alarms = alive.filter(creature => creature.species === "overrun" && hunting(creature)).slice(0, ALARM_LAMPS);
+export const ALARM_LAMPS = 2;
+/** The hunting crawlers on `place` whose alarm lamps burn, at most {@link ALARM_LAMPS}. */
+export function alarmCreatures(fauna: Dive["fauna"], place: Place): Creature[] {
+  const alarms: Creature[] = [];
+  for (const creature of Object.values(fauna)) {
+    if (alarms.length === ALARM_LAMPS) break;
+    if (creature.place === place && creature.health > 0 && creature.species === "overrun" && hunting(creature)) alarms.push(creature);
+  }
+  return alarms;
+}
+/** Where a crawler's alarm lamp hangs: ahead of it and overhead. */
+export function alarmLampAt(creature: Creature): Triple {
+  return [creature.at[0] + Math.sin(creature.facing) * 4.6, 2.8, creature.at[2] + Math.cos(creature.facing) * 4.6];
+}
+/**
+ * What moves on the floor: its living creatures (by id) and thrown lures, re-rendered only when one
+ * arrives, dies, lands or burns out. Their alarm lamps are mounted in every place, with the station's other lights.
+ */
+export function StratumLife({ creatures, read, thrown }: { creatures: readonly string[]; read: CreatureRead; thrown: Dive["thrown"] }) {
   return <>
-    {alive.map(creature => <CreatureModel key={creature.id} creature={creature} />)}
-    {Array.from({ length: ALARM_LAMPS }, (_, index) => {
-      const creature = alarms[index];
-      const at: Triple = creature === undefined ? [0, -50, 0] : [creature.at[0] + Math.sin(creature.facing) * 4.6, 2.8, creature.at[2] + Math.cos(creature.facing) * 4.6];
-      return <pointLight key={index} position={at} color={C.danger} intensity={creature === undefined ? 0 : 2} distance={5} />;
-    })}
+    {creatures.map(id => <CreatureModel key={id} id={id} read={read} />)}
     <Lures thrown={thrown} />
   </>;
 }

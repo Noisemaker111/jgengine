@@ -1,4 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useActionBindings } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { allActionCodes } from "@jgengine/core/input/actionBindings";
+import { useSceneSwapping } from "@jgengine/core/ui/sceneSwap.view";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
 import { useBrowserSuspension, useDialogBehavior } from "@jgengine/react";
 import { useOptionalGamePhase } from "@jgengine/react/hooks";
@@ -98,6 +101,13 @@ function liveReadings(ctx: GameContext) {
 }
 type Readings = ReturnType<typeof liveReadings>;
 
+/** Over the canvas while the next floor builds and compiles: where the rail or the lift is taking you. */
+function TravelCard() {
+  const swapping = useSceneSwapping();
+  const where = useStore(viewStore, v => v.dive === null ? "Marrow" : `${STRATA[v.dive.stratum].numeral} · ${STRATA[v.dive.stratum].name}`);
+  return swapping ? <div className="dw-travel" role="status"><span>{where}</span></div> : null;
+}
+
 export function GameUI() {
   useGameFonts(GAME_FONTS);
   const ctx = useGameContext();
@@ -120,8 +130,20 @@ export function GameUI() {
   useBrowserSuspension(() => {
     if (isOpen(viewStore.read(ctx))) ctx.game.commands.run("deepward.pause", { paused: true });
   });
+  const bindings = useActionBindings();
+  const cacheBinding = bindings["deepwardCache"];
+  const cacheKeys = useRef<readonly string[]>([]);
+  cacheKeys.current = cacheBinding === undefined ? [] : allActionCodes(cacheBinding);
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
+      // The cache key closes the open cache: ahead of the sheet's focus trap, which would take Tab
+      // to move between its buttons and leave "Close cache / Tab" a lie.
+      if (cacheKeys.current.includes(event.code) && !event.repeat && !settings.isOpen && viewStore.read(ctx).panel === "cache") {
+        event.preventDefault(); event.stopImmediatePropagation();
+        ctx.game.commands.run("deepward.cache", {});
+        grab();
+        return;
+      }
       if (event.code !== "Escape" || event.repeat || settings.isOpen) return;
       if (!isOpen(viewStore.read(ctx))) return;
       event.preventDefault(); event.stopImmediatePropagation();
@@ -145,6 +167,7 @@ export function GameUI() {
     if (event.code === "Tab") event.stopPropagation();
     if ((event.code === "Space" || event.code === "Enter") && event.target instanceof HTMLElement && event.target.closest("button, a, input, select, textarea, [contenteditable=true]")) event.stopPropagation();
   }}>
+    <TravelCard />
     <VisorGlass low={screen.low} />
     <HudCanvas layout={hud} editChord={false}>
       <HudPanel id="shift" anchor="top-right" priority="critical" locked>

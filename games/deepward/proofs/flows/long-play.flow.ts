@@ -40,11 +40,14 @@ export default defineFlow(game, {
     await f.waitFor((p) => p.carried >= 1, { timeoutMs: 30000 });
     await f.hold("KeyS", { ms: 300 });
     await f.press("Tab");
+    await f.waitFor((p) => p.panel === 2, { timeoutMs: 5000 });
     await f.wait(1800);
     await f.press("Tab");
+    await f.waitFor((p) => p.panel === 0, { timeoutMs: 5000 });
     await f.wait(600);
     // lamp on, a scan, a burst of fire and a reload
     await f.press("KeyF");
+    await f.waitFor((p) => p.lamp === 1, { timeoutMs: 5000 });
     await f.wait(800);
     await f.press("KeyC");
     await f.wait(1500);
@@ -79,8 +82,10 @@ export default defineFlow(game, {
     await f.wait(3000);
     // the cache again, mid-floor, then back up and home by rail
     await f.press("Tab");
+    await f.waitFor((p) => p.panel === 2, { timeoutMs: 5000 });
     await f.wait(1500);
     await f.press("Tab");
+    await f.waitFor((p) => p.panel === 0, { timeoutMs: 5000 });
     await f.teleport({ x: 0, z: 16.6 });
     await f.wait(600);
     await f.press("KeyE");

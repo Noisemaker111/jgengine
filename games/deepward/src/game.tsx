@@ -1,7 +1,8 @@
 import "./style.css";
-import { useEffect, useMemo, useRef, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, type ReactNode } from "react";
+import { useSceneSwap } from "@jgengine/core/render/sceneSwap.draw";
 import { useFrame } from "@react-three/fiber";
-import { Group, SpotLight, Vector3 } from "three";
+import { Group, SpotLight, Vector3, type PointLight } from "three";
 import { stationAssets } from "./game/assets";
 import { StationModels, hasStationModel } from "./game/stationModels";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
@@ -10,14 +11,14 @@ import { defineGame } from "@jgengine/shell/defineGame";
 import { useGameContext } from "@jgengine/react/provider";
 import { useStore } from "@jgengine/react/store";
 import { useGameStore } from "@jgengine/react/hooks";
-import { groundDistance, GARAGE, EXIT, PROPS, PRINT_ID, SALVAGE, STEAM, STASH, walkable, world, physics, editorLayers, ROOMS, RETURN_SPINE, DECOR, decorPoint, type Place, type Point } from "./world";
+import { groundDistance, GARAGE, EXIT, PROPS, PRINT_ID, PRINTER_ZERO, SALVAGE, STEAM, STASH, walkable, world, physics, editorLayers, ROOMS, RETURN_SPINE, DECOR, decorPoint, type Place, type Point } from "./world";
 import { hazardsAt } from "./game/descent";
 import { marrowOf, marrowSpec } from "./game/marrow";
 import { STRATA } from "./game/strata";
-import { Headlamp, MarrowBays, StratumAtmosphere, StratumDressing, StratumLife, type StratumMarks } from "./game/strataArt";
+import { ALARM_LAMPS, alarmCreatures, alarmLampAt, Headlamp, MarrowBays, StratumAtmosphere, StratumDressing, StratumLife, type StratumMarks } from "./game/strataArt";
 import { PALETTE as C, signTexture, IndustrialBox, SALVAGE_PLACARD, type Triple } from "./game/art";
 import { surfaceMaterial, type IndustrialSurface } from "./game/industrialMaterials";
-import { FitterModel } from "./game/fitterArt";
+import { FITTER_FLASH, FitterModel, fitterHit } from "./game/fitterArt";
 import { ServiceWeapon, serviceWeaponPose } from "./game/weaponArt";
 import { activeRoomLamps, deriveRoomPresentation, isBayWall, lampFlicker, ROOM_LIGHT_BUDGET, ROOM_LIGHT_REACH, ROOM_LIGHT_INTENSITY } from "./game/roomPresentation";
 import { captureProbe, initialize, keybinds, seatPlayer, setAim, tickControls, viewStore, type View } from "./game/controls";
@@ -28,7 +29,7 @@ import { StationStructure, StationBatch } from "./game/stationArt";
 import { ModularArchitecture } from "./game/modularArt";
 import { StencilDecals } from "./game/stencilDecals";
 import { DamagedMachinery } from "./game/damagedMachinery";
-import { InteriorArt } from "./game/interiorArt";
+import { FloorPracticals, InteriorArt } from "./game/interiorArt";
 import { ShiftLocker } from "./game/fixtureArt";
 import { GameUI } from "./game/ui/GameUI";
 import { shiftTheme } from "./game/ui/ItemMark";
@@ -149,12 +150,72 @@ function SalvagePlacard({ id, kind }: { id: string; kind: keyof typeof ITEMS }) 
 function renderEntity(entity: SceneEntity): ReactNode {
   return entity.id === PRINT_ID ? <PrintPresentation /> : <group />;
 }
+/** The Fitter's model, re-rendered when its clip changes, not as it walks: the entity moves it. */
 function PrintPresentation() {
-  const { print, trace } = useStore(viewStore, view => ({ print: view.dive?.print, trace: view.trace }));
-  // The Fitter's hit light outlives it, dark, so its death does not change the scene's lights.
-  if (!print || print.health <= 0) return <pointLight position={[0, 1.25, 0.3]} intensity={0} distance={2.2} />;
-  const hit = trace !== null && print.health < 80 && Math.hypot(trace.to[0] - print.at[0], trace.to[2] - print.at[2]) < 0.3;
-  return <FitterModel print={print} hit={hit} />;
+  const pose = useStore(viewStore, view => {
+    const print = view.dive?.print;
+    return print === undefined || print.health <= 0 ? null : { mode: print.mode, attack: print.mode === "winding" ? print.attack : 0 };
+  });
+  return pose === null ? null : <FitterModel print={pose} />;
+}
+/**
+ * Every local light the station can show besides the room lamps and the headlamp, mounted in every
+ * place and dark where it does not apply: the floor's wall lamps, the crawlers' alarm pair, Printer
+ * Zero's lamp, the vent's glow and the Fitter's hit flash. three.js recompiles every lit material
+ * when the scene's light counts change, so a dive, a lift or the Fitter arriving only moves,
+ * recolours or dims these.
+ */
+function StationLights({ place }: { place: Place }) {
+  return <>
+    <FloorPracticals place={place} />
+    <AlarmLamps />
+    <ZeroLamp place={place} />
+    <VentGlow />
+    <FitterFlash />
+  </>;
+}
+/** The hunting crawlers' alarm lamps, moved on the render frame so a crawler's step re-renders nothing. */
+function AlarmLamps() {
+  const ctx = useGameContext();
+  const lamps = useRef<(PointLight | null)[]>([]);
+  useFrame(() => {
+    const dive = viewStore.read(ctx).dive;
+    const alarms = dive === null ? [] : alarmCreatures(dive.fauna, dive.stratum);
+    lamps.current.forEach((light, index) => {
+      const creature = alarms[index];
+      if (light === null) return;
+      light.intensity = creature === undefined ? 0 : 2;
+      if (creature !== undefined) light.position.set(...alarmLampAt(creature));
+    });
+  });
+  return <>{Array.from({ length: ALARM_LAMPS }, (_, index) =>
+    <pointLight key={index} ref={light => { lamps.current[index] = light; }} position={[0, -50, 0]} color={C.danger} intensity={0} distance={5} />)}</>;
+}
+/** Printer Zero's red lamp in the choir, dark once its pattern is copied. */
+function ZeroLamp({ place }: { place: Place }) {
+  const lit = useGameStore(ctx => place === "choir" && marrowOf(ctx).fact("story.zero") !== true);
+  return <pointLight position={[PRINTER_ZERO[0], 2, PRINTER_ZERO[2] + 2]} color={C.danger} intensity={lit ? 9 : 0} distance={9} />;
+}
+/** The steam vent's glow in the vault while it vents. */
+function VentGlow() {
+  const on = useStore(viewStore, view => view.dive !== null && view.dive.stratum === "vault" && view.dive.elapsed % 8 < 3);
+  return <pointLight position={[STEAM.x, 1, STEAM.z]} color={C.danger} intensity={on ? 12 : 0} distance={7} />;
+}
+/** The Fitter's red hit flash, on its chest from the entity's pose, burning while the last shot struck it. */
+function FitterFlash() {
+  const ctx = useGameContext();
+  const ref = useRef<PointLight>(null);
+  useFrame(() => {
+    const light = ref.current;
+    if (light === null) return;
+    const view = viewStore.read(ctx), print = view.dive?.print, entity = ctx.scene.entity.get(PRINT_ID);
+    const hit = print !== undefined && entity != null && fitterHit(print, view.trace);
+    light.intensity = hit ? FITTER_FLASH.intensity : 0;
+    if (entity == null) return;
+    const [x, y, z] = entity.position, yaw = entity.rotationY;
+    light.position.set(x + Math.sin(yaw) * FITTER_FLASH.ahead, y + FITTER_FLASH.up, z + Math.cos(yaw) * FITTER_FLASH.ahead);
+  });
+  return <pointLight ref={ref} color={FITTER_FLASH.color} intensity={0} distance={FITTER_FLASH.distance} />;
 }
 function Tracer({ from, to }: { from: Point; to: Point }) {
   const midpoint = new Vector3((from[0] + to[0]) / 2, (from[1] + to[1]) / 2, (from[2] + to[2]) / 2);
@@ -198,10 +259,17 @@ function FloorDressing({ place }: { place: Place }) {
   });
   return <StratumDressing place={place} marks={marks} />;
 }
-/** The floor's creatures and lures: the one part of the dressing that moves every tick. */
+/**
+ * The floor's creatures and lures: re-rendered when one arrives, dies, lands or burns out. Each
+ * creature moves itself on the render frame; a lure stays where it landed.
+ */
 function FloorLife({ place }: { place: Place }) {
-  const { fauna, thrown } = useStore(viewStore, view => ({ fauna: view.dive?.fauna ?? NO_FAUNA, thrown: view.dive?.thrown ?? NO_LURES }));
-  return <StratumLife place={place} fauna={fauna} thrown={thrown} />;
+  const ctx = useGameContext();
+  const living = useStore(viewStore, view => Object.values(view.dive?.fauna ?? NO_FAUNA).filter(creature => creature.place === place && creature.health > 0).map(creature => creature.id).join("\n"));
+  useStore(viewStore, view => (view.dive?.thrown ?? NO_LURES).map(lure => lure.id).join("\n"));
+  const read = useCallback((id: string) => viewStore.read(ctx).dive?.fauna[id], [ctx]);
+  const creatures = useMemo(() => living === "" ? [] : living.split("\n"), [living]);
+  return <StratumLife creatures={creatures} read={read} thrown={viewStore.read(ctx).dive?.thrown ?? NO_LURES} />;
 }
 /** Marrow's bays, re-rendered when one is built, finishes or loses power. */
 function Bays() {
@@ -212,7 +280,7 @@ function Bays() {
   });
   return <MarrowBays world={marrowOf(ctx)} />;
 }
-/** The steam vent in the vault: it vents three seconds in every eight. */
+/** The steam vent in the vault: it vents three seconds in every eight. Its glow is {@link VentGlow}. */
 function SteamVent() {
   const on = useStore(viewStore, view => view.dive !== null && view.dive.elapsed % 8 < 3);
   return <group position={[STEAM.x, 0, STEAM.z]}>
@@ -220,8 +288,6 @@ function SteamVent() {
     {Array.from({ length: 9 }, (_, i) => <Block key={i} at={[0, 0.04, -3 + i * 0.7]} size={[STEAM.w, 0.025, 0.17]} color={C.amber} />)}
     <Tube at={[1.6, 1.9, 0]} radius={0.14} height={3.8} />
     <Sign at={[0, 2.7, -3.8]} title="HOT SUPPRESSANT" sub={on ? "VENTING / KEEP CLEAR" : "PRESSURE LOW / CROSS NOW"} color={C.danger} width={3.5} />
-    {/* Mounted either way: venting brightens it, rather than changing the scene's lights. */}
-    <pointLight position={[0, 1, 0]} color={C.danger} intensity={on ? 12 : 0} distance={7} />
     {on && [-1, 0, 1].map(x => <mesh key={x} position={[x, 1.1, 0]}><cylinderGeometry args={[0.7, 0.25, 2.1, 10]} /><meshBasicMaterial color="#dec9b6" transparent opacity={0.16} depthWrite={false} /></mesh>)}
   </group>;
 }
@@ -229,6 +295,16 @@ const NO_HARVEST: Dive["harvested"] = {};
 const NONE: string[] = [];
 const NO_FAUNA: Dive["fauna"] = {};
 const NO_LURES: Dive["thrown"] = [];
+/**
+ * A floor's fixed build: shell, structure, station models, machinery and decals. Memoized on the
+ * place, so it is built once per floor, in the background while the travel card is up.
+ */
+const FloorBuild = memo(function FloorBuild({ place }: { place: Place }) {
+  return <>
+    {place === "home" ? <><Architecture place={place} /><StationStructure place={place} /></> : <><InteriorArt stratum={place} /><Architecture place={place} shell={false} /></>}
+    <StationModels place={place} assets={stationAssets} /><ModularArchitecture place={place} /><DamagedMachinery place={place} /><StencilDecals place={place} />
+  </>;
+});
 function WorldOverlay() {
   // Only what the station's layout shows; the parts that move each tick subscribe on their own.
   const view = useStore(viewStore, v => ({
@@ -239,12 +315,13 @@ function WorldOverlay() {
     collected: v.dive?.collected ?? NONE,
     drop: v.dive?.print.drop ?? null,
   }));
-  const place = view.place, diving = place !== "home";
+  // A dive, a lift or the rail home builds the next floor under the travel card, never in a frozen frame.
+  const place = useSceneSwap(view.place), diving = place !== "home";
   return <>
     <SceneCaptureBinding />
     <StratumAtmosphere place={place} /><Headlamp on={view.lamp} />
-    {place === "home" ? <><Architecture place={place} /><StationStructure place={place} /></> : <><InteriorArt stratum={place} /><Architecture place={place} shell={false} /></>}
-    <RoomLights /><StationModels place={place} assets={stationAssets} /><ModularArchitecture place={place} /><DamagedMachinery place={place} /><StencilDecals place={place} />
+    <FloorBuild place={place} />
+    <RoomLights /><StationLights place={place} />
     {!diving && <Bays />}
     {diving && <><FloorDressing place={place} /><FloorLife place={place} /></>}
     {editorLayers.markers.filter(m => m.kind === "deepward-station-sign" && m.meta?.["place"] === place).map(m => <Sign key={m.id} at={[m.position.x,m.position.y,m.position.z]} title={m.label ?? m.id} sub={String(m.meta?.["subtitle"] ?? "")} width={Number(m.meta?.["width"] ?? 2.6)} turn={m.rotationY ?? 0} color={C.amber} />)}

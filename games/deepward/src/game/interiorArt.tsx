@@ -4,6 +4,7 @@ import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { ScatterInstance } from "@jgengine/core/scatter/scatterRegion";
 import type { AuthoredSurfaceConfig } from "@jgengine/core/material/authoredSurfaceMaterial.draw";
 import { InteriorDressing, PracticalLights } from "@jgengine/core/buildings/InteriorDressing.draw";
+import type { Place } from "../world";
 import { StaticShapeInstances, type StaticShapeInstance } from "@jgengine/core/instancing/staticShapeInstances.draw";
 import { InstancedScatter } from "@jgengine/core/scatter/InstancedScatter.draw";
 
@@ -68,10 +69,26 @@ export function structureShapes(stratum: Stratum, look: FloorLook = FLOOR_LOOK[s
   return shapes;
 }
 
+const PRACTICALS = Object.values(FLOOR_LOOK).map(look => look.practical);
+const PRACTICAL_POOL = Math.max(...PRACTICALS.map(practical => practical.count));
+const PRACTICAL_SHADOWED = Math.max(...PRACTICALS.map(practical => practical.shadowed));
+const NO_FIXTURES: ReturnType<typeof floorDressing>["plan"]["fixtures"] = [];
+
+/**
+ * The wall lamps' light on whichever floor you are on: one pool sized for the brightest floor and
+ * mounted at home too, where it is dark. A floor lights only its own budget of it, so every place has
+ * the same lights and moving between them never recompiles every lit material.
+ */
+export function FloorPracticals({ place }: { place: Place }) {
+  const look = place === "home" ? null : FLOOR_LOOK[place];
+  const fixtures = place === "home" ? NO_FIXTURES : floorDressing(place).plan.fixtures;
+  return <PracticalLights {...(look ?? FLOOR_LOOK.vault).practical} fixtures={fixtures} count={PRACTICAL_POOL} shadowed={PRACTICAL_SHADOWED} lit={look?.practical.count ?? 0} />;
+}
+
 /**
  * One floor's interior: its shell and station parts in the floor's scanned materials, the derived
- * trims, pipes, cables, stains and wall lamps, the practical lights that follow the camera through
- * them, and library clutter props GPU-instanced against the walls.
+ * trims, pipes, cables, stains and wall lamps, and library clutter props GPU-instanced against the
+ * walls. The lamps' light is {@link FloorPracticals}, mounted in every place.
  */
 export function InteriorArt({ stratum }: { stratum: Stratum }) {
   const look = FLOOR_LOOK[stratum];
@@ -88,7 +105,6 @@ export function InteriorArt({ stratum }: { stratum: Stratum }) {
   return <group>
     <StaticShapeInstances instances={shapes} />
     <InteriorDressing plan={dressing.plan} surfaces={look.dressing} cableColor={look.cable} decalSeed={stratum} />
-    <PracticalLights fixtures={dressing.plan.fixtures} {...look.practical} />
     <InstancedScatter instances={props} resolveItem={resolveProp} chunkSize={48} />
   </group>;
 }

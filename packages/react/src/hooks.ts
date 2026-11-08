@@ -71,7 +71,12 @@ export function useGameStore<T>(
   isEqualRef.current = isEqual;
   const cacheRef = useRef(createSelectCache<number, T>());
   const rateRef = useRef<ReturnType<typeof createSelectionRate> | null>(null);
-  if (DEV_BUILD && rateRef.current === null) rateRef.current = createSelectionRate();
+  // Named on the first render, while the component is on the stack: the store reads the snapshot later, from React's own code.
+  const nameRef = useRef("a component");
+  if (DEV_BUILD && rateRef.current === null) {
+    rateRef.current = createSelectionRate();
+    nameRef.current = callerComponent();
+  }
 
   const getSnapshot = useCallback(() => {
     const cache = cacheRef.current;
@@ -84,7 +89,7 @@ export function useGameStore<T>(
     );
     if (rateRef.current !== null && before !== undefined && value !== before && rateRef.current.changed()) {
       console.warn(
-        `[jgengine] ${callerComponent()} re-renders on almost every frame from the game store. Select only what it shows, and bind values that move every frame or tick with LiveText or useFrameBind (@jgengine/core/ui/liveBind.view), so only the changing text or bar updates.`,
+        `[jgengine] ${nameRef.current} re-renders on almost every frame from the game store. Select only what it shows, and bind values that move every frame or tick with LiveText or useFrameBind (@jgengine/core/ui/liveBind.view), so only the changing text or bar updates.`,
       );
     }
     return value;

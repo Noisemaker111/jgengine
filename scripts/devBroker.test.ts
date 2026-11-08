@@ -299,6 +299,16 @@ describe("broker capture turns", () => {
     expect(fake.started[0]!.stopped).toBe(true);
     expect(fake.chromes[0]!.stopped).toBe(true);
   });
+
+  test("a stop names the live runs it cuts off, and only those", async () => {
+    const fake = fakeBroker();
+    const core = new BrokerCore(fake.deps);
+    await core.acquireServer(request());
+    await core.acquireServer(request({ clientPid: 200, label: "shoot b" }));
+    fake.alive.delete(200);
+    await core.shutdown();
+    expect(fake.logs.filter((line) => line.startsWith("broker stopping under"))).toEqual(["broker stopping under 1 live run(s): drive a (pid 100)"]);
+  });
 });
 
 describe("broker server environment", () => {
@@ -338,7 +348,8 @@ describe("broker over HTTP with real child processes", () => {
       },
     });
     const core = new BrokerCore(fake.deps);
-    const http: Server = createServer(brokerHandler(core, () => {}));
+    const stops: string[] = [];
+    const http: Server = createServer(brokerHandler(core, (reason) => stops.push(reason)));
     await new Promise<void>((resolve) => http.listen(0, "127.0.0.1", () => resolve()));
     const base = `http://127.0.0.1:${(http.address() as AddressInfo).port}`;
     try {
@@ -371,6 +382,9 @@ describe("broker over HTTP with real child processes", () => {
         gone = true;
       }
       expect(gone).toBe(true);
+
+      await localPostJson(`${base}/v1/stop`, { by: "bun scripts/devBroker.ts stop in C:/repo/b (pid 7)" }, 5_000);
+      expect(stops).toEqual(["asked to stop by bun scripts/devBroker.ts stop in C:/repo/b (pid 7)"]);
     } finally {
       await core.shutdown();
       await new Promise<void>((resolve) => http.close(() => resolve()));

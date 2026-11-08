@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { attributeHitch, fpsAt, hitchCause, programVariantChange, renderBreakdownText, spread, summarizeBreakdown, type FrameBreakdownRecord } from "./frameBreakdown";
+import { attributeHitch, fpsAt, hitchCause, lightSetChange, programVariantChange, renderBreakdownText, spread, summarizeBreakdown, type FrameBreakdownRecord } from "./frameBreakdown";
 
 function frame(overrides: Partial<FrameBreakdownRecord> = {}): FrameBreakdownRecord {
   return {
@@ -88,4 +88,14 @@ test("a recompiled material names the scene change that forced it", () => {
   expect(programVariantChange(key(3, 4), key(2, 4), 1)).toBe("point lights 3→2");
   expect(programVariantChange(key(3, 4), key(3, 0), 1)).toBe("toneMapping 4→0");
   expect(programVariantChange(key(3, 4), key(3, 4), 1)).toBeNull();
+});
+
+test("a light recompile names the lights that came and went", () => {
+  const lamp = "PointLight #ffaa00 8m in Vent";
+  const spot = "SpotLight (shadow) #ffffff 30m in Headlamp";
+  expect(lightSetChange([spot, lamp], [spot])).toBe(`-1 ${lamp}`);
+  expect(lightSetChange([spot], [spot, lamp, lamp])).toBe(`+2 ${lamp}`);
+  expect(lightSetChange([spot], [spot])).toBeNull();
+  const many = Array.from({ length: 8 }, (_, i) => `PointLight in L${i}`);
+  expect(lightSetChange([], many, 6)).toBe(`${many.slice(0, 6).map((l) => `+1 ${l}`).join("; ")}; 2 more`);
 });

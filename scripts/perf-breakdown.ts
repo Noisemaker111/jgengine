@@ -201,14 +201,19 @@ export async function readHitchSession(session: CdpSession, privateMap?: (script
 
 /** The session's hitches for a person: count, worst, and each with its cause and the scripts in it. */
 export function renderHitchSession(read: HitchSession, title: string): string {
-  const worst = read.hitches.reduce((max, hitch) => Math.max(max, hitch.ms), 0);
+  // A stall behind a travel card or a full-screen cover froze that, not the game: counted apart.
+  const seen = read.hitches.filter((hitch) => hitch.covered === undefined);
+  const covered = read.hitches.length - seen.length;
+  const worst = seen.reduce((max, hitch) => Math.max(max, hitch.ms), 0);
   const byCause = new Map<string, number>();
-  for (const hitch of read.hitches) byCause.set(hitch.cause, (byCause.get(hitch.cause) ?? 0) + 1);
+  for (const hitch of seen) byCause.set(hitch.cause, (byCause.get(hitch.cause) ?? 0) + 1);
+  const coveredWorst = read.hitches.reduce((max, hitch) => (hitch.covered === undefined ? max : Math.max(max, hitch.ms)), 0);
   return [
     `${title}: ${read.frames} frames over ${read.seconds} s, gc ~${read.gcMb} MB`,
-    read.hitches.length === 0 ? "hitches: none over 33 ms" : `hitches over 33 ms: ${read.hitches.length}${read.dropped > 0 ? ` (+${read.dropped} past the log)` : ""}, worst ${worst} ms; by cause: ${[...byCause].map(([cause, n]) => `${cause} ${n}`).join(", ")}`,
+    seen.length === 0 ? "hitches the player saw: none over 33 ms" : `hitches the player saw over 33 ms: ${seen.length}${read.dropped > 0 ? ` (+${read.dropped} past the log)` : ""}, worst ${worst} ms; by cause: ${[...byCause].map(([cause, n]) => `${cause} ${n}`).join(", ")}`,
+    ...(covered === 0 ? [] : [`behind a travel card or cover: ${covered}, worst ${coveredWorst} ms`]),
     ...read.hitches.map((hitch) => [
-      `  ${hitch.atS.toFixed(2).padStart(7)} s ${hitch.ms.toFixed(1).padStart(7)} ms  ${hitch.cause}: ${hitch.detail}`,
+      `  ${hitch.atS.toFixed(2).padStart(7)} s ${hitch.ms.toFixed(1).padStart(7)} ms  ${hitch.covered === undefined ? "" : `[${hitch.covered}] `}${hitch.cause}: ${hitch.detail}`,
       ...(hitch.scripts ?? []).slice(0, 3).map((script) => `             ${script.ms.toFixed(1).padStart(6)} ms ${script.invoker} ${script.source}${script.layoutMs >= 1 ? ` (layout ${script.layoutMs})` : ""}`),
     ].join("\n")),
   ].join("\n");

@@ -67,6 +67,11 @@ export interface Hitch {
   ms: number;
   cause: "compile" | "upload" | "gc" | "system" | "gpu" | "script" | "other";
   detail: string;
+  /**
+   * What the player was looking at instead of the world when the frame began: a scene swap's travel
+   * card or a full-screen cover. The stall froze that, not the game. Absent when the world showed.
+   */
+  covered?: "travel card" | "canvas cover";
   /** The scripts the browser's long-animation-frame timing saw run during this frame, longest first. */
   scripts?: HitchScript[];
 }
@@ -137,6 +142,22 @@ export function programVariantChange(previousKey: string, nextKey: string, defin
   }
   if (changes.length > 0) return changes.join(", ");
   return before.length === after.length && before.every((part, index) => part === after[index]) ? null : "material flags";
+}
+
+/**
+ * Which lights came and went between two looks at the scene, as `+1 SpotLight (shadow) at 3,1,-40`:
+ * the light a recompile's "point lights 3→2" is about. Labels are counted, so two identical lamps read
+ * `+2`. At most `limit` entries, then how many more. Null when nothing changed.
+ * @internal
+ */
+export function lightSetChange(before: readonly string[], after: readonly string[], limit = 6): string | null {
+  const counts = new Map<string, number>();
+  for (const label of before) counts.set(label, (counts.get(label) ?? 0) - 1);
+  for (const label of after) counts.set(label, (counts.get(label) ?? 0) + 1);
+  const changes = [...counts].filter(([, delta]) => delta !== 0).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  if (changes.length === 0) return null;
+  const shown = changes.slice(0, limit).map(([label, delta]) => `${delta > 0 ? "+" : ""}${delta} ${label}`);
+  return changes.length > limit ? `${shown.join("; ")}; ${changes.length - limit} more` : shown.join("; ");
 }
 
 /**

@@ -3,17 +3,21 @@ import type { WebGLRenderer } from "three";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { observeSharedFrames } from "@jgengine/core/render/useSharedFrame.draw";
+import { canvasCover } from "@jgengine/core/ui/canvasCover.view";
+import { sceneSwapping } from "@jgengine/core/ui/sceneSwap.view";
 
 import {
   attributeHitch,
   hitchCause,
   HITCH_MS,
+  lightSetChange,
   observeFrameWork,
   programVariantChange,
   summarizeBreakdown,
   type DrawCost,
   type FrameBreakdown,
   type FrameBreakdownRecord,
+  type Hitch,
   type LongFrameTiming,
 } from "./frameBreakdown";
 
@@ -30,6 +34,35 @@ import {
  *
  * Dev only: it installs where the frame telemetry does, and `window.__jgFrameBreakdown` reads it.
  */
+
+/**
+ * Every visible light in a scene as `SpotLight (shadow) in Headlamp/Player`: its type, whether it casts
+ * shadows, and its own name or the nearest named ancestors, which is how you find it in the code.
+ * Position is left out: a light that moves is not a light that came or went.
+ */
+function visibleLights(scene: object): string[] {
+  const lights: string[] = [];
+  const traverse: unknown = Reflect.get(scene, "traverseVisible");
+  if (typeof traverse !== "function") return lights;
+  Reflect.apply(traverse, scene, [(node: unknown) => {
+    if (typeof node !== "object" || node === null || Reflect.get(node, "isLight") !== true) return;
+    const type = String(Reflect.get(node, "type"));
+    if (type === "AmbientLight" || type === "HemisphereLight") return;
+    const names: string[] = [];
+    for (let at: unknown = node; typeof at === "object" && at !== null && at !== scene && names.length < 3; at = Reflect.get(at, "parent")) {
+      const name: unknown = Reflect.get(at, "name");
+      if (typeof name === "string" && name !== "") names.push(name);
+    }
+    const shadow = Reflect.get(node, "castShadow") === true ? " (shadow)" : "";
+    const color: unknown = Reflect.get(node, "color");
+    const toHex: unknown = typeof color === "object" && color !== null ? Reflect.get(color, "getHexString") : undefined;
+    const hex: unknown = typeof toHex === "function" ? Reflect.apply(toHex, color, []) : undefined;
+    const distance: unknown = Reflect.get(node, "distance");
+    const look = `${typeof hex === "string" ? ` #${hex}` : ""}${typeof distance === "number" && distance > 0 ? ` ${Math.round(distance)}m` : ""}`;
+    lights.push(`${type}${shadow}${look} in ${names.length === 0 ? "unnamed" : names.join("/")}`);
+  }]);
+  return lights;
+}
 
 /** Frames kept: 30 s at 144 Hz. */
 const CAPACITY = 4320;
@@ -157,7 +190,7 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
 
   // The whole session's hitches, past the record window: a stall minutes ago is still the one the
   // player felt. Each keeps its record (GPU times resolve into it later) and when it ended.
-  const hitchLog: { endMs: number; record: FrameBreakdownRecord }[] = [];
+  const hitchLog: { endMs: number; record: FrameBreakdownRecord; covered: Hitch["covered"] }[] = [];
   let hitchDropped = 0;
   let sessionStart = performance.now();
   let sessionFrames = 0;
@@ -190,6 +223,9 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
   // The frame being filled.
   let current: FrameBreakdownRecord | null = null;
   let frameStart = 0;
+  // What covered the world when this frame began: a stall then froze the card, not the game.
+  let frameCovered: Hitch["covered"] = undefined;
+  const coverNow = (): Hitch["covered"] => (sceneSwapping() ? "travel card" : canvasCover.covered() ? "canvas cover" : undefined);
   let lastWorkEnd = 0;
   let lastHeap: number | null = null;
   const addCpu = (name: string, ms: number) => {
@@ -368,7 +404,23 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     const defines: unknown = Reflect.get(material, "defines");
     return programVariantChange(previousKey, nextKey, typeof defines === "object" && defines !== null ? Object.keys(defines).length : 0);
   };
+  // Each scene's lights at the last light recompile (or first draw), so the next one can say which
+  // lights came or went. Per scene, because a post pass draws its own light-less scene.
+  let lastScene: unknown = null;
+  const lightsSeen = new WeakMap<object, string[]>();
+  let untoldLights: string | null = null;
+  const lightsChanged = (scene: unknown): string | null => {
+    if (typeof scene !== "object" || scene === null) return null;
+    const now = visibleLights(scene);
+    const before = lightsSeen.get(scene);
+    lightsSeen.set(scene, now);
+    return before === undefined ? null : lightSetChange(before, now);
+  };
   wrap(renderer, "renderBufferDirect", (original) => (camera: unknown, scene: unknown, geometry: unknown, material: unknown, object: unknown, group: unknown) => {
+    if (scene !== lastScene) {
+      lastScene = scene;
+      if (typeof scene === "object" && scene !== null && !lightsSeen.has(scene)) lightsChanged(scene);
+    }
     const start = performance.now();
     const compiledBefore = current?.compileMs ?? 0;
     try {
@@ -389,7 +441,13 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
       if (current !== null && current.compileMs - compiledBefore >= 1) {
         const shaders = current.shaders ??= [];
         const variant = recompiledFor(material);
-        if (shaders.length < FRAME_RETENTION_LIMIT) shaders.push(`${materialName} on ${objectName}${variant === null ? "" : ` (recompiled: ${variant})`}`);
+        // Every compile re-reads the lights (compiles are rare), so a new place's first materials keep
+        // the snapshot current; the change is told on the first recompile it caused.
+        const change = lightsChanged(scene);
+        if (change !== null) untoldLights = change;
+        const lights = variant !== null && variant.includes("light") ? untoldLights : null;
+        if (lights !== null) untoldLights = null;
+        if (shaders.length < FRAME_RETENTION_LIMIT) shaders.push(`${materialName} on ${objectName}${variant === null ? "" : ` (recompiled: ${variant}${lights === null ? "" : `; lights ${lights}`})`}`);
         else retention.shaders += 1;
       }
     }
@@ -551,12 +609,13 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
       sessionFrames += 1;
       sessionGcMb += current.heapDropMb;
       if (current.intervalMs > HITCH_MS) {
-        if (hitchLog.length < HITCH_LOG_LIMIT) hitchLog.push({ endMs: now, record: current });
+        if (hitchLog.length < HITCH_LOG_LIMIT) hitchLog.push({ endMs: now, record: current, covered: frameCovered });
         else hitchDropped += 1;
       }
     }
     current = fresh();
     frameStart = now;
+    frameCovered = coverNow();
     lastWorkEnd = now;
     wrapSubscribers();
   };
@@ -575,12 +634,13 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     records: () => ordered().map((record) => unresolved.has(record) ? { ...record, gpu: null } : record),
     callbacks: () => ({ ...callbacks }),
     session() {
-      const hitches = hitchLog.map(({ endMs, record }) => {
+      const hitches = hitchLog.map(({ endMs, record, covered }) => {
         const complete = unresolved.has(record) ? { ...record, gpu: null } : record;
         return {
           atS: Math.round(((endMs - sessionStart) / 1000) * 100) / 100,
           ms: Math.round(record.intervalMs * 10) / 10,
           ...attributeHitch(hitchCause(complete), endMs, record.intervalMs, longFrames),
+          ...(covered === undefined ? {} : { covered }),
         };
       });
       return {
