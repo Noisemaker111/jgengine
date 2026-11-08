@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import * as THREE from "three";
 
 import { setCulled, skipCulledMatrices } from "@jgengine/core/visibility/culledTransforms.draw";
-import { BATCHED_SOURCE_LAYER, batchSceneDraws, DRAW_BATCH_MESH_KEY, sceneRaycaster } from "./drawBatches.draw";
+import { BATCHED_SOURCE_LAYER, batchSceneDraws, DRAW_BATCH_MESH_KEY, markNeutralRenderHook, sceneRaycaster } from "./drawBatches.draw";
 
 function setup() {
   const scene = new THREE.Scene();
@@ -152,4 +152,19 @@ test("picking still hits a batched mesh, and never the batch", () => {
   expect(hits.map((hit) => hit.object.type)).toEqual(["Mesh"]);
   expect(hits[0]?.object).toBe(mesh);
   expect(new THREE.Raycaster().layers.test(mesh.layers)).toBe(false);
+});
+
+test("a mesh whose render hook only watches (the cascaded shadows' swap check) still joins a batch", () => {
+  const { scene, batcher } = setup();
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial());
+  const watch: THREE.Object3D["onBeforeRender"] = () => {};
+  markNeutralRenderHook(watch);
+  mesh.onBeforeRender = watch;
+  scene.add(mesh);
+  scene.updateMatrixWorld();
+  expect(batcher.stats()).toMatchObject({ batched: 1, single: 0 });
+  mesh.onBeforeRender = () => {};
+  scene.updateMatrixWorld();
+  expect(batcher.stats()).toMatchObject({ batched: 0, single: 1, reasons: { renderHook: 1 } });
+  expect(mesh.layers.mask).toBe(1);
 });

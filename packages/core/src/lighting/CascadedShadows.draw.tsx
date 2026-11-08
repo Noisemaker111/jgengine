@@ -1,4 +1,5 @@
 // @skill jgengine-world
+import { isNeutralRenderHook, markNeutralRenderHook } from "@jgengine/core/instancing/drawBatches.draw";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
@@ -393,6 +394,8 @@ export function bindCsmMaterials(scene: THREE.Scene, csm: CsmMaterialSetup): () 
       prior.apply(this, args);
       checkSwap();
     };
+    // It only re-patches a swapped material, so a mesh the draw batcher takes (where it does not run) draws the same.
+    if (isNeutralRenderHook(prior)) markNeutralRenderHook(before);
     node.addEventListener("childadded", added);
     node.addEventListener("childremoved", removed);
     if (mesh.isMesh) {

@@ -29,6 +29,24 @@ const SETTLE_PASSES = 90;
 
 const BASE = THREE.Object3D.prototype;
 
+type RenderHook = THREE.Object3D["onBeforeRender"];
+const neutralRenderHooks = new WeakSet<RenderHook>();
+
+/**
+ * Declare a per-mesh `onBeforeRender` that changes nothing the draw reads (it only watches, as the
+ * cascaded shadows' material-swap check does), so a mesh carrying it can still draw through a batch,
+ * where the hook does not run. Mark it only when the hook it chains is itself neutral.
+ * @internal
+ */
+export function markNeutralRenderHook(hook: RenderHook): void {
+  neutralRenderHooks.add(hook);
+}
+
+/** Whether a mesh's `onBeforeRender` is three's own or one marked with {@link markNeutralRenderHook}. @internal */
+export function isNeutralRenderHook(hook: RenderHook): boolean {
+  return hook === BASE.onBeforeRender || neutralRenderHooks.has(hook);
+}
+
 interface BatchGroup {
   readonly key: string;
   readonly mesh: THREE.BatchedMesh;
@@ -211,7 +229,7 @@ function batchKeyOf(mesh: THREE.Mesh): string | null {
   if (mesh.layers.mask !== DEFAULT_MASK) return reject("layers");
   if (!mesh.frustumCulled) return reject("unculled");
   if (!mesh.matrixWorldAutoUpdate) return reject("handWorldMatrix");
-  if (mesh.onBeforeRender !== BASE.onBeforeRender || mesh.onAfterRender !== BASE.onAfterRender) return reject("renderHook");
+  if (!isNeutralRenderHook(mesh.onBeforeRender) || mesh.onAfterRender !== BASE.onAfterRender) return reject("renderHook");
   if (mesh.onBeforeShadow !== BASE.onBeforeShadow || mesh.onAfterShadow !== BASE.onAfterShadow) return reject("shadowHook");
   if (mesh.customDepthMaterial !== undefined || mesh.customDistanceMaterial !== undefined) return reject("customDepth");
   if (mesh.matrixWorld.determinant() <= 0) return reject("mirrored");
@@ -287,7 +305,7 @@ export class DrawBatcher implements ShownMeshVisitor {
       entry.renderOrder = mesh.renderOrder;
       this.place(entry);
       moved = true;
-    } else if (entry.drifted() || mesh.layers.mask !== BATCHED_SOURCE_MASK || mesh.onBeforeRender !== BASE.onBeforeRender || !mesh.frustumCulled) {
+    } else if (entry.drifted() || mesh.layers.mask !== BATCHED_SOURCE_MASK || !isNeutralRenderHook(mesh.onBeforeRender) || !mesh.frustumCulled) {
       this.unplace(entry);
       entry.geometry = mesh.geometry;
       entry.material = mesh.material;
