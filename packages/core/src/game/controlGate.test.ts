@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test";
 
 import type { GameContext } from "../runtime/gameContext";
 import {
-  PLAY_CONTROLS_STORE_KEY, actionContextStack, activeActionCodes,
-  playControlsActive, setPlayControlsActive, suspendPlayControls,
+  PLAY_CONTROLS_STORE_KEY, actionContextStack, activeActionCodes, bindingOverrides,
+  playControlsActive, rebindAction, reboundActionCodes, setBindingOverrides, setPlayControlsActive, suspendPlayControls,
 } from "./controlGate";
 
 function fakeCtx(): GameContext {
@@ -97,5 +97,27 @@ describe("controlGate", () => {
     expect(playControlsActive(replacement)).toBe(false);
     releaseReplacement();
     expect(playControlsActive(replacement)).toBe(true);
+  });
+
+  test("a rebind drives the live codes under any menu context, wakes listeners, and undoes with null", () => {
+    const ctx = fakeCtx();
+    const base = { jump: ["Space"], fire: { codes: ["mouse0"], locked: true } } as unknown as Parameters<typeof activeActionCodes>[1];
+    const stack = actionContextStack(ctx);
+    let heard = 0;
+    stack.subscribe(() => { heard += 1; });
+    const before = stack.version();
+    rebindAction(ctx, "jump", ["KeyJ"]);
+    expect(heard).toBe(1);
+    expect(stack.version()).toBeGreaterThan(before);
+    expect(activeActionCodes(ctx, base).jump).toEqual(["KeyJ"]);
+    stack.push({ id: "map", codes: { map: ["KeyM"] }, passthrough: true });
+    expect(activeActionCodes(ctx, base).jump).toEqual(["KeyJ"]);
+    rebindAction(ctx, "fire", ["KeyF"]);
+    expect(reboundActionCodes(ctx, base).fire).toEqual(base.fire);
+    rebindAction(ctx, "jump", null);
+    expect(bindingOverrides(ctx)).toEqual({ fire: ["KeyF"] });
+    expect(activeActionCodes(ctx, base).jump).toEqual(["Space"]);
+    setBindingOverrides(ctx, {});
+    expect(bindingOverrides(ctx)).toEqual({});
   });
 });

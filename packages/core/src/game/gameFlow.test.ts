@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import type { GameContext } from "../runtime/gameContext";
-import { continueGame, createGameFlowSystem, newGame, openTitle, playGame, saveNow, togglePause } from "./gameFlow";
+import { continueGame, createGameFlowSystem, menuPane, newGame, openTitle, playGame, saveNow, showMenuPane, togglePause } from "./gameFlow";
 import { gamePhase } from "./gamePhase";
 
 function fakeCtx(saved = false) {
@@ -41,6 +41,23 @@ describe("gameFlow", () => {
     expect(running()).toBe(true);
   });
 
+  test("a menu pane shows on the title and pause menus only, and play closes it", () => {
+    const { ctx } = fakeCtx();
+    openTitle(ctx);
+    expect(menuPane(ctx)).toBeNull();
+    showMenuPane(ctx, "credits");
+    expect(menuPane(ctx)).toBe("credits");
+    playGame(ctx);
+    expect(menuPane(ctx)).toBeNull();
+    showMenuPane(ctx, "controls");
+    expect(menuPane(ctx)).toBeNull();
+    togglePause(ctx);
+    showMenuPane(ctx, "controls");
+    expect(menuPane(ctx)).toBe("controls");
+    togglePause(ctx);
+    expect(menuPane(ctx)).toBeNull();
+  });
+
   test("a second new game calls restart instead of reusing the world", async () => {
     const { ctx, calls } = fakeCtx();
     let restarts = 0;
@@ -70,7 +87,7 @@ describe("gameFlow", () => {
     (ctx.game as unknown as { commands: unknown }).commands = { define: (id: string, c: unknown) => commands.set(id, c) };
     const system = createGameFlowSystem({ checkpointEverySeconds: 2 });
     system.create?.(ctx);
-    expect([...commands.keys()].sort()).toEqual(["pause", "start"]);
+    expect([...commands.keys()].sort()).toEqual(["continue", "menu.pane", "pause", "save", "settings.rebind", "start"]);
     expect(gamePhase(ctx)).toBe("menu");
     system.update?.(ctx, 5);
     expect(calls).not.toContain("checkpoint");

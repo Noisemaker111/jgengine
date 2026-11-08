@@ -215,6 +215,12 @@ export function checkReleaseAncestor(input: {
   ref?: string;
   target?: string | undefined;
   git?: GitRunner;
+  /**
+   * Publishing, not cutting: a target already on `ref` landed through it, so it holds everything `ref`
+   * had when it merged, and `ref` moving on since is no reason to refuse it. Publish refused 0.54.0
+   * because #3056 merged during main's CI; a cut still needs `ref`'s tip.
+   */
+  landed?: boolean;
 }): AncestorReport {
   const git = input.git ?? runGit;
   const ref = input.ref ?? "origin/beta";
@@ -231,6 +237,9 @@ export function checkReleaseAncestor(input: {
     return { ...base, ok: false, missing: [], reason: `cannot resolve ${ref}, so the release cannot prove it contains the branch everything lands on` };
   }
   if (git(["merge-base", "--is-ancestor", ref, target], input.cwd).status === 0) {
+    return { ...base, ok: true, missing: [], reason: null };
+  }
+  if (input.landed === true && git(["merge-base", "--is-ancestor", target, ref], input.cwd).status === 0) {
     return { ...base, ok: true, missing: [], reason: null };
   }
   const log = git(["log", "--format=%h %s", `${target}..${ref}`], input.cwd);
@@ -428,8 +437,9 @@ export function waitRequest(args: readonly string[]): WaitRequest | null {
 
 /**
  * `--wait <version>`: the version is already cut and on main. Wait for its Publish run, then deploy
- * jgengine.com from the commit that run published, the same tail `--wait` runs after a cut. A failed
- * deploy is retried by running this again, not by hand.
+ * jgengine.com from the commit that run published: the same tail `--wait` runs after a cut, following
+ * beta when Publish refused a commit beta had passed (0.54.0's resume only waited on main and stopped
+ * there). A failed deploy is retried by running this again, not by hand.
  */
 async function waitForVersion(root: string, version: string, wait: WaitRequest): Promise<never> {
   spawnSync("git", ["fetch", "--quiet", "origin", "main"], { cwd: root, stdio: "ignore", timeout: 20_000 });
@@ -438,11 +448,42 @@ async function waitForVersion(root: string, version: string, wait: WaitRequest):
     console.error(`release: cannot resolve ${wait.sha ?? "origin/main"} to a commit`);
     process.exit(1);
   }
-  const code = await publishThenDeploy(
-    () => awaitPublish({ version, sha, runId: wait.runId, gh: ghIn(root), log: (line) => console.log(line) }),
-    () => deploySite(root, runStep, sha),
+  process.exit(await publishAndDeploy(root, version, sha, wait.runId));
+}
+
+/**
+ * Wait for Publish on `sha` (pushing beta's tip to main and publishing that when beta passed it), then
+ * deploy jgengine.com from the commit that was published. The site deploy runs here, not in CI,
+ * because its build needs game models.
+ */
+async function publishAndDeploy(root: string, version: string, sha: string, runId?: number): Promise<number> {
+  const git = (args: readonly string[]) => spawnSync("git", [...args], { cwd: root, encoding: "utf8" });
+  const gh = ghIn(root);
+  let first = true;
+  let pushedAt: string | undefined;
+  const published = await publishFollowingBeta({
+    sha,
+    // A named run belongs to the first commit only; a commit pushed after it has its own run, created
+    // after the push.
+    publish: (target) => {
+      const run = first ? runId : undefined;
+      first = false;
+      return awaitPublish({ version, sha: target, runId: run, notBefore: pushedAt, gh, log: (line) => console.log(line) });
+    },
+    pushTip: () => {
+      pushedAt = new Date().toISOString();
+      return fastForwardMain(git);
+    },
+    log: (line) => console.log(line),
+  });
+  if (!published.ok) {
+    console.error(`release: ${published.error}`);
+    return 1;
+  }
+  return publishThenDeploy(
+    async () => published.result,
+    () => deploySite(root, runStep, published.sha),
   );
-  process.exit(code);
 }
 
 function resolveCommit(root: string, rev: string): string {
@@ -485,7 +526,6 @@ async function landAndAwait(root: string, version: string, cutFrom: string): Pro
   }
 
   if (mergeThroughQueue(root) === null) process.exit(1);
-  const gh = ghIn(root);
   const forward = fastForwardMain(git);
   if (!forward.ok) {
     console.error(`release: fast-forwarding main failed: ${forward.error}`);
@@ -493,22 +533,7 @@ async function landAndAwait(root: string, version: string, cutFrom: string): Pro
   }
   const back = git(["checkout", "--quiet", cutFrom]);
   if (back.status !== 0) console.error(`release: published, but this checkout did not switch back to ${cutFrom}: ${back.stderr.trim()}`);
-  // The site deploy runs here, not in CI, because its build needs game models.
-  const published = await publishFollowingBeta({
-    sha: forward.sha,
-    publish: (sha) => awaitPublish({ version, sha, gh, log: (line) => console.log(line) }),
-    pushTip: () => fastForwardMain(git),
-    log: (line) => console.log(line),
-  });
-  if (!published.ok) {
-    console.error(`release: ${published.error}`);
-    process.exit(1);
-  }
-  const code = await publishThenDeploy(
-    async () => published.result,
-    () => deploySite(root, runStep, published.sha),
-  );
-  process.exit(code);
+  process.exit(await publishAndDeploy(root, version, forward.sha));
 }
 
 /**

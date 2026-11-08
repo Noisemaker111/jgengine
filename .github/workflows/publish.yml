@@ -57,7 +57,8 @@ jobs:
           SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: bun scripts/check-release-ci.ts --sha "$SHA"
       - name: Refuse to publish a commit behind beta
-        run: bun scripts/check-release-ancestor.ts
+        # A release commit already on beta landed through it; beta moving on since is not a stale cut.
+        run: bun scripts/check-release-ancestor.ts --landed
       - name: Stage the lockstep changelog into each package
         run: for p in core rapier ws sql navbake react convex node shell assets editor github jgengine; do cp CHANGELOG.md "packages/$p/CHANGELOG.md"; done
       - name: Stage per-package skills

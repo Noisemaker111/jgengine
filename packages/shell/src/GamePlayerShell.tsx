@@ -18,7 +18,7 @@ import { activeTouchControlsMode } from "@jgengine/core/input/touchControlsMode"
 import { normalizePointerToAxis, type PointerAxisState } from "@jgengine/core/input/pointerAxis";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { localPlayers } from "@jgengine/core/runtime/localPlayers";
-import { actionContextStack, activeActionCodes } from "@jgengine/core/game/controlGate";
+import { actionContextStack, activeActionCodes, bindingOverrides as gameBindingOverrides, rebindAction as rebindGameAction, setBindingOverrides as seedGameBindingOverrides } from "@jgengine/core/game/controlGate";
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 import { useDisplayProfile } from "@jgengine/core/ui/display.view";
 import { RotateDeviceScreen } from "@jgengine/core/ui/rotateDevice.view";
@@ -28,9 +28,8 @@ import { createSettingsStore } from "@jgengine/core/settings/settingsModel";
 import { parseGraphicsQuality, withGraphicsQualityOverride } from "@jgengine/core/settings/graphicsSettings";
 import {
   applyBindingOverrides,
-  clearBindingOverride,
   loadBindingOverrides,
-  saveBindingOverride,
+  saveBindingOverrides,
   type BindingOverrides,
 } from "@jgengine/core/input/bindingOverrides";
 import {
@@ -207,24 +206,40 @@ export function GamePlayerShell({
     () => applyBindingOverrides(playable.game.input ?? {}, bindingOverrides),
     [playable, bindingOverrides],
   );
+  // The game holds the live rebinds (its `settings.rebind` command and this shell's Controls settings both change
+  // them there); the shell seeds them from storage when a game boots and stores them whenever they change.
   const rebindAction = useCallback(
-    (action: string, code: string) => setBindingOverrides(saveBindingOverride(playable.game.name, action, [code])),
-    [playable],
+    (action: string, code: string) => {
+      if (ctx !== null) rebindGameAction(ctx, action, [code]);
+    },
+    [ctx],
   );
   const resetActionBinding = useCallback(
-    (action: string) => setBindingOverrides(clearBindingOverride(playable.game.name, action)),
-    [playable],
+    (action: string) => {
+      if (ctx !== null) rebindGameAction(ctx, action, null);
+    },
+    [ctx],
   );
+  useLayoutEffect(() => {
+    if (ctx !== null) seedGameBindingOverrides(ctx, loadBindingOverrides(playable.game.name));
+  }, [ctx, playable]);
   const contextStack = ctx === null ? null : actionContextStack(ctx);
   const contextVersion = useSyncExternalStore(
     contextStack?.subscribe ?? NO_SUBSCRIBE,
     contextStack?.version ?? ZERO_VERSION,
     contextStack?.version ?? ZERO_VERSION,
   );
+  useEffect(() => {
+    if (ctx === null) return;
+    const live = gameBindingOverrides(ctx);
+    if (live === bindingOverrides) return;
+    setBindingOverrides(live);
+    saveBindingOverrides(playable.game.name, live);
+  }, [ctx, playable, contextVersion, bindingOverrides]);
   const activeInput = useMemo(
-    () => (ctx === null ? effectiveInput : activeActionCodes(ctx, effectiveInput)),
+    () => (ctx === null ? effectiveInput : activeActionCodes(ctx, playable.game.input ?? {})),
     // contextVersion re-derives the layered map when a context is pushed or popped mid-game.
-    [ctx, effectiveInput, contextVersion],
+    [ctx, playable, effectiveInput, contextVersion],
   );
   const activeBindingMap = useMemo(() => toActionStateBindingMap(withTouchCodes(activeInput)), [activeInput]);
   // One tracker per context, rebound in place so keys held across a context swap stay held.

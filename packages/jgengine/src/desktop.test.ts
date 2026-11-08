@@ -351,6 +351,12 @@ describe("buildPlan + writeStaging", () => {
     expect(lib).toContain("--disable-gpu-vsync --disable-frame-rate-limit");
     // Any browser argument replaces wry's defaults, so the uncapped launch must carry them itself.
     expect(lib).toContain("--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection");
+    // The player's saved choices reach the window at launch, and the page learns how it presents.
+    expect(lib).toContain('const FRAME_RATE_FILE: &str = "frame-rate.txt";');
+    expect(lib).toContain("let uncapped = forced || saved == \"uncapped\";");
+    expect(lib).toContain(".fullscreen(fullscreen)");
+    expect(lib).toContain("generate_handler![set_frame_rate, set_fullscreen, steam_overlay]");
+    expect(lib).toContain("__JG_DESKTOP__");
   });
 
   test("a diagnostic build asks for source maps through the project's own build script too", () => {

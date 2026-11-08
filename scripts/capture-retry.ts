@@ -70,3 +70,58 @@ export function retrySettleMs(attempt: number, baseMs = 1_500): number {
   const clampedBase = Number.isFinite(baseMs) && baseMs > 0 ? baseMs : 1_500;
   return clampedBase * clampedAttempt;
 }
+
+/** CPU time across every core at one moment; two of them say how busy the PC was in between. */
+export interface CpuSample {
+  idle: number;
+  total: number;
+}
+
+/** Share of the PC's CPU in use between two samples, 0 to 100. */
+export function cpuBusyPercent(from: CpuSample, to: CpuSample): number {
+  const total = to.total - from.total;
+  if (!(total > 0)) return 0;
+  return Math.round(Math.min(100, Math.max(0, (1 - (to.idle - from.idle) / total) * 100)));
+}
+
+/** A readiness wait on a PC this busy gets one more window before it fails. */
+export const BUSY_PC_PERCENT = 80;
+
+/** What the page showed when its readiness wait ran out. */
+export interface ReadinessTimeout {
+  waitedMs: number;
+  /** `data-jg-capture` when the wait ended; null when the page never set it. */
+  status: string | null;
+  /** The page's address; a `chrome-error://` page means the document itself never loaded. */
+  href: string | null;
+  /** The URL the capture opened. */
+  url: string;
+  cpuBusy: number;
+}
+
+/**
+ * The one line a readiness timeout fails with: what the page was doing and how busy the PC was, so
+ * a slow PC, a page that never loaded and a page stuck mid-boot read differently. Keeps the
+ * `timed out waiting for data-jg-capture` marker the stale-page retry matches.
+ */
+export function readinessTimeoutLine(timeout: ReadinessTimeout): string {
+  const seconds = Math.round(timeout.waitedMs / 1000);
+  const page = timeout.href?.startsWith("chrome-error://")
+    ? `the page never loaded: nothing answered at ${originOf(timeout.url)}, so the dev server is gone`
+    : timeout.status === null
+      ? "the page never started the capture handshake (no data-jg-capture), so it is still loading its code or is not a jgengine page"
+      : `the page was still "${timeout.status}"`;
+  const pc = timeout.cpuBusy >= BUSY_PC_PERCENT
+    ? `; the PC's CPU was ${timeout.cpuBusy}% busy throughout, so rerun when it is quieter or pass a longer --timeout`
+    : `; the PC's CPU was ${timeout.cpuBusy}% busy`;
+  return `timed out waiting for data-jg-capture=ready after ${seconds}s: ${page}${pc}`;
+}
+
+function originOf(url: string): string {
+  if (url.length === 0) return "the page's address";
+  try {
+    return new URL(url).origin;
+  } catch {
+    return url;
+  }
+}

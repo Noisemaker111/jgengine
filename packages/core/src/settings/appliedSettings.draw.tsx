@@ -14,6 +14,7 @@ import {
 import type { GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
 import { readGraphicsSettings, type GraphicsProfileOverrides } from "@jgengine/core/settings/graphicsSettings";
 import { readFrameRateLimit } from "@jgengine/core/settings/frameRateLimit";
+import { readDesktopShell, syncDesktopSettings } from "@jgengine/core/settings/desktopShell";
 
 import {
   DEFAULT_TOUCH_JOYSTICK_VARIANT,
@@ -77,6 +78,8 @@ export function useGraphicsSettings(
   overrides?: GraphicsProfileOverrides,
 ): AppliedGraphicsSettings {
   const rev = useSettingsRevision(store);
+  // A desktop build's saved Frame rate and Display mode decide how it launched; the store follows them.
+  useEffect(() => syncDesktopSettings(store, readDesktopShell()), [store]);
   // Effects rebuild on identity change; a fresh object each render recompiled the post chain every frame.
   return useMemo(() => {
     const { quality, profile } = readGraphicsSettings(store, overrides);

@@ -4,7 +4,7 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { join } from "node:path";
 
-import { brokerStatusOrNull, captureWaitMs, ensureBroker, stopBroker, treeFingerprint } from "./devBrokerClient";
+import { brokerStatusOrNull, captureQueueLine, captureWaitMs, ensureBroker, stopBroker, treeFingerprint } from "./devBrokerClient";
 
 async function freePort(): Promise<number> {
   return new Promise((resolve) => {
@@ -76,4 +76,11 @@ describe("broker client", () => {
       else process.env["JG_BROKER_PORT"] = before;
     }
   }, 30_000);
+});
+
+test("a run queued for the shared browser names who holds it, so a wait never reads as a hang", () => {
+  expect(captureQueueLine({ capture: { holders: ["shoot-dev.ts in C:/w/a (pid 7)"], queued: ["perf-play.ts in C:/w/b (pid 8)"] } })).toBe(
+    "held by shoot-dev.ts in C:/w/a (pid 7); 1 in the queue",
+  );
+  expect(captureQueueLine({ capture: { holders: [], queued: [] } })).toContain("nobody holds it yet");
 });

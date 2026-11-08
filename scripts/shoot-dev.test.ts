@@ -51,4 +51,10 @@ describe("shoot CLI", () => {
     expect(run.stderr).toContain("--site renders a plain web page");
     expect(run.stderr).toContain("--url http://127.0.0.1:<port>/?game=<game>");
   }, 60_000);
+
+  test("refuses --quality on the HUD-only default mode before any boot, naming the mode that has a scene", () => {
+    const run = spawnSync(process.execPath, [join(import.meta.dir, "shoot-dev.ts"), "demo", "--quality", "ultra"], { encoding: "utf8", timeout: 30_000 });
+    expect(run.status).not.toBe(0);
+    expect(run.stderr).toContain("--mode ui (the default) is a HUD-only preview with no 3D scene. Add --mode play.");
+  }, 60_000);
 });

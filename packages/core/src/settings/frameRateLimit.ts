@@ -1,7 +1,14 @@
+import type { DesktopFrameRate, DesktopPresentMode } from "./desktopShell";
 import { SETTING_IDS, type SettingOption, type SettingsStore } from "./settingsModel";
 
 /** Stored value for "render every display refresh" — the browser's vsync-locked rate. */
 export const FRAME_RATE_LIMIT_DISPLAY = "display";
+
+/**
+ * Stored value for "present without the display's vsync". Only a desktop build (`jgengine desktop`)
+ * offers it: a browser always presents on vsync, and WebView2 takes the flags at launch.
+ */
+export const FRAME_RATE_LIMIT_UNCAPPED = "uncapped";
 
 /**
  * Frame-rate limit choices. Browsers always present on the display's vsync, so the uncapped
@@ -15,7 +22,25 @@ export const FRAME_RATE_LIMIT_OPTIONS: readonly SettingOption[] = [
   { value: "144", label: "144" },
 ];
 
-/** The player's frame-rate cap in frames per second, or 0 for the display rate. */
+/**
+ * The frame-rate limit choices for this page: the browser's list, or on a desktop build "Match
+ * display (V-Sync)", the caps and "Uncapped". A choice that switches vsync says it applies after a
+ * restart, since WebView2 takes the flags only at launch.
+ */
+export function frameRateLimitOptions(desktop: DesktopFrameRate | null): readonly SettingOption[] {
+  if (desktop === null) return FRAME_RATE_LIMIT_OPTIONS;
+  const note = (mode: DesktopPresentMode): string => {
+    if (desktop.running === mode) return "";
+    return desktop.forced ? " (not while --uncapped)" : " (after restart)";
+  };
+  return [
+    { value: FRAME_RATE_LIMIT_DISPLAY, label: `Match display (V-Sync)${note("vsync")}` },
+    ...FRAME_RATE_LIMIT_OPTIONS.filter((option) => option.value !== FRAME_RATE_LIMIT_DISPLAY),
+    { value: FRAME_RATE_LIMIT_UNCAPPED, label: `Uncapped${note("uncapped")}` },
+  ];
+}
+
+/** The player's frame-rate cap in frames per second, or 0 for the display rate (or uncapped). */
 export function readFrameRateLimit(store: Pick<SettingsStore, "get">): number {
   const raw = store.get(SETTING_IDS.graphicsFrameRateLimit, FRAME_RATE_LIMIT_DISPLAY);
   const fps = Number(raw);

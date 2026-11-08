@@ -49,3 +49,26 @@ test("a game with no post chain gets no stage rows and keeps every other row", (
   expect(stageRows({ enabled: false, ao: {}, bloom: {}, dof: {} })).toEqual([]);
   expect(otherRows(undefined)).toEqual(otherRows({ ao: {}, bloom: {}, dof: { focus: 12 } }));
 });
+
+test("on a desktop build Graphics adds Display mode and an Uncapped frame rate, and saves both to the shell", () => {
+  const store = createSettingsStore(null);
+  const browserRows = graphicsSettingRows(store, undefined, undefined, false, false, null);
+  expect(browserRows.find((row) => row.id === "graphics.frameRateLimit")?.options?.map((option) => option.value)).not.toContain("uncapped");
+  expect(browserRows.map((row) => row.id)).not.toContain("graphics.displayMode");
+  const saved: unknown[][] = [];
+  Reflect.set(globalThis, "__TAURI_INTERNALS__", { invoke: (cmd: string, args: unknown) => { saved.push([cmd, args]); return Promise.resolve(); } });
+  try {
+    const rows = graphicsSettingRows(store, undefined, undefined, false, false, { frameRate: { running: "vsync", saved: "vsync", forced: false }, fullscreen: true, steamOverlay: false });
+    const display = rows[0];
+    expect(display).toMatchObject({ id: "graphics.displayMode", label: "Display mode", value: "fullscreen" });
+    display?.set("windowed");
+    const row = rows.find((entry) => entry.id === "graphics.frameRateLimit");
+    expect(row?.options?.at(-1)).toEqual({ value: "uncapped", label: "Uncapped (after restart)" });
+    row?.set("uncapped");
+    expect(store.get("graphics.frameRateLimit", "display")).toBe("uncapped");
+    expect(store.get("graphics.displayMode", "fullscreen")).toBe("windowed");
+    expect(saved).toEqual([["set_fullscreen", { fullscreen: false }], ["set_frame_rate", { mode: "uncapped" }]]);
+  } finally {
+    Reflect.deleteProperty(globalThis, "__TAURI_INTERNALS__");
+  }
+});

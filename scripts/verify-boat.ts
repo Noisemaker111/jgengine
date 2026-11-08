@@ -29,6 +29,9 @@ import type { RunStepsOptions, ScheduledStep, StepResult } from "./stepScheduler
 
 /** A test file that imports the CI skip for downloaded models (`games/shared/assetTest.ts`). */
 export const MODEL_TEST_SOURCE = /from\s+["'][^"']*\/assetTest(\.ts)?["']/;
+
+/** Why a test that reads this PC's downloaded models runs here: `verify:fast` links those models first. */
+export const MODEL_TEST_REASON = "reads this PC's downloaded models (skipped in CI)";
 /** A test file that compares `process.platform` with "win32": it checks something only Windows has. */
 export const WINDOWS_TEST_SOURCE = /process\.platform\s*[!=]==?\s*["']win32["']|["']win32["']\s*[!=]==?\s*process\.platform/;
 
@@ -442,7 +445,7 @@ export function localTestFiles(root: string, files: readonly string[], read: (pa
     } catch {
       continue;
     }
-    if (MODEL_TEST_SOURCE.test(source)) local.set(file, "reads this PC's downloaded models (skipped in CI)");
+    if (MODEL_TEST_SOURCE.test(source)) local.set(file, MODEL_TEST_REASON);
     else if (WINDOWS_TEST_SOURCE.test(source)) local.set(file, "checks something only Windows has");
   }
   return local;

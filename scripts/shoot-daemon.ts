@@ -5,8 +5,10 @@
  *
  * Every capture lane (shoot, drive, perf) acquires it through
  * {@link acquireWarmCapture}: reuse a live one, start one when none is running,
- * replace one that serves another commit, and fall back to a direct launch when
- * it cannot be had. `--cold` skips it entirely.
+ * replace one that serves another commit, and start it once more when that fails.
+ * A daemon that cannot be had, or dies mid-run twice, fails the run with a
+ * `daemon failure:` line naming why; it never turns into a silent direct launch.
+ * `--cold` skips it entirely.
  *
  *   bun run shoot <game> --mode play   # starts or reuses the daemon, then attaches
  *   bun run shoot <game> --cold        # no daemon: clean boot for evidence runs
@@ -49,8 +51,8 @@ import {
   type ChromeProcess,
   type EnsureDevServerResult,
 } from "./browser-lib";
-import { brokerEnabled } from "./devBroker";
-import { brokerCaptureTurn, brokerChrome } from "./devBrokerClient";
+import { brokerEnabled, brokerLogPath } from "./devBroker";
+import { brokerCaptureTurn, brokerChrome, brokerStatusOrNull } from "./devBrokerClient";
 import { localOk } from "./localhostHttp";
 import { detail } from "./verbosity";
 
@@ -236,6 +238,17 @@ async function touchDaemonState(cwd: string): Promise<void> {
 
 export type ShootDaemonTarget = "dev" | "web";
 
+/** The prefix of every line that reports a warm daemon failing a run: grep it in any run's output. */
+export const DAEMON_FAILURE = "daemon failure:";
+
+/** A warm daemon that could not be had even after one restart. The lane exits nonzero with this message. */
+export class DaemonUnavailable extends Error {
+  constructor(cause: string) {
+    super(`${DAEMON_FAILURE} ${cause}. Pass --cold for a deliberate direct launch.`);
+    this.name = "DaemonUnavailable";
+  }
+}
+
 /** What a lane got when it asked for a warm capture. */
 export interface WarmCapture {
   /** The daemon to attach to, or null when this run owns its own Chrome. */
@@ -280,10 +293,11 @@ export interface AcquireWarmCaptureOptions {
 }
 
 /**
- * The one decision every capture lane makes: attach to the daemon, start it, or
- * boot alone. Says which happened and how long it took: a routine reuse or start only
- * under --verbose, a fallback always. It never waits on a daemon that is not there — a
- * failure to provide one is a printed fallback to the direct launch, not a retry.
+ * The one decision every capture lane makes: attach to the daemon or start it. Says which
+ * happened and how long it took (only under --verbose; a failure always). A daemon that will
+ * not come up gets one more start, said in a `daemon failure:` line; when that fails too it
+ * throws {@link DaemonUnavailable}, never a silent direct launch. `cold` (`--cold`, or a run
+ * that needs its own browser) is the only way to boot alone.
  */
 export async function acquireWarmCapture(options: AcquireWarmCaptureOptions = {}): Promise<WarmCapture> {
   const cwd = options.cwd ?? process.cwd();
@@ -305,28 +319,49 @@ export async function acquireWarmCapture(options: AcquireWarmCaptureOptions = {}
 
   const broker = options.broker === undefined ? (brokerEnabled() ? brokerChrome : null) : options.broker;
   if (broker !== null) {
+    const shared = async (): Promise<WarmCapture | null> => {
+      const granted = await broker(cwd);
+      if (granted === null) return null;
+      const state: ShootDaemonState = {
+        identity: checkoutIdentity(cwd),
+        chromePort: granted.chromePort,
+        head: head(cwd),
+        startedAt: new Date().toISOString(),
+        broker: true,
+      };
+      return done(state, granted.started ? "cold" : "warm", `${granted.started ? "cold: started" : "warm: reused"} the shared browser :${granted.chromePort} (${elapsed()}s)`, true);
+    };
+    let got: WarmCapture | null;
     try {
-      const shared = await broker(cwd);
-      if (shared !== null) {
-        const state: ShootDaemonState = {
-          identity: checkoutIdentity(cwd),
-          chromePort: shared.chromePort,
-          head: head(cwd),
-          startedAt: new Date().toISOString(),
-          broker: true,
-        };
-        return done(state, shared.started ? "cold" : "warm", `${shared.started ? "cold: started" : "warm: reused"} the shared browser :${shared.chromePort} (${elapsed()}s)`, true);
-      }
+      got = await shared();
     } catch (error) {
-      console.error(`broker: no shared browser (${reason(error)}) — trying this checkout's daemon`);
+      console.error(`${DAEMON_FAILURE} the broker gave no shared browser (${reason(error)}) — asking once more`);
+      try {
+        got = await shared();
+      } catch (again) {
+        throw new DaemonUnavailable(`the broker gave no shared browser twice (${reason(again)}; log ${brokerLogPath()})`);
+      }
     }
+    // Null: the broker is off for this run and already said why; this checkout's daemon serves it.
+    if (got !== null) return got;
   }
+
+  /** The one retry: start the daemon again, or fail naming both causes. */
+  const startOnce = async (failure: string): Promise<WarmCapture> => {
+    console.error(`${DAEMON_FAILURE} ${failure} — starting it once more`);
+    try {
+      const state = await start(cwd);
+      return done(state, "cold", `cold: started :${state.chromePort} (${elapsed()}s)`);
+    } catch (error) {
+      throw new DaemonUnavailable(`${failure}, and starting it again failed (${reason(error)})`);
+    }
+  };
 
   let live: ShootDaemonState | null = null;
   try {
     live = await probe(cwd);
   } catch (error) {
-    return done(null, "cold", `cold: could not read the daemon (${reason(error)}) — direct launch, no retry`);
+    return startOnce(`could not read the daemon (${reason(error)})`);
   }
 
   if (live !== null) {
@@ -335,7 +370,7 @@ export async function acquireWarmCapture(options: AcquireWarmCaptureOptions = {}
       try {
         await stop(cwd);
       } catch (error) {
-        return done(null, "cold", `cold: a stale daemon would not stop (${reason(error)}) — direct launch, no retry`);
+        return startOnce(`a stale daemon would not stop (${reason(error)})`);
       }
       console.error(
         `cold: replaced daemon on :${live.chromePort} serving ${shortRevision(live.head)}, engine is ${shortRevision(current)}`,
@@ -349,7 +384,7 @@ export async function acquireWarmCapture(options: AcquireWarmCaptureOptions = {}
     const state = await start(cwd);
     return done(state, "cold", `cold: started :${state.chromePort} (${elapsed()}s)`, true);
   } catch (error) {
-    return done(null, "cold", `cold: daemon unavailable (${reason(error)}) — direct launch, no retry`);
+    return startOnce(`the daemon would not start (${reason(error)})`);
   }
 }
 
@@ -360,7 +395,7 @@ function reason(error: unknown): string {
 
 /**
  * True when a run that attached to `daemon` then failed, and the daemon is gone:
- * the failure is explained by the daemon dying, so the lane may boot once by itself.
+ * the failure is explained by the daemon dying, so the lane restarts it once.
  */
 export async function daemonDiedUnder(daemon: ShootDaemonState | null, cwd = process.cwd()): Promise<boolean> {
   if (daemon === null) return false;
@@ -370,6 +405,71 @@ export async function daemonDiedUnder(daemon: ShootDaemonState | null, cwd = pro
 async function daemonAnswers(daemon: ShootDaemonState, cwd: string): Promise<boolean> {
   if (daemon.broker !== true) return isDaemonLive(cwd);
   return localOk(`http://127.0.0.1:${daemon.chromePort}/json/version`, 800).catch(() => false);
+}
+
+/** Which part of a dead daemon went, as precisely as this machine can tell. */
+export async function describeDaemonDeath(daemon: ShootDaemonState): Promise<string> {
+  if (daemon.broker !== true) {
+    return `this checkout's daemon Chrome :${daemon.chromePort}${daemon.chromePid === undefined ? "" : ` (pid ${daemon.chromePid})`} stopped answering`;
+  }
+  const status = await brokerStatusOrNull();
+  return status === null
+    ? `the dev broker died, taking the shared browser :${daemon.chromePort} and its dev servers with it (log ${brokerLogPath()})`
+    : `the shared browser :${daemon.chromePort} exited while the broker (pid ${status.pid}) kept running (log ${brokerLogPath()})`;
+}
+
+/** Test seams for {@link runWithDaemonRecovery}. */
+export interface DaemonRecoveryOptions {
+  cwd?: string;
+  /** Start or attach to a daemon again. Defaults to {@link acquireWarmCapture}. */
+  acquire?: () => Promise<WarmCapture>;
+  died?: (daemon: ShootDaemonState) => Promise<boolean>;
+  describe?: (daemon: ShootDaemonState) => Promise<string>;
+}
+
+/**
+ * Run a capture on the daemon it acquired. When the daemon dies under it, say so in a
+ * `daemon failure:` line, restart the daemon once and run again on the new one. A daemon that
+ * will not restart, or dies again, ends the run with exit 1. It never falls back to a direct
+ * launch, which hid the death and measured a cold browser as if nothing happened.
+ */
+export async function runWithDaemonRecovery(
+  warm: WarmCapture,
+  attempt: (daemon: ShootDaemonState | null, mode: WarmCapture["mode"]) => Promise<number>,
+  options: DaemonRecoveryOptions = {},
+): Promise<number> {
+  const cwd = options.cwd ?? process.cwd();
+  const died = options.died ?? ((daemon: ShootDaemonState) => daemonDiedUnder(daemon, cwd));
+  const describe = options.describe ?? describeDaemonDeath;
+  const acquire = options.acquire ?? (() => acquireWarmCapture({ cwd }));
+  const code = await attempt(warm.daemon, warm.mode);
+  if (warm.daemon === null || code === 0 || !(await died(warm.daemon))) return code;
+  console.error(`${DAEMON_FAILURE} ${await describe(warm.daemon)} mid-run — restarting it once and running again`);
+  let again: WarmCapture;
+  try {
+    again = await acquire();
+  } catch (error) {
+    console.error(error instanceof DaemonUnavailable ? error.message : `${DAEMON_FAILURE} could not restart it (${reason(error)})`);
+    return 1;
+  }
+  const retried = await attempt(again.daemon, again.mode);
+  if (again.daemon !== null && retried !== 0 && (await died(again.daemon))) {
+    console.error(`${DAEMON_FAILURE} ${await describe(again.daemon)} again after the restart — giving up`);
+    return 1;
+  }
+  if (retried === 0) console.error(`daemon recovered: the rerun on the restarted browser passed; the daemon failure above still happened`);
+  return retried;
+}
+
+/** Acquire a warm capture for a lane's entry point, exiting 1 with the failure line when it cannot be had. */
+export async function acquireWarmCaptureOrExit(options: AcquireWarmCaptureOptions = {}): Promise<WarmCapture> {
+  try {
+    return await acquireWarmCapture(options);
+  } catch (error) {
+    if (!(error instanceof DaemonUnavailable)) throw error;
+    console.error(error.message);
+    process.exit(1);
+  }
 }
 
 /**

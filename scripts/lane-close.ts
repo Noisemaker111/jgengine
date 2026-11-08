@@ -26,11 +26,11 @@
 import { spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { assertCheckoutReady } from "./checkout-ready";
 import { gitHub, repoFromRemote } from "./github";
 import { parseLock, pidIsAlive, staleReason, type LandLock } from "./land";
+import { betaLaneClose, gitIn, landingRoot, landingScript } from "./landing-code";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose, takeVerboseFlag } from "./verbosity";
 import { EXIT_BOAT_SPENT } from "./verify-boat";
@@ -64,7 +64,7 @@ export const EXIT_ANOTHER_RUN = 4;
 /** The lock file's name inside the worktree's git directory. */
 export const LANE_LOCK_FILE = "lane-close.lock";
 
-const root = fileURLToPath(new URL("..", import.meta.url));
+const root = landingRoot(import.meta.url);
 
 export interface LaneCloseArgs {
   pr?: number;
@@ -281,7 +281,7 @@ function closeHeldLane(args: LaneCloseArgs, branch: string, io: LaneIo): number 
   stage("lane:close: land --commit");
   const landArgs = [
     "run",
-    "scripts/land.ts",
+    landingScript(import.meta.url, "land.ts"),
     "--commit",
     ...(args.allow ?? []).flatMap((path) => ["--allow", path]),
     ...(args.messages ?? []).flatMap((message) => ["-m", message]),
@@ -353,7 +353,7 @@ function closeHeldLane(args: LaneCloseArgs, branch: string, io: LaneIo): number 
  * working instead of sitting in the queue; `background await` blocks only when it asks.
  */
 export function queueInBackground(pr: number, io: LaneIo): string {
-  const started = io.sh(["run", "background", "start", "bun", "scripts/land-queue.ts", "--pr", String(pr)], false);
+  const started = io.sh(["run", "background", "start", "bun", landingScript(import.meta.url, "land-queue.ts"), "--pr", String(pr)], false);
   const id = lastLine(started.stdout);
   if (started.status !== 0 || id.length === 0) {
     return `lane:close: #${pr} waits in the landing queue; ask for its checks with bun run ci:status --pr ${pr}`;
@@ -387,12 +387,23 @@ function filesChanged(io: LaneIo): string {
 
 /** The landing modes besides closing this lane: `--batch` and `--queue` hand the rest of argv to their script. */
 export function landingMode(argv: readonly string[]): { script: string; rest: string[] } | null {
-  if (argv[0] === "--batch") return { script: "scripts/land-batch.ts", rest: argv.slice(1) };
-  if (argv[0] === "--queue") return { script: "scripts/land-queue.ts", rest: argv.slice(1) };
+  if (argv[0] === "--batch") return { script: landingScript(import.meta.url, "land-batch.ts"), rest: argv.slice(1) };
+  if (argv[0] === "--queue") return { script: landingScript(import.meta.url, "land-queue.ts"), rest: argv.slice(1) };
   return null;
 }
 
 function main(rawArgv: readonly string[]): void {
+  // Every mode, --help included, runs beta's current landing code, so a landing fix reaches lanes
+  // made before it (scripts/landing-code.ts).
+  const beta = betaLaneClose(import.meta.url, root, gitIn(root), (line) => console.log(line));
+  if (beta !== null && "problem" in beta) {
+    console.error(`lane:close: cannot take beta's landing code: ${beta.problem}`);
+    process.exit(EXIT_CANNOT_ANSWER);
+  }
+  if (beta !== null) {
+    const run = spawnSync(process.execPath, [beta.script, ...rawArgv], { cwd: root, stdio: "inherit" });
+    process.exit(run.status ?? 1);
+  }
   const argv = takeVerboseFlag(rawArgv);
   const mode = landingMode(argv);
   if (mode !== null) {
