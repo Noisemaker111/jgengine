@@ -528,10 +528,12 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     // Who asked for the link: a link no draw in the frame used (a bake or warmup linking ahead) is
     // otherwise unnamed, and the GPU process may stall on it a frame later. Links are rare.
     // three's own link path is about ten frames deep: past the default stack depth.
-    const depth = Error.stackTraceLimit;
-    Error.stackTraceLimit = 40;
+    // stackTraceLimit is V8's, absent from the DOM-only type libs some packages build with.
+    const v8Error = Error as { stackTraceLimit?: number | undefined };
+    const depth = v8Error.stackTraceLimit;
+    v8Error.stackTraceLimit = 40;
     const stack = new Error().stack ?? "";
-    Error.stackTraceLimit = depth;
+    v8Error.stackTraceLimit = depth;
     const caller = linkCaller(stack);
     const links = current.links ??= [];
     if (caller !== null && links.length < FRAME_RETENTION_LIMIT) links.push(caller);

@@ -290,6 +290,7 @@
 - `Hitch` (interface): interface Hitch — A frame over {@link HITCH_MS}, with the cause read from what happened inside it.
 - `HitchScript` (interface): interface HitchScript — One script the browser ran inside a slow frame, as its long-animation-frame timing names it.
 - `HitchSession` (interface): interface HitchSession — Every hitch of a play session, not only the frames still in the breakdown's window.
+- `LayoutAttribute` (interface): interface LayoutAttribute — A vertex attribute as three keeps it: plain, or interleaved (its array on `data`).
 - `NamedCost` (interface): interface NamedCost — A named cost over the window: its average per frame and its 95th percentile.
 - `Spread` (interface): interface Spread — Percentiles of one series.
 
