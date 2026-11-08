@@ -42,7 +42,9 @@ describe("parseShadowAuditArgs", () => {
   });
 
   test("reads games, seconds and path, and refuses a bad path", () => {
-    expect(parseShadowAuditArgs(["--games", "deepward,fernwild", "--seconds", "4", "--path", "still"])).toEqual({ games: ["deepward", "fernwild"], seconds: 4, path: "still" });
+    expect(parseShadowAuditArgs(["--games", "deepward,fernwild", "--seconds", "4", "--path", "still"])).toEqual({ games: ["deepward", "fernwild"], seconds: 4, path: "still", renderer: "webgl" });
+    expect(parseShadowAuditArgs(["--renderer", "webgpu"])).toMatchObject({ renderer: "webgpu" });
+    expect(() => parseShadowAuditArgs(["--renderer", "metal"])).toThrow("--renderer must be webgl or webgpu");
     expect(() => parseShadowAuditArgs(["--path", "run"])).toThrow("--path must be walk or still");
     expect(() => parseShadowAuditArgs(["--nope"])).toThrow("unknown argument");
   });
