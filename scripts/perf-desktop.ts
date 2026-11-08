@@ -15,6 +15,7 @@ import { GATE_SIZE } from "./perf-gate";
 import { BACKEND_READING_SCRIPT, gpuErrorLine, gpuErrors, parseSettingSpec, perfSettingsScript, SAMPLE_FRAMES_SCRIPT, summarizeFrameDeltas } from "./perf-play";
 import { renderBreakdownText, type FrameBreakdownSummary } from "../packages/core/src/devtools/frameBreakdown";
 import type { FrameWindow } from "../packages/core/src/devtools/report";
+import type { ShadowCacheStats } from "../packages/core/src/lighting/shadowCache.draw";
 import { readPrivateDesktopMap } from "../packages/jgengine/src/desktopMaps";
 import { parseRendererBackend, type RendererBackend } from "../packages/core/src/settings/rendererBackend";
 
@@ -173,6 +174,8 @@ export interface DesktopRecord {
   breakdown: FrameBreakdownSummary | null;
   /** The backend the run asked for and the one that drew (WebGPU falls back to WebGL where it is missing). */
   backend: { asked: RendererBackend; drawing: RendererBackend; warnings: string[] };
+  /** The shadow cache's counters over the measured window (`window.__jgShadowCache`); null when the page has none. */
+  shadowCache: ShadowCacheStats | null;
 }
 
 /** How a launched app got into its scene, and the tier it reports. */
@@ -256,7 +259,9 @@ export async function launchAndMeasure(args: LaunchArgs, backend: RendererBacken
     const release = await startPath(session, "walk");
     await Bun.sleep(2_000);
     if (!(await resetBreakdown(session))) throw new Error("the page has no frame breakdown; build it with --diagnostics");
+    await session.evaluate<void>("window.__jgShadowCache?.resetStats()");
     const deltas = (await session.evaluate<number[]>(SAMPLE_FRAMES_SCRIPT(args.seconds * 1000), { awaitPromise: true })) ?? [];
+    const shadowCache = (await session.evaluate<ShadowCacheStats | null>("window.__jgShadowCache?.stats() ?? null")) ?? null;
     // Frame callbacks name their source through the private maps the build wrote beside the app.
     const { privateMap } = await privateMapReader(session, args.maps);
     const breakdown = await readBreakdown(session, privateMap);
@@ -281,7 +286,7 @@ export async function launchAndMeasure(args: LaunchArgs, backend: RendererBacken
     }
     const sorted = [...deltas].sort((a, b) => a - b);
     const quantile = (p: number) => sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))] ?? Number.NaN;
-    const record: DesktopRecord = { at: Date.now(), exe: args.exe, clock: args.uncapped ? "uncapped" : "vsync", tier, viewport: viewport ?? "unknown", start, frame, rafP50Ms: quantile(0.5), rafP99Ms: quantile(0.99), breakdown, backend: { asked: backend, ...drew } };
+    const record: DesktopRecord = { at: Date.now(), exe: args.exe, clock: args.uncapped ? "uncapped" : "vsync", tier, viewport: viewport ?? "unknown", start, frame, rafP50Ms: quantile(0.5), rafP99Ms: quantile(0.99), breakdown, backend: { asked: backend, ...drew }, shadowCache };
     if (args.out !== null) {
       const out = desktopOutFor(args, backend);
       mkdirSync(dirname(out), { recursive: true });
@@ -289,6 +294,10 @@ export async function launchAndMeasure(args: LaunchArgs, backend: RendererBacken
     }
     const b = breakdown ?? null;
     console.log(`desktop ${record.clock} ${drew.drawing}: ${frame.fps} fps, frame avg ${frame.avgMs} ms, p95 ${frame.p95Ms} ms, frame p50 ${b?.frame.p50 ?? "?"} ms, CPU p50 ${b?.work.p50 ?? "?"} ms, GPU p50 ${b?.gpu?.p50 ?? "?"} ms, ${tier} tier, ${viewport}, walking; ${start}`);
+    if (shadowCache !== null) {
+      const { passes } = shadowCache;
+      console.log(`shadow cache: ${shadowCache.cpuMs.toFixed(1)} ms in the shadow step over ${deltas.length} frames, ${shadowCache.checks} caster checks, passes full ${passes.full} rebuild ${passes.rebuild} reuse ${passes.reuse} hold ${passes.hold}`);
+    }
     return record;
   });
 }

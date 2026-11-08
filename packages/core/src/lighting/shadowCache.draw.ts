@@ -35,10 +35,6 @@ const enum CasterKind {
   Batched,
 }
 
-/** The node's tracker entry: a symbol slot is the cheapest per-node lookup in a walk over the scene. */
-const ENTRY = Symbol("jg.shadowCaster");
-type WithEntry = THREE.Object3D & { [ENTRY]?: CasterEntry | undefined };
-
 class CasterEntry {
   readonly kind: CasterKind;
   /** What a depth pass reads from the caster, as of its last change (see {@link describeCaster}). */
@@ -446,9 +442,12 @@ function watchBatchEdits(batch: THREE.BatchedMesh): { count: number; release: ()
 
 /**
  * Every drawable in a scene, what its depth pass reads, and whether it has held still long enough to
- * live in the static layers. Membership streams with the scene through child events; a check walks
- * the scene the way three's shadow pass does, skipping hidden subtrees, so its cost follows what can
- * draw rather than everything loaded.
+ * live in the static layers. A check walks the scene the way three's shadow pass does, skipping
+ * hidden subtrees, so its cost follows what can draw rather than everything loaded; a drawable it
+ * reaches for the first time is tracked then, and one that has left the scene is dropped by the
+ * once-a-second sweep. Nothing is written onto the scene's objects: a property or listener added to
+ * every mesh changes the shape the engine's own hot loops see, and three's shadow pass over Fernwild's
+ * 4000 meshes ran 2 ms slower on the desktop app for it.
  * @internal
  */
 export class ShadowCasterTracker {
@@ -462,7 +461,6 @@ export class ShadowCasterTracker {
   /** Casters the last check reached that cast: the ones that stop drawing if a check misses them. */
   private drawn: CasterEntry[] = [];
   private nextDrawn: CasterEntry[] = [];
-  private readonly listeners = new Map<THREE.Object3D, () => void>();
   private readonly scratch: unknown[] = [];
   private readonly stamps: CasterStamps = { materials: new SharedStamps(putMaterial), geometries: new SharedStamps(putGeometry), pass: 0 };
   private readonly stack: THREE.Object3D[] = [];
@@ -473,9 +471,7 @@ export class ShadowCasterTracker {
     /** Called with a static caster's old or new bounds when what it draws changed (null: unbounded). */
     private readonly touch: (sphere: THREE.Sphere | null) => void,
     private readonly now: () => number,
-  ) {
-    this.attach(scene);
-  }
+  ) {}
 
   private track(object: Drawable): CasterEntry {
     const batchEdits = (object as THREE.BatchedMesh).isBatchedMesh === true ? watchBatchEdits(object as THREE.BatchedMesh) : null;
@@ -487,43 +483,22 @@ export class ShadowCasterTracker {
     entry.changedAt = this.now();
     entry.alwaysDynamic = alwaysDynamic(object);
     this.entries.set(object, entry);
-    (object as WithEntry)[ENTRY] = entry;
     this.dynamic.add(entry);
     return entry;
   }
 
-  private untrack(object: THREE.Object3D): void {
-    const entry = this.entries.get(object);
-    if (entry === undefined) return;
-    this.entries.delete(object);
-    // Cleared rather than deleted: deleting a property sends the object's shape to a slow dictionary.
-    (object as WithEntry)[ENTRY] = undefined;
+  /** Drop a caster that left the scene; the check that missed it already stopped it drawing. */
+  private untrack(entry: CasterEntry): void {
+    this.entries.delete(entry.object);
     this.dynamic.delete(entry);
     entry.batchEdits?.release();
     if (entry.isStatic && entry.drawable) this.touch(entry.sphere);
   }
 
-  private attach(node: THREE.Object3D): void {
-    if (this.listeners.has(node)) return;
-    if (isDrawable(node)) this.track(node);
-    const added = ({ child }: THREE.Object3DEventMap["childadded"]) => this.attach(child);
-    const removed = ({ child }: THREE.Object3DEventMap["childremoved"]) => this.detach(child);
-    node.addEventListener("childadded", added);
-    node.addEventListener("childremoved", removed);
-    this.listeners.set(node, () => {
-      node.removeEventListener("childadded", added);
-      node.removeEventListener("childremoved", removed);
-    });
-    for (const child of node.children) this.attach(child);
-  }
-
-  private detach(node: THREE.Object3D): void {
-    const off = this.listeners.get(node);
-    if (off === undefined) return;
-    off();
-    this.listeners.delete(node);
-    this.untrack(node);
-    for (const child of node.children) this.detach(child);
+  private inScene(object: THREE.Object3D): boolean {
+    let at: THREE.Object3D | null = object;
+    while (at !== null && at !== this.scene) at = at.parent;
+    return at !== null;
   }
 
   /** A caster that changed what it draws: off the static layers if it was on them, stamped now. */
@@ -559,12 +534,9 @@ export class ShadowCasterTracker {
         const child = children[index]!;
         if (child.visible) stack.push(child);
       }
-      let entry = (node as WithEntry)[ENTRY];
-      if (entry === undefined) {
-        if (!isDrawable(node)) continue;
-        // Reached without a child event (its parent's `children` was edited directly): track it now.
-        entry = this.track(node);
-      }
+      if (!isDrawable(node)) continue;
+      let entry = this.entries.get(node);
+      if (entry === undefined) entry = this.track(node);
       entry.seen = pass;
       const casts = node.castShadow;
       // A mesh that casts nothing draws nothing whatever else changes; turning `castShadow` on is the change.
@@ -595,6 +567,8 @@ export class ShadowCasterTracker {
     this.drawn = next;
     if (now - this.lastPromotion >= PROMOTION_INTERVAL_MS) {
       this.lastPromotion = now;
+      // Not reached this check and no longer under the scene: removed, so forgotten.
+      for (const entry of this.entries.values()) if (entry.seen !== pass && !this.inScene(entry.object)) this.untrack(entry);
       for (const entry of this.dynamic) {
         if (entry.alwaysDynamic || now - entry.changedAt < SHADOW_STATIC_AFTER_MS) continue;
         entry.isStatic = true;
@@ -654,12 +628,7 @@ export class ShadowCasterTracker {
   }
 
   dispose(): void {
-    for (const off of this.listeners.values()) off();
-    this.listeners.clear();
-    for (const entry of this.entries.values()) {
-      entry.batchEdits?.release();
-      (entry.object as WithEntry)[ENTRY] = undefined;
-    }
+    for (const entry of this.entries.values()) entry.batchEdits?.release();
     this.entries.clear();
     this.dynamic.clear();
     this.drawn.length = 0;

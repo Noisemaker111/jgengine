@@ -382,6 +382,38 @@ describe("shadow cache invalidation", () => {
     w.dispose();
   });
 
+  test("the cache writes nothing onto the scene's objects", () => {
+    // A property or listener on every mesh changes the shape three's own loops see and slows them.
+    const w = world();
+    const group = new THREE.Group();
+    const mesh = box();
+    group.add(mesh);
+    const keysOf = (object: THREE.Object3D) => [...Reflect.ownKeys(object)].map(String).sort();
+    const before = [keysOf(w.scene), keysOf(group), keysOf(mesh)];
+    w.scene.add(group);
+    w.settle();
+    mesh.position.x += 1;
+    w.frame();
+    expect([keysOf(w.scene), keysOf(group), keysOf(mesh)]).toEqual(before);
+    w.dispose();
+  });
+
+  test("a caster removed from the scene is forgotten", () => {
+    const w = world();
+    const keep = box();
+    const gone = box();
+    w.scene.add(keep, gone);
+    w.settle();
+    expect(w.stats().casters).toBe(2);
+    w.scene.remove(gone);
+    w.frame(1100);
+    expectSame(w);
+    w.frame(1100);
+    expect(w.stats().casters).toBe(1);
+    expectSame(w);
+    w.dispose();
+  });
+
   test("a frame where every light draws in full is one call to three's own pass", () => {
     const w = world();
     for (let index = 0; index < 4; index += 1) w.scene.add(box());
