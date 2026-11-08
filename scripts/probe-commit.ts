@@ -63,8 +63,11 @@ if (import.meta.main) {
     console.error("probe: name the commit to capture");
     process.exit(2);
   }
+  // `shoot --at <commit> <game> --out x` hands --out over among shoot's flags; it names the probe's file.
   const outFlag = own.indexOf("--out");
-  const explicitOut = outFlag === -1 ? undefined : own[outFlag + 1];
+  const shootOutFlag = shootArgs.indexOf("--out");
+  const explicitOut = outFlag !== -1 ? own[outFlag + 1] : shootOutFlag !== -1 ? shootArgs[shootOutFlag + 1] : undefined;
+  if (shootOutFlag !== -1) shootArgs.splice(shootOutFlag, 2);
 
   const repoRoot = gitOrThrow(["rev-parse", "--show-toplevel"], process.cwd());
 
