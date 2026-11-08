@@ -388,6 +388,8 @@ export class WebGpuGl extends GlConstants {
   private stagingUsed = 0;
   private ring: GPUBuffer;
   private ringGroups = new Map<number, GPUBindGroup>();
+  /** The one dynamic offset a uniform bind takes, passed as a typed array: an array literal per draw allocated and went through the binding's slow sequence conversion. */
+  private readonly dynamicOffset = new Uint32Array(1);
   private readonly uniformAlign: number;
   private constants = new Float32Array(1 << 16);
   private constantsUsed = 0;
@@ -923,6 +925,26 @@ export class WebGpuGl extends GlConstants {
 
   useProgram(p: GlProgram | null): void { if (p !== null) this.settle(p); this.program = p; }
 
+  /** `uniform{1,2,3,4}{f,i,ui}`: one element written from its arguments, with no array made per call. */
+  private writeScalars(loc: UniformLocation | null, components: number, integer: boolean, x: number, y: number, z: number, w: number): void {
+    if (loc === null) return;
+    const slot = loc.slot;
+    if (slot === null || loc.sampler >= 0) { this.writeUniform(loc, [x, y, z, w].slice(0, components), components, integer); return; }
+    if (loc.element >= slot.count) return;
+    const p = loc.program;
+    const view = slot.kind === "f" ? p.f32 : slot.kind === "u" ? p.u32 : p.i32;
+    const base = (slot.offset + loc.element * (slot.stride === 0 ? 16 : slot.stride)) >> 2;
+    const per = Math.min(components, slot.rows);
+    const whole = integer || slot.kind !== "f";
+    let changed = false;
+    for (let k = 0; k < per; k += 1) {
+      const raw = k === 0 ? x : k === 1 ? y : k === 2 ? z : w;
+      const v = whole ? Math.trunc(raw) : Math.fround(raw);
+      if (view[base + k] !== v) { view[base + k] = v; changed = true; }
+    }
+    if (changed) p.dirty = true;
+  }
+
   private writeUniform(loc: UniformLocation | null, data: ArrayLike<number>, components: number, integer: boolean): void {
     if (loc === null) return;
     const p = loc.program;
@@ -941,7 +963,8 @@ export class WebGpuGl extends GlConstants {
     for (let e = 0; e < count; e += 1) {
       const base = (slot.offset + (loc.element + e) * stride) >> 2;
       for (let k = 0; k < per; k += 1) {
-        const v = integer || slot.kind !== "f" ? Math.trunc(Number(data[e * components + k])) : data[e * components + k]!;
+        // Rounded as the block stores it, so an unchanged value compares equal and leaves the block clean.
+        const v = integer || slot.kind !== "f" ? Math.trunc(Number(data[e * components + k])) : Math.fround(Number(data[e * components + k]));
         if (view[base + k] !== v) { view[base + k] = v; changed = true; }
       }
     }
@@ -968,18 +991,18 @@ export class WebGpuGl extends GlConstants {
     if (changed) p.dirty = true;
   }
 
-  uniform1f(l: UniformLocation | null, x: number): void { this.writeUniform(l, [x], 1, false); }
-  uniform2f(l: UniformLocation | null, x: number, y: number): void { this.writeUniform(l, [x, y], 2, false); }
-  uniform3f(l: UniformLocation | null, x: number, y: number, z: number): void { this.writeUniform(l, [x, y, z], 3, false); }
-  uniform4f(l: UniformLocation | null, x: number, y: number, z: number, w: number): void { this.writeUniform(l, [x, y, z, w], 4, false); }
-  uniform1i(l: UniformLocation | null, x: number): void { this.writeUniform(l, [x], 1, true); }
-  uniform2i(l: UniformLocation | null, x: number, y: number): void { this.writeUniform(l, [x, y], 2, true); }
-  uniform3i(l: UniformLocation | null, x: number, y: number, z: number): void { this.writeUniform(l, [x, y, z], 3, true); }
-  uniform4i(l: UniformLocation | null, x: number, y: number, z: number, w: number): void { this.writeUniform(l, [x, y, z, w], 4, true); }
-  uniform1ui(l: UniformLocation | null, x: number): void { this.writeUniform(l, [x], 1, true); }
-  uniform2ui(l: UniformLocation | null, x: number, y: number): void { this.writeUniform(l, [x, y], 2, true); }
-  uniform3ui(l: UniformLocation | null, x: number, y: number, z: number): void { this.writeUniform(l, [x, y, z], 3, true); }
-  uniform4ui(l: UniformLocation | null, x: number, y: number, z: number, w: number): void { this.writeUniform(l, [x, y, z, w], 4, true); }
+  uniform1f(l: UniformLocation | null, x: number): void { this.writeScalars(l, 1, false, x, 0, 0, 0); }
+  uniform2f(l: UniformLocation | null, x: number, y: number): void { this.writeScalars(l, 2, false, x, y, 0, 0); }
+  uniform3f(l: UniformLocation | null, x: number, y: number, z: number): void { this.writeScalars(l, 3, false, x, y, z, 0); }
+  uniform4f(l: UniformLocation | null, x: number, y: number, z: number, w: number): void { this.writeScalars(l, 4, false, x, y, z, w); }
+  uniform1i(l: UniformLocation | null, x: number): void { this.writeScalars(l, 1, true, x, 0, 0, 0); }
+  uniform2i(l: UniformLocation | null, x: number, y: number): void { this.writeScalars(l, 2, true, x, y, 0, 0); }
+  uniform3i(l: UniformLocation | null, x: number, y: number, z: number): void { this.writeScalars(l, 3, true, x, y, z, 0); }
+  uniform4i(l: UniformLocation | null, x: number, y: number, z: number, w: number): void { this.writeScalars(l, 4, true, x, y, z, w); }
+  uniform1ui(l: UniformLocation | null, x: number): void { this.writeScalars(l, 1, true, x, 0, 0, 0); }
+  uniform2ui(l: UniformLocation | null, x: number, y: number): void { this.writeScalars(l, 2, true, x, y, 0, 0); }
+  uniform3ui(l: UniformLocation | null, x: number, y: number, z: number): void { this.writeScalars(l, 3, true, x, y, z, 0); }
+  uniform4ui(l: UniformLocation | null, x: number, y: number, z: number, w: number): void { this.writeScalars(l, 4, true, x, y, z, w); }
   uniform1fv(l: UniformLocation | null, v: ArrayLike<number>): void { this.writeUniform(l, v, 1, false); }
   uniform2fv(l: UniformLocation | null, v: ArrayLike<number>): void { this.writeUniform(l, v, 2, false); }
   uniform3fv(l: UniformLocation | null, v: ArrayLike<number>): void { this.writeUniform(l, v, 3, false); }
@@ -1828,7 +1851,8 @@ struct O { ${outputs} };
     this.stagingUsed = at + 32;
     const pass = this.pass!;
     pass.setPipeline(pipeline);
-    pass.setBindGroup(0, this.ringGroup(32), [at]);
+    this.dynamicOffset[0] = at;
+    pass.setBindGroup(0, this.ringGroup(32), this.dynamicOffset, 0, 1);
     pass.setViewport(0, 0, target.width, target.height, 0, 1);
     const sc = this.enabled.has(0x0c11) ? this.scissorBox : [0, 0, target.width, target.height];
     const sx = Math.min(target.width, Math.max(0, sc[0]!));
@@ -2306,7 +2330,8 @@ struct O { ${outputs} };
     const passNow = this.pass!;
     if (this.boundPipeline !== pipeline) { passNow.setPipeline(pipeline); this.boundPipeline = pipeline; }
     if (this.boundUniform !== p.slotOffset + p.blockSize * 1e7) {
-      passNow.setBindGroup(0, this.ringGroup(p.blockSize), [p.slotOffset]);
+      this.dynamicOffset[0] = p.slotOffset;
+      passNow.setBindGroup(0, this.ringGroup(p.blockSize), this.dynamicOffset, 0, 1);
       this.boundUniform = p.slotOffset + p.blockSize * 1e7;
     }
     const group = tc.group;

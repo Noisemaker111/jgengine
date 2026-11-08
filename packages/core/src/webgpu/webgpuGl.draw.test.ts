@@ -200,6 +200,31 @@ const drawSetup = (features: string[] = []) => {
   return { gl, passes, calls, groups, pipelines: () => pipelines, texture, draw: () => gl.drawArrays(4, 0, 3) };
 };
 
+describe("WebGpuGl uniforms", () => {
+  test("scalar uniform calls land in the block, and an unchanged value leaves it clean", () => {
+    const { gl } = drawSetup();
+    const p = gl.program;
+    const block = new ArrayBuffer(64);
+    Object.assign(p, { block, f32: new Float32Array(block), i32: new Int32Array(block), u32: new Uint32Array(block), bytes: new Uint8Array(block), blockSize: 64 });
+    p.uniforms = new Map([
+      ["tint", { name: "tint", offset: 16, kind: "f", columns: 1, rows: 3, column_stride: 0, count: 2, stride: 16, array: true }],
+      ["mode", { name: "mode", offset: 48, kind: "i", columns: 1, rows: 1, column_stride: 0, count: 1, stride: 0, array: false }],
+    ]);
+    gl.uniform3f(gl.getUniformLocation(p, "tint"), 1, 2, 0.1);
+    gl.uniform3f(gl.getUniformLocation(p, "tint[1]"), 4, 5, 6);
+    gl.uniform1i(gl.getUniformLocation(p, "mode"), 2.7);
+    expect([...p.f32.subarray(4, 7)]).toEqual([1, 2, Math.fround(0.1)]);
+    expect([...p.f32.subarray(8, 11)]).toEqual([4, 5, 6]);
+    expect(p.i32[12]).toBe(2);
+    expect(p.dirty).toBe(true);
+    p.dirty = false;
+    gl.uniform3f(gl.getUniformLocation(p, "tint"), 1, 2, 0.1);
+    expect(p.dirty).toBe(false);
+    gl.uniform3f(gl.getUniformLocation(p, "tint"), 1, 2, 0.2);
+    expect(p.dirty).toBe(true);
+  });
+});
+
 describe("WebGpuGl multi-draw", () => {
   test("a multi-draw sets its bindings once and draws each item with firstInstance as its draw id", () => {
     const { gl, calls, texture } = drawSetup();
