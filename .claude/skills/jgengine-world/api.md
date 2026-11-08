@@ -6270,7 +6270,7 @@
 
 ## @jgengine/core/webgpu/webgpuGl.draw
 
-- `WebGpuGl` (class): class WebGpuGl — The GL-shaped context. Construct through {@link createWebGpuGl}.
+- `WebGpuGl` (class): class WebGpuGl extends GlConstants — The GL-shaped context. Construct through {@link createWebGpuGl}.
 - `WebGpuGlAttributes` (interface): interface WebGpuGlAttributes — Context attributes the canvas was asked for (WebGL's `getContextAttributes`).
 - `WebGpuGlStats` (interface): interface WebGpuGlStats — Counters a perf probe reads per frame.
 - `createWebGpuGl` (function): function createWebGpuGl(canvas: HTMLCanvasElement, attributes: Partial<WebGpuGlAttributes> = {}): Promise<WebGpuGl | null> — Create the WebGPU device and the GL-shaped context for `canvas`, or `null` when this browser has no usable WebGPU adapter.

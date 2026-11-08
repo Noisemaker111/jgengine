@@ -499,7 +499,7 @@ pub fn rewrite(vert: &str, frag: &str) -> Result<Rewritten, String> {
 
     // Uniforms of both stages, in first-seen order; one block shared by both.
     let mut block: Vec<(String, String, Option<String>)> = Vec::new(); // (type, name, array)
-    let mut samplers: BTreeMap<String, (String, u32)> = BTreeMap::new(); // name -> (type, count)
+    let mut samplers: BTreeMap<String, (String, u32, bool)> = BTreeMap::new(); // name -> (type, count, declared as an array)
     let mut sampler_order: Vec<String> = Vec::new();
     let mut structs: Vec<(String, Vec<Tok>)> = Vec::new();
     for items in [&vitems, &fitems] {
@@ -512,7 +512,7 @@ pub fn rewrite(vert: &str, frag: &str) -> Result<Rewritten, String> {
                             if !samplers.contains_key(name) {
                                 sampler_order.push(name.clone());
                             }
-                            samplers.insert(name.clone(), (ty.clone(), count));
+                            samplers.insert(name.clone(), (ty.clone(), count, arr.is_some()));
                         } else if !block.iter().any(|b| &b.1 == name) {
                             block.push((ty.clone(), name.clone(), arr.clone()));
                         }
@@ -537,6 +537,10 @@ pub fn rewrite(vert: &str, frag: &str) -> Result<Rewritten, String> {
     // naga's GLSL frontend has no modf(x, out i); WebGPU has no point sprites, so a points
     // shader's gl_PointCoord is the sprite centre (no recorded draw uses points).
     rules.simple.insert("modf".into(), "jg_modf".into());
+    // WGSL has no isinf / isnan (naga: "Unsupported relational function: IsInf", Drift Foundry's
+    // track shader went undrawn); read the bits instead, which no fast-math pass can fold away.
+    rules.simple.insert("isinf".into(), "jg_isinf".into());
+    rules.simple.insert("isnan".into(), "jg_isnan".into());
     rules.simple.insert("gl_PointCoord".into(), "vec2(0.5)".into());
     let mut members = String::new();
     let mut hint = 0u32;
@@ -571,20 +575,21 @@ pub fn rewrite(vert: &str, frag: &str) -> Result<Rewritten, String> {
     let mut slots = Vec::new();
     let mut binding = 0u32;
     for name in &sampler_order {
-        let (ty, count) = &samplers[name];
+        let (ty, count, array) = &samplers[name];
         let (tex, smp, ctor, kind, dim) = sampler_info(ty).unwrap();
         let mut per = Vec::new();
         for e in 0..*count {
-            let suffix = if *count > 1 || ty.ends_with("Array") && false { format!("{e}") } else { String::new() };
-            let suffix = if *count > 1 { suffix } else { String::new() };
+            let suffix = if *count > 1 { format!("{e}") } else { String::new() };
             let t = format!("{name}_jgt{suffix}");
             let s = format!("{name}_jgs{suffix}");
             sampler_decls.push_str(&format!("layout(set = 1, binding = {binding}) uniform {tex} {t};\nlayout(set = 1, binding = {}) uniform {smp} {s};\n", binding + 1));
-            slots.push(SamplerSlot { name: name.clone(), element: e, texture_binding: binding, sampler_binding: binding + 1, kind, dim });
+            slots.push(SamplerSlot { name: name.clone(), element: e, texture_binding: binding, sampler_binding: binding + 1, kind, dim, array: *array });
             binding += 2;
             per.push(format!("{ctor}({t}, {s})"));
         }
-        if *count > 1 {
+        // An array of one (Deepward's one spot light: `spotShadowMap[ 0 ]`) is still indexed, so the
+        // index goes with the name; replacing the bare name left `sampler2DShadow(t, s)[ 0 ]`.
+        if *count > 1 || *array {
             rules.indexed_literal.insert(name.clone(), per);
         } else {
             rules.simple.insert(name.clone(), per.pop().unwrap());
@@ -622,6 +627,7 @@ pub fn rewrite(vert: &str, frag: &str) -> Result<Rewritten, String> {
     };
 
     let uses_modf = vert.contains("modf") || frag.contains("modf");
+    let uses_float_class = ["isinf", "isnan"].iter().any(|f| vert.contains(f) || frag.contains(f));
     let header = |members: &str| -> String {
         let mut s = String::from("#version 450\n");
         for (name, toks) in &structs {
@@ -634,6 +640,16 @@ pub fn rewrite(vert: &str, frag: &str) -> Result<Rewritten, String> {
         if uses_modf {
             for t in ["float", "vec2", "vec3", "vec4"] {
                 s.push_str(&format!("{t} jg_modf({t} x, out {t} i) {{ i = trunc(x); return x - i; }}\n"));
+            }
+        }
+        if uses_float_class {
+            s.push_str("bool jg_isinf(float x) { return (floatBitsToUint(x) & 0x7fffffffu) == 0x7f800000u; }\n");
+            s.push_str("bool jg_isnan(float x) { return (floatBitsToUint(x) & 0x7fffffffu) > 0x7f800000u; }\n");
+            for (n, c) in [(2, "xy"), (3, "xyz"), (4, "xyzw")] {
+                for f in ["jg_isinf", "jg_isnan"] {
+                    let parts: Vec<String> = c.chars().map(|k| format!("{f}(x.{k})")).collect();
+                    s.push_str(&format!("bvec{n} {f}(vec{n} x) {{ return bvec{n}({}); }}\n", parts.join(", ")));
+                }
             }
         }
         if !members.is_empty() {

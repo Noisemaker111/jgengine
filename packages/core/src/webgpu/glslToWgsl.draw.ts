@@ -36,6 +36,8 @@ export interface WgslSamplerSlot {
   sampler_binding: number;
   kind: "Float" | "Depth" | "Sint" | "Uint";
   dim: "D2" | "Cube" | "D3" | "D2Array";
+  /** Declared as an array, even of one: GL names it `name[0]`. */
+  array?: boolean;
 }
 
 /** The translated program and what feeding it takes. */

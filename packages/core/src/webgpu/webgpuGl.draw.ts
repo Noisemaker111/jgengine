@@ -138,16 +138,25 @@ interface TextureSet {
   sigId: number;
   group: GPUBindGroup;
 }
-interface PipelineEntry { plan: VertexPlan; stateId: number; targetId: number; mode: number; indexType: number | null; sigId: number; pipeline: GPURenderPipeline }
+interface PipelineEntry { layoutId: number; stateId: number; targetId: number; mode: number; indexType: number | null; sigId: number; pipeline: GPURenderPipeline }
 /** One attribute as GL reads it from its buffer. */
 interface AttribSource { buffer: GlBuffer; offset: number; stride: number; type: number; size: number; normalized: boolean; convert: boolean; location: number; format: GPUVertexFormat }
 interface VertexSlot {
   buffer: GlBuffer | null; offset: number; stride: number; step: GPUVertexStepMode; attributes: GPUVertexAttribute[]; convert: { type: number; size: number; normalized: boolean } | null; constant: boolean;
   sources: AttribSource[];
   /** Several GL buffers interleaved into one, built on the CPU when a draw has more buffers than WebGPU binds. */
-  packed: { gpu: GPUBuffer | null; versions: string } | null;
+  packed: { gpu: GPUBuffer | null; ids: number[]; versions: number[] } | null;
 }
-interface VertexPlan { id: number; key: string; slots: VertexSlot[]; constants: number[]; instanceCapacity: (instances: number) => number }
+interface VertexPlan {
+  /** The interned vertex layout (`key`): a plan rebuilt with the same layout keeps its pipelines. */
+  id: number; key: string; slots: VertexSlot[]; constants: number[]; instanceCapacity: (instances: number) => number;
+  /** Whether any GL attribute steps per instance (a multi-draw's firstInstance would offset it). */
+  perInstance: boolean;
+}
+/** A WEBGL_multi_draw call: item i draws counts[countsOffset + i] from starts[startsOffset + i] (elements: a byte offset). */
+interface MultiDraw { starts: ArrayLike<number>; startsOffset: number; counts: ArrayLike<number>; countsOffset: number; drawCount: number }
+/** How many numbers describe the fixed-function state a pipeline bakes in (see `stateId`). */
+const STATE_FIELDS = 29;
 
 const WEBGL_CONSTANTS: Record<string, number> = (() => {
   const out: Record<string, number> = {};
@@ -219,6 +228,26 @@ function asView(data: any): ArrayBufferView {
   return new Uint8Array(0);
 }
 
+/** The vertex input a multi-draw program reads its `gl_DrawID` from. @internal */
+export const DRAW_ID_INPUT = "jgDrawId";
+const MULTI_DRAW_EXTENSION = /^[ \t]*#extension[ \t]+GL_ANGLE_multi_draw[ \t]*:[ \t]*\w+[ \t]*$/m;
+
+/**
+ * A vertex shader compiled against WEBGL_multi_draw (three's BatchedMesh), with `gl_DrawID` read
+ * from an integer instance attribute: each item of a multi-draw is drawn with `firstInstance` set
+ * to its index, and that attribute's buffer holds 0, 1, 2... so item i reads i. WGSL has no draw
+ * index of its own. Every line keeps its number, so a translation error still names the right one.
+ * Shaders without the extension come back unchanged. @internal
+ */
+export function withDrawIdInput(vertex: string): string {
+  if (!MULTI_DRAW_EXTENSION.test(vertex)) return vertex;
+  const lines = vertex.replace(MULTI_DRAW_EXTENSION, "#define GL_ANGLE_multi_draw 1").replace(/\bgl_DrawID\b/g, DRAW_ID_INPUT).split("\n");
+  // The declaration shares the first line of code, after the #version and #define lines.
+  const first = lines.findIndex((line) => line.trim() !== "" && !line.trimStart().startsWith("#"));
+  if (first >= 0) lines[first] = `in highp int ${DRAW_ID_INPUT}; ${lines[first]}`;
+  return lines.join("\n");
+}
+
 const PRESENT_WGSL = `
 @group(0) @binding(0) var src: texture_2d<f32>;
 struct Out { @builtin(position) pos: vec4<f32> };
@@ -263,8 +292,16 @@ export async function createWebGpuGl(canvas: HTMLCanvasElement, attributes: Part
   return new WebGpuGl(canvas, device, context, attributes, info === undefined ? "WebGPU" : `${info.vendor} ${info.architecture} ${info.description}`.trim());
 }
 
+/**
+ * WebGL's constants (`gl.TEXTURE_2D` and the rest), on a prototype as the native context keeps them.
+ * Copied onto each instance instead, the ~560 properties put the context in V8's dictionary mode,
+ * so every method call three made on it and every field it read was a hash lookup.
+ */
+class GlConstants {}
+Object.assign(GlConstants.prototype, WEBGL_CONSTANTS);
+
 /** The GL-shaped context. Construct through {@link createWebGpuGl}. */
-export class WebGpuGl {
+export class WebGpuGl extends GlConstants {
   readonly canvas: HTMLCanvasElement;
   readonly device: GPUDevice;
   readonly stats: WebGpuGlStats = { frames: 0, draws: 0, passes: 0, submits: 0, pipelines: 0, bindGroups: 0, uniformBytes: 0, orderFlushes: 0, programs: 0, translateMs: 0, fences: 0, fenceMs: 0, reads: 0, readMs: 0, queueLagMs: 0, precompiles: 0, precompileMs: 0 };
@@ -325,8 +362,15 @@ export class WebGpuGl {
    */
   private textureEpoch = 1;
   private stateKeyVersion = 0;
-  private stateKeyValue = "";
   private stateKeyId = 0;
+  /**
+   * The pipeline state's fields, written in place and interned by value: three flips depth, blend
+   * and stencil state hundreds of times a frame (Fernwild: 214), and building a string key each time
+   * was a fifth of the context's garbage.
+   */
+  private readonly stateFields = new Float64Array(STATE_FIELDS);
+  private readonly stateTable = new Map<number, { fields: Float64Array; id: number }[]>();
+  private stateCount = 0;
 
   // GPU timers: a render pass that runs while a TIME_ELAPSED query is open writes a timestamp at its
   // start and end. Serials count stamps across batches; a batch's stamps are its serials from
@@ -340,8 +384,8 @@ export class WebGpuGl {
   /** TIME_ELAPSED queries begun and not yet answered. */
   private readonly timedPending = new Set<GlQuery>();
   /** Small numbers for the strings a pipeline depends on, so a draw compares numbers instead of building a key. */
-  private readonly stateIds = new Map<string, number>();
   private readonly targetIds = new Map<string, number>();
+  private readonly layoutIds = new Map<string, number>();
   private readonly sigIds = new Map<string, number>();
 
   // WebGPU work.
@@ -354,7 +398,13 @@ export class WebGpuGl {
   private stagingUsed = 0;
   private ring: GPUBuffer;
   private ringGroups = new Map<number, GPUBindGroup>();
+  /** The one dynamic offset a uniform bind takes, passed as a typed array: an array literal per draw allocated and went through the binding's slow sequence conversion. */
+  private readonly dynamicOffset = new Uint32Array(1);
   private readonly uniformAlign: number;
+  /** `device.limits.maxVertexBuffers`, read once: each read of it is two native getter calls, and a draw read it every time. */
+  private readonly maxVertexBuffers: number;
+  /** `device.queue`, read once for the same reason. */
+  private readonly queue: GPUQueue;
   private constants = new Float32Array(1 << 16);
   private constantsUsed = 0;
   private constantRing: GPUBuffer;
@@ -379,6 +429,7 @@ export class WebGpuGl {
   private backColor: GPUTexture | null = null;
   private backColorMsaa: GPUTexture | null = null;
   private backDepth: GPUTexture | null = null;
+  private backViews: { color: GPUTextureView; msaa: GPUTextureView | null; depth: GPUTextureView | null } | null = null;
   private backSize = [0, 0];
   private presentPipeline: GPURenderPipeline | null = null;
   private presentGroup: GPUBindGroup | null = null;
@@ -387,7 +438,7 @@ export class WebGpuGl {
   private readonly defaultVertex: GPUBuffer;
 
   constructor(canvas: HTMLCanvasElement, device: GPUDevice, context: GPUCanvasContext, attributes: Partial<WebGpuGlAttributes>, renderer: string) {
-    Object.assign(this, WEBGL_CONSTANTS);
+    super();
     this.canvas = canvas;
     this.device = device;
     this.gpuContext = context;
@@ -402,6 +453,8 @@ export class WebGpuGl {
     this.canvasFormat = (globalThis.navigator as any).gpu.getPreferredCanvasFormat();
     context.configure({ device, format: this.canvasFormat, alphaMode: this.attributes.alpha ? "premultiplied" : "opaque", usage: GPUTextureUsage.RENDER_ATTACHMENT });
     this.uniformAlign = device.limits.minUniformBufferOffsetAlignment;
+    this.maxVertexBuffers = device.limits.maxVertexBuffers;
+    this.queue = device.queue;
     this.uniformLayout = device.createBindGroupLayout({ entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: "uniform", hasDynamicOffset: true } }] });
     this.emptyLayout = device.createBindGroupLayout({ entries: [] });
     this.emptyGroup = device.createBindGroup({ layout: this.emptyLayout, entries: [] });
@@ -457,12 +510,12 @@ export class WebGpuGl {
   getError(): number { const e = this.error; this.error = 0; return e; }
   makeXRCompatible(): Promise<void> { return Promise.resolve(); }
   /**
-   * No WEBGL_multi_draw: three compiles BatchedMesh shaders against it with gl_DrawID, which the
-   * translated WGSL has no value for, so every item drew with the first item's matrix (Harbor
-   * Heat's palms, plants and awnings stacked in one place). Without it three draws each item itself
-   * and sets `_gl_DrawID` as a uniform.
+   * WEBGL_multi_draw draws a BatchedMesh in one call: its items share every binding and only
+   * `gl_DrawID` changes, which the shader reads from an instance attribute ({@link withDrawIdInput}).
+   * Without it three drew each item itself with a `_gl_DrawID` uniform, so every item re-staged the
+   * program's whole uniform block and rebound it.
    */
-  getSupportedExtensions(): string[] { return ["EXT_color_buffer_float", "EXT_color_buffer_half_float", "EXT_texture_filter_anisotropic", "KHR_parallel_shader_compile", "WEBGL_lose_context", ...(this.float32Filterable ? ["OES_texture_float_linear"] : []), ...(this.float32Blendable ? ["EXT_float_blend"] : []), ...(this.stamps !== null ? ["EXT_disjoint_timer_query_webgl2"] : []), ...(this.device.features.has("texture-compression-bc") ? ["WEBGL_compressed_texture_s3tc", "WEBGL_compressed_texture_s3tc_srgb", "EXT_texture_compression_bptc", "EXT_texture_compression_rgtc"] : [])]; }
+  getSupportedExtensions(): string[] { return ["EXT_color_buffer_float", "EXT_color_buffer_half_float", "EXT_texture_filter_anisotropic", "KHR_parallel_shader_compile", "WEBGL_lose_context", "WEBGL_multi_draw", ...(this.float32Filterable ? ["OES_texture_float_linear"] : []), ...(this.float32Blendable ? ["EXT_float_blend"] : []), ...(this.stamps !== null ? ["EXT_disjoint_timer_query_webgl2"] : []), ...(this.device.features.has("texture-compression-bc") ? ["WEBGL_compressed_texture_s3tc", "WEBGL_compressed_texture_s3tc_srgb", "EXT_texture_compression_bptc", "EXT_texture_compression_rgtc"] : [])]; }
 
   getExtension(name: string): any {
     if (!this.getSupportedExtensions().includes(name)) return null;
@@ -471,6 +524,12 @@ export class WebGpuGl {
       case "KHR_parallel_shader_compile": return { COMPLETION_STATUS_KHR: 0x91b1 };
       case "EXT_disjoint_timer_query_webgl2": return { QUERY_COUNTER_BITS_EXT: 0x8864, TIME_ELAPSED_EXT: 0x88bf, TIMESTAMP_EXT: 0x8e28, GPU_DISJOINT_EXT: 0x8fbb, queryCounterEXT: () => this.warn("queryCounterEXT (a single timestamp) is not supported on the WebGPU backend; use TIME_ELAPSED_EXT") };
       case "WEBGL_lose_context": return { loseContext: () => this.loseContext(), restoreContext: () => this.warn("degraded: restoreContext is not supported on the WebGPU backend; remount the canvas") };
+      // The instanced forms are left out: an item's firstInstance carries its draw id, which would
+      // also offset gl_InstanceID and every per-instance attribute. three draws only these two.
+      case "WEBGL_multi_draw": return {
+        multiDrawArraysWEBGL: (mode: number, firsts: ArrayLike<number>, firstsOffset: number, counts: ArrayLike<number>, countsOffset: number, drawCount: number) => this.draw(mode, 0, 1, 1, null, 0, { starts: firsts, startsOffset: firstsOffset, counts, countsOffset, drawCount }),
+        multiDrawElementsWEBGL: (mode: number, counts: ArrayLike<number>, countsOffset: number, type: number, offsets: ArrayLike<number>, offsetsOffset: number, drawCount: number) => this.draw(mode, 0, 1, 1, type, 0, { starts: offsets, startsOffset: offsetsOffset, counts, countsOffset, drawCount }),
+      };
       case "WEBGL_compressed_texture_s3tc": return { COMPRESSED_RGB_S3TC_DXT1_EXT: 0x83f0, COMPRESSED_RGBA_S3TC_DXT1_EXT: 0x83f1, COMPRESSED_RGBA_S3TC_DXT3_EXT: 0x83f2, COMPRESSED_RGBA_S3TC_DXT5_EXT: 0x83f3 };
       case "WEBGL_compressed_texture_s3tc_srgb": return { COMPRESSED_SRGB_S3TC_DXT1_EXT: 0x8c4c, COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT: 0x8c4d, COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT: 0x8c4e, COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT: 0x8c4f };
       case "EXT_texture_compression_bptc": return { COMPRESSED_RGBA_BPTC_UNORM_EXT: 0x8e8c, COMPRESSED_SRGB_ALPHA_BPTC_UNORM_EXT: 0x8e8d, COMPRESSED_RGB_BPTC_SIGNED_FLOAT_EXT: 0x8e8e, COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT_EXT: 0x8e8f };
@@ -576,7 +635,8 @@ export class WebGpuGl {
   bindBuffer(target: number, b: GlBuffer | null): void {
     switch (target) {
       case 0x8892: this.arrayBuffer = b; break;
-      case 0x8893: this.vao.elements = b; this.vao.version += 1; break;
+      // A vertex plan reads only the attributes, so the index buffer leaves the vao's version alone.
+      case 0x8893: this.vao.elements = b; break;
       case 0x8f36: this.copyRead = b; break;
       case 0x8f37: this.copyWrite = b; break;
       case 0x88eb: this.pixelPack = b; break;
@@ -641,13 +701,13 @@ export class WebGpuGl {
 
   private writeBuffer(gpu: GPUBuffer, offset: number, view: ArrayBufferView): void {
     const bytes = new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
-    if (offset % 4 === 0 && bytes.byteLength % 4 === 0) { this.device.queue.writeBuffer(gpu, offset, bytes); return; }
+    if (offset % 4 === 0 && bytes.byteLength % 4 === 0) { this.queue.writeBuffer(gpu, offset, bytes); return; }
     // WebGPU writes whole 4-byte words: widen the range and fill it from the CPU copy where known.
     const start = offset - (offset % 4);
     const end = Math.min(gpu.size, Math.ceil((offset + bytes.byteLength) / 4) * 4);
     const padded = new Uint8Array(end - start);
     padded.set(bytes.subarray(0, Math.min(bytes.byteLength, padded.byteLength - (offset - start))), offset - start);
-    this.device.queue.writeBuffer(gpu, start, padded);
+    this.queue.writeBuffer(gpu, start, padded);
   }
 
   copyBufferSubData(readTarget: number, writeTarget: number, readOffset: number, writeOffset: number, size: number): void {
@@ -683,12 +743,14 @@ export class WebGpuGl {
   bindVertexArray(v: GlVertexArray | null): void { this.vao = v ?? this.defaultVao; }
   enableVertexAttribArray(i: number): void { const a = this.vao.attribs[i]!; if (!a.enabled) { a.enabled = true; this.vao.version += 1; } }
   disableVertexAttribArray(i: number): void { const a = this.vao.attribs[i]!; if (a.enabled) { a.enabled = false; this.vao.version += 1; } }
-  vertexAttribPointer(i: number, size: number, type: number, normalized: boolean, stride: number, offset: number): void {
-    Object.assign(this.vao.attribs[i]!, { buffer: this.arrayBuffer, size, type, normalized, stride, offset, integer: false });
-    this.vao.version += 1;
-  }
-  vertexAttribIPointer(i: number, size: number, type: number, stride: number, offset: number): void {
-    Object.assign(this.vao.attribs[i]!, { buffer: this.arrayBuffer, size, type, normalized: false, stride, offset, integer: true });
+  vertexAttribPointer(i: number, size: number, type: number, normalized: boolean, stride: number, offset: number): void { this.setAttrib(i, size, type, normalized, stride, offset, false); }
+  vertexAttribIPointer(i: number, size: number, type: number, stride: number, offset: number): void { this.setAttrib(i, size, type, false, stride, offset, true); }
+  /** Point attribute `i` at the bound array buffer. Re-pointing it where it already points (three does every frame for some objects) keeps the vao's vertex plan. */
+  private setAttrib(i: number, size: number, type: number, normalized: boolean, stride: number, offset: number, integer: boolean): void {
+    const a = this.vao.attribs[i]!;
+    const buffer = this.arrayBuffer;
+    if (a.buffer === buffer && a.size === size && a.type === type && a.normalized === normalized && a.stride === stride && a.offset === offset && a.integer === integer) return;
+    a.buffer = buffer; a.size = size; a.type = type; a.normalized = normalized; a.stride = stride; a.offset = offset; a.integer = integer;
     this.vao.version += 1;
   }
   vertexAttribDivisor(i: number, d: number): void { const a = this.vao.attribs[i]!; if (a.divisor !== d) { a.divisor = d; this.vao.version += 1; } }
@@ -735,7 +797,7 @@ export class WebGpuGl {
     p.linked = false;
     p.translated = null;
     p.compiled = false;
-    const pending = translateGlslAsync(vs.source, fs.source);
+    const pending = translateGlslAsync(withDrawIdInput(vs.source), fs.source);
     p.pending = pending;
     // Settle as soon as the worker answers, so the browser's compile starts without waiting for a query.
     pending.onDone(() => { if (p.pending === pending) this.settle(p); });
@@ -782,7 +844,9 @@ export class WebGpuGl {
       p.samplerIndex.set(`${s.name}[${s.element}]`, index);
       if (s.element === 0) p.samplerIndex.set(s.name, index);
     });
-    for (const [name, { count, slot }] of samplerNames) p.active.push({ name: count > 1 ? `${name}[0]` : name, size: count, type: samplerType(slot) });
+    // An array of one is still `name[0]`, as GL reports it: three binds an array uniform's textures
+    // only under that name (Deepward's one spot shadow got three's 1x1 color placeholder otherwise).
+    for (const [name, { count, slot }] of samplerNames) p.active.push({ name: count > 1 || slot.array === true ? `${name}[0]` : name, size: count, type: samplerType(slot) });
     p.units = new Int32Array(t.layout.samplers.length);
     p.attribs = [];
     const seen = new Set<string>();
@@ -883,6 +947,26 @@ export class WebGpuGl {
 
   useProgram(p: GlProgram | null): void { if (p !== null) this.settle(p); this.program = p; }
 
+  /** `uniform{1,2,3,4}{f,i,ui}`: one element written from its arguments, with no array made per call. */
+  private writeScalars(loc: UniformLocation | null, components: number, integer: boolean, x: number, y: number, z: number, w: number): void {
+    if (loc === null) return;
+    const slot = loc.slot;
+    if (slot === null || loc.sampler >= 0) { this.writeUniform(loc, [x, y, z, w].slice(0, components), components, integer); return; }
+    if (loc.element >= slot.count) return;
+    const p = loc.program;
+    const view = slot.kind === "f" ? p.f32 : slot.kind === "u" ? p.u32 : p.i32;
+    const base = (slot.offset + loc.element * (slot.stride === 0 ? 16 : slot.stride)) >> 2;
+    const per = Math.min(components, slot.rows);
+    const whole = integer || slot.kind !== "f";
+    let changed = false;
+    for (let k = 0; k < per; k += 1) {
+      const raw = k === 0 ? x : k === 1 ? y : k === 2 ? z : w;
+      const v = whole ? Math.trunc(raw) : Math.fround(raw);
+      if (view[base + k] !== v) { view[base + k] = v; changed = true; }
+    }
+    if (changed) p.dirty = true;
+  }
+
   private writeUniform(loc: UniformLocation | null, data: ArrayLike<number>, components: number, integer: boolean): void {
     if (loc === null) return;
     const p = loc.program;
@@ -901,7 +985,8 @@ export class WebGpuGl {
     for (let e = 0; e < count; e += 1) {
       const base = (slot.offset + (loc.element + e) * stride) >> 2;
       for (let k = 0; k < per; k += 1) {
-        const v = integer || slot.kind !== "f" ? Math.trunc(Number(data[e * components + k])) : data[e * components + k]!;
+        // Rounded as the block stores it, so an unchanged value compares equal and leaves the block clean.
+        const v = integer || slot.kind !== "f" ? Math.trunc(Number(data[e * components + k])) : Math.fround(Number(data[e * components + k]));
         if (view[base + k] !== v) { view[base + k] = v; changed = true; }
       }
     }
@@ -928,18 +1013,18 @@ export class WebGpuGl {
     if (changed) p.dirty = true;
   }
 
-  uniform1f(l: UniformLocation | null, x: number): void { this.writeUniform(l, [x], 1, false); }
-  uniform2f(l: UniformLocation | null, x: number, y: number): void { this.writeUniform(l, [x, y], 2, false); }
-  uniform3f(l: UniformLocation | null, x: number, y: number, z: number): void { this.writeUniform(l, [x, y, z], 3, false); }
-  uniform4f(l: UniformLocation | null, x: number, y: number, z: number, w: number): void { this.writeUniform(l, [x, y, z, w], 4, false); }
-  uniform1i(l: UniformLocation | null, x: number): void { this.writeUniform(l, [x], 1, true); }
-  uniform2i(l: UniformLocation | null, x: number, y: number): void { this.writeUniform(l, [x, y], 2, true); }
-  uniform3i(l: UniformLocation | null, x: number, y: number, z: number): void { this.writeUniform(l, [x, y, z], 3, true); }
-  uniform4i(l: UniformLocation | null, x: number, y: number, z: number, w: number): void { this.writeUniform(l, [x, y, z, w], 4, true); }
-  uniform1ui(l: UniformLocation | null, x: number): void { this.writeUniform(l, [x], 1, true); }
-  uniform2ui(l: UniformLocation | null, x: number, y: number): void { this.writeUniform(l, [x, y], 2, true); }
-  uniform3ui(l: UniformLocation | null, x: number, y: number, z: number): void { this.writeUniform(l, [x, y, z], 3, true); }
-  uniform4ui(l: UniformLocation | null, x: number, y: number, z: number, w: number): void { this.writeUniform(l, [x, y, z, w], 4, true); }
+  uniform1f(l: UniformLocation | null, x: number): void { this.writeScalars(l, 1, false, x, 0, 0, 0); }
+  uniform2f(l: UniformLocation | null, x: number, y: number): void { this.writeScalars(l, 2, false, x, y, 0, 0); }
+  uniform3f(l: UniformLocation | null, x: number, y: number, z: number): void { this.writeScalars(l, 3, false, x, y, z, 0); }
+  uniform4f(l: UniformLocation | null, x: number, y: number, z: number, w: number): void { this.writeScalars(l, 4, false, x, y, z, w); }
+  uniform1i(l: UniformLocation | null, x: number): void { this.writeScalars(l, 1, true, x, 0, 0, 0); }
+  uniform2i(l: UniformLocation | null, x: number, y: number): void { this.writeScalars(l, 2, true, x, y, 0, 0); }
+  uniform3i(l: UniformLocation | null, x: number, y: number, z: number): void { this.writeScalars(l, 3, true, x, y, z, 0); }
+  uniform4i(l: UniformLocation | null, x: number, y: number, z: number, w: number): void { this.writeScalars(l, 4, true, x, y, z, w); }
+  uniform1ui(l: UniformLocation | null, x: number): void { this.writeScalars(l, 1, true, x, 0, 0, 0); }
+  uniform2ui(l: UniformLocation | null, x: number, y: number): void { this.writeScalars(l, 2, true, x, y, 0, 0); }
+  uniform3ui(l: UniformLocation | null, x: number, y: number, z: number): void { this.writeScalars(l, 3, true, x, y, z, 0); }
+  uniform4ui(l: UniformLocation | null, x: number, y: number, z: number, w: number): void { this.writeScalars(l, 4, true, x, y, z, w); }
   uniform1fv(l: UniformLocation | null, v: ArrayLike<number>): void { this.writeUniform(l, v, 1, false); }
   uniform2fv(l: UniformLocation | null, v: ArrayLike<number>): void { this.writeUniform(l, v, 2, false); }
   uniform3fv(l: UniformLocation | null, v: ArrayLike<number>): void { this.writeUniform(l, v, 3, false); }
@@ -1126,7 +1211,7 @@ export class WebGpuGl {
     // A level smaller than a block still copies whole blocks.
     const copyW = Math.min(bw * 4, Math.ceil(mipW / 4) * 4 - x);
     const copyH = Math.min(bh * 4, Math.ceil(mipH / 4) * 4 - y);
-    this.device.queue.writeTexture({ texture: t.gpu, mipLevel: level, origin: { x, y, z } }, bytes, { bytesPerRow: bw * t.format.bytes, rowsPerImage: bh }, { width: copyW, height: copyH, depthOrArrayLayers: depth });
+    this.queue.writeTexture({ texture: t.gpu, mipLevel: level, origin: { x, y, z } }, bytes, { bytesPerRow: bw * t.format.bytes, rowsPerImage: bh }, { width: copyW, height: copyH, depthOrArrayLayers: depth });
     t.definedLevels = Math.max(t.definedLevels, level + 1);
   }
 
@@ -1148,10 +1233,10 @@ export class WebGpuGl {
         rowBytes = width * fmt.bytes;
       }
       if (flipY) bytes = flipRows(bytes, rowBytes, height, depth);
-      this.device.queue.writeTexture({ texture: t.gpu, mipLevel: level, origin: { x, y, z } }, bytes, { bytesPerRow: rowBytes, rowsPerImage: height }, { width, height, depthOrArrayLayers: depth });
+      this.queue.writeTexture({ texture: t.gpu, mipLevel: level, origin: { x, y, z } }, bytes, { bytesPerRow: rowBytes, rowsPerImage: height }, { width, height, depthOrArrayLayers: depth });
     } else {
       try {
-        this.device.queue.copyExternalImageToTexture({ source, flipY }, { texture: t.gpu, mipLevel: level, origin: { x, y, z }, premultipliedAlpha: premultiply, colorSpace: "srgb" }, { width, height });
+        this.queue.copyExternalImageToTexture({ source, flipY }, { texture: t.gpu, mipLevel: level, origin: { x, y, z }, premultipliedAlpha: premultiply, colorSpace: "srgb" }, { width, height });
       } catch (error) {
         this.warn(`texture upload from ${source?.constructor?.name ?? typeof source} failed: ${error instanceof Error ? error.message : String(error)}`);
       }
@@ -1272,15 +1357,18 @@ export class WebGpuGl {
    */
   private incompleteness(fb: GlFramebuffer | null): { status: number; reason: string } | null {
     if (fb === null) return null;
-    const attached = [...fb.colors, fb.depth, fb.stencil].filter((a): a is Attachment => a != null);
-    if (attached.length === 0) return { status: 0x8cd7, reason: "nothing is attached" };
-    for (const a of attached) {
+    // Checked at every pass, so without building a list of the attachments.
+    let attached = 0;
+    for (let i = -2; i < fb.colors.length; i += 1) {
+      const a = i === -2 ? fb.depth : i === -1 ? fb.stencil : fb.colors[i];
+      if (a == null) continue;
+      attached += 1;
       if (a.object.kind !== "texture") continue;
       const t = a.object;
       if (t.gpu === null) return { status: 0x8cd6, reason: "a texture attached to it has no storage yet" };
       if (a.level >= t.levels) return { status: 0x8cd6, reason: `it attaches mip level ${a.level} of a ${t.width}x${t.height} texture that has ${t.levels}` };
     }
-    return null;
+    return attached === 0 ? { status: 0x8cd7, reason: "nothing is attached" } : null;
   }
   private fbFor(target: number): GlFramebuffer | null { return target === 0x8ca8 ? this.readFb : this.drawFb; }
   private attach(fb: GlFramebuffer | null, point: number, a: Attachment | null): void {
@@ -1318,7 +1406,9 @@ export class WebGpuGl {
     if (rb === null || fmt === null) { this.warn(`renderbuffer format 0x${internal.toString(16)} is not available`); return; }
     this.retire(rb.gpu);
     rb.samples = samples > 1 ? 4 : 1;
-    rb.gpu = this.device.createTexture({ size: { width: Math.max(1, width), height: Math.max(1, height) }, format: fmt.format, sampleCount: rb.samples, usage: GPUTextureUsage.RENDER_ATTACHMENT | (rb.samples === 1 ? GPUTextureUsage.COPY_SRC | GPUTextureUsage.TEXTURE_BINDING : 0) });
+    // A multisampled depth buffer is also bound as a texture: a depth blit resolves it in a shader.
+    const binding = rb.samples === 1 ? GPUTextureUsage.COPY_SRC | GPUTextureUsage.TEXTURE_BINDING : isDepthFormat(fmt.format) ? GPUTextureUsage.TEXTURE_BINDING : 0;
+    rb.gpu = this.device.createTexture({ size: { width: Math.max(1, width), height: Math.max(1, height) }, format: fmt.format, sampleCount: rb.samples, usage: GPUTextureUsage.RENDER_ATTACHMENT | binding });
     rb.view = rb.gpu.createView();
     rb.format = fmt;
     rb.width = width;
@@ -1364,8 +1454,54 @@ export class WebGpuGl {
       const to = dst === null ? this.backDepth : dst.depth?.object.gpu ?? null;
       const from = src.depth.object.gpu;
       if (to !== null && from.sampleCount === to.sampleCount && sameSize) encoder.copyTextureToTexture({ texture: from, origin: { x: sx0, y: sy0 } }, { texture: to, origin: { x: dx0, y: dy0 } }, { width: sx1 - sx0, height: sy1 - sy0 });
-      else this.warn("depth blitFramebuffer between different sample counts or sizes is not drawn");
+      else if (to !== null && from.sampleCount > 1 && to.sampleCount === 1 && sameSize) {
+        this.resolveDepth(encoder, from, to, sx0, sy0, dx0, dy0, sx1 - sx0, sy1 - sy0);
+        if (dst?.depth?.object.kind === "texture") dst.depth.object.usedBatch = this.batch;
+      }
+      else this.warn("depth blitFramebuffer between different sizes, or into a multisampled target, is not drawn");
     }
+  }
+
+  private readonly depthResolvePipelines = new Map<GPUTextureFormat, GPURenderPipeline>();
+
+  /**
+   * A multisampled depth blitted into a single-sample one (Scrap Signal's MSAA scene into the depth
+   * texture its effects read): WebGPU resolves only color, so a pass writes each pixel's sample 0 as
+   * its depth, the sample ANGLE's WebGL resolve takes.
+   */
+  private resolveDepth(encoder: GPUCommandEncoder, from: GPUTexture, to: GPUTexture, sx: number, sy: number, dx: number, dy: number, width: number, height: number): void {
+    const format = to.format;
+    let pipeline = this.depthResolvePipelines.get(format);
+    if (pipeline === undefined) {
+      const module = this.device.createShaderModule({ code: `@group(0) @binding(0) var src: texture_depth_multisampled_2d;
+struct U { shift: vec2<i32> };
+@group(0) @binding(1) var<uniform> u: U;
+@vertex fn vs(@builtin(vertex_index) i: u32) -> @builtin(position) vec4<f32> {
+  let p = array<vec2<f32>, 3>(vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));
+  return vec4(p[i], 0.0, 1.0);
+}
+@fragment fn fs(@builtin(position) at: vec4<f32>) -> @builtin(frag_depth) f32 { return textureLoad(src, vec2<i32>(at.xy) + u.shift, 0); }` });
+      pipeline = this.device.createRenderPipeline({
+        layout: "auto",
+        vertex: { module, entryPoint: "vs" },
+        fragment: { module, entryPoint: "fs", targets: [] },
+        primitive: { topology: "triangle-list" },
+        depthStencil: { format, depthWriteEnabled: true, depthCompare: "always" },
+      });
+      this.depthResolvePipelines.set(format, pipeline);
+    }
+    const shift = this.device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+    this.queue.writeBuffer(shift, 0, new Int32Array([sx - dx, sy - dy, 0, 0]));
+    this.retire(shift);
+    const group = this.device.createBindGroup({ layout: pipeline.getBindGroupLayout(0), entries: [{ binding: 0, resource: from.createView({ aspect: "depth-only" }) }, { binding: 1, resource: { buffer: shift } }] });
+    const stencil = hasStencil(format);
+    const pass = encoder.beginRenderPass({ colorAttachments: [], depthStencilAttachment: { view: to.createView(), depthLoadOp: "load", depthStoreOp: "store", ...(stencil ? { stencilLoadOp: "load" as const, stencilStoreOp: "store" as const } : {}) } });
+    pass.setPipeline(pipeline);
+    pass.setBindGroup(0, group);
+    pass.setViewport(dx, dy, width, height, 0, 1);
+    pass.setScissorRect(dx, dy, width, height);
+    pass.draw(3);
+    pass.end();
   }
 
   /**
@@ -1453,7 +1589,7 @@ export class WebGpuGl {
    */
   beginQuery(target: number, q: GlQuery): void {
     if (target !== 0x88bf || this.stamps === null) return;
-    this.endPass();
+    this.endPass("any");
     q.result = 0;
     q.available = false;
     q.start = -1;
@@ -1468,7 +1604,7 @@ export class WebGpuGl {
   endQuery(target: number): void {
     const q = this.timedQuery;
     if (target !== 0x88bf || q === null) return;
-    this.endPass();
+    this.endPass("any");
     this.timedQuery = null;
     q.ended = true;
     this.settleTimer(q);
@@ -1555,6 +1691,8 @@ export class WebGpuGl {
     this.backColorMsaa = samples > 1 ? this.device.createTexture({ size: { width: w, height: h }, format: "rgba8unorm", sampleCount: samples, usage: GPUTextureUsage.RENDER_ATTACHMENT }) : null;
     this.backDepth = this.attributes.depth || this.attributes.stencil ? this.device.createTexture({ size: { width: w, height: h }, format: this.attributes.stencil ? "depth24plus-stencil8" : "depth24plus", sampleCount: samples, usage: GPUTextureUsage.RENDER_ATTACHMENT }) : null;
     this.backSize = [w, h];
+    // Made once per size: a view per pass was two native calls and garbage every pass.
+    this.backViews = { color: this.backColor.createView(), msaa: this.backColorMsaa?.createView() ?? null, depth: this.backDepth?.createView() ?? null };
     this.presentGroup = null;
   }
 
@@ -1600,12 +1738,15 @@ export class WebGpuGl {
       this.ensureBackBuffer();
       const color = clear?.color[0] ?? null;
       const msaa = this.backColorMsaa;
-      colorAttachments.push({ view: (msaa ?? this.backColor!).createView(), ...(msaa !== null ? { resolveTarget: this.backColor!.createView() } : {}), loadOp: color !== null ? "clear" : "load", storeOp: "store", clearValue: color ?? [0, 0, 0, 0] });
+      const views = this.backViews!;
+      const attachment: GPURenderPassColorAttachment = { view: views.msaa ?? views.color, loadOp: color !== null ? "clear" : "load", storeOp: "store", clearValue: color ?? [0, 0, 0, 0] };
+      if (views.msaa !== null) attachment.resolveTarget = views.color;
+      colorAttachments.push(attachment);
       colorFormats.push("rgba8unorm");
       if (msaa !== null && color === null) this.warn("the default framebuffer reloads its multisampled color between passes");
       if (this.backDepth !== null) {
         depthFormat = this.backDepth.format;
-        depthStencil = { view: this.backDepth.createView(), depthLoadOp: clear?.depth != null ? "clear" : "load", depthStoreOp: "store", depthClearValue: clear?.depth ?? 1, ...(hasStencil(depthFormat) ? { stencilLoadOp: clear?.stencil != null ? "clear" : "load", stencilStoreOp: "store", stencilClearValue: clear?.stencil ?? 0 } : {}) };
+        depthStencil = { view: views.depth!, depthLoadOp: clear?.depth != null ? "clear" : "load", depthStoreOp: "store", depthClearValue: clear?.depth ?? 1, ...(hasStencil(depthFormat) ? { stencilLoadOp: clear?.stencil != null ? "clear" : "load", stencilStoreOp: "store", stencilClearValue: clear?.stencil ?? 0 } : {}) };
       }
       width = this.backSize[0]!;
       height = this.backSize[1]!;
@@ -1675,16 +1816,18 @@ export class WebGpuGl {
 
   /**
    * End the open pass, then run any pending clear nobody drew after (GL's order: the clear happened),
-   * unless it is for `keep`, the target about to be opened.
+   * unless it is for `keep`, the target about to be opened. `keep` of `"any"` holds every pending
+   * clear for the next pass's load op: a pass boundary that changes no target (a GPU timer starting
+   * or stopping) then costs no clear-only pass of its own.
    */
-  private endPass(keep?: GlFramebuffer | null): void {
+  private endPass(keep?: GlFramebuffer | null | "any"): void {
     if (this.pass !== null) {
       this.pass.end();
       this.pass = null;
       this.passTarget = null;
     }
     const pending = this.pendingClear;
-    if (pending === null || (keep !== undefined && pending.fb === keep)) return;
+    if (pending === null || keep === "any" || (keep !== undefined && pending.fb === keep)) return;
     this.pendingClear = null;
     if (this.beginPass(pending.fb, pending)) {
       this.pass!.end();
@@ -1786,7 +1929,8 @@ struct O { ${outputs} };
     this.stagingUsed = at + 32;
     const pass = this.pass!;
     pass.setPipeline(pipeline);
-    pass.setBindGroup(0, this.ringGroup(32), [at]);
+    this.dynamicOffset[0] = at;
+    pass.setBindGroup(0, this.ringGroup(32), this.dynamicOffset, 0, 1);
     pass.setViewport(0, 0, target.width, target.height, 0, 1);
     const sc = this.enabled.has(0x0c11) ? this.scissorBox : [0, 0, target.width, target.height];
     const sx = Math.min(target.width, Math.max(0, sc[0]!));
@@ -1822,26 +1966,57 @@ struct O { ${outputs} };
   drawElementsInstanced(mode: number, count: number, type: number, offset: number, instances: number): void { this.draw(mode, 0, count, instances, type, offset); }
   drawRangeElements(mode: number, _start: number, _end: number, count: number, type: number, offset: number): void { this.draw(mode, 0, count, 1, type, offset); }
 
-  private stateKey(): string {
-    if (this.stateKeyVersion === this.stateVersion) return this.stateKeyValue;
+  /**
+   * The pipeline state's interned id; computed once per state change, without allocating. A part
+   * that is switched off (blend, depth test, cull, offset, stencil) records only that, as a string
+   * key once did, so its leftover values do not split pipelines.
+   */
+  private stateId(): number {
+    if (this.stateKeyVersion === this.stateVersion) return this.stateKeyId;
+    const f = this.stateFields;
     const e = this.enabled;
-    const blend = e.has(0x0be2) ? `${this.blendEq.join(",")}|${this.blendFn.join(",")}` : "-";
-    const depth = e.has(0x0b71) ? `${this.depthFn}|${this.depthWrite ? 1 : 0}` : "-";
-    const cull = e.has(0x0b44) ? this.cull : 0;
-    const off = e.has(0x8037) ? this.offset.join(",") : "-";
+    const blend = e.has(0x0be2);
+    f[0] = blend ? 1 : 0;
+    f[1] = blend ? this.blendEq[0]! : 0;
+    f[2] = blend ? this.blendEq[1]! : 0;
+    for (let i = 0; i < 4; i += 1) f[3 + i] = blend ? this.blendFn[i]! : 0;
+    const depth = e.has(0x0b71);
+    f[7] = depth ? 1 : 0;
+    f[8] = depth ? this.depthFn : 0;
+    f[9] = depth && this.depthWrite ? 1 : 0;
+    f[10] = e.has(0x0b44) ? this.cull : 0;
+    f[11] = this.front;
+    const off = e.has(0x8037);
+    f[12] = off ? 1 : 0;
+    f[13] = off ? this.offset[0]! : 0;
+    f[14] = off ? this.offset[1]! : 0;
+    const stencil = e.has(0x0b90);
+    f[15] = stencil ? 1 : 0;
     const s = this.stencilFront;
     const b = this.stencilBack;
-    const stencil = e.has(0x0b90) ? `${s.func},${s.mask},${s.fail},${s.zfail},${s.zpass},${s.writeMask}|${b.func},${b.mask},${b.fail},${b.zfail},${b.zpass},${b.writeMask}` : "-";
-    this.stateKeyValue = `${blend}|${depth}|${cull},${this.front}|${off}|${stencil}|${this.colorWrite.map((x) => (x ? 1 : 0)).join("")}`;
-    this.stateKeyId = internId(this.stateIds, this.stateKeyValue);
+    f[16] = stencil ? s.func : 0; f[17] = stencil ? s.mask : 0; f[18] = stencil ? s.fail : 0; f[19] = stencil ? s.zfail : 0; f[20] = stencil ? s.zpass : 0; f[21] = stencil ? s.writeMask : 0;
+    f[22] = stencil ? b.func : 0; f[23] = stencil ? b.mask : 0; f[24] = stencil ? b.fail : 0; f[25] = stencil ? b.zfail : 0; f[26] = stencil ? b.zpass : 0; f[27] = stencil ? b.writeMask : 0;
+    f[28] = (this.colorWrite[0] ? 1 : 0) | (this.colorWrite[1] ? 2 : 0) | (this.colorWrite[2] ? 4 : 0) | (this.colorWrite[3] ? 8 : 0);
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < STATE_FIELDS; i += 1) hash = Math.imul(hash ^ (Math.round(f[i]! * 4096) | 0), 0x01000193);
+    let bucket = this.stateTable.get(hash);
+    let id = 0;
+    if (bucket !== undefined) {
+      for (let k = 0; k < bucket.length && id === 0; k += 1) {
+        const held = bucket[k]!.fields;
+        let same = true;
+        for (let i = 0; i < STATE_FIELDS && same; i += 1) same = held[i] === f[i];
+        if (same) id = bucket[k]!.id;
+      }
+    }
+    if (id === 0) {
+      id = ++this.stateCount;
+      if (bucket === undefined) { bucket = []; this.stateTable.set(hash, bucket); }
+      bucket.push({ fields: f.slice(), id });
+    }
+    this.stateKeyId = id;
     this.stateKeyVersion = this.stateVersion;
-    return this.stateKeyValue;
-  }
-
-  /** The pipeline state's interned id; computed once per state change. */
-  private stateId(): number {
-    if (this.stateKeyVersion !== this.stateVersion) this.stateKey();
-    return this.stateKeyId;
+    return id;
   }
 
   private vertexPlan(p: GlProgram): VertexPlan | null {
@@ -1851,15 +2026,17 @@ struct O { ${outputs} };
       const cached = known.plan;
       let ready = true;
       for (let i = 0; i < cached.slots.length; i += 1) { const b = cached.slots[i]!.buffer; if (b !== null && b.gpu === null) { ready = false; break; } }
-      if (ready) return cached.slots.length > this.device.limits.maxVertexBuffers ? null : cached;
+      if (ready) return cached.slots.length > this.maxVertexBuffers ? null : cached;
     }
     const inputs = p.translated!.layout.vertex_inputs;
     const slots: VertexSlot[] = [];
     const constants: number[] = [];
     const constantAttrs: GPUVertexAttribute[] = [];
     let keyParts = "";
-    const limits: (Omit<InstancedAttribute, "size"> & { buffer: GlBuffer })[] = [];
+    const limits: (InstancedAttribute & { buffer: GlBuffer })[] = [];
+    let drawIdLocation = -1;
     for (const input of inputs) {
+      if (input.name === DRAW_ID_INPUT) { drawIdLocation = input.location; continue; }
       const a = vao.attribs[input.location];
       if (a === undefined || !a.enabled || a.buffer === null) {
         constants.push(input.location);
@@ -1891,12 +2068,12 @@ struct O { ${outputs} };
       slot.attributes.push({ shaderLocation: input.location, offset: convert === null ? offset - slot.offset : 0, format });
       slot.sources.push({ buffer: a.buffer, offset: a.offset, stride, type: a.type, size: a.size, normalized: a.normalized, convert: convert !== null, location: input.location, format });
       // Measured on the GL layout (the source buffer), whether or not this attribute reads a Float32 copy.
-      if (a.divisor > 0) limits.push({ stride, offset: a.offset, bytes: a.size * elementBytes, buffer: a.buffer, divisor: a.divisor });
+      if (a.divisor > 0) limits.push({ stride, offset: a.offset, bytes: a.size * elementBytes, buffer: a.buffer, divisor: a.divisor, size: 0 });
     }
     if (constantAttrs.length > 0) slots.push({ buffer: null, offset: 0, stride: 0, step: "instance", attributes: constantAttrs, convert: null, constant: true, sources: [], packed: null });
     // More buffers than WebGPU binds: interleave the per-vertex ones (static geometry, packed once),
     // then if still over, the per-instance ones, into one buffer each.
-    const max = this.device.limits.maxVertexBuffers;
+    const max = this.maxVertexBuffers;
     for (const step of ["vertex", "instance"] as const) {
       if (slots.length <= max) break;
       const group = slots.filter((x) => !x.constant && x.step === step);
@@ -1908,18 +2085,24 @@ struct O { ${outputs} };
         attributes.push({ shaderLocation: src.location, offset: at, format: src.format });
         at += Math.ceil(formatBytes(src.format) / 4) * 4;
       }
-      const packedSlot: VertexSlot = { buffer: null, offset: 0, stride: at, step, attributes, convert: null, constant: false, sources, packed: { gpu: null, versions: "" } };
+      const packedSlot: VertexSlot = { buffer: null, offset: 0, stride: at, step, attributes, convert: null, constant: false, sources, packed: { gpu: null, ids: [], versions: [] } };
       const kept = slots.filter((x) => !group.includes(x));
       slots.length = 0;
       slots.push(packedSlot, ...kept);
     }
+    if (drawIdLocation >= 0) slots.push({ buffer: this.drawIds(1), offset: 0, stride: 4, step: "instance", attributes: [{ shaderLocation: drawIdLocation, offset: 0, format: "sint32" }], convert: null, constant: false, sources: [], packed: null });
     for (const s of slots) keyParts += `${s.stride}${s.step[0]}:${s.attributes.map((x) => `${x.shaderLocation}@${x.offset}${x.format}`).join(",")};`;
     const plan: VertexPlan = {
-      id: nextId++,
+      id: internId(this.layoutIds, keyParts),
       key: keyParts,
       slots,
       constants,
-      instanceCapacity: (instances: number) => instancesThatFit(instances, limits.map((l) => ({ ...l, size: l.buffer.data?.byteLength ?? l.buffer.size }))),
+      // Sizes read at each draw (a buffer can be re-sized under a cached plan), in place: a copy per draw was most of the context's garbage.
+      instanceCapacity: (instances: number) => {
+        for (const l of limits) l.size = l.buffer.data?.byteLength ?? l.buffer.size;
+        return instancesThatFit(instances, limits);
+      },
+      perInstance: limits.length > 0,
     };
     if (slots.length > max) this.warn(`a draw needs ${slots.length} vertex buffers, over WebGPU's ${max}; it is not drawn`);
     p.vertexCache.set(vao, { version: vao.version, plan });
@@ -1930,7 +2113,7 @@ struct O { ${outputs} };
     const target = this.passTarget!;
     const topo = topology(mode);
     if (topo === null) { this.warn(`draw mode ${mode} (LINE_LOOP / TRIANGLE_FAN) is not drawn`); return null; }
-    const key = `${p.id}|${plan.key}|${this.stateKey()}|${target.key}|${topo}|${texsig}${topo.endsWith("strip") ? indexType : ""}`;
+    const key = `${p.id}|${plan.key}|s${this.stateId()}|${target.key}|${topo}|${texsig}${topo.endsWith("strip") ? indexType : ""}`;
     let pipeline = this.pipelines.get(key);
     if (pipeline !== undefined) return pipeline;
     const e = this.enabled;
@@ -2132,13 +2315,16 @@ struct O { ${outputs} };
   /** Interleave a packed slot's sources into one buffer, rebuilt when any source changes. */
   private packedCopy(slot: VertexSlot): GPUBuffer | null {
     const packed = slot.packed!;
-    let versions = "";
-    for (const src of slot.sources) {
-      if (src.buffer.data === null) return null;
-      versions += `${src.buffer.id}.${src.buffer.version},`;
-      src.buffer.usedBatch = this.batch;
+    const sources = slot.sources;
+    // Compared number by number: a string of the versions per draw was most of its garbage.
+    let current = packed.gpu !== null && packed.ids.length === sources.length;
+    for (let k = 0; k < sources.length; k += 1) {
+      const b = sources[k]!.buffer;
+      if (b.data === null) return null;
+      b.usedBatch = this.batch;
+      if (current && (packed.ids[k] !== b.id || packed.versions[k] !== b.version)) current = false;
     }
-    if (packed.gpu !== null && packed.versions === versions) return packed.gpu;
+    if (current) return packed.gpu;
     let count = Infinity;
     for (const src of slot.sources) {
       const bytes = src.size * componentBytes(src.type);
@@ -2164,8 +2350,10 @@ struct O { ${outputs} };
       packed.gpu = this.device.createBuffer({ size: out.byteLength, usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST });
     }
     // A source changing submitted the batch first (its upload saw it in use), so this write lands in order.
-    this.device.queue.writeBuffer(packed.gpu, 0, out);
-    packed.versions = versions;
+    this.queue.writeBuffer(packed.gpu, 0, out);
+    packed.ids.length = sources.length;
+    packed.versions.length = sources.length;
+    for (let k = 0; k < sources.length; k += 1) { packed.ids[k] = sources[k]!.buffer.id; packed.versions[k] = sources[k]!.buffer.version; }
     return packed.gpu;
   }
 
@@ -2187,23 +2375,27 @@ struct O { ${outputs} };
       this.retire(gpu);
       gpu = this.device.createBuffer({ size: Math.max(4, out.byteLength), usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST });
     }
-    this.device.queue.writeBuffer(gpu, 0, out);
+    this.queue.writeBuffer(gpu, 0, out);
     b.floatCopies.set(key, { version: b.version, gpu });
     return gpu;
   }
 
-  private draw(mode: number, first: number, count: number, instances: number, indexType: number | null, offset: number): void {
+  private draw(mode: number, first: number, count: number, instances: number, indexType: number | null, offset: number, multi: MultiDraw | null = null): void {
     const p = this.program;
     if (p === null || !p.linked || count <= 0 || instances <= 0) return;
+    if (multi !== null && multi.drawCount <= 0) return;
     if (!this.openPass()) return;
+    // Grown before the plan's slots are bound, so the draw ids cover every item.
+    if (multi !== null) this.drawIds(multi.drawCount);
     const plan = this.vertexPlan(p);
+    if (multi !== null && plan?.perInstance === true) this.warn("degraded: a multi-draw program also reads per-instance attributes; each item's draw id offsets them");
     // Room for this draw's constant attributes, before any of its state is set on the pass.
     if (plan !== null && plan.constants.length > 0 && this.constantsUsed + plan.constants.length * 4 > this.constants.length) {
       this.submit();
       if (!this.openPass()) return;
     }
     if (plan === null) return;
-    const fit = plan.instanceCapacity(instances);
+    const fit = plan.perInstance ? plan.instanceCapacity(instances) : instances;
     if (fit < instances) {
       this.warn(`a draw asked for ${instances} instances but its instance buffers hold ${fit}; drawing ${fit} (WebGL draws the rest with zero attributes, which shows nothing)`);
       instances = fit;
@@ -2227,13 +2419,13 @@ struct O { ${outputs} };
     if (pipelineBucket !== undefined) {
       for (let k = 0; k < pipelineBucket.length; k += 1) {
         const e = pipelineBucket[k]!;
-        if (e.plan === plan && e.stateId === stateId && e.targetId === target.id && e.mode === mode && e.indexType === indexType && e.sigId === tc.sigId) { pipeline = e.pipeline; break; }
+        if (e.layoutId === plan.id && e.stateId === stateId && e.targetId === target.id && e.mode === mode && e.indexType === indexType && e.sigId === tc.sigId) { pipeline = e.pipeline; break; }
       }
     }
     if (pipeline === null) {
       pipeline = this.pipelineFor(p, plan, mode, indexType, sig);
       if (pipeline === null) return;
-      const entry: PipelineEntry = { plan, stateId, targetId: target.id, mode, indexType, sigId: tc.sigId, pipeline };
+      const entry: PipelineEntry = { layoutId: plan.id, stateId, targetId: target.id, mode, indexType, sigId: tc.sigId, pipeline };
       if (pipelineBucket === undefined) p.pipelineSets.set(pipelineHash, [entry]);
       else pipelineBucket.push(entry);
     }
@@ -2256,7 +2448,8 @@ struct O { ${outputs} };
     const passNow = this.pass!;
     if (this.boundPipeline !== pipeline) { passNow.setPipeline(pipeline); this.boundPipeline = pipeline; }
     if (this.boundUniform !== p.slotOffset + p.blockSize * 1e7) {
-      passNow.setBindGroup(0, this.ringGroup(p.blockSize), [p.slotOffset]);
+      this.dynamicOffset[0] = p.slotOffset;
+      passNow.setBindGroup(0, this.ringGroup(p.blockSize), this.dynamicOffset, 0, 1);
       this.boundUniform = p.slotOffset + p.blockSize * 1e7;
     }
     const group = tc.group;
@@ -2323,11 +2516,42 @@ struct O { ${outputs} };
         firstIndex = offset;
       }
       if (this.boundIndex !== gpu || this.boundIndexFormat !== format) { passNow.setIndexBuffer(gpu, format); this.boundIndex = gpu; this.boundIndexFormat = format; }
-      passNow.drawIndexed(count, instances, firstIndex, 0, 0);
-    } else {
+      if (multi === null) passNow.drawIndexed(count, instances, firstIndex, 0, 0);
+      else {
+        const bytes = indexType === 0x1405 ? 4 : indexType === 0x1403 ? 2 : 1;
+        for (let i = 0; i < multi.drawCount; i += 1) {
+          const n = multi.counts[multi.countsOffset + i] ?? 0;
+          if (n > 0) passNow.drawIndexed(n, 1, (multi.starts[multi.startsOffset + i] ?? 0) / bytes, 0, i);
+        }
+      }
+    } else if (multi === null) {
       passNow.draw(count, instances, first, 0);
+    } else {
+      for (let i = 0; i < multi.drawCount; i += 1) {
+        const n = multi.counts[multi.countsOffset + i] ?? 0;
+        if (n > 0) passNow.draw(n, 1, multi.starts[multi.startsOffset + i] ?? 0, i);
+      }
     }
     this.stats.draws += 1;
+  }
+
+  private drawIdBuffer: GlBuffer | null = null;
+
+  /** The buffer holding 0, 1, 2... that multi-draw items read their `gl_DrawID` from, grown to hold `count`. */
+  private drawIds(count: number): GlBuffer {
+    const b = (this.drawIdBuffer ??= this.createBuffer());
+    if (b.gpu !== null && b.size >= count * 4) return b;
+    const length = Math.max(1024, 2 ** Math.ceil(Math.log2(count)));
+    const ids = new Int32Array(length);
+    for (let i = 0; i < length; i += 1) ids[i] = i;
+    // The old buffer's ids are a prefix of the new one's, so draws already recorded with it stay right.
+    this.retire(b.gpu);
+    b.gpu = this.device.createBuffer({ size: ids.byteLength, usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST });
+    this.queue.writeBuffer(b.gpu, 0, ids);
+    b.size = ids.byteLength;
+    b.data = ids;
+    b.version += 1;
+    return b;
   }
 
   private floatCopyIndex(b: GlBuffer): GPUBuffer {
@@ -2338,7 +2562,7 @@ struct O { ${outputs} };
     const out = new Uint16Array(Math.max(2, src.length + (src.length % 2)));
     out.set(src);
     const gpu = known?.gpu !== undefined && known.gpu.size >= out.byteLength ? known.gpu : this.device.createBuffer({ size: out.byteLength, usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST });
-    this.device.queue.writeBuffer(gpu, 0, out);
+    this.queue.writeBuffer(gpu, 0, out);
     b.floatCopies.set("u8index", { version: b.version, gpu });
     return gpu;
   }
@@ -2358,17 +2582,17 @@ struct O { ${outputs} };
     this.endPass();
     if (this.encoder === null) return;
     if (this.stagingUsed > 0) {
-      this.device.queue.writeBuffer(this.ring, 0, this.staging, 0, Math.ceil(this.stagingUsed / 4) * 4);
+      this.queue.writeBuffer(this.ring, 0, this.staging, 0, Math.ceil(this.stagingUsed / 4) * 4);
       this.stats.uniformBytes += this.stagingUsed;
     }
-    if (this.constantsUsed > 0) this.device.queue.writeBuffer(this.constantRing, 0, this.constants, 0, this.constantsUsed);
+    if (this.constantsUsed > 0) this.queue.writeBuffer(this.constantRing, 0, this.constants, 0, this.constantsUsed);
     this.resolveStamps(this.encoder);
-    this.device.queue.submit([this.encoder.finish()]);
+    this.queue.submit([this.encoder.finish()]);
     this.stats.submits += 1;
     if (!this.lagSampling) {
       this.lagSampling = true;
       const sent = performance.now();
-      void this.device.queue.onSubmittedWorkDone().then(() => {
+      void this.queue.onSubmittedWorkDone().then(() => {
         this.stats.queueLagMs = performance.now() - sent;
         this.lagSampling = false;
       });
