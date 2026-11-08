@@ -96,6 +96,7 @@ export const SETTING_IDS = {
   graphicsFrameRateLimit: "graphics.frameRateLimit",
   graphicsAnisotropy: "graphics.anisotropy",
   graphicsShowFps: "graphics.showFps",
+  graphicsDisplayMode: "graphics.displayMode",
   touchStyle: "controls.touchStyle",
   touchJoystick: "controls.touchJoystick",
 } as const;
