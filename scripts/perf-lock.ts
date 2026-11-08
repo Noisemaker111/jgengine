@@ -11,10 +11,11 @@ import { beginPause, endPause, markStep } from "./hangReport";
  * 87-99% CPU, and in four hours none of them got a number worth reading.
  *
  * Held around page load, warmup and the measurement windows only: never around builds, installs or
- * Vite startup. Who takes it: `measureGame` in perf-play (perf play, gate, fps-gap, shadow-audit),
- * perf network, perf desktop's launched scene, perf native's timed rows, and `drive --hitches`.
- * Shoot and a plain drive time no frames, so they do not wait for it. It is a mutex, not a load
- * check: a busy PC never stops a run, only another timed run does.
+ * Vite startup. Who takes it: `measureGame` in perf-play (perf play, gate, fps-gap, shadow-audit;
+ * `perf play` holds it across its one-browser batch), perf network, perf desktop from app launch to
+ * close, perf native's timed rows, and `drive --hitches`. Shoot and a plain drive time no frames,
+ * and perf live only reads a page already open, so they do not wait for it. It is a mutex, not a
+ * load check: a busy PC never stops a run, only another timed run does.
  *
  * The lock file lives once per machine (`%LOCALAPPDATA%\jgengine\perf.lock`), not per worktree,
  * because every worktree is its own checkout. A holder whose process is gone, or that stopped
