@@ -20,6 +20,7 @@ import {
   type DrawCost,
   type FrameBreakdown,
   type FrameBreakdownRecord,
+  type GpuTiming,
   type Hitch,
   type LayoutAttribute,
   type LongFrameTiming,
@@ -33,6 +34,8 @@ import {
  *   (`frame#<n>`, named in `callbacks()` by its source), render submission and each post pass.
  * - GPU per pass: `EXT_disjoint_timer_query_webgl2` around the shadow pass, the main render and each
  *   post pass. Only one timer runs at a time in WebGL, so a nested pass pauses its parent's timer.
+ *   A pass timer also counts the GPU idle while the CPU submits that pass, so `gpuTiming("draws")`
+ *   times every draw and clear on its own instead: the GPU work, by pass and by material.
  * - Counts: draws and triangles (per object and material too), shader links and the time spent on
  *   them, texture and buffer uploads, and the JS heap (a drop between frames is a collection).
  *
@@ -70,8 +73,9 @@ function visibleLights(scene: object): string[] {
 
 /** Frames kept: 30 s at 144 Hz. */
 const CAPACITY = 4320;
-/** Pending GPU timers kept before the oldest are dropped unread. */
+/** Pending GPU timers kept before the oldest are dropped unread: a few frames of passes, or of draws. */
 const MAX_PENDING_QUERIES = 512;
+const MAX_PENDING_DRAW_QUERIES = 16384;
 /** @internal */
 export const FRAME_RETENTION_LIMIT = 1024;
 /** Hitches a session keeps: an hour of one stall every two seconds. */
@@ -266,10 +270,22 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     compiles: 0, compileMs: 0, uploads: 0, uploadBytes: 0, uploadMs: 0, heapMb: null, heapDropMb: 0,
   });
 
-  // GPU timers: a stack of pass labels, one query running for the top of it.
+  // GPU timers: a stack of pass labels, one query running for the top of it (span timing), or one
+  // query around each draw and clear, credited to the pass on top of the stack (draw timing).
+  let gpuMode: GpuTiming = "span";
   const gpuStack: string[] = [];
-  let running: { query: WebGLQuery; label: string; record: FrameBreakdownRecord } | null = null;
-  const pending: { query: WebGLQuery; label: string; record: FrameBreakdownRecord }[] = [];
+  type Timer = { query: WebGLQuery; label: string; record: FrameBreakdownRecord; material: string | null };
+  let running: Timer | null = null;
+  // The material of the draw three is submitting, so a draw-timed call is credited to it.
+  let drawingMaterial: string | null = null;
+  const pending: Timer[] = [];
+  // Ended queries are reused: draw timing ends hundreds a frame, and a create and delete for each
+  // would be driver work of its own inside the very frames it measures.
+  const spare: WebGLQuery[] = [];
+  const release = (query: WebGLQuery) => {
+    if (spare.length < MAX_PENDING_DRAW_QUERIES) spare.push(query);
+    else timers?.gl.deleteQuery(query);
+  };
   const unresolved = new Map<FrameBreakdownRecord, number>();
   const stopTimer = () => {
     if (timers === null || running === null) return;
@@ -277,7 +293,7 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     pending.push(running);
     unresolved.set(running.record, (unresolved.get(running.record) ?? 0) + 1);
     running = null;
-    if (pending.length > MAX_PENDING_QUERIES) {
+    if (pending.length > (gpuMode === "draws" ? MAX_PENDING_DRAW_QUERIES : MAX_PENDING_QUERIES)) {
       const dropped = pending.shift();
       if (dropped !== undefined) {
         dropped.record.gpu = null;
@@ -288,19 +304,21 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
       }
     }
   };
-  const startTimer = (label: string) => {
+  const startTimer = (label: string, material: string | null = null) => {
     if (timers === null || current === null) return;
-    const query = timers.gl.createQuery();
+    const query = spare.pop() ?? timers.gl.createQuery();
     if (query === null) { current.gpu = null; return; }
     timers.gl.beginQuery(timers.ext.TIME_ELAPSED_EXT, query);
-    running = { query, label, record: current };
+    running = { query, label, record: current, material };
   };
   const enterPass = (label: string) => {
+    if (gpuMode === "draws") { gpuStack.push(label); return; }
     stopTimer();
     gpuStack.push(label);
     startTimer(label);
   };
   const leavePass = () => {
+    if (gpuMode === "draws") { gpuStack.pop(); return; }
     stopTimer();
     gpuStack.pop();
     const parent = gpuStack[gpuStack.length - 1];
@@ -311,7 +329,7 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     const { gl, ext } = timers;
     if (gl.getParameter(ext.GPU_DISJOINT_EXT) === true) {
       for (const entry of pending.splice(0)) {
-        gl.deleteQuery(entry.query);
+        release(entry.query);
         entry.record.gpu = null;
         unresolved.delete(entry.record);
       }
@@ -321,8 +339,12 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
       if (gl.getQueryParameter(entry.query, gl.QUERY_RESULT_AVAILABLE) !== true) break;
       pending.shift();
       const ns = Number(gl.getQueryParameter(entry.query, gl.QUERY_RESULT));
-      gl.deleteQuery(entry.query);
+      release(entry.query);
       if (entry.record.gpu !== null) entry.record.gpu[entry.label] = (entry.record.gpu[entry.label] ?? 0) + ns / 1e6;
+      if (entry.material !== null) {
+        const cost = materials.get(entry.material);
+        if (cost !== undefined) cost.gpuMs = (cost.gpuMs ?? 0) + ns / 1e6;
+      }
       const left = (unresolved.get(entry.record) ?? 1) - 1;
       if (left <= 0) unresolved.delete(entry.record);
       else unresolved.set(entry.record, left);
@@ -471,21 +493,23 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
       lastScene = scene;
       if (typeof scene === "object" && scene !== null && !lightsSeen.has(scene)) lightsChanged(scene);
     }
+    const pass = gpuStack[gpuStack.length - 1] ?? "main";
+    const materialName = labelFor(materialLabels, material, labelOf, "material");
     const start = performance.now();
     const compiledBefore = current?.compileMs ?? 0;
     const linkedBefore = current?.compiles ?? 0;
+    drawingMaterial = materialName;
     try {
       return original(camera, scene, geometry, material, object, group);
     } finally {
+      drawingMaterial = null;
       const ms = performance.now() - start;
       const triangles = trianglesOf(geometry, group, object);
-      const pass = gpuStack[gpuStack.length - 1] ?? "main";
       if (current !== null) {
         current.draws += 1;
         current.triangles += triangles;
       }
       const objectName = labelFor(objectLabels, object, objectLabel, geometry);
-      const materialName = labelFor(materialLabels, material, labelOf, "material");
       tally(objects, objectName, triangles, ms, pass);
       tally(materials, materialName, triangles, ms, pass);
       // This draw built or first used a program: name it, and the pass that drew it, so a compile
@@ -512,6 +536,21 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
       }
     }
   });
+
+  // Draw timing brackets the context's own draw, clear and blit calls, not three's state setup around
+  // them: a query opened before that setup also counts the GPU idle while the CPU binds uniforms and
+  // textures (Harbor Heat's scene pass read 6.6 ms that way against 2.75 ms of draws).
+  for (const method of ["drawElements", "drawArrays", "drawElementsInstanced", "drawArraysInstanced", "drawRangeElements", "clear", "clearBufferfv", "clearBufferiv", "clearBufferuiv", "clearBufferfi", "blitFramebuffer"]) {
+    wrap(context, method, (original) => (...args) => {
+      const timeCall = gpuMode === "draws" && running === null;
+      if (timeCall) startTimer(gpuStack[gpuStack.length - 1] ?? "main", drawingMaterial);
+      try {
+        return original(...args);
+      } finally {
+        if (timeCall) stopTimer();
+      }
+    });
+  }
 
   // Shader compiles and links, and uploads, on the context itself.
   const timed = (method: string, onCall: (ms: number, args: unknown[], result: unknown) => void) =>
@@ -710,8 +749,8 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
       const programs = renderer.info.programs?.length ?? null;
       const complete = ordered().map((record) => unresolved.has(record) ? { ...record, gpu: null } : record);
       // Draw costs are gathered over the whole window, so a tail of it reports frames only.
-      if (options.last !== undefined) return { ...summarizeBreakdown(complete.slice(-options.last), { objects: [], materials: [] }, { programs, top: options.top }), workCounts: detailedWork ? "enabled" : "disabled", retention: { ...retention } };
-      return { ...summarizeBreakdown(complete, { objects: [...objects.values()], materials: [...materials.values()] }, { programs, top: options.top }), workCounts: detailedWork ? "enabled" : "disabled", retention: { ...retention } };
+      if (options.last !== undefined) return { ...summarizeBreakdown(complete.slice(-options.last), { objects: [], materials: [] }, { programs, top: options.top, gpuTiming: gpuMode }), workCounts: detailedWork ? "enabled" : "disabled", retention: { ...retention } };
+      return { ...summarizeBreakdown(complete, { objects: [...objects.values()], materials: [...materials.values()] }, { programs, top: options.top, gpuTiming: gpuMode }), workCounts: detailedWork ? "enabled" : "disabled", retention: { ...retention } };
     },
     records: () => ordered().map((record) => unresolved.has(record) ? { ...record, gpu: null } : record),
     callbacks: () => ({ ...callbacks }),
@@ -733,6 +772,16 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
         dropped: hitchDropped,
       };
     },
+    gpuTiming(mode) {
+      if (mode !== undefined && mode !== gpuMode) {
+        stopTimer();
+        gpuMode = mode;
+        // A pass already open is timed the new way from here: by its draws, or by a span from now.
+        const open = gpuStack[gpuStack.length - 1];
+        if (mode === "span" && open !== undefined) startTimer(open);
+      }
+      return gpuMode;
+    },
     reset() {
       records.length = 0;
       next = 0;
@@ -749,6 +798,7 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     dispose() {
       stopTimer();
       for (const entry of pending.splice(0)) timers?.gl.deleteQuery(entry.query);
+      for (const query of spare.splice(0)) timers?.gl.deleteQuery(query);
       for (const undo of restore.splice(0).reverse()) undo();
       if (active === breakdown) {
         active = null;

@@ -6,7 +6,7 @@ import { ensureDevServer, killPid, killProcessTree, openPageSession, withBrowser
 import { FRAME_GAMES } from "./ci-scope";
 import { engineRecord, resolveEngineIdentity } from "./engineIdentity";
 import { debugPortFor, GATE_SIZE } from "./perf-gate";
-import { gpuErrors, measureGame, parseSettingSpec, type AllocationEntry, type PerfRecord, type ProfileNode, type RawProfile } from "./perf-play";
+import { gameSessionDeadlineMs, GPU_WORK_SECONDS, gpuErrors, measureGame, parseSettingSpec, type AllocationEntry, type PerfRecord, type ProfileNode, type RawProfile } from "./perf-play";
 import type { FrameBreakdownSummary, NamedCost } from "../packages/core/src/devtools/frameBreakdown";
 import { parseRendererBackend, type RendererBackend } from "../packages/core/src/settings/rendererBackend";
 
@@ -178,8 +178,12 @@ export function gpuGroupOf(pass: string): string {
 const UNATTRIBUTED = "untimed work inside the frame (r3f loop, React effects)";
 const BETWEEN = "between frames (GPU wait, compositing, React commits, GC)";
 
-/** Average ms per frame by group for one game: CPU groups, GPU groups, and the frame's unexplained time. */
-export function groupCosts(breakdown: FrameBreakdownSummary): { cpu: Map<string, number>; gpu: Map<string, number> } {
+/**
+ * Average ms per frame by group for one game: CPU groups, GPU groups, and the frame's unexplained time.
+ * GPU groups come from `gpuWork` (every draw timed on its own) when the record has it, since the
+ * frame window's pass timers also count the GPU waiting on the CPU.
+ */
+export function groupCosts(breakdown: FrameBreakdownSummary, gpuWork?: FrameBreakdownSummary | null): { cpu: Map<string, number>; gpu: Map<string, number> } {
   const cpu = new Map<string, number>();
   let named = 0;
   for (const row of breakdown.cpu) {
@@ -192,7 +196,7 @@ export function groupCosts(breakdown: FrameBreakdownSummary): { cpu: Map<string,
   const between = breakdown.frame.avg - breakdown.work.avg;
   if (between > 0) cpu.set(BETWEEN, between);
   const gpu = new Map<string, number>();
-  for (const pass of breakdown.passes) {
+  for (const pass of (gpuWork ?? breakdown).passes) {
     const group = gpuGroupOf(pass.name);
     gpu.set(group, (gpu.get(group) ?? 0) + pass.avgMs);
   }
@@ -224,7 +228,7 @@ export function workItems(entries: readonly FpsGapEntry[]): WorkItem[] {
   for (const { record } of entries) {
     const breakdown = record.breakdown;
     if (breakdown === null || breakdown === undefined) continue;
-    const { cpu, gpu } = groupCosts(breakdown);
+    const { cpu, gpu } = groupCosts(breakdown, record.gpuWork);
     for (const [group, ms] of cpu) add(group, "CPU", record.game, ms);
     for (const [group, ms] of gpu) add(group, "GPU", record.game, ms);
     // Garbage the window collected, spread over its frames: the per-frame share of collection pauses
@@ -291,20 +295,22 @@ export function renderFpsGapReport(entries: readonly FpsGapEntry[], options: { m
   out.push(`360 fps gap: every cost against the ${budget} ms frame (360 fps). ${entries.length} games.`);
   if (first !== undefined) out.push(`Conditions: ${first.viewport}, ${first.quality} tier, ${first.frameClock} clock, path ${first.path ?? "still"}, ${first.gpu}${engines.length === 0 ? "" : `, engine ${engines.join(" and ")}`}.`);
   out.push("CPU is main-thread work per frame and GPU the timer-query sum of the passes; cost is the larger p50, so 'x budget' and 'ceiling fps' assume the two overlap fully.");
+  out.push("GPU is the GPU's work: a second window on the same path times every draw and clear on its own ('GPU span' is the frame window's pass timers, which also count the GPU idle while the CPU submits; a record without the draw-timed window shows its span in both).");
   out.push("These are the dev server's build (development React, unminified modules) in headless Chrome; a production desktop build spends less CPU (`bun run perf desktop --launch <app.exe> --uncapped`).", "");
 
-  const summary: Table = { head: ["game", "frame p50", "p95", "p99", "CPU p50", "GPU p50", "bound", "x budget", "ceiling fps", "draws", "triangles", "nodes", "GC MB/8s", "hitches"], rows: [] };
+  const summary: Table = { head: ["game", "frame p50", "p95", "p99", "CPU p50", "GPU p50", "GPU span p50", "bound", "x budget", "ceiling fps", "draws", "triangles", "nodes", "GC MB/8s", "hitches"], rows: [] };
   for (const { record } of entries) {
     const b = record.breakdown;
     if (b === null || b === undefined) {
-      summary.rows.push([record.game, `${ms2(record.frame.avgMs)} avg`, ms2(record.frame.p95Ms), "-", "-", "-", "-", "-", "-", String(record.render.drawsFrame ?? "-"), String(record.render.triangles ?? "-"), String(record.render.nodes ?? "-"), "-", String(record.frame.longFrames)]);
+      summary.rows.push([record.game, `${ms2(record.frame.avgMs)} avg`, ms2(record.frame.p95Ms), "-", "-", "-", "-", "-", "-", "-", String(record.render.drawsFrame ?? "-"), String(record.render.triangles ?? "-"), String(record.render.nodes ?? "-"), "-", String(record.frame.longFrames)]);
       continue;
     }
-    const cost = frameCost(b);
+    const gpu = (record.gpuWork ?? b).gpu;
+    const cost = frameCost({ work: b.work, gpu });
     summary.rows.push([
       record.game,
       ms2(b.frame.p50), ms2(b.frame.p95), ms2(b.frame.p99),
-      ms2(b.work.p50), b.gpu === null ? "n/a" : ms2(b.gpu.p50),
+      ms2(b.work.p50), gpu === null ? "n/a" : ms2(gpu.p50), b.gpu === null ? "n/a" : ms2(b.gpu.p50),
       cost.bound,
       `${(cost.ms / FPS_GAP_BUDGET_MS).toFixed(1)}x`,
       String(Math.round(1000 / Math.max(cost.ms, 0.01))),
@@ -321,7 +327,7 @@ export function renderFpsGapReport(entries: readonly FpsGapEntry[], options: { m
     detail.rows.push([
       record.game,
       b === null || b === undefined ? "-" : top(b.cpu, 4),
-      b === null || b === undefined ? "-" : top(b.passes, 3),
+      b === null || b === undefined ? "-" : top((record.gpuWork ?? b).passes, 3),
       layers.slice(0, 4).map((layer) => `${layer.layer} ${layer.pct}`).join("; "),
       allocators.slice(0, 3).map((entry) => `${entry.fn} ${entry.mbPerSecond}`).join("; "),
     ]);
@@ -410,7 +416,8 @@ async function measureAll(args: FpsGapArgs, backend: RendererBackend, engine: Pe
         }
         previous = game;
         const exit = await withBrowserSession(
-          { keep: false, debugPort: debugPortFor(index), timeoutMs: 180_000, hardDeadlineMs: 300_000, frameClock: "uncapped" },
+          // Frame window, profile window and the draw-timed GPU window.
+          { keep: false, debugPort: debugPortFor(index), timeoutMs: 180_000, hardDeadlineMs: gameSessionDeadlineMs(WARMUP_MS, args.seconds * 2 + GPU_WORK_SECONDS), frameClock: "uncapped" },
           async ({ debugPort }) => {
             const session = await openPageSession(debugPort);
             try {
@@ -428,6 +435,7 @@ async function measureAll(args: FpsGapArgs, backend: RendererBackend, engine: Pe
                 settings: [parseSettingSpec("graphics.auto=false"), parseSettingSpec(`renderer=${backend}`)],
                 size: GATE_SIZE,
                 breakdownTop: BREAKDOWN_TOP,
+                gpuWork: true,
               });
               if (measured.record.breakdown === null || measured.record.breakdown === undefined) {
                 throw new Error("the page installed no frame breakdown, so CPU, GPU and their groups are unknown; measure it again");

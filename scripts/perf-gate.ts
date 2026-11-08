@@ -10,7 +10,7 @@ import {
   withBrowserSession,
 } from "./browser-lib";
 import { FRAME_GAMES } from "./ci-scope";
-import { measureGame, parseSettingSpec, writePerfRecord } from "./perf-play";
+import { gameSessionDeadlineMs, measureGame, parseSettingSpec, writePerfRecord } from "./perf-play";
 import { parseGraphicsTier, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 import {
   checkBudget,
@@ -189,7 +189,7 @@ async function main(): Promise<void> {
     console.log(`perf gate: ${game} budget ${loaded.source}`);
     let outcome: GameOutcome = { game, summary: null, violations: [], error: null };
     const exitCode = await withBrowserSession(
-      { keep: false, debugPort: debugPortFor(index), timeoutMs: 180_000, hardDeadlineMs: 300_000, frameClock: "uncapped" },
+      { keep: false, debugPort: debugPortFor(index), timeoutMs: 180_000, hardDeadlineMs: gameSessionDeadlineMs(WARMUP_MS, seconds), frameClock: "uncapped" },
       async ({ debugPort }) => {
         const session = await openPageSession(debugPort);
         try {

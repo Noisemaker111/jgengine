@@ -92,6 +92,20 @@ test("a game's groups add up to its frame: named rows, untimed work, and the tim
   expect(gpu.get("post-processing GPU")).toBe(0.6);
 });
 
+test("GPU groups and the GPU column read the draw-timed window when the record has one", () => {
+  const work = breakdown({ gpuTiming: "draws", gpu: spread(2.5), passes: [{ name: "post:BeautyPass", avgMs: 1.5, p95Ms: 2 }, { name: "shadow", avgMs: 0.7, p95Ms: 1 }] });
+  const { gpu } = groupCosts(breakdown(), work);
+  expect(gpu.get("scene raster (GPU)")).toBe(1.5);
+  expect(gpu.get("shadow map raster (GPU)")).toBe(0.7);
+  const withWork = entry("a", breakdown({ gpu: spread(10) }));
+  withWork.record.gpuWork = work;
+  const report = renderFpsGapReport([withWork], { markdown: true });
+  // GPU p50 is the work (2.50), GPU span p50 the frame window's pass timers (10.00), and the cost
+  // is the CPU's 9 ms, not the span's 10.
+  expect(report).toContain("| 9.00 | 2.50 | 10.00 | CPU |");
+  expect(workItems([withWork]).find((item) => item.group === "scene raster (GPU)")?.totalMs).toBe(1.5);
+});
+
 test("work items rank by games blocked, then by total ms", () => {
   const items = workItems([
     entry("a", breakdown()),
@@ -146,7 +160,7 @@ test("the report prints every game against the budget, in text or Markdown", () 
   const text = renderFpsGapReport(entries, { markdown: false });
   expect(text).toContain("2.78 ms frame (360 fps)");
   expect(text, "the engine the records were measured on, once").toContain("engine abc123def.");
-  expect(text).toMatch(/harbor-heat\s+12\.00\s+16\.80\s+21\.60\s+9\.00\s+6\.00\s+CPU\s+3\.2x\s+111\s/);
+  expect(text).toMatch(/harbor-heat\s+12\.00\s+16\.80\s+21\.60\s+9\.00\s+6\.00\s+6\.00\s+CPU\s+3\.2x\s+111\s/);
   expect(text).toContain("deepward");
   expect(text).toContain("scene submission (three.js traversal, sort, draw calls)");
   const markdown = renderFpsGapReport(entries, { markdown: true });

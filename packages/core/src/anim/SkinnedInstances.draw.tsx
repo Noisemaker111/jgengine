@@ -109,7 +109,7 @@ function placeStaticSkin(geometry: THREE.BufferGeometry, skinned: THREE.SkinnedM
 
 /** Attribute layout two geometries must agree on before their vertices can share a draw. */
 function layoutKey(geometry: THREE.BufferGeometry): string {
-  const parts = [geometry.index === null ? "plain" : "indexed"];
+  const parts: string[] = [];
   for (const name of Object.keys(geometry.attributes).sort()) {
     const attribute = geometry.attributes[name]!;
     parts.push(`${name}:${attribute.itemSize}:${attribute.normalized === true ? 1 : 0}`);
@@ -118,15 +118,19 @@ function layoutKey(geometry: THREE.BufferGeometry): string {
 }
 
 /**
- * Flattens an indexed part so every baked geometry shares one attribute set. Bakes happen once per
- * character kind, and mixed indexed/non-indexed sources (a box plus an icosahedron) would otherwise
- * refuse to merge into one draw.
+ * Gives a part without an index the identity one, so every part merges as indexed (mixed indexed and
+ * non-indexed sources, a box plus an icosahedron, refuse to merge into one draw). Keeping the index
+ * keeps the source's shared vertices: the same triangles in the same order, so the same pixels, with
+ * each vertex shaded once instead of once per triangle corner (flattening the parts made Harbor
+ * Heat's baked cars shade about three times the vertices, in every pass that draws them).
  */
-function flatten(geometry: THREE.BufferGeometry): THREE.BufferGeometry {
-  if (geometry.index === null) return geometry;
-  const expanded = geometry.toNonIndexed();
-  geometry.dispose();
-  return expanded;
+function indexed(geometry: THREE.BufferGeometry): THREE.BufferGeometry {
+  if (geometry.index !== null) return geometry;
+  const count = geometry.getAttribute("position").count;
+  const identity = count > 65535 ? new Uint32Array(count) : new Uint16Array(count);
+  for (let vertex = 0; vertex < count; vertex += 1) identity[vertex] = vertex;
+  geometry.setIndex(new THREE.BufferAttribute(identity, 1));
+  return geometry;
 }
 
 /** Copies the attributes a batch can draw: the vertex, its normal and its texture coordinate. */
@@ -140,7 +144,7 @@ function bakePart(mesh: THREE.Mesh, relative: THREE.Matrix4): { geometry: THREE.
   geometry.setAttribute("uv", uv !== undefined ? floatAttribute(uv) : new THREE.Float32BufferAttribute(new Float32Array(source.getAttribute("position").count * 2), 2));
   if (source.index !== null) geometry.setIndex(source.index.clone());
   geometry.applyMatrix4(relative);
-  return { geometry: flatten(geometry), layout: "", material: firstMaterial(mesh.material) };
+  return { geometry: indexed(geometry), layout: "", material: firstMaterial(mesh.material) };
 }
 
 /**
@@ -210,8 +214,7 @@ export function bakeSkinnedCrowd(source: SkinnedCrowdSource, options: BakeSkinne
       }
       geometry.setAttribute("skinIndex", new THREE.Float32BufferAttribute(remapped, 4));
       geometry.setAttribute("skinWeight", new THREE.Float32BufferAttribute(weights, 4));
-      const flat = flatten(geometry);
-      part = { geometry: flat, layout: layoutKey(flat), material: firstMaterial(mesh.material) };
+      part = { geometry: indexed(geometry), layout: layoutKey(geometry), material: firstMaterial(mesh.material) };
     } else {
       const slotNode = rigidSlotNode(mesh, root, animatedNames);
       const nodeInverse = slotNode.matrixWorld.clone().invert();

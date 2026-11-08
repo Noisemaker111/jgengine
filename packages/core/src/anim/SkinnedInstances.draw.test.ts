@@ -58,7 +58,7 @@ function bakeGroups(scene: THREE.Object3D): THREE.Mesh[][] {
     if (mesh.isMesh !== true || Array.isArray(mesh.material) || mesh.material === undefined) return;
     if (mesh.geometry.getAttribute("position") === undefined) return;
     const material = mesh.material as THREE.Material;
-    const layout = [mesh.geometry.index === null ? "plain" : "indexed", ...Object.keys(mesh.geometry.attributes).sort()].join(",");
+    const layout = Object.keys(mesh.geometry.attributes).sort().join(",");
     const key = `${material.uuid}|${layout}`;
     const bucket = groups.get(key);
     if (bucket === undefined) groups.set(key, [mesh]);
@@ -68,7 +68,7 @@ function bakeGroups(scene: THREE.Object3D): THREE.Mesh[][] {
 }
 
 /**
- * three's own CPU skinning of the same vertices in the bake's draw order: grouped by material, meshes
+ * three's own CPU skinning of the same triangle corners in the bake's draw order: grouped by material, meshes
  * in traversal order, skinned vertices posed by the mixer and rigid vertices by their node.
  */
 function skinReference(gltf: GLTF, clip: string, time: number): THREE.Vector3[] {
@@ -109,13 +109,18 @@ describe("bakeSkinnedCrowd on a KayKit Knight", () => {
     const gltf = await loadKnight();
     const baked = bakeSkinnedCrowd(gltf, { clips: ["Idle", "Walking_A", "Death_A"], once: ["Death_A"], fps: 20 });
     let vertices = 0;
+    let corners = 0;
     gltf.scene.traverse((object) => {
       const mesh = object as THREE.Mesh;
       if (mesh.isMesh !== true) return;
-      // The bake flattens indexed parts, so an indexed mesh contributes one vertex per index.
-      vertices += mesh.geometry.index === null ? mesh.geometry.getAttribute("position").count : mesh.geometry.index.count;
+      vertices += mesh.geometry.getAttribute("position").count;
+      corners += mesh.geometry.index === null ? mesh.geometry.getAttribute("position").count : mesh.geometry.index.count;
     });
+    // Every triangle corner is drawn, and the source's shared vertices stay shared: each vertex is
+    // shaded once, not once per corner.
+    expect(baked.geometry.index?.count).toBe(corners);
     expect(baked.geometry.getAttribute("position").count).toBe(vertices);
+    expect(vertices).toBeLessThan(corners);
     // One geometry group per material when several materials are merged; a single-material rig
     // needs no groups and is still one draw.
     expect(baked.geometry.groups.length).toBe(baked.materials.length === 1 ? 0 : baked.materials.length);
@@ -148,9 +153,10 @@ describe("bakeSkinnedCrowd on a KayKit Knight", () => {
     const gltf = await loadKnight();
     const baked = bakeSkinnedCrowd(gltf, { clips: ["Idle", "Walking_A"], fps: 20 });
     const reference = skinReference(gltf, clip, time);
-    expect(reference).toHaveLength(baked.geometry.getAttribute("position").count);
+    const index = baked.geometry.index!;
+    expect(reference).toHaveLength(index.count);
     let worst = 0;
-    for (let v = 0; v < reference.length; v += 7) worst = Math.max(worst, skinBaked(baked, v, clip, time).distanceTo(reference[v]!));
+    for (let corner = 0; corner < reference.length; corner += 7) worst = Math.max(worst, skinBaked(baked, index.getX(corner), clip, time).distanceTo(reference[corner]!));
     expect(worst).toBeLessThan(tolerance);
   });
 
@@ -235,11 +241,14 @@ describe("bakeSkinnedCrowd on a rig-less character", () => {
       if ((object as THREE.Mesh).isMesh === true) meshes.push(object as THREE.Mesh);
     });
     let vertices = 0;
+    let corners = 0;
     for (const mesh of meshes) {
       const geometry = mesh.geometry;
-      vertices += geometry.index === null ? geometry.getAttribute("position").count : geometry.index.count;
+      vertices += geometry.getAttribute("position").count;
+      corners += geometry.index === null ? geometry.getAttribute("position").count : geometry.index.count;
     }
     expect(baked.geometry.getAttribute("position").count).toBe(vertices);
+    expect(baked.geometry.index?.count).toBe(corners);
     // The arm rotates away from the body between the first and last baked frames.
     const arm = new THREE.Vector3().fromBufferAttribute(baked.geometry.getAttribute("position") as THREE.BufferAttribute, 0);
     const start = arm.clone().applyMatrix4(boneMatrix(baked, baked.geometry.getAttribute("skinIndex").getX(0), 0));
