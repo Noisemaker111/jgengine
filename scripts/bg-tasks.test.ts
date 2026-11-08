@@ -117,6 +117,17 @@ test("a supervisor started outside the caller runs the command with the caller's
   }
 });
 
+const GIT_BASH = "C:/Program Files/Git/bin/bash.exe";
+
+test.skipIf(process.platform !== "win32" || !existsSync(GIT_BASH))("a Git Bash job's output reaches the log (MSYS writes nothing to an append-only handle)", async () => {
+  const dir = checkout();
+  const id = startTask({ command: `"${GIT_BASH}" -c "echo from-msys; echo to-stderr >&2; exit 4"`, checkout: dir });
+  let printed = "";
+  expect(await awaitTask({ id, checkout: dir, write: (text) => (printed += text), err: () => {}, timeoutMs: 30_000 })).toBe(4);
+  expect(printed).toContain("from-msys");
+  expect(printed).toContain("to-stderr");
+});
+
 test("bun's argument separator is not part of the command", () => {
   expect(commandFrom(["--", "bun", "run", "verify:fast", "--full"])).toBe("bun run verify:fast --full");
   expect(commandFrom(["bun", "run", "verify:fast", "--full"])).toBe("bun run verify:fast --full");
