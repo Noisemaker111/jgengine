@@ -89,13 +89,66 @@ export interface GameFlowOptions {
 }
 
 /**
- * Title, play, pause and checkpoints as one system. Boot stops the clock behind the title; the
- * `pause` command (bind it to Esc / P) opens and closes the pause menu; the `start` command leaves
- * the title straight into play, which is what a capture or a drive runs to skip the menu; the
- * `menu.pane` command shows a menu's Controls, Settings or Credits pane, as choosing that verb does,
- * so a proof reads the credits through {@link menuPane}; the `settings.rebind` command binds an action
- * to new keys (null restores the game's), as the Controls settings do; `save` and `continue` run the
- * pause menu's Save and the title's Continue. Pair it with `GameFlowUI` from
+ * The commands {@link createGameFlowSystem} defines, one entry each with its own comment. A new
+ * game-flow command is a new entry at the end, so two changes that each add one touch no shared line.
+ */
+const gameFlowCommands: readonly ((ctx: GameContext) => void)[] = [
+  // `pause` (bind it to Esc / P) opens and closes the pause menu.
+  (ctx) =>
+    ctx.game.commands.define("pause", {
+      apply(state) {
+        togglePause(state);
+        return state;
+      },
+    }),
+  // `settings.rebind` binds an action to new keys (null restores the game's), as the Controls settings do.
+  (ctx) =>
+    ctx.game.commands.define<{ action: string; codes: ActionCodes | null }>("settings.rebind", {
+      apply(state, input) {
+        rebindAction(state, input.action, input.codes);
+        return state;
+      },
+    }),
+  // `save` runs the pause menu's Save.
+  (ctx) =>
+    ctx.game.commands.define("save", {
+      apply(state) {
+        void saveNow(state);
+        return state;
+      },
+    }),
+  // `continue` runs the title's Continue.
+  (ctx) =>
+    ctx.game.commands.define("continue", {
+      apply(state) {
+        void continueGame(state);
+        return state;
+      },
+    }),
+  // `start` leaves the title straight into play, which is what a capture or a drive runs to skip the menu.
+  (ctx) =>
+    ctx.game.commands.define("start", {
+      apply(state) {
+        playGame(state);
+        return state;
+      },
+    }),
+  // `menu.pane` shows a menu's Controls, Settings or Credits pane, as choosing that verb does, so a
+  // proof reads the credits through `menuPane`.
+  (ctx) =>
+    ctx.game.commands.define<{ pane: MenuPane | null }>("menu.pane", {
+      apply(state, input) {
+        showMenuPane(state, input.pane);
+        return state;
+      },
+    }),
+];
+
+/**
+ * Title, play, pause and checkpoints as one system. Boot stops the clock behind the title and
+ * defines the game-flow commands, each described where this file lists it, so a menu, a capture or
+ * a proof runs the same verbs (the `start` command skips the title).
+ * Pair it with `GameFlowUI` from
  * `@jgengine/core/menu/gameFlowMenus.view`.
  *
  * @capability game-flow title, play, pause and autosave checkpoints as one system, with newGame/continueGame/saveNow for menus
@@ -106,42 +159,7 @@ export function createGameFlowSystem(options: GameFlowOptions = {}): SystemDefin
     id: "game.flow",
     tick: { type: "frame" },
     create(ctx) {
-      ctx.game.commands.define("pause", {
-        apply(state) {
-          togglePause(state);
-          return state;
-        },
-      });
-      ctx.game.commands.define<{ action: string; codes: ActionCodes | null }>("settings.rebind", {
-        apply(state, input) {
-          rebindAction(state, input.action, input.codes);
-          return state;
-        },
-      });
-      ctx.game.commands.define("save", {
-        apply(state) {
-          void saveNow(state);
-          return state;
-        },
-      });
-      ctx.game.commands.define("continue", {
-        apply(state) {
-          void continueGame(state);
-          return state;
-        },
-      });
-      ctx.game.commands.define("start", {
-        apply(state) {
-          playGame(state);
-          return state;
-        },
-      });
-      ctx.game.commands.define<{ pane: MenuPane | null }>("menu.pane", {
-        apply(state, input) {
-          showMenuPane(state, input.pane);
-          return state;
-        },
-      });
+      for (const define of gameFlowCommands) define(ctx);
       openTitle(ctx);
     },
     update(ctx, dt) {
