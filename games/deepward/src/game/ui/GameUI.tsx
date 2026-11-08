@@ -212,7 +212,8 @@ function VisorGlass({ low }: { low: boolean }) {
   const glass = useStore(viewStore, v => ({ diving: v.dive !== null, hurt: v.dive !== null && v.dive.hurt > 0, hit: v.dive !== null && v.dive.flash > 0 }));
   return <>
     <Visor low={low} hurt={glass.hurt} />
-    {glass.hurt && <div className="dw-hurtwash" aria-hidden="true" />}
+    {/* Always mounted, only faded: its first draw links a blur program in the browser, a frame frozen mid-fight. */}
+    <div className="dw-hurtwash" data-on={glass.hurt ? "" : undefined} aria-hidden="true" />
     {glass.diving && <VisorReticle hit={glass.hit} />}
   </>;
 }
