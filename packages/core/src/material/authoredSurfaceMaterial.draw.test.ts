@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
 import { authoredSurfaceTextures, configureAuthoredSurface } from "./authoredSurfaceMaterial.draw";
+import { compilesBatched } from "./compileLayers.draw";
 
 describe("authored PBR surface", () => {
   test("physical color maps use sRGB while numeric maps stay linear on independently owned views", () => {
@@ -57,7 +58,10 @@ describe("authored PBR surface", () => {
     expect(material.depthWrite).toBe(false);
     const shader = { uniforms: {}, vertexShader: "#include <uv_vertex>", fragmentShader: "#include <common>\n#include <opaque_fragment>" };
     material.onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, {} as THREE.WebGLRenderer);
-    expect(shader.vertexShader).toContain("modelMatrix * instanceMatrix");
+    expect(shader.vertexShader).toContain("surfaceTransform * instanceMatrix");
+    expect(shader.vertexShader).toContain("modelMatrix * getBatchingMatrix");
+    // Rim and surface both read the batched instance, so a batch can draw it.
+    expect(compilesBatched(material)).toBe(true);
     expect(shader.vertexShader).toContain("vDisplacementMapUv *= surfaceRepeat");
     expect(shader.fragmentShader).toContain("uJgRimColor");
     expect(material.customProgramCacheKey()).toContain("authored-surface:box:1.2");

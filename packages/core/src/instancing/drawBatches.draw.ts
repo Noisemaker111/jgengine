@@ -4,6 +4,7 @@ import { devtools } from "@jgengine/core/devtools/devtools";
 import { compilesBatched, withoutCompileLayers } from "@jgengine/core/material/compileLayers.draw";
 import { freezeStaticTransforms } from "@jgengine/core/model/staticTransforms.draw";
 import { isPostfxOverlay } from "@jgengine/core/postfx/postfxOverlay.draw";
+import { giveStableShadowDepth, isStableShadowDepth } from "@jgengine/core/lighting/shadowCasters.draw";
 import { Lingering } from "@jgengine/core/run/lingering";
 import { visitShownMeshes } from "@jgengine/core/visibility/culledTransforms.draw";
 import { batchableGeometry, geometryLayout, materialSignature, mirrorSourceTextures } from "./staticDrawPool.draw";
@@ -168,6 +169,7 @@ class DrawEntry {
   castShadow: boolean;
   receiveShadow: boolean;
   renderOrder: number;
+  frustumCulled: boolean;
   seen = -1;
   shown = false;
   /** Pass at which a mesh drawn on its own is asked again. */
@@ -183,13 +185,14 @@ class DrawEntry {
     this.castShadow = mesh.castShadow;
     this.receiveShadow = mesh.receiveShadow;
     this.renderOrder = mesh.renderOrder;
+    this.frustumCulled = mesh.frustumCulled;
   }
 
   /** Whether anything the batch key or the draw is made of changed since the mesh was placed. */
   drifted(): boolean {
     const mesh = this.mesh;
     return mesh.geometry !== this.geometry || mesh.material !== this.material || mesh.castShadow !== this.castShadow ||
-      mesh.receiveShadow !== this.receiveShadow || mesh.renderOrder !== this.renderOrder;
+      mesh.receiveShadow !== this.receiveShadow || mesh.renderOrder !== this.renderOrder || mesh.frustumCulled !== this.frustumCulled;
   }
 }
 
@@ -227,11 +230,13 @@ function reject(reason: string): null {
 /** Whether a mesh's batch would draw exactly what three draws for it, and if so the batch it joins. */
 function batchKeyOf(mesh: THREE.Mesh): string | null {
   if (mesh.layers.mask !== DEFAULT_MASK) return reject("layers");
-  if (!mesh.frustumCulled) return reject("unculled");
   if (!mesh.matrixWorldAutoUpdate) return reject("handWorldMatrix");
   if (!isNeutralRenderHook(mesh.onBeforeRender) || mesh.onAfterRender !== BASE.onAfterRender) return reject("renderHook");
   if (mesh.onBeforeShadow !== BASE.onBeforeShadow || mesh.onAfterShadow !== BASE.onAfterShadow) return reject("shadowHook");
-  if (mesh.customDepthMaterial !== undefined || mesh.customDistanceMaterial !== undefined) return reject("customDepth");
+  // A stable shadow depth is three's own depth shader with the caster's map, side and alpha test,
+  // which is what the batch casts with.
+  const depth = mesh.customDepthMaterial;
+  if ((depth !== undefined && !isStableShadowDepth(depth)) || mesh.customDistanceMaterial !== undefined) return reject("customDepth");
   if (mesh.matrixWorld.determinant() <= 0) return reject("mirrored");
   if (geometryLayout(mesh.geometry) === null) return reject("geometry");
   const material = mesh.material;
@@ -242,7 +247,7 @@ function batchKeyOf(mesh: THREE.Mesh): string | null {
   const signature = materialSignature(material);
   if (signature === null) return reject("materialValue");
   for (let node: THREE.Object3D | null = mesh; node !== null; node = node.parent) if (isPostfxOverlay(node)) return reject("overlay");
-  return `${mesh.castShadow ? 1 : 0}${mesh.receiveShadow ? 1 : 0}#${mesh.renderOrder}#${geometryLayout(mesh.geometry) ?? ""}#${signature}`;
+  return `${mesh.castShadow ? 1 : 0}${mesh.receiveShadow ? 1 : 0}${mesh.frustumCulled ? 1 : 0}#${mesh.renderOrder}#${geometryLayout(mesh.geometry) ?? ""}#${signature}`;
 }
 
 function vertexCount(geometry: THREE.BufferGeometry): number {
@@ -303,15 +308,17 @@ export class DrawBatcher implements ShownMeshVisitor {
       entry.castShadow = mesh.castShadow;
       entry.receiveShadow = mesh.receiveShadow;
       entry.renderOrder = mesh.renderOrder;
+      entry.frustumCulled = mesh.frustumCulled;
       this.place(entry);
       moved = true;
-    } else if (entry.drifted() || mesh.layers.mask !== BATCHED_SOURCE_MASK || !isNeutralRenderHook(mesh.onBeforeRender) || !mesh.frustumCulled) {
+    } else if (entry.drifted() || mesh.layers.mask !== BATCHED_SOURCE_MASK || !isNeutralRenderHook(mesh.onBeforeRender)) {
       this.unplace(entry);
       entry.geometry = mesh.geometry;
       entry.material = mesh.material;
       entry.castShadow = mesh.castShadow;
       entry.receiveShadow = mesh.receiveShadow;
       entry.renderOrder = mesh.renderOrder;
+      entry.frustumCulled = mesh.frustumCulled;
       this.place(entry);
       moved = true;
     }
@@ -487,9 +494,10 @@ export class DrawBatcher implements ShownMeshVisitor {
     batch.castShadow = mesh.castShadow;
     batch.receiveShadow = mesh.receiveShadow;
     batch.renderOrder = mesh.renderOrder;
-    // Instances move anywhere, so the batch has no bounds of its own; it culls each instance per camera.
+    // Instances move anywhere, so the batch has no bounds of its own; it culls each instance per camera,
+    // unless its meshes asked three never to cull them.
     batch.frustumCulled = false;
-    batch.perObjectFrustumCulled = true;
+    batch.perObjectFrustumCulled = mesh.frustumCulled;
     batch.userData[DRAW_BATCH_MESH_KEY] = true;
     // Picking hits the source meshes, which stay in the scene; the batch is only their picture.
     batch.raycast = () => {};
@@ -497,6 +505,7 @@ export class DrawBatcher implements ShownMeshVisitor {
     batch.visible = false;
     this.parent.add(batch);
     freezeStaticTransforms(batch);
+    if (batch.castShadow) giveStableShadowDepth(batch);
     return { key, mesh: batch, material: shared.material, geometries: new Map(), vertexCapacity, indexCapacity, instances: 0, shown: 0 };
   }
 

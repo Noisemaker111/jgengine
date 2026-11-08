@@ -8,6 +8,7 @@ import type { SurfaceMaterialMaps } from "@jgengine/core/material/surfaceMateria
 import type { TerrainMaterialMaps } from "@jgengine/core/world/features";
 import { MAX_TERRAIN_PAINT_LAYERS } from "./terrainSurfaces.draw";
 import { terrainScanKey } from "./terrainScanMaps.draw";
+import { MODEL_MATRIX_GLSL, markBatchSafeOwnHook } from "@jgengine/core/material/compileLayers.draw";
 
 import { NOISE_GLSL, PAINT_PARS_GLSL, SURFACE_BUMP_NORMAL_GLSL, SURFACE_FUNCTIONS_GLSL, surfaceNoiseUniforms } from "./terrainSurfaceShader.draw";
 import type { TerrainPaintTextures } from "./terrainSurfaces.draw";
@@ -389,12 +390,13 @@ varying vec3 vJgWorldNormal;`,
       .replace(
         "#include <beginnormal_vertex>",
         `#include <beginnormal_vertex>
-vJgWorldNormal = normalize(mat3(modelMatrix) * objectNormal);`,
+${MODEL_MATRIX_GLSL}
+vJgWorldNormal = normalize(mat3(jgModelMatrix) * objectNormal);`,
       )
       .replace(
         "#include <begin_vertex>",
         `#include <begin_vertex>
-vJgWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;`,
+vJgWorldPos = (jgModelMatrix * vec4(transformed, 1.0)).xyz;`,
       );
 
     const materialUniformsGlsl = hasTexture
@@ -617,5 +619,6 @@ reflectedLight.indirectDiffuse *= jgGenAoSum;
 
   material.customProgramCacheKey = () =>
     `jgengine-terrain-detail-${hasTexture ? "tex" : "flat"}-${hasTexture && textures.roughness !== undefined ? "rough" : "scalar"}-${hasTexture && textures.ao !== undefined ? "ao" : "unoccluded"}-${paint === undefined ? "bare" : "paint"}-${low ? "low" : "full"}-${classMask}-${surfaceKey}`;
+  markBatchSafeOwnHook(material.onBeforeCompile);
   return { material, contour };
 }

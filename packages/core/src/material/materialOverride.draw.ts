@@ -3,6 +3,7 @@ import * as THREE from "three";
 import type { ModelMaterialOverride, ModelRimLight } from "@jgengine/core/game/playableGame";
 
 import { applyModelScan } from "@jgengine/core/model/modelScan.draw";
+import { batchSafeSignature, markBatchSafe } from "./compileLayers.draw";
 
 /** Options for applyMaterialOverride: clone first, textures to apply and a hook that records replaced materials. */
 export interface MaterialOverrideOptions {
@@ -172,5 +173,8 @@ outgoingLight += uJgRimColor * jgRim * uJgRimStrength;
   // Two materials differing only in rim tuning must not share a compiled program.
   // Read the chained key lazily: the default surface's key follows the live graphics tier.
   target.customProgramCacheKey = () => `${previousKey.call(target)}|jgengine-rim-${rim.color ?? "#ffffff"}-${strength}-${power}`;
+  // Fragment only, and its tuning is the closure's, so it names it.
+  const wrapped = batchSafeSignature(previousCompile);
+  if (wrapped !== undefined) markBatchSafe(target.onBeforeCompile, { signature: `rim(${rim.color ?? "#ffffff"},${strength},${power})${wrapped}` });
   target.needsUpdate = true;
 }

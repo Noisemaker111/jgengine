@@ -5,6 +5,7 @@ import * as THREE from "three";
 import type { ModelMaterialOverride } from "@jgengine/core/game/playableGame";
 import { MATERIAL_TEXTURE_SEMANTICS } from "@jgengine/core/material/materialAsset";
 
+import { batchSafeSignature, markBatchSafe } from "./compileLayers.draw";
 import { applyMaterialOverrideToMaterial, requiresPhysicalMaterial, type MaterialOverrideTextures } from "./materialOverride.draw";
 import { ImageTextureLoader } from "./imageTexture.draw";
 import { modelMapEntries } from "@jgengine/core/model/modelAssets";
@@ -73,8 +74,11 @@ export function configureAuthoredSurface(material: THREE.MeshStandardMaterial, c
     previousCompile.call(material, shader, renderer);
     shader.vertexShader = shader.vertexShader.replace("#include <uv_vertex>", `#include <uv_vertex>
 mat4 surfaceTransform = modelMatrix;
+#ifdef USE_BATCHING
+ surfaceTransform = modelMatrix * getBatchingMatrix( getIndirectIndex( gl_DrawID ) );
+#endif
 #ifdef USE_INSTANCING
- surfaceTransform = modelMatrix * instanceMatrix;
+ surfaceTransform = surfaceTransform * instanceMatrix;
 #endif
 vec3 surfaceExtent = vec3(length(surfaceTransform[0].xyz), length(surfaceTransform[1].xyz), length(surfaceTransform[2].xyz));
 vec2 surfaceRepeat = ${shape === "box"
@@ -86,6 +90,8 @@ ${Object.entries({ MAP: "vMapUv", NORMALMAP: "vNormalMapUv", ROUGHNESSMAP: "vRou
     }).join("\n")}`);
   };
   material.customProgramCacheKey = () => `${previousKey}|authored-surface:${shape}:${tile}`;
+  const wrapped = batchSafeSignature(previousCompile);
+  if (wrapped !== undefined) markBatchSafe(material.onBeforeCompile, { signature: `authored(${shape},${tile})${wrapped}` });
 }
 
 /**

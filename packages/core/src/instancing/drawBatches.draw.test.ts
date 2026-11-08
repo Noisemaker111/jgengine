@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import * as THREE from "three";
 
+import { giveStableShadowDepth, isStableShadowDepth } from "@jgengine/core/lighting/shadowCasters.draw";
 import { setCulled, skipCulledMatrices } from "@jgengine/core/visibility/culledTransforms.draw";
 import { BATCHED_SOURCE_LAYER, batchSceneDraws, DRAW_BATCH_MESH_KEY, markNeutralRenderHook, sceneRaycaster } from "./drawBatches.draw";
 
@@ -167,4 +168,49 @@ test("a mesh whose render hook only watches (the cascaded shadows' swap check) s
   scene.updateMatrixWorld();
   expect(batcher.stats()).toMatchObject({ batched: 0, single: 1, reasons: { renderHook: 1 } });
   expect(mesh.layers.mask).toBe(1);
+});
+
+test("casters with a stable shadow depth batch, and the batch casts through its own; a foreign depth shader keeps its draw", () => {
+  const { scene, batcher } = setup();
+  const material = new THREE.MeshStandardMaterial();
+  const stable = Array.from({ length: 3 }, (_, index) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(), material);
+    mesh.castShadow = true;
+    mesh.position.x = index * 3;
+    giveStableShadowDepth(mesh);
+    return mesh;
+  });
+  const foreign = new THREE.Mesh(new THREE.BoxGeometry(), material);
+  foreign.castShadow = true;
+  foreign.customDepthMaterial = new THREE.MeshDepthMaterial();
+  scene.add(...stable, foreign);
+  scene.updateMatrixWorld();
+  expect(batcher.stats()).toMatchObject({ batched: 3, single: 1, reasons: { customDepth: 1 } });
+  const [batch] = batchesOf(scene);
+  expect(batch?.customDepthMaterial !== undefined && isStableShadowDepth(batch.customDepthMaterial)).toBe(true);
+});
+
+test("meshes three must never cull batch apart from culled ones, in a batch that never culls", () => {
+  const { scene, batcher } = setup();
+  const material = new THREE.MeshStandardMaterial();
+  const culled = new THREE.Mesh(new THREE.BoxGeometry(), material);
+  const unculled = new THREE.Mesh(new THREE.BoxGeometry(), material);
+  unculled.frustumCulled = false;
+  scene.add(culled, unculled);
+  scene.updateMatrixWorld();
+  expect(batcher.stats()).toMatchObject({ batched: 2, single: 0, batches: 2 });
+  expect(batchesOf(scene).map((batch) => batch.perObjectFrustumCulled).sort()).toEqual([false, true]);
+  unculled.frustumCulled = true;
+  scene.updateMatrixWorld();
+  expect(batcher.stats()).toMatchObject({ batched: 2, batches: 1 });
+});
+
+test("a batch draws with its material's own shader switches, which three's material copy drops", () => {
+  const { scene } = setup();
+  const material = new THREE.MeshStandardMaterial();
+  material.defines = { ...material.defines, JG_TERRAIN_PAINT: "", JG_SURFACE_CLASSES: "7" };
+  scene.add(new THREE.Mesh(new THREE.BoxGeometry(), material), new THREE.Mesh(new THREE.BoxGeometry(), material));
+  scene.updateMatrixWorld();
+  const [batch] = batchesOf(scene);
+  expect((batch?.material as THREE.Material | undefined)?.defines).toMatchObject({ STANDARD: "", JG_TERRAIN_PAINT: "", JG_SURFACE_CLASSES: "7" });
 });

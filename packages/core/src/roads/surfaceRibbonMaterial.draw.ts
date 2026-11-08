@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 
+import { MODEL_MATRIX_GLSL, markBatchSafeOwnHook } from "@jgengine/core/material/compileLayers.draw";
 import { clamp } from "@jgengine/core/math/scalar";
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
@@ -359,7 +360,8 @@ varying vec3 vJgRibbon;`,
       .replace(
         "#include <begin_vertex>",
         `#include <begin_vertex>
-vJgWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;
+${MODEL_MATRIX_GLSL}
+vJgWorldPos = (jgModelMatrix * vec4(transformed, 1.0)).xyz;
 vJgRibbon = ${RIBBON_FRAME_ATTRIBUTE};`,
       );
     shader.fragmentShader = shader.fragmentShader
@@ -399,6 +401,7 @@ ${RIBBON_SCAN_AO_GLSL}`,
   };
   material.customProgramCacheKey = () =>
     `jgengine-surface-ribbon-${classIndex}-${low ? "low" : "full"}-${edge ? "edge" : "hard"}-${wear > 0 ? "wear" : "clean"}-${slabs === undefined ? "poured" : "slabs"}-${surfaceScanKeyPart(scan?.textures ?? null)}-${frame ? "frame" : "world"}-${paint ? "paint" : "base"}`;
+  markBatchSafeOwnHook(material.onBeforeCompile);
   return material;
 }
 

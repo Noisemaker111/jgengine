@@ -5,6 +5,7 @@ import * as THREE from "three";
 
 import { MATERIAL_TEXTURE_SEMANTICS, validateMaterialAsset, validateMaterialAssignments, type MaterialAsset, type MaterialAssignment, type MaterialAssignmentValidationOptions, type MaterialSurfaceParameters, type MaterialTextureMetadata, type MaterialTextureRole } from "@jgengine/core/material/materialAsset";
 
+import { batchSafeSignature, markBatchSafe } from "./compileLayers.draw";
 import { applyMaterialOverrideToMaterial, MATERIAL_TEXTURE_PROPERTIES, requiresPhysicalMaterial, type MaterialOverrideTextures } from "./materialOverride.draw";
 import { configureAuthoredSurface, type SurfaceShape } from "./authoredSurfaceMaterial.draw";
 import { ownModelMaterial } from "@jgengine/core/model/modelRender.draw";
@@ -111,6 +112,9 @@ vec2 jgSlope = transpose(jgRotation) * (cos(jgThreads) * jgThreadFilter * uJgFab
 normal = normalize(normal + (jgT * jgSlope.x + jgB * jgSlope.y) / jgFrameLength);`);
   };
   material.customProgramCacheKey = () => `${previousKey}|jg-fabric:v1`;
+  // Reads only uv and view space, and its weave is the closure's, so it names it.
+  const wrapped = batchSafeSignature(previousCompile);
+  if (wrapped !== undefined) markBatchSafe(material.onBeforeCompile, { signature: `fabric(${scale},${strength},${variation},${direction})${wrapped}` });
   material.needsUpdate = true;
 }
 
