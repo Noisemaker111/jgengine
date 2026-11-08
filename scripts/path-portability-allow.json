@@ -19,6 +19,16 @@
       "file": "packages/jgengine/src/desktopSteam.test.ts",
       "match": "\"BuildOutput\"",
       "reason": "a SteamPipe build script is Windows-format text that steamcmd reads with backslash paths on every OS; the assertion is the file's fixed text, not a path built for this machine"
+    },
+    {
+      "file": "scripts/outsideCaller.test.ts",
+      "match": "windowsCommandLineArg(",
+      "reason": "windowsCommandLineArg quotes a Windows command line for WMI; a Windows path with backslashes is its subject on every OS"
+    },
+    {
+      "file": "scripts/outsideCaller.test.ts",
+      "match": "windowsCommandLine(",
+      "reason": "windowsCommandLine builds the Windows command line WMI runs; the Windows path is its subject on every OS"
     }
   ]
 }
