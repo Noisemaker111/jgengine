@@ -69,9 +69,15 @@ export function ScatterImpostorField({ cacheKey, sources, farSources, batches, r
   const settings = useMemo(() => impostorSettingsForQuality(quality), [quality]);
   const [entry, setEntry] = useState<ImpostorEntry | null>(null);
   useEffect(() => {
+    let live = true;
     const acquired = acquireImpostor(cacheKey, gl, farSources ?? sources, settings);
-    setEntry(acquired);
-    return () => releaseImpostor(cacheKey, gl, settings);
+    // The bake links its programs off the frame first; the far placements draw as models until it lands.
+    setEntry(acquired.baked ? acquired : null);
+    if (!acquired.baked) void acquired.ready.then(() => { if (live) setEntry(acquired); });
+    return () => {
+      live = false;
+      releaseImpostor(cacheKey, gl, settings);
+    };
   }, [cacheKey, gl, sources, farSources, settings]);
 
   // Near draws are cached per batch object: a batch that comes back unchanged (every chunk but the one

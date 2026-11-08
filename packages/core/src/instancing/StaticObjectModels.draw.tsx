@@ -340,8 +340,15 @@ function ImpostorStaticObjects({ batch, objects, sources, radius }: {
   const key = useMemo(() => `object:${batch.model.url}:${JSON.stringify(batch.model)}`, [batch.model]);
   const [entry, setEntry] = useState<ImpostorEntry | null>(null);
   useEffect(() => {
-    setEntry(acquireImpostor(key, gl, sources, settings));
-    return () => releaseImpostor(key, gl, settings);
+    let live = true;
+    const acquired = acquireImpostor(key, gl, sources, settings);
+    // The bake links its programs off the frame first; the far placements draw as models until it lands.
+    setEntry(acquired.baked ? acquired : null);
+    if (!acquired.baked) void acquired.ready.then(() => { if (live) setEntry(acquired); });
+    return () => {
+      live = false;
+      releaseImpostor(key, gl, settings);
+    };
   }, [key, gl, sources, settings]);
   const assignment = useMemo(() => new LevelAssignment(), []);
   const camera = useMemo(() => new THREE.Vector3(), []);
