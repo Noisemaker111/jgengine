@@ -41,7 +41,7 @@ if (cold && process.env.JG_PARENT_SOURCE_ONLY !== "1") {
   // spawn stays in the job and died with the hook, leaving an empty log and no install (2026-11-08).
   let id = null;
   try {
-    const started = execFileSync("bun", ["scripts/bg-run.ts", "start", "bun", "scripts/agent-bootstrap.ts"], {
+    const started = execFileSync("bun", ["scripts/background.ts", "start", "--", "bun", "scripts/agent-bootstrap.ts"], {
       cwd: process.cwd(),
       stdio: ["ignore", "pipe", "ignore"],
       windowsHide: true,

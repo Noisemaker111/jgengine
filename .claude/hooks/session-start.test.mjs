@@ -39,7 +39,7 @@ function runHook({ sourceOnly = false, rulesMoved = false, warm = false, startFa
 test('a cold checkout starts the bootstrap as a background task outside the hook, and names it', () => {
   const result = runHook();
   assert.equal(result.launches.length, 1);
-  assert.equal(result.launches[0].args.join(' '), 'scripts/bg-run.ts start bun scripts/agent-bootstrap.ts');
+  assert.equal(result.launches[0].args.join(' '), 'scripts/background.ts start -- bun scripts/agent-bootstrap.ts');
   assert.equal(result.launches[0].options.windowsHide, true);
   assert.match(result.context, /was started in the background as task task-7/);
 });
