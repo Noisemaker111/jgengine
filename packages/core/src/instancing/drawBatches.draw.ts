@@ -1,5 +1,6 @@
 import * as THREE from "three";
 
+import { devtools } from "@jgengine/core/devtools/devtools";
 import { withoutCompileLayers } from "@jgengine/core/material/compileLayers.draw";
 import { freezeStaticTransforms } from "@jgengine/core/model/staticTransforms.draw";
 import { isPostfxOverlay } from "@jgengine/core/postfx/postfxOverlay.draw";
@@ -509,6 +510,14 @@ export function batchSceneDraws(scene: THREE.Object3D, raycaster: THREE.Raycaste
     batcher = new DrawBatcher(scene);
     batchers.set(scene, batcher);
     visitShownMeshes(scene, batcher);
+    const probe = batcher;
+    devtools.probes.registerSystem("render/drawBatches", {
+      counters: () => ({ ...probe.stats() }),
+      state: () => {
+        const stats = probe.stats();
+        return `${stats.batched} meshes in ${stats.batches} batches (${stats.drawn} drawn) · ${stats.single} on their own`;
+      },
+    });
   }
   raycaster.layers.enable(BATCHED_SOURCE_LAYER);
   return batcher;

@@ -2,6 +2,7 @@ import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   readdirSync,
@@ -2488,8 +2489,9 @@ export async function navigateCapturePageWithRetry(
   }
 }
 
-/** Write bytes to a temp path then atomically swap into place (never a torn PNG). */
+/** Write bytes to a temp path then atomically swap into place (never a torn PNG), making `--out`'s folder when it is new. */
 export function writePngAtomic(outPath: string, bytes: Buffer): void {
+  mkdirSync(dirname(outPath), { recursive: true });
   const tmpPath = `${outPath}.tmp`;
   writeFileSync(tmpPath, bytes);
   if (existsSync(outPath)) unlinkSync(outPath);
