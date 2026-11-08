@@ -26,11 +26,11 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | spawns | 3/3 | 0 | 0 | 0 | 0 |
 | boss | 3/3 | 0 | 0 | 0 | 0 |
 | cave | 2/2 | 0 | 0 | 0 | 0 |
-| **total** | **64/67** | 0 | 0 | 3 | 0 |
+| **total** | **65/67** | 0 | 0 | 2 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: creature-survival. 64/67 proven · 3 missing.
+Genres: creature-survival. 65/67 proven · 2 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
