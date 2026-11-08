@@ -1,6 +1,7 @@
 import { useThree } from "@react-three/fiber";
 import { memo, useEffect } from "react";
 import * as THREE from "three";
+import { sceneRaycaster } from "@jgengine/core/instancing/drawBatches.draw";
 
 import { MATERIAL_DRAG_MIME } from "./AssetBrowser";
 import type { EditorHostApi } from "./session";
@@ -21,7 +22,7 @@ export const MaterialDropZone = memo(function MaterialDropZone({ api }: { api: E
 
   useEffect(() => {
     const canvas = gl.domElement;
-    const raycaster = new THREE.Raycaster();
+    const raycaster = sceneRaycaster();
     const ndc = new THREE.Vector2();
     const planeHit = new THREE.Vector3();
 

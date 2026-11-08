@@ -1,6 +1,7 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { sceneRaycaster } from "@jgengine/core/instancing/drawBatches.draw";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { IMPACT_PROFILES, impactClassFor, type ImpactClass, type ImpactProfile } from "@jgengine/core/combat/impactProfile";
@@ -116,7 +117,7 @@ function markTexture(): THREE.DataTexture {
 }
 
 const Z = new THREE.Vector3(0, 0, 1);
-const surfaceRay = new THREE.Raycaster();
+const surfaceRay = sceneRaycaster();
 const boundsScratch = new THREE.Sphere();
 const alongScratch = new THREE.Vector3();
 const instanceScratch = new THREE.Matrix4();

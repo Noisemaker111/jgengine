@@ -1,7 +1,8 @@
 import { OrbitControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useRef, type ComponentRef, type MutableRefObject } from "react";
-import { MOUSE, PerspectiveCamera, Raycaster, type Camera, Vector3 } from "three";
+import { MOUSE, PerspectiveCamera, type Camera, Vector3 } from "three";
+import { sceneRaycaster } from "@jgengine/core/instancing/drawBatches.draw";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { isCameraOccluderTransparent } from "./cameraCollision";
 import { useGameContext } from "@jgengine/react/provider";
@@ -86,7 +87,7 @@ export function GameOrbitCamera({
   const playerFov = usePlayerFov();
   const camera = useThree((state) => state.camera);
   const scene = useThree((state) => state.scene);
-  const raycasterRef = useRef(new Raycaster());
+  const raycasterRef = useRef(sceneRaycaster());
   const collisionDirRef = useRef(new Vector3());
   const collisionOriginRef = useRef(new Vector3());
   const followPayloadRef = useRef<CameraFollowState>({

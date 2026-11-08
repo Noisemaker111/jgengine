@@ -164,7 +164,8 @@ export function materialSignature(material: THREE.Material | THREE.Material[]): 
 /**
  * The vertex layout a batch's shared buffers are made from: index or none, then each attribute's name,
  * width, array type and normalization (a quantized model's 16-bit positions never mix with float
- * ones). Null for a geometry a batch cannot hold.
+ * ones). Null for a geometry a batch cannot hold. Groups are no bar: a batch takes one material, and
+ * three draws a single-material mesh whole whatever groups its geometry has (a box's six faces).
  * @internal
  */
 export function geometryLayout(geometry: THREE.BufferGeometry): string | null {
@@ -172,7 +173,7 @@ export function geometryLayout(geometry: THREE.BufferGeometry): string | null {
 }
 
 function plainLayout(geometry: THREE.BufferGeometry): string | null {
-  if (geometry.groups.length > 1 || geometry.drawRange.start !== 0 || geometry.drawRange.count !== Infinity) return null;
+  if (geometry.drawRange.start !== 0 || geometry.drawRange.count !== Infinity) return null;
   if (Object.keys(geometry.morphAttributes).length > 0 || !geometry.hasAttribute("position")) return null;
   const parts = [geometry.index === null ? "n" : "i"];
   for (const name of Object.keys(geometry.attributes).sort()) {
@@ -642,8 +643,9 @@ const mirrors = new WeakMap<THREE.BatchedMesh, () => void>();
  * bake lands after the first rock is placed), which left the batch on the stand-in texture for good.
  * Before each draw the copy takes any texture slot that changed; a slot that gains or loses a
  * texture recompiles, as it would on the source.
+ * @internal
  */
-function mirrorSourceTextures(mesh: THREE.BatchedMesh, source: THREE.Material, owned: THREE.Material): void {
+export function mirrorSourceTextures(mesh: THREE.BatchedMesh, source: THREE.Material, owned: THREE.Material): void {
   const slots = Object.keys(source).filter((key) => key === "map" || key.endsWith("Map"));
   if (slots.length === 0) return;
   const mirror = (): void => {

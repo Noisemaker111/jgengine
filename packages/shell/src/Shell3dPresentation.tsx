@@ -71,6 +71,7 @@ import {
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "@jgengine/core/audio/AudioComponents.draw";
 import { skipCulledMatrices } from "@jgengine/core/visibility/culledTransforms.draw";
 import { installFlatSceneWalk } from "@jgengine/core/render/flatSceneWalk.draw";
+import { batchSceneDraws } from "@jgengine/core/instancing/drawBatches.draw";
 import { StaticDrawPoolDriver } from "@jgengine/core/instancing/StaticObjectModels.draw";
 import { MeshLodSettings } from "@jgengine/core/lod/builtLods.draw";
 import type { AudioEngine } from "@jgengine/core/audio/audioEngine.view";
@@ -704,10 +705,11 @@ export function Shell3dPresentation({
                 {rendererFactory === null ? null : (
                 <Canvas
                   key={rendererFactory.backend}
-                  onCreated={({ gl, scene }) => {
+                  onCreated={({ gl, scene, raycaster }) => {
                     setCanvasElement(gl.domElement);
                     skipCulledMatrices(scene);
                     installFlatSceneWalk(gl, scene);
+                    batchSceneDraws(scene, raycaster);
                     if (ktx2SupportDetected.current) return;
                     ktx2SupportDetected.current = true;
                     detectKtx2Support(gl);

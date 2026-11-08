@@ -1,6 +1,7 @@
 import { useThree } from "@react-three/fiber";
 import { memo, useEffect, useMemo } from "react";
 import * as THREE from "three";
+import { sceneRaycaster } from "@jgengine/core/instancing/drawBatches.draw";
 
 import type { EditorSession, EditorVec3 } from "@jgengine/core/editor/index";
 import {
@@ -148,7 +149,7 @@ export const ViewportSelect = memo(function ViewportSelect({ api, ui }: { api: E
 
   useEffect(() => {
     const canvas = gl.domElement;
-    const raycaster = new THREE.Raycaster();
+    const raycaster = sceneRaycaster();
     const ndc = new THREE.Vector2();
     const projected = new THREE.Vector3();
     const planeHit = new THREE.Vector3();

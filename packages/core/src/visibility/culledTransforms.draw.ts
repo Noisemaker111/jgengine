@@ -1,6 +1,7 @@
 import type * as THREE from "three";
 import { SkinnedMesh } from "three";
 import { isFrozenRoot } from "@jgengine/core/model/staticTransforms.draw";
+import type { ShownMeshVisitor } from "@jgengine/core/instancing/drawBatches.draw";
 
 const culled = new WeakSet<THREE.Object3D>();
 
@@ -144,6 +145,11 @@ function updateShownNode(node: THREE.Object3D, force: boolean): boolean {
   return true;
 }
 
+/** The pass's stacks, kept between frames: the walk runs every render and allocated three arrays each time. */
+const walkNodes: THREE.Object3D[] = [];
+const walkForced: boolean[] = [];
+const walkModes: number[] = [];
+
 /**
  * Where three's render walk must start for its result to be unchanged: the shown nodes three acts on
  * (a mesh, line, points, sprite, light or LOD, or a group whose `renderOrder` sets its subtree's sort
@@ -161,6 +167,8 @@ function startsWalk(node: THREE.Object3D): boolean {
 const MATRIX = 1;
 /** The node is shown (it and every ancestor visible) and no walk start is above it. */
 const COLLECT = 2;
+/** The node and every ancestor are visible. */
+const SHOWN = 4;
 
 /** The walk starts the scene's last matrix pass found; `serial` changes with every pass. */
 export interface SceneWalkStarts {
@@ -174,15 +182,23 @@ let walkSerial = 0;
 /**
  * Parents before children, with its own stack: a recursive walk over a scene's mix of node classes
  * cost several times more than the work it did at each node. The same pass lists the scene's walk
- * starts (see {@link startsWalk}), in three's walk order.
+ * starts (see {@link startsWalk}), in three's walk order, and `meshes` hears of every plain mesh it
+ * updates, whether its world matrix was rebuilt and whether it and its ancestors are visible.
  */
-function updateShownMatrixWorld(root: THREE.Object3D, force: boolean): THREE.Object3D[] {
+function updateShownMatrixWorld(root: THREE.Object3D, force: boolean, meshes: ShownMeshVisitor | null): THREE.Object3D[] {
   const starts: THREE.Object3D[] = [];
-  const nodes: THREE.Object3D[] = [root];
-  const forced: boolean[] = [force];
-  const modes: number[] = [root.visible ? MATRIX | COLLECT : MATRIX];
+  const nodes = walkNodes;
+  const forced = walkForced;
+  const modes = walkModes;
+  // A walk a throw cut short leaves its nodes behind.
+  nodes.length = 0;
+  forced.length = 0;
+  modes.length = 0;
+  nodes.push(root);
+  forced.push(force);
+  modes.push(root.visible ? MATRIX | COLLECT | SHOWN : MATRIX);
   for (let node = nodes.pop(); node !== undefined; node = nodes.pop()) {
-    const mode = modes.pop()!;
+    const mode = modes.pop() ?? 0;
     const nodeForce = forced.pop() === true;
     if ((mode & MATRIX) === 0) {
       // A shown frozen subtree: pushed only to keep its place in the order; three walks it from here.
@@ -190,6 +206,8 @@ function updateShownMatrixWorld(root: THREE.Object3D, force: boolean): THREE.Obj
       continue;
     }
     const childForce = updateShownNode(node, nodeForce);
+    const shown = (mode & SHOWN) !== 0;
+    if (meshes !== null && (node as THREE.Mesh).isMesh === true) meshes.visit(node as THREE.Mesh, childForce, shown);
     let collect = (mode & COLLECT) !== 0;
     if (collect && node !== root && startsWalk(node)) {
       starts.push(node);
@@ -210,10 +228,24 @@ function updateShownMatrixWorld(root: THREE.Object3D, force: boolean): THREE.Obj
       }
       nodes.push(child);
       forced.push(childForce);
-      modes.push(collect && child.visible ? MATRIX | COLLECT : MATRIX);
+      modes.push(MATRIX | (collect && child.visible ? COLLECT : 0) | (shown && child.visible ? SHOWN : 0));
     }
   }
+  meshes?.endPass();
   return starts;
+}
+
+/** One mesh hook per scene; read once per pass. */
+const sceneMeshVisitors = new WeakMap<THREE.Object3D, ShownMeshVisitor>();
+
+/**
+ * Hand every plain mesh the scene's matrix pass reaches to `visitor` (the scene's draw batcher), with
+ * whether it moved and whether it shows. Null removes it. Needs {@link skipCulledMatrices} on the scene.
+ * @internal
+ */
+export function visitShownMeshes(scene: THREE.Object3D, visitor: ShownMeshVisitor | null): void {
+  if (visitor === null) sceneMeshVisitors.delete(scene);
+  else sceneMeshVisitors.set(scene, visitor);
 }
 
 /**
@@ -228,7 +260,8 @@ function updateShownMatrixWorld(root: THREE.Object3D, force: boolean): THREE.Obj
 export function skipCulledMatrices(scene: THREE.Object3D): void {
   scene.updateMatrixWorld = function updateMatrixWorld(this: THREE.Object3D, force?: boolean) {
     walkSerial += 1;
-    walkStarts.set(this, { starts: updateShownMatrixWorld(this, force === true), serial: walkSerial });
+    const starts = updateShownMatrixWorld(this, force === true, sceneMeshVisitors.get(this) ?? null);
+    walkStarts.set(this, { starts, serial: walkSerial });
   };
 }
 
