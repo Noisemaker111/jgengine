@@ -85,6 +85,68 @@ export class LevelAssignment extends Map<string, number> {
 interface StaticMembers {
   current: SceneObject[];
   version: number;
+  /** The write steps of the opaque sources drawing these members, run by the batch from one frame callback. */
+  readonly steps: SourceSteps;
+}
+
+/** One source's per-frame write, held by reference so a re-render swaps it in place. @internal */
+export interface SourceStep {
+  run(): void;
+}
+
+/**
+ * The write steps of one batch's sources. `run` calls every step after the placed objects or the
+ * gathered members changed, and otherwise only the steps marked since the last run, so a still batch
+ * costs one compare a frame however many sources it has.
+ * @internal
+ */
+export class SourceSteps {
+  readonly all = new Set<SourceStep>();
+  readonly pending = new Set<SourceStep>();
+  private objects = -1;
+  private members = -1;
+
+  add(step: SourceStep): void {
+    this.all.add(step);
+    this.pending.add(step);
+  }
+
+  delete(step: SourceStep): void {
+    this.all.delete(step);
+    this.pending.delete(step);
+  }
+
+  /** Run the steps due, given the object store's version and the members' gather count. */
+  run(objects: number, members: number): void {
+    if (this.objects !== objects || this.members !== members) {
+      this.objects = objects;
+      this.members = members;
+      this.pending.clear();
+      for (const step of this.all) step.run();
+      return;
+    }
+    if (this.pending.size === 0) return;
+    for (const step of this.pending) step.run();
+    this.pending.clear();
+  }
+}
+
+/**
+ * Join `run` to the sources `members` drives. It runs on the frame after any render of its owner and
+ * after the batch's members or a placed object changed; on any other frame it is not called at all.
+ * A world of a thousand still props paid a callback per source per frame only to find nothing new.
+ */
+function useSourceStep(members: StaticMembers, run: () => void): { mark(): void } {
+  const step = useMemo((): SourceStep => ({ run }), []);
+  useLayoutEffect(() => {
+    step.run = run;
+    members.steps.pending.add(step);
+  });
+  useLayoutEffect(() => {
+    members.steps.add(step);
+    return () => members.steps.delete(step);
+  }, [members, step]);
+  return useMemo(() => ({ mark: () => void members.steps.pending.add(step) }), [members, step]);
 }
 
 /**
@@ -146,7 +208,7 @@ function useBatchMembers(batch: StaticObjectBatch): { objects: readonly SceneObj
 function useStaticMembers(batch: StaticObjectBatch, objects: readonly SceneObject[], assignment?: LevelAssignment, level?: number, drawn = true): StaticMembers {
   const ctx = useGameContext();
   const visibility = useRenderVisibility();
-  const members = useMemo((): StaticMembers => ({ current: [], version: 0 }), []);
+  const members = useMemo((): StaticMembers => ({ current: [], version: 0, steps: new SourceSteps() }), []);
   const changed = useObjectChanges();
   const shown = useMemberVisibilityChanges(objects);
   const gathered = useRef<{ objects: unknown; assignment: unknown; revision: number; level: unknown }>({ objects: null, assignment: null, revision: -1, level: null });
@@ -167,6 +229,8 @@ function useStaticMembers(batch: StaticObjectBatch, objects: readonly SceneObjec
         isCompatibleStaticObject(object, batch.model, ctx.scene.object.catalog(id)) ? object : null;
     }, visibility.current, accept, members.current);
   }, CAMERA_POST_FRAME_PRIORITY + 0.15, drawn);
+  // Every source of the batch after a gather or a placed object's change; otherwise only those whose own inputs changed.
+  useSharedFrame(() => members.steps.run(ctx.scene.object.version(), members.version), CAMERA_POST_FRAME_PRIORITY + 0.2, drawn);
   return members;
 }
 
@@ -230,7 +294,7 @@ function PooledObjectSource({ slot, source, members, objects }: {
   const checkedVersion = useRef(-1);
   const syncedAt = useRef<{ slot: StaticDrawSlot; members: number; placed: unknown; slotOf: unknown } | null>(null);
   const live = useMemo((): SceneObject[] => [], []);
-  useSharedFrame(() => {
+  useSourceStep(members, () => {
     const version = ctx.scene.object.version();
     const last = placed.current;
     if (last === null || last.slot !== slot || last.objects !== objects || checkedVersion.current !== version) {
@@ -248,7 +312,7 @@ function PooledObjectSource({ slot, source, members, objects }: {
     if (synced?.slot === slot && synced.members === members.version && synced.placed === placed.current && synced.slotOf === slotOf) return;
     syncedAt.current = { slot, members: members.version, placed: placed.current, slotOf };
     slot.sync(members.current, slotOf, matrixOf);
-  }, CAMERA_POST_FRAME_PRIORITY + 0.2);
+  });
   return null;
 }
 
@@ -263,26 +327,33 @@ function InstancedObjectSource({ source, members, capacity }: {
   const blends = useMemo(() => blendsSource(source), [source]);
   const eye = useMemo(() => new THREE.Vector3(), []);
   const ordered = useMemo((): SceneObject[] => [], []);
+  const syncedAt = useRef<{ mesh: THREE.InstancedMesh | null; members: number }>({ mesh: null, members: -1 });
+  // An opaque source's instances follow the members alone, so the batch runs it after a gather; a
+  // see-through one re-sorts as the camera moves, so it writes every frame on its own.
+  const opaque = useSourceStep(members, () => {
+    const mesh = ref.current;
+    if (blends || mesh === null) return;
+    const synced = syncedAt.current;
+    if (synced.mesh === mesh && synced.members === members.version) return;
+    synced.mesh = mesh;
+    synced.members = members.version;
+    syncStaticObjectSource(mesh, source, members.current, scratch);
+  });
   const attach = useCallback((mesh: THREE.InstancedMesh | null) => {
     ref.current = mesh;
-    if (mesh !== null) freezeStaticTransforms(mesh);
-  }, []);
+    if (mesh === null) return;
+    freezeStaticTransforms(mesh);
+    opaque.mark();
+  }, [opaque]);
   useEffect(() => {
     const mesh = ref.current;
     return () => { mesh?.dispose(); };
   }, [capacity, source]);
-  const syncedAt = useRef<{ mesh: THREE.InstancedMesh | null; members: number }>({ mesh: null, members: -1 });
   useSharedFrame((state) => {
     const mesh = ref.current;
     if (mesh === null) return;
-    // An opaque source's instances follow the members alone; a see-through one re-sorts as the camera moves.
-    const synced = syncedAt.current;
-    if (!blends && synced.mesh === mesh && synced.members === members.version) return;
-    synced.mesh = mesh;
-    synced.members = members.version;
-    const drawn = blends ? sortFarToNear(members.current, state.camera.getWorldPosition(eye), ordered) : members.current;
-    syncStaticObjectSource(mesh, source, drawn, scratch);
-  }, CAMERA_POST_FRAME_PRIORITY + 0.2);
+    syncStaticObjectSource(mesh, source, sortFarToNear(members.current, state.camera.getWorldPosition(eye), ordered), scratch);
+  }, CAMERA_POST_FRAME_PRIORITY + 0.2, blends);
   return <instancedMesh ref={attach} args={[source.geometry, source.material, capacity]} userData={{ [STATIC_BATCH_MESH_KEY]: true }} castShadow={source.castShadow ?? false} receiveShadow={source.receiveShadow ?? false} dispose={null} />;
 }
 

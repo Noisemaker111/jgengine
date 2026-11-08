@@ -5,7 +5,7 @@ import { createObjectStore } from "@jgengine/core/scene/objectStore";
 import { createModelVariantSelector } from "@jgengine/core/lod/modelLod";
 import { buildScatterModelSources, disposeScatterModelSources } from "@jgengine/core/scatter/scatterModels.draw";
 import { countStaticBatchDraws, groupStaticObjects, STATIC_BATCH_MESH_KEY, gatherStaticMembers, syncStaticObjectSource, type StaticObjectBatch } from "./staticObjectBatches.draw";
-import { LevelAssignment, LevelSingles, placementStale, VariantStaticObjects } from "./StaticObjectModels.draw";
+import { LevelAssignment, LevelSingles, placementStale, SourceSteps, VariantStaticObjects } from "./StaticObjectModels.draw";
 
 const FULL_TRIANGLES = 9134;
 const FAR_TRIANGLES = 4110;
@@ -162,4 +162,32 @@ test("a pooled source places again only when one of its own objects moved or lef
   store.move("mine", 2, 0, 0);
   expect(placementStale(last, slot, objects, store.get)).toBe(true);
   expect(placementStale(last, {}, objects, store.get)).toBe(true);
+});
+
+test("a batch's source steps run after a gather or an object change, and a marked step alone otherwise", () => {
+  const steps = new SourceSteps();
+  const runs: string[] = [];
+  const a = { run: () => void runs.push("a") };
+  const b = { run: () => void runs.push("b") };
+  steps.add(a);
+  steps.add(b);
+  steps.run(0, 0);
+  expect(runs).toEqual(["a", "b"]);
+  runs.length = 0;
+  for (let frame = 0; frame < 100; frame += 1) steps.run(0, 0);
+  expect(runs).toEqual([]);
+  steps.run(0, 1);
+  expect(runs).toEqual(["a", "b"]);
+  runs.length = 0;
+  steps.run(1, 1);
+  expect(runs).toEqual(["a", "b"]);
+  runs.length = 0;
+  steps.pending.add(b);
+  steps.run(1, 1);
+  steps.run(1, 1);
+  expect(runs).toEqual(["b"]);
+  runs.length = 0;
+  steps.delete(a);
+  steps.run(2, 1);
+  expect(runs).toEqual(["b"]);
 });
