@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { decodePng, encodePng } from "../packages/assets/src/imageCodec";
 import { applyDevice, ensureDevServer, navigateCapturePage, openPageSession, withBrowserSession, type CdpSession } from "./browser-lib";
 import { GATE_SIZE } from "./perf-gate";
-import { perfPageUrl } from "./perf-play";
+import { perfPageUrl, SAMPLE_FRAMES_SCRIPT } from "./perf-play";
 import { diffImages, type ShotDiff } from "./shot-diff";
 
 /**
@@ -43,6 +43,36 @@ export interface RendererDiffResult {
   switchSeconds: number;
   /** The settled auto-exposure each shot was taken at: first WebGL, WebGPU, remounted WebGL. */
   exposure: { webgl: number | null; webgpu: number | null; remounted: number | null };
+  /**
+   * Frame times right after each shot, on the uncapped clock, with game time still frozen: the same
+   * scene drawn by each backend, so the difference is the backend's own cost. A walking run sees a
+   * different scene on each backend (Brightway Park's WebGPU walk drew 240k triangles to WebGL's
+   * 72k, 2026-11-08), which a speed comparison cannot separate from the renderer. WebGL is timed
+   * before and after WebGPU, so drift on a busy PC shows as the two WebGL numbers disagreeing.
+   * `null` with `--seconds 0`.
+   */
+  frames: { webgl: FrameTiming; webgpu: FrameTiming; remounted: FrameTiming } | null;
+}
+
+/** One timed window: median and 95th-percentile frame time in ms, and frames per second. */
+export interface FrameTiming {
+  p50Ms: number;
+  p95Ms: number;
+  fps: number;
+  samples: number;
+}
+
+/** Summarize rAF deltas; the first frame after a screenshot is dropped, as it carries the capture. @internal */
+export function frameTiming(deltas: readonly number[]): FrameTiming {
+  const kept = deltas.slice(1).filter((ms) => Number.isFinite(ms) && ms > 0).sort((a, b) => a - b);
+  if (kept.length === 0) return { p50Ms: 0, p95Ms: 0, fps: 0, samples: 0 };
+  const at = (q: number) => Math.round(kept[Math.min(kept.length - 1, Math.floor(kept.length * q))]! * 100) / 100;
+  const avg = kept.reduce((sum, ms) => sum + ms, 0) / kept.length;
+  return { p50Ms: at(0.5), p95Ms: at(0.95), fps: Math.round(10000 / avg) / 10, samples: kept.length };
+}
+
+async function timeFrames(session: CdpSession, seconds: number): Promise<FrameTiming> {
+  return frameTiming((await session.evaluate<number[]>(SAMPLE_FRAMES_SCRIPT(seconds * 1000), { awaitPromise: true })) ?? []);
 }
 
 async function screenshot(session: CdpSession) {
@@ -101,7 +131,8 @@ async function switchTo(session: CdpSession, backend: "webgl" | "webgpu"): Promi
   return Math.round((Date.now() - started) / 100) / 10;
 }
 
-async function compareGame(session: CdpSession, base: string, game: string, outDir: string, settleMs: number): Promise<RendererDiffResult> {
+async function compareGame(session: CdpSession, base: string, game: string, outDir: string, settleMs: number, seconds: number): Promise<RendererDiffResult> {
+  const timed = async () => (seconds > 0 ? await timeFrames(session, seconds) : null);
   await applyDevice(session, "desktop", "full", { width: GATE_SIZE.width, height: GATE_SIZE.height });
   const url = perfPageUrl({ base, game, quality: "high", params: [["renderer", "webgl"]] });
   await navigateCapturePage(session, url.toString(), 240_000);
@@ -112,6 +143,7 @@ async function compareGame(session: CdpSession, base: string, game: string, outD
   const webgl = await screenshot(session);
   await sleep(1000);
   const webglAgain = await screenshot(session);
+  const webglFrames = await timed();
 
   const switchSeconds = await switchTo(session, "webgpu");
   // Time stays frozen across the remount; the settle lets streamed content and the exposure meter land.
@@ -119,12 +151,14 @@ async function compareGame(session: CdpSession, base: string, game: string, outD
   await sleep(settleMs);
   const webgpuExposure = await settleExposure(session, "webgpu");
   const webgpu = await screenshot(session);
+  const webgpuFrames = await timed();
   const warnings = (await session.evaluate<string[]>(`[...(globalThis.__jgWebGpu?.warnings?.keys() ?? [])].map((w) => w.slice(0, 300))`)) ?? [];
   await switchTo(session, "webgl");
   await bridge(session, { method: "time_scale", scale: 0 });
   await sleep(settleMs);
   const remountedExposure = await settleExposure(session, "remounted webgl");
   const webglRemounted = await screenshot(session);
+  const remountedFrames = await timed();
 
   mkdirSync(outDir, { recursive: true });
   writeFileSync(join(outDir, "webgl.png"), webgl.bytes);
@@ -138,47 +172,68 @@ async function compareGame(session: CdpSession, base: string, game: string, outD
   const remount = diffImages(webgl.image, webglRemounted.image);
   writeFileSync(join(outDir, "diff.png"), encodePng({ width: webgl.image.width, height: webgl.image.height, data: heat }));
   const exposure = { webgl: webglExposure, webgpu: webgpuExposure, remounted: remountedExposure };
-  const result: RendererDiffResult = { game, noise, diff, remounted, remount, warnings, switchSeconds, exposure };
+  const frames = webglFrames !== null && webgpuFrames !== null && remountedFrames !== null ? { webgl: webglFrames, webgpu: webgpuFrames, remounted: remountedFrames } : null;
+  const result: RendererDiffResult = { game, noise, diff, remounted, remount, warnings, switchSeconds, exposure, frames };
   writeFileSync(join(outDir, "result.json"), `${JSON.stringify(result, null, 2)}\n`);
   return result;
 }
 
-export function parseRendererDiffArgs(argv: readonly string[]): { games: string[]; out: string; settleMs: number } {
+export function parseRendererDiffArgs(argv: readonly string[]): { games: string[]; out: string; settleMs: number; seconds: number } {
   const games: string[] = [];
   let out = join(repoRoot, ".scratch", "renderer-diff");
   let settleMs = 4000;
+  let seconds = 5;
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i]!;
-    if (arg === "--out" || arg === "--settle") {
+    if (arg === "--out" || arg === "--settle" || arg === "--seconds") {
       const value = argv[i + 1];
       if (value === undefined) throw new Error(`${arg} needs a value`);
       i += 1;
       if (arg === "--out") out = resolve(value);
-      else {
+      else if (arg === "--settle") {
         settleMs = Number(value);
         if (!Number.isFinite(settleMs) || settleMs < 0) throw new Error(`--settle must be milliseconds (got ${value})`);
+      } else {
+        seconds = Number(value);
+        if (!Number.isFinite(seconds) || seconds < 0) throw new Error(`--seconds must be a number of seconds, 0 to skip timing (got ${value})`);
       }
       continue;
     }
     if (arg.startsWith("--")) throw new Error(`unknown argument ${arg}`);
     games.push(arg);
   }
-  if (games.length === 0) throw new Error("usage: bun scripts/renderer-diff.ts <game> [<game> ...] [--out <dir>] [--settle <ms>]");
-  return { games, out, settleMs };
+  if (games.length === 0) throw new Error("usage: bun scripts/renderer-diff.ts <game> [<game> ...] [--out <dir>] [--settle <ms>] [--seconds <n>]");
+  return { games, out, settleMs, seconds };
+}
+
+/** The table a run ends with: each game's frame p50 on WebGL (before / after) and WebGPU, and WebGPU's share. @internal */
+export function frameTable(results: readonly RendererDiffResult[]): string {
+  const rows = results.flatMap((r) => {
+    const f = r.frames;
+    if (f === null) return [];
+    const gl = (f.webgl.p50Ms + f.remounted.p50Ms) / 2;
+    const ratio = gl > 0 ? f.webgpu.p50Ms / gl : 0;
+    return `| ${r.game} | ${f.webgl.p50Ms} / ${f.remounted.p50Ms} | ${f.webgpu.p50Ms} | ${ratio.toFixed(2)}x | ${ratio > 0 && ratio < 1 ? "webgpu" : "webgl"} |`;
+  });
+  if (rows.length === 0) return "";
+  return ["| game | WebGL p50 ms (before / after) | WebGPU p50 ms | WebGPU / WebGL | faster |", "| --- | --- | ---: | ---: | --- |", ...rows].join("\n");
 }
 
 async function main(): Promise<void> {
   const args = parseRendererDiffArgs(process.argv.slice(2));
   const failed: string[] = [];
+  const results: RendererDiffResult[] = [];
   for (const game of args.games) {
     try {
       const server = await ensureDevServer(repoRoot);
-      await withBrowserSession({ keep: false, timeoutMs: 600_000 }, async ({ debugPort }) => {
+      // Uncapped so the timed windows measure each backend's cost rather than the display's refresh.
+      await withBrowserSession({ keep: false, timeoutMs: 600_000, ...(args.seconds > 0 ? { frameClock: "uncapped" as const } : {}) }, async ({ debugPort }) => {
         const session = await openPageSession(debugPort);
         await session.send("Page.enable", {});
         await session.send("Page.addScriptToEvaluateOnNewDocument", { source: RENDERER_HOOK });
         try {
-          const result = await compareGame(session, server.base, game, join(args.out, game), args.settleMs);
+          const result = await compareGame(session, server.base, game, join(args.out, game), args.settleMs, args.seconds);
+          results.push(result);
           console.log(JSON.stringify(result));
         } finally {
           await session.close();
@@ -189,6 +244,8 @@ async function main(): Promise<void> {
       failed.push(game);
     }
   }
+  const table = frameTable(results);
+  if (table !== "") console.error(`\nSame frozen moment on each backend, uncapped:\n${table}`);
   if (failed.length > 0) process.exitCode = 1;
 }
 

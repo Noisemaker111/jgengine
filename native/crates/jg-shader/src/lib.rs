@@ -55,6 +55,10 @@ pub struct SamplerSlot {
     pub sampler_binding: u32,
     pub kind: SamplerKind,
     pub dim: TextureDim,
+    /// Declared as an array (GL names it `name[0]`), even with one element: three binds an array
+    /// uniform's textures only under that name.
+    #[serde(default)]
+    pub array: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

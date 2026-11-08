@@ -169,6 +169,24 @@ describe("WebGpuGl as three sees it", () => {
     expect(result.ok.layout.vertex_inputs.find((input) => input.name === DRAW_ID_INPUT)?.kind).toBe("i");
     expect(result.ok.layout.uniforms.map((u) => u.name)).not.toContain("_gl_DrawID");
   });
+
+  test("a one-element shadow sampler array translates and is marked as an array, so three binds its depth texture (Deepward's spot light)", async () => {
+    const vs = "#version 300 es\nin vec3 position;\nout vec2 vUv;\nvoid main() { vUv = position.xy; gl_Position = vec4(position, 1.0); }";
+    const fs = [
+      "#version 300 es",
+      "precision highp float;",
+      "precision highp sampler2DShadow;",
+      "in vec2 vUv;",
+      "out vec4 color;",
+      "uniform sampler2DShadow spotShadowMap[ 1 ];",
+      "float getShadow( sampler2DShadow shadowMap, vec3 coord ) { return texture( shadowMap, coord ); }",
+      "void main() { color = vec4( getShadow( spotShadowMap[ 0 ], vec3( vUv, 0.5 ) ) ); }",
+    ].join("\n");
+    await loadGlslTranslator(new URL("./glslToWgsl.wasm", import.meta.url));
+    const result = translateGlsl(vs, fs);
+    if (!("ok" in result)) throw new Error(result.error);
+    expect(result.ok.layout.samplers.map((s) => [s.name, s.kind, s.array])).toEqual([["spotShadowMap", "Depth", true]]);
+  });
 });
 
 // A linked one-sampler program without the naga translation, and a draw with no vertex buffers:
@@ -495,6 +513,35 @@ describe("WebGpuGl framebuffer completeness", () => {
     gl.clear(0x4000);
     gl.finish();
     expect(views.some((view) => view.baseMipLevel === 9)).toBe(true);
+  });
+
+  test("a multisampled depth blitted into a depth texture is resolved by a pass writing its depth (Scrap Signal), not skipped", () => {
+    const { gl, passes, calls } = stubContext();
+    const storage = (samples: number, internal: number, point: number) => {
+      const rb = gl.createRenderbuffer();
+      gl.bindRenderbuffer(0x8d41, rb);
+      gl.renderbufferStorageMultisample(0x8d41, samples, internal, 64, 64);
+      gl.framebufferRenderbuffer(0x8d40, point, 0x8d41, rb);
+    };
+    const scene = gl.createFramebuffer();
+    gl.bindFramebuffer(0x8d40, scene);
+    storage(4, 0x8058, 0x8ce0); // RGBA8 color
+    storage(4, 0x81a6, 0x8d00); // DEPTH_COMPONENT24
+    const depth = gl.createTexture();
+    gl.bindTexture(0x0de1, depth);
+    gl.texStorage2D(0x0de1, 1, 0x81a6, 64, 64);
+    const target = gl.createFramebuffer();
+    gl.bindFramebuffer(0x8d40, target);
+    gl.framebufferTexture2D(0x8d40, 0x8d00, 0x0de1, depth, 0);
+    gl.bindFramebuffer(0x8ca8, scene);
+    gl.bindFramebuffer(0x8ca9, target);
+    gl.blitFramebuffer(0, 0, 64, 64, 0, 0, 64, 64, 0x0100);
+    expect([...gl.warnings.keys()].filter((w: string) => w.includes("blitFramebuffer"))).toEqual([]);
+    const pass = passes.at(-1) as unknown as { colorAttachments: unknown[]; depthStencilAttachment: { depthLoadOp: string; depthStoreOp: string } };
+    expect(pass.colorAttachments).toEqual([]);
+    expect(pass.depthStencilAttachment.depthLoadOp).toBe("load");
+    expect(pass.depthStencilAttachment.depthStoreOp).toBe("store");
+    expect(calls.filter(([name]) => name === "draw").at(-1)?.[1]).toEqual([3]);
   });
 
   test("a framebuffer with nothing attached is incomplete; the default one is complete", () => {

@@ -844,7 +844,9 @@ export class WebGpuGl extends GlConstants {
       p.samplerIndex.set(`${s.name}[${s.element}]`, index);
       if (s.element === 0) p.samplerIndex.set(s.name, index);
     });
-    for (const [name, { count, slot }] of samplerNames) p.active.push({ name: count > 1 ? `${name}[0]` : name, size: count, type: samplerType(slot) });
+    // An array of one is still `name[0]`, as GL reports it: three binds an array uniform's textures
+    // only under that name (Deepward's one spot shadow got three's 1x1 color placeholder otherwise).
+    for (const [name, { count, slot }] of samplerNames) p.active.push({ name: count > 1 || slot.array === true ? `${name}[0]` : name, size: count, type: samplerType(slot) });
     p.units = new Int32Array(t.layout.samplers.length);
     p.attribs = [];
     const seen = new Set<string>();
@@ -1404,7 +1406,9 @@ export class WebGpuGl extends GlConstants {
     if (rb === null || fmt === null) { this.warn(`renderbuffer format 0x${internal.toString(16)} is not available`); return; }
     this.retire(rb.gpu);
     rb.samples = samples > 1 ? 4 : 1;
-    rb.gpu = this.device.createTexture({ size: { width: Math.max(1, width), height: Math.max(1, height) }, format: fmt.format, sampleCount: rb.samples, usage: GPUTextureUsage.RENDER_ATTACHMENT | (rb.samples === 1 ? GPUTextureUsage.COPY_SRC | GPUTextureUsage.TEXTURE_BINDING : 0) });
+    // A multisampled depth buffer is also bound as a texture: a depth blit resolves it in a shader.
+    const binding = rb.samples === 1 ? GPUTextureUsage.COPY_SRC | GPUTextureUsage.TEXTURE_BINDING : isDepthFormat(fmt.format) ? GPUTextureUsage.TEXTURE_BINDING : 0;
+    rb.gpu = this.device.createTexture({ size: { width: Math.max(1, width), height: Math.max(1, height) }, format: fmt.format, sampleCount: rb.samples, usage: GPUTextureUsage.RENDER_ATTACHMENT | binding });
     rb.view = rb.gpu.createView();
     rb.format = fmt;
     rb.width = width;
@@ -1450,8 +1454,54 @@ export class WebGpuGl extends GlConstants {
       const to = dst === null ? this.backDepth : dst.depth?.object.gpu ?? null;
       const from = src.depth.object.gpu;
       if (to !== null && from.sampleCount === to.sampleCount && sameSize) encoder.copyTextureToTexture({ texture: from, origin: { x: sx0, y: sy0 } }, { texture: to, origin: { x: dx0, y: dy0 } }, { width: sx1 - sx0, height: sy1 - sy0 });
-      else this.warn("depth blitFramebuffer between different sample counts or sizes is not drawn");
+      else if (to !== null && from.sampleCount > 1 && to.sampleCount === 1 && sameSize) {
+        this.resolveDepth(encoder, from, to, sx0, sy0, dx0, dy0, sx1 - sx0, sy1 - sy0);
+        if (dst?.depth?.object.kind === "texture") dst.depth.object.usedBatch = this.batch;
+      }
+      else this.warn("depth blitFramebuffer between different sizes, or into a multisampled target, is not drawn");
     }
+  }
+
+  private readonly depthResolvePipelines = new Map<GPUTextureFormat, GPURenderPipeline>();
+
+  /**
+   * A multisampled depth blitted into a single-sample one (Scrap Signal's MSAA scene into the depth
+   * texture its effects read): WebGPU resolves only color, so a pass writes each pixel's sample 0 as
+   * its depth, the sample ANGLE's WebGL resolve takes.
+   */
+  private resolveDepth(encoder: GPUCommandEncoder, from: GPUTexture, to: GPUTexture, sx: number, sy: number, dx: number, dy: number, width: number, height: number): void {
+    const format = to.format;
+    let pipeline = this.depthResolvePipelines.get(format);
+    if (pipeline === undefined) {
+      const module = this.device.createShaderModule({ code: `@group(0) @binding(0) var src: texture_depth_multisampled_2d;
+struct U { shift: vec2<i32> };
+@group(0) @binding(1) var<uniform> u: U;
+@vertex fn vs(@builtin(vertex_index) i: u32) -> @builtin(position) vec4<f32> {
+  let p = array<vec2<f32>, 3>(vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));
+  return vec4(p[i], 0.0, 1.0);
+}
+@fragment fn fs(@builtin(position) at: vec4<f32>) -> @builtin(frag_depth) f32 { return textureLoad(src, vec2<i32>(at.xy) + u.shift, 0); }` });
+      pipeline = this.device.createRenderPipeline({
+        layout: "auto",
+        vertex: { module, entryPoint: "vs" },
+        fragment: { module, entryPoint: "fs", targets: [] },
+        primitive: { topology: "triangle-list" },
+        depthStencil: { format, depthWriteEnabled: true, depthCompare: "always" },
+      });
+      this.depthResolvePipelines.set(format, pipeline);
+    }
+    const shift = this.device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+    this.queue.writeBuffer(shift, 0, new Int32Array([sx - dx, sy - dy, 0, 0]));
+    this.retire(shift);
+    const group = this.device.createBindGroup({ layout: pipeline.getBindGroupLayout(0), entries: [{ binding: 0, resource: from.createView({ aspect: "depth-only" }) }, { binding: 1, resource: { buffer: shift } }] });
+    const stencil = hasStencil(format);
+    const pass = encoder.beginRenderPass({ colorAttachments: [], depthStencilAttachment: { view: to.createView(), depthLoadOp: "load", depthStoreOp: "store", ...(stencil ? { stencilLoadOp: "load" as const, stencilStoreOp: "store" as const } : {}) } });
+    pass.setPipeline(pipeline);
+    pass.setBindGroup(0, group);
+    pass.setViewport(dx, dy, width, height, 0, 1);
+    pass.setScissorRect(dx, dy, width, height);
+    pass.draw(3);
+    pass.end();
   }
 
   /**
