@@ -8,7 +8,7 @@ import type { Snapshot } from "./boat-snapshot";
 import { resultLine } from "./boat-steps";
 import { runSteps, type StepResult } from "./stepScheduler";
 import { isLight, localReason, localTestFiles, placeSteps, remoteCommand, runPlaced, type PlaceableStep, type Where } from "./verify-boat";
-import { fastSteps, type Plan } from "./verify-fast";
+import { fastSteps, provisionStepFor, type Plan } from "./verify-fast";
 
 const made: string[] = [];
 afterEach(() => {
@@ -62,6 +62,17 @@ describe("placement", () => {
     expect(local?.localBecause).toContain("models");
     expect(steps.filter((candidate) => candidate.command.includes("packages/core/src/a.test.ts"))).toHaveLength(1);
     expect(placeSteps(steps).get(local!.name)?.where).toBe("local");
+    // A model-reading test links its game's packs first, on this PC, so a fresh worktree is not red.
+    const provision = steps.find((candidate) => candidate.command.includes("games/scripts/provision-assets.ts"));
+    expect(provision?.command.slice(2)).toEqual(["x"]);
+    expect(local?.needs).toEqual([provision!.name]);
+    expect(placeSteps(steps).get(provision!.name)?.where).toBe("local");
+  });
+
+  test("a model-reading test outside a game links every game's packs; no model test, no provision", () => {
+    expect(provisionStepFor(["scripts/missingModels.test.ts", "games/x/a.test.ts"])?.command).toEqual(["bun", "games/scripts/provision-assets.ts"]);
+    expect(provisionStepFor(["games/b/a.test.ts", "games/a/a.test.ts", "games/a/b.test.ts"])?.command.slice(2)).toEqual(["a", "b"]);
+    expect(provisionStepFor([])).toBeNull();
   });
 
   test("a few local test files take no heavy-job slot; a game boot or a bigger set does", () => {

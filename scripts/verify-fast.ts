@@ -37,7 +37,7 @@ import { siteGames } from "./siteGames";
 import { runSteps, type ScheduledStep, type StepResult } from "./stepScheduler";
 import { TEST_ROOTS, walkTestFiles } from "./test-shard";
 import { createVerifyReceipt } from "./verify-receipt";
-import { boatForThisRun, EXIT_BOAT_SPENT, localTestFiles, placeSteps, runPlaced, withHeavySlot, type BoatReceipt, type Where } from "./verify-boat";
+import { boatForThisRun, EXIT_BOAT_SPENT, localTestFiles, placeSteps, READS_MODELS, runPlaced, withHeavySlot, type BoatReceipt, type Where } from "./verify-boat";
 
 const VERIFY_FAST_USAGE = {
   summary: "run only the tests and static gates this branch's diff reaches, in seconds",
@@ -640,6 +640,22 @@ export interface FastOptions {
 }
 
 /**
+ * The step that links the packs the model-reading `tests` need, or null when there are none: each test
+ * under `games/<id>/` needs that game's; any other (shared code, scripts) gets every game's.
+ */
+export function provisionStepFor(tests: readonly string[]): Step | null {
+  if (tests.length === 0) return null;
+  const games = tests.map((file) => /^games\/([^/]+)\//.exec(file)?.[1]);
+  const every = games.some((game) => game === undefined || game === "shared" || game === "scripts" || game === "registry");
+  const named = every ? [] : [...new Set(games as string[])].sort();
+  return {
+    name: `provision ${every ? "every game" : named.join(" ")} for its tests`,
+    command: ["bun", "games/scripts/provision-assets.ts", ...named],
+    cost: 2,
+  };
+}
+
+/**
  * The commands `bun run verify:fast` runs for a plan. `check skill-api` waits for `--skill-api`.
  * Every step lists the units it settles (`units`), so a pass is remembered per unit and a unit
  * whose inputs did not change since it passed is left out.
@@ -686,7 +702,16 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
     if (here.length > 0) {
       const reasons = [...new Set(here.map((file) => options.localTests!.get(file)!))];
       const isOwn = plan.changed.some((file) => ownTests(file, here).length > 0);
-      steps.push({ ...testStep(here, `test ${here.length} file(s) on this PC`, 999, isOwn), localBecause: reasons.join("; ") });
+      // A model-reading test needs its game's packs linked into this checkout first, as a boot does: a
+      // worktree that never ran a dev server or `games:provision` failed scrap-signal's "every bound
+      // model is a file the game serves" with 29 models "not on disk" although the store had them all.
+      const provision = provisionStepFor(here.filter((file) => options.localTests!.get(file) === READS_MODELS));
+      if (provision !== null) steps.push(provision);
+      steps.push({
+        ...testStep(here, `test ${here.length} file(s) on this PC`, 999, isOwn),
+        localBecause: reasons.join("; "),
+        ...(provision === null ? {} : { needs: [provision.name] }),
+      });
     }
     if (rest.length > 0) {
       const total = rest.reduce((sum, file) => sum + cost[file]!, 0);
