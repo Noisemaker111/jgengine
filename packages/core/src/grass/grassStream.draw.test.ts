@@ -131,6 +131,30 @@ test("ground revision discards unfinished and cached grass before rebuilding", (
   handle.material.dispose();
 });
 
+test("every leaf draws one shared copy of the tuft, and dropping a leaf frees only its own buffers", () => {
+  // Each leaf once wrapped the template in its own attributes, so the GPU took a full copy per leaf;
+  // at realism 1 that upload cost fernwild 14% of its frame.
+  const { stream: field } = stream({ area: 40 });
+  field.update(camera([0, 1.7, 0], [0, 0.5, -30]), VIEW_HEIGHT, Infinity);
+  const leaves = field.group.children.filter((child): child is THREE.Mesh => child instanceof THREE.Mesh);
+  expect(leaves.length).toBeGreaterThan(1);
+  const [first] = leaves;
+  for (const leaf of leaves) {
+    for (const name of ["position", "grassUv", "bladeOffset", "bladeVary", "bladeBend"]) expect(leaf.geometry.getAttribute(name)).toBe(first!.geometry.getAttribute(name));
+    expect(leaf.geometry.index).toBe(first!.geometry.index);
+  }
+  // three deletes the GPU buffer of every attribute a geometry still holds when it is disposed.
+  const freed: string[][] = [];
+  for (const leaf of leaves) {
+    leaf.geometry.addEventListener("dispose", () => {
+      freed.push([...Object.keys(leaf.geometry.attributes), ...(leaf.geometry.index === null ? [] : ["index"])]);
+    });
+  }
+  field.dispose();
+  expect(freed.length).toBe(leaves.length);
+  for (const names of freed) expect(names.sort()).toEqual(["instanceOffset", "instanceShape", "instanceTone", "instanceVary"]);
+});
+
 test("continuous movement keeps the cache bounded and settles when movement stops", () => {
   const { stream: field } = stream({ area: 40 });
   let view = camera([0, 1.7, 0], [0, 0.5, -30]);
