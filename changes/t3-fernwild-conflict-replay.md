@@ -1,6 +1,10 @@
-Landings no longer stop when two lanes each add a game-flow command or a Fernwild import, prompt or system, and a keep-both merge no longer drops a line both added blocks share
+The game-flow system defines its commands from a list with one entry each, with its own comment; a new command adds an entry, and the test lists one command name per line
 
 Root cause: the Fernwild landings that still stopped after #3064 were two lanes editing one shared line. In gameFlow.ts, every new command extended one doc paragraph and the test's one-line command list. In game.config.ts, every new feature added a name to a short one-line import (`{ BROOD_PHASES }` → `{ BROOD_PHASES, BROOD_TIERS }`), and prompt sources sat in one list expression. Separately, #3064's keep-both merge read `git merge-file --zdiff3`, which lifts lines two insertions share at their start or end out of the conflict, so two added `import { ... } from` blocks landed with one `import {` and did not parse.
+
+Root cause: the Fernwild landings that still stopped after #3064 were two lanes editing one shared line (gameFlow.ts's command doc paragraph and test list, and short one-line imports in game.config.ts), and #3064's keep-both merge read zdiff3 output, which drops lines two added blocks share at their edges
+
+Engine seam: packages/core/src/game/gameFlow.ts
 
 ### Changed
 
