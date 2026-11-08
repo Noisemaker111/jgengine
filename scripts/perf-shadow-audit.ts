@@ -6,11 +6,12 @@ import { debugPortFor, GATE_SIZE } from "./perf-gate";
 import type { PerfPath } from "./perf-breakdown";
 import { acquirePerfLock } from "./perf-lock";
 import { measureGame, parseSettingSpec } from "./perf-play";
+import { parseRendererBackend, type RendererBackend } from "../packages/core/src/settings/rendererBackend";
 
 /**
  * Proves the shadow cache draws the same shadow maps as three's uncached pass.
  *
- *   bun run perf shadow-audit [--games a,b] [--seconds n] [--path walk|still]
+ *   bun run perf shadow-audit [--games a,b] [--seconds n] [--path walk|still] [--renderer webgl|webgpu]
  *
  * Each game is played at the frame gate's conditions with `?shadowAudit=1`: after every pass the
  * cache serves from its static layer, the page draws the same map the uncached way into a spare
@@ -19,7 +20,7 @@ import { measureGame, parseSettingSpec } from "./perf-play";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
-const USAGE = `usage: bun run perf shadow-audit [--games a,b] [--seconds n] [--path walk|still]
+const USAGE = `usage: bun run perf shadow-audit [--games a,b] [--seconds n] [--path walk|still] [--renderer webgl|webgpu]
 
   Plays each game (${GATE_SIZE.width}x${GATE_SIZE.height}, high tier, automatic quality off) with the shadow cache's audit on:
   every shadow map the cache serves from its static layer is compared, depth bit for depth bit, with a
@@ -27,26 +28,33 @@ const USAGE = `usage: bun run perf shadow-audit [--games a,b] [--seconds n] [--p
 
   --games    comma-separated game ids (default: every game the frame gate measures)
   --seconds  measured window per game (default 8)
-  --path     walk (default) or still`;
+  --path     walk (default) or still
+  --renderer the backend that draws: webgl (default) or webgpu`;
 
 export interface ShadowAuditArgs {
   games: string[];
   seconds: number;
   path: PerfPath;
+  renderer: RendererBackend;
 }
 
 export function parseShadowAuditArgs(argv: readonly string[]): ShadowAuditArgs | "help" {
   let games: string[] | undefined;
   let seconds = 8;
   let path: PerfPath = "walk";
+  let renderer: RendererBackend = "webgl";
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index] ?? "";
     if (arg === "--help" || arg === "-h") return "help";
     const value = argv[index + 1];
-    if (arg === "--games" || arg === "--seconds" || arg === "--path") {
+    if (arg === "--games" || arg === "--seconds" || arg === "--path" || arg === "--renderer") {
       if (value === undefined || value.startsWith("--")) throw new Error(`${arg} needs a value`);
       index += 1;
-      if (arg === "--games") games = value.split(",").map((id) => id.trim()).filter((id) => id.length > 0);
+      if (arg === "--renderer") {
+        const backend = parseRendererBackend(value);
+        if (backend === null) throw new Error(`--renderer must be webgl or webgpu (got ${value})`);
+        renderer = backend;
+      } else if (arg === "--games") games = value.split(",").map((id) => id.trim()).filter((id) => id.length > 0);
       else if (arg === "--path") {
         if (value !== "walk" && value !== "still") throw new Error(`--path must be walk or still (got ${value})`);
         path = value;
@@ -60,7 +68,7 @@ export function parseShadowAuditArgs(argv: readonly string[]): ShadowAuditArgs |
     throw new Error(`unknown argument ${arg}`);
   }
   if (games !== undefined && games.length === 0) throw new Error("--games needs at least one game id");
-  return { games: games ?? [...FRAME_GAMES], seconds, path };
+  return { games: games ?? [...FRAME_GAMES], seconds, path, renderer };
 }
 
 /** One game's audit: the cache's pass counts and what the comparison found. */
@@ -119,7 +127,7 @@ async function auditGame(game: string, index: number, args: ShadowAuditArgs, sta
         profile: false,
         path: args.path,
         settings: [parseSettingSpec("graphics.auto=false")],
-        params: [["shadowAudit", "1"]],
+        params: [["shadowAudit", "1"], ["renderer", args.renderer]],
         size: GATE_SIZE,
       });
       counters = measured.record.systems["render/shadow-cache"]?.counters ?? null;

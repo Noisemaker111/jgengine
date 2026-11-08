@@ -723,9 +723,22 @@ function disposeTarget(target: THREE.WebGLRenderTarget | null): void {
 /** Side of the square of texels one comparison fragment counts, so the readback is 1/256 of the map. */
 const AUDIT_BLOCK = 16;
 
+/** Comparisons still waiting on the GPU at most; one more is counted as failed rather than queued. */
+const AUDIT_PENDING_MAX = 16;
+
+/** One comparison's readback, waiting on its fence. */
+interface PendingComparison {
+  sync: WebGLSync;
+  buffer: WebGLBuffer;
+  bytes: number;
+  done: (differing: number) => void;
+}
+
 /**
  * Bit-exact comparison of two depth textures on the GPU, for the audit. It draws with its own GL
  * program rather than `renderer.render`, so a loading-time draw hold cannot swallow the comparison.
+ * The result reads back through a pixel-pack buffer and a fence, landing a frame or more later
+ * ({@link poll}): the WebGPU backend has no synchronous readback, and WebGL then never stalls on one.
  */
 class DepthComparer {
   private gl: WebGL2RenderingContext | null = null;
@@ -736,14 +749,24 @@ class DepthComparer {
   private width = 0;
   private height = 0;
   private pixels = new Uint8Array(0);
+  private pending: PendingComparison[] = [];
+  private spare: WebGLBuffer[] = [];
 
-  /** Texels whose depth bits differ between the two maps, or -1 when the comparison could not run. */
-  count(renderer: THREE.WebGLRenderer, cached: THREE.DepthTexture, full: THREE.DepthTexture, width: number, height: number): number {
+  /**
+   * Compare the two maps on the GPU and call `done` with the texels whose depth bits differ once the
+   * result is back, or -1 when the comparison did not run. False when it could not start.
+   */
+  compare(renderer: THREE.WebGLRenderer, cached: THREE.DepthTexture, full: THREE.DepthTexture, width: number, height: number, done: (differing: number) => void): boolean {
     const gl = renderer.getContext() as WebGL2RenderingContext;
+    this.poll();
+    if (this.pending.length >= AUDIT_PENDING_MAX) return false;
     const handles = [cached, full].map((texture) => (renderer.properties.get(texture) as { __webglTexture?: WebGLTexture }).__webglTexture);
     const blocksX = Math.ceil(width / AUDIT_BLOCK);
     const blocksY = Math.ceil(height / AUDIT_BLOCK);
-    if (handles[0] === undefined || handles[1] === undefined || !this.prepare(gl, blocksX, blocksY)) return -1;
+    if (handles[0] === undefined || handles[1] === undefined || !this.prepare(gl, blocksX, blocksY)) return false;
+    const bytes = blocksX * blocksY * 4;
+    const buffer = this.spare.pop() ?? gl.createBuffer();
+    let started = false;
     const previous = renderer.getRenderTarget();
     // texelFetch reads raw depth only with comparison off, and a depth texture read that way is
     // incomplete (reads zero) unless it filters NEAREST; three's PCF maps compare and filter LINEAR.
@@ -773,21 +796,45 @@ class DepthComparer {
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       gl.bindVertexArray(null);
       gl.pixelStorei(gl.PACK_ALIGNMENT, 4);
+      gl.bindBuffer(gl.PIXEL_PACK_BUFFER, buffer);
+      gl.bufferData(gl.PIXEL_PACK_BUFFER, bytes, gl.STREAM_READ);
+      gl.readPixels(0, 0, blocksX, blocksY, gl.RGBA, gl.UNSIGNED_BYTE, 0);
       gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
-      gl.readPixels(0, 0, blocksX, blocksY, gl.RGBA, gl.UNSIGNED_BYTE, this.pixels);
+      const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+      if (sync !== null) {
+        this.pending.push({ sync, buffer, bytes, done });
+        started = true;
+      }
       setRaw(false);
     } finally {
+      if (!started) this.spare.push(buffer);
       // three caches GL state; after raw calls it must forget it all, then rebind the pass's target.
       renderer.resetState();
       renderer.setRenderTarget(previous);
     }
-    let differing = 0;
-    for (let index = 0; index < this.pixels.length; index += 4) {
-      // A texel the comparison never wrote means it did not run: no verdict rather than a false one.
-      if (this.pixels[index + 1] !== 255) return -1;
-      differing += this.pixels[index]! + 256 * this.pixels[index + 2]!;
+    return started;
+  }
+
+  /** Hand every comparison whose readback has landed to its callback. */
+  poll(): void {
+    const gl = this.gl;
+    if (gl === null || this.pending.length === 0) return;
+    const waiting: PendingComparison[] = [];
+    for (const p of this.pending) {
+      if (gl.getSyncParameter(p.sync, gl.SYNC_STATUS) !== gl.SIGNALED) {
+        waiting.push(p);
+        continue;
+      }
+      gl.deleteSync(p.sync);
+      if (this.pixels.length < p.bytes) this.pixels = new Uint8Array(p.bytes);
+      const pixels = this.pixels.subarray(0, p.bytes);
+      gl.bindBuffer(gl.PIXEL_PACK_BUFFER, p.buffer);
+      gl.getBufferSubData(gl.PIXEL_PACK_BUFFER, 0, pixels);
+      gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+      this.spare.push(p.buffer);
+      p.done(countDiffering(pixels));
     }
-    return differing;
+    this.pending = waiting;
   }
 
   private prepare(gl: WebGL2RenderingContext, width: number, height: number): boolean {
@@ -844,6 +891,13 @@ class DepthComparer {
   private release(): void {
     const gl = this.gl;
     if (gl === null) return;
+    for (const p of this.pending) {
+      gl.deleteSync(p.sync);
+      gl.deleteBuffer(p.buffer);
+    }
+    for (const buffer of this.spare) gl.deleteBuffer(buffer);
+    this.pending = [];
+    this.spare = [];
     if (this.program !== null) gl.deleteProgram(this.program);
     if (this.vao !== null) gl.deleteVertexArray(this.vao);
     if (this.framebuffer !== null) gl.deleteFramebuffer(this.framebuffer);
@@ -855,6 +909,21 @@ class DepthComparer {
     this.release();
     this.gl = null;
   }
+}
+
+/**
+ * The comparison's readback summed: red and blue hold each block's differing texels (low and high
+ * byte), green marks a block the comparison wrote. -1 when a block was never written: the comparison
+ * did not run, so there is no verdict rather than a false one.
+ * @internal
+ */
+export function countDiffering(pixels: Uint8Array): number {
+  let differing = 0;
+  for (let index = 0; index < pixels.length; index += 4) {
+    if (pixels[index + 1] !== 255) return -1;
+    differing += pixels[index]! + 256 * pixels[index + 2]!;
+  }
+  return differing;
 }
 
 function linkProgram(gl: WebGL2RenderingContext, vertex: string, fragment: string): WebGLProgram | null {
@@ -1096,16 +1165,18 @@ class ShadowCache {
       shadow.map = map;
     }
     this.comparer ??= new DepthComparer();
-    const differing = this.comparer.count(renderer, map.depthTexture!, this.auditTarget.depthTexture!, map.width, map.height);
-    if (differing < 0) {
-      this.auditStats.failed += 1;
-      return;
-    }
-    this.auditStats.maps += 1;
-    if (differing > 0) {
-      this.auditStats.mismatchedMaps += 1;
-      this.auditStats.mismatchedTexels += differing;
-    }
+    const started = this.comparer.compare(renderer, map.depthTexture!, this.auditTarget.depthTexture!, map.width, map.height, (differing) => {
+      if (differing < 0) {
+        this.auditStats.failed += 1;
+        return;
+      }
+      this.auditStats.maps += 1;
+      if (differing > 0) {
+        this.auditStats.mismatchedMaps += 1;
+        this.auditStats.mismatchedTexels += differing;
+      }
+    });
+    if (!started) this.auditStats.failed += 1;
   }
 
   private retire(): void {
@@ -1118,15 +1189,19 @@ class ShadowCache {
 
   handle(): ShadowCacheHandle {
     return {
-      stats: () => ({
-        enabled: this.enabled,
-        casters: this.tracker.entries.size,
-        staticCasters: this.tracker.staticCount(),
-        checks: this.checks,
-        cpuMs: this.cpuMs,
-        passes: { ...this.passes },
-        audit: { on: this.audit, ...this.auditStats },
-      }),
+      stats: () => {
+        // Audit comparisons land asynchronously; a read takes every one that has.
+        this.comparer?.poll();
+        return {
+          enabled: this.enabled,
+          casters: this.tracker.entries.size,
+          staticCasters: this.tracker.staticCount(),
+          checks: this.checks,
+          cpuMs: this.cpuMs,
+          passes: { ...this.passes },
+          audit: { on: this.audit, ...this.auditStats },
+        };
+      },
       setEnabled: (on) => {
         if (on === this.enabled) return;
         this.enabled = on;
