@@ -23,14 +23,14 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { assertCheckoutReady } from "./checkout-ready";
+import { landingRoot } from "./landing-code";
 import { checkoutGitHub, type GitHub } from "./github";
 import { printHelpIfAsked } from "./script-help";
 import { duration, gitCommonDir, runAt } from "./land";
 import type { Git, Run } from "./land";
 
-const root = fileURLToPath(new URL("..", import.meta.url));
+const root = landingRoot(import.meta.url);
 
 const BATCH_USAGE = {
   summary: "land several finished branches as one push, so CI runs once instead of once per branch",
