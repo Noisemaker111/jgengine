@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 import type { GrassBlade, GrassLook } from "@jgengine/core/grass/grassKind";
 import { grassMownAmount } from "@jgengine/core/grass/grassDrawn";
-import { grassDetailScale, grassExaggerationAmount } from "@jgengine/core/grass/grassStyle";
+import { grassColourFactor, grassDetailScale, grassExaggerationAmount, grassShadingAmounts } from "@jgengine/core/grass/grassStyle";
 import type { GrassWindLook } from "./grassWind";
 
 /** Uniforms the grass shader reads; the stream rewrites the `uLod` row per camera. */
@@ -33,6 +33,10 @@ export interface GrassShaderUniforms {
   uPatternColor: THREE.IUniform<THREE.Color>;
   /** Style shape: x torn tips (mown blades at the natural end), y round tips (the cartoon end), z blades drawn per blade grown (`grassDetailScale`). */
   uStyle: THREE.IUniform<THREE.Vector4>;
+  /** Style light and colour: x cel bands, y sheen, z colour steps, w outline (all 0 at the default style). */
+  uStyleLook: THREE.IUniform<THREE.Vector4>;
+  /** Style colour factors: x saturation, y root-to-tip contrast (both 1 at the default style). */
+  uStyleColour: THREE.IUniform<THREE.Vector2>;
 }
 
 /** The grass blade material and the uniforms behind it. */
@@ -177,6 +181,8 @@ uniform vec4 uStripe;
 uniform vec4 uPattern;
 uniform vec3 uPatternColor;
 uniform vec4 uStyle;
+uniform vec4 uStyleLook;
+uniform vec2 uStyleColour;
 varying float vGrassT;
 varying float vGrassU;
 varying float vGrassStripe;
@@ -185,6 +191,10 @@ varying float vGrassKind;
 varying float vGrassTone;
 varying float vGrassFade;
 varying vec2 vGrassPetal;
+// Three soft cel bands over the light's angle: shade, half and full light.
+float jgCelBand(float dotNL) {
+  return 0.22 + 0.39 * smoothstep(0.0, 0.08, dotNL) + 0.39 * smoothstep(0.45, 0.53, dotNL);
+}
 vec3 jgHueShift(vec3 color, float angle) {
   const vec3 k = vec3(0.57735);
   float c = cos(angle);
@@ -220,10 +230,24 @@ if (vGrassKind > 1.5) {
   float roll2 = fract(vGrassRoll * 13.7);
   float roll3 = fract(vGrassRoll * 29.3);
   vec3 tip = vGrassKind > 0.5 ? uMixColor : uTipColor;
+  vec3 root = uBaseColor;
+  // Style contrast pushes root and tip apart (cartoon) or together (natural) about their middle.
+  if (uStyleColour.y != 1.0) {
+    vec3 middle = 0.5 * (root + tip);
+    root = max(middle + (root - middle) * uStyleColour.y, vec3(0.0));
+    tip = max(middle + (tip - middle) * uStyleColour.y, vec3(0.0));
+  }
+  // Colour steps snap the height the colour reads at to three flat tones, and quiet the blade-to-blade noise.
+  float jgT = vGrassT;
+  float noiseKeep = 1.0;
+  if (uStyleLook.z > 0.0) {
+    jgT = mix(vGrassT, clamp(floor(vGrassT * 3.0) / 2.0, 0.0, 1.0), uStyleLook.z);
+    noiseKeep = 1.0 - 0.75 * uStyleLook.z;
+  }
   float center = mix(0.1, 0.95, uTone.x);
-  grassColor = mix(uBaseColor, tip, smoothstep(center - 0.35, center + 0.35, vGrassT));
-  grassColor = jgHueShift(grassColor, (roll2 - 0.5) * uNoise.x * 0.6);
-  grassColor *= 1.0 + (roll3 - 0.5) * uNoise.y * 0.7;
+  grassColor = mix(root, tip, smoothstep(center - 0.35, center + 0.35, jgT));
+  grassColor = jgHueShift(grassColor, (roll2 - 0.5) * uNoise.x * 0.6 * noiseKeep);
+  grassColor *= 1.0 + (roll3 - 0.5) * uNoise.y * 0.7 * noiseKeep;
   // Variegation: pale margins along the edges and pale bands across the blade.
   float margin = uPattern.x > 0.0 ? smoothstep(0.44 - uPattern.x * 0.24, 0.48 - uPattern.x * 0.24, abs(vGrassU - 0.5)) : 0.0;
   float band = smoothstep(0.62, 0.7, fract(vGrassT * 4.0 + vGrassRoll * 5.0)) * smoothstep(0.08, 0.25, vGrassT) * uPattern.y;
@@ -240,12 +264,21 @@ if (vGrassKind > 1.5) {
   // Torn ends dry pale.
   grassColor = mix(grassColor, grassColor * vec3(1.1, 1.05, 0.75) + vec3(0.04), uStyle.x * smoothstep(0.8, 1.0, vGrassT) * 0.6);
   // Roots take the ground colour so blades grow out of the terrain instead of floating on it.
-  grassColor = mix(mix(uGroundColor, grassColor, 0.45), grassColor, smoothstep(0.0, 0.3, vGrassT));
+  grassColor = mix(mix(uGroundColor, grassColor, 0.45), grassColor, smoothstep(0.0, 0.3, jgT));
   // The lower blade sits in the sward's own shade, the same for every blade, so a dense field
   // reads deep from above without any one blade standing out as a dark spot.
-  grassColor *= mix(0.7, 1.0, smoothstep(0.05, 0.7, vGrassT));
+  grassColor *= mix(0.7, 1.0, smoothstep(0.05, 0.7, jgT));
+  // Ink along the blade's edges, so a clump reads as an outlined shape.
+  if (uStyleLook.w > 0.0) {
+    float ink = smoothstep(0.3, 0.46, abs(vGrassU - 0.5)) * smoothstep(0.02, 0.12, vGrassT);
+    grassColor = mix(grassColor, grassColor * 0.16, ink * uStyleLook.w);
+  }
 }
 grassColor = mix(grassColor, uGroundColor * 1.04, vGrassFade * 0.55);
+if (uStyleColour.x != 1.0) {
+  float grey = dot(grassColor, vec3(0.299, 0.587, 0.114));
+  grassColor = max(mix(vec3(grey), grassColor, uStyleColour.x), vec3(0.0));
+}
 diffuseColor.rgb = grassColor;
 `;
 
@@ -263,10 +296,24 @@ nonPerturbedNormal = normal;
 
 const LIGHT_END = /* glsl */ `
 #include <lights_fragment_end>
-// Warm tip glow where sun shines through the blades, scaled by direct light; no extra lights.
-float jgTipMask = smoothstep(0.55, 1.0, vGrassT) * step(vGrassKind, 1.5);
+// Cel style: the sun's light falls into three flat bands by the angle it strikes at, the gloss goes
+// matt, and a rim of sky light outlines the blade against what is behind it.
+#if NUM_DIR_LIGHTS > 0
+if (uStyleLook.x > 0.0) {
+  float jgDotNL = dot(geometryNormal, directionalLights[0].direction);
+  float jgBanded = jgCelBand(jgDotNL) / max(jgDotNL, 0.22);
+  reflectedLight.directDiffuse = mix(reflectedLight.directDiffuse, reflectedLight.directDiffuse * jgBanded, uStyleLook.x);
+  reflectedLight.directSpecular *= 1.0 - 0.85 * uStyleLook.x;
+  float jgRim = pow(1.0 - saturate(dot(geometryNormal, geometryViewDir)), 3.0);
+  reflectedLight.indirectDiffuse += diffuseColor.rgb * jgRim * 0.35 * uStyleLook.x;
+}
+#endif
+// Warm tip glow where sun shines through the blades, scaled by direct light; no extra lights. The
+// sheen end lets light through more of the leaf and glosses it.
+float jgTipMask = smoothstep(0.55 - 0.35 * uStyleLook.y, 1.0, vGrassT) * step(vGrassKind, 1.5);
 float jgLit = clamp(dot(reflectedLight.directDiffuse, vec3(0.3333)) * 1.6, 0.0, 1.0);
-reflectedLight.directDiffuse += vec3(0.34, 0.28, 0.12) * jgTipMask * jgLit * uLight.x * (1.0 - vGrassFade * 0.7);
+reflectedLight.directDiffuse += vec3(0.34, 0.28, 0.12) * jgTipMask * jgLit * uLight.x * (1.0 + 0.8 * uStyleLook.y) * (1.0 - vGrassFade * 0.7);
+if (uStyleLook.y > 0.0) reflectedLight.directSpecular *= 1.0 + 1.2 * uStyleLook.y;
 `;
 
 /**
@@ -291,6 +338,21 @@ export function grassStyleShape(look: Pick<GrassLook, "blade" | "style">): THREE
   return new THREE.Vector4(Math.max(0, -amount) * grassMownAmount(look), Math.max(0, amount), grassDetailScale(look.style.detail), 0);
 }
 
+/**
+ * The shader's style light and colour rows for a look: `look` x cel bands, y sheen, z colour steps,
+ * w outline; `colour` x saturation, y root-to-tip contrast. At the default style they are
+ * [0,0,0,0] and [1,1], where the shader skips every style branch. Uniforms, never compile switches,
+ * so moving a slider compiles nothing.
+ * @internal
+ */
+export function grassStyleLighting(look: Pick<GrassLook, "style">): { look: THREE.Vector4; colour: THREE.Vector2 } {
+  const { cel, sheen } = grassShadingAmounts(look.style.shading);
+  return {
+    look: new THREE.Vector4(cel, sheen, Math.max(0, Math.min(1, look.style.colourSteps)), Math.max(0, Math.min(1, look.style.outline))),
+    colour: new THREE.Vector2(grassColourFactor(look.style.saturation), grassColourFactor(look.style.contrast)),
+  };
+}
+
 /** Build the one grass material for a look; `groundColor` is the terrain the roots blend into. */
 export function createGrassMaterial(look: GrassLook, groundColor?: THREE.ColorRepresentation): GrassMaterialHandle {
   const base = new THREE.Color(look.colour.baseColor);
@@ -299,6 +361,7 @@ export function createGrassMaterial(look: GrassLook, groundColor?: THREE.ColorRe
   const softness = 1.25 - look.blade.stiffness;
   const strength = look.wind.windStrength * 0.6 * softness;
   const flutter = look.wind.windStrength * 0.18 * softness;
+  const styleLighting = grassStyleLighting(look);
   const uniforms: GrassShaderUniforms = {
     uTime: { value: 0 },
     uLod: { value: new THREE.Vector4(1e6, 1, 1e6, 1) },
@@ -320,6 +383,8 @@ export function createGrassMaterial(look: GrassLook, groundColor?: THREE.ColorRe
     uPattern: { value: new THREE.Vector4(look.colour.variegation, look.colour.banding, look.flowers.headShape, 0) },
     uPatternColor: { value: new THREE.Color(look.colour.variegationColor) },
     uStyle: { value: grassStyleShape(look) },
+    uStyleLook: { value: styleLighting.look },
+    uStyleColour: { value: styleLighting.colour },
   };
   const material = new THREE.MeshStandardMaterial({ color: "#ffffff", side: THREE.DoubleSide, roughness: look.lighting.roughness, metalness: 0 });
   material.onBeforeCompile = (shader) => {

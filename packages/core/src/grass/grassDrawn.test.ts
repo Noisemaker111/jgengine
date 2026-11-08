@@ -7,7 +7,7 @@ import { resolveGrassBake } from "@jgengine/core/grass/grassBake.draw";
 import { drawnGrassLook, grassMownAmount } from "@jgengine/core/grass/grassDrawn";
 import { createGrassTuftTemplate } from "@jgengine/core/grass/grassField";
 import { grassBladeDensity, readGrassLook } from "@jgengine/core/grass/grassKind";
-import { grassStyleShape } from "@jgengine/core/grass/grassMaterial.draw";
+import { grassStyleLighting, grassStyleShape } from "@jgengine/core/grass/grassMaterial.draw";
 import { GRASS_SPECIES } from "@jgengine/core/grass/grassSpecies";
 import { grassDetailScale, grassRealismFromPage, resolveGrassStyle } from "@jgengine/core/grass/grassStyle";
 
@@ -28,6 +28,9 @@ describe("drawn grass", () => {
       const look = readGrassLook({ species: species.id });
       expect(drawnGrassLook(look)).toBe(look);
       expect(grassStyleShape(look).toArray()).toEqual([0, 0, 1, 0]);
+      const lighting = grassStyleLighting(look);
+      expect(lighting.look.toArray()).toEqual([0, 0, 0, 0]);
+      expect(lighting.colour.toArray()).toEqual([1, 1]);
     }
   });
 
