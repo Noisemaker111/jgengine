@@ -33,7 +33,7 @@ import { assertCheckoutReady } from "./checkout-ready";
 import { workingTree } from "./boat-snapshot";
 import { gitHub, repoFromRemote, type GitHub } from "./github";
 import { MERGE_ATTEMPTS, mergeVerified, parseLock, pidIsAlive, staleReason, type LandLock } from "./land";
-import { betaLaneClose, gitIn, landingRoot, landingScript } from "./landing-code";
+import { betaLaneClose, gitIn, landingRoot, landingScript, receiptsBehind } from "./landing-code";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose, takeVerboseFlag } from "./verbosity";
 import { EXIT_BOAT_SPENT } from "./verify-boat";
@@ -144,6 +144,8 @@ export interface LaneIo {
   tree: () => string;
   /** The passing `verify:fast --landing` receipt for `tree` against this branch's merge base, or null. */
   passedOn: (tree: string) => string | null;
+  /** Why this lane's verify:fast cannot write a receipt this landing code reads (`receiptsBehind`), or null. */
+  receiptsBehind: () => string | null;
   /** The GitHub client for `repo`; by default `gh api` through `sh`. */
   github?: (repo: string) => GitHub;
   /** Waits between merge attempts while another merge moves the base. */
@@ -248,6 +250,13 @@ function closeHeldLane(args: LaneCloseArgs, branch: string, io: LaneIo): number 
   // A type error used to surface only after the whole test suite. land --commit stages what gen rewrote.
   // The stage lines are progress, kept for --verbose; each stage's own failure names the stage.
   const stage = isVerbose(io.env) ? io.out : (): void => {};
+  // Merging needs a receipt this code can read, and the receipt comes from the lane's own verify:fast.
+  // A lane too old to write one learns that now, not after the whole suite (scripts/landing-code.ts).
+  const behind = io.receiptsBehind();
+  if (behind !== null) {
+    io.err(`lane:close: ${behind}; nothing ran and nothing landed. Merge beta into this branch (git merge origin/beta) and close again.`);
+    return EXIT_VERIFY_FAILED;
+  }
   // A `verify:fast --landing` that passed on these exact bytes (run by hand just before) already
   // proved what preflight and verify would: its gates fail on a stale generated file, so gen has
   // nothing to rewrite. Both are skipped, in one line, instead of spending minutes on the same answer.
@@ -481,6 +490,7 @@ function realIo(): LaneIo {
     now: Date.now,
     alive: pidIsAlive,
     tree: () => workingTree(root).tree,
+    receiptsBehind: () => receiptsBehind(import.meta.url, root),
     passedOn: (tree) => {
       const base = spawnSync("git", ["merge-base", "HEAD", "origin/beta"], { cwd: root, encoding: "utf8" });
       const mergeBase = (base.stdout ?? "").trim();
