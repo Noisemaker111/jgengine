@@ -308,21 +308,26 @@ export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: 
       const grown = smoothstep(look.growth.patchiness * 0.85 - 0.1, look.growth.patchiness * 0.85 + 0.04, grassFieldNoise(nx, nz, seedNumber + 31));
       height *= 0.55 + 0.45 * grown;
       const y = bake.heightAt(x, z);
-      if (look.growth.slopeThin > 0) {
-        const slope = Math.hypot(bake.heightAt(x + 0.5, z) - bake.heightAt(x - 0.5, z), bake.heightAt(x, z + 0.5) - bake.heightAt(x, z - 0.5));
-        height *= 1 - look.growth.slopeThin * 0.75 * smoothstep(0.35, 1.3, slope);
-      }
+      // The masks after the slope, measured first: a tuft one of them zeroes ends at height 0 whatever
+      // its slope (every factor is finite and none negative), so it skips the four slope samples, the
+      // costliest part of a tuft on a detailed terrain. They still multiply in their own order.
+      let edgeKeep = 1;
       if (bake.edgeFeather > 0) {
         // Tufts drop out across the feather band, so the border reads as grass growing sparser.
         const edge = Math.min(halfW - Math.abs(x), halfD - Math.abs(z));
         const inside = Math.min(1, Math.max(0, edge / bake.edgeFeather));
-        height *= gate < inside * inside ? 0.7 + 0.3 * settle : 0;
+        edgeKeep = gate < inside * inside ? 0.7 + 0.3 * settle : 0;
       }
-      for (const zone of bake.exclude) {
-        const dist = Math.max(Math.abs(x - zone.center[0]) - zone.half[0], Math.abs(z - zone.center[1]) - zone.half[1]);
-        height *= Math.min(1, Math.max(0, dist / Math.max(0.001, zone.feather ?? 1.5)));
+      let excluded = false;
+      for (const zone of bake.exclude) if (excludeKeep(zone, x, z) === 0) excluded = true;
+      const covered = Math.max(0, Math.min(1, bake.coverageAt(x, z))) * smoothstep(bake.growAbove, bake.growAbove + 1, y);
+      if (look.growth.slopeThin > 0 && edgeKeep !== 0 && !excluded && covered !== 0) {
+        const slope = Math.hypot(bake.heightAt(x + 0.5, z) - bake.heightAt(x - 0.5, z), bake.heightAt(x, z + 0.5) - bake.heightAt(x, z - 0.5));
+        height *= 1 - look.growth.slopeThin * 0.75 * smoothstep(0.35, 1.3, slope);
       }
-      height *= Math.max(0, Math.min(1, bake.coverageAt(x, z))) * smoothstep(bake.growAbove, bake.growAbove + 1, y);
+      if (bake.edgeFeather > 0) height *= edgeKeep;
+      for (const zone of bake.exclude) height *= excludeKeep(zone, x, z);
+      height *= covered;
       // A blade masked down to nothing narrows with it, so no flat sliver lies on bare ground.
       const width = look.blade.bladeWidth * (1 - look.blade.widthVariation * 0.6 * (1 - widthRoll)) * (species === 1 ? look.mix.mixWidth : 1) * Math.min(1, height / Math.max(1e-4, look.blade.bladeHeight * 0.2));
       const bend = look.blade.curvature * (0.6 + 0.8 * bendRoll) * (1 + flutterStiff * 0.4);
@@ -366,6 +371,12 @@ export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: 
 
 /** Sort items moved between yields: one yield per item cost more than the moves themselves. */
 const SORT_CHUNK = 64;
+
+/** How much of a tuft an exclusion zone keeps: 0 inside its box, 1 past its feather. */
+function excludeKeep(zone: GrassExclusion, x: number, z: number): number {
+  const dist = Math.max(Math.abs(x - zone.center[0]) - zone.half[0], Math.abs(z - zone.center[1]) - zone.half[1]);
+  return Math.min(1, Math.max(0, dist / Math.max(0.001, zone.feather ?? 1.5)));
+}
 
 /**
  * Tufts in rank order, stable. Each cell's tufts were grown in rising rank, so `runEnds` (where each
