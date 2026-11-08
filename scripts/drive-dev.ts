@@ -79,7 +79,7 @@ import { LockstepRecorder } from "./driveLockstep";
 import { readHitchSession, renderHitchSession, resetBreakdown } from "./perf-breakdown";
 import { installPageRenderCounter, readRenderCounts, renderRenderCounts, resetRenderCounter } from "./perf-renders";
 import { aggregateAllocations, type HeapSampleNode } from "./perf-play";
-import { endTrace, markTraceAnchor, readTraceEvents, renderTracedHitches, startTrace, traceHitches } from "./perf-trace";
+import { describeFirstPaints, endTrace, markTraceAnchor, readTraceEvents, renderTracedHitches, startTrace, traceHitches } from "./perf-trace";
 import { profileHitches, renderProfiledHitches, startCpuProfile, stopCpuProfile } from "./perf-cpu";
 
 type Step = CaptureStep;
@@ -567,7 +567,10 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
           mkdirSync(dirname(out), { recursive: true });
           await endTrace(session, out);
           console.log(`trace: ${out}`);
-          if (hitchRead !== null) console.log(renderTracedHitches(traceHitches(await readTraceEvents(out), hitchRead.hitches)));
+          if (hitchRead !== null) {
+            const traced = traceHitches(await readTraceEvents(out), hitchRead.hitches);
+            console.log(renderTracedHitches(traced, await describeFirstPaints(session, traced)));
+          }
         }
         if (cpuProfile !== null) {
           if (hitchRead === null) throw new Error("drive: --cpu names what ran in each hitch; pass --hitches too");

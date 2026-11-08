@@ -10,7 +10,7 @@ import { flowsDirOf, loadFlow } from "./driveFlows";
 import { pageFlowDriver, readProbe } from "./drivePage";
 import { localGetJson } from "./localhostHttp";
 import { readBreakdown, readHitchSession, renderHitchSession, resetBreakdown, startPath } from "./perf-breakdown";
-import { endTrace, markTraceAnchor, readTraceEvents, renderTracedHitches, startTrace, traceHitches } from "./perf-trace";
+import { describeFirstPaints, endTrace, markTraceAnchor, readTraceEvents, renderTracedHitches, startTrace, traceHitches } from "./perf-trace";
 import { createFlowStepper, describeFlowReport, runFlowReport } from "../packages/core/src/play/flowSteps";
 import { GATE_SIZE } from "./perf-gate";
 import { BACKEND_READING_SCRIPT, gpuErrorLine, gpuErrors, parseSettingSpec, perfSettingsScript, SAMPLE_FRAMES_SCRIPT, summarizeFrameDeltas } from "./perf-play";
@@ -405,7 +405,8 @@ export async function launchAndPlayFlow(args: LaunchArgs, flow: { game: string; 
         const tracePath = out.replace(/\.json$/, "") + ".trace.json";
         await endTrace(session, tracePath);
         console.log(`trace: ${tracePath}`);
-        console.log(renderTracedHitches(traceHitches(await readTraceEvents(tracePath), hitches.hitches)));
+        const traced = traceHitches(await readTraceEvents(tracePath), hitches.hitches);
+        console.log(renderTracedHitches(traced, await describeFirstPaints(session, traced)));
       }
       return report.ok;
     });

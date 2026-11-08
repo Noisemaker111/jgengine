@@ -11,9 +11,12 @@ import type { CdpSession } from "./browser-lib";
 /**
  * The GPU service and ANGLE's own slices, and the page's marks: where a draw-time shader variant, a
  * raster program link or a long flush shows. Not "toplevel": every task of every process made a
- * 700 MB trace that took minutes to save on a busy PC.
+ * 700 MB trace that took minutes to save on a busy PC. "devtools.timeline" for its Paint events,
+ * which name the element painted: a raster program link stalls on the first paint of some effect.
  */
-const CATEGORIES = ["gpu", "gpu.angle", "gpu.service", "viz", "blink.user_timing", "disabled-by-default-gpu.service"];
+const CATEGORIES = ["gpu", "gpu.angle", "gpu.service", "viz", "blink.user_timing", "disabled-by-default-gpu.service", "devtools.timeline"];
+/** How far before a hitch an element's first paint can be the one its raster stalled on. */
+const FIRST_PAINT_LEAD_MS = 500;
 /** The page mark that ties the hitch log's clock to the trace's. */
 export const TRACE_ANCHOR = "jg-hitch-zero";
 
@@ -70,6 +73,11 @@ export interface TracedHitch {
   ms: number;
   /** The longest slice chain on each thread busy for a good part of the frame, longest first. */
   busy: { thread: string; ms: number; chain: string }[];
+  /**
+   * Elements painted for the first time in the trace just before or through the hitch (DOM backend
+   * node ids): the browser links a raster program for an effect the first time it paints one.
+   */
+  firstPaints: number[];
 }
 
 /** Slices shorter than this are never named; the frames worth explaining are 33 ms and up. */
@@ -104,7 +112,8 @@ function keepTraceLine(raw: string, kept: TraceEvent[]): void {
   if (!line.startsWith("{\"")) return;
   // Cheap text tests first: most lines are short slices, and parsing each took minutes.
   const meta = line.includes("\"ph\":\"M\"");
-  if (!meta && !line.includes(TRACE_ANCHOR)) {
+  const paint = line.includes(PAINT_NAME);
+  if (!meta && !paint && !line.includes(TRACE_ANCHOR)) {
     const dur = DUR.exec(line);
     if (dur === null || Number(dur[1]) < MIN_SLICE_MS * 1000) return;
   }
@@ -114,7 +123,17 @@ function keepTraceLine(raw: string, kept: TraceEvent[]): void {
   } catch {
     return;
   }
-  if (meta || event.name === TRACE_ANCHOR || (event.ph === "X" && (event.dur ?? 0) >= MIN_SLICE_MS * 1000)) kept.push(event);
+  if (meta || event.name === TRACE_ANCHOR || paintedNode(event) !== null || (event.ph === "X" && (event.dur ?? 0) >= MIN_SLICE_MS * 1000)) kept.push(event);
+}
+
+const PAINT_NAME = "\"name\":\"Paint\"";
+
+/** The element a Blink Paint event painted, or null for any other event. */
+function paintedNode(event: TraceEvent): number | null {
+  if (event.name !== "Paint") return null;
+  const data = event.args?.["data"];
+  const node = typeof data === "object" && data !== null ? (data as Record<string, unknown>)["nodeId"] : undefined;
+  return typeof node === "number" && node > 0 ? node : null;
 }
 
 const TRACE_HEAD = "{\"traceEvents\":[";
@@ -136,6 +155,12 @@ export function traceHitches(events: TraceEvent[], hitches: { atS: number; ms: n
     else if (event.name === "thread_name") names.set(`${event.pid}:${event.tid}`, name);
   }
   const slices = events.filter((event) => event.ph === "X" && (event.dur ?? 0) >= MIN_SLICE_MS * 1000).sort((a, b) => a.ts - b.ts);
+  // When each element was first painted in the whole trace.
+  const firstPaint = new Map<number, number>();
+  for (const event of events) {
+    const node = paintedNode(event);
+    if (node !== null && event.ts < (firstPaint.get(node) ?? Infinity)) firstPaint.set(node, event.ts);
+  }
   return hitches.map((hitch) => {
     const end = anchor.ts + hitch.atS * 1_000_000;
     const start = end - hitch.ms * 1000;
@@ -167,15 +192,48 @@ export function traceHitches(events: TraceEvent[], hitches: { atS: number; ms: n
       busy.push({ thread: `${names.get(pid) ?? `pid ${pid}`} / ${names.get(key) ?? `tid ${key.split(":")[1]}`}`, ms: Math.round(overlap(longest) / 100) / 10, chain: chain.join(" > ") });
     }
     busy.sort((a, b) => b.ms - a.ms);
-    return { atS: hitch.atS, ms: hitch.ms, busy: busy.filter((entry) => entry.ms >= hitch.ms / 4).slice(0, 4) };
+    const lead = start - FIRST_PAINT_LEAD_MS * 1000;
+    const firstPaints = [...firstPaint].filter(([, at]) => at >= lead && at < end).sort((a, b) => a[1] - b[1]).map(([node]) => node);
+    return { atS: hitch.atS, ms: hitch.ms, busy: busy.filter((entry) => entry.ms >= hitch.ms / 4).slice(0, 4), firstPaints };
   });
 }
 
-export function renderTracedHitches(traced: TracedHitch[]): string {
+/**
+ * Name the first-painted elements of the traced hitches from the live page, as `div.dw-hurtwash`.
+ * An element gone since is left out. Call before the page is closed.
+ */
+export async function describeFirstPaints(session: CdpSession, traced: readonly TracedHitch[]): Promise<Map<number, string>> {
+  const names = new Map<number, string>();
+  const nodes = new Set(traced.flatMap((hitch) => hitch.firstPaints));
+  if (nodes.size === 0) return names;
+  await session.send("DOM.enable").catch(() => {});
+  for (const backendNodeId of nodes) {
+    try {
+      const described = await session.send("DOM.describeNode", { backendNodeId });
+      const node = described["node"] as { localName?: string; nodeName?: string; attributes?: string[] } | undefined;
+      if (node === undefined) continue;
+      const attributes = node.attributes ?? [];
+      const at = (name: string) => { const index = attributes.indexOf(name); return index >= 0 && index % 2 === 0 ? attributes[index + 1] : undefined; };
+      const classes = (at("class") ?? "").trim().split(/\s+/).filter(Boolean).map((name) => `.${name}`).join("");
+      const id = at("id");
+      const label = at("aria-label");
+      names.set(backendNodeId, `${node.localName || node.nodeName || "?"}${id ? `#${id}` : ""}${classes}${label ? ` "${label}"` : ""}`);
+    } catch {
+      // Removed from the page since it painted.
+    }
+  }
+  return names;
+}
+
+export function renderTracedHitches(traced: TracedHitch[], painted: ReadonlyMap<number, string> = new Map()): string {
   const lines = ["trace: what each process was running through the hitches"];
   for (const hitch of traced) {
     lines.push(`  ${hitch.atS.toFixed(2).padStart(6)} s ${hitch.ms.toFixed(1).padStart(6)} ms${hitch.busy.length === 0 ? "  no thread was busy for a quarter of it" : ""}`);
     for (const entry of hitch.busy) lines.push(`      ${entry.ms.toFixed(1).padStart(6)} ms  ${entry.thread}: ${entry.chain}`);
+    if (hitch.firstPaints.length > 0) {
+      const named = hitch.firstPaints.map((node) => painted.get(node) ?? `node ${node} (gone)`);
+      lines.push(`      first painted: ${named.slice(0, 8).join(", ")}${named.length > 8 ? `, ${named.length - 8} more` : ""}`);
+    }
   }
   return lines.join("\n");
 }

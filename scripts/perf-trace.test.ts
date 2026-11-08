@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { TRACE_ANCHOR, traceHitches, type TraceEvent } from "./perf-trace";
+import { renderTracedHitches, TRACE_ANCHOR, traceHitches, type TraceEvent } from "./perf-trace";
 
 const meta = (pid: number, tid: number, kind: "process_name" | "thread_name", name: string): TraceEvent => ({ name: kind, ph: "M", ts: 0, pid, tid, args: { name } });
 
@@ -24,6 +24,23 @@ test("a hitch the page could not explain is named by the GPU process slice that 
   expect(traced!.busy).toEqual([
     { thread: "GPU Process / CrGpuMain", ms: 300, chain: "ThreadControllerImpl::RunTask > GpuChannel::ExecuteDeferredRequest > ProgramD3D::getVertexExecutableForCachedInputLayout" },
   ]);
+});
+
+test("a hitch lists the elements first painted just before it, not ones painted every frame", () => {
+  const anchor = 1_000_000;
+  const paint = (ts: number, nodeId: number): TraceEvent => ({ name: "Paint", ph: "X", ts, dur: 200, pid: 3, tid: 7, args: { data: { nodeId, layerId: 1 } } });
+  const events: TraceEvent[] = [
+    { name: TRACE_ANCHOR, ph: "R", ts: anchor, pid: 3, tid: 7 },
+    // The dial repaints every frame from the start: never a first paint near the hitch.
+    paint(anchor + 1_000_000, 11), paint(anchor + 9_900_000, 11),
+    // The hurt wash first paints 200 ms before the 300 ms hitch that ends at 10 s.
+    paint(anchor + 9_500_000, 42),
+    // Something first painted long before is not named.
+    paint(anchor + 5_000_000, 7),
+  ];
+  const [traced] = traceHitches(events, [{ atS: 10, ms: 300 }]);
+  expect(traced!.firstPaints).toEqual([42]);
+  expect(renderTracedHitches([traced!], new Map([[42, "div.dw-hurtwash"]]))).toContain("first painted: div.dw-hurtwash");
 });
 
 test("a trace without the anchor mark fails instead of naming the wrong slices", () => {
