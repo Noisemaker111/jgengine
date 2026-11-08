@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "bun:test";
 
-import { rebaseResolvingGenerated } from "./generated-rebase";
+import { keepBothInsertions, mergeSuiteReports, MERGE_FILE_LABELS, rebaseResolvingGenerated } from "./generated-rebase";
 import type { Run } from "./land";
 import { SUITE_SCORE_END, SUITE_SCORE_START } from "./suite-score-block";
 
@@ -68,5 +68,57 @@ describe("rebaseResolvingGenerated", () => {
     const rebased = rebaseResolvingGenerated(git, "beta");
     expect(rebased.ok).toBe(false);
     expect(rebased.conflicts).toEqual([README]);
+  });
+});
+
+/** `git merge-file -p --zdiff3` of three texts, labelled as the rebase labels them. */
+function mergeFile(ours: string, base: string, theirs: string): string {
+  const dir = mkdtempSync(join(tmpdir(), "gen-rebase-merge-"));
+  dirs.push(dir);
+  const files = Object.entries({ ours, base, theirs }).map(([name, text]) => {
+    writeFileSync(join(dir, name), text);
+    return join(dir, name);
+  });
+  return spawnSync("git", ["merge-file", "-p", "--zdiff3", ...MERGE_FILE_LABELS, ...files], { encoding: "utf8" }).stdout;
+}
+
+describe("keepBothInsertions", () => {
+  const probe = (fields: string[]) => ["probe: {", "  x: 1,", ...fields, "},", ""].join("\n");
+
+  test("lines both sides appended at one place are both kept, the base's first", () => {
+    const merged = mergeFile(probe(["  stones: 2,"]), probe([]), probe(["  arrows: 3,"]));
+    expect(keepBothInsertions(merged)).toBe(probe(["  stones: 2,", "  arrows: 3,"]));
+  });
+
+  test("a line both sides changed is a real conflict", () => {
+    expect(keepBothInsertions(mergeFile(probe(["  y: 2,"]).replace("x: 1", "x: 2"), probe([]), probe([]).replace("x: 1", "x: 3")))).toBeNull();
+  });
+
+  test("text that only looks like a conflict marker is kept as text", () => {
+    const heading = (extra: string) => `Title\n=======\n\n${extra}`;
+    expect(keepBothInsertions(mergeFile(heading("- a\n"), heading(""), heading("- b\n")))).toBe(heading("- a\n- b\n"));
+  });
+});
+
+describe("mergeSuiteReports", () => {
+  const proof = (file: string, ok = true) => ({ file, proves: [file], ok });
+  const report = (proofs: ReturnType<typeof proof>[], data: string[] = []) =>
+    `${JSON.stringify({ game: "demo", proofs, data: data.map((id) => ({ id, ok: true, problems: [] })) }, null, 2)}\n`;
+
+  test("each side keeps the proof rows it changed; rows stay sorted by file", () => {
+    const base = report([proof("a"), proof("c", false), proof("gone")], ["d1"]);
+    const ours = report([proof("a", false), proof("b"), proof("c", false)], ["d1", "d2"]);
+    const theirs = report([proof("a"), proof("c"), proof("gone"), proof("z")], ["d1", "d3"]);
+    expect(mergeSuiteReports({ base, ours, theirs })).toBe(report([proof("a", false), proof("b"), proof("c"), proof("z")], ["d1", "d2", "d3"]));
+  });
+
+  test("a row both sides changed takes the lane's run", () => {
+    const ran = (ok: boolean, failure?: string) => ({ ...proof("a", ok), ...(failure === undefined ? {} : { failure }) });
+    const merged = mergeSuiteReports({ base: report([proof("a", false)]), ours: report([ran(false, "beta's reason")]), theirs: report([ran(true)]) });
+    expect(merged).toBe(report([proof("a")]));
+  });
+
+  test("a side that is not a suite report is not merged", () => {
+    expect(mergeSuiteReports({ base: report([]), ours: "{", theirs: report([]) })).toBeNull();
   });
 });
