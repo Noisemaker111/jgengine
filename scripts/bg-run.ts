@@ -55,7 +55,10 @@ export function startTask(options: StartOptions): string {
 
 /** The detached side: run the command, keep its output and its exit code, and outlive the caller. */
 export function supervise(dir: string): void {
-  const fd = openSync(join(dir, "out.log"), "a");
+  // Opened for writing, not append-only: MSYS programs (Git Bash, its grep and echo) write nothing,
+  // not even their errors, to a handle opened with append access alone, so a bash job's log came
+  // back empty. Nothing writes the log before this point.
+  const fd = openSync(join(dir, "out.log"), "w");
   writeFileSync(join(dir, "runner"), `${process.pid}\n`);
   const command = readFileSync(join(dir, "cmd.txt"), "utf8").trim();
   const [file, args] =
