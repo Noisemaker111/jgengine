@@ -617,6 +617,8 @@
     "./lighting/lightingBalance",
     "./lighting/pmremLink.draw",
     "./lighting/reflectionProbe.draw",
+    "./lighting/shadowCache",
+    "./lighting/shadowCache.draw",
     "./lighting/shadowCasters.draw",
     "./lighting/shadowTiers",
     "./lighting/softShadows",

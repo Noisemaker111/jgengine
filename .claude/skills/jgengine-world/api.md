@@ -2505,6 +2505,10 @@
 - `FALLBACK_KEY_LIGHT` (const): const FALLBACK_KEY_LIGHT: Readonly<DirectionalLightingConfig> — Soft key added when authored lighting has no directional light: high, off to one side, shadowless.
 - `balanceLightingForIbl` (function): function balanceLightingForIbl(lighting: LightingConfig | undefined): LightingConfig | undefined — Rebalance authored lighting for a scene that also has image-based light: trim the flat ambient term by `iblAmbientScale` (default 0.5) and, when no directional light is authored, add {@link FALLBACK_KEY_LIGHT} tinted by the ambient colour so forms keep a lit and a shaded side. Returns the input unchanged when there is nothing to adjust.
 
+## @jgengine/core/lighting/shadowCache
+
+- `ShadowPassPlan` (type): type ShadowPassPlan = | "full" /** Draw the static casters into the layer, then copy it into the map and draw the changed casters over it. */ | "rebuild" /** Copy the layer into the map and draw the changed casters over it. */ | "reuse" /** The map already holds exactly the layer and no changed cast… — Same-image shadow caching, the renderer-agnostic half: what one light's depth pass draws this frame.
+
 ## @jgengine/core/lighting/softShadows
 
 - `DEFAULT_OCCLUDER_DISTANCE` (const): const DEFAULT_OCCLUDER_DISTANCE: 4 — Metres between a typical caster and the ground it shadows, used when a light leaves it unset.
