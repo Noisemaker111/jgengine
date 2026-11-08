@@ -172,6 +172,8 @@ export function ConfiguredLighting({
         return {
           casters: stats.casters,
           static: stats.staticCasters,
+          checks: stats.checks,
+          cpuMs: stats.cpuMs,
           ...stats.passes,
           auditMaps: stats.audit.maps,
           auditMismatchedMaps: stats.audit.mismatchedMaps,
