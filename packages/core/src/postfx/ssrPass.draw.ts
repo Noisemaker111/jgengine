@@ -4,7 +4,11 @@ import { FullScreenQuad, Pass } from "three-stdlib";
 import type { SsrConfig } from "@jgengine/core/render/postProcessing";
 import { visitVisible } from "@jgengine/core/visibility/visitVisible.draw";
 
+import { proxyGeometry } from "./proxyGeometry.draw";
+
 const maskClear = new THREE.Color();
+/** The only attribute the mask shader reads, so every glossy mesh shares its one program. */
+const MASK_ATTRIBUTES = ["position"] as const;
 
 const vertexShader = /* glsl */ `
   varying vec2 vUv;
@@ -195,6 +199,14 @@ export class SsrPass extends Pass {
   private framesSinceScan = GLOSS_RESCAN_FRAMES;
   private frame = 0;
   private readonly maxRoughness: number;
+  /**
+   * A dry run (the shader warmup's) draws the mask and the march even with nothing glossy in view,
+   * so both programs link off the frame. Without it the first glossy floor to come into view linked
+   * them mid-play: a 120 ms freeze in the browser and 240 ms in the desktop app.
+   */
+  dry = false;
+  /** Drawn into the mask on a dry run: no glossy surface needs to exist for its program to link. */
+  private readonly standIn = new THREE.Mesh(new THREE.BufferGeometry().setAttribute("position", new THREE.Float32BufferAttribute(new Float32Array(9), 3)));
 
   constructor(
     private readonly scene: THREE.Scene,
@@ -247,7 +259,7 @@ export class SsrPass extends Pass {
       vertexShader: maskVertex,
       fragmentShader: maskFragment,
     });
-    const copy = new THREE.Mesh(mesh.geometry, material);
+    const copy = new THREE.Mesh(proxyGeometry(mesh.geometry, MASK_ATTRIBUTES), material);
     copy.matrixAutoUpdate = false;
     copy.matrixWorldAutoUpdate = false;
     proxy = { mesh: copy, material, gloss };
@@ -268,10 +280,11 @@ export class SsrPass extends Pass {
       if (mesh.parent === null || !mesh.visible) continue;
       const proxy = this.proxyFor(mesh);
       proxy.gloss.value = gloss;
-      proxy.mesh.geometry = mesh.geometry;
+      proxy.mesh.geometry = proxyGeometry(mesh.geometry, MASK_ATTRIBUTES);
       proxy.mesh.matrixWorld.copy(mesh.matrixWorld);
       this.maskScene.add(proxy.mesh);
     }
+    if (this.dry) this.maskScene.add(this.proxyFor(this.standIn).mesh);
     const clearColor = renderer.getClearColor(maskClear);
     const clearAlpha = renderer.getClearAlpha();
     renderer.setRenderTarget(this.mask);
@@ -290,6 +303,7 @@ export class SsrPass extends Pass {
   }
 
   override render(renderer: THREE.WebGLRenderer, writeBuffer: THREE.WebGLRenderTarget, readBuffer: THREE.WebGLRenderTarget): void {
+    // A dry run's stand-in is in the mask, so it marches too.
     if (!this.drawMask(renderer)) {
       // Nothing glossy in view: pass the frame through untouched instead of marching every pixel.
       this.needsSwap = false;
@@ -314,5 +328,6 @@ export class SsrPass extends Pass {
     for (const material of this.materials) material.dispose();
     this.materials.clear();
     this.maskScene.clear();
+    this.standIn.geometry.dispose();
   }
 }

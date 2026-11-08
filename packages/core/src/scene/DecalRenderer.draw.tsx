@@ -51,7 +51,13 @@ function bakePage(looks: readonly DecalLook[]): THREE.DataTexture {
       const sy = Math.min(DECAL_TILE - 1, Math.max(0, y - DECAL_GUTTER));
       for (let x = 0; x < DECAL_STRIDE; x += 1) {
         const sx = Math.min(DECAL_TILE - 1, Math.max(0, x - DECAL_GUTTER));
-        data.set(baked.data.subarray((sy * DECAL_TILE + sx) * 4, (sy * DECAL_TILE + sx) * 4 + 4), ((bottom + y) * width + left + x) * 4);
+        // Byte by byte: a subarray per texel was a garbage object for each of the page's pixels.
+        const from = (sy * DECAL_TILE + sx) * 4;
+        const to = ((bottom + y) * width + left + x) * 4;
+        data[to] = baked.data[from]!;
+        data[to + 1] = baked.data[from + 1]!;
+        data[to + 2] = baked.data[from + 2]!;
+        data[to + 3] = baked.data[from + 3]!;
       }
     }
   }

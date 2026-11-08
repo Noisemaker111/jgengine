@@ -18,7 +18,22 @@ import {
   resolveIdleExitMs,
   startIdleWatchdog,
   writeMarker,
+  checkoutIdentity,
 } from "./devServerMarker";
+
+test("a checkout's identity is git's own top-level path, read without running git", () => {
+  const git = Bun.spawnSync(["git", "rev-parse", "--show-toplevel"], { cwd: import.meta.dir });
+  const top = git.stdout.toString().trim();
+  expect(checkoutIdentity(import.meta.dir)).toBe(top);
+  expect(checkoutIdentity(join(import.meta.dir, "..", "packages", "core"))).toBe(top);
+  // A folder outside any checkout keeps its own path, in the same slash form.
+  const outside = mkdtempSync(join(tmpdir(), "jg-identity-"));
+  try {
+    expect(checkoutIdentity(outside)).toBe(outside.replaceAll("\\", "/"));
+  } finally {
+    rmSync(outside, { recursive: true, force: true });
+  }
+});
 
 /**
  * The marker is how `bun run perf live` finds the dev server Jon started with `bun dev`:

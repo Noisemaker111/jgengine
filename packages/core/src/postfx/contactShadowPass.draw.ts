@@ -143,6 +143,8 @@ export class ContactShadowPass extends Pass {
   private readonly applyQuad: FullScreenQuad;
   private light: THREE.DirectionalLight | null = null;
   private framesSinceScan = LIGHT_RESCAN_FRAMES;
+  /** A dry run (the shader warmup's) draws even with no key light, so the programs link off the frame. */
+  dry = false;
   private frame = 0;
   private readonly lightWorld = new THREE.Vector3();
 
@@ -212,9 +214,11 @@ export class ContactShadowPass extends Pass {
 
   override render(renderer: THREE.WebGLRenderer, _writeBuffer: THREE.WebGLRenderTarget, readBuffer: THREE.WebGLRenderTarget): void {
     const light = this.keyLight();
-    if (light === null) return;
+    // A dry run (the shader warmup's) draws with no key light too, so a place whose sun comes later
+    // finds both programs linked.
+    if (light === null && !this.dry) return;
     const uniforms = this.material.uniforms;
-    towardLight(light, this.lightWorld);
+    if (light !== null) towardLight(light, this.lightWorld);
     (uniforms["uLightView"]!.value as THREE.Vector3).copy(this.lightWorld).transformDirection(this.camera.matrixWorldInverse);
     (uniforms["uProjection"]!.value as THREE.Matrix4).copy(this.camera.projectionMatrix);
     (uniforms["uProjectionInverse"]!.value as THREE.Matrix4).copy(this.camera.projectionMatrixInverse);

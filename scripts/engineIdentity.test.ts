@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, test } from "bun:test";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { afterEach, describe, expect, setDefaultTimeout, test } from "bun:test";
+import { mkdirSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import {
@@ -12,6 +12,9 @@ import { buildShotRecord, shotSidecarPath, writeShotRecord, readShotRecord } fro
 /**
  * The dev runner serves engine source from this checkout, so every capture names what it served.
  */
+// Each test builds a real git checkout (three git runs) and reads it with two more: on a busy PC that
+// passed bun's 5 s default with nothing wrong.
+setDefaultTimeout(30_000);
 const scratch = join(import.meta.dir, "..", ".scratch");
 const dirs: string[] = [];
 afterEach(() => {
@@ -53,6 +56,18 @@ describe("engine identity", () => {
     const identity = resolveEngineIdentity({ root });
     expect(identity.line).toContain("@jgengine/core 0.38.0");
     expect(identity.line).toContain(headOf(root));
+  });
+
+  test("reading the identity never writes the checkout's index, so a run killed mid-read leaves no index.lock", () => {
+    const root = checkout("0.38.0");
+    const manifest = join(root, "packages", "core", "package.json");
+    // Same content, newer time: a plain `git status` refreshes the index and rewrites it under index.lock.
+    const later = new Date(Date.now() + 5_000);
+    utimesSync(manifest, later, later);
+    const index = join(root, ".git", "index");
+    const before = statSync(index).mtimeMs;
+    expect(readServedEngine(root)?.dirty).toBe(false);
+    expect(statSync(index).mtimeMs).toBe(before);
   });
 
   test("no engine checkout is named, not guessed", () => {

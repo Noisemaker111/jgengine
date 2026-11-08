@@ -1340,7 +1340,11 @@ export function HudFade({ watch, idleMs = 3500, dimTo = 0.18, hold = NEVER_HOLD,
       onPointerLeave={() => {
         hovered.current = false;
       }}
-      style={{ opacity: 1, transition: fadeTransition(true), ...style }}
+      // Its own compositor layer: the fade is then an opacity the compositor applies to pixels it
+      // already has. Without it the dimmed group fell back to being painted through an offscreen
+      // alpha layer, and the first dim of a session linked the browser's programs for that, freezing
+      // Deepward for 0.4-0.75 s four seconds after the dive HUD went quiet.
+      style={{ opacity: 1, transition: fadeTransition(true), willChange: "opacity", ...style }}
     >
       {children}
     </div>

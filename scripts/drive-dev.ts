@@ -78,6 +78,9 @@ import { parseDriveArgs, projectDirOf, DRIVE_HELP } from "./driveArgs";
 import { LockstepRecorder } from "./driveLockstep";
 import { readHitchSession, renderHitchSession, resetBreakdown } from "./perf-breakdown";
 import { installPageRenderCounter, readRenderCounts, renderRenderCounts, resetRenderCounter } from "./perf-renders";
+import { aggregateAllocations, type HeapSampleNode } from "./perf-play";
+import { describeFirstPaints, endTrace, markTraceAnchor, readTraceEvents, renderTracedHitches, startTrace, traceHitches } from "./perf-trace";
+import { profileHitches, renderProfiledHitches, startCpuProfile, stopCpuProfile } from "./perf-cpu";
 
 type Step = CaptureStep;
 
@@ -370,8 +373,21 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
         if (args.hitches && !(await resetBreakdown(session))) {
           throw new Error("drive: --hitches found no frame breakdown on the page (window.__jgFrameBreakdown); the game renders no 3D scene, or local telemetry did not start");
         }
+        // The page clock at the hitch log's zero, for lining a CPU profile up with its hitches.
+        const hitchZeroMs = (await session.evaluate<number>("performance.now()")) ?? 0;
+        if (args.trace) {
+          await startTrace(session);
+          await markTraceAnchor(session);
+        }
+        const cpuStartedAtMs = args.cpu ? await startCpuProfile(session) : 0;
         if (args.renders && !(await resetRenderCounter(session))) {
           throw new Error("drive: --renders found no render counter on the page; another React DevTools hook was installed first");
+        }
+        const allocationsFrom = Date.now();
+        if (args.allocations) {
+          await session.send("HeapProfiler.enable");
+          // Collected objects are the garbage itself; without these flags only survivors are counted.
+          await session.send("HeapProfiler.startSampling", { samplingInterval: 16_384, includeObjectsCollectedByMajorGC: true, includeObjectsCollectedByMinorGC: true });
         }
 
         let recorder: LockstepRecorder | null = null;
@@ -535,15 +551,30 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
           },
         });
         if (done.failed > 0) code = 1;
+        const runName = `${args.game}-${args.flow ?? "drive"}${args.url === undefined ? "" : "-url"}`;
+        const cpuProfile = args.cpu ? await stopCpuProfile(session) : null;
+        const hitchRead = args.hitches ? await readHitchSession(session) : null;
         if (args.hitches) {
-          const read = await readHitchSession(session);
-          if (read === null) throw new Error("drive: --hitches lost the page's frame breakdown before the run ended");
-          const name = `${args.game}-${args.flow ?? "drive"}${args.url === undefined ? "" : "-url"}`;
-          const out = resolve(import.meta.dir, "..", ".scratch", "perf", "hitches", `${name}.json`);
+          if (hitchRead === null) throw new Error("drive: --hitches lost the page's frame breakdown before the run ended");
+          const out = resolve(import.meta.dir, "..", ".scratch", "perf", "hitches", `${runName}.json`);
           mkdirSync(dirname(out), { recursive: true });
-          writeFileSync(out, JSON.stringify(read, null, 2));
-          console.log(renderHitchSession(read, `hitches ${name}`));
+          writeFileSync(out, JSON.stringify(hitchRead, null, 2));
+          console.log(renderHitchSession(hitchRead, `hitches ${runName}`));
           console.log(`hitch record: ${out}`);
+        }
+        if (args.trace) {
+          const out = resolve(import.meta.dir, "..", ".scratch", "perf", "traces", `${runName}.trace.json`);
+          mkdirSync(dirname(out), { recursive: true });
+          await endTrace(session, out);
+          console.log(`trace: ${out}`);
+          if (hitchRead !== null) {
+            const traced = traceHitches(await readTraceEvents(out), hitchRead.hitches);
+            console.log(renderTracedHitches(traced, await describeFirstPaints(session, traced)));
+          }
+        }
+        if (cpuProfile !== null) {
+          if (hitchRead === null) throw new Error("drive: --cpu names what ran in each hitch; pass --hitches too");
+          console.log(renderProfiledHitches(profileHitches(cpuProfile, cpuStartedAtMs, hitchZeroMs, hitchRead.hitches)));
         }
         if (args.renders) {
           const counts = await readRenderCounts(session);
@@ -553,6 +584,14 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
           writeFileSync(out, JSON.stringify(counts, null, 2));
           console.log(renderRenderCounts(counts, `renders ${args.game}-${args.flow ?? "drive"}`));
           console.log(`render record: ${out}`);
+        }
+        if (args.allocations) {
+          const heap = await session.send("HeapProfiler.stopSampling");
+          const head = (heap["profile"] as { head?: HeapSampleNode } | undefined)?.head;
+          if (head === undefined) throw new Error("drive: --allocations got no heap profile back from the page");
+          const seconds = (Date.now() - allocationsFrom) / 1000;
+          console.log(`allocations ${args.game}-${args.flow ?? "drive"} over ${seconds.toFixed(1)} s, per second of play (sampled):`);
+          for (const entry of aggregateAllocations(head, seconds * 1000, 25)) console.log(`  ${entry.mbPerSecond.toFixed(2).padStart(7)} MB/s  ${entry.fn}  ${entry.at}`);
         }
 
         if (recorder !== null) {

@@ -297,9 +297,11 @@ export function disposeGraph(built: BuiltGraph): void {
  */
 function dryRender(built: BuiltGraph, every = false): void {
   const passes = built.composer.passes;
-  const meters = passes.filter((pass): pass is ExposureMeterPass => pass instanceof ExposureMeterPass);
+  // A pass with a `dry` switch draws everything it could draw in play (a mask with nothing glossy
+  // in view, a velocity buffer with nothing moving), so a program it only needs later links now.
+  const dryable = passes.filter((pass): pass is Pass & { dry: boolean } => typeof (pass as { dry?: unknown }).dry === "boolean");
   const enabled = passes.map((pass) => pass.enabled);
-  for (const meter of meters) meter.dry = true;
+  for (const pass of dryable) pass.dry = true;
   if (every) for (const pass of passes) pass.enabled = true;
   try {
     built.composer.render(0);
@@ -307,7 +309,7 @@ function dryRender(built: BuiltGraph, every = false): void {
     passes.forEach((pass, index) => {
       pass.enabled = enabled[index]!;
     });
-    for (const meter of meters) meter.dry = false;
+    for (const pass of dryable) pass.dry = false;
     for (const pass of passes) if (pass instanceof TemporalAaPass) pass.reset();
   }
 }

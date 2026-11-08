@@ -40,6 +40,14 @@ export interface FrameBreakdownRecord {
   compileMs: number;
   /** The draws that waited on a shader program this frame, as "material on object". */
   shaders?: string[];
+  /**
+   * Draws that ran a program with a vertex layout or target it had not drawn with before, as
+   * "material on object": ANGLE on Direct3D builds a shader for each at that draw, in the GPU
+   * process, so the frame stalls with nothing on the page's own clock.
+   */
+  firstDraws?: string[];
+  /** Where each program linked this frame was asked for: the first game or engine function on its stack. */
+  links?: string[];
   /** Texture and buffer uploads this frame: calls, bytes and main-thread milliseconds. */
   uploads: number;
   uploadBytes: number;
@@ -223,6 +231,70 @@ export function lightSetChange(before: readonly string[], after: readonly string
 }
 
 /**
+ * The first game or engine function on a link's call stack, past three, the breakdown's own wrapper
+ * and dependencies: `bakeImpostorLinked packages/core/src/lod/impostor.draw.ts:171`. Null when none
+ * is on it. Reads V8's `at fn (url:line:col)` frames.
+ * @internal
+ */
+export function linkCaller(stack: string): string | null {
+  for (const line of stack.split("\n")) {
+    const frame = /^\s*at (?:(?:async )?(\S+) \()?(.*?):(\d+):\d+\)?$/.exec(line);
+    if (frame === null) continue;
+    const url = frame[2]!.replace(/\?.*$/, "");
+    if (url.includes("node_modules") || url.includes("/devtools/frameBreakdown") || !/\/(packages|games)\//.test(url)) continue;
+    const path = url.replace(/^.*?\/((?:packages|games)\/.*)$/, "$1");
+    return `${frame[1] ?? "(anonymous)"} ${path}:${frame[3]}`;
+  }
+  return null;
+}
+
+/** "; linked from …" for a compile hitch no draw named: each caller once, with how many it linked. */
+function linkedFrom(links: readonly string[] | undefined): string {
+  if (links === undefined || links.length === 0) return "";
+  const counts = new Map<string, number>();
+  for (const link of links) counts.set(link, (counts.get(link) ?? 0) + 1);
+  const named = [...counts].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([link, count]) => (count > 1 ? `${link} ×${count}` : link));
+  return `, linked from ${named.join(", ")}`;
+}
+
+/** A vertex attribute as three keeps it: plain, or interleaved (its array on `data`). */
+export interface LayoutAttribute {
+  itemSize?: number;
+  normalized?: boolean;
+  array?: { constructor: { name: string } };
+  data?: { array?: { constructor: { name: string } } };
+}
+
+/**
+ * The vertex layout a draw feeds a program: each attribute the program reads, with its size, element
+ * type and normalisation (`-` when the draw has none). ANGLE on Direct3D builds a vertex shader per
+ * layout at the first draw that uses it, so one program drawn with two layouts builds twice.
+ * @internal
+ */
+export function vertexLayout(active: readonly string[], attributeOf: (name: string) => LayoutAttribute | undefined): string {
+  return [...active].sort().map((name) => {
+    const attribute = attributeOf(name);
+    if (attribute === undefined) return `${name}:-`;
+    const array = attribute.array ?? attribute.data?.array;
+    return `${name}:${attribute.itemSize ?? "?"}${attribute.normalized === true ? "n" : ""}:${array?.constructor.name ?? "?"}`;
+  }).join(",");
+}
+
+const TEXEL_TYPES: Record<number, string> = { 1009: "rgba8", 1015: "float", 1016: "half-float" };
+
+/**
+ * The colour outputs a draw writes, which ANGLE on Direct3D builds a pixel shader per: `screen`, or
+ * how many colour textures the target has, their texel type and whether it is multisampled.
+ * @internal
+ */
+export function targetLayout(target: { textures?: readonly { type?: number }[]; texture?: { type?: number }; samples?: number } | null): string {
+  if (target === null) return "screen";
+  const textures = target.textures ?? (target.texture === undefined ? [] : [target.texture]);
+  const types = textures.map((texture) => TEXEL_TYPES[texture.type ?? 1009] ?? `type ${texture.type}`);
+  return `${types.length > 1 ? `${types.length}× ` : ""}${[...new Set(types)].join("+")}${(target.samples ?? 0) > 0 ? " msaa" : ""}`;
+}
+
+/**
  * The scripts that ran inside a frame that ended at `endMs` after `intervalMs`, longest first, and
  * the cause they make it when the frame's own record named nothing: a slow frame with no compile,
  * upload, collection, system or pass is the browser running something else, and this says what.
@@ -371,9 +443,9 @@ function namedCosts(frames: readonly Record<string, number>[], top: number): Nam
  * @internal
  */
 export function hitchCause(record: FrameBreakdownRecord): Pick<Hitch, "cause" | "detail"> {
+  const which = record.shaders !== undefined && record.shaders.length > 0 ? ` for ${record.shaders.slice(0, 3).join(", ")}` : "";
   if (record.compileMs >= 2) {
     const what = record.compiles > 0 ? `${record.compiles} shader program(s) compiled` : "waited on shader programs at first use";
-    const which = record.shaders !== undefined && record.shaders.length > 0 ? ` for ${record.shaders.slice(0, 3).join(", ")}` : "";
     return { cause: "compile", detail: `${what}, ${round(record.compileMs, 1)} ms${which}` };
   }
   if (record.uploadMs >= 4 || record.uploadBytes >= 4 * 1024 * 1024) {
@@ -385,11 +457,14 @@ export function hitchCause(record: FrameBreakdownRecord): Pick<Hitch, "cause" | 
   // A system or pass is the cause only when it took a real share of the frame: a 2 s frame with a
   // 16 ms GPU pass in it froze somewhere else (Deepward's desktop build blamed BeautyPass for one).
   const share = record.intervalMs / 4;
-  if (systemMs >= 8 && systemMs >= passMs && systemMs >= share) return { cause: "system", detail: `${system} ${round(systemMs, 1)} ms on the CPU` };
-  if (passMs >= 8 && passMs >= share) return { cause: "gpu", detail: `${pass} ${round(passMs, 1)} ms on the GPU` };
-  if (record.compiles > 0) return { cause: "compile", detail: `${record.compiles} shader program(s) linked` };
+  // A program's first draw with a new layout builds a driver shader off the page's clock: told beside
+  // whatever the frame is blamed on, since that build is what the GPU process was doing.
+  const firsts = record.firstDraws !== undefined && record.firstDraws.length > 0 ? `; first draws of ${record.firstDraws.length} program and layout pair(s): ${record.firstDraws.slice(0, 3).join(", ")}` : "";
+  if (systemMs >= 8 && systemMs >= passMs && systemMs >= share) return { cause: "system", detail: `${system} ${round(systemMs, 1)} ms on the CPU${firsts}` };
+  if (passMs >= 8 && passMs >= share) return { cause: "gpu", detail: `${pass} ${round(passMs, 1)} ms on the GPU${firsts}` };
+  if (record.compiles > 0) return { cause: "compile", detail: `${record.compiles} shader program(s) linked${which || linkedFrom(record.links)}` };
   const largest = Math.max(systemMs, passMs) >= 8 ? `; the largest game cost was ${systemMs >= passMs ? `${system} ${round(systemMs, 1)} ms on the CPU` : `${pass} ${round(passMs, 1)} ms on the GPU`}` : "";
-  return { cause: "other", detail: `${round(record.intervalMs - record.workMs, 1)} ms outside the game's frame work (browser, compositor, OS)${largest}` };
+  return { cause: "other", detail: `${round(record.intervalMs - record.workMs, 1)} ms outside the game's frame work (browser, compositor, OS)${largest}${firsts}` };
 }
 
 /** Summarize a window of frames plus the draw costs gathered over it. @internal */

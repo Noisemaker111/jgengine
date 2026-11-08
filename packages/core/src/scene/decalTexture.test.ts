@@ -13,6 +13,14 @@ test("stencil paints its text in its colour and a placeholder pair without text"
   expect(createDecalTexture("stencil", "a", 128, { text: "LINE 06", color: "#336699" }).data).toEqual(painted.data);
 });
 
+test("a look baked before comes back as the same bytes, and a different look bakes its own", () => {
+  const first = createDecalTexture("rust", "pipe-3", 64);
+  expect(createDecalTexture("rust", "pipe-3", 64)).toBe(first);
+  expect(createDecalTexture("rust", "pipe-4", 64)).not.toBe(first);
+  expect(createDecalTexture("rust", "pipe-3", 32)).not.toBe(first);
+  expect(createDecalTexture("stencil", "pipe-3", 64, { text: "A" })).not.toBe(createDecalTexture("stencil", "pipe-3", 64, { text: "B" }));
+});
+
 test("every stencil letter, digit and mark has a seven-row glyph", () => {
   for (const char of "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-/.") expect(covered(createDecalTexture("stencil", "g", 128, { text: char }).data)).toBeGreaterThan(0);
 });

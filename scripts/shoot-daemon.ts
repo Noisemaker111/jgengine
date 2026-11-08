@@ -486,12 +486,19 @@ export function brokerTurn(daemon: ShootDaemonState | null, cwd = process.cwd())
  * does not fail — it waits — so a capture that attached to the daemon races this and
  * fails in seconds, which turns a hang into the one-line fallback.
  */
-export async function watchDaemon(daemon: ShootDaemonState, cwd = process.cwd(), intervalMs = 2_000): Promise<never> {
+export async function watchDaemon(daemon: ShootDaemonState, cwd = process.cwd(), intervalMs = 2_000, missesAllowed = DAEMON_MISSES_ALLOWED, answers: () => Promise<boolean> = () => daemonAnswers(daemon, cwd)): Promise<never> {
+  // A live browser can be slow to answer for a few seconds (streaming out a long trace took it past
+  // the 800 ms probe and failed two drives that had passed); only a run of misses is a dead one.
+  let misses = 0;
   for (;;) {
     await new Promise((resolve) => setTimeout(resolve, intervalMs));
-    if (!(await daemonAnswers(daemon, cwd))) throw new Error(`shoot daemon: :${daemon.chromePort} stopped answering mid-run`);
+    misses = (await answers()) ? 0 : misses + 1;
+    if (misses > missesAllowed) throw new Error(`shoot daemon: :${daemon.chromePort} stopped answering mid-run`);
   }
 }
+
+/** Probes in a row a browser may miss before the watch calls it dead: about 8 s at the 2 s interval. */
+const DAEMON_MISSES_ALLOWED = 3;
 
 /** Run a capture session, failing early if the daemon it borrowed dies under it. */
 export async function withDaemonWatch<T>(daemon: ShootDaemonState | null, run: Promise<T>, cwd = process.cwd()): Promise<T> {

@@ -11,13 +11,17 @@ import {
   hitchCause,
   HITCH_MS,
   lightSetChange,
+  linkCaller,
   observeFrameWork,
   programVariantChange,
   summarizeBreakdown,
+  targetLayout,
+  vertexLayout,
   type DrawCost,
   type FrameBreakdown,
   type FrameBreakdownRecord,
   type Hitch,
+  type LayoutAttribute,
   type LongFrameTiming,
 } from "./frameBreakdown";
 
@@ -72,6 +76,8 @@ const MAX_PENDING_QUERIES = 512;
 export const FRAME_RETENTION_LIMIT = 1024;
 /** Hitches a session keeps: an hour of one stall every two seconds. */
 const HITCH_LOG_LIMIT = 2000;
+/** Smooth frames whose first draws a stall also tells: the GPU process runs up to a couple behind. */
+const FIRST_DRAW_LAG_FRAMES = 2;
 /** Long animation frames kept to attribute hitches from. */
 const LONG_FRAME_LIMIT = 600;
 
@@ -416,6 +422,50 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     lightsSeen.set(scene, now);
     return before === undefined ? null : lightSetChange(before, now);
   };
+  // Each program's (vertex layout, colour target) pairs drawn so far: ANGLE on Direct3D builds a
+  // shader for each new pair at that draw, in the GPU process, so a frame stalls with nothing on the
+  // page's clock. Null for a pair already drawn; otherwise the target, and the layout when that is new.
+  const pairsDrawn = new WeakMap<object, Set<string>>();
+  const layoutsDrawn = new WeakMap<object, Set<string>>();
+  const layoutCache = new WeakMap<object, WeakMap<object, string>>();
+  const targetCache = new WeakMap<object, string>();
+  const firstDrawOf = (material: unknown, geometry: unknown, object: unknown): string | null => {
+    if (typeof material !== "object" || material === null || typeof geometry !== "object" || geometry === null) return null;
+    // A stand-in renderer (tests, a headless host) may keep no program record: nothing to tell.
+    const live = renderer as Partial<Pick<WebGLRenderer, "properties" | "getRenderTarget">>;
+    if (live.properties === undefined || live.getRenderTarget === undefined) return null;
+    const properties: unknown = live.properties.get(material);
+    const program: unknown = typeof properties === "object" && properties !== null ? Reflect.get(properties, "currentProgram") : undefined;
+    if (typeof program !== "object" || program === null) return null;
+    let byGeometry = layoutCache.get(program);
+    if (byGeometry === undefined) layoutCache.set(program, (byGeometry = new WeakMap()));
+    let layout = byGeometry.get(geometry);
+    if (layout === undefined) {
+      const getAttributes: unknown = Reflect.get(program, "getAttributes");
+      const active: unknown = typeof getAttributes === "function" ? Reflect.apply(getAttributes, program, []) : {};
+      const attributes: unknown = Reflect.get(geometry, "attributes");
+      layout = vertexLayout(Object.keys(typeof active === "object" && active !== null ? active : {}), (name) => {
+        // Instancing attributes live on the object (InstancedMesh), the rest on the geometry.
+        const own: unknown = typeof attributes === "object" && attributes !== null ? Reflect.get(attributes, name) : undefined;
+        const found: unknown = own ?? (typeof object === "object" && object !== null ? Reflect.get(object, name) : undefined);
+        return typeof found === "object" && found !== null ? (found as LayoutAttribute) : undefined;
+      });
+      byGeometry.set(geometry, layout);
+    }
+    const bound = live.getRenderTarget.call(renderer);
+    let target = bound === null ? "screen" : targetCache.get(bound);
+    if (target === undefined) targetCache.set(bound!, (target = targetLayout(bound as Parameters<typeof targetLayout>[0])));
+    let pairs = pairsDrawn.get(program);
+    if (pairs === undefined) pairsDrawn.set(program, (pairs = new Set()));
+    const pair = `${layout}|${target}`;
+    if (pairs.has(pair)) return null;
+    pairs.add(pair);
+    let layouts = layoutsDrawn.get(program);
+    if (layouts === undefined) layoutsDrawn.set(program, (layouts = new Set()));
+    const newLayout = !layouts.has(layout);
+    layouts.add(layout);
+    return pairs.size === 1 ? `first draw, ${target}` : newLayout ? `${target}, new vertex layout ${layout}` : target;
+  };
   wrap(renderer, "renderBufferDirect", (original) => (camera: unknown, scene: unknown, geometry: unknown, material: unknown, object: unknown, group: unknown) => {
     if (scene !== lastScene) {
       lastScene = scene;
@@ -423,6 +473,7 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     }
     const start = performance.now();
     const compiledBefore = current?.compileMs ?? 0;
+    const linkedBefore = current?.compiles ?? 0;
     try {
       return original(camera, scene, geometry, material, object, group);
     } finally {
@@ -437,8 +488,10 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
       const materialName = labelFor(materialLabels, material, labelOf, "material");
       tally(objects, objectName, triangles, ms, pass);
       tally(materials, materialName, triangles, ms, pass);
-      // This draw built or first used a program: name it, so a compile hitch says what to warm up.
-      if (current !== null && current.compileMs - compiledBefore >= 1) {
+      // This draw built or first used a program: name it, and the pass that drew it, so a compile
+      // hitch says what to warm up. A link the driver finished off the main thread still counts: the
+      // GPU process builds it before the frame can show, so "1 program linked" needs a name too.
+      if (current !== null && (current.compileMs - compiledBefore >= 1 || current.compiles > linkedBefore)) {
         const shaders = current.shaders ??= [];
         const variant = recompiledFor(material);
         // Every compile re-reads the lights (compiles are rare), so a new place's first materials keep
@@ -447,7 +500,14 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
         if (change !== null) untoldLights = change;
         const lights = variant !== null && variant.includes("light") ? untoldLights : null;
         if (lights !== null) untoldLights = null;
-        if (shaders.length < FRAME_RETENTION_LIMIT) shaders.push(`${materialName} on ${objectName}${variant === null ? "" : ` (recompiled: ${variant}${lights === null ? "" : `; lights ${lights}`})`}`);
+        const where = pass === "main" ? "" : ` [${pass}]`;
+        if (shaders.length < FRAME_RETENTION_LIMIT) shaders.push(`${materialName} on ${objectName}${where}${variant === null ? "" : ` (recompiled: ${variant}${lights === null ? "" : `; lights ${lights}`})`}`);
+        else retention.shaders += 1;
+      }
+      const first = current === null ? null : firstDrawOf(material, geometry, object);
+      if (first !== null && current !== null) {
+        const firstDraws = current.firstDraws ??= [];
+        if (firstDraws.length < FRAME_RETENTION_LIMIT) firstDraws.push(`${materialName} on ${objectName}${pass === "main" ? "" : ` [${pass}]`} → ${first}`);
         else retention.shaders += 1;
       }
     }
@@ -465,6 +525,18 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     if (current === null) return;
     current.compiles += 1;
     current.compileMs += ms;
+    // Who asked for the link: a link no draw in the frame used (a bake or warmup linking ahead) is
+    // otherwise unnamed, and the GPU process may stall on it a frame later. Links are rare.
+    // three's own link path is about ten frames deep: past the default stack depth.
+    // stackTraceLimit is V8's, absent from the DOM-only type libs some packages build with.
+    const v8Error = Error as { stackTraceLimit?: number | undefined };
+    const depth = v8Error.stackTraceLimit;
+    v8Error.stackTraceLimit = 40;
+    const stack = new Error().stack ?? "";
+    v8Error.stackTraceLimit = depth;
+    const caller = linkCaller(stack);
+    const links = current.links ??= [];
+    if (caller !== null && links.length < FRAME_RETENTION_LIMIT) links.push(caller);
   });
   // three asks a program for its uniforms and attributes at its first draw; those queries wait for the link.
   for (const method of ["compileShader", "getShaderParameter", "getProgramParameter", "getProgramInfoLog", "getShaderInfoLog", "getActiveUniform", "getActiveAttrib", "getUniformLocation", "getAttribLocation"]) {
@@ -594,6 +666,8 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     subscriberWrappers.clear();
   });
 
+  // The first draws of the last few smooth frames, for the stall they may land in.
+  const recentFirstDraws: string[][] = [];
   // The first callback of every frame closes the previous frame and opens the next.
   const tick: RenderCallback = () => {
     const now = performance.now();
@@ -609,8 +683,16 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
       sessionFrames += 1;
       sessionGcMb += current.heapDropMb;
       if (current.intervalMs > HITCH_MS) {
+        // The GPU process builds a draw's shader when it reaches that draw, which can be a frame or
+        // two after the page sent it: the frames just before a stall tell their first draws too.
+        const earlier = recentFirstDraws.flat();
+        if (earlier.length > 0) current.firstDraws = [...earlier.map((draw) => `${draw} (frame before)`), ...(current.firstDraws ?? [])].slice(0, FRAME_RETENTION_LIMIT);
+        recentFirstDraws.length = 0;
         if (hitchLog.length < HITCH_LOG_LIMIT) hitchLog.push({ endMs: now, record: current, covered: frameCovered });
         else hitchDropped += 1;
+      } else {
+        recentFirstDraws.push(current.firstDraws ?? []);
+        if (recentFirstDraws.length > FIRST_DRAW_LAG_FRAMES) recentFirstDraws.shift();
       }
     }
     current = fresh();

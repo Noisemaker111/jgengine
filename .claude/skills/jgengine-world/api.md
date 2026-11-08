@@ -5047,6 +5047,7 @@
 
 ## @jgengine/core/scene/decalTexture
 
+- `DecalPaint` (interface): interface DecalPaint — The paint a stencil or chevron decal is sprayed in.
 - `DecalTextureData` (interface): interface DecalTextureData — Row-major RGBA bytes plus their edge length, ready for a `THREE.DataTexture`.
 
 ## @jgengine/core/scene/entityStats
@@ -5278,6 +5279,10 @@
 - `Targeting` (interface): interface Targeting { setTarget(fromId: string, toId: string | null): void; getTarget(fromId: string): string | null; cycleTarget(fromId: string, options?: CycleTargetOptions): string | null; clearAll(instanceId: string): void } — ⚠ undocumented
 - `TargetingOptions` (interface): interface TargetingOptions { candidates: () => string[]; classify?: (fromId: string, toId: string) => TargetRelation; orderBy?: (a: string, b: string) => number; distance?: (fromId: string, toId: string) => number | null } — ⚠ undocumented
 - `createTargeting` (function): function createTargeting(options: TargetingOptions): Targeting — ⚠ undocumented
+
+## @jgengine/core/scene/useDecalTexture.draw
+
+- `useDecalTexture` (function): function useDecalTexture(style: DecalStyle, seed: string, size: number, paint: DecalPaint, configure: (texture: THREE.DataTexture) => void): THREE.DataTexture — A procedural decal's texture, baked on a worker. Until the bake lands the texture is clear (alpha 0), so the decal shows nothing rather than a black square, and the scene's covered warmup (the loading cover, a travel card) waits for the bake, so a place is revealed with its decals painted. A look baked before fills the texture at once. `configure` sets filtering and colour space; it runs once, before the first upload.
 
 ## @jgengine/core/scene/vehicleSeat
 

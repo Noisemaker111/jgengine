@@ -1,7 +1,8 @@
 import { expect, test } from "bun:test";
 import * as THREE from "three";
 
-import { motionBlurBodies, motionBlurFragment, motionBlurScale, registerMotionBlurBody } from "./motionBlurPass.draw";
+import { DEFAULT_MOTION_BLUR } from "@jgengine/core/render/postProcessing";
+import { MotionBlurPass, motionBlurBodies, motionBlurFragment, motionBlurScale, registerMotionBlurBody } from "./motionBlurPass.draw";
 
 test("blur length follows the shutter at any frame rate and stays bounded through a hitch", () => {
   expect(motionBlurScale(0.5, 1 / 60)).toBeCloseTo(0.5);
@@ -18,6 +19,35 @@ test("a registered body is walked until it unregisters", () => {
   expect(motionBlurBodies().has(body)).toBe(true);
   release();
   expect(motionBlurBodies().has(body)).toBe(false);
+});
+
+test("a dry run draws a plain and a skinned stand-in body, so both velocity programs link before a body moves", () => {
+  const pass = new MotionBlurPass(new THREE.PerspectiveCamera(), new THREE.DepthTexture(4, 4), DEFAULT_MOTION_BLUR, 6);
+  const target = new THREE.WebGLRenderTarget(4, 4);
+  const drawn: string[][] = [];
+  const renderer = {
+    shadowMap: { autoUpdate: true },
+    getClearColor: (color: THREE.Color) => color,
+    getClearAlpha: () => 1,
+    setClearColor: () => {},
+    setRenderTarget: () => {},
+    clear: () => {},
+    render: (scene: THREE.Object3D) => {
+      const kinds: string[] = [];
+      for (const child of scene.children) kinds.push(child instanceof THREE.SkinnedMesh ? "skinned" : "plain");
+      if (scene instanceof THREE.Scene) drawn.push(kinds);
+    },
+  } as unknown as THREE.WebGLRenderer;
+  try {
+    pass.render(renderer, target, target);
+    expect(drawn).toEqual([]);
+    pass.dry = true;
+    pass.render(renderer, target, target);
+    expect(drawn).toEqual([["plain", "skinned"]]);
+  } finally {
+    pass.dispose();
+    target.dispose();
+  }
 });
 
 test("the blur shader takes as many taps as the tier pays for", () => {

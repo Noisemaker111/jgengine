@@ -1,8 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { compassBearing, headingToBearing, relativeBearing } from "@jgengine/core/map/minimap";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/react/provider";
+import { subscribeFrameBind } from "@jgengine/core/ui/liveBind.view";
 import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { useHudAwake } from "@jgengine/core/hud/hudLayout.view";
 import { useInputDevice } from "@jgengine/core/input/inputDevice.view";
@@ -136,41 +138,65 @@ function promptLabel(id: string): string {
   return labels[id] ?? "Talk";
 }
 
-/** The goal plus where it is from here: rounded so the card redraws a few times a second, not every frame. */
-function objectiveView(ctx: GameContext) {
+/** Where the courier is and which way they face: the car when driving, else on foot. */
+function bodyOf(ctx: GameContext) {
   const player = ctx.scene.entity.get(ctx.player.userId);
   const body = ctx.scene.entity.get(drivingStore.read(ctx) ?? ctx.player.userId) ?? player;
-  if (body === null || player === null) return null;
-  const at = xz(body.position);
-  const goal = goalOf(ctx, at);
+  return body === null || player === null ? null : { player, body };
+}
+
+/**
+ * What the pager says, which changes at discrete moments: a new job, a step, a knock to the parcel, a
+ * clock crossing into warn or urgent. The distance, arrow and countdown move every frame and are not
+ * here: {@link livePager} writes them straight to their nodes, so the card does not re-render as the
+ * courier drives.
+ */
+function objectiveView(ctx: GameContext) {
+  const found = bodyOf(ctx);
+  if (found === null) return null;
+  const { player, body } = found;
+  const { target, deadline, ...goal } = goalOf(ctx, xz(body.position));
   const active = resolveActivePrompt({ x: player.position[0], z: player.position[2] }, prompts(ctx));
-  const target = goal.target;
   return {
     ...goal,
-    distance: target === undefined ? undefined : Math.round(Math.hypot(target[0] - at[0], target[1] - at[1])),
-    bearing: target === undefined ? undefined : Math.round(relativeBearing(compassBearing(at, target), headingToBearing(body.rotationY)) * 20) / 20,
-    deadline: goal.deadline === undefined ? undefined : { remaining: Math.ceil(goal.deadline.remaining * 4) / 4, total: goal.deadline.total },
+    hasTarget: target !== undefined,
+    stage: deadline === undefined ? null : deadlineStage(deadline),
     prompt: active?.prompt.invoke == null ? null : { id: active.id, label: systemPromptLabel(ctx, active.id), name: active.prompt.invoke.name, input: active.prompt.invoke.input },
   };
 }
 
 const sameView = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
-/** The pointer on the pager: which way to go from where the courier faces. */
-function Bearing({ radians }: { radians: number }) {
+/** This frame's distance, arrow and clock: rounded, so a node is written only when what it shows changes. */
+function livePager(ctx: GameContext) {
+  const found = bodyOf(ctx);
+  if (found === null) return null;
+  const at = xz(found.body.position);
+  const goal = goalOf(ctx, at);
+  const target = goal.target;
+  return {
+    key: goal.key,
+    distance: target === undefined ? null : Math.round(Math.hypot(target[0] - at[0], target[1] - at[1])),
+    bearing: target === undefined ? null : Math.round(relativeBearing(compassBearing(at, target), headingToBearing(found.body.rotationY)) * 20) / 20,
+    clock: goal.deadline === undefined ? null : formatCountdown(goal.deadline.remaining),
+    lit: goal.deadline === undefined || goal.deadline.total <= 0 ? 0 : Math.ceil((Math.max(0, goal.deadline.remaining) / goal.deadline.total) * 16),
+  };
+}
+
+/** The pointer on the pager: which way to go from where the courier faces. Its turn is written each frame. */
+function Bearing({ svg }: { svg: { current: SVGSVGElement | null } }) {
   return (
-    <svg className="hh-pager-arrow" viewBox="0 0 24 24" aria-hidden="true" style={{ transform: `rotate(${radians}rad)` }}>
+    <svg ref={svg} className="hh-pager-arrow" viewBox="0 0 24 24" aria-hidden="true">
       <path d="M12 2 L20.5 12 L15 12 L15 22 L9 22 L9 12 L3.5 12 Z" />
     </svg>
   );
 }
 
-/** The parcel clock as LCD segments draining left to right. */
-function Fuse({ remaining, total }: { remaining: number; total: number }) {
-  const lit = total <= 0 ? 0 : Math.ceil((Math.max(0, remaining) / total) * 16);
+/** The parcel clock as LCD segments draining left to right. Which are lit is written each frame. */
+function Fuse({ fuse }: { fuse: { current: HTMLSpanElement | null } }) {
   return (
-    <span className="hh-pager-fuse" aria-hidden="true">
-      {Array.from({ length: 16 }, (_, i) => <i key={i} data-lit={i < lit ? "" : undefined} />)}
+    <span ref={fuse} className="hh-pager-fuse" aria-hidden="true">
+      {Array.from({ length: 16 }, (_, i) => <i key={i} />)}
     </span>
   );
 }
@@ -182,24 +208,52 @@ function Fuse({ remaining, total }: { remaining: number; total: number }) {
  * whatever is in reach: the key to press (or TAP) and what it does.
  */
 export function Objective() {
+  const ctx = useGameContext();
   const { commands } = useGame();
   const device = useInputDevice();
   const bound = useActionGlyph("interact", "E");
   const cue = useUiCue();
   const view = useGameStore(objectiveView, sameView);
+  const distance = useRef<HTMLSpanElement>(null);
+  const arrow = useRef<SVGSVGElement>(null);
+  const clock = useRef<HTMLElement>(null);
+  const fuse = useRef<HTMLSpanElement>(null);
   // The idle hint waits on real progress: getting closer, not just moving.
   const best = useRef({ key: "", distance: Infinity });
-  const stage = view?.deadline === undefined || view === null ? "calm" : deadlineStage(view.deadline);
+  const runLive = useRef(() => {});
+  useLayoutEffect(() => {
+    const shown = new Map<Element, string | number>();
+    const write = (element: Element | null, value: string | number, apply: (element: Element) => void) => {
+      if (element === null || shown.get(element) === value) return;
+      shown.set(element, value);
+      apply(element);
+    };
+    const run = () => {
+      const live = livePager(ctx);
+      if (live === null) return;
+      if (best.current.key !== live.key) best.current = { key: live.key, distance: Infinity };
+      if (live.distance !== null && live.distance < best.current.distance - 3) best.current.distance = live.distance;
+      if (live.distance !== null) write(distance.current, live.distance, (el) => { el.textContent = `${live.distance} m`; });
+      if (live.bearing !== null) write(arrow.current, live.bearing, (el) => { (el as SVGSVGElement).style.transform = `rotate(${live.bearing}rad)`; });
+      if (live.clock !== null) write(clock.current, live.clock, (el) => { el.textContent = live.clock; });
+      write(fuse.current, live.lit, (el) => {
+        for (let i = 0; i < el.children.length; i += 1) el.children[i]!.toggleAttribute("data-lit", i < live.lit);
+      });
+    };
+    runLive.current = run;
+    run();
+    return subscribeFrameBind(run);
+  }, [ctx]);
+  // A node the last render mounted (the clock when a deadline starts) gets its value before it paints.
+  useLayoutEffect(() => runLive.current());
+  const stage = view?.stage ?? "calm";
   const lastStage = useRef(stage);
   useEffect(() => {
     if (stage !== lastStage.current && stage !== "calm") cue(stage === "urgent" ? "deny" : "notify");
     lastStage.current = stage;
   }, [stage, cue]);
-  if (view !== null && best.current.key !== view.key) best.current = { key: view.key, distance: Infinity };
-  if (view?.distance !== undefined && view.distance < best.current.distance - 3) best.current.distance = view.distance;
-  const progressKey = view === null ? "" : `${view.key}:${best.current.distance}`;
   const hasHint = view?.hint !== undefined;
-  const moving = useHudAwake(() => progressKey, 12_000, () => !hasHint);
+  const moving = useHudAwake(() => `${best.current.key}:${best.current.distance}`, 12_000, () => !hasHint);
   const stuck = hasHint && !moving;
   useEffect(() => {
     if (stuck) cue("notify");
@@ -215,18 +269,18 @@ export function Objective() {
         <Lcd className="hh-pager-lcd" alarm={stage === "urgent"}>
           <span className="hh-pager-top">
             <small>{view.eyebrow ?? "Dispatch"}</small>
-            {view.deadline === undefined ? null : <b className="hh-pager-clock">{formatCountdown(view.deadline.remaining)}</b>}
+            {view.stage === null ? null : <b ref={clock} className="hh-pager-clock" />}
           </span>
           <span className="hh-pager-main">
             <b className="hh-pager-title">{view.title}</b>
-            {view.distance === undefined ? null : (
+            {view.hasTarget ? (
               <span className="hh-pager-way">
-                {view.bearing === undefined ? null : <Bearing radians={view.bearing} />}
-                <span>{view.distance} m</span>
+                <Bearing svg={arrow} />
+                <span ref={distance} />
               </span>
-            )}
+            ) : null}
           </span>
-          {view.deadline === undefined ? null : <Fuse remaining={view.deadline.remaining} total={view.deadline.total} />}
+          {view.stage === null ? null : <Fuse fuse={fuse} />}
           {stuck && view.hint !== undefined ? <span className="hh-pager-hint">{view.hint}</span> : null}
         </Lcd>
       </div>

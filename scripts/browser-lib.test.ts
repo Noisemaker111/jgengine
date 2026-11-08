@@ -1110,12 +1110,20 @@ describe("stray browser sweep", () => {
           "--no-first-run",
           "--no-default-browser-check",
           "--no-sandbox",
+          "--remote-debugging-port=0",
           "about:blank",
         ],
         { stdio: "ignore", windowsHide: true },
       );
       try {
         expect(pidAlive(child.pid)).toBe(true);
+        // Sweep a browser that has finished starting: Chrome writes DevToolsActivePort once it is up.
+        // Swept mid-start on a loaded PC, helpers it spawned after the kill outlived it (2026-11-08).
+        const started = Date.now() + 30_000;
+        while (!existsSync(join(dir, "DevToolsActivePort")) && Date.now() < started) {
+          await new Promise((r) => setTimeout(r, 100)); // wait-ok: polling for Chrome's own ready file
+        }
+        expect(existsSync(join(dir, "DevToolsActivePort"))).toBe(true);
         const result = sweepStrayBrowsers(root);
         console.error(
           `proof (1): planted Chrome pid ${child.pid} with dead run ${DEAD_PID} — killed ${result.killed}, profiles removed ${result.profilesRemoved}`,

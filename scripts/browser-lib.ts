@@ -147,6 +147,13 @@ export function buildBrowserFixture(entry: string): string {
  */
 const HARDWARE_GPU_ARGS = ["--ignore-gpu-blocklist", "--enable-webgpu-developer-features"];
 
+/**
+ * `performance.memory` reports the exact heap on every read instead of a bucketed, cached figure,
+ * so the frame breakdown sees a collection in the frame it happened and its hitch reads "gc"
+ * rather than "other". The desktop harness passes it to WebView2 too.
+ */
+export const PRECISE_HEAP_ARG = "--enable-precise-memory-info";
+
 /** Native GPU locally; deterministic software GL only when explicitly requested or in CI. */
 export function chromeGraphicsArgs(
   env: NodeJS.ProcessEnv = process.env,
@@ -453,6 +460,8 @@ async function serverFromBroker(cwd: string, kind: "runner" | "website", portEnv
  * Port is derived from the worktree path; a live server on that port is
  * reused only when a marker file proves it belongs to this identity.
  */
+const DEV_SERVER_BOOT_MS = 90_000;
+
 export async function ensureDevServer(cwd = process.cwd()): Promise<EnsureDevServerResult> {
   const brokered = await serverFromBroker(cwd, "runner", "JG_DEV_PORT");
   if (brokered !== null) return brokered;
@@ -497,7 +506,9 @@ export async function ensureDevServer(cwd = process.cwd()): Promise<EnsureDevSer
   writeMarker({ identity, port, pid, head: headRevision(cwd), kind: "runner" });
 
   const finalBase = `http://127.0.0.1:${port}`;
-  for (let attempt = 0; attempt < 60; attempt += 1) {
+  // 90 s: a cold boot with its dep cache cleared took past the old 30 s on a loaded PC, and the
+  // drive failed before Vite answered. A Vite that exits early still fails at once, below.
+  for (let attempt = 0; attempt < DEV_SERVER_BOOT_MS / 500; attempt += 1) {
     await new Promise((r) => setTimeout(r, 500));
     if (await isUp(finalBase)) {
       const confirmed = await confirmLaunchedServer(finalBase, port, identity, "runner", cwd);
@@ -514,11 +525,14 @@ export async function ensureDevServer(cwd = process.cwd()): Promise<EnsureDevSer
   }
   if (child !== null) child.kill();
   else killPid(pid, true);
+  // The runner's Vite is apps/dev's own dependency; the root never had it, so checking only there
+  // called every slow boot "vite is missing".
   const viteInstalled =
+    existsSync(join(cwd, "apps", "dev", "node_modules", "vite")) ||
     existsSync(join(cwd, "node_modules", ".bin", "vite")) ||
     existsSync(join(cwd, "node_modules", "vite"));
   const hint = viteInstalled
-    ? "the apps/dev Vite server never became reachable — check for a port conflict or a Vite boot error"
+    ? `the apps/dev Vite server never became reachable in ${DEV_SERVER_BOOT_MS / 1000} s — check for a port conflict or a Vite boot error`
     : "node_modules looks incomplete (vite is missing) — run `bun scripts/ensure-ready.ts` (or `bun install`) first";
   throw new Error(`Dev server failed to start on :${port} for ${identity} — ${hint}`);
 }
@@ -1490,6 +1504,7 @@ export function launchChrome(
       "--disable-default-apps",
       "--mute-audio",
       "--hide-scrollbars",
+      PRECISE_HEAP_ARG,
       "--no-sandbox",
       "--disable-dev-shm-usage",
       "about:blank",
@@ -1540,6 +1555,7 @@ export function launchPersistentChrome(
     "--disable-default-apps",
     "--mute-audio",
     "--hide-scrollbars",
+    PRECISE_HEAP_ARG,
     ...chromeGraphicsArgs(),
     "--no-sandbox",
     "--disable-dev-shm-usage",

@@ -59,6 +59,64 @@ test("bounds retained callbacks and draw identities under churn", () => {
   }
 });
 
+test("a frame names each draw that fed a program a vertex layout or colour target it had not drawn with", () => {
+  const prior = Reflect.get(globalThis, "window");
+  Reflect.set(globalThis, "window", { location: { search: "" } });
+  const subscribers: { ref: { current: (state: unknown, delta: number) => void }; priority: number }[] = [];
+  const internal = { subscribers, subscribe(ref: { current: (state: unknown, delta: number) => void }, priority: number) {
+    const entry = { ref, priority }; subscribers.push(entry);
+    return () => { const index = subscribers.indexOf(entry); if (index >= 0) subscribers.splice(index, 1); };
+  } };
+  // One program shared by two materials, as three links one program for every material alike.
+  const program = { getAttributes: () => ({ position: {}, color: {} }) };
+  const programs = new Map<object, { currentProgram: object }>();
+  let target: object | null = null;
+  const renderer = {
+    getContext: () => ({ getExtension: () => null }), shadowMap: {}, info: { programs: [] }, render() {},
+    properties: { get: (material: object) => programs.get(material) ?? {} },
+    getRenderTarget: () => target,
+    renderBufferDirect(_a: unknown, _b: unknown, _c: unknown, _d: unknown, _e: unknown, _f: unknown) {},
+  };
+  const hull = { name: "Hull" };
+  const rock = { name: "Rock" };
+  programs.set(hull, { currentProgram: program }).set(rock, { currentProgram: program });
+  const float3 = { itemSize: 3, array: new Float32Array(3) };
+  const plain = { attributes: { position: float3 } };
+  const tinted = { attributes: { position: float3, color: { itemSize: 4, normalized: true, array: new Uint8Array(4) } } };
+  const breakdown = installFrameBreakdown(renderer as never, { getState: () => ({ internal }) } as never);
+  const draws: [object, object, object | null][] = [];
+  internal.subscribe({ current: () => { for (const [geometry, material, bound] of draws) { target = bound; renderer.renderBufferDirect(null, null, geometry, material, { name: "Mesh" }, null); } target = null; } }, 0);
+  // A frame's record is filed when the next frame starts: draw, then run an empty frame to file it.
+  const frame = (next: [object, object, object | null][]) => {
+    for (const batch of [next, []]) { draws.splice(0, draws.length, ...batch); for (const { ref } of subscribers) ref.current({}, 1 / 60); }
+    // Material name and what was new; the labels' ids and object kind are the recorder's usual naming.
+    return breakdown.records().at(-1)?.firstDraws?.map((draw) => `${draw.split("#")[0]} → ${draw.split(" → ")[1]}`);
+  };
+  const halfFloat = { textures: [{ type: 1016 }] };
+  try {
+    expect(frame([[plain, hull, null]])).toEqual(["Hull → first draw, screen"]);
+    // The same program and layout from another material is no new pair.
+    expect(frame([[plain, rock, null], [plain, hull, null]])).toBeUndefined();
+    expect(frame([[tinted, rock, null], [plain, hull, halfFloat], [plain, hull, halfFloat]])).toEqual([
+      "Rock → screen, new vertex layout color:4n:Uint8Array,position:3:Float32Array",
+      "Hull → half-float",
+    ]);
+    expect(frame([[tinted, rock, halfFloat], [plain, rock, null]])).toEqual(["Rock → half-float"]);
+    // The GPU process builds that shader when it reaches the draw: a stall a frame later still names it.
+    const msaa = { textures: [{ type: 1016 }], samples: 4 };
+    frame([[plain, hull, msaa]]);
+    let stall = true;
+    internal.subscribe({ current: () => { if (!stall) return; stall = false; const until = performance.now() + 45; while (performance.now() < until); } }, 1);
+    frame([]);
+    const [hitch] = breakdown.session().hitches;
+    expect(hitch?.detail).toContain("first draws of 1 program and layout pair(s): Hull");
+    expect(hitch?.detail).toContain("→ half-float msaa (frame before)");
+  } finally {
+    breakdown.dispose();
+    if (prior === undefined) Reflect.deleteProperty(globalThis, "window"); else Reflect.set(globalThis, "window", prior);
+  }
+});
+
 test("disposing and reinstalling the recorder restores live callbacks", () => {
   const prior = Reflect.get(globalThis, "window");
   Reflect.set(globalThis, "window", { location: { search: "" } });
