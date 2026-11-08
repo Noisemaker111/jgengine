@@ -4,9 +4,9 @@ import { isStableShadowDepth } from "./shadowCasters.draw";
 import {
   createShadowLayerState,
   dropShadowLayer,
+  shadowPassMayCache,
   planShadowPass,
   recordShadowPass,
-  sameShadowKey,
   type ShadowLayerState,
   type ShadowPassPlan,
 } from "./shadowCache";
@@ -1022,7 +1022,7 @@ class ShadowCache {
         record.seenFrame = this.frame;
         const key = lightKey(light, shadow, camera, reversed, type, record.key);
         // Only a light that may skip casters needs them checked: a far cascade stepping a texel draws them all.
-        const mayCache = record.state.cacheable || sameShadowKey(record.state.drawnKey, key);
+        const mayCache = shadowPassMayCache(record.state, key);
         if (mayCache && !checked) {
           this.tracker.check();
           this.checks += 1;

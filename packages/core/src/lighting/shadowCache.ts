@@ -22,12 +22,18 @@ export type ShadowPassPlan =
 export interface ShadowLayerState {
   /** Projection key the map was last drawn with; null before its first pass. */
   drawnKey: number[] | null;
+  /** Passes in a row drawn at `drawnKey` after the one that moved to it. */
+  heldPasses: number;
   /**
-   * The light's last pass was at the key of the pass before it. A light that just held still is
-   * worth a layer when its key moves; one whose key moves every pass (the cascade around a walking
-   * camera) would rebuild a layer it never reuses, so it draws full until it holds again.
+   * Held passes in a row before a layer is built. A rebuild costs a full draw plus a copy, so it pays
+   * only if the key then holds for at least one more pass: a camera that moves on some frames and not
+   * others (an uncapped frame rate over a fixed simulation step) would rebuild a layer every few
+   * frames and never use it. Each layer that goes unused before the key moves raises this by one;
+   * each that serves a pass lowers it, down to 1.
    */
-  cacheable: boolean;
+  rebuildAfter: number;
+  /** The layer was built since the key last moved and has not served a pass yet. */
+  layerUnproven: boolean;
   /** Key the static layer was drawn at; null while there is none. */
   layerKey: number[] | null;
   /** A static caster this light's layer can see changed since the layer was drawn. */
@@ -38,7 +44,7 @@ export interface ShadowLayerState {
 
 /** @internal */
 export function createShadowLayerState(): ShadowLayerState {
-  return { drawnKey: null, cacheable: false, layerKey: null, layerStale: false, mapIsLayer: false };
+  return { drawnKey: null, heldPasses: 0, rebuildAfter: 1, layerUnproven: false, layerKey: null, layerStale: false, mapIsLayer: false };
 }
 
 /** Exact equality of two projection keys. @internal */
@@ -48,30 +54,53 @@ export function sameShadowKey(a: readonly number[] | null, b: readonly number[])
   return true;
 }
 
+/** Upper bound for {@link ShadowLayerState.rebuildAfter}. */
+const MAX_REBUILD_AFTER = 8;
+
 /**
- * The pass for a light asked to redraw at `key`. A light whose redraws keep coming with a new
- * projection (a far cascade stepping a texel, the near one while walking) stays on `full`: a layer
- * would never be reused.
+ * Whether this pass could be served from the light's layer, or build one: only a pass at the key the
+ * map was last drawn with, or at the layer's own key. Anything else draws in full, and the cache can
+ * skip checking its casters. @internal
+ */
+export function shadowPassMayCache(state: ShadowLayerState, key: readonly number[]): boolean {
+  return sameShadowKey(state.drawnKey, key) || (!state.layerStale && sameShadowKey(state.layerKey, key));
+}
+
+/**
+ * The pass for a light asked to redraw at `key`. A pass at a new projection (a far cascade stepping a
+ * texel, the near one while walking) draws in full; a layer is built once the key has held for
+ * {@link ShadowLayerState.rebuildAfter} passes.
  * @internal
  */
 export function planShadowPass(state: ShadowLayerState, key: readonly number[], changedCastersReach: boolean): ShadowPassPlan {
   const held = sameShadowKey(state.drawnKey, key);
-  if (!state.cacheable && !held) return "full";
-  const layerFresh = !state.layerStale && sameShadowKey(state.layerKey, key);
-  if (!layerFresh) return "rebuild";
-  if (held && state.mapIsLayer && !changedCastersReach) return "hold";
-  return "reuse";
+  if (!state.layerStale && sameShadowKey(state.layerKey, key)) return held && state.mapIsLayer && !changedCastersReach ? "hold" : "reuse";
+  if (!held) return "full";
+  return state.heldPasses + 1 >= state.rebuildAfter ? "rebuild" : "full";
 }
 
 /** Record the pass that ran, so the next frame plans from what the map and layer now hold. @internal */
 export function recordShadowPass(state: ShadowLayerState, key: readonly number[], plan: ShadowPassPlan, changedCastersReach: boolean): void {
-  state.cacheable = sameShadowKey(state.drawnKey, key);
+  if (sameShadowKey(state.drawnKey, key)) {
+    state.heldPasses += 1;
+  } else {
+    state.heldPasses = 0;
+    // The key moved on before the last layer served a pass: wait one held pass longer next time.
+    if (state.layerUnproven) state.rebuildAfter = Math.min(MAX_REBUILD_AFTER, state.rebuildAfter + 1);
+    state.layerUnproven = false;
+  }
   if (plan === "full") {
     state.mapIsLayer = false;
   } else {
     if (plan === "rebuild") {
+      // A layer rebuilt before the last one served a pass (a static caster in reach changed) was wasted too.
+      if (state.layerUnproven) state.rebuildAfter = Math.min(MAX_REBUILD_AFTER, state.rebuildAfter + 1);
       state.layerKey = [...key];
       state.layerStale = false;
+      state.layerUnproven = true;
+    } else if (state.layerUnproven) {
+      state.layerUnproven = false;
+      state.rebuildAfter = Math.max(1, state.rebuildAfter - 1);
     }
     state.mapIsLayer = !changedCastersReach;
   }
@@ -82,6 +111,7 @@ export function recordShadowPass(state: ShadowLayerState, key: readonly number[]
 /** Forget the layer, e.g. after the device lost it or the shadow type changed. @internal */
 export function dropShadowLayer(state: ShadowLayerState): void {
   state.layerKey = null;
+  state.layerUnproven = false;
   state.layerStale = false;
   state.mapIsLayer = false;
 }

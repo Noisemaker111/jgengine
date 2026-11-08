@@ -405,12 +405,10 @@ describe("shadow cache invalidation", () => {
       expectSame(w);
       expectSame(w, second);
     }
-    // One light holding again goes back to a pass per light.
-    w.frame();
+    // Both holding builds their layers; then the one that moves draws alone and the other draws nothing.
+    expect(w.frame()).toMatchObject({ rebuild: 2 });
     w.light.position.x += 0.5;
-    const calls = w.renderer.passes;
-    w.frame();
-    expect(w.renderer.passes - calls).toBeGreaterThan(1);
+    expect(w.frame()).toMatchObject({ full: 1, hold: 1 });
     expectSame(w);
     expectSame(w, second);
     w.dispose();
