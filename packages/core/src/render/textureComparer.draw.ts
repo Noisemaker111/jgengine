@@ -20,8 +20,12 @@ export class TextureComparer {
   private height = 0;
   private pixels = new Uint8Array(0);
 
-  /** Texels whose bits differ between `a` and `b`, or -1 when the comparison could not run. */
-  count(renderer: THREE.WebGLRenderer, a: THREE.Texture, b: THREE.Texture, width: number, height: number): number {
+  /**
+   * Texels whose bits differ between `a` and `b`, or -1 when the comparison could not run. With a
+   * `tolerance`, only texels where some channel differs by more than it count (for 8-bit targets,
+   * one level is 1 / 255).
+   */
+  count(renderer: THREE.WebGLRenderer, a: THREE.Texture, b: THREE.Texture, width: number, height: number, tolerance = 0): number {
     const gl = renderer.getContext() as WebGL2RenderingContext;
     const textures = [a, b];
     const handles = textures.map((texture) => (renderer.properties.get(texture) as { __webglTexture?: WebGLTexture }).__webglTexture);
@@ -53,6 +57,7 @@ export class TextureComparer {
       gl.uniform1i(gl.getUniformLocation(this.program!, "a"), 0);
       gl.uniform1i(gl.getUniformLocation(this.program!, "b"), 1);
       gl.uniform2i(gl.getUniformLocation(this.program!, "size"), width, height);
+      gl.uniform1f(gl.getUniformLocation(this.program!, "tolerance"), tolerance);
       gl.bindVertexArray(this.vao);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       gl.bindVertexArray(null);
@@ -93,13 +98,17 @@ export class TextureComparer {
         "uniform sampler2D a;",
         "uniform sampler2D b;",
         "uniform ivec2 size;",
+        "uniform float tolerance;",
         "out vec4 outColor;",
         "void main() {",
         `  ivec2 block = ivec2(gl_FragCoord.xy) * ${COMPARE_BLOCK};`,
         "  int count = 0;",
         `  for (int y = 0; y < ${COMPARE_BLOCK}; y++) for (int x = 0; x < ${COMPARE_BLOCK}; x++) {`,
         "    ivec2 texel = block + ivec2(x, y);",
-        "    if (texel.x < size.x && texel.y < size.y && any(notEqual(floatBitsToUint(texelFetch(a, texel, 0)), floatBitsToUint(texelFetch(b, texel, 0))))) count++;",
+        "    if (texel.x >= size.x || texel.y >= size.y) continue;",
+        "    vec4 ta = texelFetch(a, texel, 0), tb = texelFetch(b, texel, 0);",
+        "    bool differs = tolerance > 0.0 ? any(greaterThan(abs(ta - tb), vec4(tolerance))) : any(notEqual(floatBitsToUint(ta), floatBitsToUint(tb)));",
+        "    if (differs) count++;",
         "  }",
         // Differing texels in red (low byte) and blue (high byte); green marks every block the comparison wrote.
         "  outColor = vec4(float(count % 256) / 255.0, 1.0, float(count / 256) / 255.0, 1.0);",

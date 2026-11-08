@@ -28,13 +28,13 @@ const USAGE = `usage: bun run perf shadow-audit [--games a,b] [--seconds n] [--p
   --seconds  measured window per game (default 8)
   --path     walk (default) or still`;
 
-export interface ShadowAuditArgs {
+export interface AuditArgs {
   games: string[];
   seconds: number;
   path: PerfPath;
 }
 
-export function parseShadowAuditArgs(argv: readonly string[]): ShadowAuditArgs | "help" {
+export function parseAuditArgs(argv: readonly string[]): AuditArgs | "help" {
   let games: string[] | undefined;
   let seconds = 8;
   let path: PerfPath = "walk";
@@ -62,15 +62,15 @@ export function parseShadowAuditArgs(argv: readonly string[]): ShadowAuditArgs |
   return { games: games ?? [...FRAME_GAMES], seconds, path };
 }
 
-/** One game's audit: the cache's pass counts and what the comparison found. */
-export interface ShadowAuditRow {
+/** One game's audit: the audited system's counters and what the comparison found. */
+export interface AuditRow {
   game: string;
   counters: Record<string, number> | null;
   error: string | null;
 }
 
 /** A row's verdict: a game with no compared map proved nothing, so it fails like a mismatch does. */
-export function auditVerdict(row: ShadowAuditRow): "identical" | "identical (every pass full)" | "differs" | "comparison failed" | "nothing compared" | "not measured" {
+export function auditVerdict(row: AuditRow): "identical" | "identical (every pass full)" | "differs" | "comparison failed" | "nothing compared" | "not measured" {
   if (row.counters === null) return "not measured";
   const count = (name: string) => row.counters?.[name] ?? 0;
   if (count("auditMismatchedMaps") > 0) return "differs";
@@ -84,7 +84,7 @@ export function auditVerdict(row: ShadowAuditRow): "identical" | "identical (eve
 
 const PASSING_VERDICTS: ReadonlySet<string> = new Set(["identical", "identical (every pass full)"]);
 
-export function renderShadowAudit(rows: readonly ShadowAuditRow[]): string {
+export function renderShadowAudit(rows: readonly AuditRow[]): string {
   const head = ["game", "casters", "static", "full", "rebuild", "reuse", "hold", "maps compared", "maps differing", "texels differing", "failed", "verdict"];
   const body = rows.map((row) => {
     const c = row.counters ?? {};
@@ -96,13 +96,41 @@ export function renderShadowAudit(rows: readonly ShadowAuditRow[]): string {
   return [line(head), ...body.map(line)].join("\n");
 }
 
-async function auditGame(game: string, index: number, args: ShadowAuditArgs, started: Awaited<ReturnType<typeof ensureDevServer>>[]): Promise<ShadowAuditRow> {
+/**
+ * What one audit verb plays each game with and reads back: the page flag that turns the audit on, the
+ * probe system whose counters carry its findings, and how a row of them is judged and shown.
+ */
+export interface AuditKind {
+  /** The verb, for progress lines: `perf <name>`. */
+  name: string;
+  param: string;
+  system: string;
+  /** The row's error when the page registered no such system. */
+  missing: string;
+  verdict(row: AuditRow): string;
+  passing: ReadonlySet<string>;
+  render(rows: readonly AuditRow[]): string;
+}
+
+const SHADOW_AUDIT: AuditKind = {
+  name: "shadow-audit",
+  param: "shadowAudit",
+  system: "render/shadow-cache",
+  missing: "no shadow cache on the page",
+  verdict: auditVerdict,
+  passing: PASSING_VERDICTS,
+  render: renderShadowAudit,
+};
+
+async function auditGame(kind: AuditKind, game: string, index: number, args: AuditArgs, started: Awaited<ReturnType<typeof ensureDevServer>>[]): Promise<AuditRow> {
   // Checked before every game, so a dev server that died under the last one is started again.
   const server = await ensureDevServer(repoRoot);
   if (server.pid !== undefined) started.push(server);
   let counters: Record<string, number> | null = null;
   let failure: unknown = null;
-  const exit = await withBrowserSession({ keep: false, debugPort: debugPortFor(index), timeoutMs: 240_000, hardDeadlineMs: 360_000 }, async ({ debugPort }) => {
+  // A loaded PC took over 340 s just to open a game's page (2026-11-08), so the session gets the
+  // budget `shoot` gives a capture; an audit is a proof, not a timing, so a slow load costs nothing.
+  const exit = await withBrowserSession({ keep: false, debugPort: debugPortFor(index), timeoutMs: 600_000, hardDeadlineMs: 900_000 }, async ({ debugPort }) => {
     const session = await openPageSession(debugPort);
     try {
       const measured = await measureGame({
@@ -114,10 +142,10 @@ async function auditGame(game: string, index: number, args: ShadowAuditArgs, sta
         profile: false,
         path: args.path,
         settings: [parseSettingSpec("graphics.auto=false")],
-        params: [["shadowAudit", "1"]],
+        params: [[kind.param, "1"]],
         size: GATE_SIZE,
       });
-      counters = measured.record.systems["render/shadow-cache"]?.counters ?? null;
+      counters = measured.record.systems[kind.system]?.counters ?? null;
     } catch (error) {
       failure = error;
       throw error;
@@ -127,36 +155,37 @@ async function auditGame(game: string, index: number, args: ShadowAuditArgs, sta
   });
   // The session logs a failed run and hands back its exit code instead of throwing.
   if (exit !== 0) throw failure instanceof Error ? failure : new Error(`the browser session exited ${exit}`);
-  return { game, counters, error: counters === null ? "no shadow cache on the page" : null };
+  return { game, counters, error: counters === null ? kind.missing : null };
 }
 
-async function main(): Promise<void> {
-  const parsed = parseShadowAuditArgs(process.argv.slice(2));
+/** Play each game the arguments name with `kind`'s audit on, print the table and fail on any row that does not pass. */
+export async function runAudit(kind: AuditKind, argv: readonly string[], usage: string): Promise<void> {
+  const parsed = parseAuditArgs(argv);
   if (parsed === "help") {
-    console.log(USAGE);
+    console.log(usage);
     return;
   }
-  const rows: ShadowAuditRow[] = [];
+  const rows: AuditRow[] = [];
   const started: Awaited<ReturnType<typeof ensureDevServer>>[] = [];
   try {
     for (const [index, game] of parsed.games.entries()) {
-      console.error(`perf shadow-audit: ${game} (${index + 1}/${parsed.games.length})`);
-      let row: ShadowAuditRow;
+      console.error(`perf ${kind.name}: ${game} (${index + 1}/${parsed.games.length})`);
+      let row: AuditRow;
       try {
-        row = await auditGame(game, index, parsed, started);
+        row = await auditGame(kind, game, index, parsed, started);
       } catch (first) {
         // A run that could not measure (a refused navigation, a load that timed out) says nothing about
-        // the cache; it is measured once more and named, and a second failure stays in the table.
-        console.error(`perf shadow-audit: ${game} could not be measured (${first instanceof Error ? first.message : String(first)}); measuring it again`);
+        // what is audited; it is measured once more and named, and a second failure stays in the table.
+        console.error(`perf ${kind.name}: ${game} could not be measured (${first instanceof Error ? first.message : String(first)}); measuring it again`);
         try {
-          row = await auditGame(game, index, parsed, started);
+          row = await auditGame(kind, game, index, parsed, started);
         } catch (error) {
           row = { game, counters: null, error: error instanceof Error ? error.message : String(error) };
         }
       }
       rows.push(row);
       // Each row as it lands, so a run cut short still shows the games it finished.
-      console.error(renderShadowAudit([row]).split("\n")[1]);
+      console.error(kind.render([row]).split("\n")[1]);
     }
   } finally {
     for (const server of started) {
@@ -164,8 +193,8 @@ async function main(): Promise<void> {
       killPid(server.pid, true);
     }
   }
-  console.log(renderShadowAudit(rows));
-  if (rows.some((row) => !PASSING_VERDICTS.has(auditVerdict(row)))) process.exitCode = 1;
+  console.log(kind.render(rows));
+  if (rows.some((row) => !kind.passing.has(kind.verdict(row)))) process.exitCode = 1;
 }
 
-if (import.meta.main) await main();
+if (import.meta.main) await runAudit(SHADOW_AUDIT, process.argv.slice(2), USAGE);

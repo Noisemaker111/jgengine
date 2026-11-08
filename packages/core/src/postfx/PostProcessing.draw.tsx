@@ -52,6 +52,8 @@ import { postfxTierPolicy } from "./postfxTierPolicy";
 import { releasePostfxOverlayTracking, restorePostfxOverlays } from "./postfxOverlay.draw";
 import { RevealFadePass, RevealSnapshotPass, stepRevealFade } from "./revealFade.draw";
 import { SceneCompositePass } from "./sceneCompositePass.draw";
+import { PostAudit } from "./postAudit.draw";
+import { devtools } from "@jgengine/core/devtools/devtools";
 import { hideForOutlinePrepass, StylizePass } from "./stylizePass.draw";
 import { renderShadowlessPrepass } from "./shadowPrepass.draw";
 import { JitteredRenderPass, TemporalAaPass } from "./temporalAaPass.draw";
@@ -759,6 +761,20 @@ export function PostProcessing({
   const size = useThree((s) => s.size);
 
   const builtRef = useRef<BuiltGraph | null>(null);
+  const auditRef = useRef<PostAudit | null>(null);
+
+  useEffect(() => {
+    // `bun run perf post-audit` loads the page with this flag: the grade's merged draws are compared with the separate ones.
+    const auditing = typeof window !== "undefined" && new URLSearchParams(window.location?.search ?? "").get("postAudit") === "1";
+    const audit = new PostAudit(auditing);
+    auditRef.current = audit;
+    const unregister = devtools.probes.registerSystem("render/postfx", { counters: () => ({ ...audit.stats }) });
+    return () => {
+      unregister();
+      audit.dispose();
+      if (auditRef.current === audit) auditRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     const width = Math.max(1, size.width);
@@ -815,6 +831,7 @@ export function PostProcessing({
     for (const pass of built.composer.passes) if (pass instanceof ExposureMeterPass) pass.collect();
     syncTail(built);
     built.composer.render(delta);
+    auditRef.current?.afterFrame(gl, built.grade, built.taa, built.composer.readBuffer.width, built.composer.readBuffer.height);
     for (const pass of built.composer.passes) if (pass instanceof ExposureMeterPass) pass.frameEnd();
     advanceRevealFade(built, delta);
   }, 1);

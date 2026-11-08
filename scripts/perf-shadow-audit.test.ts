@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { auditVerdict, parseShadowAuditArgs, renderShadowAudit, type ShadowAuditRow } from "./perf-shadow-audit";
+import { auditVerdict, parseAuditArgs, renderShadowAudit, type AuditRow } from "./perf-shadow-audit";
 
 const counters = (overrides: Record<string, number>) => ({ casters: 10, static: 8, full: 1, rebuild: 1, reuse: 5, hold: 20, auditMaps: 26, auditMismatchedMaps: 0, auditMismatchedTexels: 0, auditFailed: 0, ...overrides });
 
@@ -14,7 +14,7 @@ describe("auditVerdict", () => {
   });
 
   test("a differing texel, a comparison that did not run, or nothing compared all fail", () => {
-    const rows: [ShadowAuditRow, string][] = [
+    const rows: [AuditRow, string][] = [
       [{ game: "a", counters: counters({ auditMismatchedMaps: 1, auditMismatchedTexels: 3 }), error: null }, "differs"],
       [{ game: "a", counters: counters({ auditFailed: 1 }), error: null }, "comparison failed"],
       [{ game: "a", counters: counters({ auditMaps: 0 }), error: null }, "nothing compared"],
@@ -31,9 +31,9 @@ describe("auditVerdict", () => {
   });
 });
 
-describe("parseShadowAuditArgs", () => {
+describe("parseAuditArgs", () => {
   test("defaults to every frame game walking for 8 s", () => {
-    const parsed = parseShadowAuditArgs([]);
+    const parsed = parseAuditArgs([]);
     expect(parsed).not.toBe("help");
     if (parsed === "help") return;
     expect(parsed.path).toBe("walk");
@@ -42,8 +42,8 @@ describe("parseShadowAuditArgs", () => {
   });
 
   test("reads games, seconds and path, and refuses a bad path", () => {
-    expect(parseShadowAuditArgs(["--games", "deepward,fernwild", "--seconds", "4", "--path", "still"])).toEqual({ games: ["deepward", "fernwild"], seconds: 4, path: "still" });
-    expect(() => parseShadowAuditArgs(["--path", "run"])).toThrow("--path must be walk or still");
-    expect(() => parseShadowAuditArgs(["--nope"])).toThrow("unknown argument");
+    expect(parseAuditArgs(["--games", "deepward,fernwild", "--seconds", "4", "--path", "still"])).toEqual({ games: ["deepward", "fernwild"], seconds: 4, path: "still" });
+    expect(() => parseAuditArgs(["--path", "run"])).toThrow("--path must be walk or still");
+    expect(() => parseAuditArgs(["--nope"])).toThrow("unknown argument");
   });
 });
