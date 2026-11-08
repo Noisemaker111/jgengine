@@ -102,6 +102,15 @@ test("a frame names each draw that fed a program a vertex layout or colour targe
       "Hull → half-float",
     ]);
     expect(frame([[tinted, rock, halfFloat], [plain, rock, null]])).toEqual(["Rock → half-float"]);
+    // The GPU process builds that shader when it reaches the draw: a stall a frame later still names it.
+    const msaa = { textures: [{ type: 1016 }], samples: 4 };
+    frame([[plain, hull, msaa]]);
+    let stall = true;
+    internal.subscribe({ current: () => { if (!stall) return; stall = false; const until = performance.now() + 45; while (performance.now() < until); } }, 1);
+    frame([]);
+    const [hitch] = breakdown.session().hitches;
+    expect(hitch?.detail).toContain("first draws of 1 program and layout pair(s): Hull");
+    expect(hitch?.detail).toContain("→ half-float msaa (frame before)");
   } finally {
     breakdown.dispose();
     if (prior === undefined) Reflect.deleteProperty(globalThis, "window"); else Reflect.set(globalThis, "window", prior);

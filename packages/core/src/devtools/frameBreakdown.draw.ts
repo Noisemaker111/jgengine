@@ -75,6 +75,8 @@ const MAX_PENDING_QUERIES = 512;
 export const FRAME_RETENTION_LIMIT = 1024;
 /** Hitches a session keeps: an hour of one stall every two seconds. */
 const HITCH_LOG_LIMIT = 2000;
+/** Smooth frames whose first draws a stall also tells: the GPU process runs up to a couple behind. */
+const FIRST_DRAW_LAG_FRAMES = 2;
 /** Long animation frames kept to attribute hitches from. */
 const LONG_FRAME_LIMIT = 600;
 
@@ -651,6 +653,8 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     subscriberWrappers.clear();
   });
 
+  // The first draws of the last few smooth frames, for the stall they may land in.
+  const recentFirstDraws: string[][] = [];
   // The first callback of every frame closes the previous frame and opens the next.
   const tick: RenderCallback = () => {
     const now = performance.now();
@@ -666,8 +670,16 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
       sessionFrames += 1;
       sessionGcMb += current.heapDropMb;
       if (current.intervalMs > HITCH_MS) {
+        // The GPU process builds a draw's shader when it reaches that draw, which can be a frame or
+        // two after the page sent it: the frames just before a stall tell their first draws too.
+        const earlier = recentFirstDraws.flat();
+        if (earlier.length > 0) current.firstDraws = [...earlier.map((draw) => `${draw} (frame before)`), ...(current.firstDraws ?? [])].slice(0, FRAME_RETENTION_LIMIT);
+        recentFirstDraws.length = 0;
         if (hitchLog.length < HITCH_LOG_LIMIT) hitchLog.push({ endMs: now, record: current, covered: frameCovered });
         else hitchDropped += 1;
+      } else {
+        recentFirstDraws.push(current.firstDraws ?? []);
+        if (recentFirstDraws.length > FIRST_DRAW_LAG_FRAMES) recentFirstDraws.shift();
       }
     }
     current = fresh();
