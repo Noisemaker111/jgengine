@@ -51,7 +51,8 @@ export function baselinePath(root: string, game: string, commit: string, key: st
 }
 
 function git(root: string, args: string[]): string | null {
-  const run = spawnSync("git", args, { cwd: root, encoding: "utf8", windowsHide: true, timeout: 10_000 });
+  // No optional locks: a `git status` killed at the timeout would leave index.lock behind.
+  const run = spawnSync("git", args, { cwd: root, encoding: "utf8", windowsHide: true, timeout: 10_000, env: { ...process.env, GIT_OPTIONAL_LOCKS: "0" } });
   return run.status === 0 ? run.stdout.trim() : null;
 }
 
