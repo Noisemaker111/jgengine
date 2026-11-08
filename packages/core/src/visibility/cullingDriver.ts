@@ -77,6 +77,8 @@ function overrideWatch(read: () => Readonly<Record<string, unknown>> | undefined
 export function buildCullingDriver(ctx: GameContext, config: VisibilityConfig | undefined) {
   let walk = 0;
   let currentView: CameraView | null = null;
+  // Rebuilt only when the caller hands over a different view object: a provider rewrites one in place.
+  let currentCameras: readonly CameraVisibilityContext[] = EMPTY_CAMERAS;
 
   /** The culling sphere, written to `sphere`: the measured model (scaled for props) once mounted, the fallback before. */
   const sphere = { radius: 0, offsetY: 0 };
@@ -179,14 +181,16 @@ export function buildCullingDriver(ctx: GameContext, config: VisibilityConfig | 
       { renderables: entityRenderables, revision: () => { listen(); return entityChanges + renderBoundsRevision(ctx) + entityOverrides(); } },
       { renderables: objectRenderables, revision: () => { listen(); return objectChanges + renderBoundsRevision(ctx) + objectOverrides(); } },
     ],
-    cameras: () => currentView === null ? EMPTY_CAMERAS : [{ id: "main", view: currentView }],
+    cameras: () => currentCameras,
     ...(config?.culling !== undefined ? { settings: config.culling } : {}),
     ...(config?.scene !== undefined ? { sceneOverrides: config.scene } : {}),
   });
   return {
     system,
     setView(view: CameraView | null) {
+      if (view === currentView) return;
       currentView = view;
+      currentCameras = view === null ? EMPTY_CAMERAS : [{ id: "main", view }];
     },
     trackedCount() {
       return entityEntries.size + objectEntries.size;
