@@ -23,6 +23,9 @@ import { diffImages, type ShotDiff } from "./shot-diff";
  * webgl-again.png, webgpu.png, webgl-remounted.png, diff.png (WebGPU against the remounted WebGL)
  * and result.json per game under --out (default .scratch/renderer-diff) and prints one JSON line per game.
  * A report, not a gate: exits 1 only when a game could not be compared.
+ *
+ * The page runs with telemetry off, as a shipped game does: the frame breakdown's GPU timers and GL
+ * wrappers cost each backend differently, so timing with them on compares the instruments.
  */
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
@@ -134,7 +137,7 @@ async function switchTo(session: CdpSession, backend: "webgl" | "webgpu"): Promi
 async function compareGame(session: CdpSession, base: string, game: string, outDir: string, settleMs: number, seconds: number): Promise<RendererDiffResult> {
   const timed = async () => (seconds > 0 ? await timeFrames(session, seconds) : null);
   await applyDevice(session, "desktop", "full", { width: GATE_SIZE.width, height: GATE_SIZE.height });
-  const url = perfPageUrl({ base, game, quality: "high", params: [["renderer", "webgl"]] });
+  const url = perfPageUrl({ base, game, quality: "high", telemetry: "off", params: [["renderer", "webgl"]] });
   await navigateCapturePage(session, url.toString(), 240_000);
   const frozen = await bridge(session, { method: "time_scale", scale: 0 });
   if (!frozen.ok) throw new Error(`could not freeze game time: ${frozen.error}`);

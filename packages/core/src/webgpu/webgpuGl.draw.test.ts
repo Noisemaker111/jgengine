@@ -467,6 +467,32 @@ describe("WebGpuGl GPU timers", () => {
     expect(opened[0]!.depthStencilAttachment?.depthLoadOp).toBe("clear");
   });
 
+  test("timers started and stopped between draws into one target keep one pass, and read that whole pass", () => {
+    // The frame breakdown starts and stops timers around shadow maps and post passes every frame; each
+    // one ended the pass, so a timed page drew extra passes (each a store and a load of its target)
+    // that WebGL never pays, and every WebGPU measurement with telemetry on was slowed by its instrument.
+    const { gl, passes, texture, draw } = drawSetup(["timestamp-query"]);
+    texture();
+    const ext = gl.getExtension("EXT_disjoint_timer_query_webgl2");
+    gl.beginQuery(ext.TIME_ELAPSED_EXT, gl.createQuery());
+    gl.endQuery(ext.TIME_ELAPSED_EXT);
+    const before = passes.length;
+    draw();
+    const q = gl.createQuery();
+    gl.beginQuery(ext.TIME_ELAPSED_EXT, q);
+    draw();
+    gl.endQuery(ext.TIME_ELAPSED_EXT);
+    gl.beginQuery(ext.TIME_ELAPSED_EXT, gl.createQuery());
+    draw();
+    gl.endQuery(ext.TIME_ELAPSED_EXT);
+    draw();
+    gl.finish();
+    const opened = passes.slice(before);
+    expect(opened.length).toBe(1);
+    const stamps = opened[0]!.timestampWrites!;
+    expect([q.start, q.end]).toEqual([stamps.beginningOfPassWriteIndex, stamps.endOfPassWriteIndex]);
+  });
+
   test("without timestamp queries the context offers no GPU timer", () => {
     const { gl } = stubContext();
     expect(gl.getSupportedExtensions()).not.toContain("EXT_disjoint_timer_query_webgl2");
