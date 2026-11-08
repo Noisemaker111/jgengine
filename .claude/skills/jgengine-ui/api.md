@@ -785,6 +785,10 @@
 - `exposureForKey` (function): function exposureForKey(keyLuminance: number, config: AutoExposureConfig = {}, daylight = 1): number — Exposure that places a frame whose key luminance is `keyLuminance` on {@link MID_GREY}, bounded by the authored range. A dark interior asks for more than `max` and gets `max`; a blown-out exterior asks for less than `min` and gets `min`, so the frame never runs away at either end. `daylight` (0..1, the sky's share of full day light) scales how far above 1 the meter may lift: a frame dark because it is night keeps its dark, while a dark room by day still opens up.
 - `keyLuminanceFromSamples` (function): function keyLuminanceFromSamples(samples: ArrayLike<number>): number — Key luminance of a metered frame: the median of its samples, each clamped to {@link METERING_HIGHLIGHT_CEILING}. A median rather than a mean because a bright sky, a window or a lamp is a large minority of the frame: averaging those in drags an interior down to a silhouette, where the median still reports the room.
 
+## @jgengine/core/render/flatSceneWalk.draw
+
+- `FlatWalkRenderer` (interface): interface FlatWalkRenderer — The renderer parts the flat walk wraps: three's render lists and shadow pass, and its render counter.
+
 ## @jgengine/core/render/lookMood
 
 - `LookMood` (type): type LookMood = MoodPreset | MoodConfig — A mood: a preset name, or a preset with token overrides.

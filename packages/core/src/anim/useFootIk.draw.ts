@@ -61,7 +61,22 @@ const scratch = {
   q2: new THREE.Quaternion(),
   parent: new THREE.Quaternion(),
   m: new THREE.Matrix4(),
+  decomposedPosition: new THREE.Vector3(),
+  decomposedScale: new THREE.Vector3(),
 };
+
+// `getWorldPosition` and `getWorldQuaternion` recompose every ancestor up to the scene root on each
+// call. Inside one IK solve a bone's world matrix is already current: the solve brings each leg and its
+// ancestors up to date once, and every write it makes updates the written bone's subtree at once. These
+// read that matrix, the same numbers the getters would recompute, without the walk.
+function currentWorldPosition(node: THREE.Object3D, out: THREE.Vector3): THREE.Vector3 {
+  return out.setFromMatrixPosition(node.matrixWorld);
+}
+
+function currentWorldQuaternion(node: THREE.Object3D, out: THREE.Quaternion): THREE.Quaternion {
+  node.matrixWorld.decompose(scratch.decomposedPosition, out, scratch.decomposedScale);
+  return out;
+}
 const solved = { mid: [0, 0, 0] as MutableVec3, tip: [0, 0, 0] as MutableVec3 };
 
 function bindPosition(skeleton: THREE.Skeleton, bone: THREE.Bone, out: THREE.Vector3): THREE.Vector3 | null {
@@ -179,9 +194,10 @@ export function resolveFootIkRig(scene: THREE.Object3D, config: FootIkConfig, qu
   };
 }
 
+/** Turn `bone` to `world`; its parent's world matrix must be current, and its own subtree is after. */
 function writeWorldQuaternion(bone: THREE.Object3D, world: THREE.Quaternion): void {
   if (bone.parent === null) bone.quaternion.copy(world);
-  else bone.quaternion.copy(bone.parent.getWorldQuaternion(scratch.parent).invert().multiply(world));
+  else bone.quaternion.copy(currentWorldQuaternion(bone.parent, scratch.parent).invert().multiply(world));
   bone.updateMatrixWorld(true);
 }
 
@@ -190,13 +206,14 @@ function aimSegment(bone: THREE.Object3D, from: THREE.Vector3, currentTo: THREE.
   const desired = scratch.b.set(solvedTo[0]! - from.x, solvedTo[1]! - from.y, solvedTo[2]! - from.z);
   if (current.lengthSq() < 1e-10 || desired.lengthSq() < 1e-10) return;
   const correction = scratch.q.setFromUnitVectors(current.normalize(), desired.normalize());
-  writeWorldQuaternion(bone, correction.multiply(bone.getWorldQuaternion(scratch.q2)));
+  writeWorldQuaternion(bone, correction.multiply(currentWorldQuaternion(bone, scratch.q2)));
 }
 
+/** The leg's length; its joints' world matrices must be current. */
 function legLength(leg: IkLeg): number {
-  leg.root.getWorldPosition(scratch.root);
-  leg.mid.getWorldPosition(scratch.mid);
-  leg.tip.getWorldPosition(scratch.tip);
+  currentWorldPosition(leg.root, scratch.root);
+  currentWorldPosition(leg.mid, scratch.mid);
+  currentWorldPosition(leg.tip, scratch.tip);
   return scratch.root.distanceTo(scratch.mid) + scratch.mid.distanceTo(scratch.tip);
 }
 
@@ -277,9 +294,10 @@ export function applyFootIk(
     const target = placement.ankleTargets[i];
     if (target === null || target === undefined) continue;
     const leg = rig.legs[i]!;
-    const root = leg.root.getWorldPosition(scratch.root);
-    const mid = leg.mid.getWorldPosition(scratch.mid);
-    const tip = leg.tip.getWorldPosition(scratch.tip);
+    // Current: brought up to date with the legs above, and the pelvis write updated its whole subtree.
+    const root = currentWorldPosition(leg.root, scratch.root);
+    const mid = currentWorldPosition(leg.mid, scratch.mid);
+    const tip = currentWorldPosition(leg.tip, scratch.tip);
     const bend = scratch.a.copy(root).add(tip).multiplyScalar(0.5);
     bend.subVectors(mid, bend);
     if (bend.lengthSq() < 1e-8) bend.set(0, 0, 1).applyQuaternion(leg.root.parent?.getWorldQuaternion(scratch.q) ?? scratch.q.identity());
@@ -288,13 +306,13 @@ export function applyFootIk(
     solveTwoBone({ root: [root.x, root.y, root.z], mid: [mid.x, mid.y, mid.z], tip: [tip.x, tip.y, tip.z], target: [tip.x, targetY, tip.z], pole: [pole.x, pole.y, pole.z] }, solved);
     aimSegment(leg.root, root, mid, solved.mid);
     // Rotating the thigh also moved the tip; aim the shin from that updated pose.
-    aimSegment(leg.mid, leg.mid.getWorldPosition(scratch.mid), leg.tip.getWorldPosition(scratch.tip), solved.tip);
+    aimSegment(leg.mid, currentWorldPosition(leg.mid, scratch.mid), currentWorldPosition(leg.tip, scratch.tip), solved.tip);
 
     const normal = normalsScratch[i];
     if (normal !== null && normal !== undefined && rig.alignToGround > 0) {
       const planted = 1 - Math.min(1, Math.max(0, samplesScratch[i]!.ankleY - ankleHeight - samplesScratch[i]!.groundY!) / Math.max(ankleHeight, length * 0.05));
       const tilt = scratch.q.setFromUnitVectors(UP, scratch.b.set(normal[0], normal[1], normal[2]).normalize());
-      const current = leg.tip.getWorldQuaternion(scratch.q2);
+      const current = currentWorldQuaternion(leg.tip, scratch.q2);
       writeWorldQuaternion(leg.tip, current.slerp(tilt.multiply(current), planted * weight * rig.alignToGround));
     }
   }
@@ -302,7 +320,8 @@ export function applyFootIk(
   if (rig.head !== null && lookAtTarget !== undefined) {
     const from = rig.head.getWorldPosition(scratch.a);
     const q = lookAt({ from: [from.x, from.y, from.z], target: lookAtTarget, up: [0, 1, 0], ...rig.lookAtLimits });
-    const current = rig.head.getWorldQuaternion(scratch.q2);
+    // The head's getWorldPosition above brought it and its ancestors up to date.
+    const current = currentWorldQuaternion(rig.head, scratch.q2);
     const reach = Math.max(weight, rig.legs.length === 0 ? 1 : 0) * rig.lookAtWeight;
     writeWorldQuaternion(rig.head, current.slerp(scratch.q.set(q[0], q[1], q[2], q[3]), reach));
   }

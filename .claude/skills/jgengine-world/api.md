@@ -1795,7 +1795,7 @@
 - `ResolvedGrassBake` (interface): interface ResolvedGrassBake — A patch ready to bake: the look plus every derived number the bake and stream share.
 - `bakeGrassNode` (function): function bakeGrassNode(bake: ResolvedGrassBake, level: number, ix: number, iz: number, share: number): GrassTufts — Seeded tufts for one stream node at `share` of full detail (0..1]. Each base cell inside the node grows its own seeded sequence, so the result never depends on which node asked or how big it is.
 - `grassFieldColors` (function): function grassFieldColors(look: GrassLook): { base: THREE.Color; tip: THREE.Color } — The look's colours after season and dryness, as the turf mat and far field show them. Mirrors the blade shader's colour path at the field's average tone.
-- `grassNodeRect` (function): function grassNodeRect(bake: ResolvedGrassBake, level: number, ix: number, iz: number): [number, number, number, number] — Patch-local XZ rectangle a node covers, clipped to the patch: `[x0, z0, x1, z1]`.
+- `grassNodeRect` (function): function grassNodeRect(bake: ResolvedGrassBake, level: number, ix: number, iz: number, out: [number, number, number, number] = [0, 0, 0, 0]): [number, number, number, number] — Patch-local XZ rectangle a node covers, clipped to the patch: `[x0, z0, x1, z1]`, written into `out` when given.
 - `grassTuftsBelow` (function): function grassTuftsBelow(ranks: Float32Array, share: number): number — Number of sorted tufts whose rank is below `share`.
 - `resolveGrassBake` (function): function resolveGrassBake(options: GrassBakeOptions): ResolvedGrassBake — Resolve a patch's bake inputs once; the stream and every node bake read the result.
 
@@ -5997,6 +5997,10 @@
 - `HlodConfig` (interface): interface HlodConfig — Far static cells draw one merged proxy instead of their props. Every cell of batched static props switches to its proxy from `distance` metres (camera to the cell's bounds) plus half the `hysteresis` band, and back below `distance` minus half of it; `cluster` is the proxy's detail in metres: vertices closer than it merge.
 - `VisibilityConfig` (interface): interface VisibilityConfig — Per-game visibility configuration, surfaced on `PlayableGame.visibility`. Everything is optional: an existing game that sets nothing gets the conservative engine defaults automatically. This is the scene-level and per-kind override seam (requirement: per-object, per-layer, per-scene, and global controls).
 
+## @jgengine/core/visibility/culledTransforms.draw
+
+- `SceneWalkStarts` (interface): interface SceneWalkStarts — The walk starts the scene's last matrix pass found; `serial` changes with every pass.
+
 ## @jgengine/core/visibility/diagnostics
 
 - `VisibilityStats` (interface): interface VisibilityStats — Per-frame visibility + streaming counters. The VisibilitySystem fills the culling and timing fields; the AssetStreamingSystem fills the asset fields. Everything is a plain number so a HUD or the devtools hub can read it without adapters.
@@ -6068,11 +6072,13 @@
 
 ## @jgengine/core/visibility/visibilitySystem
 
+- `IdSet` (interface): interface IdSet extends Iterable<string> — A read-only set of ids: membership, count and iteration.
 - `Renderable` (interface): interface Renderable — A scene object the visibility system considers. A normal game object already carries a position and a version counter, so it becomes cullable automatically — no separate "cullable" component. Everything else is optional override.
+- `RenderableSource` (interface): interface RenderableSource — One group of renderables a {@link VisibilitySystem} walks, such as the scene's actors or its props.
 - `VisibilityDebugSnapshot` (interface): interface VisibilityDebugSnapshot { cameras: {id: string; kind: CameraKind; corners: number[]; preloadMargin: number}[]; bounds: {id: string; minX: number; minY: number; minZ: number; maxX: number; maxY: number; maxZ: number; visible: boolean}[]; partitions: {key: string; c… — ⚠ undocumented
-- `VisibilityResult` (interface): interface VisibilityResult { readonly visible: ReadonlySet<string>; readonly preload: ReadonlySet<string>; readonly stats: VisibilityStats; readonly generation: number } — ⚠ undocumented
+- `VisibilityResult` (interface): interface VisibilityResult { readonly visible: IdSet; readonly preload: IdSet; readonly stats: VisibilityStats; readonly generation: number; readonly changed: readonly string[] } — ⚠ undocumented
 - `VisibilitySystem` (interface): interface VisibilitySystem { update(): VisibilityResult; isVisible(id: string): boolean; isPreloaded(id: string): boolean; boundsOf(id: string): RenderBounds | undefined; settings(): CullingSettings; setSettings(patch: Partial<CullingSettings>): void; stats(): Visibi… — ⚠ undocumented
-- `VisibilitySystemOptions` (interface): interface VisibilitySystemOptions { readonly renderables: () => Iterable<Renderable>; readonly cameras: () => readonly CameraVisibilityContext[]; readonly settings?: Partial<CullingSettings>; readonly sceneOverrides?: ObjectVisibilityOverrides; readonly globalOverrides?: Ob… — ⚠ undocumented
+- `VisibilitySystemOptions` (interface): interface VisibilitySystemOptions { readonly sources: readonly RenderableSource[]; readonly cameras: () => readonly CameraVisibilityContext[]; readonly settings?: Partial<CullingSettings>; readonly sceneOverrides?: ObjectVisibilityOverrides; readonly globalOverrides?: Objec… — ⚠ undocumented
 - `createVisibilitySystem` (function): function createVisibilitySystem(options: VisibilitySystemOptions): VisibilitySystem — ⚠ undocumented
 
 ## @jgengine/core/water/Ocean.draw

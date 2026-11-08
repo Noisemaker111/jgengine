@@ -74,6 +74,31 @@ describe("shell culling driver", () => {
     expect(driver.system.isVisible(id)).toBe(false);
   });
 
+  test("a still scene is not walked again, and a pose write or a move after dispose is still seen", () => {
+    const { ctx, driver } = fixture({ culling: { preloadMargin: 0, hysteresis: 0 } });
+    const actor = ctx.scene.entity.spawn("actor", { position: [0, 0, -20] });
+    const prop = ctx.scene.object.place("box", 0, 0, -20);
+    let reads = 0;
+    const list = ctx.scene.entity.list;
+    ctx.scene.entity.list = () => { reads += 1; return list(); };
+    driver.system.update();
+    driver.system.update();
+    driver.system.update();
+    expect(reads).toBe(1);
+    expect(driver.system.isVisible(actor)).toBe(true);
+
+    ctx.scene.entity.setPose(actor, { position: [40, 0, -20] });
+    driver.system.update();
+    expect(reads).toBe(2);
+    expect(driver.system.isVisible(actor)).toBe(false);
+    expect(driver.system.isVisible(prop)).toBe(true);
+
+    driver.dispose();
+    ctx.scene.object.move(prop, 40, 0, -20);
+    driver.system.update();
+    expect(driver.system.isVisible(prop)).toBe(false);
+  });
+
   test("bounds shell tracking by live rows through repeated spawn and removal", () => {
     const { ctx, driver } = fixture();
     for (let wave = 0; wave < 100; wave += 1) {

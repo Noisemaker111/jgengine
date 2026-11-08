@@ -1,9 +1,9 @@
 import type { EnvironmentVec2, TerrainCoast, TerrainColors, TerrainMaterial, TerrainMaterialRegion } from "../world/features";
 import { pointInPolygon } from "../world/polygon";
-import { buildPolylineIndex, type PolylineIndex } from "../world/polylineIndex";
+import { buildPolylineIndex, createPolylineHit, type PolylineIndex } from "../world/polylineIndex";
 import type { SceneDocumentLike, ScenePathLike } from "../world/sceneShapes";
 import type { TerrainPathProfile } from "./pathTerrain";
-import { fractalNoise, seedFrom, seedPhase } from "./terrain";
+import { fractalNoise, seedFrom, seedPhase, type FractalNoiseConfig } from "./terrain";
 import { clamp01 } from "../math/scalar";
 
 /** Scene kinds a surveyed landmass reads: shore outlines, summits, mountain chains, hills, cliffs, rivers and biome outlines. */
@@ -275,7 +275,34 @@ interface IndexedHills {
   hills: SurveyHills;
   edge: PolylineIndex;
   bounds: Bounds;
-  seed: number;
+  /** 0 unknown, 1 inside and past the falloff from the edge, 2 outside and past it, 3 nearer; per {@link HILLS_ZONE_CELLS} cell. */
+  zones: Uint8Array;
+  zoneCell: number;
+  zoneColumns: number;
+  round: FractalNoiseConfig;
+  crest: FractalNoiseConfig;
+}
+
+/** Most zone cells along a hills outline's longer side. */
+const HILLS_ZONE_CELLS = 256;
+
+/**
+ * Where a point stands against a hills outline: 1 inside and farther than the falloff from its edge,
+ * 2 outside and farther, 3 nearer. A cell with no edge within the falloff plus half its diagonal of its
+ * centre lies wholly on its centre's side, so most samples skip the ring test and the edge search.
+ */
+function hillsZone(entry: IndexedHills, x: number, z: number): number {
+  const { bounds, zoneCell, zoneColumns, zones } = entry;
+  const column = Math.min(zoneColumns - 1, Math.floor((x - bounds.minX) / zoneCell));
+  const row = Math.floor((z - bounds.minZ) / zoneCell);
+  const key = row * zoneColumns + column;
+  if (key >= zones.length) return 3;
+  if (zones[key] === 0) {
+    const cx = bounds.minX + (column + 0.5) * zoneCell;
+    const cz = bounds.minZ + (row + 0.5) * zoneCell;
+    zones[key] = entry.edge.nearest(cx, cz, entry.hills.falloff + zoneCell * Math.SQRT1_2, surveyHit) !== null ? 3 : pointInPolygon(entry.hills.ring, cx, cz) ? 1 : 2;
+  }
+  return zones[key]!;
 }
 
 interface IndexedCliff {
@@ -294,18 +321,27 @@ function gully(x: number, z: number, size: number, seed: number): number {
   return 0.5 + 0.5 * fractalNoise(x, z, { seed, frequency: 1 / size, octaves: 3, lacunarity: 2.1, persistence: 0.5, ridged: true });
 }
 
+/** The hit every survey query writes into: each reads its hit before the next query. */
+const surveyHit = createPolylineHit();
+
 function hillsRise(entry: IndexedHills, x: number, z: number): number {
   const { hills } = entry;
-  if (!inBounds(entry.bounds, x, z) || !pointInPolygon(hills.ring, x, z)) return 0;
-  const edge = entry.edge.nearest(x, z, hills.falloff);
-  const mask = edge === null ? 1 : smooth01(edge.distance / hills.falloff);
-  if (mask <= 0) return 0;
+  if (!inBounds(entry.bounds, x, z)) return 0;
+  const zone = hillsZone(entry, x, z);
+  if (zone === 2) return 0;
+  let mask = 1;
+  if (zone === 3) {
+    if (!pointInPolygon(hills.ring, x, z)) return 0;
+    const edge = entry.edge.nearest(x, z, hills.falloff, surveyHit);
+    mask = edge === null ? 1 : smooth01(edge.distance / hills.falloff);
+    if (mask <= 0) return 0;
+  }
   // Separate hills with plains between them: negative noise stays at plains level, so no outline shows.
-  const round = fractalNoise(x, z, { seed: entry.seed, frequency: 1 / hills.scale, octaves: 3, lacunarity: 2, persistence: 0.4, ridged: false });
+  const round = fractalNoise(x, z, entry.round);
   let shape = smooth01(round * 1.8 + 0.15);
   if (shape <= 0) return 0;
   if (hills.ridged > 0) {
-    const crest = fractalNoise(x, z, { seed: entry.seed + 7, frequency: 1.3 / hills.scale, octaves: 2, lacunarity: 2, persistence: 0.4, ridged: true }) * 0.5 + 0.5;
+    const crest = fractalNoise(x, z, entry.crest) * 0.5 + 0.5;
     shape *= Math.min(1, 1 - hills.ridged * 0.6 + hills.ridged * crest);
   }
   return mask * hills.height * shape;
@@ -315,7 +351,7 @@ function cliffRise(entry: IndexedCliff, x: number, z: number): number {
   const { cliff } = entry;
   if (!inBounds(entry.bounds, x, z)) return 0;
   const half = cliff.face / 2;
-  const hit = entry.index.nearest(x, z, half + cliff.reach);
+  const hit = entry.index.nearest(x, z, half + cliff.reach, surveyHit);
   if (hit === null) return 0;
   const a = cliff.points[hit.segment];
   const b = cliff.points[hit.segment + 1] ?? a;
@@ -338,7 +374,21 @@ function cliffRise(entry: IndexedCliff, x: number, z: number): number {
 function indexHills(hills: SurveyHills): IndexedHills {
   const first = hills.ring[0];
   const closed = first === undefined ? hills.ring : [...hills.ring, first];
-  return { hills, edge: buildPolylineIndex(closed, hills.falloff), bounds: boundsOf(hills.ring, 0), seed: seedFrom(hills.seed, 1) };
+  const bounds = boundsOf(hills.ring, 0);
+  const seed = seedFrom(hills.seed, 1);
+  const zoneCell = Math.max(hills.falloff / 4, Math.max(bounds.maxX - bounds.minX, bounds.maxZ - bounds.minZ, 1) / HILLS_ZONE_CELLS);
+  const zoneColumns = Math.floor((bounds.maxX - bounds.minX) / zoneCell) + 1;
+  const zoneRows = Math.floor((bounds.maxZ - bounds.minZ) / zoneCell) + 1;
+  return {
+    hills,
+    edge: buildPolylineIndex(closed, hills.falloff),
+    bounds,
+    zones: new Uint8Array(zoneColumns * zoneRows),
+    zoneCell,
+    zoneColumns,
+    round: { seed, frequency: 1 / hills.scale, octaves: 3, lacunarity: 2, persistence: 0.4, ridged: false },
+    crest: { seed: seed + 7, frequency: 1.3 / hills.scale, octaves: 2, lacunarity: 2, persistence: 0.4, ridged: true },
+  };
 }
 
 function indexCliff(cliff: SurveyCliff): IndexedCliff {
@@ -382,7 +432,11 @@ export function surveyHeightField(survey: Survey, plains: SurveyPlains = {}): (x
     for (const entry of cliffs) ground += cliffRise(entry, x, z);
     let mountain = 0;
     for (const { peak, seed } of peaks) {
-      const distance = Math.hypot(x - peak.at[0], z - peak.at[1]);
+      const dx = x - peak.at[0];
+      const dz = z - peak.at[1];
+      // A hypot is never below its larger side, so a point outside the peak's square is outside its circle.
+      if (Math.abs(dx) >= peak.radius || Math.abs(dz) >= peak.radius) continue;
+      const distance = Math.hypot(dx, dz);
       if (distance >= peak.radius) continue;
       let rise = peak.height * Math.pow(1 - smooth01(distance / peak.radius), peak.sharpness ?? 1.4);
       if (peak.erosion !== undefined && peak.erosion > 0) rise *= 1 - peak.erosion * GULLY_DEPTH * gully(x, z, peak.radius * 0.3, seed);
@@ -394,7 +448,7 @@ export function surveyHeightField(survey: Survey, plains: SurveyPlains = {}): (x
     }
     for (const { ridge, index, seed } of ridges) {
       const half = ridge.width / 2;
-      const hit = index.nearest(x, z, half);
+      const hit = index.nearest(x, z, half, surveyHit);
       if (hit === null) continue;
       const a = ridge.points[hit.segment];
       const b = ridge.points[hit.segment + 1] ?? a;
