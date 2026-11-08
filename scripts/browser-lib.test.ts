@@ -955,6 +955,7 @@ describe("capture profile sweep", () => {  test("removes only stale jg dirs whos
       const leaked = agedProfile(root, "jg-leaked-", 60);
       const reported: string[] = [];
       const removed = sweepCaptureProfiles(root, {
+        processes: [],
         freeBytes: 200 * 1024 ** 3,
         log: (line) => {
           reported.push(line);
@@ -980,6 +981,7 @@ describe("capture profile sweep", () => {  test("removes only stale jg dirs whos
       const sixMinutes = agedProfile(root, "jg-six-", 6);
       const reported: string[] = [];
       const removed = sweepCaptureProfiles(root, {
+        processes: [],
         freeBytes: 8 * 1024 ** 3,
         log: (line) => {
           reported.push(line);
@@ -1012,7 +1014,8 @@ describe("capture profile sweep", () => {  test("removes only stale jg dirs whos
         const recent = new Date(Date.now() - 6 * 60_000);
         utimesSync(liveSix, recent, recent);
 
-        const removed = sweepCaptureProfiles(root, { freeBytes, log: () => {} });
+        const removed = sweepCaptureProfiles(root, {
+        processes: [], freeBytes, log: () => {} });
         console.error(`proof (c): ${Math.round(freeBytes / 1024 ** 3)} GB free — removed ${removed} of 2, kept both live-browser profiles`);
 
         expect(removed).toBe(0);
@@ -1029,7 +1032,8 @@ describe("capture profile sweep", () => {  test("removes only stale jg dirs whos
     try {
       const twenty = agedProfile(root, "jg-twenty-", 20);
       const hour = agedProfile(root, "jg-hour-", 60);
-      const removed = sweepCaptureProfiles(root, { freeBytes: null, log: () => {} });
+      const removed = sweepCaptureProfiles(root, {
+        processes: [], freeBytes: null, log: () => {} });
       expect(removed).toBe(1);
       expect(existsSync(twenty)).toBe(true);
       expect(existsSync(hour)).toBe(false);
@@ -1193,6 +1197,69 @@ describe("stray browser sweep", () => {
       expect(killed).toEqual([6002]);
       expect(result.killed).toBe(1);
       expect(existsSync(warm)).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("every process left on a stray profile is killed before the profile is removed", () => {
+    const root = mkdtempSync(join(tmpdir(), "jg-stray-orphans-"));
+    try {
+      const dir = profile(root, "jg-drive-orphans", DEAD_PID);
+      const killed: number[] = [];
+      const startedAt = Date.now() - 60 * 60 * 1000;
+      const helper = (pid: number) => ({ pid, parentPid: DEAD_PID, startedAt, commandLine: `chrome.exe --type=renderer --user-data-dir=${dir}` });
+      const result = sweepStrayBrowsers(root, {
+        processes: [helper(7101), helper(7102), helper(7103)],
+        kill: (pid) => killed.push(pid),
+        isAlive: (pid) => pid !== undefined && pid !== DEAD_PID && !killed.includes(pid),
+      });
+      expect(killed).toEqual([7101, 7102, 7103]);
+      expect(result).toEqual({ killed: 1, profilesRemoved: 1 });
+      expect(existsSync(dir)).toBe(false);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("a stray whose kill is refused is left with its profile, though it no longer answers as alive", () => {
+    const root = mkdtempSync(join(tmpdir(), "jg-stray-refused-"));
+    try {
+      const dir = profile(root, "jg-drive-refused", DEAD_PID);
+      const removed: string[] = [];
+      const startedAt = Date.now() - 60 * 60 * 1000;
+      const result = sweepStrayBrowsers(root, {
+        processes: [
+          { pid: 7201, parentPid: DEAD_PID, startedAt, commandLine: `chrome.exe --type=utility --user-data-dir=${dir}` },
+          { pid: 7202, parentPid: DEAD_PID, startedAt, commandLine: `chrome.exe --type=gpu-process --user-data-dir=${dir}` },
+        ],
+        kill: (pid) => pid !== 7201,
+        isAlive: () => false,
+        remove: (path) => removed.push(path),
+      });
+      expect(result).toEqual({ killed: 0, profilesRemoved: 0 });
+      expect(removed).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("a stray the kill cannot end is left with its profile, without waiting on either", () => {
+    const root = mkdtempSync(join(tmpdir(), "jg-stray-stuck-"));
+    try {
+      const dir = profile(root, "jg-drive-stuck", DEAD_PID);
+      const removed: string[] = [];
+      const started = Date.now();
+      const result = sweepStrayBrowsers(root, {
+        processes: [{ pid: 7001, parentPid: DEAD_PID, startedAt: Date.now() - 60 * 60 * 1000, commandLine: `chrome.exe --user-data-dir=${dir}` }],
+        kill: () => {},
+        isAlive: (pid) => pid === 7001,
+        remove: (path) => removed.push(path),
+      });
+      expect(result).toEqual({ killed: 0, profilesRemoved: 0 });
+      expect(removed).toEqual([]);
+      expect(existsSync(dir)).toBe(true);
+      expect(Date.now() - started).toBeLessThan(1_000);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

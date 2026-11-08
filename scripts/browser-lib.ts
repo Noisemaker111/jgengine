@@ -591,24 +591,32 @@ export async function ensureWebServer(cwd = process.cwd()): Promise<EnsureDevSer
  * group on posix (SIGKILL to `-pid`) before falling back to the bare pid —
  * used when we own a detached launcher whose children must die with it.
  */
-export function killPid(pid: number | undefined, tree = false): void {
-  if (pid === undefined || !Number.isFinite(pid) || pid <= 0) return;
+/**
+ * Kill `pid` (and its tree). True when it is gone or going; false when the kill was refused. On
+ * Windows a process can be stuck past `taskkill` ("there is no running instance of the task",
+ * exit 255) while `process.kill(pid, 0)` already calls it dead, so only this answer tells a caller
+ * that its files stay locked.
+ */
+export function killPid(pid: number | undefined, tree = false): boolean {
+  if (pid === undefined || !Number.isFinite(pid) || pid <= 0) return true;
   if (process.platform === "win32") {
-    spawnSync("taskkill", ["/pid", String(pid), "/T", "/F"], { stdio: "ignore", windowsHide: true, timeout: 15_000 });
-    return;
+    const status = spawnSync("taskkill", ["/pid", String(pid), "/T", "/F"], { stdio: "ignore", windowsHide: true, timeout: 15_000 }).status;
+    // 128: no such process, already gone.
+    return status === 0 || status === 128;
   }
   if (tree) {
     try {
       process.kill(-pid, "SIGKILL");
-      return;
+      return true;
     } catch {
       /* group gone or ungrouped — fall through to the bare pid */
     }
   }
   try {
     process.kill(pid, "SIGKILL");
-  } catch {
-    /* already gone */
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === "ESRCH";
   }
 }
 
@@ -1162,11 +1170,18 @@ export function listBrowserProcesses(): BrowserProcess[] {
   if (process.platform === "win32") {
     // Encoded, because `-Command` through argv mangles the quotes inside a WQL filter.
     const encoded = Buffer.from(WINDOWS_PROCESS_QUERY, "utf16le").toString("base64");
-    const query = spawnSync(
-      "powershell.exe",
+    const run = (shell: string) => spawnSync(
+      shell,
       ["-NoProfile", "-NonInteractive", "-EncodedCommand", encoded],
       { encoding: "utf8", windowsHide: true, timeout: 20_000 },
     );
+    // PowerShell 7 starts in about 0.4 s; Windows PowerShell 5 took 3.5 to 8 s on a busy PC, and
+    // every capture start runs this query (2026-11-08).
+    let query = run("pwsh");
+    if (query.error !== undefined) {
+      console.error(`degraded: pwsh is not installed (${query.error.message}); listing browsers with Windows PowerShell, which starts seconds slower`);
+      query = run("powershell.exe");
+    }
     return query.status === 0 ? parseRows(query.stdout ?? "") : [];
   }
   const withElapsed = spawnSync("ps", ["-eo", "pid=,ppid=,etimes=,args="], { encoding: "utf8", timeout: 20_000 });
@@ -1232,7 +1247,8 @@ export interface StrayBrowserSweepOptions {
   maxAgeMs?: number;
   /** Replace the live process list (tests). */
   processes?: readonly BrowserProcess[];
-  kill?: (pid: number) => void;
+  /** False when the kill was refused (see {@link killPid}); the profile is then left alone. */
+  kill?: (pid: number) => unknown;
   remove?: (dir: string) => void;
   isAlive?: (pid: number | undefined) => boolean;
 }
@@ -1252,17 +1268,26 @@ export function sweepStrayBrowsers(root = tmpdir(), options: StrayBrowserSweepOp
   // A killed Chrome holds its profile's files until it has exited, and Windows keeps a folder whose
   // files are still open, so the real kill waits for the exit before the profile is removed.
   const kill = options.kill ?? ((pid: number) => {
-    killPid(pid, true);
-    waitForExitSync(pid, 10_000);
+    const ended = killPid(pid, true);
+    if (ended) waitForExitSync(pid, 10_000);
+    return ended;
   });
   const remove = options.remove ?? removeProfileDir;
-  const processes = options.processes ?? listBrowserProcesses();
-  const seen = new Set<string>();
-  const result: StrayBrowserSweepResult = { killed: 0, profilesRemoved: 0 };
-  for (const process of processes) {
+  // A browser whose main process died leaves its helpers (GPU, renderers, utilities) as siblings
+  // with no parent, so killing one helper's tree ends only that helper. Every process on a stray
+  // profile is killed: two such profiles kept 9 helpers alive for days and stalled each capture
+  // start for 20 s (2026-11-08).
+  const byProfile = new Map<string, BrowserProcess[]>();
+  for (const process of options.processes ?? listBrowserProcesses()) {
     const dir = profileDirUnderRoot(process.commandLine, root);
-    if (dir === undefined || seen.has(dir)) continue;
-    seen.add(dir);
+    if (dir === undefined) continue;
+    const group = byProfile.get(dir);
+    if (group === undefined) byProfile.set(dir, [process]);
+    else group.push(process);
+  }
+  const result: StrayBrowserSweepResult = { killed: 0, profilesRemoved: 0 };
+  for (const [dir, group] of byProfile) {
+    const process = group[0]!;
     if (ownedProfiles.has(dir)) continue;
     const headless = process.commandLine.includes("--headless");
     const runPid = readRunPid(dir);
@@ -1280,7 +1305,14 @@ export function sweepStrayBrowsers(root = tmpdir(), options: StrayBrowserSweepOp
       stray = !isAlive(process.parentPid) && startedAt !== undefined && now - startedAt >= maxAgeMs;
     }
     if (!stray) continue;
-    kill(process.pid);
+    const refused = new Set(group.filter(({ pid }) => kill(pid) === false).map(({ pid }) => pid));
+    // A process the kill could not end still holds the profile: deleting it would only retry for
+    // 10 s and fail.
+    const survivors = group.filter(({ pid }) => refused.has(pid) || isAlive(pid)).map(({ pid }) => pid);
+    if (survivors.length > 0) {
+      console.error(`degraded: browser process(es) ${survivors.join(", ")} on ${dir} survived the kill; the profile stays until they exit`);
+      continue;
+    }
     result.killed += 1;
     remove(dir);
     if (!existsSync(dir)) result.profilesRemoved += 1;
