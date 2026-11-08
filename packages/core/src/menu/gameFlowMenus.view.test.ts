@@ -3,7 +3,7 @@ import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
-import { openTitle, togglePause, playGame } from "@jgengine/core/game/gameFlow";
+import { openTitle, togglePause, playGame, showMenuPane } from "@jgengine/core/game/gameFlow";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { SettingsControllerProvider, type SettingsController } from "@jgengine/core/settings/settings.view";
@@ -51,6 +51,16 @@ describe("GameFlowUI", () => {
     expect(html).toContain('data-jg-menu-item="credits"');
     expect(render(ctx, MENU, false)).not.toContain('data-jg-menu-item="settings"');
     expect(render(ctx, { ...MENU, settings: false }, true)).not.toContain('data-jg-menu-item="settings"');
+  });
+
+  test("the menu.pane command's pane is the one the title shows", () => {
+    const ctx = fixture();
+    openTitle(ctx);
+    expect(render(ctx, MENU, true)).not.toContain("Thanks.");
+    showMenuPane(ctx, "credits");
+    expect(render(ctx, MENU, true)).toContain("Thanks.");
+    showMenuPane(ctx, "controls");
+    expect(render(ctx, MENU, true)).toContain("walk");
   });
 
   test("the pause menu offers Settings too", () => {

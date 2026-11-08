@@ -2,7 +2,8 @@ import { ambientFauna } from "./game/ambientFauna";
 import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
 import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
 import { authoredSpawnPosition, authoredSpawnRotation } from "@jgengine/core/world/authoredSpawn";
-import { createGameFlowSystem } from "@jgengine/core/game/gameFlow";
+import { createGameFlowSystem, menuPane } from "@jgengine/core/game/gameFlow";
+import { gamePhase } from "@jgengine/core/game/gamePhase";
 import { onboardingOf } from "@jgengine/core/onboarding/onboardingSystem";
 import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/shell/gameKit";
 
@@ -138,6 +139,8 @@ export const game = defineGame({
   },
   capture: {
     play: [{ name: "start", input: {} }],
+    // Boot and stay on the title, as the page opens.
+    states: { title: [] },
     probe: (ctx) => {
       const view = survivorView(ctx);
       const creatures = creaturesView(ctx);
@@ -287,6 +290,9 @@ export const game = defineGame({
         craftProgress: view.queue[0] === undefined ? -1 : Math.round(view.queue[0].progress * 100),
         fuel: Math.round(fuelNear(ctx, here, 6) * 10) / 10,
         screen: openScreen(ctx) === null ? 0 : 1,
+        // The run's phase (0 title, 1 playing, 2 paused, 3 ended) and the menu's pane (0 its default, 1 controls, 2 settings, 3 credits).
+        phase: ["menu", "playing", "paused", "ended"].indexOf(gamePhase(ctx)),
+        menuPane: ["controls", "settings", "credits"].indexOf(menuPane(ctx) ?? "") + 1,
         // Items in the open storage box (-1 with none open).
         stored: ((store) => (store === null ? -1 : store.slots.reduce((sum, slot) => sum + (slot?.count ?? 0), 0)))(storeView(ctx)),
         // The bag's raw meat slot, and the raw meat in the open container (-1 with none open).

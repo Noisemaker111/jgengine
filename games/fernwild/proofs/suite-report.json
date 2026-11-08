@@ -206,6 +206,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/menu-credits.proof.ts",
+      "proves": [
+        "menu.start-and-credits"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/node-respawn.proof.ts",
       "proves": [
         "harvest.node-respawn"

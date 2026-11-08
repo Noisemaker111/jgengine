@@ -1,10 +1,10 @@
 import { useEffect, useState, type ReactNode } from "react";
 
-import { continueGame, newGame, openTitle, playGame, runPlayed, saveNow, togglePause } from "@jgengine/core/game/gameFlow";
+import { continueGame, menuPane, newGame, openTitle, playGame, runPlayed, saveNow, showMenuPane, togglePause, type MenuPane } from "@jgengine/core/game/gameFlow";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { useHasSettings, useSettings } from "@jgengine/core/settings/settings.view";
-import { useGamePhase } from "@jgengine/react/hooks";
+import { useGamePhase, useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import type { CreditsDocument } from "./credits";
 import { GameMenu } from "./gameMenu.view";
@@ -97,6 +97,25 @@ function SettingsDetail(): ReactNode {
   return <p style={{ margin: 0, maxWidth: 420, opacity: 0.85 }}>Graphics quality, sound, key bindings and accessibility.</p>;
 }
 
+const PANES: readonly string[] = ["controls", "settings", "credits"] satisfies readonly MenuPane[];
+
+/**
+ * The menu pane in the game's state, both ways: highlighting a Controls, Settings or Credits verb shows its pane
+ * there, and the `menu.pane` command highlights that verb. `focus` is the verb to highlight: the pane's, else the
+ * last other verb the player was on, else `fallback`.
+ */
+function usePane(fallback: string): { focus: string; highlight: (id: string | null) => void } {
+  const ctx = useGameContext();
+  const pane = useGameStore((c) => menuPane(c));
+  const [rest, setRest] = useState<string | null>(null);
+  const highlight = (id: string | null): void => {
+    const next = id !== null && PANES.includes(id) ? (id as MenuPane) : null;
+    if (next === null && id !== null) setRest(id);
+    if (next !== menuPane(ctx)) showMenuPane(ctx, next);
+  };
+  return { focus: pane ?? rest ?? fallback, highlight };
+}
+
 /** Whether the Settings verb shows: the game has settings and did not turn the verb off. */
 function useSettingsVerb(content: GameFlowMenuContent): boolean {
   const has = useHasSettings();
@@ -121,6 +140,7 @@ function GameFlowTitle({ content }: { content: GameFlowMenuContent }): ReactNode
   const settings = useSettings();
   const withSettings = useSettingsVerb(content);
   const [saved, setSaved] = useState(false);
+  const { focus, highlight } = usePane(saved ? "continue" : "new");
   const setup = content.newGameSetup;
   const [settingUp, setSettingUp] = useState(() => setup !== undefined && setupAfterRestart());
   useEffect(() => {
@@ -158,7 +178,8 @@ function GameFlowTitle({ content }: { content: GameFlowMenuContent }): ReactNode
         ...(withSettings ? [{ id: "settings", label: "Settings", hint: "Graphics, sound, keys" }] : []),
         ...(content.credits === undefined ? [] : [{ id: "credits", label: "Credits" }]),
       ]}
-      initialId={saved ? "continue" : "new"}
+      initialId={focus}
+      onHighlight={highlight}
       detail={(id) =>
         id === "controls" ? (
           <ControlsPane rows={content.controls} />
@@ -184,8 +205,11 @@ function GameFlowPause({ content }: { content: GameFlowMenuContent }): ReactNode
   const ctx = useGameContext();
   const settings = useSettings();
   const withSettings = useSettingsVerb(content);
+  const { focus, highlight } = usePane("resume");
   return (
     <PauseMenu
+      initialId={focus}
+      onHighlight={highlight}
       style={menuStyle(content)}
       items={[
         { id: "resume", label: "Resume" },

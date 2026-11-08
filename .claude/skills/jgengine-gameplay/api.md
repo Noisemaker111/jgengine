@@ -706,13 +706,17 @@
 ## @jgengine/core/game/gameFlow
 
 - `GameFlowOptions` (interface): interface GameFlowOptions — Options for {@link createGameFlowSystem}.
+- `MENU_PANE_STORE_KEY` (const): const MENU_PANE_STORE_KEY: "jg.menuPane" — ⚠ undocumented
+- `MenuPane` (type): type MenuPane = "controls" | "settings" | "credits" — A pane the title or pause menu shows beside its verbs.
 - `continueGame` (function): function continueGame(ctx: GameContext): Promise<boolean> — Load the save and play it; resolves `false` (and stays put) when there is none.
-- `createGameFlowSystem` (function): function createGameFlowSystem(options: GameFlowOptions = {}): SystemDefinition — Title, play, pause and checkpoints as one system. Boot stops the clock behind the title; the `pause` command (bind it to Esc / P) opens and closes the pause menu; the `start` command leaves the title straight into play, which is what a capture or a drive runs to skip the menu. Pair it with `GameFlowUI` from `@jgengine/core/menu/gameFlowMenus.view`.
+- `createGameFlowSystem` (function): function createGameFlowSystem(options: GameFlowOptions = {}): SystemDefinition — Title, play, pause and checkpoints as one system. Boot stops the clock behind the title; the `pause` command (bind it to Esc / P) opens and closes the pause menu; the `start` command leaves the title straight into play, which is what a capture or a drive runs to skip the menu; the `menu.pane` command shows a menu's Controls, Settings or Credits pane, as choosing that verb does, so a proof reads the credits through {@link menuPane}. Pair it with `GameFlowUI` from `@jgengine/core/menu/gameFlowMenus.view`.
+- `menuPane` (function): function menuPane(ctx: GameContext): MenuPane | null — The pane the title or pause menu shows, or null for its default (the briefing on the title, nothing on pause).
 - `newGame` (function): function newGame(ctx: GameContext, restart?: () => void): Promise<void> — A fresh run: clears the save, then plays. When a run already played in this world, `restart` is called instead so nothing carries over (the browser host passes a page reload).
 - `openTitle` (function): function openTitle(ctx: GameContext): void — Stop the clock and show the title (`"menu"` phase).
 - `playGame` (function): function playGame(ctx: GameContext): void — Start the clock and enter the `"playing"` phase.
 - `runPlayed` (function): function runPlayed(ctx: GameContext): boolean — Whether a run already played in this world, so a new one has to restart the page first.
 - `saveNow` (function): function saveNow(ctx: GameContext, notice = "Saved"): Promise<void> — Save now and post a "Saved" notice.
+- `showMenuPane` (function): function showMenuPane(ctx: GameContext, pane: MenuPane | null): void — Show a pane on the title or pause menu (null for its default). Outside those menus there is none to show, so it does nothing.
 - `togglePause` (function): function togglePause(ctx: GameContext): void — Pause from `"playing"`, resume from `"paused"`; any other phase is left alone.
 
 ## @jgengine/core/game/gamePhase
