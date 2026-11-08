@@ -228,7 +228,12 @@ export function lineOfSight(a: Point, b: Point, place: Place = "vault"): boolean
   return true;
 }
 export function roomAt(p: Point, place: Place): string {
-  return [...ROOMS].reverse().find(r => r.place === place && inside(p[0], p[2], r))?.name ?? "Rail threshold";
+  // The last authored room wins where rooms overlap. Walked backwards, not copied: the HUD asks every tick.
+  for (let i = ROOMS.length - 1; i >= 0; i--) {
+    const room = ROOMS[i];
+    if (room !== undefined && room.place === place && inside(p[0], p[2], room)) return room.name;
+  }
+  return "Rail threshold";
 }
 /** A room's authored depth ("01 / rail receiving" is 1). Item level reads this, so deeper loot rolls higher. */
 function roomDepth(room: Room): number {

@@ -265,10 +265,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `GameSlider` (function) · `import { GameSlider } from "@jgengine/react"`
 
-## game-store-live — re-render a HUD component only when its selection's shape changes and write per-frame values through refs
-
-- `useGameStoreLive` (function) · `import { useGameStoreLive } from "@jgengine/react"`
-
 ## group-credits — turn a flat list of credited things into ordered credit sections
 
 - `groupCredits` (function) · `import { groupCredits } from "@jgengine/core/menu/credits"`
@@ -498,6 +494,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## live-markers — a self-ticking MarkerSet kept in sync from the live scene each HUD tick — pass a rebuild(markers, ctx) that clears+repopulates, no hand-rolled setInterval
 
 - `useLiveMarkers` (function) · `import { useLiveMarkers } from "@jgengine/react"`
+
+## live-text — a HUD number or label that updates its own text node every tick without re-rendering its component
+
+- `LiveText` (function) · `import { LiveText } from "@jgengine/core/ui/liveBind.view"`
+
+## live-value — write a per-frame HUD value (text, bar, dial, colour) straight to its DOM node, never through React state
+
+- `useFrameBind` (function) · `import { useFrameBind } from "@jgengine/core/ui/liveBind.view"`
 
 ## loading-screen — loading block with progress, rotating tips, a ready gate, and a scene backdrop
 
@@ -755,6 +759,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## scaled-object-model — stretch one placement of a catalog model with visual.scale
 
 - `drawsScaledModel` (function) · `import { drawsScaledModel } from "@jgengine/shell/world/WorldScene"`
+
+## scene-swap — change place without a frozen frame: build and compile the new place in the background behind a travel card
+
+- `useSceneSwap` (function) · `import { useSceneSwap } from "@jgengine/core/render/sceneSwap.draw"`
+
+## scene-swap-card — know when to show a travel card while the next place builds behind it
+
+- `useSceneSwapping` (function) · `import { useSceneSwapping } from "@jgengine/core/ui/sceneSwap.view"`
 
 ## scoreboard-table — reskinnable ranked-score / leaderboard table over the rankLeaderboard selector — medal-colored podium, local-row highlight, HudTheme-token driven
 

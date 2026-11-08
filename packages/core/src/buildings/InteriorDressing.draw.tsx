@@ -219,6 +219,12 @@ export interface PracticalLightsProps {
   count?: number;
   /** How many of the nearest lights cast shadows; fixed like `count`. Default 0. */
   shadowed?: number;
+  /**
+   * How many of the pool may burn at once; the rest stay dark. Default `count`. One pool sized for
+   * the largest budget and mounted in every place keeps the scene's light count constant, so moving
+   * between places with different budgets (or none) never recompiles every lit material.
+   */
+  lit?: number;
   color?: THREE.ColorRepresentation;
   intensity?: number;
   /** Light range, metres. Default 9. */
@@ -238,7 +244,7 @@ export interface PracticalLightsProps {
  * never change, so walking a floor of hundreds of lamps costs the same few lights.
  * @capability practical-lights light the planned lamps nearest the camera with a fixed, shadow-capped spot-light pool
  */
-export function PracticalLights({ fixtures, count = 6, shadowed = 0, color = "#ffe2b0", intensity = 14, distance = 9, angle = 1.05, penumbra = 0.6, reach = 28, every = 8 }: PracticalLightsProps) {
+export function PracticalLights({ fixtures, count = 6, shadowed = 0, lit = count, color = "#ffe2b0", intensity = 14, distance = 9, angle = 1.05, penumbra = 0.6, reach = 28, every = 8 }: PracticalLightsProps) {
   // A dead lamp never takes a light from the pool; a fixture planned without a state burns.
   const burning = useMemo(() => fixtures.filter((fixture) => fixture.state !== "dead"), [fixtures]);
   const flickers = useRef<(number | null)[]>([]);
@@ -278,9 +284,11 @@ export function PracticalLights({ fixtures, count = 6, shadowed = 0, color = "#f
     }
     frame.current = 0;
     const eye = camera.position;
-    const picked = nearestFixtures(burning, [eye.x, eye.y, eye.z], lights.length, reach);
+    const picked = nearestFixtures(burning, [eye.x, eye.y, eye.z], Math.min(lights.length, Math.max(0, lit)), reach);
     lights.forEach((light, index) => {
       const fixture = picked[index];
+      // A dark light keeps its shadow slot (the count is what shaders compile for) but draws no shadow map.
+      if (light.castShadow) light.shadow.autoUpdate = fixture !== undefined;
       if (fixture === undefined) {
         light.intensity = 0;
         flickers.current[index] = null;

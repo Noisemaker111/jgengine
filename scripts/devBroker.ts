@@ -423,8 +423,10 @@ export class BrokerCore {
     };
   }
 
-  /** Stop everything this broker started. */
+  /** Stop everything this broker started, naming the live runs that lose their server or browser. */
   async shutdown(): Promise<void> {
+    const cut = [...this.leases.values()].filter((lease) => this.deps.isAlive(lease.clientPid));
+    if (cut.length > 0) this.deps.log(`broker stopping under ${cut.length} live run(s): ${cut.map((lease) => `${lease.label} (pid ${lease.clientPid})`).join("; ")}`);
     for (const waiter of this.queue.splice(0)) waiter.reject(new Error("broker shutting down"));
     this.holders.clear();
     this.leases.clear();
@@ -770,8 +772,8 @@ function number(value: unknown, name: string): number {
   return value;
 }
 
-/** The broker's HTTP face. `onStop` runs after `/v1/stop` has answered. */
-export function brokerHandler(core: BrokerCore, onStop: () => void) {
+/** The broker's HTTP face. `onStop` runs after `/v1/stop` has answered, with who asked. */
+export function brokerHandler(core: BrokerCore, onStop: (reason: string) => void) {
   return async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
     try {
       const url = new URL(req.url ?? "/", "http://127.0.0.1");
@@ -810,7 +812,7 @@ export function brokerHandler(core: BrokerCore, onStop: () => void) {
       if (url.pathname === "/v1/release") return send(res, 200, { released: core.release(text(body["leaseId"], "leaseId")) });
       if (url.pathname === "/v1/stop") {
         send(res, 200, { stopping: true });
-        onStop();
+        onStop(`asked to stop by ${typeof body["by"] === "string" && body["by"] !== "" ? body["by"] : "an unnamed client"}`);
         return;
       }
       return send(res, 404, { error: `no route POST ${url.pathname}` });
@@ -861,7 +863,17 @@ export async function serveBroker(env: NodeJS.ProcessEnv = process.env): Promise
     }
     process.exit(0);
   };
-  const http = createHttpServer(brokerHandler(core, () => void stop("asked to stop")));
+  // The broker runs with its output thrown away, so a crash would otherwise end it, and every server it
+  // owns, without a line anywhere.
+  process.on("uncaughtException", (error) => {
+    writeLog(`broker crashed: ${error.stack ?? error.message}`);
+    process.exit(1);
+  });
+  process.on("unhandledRejection", (reason) => {
+    writeLog(`broker crashed: unhandled rejection ${reason instanceof Error ? reason.stack ?? reason.message : String(reason)}`);
+    process.exit(1);
+  });
+  const http = createHttpServer(brokerHandler(core, (reason) => void stop(reason)));
   http.requestTimeout = 0;
   const port = brokerPort(env);
   await new Promise<void>((resolve) => {

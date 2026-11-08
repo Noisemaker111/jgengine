@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { fpsAt, hitchCause, renderBreakdownText, spread, summarizeBreakdown, type FrameBreakdownRecord } from "./frameBreakdown";
+import { attributeHitch, fpsAt, hitchCause, lightSetChange, programVariantChange, renderBreakdownText, spread, summarizeBreakdown, type FrameBreakdownRecord } from "./frameBreakdown";
 
 function frame(overrides: Partial<FrameBreakdownRecord> = {}): FrameBreakdownRecord {
   return {
@@ -38,6 +38,10 @@ test("a hitch names its cause from what happened in that frame", () => {
   expect(hitchCause(frame({ intervalMs: 40, cpu: { "frame#4 src/water.ts:9": 30 } })).detail).toBe("frame#4 src/water.ts:9 30 ms on the CPU");
   expect(hitchCause(frame({ intervalMs: 40, gpu: { "post:GTAO": 25 } })).cause).toBe("gpu");
   expect(hitchCause(frame({ intervalMs: 40 })).cause).toBe("other");
+  // A 2 s frame with a 16 ms pass in it froze somewhere else.
+  expect(hitchCause(frame({ intervalMs: 1962, workMs: 16, gpu: { "post:BeautyPass": 15.6 } }))).toEqual({
+    cause: "other", detail: "1946 ms outside the game's frame work (browser, compositor, OS); the largest game cost was post:BeautyPass 15.6 ms on the GPU",
+  });
 });
 
 test("a window sums up: spreads, costliest systems and passes, per-frame draw costs, hitches", () => {
@@ -61,4 +65,58 @@ test("a window sums up: spreads, costliest systems and passes, per-frame draw co
   expect(text).toContain("not an FPS prediction");
   expect(text).toContain("70.0 ms  compile: 2 shader program(s) compiled");
   expect(fpsAt(6.94)).toBe(144);
+});
+
+test("a slow frame the loop cannot see into is named by the scripts the browser ran in it", () => {
+  const timings = [
+    { startTime: 1000, duration: 400, scripts: [
+      { startTime: 1010, duration: 380, invoker: "MessagePort.onmessage", source: "performWorkUntilDeadline react-dom.js:120", layoutMs: 30 },
+      { startTime: 1005, duration: 4, invoker: "FrameRequestCallback", source: "loop three.js:9", layoutMs: 0 },
+    ] },
+    { startTime: 5000, duration: 60, scripts: [{ startTime: 5000, duration: 60, invoker: "DOMWindow.onkeydown", source: "key game.js:4", layoutMs: 0 }] },
+  ];
+  const other = { cause: "other" as const, detail: "outside" };
+  const named = attributeHitch(other, 1420, 430, timings);
+  expect(named.cause).toBe("script");
+  expect(named.detail).toBe("MessagePort.onmessage performWorkUntilDeadline react-dom.js:120 380 ms (forced layout 30 ms)");
+  expect(named.scripts?.map((script) => script.ms)).toEqual([380, 4]);
+  // A frame whose record already names a cause keeps it, with the scripts beside it.
+  expect(attributeHitch({ cause: "compile", detail: "linked" }, 1420, 430, timings).cause).toBe("compile");
+  // Scripts that ran 444 ms of a 4.5 s frame are listed, but the frame stays unexplained.
+  const long = attributeHitch(other, 5040, 4500, timings);
+  expect(long.cause).toBe("other");
+  expect(long.scripts?.map((script) => script.ms)).toEqual([380, 60, 4]);
+  // Scripts outside the frame are not its cause.
+  expect(attributeHitch(other, 3000, 40, timings)).toEqual(other);
+});
+
+test("a recompiled material names the scene change that forced it", () => {
+  // three's key: shader id, each define's name and value, then the scene-dependent parameters.
+  // three's key: shader id, each define's name and value, the scene-dependent parameters from the
+  // precision on, two flag masks, the output colour space and the custom key.
+  const key = (pointLights: number, toneMapping: number, flags = [0, 0], defines = ["STANDARD", ""], custom = "jg-surface:v1:full") => [
+    "physical", ...defines,
+    ...Array.from({ length: 53 }, (_, index) => (index === 0 ? "highp" : index === 36 ? pointLights : index === 49 ? toneMapping : 0)),
+    ...flags, "srgb", custom,
+  ].join();
+  expect(programVariantChange(key(3, 4), key(2, 4), 1)).toBe("point lights 3→2");
+  expect(programVariantChange(key(3, 4), key(3, 0), 1)).toBe("toneMapping 4→0");
+  expect(programVariantChange(key(3, 4), key(3, 4), 1)).toBeNull();
+  // A parked car drawn instanced, then plain once entered; a material made double-sided.
+  expect(programVariantChange(key(3, 4, [1, 0]), key(3, 4, [0, 0]), 1)).toBe("instancing on→off");
+  expect(programVariantChange(key(3, 4, [0, 0]), key(3, 4, [0, 1 << 11]), 1)).toBe("doubleSided off→on");
+  // A define added shifts every later field; the parameters still line up from the precision.
+  expect(programVariantChange(key(3, 4), key(2, 4, [0, 0], ["STANDARD", "", "USE_TINT", "1"]), 2)).toBe("+define USE_TINT, point lights 3→2");
+  // An engine patch chained onto the material's key: the segment that came or went.
+  expect(programVariantChange(key(3, 4), key(3, 4, [0, 0], ["STANDARD", ""], "jg-surface:v1:off|jg-wet:v1"), 1)).toBe("custom key -jg-surface:v1:full +jg-surface:v1:off +jg-wet:v1");
+});
+
+test("a light recompile names the lights that came and went", () => {
+  const lamp = "PointLight #ffaa00 8m in Vent";
+  const spot = "SpotLight (shadow) #ffffff 30m in Headlamp";
+  expect(lightSetChange([spot, lamp], [spot])).toBe(`-1 ${lamp}`);
+  expect(lightSetChange([spot], [spot, lamp, lamp])).toBe(`+2 ${lamp}`);
+  expect(lightSetChange([spot], [spot])).toBeNull();
+  const many = Array.from({ length: 8 }, (_, i) => `PointLight in L${i}`);
+  expect(lightSetChange([], many, 6)).toBe(`${many.slice(0, 6).map((l) => `+1 ${l}`).join("; ")}; 2 more`);
 });

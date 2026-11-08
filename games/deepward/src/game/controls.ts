@@ -1270,5 +1270,7 @@ function depthProbe(ctx: GameContext, v: View) {
     creatures: alive.length, nearestCreature: Number.isFinite(near) ? Math.round(near * 10) / 10 : 99,
     hunting: alive.filter(creature => creature.mode === "attack" || creature.mode === "stalk" || creature.mode === "winding").length,
     luresOut: dive?.thrown.length ?? 0, inked: dive !== null && dive.inked > 0 ? 1 : 0,
+    // Which sheet is open (0 none, 1 stash, 2 cache, 3 fabricator): a sheet takes the keys the field would.
+    panel: v.panel === null ? 0 : ["stash", "cache", "fabricator"].indexOf(v.panel) + 1,
   };
 }

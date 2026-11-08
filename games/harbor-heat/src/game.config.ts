@@ -20,6 +20,7 @@ import { drivingStore, RIVAL_RACER_ID, raceStore } from "./game/streetPlay";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { wantedStore } from "./game/streetPlay";
 import { convoySnapshot } from "./game/runState";
+import { vehicleById } from "./game/entities/vehicles/catalog";
 
 /** The HUD's wanted mirror, read without creating the pursuit slice. */
 function wantedSnapshotOf(ctx: GameContext): { heat: number; stars: number } | null {
@@ -208,7 +209,20 @@ export const game = defineGame({
       const nearest = residentBoardStore.read(ctx)[0];
       const wanted = wantedSnapshotOf(ctx);
       const race = raceStore.read(ctx);
+      // The nearest parked car (police cruisers excluded), so a flow can walk up to one and press E.
+      let car: { x: number; z: number; distance: number } | null = null;
+      if (vehicleId === null && entity !== null) {
+        for (const other of ctx.scene.entity.list()) {
+          if (vehicleById(other.name) === undefined || other.id.startsWith("cruiser_")) continue;
+          const distance = Math.hypot(other.position[0] - entity.position[0], other.position[2] - entity.position[2]);
+          if (car === null || distance < car.distance) car = { x: other.position[0], z: other.position[2], distance };
+        }
+      }
       return {
+        driving: vehicleId === null ? 0 : 1,
+        carX: car?.x ?? 0,
+        carZ: car?.z ?? 0,
+        carDistance: car?.distance ?? -1,
         // A circuit race in progress, and one that ended because the player left the car.
         racing: race?.active === true ? 1 : 0,
         raceForfeit: race?.forfeit != null ? 1 : 0,

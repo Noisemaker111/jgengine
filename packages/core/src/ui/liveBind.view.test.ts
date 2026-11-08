@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { frameBindSubscriberCount, subscribeFrameBind } from "./liveBind.view";
+import { flushFrameBinds, frameBindSubscriberCount, subscribeFrameBind } from "./liveBind.view";
 
 describe("shared frame bind ticker", () => {
   test("multiple subscribers share one registry", () => {
@@ -8,6 +8,8 @@ describe("shared frame bind ticker", () => {
     const unsubA = subscribeFrameBind(() => calls.push("a"));
     const unsubB = subscribeFrameBind(() => calls.push("b"));
     expect(frameBindSubscriberCount()).toBe(2);
+    flushFrameBinds();
+    expect(calls).toEqual(["a", "b"]);
     unsubA();
     expect(frameBindSubscriberCount()).toBe(1);
     unsubB();
@@ -24,9 +26,10 @@ describe("shared frame bind ticker", () => {
       b += 1;
     });
     unsubA();
+    flushFrameBinds();
     expect(frameBindSubscriberCount()).toBe(1);
     unsubB();
     expect(a).toBe(0);
-    expect(b).toBe(0);
+    expect(b).toBe(1);
   });
 });
