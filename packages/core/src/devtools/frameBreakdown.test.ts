@@ -82,6 +82,10 @@ test("a slow frame the loop cannot see into is named by the scripts the browser 
   expect(named.scripts?.map((script) => script.ms)).toEqual([380, 4]);
   // A frame whose record already names a cause keeps it, with the scripts beside it.
   expect(attributeHitch({ cause: "compile", detail: "linked" }, 1420, 430, timings).cause).toBe("compile");
+  // Scripts that ran 444 ms of a 4.5 s frame are listed, but the frame stays unexplained.
+  const long = attributeHitch(other, 5040, 4500, timings);
+  expect(long.cause).toBe("other");
+  expect(long.scripts?.map((script) => script.ms)).toEqual([380, 60, 4]);
   // Scripts outside the frame are not its cause.
   expect(attributeHitch(other, 3000, 40, timings)).toEqual(other);
 });

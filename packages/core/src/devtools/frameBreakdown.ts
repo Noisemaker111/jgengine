@@ -246,7 +246,9 @@ export function attributeHitch(
   scripts.sort((a, b) => b.ms - a.ms);
   const top = scripts.slice(0, 5);
   const longest = top[0];
-  if (base.cause === "other" && longest !== undefined && longest.ms >= 8) {
+  // Like a system or pass, a script is the cause only when it took a quarter of the frame: a 4.5 s
+  // frame with a 23 ms frame callback in it froze somewhere else.
+  if (base.cause === "other" && longest !== undefined && longest.ms >= 8 && longest.ms >= intervalMs / 4) {
     return { cause: "script", detail: `${longest.invoker} ${longest.source} ${longest.ms} ms${longest.layoutMs >= 1 ? ` (forced layout ${longest.layoutMs} ms)` : ""}`, scripts: top };
   }
   return top.length === 0 ? base : { ...base, scripts: top };
