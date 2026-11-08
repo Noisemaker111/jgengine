@@ -968,6 +968,12 @@ export interface PerfRecord extends Omit<PerfReport, "quality"> {
   movement?: { start: readonly number[] | null; end: readonly number[] | null; displacement: number | null; focus: readonly (string | null)[]; errors: string[] };
   /** Where each frame went over the measured window; null when the page has no dev telemetry. */
   breakdown?: FrameBreakdownSummary | null;
+  /**
+   * A second window on the same path with every draw timed on its own (`gpuTiming: "draws"`): the
+   * GPU work per pass and material. `breakdown`'s pass timers also count the GPU waiting on the CPU.
+   * Absent unless asked for (`gpuWork`), and in older records.
+   */
+  gpuWork?: FrameBreakdownSummary | null;
   /** The GPU API that actually drew the window, and the WebGPU backend's warnings when it was that one. */
   backend?: BackendReading;
 }
@@ -1097,6 +1103,30 @@ export interface MeasureOptions {
   size?: { width: number; height: number };
   /** CPU and call rows the breakdown keeps (default 15); a report that sums costs by group needs the tail too. */
   breakdownTop?: number;
+  /** After the frame window, time every draw for a few seconds more and save it as `gpuWork`. */
+  gpuWork?: boolean;
+}
+
+/** Seconds of draw-timed frames a `gpuWork` window keeps. */
+const GPU_WORK_SECONDS = 3;
+
+/**
+ * Time every draw for a window and read it back, then return the page to pass timers. Null when the
+ * page has no breakdown or the window resolved no GPU timer.
+ */
+export async function measureGpuWork(session: CdpSession, top: number, seconds = GPU_WORK_SECONDS): Promise<FrameBreakdownSummary | null> {
+  const switched = await session.evaluate<boolean>(`(() => { const b = globalThis.__jgFrameBreakdown; if (!b || typeof b.gpuTiming !== "function") return false; b.gpuTiming("draws"); return true; })()`);
+  if (switched !== true) return null;
+  try {
+    // A frame or two runs before the switch reaches it, and its timers resolve a few frames late.
+    await session.evaluate(`new Promise((r) => setTimeout(r, 300))`, { awaitPromise: true });
+    await resetBreakdown(session);
+    await session.evaluate(`new Promise((r) => setTimeout(r, ${Math.round(seconds * 1000)}))`, { awaitPromise: true });
+    const summary = await session.evaluate<FrameBreakdownSummary | null>(`globalThis.__jgFrameBreakdown?.summary({ top: ${Math.max(1, Math.floor(top))} }) ?? null`);
+    return summary === null || summary === undefined || summary.gpu === null ? null : summary;
+  } finally {
+    await session.evaluate(`globalThis.__jgFrameBreakdown?.gpuTiming?.("span")`);
+  }
 }
 
 export interface PerfMeasure {
@@ -1241,6 +1271,8 @@ async function measureProvisioned(options: MeasureOptions): Promise<PerfMeasure>
   const windowMs = Date.now() - startedAt;
   const frameDraws = summarizeFrameDraws(drawFrames);
   const breakdown = hasBreakdown ? await readBreakdown(session, undefined, options.breakdownTop) : null;
+  const gpuWork = hasBreakdown && options.gpuWork === true ? await measureGpuWork(session, options.breakdownTop ?? 15) : undefined;
+  if (gpuWork === null) console.error("degraded: the draw-timed GPU window resolved no timers, so the record has pass spans only");
 
   const snapshot = await session.evaluate<{
     frame: { avgSimMs?: number; avgOutsideMs?: number; phases?: unknown[] } | null;
@@ -1346,6 +1378,7 @@ async function measureProvisioned(options: MeasureOptions): Promise<PerfMeasure>
     path: options.path ?? "still",
     movement: movementEvidence(movementStart, movementEnd),
     breakdown,
+    ...(gpuWork === undefined ? {} : { gpuWork }),
   };
 
   const draws = record.render.draws;

@@ -64,9 +64,20 @@ export interface DrawCost {
   triangles: number;
   /** Main-thread milliseconds spent submitting its draws (state changes, uniforms, the draw call). */
   cpuMs: number;
+  /** GPU milliseconds its draws took, each timed on its own; only in a window timed by draws. */
+  gpuMs?: number;
   /** The pass its draws were mostly in (shadow, main, a post pass). */
   pass: string;
 }
+
+/**
+ * How the breakdown times the GPU.
+ * - `span`: one timer around each pass. Cheap, but it also counts the time the GPU sat idle waiting
+ *   for the CPU to submit the pass's commands, so a pass the CPU submits slowly reads as GPU time.
+ * - `draws`: one timer around every draw and clear, summed into its pass. That is the work the GPU
+ *   did; the timers themselves cost CPU, so frame times in such a window are not the player's.
+ */
+export type GpuTiming = "span" | "draws";
 
 /** A frame over {@link HITCH_MS}, with the cause read from what happened inside it. */
 export interface Hitch {
@@ -354,6 +365,8 @@ export interface FrameBreakdownSummary {
   gpu: Spread | null;
   /** Frames with complete GPU timings, or absent in an older saved record. */
   gpuFrames?: number;
+  /** How the window's GPU times were taken; absent in an older record, which timed spans. */
+  gpuTiming?: GpuTiming;
   cpu: NamedCost[];
   passes: NamedCost[];
   /** Calls per frame for observed scopes. Missing on older records. */
@@ -393,6 +406,8 @@ export interface FrameBreakdown {
   callbacks(): Record<string, (...args: never[]) => void>;
   /** Every hitch since install or the last reset, however long ago, each with the scripts that ran in it. */
   session(): HitchSession;
+  /** Switch how the GPU is timed (when given) and return the mode in force; reset after switching. */
+  gpuTiming(mode?: GpuTiming): GpuTiming;
   reset(): void;
   dispose(): void;
 }
@@ -471,7 +486,7 @@ export function hitchCause(record: FrameBreakdownRecord): Pick<Hitch, "cause" | 
 export function summarizeBreakdown(
   records: readonly FrameBreakdownRecord[],
   draws: { objects: readonly DrawCost[]; materials: readonly DrawCost[] },
-  options: { programs?: number | null | undefined; top?: number | undefined; hitches?: number | undefined } = {},
+  options: { programs?: number | null | undefined; top?: number | undefined; hitches?: number | undefined; gpuTiming?: GpuTiming | undefined } = {},
 ): FrameBreakdownSummary {
   const top = options.top ?? 12;
   const resolved = records.flatMap((record) => (record.gpu === null ? [] : [record.gpu]));
@@ -483,7 +498,7 @@ export function summarizeBreakdown(
     if (record.intervalMs > HITCH_MS) hitches.push({ atS: round(elapsed / 1000, 2), ms: round(record.intervalMs, 1), ...hitchCause(record) });
   }
   const lastHeap = records.map((record) => record.heapMb).filter((mb): mb is number => mb !== null).at(-1);
-  const byCost = (a: DrawCost, b: DrawCost) => b.cpuMs - a.cpuMs || b.triangles - a.triangles;
+  const byCost = (a: DrawCost, b: DrawCost) => (b.gpuMs ?? 0) - (a.gpuMs ?? 0) || b.cpuMs - a.cpuMs || b.triangles - a.triangles;
   const n = Math.max(1, records.length);
   const includeMembers = <T extends { name: string }>(items: T[]): T[] => {
     const first = items.slice(0, top);
@@ -497,7 +512,10 @@ export function summarizeBreakdown(
   }).sort((a, b) => b.avg - a.avg);
   const selectedCpu = includeMembers(cpuRows);
   const selectedCalls = includeMembers(callRows);
-  const perFrame = (cost: DrawCost): DrawCost => ({ ...cost, draws: round(cost.draws / n, 1), triangles: Math.round(cost.triangles / n), cpuMs: round(cost.cpuMs / n, 3) });
+  const perFrame = (cost: DrawCost): DrawCost => ({
+    ...cost, draws: round(cost.draws / n, 1), triangles: Math.round(cost.triangles / n), cpuMs: round(cost.cpuMs / n, 3),
+    ...(cost.gpuMs === undefined ? {} : { gpuMs: round(cost.gpuMs / Math.max(1, resolved.length), 3) }),
+  });
   return {
     frames: records.length,
     seconds: round(elapsed / 1000, 1),
@@ -505,6 +523,7 @@ export function summarizeBreakdown(
     work: spread(records.map((record) => record.workMs)),
     gpu: resolved.length === 0 ? null : spread(gpuTotals),
     gpuFrames: resolved.length,
+    gpuTiming: options.gpuTiming ?? "span",
     cpu: selectedCpu,
     passes: namedCosts(resolved, top),
     calls: selectedCalls,
@@ -548,7 +567,7 @@ export function renderBreakdownText(summary: FrameBreakdownSummary, title: strin
     `cpu     p50 ${ms(summary.work.p50)}  p95 ${ms(summary.work.p95)}   main-thread work per frame`,
     summary.gpu === null
       ? "gpu     unavailable or unresolved"
-      : `gpu     p50 ${ms(summary.gpu.p50)}  p95 ${ms(summary.gpu.p95)} (${summary.gpuFrames ?? "?"}/${summary.frames} frames complete)`,
+      : `gpu     p50 ${ms(summary.gpu.p50)}  p95 ${ms(summary.gpu.p95)} (${summary.gpuFrames ?? "?"}/${summary.frames} frames complete; ${summary.gpuTiming === "draws" ? "work: every draw timed on its own" : "span: pass timers, which also count the GPU idle waiting on the CPU"})`,
     summary.gpu === null ? "cost    unavailable without GPU timing" :
       `cost    larger CPU/GPU p50 ${ms(cost)}, p95 ${ms(cost95)}; overlap assumed, not an FPS prediction`,
     "",
@@ -565,7 +584,7 @@ export function renderBreakdownText(summary: FrameBreakdownSummary, title: strin
     "top objects per frame (submit ms, draws, triangles, pass):",
     ...summary.objects.slice(0, 5).map((entry) => `  ${entry.label.padEnd(40)} ${entry.cpuMs.toFixed(3).padStart(7)} ms ${String(entry.draws).padStart(6)} ${entry.triangles} [${entry.pass}]`),
     "top materials per frame:",
-    ...summary.materials.slice(0, 5).map((entry) => `  ${entry.label.padEnd(40)} ${entry.cpuMs.toFixed(3).padStart(7)} ms ${String(entry.draws).padStart(6)} ${entry.triangles} [${entry.pass}]`),
+    ...summary.materials.slice(0, 5).map((entry) => `  ${entry.label.padEnd(40)} ${entry.cpuMs.toFixed(3).padStart(7)} ms ${String(entry.draws).padStart(6)} ${entry.triangles} [${entry.pass}]${entry.gpuMs === undefined ? "" : ` gpu ${entry.gpuMs.toFixed(3)} ms`}`),
     summary.hitches.length === 0 ? "hitches: none over 33 ms" : `hitches over ${HITCH_MS} ms: ${summary.hitches.length}${summary.hitches.length >= 20 ? "+" : ""}`,
     ...summary.hitches.slice(0, 6).map((hitch) => `  ${hitch.atS.toFixed(2).padStart(6)} s ${hitch.ms.toFixed(1).padStart(6)} ms  ${hitch.cause}: ${hitch.detail}`),
   ];

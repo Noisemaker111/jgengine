@@ -242,6 +242,66 @@ test("unresolved and disjoint GPU queries remain unavailable until complete", ()
   }
 });
 
+test("draw timing credits each draw's GPU time to its pass and material, never the CPU wait between them", () => {
+  const prior = Reflect.get(globalThis, "window");
+  Reflect.set(globalThis, "window", { location: { search: "" } });
+  const subscribers: { ref: { current: (state: unknown, delta: number) => void }; priority: number }[] = [];
+  const internal = { subscribers, subscribe(ref: { current: (state: unknown, delta: number) => void }, priority: number) {
+    const entry = { ref, priority }; subscribers.push(entry); subscribers.sort((a, b) => a.priority - b.priority);
+    return () => { const index = subscribers.indexOf(entry); if (index >= 0) subscribers.splice(index, 1); };
+  } };
+  // A fake GPU clock: each draw costs 1 ms of GPU work, and the CPU's submission between draws
+  // leaves the GPU idle for 3 ms, which an open timer counts the way TIME_ELAPSED does.
+  let clock = 0;
+  const begun = new Map<object, number>();
+  const result = new Map<object, number>();
+  let open: object | null = null;
+  const gl = {
+    QUERY_RESULT_AVAILABLE: 1, QUERY_RESULT: 2,
+    getExtension: () => ({ TIME_ELAPSED_EXT: 3, GPU_DISJOINT_EXT: 4 }),
+    createQuery: () => ({}),
+    beginQuery(_target: number, query: object) { if (open !== null) throw new Error("only one timer runs at a time"); open = query; begun.set(query, clock); },
+    endQuery() { if (open === null) throw new Error("no timer running"); result.set(open, (clock - (begun.get(open) ?? clock)) * 1e6); open = null; },
+    deleteQuery() {},
+    getParameter: () => false,
+    getQueryParameter: (query: object, name: number) => name === 1 ? result.has(query) : result.get(query),
+  };
+  const mesh = { name: "Rock", type: "Mesh", id: 1, parent: null };
+  const geometry = { type: "BoxGeometry", index: { count: 36 } };
+  const material = { name: "Stone", type: "MeshStandardMaterial", id: 7 };
+  const renderer = {
+    getContext: () => gl, shadowMap: {}, info: { programs: [] },
+    renderBufferDirect(_c: unknown, _s: unknown, _g: unknown, _m: unknown, _o: unknown, _gr: unknown) { clock += 1; },
+    clear() { clock += 0.5; },
+    render() {
+      renderer.clear();
+      for (let draw = 0; draw < 3; draw += 1) {
+        clock += 3; // CPU submission: the GPU idles
+        renderer.renderBufferDirect(null, null, geometry, material, mesh, null);
+      }
+    },
+  };
+  const store = { getState: () => ({ internal }) };
+  const breakdown = installFrameBreakdown(renderer as never, store as never);
+  internal.subscribe({ current: () => renderer.render() }, 0);
+  const frame = () => { for (const { ref } of subscribers) ref.current({}, 1 / 60); };
+  try {
+    frame(); frame(); frame();
+    expect(breakdown.records()[0]?.gpu?.["main"]).toBe(12.5);
+    breakdown.gpuTiming("draws");
+    breakdown.reset();
+    frame(); frame(); frame();
+    const summary = breakdown.summary();
+    expect(summary.gpuTiming).toBe("draws");
+    expect(breakdown.records()[0]?.gpu?.["main"]).toBe(3.5);
+    expect(summary.materials[0]).toMatchObject({ label: "Stone#7", gpuMs: 3 });
+    expect(breakdown.gpuTiming("span")).toBe("span");
+  } finally {
+    breakdown.dispose();
+    if (prior === undefined) Reflect.deleteProperty(globalThis, "window"); else Reflect.set(globalThis, "window", prior);
+  }
+});
+
 test("shared member identities survive the recorder and source-map report", async () => {
   const prior = Reflect.get(globalThis, "window");
   Reflect.set(globalThis, "window", { location: { search: "?frameMembers=1" } });
