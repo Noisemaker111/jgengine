@@ -26,112 +26,76 @@ function isUnmodelledDrawable(object: THREE.Object3D): boolean {
   return drawable.isPoints === true || drawable.isLine === true || drawable.isLine2 === true;
 }
 
-/**
- * What one scene's prepasses hide, and the graph revision that answer describes. A scene graph
- * changes when a node attaches or detaches, so every watched node bumps `revision` from two
- * listeners; the scene is scanned when the revision moves, not once per pass per frame.
- */
-interface PrepassTrack {
-  revision: number;
-  scanned: number;
-  overlays: THREE.Object3D[];
-  drawables: THREE.Object3D[];
-  listeners: Map<THREE.Object3D, () => void>;
+/** Whether one node, and with it its whole subtree, stays out of a scene prepass. @internal */
+export type PrepassExclusion = (node: THREE.Object3D) => boolean;
+
+/** A depth or AO prepass leaves out marked overlays. @internal */
+export const excludesOverlays: PrepassExclusion = (node) => isPostfxOverlay(node);
+
+/** The AO normal prepass also leaves out points and lines, which three's GTAO pass cannot describe. @internal */
+export const excludesOverlaysAndUnmodelled: PrepassExclusion = (node) => isPostfxOverlay(node) || isUnmodelledDrawable(node);
+
+/** The renderer surface {@link drawPrepassExcluding} reads: three's render lists, which `WebGLRenderer` exposes. @internal */
+export interface PrepassListRenderer {
+  renderLists: { get(scene: THREE.Object3D, renderCallDepth: number): PrepassRenderList };
 }
 
-const tracks = new WeakMap<THREE.Object3D, PrepassTrack>();
-
-function unwatchAll(track: PrepassTrack, node: THREE.Object3D): void {
-  track.listeners.get(node)?.();
-  track.listeners.delete(node);
-  for (const child of node.children) unwatchAll(track, child);
+/** What a prepass drops from three's render list for one scene render. @internal */
+export interface PrepassRenderList {
+  opaque: { object: THREE.Object3D }[];
+  transmissive: { object: THREE.Object3D }[];
+  transparent: { object: THREE.Object3D }[];
+  finish(): void;
 }
 
-function watch(track: PrepassTrack, node: THREE.Object3D): void {
-  if (track.listeners.has(node)) return;
-  const added = ({ child }: THREE.Object3DEventMap["childadded"]) => {
-    track.revision += 1;
-    watch(track, child);
-  };
-  const removed = ({ child }: THREE.Object3DEventMap["childremoved"]) => {
-    track.revision += 1;
-    unwatchAll(track, child);
-  };
-  node.addEventListener("childadded", added);
-  node.addEventListener("childremoved", removed);
-  track.listeners.set(node, () => {
-    node.removeEventListener("childadded", added);
-    node.removeEventListener("childremoved", removed);
-  });
-  for (const child of node.children) watch(track, child);
+function excludedUnder(object: THREE.Object3D, excluded: PrepassExclusion): boolean {
+  for (let node: THREE.Object3D | null = object; node !== null; node = node.parent) if (excluded(node)) return true;
+  return false;
 }
 
-function trackFor(scene: THREE.Object3D): PrepassTrack {
-  const existing = tracks.get(scene);
-  if (existing !== undefined) return existing;
-  const track: PrepassTrack = { revision: 0, scanned: -1, overlays: [], drawables: [], listeners: new Map() };
-  tracks.set(scene, track);
-  watch(track, scene);
-  return track;
-}
-
-function rescan(scene: THREE.Object3D, track: PrepassTrack): void {
-  track.overlays.length = 0;
-  track.drawables.length = 0;
-  scene.traverse((object) => {
-    if (isPostfxOverlay(object)) track.overlays.push(object);
-    else if (isUnmodelledDrawable(object)) track.drawables.push(object);
-  });
-  track.scanned = track.revision;
-}
-
-function hideAll(objects: readonly THREE.Object3D[], out: THREE.Object3D[]): void {
-  for (const object of objects) {
-    if (!object.visible) continue;
-    object.visible = false;
-    out.push(object);
+function dropExcluded(items: { object: THREE.Object3D }[], excluded: PrepassExclusion): void {
+  let kept = 0;
+  for (let index = 0; index < items.length; index += 1) {
+    const item = items[index];
+    if (item === undefined || excludedUnder(item.object, excluded)) continue;
+    items[kept] = item;
+    kept += 1;
   }
+  items.length = kept;
 }
 
 /**
- * Hide every currently visible object `scene`'s prepasses must skip, recording what was hidden into
- * `out` (cleared first, no allocation on the hot path) so {@link restorePostfxOverlays} can undo
- * exactly that set. `withUnmodelled` also hides points and lines, which three's GTAO pass excludes
- * from its normal buffer but a depth prepass keeps.
+ * Draw a prepass of `scene` without what `excluded` matches, or anything under it. The prepass
+ * keeps three's own walk of the scene and drops the excluded draws from the render list it built,
+ * before it sorts or draws: the same draws, in the same order, as hiding those subtrees would leave.
  *
- * The set is cached and rescanned only when the scene graph changes: walking the whole scene per
- * prepass cost 2.4 ms/frame in Drift Foundry and 0.6 ms/frame in Harbor Heat, and the graph changes
- * when something mounts, not between frames.
+ * Hiding them meant finding them first. That cost a walk of the whole scene per prepass and a pair of
+ * graph listeners on every node to know when to walk again; Scrap Signal's graph changes every frame,
+ * so it walked 10,800 nodes twice a frame, and the listeners changed the shape of every object three's
+ * own walks read. This looks only at the draws three already collected, and their ancestors.
  * @internal
  */
-export function hidePostfxOverlays(scene: THREE.Object3D, out: THREE.Object3D[], withUnmodelled = false): void {
-  out.length = 0;
-  const track = trackFor(scene);
-  if (track.scanned !== track.revision) rescan(scene, track);
-  hideAll(track.overlays, out);
-  if (withUnmodelled) hideAll(track.drawables, out);
-}
-
-/**
- * Restore visibility for the objects hidden by {@link hidePostfxOverlays} and clear the list.
- * @internal
- */
-export function restorePostfxOverlays(hidden: THREE.Object3D[]): void {
-  for (const object of hidden) object.visible = true;
-  hidden.length = 0;
-}
-
-/**
- * Drop the cached set and its listeners for a scene that is going away, so a torn-down world does
- * not keep its node graph reachable through this module.
- * @internal
- */
-export function releasePostfxOverlayTracking(scene: THREE.Object3D): void {
-  const track = tracks.get(scene);
-  if (track === undefined) return;
-  tracks.delete(scene);
-  for (const off of track.listeners.values()) off();
-  track.listeners.clear();
-  track.overlays.length = 0;
-  track.drawables.length = 0;
+export function drawPrepassExcluding<T>(renderer: PrepassListRenderer, scene: THREE.Object3D, excluded: PrepassExclusion, render: () => T): T {
+  const lists = renderer.renderLists;
+  const get = lists.get;
+  const patched: { list: PrepassRenderList; finish: () => void }[] = [];
+  lists.get = (drawn, depth) => {
+    const list = get.call(lists, drawn, depth);
+    if (drawn !== scene || patched.some((entry) => entry.list === list)) return list;
+    const finish = list.finish;
+    patched.push({ list, finish });
+    list.finish = () => {
+      finish();
+      dropExcluded(list.opaque, excluded);
+      dropExcluded(list.transmissive, excluded);
+      dropExcluded(list.transparent, excluded);
+    };
+    return list;
+  };
+  try {
+    return render();
+  } finally {
+    lists.get = get;
+    for (const { list, finish } of patched) list.finish = finish;
+  }
 }

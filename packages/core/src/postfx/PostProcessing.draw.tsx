@@ -48,25 +48,27 @@ import { createGradePass } from "./gradeShader.draw";
 import { MotionBlurPass } from "./motionBlurPass.draw";
 import { SsrPass } from "./ssrPass.draw";
 import { postfxTierPolicy } from "./postfxTierPolicy";
-import { releasePostfxOverlayTracking, restorePostfxOverlays } from "./postfxOverlay.draw";
+import { excludesOverlays, excludesOverlaysAndUnmodelled, type PrepassExclusion } from "./postfxOverlay.draw";
 import { RevealFadePass, RevealSnapshotPass, stepRevealFade } from "./revealFade.draw";
-import { hideForOutlinePrepass, StylizePass } from "./stylizePass.draw";
+import { excludesFromOutline, StylizePass } from "./stylizePass.draw";
 import { renderShadowlessPrepass } from "./shadowPrepass.draw";
 import { JitteredRenderPass, TemporalAaPass } from "./temporalAaPass.draw";
 
 /**
  * GTAO renders the scene with an `overrideMaterial` normal/depth prepass when it has no GBuffer,
  * which stamps transparent overlay quads (additive VFX sprites, telegraphs, debug gizmos) into the
- * AO buffers as opaque squares — the AO composite then multiplies them toward black. Hide marked
- * overlay subtrees for the whole pass: the beauty buffer it composites over was already rendered
- * with them in. A chain whose AO reads the beauty pass's own depth buffer draws no prepass, so
- * nothing is stamped and the cached hide list is empty.
+ * AO buffers as opaque squares — the AO composite then multiplies them toward black. The prepass
+ * leaves marked overlay subtrees out: the beauty buffer it composites over was already rendered
+ * with them in. A chain whose AO reads the beauty pass's own depth buffer draws no prepass.
  */
+const gtaoExcludes: PrepassExclusion = excludesOverlaysAndUnmodelled;
+const gtaoAndOutlineExcludes: PrepassExclusion = (node) => excludesOverlaysAndUnmodelled(node) || excludesFromOutline(node);
+
 /**
  * GTAO's own `_overrideVisibility` walks the whole scene to hide points and lines before its normal
- * render. `renderShadowlessPrepass` already hides the same set from a cached list, so that walk is
- * skipped here; three only fills its cache with objects it hid, so leaving it empty restores nothing.
- * The hooks are optional: a three version without them leaves the walk in place.
+ * render. `renderShadowlessPrepass` already leaves the same set out of the prepass's draws, so that
+ * walk is skipped here; three only fills its cache with objects it hid, so leaving it empty restores
+ * nothing. The hooks are optional: a three version without them leaves the walk in place.
  * @internal
  */
 export type GtaoVisibilityHooks = {
@@ -91,9 +93,7 @@ export function skipGtaoVisibilityWalk(pass: object): boolean {
 const AO_RESOLUTION = 0.5;
 
 class OverlayAwareGTAOPass extends GTAOPass {
-  private readonly hiddenOverlays: THREE.Object3D[] = [];
-  private readonly hiddenForOutline: THREE.Object3D[] = [];
-  /** Set when the outline pass reads this prepass: it then also hides what an outline must not see. */
+  /** Set when the outline pass reads this prepass: it then also leaves out what an outline must not see. */
   private outlineReads = false;
 
   /** The normal/depth prepass this pass draws each frame, for the outline pass to read instead of drawing its own; null when AO reads the beauty depth. */
@@ -138,22 +138,13 @@ class OverlayAwareGTAOPass extends GTAOPass {
       super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive);
       return;
     }
-    renderShadowlessPrepass(renderer, this.scene, this.hiddenOverlays, () => {
-      if (!this.outlineReads) return super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive);
-      hideForOutlinePrepass(this.scene, this.hiddenForOutline);
-      try {
-        return super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive);
-      } finally {
-        restorePostfxOverlays(this.hiddenForOutline);
-      }
-    }, true);
+    renderShadowlessPrepass(renderer, this.scene, this.outlineReads ? gtaoAndOutlineExcludes : gtaoExcludes, () =>
+      super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive));
   }
 }
 
 /** DOF's depth prepass has the same `overrideMaterial` overlay-stamping problem as GTAO. */
 class OverlayAwareBokehPass extends BokehPass {
-  private readonly hiddenOverlays: THREE.Object3D[] = [];
-
   override render(
     renderer: THREE.WebGLRenderer,
     writeBuffer: THREE.WebGLRenderTarget,
@@ -161,7 +152,7 @@ class OverlayAwareBokehPass extends BokehPass {
     deltaTime: number,
     maskActive: boolean,
   ): void {
-    renderShadowlessPrepass(renderer, this.scene, this.hiddenOverlays, () =>
+    renderShadowlessPrepass(renderer, this.scene, excludesOverlays, () =>
       super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive));
   }
 }
@@ -659,7 +650,6 @@ export function PostProcessing({
       stopped = true;
       unwarm();
       disposeGraph(graph);
-      releasePostfxOverlayTracking(scene);
       builtRef.current = null;
     };
   }, [gl, scene, camera, config, quality, stages, immediate]);
