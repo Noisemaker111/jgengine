@@ -65,6 +65,35 @@ export function markBatchSafe(hook: CompileHook, own: { signature?: string; user
   for (const key of own.userData ?? []) hookUserData.add(key);
 }
 
+let ownHooks = 0;
+
+/**
+ * {@link markBatchSafe} for a hook that keeps its uniforms in its own closure (a terrain's maps and
+ * sweeps): only materials sharing this very hook, one material or its clones, share a batched draw.
+ * @internal
+ */
+export function markBatchSafeOwnHook(hook: CompileHook): void {
+  ownHooks += 1;
+  markBatchSafe(hook, { signature: `own#${ownHooks}` });
+}
+
+/**
+ * The model matrix of the vertex being drawn, for a compile hook that needs world space before three's
+ * `worldpos_vertex`: the batch's per-instance matrix under a `BatchedMesh`, the instance's under an
+ * `InstancedMesh`. Declares `jgModelMatrix`; insert it after `#include <batching_vertex>`'s place, at
+ * `beginnormal_vertex` or later.
+ * @internal
+ */
+export const MODEL_MATRIX_GLSL = /* glsl */ `
+mat4 jgModelMatrix = modelMatrix;
+#ifdef USE_BATCHING
+  jgModelMatrix = jgModelMatrix * batchingMatrix;
+#endif
+#ifdef USE_INSTANCING
+  jgModelMatrix = jgModelMatrix * instanceMatrix;
+#endif
+`;
+
 /** A batch-safe hook's signature, or undefined for a hook not declared batch-safe. @internal */
 export function batchSafeSignature(hook: CompileHook): string | undefined {
   return batchSafe.get(hook);
@@ -94,6 +123,9 @@ export function withoutCompileLayers(material: THREE.Material): THREE.Material {
   const copy = material.clone();
   copy.onBeforeCompile = ownCompileHook(material);
   copy.customProgramCacheKey = ownCacheKey(material);
+  // three's standard and physical copy() reset defines to their own, which dropped a material's
+  // shader switches (a terrain's paint layers and surface classes) from every batch drawn with it.
+  if (material.defines !== undefined) copy.defines = { ...material.defines };
   for (const name of Object.keys(copy.defines ?? {})) if (layerDefines.has(name)) delete copy.defines?.[name];
   for (const key of Object.keys(copy.userData)) if (layerUserData.has(key)) delete copy.userData[key];
   return copy;
