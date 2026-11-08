@@ -227,6 +227,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/rebind-inventory.proof.ts",
+      "proves": [
+        "settings.controls"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/refine-tier.proof.ts",
       "proves": [
         "crafting.refine-tier"
