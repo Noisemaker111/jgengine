@@ -7,6 +7,7 @@ import { isPostfxOverlay } from "@jgengine/core/postfx/postfxOverlay.draw";
 import { giveStableShadowDepth, isStableShadowDepth } from "@jgengine/core/lighting/shadowCasters.draw";
 import { Lingering } from "@jgengine/core/run/lingering";
 import { visitShownMeshes } from "@jgengine/core/visibility/culledTransforms.draw";
+import { DrawBatchMesh } from "./drawBatchMesh.draw";
 import { batchableGeometry, geometryLayout, materialSignature, mirrorSourceTextures } from "./staticDrawPool.draw";
 
 /**
@@ -50,7 +51,7 @@ export function isNeutralRenderHook(hook: RenderHook): boolean {
 
 interface BatchGroup {
   readonly key: string;
-  readonly mesh: THREE.BatchedMesh;
+  readonly mesh: DrawBatchMesh;
   readonly material: THREE.Material;
   /** Its instances turn their faces (negative scale); the batch's own matrix carries the mirror. */
   readonly mirrored: boolean;
@@ -225,6 +226,9 @@ export interface DrawBatchStats {
   drawn: number;
   /** Instances shown across every batch. */
   shown: number;
+  /** Draw lists the batches built and uploaded since they were made (a build reuses the last one when nothing changed). */
+  builds: number;
+  uploads: number;
   /** Meshes on their own draw by the first rule each broke (`settling` for a material whose look just changed). */
   reasons: Record<string, number>;
 }
@@ -464,13 +468,17 @@ export class DrawBatcher implements ShownMeshVisitor {
     for (const entry of this.list) if (entry.group !== null) batched += 1;
     let drawn = 0;
     let shown = 0;
+    let builds = 0;
+    let uploads = 0;
     for (const group of this.groups.values()) {
       if (group.shown > 0) drawn += 1;
       shown += group.shown;
+      builds += group.mesh.counts.builds;
+      uploads += group.mesh.counts.uploads;
     }
     const reasons: Record<string, number> = {};
     for (const entry of this.list) if (entry.group === null) reasons[entry.reason] = (reasons[entry.reason] ?? 0) + 1;
-    return { batched, single: this.list.length - batched, batches: this.groups.size, drawn, shown, reasons };
+    return { batched, single: this.list.length - batched, batches: this.groups.size, drawn, shown, builds, uploads, reasons };
   }
 
   /** Give every mesh its own draw back and free every batch. */
@@ -599,7 +607,7 @@ export class DrawBatcher implements ShownMeshVisitor {
       this.materials.set(materialKey, shared);
     }
     shared.refs += 1;
-    const batch = new THREE.BatchedMesh(64, vertexCapacity, indexCapacity, shared.material);
+    const batch = new DrawBatchMesh(64, vertexCapacity, indexCapacity, shared.material);
     batch.castShadow = mesh.castShadow;
     batch.receiveShadow = mesh.receiveShadow;
     batch.renderOrder = mesh.renderOrder;
