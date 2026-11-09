@@ -1,14 +1,18 @@
 /**
  * The engine-owned frame loop: one rAF that steps an ordered list of draw
  * systems and renders a plain three.js scene. This is what r3f's Canvas +
- * useFrame gave the shell, without React: systems are registered in mount
- * order (each feature's `*.draw` file becomes one), the camera and renderer
- * are owned here, and the frameloop modes the shell used (`always`, `demand`,
- * `never` plus the fps cap and canvas cover) are first-class loop state.
+ * useFrame gave the shell, without React: systems are registered with a
+ * priority (lower runs first, the render happens once after all of them —
+ * r3f's subscriber order), the camera and renderer are owned here, and the
+ * frameloop modes the shell used (`always`, `demand`, `never` plus the fps
+ * cap and canvas cover) are first-class loop state.
  *
  * A system is anything with a per-frame `frame(state)`; `mount`/`dispose`
  * bracket its three.js objects' lifetime. Systems never see React, never see
- * the DOM, and read their own stores through closures.
+ * the DOM, and read their own stores through closures. Per-instance frame
+ * work that many mounted copies share (the old `useSharedFrame` /
+ * `useFrameWhile` case) joins `loop.tasks` at a priority instead of becoming
+ * one draw each.
  */
 import * as THREE from "three";
 
@@ -37,14 +41,26 @@ export interface EngineFrameState {
   readonly covered: boolean;
 }
 
-/** One ordered participant in the frame. Register in the order frames should run. */
+/** One ordered participant in the frame. Lower `priority` runs first; render happens after all. */
 export interface EngineDraw {
+  /** r3f `useFrame` priority: subscribers run ascending, then one render. Default 0. */
+  readonly priority?: number;
   /** Once, after the scene exists and before the first frame. Add objects here. */
   mount?(state: EngineFrameState): void;
-  /** Every rendered frame, in registration order. */
+  /** Every rendered frame, in priority then registration order. */
   frame(state: EngineFrameState): void;
   /** Once, on teardown. Remove objects and free GPU resources here. */
   dispose?(state: EngineFrameState): void;
+}
+
+/** A shared per-priority task list: many small frame callbacks inside one draw (useSharedFrame's shape). */
+export interface EngineFrameBoard {
+  /**
+   * Run `task(state, delta)` on every rendered frame at `priority`, after the
+   * draws at lower priorities and before higher ones. Tasks at one priority
+   * run in join order. Returns the leave; the draw unsubscribes when empty.
+   */
+  join(priority: number, task: (state: EngineFrameState, delta: number) => void): () => void;
 }
 
 export interface EngineLoopOptions {
@@ -75,7 +91,9 @@ export interface EngineLoop {
   readonly scene: THREE.Scene;
   readonly camera: THREE.Camera;
   readonly renderer: THREE.WebGLRenderer;
-  /** Register a draw system; returns its unregister. Later registrations run later. */
+  /** Shared frame tasks grouped by priority (the useSharedFrame/useFrameWhile seam). */
+  readonly tasks: EngineFrameBoard;
+  /** Register a draw system; returns its unregister. Ordered by priority, then registration. */
   add(draw: EngineDraw): () => void;
   /** Demand mode: schedule a rendered frame. */
   invalidate(): void;
@@ -151,6 +169,7 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
   let paceStart: number | null = null;
   /** Scene-clock seconds the last capped frame showed; the sim must not run slow-mo under a cap. */
   let pacedElapsed: number | null = null;
+  let paceBase: number | null = null;
 
   const clock = new THREE.Clock();
   const state = {
@@ -205,8 +224,8 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
         const admitted = paceFrame(now, paceAnchor, fpsLimit);
         if (admitted !== null) {
           paceAnchor = admitted;
-          const base = pacedStartBase();
-          advance(base + (now - paceStart) / 1000);
+          if (paceBase === null) paceBase = clock.elapsedTime;
+          advance(paceBase + (now - paceStart) / 1000);
         }
       } else {
         advance();
@@ -215,24 +234,61 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
     if (frameloop !== "never") raf = requestAnimationFrame(frame);
   }
 
-  let paceBase: number | null = null;
-  function pacedStartBase(): number {
-    if (paceBase === null) paceBase = clock.elapsedTime;
-    return paceBase;
+  /** Insert keeping `draws` sorted by priority, stable within one priority. */
+  function insertDraw(draw: EngineDraw): number {
+    const priority = draw.priority ?? 0;
+    let index = draws.length;
+    while (index > 0 && (draws[index - 1]!.priority ?? 0) > priority) index -= 1;
+    draws.splice(index, 0, draw);
+    return index;
   }
+
+  function removeDraw(draw: EngineDraw): void {
+    const index = draws.indexOf(draw);
+    if (index >= 0) draws.splice(index, 1);
+  }
+
+  // One group draw per priority level, shared by every join at that level —
+  // the useSharedFrame shape: N callers pay one frame callback, not N.
+  const sharedTasks = new Map<number, { tasks: Set<(state: EngineFrameState, delta: number) => void>; draw: EngineDraw }>();
+  const sharedBoard: EngineFrameBoard = {
+    join(priority, task) {
+      let group = sharedTasks.get(priority);
+      if (group === undefined) {
+        const tasks = new Set<(state: EngineFrameState, delta: number) => void>();
+        const draw: EngineDraw = {
+          priority,
+          frame(state) {
+            for (const each of tasks) each(state, state.delta);
+          },
+        };
+        group = { tasks, draw };
+        sharedTasks.set(priority, group);
+        insertDraw(draw);
+      }
+      const joined = group;
+      joined.tasks.add(task);
+      return () => {
+        joined.tasks.delete(task);
+        if (joined.tasks.size > 0 || sharedTasks.get(priority) !== joined) return;
+        sharedTasks.delete(priority);
+        removeDraw(joined.draw);
+      };
+    },
+  };
 
   const loop: EngineLoop = {
     state,
     scene,
     camera,
     renderer,
+    tasks: sharedBoard,
     add(draw) {
-      draws.push(draw);
+      insertDraw(draw);
       draw.mount?.(state);
       invalidated = true;
       return () => {
-        const index = draws.indexOf(draw);
-        if (index >= 0) draws.splice(index, 1);
+        removeDraw(draw);
         draw.dispose?.(state);
       };
     },
