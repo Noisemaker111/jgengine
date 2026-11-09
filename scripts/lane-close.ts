@@ -325,6 +325,12 @@ function closeHeldLane(args: LaneCloseArgs, branch: string, io: LaneIo): number 
   const github = io.github?.(repo) ?? gitHub((ghArgs) => io.sh(["gh", ...ghArgs], false), repo);
   const files = filesChanged(io);
 
+  // Tally benchmarks the tasks this diff touches on base and head and puts the
+  // numbers in the PR body. It never fails the lane; problems print `degraded:`.
+  stage(`lane:close: ${branch} — tally`);
+  const tally = io.sh(["run", "scripts/tally-pr.ts", String(pr)], true);
+  if (tally.status !== 0) io.err(`lane:close: degraded: tally exited ${tally.status}; benchmark skipped`);
+
   for (let attempt = 1; attempt <= MERGE_ATTEMPTS; attempt += 1) {
     const proof = proveHead(verifiedTree, scoredPaths, io);
     if (proof !== null) {
