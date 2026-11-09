@@ -41,22 +41,44 @@ pub struct Rewritten {
     pub object_size_hint: u32,
 }
 
-/// Uniform names three.js writes per drawn object (WebGLRenderer's per-object uniform block):
-/// they change every draw, so the backend restages them per pass. Everything else a program
-/// declares is shared state that changes at most once per frame. A name missing here only costs
-/// extra restaging, never correctness: an object uniform left in the shared block still renders
-/// right as long as its writes flush between submits.
-const OBJECT_UNIFORMS: &[&str] = &[
-    "modelMatrix",
-    "modelViewMatrix",
-    "normalMatrix",
-    "bindMatrix",
-    "bindMatrixInverse",
-    "morphTargetBaseInfluence",
-    "morphTargetInfluences",
-    "receiveShadow",
-    "center",
-    "_gl_DrawID",
+/// Uniform names that stay constant while a frame's draws run — the camera, the fog, the lights
+/// and the renderer's own state — so the backend can keep their bytes resident and upload only
+/// changed spans. Everything else (object transforms, morph weights, material values, custom
+/// uniforms) goes to the per-object block, which restages whenever a draw changes it: putting a
+/// per-draw uniform in the shared block would force a submit between the draws that see different
+/// values, so the default is object and only names known frame-constant belong here.
+const SHARED_UNIFORMS: &[&str] = &[
+    "projectionMatrix",
+    "viewMatrix",
+    "cameraPosition",
+    "isOrthographic",
+    "logDepthBufFC",
+    "toneMappingExposure",
+    "fogColor",
+    "fogDensity",
+    "fogNear",
+    "fogFar",
+    "directionalLights",
+    "pointLights",
+    "spotLights",
+    "hemisphereLights",
+    "rectAreaLights",
+    "sunLights",
+    "directionalLightShadows",
+    "pointLightShadows",
+    "spotLightShadows",
+    "sunLightShadows",
+    "ambientLightColor",
+    "lightProbe",
+    "probesMin",
+    "probesMax",
+    "probesResolution",
+    "directionalShadowMatrix",
+    "pointShadowMatrix",
+    "spotLightMatrix",
+    "sunShadowMatrix",
+    "sunShadowCascade",
+    "clippingPlanes",
 ];
 
 fn sampler_info(ty: &str) -> Option<(&'static str, &'static str, &'static str, SamplerKind, TextureDim)> {
@@ -567,7 +589,7 @@ pub fn rewrite(vert: &str, frag: &str, split: bool) -> Result<Rewritten, String>
     let mut shared_hint = 0u32;
     let mut object_hint = 0u32;
     for (ty, name, arr) in &block {
-        let (members, hint) = if split && OBJECT_UNIFORMS.contains(&name.as_str()) {
+        let (members, hint) = if split && !SHARED_UNIFORMS.contains(&name.as_str()) {
             (&mut object_members, &mut object_hint)
         } else {
             (&mut shared_members, &mut shared_hint)
