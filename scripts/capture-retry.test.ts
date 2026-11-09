@@ -26,6 +26,10 @@ describe("isStaleCaptureFailure", () => {
     expect(isStaleCaptureFailure("capture error: timed out waiting for canvas, [data-jg-frame-ready]")).toBe(true);
   });
 
+  test("matches Vite failing a module import while its server restarts", () => {
+    expect(isStaleCaptureFailure("capture error: TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:4785/@fs/C:/x/games/drift-foundry/src/index.tsx")).toBe(true);
+  });
+
   test("does not match deterministic config errors a reload cannot fix", () => {
     expect(isStaleCaptureFailure('unknown capture state "boss" for the-robots')).toBe(false);
     expect(isStaleCaptureFailure('capture command "character.pick" is not registered')).toBe(false);

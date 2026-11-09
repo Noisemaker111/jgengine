@@ -33,6 +33,9 @@ export const STALE_FAILURE_MARKERS: readonly string[] = [
   // (its tree moved) served a cold module graph to a PC at 80% CPU, and the reload finds it warm
   // (perf ab, harbor-heat, 2026-11-09).
   "timed out waiting for canvas",
+  // Vite's own symptom of a server restarting or re-optimizing dependencies under the page; the module
+  // served a moment later (perf ab, drift-foundry, 2026-11-09).
+  "failed to fetch dynamically imported module",
 ];
 
 /**
