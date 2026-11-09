@@ -521,7 +521,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## character-crowd — draw animated or static characters as batched instanced draws instead of posing each skeleton
 
-- `CharacterCrowd` (function) · `import { CharacterCrowd } from "@jgengine/core/anim/CharacterCrowd.draw"`
+- `CharacterCrowd` (const) · `import { CharacterCrowd } from "@jgengine/core/anim/CharacterCrowd.draw"`
 
 ## character-motion — switch foot IK, glance and locomotion per game, model or entity
 
@@ -2319,7 +2319,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## tween-number — rolling number readout with an up/down delta flash
 
-- `TweenNumber` (function) · `import { TweenNumber } from "@jgengine/core/anim/tweenNumber.view"`
+- `TweenNumber` (const) · `import { TweenNumber } from "@jgengine/core/anim/tweenNumber.view"`
 
 ## tweened-value — animate a displayed number toward its target, honouring reduced motion
 

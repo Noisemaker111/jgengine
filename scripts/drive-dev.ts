@@ -402,6 +402,7 @@ async function driveLocked(daemon: ShootDaemonState | null, timed: boolean): Pro
           await markTraceAnchor(session);
         }
         const cpuStartedAtMs = args.cpu ? await startCpuProfile(session) : 0;
+        if (args.renders && args.rendersSettleMs > 0) await new Promise((r) => setTimeout(r, args.rendersSettleMs));
         if (args.renders && !(await resetRenderCounter(session))) {
           throw new Error("drive: --renders found no render counter on the page; another React DevTools hook was installed first");
         }

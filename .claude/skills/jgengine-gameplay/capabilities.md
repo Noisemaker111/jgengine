@@ -375,7 +375,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## kill-feed — vertical event/kill-feed ticker rendering a core event-ticker as a fading, newest-on-top stack of per-kind iconned, accent-colored rows over HudTheme tokens
 
-- `KillFeed` (function) · `import { KillFeed } from "@jgengine/core/feed/killFeed.view"`
+- `KillFeed` (const) · `import { KillFeed } from "@jgengine/core/feed/killFeed.view"`
 
 ## lap-splits — per-lap durations from a cumulative split book
 
@@ -563,7 +563,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## objective-banner-host — full-screen overlay that renders a core objective-banner controller as a fly-in / hold / fade-out centered title + subtitle stamp, theme- and per-kind-skinnable
 
-- `ObjectiveBannerHost` (function) · `import { ObjectiveBannerHost } from "@jgengine/core/mission/objectiveBanner.view"`
+- `ObjectiveBannerHost` (const) · `import { ObjectiveBannerHost } from "@jgengine/core/mission/objectiveBanner.view"`
 
 ## objectives — check progress of a threshold objective against a live metric
 
@@ -1045,7 +1045,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useDialogueRun` (function) · `import { useDialogueRun } from "@jgengine/core/dialogue/dialogueView.view"`
 
-## use-event-ticker — React hook binding an event-ticker — re-renders per frame so entries fade and drop live, returning the current newest-first views
+## use-event-ticker — React hook binding an event-ticker — re-renders when entries arrive or expire, returning the current newest-first views
 
 - `useEventTicker` (function) · `import { useEventTicker } from "@jgengine/core/feed/killFeed.view"`
 

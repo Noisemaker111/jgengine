@@ -263,7 +263,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## game-slider — drawn game slider (groove or pips) with keyboard, drag and screen reader support, no browser range input
 
-- `GameSlider` (function) · `import { GameSlider } from "@jgengine/react"`
+- `GameSlider` (const) · `import { GameSlider } from "@jgengine/react"`
 
 ## group-credits — turn a flat list of credited things into ordered credit sections
 
@@ -291,11 +291,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## hud-canvas — the HUD root surface — design-resolution scaling plus live panel-placement editing (F2+C)
 
-- `HudCanvas` (function) · `import { HudCanvas } from "@jgengine/react"`
+- `HudCanvas` (const) · `import { HudCanvas } from "@jgengine/react"`
 
 ## hud-clock — in-game time-of-day readout bound to the sim clock
 
-- `Clock` (function) · `import { Clock } from "@jgengine/react"`
+- `Clock` (const) · `import { Clock } from "@jgengine/react"`
 
 ## hud-coins — currency counter widget bound to a currency id
 
@@ -303,7 +303,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## hud-fade — HUD group that fades when idle and returns when its values change
 
-- `HudFade` (function) · `import { HudFade } from "@jgengine/react"`
+- `HudFade` (const) · `import { HudFade } from "@jgengine/react"`
 
 ## hud-frame — optional framed panel skins (glass/plate/retro/themed) — games own product chrome
 
@@ -311,7 +311,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## hud-hotbar — optional inventory hotbar building block — games own slot chrome
 
-- `Hotbar` (function) · `import { Hotbar } from "@jgengine/react"`
+- `Hotbar` (const) · `import { Hotbar } from "@jgengine/react"`
 
 ## hud-icons — painted-icon treatment for hotbar/action slots — glyph + gradient + count badge
 
@@ -339,7 +339,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## hud-panel — anchored HUD slot — drop any widget in a named, player-movable panel
 
-- `HudPanel` (function) · `import { HudPanel } from "@jgengine/react"`
+- `HudPanel` (const) · `import { HudPanel } from "@jgengine/react"`
 
 ## hud-slots — a play HUD of edge-pinned, player-movable panels in one component
 
@@ -400,7 +400,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## kill-feed — vertical event/kill-feed ticker rendering a core event-ticker as a fading, newest-on-top stack of per-kind iconned, accent-colored rows over HudTheme tokens
 
-- `KillFeed` (function) · `import { KillFeed } from "@jgengine/react"`
+- `KillFeed` (const) · `import { KillFeed } from "@jgengine/react"`
 
 ## kit-action-glyph — the bound key, pad button or tap label for an action, live, for any kit part
 
@@ -408,23 +408,23 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## kit-action-prompt — a device-correct "press X to do Y" prompt (keyboard key, pad button, tap) in the active UI kit
 
-- `KitActionPrompt` (function) · `import { KitActionPrompt } from "@jgengine/react"`
+- `KitActionPrompt` (const) · `import { KitActionPrompt } from "@jgengine/react"`
 
 ## kit-banner — a phase-change banner (day, wave, run start) in the active UI kit, shown when its cue changes
 
-- `KitBanner` (function) · `import { KitBanner } from "@jgengine/react"`
+- `KitBanner` (const) · `import { KitBanner } from "@jgengine/react"`
 
 ## kit-button — a button drawn by the active UI kit, or made of a material (steel, wood, enamel…), with UI cue sounds
 
-- `KitButton` (function) · `import { KitButton } from "@jgengine/react"`
+- `KitButton` (const) · `import { KitButton } from "@jgengine/react"`
 
 ## kit-count — a HUD resource readout — a number and its word, with an optional rate line
 
-- `KitCount` (function) · `import { KitCount } from "@jgengine/core/hud/kitHud.view"`
+- `KitCount` (const) · `import { KitCount } from "@jgengine/core/hud/kitHud.view"`
 
 ## kit-counts — a row of HUD resource counts
 
-- `KitCounts` (function) · `import { KitCounts } from "@jgengine/core/hud/kitHud.view"`
+- `KitCounts` (const) · `import { KitCounts } from "@jgengine/core/hud/kitHud.view"`
 
 ## kit-frame-cut — clip path for an angled or irregular frame silhouette (chamfer, banner, ticket, torn…)
 
@@ -436,47 +436,47 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## kit-hint — a HUD hint strip for the current tool or problem, with the phase banner
 
-- `KitHint` (function) · `import { KitHint } from "@jgengine/core/hud/kitHud.view"`
+- `KitHint` (const) · `import { KitHint } from "@jgengine/core/hud/kitHud.view"`
 
 ## kit-menu — a verb list drawn by the active UI kit over shared menu navigation
 
-- `KitMenu` (function) · `import { KitMenu } from "@jgengine/react"`
+- `KitMenu` (const) · `import { KitMenu } from "@jgengine/react"`
 
-## kit-meter — a value meter (bar, segments, ring) drawn by the active UI kit
+## kit-meter — a value meter (bar, segments, ring) drawn by the active UI kit, fed a plain or live value
 
-- `KitMeter` (function) · `import { KitMeter } from "@jgengine/react"`
+- `KitMeter` (const) · `import { KitMeter } from "@jgengine/react"`
 
 ## kit-minimap-frame — a minimap or radar frame drawn by the active UI kit
 
-- `KitMinimapFrame` (function) · `import { KitMinimapFrame } from "@jgengine/react"`
+- `KitMinimapFrame` (const) · `import { KitMinimapFrame } from "@jgengine/react"`
 
 ## kit-objective — first-minute guidance in the active UI kit — goal, distance and direction, checklist, countdown with urgency warnings, idle hint, next-action prompt
 
-- `KitObjective` (function) · `import { KitObjective } from "@jgengine/react"`
+- `KitObjective` (const) · `import { KitObjective } from "@jgengine/react"`
 
 ## kit-panel — a content surface drawn by the active UI kit, or made of a material with a cut silhouette, with enter/exit motion
 
-- `KitPanel` (function) · `import { KitPanel } from "@jgengine/react"`
+- `KitPanel` (const) · `import { KitPanel } from "@jgengine/react"`
 
 ## kit-result-screen — run/day/level result screen in the active UI kit — scrim, summary, tally, keyboard/gamepad/touch choices, kit motion
 
-- `KitResultScreen` (function) · `import { KitResultScreen } from "@jgengine/react"`
+- `KitResultScreen` (const) · `import { KitResultScreen } from "@jgengine/react"`
 
 ## kit-toast — a short message drawn by the active UI kit, with its enter/exit motion
 
-- `KitToast` (function) · `import { KitToast } from "@jgengine/react"`
+- `KitToast` (const) · `import { KitToast } from "@jgengine/react"`
 
 ## kit-vital-icons — survival pools as a column of glyphs that fill from the bottom, numbers on demand
 
-- `KitVitalIcons` (function) · `import { KitVitalIcons } from "@jgengine/core/hud/kitHud.view"`
+- `KitVitalIcons` (const) · `import { KitVitalIcons } from "@jgengine/core/hud/kitHud.view"`
 
 ## kit-vitals — a HUD vitals card — meters that turn bad when low, extra readouts, the labeled current objective under it
 
-- `KitVitals` (function) · `import { KitVitals } from "@jgengine/core/hud/kitHud.view"`
+- `KitVitals` (const) · `import { KitVitals } from "@jgengine/core/hud/kitHud.view"`
 
 ## kit-wave-clock — a HUD wave clock — countdown or enemies left, a note, and the wave banner
 
-- `KitWaveClock` (function) · `import { KitWaveClock } from "@jgengine/core/hud/kitHud.view"`
+- `KitWaveClock` (const) · `import { KitWaveClock } from "@jgengine/core/hud/kitHud.view"`
 
 ## layout-collision-report — format the overlapping HUD/control regions for a development console
 
@@ -491,13 +491,13 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `MoodPreset` (type) · `import { MoodPreset } from "@jgengine/core/render/lookMood"`
 - `resolveMood` (function) · `import { resolveMood } from "@jgengine/core/render/lookMood"`
 
-## live-markers — a self-ticking MarkerSet kept in sync from the live scene each HUD tick — pass a rebuild(markers, ctx) that clears+repopulates, no hand-rolled setInterval
+## live-prop — hand an engine UI part a value that moves every frame (a meter, a distance, a countdown) so only its own node updates
 
-- `useLiveMarkers` (function) · `import { useLiveMarkers } from "@jgengine/react"`
+- `live` (function) · `import { live } from "@jgengine/core/ui/liveValue"`
 
 ## live-text — a HUD number or label that updates its own text node every tick without re-rendering its component
 
-- `LiveText` (function) · `import { LiveText } from "@jgengine/core/ui/liveBind.view"`
+- `LiveText` (const) · `import { LiveText } from "@jgengine/core/ui/liveBind.view"`
 
 ## live-value — write a per-frame HUD value (text, bar, dial, colour) straight to its DOM node, never through React state
 
@@ -526,6 +526,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## match-locale — pick the supported locale that best matches requested tags
 
 - `matchLocale` (function) · `import { matchLocale } from "@jgengine/core/ui"`
+
+## memo-view — a UI part that skips its parent's re-renders: inline handlers, live values and equal children never redraw it
+
+- `memoView` (function) · `import { memoView } from "@jgengine/core/ui/memoView.view"`
 
 ## menu-key-intent — resolve a keyboard code to a menu intent (move / confirm / back)
 
@@ -617,7 +621,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## objective-banner-host — full-screen overlay that renders a core objective-banner controller as a fly-in / hold / fade-out centered title + subtitle stamp, theme- and per-kind-skinnable
 
-- `ObjectiveBannerHost` (function) · `import { ObjectiveBannerHost } from "@jgengine/react"`
+- `ObjectiveBannerHost` (const) · `import { ObjectiveBannerHost } from "@jgengine/react"`
 
 ## offscreen-markers — pure edge-clamp + bearing math turning a projected point into an on-screen pin or an off-screen directional arrow clamped to the viewport edge
 
@@ -831,7 +835,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## sprite-icon — draw a served one-colour icon (game-icons.net SVG) tinted to the HUD theme
 
-- `SpriteIcon` (function) · `import { SpriteIcon } from "@jgengine/core/ui/icons/spriteIcon.view"`
+- `SpriteIcon` (const) · `import { SpriteIcon } from "@jgengine/core/ui/icons/spriteIcon.view"`
 
 ## start-new-game — start a fresh run from a menu or result screen; reloads the page when a run already played
 
@@ -946,7 +950,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useDialogueRun` (function) · `import { useDialogueRun } from "@jgengine/react"`
 
-## use-event-ticker — React hook binding an event-ticker — re-renders per frame so entries fade and drop live, returning the current newest-first views
+## use-event-ticker — React hook binding an event-ticker — re-renders when entries arrive or expire, returning the current newest-first views
 
 - `useEventTicker` (function) · `import { useEventTicker } from "@jgengine/react"`
 

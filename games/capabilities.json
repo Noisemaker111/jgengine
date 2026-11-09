@@ -5971,7 +5971,7 @@
       "module": "@jgengine/core/ui/kit/uiKitRoot.view",
       "gameFacing": false,
       "probe": null,
-      "intent": "a value meter (bar, segments, ring) drawn by the active UI kit"
+      "intent": "a value meter (bar, segments, ring) drawn by the active UI kit, fed a plain or live value"
     },
     {
       "id": "kit-minimap-frame",
@@ -6484,14 +6484,14 @@
       "intent": "player-driven marketplace listings with a house cut, expiry sweep, and seller collection box"
     },
     {
-      "id": "live-markers",
+      "id": "live-prop",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hooks",
+      "module": "@jgengine/core/ui/liveValue",
       "gameFacing": false,
       "probe": null,
-      "intent": "a self-ticking MarkerSet kept in sync from the live scene each HUD tick — pass a rebuild(markers, ctx) that clears+repopulates, no hand-rolled setInterval"
+      "intent": "hand an engine UI part a value that moves every frame (a meter, a distance, a countdown) so only its own node updates"
     },
     {
       "id": "live-road-surface",
@@ -7016,6 +7016,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "per-event bronze/silver/gold targets over a stored best, with tiers that open on medal points"
+    },
+    {
+      "id": "memo-view",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/ui/memoView.view",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "a UI part that skips its parent's re-renders: inline handlers, live values and equal children never redraw it"
     },
     {
       "id": "menu-key-intent",
@@ -12097,7 +12107,7 @@
       "module": "@jgengine/core/feed/killFeed.view",
       "gameFacing": false,
       "probe": null,
-      "intent": "React hook binding an event-ticker — re-renders per frame so entries fade and drop live, returning the current newest-first views"
+      "intent": "React hook binding an event-ticker — re-renders when entries arrive or expire, returning the current newest-first views"
     },
     {
       "id": "use-fast-travel",
