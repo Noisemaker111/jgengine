@@ -124,6 +124,10 @@ struct UiCompositor {
     /// Last text shipped per field id; `on_edit` is an accessor Rune calls for
     /// layout and paint too, so changes are diffed here once per frame instead.
     edit_last: HashMap<String, String>,
+    /// Last frame payload shipped to JS; static frames skip the JSON round trip.
+    last_regions: Vec<[f32; 4]>,
+    last_modal: bool,
+    shipped: bool,
 }
 
 impl Compositor<Ui> for UiCompositor {
@@ -139,10 +143,17 @@ impl Compositor<Ui> for UiCompositor {
         self.edit_last.retain(|id, _| f.rt.state.edits.contains_key(id));
         let events: Vec<UiEvent> = EVENTS.with(|e| std::mem::take(&mut *e.borrow_mut()));
         let regions: Vec<[f32; 4]> = f.rt.hit_regions().to_vec();
+        let modal = f.rt.state.modal;
+        if self.shipped && events.is_empty() && modal == self.last_modal && regions == self.last_regions {
+            return;
+        }
+        self.shipped = true;
+        self.last_modal = modal;
+        self.last_regions = regions.clone();
         let payload = serde_json::json!({
             "events": events,
             "regions": regions,
-            "modal": f.rt.state.modal,
+            "modal": modal,
         })
         .to_string();
         #[cfg(target_arch = "wasm32")]
@@ -212,7 +223,12 @@ pub fn mount(canvas_id: &str, options_json: &str) {
             transparent: true,
             ..Default::default()
         })
-        .compositor(UiCompositor { edit_last: HashMap::new() });
+        .compositor(UiCompositor {
+            edit_last: HashMap::new(),
+            last_regions: Vec::new(),
+            last_modal: false,
+            shipped: false,
+        });
     for url in &opts.fonts {
         app = app.font_url(url);
     }

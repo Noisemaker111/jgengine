@@ -186,6 +186,7 @@ export class RuneUi {
     cancelAnimationFrame(this.raf);
     for (const cleanup of this.cleanups.splice(0)) cleanup();
     delete window.__jgUiFrame;
+    delete (window as { __jgUiLastFrame?: string }).__jgUiLastFrame;
     try {
       this.api.unmount();
     } catch {
@@ -220,6 +221,9 @@ export class RuneUi {
 
   private onFrame(payload: string): void {
     if (this.destroyed) return;
+    // Frames are event-driven (wasm ships only on change); keep the last one
+    // readable for probes and debugging.
+    (window as { __jgUiLastFrame?: string }).__jgUiLastFrame = payload;
     let frame: RuneUiFrame;
     try {
       frame = JSON.parse(payload) as RuneUiFrame;
