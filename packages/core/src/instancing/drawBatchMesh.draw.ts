@@ -18,10 +18,9 @@ const viewProjection = new THREE.Matrix4();
  * rebuilds it before every pass the batch draws in (the scene, each shadow cascade, every prepass):
  * it tests each instance against the camera, sorts them, and uploads the visible ids to the GPU again,
  * which on a scene of small batches cost more than the draws it saved. Here a pass with the same
- * camera, flags and instances as the last build reuses that build, and a build whose visible ids
- * match the ones already uploaded uploads nothing. Shadow passes build their lists unsorted: a depth
- * pass writes the nearest depth whatever the order, so the map is the same, and an unsorted list
- * repeats across cascades and passes. Every list it draws is the list three would build.
+ * camera, flags and instances as the last build reuses that build (the scene pass and the prepasses
+ * that share its camera), and a build whose visible ids match the ones already uploaded uploads
+ * nothing. Every list it draws is the list three would build.
  * @internal
  */
 export class DrawBatchMesh extends THREE.BatchedMesh {
@@ -94,24 +93,6 @@ export class DrawBatchMesh extends THREE.BatchedMesh {
     // Three made a new indirect texture: it uploads whole on its first draw.
     this.gateUploads();
     this.uploadedCount = -1;
-  }
-
-  override onBeforeShadow(
-    renderer: THREE.WebGLRenderer,
-    object: THREE.Object3D,
-    camera: THREE.Camera,
-    shadowCamera: THREE.Camera,
-    geometry: THREE.BufferGeometry,
-    depthMaterial: THREE.Material,
-    group: THREE.Group,
-  ): void {
-    const sort = this.sortObjects;
-    this.sortObjects = false;
-    try {
-      super.onBeforeShadow(renderer, object, camera, shadowCamera, geometry, depthMaterial, group);
-    } finally {
-      this.sortObjects = sort;
-    }
   }
 
   /** Three's list build, run only when its inputs changed, and uploading only a list the GPU does not already hold. */

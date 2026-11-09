@@ -709,7 +709,7 @@ export function Shell3dPresentation({
                     setCanvasElement(gl.domElement);
                     skipCulledMatrices(scene);
                     installFlatSceneWalk(gl, scene);
-                    batchSceneDraws(scene, raycaster);
+                    batchSceneDraws(gl, scene, raycaster);
                     if (ktx2SupportDetected.current) return;
                     ktx2SupportDetected.current = true;
                     detectKtx2Support(gl);

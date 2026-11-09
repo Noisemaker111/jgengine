@@ -4,7 +4,6 @@ import { devtools } from "@jgengine/core/devtools/devtools";
 import { compilesBatched, withoutCompileLayers } from "@jgengine/core/material/compileLayers.draw";
 import { freezeStaticTransforms } from "@jgengine/core/model/staticTransforms.draw";
 import { isPostfxOverlay } from "@jgengine/core/postfx/postfxOverlay.draw";
-import { giveStableShadowDepth, isStableShadowDepth } from "@jgengine/core/lighting/shadowCasters.draw";
 import { Lingering } from "@jgengine/core/run/lingering";
 import { visitShownMeshes } from "@jgengine/core/visibility/culledTransforms.draw";
 import { DrawBatchMesh } from "./drawBatchMesh.draw";
@@ -269,11 +268,7 @@ function batchKeyOf(mesh: THREE.Mesh, instanced: THREE.InstancedMesh | null): st
   if (mesh.layers.mask !== DEFAULT_MASK) return reject("layers");
   if (!mesh.matrixWorldAutoUpdate) return reject("handWorldMatrix");
   if (!isNeutralRenderHook(mesh.onBeforeRender) || mesh.onAfterRender !== BASE.onAfterRender) return reject("renderHook");
-  if (mesh.onBeforeShadow !== BASE.onBeforeShadow || mesh.onAfterShadow !== BASE.onAfterShadow) return reject("shadowHook");
-  // A stable shadow depth is three's own depth shader with the caster's map, side and alpha test,
-  // which is what the batch casts with.
-  const depth = mesh.customDepthMaterial;
-  if ((depth !== undefined && !isStableShadowDepth(depth)) || mesh.customDistanceMaterial !== undefined) return reject("customDepth");
+  // Shadow hooks and depth materials do not matter: a mesh casts its own shadow, never its batch.
   const side = sideOf(mesh, instanced);
   if (side === 0) return reject(instanced === null ? "flat" : "mirroredMix");
   if (geometryLayout(mesh.geometry) === null) return reject("geometry");
@@ -285,7 +280,7 @@ function batchKeyOf(mesh: THREE.Mesh, instanced: THREE.InstancedMesh | null): st
   const signature = materialSignature(material);
   if (signature === null) return reject("materialValue");
   for (let node: THREE.Object3D | null = mesh; node !== null; node = node.parent) if (isPostfxOverlay(node)) return reject("overlay");
-  return `${mesh.castShadow ? 1 : 0}${mesh.receiveShadow ? 1 : 0}${mesh.frustumCulled ? 1 : 0}${side < 0 ? "m" : ""}#${mesh.renderOrder}#${geometryLayout(mesh.geometry) ?? ""}#${signature}`;
+  return `${mesh.receiveShadow ? 1 : 0}${mesh.frustumCulled ? 1 : 0}${side < 0 ? "m" : ""}#${mesh.renderOrder}#${geometryLayout(mesh.geometry) ?? ""}#${signature}`;
 }
 
 /**
@@ -599,7 +594,7 @@ export class DrawBatcher implements ShownMeshVisitor {
     const geometry = batchableGeometry(mesh.geometry);
     const vertexCapacity = Math.max(1024, vertexCount(geometry) * 4);
     const indexCapacity = Math.max(2048, (geometry.index?.count ?? 0) * 4);
-    // One copy per signature and layout, shared by every batch made from it (a batch per shadow flag).
+    // One copy per signature and layout, shared by every batch made from it (a batch per receive or cull flag).
     const materialKey = key.slice(key.indexOf("#", key.indexOf("#") + 1) + 1);
     let shared = this.materials.get(materialKey);
     if (shared === undefined) {
@@ -608,7 +603,10 @@ export class DrawBatcher implements ShownMeshVisitor {
     }
     shared.refs += 1;
     const batch = new DrawBatchMesh(64, vertexCapacity, indexCapacity, shared.material);
-    batch.castShadow = mesh.castShadow;
+    // Its meshes cast their own shadows ({@link batchSceneDraws}), so the shadow cache sees the casters
+    // it would see without batches: a batch casting changed whenever any member moved or was culled,
+    // and its whole geometry was redrawn into every cascade each frame.
+    batch.castShadow = false;
     batch.receiveShadow = mesh.receiveShadow;
     batch.renderOrder = mesh.renderOrder;
     // Instances move anywhere, so the batch has no bounds of its own; it culls each instance per camera,
@@ -629,7 +627,6 @@ export class DrawBatcher implements ShownMeshVisitor {
       batch.matrixWorld.copy(MIRROR);
     }
     this.parent.add(batch);
-    if (batch.castShadow) giveStableShadowDepth(batch);
     return { key, mesh: batch, material: shared.material, mirrored, geometries: new Map(), vertexCapacity, indexCapacity, instances: 0, shown: 0 };
   }
 
@@ -674,12 +671,45 @@ export function drawBatcherOf(scene: THREE.Object3D): DrawBatcher | null {
   return batchers.get(scene) ?? null;
 }
 
+/** The shadow pass of the renderer the batches draw with: three's WebGL shadow map. */
+interface ShadowPassRenderer {
+  isWebGPURenderer?: boolean;
+  shadowMap?: { render?: (lights: THREE.Light[], scene: THREE.Object3D, camera: THREE.Camera) => void };
+}
+
+const sourceCasting = new WeakSet<object>();
+
+/**
+ * Let batched meshes cast their own shadows: for the length of each shadow pass the camera also sees
+ * {@link BATCHED_SOURCE_LAYER}, which three's shadow map tests casters against. Returns false when the
+ * renderer has no such pass (WebGPU), where batching stays off. Idempotent per renderer.
+ */
+function castFromSources(renderer: ShadowPassRenderer): boolean {
+  const shadowMap = renderer.shadowMap;
+  const render = shadowMap?.render;
+  if (renderer.isWebGPURenderer === true || shadowMap === undefined || render === undefined) return false;
+  if (sourceCasting.has(shadowMap)) return true;
+  sourceCasting.add(shadowMap);
+  shadowMap.render = function castingSources(this: unknown, lights: THREE.Light[], scene: THREE.Object3D, camera: THREE.Camera): void {
+    const mask = camera.layers.mask;
+    camera.layers.mask = mask | BATCHED_SOURCE_MASK;
+    try {
+      render.call(this, lights, scene, camera);
+    } finally {
+      camera.layers.mask = mask;
+    }
+  };
+  return true;
+}
+
 /**
  * Draw the scene's plain meshes through a {@link DrawBatcher}, fed by the scene's matrix pass
  * (`skipCulledMatrices`), and let `raycaster` (the canvas's pointer raycaster) keep hitting them.
+ * The meshes keep casting their own shadows through `renderer`'s shadow pass; on a renderer without
+ * three's WebGL shadow map every mesh keeps its own draw.
  * @internal
  */
-export function batchSceneDraws(scene: THREE.Object3D, raycaster: THREE.Raycaster): DrawBatcher {
+export function batchSceneDraws(renderer: ShadowPassRenderer, scene: THREE.Object3D, raycaster: THREE.Raycaster): DrawBatcher {
   let batcher = batchers.get(scene);
   if (batcher === undefined) {
     batcher = new DrawBatcher(scene);
@@ -699,6 +729,7 @@ export function batchSceneDraws(scene: THREE.Object3D, raycaster: THREE.Raycaste
       },
     });
   }
+  batcher.setEnabled(castFromSources(renderer));
   raycaster.layers.enable(BATCHED_SOURCE_LAYER);
   return batcher;
 }

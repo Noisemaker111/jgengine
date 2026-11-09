@@ -1,15 +1,29 @@
 import { expect, test } from "bun:test";
 import * as THREE from "three";
 
-import { giveStableShadowDepth, isStableShadowDepth } from "@jgengine/core/lighting/shadowCasters.draw";
+import { giveStableShadowDepth } from "@jgengine/core/lighting/shadowCasters.draw";
 import { sceneWalkStarts, setCulled, skipCulledMatrices } from "@jgengine/core/visibility/culledTransforms.draw";
 import { BATCHED_SOURCE_LAYER, batchSceneDraws, DRAW_BATCH_MESH_KEY, markNeutralRenderHook, sceneRaycaster } from "./drawBatches.draw";
+
+/** A WebGL renderer's shadow pass as the batcher wraps it: records the layers each pass's camera sees. */
+function webGl() {
+  const seen: number[] = [];
+  const renderer = {
+    shadowMap: {
+      render(_lights: THREE.Light[], _scene: THREE.Object3D, camera: THREE.Camera) {
+        seen.push(camera.layers.mask);
+      },
+    },
+  };
+  return { renderer, seen };
+}
 
 function setup() {
   const scene = new THREE.Scene();
   skipCulledMatrices(scene);
-  const batcher = batchSceneDraws(scene, new THREE.Raycaster());
-  return { scene, batcher };
+  const { renderer, seen } = webGl();
+  const batcher = batchSceneDraws(renderer, scene, new THREE.Raycaster());
+  return { scene, batcher, renderer, seen };
 }
 
 function batchesOf(scene: THREE.Scene): THREE.BatchedMesh[] {
@@ -51,7 +65,7 @@ test("many models cut from the same materials draw as one batch per material, an
     expect(cabin.layers.mask).toBe(1 << BATCHED_SOURCE_LAYER);
     expect(hull.layers.test(new THREE.Camera().layers)).toBe(false);
   }
-  expect(batches.every((batch) => batch.castShadow && batch.perObjectFrustumCulled)).toBe(true);
+  expect(batches.every((batch) => !batch.castShadow && batch.perObjectFrustumCulled)).toBe(true);
 });
 
 test("a moved model writes only its own instances, and a still one costs no write", () => {
@@ -174,8 +188,8 @@ test("a mesh whose render hook only watches (the cascaded shadows' swap check) s
   expect(mesh.layers.mask).toBe(1);
 });
 
-test("casters with a stable shadow depth batch, and the batch casts through its own; a foreign depth shader keeps its draw", () => {
-  const { scene, batcher } = setup();
+test("batches never cast: every mesh casts its own shadow, whatever depth shader or shadow hook it has, because each shadow pass also sees the source layer", () => {
+  const { scene, batcher, renderer, seen } = setup();
   const material = new THREE.MeshStandardMaterial();
   const stable = Array.from({ length: 3 }, (_, index) => {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(), material);
@@ -187,11 +201,31 @@ test("casters with a stable shadow depth batch, and the batch casts through its 
   const foreign = new THREE.Mesh(new THREE.BoxGeometry(), material);
   foreign.castShadow = true;
   foreign.customDepthMaterial = new THREE.MeshDepthMaterial();
-  scene.add(...stable, foreign);
+  foreign.onBeforeShadow = () => {};
+  const still = new THREE.Mesh(new THREE.BoxGeometry(), material);
+  scene.add(...stable, foreign, still);
   scene.updateMatrixWorld();
-  expect(batcher.stats()).toMatchObject({ batched: 3, single: 1, reasons: { customDepth: 1 } });
-  const [batch] = batchesOf(scene);
-  expect(batch?.customDepthMaterial !== undefined && isStableShadowDepth(batch.customDepthMaterial)).toBe(true);
+  expect(batcher.stats()).toMatchObject({ batched: 5, single: 0, batches: 1 });
+  expect(batchesOf(scene).every((batch) => !batch.castShadow)).toBe(true);
+  const camera = new THREE.PerspectiveCamera();
+  renderer.shadowMap.render([], scene, camera);
+  expect(seen).toEqual([1 | (1 << BATCHED_SOURCE_LAYER)]);
+  expect(camera.layers.mask).toBe(1);
+  // Wrapped once however many times the shell batches a scene on the same renderer.
+  batchSceneDraws(renderer, new THREE.Scene(), new THREE.Raycaster());
+  renderer.shadowMap.render([], scene, camera);
+  expect(seen).toHaveLength(2);
+});
+
+test("a renderer without three's WebGL shadow pass (WebGPU) keeps every mesh on its own draw and shadow", () => {
+  const scene = new THREE.Scene();
+  skipCulledMatrices(scene);
+  const batcher = batchSceneDraws({ isWebGPURenderer: true, shadowMap: { render: () => {} } }, scene, new THREE.Raycaster());
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial());
+  scene.add(mesh);
+  scene.updateMatrixWorld();
+  expect(batcher.stats()).toMatchObject({ batched: 0, batches: 0 });
+  expect(mesh.layers.mask).toBe(1);
 });
 
 test("meshes three must never cull batch apart from culled ones, in a batch that never culls", () => {

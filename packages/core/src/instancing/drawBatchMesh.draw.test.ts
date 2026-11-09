@@ -11,8 +11,6 @@ interface Internals {
   _indirectTexture: THREE.DataTexture;
 }
 
-/** A WebGL renderer as the shadow hook reads it. */
-const GL = { isWebGPURenderer: false } as unknown as THREE.WebGLRenderer;
 
 function internals(mesh: THREE.BatchedMesh): Internals {
   return mesh as unknown as Internals;
@@ -79,12 +77,9 @@ test("every list the batch draws is the list three builds, over moves, visibilit
     internals(theirs)._updateDrawParameters(view, theirs.geometry, material);
     expect(drawList(ours)).toBe(drawList(theirs));
     if (random() < 0.3) {
-      // A shadow pass draws unsorted: the same instances as three's, which a depth pass writes the same whatever the order.
-      ours.onBeforeShadow(GL, ours, view, light, ours.geometry, depth, null as never);
-      const sort = theirs.sortObjects;
-      theirs.sortObjects = false;
+      // A pass with another camera and material (a depth prepass from a light) between two scene passes.
+      internals(ours)._updateDrawParameters(light, ours.geometry, depth);
       internals(theirs)._updateDrawParameters(light, theirs.geometry, depth);
-      theirs.sortObjects = sort;
       expect(drawList(ours)).toBe(drawList(theirs));
     }
   }
@@ -92,13 +87,8 @@ test("every list the batch draws is the list three builds, over moves, visibilit
 
 test("a pass with the same camera and instances reuses the last list, and a list the GPU already holds is not uploaded again", () => {
   const material = new THREE.MeshStandardMaterial();
-  const depth = new THREE.MeshDepthMaterial();
   const { ours } = pair(material);
   const view = camera(0, 10, 0);
-  const light = new THREE.OrthographicCamera(-60, 60, 60, -60, 0.1, 200);
-  light.position.set(0, 50, 0);
-  light.lookAt(0, 0, 0);
-  light.updateMatrixWorld();
   const run = () => internals(ours)._updateDrawParameters(view, ours.geometry, material);
   run();
   const texture = internals(ours)._indirectTexture;
@@ -107,18 +97,13 @@ test("a pass with the same camera and instances reuses the last list, and a list
   for (let pass = 0; pass < 5; pass += 1) run();
   expect(ours.counts).toEqual({ builds, uploads });
   expect(texture.version).toBe(version);
-  // Every instance inside two shadow cascades: two builds of one unsorted list, uploaded at most once.
-  ours.onBeforeShadow(GL, ours, view, light, ours.geometry, depth, null as never);
-  const afterFirst = ours.counts.uploads;
-  expect(afterFirst).toBeLessThanOrEqual(uploads + 1);
-  const shifted = light.clone();
-  shifted.position.x += 1;
-  shifted.updateMatrixWorld();
-  ours.onBeforeShadow(GL, ours, view, shifted, ours.geometry, depth, null as never);
-  expect(ours.counts.builds).toBe(builds + 2);
-  expect(ours.counts.uploads).toBe(afterFirst);
-  ours.setMatrixAt(0, new THREE.Matrix4().makeTranslation(0, 0, -6));
+  // The camera moved a little and every instance is still in view, in the same order: a build, no upload.
+  const nudged = camera(0.01, 10, 0);
+  internals(ours)._updateDrawParameters(nudged, ours.geometry, material);
+  expect(ours.counts).toEqual({ builds: builds + 1, uploads });
+  expect(texture.version).toBe(version);
+  ours.setMatrixAt(0, new THREE.Matrix4().makeTranslation(0, 0, 30));
   run();
-  expect(ours.counts.builds).toBe(builds + 3);
+  expect(ours.counts.builds).toBe(builds + 2);
   expect(texture.version).toBeGreaterThan(version);
 });
