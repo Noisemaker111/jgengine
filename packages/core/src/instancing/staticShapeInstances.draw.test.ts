@@ -75,7 +75,11 @@ test("mounted batches retune matrices, share only compatible draws and dispose o
       scene = root.render(createElement(Suspense, { fallback: null }, createElement(StaticShapeInstances, { instances }))).getState().scene;
     });
     await render([box, { ...box, position: [10, 0, 0] }]);
-    const meshes = () => scene.children.filter(node => (node as THREE.InstancedMesh).isInstancedMesh) as THREE.InstancedMesh[];
+    const meshes = () => {
+      const found: THREE.InstancedMesh[] = [];
+      scene.traverse((node) => { if ((node as THREE.InstancedMesh).isInstancedMesh === true) found.push(node as THREE.InstancedMesh); });
+      return found;
+    };
     expect(meshes()).toHaveLength(1);
     const mesh = meshes()[0]!;
     expect(mesh.count).toBe(2);

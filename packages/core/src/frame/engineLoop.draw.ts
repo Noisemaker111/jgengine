@@ -57,6 +57,13 @@ export interface EngineDraw {
   mount?(state: EngineFrameState): void;
   /** Every rendered frame, in priority then registration order. */
   frame?(state: EngineFrameState): void;
+  /**
+   * Inputs changed outside a rendered frame. The React bridge calls this after
+   * every wrapper commit so prop-driven draws do not wait for the next frame
+   * under `frameloop="never"`/`"demand"`; loop hosts may call it the same way
+   * when their inputs change between frames.
+   */
+  update?(state: EngineFrameState): void;
   /** Once, on teardown. Remove objects and free GPU resources here. */
   dispose?(state: EngineFrameState): void;
 }

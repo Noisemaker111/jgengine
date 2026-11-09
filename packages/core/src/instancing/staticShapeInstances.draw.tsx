@@ -1,11 +1,10 @@
-import { Suspense, useMemo, useRef } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
 
 import type { ModelShadowMode } from "@jgengine/core/lod/modelLod";
-import { AuthoredSurfaceMaterial, authoredSurfaceKey, useAuthoredSurfaceMaterial, type AuthoredSurfaceConfig, type SurfaceShape } from "@jgengine/core/material/authoredSurfaceMaterial.draw";
-import { ModelFallbackBoundary } from "@jgengine/core/model/SceneModels.draw";
-import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
-import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
+import { authoredSurfaceKey, authoredSurfaceMaterial, type AuthoredSurfaceConfig, type AuthoredSurfaceMaterialLease, type SurfaceShape } from "@jgengine/core/material/authoredSurfaceMaterial.draw";
+import { childFrameState, type EngineDraw, type EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { composeInstance, uploadInstances } from "./instanceUpload.draw";
 
 /** One editor-derived static primitive. A box spans one unit; a cylinder has unit radius and height before scale. */
@@ -67,35 +66,121 @@ export function writeStaticShapeInstances(mesh: THREE.InstancedMesh, instances: 
   );
 }
 
-/** One instanced batch as an {@link EngineDraw}; the material is owned by the caller's hook. */
-export function staticShapeBatchDraw(batch: StaticShapeBatch, material: THREE.Material): EngineDraw {
+/** One instanced batch as an {@link EngineDraw}; `sync` retunes matrices in place when only instances change. @internal */
+export interface StaticShapeBatchDraw extends EngineDraw {
+  sync(batch: StaticShapeBatch): void;
+}
+
+/**
+ * One instanced batch as an {@link EngineDraw}. The flat (map-less) material lands first — the old
+ * Suspense fallback — then the declared maps swap in; a failed map load keeps the flat material,
+ * matching the old ModelFallbackBoundary.
+ */
+export function staticShapeBatchDraw(batch: StaticShapeBatch): StaticShapeBatchDraw {
   const geometry = batch.shape === "box" ? new THREE.BoxGeometry(1, 1, 1) : new THREE.CylinderGeometry(1, 1, 1, batch.radialSegments);
+  const group = new THREE.Group();
   let mesh: THREE.InstancedMesh | null = null;
+  let placeholder: THREE.MeshStandardMaterial | null = null;
+  let lease: AuthoredSurfaceMaterialLease | null = null;
+  let cancelled = false;
+  let current = batch;
+  const apply = (next: AuthoredSurfaceMaterialLease) => {
+    if (cancelled || mesh === null) {
+      next.dispose();
+      return;
+    }
+    lease?.dispose();
+    lease = next;
+    const previous = mesh.material;
+    mesh.material = next.material;
+    if (previous === placeholder) placeholder?.dispose();
+  };
+  const flat = { ...batch.surface, maps: undefined };
+  const hasMaps = Object.keys(batch.surface.maps ?? {}).length > 0;
   return {
     mount(state: EngineFrameState) {
-      mesh = new THREE.InstancedMesh(geometry, material, batch.instances.length);
+      placeholder = new THREE.MeshStandardMaterial();
+      mesh = new THREE.InstancedMesh(geometry, placeholder, current.instances.length);
       mesh.castShadow = batch.shadows === "both" || batch.shadows === "cast";
       mesh.receiveShadow = batch.shadows === "both" || batch.shadows === "receive";
-      writeStaticShapeInstances(mesh, batch.instances);
-      state.scene.add(mesh);
+      writeStaticShapeInstances(mesh, current.instances);
+      group.add(mesh);
+      state.scene.add(group);
+      void authoredSurfaceMaterial(flat, batch.shape).then(apply).catch(() => {})
+        .then(() => hasMaps ? authoredSurfaceMaterial(batch.surface, batch.shape).then(apply).catch(() => {}) : undefined);
+    },
+    sync(next: StaticShapeBatch) {
+      current = next;
+      if (mesh !== null) writeStaticShapeInstances(mesh, next.instances);
     },
     dispose(state: EngineFrameState) {
+      cancelled = true;
+      state.scene.remove(group);
+      group.clear();
+      lease?.dispose();
+      lease = null;
       if (mesh !== null) {
-        state.scene.remove(mesh);
+        if (mesh.material === placeholder) placeholder?.dispose();
         mesh.dispose();
+        mesh = null;
       }
+      placeholder = null;
       geometry.dispose();
-      mesh = null;
     },
   };
 }
 
-function ShapeBatch({ batch }: { batch: StaticShapeBatch }) {
-  const material = useAuthoredSurfaceMaterial(batch.surface, batch.shape);
-  const latest = useRef({ batch, material });
-  latest.current = { batch, material };
-  useEngineDraw(() => staticShapeBatchDraw(latest.current.batch, latest.current.material), [batch, material]);
-  return null;
+/**
+ * The whole instance set as one draw. Batches keyed by shape/surface/shadow keep their mesh and
+ * retune matrices in place; only genuinely new or removed groups mount and dispose.
+ * @internal
+ */
+export function staticShapeInstancesDraw(getInstances: () => readonly StaticShapeInstance[]): EngineDraw {
+  const group = new THREE.Group();
+  const entries = new Map<string, { draw: StaticShapeBatchDraw; state: EngineFrameState }>();
+  let instances: readonly StaticShapeInstance[] | null = null;
+  const rebuild = (state: EngineFrameState) => {
+    const batches = groupStaticShapeInstances(getInstances());
+    const seen = new Set<string>();
+    for (const batch of batches) {
+      seen.add(batch.key);
+      const entry = entries.get(batch.key);
+      if (entry === undefined) {
+        const draw = staticShapeBatchDraw(batch);
+        const childState = childFrameState(state, group);
+        draw.mount?.(childState);
+        entries.set(batch.key, { draw, state: childState });
+      } else {
+        entry.draw.sync(batch);
+      }
+    }
+    for (const [key, entry] of entries) {
+      if (seen.has(key)) continue;
+      entry.draw.dispose?.(entry.state);
+      entries.delete(key);
+    }
+  };
+  const sync = (state: EngineFrameState) => {
+    const next = getInstances();
+    if (next === instances) return;
+    instances = next;
+    rebuild(state);
+  };
+  return {
+    mount(state: EngineFrameState) {
+      state.scene.add(group);
+      instances = getInstances();
+      rebuild(state);
+    },
+    frame: sync,
+    update: sync,
+    dispose(state: EngineFrameState) {
+      for (const entry of entries.values()) entry.draw.dispose?.(entry.state);
+      entries.clear();
+      state.scene.remove(group);
+      group.clear();
+    },
+  };
 }
 
 /**
@@ -103,10 +188,7 @@ function ShapeBatch({ batch }: { batch: StaticShapeBatch }) {
  * @capability static-shape-instances render authored primitive transforms as static material-compatible instance batches
  */
 export function StaticShapeInstances({ instances }: { instances: readonly StaticShapeInstance[] }) {
-  const batches = useMemo(() => groupStaticShapeInstances(instances), [instances]);
-  return <>{batches.map(batch => (
-    <ModelFallbackBoundary key={batch.key} fallback={<AuthoredSurfaceMaterial surface={{ ...batch.surface, maps: undefined }} shape={batch.shape} />} url={Object.values(batch.surface.maps ?? {}).join(",")} seam="object">
-      <Suspense fallback={<AuthoredSurfaceMaterial surface={{ ...batch.surface, maps: undefined }} shape={batch.shape} />}><ShapeBatch batch={batch} /></Suspense>
-    </ModelFallbackBoundary>
-  ))}</>;
+  const latest = useRef<readonly StaticShapeInstance[]>(instances);
+  latest.current = instances;
+  return <EngineDrawMount create={() => staticShapeInstancesDraw(() => latest.current)} deps={[]} />;
 }

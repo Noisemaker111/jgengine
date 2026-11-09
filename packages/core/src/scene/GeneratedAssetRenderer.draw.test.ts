@@ -30,7 +30,10 @@ test("authored generator rendering retains transforms, material defaults, clamps
     const group = scene.children[0]!;
     expect(group.position.toArray()).toEqual([12, 3, -4]);
     expect(group.rotation.y).toBe(0.2);
-    const meshes = group.children as THREE.InstancedMesh[];
+    const meshes: THREE.InstancedMesh[] = [];
+    group.traverse((object) => {
+      if ((object as THREE.InstancedMesh).isInstancedMesh === true) meshes.push(object as THREE.InstancedMesh);
+    });
     expect(meshes.map(mesh => mesh.count)).toEqual([2, 1]);
     const material = meshes[0]!.material as THREE.MeshStandardMaterial;
     expect(material.color.getHexString()).toBe("123456");

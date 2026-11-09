@@ -6,16 +6,24 @@ import { childFrameState, type EngineDraw, type EngineFrameState } from "./engin
 import { frameStateFromR3F } from "./r3fFrameState.draw";
 import { joinFrameTask } from "./frameBoard.draw";
 
-function mountDraw(draw: EngineDraw, parent: THREE.Object3D, root: EngineFrameState): () => void {
+interface MountedDraw {
+  draw: EngineDraw;
+  state: EngineFrameState;
+  leave: () => void;
+}
+
+function mountDraw(draw: EngineDraw, parent: THREE.Object3D, root: EngineFrameState): MountedDraw {
   const state = childFrameState(root, parent);
   draw.mount?.(state);
   const leave = draw.frame === undefined
     ? () => {}
     : joinFrameTask(draw.priority ?? 0, (frameState) => draw.frame?.(childFrameState(frameState, parent)));
-  return () => {
-    leave();
-    draw.dispose?.(state);
-  };
+  return { draw, state, leave };
+}
+
+function unmountDraw(mounted: MountedDraw): void {
+  mounted.leave();
+  mounted.draw.dispose?.(mounted.state);
 }
 
 /**
@@ -29,15 +37,23 @@ function mountDraw(draw: EngineDraw, parent: THREE.Object3D, root: EngineFrameSt
 export function EngineDrawMount({ create, deps }: { create: () => EngineDraw; deps: DependencyList }) {
   const root = useThree();
   const ref = useRef<THREE.Group>(null);
+  const mounted = useRef<MountedDraw | null>(null);
   useEffect(() => {
     const parent = ref.current;
     if (parent === null) return;
-    const draw = create();
-    return mountDraw(draw, parent, frameStateFromR3F(root, 0));
+    const next = mountDraw(create(), parent, frameStateFromR3F(root, 0));
+    mounted.current = next;
+    return () => {
+      unmountDraw(next);
+      mounted.current = null;
+    };
     // `create` and `root` are intentionally excluded: callers pass fresh
     // closures through `deps`, and the RootState reference is stable.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
+  useEffect(() => {
+    mounted.current?.draw.update?.(mounted.current.state);
+  });
   return <group ref={ref} />;
 }
 
@@ -52,6 +68,7 @@ export function EngineDrawMount({ create, deps }: { create: () => EngineDraw; de
  */
 export function useEngineDraw(create: () => EngineDraw, deps: DependencyList): void {
   const root = useThree();
+  const mounted = useRef<MountedDraw | null>(null);
   useEffect(() => {
     const draw = create();
     const state = frameStateFromR3F(root, 0);
@@ -59,12 +76,17 @@ export function useEngineDraw(create: () => EngineDraw, deps: DependencyList): v
     const leave = draw.frame === undefined
       ? () => {}
       : joinFrameTask(draw.priority ?? 0, (frameState) => draw.frame?.(frameState));
+    const next = { draw, state, leave };
+    mounted.current = next;
     return () => {
-      leave();
-      draw.dispose?.(state);
+      unmountDraw(next);
+      mounted.current = null;
     };
     // `create` and `root` are intentionally excluded: callers pass fresh
     // closures through `deps`, and the RootState reference is stable.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
+  useEffect(() => {
+    mounted.current?.draw.update?.(mounted.current.state);
+  });
 }

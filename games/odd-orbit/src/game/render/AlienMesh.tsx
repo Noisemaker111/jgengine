@@ -1,21 +1,20 @@
-import { useLoader } from "@react-three/fiber";
-import { Component, Suspense, useCallback, useEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
 import { hashString } from "@jgengine/core/random/rng";
 import { cloneModelScene, disposeClonedMaterials, modelPlacementTransform, standardMaterialsOf } from "@jgengine/core/model/modelRender.draw";
-import { useModelAnimation } from "@jgengine/core/anim/useModelAnimation.draw";
-import { useStore } from "@jgengine/react/store";
+import { ModelAnimationDriver } from "@jgengine/core/anim/modelAnimationDriver.draw";
 import { useGameContext } from "@jgengine/react/provider";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import { bodyColor, type AlienBodyPlan } from "../creatures/bodyPlan";
 import { moodOfNeeds } from "../agents";
 import { MOOD_COLORS } from "../palette";
 import { householdStore } from "../session/store";
 import { resolveAlienMeshUrl } from "../models";
-import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 const ALIEN_HEIGHT = 1.7;
 
@@ -23,7 +22,6 @@ function planOf(entity: SceneEntity): AlienBodyPlan | null {
   const meta = entity.meta as { bodyPlan?: AlienBodyPlan } | null;
   return meta?.bodyPlan ?? null;
 }
-
 
 function bodyScale(plan: AlienBodyPlan): [number, number, number] {
   const base = 0.75 + plan.size * 0.35;
@@ -39,107 +37,116 @@ function bodyScale(plan: AlienBodyPlan): [number, number, number] {
   }
 }
 
-class ModelErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
-  override state = { failed: false };
-  static getDerivedStateFromError(): { failed: boolean } {
-    return { failed: true };
-  }
-  override render(): ReactNode {
-    return this.state.failed ? null : this.props.children;
-  }
+interface AlienLive {
+  readonly materials: THREE.MeshStandardMaterial[];
+  readonly driver: ModelAnimationDriver;
+  readonly scene: THREE.Object3D;
+  lastEmissive: string | null;
+  lastIntensity: number;
 }
 
-function AlienModel({
-  meshUrl,
-  instanceId,
-  scale,
-  color,
-  emissive,
-  emissiveIntensity,
-}: {
-  meshUrl: string;
-  instanceId: string;
-  scale: [number, number, number];
-  color: string;
-  emissive: string;
-  /** The glow follows the being's mood every tick; it is written to the materials each frame, not through a render. */
-  emissiveIntensity: () => number;
-}): ReactNode {
-  const gltf = useLoader(sharedGltfLoader, meshUrl);
-
-  const scene = useMemo(() => cloneModelScene(gltf.scene), [gltf]);
-  const materials = useMemo(() => standardMaterialsOf(scene), [scene]);
-  const nativeColors = useMemo(() => materials.map(material => material.color.clone()), [materials]);
-  const placement = useMemo(() => modelPlacementTransform(scene, { url: meshUrl, targetHeight: ALIEN_HEIGHT }), [scene, meshUrl]);
-
-  useEffect(() => () => disposeClonedMaterials(scene), [scene]);
-
-  // Engine animation driver: derives idle/walk clips from the GLB's own clip names and
-  // crossfades from the entity's live movement — no game-side mixer or clip strings.
-  useModelAnimation(scene, gltf.animations, { auto: true, clock: "game" }, instanceId);
-
-  useEffect(() => {
-    const tint = new THREE.Color(color);
-    for (const [index, material] of materials.entries()) {
-      material.color.copy(nativeColors[index]!).lerp(tint, 0.8);
-      material.emissive.set(emissive);
-      material.emissiveIntensity = emissiveIntensity();
-    }
-  }, [materials, nativeColors, color, emissive]);
-  useFrameTask(() => {
-    const intensity = emissiveIntensity();
-    for (const material of materials) {
-      if (material.emissiveIntensity !== intensity) material.emissiveIntensity = intensity;
-    }
-  });
-
-  return (
-    <group scale={scale}>
-      <group scale={placement.scale} position={placement.position}>
-        <primitive object={scene} />
-      </group>
-    </group>
-  );
-}
-
-export function AlienMesh({ entity }: { entity: SceneEntity }): ReactNode {
+/**
+ * One alien's GLB clone, animation driver and mood glow as an {@link EngineDraw}. Store reads
+ * (movement, mood tier, glow) happen per frame through the context, so no React subscription is
+ * needed; a failed or absent plan/GLB simply draws nothing, matching the old error boundary.
+ */
+export function alienMeshDraw(ctx: GameContext | null, entity: SceneEntity): EngineDraw {
+  const group = new THREE.Group();
+  const bob = new THREE.Group();
+  group.add(bob);
   const plan = planOf(entity);
-  const ctx = useGameContext();
-  const groupRef = useRef<THREE.Group>(null);
-  const phase = useMemo(() => (hashString(entity.id) % 628) / 100, [entity.id]);
-  const { moving, tier } = useStore(householdStore, (household) => {
-    const member = household.members[entity.id];
-    return {
-      moving: member !== undefined && (member.action.kind === "seek" || member.action.kind === "wander"),
-      tier: member !== undefined ? moodOfNeeds(member.needs).tier : null,
-    };
-  });
-  const glow = useCallback(() => {
-    const member = householdStore.read(ctx).members[entity.id];
+  const phase = (hashString(entity.id) % 628) / 100;
+  const color = plan === null ? "#000000" : bodyColor(plan, 72);
+  const tint = new THREE.Color(color);
+  let live: AlienLive | null = null;
+  let cancelled = false;
+
+  const memberNow = () => (ctx === null ? undefined : householdStore.read(ctx).members[entity.id]);
+  const emissiveNow = () => {
+    const member = memberNow();
+    const tier = member === undefined ? null : moodOfNeeds(member.needs).tier;
+    return (tier === null ? undefined : MOOD_COLORS[tier]) ?? "#000000";
+  };
+  const glowNow = () => {
+    const member = memberNow();
     return member !== undefined ? 0.025 + (moodOfNeeds(member.needs).score / 100) * 0.06 : 0.025;
-  }, [ctx, entity.id]);
+  };
 
-  useFrameTask(({ clock }) => {
-    const t = clock.elapsedTime;
-    if (groupRef.current !== null) {
-      groupRef.current.position.y = moving ? 0 : Math.sin(t * 1.6 + phase) * 0.02;
-    }
-  });
-
-  if (plan === null) return null;
-  const meshUrl = resolveAlienMeshUrl(plan.shape);
-
-  const color = bodyColor(plan, 72);
-  const emissive = (tier === null ? undefined : MOOD_COLORS[tier]) ?? "#000000";
-  const scale = bodyScale(plan);
-  return (
-    <group ref={groupRef}>
-      <ModelErrorBoundary>
-        <Suspense fallback={null}>
-          <AlienModel meshUrl={meshUrl} instanceId={entity.id} scale={scale} color={color} emissive={emissive} emissiveIntensity={glow} />
-        </Suspense>
-      </ModelErrorBoundary>
-    </group>
-  );
+  return {
+    mount(state: EngineFrameState) {
+      state.scene.add(group);
+      if (plan === null) return;
+      const meshUrl = resolveAlienMeshUrl(plan.shape);
+      void sharedGltfLoader.loadAsync(meshUrl).then((gltf) => {
+        if (cancelled) return;
+        try {
+          const scene = cloneModelScene(gltf.scene);
+          const materials = standardMaterialsOf(scene);
+          const nativeColors = materials.map((material) => material.color.clone());
+          const tinted = nativeColors.map((native) => native.clone().lerp(tint, 0.8));
+          const placement = modelPlacementTransform(scene, { url: meshUrl, targetHeight: ALIEN_HEIGHT });
+          const driver = new ModelAnimationDriver({
+            scene,
+            clips: gltf.animations,
+            animationInput: { auto: true, clock: "game" },
+            instanceId: entity.id,
+            ctx,
+            invalidate: () => state.invalidate(),
+          });
+          const scaleGroup = new THREE.Group();
+          scaleGroup.scale.set(...bodyScale(plan));
+          const placeGroup = new THREE.Group();
+          placeGroup.scale.setScalar(placement.scale);
+          placeGroup.position.set(...placement.position);
+          scaleGroup.add(placeGroup);
+          placeGroup.add(scene);
+          bob.add(scaleGroup);
+          const emissive = emissiveNow();
+          const intensity = glowNow();
+          for (const [index, material] of materials.entries()) {
+            material.color.copy(tinted[index]!);
+            material.emissive.set(emissive);
+            material.emissiveIntensity = intensity;
+          }
+          live = { materials, driver, scene, lastEmissive: emissive, lastIntensity: intensity };
+        } catch {
+          // The old ModelErrorBoundary rendered nothing on a bad GLB.
+        }
+      }).catch(() => {});
+    },
+    frame(state: EngineFrameState) {
+      const current = live;
+      if (current === null) return;
+      const member = memberNow();
+      const moving = member !== undefined && (member.action.kind === "seek" || member.action.kind === "wander");
+      bob.position.y = moving ? 0 : Math.sin(state.clock.elapsedTime * 1.6 + phase) * 0.02;
+      current.driver.pose(state.delta);
+      const emissive = emissiveNow();
+      const intensity = glowNow();
+      if (emissive !== current.lastEmissive || intensity !== current.lastIntensity) {
+        current.lastEmissive = emissive;
+        current.lastIntensity = intensity;
+        for (const material of current.materials) {
+          material.emissive.set(emissive);
+          material.emissiveIntensity = intensity;
+        }
+      }
+    },
+    dispose(state: EngineFrameState) {
+      cancelled = true;
+      state.scene.remove(group);
+      group.clear();
+      bob.clear();
+      if (live !== null) {
+        live.driver.dispose();
+        disposeClonedMaterials(live.scene);
+        live = null;
+      }
+    },
+  };
 }
 
+export function AlienMesh({ entity }: { entity: SceneEntity }) {
+  const ctx = useGameContext();
+  return <EngineDrawMount create={() => alienMeshDraw(ctx, entity)} deps={[ctx, entity]} />;
+}

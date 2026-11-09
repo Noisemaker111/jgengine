@@ -1,9 +1,9 @@
 import { useRef, type ReactNode } from "react";
-import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 import { DEFAULT_FORWARD, yawToFace } from "@jgengine/core/scene/facing";
-import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
 /** Lighting mood for a {@link StudioStage} — a named 3-point rig + backdrop palette. */
 export type StudioMood = "studio" | "daylight" | "dusk" | "night";
@@ -52,6 +52,98 @@ export interface StudioStageProps {
   children: ReactNode;
 }
 
+interface StageDrawProps {
+  mood: StudioMood;
+  backdrop?: string | undefined;
+  turntable: number;
+  environment: boolean;
+  faceCamera: boolean;
+  forward: readonly [number, number, number];
+}
+
+/**
+ * The stage's lights, floor and backdrop as an {@link EngineDraw}; `getSpin` resolves the group the
+ * React children render under so turntable/faceCamera still spin them. `state.scene` is the JSX
+ * parent, so the background is only set when that parent is the real Scene — the same reach the old
+ * `attach="background"` had.
+ */
+export function studioStageDraw(getProps: () => StageDrawProps, getSpin: () => THREE.Group | null): EngineDraw {
+  const group = new THREE.Group();
+  const lights: THREE.Light[] = [];
+  let floor: THREE.Mesh | null = null;
+  let previousBackground: THREE.Scene["background"] | null = null;
+  const groupWorld = new THREE.Vector3();
+  const cameraWorld = new THREE.Vector3();
+
+  return {
+    mount(state: EngineFrameState) {
+      const props = getProps();
+      const rig = MOODS[props.mood];
+      state.scene.add(group);
+      if (props.environment && state.scene instanceof THREE.Scene) {
+        previousBackground = state.scene.background;
+        state.scene.background = new THREE.Color(props.backdrop ?? rig.backdrop);
+      }
+      const ambient = new THREE.AmbientLight(rig.ambientColor, rig.ambient);
+      const key = new THREE.DirectionalLight(rig.keyColor, rig.key);
+      key.position.set(7, 9, 5);
+      key.castShadow = true;
+      key.shadow.mapSize.set(2048, 2048);
+      key.shadow.bias = -0.0004;
+      key.shadow.camera.left = -24;
+      key.shadow.camera.right = 24;
+      key.shadow.camera.top = 24;
+      key.shadow.camera.bottom = -24;
+      key.shadow.camera.near = 0.5;
+      key.shadow.camera.far = 80;
+      key.shadow.camera.updateProjectionMatrix();
+      const fill = new THREE.DirectionalLight(rig.fillColor, rig.fill);
+      fill.position.set(-8, 5, 3);
+      const rim = new THREE.DirectionalLight(rig.rimColor, rig.rim);
+      rim.position.set(0, 6, -10);
+      lights.push(ambient, key, fill, rim);
+      group.add(ambient, key, fill, rim);
+      if (props.environment) {
+        floor = new THREE.Mesh(
+          new THREE.PlaneGeometry(400, 400),
+          new THREE.MeshStandardMaterial({ color: rig.floor, roughness: 0.95, metalness: 0 }),
+        );
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -0.01;
+        floor.receiveShadow = true;
+        group.add(floor);
+      }
+    },
+    frame(state: EngineFrameState) {
+      const props = getProps();
+      const spin = getSpin();
+      if (spin === null) return;
+      if (props.faceCamera) {
+        spin.getWorldPosition(groupWorld);
+        state.camera.getWorldPosition(cameraWorld);
+        spin.rotation.y = yawToFace(props.forward, [groupWorld.x, groupWorld.z], [cameraWorld.x, cameraWorld.z]);
+        return;
+      }
+      if (props.turntable !== 0) spin.rotation.y += props.turntable * state.delta;
+    },
+    dispose(state: EngineFrameState) {
+      state.scene.remove(group);
+      group.clear();
+      for (const light of lights) light.dispose();
+      lights.length = 0;
+      if (floor !== null) {
+        floor.geometry.dispose();
+        (floor.material as THREE.Material).dispose();
+        floor = null;
+      }
+      if (previousBackground !== null && state.scene instanceof THREE.Scene) {
+        state.scene.background = previousBackground;
+        previousBackground = null;
+      }
+    },
+  };
+}
+
 /**
  * A reusable cinematic "product-shot" stage — a 3-point lighting rig (key/fill/rim + ambient), a
  * seamless backdrop, and an optional turntable — so any parametric studio renders framed and lit like
@@ -72,37 +164,7 @@ export function StudioStage({
   children,
 }: StudioStageProps) {
   const spin = useRef<THREE.Group>(null);
-  const camera = useThree((state) => state.camera);
-  const groupWorld = useRef(new THREE.Vector3()).current;
-  const cameraWorld = useRef(new THREE.Vector3()).current;
-  useFrameTask((_, delta) => {
-    const group = spin.current;
-    if (group === null) return;
-    if (faceCamera) {
-      group.getWorldPosition(groupWorld);
-      camera.getWorldPosition(cameraWorld);
-      group.rotation.y = yawToFace(forward, [groupWorld.x, groupWorld.z], [cameraWorld.x, cameraWorld.z]);
-      return;
-    }
-    if (turntable !== 0) group.rotation.y += turntable * delta;
-  });
-  const rig = MOODS[mood];
-  return (
-    <>
-      {environment ? <color attach="background" args={[backdrop ?? rig.backdrop]} /> : null}
-      <ambientLight intensity={rig.ambient} color={rig.ambientColor} />
-      <directionalLight position={[7, 9, 5]} intensity={rig.key} color={rig.keyColor} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004}>
-        <orthographicCamera attach="shadow-camera" args={[-24, 24, 24, -24, 0.5, 80]} />
-      </directionalLight>
-      <directionalLight position={[-8, 5, 3]} intensity={rig.fill} color={rig.fillColor} />
-      <directionalLight position={[0, 6, -10]} intensity={rig.rim} color={rig.rimColor} />
-      {environment ? (
-        <mesh rotation-x={-Math.PI / 2} position-y={-0.01} receiveShadow>
-          <planeGeometry args={[400, 400]} />
-          <meshStandardMaterial color={rig.floor} roughness={0.95} metalness={0} />
-        </mesh>
-      ) : null}
-      <group ref={spin}>{children}</group>
-    </>
-  );
+  const props: StageDrawProps = { mood, backdrop, turntable, environment, faceCamera, forward };
+  useEngineDraw(() => studioStageDraw(() => props, () => spin.current), [mood, backdrop, turntable, environment, faceCamera, forward]);
+  return <group ref={spin}>{children}</group>;
 }

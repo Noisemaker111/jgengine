@@ -88,6 +88,67 @@ ${Object.entries({ MAP: "vMapUv", NORMALMAP: "vNormalMapUv", ROUGHNESSMAP: "vRou
   material.customProgramCacheKey = () => `${previousKey}|authored-surface:${shape}:${tile}`;
 }
 
+const surfaceTextureLoader = new ImageTextureLoader();
+const surfaceTextureLoads = new Map<string, Promise<THREE.Texture>>();
+
+/** One shared decode per map URL, matching the `useLoader` cache the hook path used. @internal */
+function loadAuthoredSurfaceTexture(url: string): Promise<THREE.Texture> {
+  let pending = surfaceTextureLoads.get(url);
+  if (pending === undefined) {
+    pending = new Promise((resolve, reject) => {
+      surfaceTextureLoader.load(url, resolve, undefined, reject);
+    });
+    surfaceTextureLoads.set(url, pending);
+    pending.catch(() => surfaceTextureLoads.delete(url));
+  }
+  return pending;
+}
+
+/** Build the owned material and its cloned map textures from decoded sources. @internal */
+function buildAuthoredSurfaceMaterial(entries: Record<string, string>, sources: readonly THREE.Texture[], config: AuthoredSurfaceConfig, shape: SurfaceShape): readonly [THREE.MeshStandardMaterial, ...THREE.Texture[]] {
+  const textures = authoredSurfaceTextures(entries, sources, config);
+  const { anisotropy: _samplerAnisotropy, surfaceAnisotropy, ...surface } = config;
+  const material = requiresPhysicalMaterial({ ...surface, normalScale: surface.normalScale === undefined ? undefined : [...surface.normalScale], anisotropy: surfaceAnisotropy }, textures) ? new THREE.MeshPhysicalMaterial() : new THREE.MeshStandardMaterial();
+  try {
+    configureAuthoredSurface(material, config, textures, shape);
+  } catch (error) {
+    material.dispose();
+    Object.values(textures).forEach(texture => texture.dispose());
+    throw error;
+  }
+  return [material, ...Object.values(textures)];
+}
+
+/** An owned authored-surface material plus the cloned map textures it references. @internal */
+export interface AuthoredSurfaceMaterialLease {
+  readonly material: THREE.MeshStandardMaterial;
+  /** Dispose the material and every cloned map texture. Cached source textures are untouched. */
+  dispose(): void;
+}
+
+function leaseOf([material, ...textures]: readonly [THREE.MeshStandardMaterial, ...THREE.Texture[]]): AuthoredSurfaceMaterialLease {
+  return {
+    material,
+    dispose() {
+      material.dispose();
+      for (const texture of textures) texture.dispose();
+    },
+  };
+}
+
+/**
+ * The draw-side form of {@link useAuthoredSurfaceMaterial}: resolves the declared map roles through
+ * the shared texture cache and returns an owned material whose clones the caller disposes with the
+ * mesh. Maps absent from `config.maps` still resolve immediately.
+ * @internal
+ */
+export function authoredSurfaceMaterial(config: AuthoredSurfaceConfig, shape: SurfaceShape = "box"): Promise<AuthoredSurfaceMaterialLease> {
+  const entries = modelMapEntries(config.maps ?? {});
+  const urls = Object.values(entries);
+  if (urls.length === 0) return Promise.resolve(leaseOf(buildAuthoredSurfaceMaterial(entries, [], config, shape)));
+  return Promise.all(urls.map(loadAuthoredSurfaceTexture)).then((sources) => leaseOf(buildAuthoredSurfaceMaterial(entries, sources, config, shape)));
+}
+
 /**
  * Load declared surface-map roles and own the material/map clones (cached textures remain untouched).
  * Colour, emissive, sheen-colour and specular-colour maps are sRGB; numeric maps are linear. Cylinder side metres use the RMS ellipse circumference approximation.
