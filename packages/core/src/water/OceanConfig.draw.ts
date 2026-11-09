@@ -204,23 +204,25 @@ export function createOceanConfig(patch: OceanConfig = {}): ResolvedOceanConfig 
 export function buildOceanWaveUniforms(config: ResolvedOceanConfig): {
   directions: THREE.Vector2[];
   params: THREE.Vector4[];
-  phases: number[];
+  // A typed array, not number[]: three uploads this uniform every frame, and a plain array made the
+  // GL binding allocate a conversion buffer per upload.
+  phases: Float32Array;
 } {
   const directions: THREE.Vector2[] = [];
   const params: THREE.Vector4[] = [];
-  const phases: number[] = [];
+  const phases = new Float32Array(MAX_OCEAN_WAVES);
   for (let index = 0; index < MAX_OCEAN_WAVES; index += 1) {
     const wave = config.waves[index];
     if (wave === undefined) {
       directions.push(new THREE.Vector2(1, 0));
       params.push(new THREE.Vector4(1, 0, 0, 0));
-      phases.push(0);
+      phases[index] = 0;
       continue;
     }
     const waveNumber = (Math.PI * 2) / wave.wavelength;
     directions.push(new THREE.Vector2(wave.direction[0], wave.direction[1]));
     params.push(new THREE.Vector4(waveNumber, wave.amplitude, wave.steepness, wave.speed * waveNumber));
-    phases.push(wave.phase ?? 0);
+    phases[index] = wave.phase ?? 0;
   }
   return { directions, params, phases };
 }

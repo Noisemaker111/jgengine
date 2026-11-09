@@ -171,6 +171,13 @@ export interface SceneWalkStarts {
 const walkStarts = new WeakMap<THREE.Object3D, SceneWalkStarts>();
 let walkSerial = 0;
 
+// The traversal stacks are module scratch, emptied per call: this runs for every scene render, and
+// a fresh triple of arrays per call was per-frame garbage in every game. `starts` stays per-call —
+// the caller keeps it.
+const walkNodes: THREE.Object3D[] = [];
+const walkForced: boolean[] = [];
+const walkModes: number[] = [];
+
 /**
  * Parents before children, with its own stack: a recursive walk over a scene's mix of node classes
  * cost several times more than the work it did at each node. The same pass lists the scene's walk
@@ -178,9 +185,15 @@ let walkSerial = 0;
  */
 function updateShownMatrixWorld(root: THREE.Object3D, force: boolean): THREE.Object3D[] {
   const starts: THREE.Object3D[] = [];
-  const nodes: THREE.Object3D[] = [root];
-  const forced: boolean[] = [force];
-  const modes: number[] = [root.visible ? MATRIX | COLLECT : MATRIX];
+  const nodes = walkNodes;
+  const forced = walkForced;
+  const modes = walkModes;
+  nodes.length = 0;
+  forced.length = 0;
+  modes.length = 0;
+  nodes.push(root);
+  forced.push(force);
+  modes.push(root.visible ? MATRIX | COLLECT : MATRIX);
   for (let node = nodes.pop(); node !== undefined; node = nodes.pop()) {
     const mode = modes.pop()!;
     const nodeForce = forced.pop() === true;

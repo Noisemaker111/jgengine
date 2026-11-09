@@ -258,8 +258,17 @@ export function createParticleSystem(config: EmitterConfig = {}, options: Partic
   function range(r: Range): number {
     return r.min + (r.max - r.min) * rand();
   }
-  function unpackColor(rgb: number): [number, number, number] {
-    return [((rgb >> 16) & 0xff) / 255, ((rgb >> 8) & 0xff) / 255, (rgb & 0xff) / 255];
+  // Scratch tuples for the per-spawn colour unpack and the synthetic floor hit: both ran once per
+  // particle per frame and each used to allocate.
+  const spawnColorStart: [number, number, number] = [0, 0, 0];
+  const spawnColorEnd: [number, number, number] = [0, 0, 0];
+  const planeHitPosition: [number, number, number] = [0, 0, 0];
+  const planeHit: ParticleCollisionHit = { position: planeHitPosition, normal: [0, 1, 0] };
+  const NO_FORCES: readonly ForceFieldConfig[] = [];
+  function unpackColor(rgb: number, out: [number, number, number]): void {
+    out[0] = ((rgb >> 16) & 0xff) / 255;
+    out[1] = ((rgb >> 8) & 0xff) / 255;
+    out[2] = (rgb & 0xff) / 255;
   }
 
   function spawnOne(): void {
@@ -267,8 +276,10 @@ export function createParticleSystem(config: EmitterConfig = {}, options: Partic
     if (p === undefined) return;
     live++;
     p.id = nextId++;
-    const [cr0, cg0, cb0] = unpackColor(cfg.colorStart);
-    const [cr1, cg1, cb1] = unpackColor(cfg.colorEnd);
+    unpackColor(cfg.colorStart, spawnColorStart);
+    unpackColor(cfg.colorEnd, spawnColorEnd);
+    const [cr0, cg0, cb0] = spawnColorStart;
+    const [cr1, cg1, cb1] = spawnColorEnd;
 
     p.x = cfg.position[0] + (rand() * 2 - 1) * cfg.spawnJitter[0];
     p.y = cfg.position[1] + (rand() * 2 - 1) * cfg.spawnJitter[1];
@@ -294,7 +305,7 @@ export function createParticleSystem(config: EmitterConfig = {}, options: Partic
     let dx = cfg.direction[0];
     let dy = cfg.direction[1];
     let dz = cfg.direction[2];
-    const dlen = Math.hypot(dx, dy, dz) || 1;
+    const dlen = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
     dx /= dlen;
     dy /= dlen;
     dz /= dlen;
@@ -310,7 +321,7 @@ export function createParticleSystem(config: EmitterConfig = {}, options: Partic
       dx = dx * (1 - t) + sx * t;
       dy = dy * (1 - t) + sy * t;
       dz = dz * (1 - t) + sz * t;
-      const n = Math.hypot(dx, dy, dz) || 1;
+      const n = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
       dx /= n;
       dy /= n;
       dz /= n;
@@ -360,7 +371,8 @@ export function createParticleSystem(config: EmitterConfig = {}, options: Partic
       if (!Number.isFinite(dt) || dt <= 0) return;
       const damp = cfg.drag > 0 ? Math.max(0, 1 - cfg.drag * dt) : 1;
       const contact = cfg.collision;
-      const forces = (cfg.forces ?? []).slice(0, 8);
+      const forces = cfg.forces ?? NO_FORCES;
+      const forceCount = Math.min(forces.length, 8);
       const queryLimit = Math.min(max, bounded(contact?.maxQueries, 64, 4096));
       const eventLimit = bounded(contact?.maxEvents, 64, 1024);
       let queries = 0;
@@ -376,8 +388,8 @@ export function createParticleSystem(config: EmitterConfig = {}, options: Partic
         p.px = p.x; p.py = p.y; p.pz = p.z;
         let ax = cfg.gravity[0], ay = cfg.gravity[1], az = cfg.gravity[2];
         queryFrom[0] = p.x; queryFrom[1] = p.y; queryFrom[2] = p.z;
-        for (const field of forces) {
-          const force = sampleForceField(field, queryFrom, 0xffffffff, sampledForce);
+        for (let f = 0; f < forceCount; f += 1) {
+          const force = sampleForceField(forces[f]!, queryFrom, 0xffffffff, sampledForce);
           ax += force[0]; ay += force[1]; az += force[2];
         }
         if (options.acceleration !== undefined) {
@@ -398,13 +410,17 @@ export function createParticleSystem(config: EmitterConfig = {}, options: Partic
         }
         if (hit === null && contact.planeY !== undefined && queryFrom[1] >= contact.planeY && p.y <= contact.planeY && p.vy < 0) {
           const t = (queryFrom[1] - contact.planeY) / (queryFrom[1] - p.y);
-          hit = { position: [queryFrom[0] + (p.x - queryFrom[0]) * t, contact.planeY, queryFrom[2] + (p.z - queryFrom[2]) * t], normal: [0, 1, 0] };
+          planeHitPosition[0] = queryFrom[0] + (p.x - queryFrom[0]) * t;
+          planeHitPosition[1] = contact.planeY;
+          planeHitPosition[2] = queryFrom[2] + (p.z - queryFrom[2]) * t;
+          hit = planeHit;
         }
         if (hit === null) continue;
         p.x = hit.position[0]; p.y = hit.position[1]; p.z = hit.position[2];
         if (events.length < eventLimit) recordEvent("collision", p, hit.normal);
         if (contact.response !== "bounce") { swapRemove(i); continue; }
-        const length = Math.hypot(...hit.normal);
+        const n0 = hit.normal[0], n1 = hit.normal[1], n2 = hit.normal[2];
+        const length = Math.sqrt(n0 * n0 + n1 * n1 + n2 * n2);
         if (length === 0) continue;
         const nx = hit.normal[0] / length, ny = hit.normal[1] / length, nz = hit.normal[2] / length;
         const dot = p.vx * nx + p.vy * ny + p.vz * nz;
