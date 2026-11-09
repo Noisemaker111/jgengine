@@ -1,4 +1,6 @@
 import { useEffect, useImperativeHandle, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type RefObject } from "react";
+import { useFrameBind, useLiveSelect } from "@jgengine/core/ui/liveBind.view";
+import { isLive, readLive, type Live } from "@jgengine/core/ui/liveValue";
 import type { FogCells, FogField } from "@jgengine/core/map/fog";
 import {
   DEFAULT_MARKER_KINDS,
@@ -470,7 +472,12 @@ export interface MinimapChromeProps {
   frameStrokeWidth?: number;
   /** Label drawn at the top of the ring when `frame` is on; `false` omits it. */
   cardinalLabel?: string | false;
-  markers?: readonly MinimapChromeMarker[];
+  /**
+   * The blips. Give `live(() => markers)` for units that move every frame: the chrome re-renders only
+   * when a marker appears, leaves or changes its look, and moves the drawn ones to their new positions
+   * each frame.
+   */
+  markers?: Live<readonly MinimapChromeMarker[]>;
   markerColor?: string;
   markerRadius?: number;
   className?: string;
@@ -539,7 +546,7 @@ export function MinimapChrome({
   frameColor = "rgba(148,163,184,0.4)",
   frameStrokeWidth = 1.5,
   cardinalLabel = "N",
-  markers = [],
+  markers: markerSource = NO_CHROME_MARKERS,
   markerColor = "#e2e8f0",
   markerRadius = 5,
   className,
@@ -547,6 +554,20 @@ export function MinimapChrome({
 }: MinimapChromeProps): ReactNode {
   const half = view.size / 2;
   const nodes = useRef(new Map<string, SVGGElement>());
+  const markers = useLiveSelect(markerSource, (list) => list, sameMarkerLooks);
+  const layer = useRef<SVGGElement>(null);
+  useFrameBind(
+    layer,
+    () => (isLive(markerSource) ? readLive(markerSource) : null),
+    (list) => {
+      if (list === null) return;
+      for (const marker of list) {
+        const node = nodes.current.get(marker.id);
+        if (node !== undefined) placeMarkerNode(node, marker, view);
+      }
+    },
+    (previous, next) => previous === next || (previous !== null && next !== null && sameMarkerPoses(previous, next)),
+  );
   useImperativeHandle(handle, () => ({
     place(nextView, nextMarkers) {
       for (const marker of nextMarkers) {
@@ -560,7 +581,7 @@ export function MinimapChrome({
     else nodes.current.set(id, node);
   };
   return (
-    <g className={className} data-minimap-chrome>
+    <g ref={layer} className={className} data-minimap-chrome>
       {frame ? (
         <>
           <circle cx={half} cy={half} r={half - 1} fill="none" stroke={frameColor} strokeWidth={frameStrokeWidth} />
@@ -603,6 +624,28 @@ export function MinimapChrome({
       })}
     </g>
   );
+}
+
+const NO_CHROME_MARKERS: readonly MinimapChromeMarker[] = [];
+
+/** The same blips drawn the same way, wherever they stand: a moved marker needs no render. */
+function sameMarkerLooks(previous: readonly MinimapChromeMarker[], next: readonly MinimapChromeMarker[]): boolean {
+  if (previous === next) return true;
+  if (previous.length !== next.length) return false;
+  for (let index = 0; index < previous.length; index += 1) {
+    const a = previous[index]!, b = next[index]!;
+    if (a.id !== b.id || a.color !== b.color || a.radius !== b.radius || a.glyph !== b.glyph || a.glyphColor !== b.glyphColor || a.strokeColor !== b.strokeColor || a.strokeWidth !== b.strokeWidth || a.clampToEdge !== b.clampToEdge || (a.heading === undefined) !== (b.heading === undefined)) return false;
+  }
+  return true;
+}
+
+function sameMarkerPoses(previous: readonly MinimapChromeMarker[], next: readonly MinimapChromeMarker[]): boolean {
+  if (previous.length !== next.length) return false;
+  for (let index = 0; index < previous.length; index += 1) {
+    const a = previous[index]!, b = next[index]!;
+    if (a.id !== b.id || a.heading !== b.heading || a.position[0] !== b.position[0] || a.position[a.position.length - 1] !== b.position[b.position.length - 1]) return false;
+  }
+  return true;
 }
 
 const NO_SUBSCRIBE = (): (() => void) => () => undefined;
