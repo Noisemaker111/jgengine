@@ -1,6 +1,10 @@
 import { expect, test } from "bun:test";
+import { spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
-import { abVerdict, affectedGames, baseTreeName, blockOrder, medianMs, parseAbArgs, plantScript, renderAbTable, t99, type AbGameResult } from "./perf-ab";
+import { abVerdict, affectedGames, baseTreeName, blockOrder, homeRequest, medianMs, parseAbArgs, plantScript, renderAbTable, t99, treeFingerprint, type AbGameResult } from "./perf-ab";
 
 const GAMES = ["deepward", "harbor-heat", "scrap-signal"];
 const options = { minBlocks: 4, maxBlocks: 16, marginPct: 3 };
@@ -76,6 +80,42 @@ test("parseAbArgs reads every flag and refuses bad values", () => {
   expect(() => parseAbArgs(["--games"])).toThrow("needs a value");
   expect(() => parseAbArgs(["--path", "fly"])).toThrow("walk or still");
   expect(() => parseAbArgs(["--nope", "1"])).toThrow("unknown argument");
+});
+
+test("the fingerprint changes when a served file is edited, not when the edit is committed", () => {
+  const dir = mkdtempSync(join(tmpdir(), "perf-ab-fp-"));
+  try {
+    const git = (...args: string[]) => {
+      const result = spawnSync("git", args, { cwd: dir, encoding: "utf8" });
+      if (result.status !== 0) throw new Error(result.stderr);
+    };
+    git("init", "-q");
+    git("config", "user.email", "t@t");
+    git("config", "user.name", "t");
+    for (const folder of ["packages", "apps", "games"]) {
+      mkdirSync(join(dir, folder));
+      writeFileSync(join(dir, folder, "a.ts"), "1\n");
+    }
+    git("add", "-A");
+    git("commit", "-q", "-m", "one");
+    const clean = treeFingerprint(dir);
+    writeFileSync(join(dir, "packages", "a.ts"), "2\n");
+    const edited = treeFingerprint(dir);
+    expect(edited).not.toBe(clean);
+    git("commit", "-q", "-am", "two");
+    expect(treeFingerprint(dir)).toBe(edited);
+    writeFileSync(join(dir, "games", "new.ts"), "untracked\n");
+    expect(treeFingerprint(dir)).not.toBe(edited);
+    writeFileSync(join(dir, "notes.md"), "not served\n");
+    rmSync(join(dir, "games", "new.ts"));
+    expect(treeFingerprint(dir)).toBe(edited);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("every window's walk starts from the warmed-up pose", () => {
+  expect(JSON.parse(homeRequest({ x: 1, y: 2, z: 3, yaw: 0.5 }))).toEqual({ method: "teleport", x: 1, y: 2, z: 3, yaw: 0.5 });
 });
 
 test("the base tree is named for its commit", () => {

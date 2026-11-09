@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { basename, dirname, join, resolve } from "node:path";
 
@@ -205,15 +206,28 @@ function git(cwd: string, args: string[]): { ok: boolean; out: string } {
 }
 
 /**
- * What a tree serves, as one hash: its commit, its uncommitted diff and its untracked files. A run
- * that sees it change measured two different programs (the dev server hot-reloads saved edits), so it
- * stops instead of printing a number for neither.
+ * What a tree serves, as one hash: the committed content of packages, apps and games, their uncommitted
+ * diff and their untracked files. A run that sees it change measured two different programs (the dev
+ * server hot-reloads saved edits), so it stops instead of printing a number for neither. A commit that
+ * changes no served file (a script, the docs, a commit of edits already served) changes nothing here.
  */
 export function treeFingerprint(dir: string): string {
-  const head = git(dir, ["rev-parse", "HEAD"]).out;
-  const diff = git(dir, ["diff", "HEAD", "--binary", "--", "packages", "apps", "games"]).out;
-  const untracked = git(dir, ["ls-files", "--others", "--exclude-standard", "--", "packages", "apps", "games"]).out;
-  return createHash("sha1").update(`${head}\n${diff}\n${untracked}`).digest("hex").slice(0, 12);
+  // The working files as git would commit them, through a copy of the index (its stat cache keeps this
+  // to changed files), so the real index is never touched.
+  const gitDir = git(dir, ["rev-parse", "--path-format=absolute", "--git-dir"]).out;
+  const index = join(tmpdir(), `jg-perf-ab-${process.pid}-${createHash("sha1").update(dir).digest("hex").slice(0, 8)}.index`);
+  try {
+    copyFileSync(join(gitDir, "index"), index);
+    const env = { ...process.env, GIT_INDEX_FILE: index };
+    const run = (args: string[]) => spawnSync("git", args, { cwd: dir, env, encoding: "utf8", windowsHide: true, timeout: 180_000, maxBuffer: 64 * 1024 * 1024 });
+    const added = run(["add", "-A", "--", "packages", "apps", "games"]);
+    const tree = run(["write-tree"]);
+    if (added.status !== 0 || tree.status !== 0) throw new Error(`git could not hash ${dir}: ${(added.stderr || tree.stderr || "").trim()}`);
+    const served = git(dir, ["rev-parse", `${tree.stdout.trim()}:packages`, `${tree.stdout.trim()}:apps`, `${tree.stdout.trim()}:games`]).out;
+    return createHash("sha1").update(served).digest("hex").slice(0, 12);
+  } finally {
+    rmSync(index, { force: true });
+  }
 }
 
 /** Paths that differ between `commit` and this tree, committed or not, untracked included. */
@@ -279,9 +293,18 @@ export function plantScript(ms: number): string {
 
 type Side = "base" | "branch";
 
+interface Home {
+  x: number;
+  y: number;
+  z: number;
+  yaw: number;
+}
+
 interface SidePage {
   side: Side;
   session: CdpSession;
+  /** Where the player stood after warmup; every window's walk starts here, so windows replay one route. */
+  home: Home | null;
   stopPath: () => Promise<void>;
 }
 
@@ -312,7 +335,15 @@ async function openSide(side: Side, debugPort: number, base: string, game: strin
   console.error(`perf ab: ${game}: loading the ${side} page`);
   await navigateCapturePage(session, perfPageUrl({ base, game, quality: "high" }).toString(), PAGE_READY_MS);
   await session.evaluate(`new Promise((r) => setTimeout(r, ${WARMUP_MS}))`, { awaitPromise: true });
-  return { side, session, stopPath: async () => {} };
+  const pose = await session.evaluate<{ ok: boolean; position?: number[]; rotationY?: number }>(`window.__jgengineAgent?.handle?.({ method: "player_pose" }) ?? { ok: false }`);
+  const [x, y, z] = pose?.position ?? [];
+  const home = pose?.ok === true && x !== undefined && y !== undefined && z !== undefined ? { x, y, z, yaw: pose.rotationY ?? 0 } : null;
+  return { side, session, home, stopPath: async () => {} };
+}
+
+/** The bridge request that puts the player back where the window's walk starts. */
+export function homeRequest(home: Home): string {
+  return JSON.stringify({ method: "teleport", x: home.x, y: home.y, z: home.z, yaw: home.yaw });
 }
 
 async function pause(page: SidePage): Promise<void> {
@@ -328,6 +359,13 @@ async function pause(page: SidePage): Promise<void> {
 
 async function resume(page: SidePage, path: PerfPath): Promise<void> {
   await page.session.send("Debugger.resume");
+  // A walk that went on from wherever the last window left it read 10.7-23 ms from one 2 s window to
+  // the next on one build (harbor-heat pilot, 2026-11-09): each window saw new ground. From the same
+  // spot, every window on both sides walks the same route.
+  if (page.home !== null && path === "walk") {
+    const moved = await page.session.evaluate<{ ok: boolean; error?: string }>(`window.__jgengineAgent?.handle?.(${homeRequest(page.home)}) ?? { ok: false, error: "agent bridge unavailable" }`);
+    if (moved?.ok !== true) throw new Error(`could not put the ${page.side} page's player back at the start of the walk: ${moved?.error ?? "no answer"}`);
+  }
   page.stopPath = await startPath(page.session, path);
   await page.session.evaluate(`new Promise((r) => setTimeout(r, ${SETTLE_MS}))`, { awaitPromise: true });
 }
@@ -347,17 +385,27 @@ async function measurePair(game: string, servers: Record<Side, string>, args: Ab
   const pages: Partial<Record<Side, SidePage>> = {};
   try {
     // Base loads first and waits paused while the branch loads, so neither page draws while the other is timed.
+    const loadAt = Date.now();
     pages.base = await openSide("base", debugPort, servers.base, game, args);
     await pause(pages.base);
     pages.branch = await openSide("branch", debugPort, servers.branch, game, args);
     await pause(pages.branch);
+    const measureAt = Date.now();
+    // A walk with no player to put back (a camera-only game pans away) would see new ground every
+    // window, so such a game is measured standing still, and says so.
+    let path = args.path;
+    if (path === "walk" && (pages.base.home === null || pages.branch.home === null)) {
+      console.error(`perf ab: ${game} has no player pose to start each walk from, so it is measured standing still`);
+      path = "still";
+    }
+    console.error(`perf ab: ${game}: both pages loaded and warmed in ${Math.round((measureAt - loadAt) / 1000)} s`);
     const windows: AbWindow[] = [];
     const ratios: number[] = [];
     for (let block = 0; block < args.maxBlocks; block += 1) {
       const medians: Partial<Record<Side, number>> = {};
       for (const side of blockOrder(block)) {
         const page = pages[side]!;
-        await resume(page, args.path);
+        await resume(page, path);
         const deltas = await measureWindow(page, args.windowSeconds);
         await pause(page);
         const median = medianMs(deltas);
@@ -369,6 +417,7 @@ async function measurePair(game: string, servers: Record<Side, string>, args: Ab
       const verdict = abVerdict(ratios, args);
       console.error(`perf ab: ${game} block ${block + 1}: base ${medians.base!.toFixed(2)} ms, branch ${medians.branch!.toFixed(2)} ms${verdict === null ? "" : ` -> ${verdict.call}`}`);
       if (verdict !== null) {
+        console.error(`perf ab: ${game}: ${block + 1} pairs in ${Math.round((Date.now() - measureAt) / 1000)} s`);
         const side = (which: Side) => medianMs(windows.filter((window) => window.side === which).map((window) => window.medianMs));
         return { game, verdict, baseMs: side("base"), branchMs: side("branch"), windows };
       }
