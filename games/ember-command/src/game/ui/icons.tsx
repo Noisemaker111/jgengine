@@ -1,3 +1,4 @@
+import { memoView } from "@jgengine/core/ui/memoView.view";
 import { ICON_SVG } from "./iconData";
 
 /**
@@ -5,7 +6,7 @@ import { ICON_SVG } from "./iconData";
  * Colour comes from the CSS `color` of the wrapper (the paths are `fill="currentColor"`), so a slot
  * tints its icon gold, blue-when-active, or dim-when-locked with a single text-colour class.
  */
-export function GlyphIcon({ name, className, shadow, shadowDy = 16 }: { name: string; className?: string; shadow?: string; shadowDy?: number }) {
+export const GlyphIcon = memoView("GlyphIcon", function GlyphIcon({ name, className, shadow, shadowDy = 16 }: { name: string; className?: string; shadow?: string; shadowDy?: number }) {
   const inner = ICON_SVG[name];
   if (inner === undefined) return null;
   // `shadow` draws a darker copy `shadowDy` units (of 512) below the glyph: a drop shadow without a CSS
@@ -14,4 +15,4 @@ export function GlyphIcon({ name, className, shadow, shadowDy = 16 }: { name: st
   return (
     <svg viewBox="0 0 512 512" className={className} role="presentation" aria-hidden overflow="visible" dangerouslySetInnerHTML={{ __html: markup }} />
   );
-}
+});
