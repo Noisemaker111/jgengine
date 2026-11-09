@@ -7,5 +7,5 @@ description = "Deepward's HUD drawn with Rune in the native window, from the gam
 
 [dependencies]
 # Rune is pre-release and takes no pull requests: pinned to a commit of `dev` (never rewritten).
-rune = { git = "https://github.com/anomalyco/rune", rev = "58eeef5f8974299aa5e471de0010123323e3127e", default-features = false }
+rune = { git = "https://github.com/anomalyco/rune", rev = "d751f07106eac47bdd4e33756dee71e1f593c9e2", default-features = false }
 wgpu.workspace = true
