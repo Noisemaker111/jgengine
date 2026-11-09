@@ -8,6 +8,7 @@ import {
   EXIT_CLOSED,
   EXIT_VERIFY_FAILED,
   LANE_LOCK_FILE,
+  boatGateArgs,
   closeLane,
   landingMode,
   parseArgs,
@@ -64,6 +65,8 @@ interface Script {
   alive?: (pid: number) => boolean;
   /** Why the lane's verify:fast writes receipts this landing code cannot read; default none. */
   receiptsBehind?: string;
+  /** The boat host gate's exit, per run in order (null: the host cannot run it); absent: no host. */
+  remote?: (number | null)[];
 }
 
 const RUN_PID = 4242;
@@ -92,6 +95,7 @@ function io(script: Script = {}): Fake {
   const passed = new Set<string>(script.passed ?? []);
   const verifies = script.verify ?? [0];
   let verifyRuns = 0;
+  let remoteRuns = 0;
   const pr = script.pr === undefined ? 2278 : script.pr;
   const api = fakeGitHub({
     repo: REPO,
@@ -125,6 +129,18 @@ function io(script: Script = {}): Fake {
     receiptsBehind: () => script.receiptsBehind ?? null,
     github: () => github,
     pause: () => {},
+    ...(script.remote === undefined
+      ? {}
+      : {
+          // A passing host gate brings its receipt home: the tree here is then a passed tree.
+          remoteGate: (withPreflight: boolean) => {
+            const status = script.remote![Math.min(remoteRuns, script.remote!.length - 1)] ?? null;
+            remoteRuns += 1;
+            calls.push(`remote gate${withPreflight ? " with preflight" : ""}`);
+            if (status === 0) passed.add(tree);
+            return status;
+          },
+        }),
     sh: (argv) => {
       const key = argv.join(" ");
       calls.push(key);
@@ -362,6 +378,48 @@ describe("lane:close end to end", () => {
     const fake = io({ branch: "beta" });
     expect(closeLane({}, fake)).toBe(EXIT_CANNOT_ANSWER);
     expect(fake.lines.err.join("\n")).toContain("refusing to close beta");
+  });
+});
+
+describe("the gate on the boat host", () => {
+  test("a host that runs the gate replaces preflight and verify here, and its receipt merges the lane", () => {
+    const fake = io({ remote: [0] });
+    expect(closeLane({}, fake)).toBe(EXIT_CLOSED);
+    expect(fake.calls).toContain("remote gate with preflight");
+    expect(fake.calls).not.toContain("run preflight --no-verify");
+    expect(fake.calls).not.toContain("run verify:fast --landing");
+    expect(merges(fake)).toHaveLength(1);
+  });
+
+  test("a red gate on the host fails the close here and nothing lands", () => {
+    const fake = io({ remote: [1] });
+    expect(closeLane({}, fake)).toBe(EXIT_VERIFY_FAILED);
+    expect(fake.lines.err.join("\n")).toContain("the gate failed on the boat host (exit 1); nothing landed");
+    expect(fake.calls).not.toContain("run verify:fast --landing");
+    expect(fake.calls.some((call) => call.includes("land.ts"))).toBe(false);
+    expect(merges(fake)).toEqual([]);
+  });
+
+  test("a host that cannot run the gate leaves it to this machine", () => {
+    const fake = io({ remote: [null] });
+    expect(closeLane({}, fake)).toBe(EXIT_CLOSED);
+    expect(fake.calls).toContain("run preflight --no-verify");
+    expect(fake.calls).toContain("run verify:fast --landing");
+  });
+
+  test("a pushed head that needs verifying again goes to the host too, and a red there stops the merge", () => {
+    const fake = io({ remote: [0, 1], trees: { head: "T-head" }, diffs: { "T-verified..T-head": ["packages/core/src/a.ts"] } });
+    expect(closeLane({}, fake)).toBe(EXIT_VERIFY_FAILED);
+    expect(fake.calls.filter((call) => call.startsWith("remote gate"))).toEqual(["remote gate with preflight", "remote gate"]);
+    expect(fake.calls).not.toContain("run verify:fast --landing");
+    expect(merges(fake)).toEqual([]);
+  });
+
+  test("the host runs this Bun, planned from this lane's merge base, and brings the receipts and gen output home", () => {
+    const args = boatGateArgs({ commit: "c0ffee", mergeBase: "ba5e", bun: "1.4.4", withPreflight: true });
+    expect(args.slice(0, args.indexOf("--"))).toEqual(["gate", "--repo", "jgengine", "--commit", "c0ffee", "--bun", "1.4.4", "--tree-back", "--bring", ".scratch/verify-fast/runs"]);
+    expect(args.at(-1)).toBe("bun install --frozen-lockfile && bun run preflight --no-verify && bun run verify:fast --landing --base ba5e");
+    expect(boatGateArgs({ commit: "c", mergeBase: "b", bun: "1", withPreflight: false }).at(-1)).toBe("bun install --frozen-lockfile && bun run verify:fast --landing --base b");
   });
 });
 
