@@ -49,24 +49,32 @@ export function HouseClock({ compact = false }: { compact?: boolean }) {
 
 /** The fridge door: credits, rations and the midnight bill as magnets, with the day's note pinned under them. */
 export function FridgeMagnets({ compact = false }: { compact?: boolean }) {
-  const household = useStore(householdStore);
   const objects = useSceneObjects();
-  const bill = nextBill(household, objects);
+  const household = useStore(householdStore, (state) => {
+    const due = nextBill(state, objects);
+    return {
+      credits: Math.floor(state.credits),
+      pantry: state.pantry,
+      debt: state.debt,
+      bill: Math.round(due),
+      short: state.credits < due,
+      goal: dayGoal(state, objects).replace(/^Next:\s*/, ""),
+    };
+  });
+  const { bill, short, goal } = household;
   const lowFood = household.pantry < 4;
-  const short = household.credits < bill;
-  const goal = dayGoal(household, objects).replace(/^Next:\s*/, "");
   return (
-    <HudFade watch={() => [Math.floor(household.credits), household.pantry, Math.round(bill), household.debt, goal]} hold={() => lowFood || short || household.debt > 0} dimTo={0.42} idleMs={6000} className="orbit-fridge-fade">
+    <HudFade watch={() => [household.credits, household.pantry, bill, household.debt, goal]} hold={() => lowFood || short || household.debt > 0} dimTo={0.42} idleMs={6000} className="orbit-fridge-fade">
       <section className="orbit-fridge" aria-label="Household time and resources">
         <div className="orbit-magnets">
           <Enamel tone={short ? "coral" : "butter"} radius={16} padding="6px 12px 6px 8px" className="orbit-magnet" title="Credits">
-            <GameIcon name="coin" size={20} /><b>{creditsText(Math.floor(household.credits))}</b><small>credits</small>
+            <GameIcon name="coin" size={20} /><b>{creditsText(household.credits)}</b><small>credits</small>
           </Enamel>
           <Enamel tone={lowFood ? "coral" : "mint"} radius={16} padding="6px 12px 6px 8px" className="orbit-magnet" title="Rations">
             <GameIcon name="bread" size={20} /><b>{household.pantry}</b><small>rations</small>
           </Enamel>
           <KitPanel material="paper" cut="ticket" depth={10} padding="5px 14px" edgeWidth={0} shadow={false} className={`orbit-bill ${short ? "warning" : ""}`} title="Due at midnight">
-            <GameIcon name="hourglass" size={17} /><b>{Math.round(bill)}</b><small>midnight bill</small>
+            <GameIcon name="hourglass" size={17} /><b>{bill}</b><small>midnight bill</small>
           </KitPanel>
           {household.debt > 0 && (
             <Enamel tone="coral" radius={16} padding="6px 12px 6px 8px" className="orbit-magnet" title="Debt">

@@ -3,10 +3,10 @@ import { bodyColor, describePlan, type AlienBodyPlan } from "../../creatures/bod
 import { NEED_DEFS, type NeedId } from "../../needs/needs";
 import { MOOD_COLORS, NEED_COLORS } from "../../palette";
 
-export function NeedBar({ need, value }: { need: NeedId; value: number }): ReactNode {
+export function NeedBar({ need, value, low }: { need: NeedId; value: number; low?: boolean }): ReactNode {
   const def = NEED_DEFS[need];
   const pct = Math.max(0, Math.min(100, value));
-  return <div className={`orbit-need ${pct < 30 ? "low" : ""}`}><span>{def.label}</span><div role="meter" aria-label={def.label} aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100}><i style={{ width: `${Math.round(pct)}%`, backgroundColor: NEED_COLORS[need] }}/></div><b>{Math.round(pct)}</b></div>;
+  return <div className={`orbit-need ${(low ?? pct < 30) ? "low" : ""}`}><span>{def.label}</span><div role="meter" aria-label={def.label} aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100}><i style={{ width: `${Math.round(pct)}%`, backgroundColor: NEED_COLORS[need] }}/></div><b>{Math.round(pct)}</b></div>;
 }
 export function MoodBadge({ tier, face, label }: { tier: string; face: string; label: string }): ReactNode {
   return <span className="orbit-mood" style={{ color: `color-mix(in srgb, ${MOOD_COLORS[tier]} 70%, #2a1733)` }}><span aria-hidden="true">{face}</span> {label}</span>;

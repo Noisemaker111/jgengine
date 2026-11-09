@@ -106,6 +106,12 @@ export function Pushpin({ color = "#f6a6cf" }: { color?: string }) {
 }
 
 /** Four arcs around a portrait, one per need: the household's mood ring. */
+/** Needs stepped to 5%, as the ring draws them, so a ring redraws a few times a minute rather than every tick. */
+export function ringNeeds(needs: Readonly<Record<NeedId, number>>): Record<NeedId, number> {
+  const step = (need: NeedId): number => Math.round(Math.max(0, Math.min(100, needs[need] ?? 0)) / 5) * 5;
+  return { hunger: step("hunger"), energy: step("energy"), social: step("social"), fun: step("fun") };
+}
+
 export function NeedRing({ needs, size = 52, children }: { needs: Readonly<Record<NeedId, number>>; size?: number; children?: ReactNode }) {
   const r = size / 2 - 3;
   const c = size / 2;
@@ -120,7 +126,6 @@ export function NeedRing({ needs, size = 52, children }: { needs: Readonly<Recor
     <span className="orbit-ring" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
         {order.map((need, i) => {
-          // Stepped to 5% so the ring redraws a few times a minute, not every frame under its enamel rim.
           const value = Math.round(Math.max(0, Math.min(100, needs[need] ?? 0)) / 5) * 5;
           const start = i * 90 + 6;
           return (

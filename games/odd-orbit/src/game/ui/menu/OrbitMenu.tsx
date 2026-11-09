@@ -124,7 +124,7 @@ interface Plate { id: string; label: string; icon: GameIconName; tone: EnamelTon
 
 function PorchTitle({ preferences, onPreference, whileLoading }: Prefs & { whileLoading: Loader }): ReactNode {
   const ctx = useGameContext();
-  const household = useStore(householdStore);
+  const household = useStore(householdStore, (state) => ({ credits: state.credits, pantry: state.pantry, beings: state.order.length }));
   const session = useStore(orbitSession);
   const profile = useDisplayProfile();
   const slots = useSaveSlots(orbitSlots);
@@ -279,7 +279,7 @@ function PorchTitle({ preferences, onPreference, whileLoading }: Prefs & { while
           <PaperNote tilt={compact ? 0 : 1.2} torn={!compact} pin={ENAMEL.pink} className="orbit-title-paper">{note}</PaperNote>
         </div>
       )}
-      <p className="orbit-title-foot">{notice ?? `${orbitSlotLabel(session.slot)} · ${household.credits} credits · ${household.pantry} rations · ${household.order.length} beings`}</p>
+      <p className="orbit-title-foot">{notice ?? `${orbitSlotLabel(session.slot)} · ${household.credits} credits · ${household.pantry} rations · ${household.beings} beings`}</p>
     </div>
   );
 }
@@ -324,7 +324,21 @@ interface Chapter { id: string; label: string; icon: GameIconName; page: string 
 function Handbook({ preferences, onPreference, whileLoading }: Prefs & { whileLoading: Loader }): ReactNode {
   const ctx = useGameContext();
   const { commands } = useGame();
-  const household = useStore(householdStore);
+  const household = useStore(householdStore, (state) => {
+    const working = workingMember(state);
+    return {
+      day: state.day,
+      credits: state.credits,
+      pantry: state.pantry,
+      debt: state.debt,
+      working: working === null ? null : { id: working.id, name: working.name },
+      first: state.order[0] ?? null,
+      roll: state.order.flatMap((id) => {
+        const member = state.members[id];
+        return member === undefined ? [] : [{ id, plan: member.bodyPlan, name: member.name, mood: moodOfNeeds(member.needs).label }];
+      }),
+    };
+  });
   const session = useStore(orbitSession);
   const profile = useDisplayProfile();
   const [notice, setNotice] = useState<string | null>(null);
@@ -363,8 +377,8 @@ function Handbook({ preferences, onPreference, whileLoading }: Prefs & { whileLo
   });
   const active = nav.activeId ?? "resume";
   useEffect(() => { if (active !== "settings") setInSettings(false); }, [active]);
-  const working = workingMember(household);
-  const featured = working?.id ?? household.order[0] ?? null;
+  const working = household.working;
+  const featured = working?.id ?? household.first;
   const entity = featured === null ? null : ctx.scene.entity.get(featured);
   const { hour, minute } = useGameCalendar((calendar) => ({ hour: Math.floor(calendar.hour), minute: calendar.minute }));
 
@@ -378,12 +392,7 @@ function Handbook({ preferences, onPreference, whileLoading }: Prefs & { whileLo
       <div className="orbit-page-note">
         <h2>Everyone is waiting</h2>
         <div className="orbit-roll">
-          {household.order.map((id) => {
-            const member = household.members[id];
-            if (member === undefined) return null;
-            const mood = moodOfNeeds(member.needs);
-            return <div key={id} className="orbit-roll-line"><AlienSwatch plan={member.bodyPlan} size={34} /><strong>{member.name}</strong><span>{mood.label}</span></div>;
-          })}
+          {household.roll.map((member) => <div key={member.id} className="orbit-roll-line"><AlienSwatch plan={member.plan} size={34} /><strong>{member.name}</strong><span>{member.mood}</span></div>)}
         </div>
         {notice && <span className="orbit-ink-stamp">{notice}</span>}
       </div>

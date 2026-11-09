@@ -5,7 +5,7 @@ import { useStore } from "@jgengine/react/store";
 import { bodyColor } from "../../creatures/bodyPlan";
 import { householdStore } from "../../session/store";
 import { activeGoalLabel } from "../../sim/simulate";
-import { Enamel, NeedRing } from "../fiction/kit";
+import { Enamel, NeedRing, ringNeeds } from "../fiction/kit";
 import { AlienSwatch } from "./bits";
 
 /**
@@ -14,28 +14,39 @@ import { AlienSwatch } from "./bits";
  * magnet as a paper tag. Tap a magnet to open that being's card.
  */
 export function RosterPanel({ compact = false }: { compact?: boolean }) {
-  const household = useStore(householdStore);
   const { commands } = useGame();
-  const labels = household.order.map((id) => {
-    const member = household.members[id];
-    if (member === undefined) return "";
-    const company = member.action.kind === "wander" && member.action.company !== undefined ? household.members[member.action.company]?.name : undefined;
-    return activeGoalLabel(member, company);
-  });
-  const worried = household.order.some((id) => household.members[id]?.concern || household.members[id]?.recovering);
+  const roster = useStore(householdStore, (household) => ({
+    selectedMemberId: household.selectedMemberId,
+    members: household.order.flatMap((id) => {
+      const member = household.members[id];
+      if (member === undefined) return [];
+      const company = member.action.kind === "wander" && member.action.company !== undefined ? household.members[member.action.company]?.name : undefined;
+      return [{
+        id,
+        name: member.name,
+        plan: member.bodyPlan,
+        label: activeGoalLabel(member, company),
+        needs: ringNeeds(member.needs),
+        low: Math.min(...Object.values(member.needs)) < 25,
+        recovering: member.recovering,
+        concern: member.concern,
+      }];
+    }),
+  }));
+  const labels = roster.members.map((member) => member.label);
+  const worried = roster.members.some((member) => member.concern || member.recovering);
   return (
-    <HudFade watch={() => [labels.join("|"), household.selectedMemberId]} hold={() => worried || household.selectedMemberId !== null} dimTo={0.55} idleMs={7000}>
+    <HudFade watch={() => [labels.join("|"), roster.selectedMemberId]} hold={() => worried || roster.selectedMemberId !== null} dimTo={0.55} idleMs={7000}>
       <section className={`orbit-roster ${compact ? "compact" : ""}`} aria-label="Household">
-        {household.order.map((id, index) => {
-          const member = household.members[id];
-          if (!member) return null;
-          const selected = household.selectedMemberId === id;
-          const low = Math.min(...Object.values(member.needs)) < 25;
+        {roster.members.map((member, index) => {
+          const id = member.id;
+          const selected = roster.selectedMemberId === id;
+          const low = member.low;
           return (
             <div key={id} className="orbit-member-slot">
               <Enamel
                 as="button"
-                tint={bodyColor(member.bodyPlan, 82)}
+                tint={bodyColor(member.plan, 82)}
                 radius={22}
                 padding="0"
                 glow={selected ? "#ffd98a" : undefined}
@@ -45,10 +56,10 @@ export function RosterPanel({ compact = false }: { compact?: boolean }) {
                 onClick={() => commands.run("member.select", { id: selected ? null : id })}
               >
                 <span className="orbit-member-row">
-                  <NeedRing needs={member.needs} size={compact ? 42 : 50}><AlienSwatch plan={member.bodyPlan} size={compact ? 30 : 36} /></NeedRing>
+                  <NeedRing needs={member.needs} size={compact ? 42 : 50}><AlienSwatch plan={member.plan} size={compact ? 30 : 36} /></NeedRing>
                   <span className="orbit-member-text">
                     <strong>{member.name}</strong>
-                    <small>{labels[index]}</small>
+                    <small>{member.label}</small>
                   </span>
                   {(low || member.recovering) && <span className="orbit-member-alert" aria-label="Needs care"><GameIcon name="heart" size={14} /></span>}
                 </span>
