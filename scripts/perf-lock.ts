@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { linkSync, mkdirSync, readFileSync, statSync, unlinkSync, utimesSync, writeFileSync } from "node:fs";
+import { linkSync, mkdirSync, readdirSync, readFileSync, statSync, unlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join } from "node:path";
 
@@ -114,6 +114,54 @@ function readHolder(path: string): PerfLockHolder | null {
   }
 }
 
+/**
+ * Waiters queue in order. Each writes a ticket named `<queued-at>-<pid>` beside the lock, and a
+ * waiter only tries for a free lock while no older ticket's process is alive; a dead ticket is
+ * removed by whoever sees it. Without this, every release was a race between all pollers and a run
+ * from one worktree was passed over by three newer arrivals from others in eight minutes (2026-11-08).
+ */
+function queueDirOf(path: string): string {
+  return `${path}.queue`;
+}
+
+function writeTicket(path: string, queuedAt: number): string {
+  const dir = queueDirOf(path);
+  mkdirSync(dir, { recursive: true });
+  const ticket = join(dir, `${String(queuedAt).padStart(15, "0")}-${process.pid}`);
+  writeFileSync(ticket, String(process.pid));
+  return ticket;
+}
+
+/** True when no live process holds an older ticket than this process (or this process holds none yet and the queue is empty). */
+function myTurn(path: string, isAlive: (pid: number) => boolean): boolean {
+  let names: string[];
+  try {
+    names = readdirSync(queueDirOf(path)).sort();
+  } catch {
+    return true;
+  }
+  for (const name of names) {
+    const pid = Number(/^\d+-(\d+)$/.exec(name)?.[1]);
+    if (pid === process.pid) return true;
+    if (Number.isFinite(pid) && isAlive(pid)) return false;
+    try {
+      unlinkSync(join(queueDirOf(path), name));
+    } catch {
+      /* another waiter removed it */
+    }
+  }
+  return true;
+}
+
+function dropTicket(ticket: string | null): void {
+  if (ticket === null) return;
+  try {
+    unlinkSync(ticket);
+  } catch {
+    /* already removed */
+  }
+}
+
 /** Create the lock file with its whole record in one step: a hard link fails if the file exists, so no reader sees half a record. */
 function tryCreate(path: string, holder: PerfLockHolder): boolean {
   const staging = `${path}.${holder.pid}.${holder.token}.tmp`;
@@ -206,17 +254,21 @@ export async function acquirePerfLock(what: string, options: PerfLockOptions = {
   const token = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
   const queuedAt = Date.now();
   let announced: string | null = null;
+  let ticket: string | null = null;
   try {
     for (;;) {
       const mine: PerfLockHolder = { pid: process.pid, branch: options.branch ?? currentBranch(), what, cwd: process.cwd(), since: Date.now(), token };
-      if (tryCreate(path, mine)) break;
+      if (myTurn(path, isAlive) && tryCreate(path, mine)) break;
+      if (ticket === null) ticket = writeTicket(path, queuedAt);
       const holder = readHolder(path);
       if (holder === null) {
-        // Released between the link and the read, or a record nobody can read (hand-edited, a full disk).
+        // Released between the link and the read, a record nobody can read (hand-edited, a full
+        // disk), or free but an older ticket's turn.
         let silentMs: number;
         try {
           silentMs = Date.now() - statSync(path).mtimeMs;
         } catch {
+          await new Promise((resolve) => setTimeout(resolve, pollMs));
           continue;
         }
         if (silentMs > STALE_HEARTBEAT_MS) {
@@ -245,6 +297,7 @@ export async function acquirePerfLock(what: string, options: PerfLockOptions = {
       await new Promise((resolve) => setTimeout(resolve, pollMs));
     }
   } finally {
+    dropTicket(ticket);
     if (announced !== null) endPause();
   }
   if (announced !== null) {

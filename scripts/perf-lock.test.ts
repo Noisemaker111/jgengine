@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -43,7 +43,8 @@ function holder(path: string, name: string, holdMs: number): Promise<{ start: nu
 describe("perf lock", () => {
   test("two processes never hold it at once; the second says who it waits for, then runs", async () => {
     const path = lockPath();
-    const first = holder(path, "agent/first", 1_500);
+    // Held longer than a bun start on a saturated PC (over 2 s seen), so the second really waits.
+    const first = holder(path, "agent/first", 8_000);
     // The second starts once the first holds the lock, so the order is fixed.
     for (let i = 0; i < 200 && perfLockHolder(path) === null; i += 1) await Bun.sleep(25);
     expect(perfLockHolder(path)?.branch).toBe("agent/first");
@@ -80,6 +81,23 @@ describe("perf lock", () => {
     const release = await acquirePerfLock("perf deepward", { path, log: (line) => lines.push(line), branch: "agent/next" });
     expect(lines[0]).toStartWith("degraded: stale perf lock held by agent/frozen");
     expect(lines[0]).toContain("has not touched the lock");
+    release();
+  });
+
+  test("a newcomer waits behind an older waiter's live ticket and goes once that waiter is gone", async () => {
+    const path = lockPath();
+    const queue = `${path}.queue`;
+    mkdirSync(queue, { recursive: true });
+    // An older waiter (pid 4242) queued first; the lock itself is free.
+    writeFileSync(join(queue, `${String(1).padStart(15, "0")}-4242`), "4242");
+    let olderAlive = true;
+    setTimeout(() => (olderAlive = false), 400);
+    const started = Date.now();
+    const release = await acquirePerfLock("perf deepward", { path, pollMs: 25, isAlive: (pid) => (pid === 4242 ? olderAlive : true), branch: "agent/new" });
+    expect(Date.now() - started).toBeGreaterThanOrEqual(350);
+    // The dead ticket was removed and this process's own ticket dropped once it held the lock.
+    expect(existsSync(join(queue, `${String(1).padStart(15, "0")}-4242`))).toBe(false);
+    expect(readdirSync(queue)).toEqual([]);
     release();
   });
 

@@ -12,7 +12,7 @@ import {
   unlinkSync,
   writeFileSync,
 } from "node:fs";
-import { cpus, tmpdir } from "node:os";
+import { cpus, getPriority, tmpdir } from "node:os";
 import { basename, dirname, join, parse, resolve } from "node:path";
 
 import { BUSY_PC_PERCENT, cpuBusyPercent, readinessTimeoutLine, retrySettleMs, shouldRetryCapture, type CpuSample } from "./capture-retry";
@@ -21,7 +21,7 @@ import { brokerServer } from "./devBrokerClient";
 import { checkMarkedServer, checkoutIdentity, devServerIdentity, isUp, listMarkers, markerPath, readMarker, readServerIdentity, writeMarker } from "./devServerMarker";
 import { currentStep, describeHang, markStep, pausableDeadline, pausedTotal } from "./hangReport";
 import { localGet } from "./localhostHttp";
-import { currentPriority, type PriorityLabel, restoreNormalPriority } from "./machine-priority";
+import { currentPriority, type PriorityLabel, priorityLabel, restoreNormalPriority } from "./machine-priority";
 import { startOutsideCaller } from "./outsideCaller";
 import { computeShotMetrics, deadViewport } from "./shot-metrics";
 import { removeDirSync } from "./removeDir";
@@ -2593,13 +2593,23 @@ export interface WithBrowserSessionOptions {
 export type SessionChromePriority = PriorityLabel | "daemon";
 
 let sessionPriority: SessionChromePriority | null = null;
+let sessionChromePid: number | null = null;
 
 /**
  * The priority of the Chrome the latest {@link withBrowserSession} launched, `daemon` when it
- * attached to a browser another process owns, or null before the first session. It stays readable
- * after the session ends, so a mode's closing summary can say what its browser ran at.
+ * attached to a browser another process owns, or null before the first session. Read live while
+ * that Chrome runs, because something outside the run (Owl's machine-wide sweep) may have changed
+ * it since launch; after it exits, the last value read stays, so a mode's closing summary can say
+ * what its browser ran at.
  */
 export function sessionChromePriority(): SessionChromePriority | null {
+  if (sessionChromePid !== null) {
+    try {
+      sessionPriority = priorityLabel(getPriority(sessionChromePid));
+    } catch {
+      sessionChromePid = null;
+    }
+  }
   return sessionPriority;
 }
 
@@ -2657,6 +2667,7 @@ export async function withBrowserSession(
     );
     if (options.connect !== undefined || attach) {
       await waitForDebugger(debugPort, 5_000);
+      sessionChromePid = null;
       sessionPriority = "daemon";
     } else {
       const started = await startBrowser({
@@ -2671,6 +2682,7 @@ export async function withBrowserSession(
       chrome = started.browser;
       debugPort = started.debugPort;
       // A test's fake launch records nothing; its session then reports the launcher's own priority.
+      sessionChromePid = chrome.pid !== undefined && launchedPriorities.has(chrome.pid) ? chrome.pid : null;
       sessionPriority = (chrome.pid === undefined ? undefined : launchedPriorities.get(chrome.pid)) ?? currentPriority();
     }
     markStep("run the capture");
