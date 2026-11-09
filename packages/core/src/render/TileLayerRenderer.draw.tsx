@@ -1,4 +1,5 @@
-import { useFrame, useLoader, useThree } from "@react-three/fiber";
+import { useLoader } from "@react-three/fiber";
+import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
@@ -20,7 +21,6 @@ export interface TileLayerRendererProps {
 /** Renders a tilemap as one instanced quad mesh with atlas UV rectangles. */
 export function TileLayerRenderer({ config, parallax = [1, 1], pixelated = true }: TileLayerRendererProps) {
   const tileSet = config.tileSet;
-  const { camera } = useThree();
   const texture = useLoader(THREE.TextureLoader, tileSet?.atlas.image ?? "");
   const instances = useMemo(() => resolveTileLayerInstances(config), [config]);
   const meshRef = useRef<THREE.InstancedMesh>(null);
@@ -48,11 +48,11 @@ export function TileLayerRenderer({ config, parallax = [1, 1], pixelated = true 
     geometry.setAttribute("tileUvScale", uvScale);
   }, [geometry, uvOffset, uvScale]);
 
-  useFrame(() => {
+  useEffect(() => joinFrameTask(0, (state) => {
     const mesh = meshRef.current;
     if (mesh === null) return;
-    mesh.position.set(-camera.position.x * (1 - parallax[0]), 0, camera.position.z * (1 - parallax[1]));
-  });
+    mesh.position.set(-state.camera.position.x * (1 - parallax[0]), 0, state.camera.position.z * (1 - parallax[1]));
+  }), [parallax]);
   useEffect(() => {
     const mesh = meshRef.current;
     if (mesh === null) return;

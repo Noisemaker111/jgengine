@@ -1,4 +1,4 @@
-import { useFrame } from "@react-three/fiber";
+import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
 import { useEffect, useRef, type MutableRefObject } from "react";
 import {
   advanceMotionCues,
@@ -31,6 +31,8 @@ export function useEntityRenderCues(
   const ctx = useGameContext();
   const cuesRef = useRef<EntityRenderCues>({ ...DEFAULT_RENDER_CUES });
   const timersRef = useRef({ fire: 0, hit: 0 });
+  const tuningRef = useRef(tuning);
+  tuningRef.current = tuning;
 
   useEffect(() => {
     cuesRef.current = { ...DEFAULT_RENDER_CUES };
@@ -57,16 +59,19 @@ export function useEntityRenderCues(
     };
   }, [ctx, instanceId, tuning?.firePulseSeconds, tuning?.hitPulseSeconds]);
 
-  useFrame((_state, delta) => {
-    if (instanceId === undefined || delta <= 0) return;
-    const entity = ctx.scene.entity.get(instanceId);
-    if (entity === null) return;
-    const timers = timersRef.current;
-    timers.fire = Math.max(0, timers.fire - delta);
-    timers.hit = Math.max(0, timers.hit - delta);
-    const advanced = advanceMotionCues(cuesRef.current, groundSpeed(entity), delta, tuning);
-    cuesRef.current = { ...advanced, firing: timers.fire > 0, hit: timers.hit > 0 };
-  });
+  useEffect(() => {
+    if (instanceId === undefined) return;
+    return joinFrameTask(0, (_state, delta) => {
+      if (delta <= 0) return;
+      const entity = ctx.scene.entity.get(instanceId);
+      if (entity === null) return;
+      const timers = timersRef.current;
+      timers.fire = Math.max(0, timers.fire - delta);
+      timers.hit = Math.max(0, timers.hit - delta);
+      const advanced = advanceMotionCues(cuesRef.current, groundSpeed(entity), delta, tuningRef.current);
+      cuesRef.current = { ...advanced, firing: timers.fire > 0, hit: timers.hit > 0 };
+    });
+  }, [ctx, instanceId]);
 
   return cuesRef;
 }
