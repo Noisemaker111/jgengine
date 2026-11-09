@@ -494,7 +494,7 @@ interface ScatterChunkLevel {
 }
 
 /** Metres from the camera past which a scatter placement's shadow cannot resolve in the map. */
-const SCATTER_SHADOW_DISTANCE = 150;
+const SCATTER_SHADOW_DISTANCE = 250;
 
 /**
  * The coarsest detail band of a species draws far enough out that its shadow is under a shadow-map
