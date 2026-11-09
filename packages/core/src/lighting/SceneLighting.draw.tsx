@@ -177,6 +177,8 @@ export function ShadowPipeline({ profile }: { profile?: GraphicsProfile }) {
           alwaysDynamic: stats.alwaysDynamicCasters,
           checks: stats.checks,
           invocations: stats.invocations,
+          renders: stats.renders,
+          checkMs: stats.checkMs,
           cpuMs: stats.cpuMs,
           ...stats.passes,
           auditMaps: stats.audit.maps,

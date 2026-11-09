@@ -79,6 +79,10 @@ export interface ShadowCacheStats {
   checks: number;
   /** Shadow passes the renderer asked for, cached or not. */
   invocations: number;
+  /** Shadow passes that reached planning (updates on); invocations minus the ones that drew nothing. */
+  renders: number;
+  /** Milliseconds the caster checks have cost since the last reset. */
+  checkMs: number;
   /**
    * Milliseconds spent in the renderer's shadow step since the last reset, the cache's own checks
    * included; with the cache off it is three's step alone, so the two compare directly.
@@ -996,6 +1000,7 @@ class ShadowCache {
   private audit = false;
   private frame = 0;
   private checks = 0;
+  private checkMs = 0;
   private invocations = 0;
   private cpuMs = 0;
   private lastType: number;
@@ -1106,7 +1111,9 @@ class ShadowCache {
           checked = true;
           // The scene does not change between a frame's renders, so one check serves them all.
           if (frameToken === undefined || frameToken !== this.lastCheckToken) {
+            const checkStart = this.now();
             this.tracker.check();
+            this.checkMs += this.now() - checkStart;
             this.checks += 1;
             this.lastCheckToken = frameToken;
           }
@@ -1254,6 +1261,8 @@ class ShadowCache {
           alwaysDynamicCasters: this.tracker.alwaysDynamicCount(),
           checks: this.checks,
           invocations: this.invocations,
+          renders: this.frame,
+          checkMs: this.checkMs,
           cpuMs: this.cpuMs,
           passes: { ...this.passes },
           audit: { on: this.audit, ...this.auditStats },
@@ -1270,6 +1279,7 @@ class ShadowCache {
       resetStats: () => {
         for (const plan of Object.keys(this.passes) as ShadowPassPlan[]) this.passes[plan] = 0;
         this.checks = 0;
+        this.checkMs = 0;
         this.invocations = 0;
         this.cpuMs = 0;
         this.auditStats.maps = 0;
