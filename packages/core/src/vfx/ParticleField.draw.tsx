@@ -1,5 +1,5 @@
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, type ReactElement } from "react";
+import { memo, useEffect, useMemo, useRef, type ReactElement } from "react";
 import * as THREE from "three";
 
 import type { ParticleBuffers, ParticleSystem } from "@jgengine/core/vfx/particles";
@@ -289,7 +289,7 @@ export function packFieldFrame(field: FieldGeometry, buffers: ParticleBuffers): 
  * selection does not replace spawn, forces, collisions, or deterministic state.
  * @capability particle-field render a core particle pool as soft points, velocity streaks, connected ribbons, flakes, flames, smoke sprites, or ground ripples
  */
-export function ParticleField({ system, advance = true, blending = "additive", scale = 300, depthWrite = false, render, metrics }: ParticleFieldProps): ReactElement {
+export const ParticleField = memo(function ParticleField({ system, advance = true, blending = "additive", scale = 300, depthWrite = false, render, metrics }: ParticleFieldProps): ReactElement {
   const dpr = useThree((state) => state.viewport.dpr);
   const shape = render?.shape ?? "point";
   const quad = shape !== "point";
@@ -335,4 +335,4 @@ export function ParticleField({ system, advance = true, blending = "additive", s
   });
 
   return quad ? <mesh geometry={geometry} material={material} frustumCulled={false} /> : <points geometry={geometry} material={material} frustumCulled={false} />;
-}
+});

@@ -1534,7 +1534,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## particle-field — render a core particle pool as soft points, velocity streaks, connected ribbons, flakes, flames, smoke sprites, or ground ripples
 
-- `ParticleField` (function) · `import { ParticleField } from "@jgengine/core/vfx/ParticleField.draw"`
+- `ParticleField` (const) · `import { ParticleField } from "@jgengine/core/vfx/ParticleField.draw"`
 
 ## particle-system — deterministic pooled particle emitter with spawn volumes, force fields, bounded collision/death events, live tuning, SoA render buffers, and serializable state
 

@@ -5844,7 +5844,7 @@
 ## @jgengine/core/vfx/ParticleField.draw
 
 - `ParticleBlending` (type): type ParticleBlending = "additive" | "normal" — How particle fragments composite on screen.
-- `ParticleField` (function): function ParticleField({ system, advance = true, blending = "additive", scale = 300, depthWrite = false, render, metrics }: ParticleFieldProps): ReactElement — Render one pooled simulation through a point cloud or instanced quads. Output selection does not replace spawn, forces, collisions, or deterministic state.
+- `ParticleField` (const): const ParticleField: React.MemoExoticComponent<({ system, advance, blending, scale, depthWrite, render, metrics }: ParticleFieldProps) => React.ReactElement<unknown, string | React.JSXElementConstructor<any>>> — Render one pooled simulation through a point cloud or instanced quads. Output selection does not replace spawn, forces, collisions, or deterministic state.
 - `ParticleFieldProps` (interface): interface ParticleFieldProps — Props for the existing pooled particle renderer.
 
 ## @jgengine/core/vfx/effectLibrary

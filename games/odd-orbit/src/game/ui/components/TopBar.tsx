@@ -49,26 +49,23 @@ export function HouseClock({ compact = false }: { compact?: boolean }) {
 
 /** The fridge door: credits, rations and the midnight bill as magnets, with the day's note pinned under them. */
 export function FridgeMagnets({ compact = false }: { compact?: boolean }) {
+  const ctx = useGameContext();
   const objects = useSceneObjects();
+  // Credits climb every tick of a shift; the jar and the note write their own text, and the door redraws when a tone or count changes.
   const household = useStore(householdStore, (state) => {
     const due = nextBill(state, objects);
-    return {
-      credits: Math.floor(state.credits),
-      pantry: state.pantry,
-      debt: state.debt,
-      bill: Math.round(due),
-      short: state.credits < due,
-      goal: dayGoal(state, objects).replace(/^Next:\s*/, ""),
-    };
+    return { pantry: state.pantry, debt: state.debt, bill: Math.round(due), short: state.credits < due };
   });
-  const { bill, short, goal } = household;
+  const { bill, short } = household;
   const lowFood = household.pantry < 4;
+  const credits = () => creditsText(Math.floor(householdStore.read(ctx).credits));
+  const goal = () => dayGoal(householdStore.read(ctx), objects).replace(/^Next:\s*/, "");
   return (
-    <HudFade watch={() => [household.credits, household.pantry, bill, household.debt, goal]} hold={() => lowFood || short || household.debt > 0} dimTo={0.42} idleMs={6000} className="orbit-fridge-fade">
+    <HudFade watch={() => [credits(), household.pantry, bill, household.debt, goal()]} hold={() => lowFood || short || household.debt > 0} dimTo={0.42} idleMs={6000} className="orbit-fridge-fade">
       <section className="orbit-fridge" aria-label="Household time and resources">
         <div className="orbit-magnets">
           <Enamel tone={short ? "coral" : "butter"} radius={16} padding="6px 12px 6px 8px" className="orbit-magnet" title="Credits">
-            <GameIcon name="coin" size={20} /><b>{creditsText(household.credits)}</b><small>credits</small>
+            <GameIcon name="coin" size={20} /><LiveText as="b" get={credits} /><small>credits</small>
           </Enamel>
           <Enamel tone={lowFood ? "coral" : "mint"} radius={16} padding="6px 12px 6px 8px" className="orbit-magnet" title="Rations">
             <GameIcon name="bread" size={20} /><b>{household.pantry}</b><small>rations</small>
@@ -84,7 +81,7 @@ export function FridgeMagnets({ compact = false }: { compact?: boolean }) {
         </div>
         {!compact && (
           <KitPanel material="paper" cut="box" padding="8px 12px 9px" edgeWidth={0} shadow={false} tint="#fff3b8" className="orbit-sticky" role="status">
-            {goal}
+            <LiveText get={goal} />
           </KitPanel>
         )}
       </section>
