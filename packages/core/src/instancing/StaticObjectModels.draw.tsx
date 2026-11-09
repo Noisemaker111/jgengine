@@ -354,7 +354,7 @@ function InstancedObjectSource({ source, members, capacity }: {
     if (mesh === null) return;
     syncStaticObjectSource(mesh, source, sortFarToNear(members.current, state.camera.getWorldPosition(eye), ordered), scratch);
   }, CAMERA_POST_FRAME_PRIORITY + 0.2, blends);
-  return <instancedMesh ref={attach} args={[source.geometry, source.material, capacity]} userData={{ [STATIC_BATCH_MESH_KEY]: true }} castShadow={source.castShadow ?? false} receiveShadow={source.receiveShadow ?? false} dispose={null} />;
+  return <instancedMesh ref={attach} name="staticobj" args={[source.geometry, source.material, capacity]} userData={{ [STATIC_BATCH_MESH_KEY]: true }} castShadow={source.castShadow ?? false} receiveShadow={source.receiveShadow ?? false} dispose={null} />;
 }
 
 /** Bounds and collision triangles of one harvested model, measured once however often its batch re-renders. */

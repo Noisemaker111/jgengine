@@ -13,9 +13,13 @@ import {
 } from "./shadowCache";
 
 /** A caster unchanged for this long joins its lights' static layers. @internal */
-export const SHADOW_STATIC_AFTER_MS = 1000;
-/** Settled casters join the layer at most this often, so casters settling one by one cost one rebuild a second. */
-const PROMOTION_INTERVAL_MS = 1000;
+export const SHADOW_STATIC_AFTER_MS = 400;
+/** Settled casters join the layer at most this often, so casters settling one by one cost one rebuild a few times a second. */
+const PROMOTION_INTERVAL_MS = 300;
+/** Checks a caster must change on in a row before its snapshot compare is skipped as churn. */
+const CHURN_AFTER_CHECKS = 4;
+/** Checks between compares of a churned caster, so one that settles is noticed without a full rate. */
+const CHURN_RECHECK_CHECKS = 20;
 /** A light not asked for a pass in this many frames gives its layer back. */
 const LIGHT_RETIRE_FRAMES = 240;
 
@@ -49,6 +53,10 @@ class CasterEntry {
   isStatic = false;
   /** Its depth can change with nothing the snapshot sees (skinning, morphs, custom depth shaders). */
   alwaysDynamic = false;
+  /** Checks in a row whose compare found a change; past {@link CHURN_AFTER_CHECKS} the compare is skipped. */
+  churned = 0;
+  /** Checks left before a churned caster's snapshot is compared again. */
+  churnSkip = 0;
   /** The check that last reached it. */
   seen = -1;
   geometry: THREE.BufferGeometry | null = null;
@@ -576,7 +584,29 @@ export class ShadowCasterTracker {
       // A mesh that casts nothing draws nothing whatever else changes; turning `castShadow` on is the change.
       if (!casts && !entry.drawable && entry.snapshot[0] === false) continue;
       if (casts) next.push(entry);
+      // Its depth redraws every pass whatever the snapshot says, so the compare that feeds only the
+      // static layer is skipped; `drawable` still tracks reachability for the dynamic pass.
+      if (entry.alwaysDynamic) {
+        entry.drawable = casts;
+        continue;
+      }
+      // A caster that changes every check can never join a layer while it churns; comparing its
+      // snapshot each check only re-describes what the next check will find changed anyway. The
+      // skipped checks still stamp `changedAt`, so it stays dynamic, and every
+      // {@link CHURN_RECHECK_CHECKS}th check compares for real: a caster that settled then rejoins
+      // normal tracking and can promote once its new snapshot has held.
+      if (entry.churnSkip > 0) {
+        entry.churnSkip -= 1;
+        entry.changedAt = now;
+        entry.drawable = casts;
+        continue;
+      }
       const same = unchanged(entry, stamps);
+      if (same) entry.churned = 0;
+      else {
+        entry.churned += 1;
+        if (entry.churned >= CHURN_AFTER_CHECKS) entry.churnSkip = CHURN_RECHECK_CHECKS;
+      }
       if (same && casts === entry.drawable) continue;
       const oldSphere = entry.sphere;
       const wasDrawn = entry.drawable;
@@ -1138,6 +1168,7 @@ class ShadowCache {
     planned.length = 0;
     let checked = false;
     let allFull = true;
+    let needsTracker = false;
     try {
       for (const light of lights) {
         const shadow = managedShadow(light);
@@ -1152,9 +1183,16 @@ class ShadowCache {
         }
         record.seenFrame = this.frame;
         const key = lightKey(light, shadow, camera, reversed, type, record.key);
-        // Only a light that may skip casters needs them checked: a far cascade stepping a texel draws them all.
-        const mayCache = shadowPassMayCache(record.state, key);
-        if (mayCache && !checked) {
+        const state = record.state;
+        // A pass can leave the full draw only at the layer's key, or at the drawn key once it has
+        // held rebuildAfter passes; anything else plans full and never reads the tracker. A repeat
+        // of a pass already served this frame records hold, which still needs the reach count.
+        const mayCache = shadowPassMayCache(state, key);
+        const repeat = frameToken !== undefined && record.servedFrame === frameToken && sameShadowKey(state.drawnKey, key);
+        const couldServe = mayCache && ((!state.layerStale && sameShadowKey(state.layerKey, key)) ||
+          (sameShadowKey(state.drawnKey, key) && state.heldPasses + 1 >= state.rebuildAfter));
+        if (couldServe || repeat) needsTracker = true;
+        if (needsTracker && !checked) {
           checked = true;
           // The scene does not change between a frame's renders, so one check serves them all.
           if (frameToken === undefined || frameToken !== this.lastCheckToken) {
@@ -1165,11 +1203,8 @@ class ShadowCache {
             this.lastCheckToken = frameToken;
           }
         }
-        const reaches = mayCache && this.tracker.dynamicReaches(shadow.getFrustum(), passLayers(shadow, camera));
-        // A post pass that renders the scene again in the same frame asks for the same maps the
-        // first render just drew: the light's map already holds this key's image, so the pass holds.
-        const repeat = frameToken !== undefined && record.servedFrame === frameToken && sameShadowKey(record.state.drawnKey, key);
-        const plan = repeat ? "hold" : planShadowPass(record.state, key, reaches);
+        const reaches = (couldServe || repeat) && mayCache && this.tracker.dynamicReaches(shadow.getFrustum(), passLayers(shadow, camera));
+        const plan = repeat ? "hold" : planShadowPass(state, key, reaches);
         if (plan !== "full") allFull = false;
         planned.push({ light, shadow, record, key, plan, reaches });
       }
