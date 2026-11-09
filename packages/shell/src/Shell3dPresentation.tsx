@@ -120,7 +120,7 @@ import { CanvasCoverFrameloop } from "./drivers/CanvasCoverFrameloop";
 import { FpsCounter, FpsProbe, type FrameTally } from "@jgengine/core/devtools/FpsCounter.draw";
 import { createPerfOverlaySample, PerfOverlay, PerfOverlayProbe } from "@jgengine/core/devtools/perfOverlay.draw";
 import { createReplayRecorder } from "@jgengine/core/replay/replayRecording";
-import { ConfiguredLighting, BackdropFog } from "@jgengine/core/lighting/SceneLighting.draw";
+import { ConfiguredLighting, BackdropFog, ShadowPipeline } from "@jgengine/core/lighting/SceneLighting.draw";
 import { IrradianceVolumeLighting } from "@jgengine/core/lighting/IrradianceVolumeLighting.draw";
 import { usePresentationLook } from "@jgengine/core/render/presentationLook.draw";
 import type { GameLookInput } from "@jgengine/core/render/lookPreset";
@@ -759,6 +759,7 @@ export function Shell3dPresentation({
                   {playable.scene?.ambientLife !== false && playable.scene?.ambientLife?.fauna !== undefined ? (
                     <AmbientFauna config={playable.scene.ambientLife.fauna} zones={faunaZones} assets={playable.game.assets} groundAt={ctx.world.groundHeightAt} groundRevision={ctx.world.ground.heightRevision} lowTier={graphics.quality === "low"} />
                   ) : null}
+                  <ShadowPipeline profile={graphics.profile} />
                   {sceneLighting !== undefined ? (
                     <ConfiguredLighting
                       lighting={sceneLighting}

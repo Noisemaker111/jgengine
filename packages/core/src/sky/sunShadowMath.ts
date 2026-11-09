@@ -17,9 +17,19 @@ export const SUN_SHADOW = {
 } as const;
 
 /**
+ * Shadow-map texels the focus holds still between steps. One texel is ~3.4 cm, so the camera
+ * would cross a step almost every frame and the static shadow cache could never reuse the map;
+ * 32 texels (~1.1 m) still moves the coverage edge by whole texels, so the depth image only
+ * shifts and no shadow swims.
+ * @internal
+ */
+export const SUN_SHADOW_STEP_TEXELS = 32;
+
+/**
  * Where the sun's shadow box centers this frame: `lead` meters ahead of the camera along its
- * horizontal view, snapped to whole shadow texels so edges hold still while the camera moves.
- * Looking straight down (no horizontal view) centers on the camera.
+ * horizontal view, snapped to {@link SUN_SHADOW_STEP_TEXELS} shadow texels so the box — and the
+ * shadow cache's projection key — holds still while the camera walks. Looking straight down (no
+ * horizontal view) centers on the camera.
  * @internal
  */
 export function sunShadowFocus(
@@ -29,9 +39,9 @@ export function sunShadowFocus(
 ): { x: number; z: number } {
   const length = Math.hypot(forward.x, forward.z);
   const lead = length < 1e-6 ? 0 : SUN_SHADOW.lead / length;
-  const texel = (SUN_SHADOW.halfExtent * 2) / SUN_SHADOW.mapSize;
-  out.x = Math.round((camera.x + forward.x * lead) / texel) * texel;
-  out.z = Math.round((camera.z + forward.z * lead) / texel) * texel;
+  const step = ((SUN_SHADOW.halfExtent * 2) / SUN_SHADOW.mapSize) * SUN_SHADOW_STEP_TEXELS;
+  out.x = Math.round((camera.x + forward.x * lead) / step) * step;
+  out.z = Math.round((camera.z + forward.z * lead) / step) * step;
   return out;
 }
 

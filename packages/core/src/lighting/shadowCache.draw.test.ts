@@ -122,6 +122,8 @@ interface World {
   light: THREE.DirectionalLight;
   renderer: FakeRenderer;
   stats: () => ShadowCacheStats;
+  /** The frame token the cache was given; advance it to stand in for the next animation frame. */
+  frameToken: { value: number };
   /** Advance the clock, draw one frame's shadow pass, and return the plan counts it added. */
   frame: (ms?: number) => Record<string, number>;
   /** What a full redraw would hold for `light` right now. */
@@ -144,7 +146,8 @@ function world(): World {
   scene.add(light, light.target);
   const renderer = new FakeRenderer();
   let clock = 0;
-  const cache = installShadowCache(renderer, scene, () => clock);
+  const frameToken = { value: 0 };
+  const cache = installShadowCache(renderer, scene, () => clock, () => frameToken.value);
   const lights = (): THREE.Light[] => {
     const found: THREE.Light[] = [];
     scene.traverse((object) => {
@@ -154,6 +157,7 @@ function world(): World {
   };
   const frame = (ms = 16) => {
     clock += ms;
+    frameToken.value += 1;
     const before = { ...cache.handle.stats().passes };
     scene.updateMatrixWorld();
     camera.updateMatrixWorld();
@@ -172,7 +176,7 @@ function world(): World {
     const plans = frame(100);
     expect(plans["hold"]).toBeGreaterThan(0);
   };
-  return { scene, camera, light, renderer, stats: () => cache.handle.stats(), frame, reference, settle, dispose: cache.dispose };
+  return { scene, camera, light, renderer, frameToken, stats: () => cache.handle.stats(), frame, reference, settle, dispose: cache.dispose };
 }
 
 function expectSame(w: World, light = w.light): void {
@@ -186,6 +190,25 @@ describe("shadow cache invalidation", () => {
     w.settle();
     const draws = w.renderer.draws;
     expect(w.frame()).toMatchObject({ hold: 1 });
+    expect(w.renderer.draws).toBe(draws);
+    expectSame(w);
+    w.dispose();
+  });
+
+  test("a second shadow pass in the same frame holds the map the first drew", () => {
+    const w = world();
+    w.scene.add(box());
+    w.settle();
+    const draws = w.renderer.draws;
+    const before = { ...w.stats().passes };
+    // Another renderer.render before the frame token moves (a post pass re-rendering the scene):
+    // the light's map already holds this frame's image, so the pass must draw nothing.
+    w.scene.updateMatrixWorld();
+    w.camera.updateMatrixWorld();
+    w.renderer.shadowMap.render([w.light], w.scene, w.camera);
+    const after = w.stats().passes;
+    const plans = Object.fromEntries(Object.entries(after).map(([plan, count]) => [plan, count - before[plan as keyof typeof before]]));
+    expect(plans["hold"]).toBe(1);
     expect(w.renderer.draws).toBe(draws);
     expectSame(w);
     w.dispose();
