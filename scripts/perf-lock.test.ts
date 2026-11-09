@@ -168,6 +168,7 @@ test("every entry point that times frames takes the lock", () => {
     "perf-play.ts": ["withPerfLock(`perf ${options.game}`", "acquirePerfLock(`perf ${pending.join"],
     "perf-gate.ts": ["acquirePerfLock(`perf gate"],
     "perf-fps-gap.ts": ["acquirePerfLock(`perf fps-gap"],
+    "perf-ab.ts": ["acquirePerfLock(`perf ab"],
     // The audit loop shared by shadow-audit and post-audit.
     "perf-shadow-audit.ts": ["acquirePerfLock(`perf ${kind.name}"],
     "perf-network.ts": ["withPerfLock(`perf network", "acquirePerfLock(`perf network"],

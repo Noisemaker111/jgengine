@@ -29,6 +29,13 @@ export const STALE_FAILURE_MARKERS: readonly string[] = [
   "start menu still on screen",
   // waitCaptureReady() deadline: the fresh frame never arrived (rebuild in flight).
   "timed out waiting for data-jg-capture",
+  // The page's own 25 s wait for its first canvas: a dev server the broker had just restarted
+  // (its tree moved) served a cold module graph to a PC at 80% CPU, and the reload finds it warm
+  // (perf ab, harbor-heat, 2026-11-09).
+  "timed out waiting for canvas",
+  // Vite's own symptom of a server restarting or re-optimizing dependencies under the page; the module
+  // served a moment later (perf ab, drift-foundry, 2026-11-09).
+  "failed to fetch dynamically imported module",
 ];
 
 /**
