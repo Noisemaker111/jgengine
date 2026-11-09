@@ -599,6 +599,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createModalStack` (function) · `import { createModalStack } from "@jgengine/core/ui"`
 
+## nameplates — billboarded name + HP bar over nearby entities
+
+- `WorldNameplates` (function) · `import { WorldNameplates } from "@jgengine/core/hud/WorldHud.draw"`
+
 ## new-character-pane — character creation pane — name field, palette and avatar choice, start action
 
 - `NewCharacterPane` (function) · `import { NewCharacterPane } from "@jgengine/react"`

@@ -191,14 +191,6 @@ export interface WorldNameplatesProps {
   renderNameplate?: (sample: NameplateSample) => ReactNode;
 }
 
-/**
- * Billboarded name + 78×6px HP bar over every nearby non-local entity that
- * passes `roles`/`maxDistance` — headless (className/data-* slots on every
- * part, `renderNameplate` for a full swap), turned on declaratively via
- * `defineGame({ nameplates })` rather than mounted by hand.
- *
- * @capability nameplates billboarded name + HP bar over nearby entities
- */
 /** The same plates with the same names and health: a plate the camera moved needs no render. */
 function samePlates(previous: readonly NameplateSample[], next: readonly NameplateSample[]): boolean {
   if (previous.length !== next.length) return false;
@@ -209,6 +201,14 @@ function samePlates(previous: readonly NameplateSample[], next: readonly Namepla
   return true;
 }
 
+/**
+ * Billboarded name + 78×6px HP bar over every nearby non-local entity that
+ * passes `roles`/`maxDistance` — headless (className/data-* slots on every
+ * part, `renderNameplate` for a full swap), turned on declaratively via
+ * `defineGame({ nameplates })` rather than mounted by hand.
+ *
+ * @capability nameplates billboarded name + HP bar over nearby entities
+ */
 export function WorldNameplates({
   statId = "health",
   height = 2.3,
