@@ -1,6 +1,5 @@
 // @skill jgengine-world
-import { useLoader } from "@react-three/fiber";
-import { Component, Suspense, useEffect, useMemo, useRef, type ReactElement, type ReactNode } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
 
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
@@ -8,12 +7,13 @@ import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
 import { resolveModel } from "@jgengine/core/model/resolveModel";
 import { buildScatterModelSources, disposeScatterModelSources, type ScatterModelSource } from "@jgengine/core/scatter/scatterModels.draw";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { livingWorld } from "@jgengine/core/weather/livingWorld.draw";
 
 import { createAmbientFauna, FAUNA_GLOBAL_CAP, type FaunaSimulation, type FaunaFrame, type FaunaGroup, type FaunaGroupState } from "./ambientFauna";
 import type { AmbientFaunaConfig, FaunaSpecies } from "./ambientFaunaConfig";
 import { createFaunaView, selectVisible, writeFaunaView, type FaunaSelection, type FaunaView } from "./faunaCull";
-import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 const DEFAULT_DRAW_CAP = 1200;
 const CULL_RADIUS = 2;
@@ -57,105 +57,240 @@ function writeAgent(state: FaunaGroupState, index: number, nose: THREE.Vector3, 
   out.compose(scratchPosition, scratchQuaternion, scratchScale);
 }
 
-interface BatchProps {
+interface SpeciesBatch {
   species: FaunaSpecies;
   groups: readonly FaunaGroupState[];
-  shared: Shared;
   sources: ScatterModelSource[] | null;
+  sourcesRoot: THREE.Object3D | null;
+  capacity: number;
+  widest: number;
+  nearList: Int32Array;
+  farList: Int32Array;
+  selection: FaunaSelection;
+  nose: THREE.Vector3;
+  modelMeshes: (THREE.InstancedMesh | null)[];
+  spriteMesh: THREE.InstancedMesh;
+  spriteGeometry: THREE.BufferGeometry;
+  spriteMaterial: THREE.MeshBasicMaterial;
 }
 
-/** One species: a mesh per model part for the near agents and one sprite mesh for the rest, filled each frame. */
-function SpeciesBatch({ species, groups, shared, sources }: BatchProps): ReactElement {
+function makeSpriteMesh(species: FaunaSpecies, capacity: number): { mesh: THREE.InstancedMesh; geometry: THREE.BufferGeometry; material: THREE.MeshBasicMaterial } {
+  const sprite = species.sprite ?? { color: "#ffffff", size: 0.3 };
+  const geometry = new THREE.OctahedronGeometry(1, 0);
+  const material = new THREE.MeshBasicMaterial({ color: sprite.color, toneMapped: sprite.glow !== true, transparent: sprite.glow === true, opacity: sprite.glow === true ? 0.9 : 1 });
+  const mesh = new THREE.InstancedMesh(geometry, material, capacity);
+  mesh.frustumCulled = false;
+  return { mesh, geometry, material };
+}
+
+function speciesBatch(species: FaunaSpecies, groups: readonly FaunaGroupState[]): Omit<SpeciesBatch, "sources" | "sourcesRoot" | "modelMeshes"> {
   const capacity = Math.max(1, groups.reduce((sum, g) => sum + g.count, 0));
   const widest = Math.max(1, ...groups.map((g) => g.count));
-  const nearList = useMemo(() => new Int32Array(widest), [widest]);
-  const farList = useMemo(() => new Int32Array(widest), [widest]);
-  const selection = useMemo<FaunaSelection>(() => ({ near: 0, far: 0 }), []);
-  const nose = useMemo(() => new THREE.Vector3(...(species.forward ?? [0, 0, -1])).normalize(), [species.forward]);
-  const modelMeshes = useRef<(THREE.InstancedMesh | null)[]>([]);
-  const spriteMesh = useRef<THREE.InstancedMesh>(null);
+  const sprite = makeSpriteMesh(species, capacity);
+  return {
+    species,
+    groups,
+    capacity,
+    widest,
+    nearList: new Int32Array(widest),
+    farList: new Int32Array(widest),
+    selection: { near: 0, far: 0 },
+    nose: new THREE.Vector3(...(species.forward ?? [0, 0, -1])).normalize(),
+    spriteMesh: sprite.mesh,
+    spriteGeometry: sprite.geometry,
+    spriteMaterial: sprite.material,
+  };
+}
+
+function frameSpeciesBatch(batch: SpeciesBatch, shared: Shared): void {
+  const { sources } = batch;
+  const model = sources !== null;
+  let spriteCount = 0;
+  let modelCount = 0;
+  const sprites = batch.spriteMesh;
+  const { species } = batch;
+  const scale = species.scale ?? 1;
   const sprite = species.sprite ?? { color: "#ffffff", size: 0.3 };
-  const spriteGeometry = useMemo(() => new THREE.OctahedronGeometry(1, 0), []);
-  const spriteMaterial = useMemo(
-    () => new THREE.MeshBasicMaterial({ color: sprite.color, toneMapped: sprite.glow !== true, transparent: sprite.glow === true, opacity: sprite.glow === true ? 0.9 : 1 }),
-    [sprite.color, sprite.glow],
-  );
-  useEffect(() => () => { spriteGeometry.dispose(); }, [spriteGeometry]);
-  useEffect(() => () => { spriteMaterial.dispose(); }, [spriteMaterial]);
-
-  useFrameTask(() => {
-    const model = sources !== null;
-    let spriteCount = 0;
-    let modelCount = 0;
-    const sprites = spriteMesh.current;
-    for (const state of groups) {
-      if (shared.budget.remaining <= 0) break;
-      selectVisible(state, shared.view, CULL_RADIUS, shared.budget.remaining, nearList, farList, selection);
-      shared.budget.remaining -= selection.near + selection.far;
-      const scale = species.scale ?? 1;
-      if (model) {
-        for (let k = 0; k < selection.near; k += 1) {
-          writeAgent(state, (nearList[k] ?? 0), nose, scale, 1, scratchMatrix);
-          for (let s = 0; s < sources.length; s += 1) {
-            const source = sources[s];
-            if (source !== undefined) modelMeshes.current[s]?.setMatrixAt(modelCount, sourceMatrix.multiplyMatrices(scratchMatrix, source.localMatrix));
-          }
-          modelCount += 1;
+  for (const state of batch.groups) {
+    if (shared.budget.remaining <= 0) break;
+    selectVisible(state, shared.view, CULL_RADIUS, shared.budget.remaining, batch.nearList, batch.farList, batch.selection);
+    shared.budget.remaining -= batch.selection.near + batch.selection.far;
+    if (model && sources !== null) {
+      for (let k = 0; k < batch.selection.near; k += 1) {
+        writeAgent(state, (batch.nearList[k] ?? 0), batch.nose, scale, 1, scratchMatrix);
+        for (let s = 0; s < sources.length; s += 1) {
+          const source = sources[s];
+          if (source !== undefined) batch.modelMeshes[s]?.setMatrixAt(modelCount, sourceMatrix.multiplyMatrices(scratchMatrix, source.localMatrix));
         }
-      }
-      if (sprites !== null) {
-        const total = selection.near + selection.far;
-        for (let k = model ? selection.near : 0; k < total; k += 1) {
-          const index = k < selection.near ? (nearList[k] ?? 0) : (farList[k - selection.near] ?? 0);
-          writeAgent(state, index, nose, sprite.size, sprite.length ?? 1, scratchMatrix);
-          sprites.setMatrixAt(spriteCount, scratchMatrix);
-          spriteCount += 1;
-        }
+        modelCount += 1;
       }
     }
-    if (model) {
-      for (let s = 0; s < sources.length; s += 1) {
-        const mesh = modelMeshes.current[s];
-        if (mesh == null) continue;
-        mesh.count = modelCount;
-        mesh.instanceMatrix.needsUpdate = true;
-        mesh.visible = modelCount > 0;
-      }
+    const total = batch.selection.near + batch.selection.far;
+    for (let k = model ? batch.selection.near : 0; k < total; k += 1) {
+      const index = k < batch.selection.near ? (batch.nearList[k] ?? 0) : (batch.farList[k - batch.selection.near] ?? 0);
+      writeAgent(state, index, batch.nose, sprite.size, sprite.length ?? 1, scratchMatrix);
+      sprites.setMatrixAt(spriteCount, scratchMatrix);
+      spriteCount += 1;
     }
-    if (sprites !== null) {
-      sprites.count = spriteCount;
-      sprites.instanceMatrix.needsUpdate = true;
-      sprites.visible = spriteCount > 0;
+  }
+  if (model && sources !== null) {
+    for (let s = 0; s < sources.length; s += 1) {
+      const mesh = batch.modelMeshes[s];
+      if (mesh == null) continue;
+      mesh.count = modelCount;
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.visible = modelCount > 0;
     }
-  }, 1);
-
-  return (
-    <>
-      {sources?.map((source, index) => (
-        <instancedMesh
-          key={index}
-          ref={(mesh) => { modelMeshes.current[index] = mesh; }}
-          args={[source.geometry, source.material, capacity]}
-          frustumCulled={false}
-        />
-      ))}
-      <instancedMesh ref={spriteMesh} args={[spriteGeometry, spriteMaterial, capacity]} frustumCulled={false} />
-    </>
-  );
+  }
+  sprites.count = spriteCount;
+  sprites.instanceMatrix.needsUpdate = true;
+  sprites.visible = spriteCount > 0;
 }
 
-/** A model that fails to load falls back to its sprite alone. */
-class ModelBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
-  override state = { failed: false };
-  static getDerivedStateFromError(): { failed: boolean } { return { failed: true }; }
-  override render(): ReactNode { return this.state.failed ? this.props.fallback : this.props.children; }
+function dropSpeciesBatch(batch: SpeciesBatch, parent: THREE.Object3D | null): void {
+  parent?.remove(batch.spriteMesh);
+  batch.spriteMesh.dispose();
+  batch.spriteGeometry.dispose();
+  batch.spriteMaterial.dispose();
+  if (batch.sourcesRoot !== null) disposeScatterModelSources(batch.sourcesRoot);
+  for (const mesh of batch.modelMeshes) {
+    mesh?.removeFromParent();
+    mesh?.dispose();
+  }
 }
 
-function ModelSpecies({ species, model, groups, shared }: { species: FaunaSpecies; model: ModelConfig; groups: readonly FaunaGroupState[]; shared: Shared }): ReactElement {
-  const gltf = useLoader(sharedGltfLoader, model.url);
-  const built = useMemo(() => buildScatterModelSources(gltf.scene, model), [gltf, model]);
-  useEffect(() => () => disposeScatterModelSources(built.root), [built]);
-  return <SpeciesBatch species={species} groups={groups} shared={shared} sources={built.sources} />;
+/**
+ * Draw-side form of {@link AmbientFauna}: the fauna simulation, shared cull view and per-species
+ * instanced batches all live in the draw; species models load through the shared GLTF cache and a
+ * failed load falls back to the sprite batch alone, matching the old error boundary.
+ * @internal
+ */
+export function ambientFaunaDraw(getProps: () => AmbientFaunaProps): EngineDraw {
+  const frame: FaunaFrame = { dt: 0, time: 0, sunHeight: null, focusX: 0, focusZ: 0 };
+  let shared: Shared | null = null;
+  let lastDeps: readonly unknown[] | null = null;
+  let drawCap = DEFAULT_DRAW_CAP;
+  let batches: SpeciesBatch[] = [];
+  let parent: THREE.Object3D | null = null;
+  let disposed = false;
+
+  const dropAll = () => {
+    for (const batch of batches) dropSpeciesBatch(batch, parent);
+    batches = [];
+  };
+
+  const buildShared = (props: AmbientFaunaProps): Shared => {
+    const groups = [...(props.config.groups ?? []), ...(props.zones ?? [])];
+    const surface = props.config.surface;
+    const fauna = createAmbientFauna(
+      groups,
+      {
+        surfaceAt: typeof surface === "function" ? surface : () => surface ?? 0,
+        ...(props.groundAt === undefined ? {} : { groundAt: props.groundAt }),
+        ...(props.groundRevision === undefined ? {} : { groundRevision: props.groundRevision }),
+        ...(props.config.plantAt === undefined ? {} : { plantAt: props.config.plantAt }),
+        ...(props.config.wind === undefined ? {} : { wind: props.config.wind }),
+      },
+      { globalCap: Math.floor((props.config.globalCap ?? FAUNA_GLOBAL_CAP) * (props.lowTier === true ? 0.5 : 1)), ...(props.config.simulateRange === undefined ? {} : { simulateRange: props.config.simulateRange }) },
+    );
+    return { fauna, view: createFaunaView(), budget: { remaining: 0 } };
+  };
+
+  const speciesModel = (props: AmbientFaunaProps, species: FaunaSpecies): ModelConfig | undefined => {
+    if (typeof species.model !== "string") return species.model;
+    return props.assets === undefined ? undefined : (resolveModel(species.model, props.assets) ?? undefined);
+  };
+
+  const sync = () => {
+    const props = getProps();
+    // The same inputs the old `useMemo` rebuilt `shared` on, compared by identity.
+    const deps: readonly unknown[] = [
+      props.config.groups, props.zones, props.config.surface, props.config.plantAt, props.config.wind,
+      props.config.globalCap, props.config.simulateRange, props.groundAt, props.groundRevision,
+      props.lowTier === true, props.config.species, props.config.drawCap,
+    ];
+    drawCap = (props.config.drawCap ?? DEFAULT_DRAW_CAP) * (props.lowTier === true ? 0.5 : 1);
+    const prev = lastDeps;
+    if (prev !== null && prev.length === deps.length && deps.every((dep, index) => dep === prev[index])) return;
+    lastDeps = deps;
+    dropAll();
+    shared = buildShared(props);
+    if (parent === null) return;
+    const seen = new Set<string>();
+    for (const group of shared.fauna.groups) {
+      if (group.count <= 0 || seen.has(group.spec.species)) continue;
+      seen.add(group.spec.species);
+      const species = props.config.species[group.spec.species];
+      if (species === undefined) continue;
+      const own = shared.fauna.groups.filter((g) => g.spec.species === group.spec.species);
+      const batch: SpeciesBatch = { ...speciesBatch(species, own), sources: null, sourcesRoot: null, modelMeshes: [] };
+      const model = speciesModel(props, species);
+      const attach = (sources: ScatterModelSource[] | null, root: THREE.Object3D | null) => {
+        if (disposed || batches.indexOf(batch) < 0) {
+          if (root !== null) disposeScatterModelSources(root);
+          return;
+        }
+        batch.sources = sources;
+        batch.sourcesRoot = root;
+        if (sources !== null) {
+          batch.modelMeshes = sources.map((source) => {
+            const mesh = new THREE.InstancedMesh(source.geometry, source.material, batch.capacity);
+            mesh.frustumCulled = false;
+            parent?.add(mesh);
+            return mesh;
+          });
+        }
+      };
+      if (model !== undefined) {
+        sharedGltfLoader
+          .loadAsync(model.url)
+          .then((gltf) => {
+            try {
+              const built = buildScatterModelSources(gltf.scene, model);
+              attach(built.sources, built.root);
+            } catch {
+              attach(null, null);
+            }
+          })
+          .catch(() => attach(null, null));
+      }
+      parent.add(batch.spriteMesh);
+      batches.push(batch);
+    }
+  };
+
+  return {
+    mount(state: EngineFrameState) {
+      parent = state.scene;
+      disposed = false;
+      sync();
+    },
+    update() {
+      sync();
+    },
+    frame(state: EngineFrameState) {
+      sync();
+      const current = shared;
+      if (current === null) return;
+      frame.dt = state.delta;
+      frame.time = state.clock.elapsedTime;
+      frame.sunHeight = livingWorld.sunHeight;
+      frame.focusX = state.camera.position.x;
+      frame.focusZ = state.camera.position.z;
+      current.fauna.update(frame);
+      viewProjection.multiplyMatrices(state.camera.projectionMatrix, state.camera.matrixWorldInverse);
+      writeFaunaView(current.view, viewProjection.elements, state.camera.position.x, state.camera.position.y, state.camera.position.z);
+      current.budget.remaining = drawCap;
+      for (const batch of batches) frameSpeciesBatch(batch, current);
+    },
+    dispose() {
+      disposed = true;
+      dropAll();
+      shared = null;
+      lastDeps = null;
+      parent = null;
+    },
+  };
 }
 
 /**
@@ -165,58 +300,8 @@ function ModelSpecies({ species, model, groups, shared }: { species: FaunaSpecie
  * `config.drawCap`. Groups come from `config.groups` and the `ambient_fauna` zones in the editor scene.
  * @capability ambient-fauna-render draw ambient fauna as instanced species models with distance LOD, frustum culling, a per-group budget and a global draw cap
  */
-export function AmbientFauna({ config, zones, assets, groundAt, groundRevision, lowTier = false }: AmbientFaunaProps): ReactElement | null {
-  const groups = useMemo(() => [...(config.groups ?? []), ...(zones ?? [])], [config.groups, zones]);
-  const shared = useMemo<Shared>(() => {
-    const surface = config.surface;
-    const fauna = createAmbientFauna(
-      groups,
-      {
-        surfaceAt: typeof surface === "function" ? surface : () => surface ?? 0,
-        ...(groundAt === undefined ? {} : { groundAt }),
-        ...(groundRevision === undefined ? {} : { groundRevision }),
-        ...(config.plantAt === undefined ? {} : { plantAt: config.plantAt }),
-        ...(config.wind === undefined ? {} : { wind: config.wind }),
-      },
-      { globalCap: Math.floor((config.globalCap ?? FAUNA_GLOBAL_CAP) * (lowTier ? 0.5 : 1)), ...(config.simulateRange === undefined ? {} : { simulateRange: config.simulateRange }) },
-    );
-    return { fauna, view: createFaunaView(), budget: { remaining: 0 } };
-  }, [groups, config.surface, config.plantAt, config.wind, config.globalCap, config.simulateRange, groundAt, groundRevision, lowTier]);
-  const frame = useRef<FaunaFrame>({ dt: 0, time: 0, sunHeight: null, focusX: 0, focusZ: 0 });
-  const drawCap = (config.drawCap ?? DEFAULT_DRAW_CAP) * (lowTier ? 0.5 : 1);
-
-  useFrameTask(({ camera, clock }, delta) => {
-    const f = frame.current;
-    f.dt = delta;
-    f.time = clock.elapsedTime;
-    f.sunHeight = livingWorld.sunHeight;
-    f.focusX = camera.position.x;
-    f.focusZ = camera.position.z;
-    shared.fauna.update(f);
-    viewProjection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
-    writeFaunaView(shared.view, viewProjection.elements, camera.position.x, camera.position.y, camera.position.z);
-    shared.budget.remaining = drawCap;
-  }, 0);
-
-  const speciesIds = useMemo(() => [...new Set(shared.fauna.groups.filter((g) => g.count > 0).map((g) => g.spec.species))], [shared]);
-  if (speciesIds.length === 0) return null;
-  return (
-    <>
-      {speciesIds.map((id) => {
-        const species = config.species[id];
-        if (species === undefined) return null;
-        const own = shared.fauna.groups.filter((g) => g.spec.species === id);
-        const model = typeof species.model === "string" ? (assets === undefined ? undefined : resolveModel(species.model, assets)) : species.model;
-        const plain = <SpeciesBatch key={`${id}:sprite`} species={species} groups={own} shared={shared} sources={null} />;
-        if (model === undefined) return plain;
-        return (
-          <ModelBoundary key={id} fallback={plain}>
-            <Suspense fallback={null}>
-              <ModelSpecies species={species} model={model} groups={own} shared={shared} />
-            </Suspense>
-          </ModelBoundary>
-        );
-      })}
-    </>
-  );
+export function AmbientFauna(props: AmbientFaunaProps) {
+  const latest = useRef(props);
+  latest.current = props;
+  return <EngineDrawMount create={() => ambientFaunaDraw(() => latest.current)} deps={[]} />;
 }
