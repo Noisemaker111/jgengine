@@ -57,6 +57,8 @@ export interface WebGpuGlStats {
   frames: number;
   draws: number;
   passes: number;
+  /** Passes that only cleared: a clear nobody drew after before the target changed. */
+  clearPasses: number;
   submits: number;
   pipelines: number;
   bindGroups: number;
@@ -371,7 +373,7 @@ Object.assign(GlConstants.prototype, WEBGL_CONSTANTS);
 export class WebGpuGl extends GlConstants {
   readonly canvas: HTMLCanvasElement;
   readonly device: GPUDevice;
-  readonly stats: WebGpuGlStats = { frames: 0, draws: 0, passes: 0, submits: 0, pipelines: 0, bindGroups: 0, uniformBytes: 0, orderFlushes: 0, programs: 0, translateMs: 0, fences: 0, fenceMs: 0, reads: 0, readMs: 0, queueLagMs: 0, precompiles: 0, precompileMs: 0 };
+  readonly stats: WebGpuGlStats = { frames: 0, draws: 0, passes: 0, clearPasses: 0, submits: 0, pipelines: 0, bindGroups: 0, uniformBytes: 0, orderFlushes: 0, programs: 0, translateMs: 0, fences: 0, fenceMs: 0, reads: 0, readMs: 0, queueLagMs: 0, precompiles: 0, precompileMs: 0 };
   /** Every distinct problem a draw hit, once each (also printed once). */
   readonly warnings = new Map<string, number>();
   drawingBufferColorSpace: PredefinedColorSpace = "srgb";
@@ -1930,6 +1932,7 @@ struct U { shift: vec2<i32> };
     if (pending === null || keep === "any" || (keep !== undefined && pending.fb === keep)) return;
     this.pendingClear = null;
     if (this.beginPass(pending.fb, pending)) {
+      this.stats.clearPasses += 1;
       this.pass!.end();
       this.pass = null;
       this.passTarget = null;
