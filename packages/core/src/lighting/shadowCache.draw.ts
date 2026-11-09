@@ -83,6 +83,16 @@ export interface ShadowCacheStats {
   renders: number;
   /** Milliseconds the caster checks have cost since the last reset. */
   checkMs: number;
+  /** Triangles the changed casters submit when they draw over a layer, before frustum culling. */
+  dynamicTris: number;
+  /** Of {@link dynamicTris}, what instanced meshes carry. */
+  dynamicTrisInstanced: number;
+  /** Of {@link dynamicTris}, what batched meshes carry. */
+  dynamicTrisBatched: number;
+  /** Of {@link dynamicTris}, what never-cacheable casters (skinning, morphs, unstable depth) carry. */
+  dynamicTrisAlways: number;
+  /** Triangles the static casters hold in the layers. */
+  staticTris: number;
   /**
    * Milliseconds spent in the renderer's shadow step since the last reset, the cache's own checks
    * included; with the cache off it is three's step alone, so the two compare directly.
@@ -659,6 +669,43 @@ export class ShadowCasterTracker {
     let count = 0;
     for (const entry of this.entries.values()) if (entry.alwaysDynamic && entry.drawable) count += 1;
     return count;
+  }
+
+  /** Triangles one caster submits per instance set: its geometry's index or position count over three, times instanced count. */
+  private tris(entry: CasterEntry): number {
+    const mesh = entry.object as THREE.Mesh & Partial<THREE.InstancedMesh>;
+    const geometry = mesh.geometry as THREE.BufferGeometry | undefined;
+    if (geometry === undefined || geometry === null) return 0;
+    const index = geometry.getIndex();
+    const position = geometry.getAttribute("position") as THREE.BufferAttribute | undefined;
+    const vertices = index !== null ? index.count : position?.count ?? 0;
+    const instances = mesh.isInstancedMesh === true ? Math.max(0, mesh.count) : 1;
+    return Math.round((vertices / 3) * instances);
+  }
+
+  /** Triangles the changed, drawable casters would submit if every light's dynamic pass drew them. */
+  dynamicTris(): { total: number; instanced: number; batched: number; plain: number; always: number } {
+    let total = 0;
+    let instanced = 0;
+    let batched = 0;
+    let plain = 0;
+    let always = 0;
+    for (const entry of this.dynamicCasters) {
+      const tris = this.tris(entry);
+      total += tris;
+      if (entry.alwaysDynamic) always += tris;
+      if (entry.kind === CasterKind.Instanced) instanced += tris;
+      else if (entry.kind === CasterKind.Batched) batched += tris;
+      else plain += tris;
+    }
+    return { total, instanced, batched, plain, always };
+  }
+
+  /** Triangles the static casters hold across the layers. */
+  staticTris(): number {
+    let total = 0;
+    for (const entry of this.entries.values()) if (entry.isStatic && entry.drawable) total += this.tris(entry);
+    return total;
   }
 
   dispose(): void {
@@ -1263,6 +1310,11 @@ class ShadowCache {
           invocations: this.invocations,
           renders: this.frame,
           checkMs: this.checkMs,
+          ...(() => {
+            const t = this.tracker.dynamicTris();
+            return { dynamicTris: t.total, dynamicTrisInstanced: t.instanced, dynamicTrisBatched: t.batched, dynamicTrisAlways: t.always };
+          })(),
+          staticTris: this.tracker.staticTris(),
           cpuMs: this.cpuMs,
           passes: { ...this.passes },
           audit: { on: this.audit, ...this.auditStats },
