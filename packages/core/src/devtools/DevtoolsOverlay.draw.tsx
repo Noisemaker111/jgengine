@@ -1,6 +1,7 @@
-import { useThree } from "@react-three/fiber";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import {
   devtools,
 } from "@jgengine/core/devtools/devtools";
@@ -19,7 +20,6 @@ import { NetPanel } from "./NetPanel.draw";
 import { KeysPanel } from "./KeysPanel.view";
 import { ColPanel } from "./ColPanel.view";
 import { TunePanel } from "./TunePanel.view";
-import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 export { applyStoredDevtoolsOverrides, persistDevtoolsOverrides } from "./devtoolsOverrides.view";
 
@@ -30,87 +30,93 @@ export { withDevtoolsLatency } from "./latencyInstrumentation.draw";
 const RENDER_SAMPLE_MS = 500;
 const RENDER_PROBE_FRAME_PRIORITY = -10;
 
+/**
+ * Draw-side form of {@link DevtoolsRendererProbe}: registers the render probes against the mounted
+ * renderer and scene, owns `gl.info.autoReset` for the frame, and samples draw stats once per
+ * {@link RENDER_SAMPLE_MS} at {@link RENDER_PROBE_FRAME_PRIORITY}.
+ * @internal
+ */
+export function devtoolsRendererProbeDraw(): EngineDraw {
+  let disposes: (() => void)[] = [];
+  let lastSampleAt = 0;
+  return {
+    priority: RENDER_PROBE_FRAME_PRIORITY,
+    mount(state: EngineFrameState) {
+      const gl = state.renderer;
+      const scene = state.rootScene ?? state.scene;
+      disposes.push(devtools.probes.register("heavyModels", () => heavyModels()));
+      disposes.push(devtools.probes.register("shaderPrograms", () => gl.info.programs?.length ?? 0));
+      const context = webGpuContextOf(gl);
+      if (context !== null) {
+        let last = { ...context.stats };
+        let lastAt = performance.now();
+        let reading = { frames: 0, passes: 0, clearPasses: 0, replayedPasses: 0, draws: 0, submits: 0, uniformBytes: 0, bindGroups: 0, pipelines: 0 };
+        // Counters and state read back to back share one window; a new window opens every RENDER_SAMPLE_MS.
+        const perFrame = () => {
+          const at = performance.now();
+          if (at - lastAt < RENDER_SAMPLE_MS && reading.frames > 0) return reading;
+          const now = context.stats;
+          const frames = Math.max(1, now.frames - last.frames);
+          const per = (key: "passes" | "clearPasses" | "replayedPasses" | "draws" | "submits" | "uniformBytes" | "bindGroups" | "pipelines") => Math.round(((now[key] - last[key]) / frames) * 10) / 10;
+          reading = { frames: now.frames - last.frames, passes: per("passes"), clearPasses: per("clearPasses"), replayedPasses: per("replayedPasses"), draws: per("draws"), submits: per("submits"), uniformBytes: per("uniformBytes"), bindGroups: per("bindGroups"), pipelines: per("pipelines") };
+          last = { ...now };
+          lastAt = at;
+          return reading;
+        };
+        disposes.push(devtools.probes.registerSystem("render/webgpu", {
+          counters: perFrame,
+          state: () => {
+            const { passes, clearPasses, replayedPasses, draws, submits, uniformBytes } = perFrame();
+            return `per frame: ${passes} passes (${clearPasses} clear-only, ${replayedPasses} replayed) · ${draws} draws · ${submits} submits · ${uniformBytes} uniform bytes`;
+          },
+        }));
+      }
+      // One walk serves the counters, the state line and the probe: a snapshot reads the same frame.
+      const probe = triangleProbe(scene);
+      const read = sceneProbeReading(() => probe.table());
+      disposes.push(devtools.probes.register("render/triangles", () => read()));
+      disposes.push(devtools.probes.registerSystem("render/triangles", {
+        counters: () => {
+          const { triangles, casters, lines } = read();
+          return { triangles, casters, lines: lines.length };
+        },
+        state: () => {
+          const { triangles, casters, lines } = read();
+          const top = lines[0];
+          return top === undefined
+            ? `${triangles} triangles`
+            : `${triangles} triangles · casters ${casters} · top ${top.label} ${top.triangles}`;
+        },
+      }));
+      // three resets gl.info after every render() call, so with a multi-pass
+      // composer the counters only ever hold the last fullscreen pass. Own the
+      // reset instead: accumulate across the whole frame, reset at frame start.
+      gl.info.autoReset = false;
+    },
+    frame(state: EngineFrameState) {
+      const info = state.gl.info;
+      const now = performance.now();
+      if (now - lastSampleAt >= RENDER_SAMPLE_MS) {
+        lastSampleAt = now;
+        devtools.render.record({
+          drawCalls: info.render.calls,
+          triangles: info.render.triangles,
+          geometries: info.memory.geometries,
+          textures: info.memory.textures,
+        });
+      }
+      info.reset();
+    },
+    dispose(state: EngineFrameState) {
+      for (const dispose of disposes.splice(0)) dispose();
+      state.gl.info.autoReset = true;
+    },
+  };
+}
+
 /** @internal */
 export function DevtoolsRendererProbe() {
-  useEffect(() => devtools.probes.register("heavyModels", () => heavyModels()), []);
-  const gl = useThree((state) => state.gl);
-  const scene = useThree((state) => state.scene);
-  const lastSampleAt = useRef(0);
-  useEffect(() => devtools.probes.register("shaderPrograms", () => gl.info.programs?.length ?? 0), [gl]);
-  useEffect(() => {
-    // The WebGPU backend's own work per frame, averaged since the last read, so every perf record on
-    // WebGPU says how many passes, draws, submits and uniform bytes a frame cost the context.
-    const context = webGpuContextOf(gl);
-    if (context === null) return;
-    let last = { ...context.stats };
-    let lastAt = performance.now();
-    let reading = { frames: 0, passes: 0, clearPasses: 0, replayedPasses: 0, draws: 0, submits: 0, uniformBytes: 0, bindGroups: 0, pipelines: 0 };
-    // Counters and state read back to back share one window; a new window opens every RENDER_SAMPLE_MS.
-    const perFrame = () => {
-      const at = performance.now();
-      if (at - lastAt < RENDER_SAMPLE_MS && reading.frames > 0) return reading;
-      const now = context.stats;
-      const frames = Math.max(1, now.frames - last.frames);
-      const per = (key: "passes" | "clearPasses" | "replayedPasses" | "draws" | "submits" | "uniformBytes" | "bindGroups" | "pipelines") => Math.round(((now[key] - last[key]) / frames) * 10) / 10;
-      reading = { frames: now.frames - last.frames, passes: per("passes"), clearPasses: per("clearPasses"), replayedPasses: per("replayedPasses"), draws: per("draws"), submits: per("submits"), uniformBytes: per("uniformBytes"), bindGroups: per("bindGroups"), pipelines: per("pipelines") };
-      last = { ...now };
-      lastAt = at;
-      return reading;
-    };
-    return devtools.probes.registerSystem("render/webgpu", {
-      counters: perFrame,
-      state: () => {
-        const { passes, clearPasses, replayedPasses, draws, submits, uniformBytes } = perFrame();
-        return `per frame: ${passes} passes (${clearPasses} clear-only, ${replayedPasses} replayed) · ${draws} draws · ${submits} submits · ${uniformBytes} uniform bytes`;
-      },
-    });
-  }, [gl]);
-  useEffect(() => {
-    // One walk serves the counters, the state line and the probe: a snapshot reads the same frame.
-    const probe = triangleProbe(scene);
-    const read = sceneProbeReading(() => probe.table());
-    const disposeProbe = devtools.probes.register("render/triangles", () => read());
-    const disposeSystem = devtools.probes.registerSystem("render/triangles", {
-      counters: () => {
-        const { triangles, casters, lines } = read();
-        return { triangles, casters, lines: lines.length };
-      },
-      state: () => {
-        const { triangles, casters, lines } = read();
-        const top = lines[0];
-        return top === undefined
-          ? `${triangles} triangles`
-          : `${triangles} triangles · casters ${casters} · top ${top.label} ${top.triangles}`;
-      },
-    });
-    return () => {
-      disposeProbe();
-      disposeSystem();
-    };
-  }, [scene]);
-  useEffect(() => {
-    // three resets gl.info after every render() call, so with a multi-pass
-    // composer the counters only ever hold the last fullscreen pass. Own the
-    // reset instead: accumulate across the whole frame, reset at frame start.
-    gl.info.autoReset = false;
-    return () => {
-      gl.info.autoReset = true;
-    };
-  }, [gl]);
-  useFrameTask((state) => {
-    const info = state.gl.info;
-    const now = performance.now();
-    if (now - lastSampleAt.current >= RENDER_SAMPLE_MS) {
-      lastSampleAt.current = now;
-      devtools.render.record({
-        drawCalls: info.render.calls,
-        triangles: info.render.triangles,
-        geometries: info.memory.geometries,
-        textures: info.memory.textures,
-      });
-    }
-    info.reset();
-  }, RENDER_PROBE_FRAME_PRIORITY);
+  useEngineDraw(() => devtoolsRendererProbeDraw(), []);
   return null;
 }
 
