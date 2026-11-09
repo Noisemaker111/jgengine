@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { abVerdict, affectedGames, baseTreeName, bracketedLogRatio, homeRequest, medianMs, parseAbArgs, plantScript, renderAbTable, rendererCpuPct, routeSpread, t99, treeFingerprint, type AbGameResult } from "./perf-ab";
+import { abVerdict, affectedGames, BASE_TREE_KEEP_MS, baseTreeName, expiredBaseTrees, homeRequest, medianMs, pairLogRatio, parseAbArgs, plantScript, renderAbTable, rendererCpuPct, routeSpread, t99, treeFingerprint, type AbGameResult } from "./perf-ab";
 
 const GAMES = ["deepward", "harbor-heat", "scrap-signal"];
 const options = { minBlocks: 4, maxBlocks: 16, marginPct: 3 };
@@ -50,11 +50,9 @@ test("t99 falls with more pairs and holds past the table", () => {
   expect(t99(0)).toBe(Number.POSITIVE_INFINITY);
 });
 
-test("a branch window is held against the base windows either side, so a linear drift cancels", () => {
-  expect(bracketedLogRatio(20, 20, 20)).toBeCloseTo(0, 9);
-  expect(Math.exp(bracketedLogRatio(20, 21, 20)) - 1).toBeCloseTo(0.05, 9);
-  // The PC slowing every window by 10%: base 20 then 24.2, branch 22 between them, no change of its own.
-  expect(bracketedLogRatio(20, 22, 24.2)).toBeCloseTo(0, 9);
+test("a pair's ratio is its branch window over the base window just before it", () => {
+  expect(pairLogRatio(20, 20)).toBeCloseTo(0, 9);
+  expect(Math.exp(pairLogRatio(20, 21)) - 1).toBeCloseTo(0.05, 9);
 });
 
 test("medianMs drops non-frames and takes the middle", () => {
@@ -147,6 +145,17 @@ test("every window's walk starts from the warmed-up pose", () => {
 
 test("the base tree is named for its commit", () => {
   expect(baseTreeName("6c5e869e2e1234")).toBe("perf-base-6c5e869e2e");
+});
+
+test("only base trees unused for a day are removed, never the one being made or another checkout", () => {
+  const now = 10 * BASE_TREE_KEEP_MS;
+  const trees = [
+    { name: "perf-base-aaaaaaaaaa", usedAtMs: now - 60_000 },
+    { name: "perf-base-bbbbbbbbbb", usedAtMs: now - BASE_TREE_KEEP_MS - 1 },
+    { name: "perf-base-cccccccccc", usedAtMs: 0 },
+    { name: "agent-some-thread", usedAtMs: 0 },
+  ];
+  expect(expiredBaseTrees(trees, "perf-base-cccccccccc", now)).toEqual(["perf-base-bbbbbbbbbb"]);
 });
 
 test("the planted busy-wait runs once a frame, before the page's own callback", () => {

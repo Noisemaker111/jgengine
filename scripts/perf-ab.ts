@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { basename, dirname, join, resolve } from "node:path";
@@ -220,9 +220,15 @@ export function medianMs(deltas: readonly number[]): number {
   return kept.length % 2 === 1 ? kept[mid]! : (kept[mid - 1]! + kept[mid]!) / 2;
 }
 
-/** ln(branch / base) for one branch window, against the geometric mean of the base windows either side of it. */
-export function bracketedLogRatio(baseBefore: number, branch: number, baseAfter: number): number {
-  return Math.log(branch) - (Math.log(baseBefore) + Math.log(baseAfter)) / 2;
+/**
+ * ln(branch / base) for one pair: a base window and the branch window right after it, each page as far
+ * into its own game (a page's game runs only while it is timed). Holding a branch window against the
+ * base windows either side of it compared it with base half a window further on, where games run
+ * cheaper as they settle: same-code no-ops read "slower" (+4.2%, +7.5%, +8%, 2026-11-09), and the same
+ * windows matched by game time read -0.1 to +5.9% and never past the floor.
+ */
+export function pairLogRatio(base: number, branch: number): number {
+  return Math.log(branch / base);
 }
 
 function git(cwd: string, args: string[]): { ok: boolean; out: string } {
@@ -272,10 +278,53 @@ export function baseTreeName(commit: string): string {
   return `perf-base-${commit.slice(0, 10)}`;
 }
 
+/** File a base tree's every use touches; a tree unused this long is removed when another is made. */
+const BASE_USED_MARKER = ".perf-ab-used";
+export const BASE_TREE_KEEP_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Which other `perf-base-*` trees to remove: those not used for a day (a tree with no marker counts
+ * from when it was made). Removing every other tree whenever a new one was made deleted the base a
+ * second run was still serving (2026-11-09): Windows kept the files its dev server held open, so the
+ * folder stayed behind without its `.git` and the next run read the main checkout's commit from it.
+ */
+export function expiredBaseTrees(trees: Array<{ name: string; usedAtMs: number }>, current: string, nowMs: number): string[] {
+  return trees.filter((tree) => tree.name.startsWith("perf-base-") && tree.name !== current && nowMs - tree.usedAtMs > BASE_TREE_KEEP_MS).map((tree) => tree.name);
+}
+
+/** True when `dir` is the top of its own checkout, not a leftover folder git resolves to an outer one. */
+function isCheckoutRoot(dir: string): boolean {
+  const top = git(dir, ["rev-parse", "--show-toplevel"]);
+  return top.ok && resolve(top.out).toLowerCase() === resolve(dir).toLowerCase();
+}
+
+function usedAtMs(dir: string): number {
+  for (const path of [join(dir, BASE_USED_MARKER), dir]) {
+    try {
+      return statSync(path).mtimeMs;
+    } catch {
+      // try the next
+    }
+  }
+  return 0;
+}
+
+/** Removes a base tree or what a failed removal left of it; false when Windows still holds its files. */
+function removeBaseTree(main: string, dir: string): boolean {
+  if (isCheckoutRoot(dir)) git(main, ["worktree", "remove", "--force", dir]);
+  try {
+    rmSync(dir, { recursive: true, force: true, maxRetries: 3 });
+  } catch {
+    // reported below
+  }
+  git(main, ["worktree", "prune"]);
+  return !existsSync(dir);
+}
+
 /**
  * The checkout the base side is served from: a directory as given, or a detached worktree at the
  * commit under the main checkout's `.claude/worktrees/`, made once and reused by every thread that
- * measures against that commit. Older `perf-base-*` trees with no edits are removed when a new one is made.
+ * measures against that commit. Other `perf-base-*` trees unused for a day are removed when a new one is made.
  */
 function baseCheckout(spec: string | null): { dir: string; commit: string; label: string } {
   if (spec !== null && existsSync(spec)) {
@@ -288,18 +337,24 @@ function baseCheckout(spec: string | null): { dir: string; commit: string; label
   const main = mainCheckout();
   const root = join(main, ".claude", "worktrees");
   const dir = join(root, baseTreeName(commit));
+  if (existsSync(dir) && !isCheckoutRoot(dir)) {
+    console.error(`degraded: ${dir} is what a failed removal left behind (no .git); removing it and making the tree again`);
+    if (!removeBaseTree(main, dir)) throw new Error(`could not remove the leftover ${dir}: a process still holds its files (its dev server); stop it and run again`);
+  }
   if (!existsSync(dir)) {
     mkdirSync(root, { recursive: true });
-    for (const name of existsSync(root) ? readdirSync(root) : []) {
-      if (!name.startsWith("perf-base-") || name === basename(dir)) continue;
+    const trees = readdirSync(root).map((name) => ({ name, usedAtMs: usedAtMs(join(root, name)) }));
+    for (const name of expiredBaseTrees(trees, basename(dir), Date.now())) {
       const old = join(root, name);
-      if (git(old, ["status", "--porcelain", "--untracked-files=no"]).out === "") git(main, ["worktree", "remove", "--force", old]);
+      if (isCheckoutRoot(old) && git(old, ["status", "--porcelain", "--untracked-files=no"]).out !== "") continue;
+      if (!removeBaseTree(main, old)) console.error(`degraded: could not remove the unused base tree ${old}; a process still holds its files`);
     }
     console.error(`perf ab: making the base checkout ${dir} at ${commit.slice(0, 9)}`);
     const added = git(main, ["worktree", "add", "--detach", dir, commit]);
     if (!added.ok && !existsSync(dir)) throw new Error(`could not add the base worktree at ${commit.slice(0, 9)}: ${added.out}`);
   }
   if (git(dir, ["rev-parse", "HEAD"]).out !== commit) throw new Error(`the base checkout ${dir} is not at ${commit.slice(0, 9)}; remove it (git worktree remove) and run again`);
+  writeFileSync(join(dir, BASE_USED_MARKER), `${new Date().toISOString()}\n`);
   ensureWorktreeReady(dir);
   return { dir, commit, label: `${ref === commit ? "" : `${ref} = `}${commit.slice(0, 9)}` };
 }
@@ -467,12 +522,15 @@ async function measurePair(game: string, serve: (side: Side) => Promise<string>,
   try {
     browsers.base = await browserSession(ports.base, "base");
     browsers.branch = await browserSession(ports.branch, "branch");
-    // Base loads first and waits frozen while the branch loads, so neither page draws while the other is timed.
+    // Base loads first and waits frozen while the branch loads, so neither page draws while the other is
+    // timed. Which side loads and launches first moved nothing (a no-op read -0.5% with the branch first,
+    // -1.7% with the base first, harbor-heat, 2026-11-09).
     const loadAt = Date.now();
-    pages.base = await openSide("base", ports.base, browsers.base, serve, game, args);
-    await pause(pages.base);
-    pages.branch = await openSide("branch", ports.branch, browsers.branch, serve, game, args);
-    await pause(pages.branch);
+    for (const side of ["base", "branch"] as const) {
+      pages[side] = await openSide(side, ports[side], browsers[side]!, serve, game, args);
+      await pause(pages[side]!);
+    }
+    if (pages.base === undefined || pages.branch === undefined) throw new Error("a side did not load");
     const measureAt = Date.now();
     // A walk with no player to put back (a camera-only game pans away) would see new ground every
     // window, so such a game is measured standing still, and says so.
@@ -509,19 +567,16 @@ async function measurePair(game: string, serve: (side: Side) => Promise<string>,
     // One pair first, thrown away: each page's first window after its warmup pause is not like the rest.
     await run("base", 0);
     await run("branch", 0);
-    // Strictly alternating, base first and last: a page timed twice running read about 30 ms where the
-    // same page timed right after the other read 14-19 ms (harbor-heat, 2026-11-09), so every window
-    // follows the other page's. Each branch window is held against the mean of the base windows on
-    // either side of it, which also takes out a drift that is linear over three windows.
+    // Strictly alternating: a page timed twice running read about 30 ms where the same page timed right
+    // after the other read 14-19 ms (harbor-heat, 2026-11-09), so every window follows the other page's.
+    // Each pair is a base window and the branch window after it, both pages that far into their game.
     const ratios: number[] = [];
-    let before = await run("base", 1);
     for (let block = 1; block <= args.maxBlocks; block += 1) {
+      const base = await run("base", block);
       const branch = await run("branch", block);
-      const after = await run("base", block + 1);
-      ratios.push(bracketedLogRatio(before, branch, after));
+      ratios.push(pairLogRatio(base, branch));
       const verdict = abVerdict(ratios, args);
-      console.error(`perf ab: ${game} pair ${block}: base ${before.toFixed(2)} / ${after.toFixed(2)} ms, branch ${branch.toFixed(2)} ms${verdict === null ? "" : ` -> ${verdict.call}`}`);
-      before = after;
+      console.error(`perf ab: ${game} pair ${block}: base ${base.toFixed(2)} ms, branch ${branch.toFixed(2)} ms${verdict === null ? "" : ` -> ${verdict.call}`}`);
       if (verdict !== null) {
         console.error(`perf ab: ${game}: ${verdict.blocks} pairs in ${Math.round((Date.now() - measureAt) / 1000)} s`);
         // Standing still, nothing is walked: a vehicle game's player rolls on its own.
@@ -671,9 +726,9 @@ async function main(): Promise<number> {
         let measured: Omit<AbGameResult, "lockSeconds"> | null = null;
         const session = { keep: false, timeoutMs: 180_000, hardDeadlineMs: 2 * 2 * PAGE_READY_MS + 2 * WARMUP_MS + (parsed.maxBlocks + 2) * 2 * (parsed.windowSeconds * 1000 + SETTLE_MS + 1_000) + 120_000, frameClock: "uncapped", chromePriority: "normal" } as const;
         let inner = 0;
-        const exit = await withBrowserSession(session, async ({ debugPort: basePort }) => {
-          inner = await withBrowserSession(session, async ({ debugPort: branchPort }) => {
-            measured = await measurePair(game, serve, parsed, { base: basePort, branch: branchPort });
+        const exit = await withBrowserSession(session, async ({ debugPort: outerPort }) => {
+          inner = await withBrowserSession(session, async ({ debugPort: innerPort }) => {
+            measured = await measurePair(game, serve, parsed, { base: outerPort, branch: innerPort });
           });
         });
         if (exit !== 0 || inner !== 0 || measured === null) throw new Error(`the browser sessions exited ${exit} and ${inner}`);
