@@ -47,14 +47,14 @@ interface Budget {
 }
 
 /** Plain data (numbers, strings, arrays and plain objects of them) compared by value. */
-function sameData(previous: unknown, next: unknown, budget: Budget): boolean {
+function sameData(previous: unknown, next: unknown, budget: Budget, trusted: boolean): boolean {
   if (Object.is(previous, next)) return true;
   budget.left -= 1;
   if (budget.left < 0) return false;
   if (typeof previous !== "object" || typeof next !== "object" || previous === null || next === null) return false;
   if (Array.isArray(previous)) {
     if (!Array.isArray(next) || previous.length !== next.length) return false;
-    for (let index = 0; index < previous.length; index += 1) if (!sameValue(previous[index], next[index], budget, false)) return false;
+    for (let index = 0; index < previous.length; index += 1) if (!sameValue(previous[index], next[index], budget, trusted)) return false;
     return true;
   }
   if (Array.isArray(next) || !isPlainObject(previous) || !isPlainObject(next)) return false;
@@ -62,7 +62,7 @@ function sameData(previous: unknown, next: unknown, budget: Budget): boolean {
   if (keys.length !== Object.keys(next).length) return false;
   for (const key of keys) {
     if (!Object.prototype.hasOwnProperty.call(next, key)) return false;
-    if (!sameValue(Reflect.get(previous, key), Reflect.get(next, key), budget, false)) return false;
+    if (!sameValue(Reflect.get(previous, key), Reflect.get(next, key), budget, trusted)) return false;
   }
   return true;
 }
@@ -77,7 +77,7 @@ function sameValue(previous: unknown, next: unknown, budget: Budget, trusted: bo
   if (isValidElement(previous) || isValidElement(next)) return sameNode(previous as ReactNode, next as ReactNode, budget);
   if (isLive(previous) && isLive(next)) return true;
   if (Object.is(previous, next)) return trusted || Object.isFrozen(previous);
-  return sameData(previous, next, budget);
+  return sameData(previous, next, budget, trusted);
 }
 
 /** Two React nodes that draw the same: the same text, or elements of the same type, key and props. */
