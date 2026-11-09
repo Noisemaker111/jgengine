@@ -328,6 +328,8 @@ export interface AbWindow {
   raised: string[];
   /** Those still below normal when the window ended: Chrome lowered them again during it. */
   lowAfter: string[];
+  /** The player's position when the window started and ended, or null with no player: the route it walked. */
+  route: { from: number[]; to: number[] } | null;
 }
 
 export interface AbGameResult {
@@ -393,9 +395,21 @@ async function resume(page: SidePage, path: PerfPath): Promise<void> {
   if (page.home !== null && path === "walk") {
     const moved = await page.session.evaluate<{ ok: boolean; error?: string }>(`window.__jgengineAgent?.handle?.(${homeRequest(page.home)}) ?? { ok: false, error: "agent bridge unavailable" }`);
     if (moved?.ok !== true) throw new Error(`could not put the ${page.side} page's player back at the start of the walk: ${moved?.error ?? "no answer"}`);
+    // The teleport's own camera turn swings round the camera's old target, so the view after it
+    // pointed from where the last walk ended and alternate windows walked two routes (north-east at
+    // 27 ms, south at 16 ms; harbor-heat, 2026-11-09). Turned again once the camera follows the new
+    // spot, every window walks one route.
+    await page.session.evaluate(`new Promise((r) => setTimeout(r, ${TURN_SETTLE_MS}))`, { awaitPromise: true });
+    await page.session.evaluate(`window.__jgengineAgent?.handle?.(${JSON.stringify({ method: "camera_heading", yaw: page.home.yaw })})`);
+    await page.session.evaluate(`new Promise((r) => setTimeout(r, ${TURN_SETTLE_MS}))`, { awaitPromise: true });
   }
   page.stopPath = await startPath(page.session, path);
   await page.session.evaluate(`new Promise((r) => setTimeout(r, ${SETTLE_MS}))`, { awaitPromise: true });
+}
+
+async function playerAt(page: SidePage): Promise<number[] | null> {
+  const pose = await page.session.evaluate<{ ok: boolean; position?: number[] }>(`window.__jgengineAgent?.handle?.({ method: "player_pose" }) ?? { ok: false }`);
+  return pose?.ok === true && Array.isArray(pose.position) ? pose.position.map((value) => Math.round(value * 10) / 10) : null;
 }
 
 async function measureWindow(page: SidePage, seconds: number): Promise<number[]> {
@@ -451,7 +465,9 @@ async function measurePair(game: string, serve: (side: Side) => Promise<string>,
       const [timedBefore, idleBefore] = [await processCpu(page.browser), await processCpu(other.browser)];
       const raised = equalizePriorities(timedBefore, true);
       const windowAt = Date.now();
+      const from = await playerAt(page);
       const deltas = await measureWindow(page, args.windowSeconds);
+      const to = await playerAt(page);
       const ms = Date.now() - windowAt;
       const [timedAfter, idleAfter] = [await processCpu(page.browser), await processCpu(other.browser)];
       const lowAfter = equalizePriorities(timedAfter, false);
@@ -461,6 +477,7 @@ async function measurePair(game: string, serve: (side: Side) => Promise<string>,
       windows.push({
         block, side, medianMs: Math.round(median * 1000) / 1000, frames: deltas.length,
         timedCpu: rendererCpuPct(timedBefore, timedAfter, ms), idleCpu: rendererCpuPct(idleBefore, idleAfter, ms), raised, lowAfter,
+        route: from === null || to === null ? null : { from, to },
       });
       return median;
     };
@@ -482,6 +499,8 @@ async function measurePair(game: string, serve: (side: Side) => Promise<string>,
       before = after;
       if (verdict !== null) {
         console.error(`perf ab: ${game}: ${verdict.blocks} pairs in ${Math.round((Date.now() - measureAt) / 1000)} s`);
+        const spread = routeSpread(windows);
+        if (spread > ROUTE_SPREAD_MAX_M) console.error(`degraded: the windows' walks ended up to ${spread.toFixed(1)} m apart, so they did not all walk one route`);
         const busyIdle = windows.filter((window) => window.idleCpu > IDLE_CPU_MAX_PCT).length;
         if (busyIdle > 0) console.error(`degraded: in ${busyIdle} of ${windows.length} windows the frozen side's renderers still used over ${IDLE_CPU_MAX_PCT}% of a core`);
         const side = (which: Side) => medianMs(windows.filter((window) => window.side === which && window.block > 0).map((window) => window.medianMs));
@@ -497,6 +516,19 @@ async function measurePair(game: string, serve: (side: Side) => Promise<string>,
     }
     for (const browser of Object.values(browsers)) await browser.close().catch(() => {});
   }
+}
+
+/** Ms between the teleport, the second camera turn and the walk. */
+const TURN_SETTLE_MS = 250;
+/** Walk end points further apart than this, in metres, are different routes. */
+const ROUTE_SPREAD_MAX_M = 3;
+
+/** The largest distance between any two measured windows' walk end points (0 with fewer than two routes). */
+export function routeSpread(windows: readonly Pick<AbWindow, "block" | "route">[]): number {
+  const ends = windows.filter((window) => window.block > 0 && window.route !== null).map((window) => window.route!.to);
+  let widest = 0;
+  for (const a of ends) for (const b of ends) widest = Math.max(widest, Math.hypot((a[0] ?? 0) - (b[0] ?? 0), (a[2] ?? 0) - (b[2] ?? 0)));
+  return widest;
 }
 
 /** A frozen side whose renderers use more than this share of a core over a window was not frozen. */

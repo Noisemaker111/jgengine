@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { abVerdict, affectedGames, baseTreeName, bracketedLogRatio, homeRequest, medianMs, parseAbArgs, plantScript, renderAbTable, rendererCpuPct, t99, treeFingerprint, type AbGameResult } from "./perf-ab";
+import { abVerdict, affectedGames, baseTreeName, bracketedLogRatio, homeRequest, medianMs, parseAbArgs, plantScript, renderAbTable, rendererCpuPct, routeSpread, t99, treeFingerprint, type AbGameResult } from "./perf-ab";
 
 const GAMES = ["deepward", "harbor-heat", "scrap-signal"];
 const options = { minBlocks: 4, maxBlocks: 16, marginPct: 3 };
@@ -121,6 +121,14 @@ test("renderer CPU sums the renderers alive at both readings, as a percent of on
   const after = new Map([["renderer:1", 12], ["renderer:2", 4.5], ["gpu:3", 9], ["renderer:4", 50]]);
   expect(rendererCpuPct(before, after, 2_000)).toBe(125);
   expect(rendererCpuPct(before, before, 2_000)).toBe(0);
+});
+
+test("routeSpread names how far apart the windows' walks ended, ignoring the primer pair", () => {
+  const at = (block: number, x: number, z: number) => ({ block, route: { from: [0, 0, 0], to: [x, 1, z] } });
+  // The alternating routes of the 2026-11-09 pilot: north-east ends near z 47, south ends near z 29.
+  expect(routeSpread([at(1, -179.7, 47), at(2, -190.1, 28.7), at(3, -177.7, 41.5)])).toBeGreaterThan(18);
+  expect(routeSpread([at(0, 0, 0), at(1, -180, 40), at(2, -180.5, 40.4)])).toBeLessThan(1);
+  expect(routeSpread([{ block: 1, route: null }])).toBe(0);
 });
 
 test("every window's walk starts from the warmed-up pose", () => {
