@@ -4,9 +4,12 @@
 //   bun run lane:close --pr 2274
 //   bun run lane:close --allow bun.lock  # keep a file the commit guards refuse
 //
-// It runs `bun run preflight --no-verify` (the install, conflict markers and gen, on this PC), then
-// `verify:fast --landing`: the type-checks, every gate CI runs, the tests, boots and the site build,
-// on the machine the session runs on. A passing verify:fast --landing of this exact tree, run by hand just before, is reused in one line instead of run again. It writes the
+// It runs `bun run preflight --no-verify` (the install, conflict markers and gen), then
+// `verify:fast --landing`: the type-checks, every gate CI runs, the tests, boots and the site build.
+// On Jon's PC both run on his boat host when it is up (`boatGate`: the working tree goes there as a
+// commit, the output streams back, and the receipt and gen output come home), so landings stop
+// loading the PC; when the host cannot run it they run here after a `degraded:` line. Elsewhere
+// (the host itself, CI) they run on the machine the session runs on. A passing verify:fast --landing of this exact tree, run by hand just before, is reused in one line instead of run again. It writes the
 // game suite scores those tests earned, lands (staging and committing the lane's work with a `changes/`
 // note written from the -m messages - see scripts/change-note.ts - pushing and opening the PR), and then
 // merges the PR itself.
@@ -24,7 +27,8 @@
 // files, browsers and commit. The lock names the run's pid and goes with it, so a run that
 // crashed or was killed by a timeout leaves a lock the next run breaks on its own.
 import { spawnSync } from "node:child_process";
-import { mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
 import { assertCheckoutReady } from "./checkout-ready";
@@ -146,6 +150,11 @@ export interface LaneIo {
   github?: (repo: string) => GitHub;
   /** Waits between merge attempts while another merge moves the base. */
   pause?: (ms: number) => void;
+  /**
+   * The gate on the boat host (`remoteGate`): its exit code, or null when the host cannot run it
+   * and the gate runs here. Absent: always here.
+   */
+  remoteGate?: (withPreflight: boolean) => number | null;
 }
 
 /** The lock another run holds, or the lock this run now holds with the release that drops it. */
@@ -260,14 +269,22 @@ function closeHeldLane(args: LaneCloseArgs, branch: string, io: LaneIo): number 
   if (already !== null) {
     io.out(`lane:close: verify:fast --landing already passed on this exact tree (${already}); preflight and verify not run again`);
   } else {
-    stage(`lane:close: ${branch} — preflight (install, conflict markers, gen)`);
-    const preflight = io.sh(["run", "preflight", "--no-verify"], true);
-    if (preflight.status !== 0) {
-      io.err(`lane:close: preflight failed (exit ${preflight.status}); nothing landed, no tests run. Fix what it names and close again.`);
-      return EXIT_VERIFY_FAILED;
+    const remote = io.remoteGate?.(true) ?? null;
+    if (remote !== null) {
+      if (remote !== 0) {
+        io.err(`lane:close: the gate failed on the boat host (exit ${remote}); nothing landed. Fix what it names and close again.`);
+        return EXIT_VERIFY_FAILED;
+      }
+    } else {
+      stage(`lane:close: ${branch} — preflight (install, conflict markers, gen)`);
+      const preflight = io.sh(["run", "preflight", "--no-verify"], true);
+      if (preflight.status !== 0) {
+        io.err(`lane:close: preflight failed (exit ${preflight.status}); nothing landed, no tests run. Fix what it names and close again.`);
+        return EXIT_VERIFY_FAILED;
+      }
+      stage(`lane:close: ${branch} — verify:fast --landing (type-checks, gates, tests, boots and the site build)`);
+      if (!verify(io)) return EXIT_VERIFY_FAILED;
     }
-    stage(`lane:close: ${branch} — verify:fast --landing (type-checks, gates, tests, boots and the site build)`);
-    if (!verify(io)) return EXIT_VERIFY_FAILED;
   }
   const verifiedTree = io.tree();
   if (io.passedOn(verifiedTree) === null) {
@@ -345,8 +362,14 @@ function closeHeldLane(args: LaneCloseArgs, branch: string, io: LaneIo): number 
   return EXIT_VERIFY_FAILED;
 }
 
-/** `verify:fast --landing`, and what to do when it fails. */
+/** `verify:fast --landing` (on the boat host when it is up), and what to do when it fails. */
 function verify(io: LaneIo): boolean {
+  const remote = io.remoteGate?.(false) ?? null;
+  if (remote !== null) {
+    if (remote === 0) return true;
+    io.err(`lane:close: verify:fast failed on the boat host (exit ${remote}); nothing merged. Fix what it names and close again.`);
+    return false;
+  }
   const verified = io.sh(["run", "verify:fast", "--landing"], true);
   if (verified.status !== 0) {
     io.err(`lane:close: verify:fast failed (exit ${verified.status}); nothing merged. Fix what it names and close again.`);
@@ -479,6 +502,7 @@ function realIo(): LaneIo {
     alive: pidIsAlive,
     tree: () => workingTree(root).tree,
     receiptsBehind: () => receiptsBehind(import.meta.url, root),
+    remoteGate: (withPreflight) => boatGate(withPreflight),
     passedOn: (tree) => {
       const base = spawnSync("git", ["merge-base", "HEAD", "origin/beta"], { cwd: root, encoding: "utf8" });
       const mergeBase = (base.stdout ?? "").trim();
@@ -486,6 +510,56 @@ function realIo(): LaneIo {
       return passingReceipt(root, { tree, mergeBase, runtime: `bun ${Bun.version}`, scope: "landing", skillApi: false })?.path ?? null;
     },
   };
+}
+
+/** Exit of `boat-host.sh gate` when the host cannot run the gate (it printed `degraded:` and why). */
+export const BOAT_GATE_UNAVAILABLE = 69;
+
+/**
+ * The `boat-host.sh gate` arguments for this tree: the snapshot commit of the working tree, run with
+ * this Bun so the receipt's runtime matches, planned from this lane's merge base so the receipt's
+ * key matches, with the receipts and whatever gen rewrote brought back. `preflight --no-gen` (the
+ * install) comes first on a re-verify, since a fresh gate checkout on the host has no node_modules.
+ */
+export function boatGateArgs(input: { commit: string; mergeBase: string; bun: string; withPreflight: boolean }): string[] {
+  const first = input.withPreflight ? "bun run preflight --no-verify" : "bun run preflight --no-gen";
+  return [
+    "gate", "--repo", "jgengine", "--commit", input.commit, "--bun", input.bun, "--tree-back", "--bring", ".scratch/verify-fast/runs",
+    "--", "bash", "-c", `${first} && bun run verify:fast --landing --base ${input.mergeBase}`,
+  ];
+}
+
+/**
+ * The CPU gate on Jon's boat host instead of this PC (`~/.agents/skills/boat-host`, `gate`): the
+ * working tree goes as a commit, its output streams here, and its passing receipt and gen output come
+ * back, so the receipt check below decides the merge exactly as for a gate run here. Null (run it
+ * here) when there is no boat-host tool on this machine (the host itself, CI, another PC), or the
+ * host cannot run it, which the tool reports as a `degraded:` line.
+ */
+function boatGate(withPreflight: boolean): number | null {
+  const tool = process.env["BOAT_HOST_SH"] ?? join(homedir(), ".agents", "skills", "boat-host", "boat-host.sh");
+  if (process.env["BOAT_GATE"] === "off" || !existsSync(tool)) return null;
+  const git = (args: string[]): string => {
+    const run = spawnSync("git", args, { cwd: root, encoding: "utf8" });
+    return run.status === 0 ? (run.stdout ?? "").trim() : "";
+  };
+  const tree = workingTree(root).tree;
+  const commit = git(["commit-tree", tree, "-p", "HEAD", "-m", "lane:close gate snapshot of the working tree"]);
+  const mergeBase = git(["merge-base", "HEAD", "origin/beta"]);
+  if (commit.length === 0 || mergeBase.length === 0) {
+    console.log("degraded: could not snapshot the working tree for the boat host gate; it runs on this PC");
+    return null;
+  }
+  const bash = process.platform === "win32" ? gitBash() : "bash";
+  const run = spawnSync(bash, [tool, ...boatGateArgs({ commit, mergeBase, bun: Bun.version, withPreflight })], { cwd: root, stdio: "inherit" });
+  const status = run.status ?? BOAT_GATE_UNAVAILABLE;
+  return status === BOAT_GATE_UNAVAILABLE ? null : status;
+}
+
+/** Git Bash, not the WSL `bash.exe` in System32 that a bare `bash` can resolve to on Windows. */
+function gitBash(): string {
+  const candidate = join(process.env["ProgramFiles"] ?? "C:\\Program Files", "Git", "bin", "bash.exe");
+  return existsSync(candidate) ? candidate : "bash";
 }
 
 function realLockFs(): LaneLockFs {
