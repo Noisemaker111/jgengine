@@ -173,10 +173,32 @@ test("every entry point that times frames takes the lock", () => {
     "perf-desktop.ts": ["withPerfLock(`perf desktop"],
     "perf-native.ts": ["withPerfLock(`perf native"],
     "bench-cpu.ts": ["withPerfLock(\"perf timing\""],
-    "drive-dev.ts": ["perfLockTurn(`drive"],
+    "drive-dev.ts": ["acquirePerfLock(`drive"],
   };
   for (const [file, calls] of Object.entries(takers)) {
     const source = readFileSync(join(import.meta.dir, file), "utf8");
     for (const call of calls) expect(source, `${file} lost ${call}`).toContain(call);
+  }
+});
+
+test("every taker asks for its dev server only after it holds the lock", () => {
+  // A server asked for before a long wait for the lock was gone after it: the run failed on
+  // ERR_CONNECTION_REFUSED (perf play after 503 s, fps-gap's fernwild, 2026-11-08).
+  const lockFirst: Record<string, string> = {
+    "perf-play.ts": "acquirePerfLock(`perf ${pending.join",
+    "perf-gate.ts": "acquirePerfLock(`perf gate",
+    "perf-fps-gap.ts": "acquirePerfLock(`perf fps-gap",
+    "perf-shadow-audit.ts": "acquirePerfLock(`perf shadow-audit",
+    "perf-network.ts": "acquirePerfLock(`perf network",
+    "drive-dev.ts": "acquirePerfLock(`drive",
+  };
+  const serverCall = /\bensure(?:DevServer|WebServer|DaemonTarget)\(/;
+  for (const [file, lock] of Object.entries(lockFirst)) {
+    const source = readFileSync(join(import.meta.dir, file), "utf8");
+    const lockAt = source.indexOf(lock);
+    const serverAt = source.search(serverCall);
+    expect(lockAt, `${file} lost ${lock}`).toBeGreaterThanOrEqual(0);
+    expect(serverAt, `${file} asks for no dev server`).toBeGreaterThanOrEqual(0);
+    expect(serverAt, `${file} asks for its dev server before it takes the perf lock`).toBeGreaterThan(lockAt);
   }
 });

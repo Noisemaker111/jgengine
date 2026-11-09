@@ -182,8 +182,9 @@ async function main(): Promise<void> {
   const known = readKnownSlow(repoRoot);
   const added = knownSlowAdded(known, readBaseKnownSlow(repoRoot, "origin/beta"));
 
-  // Checked again under the lock before every game: a server obtained before a long wait can be gone after it.
-  let server = await ensureDevServer(repoRoot);
+  // Every server this run started, stopped at the end. Each game asks for one under the lock: a server
+  // obtained before a long wait for it can be gone after it.
+  const started: Awaited<ReturnType<typeof ensureDevServer>>[] = [];
   let rasterizerPrinted = false;
 
   const measureOne = async (game: string, index: number): Promise<GameOutcome> => {
@@ -194,7 +195,14 @@ async function main(): Promise<void> {
     // ends, so the gate and another worktree's run interleave game by game; the frame time is the
     // product, so the browser draws at normal priority (scripts/perf.ts).
     const releaseLock = await acquirePerfLock(`perf gate ${game}`);
-    server = await ensureDevServer(repoRoot);
+    let server: Awaited<ReturnType<typeof ensureDevServer>>;
+    try {
+      server = await ensureDevServer(repoRoot);
+    } catch (error) {
+      releaseLock();
+      throw error;
+    }
+    if (server.pid !== undefined) started.push(server);
     const exitCode = await withBrowserSession(
       { keep: false, debugPort: debugPortFor(index), timeoutMs: 180_000, hardDeadlineMs: gameSessionDeadlineMs(WARMUP_MS, seconds), frameClock: "uncapped", chromePriority: "normal" },
       async ({ debugPort }) => {
@@ -266,8 +274,10 @@ async function main(): Promise<void> {
       },
     );
   } finally {
-    killProcessTree(server.child ?? null);
-    killPid(server.pid, true);
+    for (const server of started) {
+      killProcessTree(server.child ?? null);
+      killPid(server.pid, true);
+    }
   }
 
   const measured = outcomes.filter((outcome): outcome is GameOutcome => outcome !== undefined);

@@ -348,6 +348,12 @@ type Turn = () => Promise<() => Promise<void>>;
  * A `withBrowserSession` turn that holds the perf lock for the whole session, taken before the
  * shared browser's own turn (`broker`), so a run queued for the lock never stalls the daemon's other
  * captures. Timed steps inside the session take the lock again for free (it is re-entrant).
+ *
+ * Only for a session that asks for its dev server inside the session callback. The turn waits after
+ * everything before `withBrowserSession` ran, so a server asked for before it can be gone by the time
+ * the lock frees (fps-gap and drive --hitches failed on ERR_CONNECTION_REFUSED this way, 2026-11-08).
+ * A script that gets its server first takes {@link acquirePerfLock} before it instead; the takers
+ * test checks that order.
  */
 export function perfLockTurn(what: string, broker: Turn | undefined, options: PerfLockOptions = {}): Turn {
   return async () => {
