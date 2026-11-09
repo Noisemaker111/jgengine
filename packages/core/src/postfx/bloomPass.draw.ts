@@ -7,6 +7,9 @@ interface BloomInternals {
   copyUniforms: Record<string, THREE.IUniform>;
 }
 
+/** three-stdlib sets these statics at runtime but leaves them out of its typings; the blur reads the same vectors. */
+const { BlurDirectionX, BlurDirectionY } = UnrealBloomPass as unknown as { BlurDirectionX: THREE.Vector2; BlurDirectionY: THREE.Vector2 };
+
 /**
  * three-stdlib's UnrealBloomPass with the same draws, materials and targets, minus the clear before
  * each one. Every bloom draw covers its whole target without blending, so each of those twelve clears
@@ -51,11 +54,11 @@ export class BloomPass extends UnrealBloomPass {
       const vertical = this.renderTargetsVertical[mip]!;
       quad.material = blur;
       blur.uniforms["colorTexture"]!.value = input.texture;
-      blur.uniforms["direction"]!.value = UnrealBloomPass.BlurDirectionX;
+      blur.uniforms["direction"]!.value = BlurDirectionX;
       renderer.setRenderTarget(horizontal);
       quad.render(renderer);
       blur.uniforms["colorTexture"]!.value = horizontal.texture;
-      blur.uniforms["direction"]!.value = UnrealBloomPass.BlurDirectionY;
+      blur.uniforms["direction"]!.value = BlurDirectionY;
       renderer.setRenderTarget(vertical);
       quad.render(renderer);
       input = vertical;
