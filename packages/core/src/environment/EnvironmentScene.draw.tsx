@@ -1,9 +1,10 @@
 // @skill jgengine-world
 import { oceanColor } from "@jgengine/core/water/oceanColor";
 import { waterSurfaceConfigFromDescriptor } from "@jgengine/core/water/waterSurface";
-import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useRef, useSyncExternalStore } from "react";
 import { PresentationAssetBoundary } from "@jgengine/shell/presentationRecovery";
-import { PresentationRecoveredDraw, useRecoverableTexture } from "@jgengine/shell/presentationRecovery3d";
+import { PresentationRecoveredDraw } from "@jgengine/shell/presentationRecovery3d";
+import { usePresentationRetryScope } from "@jgengine/shell/presentationRecovery";
 import * as THREE from "three";
 import { useGameContext } from "@jgengine/react/provider";
 
@@ -22,29 +23,20 @@ import type {
   WorldBounds,
 } from "@jgengine/core/world/features";
 import {
-  createTerrainPaletteSampler,
   resolveEnvironmentField,
   resolveTerrainDetail,
-  resolveTerrainPalette,
-  type ResolvedTerrainDetail,
   type TerrainField,
 } from "@jgengine/core/terrain/terrain";
 
-import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
-import { editableTerrainFromSnapshot, type TerraformSnapshot } from "@jgengine/core/terrain/terraform";
+import type { TerraformSnapshot } from "@jgengine/core/terrain/terraform";
 import { GroundPad } from "./GroundPad.draw";
 import { Roads } from "@jgengine/core/roads/RoadRibbons.draw";
 import { terrainGroundColorSampler } from "@jgengine/core/terrain/terrainGroundColor.draw";
 import { InstancedBuildings, type InstancedBuildingPlacement } from "@jgengine/core/buildings/GeneratedBuilding.draw";
 import { GrassPatch } from "@jgengine/core/grass/GrassPatch.draw";
-import { CarvedTerrain, type CarvedTerrainProps } from "@jgengine/core/terrain/CarvedTerrain.draw";
-import { createTerrainDetailMaterial, type TerrainSurfaceTextures } from "@jgengine/core/terrain/terrainDetailMaterial.draw";
-import { useTerrainSurfaces } from "@jgengine/core/terrain/useTerrainSurfaces.draw";
-import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
-import { terrainGroundDraw } from "./terrainGround.draw";
+import { terrainGroundDraw, type TerrainGroundDrawProps } from "./terrainGround.draw";
 import { EngineDrawMount, SceneObjectGroup, SceneObjectPortal, sceneObjectAttachDraw, useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
-import { createTerrainPaintTextures, packTerrainPaintWeights, type TerrainPaintTextures } from "@jgengine/core/terrain/terrainSurfaces.draw";
 import { Ocean } from "@jgengine/core/water/Ocean.draw";
 import { oceanBedBounds } from "@jgengine/core/water/oceanBed";
 import { RainField } from "@jgengine/core/weather/RainField.draw";
@@ -54,64 +46,6 @@ import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 /** Props for {@link EnvironmentScene}: the environment world feature to draw. */
 export interface EnvironmentSceneProps {
   feature: EnvironmentWorldFeature;
-}
-
-interface TerrainGroundLayout {
-  field: TerrainField;
-  size: readonly [number, number];
-  segments: TerrainEnvironmentDescriptor["segments"];
-  colors: CarvedTerrainProps["colors"];
-  heightRange: readonly [number, number];
-  paletteAt: CarvedTerrainProps["paletteAt"];
-  paint?: TerrainPaintTextures | undefined;
-  center?: readonly [number, number] | undefined;
-}
-
-function TexturedTerrainGround({
-  detail,
-  layout,
-  surfaces,
-}: {
-  detail: ResolvedTerrainDetail;
-  layout: TerrainGroundLayout;
-  surfaces?: TerrainSurfaceTextures | undefined;
-}) {
-  const maps = detail.material!.maps;
-  const textures = useRecoverableTexture({
-    color: maps.color,
-    normal: maps.normal,
-    ...(maps.roughness !== undefined ? { roughness: maps.roughness } : {}),
-    ...(maps.ao !== undefined ? { ao: maps.ao } : {}),
-  });
-  useEffect(() => {
-    textures.color.colorSpace = THREE.SRGBColorSpace;
-    for (const texture of Object.values(textures)) {
-      texture.wrapS = THREE.RepeatWrapping;
-      texture.wrapT = THREE.RepeatWrapping;
-      texture.needsUpdate = true;
-    }
-  }, [textures]);
-  const quality = useTerrainQuality();
-  const material = useDisposable(
-    () => createTerrainDetailMaterial(detail, textures, { paint: layout.paint, quality, surfaces }).material,
-    [detail, textures, layout.paint, quality, surfaces],
-  );
-  return (
-    <>
-    <PresentationRecoveredDraw />
-    <CarvedTerrain
-      field={layout.field}
-      size={layout.size}
-      segments={layout.segments}
-      colors={layout.colors}
-      heightRange={layout.heightRange}
-      paletteAt={layout.paletteAt}
-      center={layout.center}
-      roughness={0.94}
-      surfaceMaterial={material}
-    />
-    </>
-  );
 }
 
 function TerrainGround({
@@ -129,82 +63,20 @@ function TerrainGround({
     () => (terrain.detail === false ? undefined : resolveTerrainDetail(terrain.detail, terrain.waterLevel)),
     [terrain.detail, terrain.waterLevel],
   );
-  if (detail?.material?.missing === "fail") {
-    return <RequiredTerrainGround terrain={terrain} field={field} center={center} sculpt={sculpt} detail={detail} />;
-  }
-  return <DrawnTerrainGround terrain={terrain} field={field} center={center} sculpt={sculpt} />;
-}
-
-function DrawnTerrainGround(props: {
-  terrain: Omit<TerrainEnvironmentDescriptor, "kind">;
-  field: TerrainField;
-  center?: readonly [number, number] | undefined;
-  sculpt?: TerraformSnapshot | undefined;
-}) {
-  const latest = useRef(props);
-  latest.current = props;
-  return <EngineDrawMount create={() => terrainGroundDraw(() => latest.current)} deps={[]} />;
-}
-
-/**
- * The `missing === "fail"` terrain path: its declared maps are required, so it keeps the suspending
- * `useRecoverableTexture` load and the presentation-retry boundary until the whole scene moves off
- * React. Every other terrain draws through {@link terrainGroundDraw}.
- */
-function RequiredTerrainGround({
-  terrain,
-  field,
-  center,
-  sculpt,
-  detail: resolvedDetail,
-}: {
-  terrain: Omit<TerrainEnvironmentDescriptor, "kind">;
-  field: TerrainField;
-  center?: readonly [number, number] | undefined;
-  sculpt?: TerraformSnapshot | undefined;
-  detail: ResolvedTerrainDetail;
-}) {
-  const detailEnabled = terrain.detail !== false;
-  const paint = useMemo(() => {
-    if (!detailEnabled || sculpt === undefined) return undefined;
-    const weights = packTerrainPaintWeights(editableTerrainFromSnapshot(sculpt));
-    return weights === undefined ? undefined : createTerrainPaintTextures(weights);
-  }, [detailEnabled, sculpt]);
-  useEffect(() => () => paint?.dispose(), [paint]);
-  const palette = useMemo(() => resolveTerrainPalette(terrain), [terrain]);
-  const paletteAt = useMemo(() => {
-    const hasRegions = terrain.materialRegions !== undefined && terrain.materialRegions.length > 0;
-    const hasBands = terrain.biomeBands !== undefined && terrain.biomeBands.length > 0;
-    if (!hasRegions && !hasBands) return undefined;
-    const sampler = createTerrainPaletteSampler(terrain);
-    if (center === undefined) return sampler;
-    return (x: number, z: number) => sampler(x - center[0], z - center[1]);
-  }, [terrain, center]);
-  const colors = useMemo(
-    () => ({
-      low: palette.low,
-      high: palette.high,
-      ...(terrain.waterLevel === undefined ? {} : { waterline: palette.waterline, waterlineHeight: terrain.waterLevel }),
-    }),
-    [palette, terrain.waterLevel],
-  );
-  const size = useMemo(() => [terrain.bounds.w, terrain.bounds.d] as const, [terrain.bounds]);
-  const heightRange = useMemo(() => {
-    const base = terrain.baseHeight ?? 0;
-    const swing = terrain.height * 1.2;
-    return [base - swing, base + swing] as const;
-  }, [terrain.baseHeight, terrain.height]);
-  const quality = useTerrainQuality();
-  // Baked in slices behind the loading cover, once per surface spec (shared across remounts).
-  const { surfaces } = useTerrainSurfaces(resolvedDetail.surfaces, paint?.slots, quality);
-
+  const required = detail?.material?.missing === "fail";
+  const scope = usePresentationRetryScope();
+  const latest = useRef<TerrainGroundDrawProps>({ terrain, field, center, sculpt });
+  latest.current = {
+    terrain,
+    field,
+    center,
+    sculpt,
+    onAssetFail: (error) => scope?.fail(error),
+  };
   return (
     <PresentationAssetBoundary>
-      <TexturedTerrainGround
-        detail={resolvedDetail}
-        layout={{ field, size, segments: terrain.segments, colors, heightRange, paletteAt, paint, center }}
-        surfaces={surfaces}
-      />
+      {required ? <PresentationRecoveredDraw /> : null}
+      <EngineDrawMount create={() => terrainGroundDraw(() => latest.current)} deps={[]} />
     </PresentationAssetBoundary>
   );
 }

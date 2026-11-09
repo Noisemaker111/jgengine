@@ -13,6 +13,7 @@ import {
 import { createTerrainDetailMaterial } from "@jgengine/core/terrain/terrainDetailMaterial.draw";
 import { createTerrainSurfacesDriver, type TerrainSurfacesSnapshot } from "@jgengine/core/terrain/terrainSurfacesDriver.draw";
 import { createTolerantTerrainMaterialDriver } from "@jgengine/core/terrain/tolerantTerrainMaterial.draw";
+import { createRequiredTerrainMaterialDriver } from "@jgengine/core/terrain/requiredTerrainMaterial.draw";
 import { terrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { createTerrainPaintTextures, packTerrainPaintWeights, type TerrainPaintTextures } from "@jgengine/core/terrain/terrainSurfaces.draw";
 import type { TerrainEnvironmentDescriptor } from "@jgengine/core/world/features";
@@ -26,6 +27,8 @@ export interface TerrainGroundDrawProps {
   field: TerrainField;
   center?: readonly [number, number] | undefined;
   sculpt?: TerraformSnapshot | undefined;
+  /** Reports a required (`missing === "fail"`) detail map load failure to the presentation retry flow. */
+  onAssetFail?: ((error: unknown) => void) | undefined;
 }
 
 interface DerivedGround {
@@ -79,9 +82,9 @@ function deriveGround(props: TerrainGroundDrawProps): DerivedGround {
 
 /**
  * Terrain ground as an {@link EngineDraw}: derives paint/palette/detail inputs, runs the surface
- * bake and tolerant map loads through draw-side drivers, and feeds the current material into an
- * inner {@link carvedTerrainDraw}. `missing === "fail"` descriptors stay on the React
- * `TexturedTerrainGround` path — the draw never sees them.
+ * bake and map loads through draw-side drivers — tolerant for pulled scans, strict for
+ * `missing === "fail"` details whose declared maps must answer before anything draws — and feeds
+ * the current material into an inner {@link carvedTerrainDraw}.
  * @internal
  */
 export function terrainGroundDraw(getProps: () => TerrainGroundDrawProps): EngineDraw {
@@ -94,6 +97,7 @@ export function terrainGroundDraw(getProps: () => TerrainGroundDrawProps): Engin
   let derived: DerivedGround | null = null;
   let surfacesDriver: ReturnType<typeof createTerrainSurfacesDriver> | null = null;
   let tolerantDriver: ReturnType<typeof createTolerantTerrainMaterialDriver> | null = null;
+  let requiredDriver: ReturnType<typeof createRequiredTerrainMaterialDriver> | null = null;
   let surfacesSnap: TerrainSurfacesSnapshot = { surfaces: undefined, pending: false };
   let proceduralMaterial: THREE.Material | undefined;
   let proceduralSignature: readonly unknown[] | null = null;
@@ -106,6 +110,7 @@ export function terrainGroundDraw(getProps: () => TerrainGroundDrawProps): Engin
     derived = deriveGround(props);
     surfacesDriver?.dispose();
     tolerantDriver?.dispose();
+    requiredDriver?.dispose();
     surfacesDriver = createTerrainSurfacesDriver(
       () => ({
         detailSurfaces: derived?.resolvedDetail?.surfaces,
@@ -125,6 +130,18 @@ export function terrainGroundDraw(getProps: () => TerrainGroundDrawProps): Engin
       }),
       () => mountedState?.invalidate(),
     );
+    requiredDriver = createRequiredTerrainMaterialDriver(
+      () => ({
+        detail:
+          derived?.resolvedDetail?.material !== undefined && derived.resolvedDetail.material.missing === "fail"
+            ? derived.resolvedDetail
+            : undefined,
+        paint: derived?.paint,
+        surfaces: surfacesSnap.surfaces,
+      }),
+      () => mountedState?.invalidate(),
+      (error) => getProps().onAssetFail?.(error),
+    );
     proceduralMaterial?.dispose();
     proceduralMaterial = undefined;
     proceduralSignature = null;
@@ -141,15 +158,18 @@ export function terrainGroundDraw(getProps: () => TerrainGroundDrawProps): Engin
       recompute();
     }
     const d = derived;
-    if (d === null || surfacesDriver === null || tolerantDriver === null) return;
+    if (d === null || surfacesDriver === null || tolerantDriver === null || requiredDriver === null) return;
     surfacesSnap = surfacesDriver.sync();
     const tolerantMaterial = tolerantDriver.sync();
+    const requiredMaterial = requiredDriver.sync();
     const quality = terrainQuality();
     const detail = d.resolvedDetail;
     const wantsProcedural =
       detail !== undefined &&
       !surfacesSnap.pending &&
       !(detail.material !== undefined && detail.material.missing === "fail");
+    // A required detail draws nothing until its declared maps answer — the old Suspense boundary's blank.
+    group.visible = !(detail?.material?.missing === "fail" && requiredMaterial === undefined);
     const signature: readonly unknown[] = [detail, surfacesSnap.pending, d.paint, quality, surfacesSnap.surfaces];
     if (wantsProcedural && detail !== undefined) {
       if (proceduralSignature === null || signature.some((value, index) => value !== proceduralSignature![index])) {
@@ -174,7 +194,7 @@ export function terrainGroundDraw(getProps: () => TerrainGroundDrawProps): Engin
     carvedProps.paletteAt = d.paletteAt;
     carvedProps.paintColorAt = d.paintColorAt;
     carvedProps.center = props.center;
-    carvedProps.surfaceMaterial = tolerantMaterial ?? proceduralMaterial;
+    carvedProps.surfaceMaterial = tolerantMaterial ?? requiredMaterial ?? proceduralMaterial;
   };
 
   return {
@@ -202,6 +222,8 @@ export function terrainGroundDraw(getProps: () => TerrainGroundDrawProps): Engin
       surfacesDriver = null;
       tolerantDriver?.dispose();
       tolerantDriver = null;
+      requiredDriver?.dispose();
+      requiredDriver = null;
       proceduralMaterial?.dispose();
       proceduralMaterial = undefined;
       proceduralSignature = null;
