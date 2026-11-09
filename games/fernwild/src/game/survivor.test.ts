@@ -87,10 +87,16 @@ test("a dry throat stops healing and costs about one health every five seconds",
     save.hydrate(data);
   };
   setWater(50);
+  const foodBefore = survivorView(runner.ctx).food.value;
   for (let second = 0; second < 60; second += 1) runner.step(1);
-  const drained = 50 - survivorView(runner.ctx).water.value;
+  const minute = survivorView(runner.ctx);
+  const drained = 50 - minute.water.value;
   expect(drained).toBeGreaterThan(1.5);
   expect(drained).toBeLessThan(4);
+  const drainedFood = foodBefore - minute.food.value;
+  expect(drainedFood).toBeGreaterThan(0);
+  // ARK's food outlasts its water: at the measured drain rates a full stomach lasts longer than a full canteen.
+  expect((60 * minute.food.max) / drainedFood).toBeGreaterThan((60 * minute.water.max) / drained);
   setWater(0.2);
   for (let second = 0; second < 30 && !survivorView(runner.ctx).flags.includes("dehydrated"); second += 1) runner.step(1);
   const view = survivorView(runner.ctx);
