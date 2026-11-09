@@ -47,6 +47,7 @@ import {
   sweepOrphanProfiles,
   sweepStaleProfiles,
   sweepStrayBrowsers,
+  killAndConfirmExit,
   pidAlive,
   findChromeExecutable,
   waitForPidExit,
@@ -1079,6 +1080,16 @@ describe("headed is a deliberate act", () => {
 });
 
 describe("stray browser sweep", () => {
+  test("a kill counts by the exit, not the kill command: a taskkill that timed out on a busy PC still ended its browser", () => {
+    let alive = true;
+    const timedOut = (): boolean => {
+      alive = false;
+      return false;
+    };
+    expect(killAndConfirmExit(1234, timedOut, () => alive, () => {})).toBe(true);
+    expect(killAndConfirmExit(1234, () => true, () => true, () => {})).toBe(false);
+  });
+
   const DEAD_PID = 999_999;
   const chrome = ((): string | null => {
     try {

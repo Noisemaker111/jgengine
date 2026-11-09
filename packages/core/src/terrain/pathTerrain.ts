@@ -10,7 +10,7 @@
  * @consumer packages/core/src/terrain/terrain.ts (resolveTerrainField), games/scrap-signal roads
  */
 import type { Vec2 } from "../world/geometry";
-import { buildPolylineIndex, type PolylineIndex } from "../world/polylineIndex";
+import { buildPolylineIndex, createPolylineHit, type PolylineIndex, type PolylineIndexHit } from "../world/polylineIndex";
 import { clamp01, lerp } from "../math/scalar";
 
 function smoothstep01(t: number): number {
@@ -80,6 +80,8 @@ interface Corridor {
   readonly cumulative: readonly number[];
   readonly total: number;
   readonly index: PolylineIndex;
+  /** The hit this corridor's queries write into; each sample reads it before the next. */
+  readonly hit: PolylineIndexHit;
 }
 
 /** Nearest point on a corridor: unsigned lateral distance, arc-length position, and the projected point. */
@@ -110,7 +112,7 @@ function buildCorridor(points: readonly Vec2[]): Corridor {
     const b = points[i]!;
     cumulative.push(cumulative[i - 1]! + Math.hypot(b[0] - a[0], b[1] - a[1]));
   }
-  return { points, cumulative, total: cumulative[cumulative.length - 1] ?? 0, index: buildPolylineIndex(points) };
+  return { points, cumulative, total: cumulative[cumulative.length - 1] ?? 0, index: buildPolylineIndex(points), hit: createPolylineHit() };
 }
 
 /**
@@ -120,7 +122,7 @@ function buildCorridor(points: readonly Vec2[]): Corridor {
  * Beyond `limit` the corridor cannot change the sample, so the answer is `null`.
  */
 function nearestOnCorridor(corridor: Corridor, x: number, z: number, limit: number): CorridorHit | null {
-  const hit = corridor.index.nearest(x, z, limit);
+  const hit = corridor.index.nearest(x, z, limit, corridor.hit);
   if (hit === null) return null;
   const a = corridor.points[hit.segment]!;
   const b = corridor.points[hit.segment + 1]!;

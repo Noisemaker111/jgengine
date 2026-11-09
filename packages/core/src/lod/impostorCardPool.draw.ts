@@ -11,6 +11,8 @@ export interface ImpostorCardSlice {
   /** Object ids in the same order, so a click on a far card still picks its object. */
   ids: string[];
   count: number;
+  /** Moved by the writer after each rewrite, so the pool packs again only when a slice changed. */
+  version: number;
 }
 
 /**
@@ -23,6 +25,8 @@ export class ImpostorCardPool {
   readonly mesh: THREE.InstancedMesh;
   private readonly slices = new Set<ImpostorCardSlice>();
   private packedAt = Number.NaN;
+  /** Every slice's version summed at the last pack, or NaN after a slice joined or left. */
+  private packedVersions = Number.NaN;
 
   constructor(geometry: THREE.BufferGeometry, material: THREE.Material, depth: THREE.Material) {
     this.mesh = new THREE.InstancedMesh(geometry, material, 16);
@@ -36,20 +40,29 @@ export class ImpostorCardPool {
 
   /** A new empty slice that draws in this pool until {@link drop}. */
   slice(capacity: number): ImpostorCardSlice {
-    const slice: ImpostorCardSlice = { matrices: new Float32Array(Math.max(1, capacity) * 16), ids: [], count: 0 };
+    const slice: ImpostorCardSlice = { matrices: new Float32Array(Math.max(1, capacity) * 16), ids: [], count: 0, version: 0 };
     this.slices.add(slice);
+    this.packedVersions = Number.NaN;
     return slice;
   }
 
   drop(slice: ImpostorCardSlice): void {
     this.slices.delete(slice);
     this.packedAt = Number.NaN;
+    this.packedVersions = Number.NaN;
   }
 
-  /** Copies every slice into the shared mesh, once per `frame` however many users call it. */
+  /**
+   * Copies every slice into the shared mesh, once per `frame` however many users call it, and only
+   * after a slice was rewritten, joined or left: an unchanged pool keeps last frame's instances.
+   */
   pack(frame: number): void {
     if (frame === this.packedAt) return;
     this.packedAt = frame;
+    let versions = 0;
+    for (const slice of this.slices) versions += slice.version;
+    if (versions === this.packedVersions) return;
+    this.packedVersions = versions;
     let total = 0;
     for (const slice of this.slices) total += slice.count;
     if (total * 16 > this.mesh.instanceMatrix.array.length) {

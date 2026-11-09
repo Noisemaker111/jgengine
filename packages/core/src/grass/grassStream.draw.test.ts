@@ -399,7 +399,8 @@ test("leaves free their buffers when evicted and on dispose", () => {
   field.dispose();
   expect(field.stats().cached).toBe(0);
   expect(held).toBeGreaterThan(0);
-});
+  // Twelve full settles over a 2 km field: about 2 s alone, past bun's 5 s default on a busy PC.
+}, 30_000);
 
 test("every preset and random knob mix stays full: blade cover never drops below the lush floor", () => {
   const looks = [GRASS_DEFAULTS, ...GRASS_PRESETS.map((preset) => readGrassLook(preset.values))];

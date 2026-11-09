@@ -86,7 +86,7 @@ describe("static authored object batching", () => {
     expect(batch.objects).toHaveLength(2);
 
     const driver = buildCullingDriver(
-      { scene: { entity: { list: () => [] }, object: store } } as unknown as GameContext,
+      { scene: { entity: { list: () => [], subscribe: () => () => {} }, object: store } } as unknown as GameContext,
       undefined,
     );
     driver.setView({ kind: "perspective", position: [0, 0, 20], target: [0, 0, 0], up: [0, 1, 0], fovDeg: 50, aspect: 1, near: 0.1, far: 60 });

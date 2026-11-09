@@ -4,7 +4,7 @@ import { FullScreenQuad, Pass } from "three-stdlib";
 
 import type { StylizeConfig } from "@jgengine/core/render/postProcessing";
 
-import { isPostfxOverlay } from "./postfxOverlay.draw";
+import { drawPrepassExcluding, isPostfxOverlay, type PrepassExclusion } from "./postfxOverlay.draw";
 import { renderWithCurrentMatrices } from "./shadowPrepass.draw";
 
 const DEFAULT_OUTLINE_COLOR = "#101014";
@@ -110,26 +110,21 @@ function skipsDepthPrepass(material: MaterialLike): boolean {
 }
 
 /**
- * Hide what the outline prepass must not see: marked overlays, points/lines/sprites, custom
- * shader meshes, and transparent or alpha-cut meshes (foliage cards would otherwise outline as
- * solid quads). Hidden branches are not walked: they draw nothing either way.
+ * What the outline prepass must not see, with everything under it: marked overlays,
+ * points/lines/sprites, custom shader meshes, and transparent or alpha-cut meshes (foliage cards
+ * would otherwise outline as solid quads).
  * @internal
  */
-export function hideForOutlinePrepass(scene: THREE.Object3D, out: THREE.Object3D[]): void {
-  out.length = 0;
-  scene.traverseVisible((object) => {
-    const drawable = object as THREE.Mesh;
-    const hide =
-      isPostfxOverlay(object) ||
-      (object as THREE.Points).isPoints === true ||
-      (object as THREE.Line).isLine === true ||
-      (object as THREE.Sprite).isSprite === true ||
-      (drawable.isMesh === true && skipsDepthPrepass(drawable.material));
-    if (!hide) return;
-    object.visible = false;
-    out.push(object);
-  });
-}
+export const excludesFromOutline: PrepassExclusion = (object) => {
+  const drawable = object as THREE.Mesh;
+  return (
+    isPostfxOverlay(object) ||
+    (object as THREE.Points).isPoints === true ||
+    (object as THREE.Line).isLine === true ||
+    (object as THREE.Sprite).isSprite === true ||
+    (drawable.isMesh === true && skipsDepthPrepass(drawable.material))
+  );
+};
 
 /**
  * Art-style post pass: ink outlines from a normal+depth prepass, cel luminance bands, and
@@ -144,7 +139,6 @@ export class StylizePass extends Pass {
   private readonly material: THREE.ShaderMaterial;
   private readonly normalTarget: THREE.WebGLRenderTarget | null;
   private readonly normalMaterial = new THREE.MeshNormalMaterial();
-  private readonly hidden: THREE.Object3D[] = [];
   private readonly clearColor = new THREE.Color();
 
   constructor(
@@ -213,20 +207,20 @@ export class StylizePass extends Pass {
     const previousShadowUpdate = renderer.shadowMap.autoUpdate;
     const previousClearAlpha = renderer.getClearAlpha();
     renderer.getClearColor(this.clearColor);
-    hideForOutlinePrepass(scene, this.hidden);
     scene.overrideMaterial = this.normalMaterial;
     scene.background = null;
     renderer.shadowMap.autoUpdate = false;
     renderer.setRenderTarget(target);
     renderer.setClearColor(0x8080ff, 1);
     renderer.clear();
-    renderWithCurrentMatrices(scene, () => renderer.render(scene, this.camera));
-    renderer.setClearColor(this.clearColor, previousClearAlpha);
-    renderer.shadowMap.autoUpdate = previousShadowUpdate;
-    scene.background = previousBackground;
-    scene.overrideMaterial = previousOverride;
-    for (const object of this.hidden) object.visible = true;
-    this.hidden.length = 0;
+    try {
+      drawPrepassExcluding(renderer, scene, excludesFromOutline, () => renderWithCurrentMatrices(scene, () => renderer.render(scene, this.camera)));
+    } finally {
+      renderer.setClearColor(this.clearColor, previousClearAlpha);
+      renderer.shadowMap.autoUpdate = previousShadowUpdate;
+      scene.background = previousBackground;
+      scene.overrideMaterial = previousOverride;
+    }
   }
 
   override dispose(): void {

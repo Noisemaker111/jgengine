@@ -28,7 +28,7 @@ describe("visibility benchmark", () => {
       id: "main",
       view: { kind: "perspective", position: [0, 5, 0], target: [0, 5, 1], fovDeg: 60, aspect: 16 / 9, near: 0.1, far: 120 },
     };
-    const sys = createVisibilitySystem({ renderables: () => objects, cameras: () => [camera] });
+    const sys = createVisibilitySystem({ sources: [{ renderables: () => objects }], cameras: () => [camera] });
 
     // Warm the index, then measure steady-state frames.
     sys.update();
@@ -58,7 +58,7 @@ describe("visibility benchmark", () => {
       id: "main",
       view: { kind: "perspective", position: [0, 5, 0], target: [0, 5, 1], fovDeg: 60, aspect: 16 / 9, near: 0.1, far: 120 },
     };
-    const sys = createVisibilitySystem({ renderables: () => objects, cameras: () => [camera] });
+    const sys = createVisibilitySystem({ sources: [{ renderables: () => objects }], cameras: () => [camera] });
     expect(sys.update().visible.has("hero")).toBe(true);
   });
 
@@ -66,7 +66,7 @@ describe("visibility benchmark", () => {
     const objects = grid(4_000, 4);
     const view = { kind: "perspective" as const, position: [0, 5, 0] as [number, number, number], target: [0, 5, 1] as [number, number, number], fovDeg: 60, aspect: 1, near: 0.1, far: 100 };
     const camera: CameraVisibilityContext = { id: "main", view };
-    const sys = createVisibilitySystem({ renderables: () => objects, cameras: () => [camera] });
+    const sys = createVisibilitySystem({ sources: [{ renderables: () => objects }], cameras: () => [camera] });
     sys.update();
     const considered = sys.update().stats.consideredForRender;
     // Only the objects near the frustum are considered, not all 4000.
