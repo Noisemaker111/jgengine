@@ -1,3 +1,4 @@
+// @skill jgengine-ui
 /**
  * The engine-owned frame loop: one rAF that steps an ordered list of draw
  * systems and renders a plain three.js scene. This is what r3f's Canvas +
@@ -101,7 +102,7 @@ export function groupDraw(children: readonly EngineDraw[], frame?: (state: Engin
     },
     frame(state: EngineFrameState) {
       frame?.(state);
-      children.forEach((child, index) => child.frame?.(states[index] ?? state));
+      for (const child of children) child.frame?.(childFrameState(state, group));
     },
     dispose(state: EngineFrameState) {
       children.forEach((child, index) => child.dispose?.(states[index] ?? state));

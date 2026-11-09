@@ -1039,7 +1039,8 @@
 
 ## @jgengine/core/material/hairCards.draw
 
-- `HairCards` (function): function HairCards({ cards, material }: { cards: HairCardAuthoring; material: MaterialAsset }): React.JSX.Element — Render authored guide ribbons with explicit UVs and strand tangents; motion and collision remain caller-owned.
+- `HairCards` (function): function HairCards({ cards, material: asset }: { cards: HairCardAuthoring; material: MaterialAsset }): null — Render authored guide ribbons with explicit UVs and strand tangents; motion and collision remain caller-owned.
+- `hairCardsDraw` (function): function hairCardsDraw(cards: HairCardAuthoring, material: THREE.Material): EngineDraw — ⚠ undocumented
 
 ## @jgengine/core/material/materialAsset
 
@@ -1106,6 +1107,10 @@
 - `isSurfaceMaterialMaps` (function): function isSurfaceMaterialMaps(value: unknown): value is SurfaceMaterialMaps — True when a generator output is {@link SurfaceMaterialMaps}.
 - `surfaceMaterialMeta` (function): function surfaceMaterialMeta(spec: SurfaceMaterialSpec): Record<string, unknown> — The `meta` bag a {@link SurfaceMaterialSpec} resolves to: preset values, then overrides, then seed.
 
+## @jgengine/core/material/surfaceMaterialPreview.draw
+
+- `surfaceMaterialPreviewDraw` (function): function surfaceMaterialPreviewDraw({ definition, variant }: GeneratorPreviewProps): EngineDraw — ⚠ undocumented
+
 ## @jgengine/core/material/surfaceMaterialTextures.draw
 
 - `SurfaceMaterialArrayTextures` (interface): interface SurfaceMaterialArrayTextures — Baked surfaces stacked as array-texture layers, one layer per material, in the order given.
@@ -1148,8 +1153,19 @@
 - `EntityModel` (function): function EntityModel({ model, instanceId, measure, lodLevel = 0, }: { model: ModelConfig; instanceId?: string | undefined; measure?: MeasureTarget | undefined; /** The variant level being drawn. Past the source level, a simplified asset may have dropped a selected slot. */ lodLevel?: number; }): Rea… — Draws an entity's model at the given LOD level, with animation, paint layer and bounds measurement.
 - `EntitySprite` (function): function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }): React.JSX.Element — Draws an entity as a camera-facing sprite, playing its atlas clip when it has one.
 - `IsolatedEntityModel` (function): function IsolatedEntityModel(props: IsolatedEntityModelProps): React.JSX.Element — Draws one entity model from its own loaded copy, for models that cannot share a batched instance; a live `instanceId` draws its `look`.
-- `MeasureTarget` (interface): interface MeasureTarget — Where a measured model reports its rendered bounds: an entity kind or an object catalog id.
 - `useEntityLookModel` (function): function useEntityLookModel(model: ModelConfig | undefined, instanceId: string | undefined): ModelConfig | undefined — `model` as the live entity `instanceId` draws it: its current `look` laid over the model ({@link modelForLook}), re-rendering only when the look changes. Without an entity, the model itself.
+
+## @jgengine/core/model/entityModelDraw.draw
+
+- `EntityModelDrawOptions` (interface): interface EntityModelDrawOptions { model: ModelConfig; instanceId?: string | undefined; measure?: MeasureTarget | undefined; lodLevel?: number; ctx: GameContext | null; seam?: FallbackSeam | undefined; fallback?: (() => EngineDraw) | undefined } — ⚠ undocumented · used by `entityModelDraw`: Draws an entity's model without React: loading, cloning, materials, paint, attachments, parts, animation, foot IK, glance, bounds and collis…
+- `MeasureTarget` (interface): interface MeasureTarget — Where a measured model reports its rendered bounds: an entity kind or an object catalog id.
+- `ModelTextureEntries` (interface): interface ModelTextureEntries { global: MaterialOverrideTextures; assets: ReadonlyMap<string, MaterialOverrideTextures>; dispose(): void } — ⚠ undocumented · used by `loadModelMaterialTextures`: Load and own every map view one model configuration references — the React-free equivalent of `useModelMaterialTextures`.
+- `entityModelDraw` (function): function entityModelDraw(options: EntityModelDrawOptions): EngineDraw — Draws an entity's model without React: loading, cloning, materials, paint, attachments, parts, animation, foot IK, glance, bounds and collision measurement — the `EntityModel` contract on the engine frame loop. A live `instanceId` follows `look`, `held`, `worn`, `characterMotion` and death through context notifications, rebuilding only what changed.
+- `entitySpriteDraw` (function): function entitySpriteDraw(sprite: EntitySpriteConfig): EngineDraw — Draws an entity as a camera-facing sprite, playing its atlas clip when it has one.
+- `isolatedEntityModelDraw` (function): function isolatedEntityModelDraw(options: EntityModelDrawOptions): EngineDraw — The draw `IsolatedEntityModel` mounts: the camera-distance level switch when the model has variants and a live instance, the plain entity model otherwise.
+- `isolatedModelUsesVariants` (function): function isolatedModelUsesVariants(model: ModelConfig, instanceId: string | undefined): boolean — Whether an isolated model switches variant levels: it needs both levels and a live instance to measure from.
+- `loadModelMaterialTextures` (function): function loadModelMaterialTextures(model: Pick<ModelConfig, "material" | "materialAssets" | "materialAssignments">): Promise<ModelTextureEntries> — Load and own every map view one model configuration references — the React-free equivalent of `useModelMaterialTextures`. Resolves once all images arrive; `dispose` releases the owned views while the loaded sources stay cached.
+- `singleVariantModelDraw` (function): function singleVariantModelDraw(options: EntityModelDrawOptions): EngineDraw — One prop at its own camera distance with level switching — the `SingleVariantModel` contract as a draw.
 
 ## @jgengine/core/model/measureBounds.draw
 

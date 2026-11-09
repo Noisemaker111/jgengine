@@ -81,6 +81,33 @@
 - `SpeedUnit` (type): type SpeedUnit = "kmh" | "mph" | "knots" | "ms" — Target unit for {@link formatSpeed}: km/h, mph, knots, or raw m/s.
 - `formatSpeed` (function): function formatSpeed(metersPerSecond: number, options: SpeedFormat = {}): string — Format a speed given in meters/second as a HUD-ready string in km/h, mph, knots, or m/s — the one conversion table every speedometer and telemetry readout should share.
 
+## @jgengine/core/frame/engineLoop.draw
+
+- `EngineDraw` (interface): interface EngineDraw — One ordered participant in the frame. Lower `priority` runs first; render happens after all.
+- `EngineFrameBoard` (interface): interface EngineFrameBoard — A shared per-priority task list: many small frame callbacks inside one draw (useSharedFrame's shape).
+- `EngineFrameState` (interface): interface EngineFrameState — Everything a system may read on a rendered frame. Mutable, reused per frame.
+- `EngineFrameloop` (type): type EngineFrameloop = "always" | "demand" | "never" — Frameloop modes the shell's Canvas accepted.
+- `EngineLoop` (interface): interface EngineLoop { readonly state: EngineFrameState; readonly scene: THREE.Scene; readonly camera: THREE.Camera; readonly renderer: THREE.WebGLRenderer; readonly tasks: EngineFrameBoard; add(draw: EngineDraw): () => void; invalidate(): void; setCovered(cove… — ⚠ undocumented · used by `createEngineLoop`: Create the loop on an existing renderer (from `prepareEngineRenderer`'s factory).
+- `EngineLoopOptions` (interface): interface EngineLoopOptions { canvas: HTMLCanvasElement; renderer: THREE.WebGLRenderer; scene?: THREE.Scene; camera?: THREE.Camera; orthographic?: boolean; cameraProps?: {fov?: number; zoom?: number; near?: number; far?: number;}; frameloop?: EngineFrameloop; fpsLimit… — ⚠ undocumented · used by `createEngineLoop`: Create the loop on an existing renderer (from `prepareEngineRenderer`'s factory).
+- `childFrameState` (function): function childFrameState(state: EngineFrameState, parent: THREE.Object3D): EngineFrameState — A frame state scoped to a subtree: draws mounted through this add their objects under `parent` instead of the scene root. `scene` stays typed as Scene for the renderer; only `.add`/`.remove` are used by draws.
+- `createEngineLoop` (function): function createEngineLoop(options: EngineLoopOptions): EngineLoop — Create the loop on an existing renderer (from `prepareEngineRenderer`'s factory). The renderer's size/pixel-ratio are owned here from now on.
+- `groupDraw` (function): function groupDraw(children: readonly EngineDraw[], frame?: (state: EngineFrameState) => void): EngineDraw — Compose child draws under one THREE.Group: mounts each child with {@link childFrameState}, forwards the group's optional frame to every child's frame in order, and disposes children on teardown. Children keep their own priorities for ordering against other draws.
+
+## @jgengine/core/frame/frameBoard.draw
+
+- `FrameSource` (type): type FrameSource = ( priority: number, run: (state: EngineFrameState, delta: number) => void, ) => () => void — Attaches one priority level to the driving frame source and returns the detach. `run` is the group's shared callback; the source decides how it is scheduled (an r3f subscriber today, an ordered engine draw after cutover).
+- `FrameTask` (type): type FrameTask = (state: EngineFrameState, delta: number) => void — ⚠ undocumented · used by `joinFrameTask`: Run `task(state, delta)` on every rendered frame at `priority` — r3f's `useFrame` order: subscribers ascending by priority, one render after…
+- `FrameTaskRef` (interface): interface FrameTaskRef — A frame callback held by reference; the board stores these so observers see a stable task object.
+- `bindFrameSource` (function): function bindFrameSource(next: FrameSource | null): void — Bind the board to a frame source. Groups already joined re-attach under the new source, so the r3f pump and the engine loop can take over from each other without converted callers re-subscribing. `null` detaches everything (used while no canvas drives frames, e.g. between shells).
+- `joinFrameTask` (function): function joinFrameTask(priority: number, task: FrameTask): () => void — Run `task(state, delta)` on every rendered frame at `priority` — r3f's `useFrame` order: subscribers ascending by priority, one render after all. Returns the leave; the group's subscription ends when its last task leaves.
+
+## @jgengine/core/frame/loadDraw.draw
+
+- `LoadDrawOptions` (interface): interface LoadDrawOptions<T> { load: () => Promise<T>; key?: string; build: (value: T, parent: THREE.Group) => (() => void) | void } — ⚠ undocumented · used by `loadDraw`: An {@link EngineDraw} that appears when an async load finishes — the engine-side replacement for `useLoader` + `Suspense`.
+- `clearLoadDrawCache` (function): function clearLoadDrawCache(): void — Drop every cached load (tests, scene teardown). Loads already handed to a live draw keep their result; only the shared promise is forgotten.
+- `loadDraw` (function): function loadDraw<T>({ load, key, build }: LoadDrawOptions<T>): EngineDraw — An {@link EngineDraw} that appears when an async load finishes — the engine-side replacement for `useLoader` + `Suspense`. Nothing renders while loading; on resolve `build` fills a group added under the draw's parent. Dispose during flight cancels the mount (the load itself is shared and cannot be aborted).
+- `loadDrawSystem` (function): function loadDrawSystem<T>(options: Omit<LoadDrawOptions<T>, "build"> & { build: (value: T, parent: THREE.Group) => EngineDraw }): EngineDraw — Like {@link loadDraw} but the built content is itself an {@link EngineDraw}, so it keeps its own priority/frame/dispose. `build` returns the draw; it is mounted under the load group once the value arrives.
+
 ## @jgengine/core/health/autoQuality
 
 - `AUTO_QUALITY_MAX_FRAME_MS` (const): const AUTO_QUALITY_MAX_FRAME_MS: 1000 — Longest frame still counted; a longer one is a hidden tab or a debugger pause, not a load signal.
@@ -1645,6 +1672,14 @@
 
 - `RotateDeviceScreen` (function): function RotateDeviceScreen({ title = "Turn your device", description, requiredOrientation = "landscape", accent = "var(--jg-accent, #8ea2ff)", icon, className, style, }: { /** Short headline. */ title?: string; /** One concise explanatory line. Defaults from `requiredOrientation`. */ description?: … — Full-viewport, non-dismissible rotate-device gate shown when a game requires an orientation the device isn't in.
 
+## @jgengine/core/ui/runeUi.view
+
+- `RuneUi` (class): class RuneUi — One mounted Rune UI layer. Create once per page; games describe their trees with {@link RuneUi.setSpec} and bind live values with {@link RuneUi.bind}.
+- `RuneUiEvent` (interface): interface RuneUiEvent { id: string; kind: string; value?: number; text?: string } — ⚠ undocumented
+- `RuneUiFrame` (interface): interface RuneUiFrame { events: RuneUiEvent[]; regions: [number, number, number, number][]; modal: boolean } — ⚠ undocumented
+- `RuneUiNode` (interface): interface RuneUiNode — The engine's Rune UI bridge: mounts the jg-ui wasm (Rune compiled to WebAssembly, drawn on a transparent WebGPU canvas over the game's three.js canvas) and speaks its protocol — a declarative widget tree (`setSpec`), one shared f32 value buffer written once per frame (`bind`), and events plus hit regions back through a single per-frame payload.
+- `RuneUiOptions` (interface): interface RuneUiOptions { canvasId?: string; baseUrl?: string; fonts?: readonly string[]; sans?: string; mono?: string; zIndex?: number } — ⚠ undocumented
+
 ## @jgengine/core/ui/sceneSwap.view
 
 - `sceneSwapping` (function): function sceneSwapping(): boolean — True while a scene swap's card is up, outside React (the frame breakdown marks stalls drawn behind it).
@@ -2012,6 +2047,7 @@
 - `MapLegend` (function): function MapLegend({ kinds, labels, kindStyles = DEFAULT_MARKER_KINDS, title = "Legend", className, style, }: MapLegendProps): ReactNode — Marker-kind key for a map/minimap — glyph + color swatch per kind, labelled. Reads the same `kindStyles` the map renders with, so the legend can never drift from the pins.
 - `MapLegendProps` (interface): interface MapLegendProps — Props for {@link MapLegend}.
 - `MapViewport` (interface): interface MapViewport — Pan/zoom transform applied to a {@link WorldMapSurface}'s content group.
+- `MarkerAccess` (interface): interface MarkerAccess<TMarker extends MarkerView> — ⚠ undocumented · used by `markerAccess`: Non-hook access to a marker collection's subscribe/snapshot pair, for draw factories.
 - `MedalToken` (type): type MedalToken = "gold" | "silver" | "bronze" — The medal tokens {@link medalFor} emits for the podium.
 - `MenuNavContainerProps` (interface): interface MenuNavContainerProps — The container props that make a menu navigable.
 - `MenuNavController` (interface): interface MenuNavController — The live navigation controller returned by {@link useMenuNav}.
@@ -2236,6 +2272,7 @@
 - `layoutFloatingText` (function): function layoutFloatingText(views: readonly FloatingTextView[], project: ProjectEntity, options: FloatingTextLayoutOptions = {}): FloatingTextPlacement[] — Pure layout core: projects each view, drops the ones behind the camera or (when `viewport` is set) off-screen, and returns the survivors sorted farthest-first so nearer text paints on top. No React, no DOM — unit-testable.
 - `loadGameFonts` (function): function loadGameFonts(faces: readonly GameFontFace[]): void — Registers `faces` with the document's font set once each and starts loading them. Safe on the server.
 - `localPlayerEntity` (function): function localPlayerEntity(ctx: GameContext): SceneEntity | null — ⚠ undocumented
+- `markerAccess` (function): function markerAccess(markers: MarkerCollection): MarkerAccess<MarkerView> — Non-hook access to a marker collection's subscribe/snapshot pair, for draw factories.
 - `meterFraction` (function): function meterFraction(value: number, max = 1): number — Fill 0..1 for a meter, clamped; `max <= 0` reads as empty.
 - `meterSegmentsLit` (function): function meterSegmentsLit(value: number, max = 1, segments = 10): number — Cell states for a segmented meter: how many of `segments` are lit for `value / max`.
 - `missingKitParts` (function): function missingKitParts(kit: Pick<UiKit, "components">): UiKitPart[] — Parts a kit is missing, for tests and dev checks. Empty when the kit is complete.

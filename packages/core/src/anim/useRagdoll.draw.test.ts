@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { act, createRoot, type RootStore } from "@react-three/fiber";
-import { createElement } from "react";
+import { createElement, Fragment } from "react";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import * as THREE from "three";
@@ -10,6 +10,7 @@ import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.j
 import { KAYKIT_SCHEME, mapRigToStandard } from "@jgengine/core/anim/skeletonStandard";
 import { PhysicsWorld } from "@jgengine/core/physics/physicsWorld";
 import { useRagdoll } from "./useRagdoll.draw";
+import { FrameBoardPump } from "@jgengine/core/frame/frameBoardPump.draw";
 
 const BOUNDS = { min: [-20, 0, -20] as const, max: [20, 20, 20] as const };
 
@@ -51,7 +52,7 @@ async function ragdollHarness(scene: THREE.Object3D, world: PhysicsWorld, map: R
     return createElement("primitive", { object: scene });
   }
   const render = async (active: boolean) => {
-    await act(async () => { store = root.render(createElement(Model, { active })); });
+    await act(async () => { store = root.render(createElement(Fragment, null, createElement(FrameBoardPump), createElement(Model, { active }))); });
   };
   const frames = (count: number) => {
     for (let frame = 0; frame < count; frame++) {

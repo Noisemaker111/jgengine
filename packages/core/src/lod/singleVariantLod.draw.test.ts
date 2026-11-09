@@ -4,7 +4,7 @@ import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { createObjectStore } from "@jgengine/core/scene/objectStore";
 import { createModelVariantSelector } from "@jgengine/core/lod/modelLod";
 import { lodBandIndex } from "@jgengine/core/lod/lod";
-import { EntityModel, IsolatedEntityModel, SingleVariantModel } from "@jgengine/core/model/SceneModels.draw";
+import { isolatedEntityModelDraw, isolatedModelUsesVariants } from "@jgengine/core/model/entityModelDraw.draw";
 import { singleVariantLevel, variantLevelModel } from "./singleVariantLod.draw";
 import { attributeTriangles } from "@jgengine/core/render/triangleAttribution.draw";
 
@@ -173,20 +173,24 @@ describe("single object variant levels", () => {
 });
 
 describe("isolated path wiring", () => {
-  test("an isolated model with variants mounts the level switch, not the fixed asset", () => {
-    const element = IsolatedEntityModel({ model: PALM, instanceId: "palm-1" }) as {
-      props: { children: { props: { children: { type: unknown; props: { model: ModelConfig } } } } };
-    };
-    const child = element.props.children.props.children;
-    expect(child.type).toBe(SingleVariantModel);
-    expect(child.props.model).toBe(PALM);
+  test("an isolated model with variants and a live instance uses the level switch", () => {
+    expect(isolatedModelUsesVariants(PALM, "palm-1")).toBe(true);
+    const draw = isolatedEntityModelDraw({ model: PALM, instanceId: "palm-1", ctx: null });
+    expect(typeof draw.mount).toBe("function");
+    expect(typeof draw.frame).toBe("function");
+    expect(typeof draw.dispose).toBe("function");
   });
 
-  test("an isolated model without variants keeps the plain renderer", () => {
+  test("an isolated model without variants or without an instance keeps the plain renderer", () => {
     const plain: ModelConfig = { url: "mainsail-palm.glb" };
-    const element = IsolatedEntityModel({ model: plain, instanceId: "palm-1" }) as {
-      props: { children: { props: { children: { type: unknown } } } };
-    };
-    expect(element.props.children.props.children.type).toBe(EntityModel);
+    expect(isolatedModelUsesVariants(plain, "palm-1")).toBe(false);
+    expect(isolatedModelUsesVariants(PALM, undefined)).toBe(false);
+    for (const options of [
+      { model: plain, instanceId: "palm-1" },
+      { model: PALM, instanceId: undefined },
+    ]) {
+      const draw = isolatedEntityModelDraw({ ...options, ctx: null });
+      expect(typeof draw.mount).toBe("function");
+    }
   });
 });

@@ -177,7 +177,7 @@ const EntityMarker = memo(function EntityMarker({
             model={model}
             instanceId={entityId}
             measure={{ target: "entity", key: name }}
-            fallback={sprite !== undefined ? <EntitySprite sprite={sprite} /> : undefined}
+            sprite={sprite}
           />
         ) : sprite !== undefined ? (
           <EntitySprite sprite={sprite} />

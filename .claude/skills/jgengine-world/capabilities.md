@@ -1306,7 +1306,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## light-beam — a tall glowing column marking a spot so it can be found from far away
 
-- `LightBeam` (function) · `import { LightBeam } from "@jgengine/core/map/LightBeam.draw"`
+- `lightBeamDraw` (function) · `import { lightBeamDraw } from "@jgengine/core/map/LightBeam.draw"`
 
 ## light-probes — bake an irradiance volume from authored sky, fill and lamp inputs
 
@@ -1633,7 +1633,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## placement-ghost — render valid/invalid placement preview mesh
 
-- `PlacementGhost` (function) · `import { PlacementGhost } from "@jgengine/core/placement/PlacementGhost.draw"`
+- `placementGhostDraw` (function) · `import { placementGhostDraw } from "@jgengine/core/placement/PlacementGhost.draw"`
 
 ## placement-math — grid/surface footprint validity for build mode
 
@@ -1779,7 +1779,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## procedural-ground — seeded noise-height ground mesh with low/high/waterline vertex colours for quick natural scenes
 
-- `ProceduralGround` (function) · `import { ProceduralGround } from "@jgengine/core/terrain/ProceduralGround.draw"`
+- `proceduralGroundDraw` (function) · `import { proceduralGroundDraw } from "@jgengine/core/terrain/ProceduralGround.draw"`
 
 ## proximity-prompt — a "press E" contextual prompt shown near an interactable
 

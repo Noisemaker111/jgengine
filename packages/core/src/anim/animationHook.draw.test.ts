@@ -32,6 +32,7 @@ beforeAll(async () => {
     import {defineGameDefinition} from '@jgengine/core/game/defineGame';
     import {createAssetCatalog} from '@jgengine/core/scene/assetCatalog';
     import {seededRng} from '@jgengine/core/random/rng';
+    import {bindFrameSource} from '@jgengine/core/frame/frameBoard.draw';
     import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
     import {MeshoptDecoder} from 'three/examples/jsm/libs/meshopt_decoder.module.js';
     import {clone} from 'three/examples/jsm/utils/SkeletonUtils.js';
@@ -48,7 +49,7 @@ beforeAll(async () => {
       const initial=rng.state();const expected=seededRng('unused');expected.restore(initial);
       const scenes=Array.from({length:count},()=>clone(gltf.scene));const bind=scenes.map(values);
       scenes.forEach((_,i)=>ctx.scene.entity.spawn('hero',{id:'actor'+i,position:[0,0,0]}));
-      const callbacks=new Set();const state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};
+      const callbacks=new Set();const state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};bindFrameSource((priority,run)=>{const ref={current:(s,d)=>run(s,d)};callbacks.add(ref);return()=>callbacks.delete(ref)});
       const store=selector=>selector(state);store.getState=()=>state;
       const element=document.createElement('div');document.body.append(element);const root=createRoot(element);
       flushSync(()=>root.render(<GameProvider context={ctx}><FiberContext.Provider value={store}>{scenes.map((scene,i)=><Model key={i} scene={scene} id={'actor'+i} animation={animation}/>)}</FiberContext.Provider></GameProvider>));
@@ -73,7 +74,7 @@ beforeAll(async () => {
       ctx.scene.entity.spawn('hero',{id:'actor0',position:[0,0,0]});
       const config={states:{idle:'Idle',walk:'Walking_A',run:'Running_A'},oneShots:{attack:variants}};
       const animation=explicitGraph?{graph:locomotionGraph({...config.states,oneShots:config.oneShots})}:config;
-      const callbacks=new Set();const state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};
+      const callbacks=new Set();const state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};bindFrameSource((priority,run)=>{const ref={current:(s,d)=>run(s,d)};callbacks.add(ref);return()=>callbacks.delete(ref)});
       const store=selector=>selector(state);store.getState=()=>state;
       const element=document.createElement('div');document.body.append(element);const root=createRoot(element);
       let active=animation;let uncacheCount=0;const originalUncache=AnimationMixer.prototype.uncacheRoot;
@@ -114,7 +115,7 @@ beforeAll(async () => {
       const ctx=createGameContext({definition:defineGameDefinition({name:'discontinuity-proof',assets:createAssetCatalog(),multiplayer:'off'}),content:{},player:{userId:'player',isNew:true}});
       ctx.scene.entity.spawn('hero',{id,position:[0,0,0]});
       const animation={...config,oneShots:{...config.oneShots,death:'Death_A'},...(mode==='paused'?{paused:true}:{})};
-      const callbacks=new Set(),state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};
+      const callbacks=new Set(),state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};bindFrameSource((priority,run)=>{const ref={current:(s,d)=>run(s,d)};callbacks.add(ref);return()=>callbacks.delete(ref)});
       const store=selector=>selector(state);store.getState=()=>state;
       const actions=[];let cleanups=0;
       const originalAction=AnimationMixer.prototype.clipAction,originalUncache=AnimationMixer.prototype.uncacheRoot;
@@ -153,7 +154,7 @@ beforeAll(async () => {
       const ctx=createGameContext({definition:defineGameDefinition({name:'clock-proof',assets:createAssetCatalog(),multiplayer:'off'}),content:{},player:{userId:'player',isNew:true},rng:seededRng('clock-gameplay')});
       ctx.scene.entity.spawn('hero',{id,position:[0,0,0]});
       const animation=single?{clip:'Idle'}:config;
-      const callbacks=new Set(),state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};
+      const callbacks=new Set(),state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};bindFrameSource((priority,run)=>{const ref={current:(s,d)=>run(s,d)};callbacks.add(ref);return()=>callbacks.delete(ref)});
       const store=selector=>selector(state);store.getState=()=>state;
       const actions=[];let cleanups=0;
       const originalAction=AnimationMixer.prototype.clipAction,originalUncache=AnimationMixer.prototype.uncacheRoot;
@@ -190,7 +191,7 @@ beforeAll(async () => {
       ctx.time.setSpeed(rate);ctx.time.setTimescale(timescale);
       ctx.scene.entity.spawn('hero',{id,position:[0,0,0]});
       const animation={...(single?{clip:'Idle'}:explicitGraph?{graph:locomotionGraph(config.states)}:{states:config.states}),...(clock===null?{}:{clock}),timeScale:authoredRate,...(held?{paused:true,time:.3}:{})};
-      const callbacks=new Set(),state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};
+      const callbacks=new Set(),state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};bindFrameSource((priority,run)=>{const ref={current:(s,d)=>run(s,d)};callbacks.add(ref);return()=>callbacks.delete(ref)});
       const store=selector=>selector(state);store.getState=()=>state;
       const actions=[];let cleanups=0;
       const originalAction=AnimationMixer.prototype.clipAction,originalUncache=AnimationMixer.prototype.uncacheRoot;
@@ -219,7 +220,7 @@ beforeAll(async () => {
       const scene=clone(gltf.scene),bind=values(scene);
       const available=mode==='empty'?[]:mode==='noidle'?gltf.animations.filter(c=>!c.name.toLowerCase().includes('idle')):gltf.animations;
       const diagnostics=diagnoseModelAnimation(scene,{auto:true,clock:'game'},available);
-      const callbacks=new Set(),state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};
+      const callbacks=new Set(),state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};bindFrameSource((priority,run)=>{const ref={current:(s,d)=>run(s,d)};callbacks.add(ref);return()=>callbacks.delete(ref)});
       const store=selector=>selector(state);store.getState=()=>state;
       const warnings=[];let cleanups=0;
       const originalWarn=console.warn,originalUncache=AnimationMixer.prototype.uncacheRoot;
@@ -245,7 +246,7 @@ beforeAll(async () => {
       if(mode==='late')ctx.sim.advance(2,()=>{});
       if(mode==='missing')delete ctx.time.advancedSeconds;
       const animation=single?{clip:'Idle',clock}:{...config,clock};
-      const callbacks=new Map(),driverErrors=[],warnings=[];const state={invalidate:()=>{},internal:{subscribe:(ref,priority=0)=>{callbacks.set(ref,priority);return()=>callbacks.delete(ref)}}};
+      const callbacks=new Map(),driverErrors=[],warnings=[];const state={invalidate:()=>{},internal:{subscribe:(ref,priority=0)=>{callbacks.set(ref,priority);return()=>callbacks.delete(ref)}}};bindFrameSource((priority,run)=>{const ref={current:(s,d)=>run(s,d)};callbacks.set(ref,priority);return()=>callbacks.delete(ref)});
       const store=selector=>selector(state);store.getState=()=>state;
       const actions=[];let cleanups=0;
       const originalAction=AnimationMixer.prototype.clipAction,originalUncache=AnimationMixer.prototype.uncacheRoot,originalWarn=console.warn;
@@ -293,7 +294,7 @@ beforeAll(async () => {
       ctx.scene.entity.spawn('hero',{id,position:[0,0,0]});
       if(mode==='pause')ctx.time.pause();
       if(mode==='timescale-zero')ctx.time.setTimescale(0);
-      const callbacks=new Set(),state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};
+      const callbacks=new Set(),state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};bindFrameSource((priority,run)=>{const ref={current:(s,d)=>run(s,d)};callbacks.add(ref);return()=>callbacks.delete(ref)});
       const store=selector=>selector(state);store.getState=()=>state;
       const element=document.createElement('div');document.body.append(element);const root=createRoot(element);
       flushSync(()=>root.render(<GameProvider context={ctx}><FiberContext.Provider value={store}><Model scene={scene} id={id} animation={config}/></FiberContext.Provider></GameProvider>));

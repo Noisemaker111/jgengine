@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { act, createRoot, useThree, type ReconcilerRoot } from "@react-three/fiber";
-import { Component, createElement, Suspense, type ReactNode } from "react";
+import { act, createRoot, extend, useThree, type ReconcilerRoot } from "@react-three/fiber";
+import { createElement, Suspense } from "react";
 import * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
@@ -9,6 +9,7 @@ import type { MaterialAsset } from "@jgengine/core/material/materialAsset";
 import { MATERIAL_TEXTURE_SEMANTICS, type MaterialTextureRole } from "@jgengine/core/material/materialAsset";
 import { MATERIAL_TEXTURE_PROPERTIES } from "@jgengine/core/material/materialOverride.draw";
 import { GameProvider } from "@jgengine/react/provider";
+import { armFallbackSeams, beginFallbackPass, fallbackSeamsSnapshot } from "@jgengine/core/devtools/fallbackSeams";
 import { readFileSync } from "node:fs";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
@@ -20,7 +21,10 @@ import { standardMaterialsOf } from "./modelRender.draw";
 import type { MeasuredLocalBounds } from "./measureBounds.draw";
 import type { MeasuredCollisionTriangles } from "./measureCollisionMesh.draw";
 import { EntityModel } from "./SceneModels.draw";
+import { FrameBoardPump } from "@jgengine/core/frame/frameBoardPump.draw";
 import { useModelInstance, type ModelInstance, type ModelInstanceConfig, type ModelInstanceOptions } from "./useModelInstance.draw";
+
+extend(THREE);
 
 const roots: ReconcilerRoot<HTMLCanvasElement>[] = [];
 const originalLoad = sharedGltfLoader.load;
@@ -52,7 +56,7 @@ async function harness(source: THREE.Group, animations: THREE.AnimationClip[] = 
   }
   async function render(models: { model: ModelInstanceConfig; options?: ModelInstanceOptions }[]) {
     await act(async () => {
-      root.render(createElement(Suspense, { fallback: null }, models.map((props, index) =>
+      root.render(createElement(Suspense, { fallback: null }, createElement(FrameBoardPump), models.map((props, index) =>
         createElement(Model, { ...props, key: index, index }))));
     });
   }
@@ -109,7 +113,7 @@ describe("useModelInstance", () => {
       function Inspect() { scene = useThree(state => state.scene); return null; }
       const first: ModelConfig = { url: h.url, material: { maps, sheen: 0.4, clearcoat: 0.6, transmission: 0.5 } };
       const second: ModelConfig = { url: h.url, material: { maps: { sheenColor: maps.sheenColor, specularColor: maps.specularColor, clearcoat: maps.clearcoat } } };
-      await act(async () => h.root.render(createElement(Suspense, { fallback: null }, createElement(EntityModel, { model: first }), createElement(EntityModel, { model: second }), createElement(Inspect))));
+      await act(async () => h.root.render(createElement(Suspense, { fallback: null }, createElement(FrameBoardPump), createElement(EntityModel, { model: first }), createElement(EntityModel, { model: second }), createElement(Inspect))));
       const meshes: THREE.Mesh[] = [];
       scene.traverse(node => { if ((node as THREE.Mesh).isMesh) meshes.push(node as THREE.Mesh); });
       const firstMaterial = meshes[0]!.material as THREE.MeshPhysicalMaterial;
@@ -144,18 +148,14 @@ describe("useModelInstance", () => {
 
   test("EntityModel rejects malformed JSON visibility before texture or clone allocation", async () => {
     const report = globalThis.reportError; globalThis.reportError = () => {};
+    armFallbackSeams(true);
+    beginFallbackPass();
     const texture = new THREE.Texture();
     const load = THREE.TextureLoader.prototype.load;
-    let loads = 0, views = 0, clones = 0, caught = 0;
+    let loads = 0, views = 0, clones = 0;
     THREE.TextureLoader.prototype.load = (_url, onLoad) => { loads++; onLoad?.(texture); return texture as THREE.Texture<HTMLImageElement>; };
     const cloneTexture = texture.clone;
     texture.clone = function () { views++; return cloneTexture.call(this); };
-    class Boundary extends Component<{ children: ReactNode }, { failed: boolean }> {
-      state = { failed: false };
-      static getDerivedStateFromError() { return { failed: true }; }
-      componentDidCatch() { caught++; }
-      render() { return this.state.failed ? null : this.props.children; }
-    }
     try {
       for (const hiddenNodes of ["Body", [1], [" "], ["Body", null]]) {
         const source = new THREE.Group();
@@ -165,13 +165,16 @@ describe("useModelInstance", () => {
         const body = new THREE.Mesh(new THREE.BoxGeometry(), material); body.name = "Body"; source.add(body);
         const h = await harness(source);
         const model: ModelConfig = JSON.parse(JSON.stringify({ url: h.url, hiddenNodes, material: { maps: { color: `/malformed-visibility-${h.url}.png` } } }));
-        await act(async () => h.root.render(createElement(Boundary, { children: createElement(Suspense, { fallback: null }, createElement(EntityModel, { model })) })));
+        await act(async () => h.root.render(createElement(Suspense, { fallback: null }, createElement(FrameBoardPump), createElement(EntityModel, { model }))));
         await act(async () => h.root.render(null));
+        await new Promise((resolve) => setTimeout(resolve, 0));
         expect(body.visible).toBe(true);
       }
-      expect(caught).toBe(4); expect(loads).toBe(0); expect(views).toBe(0); expect(clones).toBe(0);
+      expect(fallbackSeamsSnapshot()).toEqual({ entity: { renderError: 4 } });
+      expect(loads).toBe(0); expect(views).toBe(0); expect(clones).toBe(0);
     } finally {
       globalThis.reportError = report; THREE.TextureLoader.prototype.load = load; texture.clone = cloneTexture;
+      armFallbackSeams(false);
     }
   });
 
@@ -266,18 +269,14 @@ describe("useModelInstance", () => {
   test("EntityModel rejects invalid assignments before texture loads, views or model clones", async () => {
     const report = globalThis.reportError;
     globalThis.reportError = () => {};
+    armFallbackSeams(true);
+    beginFallbackPass();
     const texture = new THREE.Texture();
     const load = THREE.TextureLoader.prototype.load;
-    let loads = 0, views = 0, materialClones = 0, caught = 0;
+    let loads = 0, views = 0, materialClones = 0;
     THREE.TextureLoader.prototype.load = (_url, onLoad) => { loads++; onLoad?.(texture); return texture as THREE.Texture<HTMLImageElement>; };
     const clone = texture.clone;
     texture.clone = function () { views++; return clone.call(this); };
-    class Boundary extends Component<{ children: ReactNode }, { failed: boolean }> {
-      state = { failed: false };
-      static getDerivedStateFromError() { return { failed: true }; }
-      componentDidCatch() { caught++; }
-      render() { return this.state.failed ? null : this.props.children; }
-    }
     try {
       for (const failure of ["selector", "uv", "transmission"] as const) {
         const source = new THREE.Group();
@@ -290,12 +289,13 @@ describe("useModelInstance", () => {
         const h = await harness(source);
         const asset: MaterialAsset = { schemaVersion: 1, id: failure, name: failure, family: "glass", capabilities: ["pbr", "transmission"], surface: failure === "transmission" ? { transmission: 0.7 } : {}, textures: { color: { url: `invalid-${failure}-${h.url}.png`, colorSpace: "srgb" } } };
         const model: ModelConfig = { url: h.url, ...(failure === "transmission" ? { material: { alphaMode: "blend" as const } } : {}), materialAssets: [asset], materialAssignments: [{ materialId: asset.id, selector: { mesh: failure === "selector" ? "missing" : "facade" } }] };
-        await act(async () => h.root.render(createElement(Boundary, { children: createElement(Suspense, { fallback: null }, createElement(EntityModel, { model })) })));
+        await act(async () => h.root.render(createElement(Suspense, { fallback: null }, createElement(FrameBoardPump), createElement(EntityModel, { model }))));
         await act(async () => h.root.render(null));
+        await new Promise((resolve) => setTimeout(resolve, 0));
         expect(mesh.material).toBe(material);
         expect(material.map).toBe(texture);
       }
-      expect(caught).toBe(3);
+      expect(fallbackSeamsSnapshot()).toEqual({ entity: { renderError: 3 } });
       expect(loads).toBe(0);
       expect(views).toBe(0);
       expect(materialClones).toBe(0);
@@ -303,6 +303,7 @@ describe("useModelInstance", () => {
       globalThis.reportError = report;
       THREE.TextureLoader.prototype.load = load;
       texture.clone = clone;
+      armFallbackSeams(false);
     }
   });
 
@@ -315,11 +316,13 @@ describe("useModelInstance", () => {
     const model: ModelConfig = { url: h.url, material: { alphaMode: "opaque" }, materialAssets: [asset], materialAssignments: [{ materialId: "glass", selector: { slot: "glass" } }] };
     let scene!: THREE.Scene;
     function Inspect() { scene = useThree(state => state.scene); return null; }
-    await act(async () => h.root.render(createElement(Suspense, { fallback: null }, createElement(EntityModel, { model }), createElement(Inspect))));
-    const content = scene.children[0] as THREE.Group;
-    const mesh = content.children[0]!.children[0] as THREE.Mesh;
-    expect((mesh.material as THREE.MeshPhysicalMaterial).transmission).toBe(0.7);
-    expect((mesh.material as THREE.MeshPhysicalMaterial).transparent).toBe(false);
+    await act(async () => h.root.render(createElement(Suspense, { fallback: null }, createElement(FrameBoardPump), createElement(EntityModel, { model }), createElement(Inspect))));
+    let mesh: THREE.Mesh | undefined;
+    scene.traverse((node) => {
+      if (mesh === undefined && (node as THREE.Mesh).isMesh) mesh = node as THREE.Mesh;
+    });
+    expect((mesh!.material as THREE.MeshPhysicalMaterial).transmission).toBe(0.7);
+    expect((mesh!.material as THREE.MeshPhysicalMaterial).transparent).toBe(false);
     expect(material.transparent).toBe(true);
     expect(material.transmission).toBe(0);
   });
@@ -461,6 +464,7 @@ describe("useModelInstance", () => {
     } } } as unknown as GameContext;
     await act(async () => {
       h.root.render(createElement(GameProvider, { context }, createElement(Suspense, { fallback: null },
+        createElement(FrameBoardPump),
         createElement(EntityModel, {
           model: { url: h.url, targetHeight: 1.8, animation: { clip: "root", paused: true, time: 0.5 } },
           measure: { target: "entity", key: "hero" },

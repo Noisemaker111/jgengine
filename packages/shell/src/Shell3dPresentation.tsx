@@ -1,5 +1,5 @@
 import { biomeBandsForSky } from "@jgengine/core/sky/skyBands";
-import { CharacterMotionContext } from "@jgengine/core/anim/characterMotion.draw";
+import { CharacterMotionContext, noteGameCharacterMotion } from "@jgengine/core/anim/characterMotion.draw";
 import { lightingHasSoftShadows } from "@jgengine/core/lighting/softShadows";
 import { Canvas } from "@react-three/fiber";
 import { useEngineRendererFactory } from "@jgengine/core/webgpu/engineRenderer.draw";
@@ -56,7 +56,7 @@ import { ColorblindFrame, useColorblindMode } from "@jgengine/core/ui/accessibil
 import { SettingsProvider, type SettingsActionView } from "@jgengine/core/settings/settings.view";
 
 import { resolveWorldSky } from "@jgengine/core/sky/worldSky";
-import { FirstPersonBodyContext } from "@jgengine/core/camera/firstPersonBody.draw";
+import { FirstPersonBodyContext, noteFirstPersonBody } from "@jgengine/core/camera/firstPersonBody.draw";
 import { resolveCaptureCameraConfig } from "@jgengine/core/camera/rigResolve";
 import { rtsRotateKeysConflict } from "@jgengine/core/camera/rigMath";
 import { pointerAimFor, pointerContextMenu, resolvePointerAim } from "@jgengine/core/input/shellPointer.draw";
@@ -136,7 +136,7 @@ import { ContextLossScreen } from "./presentationRecovery";
 import { CombatPresentation } from "@jgengine/core/combat/CombatPresentation.draw";
 import { ParticleEmitters } from "@jgengine/core/vfx/ParticleEmitters.draw";
 import { WorldTireMarks } from "@jgengine/core/vfx/tireMarks.draw";
-import { TerrainQualityContext } from "@jgengine/core/terrain/terrainQuality.draw";
+import { TerrainQualityContext, noteTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { detectKtx2Support } from "@jgengine/core/model/modelLoad.draw";
 import { SceneWarmupCoverLive, SceneWarmupGate, createSceneWarmupStore } from "@jgengine/core/scene/SceneWarmupGate.draw";
 import { BootDirector } from "@jgengine/core/boot/BootDirector.draw";
@@ -310,6 +310,12 @@ export function Shell3dPresentation({
   const rigKind = resolveRigKind(cameraConfig);
   const firstPerson = rigKind === "first";
   const firstPersonBody = firstPerson && cameraConfig?.rigs?.firstPerson?.body === true ? controlledEntityId : null;
+  // Draw code reads the same values without React context; keep the stores in step with the providers below.
+  useEffect(() => {
+    noteFirstPersonBody(firstPersonBody);
+    noteGameCharacterMotion(playable.scene?.characterMotion);
+    noteTerrainQuality(graphics.quality);
+  }, [firstPersonBody, playable.scene?.characterMotion, graphics.quality]);
   const showReticle =
     (firstPerson && cameraConfig?.rigs?.firstPerson?.reticle !== false) || rigKind === "shoulder";
   const rtsPanKeysEnabled = !rtsPanKeysConflict(playable.game.input);

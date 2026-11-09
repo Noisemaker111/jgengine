@@ -34,6 +34,7 @@
     "flight": "jgengine-world",
     "format": "jgengine-ui",
     "fracture": "jgengine-world",
+    "frame": "jgengine-ui",
     "game": "jgengine-gameplay",
     "generator": "jgengine-world",
     "granular": "jgengine-world",

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { act, createRoot, type RootStore } from "@react-three/fiber";
-import { createElement } from "react";
+import { createElement, Fragment } from "react";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import * as THREE from "three";
@@ -9,6 +9,7 @@ import { clone } from "three/examples/jsm/utils/SkeletonUtils.js";
 
 import type { SceneRaycastHit, SceneRaycastInput } from "@jgengine/core/scene/sceneRaycast";
 import { applyFootIk, resolveFootIkRig, useFootIk, type FootIkState } from "./useFootIk.draw";
+import { FrameBoardPump } from "@jgengine/core/frame/frameBoardPump.draw";
 import { modelPlacementTransform } from "@jgengine/core/model/modelRender.draw";
 import { measureLocalBounds } from "@jgengine/core/model/measureBounds.draw";
 import { measureLocalCollisionTriangles } from "@jgengine/core/model/measureCollisionMesh.draw";
@@ -426,7 +427,7 @@ async function footIkHarness(scene: THREE.Object3D, entities?: Record<string, [n
     return createElement("primitive", { object: scene });
   }
   const render = async (config: import("@jgengine/core/game/playableGame").ModelConfig["ik"]) => {
-    await act(async () => { store = root.render(createElement(Model, { config })); });
+    await act(async () => { store = root.render(createElement(Fragment, null, createElement(FrameBoardPump), createElement(Model, { config }))); });
   };
   const frames = (count: number) => {
     for (let frame = 0; frame < count; frame++) {

@@ -1,6 +1,7 @@
 import { describe, expect, mock, test } from "bun:test";
-import { createElement, Suspense, type ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 
+import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import {
   armFallbackSeams,
@@ -8,9 +9,9 @@ import {
   fallbackSeamsSnapshot,
 } from "@jgengine/core/devtools/fallbackSeams";
 
-import { renderToStaticMarkup } from "react-dom/server";
-
 import { IsolatedEntityModel, IsolatedModelPart, ModelFallbackBoundary } from "./SceneModels.draw";
+import { isolatedEntityModelDraw } from "./entityModelDraw.draw";
+import { modelForLook } from "./modelLook";
 
 // The shell has no React renderer in test (no react-dom / test-renderer), so the boundary is
 // exercised through the same lifecycle React drives: construct, apply getDerivedStateFromError,
@@ -123,6 +124,14 @@ describe("IsolatedModelPart", () => {
 describe("IsolatedEntityModel looks", () => {
   test("an entity that has not picked a look draws the base model once", () => {
     const survivor: ModelConfig = { ...MODEL, looks: { woman: { url: "/models/woman.glb" } } };
-    expect(() => renderToStaticMarkup(createElement(IsolatedEntityModel, { model: survivor, instanceId: "player" }))).not.toThrow();
+    const ctx = {
+      scene: { entity: { get: () => undefined } },
+      subscribe: () => () => {},
+    } as unknown as GameContext;
+    // Looks alone do not select the variant path, and the draw resolves the
+    // base model itself — the same object renderers key on, so it draws once.
+    const draw = isolatedEntityModelDraw({ model: survivor, instanceId: "player", ctx });
+    expect(typeof draw.mount).toBe("function");
+    expect(modelForLook(survivor, undefined)).toBe(survivor);
   });
 });

@@ -415,10 +415,12 @@
 ## @jgengine/core/anim/characterGlance.draw
 
 - `DEFAULT_GLANCE` (const): const DEFAULT_GLANCE: GlanceTuning — Default glance: starts at 7 m, lets go at 8.5 m, head turns up to 65° sideways and 30° up or down.
+- `GlanceDriver` (class): class GlanceDriver — The default head glance without React: resolves the rig once, then {@link pose} turns the head toward the local player each frame. `dispose` restores the animated pose. Shared by the hook and the model draw.
+- `GlanceDriverOptions` (interface): interface GlanceDriverOptions { scene: THREE.Object3D; enabled: boolean; ctx: GameContext | null; instanceId?: string | undefined; maxCameraDistance: number } — ⚠ undocumented
 - `GlanceRig` (interface): interface GlanceRig — Head and neck bones the glance turns, found by name on the loaded rig.
 - `GlanceState` (interface): interface GlanceState — Carried between frames: the smoothed aim and the faded weight.
 - `GlanceTuning` (interface): interface GlanceTuning — Tuning for the default head turn a rigged character makes toward the local player. Angles are radians, distances metres.
-- `useCharacterGlance` (function): function useCharacterGlance(scene: THREE.Object3D, enabled: boolean, ctx: GameContext | null, instanceId: string | undefined, maxCameraDistance: number): void — Default glance for a rigged character: its head turns toward the local player when they come close, from any angle in front of it, and turns back when they leave. The local player's own model never glances. `maxCameraDistance` skips the work for characters too far away to read.
+- `useCharacterGlance` (function): function useCharacterGlance(scene: THREE.Object3D, enabled: boolean, ctx: GameContext | null, instanceId: string | undefined, maxCameraDistance: number): void — Default glance for a rigged character: its head turns toward the local player when they come close, from any angle in front of it, and turns back when they leave. The local player's own model never glances. `maxCameraDistance` skips the work for characters too far away to read. A thin React shell over {@link GlanceDriver}.
 
 ## @jgengine/core/anim/characterMotion
 
@@ -432,6 +434,8 @@
 ## @jgengine/core/anim/characterMotion.draw
 
 - `CharacterMotionContext` (const): const CharacterMotionContext: React.Context<false | CharacterMotionConfig | undefined> — The game's own character-motion layer (`scene.characterMotion`); the shell provides it.
+- `drawCharacterMotion` (function): function drawCharacterMotion(model: CharacterMotionConfig | false | undefined, ctx: GameContext | null, instanceId: string | undefined): CharacterMotionParts — The resolved parts of the default character motion for draw code.
+- `noteGameCharacterMotion` (function): function noteGameCharacterMotion(layer: CharacterMotionConfig | false | undefined): void — The game-level character-motion layer for draw code, which has no React context.
 - `useCharacterMotion` (function): function useCharacterMotion(model: CharacterMotionConfig | false | undefined, ctx: GameContext | null, instanceId: string | undefined): CharacterMotionParts — The parts of the default character motion this entity runs: the game's layer, then its model's, then the entity's own `characterMotion`, which re-renders the model when it changes.
 
 ## @jgengine/core/anim/crowdRegistry.draw
@@ -523,6 +527,17 @@
 - `animGraphFromConfig` (function): function animGraphFromConfig(config: ModelAnimationConfig): AnimGraph | undefined — The graph a model animation config plays: its `graph`, or the {@link locomotionGraph} its `states` and `oneShots` describe, retaining every one-shot variant. `undefined` for a single-clip config or incomplete locomotion roles. Idle must name a clip; an absent or blank walk role holds that idle clip at walking speeds until configured. The shell plays this and the editor inspects it, so both see the same graph.
 - `locomotionGraph` (function): function locomotionGraph(input: LocomotionGraphInput): AnimGraph — The engine's default locomotion as an authored graph: a speed-driven blend between idle, walk and run, plus a state per one-shot that plays once and returns (or clamps for `death`). What `useModelAnimation` used to hardcode.
 
+## @jgengine/core/anim/modelAnimationDriver.draw
+
+- `GraphPose` (interface): interface GraphPose — A mixer set up to show {@link AnimGraph} output on a rig; see {@link createGraphPose}.
+- `ModelAnimationDiagnostic` (interface): interface ModelAnimationDiagnostic — A repairable mismatch between a model animation config and its imported rig.
+- `ModelAnimationDriver` (class): class ModelAnimationDriver — The engine's model animation driver without React: the same mixer `useModelAnimation` runs — `"auto"` derivation, speed-driven crossfades, one-shots from game events, held poses, death clamp, graph playback with root motion, and character-LOD pose pacing. `frame(state, delta)` poses the rig once per rendered frame; `dispose()` releases the mixer and events.
+- `ModelAnimationDriverOptions` (interface): interface ModelAnimationDriverOptions { scene: THREE.Object3D; clips: THREE.AnimationClip[]; animationInput: ModelAnimationConfig | "auto" | "none" | undefined; instanceId?: string | undefined; ctx: GameContext | null; invalidate?: (() => void) | undefined } — ⚠ undocumented
+- `ModelMotionStep` (interface): interface ModelMotionStep — One visual sample's measured motion, used to derive the directional locomotion parameters. `dx`/`dz` are world horizontal displacement since the previous sample, `dyaw` the yaw change in radians and `seconds` the time the sample covers.
+- `createGraphPose` (function): function createGraphPose(scene: THREE.Object3D, graph: AnimGraph, clips: THREE.AnimationClip[]): GraphPose — Binds a graph's clips to a rig exactly as `useModelAnimation` does (masked layers get filtered clips, additive layers additive ones) so a host that runs its own `createAnimGraphRuntime`, such as the editor's graph preview, poses the rig from the runtime's output.
+- `diagnoseModelAnimation` (function): function diagnoseModelAnimation(scene: THREE.Object3D, animation: ModelAnimationConfig, clips: readonly THREE.AnimationClip[]): readonly ModelAnimationDiagnostic[] — Checks clip mappings, masked layers and root-motion assumptions without starting a mixer.
+- `readModelAnimationParams` (function): function readModelAnimationParams(ctx: GameContext, instanceId: string, speed: number, out: Record<string, AnimParamValue>, step?: ModelMotionStep): Record<string, AnimParamValue> — Refreshes a caller-owned graph parameter dictionary from authored extras and known physical movement. Grounded, verticalSpeed and crouched use the shared motor's resolved state when available; custom movers retain their authored values. Speed always uses the supplied measured ground speed. Passing `step` derives the directional parameters from the character's own motion: `direction` is the motion's share along the character's right axis, `facing` its share along the facing axis, and `turnRate` its yaw change per second. Derived values override conflicting authored extras. Does not write game state.
+
 ## @jgengine/core/anim/ragdollRig
 
 - `HUMANOID_RAGDOLL_BODIES` (const): const HUMANOID_RAGDOLL_BODIES: Readonly<Partial<Record<SkeletonSlot, RagdollBodyShape>>> — Humanoid body shapes for the standard slots, sized for a roughly 1.8 m character standing on the ground. A rig of another scale multiplies them (see {@link RagdollRigOptions.scale}).
@@ -575,9 +590,11 @@
 
 ## @jgengine/core/anim/useFootIk.draw
 
+- `FootIkDriver` (class): class FootIkDriver — Foot IK without React: resolves the rig once, then {@link pose} applies one frame of correction after the animation mixer. `dispose` restores the animated pose. The hook and the model draw share this driver.
+- `FootIkDriverOptions` (interface): interface FootIkDriverOptions { scene: THREE.Object3D; config: FootIkConfig | undefined; ctx: GameContext | null; instanceId?: string | undefined; groundOffset?: number | undefined; quiet?: boolean | undefined; maxCameraDistance?: number | undefined } — ⚠ undocumented
 - `FootIkRig` (interface): interface FootIkRig — Bones resolved once per loaded scene for {@link applyFootIk}.
 - `FootIkState` (interface): interface FootIkState — Per-model state carried between frames: the faded weight and the smoothed pelvis drop.
-- `useFootIk` (function): function useFootIk(scene: THREE.Object3D, config: FootIkConfig | undefined, ctx: GameContext | null, instanceId?: string, groundOffset = 0, options: { quiet?: boolean; maxCameraDistance?: number } = {}): void — Runs foot IK after the model's animation mixer for `ModelConfig.ik`. Ground probes hit terrain and blocking physical objects, never the model's own entity. `groundOffset` is the model-space height its soles rest on (`ModelConfig.y`). `options.quiet` drops the rig diagnostics (the engine's own default IK on a model that never asked for it); `options.maxCameraDistance` skips characters further than that from the camera, fading their correction out.
+- `useFootIk` (function): function useFootIk(scene: THREE.Object3D, config: FootIkConfig | undefined, ctx: GameContext | null, instanceId?: string, groundOffset = 0, options: { quiet?: boolean; maxCameraDistance?: number } = {}): void — Runs foot IK after the model's animation mixer for `ModelConfig.ik` — a thin React shell over {@link FootIkDriver}; draw code uses the driver directly.
 
 ## @jgengine/core/anim/useModelAnimation.draw
 
@@ -587,7 +604,7 @@
 - `createGraphPose` (function): function createGraphPose(scene: THREE.Object3D, graph: AnimGraph, clips: THREE.AnimationClip[]): GraphPose — Binds a graph's clips to a rig exactly as `useModelAnimation` does (masked layers get filtered clips, additive layers additive ones) so a host that runs its own `createAnimGraphRuntime`, such as the editor's graph preview, poses the rig from the runtime's output.
 - `diagnoseModelAnimation` (function): function diagnoseModelAnimation(scene: THREE.Object3D, animation: ModelAnimationConfig, clips: readonly THREE.AnimationClip[]): readonly ModelAnimationDiagnostic[] — Checks clip mappings, masked layers and root-motion assumptions without starting a mixer.
 - `readModelAnimationParams` (function): function readModelAnimationParams(ctx: GameContext, instanceId: string, speed: number, out: Record<string, AnimParamValue>, step?: ModelMotionStep): Record<string, AnimParamValue> — Refreshes a caller-owned graph parameter dictionary from authored extras and known physical movement. Grounded, verticalSpeed and crouched use the shared motor's resolved state when available; custom movers retain their authored values. Speed always uses the supplied measured ground speed. Passing `step` derives the directional parameters from the character's own motion: `direction` is the motion's share along the character's right axis, `facing` its share along the facing axis, and `turnRate` its yaw change per second. Derived values override conflicting authored extras. Does not write game state.
-- `useModelAnimation` (function): function useModelAnimation(scene: THREE.Object3D, clips: THREE.AnimationClip[], animationInput: ModelAnimationConfig | "auto" | "none" | undefined, instanceId?: string): void — The engine's model animation driver as a standalone hook — the same mixer `EntityModel` runs, for games that render a cloned scene themselves (custom materials, procedural composition). Handles `"auto"` derivation from the GLB's clip names, speed-driven idle/walk/run crossfades read from the entity's live position when `instanceId` is set, one-shots fired from `entity.animation` / `combat.hitReaction` / `entity.died`, held poses, and the death clamp. With `animation.graph` set, the headless `AnimGraph` runtime owns every clip's time and weight and the mixer only applies them; clip events surface as `animation.event`. Equivalent same-order config data retains playback across rerenders; actual data edits reset it. Entity-bound playback holds while context game time is frozen; unbound previews keep playing.
+- `useModelAnimation` (function): function useModelAnimation(scene: THREE.Object3D, clips: THREE.AnimationClip[], animationInput: ModelAnimationConfig | "auto" | "none" | undefined, instanceId?: string): void — The engine's model animation driver as a hook — see {@link ModelAnimationDriver}. Handles `"auto"` derivation, speed-driven crossfades, one-shots, held poses, the death clamp and graph playback; entity-bound playback holds while game time is frozen. Equivalent same-order config data retains playback.
 
 ## @jgengine/core/anim/useRagdoll.draw
 
@@ -1108,8 +1125,10 @@
 
 - `FirstPersonBodyContext` (const): const FirstPersonBodyContext: React.Context<string | null> — The entity whose own body the first-person camera looks out of, or `null` when no body is drawn in first person. The shell provides it; a model instance bound to that entity collapses its head.
 - `collapseHead` (function): function collapseHead(head: THREE.Object3D): void — Folds a head bone away for this frame; the animation writes its pose first, so call it after.
+- `firstPersonBodyInstance` (function): function firstPersonBodyInstance(): string | null — The entity whose body the first-person camera sits in, for draw code.
 - `humanoidHead` (function): function humanoidHead(scene: THREE.Object3D): THREE.Object3D | null — The head bone of a humanoid rig the skeleton standard maps, or `null`. Scaling it to nothing folds the head, hair and face into the neck, so a camera at eye height sees the body's arms, hands and held items without looking out through the inside of the skull.
 - `keepHeadUnderEye` (function): function keepHeadUnderEye(body: THREE.Object3D, head: THREE.Object3D, eye: THREE.Object3D, rest: THREE.Vector3): void — Slides `body` across the ground so its folded head sits straight under the `eye` camera, from `rest` (the body's own position before any slide). A walk or run clip leans the torso forward; without this the neck, nape hair and collar swing out in front of an eye-height camera. Call after `collapseHead`.
+- `noteFirstPersonBody` (function): function noteFirstPersonBody(instanceId: string | null): void — The first-person body id for draw code, which has no React context. The shell writes it next to the provider; `null` outside a first-person rig.
 - `useFirstPersonBody` (function): function useFirstPersonBody(instanceId: string | undefined): boolean — True when `instanceId` is the body the first-person camera sits in.
 
 ## @jgengine/core/camera/fovPreference.view
@@ -1273,8 +1292,9 @@
 
 ## @jgengine/core/environment/GroundPad.draw
 
-- `GroundPad` (function): function GroundPad({ pad, field }: GroundPadProps): React.JSX.Element — A flat circular or rectangular pad resting on a terrain field.
+- `GroundPad` (function): function GroundPad({ pad, field }: GroundPadProps): null — React mount for {@link groundPadDraw} while parents still render through the Canvas.
 - `GroundPadProps` (interface): interface GroundPadProps — Props for {@link GroundPad}: the pad descriptor and the terrain field it sits on.
+- `groundPadDraw` (function): function groundPadDraw({ pad, field }: GroundPadProps): EngineDraw — A flat circular or rectangular pad resting on a terrain field.
 
 ## @jgengine/core/environment/groundPadMath
 
@@ -1642,8 +1662,9 @@
 
 ## @jgengine/core/generator/GeneratorMeshInstance.draw
 
-- `GeneratorMeshInstance` (function): function GeneratorMeshInstance({ definition, meta, fallbackSeed, position = [0, 0, 0], rotationY = 0 }: GeneratorMeshInstanceProps): React.JSX.Element — One placed generator instance drawn through the mesh builder registered for its output family (`registerGeneratorMesh`), regrown from its params and seed. Null when the family has no builder.
+- `GeneratorMeshInstance` (function): function GeneratorMeshInstance(props: GeneratorMeshInstanceProps): null — ⚠ undocumented
 - `GeneratorMeshInstanceProps` (interface): interface GeneratorMeshInstanceProps — Props for {@link GeneratorMeshInstance}.
+- `generatorMeshInstanceDraw` (function): function generatorMeshInstanceDraw(getProps: () => GeneratorMeshInstanceProps): EngineDraw — One placed generator instance drawn through the mesh builder registered for its output family (`registerGeneratorMesh`), regrown from its params and seed. Null when the family has no builder.
 
 ## @jgengine/core/generator/GeneratorVariantGrid.draw
 
@@ -2245,6 +2266,7 @@
 
 - `StaticShapeInstance` (interface): interface StaticShapeInstance — One editor-derived static primitive. A box spans one unit; a cylinder has unit radius and height before scale.
 - `StaticShapeInstances` (function): function StaticShapeInstances({ instances }: { instances: readonly StaticShapeInstance[] }): React.JSX.Element — Batch editor-derived boxes/cylinders by shape, PBR metadata and shadows. Uploads and bounds run only when instances change; map loading stays isolated per draw group.
+- `staticShapeBatchDraw` (function): function staticShapeBatchDraw(batch: StaticShapeBatch, material: THREE.Material): EngineDraw — One instanced batch as an {@link EngineDraw}; the material is owned by the caller's hook.
 
 ## @jgengine/core/interaction/contextMenu
 
@@ -2572,13 +2594,15 @@
 
 ## @jgengine/core/map/LightBeam.draw
 
-- `LightBeam` (function): function LightBeam({ height = 80, radius = 0.25, color = "#cfe8ff", opacity = 0.35 }: LightBeamProps): ReactNode — A glowing column of light rising from where it is placed, for finding something from afar: a fallen body, a supply crate, an objective. Additive and unlit, so it reads by day and glows at night.
+- `LightBeam` (function): function LightBeam(props: LightBeamProps): null — React mount for {@link lightBeamDraw} while parents still render through the Canvas.
 - `LightBeamProps` (interface): interface LightBeamProps — {@link LightBeam} look.
+- `lightBeamDraw` (function): function lightBeamDraw({ height = 80, radius = 0.25, color = "#cfe8ff", opacity = 0.35 }: LightBeamProps): EngineDraw — A glowing column of light rising from where it is placed, for finding something from afar: a fallen body, a supply crate, an objective. Additive and unlit, so it reads by day and glows at night.
 
 ## @jgengine/core/map/MapMarkerBeacons.draw
 
-- `MapMarkerBeacons` (function): function MapMarkerBeacons({ markers, kindStyles, height = 5 }: MapMarkerBeaconsProps): React.JSX.Element — World-space beacons for map markers (the visible in-world side of a ping): a floating diamond over a soft light beam, colored by marker kind. Wire it through `PlayableGame.WorldOverlay`.
+- `MapMarkerBeacons` (function): function MapMarkerBeacons(props: MapMarkerBeaconsProps): null — ⚠ undocumented
 - `MapMarkerBeaconsProps` (interface): interface MapMarkerBeaconsProps — Props for `MapMarkerBeacons`: the markers to raise as world beacons, kind styles and beacon height.
+- `mapMarkerBeaconsDraw` (function): function mapMarkerBeaconsDraw({ markers, kindStyles, height = 5 }: MapMarkerBeaconsProps): EngineDraw — World-space beacons for map markers (the visible in-world side of a ping): a floating diamond over a soft light beam, colored by marker kind. Wire it through `PlayableGame.WorldOverlay`.
 
 ## @jgengine/core/map/fastTravel
 
@@ -2618,6 +2642,7 @@
 - `MapLegend` (function): function MapLegend({ kinds, labels, kindStyles = DEFAULT_MARKER_KINDS, title = "Legend", className, style, }: MapLegendProps): ReactNode — Marker-kind key for a map/minimap — glyph + color swatch per kind, labelled. Reads the same `kindStyles` the map renders with, so the legend can never drift from the pins.
 - `MapLegendProps` (interface): interface MapLegendProps — Props for {@link MapLegend}.
 - `MapViewport` (interface): interface MapViewport — Pan/zoom transform applied to a {@link WorldMapSurface}'s content group.
+- `MarkerAccess` (interface): interface MarkerAccess<TMarker extends MarkerView> { subscribe: (listener: () => void) => () => void; getSnapshot: () => readonly TMarker[]; getServerSnapshot: () => readonly TMarker[] } — ⚠ undocumented · used by `markerAccess`: Non-hook access to a marker collection's subscribe/snapshot pair, for draw factories.
 - `Minimap` (function): function Minimap({ markers, center, worldRadius, fog, size = 176, facingYaw = 0, rotate = false, kindStyles = DEFAULT_MARKER_KINDS, background, mapBounds, routes, zones, cellStates, onWorldClick, className, style, title = "Map", children, }: MinimapProps): ReactNode — Framed circular minimap: optional baked terrain background, reveal-on-event fog overlay, categorized marker icons, and a facing arrow. Reads static marker views, an external marker source, or a native `MarkerSet`; supply your own `kindStyles` palette to reskin. Does not require `GameProvider`.
 - `MinimapChrome` (function): function MinimapChrome({ view, frame = false, frameColor = "rgba(148,163,184,0.4)", frameStrokeWidth = 1.5, cardinalLabel = "N", markers: markerSource = NO_CHROME_MARKERS, markerColor = "#e2e8f0", markerRadius = 5, className, handle, }: MinimapChromeProps): ReactNode — Headless minimap chrome — nests inside a game's own `<svg>`: an optional ring frame, and edge-clamped marker dots that draw as directional arrows when a marker carries a `heading` (the compass-arrow / player-blip layer ~8 games were re-drawing by hand over `projectToMinimap`/`clampToMinimapEdge`). Renders a bare `<g>` — no background, panel, or title; compose your own content layer (routes, zones, terrain) as sibling SVG nodes for full control of z-order, or call `MinimapChrome` twice (once for `frame`, again for `markers`) to sandwich custom content between the ring and the blips.
 - `MinimapChromeHandle` (interface): interface MinimapChromeHandle — Moves an already-drawn `MinimapChrome`'s markers in place. `place` writes the same positions, rotations and visibility a render with these props would, to markers with the ids the chrome last rendered; markers it has not rendered yet need a render first.
@@ -2636,6 +2661,7 @@
 - `WorldMapProps` (interface): interface WorldMapProps — Props for {@link WorldMap}: markers, world bounds, the player and facing, fog, background and layers.
 - `WorldMapSurface` (function): function WorldMapSurface({ markers, bounds, player, facingYaw = 0, fog, background, width = 520, height, kindStyles = DEFAULT_MARKER_KINDS, routes, zones, cellStates, onWorldClick, canvasWidth, canvasHeight, viewport = IDENTITY_VIEWPORT, style, }: WorldMapSurfaceProps): ReactNode — The bare top-down map `<svg>` shared by {@link WorldMap} (framed panel) and {@link FullscreenMap} (pan/zoom overlay): baked terrain background, fog, map layers, markers with labels, and the player arrow, drawn under an optional viewport transform. Rectangular linear projection over the world `bounds`.
 - `WorldMapSurfaceProps` (interface): interface WorldMapSurfaceProps — Props for {@link WorldMapSurface}.
+- `markerAccess` (function): function markerAccess(markers: MarkerCollection): MarkerAccess<MarkerView> — Non-hook access to a marker collection's subscribe/snapshot pair, for draw factories.
 - `useFog` (function): function useFog(fog: FogField): ReturnType<FogField["cells"]> — Re-render a component when a fog field reveals cells; returns its current cells.
 - `useMarkers` (function): function useMarkers<TMeta = unknown>(markers: MarkerSet<TMeta>): readonly MapMarker<TMeta>[] — Subscribe to a native marker set or external marker source, or read a static marker array.
 
@@ -3244,6 +3270,10 @@
 - `natureDraws` (function): function natureDraws(mesh: NatureMesh): { geometry: THREE.BufferGeometry; material: THREE.MeshStandardMaterial }[] — Every draw a nature mesh makes: one geometry and material per part (a tree's bark trunk, its leaves), or one for a single-surface mesh. The caller owns and disposes the geometries.
 - `natureGeometry` (function): function natureGeometry(mesh: NatureMesh): THREE.BufferGeometry — A three geometry for a nature mesh, its sRGB vertex colours converted to linear. The caller owns it.
 - `natureMaterial` (function): function natureMaterial(surface?: NatureSurface): THREE.MeshStandardMaterial — The material a nature mesh shares with every mesh of its surface: vertex colours, matte; frond blades carry both faces themselves, while `"leaf"` blades are single-sided and lit from both faces. Rocks and wood (`surface`) add the generated rock or bark grain, normal, roughness and AO, projected in world space so the meshes need no UVs.
+
+## @jgengine/core/nature/naturePreview.draw
+
+- `naturePreviewDraw` (function): function naturePreviewDraw({ definition, variant }: GeneratorPreviewProps): EngineDraw — ⚠ undocumented
 
 ## @jgengine/core/nav/corridors
 
@@ -3914,8 +3944,9 @@
 
 ## @jgengine/core/placement/PlacementGhost.draw
 
-- `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — Cursor-following build ghost: valid/invalid tint from a placement controller preview.
+- `PlacementGhost` (function): function PlacementGhost(props: PlacementGhostProps): null — ⚠ undocumented
 - `PlacementGhostProps` (interface): interface PlacementGhostProps — Props for {@link PlacementGhost}: the placement preview to draw and its valid/invalid tint.
+- `placementGhostDraw` (function): function placementGhostDraw(getProps: () => PlacementGhostProps): EngineDraw — Cursor-following build ghost: valid/invalid tint from a placement controller preview.
 
 ## @jgengine/core/placement/TerritoryOverlay.view
 
@@ -5477,18 +5508,21 @@
 
 ## @jgengine/core/terrain/EditableGround.draw
 
-- `EditableGround` (function): function EditableGround({ terrain, bounds, segments = 96, version = 0, baseColor = "#3f6b3a", surfaceColors = DEFAULT_SURFACE_COLORS, }: EditableGroundProps): React.JSX.Element — Mesh an editable terrain inside its bounds, coloured by each point's painted surface; bump `version` after an edit.
+- `EditableGround` (function): function EditableGround(props: EditableGroundProps): null — ⚠ undocumented
 - `EditableGroundProps` (interface): interface EditableGroundProps — Props for {@link EditableGround}: the editable terrain, the bounds to mesh, resolution, a rebuild version and surface colours.
+- `editableGroundDraw` (function): function editableGroundDraw(props: EditableGroundProps): EngineDraw — Mesh an editable terrain inside its bounds, coloured by each point's painted surface; bump `version` after an edit.
 
 ## @jgengine/core/terrain/ProceduralGround.draw
 
-- `ProceduralGround` (function): function ProceduralGround({ terrain, colors, roughness = 0.94, metalness = 0, receiveShadow = true, ...meshProps }: ProceduralGroundProps): React.JSX.Element — A seeded noise-height ground mesh coloured from low to high ground.
+- `ProceduralGround` (function): function ProceduralGround(props: ProceduralGroundProps): null — ⚠ undocumented
 - `ProceduralGroundProps` (interface): interface ProceduralGroundProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — Props for {@link ProceduralGround}: noise terrain settings, height colours and material settings.
+- `proceduralGroundDraw` (function): function proceduralGroundDraw({ terrain, colors, roughness = 0.94, metalness = 0, receiveShadow = true, ...meshProps }: ProceduralGroundProps): EngineDraw — A seeded noise-height ground mesh coloured from low to high ground.
 
 ## @jgengine/core/terrain/TerraformBrushCursor.draw
 
-- `TerraformBrushCursor` (function): function TerraformBrushCursor({ center, y = 0.05, radius, mode }: TerraformBrushCursorProps): React.JSX.Element | null — A ground ring showing where a terraform brush will act, coloured by its mode.
+- `TerraformBrushCursor` (function): function TerraformBrushCursor(props: TerraformBrushCursorProps): null — ⚠ undocumented
 - `TerraformBrushCursorProps` (interface): interface TerraformBrushCursorProps — Props for {@link TerraformBrushCursor}: brush centre (or null to hide), height, radius and terraform mode.
+- `terraformBrushCursorDraw` (function): function terraformBrushCursorDraw(getProps: () => TerraformBrushCursorProps): EngineDraw — A ground ring showing where a terraform brush will act, coloured by its mode.
 
 ## @jgengine/core/terrain/groundEdgeFade.draw
 
@@ -5680,6 +5714,8 @@
 ## @jgengine/core/terrain/terrainQuality.draw
 
 - `TerrainQualityContext` (const): const TerrainQualityContext: React.Context<GraphicsQuality> — The player's graphics tier as terrain materials see it; the shell provides it, `high` outside one.
+- `noteTerrainQuality` (function): function noteTerrainQuality(quality: GraphicsQuality): void — The graphics tier for draw code, which has no React context.
+- `terrainQuality` (function): function terrainQuality(): GraphicsQuality — The player's graphics tier for draw code (`high` outside a shell).
 - `useTerrainQuality` (function): function useTerrainQuality(): GraphicsQuality — Graphics tier for terrain surface shading (`low` takes the cheap path).
 
 ## @jgengine/core/terrain/terrainScanMaps.draw

@@ -563,7 +563,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/anim/useModelAnimation.draw",
+      "module": "@jgengine/core/anim/modelAnimationDriver.draw",
       "gameFacing": false,
       "probe": null,
       "intent": "read resolved player movement into reusable animation graph parameters"
@@ -7360,7 +7360,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/anim/useModelAnimation.draw",
+      "module": "@jgengine/core/anim/modelAnimationDriver.draw",
       "gameFacing": false,
       "probe": null,
       "intent": "inspect imported clip mappings, layer masks and root-track compatibility"

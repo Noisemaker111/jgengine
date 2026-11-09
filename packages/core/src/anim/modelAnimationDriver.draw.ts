@@ -388,7 +388,6 @@ export class ModelAnimationDriver {
   private animationPaused = false;
   private playback: GraphPlayback | null = null;
   private advancedSeconds: number | undefined;
-  private previousSeconds: number | undefined;
   private pending = 0;
   private frameCount = 0;
   private graphPosed = false;
