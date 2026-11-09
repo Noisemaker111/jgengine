@@ -7,6 +7,7 @@ import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { GameProvider } from "@jgengine/react/provider";
+import { FrameBoardPump } from "@jgengine/core/frame/frameBoardPump.draw";
 
 import { RevealHighlights } from "./RevealVision.draw";
 
@@ -47,7 +48,12 @@ async function mounted(ctx: GameContext, element: ReactElement, run: (stage: Sta
         createElement(
           GameProvider,
           { context: ctx },
-          createElement(Profiler, { id: "reveal", onRender: () => { commits += 1; } }, element),
+          createElement(
+            Profiler,
+            { id: "reveal", onRender: () => { commits += 1; } },
+            element,
+            createElement(FrameBoardPump),
+          ),
         ),
       );
       scene = store.getState().scene;
