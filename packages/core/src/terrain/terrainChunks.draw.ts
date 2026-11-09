@@ -32,6 +32,8 @@ interface GroundTile {
 export class GroundChunks {
   readonly root = new THREE.Group();
   private readonly tiles: GroundTile[] = [];
+  private readonly sortedTiles: GroundTile[] = [];
+  private readonly sortEye = new THREE.Vector3();
   private readonly cellX: number;
   private readonly cellZ: number;
   private readonly tileSpan: number;
@@ -82,7 +84,8 @@ export class GroundChunks {
     const coarsest = TILE_STEPS[TILE_STEPS.length - 1]!;
     for (const tile of this.tiles) yield* this.buildLevel(tile, coarsest);
     const eye = camera();
-    for (const tile of this.byDistance(eye)) {
+    // The job yields inside this loop, so it walks a snapshot: nextRefinement refills sortedTiles.
+    for (const tile of this.byDistance(eye).slice()) {
       const step = this.stepAt(tile.lod.position.distanceTo(flat(eye)));
       if (!tile.built.has(step)) yield* this.buildLevel(tile, step);
     }
@@ -127,9 +130,15 @@ export class GroundChunks {
   }
 
   private byDistance(eye: THREE.Vector3): GroundTile[] {
-    const at = flat(eye);
-    // Sorted in place: the spread copy was per-frame garbage while tiles stream in.
-    return this.tiles.sort((a, b) => a.lod.position.distanceToSquared(at) - b.lod.position.distanceToSquared(at));
+    // nextRefinement consumes the result synchronously, so one instance array refilled per call is
+    // safe and the per-frame spread copy stays gone. this.tiles itself keeps its creation order:
+    // initialJob iterates it across yields.
+    this.sortEye.set(eye.x, 0, eye.z);
+    const at = this.sortEye;
+    const tiles = this.sortedTiles;
+    tiles.length = 0;
+    for (const tile of this.tiles) tiles.push(tile);
+    return tiles.sort((a, b) => a.lod.position.distanceToSquared(at) - b.lod.position.distanceToSquared(at));
   }
 
   private worldX(index: number): number {
