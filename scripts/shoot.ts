@@ -8,6 +8,7 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
+import { stayOutOfTheWay } from "./machine-priority";
 import { printHelpIfAsked } from "./script-help";
 import { takeVerboseFlag } from "./verbosity";
 
@@ -62,6 +63,8 @@ export function shootCommand(argv: readonly string[]): string[] {
 }
 
 if (import.meta.main) {
+  // The capture and the headless Chrome it launches run below normal priority, so Jon's game comes first.
+  stayOutOfTheWay();
   const argv = takeVerboseFlag(process.argv.slice(2));
   if (argv[0] !== "--prove" && argv[0] !== "--at" && argv[0] !== "--load" && argv[0] !== "--board") printHelpIfAsked("shoot", SHOOT_USAGE, argv);
   const run = spawnSync(process.execPath, shootCommand(argv), { cwd: root, stdio: "inherit" });

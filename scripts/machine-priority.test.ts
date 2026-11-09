@@ -59,4 +59,19 @@ describe("machine priority", () => {
     expect(result.read).toBe(0);
     expect(result.launcher).toBe("below-normal");
   }, 30_000);
+
+  test.if(process.platform === "win32")("lowerToBelowNormal puts a process started at normal below normal", () => {
+    // The shoot daemon's Chrome is created by WMI and inherits nothing, so it is lowered by pid.
+    const out = inChild(`
+      const { lowerToBelowNormal, restoreNormalPriority } = await import(${JSON.stringify(moduleUrl)});
+      const { spawn } = await import("node:child_process");
+      const child = spawn(process.execPath, ["-e", "setTimeout(() => {}, 20000)"], { stdio: "ignore", windowsHide: true });
+      // This run may itself be below normal (Owl lowers agent sessions), so the child starts at normal on purpose.
+      const before = restoreNormalPriority(child.pid);
+      const after = lowerToBelowNormal(child.pid);
+      child.kill();
+      console.log(JSON.stringify({ before, after }));
+    `);
+    expect(JSON.parse(out)).toEqual({ before: "normal", after: "below-normal" });
+  }, 30_000);
 });

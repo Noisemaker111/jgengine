@@ -49,9 +49,9 @@ describe("buildSpawn", () => {
   });
 });
 
-// The guard and the bun it wraps run below normal priority (scripts/machine-priority.ts), so on a
-// PC saturated by normal-priority work Windows gives them a slice about every 4-5 s; these tests
-// check what the guard does, not how fast a starved process does it, so each gets 30 s.
+// The guard can run below normal priority (a perf verb lowers itself, and Owl lowers agent sessions),
+// so on a PC saturated by normal-priority work Windows gives it a slice about every 4-5 s; these
+// tests check what the guard does, not how fast a starved process does it.
 describe("guard", () => {
   test("passes through a successful command's exit code", () => {
     const result = Bun.spawnSync(["bun", guard, "30", "bun", "-e", "process.exit(0)"], { timeout: 60_000 });
@@ -97,9 +97,10 @@ describe("guard", () => {
 
   test("kills a hung command tree and exits 124", () => {
     const started = performance.now();
-    const result = Bun.spawnSync(["bun", guard, "1", "bun", "-e", "await Bun.sleep(30_000)"], { timeout: 60_000 });
+    // The child would sleep 120 s; ending well before that proves the guard killed it, with room
+    // for a starved process (see the describe's note).
+    const result = Bun.spawnSync(["bun", guard, "1", "bun", "-e", "await Bun.sleep(120_000)"], { timeout: 150_000 });
     expect(result.exitCode).toBe(124);
-    // The 1 s budget plus the kill; the rest is starvation headroom (see the describe's note).
-    expect(performance.now() - started).toBeLessThan(20_000);
-  }, 30_000);
+    expect(performance.now() - started).toBeLessThan(60_000);
+  }, 150_000);
 });

@@ -21,7 +21,7 @@ import { brokerServer } from "./devBrokerClient";
 import { checkMarkedServer, checkoutIdentity, devServerIdentity, isUp, listMarkers, markerPath, readMarker, readServerIdentity, writeMarker } from "./devServerMarker";
 import { currentStep, describeHang, markStep, pausableDeadline, pausedTotal } from "./hangReport";
 import { localGet } from "./localhostHttp";
-import { currentPriority, type PriorityLabel, priorityLabel, restoreNormalPriority } from "./machine-priority";
+import { currentPriority, lowerToBelowNormal, type PriorityLabel, priorityLabel, restoreNormalPriority } from "./machine-priority";
 import { startOutsideCaller } from "./outsideCaller";
 import { computeShotMetrics, deadViewport } from "./shot-metrics";
 import { removeDirSync } from "./removeDir";
@@ -1616,6 +1616,9 @@ export function launchPersistentChrome(
     throw new Error(`Persistent Chrome launch failed: ${error instanceof Error ? error.message : String(error)}`);
   }
   writeFileSync(join(userDataDir, PROFILE_OWNER_FILE), String(pid));
+  // Created by WMI, it inherits nothing from this process: put it below normal like every capture
+  // browser, before it starts most of its GPU and renderer processes.
+  lowerToBelowNormal(pid);
   detachProfileDir(userDataDir);
   return { pid, child: null, userDataDir };
 }

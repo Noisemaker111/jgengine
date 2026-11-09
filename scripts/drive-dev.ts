@@ -77,6 +77,7 @@ import { detail, takeVerboseFlag } from "./verbosity";
 import { parseDriveArgs, projectDirOf, DRIVE_HELP } from "./driveArgs";
 import { LockstepRecorder } from "./driveLockstep";
 import { readHitchSession, renderHitchSession, resetBreakdown } from "./perf-breakdown";
+import { stayOutOfTheWay } from "./machine-priority";
 import { acquirePerfLock } from "./perf-lock";
 import { installPageRenderCounter, readRenderCounts, renderRenderCounts, resetRenderCounter } from "./perf-renders";
 import { aggregateAllocations, type HeapSampleNode } from "./perf-play";
@@ -278,6 +279,9 @@ if (args.url !== undefined) {
     process.exit(1);
   }
 }
+// The drive and the headless Chrome it launches run below normal priority, so Jon's game comes first;
+// a timed drive puts only its own Chrome back to normal.
+stayOutOfTheWay();
 sweepCaptureProfiles();
 
 const viewport: ViewportOverride = { width: args.width, height: args.height };

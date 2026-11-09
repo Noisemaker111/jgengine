@@ -33,7 +33,6 @@ import { assertCheckoutReady } from "./checkout-ready";
 import { digestLines, failureDigest, writeStepLog } from "./failure-digest";
 import { FRAME_GAMES, REPRESENTATIVE_GAME, scopePattern } from "./ci-scope";
 import { buildImportGraph, closure, repoFiles, reverseReach, type ImportGraph } from "./import-graph";
-import { stayOutOfTheWay } from "./machine-priority";
 import { openPassCache, treeDigests, WHOLE_TREE } from "./verify-cache";
 import { checkCommand, findCheck, GEN_TARGETS, jobChecks, readsPath, reachedBy, type CheckDef } from "./run-stages";
 import { printHelpIfAsked } from "./script-help";
@@ -964,9 +963,9 @@ async function spawnStep(command: readonly string[], root: string): Promise<{ ok
 
 /**
  * The files to rerun when every failure in a `bun test` output is a timeout (a test's or a hook's),
- * or null when any failure is something else. verify runs below normal priority (Jon's game comes
- * first), so on a PC held at 100% by normal-priority work a test can wait seconds for each slice:
- * land-commit.test.ts failed 9 of 20 tests that way and passed on the next run (2026-11-09).
+ * or null when any failure is something else. On a PC held at 100% by other threads' work a test can
+ * wait seconds for each slice: land-commit.test.ts failed 9 of 20 tests that way and passed on the
+ * next run (2026-11-09), and a whole landing went red for it.
  */
 export function timedOutFiles(output: string): string[] | null {
   const lines = output.split(/\r?\n/);
@@ -996,7 +995,7 @@ async function run(step: Step, root: string): Promise<StepResult> {
   const timeoutFlag = step.command.indexOf("--timeout");
   const rerun = ["bun", "test", ...flags, ...(timeoutFlag >= 0 ? [step.command[timeoutFlag + 1]!] : []), ...timedOut];
   const again = await spawnStep(rerun, root);
-  const line = `degraded: ${step.name}: ${timedOut.join(", ")} timed out (a starved below-normal run); ${again.ok ? "passed" : "failed again"} when rerun once`;
+  const line = `degraded: ${step.name}: ${timedOut.join(", ")} timed out (a starved run on a busy PC); ${again.ok ? "passed" : "failed again"} when rerun once`;
   console.log(line);
   return { name: step.name, ok: again.ok, ms: Date.now() - started, output: again.ok ? line : `${first.output}\n${line}\n${again.output}` };
 }
@@ -1356,8 +1355,6 @@ async function main(argv: readonly string[]): Promise<number> {
 
 if (import.meta.main) {
   const argv = takeVerboseFlag(process.argv.slice(2));
-  // The type-checks, gates and tests this starts inherit below-normal priority: Jon's game first.
-  stayOutOfTheWay();
   try {
     parseVerifyArgs(argv);
     if (printHelpIfAsked("verify-fast", VERIFY_FAST_USAGE, argv)) process.exit(EXIT_VERIFIED);

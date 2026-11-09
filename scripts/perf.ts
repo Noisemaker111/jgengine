@@ -44,7 +44,7 @@ export const PERF: VerbTable = {
 };
 
 if (import.meta.main) {
-  // Unguarded verbs (network) inherit it from here; guarded ones also drop in guard.ts.
+  // Every verb's guard and script inherit it from here.
   stayOutOfTheWay();
   process.exit(runVerb(PERF, process.argv.slice(2)));
 }

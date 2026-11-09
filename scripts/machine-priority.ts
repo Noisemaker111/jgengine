@@ -1,15 +1,20 @@
 import os from "node:os";
 
 /**
- * Where a check or measurement sits against Jon's own work on the PC. Every verify and perf process
- * drops itself to below-normal priority, so the game, editor and chat in front of him keep their
- * cores; on Windows a child inherits its parent's priority class, so headless Chrome, Vite, tsc and
- * bun test all follow. The one exception is the Chrome a perf mode measures: a frame time taken at
+ * Where a browser run sits against Jon's own work on the PC. `bun run perf`, `drive` and `shoot`
+ * drop themselves to below-normal priority, so the game, editor and chat in front of him keep their
+ * cores; on Windows a child inherits its parent's priority class, so the headless Chrome and Vite
+ * they start follow. The one exception is the Chrome a perf mode measures: a frame time taken at
  * below-normal priority also measures whatever outranks it, so those sessions are put back to
  * normal (the table in `scripts/perf.ts` says which) and the record says what it ran at.
  *
- * Why: on 2026-11-08 the PC sat at 95-100% CPU with six threads' Chromes and bun at normal priority,
- * and Jon could not play.
+ * Why: on 2026-11-08 the PC sat at 95-100% CPU, 4.5-6 cores of it headless Chrome from three
+ * worktrees' perf runs, and Jon could not play.
+ *
+ * verify:fast, lane:close, check and test stay at normal priority. Tried below normal on 2026-11-09:
+ * under the same load land-commit.test.ts passed twice at normal and failed 9 of 20 tests at below
+ * normal, and four landings in a row went red on starved tests (timeouts, git calls returning
+ * nothing), so the gate stopped meaning anything. Their load is bun, which was not the problem.
  */
 
 export type PriorityLabel = "low" | "below-normal" | "normal" | "above-normal" | "high" | "realtime";
@@ -46,6 +51,16 @@ export function stayOutOfTheWay(): PriorityLabel {
     console.error(`degraded: could not lower this process's priority (${error instanceof Error ? error.message : String(error)})`);
   }
   return currentPriority();
+}
+
+/** Put another process (a browser started outside this one's tree) below normal, as {@link stayOutOfTheWay} does for this one. */
+export function lowerToBelowNormal(pid: number): PriorityLabel {
+  try {
+    if (os.getPriority(pid) < PRIORITY_BELOW_NORMAL) os.setPriority(pid, PRIORITY_BELOW_NORMAL);
+  } catch (error) {
+    console.error(`degraded: could not lower pid ${pid}'s priority (${error instanceof Error ? error.message : String(error)})`);
+  }
+  return currentPriority(pid);
 }
 
 /**

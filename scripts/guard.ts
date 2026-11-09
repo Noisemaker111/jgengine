@@ -6,7 +6,6 @@ import { join } from "node:path";
 
 import { sweepOrphanProfiles } from "./browser-lib";
 import { describeHang, pausableDeadline, pausedTotal, readStepFile, STEP_FILE_ENV } from "./hangReport";
-import { stayOutOfTheWay } from "./machine-priority";
 
 /**
  * Split a shell-free command string into an argv array on whitespace. Used only
@@ -71,10 +70,6 @@ if (import.meta.main) {
   }
 
   const isWin = process.platform === "win32";
-  // Every guarded command (check, gen, test, build, drive, each perf verb) and what it spawns runs
-  // below normal priority, so Jon's game and editor come first; a perf mode that measures Chrome
-  // puts only that Chrome back to normal.
-  stayOutOfTheWay();
   const plan = buildSpawn(process.platform, command, extra);
   // The child keeps this file naming its current step, so a kill can say what hung.
   const stepFile = join(tmpdir(), `jg-guard-step-${process.pid}.json`);
