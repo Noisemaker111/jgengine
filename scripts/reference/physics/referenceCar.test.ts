@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import type { CourseSubject, HandlingSubject, RideSubject } from "@jgengine/core/physics/handlingProbe";
 import { magicFormula } from "./magicFormulaTire";
 import { MAZDA_MX5_ND } from "./realCars";
-import { createReferenceCar, type ReferenceCarSpec } from "./referenceCar";
+import { createReferenceCar, type ReferenceCar, type ReferenceCarSpec } from "./referenceCar";
 import type { DoubleWishboneGeometry } from "./suspensionKinematics";
 
 const NEUTRAL = { throttle: 0, brake: 0, steer: 0, handbrake: 0 };
@@ -77,8 +77,8 @@ function parallelogram(halfTrack: number): DoubleWishboneGeometry {
 }
 
 // Steady state at a fixed handwheel angle and constant speed: road-wheel angle minus the Ackermann angle, and lateral g.
-function steadyPoint(spec: ReferenceCarSpec, speed: number): { g: number; dynamic: number } {
-  const car = createReferenceCar(spec);
+function steadyPoint(car: ReferenceCar, spec: ReferenceCarSpec, speed: number): { g: number; dynamic: number } {
+  car.reset();
   let step = car.tick(1 / 60, NEUTRAL);
   while (step.motion.forwardSpeed < speed) step = car.tick(1 / 60, { ...NEUTRAL, throttle: 0.6 });
   let throttle = 0.2;
@@ -141,13 +141,16 @@ describe("reference car against the analytic bicycle model", () => {
         ...base,
         frontWeight,
         comHeight: 0.05,
+        // The coarsest step the 1 ms control sample allows: the gradient is unchanged to four decimals.
+        step: 1 / 1000,
         differential: { kind: "open" },
         front: { ...base.front, geometry: parallelogram(base.front.geometry.wheelCenter[1]), compliance: {}, antiRollRate: 0 },
         rear: { ...base.rear, geometry: parallelogram(base.rear.geometry.wheelCenter[1]), compliance: {}, antiRollRate: 0 },
         steering: { ...base.steering, compliance: 0 },
       };
-      const low = steadyPoint(spec, 7.5);
-      const high = steadyPoint(spec, 11.5);
+      const car = createReferenceCar(spec);
+      const low = steadyPoint(car, spec, 7.5);
+      const high = steadyPoint(car, spec, 11.5);
       const measured = (high.dynamic - low.dynamic) / (high.g - low.g);
       const bicycle = (g: number) => bicycleSteer(base.tire.coefficients, spec.massKg, spec.wheelbase, frontWeight, g);
       const analytic = (bicycle(high.g) - bicycle(low.g)) / (high.g - low.g);
