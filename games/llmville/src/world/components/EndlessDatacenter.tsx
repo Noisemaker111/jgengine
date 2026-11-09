@@ -1,6 +1,5 @@
 import { WORLD_SCENERY_RADIUS } from "@llmville/game/world/viewDistance";
 import { useEffect, useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
 import {
   NormalBlending,
   BufferGeometry,
@@ -28,6 +27,7 @@ import {
 import { readPlayerPosition } from "@/runtime/playerPosition";
 import type { GameEngine } from "@/runtime/gameEngine";
 import { composeInstance, uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 const FLOOR_TILE_SIZE = DATACENTER_FLOOR_TILE_CELLS * CELL_SIZE;
 const FLOOR_SPAN = WORLD_SCENERY_RADIUS * 2;
@@ -122,7 +122,7 @@ export function EndlessDatacenter({ engine }: { engine: GameEngine }) {
   const trayCount = (COLUMN_VIEW_RADIUS * 2 + 1) * (COLUMN_VIEW_RADIUS * 2 + 1);
   const lightCount = (LIGHT_PANEL_RADIUS * 2 + 1) * (LIGHT_ROW_RADIUS * 2 + 1);
 
-  useFrame(() => {
+  useFrameTask(() => {
     const player = readPlayerPosition(engine);
     if (lampRef.current) {
       lampRef.current.position.set(

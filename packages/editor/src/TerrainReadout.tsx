@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 import {
@@ -13,6 +13,7 @@ import {
 } from "@jgengine/core/terrain/terrainGuides";
 
 import type { TerrainReadoutStore } from "./terrainReadoutStore";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** How often (seconds) the cursor readout re-samples — a bounded per-frame cost, not every frame. */
 const CURSOR_SAMPLE_INTERVAL = 1 / 20;
@@ -155,7 +156,7 @@ export function TerrainReadout({
   const accum = useRef(0);
   planeRef.current.constant = -(guides.summary.mean ?? 0);
 
-  useFrame((_, delta) => {
+  useFrameTask((_, delta) => {
     accum.current += delta;
     if (accum.current < CURSOR_SAMPLE_INTERVAL) return;
     accum.current = 0;

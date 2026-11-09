@@ -13,6 +13,11 @@ import type { EngineFrameState } from "./engineLoop.draw";
 
 export type FrameTask = (state: EngineFrameState, delta: number) => void;
 
+/** A frame callback held by reference; the board stores these so observers see a stable task object. */
+export interface FrameTaskRef {
+  current(state: EngineFrameState, delta: number): void;
+}
+
 /**
  * Attaches one priority level to the driving frame source and returns the
  * detach. `run` is the group's shared callback; the source decides how it is
@@ -24,17 +29,37 @@ export type FrameSource = (
 ) => () => void;
 
 interface PriorityGroup {
-  readonly tasks: Set<FrameTask>;
+  readonly tasks: Set<FrameTaskRef>;
   detach: (() => void) | null;
 }
 
 const groups = new Map<number, PriorityGroup>();
 let source: FrameSource | null = null;
 
+/** Optional per-task timing observer (the frame-breakdown devtools hook). */
+let observer: { enter(task: FrameTaskRef): void; leave(): void } | null = null;
+
+/** Set the observer called around every board task; `null` clears it. @internal */
+export function observeFrameTasks(next: { enter(task: FrameTaskRef): void; leave(): void } | null): void {
+  observer = next;
+}
+
 function attach(group: PriorityGroup, priority: number): void {
   if (source === null) return;
   group.detach = source(priority, (state, delta) => {
-    for (const task of group.tasks) task(state, delta);
+    const timing = observer;
+    for (const task of group.tasks) {
+      if (timing === null) {
+        task.current(state, delta);
+      } else {
+        timing.enter(task);
+        try {
+          task.current(state, delta);
+        } finally {
+          timing.leave();
+        }
+      }
+    }
   });
 }
 
@@ -66,10 +91,11 @@ export function joinFrameTask(priority: number, task: FrameTask): () => void {
     groups.set(priority, group);
   }
   const joined = group;
-  joined.tasks.add(task);
+  const ref: FrameTaskRef = { current: task };
+  joined.tasks.add(ref);
   if (joined.detach === null) attach(joined, priority);
   return () => {
-    joined.tasks.delete(task);
+    joined.tasks.delete(ref);
     if (joined.tasks.size > 0 || groups.get(priority) !== joined) return;
     joined.detach?.();
     groups.delete(priority);

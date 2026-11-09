@@ -1,4 +1,3 @@
-import { useFrame } from "@react-three/fiber";
 import { useRef, type ReactNode } from "react";
 import * as THREE from "three";
 
@@ -8,6 +7,7 @@ import { useGameContext } from "@jgengine/react/provider";
 import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "./measureCollisionMesh.draw";
 import { modelBindPosePositions } from "./modelBindPose.draw";
 import { recordRenderBounds } from "@jgengine/core/visibility/measuredBounds";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Subtrees flagged with this userData key are excluded from bounds measurement — debug gizmos,
  * selection quads, effect billboards that should not inflate the hitbox. Sprites and invisible
@@ -140,7 +140,7 @@ export function MeasuredBoundsGroup({
   const attemptRef = useRef(0);
   const lastMeshCountRef = useRef<number | null>(null);
 
-  useFrame(() => {
+  useFrameTask(() => {
     if (attemptRef.current >= MEASURE_FRAMES.length) return;
     frameRef.current += 1;
     if (frameRef.current < MEASURE_FRAMES[attemptRef.current]!) return;

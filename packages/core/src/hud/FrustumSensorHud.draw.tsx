@@ -1,6 +1,6 @@
 // @skill jgengine-ui
 import { Html } from "@react-three/drei";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { useMemo, useRef, useState } from "react";
 import { PerspectiveCamera, Vector3, type Camera } from "three";
 
@@ -12,6 +12,7 @@ import {
 } from "@jgengine/core/sensor/frustumSensor";
 import { useSceneEntities } from "@jgengine/react/hooks";
 import { frustumSampleDisplayEqual } from "@jgengine/core/sensor/frustumSampleEqual";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 export { frustumSampleDisplayEqual } from "@jgengine/core/sensor/frustumSampleEqual";
 
@@ -33,7 +34,7 @@ export function useFrustumSensor(options: FrustumSensorProbeOptions): FrustumSam
   const bestRef = useRef<FrustumSample | null>(null);
   const forward = useRef(new Vector3());
 
-  useFrame((_, dt) => {
+  useFrameTask((_, dt) => {
     const targets: FrustumTarget[] = [];
     for (const id of options.subjectIds) {
       const entity = entities.find((candidate) => candidate.id === id);

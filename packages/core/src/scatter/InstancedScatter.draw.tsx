@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useFrame, useLoader, useThree } from "@react-three/fiber";
+import { useLoader, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
@@ -38,6 +38,7 @@ import {
   scatterGeneratorVariantCount,
   type ScatterGeneratorItem,
 } from "./scatterGenerator";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Chunk edge (m): dense fields split into this-sized buckets, each frustum-culled independently. */
 const DEFAULT_CHUNK_SIZE = 24;
@@ -403,7 +404,7 @@ function ScatterVariantSourceInstances({ source, batch, level, selector }: {
     writeLevel(cameraPosition);
     if (meshRef.current !== null) freezeStaticTransforms(meshRef.current);
   }, [camera, writeLevel, cameraPosition]);
-  useFrame((state) => {
+  useFrameTask((state) => {
     state.camera.getWorldPosition(cameraPosition);
     if (!levelPassNeeded(lastCamera.current, cameraPosition, LEVEL_PASS_MIN_CAMERA_MOVE)) return;
     lastCamera.current.copy(cameraPosition);
@@ -513,7 +514,7 @@ function ScatterDetailInstances({ levels, batches, radius, hysteresis = 0 }: { l
     for (const pick of picks) clearDetailPicks(pick);
     lastCamera.set(Number.POSITIVE_INFINITY, 0, 0);
   }, [group, meshes, picks, lastCamera]);
-  useFrame((state) => {
+  useFrameTask((state) => {
     state.camera.getWorldPosition(cameraPosition);
     if (!levelPassNeeded(lastCamera, cameraPosition, LEVEL_PASS_MIN_CAMERA_MOVE)) return;
     lastCamera.copy(cameraPosition);

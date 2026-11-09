@@ -1,4 +1,4 @@
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { memo, useRef } from "react";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
@@ -7,6 +7,7 @@ import { editorPerfMarks } from "./perfMarks";
 import type { EditorHostApi } from "./session";
 import { getCameraTelemetry } from "./shell/cameraTelemetry";
 import { frameBudgetFromStats } from "./shell/perfHistory";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 const SAMPLE_WINDOW_MS = 500;
 /** Sum-of-abs delta on camera position/orientation above which a frame counts as camera activity. */
@@ -23,7 +24,7 @@ export const PerfProbe = memo(function PerfProbe({ api }: { api: EditorHostApi }
   const lastDrawRef = useRef(-1);
   const lastTriRef = useRef(-1);
 
-  useFrame(() => {
+  useFrameTask(() => {
     const now = performance.now();
     if (windowStartRef.current === 0) windowStartRef.current = now;
     framesRef.current += 1;

@@ -1,5 +1,5 @@
 // @skill jgengine-world
-import { useFrame, useLoader } from "@react-three/fiber";
+import { useLoader } from "@react-three/fiber";
 import type { ThreeEvent } from "@react-three/fiber";
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
@@ -38,6 +38,7 @@ import {
   patchCrowdMaterial,
 } from "./SkinnedInstances.draw";
 import { memoView } from "../ui/memoView.view";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 function CrowdBatch({
   kind,
@@ -166,7 +167,7 @@ function CrowdBatch({
   const drawnIds = useRef<string[]>([]);
   const drawnMembers = useRef<{ id: string; member: CrowdMember }[]>([]);
 
-  useFrame((_state, delta) => {
+  useFrameTask((_state, delta) => {
     if (mesh === null || baked === null || placement === null) return;
     // A crowd on a game clock stops when the game stops; an unbound preview advances on real time.
     if (uniforms !== null) {
@@ -259,7 +260,7 @@ export const CharacterCrowd = memoView("CharacterCrowd", function CharacterCrowd
     return () => dispose();
   }, []);
 
-  useFrame(() => {
+  useFrameTask(() => {
     noteCharacterFrame();
   });
 

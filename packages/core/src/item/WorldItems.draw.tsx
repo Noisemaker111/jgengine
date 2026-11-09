@@ -1,7 +1,6 @@
 // @skill jgengine-gameplay
 import { Html, Line } from "@react-three/drei";
 import { useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
 import type { Group } from "three";
 import type { WorldItemRenderConfig } from "@jgengine/core/game/playableGame";
 import { resolveWorldItemPresentation } from "@jgengine/core/loot/groundItem";
@@ -9,6 +8,7 @@ import { useGameContext } from "@jgengine/react/provider";
 import { useWorldItems } from "@jgengine/react/hooks";
 import { emptyPoseMemo, writePoseIfChanged, type PoseMemo } from "@jgengine/core/anim/entityPose";
 import { POINTER_ENTITY_KEY } from "@jgengine/core/input/pointerService.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 const DEFAULT_BEAM_HEIGHT = 2.5;
 const FALLBACK_COLOR = "#e5e7eb";
@@ -44,7 +44,7 @@ function WorldItemMarker({
   // accumulated from frame deltas (Date.now is unavailable to keep runs pure).
   const gemRef = useRef<Group>(null);
   const ageRef = useRef(0);
-  useFrame((_state, delta) => {
+  useFrameTask((_state, delta) => {
     const group = groupRef.current;
     const live = ctx.scene.entity.get(instanceId);
     if (group !== null && live !== null) writePoseIfChanged(group, live, poseRef.current);

@@ -1,4 +1,3 @@
-import { useFrame } from "@react-three/fiber";
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
@@ -9,6 +8,7 @@ import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import type { ScatterBatch } from "./InstancedScatter.draw";
 import type { ScatterModelSource } from "./scatterModels.draw";
 import { freezeStaticTransforms } from "@jgengine/core/model/staticTransforms.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Camera travel in metres before the near/far split is recomputed. */
 const SPLIT_MOVE = 1;
@@ -130,7 +130,7 @@ export function ScatterImpostorField({ cacheKey, sources, farSources, batches, r
   const camera = useMemo(() => new THREE.Vector3(), []);
   const thresholds = useMemo(() => batches.map((batch) => batch.instances.map((instance) => impostorDistance(radius * instance.scale, quality))), [batches, radius, quality]);
 
-  useFrame((state) => {
+  useFrameTask((state) => {
     state.camera.getWorldPosition(camera);
     const fresh = lastFar.current !== far || lastBatches.current !== batches;
     lastBatches.current = batches;

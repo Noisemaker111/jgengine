@@ -1,5 +1,5 @@
 // @skill jgengine-world
-import { useFrame, useLoader, useThree } from "@react-three/fiber";
+import { useLoader, useThree } from "@react-three/fiber";
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback, type ReactNode } from "react";
 import * as THREE from "three";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
@@ -29,6 +29,7 @@ import { builtLevelSource, reskinBuiltLevel, useBakedImpostor, WithBuiltLods } f
 import { IMPOSTOR_LEVEL_URL, type BuiltLodMeta } from "@jgengine/core/lod/builtLods";
 import type { HlodConfig } from "@jgengine/core/visibility/config";
 import { blendsSource, canInstanceStaticScene, countStaticBatchDraws, staticBatchCell, gatherStaticMembers, harvestStaticPieces, incompatibleStaticObjectIds, isCompatibleStaticObject, sortFarToNear, STATIC_BATCH_MESH_KEY, staticModelPieces, syncStaticObjectSource, type StaticObjectBatch } from "./staticObjectBatches.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /**
  * Report what static object batching is doing to `debug_snapshot().systems`: the grouped batches, the
@@ -678,7 +679,7 @@ export function StaticDrawPoolDriver({ hlod }: { hlod: HlodConfig | undefined })
     return () => pool.configure(null);
   }, [pool, distance, hysteresis, cluster]);
   const eye = useMemo(() => new THREE.Vector3(), []);
-  useFrame((state) => {
+  useFrameTask((state) => {
     if (distance !== undefined) pool.update(state.camera.getWorldPosition(eye));
   }, CAMERA_POST_FRAME_PRIORITY + 0.18);
   return null;

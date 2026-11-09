@@ -1,11 +1,12 @@
 import { Html } from "@react-three/drei";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { useRef, useState, type CSSProperties } from "react";
 
 import type { FloatingTextField, FloatingTextView } from "@jgengine/core/hud/floatingText";
 import { FloatingText, type FloatingTextLayoutOptions } from "@jgengine/core/hud/floatingText.view";
 
 import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Props for {@link WorldFloatingText}. */
 export interface WorldFloatingTextProps extends FloatingTextLayoutOptions {
@@ -56,7 +57,7 @@ export function WorldFloatingText({
   const project = useWorldProjection();
   const [, setTick] = useState(0);
   const showing = useRef(false);
-  useFrame((_, delta) => {
+  useFrameTask((_, delta) => {
     if (advance) field.update(Math.min(delta, 0.1));
     // Re-render every frame while text floats, so projected positions follow the camera and the
     // sim; with nothing up, an idle frame (and the shader warmup behind the cover) costs no React work.

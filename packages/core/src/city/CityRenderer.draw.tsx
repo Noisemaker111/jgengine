@@ -15,7 +15,6 @@
  * games consume the same authored volume unchanged.
  */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 import {
@@ -62,6 +61,7 @@ import { applyGroundEdgeFade, buildGroundCoverageMask, createGroundEdgeFade } fr
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "@jgengine/core/scene/sceneKindRenderers.draw";
 import { junctionSurface } from "./cityJunctionSurface";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 const ASPHALT_COLOR = "#3a3b3d";
 const GRAVEL_COLOR = "#93815f";
@@ -495,7 +495,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
   const [detailKey, setDetailKey] = useState("");
   const cameraRef = useRef<[number, number]>([0, 0]);
   const cellRef = useRef("");
-  useFrame(({ camera }) => {
+  useFrameTask(({ camera }) => {
     const key = `${Math.round(camera.position.x / 28)}:${Math.round(camera.position.z / 28)}`;
     if (key !== cellRef.current) {
       cellRef.current = key;

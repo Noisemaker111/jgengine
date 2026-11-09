@@ -1,4 +1,4 @@
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import { PerspectiveCamera, Quaternion, Vector3, type Camera } from "three";
 
@@ -54,6 +54,7 @@ import { requestRawPointerLock } from "@jgengine/core/input/pointerLock";
 import { resolveChaseHeading } from "./chaseHeading";
 
 import type { Xyz } from "@jgengine/core/math/xyz";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** useFrame priority every camera rig commits its pose at, after the game simulation. */
 export const CAMERA_RIG_FRAME_PRIORITY = ORBIT_CAMERA_FRAME_PRIORITY;
@@ -214,7 +215,7 @@ export function TopDownRig(props: RigProps) {
 
   useEffect(beginTransition, []);
 
-  useFrame((_, dt) => {
+  useFrameTask((_, dt) => {
     const sample = readFollow(ctx, followId);
     const desired = sample?.pos ?? { x: 0, y: 0, z: 0 };
     const prev = followRef.current ?? desired;
@@ -245,7 +246,7 @@ export function SideScrollRig(props: RigProps) {
 
   useEffect(beginTransition, []);
 
-  useFrame((_, dt) => {
+  useFrameTask((_, dt) => {
     const sample = readFollow(ctx, followId);
     const desired = sample?.pos ?? { x: 0, y: 0, z: 0 };
     const prev = followRef.current ?? desired;
@@ -352,7 +353,7 @@ export function RtsRig(props: RigProps & { panKeysEnabled?: boolean | undefined;
     };
   }, [domElement, edgeScroll]);
 
-  useFrame((_, dt) => {
+  useFrameTask((_, dt) => {
     const keys = held.current;
     if (keys.has("KeyQ")) yawRef.current += rotateSpeed * dt;
     if (keys.has("KeyE")) yawRef.current -= rotateSpeed * dt;
@@ -449,7 +450,7 @@ export function ShoulderRig(props: RigProps) {
     };
   }, [domElement, sensitivity, props.yawRef, props.pitchRef]);
 
-  useFrame((_, dt) => {
+  useFrameTask((_, dt) => {
     const turn = ctx.camera.takeTurnTo();
     if (turn !== null) props.yawRef.current = turn;
     const sample = readFollow(ctx, followId);
@@ -513,7 +514,7 @@ export function LockOnRig(props: RigProps) {
 
   useEffect(beginTransition, []);
 
-  useFrame((_, dt) => {
+  useFrameTask((_, dt) => {
     const sample = readFollow(ctx, followId);
     const player = sample?.pos ?? { x: 0, y: 0, z: 0 };
     const targetId = pickLockTarget(ctx, followId, config);
@@ -549,7 +550,7 @@ export function ChaseRig(props: RigProps) {
   const viewRef = useRef<ChaseView | null>(null);
   const inputSeededRef = useRef(false);
 
-  useFrame((_, dt) => {
+  useFrameTask((_, dt) => {
     const tuning = ctx.camera.chaseTuning();
     const merged = tuning === null ? config : { ...config, ...tuning };
     const resolved = tuning === null ? staticResolved : resolveChase(merged);
@@ -668,7 +669,7 @@ export function ObserverRig(props: RigProps) {
 
   useEffect(beginTransition, []);
 
-  useFrame((_, dt) => {
+  useFrameTask((_, dt) => {
     angleRef.current += resolved.orbitSpeed * dt;
     const { subject } = observerSubject(ctx, config, followId);
     const pose = observerPose(subject, angleRef.current, resolved, config?.fov ?? currentFov(camera));
@@ -695,7 +696,7 @@ export function CinematicRig(props: RigProps & { onComplete?: () => void }) {
     beginTransition();
   }, [cinematic]);
 
-  useFrame((_, dt) => {
+  useFrameTask((_, dt) => {
     if (cinematic === undefined) return;
     elapsedRef.current += dt;
     const sample = cinematicSample(

@@ -1,9 +1,9 @@
-import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type ReactElement } from "react";
 import { BufferAttribute, BufferGeometry, DoubleSide, MeshBasicMaterial, type Mesh } from "three";
 
 import type { TireMark } from "@jgengine/core/physics/tireMarks";
 import { useGameContext } from "@jgengine/react/provider";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Darkest a fresh mark draws at full strength. */
 const MARK_ALPHA = 0.62;
@@ -88,7 +88,7 @@ export function WorldTireMarks(): ReactElement {
     [geometry, material],
   );
 
-  useFrame(() => {
+  useFrameTask(() => {
     const now = ctx.time.now();
     const version = store.version();
     if (version === seen.current.version && now - seen.current.rebuiltAt < FADE_REBUILD_SECONDS) return;

@@ -1,5 +1,5 @@
 import { Html, Line } from "@react-three/drei";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
@@ -28,6 +28,7 @@ import {
 import { telegraphDecalPose, telegraphPulseOpacity } from "@jgengine/core/combat/telegraphPulse";
 import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.draw";
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 export type { NameplateSample, WorldBarSample } from "@jgengine/core/hud/barSamples.draw";
 export { collectNameplateSamples, collectWorldBarSamples, paintWorldBarSamples } from "@jgengine/core/hud/barSamples.draw";
@@ -103,7 +104,7 @@ export function WorldEntityBars({
   const warnRef = useRef<RangeWarnState | null>(null);
   const visibility = useRenderVisibility();
 
-  useFrame((state) => {
+  useFrameTask((state) => {
     const nowMs = state.clock.elapsedTime * 1000;
     const canvas = canvasRef.current;
     if (canvas === null) return;
@@ -239,7 +240,7 @@ export function WorldNameplates({
   const warnRef = useRef<RangeWarnState | null>(null);
   const visibility = useRenderVisibility();
 
-  useFrame((state) => {
+  useFrameTask((state) => {
     const nowMs = state.clock.elapsedTime * 1000;
     if (nowMs - lastTickRef.current < Math.max(0, tickMs)) return;
     lastTickRef.current = nowMs;
@@ -500,7 +501,7 @@ function TelegraphDecal({ active }: { active: ActiveTelegraph }) {
   const shape = active.event.shape;
   const pose = telegraphDecalPose(shape, active.event.position, active.event.dir ?? 0);
   const color = active.event.kind === "danger" ? "#ef4444" : "#f59e0b";
-  useFrame(() => {
+  useFrameTask(() => {
     const material = materialRef.current;
     if (material === null) return;
     material.opacity = telegraphPulseOpacity(active.bornMs, active.event.windupMs, performance.now());

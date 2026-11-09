@@ -1,4 +1,4 @@
-import { useFrame, useLoader, useThree } from "@react-three/fiber";
+import { useLoader, useThree } from "@react-three/fiber";
 import { idleOnlyAnimation } from "@jgengine/core/game/clipRoles";
 import { useEffect, useMemo } from "react";
 import { Group, type Object3D, type SkinnedMesh } from "three";
@@ -15,6 +15,7 @@ import { useModelAnimation } from "@jgengine/core/anim/useModelAnimation.draw";
 import { addHumanoidSockets, firstPersonArms, withHumanoidActionClips } from "@jgengine/core/anim/humanoidActionClips.draw";
 import { collapseHead, humanoidHead, keepHeadUnderEye, useFirstPersonBody } from "@jgengine/core/camera/firstPersonBody.draw";
 import { applyModelNodeVisibility, modelHiddenNodesKey } from "./modelNodeVisibility.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Model loading, placement, shadows and animation for a custom renderer. */
 export type ModelInstanceConfig = Pick<ModelConfig,
@@ -98,7 +99,7 @@ export function useModelInstance(model: ModelInstanceConfig, options: ModelInsta
     };
   }, [head, content, bodyRest]);
   // Registered after the animation's and the camera's frame callbacks, so it works on the pose and eye that frame wrote.
-  useFrame(({ camera }) => {
+  useFrameTask(({ camera }) => {
     if (head !== null) {
       collapseHead(head);
       keepHeadUnderEye(content, head, camera, bodyRest);

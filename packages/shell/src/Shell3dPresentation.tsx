@@ -16,7 +16,7 @@ import {
   type RefObject,
   type SetStateAction,
 } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import type { OrthographicCamera } from "three";
 
 import {
@@ -145,6 +145,7 @@ import {
   resolvePresentationEffects,
   resolveWorldOverlayBars,
 } from "./presentationResolve";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 const PRIMARY_CLICK_MOVE_THRESHOLD_PX = 6;
 const DEFAULT_BACKGROUND_COLOR = "#14161b";
@@ -152,7 +153,7 @@ const DEFAULT_BACKGROUND_COLOR = "#14161b";
 function PixelPerfectCamera({ pixelsPerUnit, integerScale }: { pixelsPerUnit: number; integerScale?: boolean }) {
   const camera = useThree((state) => state.camera) as OrthographicCamera;
   const size = useThree((state) => state.size);
-  useFrame(() => {
+  useFrameTask(() => {
     if (camera.isOrthographicCamera !== true) return;
     const frustum = pixelPerfectFrustum(size, pixelsPerUnit, integerScale === true);
     camera.left = frustum.left;

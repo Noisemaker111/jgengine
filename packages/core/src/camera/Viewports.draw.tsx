@@ -1,4 +1,4 @@
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { useMemo, useRef, useSyncExternalStore } from "react";
 import * as THREE from "three";
 
@@ -15,6 +15,7 @@ import { localPlayers, type LocalPlayerSlot } from "@jgengine/core/runtime/local
 
 import { createChaseRigState, resolveChase, resolveTopDown, stepChase, topDownPose, type CameraPose, type ChaseRigState } from "./rigMath";
 import type { Xyz } from "@jgengine/core/math/xyz";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 const SEAT_YAW = new WeakMap<GameContext, Map<string, number>>();
 
@@ -73,7 +74,7 @@ export function SplitScreenRenderer({
   const size = useThree((state) => state.size);
   const rigs = useRef(new Map<string, SeatRig>());
 
-  useFrame((_state, dt) => {
+  useFrameTask((_state, dt) => {
     const seats = localPlayers(ctx);
     let yaws = SEAT_YAW.get(ctx);
     if (yaws === undefined) {

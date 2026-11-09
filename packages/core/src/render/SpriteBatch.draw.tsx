@@ -1,8 +1,9 @@
-import { useFrame, useLoader, useThree } from "@react-three/fiber";
+import { useLoader, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** One sprite in a batch: world position, size and atlas frame. */
 export interface SpriteBatchInstance {
@@ -139,7 +140,7 @@ uniform vec2 spriteUvScale;`,
   const scaleVector = useMemo(() => new THREE.Vector3(), []);
   const matrix = useMemo(() => new THREE.Matrix4(), []);
 
-  useFrame(() => {
+  useFrameTask(() => {
     const mesh = meshRef.current;
     if (mesh === null) return;
     const list = instances();

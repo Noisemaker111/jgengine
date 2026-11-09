@@ -1,5 +1,4 @@
 import { createContext, useContext, useMemo, useRef, type ReactNode, type RefObject } from "react";
-import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 import type { VisibilityConfig } from "@jgengine/core/visibility/config";
@@ -7,6 +6,7 @@ import { culledByDistance } from "@jgengine/core/visibility/distance";
 import { DEFAULT_CULLING_SETTINGS } from "@jgengine/core/visibility/settings";
 
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Resolved shell distance policy for generated facade batches. @internal */
 export interface BuildingRenderPolicy {
@@ -87,7 +87,7 @@ export function buildingChunkWithinBudget(
 export function useBuildingChunkBudget(meshRef: RefObject<THREE.InstancedMesh | null>, bounds: THREE.Box3): void {
   const policy = useContext(BuildingRenderContext);
   const scratch = useRef({ box: new THREE.Box3(), sphere: new THREE.Sphere(), camera: new THREE.Vector3(), placed: new THREE.Matrix4(), mesh: null as THREE.InstancedMesh | null, bounds: null as THREE.Box3 | null, frustum: undefined as number | undefined });
-  useFrame(({ camera }) => {
+  useFrameTask(({ camera }) => {
     const mesh = meshRef.current;
     if (mesh === null) return;
     const chunk = scratch.current;

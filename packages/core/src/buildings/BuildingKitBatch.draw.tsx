@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useFrame, useLoader, useThree } from "@react-three/fiber";
+import { useLoader, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
@@ -25,6 +25,7 @@ import { useBuildingChunkBudget, useBuildingRenderPolicy } from "./BuildingRende
 import { partitionInstances, type InstanceChunk } from "@jgengine/core/instancing/instanceChunks.draw";
 import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { freezeStaticTransforms } from "@jgengine/core/model/staticTransforms.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 function KitSourceInstances({
   source,
@@ -100,7 +101,7 @@ function KitSourceChunk({ source, material, chunk }: {
 function PooledKitChunk({ slot, members, sphere }: { slot: StaticDrawSlot; members: readonly KitPlacement[]; sphere: THREE.Sphere }) {
   const policy = useBuildingRenderPolicy();
   const state = useMemo(() => ({ eye: new THREE.Vector3(), shown: null as boolean | null }), [slot]);
-  useFrame(({ camera }) => {
+  useFrameTask(({ camera }) => {
     camera.getWorldPosition(state.eye);
     const { center, radius } = sphere;
     const shown = !policy.enabled || !culledByDistance(state.eye.x, state.eye.y, state.eye.z, center.x, center.y, center.z,

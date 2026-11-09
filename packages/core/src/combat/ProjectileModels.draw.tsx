@@ -1,4 +1,3 @@
-import { useFrame } from "@react-three/fiber";
 import { useRef, useState, type ReactElement } from "react";
 import * as THREE from "three";
 
@@ -7,6 +6,7 @@ import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { useGameContext } from "@jgengine/react/provider";
 
 import { IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Explicit opt-in shaft/head geometry when a game has no projectile model. */
 export interface ProjectileShaft {
@@ -66,7 +66,7 @@ export function ProjectileModels({ model, fallback, forward = [0, 1, 0], maxInst
   if (nose.current.lengthSq() === 0) nose.current.set(0, 1, 0);
   const limit = Number.isFinite(maxInstances) ? Math.max(0, Math.min(1024, Math.floor(maxInstances))) : 256;
 
-  useFrame(() => {
+  useFrameTask(() => {
     let changed = false;
     const live = source?.() ?? ctx.scene.entity.activeProjectiles();
     seen.current.clear();

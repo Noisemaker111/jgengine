@@ -1,5 +1,5 @@
 // @skill jgengine-world
-import { useFrame, useLoader } from "@react-three/fiber";
+import { useLoader } from "@react-three/fiber";
 import { Component, Suspense, useEffect, useMemo, useRef, type ReactElement, type ReactNode } from "react";
 import * as THREE from "three";
 
@@ -13,6 +13,7 @@ import { livingWorld } from "@jgengine/core/weather/livingWorld.draw";
 import { createAmbientFauna, FAUNA_GLOBAL_CAP, type FaunaSimulation, type FaunaFrame, type FaunaGroup, type FaunaGroupState } from "./ambientFauna";
 import type { AmbientFaunaConfig, FaunaSpecies } from "./ambientFaunaConfig";
 import { createFaunaView, selectVisible, writeFaunaView, type FaunaSelection, type FaunaView } from "./faunaCull";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 const DEFAULT_DRAW_CAP = 1200;
 const CULL_RADIUS = 2;
@@ -82,7 +83,7 @@ function SpeciesBatch({ species, groups, shared, sources }: BatchProps): ReactEl
   useEffect(() => () => { spriteGeometry.dispose(); }, [spriteGeometry]);
   useEffect(() => () => { spriteMaterial.dispose(); }, [spriteMaterial]);
 
-  useFrame(() => {
+  useFrameTask(() => {
     const model = sources !== null;
     let spriteCount = 0;
     let modelCount = 0;
@@ -184,7 +185,7 @@ export function AmbientFauna({ config, zones, assets, groundAt, groundRevision, 
   const frame = useRef<FaunaFrame>({ dt: 0, time: 0, sunHeight: null, focusX: 0, focusZ: 0 });
   const drawCap = (config.drawCap ?? DEFAULT_DRAW_CAP) * (lowTier ? 0.5 : 1);
 
-  useFrame(({ camera, clock }, delta) => {
+  useFrameTask(({ camera, clock }, delta) => {
     const f = frame.current;
     f.dt = delta;
     f.time = clock.elapsedTime;

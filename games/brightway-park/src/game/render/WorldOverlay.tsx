@@ -2,7 +2,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { useFrame, useLoader, useThree } from "@react-three/fiber";
+import { useLoader, useThree } from "@react-three/fiber";
 import { pathFollowSeek } from "@jgengine/core/nav/pathFollow";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { Box3, Group, Mesh, MeshStandardMaterial, Object3D, Plane, Raycaster, TextureLoader, Vector2, Vector3 } from "three";
@@ -23,6 +23,7 @@ import { landCheck, LINE_KINDS } from "../build/commands";
 import { StallWares } from "./StallWares";
 import { AuthoredScenery } from "./AuthoredScenery";
 import { currentHint } from "../onboarding";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Each moving ride part: its own GLB whose origin is the pivot, and how it moves (spin, wheel, swing, drop). */
 type MotionSpec = { model: string; kind: "spin" | "wheel" | "swing" | "drop"; pivot: [number, number, number]; speed: number; amplitude?: number; level?: string };
@@ -38,7 +39,7 @@ function RideMotion({object}:{object:ParkObject}) {
   const scene=useMemo(()=>{const copy=gltf.scene.clone();copy.traverse(n=>{if(n instanceof Mesh){n.castShadow=true;n.receiveShadow=true;}});return copy;},[gltf]);
   const levels=useMemo(()=>{const out:Object3D[]=[];if(spec.level)scene.traverse(n=>{if(n.name.startsWith(spec.level!))out.push(n);});return out;},[scene,spec.level]);
   const amplitude=spec.amplitude??1;
-  useFrame(()=>{
+  useFrameTask(()=>{
     const root=ref.current; if(!root)return;
     // A broken or idle ride stands still; one running its cycle moves.
     const view=rideView(object.id);
@@ -65,7 +66,7 @@ function CoasterTrain({object,circuit}:{object:ParkObject;circuit:ReturnType<typ
   const reduced=useGameStore(ctx=>Boolean(ctx.game.store.get("park.reduced-motion")));
   const scene=useMemo(()=>{const copy=gltf.scene.clone();copy.traverse(n=>{if(n instanceof Mesh){n.castShadow=true;n.receiveShadow=true;}});return copy;},[gltf]);
   const path=useMemo(()=>({waypoints:circuit.waypoints,speed:Math.max(1,circuit.averageSpeed),loop:true}),[circuit]);
-  useFrame(()=>{
+  useFrameTask(()=>{
     const root=ref.current; if(!root) return;
     if(!circuit.closed||path.waypoints.length<3){root.visible=false;return;}
     root.visible=true;
@@ -228,7 +229,7 @@ function HintArrow() {
   const reduced=useGameStore(c=>Boolean(c.game.store.get("park.reduced-motion")));
   const spot=useGameStore(c=>{const p=currentHint(c)?.world??null;return p===null?"":`${p[0]},${p[1]}`;});
   const ref=useRef<Group>(null);
-  useFrame(({clock})=>{if(ref.current)ref.current.position.y=reduced?0:Math.sin(clock.elapsedTime*3)*.6;});
+  useFrameTask(({clock})=>{if(ref.current)ref.current.position.y=reduced?0:Math.sin(clock.elapsedTime*3)*.6;});
   if(spot==="")return null;
   const [x,z]=spot.split(",").map(Number);
   if(x===undefined||z===undefined)return null;

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { Euler } from "three";
 
 import type { MovementCommitFrame } from "@jgengine/core/game/playableGame";
@@ -10,6 +10,7 @@ import { standingStep, type PlayerPosition } from "@llmville/game/movement/playe
 import { resolvePlayerSpeed } from "@llmville/game/user/personalUpgrades";
 import { engineActions, type GameEngine } from "@/runtime/gameEngine";
 import { localGameState } from "@/user/localGameState";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 const LOOK_PERSIST_INTERVAL_MS = 1_000;
 /** The shell's first-person yaw faces +Z at 0; a three camera's Euler yaw faces -Z at 0. */
@@ -82,7 +83,7 @@ export function useLocalPlayerBridge(engine: GameEngine | null): void {
     return engine.subscribe(follow);
   }, [ctx, engine]);
 
-  useFrame(function localPlayerBridge() {
+  useFrameTask(function localPlayerBridge() {
     if (engine === null) return;
     const entity = ctx.scene.entity.get(ctx.player.userId);
     if (entity === null) return;

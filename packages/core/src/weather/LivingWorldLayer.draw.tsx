@@ -1,4 +1,4 @@
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
@@ -11,6 +11,7 @@ import { windDirection, windGust } from "@jgengine/core/model/modelWind.draw";
 import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 import { prepareBeforeLink, prepareBeforeWarmup } from "@jgengine/core/render/shaderWarmup.draw";
 import { applyWetness, applyWetnessToScene, takesWetness } from "@jgengine/core/material/wetSurfaces.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 const LIGHT_RESCAN_SECONDS = 1.5;
 const WET_SCAN_SECONDS = 2;
@@ -63,7 +64,7 @@ function LivingWorldDriver() {
       }),
     [scene],
   );
-  useFrame((_, delta) => {
+  useFrameTask((_, delta) => {
     sinceScan.current += delta;
     if (sinceScan.current >= LIGHT_RESCAN_SECONDS || light.current?.parent === null) {
       light.current = findKeyLight(scene);
@@ -161,7 +162,7 @@ function Birds({ flock }: { flock: NonNullable<ResolvedAmbientLife["birds"]> }) 
   );
   const centre = useRef<THREE.Vector3 | null>(null);
   const presence = useRef<number | null>(null);
-  useFrame(({ camera, clock }, delta) => {
+  useFrameTask(({ camera, clock }, delta) => {
     const target = birdPresence(livingWorld.sunHeight, livingWorld.rain);
     presence.current = presence.current === null ? target : presence.current + (target - presence.current) * Math.min(1, delta * 0.4);
     const instanced = mesh.current;
@@ -259,7 +260,7 @@ function Litter({ litter }: { litter: NonNullable<ResolvedAmbientLife["litter"]>
     [litter.groundY],
   );
   const mesh = useRef<THREE.Mesh>(null);
-  useFrame(({ camera, clock }) => {
+  useFrameTask(({ camera, clock }) => {
     const speed = livingWorld.wind.length();
     const strength = Math.min(1, Math.max(0, (speed - 1) / 3)) * (1 - livingWorld.wetness * 0.8);
     if (mesh.current !== null) mesh.current.visible = strength > 0.02;
@@ -341,7 +342,7 @@ function Steam({ vents, lowTier }: { vents: readonly Required<SteamVent>[]; lowT
       }),
     [],
   );
-  useFrame(({ clock }) => {
+  useFrameTask(({ clock }) => {
     material.uniforms["uTime"]!.value = clock.getElapsedTime();
     (material.uniforms["uWind"]!.value as THREE.Vector2).copy(livingWorld.wind);
     material.uniforms["uDensity"]!.value = steamDensity(livingWorld.sunHeight, livingWorld.rain);

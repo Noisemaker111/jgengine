@@ -1,8 +1,9 @@
 import { useRef, type ReactNode } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 import { DEFAULT_FORWARD, yawToFace } from "@jgengine/core/scene/facing";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Lighting mood for a {@link StudioStage} — a named 3-point rig + backdrop palette. */
 export type StudioMood = "studio" | "daylight" | "dusk" | "night";
@@ -74,7 +75,7 @@ export function StudioStage({
   const camera = useThree((state) => state.camera);
   const groupWorld = useRef(new THREE.Vector3()).current;
   const cameraWorld = useRef(new THREE.Vector3()).current;
-  useFrame((_, delta) => {
+  useFrameTask((_, delta) => {
     const group = spin.current;
     if (group === null) return;
     if (faceCamera) {

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { useFrame } from "@react-three/fiber";
 import { useGameContext } from "@jgengine/react/provider";
 import { useGameStore } from "@jgengine/react/hooks";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
@@ -18,6 +17,7 @@ import { BUILD_PLOTS, FLANK_POINT_KEY, HAS_FLANK, ROUTES, SPAWN_POINT, groundHei
 const FLANK_GATE = ROUTES[FLANK_POINT_KEY]![0]!;
 import { plotShapes } from "./plotShapes";
 import { rangeRingBand } from "./rangeRing";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 function BuildPlots() {
   const gold = useGameStore((c) => keep.of(c).num("keep.gold"));
@@ -160,7 +160,7 @@ function ProjectileBolts() {
   const source = useMemo(() => live(() => [...activeProjectiles(ctx.time.now())]), [ctx]);
   const bolts = useLiveSelect(source, (list) => list, sameBolts);
   const meshes = useRef(new Map<PendingProjectile["id"], THREE.Mesh>());
-  useFrame(() => {
+  useFrameTask(() => {
     const now = ctx.time.now();
     for (const bolt of activeProjectiles(now)) {
       const mesh = meshes.current.get(bolt.id);

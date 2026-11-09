@@ -1,5 +1,5 @@
 // @skill jgengine-world
-import { useFrame, useLoader, useThree } from "@react-three/fiber";
+import { useLoader, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 
 import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
@@ -9,6 +9,7 @@ import { staticDrawPoolFor } from "@jgengine/core/instancing/staticDrawPool.draw
 import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
 import { useGameContext } from "@jgengine/react/provider";
 import { boundCellStreaming, type CellStreaming } from "./cellStreaming";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 const fetched = new Map<string, Promise<void>>();
 
@@ -56,7 +57,7 @@ export function CellStreamingDriver({ modelUrls }: { modelUrls: () => readonly s
       }),
     [ctx],
   );
-  useFrame(() => {
+  useFrameTask(() => {
     const streaming = boundCellStreaming(ctx);
     if (attached.current?.streaming !== streaming) {
       attached.current?.detach();

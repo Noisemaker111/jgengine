@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 import { hashString, seededRng } from "@jgengine/core/random/rng";
 import { lightningStrikeEnvelope } from "./weatherMath";
 import type { WeatherVector } from "./weatherUniforms.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Props for {@link LightningStrike}: bolt start and end, a key that restarts it, a seed for its shape and visibility. */
 export interface LightningStrikeProps {
@@ -158,7 +158,7 @@ export function LightningStrike({
     startRef.current = startedAt ?? timeSeconds?.() ?? localTime.current;
   }, [branches, duration, geometry, jaggedness, material, origin, seed, strikeKey, target, visible, startedAt, timeSeconds]);
 
-  useFrame((_state, delta) => {
+  useFrameTask((_state, delta) => {
     localTime.current += delta;
     const now = timeSeconds?.() ?? localTime.current;
     const amount = visible && startRef.current !== null ? lightningStrikeEnvelope(now, startRef.current, duration, seed ^ hashString(String(strikeKey))) : 0;

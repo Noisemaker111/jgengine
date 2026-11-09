@@ -1,4 +1,3 @@
-import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 
@@ -8,6 +7,7 @@ import { cloudNoiseVolume, CLOUD_NOISE_SIZE } from "@jgengine/core/sky/volumetri
 import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 import { hashString } from "@jgengine/core/random/rng";
 import { createSkyLight, readSkyLight } from "./skyLight.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Props for {@link VolumetricClouds}: fully resolved cloud rules. Light and cover come from the scene's {@link readSkyLight}. */
 export interface VolumetricCloudsProps {
@@ -218,7 +218,7 @@ export function VolumetricClouds({ rules }: VolumetricCloudsProps) {
   );
 
   const albedo = useRef(new THREE.Color());
-  useFrame((state, delta) => {
+  useFrameTask((state, delta) => {
     timeRef.current += delta;
     frameRef.current = (frameRef.current + 1) % 64;
     const mesh = meshRef.current;

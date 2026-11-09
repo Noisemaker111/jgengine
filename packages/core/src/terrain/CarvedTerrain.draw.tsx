@@ -1,4 +1,4 @@
-import { type ThreeElements, useFrame, useThree } from "@react-three/fiber";
+import { type ThreeElements, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
@@ -11,6 +11,7 @@ import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 import { useSlicedValue } from "@jgengine/core/render/useSlicedValue.draw";
 import { CHUNKED_GROUND_MIN_VERTICES, GroundChunks } from "./terrainChunks.draw";
 import { fieldGroundGeometryJob, resolveFieldGroundGrid, type FieldGroundOptions } from "./terrainMath.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Props for `CarvedTerrain`: the terrain field to mesh, its size, resolution, colouring and material settings. */
 export interface CarvedTerrainProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> {
@@ -133,7 +134,7 @@ function ChunkedGround({
     },
     [chunks],
   );
-  useFrame((state, delta) => {
+  useFrameTask((state, delta) => {
     if (ready !== chunks || refining.current !== null) return;
     sinceCheck.current += delta;
     if (sinceCheck.current < REFINE_INTERVAL) return;

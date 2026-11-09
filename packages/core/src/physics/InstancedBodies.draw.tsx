@@ -1,11 +1,11 @@
 // @skill jgengine-world
-import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 import type { PhysicsWorld } from "@jgengine/core/physics/physicsWorld";
 
 import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Props for InstancedBodies: the physics world to draw and optional state tinting. */
 export interface InstancedBodiesProps {
@@ -57,7 +57,7 @@ export function InstancedBodies({ world, debugTint = false, baseColors, epoch = 
     lastTintRef.current = null;
   }, [epoch, debugTint]);
 
-  useFrame(() => {
+  useFrameTask(() => {
     const mesh = meshRef.current;
     if (mesh === null) return;
     const count = world.count;

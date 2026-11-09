@@ -1,4 +1,4 @@
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { UniformMaterial } from "@jgengine/core/render/uniformMaterial.draw";
 
@@ -7,6 +7,7 @@ import { createWeatherQuadGeometry } from "./weatherGeometry.draw";
 import { DEFAULT_SNOW_COUNT, DEFAULT_SNOW_DENSITY, resolveWeatherInstanceCount } from "./weatherMath";
 import { WEATHER_SHELTER_SHADER } from "./weatherShelter.draw";
 import { useWeatherUniformSet, type WeatherVector } from "./weatherUniforms.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Props for {@link SnowField}: flake count, density and budget, area, fall speed, wind and look. */
 export interface SnowFieldProps {
@@ -138,7 +139,7 @@ export function SnowField({
     });
   }, [color, opacity, shared, size, speed, sway]);
 
-  useFrame(() => {
+  useFrameTask(() => {
     const anchor = followCamera ? camera.position : null;
     const uniforms = material.uniforms;
     const target = uniforms.uAnchor.value;

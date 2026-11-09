@@ -1,4 +1,4 @@
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { UniformMaterial } from "@jgengine/core/render/uniformMaterial.draw";
@@ -10,6 +10,7 @@ import { createWeatherQuadGeometry } from "./weatherGeometry.draw";
 import { DEFAULT_RAIN_COUNT, DEFAULT_RAIN_DENSITY, resolveWeatherInstanceCount } from "./weatherMath";
 import { WEATHER_SHELTER_SHADER } from "./weatherShelter.draw";
 import { useWeatherUniformSet, type WeatherVector } from "./weatherUniforms.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Props for {@link RainField}: drop count, density and budget, area, fall speed, wind and look. */
 export interface RainFieldProps {
@@ -70,7 +71,7 @@ export function RainField({
     reportRain(source, 0);
     reportWind(source, null);
   }, [source]);
-  useFrame(() => {
+  useFrameTask(() => {
     reportRain(source, rainAmount(density, shared.rain.value));
     reportWind(source, [shared.wind.value.x, shared.wind.value.z]);
   });
@@ -156,7 +157,7 @@ export function RainField({
     });
   }, [color, length, opacity, shared, speed, width]);
 
-  useFrame(() => {
+  useFrameTask(() => {
     const anchor = followCamera ? camera.position : null;
     const uniforms = material.uniforms;
     const target = uniforms.uAnchor.value;

@@ -1,9 +1,9 @@
-import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import type { CombatVfxEvent, VfxKind } from "@jgengine/core/game/events";
 import { useGameContext } from "@jgengine/react/provider";
 import { clamp01 } from "../math/scalar";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 interface ActiveVfx {
   key: number;
@@ -146,7 +146,7 @@ function VfxItem({ event, texture }: { event: CombatVfxEvent; texture: THREE.Tex
   const particles = useMemo(() => makeParticles(event.kind), [event.kind]);
   const scratch = useRef(new THREE.Vector3());
 
-  useFrame(() => {
+  useFrameTask(() => {
     const p = clamp01((performance.now() - born.current) / event.durationMs);
     const kind = event.kind;
     for (let i = 0; i < particles.length; i += 1) {

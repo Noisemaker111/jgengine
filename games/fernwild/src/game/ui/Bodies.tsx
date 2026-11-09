@@ -1,16 +1,16 @@
 import { useReducer, useRef, type ReactNode } from "react";
-import { useFrame } from "@react-three/fiber";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import { LightBeam } from "@jgengine/core/map/LightBeam.draw";
 
 import { bodies } from "../deathBody";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Fallen survivors' bodies: a bundle where they fell and a pale beam of light above it to find it by. */
 export function Bodies({ ctx }: WorldOverlayProps): ReactNode {
   const [, redraw] = useReducer((n: number) => n + 1, 0);
   const drawn = useRef("");
   // Bodies come and go rarely; redraw only when the set changes.
-  useFrame(() => {
+  useFrameTask(() => {
     const key = bodies(ctx)
       .map((body) => body.id)
       .join(",");

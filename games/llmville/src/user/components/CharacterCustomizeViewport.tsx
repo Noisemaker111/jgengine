@@ -1,15 +1,16 @@
 import { OrbitControls } from "@react-three/drei";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas } from "@react-three/fiber";
 import { Suspense, useRef } from "react";
 import type { Group } from "three";
 
 import { PlayerCharacterFigure } from "@/user/components/PlayerCharacterFigure";
 import { LLMVILLE_CHARACTER_PALETTE, type CharacterLook } from "@/user/playerCharacterFigure";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 function RotatingFigure({ look }: { look: CharacterLook }) {
   const groupRef = useRef<Group>(null);
 
-  useFrame((_, delta) => {
+  useFrameTask((_, delta) => {
     const group = groupRef.current;
     if (!group) return;
     group.rotation.y += delta * 0.45;

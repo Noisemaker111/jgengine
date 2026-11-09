@@ -1,5 +1,5 @@
 // @skill jgengine-world
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import { Quaternion, Vector3 } from "three";
 import { useGameContext } from "@jgengine/react/provider";
@@ -12,6 +12,7 @@ import { sceneLineBlocked } from "./occlusionRaycast";
 import { enclosurePreset, type EnclosureSample } from "@jgengine/core/audio/reverb";
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { sampleEnclosure } from "./reverbRack.view";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** How often the shell listens for walls and a ceiling around the player, seconds. */
 const ENCLOSURE_INTERVAL_S = 0.5;
@@ -55,7 +56,7 @@ export function AudioListener({ engine, anchor = "camera" }: { engine: AudioEngi
     return () => engine.setOcclusionSource(null);
   }, [engine, ctx]);
   useEffect(() => installAudioProbe(engine), [engine]);
-  useFrame((_, dt) => {
+  useFrameTask((_, dt) => {
     const { direction, up, quaternion } = scratchRef.current;
     camera.getWorldDirection(direction);
     up.copy(camera.up).applyQuaternion(camera.getWorldQuaternion(quaternion));
@@ -111,7 +112,7 @@ function useTrackedEmitters(
     [engine],
   );
 
-  useFrame(() => stateRef.current?.tracker.step());
+  useFrameTask(() => stateRef.current?.tracker.step());
 }
 
 function entitySources(ctx: ReturnType<typeof useGameContext>): EmitterSources {

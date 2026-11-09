@@ -1,4 +1,4 @@
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type ComponentType, type MutableRefObject } from "react";
 import * as THREE from "three";
 import type { CameraWeaponView, FirstPersonCameraConfig } from "@jgengine/core/game/playableGame";
@@ -20,6 +20,7 @@ import { usePlayerFov } from "./PlayerFov.draw";
 import { GAME_SIM_FRAME_PRIORITY, ORBIT_CAMERA_FRAME_PRIORITY } from "./orbitCameraMath";
 import { requestRawPointerLock } from "@jgengine/core/input/pointerLock";
 import { readRegisteredFirstPersonMuzzle, registerTrackedFirstPersonMuzzle } from "./customMuzzle.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 const eyePose: RenderPose = [0, 0, 0, 0];
 
@@ -100,7 +101,7 @@ export function GameFirstPersonCamera({
     };
   }, [domElement, sensitivity, maxPitch, yawRef, pitchRef]);
 
-  useFrame((_, dt) => {
+  useFrameTask((_, dt) => {
     const entity = ctx.scene.entity.get(followId);
     if (entity === null) return;
     const turn = ctx.camera.takeTurnTo();
@@ -204,7 +205,7 @@ function FirstPersonViewmodel({
       return true;
     });
   }, [camera]);
-  useFrame(() => {
+  useFrameTask(() => {
     const group = groupRef.current;
     if (group === null) return;
     const pose = poseRef.current;

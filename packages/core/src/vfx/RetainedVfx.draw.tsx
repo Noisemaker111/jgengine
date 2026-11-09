@@ -1,10 +1,10 @@
-import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import type { VfxRef } from "@jgengine/core/game/events";
 import type { VfxInstanceState } from "@jgengine/core/vfx/vfxInstance";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { useGameContext } from "@jgengine/react/provider";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** The renderer's view of a retained instance: its authoritative state plus fade bookkeeping. */
 interface LiveEntry {
@@ -54,7 +54,7 @@ function RetainedBeam({
   const delta = useRef(new THREE.Vector3());
   const quat = useRef(new THREE.Quaternion());
 
-  useFrame(() => {
+  useFrameTask(() => {
     const entry = live.get(id);
     const mesh = meshRef.current;
     const mat = matRef.current;

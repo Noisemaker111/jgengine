@@ -1,4 +1,4 @@
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
@@ -12,6 +12,7 @@ import { useGameContext } from "@jgengine/react/provider";
 import { cameraShake } from "@jgengine/core/camera/shake/cameraShake";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { visitVisible } from "@jgengine/core/visibility/visitVisible.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** What {@link ImpactFeedback} reacts with; every field defaults on. */
 export interface ImpactFeedbackOptions {
@@ -350,7 +351,7 @@ export function ImpactFeedback({ classes, marks = true, hitstop = true }: Impact
     };
   }, [ctx, scene, camera, classes, hitstop, limit, stop, reducedMotion]);
 
-  useFrame(() => {
+  useFrameTask(() => {
     const now = performance.now();
     stop.tick(now);
     const instanced = mesh.current;

@@ -1,4 +1,4 @@
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import {
@@ -19,6 +19,7 @@ import { NetPanel } from "./NetPanel.draw";
 import { KeysPanel } from "./KeysPanel.view";
 import { ColPanel } from "./ColPanel.view";
 import { TunePanel } from "./TunePanel.view";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 export { applyStoredDevtoolsOverrides, persistDevtoolsOverrides } from "./devtoolsOverrides.view";
 
@@ -96,7 +97,7 @@ export function DevtoolsRendererProbe() {
       gl.info.autoReset = true;
     };
   }, [gl]);
-  useFrame((state) => {
+  useFrameTask((state) => {
     const info = state.gl.info;
     const now = performance.now();
     if (now - lastSampleAt.current >= RENDER_SAMPLE_MS) {

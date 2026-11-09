@@ -1,5 +1,4 @@
 import { deathRemovesEntity } from "@jgengine/core/combat/death";
-import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
@@ -11,6 +10,7 @@ import { useGameContext } from "@jgengine/react/provider";
 
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { useRagdoll } from "./useRagdoll.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 const bodies = new Map<string, THREE.Object3D>();
 
@@ -62,7 +62,7 @@ const stats = { deaths: 0, corpses: 0, skippedNoBody: 0, skippedNoRig: 0, skippe
 function CorpseBody({ corpse, lifeS, sinkS }: { corpse: Corpse; lifeS: number; sinkS: number }) {
   useRagdoll(corpse.body, { map: corpse.map, world: corpse.world, active: true, height: corpse.height });
   const restY = useRef<number | null>(null);
-  useFrame(() => {
+  useFrameTask(() => {
     const age = performance.now() / 1000 - corpse.born;
     if (age < lifeS) return;
     // Sink the settled body into the ground instead of popping it out.

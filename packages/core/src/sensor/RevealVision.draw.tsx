@@ -1,11 +1,11 @@
 // @skill jgengine-world
 import { useMemo, useState } from "react";
-import { useFrame } from "@react-three/fiber";
 import { DoubleSide } from "three";
 
 import { createRevealQuery, type RevealHit } from "@jgengine/core/sensor/revealQuery";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { usePlayer, useSceneEntities } from "@jgengine/react/hooks";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Which entities reveal vision finds: origin, radius, wanted tags and how to read an entity's tags. */
 export interface RevealVisionOptions {
@@ -48,7 +48,7 @@ export function useRevealHits(options: RevealVisionOptions): readonly RevealHit[
 /** Frames on a counter while `active`: the hook lists only change on membership, so a live overlay drives its own re-render. */
 function useFrameRefresh(active: boolean): number {
   const [frame, setFrame] = useState(0);
-  useFrame(() => {
+  useFrameTask(() => {
     if (active) setFrame((value) => (value + 1) % 1_000_000);
   });
   return frame;

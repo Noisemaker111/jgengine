@@ -1,9 +1,9 @@
 import { useRef } from "react";
-import { useFrame } from "@react-three/fiber";
 import { useGameContext } from "@jgengine/react/provider";
 import { useStore } from "@jgengine/react/store";
 import type { Group } from "three";
 import { RELAY, relayStore } from "../relay";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Original salvage antenna: copper coils, ceramic insulators, riveted feet and a split tuning fork. */
 export function SalvageRelay() {
@@ -12,7 +12,7 @@ export function SalvageRelay() {
   const rotor = useRef<Group>(null);
   const live = state.phase === "defend" || state.phase === "upload";
   const color = state.rewarded ? "#7ef1bf" : live ? "#ffbb55" : "#64dbea";
-  useFrame((_, dt) => { if (rotor.current && !ctx.time.isPaused()) rotor.current.rotation.y += dt * (live ? 1.1 : 0.2); });
+  useFrameTask((_, dt) => { if (rotor.current && !ctx.time.isPaused()) rotor.current.rotation.y += dt * (live ? 1.1 : 0.2); });
   const y = ctx.world.groundHeightAt(RELAY.x, RELAY.z);
   return <group position={[RELAY.x, y, RELAY.z]}>
     <mesh receiveShadow position={[0, 0.12, 0]}><cylinderGeometry args={[2.2, 2.5, 0.24, 12]} /><meshStandardMaterial color="#293a40" roughness={0.7} metalness={0.45} /></mesh>

@@ -1,5 +1,5 @@
 import { Html } from "@react-three/drei";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { useCallback, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
 import {
@@ -10,6 +10,7 @@ import {
   type EntityScreenProjection,
   type ProjectEntity,
 } from "@jgengine/core/hud/entityFrames.view";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /**
  * Returns a {@link ProjectEntity} bound to the live R3F camera and canvas size —
@@ -127,7 +128,7 @@ export function WorldEntityFrames<E extends EntityFrameEntry>({
 /** Bumps a state setter on a throttled frame cadence to drive re-projection. */
 function useThreeFrameTick(setTick: (updater: (n: number) => number) => void, tickMs: number): void {
   const last = useRef(0);
-  useFrame((state) => {
+  useFrameTask((state) => {
     const elapsedMs = state.clock.elapsedTime * 1000;
     if (elapsedMs - last.current < tickMs) return;
     last.current = elapsedMs;

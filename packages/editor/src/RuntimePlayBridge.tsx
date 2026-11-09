@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { useFrame } from "@react-three/fiber";
 
 import type { RuntimeEntityState, RuntimePlayControl } from "@jgengine/core/editor/index";
 import { useGameContext } from "@jgengine/react/provider";
@@ -7,6 +6,7 @@ import { useGameContext } from "@jgengine/react/provider";
 import type { EditorHostApi } from "./session";
 import { MICRO } from "./chromeStyles";
 import { PlayModeBar, usePlayControl } from "./shell/PlayModeBar";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 const PUBLISH_MS = 100;
 
@@ -61,7 +61,7 @@ export function RuntimePlayPublisher({ api }: { api: EditorHostApi }) {
     return () => clearInterval(timer);
   }, [api, ctx]);
 
-  useFrame(() => {
+  useFrameTask(() => {
     const play = api.getPlayControl();
     if (!play.paused) {
       if (ctx.time.isPaused()) ctx.time.play();

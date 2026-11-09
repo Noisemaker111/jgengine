@@ -1,4 +1,3 @@
-import { useFrame } from "@react-three/fiber";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import { SkeletonUtils } from "three-stdlib";
@@ -26,6 +25,7 @@ import {
   DEFAULT_CHARACTER_LOOK,
   VINYL_MATERIAL,
 } from "@/user/playerCharacterFigure";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 interface PlayerCharacterFigureProps {
   look?: CharacterLook;
@@ -303,7 +303,7 @@ export function PlayerCharacterFigure({
     return undefined;
   }, [skinnedMesh, look]);
 
-  useFrame(function playerCharacter(state) {
+  useFrameTask(function playerCharacter(state) {
     if (walkAction && clip) {
       const phase = walkPhase !== undefined ? walkPhase : state.clock.elapsedTime * WALK_RATE;
       if (isWalking) {

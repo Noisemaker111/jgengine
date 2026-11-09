@@ -1,5 +1,5 @@
 // @skill jgengine-world
-import { useFrame, useThree, type ThreeElements } from "@react-three/fiber";
+import { useThree, type ThreeElements } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useOptionalGameContext } from "@jgengine/react/provider";
@@ -11,6 +11,7 @@ import { readSkyLight } from "@jgengine/core/sky/skyLight.draw";
 import { createOceanConfig, oceanBedResolution, type OceanConfig, type ResolvedOceanConfig } from "./OceanConfig.draw";
 import { createOceanMaterial, deepBedTexture, syncOceanMaterial } from "./OceanMaterial.draw";
 import type { OceanBedBounds } from "./oceanBed";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Props for {@link Ocean}: the ocean config, the ground under it, and mesh props. */
 export interface OceanProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> {
@@ -117,7 +118,7 @@ export function Ocean({ config, bedAt, bedBounds, ...meshProps }: OceanProps) {
   const world = useMemo(() => new THREE.Vector3(), []);
 
   const ctx = useOptionalGameContext();
-  useFrame((state, delta) => {
+  useFrameTask((state, delta) => {
     // Waves run on the game clock, so they stop when the game pauses and line up with the water
     // surface buoyancy samples; before any game time has passed (a title screen) or with no game
     // (an editor preview) they run on real time.

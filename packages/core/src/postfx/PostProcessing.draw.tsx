@@ -1,7 +1,7 @@
 // @skill jgengine-world
 import { definedOnly } from "../data/definedOnly";
 import { requireUniform } from "../render/uniformMaterial.draw";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { EffectComposer, RenderPass, type Pass, type ShaderPass } from "three-stdlib";
@@ -57,6 +57,7 @@ import { devtools } from "@jgengine/core/devtools/devtools";
 import { excludesFromOutline, StylizePass } from "./stylizePass.draw";
 import { renderShadowlessPrepass } from "./shadowPrepass.draw";
 import { JitteredRenderPass, TemporalAaPass } from "./temporalAaPass.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /**
  * GTAO renders the scene with an `overrideMaterial` normal/depth prepass when it has no GBuffer,
@@ -747,7 +748,7 @@ export function PostProcessing({
     syncSize(built, Math.max(1, size.width), Math.max(1, size.height), gl.getPixelRatio());
   }, [gl, size.width, size.height]);
 
-  useFrame((_, delta) => {
+  useFrameTask((_, delta) => {
     const built = builtRef.current;
     if (built === null) return;
     if (built.grade !== null) requireUniform(built.grade.uniforms, "uTime").value += delta;

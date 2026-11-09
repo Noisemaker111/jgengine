@@ -1,4 +1,3 @@
-import { useFrame } from "@react-three/fiber";
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
@@ -11,6 +10,7 @@ import { hashUnit } from "@jgengine/core/random/rng";
 import { StaticShapeInstances, type StaticShapeInstance } from "@jgengine/core/instancing/staticShapeInstances.draw";
 import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** The surface each dressing family wears. Any family left out falls back to a plain painted default. */
 export interface InteriorDressingSurfaces {
@@ -269,7 +269,7 @@ export function PracticalLights({ fixtures, count = 6, shadowed = 0, lit = count
     for (const light of lights) light.dispose();
   }, [lights]);
   const frame = useRef(every);
-  useFrame(({ camera, clock }) => {
+  useFrameTask(({ camera, clock }) => {
     frame.current += 1;
     if (frame.current < every) {
       const t = clock.elapsedTime;

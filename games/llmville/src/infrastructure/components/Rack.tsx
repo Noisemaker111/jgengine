@@ -1,4 +1,3 @@
-import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef, type Ref, type RefObject } from "react";
 import { RoundedBox } from "@react-three/drei";
 import type { MeshStandardMaterial as MeshStandardMaterialType } from "three";
@@ -15,6 +14,7 @@ import {
   type RackCoolingUnitId,
 } from "@llmville/game/infrastructure/catalog";
 import type { InfrastructureBuildItemId } from "@llmville/game/build/catalog";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 const COOLANT_COLORS: Record<RackCoolantType, string> = {
   air: "#f59e0b",
@@ -799,7 +799,7 @@ export default function Rack({
   [working, rackId, rackType, installedHardwareSlots, installedCoolerId]);
   const activityColor = overheated ? "#e8836b" : workloads.includes("training") ? "#e0a95c" : workloads.includes("serving") ? "#5fc2a8" : workloads.includes("scraping") ? "#8db6de" : "#718078";
 
-  useFrame(function rackAnimation(_state, delta) {
+  useFrameTask(function rackAnimation(_state, delta) {
     if (ghost) return;
     elapsedRef.current += delta;
     if (lightRef.current) {

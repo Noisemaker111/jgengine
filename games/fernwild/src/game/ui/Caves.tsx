@@ -1,11 +1,11 @@
 import { useMemo, useRef, type ReactNode } from "react";
-import { useFrame } from "@react-three/fiber";
 import type { Mesh } from "three";
 import { Cave } from "../../engine-local/cave/Cave.draw";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 
 import { artifactHere, cavesOf, type IslandCave } from "../caves";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Hard caves are lit a hotter colour, the rest by pale crystal. */
 const GLOW = { soft: "#7fd6ff", hard: "#ff7a3c" };
@@ -56,7 +56,7 @@ export function Caves({ ctx }: WorldOverlayProps): ReactNode {
 /** The artifact: a gold gem turning over its pedestal, there only while nobody has taken it. */
 function Artifact({ ctx, cave }: { ctx: GameContext; cave: IslandCave }): ReactNode {
   const gem = useRef<Mesh>(null);
-  useFrame((_, delta) => {
+  useFrameTask((_, delta) => {
     const mesh = gem.current;
     if (mesh === null) return;
     mesh.visible = artifactHere(ctx, cave);

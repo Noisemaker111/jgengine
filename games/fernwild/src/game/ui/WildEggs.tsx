@@ -1,8 +1,8 @@
 import { useReducer, useRef, type ReactNode } from "react";
-import { useFrame } from "@react-three/fiber";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 
 import { eggsOnGround } from "../eggs";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Egg size by its item id: an extra-small dodo egg to an extra-large one. */
 const SIZE: Readonly<Record<string, number>> = { egg_xs: 0.09, egg_s: 0.12, egg_m: 0.16, egg_l: 0.21, egg_xl: 0.28 };
@@ -11,7 +11,7 @@ const SIZE: Readonly<Record<string, number>> = { egg_xs: 0.09, egg_s: 0.12, egg_
 export function WildEggs({ ctx }: WorldOverlayProps): ReactNode {
   const [, redraw] = useReducer((n: number) => n + 1, 0);
   const drawn = useRef("");
-  useFrame(() => {
+  useFrameTask(() => {
     const key = eggsOnGround(ctx).map((egg) => egg.id).join(",");
     if (key !== drawn.current) {
       drawn.current = key;

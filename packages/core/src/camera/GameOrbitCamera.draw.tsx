@@ -1,5 +1,5 @@
 import { OrbitControls } from "@react-three/drei";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { useRef, type ComponentRef, type MutableRefObject } from "react";
 import { MOUSE, PerspectiveCamera, Raycaster, type Camera, Vector3 } from "three";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
@@ -23,6 +23,7 @@ import {
 import { usePlayerFov } from "./PlayerFov.draw";
 import type { Xyz } from "@jgengine/core/math/xyz";
 import type { CameraFollowState } from "@jgengine/core/camera/cameraConfig";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 const drawnPose: RenderPose = [0, 0, 0, 0];
 const drawnPosition: [number, number, number] = [0, 0, 0];
@@ -97,7 +98,7 @@ export function GameOrbitCamera({
   });
   const followId = followEntityId ?? userId;
 
-  useFrame((_, delta) => {
+  useFrameTask((_, delta) => {
     const controls = controlsRef.current;
     const entity = ctx.scene.entity.get(followId);
     if (controls === null || entity === null) return;

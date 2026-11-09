@@ -1,10 +1,10 @@
 // @skill jgengine-world
 import { useEffect, useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 import type { FireLandscape } from "./fireLandscape";
 import { seededRng } from "../random/rng";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Props for {@link FireLandscapeView}. */
 export interface FireLandscapeViewProps {
@@ -210,7 +210,7 @@ export function FireLandscapeView({ fire, heightAt, wind = [0, 0], maxFlames = 2
 
   const cursor = useRef({ row: 0, lastTime: Number.NaN, random: seededRng("fire-smoke"), spawnDebt: 0 });
 
-  useFrame((state, delta) => {
+  useFrameTask((state, delta) => {
     const c = cursor.current;
     const n = cols * rows;
     const { data } = overlay;

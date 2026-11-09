@@ -1,5 +1,4 @@
 import { Html, Line } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import * as THREE from "three";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
@@ -30,6 +29,7 @@ import {
   type AimLaserDebug,
   type DebugShapeEntry,
 } from "./collisionDebugMath";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 function useCollisionDebugState(): CollisionDebugState {
   return useSyncExternalStore(
@@ -278,7 +278,7 @@ export function CollisionDebugWorld() {
     });
   }, [ctx, state.layers.projectiles, state.layers.muzzles]);
 
-  useFrame(() => {
+  useFrameTask(() => {
     if (!anyCollisionLayerOn(state.layers)) {
       if (shapes.length > 0) setShapes([]);
       if (laser !== null) setLaser(null);

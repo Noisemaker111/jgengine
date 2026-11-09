@@ -1,4 +1,4 @@
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
@@ -9,6 +9,7 @@ import { useAccessibilitySettings } from "@jgengine/core/settings/accessibilityS
 import { useGameContext } from "@jgengine/react/provider";
 
 import { startFromMuzzle } from "@jgengine/core/hud/WorldHud.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Whether `source` is the local player or what they currently drive. Exported for tests. @internal */
 export function isLocalSource(ctx: GameContext, source: string | undefined): boolean {
@@ -186,7 +187,7 @@ export function HitMarkers({ lifeMs = 180 }: { lifeMs?: number }) {
     };
   }, [ctx, slots, lifeMs]);
 
-  useFrame(() => {
+  useFrameTask(() => {
     const now = performance.now();
     for (const slot of slots) {
       if (!slot.sprite.visible) continue;
@@ -253,7 +254,7 @@ export function MuzzleFlashes({ lifeMs = 55 }: { lifeMs?: number }) {
     });
   }, [ctx, camera, slots, lifeMs, reducedMotion]);
 
-  useFrame(() => {
+  useFrameTask(() => {
     const now = performance.now();
     for (const slot of slots) {
       if (!slot.sprite.visible) continue;

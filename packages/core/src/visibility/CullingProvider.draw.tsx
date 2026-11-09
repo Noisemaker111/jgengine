@@ -1,6 +1,6 @@
 // @skill jgengine-world
 import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode, type MutableRefObject } from "react";
-import { useThree, useFrame } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { useGameContext } from "@jgengine/react/provider";
 import type { CameraView } from "@jgengine/core/visibility/frustum";
@@ -8,6 +8,7 @@ import type { VisibilityConfig } from "@jgengine/core/visibility/config";
 import { buildCullingDriver } from "./cullingDriver";
 import { createVisibilityChanges, type VisibilityChanges } from "./visibilityChanges";
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 type VisiblePredicate = (id: string) => boolean;
 
@@ -113,7 +114,7 @@ export function CullingProvider({ config, drawDistance, children }: { config: Vi
   const viewScratch = useMemo(createViewScratch, []);
   const changes = useMemo(createVisibilityChanges, []);
 
-  useFrame(() => {
+  useFrameTask(() => {
     const view = driver === null ? null : viewFromCamera(camera, viewScratch);
     if (driver === null || view === null) {
       if (predicateRef.current !== ALWAYS_VISIBLE) {

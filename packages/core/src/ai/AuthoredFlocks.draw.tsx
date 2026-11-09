@@ -1,5 +1,5 @@
 // @skill jgengine-world
-import { useFrame, useLoader } from "@react-three/fiber";
+import { useLoader } from "@react-three/fiber";
 import { Suspense, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import * as THREE from "three";
 
@@ -13,6 +13,7 @@ import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
 import { resolveModel } from "@jgengine/core/model/resolveModel";
 import { canInstanceStaticScene } from "@jgengine/core/instancing/staticObjectBatches.draw";
 import { buildScatterModelSources, disposeScatterModelSources, type ScatterModelSource } from "@jgengine/core/scatter/scatterModels.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Caller-owned species models for authored habitat agents. */
 export interface AuthoredFlocksProps {
@@ -105,7 +106,7 @@ export function AuthoredFlocks({ models, assets, forward = [0, 0, -1], maxInstan
   const caps = useRef(new Map<string, number>());
   const [shown, setShown] = useState<readonly string[]>([]);
 
-  useFrame(() => {
+  useFrameTask(() => {
     const next = caps.current;
     for (const species of next.keys()) next.set(species, 0);
     let count = 0;
@@ -151,7 +152,7 @@ function InstancedFlock({ species, model, caps, limit, nose, gltf }: SpeciesProp
   useEffect(() => () => disposeScatterModelSources(harvested.root), [harvested]);
   const meshes = useRef<(THREE.InstancedMesh | null)[]>([]);
   const scratch = useMemo(() => ({ pose: new THREE.Object3D(), direction: new THREE.Vector3(), matrix: new THREE.Matrix4(), agents: [] as FlockStepAgent[] }), []);
-  useFrame(() => {
+  useFrameTask(() => {
     const agents = speciesAgents(ctx.environment.flocks(), species, caps.current.get(species) ?? 0, scratch.agents);
     harvested.sources.forEach((source, index) => {
       const mesh = meshes.current[index];
@@ -185,7 +186,7 @@ function RiggedFlock({ species, model, caps, nose }: SpeciesProps): ReactElement
   const direction = useRef(new THREE.Vector3());
   const [, setGeneration] = useState(0);
 
-  useFrame(() => {
+  useFrameTask(() => {
     let changed = false;
     let count = 0;
     const cap = caps.current.get(species) ?? 0;

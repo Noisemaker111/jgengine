@@ -1,8 +1,8 @@
-import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
 import type { BaseBuilding, StructurePlan, StructureWorldBox } from "./baseBuilding";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Props for {@link BaseStructures}. */
 export interface BaseStructuresProps {
@@ -44,7 +44,7 @@ export function BaseStructures({ building, colorOf, ghost, validColor = "#34d399
   const planKey = useRef("");
   const materials = useRef(new Map<string, THREE.MeshStandardMaterial>());
 
-  useFrame(() => {
+  useFrameTask(() => {
     const now = building.version();
     if (now !== version) setVersion(now);
     const next = ghost?.() ?? null;

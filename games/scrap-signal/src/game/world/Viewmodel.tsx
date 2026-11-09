@@ -1,5 +1,5 @@
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { Group, PointLight, Vector3 } from "three";
 import { useRef, useState } from "react";
 import { useGameContext } from "@jgengine/react/provider";
@@ -12,6 +12,7 @@ import { handlingView } from "../handling";
 import { ELEMENT_COLORS } from "../palette";
 import { SalvageRelay } from "./Relay";
 import { QuestMarker } from "./QuestMarker";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /**
  * Blaster silhouettes, built from primitives rather than cast from a model pack.
@@ -305,7 +306,7 @@ function FerralonAir() {
   const [strength, setStrength] = useState(1);
   const zoneId = useRef<string | null>(null);
 
-  useFrame(() => {
+  useFrameTask(() => {
     const zone = zoneAt(camera.position.x, camera.position.z);
     const nextId = zone?.id ?? null;
     if (nextId !== zoneId.current) {
@@ -369,7 +370,7 @@ export function FerralonViewmodel() {
   const gunId = equippedGun();
   const gun = gunId === null ? undefined : gunById(gunId);
 
-  useFrame((state, dt) => {
+  useFrameTask((state, dt) => {
     const group = rig.current;
     if (group === null) return;
     const nowMs = gameNow();

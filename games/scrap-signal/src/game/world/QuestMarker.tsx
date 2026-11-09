@@ -1,5 +1,5 @@
 import { Html } from "@react-three/drei";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { useRef, useState, type ReactNode } from "react";
 
 import { gamePhase } from "@jgengine/core/game/gamePhase";
@@ -10,6 +10,7 @@ import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames";
 
 import { ELEMENT_COLORS, FERRALON } from "../palette";
 import { questWaypoint } from "../quests/waypoint";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Frames between looks for the objective: enemies walk, so the marker follows them a few times a second. */
 const LOOK_EVERY_FRAMES = 8;
@@ -30,7 +31,7 @@ export function QuestMarker(): ReactNode {
   const [entries, setEntries] = useState<readonly WaypointEntry[]>([]);
   const frames = useRef(0);
   const drawn = useRef("");
-  useFrame(() => {
+  useFrameTask(() => {
     frames.current += 1;
     if (frames.current % LOOK_EVERY_FRAMES !== 0) return;
     const goal = gamePhase(ctx) === "playing" ? questWaypoint(ctx) : null;

@@ -1,9 +1,9 @@
 import { useReducer, useRef, type ReactNode } from "react";
-import { useFrame } from "@react-three/fiber";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 
 import { eggs } from "../breeding";
 import { speciesDef } from "../data/species";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** A fertilized egg's size by its kind: a dodo's fits a hand, a bronto's is a boulder (approximate). */
 function eggSize(species: string): number {
@@ -14,7 +14,7 @@ function eggSize(species: string): number {
 export function Eggs({ ctx }: WorldOverlayProps): ReactNode {
   const [, redraw] = useReducer((n: number) => n + 1, 0);
   const drawn = useRef("");
-  useFrame(() => {
+  useFrameTask(() => {
     const key = eggs(ctx)
       .map((egg) => egg.id)
       .join(",");

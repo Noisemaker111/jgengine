@@ -1,5 +1,5 @@
 // @skill jgengine-world
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { useEffect, useRef, useState, type ReactElement } from "react";
 import type { Group } from "three";
 
@@ -14,6 +14,7 @@ import { useGameContext } from "@jgengine/react/provider";
 
 import { fieldPrograms, ParticleField, type ParticleFieldMetrics } from "./ParticleField.draw";
 import type { Vec3 } from "@jgengine/core/world/geometry";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 interface ParticlePose { position: Vec3; yaw: number; found: boolean }
 
@@ -250,7 +251,7 @@ export function ParticleEmitters({ quality, particleCap, particleBudget, diagnos
     };
   }, [ctx]);
 
-  useFrame(() => {
+  useFrameTask(() => {
     const started = diagnostics ? performance.now() : 0;
     const gameTime = ctx.time.now();
     const dt = resolveParticleDelta(previousTime.current, gameTime);

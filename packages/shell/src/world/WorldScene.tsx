@@ -1,6 +1,6 @@
 import { modelWithAuthoredMaterials } from "@jgengine/core/editor/materialAuthoring";
 import { modelWithAuthoredNodeVisibility } from "@jgengine/core/editor/modelNodeVisibility";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { memo, useCallback, useEffect, useMemo, useRef, useSyncExternalStore, type ComponentType, type ReactNode } from "react";
 import * as THREE from "three";
 
@@ -54,6 +54,7 @@ import { writePoseIfChanged, writeRenderPoseIfChanged, emptyPoseMemo, type PoseM
 import type { RenderPose } from "@jgengine/core/runtime/poseInterpolation";
 import { createSnapshotBuffer, type SnapshotBuffer } from "@jgengine/core/runtime/snapshotBuffer";
 import { POINTER_ENTITY_KEY, POINTER_OBJECT_KEY } from "@jgengine/core/input/pointerService.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Deterministic HSL color from a stable instance id (default entity/object tint). */
 function colorFromId(id: string): string {
@@ -103,7 +104,7 @@ const EntityMarker = memo(function EntityMarker({
 
   const scratchRef = useRef<RenderPose>([0, 0, 0, 0]);
   const memoRef = useRef<PoseMemo>(emptyPoseMemo());
-  useFrame((state) => {
+  useFrameTask((state) => {
     const group = groupRef.current;
     if (group === null) return;
     const live = ctx.scene.entity.get(entityId);
@@ -238,7 +239,7 @@ const ObjectMarker = memo(function ObjectMarker({
   const color = object.visual?.color ?? style?.color ?? colorFromId(object.catalogId);
   const opacity = object.visual?.opacity ?? style?.opacity ?? 1;
 
-  useFrame(() => {
+  useFrameTask(() => {
     const group = groupRef.current;
     if (group === null) return;
     const live = ctx.scene.object.get(instanceId);
@@ -619,7 +620,7 @@ export function RemotePlayers({ rows, presenceInterpolationMs = 100 }: { rows: P
       if (!active.has(userId)) buffers.current.delete(userId);
     }
   }, [rows, presenceInterpolationMs]);
-  useFrame(({ clock }) => {
+  useFrameTask(({ clock }) => {
     const now = clock.getElapsedTime() * 1000;
     for (const [userId, buffer] of buffers.current) {
       const group = groups.current.get(userId);

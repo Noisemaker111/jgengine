@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { AmbientLight, Color, Fog, HemisphereLight, SpotLight, type Group, type Object3D } from "three";
 import { useGameStore } from "@jgengine/react/hooks";
 import { IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";
@@ -13,6 +13,7 @@ import { STRATA } from "./strata";
 import { SuitStand } from "./fixtureArt";
 import type { Dive } from "./state";
 import type { Deep } from "./deep";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /**
  * What the strata below receiving look like: the seams, shelves, wrecks and lifts the descent is
@@ -138,7 +139,7 @@ function CreatureModel({ id, read }: { id: string; read: CreatureRead }) {
     const creature = read(id);
     return creature === undefined ? null : { species: creature.species, mode: creature.mode, windup: creature.mode === "winding" ? creature.windup : 0, health: creature.health };
   });
-  useFrame(() => {
+  useFrameTask(() => {
     const creature = read(id), group = body.current;
     if (creature === undefined || group === null) return;
     group.position.set(creature.at[0], 0, creature.at[2]);
@@ -286,7 +287,7 @@ export function Headlamp({ on }: { on: boolean }) {
   const ref = useRef<SpotLight>(null);
   const { scene } = useThree();
   useEffect(() => { const light = ref.current; if (light === null) return; light.userData["haze"] = false; scene.add(light.target); return () => { scene.remove(light.target); }; }, [scene]);
-  useFrame(({ camera }) => {
+  useFrameTask(({ camera }) => {
     const light = ref.current;
     if (light === null) return;
     // Carried a little behind the eye with a gentle falloff, so a wall at arm's length is lit, not

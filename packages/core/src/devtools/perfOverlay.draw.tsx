@@ -1,4 +1,4 @@
-import { useFrame, useStore, useThree } from "@react-three/fiber";
+import { useStore, useThree } from "@react-three/fiber";
 import { useEffect, useRef, type ReactElement } from "react";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
@@ -6,6 +6,7 @@ import { devtools } from "@jgengine/core/devtools/devtools";
 import type { NamedCost } from "./frameBreakdown";
 import { installFrameBreakdown } from "./frameBreakdown.draw";
 import { countSceneNodes } from "./frameSampler.view";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Frames the FPS graph keeps. */
 export const PERF_OVERLAY_FRAMES = 120;
@@ -66,7 +67,7 @@ export function PerfOverlayProbe({ sample }: { sample: PerfOverlaySample }): nul
       if (owned !== null && window.__jgFrameBreakdown === owned) owned.dispose();
     };
   }, [gl, store]);
-  useFrame(() => {
+  useFrameTask(() => {
     const now = performance.now();
     if (last.current !== null) {
       sample.intervals[sample.head] = now - last.current;

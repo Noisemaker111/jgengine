@@ -1,4 +1,4 @@
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { UniformMaterial } from "@jgengine/core/render/uniformMaterial.draw";
 
@@ -7,6 +7,7 @@ import { createWeatherQuadGeometry } from "./weatherGeometry.draw";
 import { DEFAULT_DUST_COUNT, DEFAULT_DUST_DENSITY, resolveWeatherInstanceCount } from "./weatherMath";
 import { WEATHER_SHELTER_SHADER } from "./weatherShelter.draw";
 import { useWeatherUniformSet, type WeatherVector } from "./weatherUniforms.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /**
  * Wind-borne particulate: dust, sand, ash, pollen, spores. Unlike rain and snow this is not falling
@@ -173,7 +174,7 @@ export function DustField({
     });
   }, [color, groundBias, opacity, shared, size, speed, sway]);
 
-  useFrame(() => {
+  useFrameTask(() => {
     const anchor = followCamera ? camera.position : null;
     const uniforms = material.uniforms;
     const target = uniforms.uAnchor.value;

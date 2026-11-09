@@ -1,10 +1,10 @@
 import { useReducer, useRef, type ReactNode } from "react";
-import { useFrame } from "@react-three/fiber";
 import type { Group } from "three";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import { LightBeam } from "@jgengine/core/map/LightBeam.draw";
 
 import { supplyDrops } from "../supplyDrops";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Tall enough to see over the redwoods from across the island, the way ARK's beams are. */
 const BEAM_HEIGHT = 220;
@@ -17,7 +17,7 @@ export function SupplyDrops({ ctx }: WorldOverlayProps): ReactNode {
   const [, redraw] = useReducer((n: number) => n + 1, 0);
   const drawn = useRef("");
   const groups = useRef(new Map<string, Group>());
-  useFrame(() => {
+  useFrameTask(() => {
     const drops = supplyDrops(ctx);
     const key = drops.map((drop) => `${drop.id}:${drop.landed}`).join(",");
     if (key !== drawn.current) {

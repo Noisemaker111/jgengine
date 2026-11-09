@@ -1,7 +1,7 @@
 // @skill jgengine-world
 import { oceanColor } from "@jgengine/core/water/oceanColor";
 import { waterSurfaceConfigFromDescriptor } from "@jgengine/core/water/waterSurface";
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";import { useFrame } from "@react-three/fiber";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { PresentationAssetBoundary } from "@jgengine/shell/presentationRecovery";
 import { PresentationRecoveredDraw, useRecoverableTexture } from "@jgengine/shell/presentationRecovery3d";
 import * as THREE from "three";
@@ -52,6 +52,7 @@ import { Ocean } from "@jgengine/core/water/Ocean.draw";
 import { oceanBedBounds } from "@jgengine/core/water/oceanBed";
 import { RainField } from "@jgengine/core/weather/RainField.draw";
 import { SnowField } from "@jgengine/core/weather/SnowField.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Props for {@link EnvironmentScene}: the environment world feature to draw. */
 export interface EnvironmentSceneProps {
@@ -413,7 +414,7 @@ function DynamicWater({ ocean, terrain }: { ocean: OceanEnvironmentDescriptor & 
   const [x, z] = ocean.position ?? [0, 0];
   const config = useOceanConfig(ocean);
   const { bedAt, bounds } = useOceanBed(ocean, terrain);
-  useFrame(() => {
+  useFrameTask(() => {
     if (groupRef.current !== null) groupRef.current.position.y = ocean.levelAt(ctx.time.now());
   });
   return (

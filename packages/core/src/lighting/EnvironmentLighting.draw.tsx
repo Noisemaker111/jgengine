@@ -1,6 +1,6 @@
 import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import { reportTextureLoadError } from "@jgengine/core/devtools/textureErrors";
-import { useThree, useFrame } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { EXRLoader } from "three/examples/jsm/loaders/EXRLoader.js";
@@ -10,6 +10,7 @@ import type { EnvironmentSource } from "@jgengine/core/lighting/environmentLight
 import { linkPmremBake, PMREM_BAKE_CAMERA } from "./pmremLink.draw";
 import { warmupDrawsToTarget, warmupWaitsFor } from "@jgengine/core/render/shaderWarmup.draw";
 import { WorldReflectionProbe, type WorldProbeSettings } from "./reflectionProbe.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** @internal Props for shell {@link EnvironmentLighting}. */
 export interface EnvironmentLightingProps {
@@ -171,7 +172,7 @@ export function EnvironmentLighting({
     return release;
   }, [gl, scene, worldProbe?.size, source, intensity, skyColor, groundColor, horizonTint, sunColor, sunDirection?.[0], sunDirection?.[1], sunDirection?.[2]]);
 
-  useFrame((state, delta) => {
+  useFrameTask((state, delta) => {
     const probe = probeRef.current;
     probe?.step(scene, state.camera.getWorldPosition(probeEye), delta);
     if (daylight === undefined || scene.environment === null) return;

@@ -1,4 +1,4 @@
-import { useFrame, useLoader } from "@react-three/fiber";
+import { useLoader } from "@react-three/fiber";
 import { useEffect, useLayoutEffect, useMemo } from "react";
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
@@ -9,6 +9,7 @@ import { planBoneTexture, type BoneTextureLayout } from "@jgengine/core/anim/bon
 import { measureLocalBounds } from "@jgengine/core/model/measureBounds.draw";
 import { floatAttribute } from "@jgengine/core/model/modelMeshMerge.draw";
 import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** A rig to bake: a loaded scene with skinned meshes and its clips. */
 export interface SkinnedCrowdSource {
@@ -532,7 +533,7 @@ export function SkinnedInstances({
     if (mesh.boundingSphere !== null) mesh.boundingSphere.radius += (baked.geometry.boundingSphere?.radius ?? 0) * modelScale;
   }, [mesh, instances, baked, modelScale, uniforms]);
 
-  useFrame((_three, delta) => {
+  useFrameTask((_three, delta) => {
     if (uniforms !== null) uniforms.crowdTime.value += delta * timeScale;
   });
 

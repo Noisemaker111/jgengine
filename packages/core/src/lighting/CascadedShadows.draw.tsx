@@ -1,5 +1,5 @@
 // @skill jgengine-world
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { CSM } from "three/examples/jsm/csm/CSM.js";
@@ -11,6 +11,7 @@ import { DEFAULT_SHADOW_RADIUS, lightShadowFilter, type ShadowFilter } from "./s
 import { resolveCascadeCount, resolveShadowMapSize } from "./shadowTiers";
 import type { DaylightModulation } from "./SceneLighting.draw";
 import { recordCompileLayer } from "@jgengine/core/material/compileLayers.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** @internal Reach in metres used when neither the game nor a graphics profile sets one. */
 export const DEFAULT_SHADOW_DISTANCE = 200;
@@ -269,7 +270,7 @@ export function CascadedShadows({
     entry.shadowRadius,
   ]);
 
-  useFrame(() => {
+  useFrameTask(() => {
     const csm = csmRef.current;
     if (csm === null) return;
     if (modulation !== undefined) {

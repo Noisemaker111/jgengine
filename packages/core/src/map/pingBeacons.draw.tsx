@@ -1,5 +1,4 @@
 import { Html } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
 import { useRef, type ReactNode } from "react";
 import * as THREE from "three";
 import {
@@ -11,6 +10,7 @@ import {
 import { useMarkers } from "@jgengine/core/map/map.view";
 
 import { pingBobOffset, pingOpacity } from "./pingPulse";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 function pingText(marker: MarkerView): string | undefined {
   const meta = marker.meta as { callout?: string } | undefined;
@@ -37,7 +37,7 @@ function WorldPing({ marker, style, height, showCallout, renderCallout }: WorldP
   const baseY = marker.position[1];
   const text = pingText(marker);
 
-  useFrame((state) => {
+  useFrameTask((state) => {
     const now = performance.now();
     if (bornRef.current === null) bornRef.current = now;
     // `expiresAt` is a MarkerSet lifecycle field (MapMarker), absent on plain display views.

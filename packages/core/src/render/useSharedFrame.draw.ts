@@ -1,5 +1,7 @@
-import { useStore, type RenderCallback } from "@react-three/fiber";
 import { useLayoutEffect, useRef } from "react";
+
+import { joinFrameTask, observeFrameTasks, type FrameTaskRef } from "@jgengine/core/frame/frameBoard.draw";
+import type { EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 
 /** A frame callback held by reference, so a re-render can swap it in place. A method, so r3f's callback (which wants its own state) fits. */
 interface Task {
@@ -23,6 +25,12 @@ const observers = new WeakMap<object, { enter(task: Task): void; leave(): void }
 export function observeSharedFrames(loop: object, observer: { enter(task: Task): void; leave(): void } | null): void {
   if (observer === null) observers.delete(loop);
   else observers.set(loop, observer);
+  // The board is the one live frame source now; mirror the observer onto it so
+  // per-member timing keeps working while the r3f pump drives.
+  observeFrameTasks(observer === null ? null : {
+    enter: (task: FrameTaskRef) => observer.enter(task),
+    leave: () => observer.leave(),
+  });
 }
 
 /** Add `task` to the shared callback for `priority` of the loop `loop` names, subscribing that callback on first use; returns the leave. @internal */
@@ -61,18 +69,24 @@ export function joinFrameGroup(loop: object, subscribe: Subscribe, priority: num
 
 /**
  * `useFrame` for per-instance work that many mounted copies share, such as one per prop batch: every
- * copy at one priority runs inside a single r3f subscriber, in the order they joined, and leaves it
- * while `active` is false. r3f calls and re-sorts each subscriber of its own, so a world of a thousand
- * batches with a callback each paid for the count every frame, and for every mount. Ordered against
- * the other subscribers at the same priority only by when the first copy joined: work that has to run
- * before or after a particular callback takes a priority of its own, or uses `useFrameWhile`.
+ * copy at one priority runs inside a single frame-board subscription, in the order they joined, and
+ * leaves it while `active` is false. The board groups tasks per priority, so a world of a thousand
+ * batches with a callback each pays one frame slot, not a thousand. Ordered against the other
+ * subscribers at the same priority only by when the first copy joined: work that has to run before
+ * or after a particular callback takes a priority of its own.
  * @internal
  */
-export function useSharedFrame(callback: RenderCallback, priority = 0, active = true): void {
-  const store = useStore();
+export function useSharedFrame(
+  callback: (state: EngineFrameState, delta: number) => void,
+  priority = 0,
+  active = true,
+): void {
   const ref = useRef(callback);
   useLayoutEffect(() => {
     ref.current = callback;
   });
-  useLayoutEffect(() => (active ? joinFrameGroup(store, (task, at) => store.getState().internal.subscribe(task, at, store), priority, ref) : undefined), [active, priority, store]);
+  useLayoutEffect(
+    () => (active ? joinFrameTask(priority, (state, delta) => ref.current(state, delta)) : undefined),
+    [active, priority],
+  );
 }

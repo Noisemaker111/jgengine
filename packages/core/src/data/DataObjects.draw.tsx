@@ -1,11 +1,12 @@
 // @skill jgengine-gameplay
-import { type ThreeEvent, useFrame } from "@react-three/fiber";
+import { type ThreeEvent } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 
 import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 import { clamp01 } from "../math/scalar";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /**
  * Renders one placed 3D object per data item — a 3D bar chart, a heatmap, a city
@@ -88,7 +89,7 @@ export function DataObjects<T>({
 
   const duration = grow?.duration ?? 0;
 
-  useFrame((state) => {
+  useFrameTask((state) => {
     const mesh = meshRef.current;
     if (mesh === null) return;
     if (startRef.current === null) startRef.current = state.clock.elapsedTime;

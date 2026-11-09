@@ -1,9 +1,10 @@
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { memo, useEffect, useMemo, useRef, type ReactElement } from "react";
 import * as THREE from "three";
 
 import type { ParticleBuffers, ParticleSystem } from "@jgengine/core/vfx/particles";
 import type { ParticleRenderHint } from "@jgengine/core/vfx/particleDirector";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** How particle fragments composite on screen. */
 export type ParticleBlending = "additive" | "normal";
@@ -314,7 +315,7 @@ export const ParticleField = memo(function ParticleField({ system, advance = tru
   }, [geometry, material, metrics]);
 
   const uploadedCount = useRef(-1);
-  useFrame((_, delta) => {
+  useFrameTask((_, delta) => {
     const started = metrics === undefined ? 0 : performance.now();
     if (advance) system.update(Math.min(delta, 0.1));
     const buffers = system.buffers();

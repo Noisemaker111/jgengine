@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
@@ -11,6 +11,7 @@ import { staticPoolCellAt } from "@jgengine/core/instancing/staticObjectBatches.
 import type { ScatterInstance } from "./scatterRegion";
 import { createScatterHeroSet } from "./scatterHeroes";
 import { scatterPlacementVariant, type ScatterGeneratorItem } from "./scatterGenerator";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Seconds between hero picks; the camera moving this far (m) picks again sooner. */
 const PICK_INTERVAL_S = 0.25;
@@ -167,7 +168,7 @@ export function ScatterHeroes({ item, definition, spec, instances, onShown }: Sc
       });
   };
 
-  useFrame((state) => {
+  useFrameTask((state) => {
     state.camera.getWorldPosition(camera);
     const now = state.clock.elapsedTime;
     const last = lastPick.current;

@@ -1,4 +1,3 @@
-import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import { useRef, useState, type MutableRefObject } from "react";
 import { Group, MathUtils } from "three";
@@ -8,6 +7,7 @@ import { PlayerCharacterFigure } from "@/user/components/PlayerCharacterFigure";
 import { DEFAULT_CHARACTER_LOOK } from "@/user/playerCharacterFigure";
 import { REMOTE_AVATAR_INTERPOLATION_MS } from "@/world/location";
 import { readLiveRemotePose, sampleRemotePose } from "@/world/remotePresenceRuntime";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 const AIRBORNE_JUMP_Y = 0.04;
 
@@ -98,7 +98,7 @@ function DormantWorldAgentAvatar({
   kind,
 }: WorldAgentAvatarProps) {
   const groupRef = useRef<Group>(null);
-  useFrame(function remoteAvatar() {
+  useFrameTask(function remoteAvatar() {
     const pose = readLiveRemotePose(presenceId);
     if (!pose || !groupRef.current) return;
     groupRef.current.position.set(pose.position.x, pose.position.y, pose.position.z);
@@ -130,7 +130,7 @@ function LiveQueryDrivenWorldAgentAvatar({
   const gaitPhaseRef = useRef(0);
   const [isWalking, setIsWalking] = useState(false);
 
-  useFrame(function remoteAvatar(_, delta) {
+  useFrameTask(function remoteAvatar(_, delta) {
     const group = groupRef.current;
     if (!group) return;
     const sample = sampleRemotePose(presenceId, performance.now());

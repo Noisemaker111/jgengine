@@ -1,4 +1,4 @@
-import { useFrame, useLoader } from "@react-three/fiber";
+import { useLoader } from "@react-three/fiber";
 import { Component, Suspense, useCallback, useEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 
@@ -15,6 +15,7 @@ import { moodOfNeeds } from "../agents";
 import { MOOD_COLORS } from "../palette";
 import { householdStore } from "../session/store";
 import { resolveAlienMeshUrl } from "../models";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 const ALIEN_HEIGHT = 1.7;
 
@@ -85,7 +86,7 @@ function AlienModel({
       material.emissiveIntensity = emissiveIntensity();
     }
   }, [materials, nativeColors, color, emissive]);
-  useFrame(() => {
+  useFrameTask(() => {
     const intensity = emissiveIntensity();
     for (const material of materials) {
       if (material.emissiveIntensity !== intensity) material.emissiveIntensity = intensity;
@@ -118,7 +119,7 @@ export function AlienMesh({ entity }: { entity: SceneEntity }): ReactNode {
     return member !== undefined ? 0.025 + (moodOfNeeds(member.needs).score / 100) * 0.06 : 0.025;
   }, [ctx, entity.id]);
 
-  useFrame(({ clock }) => {
+  useFrameTask(({ clock }) => {
     const t = clock.elapsedTime;
     if (groupRef.current !== null) {
       groupRef.current.position.y = moving ? 0 : Math.sin(t * 1.6 + phase) * 0.02;

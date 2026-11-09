@@ -1,7 +1,6 @@
 import "./style.css";
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import { useSceneSwap } from "@jgengine/core/render/sceneSwap.draw";
-import { useFrame } from "@react-three/fiber";
 import { Group, SpotLight, Vector3, type PointLight } from "three";
 import { stationAssets } from "./game/assets";
 import { StationModels, hasStationModel } from "./game/stationModels";
@@ -37,6 +36,7 @@ import { deepwardKit } from "./game/ui/menu/deepwardKit";
 import { audio } from "./game/audio";
 import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
 import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 function Block({ at, size, color = C.panel, glow = false, surface }: { at: Triple; size: Triple; color?: string; glow?: boolean; surface?: IndustrialSurface }) {
   return <IndustrialBox at={at} size={size} color={color} surface={surface ?? (glow ? "lamp" : color === C.steel ? "steel" : color === C.brass ? "brass" : "paint")} emission={glow ? 0.8 : 0} />;
@@ -119,7 +119,7 @@ function RoomLights() {
     return light;
   }), [place]);
   const flicker = place === "home" ? 0 : STRATA[place].lamp.flicker;
-  useFrame(({ camera, clock }) => {
+  useFrameTask(({ camera, clock }) => {
     const closest = activeRoomLamps(lamps, [camera.position.x, camera.position.y, camera.position.z]);
     lights.forEach((light, i) => {
       const candidate = closest[i];
@@ -178,7 +178,7 @@ function StationLights({ place }: { place: Place }) {
 function AlarmLamps() {
   const ctx = useGameContext();
   const lamps = useRef<(PointLight | null)[]>([]);
-  useFrame(() => {
+  useFrameTask(() => {
     const dive = viewStore.read(ctx).dive;
     const alarms = dive === null ? [] : alarmCreatures(dive.fauna, dive.stratum);
     lamps.current.forEach((light, index) => {
@@ -205,7 +205,7 @@ function VentGlow() {
 function FitterFlash() {
   const ctx = useGameContext();
   const ref = useRef<PointLight>(null);
-  useFrame(() => {
+  useFrameTask(() => {
     const light = ref.current;
     if (light === null) return;
     const view = viewStore.read(ctx), print = view.dive?.print, entity = ctx.scene.entity.get(PRINT_ID);
@@ -240,7 +240,7 @@ function Hand() {
     body.current?.position.set(...serviceWeaponBody(pose));
   };
   useLayoutEffect(applyPose);
-  useFrame(({ camera }) => {
+  useFrameTask(({ camera }) => {
     camera.getWorldDirection(dir);
     setAim(ctx, [dir.x, dir.y, dir.z]);
     const hand = ref.current;

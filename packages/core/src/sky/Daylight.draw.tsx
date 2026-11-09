@@ -1,5 +1,5 @@
 // @skill jgengine-world
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { useEffect, useLayoutEffect, useMemo, useRef, type MutableRefObject, type RefObject } from "react";
 import * as THREE from "three";
 
@@ -22,6 +22,7 @@ import {
 import { createSkyLight, publishSkyLight, type SkyLight } from "./skyLight.draw";
 import { SUN_SHADOW, sunLightPosition, sunShadowFocus } from "./sunShadowMath";
 import { VolumetricClouds } from "./VolumetricClouds.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Props for the gradient sky dome: top and horizon colours, dome radius, gradient shape and an optional sun disc. */
 export interface SkyDomeProps {
@@ -104,7 +105,7 @@ export function SunLight({
   const ownRef = useRef<THREE.DirectionalLight>(null);
   const ref = lightRef ?? ownRef;
   const scratch = useMemo(() => ({ forward: new THREE.Vector3(), focus: { x: 0, z: 0 }, position: [0, 0, 0] as [number, number, number] }), []);
-  useFrame((state) => {
+  useFrameTask((state) => {
     const light = ref.current;
     if (light === null) return;
     state.camera.getWorldDirection(scratch.forward);
@@ -182,7 +183,7 @@ export function SkyFog({ color, near, far, fogRef }: { color: string; near: numb
   useLayoutEffect(() => {
     if (ref.current !== null) setSkyFogColor(ref.current, color);
   }, [ref, color]);
-  useFrame((state) => {
+  useFrameTask((state) => {
     const fog = ref.current;
     const display = fog === null ? undefined : fogDisplayColors.get(fog);
     if (fog === null || display === undefined) return;
@@ -368,7 +369,7 @@ export function SkyDome({
     };
   }, [material, materialRef]);
   const writers = useMemo(() => ({ top: new DisplayColorWriter(), bottom: new DisplayColorWriter() }), []);
-  useFrame((state) => {
+  useFrameTask((state) => {
     const display = material.userData as SkyDomeDisplay;
     writers.top.write(material.uniforms["topColor"]!.value as THREE.Color, display.top, state.gl);
     writers.bottom.write(material.uniforms["bottomColor"]!.value as THREE.Color, display.bottom, state.gl);
@@ -516,7 +517,7 @@ export function Sky({ sky, clock, lights = true, modulation, bands = NO_BANDS, f
   const skyLight = useMemo(() => createSkyLight(), []);
   const lightWriters = useMemo<SkyLightWriters>(() => ({ zenith: new DisplayColorWriter(), horizon: new DisplayColorWriter(), display: new THREE.Color() }), []);
 
-  useFrame((state) => {
+  useFrameTask((state) => {
     publishSkyLight(state.scene, skyLight);
     if (!timeOfDay && !banded && weather === undefined) {
       writeSkyLight(skyLight, lightWriters, state.gl, initial, { zenithColor: initial.skyTop, horizonColor: initial.skyBottom, sunIntensity: initial.sunIntensity, ambientIntensity: initial.ambientIntensity }, 0, noon);

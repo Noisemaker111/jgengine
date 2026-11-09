@@ -1,5 +1,4 @@
 import { useMemo, useRef, type CSSProperties, type ReactNode } from "react";
-import { useFrame } from "@react-three/fiber";
 import type { Mesh } from "three";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import { LightBeam } from "@jgengine/core/map/LightBeam.draw";
@@ -8,6 +7,7 @@ import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { broodView, greenObelisk, lairWall, obeliskView, spitInFlight } from "../broodmother";
 import { PORTAL_RANGE } from "../data/bosses";
 import { ItemIcon } from "./ItemIcon";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 const same = <T,>(a: T, b: T) => JSON.stringify(a) === JSON.stringify(b);
 const GREEN = "#34ff6a";
@@ -37,7 +37,7 @@ function LairWall({ ctx }: WorldOverlayProps): ReactNode {
 /** The acid in flight: a glowing green glob arcing from her to where you stood. */
 function Spit({ ctx }: WorldOverlayProps): ReactNode {
   const glob = useRef<Mesh>(null);
-  useFrame(() => {
+  useFrameTask(() => {
     const at = spitInFlight(ctx);
     if (glob.current === null) return;
     glob.current.visible = at !== null;

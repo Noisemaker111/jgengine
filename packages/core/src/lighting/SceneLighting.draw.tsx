@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import type * as THREE from "three";
 import type { DirectionalLight } from "three";
 
@@ -19,6 +19,7 @@ import { lightShadowFilter } from "./softShadows";
 import { cullSmallShadowCasters, MIN_SHADOW_CASTER_RADIUS, type ShadowCasterCull } from "./shadowCasters.draw";
 import { installShadowCache } from "./shadowCache.draw";
 import { minShadowCasterRadius, resolveCascadeCount, resolveShadowMapSize, SHADOW_CASTER_RADIUS_REFERENCE_MAP } from "./shadowTiers";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** three.js lights default to white; an unset light colour means this. */
 const LIGHT_DEFAULT_COLOR = "#ffffff";
@@ -92,7 +93,7 @@ function SingleShadowLight({ entry, profile, modulation }: { entry: DirectionalL
   const mapSize = entry.shadowMapSize ?? 1024;
   const baseIntensity = entry.intensity ?? 1.3;
   const filter = lightShadowFilter(entry, profile, size * 2, mapSize, entry.shadowNormalBias ?? 0.02);
-  useFrame(() => {
+  useFrameTask(() => {
     const light = lightRef.current;
     if (light === null || modulation === undefined) return;
     light.intensity = baseIntensity * modulation.sunFactor;
@@ -211,7 +212,7 @@ export function ConfiguredLighting({
   const hemisphereRef = useRef<THREE.HemisphereLight>(null);
   const baseAmbient = lighting.ambient?.intensity ?? 0.55;
   const baseHemisphere = lighting.hemisphere?.intensity ?? 0.55;
-  useFrame(() => {
+  useFrameTask(() => {
     if (modulation === undefined) return;
     if (ambientRef.current !== null) ambientRef.current.intensity = baseAmbient * modulation.ambientFactor;
     if (hemisphereRef.current !== null) hemisphereRef.current.intensity = baseHemisphere * modulation.ambientFactor;

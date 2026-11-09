@@ -1,4 +1,4 @@
-import { useFrame, type ThreeElements } from "@react-three/fiber";
+import { type ThreeElements } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import { Vector3, type Group } from "three";
 import type * as THREE from "three";
@@ -16,6 +16,7 @@ import { grassWindAt, grassWindLook, type GrassWindSource } from "./grassWind";
 import { GrassStream } from "./grassStream.draw";
 import { GrassFrameShare } from "./grassFrameShare";
 import { trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Milliseconds of grass work one frame may spend, across every patch, once the view has filled. */
 const BAKE_SLICE_MS = 3;
@@ -107,7 +108,7 @@ export function GrassPatch({
     };
   }, [stream]);
   useEffect(() => () => handle.material.dispose(), [handle]);
-  useFrame((state) => {
+  useFrameTask((state) => {
     handle.uniforms.uTime.value = state.clock.elapsedTime;
     if (wind !== undefined) {
       origin.current?.getWorldPosition(world);
