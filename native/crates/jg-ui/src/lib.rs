@@ -7,22 +7,24 @@
 //! frame through a single import (`emit_frame`). Rune draws into a transparent
 //! WebGPU canvas over the game's three.js canvas; JS uses the hit regions to let
 //! pointer input on empty UI space reach the game.
-//!
-//! Spike scope: mount, transparency, text field, slider, button, bar, scroll,
-//! shared values, event/hit-region emit. The full kit (HUD, menus, inventory,
-//! map, settings, notifications) grows from here.
+
+// The wasm exports are the only entry points; on host targets (cargo check,
+// tests) everything below them is unreachable by construction.
+#![cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
+
+mod build;
+mod spec;
+mod style;
+mod widgets;
 
 use std::cell::{RefCell, UnsafeCell};
 use std::collections::HashMap;
 
-use rune::tok::{self, type_};
-use rune::{
-    AppHandle, Compositor, Cx, Drag, El, Frame, ScrollSpec, TextEdit, Tx, col, el, row, text,
-    text_input,
-};
+use rune::{AppHandle, Color, Compositor, Cx, El, Frame, TextEdit};
 #[cfg(target_arch = "wasm32")]
-use rune::{App, AppSpec, WindowOptions};
-use serde::Deserialize;
+use rune::{App, AppSpec, Tx, WindowOptions};
+
+pub(crate) use spec::Node;
 
 // ---------------------------------------------------------------------------
 // Shared per-frame value buffer: plain f32 slots in wasm linear memory. JS gets
@@ -41,12 +43,12 @@ unsafe impl Sync for SharedValues {}
 static VALUES: SharedValues = SharedValues(UnsafeCell::new([0.0; VALUES_LEN]));
 
 #[inline]
-fn val(slot: usize) -> f32 {
+pub(crate) fn val(slot: usize) -> f32 {
     unsafe { *(*VALUES.0.get()).get_unchecked(slot.min(VALUES_LEN - 1)) }
 }
 
 #[inline]
-fn set_val(slot: usize, v: f32) {
+pub(crate) fn set_val(slot: usize, v: f32) {
     unsafe {
         let s = &mut *VALUES.0.get();
         if slot < VALUES_LEN {
@@ -74,7 +76,7 @@ thread_local! {
     static EVENTS: RefCell<Vec<UiEvent>> = const { RefCell::new(Vec::new()) };
 }
 
-fn emit(id: &str, kind: &'static str, value: Option<f32>, text: Option<String>) {
+pub(crate) fn emit(id: &str, kind: &'static str, value: Option<f32>, text: Option<String>) {
     EVENTS.with(|e| {
         e.borrow_mut().push(UiEvent {
             id: id.to_string(),
@@ -86,329 +88,61 @@ fn emit(id: &str, kind: &'static str, value: Option<f32>, text: Option<String>) 
 }
 
 // ---------------------------------------------------------------------------
-// Declarative spec: the widget tree TypeScript sends as JSON.
-// ---------------------------------------------------------------------------
-
-#[derive(Deserialize)]
-#[serde(tag = "k", rename_all = "lowercase")]
-enum Node {
-    /// Vertical stack.
-    Panel {
-        #[serde(default)]
-        children: Vec<Node>,
-        #[serde(default)]
-        pad: f32,
-        #[serde(default)]
-        gap: f32,
-        #[serde(default)]
-        fill: Option<String>,
-        #[serde(default)]
-        w: Option<f32>,
-        #[serde(default)]
-        h: Option<f32>,
-    },
-    /// Horizontal stack.
-    Row {
-        #[serde(default)]
-        children: Vec<Node>,
-        #[serde(default)]
-        pad: f32,
-        #[serde(default)]
-        gap: f32,
-        #[serde(default)]
-        fill: Option<String>,
-        #[serde(default)]
-        w: Option<f32>,
-        #[serde(default)]
-        h: Option<f32>,
-    },
-    /// Static text, or bound text when `slot` names a value-buffer index.
-    Text {
-        #[serde(default)]
-        text: String,
-        #[serde(default)]
-        slot: Option<usize>,
-        #[serde(default)]
-        label: Option<String>,
-    },
-    Button {
-        id: String,
-        label: String,
-    },
-    /// Rune-owned text field; edits flow back as events.
-    Field {
-        id: String,
-        #[serde(default)]
-        placeholder: String,
-    },
-    /// Drag/click slider writing its fraction (0..1) to `slot`; commits emit an event.
-    Slider { id: String, slot: usize },
-    /// Bar whose fill width is `val(slot) / max` of its width.
-    Bar { slot: usize, #[serde(default = "default_bar_max")] max: f32 },
-    /// Scrollable column.
-    Scroll {
-        #[serde(default)]
-        children: Vec<Node>,
-        #[serde(default)]
-        w: Option<f32>,
-        #[serde(default)]
-        h: Option<f32>,
-    },
-    /// Fixed spacer.
-    Gap { #[serde(default = "default_gap")] size: f32 },
-}
-
-fn default_bar_max() -> f32 {
-    1.0
-}
-fn default_gap() -> f32 {
-    8.0
-}
-
-// ---------------------------------------------------------------------------
 // App state
 // ---------------------------------------------------------------------------
 
 #[derive(Default)]
-struct Ui {
+pub struct Ui {
     root: Vec<Node>,
-    /// TextEdit per Field node id, created when the spec is parsed.
+    /// While true the bridge treats the UI as modal: game input is suspended
+    /// and the pointer is shown.
+    modal: bool,
+    /// TextEdit per Field node id, created when the spec is parsed and kept
+    /// across rebuilds while the id survives.
     edits: HashMap<String, TextEdit>,
     /// Borrow fallback for a field whose edit is somehow missing.
     empty_edit: TextEdit,
 }
 
-fn parse_spec(json: &str) -> Result<(Vec<Node>, HashMap<String, TextEdit>), String> {
-    #[derive(Deserialize)]
-    struct Spec {
-        #[serde(default)]
-        children: Vec<Node>,
-    }
-    let spec: Spec = serde_json::from_str(json).map_err(|e| e.to_string())?;
-    let mut edits = HashMap::new();
-    collect_fields(&spec.children, &mut edits);
-    Ok((spec.children, edits))
-}
-
-fn collect_fields(nodes: &[Node], edits: &mut HashMap<String, TextEdit>) {
-    for n in nodes {
-        match n {
-            Node::Field { id, .. } => {
-                edits.insert(id.clone(), TextEdit::new(""));
-            }
-            Node::Panel { children, .. }
-            | Node::Row { children, .. }
-            | Node::Scroll { children, .. } => collect_fields(children, edits),
-            _ => {}
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------
-// View building
-// ---------------------------------------------------------------------------
-
-fn color(hex: &str) -> rune::Color {
-    rune::color::hex(hex).unwrap_or(rune::Color::BLACK)
-}
-
-fn sized(mut e: El, w: Option<f32>, h: Option<f32>) -> El {
-    if let Some(w) = w {
-        e = e.w(w);
-    }
-    if let Some(h) = h {
-        e = e.h(h);
-    }
-    e
-}
-
-fn stack(
-    children: &[Node],
-    s: &Ui,
-    t: &tok::Theme,
-    pad: f32,
-    gap: f32,
-    fill: &Option<String>,
-    w: Option<f32>,
-    h: Option<f32>,
-    horizontal: bool,
-) -> El {
-    let mut e = if horizontal {
-        let mut r = row().gap(gap).center_y();
-        for (i, n) in children.iter().enumerate() {
-            r = r.child(build(n, i, s, t));
-        }
-        r
-    } else {
-        let mut c = col().gap(gap);
-        for (i, n) in children.iter().enumerate() {
-            c = c.child(build(n, i, s, t));
-        }
-        c
-    };
-    e = sized(e.padding(pad), w, h);
-    if let Some(f) = fill {
-        e = e.fill(color(f));
-    }
-    e
-}
-
-fn build(n: &Node, i: usize, s: &Ui, t: &tok::Theme) -> El {
-    match n {
-        Node::Panel {
-            children,
-            pad,
-            gap,
-            fill,
-            w,
-            h,
-        } => stack(children, s, t, *pad, *gap, fill, *w, *h, false),
-        Node::Row {
-            children,
-            pad,
-            gap,
-            fill,
-            w,
-            h,
-        } => stack(children, s, t, *pad, *gap, fill, *w, *h, true),
-        Node::Scroll { children, w, h } => {
-            let mut c = col().gap(4.0);
-            for (j, ch) in children.iter().enumerate() {
-                c = c.child(build(ch, j, s, t));
-            }
-            let e = col()
-                .w_full()
-                .child(c)
-                .scroll(ScrollSpec { stick_bottom: false })
-                .hit();
-            sized(e, *w, Some(h.unwrap_or(200.0)))
-        }
-        Node::Text {
-            text: txt,
-            slot,
-            label,
-        } => {
-            let body = match slot {
-                Some(k) => format!("{}", val(*k)),
-                None => txt.clone(),
-            };
-            let e = text(body).font(type_::BODY).color(t.text);
-            let e = match label {
-                Some(l) => row()
-                    .gap(6.0)
-                    .center_y()
-                    .child(text(l.clone()).font(type_::LABEL).color(t.text_secondary))
-                    .child(e),
-                None => e,
-            };
-            e.key(format!("text-{i}"))
-        }
-        Node::Button { id, label } => {
-            let id = id.clone();
-            el()
-                .key(format!("btn-{id}"))
-                .h(36.0)
-                .px(14.0)
-                .center()
-                .radius(8.0)
-                .fill(t.control_off)
-                .child(text(label.clone()).font(type_::LABEL).color(t.text))
-                .hit()
-                .on_press(move |_: &mut Ui| emit(&id, "press", None, None))
-        }
-        Node::Field { id, placeholder } => {
-            let id_key = id.clone();
-            let id_edit = id.clone();
-            let id_submit = id.clone();
-            let ph = placeholder.clone();
-            let edit = s.edits.get(id.as_str()).unwrap_or(&s.empty_edit);
-            text_input(edit, type_::BODY)
-                .key(format!("field-{id_key}"))
-                .w_full()
-                .h(36.0)
-                .padding(8.0)
-                .radius(8.0)
-                .fill(t.card)
-                .placeholder(ph, t.text_secondary)
-                .hit()
-                .on_edit(move |s: &mut Ui| -> &mut TextEdit {
-                    s.edits.get_mut(id_edit.as_str()).unwrap_or(&mut s.empty_edit)
-                })
-                .on_submit(move |s: &mut Ui, _tx: &mut Tx| {
-                    let text = s.edits.get(id_submit.as_str()).map(|e| e.text.clone());
-                    emit(&id_submit, "submit", None, text);
-                })
-        }
-        Node::Slider { id, slot } => {
-            let id_key = id.clone();
-            let id_emit = id.clone();
-            let slot = *slot;
-            let frac = val(slot).clamp(0.0, 1.0);
-            let track_w = 200.0f32;
-            let fill_w = (track_w * frac).max(6.0);
-            row()
-                .key(format!("slider-{id_key}"))
-                .w(track_w)
-                .h(24.0)
-                .center_y()
-                .child(
-                    el()
-                        .w(track_w)
-                        .h(6.0)
-                        .radius(3.0)
-                        .fill(t.control_track)
-                        .child(el().w(fill_w).h_full().radius(3.0).fill(t.indicator)),
-                )
-                .child(el().w(14.0).h(14.0).radius(7.0).fill(t.text))
-                .hit()
-                .on_drag(move |_: &mut Ui, d: &mut Drag, _tx: &mut Tx| {
-                    let f = (d.x / d.w.max(1.0)).clamp(0.0, 1.0);
-                    set_val(slot, f);
-                    if !matches!(d.phase, rune::Phase::Move) {
-                        emit(&id_emit, "slider", Some(f), None);
-                    }
-                })
-        }
-        Node::Bar { slot, max } => {
-            let frac = (val(*slot) / *max).clamp(0.0, 1.0);
-            el()
-                .key(format!("bar-{i}"))
-                .w_full()
-                .h(8.0)
-                .radius(4.0)
-                .fill(t.control_track)
-                .child(el().w(200.0 * frac).h_full().radius(4.0).fill(t.indicator))
-        }
-        Node::Gap { size } => el().h(*size),
-    }
+/// `#rgb`/`#rrggbb`/`#rrggbbaa` to a Rune colour; anything else is opaque black.
+pub(crate) fn color(hex: &str) -> Color {
+    rune::color::hex(hex).unwrap_or(Color::BLACK)
 }
 
 fn view(s: &Ui, cx: &mut Cx<Ui>) -> El {
-    let dark = cx.system_dark();
-    let t = tok::theme(dark);
-    let mut c = col().w_full().h_full().padding(16.0).gap(8.0);
-    for (i, n) in s.root.iter().enumerate() {
-        c = c.child(build(n, i, s, &t));
-    }
-    c.key("root")
+    build::view(s, cx)
 }
 
 // ---------------------------------------------------------------------------
-// Compositor: default Rune draw + one emit per frame with events and the
-// interactive hit regions JS needs for pointer pass-through. animating() keeps
-// the display link running so the HUD redraws every frame like the game.
+// Compositor: default Rune draw + one emit per frame with events, the
+// interactive hit regions JS needs for pointer pass-through, and the modal
+// flag. animating() keeps the display link running so the HUD redraws every
+// frame like the game.
 // ---------------------------------------------------------------------------
 
-struct UiCompositor;
+struct UiCompositor {
+    /// Last text shipped per field id; `on_edit` is an accessor Rune calls for
+    /// layout and paint too, so changes are diffed here once per frame instead.
+    edit_last: HashMap<String, String>,
+}
 
 impl Compositor<Ui> for UiCompositor {
     fn render(&mut self, f: &mut Frame<'_, Ui>) {
         f.draw_ui();
+        for (id, edit) in &f.rt.state.edits {
+            let cur = edit.text.clone();
+            if self.edit_last.get(id).map(String::as_str) != Some(cur.as_str()) {
+                self.edit_last.insert(id.clone(), cur.clone());
+                emit(id, "edit", None, Some(cur));
+            }
+        }
+        self.edit_last.retain(|id, _| f.rt.state.edits.contains_key(id));
         let events: Vec<UiEvent> = EVENTS.with(|e| std::mem::take(&mut *e.borrow_mut()));
         let regions: Vec<[f32; 4]> = f.rt.hit_regions().to_vec();
         let payload = serde_json::json!({
             "events": events,
             "regions": regions,
+            "modal": f.rt.state.modal,
         })
         .to_string();
         #[cfg(target_arch = "wasm32")]
@@ -449,29 +183,39 @@ pub fn values_len() -> u32 {
     VALUES_LEN as u32
 }
 
-/// Mount the Rune UI on an existing canvas element and start its loop.
-/// Call once, after the canvas is in the DOM.
+/// Mount options: `{"fonts": ["/fonts/x.ttf", ...], "sans": "Family", "mono": "Family"}`.
+/// Font files must be TrueType/OpenType (not WOFF); they are fetched relative to
+/// the page while the GPU starts.
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen::prelude::wasm_bindgen]
-pub fn echo_len(s: &str) -> u32 {
-    web_sys::console::log_1(&format!("echo_len '{}' len={}", s, s.len()).into());
-    s.len() as u32
-}
-
-#[cfg(target_arch = "wasm32")]
-#[wasm_bindgen::prelude::wasm_bindgen]
-pub fn mount(canvas_id: &str) {
-    web_sys::console::log_1(&format!("jg-ui mount canvas_id='{canvas_id}' len={}", canvas_id.len()).into());
+pub fn mount(canvas_id: &str, options_json: &str) {
+    #[derive(serde::Deserialize, Default)]
+    struct Opts {
+        #[serde(default)]
+        fonts: Vec<String>,
+        #[serde(default)]
+        sans: Option<String>,
+        #[serde(default)]
+        mono: Option<String>,
+    }
+    let opts: Opts = serde_json::from_str(options_json).unwrap_or_default();
+    let leak = |s: &str| -> &'static str { Box::leak(s.to_string().into_boxed_str()) };
+    let sans = leak(opts.sans.as_deref().unwrap_or("Inter"));
+    let mono = leak(opts.mono.as_deref().unwrap_or("ui-monospace, monospace"));
     let mut spec = AppSpec::new("jg-ui", (800.0, 600.0), Ui::default, view);
+    spec.families = (sans, mono);
     spec.poll = Some(|_s: &mut Ui, _t: f64, _tx: &mut Tx| true);
-    let app = App::new(spec)
+    let mut app = App::new(spec)
         .canvas_id(canvas_id.to_string())
         .full_viewport()
         .window_options(WindowOptions {
             transparent: true,
             ..Default::default()
         })
-        .compositor(UiCompositor);
+        .compositor(UiCompositor { edit_last: HashMap::new() });
+    for url in &opts.fonts {
+        app = app.font_url(url);
+    }
     let handle = app.handle();
     HANDLE.with(|h| *h.borrow_mut() = Some(handle.clone()));
     app.run();
@@ -482,8 +226,9 @@ pub fn mount(canvas_id: &str) {
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen::prelude::wasm_bindgen]
 pub fn set_spec(json: &str) {
-    let (root, edits) = match parse_spec(json) {
-        Ok(v) => v,
+    let parsed = spec::parse_spec(json);
+    let (children, modal) = match parsed {
+        Ok(p) => (p.children, p.modal),
         Err(e) => {
             emit("__spec__", "error", None, Some(e));
             return;
@@ -492,11 +237,11 @@ pub fn set_spec(json: &str) {
     HANDLE.with(|h| {
         if let Some(handle) = h.borrow().as_ref() {
             handle.update(move |s: &mut Ui, _tx: &mut Tx| {
-                s.root = root;
-                s.edits.retain(|id, _| edits.contains_key(id));
-                for (id, e) in edits {
-                    s.edits.entry(id).or_insert(e);
-                }
+                let ids = spec::field_ids(&children);
+                s.edits.retain(|id, _| ids.contains(id));
+                spec::collect_fields(&children, &mut s.edits);
+                s.root = children;
+                s.modal = modal;
             });
         }
     });

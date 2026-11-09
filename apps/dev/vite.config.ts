@@ -10,6 +10,7 @@ import { parseDevProxyTable } from "../../packages/core/src/data/devProxy";
 import { tunableDiscoveryPlugin } from "../../packages/core/src/devtools/transformTunables";
 import { devServerMarkerPlugin } from "../../scripts/devServerMarker";
 import { startTextureCompression } from "../../games/shared/provisionAssets";
+import { viteJgUiWasm } from "../../games/shared/viteJgUiWasm";
 import { devReportPlugin } from "./devReportPlugin";
 import { gamePublicPlugin } from "./gamePublicPlugin";
 
@@ -96,7 +97,7 @@ const devProxy: Record<string, string | ProxyOptions> = Object.fromEntries(
 );
 
 export default defineConfig({
-  plugins: [devServerMarkerPlugin({ kind: "runner" }), tunableDiscoveryPlugin(), devSave(servedGameDir), devReportPlugin(), gamePublicPlugin(servedGameDir, gamesDir), textureCompression(), react(), tailwindcss()],
+  plugins: [devServerMarkerPlugin({ kind: "runner" }), tunableDiscoveryPlugin(), devSave(servedGameDir), devReportPlugin(), gamePublicPlugin(servedGameDir, gamesDir), textureCompression(), viteJgUiWasm(), react(), tailwindcss()],
   clearScreen: false,
   build: {
     target: "es2022",

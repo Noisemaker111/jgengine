@@ -19,6 +19,8 @@ export const TANK_SECONDS = 110;
 export interface Result { kind: "extracted" | "lost"; dive: number; count: number | null; reason: string; scrip?: number }
 export interface Home {
   version: 5; refits: ("tank" | "reserve")[]; reprintPending: boolean; revision: number; nextDive: number; life: number;
+  /** The diver's own name for the record; absent on saves written before it existed. */
+  callsign?: string;
   activeDive: number | null; stash: Item[]; extractions: number; deaths: number; last: Result | null;
   /** Career scrip: what the counter keeps, and what a Life's haul becomes. */
   bank: CareerBankState;

@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useActionBindings } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { allActionCodes } from "@jgengine/core/input/actionBindings";
 import { useSceneSwapping } from "@jgengine/core/ui/sceneSwap.view";
-import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
 import { useBrowserSuspension, useDialogBehavior } from "@jgengine/react";
 import { useOptionalGamePhase } from "@jgengine/react/hooks";
 import { useSettings } from "@jgengine/core/settings/settings.view";
@@ -12,24 +12,22 @@ import { useGameStore } from "@jgengine/react/hooks";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { HudButton } from "@jgengine/core/hud/hudButton.view";
 import { HudSurface } from "@jgengine/core/hud/hudSurface.view";
-import { groundDistance, EXIT, roomAt } from "../../world";
-import { nearby, storageChanged, viewStore, type View } from "../controls";
+import { viewStore, storageChanged, type View } from "../controls";
 import { CACHE, footprint, ITEMS, type Dive } from "../state";
 import { weaponReadout } from "../combat";
 import { loadOf, CACHE_WEIGHT } from "../haul";
 import { breakdownValue, compareToPrepared, kindOf, statLines, type Item } from "../items";
 import { REFITS, refitMissing, type RefitId } from "../progression";
-import { counterRows, marrowStanding, OPERATOR, SCRIP, scripJournal } from "../counter";
+import { counterRows, SCRIP, scripJournal } from "../counter";
+import { STRATA } from "../strata";
 import { ItemMark } from "./ItemMark";
-import { DeepwardMenu } from "./menu/DeepwardMenu";
-import { RECORD_KEY, SAVE_KEY } from "../save";
-import { ActionPlate, DepthStrip, DiveComputer, Docket, HoldTab, KitCounter, CommsLine, VisorReticle, SearchBar, Visor } from "./VisorHud";
 import { FabricatorSheet } from "./FabricatorSheet";
 import { marrowOf, marrowState } from "../marrow";
-import { nextGoal, sealMark } from "../deep";
-import { crushDamage, STRATA } from "../strata";
+import { RECORD_KEY, SAVE_KEY } from "../save";
 import { useGameFonts } from "@jgengine/core/ui/fonts.view";
 import { GAME_FONTS } from "../../art/look";
+import { RuneLayer } from "./rune/runeLayer";
+import { Visor, VisorReticle } from "./VisorHud";
 
 /*
  * The visor HUD is a tree of leaves. GameUI itself re-renders only when the screen's structure
@@ -50,8 +48,6 @@ function grab(): void {
 }
 const RARITY_LABEL: Record<string, string> = { common: "Common", uncommon: "Uncommon", rare: "Rare", epic: "Epic", legendary: "Legendary" };
 const STAT_LABEL: Record<string, string> = { damage: "damage", rate: "rate", value: "assay" };
-const CHANNEL_LABEL = { search: "Searching", harvest: "Working", scan: "Scanning", supply: "Taking", creature: "Scanning", zero: "Copying" } as const;
-const HOME_SPOT = [0, 0, 14] as const;
 const NO_CACHE: Dive["cache"] = [];
 const signed = (value: number, digits = 2): string => `${value > 0 ? "+" : ""}${Math.abs(value) < 1e-9 ? "0" : value.toFixed(digits)}`;
 /** Affix text: the roll's own words, so a rated spool reads as rated. */
@@ -70,36 +66,7 @@ function Compared({ item, equipped }: { item: Item; equipped: Item | null }) {
   </p>;
 }
 
-/** The carried mass of a cache list, worked out once per list: the list keeps its identity until it changes. */
-const carriedMass = new WeakMap<readonly Item[], number>();
-function massOf(cache: readonly Item[]): number {
-  let mass = carriedMass.get(cache);
-  if (mass === undefined) { mass = loadOf(cache).mass; carriedMass.set(cache, mass); }
-  return mass;
-}
-function positionOf(ctx: GameContext): readonly [number, number, number] {
-  return ctx.scene.entity.get(ctx.player.userId)?.position ?? HOME_SPOT;
-}
 const isOpen = (view: View): boolean => view.panel === null && !view.paused && (view.mode === "home" || view.mode === "dive");
-
-/** Getters for every reading that moves each tick; the HUD binds them to their own nodes. */
-function liveReadings(ctx: GameContext) {
-  const view = () => viewStore.read(ctx);
-  return {
-    oxygen: () => view().dive?.oxygen ?? 0,
-    health: () => view().dive?.health ?? 0,
-    rail: () => groundDistance(positionOf(ctx), EXIT),
-    food: () => view().deep.body.values["food"] ?? 0,
-    water: () => view().deep.body.values["water"] ?? 0,
-    loaded: () => view().ammo?.loaded ?? null,
-    reserve: () => view().ammo?.reserve ?? 0,
-    reloadLeft: () => { const ammo = view().ammo; return ammo?.reloading === true ? Math.round((1 - ammo.reloadProgress) * 1.3 * 10) / 10 : 0; },
-    items: () => view().dive?.cache.length ?? 0,
-    mass: () => { const cache = view().dive?.cache; return cache === undefined ? 0 : massOf(cache); },
-    search: () => { const channel = view().dive?.channel; if (channel === null || channel === undefined) return 0; const total = channel.total ?? 1.4; return (total - channel.remaining) / total; },
-  };
-}
-type Readings = ReturnType<typeof liveReadings>;
 
 /** Over the canvas while the next floor builds and compiles: where the rail or the lift is taking you. */
 function TravelCard() {
@@ -112,10 +79,8 @@ export function GameUI() {
   useGameFonts(GAME_FONTS);
   const ctx = useGameContext();
   const screen = useStore(viewStore, v => ({ panel: v.panel, mode: v.mode, paused: v.paused, diving: v.dive !== null, low: v.dive !== null && v.dive.oxygen <= 25 }));
-  const hud = useHudLayout({ storageKey: "deepward.hud" });
   const phase = useOptionalGamePhase();
   const settings = useSettings();
-  const readings = useMemo(() => liveReadings(ctx), [ctx]);
   const command: Command = (name, input = {}) => ctx.game.commands.run(`deepward.${name}`, input);
   const shiftDialogRef = useDialogBehavior({
     open: screen.panel !== null || screen.mode === "reprinting" || screen.mode === "saving" || screen.mode === "blocked",
@@ -159,50 +124,27 @@ export function GameUI() {
       window.removeEventListener("storage", storage);
     };
   }, [ctx, settings.isOpen]);
-  // The title and the pause are one menu system: the live station stays behind both. A save
-  // boundary or a pending reprint keeps its own sheet, so the menu steps aside for it.
-  if (phase === "menu") return <DeepwardMenu />;
   // The pause menu covers a HUD that stays mounted, only hidden: tearing the whole HUD down on
   // Escape and building it again on resume froze each of those frames for ~45 ms.
   const pauseMenu = phase === "paused" && screen.panel === null && (screen.mode === "home" || screen.mode === "dive");
   const close = () => { command("close"); grab(); };
-  return <>{pauseMenu ? <DeepwardMenu /> : null}<div className={`dw-ui dw-hud ${screen.low ? "dw-low" : ""} ${screen.paused ? "dw-held" : ""}`} style={pauseMenu ? HIDDEN : undefined} aria-hidden={pauseMenu || undefined} onKeyDown={event => {
-    if (event.code === "Tab") event.stopPropagation();
-    if ((event.code === "Space" || event.code === "Enter") && event.target instanceof HTMLElement && event.target.closest("button, a, input, select, textarea, [contenteditable=true]")) event.stopPropagation();
-  }}>
-    <TravelCard />
-    <VisorGlass low={screen.low} />
-    <HudCanvas layout={hud} editChord={false}>
-      <HudPanel id="shift" anchor="top-right" priority="critical" locked>
-        <HoldTab disabled={screen.mode !== "home" && screen.mode !== "dive"} onPause={() => command("pause")} />
-      </HudPanel>
-      {screen.diving && <>
-        <HudPanel id="depth" anchor="top" interactive={false} locked>
-          <DepthReadout />
-        </HudPanel>
-        <HudPanel id="air" anchor="bottom-left" priority="critical" interactive={false} locked>
-          <AirReadout readings={readings} />
-        </HudPanel>
-        <HudPanel id="haul" anchor="bottom-right" priority="critical" locked>
-          <HaulReadout readings={readings} onCache={() => command("cache")} />
-        </HudPanel>
-      </>}
-      {screen.mode === "home" && screen.panel === null && <HudPanel id="home" anchor="top-left" interactive={false} locked>
-        <HomeDocket />
-      </HudPanel>}
-      <HudPanel id="radio" anchor="bottom" order={1} interactive={false} locked>
-        <Radio />
-      </HudPanel>
-      <HudPanel id="prompt" anchor="bottom" priority="critical" locked>
-        <Prompt readings={readings} command={command} />
-      </HudPanel>
-    </HudCanvas>
+  const sheets = <>
     {screen.panel === "stash" && <StashSheet dialogRef={shiftDialogRef} command={command} close={close} />}
     {screen.panel === "fabricator" && <FabricatorPanel dialogRef={shiftDialogRef} command={command} close={close} />}
     {screen.panel === "cache" && screen.diving && <CacheSheet dialogRef={shiftDialogRef} command={command} close={close} />}
     {screen.mode === "reprinting" && <ReprintSheet dialogRef={shiftDialogRef} command={command} />}
     {(screen.mode === "saving" || screen.mode === "blocked") && <SaveSheet dialogRef={shiftDialogRef} command={command} />}
-  </div></>;
+  </>;
+  return <>
+    <RuneLayer ctx={ctx} phase={phase} settings={settings} />
+    {phase !== "menu" && <div className={`dw-ui dw-hud ${screen.low ? "dw-low" : ""} ${screen.paused ? "dw-held" : ""}`} style={pauseMenu ? HIDDEN : undefined} aria-hidden={pauseMenu || undefined} onKeyDown={event => {
+      if (event.code === "Tab") event.stopPropagation();
+      if ((event.code === "Space" || event.code === "Enter") && event.target instanceof HTMLElement && event.target.closest("button, a, input, select, textarea, [contenteditable=true]")) event.stopPropagation();
+    }}>
+      <VisorGlass low={screen.low} />
+    </div>}
+    {typeof document === "undefined" ? null : createPortal(<div className="dw-ui dw-sheet-layer"><TravelCard />{sheets}</div>, document.body)}
+  </>;
 }
 
 const HIDDEN = { display: "none" } as const;
@@ -216,80 +158,6 @@ function VisorGlass({ low }: { low: boolean }) {
     <div className="dw-hurtwash" data-on={glass.hurt ? "" : undefined} aria-hidden="true" />
     {glass.diving && <VisorReticle hit={glass.hit} />}
   </>;
-}
-
-/** The room on the brow strip; it re-renders only when the diver walks into another room. */
-function DepthReadout() {
-  const room = useGameStore(ctx => {
-    const stratum = viewStore.read(ctx).dive?.stratum ?? "vault";
-    const here = roomAt(positionOf(ctx), stratum);
-    return stratum === "vault" ? here : here.replace(/^(\d+)\s*\/\s*/, (_, n: string) => `${n} / ${STRATA[stratum].name} · `);
-  });
-  return <DepthStrip room={room} />;
-}
-
-function AirReadout({ readings }: { readings: Readings }) {
-  const suit = useStore(viewStore, v => {
-    const dive = v.dive, stratum = dive?.stratum ?? "vault", mark = sealMark(v.deep);
-    return {
-      tank: dive?.tankSeconds ?? 1, low: dive !== null && dive.oxygen <= 25, hurt: dive !== null && dive.hurt > 0,
-      mark, pressure: STRATA[stratum].pressure, crushing: crushDamage(stratum, mark) > 0,
-      ration: dive?.belt.ration ?? 0, flasks: dive?.belt.water ?? 0, lure: dive?.belt.lure ?? 0, lamp: dive?.lamp ?? false,
-    };
-  });
-  const body = useMemo(() => ({ food: readings.food, water: readings.water }), [readings]);
-  return <DiveComputer oxygen={readings.oxygen} health={readings.health} rail={readings.rail} tank={suit.tank} sealed={suit.tank > 110} low={suit.low} hurt={suit.hurt}
-    body={body} seal={{ mark: suit.mark, pressure: suit.pressure, crushing: suit.crushing }}
-    belt={{ ration: suit.ration, water: suit.flasks, lure: suit.lure, lamp: suit.lamp }} />;
-}
-
-function HaulReadout({ readings, onCache }: { readings: Readings; onCache: () => void }) {
-  const hand = useStore(viewStore, v => ({
-    weapon: weaponReadout(v.dive).label, capacity: v.ammo?.capacity ?? null, reloading: v.ammo?.reloading === true,
-    full: v.dive !== null && massOf(v.dive.cache) >= CACHE_WEIGHT,
-  }));
-  return <KitCounter weapon={hand.weapon} capacity={hand.capacity} reloading={hand.reloading} full={hand.full} capacityWeight={CACHE_WEIGHT}
-    loaded={readings.loaded} reserve={readings.reserve} reloadLeft={readings.reloadLeft} items={readings.items} mass={readings.mass} onCache={onCache} />;
-}
-
-/** Marrow's departure docket, re-rendered only when a figure on it changes as shown. */
-function HomeDocket() {
-  const docket = useGameStore(ctx => {
-    const view = viewStore.read(ctx), base = marrowOf(ctx);
-    const standing = marrowStanding(view.home.standing);
-    const goal = nextGoal(view.deep, base), said = base.says("halloway");
-    const prepared = view.home.stash.find(item => item.id === view.rifleUid) ?? null;
-    return {
-      life: view.home.life, scrip: view.home.bank.banked, stash: view.home.stash.length, returns: view.home.extractions, lost: view.home.deaths,
-      standing: `${standing.tier(OPERATOR, "marrow").id} / ${standing.standing(OPERATOR, "marrow")}`,
-      next: `${goal?.text ?? "Pattern 406 is home."} · ${view.rifleUid === null ? "issue sidearm" : `${prepared?.name ?? "service rifle"} at risk`}`,
-      brief: said.length > 0 ? `Halloway: ${said[said.length - 1]}` : undefined,
-      food: Math.ceil(view.deep.body.values["food"] ?? 0), water: Math.ceil(view.deep.body.values["water"] ?? 0),
-      power: base.num("marrow.power"), meals: Math.floor(base.num("marrow.food")), flasks: Math.floor(base.num("marrow.water")),
-      lastKind: view.home.last?.kind ?? null, lastReason: view.home.last?.reason ?? "",
-    };
-  });
-  return <Docket life={docket.life} scrip={docket.scrip} stash={docket.stash} returns={docket.returns} lost={docket.lost} standing={docket.standing} next={docket.next} brief={docket.brief}
-    base={{ food: docket.food, water: docket.water, power: docket.power, meals: docket.meals, flasks: docket.flasks }}
-    last={docket.lastKind === null ? null : { kind: docket.lastKind, reason: docket.lastReason }} />;
-}
-
-function Radio() {
-  const radio = useStore(viewStore, v => ({ hint: v.hint, error: v.error && v.mode !== "saving" && v.mode !== "blocked" ? v.error : null }));
-  return <CommsLine hint={radio.hint} error={radio.error} />;
-}
-
-/** A running search's bar, or the action the diver is standing at. */
-function Prompt({ readings, command }: { readings: Readings; command: Command }) {
-  const ctx = useGameContext();
-  const prompt = useGameStore(state => {
-    const view = viewStore.read(state), channel = view.dive?.channel ?? null;
-    if (channel !== null) return { channel: channel.kind ?? "search", target: null };
-    return { channel: null, target: view.panel === null && !view.paused ? nearby(state)?.label ?? null : null };
-  });
-  if (prompt.channel !== null) return <SearchBar done={readings.search} label={CHANNEL_LABEL[prompt.channel]} />;
-  if (prompt.target === null) return null;
-  return <ActionPlate label={prompt.target} onAct={() => { command("interact"); if (isOpen(viewStore.read(ctx))) grab(); }} />;
 }
 
 function StashSheet({ dialogRef, command, close }: { dialogRef: DialogRef; command: Command; close: () => void }) {
