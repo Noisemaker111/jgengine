@@ -524,7 +524,8 @@ async function measurePair(game: string, serve: (side: Side) => Promise<string>,
       before = after;
       if (verdict !== null) {
         console.error(`perf ab: ${game}: ${verdict.blocks} pairs in ${Math.round((Date.now() - measureAt) / 1000)} s`);
-        const spread = routeSpread(windows);
+        // Standing still, nothing is walked: a vehicle game's player rolls on its own.
+        const spread = path === "walk" ? routeSpread(windows) : 0;
         if (spread > ROUTE_SPREAD_MAX_M) console.error(`degraded: the windows' walks ended up to ${spread.toFixed(1)} m apart, so they did not all walk one route`);
         const busyIdle = windows.filter((window) => window.idleCpu > IDLE_CPU_MAX_PCT).length;
         if (busyIdle > 0) console.error(`degraded: in ${busyIdle} of ${windows.length} windows the frozen side's renderers still used over ${IDLE_CPU_MAX_PCT}% of a core`);
