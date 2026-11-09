@@ -4,7 +4,7 @@ import { GameCursor } from "@jgengine/core/ui/cursor.view";
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { GameIcon, type GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
 import { useViewportScrollLock } from "@jgengine/core/menu/gameMenu.view";
-import { useGame, useGameClock } from "@jgengine/react/hooks";
+import { useGame, useGameCalendar } from "@jgengine/react/hooks";
 import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
 import { useGameContext } from "@jgengine/react/provider";
 import { useSaveSlots } from "@jgengine/core/save/saveSlots.view";
@@ -366,9 +366,7 @@ function Handbook({ preferences, onPreference, whileLoading }: Prefs & { whileLo
   const working = workingMember(household);
   const featured = working?.id ?? household.order[0] ?? null;
   const entity = featured === null ? null : ctx.scene.entity.get(featured);
-  const clock = useGameClock();
-  const hour = Math.floor(clock.calendar.hour);
-  const minute = clock.calendar.minute;
+  const { hour, minute } = useGameCalendar((calendar) => ({ hour: Math.floor(calendar.hour), minute: calendar.minute }));
 
   const rightPage = (() => {
     if (active === "guide") return <GuidePage />;

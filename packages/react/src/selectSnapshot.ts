@@ -53,33 +53,63 @@ export function readSelectSnapshot<TSnapshot, TSelected>(
   return cache.value;
 }
 
-/** How many selection changes in {@link HOT_SELECTION_WINDOW_MS} make a component a per-frame re-render. @internal */
-export const HOT_SELECTION_CHANGES = 40;
-/** @internal */
-export const HOT_SELECTION_WINDOW_MS = 2_000;
+/** Frames or ticks a selection is watched over before it is judged. @internal */
+export const HOT_SELECTION_WINDOW = 60;
+/** Share of those frames or ticks it may change on before it counts as a per-frame or per-tick re-render. @internal */
+export const HOT_SELECTION_SHARE = 0.9;
+
+/** Which clock a hot selection kept pace with. */
+export type HotSelectionPace = "frame" | "tick";
 
 /**
- * Counts how often one component's store selection changes, and says once when it changes about as
- * often as frames draw: that component re-renders every frame, so what it selects is a value that
- * moves every frame (a timer, a position, a meter) or a whole object that a moving value is part of.
- * @internal
+ * Watches one component's store selection and says when it changes on nearly every rendered frame
+ * or nearly every simulation tick over a window: that component re-renders as often as the game
+ * draws or steps, so what it selects is a value that moves every frame or tick (a timer, a position,
+ * a meter) or a whole object one is part of. Judged in frames and ticks rather than seconds, so a
+ * 360 fps PC and a software-rendered host give the same verdict. @internal
  */
-export function createSelectionRate(now: () => number = () => performance.now()): { changed(): boolean } {
-  let windowStart = 0;
-  let changes = 0;
-  let reported = false;
+export function createSelectionHeat(): { changed(frame: number, tick: number): HotSelectionPace | null } {
+  const frames = { start: Number.NaN, last: Number.NaN, changes: 0 };
+  const ticks = { start: Number.NaN, last: Number.NaN, changes: 0 };
+  const judge = (window: typeof frames, at: number): boolean => {
+    if (Number.isNaN(window.start) || at < window.start) {
+      window.start = at;
+      window.last = Number.NaN;
+      window.changes = 0;
+    }
+    if (at !== window.last) {
+      window.last = at;
+      window.changes += 1;
+    }
+    const span = at - window.start;
+    if (span < HOT_SELECTION_WINDOW) return false;
+    const hot = window.changes >= span * HOT_SELECTION_SHARE;
+    window.start = at;
+    window.last = at;
+    window.changes = 0;
+    return hot;
+  };
   return {
-    changed() {
-      if (reported) return false;
-      const at = now();
-      if (at - windowStart > HOT_SELECTION_WINDOW_MS) {
-        windowStart = at;
-        changes = 0;
-      }
-      changes += 1;
-      if (changes < HOT_SELECTION_CHANGES) return false;
-      reported = true;
-      return true;
+    changed(frame, tick) {
+      if (judge(frames, frame)) return "frame";
+      if (judge(ticks, tick)) return "tick";
+      return null;
     },
   };
+}
+
+let devFrames = 0;
+let devFrameLoop = false;
+
+/** Rendered frames since the first store hook mounted, counted on the page's own animation frames (dev builds only). @internal */
+export function devFrameIndex(): number {
+  if (!devFrameLoop && typeof requestAnimationFrame === "function") {
+    devFrameLoop = true;
+    const count = () => {
+      devFrames += 1;
+      requestAnimationFrame(count);
+    };
+    requestAnimationFrame(count);
+  }
+  return devFrames;
 }

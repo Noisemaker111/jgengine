@@ -1,6 +1,6 @@
 import { HudButton } from "@jgengine/core/hud/hudButton.view";
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { useGame, useGameClock, useSceneObjects } from "@jgengine/react/hooks";
+import { useGame, useGameStore, useSceneObjects } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 import { NEEDS } from "../../needs/needs";
 import { moodOfNeeds, bondWord, householdBook } from "../../agents";
@@ -21,7 +21,7 @@ import { Enamel } from "../fiction/kit";
 export function Inspector() {
   const household = useStore(householdStore);
   const { commands } = useGame();
-  const clock = useGameClock();
+  const now = useGameStore((c) => c.time.now());
   const objects = useSceneObjects();
   const id = household.selectedMemberId;
   const member = id ? household.members[id] : null;
@@ -35,7 +35,7 @@ export function Inspector() {
   const reward = bloomHarvestIn(view, member, crop, false);
   const posts = postRows(household, member);
   const hasPaidStation = objects.some(object => member.lifestyle === "bloom" ? object.catalogId === "bloom_planter" : FURNITURE_BY_ID[object.catalogId]?.role === "work");
-  const paidReason = !hasPaidStation ? `Add a ${member.lifestyle === "bloom" ? "Bloom Planter" : "Yield Console"} with Furnish` : member.recovering ? "Recover before paid work" : member.shiftDay === household.day ? "Today's paid shift is finished or missed" : !shiftIsOpen(member, clock.now) ? `Paid window: ${scheduleLabel(member)}` : null;
+  const paidReason = !hasPaidStation ? `Add a ${member.lifestyle === "bloom" ? "Bloom Planter" : "Yield Console"} with Furnish` : member.recovering ? "Recover before paid work" : member.shiftDay === household.day ? "Today's paid shift is finished or missed" : !shiftIsOpen(member, now) ? `Paid window: ${scheduleLabel(member)}` : null;
   const care = [{ goal:"hunger", label:"Nourish", detail:"Uses 1 ration" }, { goal:"energy", label:"Rest", detail:"Lowers stress" }, { goal:"fun", label:"Play", detail:"Lowers stress" }] as const;
   const mood = moodOfNeeds(member.needs);
   const shiftProgress = member.lifestyle === "yield" ? member.workToday : member.shiftProgress;
@@ -49,7 +49,7 @@ export function Inspector() {
     <div className="orbit-member-state"><MoodBadge tier={mood.tier} face={mood.face} label={mood.label}/><span>{activeGoalLabel(member, company)}</span></div>
     <div className="orbit-traits" role="list" aria-label="Traits">{traitsOf(member).map(trait => <Enamel key={trait.id} role="listitem" tone="lilac" radius={99} padding="2px 10px" className="orbit-trait" title={trait.blurb}>{trait.label}</Enamel>)}</div>
     <p className="orbit-fine">{traitsOf(member).map(trait => trait.blurb).join(" ")}</p>
-    {(member.illUntil ?? 0) > clock.now && <p className="orbit-warning">Fever: no paid work and rest drains faster for another {Math.ceil(((member.illUntil ?? 0) - clock.now) / 210 * 24)} hours.</p>}
+    {(member.illUntil ?? 0) > now && <p className="orbit-warning">Fever: no paid work and rest drains faster for another {Math.ceil(((member.illUntil ?? 0) - now) / 210 * 24)} hours.</p>}
     <div className="orbit-stress"><span>{member.recovering ? "Burnout recovery" : "Stress"}</span><span className="orbit-bar" role="meter" aria-label="Stress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(member.stress)}><i style={{ width: `${Math.round(Math.max(0, Math.min(100, member.stress)))}%`, background: "#ff9e8c" }}/></span><b>{Math.round(member.stress)}</b></div>
     {member.recovering && <p className="orbit-warning">Paid work stops during recovery. Reach 50 Nourish and Rest, then reduce stress below 35.</p>}
     <div className="orbit-full-needs">{NEEDS.map(need => <NeedBar key={need} need={need} value={member.needs[need]}/>)}</div>

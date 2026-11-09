@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createSelectCache, createSelectionRate, HOT_SELECTION_CHANGES, readSelectSnapshot, shallowEqual } from "./selectSnapshot";
+import { createSelectCache, createSelectionHeat, HOT_SELECTION_WINDOW, readSelectSnapshot, shallowEqual } from "./selectSnapshot";
 
 describe("readSelectSnapshot", () => {
   test("returns the first computed value and caches it", () => {
@@ -79,22 +79,31 @@ describe("shallowEqual", () => {
   });
 });
 
-describe("createSelectionRate", () => {
-  test("says once when a selection changes about every frame, and not for a slow one", () => {
-    let at = 0;
-    const fast = createSelectionRate(() => at);
-    const reports: boolean[] = [];
-    for (let frame = 0; frame < HOT_SELECTION_CHANGES * 2; frame += 1) {
-      at += 16;
-      reports.push(fast.changed());
-    }
-    expect(reports.filter(Boolean).length).toBe(1);
-    const slow = createSelectionRate(() => at);
-    let said = false;
-    for (let tick = 0; tick < 200; tick += 1) {
-      at += 250;
-      said ||= slow.changed();
-    }
-    expect(said).toBe(false);
+describe("createSelectionHeat", () => {
+  test("names a selection that changes on nearly every frame, and passes one that changes every few frames", () => {
+    const fast = createSelectionHeat();
+    let verdict: string | null = null;
+    for (let frame = 1; frame <= HOT_SELECTION_WINDOW * 2 && verdict === null; frame += 1) verdict = fast.changed(frame, 0);
+    expect(verdict).toBe("frame");
+    const slow = createSelectionHeat();
+    let said: string | null = null;
+    for (let frame = 1; frame <= HOT_SELECTION_WINDOW * 10; frame += 3) said ??= slow.changed(frame, 0);
+    expect(said).toBeNull();
+  });
+
+  test("names a selection that changes every simulation tick even when frames run far faster", () => {
+    const heat = createSelectionHeat();
+    let verdict: string | null = null;
+    // 360 fps against a 60 Hz sim: a change every tick lands on one frame in six.
+    for (let tick = 1; tick <= HOT_SELECTION_WINDOW * 2 && verdict === null; tick += 1) verdict = heat.changed(tick * 6, tick);
+    expect(verdict).toBe("tick");
+  });
+
+  test("a short burst of changes, like a hit flash, is not a per-frame render", () => {
+    const heat = createSelectionHeat();
+    let said: string | null = null;
+    for (let frame = 1; frame <= HOT_SELECTION_WINDOW / 2; frame += 1) said ??= heat.changed(frame, frame);
+    for (let frame = HOT_SELECTION_WINDOW * 3; frame <= HOT_SELECTION_WINDOW * 3 + 5; frame += 1) said ??= heat.changed(frame, frame);
+    expect(said).toBeNull();
   });
 });

@@ -1,31 +1,36 @@
 import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { HudFade } from "@jgengine/core/hud/hudLayout.view";
-import { useGame, useGameClock, useSceneObjects } from "@jgengine/react/hooks";
+import { useGame, useGameCalendar, useGameClock, useGameStore, useSceneObjects } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/react/provider";
+import { LiveText } from "@jgengine/core/ui/liveBind.view";
 import { useStore } from "@jgengine/react/store";
 import { householdStore } from "../../session/store";
 import { nextBill } from "../../sim/economy";
 import { dayGoal } from "../../sim/goal";
 import { householdPhase } from "../../sim/schedule";
-import { Enamel, WallClock } from "../fiction/kit";
+import { Enamel, WallClock, type WallTime } from "../fiction/kit";
 import { creditsText } from "./bits";
 
 const PHASE_WORD: Record<string, string> = { torpor: "Torpor", yield: "Yield hours", bloom: "Bloom hours", bond: "Bonding hours" };
 
 /** The kitchen wall: a 24-hour clock with the shift hours painted on, a tear-off calendar and the speed knobs. */
 export function HouseClock({ compact = false }: { compact?: boolean }) {
+  const ctx = useGameContext();
   const clock = useGameClock();
   const { commands } = useGame();
-  const cal = clock.calendar;
-  const hour = Math.floor(cal.hour);
-  const minute = cal.minute;
-  const phase = householdPhase(clock.now);
+  const day = useGameCalendar((calendar) => calendar.day);
+  const phase = useGameStore((c) => householdPhase(c.time.now()));
+  const time = (): WallTime => {
+    const calendar = ctx.time.calendar();
+    return { hour: Math.floor(calendar.hour), minute: calendar.minute };
+  };
   return (
     <section className="orbit-wall" aria-label="Household time">
-      <WallClock hour={hour} minute={minute} size={compact ? 62 : 84} />
+      <WallClock time={time} size={compact ? 62 : 84} />
       <KitPanel material="paper" cut="torn" depth={6} padding="0" edgeWidth={0} shadow={false} className="orbit-calendar">
-        <span className="orbit-calendar-band">Day {cal.day + 1}</span>
-        <strong>{String(hour).padStart(2, "0")}:{String(minute).padStart(2, "0")}</strong>
+        <span className="orbit-calendar-band">Day {day + 1}</span>
+        <LiveText as="strong" get={() => { const { hour, minute } = time(); return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`; }} />
         <small>{PHASE_WORD[phase] ?? phase}</small>
       </KitPanel>
       <div className="orbit-knobs" role="group" aria-label="Simulation speed">

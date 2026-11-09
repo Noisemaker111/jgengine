@@ -29,7 +29,7 @@ import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
 import type { RosterEntry } from "@jgengine/core/scene/roster";
 import type { WorldItemRecord } from "@jgengine/core/loot/groundItem";
-import type { ClockSnapshot, SimClock } from "@jgengine/core/time/simClock";
+import type { CalendarTime, ClockSnapshot, SimClock } from "@jgengine/core/time/simClock";
 import {
   resolveActivePrompt,
   type PositionedPrompt,
@@ -39,9 +39,23 @@ import { readBuildEnv } from "@jgengine/core/devtools/saveEndpoint";
 import { useGameContext, useOptionalGameContext } from "./provider";
 
 const noopSubscribe = (): (() => void) => () => undefined;
-import { createSelectCache, createSelectionRate, readSelectSnapshot, shallowEqual } from "./selectSnapshot";
+import { createSelectCache, createSelectionHeat, devFrameIndex, HOT_SELECTION_WINDOW, readSelectSnapshot, shallowEqual, type HotSelectionPace } from "./selectSnapshot";
 
-const DEV_BUILD = readBuildEnv().DEV === true;
+const BUILD_ENV = readBuildEnv();
+/** Dev builds and tests judge every store selection's pace; a production build pays nothing for it. */
+const WATCH_PACE = BUILD_ENV.DEV === true || BUILD_ENV.NODE_ENV === "test";
+
+/** The error a component that re-renders every frame or tick from the store fails with in a dev build or test. */
+export class PerFrameRenderError extends Error {
+  constructor(component: string, pace: HotSelectionPace) {
+    super(
+      `[jgengine] ${component} re-renders on nearly every ${pace} from the game store (it changed on at least ${Math.round(HOT_SELECTION_WINDOW * 0.9)} of ${HOT_SELECTION_WINDOW} ${pace}s). ` +
+        "Select only what it shows. Draw a value that moves every frame or tick into its own node: LiveText or useFrameBind (@jgengine/core/ui/liveBind.view), " +
+        "or hand an engine UI part live(() => value) (KitMeter value, KitObjective distance and deadline).",
+    );
+    this.name = "PerFrameRenderError";
+  }
+}
 
 /** The component a hook runs in, read once off the stack for a warning. */
 function callerComponent(): string {
@@ -57,8 +71,8 @@ function callerComponent(): string {
  * `(ctx) => ({ mode: view(ctx).mode, panel: view(ctx).panel })` re-renders only when one of those does.
  * Select only what the component shows. A value that moves every frame or tick (a timer, a meter, a
  * position) never goes through here: bind it to its own node with `LiveText` or `useFrameBind`
- * (`@jgengine/core/ui/liveBind.view`). In a dev build a component whose selection changes about every
- * frame says so in the console.
+ * (`@jgengine/core/ui/liveBind.view`). In a dev build or a test, a component whose selection changes on
+ * nearly every rendered frame or simulation tick fails with a {@link PerFrameRenderError} naming it.
  */
 export function useGameStore<T>(
   selector: (ctx: GameContext) => T,
@@ -70,11 +84,12 @@ export function useGameStore<T>(
   const isEqualRef = useRef(isEqual);
   isEqualRef.current = isEqual;
   const cacheRef = useRef(createSelectCache<number, T>());
-  const rateRef = useRef<ReturnType<typeof createSelectionRate> | null>(null);
+  const heatRef = useRef<ReturnType<typeof createSelectionHeat> | null>(null);
+  const hotRef = useRef<PerFrameRenderError | null>(null);
   // Named on the first render, while the component is on the stack: the store reads the snapshot later, from React's own code.
   const nameRef = useRef("a component");
-  if (DEV_BUILD && rateRef.current === null) {
-    rateRef.current = createSelectionRate();
+  if (WATCH_PACE && heatRef.current === null) {
+    heatRef.current = createSelectionHeat();
     nameRef.current = callerComponent();
   }
 
@@ -87,10 +102,13 @@ export function useGameStore<T>(
       () => selectorRef.current(ctx),
       (previous, next) => isEqualRef.current(previous, next),
     );
-    if (rateRef.current !== null && before !== undefined && value !== before && rateRef.current.changed()) {
-      console.warn(
-        `[jgengine] ${nameRef.current} re-renders on almost every frame from the game store. Select only what it shows, and bind values that move every frame or tick with LiveText or useFrameBind (@jgengine/core/ui/liveBind.view), so only the changing text or bar updates.`,
-      );
+    if (hotRef.current !== null) throw hotRef.current;
+    if (heatRef.current !== null && before !== undefined && value !== before) {
+      const pace = heatRef.current.changed(devFrameIndex(), ctx.sim.tick());
+      if (pace !== null) {
+        hotRef.current = new PerFrameRenderError(nameRef.current, pace);
+        throw hotRef.current;
+      }
     }
     return value;
   }, [ctx]);
@@ -472,10 +490,30 @@ export function localPlayerEntity(ctx: GameContext): SceneEntity | null {
   );
 }
 
-export function useGameClock(): ClockSnapshot & { controls: SimClock } {
+/** The clock's settings a control shows: they change when the player pauses or picks a speed, never as time passes. */
+export type GameClockControls = Pick<ClockSnapshot, "paused" | "speed" | "playSpeed" | "timescale" | "scale" | "speeds"> & { controls: SimClock };
+
+/**
+ * Pause state and speed for a time control, re-rendering only when the player pauses or changes speed.
+ * Time itself is not here because it moves every tick: draw it with `LiveText`
+ * (`get={() => ctx.time.calendar().hour}`), or take a slow part of it with {@link useGameCalendar}.
+ */
+export function useGameClock(): GameClockControls {
   const ctx = useGameContext();
-  useSyncExternalStore(ctx.subscribe, ctx.version, ctx.version);
-  return { ...ctx.time.snapshot(), controls: ctx.time };
+  const settings = useGameStore((c) => {
+    const snapshot = c.time.snapshot();
+    return { paused: snapshot.paused, speed: snapshot.speed, playSpeed: snapshot.playSpeed, timescale: snapshot.timescale, scale: snapshot.scale, speeds: snapshot.speeds };
+  });
+  return useMemo(() => ({ ...settings, controls: ctx.time }), [settings, ctx]);
+}
+
+/**
+ * A slow part of the sim calendar (the day, the season, the hour), re-rendering only when it changes:
+ * `useGameCalendar((c) => c.day)`. A value that moves every tick (minutes on a fast clock, seconds)
+ * belongs in `LiveText`, not here.
+ */
+export function useGameCalendar<T>(select: (calendar: CalendarTime) => T): T {
+  return useGameStore((ctx) => select(ctx.time.calendar()));
 }
 
 export function useActivePrompt<T extends PositionedPrompt>(prompts?: readonly T[]): T | null {

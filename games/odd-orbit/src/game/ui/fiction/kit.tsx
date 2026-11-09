@@ -1,5 +1,6 @@
-import { forwardRef, type CSSProperties, type ReactNode, type Ref } from "react";
+import { forwardRef, useRef, type CSSProperties, type ReactNode, type Ref } from "react";
 import type { GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
+import { useFrameBind } from "@jgengine/core/ui/liveBind.view";
 import { KitButton, KitPanel, type KitMaterialButtonProps, type KitMaterialPanelProps } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import type { NeedId } from "../../needs/needs";
 import { NEED_COLORS } from "../../palette";
@@ -144,7 +145,25 @@ const DIAL_PHASES: readonly { from: number; to: number; color: string }[] = [
 ];
 
 /** The habitat's wall clock: a 24-hour enamel dial with one hand and the shift hours painted on. */
-export function WallClock({ hour, minute, size = 76 }: { hour: number; minute: number; size?: number }) {
+/** The hour and minute a {@link WallClock} shows. */
+export interface WallTime {
+  hour: number;
+  minute: number;
+}
+
+function wallLabel({ hour, minute }: WallTime): string {
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+/** A 24-hour wall clock whose hand follows `time`, read every frame: only the hand and its label move. */
+export function WallClock({ time, size = 76 }: { time: () => WallTime; size?: number }) {
+  const face = useRef<SVGSVGElement>(null);
+  const hand = useRef<SVGPathElement>(null);
+  useFrameBind(face, () => wallLabel(time()), (label, svg) => svg.setAttribute("aria-label", label));
+  useFrameBind(hand, () => {
+    const { hour, minute } = time();
+    return ((hour + minute / 60) / 24) * 360 + 180;
+  }, (angle, path) => path.setAttribute("transform", `rotate(${angle} 50 50)`));
   const c = 50;
   // Midnight at the foot, noon at the crown; hours run clockwise.
   const at = (h: number, r: number): [number, number] => {
@@ -156,9 +175,8 @@ export function WallClock({ hour, minute, size = 76 }: { hour: number; minute: n
     const [x1, y1] = at(to, r);
     return `M ${c} ${c} L ${x0} ${y0} A ${r} ${r} 0 ${to - from > 12 ? 1 : 0} 1 ${x1} ${y1} Z`;
   };
-  const angle = ((hour + minute / 60) / 24) * 360 + 180;
   return (
-    <svg className="orbit-clock-face" width={size} height={size} viewBox="0 0 100 100" role="img" aria-label={`${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`}>
+    <svg ref={face} className="orbit-clock-face" width={size} height={size} viewBox="0 0 100 100" role="img">
       <circle cx="50" cy="52" r="47" fill="rgba(0,0,0,0.3)" />
       <circle cx="50" cy="50" r="47" fill="#fff0d6" stroke="#2a1733" strokeWidth="3" />
       {DIAL_PHASES.map((phase) => <path key={phase.from} d={wedge(phase.from, phase.to, 38)} fill={phase.color} opacity="0.85" />)}
@@ -169,7 +187,7 @@ export function WallClock({ hour, minute, size = 76 }: { hour: number; minute: n
         const [x2, y2] = at(i, long ? 37 : 41);
         return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#2a1733" strokeWidth={long ? 2.6 : 1.2} strokeLinecap="round" />;
       })}
-      <path d="M 50 50 L 50 14" stroke="#2a1733" strokeWidth="4" strokeLinecap="round" transform={`rotate(${angle} 50 50)`} />
+      <path ref={hand} d="M 50 50 L 50 14" stroke="#2a1733" strokeWidth="4" strokeLinecap="round" />
       <circle cx="50" cy="50" r="5" fill="#f6a6cf" stroke="#2a1733" strokeWidth="2" />
       <path d="M 22 18 A 40 40 0 0 1 60 10" stroke="rgba(255,255,255,0.7)" strokeWidth="3" fill="none" strokeLinecap="round" />
     </svg>

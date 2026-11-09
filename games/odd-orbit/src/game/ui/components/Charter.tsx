@@ -1,6 +1,6 @@
 import { GameIcon, type GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { useGame, useGameClock, useSceneObjects } from "@jgengine/react/hooks";
+import { useGame, useGameStore, useSceneObjects } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 
 import { householdStore } from "../../session/store";
@@ -62,13 +62,13 @@ export function CharterNote({ compact = false }: { compact?: boolean }) {
 /** A transmission slip from the Authority's relay: what happened, the household's answers and the time left. */
 export function TransmissionSlip() {
   const household = useStore(householdStore);
-  const clock = useGameClock();
+  const now = useGameStore((c) => c.time.now());
   const { commands } = useGame();
   const pending: PendingIncident | null | undefined = household.incident;
   if (pending == null) return null;
   const def = incidentDef(pending.id);
   if (def?.choices === undefined) return null;
-  const left = Math.max(0, pending.deadline - clock.now);
+  const left = Math.max(0, pending.deadline - now);
   return (
     <PaperNote tilt={-0.8} pin="#ff9e8c" padding="16px 18px 18px" className="orbit-transmission" role="alertdialog" aria-label={`Transmission: ${def.title}`}>
       <header className="orbit-transmission-head">

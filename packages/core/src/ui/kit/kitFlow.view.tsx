@@ -121,9 +121,9 @@ export const KitObjective = memoView("KitObjective", function KitObjective({
   const arrow = useRef<SVGSVGElement>(null);
   useFrameBind(
     arrow,
-    () => (bearing === undefined ? 0 : readLive(bearing)),
+    () => (isLive(bearing) ? readLive(bearing) : null),
     (radians, element) => {
-      element.style.transform = `rotate(${radians}rad)`;
+      if (radians !== null) element.style.transform = `rotate(${radians}rad)`;
     },
   );
   const aside =
@@ -137,13 +137,13 @@ export const KitObjective = memoView("KitObjective", function KitObjective({
             viewBox="0 0 24 24"
             width="1.15em"
             height="1.15em"
-            style={{ display: "block", flex: "none", transition: "transform 120ms linear" }}
+            style={{ display: "block", flex: "none", ...(isLive(bearing) ? {} : { transform: `rotate(${bearing}rad)` }), transition: "transform 120ms linear" }}
           >
             {/* Head and shaft: a bare arrowhead turned to 5 o'clock reads as pointing left. */}
             <path d="M12 1.5 L21.5 11.5 L15.5 11.5 L15.5 22.5 L8.5 22.5 L8.5 11.5 L2.5 11.5 Z" fill="currentColor" stroke="var(--kit-surface, #fff)" strokeWidth="1.5" strokeLinejoin="round" />
           </svg>
         )}
-        <LiveText get={() => `${Math.round(readLive(distance))} m`} />
+        {isLive(distance) ? <LiveText get={() => `${Math.round(readLive(distance))} m`} /> : <>{Math.round(distance)} m</>}
       </span>
     );
   return (

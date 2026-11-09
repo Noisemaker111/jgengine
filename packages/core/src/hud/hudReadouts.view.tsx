@@ -1,11 +1,13 @@
-import { useMemo, type CSSProperties, type ReactNode } from "react";
+import { useRef, type CSSProperties, type ReactNode } from "react";
 
 import { groundSpeed } from "@jgengine/core/scene/entityStore";
 
 import { iconForItemId } from "@jgengine/core/ui/icons/gameIcons.view";
 import { hudFrameStyle } from "./hudFrame.view";
 import { IconTreatment, schoolForItem } from "@jgengine/core/ui/icons/iconTreatment.view";
-import { useCurrency, useGameClock, useGameStore, useInventory, localPlayerEntity } from "@jgengine/react/hooks";
+import { useCurrency, useGameCalendar, useGameClock, useInventory, localPlayerEntity } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/react/provider";
+import { LiveText, useFrameBind } from "@jgengine/core/ui/liveBind.view";
 import { hudType } from "./hudTokens";
 
 /**
@@ -118,11 +120,12 @@ export function Speedometer({
   style?: CSSProperties;
   className?: string;
 }) {
-  const speed = useGameStore((ctx) => {
+  const ctx = useGameContext();
+  const speed = (): number => {
     const entity = entityId === undefined ? localPlayerEntity(ctx) : ctx.scene.entity.get(entityId);
     return entity === null ? 0 : groundSpeed(entity) * scale;
-  });
-  const fraction = Math.max(0, Math.min(1, speed / max));
+  };
+  const needle = useRef<SVGPathElement>(null);
   // 240° sweep from -210° to +30°.
   const startDeg = -210;
   const sweep = 240;
@@ -135,13 +138,21 @@ export function Speedometer({
     const large = sweep * (toFrac - fromFrac) > 180 ? 1 : 0;
     return `M ${cx + radius * Math.cos(a0)} ${cy + radius * Math.sin(a0)} A ${radius} ${radius} 0 ${large} 1 ${cx + radius * Math.cos(a1)} ${cy + radius * Math.sin(a1)}`;
   };
+  useFrameBind(
+    needle,
+    () => Math.max(0, Math.min(1, speed() / max)),
+    (fraction, path) => {
+      path.setAttribute("d", arc(0, fraction));
+      path.setAttribute("stroke", fraction > 0.85 ? "#f87171" : "#38bdf8");
+    },
+  );
   return (
     <div className={className} style={{ ...PANEL, width: size, padding: 6, textAlign: "center", ...style }}>
       <svg width={size - 12} height={(size - 12) * 0.72} viewBox={`0 0 ${size} ${size * 0.72}`} style={{ display: "block", margin: "0 auto" }}>
         <path d={arc(0, 1)} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={7} strokeLinecap="round" />
-        <path d={arc(0, fraction)} fill="none" stroke={fraction > 0.85 ? "#f87171" : "#38bdf8"} strokeWidth={7} strokeLinecap="round" />
+        <path ref={needle} fill="none" strokeWidth={7} strokeLinecap="round" />
       </svg>
-      <div style={{ marginTop: -8, fontVariantNumeric: "tabular-nums", fontWeight: 700, fontSize: 18, lineHeight: 1 }}>{Math.round(speed)}</div>
+      <LiveText as="div" style={{ marginTop: -8, fontVariantNumeric: "tabular-nums", fontWeight: 700, fontSize: 18, lineHeight: 1 }} get={() => Math.round(speed())} />
       <div style={{ fontSize: hudType("xs"), opacity: 0.6, letterSpacing: 0.4, textTransform: "uppercase" }}>{unit}</div>
     </div>
   );
@@ -167,20 +178,13 @@ export function Clock({
   style?: CSSProperties;
   className?: string;
 }) {
+  const ctx = useGameContext();
   const clock = useGameClock();
-  const { hour, minute, day } = clock.calendar;
-  const label = useMemo(() => {
-    const mm = minute.toString().padStart(2, "0");
-    if (format === "12h") {
-      const h12 = hour % 12 === 0 ? 12 : hour % 12;
-      return `${h12}:${mm} ${hour < 12 ? "AM" : "PM"}`;
-    }
-    return `${hour.toString().padStart(2, "0")}:${mm}`;
-  }, [hour, minute, format]);
+  const day = useGameCalendar((calendar) => calendar.day);
   return (
     <div className={className} style={{ ...PANEL, padding: "5px 10px", display: "inline-flex", alignItems: "center", gap: 8, fontVariantNumeric: "tabular-nums", ...style }}>
       {showDay ? <span style={{ fontSize: hudType("xs"), opacity: 0.6 }}>Day {day + 1}</span> : null}
-      <span style={{ fontWeight: 700, fontSize: 14 }}>{label}</span>
+      <LiveText style={{ fontWeight: 700, fontSize: 14 }} get={() => clockLabel(ctx.time.calendar(), format)} />
       {controls ? (
         <span style={{ display: "inline-flex", gap: 3, marginLeft: 4 }}>
           <ClockPill label={clock.paused ? "▶" : "❚❚"} active={false} onClick={() => (clock.paused ? clock.controls.play() : clock.controls.pause())} />
@@ -191,6 +195,15 @@ export function Clock({
       ) : null}
     </div>
   );
+}
+
+function clockLabel({ hour, minute }: { hour: number; minute: number }, format: "24h" | "12h"): string {
+  const mm = minute.toString().padStart(2, "0");
+  if (format === "12h") {
+    const h12 = hour % 12 === 0 ? 12 : hour % 12;
+    return `${h12}:${mm} ${hour < 12 ? "AM" : "PM"}`;
+  }
+  return `${hour.toString().padStart(2, "0")}:${mm}`;
 }
 
 function ClockPill({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
