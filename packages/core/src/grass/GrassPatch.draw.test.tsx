@@ -1,8 +1,9 @@
 import { expect, test } from "bun:test";
 import { act, advance, createRoot, extend } from "@react-three/fiber";
-import { createElement, type ReactElement } from "react";
+import { createElement, Fragment, type ReactElement } from "react";
 import * as THREE from "three";
 
+import { FrameBoardPump } from "@jgengine/core/frame/frameBoardPump.draw";
 import { GrassCover } from "./GrassCover.draw";
 import { bakeGrassNode, resolveGrassBake } from "./grassBake.draw";
 import { readGrassLook } from "./grassKind";
@@ -21,7 +22,7 @@ async function mounted(camera: THREE.Camera, element: ReactElement, run: (scene:
     gl: () => ({ render() {}, setSize() {}, setPixelRatio() {} }) as unknown as THREE.WebGLRenderer });
   try {
     let scene!: THREE.Scene;
-    await act(async () => { scene = root.render(element).getState().scene; });
+    await act(async () => { scene = root.render(createElement(Fragment, null, createElement(FrameBoardPump), element)).getState().scene; });
     for (let frame = 0; frame < frames; frame += 1) await act(async () => { advance(performance.now()); });
     scene.updateMatrixWorld(true);
     await run(scene);

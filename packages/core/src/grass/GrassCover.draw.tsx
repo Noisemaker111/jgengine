@@ -1,7 +1,9 @@
 // @skill jgengine-world
+import { useRef } from "react";
 import * as THREE from "three";
 
-import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { createGrassCoverGeometry, GRASS_COVER_MAX_SEGMENTS } from "./grassCoverGeometry.draw";
 import type { TerrainHeightSampler } from "@jgengine/core/terrain/terrainMath.draw";
 
@@ -139,80 +141,103 @@ export interface GrassCoverProps {
  * turns a bare pavement footprint into grass the blade field stands in. Bounded to one draw and a
  * {@link GRASS_COVER_MAX_SEGMENTS}² grid, so a large park still costs a single mesh.
  */
-export function GrassCover({
-  area,
-  seed,
-  colorBase,
-  colorTip,
-  strength,
-  edgeFeather,
-  heightAt,
-  coverageAt,
-  segments,
-  lift,
-  shadeAt,
-  detail = 0.5,
-  position,
-}: GrassCoverProps) {
-  const geometry = useDisposable(() => {
-    const baked = createGrassCoverGeometry({
-      area,
-      seed,
-      colorBase,
-      colorTip,
-      strength,
-      edgeFeather,
-      heightAt,
-      coverageAt,
-      ...(segments === undefined ? {} : { segments }),
-      ...(lift === undefined ? {} : { lift }),
-      ...(shadeAt === undefined ? {} : { shadeAt }),
-    });
-    const next = new THREE.BufferGeometry();
-    if (baked.positions.length === 0) return next;
-    next.setAttribute("position", new THREE.BufferAttribute(baked.positions, 3));
-    next.setAttribute("normal", new THREE.BufferAttribute(baked.normals, 3));
-    next.setAttribute("color", new THREE.BufferAttribute(baked.colors, 4));
-    next.setAttribute("uv", new THREE.BufferAttribute(baked.uvs, 2));
-    next.setIndex(new THREE.BufferAttribute(baked.indices, 1));
-    next.computeBoundingSphere();
-    return next;
-  }, [area, seed, colorBase, colorTip, strength, edgeFeather, heightAt, coverageAt, segments, lift, shadeAt]);
-  const material = useDisposable(() => {
-    const tile = coverGrain();
-    const { strength, scale } = grassCoverGrain(detail);
-    const next = new THREE.MeshStandardMaterial({
-      map: tile.map,
-      normalMap: tile.normalMap,
-      normalScale: new THREE.Vector2(0.5 * strength, 0.5 * strength),
-      vertexColors: true,
-      transparent: true,
-      depthWrite: false,
-      roughness: 0.96,
-      metalness: 0,
-      polygonOffset: true,
-      polygonOffsetFactor: -1,
-      polygonOffsetUnits: -1,
-    });
-    next.onBeforeCompile = (shader) => {
-      shader.uniforms["uGrain"] = { value: strength };
-      shader.uniforms["uGrainScale"] = { value: scale };
-      shader.uniforms["uGrainMean"] = { value: tile.mean };
-      shader.fragmentShader = shader.fragmentShader
-        .replace("#include <common>", "#include <common>\nuniform float uGrain;\nuniform float uGrainScale;\nuniform float uGrainMean;")
-        .replace("#include <map_fragment>", grassCoverMapFragment(THREE.ShaderChunk.map_fragment));
-    };
-    next.customProgramCacheKey = () => "jgengine-grass-cover";
-    return next;
-  }, [detail]);
-  if (strength <= 0) return null;
-  return (
-    <mesh
-      geometry={geometry}
-      material={material}
-      receiveShadow
-      frustumCulled
-      {...(position === undefined ? {} : { position: [position[0], position[1], position[2]] as const })}
-    />
-  );
+export function grassCoverDraw(getProps: () => GrassCoverProps): EngineDraw {
+  let mesh: THREE.Mesh | null = null;
+  let geometry: THREE.BufferGeometry | null = null;
+  let material: THREE.MeshStandardMaterial | null = null;
+  return {
+    mount(state: EngineFrameState) {
+      const props = getProps();
+      if (props.strength <= 0) return;
+      const baked = createGrassCoverGeometry({
+        area: props.area,
+        seed: props.seed,
+        colorBase: props.colorBase,
+        colorTip: props.colorTip,
+        strength: props.strength,
+        edgeFeather: props.edgeFeather,
+        heightAt: props.heightAt,
+        coverageAt: props.coverageAt,
+        ...(props.segments === undefined ? {} : { segments: props.segments }),
+        ...(props.lift === undefined ? {} : { lift: props.lift }),
+        ...(props.shadeAt === undefined ? {} : { shadeAt: props.shadeAt }),
+      });
+      geometry = new THREE.BufferGeometry();
+      if (baked.positions.length !== 0) {
+        geometry.setAttribute("position", new THREE.BufferAttribute(baked.positions, 3));
+        geometry.setAttribute("normal", new THREE.BufferAttribute(baked.normals, 3));
+        geometry.setAttribute("color", new THREE.BufferAttribute(baked.colors, 4));
+        geometry.setAttribute("uv", new THREE.BufferAttribute(baked.uvs, 2));
+        geometry.setIndex(new THREE.BufferAttribute(baked.indices, 1));
+        geometry.computeBoundingSphere();
+      }
+      const tile = coverGrain();
+      const { strength, scale } = grassCoverGrain(props.detail ?? 0.5);
+      material = new THREE.MeshStandardMaterial({
+        map: tile.map,
+        normalMap: tile.normalMap,
+        normalScale: new THREE.Vector2(0.5 * strength, 0.5 * strength),
+        vertexColors: true,
+        transparent: true,
+        depthWrite: false,
+        roughness: 0.96,
+        metalness: 0,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -1,
+      });
+      material.onBeforeCompile = (shader) => {
+        shader.uniforms["uGrain"] = { value: strength };
+        shader.uniforms["uGrainScale"] = { value: scale };
+        shader.uniforms["uGrainMean"] = { value: tile.mean };
+        shader.fragmentShader = shader.fragmentShader
+          .replace("#include <common>", "#include <common>\nuniform float uGrain;\nuniform float uGrainScale;\nuniform float uGrainMean;")
+          .replace("#include <map_fragment>", grassCoverMapFragment(THREE.ShaderChunk.map_fragment));
+      };
+      material.customProgramCacheKey = () => "jgengine-grass-cover";
+      mesh = new THREE.Mesh(geometry, material);
+      mesh.receiveShadow = true;
+      mesh.frustumCulled = true;
+      const position = props.position;
+      if (position !== undefined) mesh.position.set(position[0], position[1], position[2]);
+      state.scene.add(mesh);
+    },
+    frame() {
+      const position = getProps().position;
+      if (mesh !== null && position !== undefined) mesh.position.set(position[0], position[1], position[2]);
+    },
+    dispose(state: EngineFrameState) {
+      if (mesh !== null) state.scene.remove(mesh);
+      mesh = null;
+      geometry?.dispose();
+      material?.dispose();
+      geometry = null;
+      material = null;
+    },
+  };
+}
+
+/**
+ * The turf surface under one authored `grass_field` patch: a ground-draped, edge-feathered mat that
+ * turns a bare pavement footprint into grass the blade field stands in. Bounded to one draw and a
+ * {@link GRASS_COVER_MAX_SEGMENTS}² grid, so a large park still costs a single mesh.
+ */
+export function GrassCover(props: GrassCoverProps) {
+  const latest = useRef<GrassCoverProps>(props);
+  latest.current = props;
+  useEngineDraw(() => grassCoverDraw(() => latest.current), [
+    props.area,
+    props.seed,
+    props.colorBase,
+    props.colorTip,
+    props.strength,
+    props.edgeFeather,
+    props.heightAt,
+    props.coverageAt,
+    props.segments,
+    props.lift,
+    props.shadeAt,
+    props.detail,
+  ]);
+  return null;
 }

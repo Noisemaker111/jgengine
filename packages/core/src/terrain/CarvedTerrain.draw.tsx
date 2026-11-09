@@ -1,17 +1,17 @@
-import { type ThreeElements, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { type ThreeElements } from "@react-three/fiber";
+import { useRef } from "react";
 import * as THREE from "three";
 
 import { nextFrame } from "@jgengine/core/run/nextFrame.draw";
-import { runSliced, type SlicedRun } from "@jgengine/core/run/slicedWork";
+import { runSliced, SlicedWorkCancelled, type SlicedJob, type SlicedRun } from "@jgengine/core/run/slicedWork";
 
 import type { TerrainField } from "@jgengine/core/terrain/terrain";
 
-import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
-import { useSlicedValue } from "@jgengine/core/render/useSlicedValue.draw";
+import { trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { CHUNKED_GROUND_MIN_VERTICES, GroundChunks } from "./terrainChunks.draw";
 import { fieldGroundGeometryJob, resolveFieldGroundGrid, type FieldGroundOptions } from "./terrainMath.draw";
-import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Props for `CarvedTerrain`: the terrain field to mesh, its size, resolution, colouring and material settings. */
 export interface CarvedTerrainProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> {
@@ -32,135 +32,8 @@ export interface CarvedTerrainProps extends Omit<ThreeElements["mesh"], "args" |
   epoch?: number;
 }
 
-/**
- * Renders a `TerrainField` as a deformed ground mesh — the crater/mound view for destructible terrain.
- * Because the geometry samples `field.sampleHeight`, a `CarvableField.carve(...)` shows as a real bowl
- * once `epoch` changes. Pair with `InstancedBodies` to see debris resting in the crater it blasted.
- */
-export function CarvedTerrain({
-  field,
-  size,
-  segments,
-  center,
-  colors,
-  heightRange,
-  paletteAt,
-  paintColorAt,
-  roughness = 0.95,
-  metalness = 0,
-  surfaceMaterial,
-  receiveShadow = true,
-  epoch = 0,
-  ...meshProps
-}: CarvedTerrainProps) {
-  const defaultMaterial = useDisposable(
-    () => new THREE.MeshStandardMaterial({ color: "#ffffff", roughness, metalness, vertexColors: true }),
-    [metalness, roughness],
-  );
-  const material = surfaceMaterial ?? defaultMaterial;
-  const grid = useMemo(
-    () => resolveFieldGroundGrid(field, { size, segments, center, colors, heightRange, paletteAt, paintColorAt }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [field, size, segments, center, colors, heightRange, paletteAt, paintColorAt, epoch],
-  );
-  const chunked = (grid.segments.x + 1) * (grid.segments.z + 1) > CHUNKED_GROUND_MIN_VERTICES;
-  if (chunked) return <ChunkedGround grid={grid} material={material} receiveShadow={receiveShadow} meshProps={meshProps} />;
-  return <WholeGround field={field} options={{ size, segments, center, colors, heightRange, paletteAt, paintColorAt }} epoch={epoch} material={material} receiveShadow={receiveShadow} meshProps={meshProps} />;
-}
-
-function WholeGround({
-  field,
-  options,
-  epoch,
-  material,
-  receiveShadow,
-  meshProps,
-}: {
-  field: TerrainField;
-  options: FieldGroundOptions;
-  epoch: number;
-  material: THREE.Material;
-  receiveShadow: boolean;
-  meshProps: Omit<CarvedTerrainProps, "field">;
-}) {
-  // Meshed in slices after mount: a big field samples the game's height function hundreds of
-  // thousands of times, which inside render froze the page (and the menu over it) for seconds.
-  // The previous mesh stays up while a carve re-meshes.
-  const { size, segments, center, colors, heightRange, paletteAt, paintColorAt } = options;
-  const geometry = useSlicedValue(
-    "terrain",
-    () => fieldGroundGeometryJob(field, options),
-    [field, size, segments, center, colors, heightRange, paletteAt, paintColorAt, epoch],
-  );
-  useDisposable(() => geometry ?? [], [geometry]);
-
-  // Until the mesh is built, a stand-in with its vertex layout and a single zero-area triangle
-  // holds its place: the shader warmup links and draws the ground's program (one of the largest a
-  // scene has) while the build runs, instead of starting only once the mesh lands.
-  return <mesh {...meshProps} geometry={geometry ?? terrainStandIn()} material={material} receiveShadow={receiveShadow} />;
-}
-
 /** Seconds between checks for a tile level the camera now needs. */
 const REFINE_INTERVAL = 0.25;
-
-/**
- * A ground too big for one mesh, drawn as {@link GroundChunks} LOD tiles. Scene loading waits for
- * the coarse cover plus the tiles around the camera; finer tiles stream in afterwards in small
- * slices as the camera approaches them, so they never count against the scene being ready.
- */
-function ChunkedGround({
-  grid,
-  material,
-  receiveShadow,
-  meshProps,
-}: {
-  grid: ReturnType<typeof resolveFieldGroundGrid>;
-  material: THREE.Material;
-  receiveShadow: boolean;
-  meshProps: Omit<CarvedTerrainProps, "field">;
-}) {
-  const camera = useThree((state) => state.camera);
-  const cameraRef = useRef(camera);
-  cameraRef.current = camera;
-  const chunks = useMemo(() => new GroundChunks(grid, material, receiveShadow), [grid, material, receiveShadow]);
-  useEffect(() => () => chunks.dispose(), [chunks]);
-  const ready = useSlicedValue("terrain", () => wrapInitial(chunks, () => cameraRef.current.getWorldPosition(new THREE.Vector3())), [chunks]);
-  const refining = useRef<SlicedRun<void> | null>(null);
-  const sinceCheck = useRef(0);
-  useEffect(
-    () => () => {
-      refining.current?.cancel();
-      refining.current = null;
-    },
-    [chunks],
-  );
-  useFrameTask((state, delta) => {
-    if (ready !== chunks || refining.current !== null) return;
-    sinceCheck.current += delta;
-    if (sinceCheck.current < REFINE_INTERVAL) return;
-    sinceCheck.current = 0;
-    const job = chunks.nextRefinement(state.camera.getWorldPosition(eyeScratch));
-    if (job === null) return;
-    const run = runSliced(job, { budgetMs: 1, yieldThread: nextFrame });
-    refining.current = run;
-    run.done.then(
-      () => {
-        if (refining.current === run) refining.current = null;
-      },
-      () => {
-        if (refining.current === run) refining.current = null;
-      },
-    );
-  });
-  const { position, rotation, scale, visible } = meshProps;
-  return (
-    <>
-      <primitive object={chunks.root} position={position} rotation={rotation} scale={scale} visible={visible} />
-      {/* Holds the ground's program in the warmup while the first tiles build (see WholeGround). */}
-      {ready === chunks ? null : <mesh geometry={terrainStandIn()} material={material} receiveShadow={receiveShadow} />}
-    </>
-  );
-}
 
 const eyeScratch = new THREE.Vector3();
 
@@ -182,4 +55,218 @@ function terrainStandIn(): THREE.BufferGeometry {
   standIn.setIndex(new THREE.BufferAttribute(new Uint32Array([0, 1, 2]), 1));
   standIn.computeBoundingSphere();
   return standIn;
+}
+
+function applyVec3(target: THREE.Vector3 | THREE.Euler, value: unknown): void {
+  if (Array.isArray(value)) target.set(value[0] as number, value[1] as number, value[2] as number);
+  else if (value instanceof THREE.Vector3 || value instanceof THREE.Euler) target.copy(value as never);
+}
+
+interface SurfaceFlags {
+  castShadow: boolean | undefined;
+  frustumCulled: boolean | undefined;
+}
+
+function applyMeshProps(object: THREE.Object3D, props: CarvedTerrainProps, flags: SurfaceFlags): void {
+  const position = props.position;
+  if (position !== undefined) applyVec3(object.position, position);
+  const rotation = props.rotation;
+  if (rotation !== undefined) applyVec3(object.rotation, rotation);
+  const scale = props.scale;
+  if (scale !== undefined) applyVec3(object.scale, scale);
+  if (props.visible !== undefined) object.visible = props.visible as boolean;
+  // Traversing a chunked ground's tiles every frame is wasteful; only re-apply on change.
+  if (props.castShadow !== flags.castShadow || props.frustumCulled !== flags.frustumCulled) {
+    flags.castShadow = props.castShadow;
+    flags.frustumCulled = props.frustumCulled;
+    object.traverse((node) => {
+      const mesh = node as THREE.Mesh;
+      if (props.castShadow !== undefined) mesh.castShadow = props.castShadow;
+      if (props.frustumCulled !== undefined) mesh.frustumCulled = props.frustumCulled;
+    });
+  }
+}
+
+/** Run a sliced job the way `useSlicedValue` did: scene work counted, result on done. */
+function startSliced<T>(label: string, job: SlicedJob<T>, onResult: (value: T) => void): SlicedRun<T> {
+  const done = trackSceneWork(label);
+  const run = runSliced(job);
+  run.done.then(
+    (result) => {
+      onResult(result);
+      done();
+    },
+    (error: unknown) => {
+      done();
+      if (!(error instanceof SlicedWorkCancelled)) console.error(`[jgengine] ${label} failed to build`, error);
+    },
+  );
+  return run;
+}
+
+/**
+ * Renders a `TerrainField` as a deformed ground mesh — the crater/mound view for destructible terrain.
+ * Because the geometry samples `field.sampleHeight`, a `CarvableField.carve(...)` shows as a real bowl
+ * once `epoch` changes. Pair with `InstancedBodies` to see debris resting in the crater it blasted.
+ */
+export function carvedTerrainDraw(getProps: () => CarvedTerrainProps): EngineDraw {
+  let holder: THREE.Group | null = null;
+  let mesh: THREE.Mesh | null = null;
+  let standInMesh: THREE.Mesh | null = null;
+  let chunks: GroundChunks | null = null;
+  let run: SlicedRun<unknown> | null = null;
+  let refining: SlicedRun<void> | null = null;
+  let ready = false;
+  let sinceCheck = 0;
+  let disposed = false;
+  let defaultMaterial: THREE.MeshStandardMaterial | null = null;
+  let defaultKey = "";
+  const holderFlags: SurfaceFlags = { castShadow: undefined, frustumCulled: undefined };
+  const meshFlags: SurfaceFlags = { castShadow: undefined, frustumCulled: undefined };
+
+  function currentMaterial(props: CarvedTerrainProps): THREE.Material {
+    if (props.surfaceMaterial !== undefined) return props.surfaceMaterial;
+    const roughness = props.roughness ?? 0.95;
+    const metalness = props.metalness ?? 0;
+    const key = `${roughness}|${metalness}`;
+    if (defaultMaterial === null || defaultKey !== key) {
+      defaultMaterial?.dispose();
+      defaultMaterial = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness, metalness, vertexColors: true });
+      defaultKey = key;
+    }
+    return defaultMaterial;
+  }
+
+  function mountChunked(state: EngineFrameState, props: CarvedTerrainProps, grid: ReturnType<typeof resolveFieldGroundGrid>, material: THREE.Material): void {
+    chunks = new GroundChunks(grid, material, props.receiveShadow ?? true);
+    holder = new THREE.Group();
+    holder.add(chunks.root);
+    applyMeshProps(holder, props, holderFlags);
+    state.scene.add(holder);
+    // Holds the ground's program in the warmup while the first tiles build (see WholeGround).
+    standInMesh = new THREE.Mesh(terrainStandIn(), material);
+    standInMesh.receiveShadow = props.receiveShadow ?? true;
+    state.scene.add(standInMesh);
+    const camera = state.camera;
+    run = startSliced("terrain", wrapInitial(chunks, () => camera.getWorldPosition(new THREE.Vector3())), () => {
+      ready = true;
+      state.invalidate();
+    }) as SlicedRun<unknown>;
+  }
+
+  function mountWhole(state: EngineFrameState, props: CarvedTerrainProps, material: THREE.Material): void {
+    const { field, size, segments, center, colors, heightRange, paletteAt, paintColorAt } = props;
+    const options: FieldGroundOptions = { size, segments, center, colors, heightRange, paletteAt, paintColorAt };
+    mesh = new THREE.Mesh(terrainStandIn(), material);
+    mesh.receiveShadow = props.receiveShadow ?? true;
+    applyMeshProps(mesh, props, meshFlags);
+    state.scene.add(mesh);
+    run = startSliced("terrain", fieldGroundGeometryJob(field, options), (geometry) => {
+      if (disposed || mesh === null) {
+        geometry.dispose();
+        return;
+      }
+      const previous = mesh.geometry;
+      mesh.geometry = geometry;
+      if (previous !== terrainStandIn()) previous.dispose();
+      state.invalidate();
+    }) as SlicedRun<unknown>;
+  }
+
+  return {
+    mount(state: EngineFrameState) {
+      disposed = false;
+      const props = getProps();
+      const grid = resolveFieldGroundGrid(props.field, {
+        size: props.size,
+        segments: props.segments,
+        center: props.center,
+        colors: props.colors,
+        heightRange: props.heightRange,
+        paletteAt: props.paletteAt,
+        paintColorAt: props.paintColorAt,
+      });
+      const chunked = (grid.segments.x + 1) * (grid.segments.z + 1) > CHUNKED_GROUND_MIN_VERTICES;
+      const material = currentMaterial(props);
+      if (chunked) mountChunked(state, props, grid, material);
+      else mountWhole(state, props, material);
+    },
+    frame(state: EngineFrameState) {
+      const props = getProps();
+      const material = currentMaterial(props);
+      const receiveShadow = props.receiveShadow ?? true;
+      if (chunks !== null && holder !== null) {
+        chunks.syncSurface(material, receiveShadow);
+        applyMeshProps(holder, props, holderFlags);
+        if (!ready || refining !== null) return;
+        sinceCheck += state.delta;
+        if (sinceCheck < REFINE_INTERVAL) return;
+        sinceCheck = 0;
+        const job = chunks.nextRefinement(state.camera.getWorldPosition(eyeScratch));
+        if (job === null) return;
+        const next = runSliced(job, { budgetMs: 1, yieldThread: nextFrame });
+        refining = next;
+        next.done.then(
+          () => { if (refining === next) refining = null; },
+          () => { if (refining === next) refining = null; },
+        );
+        return;
+      }
+      if (mesh !== null) {
+        mesh.material = material;
+        mesh.receiveShadow = receiveShadow;
+        applyMeshProps(mesh, props, meshFlags);
+      }
+    },
+    dispose(state: EngineFrameState) {
+      disposed = true;
+      run?.cancel();
+      run = null;
+      refining?.cancel();
+      refining = null;
+      chunks?.dispose();
+      chunks = null;
+      if (holder !== null) {
+        state.scene.remove(holder);
+        holder = null;
+      }
+      if (standInMesh !== null) {
+        state.scene.remove(standInMesh);
+        standInMesh = null;
+      }
+      if (mesh !== null) {
+        const geometry = mesh.geometry;
+        state.scene.remove(mesh);
+        if (geometry !== terrainStandIn()) geometry.dispose();
+        mesh = null;
+      }
+      defaultMaterial?.dispose();
+      defaultMaterial = null;
+      defaultKey = "";
+      ready = false;
+      sinceCheck = 0;
+    },
+  };
+}
+
+/**
+ * Renders a `TerrainField` as a deformed ground mesh — the crater/mound view for destructible terrain.
+ * Because the geometry samples `field.sampleHeight`, a `CarvableField.carve(...)` shows as a real bowl
+ * once `epoch` changes. Pair with `InstancedBodies` to see debris resting in the crater it blasted.
+ */
+export function CarvedTerrain(props: CarvedTerrainProps) {
+  const latest = useRef<CarvedTerrainProps>(props);
+  latest.current = props;
+  useEngineDraw(() => carvedTerrainDraw(() => latest.current), [
+    props.field,
+    props.size,
+    props.segments,
+    props.center,
+    props.colors,
+    props.heightRange,
+    props.paletteAt,
+    props.paintColorAt,
+    props.epoch,
+  ]);
+  return null;
 }

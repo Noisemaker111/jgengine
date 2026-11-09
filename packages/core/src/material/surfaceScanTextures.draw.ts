@@ -7,6 +7,65 @@ import type { TerrainMaterialMaps } from "@jgengine/core/world/features";
 import { ImageTextureLoader } from "./imageTexture.draw";
 import { warmupWaitsFor } from "@jgengine/core/render/shaderWarmup.draw";
 
+/** A scan tracked outside React: `useSurfaceScan`'s draw-side twin for EngineDraw factories. */
+export interface SurfaceScanTrack {
+  /** The decoded maps; `null` while loading, after a failure, or when nothing was asked for. */
+  textures(): SurfaceScanTextures | null;
+  /** True until the maps load or fail — the surface stays hidden meanwhile. */
+  pending(): boolean;
+  /** Swap `enabled`/`maps` for a new request; the old handle is released. */
+  sync(maps: TerrainMaterialMaps | undefined, enabled: boolean, scene: THREE.Scene): void;
+  release(): void;
+}
+
+/**
+ * Acquire a scan for draw code: the first holder starts the decode, `onChange` fires once the maps
+ * are ready or have failed, and the last release frees the GPU textures. `sync` follows prop changes
+ * the way the hook's effect deps did.
+ */
+export function trackSurfaceScan(maps: TerrainMaterialMaps | undefined, enabled: boolean, scene: THREE.Scene, onChange: () => void): SurfaceScanTrack {
+  let handle: ReturnType<typeof acquireSurfaceScan> | null = null;
+  let requested = false;
+  let settled = true;
+  const keyOf = (next: TerrainMaterialMaps | undefined, nextEnabled: boolean) => (next === undefined || !nextEnabled ? null : surfaceScanKey(next));
+  let key = keyOf(maps, enabled);
+  requested = key !== null;
+  if (key !== null && maps !== undefined) {
+    handle = acquireSurfaceScan(maps, () => {
+      settled = true;
+      onChange();
+    });
+    if (handle.current() === null) warmupWaitsFor(scene, handle.settled);
+    settled = handle.current() !== null || handle.failed();
+  }
+  return {
+    textures: () => handle?.current() ?? null,
+    pending: () => requested && !settled,
+    sync(next, nextEnabled, nextScene) {
+      const nextKey = keyOf(next, nextEnabled);
+      if (nextKey === key) return;
+      handle?.release();
+      handle = null;
+      key = nextKey;
+      requested = nextKey !== null;
+      settled = !requested;
+      if (nextKey !== null && next !== undefined) {
+        handle = acquireSurfaceScan(next, () => {
+          settled = true;
+          onChange();
+        });
+        if (handle.current() === null) warmupWaitsFor(nextScene, handle.settled);
+        settled = handle.current() !== null || handle.failed();
+      }
+      onChange();
+    },
+    release() {
+      handle?.release();
+      handle = null;
+    },
+  };
+}
+
 /** Decoded maps of one scanned surface, shared by every material that tiles it. */
 export interface SurfaceScanTextures {
   color: THREE.Texture;

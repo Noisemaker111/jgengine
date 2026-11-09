@@ -1,93 +1,99 @@
-import { useMemo } from "react";
-import { DoubleSide, type BufferGeometry } from "three";
+import { useRef } from "react";
+import { DoubleSide, Group, MeshStandardMaterial, type BufferGeometry } from "three";
 import type { RoadRibbon } from "@jgengine/core/roads/roads";
 import type { TerrainDetailMaterialConfig } from "@jgengine/core/world/features";
-import { useSurfaceScan } from "@jgengine/core/material/surfaceScanTextures.draw";
-import { useSurfaceRibbonMaterial } from "./surfaceRibbonMaterial.draw";
-import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { childFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
+import { terrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
+import type { SurfaceScanTextures } from "@jgengine/core/material/surfaceScanTextures.draw";
+import { scannedRibbonDraw, type ScannedRibbonSpec, type SurfaceRibbonMaterialOptions } from "./surfaceRibbonMaterial.draw";
 import { mergeRibbonGeometry, type JunctionSurface } from "./RoadRibbons.draw";
 
-function JunctionPatch({
-  geometry,
-  color,
-  surfaceDetail,
-  surface,
-  scan,
-}: {
+/** Stop-line and crosswalk paint tone. @internal */
+export const JUNCTION_PAINT = "#e6e9ee";
+
+interface JunctionPatchProps {
   geometry: BufferGeometry;
   color: string;
   surfaceDetail: boolean;
   surface: string;
   scan: TerrainDetailMaterialConfig | undefined;
-}) {
-  const quality = useTerrainQuality();
-  // The same world-XZ scan as the carriageway ribbons, so asphalt runs through the crossing unbroken.
-  const { textures, pending } = useSurfaceScan(scan?.maps, surfaceDetail && quality !== "low");
-  const material = useSurfaceRibbonMaterial(
-    surfaceDetail
-      ? {
-          surface,
-          color,
-          halfWidth: 1,
-          quality,
-          ...(scan === undefined || textures === null
-            ? {}
-            : { scan: { textures, projection: "world" as const, repeat: scan.repeat ?? 4, strength: scan.strength ?? 1, tint: scan.tint ?? 1 } }),
-        }
-      : null,
-  );
-  return (
-    <mesh geometry={geometry} receiveShadow visible={!pending} {...(material === null ? {} : { material })}>
-      {material === null ? <meshStandardMaterial color={color} roughness={0.95} metalness={0} side={DoubleSide} /> : null}
-    </mesh>
-  );
 }
 
-/** Stop-line and crosswalk paint tone. @internal */
-export const JUNCTION_PAINT = "#e6e9ee";
+/** One welded crossing surface, shaded like the carriageway ribbons. */
+function junctionPatchDraw(getProps: () => JunctionPatchProps): EngineDraw {
+  return scannedRibbonDraw((): ScannedRibbonSpec => {
+    const props = getProps();
+    const quality = terrainQuality();
+    return {
+      geometry: props.geometry,
+      scanMaps: props.scan?.maps,
+      scanEnabled: props.surfaceDetail && quality !== "low",
+      quality,
+      materialOptions: (textures: SurfaceScanTextures | null): SurfaceRibbonMaterialOptions | null =>
+        props.surfaceDetail
+          ? {
+              surface: props.surface,
+              color: props.color,
+              halfWidth: 1,
+              quality,
+              ...(props.scan === undefined || textures === null
+                ? {}
+                : { scan: { textures, projection: "world" as const, repeat: props.scan.repeat ?? 4, strength: props.scan.strength ?? 1, tint: props.scan.tint ?? 1 } }),
+            }
+          : null,
+      fallback: () => new MeshStandardMaterial({ color: props.color, roughness: 0.95, metalness: 0, side: DoubleSide }),
+      receiveShadow: true,
+    };
+  });
+}
 
-/** White stop-line / crosswalk paint over a junction: worn through to the asphalt grain like the lane dashes. */
-function JunctionPaint({
-  geometry,
-  surfaceDetail,
-  scan,
-}: {
+interface JunctionPaintProps {
   geometry: BufferGeometry;
   surfaceDetail: boolean;
   scan: TerrainDetailMaterialConfig | undefined;
-}) {
-  const quality = useTerrainQuality();
-  const { textures, pending } = useSurfaceScan(scan?.maps, surfaceDetail && quality !== "low");
-  const material = useSurfaceRibbonMaterial(
-    surfaceDetail
-      ? {
-          surface: "road",
+}
+
+/** White stop-line / crosswalk paint over a junction: worn through to the asphalt grain like the lane dashes. */
+function junctionPaintDraw(getProps: () => JunctionPaintProps): EngineDraw {
+  return scannedRibbonDraw((): ScannedRibbonSpec => {
+    const props = getProps();
+    const quality = terrainQuality();
+    return {
+      geometry: props.geometry,
+      scanMaps: props.scan?.maps,
+      scanEnabled: props.surfaceDetail && quality !== "low",
+      quality,
+      materialOptions: (textures: SurfaceScanTextures | null): SurfaceRibbonMaterialOptions | null =>
+        props.surfaceDetail
+          ? {
+              surface: "road",
+              color: JUNCTION_PAINT,
+              halfWidth: 0.3,
+              roughness: 0.6,
+              quality,
+              polygonOffset: true,
+              paint: true,
+              ...(props.scan === undefined || textures === null
+                ? {}
+                : { scan: { textures, projection: "world" as const, repeat: props.scan.repeat ?? 4, strength: 0.85, tint: 0 } }),
+            }
+          : null,
+      fallback: () =>
+        new MeshStandardMaterial({
           color: JUNCTION_PAINT,
-          halfWidth: 0.3,
-          roughness: 0.6,
-          quality,
+          roughness: 0.85,
+          metalness: 0,
+          side: DoubleSide,
           polygonOffset: true,
-          paint: true,
-          ...(scan === undefined || textures === null
-            ? {}
-            : { scan: { textures, projection: "world" as const, repeat: scan.repeat ?? 4, strength: 0.85, tint: 0 } }),
-        }
-      : null,
-  );
-  if (material !== null) return <mesh geometry={geometry} renderOrder={1} receiveShadow visible={!pending} material={material} />;
-  return (
-    <mesh geometry={geometry} renderOrder={1} visible={!pending}>
-      <meshStandardMaterial
-        color={JUNCTION_PAINT}
-        roughness={0.85}
-        metalness={0}
-        side={DoubleSide}
-        polygonOffset
-        polygonOffsetFactor={-1}
-        polygonOffsetUnits={-1}
-      />
-    </mesh>
-  );
+          polygonOffsetFactor: -1,
+          polygonOffsetUnits: -1,
+        }),
+      receiveShadow: true,
+      renderOrder: 1,
+    };
+  });
 }
 
 /**
@@ -108,21 +114,8 @@ export function mergeJunctionSurfaces(surfaces: readonly JunctionSurface[]): { c
   return patches;
 }
 
-/**
- * Renders welded road intersections: one seam-shared asphalt surface per junction (built by
- * {@link buildAuthoredRoadNetwork}, its boundary vertices welded onto the trimmed ribbon ends so
- * there is no overlap and no floating disc), plus white stop lines and crosswalk bars at each
- * approach. Junctions of one colour share one draw. Markings ride the `GROUND_DECAL_LAYERS` marking
- * layer above the surface, with `polygonOffset`/`renderOrder` so they win the depth test on sloped ground.
- * @internal
- */
-export function RoadJunctions({
-  surfaces,
-  paint,
-  surfaceDetail = true,
-  surface = "road",
-  scan,
-}: {
+/** Props for {@link RoadJunctions}. */
+export interface RoadJunctionsProps {
   surfaces: readonly JunctionSurface[];
   /** Stop-line and crosswalk ribbons from `buildAuthoredRoadNetwork`. */
   paint: readonly RoadRibbon[];
@@ -132,18 +125,73 @@ export function RoadJunctions({
   surface?: string;
   /** Scanned carriageway from the first road that names one, so junctions match the ribbons. */
   scan?: TerrainDetailMaterialConfig | undefined;
-}) {
-  const patches = useMemo(() => mergeJunctionSurfaces(surfaces), [surfaces]);
+}
 
-  const markings = useMemo(() => mergeRibbonGeometry(paint), [paint]);
+/**
+ * Renders welded road intersections: one seam-shared asphalt surface per junction (built by
+ * {@link buildAuthoredRoadNetwork}, its boundary vertices welded onto the trimmed ribbon ends so
+ * there is no overlap and no floating disc), plus white stop lines and crosswalk bars at each
+ * approach. Junctions of one colour share one draw. Markings ride the `GROUND_DECAL_LAYERS` marking
+ * layer above the surface, with `polygonOffset`/`renderOrder` so they win the depth test on sloped ground.
+ * @internal
+ */
+export function roadJunctionsDraw(getProps: () => RoadJunctionsProps): EngineDraw {
+  const group = new Group();
+  let children: { draw: EngineDraw; state: EngineFrameState }[] = [];
+  let geometries: BufferGeometry[] = [];
+  let added = false;
+  return {
+    mount(state: EngineFrameState) {
+      const props = getProps();
+      const patches = mergeJunctionSurfaces(props.surfaces);
+      const markings = mergeRibbonGeometry(props.paint);
+      if (patches.length === 0 && markings === null) return;
+      const surfaceDetail = props.surfaceDetail ?? true;
+      const surface = props.surface ?? "road";
+      const scan = props.scan;
+      children = [];
+      geometries = [];
+      const add = (draw: EngineDraw) => {
+        const childState = childFrameState(state, group);
+        draw.mount?.(childState);
+        children.push({ draw, state: childState });
+      };
+      for (const patch of patches) {
+        geometries.push(patch.geometry);
+        add(junctionPatchDraw(() => ({ geometry: patch.geometry, color: patch.color, surfaceDetail, surface, scan })));
+      }
+      if (markings !== null) {
+        geometries.push(markings);
+        add(junctionPaintDraw(() => ({ geometry: markings, surfaceDetail, scan })));
+      }
+      state.scene.add(group);
+      added = true;
+    },
+    frame(_state: EngineFrameState) {
+      for (const child of children) child.draw.frame?.(child.state);
+    },
+    dispose(state: EngineFrameState) {
+      for (const child of children) child.draw.dispose?.(child.state);
+      children = [];
+      if (added) state.scene.remove(group);
+      added = false;
+      for (const geometry of geometries) geometry.dispose();
+      geometries = [];
+    },
+  };
+}
 
-  if (patches.length === 0 && markings === null) return null;
-  return (
-    <group>
-      {patches.map((patch) => (
-        <JunctionPatch key={patch.color} geometry={patch.geometry} color={patch.color} surfaceDetail={surfaceDetail} surface={surface} scan={scan} />
-      ))}
-      {markings !== null ? <JunctionPaint geometry={markings} surfaceDetail={surfaceDetail} scan={scan} /> : null}
-    </group>
-  );
+/**
+ * Renders welded road intersections: one seam-shared asphalt surface per junction (built by
+ * {@link buildAuthoredRoadNetwork}, its boundary vertices welded onto the trimmed ribbon ends so
+ * there is no overlap and no floating disc), plus white stop lines and crosswalk bars at each
+ * approach. Junctions of one colour share one draw. Markings ride the `GROUND_DECAL_LAYERS` marking
+ * layer above the surface, with `polygonOffset`/`renderOrder` so they win the depth test on sloped ground.
+ * @internal
+ */
+export function RoadJunctions(props: RoadJunctionsProps) {
+  const latest = useRef<RoadJunctionsProps>(props);
+  latest.current = props;
+  useEngineDraw(() => roadJunctionsDraw(() => latest.current), [props.surfaces, props.paint, props.surfaceDetail, props.surface, props.scan]);
+  return null;
 }

@@ -1,17 +1,19 @@
 // @skill jgengine-world
-import { useThree, type ThreeElements } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { type ThreeElements } from "@react-three/fiber";
+import { useRef } from "react";
 import * as THREE from "three";
 import { useOptionalGameContext } from "@jgengine/react/provider";
 
 import type { SlicedJob } from "@jgengine/core/run/slicedWork";
-import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
-import { useSlicedValue } from "@jgengine/core/render/useSlicedValue.draw";
+import { runSliced } from "@jgengine/core/run/slicedWork";
+import { trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
+import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { readSkyLight } from "@jgengine/core/sky/skyLight.draw";
 import { createOceanConfig, oceanBedResolution, type OceanConfig, type ResolvedOceanConfig } from "./OceanConfig.draw";
-import { createOceanMaterial, deepBedTexture, syncOceanMaterial } from "./OceanMaterial.draw";
+import { createOceanMaterial, deepBedTexture, syncOceanMaterial, type OceanShaderMaterial } from "./OceanMaterial.draw";
 import type { OceanBedBounds } from "./oceanBed";
-import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Props for {@link Ocean}: the ocean config, the ground under it, and mesh props. */
 export interface OceanProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> {
@@ -81,67 +83,159 @@ export function* bakeOceanBed(bedAt: (x: number, z: number) => number, bounds: O
   return texture;
 }
 
+/** The slice of an {@link OceanProps} the draw reads; `ctx` carries game time like the old provider. */
+export interface OceanDrawProps {
+  config?: OceanConfig | undefined;
+  bedAt?: ((x: number, z: number) => number) | undefined;
+  bedBounds?: OceanBedBounds | undefined;
+  position?: readonly [number, number, number] | THREE.Vector3 | undefined;
+  frustumCulled?: boolean | undefined;
+  ctx?: GameContext | null | undefined;
+}
+
 /**
  * An animated Gerstner-wave water surface lit by the scene's sky: it reflects the sky's colours, takes
  * the sun's and moon's light, clears over shallows and foams at the shore wherever `bedAt` puts the bed,
  * and follows the camera to the horizon when `config.follow` is set.
  */
-export function Ocean({ config, bedAt, bedBounds, ...meshProps }: OceanProps) {
-  const resolved = useMemo(() => createOceanConfig(config), [config]);
-  const far = useThree((state) => (state.camera instanceof THREE.PerspectiveCamera || state.camera instanceof THREE.OrthographicCamera ? state.camera.far : 0));
-  const followHalf = resolved.follow ? Math.max(resolved.size, resolved.depth, (Number.isFinite(far) ? far : 0) * 2) / 2 : 0;
-  const sheet = useMemo(
-    () => (resolved.follow ? createFollowGeometry(followHalf, resolved.resolution) : { geometry: createSheetGeometry(resolved), spacing: 0 }),
-    [resolved, followHalf],
-  );
-  useEffect(() => () => sheet.geometry.dispose(), [sheet]);
-  const material = useDisposable(() => createOceanMaterial(resolved), [resolved]);
+export function oceanDraw(getProps: () => OceanDrawProps): EngineDraw {
+  let mesh: THREE.Mesh | null = null;
+  let geometry: THREE.PlaneGeometry | null = null;
+  let material: OceanShaderMaterial | null = null;
+  let resolved: ResolvedOceanConfig | null = null;
+  let sheet: { geometry: THREE.PlaneGeometry; spacing: number } | null = null;
+  let bed: THREE.DataTexture | null = null;
+  let bedOwned = false;
+  let bounds: OceanBedBounds = [0, 0, 0, 0];
+  let elapsed = 0;
+  let added = false;
+  let cancelled = false;
+  let bedRun: { cancel(): void } | null = null;
+  const world = new THREE.Vector3();
 
-  const bounds = useMemo<OceanBedBounds>(
-    () => bedBounds ?? [-resolved.size / 2, -resolved.depth / 2, resolved.size / 2, resolved.depth / 2],
-    [bedBounds, resolved.size, resolved.depth],
-  );
-  const bedResolution = oceanBedResolution(resolved, Math.max(bounds[2] - bounds[0], bounds[3] - bounds[1]));
-  const baked = useSlicedValue(
-    "ocean bed",
-    () => (bedAt === undefined ? (function* none(): SlicedJob<null> { return null; })() : bakeOceanBed(bedAt, bounds, bedResolution)),
-    [bedAt, bounds, bedResolution],
-  );
-  useEffect(() => () => baked?.dispose(), [baked]);
-  const bed = bedAt === undefined ? deepBedTexture() : baked;
+  function applyPosition(props: OceanDrawProps): void {
+    const position = props.position;
+    if (mesh === null || position === undefined) return;
+    if (position instanceof THREE.Vector3) mesh.position.copy(position);
+    else mesh.position.set(position[0], position[1], position[2]);
+  }
 
-  const elapsedRef = useRef(0);
-  useEffect(() => {
-    elapsedRef.current = 0;
-  }, [material]);
-  const meshRef = useRef<THREE.Mesh>(null);
-  const world = useMemo(() => new THREE.Vector3(), []);
+  return {
+    mount(state: EngineFrameState) {
+      const props = getProps();
+      resolved = createOceanConfig(props.config);
+      const far = state.camera instanceof THREE.PerspectiveCamera || state.camera instanceof THREE.OrthographicCamera ? state.camera.far : 0;
+      const followHalf = resolved.follow ? Math.max(resolved.size, resolved.depth, (Number.isFinite(far) ? far : 0) * 2) / 2 : 0;
+      sheet = resolved.follow
+        ? createFollowGeometry(followHalf, resolved.resolution)
+        : { geometry: createSheetGeometry(resolved), spacing: 0 };
+      geometry = sheet.geometry;
+      material = createOceanMaterial(resolved);
+      bounds = props.bedBounds ?? [-resolved.size / 2, -resolved.depth / 2, resolved.size / 2, resolved.depth / 2];
+      const bedResolution = oceanBedResolution(resolved, Math.max(bounds[2] - bounds[0], bounds[3] - bounds[1]));
+      if (props.bedAt === undefined) {
+        bed = deepBedTexture();
+      } else {
+        const done = trackSceneWork("ocean bed");
+        const bedAt = props.bedAt;
+        const run = runSliced(bakeOceanBed(bedAt, bounds, bedResolution));
+        bedRun = run;
+        run.done.then(
+          (texture) => {
+            done();
+            if (cancelled) {
+              texture.dispose();
+              return;
+            }
+            bed = texture;
+            bedOwned = true;
+            state.invalidate();
+          },
+          (error: unknown) => {
+            done();
+            console.error("[jgengine] ocean bed failed to build", error);
+          },
+        );
+      }
+      mesh = new THREE.Mesh(geometry, material);
+      applyPosition(props);
+      mesh.frustumCulled = resolved.follow ? false : props.frustumCulled ?? true;
+      if (bed !== null) {
+        state.scene.add(mesh);
+        added = true;
+      }
+      elapsed = 0;
+    },
+    frame(state: EngineFrameState) {
+      const props = getProps();
+      const config = resolved;
+      const mat = material;
+      const sheetGeometry = sheet;
+      if (config === null || mat === null || mesh === null) return;
+      applyPosition(props);
+      if (!config.follow) mesh.frustumCulled = props.frustumCulled ?? true;
+      if (bed !== null && !added) {
+        state.scene.add(mesh);
+        added = true;
+      }
+      // Waves run on the game clock, so they stop when the game pauses and line up with the water
+      // surface buoyancy samples; before any game time has passed (a title screen) or with no game
+      // (an editor preview) they run on real time.
+      const advanced = props.ctx?.time.advancedSeconds?.();
+      elapsed = advanced !== undefined && advanced > 0 ? advanced * config.timeScale : elapsed + state.delta * config.timeScale;
+      syncOceanMaterial(mat, config, elapsed, readSkyLight(state.scene));
+      const surface = bed;
+      if (surface === null) return;
+      const u = mat.uniforms;
+      u.uBedMap.value = surface;
+      u.uBedRect.value.set(bounds[0], bounds[1], bounds[2] - bounds[0], bounds[3] - bounds[1]);
+      world.setFromMatrixPosition(mesh.matrixWorld);
+      u.uOrigin.value.set(world.x, world.z);
+      u.uSurfaceY.value = world.y;
+      if (config.follow && sheetGeometry !== null) {
+        // Snap to the finest vertex spacing so the near grid does not slide under the waves.
+        const step = sheetGeometry.spacing > 0 ? sheetGeometry.spacing : 1;
+        u.uFollow.value.set(Math.round((state.camera.position.x - world.x) / step) * step, Math.round((state.camera.position.z - world.z) / step) * step);
+      } else {
+        u.uFollow.value.set(0, 0);
+      }
+    },
+    dispose(state: EngineFrameState) {
+      cancelled = true;
+      bedRun?.cancel();
+      bedRun = null;
+      if (added && mesh !== null) state.scene.remove(mesh);
+      added = false;
+      if (bedOwned) bed?.dispose();
+      bed = null;
+      bedOwned = false;
+      geometry?.dispose();
+      material?.dispose();
+      geometry = null;
+      material = null;
+      sheet = null;
+      mesh = null;
+      resolved = null;
+    },
+  };
+}
 
+/**
+ * An animated Gerstner-wave water surface lit by the scene's sky: it reflects the sky's colours, takes
+ * the sun's and moon's light, clears over shallows and foams at the shore wherever `bedAt` puts the bed,
+ * and follows the camera to the horizon when `config.follow` is set.
+ */
+export function Ocean(props: OceanProps) {
   const ctx = useOptionalGameContext();
-  useFrameTask((state, delta) => {
-    // Waves run on the game clock, so they stop when the game pauses and line up with the water
-    // surface buoyancy samples; before any game time has passed (a title screen) or with no game
-    // (an editor preview) they run on real time.
-    const advanced = ctx?.time.advancedSeconds?.();
-    elapsedRef.current = advanced !== undefined && advanced > 0 ? advanced * resolved.timeScale : elapsedRef.current + delta * resolved.timeScale;
-    syncOceanMaterial(material, resolved, elapsedRef.current, readSkyLight(state.scene));
-    const mesh = meshRef.current;
-    if (mesh === null || bed === null) return;
-    const u = material.uniforms;
-    u.uBedMap.value = bed;
-    u.uBedRect.value.set(bounds[0], bounds[1], bounds[2] - bounds[0], bounds[3] - bounds[1]);
-    world.setFromMatrixPosition(mesh.matrixWorld);
-    u.uOrigin.value.set(world.x, world.z);
-    u.uSurfaceY.value = world.y;
-    if (resolved.follow) {
-      // Snap to the finest vertex spacing so the near grid does not slide under the waves.
-      const step = sheet.spacing > 0 ? sheet.spacing : 1;
-      u.uFollow.value.set(Math.round((state.camera.position.x - world.x) / step) * step, Math.round((state.camera.position.z - world.z) / step) * step);
-    } else {
-      u.uFollow.value.set(0, 0);
-    }
-  });
-
-  if (bed === null) return null;
-  return <mesh {...meshProps} ref={meshRef} geometry={sheet.geometry} material={material} frustumCulled={resolved.follow ? false : meshProps.frustumCulled ?? true} />;
+  const latest = useRef<OceanDrawProps>({});
+  latest.current = {
+    config: props.config,
+    bedAt: props.bedAt,
+    bedBounds: props.bedBounds,
+    position: props.position as OceanDrawProps["position"],
+    frustumCulled: props.frustumCulled as boolean | undefined,
+    ctx,
+  };
+  useEngineDraw(() => oceanDraw(() => latest.current), [props.config, props.bedAt, props.bedBounds, ctx]);
+  return null;
 }

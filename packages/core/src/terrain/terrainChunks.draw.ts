@@ -38,8 +38,8 @@ export class GroundChunks {
 
   constructor(
     private readonly grid: GroundGrid,
-    private readonly material: THREE.Material,
-    private readonly receiveShadow: boolean,
+    private material: THREE.Material,
+    private receiveShadow: boolean,
   ) {
     this.cellX = grid.size.width / grid.segments.x;
     this.cellZ = grid.size.depth / grid.segments.z;
@@ -95,6 +95,18 @@ export class GroundChunks {
       if (!tile.built.has(step)) return this.buildLevel(tile, step);
     }
     return null;
+  }
+
+  /** Swap the material and shadow flag on every built tile without re-meshing. */
+  syncSurface(material: THREE.Material, receiveShadow: boolean): void {
+    this.material = material;
+    this.receiveShadow = receiveShadow;
+    for (const tile of this.tiles) {
+      for (const mesh of tile.built.values()) {
+        mesh.material = material;
+        mesh.receiveShadow = receiveShadow;
+      }
+    }
   }
 
   dispose(): void {
