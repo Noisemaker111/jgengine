@@ -1,5 +1,4 @@
 import { useRef } from "react";
-import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
@@ -237,7 +236,6 @@ export function HitMarkers({ lifeMs = 180 }: { lifeMs?: number }) {
 
 export interface MuzzleFlashesDrawProps {
   ctx: GameContext;
-  camera: THREE.Camera;
   /** Accessibility setting: smaller, dimmer flashes under reduced motion. */
   reducedMotion: boolean;
   /** Milliseconds a flash stays up. Default 55. */
@@ -247,8 +245,8 @@ export interface MuzzleFlashesDrawProps {
 /**
  * Draw-side form of {@link MuzzleFlashes}: a short bright star where each direct-fire shot leaves
  * the gun (the shooter's hand or barrel, or the first-person gun). Reduced motion keeps the flash
- * but makes it smaller and dimmer. `lifeMs`/`reducedMotion`/`camera` are read per event, so only a
- * `ctx` swap resubscribes — matching the old effect deps.
+ * but makes it smaller and dimmer. `lifeMs`/`reducedMotion` are read per event and the camera is the
+ * frame state's live object, so only a `ctx` swap resubscribes — matching the old effect deps.
  * @internal
  */
 export function muzzleFlashesDraw(getProps: () => MuzzleFlashesDrawProps): EngineDraw {
@@ -258,19 +256,20 @@ export function muzzleFlashesDraw(getProps: () => MuzzleFlashesDrawProps): Engin
   );
   const cursor = { current: 0 };
   let parent: THREE.Object3D | null = null;
+  let camera: THREE.Camera | null = null;
   let subscribedCtx: GameContext | null = null;
   let offSettled: (() => void) | null = null;
 
   const subscribe = (ctx: GameContext) => {
     offSettled = ctx.game.events.on("projectile.settled", (event) => {
-      if (event.ballistic) return;
+      if (event.ballistic || camera === null) return;
       const props = getProps();
       const slot = nextSlot(slots, cursor);
       const start = slot.sprite.position.set(event.origin[0], event.origin[1], event.origin[2]);
-      startFromMuzzle(props.ctx, event.from, props.camera, start);
+      startFromMuzzle(props.ctx, event.from, camera, start);
       slot.born = performance.now();
       slot.life = props.lifeMs ?? 55;
-      const near = props.camera.getWorldPosition(new THREE.Vector3()).distanceTo(start) < 1.2;
+      const near = camera.getWorldPosition(new THREE.Vector3()).distanceTo(start) < 1.2;
       slot.size = (near ? 0.07 : 0.45) * (props.reducedMotion ? 0.6 : 1);
       slot.sprite.scale.set(slot.size * 0.7, slot.size * 0.7, 1);
       slot.material.rotation = Math.random() * Math.PI * 2;
@@ -292,6 +291,7 @@ export function muzzleFlashesDraw(getProps: () => MuzzleFlashesDrawProps): Engin
   return {
     mount(state: EngineFrameState) {
       parent = state.scene;
+      camera = state.camera;
       for (const slot of slots) parent.add(slot.sprite);
       syncSubscription();
     },
@@ -315,6 +315,7 @@ export function muzzleFlashesDraw(getProps: () => MuzzleFlashesDrawProps): Engin
       offSettled?.();
       offSettled = null;
       subscribedCtx = null;
+      camera = null;
       const host = parent;
       parent = null;
       for (const slot of slots) {
@@ -333,9 +334,8 @@ export function muzzleFlashesDraw(getProps: () => MuzzleFlashesDrawProps): Engin
  */
 export function MuzzleFlashes({ lifeMs = 55 }: { lifeMs?: number }) {
   const ctx = useGameContext();
-  const camera = useThree((state) => state.camera);
   const { reducedMotion } = useAccessibilitySettings();
-  const latest = useRef({ ctx, camera, reducedMotion, lifeMs });
-  latest.current = { ctx, camera, reducedMotion, lifeMs };
+  const latest = useRef({ ctx, reducedMotion, lifeMs });
+  latest.current = { ctx, reducedMotion, lifeMs };
   return <EngineDrawMount create={() => muzzleFlashesDraw(() => latest.current)} deps={[ctx]} />;
 }
