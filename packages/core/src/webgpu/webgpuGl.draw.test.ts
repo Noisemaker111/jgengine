@@ -245,6 +245,59 @@ describe("WebGpuGl uniforms", () => {
   });
 });
 
+describe("WebGpuGl pass replay", () => {
+  const frame = (s: ReturnType<typeof drawSetup>, draws: number) => {
+    for (let i = 0; i < draws; i += 1) s.draw();
+    s.calls.length = 0;
+    s.gl.present();
+    // Less the present blit's own draw.
+    const names = s.calls.map(([name]) => name);
+    names.splice(names.lastIndexOf("draw"), 1);
+    return names;
+  };
+
+  test("a pass that repeats last frame's commands is replayed from render bundles, and one that changes is encoded again", () => {
+    const s = drawSetup();
+    s.texture();
+    expect(frame(s, 3).filter((n) => n === "draw").length).toBe(3); // first frame: encoded
+    // The first repeat records the bundles and replays them; later repeats only replay.
+    for (const n of [1, 2]) {
+      const replayed = frame(s, 3);
+      expect(replayed.filter((name) => name === "draw").length).toBe(0);
+      expect(replayed).toContain("executeBundles");
+      expect(s.gl.stats.replayedPasses).toBe(n);
+    }
+    expect(s.gl.stats.bundles).toBe(1);
+    const changed = frame(s, 4);
+    expect(changed.filter((n) => n === "draw").length).toBe(4);
+    expect(changed).not.toContain("executeBundles");
+  });
+
+  test("uniforms are bound relative to the pass's own range, so a pass after a different one still repeats", () => {
+    const s = drawSetup();
+    s.texture();
+    const fb = s.gl.createFramebuffer();
+    const t = s.texture();
+    s.gl.bindFramebuffer(0x8d40, fb);
+    s.gl.framebufferTexture2D(0x8d40, 0x8ce0, 0x0de1, t, 0);
+    // The default framebuffer's pass draws a different number of times each frame; fb's pass, after it, does not.
+    const twoPasses = (first: number) => {
+      s.gl.bindFramebuffer(0x8d40, null);
+      // Each draw with new uniforms (a moving object), so the first pass's share of the ring changes.
+      for (let i = 0; i < first; i += 1) { s.gl.program.dirty = true; s.draw(); }
+      s.gl.bindFramebuffer(0x8d40, fb);
+      s.gl.program.dirty = true;
+      s.draw();
+      s.gl.present();
+    };
+    twoPasses(1);
+    twoPasses(2);
+    const before = s.gl.stats.replayedPasses;
+    twoPasses(3);
+    expect(s.gl.stats.replayedPasses).toBe(before + 1);
+  });
+});
+
 describe("WebGpuGl multi-draw", () => {
   test("a multi-draw sets its bindings once and draws each item with firstInstance as its draw id", () => {
     const { gl, calls, texture } = drawSetup();

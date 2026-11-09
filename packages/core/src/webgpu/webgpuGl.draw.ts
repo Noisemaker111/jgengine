@@ -59,6 +59,10 @@ export interface WebGpuGlStats {
   passes: number;
   /** Passes that only cleared: a clear nobody drew after before the target changed. */
   clearPasses: number;
+  /** Passes replayed from render bundles because they repeated the last frame's (see WebGpuGl.encodePass). */
+  replayedPasses: number;
+  /** Render bundle sets recorded for repeating passes. */
+  bundles: number;
   submits: number;
   pipelines: number;
   bindGroups: number;
@@ -210,7 +214,11 @@ class RecordedPass {
   readonly ops: unknown[] = [];
   /** Whether {@link descriptor} is this pass's own copy, so changing it leaves the framebuffer's plan alone. */
   private owned = false;
-  constructor(public descriptor: GPURenderPassDescriptor, readonly fb: GlFramebuffer | null, readonly plan: PassPlan) {}
+  /** Where this pass's uniforms start in the batch's staging ring; every dynamic offset it binds is at or after it. */
+  uniformBase = 0;
+  /** Where they end, set when the pass ends. */
+  uniformEnd = 0;
+  constructor(public descriptor: GPURenderPassDescriptor, readonly fb: GlFramebuffer | null, readonly plan: PassPlan, readonly ordinal: number) {}
   setPipeline(pipeline: GPURenderPipeline): void { this.ops.push(OP_PIPELINE, pipeline); }
   setBindGroup(index: number, group: GPUBindGroup, offsets?: Uint32Array, start?: number, _count?: number): void {
     if (offsets === undefined) this.ops.push(OP_GROUP, index, group);
@@ -274,11 +282,53 @@ class RecordedPass {
   }
 }
 
+/** A replay step that runs a render bundle; other steps are pass state ops (viewport, scissor, references). */
+const STEP_BUNDLE = 100;
+
+/**
+ * One target's n-th pass of a frame, kept to replay the next frame's n-th pass from render bundles
+ * when its commands repeat (Babylon's snapshot rendering, at the GL layer). Its uniform offsets are
+ * relative to the pass's own range, so a pass repeats whatever the passes before it bound.
+ */
+interface PassReplay {
+  /** The pass's commands with each uniform bind as (block size, offset into the pass's range). */
+  ops: unknown[];
+  /** Frames in a row the commands repeated. */
+  repeats: number;
+  /** Bundles and the state ops between them; null until the commands repeat. */
+  steps: unknown[] | null;
+  /** The pass's own uniform buffer the bundles bind, filled from the ring before each replay. */
+  uniforms: GPUBuffer | null;
+  size: number;
+}
+
 /** Encoder work recorded after a pass that is still unencoded, run in order when the passes are flushed. */
 interface RecordedAction {
   run: (encoder: GPUCommandEncoder) => void;
   /** Textures it reads: an attachment one of these is cannot be discarded by the pass before it. */
   reads: GPUTexture[];
+}
+
+/** Whether two relative op lists are the same commands on the same objects. */
+function sameOps(a: unknown[], b: unknown[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) if (a[i] !== b[i]) return false;
+  return true;
+}
+
+/** Run a replay's steps on `pass`: its bundles, and the state ops between them. */
+function replaySteps(pass: GPURenderPassEncoder, steps: unknown[]): void {
+  const s = steps as any[];
+  for (let i = 0; i < s.length;) {
+    switch (s[i] as number) {
+      case STEP_BUNDLE: pass.executeBundles([s[i + 1]]); i += 2; break;
+      case OP_VIEWPORT: pass.setViewport(s[i + 1], s[i + 2], s[i + 3], s[i + 4], s[i + 5], s[i + 6]); i += 7; break;
+      case OP_SCISSOR: pass.setScissorRect(s[i + 1], s[i + 2], s[i + 3], s[i + 4]); i += 5; break;
+      case OP_STENCIL_REF: pass.setStencilReference(s[i + 1]); i += 2; break;
+      case OP_BLEND: pass.setBlendConstant(s[i + 1]); i += 2; break;
+      default: throw new Error(`webgpu: unknown replay step ${String(s[i])}`);
+    }
+  }
 }
 
 /** What makes an attachment's view stale: its texture's storage, or its renderbuffer's view. */
@@ -466,7 +516,7 @@ Object.assign(GlConstants.prototype, WEBGL_CONSTANTS);
 export class WebGpuGl extends GlConstants {
   readonly canvas: HTMLCanvasElement;
   readonly device: GPUDevice;
-  readonly stats: WebGpuGlStats = { frames: 0, draws: 0, passes: 0, clearPasses: 0, submits: 0, pipelines: 0, bindGroups: 0, uniformBytes: 0, orderFlushes: 0, programs: 0, translateMs: 0, fences: 0, fenceMs: 0, reads: 0, readMs: 0, queueLagMs: 0, precompiles: 0, precompileMs: 0 };
+  readonly stats: WebGpuGlStats = { frames: 0, draws: 0, passes: 0, clearPasses: 0, replayedPasses: 0, bundles: 0, submits: 0, pipelines: 0, bindGroups: 0, uniformBytes: 0, orderFlushes: 0, programs: 0, translateMs: 0, fences: 0, fenceMs: 0, reads: 0, readMs: 0, queueLagMs: 0, precompiles: 0, precompileMs: 0 };
   /** Every distinct problem a draw hit, once each (also printed once). */
   readonly warnings = new Map<string, number>();
   drawingBufferColorSpace: PredefinedColorSpace = "srgb";
@@ -560,6 +610,17 @@ export class WebGpuGl extends GlConstants {
   /** Passes ended but not yet encoded, and encoder work recorded after them, in order (see {@link RecordedPass}). */
   private readonly unencoded: (RecordedPass | RecordedAction)[] = [];
   private readonly replayOffset = new Uint32Array(1);
+  /**
+   * Changes at every pass and every submit: a program copies its uniforms into the ring once per pass,
+   * so every offset a pass binds lies in its own range and a cached replay of it can carry them.
+   */
+  private slotEpoch = 0;
+  /** Each target's passes this frame so far, so the n-th pass into a target meets last frame's n-th. */
+  private readonly passOrdinals = new Map<GlFramebuffer | null, number>();
+  /** Last frames' passes per target and ordinal, replayed from render bundles when a pass repeats (see {@link encodePass}). */
+  private readonly replays = new Map<GlFramebuffer | null, (PassReplay | undefined)[]>();
+  /** The uniform block size each ring bind group binds. */
+  private readonly ringGroupSizes = new WeakMap<GPUBindGroup, number>();
   private passTarget: PassTarget | null = null;
   private pendingClear: PendingClear | null = null;
   private batch = 1;
@@ -629,7 +690,7 @@ export class WebGpuGl extends GlConstants {
     this.uniformLayout = device.createBindGroupLayout({ entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: "uniform", hasDynamicOffset: true } }] });
     this.emptyLayout = device.createBindGroupLayout({ entries: [] });
     this.emptyGroup = device.createBindGroup({ layout: this.emptyLayout, entries: [] });
-    this.ring = device.createBuffer({ size: UNIFORM_RING_BYTES, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+    this.ring = device.createBuffer({ size: UNIFORM_RING_BYTES, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC });
     this.constantRing = device.createBuffer({ size: this.constants.byteLength, usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST });
     this.defaultVertex = device.createBuffer({ size: 64, usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST });
     device.queue.writeBuffer(this.defaultVertex, 0, new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]));
@@ -1893,11 +1954,141 @@ struct U { shift: vec2<i32> };
     const encoder = (this.encoder ??= this.device.createCommandEncoder());
     if (this.unencoded.length > 0) {
       for (const entry of this.unencoded.splice(0)) {
-        if (entry instanceof RecordedPass) entry.encode(encoder, this.replayOffset);
+        if (entry instanceof RecordedPass) this.encodePass(entry, encoder);
         else entry.run(encoder);
       }
     }
     return encoder;
+  }
+
+  /**
+   * Encode `rp`, from its cached render bundles when it repeats last frame's pass into the same target
+   * at the same place in the frame. A repeat costs one buffer copy and one executeBundles per run of
+   * draws, instead of a setPipeline, setBindGroup, setVertexBuffer and draw per draw: Chrome's WebGPU
+   * calls cost more each than WebGL's, so a translation that issues them one for one cannot beat WebGL
+   * on a CPU-bound frame (#3066).
+   */
+  private encodePass(rp: RecordedPass, encoder: GPUCommandEncoder): void {
+    const ops = rp.ops.length > 0 ? this.relativeOps(rp) : null;
+    if (ops === null) { rp.encode(encoder, this.replayOffset); return; }
+    let list = this.replays.get(rp.fb);
+    if (list === undefined) { list = []; this.replays.set(rp.fb, list); }
+    const known = list[rp.ordinal];
+    const size = Math.ceil((rp.uniformEnd - rp.uniformBase) / 4) * 4;
+    if (known !== undefined && sameOps(known.ops, ops)) {
+      known.repeats += 1;
+      if (known.steps === null) this.buildReplay(known, rp, size);
+      if (known.steps !== null && known.uniforms !== null && known.size >= size) {
+        if (size > 0) encoder.copyBufferToBuffer(this.ring, rp.uniformBase, known.uniforms, 0, size);
+        const pass = encoder.beginRenderPass(rp.descriptor);
+        replaySteps(pass, known.steps);
+        pass.end();
+        this.stats.replayedPasses += 1;
+        return;
+      }
+    } else {
+      if (known?.uniforms != null) this.retire(known.uniforms);
+      list[rp.ordinal] = { ops, repeats: 0, steps: null, uniforms: null, size: 0 };
+    }
+    rp.encode(encoder, this.replayOffset);
+  }
+
+  /** `rp`'s commands with uniform binds made relative to its range, or null when it binds something a replay cannot carry. */
+  private relativeOps(rp: RecordedPass): unknown[] | null {
+    const ops = rp.ops as any[];
+    const out = ops.slice();
+    for (let i = 0; i < ops.length;) {
+      switch (ops[i] as number) {
+        case OP_PIPELINE: case OP_STENCIL_REF: case OP_BLEND: i += 2; break;
+        case OP_GROUP: case OP_INDEX: i += 3; break;
+        case OP_GROUP_OFFSET: {
+          const size = this.ringGroupSizes.get(ops[i + 2]);
+          const offset = ops[i + 3] as number;
+          if (size === undefined || offset < rp.uniformBase || offset + size > rp.uniformEnd) return null;
+          out[i + 2] = size;
+          out[i + 3] = offset - rp.uniformBase;
+          i += 4;
+          break;
+        }
+        // Constant attributes come from a ring rewritten every batch at offsets the batch decides.
+        case OP_VERTEX: if (ops[i + 2] === this.constantRing) return null; i += 4; break;
+        case OP_DRAW: case OP_SCISSOR: i += 5; break;
+        case OP_DRAW_INDEXED: i += 6; break;
+        case OP_VIEWPORT: i += 7; break;
+        default: return null;
+      }
+    }
+    return out;
+  }
+
+  /** Record `known`'s commands into render bundles, split at the pass state ops bundles cannot hold. */
+  private buildReplay(known: PassReplay, rp: RecordedPass, size: number): void {
+    const target = rp.plan.target;
+    const uniforms = this.device.createBuffer({ size: Math.max(256, Math.ceil(size / 256) * 256), usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+    const groups = new Map<number, GPUBindGroup>();
+    const group = (blockSize: number) => {
+      let g = groups.get(blockSize);
+      if (g === undefined) {
+        g = this.device.createBindGroup({ layout: this.uniformLayout, entries: [{ binding: 0, resource: { buffer: uniforms, offset: 0, size: blockSize } }] });
+        groups.set(blockSize, g);
+      }
+      return g;
+    };
+    const descriptor: GPURenderBundleEncoderDescriptor = { colorFormats: target.colorFormats, sampleCount: target.samples, ...(target.depthFormat !== null ? { depthStencilFormat: target.depthFormat } : {}) };
+    const steps: unknown[] = [];
+    const ops = known.ops as any[];
+    // What the commands so far have bound: a bundle starts with nothing bound, so each one after the first sets it again.
+    let pipeline: GPURenderPipeline | null = null;
+    const bound = new Map<number, [GPUBindGroup, number | null]>();
+    const vertex = new Map<number, [GPUBuffer, number]>();
+    let index: [GPUBuffer, GPUIndexFormat] | null = null;
+    let bundle = null as GPURenderBundleEncoder | null;
+    const offset = new Uint32Array(1);
+    const open = () => {
+      if (bundle !== null) return bundle;
+      const b = this.device.createRenderBundleEncoder(descriptor);
+      if (pipeline !== null) b.setPipeline(pipeline);
+      for (const [i, [g, o]] of bound) { if (o === null) b.setBindGroup(i, g); else { offset[0] = o; b.setBindGroup(i, g, offset, 0, 1); } }
+      for (const [slot, [buffer, at]] of vertex) b.setVertexBuffer(slot, buffer, at);
+      if (index !== null) b.setIndexBuffer(index[0], index[1]);
+      bundle = b;
+      return b;
+    };
+    const close = () => {
+      if (bundle === null) return;
+      steps.push(STEP_BUNDLE, bundle.finish());
+      bundle = null;
+    };
+    for (let i = 0; i < ops.length;) {
+      const code = ops[i] as number;
+      switch (code) {
+        case OP_PIPELINE: pipeline = ops[i + 1]; if (bundle !== null) bundle.setPipeline(pipeline!); i += 2; break;
+        case OP_GROUP: bound.set(ops[i + 1], [ops[i + 2], null]); if (bundle !== null) bundle.setBindGroup(ops[i + 1], ops[i + 2]); i += 3; break;
+        case OP_GROUP_OFFSET: {
+          const g = group(ops[i + 2]);
+          bound.set(ops[i + 1], [g, ops[i + 3]]);
+          if (bundle !== null) { offset[0] = ops[i + 3]; bundle.setBindGroup(ops[i + 1], g, offset, 0, 1); }
+          i += 4;
+          break;
+        }
+        case OP_VERTEX: vertex.set(ops[i + 1], [ops[i + 2], ops[i + 3]]); if (bundle !== null) bundle.setVertexBuffer(ops[i + 1], ops[i + 2], ops[i + 3]); i += 4; break;
+        case OP_INDEX: index = [ops[i + 1], ops[i + 2]]; if (bundle !== null) bundle.setIndexBuffer(ops[i + 1], ops[i + 2]); i += 3; break;
+        case OP_DRAW: open().draw(ops[i + 1], ops[i + 2], ops[i + 3], ops[i + 4]); i += 5; break;
+        case OP_DRAW_INDEXED: open().drawIndexed(ops[i + 1], ops[i + 2], ops[i + 3], ops[i + 4], ops[i + 5]); i += 6; break;
+        default: {
+          // Pass state: between bundles, on the pass itself.
+          close();
+          const length = code === OP_VIEWPORT ? 7 : code === OP_SCISSOR ? 5 : 2;
+          for (let k = 0; k < length; k += 1) steps.push(ops[i + k]);
+          i += length;
+        }
+      }
+    }
+    close();
+    known.steps = steps;
+    known.uniforms = uniforms;
+    known.size = uniforms.size;
+    this.stats.bundles += 1;
   }
 
   /** Run `run` on the encoder after every pass ended so far, without encoding them yet. */
@@ -2081,7 +2272,11 @@ struct U { shift: vec2<i32> };
     if (clear !== null) descriptor = withClears(descriptor, plan.colorIndex, clear);
     const timestampWrites = this.passStamps();
     if (timestampWrites !== undefined) descriptor = { ...descriptor, timestampWrites };
-    this.pass = new RecordedPass(descriptor, fb, plan);
+    const ordinal = this.passOrdinals.get(fb) ?? 0;
+    this.passOrdinals.set(fb, ordinal + 1);
+    this.pass = new RecordedPass(descriptor, fb, plan, ordinal);
+    this.pass.uniformBase = Math.ceil(this.stagingUsed / this.uniformAlign) * this.uniformAlign;
+    this.slotEpoch += 1;
     this.stats.passes += 1;
     this.passTarget = plan.target;
     this.boundPipeline = null;
@@ -2106,6 +2301,7 @@ struct U { shift: vec2<i32> };
    */
   private endPass(keep?: GlFramebuffer | null | "any"): void {
     if (this.pass !== null) {
+      this.pass.uniformEnd = this.stagingUsed;
       this.unencoded.push(this.pass);
       this.pass = null;
       this.passTarget = null;
@@ -2116,6 +2312,7 @@ struct U { shift: vec2<i32> };
     this.pendingClear = null;
     if (this.beginPass(pending.fb, pending)) {
       this.stats.clearPasses += 1;
+      this.pass!.uniformEnd = this.stagingUsed;
       this.unencoded.push(this.pass!);
       this.pass = null;
       this.passTarget = null;
@@ -2595,6 +2792,7 @@ struct O { ${outputs} };
     if (g === undefined) {
       g = this.device.createBindGroup({ layout: this.uniformLayout, entries: [{ binding: 0, resource: { buffer: this.ring, offset: 0, size } }] });
       this.ringGroups.set(size, g);
+      this.ringGroupSizes.set(g, size);
     }
     return g;
   }
@@ -2718,7 +2916,7 @@ struct O { ${outputs} };
     }
     const pass = this.pass!;
     // Uniforms: one aligned copy per program per change.
-    if (p.dirty || p.slotBatch !== this.batch) {
+    if (p.dirty || p.slotBatch !== this.slotEpoch) {
       let at = Math.ceil(this.stagingUsed / this.uniformAlign) * this.uniformAlign;
       if (at + p.blockSize > this.staging.byteLength) {
         this.submit();
@@ -2729,7 +2927,7 @@ struct O { ${outputs} };
       this.staging.set(p.bytes.byteLength === p.blockSize ? p.bytes : p.bytes.subarray(0, p.blockSize), at);
       this.stagingUsed = at + p.blockSize;
       p.slotOffset = at;
-      p.slotBatch = this.batch;
+      p.slotBatch = this.slotEpoch;
       p.dirty = false;
     }
     const passNow = this.pass!;
@@ -2889,6 +3087,7 @@ struct O { ${outputs} };
     this.stagingUsed = 0;
     this.constantsUsed = 0;
     this.batch += 1;
+    this.slotEpoch += 1;
     for (const f of this.afterSubmit.splice(0)) f();
   }
 
@@ -2896,6 +3095,8 @@ struct O { ${outputs} };
   private present(): void {
     this.presentScheduled = false;
     this.endPass();
+    // The frame ends here: the next one's passes meet this one's by their order into each target.
+    this.passOrdinals.clear();
     // As GL, the canvas shows a new image only when the default framebuffer was drawn this task.
     if (!this.backDirty || this.backColor === null) { this.submit(); return; }
     this.backDirty = false;
