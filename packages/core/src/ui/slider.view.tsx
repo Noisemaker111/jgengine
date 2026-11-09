@@ -1,4 +1,5 @@
 import { useCallback, useInsertionEffect, useRef, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
+import { memoView } from "./memoView.view";
 
 /** Props for {@link GameSlider}. */
 export interface GameSliderProps {
@@ -63,7 +64,7 @@ export function snapSliderValue(raw: number, min: number, max: number, step: num
  *
  * @capability game-slider drawn game slider (groove or pips) with keyboard, drag and screen reader support, no browser range input
  */
-export function GameSlider({
+export const GameSlider = memoView("GameSlider", function GameSlider({
   value,
   min = 0,
   max = 1,
@@ -160,4 +161,4 @@ export function GameSlider({
       )}
     </div>
   );
-}
+});

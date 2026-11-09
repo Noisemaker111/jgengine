@@ -6,6 +6,7 @@ import type {
   ObjectiveBannerView,
 } from "@jgengine/core/mission/objectiveBanner";
 import { lerp } from "../math/scalar";
+import { memoView } from "../ui/memoView.view";
 
 /**
  * Subscribe to a banner controller, drive its clock on an animation frame (unless
@@ -134,7 +135,7 @@ export interface ObjectiveBannerHostProps {
  *
  * @capability objective-banner-host full-screen overlay that renders a core objective-banner controller as a fly-in / hold / fade-out centered title + subtitle stamp, theme- and per-kind-skinnable
  */
-export function ObjectiveBannerHost({
+export const ObjectiveBannerHost = memoView("ObjectiveBannerHost", function ObjectiveBannerHost({
   controller,
   theme,
   kindThemes,
@@ -226,4 +227,4 @@ export function ObjectiveBannerHost({
       </div>
     </div>
   );
-}
+});

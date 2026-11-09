@@ -54,6 +54,7 @@ import { hudFont, hudType } from "./hudTokens";
 import type { TextDirection } from "../i18n/textDirection";
 import { useTextDirection } from "../i18n/textDirection.view";
 import { subscribeFrameBind, useFrameBind } from "../ui/liveBind.view";
+import { memoView } from "../ui/memoView.view";
 
 /** Whether a HUD element opted into `showDuring` is visible in the current phase; `undefined` = always visible (default). */
 export function hudVisibleInPhase(showDuring: readonly GamePhase[] | undefined, phase: GamePhase): boolean {
@@ -436,7 +437,7 @@ function estimateChipSize(label: string): HudSize {
   *
  * @capability hud-canvas the HUD root surface — design-resolution scaling plus live panel-placement editing (F2+C)
  */
-export function HudCanvas({
+export const HudCanvas = memoView("HudCanvas", function HudCanvas({
   layout,
   editChord,
   showDuring,
@@ -769,7 +770,7 @@ export function HudCanvas({
       </div>
     </HudCanvasContext.Provider>
   );
-}
+});
 
 /** Human-readable edge list for the dev boundary badge, e.g. `right +260 · bottom +56`. */
 function overflowEdges(overflow: HudOverflow): string {
@@ -862,7 +863,7 @@ function HudChip({
   *
  * @capability hud-panel anchored HUD slot — drop any widget in a named, player-movable panel
  */
-export function HudPanel({
+export const HudPanel = memoView("HudPanel", function HudPanel({
   id,
   anchor = "top-left",
   order,
@@ -1227,7 +1228,7 @@ export function HudPanel({
       {editingChrome}
     </div>
   );
-}
+});
 
 /** Props for {@link HudFade}. */
 export interface HudFadeProps {
@@ -1320,7 +1321,7 @@ const fadeTransition = (awake: boolean): string => `opacity calc(${awake ? 160 :
  *
  * @capability hud-fade HUD group that fades when idle and returns when its values change
  */
-export function HudFade({ watch, idleMs = 3500, dimTo = 0.18, hold = NEVER_HOLD, children, className, style }: HudFadeProps): ReactNode {
+export const HudFade = memoView("HudFade", function HudFade({ watch, idleMs = 3500, dimTo = 0.18, hold = NEVER_HOLD, children, className, style }: HudFadeProps): ReactNode {
   const ref = useRef<HTMLDivElement>(null);
   const hovered = useRef(false);
   const clock = useMemo(() => createHudAwakeClock(idleMs), [idleMs]);
@@ -1349,7 +1350,7 @@ export function HudFade({ watch, idleMs = 3500, dimTo = 0.18, hold = NEVER_HOLD,
       {children}
     </div>
   );
-}
+}, { readLater: ["watch", "hold"] });
 
 /** The eight edge slots of {@link HudSlots}. */
 export type HudSlot = "topLeft" | "top" | "topRight" | "left" | "right" | "bottomLeft" | "bottom" | "bottomRight";

@@ -5,6 +5,7 @@ import { KitBanner, KitObjective, type KitBannerProps } from "@jgengine/core/ui/
 import type { KitTone } from "@jgengine/core/ui/kit/uiKit.view";
 import { KitMeter, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { SpriteIcon } from "@jgengine/core/ui/icons/spriteIcon.view";
+import { memoView } from "../ui/memoView.view";
 
 /**
  * The play-HUD readouts every game repeats, drawn from the active UI kit's parts: resource counts,
@@ -32,7 +33,7 @@ export interface KitCountProps {
  *
  * @capability kit-count a HUD resource readout — a number and its word, with an optional rate line
  */
-export function KitCount({ value, label, id, detail, detailBad = false }: KitCountProps): ReactNode {
+export const KitCount = memoView("KitCount", function KitCount({ value, label, id, detail, detailBad = false }: KitCountProps): ReactNode {
   const count = (
     <span data-count={id ?? label} style={{ display: "inline-flex", gap: 5, alignItems: "baseline", whiteSpace: "nowrap" }}>
       <span style={{ fontSize: 17, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>{value}</span>
@@ -46,12 +47,12 @@ export function KitCount({ value, label, id, detail, detailBad = false }: KitCou
       <span style={{ fontSize: 10, opacity: 0.7, color: detailBad ? "#ff8a7a" : undefined }}>{detail}</span>
     </span>
   );
-}
+});
 
 /** A row of {@link KitCount}s with even gaps. @capability kit-counts a row of HUD resource counts */
-export function KitCounts({ children }: { children?: ReactNode }): ReactNode {
+export const KitCounts = memoView("KitCounts", function KitCounts({ children }: { children?: ReactNode }): ReactNode {
   return <div style={{ display: "flex", gap: 14, alignItems: "baseline", flexWrap: "wrap" }}>{children}</div>;
-}
+});
 
 /** One meter on a {@link KitVitals} card. */
 export interface KitVital {
@@ -97,7 +98,7 @@ export interface KitVitalsProps {
  *
  * @capability kit-vitals a HUD vitals card — meters that turn bad when low, extra readouts, the labeled current objective under it
  */
-export function KitVitals({ eyebrow, title, vitals = [], children, objective, width = HUD_CORNER_WIDTH }: KitVitalsProps): ReactNode {
+export const KitVitals = memoView("KitVitals", function KitVitals({ eyebrow, title, vitals = [], children, objective, width = HUD_CORNER_WIDTH }: KitVitalsProps): ReactNode {
   return (
     <div data-kit-vitals="" style={{ width, pointerEvents: "none" }}>
       <KitPanel variant="hud" eyebrow={eyebrow} title={title}>
@@ -118,7 +119,7 @@ export function KitVitals({ eyebrow, title, vitals = [], children, objective, wi
       )}
     </div>
   );
-}
+});
 
 /** Props for {@link KitWaveClock}. */
 export interface KitWaveClockProps {
@@ -138,7 +139,7 @@ export interface KitWaveClockProps {
  *
  * @capability kit-wave-clock a HUD wave clock — countdown or enemies left, a note, and the wave banner
  */
-export function KitWaveClock({ text, detail, alarm = false, banner }: KitWaveClockProps): ReactNode {
+export const KitWaveClock = memoView("KitWaveClock", function KitWaveClock({ text, detail, alarm = false, banner }: KitWaveClockProps): ReactNode {
   return (
     <div style={{ pointerEvents: "none" }}>
       <KitPanel variant="strip" tone={alarm ? "bad" : "neutral"}>
@@ -150,7 +151,7 @@ export function KitWaveClock({ text, detail, alarm = false, banner }: KitWaveClo
       {banner === undefined ? null : <KitBanner {...banner} />}
     </div>
   );
-}
+});
 
 /** Props for {@link KitHint}. */
 export interface KitHintProps {
@@ -168,7 +169,7 @@ export interface KitHintProps {
  *
  * @capability kit-hint a HUD hint strip for the current tool or problem, with the phase banner
  */
-export function KitHint({ text, tone = "accent", banner }: KitHintProps): ReactNode {
+export const KitHint = memoView("KitHint", function KitHint({ text, tone = "accent", banner }: KitHintProps): ReactNode {
   return (
     <div style={{ pointerEvents: "none" }}>
       {text === null ? null : (
@@ -179,7 +180,7 @@ export function KitHint({ text, tone = "accent", banner }: KitHintProps): ReactN
       {banner === undefined ? null : <KitBanner {...banner} />}
     </div>
   );
-}
+});
 
 /** One pool on a {@link KitVitalIcons} strip. */
 export interface KitVitalIcon {
@@ -231,7 +232,7 @@ const TONE_COLOR: Record<KitTone, string> = {
  *
  * @capability kit-vital-icons survival pools as a column of glyphs that fill from the bottom, numbers on demand
  */
-export function KitVitalIcons({ vitals, size = 32, readout = false, direction = "column" }: KitVitalIconsProps): ReactNode {
+export const KitVitalIcons = memoView("KitVitalIcons", function KitVitalIcons({ vitals, size = 32, readout = false, direction = "column" }: KitVitalIconsProps): ReactNode {
   return (
     <div data-kit-vital-icons="" style={{ display: "flex", flexDirection: direction, alignItems: direction === "column" ? "flex-end" : "flex-start", gap: 4, pointerEvents: "none" }}>
       {vitals.map((vital) => {
@@ -267,4 +268,4 @@ export function KitVitalIcons({ vitals, size = 32, readout = false, direction = 
       })}
     </div>
   );
-}
+});

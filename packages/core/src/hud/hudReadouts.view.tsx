@@ -9,6 +9,7 @@ import { useCurrency, useGameCalendar, useGameClock, useInventory, localPlayerEn
 import { useGameContext } from "@jgengine/react/provider";
 import { LiveText, useFrameBind } from "@jgengine/core/ui/liveBind.view";
 import { hudType } from "./hudTokens";
+import { memoView } from "../ui/memoView.view";
 
 /**
  * Optional HUD building blocks bound to live game state — not a finished game face. Every game
@@ -30,7 +31,7 @@ const PANEL: CSSProperties = hudFrameStyle("glass");
   *
  * @capability hud-hotbar optional inventory hotbar building block — games own slot chrome
  */
-export function Hotbar({
+export const Hotbar = memoView("Hotbar", function Hotbar({
   inventoryId,
   activeSlot,
   keys,
@@ -96,14 +97,14 @@ export function Hotbar({
       })}
     </div>
   );
-}
+});
 
 /**
  * A speedometer for an entity (defaults to the local player) — an SVG arc gauge + a digital readout.
  * `scale` converts world units/second to your display unit (3.6 → km/h, 2.237 → mph); `max` sets the
  * gauge's top of scale.
  */
-export function Speedometer({
+export const Speedometer = memoView("Speedometer", function Speedometer({
   entityId,
   scale = 3.6,
   unit = "km/h",
@@ -156,7 +157,7 @@ export function Speedometer({
       <div style={{ fontSize: hudType("xs"), opacity: 0.6, letterSpacing: 0.4, textTransform: "uppercase" }}>{unit}</div>
     </div>
   );
-}
+});
 
 /**
  * A time-of-day clock reading the sim calendar — `Day N · HH:MM`, 24h or 12h. `controls` adds
@@ -165,7 +166,7 @@ export function Speedometer({
   *
  * @capability hud-clock in-game time-of-day readout bound to the sim clock
  */
-export function Clock({
+export const Clock = memoView("Clock", function Clock({
   format = "24h",
   showDay = true,
   controls = false,
@@ -195,7 +196,7 @@ export function Clock({
       ) : null}
     </div>
   );
-}
+});
 
 function clockLabel({ hour, minute }: { hour: number; minute: number }, format: "24h" | "12h"): string {
   const mm = minute.toString().padStart(2, "0");
@@ -252,7 +253,7 @@ export function Coins({
 }
 
 /** A minimal center crosshair reticle — four ticks around a gap. Purely presentational. */
-export function Crosshair({
+export const Crosshair = memoView("Crosshair", function Crosshair({
   size = 18,
   gap = 5,
   thickness = 2,
@@ -278,4 +279,4 @@ export function Crosshair({
       </div>
     </div>
   );
-}
+});

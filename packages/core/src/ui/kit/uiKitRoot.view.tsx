@@ -21,7 +21,8 @@ import { hashString } from "@jgengine/core/random/rng";
 import { actionGlyph, useInputDevice } from "../../input/inputDevice.view";
 import { KitFrame, type KitFrameLook } from "./kitFrame.view";
 import { memoView } from "../memoView.view";
-import { isLive, useLiveSelect, type Live } from "../liveBind.view";
+import { useLiveSelect } from "../liveBind.view";
+import { isLive, type Live } from "../liveValue";
 import {
   uiKitVars,
   type KitButtonProps,

@@ -1,4 +1,6 @@
-import { createElement, useCallback, useLayoutEffect, useRef, useSyncExternalStore, type HTMLAttributes, type ReactElement } from "react";
+import { createElement, useCallback, useLayoutEffect, useRef, useSyncExternalStore, type HTMLAttributes, type ReactElement, type ReactNode } from "react";
+import { memoView } from "./memoView.view";
+import { isLive, readLive, type Live } from "./liveValue";
 
 /*
  * Live values. A HUD number, bar or dial that moves every frame or tick updates its own DOM node
@@ -31,38 +33,6 @@ export function subscribeFrameBind(subscriber: FrameSubscriber): () => void {
       sharedRaf = 0;
     }
   };
-}
-
-const LIVE = Symbol.for("jgengine.live");
-
-/** A value read fresh every frame instead of passed once: make one with {@link live}. */
-export interface LiveValue<T> {
-  readonly [LIVE]: true;
-  get(): T;
-}
-
-/** A prop that takes either a plain value or a {@link live} one. Engine UI parts take `Live<number>` for anything that can move every frame. */
-export type Live<T> = T | LiveValue<T>;
-
-/**
- * A value an engine UI part reads every frame and draws into its own node, never through a React
- * render: `<KitMeter value={live(() => fuel(ctx))} max={100} />`. The getter may close over props; the
- * part always calls the newest one.
- *
- * @capability live-prop hand an engine UI part a value that moves every frame (a meter, a distance, a countdown) so only its own node updates
- */
-export function live<T>(get: () => T): LiveValue<T> {
-  return { [LIVE]: true, get };
-}
-
-/** True for a value made with {@link live}. */
-export function isLive(value: unknown): value is LiveValue<unknown> {
-  return typeof value === "object" && value !== null && Reflect.get(value, LIVE) === true;
-}
-
-/** The value now: a plain value as is, a {@link live} one read once. */
-export function readLive<T>(value: Live<T>): T {
-  return isLive(value) ? (value as LiveValue<T>).get() : (value as T);
 }
 
 const noFrames = (): (() => void) => () => undefined;
@@ -146,6 +116,15 @@ export function useFrameBind<T, E extends Element = Element>(
 /** Inline and block elements a live text can be. */
 export type LiveTextTag = "span" | "b" | "strong" | "small" | "em" | "i" | "div" | "p" | "dd" | "dt" | "td" | "output" | "text" | "tspan";
 
+/** Props for {@link LiveText}. */
+export interface LiveTextProps<T> extends Omit<HTMLAttributes<HTMLElement>, "children"> {
+  /** Read once per frame. */
+  get: () => T;
+  /** The text for a value. Default `String(value)`. */
+  format?(value: T): string;
+  as?: LiveTextTag;
+}
+
 /**
  * A text leaf for a value that changes every frame or tick: a counter, a timer, a distance. It
  * renders the current text once, then writes only its own text node when the formatted text changes;
@@ -158,11 +137,7 @@ export type LiveTextTag = "span" | "b" | "strong" | "small" | "em" | "i" | "div"
  *
  * @capability live-text a HUD number or label that updates its own text node every tick without re-rendering its component
  */
-export function LiveText<T>({ get, format, as = "span", ...attributes }: {
-  get: () => T;
-  format?: (value: T) => string;
-  as?: LiveTextTag;
-} & Omit<HTMLAttributes<HTMLElement>, "children">): ReactElement {
+export const LiveText: <T>(props: LiveTextProps<T>) => ReactNode = memoView("LiveText", function LiveText({ get, format, as = "span", ...attributes }: LiveTextProps<unknown>): ReactElement {
   const ref = useRef<Element>(null);
   const formatRef = useRef(format);
   formatRef.current = format;
@@ -175,4 +150,4 @@ export function LiveText<T>({ get, format, as = "span", ...attributes }: {
     element.textContent = value;
   });
   return createElement(as, { ...attributes, ref }, text());
-}
+}, { readLater: ["get", "format"] });

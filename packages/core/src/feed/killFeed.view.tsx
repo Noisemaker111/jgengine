@@ -3,6 +3,7 @@ import { useEffect, useReducer, useRef, type CSSProperties, type ReactNode } fro
 import type { EventTicker, EventTickerView } from "@jgengine/core/feed/eventTicker";
 
 import { GameIcon, isGameIconName } from "../ui/icons/gameIcons.view";
+import { memoView } from "../ui/memoView.view";
 
 /**
  * Subscribe to an event ticker and re-render it on an animation frame (unless the game
@@ -106,7 +107,7 @@ export interface KillFeedProps {
  *
  * @capability kill-feed vertical event/kill-feed ticker rendering a core event-ticker as a fading, newest-on-top stack of per-kind iconned, accent-colored rows over HudTheme tokens
  */
-export function KillFeed({
+export const KillFeed = memoView("KillFeed", function KillFeed({
   ticker,
   kindStyles,
   theme,
@@ -181,4 +182,4 @@ export function KillFeed({
       })}
     </div>
   );
-}
+});

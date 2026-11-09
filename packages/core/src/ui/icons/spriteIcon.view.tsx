@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 
 import { resolveAssetBaseUrl } from "../../assets/assetBase";
+import { memoView } from "../memoView.view";
 
 /** Props for {@link SpriteIcon}. */
 export interface SpriteIconProps {
@@ -48,7 +49,7 @@ export function spriteIconMask(src: string, mode: "luminance" | "alpha" = "lumin
  *
  * @capability sprite-icon draw a served one-colour icon (game-icons.net SVG) tinted to the HUD theme
  */
-export function SpriteIcon({ src, size = 24, color = "currentColor", title, mode = "luminance", className, style }: SpriteIconProps) {
+export const SpriteIcon = memoView("SpriteIcon", function SpriteIcon({ src, size = 24, color = "currentColor", title, mode = "luminance", className, style }: SpriteIconProps) {
   return (
     <span
       role={title === undefined ? undefined : "img"}
@@ -59,4 +60,4 @@ export function SpriteIcon({ src, size = 24, color = "currentColor", title, mode
       style={{ display: "inline-block", width: size, height: size, flexShrink: 0, backgroundColor: color, ...spriteIconMask(src, mode), ...style }}
     />
   );
-}
+});

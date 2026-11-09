@@ -1,6 +1,6 @@
 import { isValidElement, memo, useRef, type ComponentType, type NamedExoticComponent, type ReactNode } from "react";
 
-import { isLive, live, type LiveValue } from "./liveBind.view";
+import { isLive, live, type LiveValue } from "./liveValue";
 
 /*
  * Engine view parts re-render only when what they show changes, never because their parent did. A
@@ -15,6 +15,8 @@ import { isLive, live, type LiveValue } from "./liveBind.view";
 const latestByProps = new WeakMap<object, Map<string, unknown>>();
 
 const NODE_BUDGET = 400;
+
+const NO_KEYS: ReadonlySet<string> = new Set();
 
 function isHandlerKey(key: string): boolean {
   return key.length > 2 && key.charCodeAt(0) === 111 && key.charCodeAt(1) === 110 && key.charCodeAt(2) >= 65 && key.charCodeAt(2) <= 90;
@@ -112,7 +114,7 @@ export function sameNode(previous: ReactNode, next: ReactNode, budget: Budget = 
  * values differing only by identity count as the same and are recorded as the newest, so the part
  * still calls the current one.
  */
-export function samePartProps(previous: object, next: object): boolean {
+export function samePartProps(previous: object, next: object, readLater: ReadonlySet<string> = NO_KEYS): boolean {
   const before = previous as Record<string, unknown>;
   const after = next as Record<string, unknown>;
   const keys = Object.keys(before);
@@ -124,7 +126,7 @@ export function samePartProps(previous: object, next: object): boolean {
     const a = before[key];
     const b = after[key];
     if (Object.is(a, b)) continue;
-    if ((typeof a === "function" && typeof b === "function" && isHandlerKey(key)) || (isLive(a) && isLive(b))) {
+    if ((typeof a === "function" && typeof b === "function" && (isHandlerKey(key) || readLater.has(key))) || (isLive(a) && isLive(b))) {
       newest ??= new Map();
       newest.set(key, b);
       continue;
@@ -159,14 +161,14 @@ type Callable = (...args: never[]) => unknown;
  * The props a part draws with: each `on*` handler and live value replaced by a stable stand-in that
  * reaches the newest one the parent passed, so a skipped render never leaves an old closure behind.
  */
-function useNewestProps<P extends object>(props: P): P {
+function useNewestProps<P extends object>(props: P, readLater: ReadonlySet<string>): P {
   const propsRef = useRef(props);
   propsRef.current = props;
   const standIns = useRef<Map<string, unknown> | null>(null);
   let out: P = props;
   for (const key of Object.keys(props)) {
     const value: unknown = Reflect.get(props, key);
-    const handler = typeof value === "function" && isHandlerKey(key);
+    const handler = typeof value === "function" && (isHandlerKey(key) || readLater.has(key));
     if (!handler && !isLive(value)) continue;
     standIns.current ??= new Map();
     let standIn = standIns.current.get(key);
@@ -185,6 +187,15 @@ function useNewestProps<P extends object>(props: P): P {
   return out;
 }
 
+/** Options for {@link memoView}. */
+export interface MemoViewOptions<P> {
+  /**
+   * Function props the part only calls later (in a frame binding or an effect), like `HudFade`'s
+   * `watch`: a new function for one of these is no reason to redraw, and the part calls the newest.
+   */
+  readLater?: readonly Extract<keyof P, string>[];
+}
+
 /**
  * Make a view part that re-renders only when what it draws changes ({@link samePartProps}), never
  * because its parent re-rendered. Every engine UI part (kit parts, HUD blocks) is made with it, so a
@@ -193,10 +204,11 @@ function useNewestProps<P extends object>(props: P): P {
  *
  * @capability memo-view a UI part that skips its parent's re-renders: inline handlers, live values and equal children never redraw it
  */
-export function memoView<P extends object>(name: string, Part: (props: P) => ReactNode): NamedExoticComponent<P> {
-  const View = (props: P): ReactNode => Part(useNewestProps(props));
+export function memoView<P extends object>(name: string, Part: (props: P) => ReactNode, options: MemoViewOptions<P> = {}): NamedExoticComponent<P> {
+  const readLater: ReadonlySet<string> = options.readLater === undefined ? NO_KEYS : new Set(options.readLater);
+  const View = (props: P): ReactNode => Part(useNewestProps(props, readLater));
   View.displayName = name;
-  const memoized = memo(View as ComponentType<P>, samePartProps);
+  const memoized = memo(View as ComponentType<P>, (previous, next) => samePartProps(previous, next, readLater));
   memoized.displayName = name;
   return memoized;
 }

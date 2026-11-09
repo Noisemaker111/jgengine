@@ -1,6 +1,7 @@
-import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
+import { type ButtonHTMLAttributes, type ReactNode, type Ref } from "react";
 
 import { useEngineStyles } from "@jgengine/react/engineStyles";
+import { memoView } from "../ui/memoView.view";
 import { useHudInteract, type HudInteractListener } from "./hudInteract.view";
 
 /** Visual weight of a {@link HudButton}. */
@@ -32,10 +33,22 @@ export interface HudButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElem
  *
  * @capability hud-button themed button with hover lift, press scale, focus ring, disabled state, and an interaction cue seam
  */
-export const HudButton = forwardRef<HTMLButtonElement, HudButtonProps>(function HudButton(
-  { variant = "secondary", size = "md", block, type = "button", cue, onInteract, onClick, onPointerEnter, onPointerDown, onFocus, disabled, children, ...rest },
+export const HudButton = memoView("HudButton", function HudButton({
+  variant = "secondary",
+  size = "md",
+  block,
+  type = "button",
+  cue,
+  onInteract,
+  onClick,
+  onPointerEnter,
+  onPointerDown,
+  onFocus,
+  disabled,
+  children,
   ref,
-) {
+  ...rest
+}: HudButtonProps & { ref?: Ref<HTMLButtonElement> }): ReactNode {
   useEngineStyles();
   const report = useHudInteract("button", cue, onInteract);
   return (

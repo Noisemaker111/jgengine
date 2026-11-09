@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
-import { isLive, live, LiveText, readLive, useFrameBind, useLiveSelect, type Live } from "../liveBind.view";
+import { LiveText, useFrameBind, useLiveSelect } from "../liveBind.view";
+import { isLive, live, readLive, type Live } from "../liveValue";
 import { memoView } from "../memoView.view";
 
 import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
