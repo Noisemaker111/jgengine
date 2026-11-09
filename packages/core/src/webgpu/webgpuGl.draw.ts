@@ -71,6 +71,8 @@ export interface WebGpuGlStats {
   pipelines: number;
   bindGroups: number;
   uniformBytes: number;
+  /** Sum of every linked program's uniform block size: what one full restage of all programs would upload. */
+  uniformBlockBytes: number;
   /** Flushes forced by an upload into a resource the open batch already used. */
   orderFlushes: number;
   /** Programs linked, and the milliseconds spent translating them to WGSL. */
@@ -121,13 +123,31 @@ interface GlQuery {
   /** A TIME_ELAPSED query: the stamp serials of its first pass's start and its last pass's end so far (-1 for none), and those stamps once read back. */
   start: number; end: number; ended: boolean; startNs: number | null; endNs: number | null; endNsSerial: number;
 }
+/** One of a program's two uniform blocks: the CPU copy three's uniform writes land in, and the
+ * state that decides when its GPU bytes move. `object` restages into the batch's ring once per
+ * pass; `shared` persists in its own buffer and uploads only the spans that changed. */
+interface GlUniformSide {
+  block: ArrayBuffer; f32: Float32Array; i32: Int32Array; u32: Uint32Array; bytes: Uint8Array;
+  /** Allocated bytes, a multiple of 16 and at least 16. */
+  size: number;
+  /** Object: restage into the ring. Shared: has an unflushed span in `sharedLo..sharedHi`. */
+  dirty: boolean;
+  /** Object only: the pass epoch and ring offset its last staging took. */
+  slotBatch: number; slotOffset: number;
+}
 interface GlProgram {
   kind: "program"; id: number; shaders: GlShader[]; linked: boolean; log: string; translated: WgslProgram | null; pending: PendingTranslation | null;
   vertex: GPUShaderModule | null; fragment: GPUShaderModule | null;
   /** Whether the browser has compiled the shaders for the GPU (see {@link WebGpuGl.precompile}). */
   compiled: boolean;
   uniforms: Map<string, WgslUniformSlot>; samplerIndex: Map<string, number>; active: { name: string; size: number; type: number }[]; attribs: { name: string; size: number; type: number; location: number }[];
-  block: ArrayBuffer; f32: Float32Array; i32: Int32Array; u32: Uint32Array; bytes: Uint8Array; blockSize: number; dirty: boolean; slotBatch: number; slotOffset: number;
+  objectSide: GlUniformSide; sharedSide: GlUniformSide;
+  /** The shared block's persistent GPU buffer and the group(0) bind group every draw of this program uses. */
+  sharedBuf: GPUBuffer | null; uniformGroup: GPUBindGroup | null;
+  /** The batch this program last drew in: a shared write after that must flush first (see markShared). */
+  usedBatch: number;
+  /** Unflushed shared byte span, valid while the program is in {@link WebGpuGl.sharedDirty}. */
+  sharedLo: number; sharedHi: number;
   units: Int32Array; layouts: Map<string, { group: GPUBindGroupLayout; pipeline: GPUPipelineLayout }>;
   /** Each vertex array's plan for this program, valid while the array's version is the one it was made at. */
   vertexCache: WeakMap<GlVertexArray, { version: number; plan: VertexPlan }>;
@@ -535,7 +555,7 @@ Object.assign(GlConstants.prototype, WEBGL_CONSTANTS);
 export class WebGpuGl extends GlConstants {
   readonly canvas: HTMLCanvasElement;
   readonly device: GPUDevice;
-  readonly stats: WebGpuGlStats = { frames: 0, draws: 0, passes: 0, clearPasses: 0, replayedPasses: 0, bundles: 0, changedPasses: 0, unreplayablePasses: 0, submits: 0, pipelines: 0, bindGroups: 0, uniformBytes: 0, orderFlushes: 0, programs: 0, translateMs: 0, fences: 0, fenceMs: 0, reads: 0, readMs: 0, queueLagMs: 0, precompiles: 0, precompileMs: 0 };
+  readonly stats: WebGpuGlStats = { frames: 0, draws: 0, passes: 0, clearPasses: 0, replayedPasses: 0, bundles: 0, changedPasses: 0, unreplayablePasses: 0, submits: 0, pipelines: 0, bindGroups: 0, uniformBytes: 0, uniformBlockBytes: 0, orderFlushes: 0, programs: 0, translateMs: 0, fences: 0, fenceMs: 0, reads: 0, readMs: 0, queueLagMs: 0, precompiles: 0, precompileMs: 0 };
   /** Every distinct problem a draw hit, once each (also printed once). */
   readonly warnings = new Map<string, number>();
   drawingBufferColorSpace: PredefinedColorSpace = "srgb";
@@ -547,6 +567,8 @@ export class WebGpuGl extends GlConstants {
   private readonly float32Blendable: boolean;
   private readonly canvasFormat: GPUTextureFormat;
   private readonly uniformLayout: GPUBindGroupLayout;
+  /** Programs' group(0): the shared block static at binding 0, the per-object block dynamic at binding 1. */
+  private readonly programUniformLayout: GPUBindGroupLayout;
   private readonly emptyLayout: GPUBindGroupLayout;
   private readonly emptyGroup: GPUBindGroup;
 
@@ -630,16 +652,21 @@ export class WebGpuGl extends GlConstants {
   private readonly unencoded: (RecordedPass | RecordedAction)[] = [];
   private readonly replayOffset = new Uint32Array(1);
   /**
-   * Changes at every pass and every submit: a program copies its uniforms into the ring once per pass,
-   * so every offset a pass binds lies in its own range and a cached replay of it can carry them.
+   * Changes at every pass and every submit: a program copies its object uniforms into the ring once
+   * per pass, so every offset a pass binds lies in its own range and a cached replay of it can
+   * carry them. (The shared block is not in the ring: it persists in each program's own buffer.)
    */
   private slotEpoch = 0;
   /** Each target's passes this frame so far, so the n-th pass into a target meets last frame's n-th. */
   private readonly passOrdinals = new Map<GlFramebuffer | null, number>();
   /** Last frames' passes per target and ordinal, replayed from render bundles when a pass repeats (see {@link encodePass}). */
   private readonly replays = new Map<GlFramebuffer | null, PassReplay[][]>();
-  /** The uniform block size each ring bind group binds. */
+  /** The uniform block size each ring bind group binds: a program's group binds its object block. */
   private readonly ringGroupSizes = new WeakMap<GPUBindGroup, number>();
+  /** The program each program uniform bind group belongs to, for replay bind groups. */
+  private readonly uniformGroupPrograms = new WeakMap<GPUBindGroup, GlProgram>();
+  /** Programs whose shared block has bytes to upload at the next submit. */
+  private readonly sharedDirty = new Set<GlProgram>();
   private passTarget: PassTarget | null = null;
   private pendingClear: PendingClear | null = null;
   private batch = 1;
@@ -662,7 +689,8 @@ export class WebGpuGl extends GlConstants {
   private readonly samplers = new Map<string, GPUSampler>();
   private boundPipeline: GPURenderPipeline | null = null;
   private boundGroup1: GPUBindGroup | null = null;
-  private boundUniform = -1;
+  private boundUniformGroup: GPUBindGroup | null = null;
+  private boundUniformOffset = -1;
   private boundVertex: (GPUBuffer | null)[] = [];
   private boundVertexOffset: number[] = [];
   private boundIndex: GPUBuffer | null = null;
@@ -707,6 +735,10 @@ export class WebGpuGl extends GlConstants {
     this.maxVertexBuffers = device.limits.maxVertexBuffers;
     this.queue = device.queue;
     this.uniformLayout = device.createBindGroupLayout({ entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: "uniform", hasDynamicOffset: true } }] });
+    this.programUniformLayout = device.createBindGroupLayout({ entries: [
+      { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: "uniform" } },
+      { binding: 1, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: "uniform", hasDynamicOffset: true } },
+    ] });
     this.emptyLayout = device.createBindGroupLayout({ entries: [] });
     this.emptyGroup = device.createBindGroup({ layout: this.emptyLayout, entries: [] });
     this.ring = device.createBuffer({ size: UNIFORM_RING_BYTES, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC });
@@ -1029,7 +1061,8 @@ export class WebGpuGl extends GlConstants {
     return {
       kind: "program", id: nextId++, shaders: [], linked: false, log: "", translated: null, pending: null, vertex: null, fragment: null, compiled: false,
       uniforms: new Map(), samplerIndex: new Map(), active: [], attribs: [],
-      block: new ArrayBuffer(16), f32: new Float32Array(4), i32: new Int32Array(4), u32: new Uint32Array(4), bytes: new Uint8Array(16), blockSize: 16, dirty: true, slotBatch: 0, slotOffset: 0,
+      objectSide: this.uniformSide(16), sharedSide: this.uniformSide(16),
+      sharedBuf: null, uniformGroup: null, usedBatch: 0, sharedLo: 0, sharedHi: 0,
       units: new Int32Array(0), layouts: new Map(), vertexCache: new WeakMap(), textureSets: new Map(), lastTextures: null, pipelineSets: new Map(),
     };
   }
@@ -1073,13 +1106,25 @@ export class WebGpuGl extends GlConstants {
     p.translated = t;
     p.vertex = this.device.createShaderModule({ code: t.vertex_wgsl });
     p.fragment = this.device.createShaderModule({ code: t.fragment_wgsl });
-    p.blockSize = Math.max(16, Math.ceil(t.layout.uniform_size / 16) * 16);
-    p.block = new ArrayBuffer(p.blockSize);
-    p.f32 = new Float32Array(p.block);
-    p.i32 = new Int32Array(p.block);
-    p.u32 = new Uint32Array(p.block);
-    p.bytes = new Uint8Array(p.block);
-    p.dirty = true;
+    // Split layouts carry both block sizes; an unsplit one puts everything in the shared block.
+    const split = (t.layout.object_size ?? 0) > 0 || (t.layout.shared_size ?? 0) > 0;
+    const align16 = (n: number) => Math.max(16, Math.ceil(n / 16) * 16);
+    const sharedSize = align16(split ? t.layout.shared_size ?? 0 : t.layout.uniform_size);
+    const objectSize = align16(split ? t.layout.object_size ?? 0 : 0);
+    p.objectSide = this.uniformSide(objectSize);
+    p.sharedSide = this.uniformSide(sharedSize);
+    p.sharedBuf = this.device.createBuffer({ size: sharedSize, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+    p.uniformGroup = this.device.createBindGroup({
+      layout: this.programUniformLayout,
+      entries: [
+        { binding: 0, resource: { buffer: p.sharedBuf, offset: 0, size: sharedSize } },
+        { binding: 1, resource: { buffer: this.ring, offset: 0, size: objectSize } },
+      ],
+    });
+    this.ringGroupSizes.set(p.uniformGroup, objectSize);
+    this.uniformGroupPrograms.set(p.uniformGroup, p);
+    this.markShared(p, 0, sharedSize);
+    this.stats.uniformBlockBytes += sharedSize + objectSize;
     p.uniforms.clear();
     p.active = [];
     for (const slot of t.layout.uniforms) {
@@ -1198,6 +1243,36 @@ export class WebGpuGl extends GlConstants {
 
   useProgram(p: GlProgram | null): void { if (p !== null) this.settle(p); this.program = p; }
 
+  /** A fresh CPU uniform block of `size` bytes (a multiple of 16). */
+  private uniformSide(size: number): GlUniformSide {
+    const block = new ArrayBuffer(size);
+    return { block, f32: new Float32Array(block), i32: new Int32Array(block), u32: new Uint32Array(block), bytes: new Uint8Array(block), size, dirty: true, slotBatch: 0, slotOffset: 0 };
+  }
+
+  /** The block a uniform slot's bytes live in. Slots without a block mark (pre-split layouts) are shared. */
+  private blockFor(p: GlProgram, slot: WgslUniformSlot): GlUniformSide {
+    return slot.block === "object" ? p.objectSide : p.sharedSide;
+  }
+
+  /**
+   * Record that `p`'s shared block changed over `lo..hi` bytes; its GPU buffer gets them at the
+   * next submit. A shared write after the program already drew this batch would let those earlier
+   * draws see the new value in the same submit, so callers flush first ({@link orderFlush}).
+   */
+  private markShared(p: GlProgram, lo: number, hi: number): void {
+    const a = Math.max(0, lo);
+    const b = Math.min(p.sharedSide.size, hi);
+    if (!this.sharedDirty.has(p)) {
+      p.sharedLo = a;
+      p.sharedHi = b;
+      this.sharedDirty.add(p);
+    } else {
+      p.sharedLo = Math.min(p.sharedLo, a);
+      p.sharedHi = Math.max(p.sharedHi, b);
+    }
+    p.sharedSide.dirty = true;
+  }
+
   /** `uniform{1,2,3,4}{f,i,ui}`: one element written from its arguments, with no array made per call. */
   private writeScalars(loc: UniformLocation | null, components: number, integer: boolean, x: number, y: number, z: number, w: number): void {
     if (loc === null) return;
@@ -1205,8 +1280,13 @@ export class WebGpuGl extends GlConstants {
     if (slot === null || loc.sampler >= 0) { this.writeUniform(loc, [x, y, z, w].slice(0, components), components, integer); return; }
     if (loc.element >= slot.count) return;
     const p = loc.program;
-    const view = slot.kind === "f" ? p.f32 : slot.kind === "u" ? p.u32 : p.i32;
-    const base = (slot.offset + loc.element * (slot.stride === 0 ? 16 : slot.stride)) >> 2;
+    const side = this.blockFor(p, slot);
+    const shared = side === p.sharedSide;
+    const stride = slot.stride === 0 ? 16 : slot.stride;
+    const lo = slot.offset + loc.element * stride;
+    if (shared && p.usedBatch === this.batch && this.scalarsChange(p, slot, loc.element, components, integer, x, y, z, w)) this.orderFlush();
+    const view = slot.kind === "f" ? side.f32 : slot.kind === "u" ? side.u32 : side.i32;
+    const base = (slot.offset + loc.element * stride) >> 2;
     const per = Math.min(components, slot.rows);
     const whole = integer || slot.kind !== "f";
     let changed = false;
@@ -1215,7 +1295,25 @@ export class WebGpuGl extends GlConstants {
       const v = whole ? Math.trunc(raw) : Math.fround(raw);
       if (view[base + k] !== v) { view[base + k] = v; changed = true; }
     }
-    if (changed) p.dirty = true;
+    if (changed) {
+      if (shared) this.markShared(p, lo, lo + stride);
+      else side.dirty = true;
+    }
+  }
+
+  /** Whether {@link writeScalars}' write would change the shared block, without writing it. */
+  private scalarsChange(p: GlProgram, slot: WgslUniformSlot, element: number, components: number, integer: boolean, x: number, y: number, z: number, w: number): boolean {
+    const side = p.sharedSide;
+    const view = slot.kind === "f" ? side.f32 : slot.kind === "u" ? side.u32 : side.i32;
+    const base = (slot.offset + element * (slot.stride === 0 ? 16 : slot.stride)) >> 2;
+    const per = Math.min(components, slot.rows);
+    const whole = integer || slot.kind !== "f";
+    for (let k = 0; k < per; k += 1) {
+      const raw = k === 0 ? x : k === 1 ? y : k === 2 ? z : w;
+      const v = whole ? Math.trunc(raw) : Math.fround(raw);
+      if (view[base + k] !== v) return true;
+    }
+    return false;
   }
 
   private writeUniform(loc: UniformLocation | null, data: ArrayLike<number>, components: number, integer: boolean): void {
@@ -1227,11 +1325,16 @@ export class WebGpuGl extends GlConstants {
       return;
     }
     const slot = loc.slot!;
-    const view = slot.kind === "f" ? p.f32 : slot.kind === "u" ? p.u32 : p.i32;
+    const side = this.blockFor(p, slot);
+    const shared = side === p.sharedSide;
     const rows = slot.rows;
     const stride = slot.stride === 0 ? 16 : slot.stride;
     const per = Math.min(components, rows);
     const count = Math.min(Math.floor(data.length / components), slot.count - loc.element);
+    const lo = slot.offset + loc.element * stride;
+    const hi = slot.offset + (loc.element + Math.max(0, count)) * stride;
+    if (shared && p.usedBatch === this.batch && this.uniformsChange(p, slot, loc.element, data, components, integer)) this.orderFlush();
+    const view = slot.kind === "f" ? side.f32 : slot.kind === "u" ? side.u32 : side.i32;
     let changed = false;
     for (let e = 0; e < count; e += 1) {
       const base = (slot.offset + (loc.element + e) * stride) >> 2;
@@ -1241,27 +1344,73 @@ export class WebGpuGl extends GlConstants {
         if (view[base + k] !== v) { view[base + k] = v; changed = true; }
       }
     }
-    if (changed) p.dirty = true;
+    if (changed) {
+      if (shared) this.markShared(p, lo, hi);
+      else side.dirty = true;
+    }
+  }
+
+  /** Whether {@link writeUniform}'s write would change the shared block, without writing it. */
+  private uniformsChange(p: GlProgram, slot: WgslUniformSlot, element: number, data: ArrayLike<number>, components: number, integer: boolean): boolean {
+    const side = p.sharedSide;
+    const view = slot.kind === "f" ? side.f32 : slot.kind === "u" ? side.u32 : side.i32;
+    const rows = slot.rows;
+    const stride = slot.stride === 0 ? 16 : slot.stride;
+    const per = Math.min(components, rows);
+    const count = Math.min(Math.floor(data.length / components), slot.count - element);
+    for (let e = 0; e < count; e += 1) {
+      const base = (slot.offset + (element + e) * stride) >> 2;
+      for (let k = 0; k < per; k += 1) {
+        const v = integer || slot.kind !== "f" ? Math.trunc(Number(data[e * components + k])) : Math.fround(Number(data[e * components + k]));
+        if (view[base + k] !== v) return true;
+      }
+    }
+    return false;
   }
 
   private writeMatrix(loc: UniformLocation | null, data: ArrayLike<number>, columns: number, rows: number): void {
     if (loc === null || loc.slot === null) return;
     const p = loc.program;
     const slot = loc.slot;
+    const side = this.blockFor(p, slot);
+    const shared = side === p.sharedSide;
     const per = columns * rows;
     const count = Math.min(Math.floor(data.length / per), slot.count - loc.element);
     const stride = slot.stride === 0 ? slot.column_stride * columns : slot.stride;
+    const lo = slot.offset + loc.element * stride;
+    const hi = slot.offset + (loc.element + Math.max(0, count)) * stride;
+    if (shared && p.usedBatch === this.batch && this.matricesChange(p, slot, loc.element, data, columns, rows)) this.orderFlush();
     let changed = false;
     for (let e = 0; e < count; e += 1) {
       for (let col = 0; col < columns; col += 1) {
         const base = (slot.offset + (loc.element + e) * stride + col * slot.column_stride) >> 2;
         for (let r = 0; r < rows; r += 1) {
           const v = data[e * per + col * rows + r]!;
-          if (p.f32[base + r] !== v) { p.f32[base + r] = v; changed = true; }
+          if (side.f32[base + r] !== v) { side.f32[base + r] = v; changed = true; }
         }
       }
     }
-    if (changed) p.dirty = true;
+    if (changed) {
+      if (shared) this.markShared(p, lo, hi);
+      else side.dirty = true;
+    }
+  }
+
+  /** Whether {@link writeMatrix}'s write would change the shared block, without writing it. */
+  private matricesChange(p: GlProgram, slot: WgslUniformSlot, element: number, data: ArrayLike<number>, columns: number, rows: number): boolean {
+    const side = p.sharedSide;
+    const per = columns * rows;
+    const count = Math.min(Math.floor(data.length / per), slot.count - element);
+    const stride = slot.stride === 0 ? slot.column_stride * columns : slot.stride;
+    for (let e = 0; e < count; e += 1) {
+      for (let col = 0; col < columns; col += 1) {
+        const base = (slot.offset + (element + e) * stride + col * slot.column_stride) >> 2;
+        for (let r = 0; r < rows; r += 1) {
+          if (side.f32[base + r] !== data[e * per + col * rows + r]!) return true;
+        }
+      }
+    }
+    return false;
   }
 
   uniform1f(l: UniformLocation | null, x: number): void { this.writeScalars(l, 1, false, x, 0, 0, 0); }
@@ -2037,7 +2186,7 @@ struct U { shift: vec2<i32> };
           const size = this.ringGroupSizes.get(ops[i + 2]);
           const offset = ops[i + 3] as number;
           if (size === undefined || offset < rp.uniformBase || offset + size > rp.uniformEnd) return null;
-          out[i + 2] = size;
+          // The group stays: a program's uniform group names its shared buffer for the replay bind group.
           out[i + 3] = offset - rp.uniformBase;
           i += 4;
           break;
@@ -2069,12 +2218,22 @@ struct U { shift: vec2<i32> };
     const constantRoom = Math.ceil(constants / 256) * 256;
     const usage = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | (constantRoom > 0 ? GPUBufferUsage.VERTEX : 0);
     const uniforms = this.device.createBuffer({ size: constantsAt + constantRoom, usage });
-    const groups = new Map<number, GPUBindGroup>();
-    const group = (blockSize: number) => {
-      let g = groups.get(blockSize);
+    const groups = new Map<GPUBindGroup, GPUBindGroup>();
+    const group = (bound: GPUBindGroup) => {
+      let g = groups.get(bound);
       if (g === undefined) {
-        g = this.device.createBindGroup({ layout: this.uniformLayout, entries: [{ binding: 0, resource: { buffer: uniforms, offset: 0, size: blockSize } }] });
-        groups.set(blockSize, g);
+        const prog = this.uniformGroupPrograms.get(bound);
+        if (prog !== undefined && prog.sharedBuf !== null) {
+          // A program's uniforms: its persistent shared block plus this pass's object range.
+          g = this.device.createBindGroup({ layout: this.programUniformLayout, entries: [
+            { binding: 0, resource: { buffer: prog.sharedBuf, offset: 0, size: prog.sharedSide.size } },
+            { binding: 1, resource: { buffer: uniforms, offset: 0, size: prog.objectSide.size } },
+          ] });
+        } else {
+          const blockSize = this.ringGroupSizes.get(bound) ?? 16;
+          g = this.device.createBindGroup({ layout: this.uniformLayout, entries: [{ binding: 0, resource: { buffer: uniforms, offset: 0, size: blockSize } }] });
+        }
+        groups.set(bound, g);
       }
       return g;
     };
@@ -2335,7 +2494,8 @@ struct U { shift: vec2<i32> };
     this.passTarget = plan.target;
     this.boundPipeline = null;
     this.boundGroup1 = null;
-    this.boundUniform = -1;
+    this.boundUniformGroup = null;
+    this.boundUniformOffset = -1;
     this.boundVertex = [];
     this.boundVertexOffset = [];
     this.boundIndex = null;
@@ -2479,7 +2639,8 @@ struct O { ${outputs} };
     if (stencil) pass.setStencilReference(this.clearStencilValue);
     pass.draw(3);
     this.boundPipeline = null;
-    this.boundUniform = -1;
+    this.boundUniformGroup = null;
+    this.boundUniformOffset = -1;
     this.boundView = undefined;
     this.boundScissor = undefined;
     this.boundRef = -1;
@@ -2724,7 +2885,7 @@ struct O { ${outputs} };
       entries.push({ binding: s.sampler_binding, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, sampler: { type: comparison ? "comparison" : sampleType === "float" ? "filtering" : "non-filtering" } });
     });
     const group = entries.length === 0 ? this.emptyLayout : this.device.createBindGroupLayout({ entries });
-    layout = { group, pipeline: this.device.createPipelineLayout({ bindGroupLayouts: [this.uniformLayout, group] }) };
+    layout = { group, pipeline: this.device.createPipelineLayout({ bindGroupLayouts: [this.programUniformLayout, group] }) };
     p.layouts.set(texsig, layout);
     return layout;
   }
@@ -2971,27 +3132,32 @@ struct O { ${outputs} };
       else pipelineBucket.push(entry);
     }
     const pass = this.pass!;
-    // Uniforms: one aligned copy per program per change.
-    if (p.dirty || p.slotBatch !== this.slotEpoch) {
+    // The per-object block: one aligned copy per program per pass. The shared block lives in the
+    // program's own buffer and only changed spans upload at submit.
+    const objectSide = p.objectSide;
+    if (objectSide.dirty || objectSide.slotBatch !== this.slotEpoch) {
       let at = Math.ceil(this.stagingUsed / this.uniformAlign) * this.uniformAlign;
-      if (at + p.blockSize > this.staging.byteLength) {
+      if (at + objectSide.size > this.staging.byteLength) {
         this.submit();
         if (!this.openPass()) return;
         at = 0;
       }
-      // The block is exactly blockSize long once linked, so most draws copy it without making a view.
-      this.staging.set(p.bytes.byteLength === p.blockSize ? p.bytes : p.bytes.subarray(0, p.blockSize), at);
-      this.stagingUsed = at + p.blockSize;
-      p.slotOffset = at;
-      p.slotBatch = this.slotEpoch;
-      p.dirty = false;
+      // The block is exactly its size long once linked, so most draws copy it without making a view.
+      this.staging.set(objectSide.bytes.byteLength === objectSide.size ? objectSide.bytes : objectSide.bytes.subarray(0, objectSide.size), at);
+      this.stagingUsed = at + objectSide.size;
+      objectSide.slotOffset = at;
+      objectSide.slotBatch = this.slotEpoch;
+      objectSide.dirty = false;
     }
     const passNow = this.pass!;
     if (this.boundPipeline !== pipeline) { passNow.setPipeline(pipeline); this.boundPipeline = pipeline; }
-    if (this.boundUniform !== p.slotOffset + p.blockSize * 1e7) {
-      this.dynamicOffset[0] = p.slotOffset;
-      passNow.setBindGroup(0, this.ringGroup(p.blockSize), this.dynamicOffset, 0, 1);
-      this.boundUniform = p.slotOffset + p.blockSize * 1e7;
+    const uniformGroup = p.uniformGroup;
+    if (uniformGroup === null) return;
+    if (this.boundUniformGroup !== uniformGroup || this.boundUniformOffset !== objectSide.slotOffset) {
+      this.dynamicOffset[0] = objectSide.slotOffset;
+      passNow.setBindGroup(0, uniformGroup, this.dynamicOffset, 0, 1);
+      this.boundUniformGroup = uniformGroup;
+      this.boundUniformOffset = objectSide.slotOffset;
     }
     const group = tc.group;
     if (this.boundGroup1 !== group) { passNow.setBindGroup(1, group); this.boundGroup1 = group; }
@@ -3074,6 +3240,7 @@ struct O { ${outputs} };
       }
     }
     this.stats.draws += 1;
+    p.usedBatch = this.batch;
   }
 
   private drawIdBuffer: GlBuffer | null = null;
@@ -3127,6 +3294,22 @@ struct O { ${outputs} };
       this.queue.writeBuffer(this.ring, 0, this.staging, 0, Math.ceil(this.stagingUsed / 4) * 4);
       this.stats.uniformBytes += this.stagingUsed;
     }
+    // Shared uniform blocks: only the spans that changed since the last submit, into each
+    // program's own buffer. They land before this submit's commands, so every pass sees them.
+    for (const p of this.sharedDirty) {
+      const buf = p.sharedBuf;
+      if (buf === null) continue;
+      const lo = p.sharedLo & ~3;
+      const hi = Math.min(p.sharedSide.size, (p.sharedHi + 3) & ~3);
+      if (hi > lo) {
+        this.queue.writeBuffer(buf, lo, p.sharedSide.bytes.subarray(lo, hi));
+        this.stats.uniformBytes += hi - lo;
+      }
+      p.sharedSide.dirty = false;
+      p.sharedLo = p.sharedSide.size;
+      p.sharedHi = 0;
+    }
+    this.sharedDirty.clear();
     if (this.constantsUsed > 0) this.queue.writeBuffer(this.constantRing, 0, this.constants, 0, this.constantsUsed);
     this.resolveStamps(this.encoder);
     this.queue.submit([this.encoder.finish()]);
