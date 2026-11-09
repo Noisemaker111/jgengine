@@ -471,8 +471,10 @@ async function resume(page: SidePage, path: PerfPath): Promise<void> {
   await page.session.send("Page.bringToFront");
   // A walk that went on from wherever the last window left it read 10.7-23 ms from one 2 s window to
   // the next on one build (harbor-heat pilot, 2026-11-09): each window saw new ground. From the same
-  // spot, every window on both sides walks the same route.
-  if (page.home !== null && path === "walk") {
+  // spot, every window on both sides walks the same route. Standing still too: drift-foundry's car
+  // drives itself about 10 m a second, so its windows went from 13 ms to 7 ms down the track and the
+  // two pages crossed the cheap stretch at different pairs, burying a planted 5% (2026-11-09).
+  if (page.home !== null) {
     const moved = await page.session.evaluate<{ ok: boolean; error?: string }>(`window.__jgengineAgent?.handle?.(${homeRequest(page.home)}) ?? { ok: false, error: "agent bridge unavailable" }`);
     if (moved?.ok !== true) throw new Error(`could not put the ${page.side} page's player back at the start of the walk: ${moved?.error ?? "no answer"}`);
     // The teleport's own camera turn swings round the camera's old target, so the view after it
@@ -579,9 +581,10 @@ async function measurePair(game: string, serve: (side: Side) => Promise<string>,
       console.error(`perf ab: ${game} pair ${block}: base ${base.toFixed(2)} ms, branch ${branch.toFixed(2)} ms${verdict === null ? "" : ` -> ${verdict.call}`}`);
       if (verdict !== null) {
         console.error(`perf ab: ${game}: ${verdict.blocks} pairs in ${Math.round((Date.now() - measureAt) / 1000)} s`);
-        // Standing still, nothing is walked: a vehicle game's player rolls on its own.
-        const spread = path === "walk" ? routeSpread(windows) : 0;
-        if (spread > ROUTE_SPREAD_MAX_M) console.error(`degraded: the windows' walks ended up to ${spread.toFixed(1)} m apart, so they did not all walk one route`);
+        // Every window starts from home, walking or standing (a vehicle's player moves on its own), so
+        // their ends say whether they all covered the same ground.
+        const spread = routeSpread(windows);
+        if (spread > ROUTE_SPREAD_MAX_M) console.error(`degraded: the windows' players ended up to ${spread.toFixed(1)} m apart, so they did not all cover the same ground`);
         const busyIdle = windows.filter((window) => window.idleCpu > IDLE_CPU_MAX_PCT).length;
         if (busyIdle > 0) console.error(`degraded: in ${busyIdle} of ${windows.length} windows the frozen side's renderers still used over ${IDLE_CPU_MAX_PCT}% of a core`);
         const side = (which: Side) => medianMs(windows.filter((window) => window.side === which && window.block > 0).map((window) => window.medianMs));
