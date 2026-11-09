@@ -573,7 +573,7 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
       const timeCall = gpuMode === "draws" && running === null;
       if (timeCall) startTimer(gpuStack[gpuStack.length - 1] ?? "main", drawingMaterial);
       try {
-        return original.apply(undefined, arguments);
+        return Reflect.apply(original, undefined, arguments);
       } finally {
         if (timeCall) stopTimer();
       }
@@ -584,7 +584,7 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
   const timed = (method: string, onCall: (ms: number, args: Iterable<unknown> & ArrayLike<unknown>, result: unknown) => void) =>
     wrap(context, method, (original) => function (this: unknown) {
       const start = performance.now();
-      const result = original.apply(undefined, arguments);
+      const result = Reflect.apply(original, undefined, arguments);
       onCall(performance.now() - start, arguments, result);
       return result;
     });
