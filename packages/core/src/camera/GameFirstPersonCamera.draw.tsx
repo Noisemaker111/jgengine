@@ -1,5 +1,5 @@
+import { useRef, type ComponentType, type MutableRefObject } from "react";
 import { useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, type ComponentType, type MutableRefObject } from "react";
 import * as THREE from "three";
 import type { CameraWeaponView, FirstPersonCameraConfig } from "@jgengine/core/game/playableGame";
 import { DEFAULT_EYE_HEIGHT } from "@jgengine/core/combat/shotOrigin";
@@ -16,8 +16,10 @@ import type { RenderPose } from "@jgengine/core/runtime/poseInterpolation";
 import { usePlayer } from "@jgengine/react/hooks";
 import { useEntityRenderCues } from "@jgengine/core/anim/useEntityRenderCues.draw";
 import { clearCameraBoom, sceneCameraQuery } from "./cameraCollision";
-import { usePlayerFov } from "./PlayerFov.draw";
+import { usePlayerFov, type PlayerFovState } from "./PlayerFov.draw";
 import { GAME_SIM_FRAME_PRIORITY, ORBIT_CAMERA_FRAME_PRIORITY } from "./orbitCameraMath";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { requestRawPointerLock } from "@jgengine/core/input/pointerLock";
 import { readRegisteredFirstPersonMuzzle, registerTrackedFirstPersonMuzzle } from "./customMuzzle.draw";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
@@ -52,135 +54,172 @@ export interface GameFirstPersonCameraProps {
   weapon?: ((entityId: string, ctx: GameContext) => CameraWeaponView | null) | undefined;
 }
 
+/** Everything the first-person draw reads, resolved by the React wrapper. */
+export interface GameFirstPersonCameraDrawProps extends GameFirstPersonCameraProps {
+  ctx: GameContext;
+  userId: string;
+  playerFov: PlayerFovState;
+  /** Shared with the viewmodel: the weapon pose computed each frame. */
+  poseRef: MutableRefObject<WeaponPose | null>;
+  /** Live render cues for the followed entity (speed/bob feed weapon presentation). */
+  cuesRef: MutableRefObject<EntityRenderCues>;
+}
+
+/**
+ * Draw-side form of the first-person rig: pointer-lock look, eye placement, camera boom collision
+ * and weapon presentation all run in `frame` at orbit priority; DOM listeners live in
+ * mount/dispose. The viewmodel anchor stays a React component because games supply their own.
+ * @internal
+ */
+export function firstPersonCameraDraw(getProps: () => GameFirstPersonCameraDrawProps): EngineDraw {
+  const presentation = createWeaponPresentation();
+  const query = sceneCameraQuery(getProps().ctx.scene.raycast);
+  let seeded = false;
+  let tuning: WeaponPresentationTuning | undefined;
+  const lastLook = { yaw: 0, pitch: 0, primed: false };
+  let arm: number | null = null;
+  let domElement: HTMLCanvasElement | null = null;
+
+  const onClick = () => {
+    if (domElement === null) return;
+    if (window.matchMedia?.("(pointer: coarse)").matches) return;
+    if (document.pointerLockElement !== domElement) requestRawPointerLock(domElement);
+  };
+  const onMove = (event: MouseEvent) => {
+    const props = getProps();
+    if (domElement === null || document.pointerLockElement !== domElement) return;
+    const config = props.config;
+    const sensitivity = config?.sensitivity ?? DEFAULT_SENSITIVITY;
+    const maxPitch = config?.maxPitch ?? DEFAULT_MAX_PITCH;
+    props.yawRef.current -= event.movementX * sensitivity;
+    props.pitchRef.current = Math.max(
+      -maxPitch,
+      Math.min(maxPitch, props.pitchRef.current - event.movementY * sensitivity),
+    );
+  };
+
+  return {
+    priority: ORBIT_CAMERA_FRAME_PRIORITY,
+    mount(state: EngineFrameState) {
+      domElement = state.gl.domElement;
+      domElement.addEventListener("click", onClick);
+      window.addEventListener("mousemove", onMove);
+    },
+    frame(state: EngineFrameState) {
+      const props = getProps();
+      const config = props.config;
+      const eyeHeight = config?.eyeHeight ?? DEFAULT_EYE_HEIGHT;
+      const maxPitch = config?.maxPitch ?? DEFAULT_MAX_PITCH;
+      const followId = props.followEntityId ?? props.userId;
+      const entity = props.ctx.scene.entity.get(followId);
+      if (entity === null) return;
+      const turn = props.ctx.camera.takeTurnTo();
+      if (turn !== null) props.yawRef.current = turn;
+      if (!seeded) {
+        seeded = true;
+        props.yawRef.current = entity.rotationY;
+      }
+      const view = props.weapon?.(followId, props.ctx) ?? null;
+      if (!lastLook.primed) {
+        lastLook.primed = true;
+        lastLook.yaw = props.yawRef.current;
+        lastLook.pitch = props.pitchRef.current;
+      }
+      const step = Math.max(1e-4, state.delta);
+      let pose: WeaponPose | null = null;
+      if (view !== null) {
+        if (view.presentation !== tuning) {
+          tuning = view.presentation;
+          presentation.retune(view.presentation ?? {});
+        }
+        pose = presentation.update(state.delta, {
+          lookYawRate: (props.yawRef.current - lastLook.yaw) / step,
+          lookPitchRate: (props.pitchRef.current - lastLook.pitch) / step,
+          speed: props.cuesRef.current.speed,
+          bobPhase: props.cuesRef.current.bobPhase,
+          handling: view.handling,
+        });
+      }
+      lastLook.yaw = props.yawRef.current;
+      lastLook.pitch = props.pitchRef.current;
+      props.poseRef.current = pose;
+      const yaw = props.yawRef.current - (pose?.lookYaw ?? 0);
+      const pitch = Math.max(-maxPitch, Math.min(maxPitch, props.pitchRef.current + (pose?.lookPitch ?? 0)));
+      const cosPitch = Math.cos(pitch);
+      // The eye rides the drawn (interpolated) body so a fixed-step sim stays smooth on a fast display.
+      const body = props.ctx.sim.renderPose(followId, eyePose) ? eyePose : entity.position;
+      const eye = {
+        x: body[0],
+        y: body[1] + eyeHeight,
+        z: body[2],
+      };
+      const look = {
+        x: eye.x + Math.sin(yaw) * cosPitch,
+        y: eye.y + Math.sin(pitch),
+        z: eye.z + Math.cos(yaw) * cosPitch,
+      };
+      const camera = state.camera;
+      const collision = config?.collision;
+      if (collision !== false) {
+        const options = collision ?? {};
+        const armBack = options.armBack ?? 1.5;
+        // The boom anchors behind the eye along the look ray, so a trunk the body reached
+        // pulls the camera back toward it instead of leaving the view inside the bark.
+        const forward = { x: Math.sin(yaw) * cosPitch, y: Math.sin(pitch), z: Math.cos(yaw) * cosPitch };
+        const cleared = clearCameraBoom({
+          pivot: { x: eye.x - forward.x * armBack, y: eye.y - forward.y * armBack, z: eye.z - forward.z * armBack },
+          desired: eye,
+          query,
+          clearance: options.clearance ?? ((camera as THREE.PerspectiveCamera).near || 0.1) + 0.15,
+          previousArm: arm,
+          deltaSeconds: state.delta,
+        });
+        arm = cleared.arm;
+        camera.position.set(cleared.position.x, cleared.position.y, cleared.position.z);
+        look.x += cleared.position.x - eye.x;
+        look.y += cleared.position.y - eye.y;
+        look.z += cleared.position.z - eye.z;
+      } else {
+        arm = null;
+        camera.position.set(eye.x, eye.y, eye.z);
+      }
+      camera.lookAt(look.x, look.y, look.z);
+      if ((camera as THREE.PerspectiveCamera).isPerspectiveCamera === true) {
+        const perspective = camera as THREE.PerspectiveCamera;
+        const fov = props.playerFov.fov * (pose?.fovScale ?? 1);
+        if (Math.abs(perspective.fov - fov) > 0.001) {
+          perspective.fov = fov;
+          perspective.updateProjectionMatrix();
+        }
+      }
+    },
+    dispose() {
+      if (domElement !== null) {
+        domElement.removeEventListener("click", onClick);
+        window.removeEventListener("mousemove", onMove);
+        domElement = null;
+      }
+      seeded = false;
+      lastLook.primed = false;
+      arm = null;
+    },
+  };
+}
+
 /** First-person camera locked to the followed entity's eyes, with mouse look, head bob and the muzzle-tracked viewmodel. */
-export function GameFirstPersonCamera({
-  yawRef,
-  pitchRef,
-  config,
-  followEntityId,
-  viewmodel,
-  weapon,
-}: GameFirstPersonCameraProps) {
-  const eyeHeight = config?.eyeHeight ?? DEFAULT_EYE_HEIGHT;
-  const sensitivity = config?.sensitivity ?? DEFAULT_SENSITIVITY;
-  const maxPitch = config?.maxPitch ?? DEFAULT_MAX_PITCH;
+export function GameFirstPersonCamera(props: GameFirstPersonCameraProps) {
   const { userId } = usePlayer();
   const ctx = useGameContext();
   const playerFov = usePlayerFov();
   const camera = useThree((state) => state.camera);
-  const domElement = useThree((state) => state.gl.domElement);
-  const followId = followEntityId ?? userId;
-  const seededRef = useRef(false);
+  const followId = props.followEntityId ?? userId;
   const cuesRef = useEntityRenderCues(followId);
-  const presentation = useMemo(() => createWeaponPresentation(), []);
-  const tuningRef = useRef<WeaponPresentationTuning | undefined>(undefined);
-  const lastLookRef = useRef<{ yaw: number; pitch: number } | null>(null);
   const poseRef = useRef<WeaponPose | null>(null);
-  const armRef = useRef<number | null>(null);
-  const collision = config?.collision;
-  const query = useMemo(() => sceneCameraQuery(ctx.scene.raycast), [ctx.scene]);
-
-  useEffect(() => {
-    const requestLock = () => {
-      if (window.matchMedia?.("(pointer: coarse)").matches) return;
-      if (document.pointerLockElement !== domElement) requestRawPointerLock(domElement);
-    };
-    const onMove = (event: MouseEvent) => {
-      if (document.pointerLockElement !== domElement) return;
-      yawRef.current -= event.movementX * sensitivity;
-      pitchRef.current = Math.max(
-        -maxPitch,
-        Math.min(maxPitch, pitchRef.current - event.movementY * sensitivity),
-      );
-    };
-    domElement.addEventListener("click", requestLock);
-    window.addEventListener("mousemove", onMove);
-    return () => {
-      domElement.removeEventListener("click", requestLock);
-      window.removeEventListener("mousemove", onMove);
-    };
-  }, [domElement, sensitivity, maxPitch, yawRef, pitchRef]);
-
-  useFrameTask((_, dt) => {
-    const entity = ctx.scene.entity.get(followId);
-    if (entity === null) return;
-    const turn = ctx.camera.takeTurnTo();
-    if (turn !== null) yawRef.current = turn;
-    if (!seededRef.current) {
-      seededRef.current = true;
-      yawRef.current = entity.rotationY;
-    }
-    const view = weapon?.(followId, ctx) ?? null;
-    const last = (lastLookRef.current ??= { yaw: yawRef.current, pitch: pitchRef.current });
-    const step = Math.max(1e-4, dt);
-    let pose: WeaponPose | null = null;
-    if (view !== null) {
-      if (view.presentation !== tuningRef.current) {
-        tuningRef.current = view.presentation;
-        presentation.retune(view.presentation ?? {});
-      }
-      pose = presentation.update(dt, {
-        lookYawRate: (yawRef.current - last.yaw) / step,
-        lookPitchRate: (pitchRef.current - last.pitch) / step,
-        speed: cuesRef.current.speed,
-        bobPhase: cuesRef.current.bobPhase,
-        handling: view.handling,
-      });
-    }
-    last.yaw = yawRef.current;
-    last.pitch = pitchRef.current;
-    poseRef.current = pose;
-    const yaw = yawRef.current - (pose?.lookYaw ?? 0);
-    const pitch = Math.max(-maxPitch, Math.min(maxPitch, pitchRef.current + (pose?.lookPitch ?? 0)));
-    const cosPitch = Math.cos(pitch);
-    // The eye rides the drawn (interpolated) body so a fixed-step sim stays smooth on a fast display.
-    const body = ctx.sim.renderPose(followId, eyePose) ? eyePose : entity.position;
-    const eye = {
-      x: body[0],
-      y: body[1] + eyeHeight,
-      z: body[2],
-    };
-    const look = {
-      x: eye.x + Math.sin(yaw) * cosPitch,
-      y: eye.y + Math.sin(pitch),
-      z: eye.z + Math.cos(yaw) * cosPitch,
-    };
-    if (collision !== false) {
-      const options = collision ?? {};
-      const armBack = options.armBack ?? 1.5;
-      // The boom anchors behind the eye along the look ray, so a trunk the body reached
-      // pulls the camera back toward it instead of leaving the view inside the bark.
-      const forward = { x: Math.sin(yaw) * cosPitch, y: Math.sin(pitch), z: Math.cos(yaw) * cosPitch };
-      const cleared = clearCameraBoom({
-        pivot: { x: eye.x - forward.x * armBack, y: eye.y - forward.y * armBack, z: eye.z - forward.z * armBack },
-        desired: eye,
-        query,
-        clearance: options.clearance ?? ((camera as THREE.PerspectiveCamera).near || 0.1) + 0.15,
-        previousArm: armRef.current,
-        deltaSeconds: dt,
-      });
-      armRef.current = cleared.arm;
-      camera.position.set(cleared.position.x, cleared.position.y, cleared.position.z);
-      look.x += cleared.position.x - eye.x;
-      look.y += cleared.position.y - eye.y;
-      look.z += cleared.position.z - eye.z;
-    } else {
-      armRef.current = null;
-      camera.position.set(eye.x, eye.y, eye.z);
-    }
-    camera.lookAt(look.x, look.y, look.z);
-    if ((camera as THREE.PerspectiveCamera).isPerspectiveCamera === true) {
-      const perspective = camera as THREE.PerspectiveCamera;
-      const fov = playerFov.fov * (pose?.fovScale ?? 1);
-      if (Math.abs(perspective.fov - fov) > 0.001) {
-        perspective.fov = fov;
-        perspective.updateProjectionMatrix();
-      }
-    }
-  }, ORBIT_CAMERA_FRAME_PRIORITY);
-
-  if (config?.viewmodel === false) return null;
-  return <FirstPersonViewmodel camera={camera} viewmodel={viewmodel} cuesRef={cuesRef} poseRef={poseRef} />;
+  const latest = useRef<GameFirstPersonCameraDrawProps>({ ...props, ctx, userId, playerFov, poseRef, cuesRef });
+  latest.current = { ...props, ctx, userId, playerFov, poseRef, cuesRef };
+  useEngineDraw(() => firstPersonCameraDraw(() => latest.current), [ctx]);
+  if (props.config?.viewmodel === false) return null;
+  return <FirstPersonViewmodel camera={camera} viewmodel={props.viewmodel} cuesRef={cuesRef} poseRef={poseRef} />;
 }
 
 function FirstPersonViewmodel({
