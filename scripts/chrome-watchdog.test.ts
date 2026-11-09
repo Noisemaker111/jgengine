@@ -38,30 +38,58 @@ describe("chrome watchdog", () => {
   test("leaves quietly when Chrome exits on its own, killing nothing", async () => {
     const alive = new Set([1, 2]);
     const killed: number[] = [];
-    const run = watch(1, 2, dir, { pollMs: 10, isAlive: (pid) => alive.has(pid), kill: (pid) => (killed.push(pid), true), remove: () => {} });
+    const removed: string[] = [];
+    const run = watch(1, 2, dir, { pollMs: 10, isAlive: (pid) => alive.has(pid), kill: (pid) => (killed.push(pid), true), remove: (path) => void removed.push(path), log: () => {} });
     await Bun.sleep(30);
     alive.delete(2);
     expect(await run).toEqual({ reason: "chrome exited", chromeEnded: true });
     expect(killed).toEqual([]);
+    // The launcher is alive and removes its own profile.
+    expect(removed).toEqual([]);
   });
 
   test("ends Chrome's tree and its profile when the launcher dies first", async () => {
     const alive = new Set([1, 2]);
     const killed: number[] = [];
     const removed: string[] = [];
-    const run = watch(1, 2, dir, { pollMs: 10, isAlive: (pid) => alive.has(pid), kill: (pid) => (killed.push(pid), true), remove: (path) => void removed.push(path) });
+    const lines: string[] = [];
+    const run = watch(1, 2, dir, { pollMs: 10, isAlive: (pid) => alive.has(pid), kill: (pid) => (killed.push(pid), true), remove: (path) => void removed.push(path), log: (line) => void lines.push(line) });
     await Bun.sleep(30);
     alive.delete(1);
     expect(await run).toEqual({ reason: "launcher died", chromeEnded: true });
     expect(killed).toEqual([2]);
     expect(removed).toEqual([dir]);
+    expect(lines[0]).toStartWith("launcher 1 died; ended Chrome 2 and removed");
   });
 
-  test("a profile is kept when the kill was refused, so a later sweep can retry", async () => {
+  test("removes the profile when Chrome died together with its launcher", async () => {
+    // A launcher whose Windows job ends takes its Chrome with it; nobody else is left to delete the profile.
+    const alive = new Set([1, 2]);
+    const killed: number[] = [];
     const removed: string[] = [];
-    const outcome = await watch(1, 2, dir, { pollMs: 10, isAlive: (pid) => pid === 2, kill: () => false, remove: (path) => void removed.push(path) });
+    const run = watch(1, 2, dir, { pollMs: 10, isAlive: (pid) => alive.has(pid), kill: (pid) => (killed.push(pid), true), remove: (path) => void removed.push(path), log: () => {} });
+    await Bun.sleep(30);
+    alive.delete(1);
+    alive.delete(2);
+    expect(await run).toEqual({ reason: "launcher died", chromeEnded: true });
+    expect(killed).toEqual([]);
+    expect(removed).toEqual([dir]);
+  });
+
+  test("a profile is kept when the kill was refused, and the refusal is logged", async () => {
+    const removed: string[] = [];
+    const lines: string[] = [];
+    const outcome = await watch(1, 2, dir, { pollMs: 10, isAlive: (pid) => pid === 2, kill: () => false, remove: (path) => void removed.push(path), log: (line) => void lines.push(line) });
     expect(outcome).toEqual({ reason: "launcher died", chromeEnded: false });
     expect(removed).toEqual([]);
+    expect(lines[0]).toStartWith("degraded: launcher 1 died and Chrome 2 survived the kill");
+  });
+
+  test("a profile that cannot be removed is logged as degraded", async () => {
+    const lines: string[] = [];
+    await watch(1, 2, dir, { pollMs: 10, isAlive: () => false, kill: () => true, remove: () => { throw new Error("EBUSY: held"); }, log: (line) => void lines.push(line) });
+    expect(lines[0]).toStartWith("degraded: launcher 1 died; Chrome 2 ended but");
+    expect(lines[0]).toContain("EBUSY: held");
   });
 
   test("the real watchdog kills a 'Chrome' within seconds of its launcher being force-killed", async () => {
