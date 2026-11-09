@@ -1,18 +1,20 @@
 import { useAnimations, useGLTF } from "@react-three/drei";
 import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import { SkeletonUtils } from "three-stdlib";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
+import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
+import { loadDraw } from "@jgengine/core/frame/loadDraw.draw";
+import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { AnimationMixer, type AnimationAction, type AnimationClip, type Bone, type Object3D, type SkinnedMesh, type Texture } from "three";
 import {
   BufferAttribute,
   BufferGeometry,
   Color,
   Euler,
+  Group,
   MeshStandardMaterial,
   Quaternion,
-  type Bone,
-  type Group,
-  type Object3D,
-  type SkinnedMesh,
-  type Texture,
 } from "three";
 
 import {
@@ -233,7 +235,17 @@ const SOLID_TINT_MATERIAL = new MeshStandardMaterial({ vertexColors: true, ...VI
 const lookAtEuler = new Euler();
 const lookAtQuat = new Quaternion();
 
-export function PlayerCharacterFigure({
+export function PlayerCharacterFigure(props: PlayerCharacterFigureProps) {
+  const host = useEngineHost();
+  const latest = useRef<PlayerCharacterFigureProps>(props);
+  latest.current = props;
+  if (host.r3f) {
+    return <PlayerCharacterFigureR3F {...props} />;
+  }
+  return <EngineDrawMount create={() => playerCharacterDraw(() => latest.current)} deps={[]} />;
+}
+
+function PlayerCharacterFigureR3F({
   look = DEFAULT_CHARACTER_LOOK,
   scale = 1,
   isWalking = false,
@@ -328,4 +340,112 @@ export function PlayerCharacterFigure({
       <primitive object={cloned} />
     </group>
   );
+}
+
+function playerCharacterDraw(getProps: () => PlayerCharacterFigureProps): EngineDraw {
+  let rig: Group | null = null;
+  let mixer: AnimationMixer | null = null;
+  let walkAction: AnimationAction | null = null;
+  let clip: AnimationClip | null = null;
+  let skinnedMesh: SkinnedMesh | null = null;
+  let headBone: Bone | null = null;
+  let headBindQuat: Quaternion | null = null;
+  let appliedLook: CharacterLook | null = null;
+  let disposed = false;
+
+  const look = () => getProps().look ?? DEFAULT_CHARACTER_LOOK;
+
+  const applyTint = () => {
+    if (skinnedMesh === null || disposed) return;
+    const sourceMaterial = skinnedMesh.material;
+    const standardMaterial = Array.isArray(sourceMaterial)
+      ? sourceMaterial.find((entry): entry is MeshStandardMaterial => entry instanceof MeshStandardMaterial)
+      : sourceMaterial instanceof MeshStandardMaterial
+        ? sourceMaterial
+        : null;
+
+    const textureSampler =
+      standardMaterial?.map != null ? createTextureSampler(standardMaterial.map) : null;
+    const regions = computeVertexRegions(skinnedMesh, textureSampler ?? undefined);
+
+    skinnedMesh.geometry = buildTintedGeometry(skinnedMesh, regions, look());
+    if (textureSampler !== null && standardMaterial) {
+      const tintedMaterial = standardMaterial.clone();
+      tintedMaterial.vertexColors = true;
+      skinnedMesh.material = tintedMaterial;
+    } else {
+      skinnedMesh.material = SOLID_TINT_MATERIAL;
+    }
+    skinnedMesh.castShadow = true;
+    skinnedMesh.receiveShadow = true;
+    appliedLook = look();
+  };
+
+  const applyTintWhenReady = () => {
+    if (skinnedMesh === null || disposed) return;
+    const sourceMaterial = skinnedMesh.material;
+    const map = (Array.isArray(sourceMaterial) ? sourceMaterial[0] : sourceMaterial) as MeshStandardMaterial | undefined;
+    const textureSource = map?.map?.image;
+    if (textureSource instanceof HTMLImageElement && !textureSource.complete) {
+      textureSource.addEventListener("load", applyTint, { once: true });
+      return;
+    }
+    applyTint();
+  };
+
+  const inner = loadDraw({
+    load: () => sharedGltfLoader.loadAsync(MODEL_URL),
+    key: `llmville-player-character:${MODEL_URL}`,
+    build: (gltf, parent) => {
+      const cloned = SkeletonUtils.clone(gltf.scene) as Object3D;
+      parent.add(cloned);
+      rig = parent;
+      rig.scale.setScalar((getProps().scale ?? 1) * RIG_SCALE_FIX);
+      mixer = new AnimationMixer(rig);
+      clip = gltf.animations[0] ?? null;
+      walkAction = clip !== null ? mixer.clipAction(clip) : null;
+      walkAction?.play();
+      skinnedMesh = findSkinnedMesh(cloned);
+      headBone = (cloned.getObjectByName("Head") as Bone | undefined) ?? null;
+      headBindQuat = headBone?.quaternion.clone() ?? null;
+      applyTintWhenReady();
+      return () => {
+        disposed = true;
+      };
+    },
+  });
+
+  return {
+    mount: (state: EngineFrameState) => inner.mount?.(state),
+    frame: (state: EngineFrameState) => {
+      const props = getProps();
+      if (walkAction !== null && clip !== null && mixer !== null) {
+        const phase = props.walkPhase !== undefined ? props.walkPhase : state.clock.elapsedTime * WALK_RATE;
+        if (props.isWalking) {
+          const cycle = ((phase % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+          walkAction.time = (cycle / (Math.PI * 2)) * clip.duration;
+        } else {
+          walkAction.time = IDLE_TIME;
+        }
+        mixer.update(0);
+      }
+
+      if (headBone !== null && headBindQuat !== null) {
+        const pitch = props.headLookRef?.current?.pitch ?? props.headPitch ?? 0;
+        lookAtEuler.set(pitch, props.headYaw ?? 0, 0, "XYZ");
+        lookAtQuat.setFromEuler(lookAtEuler);
+        headBone.quaternion.copy(headBindQuat).multiply(lookAtQuat);
+      }
+    },
+    update: () => {
+      const props = getProps();
+      if (rig !== null) rig.scale.setScalar((props.scale ?? 1) * RIG_SCALE_FIX);
+      if (skinnedMesh !== null && appliedLook !== look()) applyTint();
+    },
+    dispose: (state: EngineFrameState) => {
+      disposed = true;
+      mixer?.stopAllAction();
+      inner.dispose?.(state);
+    },
+  };
 }

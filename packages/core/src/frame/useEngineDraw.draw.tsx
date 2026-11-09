@@ -76,6 +76,31 @@ export function sceneObjectAttachDraw(object: THREE.Object3D, attach: boolean): 
 }
 
 /**
+ * Mount a caller-owned {@link THREE.Object3D} on either host: under r3f a
+ * `<primitive>` so the reconciler parents it; under the engine loop an attach
+ * draw adding it to the nearest {@link EngineSceneContext} (or scene root).
+ * The object keeps whatever transform the caller writes onto it.
+ * @internal
+ */
+export function SceneObjectAttach({ object }: { object: THREE.Object3D }) {
+  const host = useEngineHost();
+  const sceneParent = useContext(EngineSceneContext);
+  useEngineDraw(
+    () => ({
+      mount(state: EngineFrameState) {
+        if (!host.r3f) (sceneParent ?? state.scene).add(object);
+      },
+      dispose(state: EngineFrameState) {
+        if (!host.r3f) (sceneParent ?? state.scene).remove(object);
+      },
+    }),
+    [object, host.r3f, sceneParent],
+  );
+  if (host.r3f) return <primitive object={object} />;
+  return null;
+}
+
+/**
  * Attach a caller-owned {@link THREE.Object3D} under the nearest
  * {@link EngineSceneContext} parent (or the scene root) on the engine loop —
  * the context-aware form of {@link sceneObjectAttachDraw} for objects a

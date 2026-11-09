@@ -1,6 +1,13 @@
-import { Html } from "@react-three/drei";
-import { useMemo } from "react";
-import { ArrowHelper, BoxGeometry, EdgesGeometry, LineBasicMaterial } from "three";
+import { AnchoredOverlay } from "@jgengine/core/hud/hudOverlay.draw";
+import {
+  EngineDrawMount,
+  SceneObjectAttach,
+  SceneObjectPortal,
+  useSceneObjectAttach,
+} from "@jgengine/core/frame/useEngineDraw.draw";
+import type { EngineDraw } from "@jgengine/core/frame/engineLoop.draw";
+import { useEffect, useMemo } from "react";
+import { ArrowHelper, BoxGeometry, EdgesGeometry, Group, LineBasicMaterial, LineSegments } from "three";
 
 import type { GridFootprint } from "@llmville/game/world/grid";
 import { TILE_SIZE } from "@llmville/game/world/grid";
@@ -23,6 +30,25 @@ interface AssetFrameGizmoProps {
   showForwardArrow?: boolean | undefined;
 }
 
+function footprintEdgesDraw(width: number, depth: number): EngineDraw {
+  const geometry = new BoxGeometry(width, 0.04, depth);
+  const edges = new EdgesGeometry(geometry);
+  geometry.dispose();
+  const lineMaterial = new LineBasicMaterial({ color: 0x34d399 });
+  const line = new LineSegments(edges, lineMaterial);
+  line.position.set(0, 0.02, 0);
+  return {
+    mount(state) {
+      state.scene.add(line);
+    },
+    dispose(state) {
+      state.scene.remove(line);
+      edges.dispose();
+      lineMaterial.dispose();
+    },
+  };
+}
+
 export function AssetFrameGizmo({
   footprint,
   direction = 0,
@@ -35,12 +61,11 @@ export function AssetFrameGizmo({
   const facing = cardinalLabel(direction);
   const displayLabel = label ? `${label} · ${facing}` : facing;
 
-  const footprintEdges = useMemo(() => {
-    const geometry = new BoxGeometry(width, 0.04, depth);
-    const edges = new EdgesGeometry(geometry);
-    geometry.dispose();
-    return edges;
-  }, [depth, width]);
+  const gizmo = useMemo(() => new Group(), []);
+  useSceneObjectAttach(gizmo);
+  useEffect(() => {
+    gizmo.rotation.y = rotationY;
+  }, [gizmo, rotationY]);
 
   const forwardArrow = useMemo(() => {
     const arrow = new ArrowHelper(undefined, undefined, Math.min(depth * 0.45, 2.5), 0x38bdf8, 0.25, 0.15);
@@ -48,14 +73,12 @@ export function AssetFrameGizmo({
     return arrow;
   }, [depth]);
 
-  const edgeMaterial = useMemo(() => new LineBasicMaterial({ color: 0x34d399 }), []);
-
   return (
-    <group rotation={[0, rotationY, 0]}>
-      <lineSegments geometry={footprintEdges} material={edgeMaterial} position={[0, 0.02, 0]} />
-      {showForwardArrow && <primitive object={forwardArrow} />}
+    <SceneObjectPortal object={gizmo}>
+      <EngineDrawMount create={() => footprintEdgesDraw(width, depth)} deps={[width, depth]} />
+      {showForwardArrow && <SceneObjectAttach object={forwardArrow} />}
       {label && (
-        <Html position={[0, 0.35, 0]} center distanceFactor={12} style={{ pointerEvents: "none" }}>
+        <AnchoredOverlay anchor={gizmo} localPosition={[0, 0.35, 0]} distanceFactor={12}>
           <div
             style={{
               background: "rgba(15, 23, 42, 0.85)",
@@ -69,8 +92,8 @@ export function AssetFrameGizmo({
           >
             {displayLabel}
           </div>
-        </Html>
+        </AnchoredOverlay>
       )}
-    </group>
+    </SceneObjectPortal>
   );
 }

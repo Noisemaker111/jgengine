@@ -7,6 +7,19 @@ import { AssetFrameGizmo, useShowAssetFrames } from "@/scene/components/AssetFra
 import { SceneModel } from "@/scene/components/SceneModel";
 import { resolveWebBuildItemPlacementBounds3d } from "@/scene/buildItemBounds";
 import { getWorldModelAsset } from "@llmville/game/world/worldModelCatalog";
+import { EngineDrawMount, SceneObjectGroup, type DrawTransform } from "@jgengine/core/frame/useEngineDraw.draw";
+import type { EngineDraw } from "@jgengine/core/frame/engineLoop.draw";
+import {
+  BoxGeometry,
+  CylinderGeometry,
+  Mesh,
+  MeshBasicMaterial,
+  MeshStandardMaterial,
+  SphereGeometry,
+  type BufferGeometry,
+  type Material,
+  type MeshStandardMaterialParameters,
+} from "three";
 
 const CART_WHEEL_OFFSETS: readonly (readonly [number, number, number])[] = [
   [-0.35, 0.12, -0.22],
@@ -25,6 +38,43 @@ interface BuildPropProps {
   isValid?: boolean;
 }
 
+interface PropMeshSpec extends DrawTransform {
+  geometry: BufferGeometry;
+  material: Material;
+  castShadow?: boolean;
+  receiveShadow?: boolean;
+}
+
+function propMeshesDraw(specs: readonly PropMeshSpec[]): EngineDraw {
+  const meshes = specs.map((spec) => {
+    const mesh = new Mesh(spec.geometry, spec.material);
+    if (spec.position !== undefined) mesh.position.set(spec.position[0], spec.position[1], spec.position[2]);
+    if (spec.rotation !== undefined) mesh.rotation.set(spec.rotation[0], spec.rotation[1], spec.rotation[2]);
+    if (spec.scale !== undefined) mesh.scale.set(spec.scale[0], spec.scale[1], spec.scale[2]);
+    if (spec.visible !== undefined) mesh.visible = spec.visible;
+    if (spec.castShadow !== undefined) mesh.castShadow = spec.castShadow;
+    if (spec.receiveShadow !== undefined) mesh.receiveShadow = spec.receiveShadow;
+    return mesh;
+  });
+  return {
+    mount(state) {
+      for (const mesh of meshes) state.scene.add(mesh);
+    },
+    dispose(state) {
+      for (const mesh of meshes) {
+        state.scene.remove(mesh);
+        mesh.geometry.dispose();
+        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        for (const material of materials) material.dispose();
+      }
+    },
+  };
+}
+
+function standardMaterial(style: BuildPropMaterialPresentation, overrides: Partial<MeshStandardMaterialParameters> = {}): MeshStandardMaterial {
+  return new MeshStandardMaterial({ ...style, ...overrides });
+}
+
 function BuildPropShape({
   itemId,
   style,
@@ -41,108 +91,190 @@ function BuildPropShape({
     return <SceneModel asset={modelAsset} placementDirection={direction} />;
   }
 
+  const deps = [style.color, style.emissive, style.emissiveIntensity, style.transparent, style.opacity];
+
   if (itemId === "neon_sign") {
     return (
-      <>
-        <mesh position={[0, 0.55, 0]} castShadow receiveShadow>
-          <boxGeometry args={[0.15, 1.1, 0.12]} />
-          <meshStandardMaterial {...style} metalness={0.7} roughness={0.2} />
-        </mesh>
-        <mesh position={[0, 1.15, 0.06]} castShadow>
-          <boxGeometry args={[0.95, 0.48, 0.08]} />
-          <meshStandardMaterial {...style} emissiveIntensity={style.emissiveIntensity + 0.2} metalness={0.4} roughness={0.25} />
-        </mesh>
-      </>
+      <EngineDrawMount
+        create={() =>
+          propMeshesDraw([
+            {
+              geometry: new BoxGeometry(0.15, 1.1, 0.12),
+              material: standardMaterial(style, { metalness: 0.7, roughness: 0.2 }),
+              position: [0, 0.55, 0],
+              castShadow: true,
+              receiveShadow: true,
+            },
+            {
+              geometry: new BoxGeometry(0.95, 0.48, 0.08),
+              material: standardMaterial(style, {
+                emissiveIntensity: style.emissiveIntensity + 0.2,
+                metalness: 0.4,
+                roughness: 0.25,
+              }),
+              position: [0, 1.15, 0.06],
+              castShadow: true,
+            },
+          ])
+        }
+        deps={deps}
+      />
     );
   }
 
   if (itemId === "potted_plant") {
     return (
-      <>
-        <mesh position={[0, 0.2, 0]} castShadow receiveShadow>
-          <cylinderGeometry args={[0.23, 0.3, 0.35, 16]} />
-          <meshStandardMaterial {...style} color={style.transparent ? style.color : "#7c2d12"} emissive={style.emissive} />
-        </mesh>
-        <mesh position={[0, 0.62, 0]} castShadow>
-          <sphereGeometry args={[0.28, 18, 12]} />
-          <meshStandardMaterial
-            {...style}
-            color={style.transparent ? style.color : "#16a34a"}
-            emissive={style.transparent ? style.emissive : "#16a34a"}
-            emissiveIntensity={style.transparent ? style.emissiveIntensity : 0.35}
-          />
-        </mesh>
-      </>
+      <EngineDrawMount
+        create={() =>
+          propMeshesDraw([
+            {
+              geometry: new CylinderGeometry(0.23, 0.3, 0.35, 16),
+              material: standardMaterial(style, {
+                color: style.transparent ? style.color : "#7c2d12",
+                emissive: style.emissive,
+              }),
+              position: [0, 0.2, 0],
+              castShadow: true,
+              receiveShadow: true,
+            },
+            {
+              geometry: new SphereGeometry(0.28, 18, 12),
+              material: standardMaterial(style, {
+                color: style.transparent ? style.color : "#16a34a",
+                emissive: style.transparent ? style.emissive : "#16a34a",
+                emissiveIntensity: style.transparent ? style.emissiveIntensity : 0.35,
+              }),
+              position: [0, 0.62, 0],
+              castShadow: true,
+            },
+          ])
+        }
+        deps={deps}
+      />
     );
   }
 
   if (itemId === "holo_poster") {
     return (
-      <>
-        <mesh position={[0, 0.7, 0]} castShadow receiveShadow>
-          <boxGeometry args={[0.08, 1.4, 0.08]} />
-          <meshStandardMaterial {...style} metalness={0.8} roughness={0.2} />
-        </mesh>
-        <mesh position={[0, 1.2, 0.12]} castShadow>
-          <boxGeometry args={[1.1, 0.75, 0.05]} />
-          <meshStandardMaterial {...style} emissiveIntensity={style.emissiveIntensity + 0.25} metalness={0.3} roughness={0.15} />
-        </mesh>
-      </>
+      <EngineDrawMount
+        create={() =>
+          propMeshesDraw([
+            {
+              geometry: new BoxGeometry(0.08, 1.4, 0.08),
+              material: standardMaterial(style, { metalness: 0.8, roughness: 0.2 }),
+              position: [0, 0.7, 0],
+              castShadow: true,
+              receiveShadow: true,
+            },
+            {
+              geometry: new BoxGeometry(1.1, 0.75, 0.05),
+              material: standardMaterial(style, {
+                emissiveIntensity: style.emissiveIntensity + 0.25,
+                metalness: 0.3,
+                roughness: 0.15,
+              }),
+              position: [0, 1.2, 0.12],
+              castShadow: true,
+            },
+          ])
+        }
+        deps={deps}
+      />
     );
   }
 
   if (itemId === "beanbag_corner") {
     return (
-      <mesh position={[0, 0.25, 0]} scale={[1.2, 0.65, 1]} castShadow receiveShadow>
-        <sphereGeometry args={[0.5, 24, 16]} />
-        <meshStandardMaterial
-          {...style}
-          color={style.transparent ? style.color : "#f59e0b"}
-          emissive={style.transparent ? style.emissive : "#f59e0b"}
-          emissiveIntensity={style.transparent ? style.emissiveIntensity : 0.15}
-          roughness={0.55}
-        />
-      </mesh>
+      <EngineDrawMount
+        create={() =>
+          propMeshesDraw([
+            {
+              geometry: new SphereGeometry(0.5, 24, 16),
+              material: standardMaterial(style, {
+                color: style.transparent ? style.color : "#f59e0b",
+                emissive: style.transparent ? style.emissive : "#f59e0b",
+                emissiveIntensity: style.transparent ? style.emissiveIntensity : 0.15,
+                roughness: 0.55,
+              }),
+              position: [0, 0.25, 0],
+              scale: [1.2, 0.65, 1],
+              castShadow: true,
+              receiveShadow: true,
+            },
+          ])
+        }
+        deps={deps}
+      />
     );
   }
 
   if (itemId === "coffee_cart") {
     return (
-      <>
-        <mesh position={[0, 0.4, 0]} castShadow receiveShadow>
-          <boxGeometry args={[0.95, 0.55, 0.55]} />
-          <meshStandardMaterial {...style} color={style.transparent ? style.color : "#334155"} emissive={style.emissive} metalness={0.5} roughness={0.35} />
-        </mesh>
-        <mesh position={[0, 0.74, 0]} castShadow>
-          <boxGeometry args={[1.05, 0.08, 0.65]} />
-          <meshStandardMaterial {...style} color={style.transparent ? style.color : "#cbd5e1"} emissive={style.emissive} />
-        </mesh>
-        {CART_WHEEL_OFFSETS.map(([wheelX, wheelY, wheelZ]) => (
-          <mesh key={`${wheelX}-${wheelZ}`} position={[wheelX, wheelY, wheelZ]} castShadow>
-            <cylinderGeometry args={[0.08, 0.08, 0.06, 12]} />
-            <meshStandardMaterial {...style} color={style.transparent ? style.color : "#0f172a"} emissive={style.emissive} />
-          </mesh>
-        ))}
-      </>
+      <EngineDrawMount
+        create={() =>
+          propMeshesDraw([
+            {
+              geometry: new BoxGeometry(0.95, 0.55, 0.55),
+              material: standardMaterial(style, {
+                color: style.transparent ? style.color : "#334155",
+                emissive: style.emissive,
+                metalness: 0.5,
+                roughness: 0.35,
+              }),
+              position: [0, 0.4, 0],
+              castShadow: true,
+              receiveShadow: true,
+            },
+            {
+              geometry: new BoxGeometry(1.05, 0.08, 0.65),
+              material: standardMaterial(style, {
+                color: style.transparent ? style.color : "#cbd5e1",
+                emissive: style.emissive,
+              }),
+              position: [0, 0.74, 0],
+              castShadow: true,
+            },
+            ...CART_WHEEL_OFFSETS.map(([wheelX, wheelY, wheelZ]): PropMeshSpec => ({
+              geometry: new CylinderGeometry(0.08, 0.08, 0.06, 12),
+              material: standardMaterial(style, {
+                color: style.transparent ? style.color : "#0f172a",
+                emissive: style.emissive,
+              }),
+              position: [wheelX, wheelY, wheelZ],
+              castShadow: true,
+            })),
+          ])
+        }
+        deps={deps}
+      />
     );
   }
 
   return (
-    <>
-      <mesh position={[0, 0.6, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.1, 1.2, 0.1]} />
-        <meshStandardMaterial {...style} metalness={0.7} roughness={0.2} />
-      </mesh>
-      <mesh position={[0, 1.05, 0.08]} castShadow>
-        <boxGeometry args={[1.25, 0.78, 0.05]} />
-        <meshStandardMaterial
-          {...style}
-          color={style.transparent ? style.color : "#e2e8f0"}
-          emissive={style.transparent ? style.emissive : "#22d3ee"}
-          emissiveIntensity={style.transparent ? style.emissiveIntensity : 0.2}
-        />
-      </mesh>
-    </>
+    <EngineDrawMount
+      create={() =>
+        propMeshesDraw([
+          {
+            geometry: new BoxGeometry(0.1, 1.2, 0.1),
+            material: standardMaterial(style, { metalness: 0.7, roughness: 0.2 }),
+            position: [0, 0.6, 0],
+            castShadow: true,
+            receiveShadow: true,
+          },
+          {
+            geometry: new BoxGeometry(1.25, 0.78, 0.05),
+            material: standardMaterial(style, {
+              color: style.transparent ? style.color : "#e2e8f0",
+              emissive: style.transparent ? style.emissive : "#22d3ee",
+              emissiveIntensity: style.transparent ? style.emissiveIntensity : 0.2,
+            }),
+            position: [0, 1.05, 0.08],
+            castShadow: true,
+          },
+        ])
+      }
+      deps={deps}
+    />
   );
 }
 
@@ -175,10 +307,23 @@ function BuildPlacementWireframe({
   const d = bounds3d.maxZ - bounds3d.minZ;
 
   return (
-    <mesh position={[cx - x, cy - y, cz - z]}>
-      <boxGeometry args={[w, h, d]} />
-      <meshBasicMaterial color={isValid ? "#f59e0b" : "#fb7185"} transparent opacity={0.35} wireframe />
-    </mesh>
+    <EngineDrawMount
+      create={() =>
+        propMeshesDraw([
+          {
+            geometry: new BoxGeometry(w, h, d),
+            material: new MeshBasicMaterial({
+              color: isValid ? "#f59e0b" : "#fb7185",
+              transparent: true,
+              opacity: 0.35,
+              wireframe: true,
+            }),
+            position: [cx - x, cy - y, cz - z],
+          },
+        ])
+      }
+      deps={[w, h, d, cx - x, cy - y, cz - z, isValid]}
+    />
   );
 }
 
@@ -188,7 +333,7 @@ export default function BuildProp({ itemId, x, y, z, direction, ghost = false, i
   const showFrames = useShowAssetFrames();
 
   return (
-    <group position={[x, y, z]}>
+    <SceneObjectGroup position={[x, y, z]}>
       <BuildPropShape itemId={itemId} style={style} ghost={ghost} direction={direction} />
       {ghost && (
         <BuildPlacementWireframe
@@ -203,6 +348,6 @@ export default function BuildProp({ itemId, x, y, z, direction, ghost = false, i
       {showFrames && modelAsset && (
         <AssetFrameGizmo footprint={modelAsset.footprint} direction={direction} label={itemId} />
       )}
-    </group>
+    </SceneObjectGroup>
   );
 }

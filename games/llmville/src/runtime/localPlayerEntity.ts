@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef } from "react";
-import { useThree } from "@react-three/fiber";
 import { Euler } from "three";
 
 import type { MovementCommitFrame } from "@jgengine/core/game/playableGame";
@@ -11,6 +10,7 @@ import { resolvePlayerSpeed } from "@llmville/game/user/personalUpgrades";
 import { engineActions, type GameEngine } from "@/runtime/gameEngine";
 import { localGameState } from "@/user/localGameState";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 
 const LOOK_PERSIST_INTERVAL_MS = 1_000;
 /** The shell's first-person yaw faces +Z at 0; a three camera's Euler yaw faces -Z at 0. */
@@ -67,7 +67,7 @@ export function useLocalPlayerWalkSpeed(walkSpeedLevel: number): void {
  */
 export function useLocalPlayerBridge(engine: GameEngine | null): void {
   const ctx = useGameContext();
-  const camera = useThree((state) => state.camera);
+  const host = useEngineHost();
   const look = useMemo(() => new Euler(0, 0, 0, "YXZ"), []);
   const lastPersistedAt = useRef(0);
 
@@ -96,7 +96,7 @@ export function useLocalPlayerBridge(engine: GameEngine | null): void {
     lastPersistedAt.current = now;
     const { activeSlot, gameId } = engine.getState().session;
     if (gameId === null) return;
-    look.setFromQuaternion(camera.quaternion, "YXZ");
+    look.setFromQuaternion(host.frame.camera.quaternion, "YXZ");
     localGameState().writeCameraLook(activeSlot, gameId, { yaw: look.y, pitch: look.x });
   });
 }

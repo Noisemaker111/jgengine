@@ -1,4 +1,4 @@
-import { Html } from "@react-three/drei";
+import { AnchoredOverlay } from "@jgengine/core/hud/hudOverlay.draw";
 
 import type { PlacedBuildItem } from "@llmville/game/build/build";
 import type { PlacedRack } from "@/infrastructure/infrastructure";
@@ -98,19 +98,13 @@ export function ProximityPromptMarker(props: ProximityPromptMarkerProps) {
   if (!body) return null;
 
   return (
-    <Html
-      position={worldPos}
-      center
-      pointerEvents="none"
-      style={{ pointerEvents: "none" }}
-      zIndexRange={[10, 100]}
-    >
+    <AnchoredOverlay position={worldPos} zIndex={10}>
       <div
         className="flex flex-col items-center rounded-md bg-[#111a18]/90 px-2.5 py-1 text-center text-white shadow-md border border-white/10"
         style={{ fontSize: "11px", whiteSpace: "nowrap", minWidth: "60px" }}
       >
         {body}
       </div>
-    </Html>
+    </AnchoredOverlay>
   );
 }

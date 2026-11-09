@@ -1,5 +1,5 @@
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { Html } from "@react-three/drei";
+import { AnchoredOverlay } from "@jgengine/core/hud/hudOverlay.draw";
 
 import { cn } from "@/kit/cn";
 import type { PlacedRack } from "@/infrastructure/infrastructure";
@@ -33,12 +33,7 @@ export function TutorialRackArrow({ rack, show }: { rack: PlacedRack | null; sho
   if (!show || rack === null) return null;
 
   return (
-    <Html
-      position={[rack.x, 1.6, rack.z]}
-      center
-      pointerEvents="none"
-      style={{ pointerEvents: "none", transform: "translate(-50%, 0)" }}
-    >
+    <AnchoredOverlay position={[rack.x, 1.6, rack.z]}>
       <div className="flex flex-col items-center drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
         <svg
           width="48"
@@ -57,7 +52,7 @@ export function TutorialRackArrow({ rack, show }: { rack: PlacedRack | null; sho
           />
         </svg>
       </div>
-    </Html>
+    </AnchoredOverlay>
   );
 }
 
