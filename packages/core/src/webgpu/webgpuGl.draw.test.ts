@@ -305,6 +305,32 @@ describe("WebGpuGl pass replay", () => {
     twoPasses(3);
     expect(s.gl.stats.replayedPasses).toBe(before + 1);
   });
+
+  test("a pass whose draws read a constant vertex attribute repeats, bound relative to its own range of the constant ring", () => {
+    const s = drawSetup();
+    s.texture();
+    // Attribute 0 is not an array: each draw writes its constant value into the batch's constant ring.
+    const plan = { id: 902, key: "constant", slots: [{ constant: true }], constants: [0], instanceCapacity: (n: number) => n };
+    s.gl.vertexPlan = () => plan;
+    const fb = s.gl.createFramebuffer();
+    s.gl.bindFramebuffer(0x8d40, fb);
+    s.gl.framebufferTexture2D(0x8d40, 0x8ce0, 0x0de1, s.texture(), 0);
+    // The default framebuffer's pass takes a different share of the constant ring each frame; fb's pass, after it, does not.
+    const twoPasses = (first: number) => {
+      s.gl.bindFramebuffer(0x8d40, null);
+      for (let i = 0; i < first; i += 1) { s.gl.vertexAttrib1f(0, i); s.draw(); }
+      s.gl.bindFramebuffer(0x8d40, fb);
+      s.gl.vertexAttrib1f(0, 7);
+      s.draw();
+      s.gl.present();
+    };
+    twoPasses(1);
+    twoPasses(2);
+    const before = s.gl.stats.replayedPasses;
+    twoPasses(3);
+    expect(s.gl.stats.replayedPasses).toBe(before + 1);
+    expect(s.gl.stats.unreplayablePasses).toBe(0);
+  });
 });
 
 describe("WebGpuGl multi-draw", () => {

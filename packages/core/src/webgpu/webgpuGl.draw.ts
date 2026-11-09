@@ -65,7 +65,7 @@ export interface WebGpuGlStats {
   bundles: number;
   /** Passes encoded draw by draw because their commands differ from the forms kept for them. */
   changedPasses: number;
-  /** Passes encoded draw by draw because they bind something a replay cannot carry (constant attributes, uniforms outside their range). */
+  /** Passes encoded draw by draw because they bind something a replay cannot carry (uniforms or constant attributes outside their range). */
   unreplayablePasses: number;
   submits: number;
   pipelines: number;
@@ -222,6 +222,10 @@ class RecordedPass {
   uniformBase = 0;
   /** Where they end, set when the pass ends. */
   uniformEnd = 0;
+  /** Where this pass's constant vertex attributes start in the batch's constant ring, in bytes. */
+  constantBase = 0;
+  /** Where they end, set when the pass ends. */
+  constantEnd = 0;
   constructor(public descriptor: GPURenderPassDescriptor, readonly fb: GlFramebuffer | null, readonly plan: PassPlan, readonly ordinal: number) {}
   setPipeline(pipeline: GPURenderPipeline): void { this.ops.push(OP_PIPELINE, pipeline); }
   setBindGroup(index: number, group: GPUBindGroup, offsets?: Uint32Array, start?: number, _count?: number): void {
@@ -303,10 +307,19 @@ interface PassReplay {
   repeats: number;
   /** Bundles and the state ops between them; null until the commands repeat. */
   steps: unknown[] | null;
-  /** The pass's own uniform buffer the bundles bind, filled from the ring before each replay. */
-  uniforms: GPUBuffer | null;
-  size: number;
+  /**
+   * The pass's own buffer the bundles bind: its uniforms from 0, its constant vertex attributes
+   * from {@link constantsAt}, both copied from the batch's rings before each replay.
+   */
+  buffer: GPUBuffer | null;
+  /** Room for uniforms, which is also where the constant attributes start. */
+  constantsAt: number;
+  /** Room for constant attributes. */
+  constantRoom: number;
 }
+
+/** Stands for the replay's own buffer in a recorded vertex bind of the constant-attribute ring. */
+const CONSTANTS = Symbol("constants");
 
 /** Encoder work recorded after a pass that is still unencoded, run in order when the passes are flushed. */
 interface RecordedAction {
@@ -697,7 +710,7 @@ export class WebGpuGl extends GlConstants {
     this.emptyLayout = device.createBindGroupLayout({ entries: [] });
     this.emptyGroup = device.createBindGroup({ layout: this.emptyLayout, entries: [] });
     this.ring = device.createBuffer({ size: UNIFORM_RING_BYTES, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC });
-    this.constantRing = device.createBuffer({ size: this.constants.byteLength, usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST });
+    this.constantRing = device.createBuffer({ size: this.constants.byteLength, usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC });
     this.defaultVertex = device.createBuffer({ size: 64, usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST });
     device.queue.writeBuffer(this.defaultVertex, 0, new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]));
     this.defaultVao = this.makeVao();
@@ -1985,11 +1998,12 @@ struct U { shift: vec2<i32> };
     if (slots === undefined) { slots = []; this.replays.set(rp.fb, slots); }
     const kept = (slots[rp.ordinal] ??= []);
     const size = Math.ceil((rp.uniformEnd - rp.uniformBase) / 4) * 4;
+    const constants = rp.constantEnd - rp.constantBase;
     const at = kept.findIndex((candidate) => sameOps(candidate.ops, ops));
     if (at < 0) {
       // A pass that alternates between two forms (a ping-pong target read on alternate frames) keeps both.
-      kept.unshift({ ops, repeats: 0, steps: null, uniforms: null, size: 0 });
-      for (const dropped of kept.splice(REPLAY_FORMS)) if (dropped.uniforms !== null) this.retire(dropped.uniforms);
+      kept.unshift({ ops, repeats: 0, steps: null, buffer: null, constantsAt: 0, constantRoom: 0 });
+      for (const dropped of kept.splice(REPLAY_FORMS)) if (dropped.buffer !== null) this.retire(dropped.buffer);
       this.stats.changedPasses += 1;
       rp.encode(encoder, this.replayOffset);
       return;
@@ -1997,13 +2011,14 @@ struct U { shift: vec2<i32> };
     const known = kept[at]!;
     if (at > 0) { kept.splice(at, 1); kept.unshift(known); }
     known.repeats += 1;
-    if (known.steps !== null && known.size < size) {
-      this.retire(known.uniforms);
+    if (known.steps !== null && (known.constantsAt < size || known.constantRoom < constants)) {
+      this.retire(known.buffer);
       known.steps = null;
-      known.uniforms = null;
+      known.buffer = null;
     }
-    if (known.steps === null) this.buildReplay(known, rp, size);
-    if (size > 0) encoder.copyBufferToBuffer(this.ring, rp.uniformBase, known.uniforms!, 0, size);
+    if (known.steps === null) this.buildReplay(known, rp, size, constants);
+    if (size > 0) encoder.copyBufferToBuffer(this.ring, rp.uniformBase, known.buffer!, 0, size);
+    if (constants > 0) encoder.copyBufferToBuffer(this.constantRing, rp.constantBase, known.buffer!, known.constantsAt, constants);
     const pass = encoder.beginRenderPass(rp.descriptor);
     replaySteps(pass, known.steps!);
     pass.end();
@@ -2027,8 +2042,17 @@ struct U { shift: vec2<i32> };
           i += 4;
           break;
         }
-        // Constant attributes come from a ring rewritten every batch at offsets the batch decides.
-        case OP_VERTEX: if (ops[i + 2] === this.constantRing) return null; i += 4; break;
+        case OP_VERTEX: {
+          // Constant attributes come from a ring rewritten every batch: bound relative to the pass's range of it.
+          if (ops[i + 2] === this.constantRing) {
+            const offset = ops[i + 3] as number;
+            if (offset < rp.constantBase || offset >= rp.constantEnd) return null;
+            out[i + 2] = CONSTANTS;
+            out[i + 3] = offset - rp.constantBase;
+          }
+          i += 4;
+          break;
+        }
         case OP_DRAW: case OP_SCISSOR: i += 5; break;
         case OP_DRAW_INDEXED: i += 6; break;
         case OP_VIEWPORT: i += 7; break;
@@ -2039,9 +2063,12 @@ struct U { shift: vec2<i32> };
   }
 
   /** Record `known`'s commands into render bundles, split at the pass state ops bundles cannot hold. */
-  private buildReplay(known: PassReplay, rp: RecordedPass, size: number): void {
+  private buildReplay(known: PassReplay, rp: RecordedPass, size: number, constants: number): void {
     const target = rp.plan.target;
-    const uniforms = this.device.createBuffer({ size: Math.max(256, Math.ceil(size / 256) * 256), usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+    const constantsAt = Math.max(256, Math.ceil(size / 256) * 256);
+    const constantRoom = Math.ceil(constants / 256) * 256;
+    const usage = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | (constantRoom > 0 ? GPUBufferUsage.VERTEX : 0);
+    const uniforms = this.device.createBuffer({ size: constantsAt + constantRoom, usage });
     const groups = new Map<number, GPUBindGroup>();
     const group = (blockSize: number) => {
       let g = groups.get(blockSize);
@@ -2088,7 +2115,15 @@ struct U { shift: vec2<i32> };
           i += 4;
           break;
         }
-        case OP_VERTEX: vertex.set(ops[i + 1], [ops[i + 2], ops[i + 3]]); if (bundle !== null) bundle.setVertexBuffer(ops[i + 1], ops[i + 2], ops[i + 3]); i += 4; break;
+        case OP_VERTEX: {
+          const constant = ops[i + 2] === CONSTANTS;
+          const buffer: GPUBuffer = constant ? uniforms : ops[i + 2];
+          const at: number = constant ? constantsAt + ops[i + 3] : ops[i + 3];
+          vertex.set(ops[i + 1], [buffer, at]);
+          if (bundle !== null) bundle.setVertexBuffer(ops[i + 1], buffer, at);
+          i += 4;
+          break;
+        }
         case OP_INDEX: index = [ops[i + 1], ops[i + 2]]; if (bundle !== null) bundle.setIndexBuffer(ops[i + 1], ops[i + 2]); i += 3; break;
         case OP_DRAW: open().draw(ops[i + 1], ops[i + 2], ops[i + 3], ops[i + 4]); i += 5; break;
         case OP_DRAW_INDEXED: open().drawIndexed(ops[i + 1], ops[i + 2], ops[i + 3], ops[i + 4], ops[i + 5]); i += 6; break;
@@ -2103,8 +2138,9 @@ struct U { shift: vec2<i32> };
     }
     close();
     known.steps = steps;
-    known.uniforms = uniforms;
-    known.size = uniforms.size;
+    known.buffer = uniforms;
+    known.constantsAt = constantsAt;
+    known.constantRoom = constantRoom;
     this.stats.bundles += 1;
   }
 
@@ -2293,6 +2329,7 @@ struct U { shift: vec2<i32> };
     this.passOrdinals.set(fb, ordinal + 1);
     this.pass = new RecordedPass(descriptor, fb, plan, ordinal);
     this.pass.uniformBase = Math.ceil(this.stagingUsed / this.uniformAlign) * this.uniformAlign;
+    this.pass.constantBase = this.constantsUsed * 4;
     this.slotEpoch += 1;
     this.stats.passes += 1;
     this.passTarget = plan.target;
@@ -2319,6 +2356,7 @@ struct U { shift: vec2<i32> };
   private endPass(keep?: GlFramebuffer | null | "any"): void {
     if (this.pass !== null) {
       this.pass.uniformEnd = this.stagingUsed;
+      this.pass.constantEnd = this.constantsUsed * 4;
       this.unencoded.push(this.pass);
       this.pass = null;
       this.passTarget = null;
@@ -2330,6 +2368,7 @@ struct U { shift: vec2<i32> };
     if (this.beginPass(pending.fb, pending)) {
       this.stats.clearPasses += 1;
       this.pass!.uniformEnd = this.stagingUsed;
+      this.pass!.constantEnd = this.constantsUsed * 4;
       this.unencoded.push(this.pass!);
       this.pass = null;
       this.passTarget = null;
