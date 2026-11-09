@@ -1,6 +1,6 @@
 // @skill jgengine-assets
 import { deathRemovesEntity } from "@jgengine/core/combat/death";
-import { useFrame, useLoader, useThree } from "@react-three/fiber";
+import { useLoader, useThree } from "@react-three/fiber";
 import { Component, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import * as THREE from "three";
 
@@ -48,6 +48,7 @@ import {
   type PaintCanvas,
 } from "./modelRender.draw";
 import { useFrameWhile } from "@jgengine/core/render/useFrameWhile.draw";
+import { useSharedFrame } from "@jgengine/core/render/useSharedFrame.draw";
 
 /** No paint layer outside a running game: nothing to subscribe to. */
 const NOTHING_WORN: readonly WornLayer[] = [];
@@ -78,7 +79,7 @@ export function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }) {
     invalidate();
   }, [player, animation, map, sprite.clip, invalidate]);
 
-  useFrame((_state, delta) => {
+  useSharedFrame((_state, delta) => {
     if (player === null || sprite.clip === undefined) return;
     player.advance(delta);
     const frame = player.frame();
@@ -232,7 +233,7 @@ export function SingleVariantModel({
   const probe = useMemo(() => new THREE.Vector3(), []);
   // Warm every level at mount, so the switch swaps a cached clone instead of suspending on a load.
   for (const candidate of variants?.levels ?? []) useLoader.preload(sharedGltfLoader, candidate.url);
-  useFrame((state) => {
+  useSharedFrame((state) => {
     if (selector === null || ctx === null) return;
     const placement = ctx.scene.object.get(instanceId)?.position ?? ctx.scene.entity.get(instanceId)?.position;
     if (placement === undefined) return;

@@ -1,4 +1,3 @@
-import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, type MutableRefObject } from "react";
 import {
   advanceMotionCues,
@@ -12,6 +11,7 @@ import {
   type RenderCueTuning,
 } from "@jgengine/core/combat/renderCues";
 import { groundSpeed } from "@jgengine/core/scene/entityStore";
+import { useSharedFrame } from "@jgengine/core/render/useSharedFrame.draw";
 import { useGameContext } from "@jgengine/react/provider";
 
 /**
@@ -57,7 +57,7 @@ export function useEntityRenderCues(
     };
   }, [ctx, instanceId, tuning?.firePulseSeconds, tuning?.hitPulseSeconds]);
 
-  useFrame((_state, delta) => {
+  useSharedFrame((_state, delta) => {
     if (instanceId === undefined || delta <= 0) return;
     const entity = ctx.scene.entity.get(instanceId);
     if (entity === null) return;

@@ -1,4 +1,3 @@
-import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
@@ -7,6 +6,7 @@ import type { SkeletonMap, SkeletonSlot } from "@jgengine/core/anim/skeletonStan
 import { createRagdoll, type Ragdoll } from "@jgengine/core/physics/ragdoll";
 import type { PhysicsWorld } from "@jgengine/core/physics/physicsWorld";
 import { resolveRigNode } from "@jgengine/core/model/rigNode.draw";
+import { useSharedFrame } from "@jgengine/core/render/useSharedFrame.draw";
 
 /** What {@link useRagdoll} needs: the rig's bone names, the physics world and what arms it. */
 export interface RagdollOptions {
@@ -87,7 +87,7 @@ export function useRagdoll(scene: THREE.Object3D, options: RagdollOptions): void
     };
   }, [active, scene, map, world, height]);
 
-  useFrame((_state, delta) => {
+  useSharedFrame((_state, delta) => {
     const ragdoll = ragdollRef.current;
     if (ragdoll === null || delta <= 0) return;
     world.step(delta);

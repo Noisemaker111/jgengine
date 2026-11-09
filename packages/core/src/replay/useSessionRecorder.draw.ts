@@ -1,7 +1,7 @@
-import { useFrame } from "@react-three/fiber";
 import { useMemo } from "react";
 
 import { createRecordingBuffer, type RecordingBuffer, type RecordingBufferOptions } from "@jgengine/core/replay/recordingBuffer";
+import { useSharedFrame } from "@jgengine/core/render/useSharedFrame.draw";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { useGameContext } from "@jgengine/react/provider";
 
@@ -21,7 +21,7 @@ export function useSessionRecorder(entityId: string, options?: RecordingBufferOp
   const ctx = useGameContext();
   const buffer = useMemo(() => createRecordingBuffer<RecordedPose>(options), []);
 
-  useFrame(() => {
+  useSharedFrame(() => {
     const entity = ctx.scene.entity.get(entityId);
     if (entity === null) return;
     buffer.append(ctx.time.now(), { position: entity.position, rotationY: entity.rotationY });

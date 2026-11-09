@@ -1,4 +1,3 @@
-import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 
@@ -11,6 +10,7 @@ import {
   type PartMotionInput,
 } from "@jgengine/core/game/partAnimation";
 import { useOptionalGameContext } from "@jgengine/react/provider";
+import { useSharedFrame } from "@jgengine/core/render/useSharedFrame.draw";
 
 const FLINCH_RELEASE_SEC = 0.35;
 const DEATH_RAMP_PER_SEC = 2.5;
@@ -69,7 +69,7 @@ export function PartMotionRig({
   );
   const pose = useMemo(() => createPartPose(), []);
 
-  useFrame((frameState, delta) => {
+  useSharedFrame((frameState, delta) => {
     const motion = motionRef.current;
     if (delta > 0 && instanceId !== undefined && ctx !== null) {
       const entity = ctx.scene.entity.get(instanceId);
