@@ -3,6 +3,9 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { carryShaderCaches, desktopDeadline, desktopOutFor, diagnosticDesktopTarget, freePort, parseAllArgs, parseLaunchArgs, portAnswers, renderAllTable, unmeasuredFailure, unmeasuredSceneReason } from "./perf-desktop";
+import { foldDesktopCpuLayers } from "./perf-desktop-cpu";
+import type { CdpSession } from "./browser-lib";
+import type { ProfileNode, RawProfile } from "./perf-play";
 
 test("an --all run with a game left unmeasured fails and names it", () => {
   const measured = { game: "beacon-bastion", backend: "webgl" as const, record: {} as never };
@@ -19,10 +22,11 @@ test("a window measured under the preparing cover, or with nothing drawn, is not
 });
 
 test("a launch run names its app and defaults to the display's vsync", () => {
-  expect(parseLaunchArgs(["--launch", "out/game/Game.exe"])).toEqual({ exe: resolve("out/game/Game.exe"), uncapped: false, seconds: 8, port: null, out: null, maps: `${resolve("out/game")}.private-maps`, size: { width: 1600, height: 900 }, flow: null, renderers: ["webgl"], returning: false, trace: false });
+  expect(parseLaunchArgs(["--launch", "out/game/Game.exe"])).toEqual({ exe: resolve("out/game/Game.exe"), uncapped: false, seconds: 8, port: null, out: null, maps: `${resolve("out/game")}.private-maps`, size: { width: 1600, height: 900 }, flow: null, renderers: ["webgl"], returning: false, trace: false, cpu: false, renders: false });
   expect(parseLaunchArgs(["--launch", "Game.exe", "--flow", "deepward/long-play"]).flow).toEqual({ game: "deepward", name: "long-play" });
   expect(() => parseLaunchArgs(["--launch", "Game.exe", "--flow", "long-play"])).toThrow("--flow takes");
-  expect(parseLaunchArgs(["--launch", "Game.exe", "--uncapped", "--seconds", "4", "--port", "9400", "--out", "r.json", "--maps", "m", "--size", "1920x1080"])).toEqual({ exe: resolve("Game.exe"), uncapped: true, seconds: 4, port: 9400, out: resolve("r.json"), maps: resolve("m"), size: { width: 1920, height: 1080 }, flow: null, renderers: ["webgl"], returning: false, trace: false });
+  expect(parseLaunchArgs(["--launch", "Game.exe", "--uncapped", "--seconds", "4", "--port", "9400", "--out", "r.json", "--maps", "m", "--size", "1920x1080"])).toEqual({ exe: resolve("Game.exe"), uncapped: true, seconds: 4, port: 9400, out: resolve("r.json"), maps: resolve("m"), size: { width: 1920, height: 1080 }, flow: null, renderers: ["webgl"], returning: false, trace: false, cpu: false, renders: false });
+  expect(parseLaunchArgs(["--launch", "Game.exe", "--cpu", "--renders"])).toMatchObject({ cpu: true, renders: true });
   expect(() => parseLaunchArgs(["--uncapped"])).toThrow("--launch needs");
   expect(parseLaunchArgs(["--launch", "Game.exe", "--renderer", "both"]).renderers).toEqual(["webgl", "webgpu"]);
   expect(parseLaunchArgs(["--launch", "Game.exe", "--renderer", "webgpu"]).renderers).toEqual(["webgpu"]);
@@ -115,4 +119,37 @@ test("a returning session carries the shader caches and nothing of a save", () =
     rmSync(from, { recursive: true, force: true });
     rmSync(to, { recursive: true, force: true });
   }
+});
+
+test("a desktop CPU profile folds into fps-gap's layers through the private maps, unmapped scripts counted apart", async () => {
+  // One generated line per source: react-dom, a game HUD file, an engine file; line 3 has no map.
+  const map = JSON.stringify({
+    version: 3,
+    sources: ["../../node_modules/react-dom/cjs/react-dom.production.js", "../../games/deepward/src/ui/VisorHud.tsx", "../../packages/core/src/frame.ts"],
+    names: [],
+    mappings: "AAAA;ACAA;ACAA",
+  });
+  const session = {
+    async send(method: string) {
+      if (method === "Debugger.enable" || method === "Debugger.disable") return {};
+      throw new Error(`unexpected CDP call ${method}`);
+    },
+  } as unknown as CdpSession;
+  const node = (id: number, lineNumber: number, scriptId = "s1"): ProfileNode => ({
+    id,
+    callFrame: { functionName: `f${id}`, scriptId, url: "assets/index-abc.js", lineNumber, columnNumber: 0 } as ProfileNode["callFrame"],
+  });
+  const profile: RawProfile = {
+    nodes: [node(1, 0), node(2, 1), node(3, 2), { id: 4, callFrame: { functionName: "native", url: "native.js", lineNumber: 0, columnNumber: 0 } }],
+    samples: [1, 2, 3, 4, 4],
+    timeDeltas: [100, 100, 100, 50, 50],
+  };
+  const folded = await foldDesktopCpuLayers(session, profile, async (scriptId) => (scriptId === "s1" ? map : null));
+  expect(folded.layers).toEqual([
+    { layer: "React", pct: 25 },
+    { layer: "game code", pct: 25 },
+    { layer: "engine code", pct: 25 },
+    { layer: "other scripts", pct: 25 },
+  ]);
+  expect(folded.unmappedPct).toBe(25);
 });

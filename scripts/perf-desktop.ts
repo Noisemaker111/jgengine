@@ -15,12 +15,15 @@ import { readBreakdown, readHitchSession, renderHitchSession, resetBreakdown, st
 import { describeFirstPaints, endTrace, markTraceAnchor, readTraceEvents, renderTracedHitches, startTrace, traceHitches } from "./perf-trace";
 import { createFlowStepper, describeFlowReport, runFlowReport } from "../packages/core/src/play/flowSteps";
 import { GATE_SIZE } from "./perf-gate";
-import { BACKEND_READING_SCRIPT, gpuErrorLine, gpuErrors, parseSettingSpec, perfSettingsScript, SAMPLE_FRAMES_SCRIPT, summarizeFrameDeltas } from "./perf-play";
+import { BACKEND_READING_SCRIPT, gpuErrorLine, gpuErrors, parseSettingSpec, perfSettingsScript, SAMPLE_FRAMES_SCRIPT, summarizeFrameDeltas, type RawProfile } from "./perf-play";
 import { renderBreakdownText, type FrameBreakdownSummary } from "../packages/core/src/devtools/frameBreakdown";
 import type { FrameWindow } from "../packages/core/src/devtools/report";
 import type { ShadowCacheStats } from "../packages/core/src/lighting/shadowCache.draw";
 import { readPrivateDesktopMap } from "../packages/jgengine/src/desktopMaps";
 import { parseRendererBackend, type RendererBackend } from "../packages/core/src/settings/rendererBackend";
+import { foldDesktopCpuLayers, sampleDesktopCpuLayers, type DesktopCpuProfile } from "./perf-desktop-cpu";
+import { RENDER_COUNTER_SCRIPT, readRenderCounts, renderRenderCounts, resetRenderCounter, type RunRenderCounts } from "./perf-renders";
+import type { ProfileLayer } from "./perf-fps-gap";
 
 interface Target { type?: string; url?: string; webSocketDebuggerUrl?: string }
 
@@ -80,9 +83,13 @@ export interface LaunchArgs {
   trace: boolean;
   /** `--returning`: play the flow once first and measure a second session that has its shader caches. */
   returning: boolean;
+  /** `--cpu`: sample the page's CPU over a second window and report main-thread share by layer. */
+  cpu: boolean;
+  /** `--renders`: count React commits and component renders over the measured window or flow. */
+  renders: boolean;
 }
 
-/** Parse `--launch <exe> [--uncapped] [--renderer webgl|webgpu|both] [--seconds n] [--port n] [--size WxH] [--out file] [--maps dir] [--flow game/name]`. @internal */
+/** Parse `--launch <exe> [--uncapped] [--renderer webgl|webgpu|both] [--seconds n] [--port n] [--size WxH] [--out file] [--maps dir] [--flow game/name] [--cpu] [--renders]`. @internal */
 export function parseLaunchArgs(argv: readonly string[]): LaunchArgs {
   let exe: string | undefined;
   let uncapped = false;
@@ -95,11 +102,15 @@ export function parseLaunchArgs(argv: readonly string[]): LaunchArgs {
   let renderers: RendererBackend[] = ["webgl"];
   let returning = false;
   let trace = false;
+  let cpu = false;
+  let renders = false;
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index] ?? "";
     if (arg === "--uncapped") { uncapped = true; continue; }
     if (arg === "--returning") { returning = true; continue; }
     if (arg === "--trace") { trace = true; continue; }
+    if (arg === "--cpu") { cpu = true; continue; }
+    if (arg === "--renders") { renders = true; continue; }
     if (arg !== "--launch" && arg !== "--seconds" && arg !== "--port" && arg !== "--size" && arg !== "--out" && arg !== "--maps" && arg !== "--flow" && arg !== "--renderer") throw new Error(`unknown argument ${arg}`);
     const value = argv[index + 1];
     if (value === undefined || value.startsWith("--")) throw new Error(`${arg} needs a value`);
@@ -135,7 +146,7 @@ export function parseLaunchArgs(argv: readonly string[]): LaunchArgs {
   if (exe === undefined) throw new Error("--launch needs the desktop app's .exe");
   // `jgengine desktop --out <dir>` writes the app into <dir> and its private maps to <dir>.private-maps.
   if (returning && flow === null) throw new Error("--returning plays a --flow twice; name one");
-  return { exe, uncapped, seconds, port, out, maps: maps ?? `${dirname(exe)}.private-maps`, size, flow, renderers, returning, trace };
+  return { exe, uncapped, seconds, port, out, maps: maps ?? `${dirname(exe)}.private-maps`, size, flow, renderers, returning, trace, cpu, renders };
 }
 
 /**
@@ -207,6 +218,12 @@ export interface DesktopRecord {
   backend: { asked: RendererBackend; drawing: RendererBackend; warnings: string[] };
   /** The shadow cache's counters over the measured window (`window.__jgShadowCache`); null when the page has none. */
   shadowCache: ShadowCacheStats | null;
+  /** Main-thread share by layer over the `--cpu` profile window; absent when the run did not profile. */
+  cpuLayers?: ProfileLayer[];
+  /** Share of the `--cpu` window's samples no private map could name. */
+  cpuUnmappedPct?: number;
+  /** React commits and component renders over the measured window or flow (`--renders`). */
+  renderCounts?: RunRenderCounts;
 }
 
 /** How a launched app got into its scene, and the tier it reports. */
@@ -247,6 +264,8 @@ async function launchedScene<T>(args: LaunchArgs, backend: RendererBackend, prof
     try {
       await session.send("Page.enable");
       await session.send("Page.addScriptToEvaluateOnNewDocument", { source: perfSettingsScript([parseSettingSpec("graphics.auto=false"), parseSettingSpec(`renderer=${backend}`)]) });
+      // Ahead of the page's own scripts, so React picks the counter up as its devtools hook.
+      if (args.renders) await session.send("Page.addScriptToEvaluateOnNewDocument", { source: RENDER_COUNTER_SCRIPT });
       await session.send("Emulation.setDeviceMetricsOverride", { width: args.size.width, height: args.size.height, deviceScaleFactor: 1, mobile: false });
       // A navigation from the debugger, not `location.href`: an app still finishing its own first load
       // cancelled the script-set one and kept its menu page.
@@ -302,11 +321,19 @@ export async function launchAndMeasure(args: LaunchArgs, backend: RendererBacken
     await Bun.sleep(2_000);
     if (!(await resetBreakdown(session))) throw new Error("the page has no frame breakdown; build it with --diagnostics");
     await session.evaluate<void>("window.__jgShadowCache?.resetStats()");
+    if (args.renders && !(await resetRenderCounter(session))) {
+      throw new Error("the page has no render counter; the counter script did not reach it before React loaded");
+    }
     const deltas = (await session.evaluate<number[]>(SAMPLE_FRAMES_SCRIPT(args.seconds * 1000), { awaitPromise: true })) ?? [];
     const shadowCache = (await session.evaluate<ShadowCacheStats | null>("window.__jgShadowCache?.stats() ?? null")) ?? null;
     // Frame callbacks name their source through the private maps the build wrote beside the app.
     const { privateMap } = await privateMapReader(session, args.maps);
     const breakdown = await readBreakdown(session, privateMap);
+    // A second window, still walking: the CPU profile and the render count cover play, not the readback.
+    const cpu: DesktopCpuProfile | null = args.cpu ? await sampleDesktopCpuLayers(session, async (scriptId) => {
+      try { return await privateMap(scriptId); } catch { return null; }
+    }, args.seconds) : null;
+    const renderCounts = args.renders ? await readRenderCounts(session) : null;
     await release();
     const viewport = await session.evaluate<string>(`innerWidth + "x" + innerHeight`);
     // The app presents the way the player saved it unless --uncapped forces it: a vsync run on an
@@ -328,7 +355,11 @@ export async function launchAndMeasure(args: LaunchArgs, backend: RendererBacken
     }
     const sorted = [...deltas].sort((a, b) => a - b);
     const quantile = (p: number) => sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))] ?? Number.NaN;
-    const record: DesktopRecord = { at: Date.now(), exe: args.exe, clock: args.uncapped ? "uncapped" : "vsync", tier, viewport: viewport ?? "unknown", start, frame, rafP50Ms: quantile(0.5), rafP99Ms: quantile(0.99), breakdown, backend: { asked: backend, ...drew }, shadowCache };
+    const record: DesktopRecord = {
+      at: Date.now(), exe: args.exe, clock: args.uncapped ? "uncapped" : "vsync", tier, viewport: viewport ?? "unknown", start, frame, rafP50Ms: quantile(0.5), rafP99Ms: quantile(0.99), breakdown, backend: { asked: backend, ...drew }, shadowCache,
+      ...(cpu === null ? {} : { cpuLayers: cpu.layers, cpuUnmappedPct: cpu.unmappedPct }),
+      ...(renderCounts === null ? {} : { renderCounts }),
+    };
     if (args.out !== null) {
       const out = desktopOutFor(args, backend);
       mkdirSync(dirname(out), { recursive: true });
@@ -340,6 +371,12 @@ export async function launchAndMeasure(args: LaunchArgs, backend: RendererBacken
       const { passes } = shadowCache;
       console.log(`shadow cache: ${shadowCache.cpuMs.toFixed(1)} ms in the shadow step over ${deltas.length} frames, ${shadowCache.checks} caster checks, passes full ${passes.full} rebuild ${passes.rebuild} reuse ${passes.reuse} hold ${passes.hold}`);
     }
+    if (cpu !== null) {
+      const ui = cpu.layers.filter((layer) => layer.layer === "React" || layer.layer === "react-three-fiber").reduce((sum, layer) => sum + layer.pct, 0);
+      console.log(`cpu layers (${args.seconds}s sampled while walking, mapped through private maps): ${cpu.layers.slice(0, 8).map((layer) => `${layer.layer} ${layer.pct}%`).join("; ")}${cpu.unmappedPct > 0 ? `; unmapped ${cpu.unmappedPct}%` : ""}`);
+      console.log(`React + react-three-fiber: ${ui.toFixed(1)}% of the main thread`);
+    }
+    if (renderCounts !== null) console.log(renderRenderCounts(renderCounts, "renders walk"));
     return record;
   });
 }
@@ -396,9 +433,19 @@ export async function launchAndPlayFlow(args: LaunchArgs, flow: { game: string; 
     }
     return await withLaunchedScene(args, backend, profile, async (session, { tier, start }) => {
       if (!(await resetBreakdown(session))) throw new Error("the page has no frame breakdown; build it with --diagnostics");
+      if (args.renders && !(await resetRenderCounter(session))) {
+        throw new Error("the page has no render counter; the counter script did not reach it before React loaded");
+      }
+      const { privateMap } = await privateMapReader(session, args.maps);
       if (args.trace) {
         await startTrace(session);
         await markTraceAnchor(session);
+      }
+      // The whole flow is one CPU window: a HUD that only exists mid-dive still shows in the layers.
+      if (args.cpu) {
+        await session.send("Profiler.enable");
+        await session.send("Profiler.setSamplingInterval", { interval: 200 });
+        await session.send("Profiler.start");
       }
       const driver = pageFlowDriver(session, {
         clock: null,
@@ -408,15 +455,50 @@ export async function launchAndPlayFlow(args: LaunchArgs, flow: { game: string; 
       const stepper = createFlowStepper(() => readProbe(session));
       const reports: { label: string; probe: unknown }[] = [];
       const name = `${flow.game}/${flow.name}`;
+      // Commits and frames sampled through the run, so a HUD that re-renders per tick shows as a
+      // commits/frame rate in the windows where it was up, not only as a whole-run average.
+      const renderWindows: { atMs: number; counts: RunRenderCounts }[] = [];
+      let samplingRenders = args.renders;
+      const renderSampler = args.renders
+        ? (async () => {
+            while (samplingRenders) {
+              const counts = await readRenderCounts(session).catch(() => null);
+              if (counts !== null) renderWindows.push({ atMs: Date.now(), counts });
+              await Bun.sleep(5_000);
+            }
+          })()
+        : Promise.resolve();
       const report = await runFlowReport(stepper, reports, () => proof.run(createBrowserFlow(driver, stepper, reports)));
+      samplingRenders = false;
+      await renderSampler;
       for (const line of describeFlowReport(name, report)) (report.ok ? console.log : console.error)(line);
-      const { privateMap } = await privateMapReader(session, args.maps);
+      const cpu: DesktopCpuProfile | null = args.cpu
+        ? await session.send("Profiler.stop").then((stopped) => foldDesktopCpuLayers(session, stopped["profile"] as RawProfile, async (scriptId) => {
+            try { return await privateMap(scriptId); } catch { return null; }
+          }))
+        : null;
+      const renderCounts = args.renders ? await readRenderCounts(session) : null;
+      if (renderCounts !== null) {
+        console.log(renderRenderCounts(renderCounts, `renders ${name}`));
+        for (let index = 1; index < renderWindows.length; index += 1) {
+          const before = renderWindows[index - 1]!;
+          const after = renderWindows[index]!;
+          const commits = after.counts.commits - before.counts.commits;
+          const frames = after.counts.frames - before.counts.frames;
+          if (frames > 0) console.log(`  renders window ${((after.atMs - before.atMs) / 1000).toFixed(0)}s: ${commits} commits / ${frames} frames = ${(commits / frames).toFixed(2)} commits/frame`);
+        }
+      }
+      if (cpu !== null) {
+        const ui = cpu.layers.filter((layer) => layer.layer === "React" || layer.layer === "react-three-fiber").reduce((sum, layer) => sum + layer.pct, 0);
+        console.log(`cpu layers (whole flow, mapped through private maps): ${cpu.layers.slice(0, 8).map((layer) => `${layer.layer} ${layer.pct}%`).join("; ")}${cpu.unmappedPct > 0 ? `; unmapped ${cpu.unmappedPct}%` : ""}`);
+        console.log(`React + react-three-fiber: ${ui.toFixed(1)}% of the main thread`);
+      }
       const hitches = await readHitchSession(session, privateMap);
       if (hitches === null) throw new Error("the page lost its frame breakdown during the flow");
       const clock = args.uncapped ? "uncapped" : "vsync";
       const out = args.out ?? resolve(import.meta.dir, "..", ".scratch", "perf", "hitches", `${flow.game}-${flow.name}-desktop.json`);
       mkdirSync(dirname(out), { recursive: true });
-      writeFileSync(out, `${JSON.stringify({ at: Date.now(), exe: args.exe, clock, tier, start, flow: name, session: args.returning ? "returning" : "first", ok: report.ok, hitches }, null, 2)}\n`);
+      writeFileSync(out, `${JSON.stringify({ at: Date.now(), exe: args.exe, clock, tier, start, flow: name, session: args.returning ? "returning" : "first", ok: report.ok, hitches, ...(cpu === null ? {} : { cpuLayers: cpu.layers, cpuUnmappedPct: cpu.unmappedPct }), ...(renderCounts === null ? {} : { renderCounts, renderWindows }) }, null, 2)}\n`);
       console.log(renderHitchSession(hitches, `desktop ${clock} ${name}`));
       console.log(`hitch record: ${out}`);
       if (args.trace) {
@@ -452,11 +534,15 @@ export interface AllArgs {
   markdown: boolean;
   /** The GPU backends each game is measured on, one launch each (`--renderer`, default webgl). */
   renderers: RendererBackend[];
+  /** `--cpu`: profile each game's main thread by layer over a second window. */
+  cpu: boolean;
+  /** `--renders`: count React commits and renders over each game's measured window. */
+  renders: boolean;
 }
 
-/** Parse `--all [--games a,b] [--uncapped] [--renderer webgl|webgpu|both] [--seconds n] [--records dir] [--skip-build] [--reuse] [--markdown]`. @internal */
+/** Parse `--all [--games a,b] [--uncapped] [--renderer webgl|webgpu|both] [--seconds n] [--records dir] [--skip-build] [--reuse] [--markdown] [--cpu] [--renders]`. @internal */
 export function parseAllArgs(argv: readonly string[]): AllArgs {
-  const args: AllArgs = { games: [...FRAME_GAMES], uncapped: false, seconds: 8, records: DEFAULT_ALL_RECORDS, skipBuild: false, reuse: false, markdown: false, renderers: ["webgl"] };
+  const args: AllArgs = { games: [...FRAME_GAMES], uncapped: false, seconds: 8, records: DEFAULT_ALL_RECORDS, skipBuild: false, reuse: false, markdown: false, renderers: ["webgl"], cpu: false, renders: false };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index] ?? "";
     if (arg === "--all") continue;
@@ -464,6 +550,8 @@ export function parseAllArgs(argv: readonly string[]): AllArgs {
     if (arg === "--skip-build") { args.skipBuild = true; continue; }
     if (arg === "--reuse") { args.reuse = true; continue; }
     if (arg === "--markdown") { args.markdown = true; continue; }
+    if (arg === "--cpu") { args.cpu = true; continue; }
+    if (arg === "--renders") { args.renders = true; continue; }
     if (arg !== "--games" && arg !== "--seconds" && arg !== "--records" && arg !== "--renderer") throw new Error(`unknown argument ${arg}`);
     const value = argv[index + 1];
     if (value === undefined || value.startsWith("--")) throw new Error(`${arg} needs a value`);
@@ -489,18 +577,29 @@ export interface AllRow { game: string; backend: RendererBackend; record: Deskto
 
 const ms = (value: number | undefined): string => (value === undefined || !Number.isFinite(value) ? "?" : value.toFixed(2));
 
+/** React plus react-three-fiber's share of the profiled main thread, or null when the run did not profile. */
+function uiShare(record: DesktopRecord): number | null {
+  const layers = record.cpuLayers;
+  if (layers === undefined) return null;
+  return layers.filter((layer) => layer.layer === "React" || layer.layer === "react-three-fiber").reduce((sum, layer) => sum + layer.pct, 0);
+}
+
 /** The all-games desktop table against 360 fps. A report, not a gate. @internal */
 export function renderAllTable(rows: readonly AllRow[], markdown: boolean): string {
-  const header = ["game", "renderer", "clock", "fps", "frame p50 ms", "frame p95 ms", "CPU p50 ms", "GPU p50 ms", "draws", "at 360 fps"];
+  const withCpu = rows.some((row) => row.record?.cpuLayers !== undefined);
+  const withRenders = rows.some((row) => row.record?.renderCounts !== undefined);
+  const header = ["game", "renderer", "clock", "fps", "frame p50 ms", "frame p95 ms", "CPU p50 ms", "GPU p50 ms", "draws", ...(withCpu ? ["React+r3f %"] : []), ...(withRenders ? ["commits/frame"] : []), "at 360 fps"];
   const body = rows.map((row) => {
-    if (row.record === null) return [row.game, row.backend, "-", "-", "-", "-", "-", "-", "-", `no run: ${row.error ?? "unknown"}`];
+    if (row.record === null) return [row.game, row.backend, "-", "-", "-", "-", "-", "-", "-", ...(withCpu ? ["-"] : []), ...(withRenders ? ["-"] : []), `no run: ${row.error ?? "unknown"}`];
     const { record } = row;
     const b = record.breakdown;
     const frameP50 = b?.frame.p50 ?? record.rafP50Ms;
     const errors = gpuErrors(record.backend).length;
     const verdict = errors > 0 ? `not comparable: ${errors} WebGPU errors dropped GPU work` : record.frame.fps >= 360 ? "yes" : `${(Math.max(frameP50, BUDGET_360_MS) / BUDGET_360_MS).toFixed(1)}x short`;
     const drawn = record.backend?.drawing ?? row.backend;
-    return [row.game, drawn === row.backend ? drawn : `${row.backend} (drew ${drawn})`, record.clock, String(Math.round(record.frame.fps)), ms(frameP50), ms(record.frame.p95Ms), ms(b?.work.p50), ms(b?.gpu?.p50), b === null ? "?" : String(Math.round(b.counts.drawsAvg)), verdict];
+    const commits = record.renderCounts;
+    const share = uiShare(record);
+    return [row.game, drawn === row.backend ? drawn : `${row.backend} (drew ${drawn})`, record.clock, String(Math.round(record.frame.fps)), ms(frameP50), ms(record.frame.p95Ms), ms(b?.work.p50), ms(b?.gpu?.p50), b === null ? "?" : String(Math.round(b.counts.drawsAvg)), ...(withCpu ? [share === null ? "-" : share.toFixed(1)] : []), ...(withRenders ? [commits === undefined || commits.frames === 0 ? "-" : (commits.commits / commits.frames).toFixed(2)] : []), verdict];
   });
   const backends = [...new Set(rows.map((row) => row.backend))];
   const counts = backends.map((backend) => {
@@ -574,7 +673,7 @@ export async function measureAll(args: AllArgs): Promise<AllRow[]> {
     }
     for (const backend of args.renderers) {
       try {
-        const launch: LaunchArgs = { exe: app, uncapped: args.uncapped, seconds: args.seconds, port: null, out: recordPath(backend), maps: `${dirname(app)}.private-maps`, size: { width: GATE_SIZE.width, height: GATE_SIZE.height }, flow: null, renderers: [backend], returning: false, trace: false };
+        const launch: LaunchArgs = { exe: app, uncapped: args.uncapped, seconds: args.seconds, port: null, out: recordPath(backend), maps: `${dirname(app)}.private-maps`, size: { width: GATE_SIZE.width, height: GATE_SIZE.height }, flow: null, renderers: [backend], returning: false, trace: false, cpu: args.cpu, renders: args.renders };
         let record: DesktopRecord;
         try {
           record = await launchAndMeasure(launch, backend);
@@ -626,7 +725,7 @@ async function main(argv: string[]): Promise<void> {
     return;
   }
   const port = Number(argv[0]);
-  if (!Number.isInteger(port) || port < 1 || port > 65535 || argv[1] !== "--out" || argv[2] === undefined || argv[3] !== "--maps" || argv[4] === undefined || argv.length !== 5) throw new Error("usage: bun run perf desktop <debug-port> --out <file.json> --maps <private-maps-directory>\n       bun run perf desktop --launch <app.exe> [--uncapped] [--renderer webgl|webgpu|both] [--seconds n] [--port n] [--size WxH] [--out <file.json>] [--maps <private-maps-directory>] [--flow <game>/<flow>]\n       bun run perf desktop --all [--uncapped] [--renderer webgl|webgpu|both] [--games a,b] [--seconds n] [--records dir] [--skip-build] [--reuse] [--markdown]");
+  if (!Number.isInteger(port) || port < 1 || port > 65535 || argv[1] !== "--out" || argv[2] === undefined || argv[3] !== "--maps" || argv[4] === undefined || argv.length !== 5) throw new Error("usage: bun run perf desktop <debug-port> --out <file.json> --maps <private-maps-directory>\n       bun run perf desktop --launch <app.exe> [--uncapped] [--renderer webgl|webgpu|both] [--seconds n] [--port n] [--size WxH] [--out <file.json>] [--maps <private-maps-directory>] [--flow <game>/<flow>] [--cpu] [--renders]\n       bun run perf desktop --all [--uncapped] [--renderer webgl|webgpu|both] [--games a,b] [--seconds n] [--records dir] [--skip-build] [--reuse] [--markdown] [--cpu] [--renders]");
   const targets = await localGetJson<Target[]>(`http://127.0.0.1:${port}/json/list`, 5_000);
   const target = diagnosticDesktopTarget(targets);
   if (target.webSocketDebuggerUrl === undefined) throw new Error("desktop debugger URL unavailable");
