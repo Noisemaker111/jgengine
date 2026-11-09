@@ -285,13 +285,16 @@ async function launchedScene<T>(args: LaunchArgs, backend: RendererBackend, prof
       const start = await startCaptureScene(session);
       // The scene's shader warmup covers it ("Preparing scene (90 shaders)") until every program is
       // compiled: Harbor Heat still had 597 to go ten seconds in, and that window drew nothing. Wait
-      // out the warmup (its own cap is 2.5 minutes), then the same settle the browser harness gives.
+      // out the warmup, then the same settle the browser harness gives. A flow's fresh profile pays a
+      // cold compile every launch, and one covered round can overshoot the warmup's own 2-minute
+      // plan budget when the GPU is shared: deepward's cover stayed up past five minutes while another
+      // timed run held the machine (2026-11). The cover always lifts on the warmup's own deadlines.
       let warming = true;
-      for (let attempt = 0; attempt < 360 && warming; attempt += 1) {
+      for (let attempt = 0; attempt < 900 && warming; attempt += 1) {
         warming = (await session.evaluate<boolean>(`document.querySelector("[data-shell-warmup]") !== null`).catch(() => true)) ?? true;
         if (warming) await Bun.sleep(500);
       }
-      if (warming) throw new Error("the scene's shader warmup did not finish within 3 minutes");
+      if (warming) throw new Error("the scene's shader warmup did not finish within 7.5 minutes");
       await Bun.sleep(10_000);
       return await work(session, { tier, start });
     } finally {
