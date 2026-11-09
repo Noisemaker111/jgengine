@@ -5,6 +5,7 @@ Refs #3016, #3017
 ### Added
 
 - bun run perf post-audit redraws each changed post draw three's way on live frames and counts differing texels; bun run check postfx-exact checks the half-float rounding on the GPU
+- bun run perf post-audit redraws each changed post draw three's way on live frames and counts differing texels, sharing shadow-audit's lock-first per-game loop; bun run check postfx-exact checks the half-float rounding on the GPU
 - `PostAuditStats` (`@jgengine/core/postfx/postAudit.draw`): What the changed draws did and, with the audit on, what comparing them with three's draws found.
 
 ### Fixed
