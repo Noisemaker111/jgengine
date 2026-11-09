@@ -123,6 +123,18 @@ function createRegionRegistry(): RegionRegistry {
 
 const RegionRegistryContext = createContext<RegionRegistry | null>(null);
 const GameLayoutContext = createContext<GameViewportLayout | null>(null);
+/** The viewport without its region list: a HUD panel moving never changes it, so the many readers of the mode stay still. */
+const GameShapeContext = createContext<GameViewportShape | null>(null);
+
+/** {@link GameViewportLayout} without the live region list. */
+export type GameViewportShape = Omit<GameViewportLayout, "regions">;
+
+function sameRects(a: readonly LayoutRect[], b: readonly LayoutRect[]): boolean {
+  return a.length === b.length && a.every((rect, index) => {
+    const other = b[index];
+    return other !== undefined && sameRect(rect, other);
+  });
+}
 
 const INPUT_HINT_STYLE_ID = "jg-input-hints";
 const INPUT_HINT_CSS = "@media (pointer: coarse){[data-jg-kbd-hint]{display:none!important}}";
@@ -298,7 +310,12 @@ export function GameViewportProvider({
   const vw = Math.max(0, visual.right - visual.left);
   const vh = Math.max(0, visual.bottom - visual.top);
 
-  const layout = useMemo<GameViewportLayout>(() => {
+  const reservedNow = regions.filter((region) => region.kind === "control" || region.kind === "system").map((region) => region.rect);
+  const zonesRef = useRef<readonly LayoutRect[]>(reservedNow);
+  if (!sameRects(zonesRef.current, reservedNow)) zonesRef.current = reservedNow;
+  const controlZones = zonesRef.current;
+
+  const shape = useMemo<GameViewportShape>(() => {
     const orientation: LayoutOrientation =
       vw > 0 || vh > 0 ? orientationOf(vw, vh) : orientationOf(metrics.layout.right, metrics.layout.bottom);
     const mode: GameLayoutMode = resolveLayoutMode({
@@ -307,21 +324,18 @@ export function GameViewportProvider({
       coarsePointer,
       mobileSupported,
     });
-    const reserved = regions
-      .filter((region) => region.kind === "control" || region.kind === "system")
-      .map((region) => region.rect);
-    const gameplayRect = computeGameplayRect(metrics.layout, safeArea, reserved);
+    const gameplayRect = computeGameplayRect(metrics.layout, safeArea, controlZones);
     return {
       viewport: metrics.layout,
       visualViewport: visual,
       safeArea,
       mode,
       orientation,
-      regions,
-      controlZones: reserved,
+      controlZones,
       gameplayRect,
     };
-  }, [regions, metrics.layout, visual, vw, vh, coarsePointer, mobileSupported, safeArea]);
+  }, [controlZones, metrics.layout, visual, vw, vh, coarsePointer, mobileSupported, safeArea]);
+  const layout = useMemo<GameViewportLayout>(() => ({ ...shape, regions }), [shape, regions]);
 
   const collisions = useMemo(() => detectLayoutCollisions(regions), [regions]);
   const forbidden = useMemo(() => collisions.filter((c) => c.severity === "forbid"), [collisions]);
@@ -375,6 +389,7 @@ export function GameViewportProvider({
   return (
     <RegionRegistryContext.Provider value={registry}>
       <GameLayoutContext.Provider value={layout}>
+      <GameShapeContext.Provider value={shape}>
         <div
           ref={rootRef}
           data-jg-viewport=""
@@ -387,6 +402,7 @@ export function GameViewportProvider({
           <div ref={probeRef} aria-hidden style={SAFE_AREA_PROBE_STYLE} />
           {children}
         </div>
+      </GameShapeContext.Provider>
       </GameLayoutContext.Provider>
     </RegionRegistryContext.Provider>
   );
@@ -410,19 +426,42 @@ export function useGameViewportLayout(): GameViewportLayout {
   );
 }
 
+/**
+ * The viewport, safe area, mode, orientation and reserved control zones, without the live region list:
+ * it changes when the screen or the touch controls do, never when a HUD panel moves or resizes. Read
+ * this rather than {@link useGameViewportLayout} unless the component needs every region.
+ */
+export function useGameViewportShape(): GameViewportShape {
+  const shape = useContext(GameShapeContext);
+  const metrics = useViewportMetrics();
+  return useMemo(
+    () =>
+      shape ?? {
+        viewport: metrics.layout,
+        visualViewport: metrics.visual,
+        safeArea: { top: 0, right: 0, bottom: 0, left: 0 },
+        mode: resolveLayoutMode({ width: metrics.layout.right, height: metrics.layout.bottom, coarsePointer: false }),
+        orientation: orientationOf(metrics.layout.right, metrics.layout.bottom),
+        controlZones: [],
+        gameplayRect: metrics.layout,
+      },
+    [shape, metrics],
+  );
+}
+
 /** The resolved explicit composition mode (`desktop-wide` … `mobile-portrait`). */
 export function useGameLayoutMode(): GameLayoutMode {
-  return useGameViewportLayout().mode;
+  return useGameViewportShape().mode;
 }
 
 /** The live device orientation. */
 export function useGameOrientation(): LayoutOrientation {
-  return useGameViewportLayout().orientation;
+  return useGameViewportShape().orientation;
 }
 
 /** Rectangles reserved by touch controls and system UI — HUD placement should avoid these. */
 export function useReservedControlZones(): readonly LayoutRect[] {
-  return useGameViewportLayout().controlZones;
+  return useGameViewportShape().controlZones;
 }
 
 /** Live forbidden/warned region collisions (empty outside a provider). */

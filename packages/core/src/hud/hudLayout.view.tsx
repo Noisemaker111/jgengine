@@ -4,9 +4,11 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
@@ -22,6 +24,7 @@ import {
   registerActiveHudLayout,
   type HudAnchor,
   type HudLayoutStore,
+  type HudRect,
   type HudSize,
 } from "@jgengine/core/hud/hudLayout";
 import {
@@ -45,7 +48,7 @@ import {
 import type { GamePhase } from "@jgengine/core/game/gamePhase";
 import { useDisplayProfile } from "@jgengine/core/ui/display.view";
 import { useEngineState } from "@jgengine/react/engineStore";
-import { useGameLayoutMode, useGameViewportLayout, useRegisterLayoutRegion } from "@jgengine/core/ui/viewport.view";
+import { useGameLayoutMode, useGameViewportShape, useRegisterLayoutRegion } from "@jgengine/core/ui/viewport.view";
 import { useOptionalGamePhase } from "@jgengine/react/hooks";
 import { arrangeHudPanels, type HudPanelClaim, type HudPanelLayout } from "./hudPanelLayout";
 import { useHudLayoutPersist } from "./hudLayoutPersist.view";
@@ -310,7 +313,8 @@ interface HudCanvasContextValue {
   layer: HTMLDivElement | null;
   /** The HUD's own size in HUD pixels, once measured. */
   frame: HudSize | null;
-  placements: HudPanelLayout;
+  /** Each flowing panel's place; a panel subscribes to its own, so one panel resizing moves only the panels it pushes. */
+  placements: PlacementHub;
   declarePanel: (claim: PanelDeclaration) => void;
   removePanel: (id: string) => void;
   reportPanelSize: (id: string, size: HudSize, collapsed: boolean) => void;
@@ -329,6 +333,51 @@ interface PanelDeclaration {
 const EMPTY_PLACEMENTS: HudPanelLayout = { scale: 1, rects: {}, collapsed: [], overlapping: [] };
 
 const HudCanvasContext = createContext<HudCanvasContextValue | null>(null);
+
+/** Where one flowing panel sits: its rectangle and whether it is drawn as its toggle. */
+interface PanelPlacement {
+  rect: HudRect | undefined;
+  collapsed: boolean;
+}
+
+interface PlacementHub {
+  publish(next: HudPanelLayout): void;
+  subscribe(listener: () => void): () => void;
+  /** The panel's placement, the same object until its rectangle or collapse changes. */
+  of(id: string): PanelPlacement;
+}
+
+function createPlacementHub(): PlacementHub {
+  let current = EMPTY_PLACEMENTS;
+  const listeners = new Set<() => void>();
+  const slots = new Map<string, PanelPlacement>();
+  return {
+    publish(next) {
+      if (next === current) return;
+      current = next;
+      for (const listener of [...listeners]) listener();
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    of(id) {
+      const rect = current.rects[id];
+      const collapsed = current.collapsed.includes(id);
+      const previous = slots.get(id);
+      if (previous !== undefined && previous.collapsed === collapsed && sameRect(previous.rect, rect)) return previous;
+      const placement = { rect, collapsed };
+      slots.set(id, placement);
+      return placement;
+    },
+  };
+}
+
+function sameRect(a: HudRect | undefined, b: HudRect | undefined): boolean {
+  if (a === b) return true;
+  if (a === undefined || b === undefined) return false;
+  return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+}
 
 function HudEditBar({ layout }: { layout: HudLayoutStore }) {
   return (
@@ -462,7 +511,7 @@ export const HudCanvas = memoView("HudCanvas", function HudCanvas({
   }, []);
   const phase = useOptionalGamePhase();
   const { compact } = useDisplayProfile();
-  const { safeArea, controlZones } = useGameViewportLayout();
+  const { safeArea, controlZones } = useGameViewportShape();
   const hudViewport = useHudViewport();
   const fitEnabled = hudViewport?.fitEnabled === true;
   const [viewport, setViewport] = useState<HudSize | null>(null);
@@ -547,9 +596,12 @@ export const HudCanvas = memoView("HudCanvas", function HudCanvas({
   const scale = placements.scale;
   const frame = useMemo(() => (viewport === null ? null : { width: viewport.width / scale, height: viewport.height / scale }), [viewport, scale]);
 
+  const [placementHub] = useState(createPlacementHub);
+  // Published before paint: a panel whose place changed redraws in the same frame, the others not at all.
+  useLayoutEffect(() => placementHub.publish(placements), [placementHub, placements]);
   const value = useMemo(
-    () => ({ layout, canvasRef, layer, frame, placements, declarePanel, removePanel, reportPanelSize }),
-    [layout, layer, frame, placements, declarePanel, removePanel, reportPanelSize],
+    () => ({ layout, canvasRef, layer, frame, placements: placementHub, declarePanel, removePanel, reportPanelSize }),
+    [layout, layer, frame, placementHub, declarePanel, removePanel, reportPanelSize],
   );
   const editing = useEngineState(layout).editing;
   useEffect(() => registerActiveHudLayout(layout), [layout]);
@@ -972,8 +1024,10 @@ export const HudPanel = memoView("HudPanel", function HudPanel({
     return () => removePanel(id);
   }, [flowing, removePanel, id]);
 
-  const placed = flowing ? placements.rects[id] : undefined;
-  const collapsed = flowing && placements.collapsed.includes(id);
+  const readPlacement = useCallback(() => placements.of(id), [placements, id]);
+  const placement = useSyncExternalStore(placements.subscribe, readPlacement, readPlacement);
+  const placed = flowing ? placement.rect : undefined;
+  const collapsed = flowing && placement.collapsed;
   const flowMounted = flowing && layer !== null;
   useEffect(() => {
     if (!flowMounted) return;

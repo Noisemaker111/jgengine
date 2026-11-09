@@ -8,7 +8,7 @@ import {
 
 import { useReducedMotion } from "@jgengine/core/ui/accessibility.view";
 import { createGameMenuSound, type GameMenuSound } from "./gameMenuSound.view";
-import { useGameViewportLayout } from "@jgengine/core/ui/viewport.view";
+import { useGameViewportShape } from "@jgengine/core/ui/viewport.view";
 import { hudDuration, hudEase, hudFont, hudType } from "@jgengine/core/hud/hudTokens";
 import { useMenuNav } from "./menuNav.view";
 import { kitHudBridge, KitMenu, KitPanel, useHasUiKit } from "@jgengine/core/ui/kit/uiKitRoot.view";
@@ -289,7 +289,7 @@ export function GameMenu({
   const reduced = reducedMotion === undefined ? prefersReduced : reducedMotion || prefersReduced;
   const kitted = useHasUiKit();
   // A portrait phone (or any narrow portrait window) has no room for two columns.
-  const layout = useGameViewportLayout();
+  const layout = useGameViewportShape();
   const stacked = layout.mode === "mobile-portrait" || (layout.orientation === "portrait" && layout.viewport.right - layout.viewport.left < 600);
   useViewportScrollLock(open);
 
