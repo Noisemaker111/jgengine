@@ -518,14 +518,14 @@ export const BOAT_GATE_UNAVAILABLE = 69;
 /**
  * The `boat-host.sh gate` arguments for this tree: the snapshot commit of the working tree, run with
  * this Bun so the receipt's runtime matches, planned from this lane's merge base so the receipt's
- * key matches, with the receipts and whatever gen rewrote brought back. `preflight --no-gen` (the
- * install) comes first on a re-verify, since a fresh gate checkout on the host has no node_modules.
+ * key matches, with the receipts and whatever gen rewrote brought back. The install comes first: a
+ * new gate checkout on the host has no node_modules, and preflight only checks for them.
  */
 export function boatGateArgs(input: { commit: string; mergeBase: string; bun: string; withPreflight: boolean }): string[] {
-  const first = input.withPreflight ? "bun run preflight --no-verify" : "bun run preflight --no-gen";
+  const steps = ["bun install --frozen-lockfile", ...(input.withPreflight ? ["bun run preflight --no-verify"] : []), `bun run verify:fast --landing --base ${input.mergeBase}`];
   return [
     "gate", "--repo", "jgengine", "--commit", input.commit, "--bun", input.bun, "--tree-back", "--bring", ".scratch/verify-fast/runs",
-    "--", "bash", "-c", `${first} && bun run verify:fast --landing --base ${input.mergeBase}`,
+    "--", "bash", "-c", steps.join(" && "),
   ];
 }
 

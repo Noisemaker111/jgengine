@@ -418,8 +418,8 @@ describe("the gate on the boat host", () => {
   test("the host runs this Bun, planned from this lane's merge base, and brings the receipts and gen output home", () => {
     const args = boatGateArgs({ commit: "c0ffee", mergeBase: "ba5e", bun: "1.4.4", withPreflight: true });
     expect(args.slice(0, args.indexOf("--"))).toEqual(["gate", "--repo", "jgengine", "--commit", "c0ffee", "--bun", "1.4.4", "--tree-back", "--bring", ".scratch/verify-fast/runs"]);
-    expect(args.at(-1)).toBe("bun run preflight --no-verify && bun run verify:fast --landing --base ba5e");
-    expect(boatGateArgs({ commit: "c", mergeBase: "b", bun: "1", withPreflight: false }).at(-1)).toBe("bun run preflight --no-gen && bun run verify:fast --landing --base b");
+    expect(args.at(-1)).toBe("bun install --frozen-lockfile && bun run preflight --no-verify && bun run verify:fast --landing --base ba5e");
+    expect(boatGateArgs({ commit: "c", mergeBase: "b", bun: "1", withPreflight: false }).at(-1)).toBe("bun install --frozen-lockfile && bun run verify:fast --landing --base b");
   });
 });
 
