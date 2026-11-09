@@ -1,7 +1,7 @@
 import { Html } from "@react-three/drei";
-import { useThree } from "@react-three/fiber";
 import { useCallback, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import {
   EntityFrames,
   type EntityFrameEntry,
@@ -23,15 +23,16 @@ import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
  * @capability entity-frames R3F camera→screen projector for world-anchored frames
  */
 export function useWorldProjection(): ProjectEntity {
-  const camera = useThree((state) => state.camera);
-  const size = useThree((state) => state.size);
+  const host = useEngineHost();
   const scratch = useRef(new THREE.Vector3());
   return useCallback(
     (worldPosition) => {
+      const camera = host.frame.camera;
+      const size = host.frame.size;
       camera.updateMatrixWorld();
       return projectWorldToScreen(scratch.current, camera, worldPosition, size.width, size.height);
     },
-    [camera, size.width, size.height],
+    [host],
   );
 }
 
@@ -100,7 +101,8 @@ export function WorldEntityFrames<E extends EntityFrameEntry>({
   anchorTransform,
   ...layout
 }: WorldEntityFramesProps<E>) {
-  const size = useThree((state) => state.size);
+  const host = useEngineHost();
+  const size = host.frame.size;
   const project = useWorldProjection();
   // Re-render on a frame cadence so projected screen positions follow the camera.
   const [, setTick] = useState(0);

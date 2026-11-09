@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from "r
 import { PresentationAssetBoundary } from "@jgengine/shell/presentationRecovery";
 import { PresentationRecoveredDraw, useRecoverableTexture } from "@jgengine/shell/presentationRecovery3d";
 import * as THREE from "three";
-import type { Group } from "three";
 import { useGameContext } from "@jgengine/react/provider";
 
 import { resolveBuildingPalette } from "@jgengine/core/buildings/buildings";
@@ -43,7 +42,8 @@ import { createTerrainDetailMaterial, type TerrainSurfaceTextures } from "@jgeng
 import { useTerrainSurfaces } from "@jgengine/core/terrain/useTerrainSurfaces.draw";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { terrainGroundDraw } from "./terrainGround.draw";
-import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
+import { EngineDrawMount, SceneObjectGroup, SceneObjectPortal, sceneObjectAttachDraw, useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { createTerrainPaintTextures, packTerrainPaintWeights, type TerrainPaintTextures } from "@jgengine/core/terrain/terrainSurfaces.draw";
 import { Ocean } from "@jgengine/core/water/Ocean.draw";
 import { oceanBedBounds } from "@jgengine/core/water/oceanBed";
@@ -258,7 +258,7 @@ function Precipitation({ weather }: { weather: RainEnvironmentDescriptor | SnowE
   const [cx, cz] = areaCenter(weather.area);
   if (weather.kind === "rain") {
     return (
-      <group position={[cx, 0, cz]}>
+      <SceneObjectGroup position={[cx, 0, cz]}>
         <RainField
           timeSeconds={ctx.time.now}
           density={weather.density}
@@ -270,11 +270,11 @@ function Precipitation({ weather }: { weather: RainEnvironmentDescriptor | SnowE
           wind={[weather.wind[0], 0, weather.wind[1]]}
           volume={weatherVolume(weather.area)}
         />
-      </group>
+      </SceneObjectGroup>
     );
   }
   return (
-    <group position={[cx, 0, cz]}>
+    <SceneObjectGroup position={[cx, 0, cz]}>
       <SnowField
         timeSeconds={ctx.time.now}
         density={weather.density}
@@ -286,7 +286,7 @@ function Precipitation({ weather }: { weather: RainEnvironmentDescriptor | SnowE
         wind={[weather.wind[0], 0, weather.wind[1]]}
         volume={weatherVolume(weather.area)}
       />
-    </group>
+    </SceneObjectGroup>
   );
 }
 
@@ -331,17 +331,23 @@ function useOceanBed(ocean: OceanEnvironmentDescriptor, terrain: WorldBounds | u
 
 function DynamicWater({ ocean, terrain }: { ocean: OceanEnvironmentDescriptor & { levelAt: (time: number) => number }; terrain: WorldBounds | undefined }) {
   const ctx = useGameContext();
-  const groupRef = useRef<Group>(null);
+  const host = useEngineHost();
   const [x, z] = ocean.position ?? [0, 0];
   const config = useOceanConfig(ocean);
   const { bedAt, bounds } = useOceanBed(ocean, terrain);
+  const group = useMemo(() => {
+    const next = new THREE.Group();
+    next.position.set(0, ocean.level, 0);
+    return next;
+  }, [ocean.level]);
+  useEngineDraw(() => sceneObjectAttachDraw(group, !host.r3f), [group, host.r3f]);
   useFrameTask(() => {
-    if (groupRef.current !== null) groupRef.current.position.y = ocean.levelAt(ctx.time.now());
+    group.position.y = ocean.levelAt(ctx.time.now());
   });
   return (
-    <group ref={groupRef} position={[0, ocean.level, 0]}>
+    <SceneObjectPortal object={group}>
       <Ocean position={[x, 0, z]} config={config} bedAt={bedAt} bedBounds={bounds} />
-    </group>
+    </SceneObjectPortal>
   );
 }
 

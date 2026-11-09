@@ -6,13 +6,21 @@ import { childFrameState, type EngineDraw, type EngineFrameState } from "./engin
 import { useEngineHost } from "./engineHost.draw";
 import { joinFrameTask } from "./frameBoard.draw";
 
-interface MountedDraw {
+/** A draw mounted by {@link mountChildDraw}: its scoped state, and the leave/dispose pair. @internal */
+export interface MountedChildDraw {
   draw: EngineDraw;
   state: EngineFrameState;
   leave: () => void;
 }
 
-function mountDraw(draw: EngineDraw, parent: THREE.Object3D, root: EngineFrameState): MountedDraw {
+/**
+ * Mount `draw` as a child of `parent` under the root frame state — the imperative form of
+ * {@link EngineDrawMount} for draws that compose children (a marker swapping its model for a
+ * sprite). The child's `state.scene` is `parent`, so its objects and frame tasks inherit the
+ * parent's transform exactly like JSX nesting did.
+ * @internal
+ */
+export function mountChildDraw(draw: EngineDraw, parent: THREE.Object3D, root: EngineFrameState): MountedChildDraw {
   const state = childFrameState(root, parent);
   draw.mount?.(state);
   const leave = draw.frame === undefined
@@ -21,7 +29,8 @@ function mountDraw(draw: EngineDraw, parent: THREE.Object3D, root: EngineFrameSt
   return { draw, state, leave };
 }
 
-function unmountDraw(mounted: MountedDraw): void {
+/** Reverse {@link mountChildDraw}: leave the frame board, then dispose with the scoped state. @internal */
+export function unmountChildDraw(mounted: MountedChildDraw): void {
   mounted.leave();
   mounted.draw.dispose?.(mounted.state);
 }
@@ -41,6 +50,54 @@ export function EngineSceneProvider({ parent, children }: { parent: THREE.Object
 }
 
 /**
+ * Parents `children`'s scene objects under `object` on either host: under r3f a
+ * `<primitive>` (so raw intrinsics and draw mounts alike inherit the transform through the
+ * reconciler); under the engine loop an {@link EngineSceneContext} provider (so descendant
+ * draw mounts attach to `object` themselves). This is how a draw that owns a {@link THREE.Group}
+ * gives React-rendered custom content that group's transform.
+ * @internal
+ */
+export function SceneObjectPortal({ object, children }: { object: THREE.Object3D; children?: ReactNode }) {
+  const host = useEngineHost();
+  if (host.r3f) return <primitive object={object}>{children}</primitive>;
+  return <EngineSceneContext.Provider value={object}>{children}</EngineSceneContext.Provider>;
+}
+
+/** Attach `object` to the host scene under the engine loop; a no-op under r3f, where the portal's primitive parents it. @internal */
+export function sceneObjectAttachDraw(object: THREE.Object3D, attach: boolean): EngineDraw {
+  return {
+    mount(state: EngineFrameState) {
+      if (attach) state.scene.add(object);
+    },
+    dispose(state: EngineFrameState) {
+      if (attach) state.scene.remove(object);
+    },
+  };
+}
+
+/**
+ * A positioned {@link THREE.Group} parenting `children`'s scene objects on either host — the
+ * draw-side form of `<group position={...}>`: under r3f a primitive at the JSX position, under
+ * the engine loop a scene attachment plus an {@link EngineSceneContext} for descendants.
+ * @internal
+ */
+export function SceneObjectGroup({
+  position,
+  children,
+}: {
+  position?: readonly [number, number, number] | undefined;
+  children?: ReactNode;
+}) {
+  const host = useEngineHost();
+  const group = useMemo(() => new THREE.Group(), []);
+  useEffect(() => {
+    if (position !== undefined) group.position.set(position[0], position[1], position[2]);
+  }, [group, position]);
+  useEngineDraw(() => sceneObjectAttachDraw(group, !host.r3f), [group, host.r3f]);
+  return <SceneObjectPortal object={group}>{children}</SceneObjectPortal>;
+}
+
+/**
  * Mount an {@link EngineDraw} as a child of an identity {@link THREE.Group}.
  * Under r3f the group is a `<primitive>` and inherits the JSX parent's
  * transform; under the engine loop it attaches to the nearest
@@ -54,16 +111,16 @@ export function EngineDrawMount({ create, deps }: { create: () => EngineDraw; de
   // A primitive object, not a `<group>` intrinsic: bare test roots have no THREE
   // catalogue extension, and the draw only needs a stable parent transform.
   const parent = useMemo(() => new THREE.Group(), []);
-  const mounted = useRef<MountedDraw | null>(null);
+  const mounted = useRef<MountedChildDraw | null>(null);
   useEffect(() => {
     if (!host.r3f) {
       const attachTo = sceneParent ?? host.frame.scene;
       attachTo.add(parent);
     }
-    const next = mountDraw(create(), parent, host.frame);
+    const next = mountChildDraw(create(), parent, host.frame);
     mounted.current = next;
     return () => {
-      unmountDraw(next);
+      unmountChildDraw(next);
       mounted.current = null;
       if (!host.r3f) {
         const attachTo = sceneParent ?? host.frame.scene;
@@ -92,7 +149,7 @@ export function EngineDrawMount({ create, deps }: { create: () => EngineDraw; de
  */
 export function useEngineDraw(create: () => EngineDraw, deps: DependencyList): void {
   const frame = useEngineHost().frame;
-  const mounted = useRef<MountedDraw | null>(null);
+  const mounted = useRef<MountedChildDraw | null>(null);
   useEffect(() => {
     const draw = create();
     const state = frame;
@@ -103,7 +160,7 @@ export function useEngineDraw(create: () => EngineDraw, deps: DependencyList): v
     const next = { draw, state, leave };
     mounted.current = next;
     return () => {
-      unmountDraw(next);
+      unmountChildDraw(next);
       mounted.current = null;
     };
     // `create` and `frame` are intentionally excluded: callers pass fresh

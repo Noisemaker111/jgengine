@@ -124,7 +124,7 @@ import { ConfiguredLighting, BackdropFog } from "@jgengine/core/lighting/SceneLi
 import { IrradianceVolumeLighting } from "@jgengine/core/lighting/IrradianceVolumeLighting.draw";
 import { usePresentationLook } from "@jgengine/core/render/presentationLook.draw";
 import type { GameLookInput } from "@jgengine/core/render/lookPreset";
-import { WorldView, RemotePlayers } from "./world/WorldScene";
+import { WorldView, RemotePlayers, dispatchWorldEntityPointerDown } from "./world/WorldScene";
 import { FrameDriver } from "./drivers/FrameDriver";
 import { FrameBoardPump } from "./drivers/FrameBoardPump";
 import { R3FEngineHost } from "@jgengine/core/frame/r3fEngineHost.draw";
@@ -474,6 +474,20 @@ export function Shell3dPresentation({
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     pointerInput.down(event, isWorldPointerTarget(event));
+    if (isWorldPointerTarget(event)) {
+      // The world markers' click-to-target used to arrive through r3f's event system; feed the
+      // service this event's exact cursor, then dispatch the hit entity on either render host.
+      const rect = canvasElement?.getBoundingClientRect();
+      if (rect !== undefined && rect.width > 0 && rect.height > 0) {
+        pointerService.setState({
+          x: ((event.clientX - rect.left) / rect.width) * 2 - 1,
+          y: -(((event.clientY - rect.top) / rect.height) * 2 - 1),
+          present: true,
+        });
+      }
+      const hit = pointerService.worldHit();
+      if (hit?.entity != null) dispatchWorldEntityPointerDown(hit.entity);
+    }
     if (!playControlsActive(ctx)) return;
     if (isWorldPointerTarget(event)) wrapperRef.current?.focus();
     trackPointerAxis(event);
