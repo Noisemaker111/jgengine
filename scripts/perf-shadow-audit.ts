@@ -117,7 +117,7 @@ export function renderShadowAudit(rows: readonly ShadowAuditRow[]): string {
   return [line(head), ...body.map(line)].join("\n");
 }
 
-async function auditGame(game: string, index: number, args: ShadowAuditArgs, started: Awaited<ReturnType<typeof ensureDevServer>>[]): Promise<ShadowAuditRow> {
+async function auditGame(game: string, args: ShadowAuditArgs, started: Awaited<ReturnType<typeof ensureDevServer>>[]): Promise<ShadowAuditRow> {
   // The lock first: the server check and Chrome launch sit inside it, so a server obtained before a
   // long wait cannot be gone after it. Texels are the product here, not frame times, so the browser
   // keeps the inherited below-normal priority (scripts/perf.ts).

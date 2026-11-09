@@ -229,12 +229,13 @@ async function main(): Promise<void> {
   const results: RendererDiffResult[] = [];
   for (const game of args.games) {
     try {
-      const server = await ensureDevServer(repoRoot);
       // Uncapped so the timed windows measure each backend's cost rather than the display's refresh.
       // A failed capture comes back as a nonzero code (already reported), not a throw.
       // Timed windows hold the machine-wide perf lock, so another thread's run never shares the GPU with them.
       const timed = args.seconds > 0 ? { frameClock: "uncapped" as const, turn: perfLockTurn(`renderer-diff ${game}`, undefined) } : {};
       const code = await withBrowserSession({ keep: false, timeoutMs: 600_000, ...timed }, async ({ debugPort }) => {
+        // Under the perf lock: a server asked for before a long wait for it can be gone after.
+        const server = await ensureDevServer(repoRoot);
         const session = await openPageSession(debugPort);
         await session.send("Page.enable", {});
         await session.send("Page.addScriptToEvaluateOnNewDocument", { source: RENDERER_HOOK });
