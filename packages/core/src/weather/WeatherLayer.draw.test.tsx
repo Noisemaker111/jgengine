@@ -1,8 +1,9 @@
 import { expect, test } from "bun:test";
 import { act, createRoot, extend } from "@react-three/fiber";
-import { createElement, type ReactElement } from "react";
+import { createElement, Fragment, type ReactElement } from "react";
 import * as THREE from "three";
 import { createAuthoredWeather } from "@jgengine/core/weather/authoredWeather";
+import { FrameBoardPump } from "@jgengine/core/frame/frameBoardPump.draw";
 import type { WeatherParticleMetrics } from "./weatherUniforms.draw";
 import { WeatherLayer } from "./WeatherLayer.draw";
 
@@ -18,7 +19,7 @@ async function mounted(element: ReactElement, run: (scene: THREE.Scene, frame: (
     let frame = (): void => {};
     let scene!: THREE.Scene;
     const render = async (next: ReactElement) => act(async () => {
-      const store = root.render(next);
+      const store = root.render(createElement(Fragment, null, createElement(FrameBoardPump), next));
       scene = store.getState().scene;
       frame = () => store.getState().advance(0, true);
     });

@@ -1,16 +1,23 @@
-import { useThree } from "@react-three/fiber";
-import { useEffect, useMemo } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
 import { UniformMaterial } from "@jgengine/core/render/uniformMaterial.draw";
 
 import { reportRain, reportWind } from "@jgengine/core/weather/livingWorld.draw";
 
-import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { createWeatherQuadGeometry } from "./weatherGeometry.draw";
 import { DEFAULT_RAIN_COUNT, DEFAULT_RAIN_DENSITY, resolveWeatherInstanceCount } from "./weatherMath";
 import { WEATHER_SHELTER_SHADER } from "./weatherShelter.draw";
-import { useWeatherUniformSet, type WeatherVector } from "./weatherUniforms.draw";
-import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
+import {
+  createWeatherUniformSet,
+  updateWeatherUniformSet,
+  useWeatherUniformSet,
+  type WeatherUniformOptions,
+  type WeatherUniformSet,
+  type WeatherVector,
+} from "./weatherUniforms.draw";
 
 /** Props for {@link RainField}: drop count, density and budget, area, fall speed, wind and look. */
 export interface RainFieldProps {
@@ -43,62 +50,52 @@ export function rainAmount(density: number, localRain: number): number {
   return Math.min(1, (Math.max(0, density) / DEFAULT_RAIN_DENSITY) * 0.8) * localRain;
 }
 
-/** GPU-animated rain streaks around the camera, sheltered under authored roofs. */
-export function RainField({
-  count = DEFAULT_RAIN_COUNT,
-  density = DEFAULT_RAIN_DENSITY,
-  budget,
-  volume = DEFAULT_VOLUME,
-  wind,
-  origin = DEFAULT_ORIGIN,
-  followCamera = true,
-  speed = 22,
-  length = 1.35,
-  width = 0.018,
-  opacity = 0.48,
-  color = DEFAULT_RAIN_COLOR,
-  lightning,
-  timeScale,
-  timeSeconds,
-  seed = 11939,
-  renderOrder = 10,
-  frustumCulled,
-}: RainFieldProps) {
-  const { camera } = useThree();
-  const shared = useWeatherUniformSet({ wind, lightning, timeScale, timeSeconds });
-  const source = useMemo(() => ({}), []);
-  useEffect(() => () => {
-    reportRain(source, 0);
-    reportWind(source, null);
-  }, [source]);
-  useFrameTask(() => {
-    reportRain(source, rainAmount(density, shared.rain.value));
-    reportWind(source, [shared.wind.value.x, shared.wind.value.z]);
-  });
-  const geometry = useDisposable(() => createWeatherQuadGeometry(count, seed), [count, seed]);
-  const material = useDisposable(() => {
-    const uniforms = {
-      uTime: shared.time,
-      uShelterCenters: shared.shelterCenters,
-      uShelterShapes: shared.shelterShapes,
-      uShelterCount: shared.shelterCount,
-      uWind: shared.wind,
-      uLightning: shared.lightning,
-      uAnchor: { value: new THREE.Vector3() },
-      uVolume: { value: new THREE.Vector3() },
-      uSpeed: { value: speed },
-      uLength: { value: length },
-      uWidth: { value: width },
-      uOpacity: { value: opacity },
-      uColor: { value: new THREE.Color(color) },
-    } satisfies Record<string, THREE.IUniform>;
+function uniformOptions(props: RainFieldProps): WeatherUniformOptions {
+  return { wind: props.wind, lightning: props.lightning, timeScale: props.timeScale, timeSeconds: props.timeSeconds };
+}
 
-    return new UniformMaterial({
-      uniforms,
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.NormalBlending,
-      vertexShader: `
+/**
+ * GPU-animated rain streaks around the camera, sheltered under authored roofs.
+ * `uniforms` is the resolved shared set (the React path's `useWeatherUniformSet`,
+ * already ticked); without it the draw owns a local set and ticks it on the
+ * board at weather priority, matching the old local-uniforms path.
+ */
+export function rainFieldDraw(getProps: () => RainFieldProps, uniforms?: WeatherUniformSet): EngineDraw {
+  const source = {};
+  let mesh: THREE.Mesh | null = null;
+  let geometry: THREE.InstancedBufferGeometry | null = null;
+  let material: UniformMaterial | null = null;
+  let shared: WeatherUniformSet | null = null;
+  let leaveTicker = () => {};
+
+  return {
+    mount(state: EngineFrameState) {
+      const props = getProps();
+      const count = props.count ?? DEFAULT_RAIN_COUNT;
+      const seed = props.seed ?? 11939;
+      shared = uniforms ?? createWeatherUniformSet(uniformOptions(props));
+      const set = shared;
+      geometry = createWeatherQuadGeometry(count, seed);
+      material = new UniformMaterial({
+        uniforms: {
+          uTime: set.time,
+          uShelterCenters: set.shelterCenters,
+          uShelterShapes: set.shelterShapes,
+          uShelterCount: set.shelterCount,
+          uWind: set.wind,
+          uLightning: set.lightning,
+          uAnchor: { value: new THREE.Vector3() },
+          uVolume: { value: new THREE.Vector3() },
+          uSpeed: { value: props.speed ?? 22 },
+          uLength: { value: props.length ?? 1.35 },
+          uWidth: { value: props.width ?? 0.018 },
+          uOpacity: { value: props.opacity ?? 0.48 },
+          uColor: { value: new THREE.Color(props.color ?? DEFAULT_RAIN_COLOR) },
+        },
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.NormalBlending,
+        vertexShader: `
         ${WEATHER_SHELTER_SHADER}
         uniform float uTime;
         uniform vec3 uWind;
@@ -135,7 +132,7 @@ export function RainField({
           gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.0);
         }
       `,
-      fragmentShader: `
+        fragmentShader: `
         uniform float uOpacity;
         uniform vec3 uColor;
         uniform float uLightning;
@@ -154,32 +151,80 @@ export function RainField({
           gl_FragColor = vec4(litColor, alpha);
         }
       `,
-    });
-  }, [color, length, opacity, shared, speed, width]);
+      });
+      mesh = new THREE.Mesh(geometry, material);
+      mesh.frustumCulled = props.frustumCulled ?? !(props.followCamera ?? true);
+      mesh.renderOrder = props.renderOrder ?? 10;
+      state.scene.add(mesh);
+      if (uniforms === undefined) {
+        leaveTicker = joinFrameTask(-1, (frameState, delta) => {
+          const p = getProps();
+          const position = frameState.camera.position;
+          updateWeatherUniformSet(set, uniformOptions(p), delta, position.x, position.z, position.y);
+        });
+      }
+    },
+    frame(state: EngineFrameState) {
+      const props = getProps();
+      const set = shared;
+      if (set === null || mesh === null || material === null || geometry === null) return;
+      reportRain(source, rainAmount(props.density ?? DEFAULT_RAIN_DENSITY, set.rain.value));
+      reportWind(source, [set.wind.value.x, set.wind.value.z]);
+      const uniforms = material.uniforms;
+      const followCamera = props.followCamera ?? true;
+      const origin = props.origin ?? DEFAULT_ORIGIN;
+      const target = uniforms.uAnchor.value as THREE.Vector3;
+      if (followCamera) target.copy(state.camera.position);
+      else target.set(origin[0], origin[1], origin[2]);
+      const volume = props.volume ?? DEFAULT_VOLUME;
+      uniforms.uVolume.value.set(volume[0], volume[1], volume[2]);
+      uniforms.uSpeed.value = props.speed ?? 22;
+      uniforms.uLength.value = props.length ?? 1.35;
+      uniforms.uWidth.value = props.width ?? 0.018;
+      uniforms.uOpacity.value = props.opacity ?? 0.48;
+      uniforms.uColor.value.set(props.color ?? DEFAULT_RAIN_COLOR);
+      geometry.instanceCount = resolveWeatherInstanceCount(
+        props.count ?? DEFAULT_RAIN_COUNT,
+        (props.density ?? DEFAULT_RAIN_DENSITY) * set.rain.value,
+        props.budget,
+      );
+      const metrics = set.metrics?.rain;
+      if (metrics !== undefined) {
+        metrics.count = geometry.instanceCount;
+        metrics.capacity = geometry.getAttribute("aSpawn").count;
+      }
+      mesh.frustumCulled = props.frustumCulled ?? !followCamera;
+      mesh.renderOrder = props.renderOrder ?? 10;
+    },
+    dispose(state: EngineFrameState) {
+      leaveTicker();
+      leaveTicker = () => {};
+      reportRain(source, 0);
+      reportWind(source, null);
+      if (mesh !== null) state.scene.remove(mesh);
+      geometry?.dispose();
+      material?.dispose();
+      mesh = null;
+      geometry = null;
+      material = null;
+      shared = null;
+    },
+  };
+}
 
-  useFrameTask(() => {
-    const anchor = followCamera ? camera.position : null;
-    const uniforms = material.uniforms;
-    const target = uniforms.uAnchor.value;
-    if (anchor !== null) target.copy(anchor);
-    else target.set(origin[0], origin[1], origin[2]);
-    uniforms.uVolume.value.set(volume[0], volume[1], volume[2]);
-    uniforms.uSpeed.value = speed;
-    uniforms.uLength.value = length;
-    uniforms.uWidth.value = width;
-    uniforms.uOpacity.value = opacity;
-    uniforms.uColor.value.set(color);
-    geometry.instanceCount = resolveWeatherInstanceCount(count, density * shared.rain.value, budget);
-    const metrics = shared.metrics?.rain;
-    if (metrics !== undefined) { metrics.count = geometry.instanceCount; metrics.capacity = geometry.getAttribute("aSpawn").count; }
+/** GPU-animated rain streaks around the camera, sheltered under authored roofs. */
+export function RainField(props: RainFieldProps) {
+  const uniforms = useWeatherUniformSet({
+    wind: props.wind,
+    lightning: props.lightning,
+    timeScale: props.timeScale,
+    timeSeconds: props.timeSeconds,
   });
-
-  return (
-    <mesh
-      geometry={geometry}
-      material={material}
-      frustumCulled={frustumCulled ?? !followCamera}
-      renderOrder={renderOrder}
-    />
+  const latest = useRef(props);
+  latest.current = props;
+  useEngineDraw(
+    () => rainFieldDraw(() => latest.current, uniforms),
+    [props.count, props.seed, uniforms],
   );
+  return null;
 }

@@ -1,13 +1,21 @@
-import { useThree } from "@react-three/fiber";
+import { useRef } from "react";
 import * as THREE from "three";
 import { UniformMaterial } from "@jgengine/core/render/uniformMaterial.draw";
 
-import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { createWeatherQuadGeometry } from "./weatherGeometry.draw";
 import { DEFAULT_DUST_COUNT, DEFAULT_DUST_DENSITY, resolveWeatherInstanceCount } from "./weatherMath";
 import { WEATHER_SHELTER_SHADER } from "./weatherShelter.draw";
-import { useWeatherUniformSet, type WeatherVector } from "./weatherUniforms.draw";
-import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
+import {
+  createWeatherUniformSet,
+  updateWeatherUniformSet,
+  useWeatherUniformSet,
+  type WeatherUniformOptions,
+  type WeatherUniformSet,
+  type WeatherVector,
+} from "./weatherUniforms.draw";
 
 /**
  * Wind-borne particulate: dust, sand, ash, pollen, spores. Unlike rain and snow this is not falling
@@ -45,60 +53,55 @@ const DEFAULT_VOLUME: WeatherVector = [70, 22, 70];
 const DEFAULT_ORIGIN: WeatherVector = [0, 0, 0];
 const DEFAULT_DUST_COLOR = "#c8a878";
 
+function uniformOptions(props: DustFieldProps): WeatherUniformOptions {
+  return { wind: props.wind, timeScale: props.timeScale, timeSeconds: props.timeSeconds };
+}
+
 /**
  * Renders wind-borne particulate as camera-facing motes. Reach for it whenever the air itself
  * should read as weather — a desert gale, ash off a volcano, pollen in a meadow, grain dust in a
  * silo. Compose it through {@link WeatherLayer}'s `"dust"` mode (or `dustAlways` alongside rain and
  * snow) rather than mounting it directly, so it shares one wind and time source with the other layers.
+ * `uniforms` is the resolved shared set (the React path's `useWeatherUniformSet`, already ticked);
+ * without it the draw owns a local set and ticks it on the board at weather priority.
  *
  * @capability weather-dust airborne particulate that turns still air into visible wind
  */
-export function DustField({
-  count = DEFAULT_DUST_COUNT,
-  density = DEFAULT_DUST_DENSITY,
-  budget,
-  volume = DEFAULT_VOLUME,
-  wind,
-  origin = DEFAULT_ORIGIN,
-  followCamera = true,
-  speed = 2.4,
-  size = 0.16,
-  sway = 0.5,
-  opacity = 0.3,
-  color = DEFAULT_DUST_COLOR,
-  groundBias = 0.65,
-  timeScale,
-  timeSeconds,
-  seed = 51407,
-  renderOrder = 10,
-  frustumCulled,
-}: DustFieldProps) {
-  const { camera } = useThree();
-  const shared = useWeatherUniformSet({ wind, timeScale, timeSeconds });
-  const geometry = useDisposable(() => createWeatherQuadGeometry(count, seed), [count, seed]);
-  const material = useDisposable(() => {
-    const uniforms = {
-      uTime: shared.time,
-      uShelterCenters: shared.shelterCenters,
-      uShelterShapes: shared.shelterShapes,
-      uShelterCount: shared.shelterCount,
-      uWind: shared.wind,
-      uAnchor: { value: new THREE.Vector3() },
-      uVolume: { value: new THREE.Vector3() },
-      uSpeed: { value: speed },
-      uSize: { value: size },
-      uSway: { value: sway },
-      uOpacity: { value: opacity },
-      uColor: { value: new THREE.Color(color) },
-      uGroundBias: { value: groundBias },
-    } satisfies Record<string, THREE.IUniform>;
+export function dustFieldDraw(getProps: () => DustFieldProps, uniforms?: WeatherUniformSet): EngineDraw {
+  let mesh: THREE.Mesh | null = null;
+  let geometry: THREE.InstancedBufferGeometry | null = null;
+  let material: UniformMaterial | null = null;
+  let shared: WeatherUniformSet | null = null;
+  let leaveTicker = () => {};
 
-    return new UniformMaterial({
-      uniforms,
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.NormalBlending,
-      vertexShader: `
+  return {
+    mount(state: EngineFrameState) {
+      const props = getProps();
+      const count = props.count ?? DEFAULT_DUST_COUNT;
+      const seed = props.seed ?? 51407;
+      shared = uniforms ?? createWeatherUniformSet(uniformOptions(props));
+      const set = shared;
+      geometry = createWeatherQuadGeometry(count, seed);
+      material = new UniformMaterial({
+        uniforms: {
+          uTime: set.time,
+          uShelterCenters: set.shelterCenters,
+          uShelterShapes: set.shelterShapes,
+          uShelterCount: set.shelterCount,
+          uWind: set.wind,
+          uAnchor: { value: new THREE.Vector3() },
+          uVolume: { value: new THREE.Vector3() },
+          uSpeed: { value: props.speed ?? 2.4 },
+          uSize: { value: props.size ?? 0.16 },
+          uSway: { value: props.sway ?? 0.5 },
+          uOpacity: { value: props.opacity ?? 0.3 },
+          uColor: { value: new THREE.Color(props.color ?? DEFAULT_DUST_COLOR) },
+          uGroundBias: { value: props.groundBias ?? 0.65 },
+        },
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.NormalBlending,
+        vertexShader: `
         ${WEATHER_SHELTER_SHADER}
         uniform float uTime;
         uniform vec3 uWind;
@@ -152,7 +155,7 @@ export function DustField({
           gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.0);
         }
       `,
-      fragmentShader: `
+        fragmentShader: `
         uniform float uOpacity;
         uniform vec3 uColor;
 
@@ -171,33 +174,75 @@ export function DustField({
           gl_FragColor = vec4(uColor, alpha);
         }
       `,
-    });
-  }, [color, groundBias, opacity, shared, size, speed, sway]);
+      });
+      mesh = new THREE.Mesh(geometry, material);
+      mesh.frustumCulled = props.frustumCulled ?? !(props.followCamera ?? true);
+      mesh.renderOrder = props.renderOrder ?? 10;
+      state.scene.add(mesh);
+      if (uniforms === undefined) {
+        leaveTicker = joinFrameTask(-1, (frameState, delta) => {
+          const p = getProps();
+          const position = frameState.camera.position;
+          updateWeatherUniformSet(set, uniformOptions(p), delta, position.x, position.z, position.y);
+        });
+      }
+    },
+    frame(state: EngineFrameState) {
+      const props = getProps();
+      const set = shared;
+      if (set === null || mesh === null || material === null || geometry === null) return;
+      const uniforms = material.uniforms;
+      const followCamera = props.followCamera ?? true;
+      const origin = props.origin ?? DEFAULT_ORIGIN;
+      const target = uniforms.uAnchor.value as THREE.Vector3;
+      if (followCamera) target.copy(state.camera.position);
+      else target.set(origin[0], origin[1], origin[2]);
+      const volume = props.volume ?? DEFAULT_VOLUME;
+      uniforms.uVolume.value.set(volume[0], volume[1], volume[2]);
+      uniforms.uSpeed.value = props.speed ?? 2.4;
+      uniforms.uSize.value = props.size ?? 0.16;
+      uniforms.uSway.value = props.sway ?? 0.5;
+      uniforms.uOpacity.value = props.opacity ?? 0.3;
+      uniforms.uGroundBias.value = props.groundBias ?? 0.65;
+      uniforms.uColor.value.set(props.color ?? DEFAULT_DUST_COLOR);
+      geometry.instanceCount = resolveWeatherInstanceCount(
+        props.count ?? DEFAULT_DUST_COUNT,
+        (props.density ?? DEFAULT_DUST_DENSITY) * set.dust.value,
+        props.budget,
+      );
+      const metrics = set.metrics?.dust;
+      if (metrics !== undefined) {
+        metrics.count = geometry.instanceCount;
+        metrics.capacity = geometry.getAttribute("aSpawn").count;
+      }
+      mesh.frustumCulled = props.frustumCulled ?? !followCamera;
+      mesh.renderOrder = props.renderOrder ?? 10;
+    },
+    dispose(state: EngineFrameState) {
+      leaveTicker();
+      leaveTicker = () => {};
+      if (mesh !== null) state.scene.remove(mesh);
+      geometry?.dispose();
+      material?.dispose();
+      mesh = null;
+      geometry = null;
+      material = null;
+      shared = null;
+    },
+  };
+}
 
-  useFrameTask(() => {
-    const anchor = followCamera ? camera.position : null;
-    const uniforms = material.uniforms;
-    const target = uniforms.uAnchor.value;
-    if (anchor !== null) target.copy(anchor);
-    else target.set(origin[0], origin[1], origin[2]);
-    uniforms.uVolume.value.set(volume[0], volume[1], volume[2]);
-    uniforms.uSpeed.value = speed;
-    uniforms.uSize.value = size;
-    uniforms.uSway.value = sway;
-    uniforms.uOpacity.value = opacity;
-    uniforms.uGroundBias.value = groundBias;
-    uniforms.uColor.value.set(color);
-    geometry.instanceCount = resolveWeatherInstanceCount(count, density * shared.dust.value, budget);
-    const metrics = shared.metrics?.dust;
-    if (metrics !== undefined) { metrics.count = geometry.instanceCount; metrics.capacity = geometry.getAttribute("aSpawn").count; }
+export function DustField(props: DustFieldProps) {
+  const uniforms = useWeatherUniformSet({
+    wind: props.wind,
+    timeScale: props.timeScale,
+    timeSeconds: props.timeSeconds,
   });
-
-  return (
-    <mesh
-      geometry={geometry}
-      material={material}
-      frustumCulled={frustumCulled ?? !followCamera}
-      renderOrder={renderOrder}
-    />
+  const latest = useRef(props);
+  latest.current = props;
+  useEngineDraw(
+    () => dustFieldDraw(() => latest.current, uniforms),
+    [props.count, props.seed, uniforms],
   );
+  return null;
 }
