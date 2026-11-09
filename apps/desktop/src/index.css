@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import "tailwindcss" source(".");
 @source "../../../games/*/src/**/*.{ts,tsx}";
 @source "../../../packages/react/src/**/*.{ts,tsx}";
 @source "../../../packages/shell/src/**/*.{ts,tsx}";
