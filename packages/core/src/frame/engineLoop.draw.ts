@@ -111,6 +111,9 @@ export function groupDraw(children: readonly EngineDraw[], frame?: (state: Engin
       frame?.(state);
       for (const child of children) child.frame?.(childFrameState(state, group));
     },
+    update(state: EngineFrameState) {
+      for (const child of children) child.update?.(childFrameState(state, group));
+    },
     dispose(state: EngineFrameState) {
       children.forEach((child, index) => child.dispose?.(states[index] ?? state));
       state.scene.remove(group);

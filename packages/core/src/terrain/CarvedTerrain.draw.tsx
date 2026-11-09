@@ -104,12 +104,17 @@ function startSliced<T>(label: string, job: SlicedJob<T>, onResult: (value: T) =
   return run;
 }
 
+/** {@link carvedTerrainDraw} plus its prop/material sync, shared by `frame` and `update`. @internal */
+export interface CarvedTerrainDraw extends EngineDraw {
+  syncSurface(): void;
+}
+
 /**
  * Renders a `TerrainField` as a deformed ground mesh — the crater/mound view for destructible terrain.
  * Because the geometry samples `field.sampleHeight`, a `CarvableField.carve(...)` shows as a real bowl
  * once `epoch` changes. Pair with `InstancedBodies` to see debris resting in the crater it blasted.
  */
-export function carvedTerrainDraw(getProps: () => CarvedTerrainProps): EngineDraw {
+export function carvedTerrainDraw(getProps: () => CarvedTerrainProps): CarvedTerrainDraw {
   let holder: THREE.Group | null = null;
   let mesh: THREE.Mesh | null = null;
   let standInMesh: THREE.Mesh | null = null;
@@ -191,25 +196,13 @@ export function carvedTerrainDraw(getProps: () => CarvedTerrainProps): EngineDra
       if (chunked) mountChunked(state, props, grid, material);
       else mountWhole(state, props, material);
     },
-    frame(state: EngineFrameState) {
+    syncSurface() {
       const props = getProps();
       const material = currentMaterial(props);
       const receiveShadow = props.receiveShadow ?? true;
       if (chunks !== null && holder !== null) {
         chunks.syncSurface(material, receiveShadow);
         applyMeshProps(holder, props, holderFlags);
-        if (!ready || refining !== null) return;
-        sinceCheck += state.delta;
-        if (sinceCheck < REFINE_INTERVAL) return;
-        sinceCheck = 0;
-        const job = chunks.nextRefinement(state.camera.getWorldPosition(eyeScratch));
-        if (job === null) return;
-        const next = runSliced(job, { budgetMs: 1, yieldThread: nextFrame });
-        refining = next;
-        next.done.then(
-          () => { if (refining === next) refining = null; },
-          () => { if (refining === next) refining = null; },
-        );
         return;
       }
       if (mesh !== null) {
@@ -217,6 +210,24 @@ export function carvedTerrainDraw(getProps: () => CarvedTerrainProps): EngineDra
         mesh.receiveShadow = receiveShadow;
         applyMeshProps(mesh, props, meshFlags);
       }
+    },
+    frame(state: EngineFrameState) {
+      this.syncSurface();
+      if (chunks === null || holder === null || !ready || refining !== null) return;
+      sinceCheck += state.delta;
+      if (sinceCheck < REFINE_INTERVAL) return;
+      sinceCheck = 0;
+      const job = chunks.nextRefinement(state.camera.getWorldPosition(eyeScratch));
+      if (job === null) return;
+      const next = runSliced(job, { budgetMs: 1, yieldThread: nextFrame });
+      refining = next;
+      next.done.then(
+        () => { if (refining === next) refining = null; },
+        () => { if (refining === next) refining = null; },
+      );
+    },
+    update() {
+      this.syncSurface();
     },
     dispose(state: EngineFrameState) {
       disposed = true;
