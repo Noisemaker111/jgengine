@@ -6247,8 +6247,10 @@
 
 ## @jgengine/core/webgpu/engineRenderer.draw
 
-- `engineRendererFactory` (function): function engineRendererFactory(backend: RendererBackend): (defaults: WebGLRendererParameters) => Promise<WebGLRenderer> — React Three Fiber's `gl` factory for `backend`.
+- `EngineRendererFactory` (interface): interface EngineRendererFactory — React Three Fiber's `gl` factory for one canvas mount; it never awaits.
+- `prepareEngineRenderer` (function): function prepareEngineRenderer(backend: RendererBackend): Promise<EngineRendererFactory> — Do the asynchronous part of starting `backend` (on WebGPU: the shader translator and one device) and return the synchronous factory for one canvas. The device belongs to the first canvas the factory draws on, and that canvas's context loss destroys it.
 - `rendererBackendOf` (function): function rendererBackendOf(renderer: WebGLRenderer): RendererBackend — Which backend actually draws `renderer` (`webgl` for one this module did not make).
+- `useEngineRendererFactory` (function): function useEngineRendererFactory(backend: RendererBackend): EngineRendererFactory | null — The renderer factory for `backend`, or `null` while it is being prepared. Mount the canvas only once it is non-null and its `backend` matches, keyed by that backend, so each canvas mount gets its own prepared device.
 - `webGpuContextOf` (function): function webGpuContextOf(renderer: WebGLRenderer): WebGpuGl | null — The WebGPU context behind `renderer`, for counters and diagnostics; `null` on WebGL.
 
 ## @jgengine/core/webgpu/glFormats.draw
@@ -6285,10 +6287,12 @@
 
 ## @jgengine/core/webgpu/webgpuGl.draw
 
+- `WebGpuDevice` (interface): interface WebGpuDevice — A WebGPU device ready for one canvas, from {@link requestWebGpuDevice}.
 - `WebGpuGl` (class): class WebGpuGl extends GlConstants — The GL-shaped context. Construct through {@link createWebGpuGl}.
 - `WebGpuGlAttributes` (interface): interface WebGpuGlAttributes — Context attributes the canvas was asked for (WebGL's `getContextAttributes`).
 - `WebGpuGlStats` (interface): interface WebGpuGlStats — Counters a perf probe reads per frame.
-- `createWebGpuGl` (function): function createWebGpuGl(canvas: HTMLCanvasElement, attributes: Partial<WebGpuGlAttributes> = {}): Promise<WebGpuGl | null> — Create the WebGPU device and the GL-shaped context for `canvas`, or `null` when this browser has no usable WebGPU adapter.
+- `createWebGpuGl` (function): function createWebGpuGl(canvas: HTMLCanvasElement, gpu: WebGpuDevice, attributes: Partial<WebGpuGlAttributes> = {}): WebGpuGl | null — The GL-shaped context for `canvas` on a device from {@link requestWebGpuDevice}, or `null` when the canvas gives no WebGPU context.
+- `requestWebGpuDevice` (function): function requestWebGpuDevice(powerPreference: WebGLPowerPreference = "high-performance"): Promise<WebGpuDevice | null> — Request the WebGPU device, or `null` when this browser has no usable WebGPU adapter. This is the only asynchronous step; {@link createWebGpuGl} then makes the context synchronously, so a renderer factory never awaits (see `engineRenderer.draw.ts` for why that matters).
 
 ## @jgengine/core/world
 
