@@ -88,6 +88,7 @@ export function ScatterImpostorField({ cacheKey, sources, farSources, batches, r
       }
       const draws = sources.map((source) => {
         const mesh = new THREE.InstancedMesh(source.geometry, source.material, batch.matrices.length);
+        mesh.name = `impostor:${cacheKey}`;
         mesh.castShadow = source.skipShadow !== true && (source.castShadow ?? true);
         mesh.receiveShadow = source.receiveShadow ?? true;
         const composed = new Float32Array(batch.matrices.length * 16);
@@ -110,6 +111,7 @@ export function ScatterImpostorField({ cacheKey, sources, farSources, batches, r
   const far = useMemo(() => {
     if (entry?.atlas == null || entry.materials === null) return null;
     const mesh = new THREE.InstancedMesh(impostorCard(entry.atlas), entry.materials.material, total);
+    mesh.name = `impostor-far:${cacheKey}`;
     mesh.customDepthMaterial = entry.materials.depth;
     mesh.castShadow = true;
     mesh.receiveShadow = true;

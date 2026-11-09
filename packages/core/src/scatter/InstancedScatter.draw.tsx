@@ -140,6 +140,7 @@ function ScatterBatchMesh({ batch, geometry }: { batch: ScatterBatch; geometry: 
   useEffect(() => {
     const mesh = meshRef.current;
     if (mesh === null) return;
+    mesh.name = `scatter:${batch.item}`;
     uploadInstances(mesh, batch.matrices);
     freezeStaticTransforms(mesh);
   }, [batch]);
@@ -289,8 +290,9 @@ function acquireDetailSlot(pool: StaticDrawPool, batch: ScatterBatch, source: Sc
   return slot;
 }
 
-function addDetailMesh(field: THREE.Object3D, source: ScatterModelSource, count: number): THREE.InstancedMesh {
+function addDetailMesh(field: THREE.Object3D, source: ScatterModelSource, count: number, name: string): THREE.InstancedMesh {
   const mesh = new THREE.InstancedMesh(source.geometry, source.material, count);
+  mesh.name = name;
   mesh.castShadow = source.skipShadow !== true;
   mesh.receiveShadow = true;
   field.add(mesh);
@@ -350,7 +352,7 @@ export function syncDetailDraws(
       return;
     }
     if (draw === undefined) {
-      draw = (pool === null ? null : acquireDetailSlot(pool, batch, source)) ?? addDetailMesh(field, source, count);
+      draw = (pool === null ? null : acquireDetailSlot(pool, batch, source)) ?? addDetailMesh(field, source, count, `scatter:${batch.item}`);
       row[sourceIndex] = draw;
     }
     if (draw instanceof StaticDrawSlot) showPicked(draw, batch, picks, levelIndex, source.localMatrix);
@@ -412,6 +414,7 @@ function ScatterVariantSourceInstances({ source, batch, level, selector }: {
   return (
     <instancedMesh
       ref={meshRef}
+      name={`scatter:${batch.item}`}
       args={[source.geometry, source.material, batch.matrices.length]}
       castShadow={source.skipShadow !== true && (source.castShadow ?? true)}
       receiveShadow={source.receiveShadow ?? true}
@@ -488,6 +491,23 @@ export function scatterBatchFootprint(batch: ScatterBatch): { x: number; z: numb
 interface ScatterChunkLevel {
   sources: ScatterModelSource[];
   maxDistance: number;
+}
+
+/** Metres from the camera past which a scatter placement's shadow cannot resolve in the map. */
+const SCATTER_SHADOW_DISTANCE = 150;
+
+/**
+ * The coarsest detail band of a species draws far enough out that its shadow is under a shadow-map
+ * texel, so its sources stop paying the depth pass; every nearer band keeps casting.
+ * @internal
+ */
+export function withoutFarShadows(levels: readonly ScatterChunkLevel[]): ScatterChunkLevel[] {
+  if (levels.length < 2) return [...levels];
+  const last = levels.length - 1;
+  const bandStart = levels[last - 1]?.maxDistance ?? 0;
+  if (!Number.isFinite(bandStart) || bandStart < SCATTER_SHADOW_DISTANCE) return [...levels];
+  const top = levels[last]!;
+  return [...levels.slice(0, last), { ...top, sources: top.sources.map((source) => ({ ...source, skipShadow: true })) }];
 }
 
 /**
@@ -587,7 +607,7 @@ function ScatterBuiltSpecies({ model, levels, hysteresis, batches }: {
     });
   }, [gltfs, urls, model]);
   useEffect(() => () => harvested.forEach(({ root }) => disposeScatterModelSources(root)), [harvested]);
-  const chunkLevels = useMemo(() => harvested.map(({ sources }, index) => ({ sources, maxDistance: levels?.[index]?.maxDistance ?? Infinity })), [harvested, levels]);
+  const chunkLevels = useMemo(() => withoutFarShadows(harvested.map(({ sources }, index) => ({ sources, maxDistance: levels?.[index]?.maxDistance ?? Infinity }))), [harvested, levels]);
   return <ScatterSourcesField cacheKey={`scatter:${model.url}:${JSON.stringify(model)}`} levels={chunkLevels} batches={batches} hysteresis={hysteresis} />;
 }
 
@@ -694,7 +714,7 @@ function ScatterGeneratorSpecies({ item, species }: { item: string; species: Sca
   );
   const farBake = useMemo((): GeneratorBake | null => coarser.length === 0 ? null : { definition: { ...definition, lods: coarser.map((level) => level.detail) }, base, options }, [coarser, definition, base, options]);
   const { variants: far } = useBakedVariants(farBake, `scatter-${item}-levels`);
-  const levels = useMemo(() => near.map((nearLevels, variant): ScatterChunkLevel[] => {
+  const levels = useMemo(() => withoutFarShadows(near.map((nearLevels, variant): ScatterChunkLevel[] => {
     const own = nearLevels[0] ?? [];
     const farLevels = far[variant];
     if (farLevels === undefined) return [{ sources: own, maxDistance: Infinity }];
@@ -702,7 +722,7 @@ function ScatterGeneratorSpecies({ item, species }: { item: string; species: Sca
       { sources: own, maxDistance: coarser[0]?.from ?? Infinity },
       ...coarser.map((_, index) => ({ sources: farLevels[index] ?? [], maxDistance: coarser[index + 1]?.from ?? Infinity })),
     ];
-  }), [near, far, coarser]);
+  })), [near, far, coarser]);
   const variants = useMemo(() => near.map((nearLevels) => nearLevels[0] ?? []), [near]);
   const hysteresis = settings?.hysteresis ?? DEFAULT_MESH_LOD_HYSTERESIS;
   const unique = isUniqueScatterItem(spec);
