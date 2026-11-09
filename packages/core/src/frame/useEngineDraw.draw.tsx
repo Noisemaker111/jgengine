@@ -83,13 +83,20 @@ export function sceneObjectAttachDraw(object: THREE.Object3D, attach: boolean): 
  */
 export function SceneObjectGroup({
   position,
+  userData,
   children,
 }: {
   position?: readonly [number, number, number] | undefined;
+  /** Tags the group for scene scans (postfx overlay exclusion, camera collision). */
+  userData?: Record<string, unknown> | undefined;
   children?: ReactNode;
 }) {
   const host = useEngineHost();
-  const group = useMemo(() => new THREE.Group(), []);
+  const group = useMemo(() => {
+    const next = new THREE.Group();
+    if (userData !== undefined) next.userData = { ...next.userData, ...userData };
+    return next;
+  }, [userData]);
   useEffect(() => {
     if (position !== undefined) group.position.set(position[0], position[1], position[2]);
   }, [group, position]);

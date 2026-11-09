@@ -16,8 +16,7 @@ import {
   type RefObject,
   type SetStateAction,
 } from "react";
-import { useThree } from "@react-three/fiber";
-import type { OrthographicCamera } from "three";
+import * as THREE from "three";
 
 import {
   contextVerbInput,
@@ -147,15 +146,19 @@ import {
   resolveWorldOverlayBars,
 } from "./presentationResolve";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
+import { useEngineDraw, SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 
 const PRIMARY_CLICK_MOVE_THRESHOLD_PX = 6;
 const DEFAULT_BACKGROUND_COLOR = "#14161b";
 
 function PixelPerfectCamera({ pixelsPerUnit, integerScale }: { pixelsPerUnit: number; integerScale?: boolean }) {
-  const camera = useThree((state) => state.camera) as OrthographicCamera;
-  const size = useThree((state) => state.size);
+  const host = useEngineHost();
   useFrameTask(() => {
-    if (camera.isOrthographicCamera !== true) return;
+    const camera = host.frame.camera;
+    const { size } = host.frame;
+    if (!(camera instanceof THREE.OrthographicCamera)) return;
     const frustum = pixelPerfectFrustum(size, pixelsPerUnit, integerScale === true);
     camera.left = frustum.left;
     camera.right = frustum.right;
@@ -166,6 +169,58 @@ function PixelPerfectCamera({ pixelsPerUnit, integerScale }: { pixelsPerUnit: nu
     camera.position.set(snapped.x, snapped.y, snapped.z);
     camera.updateProjectionMatrix();
   }, 1);
+  return null;
+}
+
+/** `<color attach="background">` as a draw: sets scene.background, restores on dispose. */
+function backgroundColorDraw(color: string): EngineDraw {
+  const applied = new THREE.Color(color);
+  let previous: THREE.Scene["background"] = null;
+  return {
+    mount(state: EngineFrameState) {
+      previous = state.scene.background;
+      state.scene.background = applied;
+    },
+    update(state: EngineFrameState) {
+      if (state.scene.background !== applied) state.scene.background = applied;
+    },
+    dispose(state: EngineFrameState) {
+      state.scene.background = previous;
+      previous = null;
+    },
+  };
+}
+
+/** The no-sky lighting fallback (`<ambientLight>` + `<directionalLight>`) as a draw. */
+function fallbackLightsDraw(ambientIntensity: number): EngineDraw {
+  let ambient: THREE.AmbientLight | null = null;
+  let sun: THREE.DirectionalLight | null = null;
+  return {
+    mount(state: EngineFrameState) {
+      ambient = new THREE.AmbientLight(0xffffff, ambientIntensity);
+      sun = new THREE.DirectionalLight(0xffffff, 1.3);
+      sun.position.set(10, 16, 6);
+      state.scene.add(ambient, sun);
+    },
+    update() {
+      if (ambient !== null && ambient.intensity !== ambientIntensity) ambient.intensity = ambientIntensity;
+    },
+    dispose(state: EngineFrameState) {
+      if (ambient !== null) state.scene.remove(ambient);
+      if (sun !== null) state.scene.remove(sun);
+      ambient = null;
+      sun = null;
+    },
+  };
+}
+
+function BackgroundColor({ color }: { color: string }) {
+  useEngineDraw(() => backgroundColorDraw(color), [color]);
+  return null;
+}
+
+function FallbackLights({ ambientIntensity }: { ambientIntensity: number }) {
+  useEngineDraw(() => fallbackLightsDraw(ambientIntensity), [ambientIntensity]);
   return null;
 }
 
@@ -765,7 +820,7 @@ export function Shell3dPresentation({
                   {orthographic && playable.camera?.lens?.pixelPerfect !== undefined ? (
                     <PixelPerfectCamera {...playable.camera.lens?.pixelPerfect} />
                   ) : null}
-                  {backgroundColor !== undefined ? <color attach="background" args={[backgroundColor]} /> : null}
+                  {backgroundColor !== undefined ? <BackgroundColor color={backgroundColor} /> : null}
                   {cinematicLook ? (
                     <BootSuspenseGuard area="the environment lighting">
                     <EnvironmentLighting
@@ -791,10 +846,7 @@ export function Shell3dPresentation({
                       {...(authoredDaylight ? { modulation: daylightModulation } : {})}
                     />
                   ) : effectiveSky === undefined ? (
-                    <>
-                      <ambientLight intensity={cinematicLook ? 0.3 : 0.55} />
-                      <directionalLight position={[10, 16, 6]} intensity={1.3} />
-                    </>
+                    <FallbackLights ambientIntensity={cinematicLook ? 0.3 : 0.55} />
                   ) : null}
                   {effectiveSky !== undefined ? (
                     <BootSuspenseGuard area="the sky">
@@ -864,9 +916,9 @@ export function Shell3dPresentation({
                       // Author decor is presentation dressing, not collision geometry — mark it
                       // camera-transparent so the orbit spring-arm never yanks toward it. A child
                       // that should block the camera opts back in with userData.jgCameraCollide.
-                      <group userData={CAMERA_TRANSPARENT_USERDATA}>
+                      <SceneObjectGroup userData={CAMERA_TRANSPARENT_USERDATA}>
                         <BootSuspenseGuard area="the game's world overlay"><WorldOverlay ctx={ctx} /></BootSuspenseGuard>
-                      </group>
+                      </SceneObjectGroup>
                     ) : null}
                     {GameRemotePlayers !== undefined ? (
                       <BootSuspenseGuard area="the game's remote players"><GameRemotePlayers ctx={ctx} rows={remotePlayers} /></BootSuspenseGuard>
