@@ -161,8 +161,11 @@ impl Compositor<Ui> for UiCompositor {
         let _ = payload;
     }
 
+    /// No compositor-driven animation: frames run only when state changes
+    /// (spec updates, input, timers) or JS reports bound values moved
+    /// (`values_changed`). An idle HUD costs no draw and no present.
     fn animating(&self) -> bool {
-        true
+        false
     }
 }
 
@@ -213,9 +216,10 @@ pub fn mount(canvas_id: &str, options_json: &str) {
     let leak = |s: &str| -> &'static str { Box::leak(s.to_string().into_boxed_str()) };
     let sans = leak(opts.sans.as_deref().unwrap_or("Inter"));
     let mono = leak(opts.mono.as_deref().unwrap_or("ui-monospace, monospace"));
+    // No `poll`: JS pushes every change (spec, values, input), so the view
+    // never needs to ask whether something moved.
     let mut spec = AppSpec::new("jg-ui", (800.0, 600.0), Ui::default, view);
     spec.families = (sans, mono);
-    spec.poll = Some(|_s: &mut Ui, _t: f64, _tx: &mut Tx| true);
     let mut app = App::new(spec)
         .canvas_id(canvas_id.to_string())
         .full_viewport()
@@ -259,6 +263,18 @@ pub fn set_spec(json: &str) {
                 s.root = children;
                 s.modal = modal;
             });
+        }
+    });
+}
+
+/// JS wrote bound values that may have changed pixels: commit one frame.
+/// Called only when the JS-side diff saw a value move, never per frame.
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen::prelude::wasm_bindgen]
+pub fn values_changed() {
+    HANDLE.with(|h| {
+        if let Some(handle) = h.borrow().as_ref() {
+            handle.update(|_s: &mut Ui, _tx: &mut Tx| {});
         }
     });
 }

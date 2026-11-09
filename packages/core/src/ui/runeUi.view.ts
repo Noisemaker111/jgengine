@@ -48,6 +48,7 @@ interface JgUiModule {
   default: (input?: string | URL | Request | Response | BufferSource | WebAssembly.Module) => Promise<unknown>;
   mount: (canvasId: string, optionsJson: string) => void;
   set_spec: (json: string) => void;
+  values_changed: () => void;
   unmount: () => void;
   values_ptr: () => number;
   values_len: () => number;
@@ -75,6 +76,8 @@ export class RuneUi {
   private readonly bound = new Map<string, BoundValue>();
   private readonly handlers = new Map<string, Set<EventHandler>>();
   private valuesView: Float32Array | null = null;
+  /** Last value written per bound slot; a change is what wakes a Rune frame. */
+  private readonly prevValues = new Map<number, number>();
   private raf = 0;
   private destroyed = false;
   private specQueue: string[] = [];
@@ -138,6 +141,8 @@ export class RuneUi {
   write(name: string, value: number): void {
     const slot = this.slot(name);
     this.values()[slot] = value;
+    this.prevValues.set(slot, value);
+    this.wake();
   }
 
   /** Replace the widget tree. `children` are spec nodes (`{k: "panel", ...}`); `modal` suspends game input. */
@@ -206,17 +211,36 @@ export class RuneUi {
   private startValueLoop(): void {
     const tick = () => {
       if (this.destroyed) return;
+      let changed = false;
       try {
         const view = this.values();
         for (const { slot, get } of this.bound.values()) {
-          view[slot] = get();
+          const value = get();
+          view[slot] = value;
+          const prev = this.prevValues.get(slot);
+          if (prev === undefined || !(prev === value || (Number.isNaN(prev) && Number.isNaN(value)))) {
+            this.prevValues.set(slot, value);
+            changed = true;
+          }
         }
       } catch {
         this.valuesView = null;
       }
+      // Rune draws and presents only when state moves; an unchanged HUD costs
+      // no GPU frame and no browser recomposite.
+      if (changed) this.wake();
       this.raf = requestAnimationFrame(tick);
     };
     this.raf = requestAnimationFrame(tick);
+  }
+
+  /** Ask wasm for one committed frame (bound values moved or `write` ran). */
+  private wake(): void {
+    try {
+      this.api.values_changed();
+    } catch {
+      // Before mount resolves there is nothing to wake; the first frame draws anyway.
+    }
   }
 
   private onFrame(payload: string): void {
