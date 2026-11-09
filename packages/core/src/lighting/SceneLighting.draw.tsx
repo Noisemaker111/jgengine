@@ -160,10 +160,8 @@ export function ConfiguredLighting({
   const gl = useThree((s) => s.gl);
   useEffect(() => {
     if (!shadowsCast) return;
-    // Only on a real WebGL 2 context: the WebGPU preview backend has no synchronous readback, so
-    // `perf shadow-audit` cannot yet prove its cached maps match a full redraw, and an unproven depth
-    // copy there could drop static shadows. Three draws its shadows unchanged on that backend.
-    if (typeof WebGL2RenderingContext === "undefined" || !(gl.getContext() instanceof WebGL2RenderingContext)) return;
+    // Every backend: the audit reads back through a fence, which the WebGPU backend answers too, so
+    // `perf shadow-audit --renderer webgpu` proves its cached maps as it does WebGL's.
     const cache = installShadowCache(gl, scene);
     if (typeof window !== "undefined") {
       window.__jgShadowCache = cache.handle;
@@ -183,6 +181,7 @@ export function ConfiguredLighting({
           auditMismatchedMaps: stats.audit.mismatchedMaps,
           auditMismatchedTexels: stats.audit.mismatchedTexels,
           auditFailed: stats.audit.failed,
+          auditSkipped: stats.audit.skipped,
         };
       },
       state: () => {

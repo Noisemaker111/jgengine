@@ -131,11 +131,12 @@ test("profile samples group into layers by script", () => {
   const node = (functionName: string, url: string) => ({ callFrame: { functionName, url, lineNumber: 0, columnNumber: 0 } });
   expect(profileLayerOf(node("(garbage collector)", ""))).toBe("garbage collection");
   expect(profileLayerOf(node("(program)", ""))).toBe("browser (layout, paint, compositing, GPU process)");
-  expect(profileLayerOf(node("uniformMatrix4fv", ""))).toBe("native calls (WebGL and DOM)");
+  expect(profileLayerOf(node("uniformMatrix4fv", ""))).toBe("native calls (WebGL, WebGPU and DOM)");
   expect(profileLayerOf(node("projectObject", "http://127.0.0.1:4601/node_modules/.vite/deps/three.module-B4NrmTkk.js?v=1"))).toBe("three.js");
   expect(profileLayerOf(node("commitRoot", "http://127.0.0.1:4601/node_modules/.vite/deps/react-dom_client.js?v=1"))).toBe("React");
   expect(profileLayerOf(node("loop", "http://127.0.0.1:4601/node_modules/.vite/deps/@react-three_fiber.js?v=1"))).toBe("react-three-fiber");
   expect(profileLayerOf(node("tick", "http://127.0.0.1:4601/@fs/C:/repo/packages/core/src/runtime/simLoop.ts"))).toBe("engine code");
+  expect(profileLayerOf(node("draw", "http://127.0.0.1:4601/@fs/C:/repo/packages/core/src/webgpu/webgpuGl.draw.ts"))).toBe("WebGPU context");
   expect(profileLayerOf(node("boat", "http://127.0.0.1:4601/@fs/C:/repo/games/harbor-heat/src/game/boat.ts"))).toBe("game code");
   const layers = profileLayers({
     nodes: [

@@ -118,7 +118,7 @@ export function refreshCascadesOnTexelStep(
     const snapped = (snappedScratch[index] ??= new THREE.Vector3());
     snapped.copy(snapCascadeCenter(light.position, lightDirection, cascadeTexelSize(light)));
     const known = state.centres[index];
-    const moved = known === undefined || known.distanceToSquared(snapped) > 1e-12;
+    const moved = hasMoved(known, snapped);
     if (!moved || index < state.floor || mustRedraw(light, known)) continue;
     state.waiting[index] = (state.waiting[index] ?? 0) + 1;
     if (farPick < 0 || state.waiting[index]! > state.waiting[farPick]!) farPick = index;
@@ -129,7 +129,20 @@ export function refreshCascadesOnTexelStep(
     const light = lights[index]!;
     const snapped = snappedScratch[index]!;
     const known = state.centres[index];
-    const moved = known === undefined || known.distanceToSquared(snapped) > 1e-12;
+    // A camera with no valid projection yet (a canvas measured at zero size: aspect 0) puts CSM's
+    // lights at NaN. Nothing is drawn from such a centre and none is kept, so the first valid frame
+    // redraws every cascade; a NaN once stored never compared as moved, and froze the far cascades
+    // (and the shadow cache's pass keys) at NaN for the whole session.
+    if (!isFiniteVector(snapped)) {
+      if (known !== undefined) {
+        light.position.copy(known);
+        light.target.position.copy(known).add(lightDirection);
+      }
+      light.shadow.autoUpdate = false;
+      light.shadow.needsUpdate = false;
+      continue;
+    }
+    const moved = hasMoved(known, snapped);
     const refresh = index < state.floor || mustRedraw(light, known) || (moved && index === farPick);
     // A held light stays at the centre its map was drawn from.
     const centre = refresh || known === undefined ? snapped : known;
@@ -156,7 +169,16 @@ export function refreshCascadesOnTexelStep(
  * fails, and the scene comes up blank.
  */
 function mustRedraw(light: THREE.DirectionalLight, known: THREE.Vector3 | undefined): boolean {
-  return known === undefined || light.shadow.map === null || light.shadow.needsUpdate;
+  return known === undefined || !isFiniteVector(known) || light.shadow.map === null || light.shadow.needsUpdate;
+}
+
+function isFiniteVector(v: THREE.Vector3): boolean {
+  return Number.isFinite(v.x) && Number.isFinite(v.y) && Number.isFinite(v.z);
+}
+
+/** Whether the snapped centre left the one the map was drawn from; a non-finite side always counts as moved. */
+function hasMoved(known: THREE.Vector3 | undefined, snapped: THREE.Vector3): boolean {
+  return known === undefined || !(known.distanceToSquared(snapped) <= 1e-12);
 }
 
 function isStandardMaterial(mat: THREE.Material): mat is THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial {

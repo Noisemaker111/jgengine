@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { decodePng, encodePng } from "../packages/assets/src/imageCodec";
 import { applyDevice, ensureDevServer, navigateCapturePage, openPageSession, withBrowserSession, type CdpSession } from "./browser-lib";
 import { GATE_SIZE } from "./perf-gate";
+import { perfLockTurn } from "./perf-lock";
 import { perfPageUrl, SAMPLE_FRAMES_SCRIPT } from "./perf-play";
 import { diffImages, type ShotDiff } from "./shot-diff";
 
@@ -23,6 +24,9 @@ import { diffImages, type ShotDiff } from "./shot-diff";
  * webgl-again.png, webgpu.png, webgl-remounted.png, diff.png (WebGPU against the remounted WebGL)
  * and result.json per game under --out (default .scratch/renderer-diff) and prints one JSON line per game.
  * A report, not a gate: exits 1 only when a game could not be compared.
+ *
+ * The page runs with telemetry off, as a shipped game does: the frame breakdown's GPU timers and GL
+ * wrappers cost each backend differently, so timing with them on compares the instruments.
  */
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
@@ -134,7 +138,7 @@ async function switchTo(session: CdpSession, backend: "webgl" | "webgpu"): Promi
 async function compareGame(session: CdpSession, base: string, game: string, outDir: string, settleMs: number, seconds: number): Promise<RendererDiffResult> {
   const timed = async () => (seconds > 0 ? await timeFrames(session, seconds) : null);
   await applyDevice(session, "desktop", "full", { width: GATE_SIZE.width, height: GATE_SIZE.height });
-  const url = perfPageUrl({ base, game, quality: "high", params: [["renderer", "webgl"]] });
+  const url = perfPageUrl({ base, game, quality: "high", telemetry: "off", params: [["renderer", "webgl"]] });
   await navigateCapturePage(session, url.toString(), 240_000);
   const frozen = await bridge(session, { method: "time_scale", scale: 0 });
   if (!frozen.ok) throw new Error(`could not freeze game time: ${frozen.error}`);
@@ -225,10 +229,13 @@ async function main(): Promise<void> {
   const results: RendererDiffResult[] = [];
   for (const game of args.games) {
     try {
-      const server = await ensureDevServer(repoRoot);
       // Uncapped so the timed windows measure each backend's cost rather than the display's refresh.
       // A failed capture comes back as a nonzero code (already reported), not a throw.
-      const code = await withBrowserSession({ keep: false, timeoutMs: 600_000, ...(args.seconds > 0 ? { frameClock: "uncapped" as const } : {}) }, async ({ debugPort }) => {
+      // Timed windows hold the machine-wide perf lock, so another thread's run never shares the GPU with them.
+      const timed = args.seconds > 0 ? { frameClock: "uncapped" as const, turn: perfLockTurn(`renderer-diff ${game}`, undefined) } : {};
+      const code = await withBrowserSession({ keep: false, timeoutMs: 600_000, ...timed }, async ({ debugPort }) => {
+        // Under the perf lock: a server asked for before a long wait for it can be gone after.
+        const server = await ensureDevServer(repoRoot);
         const session = await openPageSession(debugPort);
         await session.send("Page.enable", {});
         await session.send("Page.addScriptToEvaluateOnNewDocument", { source: RENDERER_HOOK });

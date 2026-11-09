@@ -57,6 +57,8 @@ export interface WebGpuGlStats {
   frames: number;
   draws: number;
   passes: number;
+  /** Passes that only cleared: a clear nobody drew after before the target changed. */
+  clearPasses: number;
   submits: number;
   pipelines: number;
   bindGroups: number;
@@ -99,7 +101,9 @@ interface GlTexture {
 }
 interface GlRenderbuffer { kind: "renderbuffer"; id: number; gpu: GPUTexture | null; format: GlTextureFormat | null; width: number; height: number; samples: number; view: GPUTextureView | null }
 interface Attachment { object: GlTexture | GlRenderbuffer; level: number; layer: number }
-interface GlFramebuffer { kind: "framebuffer"; id: number; colors: (Attachment | null)[]; depth: Attachment | null; stencil: Attachment | null; drawBuffers: number[]; version: number }
+interface GlFramebuffer { kind: "framebuffer"; id: number; colors: (Attachment | null)[]; depth: Attachment | null; stencil: Attachment | null; drawBuffers: number[]; version: number;
+  /** Its pass, built once per change (see WebGpuGl.passPlan). */
+  plan: PassPlan | null }
 interface GlShader { kind: "shader"; id: number; type: number; source: string; compiled: boolean }
 interface VertexAttrib { enabled: boolean; buffer: GlBuffer | null; size: number; type: number; normalized: boolean; stride: number; offset: number; divisor: number; integer: boolean }
 interface GlVertexArray { kind: "vao"; id: number; attribs: VertexAttrib[]; elements: GlBuffer | null; version: number }
@@ -168,6 +172,151 @@ const WEBGL_CONSTANTS: Record<string, number> = (() => {
   }
   return out;
 })();
+
+interface PassTarget { fb: GlFramebuffer | null; version: number; width: number; height: number; colorFormats: (GPUTextureFormat | null)[]; depthFormat: GPUTextureFormat | null; samples: number; key: string; id: number }
+interface PendingClear { fb: GlFramebuffer | null; color: (GPUColor | null)[]; depth: number | null; stencil: number | null }
+/** A framebuffer's pass, as {@link WebGpuGl.passPlan} builds it. */
+interface PassPlan {
+  /** What the attachments were when it was built (see {@link attachmentDeps}); the back buffer's views for the default framebuffer. */
+  deps: unknown[];
+  /** The GL color index each color attachment came from, for picking its clear value; -1 for a gap. */
+  colorIndex: number[];
+  /** Every attachment loaded and stored. */
+  descriptor: GPURenderPassDescriptor;
+  /** The attached textures, marked as used by each batch drawing into them. */
+  textures: GlTexture[];
+  target: PassTarget;
+}
+
+const OP_PIPELINE = 0;
+const OP_GROUP = 1;
+const OP_GROUP_OFFSET = 2;
+const OP_VERTEX = 3;
+const OP_INDEX = 4;
+const OP_DRAW = 5;
+const OP_DRAW_INDEXED = 6;
+const OP_VIEWPORT = 7;
+const OP_SCISSOR = 8;
+const OP_STENCIL_REF = 9;
+const OP_BLEND = 10;
+
+/**
+ * One render pass's commands, kept as a flat list and encoded only when the pass is flushed. Until
+ * then its descriptor can still change: GL says what an attachment is for only after drawing into
+ * it (a blitFramebuffer resolve, then invalidateFramebuffer), and WebGPU fixes the resolve target and
+ * store ops when the pass begins. ANGLE's Vulkan backend defers its render passes the same way.
+ */
+class RecordedPass {
+  readonly ops: unknown[] = [];
+  /** Whether {@link descriptor} is this pass's own copy, so changing it leaves the framebuffer's plan alone. */
+  private owned = false;
+  constructor(public descriptor: GPURenderPassDescriptor, readonly fb: GlFramebuffer | null, readonly plan: PassPlan) {}
+  setPipeline(pipeline: GPURenderPipeline): void { this.ops.push(OP_PIPELINE, pipeline); }
+  setBindGroup(index: number, group: GPUBindGroup, offsets?: Uint32Array, start?: number, _count?: number): void {
+    if (offsets === undefined) this.ops.push(OP_GROUP, index, group);
+    else this.ops.push(OP_GROUP_OFFSET, index, group, offsets[start ?? 0]);
+  }
+  setVertexBuffer(slot: number, buffer: GPUBuffer, offset: number): void { this.ops.push(OP_VERTEX, slot, buffer, offset); }
+  setIndexBuffer(buffer: GPUBuffer, format: GPUIndexFormat): void { this.ops.push(OP_INDEX, buffer, format); }
+  draw(vertices: number, instances = 1, first = 0, firstInstance = 0): void { this.ops.push(OP_DRAW, vertices, instances, first, firstInstance); }
+  drawIndexed(indices: number, instances = 1, first = 0, base = 0, firstInstance = 0): void { this.ops.push(OP_DRAW_INDEXED, indices, instances, first, base, firstInstance); }
+  setViewport(x: number, y: number, w: number, h: number, min: number, max: number): void { this.ops.push(OP_VIEWPORT, x, y, w, h, min, max); }
+  setScissorRect(x: number, y: number, w: number, h: number): void { this.ops.push(OP_SCISSOR, x, y, w, h); }
+  setStencilReference(ref: number): void { this.ops.push(OP_STENCIL_REF, ref); }
+  setBlendConstant(color: GPUColor): void { this.ops.push(OP_BLEND, color); }
+  end(): void {}
+
+  /** The color attachment at `slot`, copied into this pass's own descriptor so it can be changed. */
+  colorAttachment(slot: number): GPURenderPassColorAttachment | null {
+    this.own();
+    const colors = this.descriptor.colorAttachments as (GPURenderPassColorAttachment | null)[];
+    const a = colors[slot];
+    if (a == null) return null;
+    const copy = { ...a };
+    colors[slot] = copy;
+    return copy;
+  }
+  depthAttachment(): GPURenderPassDepthStencilAttachment | null {
+    this.own();
+    const d = this.descriptor.depthStencilAttachment;
+    if (d === undefined) return null;
+    const copy = { ...d };
+    this.descriptor.depthStencilAttachment = copy;
+    return copy;
+  }
+  private own(): void {
+    if (this.owned) return;
+    this.owned = true;
+    this.descriptor = { ...this.descriptor, colorAttachments: [...this.descriptor.colorAttachments] };
+  }
+
+  /** Encode the pass onto `encoder`. */
+  encode(encoder: GPUCommandEncoder, offset: Uint32Array): void {
+    const pass = encoder.beginRenderPass(this.descriptor);
+    const ops = this.ops as any[];
+    for (let i = 0; i < ops.length;) {
+      switch (ops[i] as number) {
+        case OP_PIPELINE: pass.setPipeline(ops[i + 1]); i += 2; break;
+        case OP_GROUP: pass.setBindGroup(ops[i + 1], ops[i + 2]); i += 3; break;
+        case OP_GROUP_OFFSET: offset[0] = ops[i + 3]; pass.setBindGroup(ops[i + 1], ops[i + 2], offset, 0, 1); i += 4; break;
+        case OP_VERTEX: pass.setVertexBuffer(ops[i + 1], ops[i + 2], ops[i + 3]); i += 4; break;
+        case OP_INDEX: pass.setIndexBuffer(ops[i + 1], ops[i + 2]); i += 3; break;
+        case OP_DRAW: pass.draw(ops[i + 1], ops[i + 2], ops[i + 3], ops[i + 4]); i += 5; break;
+        case OP_DRAW_INDEXED: pass.drawIndexed(ops[i + 1], ops[i + 2], ops[i + 3], ops[i + 4], ops[i + 5]); i += 6; break;
+        case OP_VIEWPORT: pass.setViewport(ops[i + 1], ops[i + 2], ops[i + 3], ops[i + 4], ops[i + 5], ops[i + 6]); i += 7; break;
+        case OP_SCISSOR: pass.setScissorRect(ops[i + 1], ops[i + 2], ops[i + 3], ops[i + 4]); i += 5; break;
+        case OP_STENCIL_REF: pass.setStencilReference(ops[i + 1]); i += 2; break;
+        case OP_BLEND: pass.setBlendConstant(ops[i + 1]); i += 2; break;
+        default: throw new Error(`webgpu: unknown recorded pass op ${String(ops[i])}`);
+      }
+    }
+    pass.end();
+  }
+}
+
+/** Encoder work recorded after a pass that is still unencoded, run in order when the passes are flushed. */
+interface RecordedAction {
+  run: (encoder: GPUCommandEncoder) => void;
+  /** Textures it reads: an attachment one of these is cannot be discarded by the pass before it. */
+  reads: GPUTexture[];
+}
+
+/** What makes an attachment's view stale: its texture's storage, or its renderbuffer's view. */
+function attachmentDep(a: Attachment | null | undefined): unknown {
+  return a == null ? null : a.object.kind === "texture" ? a.object.gpu : a.object.view;
+}
+function attachmentDeps(fb: GlFramebuffer): unknown[] {
+  const out = [attachmentDep(fb.depth), attachmentDep(fb.stencil)];
+  for (const a of fb.colors) out.push(attachmentDep(a));
+  return out;
+}
+/** Whether `fb`'s attachments are still those {@link attachmentDeps} saw, without building a list. */
+function sameDeps(fb: GlFramebuffer, deps: unknown[]): boolean {
+  if (deps.length !== fb.colors.length + 2 || deps[0] !== attachmentDep(fb.depth) || deps[1] !== attachmentDep(fb.stencil)) return false;
+  for (let i = 0; i < fb.colors.length; i += 1) if (deps[i + 2] !== attachmentDep(fb.colors[i])) return false;
+  return true;
+}
+/** A depth/stencil attachment that loads and stores whichever aspects `format` has. */
+function loadDepth(view: GPUTextureView, format: GPUTextureFormat): GPURenderPassDepthStencilAttachment {
+  const a: GPURenderPassDepthStencilAttachment = { view };
+  if (format !== "stencil8") { a.depthLoadOp = "load"; a.depthStoreOp = "store"; }
+  if (format === "stencil8" || hasStencil(format)) { a.stencilLoadOp = "load"; a.stencilStoreOp = "store"; }
+  return a;
+}
+/** `base` with `clear`'s values as clear load ops on the attachments it names. */
+function withClears(base: GPURenderPassDescriptor, colorIndex: number[], clear: PendingClear): GPURenderPassDescriptor {
+  const colors = [...base.colorAttachments].map((a, i) => {
+    const value = a == null ? null : clear.color[colorIndex[i]!] ?? null;
+    return a == null || value === null ? a : { ...a, loadOp: "clear" as const, clearValue: value };
+  });
+  let depth = base.depthStencilAttachment;
+  if (depth !== undefined && (clear.depth != null || clear.stencil != null)) {
+    depth = { ...depth };
+    if (clear.depth != null && depth.depthLoadOp !== undefined) { depth.depthLoadOp = "clear"; depth.depthClearValue = clear.depth; }
+    if (clear.stencil != null && depth.stencilLoadOp !== undefined) { depth.stencilLoadOp = "clear"; depth.stencilClearValue = clear.stencil; }
+  }
+  return depth === undefined ? { colorAttachments: colors } : { colorAttachments: colors, depthStencilAttachment: depth };
+}
 
 /** A small, stable number for a string, assigned on first sight. */
 function internId(ids: Map<string, number>, key: string): number {
@@ -271,14 +420,22 @@ struct Out { @builtin(position) pos: vec4<f32>, @location(0) uv: vec2<f32> };
 }
 @fragment fn fs(o: Out) -> @location(0) vec4<f32> { return textureSampleLevel(src, smp, o.uv, 0.0); }`;
 
+/** A WebGPU device ready for one canvas, from {@link requestWebGpuDevice}. */
+export interface WebGpuDevice {
+  device: GPUDevice;
+  /** The adapter's description, reported as the GL renderer string. */
+  label: string;
+}
+
 /**
- * Create the WebGPU device and the GL-shaped context for `canvas`, or `null` when this browser has
- * no usable WebGPU adapter.
+ * Request the WebGPU device, or `null` when this browser has no usable WebGPU adapter. This is the
+ * only asynchronous step; {@link createWebGpuGl} then makes the context synchronously, so a renderer
+ * factory never awaits (see `engineRenderer.draw.ts` for why that matters).
  */
-export async function createWebGpuGl(canvas: HTMLCanvasElement, attributes: Partial<WebGpuGlAttributes> = {}): Promise<WebGpuGl | null> {
+export async function requestWebGpuDevice(powerPreference: WebGLPowerPreference = "high-performance"): Promise<WebGpuDevice | null> {
   const gpu = (globalThis.navigator as any)?.gpu as GPU | undefined;
   if (gpu === undefined) return null;
-  const adapter = await gpu.requestAdapter({ powerPreference: attributes.powerPreference === "low-power" ? "low-power" : "high-performance" });
+  const adapter = await gpu.requestAdapter({ powerPreference: powerPreference === "low-power" ? "low-power" : "high-performance" });
   if (adapter === null) return null;
   const wanted: GPUFeatureName[] = ["texture-compression-bc", "float32-filterable", "float32-blendable", "timestamp-query", "depth32float-stencil8", "rg11b10ufloat-renderable"];
   const requiredFeatures = wanted.filter((name) => adapter.features.has(name));
@@ -286,10 +443,15 @@ export async function createWebGpuGl(canvas: HTMLCanvasElement, attributes: Part
     requiredFeatures,
     requiredLimits: { maxColorAttachmentBytesPerSample: Math.min(adapter.limits.maxColorAttachmentBytesPerSample, 64), maxTextureDimension2D: adapter.limits.maxTextureDimension2D, maxBufferSize: adapter.limits.maxBufferSize, maxStorageBufferBindingSize: adapter.limits.maxStorageBufferBindingSize, maxSampledTexturesPerShaderStage: adapter.limits.maxSampledTexturesPerShaderStage, maxSamplersPerShaderStage: adapter.limits.maxSamplersPerShaderStage, maxUniformBufferBindingSize: adapter.limits.maxUniformBufferBindingSize, maxInterStageShaderVariables: adapter.limits.maxInterStageShaderVariables, maxVertexAttributes: adapter.limits.maxVertexAttributes, maxVertexBuffers: adapter.limits.maxVertexBuffers },
   });
+  const info = (adapter as any).info as GPUAdapterInfo | undefined;
+  return { device, label: info === undefined ? "WebGPU" : `${info.vendor} ${info.architecture} ${info.description}`.trim() };
+}
+
+/** The GL-shaped context for `canvas` on a device from {@link requestWebGpuDevice}, or `null` when the canvas gives no WebGPU context. */
+export function createWebGpuGl(canvas: HTMLCanvasElement, gpu: WebGpuDevice, attributes: Partial<WebGpuGlAttributes> = {}): WebGpuGl | null {
   const context = canvas.getContext("webgpu") as GPUCanvasContext | null;
   if (context === null) return null;
-  const info = (adapter as any).info as GPUAdapterInfo | undefined;
-  return new WebGpuGl(canvas, device, context, attributes, info === undefined ? "WebGPU" : `${info.vendor} ${info.architecture} ${info.description}`.trim());
+  return new WebGpuGl(canvas, gpu.device, context, attributes, gpu.label);
 }
 
 /**
@@ -304,7 +466,7 @@ Object.assign(GlConstants.prototype, WEBGL_CONSTANTS);
 export class WebGpuGl extends GlConstants {
   readonly canvas: HTMLCanvasElement;
   readonly device: GPUDevice;
-  readonly stats: WebGpuGlStats = { frames: 0, draws: 0, passes: 0, submits: 0, pipelines: 0, bindGroups: 0, uniformBytes: 0, orderFlushes: 0, programs: 0, translateMs: 0, fences: 0, fenceMs: 0, reads: 0, readMs: 0, queueLagMs: 0, precompiles: 0, precompileMs: 0 };
+  readonly stats: WebGpuGlStats = { frames: 0, draws: 0, passes: 0, clearPasses: 0, submits: 0, pipelines: 0, bindGroups: 0, uniformBytes: 0, orderFlushes: 0, programs: 0, translateMs: 0, fences: 0, fenceMs: 0, reads: 0, readMs: 0, queueLagMs: 0, precompiles: 0, precompileMs: 0 };
   /** Every distinct problem a draw hit, once each (also printed once). */
   readonly warnings = new Map<string, number>();
   drawingBufferColorSpace: PredefinedColorSpace = "srgb";
@@ -372,7 +534,7 @@ export class WebGpuGl extends GlConstants {
   private readonly stateTable = new Map<number, { fields: Float64Array; id: number }[]>();
   private stateCount = 0;
 
-  // GPU timers: a render pass that runs while a TIME_ELAPSED query is open writes a timestamp at its
+  // GPU timers: once a page has begun a TIME_ELAPSED query, every render pass writes a timestamp at its
   // start and end. Serials count stamps across batches; a batch's stamps are its serials from
   // `stampFirst`, resolved and read back after it is submitted.
   private readonly stamps: GPUQuerySet | null = null;
@@ -381,6 +543,10 @@ export class WebGpuGl extends GlConstants {
   private stampFirst = 0;
   private stampOverflowed = false;
   private timedQuery: GlQuery | null = null;
+  /** A TIME_ELAPSED query has been begun: from then on every pass writes stamps. */
+  private timersInUse = false;
+  /** The open pass's begin stamp serial, or -1 when no pass is open or it writes none. */
+  private openPassStamp = -1;
   /** TIME_ELAPSED queries begun and not yet answered. */
   private readonly timedPending = new Set<GlQuery>();
   /** Small numbers for the strings a pipeline depends on, so a draw compares numbers instead of building a key. */
@@ -390,9 +556,12 @@ export class WebGpuGl extends GlConstants {
 
   // WebGPU work.
   private encoder: GPUCommandEncoder | null = null;
-  private pass: GPURenderPassEncoder | null = null;
-  private passTarget: { fb: GlFramebuffer | null; version: number; width: number; height: number; colorFormats: (GPUTextureFormat | null)[]; depthFormat: GPUTextureFormat | null; samples: number; key: string; id: number } | null = null;
-  private pendingClear: { fb: GlFramebuffer | null; color: (GPUColor | null)[]; depth: number | null; stencil: number | null } | null = null;
+  private pass: RecordedPass | null = null;
+  /** Passes ended but not yet encoded, and encoder work recorded after them, in order (see {@link RecordedPass}). */
+  private readonly unencoded: (RecordedPass | RecordedAction)[] = [];
+  private readonly replayOffset = new Uint32Array(1);
+  private passTarget: PassTarget | null = null;
+  private pendingClear: PendingClear | null = null;
   private batch = 1;
   private staging = new Uint8Array(UNIFORM_RING_BYTES);
   private stagingUsed = 0;
@@ -430,6 +599,8 @@ export class WebGpuGl extends GlConstants {
   private backColorMsaa: GPUTexture | null = null;
   private backDepth: GPUTexture | null = null;
   private backViews: { color: GPUTextureView; msaa: GPUTextureView | null; depth: GPUTextureView | null } | null = null;
+  /** The default framebuffer's pass, for the current {@link backViews}. */
+  private backPlan: PassPlan | null = null;
   private backSize = [0, 0];
   private presentPipeline: GPURenderPipeline | null = null;
   private presentGroup: GPUBindGroup | null = null;
@@ -478,7 +649,7 @@ export class WebGpuGl extends GlConstants {
    */
   private retire(resource: GPUBuffer | GPUTexture | null | undefined): void {
     if (resource === null || resource === undefined) return;
-    if (this.encoder === null) resource.destroy();
+    if (this.encoder === null && this.pass === null && this.unencoded.length === 0) resource.destroy();
     else this.afterSubmit.push(() => resource.destroy());
   }
 
@@ -1340,7 +1511,7 @@ export class WebGpuGl extends GlConstants {
 
   // ---------------------------------------------------------------- framebuffers
 
-  createFramebuffer(): GlFramebuffer { return { kind: "framebuffer", id: nextId++, colors: [], depth: null, stencil: null, drawBuffers: [0x8ce0], version: 1 }; }
+  createFramebuffer(): GlFramebuffer { return { kind: "framebuffer", id: nextId++, colors: [], depth: null, stencil: null, drawBuffers: [0x8ce0], version: 1, plan: null }; }
   deleteFramebuffer(fb: GlFramebuffer | null): void { if (fb !== null && this.drawFb === fb) this.drawFb = null; }
   isFramebuffer(fb: unknown): boolean { return (fb as GlFramebuffer | null)?.kind === "framebuffer"; }
   bindFramebuffer(target: number, fb: GlFramebuffer | null): void {
@@ -1394,7 +1565,6 @@ export class WebGpuGl extends GlConstants {
     this.drawFb.version += 1;
   }
   readBuffer(): void {}
-  invalidateFramebuffer(): void {}
   createRenderbuffer(): GlRenderbuffer { return { kind: "renderbuffer", id: nextId++, gpu: null, format: null, width: 0, height: 0, samples: 1, view: null }; }
   deleteRenderbuffer(rb: GlRenderbuffer | null): void { this.retire(rb?.gpu); }
   isRenderbuffer(rb: unknown): boolean { return (rb as GlRenderbuffer | null)?.kind === "renderbuffer"; }
@@ -1432,20 +1602,27 @@ export class WebGpuGl extends GlConstants {
     const incomplete = this.incompleteness(src) ?? this.incompleteness(dst);
     if (incomplete !== null) { this.warn(`a blit from or into an incomplete framebuffer is skipped, as GL skips it: ${incomplete.reason}`); return; }
     this.endPass();
-    const encoder = this.ensureEncoder();
     const sameSize = sx1 - sx0 === dx1 - dx0 && sy1 - sy0 === dy1 - dy0;
+    // Encoded after the passes before it, which stay unencoded until then (see RecordedPass).
+    const reads: GPUTexture[] = [];
+    const work: ((encoder: GPUCommandEncoder) => void)[] = [];
     if ((mask & 0x4000) !== 0) {
       const from = src === null ? null : src.colors[0];
       const to = this.colorTexture(dst, 0);
       if (from !== null && from !== undefined && to !== null && from.object.gpu !== null) {
         const fromTexture = from.object.gpu;
         if (fromTexture.sampleCount > 1) {
-          // MSAA resolve: an empty pass that resolves the multisampled color into the target.
           const view = to.texture.createView({ dimension: "2d", baseMipLevel: to.level, mipLevelCount: 1, baseArrayLayer: to.layer, arrayLayerCount: 1 });
-          const pass = encoder.beginRenderPass({ colorAttachments: [{ view: fromTexture.createView(), resolveTarget: view, loadOp: "load", storeOp: "store" }] });
-          pass.end();
+          // MSAA resolve: by the pass that drew the image when it is the last one ended, else an empty
+          // pass that loads the multisampled color and resolves it.
+          if (!this.resolveInEndedPass(src, view)) {
+            reads.push(fromTexture);
+            work.push((encoder) => encoder.beginRenderPass({ colorAttachments: [{ view: fromTexture.createView(), resolveTarget: view, loadOp: "load", storeOp: "store" }] }).end());
+          }
         } else if (sameSize) {
-          encoder.copyTextureToTexture({ texture: fromTexture, mipLevel: from.level, origin: { x: sx0, y: sy0, z: from.layer } }, { texture: to.texture, mipLevel: to.level, origin: { x: dx0, y: dy0, z: to.layer } }, { width: sx1 - sx0, height: sy1 - sy0 });
+          reads.push(fromTexture);
+          const texture = to.texture;
+          work.push((encoder) => encoder.copyTextureToTexture({ texture: fromTexture, mipLevel: from.level, origin: { x: sx0, y: sy0, z: from.layer } }, { texture, mipLevel: to.level, origin: { x: dx0, y: dy0, z: to.layer } }, { width: sx1 - sx0, height: sy1 - sy0 }));
         } else this.warn("scaled blitFramebuffer is not drawn");
         if (dst !== null) for (const a of dst.colors) if (a?.object.kind === "texture") a.object.usedBatch = this.batch;
       }
@@ -1453,13 +1630,33 @@ export class WebGpuGl extends GlConstants {
     if ((mask & 0x0100) !== 0 && src?.depth != null && src.depth.object.gpu !== null) {
       const to = dst === null ? this.backDepth : dst.depth?.object.gpu ?? null;
       const from = src.depth.object.gpu;
-      if (to !== null && from.sampleCount === to.sampleCount && sameSize) encoder.copyTextureToTexture({ texture: from, origin: { x: sx0, y: sy0 } }, { texture: to, origin: { x: dx0, y: dy0 } }, { width: sx1 - sx0, height: sy1 - sy0 });
-      else if (to !== null && from.sampleCount > 1 && to.sampleCount === 1 && sameSize) {
-        this.resolveDepth(encoder, from, to, sx0, sy0, dx0, dy0, sx1 - sx0, sy1 - sy0);
+      if (to !== null && from.sampleCount === to.sampleCount && sameSize) {
+        reads.push(from);
+        work.push((encoder) => encoder.copyTextureToTexture({ texture: from, origin: { x: sx0, y: sy0 } }, { texture: to, origin: { x: dx0, y: dy0 } }, { width: sx1 - sx0, height: sy1 - sy0 }));
+      } else if (to !== null && from.sampleCount > 1 && to.sampleCount === 1 && sameSize) {
+        reads.push(from);
+        work.push((encoder) => this.resolveDepth(encoder, from, to, sx0, sy0, dx0, dy0, sx1 - sx0, sy1 - sy0));
         if (dst?.depth?.object.kind === "texture") dst.depth.object.usedBatch = this.batch;
       }
       else this.warn("depth blitFramebuffer between different sizes, or into a multisampled target, is not drawn");
     }
+    if (work.length > 0) this.afterEnded(reads, (encoder) => { for (const w of work) w(encoder); });
+  }
+
+  /**
+   * Resolve `src`'s multisampled color 0 into `view` at the end of the pass that drew it, when that is
+   * the last pass ended and nothing recorded since: the image is final there, so no second pass has to
+   * load the multisampled color back from memory, and an invalidate after it can discard it.
+   */
+  private resolveInEndedPass(src: GlFramebuffer | null, view: GPUTextureView): boolean {
+    const last = this.unencoded[this.unencoded.length - 1];
+    if (!(last instanceof RecordedPass) || last.fb !== src || src === null) return false;
+    const slot = last.plan.colorIndex.indexOf(0);
+    if (slot < 0) return false;
+    const a = last.colorAttachment(slot);
+    if (a === null || a.resolveTarget !== undefined) return false;
+    a.resolveTarget = view;
+    return true;
   }
 
   private readonly depthResolvePipelines = new Map<GPUTextureFormat, GPURenderPipeline>();
@@ -1583,13 +1780,17 @@ struct U { shift: vec2<i32> };
     if (this.timedQuery === q) this.timedQuery = null;
   }
   /**
-   * A TIME_ELAPSED query times the render passes between begin and end: the open pass ends at each,
-   * so the query covers whole passes, from the first one's start to the last one's end (GPU time,
-   * not the gaps between passes). Other query kinds answer 0 at once.
+   * A TIME_ELAPSED query times the render passes it overlaps, whole, from the first one's start to the
+   * last one's end (GPU time, not the gaps between passes). Once a page uses timers, every pass writes
+   * its stamps, so starting or stopping a timer never ends a pass: a split would add a store and a load
+   * of the target that WebGL never pays, and the timers would slow the frame they measure. A timer
+   * started and stopped inside one pass reads that whole pass. Other query kinds answer 0 at once.
    */
   beginQuery(target: number, q: GlQuery): void {
     if (target !== 0x88bf || this.stamps === null) return;
-    this.endPass("any");
+    this.timersInUse = true;
+    // Only the first timer can find an unstamped pass open; it starts with the next pass.
+    if (this.pass !== null && this.openPassStamp < 0) this.endPass("any");
     q.result = 0;
     q.available = false;
     q.start = -1;
@@ -1598,13 +1799,16 @@ struct U { shift: vec2<i32> };
     q.startNs = null;
     q.endNs = null;
     q.endNsSerial = -1;
+    if (this.openPassStamp >= 0) {
+      q.start = this.openPassStamp;
+      q.end = this.openPassStamp + 1;
+    }
     this.timedQuery = q;
     this.timedPending.add(q);
   }
   endQuery(target: number): void {
     const q = this.timedQuery;
     if (target !== 0x88bf || q === null) return;
-    this.endPass("any");
     this.timedQuery = null;
     q.ended = true;
     this.settleTimer(q);
@@ -1624,10 +1828,10 @@ struct U { shift: vec2<i32> };
     this.timedPending.delete(q);
   }
 
-  /** The timestamp writes for a pass about to begin, when a timer query is open. */
+  /** The timestamp writes for a pass about to begin, once the page uses timers. */
   private passStamps(): GPURenderPassTimestampWrites | undefined {
-    const q = this.timedQuery;
-    if (q === null || this.stamps === null) return undefined;
+    this.openPassStamp = -1;
+    if (!this.timersInUse || this.stamps === null) return undefined;
     if (this.stampSerial - this.stampFirst + 2 > STAMPS_PER_BATCH) {
       if (!this.stampOverflowed) this.warn(`degraded: a batch ran over ${STAMPS_PER_BATCH / 2} timed passes; the GPU timer leaves out the passes after it`);
       this.stampOverflowed = true;
@@ -1635,8 +1839,12 @@ struct U { shift: vec2<i32> };
     }
     const begin = this.stampSerial;
     this.stampSerial += 2;
-    if (q.start < 0) q.start = begin;
-    q.end = begin + 1;
+    this.openPassStamp = begin;
+    const q = this.timedQuery;
+    if (q !== null) {
+      if (q.start < 0) q.start = begin;
+      q.end = begin + 1;
+    }
     return { querySet: this.stamps, beginningOfPassWriteIndex: begin - this.stampFirst, endOfPassWriteIndex: begin + 1 - this.stampFirst };
   }
 
@@ -1668,16 +1876,77 @@ struct U { shift: vec2<i32> };
 
   // ---------------------------------------------------------------- passes
 
+  /** The batch's encoder, with every ended pass encoded onto it first, for work that goes after them. */
   private ensureEncoder(): GPUCommandEncoder {
-    if (this.encoder === null) {
-      this.encoder = this.device.createCommandEncoder();
-      if (!this.presentScheduled) {
-        this.presentScheduled = true;
-        queueMicrotask(() => this.present());
+    this.schedulePresent();
+    return this.encodeEnded();
+  }
+
+  /** Present (and submit) at the end of this task, as GL shows a frame once the task that drew it returns. */
+  private schedulePresent(): void {
+    if (this.presentScheduled) return;
+    this.presentScheduled = true;
+    queueMicrotask(() => this.present());
+  }
+
+  private encodeEnded(): GPUCommandEncoder {
+    const encoder = (this.encoder ??= this.device.createCommandEncoder());
+    if (this.unencoded.length > 0) {
+      for (const entry of this.unencoded.splice(0)) {
+        if (entry instanceof RecordedPass) entry.encode(encoder, this.replayOffset);
+        else entry.run(encoder);
       }
     }
-    return this.encoder;
+    return encoder;
   }
+
+  /** Run `run` on the encoder after every pass ended so far, without encoding them yet. */
+  private afterEnded(reads: GPUTexture[], run: (encoder: GPUCommandEncoder) => void): void {
+    this.schedulePresent();
+    if (this.unencoded.length === 0) run(this.encodeEnded());
+    else this.unencoded.push({ run, reads });
+  }
+
+  /**
+   * GL's word that `fb`'s listed attachments are no longer needed: the last ended pass into it, while
+   * still unencoded, stores nothing for them, unless work recorded after it reads them. three
+   * invalidates a multisampled target's color right after resolving it, so the multisampled color is
+   * never written out to memory.
+   */
+  invalidateFramebuffer(target: number, attachments: number[]): void {
+    const fb = this.fbFor(target);
+    if (this.pass !== null) return;
+    let at = this.unencoded.length - 1;
+    while (at >= 0 && !(this.unencoded[at] instanceof RecordedPass)) at -= 1;
+    const pass = this.unencoded[at] as RecordedPass | undefined;
+    if (pass === undefined || pass.fb !== fb) return;
+    const later = this.unencoded.slice(at + 1) as RecordedAction[];
+    const readLater = (object: GlTexture | GlRenderbuffer | null) => object !== null && object.gpu !== null && later.some((action) => action.reads.includes(object.gpu!));
+    for (const point of attachments) {
+      const color = fb === null ? (point === 0x1800 ? 0 : -1) : point >= 0x8ce0 && point <= 0x8cef ? point - 0x8ce0 : -1;
+      if (color >= 0) {
+        const slot = pass.plan.colorIndex.indexOf(color);
+        if (slot < 0) continue;
+        const object = fb === null ? null : fb.colors[color]?.object ?? null;
+        if (readLater(object)) continue;
+        const a = pass.colorAttachment(slot);
+        // A pass that clears and is then discarded did nothing, but stays: GL ordered it.
+        if (a !== null) a.storeOp = "discard";
+        continue;
+      }
+      const depthPoint = fb === null ? point === 0x1801 || point === 0x1802 : point === 0x8d00 || point === 0x8d20 || point === 0x821a;
+      if (!depthPoint) continue;
+      const object = fb === null ? null : (fb.depth ?? fb.stencil)?.object ?? null;
+      if (readLater(object)) continue;
+      const d = pass.depthAttachment();
+      if (d === null) continue;
+      const depth = point === 0x8d00 || point === 0x821a || point === 0x1801;
+      const stencil = point === 0x8d20 || point === 0x821a || point === 0x1802;
+      if (depth && d.depthStoreOp !== undefined) d.depthStoreOp = "discard";
+      if (stencil && d.stencilStoreOp !== undefined) d.stencilStoreOp = "discard";
+    }
+  }
+  invalidateSubFramebuffer(): void {}
 
   private ensureBackBuffer(): void {
     const w = Math.max(1, this.canvas.width);
@@ -1722,84 +1991,99 @@ struct U { shift: vec2<i32> };
     return this.beginPass(fb, clear);
   }
 
-  /** Open a render pass on `fb`, with `clear`'s values as load ops. */
-  private beginPass(fb: GlFramebuffer | null, clear: NonNullable<typeof this.pendingClear> | null): boolean {
-    const version = fb === null ? -1 : fb.version;
-    const encoder = this.ensureEncoder();
-    if (fb === null) this.backDirty = true;
-    const colorAttachments: (GPURenderPassColorAttachment | null)[] = [];
+  /**
+   * What a pass on `fb` attaches, built once per framebuffer change (or back-buffer size) rather
+   * than at each of a frame's ~30 passes. Its attachments carry load ops and no clear values: the
+   * browser converts every member of a pass descriptor at each beginRenderPass, so a pass that only
+   * loads costs least with nothing more in it. Null for an incomplete framebuffer, rechecked each pass.
+   */
+  private passPlan(fb: GlFramebuffer | null): PassPlan | null {
+    if (fb === null) {
+      this.ensureBackBuffer();
+      const views = this.backViews!;
+      if (this.backPlan !== null && this.backPlan.deps[0] === views) return this.backPlan;
+      const color: GPURenderPassColorAttachment = { view: views.msaa ?? views.color, loadOp: "load", storeOp: "store" };
+      if (views.msaa !== null) color.resolveTarget = views.color;
+      const depthFormat = this.backDepth?.format ?? null;
+      const depth = depthFormat === null ? undefined : loadDepth(views.depth!, depthFormat);
+      const samples = views.msaa !== null ? 4 : 1;
+      this.backPlan = this.makePlan(null, [views], [color], [0], ["rgba8unorm"], depth, depthFormat, this.backSize[0]!, this.backSize[1]!, samples, []);
+      return this.backPlan;
+    }
+    const known = fb.plan;
+    if (known !== null && known.target.version === fb.version && sameDeps(fb, known.deps)) return known;
+    fb.plan = null;
+    const incomplete = this.incompleteness(fb);
+    if (incomplete !== null) {
+      this.warn(`a draw or clear into an incomplete framebuffer is skipped, as GL skips it: ${incomplete.reason}`);
+      return null;
+    }
+    const colors: (GPURenderPassColorAttachment | null)[] = [];
+    const colorIndex: number[] = [];
     const colorFormats: (GPUTextureFormat | null)[] = [];
-    let depthStencil: GPURenderPassDepthStencilAttachment | undefined;
+    const textures: GlTexture[] = [];
+    let depth: GPURenderPassDepthStencilAttachment | undefined;
     let depthFormat: GPUTextureFormat | null = null;
     let width = 0;
     let height = 0;
     let samples = 1;
-    if (fb === null) {
-      this.ensureBackBuffer();
-      const color = clear?.color[0] ?? null;
-      const msaa = this.backColorMsaa;
-      const views = this.backViews!;
-      const attachment: GPURenderPassColorAttachment = { view: views.msaa ?? views.color, loadOp: color !== null ? "clear" : "load", storeOp: "store", clearValue: color ?? [0, 0, 0, 0] };
-      if (views.msaa !== null) attachment.resolveTarget = views.color;
-      colorAttachments.push(attachment);
-      colorFormats.push("rgba8unorm");
-      if (msaa !== null && color === null) this.warn("the default framebuffer reloads its multisampled color between passes");
-      if (this.backDepth !== null) {
-        depthFormat = this.backDepth.format;
-        depthStencil = { view: views.depth!, depthLoadOp: clear?.depth != null ? "clear" : "load", depthStoreOp: "store", depthClearValue: clear?.depth ?? 1, ...(hasStencil(depthFormat) ? { stencilLoadOp: clear?.stencil != null ? "clear" : "load", stencilStoreOp: "store", stencilClearValue: clear?.stencil ?? 0 } : {}) };
-      }
-      width = this.backSize[0]!;
-      height = this.backSize[1]!;
-      samples = msaa !== null ? 4 : 1;
-    } else {
-      const incomplete = this.incompleteness(fb);
-      if (incomplete !== null) {
-        this.warn(`a draw or clear into an incomplete framebuffer is skipped, as GL skips it: ${incomplete.reason}`);
-        return false;
-      }
-      for (const buffer of fb.drawBuffers) {
-        const index = buffer - 0x8ce0;
-        const a = buffer === 0 ? null : fb.colors[index];
-        const view = a == null ? null : this.attachmentView(a);
-        if (a == null || view === null) { colorAttachments.push(null); colorFormats.push(null); continue; }
-        const object = a.object;
-        const fmt = object.format!.format;
-        const color = clear?.color[index] ?? null;
-        colorAttachments.push({ view, loadOp: color !== null ? "clear" : "load", storeOp: "store", clearValue: color ?? [0, 0, 0, 0] });
-        colorFormats.push(fmt);
-        width = Math.max(1, (object.kind === "texture" ? object.width >> a.level : object.width));
-        height = Math.max(1, (object.kind === "texture" ? object.height >> a.level : object.height));
-        samples = object.kind === "renderbuffer" ? object.samples : 1;
-        if (object.kind === "texture") object.usedBatch = this.batch;
-      }
-      const d = fb.depth ?? fb.stencil;
-      if (d !== null) {
-        const view = this.attachmentView(d);
-        if (view !== null) {
-          depthFormat = d.object.format!.format;
-          const stencil = hasStencil(depthFormat);
-          const depthOnly = depthFormat === "stencil8";
-          depthStencil = {
-            view,
-            ...(depthOnly ? {} : { depthLoadOp: clear?.depth != null ? "clear" : "load", depthStoreOp: "store", depthClearValue: clear?.depth ?? 1 }),
-            ...(stencil || depthOnly ? { stencilLoadOp: clear?.stencil != null ? "clear" : "load", stencilStoreOp: "store", stencilClearValue: clear?.stencil ?? 0 } : {}),
-          } as GPURenderPassDepthStencilAttachment;
-          if (width === 0) {
-            width = Math.max(1, d.object.kind === "texture" ? d.object.width >> d.level : d.object.width);
-            height = Math.max(1, d.object.kind === "texture" ? d.object.height >> d.level : d.object.height);
-            samples = d.object.kind === "renderbuffer" ? d.object.samples : 1;
-          }
-          if (d.object.kind === "texture") d.object.usedBatch = this.batch;
-        }
-      }
-      while (colorAttachments.length > 0 && colorAttachments[colorAttachments.length - 1] === null) { colorAttachments.pop(); colorFormats.pop(); }
-      if (colorAttachments.length === 0 && depthStencil === undefined) { this.warn("a draw into a framebuffer whose draw buffers name nothing attached"); return false; }
+    for (const buffer of fb.drawBuffers) {
+      const index = buffer - 0x8ce0;
+      const a = buffer === 0 ? null : fb.colors[index];
+      const view = a == null ? null : this.attachmentView(a);
+      if (a == null || view === null) { colors.push(null); colorIndex.push(-1); colorFormats.push(null); continue; }
+      const object = a.object;
+      colors.push({ view, loadOp: "load", storeOp: "store" });
+      colorIndex.push(index);
+      colorFormats.push(object.format!.format);
+      width = Math.max(1, (object.kind === "texture" ? object.width >> a.level : object.width));
+      height = Math.max(1, (object.kind === "texture" ? object.height >> a.level : object.height));
+      samples = object.kind === "renderbuffer" ? object.samples : 1;
+      if (object.kind === "texture") textures.push(object);
     }
+    const d = fb.depth ?? fb.stencil;
+    if (d !== null) {
+      const view = this.attachmentView(d);
+      if (view !== null) {
+        depthFormat = d.object.format!.format;
+        depth = loadDepth(view, depthFormat);
+        if (width === 0) {
+          width = Math.max(1, d.object.kind === "texture" ? d.object.width >> d.level : d.object.width);
+          height = Math.max(1, d.object.kind === "texture" ? d.object.height >> d.level : d.object.height);
+          samples = d.object.kind === "renderbuffer" ? d.object.samples : 1;
+        }
+        if (d.object.kind === "texture") textures.push(d.object);
+      }
+    }
+    while (colors.length > 0 && colors[colors.length - 1] === null) { colors.pop(); colorIndex.pop(); colorFormats.pop(); }
+    if (colors.length === 0 && depth === undefined) { this.warn("a draw into a framebuffer whose draw buffers name nothing attached"); return null; }
+    fb.plan = this.makePlan(fb, attachmentDeps(fb), colors, colorIndex, colorFormats, depth, depthFormat, width, height, samples, textures);
+    return fb.plan;
+  }
+
+  private makePlan(fb: GlFramebuffer | null, deps: unknown[], colors: (GPURenderPassColorAttachment | null)[], colorIndex: number[], colorFormats: (GPUTextureFormat | null)[], depth: GPURenderPassDepthStencilAttachment | undefined, depthFormat: GPUTextureFormat | null, width: number, height: number, samples: number, textures: GlTexture[]): PassPlan {
+    const key = `${colorFormats.join(",")}|${depthFormat}|${samples}`;
+    const descriptor: GPURenderPassDescriptor = depth === undefined ? { colorAttachments: colors } : { colorAttachments: colors, depthStencilAttachment: depth };
+    return { deps, colorIndex, descriptor, textures, target: { fb, version: fb === null ? -1 : fb.version, width, height, colorFormats, depthFormat, samples, key, id: internId(this.targetIds, key) } };
+  }
+
+  /** Open a render pass on `fb`, with `clear`'s values as load ops. */
+  private beginPass(fb: GlFramebuffer | null, clear: PendingClear | null): boolean {
+    const plan = this.passPlan(fb);
+    if (plan === null) return false;
+    this.schedulePresent();
+    if (fb === null) {
+      this.backDirty = true;
+      if (this.backColorMsaa !== null && clear?.color[0] == null) this.warn("the default framebuffer reloads its multisampled color between passes");
+    }
+    for (let i = 0; i < plan.textures.length; i += 1) plan.textures[i]!.usedBatch = this.batch;
+    let descriptor = plan.descriptor;
+    if (clear !== null) descriptor = withClears(descriptor, plan.colorIndex, clear);
     const timestampWrites = this.passStamps();
-    this.pass = encoder.beginRenderPass({ colorAttachments, ...(depthStencil !== undefined ? { depthStencilAttachment: depthStencil } : {}), ...(timestampWrites !== undefined ? { timestampWrites } : {}) });
+    if (timestampWrites !== undefined) descriptor = { ...descriptor, timestampWrites };
+    this.pass = new RecordedPass(descriptor, fb, plan);
     this.stats.passes += 1;
-    const targetKey = `${colorFormats.join(",")}|${depthFormat}|${samples}`;
-    this.passTarget = { fb, version, width, height, colorFormats, depthFormat, samples, key: targetKey, id: internId(this.targetIds, targetKey) };
+    this.passTarget = plan.target;
     this.boundPipeline = null;
     this.boundGroup1 = null;
     this.boundUniform = -1;
@@ -1822,17 +2106,20 @@ struct U { shift: vec2<i32> };
    */
   private endPass(keep?: GlFramebuffer | null | "any"): void {
     if (this.pass !== null) {
-      this.pass.end();
+      this.unencoded.push(this.pass);
       this.pass = null;
       this.passTarget = null;
+      this.openPassStamp = -1;
     }
     const pending = this.pendingClear;
     if (pending === null || keep === "any" || (keep !== undefined && pending.fb === keep)) return;
     this.pendingClear = null;
     if (this.beginPass(pending.fb, pending)) {
-      this.pass!.end();
+      this.stats.clearPasses += 1;
+      this.unencoded.push(this.pass!);
       this.pass = null;
       this.passTarget = null;
+      this.openPassStamp = -1;
     }
   }
 
@@ -1858,7 +2145,7 @@ struct U { shift: vec2<i32> };
     if ((mask & 0x0100) !== 0 && this.depthWrite) pending.depth = this.clearDepthValue;
     if ((mask & 0x0400) !== 0) pending.stencil = this.clearStencilValue;
     this.pendingClear = pending;
-    this.ensureEncoder();
+    this.schedulePresent();
   }
 
   clearBufferfv(buffer: number, index: number, values: ArrayLike<number>): void {
@@ -1868,7 +2155,7 @@ struct U { shift: vec2<i32> };
     if (buffer === 0x1800) pending.color[index] = { r: values[0]!, g: values[1]!, b: values[2]!, a: values[3]! };
     else if (buffer === 0x1801) pending.depth = values[0]!;
     this.pendingClear = pending;
-    this.ensureEncoder();
+    this.schedulePresent();
   }
   clearBufferiv(buffer: number, index: number, values: ArrayLike<number>): void { this.clearBufferfv(buffer, index, values); }
   clearBufferuiv(buffer: number, index: number, values: ArrayLike<number>): void { this.clearBufferfv(buffer, index, values); }
@@ -2580,6 +2867,7 @@ struct O { ${outputs} };
   /** End the open pass, upload the batch's uniforms and submit its commands. */
   private submit(): void {
     this.endPass();
+    if (this.unencoded.length > 0) this.encodeEnded();
     if (this.encoder === null) return;
     if (this.stagingUsed > 0) {
       this.queue.writeBuffer(this.ring, 0, this.staging, 0, Math.ceil(this.stagingUsed / 4) * 4);
@@ -2611,7 +2899,7 @@ struct O { ${outputs} };
     // As GL, the canvas shows a new image only when the default framebuffer was drawn this task.
     if (!this.backDirty || this.backColor === null) { this.submit(); return; }
     this.backDirty = false;
-    const encoder = (this.encoder ??= this.device.createCommandEncoder());
+    const encoder = this.encodeEnded();
     if (this.presentPipeline === null) {
       const module = this.device.createShaderModule({ code: PRESENT_WGSL });
       this.presentPipeline = this.device.createRenderPipeline({ layout: "auto", vertex: { module, entryPoint: "vs" }, fragment: { module, entryPoint: "fs", targets: [{ format: this.canvasFormat }] }, primitive: { topology: "triangle-list" } });

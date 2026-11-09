@@ -10,6 +10,7 @@ import type { ShellMultiplayer } from "../multiplayer/multiplayer.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 import { heavyModels } from "@jgengine/core/model/modelLoad.draw";
 import { triangleProbe } from "@jgengine/core/render/triangleAttribution.draw";
+import { webGpuContextOf } from "@jgengine/core/webgpu/engineRenderer.draw";
 import { buildLeanReport } from "./devtoolsReports.draw";
 import { sceneProbeReading } from "./discover";
 import { PerfPanel } from "./PerfPanel.view";
@@ -35,6 +36,34 @@ export function DevtoolsRendererProbe() {
   const scene = useThree((state) => state.scene);
   const lastSampleAt = useRef(0);
   useEffect(() => devtools.probes.register("shaderPrograms", () => gl.info.programs?.length ?? 0), [gl]);
+  useEffect(() => {
+    // The WebGPU backend's own work per frame, averaged since the last read, so every perf record on
+    // WebGPU says how many passes, draws, submits and uniform bytes a frame cost the context.
+    const context = webGpuContextOf(gl);
+    if (context === null) return;
+    let last = { ...context.stats };
+    let lastAt = performance.now();
+    let reading = { frames: 0, passes: 0, clearPasses: 0, draws: 0, submits: 0, uniformBytes: 0, bindGroups: 0, pipelines: 0 };
+    // Counters and state read back to back share one window; a new window opens every RENDER_SAMPLE_MS.
+    const perFrame = () => {
+      const at = performance.now();
+      if (at - lastAt < RENDER_SAMPLE_MS && reading.frames > 0) return reading;
+      const now = context.stats;
+      const frames = Math.max(1, now.frames - last.frames);
+      const per = (key: "passes" | "clearPasses" | "draws" | "submits" | "uniformBytes" | "bindGroups" | "pipelines") => Math.round(((now[key] - last[key]) / frames) * 10) / 10;
+      reading = { frames: now.frames - last.frames, passes: per("passes"), clearPasses: per("clearPasses"), draws: per("draws"), submits: per("submits"), uniformBytes: per("uniformBytes"), bindGroups: per("bindGroups"), pipelines: per("pipelines") };
+      last = { ...now };
+      lastAt = at;
+      return reading;
+    };
+    return devtools.probes.registerSystem("render/webgpu", {
+      counters: perFrame,
+      state: () => {
+        const { passes, clearPasses, draws, submits, uniformBytes } = perFrame();
+        return `per frame: ${passes} passes (${clearPasses} clear-only) · ${draws} draws · ${submits} submits · ${uniformBytes} uniform bytes`;
+      },
+    });
+  }, [gl]);
   useEffect(() => {
     // One walk serves the counters, the state line and the probe: a snapshot reads the same frame.
     const probe = triangleProbe(scene);

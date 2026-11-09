@@ -732,8 +732,16 @@ export const DRAW_FRAME_COUNTER_SCRIPT = `(() => {
     wrapped.add(countedExtension);
     proto.getExtension = countedExtension;
   }
+  // The WebGPU backend's GL-shaped context is not a native prototype, so its draws come from its own
+  // counter (one per GL draw call, as here); without it every WebGPU record read 0 draws a frame.
+  let gpuContext = null;
+  let gpuDraws = 0;
   const tick = () => {
-    if (state.counting) state.frames.push(state.pending);
+    const live = globalThis.__jgWebGpu;
+    if (live !== gpuContext) { gpuContext = live ?? null; gpuDraws = gpuContext?.stats?.draws ?? 0; }
+    const drawsNow = gpuContext?.stats?.draws ?? 0;
+    if (state.counting) state.frames.push(state.pending + drawsNow - gpuDraws);
+    gpuDraws = drawsNow;
     state.pending = 0;
     requestAnimationFrame(tick);
   };
@@ -742,6 +750,7 @@ export const DRAW_FRAME_COUNTER_SCRIPT = `(() => {
     start() {
       state.frames = [];
       state.pending = 0;
+      gpuDraws = gpuContext?.stats?.draws ?? 0;
       state.counting = true;
     },
     stop() {

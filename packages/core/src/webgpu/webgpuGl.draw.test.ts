@@ -69,6 +69,8 @@ function stubGlobals(): void {
 }
 
 const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0));
+/** End the open pass and encode every ended one: passes reach the encoder only when work after them needs it. */
+const encodePasses = (gl: any) => { gl.endPass(); gl.encodeEnded(); };
 
 describe("WebGpuGl readback fences", () => {
   test("a fence made right after readPixels signals only once that readback has landed (autoExposure's pattern)", async () => {
@@ -255,6 +257,7 @@ describe("WebGpuGl multi-draw", () => {
     gl.bufferData(0x8893, new Uint16Array(64), 0x88e4);
     const ext = gl.getExtension("WEBGL_multi_draw");
     ext.multiDrawElementsWEBGL(4, new Int32Array([9, 6, 0, 12]), 1, 0x1403, new Int32Array([99, 0, 12, 24]), 1, 3);
+    encodePasses(gl);
     // Item 1 is empty and skipped; starts are byte offsets into 2-byte indices.
     expect(calls.filter(([name]) => name === "drawIndexed").map(([, args]) => args)).toEqual([[6, 1, 0, 0, 0], [12, 1, 12, 0, 2]]);
     expect(calls.filter(([name]) => name === "setBindGroup").length).toBe(2);
@@ -263,6 +266,7 @@ describe("WebGpuGl multi-draw", () => {
     // More items than the id buffer holds: it grows before the draw binds it.
     calls.length = 0;
     ext.multiDrawArraysWEBGL(4, new Int32Array(2000), 0, new Int32Array(2000).fill(3), 0, 2000);
+    encodePasses(gl);
     expect(gl.drawIdBuffer.size).toBe(2048 * 4);
     expect(calls.filter(([name]) => name === "draw").at(-1)?.[1]).toEqual([3, 1, 0, 1999]);
   });
@@ -426,6 +430,7 @@ describe("WebGpuGl GPU timers", () => {
     gl.bindFramebuffer(0x8d40, null);
     gl.clear(0x4000); // pass 2: fb's clear lands; this one waits past the query for the next pass
     gl.endQuery(ext.TIME_ELAPSED_EXT);
+    gl.encodeEnded();
     const timed = passes.slice(untimed).filter((pass) => pass.timestampWrites !== undefined);
     expect(timed.length).toBe(2);
     expect(timed.map((pass) => [pass.timestampWrites!.beginningOfPassWriteIndex, pass.timestampWrites!.endOfPassWriteIndex])).toEqual([[0, 1], [2, 3]]);
@@ -465,6 +470,32 @@ describe("WebGpuGl GPU timers", () => {
     const opened = passes.slice(before) as unknown as { colorAttachments: { loadOp: string }[]; depthStencilAttachment?: { depthLoadOp: string } }[];
     expect(opened.map((pass) => pass.colorAttachments[0]!.loadOp)).toEqual(["clear", "clear"]);
     expect(opened[0]!.depthStencilAttachment?.depthLoadOp).toBe("clear");
+  });
+
+  test("timers started and stopped between draws into one target keep one pass, and read that whole pass", () => {
+    // The frame breakdown starts and stops timers around shadow maps and post passes every frame; each
+    // one ended the pass, so a timed page drew extra passes (each a store and a load of its target)
+    // that WebGL never pays, and every WebGPU measurement with telemetry on was slowed by its instrument.
+    const { gl, passes, texture, draw } = drawSetup(["timestamp-query"]);
+    texture();
+    const ext = gl.getExtension("EXT_disjoint_timer_query_webgl2");
+    gl.beginQuery(ext.TIME_ELAPSED_EXT, gl.createQuery());
+    gl.endQuery(ext.TIME_ELAPSED_EXT);
+    const before = passes.length;
+    draw();
+    const q = gl.createQuery();
+    gl.beginQuery(ext.TIME_ELAPSED_EXT, q);
+    draw();
+    gl.endQuery(ext.TIME_ELAPSED_EXT);
+    gl.beginQuery(ext.TIME_ELAPSED_EXT, gl.createQuery());
+    draw();
+    gl.endQuery(ext.TIME_ELAPSED_EXT);
+    draw();
+    gl.finish();
+    const opened = passes.slice(before);
+    expect(opened.length).toBe(1);
+    const stamps = opened[0]!.timestampWrites!;
+    expect([q.start, q.end]).toEqual([stamps.beginningOfPassWriteIndex, stamps.endOfPassWriteIndex]);
   });
 
   test("without timestamp queries the context offers no GPU timer", () => {
@@ -515,6 +546,74 @@ describe("WebGpuGl framebuffer completeness", () => {
     expect(views.some((view) => view.baseMipLevel === 9)).toBe(true);
   });
 
+  describe("a multisampled scene resolved as three resolves it (blit, then invalidate)", () => {
+    type Pass = { colorAttachments: { loadOp: string; storeOp: string; resolveTarget?: unknown }[]; depthStencilAttachment?: { depthStoreOp?: string } };
+    const setup = () => {
+      const s = drawSetup();
+      const { gl } = s;
+      const storage = (internal: number, point: number) => {
+        const rb = gl.createRenderbuffer();
+        gl.bindRenderbuffer(0x8d41, rb);
+        gl.renderbufferStorageMultisample(0x8d41, 4, internal, 64, 64);
+        gl.framebufferRenderbuffer(0x8d40, point, 0x8d41, rb);
+      };
+      const scene = gl.createFramebuffer();
+      gl.bindFramebuffer(0x8d40, scene);
+      storage(0x8058, 0x8ce0);
+      storage(0x81a6, 0x8d00);
+      const target = gl.createFramebuffer();
+      gl.bindFramebuffer(0x8d40, target);
+      for (const [internal, point] of [[0x8058, 0x8ce0], [0x81a6, 0x8d00]] as const) {
+        const t = gl.createTexture();
+        gl.bindTexture(0x0de1, t);
+        gl.texStorage2D(0x0de1, 1, internal, 64, 64);
+        gl.framebufferTexture2D(0x8d40, point, 0x0de1, t, 0);
+      }
+      const other = gl.createFramebuffer();
+      gl.bindFramebuffer(0x8d40, other);
+      const t = gl.createTexture();
+      gl.bindTexture(0x0de1, t);
+      gl.texStorage2D(0x0de1, 1, 0x8058, 64, 64);
+      gl.framebufferTexture2D(0x8d40, 0x8ce0, 0x0de1, t, 0);
+      const resolve = (mask: number) => {
+        gl.bindFramebuffer(0x8ca8, scene);
+        gl.bindFramebuffer(0x8ca9, target);
+        gl.blitFramebuffer(0, 0, 64, 64, 0, 0, 64, 64, mask);
+        gl.invalidateFramebuffer(0x8ca8, [0x8ce0, 0x8d00]);
+        gl.finish();
+      };
+      const resolving = () => (s.passes as unknown as Pass[]).filter((p) => p.colorAttachments[0]?.resolveTarget !== undefined);
+      return { ...s, scene, other, resolve, resolving };
+    };
+
+    test("the scene's own pass resolves it and stores no multisampled color; its depth, read by the depth resolve after it, is kept", () => {
+      const { gl, draw, scene, resolve, resolving, passes } = setup();
+      gl.bindFramebuffer(0x8d40, scene);
+      draw();
+      const before = passes.length;
+      resolve(0x4100);
+      const all = resolving();
+      expect(all.length).toBe(1);
+      const own = all[0]!;
+      expect(passes.indexOf(own as never)).toBe(before); // the pass that drew, not an empty one after it
+      expect(own.colorAttachments[0]!.storeOp).toBe("discard");
+      expect(own.depthStencilAttachment?.depthStoreOp).toBe("store");
+    });
+
+    test("with another pass ended after the scene's, an empty pass resolves it and the scene's color is stored", () => {
+      const { gl, draw, scene, other, resolve, resolving } = setup();
+      gl.bindFramebuffer(0x8d40, scene);
+      draw();
+      gl.bindFramebuffer(0x8d40, other);
+      draw();
+      resolve(0x4000);
+      const all = resolving();
+      expect(all.length).toBe(1);
+      expect(all[0]!.colorAttachments[0]!.loadOp).toBe("load");
+      expect(all[0]!.colorAttachments[0]!.storeOp).toBe("store");
+    });
+  });
+
   test("a multisampled depth blitted into a depth texture is resolved by a pass writing its depth (Scrap Signal), not skipped", () => {
     const { gl, passes, calls } = stubContext();
     const storage = (samples: number, internal: number, point: number) => {
@@ -542,6 +641,35 @@ describe("WebGpuGl framebuffer completeness", () => {
     expect(pass.depthStencilAttachment.depthLoadOp).toBe("load");
     expect(pass.depthStencilAttachment.depthStoreOp).toBe("store");
     expect(calls.filter(([name]) => name === "draw").at(-1)?.[1]).toEqual([3]);
+  });
+
+  test("a framebuffer's pass is built once: a loading pass carries no clear values, a clear gets its own, and new storage for an attachment rebuilds it", () => {
+    const { gl, passes, draw } = drawSetup();
+    const tex = gl.createTexture();
+    gl.bindTexture(0x0de1, tex);
+    gl.texImage2D(0x0de1, 0, 0x8058, 64, 64, 0, 0x1908, 0x1401, null);
+    const fb = gl.createFramebuffer();
+    gl.bindFramebuffer(0x8d40, fb);
+    gl.framebufferTexture2D(0x8d40, 0x8ce0, 0x0de1, tex, 0);
+    type Color = { view: unknown; loadOp: string; clearValue?: unknown };
+    const color = (at: number) => { encodePasses(gl); return (passes.at(at) as unknown as { colorAttachments: Color[] }).colorAttachments[0]!; };
+    gl.clearColor(1, 0, 0, 1);
+    gl.clear(0x4000);
+    draw();
+    expect(color(-1).loadOp).toBe("clear");
+    expect(color(-1).clearValue).toEqual({ r: 1, g: 0, b: 0, a: 1 });
+    const first = color(-1).view;
+    gl.bindFramebuffer(0x8d40, null);
+    draw();
+    gl.bindFramebuffer(0x8d40, fb);
+    draw();
+    expect(color(-1)).toEqual({ view: first, loadOp: "load", storeOp: "store" } as Color);
+    // New storage: the old view is of a destroyed texture, so the pass must not reuse it.
+    gl.bindTexture(0x0de1, tex);
+    gl.texImage2D(0x0de1, 0, 0x8058, 32, 32, 0, 0x1908, 0x1401, null);
+    draw();
+    expect(gl.passTarget.width).toBe(32);
+    expect(color(-1).view).not.toBe(first);
   });
 
   test("a framebuffer with nothing attached is incomplete; the default one is complete", () => {
