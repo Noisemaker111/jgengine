@@ -3,7 +3,7 @@ import * as THREE from "three";
 
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 
 import { createProceduralGroundGeometry, type ProceduralTerrainConfig, type TerrainVertexColorOptions } from "./terrainMath.draw";
 
@@ -59,9 +59,8 @@ export function proceduralGroundDraw({
 }
 
 export function ProceduralGround(props: ProceduralGroundProps) {
-  const key = useMemo(() => JSON.stringify([props.terrain, props.colors, props.roughness, props.metalness]), [props.terrain, props.colors, props.roughness, props.metalness]);
   const latest = useRef(props);
   latest.current = props;
-  useEngineDraw(() => proceduralGroundDraw(latest.current), [key]);
+  useEngineDraw(() => proceduralGroundDraw(latest.current), [props.terrain, props.colors, props.roughness, props.metalness]);
   return null;
 }

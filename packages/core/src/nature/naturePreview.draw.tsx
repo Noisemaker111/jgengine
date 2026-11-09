@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
 
 import { runGenerator } from "@jgengine/core/generator/generator";
@@ -51,10 +51,9 @@ export function naturePreviewDraw({ definition, variant }: GeneratorPreviewProps
 
 function NaturePreview(props: GeneratorPreviewProps) {
   const { definition, variant } = props;
-  const key = useMemo(() => JSON.stringify([definition, variant.meta, variant.seed]), [definition, variant.meta, variant.seed]);
   const latest = useRef(props);
   latest.current = props;
-  useEngineDraw(() => naturePreviewDraw(latest.current), [key]);
+  useEngineDraw(() => naturePreviewDraw(latest.current), [definition, variant]);
   return null;
 }
 

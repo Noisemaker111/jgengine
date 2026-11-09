@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
 
 import { runGenerator, type GeneratorDefinition } from "@jgengine/core/generator/generator";
@@ -21,15 +21,15 @@ export interface GeneratorMeshInstanceProps {
  * One placed generator instance drawn through the mesh builder registered for its output family
  * (`registerGeneratorMesh`), regrown from its params and seed. Null when the family has no builder.
  */
-export function generatorMeshInstanceDraw({ definition, meta, fallbackSeed, position = [0, 0, 0], rotationY = 0 }: GeneratorMeshInstanceProps): EngineDraw {
+export function generatorMeshInstanceDraw(getProps: () => GeneratorMeshInstanceProps): EngineDraw {
+  const props = getProps();
+  const { definition, meta, fallbackSeed } = props;
   const sources = getGeneratorMesh(definition.output)?.(runGenerator(definition, meta, { fallbackSeed })) ?? [];
   let group: THREE.Group | null = null;
   return {
     mount(state: EngineFrameState) {
       if (sources.length === 0) return;
       group = new THREE.Group();
-      group.position.set(position[0], position[1], position[2]);
-      group.rotation.y = rotationY;
       for (const source of sources) {
         const mesh = new THREE.Mesh(source.geometry, source.material);
         mesh.castShadow = source.castShadow ?? true;
@@ -37,6 +37,13 @@ export function generatorMeshInstanceDraw({ definition, meta, fallbackSeed, posi
         group.add(mesh);
       }
       state.scene.add(group);
+    },
+    frame(_state: EngineFrameState) {
+      if (group === null) return;
+      const current = getProps();
+      const [px, py, pz] = current.position ?? [0, 0, 0];
+      group.position.set(px, py, pz);
+      group.rotation.y = current.rotationY ?? 0;
     },
     dispose(state: EngineFrameState) {
       if (group !== null) state.scene.remove(group);
@@ -47,10 +54,9 @@ export function generatorMeshInstanceDraw({ definition, meta, fallbackSeed, posi
 }
 
 export function GeneratorMeshInstance(props: GeneratorMeshInstanceProps) {
-  const { definition, meta, fallbackSeed, position, rotationY } = props;
-  const key = useMemo(() => JSON.stringify([definition, meta, fallbackSeed, position, rotationY]), [definition, meta, fallbackSeed, position, rotationY]);
+  const { definition, meta, fallbackSeed } = props;
   const latest = useRef(props);
   latest.current = props;
-  useEngineDraw(() => generatorMeshInstanceDraw(latest.current), [key]);
+  useEngineDraw(() => generatorMeshInstanceDraw(() => latest.current), [definition, meta, fallbackSeed]);
   return null;
 }

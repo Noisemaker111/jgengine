@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
 
 import { runGenerator } from "@jgengine/core/generator/generator";
@@ -47,10 +47,9 @@ export function surfaceMaterialPreviewDraw({ definition, variant }: GeneratorPre
 
 function SurfaceMaterialPreview(props: GeneratorPreviewProps) {
   const { definition, variant } = props;
-  const key = useMemo(() => JSON.stringify([definition, variant.meta, variant.seed]), [definition, variant.meta, variant.seed]);
   const latest = useRef(props);
   latest.current = props;
-  useEngineDraw(() => surfaceMaterialPreviewDraw(latest.current), [key]);
+  useEngineDraw(() => surfaceMaterialPreviewDraw(latest.current), [definition, variant]);
   return null;
 }
 
