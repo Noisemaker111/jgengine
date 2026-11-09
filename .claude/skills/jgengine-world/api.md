@@ -6283,7 +6283,8 @@
 - `TranslateResult` (type): type TranslateResult = { ok: WgslProgram } | { error: string } — What translating one program gives: the program, or why it does not translate.
 - `WgslProgram` (interface): interface WgslProgram — The translated program and what feeding it takes.
 - `WgslSamplerSlot` (interface): interface WgslSamplerSlot — A sampler uniform split into a texture and a sampler binding in group 1.
-- `WgslUniformSlot` (interface): interface WgslUniformSlot — Where one of three's uniform names lives in the program's std140 block.
+- `WgslUniformBlock` (type): type WgslUniformBlock = "shared" | "object" — Where one of three's uniform names lives: `shared` is the program-wide block (binding 0, persistent across frames), `object` the per-object block (binding 1, restaged per draw batch). Absent on layouts translated before the split: treat as `shared`.
+- `WgslUniformSlot` (interface): interface WgslUniformSlot — Where one of three's uniform names lives in its block.
 - `WgslVertexInput` (interface): interface WgslVertexInput — three.js GLSL ES 3.00 programs translated to WGSL by `native/crates/jg-shader` (naga), built to `glslToWgsl.wasm` by `bun scripts/build-glsl-translator.ts`. Loaded once per page. {@link translateGlslAsync} translates on a few worker threads, as a GPU driver compiles WebGL programs in parallel; {@link translateGlsl} translates on the calling thread.
 - `loadGlslTranslator` (function): function loadGlslTranslator(url: URL | string = new URL("./glslToWgsl.wasm", import.meta.url)): Promise<void> — Fetch and compile the translator once. Resolves when {@link translateGlsl} can run.
 - `translateGlsl` (function): function translateGlsl(vertex: string, fragment: string): TranslateResult — Translate one program exactly as three passed it to GL. Returns the WGSL and layout, or the translator's error (what a failed `linkProgram` reports).
