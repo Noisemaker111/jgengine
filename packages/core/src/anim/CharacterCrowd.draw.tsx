@@ -23,6 +23,7 @@ import {
   setCrowdKindReady,
   stableCrowdKinds,
   type CrowdMember,
+  type CrowdSpeedBands,
 } from "./crowdRegistry.draw";
 import { applyMaterialOverrideToMaterial, overrideTargets } from "@jgengine/core/material/materialOverride.draw";
 import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.draw";
@@ -42,7 +43,7 @@ import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
 import { type EngineDraw, type EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { MutableRefObject } from "react";
-import type { VisiblePredicate } from "@jgengine/core/visibility/visibilityChanges";
+import type { VisiblePredicate } from "@jgengine/core/visibility/CullingProvider.draw";
 
 interface CrowdBatchEnv {
   registry: CharacterCrowdRegistry;
@@ -72,7 +73,7 @@ function crowdBatchDraw(kind: string, model: ModelConfig, getEnv: () => CrowdBat
   let meshes: { main: THREE.InstancedMesh; mirrors: THREE.InstancedMesh[] } | null = null;
   let placement: { scale: number; offset: THREE.Vector3 } | null = null;
   let clips: ReturnType<typeof crowdClipsOf> = [];
-  let bands: ReturnType<typeof crowdSpeedBandsOf> = [];
+  let bands: CrowdSpeedBands | undefined;
   let clipIndex: ReadonlyMap<string, number> | null = null;
   const playback = new Map<string, CrowdPlayback>();
   const drawnIds: string[] = [];

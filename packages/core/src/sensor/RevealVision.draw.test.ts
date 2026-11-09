@@ -51,8 +51,8 @@ async function mounted(ctx: GameContext, element: ReactElement, run: (stage: Sta
           createElement(
             Profiler,
             { id: "reveal", onRender: () => { commits += 1; } },
-            element,
             createElement(FrameBoardPump),
+            element,
           ),
         ),
       );

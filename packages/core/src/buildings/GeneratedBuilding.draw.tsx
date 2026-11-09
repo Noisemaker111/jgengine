@@ -302,7 +302,7 @@ export function instancedBuildingsDraw(getProps: () => InstancedBuildingsProps):
       }
     },
     frame(frameState: EngineFrameState) {
-      for (const draw of children) draw.frame?.(frameState);
+      for (const draw of children) draw.frame?.(frameState, frameState.delta);
     },
     dispose(disposeState: EngineFrameState) {
       clearChildren(disposeState);

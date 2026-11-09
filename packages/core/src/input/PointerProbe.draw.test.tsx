@@ -1,8 +1,9 @@
 import { afterEach, expect, test } from "bun:test";
 import { act, createRoot, extend } from "@react-three/fiber";
-import { createElement } from "react";
+import { createElement, Fragment } from "react";
 import * as THREE from "three";
 
+import { FrameBoardPump } from "@jgengine/core/frame/frameBoardPump.draw";
 import { PointerProbe } from "./PointerProbe.draw";
 import type { PointerService } from "./pointerService.draw";
 
@@ -34,7 +35,7 @@ async function mount(groundHeightAt?: (x: number, z: number) => number): Promise
     gl: () => ({ render() {}, setSize() {}, setPixelRatio() {}, domElement: new EventTarget() }) as unknown as THREE.WebGLRenderer,
   });
   await act(async () => {
-    root.render(createElement(PointerProbe, { service, ...(groundHeightAt === undefined ? {} : { groundHeightAt }) }));
+    root.render(createElement(Fragment, null, createElement(FrameBoardPump), createElement(PointerProbe, { service, ...(groundHeightAt === undefined ? {} : { groundHeightAt }) })));
   });
   return { bound, unmount: async () => act(async () => root.unmount()) };
 }

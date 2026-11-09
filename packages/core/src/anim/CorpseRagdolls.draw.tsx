@@ -107,7 +107,7 @@ export function corpseRagdollsDraw(ctx: GameContext, getProps: () => CorpseRagdo
     if (mountState === null) return;
     const draw = ragdollDraw(corpse.body, () => corpse.options);
     draw.mount?.(mountState);
-    const leave = draw.frame === undefined ? () => {} : joinFrameTask(draw.priority ?? 0, (state) => draw.frame?.(state));
+    const leave = draw.frame === undefined ? () => {} : joinFrameTask(draw.priority ?? 0, (state, delta) => draw.frame?.(state, delta));
     corpse.ragdoll = draw;
     corpse.ragdollLeave = leave;
   };

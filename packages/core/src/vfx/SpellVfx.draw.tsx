@@ -292,7 +292,7 @@ export function spellVfxDraw(ctx: GameContext, { tailMs = 200 }: { tailMs?: numb
       });
     },
     frame(frameState: EngineFrameState) {
-      for (const item of active.values()) item.draw.frame?.(frameState);
+      for (const item of active.values()) item.draw.frame?.(frameState, frameState.delta);
     },
     dispose() {
       off?.();

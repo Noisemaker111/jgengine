@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { act, createRoot, type ReconcilerRoot } from "@react-three/fiber";
-import { createElement } from "react";
+import { createElement, Fragment } from "react";
 import * as THREE from "three";
+import { FrameBoardPump } from "@jgengine/core/frame/frameBoardPump.draw";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import { EXRLoader } from "three/examples/jsm/loaders/EXRLoader.js";
 import { armTextureErrors, textureErrorsSnapshot } from "@jgengine/core/devtools/textureErrors";
@@ -65,7 +66,7 @@ async function harness(source: EnvironmentSource) {
   scene.environmentIntensity = 0.6;
   await root.configure({ scene, frameloop: "never", size: { width: 100, height: 100, top: 0, left: 0 }, dpr: 1,
     gl: () => ({ render() {}, setSize() {}, setPixelRatio() {} }) as unknown as THREE.WebGLRenderer });
-  await act(async () => root.render(createElement(EnvironmentLighting, { source })));
+  await act(async () => root.render(createElement(Fragment, null, createElement(FrameBoardPump), createElement(EnvironmentLighting, { source }))));
   return { root, scene, originalTexture, originalRotation, remove: () => act(async () => root.render(null)) };
 }
 

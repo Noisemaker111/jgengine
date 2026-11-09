@@ -168,7 +168,7 @@ export function roadJunctionsDraw(getProps: () => RoadJunctionsProps): EngineDra
       added = true;
     },
     frame(_state: EngineFrameState) {
-      for (const child of children) child.draw.frame?.(child.state);
+      for (const child of children) child.draw.frame?.(child.state, child.state.delta);
     },
     dispose(state: EngineFrameState) {
       for (const child of children) child.draw.dispose?.(child.state);

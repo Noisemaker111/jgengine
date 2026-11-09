@@ -124,7 +124,7 @@ class ChildDraw {
   mount(state: EngineFrameState): void {
     const parent = this.parent;
     this.draw.mount?.(childFrameState(state, parent));
-    this.leave = joinFrameTask(this.draw.priority ?? 0, (s) => this.draw.frame?.(childFrameState(s, parent)));
+    this.leave = joinFrameTask(this.draw.priority ?? 0, (s, delta) => this.draw.frame?.(childFrameState(s, parent), delta));
   }
   dispose(state: EngineFrameState): void {
     this.leave?.();

@@ -144,7 +144,7 @@ function childrenDraw(children: readonly EngineDraw[], teardown?: () => void): E
       for (const child of children) child.mount?.(state);
     },
     frame(state) {
-      for (const child of children) child.frame?.(state);
+      for (const child of children) child.frame?.(state, state.delta);
     },
     update(state) {
       for (const child of children) child.update?.(state);
@@ -177,7 +177,7 @@ function asyncChildDraw(load: (state: EngineFrameState) => Promise<EngineDraw | 
       }).catch(fail);
     },
     frame(state) {
-      inner?.frame?.(state);
+      inner?.frame?.(state, state.delta);
     },
     update(state) {
       inner?.update?.(state);
@@ -672,7 +672,7 @@ function scatterBuiltSpeciesDraw({ model, levels, hysteresis, batches, cacheKey 
     const field = scatterSourcesFieldDraw({ cacheKey, levels: chunkLevels, batches, hysteresis });
     return {
       mount: (state: EngineFrameState) => field.mount?.(state),
-      frame: (state: EngineFrameState) => field.frame?.(state),
+      frame: (state: EngineFrameState) => field.frame?.(state, state.delta),
       update: (state: EngineFrameState) => field.update?.(state),
       dispose: (state: EngineFrameState) => {
         field.dispose?.(state);
@@ -915,8 +915,8 @@ function scatterGeneratorSpeciesDraw({ item, species }: { item: string; species:
     },
     frame(s) {
       state = s;
-      for (const field of fields) field.frame?.(s);
-      heroesDraw?.frame?.(s);
+      for (const field of fields) field.frame?.(s, s.delta);
+      heroesDraw?.frame?.(s, s.delta);
       if (nearReady && !disposed) syncLevels(s);
     },
     update(s) {
@@ -1146,7 +1146,7 @@ export function instancedScatterDraw(getProps: () => InstancedScatterProps): Eng
       for (const child of children) child.update?.(s);
     },
     frame(s) {
-      for (const child of children) child.frame?.(s);
+      for (const child of children) child.frame?.(s, s.delta);
     },
     dispose(s) {
       for (const child of children) child.dispose?.(s);

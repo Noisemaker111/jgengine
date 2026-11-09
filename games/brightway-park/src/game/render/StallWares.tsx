@@ -70,7 +70,7 @@ export function stallWaresDraw(ctx: GameContext, object: ParkObject): EngineDraw
       }
     },
     frame(state) {
-      for (const entry of draws) entry.draw.frame?.(entry.state ?? state);
+      for (const entry of draws) entry.draw.frame?.(entry.state ?? state, (entry.state ?? state).delta);
     },
     dispose(state) {
       for (const entry of draws) entry.draw.dispose?.(entry.state ?? state);

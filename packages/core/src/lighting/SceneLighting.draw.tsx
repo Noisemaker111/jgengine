@@ -159,72 +159,6 @@ function singleShadowLightDraw(getProps: () => {
   };
 }
 
-function directionalShadowLightDraw(getProps: () => {
-  entry: DirectionalLightingConfig;
-  profile?: GraphicsProfile | undefined;
-  modulation?: DaylightModulation | undefined;
-}): EngineDraw {
-  // Resolved once per entry/profile pair: the child draws read props every frame, so the
-  // resolved entry and the props object they see must not allocate per call.
-  let cachedEntry: DirectionalLightingConfig | null = null;
-  let cachedProfile: GraphicsProfile | undefined;
-  let cachedResolved: DirectionalLightingConfig | null = null;
-  const resolvedEntry = (): DirectionalLightingConfig => {
-    const props = getProps();
-    const entry = props.entry;
-    if (cachedResolved !== null && entry === cachedEntry && props.profile === cachedProfile) return cachedResolved;
-    cachedEntry = entry;
-    cachedProfile = props.profile;
-    cachedResolved = props.profile === undefined
-      ? entry
-      : {
-          ...entry,
-          shadowMapSize: resolveShadowMapSize(props.profile, entry.shadowMapSize),
-          cascades: resolveCascadeCount(props.profile, entry.cascades),
-        };
-    return cachedResolved;
-  };
-  let childProps: { entry: DirectionalLightingConfig; profile?: GraphicsProfile | undefined; modulation?: DaylightModulation | undefined } | null = null;
-  const childGetProps = () => {
-    const props = getProps();
-    if (childProps === null) {
-      childProps = { entry: resolvedEntry() };
-    } else {
-      childProps.entry = resolvedEntry();
-    }
-    childProps.profile = props.profile;
-    childProps.modulation = props.modulation;
-    return childProps;
-  };
-  let child: EngineDraw | null = null;
-  let childKind = "";
-  const ensure = (state: EngineFrameState) => {
-    const kind = usesCascades(resolvedEntry()) ? "cascade" : "single";
-    if (child !== null && kind === childKind) return;
-    child?.dispose?.(state);
-    child = kind === "cascade" ? cascadedShadowsDraw(childGetProps) : singleShadowLightDraw(childGetProps);
-    childKind = kind;
-    child.mount?.(state);
-  };
-  return {
-    mount(state: EngineFrameState) {
-      ensure(state);
-    },
-    update(state: EngineFrameState) {
-      ensure(state);
-      child?.update?.(state);
-    },
-    frame(state: EngineFrameState) {
-      child?.frame?.(state);
-    },
-    dispose(state: EngineFrameState) {
-      child?.dispose?.(state);
-      child = null;
-      childKind = "";
-    },
-  };
-}
-
 /** Draw-side form of {@link ConfiguredLighting}: all authored lights live in one group; the light
  * set rebuilds when the `lighting` config or `profile` identity changes, the shadow-caster cull,
  * shadow cache and devtools probes follow `shadowsCast`/`casterRadius`, and daylight modulation
@@ -436,7 +370,7 @@ export function configuredLightingDraw(getProps: () => {
         if (ambient !== null) ambient.intensity = baseAmbient * modulation.ambientFactor;
         if (hemisphere !== null) hemisphere.intensity = baseHemisphere * modulation.ambientFactor;
       }
-      for (const child of children) child.frame?.(state);
+      for (const child of children) child.frame?.(state, state.delta);
     },
     dispose(state: EngineFrameState) {
       clearLights();

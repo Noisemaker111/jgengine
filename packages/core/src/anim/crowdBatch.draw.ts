@@ -32,7 +32,7 @@ export interface CrowdBatchFrame {
   placement: CrowdBatchPlacement;
   /** Baked clip names in `[idle, walk, run]` order. */
   clips: readonly string[];
-  bands: CrowdSpeedBands;
+  bands?: CrowdSpeedBands | undefined;
   clipIndex: ReadonlyMap<string, number>;
   /** Seconds of batch time, so a member entering mid-clip continues the pose it was holding. */
   time: number;

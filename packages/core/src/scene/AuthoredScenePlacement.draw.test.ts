@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { act, createRoot } from "@react-three/fiber";
-import { createElement } from "react";
+import { createElement, Fragment } from "react";
 import type { WebGLRenderer } from "three";
 
 import { createEmptyEditorDocument } from "@jgengine/core/editor/document";
@@ -10,6 +10,7 @@ import { ENTITY_MARKER_KINDS } from "@jgengine/core/world/authoredObjects";
 import { authoredSpawnPosition } from "@jgengine/core/world/authoredSpawn";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { GameProvider } from "@jgengine/react/provider";
+import { FrameBoardPump } from "@jgengine/core/frame/frameBoardPump.draw";
 
 import { defineGame } from "@jgengine/shell/defineGame";
 import { AuthoredObjects } from "./AuthoredScene.draw";
@@ -56,7 +57,7 @@ test("defineGame excludes a player-spawn catalog marker from static placement wh
   ctx.scene.entity.spawn("knight", { id: "player", position: authoredSpawnPosition(document)! });
   const root = await renderer();
   try {
-    await act(async () => root.render(createElement(GameProvider, { context: ctx }, createElement(overlayOf(playable), { ctx }))));
+    await act(async () => root.render(createElement(GameProvider, { context: ctx }, createElement(Fragment, null, createElement(FrameBoardPump), createElement(overlayOf(playable), { ctx })))));
     expect(ctx.scene.object.ids()).toEqual(["crate"]);
     expect(ctx.scene.object.get("crate")!.position).toEqual([2, 1.25, -3]);
     expect(ctx.scene.entity.ids()).toEqual(["player"]);
@@ -79,7 +80,7 @@ test("default scene placement keeps its existing mob/boss exclusions", async () 
   const ctx = createGameContext({ definition: playable.game, content: playable.content, player: { userId: "player", isNew: true } });
   const root = await renderer();
   try {
-    await act(async () => root.render(createElement(GameProvider, { context: ctx }, createElement(overlayOf(playable), { ctx }))));
+    await act(async () => root.render(createElement(GameProvider, { context: ctx }, createElement(Fragment, null, createElement(FrameBoardPump), createElement(overlayOf(playable), { ctx })))));
     expect(ctx.scene.object.ids()).toEqual(["spawn:player", "crate"]);
   } finally {
     await act(async () => root.unmount());
@@ -95,7 +96,7 @@ test("changing the exclusion policy resolves newly eligible props without changi
   const playable = defineGame({ name: "Placement policy", assets });
   const ctx = createGameContext({ definition: playable.game, content: playable.content, player: { userId: "player", isNew: true } });
   const root = await renderer();
-  const render = (excludeKinds: readonly string[]) => createElement(GameProvider, { context: ctx }, createElement(AuthoredObjects, { document, field: ctx.world.ground, excludeKinds }));
+  const render = (excludeKinds: readonly string[]) => createElement(GameProvider, { context: ctx }, createElement(Fragment, null, createElement(FrameBoardPump), createElement(AuthoredObjects, { document, field: ctx.world.ground, excludeKinds })));
   try {
     await act(async () => root.render(render([...ENTITY_MARKER_KINDS, "player_spawn", "prop"])));
     expect(ctx.scene.object.ids()).toEqual([]);
@@ -116,7 +117,7 @@ test("live synchronization removes excluded static placements while preserving t
   const ctx = createGameContext({ definition: playable.game, content: playable.content, player: { userId: "player", isNew: true } });
   ctx.scene.entity.spawn("knight", { id: "spawn:player", position: [0, 0, 0] });
   const root = await renderer();
-  const render = (excludeKinds: readonly string[], current = document) => createElement(GameProvider, { context: ctx }, createElement(AuthoredObjects, { document: current, field: ctx.world.ground, synchronize: true, excludeKinds }));
+  const render = (excludeKinds: readonly string[], current = document) => createElement(GameProvider, { context: ctx }, createElement(Fragment, null, createElement(FrameBoardPump), createElement(AuthoredObjects, { document: current, field: ctx.world.ground, synchronize: true, excludeKinds })));
   try {
     await act(async () => root.render(render(ENTITY_MARKER_KINDS)));
     expect(ctx.scene.object.ids()).toEqual(["spawn:player", "crate"]);
@@ -148,7 +149,7 @@ test("static animation placement rejects malformed saved overrides with located 
   const warnings: string[] = [];
   const originalWarn = console.warn;
   console.warn = (...args: unknown[]) => { warnings.push(args.join(" ")); };
-  const render = (current = document, verticalOffset = 1, context = ctx) => createElement(GameProvider, { context }, createElement(AuthoredObjects, { document: current, field: context.world.ground, synchronize: true, verticalOffset }));
+  const render = (current = document, verticalOffset = 1, context = ctx) => createElement(GameProvider, { context }, createElement(Fragment, null, createElement(FrameBoardPump), createElement(AuthoredObjects, { document: current, field: context.world.ground, synchronize: true, verticalOffset })));
   try {
     await act(async () => root.render(render()));
     const object = ctx.scene.object.get("character")!;

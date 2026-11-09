@@ -190,7 +190,7 @@ export function terrainGroundDraw(getProps: () => TerrainGroundDrawProps): Engin
     },
     frame(state: EngineFrameState) {
       sync();
-      if (inner !== null && innerState !== null) inner.frame?.(childFrameState(state, group));
+      if (inner !== null && innerState !== null) inner.frame?.(childFrameState(state, group), state.delta);
     },
     update(state: EngineFrameState) {
       sync();

@@ -1,7 +1,8 @@
 import { expect, test } from "bun:test";
 import { act, createRoot, extend } from "@react-three/fiber";
-import { createElement, Suspense } from "react";
+import { createElement, Fragment, Suspense } from "react";
 import * as THREE from "three";
+import { FrameBoardPump } from "@jgengine/core/frame/frameBoardPump.draw";
 import { registerGenerator } from "@jgengine/core/generator/generator";
 import { PARTS_OUTPUT } from "@jgengine/core/scene/assetGenerator";
 import { GeneratedAssetInstance } from "./GeneratedAssetRenderer.draw";
@@ -24,8 +25,8 @@ test("authored generator rendering retains transforms, material defaults, clamps
   try {
     let scene!: THREE.Scene;
     await act(async () => {
-      scene = root.render(createElement(Suspense, { fallback: null }, createElement(GeneratedAssetInstance,
-        { meta: { assetId: "render-test-bookcase" }, position: [12, 3, -4], rotationY: 0.2 }))).getState().scene;
+      scene = root.render(createElement(Suspense, { fallback: null }, createElement(Fragment, null, createElement(FrameBoardPump), createElement(GeneratedAssetInstance,
+        { meta: { assetId: "render-test-bookcase" }, position: [12, 3, -4], rotationY: 0.2 })))).getState().scene;
     });
     const group = scene.children[0]!;
     expect(group.position.toArray()).toEqual([12, 3, -4]);

@@ -68,7 +68,7 @@ export function cavesDraw(ctx: WorldOverlayProps["ctx"]): EngineDraw {
         mesh.visible = artifactHere(ctx, cave);
         mesh.rotation.y += state.delta * 0.8;
       }
-      for (const rock of rocks) if (rock.state !== null) rock.draw.frame?.(rock.state);
+      for (const rock of rocks) if (rock.state !== null) rock.draw.frame?.(rock.state, rock.state.delta);
     },
     dispose(state: EngineFrameState) {
       for (const rock of rocks) if (rock.state !== null) rock.draw.dispose?.(rock.state);

@@ -102,7 +102,7 @@ export function useBuildingChunkBudget(meshRef: RefObject<THREE.InstancedMesh | 
   useFrameTask(({ camera }) => {
     const mesh = meshRef.current;
     if (mesh === null) return;
-    syncBuildingChunkBudget(mesh, bounds, policy, camera, scratch.current);
+    syncBuildingChunkBudget(mesh, bounds, camera, scratch.current, policy);
   }, CAMERA_POST_FRAME_PRIORITY);
 }
 

@@ -114,7 +114,7 @@ function kitSourceChunkDraw(source: ScatterModelSource, material: THREE.Material
     },
     frame(state: EngineFrameState) {
       if (disposed) return;
-      (pooled ?? instanced)?.frame?.(state);
+      (pooled ?? instanced)?.frame?.(state, state.delta);
     },
     dispose(state: EngineFrameState) {
       disposed = true;
@@ -143,7 +143,7 @@ function kitSourceInstancesDraw(source: ScatterModelSource, material: THREE.Mate
       for (const child of children) child.mount?.(state);
     },
     frame(state: EngineFrameState) {
-      for (const child of children) child.frame?.(state);
+      for (const child of children) child.frame?.(state, state.delta);
     },
     dispose(state: EngineFrameState) {
       for (const child of children) child.dispose?.(state);
@@ -207,7 +207,7 @@ function styledKitSourcesDraw(scene: THREE.Object3D, materialAssets: readonly Ma
       });
     },
     frame(frameState: EngineFrameState) {
-      for (const draw of inner) draw.frame?.(frameState);
+      for (const draw of inner) draw.frame?.(frameState, frameState.delta);
     },
     dispose() {
       disposed = true;
@@ -336,7 +336,7 @@ export function buildingKitBatchDraw(getProps: () => BuildingKitBatchProps): Eng
       }
     },
     frame(frameState: EngineFrameState) {
-      for (const draw of groupDraws) draw.frame?.(frameState);
+      for (const draw of groupDraws) draw.frame?.(frameState, frameState.delta);
     },
     dispose(disposeState: EngineFrameState) {
       disposed = true;

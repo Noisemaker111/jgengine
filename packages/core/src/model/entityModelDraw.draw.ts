@@ -117,7 +117,7 @@ class ModelChildren implements EngineDraw {
   }
 
   frame(state: EngineFrameState): void {
-    for (const child of this.mounted) child.draw.frame?.(childFrameState(state, child.parent));
+    for (const child of this.mounted) child.draw.frame?.(childFrameState(state, child.parent), state.delta);
   }
 
   dispose(state: EngineFrameState): void {
@@ -1062,7 +1062,7 @@ export function singleVariantModelDraw(options: EntityModelDrawOptions): EngineD
           if (next !== level) swapLevel(state, next);
         }
       }
-      inner?.frame?.(childFrameState(state, host));
+      inner?.frame?.(childFrameState(state, host), state.delta);
     },
     dispose(state: EngineFrameState) {
       inner?.dispose?.(innerState ?? state);

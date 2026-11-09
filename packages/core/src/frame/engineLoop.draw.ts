@@ -69,8 +69,8 @@ export interface EngineDraw {
   readonly priority?: number;
   /** Once, after the scene exists and before the first frame. Add objects here. */
   mount?(state: EngineFrameState): void;
-  /** Every rendered frame, in priority then registration order. */
-  frame?(state: EngineFrameState): void;
+  /** Every rendered frame, in priority then registration order. `delta` mirrors `state.delta`. */
+  frame?(state: EngineFrameState, delta: number): void;
   /**
    * Inputs changed outside a rendered frame. The React bridge calls this after
    * every wrapper commit so prop-driven draws do not wait for the next frame
@@ -124,7 +124,7 @@ export function groupDraw(children: readonly EngineDraw[], frame?: (state: Engin
     },
     frame(state: EngineFrameState) {
       frame?.(state);
-      for (const child of children) child.frame?.(childFrameState(state, group));
+      for (const child of children) child.frame?.(childFrameState(state, group), state.delta);
     },
     update(state: EngineFrameState) {
       for (const child of children) child.update?.(childFrameState(state, group));
@@ -292,7 +292,7 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
       pacedElapsed = null;
     }
     flushBeforeRenderTasks();
-    for (const draw of draws) draw.frame?.(state);
+    for (const draw of draws) draw.frame?.(state, state.delta);
     renderer.render(scene, camera);
     flushAfterRenderTasks();
     invalidated = false;

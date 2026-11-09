@@ -170,11 +170,11 @@ export function projectileModelsDraw(getProps: () => ProjectileModelsProps, ctx:
       }
       for (const entry of entries.values()) applyProjectilePose(entry.group, entry.flight, nose, direction);
       for (const entry of entries.values()) {
-        if (entry.content.kind === "model") entry.content.draw.frame?.(entry.content.state);
+        if (entry.content.kind === "model") entry.content.draw.frame?.(entry.content.state, entry.content.state.delta);
       }
     },
     update(state: EngineFrameState) {
-      this.frame?.(state);
+      this.frame?.(state, state.delta);
     },
     dispose(state: EngineFrameState) {
       for (const entry of entries.values()) {

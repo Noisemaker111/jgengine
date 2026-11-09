@@ -79,7 +79,7 @@ function plantPreviewDraw(props: GeneratorPreviewProps): EngineDraw {
       inner.mount?.(innerState);
     },
     frame(_state: EngineFrameState) {
-      if (innerState !== null) inner.frame?.(innerState);
+      if (innerState !== null) inner.frame?.(innerState, innerState.delta);
     },
     dispose(state: EngineFrameState) {
       if (innerState !== null) inner.dispose?.(innerState);

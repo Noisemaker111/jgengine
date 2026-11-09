@@ -1,8 +1,9 @@
 import { expect, test } from "bun:test";
 import { act, createRoot, extend } from "@react-three/fiber";
-import { createElement } from "react";
+import { createElement, Fragment } from "react";
 import * as THREE from "three";
 
+import { FrameBoardPump } from "@jgengine/core/frame/frameBoardPump.draw";
 import { createCameraShake } from "@jgengine/core/camera/shake/cameraShake";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
@@ -33,7 +34,7 @@ test("a hit reaction's trauma, or its raw amplitude and decay, reaches the rig's
   });
   try {
     await act(async () => {
-      root.render(createElement(GameProvider, { context: ctx }, createElement(CameraShakeContext.Provider, { value: shake }, createElement(HitReactionShake))));
+      root.render(createElement(GameProvider, { context: ctx }, createElement(Fragment, null, createElement(FrameBoardPump), createElement(CameraShakeContext.Provider, { value: shake }, createElement(HitReactionShake)))));
     });
     ctx.game.events.emit("combat.hitReaction", { position: [0, 0, 0], hitstopMs: 0, trauma: 0.4 });
     expect(shake.trauma()).toBeCloseTo(0.4);

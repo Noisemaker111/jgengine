@@ -88,7 +88,7 @@ export function grassPreviewDraw(getVariant: () => GeneratorVariant): EngineDraw
     },
     frame(state: EngineFrameState) {
       syncMesh();
-      if (patch !== null && patchState !== null) patch.frame?.(childFrameState(state, group));
+      if (patch !== null && patchState !== null) patch.frame?.(childFrameState(state, group), state.delta);
     },
     update(state: EngineFrameState) {
       syncMesh();

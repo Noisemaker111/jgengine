@@ -277,7 +277,7 @@ export function interiorDressingDraw(getProps: () => InteriorDressingProps): Eng
       for (const child of children) child.update?.(state);
     },
     frame(state) {
-      for (const child of children) child.frame?.(state);
+      for (const child of children) child.frame?.(state, state.delta);
     },
     dispose(state) {
       for (const child of children) child.dispose?.(state);

@@ -350,8 +350,8 @@ export function particleEmittersDraw(
         ctx.particles.burst({ ...config, position: event.position, rate: 0, deathEvents: false }, effect.count, effect.blending, { render: effect.render });
       }
       // Fields pack their buffers after the systems advance so a frame never shows last tick's sim.
-      for (const instance of emitters.values()) instance.draw?.frame?.(frameState);
-      for (const burst of bursts) burst.draw?.frame?.(frameState);
+      for (const instance of emitters.values()) instance.draw?.frame?.(frameState, frameState.delta);
+      for (const burst of bursts) burst.draw?.frame?.(frameState, frameState.delta);
       if (diagnostics) {
         const elapsed = performance.now() - started;
         timing.lastUpdateMs = elapsed; timing.totalUpdateMs += elapsed; timing.maxUpdateMs = Math.max(timing.maxUpdateMs, elapsed); timing.updateSamples++;

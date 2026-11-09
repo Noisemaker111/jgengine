@@ -221,7 +221,7 @@ export interface SkyFogDrawProps {
 export function skyFogDraw(getProps: () => SkyFogDrawProps): EngineDraw {
   let fog: THREE.Fog | null = null;
   let scene: THREE.Scene | null = null;
-  let previous: THREE.FogBase | null = null;
+  let previous: THREE.Scene["fog"] = null;
   let boundRef: RefObject<THREE.Fog | null> | undefined;
   const writer = new DisplayColorWriter();
   const applyProps = () => {
@@ -235,8 +235,8 @@ export function skyFogDraw(getProps: () => SkyFogDrawProps): EngineDraw {
   return {
     mount(state: EngineFrameState) {
       scene = state.rootScene ?? state.scene;
-      previous = scene.fog ?? null;
-      fog = new THREE.Fog();
+      previous = scene.fog;
+      fog = new THREE.Fog(0xffffff);
       applyProps();
       scene.fog = fog;
       boundRef = getProps().fogRef;
@@ -773,7 +773,7 @@ export function skyDraw(getProps: () => SkyProps): EngineDraw {
       for (const child of children) child.draw.update?.(child.state);
     },
     frame(state: EngineFrameState) {
-      for (const child of children) child.draw.frame?.(child.state);
+      for (const child of children) child.draw.frame?.(child.state, child.state.delta);
       const d = derived;
       if (d === null) return;
       const props = getProps();

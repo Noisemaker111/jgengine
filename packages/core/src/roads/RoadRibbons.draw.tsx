@@ -484,7 +484,7 @@ export function roadRibbonsDraw(getProps: () => RoadRibbonsProps): EngineDraw {
       added = true;
     },
     frame(_state: EngineFrameState) {
-      for (const child of children) child.draw.frame?.(child.state);
+      for (const child of children) child.draw.frame?.(child.state, child.state.delta);
     },
     dispose(state: EngineFrameState) {
       for (const child of children) child.draw.dispose?.(child.state);
@@ -578,7 +578,7 @@ function roadGroupDraw(getProps: () => { roads: readonly RoadEnvironmentDescript
       added = true;
     },
     frame(_state: EngineFrameState) {
-      for (const child of children) child.draw.frame?.(child.state);
+      for (const child of children) child.draw.frame?.(child.state, child.state.delta);
     },
     dispose(state: EngineFrameState) {
       for (const child of children) child.draw.dispose?.(child.state);
@@ -619,7 +619,7 @@ export function roadsDraw(getProps: () => { roads: readonly RoadEnvironmentDescr
       added = true;
     },
     frame(_state: EngineFrameState) {
-      for (const child of children) child.draw.frame?.(child.state);
+      for (const child of children) child.draw.frame?.(child.state, child.state.delta);
     },
     dispose(state: EngineFrameState) {
       for (const child of children) child.draw.dispose?.(child.state);

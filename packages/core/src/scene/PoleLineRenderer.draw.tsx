@@ -360,7 +360,7 @@ function poleLineDraw(object: SceneKindObject, context: SceneKindRenderContext):
       for (const child of children) child.mount?.(state);
     },
     frame(state: EngineFrameState) {
-      for (const child of live) child.frame?.(state);
+      for (const child of live) child.frame?.(state, state.delta);
     },
     update(state: EngineFrameState) {
       for (const child of live) child.update?.(state);

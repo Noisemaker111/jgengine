@@ -10,7 +10,7 @@ import { reportFallbackSeam } from "@jgengine/core/devtools/fallbackSeams";
 import { useGameContext } from "@jgengine/react/provider";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { preloadSceneModel } from "@jgengine/core/model/entityModelDraw.draw";
-import { loadOverrideMapSets } from "@jgengine/core/material/materialAsset.draw";
+import { loadOverrideMapSets, type OverrideMapSetsLease } from "@jgengine/core/material/materialAsset.draw";
 import { variantLevelModel } from "@jgengine/core/lod/singleVariantLod.draw";
 import { assignVariantLevels, createLevelPassGate, levelPassProbe, noteLevelPass, noteLevelPassFrame, variantSwitchOf } from "@jgengine/core/lod/levelPass.draw";
 import { freezeStaticTransforms } from "@jgengine/core/model/staticTransforms.draw";
@@ -83,14 +83,6 @@ export class LevelAssignment extends Map<string, number> {
     if (this.size > 0) this.revision += 1;
     super.clear();
   }
-}
-
-/** A batch's members this frame, and how many times they have been gathered. */
-interface StaticMembers {
-  current: SceneObject[];
-  version: number;
-  /** The write steps of the opaque sources drawing these members, run by the batch from one frame callback. */
-  readonly steps: SourceSteps;
 }
 
 /** One source's per-frame write, held by reference so a re-render swaps it in place. @internal */
@@ -336,7 +328,7 @@ class MountedDraw {
   mount(state: EngineFrameState): void {
     const parent = this.parent;
     this.draw.mount?.(childFrameState(state, parent));
-    this.leave = joinFrameTask(this.draw.priority ?? 0, (s) => this.draw.frame?.(childFrameState(s, parent)));
+    this.leave = joinFrameTask(this.draw.priority ?? 0, (s, delta) => this.draw.frame?.(childFrameState(s, parent), delta));
   }
   update(state: EngineFrameState): void {
     this.draw.update?.(childFrameState(state, this.parent));
@@ -431,7 +423,7 @@ function pooledSourceDraw(env: StaticBatchEnv, args: {
 }
 
 /** A source drawn on its own: one instanced draw holding this batch's placements. */
-function instancedSourceDraw(env: StaticBatchEnv, args: {
+function instancedSourceDraw(args: {
   source: ScatterModelSource;
   members: StaticMembersDriver;
   capacity: () => number;
@@ -493,7 +485,7 @@ function instancedSourceDraw(env: StaticBatchEnv, args: {
       ensureMesh();
       members.steps.pending.add(step);
     },
-    dispose(state: EngineFrameState) {
+    dispose(_state: EngineFrameState) {
       leaveFrame?.();
       members.steps.delete(step);
       const current = mesh;
@@ -538,7 +530,7 @@ function objectSourceDraw(env: StaticBatchEnv, args: {
     const acquired = staticDrawPoolFor(scene).acquire(args.source, cell, capacity, proxy);
     slot = acquired;
     const draw = acquired === null
-      ? instancedSourceDraw(env, { source: args.source, members: args.members, capacity: () => args.objects().length })
+      ? instancedSourceDraw({ source: args.source, members: args.members, capacity: () => args.objects().length })
       : pooledSourceDraw(env, { slot: acquired, source: args.source, members: args.members, objects: args.objects });
     inner = new MountedDraw(draw, group);
     inner.mount(stateRef);
@@ -866,7 +858,7 @@ const IMPOSTOR_SPLIT_MOVE = 1;
 interface HarvestedBatch {
   readonly sources: readonly ScatterModelSource[];
   readonly roots: readonly THREE.Object3D[];
-  readonly lease: { dispose(): void } | null;
+  readonly lease: OverrideMapSetsLease;
 }
 
 /**
@@ -890,7 +882,7 @@ function variantLevelDraw(env: StaticBatchEnv, args: {
   let stateRef: EngineFrameState | null = null;
   let members: StaticMembersDriver | null = null;
   let harvested: { sources: ScatterModelSource[]; root: THREE.Object3D } | null = null;
-  let lease: { dispose(): void } | null = null;
+  let lease: OverrideMapSetsLease | null = null;
 
   const reportLevelSingles = () => {
     env.singles.clearPrefix(args.singlesPrefix);
@@ -925,7 +917,7 @@ function variantLevelDraw(env: StaticBatchEnv, args: {
     });
   };
 
-  const build = async (state: EngineFrameState) => {
+  const build = async () => {
     const built = builtLevelSource(args.url);
     const urls = built === null ? [args.url] : [args.url, built.source];
     const gltfs = await Promise.all(urls.map((url) => preloadSceneModel(url)));
@@ -961,7 +953,7 @@ function variantLevelDraw(env: StaticBatchEnv, args: {
     mount(state: EngineFrameState) {
       stateRef = state;
       state.scene.add(group);
-      void build(state).catch((error) => {
+      void build().catch((error) => {
         reportFallbackSeam("object", "renderError");
         console.error("[jgengine:static-objects] level load failed", args.url, error);
       });
@@ -1075,7 +1067,6 @@ function variantStaticDraw(env: StaticBatchEnv, args: {
   let revision = -1;
   let activeSelector = selector;
   let leaveAssign: (() => void) | null = null;
-  let stateRef: EngineFrameState | null = null;
 
   const impostor = levels[levels.length - 1]?.url === IMPOSTOR_LEVEL_URL;
   const coarsest = levels.length - (impostor ? 2 : 1);
@@ -1115,7 +1106,6 @@ function variantStaticDraw(env: StaticBatchEnv, args: {
 
   return {
     mount(state: EngineFrameState) {
-      stateRef = state;
       state.scene.add(group);
       buildLevels(state);
       leaveAssign = joinFrameTask(CAMERA_POST_FRAME_PRIORITY + 0.1, (frameState) => {
@@ -1139,7 +1129,6 @@ function variantStaticDraw(env: StaticBatchEnv, args: {
       });
     },
     update(state: EngineFrameState) {
-      stateRef = state;
       for (const child of children.values()) child.update(state);
     },
     dispose(state: EngineFrameState) {
@@ -1147,7 +1136,6 @@ function variantStaticDraw(env: StaticBatchEnv, args: {
       for (const child of children.values()) child.dispose(state);
       children.clear();
       env.singles.clearPrefix("level:");
-      stateRef = null;
       state.scene.remove(group);
     },
   };

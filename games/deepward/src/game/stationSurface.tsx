@@ -31,11 +31,11 @@ export function applyStationSurface(material: MeshStandardMaterial, surface: Ind
   const family = surface === 'floor' ? 'station-floor' : 'station-enamel';
   const tile = surface === 'floor' ? 1 : 1.2;
   material.normalScale.set(0.22, 0.22);
-  void Promise.all(
-    (['color', 'roughness', 'normal'] as const).map((role) =>
-      loadStationTexture(`/models/imported/deepward/surfaces/${family}-${role}.png`),
-    ),
-  ).then(([map, roughnessMap, normalMap]) => {
+  void Promise.all([
+    loadStationTexture(`/models/imported/deepward/surfaces/${family}-color.png`),
+    loadStationTexture(`/models/imported/deepward/surfaces/${family}-roughness.png`),
+    loadStationTexture(`/models/imported/deepward/surfaces/${family}-normal.png`),
+  ]).then(([map, roughnessMap, normalMap]) => {
     for (const texture of [map, roughnessMap, normalMap]) {
       texture.wrapS = RepeatWrapping;
       texture.wrapT = RepeatWrapping;

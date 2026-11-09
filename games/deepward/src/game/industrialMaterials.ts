@@ -1,4 +1,5 @@
 import type { ThreeElements } from "@react-three/fiber";
+import type { MeshStandardMaterialParameters } from "three";
 
 export const PALETTE = {
   wall: "#89918c", panel: "#344344", floor: "#34444b", steel: "#82918b", brass: "#cca46c",
@@ -28,4 +29,14 @@ export type IndustrialSurface = keyof typeof INDUSTRIAL;
 export function surfaceMaterial(surface: IndustrialSurface, color?: string, emission = 0): IndustrialMaterialProps {
   return { ...INDUSTRIAL[surface], ...(color === undefined ? {} : { color }),
     ...(emission > 0 ? { emissive: color ?? INDUSTRIAL[surface].color, emissiveIntensity: emission } : {}) };
+}
+
+/** The same recipe as `MeshStandardMaterial` constructor parameters for draw-side materials. */
+export function surfaceMaterialParams(surface: IndustrialSurface, color?: string, emission = 0): MeshStandardMaterialParameters {
+  const base = INDUSTRIAL[surface];
+  return {
+    ...base,
+    color: color ?? base.color,
+    ...(emission > 0 ? { emissive: color ?? base.color, emissiveIntensity: emission } : {}),
+  };
 }

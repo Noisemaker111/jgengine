@@ -180,7 +180,7 @@ export function grassPatchDraw(getProps: () => GrassPatchProps): EngineDraw {
         filling();
         filling = undefined;
       }
-      cover?.frame?.(coverState ?? state);
+      cover?.frame?.(coverState ?? state, (coverState ?? state).delta);
     },
     dispose(state: EngineFrameState) {
       filling?.();

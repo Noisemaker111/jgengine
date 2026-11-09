@@ -1,8 +1,9 @@
 import { afterEach, expect, test } from "bun:test";
 import { act, createRoot, extend } from "@react-three/fiber";
-import { createElement } from "react";
+import { createElement, Fragment } from "react";
 import * as THREE from "three";
 
+import { FrameBoardPump } from "@jgengine/core/frame/frameBoardPump.draw";
 import { environment, road } from "@jgengine/core/world/features";
 
 import { setSurfaceScanLoader } from "@jgengine/core/material/surfaceScanTextures.draw";
@@ -25,7 +26,7 @@ async function mountScene(feature: ReturnType<typeof environment>): Promise<{ sc
   });
   let scene!: THREE.Scene;
   await act(async () => {
-    scene = root.render(createElement(EnvironmentScene, { feature })).getState().scene;
+    scene = root.render(createElement(Fragment, null, createElement(FrameBoardPump), createElement(EnvironmentScene, { feature }))).getState().scene;
   });
   // Let the scan loads resolve and the materials rebuild around them.
   await act(async () => {

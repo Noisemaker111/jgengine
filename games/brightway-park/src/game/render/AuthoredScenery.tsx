@@ -55,7 +55,7 @@ export function authoredSceneryDraw(): EngineDraw {
       for (const draw of draws) draw.mount?.(state);
     },
     frame(state) {
-      for (const draw of draws) draw.frame?.(state);
+      for (const draw of draws) draw.frame?.(state, state.delta);
     },
     dispose(state) {
       for (const draw of draws) draw.dispose?.(state);

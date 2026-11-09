@@ -127,6 +127,7 @@ import type { GameLookInput } from "@jgengine/core/render/lookPreset";
 import { WorldView, RemotePlayers } from "./world/WorldScene";
 import { FrameDriver } from "./drivers/FrameDriver";
 import { FrameBoardPump } from "./drivers/FrameBoardPump";
+import { R3FEngineHost } from "@jgengine/core/frame/r3fEngineHost.draw";
 import { GamepadSource } from "@jgengine/core/input/gamepadSource.draw";
 import { SplitScreenRenderer, useSeatViewports } from "@jgengine/core/camera/Viewports.draw";
 import { localPlayers } from "@jgengine/core/runtime/localPlayers";
@@ -740,6 +741,7 @@ export function Shell3dPresentation({
                   gl={rendererFactory}
                   style={{ touchAction: "none" }}
                 >
+                  <R3FEngineHost>
                   <FrameBoardPump />
                   <CanvasCoverFrameloop authored={canvasFrameloop} />
                   <TextureFiltering anisotropy={graphics.profile.anisotropy} />
@@ -938,6 +940,7 @@ export function Shell3dPresentation({
                       sceneDrawsToTarget={!splitScreen && resolvedLook.postProcessing !== undefined && resolvedLook.postProcessing.enabled !== false}
                     />
                   )}
+                  </R3FEngineHost>
                 </Canvas>
                 )}
               </ColorblindFrame>

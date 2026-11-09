@@ -60,7 +60,8 @@ describe("static authored shapes", () => {
 
 test("mounted batches retune matrices, share only compatible draws and dispose owned resources", async () => {
   const { act, createRoot, extend } = await import("@react-three/fiber");
-  const { createElement, Suspense } = await import("react");
+  const { createElement, Fragment, Suspense } = await import("react");
+  const { FrameBoardPump } = await import("@jgengine/core/frame/frameBoardPump.draw");
   const { StaticShapeInstances } = await import("./staticShapeInstances.draw");
   const environment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
   const previous = environment.IS_REACT_ACT_ENVIRONMENT;
@@ -72,7 +73,7 @@ test("mounted batches retune matrices, share only compatible draws and dispose o
   try {
     let scene: THREE.Scene;
     const render = async (instances: StaticShapeInstance[]) => act(async () => {
-      scene = root.render(createElement(Suspense, { fallback: null }, createElement(StaticShapeInstances, { instances }))).getState().scene;
+      scene = root.render(createElement(Suspense, { fallback: null }, createElement(Fragment, null, createElement(FrameBoardPump), createElement(StaticShapeInstances, { instances })))).getState().scene;
     });
     await render([box, { ...box, position: [10, 0, 0] }]);
     const meshes = () => {

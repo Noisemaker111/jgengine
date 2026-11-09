@@ -559,8 +559,8 @@ export function livingWorldVisualsDraw(getProps: () => LivingWorldProps): Engine
       reconcile();
       for (const slot of Object.values(slots)) if (slot.draw !== null && slot.state !== null) slot.draw.update?.(slot.state);
     },
-    frame() {
-      for (const slot of Object.values(slots)) if (slot.draw !== null && slot.state !== null) slot.draw.frame?.(slot.state);
+    frame(state: EngineFrameState) {
+      for (const slot of Object.values(slots)) if (slot.draw !== null && slot.state !== null) slot.draw.frame?.(slot.state, state.delta);
     },
     dispose(state: EngineFrameState) {
       for (const slot of Object.values(slots)) disposeSlot(slot);

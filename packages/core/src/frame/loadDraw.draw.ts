@@ -100,7 +100,7 @@ export function loadDrawSystem<T>(options: Omit<LoadDrawOptions<T>, "build"> & {
       });
     },
     frame(_state: EngineFrameState) {
-      if (inner !== null) inner.draw.frame?.(inner.state);
+      if (inner !== null) inner.draw.frame?.(inner.state, inner.state.delta);
     },
     dispose(state: EngineFrameState) {
       cancelled = true;

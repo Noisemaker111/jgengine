@@ -11,7 +11,8 @@ import { buildCullingDriver } from "./cullingDriver";
 import { createVisibilityChanges, type VisibilityChanges } from "./visibilityChanges";
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
 
-type VisiblePredicate = (id: string) => boolean;
+/** Whether an id is inside the visible set this frame. @internal */
+export type VisiblePredicate = (id: string) => boolean;
 
 const ALWAYS_VISIBLE: VisiblePredicate = () => true;
 const alwaysVisibleRef: MutableRefObject<VisiblePredicate> = { current: ALWAYS_VISIBLE };

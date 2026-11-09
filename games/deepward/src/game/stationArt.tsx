@@ -6,7 +6,7 @@ import { composeInstance, uploadInstances } from '@jgengine/core/instancing/inst
 import { editorLayers, type Place } from '../world';
 import { applyStationSurface, stationSurfaceTextured } from './stationSurface';
 import { stationModelReplacements } from './stationModels';
-import { surfaceMaterial, type IndustrialSurface } from './industrialMaterials';
+import { surfaceMaterialParams, type IndustrialSurface } from './industrialMaterials';
 
 type StationPart = (typeof editorLayers.volumes)[number];
 
@@ -36,7 +36,7 @@ function stationBatchDraw(parts: readonly StationPart[]): EngineDraw {
  return {
   mount(state: EngineFrameState) {
    geometry = first.shape === 'box' ? new BoxGeometry(1, 1, 1) : new CylinderGeometry(1, 1, 1, 16);
-   material = new MeshStandardMaterial(surfaceMaterial(surface, first.color, surface === "lamp" ? 0.8 : 0));
+   material = new MeshStandardMaterial(surfaceMaterialParams(surface, first.color, surface === "lamp" ? 0.8 : 0));
    if (first.shape === 'box' && stationSurfaceTextured(surface)) {
     applyStationSurface(material, surface);
    }
