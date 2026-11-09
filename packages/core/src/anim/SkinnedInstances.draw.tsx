@@ -1,5 +1,4 @@
-import { useLoader } from "@react-three/fiber";
-import { useEffect, useLayoutEffect, useMemo } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
@@ -8,8 +7,10 @@ import { planBoneTexture, type BoneTextureLayout } from "@jgengine/core/anim/bon
 
 import { measureLocalBounds } from "@jgengine/core/model/measureBounds.draw";
 import { floatAttribute } from "@jgengine/core/model/modelMeshMerge.draw";
-import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
-import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
+import { preloadSceneModel } from "@jgengine/core/model/entityModelDraw.draw";
+import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 
 /** A rig to bake: a loaded scene with skinned meshes and its clips. */
 export interface SkinnedCrowdSource {
@@ -460,82 +461,153 @@ const scratchPosition = new THREE.Vector3();
 const scratchScale = new THREE.Vector3();
 
 /**
+ * Draw-side form of {@link SkinnedInstances}: loads the rig through the shared per-url GLTF cache,
+ * bakes its clips to the bone texture once per (url, clips, once, fps) signature, and rebuilds the
+ * instanced mesh when capacity changes or rewrites its buffers when the instance list does — the
+ * same boundaries the old memos and layout effect had.
+ */
+export function skinnedInstancesDraw(getProps: () => SkinnedInstancesProps): EngineDraw {
+  let gltf: GLTF | null = null;
+  let baked: BakedSkinnedCrowd | null = null;
+  let uniforms: CrowdUniforms | null = null;
+  let materials: THREE.Material[] = [];
+  let depthMaterial: THREE.MeshDepthMaterial | null = null;
+  let mesh: THREE.InstancedMesh | null = null;
+  let mountState: EngineFrameState | null = null;
+  let loadKey = "";
+  let builtInstances: readonly CrowdInstance[] | null = null;
+  let builtModelScale = 0;
+  let builtCapacity = -1;
+  let generation = 0;
+
+  const disposeScene = () => {
+    if (mesh !== null && mountState !== null) mountState.scene.remove(mesh);
+    mesh?.dispose();
+    mesh = null;
+    for (const material of materials) material.dispose();
+    materials = [];
+    depthMaterial?.dispose();
+    depthMaterial = null;
+    baked?.dispose();
+    baked = null;
+    uniforms = null;
+    builtCapacity = -1;
+  };
+
+  const writeInstances = () => {
+    const target = mesh;
+    const rig = baked;
+    if (target === null || rig === null) return;
+    const props = getProps();
+    const modelScale = props.modelScale ?? 1;
+    const play = uniforms === null ? null : (target.geometry.getAttribute("crowdPlay") as THREE.InstancedBufferAttribute);
+    props.instances.forEach((instance, i) => {
+      const scale = (instance.scale ?? 1) * modelScale;
+      scratchQuaternion.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, instance.rotationY ?? 0);
+      scratchMatrix.compose(scratchPosition.set(instance.position[0], instance.position[1], instance.position[2]), scratchQuaternion, scratchScale.set(scale, scale, scale));
+      target.setMatrixAt(i, scratchMatrix);
+      play?.setXYZ(i, instance.clip === undefined ? 0 : rig.clipIndex.get(instance.clip) ?? 0, instance.timeOffset ?? 0, instance.speed ?? 1);
+    });
+    target.count = props.instances.length;
+    target.instanceMatrix.needsUpdate = true;
+    if (play !== null) play.needsUpdate = true;
+    target.computeBoundingSphere();
+    // Poses reach past the bind-pose bounds (arms out, a lunge), so pad the cull sphere.
+    if (target.boundingSphere !== null) target.boundingSphere.radius += (rig.geometry.boundingSphere?.radius ?? 0) * modelScale;
+    builtInstances = props.instances;
+    builtModelScale = modelScale;
+  };
+
+  const bakeScene = () => {
+    if (gltf === null || mountState === null) return;
+    disposeScene();
+    const props = getProps();
+    const next = bakeSkinnedCrowd({ scene: gltf.scene, animations: gltf.animations }, { clips: props.clips, once: props.once, fps: props.fps });
+    baked = next;
+    uniforms = next.animated ? createCrowdUniforms(next) : null;
+    materials = next.materials.map((material) => (uniforms === null ? material.clone() : patchCrowdMaterial(material.clone(), uniforms)));
+    depthMaterial = uniforms === null ? null : patchCrowdMaterial(new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking }), uniforms);
+    builtCapacity = -1;
+  };
+
+  const syncMesh = () => {
+    if (baked === null || mountState === null) return;
+    const props = getProps();
+    const capacity = Math.max(1, props.instances.length);
+    if (mesh === null || capacity !== builtCapacity) {
+      if (mesh !== null && mountState !== null) mountState.scene.remove(mesh);
+      mesh?.dispose();
+      mesh = new THREE.InstancedMesh(baked.geometry, materials.length === 1 ? materials[0] ?? materials : materials, capacity);
+      if (depthMaterial !== null) mesh.customDepthMaterial = depthMaterial;
+      if (uniforms !== null) mesh.geometry.setAttribute("crowdPlay", new THREE.InstancedBufferAttribute(new Float32Array(capacity * 3), 3));
+      mesh.castShadow = props.castShadow ?? true;
+      mesh.receiveShadow = props.receiveShadow ?? true;
+      mountState.scene.add(mesh);
+      builtCapacity = capacity;
+      builtInstances = null;
+    } else {
+      mesh.castShadow = props.castShadow ?? true;
+      mesh.receiveShadow = props.receiveShadow ?? true;
+    }
+    if (builtInstances !== props.instances || builtModelScale !== (props.modelScale ?? 1)) writeInstances();
+  };
+
+  return {
+    mount(state: EngineFrameState) {
+      mountState = state;
+      const props = getProps();
+      loadKey = `${props.url}\u0000${props.clips?.join("\u0000") ?? ""}\u0000${props.once?.join("\u0000") ?? ""}\u0000${props.fps ?? ""}`;
+      const gen = ++generation;
+      void preloadSceneModel(props.url).then((loaded) => {
+        if (gen !== generation) return;
+        gltf = loaded;
+        bakeScene();
+        syncMesh();
+      }).catch(() => {});
+    },
+    update(state: EngineFrameState) {
+      mountState = state;
+      const props = getProps();
+      const nextKey = `${props.url}\u0000${props.clips?.join("\u0000") ?? ""}\u0000${props.once?.join("\u0000") ?? ""}\u0000${props.fps ?? ""}`;
+      if (nextKey !== loadKey) {
+        loadKey = nextKey;
+        generation += 1;
+        gltf = null;
+        disposeScene();
+        const gen = generation;
+        void preloadSceneModel(props.url).then((loaded) => {
+          if (gen !== generation) return;
+          gltf = loaded;
+          bakeScene();
+          syncMesh();
+        }).catch(() => {});
+        return;
+      }
+      if (gltf !== null && baked === null) {
+        bakeScene();
+      }
+      syncMesh();
+    },
+    frame(_state: EngineFrameState, delta: number) {
+      if (uniforms !== null) uniforms.crowdTime.value += delta * (getProps().timeScale ?? 1);
+    },
+    dispose(_state: EngineFrameState) {
+      generation += 1;
+      disposeScene();
+      mountState = null;
+      gltf = null;
+    },
+  };
+}
+
+/**
  * Renders many animated copies of one rigged model in a single instanced draw per material: the
  * rig's clips are baked to a bone-matrix texture once, and each instance samples its own clip, time
  * offset and speed on the GPU. For crowds, spectators and distant NPCs; a character that needs
  * blending, IK or attachments stays an entity model.
  */
-export function SkinnedInstances({
-  url,
-  instances,
-  clips,
-  once,
-  fps,
-  modelScale = 1,
-  castShadow = true,
-  receiveShadow = true,
-  timeScale = 1,
-}: SkinnedInstancesProps) {
-  const gltf = useLoader(sharedGltfLoader, url);
-  const clipKey = clips?.join("\u0000");
-  const onceKey = once?.join("\u0000");
-  const baked = useMemo(
-    () => bakeSkinnedCrowd({ scene: gltf.scene, animations: gltf.animations }, { clips, once, fps }),
-    [gltf, clipKey, onceKey, fps],
-  );
-  useEffect(() => () => baked.dispose(), [baked]);
-
-  const uniforms = useMemo(() => (baked.animated ? createCrowdUniforms(baked) : null), [baked]);
-  const materials = useMemo(
-    () => baked.materials.map((material) => (uniforms === null ? material.clone() : patchCrowdMaterial(material.clone(), uniforms))),
-    [baked, uniforms],
-  );
-  const depthMaterial = useMemo(
-    () => (uniforms === null ? null : patchCrowdMaterial(new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking }), uniforms)),
-    [uniforms],
-  );
-  useEffect(
-    () => () => {
-      for (const material of materials) material.dispose();
-      depthMaterial?.dispose();
-    },
-    [materials, depthMaterial],
-  );
-
-  const capacity = Math.max(1, instances.length);
-  const mesh = useMemo(() => {
-    const instanced = new THREE.InstancedMesh(baked.geometry, materials.length === 1 ? materials[0]! : materials, capacity);
-    if (depthMaterial !== null) instanced.customDepthMaterial = depthMaterial;
-    if (uniforms !== null) instanced.geometry.setAttribute("crowdPlay", new THREE.InstancedBufferAttribute(new Float32Array(capacity * 3), 3));
-    return instanced;
-  }, [baked, materials, depthMaterial, uniforms, capacity]);
-  useEffect(
-    () => () => {
-      mesh.dispose();
-    },
-    [mesh],
-  );
-
-  useLayoutEffect(() => {
-    const play = uniforms === null ? null : (mesh.geometry.getAttribute("crowdPlay") as THREE.InstancedBufferAttribute);
-    instances.forEach((instance, i) => {
-      const scale = (instance.scale ?? 1) * modelScale;
-      scratchQuaternion.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, instance.rotationY ?? 0);
-      scratchMatrix.compose(scratchPosition.set(instance.position[0], instance.position[1], instance.position[2]), scratchQuaternion, scratchScale.set(scale, scale, scale));
-      mesh.setMatrixAt(i, scratchMatrix);
-      play?.setXYZ(i, instance.clip === undefined ? 0 : baked.clipIndex.get(instance.clip) ?? 0, instance.timeOffset ?? 0, instance.speed ?? 1);
-    });
-    mesh.count = instances.length;
-    mesh.instanceMatrix.needsUpdate = true;
-    if (play !== null) play.needsUpdate = true;
-    mesh.computeBoundingSphere();
-    // Poses reach past the bind-pose bounds (arms out, a lunge), so pad the cull sphere.
-    if (mesh.boundingSphere !== null) mesh.boundingSphere.radius += (baked.geometry.boundingSphere?.radius ?? 0) * modelScale;
-  }, [mesh, instances, baked, modelScale, uniforms]);
-
-  useFrameTask((_three, delta) => {
-    if (uniforms !== null) uniforms.crowdTime.value += delta * timeScale;
-  });
-
-  return <primitive object={mesh} castShadow={castShadow} receiveShadow={receiveShadow} />;
+export function SkinnedInstances(props: SkinnedInstancesProps) {
+  const latest = useRef<SkinnedInstancesProps>(props);
+  latest.current = props;
+  return <EngineDrawMount create={() => skinnedInstancesDraw(() => latest.current)} deps={[props.url, props.clips?.join("\u0000"), props.once?.join("\u0000"), props.fps]} />;
 }
