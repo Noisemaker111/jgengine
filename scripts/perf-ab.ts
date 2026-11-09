@@ -5,13 +5,15 @@ import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { basename, dirname, join, resolve } from "node:path";
 
-import { applyDevice, ensureDevServer, killPid, killProcessTree, navigateCapturePage, openPageSession, withBrowserSession, type CdpSession, type EnsureDevServerResult } from "./browser-lib";
+import { applyDevice, CdpSession, ensureDevServer, killPid, killProcessTree, navigateCapturePage, openPageSession, withBrowserSession, type EnsureDevServerResult } from "./browser-lib";
 import { FRAME_GAMES } from "./ci-scope";
 import { ensureWorktreeReady } from "./agent-worktree";
 import { startPath, type PerfPath } from "./perf-breakdown";
 import { GATE_SIZE } from "./perf-gate";
 import { acquirePerfLock } from "./perf-lock";
 import { cappedClockProblem, PAGE_READY_MS, parseSettingSpec, perfPageUrl, perfSettingsScript, probeFrameClockMs, SAMPLE_FRAMES_SCRIPT, type PerfSettingOverride } from "./perf-play";
+import { localGet } from "./localhostHttp";
+import { currentPriority, restoreNormalPriority } from "./machine-priority";
 import { provisionCapturedGame } from "./provisionCapture";
 
 /**
@@ -195,9 +197,9 @@ export function medianMs(deltas: readonly number[]): number {
   return kept.length % 2 === 1 ? kept[mid]! : (kept[mid - 1]! + kept[mid]!) / 2;
 }
 
-/** Which side runs first in block `index`: base first in even blocks, branch first in odd ones. */
-export function blockOrder(index: number): ["base", "branch"] | ["branch", "base"] {
-  return index % 2 === 0 ? ["base", "branch"] : ["branch", "base"];
+/** ln(branch / base) for one branch window, against the geometric mean of the base windows either side of it. */
+export function bracketedLogRatio(baseBefore: number, branch: number, baseAfter: number): number {
+  return Math.log(branch) - (Math.log(baseBefore) + Math.log(baseAfter)) / 2;
 }
 
 function git(cwd: string, args: string[]): { ok: boolean; out: string } {
@@ -313,6 +315,12 @@ export interface AbWindow {
   side: Side;
   medianMs: number;
   frames: number;
+  /** Each renderer's CPU over the window, % of a core, busiest first. */
+  renderers: number[];
+  /** The GPU process's CPU over the window, % of a core. */
+  gpu: number;
+  /** Chrome processes that sat below normal priority before the window and were raised to normal. */
+  raised: string[];
 }
 
 export interface AbGameResult {
@@ -324,7 +332,7 @@ export interface AbGameResult {
   lockSeconds: number;
 }
 
-async function openSide(side: Side, debugPort: number, base: string, game: string, args: AbArgs): Promise<SidePage> {
+async function openSide(side: Side, debugPort: number, serve: (side: Side) => Promise<string>, game: string, args: AbArgs): Promise<SidePage> {
   const session = await openPageSession(debugPort);
   await session.send("Page.enable");
   await session.send("Debugger.enable");
@@ -333,7 +341,17 @@ async function openSide(side: Side, debugPort: number, base: string, game: strin
   if (side === "branch" && args.plantMs > 0) await session.send("Page.addScriptToEvaluateOnNewDocument", { source: plantScript(args.plantMs) });
   await applyDevice(session, "desktop", "full", GATE_SIZE);
   console.error(`perf ab: ${game}: loading the ${side} page`);
-  await navigateCapturePage(session, perfPageUrl({ base, game, quality: "high" }).toString(), PAGE_READY_MS);
+  const load = async () => navigateCapturePage(session, perfPageUrl({ base: await serve(side), game, quality: "high" }).toString(), PAGE_READY_MS);
+  try {
+    await load();
+  } catch (error) {
+    // The broker restarts a checkout's dev server when its tree moves, so the one asked for before the
+    // lock can be gone at the load; asked again, it is the live one.
+    const message = error instanceof Error ? error.message : String(error);
+    if (!/ERR_CONNECTION_REFUSED|ERR_CONNECTION_RESET|ERR_EMPTY_RESPONSE/.test(message)) throw error;
+    console.error(`degraded: the ${side} dev server stopped answering (${message}); asked for it again and loading once more`);
+    await load();
+  }
   await session.evaluate(`new Promise((r) => setTimeout(r, ${WARMUP_MS}))`, { awaitPromise: true });
   const pose = await session.evaluate<{ ok: boolean; position?: number[]; rotationY?: number }>(`window.__jgengineAgent?.handle?.({ method: "player_pose" }) ?? { ok: false }`);
   const [x, y, z] = pose?.position ?? [];
@@ -359,6 +377,8 @@ async function pause(page: SidePage): Promise<void> {
 
 async function resume(page: SidePage, path: PerfPath): Promise<void> {
   await page.session.send("Debugger.resume");
+  // The newest page is the browser's foreground one; the other would be timed as a background tab.
+  await page.session.send("Page.bringToFront");
   // A walk that went on from wherever the last window left it read 10.7-23 ms from one 2 s window to
   // the next on one build (harbor-heat pilot, 2026-11-09): each window saw new ground. From the same
   // spot, every window on both sides walks the same route.
@@ -374,7 +394,7 @@ async function measureWindow(page: SidePage, seconds: number): Promise<number[]>
   return (await page.session.evaluate<number[]>(SAMPLE_FRAMES_SCRIPT(seconds * 1000), { awaitPromise: true })) ?? [];
 }
 
-async function measurePair(game: string, servers: Record<Side, string>, args: AbArgs, debugPort: number): Promise<Omit<AbGameResult, "lockSeconds">> {
+async function measurePair(game: string, serve: (side: Side) => Promise<string>, args: AbArgs, debugPort: number): Promise<Omit<AbGameResult, "lockSeconds">> {
   const probe = await openPageSession(debugPort);
   try {
     const problem = cappedClockProblem(await probeFrameClockMs(probe));
@@ -383,12 +403,15 @@ async function measurePair(game: string, servers: Record<Side, string>, args: Ab
     await probe.close();
   }
   const pages: Partial<Record<Side, SidePage>> = {};
+  const version = JSON.parse(await localGet(`http://127.0.0.1:${debugPort}/json/version`, 5_000)) as { webSocketDebuggerUrl?: string };
+  if (version.webSocketDebuggerUrl === undefined) throw new Error("the browser named no debugger endpoint");
+  const browser = await CdpSession.connect(version.webSocketDebuggerUrl, 10_000);
   try {
     // Base loads first and waits paused while the branch loads, so neither page draws while the other is timed.
     const loadAt = Date.now();
-    pages.base = await openSide("base", debugPort, servers.base, game, args);
+    pages.base = await openSide("base", debugPort, serve, game, args);
     await pause(pages.base);
-    pages.branch = await openSide("branch", debugPort, servers.branch, game, args);
+    pages.branch = await openSide("branch", debugPort, serve, game, args);
     await pause(pages.branch);
     const measureAt = Date.now();
     // A walk with no player to put back (a camera-only game pans away) would see new ground every
@@ -400,25 +423,39 @@ async function measurePair(game: string, servers: Record<Side, string>, args: Ab
     }
     console.error(`perf ab: ${game}: both pages loaded and warmed in ${Math.round((measureAt - loadAt) / 1000)} s`);
     const windows: AbWindow[] = [];
+    const run = async (side: Side, block: number): Promise<number> => {
+      const page = pages[side]!;
+      await resume(page, path);
+      const cpuBefore = await processCpu(browser);
+      const lowered = equalizePriorities(cpuBefore);
+      const windowAt = Date.now();
+      const deltas = await measureWindow(page, args.windowSeconds);
+      const cpu = cpuShares(cpuBefore, await processCpu(browser), Date.now() - windowAt);
+      await pause(page);
+      const median = medianMs(deltas);
+      if (!Number.isFinite(median)) throw new Error(`the ${side} page drew no frames in pair ${block}`);
+      windows.push({ block, side, medianMs: Math.round(median * 1000) / 1000, frames: deltas.length, ...cpu, raised: lowered });
+      return median;
+    };
+    // One pair first, thrown away: each page's first window after its warmup pause is not like the rest.
+    await run("base", 0);
+    await run("branch", 0);
+    // Strictly alternating, base first and last: a page timed twice running read about 30 ms where the
+    // same page timed right after the other read 14-19 ms (harbor-heat, 2026-11-09), so every window
+    // follows the other page's. Each branch window is held against the mean of the base windows on
+    // either side of it, which also takes out a drift that is linear over three windows.
     const ratios: number[] = [];
-    for (let block = 0; block < args.maxBlocks; block += 1) {
-      const medians: Partial<Record<Side, number>> = {};
-      for (const side of blockOrder(block)) {
-        const page = pages[side]!;
-        await resume(page, path);
-        const deltas = await measureWindow(page, args.windowSeconds);
-        await pause(page);
-        const median = medianMs(deltas);
-        if (!Number.isFinite(median)) throw new Error(`the ${side} page drew no frames in block ${block + 1}`);
-        medians[side] = median;
-        windows.push({ block: block + 1, side, medianMs: Math.round(median * 1000) / 1000, frames: deltas.length });
-      }
-      ratios.push(Math.log(medians.branch! / medians.base!));
+    let before = await run("base", 1);
+    for (let block = 1; block <= args.maxBlocks; block += 1) {
+      const branch = await run("branch", block);
+      const after = await run("base", block + 1);
+      ratios.push(bracketedLogRatio(before, branch, after));
       const verdict = abVerdict(ratios, args);
-      console.error(`perf ab: ${game} block ${block + 1}: base ${medians.base!.toFixed(2)} ms, branch ${medians.branch!.toFixed(2)} ms${verdict === null ? "" : ` -> ${verdict.call}`}`);
+      console.error(`perf ab: ${game} pair ${block}: base ${before.toFixed(2)} / ${after.toFixed(2)} ms, branch ${branch.toFixed(2)} ms${verdict === null ? "" : ` -> ${verdict.call}`}`);
+      before = after;
       if (verdict !== null) {
-        console.error(`perf ab: ${game}: ${block + 1} pairs in ${Math.round((Date.now() - measureAt) / 1000)} s`);
-        const side = (which: Side) => medianMs(windows.filter((window) => window.side === which).map((window) => window.medianMs));
+        console.error(`perf ab: ${game}: ${verdict.blocks} pairs in ${Math.round((Date.now() - measureAt) / 1000)} s`);
+        const side = (which: Side) => medianMs(windows.filter((window) => window.side === which && window.block > 0).map((window) => window.medianMs));
         return { game, verdict, baseMs: side("base"), branchMs: side("branch"), windows };
       }
     }
@@ -429,7 +466,47 @@ async function measurePair(game: string, servers: Record<Side, string>, args: Ab
       await page.stopPath().catch(() => {});
       await page.session.close().catch(() => {});
     }
+    await browser.close().catch(() => {});
   }
+}
+
+/**
+ * Put every renderer and the GPU process at normal priority before a window, and name the ones that
+ * were lower: Chrome lowers the renderers of pages it treats as background, and the page timed after
+ * the other was made first would be timed at that lower priority on a busy PC.
+ */
+function equalizePriorities(processes: ReadonlyMap<string, number>): string[] {
+  const lowered: string[] = [];
+  for (const key of processes.keys()) {
+    const [type, id] = key.split(":");
+    const pid = Number(id);
+    if ((type !== "renderer" && type !== "gpu") || !Number.isInteger(pid) || pid <= 0) continue;
+    const before = currentPriority(pid);
+    if (before === "normal") continue;
+    lowered.push(`${type} ${pid} (${before})`);
+    restoreNormalPriority(pid);
+  }
+  return lowered;
+}
+
+/** CPU seconds so far per Chrome process, by type and pid. */
+async function processCpu(browser: CdpSession): Promise<Map<string, number>> {
+  const info = await browser.send("SystemInfo.getProcessInfo");
+  const list = (info["processInfo"] ?? []) as Array<{ type: string; id: number; cpuTime: number }>;
+  return new Map(list.map((process) => [`${process.type}:${process.id}`, process.cpuTime]));
+}
+
+/**
+ * Each renderer's and the GPU process's CPU over a window as a percent of one core, renderers busiest
+ * first: the paused page's renderer should sit near 0, or it was drawing while the other was timed.
+ */
+export function cpuShares(before: ReadonlyMap<string, number>, after: ReadonlyMap<string, number>, windowMs: number): { renderers: number[]; gpu: number } {
+  const share = (key: string) => Math.round((((after.get(key) ?? 0) - (before.get(key) ?? 0)) * 1000 * 100) / Math.max(windowMs, 1));
+  const keys = [...after.keys()].filter((key) => before.has(key));
+  return {
+    renderers: keys.filter((key) => key.startsWith("renderer:")).map(share).sort((a, b) => b - a),
+    gpu: keys.filter((key) => key.startsWith("gpu:")).map(share).reduce((sum, value) => sum + value, 0),
+  };
 }
 
 const CALL_TEXT: Record<AbCall, string> = { slower: "slower", faster: "faster", same: "no difference", unclear: "unclear" };
@@ -496,12 +573,11 @@ async function main(): Promise<number> {
       const releaseLock = await acquirePerfLock(`perf ab ${game}`);
       const heldAt = Date.now();
       try {
-        const servers = { base: await serve("base"), branch: await serve("branch") };
         let measured: Omit<AbGameResult, "lockSeconds"> | null = null;
         const exit = await withBrowserSession(
           { keep: false, timeoutMs: 180_000, hardDeadlineMs: 2 * 2 * PAGE_READY_MS + 2 * WARMUP_MS + parsed.maxBlocks * 2 * (parsed.windowSeconds * 1000 + SETTLE_MS + 1_000) + 120_000, frameClock: "uncapped", chromePriority: "normal" },
           async ({ debugPort }) => {
-            measured = await measurePair(game, servers, parsed, debugPort);
+            measured = await measurePair(game, serve, parsed, debugPort);
           },
         );
         if (exit !== 0 || measured === null) throw new Error(`the browser session exited ${exit}`);

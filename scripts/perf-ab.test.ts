@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { abVerdict, affectedGames, baseTreeName, blockOrder, homeRequest, medianMs, parseAbArgs, plantScript, renderAbTable, t99, treeFingerprint, type AbGameResult } from "./perf-ab";
+import { abVerdict, affectedGames, baseTreeName, bracketedLogRatio, homeRequest, medianMs, parseAbArgs, plantScript, renderAbTable, t99, treeFingerprint, type AbGameResult } from "./perf-ab";
 
 const GAMES = ["deepward", "harbor-heat", "scrap-signal"];
 const options = { minBlocks: 4, maxBlocks: 16, marginPct: 3 };
@@ -43,10 +43,11 @@ test("t99 falls with more pairs and holds past the table", () => {
   expect(t99(0)).toBe(Number.POSITIVE_INFINITY);
 });
 
-test("blocks alternate which side goes first", () => {
-  expect(blockOrder(0)).toEqual(["base", "branch"]);
-  expect(blockOrder(1)).toEqual(["branch", "base"]);
-  expect(blockOrder(2)).toEqual(["base", "branch"]);
+test("a branch window is held against the base windows either side, so a linear drift cancels", () => {
+  expect(bracketedLogRatio(20, 20, 20)).toBeCloseTo(0, 9);
+  expect(Math.exp(bracketedLogRatio(20, 21, 20)) - 1).toBeCloseTo(0.05, 9);
+  // The PC slowing every window by 10%: base 20 then 24.2, branch 22 between them, no change of its own.
+  expect(bracketedLogRatio(20, 22, 24.2)).toBeCloseTo(0, 9);
 });
 
 test("medianMs drops non-frames and takes the middle", () => {
