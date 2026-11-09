@@ -1,6 +1,5 @@
 // @skill jgengine-world
-import { useThree } from "@react-three/fiber";
-import { useEffect, useLayoutEffect, useMemo, useRef, type MutableRefObject, type RefObject } from "react";
+import { useRef, type MutableRefObject, type RefObject } from "react";
 import * as THREE from "three";
 
 import type { BiomeBand, SkyEnvironmentDescriptor } from "@jgengine/core/world/features";
@@ -21,8 +20,9 @@ import {
 } from "@jgengine/core/sky/daylightCycle";
 import { createSkyLight, publishSkyLight, type SkyLight } from "./skyLight.draw";
 import { SUN_SHADOW, sunLightPosition, sunShadowFocus } from "./sunShadowMath";
-import { VolumetricClouds } from "./VolumetricClouds.draw";
-import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
+import { volumetricCloudsDraw } from "./VolumetricClouds.draw";
+import { childFrameState, type EngineDraw, type EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 
 /** Props for the gradient sky dome: top and horizon colours, dome radius, gradient shape and an optional sun disc. */
 export interface SkyDomeProps {
@@ -79,21 +79,8 @@ export function setSkyMoon(
   material.uniforms["uMoonIntensity"]!.value = intensity;
   material.uniforms["uStars"]!.value = starOpacity;
 }
-
-/**
- * Shadow-casting sun whose shadow box leads the camera each frame ({@link sunShadowFocus}), so
- * grounded shadows stay crisp and soft-edged under the player anywhere in a large world. Time-of-day
- * drivers aim it through `directionRef` and retint it through `lightRef`.
- * @internal
- */
-export function SunLight({
-  direction,
-  directionRef,
-  lightRef,
-  intensity,
-  color,
-  castShadow = true,
-}: {
+/** Props for {@link sunLightDraw}: the light's aim, live direction override, intensity and colour. */
+export interface SunLightDrawProps {
   direction: readonly [number, number, number];
   directionRef?: MutableRefObject<readonly [number, number, number]> | undefined;
   lightRef?: RefObject<THREE.DirectionalLight | null> | undefined;
@@ -101,41 +88,81 @@ export function SunLight({
   color: string;
   /** Shadow-casting key light. Off for the moon: its light is too weak to read a shadow and a second shadow pass is not free. */
   castShadow?: boolean;
-}) {
-  const ownRef = useRef<THREE.DirectionalLight>(null);
-  const ref = lightRef ?? ownRef;
-  const scratch = useMemo(() => ({ forward: new THREE.Vector3(), focus: { x: 0, z: 0 }, position: [0, 0, 0] as [number, number, number] }), []);
-  useFrameTask((state) => {
-    const light = ref.current;
+}
+
+/**
+ * Draw-side form of {@link SunLight}: a directional light whose shadow box leads the camera each
+ * frame ({@link sunShadowFocus}), so grounded shadows stay crisp and soft-edged under the player
+ * anywhere in a large world. `directionRef` carries the per-frame aim time-of-day drivers write;
+ * `lightRef` exposes the light the same way the JSX ref did.
+ */
+export function sunLightDraw(getProps: () => SunLightDrawProps): EngineDraw {
+  let light: THREE.DirectionalLight | null = null;
+  let boundRef: RefObject<THREE.DirectionalLight | null> | undefined;
+  const scratch = { forward: new THREE.Vector3(), focus: { x: 0, z: 0 }, position: [0, 0, 0] as [number, number, number] };
+  const applyProps = () => {
     if (light === null) return;
-    state.camera.getWorldDirection(scratch.forward);
-    const focus = sunShadowFocus(state.camera.position, scratch.forward, scratch.focus);
-    const [x, y, z] = sunLightPosition(focus, directionRef?.current ?? direction, scratch.position);
-    light.position.set(x, y, z);
-    light.target.position.set(focus.x, 0, focus.z);
-    light.target.updateMatrixWorld();
-  });
-  const initial = sunLightPosition({ x: 0, z: 0 }, direction);
-  return (
-    <directionalLight
-      ref={ref}
-      position={initial}
-      intensity={intensity}
-      color={color}
-      castShadow={castShadow}
-      shadow-mapSize-width={SUN_SHADOW.mapSize}
-      shadow-mapSize-height={SUN_SHADOW.mapSize}
-      shadow-camera-left={-SUN_SHADOW.halfExtent}
-      shadow-camera-right={SUN_SHADOW.halfExtent}
-      shadow-camera-top={SUN_SHADOW.halfExtent}
-      shadow-camera-bottom={-SUN_SHADOW.halfExtent}
-      shadow-camera-near={SUN_SHADOW.near}
-      shadow-camera-far={SUN_SHADOW.far}
-      shadow-bias={SUN_SHADOW.bias}
-      shadow-normalBias={SUN_SHADOW.normalBias}
-      shadow-radius={SUN_SHADOW.radius}
-    />
-  );
+    const props = getProps();
+    light.intensity = props.intensity;
+    light.color.set(props.color);
+    light.castShadow = props.castShadow ?? true;
+  };
+  return {
+    mount(state: EngineFrameState) {
+      light = new THREE.DirectionalLight();
+      const shadow = light.shadow;
+      shadow.mapSize.set(SUN_SHADOW.mapSize, SUN_SHADOW.mapSize);
+      shadow.camera.left = -SUN_SHADOW.halfExtent;
+      shadow.camera.right = SUN_SHADOW.halfExtent;
+      shadow.camera.top = SUN_SHADOW.halfExtent;
+      shadow.camera.bottom = -SUN_SHADOW.halfExtent;
+      shadow.camera.near = SUN_SHADOW.near;
+      shadow.camera.far = SUN_SHADOW.far;
+      shadow.camera.updateProjectionMatrix();
+      shadow.bias = SUN_SHADOW.bias;
+      shadow.normalBias = SUN_SHADOW.normalBias;
+      shadow.radius = SUN_SHADOW.radius;
+      const initial = sunLightPosition({ x: 0, z: 0 }, getProps().direction, scratch.position);
+      light.position.set(initial[0], initial[1], initial[2]);
+      applyProps();
+      state.scene.add(light);
+      boundRef = getProps().lightRef;
+      if (boundRef !== undefined) boundRef.current = light;
+    },
+    update() {
+      applyProps();
+    },
+    frame(state: EngineFrameState) {
+      if (light === null) return;
+      const props = getProps();
+      state.camera.getWorldDirection(scratch.forward);
+      const focus = sunShadowFocus(state.camera.position, scratch.forward, scratch.focus);
+      const [x, y, z] = sunLightPosition(focus, props.directionRef?.current ?? props.direction, scratch.position);
+      light.position.set(x, y, z);
+      light.target.position.set(focus.x, 0, focus.z);
+      light.target.updateMatrixWorld();
+    },
+    dispose(state: EngineFrameState) {
+      if (boundRef !== undefined) boundRef.current = null;
+      boundRef = undefined;
+      if (light !== null) {
+        state.scene.remove(light);
+        light = null;
+      }
+    },
+  };
+}
+
+/**
+ * Shadow-casting sun whose shadow box leads the camera each frame ({@link sunShadowFocus}), so
+ * grounded shadows stay crisp and soft-edged under the player anywhere in a large world. Time-of-day
+ * drivers aim it through `directionRef` and retint it through `lightRef`.
+ * @internal
+ */
+export function SunLight(props: SunLightDrawProps) {
+  const latest = useRef<SunLightDrawProps>(props);
+  latest.current = props;
+  return <EngineDrawMount create={() => sunLightDraw(() => latest.current)} deps={[]} />;
 }
 
 /**
@@ -143,14 +170,10 @@ export function SunLight({
  * shaded side instead of collapsing into flat ambient. Same camera-following aim as the sun.
  * @internal
  */
-export function MoonLight({ direction, directionRef, lightRef, intensity, color }: {
-  direction: readonly [number, number, number];
-  directionRef?: MutableRefObject<readonly [number, number, number]>;
-  lightRef?: RefObject<THREE.DirectionalLight | null>;
-  intensity: number;
-  color: string;
-}) {
-  return <SunLight direction={direction} directionRef={directionRef} lightRef={lightRef} intensity={intensity} color={color} castShadow={false} />;
+export function MoonLight(props: Omit<SunLightDrawProps, "castShadow">) {
+  const latest = useRef<SunLightDrawProps>({ ...props, castShadow: false });
+  latest.current = { ...props, castShadow: false };
+  return <EngineDrawMount create={() => sunLightDraw(() => latest.current)} deps={[]} />;
 }
 
 interface SkyDomeDisplay {
@@ -177,19 +200,65 @@ export function setSkyDomeColors(material: THREE.ShaderMaterial, top: THREE.Colo
  * @internal
  */
 export function SkyFog({ color, near, far, fogRef }: { color: string; near: number; far: number; fogRef?: RefObject<THREE.Fog | null> }) {
-  const ownRef = useRef<THREE.Fog>(null);
-  const ref = fogRef ?? ownRef;
-  const writer = useMemo(() => new DisplayColorWriter(), []);
-  useLayoutEffect(() => {
-    if (ref.current !== null) setSkyFogColor(ref.current, color);
-  }, [ref, color]);
-  useFrameTask((state) => {
-    const fog = ref.current;
-    const display = fog === null ? undefined : fogDisplayColors.get(fog);
-    if (fog === null || display === undefined) return;
-    writer.write(fog.color, display, state.gl);
-  });
-  return <fog attach="fog" ref={ref} args={[color, near, far]} />;
+  const latest = useRef({ color, near, far, fogRef });
+  latest.current = { color, near, far, fogRef };
+  return <EngineDrawMount create={() => skyFogDraw(() => latest.current)} deps={[]} />;
+}
+
+/** Props for {@link skyFogDraw}: the fog's display color and range, plus the ref the old JSX exposed. */
+export interface SkyFogDrawProps {
+  color: string;
+  near: number;
+  far: number;
+  fogRef?: RefObject<THREE.Fog | null> | undefined;
+}
+
+/**
+ * Draw-side form of {@link SkyFog}: an owned `THREE.Fog` installed as the scene's fog, retinted per
+ * frame through the display-color writer exactly like the JSX version. Restores the previous fog on
+ * dispose.
+ */
+export function skyFogDraw(getProps: () => SkyFogDrawProps): EngineDraw {
+  let fog: THREE.Fog | null = null;
+  let scene: THREE.Scene | null = null;
+  let previous: THREE.FogBase | null = null;
+  let boundRef: RefObject<THREE.Fog | null> | undefined;
+  const writer = new DisplayColorWriter();
+  const applyProps = () => {
+    if (fog === null) return;
+    const props = getProps();
+    fog.color.set(props.color);
+    fog.near = props.near;
+    fog.far = props.far;
+    setSkyFogColor(fog, props.color);
+  };
+  return {
+    mount(state: EngineFrameState) {
+      scene = state.rootScene ?? state.scene;
+      previous = scene.fog ?? null;
+      fog = new THREE.Fog();
+      applyProps();
+      scene.fog = fog;
+      boundRef = getProps().fogRef;
+      if (boundRef !== undefined) boundRef.current = fog;
+    },
+    update() {
+      applyProps();
+    },
+    frame(state: EngineFrameState) {
+      const display = fog === null ? undefined : fogDisplayColors.get(fog);
+      if (fog === null || display === undefined) return;
+      writer.write(fog.color, display, state.gl);
+    },
+    dispose() {
+      if (boundRef !== undefined) boundRef.current = null;
+      boundRef = undefined;
+      if (scene !== null && fog !== null) scene.fog = previous;
+      scene = null;
+      previous = null;
+      fog = null;
+    },
+  };
 }
 
 /** Sets the display color a {@link SkyFog} converts each frame. @internal */
@@ -226,163 +295,225 @@ export function skyDomeRadius(authored: number | undefined, far: number | undefi
   return Math.min(DEFAULT_SKY_RADIUS, far * 0.9);
 }
 
-/** @internal */
-export function SkyDome({
-  topColor = SKY_TOP,
-  horizonColor = SKY_HORIZON,
-  radius: authoredRadius,
-  offset = 24,
-  exponent = 0.65,
-  sunDirection,
-  sunColor = "#fff4d6",
-  sunIntensity = 1,
-  moonDirection,
-  moonColor = MOON_COLOR,
-  moonIntensity = 0,
-  starOpacity = 0,
-  hazeStrength = 0.5,
-  sunGlowStrength = 1,
-  cloudiness = 0.35,
-  materialRef,
-}: SkyDomeProps = {}) {
-  const meshRef = useRef<THREE.Mesh>(null);
-  const far = useThree((state) => (state.camera as THREE.PerspectiveCamera).far);
-  const radius = skyDomeRadius(authoredRadius, far);
-  const material = useMemo(() => {
-    const dome = new THREE.ShaderMaterial({
-      uniforms: {
-        topColor: { value: new THREE.Color(topColor) },
-        bottomColor: { value: new THREE.Color(horizonColor) },
-        offset: { value: offset },
-        exponent: { value: exponent },
-        uSunColor: { value: new THREE.Color(sunColor) },
-        uSunDirection: { value: sunDirection === undefined ? new THREE.Vector3(0, 1, 0) : normalizeVec3(sunDirection) },
-        uSunIntensity: { value: sunDirection === undefined ? 0 : sunIntensity },
-        uMoonColor: { value: new THREE.Color(moonColor) },
-        uMoonDirection: { value: moonDirection === undefined ? new THREE.Vector3(0, -1, 0) : normalizeVec3(moonDirection) },
-        uMoonIntensity: { value: moonDirection === undefined ? 0 : moonIntensity },
-        uStars: { value: starOpacity },
-        uHazeStrength: { value: hazeStrength },
-        uSunGlow: { value: sunGlowStrength },
-        uCloudiness: { value: cloudiness },
-      },
-      vertexShader: `
-        varying vec3 vWorldPosition;
-        void main() {
-          vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-          vWorldPosition = worldPosition.xyz;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-          // On the far plane: drawn after the opaque scene (SKY_RENDER_ORDER), the depth test then
-          // shades only the pixels nothing covers, and no radius ever clips.
-          gl_Position.z = gl_Position.w;
+function buildSkyDomeMaterial(p: SkyDomeProps): THREE.ShaderMaterial {
+  const topColor = p.topColor ?? SKY_TOP;
+  const horizonColor = p.horizonColor ?? SKY_HORIZON;
+  const offset = p.offset ?? 24;
+  const exponent = p.exponent ?? 0.65;
+  const sunColor = p.sunColor ?? "#fff4d6";
+  const sunDirection = p.sunDirection;
+  const sunIntensity = p.sunIntensity ?? 1;
+  const moonDirection = p.moonDirection;
+  const moonColor = p.moonColor ?? MOON_COLOR;
+  const moonIntensity = p.moonIntensity ?? 0;
+  const starOpacity = p.starOpacity ?? 0;
+  const hazeStrength = p.hazeStrength ?? 0.5;
+  const sunGlowStrength = p.sunGlowStrength ?? 1;
+  const cloudiness = p.cloudiness ?? 0.35;
+  const dome = new THREE.ShaderMaterial({
+    uniforms: {
+      topColor: { value: new THREE.Color(topColor) },
+      bottomColor: { value: new THREE.Color(horizonColor) },
+      offset: { value: offset },
+      exponent: { value: exponent },
+      uSunColor: { value: new THREE.Color(sunColor) },
+      uSunDirection: { value: sunDirection === undefined ? new THREE.Vector3(0, 1, 0) : normalizeVec3(sunDirection) },
+      uSunIntensity: { value: sunDirection === undefined ? 0 : sunIntensity },
+      uMoonColor: { value: new THREE.Color(moonColor) },
+      uMoonDirection: { value: moonDirection === undefined ? new THREE.Vector3(0, -1, 0) : normalizeVec3(moonDirection) },
+      uMoonIntensity: { value: moonDirection === undefined ? 0 : moonIntensity },
+      uStars: { value: starOpacity },
+      uHazeStrength: { value: hazeStrength },
+      uSunGlow: { value: sunGlowStrength },
+      uCloudiness: { value: cloudiness },
+    },
+    vertexShader: `
+      varying vec3 vWorldPosition;
+      void main() {
+        vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+        vWorldPosition = worldPosition.xyz;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        // On the far plane: drawn after the opaque scene (SKY_RENDER_ORDER), the depth test then
+        // shades only the pixels nothing covers, and no radius ever clips.
+        gl_Position.z = gl_Position.w;
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 topColor;
+      uniform vec3 bottomColor;
+      uniform vec3 uSunColor;
+      uniform vec3 uSunDirection;
+      uniform float uSunIntensity;
+      uniform vec3 uMoonColor;
+      uniform vec3 uMoonDirection;
+      uniform float uMoonIntensity;
+      uniform float uStars;
+      uniform float uHazeStrength;
+      uniform float uSunGlow;
+      uniform float uCloudiness;
+      uniform float offset;
+      uniform float exponent;
+      varying vec3 vWorldPosition;
+      float sHash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      float sNoise(vec2 p){
+        vec2 i = floor(p); vec2 f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);
+        return mix(mix(sHash(i), sHash(i + vec2(1.0, 0.0)), u.x),
+                   mix(sHash(i + vec2(0.0, 1.0)), sHash(i + vec2(1.0, 1.0)), u.x), u.y);
+      }
+      float sFbm(vec2 p){ float v = 0.0; float a = 0.5; for (int i = 0; i < 5; i++){ v += a * sNoise(p); p *= 2.0; a *= 0.5; } return v; }
+      float h3(vec3 p){ return fract(sin(dot(p, vec3(12.9898, 78.233, 37.719))) * 43758.5453); }
+      float starField(vec3 dir){
+        vec3 q = dir * 170.0;
+        vec3 cell = floor(q);
+        float seed = h3(cell);
+        if (seed < 0.984) return 0.0;
+        vec3 jitter = fract(vec3(seed * 137.0, seed * 311.0, seed * 531.0)) - 0.5;
+        float d = length(fract(q) - 0.5 - jitter * 0.7);
+        return smoothstep(0.18, 0.0, d) * smoothstep(0.984, 0.999, seed);
+      }
+      // Single-scattering terms the authored gradient lacks: a forward-scattering (Mie) aureole around
+      // the sun, and a long path through the air when the sun is low that reddens the horizon on its side.
+      vec3 skyScatter(vec3 vd, vec3 sunDir, float h) {
+        float cosTheta = dot(vd, sunDir);
+        float g = 0.76;
+        float mie = (1.0 - g * g) / pow(1.0 + g * g - 2.0 * g * cosTheta, 1.5) * 0.0045;
+        float sunHeight = sunDir.y;
+        float lowSun = (1.0 - smoothstep(0.04, 0.42, sunHeight)) * smoothstep(-0.16, 0.0, sunHeight);
+        vec2 flatView = normalize(vd.xz + vec2(1e-5));
+        vec2 flatSun = normalize(sunDir.xz + vec2(1e-5));
+        float sunSide = pow(dot(flatView, flatSun) * 0.5 + 0.5, 2.0);
+        float band = pow(1.0 - h, 4.0);
+        return uSunColor * (mie * smoothstep(-0.1, 0.05, sunHeight) + band * sunSide * lowSun * 0.55);
+      }
+      void main() {
+        vec3 dir = normalize(vWorldPosition + vec3(0.0, offset, 0.0));
+        float h = max(dir.y, 0.0);
+        vec3 col = mix(bottomColor, topColor, pow(h, exponent));
+        col = mix(col, bottomColor * 1.12, pow(1.0 - h, 6.0) * uHazeStrength);
+        vec3 vd = normalize(vWorldPosition);
+        vec2 cuv = vd.xz / (max(vd.y, 0.06) + 0.15) * 1.2;
+        float clouds = smoothstep(0.52, 0.82, sFbm(cuv));
+        float band = smoothstep(0.08, 0.35, dir.y) * smoothstep(1.0, 0.35, dir.y);
+        col = mix(col, mix(topColor, vec3(1.0), 0.6), clouds * band * uCloudiness);
+        vec3 sunDir = normalize(uSunDirection);
+        float sd = max(dot(vd, sunDir), 0.0);
+        float glow = pow(sd, 8.0) * 0.35 + pow(sd, 128.0) * 2.6;
+        col += uSunColor * glow * uSunIntensity * uSunGlow;
+        col += skyScatter(vd, sunDir, h) * uSunIntensity * uSunGlow;
+        if (uStars > 0.001) {
+          float stars = starField(vd) * smoothstep(0.02, 0.22, vd.y) * smoothstep(0.35, 0.9, uStars);
+          col += vec3(0.86, 0.9, 1.0) * stars * uStars * 1.6;
         }
-      `,
-      fragmentShader: `
-        uniform vec3 topColor;
-        uniform vec3 bottomColor;
-        uniform vec3 uSunColor;
-        uniform vec3 uSunDirection;
-        uniform float uSunIntensity;
-        uniform vec3 uMoonColor;
-        uniform vec3 uMoonDirection;
-        uniform float uMoonIntensity;
-        uniform float uStars;
-        uniform float uHazeStrength;
-        uniform float uSunGlow;
-        uniform float uCloudiness;
-        uniform float offset;
-        uniform float exponent;
-        varying vec3 vWorldPosition;
-        float sHash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-        float sNoise(vec2 p){
-          vec2 i = floor(p); vec2 f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);
-          return mix(mix(sHash(i), sHash(i + vec2(1.0, 0.0)), u.x),
-                     mix(sHash(i + vec2(0.0, 1.0)), sHash(i + vec2(1.0, 1.0)), u.x), u.y);
+        if (uMoonIntensity > 0.001) {
+          float md = max(dot(vd, normalize(uMoonDirection)), 0.0);
+          float disc = smoothstep(0.99955, 0.99985, md);
+          float halo = pow(md, 512.0) * 0.5 + pow(md, 24.0) * 0.05;
+          col += uMoonColor * (disc * 2.2 + halo) * uMoonIntensity;
         }
-        float sFbm(vec2 p){ float v = 0.0; float a = 0.5; for (int i = 0; i < 5; i++){ v += a * sNoise(p); p *= 2.0; a *= 0.5; } return v; }
-        float h3(vec3 p){ return fract(sin(dot(p, vec3(12.9898, 78.233, 37.719))) * 43758.5453); }
-        float starField(vec3 dir){
-          vec3 q = dir * 170.0;
-          vec3 cell = floor(q);
-          float seed = h3(cell);
-          if (seed < 0.984) return 0.0;
-          vec3 jitter = fract(vec3(seed * 137.0, seed * 311.0, seed * 531.0)) - 0.5;
-          float d = length(fract(q) - 0.5 - jitter * 0.7);
-          return smoothstep(0.18, 0.0, d) * smoothstep(0.984, 0.999, seed);
-        }
-        // Single-scattering terms the authored gradient lacks: a forward-scattering (Mie) aureole around
-        // the sun, and a long path through the air when the sun is low that reddens the horizon on its side.
-        vec3 skyScatter(vec3 vd, vec3 sunDir, float h) {
-          float cosTheta = dot(vd, sunDir);
-          float g = 0.76;
-          float mie = (1.0 - g * g) / pow(1.0 + g * g - 2.0 * g * cosTheta, 1.5) * 0.0045;
-          float sunHeight = sunDir.y;
-          float lowSun = (1.0 - smoothstep(0.04, 0.42, sunHeight)) * smoothstep(-0.16, 0.0, sunHeight);
-          vec2 flatView = normalize(vd.xz + vec2(1e-5));
-          vec2 flatSun = normalize(sunDir.xz + vec2(1e-5));
-          float sunSide = pow(dot(flatView, flatSun) * 0.5 + 0.5, 2.0);
-          float band = pow(1.0 - h, 4.0);
-          return uSunColor * (mie * smoothstep(-0.1, 0.05, sunHeight) + band * sunSide * lowSun * 0.55);
-        }
-        void main() {
-          vec3 dir = normalize(vWorldPosition + vec3(0.0, offset, 0.0));
-          float h = max(dir.y, 0.0);
-          vec3 col = mix(bottomColor, topColor, pow(h, exponent));
-          col = mix(col, bottomColor * 1.12, pow(1.0 - h, 6.0) * uHazeStrength);
-          vec3 vd = normalize(vWorldPosition);
-          vec2 cuv = vd.xz / (max(vd.y, 0.06) + 0.15) * 1.2;
-          float clouds = smoothstep(0.52, 0.82, sFbm(cuv));
-          float band = smoothstep(0.08, 0.35, dir.y) * smoothstep(1.0, 0.35, dir.y);
-          col = mix(col, mix(topColor, vec3(1.0), 0.6), clouds * band * uCloudiness);
-          vec3 sunDir = normalize(uSunDirection);
-          float sd = max(dot(vd, sunDir), 0.0);
-          float glow = pow(sd, 8.0) * 0.35 + pow(sd, 128.0) * 2.6;
-          col += uSunColor * glow * uSunIntensity * uSunGlow;
-          col += skyScatter(vd, sunDir, h) * uSunIntensity * uSunGlow;
-          if (uStars > 0.001) {
-            float stars = starField(vd) * smoothstep(0.02, 0.22, vd.y) * smoothstep(0.35, 0.9, uStars);
-            col += vec3(0.86, 0.9, 1.0) * stars * uStars * 1.6;
-          }
-          if (uMoonIntensity > 0.001) {
-            float md = max(dot(vd, normalize(uMoonDirection)), 0.0);
-            float disc = smoothstep(0.99955, 0.99985, md);
-            float halo = pow(md, 512.0) * 0.5 + pow(md, 24.0) * 0.05;
-            col += uMoonColor * (disc * 2.2 + halo) * uMoonIntensity;
-          }
-          gl_FragColor = vec4(col, 1.0);
-          #include <tonemapping_fragment>
-          #include <colorspace_fragment>
-        }
-      `,
-      side: THREE.BackSide,
-      depthWrite: false,
-      fog: false,
-    });
-    setSkyDomeColors(dome, topColor, horizonColor);
-    return dome;
-  }, [topColor, horizonColor, offset, exponent, sunColor, sunDirection, sunIntensity, moonDirection, moonColor, moonIntensity, starOpacity, hazeStrength, sunGlowStrength, cloudiness]);
-  useEffect(() => {
-    if (materialRef !== undefined) materialRef.current = material;
-    return () => {
-      material.dispose();
-      if (materialRef !== undefined) materialRef.current = null;
-    };
-  }, [material, materialRef]);
-  const writers = useMemo(() => ({ top: new DisplayColorWriter(), bottom: new DisplayColorWriter() }), []);
-  useFrameTask((state) => {
-    const display = material.userData as SkyDomeDisplay;
-    writers.top.write(material.uniforms["topColor"]!.value as THREE.Color, display.top, state.gl);
-    writers.bottom.write(material.uniforms["bottomColor"]!.value as THREE.Color, display.bottom, state.gl);
-    const mesh = meshRef.current;
-    if (mesh === null) return;
-    mesh.position.x = state.camera.position.x;
-    mesh.position.z = state.camera.position.z;
+        gl_FragColor = vec4(col, 1.0);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }
+    `,
+    side: THREE.BackSide,
+    depthWrite: false,
+    fog: false,
   });
-  return (
-    <mesh ref={meshRef} material={material} renderOrder={SKY_RENDER_ORDER} frustumCulled={false}>
-      <sphereGeometry args={[radius, 32, 16]} />
-    </mesh>
-  );
+  setSkyDomeColors(dome, topColor, horizonColor);
+  return dome;
+}
+
+function skyDomeMaterialSignature(p: SkyDomeProps): string {
+  return JSON.stringify([
+    p.topColor ?? SKY_TOP, p.horizonColor ?? SKY_HORIZON, p.offset ?? 24, p.exponent ?? 0.65,
+    p.sunColor ?? "#fff4d6", p.sunDirection ?? null, p.sunIntensity ?? 1,
+    p.moonDirection ?? null, p.moonColor ?? MOON_COLOR, p.moonIntensity ?? 0,
+    p.starOpacity ?? 0, p.hazeStrength ?? 0.5, p.sunGlowStrength ?? 1, p.cloudiness ?? 0.35,
+  ]);
+}
+
+/**
+ * Draw-side form of {@link SkyDome}: an owned shader-material sphere that follows the camera on x/z,
+ * converts its zenith/horizon through the display-color writers each frame, and rebuilds its material
+ * and geometry only when the resolved inputs change â€” the same memo boundaries the hooks had.
+ */
+export function skyDomeDraw(getProps: () => SkyDomeProps): EngineDraw {
+  let mesh: THREE.Mesh | null = null;
+  let geometry: THREE.SphereGeometry | null = null;
+  let material: THREE.ShaderMaterial | null = null;
+  let materialKey = "";
+  let radius = -1;
+  const writers = { top: new DisplayColorWriter(), bottom: new DisplayColorWriter() };
+  const farOf = (state: EngineFrameState): number | undefined => (state.camera as THREE.PerspectiveCamera).far;
+  const syncAssets = (state: EngineFrameState) => {
+    const props = getProps();
+    const nextRadius = skyDomeRadius(props.radius, farOf(state));
+    const nextKey = skyDomeMaterialSignature(props);
+    if (nextRadius !== radius) {
+      const nextGeometry = new THREE.SphereGeometry(nextRadius, 32, 16);
+      if (geometry !== null) geometry.dispose();
+      geometry = nextGeometry;
+      radius = nextRadius;
+      if (mesh !== null) mesh.geometry = nextGeometry;
+    }
+    if (nextKey !== materialKey) {
+      const next = buildSkyDomeMaterial(props);
+      if (material !== null) material.dispose();
+      material = next;
+      materialKey = nextKey;
+      if (mesh !== null) mesh.material = next;
+    }
+    const ref = props.materialRef;
+    if (ref !== undefined) ref.current = material;
+  };
+  return {
+    mount(state: EngineFrameState) {
+      material = null;
+      geometry = null;
+      radius = -1;
+      materialKey = "";
+      mesh = new THREE.Mesh();
+      mesh.renderOrder = SKY_RENDER_ORDER;
+      mesh.frustumCulled = false;
+      syncAssets(state);
+      state.scene.add(mesh);
+    },
+    update(state: EngineFrameState) {
+      syncAssets(state);
+    },
+    frame(state: EngineFrameState) {
+      if (material === null) return;
+      const display = material.userData as SkyDomeDisplay;
+      writers.top.write(material.uniforms["topColor"]!.value as THREE.Color, display.top, state.gl);
+      writers.bottom.write(material.uniforms["bottomColor"]!.value as THREE.Color, display.bottom, state.gl);
+      if (mesh === null) return;
+      mesh.position.x = state.camera.position.x;
+      mesh.position.z = state.camera.position.z;
+    },
+    dispose(state: EngineFrameState) {
+      const ref = getProps().materialRef;
+      if (ref !== undefined) ref.current = null;
+      if (mesh !== null) {
+        state.scene.remove(mesh);
+        mesh = null;
+      }
+      geometry?.dispose();
+      geometry = null;
+      material?.dispose();
+      material = null;
+      materialKey = "";
+      radius = -1;
+    },
+  };
+}
+
+/**
+ * @internal
+ */
+export function SkyDome(props: SkyDomeProps = {}) {
+  const latest = useRef<SkyDomeProps>(props);
+  latest.current = props;
+  return <EngineDrawMount create={() => skyDomeDraw(() => latest.current)} deps={[]} />;
 }
 
 /** Points the dome's sun glow at `position` and keeps the disc lit; called per frame by the time-of-day drivers. */
@@ -470,6 +601,243 @@ function writeSkyLight(
   light.daylight = Math.min(1, Math.max(0, sunShare, ambientShare));
 }
 
+/** Everything the sky's children and frame read, resolved once per prop-identity sync. */
+interface SkyDerived {
+  timeOfDay: boolean;
+  banded: boolean;
+  lights: boolean;
+  mountMoon: boolean;
+  initial: DaylightState;
+  noon: { sun: number; ambient: number };
+  fogFallback: { color: string; near: number; far: number; density: number };
+  fogSampler: ReturnType<typeof createBiomeFogSampler>;
+  skySampler: ReturnType<typeof createBiomeSkySampler>;
+  domeProps: SkyDomeProps;
+  fogProps: SkyFogDrawProps;
+  sunProps: SunLightDrawProps;
+  moonProps: SunLightDrawProps;
+  rules: ReturnType<typeof resolveVolumetricClouds> | null;
+  hemiArgs: { sky: string; ground: string; intensity: number };
+}
+
+function deriveSky(props: SkyProps, refs: {
+  skyMaterialRef: RefObject<THREE.ShaderMaterial | null>;
+  fogRef: RefObject<THREE.Fog | null>;
+  sunRef: RefObject<THREE.DirectionalLight | null>;
+  moonRef: RefObject<THREE.DirectionalLight | null>;
+  sunDirectionRef: { current: readonly [number, number, number] };
+  moonDirectionRef: { current: readonly [number, number, number] };
+}): SkyDerived {
+  const sky = props.sky;
+  const clock = props.clock;
+  const timeOfDay = sky.timeOfDay === true && clock !== undefined;
+  const baseFraction = sky.timeOfDay === true && clock !== undefined ? clock.calendar().dayFraction : SKY_PRESET_DAY_FRACTION[sky.preset];
+  const initial = daylightStateAt(baseFraction, sky);
+  const range = skyFogRange(sky, props.fogRange, { near: 70, far: 260 });
+  const noonSun = sky.sunIntensity ?? DEFAULT_DAY_SUN_INTENSITY;
+  const noonAmbient = sky.ambientIntensity ?? DEFAULT_DAY_AMBIENT_INTENSITY;
+  const noon = { sun: noonSun, ambient: noonAmbient };
+  const fogFallback = { color: sky.fog?.color ?? initial.fogColor, near: range.near, far: range.far, density: 0 };
+  const skyFallback = {
+    horizonColor: initial.skyBottom,
+    zenithColor: initial.skyTop,
+    sunIntensity: initial.sunIntensity,
+    ambientIntensity: initial.ambientIntensity,
+  };
+  const bands = props.bands ?? NO_BANDS;
+  const banded = bands.some((band) => band.fog !== undefined || band.sky !== undefined);
+  const lights = props.lights !== false;
+  // The moon's light is part of every lit program, so mounting it as it crosses the horizon would
+  // relink the whole scene: a cycling sky keeps it mounted, dark by day. A fixed day sky, whose moon
+  // never rises, does not carry it; a zero-intensity light still costs every lit fragment a loop.
+  const mountMoon = (lights || props.modulation !== undefined) && (timeOfDay || initial.moonIntensity > 0);
+  // Seed the live aim refs with this sync's directions, like the old ref initializers did, so the
+  // first child frame already aims correctly.
+  refs.sunDirectionRef.current = initial.sunPosition;
+  refs.moonDirectionRef.current = initial.moonPosition;
+  const domeProps: SkyDomeProps = {
+    topColor: initial.skyTop,
+    horizonColor: initial.skyBottom,
+    sunDirection: initial.sunPosition,
+    sunColor: initial.sunColor,
+    materialRef: refs.skyMaterialRef,
+    moonDirection: initial.moonPosition,
+    moonColor: initial.moonColor,
+    moonIntensity: initial.moonIntensity,
+    starOpacity: initial.starOpacity,
+    ...skyDomeShape(sky),
+  };
+  return {
+    timeOfDay,
+    banded,
+    lights,
+    mountMoon,
+    initial,
+    noon,
+    fogFallback,
+    fogSampler: createBiomeFogSampler(bands, fogFallback),
+    skySampler: createBiomeSkySampler(bands, skyFallback),
+    domeProps,
+    fogProps: { color: fogFallback.color, near: fogFallback.near, far: fogFallback.far, fogRef: refs.fogRef },
+    sunProps: {
+      direction: initial.sunPosition,
+      directionRef: refs.sunDirectionRef as MutableRefObject<readonly [number, number, number]>,
+      lightRef: refs.sunRef,
+      intensity: initial.sunIntensity,
+      color: initial.sunColor,
+      castShadow: true,
+    },
+    moonProps: {
+      direction: initial.moonPosition,
+      directionRef: refs.moonDirectionRef as MutableRefObject<readonly [number, number, number]>,
+      lightRef: refs.moonRef,
+      intensity: initial.moonIntensity,
+      color: initial.moonColor,
+      castShadow: false,
+    },
+    rules: sky.volumetricClouds === undefined ? null : resolveVolumetricClouds(sky.volumetricClouds),
+    hemiArgs: { sky: HEMI_SKY, ground: HEMI_GROUND, intensity: initial.ambientIntensity },
+  };
+}
+
+/**
+ * The engine's one sky, as a draw: a dome with sun, moon and stars, volumetric clouds when the
+ * descriptor asks, the scene fog, and (unless `lights={false}`) the sun, moon and hemisphere fill.
+ * It holds the preset's look, follows the world clock under `sky.timeOfDay`, cross-fades through
+ * terrain `biomeBands` by camera z, and can drive a game's authored lights through the day via
+ * `modulation`. Every frame it rewrites uniforms and light values in place, never remounting.
+ * @capability day-night-sky one sky for a fixed look, a day-night cycle, biome bands and authored lights
+ */
+export function skyDraw(getProps: () => SkyProps): EngineDraw {
+  const host = new THREE.Group();
+  const children: { draw: EngineDraw; state: EngineFrameState }[] = [];
+  const skyLight = createSkyLight();
+  const lightWriters: SkyLightWriters = { zenith: new DisplayColorWriter(), horizon: new DisplayColorWriter(), display: new THREE.Color() };
+  const sunRef = { current: null as THREE.DirectionalLight | null };
+  const moonRef = { current: null as THREE.DirectionalLight | null };
+  const sunDirectionRef = { current: [0, 1, 0] as readonly [number, number, number] };
+  const moonDirectionRef = { current: [0, -1, 0] as readonly [number, number, number] };
+  const skyMaterialRef = { current: null as THREE.ShaderMaterial | null };
+  const fogRef = { current: null as THREE.Fog | null };
+  const refs = { skyMaterialRef, fogRef, sunRef, moonRef, sunDirectionRef, moonDirectionRef };
+  let hemi: THREE.HemisphereLight | null = null;
+  let derived: SkyDerived | null = null;
+  let built: SkyProps | null = null;
+
+  const clearChildren = () => {
+    for (const child of children.splice(0)) child.draw.dispose?.(child.state);
+    if (hemi !== null) {
+      host.remove(hemi);
+      hemi = null;
+    }
+  };
+
+  const buildChildren = (mountState: EngineFrameState) => {
+    clearChildren();
+    const props = getProps();
+    derived = deriveSky(props, refs);
+    const d = derived;
+    const childState = childFrameState(mountState, host);
+    const add = (draw: EngineDraw) => {
+      children.push({ draw, state: childState });
+      draw.mount?.(childState);
+    };
+    add(skyDomeDraw(() => d.domeProps));
+    const rules = d.rules;
+    if (rules !== null) add(volumetricCloudsDraw(() => ({ rules })));
+    add(skyFogDraw(() => d.fogProps));
+    if (d.lights) {
+      hemi = new THREE.HemisphereLight(d.hemiArgs.sky, d.hemiArgs.ground, d.hemiArgs.intensity);
+      childState.scene.add(hemi);
+      add(sunLightDraw(() => d.sunProps));
+    }
+    if (d.mountMoon) add(sunLightDraw(() => d.moonProps));
+    built = props;
+  };
+
+  const sameSkyInputs = (a: SkyProps, b: SkyProps): boolean =>
+    a.sky === b.sky && a.clock === b.clock && a.lights === b.lights &&
+    a.bands === b.bands && a.fogRange === b.fogRange;
+
+  return {
+    mount(mountState: EngineFrameState) {
+      mountState.scene.add(host);
+      buildChildren(mountState);
+    },
+    update(mountState: EngineFrameState) {
+      const props = getProps();
+      if (built === null || !sameSkyInputs(props, built)) {
+        buildChildren(mountState);
+        return;
+      }
+      for (const child of children) child.draw.update?.(child.state);
+    },
+    frame(state: EngineFrameState) {
+      for (const child of children) child.draw.frame?.(child.state);
+      const d = derived;
+      if (d === null) return;
+      const props = getProps();
+      publishSkyLight(state.rootScene ?? state.scene, skyLight);
+      if (!d.timeOfDay && !d.banded && props.weather === undefined) {
+        writeSkyLight(skyLight, lightWriters, state.gl, d.initial, { zenithColor: d.initial.skyTop, horizonColor: d.initial.skyBottom, sunIntensity: d.initial.sunIntensity, ambientIntensity: d.initial.ambientIntensity }, 0, d.noon);
+        return;
+      }
+      const frameClock = props.clock;
+      const cycle = d.timeOfDay && frameClock !== undefined ? daylightStateAt(frameClock.calendar().dayFraction, props.sky) : d.initial;
+      const here = props.weather?.sample(state.camera.position.x, state.camera.position.z);
+      const cover = here === undefined ? 0 : (here.cloudCover ?? here.precipitation);
+      const base = cover > 0 ? overcastDaylight(cycle, cover) : cycle;
+      const z = state.camera.position.z;
+      const fog = d.banded ? d.fogSampler(z) : null;
+      const skyValue = d.banded
+        ? d.skySampler(z)
+        : { zenithColor: base.skyTop, horizonColor: base.skyBottom, sunIntensity: base.sunIntensity, ambientIntensity: base.ambientIntensity };
+      const fogNode = fogRef.current;
+      if (fogNode !== null) {
+        // Under a day cycle the sky owns the fog color (bands still own its range): a fixed noon
+        // tint would leave bright haze hanging in a black night sky.
+        setSkyFogColor(fogNode, bandFogColor({ timeOfDay: d.timeOfDay, cycle: base.fogColor, band: fog?.color ?? d.fogFallback.color }));
+        if (fog !== null) {
+          fogNode.near = fog.near;
+          fogNode.far = fog.far;
+        }
+      }
+      const skyMaterial = skyMaterialRef.current;
+      if (skyMaterial !== null) {
+        setSkyDomeColors(skyMaterial, skyValue.zenithColor, skyValue.horizonColor);
+        aimSkySun(skyMaterial, base.sunPosition);
+        setSkyMoon(skyMaterial, base.moonPosition, base.moonColor, base.moonIntensity, base.starOpacity);
+      }
+      sunDirectionRef.current = base.sunPosition;
+      moonDirectionRef.current = base.moonPosition;
+      const moon = moonRef.current;
+      if (moon !== null) {
+        moon.intensity = base.moonIntensity;
+        moon.color.set(base.moonColor);
+      }
+      const sun = sunRef.current;
+      if (sun !== null) {
+        sun.intensity = skyValue.sunIntensity;
+        sun.color.set(base.sunColor);
+      }
+      if (hemi !== null) hemi.intensity = skyValue.ambientIntensity;
+      writeSkyLight(skyLight, lightWriters, state.gl, base, skyValue, cover, d.noon);
+      if (props.modulation !== undefined) {
+        props.modulation.sunFactor = skyValue.sunIntensity / d.noon.sun;
+        props.modulation.sunColor = base.sunColor;
+        props.modulation.ambientFactor = skyValue.ambientIntensity / d.noon.ambient;
+      }
+    },
+    dispose(disposeState: EngineFrameState) {
+      clearChildren();
+      disposeState.scene.remove(host);
+      host.clear();
+      derived = null;
+      built = null;
+    },
+  };
+}
+
 /**
  * The engine's one sky: a dome with sun, moon and stars, volumetric clouds when the descriptor asks,
  * the scene fog, and (unless `lights={false}`) the sun, moon and hemisphere fill. It holds the
@@ -478,137 +846,8 @@ function writeSkyLight(
  * `modulation`. Every frame it rewrites uniforms and light values in place, never remounting.
  * @capability day-night-sky one sky for a fixed look, a day-night cycle, biome bands and authored lights
  */
-export function Sky({ sky, clock, lights = true, modulation, bands = NO_BANDS, fogRange, weather }: SkyProps) {
-  const timeOfDay = sky.timeOfDay === true && clock !== undefined;
-  const baseFraction = timeOfDay ? clock!.calendar().dayFraction : SKY_PRESET_DAY_FRACTION[sky.preset];
-  const initial = useMemo(() => daylightStateAt(baseFraction, sky), [sky, baseFraction]);
-  const sunRef = useRef<THREE.DirectionalLight>(null);
-  const sunDirectionRef = useRef<readonly [number, number, number]>(initial.sunPosition);
-  const moonRef = useRef<THREE.DirectionalLight>(null);
-  const moonDirectionRef = useRef<readonly [number, number, number]>(initial.moonPosition);
-  const hemiRef = useRef<THREE.HemisphereLight>(null);
-  const fogRef = useRef<THREE.Fog>(null);
-  const skyMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
-  const range = skyFogRange(sky, fogRange, { near: 70, far: 260 });
-  const noonSun = sky.sunIntensity ?? DEFAULT_DAY_SUN_INTENSITY;
-  const noonAmbient = sky.ambientIntensity ?? DEFAULT_DAY_AMBIENT_INTENSITY;
-  const noon = useMemo(() => ({ sun: noonSun, ambient: noonAmbient }), [noonSun, noonAmbient]);
-
-  const fogFallback = useMemo(
-    () => ({ color: sky.fog?.color ?? initial.fogColor, near: range.near, far: range.far, density: 0 }),
-    [sky.fog?.color, range.near, range.far, initial.fogColor],
-  );
-  const skyFallback = useMemo(
-    () => ({
-      horizonColor: initial.skyBottom,
-      zenithColor: initial.skyTop,
-      sunIntensity: initial.sunIntensity,
-      ambientIntensity: initial.ambientIntensity,
-    }),
-    [initial.skyBottom, initial.skyTop, initial.sunIntensity, initial.ambientIntensity],
-  );
-  const fogSampler = useMemo(() => createBiomeFogSampler(bands, fogFallback), [bands, fogFallback]);
-  const skySampler = useMemo(() => createBiomeSkySampler(bands, skyFallback), [bands, skyFallback]);
-  const banded = bands.some((band) => band.fog !== undefined || band.sky !== undefined);
-  // The moon's light is part of every lit program, so mounting it as it crosses the horizon would
-  // relink the whole scene: a cycling sky keeps it mounted, dark by day. A fixed day sky, whose moon
-  // never rises, does not carry it; a zero-intensity light still costs every lit fragment a loop.
-  const mountMoon = (lights || modulation !== undefined) && (timeOfDay || initial.moonIntensity > 0);
-  const skyLight = useMemo(() => createSkyLight(), []);
-  const lightWriters = useMemo<SkyLightWriters>(() => ({ zenith: new DisplayColorWriter(), horizon: new DisplayColorWriter(), display: new THREE.Color() }), []);
-
-  useFrameTask((state) => {
-    publishSkyLight(state.scene, skyLight);
-    if (!timeOfDay && !banded && weather === undefined) {
-      writeSkyLight(skyLight, lightWriters, state.gl, initial, { zenithColor: initial.skyTop, horizonColor: initial.skyBottom, sunIntensity: initial.sunIntensity, ambientIntensity: initial.ambientIntensity }, 0, noon);
-      return;
-    }
-    const cycle = timeOfDay ? daylightStateAt(clock!.calendar().dayFraction, sky) : initial;
-    const here = weather?.sample(state.camera.position.x, state.camera.position.z);
-    const cover = here === undefined ? 0 : (here.cloudCover ?? here.precipitation);
-    const base = cover > 0 ? overcastDaylight(cycle, cover) : cycle;
-    const z = state.camera.position.z;
-    const fog = banded ? fogSampler(z) : null;
-    const skyValue = banded
-      ? skySampler(z)
-      : { zenithColor: base.skyTop, horizonColor: base.skyBottom, sunIntensity: base.sunIntensity, ambientIntensity: base.ambientIntensity };
-    const fogNode = fogRef.current;
-    if (fogNode !== null) {
-      // Under a day cycle the sky owns the fog color (bands still own its range): a fixed noon
-      // tint would leave bright haze hanging in a black night sky.
-      setSkyFogColor(fogNode, bandFogColor({ timeOfDay, cycle: base.fogColor, band: fog?.color ?? fogFallback.color }));
-      if (fog !== null) {
-        fogNode.near = fog.near;
-        fogNode.far = fog.far;
-      }
-    }
-    const skyMaterial = skyMaterialRef.current;
-    if (skyMaterial !== null) {
-      setSkyDomeColors(skyMaterial, skyValue.zenithColor, skyValue.horizonColor);
-      aimSkySun(skyMaterial, base.sunPosition);
-      setSkyMoon(skyMaterial, base.moonPosition, base.moonColor, base.moonIntensity, base.starOpacity);
-    }
-    sunDirectionRef.current = base.sunPosition;
-    moonDirectionRef.current = base.moonPosition;
-    const moon = moonRef.current;
-    if (moon !== null) {
-      moon.intensity = base.moonIntensity;
-      moon.color.set(base.moonColor);
-    }
-    const sun = sunRef.current;
-    if (sun !== null) {
-      sun.intensity = skyValue.sunIntensity;
-      sun.color.set(base.sunColor);
-    }
-    const hemi = hemiRef.current;
-    if (hemi !== null) hemi.intensity = skyValue.ambientIntensity;
-    writeSkyLight(skyLight, lightWriters, state.gl, base, skyValue, cover, noon);
-    if (modulation !== undefined) {
-      modulation.sunFactor = skyValue.sunIntensity / noonSun;
-      modulation.sunColor = base.sunColor;
-      modulation.ambientFactor = skyValue.ambientIntensity / noonAmbient;
-    }
-  });
-
-  return (
-    <>
-      <SkyDome
-        topColor={initial.skyTop}
-        horizonColor={initial.skyBottom}
-        sunDirection={initial.sunPosition}
-        sunColor={initial.sunColor}
-        materialRef={skyMaterialRef}
-        moonDirection={initial.moonPosition}
-        moonColor={initial.moonColor}
-        moonIntensity={initial.moonIntensity}
-        starOpacity={initial.starOpacity}
-        {...skyDomeShape(sky)}
-      />
-      {sky.volumetricClouds === undefined ? null : (
-        <VolumetricClouds rules={resolveVolumetricClouds(sky.volumetricClouds)} />
-      )}
-      <SkyFog fogRef={fogRef} color={fogFallback.color} near={fogFallback.near} far={fogFallback.far} />
-      {lights ? (
-        <>
-          <hemisphereLight ref={hemiRef} args={[HEMI_SKY, HEMI_GROUND, initial.ambientIntensity]} />
-          <SunLight
-            direction={initial.sunPosition}
-            directionRef={sunDirectionRef}
-            lightRef={sunRef}
-            intensity={initial.sunIntensity}
-            color={initial.sunColor}
-          />
-        </>
-      ) : null}
-      {mountMoon ? (
-        <MoonLight
-          direction={initial.moonPosition}
-          directionRef={moonDirectionRef}
-          lightRef={moonRef}
-          intensity={initial.moonIntensity}
-          color={initial.moonColor}
-        />
-      ) : null}
-    </>
-  );
+export function Sky(props: SkyProps) {
+  const latest = useRef<SkyProps>(props);
+  latest.current = props;
+  return <EngineDrawMount create={() => skyDraw(() => latest.current)} deps={[]} />;
 }
