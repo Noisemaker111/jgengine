@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { linkSync, mkdirSync, readFileSync, statSync, unlinkSync, utimesSync, writeFileSync } from "node:fs";
+import { linkSync, mkdirSync, readdirSync, readFileSync, statSync, unlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join } from "node:path";
 
@@ -10,18 +10,24 @@ import { beginPause, endPause, markStep } from "./hangReport";
  * desktop build, so two never overlap. On 2026-11-08 six threads timed games at once, the PC sat at
  * 87-99% CPU, and in four hours none of them got a number worth reading.
  *
- * Held around page load, warmup and the measurement windows only: never around builds, installs or
- * Vite startup. Who takes it: `measureGame` in perf-play (perf play, gate, fps-gap, shadow-audit;
+ * Held around the dev-server check, browser launch, page load, warmup and the measurement windows:
+ * never around builds or installs. The server check sits inside because a server obtained before a
+ * 503 s wait was gone after it (the broker had been restarted; 2026-11-08). Who takes it: `measureGame` in perf-play (perf play, gate, fps-gap, shadow-audit;
  * `perf play` holds it across its one-browser batch), perf network, perf desktop from app launch to
  * close, perf native's timed rows, and `drive --hitches` or `--trace`. Shoot and a plain drive time no frames,
  * and perf live only reads a page already open, so they do not wait for it. It is a mutex, not a
  * load check: a busy PC never stops a run, only another timed run does.
  *
+ * Taken before the browser launches (a session `turn`, see {@link perfLockTurn}), so a queued run
+ * has no uncapped Chrome idling while it waits.
+ *
  * The lock file lives once per machine (`%LOCALAPPDATA%\jgengine\perf.lock`), not per worktree,
  * because every worktree is its own checkout. A holder whose process is gone, or that stopped
- * touching the file for {@link STALE_HEARTBEAT_MS}, is taken over with a `degraded:` line. Time a
- * run spends waiting is credited back to the guard's and the browser session's deadlines
- * (`hangReport` pauses), so a long queue never kills a run that has not started.
+ * touching the file for {@link STALE_HEARTBEAT_MS}, is taken over with a `degraded:` line, so a
+ * run killed with `taskkill /F` frees it for the next waiter at once. Time a run spends waiting is
+ * credited back to the guard's and the browser session's deadlines (`hangReport` pauses), so a
+ * long queue never kills a run that has not started; the record it writes says how long it waited
+ * ({@link perfLockWaitedMs}). A queued run prints {@link waitingLine} once.
  */
 
 /** Overrides the lock file's path; tests point it at a scratch file so they never queue behind a real run. */
@@ -66,8 +72,20 @@ export function processAlive(pid: number): boolean {
 
 const clock = (ms: number): string => new Date(ms).toTimeString().slice(0, 5);
 
-export function waitingLine(holder: Pick<PerfLockHolder, "branch" | "pid" | "since">): string {
-  return `waiting for perf lock held by ${holder.branch} (pid ${holder.pid}, since ${clock(holder.since)})`;
+/**
+ * The one line a queued run prints: `perf lock: waiting for pid <n> (<branch>: <what>, since <hh:mm>) …`.
+ * AGENTS.md names it, so a thread that sees it lets the run wait instead of killing it.
+ */
+export function waitingLine(holder: Pick<PerfLockHolder, "branch" | "pid" | "since"> & { what?: string }): string {
+  const label = holder.what === undefined || holder.what === "" ? holder.branch : `${holder.branch}: ${holder.what}`;
+  return `perf lock: waiting for pid ${holder.pid} (${label}, since ${clock(holder.since)}) …`;
+}
+
+let waitedTotalMs = 0;
+
+/** Ms this process has spent queued for the lock so far; a record or report says it as seconds waited. */
+export function perfLockWaitedMs(): number {
+  return waitedTotalMs;
 }
 
 let cachedBranch: string | null = null;
@@ -93,6 +111,54 @@ function readHolder(path: string): PerfLockHolder | null {
     };
   } catch {
     return null;
+  }
+}
+
+/**
+ * Waiters queue in order. Each writes a ticket named `<queued-at>-<pid>` beside the lock, and a
+ * waiter only tries for a free lock while no older ticket's process is alive; a dead ticket is
+ * removed by whoever sees it. Without this, every release was a race between all pollers and a run
+ * from one worktree was passed over by three newer arrivals from others in eight minutes (2026-11-08).
+ */
+function queueDirOf(path: string): string {
+  return `${path}.queue`;
+}
+
+function writeTicket(path: string, queuedAt: number): string {
+  const dir = queueDirOf(path);
+  mkdirSync(dir, { recursive: true });
+  const ticket = join(dir, `${String(queuedAt).padStart(15, "0")}-${process.pid}`);
+  writeFileSync(ticket, String(process.pid));
+  return ticket;
+}
+
+/** True when no live process holds an older ticket than this process (or this process holds none yet and the queue is empty). */
+function myTurn(path: string, isAlive: (pid: number) => boolean): boolean {
+  let names: string[];
+  try {
+    names = readdirSync(queueDirOf(path)).sort();
+  } catch {
+    return true;
+  }
+  for (const name of names) {
+    const pid = Number(/^\d+-(\d+)$/.exec(name)?.[1]);
+    if (pid === process.pid) return true;
+    if (Number.isFinite(pid) && isAlive(pid)) return false;
+    try {
+      unlinkSync(join(queueDirOf(path), name));
+    } catch {
+      /* another waiter removed it */
+    }
+  }
+  return true;
+}
+
+function dropTicket(ticket: string | null): void {
+  if (ticket === null) return;
+  try {
+    unlinkSync(ticket);
+  } catch {
+    /* already removed */
   }
 }
 
@@ -186,18 +252,23 @@ export async function acquirePerfLock(what: string, options: PerfLockOptions = {
   const pollMs = options.pollMs ?? POLL_MS;
   mkdirSync(dirname(path), { recursive: true });
   const token = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+  const queuedAt = Date.now();
   let announced: string | null = null;
+  let ticket: string | null = null;
   try {
     for (;;) {
       const mine: PerfLockHolder = { pid: process.pid, branch: options.branch ?? currentBranch(), what, cwd: process.cwd(), since: Date.now(), token };
-      if (tryCreate(path, mine)) break;
+      if (myTurn(path, isAlive) && tryCreate(path, mine)) break;
+      if (ticket === null) ticket = writeTicket(path, queuedAt);
       const holder = readHolder(path);
       if (holder === null) {
-        // Released between the link and the read, or a record nobody can read (hand-edited, a full disk).
+        // Released between the link and the read, a record nobody can read (hand-edited, a full
+        // disk), or free but an older ticket's turn.
         let silentMs: number;
         try {
           silentMs = Date.now() - statSync(path).mtimeMs;
         } catch {
+          await new Promise((resolve) => setTimeout(resolve, pollMs));
           continue;
         }
         if (silentMs > STALE_HEARTBEAT_MS) {
@@ -219,16 +290,21 @@ export async function acquirePerfLock(what: string, options: PerfLockOptions = {
         if (announced !== holder.token) {
           announced = holder.token;
           const line = waitingLine(holder);
-          log(holder.what === "" ? line : `${line}: ${holder.what}`);
+          log(line);
           beginPause(line);
         }
       }
       await new Promise((resolve) => setTimeout(resolve, pollMs));
     }
   } finally {
+    dropTicket(ticket);
     if (announced !== null) endPause();
   }
-  if (announced !== null) log(`perf lock: taken for ${what}`);
+  if (announced !== null) {
+    const waitedMs = Date.now() - queuedAt;
+    waitedTotalMs += waitedMs;
+    log(`perf lock: taken for ${what} after waiting ${Math.round(waitedMs / 1000)} s`);
+  }
   markStep(`hold the perf lock: ${what}`);
   const heartbeat = setInterval(() => {
     try {
@@ -272,6 +348,12 @@ type Turn = () => Promise<() => Promise<void>>;
  * A `withBrowserSession` turn that holds the perf lock for the whole session, taken before the
  * shared browser's own turn (`broker`), so a run queued for the lock never stalls the daemon's other
  * captures. Timed steps inside the session take the lock again for free (it is re-entrant).
+ *
+ * Only for a session that asks for its dev server inside the session callback. The turn waits after
+ * everything before `withBrowserSession` ran, so a server asked for before it can be gone by the time
+ * the lock frees (fps-gap and drive --hitches failed on ERR_CONNECTION_REFUSED this way, 2026-11-08).
+ * A script that gets its server first takes {@link acquirePerfLock} before it instead; the takers
+ * test checks that order.
  */
 export function perfLockTurn(what: string, broker: Turn | undefined, options: PerfLockOptions = {}): Turn {
   return async () => {

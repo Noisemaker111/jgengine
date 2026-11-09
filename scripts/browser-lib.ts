@@ -12,7 +12,7 @@ import {
   unlinkSync,
   writeFileSync,
 } from "node:fs";
-import { cpus, tmpdir } from "node:os";
+import { cpus, getPriority, tmpdir } from "node:os";
 import { basename, dirname, join, parse, resolve } from "node:path";
 
 import { BUSY_PC_PERCENT, cpuBusyPercent, readinessTimeoutLine, retrySettleMs, shouldRetryCapture, type CpuSample } from "./capture-retry";
@@ -21,6 +21,7 @@ import { brokerServer } from "./devBrokerClient";
 import { checkMarkedServer, checkoutIdentity, devServerIdentity, isUp, listMarkers, markerPath, readMarker, readServerIdentity, writeMarker } from "./devServerMarker";
 import { currentStep, describeHang, markStep, pausableDeadline, pausedTotal } from "./hangReport";
 import { localGet } from "./localhostHttp";
+import { currentPriority, lowerToBelowNormal, type PriorityLabel, priorityLabel, restoreNormalPriority } from "./machine-priority";
 import { startOutsideCaller } from "./outsideCaller";
 import { computeShotMetrics, deadViewport } from "./shot-metrics";
 import { removeDirSync } from "./removeDir";
@@ -1196,7 +1197,13 @@ export function listBrowserProcesses(): BrowserProcess[] {
       console.error(`degraded: pwsh is not installed (${query.error.message}); listing browsers with Windows PowerShell, which starts seconds slower`);
       query = run("powershell.exe");
     }
-    return query.status === 0 ? parseRows(query.stdout ?? "") : [];
+    if (query.status !== 0) {
+      // Silent before: on a loaded PC the 20 s query timed out, the sweep saw no browsers, and a
+      // test read that as "nothing stray" (2026-11-08).
+      console.error(`degraded: could not list browser processes (${query.error?.message ?? `exit ${query.status}`}); no stray browser is swept this time`);
+      return [];
+    }
+    return parseRows(query.stdout ?? "");
   }
   const withElapsed = spawnSync("ps", ["-eo", "pid=,ppid=,etimes=,args="], { encoding: "utf8", timeout: 20_000 });
   const ps = withElapsed.status === 0 ? withElapsed : spawnSync("ps", ["-axo", "pid=,ppid=,command="], { encoding: "utf8", timeout: 20_000 });
@@ -1532,7 +1539,34 @@ export function launchChrome(
   );
   if (child.pid !== undefined) writeFileSync(join(userDataDir, PROFILE_OWNER_FILE), String(child.pid));
   trackProfileBrowser(userDataDir, child.pid);
+  // Set before Chrome forks its GPU and renderer processes, which inherit the browser's class.
+  const priority = options.priority === "normal" ? restoreNormalPriority(child.pid) : currentPriority(child.pid);
+  if (child.pid !== undefined) launchedPriorities.set(child.pid, priority);
+  if (!options.persistent && child.pid !== undefined) startChromeWatchdog(child.pid, userDataDir);
   return Object.assign(child, { userDataDir });
+}
+
+/** The priority a Chrome this process launched runs at, by browser pid. */
+const launchedPriorities = new Map<number, PriorityLabel>();
+
+/**
+ * Start the detached watchdog that ends this Chrome's tree and profile when this process dies
+ * without running its exit handlers (`taskkill /F`, a stopped job): `scripts/chrome-watchdog.ts`.
+ * Tests that fake the launch never reach here.
+ */
+export function startChromeWatchdog(chromePid: number, userDataDir: string, launcherPid = process.pid): number | undefined {
+  try {
+    const watchdog = spawn(process.execPath, [join(import.meta.dir, "chrome-watchdog.ts"), String(launcherPid), String(chromePid), userDataDir], {
+      stdio: "ignore",
+      windowsHide: true,
+      detached: true,
+    });
+    watchdog.unref();
+    return watchdog.pid;
+  } catch (error) {
+    console.error(`degraded: no watchdog for Chrome ${chromePid} (${error instanceof Error ? error.message : String(error)}); a killed launcher would leave it running`);
+    return undefined;
+  }
 }
 
 /** Launch persistent headless Chrome without retaining a Windows child-process handle in Bun. */
@@ -1582,6 +1616,9 @@ export function launchPersistentChrome(
     throw new Error(`Persistent Chrome launch failed: ${error instanceof Error ? error.message : String(error)}`);
   }
   writeFileSync(join(userDataDir, PROFILE_OWNER_FILE), String(pid));
+  // Created by WMI, it inherits nothing from this process: put it below normal like every capture
+  // browser, before it starts most of its GPU and renderer processes.
+  lowerToBelowNormal(pid);
   detachProfileDir(userDataDir);
   return { pid, child: null, userDataDir };
 }
@@ -1602,6 +1639,12 @@ export interface ChromeLaunchOptions {
    * capture can never put a Chrome on Jon's desktop by accident; only `--headed` sets it.
    */
   headed?: boolean;
+  /**
+   * `normal` puts the browser back to normal priority after launch, for a mode whose product is a
+   * frame time (the launcher itself runs below normal, see `scripts/machine-priority.ts`). The
+   * default inherits the launcher's priority, which is what a capture or a byte count wants.
+   */
+  priority?: "normal" | "inherit";
 }
 
 export interface StartBrowserOptions<L extends LaunchableBrowser = ChromeProcess> {
@@ -1618,6 +1661,8 @@ export interface StartBrowserOptions<L extends LaunchableBrowser = ChromeProcess
   frameClock?: FrameClock;
   /** Launch a real (off-screen) window instead of headless Chrome. */
   headed?: boolean;
+  /** `normal` for a Chrome whose frame times are the product; see {@link ChromeLaunchOptions.priority}. */
+  priority?: "normal" | "inherit";
   /** Prove the page layer answers; defaults to opening and closing a page target. */
   pageProbe?: (debugPort: number, profilePath: string) => Promise<void>;
   /** Read the port a browser launched on port 0 published; defaults to its profile's DevToolsActivePort. */
@@ -1685,11 +1730,12 @@ export async function startBrowser<L extends LaunchableBrowser = ChromeProcess>(
   const publishedPort = options.publishedPort ?? publishedDebugPort;
   const pageProbe = options.pageProbe ?? defaultPageProbe;
   const launchOptions: ChromeLaunchOptions | undefined =
-    options.frameClock === undefined && options.headed !== true
+    options.frameClock === undefined && options.headed !== true && options.priority === undefined
       ? undefined
       : {
           ...(options.frameClock === undefined ? {} : { frameClock: options.frameClock }),
           ...(options.headed === true ? { headed: true } : {}),
+          ...(options.priority === undefined ? {} : { priority: options.priority }),
         };
   const attempts = 2;
   let last: BrowserLaunchError | null = null;
@@ -2554,6 +2600,32 @@ export interface WithBrowserSessionOptions {
    * The wait sits outside the hard deadline, which covers only this run's own work.
    */
   turn?: (() => Promise<() => Promise<void>>) | undefined;
+  /** `normal` for a session whose product is a frame time; see {@link ChromeLaunchOptions.priority}. */
+  chromePriority?: "normal" | "inherit" | undefined;
+}
+
+/** What the current session's Chrome runs at, for the record a measurement writes. */
+export type SessionChromePriority = PriorityLabel | "daemon";
+
+let sessionPriority: SessionChromePriority | null = null;
+let sessionChromePid: number | null = null;
+
+/**
+ * The priority of the Chrome the latest {@link withBrowserSession} launched, `daemon` when it
+ * attached to a browser another process owns, or null before the first session. Read live while
+ * that Chrome runs, because something outside the run (Owl's machine-wide sweep) may have changed
+ * it since launch; after it exits, the last value read stays, so a mode's closing summary can say
+ * what its browser ran at.
+ */
+export function sessionChromePriority(): SessionChromePriority | null {
+  if (sessionChromePid !== null) {
+    try {
+      sessionPriority = priorityLabel(getPriority(sessionChromePid));
+    } catch {
+      sessionChromePid = null;
+    }
+  }
+  return sessionPriority;
 }
 
 /**
@@ -2610,6 +2682,8 @@ export async function withBrowserSession(
     );
     if (options.connect !== undefined || attach) {
       await waitForDebugger(debugPort, 5_000);
+      sessionChromePid = null;
+      sessionPriority = "daemon";
     } else {
       const started = await startBrowser({
         debugPort,
@@ -2618,9 +2692,13 @@ export async function withBrowserSession(
         ...(options.pageProbe === undefined ? {} : { pageProbe: options.pageProbe }),
         ...(options.frameClock === undefined ? {} : { frameClock: options.frameClock }),
         ...(options.headed === true ? { headed: true } : {}),
+        ...(options.chromePriority === undefined ? {} : { priority: options.chromePriority }),
       });
       chrome = started.browser;
       debugPort = started.debugPort;
+      // A test's fake launch records nothing; its session then reports the launcher's own priority.
+      sessionChromePid = chrome.pid !== undefined && launchedPriorities.has(chrome.pid) ? chrome.pid : null;
+      sessionPriority = (chrome.pid === undefined ? undefined : launchedPriorities.get(chrome.pid)) ?? currentPriority();
     }
     markStep("run the capture");
     const result = await fn({ debugPort, chrome });

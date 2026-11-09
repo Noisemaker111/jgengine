@@ -1,5 +1,5 @@
 import { afterEach, expect, setDefaultTimeout, test } from "bun:test";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import {
@@ -38,6 +38,7 @@ import { attemptsOf, judgeChecks } from "./ci-status";
 import type { RollupEntry } from "./ci-status";
 import { fakeGitHub, type FakeCall, type FakeCheck, type FakeGitHub } from "./github.fixture";
 import { OUTAGE_ATTEMPTS } from "./github";
+import { removeDirSync } from "./removeDir";
 
 // Many tests run real git repos; on a busy Windows PC a push-and-clone test took 5-6 s and failed bun's 5 s default.
 setDefaultTimeout(60_000);
@@ -354,14 +355,18 @@ test("refuses main, the base branch and a dirty tree", () => {
 const SCRATCH = join(import.meta.dir, "..", ".scratch");
 const made: string[] = [];
 afterEach(() => {
-  for (const dir of made.splice(0)) rmSync(dir, { recursive: true, force: true });
+  // Retried: a git a timeout just killed still holds files for a moment (EBUSY), and Bun's rmSync does not retry.
+  for (const dir of made.splice(0)) removeDirSync(dir);
 });
 
 function gitIn(cwd: string, args: string[]): Run {
   const result = Bun.spawnSync({
     cmd: ["git", "-c", "user.email=land@example.test", "-c", "user.name=Land", ...args],
     cwd,
-    timeout: 60_000,
+    // A local push forks several git processes; at below-normal priority on a PC held at 100% by
+    // normal-priority work, Windows runs each only every few seconds, and one push took 60 s
+    // (2026-11-09). A real hang still ends here.
+    timeout: 180_000,
     stdout: "pipe",
     stderr: "pipe",
   });

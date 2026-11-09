@@ -4,6 +4,7 @@ import { ensureDevServer, killPid, killProcessTree, openPageSession, withBrowser
 import { FRAME_GAMES } from "./ci-scope";
 import { debugPortFor, GATE_SIZE } from "./perf-gate";
 import type { PerfPath } from "./perf-breakdown";
+import { acquirePerfLock } from "./perf-lock";
 import { measureGame, parseSettingSpec } from "./perf-play";
 
 /**
@@ -97,6 +98,10 @@ export function renderShadowAudit(rows: readonly ShadowAuditRow[]): string {
 }
 
 async function auditGame(game: string, index: number, args: ShadowAuditArgs, started: Awaited<ReturnType<typeof ensureDevServer>>[]): Promise<ShadowAuditRow> {
+  // The lock first: the server check and Chrome launch sit inside it, so a server obtained before a
+  // long wait cannot be gone after it. Texels are the product here, not frame times, so the browser
+  // keeps the inherited below-normal priority (scripts/perf.ts).
+  const releaseLock = await acquirePerfLock(`perf shadow-audit ${game}`);
   // Checked before every game, so a dev server that died under the last one is started again.
   const server = await ensureDevServer(repoRoot);
   if (server.pid !== undefined) started.push(server);
@@ -124,7 +129,7 @@ async function auditGame(game: string, index: number, args: ShadowAuditArgs, sta
     } finally {
       await session.close();
     }
-  });
+  }).finally(releaseLock);
   // The session logs a failed run and hands back its exit code instead of throwing.
   if (exit !== 0) throw failure instanceof Error ? failure : new Error(`the browser session exited ${exit}`);
   return { game, counters, error: counters === null ? "no shadow cache on the page" : null };

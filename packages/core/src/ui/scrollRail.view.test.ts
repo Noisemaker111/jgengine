@@ -9,6 +9,8 @@ setDefaultTimeout(30_000);
 const scratch = resolve(import.meta.dir, "../../../../.scratch/scroll-rail-test");
 let browser: Browser, page: Page, server: ReturnType<typeof Bun.serve>;
 beforeAll(async () => {
+  // A run killed mid-test (a timeout) leaves its links here; the next run must not fail on EEXIST.
+  await rm(scratch, { recursive: true, force: true });
   await mkdir(scratch, { recursive: true });
   await mkdir(`${scratch}/node_modules`, {recursive:true});
   for (const pkg of ['react','react-dom']) await symlink(resolve(import.meta.dir,'../../../../packages/react/node_modules',pkg),`${scratch}/node_modules/${pkg}`,'dir');

@@ -6,7 +6,8 @@ import { ensureDevServer, killPid, killProcessTree, openPageSession, withBrowser
 import { FRAME_GAMES } from "./ci-scope";
 import { engineRecord, resolveEngineIdentity } from "./engineIdentity";
 import { debugPortFor, GATE_SIZE } from "./perf-gate";
-import { gameSessionDeadlineMs, GPU_WORK_SECONDS, gpuErrors, measureGame, parseSettingSpec, type AllocationEntry, type PerfRecord, type ProfileNode, type RawProfile } from "./perf-play";
+import { acquirePerfLock } from "./perf-lock";
+import { gameSessionDeadlineMs, GPU_WORK_SECONDS, gpuErrors, machineClause, measureGame, parseSettingSpec, type AllocationEntry, type PerfRecord, type ProfileNode, type RawProfile } from "./perf-play";
 import type { FrameBreakdownSummary, NamedCost } from "../packages/core/src/devtools/frameBreakdown";
 import { parseRendererBackend, type RendererBackend } from "../packages/core/src/settings/rendererBackend";
 
@@ -293,7 +294,7 @@ export function renderFpsGapReport(entries: readonly FpsGapEntry[], options: { m
   }))];
   const budget = ms2(FPS_GAP_BUDGET_MS);
   out.push(`360 fps gap: every cost against the ${budget} ms frame (360 fps). ${entries.length} games.`);
-  if (first !== undefined) out.push(`Conditions: ${first.viewport}, ${first.quality} tier, ${first.frameClock} clock, path ${first.path ?? "still"}, ${first.gpu}${engines.length === 0 ? "" : `, engine ${engines.join(" and ")}`}.`);
+  if (first !== undefined) out.push(`Conditions: ${first.viewport}, ${first.quality} tier, ${first.frameClock} clock, path ${first.path ?? "still"}, ${first.gpu}${engines.length === 0 ? "" : `, engine ${engines.join(" and ")}`}${machineClause(first.machine)}.`);
   out.push("CPU is main-thread work per frame and GPU the timer-query sum of the passes; cost is the larger p50, so 'x budget' and 'ceiling fps' assume the two overlap fully.");
   out.push("GPU is the GPU's work: a second window on the same path times every draw and clear on its own ('GPU span' is the frame window's pass timers, which also count the GPU idle while the CPU submits; a record without the draw-timed window shows its span in both).");
   out.push("These are the dev server's build (development React, unminified modules) in headless Chrome; a production desktop build spends less CPU (`bun run perf desktop --launch <app.exe> --uncapped`).", "");
@@ -406,7 +407,11 @@ async function measureAll(args: FpsGapArgs, backend: RendererBackend, engine: Pe
   try {
     for (const [index, game] of args.games.entries()) {
       console.error(`perf fps-gap: ${game} on ${backend} (${index + 1}/${args.games.length})`);
+      let releaseLock = (): void => {};
       try {
+        // The lock first: this game's server check and Chrome launch sit inside it, so a server
+        // obtained before a long wait cannot be gone after it.
+        releaseLock = await acquirePerfLock(`perf fps-gap ${game}`);
         // Checked before every game: a dev server that died under the last one is restarted, and named,
         // instead of every remaining game failing on a refused connection.
         const server = await ensureDevServer(repoRoot);
@@ -417,7 +422,8 @@ async function measureAll(args: FpsGapArgs, backend: RendererBackend, engine: Pe
         previous = game;
         const exit = await withBrowserSession(
           // Frame window, profile window and the draw-timed GPU window.
-          { keep: false, debugPort: debugPortFor(index), timeoutMs: 180_000, hardDeadlineMs: gameSessionDeadlineMs(WARMUP_MS, args.seconds * 2 + GPU_WORK_SECONDS), frameClock: "uncapped" },
+          // The frame time is the product, so the browser draws at normal priority (scripts/perf.ts).
+          { keep: false, debugPort: debugPortFor(index), timeoutMs: 180_000, hardDeadlineMs: gameSessionDeadlineMs(WARMUP_MS, args.seconds * 2 + GPU_WORK_SECONDS), frameClock: "uncapped", chromePriority: "normal" },
           async ({ debugPort }) => {
             const session = await openPageSession(debugPort);
             try {
@@ -459,6 +465,8 @@ async function measureAll(args: FpsGapArgs, backend: RendererBackend, engine: Pe
       } catch (error) {
         console.error(`perf fps-gap: ${game} could not be measured — ${error instanceof Error ? error.message : String(error)}`);
         failed.push(game);
+      } finally {
+        releaseLock();
       }
     }
   } finally {

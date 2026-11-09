@@ -21,7 +21,9 @@ export function headRevision(cwd = process.cwd()): string | undefined {
       cwd,
       encoding: "utf8",
       windowsHide: true,
-      timeout: 5_000,
+      // A local rev-parse on a PC with every core busy took over 5 s and read as "not a git tree"
+      // (2026-11-09); 30 s still ends a real hang.
+      timeout: 30_000,
     });
     if (result.status !== 0) return undefined;
     const head = result.stdout.trim();

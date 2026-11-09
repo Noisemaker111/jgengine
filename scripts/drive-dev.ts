@@ -77,7 +77,8 @@ import { detail, takeVerboseFlag } from "./verbosity";
 import { parseDriveArgs, projectDirOf, DRIVE_HELP } from "./driveArgs";
 import { LockstepRecorder } from "./driveLockstep";
 import { readHitchSession, renderHitchSession, resetBreakdown } from "./perf-breakdown";
-import { perfLockTurn } from "./perf-lock";
+import { stayOutOfTheWay } from "./machine-priority";
+import { acquirePerfLock } from "./perf-lock";
 import { installPageRenderCounter, readRenderCounts, renderRenderCounts, resetRenderCounter } from "./perf-renders";
 import { aggregateAllocations, type HeapSampleNode } from "./perf-play";
 import { describeFirstPaints, endTrace, markTraceAnchor, readTraceEvents, renderTracedHitches, startTrace, traceHitches } from "./perf-trace";
@@ -278,6 +279,9 @@ if (args.url !== undefined) {
     process.exit(1);
   }
 }
+// The drive and the headless Chrome it launches run below normal priority, so Jon's game comes first;
+// a timed drive puts only its own Chrome back to normal.
+stayOutOfTheWay();
 sweepCaptureProfiles();
 
 const viewport: ViewportOverride = { width: args.width, height: args.height };
@@ -314,6 +318,21 @@ function targetUrl(base: string): URL {
 
 async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
   requireReusableCaptureStorage(args.reuseStorage, args.connect !== undefined, daemon !== null);
+  // --hitches and --trace time the run's frames, so the drive holds the perf lock from before it asks
+  // for its dev server (one asked for before a long wait can be gone after it); a drive that times
+  // nothing does not wait for it.
+  const timed = args.hitches || args.trace;
+  const releaseLock = timed
+    ? await acquirePerfLock(`drive ${args.game}${args.flow === undefined ? "" : ` ${args.flow}`}${args.hitches ? " --hitches" : ""}${args.trace ? " --trace" : ""}`)
+    : () => {};
+  try {
+    return await driveLocked(daemon, timed);
+  } finally {
+    releaseLock();
+  }
+}
+
+async function driveLocked(daemon: ShootDaemonState | null, timed: boolean): Promise<number> {
   const dev = args.url !== undefined
     ? { base: args.url, child: null, pid: undefined }
     : await withStepDeadline("start or reuse the dev server", SERVER_STEP_MS, async () =>
@@ -339,8 +358,9 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
       attach: daemon !== null,
       leaveWarm: args.keep || daemon !== null,
       chromePrefix: "jg-drive-",
-      // --hitches and --trace time the run's frames, so the session holds the perf lock; a drive that times nothing does not wait for it.
-      turn: args.hitches || args.trace ? perfLockTurn(`drive ${args.game}${args.flow === undefined ? "" : ` ${args.flow}`}${args.hitches ? " --hitches" : ""}${args.trace ? " --trace" : ""}`, brokerTurn(daemon)) : brokerTurn(daemon),
+      turn: brokerTurn(daemon),
+      // A timed drive's hitches are the product, so its own Chrome draws at normal priority; a capture keeps the inherited below-normal.
+      chromePriority: timed ? "normal" : "inherit",
       headed: args.headed,
       // One real render + capture per output frame — give the watchdog room.
       ...(lockstep ? { hardDeadlineMs: args.timeoutMs + 120_000 + lockstepProjected * 3_000 } : {}),

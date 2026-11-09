@@ -16,7 +16,9 @@ import {
   sweepCaptureProfiles,
   watchPageExceptions,
   withBrowserSession,
+  sessionChromePriority,
   type FrameClock,
+  type SessionChromePriority,
 } from "./browser-lib";
 import { parseGraphicsTier, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 import { engineRecord, resolveEngineIdentity, type EngineRecord } from "./engineIdentity";
@@ -41,8 +43,9 @@ import {
 import type { SystemProbeReading } from "../packages/core/src/devtools/types";
 import { renderBreakdownText, type FrameBreakdownSummary } from "../packages/core/src/devtools/frameBreakdown";
 import { compareBreakdowns, readBreakdown, resetBreakdown, startPath, type PerfPath } from "./perf-breakdown";
-import { perfLockTurn, withPerfLock } from "./perf-lock";
+import { acquirePerfLock, perfLockWaitedMs, withPerfLock } from "./perf-lock";
 import { markStep } from "./hangReport";
+import { currentPriority, type PriorityLabel } from "./machine-priority";
 import { provisionCapturedGame } from "./provisionCapture";
 import {
   ACCESSIBILITY_SETTING_IDS,
@@ -977,6 +980,29 @@ export interface PerfRecord extends Omit<PerfReport, "quality"> {
   gpuWork?: FrameBreakdownSummary | null;
   /** The GPU API that actually drew the window, and the WebGPU backend's warnings when it was that one. */
   backend?: BackendReading;
+  /**
+   * Where the run sat on the machine: seconds it queued for the perf lock before measuring, the
+   * priority its Chrome drew at, and the priority of the process that measured. A number taken
+   * below normal also measured whatever outranked it; absent in older records.
+   */
+  machine?: RunMachine;
+}
+
+export interface RunMachine {
+  lockWaitSeconds: number;
+  chromePriority: SessionChromePriority | "unknown";
+  launcherPriority: PriorityLabel;
+}
+
+/** This run's {@link RunMachine}, read when a record is built. */
+export function runMachine(): RunMachine {
+  return { lockWaitSeconds: Math.round(perfLockWaitedMs() / 1000), chromePriority: sessionChromePriority() ?? "unknown", launcherPriority: currentPriority() };
+}
+
+/** The clause a summary line adds about the run's place on the machine, or "" for an older record. */
+export function machineClause(machine: RunMachine | undefined): string {
+  if (machine === undefined) return "";
+  return `, waited ${machine.lockWaitSeconds} s for the perf lock, Chrome at ${machine.chromePriority} priority (measured from ${machine.launcherPriority})`;
 }
 
 /** Which backend drew the page: `webgpu` only when the engine's WebGPU context is live. */
@@ -1406,6 +1432,7 @@ async function measureProvisioned(options: MeasureOptions): Promise<PerfMeasure>
     movement: movementEvidence(movementStart, movementEnd),
     breakdown,
     ...(gpuWork === undefined ? {} : { gpuWork }),
+    machine: runMachine(),
   };
 
   const draws = record.render.draws;
@@ -1517,6 +1544,10 @@ async function main(): Promise<void> {
    * one launch. A function so a daemon that dies under a run can be retried cold once.
    */
   const runPerf = async (daemon: ShootDaemonState | null, browser: "cold" | "warm"): Promise<number> => {
+    // The lock first, then the server, then the browser: a server obtained before a 503 s wait was
+    // gone after it (the broker had been restarted; ERR_CONNECTION_REFUSED, 2026-11-08). Taken before
+    // the shared browser's turn, so a run queued for the lock never stalls the daemon's other captures.
+    const releaseLock = await acquirePerfLock(`perf ${pending.join(" ")}`);
     const server = daemon === null ? await ensureDevServer(repoRoot) : await ensureDaemonTarget(daemon, "dev");
     return withDaemonWatch(daemon, withBrowserSession(
       {
@@ -1527,13 +1558,14 @@ async function main(): Promise<void> {
         hardDeadlineMs: pending.length * 300_000,
         frameClock,
         headed,
+        // The frame time is the product, so the browser draws at normal priority (scripts/perf.ts).
+        chromePriority: "normal",
         server: server.child,
         serverPid: server.pid,
         debugPort: daemon?.chromePort,
         attach: daemon !== null,
         leaveWarm: daemon !== null,
-        // The batch holds the perf lock, taken before the shared browser's turn so waiting for it never stalls other captures.
-        turn: perfLockTurn(`perf ${pending.join(" ")}`, brokerTurn(daemon, repoRoot)),
+        turn: brokerTurn(daemon, repoRoot),
       },
       async ({ debugPort }) => {
         const failed: string[] = [];
@@ -1570,7 +1602,7 @@ async function main(): Promise<void> {
         }
         return failed.length === 0 ? 0 : 1;
       },
-    ));
+    )).finally(releaseLock);
   };
 
   const exitCode = await runWithDaemonRecovery(warm, (daemon, mode) =>
@@ -1665,7 +1697,7 @@ export function perfBatchTable(rows: readonly PerfBatchRow[]): string {
 
 /** The text a person reads after a run: the breakdown, the run's conditions, and the diff when asked. */
 export function perfSummaryText(record: PerfRecord, baseline: PerfRecord | null): string {
-  const conditions = `${record.viewport}, ${record.quality} tier, ${record.frameClock} clock, path ${record.path ?? "still"}, ${record.gpu}`;
+  const conditions = `${record.viewport}, ${record.quality} tier, ${record.frameClock} clock, path ${record.path ?? "still"}, ${record.gpu}${machineClause(record.machine)}`;
   const lines: string[] = [];
   if (record.breakdown === null || record.breakdown === undefined) {
     lines.push(`${record.game}: no frame breakdown (the page has no dev telemetry); frame avg ${record.frame.avgMs} ms, p95 ${record.frame.p95Ms} ms`);

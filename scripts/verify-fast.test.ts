@@ -26,6 +26,7 @@ import {
   pureRenames,
   rerunCommand,
   rerunFailing,
+  timedOutFiles,
   splitByCost,
   TESTS_PER_LANE,
   workspaceOf,
@@ -378,6 +379,29 @@ describe("attribution fails loudly", () => {
     const chunk = { name: "test 3 file(s)", command: ["bun", "test", "--timeout", "20000", "a.test.ts", "b.test.ts", "c.test.ts"] };
     expect(rerunFailing(chunk, "b.test.ts:\n(fail) x\n\n 1 fail")).toBe("bun test b.test.ts");
     expect(rerunFailing(chunk, "bun crashed")).toBe("bun test --timeout 20000 a.test.ts b.test.ts c.test.ts");
+  });
+
+  test("a step whose every failure is a timeout names its files for one rerun; any other failure names none", () => {
+    // The shapes bun printed on 2026-11-09, a test timeout and a hook timeout in two files.
+    const timeouts = [
+      "scripts\\land-commit.test.ts:",
+      "error: expect(received).toBe(expected)",
+      "(fail) a re-close with new -m lines on a clean tree adds them to the note [21507.27ms]",
+      "  ^ this test timed out after 20000ms.",
+      "",
+      "packages\\core\\src\\landform\\evolution\\landscapeEvolution.browser.test.ts:",
+      "(fail) (unnamed) [179458.05ms]",
+      "  ^ a beforeEach/afterEach hook timed out for this test.",
+      "",
+      " 127 pass",
+      " 2 fail",
+    ].join("\n");
+    expect(timedOutFiles(timeouts)).toEqual(["scripts/land-commit.test.ts", "packages/core/src/landform/evolution/landscapeEvolution.browser.test.ts"]);
+    // One real assertion failure among the timeouts: nothing is rerun, the step stays red.
+    const mixed = `${timeouts}\nscripts\\b.test.ts:\nerror: expect(received).toBe(expected)\n(fail) b counts [3.10ms]\n`;
+    expect(timedOutFiles(mixed)).toBeNull();
+    // A crash with no (fail) line is not a timeout either.
+    expect(timedOutFiles("bun crashed")).toBeNull();
   });
 
   test("the tests named after the changed files run first, in their own step, so the root cause is never left not run", () => {
