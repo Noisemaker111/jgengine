@@ -1,10 +1,11 @@
-import { Suspense, useLayoutEffect, useMemo, useRef } from "react";
+import { Suspense, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 import type { ModelShadowMode } from "@jgengine/core/lod/modelLod";
-import { AuthoredSurfaceMaterial, authoredSurfaceKey, type AuthoredSurfaceConfig, type SurfaceShape } from "@jgengine/core/material/authoredSurfaceMaterial.draw";
+import { AuthoredSurfaceMaterial, authoredSurfaceKey, useAuthoredSurfaceMaterial, type AuthoredSurfaceConfig, type SurfaceShape } from "@jgengine/core/material/authoredSurfaceMaterial.draw";
 import { ModelFallbackBoundary } from "@jgengine/core/model/SceneModels.draw";
-import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { composeInstance, uploadInstances } from "./instanceUpload.draw";
 
 /** One editor-derived static primitive. A box spans one unit; a cylinder has unit radius and height before scale. */
@@ -66,18 +67,35 @@ export function writeStaticShapeInstances(mesh: THREE.InstancedMesh, instances: 
   );
 }
 
+/** One instanced batch as an {@link EngineDraw}; the material is owned by the caller's hook. */
+export function staticShapeBatchDraw(batch: StaticShapeBatch, material: THREE.Material): EngineDraw {
+  const geometry = batch.shape === "box" ? new THREE.BoxGeometry(1, 1, 1) : new THREE.CylinderGeometry(1, 1, 1, batch.radialSegments);
+  let mesh: THREE.InstancedMesh | null = null;
+  return {
+    mount(state: EngineFrameState) {
+      mesh = new THREE.InstancedMesh(geometry, material, batch.instances.length);
+      mesh.castShadow = batch.shadows === "both" || batch.shadows === "cast";
+      mesh.receiveShadow = batch.shadows === "both" || batch.shadows === "receive";
+      writeStaticShapeInstances(mesh, batch.instances);
+      state.scene.add(mesh);
+    },
+    dispose(state: EngineFrameState) {
+      if (mesh !== null) {
+        state.scene.remove(mesh);
+        mesh.dispose();
+      }
+      geometry.dispose();
+      mesh = null;
+    },
+  };
+}
+
 function ShapeBatch({ batch }: { batch: StaticShapeBatch }) {
-  const ref = useRef<THREE.InstancedMesh>(null);
-  const geometry = useDisposable(() => batch.shape === "box" ? new THREE.BoxGeometry(1, 1, 1) : new THREE.CylinderGeometry(1, 1, 1, batch.radialSegments), [batch.shape, batch.radialSegments]);
-  useLayoutEffect(() => {
-    if (ref.current !== null) writeStaticShapeInstances(ref.current, batch.instances);
-  }, [batch.instances]);
-  const fallback = <AuthoredSurfaceMaterial surface={{ ...batch.surface, maps: undefined }} shape={batch.shape} />;
-  return <instancedMesh ref={ref} args={[geometry, undefined, batch.instances.length]} castShadow={batch.shadows === "both" || batch.shadows === "cast"} receiveShadow={batch.shadows === "both" || batch.shadows === "receive"}>
-    <ModelFallbackBoundary fallback={fallback} url={Object.values(batch.surface.maps ?? {}).join(",")} seam="object">
-      <Suspense fallback={fallback}><AuthoredSurfaceMaterial surface={batch.surface} shape={batch.shape} /></Suspense>
-    </ModelFallbackBoundary>
-  </instancedMesh>;
+  const material = useAuthoredSurfaceMaterial(batch.surface, batch.shape);
+  const latest = useRef({ batch, material });
+  latest.current = { batch, material };
+  useEngineDraw(() => staticShapeBatchDraw(latest.current.batch, latest.current.material), [batch, material]);
+  return null;
 }
 
 /**
@@ -86,5 +104,9 @@ function ShapeBatch({ batch }: { batch: StaticShapeBatch }) {
  */
 export function StaticShapeInstances({ instances }: { instances: readonly StaticShapeInstance[] }) {
   const batches = useMemo(() => groupStaticShapeInstances(instances), [instances]);
-  return <>{batches.map(batch => <ShapeBatch key={batch.key} batch={batch} />)}</>;
+  return <>{batches.map(batch => (
+    <ModelFallbackBoundary key={batch.key} fallback={<AuthoredSurfaceMaterial surface={{ ...batch.surface, maps: undefined }} shape={batch.shape} />} url={Object.values(batch.surface.maps ?? {}).join(",")} seam="object">
+      <Suspense fallback={<AuthoredSurfaceMaterial surface={{ ...batch.surface, maps: undefined }} shape={batch.shape} />}><ShapeBatch batch={batch} /></Suspense>
+    </ModelFallbackBoundary>
+  ))}</>;
 }
