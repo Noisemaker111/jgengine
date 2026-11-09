@@ -11,7 +11,7 @@ export interface OceanMaterialUniforms {
   uTime: { value: number };
   uWaveDirections: { value: THREE.Vector2[] };
   uWaveParams: { value: THREE.Vector4[] };
-  uWavePhases: { value: number[] | Float32Array };
+  uWavePhases: { value: number[] };
   uChoppiness: { value: number };
   uWaveCount: { value: number };
   uBedMap: { value: THREE.Texture };

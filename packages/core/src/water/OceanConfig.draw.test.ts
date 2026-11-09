@@ -75,7 +75,7 @@ describe("buildOceanWaveUniforms", () => {
     const uniforms = buildOceanWaveUniforms(config);
     expect(config.waves).toHaveLength(MAX_OCEAN_WAVES);
     expect(uniforms.phases).toHaveLength(MAX_OCEAN_WAVES);
-    expect(uniforms.phases[0]).toBeCloseTo((field.components[0]?.phase ?? 0) + Math.PI / 2, 5);
+    expect(uniforms.phases[0]).toBeCloseTo((field.components[0]?.phase ?? 0) + Math.PI / 2, 9);
     expect(config.waves[0]?.steepness).toBe(0);
   });
 });
