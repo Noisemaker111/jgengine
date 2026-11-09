@@ -2,7 +2,8 @@
 import type { ReactElement } from "react";
 import * as THREE from "three";
 
-import { useGameContext, type GameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/react/provider";
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { devtools } from "@jgengine/core/devtools/devtools";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { childFrameState } from "@jgengine/core/frame/engineLoop.draw";
