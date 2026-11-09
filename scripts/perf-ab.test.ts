@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { abVerdict, affectedGames, BASE_TREE_KEEP_MS, baseTreeName, expiredBaseTrees, homeRequest, medianMs, pairLogRatio, parseAbArgs, plantScript, renderAbTable, rendererCpuPct, routeSpread, t99, treeFingerprint, type AbGameResult } from "./perf-ab";
+import { abVerdict, affectedGames, awayFromHome, BASE_TREE_KEEP_MS, baseTreeName, expiredBaseTrees, homeRequest, medianMs, pairLogRatio, parseAbArgs, plantScript, renderAbTable, rendererCpuPct, routeSpread, t99, treeFingerprint, type AbGameResult } from "./perf-ab";
 
 const GAMES = ["deepward", "harbor-heat", "scrap-signal"];
 const options = { minBlocks: 4, maxBlocks: 16, marginPct: 3 };
@@ -172,4 +172,10 @@ test("the table says the verdict, change and interval per game", () => {
   };
   const table = renderAbTable([result], { markdown: true, marginPct: 3 });
   expect(table).toContain("| harbor-heat | slower | +5.1% | +3.2% to +7.0% | 24.60 | 25.85 | 5 | 95 |");
+});
+
+test("distance from home is on the ground, and a game with no pose counts as home", () => {
+  const home = { x: 0, y: 0, z: 100, yaw: 0 };
+  expect(awayFromHome([3, 9, 104], home)).toBeCloseTo(5, 9);
+  expect(awayFromHome(null, home)).toBe(0);
 });

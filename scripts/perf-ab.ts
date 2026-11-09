@@ -373,7 +373,7 @@ export function plantScript(ms: number): string {
 
 type Side = "base" | "branch";
 
-interface Home {
+export interface Home {
   x: number;
   y: number;
   z: number;
@@ -387,6 +387,8 @@ interface SidePage {
   browser: CdpSession;
   /** Where the player stood after warmup; every window's walk starts here, so windows replay one route. */
   home: Home | null;
+  /** The game's teleport left its player where it was (a car body puts it back), so windows follow it on. */
+  homeFailed: boolean;
   stopPath: () => Promise<void>;
   /** Renderer pids suspended while the other side is timed. */
   frozen: number[];
@@ -444,7 +446,7 @@ async function openSide(side: Side, debugPort: number, browser: CdpSession, serv
   const pose = await session.evaluate<{ ok: boolean; position?: number[]; rotationY?: number }>(`window.__jgengineAgent?.handle?.({ method: "player_pose" }) ?? { ok: false }`);
   const [x, y, z] = pose?.position ?? [];
   const home = pose?.ok === true && x !== undefined && y !== undefined && z !== undefined ? { x, y, z, yaw: pose.rotationY ?? 0 } : null;
-  return { side, session, browser, home, stopPath: async () => {}, frozen: [] };
+  return { side, session, browser, home, homeFailed: false, stopPath: async () => {}, frozen: [] };
 }
 
 /** The bridge request that puts the player back where the window's walk starts. */
@@ -471,22 +473,39 @@ async function resume(page: SidePage, path: PerfPath): Promise<void> {
   await page.session.send("Page.bringToFront");
   // A walk that went on from wherever the last window left it read 10.7-23 ms from one 2 s window to
   // the next on one build (harbor-heat pilot, 2026-11-09): each window saw new ground. From the same
-  // spot, every window on both sides walks the same route. Standing still too: drift-foundry's car
-  // drives itself about 10 m a second, so its windows went from 13 ms to 7 ms down the track and the
-  // two pages crossed the cheap stretch at different pairs, burying a planted 5% (2026-11-09).
-  if (page.home !== null) {
-    const moved = await page.session.evaluate<{ ok: boolean; error?: string }>(`window.__jgengineAgent?.handle?.(${homeRequest(page.home)}) ?? { ok: false, error: "agent bridge unavailable" }`);
+  // spot, every window on both sides walks the same route. Standing still, only a player that moved on
+  // its own is put back (a car that drives itself), so a game whose player stands pays no teleport.
+  const home = page.home;
+  if (home !== null && !page.homeFailed && (path === "walk" || awayFromHome(await playerAt(page), home) > HOME_TOLERANCE_M)) {
+    const moved = await page.session.evaluate<{ ok: boolean; error?: string }>(`window.__jgengineAgent?.handle?.(${homeRequest(home)}) ?? { ok: false, error: "agent bridge unavailable" }`);
     if (moved?.ok !== true) throw new Error(`could not put the ${page.side} page's player back at the start of the walk: ${moved?.error ?? "no answer"}`);
     // The teleport's own camera turn swings round the camera's old target, so the view after it
     // pointed from where the last walk ended and alternate windows walked two routes (north-east at
     // 27 ms, south at 16 ms; harbor-heat, 2026-11-09). Turned again once the camera follows the new
     // spot, every window walks one route.
     await page.session.evaluate(`new Promise((r) => setTimeout(r, ${TURN_SETTLE_MS}))`, { awaitPromise: true });
-    await page.session.evaluate(`window.__jgengineAgent?.handle?.(${JSON.stringify({ method: "camera_heading", yaw: page.home.yaw })})`);
+    await page.session.evaluate(`window.__jgengineAgent?.handle?.(${JSON.stringify({ method: "camera_heading", yaw: home.yaw })})`);
     await page.session.evaluate(`new Promise((r) => setTimeout(r, ${TURN_SETTLE_MS}))`, { awaitPromise: true });
+    // drift-foundry's teleport answers ok and its car body puts the player back where it was; its
+    // windows then follow the car down the track, each pair still at one spot on both pages.
+    const away = awayFromHome(await playerAt(page), home);
+    if (away > HOME_TOLERANCE_M && path === "still") {
+      page.homeFailed = true;
+      console.error(`degraded: the ${page.side} page's player was ${away.toFixed(1)} m from its start after a teleport, so its windows follow the player on; each pair is still both pages equally far into the game`);
+    } else if (away > HOME_TOLERANCE_M) {
+      throw new Error(`the ${page.side} page's player was ${away.toFixed(1)} m from the start of the walk after a teleport, so its walks would not replay one route`);
+    }
   }
   page.stopPath = await startPath(page.session, path);
   await page.session.evaluate(`new Promise((r) => setTimeout(r, ${SETTLE_MS}))`, { awaitPromise: true });
+}
+
+/** How far a player may be from home and count as there. */
+const HOME_TOLERANCE_M = 1;
+
+/** Ground distance from home, 0 when the game has no pose. */
+export function awayFromHome(at: readonly number[] | null, home: Home): number {
+  return at === null ? 0 : Math.hypot((at[0] ?? home.x) - home.x, (at[2] ?? home.z) - home.z);
 }
 
 async function playerAt(page: SidePage): Promise<number[] | null> {
@@ -583,7 +602,7 @@ async function measurePair(game: string, serve: (side: Side) => Promise<string>,
         console.error(`perf ab: ${game}: ${verdict.blocks} pairs in ${Math.round((Date.now() - measureAt) / 1000)} s`);
         // Every window starts from home, walking or standing (a vehicle's player moves on its own), so
         // their ends say whether they all covered the same ground.
-        const spread = routeSpread(windows);
+        const spread = pages.base.homeFailed || pages.branch.homeFailed ? 0 : routeSpread(windows);
         if (spread > ROUTE_SPREAD_MAX_M) console.error(`degraded: the windows' players ended up to ${spread.toFixed(1)} m apart, so they did not all cover the same ground`);
         const busyIdle = windows.filter((window) => window.idleCpu > IDLE_CPU_MAX_PCT).length;
         if (busyIdle > 0) console.error(`degraded: in ${busyIdle} of ${windows.length} windows the frozen side's renderers still used over ${IDLE_CPU_MAX_PCT}% of a core`);
