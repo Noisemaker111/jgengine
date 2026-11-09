@@ -168,12 +168,16 @@ export interface SceneWalkStarts {
   readonly serial: number;
 }
 
-const walkStarts = new WeakMap<THREE.Object3D, SceneWalkStarts>();
+interface WalkEntry {
+  starts: THREE.Object3D[];
+  serial: number;
+}
+
+const walkStarts = new WeakMap<THREE.Object3D, WalkEntry>();
 let walkSerial = 0;
 
-// The traversal stacks are module scratch, emptied per call: this runs for every scene render, and
-// a fresh triple of arrays per call was per-frame garbage in every game. `starts` stays per-call —
-// the caller keeps it.
+// The traversal stacks and each scene's walk-starts entry are reused: this runs for every scene
+// render, and fresh arrays and entry objects per pass were per-frame garbage in every game.
 const walkNodes: THREE.Object3D[] = [];
 const walkForced: boolean[] = [];
 const walkModes: number[] = [];
@@ -181,10 +185,10 @@ const walkModes: number[] = [];
 /**
  * Parents before children, with its own stack: a recursive walk over a scene's mix of node classes
  * cost several times more than the work it did at each node. The same pass lists the scene's walk
- * starts (see {@link startsWalk}), in three's walk order.
+ * starts (see {@link startsWalk}), in three's walk order, into `starts`.
  */
-function updateShownMatrixWorld(root: THREE.Object3D, force: boolean): THREE.Object3D[] {
-  const starts: THREE.Object3D[] = [];
+function updateShownMatrixWorld(root: THREE.Object3D, force: boolean, starts: THREE.Object3D[]): void {
+  starts.length = 0;
   const nodes = walkNodes;
   const forced = walkForced;
   const modes = walkModes;
@@ -226,7 +230,6 @@ function updateShownMatrixWorld(root: THREE.Object3D, force: boolean): THREE.Obj
       modes.push(collect && child.visible ? MATRIX | COLLECT : MATRIX);
     }
   }
-  return starts;
 }
 
 /**
@@ -241,7 +244,13 @@ function updateShownMatrixWorld(root: THREE.Object3D, force: boolean): THREE.Obj
 export function skipCulledMatrices(scene: THREE.Object3D): void {
   scene.updateMatrixWorld = function updateMatrixWorld(this: THREE.Object3D, force?: boolean) {
     walkSerial += 1;
-    walkStarts.set(this, { starts: updateShownMatrixWorld(this, force === true), serial: walkSerial });
+    let entry = walkStarts.get(this);
+    if (entry === undefined) {
+      entry = { starts: [], serial: walkSerial };
+      walkStarts.set(this, entry);
+    }
+    updateShownMatrixWorld(this, force === true, entry.starts);
+    entry.serial = walkSerial;
   };
 }
 

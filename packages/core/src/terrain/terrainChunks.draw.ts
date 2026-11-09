@@ -128,7 +128,8 @@ export class GroundChunks {
 
   private byDistance(eye: THREE.Vector3): GroundTile[] {
     const at = flat(eye);
-    return [...this.tiles].sort((a, b) => a.lod.position.distanceToSquared(at) - b.lod.position.distanceToSquared(at));
+    // Sorted in place: the spread copy was per-frame garbage while tiles stream in.
+    return this.tiles.sort((a, b) => a.lod.position.distanceToSquared(at) - b.lod.position.distanceToSquared(at));
   }
 
   private worldX(index: number): number {

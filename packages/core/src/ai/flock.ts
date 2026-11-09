@@ -125,8 +125,35 @@ export function flockSteer(
 }
 
 export interface FlockStepAgent {
-  position: FlockVec3;
-  velocity: FlockVec3;
+  position: [number, number, number];
+  velocity: [number, number, number];
+}
+
+interface FlockScratch {
+  positions: Float64Array;
+  candidates: Int32Array;
+  neighbors: FlockAgent[];
+  steer: Float64Array;
+}
+
+// A checked-out bundle per in-flight step: an acceleration callback may step another flock, so the
+// pool hands each call its own scratch instead of sharing one module array.
+const flockScratch: FlockScratch[] = [];
+
+function takeFlockScratch(count: number): FlockScratch {
+  let scratch = flockScratch.pop();
+  if (scratch === undefined) {
+    scratch = { positions: new Float64Array(0), candidates: new Int32Array(0), neighbors: [], steer: new Float64Array(0) };
+  }
+  if (scratch.positions.length < count * 3) scratch.positions = new Float64Array(count * 3);
+  if (scratch.candidates.length < count) scratch.candidates = new Int32Array(count);
+  if (scratch.steer.length < count * 3) scratch.steer = new Float64Array(count * 3);
+  scratch.neighbors.length = 0;
+  return scratch;
+}
+
+function releaseFlockScratch(scratch: FlockScratch): void {
+  flockScratch.push(scratch);
 }
 
 /** Integrate one tick in place: steer every agent, clamp to `maxSpeed`, advance positions.
@@ -141,11 +168,26 @@ export function stepFlock(
 ): void {
   const count = agents.length;
   if (count === 0) return;
+  const scratch = takeFlockScratch(count);
+  try {
+    stepFlockInto(agents, count, config, dt, target, acceleration, scratch);
+  } finally {
+    releaseFlockScratch(scratch);
+  }
+}
 
+function stepFlockInto(
+  agents: FlockStepAgent[],
+  count: number,
+  config: FlockConfig,
+  dt: number,
+  target: FlockVec3 | undefined,
+  acceleration: ((agent: Readonly<FlockStepAgent>, index: number) => FlockVec3) | undefined,
+  scratch: FlockScratch,
+): void {
   const cellSize = config.neighborRadius > 1e-6 ? config.neighborRadius : 1;
-  // All scratch is call-local so concurrent worlds (or re-entrant steps) never share a grid. The grid
-  // hands back candidates by z row, then x, then agent order, so flockmates sum in a fixed order.
-  const positions = new Float64Array(count * 3);
+  // The grid hands back candidates by z row, then x, then agent order, so flockmates sum in a fixed order.
+  const positions = scratch.positions;
   for (let i = 0; i < count; i += 1) {
     const position = agents[i]!.position;
     positions[i * 3] = position[0];
@@ -154,9 +196,9 @@ export function stepFlock(
   }
   const grid = createPointGrid({ cellSize });
   grid.rebuild(positions, count);
-  const candidates = new Int32Array(count);
-  const neighborScratch: FlockAgent[] = [];
-  const steerScratch = new Float64Array(count * 3);
+  const candidates = scratch.candidates;
+  const neighborScratch = scratch.neighbors;
+  const steerScratch = scratch.steer;
 
   for (let i = 0; i < count; i += 1) {
     const found = grid.query(positions[i * 3]!, positions[i * 3 + 2]!, cellSize, candidates);
@@ -190,12 +232,14 @@ export function stepFlock(
       vy *= clamp;
       vz *= clamp;
     }
-    agent.velocity = [vx, vy, vz];
-    agent.position = [
-      agent.position[0] + vx * dt,
-      agent.position[1] + vy * dt,
-      agent.position[2] + vz * dt,
-    ];
+    const velocity = agent.velocity;
+    velocity[0] = vx;
+    velocity[1] = vy;
+    velocity[2] = vz;
+    const position = agent.position;
+    position[0] += vx * dt;
+    position[1] += vy * dt;
+    position[2] += vz * dt;
   }
 }
 
