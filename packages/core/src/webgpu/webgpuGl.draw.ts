@@ -63,6 +63,10 @@ export interface WebGpuGlStats {
   replayedPasses: number;
   /** Render bundle sets recorded for repeating passes. */
   bundles: number;
+  /** Passes encoded draw by draw because their commands differ from the forms kept for them. */
+  changedPasses: number;
+  /** Passes encoded draw by draw because they bind something a replay cannot carry (constant attributes, uniforms outside their range). */
+  unreplayablePasses: number;
   submits: number;
   pipelines: number;
   bindGroups: number;
@@ -282,6 +286,8 @@ class RecordedPass {
   }
 }
 
+/** Forms of one pass kept to match against: two, so a pass reading a ping-pong target on alternate frames repeats. */
+const REPLAY_FORMS = 2;
 /** A replay step that runs a render bundle; other steps are pass state ops (viewport, scissor, references). */
 const STEP_BUNDLE = 100;
 
@@ -516,7 +522,7 @@ Object.assign(GlConstants.prototype, WEBGL_CONSTANTS);
 export class WebGpuGl extends GlConstants {
   readonly canvas: HTMLCanvasElement;
   readonly device: GPUDevice;
-  readonly stats: WebGpuGlStats = { frames: 0, draws: 0, passes: 0, clearPasses: 0, replayedPasses: 0, bundles: 0, submits: 0, pipelines: 0, bindGroups: 0, uniformBytes: 0, orderFlushes: 0, programs: 0, translateMs: 0, fences: 0, fenceMs: 0, reads: 0, readMs: 0, queueLagMs: 0, precompiles: 0, precompileMs: 0 };
+  readonly stats: WebGpuGlStats = { frames: 0, draws: 0, passes: 0, clearPasses: 0, replayedPasses: 0, bundles: 0, changedPasses: 0, unreplayablePasses: 0, submits: 0, pipelines: 0, bindGroups: 0, uniformBytes: 0, orderFlushes: 0, programs: 0, translateMs: 0, fences: 0, fenceMs: 0, reads: 0, readMs: 0, queueLagMs: 0, precompiles: 0, precompileMs: 0 };
   /** Every distinct problem a draw hit, once each (also printed once). */
   readonly warnings = new Map<string, number>();
   drawingBufferColorSpace: PredefinedColorSpace = "srgb";
@@ -618,7 +624,7 @@ export class WebGpuGl extends GlConstants {
   /** Each target's passes this frame so far, so the n-th pass into a target meets last frame's n-th. */
   private readonly passOrdinals = new Map<GlFramebuffer | null, number>();
   /** Last frames' passes per target and ordinal, replayed from render bundles when a pass repeats (see {@link encodePass}). */
-  private readonly replays = new Map<GlFramebuffer | null, (PassReplay | undefined)[]>();
+  private readonly replays = new Map<GlFramebuffer | null, PassReplay[][]>();
   /** The uniform block size each ring bind group binds. */
   private readonly ringGroupSizes = new WeakMap<GPUBindGroup, number>();
   private passTarget: PassTarget | null = null;
@@ -1970,27 +1976,38 @@ struct U { shift: vec2<i32> };
    */
   private encodePass(rp: RecordedPass, encoder: GPUCommandEncoder): void {
     const ops = rp.ops.length > 0 ? this.relativeOps(rp) : null;
-    if (ops === null) { rp.encode(encoder, this.replayOffset); return; }
-    let list = this.replays.get(rp.fb);
-    if (list === undefined) { list = []; this.replays.set(rp.fb, list); }
-    const known = list[rp.ordinal];
-    const size = Math.ceil((rp.uniformEnd - rp.uniformBase) / 4) * 4;
-    if (known !== undefined && sameOps(known.ops, ops)) {
-      known.repeats += 1;
-      if (known.steps === null) this.buildReplay(known, rp, size);
-      if (known.steps !== null && known.uniforms !== null && known.size >= size) {
-        if (size > 0) encoder.copyBufferToBuffer(this.ring, rp.uniformBase, known.uniforms, 0, size);
-        const pass = encoder.beginRenderPass(rp.descriptor);
-        replaySteps(pass, known.steps);
-        pass.end();
-        this.stats.replayedPasses += 1;
-        return;
-      }
-    } else {
-      if (known?.uniforms != null) this.retire(known.uniforms);
-      list[rp.ordinal] = { ops, repeats: 0, steps: null, uniforms: null, size: 0 };
+    if (ops === null) {
+      if (rp.ops.length > 0) this.stats.unreplayablePasses += 1;
+      rp.encode(encoder, this.replayOffset);
+      return;
     }
-    rp.encode(encoder, this.replayOffset);
+    let slots = this.replays.get(rp.fb);
+    if (slots === undefined) { slots = []; this.replays.set(rp.fb, slots); }
+    const kept = (slots[rp.ordinal] ??= []);
+    const size = Math.ceil((rp.uniformEnd - rp.uniformBase) / 4) * 4;
+    const at = kept.findIndex((candidate) => sameOps(candidate.ops, ops));
+    if (at < 0) {
+      // A pass that alternates between two forms (a ping-pong target read on alternate frames) keeps both.
+      kept.unshift({ ops, repeats: 0, steps: null, uniforms: null, size: 0 });
+      for (const dropped of kept.splice(REPLAY_FORMS)) if (dropped.uniforms !== null) this.retire(dropped.uniforms);
+      this.stats.changedPasses += 1;
+      rp.encode(encoder, this.replayOffset);
+      return;
+    }
+    const known = kept[at]!;
+    if (at > 0) { kept.splice(at, 1); kept.unshift(known); }
+    known.repeats += 1;
+    if (known.steps !== null && known.size < size) {
+      this.retire(known.uniforms);
+      known.steps = null;
+      known.uniforms = null;
+    }
+    if (known.steps === null) this.buildReplay(known, rp, size);
+    if (size > 0) encoder.copyBufferToBuffer(this.ring, rp.uniformBase, known.uniforms!, 0, size);
+    const pass = encoder.beginRenderPass(rp.descriptor);
+    replaySteps(pass, known.steps!);
+    pass.end();
+    this.stats.replayedPasses += 1;
   }
 
   /** `rp`'s commands with uniform binds made relative to its range, or null when it binds something a replay cannot carry. */

@@ -273,6 +273,15 @@ describe("WebGpuGl pass replay", () => {
     expect(changed).not.toContain("executeBundles");
   });
 
+  test("a pass that alternates between two forms (a ping-pong target) is replayed in both", () => {
+    const s = drawSetup();
+    s.texture();
+    for (const draws of [3, 4, 3, 4]) frame(s, draws);
+    const replayed = s.gl.stats.replayedPasses;
+    for (const draws of [3, 4]) expect(frame(s, draws).filter((n) => n === "draw").length).toBe(0);
+    expect(s.gl.stats.replayedPasses).toBe(replayed + 2);
+  });
+
   test("uniforms are bound relative to the pass's own range, so a pass after a different one still repeats", () => {
     const s = drawSetup();
     s.texture();
