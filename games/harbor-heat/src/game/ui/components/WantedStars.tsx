@@ -3,7 +3,7 @@ import { useStore } from "@jgengine/react/store";
 import { MAX_HEAT, MAX_STARS, type WantedSnapshot, wantedStore } from "../../streetPlay";
 
 /** HHPD's own words for what it is doing, so the stars read as a search rather than a score. */
-function heatLine(wanted: WantedSnapshot): string {
+function heatLine(wanted: Pick<WantedSnapshot, "response" | "stars">): string {
   if (wanted.response === "roadblock") return "HHPD has the causeway";
   if (wanted.response === "pursue") return "HHPD is hunting you";
   return wanted.stars >= 2 ? "HHPD is asking around" : "Someone called it in";
@@ -17,10 +17,16 @@ const SEGMENTS = 20;
  * the call is, and how wide the search circle is.
  */
 export function WantedStars() {
-  const wanted = useStore(wantedStore);
+  // Pursuit publishes heat every tick; the scanner draws twenty segments, so it selects those.
+  const wanted = useStore(wantedStore, (state) => state === undefined ? undefined : {
+    stars: state.stars,
+    response: state.response,
+    lit: Math.round((Math.min(state.heat, MAX_HEAT) / MAX_HEAT) * SEGMENTS),
+    searchRadius: state.search == null ? null : Math.round(state.search.radius),
+  });
   if (wanted === undefined || wanted.stars === 0) return null;
   const hunting = wanted.response === "pursue" || wanted.response === "roadblock";
-  const lit = Math.round((Math.min(wanted.heat, MAX_HEAT) / MAX_HEAT) * SEGMENTS);
+  const lit = wanted.lit;
   return (
     <div className="hh-scanner" data-hunting={hunting ? "" : undefined} data-stars={wanted.stars}>
       <span className="hh-lightbar" aria-hidden="true"><i /><i /><i /><i /></span>
@@ -38,7 +44,7 @@ export function WantedStars() {
           <span className="hh-led-heat" aria-hidden="true">
             {Array.from({ length: SEGMENTS }, (_, i) => <i key={i} data-lit={i < lit ? "" : undefined} />)}
           </span>
-          {wanted.search == null ? null : <small className="hh-led-search">Search {Math.round(wanted.search.radius)} m · lose them outside it</small>}
+          {wanted.searchRadius === null ? null : <small className="hh-led-search">Search {wanted.searchRadius} m · lose them outside it</small>}
         </span>
       </div>
     </div>
