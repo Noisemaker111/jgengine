@@ -1,6 +1,5 @@
 // @skill jgengine-world
-import { useLoader, useThree } from "@react-three/fiber";
-import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 
@@ -19,8 +18,6 @@ import {
 import type { ImpostorAtlas } from "@jgengine/core/lod/impostor.draw";
 import { scatterModelBaseTransform } from "@jgengine/core/scatter/scatterModels.draw";
 import { trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
-
-const MeshLodContext = createContext<MeshLodConfig | undefined>(undefined);
 
 // Draws cannot read the React context, so MeshLodSettings also pushes its config on a module stack;
 // the world canvas is the only tree that sets it, and nested preview canvases never do.
@@ -43,18 +40,7 @@ export function pushMeshLodSettings(config: MeshLodConfig | undefined): () => vo
 /** Hands the game's `visibility.meshLods` to every model draw below it. @internal */
 export function MeshLodSettings({ config, children }: { config: MeshLodConfig | undefined; children: ReactNode }) {
   useEffect(() => pushMeshLodSettings(config), [config]);
-  return <MeshLodContext.Provider value={config}>{children}</MeshLodContext.Provider>;
-}
-
-/**
- * The game's `visibility.meshLods` (null when it asks for none) and the camera's vertical field of
- * view in radians, for a draw that sets its own level distances from size on screen.
- * @internal
- */
-export function useMeshLodView(): { settings: MeshLodConfig | null; fovY: number } {
-  const game = useContext(MeshLodContext);
-  const fovY = cameraFov(useThree((state) => state.camera));
-  return useMemo(() => ({ settings: meshLodSettings(game, undefined), fovY }), [game, fovY]);
+  return <>{children}</>;
 }
 
 /**
@@ -212,7 +198,7 @@ export function loadBuiltLodMeta(url: string): Promise<BuiltLodMeta | null> {
 }
 
 /**
- * Draw-side form of {@link WithBuiltLods}'s resolution: the model with the levels the asset build
+ * Draw-side form of the old WithBuiltLods resolution: the model with the levels the asset build
  * wrote for its file, or the model unchanged when nothing was built or meshLods are off.
  * @internal
  */
@@ -279,81 +265,3 @@ export async function loadBakedImpostor(model: ModelConfig, meta: BuiltLodMeta):
   };
 }
 
-/**
- * Hands `children` the model to draw: `model` with the levels the asset build wrote for its file,
- * switched by size on screen. Its `variants` become the source, every built level the game's
- * `visibility.meshLods` reaches and, when `impostors` is true and an atlas was baked, the impostor
- * (`IMPOSTOR_LEVEL_URL`). A model without built levels, or with `meshLods: false`, comes back
- * unchanged. Suspends while the metadata loads.
- * @internal
- */
-export function WithBuiltLods({ model, impostors, children }: {
-  model: ModelConfig;
-  impostors: boolean;
-  children: (resolved: BuiltLodModel) => ReactNode;
-}) {
-  const game = useContext(MeshLodContext);
-  const settings = meshLodSettings(game, model.meshLods);
-  if (settings === null || !hasBuiltLodPath(model.url)) return <>{children({ model, meta: null })}</>;
-  return <BuiltLodResolver model={model} settings={settings} impostors={impostors}>{children}</BuiltLodResolver>;
-}
-
-function BuiltLodResolver({ model, settings, impostors, children }: {
-  model: ModelConfig;
-  settings: MeshLodConfig;
-  impostors: boolean;
-  children: (resolved: BuiltLodModel) => ReactNode;
-}) {
-  const meta = useLoader(BuiltLodMetaLoader, builtLodMetaUrl(model.url));
-  const fov = cameraFov(useThree((state) => state.camera));
-  const key = JSON.stringify(settings);
-  const resolved = useMemo((): BuiltLodModel => {
-    if (meta === null) return { model, meta: null };
-    remember(model.url, meta);
-    const bounds = boundsOf(meta);
-    const radius = bounds.getBoundingSphere(new THREE.Sphere()).radius * normalizationScale(model, bounds);
-    const config = impostors ? settings : { screenSizes: settings.screenSizes, ...(settings.hysteresis === undefined ? {} : { hysteresis: settings.hysteresis }) };
-    const built = resolveBuiltLods(model.url, meta, config, radius, fov);
-    return built === null ? { model, meta } : { model: { ...model, variants: built.variants }, meta };
-    // `key` stands for `settings`, a fresh object every render.
-  }, [model, meta, fov, impostors, key]);
-  return <>{children(resolved)}</>;
-}
-
-/**
- * The baked impostor atlas of a built model, placed in the model's normalized space (its targetHeight,
- * scale and anchor applied), so the cards stand where the meshes stood. Suspends while it loads.
- * @internal
- */
-export function useBakedImpostor(model: ModelConfig, meta: BuiltLodMeta): ImpostorAtlas | null {
-  const impostor = meta.impostor;
-  const urls = impostor === undefined ? [] : [builtLodFileUrl(model.url, impostor.albedo), builtLodFileUrl(model.url, impostor.normal)];
-  const textures = useLoader(THREE.TextureLoader, urls);
-  return useMemo(() => {
-    const [albedo, normal] = textures;
-    if (impostor === undefined || albedo === undefined || normal === undefined) return null;
-    for (const texture of [albedo, normal]) {
-      // The build writes rows as the GPU read them back, bottom first.
-      texture.flipY = false;
-      texture.generateMipmaps = true;
-      texture.minFilter = THREE.LinearMipmapLinearFilter;
-      texture.magFilter = THREE.LinearFilter;
-      texture.needsUpdate = true;
-    }
-    albedo.colorSpace = THREE.SRGBColorSpace;
-    normal.colorSpace = THREE.NoColorSpace;
-    const bounds = boundsOf(meta);
-    const base = scatterModelBaseTransform(new THREE.Object3D(), model, bounds);
-    const center = new THREE.Vector3(...impostor.center).applyMatrix4(base);
-    return {
-      albedo,
-      normal,
-      frames: impostor.frames,
-      center,
-      radius: impostor.radius * base.getMaxScaleOnAxis(),
-      dispose() {
-        // The loader cache owns the textures; another model sharing the file may still draw them.
-      },
-    };
-  }, [textures, impostor, meta, model]);
-}

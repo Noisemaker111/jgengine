@@ -417,6 +417,49 @@ export function useOverrideMapSets(models: readonly Pick<ModelConfig, "material"
   }, [entries, views, models.length]);
 }
 
+/** An owned {@link loadOverrideMapSets} result plus the texture views to dispose. @internal */
+export interface OverrideMapSetsLease {
+  readonly sets: readonly (MaterialOverrideTextures | undefined)[];
+  dispose(): void;
+}
+
+/**
+ * Draw-side form of {@link useOverrideMapSets}: resolves each model's override maps through the
+ * shared texture cache and returns owned views grouped per model, in order. The caller disposes the
+ * views once the sources built from them are gone.
+ * @internal
+ */
+export function loadOverrideMapSets(renderer: THREE.WebGLRenderer | null, models: readonly Pick<ModelConfig, "material">[]): Promise<OverrideMapSetsLease> {
+  const entries = models.flatMap((model, piece) => overrideMapEntries(model.material?.maps).map(entry => ({ ...entry, piece })));
+  if (entries.some(entry => /\.ktx2(?:[?#]|$)/i.test(entry.metadata.url)) && renderer !== null) detectKtx2Support(renderer);
+  if (entries.length === 0) {
+    return Promise.resolve({ sets: models.map(() => undefined), dispose() {} });
+  }
+  return Promise.all(entries.map(entry => loadMaterialTexture(entry.metadata.url))).then(sources => {
+    const owned: THREE.Texture[] = [];
+    try {
+      const sets: (MaterialOverrideTextures | undefined)[] = models.map(() => undefined);
+      entries.forEach((entry, index) => {
+        const view = configureMaterialTexture(entry.role, entry.metadata, sources[index]!);
+        view.flipY = false;
+        owned.push(view);
+        const set = sets[entry.piece] ?? {};
+        set[entry.role] = view;
+        sets[entry.piece] = set;
+      });
+      return {
+        sets,
+        dispose() {
+          for (const texture of owned) texture.dispose();
+        },
+      };
+    } catch (error) {
+      for (const texture of owned) texture.dispose();
+      throw error;
+    }
+  });
+}
+
 /** An owned {@link useModelMaterialTextures} result plus the texture views to dispose. @internal */
 export interface ModelMaterialTexturesLease {
   readonly global: MaterialOverrideTextures;

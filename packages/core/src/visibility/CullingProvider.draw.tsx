@@ -42,6 +42,15 @@ export function useVisibilityChanges(ids: readonly string[], mark: () => void): 
   useEffect(() => changes.watch(ids, mark), [changes, ids, mark]);
 }
 
+/**
+ * The provider's visibility-changes feed for draw code that cannot read the React context —
+ * the same instance {@link useVisibilityChanges} watches through.
+ * @internal
+ */
+export function useVisibilityChangesSource(): VisibilityChanges {
+  return useContext(ChangesContext);
+}
+
 const tmpDir = new THREE.Vector3();
 
 type Mutable<T> = { -readonly [Key in keyof T]: T[Key] };

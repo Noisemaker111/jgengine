@@ -5,7 +5,7 @@ import { createObjectStore } from "@jgengine/core/scene/objectStore";
 import { createModelVariantSelector } from "@jgengine/core/lod/modelLod";
 import { buildScatterModelSources, disposeScatterModelSources } from "@jgengine/core/scatter/scatterModels.draw";
 import { countStaticBatchDraws, groupStaticObjects, STATIC_BATCH_MESH_KEY, gatherStaticMembers, syncStaticObjectSource, type StaticObjectBatch } from "./staticObjectBatches.draw";
-import { LevelAssignment, LevelSingles, placementStale, SourceSteps, VariantStaticObjects } from "./StaticObjectModels.draw";
+import { LevelAssignment, placementStale, SourceSteps, staticObjectBatchDraw, StaticDrawPoolDriver } from "./StaticObjectModels.draw";
 
 const FULL_TRIANGLES = 9134;
 const FAR_TRIANGLES = 4110;
@@ -70,8 +70,8 @@ function palmBatch(store: ReturnType<typeof createObjectStore>, model: ModelConf
 
 describe("model variant batches", () => {
   test("the instanced renderer draws a variant model through the level switch", () => {
-    expect(typeof VariantStaticObjects).toBe("function");
-    expect(typeof LevelSingles).toBe("function");
+    expect(typeof staticObjectBatchDraw).toBe("function");
+    expect(typeof StaticDrawPoolDriver).toBe("function");
   });
 
   test("one palm species at 20 m and 200 m draws full near, decimated far, and drops the expected triangles", () => {
