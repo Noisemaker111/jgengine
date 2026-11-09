@@ -181,24 +181,50 @@ test("every entry point that times frames takes the lock", () => {
   }
 });
 
-test("every taker asks for its dev server only after it holds the lock", () => {
-  // A server asked for before a long wait for the lock was gone after it: the run failed on
-  // ERR_CONNECTION_REFUSED (perf play after 503 s, fps-gap's fernwild, 2026-11-08).
-  const lockFirst: Record<string, string> = {
-    "perf-play.ts": "acquirePerfLock(`perf ${pending.join",
-    "perf-gate.ts": "acquirePerfLock(`perf gate",
-    "perf-fps-gap.ts": "acquirePerfLock(`perf fps-gap",
-    "perf-shadow-audit.ts": "acquirePerfLock(`perf shadow-audit",
-    "perf-network.ts": "acquirePerfLock(`perf network",
-    "drive-dev.ts": "acquirePerfLock(`drive",
-  };
-  const serverCall = /\bensure(?:DevServer|WebServer|DaemonTarget)\(/;
-  for (const [file, lock] of Object.entries(lockFirst)) {
-    const source = readFileSync(join(import.meta.dir, file), "utf8");
-    const lockAt = source.indexOf(lock);
-    const serverAt = source.search(serverCall);
-    expect(lockAt, `${file} lost ${lock}`).toBeGreaterThanOrEqual(0);
-    expect(serverAt, `${file} asks for no dev server`).toBeGreaterThanOrEqual(0);
-    expect(serverAt, `${file} asks for its dev server before it takes the perf lock`).toBeGreaterThan(lockAt);
+/** Lines a server fetch may sit below the lock take that guards it: the take, its comment and a try. */
+const LOCK_TO_SERVER_LINES = 20;
+
+/**
+ * Each `await ensure…(` server fetch in `source` that has no lock take in the lines just above it,
+ * as `line N`. A fetch guarded that way runs after the wait, whatever the file's shape (one batch,
+ * a per-game loop, a shared audit loop).
+ */
+export function serversBeforeLock(source: string): string[] {
+  const lines = source.split(/\r?\n/);
+  // A `perfLockTurn` above the fetch means the fetch runs inside the session, after the wait.
+  const lockTake = /\b(?:acquirePerfLock|withPerfLock|perfLockTurn)\(/;
+  const serverFetch = /\bawait\s+ensure(?:DevServer|WebServer|DaemonTarget)\(/;
+  const bad: string[] = [];
+  for (const [index, line] of lines.entries()) {
+    if (!serverFetch.test(line)) continue;
+    const above = lines.slice(Math.max(0, index - LOCK_TO_SERVER_LINES), index + 1);
+    if (!above.some((candidate) => lockTake.test(candidate))) bad.push(`line ${index + 1}`);
   }
+  return bad;
+}
+
+test("every script that takes the perf lock asks for its dev server only under it", () => {
+  // A server asked for before a long wait for the lock was gone after it: the run failed on
+  // ERR_CONNECTION_REFUSED (perf play after 503 s, fps-gap's fernwild, 2026-11-08). Every script that
+  // takes the lock is checked, so a new timed script cannot bring the order back.
+  const scripts = readdirSync(import.meta.dir).filter((name) => /\.ts$/.test(name) && !/\.test\.ts$/.test(name) && name !== "perf-lock.ts");
+  const takers = scripts.filter((name) => /\b(?:acquirePerfLock|withPerfLock|perfLockTurn)\(/.test(readFileSync(join(import.meta.dir, name), "utf8")));
+  // The ones that start a dev server; perf desktop, native and timing start none inside the lock.
+  for (const file of ["perf-play.ts", "perf-gate.ts", "perf-fps-gap.ts", "perf-shadow-audit.ts", "perf-network.ts", "drive-dev.ts"]) {
+    expect(takers, `${file} no longer takes the perf lock`).toContain(file);
+  }
+  for (const file of takers) {
+    expect(serversBeforeLock(readFileSync(join(import.meta.dir, file), "utf8")), `${file} asks for a dev server outside the perf lock at`).toEqual([]);
+  }
+});
+
+test("the order check flags a server fetched before the lock and passes one fetched under it", () => {
+  const before = ["const server = await ensureDevServer(repoRoot);", "const exit = await withBrowserSession({ turn: perfLockTurn(`x`, undefined) }, run);"].join("\n");
+  expect(serversBeforeLock(before)).toEqual(["line 1"]);
+  const under = ["const release = await acquirePerfLock(`x`);", "// a comment", "const server = await ensureDevServer(repoRoot);"].join("\n");
+  expect(serversBeforeLock(under)).toEqual([]);
+  const wrapped = ["return withPerfLock(`perf ${kind.name} ${game}`, () => locked(game));", "}", "async function locked(game) {", "  const server = await ensureDevServer(repoRoot);"].join("\n");
+  expect(serversBeforeLock(wrapped)).toEqual([]);
+  const insideTurn = ["const exit = await withBrowserSession({ turn: perfLockTurn(`x`, undefined) }, async () => {", "  const server = await ensureDevServer(repoRoot);"].join("\n");
+  expect(serversBeforeLock(insideTurn)).toEqual([]);
 });
