@@ -640,7 +640,18 @@ async function main(): Promise<number> {
       for (const dir of [base.dir, repoRoot]) await provisionCapturedGame(join(dir, "games", game), (line) => console.error(`perf ab: ${line}`));
       const releaseLock = await acquirePerfLock(`perf ab ${game}`);
       const serve = async (side: Side): Promise<string> => {
-        const server = await ensureDevServer(side === "base" ? base.dir : repoRoot);
+        const dir = side === "base" ? base.dir : repoRoot;
+        let server: EnsureDevServerResult;
+        try {
+          server = await ensureDevServer(dir);
+        } catch (error) {
+          // The machine-wide dev-server broker died mid-request (2026-11-09, 03:20, no log line); asked
+          // again, a new broker starts.
+          const message = error instanceof Error ? error.message : String(error);
+          if (!/ECONNRESET|ECONNREFUSED|socket hang up/.test(message)) throw error;
+          console.error(`degraded: asking for the ${side} dev server failed (${message}); asking once more`);
+          server = await ensureDevServer(dir);
+        }
         if (server.pid !== undefined) started.push(server);
         return server.base;
       };
