@@ -70,6 +70,47 @@ export interface EngineFrameBoard {
   join(priority: number, task: (state: EngineFrameState, delta: number) => void): () => void;
 }
 
+/**
+ * A frame state scoped to a subtree: draws mounted through this add their
+ * objects under `parent` instead of the scene root. `scene` stays typed as
+ * Scene for the renderer; only `.add`/`.remove` are used by draws.
+ */
+export function childFrameState(state: EngineFrameState, parent: THREE.Object3D): EngineFrameState {
+  return { ...state, scene: parent as THREE.Scene };
+}
+
+/**
+ * Compose child draws under one THREE.Group: mounts each child with
+ * {@link childFrameState}, forwards the group's optional frame to every
+ * child's frame in order, and disposes children on teardown. Children keep
+ * their own priorities for ordering against other draws.
+ */
+export function groupDraw(children: readonly EngineDraw[], frame?: (state: EngineFrameState) => void): EngineDraw {
+  const group = new THREE.Group();
+  let states: EngineFrameState[] = [];
+  const priorities = children.map((child) => child.priority ?? 0);
+  return {
+    priority: priorities.length === 0 ? 0 : Math.min(...priorities),
+    mount(state: EngineFrameState) {
+      state.scene.add(group);
+      states = children.map((child) => {
+        const childState = childFrameState(state, group);
+        child.mount?.(childState);
+        return childState;
+      });
+    },
+    frame(state: EngineFrameState) {
+      frame?.(state);
+      children.forEach((child, index) => child.frame?.(states[index] ?? state));
+    },
+    dispose(state: EngineFrameState) {
+      children.forEach((child, index) => child.dispose?.(states[index] ?? state));
+      state.scene.remove(group);
+      states = [];
+    },
+  };
+}
+
 export interface EngineLoopOptions {
   canvas: HTMLCanvasElement;
   renderer: THREE.WebGLRenderer;
