@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { attributeHitch, fpsAt, hitchCause, lightSetChange, linkCaller, programVariantChange, renderBreakdownText, spread, summarizeBreakdown, targetLayout, vertexLayout, type FrameBreakdownRecord } from "./frameBreakdown";
+import { attributeHitch, fpsAt, hitchCause, longShareOf, lightSetChange, linkCaller, programVariantChange, renderBreakdownText, spread, summarizeBreakdown, targetLayout, vertexLayout, type FrameBreakdownRecord } from "./frameBreakdown";
 
 function frame(overrides: Partial<FrameBreakdownRecord> = {}): FrameBreakdownRecord {
   return {
@@ -157,4 +157,10 @@ test("a light recompile names the lights that came and went", () => {
   expect(lightSetChange([spot], [spot])).toBeNull();
   const many = Array.from({ length: 8 }, (_, i) => `PointLight in L${i}`);
   expect(lightSetChange([], many, 6)).toBe(`${many.slice(0, 6).map((l) => `+1 ${l}`).join("; ")}; 2 more`);
+});
+
+test("the long-frame share counts frames over twice the median", () => {
+  expect(longShareOf([])).toBe(0);
+  expect(longShareOf([2.8, 2.8, 2.8, 2.8, 2.8, 6])).toBeCloseTo(1 / 6, 4);
+  expect(longShareOf([2.8, 2.8, 5.6])).toBe(0);
 });

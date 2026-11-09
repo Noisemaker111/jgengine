@@ -594,6 +594,17 @@ export async function measureAll(args: AllArgs): Promise<AllRow[]> {
   return rows;
 }
 
+/**
+ * The failure line for an `--all` run that left games unmeasured, or null when every run measured. The run
+ * still prints every row, but it exits 1: eight of nine builds failed on a full disk and the run exited 0
+ * (2026-11-09), so a caller reading only the exit took one game for all nine.
+ */
+export function unmeasuredFailure(rows: readonly Pick<AllRow, "game" | "backend" | "record">[]): string | null {
+  const missing = rows.filter((row) => row.record === null);
+  if (missing.length === 0) return null;
+  return `perf desktop: ${missing.length} of ${rows.length} game runs not measured: ${missing.map((row) => `${row.game} (${row.backend})`).join(", ")}`;
+}
+
 async function main(argv: string[]): Promise<void> {
   if (argv[0] === "--launch") {
     const args = parseLaunchArgs(argv);
@@ -605,7 +616,13 @@ async function main(argv: string[]): Promise<void> {
   }
   if (argv.includes("--all")) {
     const args = parseAllArgs(argv);
-    console.log(renderAllTable(await measureAll(args), args.markdown));
+    const rows = await measureAll(args);
+    console.log(renderAllTable(rows, args.markdown));
+    const failed = unmeasuredFailure(rows);
+    if (failed !== null) {
+      console.error(failed);
+      process.exitCode = 1;
+    }
     return;
   }
   const port = Number(argv[0]);

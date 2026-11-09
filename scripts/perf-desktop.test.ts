@@ -2,7 +2,13 @@ import { expect, test } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { carryShaderCaches, desktopDeadline, desktopOutFor, diagnosticDesktopTarget, freePort, parseAllArgs, parseLaunchArgs, portAnswers, renderAllTable, unmeasuredSceneReason } from "./perf-desktop";
+import { carryShaderCaches, desktopDeadline, desktopOutFor, diagnosticDesktopTarget, freePort, parseAllArgs, parseLaunchArgs, portAnswers, renderAllTable, unmeasuredFailure, unmeasuredSceneReason } from "./perf-desktop";
+
+test("an --all run with a game left unmeasured fails and names it", () => {
+  const measured = { game: "beacon-bastion", backend: "webgl" as const, record: {} as never };
+  expect(unmeasuredFailure([measured])).toBeNull();
+  expect(unmeasuredFailure([measured, { game: "fernwild", backend: "webgl", record: null }])).toBe("perf desktop: 1 of 2 game runs not measured: fernwild (webgl)");
+});
 
 test("a window measured under the preparing cover, or with nothing drawn, is not a measurement", () => {
   expect(unmeasuredSceneReason(8, true)).toContain("still preparing shaders");

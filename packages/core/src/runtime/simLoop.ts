@@ -29,12 +29,24 @@ export interface SimAdvanceResult {
   tick: number;
   /** Steps discarded because the catch-up cap was hit. */
   dropped: number;
+  /** Of `steps`, those already run early by {@link SimLoop.stepAhead}, so this advance only accounted for them. */
+  early: number;
 }
 
 /** The stepper handle: advance with real time, read the tick and interpolation alpha, retune the rate, snapshot and restore. */
 export interface SimLoop {
   /** Feed real elapsed seconds; runs `step(dt, tick)` zero or more times and returns what happened. */
   advance(realDt: number, step: (dt: number, tick: number) => void): SimAdvanceResult;
+  /**
+   * Run the next fixed step now, before the advance that owes it, so a renderer can spend idle time between
+   * frames on it instead of the frame where it falls due. That advance then counts it without running it;
+   * if that advance is a little short of the step, the loop keeps the step and owes the time back, so the
+   * sim never runs ahead of real time by more than one step. Returns false on a variable loop or when a step
+   * is already ahead.
+   */
+  stepAhead(step: (dt: number, tick: number) => void): boolean;
+  /** Real seconds still to accumulate before the next step not yet run falls due; `null` on a variable loop. */
+  untilStep(): number | null;
   tick(): number;
   alpha(): number;
   /** Seconds per fixed step, `null` on a variable loop. */
@@ -72,6 +84,15 @@ export function createSimLoop(initial?: SimulationConfig): SimLoop {
   let tick = 0;
   let accumulator = 0;
   let alpha = 1;
+  // A step run early by stepAhead and not yet reached by real time.
+  let ahead = false;
+
+  /** Count an early step as reached: the accumulator may go below zero, which the next frames repay. */
+  function settleAhead(stepDt: number): void {
+    if (!ahead) return;
+    ahead = false;
+    accumulator -= stepDt;
+  }
 
   function stepSeconds(): number | null {
     return config.hz === "variable" ? null : 1 / config.hz;
@@ -79,18 +100,26 @@ export function createSimLoop(initial?: SimulationConfig): SimLoop {
 
   return {
     advance(realDt, step) {
-      if (!(realDt > 0)) return { steps: 0, alpha, tick, dropped: 0 };
+      if (!(realDt > 0)) return { steps: 0, alpha, tick, dropped: 0, early: 0 };
       const stepDt = stepSeconds();
       if (stepDt === null) {
         tick += 1;
         alpha = 1;
         step(realDt, tick);
-        return { steps: 1, alpha, tick, dropped: 0 };
+        return { steps: 1, alpha, tick, dropped: 0, early: 0 };
       }
       accumulator += realDt;
       // Time fed as exact multiples of a step (1 s at 60 Hz in slices) must run every step despite float drift.
       const due = stepDt * (1 - 1e-9);
       let steps = 0;
+      let early = 0;
+      if (ahead) {
+        // The early step is the first one this advance owes; a frame that ends just short of it still shows
+        // it, owing the remainder, rather than holding a world the sim has already moved past.
+        settleAhead(stepDt);
+        steps = 1;
+        early = 1;
+      }
       while (accumulator >= due && steps < config.maxCatchUpSteps) {
         tick += 1;
         step(stepDt, tick);
@@ -102,14 +131,29 @@ export function createSimLoop(initial?: SimulationConfig): SimLoop {
         dropped = Math.floor(accumulator / due);
         accumulator = Math.max(0, accumulator - dropped * stepDt);
       }
-      alpha = accumulator / stepDt;
-      return { steps, alpha, tick, dropped };
+      alpha = Math.max(0, accumulator) / stepDt;
+      return { steps, alpha, tick, dropped, early };
+    },
+    stepAhead(step) {
+      const stepDt = stepSeconds();
+      if (stepDt === null || ahead) return false;
+      ahead = true;
+      tick += 1;
+      step(stepDt, tick);
+      return true;
+    },
+    untilStep() {
+      const stepDt = stepSeconds();
+      if (stepDt === null) return null;
+      return Math.max(0, stepDt * (ahead ? 2 : 1) - accumulator);
     },
     tick: () => tick,
     alpha: () => alpha,
     stepSeconds,
     isFixed: () => config.hz !== "variable",
     retune(next) {
+      const before = stepSeconds();
+      if (before !== null) settleAhead(before);
       config = resolveConfig({ ...config, ...next });
       if (config.hz === "variable") {
         accumulator = 0;
@@ -117,11 +161,15 @@ export function createSimLoop(initial?: SimulationConfig): SimLoop {
       }
     },
     config: () => config,
-    snapshot: () => ({ tick, accumulator }),
+    snapshot: () => {
+      const stepDt = stepSeconds();
+      return { tick, accumulator: ahead && stepDt !== null ? accumulator - stepDt : accumulator };
+    },
     restore(state) {
       tick = state.tick;
       accumulator = state.accumulator;
-      alpha = config.hz === "variable" ? 1 : accumulator * config.hz;
+      ahead = false;
+      alpha = config.hz === "variable" ? 1 : Math.max(0, accumulator) * config.hz;
     },
   };
 }

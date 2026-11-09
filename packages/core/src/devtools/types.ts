@@ -201,6 +201,8 @@ export interface LastFrameSample {
   serial: number;
   simMs: number;
   phases: Readonly<Record<string, number>>;
+  /** Named phases of a fixed step run between the previous frame and this one (`ctx.sim.stepAhead`), outside `simMs`. */
+  ahead?: Readonly<Record<string, number>>;
 }
 
 /** Per-frame timing input recorded by callers: total frame time, sim time, and optional named phase durations. */
@@ -208,6 +210,8 @@ export interface FrameRecordSample {
   frameMs: number;
   simMs: number;
   phases?: Readonly<Record<string, number>>;
+  /** Named phases of a fixed step the driver ran between the previous frame and this one; not part of `simMs`. */
+  ahead?: Readonly<Record<string, number>>;
 }
 
 /** Top-level devtools facade aggregating frame, profile, render, logs, latency, controls, discover, overrides, and probes. */

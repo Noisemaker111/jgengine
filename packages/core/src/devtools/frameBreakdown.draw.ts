@@ -691,6 +691,9 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
               named += ms;
             }
             addCpu("sim:other", sim.simMs - named);
+            if (current !== null) current.simMs = sim.simMs;
+            // A step the driver ran between frames is not this frame's work; its rows keep it apart.
+            if (sim.ahead !== undefined) for (const [phase, ms] of Object.entries(sim.ahead)) addCpu(`ahead:${phase}`, ms);
             cpuLeave(sim.simMs);
           } else cpuLeave();
         }

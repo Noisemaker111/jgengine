@@ -27,6 +27,7 @@ import type { ActionStateTracker } from "@jgengine/core/input/actionBindings";
 import { collisionDebug } from "@jgengine/core/devtools/collisionDebug";
 import { createAimRecoil } from "@jgengine/core/camera/aimRecoil";
 import { registerSimStepper } from "@jgengine/core/sim/simStepper";
+import { createIdleTask, createRecordedTime, shouldStepAhead } from "@jgengine/core/runtime/simAhead";
 import { GAME_SIM_FRAME_PRIORITY } from "@jgengine/core/camera/orbitCameraMath";
 import { NO_ACTIONS } from "../shellConstants";
 import type { PointerService } from "@jgengine/core/input/pointerService.draw";
@@ -88,6 +89,7 @@ export function FrameDriver({
   const posterElapsedRef = useRef(0);
   const posterDoneRef = useRef(false);
   const hasReportedTickError = useRef(false);
+  const recordedTime = useMemo(createRecordedTime, [recorder]);
   const repeatFiredAtRef = useRef<Map<string, number>>(new Map());
   const recoil = useMemo(createAimRecoil, []);
   useEffect(() => {
@@ -176,6 +178,73 @@ export function FrameDriver({
   }, [ctx]);
   authoritativeFrameRef.current = serverAuthoritative ? predictionHandler : null;
 
+  // One fixed step of the simulation: movement, stages, onTick and behaviors. The frame's advance runs it,
+  // and so does the step run ahead between frames.
+  const runStep = (stepDt: number, gameDt: number, playerId: string): void => {
+    ctx.input.beginStep();
+    const movementDt = serverAuthoritative ? stepDt : gameDt;
+    if (!serverAuthoritative) ctx.sim.runStages("beforeMovement", stepDt);
+    const player = ctx.scene.entity.get(playerId);
+    // Server-authoritative sessions still run the deterministic local step as a prediction; the
+    // replicated pose is the confirmation that the transport reconciles on the next world diff.
+    if (player !== null && drivesPose && movementDt > 0) {
+      const endPose = devtools.profile.begin("pose");
+      stepPlayerMovement(
+        ctx,
+        ctx.player.userId,
+        { held: ctx.input.held(), pointer: ctx.input.pointer(), analog: ctx.input.analog() },
+        movementDt,
+        movementTuning,
+        yawRef.current,
+        pitchRef.current,
+      );
+      const predicted = ctx.scene.entity.get(playerId);
+      if (predicted !== null) {
+        predictionRef.current.record(
+          { held: ctx.input.held(), pointer: ctx.input.pointer(), analog: ctx.input.analog(), tick: ctx.sim.tick() },
+          movementDt,
+          predicted.position,
+        );
+      }
+      endPose();
+    }
+    if (drivesPose && !serverAuthoritative && movementDt > 0) {
+      const table = localPlayers(ctx);
+      const seats = table.slots();
+      for (let index = 1; index < seats.length; index += 1) {
+        const seat = table.local(seats[index]!.slotId);
+        if (seat === null) continue;
+        stepPlayerMovement(
+          ctx,
+          seat.userId,
+          { held: seat.input.held(), pointer: null, analog: seat.input.analog() },
+          movementDt,
+          movementTuning,
+          seatCameraYaw(ctx, seat.userId),
+        );
+      }
+    }
+    if (!serverAuthoritative) ctx.sim.runStages("afterMovement", stepDt);
+
+    if (autoPickupRadius !== null && !serverAuthoritative) {
+      const endPickup = devtools.profile.begin("pickup");
+      const self = ctx.scene.entity.get(playerId);
+      if (self !== null) {
+        const nearest = ctx.scene.worldItem.nearestInRadius(self.position, autoPickupRadius);
+        if (nearest !== null) ctx.scene.worldItem.pickup(nearest, ctx.player.userId);
+      }
+      endPickup();
+    }
+
+    if (!serverAuthoritative) {
+      devtools.profile.measure("onTick", () => {
+        playable.loop.onTick(ctx, gameDt);
+      });
+      advanceBehaviors(ctx, gameDt);
+    }
+    if (!serverAuthoritative) ctx.sim.runStages("afterTick", stepDt);
+  };
+
   // One frame of simulation — input, movement, onTick, behaviors, bound actions — shared by the
   // render loop and the agent bridge's render-free `sim_advance`.
   /** Returns false when play is gated (menu, pause) and nothing advanced. */
@@ -211,7 +280,7 @@ export function FrameDriver({
     if (recorder !== undefined && !recorder.full()) {
       const actions = tracker.actions();
       recorder.frame({
-        dt,
+        dt: recordedTime.frame(dt),
         held: ctx.input.held(),
         pressed: actions.filter((action) => tracker.wasPressed(action)),
         yaw: yawRef.current,
@@ -228,70 +297,7 @@ export function FrameDriver({
     endPhase();
 
     const playerId = ctx.player.possession.active(ctx.player.userId);
-    ctx.sim.advance(dt, (stepDt, _tick, gameDt) => {
-      ctx.input.beginStep();
-      const movementDt = serverAuthoritative ? stepDt : gameDt;
-      if (!serverAuthoritative) ctx.sim.runStages("beforeMovement", stepDt);
-      const player = ctx.scene.entity.get(playerId);
-      // Server-authoritative sessions still run the deterministic local step as a prediction; the
-      // replicated pose is the confirmation that the transport reconciles on the next world diff.
-      if (player !== null && drivesPose && movementDt > 0) {
-        const endPose = devtools.profile.begin("pose");
-        stepPlayerMovement(
-          ctx,
-          ctx.player.userId,
-          { held: ctx.input.held(), pointer: ctx.input.pointer(), analog: ctx.input.analog() },
-          movementDt,
-          movementTuning,
-          yawRef.current,
-          pitchRef.current,
-        );
-        const predicted = ctx.scene.entity.get(playerId);
-        if (predicted !== null) {
-          predictionRef.current.record(
-            { held: ctx.input.held(), pointer: ctx.input.pointer(), analog: ctx.input.analog(), tick: ctx.sim.tick() },
-            movementDt,
-            predicted.position,
-          );
-        }
-        endPose();
-      }
-      if (drivesPose && !serverAuthoritative && movementDt > 0) {
-        const table = localPlayers(ctx);
-        const seats = table.slots();
-        for (let index = 1; index < seats.length; index += 1) {
-          const seat = table.local(seats[index]!.slotId);
-          if (seat === null) continue;
-          stepPlayerMovement(
-            ctx,
-            seat.userId,
-            { held: seat.input.held(), pointer: null, analog: seat.input.analog() },
-            movementDt,
-            movementTuning,
-            seatCameraYaw(ctx, seat.userId),
-          );
-        }
-      }
-      if (!serverAuthoritative) ctx.sim.runStages("afterMovement", stepDt);
-
-      if (autoPickupRadius !== null && !serverAuthoritative) {
-        const endPickup = devtools.profile.begin("pickup");
-        const self = ctx.scene.entity.get(playerId);
-        if (self !== null) {
-          const nearest = ctx.scene.worldItem.nearestInRadius(self.position, autoPickupRadius);
-          if (nearest !== null) ctx.scene.worldItem.pickup(nearest, ctx.player.userId);
-        }
-        endPickup();
-      }
-
-      if (!serverAuthoritative) {
-        devtools.profile.measure("onTick", () => {
-          playable.loop.onTick(ctx, gameDt);
-        });
-        advanceBehaviors(ctx, gameDt);
-      }
-      if (!serverAuthoritative) ctx.sim.runStages("afterTick", stepDt);
-    }, { advanceTime: !serverAuthoritative });
+    ctx.sim.advance(dt, (stepDt, _tick, gameDt) => runStep(stepDt, gameDt, playerId), { advanceTime: !serverAuthoritative });
 
     endPhase = devtools.profile.begin("actions");
     if (tracker.wasPressed("tabTarget")) {
@@ -409,6 +415,47 @@ export function FrameDriver({
   simulateRef.current = simulate;
   useEffect(() => (poster ? undefined : registerSimStepper((rawDt) => ctx.batch(() => simulateRef.current(rawDt)))), [poster, ctx]);
 
+  // A frame without a step costs a sixth of one with it at 360 fps, so the step the next frame owes runs
+  // between frames instead, in the time the main thread waits for the GPU and compositor. Its phases are
+  // kept apart and handed to the next frame's record as `ahead`, so the frame's own sim time stays its own.
+  const stepsAhead = !poster && !serverAuthoritative;
+  const aheadPhasesRef = useRef<Record<string, number> | null>(null);
+  const stepAhead = () => {
+    if (gateRef.current || !playControlsActive(ctx)) return;
+    const until = ctx.sim.loop.untilStep();
+    if (until === null) return;
+    const framePhases = devtools.profile.current();
+    devtools.profile.reset();
+    const start = performance.now();
+    try {
+      const playerId = ctx.player.possession.active(ctx.player.userId);
+      const stepped = ctx.batch(() => ctx.sim.stepAhead((stepDt, _tick, gameDt) => runStep(stepDt, gameDt, playerId)));
+      // The replay gets the early step as a frame of its own, with the input it ran on and the time that
+      // makes it fall due, so playing the replay runs every step on the same input at the same point.
+      if (stepped && recorder !== undefined && !recorder.full()) {
+        recorder.frame({ dt: recordedTime.ahead(until), held: ctx.input.held(), pressed: [], yaw: yawRef.current, pitch: pitchRef.current });
+      }
+    } catch (error) {
+      if (!hasReportedTickError.current) {
+        hasReportedTickError.current = true;
+        onRuntimeError(error, "tick");
+      }
+    } finally {
+      const phases = devtools.profile.current();
+      let named = 0;
+      for (const ms of Object.values(phases)) named += ms;
+      const other = performance.now() - start - named;
+      if (other > 0) phases["other"] = other;
+      aheadPhasesRef.current = phases;
+      devtools.profile.reset();
+      for (const [name, ms] of Object.entries(framePhases)) devtools.profile.add(name, ms);
+    }
+  };
+  const stepAheadRef = useRef(stepAhead);
+  stepAheadRef.current = stepAhead;
+  const idleStep = useMemo(() => createIdleTask(() => stepAheadRef.current()), []);
+  useEffect(() => () => idleStep.dispose(), [idleStep]);
+
   useFrame((_state, rawDt) => {
     if (poster) {
       if (posterDoneRef.current) return;
@@ -422,7 +469,11 @@ export function FrameDriver({
     onFrameMs?.(rawDt * 1000);
     const simStart = performance.now();
     if (!ctx.batch(() => simulate(rawDt))) return;
-    devtools.frame.record({ frameMs: rawDt * 1000, simMs: performance.now() - simStart });
+    const simMs = performance.now() - simStart;
+    const ahead = aheadPhasesRef.current;
+    aheadPhasesRef.current = null;
+    devtools.frame.record(ahead === null ? { frameMs: rawDt * 1000, simMs } : { frameMs: rawDt * 1000, simMs, ahead });
+    if (stepsAhead && shouldStepAhead(ctx.sim.loop, Math.min(rawDt, 0.05))) idleStep.request();
   }, GAME_SIM_FRAME_PRIORITY);
   return null;
 }

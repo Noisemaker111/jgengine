@@ -31,6 +31,12 @@ export interface SimContext {
   readonly loop: SimLoop;
   /** Advance simulation and its game clock once per step. The callback receives real dt, tick and scaled game dt. Prediction can opt out of clock advancement. */
   advance(realDt: number, body: (dt: number, tick: number, gameDt: number) => void, options?: { advanceTime?: boolean }): SimAdvanceResult;
+  /**
+   * Run the next fixed step now with the same body {@link advance} would give it, so a renderer can spend
+   * the idle time between frames on it; the next `advance` counts it instead of running it. False on a
+   * variable loop or when a step is already ahead. See {@link SimLoop.stepAhead}.
+   */
+  stepAhead(body: (dt: number, tick: number, gameDt: number) => void, options?: { advanceTime?: boolean }): boolean;
   tick(): number;
   /** Interpolation fraction for the current frame, 1 on a variable loop. */
   alpha(): number;
@@ -58,18 +64,31 @@ export function createSimContext(options: { config?: SimulationConfig | undefine
   let advancing = false;
   let currentGameDt = 0;
 
+  const stepWith = (body: (dt: number, tick: number, gameDt: number) => void, stepOptions: { advanceTime?: boolean } | undefined) =>
+    (dt: number, tick: number) => {
+      if (loop.isFixed()) poses.beginStep(entities);
+      const gameDt = stepOptions?.advanceTime === false ? 0 : options.time?.advance(dt) ?? dt;
+      currentGameDt = gameDt;
+      body(dt, tick, gameDt);
+    };
+
   return {
     loop,
     advance(realDt, body, stepOptions) {
       if (advancing) throw new Error("ctx.sim.advance is not reentrant");
       advancing = true;
       try {
-        return loop.advance(realDt, (dt, tick) => {
-          if (loop.isFixed()) poses.beginStep(entities);
-          const gameDt = stepOptions?.advanceTime === false ? 0 : options.time?.advance(dt) ?? dt;
-          currentGameDt = gameDt;
-          body(dt, tick, gameDt);
-        });
+        return loop.advance(realDt, stepWith(body, stepOptions));
+      } finally {
+        advancing = false;
+        currentGameDt = 0;
+      }
+    },
+    stepAhead(body, stepOptions) {
+      if (advancing) throw new Error("ctx.sim.stepAhead cannot run inside a step");
+      advancing = true;
+      try {
+        return loop.stepAhead(stepWith(body, stepOptions));
       } finally {
         advancing = false;
         currentGameDt = 0;

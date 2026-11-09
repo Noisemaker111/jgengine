@@ -89,10 +89,12 @@ export interface AbArgs {
   markdown: boolean;
   /** Self-check: busy-wait this many ms in every frame of the branch page, a known regression the run must find. */
   plantMs: number;
+  /** The frame-time percentile of each window the verdict compares: 50 (the middle frame) unless asked. */
+  percentile: number;
 }
 
 const USAGE = `usage: bun run perf ab [--games a,b] [--base <ref|dir>] [--window s] [--blocks min,max] [--margin pct]
-                       [--path walk|still] [--set key=value ...] [--out dir] [--markdown] [--plant-ms n]
+                       [--path walk|still] [--stat pNN] [--set key=value ...] [--out dir] [--markdown] [--plant-ms n]
 
   Is this branch faster or slower than its base, per game: the base and the branch load once each, in
   a Chrome of their own, then take turns running ${DEFAULT_WINDOW_SECONDS} s windows (the other side suspended) at the
@@ -109,7 +111,9 @@ const USAGE = `usage: bun run perf ab [--games a,b] [--base <ref|dir>] [--window
   --blocks   fewest and most pairs per game (default ${DEFAULT_MIN_BLOCKS},${DEFAULT_MAX_BLOCKS})
   --margin   a change whose interval fits inside +-margin % reads as no difference (default ${DEFAULT_MARGIN_PCT})
   --path     still (default) or walk: every window walks forward from one spot, about twice as noisy
-  --set      a setting for both sides, as perf <game> --set
+  --stat     which frame time of each window is compared: p50 (default, the middle frame) or a tail
+             such as p90 or p99, for a change that moves the slow frames and not the typical one
+  --set     a setting for both sides, as perf <game> --set
   --out      where each game's windows are written as JSON (default .scratch/perf-ab)
   --markdown print the table as Markdown
   --plant-ms busy-wait this many ms in every frame of the branch page: a known regression, to check
@@ -118,7 +122,7 @@ const USAGE = `usage: bun run perf ab [--games a,b] [--base <ref|dir>] [--window
 export function parseAbArgs(argv: readonly string[]): AbArgs | "help" {
   const args: AbArgs = {
     games: null, base: null, windowSeconds: DEFAULT_WINDOW_SECONDS, minBlocks: DEFAULT_MIN_BLOCKS, maxBlocks: DEFAULT_MAX_BLOCKS,
-    marginPct: DEFAULT_MARGIN_PCT, path: "still", settings: [], out: join(repoRoot, ".scratch", "perf-ab"), markdown: false, plantMs: 0,
+    marginPct: DEFAULT_MARGIN_PCT, path: "still", settings: [], out: join(repoRoot, ".scratch", "perf-ab"), markdown: false, plantMs: 0, percentile: 50,
   };
   const number = (flag: string, value: string, min: number): number => {
     const parsed = Number(value);
@@ -156,6 +160,13 @@ export function parseAbArgs(argv: readonly string[]): AbArgs | "help" {
       case "--set": args.settings.push(parseSettingSpec(value)); break;
       case "--out": args.out = resolve(value); break;
       case "--plant-ms": args.plantMs = number(arg, value, 0); break;
+      case "--stat": {
+        const match = /^p(\d{1,2}(?:\.\d+)?)$/.exec(value);
+        const percentile = match === null ? Number.NaN : Number(match[1]);
+        if (!(percentile >= 1 && percentile < 100)) throw new Error(`--stat must be a percentile such as p50, p90 or p99 (got ${value})`);
+        args.percentile = percentile;
+        break;
+      }
       default: throw new Error(`unknown argument ${arg}`);
     }
   }
@@ -214,10 +225,17 @@ export function abVerdict(logRatios: readonly number[], options: { minBlocks: nu
 
 /** The middle frame time of a window. */
 export function medianMs(deltas: readonly number[]): number {
+  return percentileMs(deltas, 50);
+}
+
+/** The frame time `percentile` % of a window's frames are at or under, interpolated between ranks (50: the median). */
+export function percentileMs(deltas: readonly number[], percentile: number): number {
   const kept = deltas.filter((ms) => Number.isFinite(ms) && ms > 0).sort((a, b) => a - b);
   if (kept.length === 0) return Number.NaN;
-  const mid = kept.length >> 1;
-  return kept.length % 2 === 1 ? kept[mid]! : (kept[mid - 1]! + kept[mid]!) / 2;
+  const rank = (percentile / 100) * (kept.length - 1);
+  const low = Math.floor(rank);
+  const high = Math.min(low + 1, kept.length - 1);
+  return kept[low]! + (kept[high]! - kept[low]!) * (rank - low);
 }
 
 /**
@@ -398,6 +416,8 @@ export interface AbWindow {
   block: number;
   side: Side;
   medianMs: number;
+  /** The window's frame time at the run's `--stat` percentile: what the verdict compares (its median at p50). */
+  statMs: number;
   frames: number;
   /** CPU of the timed side's renderers over the window, % of one core. */
   timedCpu: number;
@@ -577,13 +597,14 @@ async function measurePair(game: string, serve: (side: Side) => Promise<string>,
       const lowAfter = equalizePriorities(timedAfter, false);
       await pause(page);
       const median = medianMs(deltas);
-      if (!Number.isFinite(median)) throw new Error(`the ${side} page drew no frames in pair ${block}`);
+      const stat = percentileMs(deltas, args.percentile);
+      if (!Number.isFinite(median) || !Number.isFinite(stat)) throw new Error(`the ${side} page drew no frames in pair ${block}`);
       windows.push({
-        block, side, medianMs: Math.round(median * 1000) / 1000, frames: deltas.length,
+        block, side, medianMs: Math.round(median * 1000) / 1000, statMs: Math.round(stat * 1000) / 1000, frames: deltas.length,
         timedCpu: rendererCpuPct(timedBefore, timedAfter, ms), idleCpu: rendererCpuPct(idleBefore, idleAfter, ms), raised, lowAfter,
         route: from === null || to === null ? null : { from, to },
       });
-      return median;
+      return stat;
     };
     // One pair first, thrown away: each page's first window after its warmup pause is not like the rest.
     await run("base", 0);
@@ -606,7 +627,7 @@ async function measurePair(game: string, serve: (side: Side) => Promise<string>,
         if (spread > ROUTE_SPREAD_MAX_M) console.error(`degraded: the windows' players ended up to ${spread.toFixed(1)} m apart, so they did not all cover the same ground`);
         const busyIdle = windows.filter((window) => window.idleCpu > IDLE_CPU_MAX_PCT).length;
         if (busyIdle > 0) console.error(`degraded: in ${busyIdle} of ${windows.length} windows the frozen side's renderers still used over ${IDLE_CPU_MAX_PCT}% of a core`);
-        const side = (which: Side) => medianMs(windows.filter((window) => window.side === which && window.block > 0).map((window) => window.medianMs));
+        const side = (which: Side) => medianMs(windows.filter((window) => window.side === which && window.block > 0).map((window) => window.statMs));
         return { game, verdict, baseMs: side("base"), branchMs: side("branch"), windows };
       }
     }
@@ -674,8 +695,9 @@ export function rendererCpuPct(before: ReadonlyMap<string, number>, after: Reado
 
 const CALL_TEXT: Record<AbCall, string> = { slower: "slower", faster: "faster", same: "no difference", unclear: "unclear" };
 
-export function renderAbTable(results: readonly AbGameResult[], options: { markdown: boolean; marginPct: number }): string {
-  const head = ["game", "verdict", "change", "99% interval", "base p50 ms", "branch p50 ms", "pairs", "lock s"];
+export function renderAbTable(results: readonly AbGameResult[], options: { markdown: boolean; marginPct: number; percentile?: number }): string {
+  const stat = `p${options.percentile ?? 50}`;
+  const head = ["game", "verdict", "change", "99% interval", `base ${stat} ms`, `branch ${stat} ms`, "pairs", "lock s"];
   const rows = results.map((result) => {
     const { verdict } = result;
     const sign = (pct: number) => `${pct > 0 ? "+" : ""}${pct.toFixed(1)}%`;
@@ -778,7 +800,7 @@ async function main(): Promise<number> {
   if (results.length > 0) {
     const plant = parsed.plantMs > 0 ? ` A ${parsed.plantMs} ms busy-wait was planted in every branch frame.` : "";
     console.log(`Branch ${branchHead} against base ${base.label}: frame time per game, ${parsed.windowSeconds} s windows taken in turns, ${parsed.path === "walk" ? "walking" : "standing still"}, ${GATE_SIZE.width}x${GATE_SIZE.height}, high tier, uncapped. Positive change = the branch's frames take longer.${plant}\n`);
-    console.log(renderAbTable(results, { markdown: parsed.markdown, marginPct: parsed.marginPct }));
+    console.log(renderAbTable(results, { markdown: parsed.markdown, marginPct: parsed.marginPct, percentile: parsed.percentile }));
   }
   console.error(`perf ab: ${Math.round((Date.now() - startedAt) / 1000)} s in all`);
   if (failure !== null) {

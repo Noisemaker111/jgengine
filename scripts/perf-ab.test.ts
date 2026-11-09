@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { abVerdict, affectedGames, awayFromHome, BASE_TREE_KEEP_MS, baseTreeName, expiredBaseTrees, homeRequest, medianMs, pairLogRatio, parseAbArgs, plantScript, renderAbTable, rendererCpuPct, routeSpread, t99, treeFingerprint, type AbGameResult } from "./perf-ab";
+import { abVerdict, affectedGames, awayFromHome, BASE_TREE_KEEP_MS, baseTreeName, expiredBaseTrees, homeRequest, medianMs, pairLogRatio, parseAbArgs, percentileMs, plantScript, renderAbTable, rendererCpuPct, routeSpread, t99, treeFingerprint, type AbGameResult } from "./perf-ab";
 
 const GAMES = ["deepward", "harbor-heat", "scrap-signal"];
 const options = { minBlocks: 4, maxBlocks: 16, marginPct: 3 };
@@ -61,6 +61,15 @@ test("medianMs drops non-frames and takes the middle", () => {
   expect(medianMs([])).toBeNaN();
 });
 
+test("percentileMs reads the slow tail: one tick frame in six shows at p90, not at p50", () => {
+  const frames = Array.from({ length: 600 }, (_, index) => (index % 6 === 5 ? 6 : 2.5));
+  expect(percentileMs(frames, 50)).toBe(2.5);
+  expect(percentileMs(frames, 90)).toBe(6);
+  expect(percentileMs([1, 2, 3, 4, 5], 75)).toBe(4);
+  expect(percentileMs([1, 2], 50)).toBe(1.5);
+  expect(percentileMs([0, Number.NaN], 90)).toBeNaN();
+});
+
 test("affectedGames: the engine changes every game, a game folder only that game, scripts none", () => {
   expect(affectedGames(["packages/core/src/render/pass.ts"], GAMES)).toEqual(GAMES);
   expect(affectedGames(["packages/core/src/render/pass.test.ts", "scripts/perf-ab.ts", "AGENTS.md"], GAMES)).toEqual([]);
@@ -84,7 +93,12 @@ test("parseAbArgs reads every flag and refuses bad values", () => {
   expect(parseAbArgs(["--help"])).toBe("help");
   const defaults = parseAbArgs([]);
   if (defaults === "help") throw new Error("parsed as help");
-  expect([defaults.path, defaults.marginPct, defaults.minBlocks, defaults.maxBlocks, defaults.windowSeconds]).toEqual(["still", 4, 4, 30, 2]);
+  expect([defaults.path, defaults.marginPct, defaults.minBlocks, defaults.maxBlocks, defaults.windowSeconds, defaults.percentile]).toEqual(["still", 4, 4, 30, 2, 50]);
+  const tail = parseAbArgs(["--stat", "p90"]);
+  if (tail === "help") throw new Error("parsed as help");
+  expect(tail.percentile).toBe(90);
+  expect(() => parseAbArgs(["--stat", "p100"])).toThrow("percentile");
+  expect(() => parseAbArgs(["--stat", "max"])).toThrow("percentile");
   expect(() => parseAbArgs(["--blocks", "9,3"])).toThrow("max >= min");
   expect(() => parseAbArgs(["--games"])).toThrow("needs a value");
   expect(() => parseAbArgs(["--path", "fly"])).toThrow("walk or still");
@@ -172,6 +186,8 @@ test("the table says the verdict, change and interval per game", () => {
   };
   const table = renderAbTable([result], { markdown: true, marginPct: 3 });
   expect(table).toContain("| harbor-heat | slower | +5.1% | +3.2% to +7.0% | 24.60 | 25.85 | 5 | 95 |");
+  expect(table).toContain("| base p50 ms | branch p50 ms |");
+  expect(renderAbTable([result], { markdown: true, marginPct: 3, percentile: 90 })).toContain("| base p90 ms | branch p90 ms |");
 });
 
 test("distance from home is on the ground, and a game with no pose counts as home", () => {
