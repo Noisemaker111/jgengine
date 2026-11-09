@@ -1,10 +1,12 @@
-import { useEffect, useMemo } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
 
 import { resolveSoilObject } from "@jgengine/core/world/soilKind";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 
 import { createSoilPatchMaterial } from "@jgengine/core/terrain/soilPatchMaterial.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers.draw";
 
 /** Height offset above the sampled terrain so the draped patch never z-fights the ground. */
@@ -38,52 +40,72 @@ function reliefNoise(x: number, z: number): number {
  * One authored soil volume → a subdivided plane draped over the live terrain (each vertex sampled
  * from the height field) with the crack/moss shader and a noise-eroded edge fade, so the patch hugs
  * relief and dissolves into the surrounding ground instead of reading as a hovering brown box.
+ * @internal
  */
-function OneSoil({ object, context }: { object: SceneKindObject; context: SceneKindRenderContext }) {
-  const resolved = useMemo(() => resolveSoilObject(object), [object]);
-  const groundColorAt = context.groundColorAt;
-  const material = useMemo(
-    () =>
-      resolved === null
-        ? null
-        : createSoilPatchMaterial(resolved.rules, {
-            center: [resolved.center[0], resolved.center[2]],
-            halfSize: [resolved.size[0] / 2, resolved.size[1] / 2],
-            ...(groundColorAt === undefined
-              ? {}
-              : { groundColor: groundColorAt(resolved.center[0], resolved.center[2]) }),
-          }),
-    [resolved, groundColorAt],
+export function soilPatchDraw(object: SceneKindObject, context: SceneKindRenderContext): EngineDraw {
+  const resolved = resolveSoilObject(object);
+  const group = new THREE.Group();
+  let mesh: THREE.Mesh | null = null;
+  let material: THREE.Material | null = null;
+  let geometry: THREE.BufferGeometry | null = null;
+  return {
+    mount(state: EngineFrameState) {
+      if (resolved === null) return;
+      const groundColorAt = context.groundColorAt;
+      material = createSoilPatchMaterial(resolved.rules, {
+        center: [resolved.center[0], resolved.center[2]],
+        halfSize: [resolved.size[0] / 2, resolved.size[1] / 2],
+        ...(groundColorAt === undefined ? {} : { groundColor: groundColorAt(resolved.center[0], resolved.center[2]) }),
+      });
+      const [w, d] = resolved.size;
+      const segX = Math.min(96, Math.max(12, Math.round(w / 0.4)));
+      const segZ = Math.min(96, Math.max(12, Math.round(d / 0.4)));
+      const plane = new THREE.PlaneGeometry(w, d, segX, segZ);
+      plane.rotateX(-Math.PI / 2);
+      const positions = plane.getAttribute("position");
+      for (let i = 0; i < positions.count; i += 1) {
+        const x = positions.getX(i);
+        const z = positions.getZ(i);
+        const wx = resolved.center[0] + x;
+        const wz = resolved.center[2] + z;
+        // Seeded micro-relief so the cracked dirt catches light like packed earth, not a flat decal;
+        // the amplitude eases out toward the border so the fading edge still meets the ground flush.
+        const edgeX = 1 - Math.min(1, Math.abs(x) / (w / 2));
+        const edgeZ = 1 - Math.min(1, Math.abs(z) / (d / 2));
+        const edgeEase = Math.min(1, Math.min(edgeX, edgeZ) * 3);
+        const relief = (reliefNoise(wx, wz) - 0.5) * 2 * SOIL_RELIEF * edgeEase;
+        positions.setY(i, context.field.sampleHeight(wx, wz) + SOIL_LIFT + relief);
+      }
+      positions.needsUpdate = true;
+      plane.computeVertexNormals();
+      geometry = plane;
+      mesh = new THREE.Mesh(plane, material);
+      mesh.position.set(resolved.center[0], 0, resolved.center[2]);
+      mesh.receiveShadow = true;
+      group.add(mesh);
+      state.scene.add(group);
+    },
+    dispose(state: EngineFrameState) {
+      state.scene.remove(group);
+      group.clear();
+      mesh = null;
+      material?.dispose();
+      material = null;
+      geometry?.dispose();
+      geometry = null;
+    },
+  };
+}
+
+function SoilPatch({ object, context }: { object: SceneKindObject; context: SceneKindRenderContext }) {
+  const latest = useRef({ object, context });
+  latest.current = { object, context };
+  return (
+    <EngineDrawMount
+      create={() => soilPatchDraw(latest.current.object, latest.current.context)}
+      deps={[object, context.field, context.groundColorAt]}
+    />
   );
-  const geometry = useMemo(() => {
-    if (resolved === null) return null;
-    const [w, d] = resolved.size;
-    const segX = Math.min(96, Math.max(12, Math.round(w / 0.4)));
-    const segZ = Math.min(96, Math.max(12, Math.round(d / 0.4)));
-    const plane = new THREE.PlaneGeometry(w, d, segX, segZ);
-    plane.rotateX(-Math.PI / 2);
-    const positions = plane.getAttribute("position");
-    for (let i = 0; i < positions.count; i += 1) {
-      const x = positions.getX(i);
-      const z = positions.getZ(i);
-      const wx = resolved.center[0] + x;
-      const wz = resolved.center[2] + z;
-      // Seeded micro-relief so the cracked dirt catches light like packed earth, not a flat decal;
-      // the amplitude eases out toward the border so the fading edge still meets the ground flush.
-      const edgeX = 1 - Math.min(1, Math.abs(x) / (w / 2));
-      const edgeZ = 1 - Math.min(1, Math.abs(z) / (d / 2));
-      const edgeEase = Math.min(1, Math.min(edgeX, edgeZ) * 3);
-      const relief = (reliefNoise(wx, wz) - 0.5) * 2 * SOIL_RELIEF * edgeEase;
-      positions.setY(i, context.field.sampleHeight(wx, wz) + SOIL_LIFT + relief);
-    }
-    positions.needsUpdate = true;
-    plane.computeVertexNormals();
-    return plane;
-  }, [resolved, context.field]);
-  useEffect(() => () => material?.dispose(), [material]);
-  useEffect(() => () => geometry?.dispose(), [geometry]);
-  if (resolved === null || material === null || geometry === null) return null;
-  return <mesh position={[resolved.center[0], 0, resolved.center[2]]} geometry={geometry} material={material} receiveShadow />;
 }
 
 /** Registers the `soil` volume runtime renderer. Called by `registerBuiltinSceneKindRenderers`. @internal */
@@ -91,7 +113,7 @@ export function registerSoilPatchRenderer(): void {
   registerSceneKindRenderer("soil", ({ objects, context }) => (
     <>
       {objects.map((object) => (
-        <OneSoil key={object.id} object={object} context={context} />
+        <SoilPatch key={object.id} object={object} context={context} />
       ))}
     </>
   ));

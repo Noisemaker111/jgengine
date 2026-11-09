@@ -143,6 +143,11 @@ function loadGltf(url: string): Promise<GLTF> {
   return promise;
 }
 
+/** Warm the shared per-url GLTF load entity draws use, so a streaming prepare finishes the parse off the frame. @internal */
+export function preloadSceneModel(url: string): Promise<GLTF> {
+  return loadGltf(url);
+}
+
 function loadMaterialTexture(url: string): Promise<THREE.Texture> {
   const resolved = resolveAssetBaseUrl(url);
   let promise = textureLoads.get(resolved);
