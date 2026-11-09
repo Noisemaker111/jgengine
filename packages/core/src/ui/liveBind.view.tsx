@@ -1,4 +1,4 @@
-import { createElement, useLayoutEffect, useRef, type HTMLAttributes, type ReactElement } from "react";
+import { createElement, useCallback, useLayoutEffect, useRef, useSyncExternalStore, type HTMLAttributes, type ReactElement } from "react";
 
 /*
  * Live values. A HUD number, bar or dial that moves every frame or tick updates its own DOM node
@@ -31,6 +31,65 @@ export function subscribeFrameBind(subscriber: FrameSubscriber): () => void {
       sharedRaf = 0;
     }
   };
+}
+
+const LIVE = Symbol.for("jgengine.live");
+
+/** A value read fresh every frame instead of passed once: make one with {@link live}. */
+export interface LiveValue<T> {
+  readonly [LIVE]: true;
+  get(): T;
+}
+
+/** A prop that takes either a plain value or a {@link live} one. Engine UI parts take `Live<number>` for anything that can move every frame. */
+export type Live<T> = T | LiveValue<T>;
+
+/**
+ * A value an engine UI part reads every frame and draws into its own node, never through a React
+ * render: `<KitMeter value={live(() => fuel(ctx))} max={100} />`. The getter may close over props; the
+ * part always calls the newest one.
+ *
+ * @capability live-prop hand an engine UI part a value that moves every frame (a meter, a distance, a countdown) so only its own node updates
+ */
+export function live<T>(get: () => T): LiveValue<T> {
+  return { [LIVE]: true, get };
+}
+
+/** True for a value made with {@link live}. */
+export function isLive(value: unknown): value is LiveValue<unknown> {
+  return typeof value === "object" && value !== null && Reflect.get(value, LIVE) === true;
+}
+
+/** The value now: a plain value as is, a {@link live} one read once. */
+export function readLive<T>(value: Live<T>): T {
+  return isLive(value) ? (value as LiveValue<T>).get() : (value as T);
+}
+
+const noFrames = (): (() => void) => () => undefined;
+
+/**
+ * What a component draws from a value that may be {@link live}: `select` runs on the current value,
+ * and for a live one again every frame, and the component re-renders only when its result changes
+ * (`isEqual`, default `Object.is`). Use it for the discrete part of a moving value (a deadline's
+ * urgency stage, a meter's lit segment count) and draw the moving part with {@link LiveText} or
+ * {@link useFrameBind}.
+ */
+export function useLiveSelect<T, S>(value: Live<T>, select: (value: T) => S, isEqual: (previous: S, next: S) => boolean = Object.is): S {
+  const valueRef = useRef(value);
+  valueRef.current = value;
+  const selectRef = useRef(select);
+  selectRef.current = select;
+  const isEqualRef = useRef(isEqual);
+  isEqualRef.current = isEqual;
+  const cache = useRef<{ value: S } | null>(null);
+  const getSnapshot = useCallback((): S => {
+    const next = selectRef.current(readLive(valueRef.current));
+    const last = cache.current;
+    if (last !== null && isEqualRef.current(last.value, next)) return last.value;
+    cache.current = { value: next };
+    return next;
+  }, []);
+  return useSyncExternalStore(isLive(value) ? subscribeFrameBind : noFrames, getSnapshot, getSnapshot);
 }
 
 /** Live bindings currently on the loop. @internal */

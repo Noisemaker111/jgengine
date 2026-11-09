@@ -20,10 +20,11 @@ export async function readRenderCounts(session: CdpSession): Promise<RenderCount
   return (await session.evaluate<RenderCounts | null>(`globalThis.__jgRenders?.read() ?? null`)) ?? null;
 }
 
-/** The busiest components for a person: commits per second, then each component's renders. */
+/** The busiest components for a person: commits per second and per frame, then each component's renders. */
 export function renderRenderCounts(counts: RenderCounts, title: string, top = 20): string {
+  const frames = Math.max(counts.frames, 1);
   return [
-    `${title}: ${counts.commits} React commits and ${counts.renders} component renders over ${counts.seconds} s (${Math.round((counts.commits / Math.max(counts.seconds, 0.001)) * 10) / 10} commits/s)`,
-    ...counts.components.slice(0, top).map((entry) => `  ${entry.name.padEnd(36)} ${String(entry.renders).padStart(7)}  ${entry.perSecond.toFixed(1).padStart(7)}/s`),
+    `${title}: ${counts.commits} React commits and ${counts.renders} component renders over ${counts.seconds} s and ${counts.frames} frames (${Math.round((counts.commits / Math.max(counts.seconds, 0.001)) * 10) / 10} commits/s, ${(counts.commits / frames).toFixed(2)} commits/frame, ${(counts.renders / frames).toFixed(1)} renders/frame)`,
+    ...counts.components.slice(0, top).map((entry) => `  ${entry.name.padEnd(36)} ${String(entry.renders).padStart(7)}  ${entry.perSecond.toFixed(1).padStart(7)}/s  ${entry.perFrame.toFixed(2).padStart(6)}/frame`),
   ].join("\n");
 }
