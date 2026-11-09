@@ -158,13 +158,14 @@ function cellStateNodes(
   return nodes;
 }
 
-interface MarkerAccess<TMarker extends MarkerView> {
+export interface MarkerAccess<TMarker extends MarkerView> {
   subscribe: (listener: () => void) => () => void;
   getSnapshot: () => readonly TMarker[];
   getServerSnapshot: () => readonly TMarker[];
 }
 
-function markerAccess(markers: MarkerCollection): MarkerAccess<MarkerView> {
+/** Non-hook access to a marker collection's subscribe/snapshot pair, for draw factories. */
+export function markerAccess(markers: MarkerCollection): MarkerAccess<MarkerView> {
   if (Array.isArray(markers)) {
     const snapshot = markers as readonly MarkerView[];
     return { subscribe: NO_SUBSCRIBE, getSnapshot: () => snapshot, getServerSnapshot: () => snapshot };
