@@ -6,6 +6,7 @@ import type { Group } from "three";
 import { PlayerCharacterFigure } from "@/user/components/PlayerCharacterFigure";
 import { LLMVILLE_CHARACTER_PALETTE, type CharacterLook } from "@/user/playerCharacterFigure";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
+import { R3FEngineHost } from "@jgengine/core/frame/r3fEngineHost.draw";
 
 function RotatingFigure({ look }: { look: CharacterLook }) {
   const groupRef = useRef<Group>(null);
@@ -78,9 +79,11 @@ export function CharacterCustomizeViewport({ look, className }: CharacterCustomi
         gl={{ antialias: true, alpha: false }}
         dpr={[1, 2]}
       >
+        <R3FEngineHost>
         <Suspense fallback={null}>
           <CharacterStage look={look} />
         </Suspense>
+        </R3FEngineHost>
       </Canvas>
     </div>
   );

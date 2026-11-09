@@ -1,4 +1,4 @@
-import { useThree } from "@react-three/fiber";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 
 import { useDeferredSwap } from "@jgengine/core/ui/sceneSwap.view";
 
@@ -24,6 +24,6 @@ import { prepareSceneView } from "./shaderWarmup.draw";
  * @capability scene-swap change place without a frozen frame: build and compile the new place in the background behind a travel card
  */
 export function useSceneSwap<T>(wanted: T): T {
-  const scene = useThree((state) => state.scene);
-  return useDeferredSwap(wanted, () => prepareSceneView(scene));
+  const host = useEngineHost();
+  return useDeferredSwap(wanted, () => prepareSceneView(host.frame.scene));
 }

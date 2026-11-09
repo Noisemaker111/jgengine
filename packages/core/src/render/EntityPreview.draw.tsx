@@ -7,6 +7,7 @@ import { GameContextBridge, useOptionalGameContext } from "@jgengine/react/provi
 
 import { StudioStage, type StudioMood } from "@jgengine/core/scene/StudioStage.draw";
 import { IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";
+import { R3FEngineHost } from "@jgengine/core/frame/r3fEngineHost.draw";
 
 /** Props for {@link EntityPreview}. */
 export interface EntityPreviewProps {
@@ -106,6 +107,7 @@ export function EntityPreview({
         {...(cameraTarget === undefined ? {} : { onCreated: (state: RootState) => state.camera.lookAt(cameraTarget[0], cameraTarget[1], cameraTarget[2]) })}
         style={{ touchAction: "none" }}
       >
+        <R3FEngineHost>
         <GameContextBridge context={ctx}>
           <StudioStage
             mood={mood}
@@ -118,6 +120,7 @@ export function EntityPreview({
             {subject}
           </StudioStage>
         </GameContextBridge>
+        </R3FEngineHost>
       </Canvas>
     </div>
   );

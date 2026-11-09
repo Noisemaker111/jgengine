@@ -22,6 +22,7 @@ export function frameStateFromR3F(state: RootState, delta: number): EngineFrameS
     height: state.size.height,
     frameloop: state.frameloop as EngineFrameloop,
     renderPriority: state.internal.priority,
+    renderTakenOver: state.internal.priority > 0,
     invalidate: () => state.invalidate(),
     setCovered: (covered: boolean) => state.setFrameloop(covered ? "never" : "always"),
     get covered() {
@@ -76,6 +77,9 @@ export function liveFrameStateFromR3F(get: () => RootState): EngineFrameState {
     },
     get renderPriority() {
       return get().internal.priority;
+    },
+    get renderTakenOver() {
+      return get().internal.priority > 0;
     },
     invalidate: () => get().invalidate(),
     setCovered: (covered: boolean) => get().setFrameloop(covered ? "never" : "always"),

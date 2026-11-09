@@ -61,11 +61,22 @@ export interface EngineFrameState {
    * draw the scene into their own buffer (the post chain, the warmup gate) read it.
    */
   readonly renderPriority: number;
+  /**
+   * True while a positive-priority draw owns rendering — r3f's "a priority
+   * subscriber takes over the frame" rule. The loop renders nothing itself in
+   * that state; post chains and scissored viewports draw through their own passes.
+   */
+  readonly renderTakenOver: boolean;
 }
 
 /** One ordered participant in the frame. Lower `priority` runs first; render happens after all. */
 export interface EngineDraw {
-  /** r3f `useFrame` priority: subscribers run ascending, then one render. Default 0. */
+  /**
+   * r3f `useFrame` priority: draws run ascending, then one render. A positive
+   * priority takes rendering into the draw's own hands — the loop renders
+   * nothing itself while one is mounted (r3f's manual-render rule).
+   * Default 0.
+   */
   readonly priority?: number;
   /** Once, after the scene exists and before the first frame. Add objects here. */
   mount?(state: EngineFrameState): void;
@@ -237,6 +248,8 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
   }
 
   const draws: EngineDraw[] = [];
+  /** Mounted draws at positive priority — they own rendering while > 0. */
+  let positiveDraws = 0;
   let raf = 0;
   let disposed = false;
   let invalidated = true;
@@ -275,6 +288,9 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
       return covered;
     },
     renderPriority: options.renderPriority ?? 0,
+    get renderTakenOver() {
+      return positiveDraws > 0;
+    },
   } as EngineFrameState;
 
   function advance(elapsedOverride?: number): void {
@@ -293,12 +309,16 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
     }
     flushBeforeRenderTasks();
     for (const draw of draws) draw.frame?.(state, state.delta);
-    renderer.render(scene, camera);
+    // r3f's rule: a draw at positive priority takes rendering into its own
+    // hands — the loop renders nothing itself while one is mounted (the
+    // post chain and split-screen viewports render through their own passes).
+    if (!state.renderTakenOver) renderer.render(scene, camera);
     flushAfterRenderTasks();
     invalidated = false;
   }
 
   function frame(): void {
+    raf = 0;
     if (disposed) return;
     const wants = frameloop === "always" || (frameloop === "demand" && invalidated);
     if (wants && !covered) {
@@ -324,6 +344,7 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
   /** Insert keeping `draws` sorted by priority, stable within one priority. */
   function insertDraw(draw: EngineDraw): number {
     const priority = draw.priority ?? 0;
+    if (priority > 0) positiveDraws += 1;
     let index = draws.length;
     while (index > 0 && (draws[index - 1]!.priority ?? 0) > priority) index -= 1;
     draws.splice(index, 0, draw);
@@ -333,6 +354,7 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
   function removeDraw(draw: EngineDraw): void {
     const index = draws.indexOf(draw);
     if (index >= 0) draws.splice(index, 1);
+    if ((draw.priority ?? 0) > 0) positiveDraws -= 1;
   }
 
   const loop: EngineLoop = {

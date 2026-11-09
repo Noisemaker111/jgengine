@@ -63,6 +63,10 @@ export function EngineCanvas({
       antialias: true,
       alpha: true,
     });
+    // r3f's `flat={false}` + sRGB defaults: without these the same scene draws
+    // noticeably different (no tone curve) the moment the Canvas is swapped.
+    created.toneMapping = THREE.ACESFilmicToneMapping;
+    created.outputColorSpace = THREE.SRGBColorSpace;
     const engine = createEngineLoop({
       canvas,
       renderer: created,
@@ -117,7 +121,9 @@ export function EngineCanvas({
 
   return (
     <>
+      {/* Keyed per backend: a fresh DOM canvas per renderer factory, like r3f's `key={backend}` on Canvas. */}
       <canvas
+        key={`canvas-${rendererFactory.backend}`}
         ref={canvasRef}
         style={{
           position: "absolute",
@@ -130,7 +136,7 @@ export function EngineCanvas({
         }}
       />
       {host !== null ? (
-        <EngineHostProvider key={rendererFactory.backend} host={host}>
+        <EngineHostProvider key={`host-${rendererFactory.backend}`} host={host}>
           {children}
         </EngineHostProvider>
       ) : null}

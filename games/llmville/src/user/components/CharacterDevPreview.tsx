@@ -1,4 +1,5 @@
 import { Canvas, useThree } from "@react-three/fiber";
+import { R3FEngineHost } from "@jgengine/core/frame/r3fEngineHost.draw";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import type {
   CharacterFishColorId,
@@ -60,6 +61,7 @@ function CharacterView({ yaw, look, walkPhase, isWalking, label, viewAngle = "fr
           style={{ width: "100%", height: "560px", background: "#0f1715" }}
           dpr={[1, 2]}
         >
+          <R3FEngineHost>
           <Suspense fallback={null}>
             <CameraRig position={camPos} target={camTarget} />
 
@@ -107,6 +109,7 @@ function CharacterView({ yaw, look, walkPhase, isWalking, label, viewAngle = "fr
             {/* Very faint grid for scale reference */}
             <gridHelper args={[2.2, 11, "#1a2623", "#1a2623"]} position={[0, 0.002, 0]} />
           </Suspense>
+          </R3FEngineHost>
         </Canvas>
       </div>
     </div>

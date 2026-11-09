@@ -1,4 +1,4 @@
-import { useRef, type ReactNode } from "react";
+import { useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
@@ -8,7 +8,7 @@ import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "./m
 import { modelBindPosePositions } from "./modelBindPose.draw";
 import { recordRenderBounds } from "@jgengine/core/visibility/measuredBounds";
 import type { EngineDraw } from "@jgengine/core/frame/engineLoop.draw";
-import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
+import { EngineDrawMount, SceneObjectPortal, useSceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 
 /** Subtrees flagged with this userData key are excluded from bounds measurement — debug gizmos,
  * selection quads, effect billboards that should not inflate the hitbox. Sprites and invisible
@@ -167,16 +167,17 @@ export function MeasuredBoundsGroup({
   children: ReactNode;
 }) {
   const ctx = useGameContext();
-  const groupRef = useRef<THREE.Group>(null);
+  const group = useMemo(() => new THREE.Group(), []);
+  useSceneObjectAttach(group);
   const latest = useRef({ ctx, target, measureKey });
   latest.current = { ctx, target, measureKey };
   return (
-    <group ref={groupRef}>
+    <SceneObjectPortal object={group}>
       <EngineDrawMount
-        create={() => measuredBoundsDraw(() => ({ ...latest.current, anchor: groupRef.current }))}
+        create={() => measuredBoundsDraw(() => ({ ...latest.current, anchor: group }))}
         deps={[target, measureKey]}
       />
       {children}
-    </group>
+    </SceneObjectPortal>
   );
 }

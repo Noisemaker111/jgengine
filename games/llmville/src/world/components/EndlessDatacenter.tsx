@@ -1,5 +1,5 @@
 import { WORLD_SCENERY_RADIUS } from "@llmville/game/world/viewDistance";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import {
   NormalBlending,
   BufferGeometry,
@@ -8,8 +8,13 @@ import {
   Group,
   InstancedMesh,
   Matrix4,
+  Mesh,
+  MeshBasicMaterial,
+  MeshStandardMaterial,
+  PlaneGeometry,
   PointLight,
   RepeatWrapping,
+  BoxGeometry,
 } from "three";
 
 import {
@@ -27,7 +32,8 @@ import {
 import { readPlayerPosition } from "@/runtime/playerPosition";
 import type { GameEngine } from "@/runtime/gameEngine";
 import { composeInstance, uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
-import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
+import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 
 const FLOOR_TILE_SIZE = DATACENTER_FLOOR_TILE_CELLS * CELL_SIZE;
 const FLOOR_SPAN = WORLD_SCENERY_RADIUS * 2;
@@ -101,80 +107,139 @@ function useLightPoolTexture(): CanvasTexture | null {
   }, []);
 }
 
-export function EndlessDatacenter({ engine }: { engine: GameEngine }) {
-  const shaftRef = useRef<InstancedMesh>(null);
-  const baseRef = useRef<InstancedMesh>(null);
-  const capitalRef = useRef<InstancedMesh>(null);
-  const trayXRef = useRef<InstancedMesh>(null);
-  const trayZRef = useRef<InstancedMesh>(null);
-  const stripRef = useRef<InstancedMesh>(null);
-  const poolRef = useRef<InstancedMesh>(null);
-  const shellRef = useRef<Group>(null);
-  const lampRef = useRef<PointLight>(null);
-  const lastAnchor = useRef<string>("");
-  const floorTexture = usePolishedConcreteTexture();
-  const poolTexture = useLightPoolTexture();
+function endlessDatacenterDraw(engine: GameEngine, floorTexture: CanvasTexture | null, poolTexture: CanvasTexture | null): EngineDraw {
+  const shaft = new InstancedMesh(
+    new BoxGeometry(COLUMN_SHAFT_SIZE, DATACENTER_CEILING_HEIGHT, COLUMN_SHAFT_SIZE),
+    new MeshStandardMaterial({ color: "#b9bec0", roughness: 0.88, metalness: 0.02 }),
+    (COLUMN_VIEW_RADIUS * 2 + 1) ** 2,
+  );
+  shaft.castShadow = true;
+  shaft.receiveShadow = true;
+  shaft.frustumCulled = false;
 
-  useEffect(() => () => floorTexture?.dispose(), [floorTexture]);
-  useEffect(() => () => poolTexture?.dispose(), [poolTexture]);
+  const base = new InstancedMesh(
+    new BoxGeometry(COLUMN_BASE_SIZE, COLUMN_BASE_HEIGHT, COLUMN_BASE_SIZE),
+    new MeshStandardMaterial({ color: "#9ea4a7", roughness: 0.9, metalness: 0.02 }),
+    (COLUMN_VIEW_RADIUS * 2 + 1) ** 2,
+  );
+  base.receiveShadow = true;
+  base.frustumCulled = false;
+
+  const capital = new InstancedMesh(
+    new BoxGeometry(COLUMN_BASE_SIZE, COLUMN_CAPITAL_HEIGHT, COLUMN_BASE_SIZE),
+    new MeshStandardMaterial({ color: "#c6cacc", roughness: 0.85, metalness: 0.03 }),
+    (COLUMN_VIEW_RADIUS * 2 + 1) ** 2,
+  );
+  capital.frustumCulled = false;
 
   const columnCount = (COLUMN_VIEW_RADIUS * 2 + 1) ** 2;
-  const trayCount = (COLUMN_VIEW_RADIUS * 2 + 1) * (COLUMN_VIEW_RADIUS * 2 + 1);
-  const lightCount = (LIGHT_PANEL_RADIUS * 2 + 1) * (LIGHT_ROW_RADIUS * 2 + 1);
+  const trayCount = columnCount;
+  const traySide = COLUMN_VIEW_RADIUS * 2 + 1;
 
-  useFrameTask(() => {
-    const player = readPlayerPosition(engine);
-    if (lampRef.current) {
-      lampRef.current.position.set(
+  const trayX = new InstancedMesh(
+    new BoxGeometry(COLUMN_STEP, TRAY_HEIGHT, TRAY_WIDTH),
+    new MeshStandardMaterial({ color: "#2c3236", roughness: 0.7, metalness: 0.45 }),
+    trayCount,
+  );
+  trayX.frustumCulled = false;
+
+  const trayZ = new InstancedMesh(
+    new BoxGeometry(TRAY_WIDTH, TRAY_HEIGHT, COLUMN_STEP),
+    new MeshStandardMaterial({ color: "#2c3236", roughness: 0.7, metalness: 0.45 }),
+    trayCount,
+  );
+  trayZ.frustumCulled = false;
+
+  const lightCount = (LIGHT_PANEL_RADIUS * 2 + 1) * (LIGHT_ROW_RADIUS * 2 + 1);
+  const strip = new InstancedMesh(
+    new BoxGeometry(LIGHT_PANEL_LENGTH, 0.09, LIGHT_PANEL_WIDTH),
+    new MeshStandardMaterial({ color: "#fff0d4", emissive: "#ffe1ae", emissiveIntensity: 1.8, toneMapped: false }),
+    lightCount,
+  );
+  strip.frustumCulled = false;
+
+  const pool = new InstancedMesh(
+    new PlaneGeometry(LIGHT_POOL_LENGTH, LIGHT_POOL_WIDTH),
+    new MeshBasicMaterial({
+      map: poolTexture,
+      color: "#f6e1be",
+      transparent: true,
+      opacity: 0.28,
+      blending: NormalBlending,
+      depthWrite: false,
+      toneMapped: false,
+    }),
+    lightCount,
+  );
+  pool.frustumCulled = false;
+
+  const lamp = new PointLight("#f4faff", 26, 24, 2);
+
+  const shell = new Group();
+  const floorGeometry = new PlaneGeometry(FLOOR_SPAN, FLOOR_SPAN);
+  const floor = new Mesh(
+    floorGeometry,
+    new MeshStandardMaterial({ map: floorTexture, color: "#ffffff", roughness: 0.28, metalness: 0.16 }),
+  );
+  floor.rotation.x = -Math.PI / 2;
+  floor.receiveShadow = true;
+  shell.add(floor);
+  const ceilingGeometry = new PlaneGeometry(FLOOR_SPAN, FLOOR_SPAN);
+  const ceiling = new Mesh(
+    ceilingGeometry,
+    new MeshStandardMaterial({ color: "#12171a", roughness: 0.95, metalness: 0.05 }),
+  );
+  ceiling.position.set(0, DATACENTER_CEILING_HEIGHT, 0);
+  ceiling.rotation.x = Math.PI / 2;
+  shell.add(ceiling);
+
+  const instanced = [shaft, base, capital, trayX, trayZ, strip, pool];
+  let lastAnchor = "";
+
+  return {
+    mount(state: EngineFrameState) {
+      for (const mesh of instanced) state.scene.add(mesh);
+      state.scene.add(lamp);
+      state.scene.add(shell);
+    },
+    frame(_state: EngineFrameState) {
+      const player = readPlayerPosition(engine);
+      lamp.position.set(
         player.x,
         DATACENTER_CEILING_HEIGHT - 0.3,
         snap(player.z, LIGHT_ROW_SPACING),
       );
-    }
 
-    const anchorX = snap(player.x, FLOOR_TILE_SIZE);
-    const anchorZ = snap(player.z, FLOOR_TILE_SIZE);
-    const anchorKey = `${anchorX}:${anchorZ}`;
-    if (anchorKey === lastAnchor.current) return;
-    lastAnchor.current = anchorKey;
+      const anchorX = snap(player.x, FLOOR_TILE_SIZE);
+      const anchorZ = snap(player.z, FLOOR_TILE_SIZE);
+      const anchorKey = `${anchorX}:${anchorZ}`;
+      if (anchorKey === lastAnchor) return;
+      lastAnchor = anchorKey;
 
-    const columnBaseX = snap(player.x, COLUMN_STEP);
-    const columnBaseZ = snap(player.z, COLUMN_STEP);
-    const shaft = shaftRef.current;
-    const base = baseRef.current;
-    const capital = capitalRef.current;
-    const columnSide = COLUMN_VIEW_RADIUS * 2 + 1;
-    const columnCenter = (index: number) =>
-      cellToWorldCenter(
-        worldToCell(
-          columnBaseX + (Math.floor(index / columnSide) - COLUMN_VIEW_RADIUS) * COLUMN_STEP,
-          columnBaseZ + ((index % columnSide) - COLUMN_VIEW_RADIUS) * COLUMN_STEP,
-        ),
-      );
-    const atColumns = (y: number, offsetX: number, offsetZ: number) => ({
-      count: columnCount,
-      at: (index: number, out: Matrix4) => {
-        const center = columnCenter(index);
-        out.makeTranslation(center.x + offsetX, y, center.z + offsetZ);
-      },
-    });
-    if (shaft && base && capital) {
+      const columnBaseX = snap(player.x, COLUMN_STEP);
+      const columnBaseZ = snap(player.z, COLUMN_STEP);
+      const columnCenter = (index: number) =>
+        cellToWorldCenter(
+          worldToCell(
+            columnBaseX + (Math.floor(index / traySide) - COLUMN_VIEW_RADIUS) * COLUMN_STEP,
+            columnBaseZ + ((index % traySide) - COLUMN_VIEW_RADIUS) * COLUMN_STEP,
+          ),
+        );
+      const atColumns = (y: number, offsetX: number, offsetZ: number) => ({
+        count: columnCount,
+        at: (index: number, out: Matrix4) => {
+          const center = columnCenter(index);
+          out.makeTranslation(center.x + offsetX, y, center.z + offsetZ);
+        },
+      });
       uploadInstances(shaft, atColumns(DATACENTER_CEILING_HEIGHT / 2, 0, 0), { bounds: "none" });
       uploadInstances(base, atColumns(COLUMN_BASE_HEIGHT / 2, 0, 0), { bounds: "none" });
       uploadInstances(capital, atColumns(DATACENTER_CEILING_HEIGHT - COLUMN_CAPITAL_HEIGHT / 2, 0, 0), { bounds: "none" });
-    }
 
-    const trayX = trayXRef.current;
-    const trayZ = trayZRef.current;
-    if (trayX && trayZ) {
       const trayY = DATACENTER_CEILING_HEIGHT - 0.42;
       uploadInstances(trayX, atColumns(trayY, COLUMN_STEP / 2, 0), { bounds: "none" });
       uploadInstances(trayZ, atColumns(trayY, 0, COLUMN_STEP / 2), { bounds: "none" });
-    }
 
-    const strips = stripRef.current;
-    const pools = poolRef.current;
-    if (strips && pools) {
       const lightBaseX = snap(player.x, LIGHT_PANEL_SPACING);
       const lightBaseZ = snap(player.z, LIGHT_ROW_SPACING);
       const rowSide = LIGHT_ROW_RADIUS * 2 + 1;
@@ -186,63 +251,41 @@ export function EndlessDatacenter({ engine }: { engine: GameEngine }) {
           composeInstance(out, [x, y, z], [tilt, 0, 0], 1);
         },
       });
-      uploadInstances(strips, atLights(DATACENTER_CEILING_HEIGHT - 0.12, 0), { bounds: "none" });
-      uploadInstances(pools, atLights(0.014, -Math.PI / 2), { bounds: "none" });
-    }
+      uploadInstances(strip, atLights(DATACENTER_CEILING_HEIGHT - 0.12, 0), { bounds: "none" });
+      uploadInstances(pool, atLights(0.014, -Math.PI / 2), { bounds: "none" });
 
-    if (shellRef.current) shellRef.current.position.set(anchorX, 0, anchorZ);
-  });
+      shell.position.set(anchorX, 0, anchorZ);
+    },
+    dispose(state: EngineFrameState) {
+      for (const mesh of instanced) {
+        state.scene.remove(mesh);
+        mesh.geometry.dispose();
+        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        for (const material of materials) material.dispose();
+      }
+      state.scene.remove(lamp);
+      state.scene.remove(shell);
+      floorGeometry.dispose();
+      ceilingGeometry.dispose();
+      const floorMaterials = Array.isArray(floor.material) ? floor.material : [floor.material];
+      const ceilingMaterials = Array.isArray(ceiling.material) ? ceiling.material : [ceiling.material];
+      for (const material of [...floorMaterials, ...ceilingMaterials]) material.dispose();
+    },
+  };
+}
+
+export function EndlessDatacenter({ engine }: { engine: GameEngine }) {
+  const floorTexture = usePolishedConcreteTexture();
+  const poolTexture = useLightPoolTexture();
+
+  useEffect(() => () => floorTexture?.dispose(), [floorTexture]);
+  useEffect(() => () => poolTexture?.dispose(), [poolTexture]);
 
   return (
-    <group>
-      <instancedMesh ref={shaftRef} args={[undefined, undefined, columnCount]} castShadow receiveShadow frustumCulled={false}>
-        <boxGeometry args={[COLUMN_SHAFT_SIZE, DATACENTER_CEILING_HEIGHT, COLUMN_SHAFT_SIZE]} />
-        <meshStandardMaterial color="#b9bec0" roughness={0.88} metalness={0.02} />
-      </instancedMesh>
-      <instancedMesh ref={baseRef} args={[undefined, undefined, columnCount]} receiveShadow frustumCulled={false}>
-        <boxGeometry args={[COLUMN_BASE_SIZE, COLUMN_BASE_HEIGHT, COLUMN_BASE_SIZE]} />
-        <meshStandardMaterial color="#9ea4a7" roughness={0.9} metalness={0.02} />
-      </instancedMesh>
-      <instancedMesh ref={capitalRef} args={[undefined, undefined, columnCount]} frustumCulled={false}>
-        <boxGeometry args={[COLUMN_BASE_SIZE, COLUMN_CAPITAL_HEIGHT, COLUMN_BASE_SIZE]} />
-        <meshStandardMaterial color="#c6cacc" roughness={0.85} metalness={0.03} />
-      </instancedMesh>
-      <instancedMesh ref={trayXRef} args={[undefined, undefined, trayCount]} frustumCulled={false}>
-        <boxGeometry args={[COLUMN_STEP, TRAY_HEIGHT, TRAY_WIDTH]} />
-        <meshStandardMaterial color="#2c3236" roughness={0.7} metalness={0.45} />
-      </instancedMesh>
-      <instancedMesh ref={trayZRef} args={[undefined, undefined, trayCount]} frustumCulled={false}>
-        <boxGeometry args={[TRAY_WIDTH, TRAY_HEIGHT, COLUMN_STEP]} />
-        <meshStandardMaterial color="#2c3236" roughness={0.7} metalness={0.45} />
-      </instancedMesh>
-      <instancedMesh ref={stripRef} args={[undefined, undefined, lightCount]} frustumCulled={false}>
-        <boxGeometry args={[LIGHT_PANEL_LENGTH, 0.09, LIGHT_PANEL_WIDTH]} />
-        <meshStandardMaterial color="#fff0d4" emissive="#ffe1ae" emissiveIntensity={1.8} toneMapped={false} />
-      </instancedMesh>
-      <instancedMesh ref={poolRef} args={[undefined, undefined, lightCount]} frustumCulled={false}>
-        <planeGeometry args={[LIGHT_POOL_LENGTH, LIGHT_POOL_WIDTH]} />
-        <meshBasicMaterial
-          map={poolTexture}
-          color="#f6e1be"
-          transparent
-          opacity={0.28}
-          blending={NormalBlending}
-          depthWrite={false}
-          toneMapped={false}
-        />
-      </instancedMesh>
-      <pointLight ref={lampRef} intensity={26} distance={24} decay={2} color="#f4faff" />
-      <group ref={shellRef}>
-        <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <planeGeometry args={[FLOOR_SPAN, FLOOR_SPAN]} />
-          <meshStandardMaterial map={floorTexture} color="#ffffff" roughness={0.28} metalness={0.16} />
-        </mesh>
-        <mesh position={[0, DATACENTER_CEILING_HEIGHT, 0]} rotation={[Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[FLOOR_SPAN, FLOOR_SPAN]} />
-          <meshStandardMaterial color="#12171a" roughness={0.95} metalness={0.05} />
-        </mesh>
-      </group>
-    </group>
+    <EngineDrawMount
+      create={() => endlessDatacenterDraw(engine, floorTexture, poolTexture)}
+      deps={[engine, floorTexture, poolTexture]}
+    />
   );
 }
 
@@ -324,6 +367,57 @@ function claimGeometry(claims: readonly DatacenterClaim[]): { fill: BufferGeomet
   return { fill: quadsGeometry(fillQuads, CLAIM_FILL_Y), edges: quadsGeometry(edgeQuads, CLAIM_EDGE_Y) };
 }
 
+function claimedCellsDraw(
+  claims: readonly DatacenterClaim[],
+  localGameId: string | null,
+  anchorCx: number,
+  anchorCz: number,
+): EngineDraw {
+  const centerCx = anchorCx * 8;
+  const centerCz = anchorCz * 8;
+  const visible = claims.filter(
+    (claim) =>
+      Math.abs(claim.cx - centerCx) <= CLAIM_VIEW_RADIUS_CELLS
+      && Math.abs(claim.cz - centerCz) <= CLAIM_VIEW_RADIUS_CELLS,
+  );
+  const own = visible.filter((claim) => localGameId !== null && claim.ownerGameId === localGameId);
+  const others = visible.filter((claim) => localGameId === null || claim.ownerGameId !== localGameId);
+  const geometries = { own: claimGeometry(own), others: claimGeometry(others) };
+
+  const specs = [
+    { geometry: geometries.own.fill, color: "#2dd4bf", opacity: 0.16, toneMapped: true },
+    { geometry: geometries.own.edges, color: "#5fc2a8", opacity: 0.85, toneMapped: false },
+    { geometry: geometries.others.fill, color: "#f0b35f", opacity: 0.1, toneMapped: true },
+    { geometry: geometries.others.edges, color: "#e0a95c", opacity: 0.7, toneMapped: false },
+  ];
+  const meshes = specs.map(
+    (spec) =>
+      new Mesh(
+        spec.geometry,
+        new MeshBasicMaterial({
+          color: spec.color,
+          transparent: true,
+          opacity: spec.opacity,
+          depthWrite: false,
+          toneMapped: spec.toneMapped,
+        }),
+      ),
+  );
+
+  return {
+    mount(state: EngineFrameState) {
+      for (const mesh of meshes) state.scene.add(mesh);
+    },
+    dispose(state: EngineFrameState) {
+      for (const mesh of meshes) {
+        state.scene.remove(mesh);
+        mesh.geometry.dispose();
+        (mesh.material as MeshBasicMaterial).dispose();
+      }
+    },
+  };
+}
+
 export function ClaimedCellOverlay({
   claims,
   localGameId,
@@ -337,43 +431,10 @@ export function ClaimedCellOverlay({
   const anchorCx = Math.floor(anchor.cx / 8);
   const anchorCz = Math.floor(anchor.cz / 8);
 
-  const geometries = useMemo(() => {
-    const centerCx = anchorCx * 8;
-    const centerCz = anchorCz * 8;
-    const visible = claims.filter(
-      (claim) =>
-        Math.abs(claim.cx - centerCx) <= CLAIM_VIEW_RADIUS_CELLS
-        && Math.abs(claim.cz - centerCz) <= CLAIM_VIEW_RADIUS_CELLS,
-    );
-    const own = visible.filter((claim) => localGameId !== null && claim.ownerGameId === localGameId);
-    const others = visible.filter((claim) => localGameId === null || claim.ownerGameId !== localGameId);
-    return { own: claimGeometry(own), others: claimGeometry(others) };
-  }, [claims, localGameId, anchorCx, anchorCz]);
-
-  useEffect(
-    () => () => {
-      geometries.own.fill.dispose();
-      geometries.own.edges.dispose();
-      geometries.others.fill.dispose();
-      geometries.others.edges.dispose();
-    },
-    [geometries],
-  );
-
   return (
-    <group>
-      <mesh geometry={geometries.own.fill}>
-        <meshBasicMaterial color="#2dd4bf" transparent opacity={0.16} depthWrite={false} />
-      </mesh>
-      <mesh geometry={geometries.own.edges}>
-        <meshBasicMaterial color="#5fc2a8" transparent opacity={0.85} depthWrite={false} toneMapped={false} />
-      </mesh>
-      <mesh geometry={geometries.others.fill}>
-        <meshBasicMaterial color="#f0b35f" transparent opacity={0.1} depthWrite={false} />
-      </mesh>
-      <mesh geometry={geometries.others.edges}>
-        <meshBasicMaterial color="#e0a95c" transparent opacity={0.7} depthWrite={false} toneMapped={false} />
-      </mesh>
-    </group>
+    <EngineDrawMount
+      create={() => claimedCellsDraw(claims, localGameId, anchorCx, anchorCz)}
+      deps={[claims, localGameId, anchorCx, anchorCz]}
+    />
   );
 }

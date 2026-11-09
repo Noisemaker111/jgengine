@@ -3,6 +3,7 @@ import { useEffect, useRef, type ReactElement } from "react";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import type { NamedCost } from "./frameBreakdown";
@@ -98,7 +99,17 @@ export function perfOverlayProbeDraw(sample: PerfOverlaySample, getStore: () => 
  * the costliest subsystems. It installs the frame breakdown while open when the dev telemetry has not,
  * and removes what it installed on close. Mount inside the Canvas. @internal
  */
-export function PerfOverlayProbe({ sample }: { sample: PerfOverlaySample }): null {
+export function PerfOverlayProbe({ sample }: { sample: PerfOverlaySample }): ReactElement | null {
+  const host = useEngineHost();
+  return host.r3f ? <PerfOverlayProbeR3F sample={sample} /> : <PerfOverlayProbeEngine sample={sample} />;
+}
+
+function PerfOverlayProbeEngine({ sample }: { sample: PerfOverlaySample }): null {
+  useEngineDraw(() => perfOverlayProbeDraw(sample, () => null), [sample]);
+  return null;
+}
+
+function PerfOverlayProbeR3F({ sample }: { sample: PerfOverlaySample }): null {
   const store = useStore();
   useEngineDraw(() => perfOverlayProbeDraw(sample, () => store), [sample, store]);
   return null;

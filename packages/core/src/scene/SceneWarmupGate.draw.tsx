@@ -88,7 +88,7 @@ export function sceneWarmupGateDraw(getProps: () => SceneWarmupGateProps): Engin
         // With no answer from the canvas owner, a priority frame loop is taken for the post chain, which
         // draws the scene into its own buffer. A scissored split-screen loop also takes priority and draws
         // the canvas, so the composition passes the answer where it knows it.
-        sceneDrawsToTarget: () => getProps().sceneDrawsToTarget ?? state.renderPriority > 0,
+        sceneDrawsToTarget: () => getProps().sceneDrawsToTarget ?? state.renderTakenOver,
         takeHeldDraws: () => {
           const taken = held;
           held = [];

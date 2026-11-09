@@ -2,6 +2,8 @@ import { PerspectiveCamera, View } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import type { ReactNode } from "react";
 
+import { R3FEngineHost } from "@jgengine/core/frame/r3fEngineHost.draw";
+
 import type { GeneratorDefinition, GeneratorVariant } from "@jgengine/core/generator/generator";
 import { getGeneratorPreview } from "@jgengine/core/generator/generatorPreview.draw";
 
@@ -93,7 +95,9 @@ export function GeneratorVariantGrid({ definition, variants, selected, kept, onP
       </div>
       {hasPreview ? (
         <Canvas style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none" }} dpr={[1, 1.5]} gl={{ antialias: true }}>
-          <View.Port />
+          <R3FEngineHost>
+            <View.Port />
+          </R3FEngineHost>
         </Canvas>
       ) : null}
     </div>

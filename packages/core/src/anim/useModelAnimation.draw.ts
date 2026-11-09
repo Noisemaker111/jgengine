@@ -1,6 +1,7 @@
-import { useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 
 import type { ModelAnimationConfig } from "@jgengine/core/game/playableGame";
 import { resolveAnimationConfig } from "@jgengine/core/game/clipRoles";
@@ -33,7 +34,7 @@ export function useModelAnimation(
   animationInput: ModelAnimationConfig | "auto" | "none" | undefined,
   instanceId?: string,
 ): void {
-  const invalidate = useThree((state) => state.invalidate);
+  const invalidate = useEngineHost().frame.invalidate;
   // Optional: a model must still animate its bind pose / auto clip in a preview or inspector that
   // has no running game — a hard context requirement made every part composition unviewable outside
   // the world, which is half of why #1588 took a session to see.

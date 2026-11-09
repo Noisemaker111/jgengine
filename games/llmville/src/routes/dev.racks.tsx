@@ -3,6 +3,7 @@ import { Html, OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { useMemo, useState } from "react";
 import { PCFShadowMap } from "three";
+import { R3FEngineHost } from "@jgengine/core/frame/r3fEngineHost.draw";
 
 import type { InfrastructureBuildItemId } from "@llmville/game/build/catalog";
 import Rack from "@/infrastructure/components/Rack";
@@ -186,6 +187,7 @@ function DevRackGallery() {
           gl.shadowMap.type = PCFShadowMap;
         }}
       >
+        <R3FEngineHost>
         <color attach="background" args={["#111719"]} />
         <fog attach="fog" args={["#111719", 18, 54]} />
         <ambientLight intensity={0.7} />
@@ -228,6 +230,8 @@ function DevRackGallery() {
         })}
 
         <OrbitControls enablePan enableZoom enableRotate target={[1.4, 1.1, 0.3]} />
+      </R3FEngineHost>
+
       </Canvas>
 
       <div className="pointer-events-auto absolute left-4 top-4 w-[360px] rounded-md border border-white/10 bg-zinc-950/85 p-3 text-xs text-zinc-200 shadow-xl backdrop-blur">

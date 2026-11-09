@@ -1,5 +1,4 @@
-import { useEffect, useRef, type ComponentType, type MutableRefObject } from "react";
-import { useThree } from "@react-three/fiber";
+import { useEffect, useMemo, useRef, type ComponentType, type MutableRefObject } from "react";
 import * as THREE from "three";
 import type { CameraWeaponView, FirstPersonCameraConfig } from "@jgengine/core/game/playableGame";
 import { DEFAULT_EYE_HEIGHT } from "@jgengine/core/combat/shotOrigin";
@@ -19,7 +18,8 @@ import { clearCameraBoom, sceneCameraQuery } from "./cameraCollision";
 import { usePlayerFov, type PlayerFovState } from "./PlayerFov.draw";
 import { GAME_SIM_FRAME_PRIORITY, ORBIT_CAMERA_FRAME_PRIORITY } from "./orbitCameraMath";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
-import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
+import { SceneObjectPortal, useEngineDraw, useSceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { requestRawPointerLock } from "@jgengine/core/input/pointerLock";
 import { readRegisteredFirstPersonMuzzle, registerTrackedFirstPersonMuzzle } from "./customMuzzle.draw";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
@@ -211,7 +211,7 @@ export function GameFirstPersonCamera(props: GameFirstPersonCameraProps) {
   const { userId } = usePlayer();
   const ctx = useGameContext();
   const playerFov = usePlayerFov();
-  const camera = useThree((state) => state.camera);
+  const camera = useEngineHost().frame.camera;
   const followId = props.followEntityId ?? userId;
   const cuesRef = useEntityRenderCues(followId);
   const poseRef = useRef<WeaponPose | null>(null);
@@ -233,7 +233,22 @@ function FirstPersonViewmodel({
   cuesRef: MutableRefObject<EntityRenderCues>;
   poseRef: MutableRefObject<WeaponPose | null>;
 }) {
-  const groupRef = useRef<THREE.Group>(null);
+  const group = useMemo(() => {
+    const next = new THREE.Group();
+    if (Viewmodel === undefined) {
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.11, 0.55), new THREE.MeshStandardMaterial({ color: "#22262d", metalness: 0.6, roughness: 0.35 }));
+      body.position.set(0, 0, -0.22);
+      const grip = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.18, 0.11), new THREE.MeshStandardMaterial({ color: "#33373f", metalness: 0.4, roughness: 0.5 }));
+      grip.position.set(0, -0.13, 0.04);
+      grip.rotation.x = 0.35;
+      const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.18, 10), new THREE.MeshStandardMaterial({ color: "#0e0f12", metalness: 0.7, roughness: 0.3 }));
+      barrel.position.set(0, 0.03, -0.52);
+      barrel.rotation.x = Math.PI / 2;
+      next.add(body, grip, barrel);
+    }
+    return next;
+  }, [Viewmodel]);
+  useSceneObjectAttach(group);
   const muzzleWorld = useRef(new THREE.Vector3());
   const muzzleTracked = useRef(false);
   useEffect(() => {
@@ -245,8 +260,6 @@ function FirstPersonViewmodel({
     });
   }, [camera]);
   useFrameTask(() => {
-    const group = groupRef.current;
-    if (group === null) return;
     const pose = poseRef.current;
     const perspective = camera as THREE.PerspectiveCamera;
     // Scaling camera-space x/y by this projects the viewmodel at its own FOV without a second render pass.
@@ -265,27 +278,9 @@ function FirstPersonViewmodel({
     group.localToWorld(muzzleWorld.current.copy(MUZZLE_TIP_LOCAL));
     muzzleTracked.current = true;
   }, GAME_SIM_FRAME_PRIORITY);
-  if (Viewmodel !== undefined) {
-    return (
-      <group ref={groupRef}>
-        <Viewmodel cuesRef={cuesRef} />
-      </group>
-    );
-  }
   return (
-    <group ref={groupRef}>
-      <mesh position={[0, 0, -0.22]}>
-        <boxGeometry args={[0.09, 0.11, 0.55]} />
-        <meshStandardMaterial color="#22262d" metalness={0.6} roughness={0.35} />
-      </mesh>
-      <mesh position={[0, -0.13, 0.04]} rotation={[0.35, 0, 0]}>
-        <boxGeometry args={[0.08, 0.18, 0.11]} />
-        <meshStandardMaterial color="#33373f" metalness={0.4} roughness={0.5} />
-      </mesh>
-      <mesh position={[0, 0.03, -0.52]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.022, 0.022, 0.18, 10]} />
-        <meshStandardMaterial color="#0e0f12" metalness={0.7} roughness={0.3} />
-      </mesh>
-    </group>
+    <SceneObjectPortal object={group}>
+      {Viewmodel !== undefined ? <Viewmodel cuesRef={cuesRef} /> : null}
+    </SceneObjectPortal>
   );
 }

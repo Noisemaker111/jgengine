@@ -1,8 +1,8 @@
 import { biomeBandsForSky } from "@jgengine/core/sky/skyBands";
 import { CharacterMotionContext, noteGameCharacterMotion } from "@jgengine/core/anim/characterMotion.draw";
 import { lightingHasSoftShadows } from "@jgengine/core/lighting/softShadows";
-import { Canvas } from "@react-three/fiber";
 import { useEngineRendererFactory } from "@jgengine/core/webgpu/engineRenderer.draw";
+import { EngineCanvas } from "@jgengine/core/frame/engineCanvas.draw";
 import {
   useMemo,
   useEffect,
@@ -125,8 +125,6 @@ import { usePresentationLook } from "@jgengine/core/render/presentationLook.draw
 import type { GameLookInput } from "@jgengine/core/render/lookPreset";
 import { WorldView, RemotePlayers, dispatchWorldEntityPointerDown } from "./world/WorldScene";
 import { FrameDriver } from "./drivers/FrameDriver";
-import { FrameBoardPump } from "./drivers/FrameBoardPump";
-import { R3FEngineHost } from "@jgengine/core/frame/r3fEngineHost.draw";
 import { GamepadSource } from "@jgengine/core/input/gamepadSource.draw";
 import { SplitScreenRenderer, useSeatViewports } from "@jgengine/core/camera/Viewports.draw";
 import { localPlayers } from "@jgengine/core/runtime/localPlayers";
@@ -693,8 +691,9 @@ export function Shell3dPresentation({
         run: () => action.run(ctx),
       }));
   const touchScale = compact ? 0.88 : 1;
-  const canvasFrameloop: "always" | "demand" | "never" =
-    poster && posterFrozen ? "demand" : graphics.frameRateLimit > 0 && !poster ? "never" : "always";
+  // The engine loop paces a frame-rate cap inside `setFpsLimit`, so "never"
+  // (r3f's manual-advance mode for the old external pacer) is never authored here.
+  const canvasFrameloop: "always" | "demand" | "never" = poster && posterFrozen ? "demand" : "always";
   // The frame carries the player's colour-vision mode; the HUD and menu text above it stay unfiltered.
   const colorblind = useColorblindMode(settingsStore);
   const dockMounted =
@@ -780,8 +779,8 @@ export function Shell3dPresentation({
             <GameViewportProvider platforms={playable.controls?.platforms}>
               <ColorblindFrame mode={colorblind} style={{ position: "absolute", inset: 0 }}>
                 {rendererFactory === null ? null : (
-                <Canvas
-                  key={rendererFactory.backend}
+                <EngineCanvas
+                  rendererFactory={rendererFactory}
                   onCreated={({ gl, scene }) => {
                     setCanvasElement(gl.domElement);
                     skipCulledMatrices(scene);
@@ -805,13 +804,10 @@ export function Shell3dPresentation({
                           far: playable.camera?.lens?.frustum?.far ?? CAMERA_FRUSTUM_DEFAULTS.far,
                         }
                   }
-                  shadows={graphics.shadows ? "percentage" : false}
+                  shadows={graphics.shadows ? true : false}
                   dpr={[Math.min(1, graphics.dpr), graphics.dpr]}
-                  gl={rendererFactory}
                   style={{ touchAction: "none" }}
                 >
-                  <R3FEngineHost>
-                  <FrameBoardPump />
                   <CanvasCoverFrameloop authored={canvasFrameloop} />
                   <TextureFiltering anisotropy={graphics.profile.anisotropy} />
                   {graphics.frameRateLimit > 0 && !poster ? <FrameRateLimiter fps={graphics.frameRateLimit} /> : null}
@@ -1006,8 +1002,7 @@ export function Shell3dPresentation({
                       sceneDrawsToTarget={!splitScreen && resolvedLook.postProcessing !== undefined && resolvedLook.postProcessing.enabled !== false}
                     />
                   )}
-                  </R3FEngineHost>
-                </Canvas>
+                </EngineCanvas>
                 )}
               </ColorblindFrame>
               <SceneWarmupCoverLive store={warmup} />

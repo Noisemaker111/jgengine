@@ -1,9 +1,10 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { act, createRoot, useFrame, useThree } from "@react-three/fiber";
-import { createElement, Fragment, useEffect } from "react";
+import { createElement, useEffect } from "react";
 import * as THREE from "three";
 
 import { canvasCover } from "@jgengine/core/ui/canvasCover.view";
+import { R3FEngineHost } from "@jgengine/core/frame/r3fEngineHost.draw";
 
 import { CanvasCoverFrameloop } from "./drivers/CanvasCoverFrameloop";
 import { FrameRateLimiter } from "./drivers/FrameRateLimiter";
@@ -94,7 +95,7 @@ async function mount(): Promise<Harness> {
   await act(async () => {
     store = root.render(
       createElement(
-        Fragment,
+        R3FEngineHost,
         null,
         createElement(CanvasCoverFrameloop, { authored: "always" }),
         createElement(World),
@@ -228,7 +229,7 @@ test("the frame-rate limiter advances nothing while the canvas is covered", asyn
     });
     let store: ReturnType<typeof root.render> | null = null;
     await act(async () => {
-      store = root.render(createElement(FrameRateLimiter, { fps: 30 }));
+      store = root.render(createElement(R3FEngineHost, null, createElement(FrameRateLimiter, { fps: 30 })));
     });
     if (store === null) throw new Error("the frame-rate limiter did not mount");
     return store;
