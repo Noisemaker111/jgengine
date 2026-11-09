@@ -13,6 +13,8 @@ let input: CDPSession;
 let baselineListeners: [string, unknown][];
 
 beforeAll(async () => {
+  // A run killed mid-test (a timeout) leaves its links here; the next run must not fail on EEXIST.
+  await rm(scratch, { recursive: true, force: true });
   await mkdir(`${scratch}/node_modules/@jgengine`, { recursive: true });
   for (const peer of ["react", "react-dom"]) {
     await symlink(resolve(import.meta.dir, "../../../react/node_modules", peer), `${scratch}/node_modules/${peer}`, "dir");
