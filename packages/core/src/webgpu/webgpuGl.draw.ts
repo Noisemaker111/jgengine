@@ -212,7 +212,7 @@ class RecordedPass {
   private owned = false;
   constructor(public descriptor: GPURenderPassDescriptor, readonly fb: GlFramebuffer | null, readonly plan: PassPlan) {}
   setPipeline(pipeline: GPURenderPipeline): void { this.ops.push(OP_PIPELINE, pipeline); }
-  setBindGroup(index: number, group: GPUBindGroup, offsets?: Uint32Array, start?: number): void {
+  setBindGroup(index: number, group: GPUBindGroup, offsets?: Uint32Array, start?: number, _count?: number): void {
     if (offsets === undefined) this.ops.push(OP_GROUP, index, group);
     else this.ops.push(OP_GROUP_OFFSET, index, group, offsets[start ?? 0]);
   }
