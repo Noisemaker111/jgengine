@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { basename, dirname, join, resolve } from "node:path";
 
-import { applyDevice, CdpSession, ensureDevServer, killPid, killProcessTree, navigateCapturePage, openPageSession, withBrowserSession, type EnsureDevServerResult } from "./browser-lib";
+import { applyDevice, CdpSession, ensureDevServer, killPid, killProcessTree, navigateCapturePageWithRetry, openPageSession, withBrowserSession, type EnsureDevServerResult } from "./browser-lib";
 import { FRAME_GAMES } from "./ci-scope";
 import { ensureWorktreeReady } from "./agent-worktree";
 import { startPath, type PerfPath } from "./perf-breakdown";
@@ -349,7 +349,10 @@ async function openSide(side: Side, debugPort: number, browser: CdpSession, serv
   if (side === "branch" && args.plantMs > 0) await session.send("Page.addScriptToEvaluateOnNewDocument", { source: plantScript(args.plantMs) });
   await applyDevice(session, "desktop", "full", GATE_SIZE);
   console.error(`perf ab: ${game}: loading the ${side} page`);
-  const load = async () => navigateCapturePage(session, perfPageUrl({ base: await serve(side), game, quality: "high" }).toString(), PAGE_READY_MS);
+  const load = async () => {
+    const base = await serve(side);
+    await navigateCapturePageWithRetry(session, perfPageUrl({ base, game, quality: "high" }).toString(), base, PAGE_READY_MS);
+  };
   try {
     await load();
   } catch (error) {
