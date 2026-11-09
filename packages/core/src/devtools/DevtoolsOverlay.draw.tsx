@@ -43,15 +43,15 @@ export function DevtoolsRendererProbe() {
     if (context === null) return;
     let last = { ...context.stats };
     let lastAt = performance.now();
-    let reading = { frames: 0, passes: 0, clearPasses: 0, draws: 0, submits: 0, uniformBytes: 0, bindGroups: 0, pipelines: 0 };
+    let reading = { frames: 0, passes: 0, clearPasses: 0, replayedPasses: 0, draws: 0, submits: 0, uniformBytes: 0, bindGroups: 0, pipelines: 0 };
     // Counters and state read back to back share one window; a new window opens every RENDER_SAMPLE_MS.
     const perFrame = () => {
       const at = performance.now();
       if (at - lastAt < RENDER_SAMPLE_MS && reading.frames > 0) return reading;
       const now = context.stats;
       const frames = Math.max(1, now.frames - last.frames);
-      const per = (key: "passes" | "clearPasses" | "draws" | "submits" | "uniformBytes" | "bindGroups" | "pipelines") => Math.round(((now[key] - last[key]) / frames) * 10) / 10;
-      reading = { frames: now.frames - last.frames, passes: per("passes"), clearPasses: per("clearPasses"), draws: per("draws"), submits: per("submits"), uniformBytes: per("uniformBytes"), bindGroups: per("bindGroups"), pipelines: per("pipelines") };
+      const per = (key: "passes" | "clearPasses" | "replayedPasses" | "draws" | "submits" | "uniformBytes" | "bindGroups" | "pipelines") => Math.round(((now[key] - last[key]) / frames) * 10) / 10;
+      reading = { frames: now.frames - last.frames, passes: per("passes"), clearPasses: per("clearPasses"), replayedPasses: per("replayedPasses"), draws: per("draws"), submits: per("submits"), uniformBytes: per("uniformBytes"), bindGroups: per("bindGroups"), pipelines: per("pipelines") };
       last = { ...now };
       lastAt = at;
       return reading;
@@ -59,8 +59,8 @@ export function DevtoolsRendererProbe() {
     return devtools.probes.registerSystem("render/webgpu", {
       counters: perFrame,
       state: () => {
-        const { passes, clearPasses, draws, submits, uniformBytes } = perFrame();
-        return `per frame: ${passes} passes (${clearPasses} clear-only) · ${draws} draws · ${submits} submits · ${uniformBytes} uniform bytes`;
+        const { passes, clearPasses, replayedPasses, draws, submits, uniformBytes } = perFrame();
+        return `per frame: ${passes} passes (${clearPasses} clear-only, ${replayedPasses} replayed) · ${draws} draws · ${submits} submits · ${uniformBytes} uniform bytes`;
       },
     });
   }, [gl]);

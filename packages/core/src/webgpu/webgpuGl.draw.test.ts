@@ -245,6 +245,94 @@ describe("WebGpuGl uniforms", () => {
   });
 });
 
+describe("WebGpuGl pass replay", () => {
+  const frame = (s: ReturnType<typeof drawSetup>, draws: number) => {
+    for (let i = 0; i < draws; i += 1) s.draw();
+    s.calls.length = 0;
+    s.gl.present();
+    // Less the present blit's own draw.
+    const names = s.calls.map(([name]) => name);
+    names.splice(names.lastIndexOf("draw"), 1);
+    return names;
+  };
+
+  test("a pass that repeats last frame's commands is replayed from render bundles, and one that changes is encoded again", () => {
+    const s = drawSetup();
+    s.texture();
+    expect(frame(s, 3).filter((n) => n === "draw").length).toBe(3); // first frame: encoded
+    // The first repeat records the bundles and replays them; later repeats only replay.
+    for (const n of [1, 2]) {
+      const replayed = frame(s, 3);
+      expect(replayed.filter((name) => name === "draw").length).toBe(0);
+      expect(replayed).toContain("executeBundles");
+      expect(s.gl.stats.replayedPasses).toBe(n);
+    }
+    expect(s.gl.stats.bundles).toBe(1);
+    const changed = frame(s, 4);
+    expect(changed.filter((n) => n === "draw").length).toBe(4);
+    expect(changed).not.toContain("executeBundles");
+  });
+
+  test("a pass that alternates between two forms (a ping-pong target) is replayed in both", () => {
+    const s = drawSetup();
+    s.texture();
+    for (const draws of [3, 4, 3, 4]) frame(s, draws);
+    const replayed = s.gl.stats.replayedPasses;
+    for (const draws of [3, 4]) expect(frame(s, draws).filter((n) => n === "draw").length).toBe(0);
+    expect(s.gl.stats.replayedPasses).toBe(replayed + 2);
+  });
+
+  test("uniforms are bound relative to the pass's own range, so a pass after a different one still repeats", () => {
+    const s = drawSetup();
+    s.texture();
+    const fb = s.gl.createFramebuffer();
+    const t = s.texture();
+    s.gl.bindFramebuffer(0x8d40, fb);
+    s.gl.framebufferTexture2D(0x8d40, 0x8ce0, 0x0de1, t, 0);
+    // The default framebuffer's pass draws a different number of times each frame; fb's pass, after it, does not.
+    const twoPasses = (first: number) => {
+      s.gl.bindFramebuffer(0x8d40, null);
+      // Each draw with new uniforms (a moving object), so the first pass's share of the ring changes.
+      for (let i = 0; i < first; i += 1) { s.gl.program.dirty = true; s.draw(); }
+      s.gl.bindFramebuffer(0x8d40, fb);
+      s.gl.program.dirty = true;
+      s.draw();
+      s.gl.present();
+    };
+    twoPasses(1);
+    twoPasses(2);
+    const before = s.gl.stats.replayedPasses;
+    twoPasses(3);
+    expect(s.gl.stats.replayedPasses).toBe(before + 1);
+  });
+
+  test("a pass whose draws read a constant vertex attribute repeats, bound relative to its own range of the constant ring", () => {
+    const s = drawSetup();
+    s.texture();
+    // Attribute 0 is not an array: each draw writes its constant value into the batch's constant ring.
+    const plan = { id: 902, key: "constant", slots: [{ constant: true }], constants: [0], instanceCapacity: (n: number) => n };
+    s.gl.vertexPlan = () => plan;
+    const fb = s.gl.createFramebuffer();
+    s.gl.bindFramebuffer(0x8d40, fb);
+    s.gl.framebufferTexture2D(0x8d40, 0x8ce0, 0x0de1, s.texture(), 0);
+    // The default framebuffer's pass takes a different share of the constant ring each frame; fb's pass, after it, does not.
+    const twoPasses = (first: number) => {
+      s.gl.bindFramebuffer(0x8d40, null);
+      for (let i = 0; i < first; i += 1) { s.gl.vertexAttrib1f(0, i); s.draw(); }
+      s.gl.bindFramebuffer(0x8d40, fb);
+      s.gl.vertexAttrib1f(0, 7);
+      s.draw();
+      s.gl.present();
+    };
+    twoPasses(1);
+    twoPasses(2);
+    const before = s.gl.stats.replayedPasses;
+    twoPasses(3);
+    expect(s.gl.stats.replayedPasses).toBe(before + 1);
+    expect(s.gl.stats.unreplayablePasses).toBe(0);
+  });
+});
+
 describe("WebGpuGl multi-draw", () => {
   test("a multi-draw sets its bindings once and draws each item with firstInstance as its draw id", () => {
     const { gl, calls, texture } = drawSetup();
