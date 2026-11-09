@@ -88,15 +88,17 @@ describe("portable harness parity", () => {
     }
   });
 
+  // About 50 bun starts in a row; on a PC with every core busy one start took over 30 s (2026-11-09),
+  // so the limits are for a hang, not for speed.
   test("drive.mjs and shoot.mjs accept every portable flag and name each engine-only one", () => {
     for (const tool of tools) {
       const dir = materializeHarness(tool);
       try {
         for (const entry of CAPTURE_FLAGS.filter((flag) => flag.tools.includes(tool))) {
-          const run = spawnSync(process.execPath, [join(dir, `${tool}.mjs`), ...sampleArgv(entry), "--help"], { encoding: "utf8", timeout: 30_000 });
+          const run = spawnSync(process.execPath, [join(dir, `${tool}.mjs`), ...sampleArgv(entry), "--help"], { encoding: "utf8", timeout: 120_000 });
           expect({ flag: entry.flag, status: run.status }).toEqual({ flag: entry.flag, status: 0 });
           if (entry.engineOnly === undefined) continue;
-          const refused = spawnSync(process.execPath, [join(dir, `${tool}.mjs`), ...sampleArgv(entry)], { encoding: "utf8", timeout: 30_000 });
+          const refused = spawnSync(process.execPath, [join(dir, `${tool}.mjs`), ...sampleArgv(entry)], { encoding: "utf8", timeout: 120_000 });
           expect(refused.status).toBe(1);
           expect(refused.stderr).toContain(`${entry.flag} ${entry.engineOnly}`);
         }
@@ -104,5 +106,5 @@ describe("portable harness parity", () => {
         rmSync(dir, { recursive: true, force: true });
       }
     }
-  }, 60_000);
+  }, 600_000);
 });
