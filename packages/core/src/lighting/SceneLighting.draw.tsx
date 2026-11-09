@@ -129,40 +129,39 @@ function SingleShadowLight({ entry, profile, modulation }: { entry: DirectionalL
   );
 }
 
-/** Mounts the game's authored lights (ambient, hemisphere, directional with shadows, point and spot within the light budget) for the active graphics profile. */
-export function ConfiguredLighting({
-  lighting,
-  profile,
-  modulation,
-}: {
-  lighting: LightingConfig;
-  profile?: GraphicsProfile;
-  /** Day-cycle scaling for the first directional (the sun) and the ambient fill. */
-  modulation?: DaylightModulation;
-}) {
-  const dynamic = resolveDynamicLights(lighting);
+/**
+ * The shadow pipeline every shadow-casting light shares, whichever feature mounts it: the small
+ * caster cull and the static shadow cache are renderer-level, so they mount once per scene here —
+ * not inside any one lighting feature — and a sky-owned sun or a game-authored light gets the same
+ * treatment as a {@link ConfiguredLighting} directional.
+ * @internal
+ */
+export function ShadowPipeline({ profile }: { profile?: GraphicsProfile }) {
   const scene = useThree((s) => s.scene);
-  const shadowsCast = (lighting.directional ?? []).some((entry) => entry.castShadow === true);
-  const cullRef = useRef<ShadowCasterCull | null>(null);
+  const gl = useThree((s) => s.gl);
   const casterRadius = minShadowCasterRadius(
     profile?.shadowMapSize ?? SHADOW_CASTER_RADIUS_REFERENCE_MAP,
     MIN_SHADOW_CASTER_RADIUS,
   );
+  const cullRef = useRef<ShadowCasterCull | null>(null);
+  // Counts the frames this component sees, before the render: the shadow cache serves each light's
+  // map once per token, so a post pass that renders the scene again in the frame draws nothing twice.
+  const frameCount = useRef(0);
+  useFrame(() => {
+    frameCount.current += 1;
+  });
   useEffect(() => {
-    if (!shadowsCast) return;
     const cull = cullSmallShadowCasters(scene, casterRadius);
     cullRef.current = cull;
     return () => {
       cull.restore();
       cullRef.current = null;
     };
-  }, [scene, shadowsCast, casterRadius]);
-  const gl = useThree((s) => s.gl);
+  }, [scene, casterRadius]);
   useEffect(() => {
-    if (!shadowsCast) return;
     // Every backend: the audit reads back through a fence, which the WebGPU backend answers too, so
     // `perf shadow-audit --renderer webgpu` proves its cached maps as it does WebGL's.
-    const cache = installShadowCache(gl, scene);
+    const cache = installShadowCache(gl, scene, undefined, () => frameCount.current);
     if (typeof window !== "undefined") {
       window.__jgShadowCache = cache.handle;
       // `bun run perf shadow-audit` loads the page with this flag: every cached map is checked against a full redraw.
@@ -174,7 +173,17 @@ export function ConfiguredLighting({
         return {
           casters: stats.casters,
           static: stats.staticCasters,
+          dynamic: stats.dynamicCasters,
+          alwaysDynamic: stats.alwaysDynamicCasters,
           checks: stats.checks,
+          invocations: stats.invocations,
+          renders: stats.renders,
+          checkMs: stats.checkMs,
+          dynamicTris: stats.dynamicTris,
+          dynamicTrisInstanced: stats.dynamicTrisInstanced,
+          dynamicTrisBatched: stats.dynamicTrisBatched,
+          dynamicTrisAlways: stats.dynamicTrisAlways,
+          staticTris: stats.staticTris,
           cpuMs: stats.cpuMs,
           ...stats.passes,
           auditMaps: stats.audit.maps,
@@ -194,7 +203,7 @@ export function ConfiguredLighting({
       if (typeof window !== "undefined" && window.__jgShadowCache === cache.handle) delete window.__jgShadowCache;
       cache.dispose();
     };
-  }, [gl, scene, shadowsCast]);
+  }, [gl, scene]);
   useEffect(() => {
     const casterStats = sceneProbeReading(() => cullRef.current?.stats());
     return devtools.probes.registerSystem("render/shadows", {
@@ -207,6 +216,21 @@ export function ConfiguredLighting({
       },
     });
   }, [casterRadius]);
+  return null;
+}
+
+/** Mounts the game's authored lights (ambient, hemisphere, directional with shadows, point and spot within the light budget) for the active graphics profile. */
+export function ConfiguredLighting({
+  lighting,
+  profile,
+  modulation,
+}: {
+  lighting: LightingConfig;
+  profile?: GraphicsProfile;
+  /** Day-cycle scaling for the first directional (the sun) and the ambient fill. */
+  modulation?: DaylightModulation;
+}) {
+  const dynamic = resolveDynamicLights(lighting);
   const ambientRef = useRef<THREE.AmbientLight>(null);
   const hemisphereRef = useRef<THREE.HemisphereLight>(null);
   const baseAmbient = lighting.ambient?.intensity ?? 0.55;

@@ -1317,6 +1317,7 @@ async function measureProvisioned(options: MeasureOptions): Promise<PerfMeasure>
   await session.evaluate(`window.__jgPerfGl?.reset?.()`);
   const hasBreakdown = await resetBreakdown(session);
   await session.evaluate(`window.__jgengineAgent?.handle?.({ method: "debug_perf_reset" })`);
+  await session.evaluate(`window.__jgShadowCache?.resetStats?.()`);
 
   // Frame timings are sampled without the profiler running, so the fps and
   // percentiles are the loop the player gets; the profile window is separate.

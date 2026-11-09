@@ -4,6 +4,7 @@ import { isStableShadowDepth } from "./shadowCasters.draw";
 import {
   createShadowLayerState,
   dropShadowLayer,
+  sameShadowKey,
   shadowPassMayCache,
   planShadowPass,
   recordShadowPass,
@@ -70,8 +71,28 @@ export interface ShadowCacheStats {
   enabled: boolean;
   casters: number;
   staticCasters: number;
+  /** Casters that changed recently enough to still draw every pass instead of joining a layer. */
+  dynamicCasters: number;
+  /** Of those, the ones whose depth can never be cached (skinned, morphing, unstable depth). */
+  alwaysDynamicCasters: number;
   /** Caster checks run: one per shadow pass of the cache's scene that may serve a light from its layer. */
   checks: number;
+  /** Shadow passes the renderer asked for, cached or not. */
+  invocations: number;
+  /** Shadow passes that reached planning (updates on); invocations minus the ones that drew nothing. */
+  renders: number;
+  /** Milliseconds the caster checks have cost since the last reset. */
+  checkMs: number;
+  /** Triangles the changed casters submit when they draw over a layer, before frustum culling. */
+  dynamicTris: number;
+  /** Of {@link dynamicTris}, what instanced meshes carry. */
+  dynamicTrisInstanced: number;
+  /** Of {@link dynamicTris}, what batched meshes carry. */
+  dynamicTrisBatched: number;
+  /** Of {@link dynamicTris}, what never-cacheable casters (skinning, morphs, unstable depth) carry. */
+  dynamicTrisAlways: number;
+  /** Triangles the static casters hold in the layers. */
+  staticTris: number;
   /**
    * Milliseconds spent in the renderer's shadow step since the last reset, the cache's own checks
    * included; with the cache off it is three's step alone, so the two compare directly.
@@ -640,6 +661,53 @@ export class ShadowCasterTracker {
     return this.entries.size - this.dynamic.size;
   }
 
+  dynamicCount(): number {
+    return this.dynamicCasters.length;
+  }
+
+  alwaysDynamicCount(): number {
+    let count = 0;
+    for (const entry of this.entries.values()) if (entry.alwaysDynamic && entry.drawable) count += 1;
+    return count;
+  }
+
+  /** Triangles one caster submits per instance set: its geometry's index or position count over three, times instanced count. */
+  private tris(entry: CasterEntry): number {
+    const mesh = entry.object as THREE.Mesh & Partial<THREE.InstancedMesh>;
+    const geometry = mesh.geometry as THREE.BufferGeometry | undefined;
+    if (geometry === undefined || geometry === null) return 0;
+    const index = geometry.getIndex();
+    const position = geometry.getAttribute("position") as THREE.BufferAttribute | undefined;
+    const vertices = index !== null ? index.count : position?.count ?? 0;
+    const instances = mesh.isInstancedMesh === true ? Math.max(0, mesh.count) : 1;
+    return Math.round((vertices / 3) * instances);
+  }
+
+  /** Triangles the changed, drawable casters would submit if every light's dynamic pass drew them. */
+  dynamicTris(): { total: number; instanced: number; batched: number; plain: number; always: number } {
+    let total = 0;
+    let instanced = 0;
+    let batched = 0;
+    let plain = 0;
+    let always = 0;
+    for (const entry of this.dynamicCasters) {
+      const tris = this.tris(entry);
+      total += tris;
+      if (entry.alwaysDynamic) always += tris;
+      if (entry.kind === CasterKind.Instanced) instanced += tris;
+      else if (entry.kind === CasterKind.Batched) batched += tris;
+      else plain += tris;
+    }
+    return { total, instanced, batched, plain, always };
+  }
+
+  /** Triangles the static casters hold across the layers. */
+  staticTris(): number {
+    let total = 0;
+    for (const entry of this.entries.values()) if (entry.isStatic && entry.drawable) total += this.tris(entry);
+    return total;
+  }
+
   dispose(): void {
     for (const entry of this.entries.values()) entry.batchEdits?.release();
     this.entries.clear();
@@ -657,6 +725,8 @@ interface LightRecord {
   readonly frustum: THREE.Frustum;
   readonly key: number[];
   seenFrame: number;
+  /** Frame token of the last pass that left this light's map correct; -1 before the first. */
+  servedFrame: number;
 }
 
 interface ManagedShadow {
@@ -977,13 +1047,17 @@ class ShadowCache {
   private audit = false;
   private frame = 0;
   private checks = 0;
+  private checkMs = 0;
+  private invocations = 0;
   private cpuMs = 0;
   private lastType: number;
+  private lastCheckToken: number | undefined;
 
   constructor(
     private readonly renderer: ShadowCacheRenderer,
     scene: THREE.Object3D,
     private readonly now: () => number,
+    private readonly frameToken?: () => number,
   ) {
     this.tracker = new ShadowCasterTracker(scene, (sphere) => this.stale(sphere), now);
     this.lastType = renderer.shadowMap.type;
@@ -1028,6 +1102,7 @@ class ShadowCache {
   }
 
   private render(lights: THREE.Light[], scene: THREE.Object3D, camera: THREE.Camera): void {
+    this.invocations += 1;
     const renderer = this.renderer;
     const shadowMap = renderer.shadowMap;
     const type = shadowMap.type;
@@ -1054,6 +1129,7 @@ class ShadowCache {
       return;
     }
     const needsUpdate = shadowMap.needsUpdate;
+    const frameToken = this.frameToken?.();
     this.frame += 1;
     const reversed = renderer.state.buffers.depth.getReversed();
     const rest = this.rest;
@@ -1071,7 +1147,7 @@ class ShadowCache {
         }
         let record = this.lights.get(light);
         if (record === undefined) {
-          record = { state: createShadowLayerState(), layer: null, frustum: new THREE.Frustum(), key: [], seenFrame: this.frame };
+          record = { state: createShadowLayerState(), layer: null, frustum: new THREE.Frustum(), key: [], seenFrame: this.frame, servedFrame: -1 };
           this.lights.set(light, record);
         }
         record.seenFrame = this.frame;
@@ -1079,12 +1155,21 @@ class ShadowCache {
         // Only a light that may skip casters needs them checked: a far cascade stepping a texel draws them all.
         const mayCache = shadowPassMayCache(record.state, key);
         if (mayCache && !checked) {
-          this.tracker.check();
-          this.checks += 1;
           checked = true;
+          // The scene does not change between a frame's renders, so one check serves them all.
+          if (frameToken === undefined || frameToken !== this.lastCheckToken) {
+            const checkStart = this.now();
+            this.tracker.check();
+            this.checkMs += this.now() - checkStart;
+            this.checks += 1;
+            this.lastCheckToken = frameToken;
+          }
         }
         const reaches = mayCache && this.tracker.dynamicReaches(shadow.getFrustum(), passLayers(shadow, camera));
-        const plan = planShadowPass(record.state, key, reaches);
+        // A post pass that renders the scene again in the same frame asks for the same maps the
+        // first render just drew: the light's map already holds this key's image, so the pass holds.
+        const repeat = frameToken !== undefined && record.servedFrame === frameToken && sameShadowKey(record.state.drawnKey, key);
+        const plan = repeat ? "hold" : planShadowPass(record.state, key, reaches);
         if (plan !== "full") allFull = false;
         planned.push({ light, shadow, record, key, plan, reaches });
       }
@@ -1101,6 +1186,7 @@ class ShadowCache {
       }
       for (const { record, key, plan, reaches } of planned) {
         recordShadowPass(record.state, key, plan, reaches);
+        if (frameToken !== undefined) record.servedFrame = frameToken;
         this.passes[plan] += 1;
       }
     } finally {
@@ -1218,7 +1304,17 @@ class ShadowCache {
           enabled: this.enabled,
           casters: this.tracker.entries.size,
           staticCasters: this.tracker.staticCount(),
+          dynamicCasters: this.tracker.dynamicCount(),
+          alwaysDynamicCasters: this.tracker.alwaysDynamicCount(),
           checks: this.checks,
+          invocations: this.invocations,
+          renders: this.frame,
+          checkMs: this.checkMs,
+          ...(() => {
+            const t = this.tracker.dynamicTris();
+            return { dynamicTris: t.total, dynamicTrisInstanced: t.instanced, dynamicTrisBatched: t.batched, dynamicTrisAlways: t.always };
+          })(),
+          staticTris: this.tracker.staticTris(),
           cpuMs: this.cpuMs,
           passes: { ...this.passes },
           audit: { on: this.audit, ...this.auditStats },
@@ -1235,6 +1331,8 @@ class ShadowCache {
       resetStats: () => {
         for (const plan of Object.keys(this.passes) as ShadowPassPlan[]) this.passes[plan] = 0;
         this.checks = 0;
+        this.checkMs = 0;
+        this.invocations = 0;
         this.cpuMs = 0;
         this.auditStats.maps = 0;
         this.auditStats.mismatchedMaps = 0;
@@ -1274,8 +1372,13 @@ class ShadowCache {
  * the uninstall.
  * @internal
  */
-export function installShadowCache(renderer: ShadowCacheRenderer, scene: THREE.Object3D, now: () => number = () => performance.now()): { handle: ShadowCacheHandle; dispose: () => void } {
-  const cache = new ShadowCache(renderer, scene, now);
+export function installShadowCache(
+  renderer: ShadowCacheRenderer,
+  scene: THREE.Object3D,
+  now: () => number = () => performance.now(),
+  frameToken?: () => number,
+): { handle: ShadowCacheHandle; dispose: () => void } {
+  const cache = new ShadowCache(renderer, scene, now, frameToken);
   const canvas = (renderer as unknown as Partial<THREE.WebGLRenderer>).domElement;
   const restored = () => cache.contextRestored();
   canvas?.addEventListener?.("webglcontextrestored", restored);
