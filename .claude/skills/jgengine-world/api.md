@@ -2476,7 +2476,6 @@
 
 ## @jgengine/core/lighting/CascadedShadows.draw
 
-- `CASCADE_DEPTH_STEP_TEXELS` (const): const CASCADE_DEPTH_STEP_TEXELS: 8 — Depth-axis steps worth of a texel the snapped light may drift before it re-anchors.
 - `CascadeRefreshState` (interface): interface CascadeRefreshState — Per-frame cascade refresh bookkeeping: the centre each map was last rendered with.
 - `CsmMaterialSetup` (interface): interface CsmMaterialSetup — Structural slice of CSM so the patcher is testable without a renderer.
 
