@@ -674,7 +674,7 @@ export function drawBatcherOf(scene: THREE.Object3D): DrawBatcher | null {
 /** The shadow pass of the renderer the batches draw with: three's WebGL shadow map. */
 interface ShadowPassRenderer {
   isWebGPURenderer?: boolean;
-  shadowMap?: { render?: (lights: THREE.Light[], scene: THREE.Object3D, camera: THREE.Camera) => void };
+  shadowMap?: { render?(lights: THREE.Light[], scene: THREE.Scene, camera: THREE.Camera): void };
 }
 
 const sourceCasting = new WeakSet<object>();
@@ -690,7 +690,7 @@ function castFromSources(renderer: ShadowPassRenderer): boolean {
   if (renderer.isWebGPURenderer === true || shadowMap === undefined || render === undefined) return false;
   if (sourceCasting.has(shadowMap)) return true;
   sourceCasting.add(shadowMap);
-  shadowMap.render = function castingSources(this: unknown, lights: THREE.Light[], scene: THREE.Object3D, camera: THREE.Camera): void {
+  shadowMap.render = function castingSources(this: unknown, lights: THREE.Light[], scene: THREE.Scene, camera: THREE.Camera): void {
     const mask = camera.layers.mask;
     camera.layers.mask = mask | BATCHED_SOURCE_MASK;
     try {

@@ -24,6 +24,8 @@ const viewProjection = new THREE.Matrix4();
  * @internal
  */
 export class DrawBatchMesh extends THREE.BatchedMesh {
+  /** Typed against the base class, so a batch passes wherever a `BatchedMesh` is taken (the typings bind `this`). */
+  declare customSort: ((this: THREE.BatchedMesh, list: Array<{ start: number; count: number; z: number }>, camera: THREE.Camera) => void) | null;
   /** Bumped by every write that changes what a draw list holds. */
   private revision = 0;
   private builtRevision = -1;
@@ -116,7 +118,7 @@ export class DrawBatchMesh extends THREE.BatchedMesh {
   private sameBuild(camera: THREE.Camera, material: THREE.Material, drawFormat: string): boolean {
     const key = this.builtKey;
     const elements = viewProjection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse).elements;
-    const flags = (this.sortObjects ? 1 : 0) | (this.perObjectFrustumCulled ? 2 : 0) | (material.wireframe === true ? 4 : 0) |
+    const flags = (this.sortObjects ? 1 : 0) | (this.perObjectFrustumCulled ? 2 : 0) | ("wireframe" in material && material.wireframe === true ? 4 : 0) |
       (material.transparent ? 8 : 0) | (drawFormat === "merged" ? 16 : 0) | (camera.reversedDepth ? 32 : 0);
     const forward = this.sortObjects ? camera.matrixWorld.elements : null;
     let same = this.builtRevision === this.revision && key[16] === flags;
