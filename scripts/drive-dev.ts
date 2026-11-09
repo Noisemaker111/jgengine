@@ -76,6 +76,13 @@ import { driveShotPath, shotsDir } from "./shotPath";
 import { detail, takeVerboseFlag } from "./verbosity";
 import { parseDriveArgs, projectDirOf, DRIVE_HELP } from "./driveArgs";
 import { LockstepRecorder } from "./driveLockstep";
+import { readHitchSession, renderHitchSession, resetBreakdown } from "./perf-breakdown";
+import { stayOutOfTheWay } from "./machine-priority";
+import { acquirePerfLock } from "./perf-lock";
+import { installPageRenderCounter, readRenderCounts, renderRenderCounts, resetRenderCounter } from "./perf-renders";
+import { aggregateAllocations, type HeapSampleNode } from "./perf-play";
+import { describeFirstPaints, endTrace, markTraceAnchor, readTraceEvents, renderTracedHitches, startTrace, traceHitches } from "./perf-trace";
+import { profileHitches, renderProfiledHitches, startCpuProfile, stopCpuProfile } from "./perf-cpu";
 
 type Step = CaptureStep;
 
@@ -210,7 +217,6 @@ if (flow !== null && !flow.browser && !args.browser) {
   process.exit(finishFlow(args.flow ?? "flow", await runFlowHeadless(flow, args.state === undefined ? {} : { state: args.state })));
 }
 
-sweepCaptureProfiles();
 // A game captured from this checkout pulls the packs it references first, the way its own `dev` does,
 // so a missing model in the shot is a real path bug rather than an unprovisioned checkout.
 if (args.url === undefined && args.site === undefined) await provisionCapturedGame(args.gameDir ?? resolve(import.meta.dir, "../games", args.game));
@@ -258,6 +264,25 @@ for (const step of args.steps) {
   const path = step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}${qualitySuffix(args.quality)}${draftSuffix(args.draft)}${quickSuffix(args.quick)}.png`);
   if (!preparedShots.has(path)) preparedShots.set(path, clearShotTarget(path));
 }
+// An external server that is down fails the run before the profile sweep, which lists every
+// browser process and took 3 to 4 s on a busy Windows PC (2026-11-08).
+// An external --url never attaches the daemon, so its storage refusal is known here too.
+if (args.url !== undefined) {
+  try {
+    requireReusableCaptureStorage(args.reuseStorage, args.connect !== undefined, false);
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : error);
+    process.exit(1);
+  }
+  if (!(await isUp(args.url))) {
+    console.error(`drive: nothing is listening at ${args.url} — start that external server first`);
+    process.exit(1);
+  }
+}
+// The drive and the headless Chrome it launches run below normal priority, so Jon's game comes first;
+// a timed drive puts only its own Chrome back to normal.
+stayOutOfTheWay();
+sweepCaptureProfiles();
 
 const viewport: ViewportOverride = { width: args.width, height: args.height };
 const clickPoints = new Map<CaptureStep, { x: number; y: number }>();
@@ -281,6 +306,8 @@ function targetUrl(base: string): URL {
   if (args.run !== undefined) url.searchParams.set("run", args.run);
   if (args.style !== undefined) url.searchParams.set("style", args.style);
   if (args.settle !== undefined) url.searchParams.set("settle", String(args.settle));
+  // Local telemetry installs the frame breakdown in a dev page and a built one alike.
+  if (args.hitches) url.searchParams.set("telemetry", "local");
   const aim = parseLookAim(args.look, args.lookFrom, { withNamedView: args.view !== undefined });
   if (aim !== undefined) {
     for (const [key, value] of Object.entries(lookSearchParams(aim))) url.searchParams.set(key, value);
@@ -291,9 +318,21 @@ function targetUrl(base: string): URL {
 
 async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
   requireReusableCaptureStorage(args.reuseStorage, args.connect !== undefined, daemon !== null);
-  if (args.url !== undefined && !(await isUp(args.url))) {
-    throw new Error(`drive: nothing is listening at ${args.url} — start that external server first`);
+  // --hitches and --trace time the run's frames, so the drive holds the perf lock from before it asks
+  // for its dev server (one asked for before a long wait can be gone after it); a drive that times
+  // nothing does not wait for it.
+  const timed = args.hitches || args.trace;
+  const releaseLock = timed
+    ? await acquirePerfLock(`drive ${args.game}${args.flow === undefined ? "" : ` ${args.flow}`}${args.hitches ? " --hitches" : ""}${args.trace ? " --trace" : ""}`)
+    : () => {};
+  try {
+    return await driveLocked(daemon, timed);
+  } finally {
+    releaseLock();
   }
+}
+
+async function driveLocked(daemon: ShootDaemonState | null, timed: boolean): Promise<number> {
   const dev = args.url !== undefined
     ? { base: args.url, child: null, pid: undefined }
     : await withStepDeadline("start or reuse the dev server", SERVER_STEP_MS, async () =>
@@ -320,6 +359,8 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
       leaveWarm: args.keep || daemon !== null,
       chromePrefix: "jg-drive-",
       turn: brokerTurn(daemon),
+      // A timed drive's hitches are the product, so its own Chrome draws at normal priority; a capture keeps the inherited below-normal.
+      chromePriority: timed ? "normal" : "inherit",
       headed: args.headed,
       // One real render + capture per output frame — give the watchdog room.
       ...(lockstep ? { hardDeadlineMs: args.timeoutMs + 120_000 + lockstepProjected * 3_000 } : {}),
@@ -332,6 +373,7 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
         await session.send("Page.enable");
         await session.send("Runtime.enable");
         await applyDevice(session, args.device, args.size, viewport);
+        if (args.renders) await installPageRenderCounter(session);
         const url = targetUrl(dev.base);
         const aim = parseLookAim(args.look, args.lookFrom, { withNamedView: args.view !== undefined });
         if (!args.reuseStorage) await clearOriginStorage(session, new URL(url.toString()).origin);
@@ -350,6 +392,25 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
         }
         await new Promise((r) => setTimeout(r, 500));
         await installFrameCounter(session);
+        if (args.hitches && !(await resetBreakdown(session))) {
+          throw new Error("drive: --hitches found no frame breakdown on the page (window.__jgFrameBreakdown); the game renders no 3D scene, or local telemetry did not start");
+        }
+        // The page clock at the hitch log's zero, for lining a CPU profile up with its hitches.
+        const hitchZeroMs = (await session.evaluate<number>("performance.now()")) ?? 0;
+        if (args.trace) {
+          await startTrace(session);
+          await markTraceAnchor(session);
+        }
+        const cpuStartedAtMs = args.cpu ? await startCpuProfile(session) : 0;
+        if (args.renders && !(await resetRenderCounter(session))) {
+          throw new Error("drive: --renders found no render counter on the page; another React DevTools hook was installed first");
+        }
+        const allocationsFrom = Date.now();
+        if (args.allocations) {
+          await session.send("HeapProfiler.enable");
+          // Collected objects are the garbage itself; without these flags only survivors are counted.
+          await session.send("HeapProfiler.startSampling", { samplingInterval: 16_384, includeObjectsCollectedByMajorGC: true, includeObjectsCollectedByMinorGC: true });
+        }
 
         let recorder: LockstepRecorder | null = null;
         if (lockstep) {
@@ -512,6 +573,48 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
           },
         });
         if (done.failed > 0) code = 1;
+        const runName = `${args.game}-${args.flow ?? "drive"}${args.url === undefined ? "" : "-url"}`;
+        const cpuProfile = args.cpu ? await stopCpuProfile(session) : null;
+        const hitchRead = args.hitches ? await readHitchSession(session) : null;
+        if (args.hitches) {
+          if (hitchRead === null) throw new Error("drive: --hitches lost the page's frame breakdown before the run ended");
+          const out = resolve(import.meta.dir, "..", ".scratch", "perf", "hitches", `${runName}.json`);
+          mkdirSync(dirname(out), { recursive: true });
+          writeFileSync(out, JSON.stringify(hitchRead, null, 2));
+          console.log(renderHitchSession(hitchRead, `hitches ${runName}`));
+          console.log(`hitch record: ${out}`);
+        }
+        if (args.trace) {
+          const out = resolve(import.meta.dir, "..", ".scratch", "perf", "traces", `${runName}.trace.json`);
+          mkdirSync(dirname(out), { recursive: true });
+          await endTrace(session, out);
+          console.log(`trace: ${out}`);
+          if (hitchRead !== null) {
+            const traced = traceHitches(await readTraceEvents(out), hitchRead.hitches);
+            console.log(renderTracedHitches(traced, await describeFirstPaints(session, traced)));
+          }
+        }
+        if (cpuProfile !== null) {
+          if (hitchRead === null) throw new Error("drive: --cpu names what ran in each hitch; pass --hitches too");
+          console.log(renderProfiledHitches(profileHitches(cpuProfile, cpuStartedAtMs, hitchZeroMs, hitchRead.hitches)));
+        }
+        if (args.renders) {
+          const counts = await readRenderCounts(session);
+          if (counts === null) throw new Error("drive: --renders lost the page's render counter before the run ended");
+          const out = resolve(import.meta.dir, "..", ".scratch", "perf", "renders", `${args.game}-${args.flow ?? "drive"}.json`);
+          mkdirSync(dirname(out), { recursive: true });
+          writeFileSync(out, JSON.stringify(counts, null, 2));
+          console.log(renderRenderCounts(counts, `renders ${args.game}-${args.flow ?? "drive"}`));
+          console.log(`render record: ${out}`);
+        }
+        if (args.allocations) {
+          const heap = await session.send("HeapProfiler.stopSampling");
+          const head = (heap["profile"] as { head?: HeapSampleNode } | undefined)?.head;
+          if (head === undefined) throw new Error("drive: --allocations got no heap profile back from the page");
+          const seconds = (Date.now() - allocationsFrom) / 1000;
+          console.log(`allocations ${args.game}-${args.flow ?? "drive"} over ${seconds.toFixed(1)} s, per second of play (sampled):`);
+          for (const entry of aggregateAllocations(head, seconds * 1000, 25)) console.log(`  ${entry.mbPerSecond.toFixed(2).padStart(7)} MB/s  ${entry.fn}  ${entry.at}`);
+        }
 
         if (recorder !== null) {
           await recorder.stop();

@@ -469,7 +469,7 @@ export interface SkyEnvironmentConfig {
    * the first directional light's direction so the dome sun agrees with the shadows.
    */
   sun?: SkySunConfig;
-  /** Sky-dome sphere radius in world units. Enlarge for a playfield sited far from the origin so the viewer never exits the dome. Must stay below the camera far plane or the dome depth-clips to black. Default 260. */
+  /** Sky-dome sphere radius in world units. Enlarge for a playfield sited far from the origin so the viewer never exits the dome. The dome draws on the far plane, so any radius shows. Default 260. */
   radius?: number;
   /** Horizon haze-band strength: 0 removes the dusty band, ~1 makes it heavy. Default 0.5. */
   hazeStrength?: number;

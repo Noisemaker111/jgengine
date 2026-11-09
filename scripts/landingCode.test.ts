@@ -1,5 +1,6 @@
 // A lane made before a landing fix must still land with the fix: `lane:close` runs beta's current
-// landing code, not the copy in the lane's worktree (scripts/landing-code.ts).
+// landing code, not the copy in the lane's worktree, unless the lane changes that code itself
+// (scripts/landing-code.ts).
 import { spawnSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -53,8 +54,9 @@ beforeAll(() => {
   git(top, ["clone", "-q", "-b", "beta", origin, lane]);
   git(lane, ["checkout", "-q", "-b", "lane"]);
 
-  fixOnBeta(seed, "lane-close.ts", 'summary: "verify, land,', 'summary: "BETA LANDING FIX verify, land,');
-  fixOnBeta(seed, "land-queue.ts", "console.error(`land:queue: ${(error as Error).message}`)", "console.error(`BETA QUEUE FIX ${(error as Error).message}`)");
+  fixOnBeta(seed, "lane-close.ts", 'summary: "verify, land and merge', 'summary: "BETA LANDING FIX verify, land and merge');
+  fixOnBeta(seed, "land-batch.ts", 'summary: "land several finished branches', 'summary: "BETA BATCH FIX land several finished branches');
+  fixOnBeta(seed, "verify-receipt.ts", "/** A separate receipt", "/** BETA RECEIPT FORMAT. A separate receipt");
   git(seed, ["commit", "-q", "-am", "a landing fix lands on beta"]);
   git(seed, ["push", "-q", "origin", "beta"]);
 }, 60_000);
@@ -68,9 +70,9 @@ describe("lane:close runs beta's landing code", () => {
     expect(ran.status).toBe(0);
   }, 30_000);
 
-  test("the queue mode starts beta's land-queue too", () => {
-    const ran = bun(lane, ["scripts/lane-close.ts", "--queue", "--help"]);
-    expect(ran.out).toContain("BETA QUEUE FIX");
+  test("the batch mode starts beta's land-batch too", () => {
+    const ran = bun(lane, ["scripts/lane-close.ts", "--batch", "--help"]);
+    expect(ran.out).toContain("BETA BATCH FIX");
   }, 30_000);
 
   test("beta's copy acts on the lane it was started in, not on itself", () => {
@@ -91,5 +93,44 @@ describe("lane:close runs beta's landing code", () => {
     const seen = JSON.parse(ran.out.trim().split("\n").pop()!) as { root: string; land: string };
     expect(realpathSync(seen.root)).toBe(realpathSync(lane));
     expect(seen.land).toBe(join(cache, copy!, "scripts", "land.ts").split("\\").join("/"));
+  }, 30_000);
+
+  test("a lane whose receipt module is older than beta's is told so by beta's copy, and one that matches is not", () => {
+    const cache = join(git(lane, ["rev-parse", "--path-format=absolute", "--git-common-dir"]), "jg-landing");
+    const copy = readdirSync(cache).find((name) => existsSync(join(cache, name, ".jg-landing-code")));
+    expect(copy).toBeDefined();
+    const module = join(cache, copy!, "scripts", "landing-code.ts");
+    const probe = join(top, "receipts-probe.ts");
+    writeFileSync(
+      probe,
+      `import { receiptsBehind } from ${JSON.stringify(module)};\n` +
+        `const url = new URL("file:///" + ${JSON.stringify(module.split("\\").join("/"))}).href;\n` +
+        `console.log(JSON.stringify({ behind: receiptsBehind(url, ${JSON.stringify(lane)}) }));\n`,
+    );
+    const seen = (): string | null => (JSON.parse(bun(lane, [probe]).out.trim().split("\n").pop()!) as { behind: string | null }).behind;
+    expect(seen()).toBe("this lane's scripts/verify-receipt.ts is older than beta's, so beta's landing code cannot read what its verify:fast records");
+    const path = join(lane, "scripts", "verify-receipt.ts");
+    const before = readFileSync(path, "utf8");
+    // The lane catches up with beta's receipts; Windows line endings alone are not a difference.
+    writeFileSync(path, readFileSync(join(seed, "scripts", "verify-receipt.ts"), "utf8").replace(/\n/g, "\r\n"));
+    try {
+      expect(seen()).toBeNull();
+    } finally {
+      writeFileSync(path, before);
+    }
+  }, 30_000);
+
+  test("a lane that changes the landing code itself lands with its own copy", () => {
+    const path = join(lane, "scripts", "land.ts");
+    const before = readFileSync(path, "utf8");
+    writeFileSync(path, `${before}\n// this lane changes how lanes land\n`);
+    try {
+      const ran = bun(lane, ["scripts/lane-close.ts", "--help"]);
+      expect(ran.out).toContain("this lane changes the landing code (scripts/land.ts), so it lands with its own copy");
+      expect(ran.out).not.toContain("BETA LANDING FIX");
+      expect(ran.status).toBe(0);
+    } finally {
+      writeFileSync(path, before);
+    }
   }, 30_000);
 });

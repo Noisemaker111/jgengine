@@ -60,6 +60,8 @@ apps/dev/public/library-materials/
 .agent-bootstrap.lock
 .agent-bootstrap.log
 .agent-bootstrap.installing
+# T3 Code's worktree setup writes the bootstrap's output here; land refused it and stopped a lane:close.
+/.scratch-bootstrap.out
 apps/web/.wrangler/
 
 # One checkout home and one scratch folder (JonsOCsetup docs/worktrees.md)

@@ -2,11 +2,14 @@ import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
 import { GTAOPass } from "three/examples/jsm/postprocessing/GTAOPass.js";
 import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass.js";
-import { POSTFX_OVERLAY_USERDATA } from "./postfxOverlay.draw";
+import { excludesOverlays, type PrepassListRenderer } from "./postfxOverlay.draw";
 import { renderShadowlessPrepass } from "./shadowPrepass.draw";
 
-function renderer(autoUpdate = true, needsUpdate = false): Pick<THREE.WebGLRenderer, "shadowMap"> {
-  return { shadowMap: { autoUpdate, needsUpdate } as THREE.WebGLShadowMap };
+function renderer(autoUpdate = true, needsUpdate = false): Pick<THREE.WebGLRenderer, "shadowMap"> & PrepassListRenderer {
+  return {
+    shadowMap: { autoUpdate, needsUpdate } as THREE.WebGLShadowMap,
+    renderLists: { get: () => ({ opaque: [], transmissive: [], transparent: [], finish: () => {} }) },
+  };
 }
 
 describe("postfx shadow prepasses", () => {
@@ -38,7 +41,7 @@ describe("postfx shadow prepasses", () => {
     };
     gl.render(scene);
     for (const pass of passes) {
-      renderShadowlessPrepass(gl, scene, [], () => pass.render(gl as unknown as THREE.WebGLRenderer, writeBuffer, readBuffer, 0, false));
+      renderShadowlessPrepass(gl, scene, excludesOverlays, () => pass.render(gl as unknown as THREE.WebGLRenderer, writeBuffer, readBuffer, 0, false));
     }
     expect(sceneDraws).toBe(3);
     expect(shadowUpdates).toBe(1);
@@ -55,7 +58,7 @@ describe("postfx shadow prepasses", () => {
     "preserves shadow update policy auto=%s dirty=%s",
     (autoUpdate, needsUpdate) => {
       const gl = renderer(autoUpdate, needsUpdate);
-      expect(renderShadowlessPrepass(gl, new THREE.Scene(), [], () => {
+      expect(renderShadowlessPrepass(gl, new THREE.Scene(), excludesOverlays, () => {
         expect(gl.shadowMap.autoUpdate).toBe(false);
         expect(gl.shadowMap.needsUpdate).toBe(false);
         return "depth";
@@ -68,20 +71,9 @@ describe("postfx shadow prepasses", () => {
   test("restores a pending update after a prepass throws", () => {
     const gl = renderer(false, true);
     const error = new Error("prepass failed");
-    const scene = new THREE.Scene();
-    const overlay = new THREE.Group();
-    Object.assign(overlay.userData, POSTFX_OVERLAY_USERDATA);
-    const alreadyHidden = overlay.clone();
-    alreadyHidden.visible = false;
-    scene.add(overlay, alreadyHidden);
-    const hidden: THREE.Object3D[] = [];
-    expect(() => renderShadowlessPrepass(gl, scene, hidden, () => {
-      expect(overlay.visible).toBe(false);
+    expect(() => renderShadowlessPrepass(gl, new THREE.Scene(), excludesOverlays, () => {
       throw error;
     })).toThrow(error);
-    expect(overlay.visible).toBe(true);
-    expect(alreadyHidden.visible).toBe(false);
-    expect(hidden).toHaveLength(0);
     expect(gl.shadowMap.autoUpdate).toBe(false);
     expect(gl.shadowMap.needsUpdate).toBe(true);
   });
@@ -89,34 +81,24 @@ describe("postfx shadow prepasses", () => {
   test("nested prepasses restore the outer disabled scope", () => {
     const gl = renderer(true, true);
     const scene = new THREE.Scene();
-    const overlay = new THREE.Group();
-    Object.assign(overlay.userData, POSTFX_OVERLAY_USERDATA);
-    scene.add(overlay);
-    const outerHidden: THREE.Object3D[] = [];
-    const innerHidden: THREE.Object3D[] = [];
-    renderShadowlessPrepass(gl, scene, outerHidden, () => {
-      renderShadowlessPrepass(gl, scene, innerHidden, () => {
+    renderShadowlessPrepass(gl, scene, excludesOverlays, () => {
+      renderShadowlessPrepass(gl, scene, excludesOverlays, () => {
         expect(gl.shadowMap.autoUpdate).toBe(false);
         expect(gl.shadowMap.needsUpdate).toBe(false);
         expect(scene.matrixWorldAutoUpdate).toBe(false);
-        expect(overlay.visible).toBe(false);
       });
       expect(gl.shadowMap.autoUpdate).toBe(false);
       expect(gl.shadowMap.needsUpdate).toBe(false);
-      expect(overlay.visible).toBe(false);
     });
     expect(gl.shadowMap.autoUpdate).toBe(true);
     expect(gl.shadowMap.needsUpdate).toBe(true);
     expect(scene.matrixWorldAutoUpdate).toBe(true);
-    expect(overlay.visible).toBe(true);
-    expect(outerHidden).toHaveLength(0);
-    expect(innerHidden).toHaveLength(0);
   });
 
   test("a throwing prepass restores the scene's matrix pass", () => {
     const scene = new THREE.Scene();
     const error = new Error("prepass failed");
-    expect(() => renderShadowlessPrepass(renderer(), scene, [], () => {
+    expect(() => renderShadowlessPrepass(renderer(), scene, excludesOverlays, () => {
       expect(scene.matrixWorldAutoUpdate).toBe(false);
       throw error;
     })).toThrow(error);

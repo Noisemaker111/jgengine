@@ -85,6 +85,28 @@ describe("cascade cadence and shadow reach", () => {
     }
   });
 
+  test("frames with no valid camera (NaN lights) draw nothing and the first valid frame redraws every cascade", () => {
+    const lights = Array.from({ length: 3 }, () => new THREE.DirectionalLight());
+    const state = createCascadeRefreshState(1);
+    const direction = new THREE.Vector3(-0.5, -1, -0.4).normalize();
+    // A canvas measured at zero size: aspect 0, so CSM places every light at NaN for a while.
+    for (let frame = 0; frame < 5; frame++) {
+      for (const light of lights) light.position.set(Number.NaN, Number.NaN, Number.NaN);
+      refreshCascadesOnTexelStep(lights, direction, state);
+      for (const light of lights) expect(light.shadow.autoUpdate).toBe(false);
+      drawShadowPass(lights);
+    }
+    for (let frame = 0; frame < 4; frame++) {
+      for (const light of lights) light.position.set(3, 20, 4);
+      refreshCascadesOnTexelStep(lights, direction, state);
+      if (frame === 0) for (const light of lights) expect(light.shadow.autoUpdate).toBe(true);
+      for (const light of lights) expect(Number.isFinite(light.position.x)).toBe(true);
+      drawShadowPass(lights);
+    }
+    // Settled: only the player cascade keeps refreshing.
+    expect(lights.map((light) => light.shadow.autoUpdate)).toEqual([true, false, false]);
+  });
+
   test("shadow reach follows the tier and never exceeds the authored value", () => {
     expect(resolveShadowDistance(resolveGraphicsProfile("high"))).toBe(200);
     expect(resolveShadowDistance(resolveGraphicsProfile("medium"))).toBe(150);

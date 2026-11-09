@@ -69,6 +69,16 @@ export type DriveArgs = {
   flows: boolean;
   /** Also write one JSONL line per step here. */
   log?: string | undefined;
+  /** `--hitches`: record every frame over 33 ms of the run with its cause, and print them at the end. */
+  hitches: boolean;
+  /** `--renders`: count every React component render of the run and print the busiest components. */
+  renders: boolean;
+  /** `--allocations`: sample who allocated what over the run and print the biggest allocators. */
+  allocations: boolean;
+  /** `--cpu`: sample the page's CPU over the run and list the functions that took each hitch. */
+  cpu: boolean;
+  /** `--trace`: record a Chrome trace of every process (GPU process included) and name the long slices in each hitch. */
+  trace: boolean;
 };
 
 export const DRIVE_HELP = `bun run drive <gameId> --flow <name>     (a TypeScript route from <game>/proofs/flows/)
@@ -126,6 +136,21 @@ Notes:
   --port starts (or reuses) the dev runner on that port instead of the per-checkout default.
   --headed opens a real Chrome window off-screen, for debugging a drive; every run is
   headless unless you ask, and the window never lands on the desktop.
+  --hitches records every frame over 33 ms for the whole run (not only the breakdown's last 30 s)
+  with its cause and the scripts the browser ran in it, mapped to source lines; it prints them at
+  the end and writes .scratch/perf/hitches/<game>-<flow>.json. Use it with a --flow to find the
+  stalls a player feels in a long session; with --url it measures a built page the same way.
+  --renders counts every React component render over the run (a stand-in for React DevTools'
+  hook, installed before React loads) and prints the components that rendered most, so a HUD
+  that re-renders whole on every tick shows by name. Names are readable on a dev page.
+  --allocations samples every allocation over the run, the garbage included, and prints the
+  functions that allocated most per second: what the garbage collection pauses in --hitches
+  are collecting. The sampler costs a little per allocation, so measure stalls without it.
+  --trace records a Chrome trace of every process over the run (.scratch/perf/traces/) and, with
+  --hitches, names the longest slices of the GPU process and the browser in each hitch: the
+  stalls --hitches can only call "outside the game's frame work".
+  --cpu samples the page's CPU over the run and, with --hitches, lists the functions that ran
+  longest inside each hitch: what a slow keypress or frame callback spent its time on.
   --quick is the iteration preset: 960x540, one settled frame in a 2s window, no
   video, no perf pass. It cannot support a 1600x900 pixel claim or a frame-time
   claim, so asking for either alongside it fails; re-run without --quick for
@@ -168,6 +193,12 @@ export function parseDriveArgs(argv: string[]): DriveArgs {
   // `--cold` is parsed here, not in CAPTURE_FLAGS: the portable harness has no daemon to skip.
   const cold = quick.argv.includes("--cold");
   const headed = quick.argv.includes("--headed");
+  // `--hitches` is parsed here too: it reads the engine's frame breakdown, which the portable harness lacks.
+  const hitches = quick.argv.includes("--hitches");
+  const renders = quick.argv.includes("--renders");
+  const allocations = quick.argv.includes("--allocations");
+  const trace = quick.argv.includes("--trace");
+  const cpu = quick.argv.includes("--cpu");
   // `--game-dir` is parsed here, not in CAPTURE_FLAGS: the portable harness has no `games/` to swap.
   const served = splitGameDir(quick.argv);
   // Flows resolve inside parseCaptureArgs, so the served folder must be known first or `--flow`
@@ -175,7 +206,7 @@ export function parseDriveArgs(argv: string[]): DriveArgs {
   if (served.dir !== null) process.env["JG_GAME_DIR"] = resolve(served.dir);
   const parsed = parseCaptureArgs(
     "drive",
-    served.argv.filter((arg) => arg !== "--headed" && arg !== "--cold"),
+    served.argv.filter((arg) => arg !== "--headed" && arg !== "--cold" && arg !== "--hitches" && arg !== "--renders" && arg !== "--allocations" && arg !== "--trace" && arg !== "--cpu"),
     CAPTURE_FLAGS,
   );
   const o = parsed.options;
@@ -238,6 +269,11 @@ export function parseDriveArgs(argv: string[]): DriveArgs {
     browser: o["browser"] === true,
     flows: o["flows"] === true,
     log: str("log"),
+    hitches,
+    renders,
+    allocations,
+    trace,
+    cpu,
   };
   if (args.help) return args;
   if (args.flows && (args.flow !== undefined || args.steps.length > 0)) {

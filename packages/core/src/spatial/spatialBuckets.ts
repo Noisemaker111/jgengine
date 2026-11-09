@@ -10,8 +10,13 @@
 export interface SpatialBuckets {
   /** Register `id` under every cell its rectangle overlaps. Ids are returned in insertion order. */
   insert(id: number, minX: number, minZ: number, maxX: number, maxZ: number): void;
-  /** Ids whose rectangle overlaps the query box, ascending and deduped, written into `out`. */
-  query(minX: number, minZ: number, maxX: number, maxZ: number, out: number[]): number[];
+  /**
+   * Writes the ids whose rectangle overlaps the query box, ascending and deduped, to the front of
+   * `out` and returns how many: entries past that count are stale. `out` keeps its storage between
+   * queries (V8 frees an array's storage when its length is set to 0), so a per-sample query in a
+   * height or palette sampler allocates nothing.
+   */
+  query(minX: number, minZ: number, maxX: number, maxZ: number, out: number[]): number;
 }
 
 /** @internal */
@@ -54,7 +59,7 @@ export function buildSpatialBuckets(cellSize: number): SpatialBuckets {
       }
     },
     query(minX, minZ, maxX, maxZ, out) {
-      out.length = 0;
+      let found = 0;
       generation += 1;
       if (generation >= 2147483647) {
         marks.fill(0);
@@ -73,14 +78,17 @@ export function buildSpatialBuckets(cellSize: number): SpatialBuckets {
           for (const id of bucket) {
             if (marks[id] === generation) continue;
             marks[id] = generation;
-            out.push(id);
+            out[found] = id;
+            found += 1;
           }
         }
       }
       // A query returns a few dozen ids at most; insertion sort beats a comparator sort there several times over.
-      if (out.length > 64) out.sort((a, b) => a - b);
-      else {
-        for (let i = 1; i < out.length; i += 1) {
+      if (found > 64) {
+        out.length = found;
+        out.sort((a, b) => a - b);
+      } else {
+        for (let i = 1; i < found; i += 1) {
           const id = out[i]!;
           let j = i - 1;
           while (j >= 0 && out[j]! > id) {
@@ -90,7 +98,7 @@ export function buildSpatialBuckets(cellSize: number): SpatialBuckets {
           out[j + 1] = id;
         }
       }
-      return out;
+      return found;
     },
   };
 }

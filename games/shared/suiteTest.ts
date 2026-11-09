@@ -8,7 +8,7 @@ import { readGameSuiteConfig, renderSuiteText, scoreGameSuite, suiteRegressions 
 import { runGameSuite, type LoadedSuiteProof } from "@jgengine/core/suite/runSuiteProof.draw";
 import { isSuiteProof } from "@jgengine/core/suite/suiteProof";
 
-import { readGameProject, readSuiteReport, SUITE_PROOFS_DIR, SUITE_REPORT_FILE, SUITE_RUN_OUT_ENV, SUITE_WRITE_ENV } from "./suiteReport";
+import { readGameProject, readSuiteReport, SUITE_PROOFS_DIR, SUITE_REPORT_FILE, SUITE_RUN_OUT_ENV } from "./suiteReport";
 
 async function loadProofs(gameDir: string): Promise<LoadedSuiteProof[]> {
   const dir = join(gameDir, SUITE_PROOFS_DIR);
@@ -26,7 +26,7 @@ async function loadProofs(gameDir: string): Promise<LoadedSuiteProof[]> {
 
 /**
  * A game's suite test: runs every proof in `proofs/sim/` and the content check headless, writes
- * `proofs/suite-report.json` (outside CI, or under it with `SUITE_WRITE_ENV`, as a boat machine runs), and fails when the game's suite declarations are wrong or an
+ * `proofs/suite-report.json` (outside CI), and fails when the game's suite declarations are wrong or an
  * entry the committed report had proven is no longer proven. A missing or failing entry that was never
  * proven is the game's honest score, not a test failure.
  */
@@ -45,7 +45,7 @@ export function suiteTest(gameDir: string, content: SuiteContent | null = null):
     const runOut = process.env[SUITE_RUN_OUT_ENV];
     if (runOut !== undefined && runOut !== "") writeFileSync(runOut, written);
     // A regressed run keeps the committed report, so the next run still sees what was proven.
-    const writes = process.env["CI"] === undefined || process.env[SUITE_WRITE_ENV] === "1";
+    const writes = process.env["CI"] === undefined;
     if (writes && regressed.length === 0) writeFileSync(join(gameDir, SUITE_REPORT_FILE), written);
     expect(score.problems).toEqual([]);
     expect(regressed).toEqual([]);

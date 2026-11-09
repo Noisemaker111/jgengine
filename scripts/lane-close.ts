@@ -1,55 +1,58 @@
-// The last step of a lane, done as one command so it is not a paragraph of
-// remembered steps:
+// The last step of a lane, done as one command so it is not a paragraph of remembered steps:
 //
 //   bun run lane:close -m "Wolves hunt in packs"   # the current branch's lane, with its change note
 //   bun run lane:close --pr 2274
 //   bun run lane:close --allow bun.lock  # keep a file the commit guards refuse
 //
-// It runs `bun run preflight --no-verify` (the install, conflict markers and gen, on this PC), then
-// `verify:fast --landing`: the type-checks, every gate CI runs and the tests, on a boat.dev Linux
-// machine when boat is usable, with only the steps that need this PC (a game boot, a Windows-only
-// test) here in a fairshare slot (scripts/verify-boat.ts). It writes the game suite scores those tests earned, then lands (staging and committing the lane's work first, with a `changes/` note written
-// from the -m messages, the API the diff changed and its engine seam - see scripts/change-note.ts), asks `ci:status` once for the truth about the checks, and
-// prints a report skeleton a lane can paste instead of writing prose. It exits 1 when
-// verify or land failed and 3 when it cannot answer (no PR, no branch).
+// It runs `bun run preflight --no-verify` (the install, conflict markers and gen), then
+// `verify:fast --landing`: the type-checks, every gate CI runs, the tests, boots and the site build.
+// On Jon's PC both run on his boat host when it is up (`boatGate`: the working tree goes there as a
+// commit, the output streams back, and the receipt and gen output come home), so landings stop
+// loading the PC; when the host cannot run it they run here after a `degraded:` line. Elsewhere
+// (the host itself, CI) they run on the machine the session runs on. A passing verify:fast --landing of this exact tree, run by hand just before, is reused in one line instead of run again. It writes the
+// game suite scores those tests earned, lands (staging and committing the lane's work with a `changes/`
+// note written from the -m messages - see scripts/change-note.ts - pushing and opening the PR), and then
+// merges the PR itself.
 //
-// A PR whose checks have not registered yet is a hand-off, not a failure: the queue
-// owns the wait and `bun run ci:status --pr <n>` answers only later, so the report
-// says so and the lane still exits 0. The queue for that PR starts in the background,
-// and the last line names the one command that prints its outcome, to be awaited from the
-// harness background so the agent's turn ends and the exit calls it back.
+// The merge is gated on the receipt, not on GitHub: the pushed head's tree must be a tree verify:fast
+// passed on, apart from what lane:close itself wrote after it (the suite scores, and the change note
+// land renders from -m, which no test or gate reads). A head that differs otherwise - a rebase onto a conflicting
+// base, a file edited while verify ran - is verified again first, and the unit cache reruns only what
+// changed. GitHub merges the PR only while its head is that commit. CI on the beta push stays the
+// backstop. The last line names the merge commit; exit 1 when verify, land or the merge failed, 3 when
+// it cannot answer (no PR, no branch).
 //
 // One run per worktree: a second lane:close started while the first is still verifying is
 // refused (exit 4) and told which run holds the worktree, instead of racing it for the same
 // files, browsers and commit. The lock names the run's pid and goes with it, so a run that
 // crashed or was killed by a timeout leaves a lock the next run breaks on its own.
 import { spawnSync } from "node:child_process";
-import { mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
 import { assertCheckoutReady } from "./checkout-ready";
-import { gitHub, repoFromRemote } from "./github";
-import { parseLock, pidIsAlive, staleReason, type LandLock } from "./land";
-import { betaLaneClose, gitIn, landingRoot, landingScript } from "./landing-code";
+import { gitHub, repoFromRemote, type GitHub } from "./github";
+import { MERGE_ATTEMPTS, mergeVerified, parseLock, pidIsAlive, staleReason, type LandLock } from "./land";
+import { betaLaneClose, gitIn, landingRoot, landingScript, receiptsBehind } from "./landing-code";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose, takeVerboseFlag } from "./verbosity";
-import { EXIT_BOAT_SPENT } from "./verify-boat";
+import { passingReceipt, workingTree } from "./verify-receipt";
 
 const LANE_CLOSE_USAGE = {
-  summary: "verify, land, ask the checks once, and print the lane report",
-  usage: "bun run lane:close [-m <message> ...] [--pr <number>] [--allow <path>] [--verbose] | --batch <branch ...> | --queue",
+  summary: "verify, land and merge this lane's PR, and print the lane report",
+  usage: "bun run lane:close [-m <message> ...] [--pr <number>] [--allow <path>] [--verbose] | --batch <branch ...>",
   flags: [
     { flag: "-m, --message <text>", detail: "what changed, in plain words; repeatable. Prefix `Fixed:`, `Added:`, `Removed:` or `Migrate:` for that changelog heading (default Changed). Becomes changes/<branch>.md, the commit message and the PR body" },
     { flag: "--batch <branch ...>", detail: "land several finished branches as one push instead (the rest of the arguments go to the batch; --help there lists them)" },
-    { flag: "--queue", detail: "drain the landing queue: rebase and wait once for each queued PR" },
     { flag: "--pr <number>", detail: "the PR to close; default: the open PR for this branch" },
     { flag: "--allow <path>", detail: "a path land --commit may take although its guards refuse it; repeatable" },
     { flag: "--verbose", detail: "also print each stage, every pass and every committed path (by default the failures, the summaries and the report)" },
   ],
   example: 'bun run lane:close -m "Wolves hunt in packs" -m "Fixed: a tamed wolf no longer despawns at night"',
   exits: [
-    "0 closed",
-    "1 verify or land failed",
+    "0 merged",
+    "1 verify, land or the merge failed",
     "3 cannot answer (no PR, no branch)",
     "4 another lane:close is still running in this worktree",
     "78 this checkout has no node_modules - run bun install, or bun run agent:bootstrap",
@@ -99,28 +102,21 @@ export function parseArgs(argv: readonly string[]): LaneCloseArgs {
 export interface ReportInput {
   branch: string;
   pr: number;
-  prState?: string | undefined;
   prUrl?: string | undefined;
-  status?: { counts: { pass: number; fail: number; pending: number }; verdict: string; runIds: number[] } | undefined;
-  checksProblem?: string;
+  /** The merge commit on the base. */
+  merged: string;
   filesChanged: string;
 }
 
 /** The report a lane pastes: the numbers, filled in, with nothing to write by hand. */
 export function reportSkeleton(input: ReportInput): string {
-  const lines = ["Lane report", `- branch: ${input.branch}`];
-  const state = input.prState === undefined ? "" : ` ${input.prState.toLowerCase()}`;
-  lines.push(`- PR: #${input.pr}${state}${input.prUrl === undefined ? "" : ` ${input.prUrl}`}`.trimEnd());
-  if (input.status === undefined) {
-    lines.push(`- checks: unavailable — ${input.checksProblem ?? "ci:status did not answer"}`);
-  } else {
-    const { pass, fail, pending } = input.status.counts;
-    const runs = input.status.runIds.length > 0 ? ` (run ${input.status.runIds.join(", ")})` : "";
-    lines.push(`- checks: ${pass} pass, ${fail} fail, ${pending} pending — ${input.status.verdict}${runs}`);
-  }
-  lines.push(`- files changed: ${input.filesChanged}`);
-  if (input.status === undefined) lines.push(`- ask again for the checks: bun run ci:status --pr ${input.pr}`);
-  return lines.join("\n");
+  return [
+    "Lane report",
+    `- branch: ${input.branch}`,
+    `- PR: #${input.pr} merged${input.prUrl === undefined ? "" : ` ${input.prUrl}`}`,
+    `- merge commit: ${input.merged}`,
+    `- files changed: ${input.filesChanged}`,
+  ].join("\n");
 }
 
 /** The file operations the worktree lock needs, so a test can hold one in memory. */
@@ -144,6 +140,21 @@ export interface LaneIo {
   pid: number;
   now: () => number;
   alive: (pid: number) => boolean;
+  /** The working tree's id (`workingTree`): the same id is the same bytes. */
+  tree: () => string;
+  /** The passing `verify:fast --landing` receipt for `tree` against this branch's merge base, or null. */
+  passedOn: (tree: string) => string | null;
+  /** Why this lane's verify:fast cannot write a receipt this landing code reads (`receiptsBehind`), or null. */
+  receiptsBehind: () => string | null;
+  /** The GitHub client for `repo`; by default `gh api` through `sh`. */
+  github?: (repo: string) => GitHub;
+  /** Waits between merge attempts while another merge moves the base. */
+  pause?: (ms: number) => void;
+  /**
+   * The gate on the boat host (`remoteGate`): its exit code, or null when the host cannot run it
+   * and the gate runs here. Absent: always here.
+   */
+  remoteGate?: (withPreflight: boolean) => number | null;
 }
 
 /** The lock another run holds, or the lock this run now holds with the release that drops it. */
@@ -244,39 +255,51 @@ function closeHeldLane(args: LaneCloseArgs, branch: string, io: LaneIo): number 
   // A type error used to surface only after the whole test suite. land --commit stages what gen rewrote.
   // The stage lines are progress, kept for --verbose; each stage's own failure names the stage.
   const stage = isVerbose(io.env) ? io.out : (): void => {};
-  stage(`lane:close: ${branch} — preflight (install, conflict markers, gen)`);
-  const preflight = io.sh(["run", "preflight", "--no-verify"], true);
-  if (preflight.status !== 0) {
-    io.err(`lane:close: preflight failed (exit ${preflight.status}); nothing landed, no tests run. Fix what it names and close again.`);
+  // Merging needs a receipt this code can read, and the receipt comes from the lane's own verify:fast.
+  // A lane too old to write one learns that now, not after the whole suite (scripts/landing-code.ts).
+  const behind = io.receiptsBehind();
+  if (behind !== null) {
+    io.err(`lane:close: ${behind}; nothing ran and nothing landed. Merge beta into this branch (git merge origin/beta) and close again.`);
     return EXIT_VERIFY_FAILED;
   }
-  // One run for the type-checks, every gate and the tests: on one boat machine, not two. The
-  // type-checks and gates start first and all run; the tests stop at the first failure.
-  stage(`lane:close: ${branch} — verify:fast --landing (type-checks, gates, tests and boots)`);
-  const verified = io.sh(["run", "verify:fast", "--landing"], true);
-  if (verified.status === EXIT_BOAT_SPENT) {
-    io.err(
-      "lane:close: boat.dev had no start for the Linux steps (verify:fast says until when, above); they did not run here " +
-        "either, and nothing landed. Run lane:close again then, as a harness background command. Do not set JG_VERIFY_BOAT=0 " +
-        "to land sooner: that runs the whole Linux suite on Jon's PC. Any other failure printed above is real.",
-    );
-    return EXIT_VERIFY_FAILED;
+  // A `verify:fast --landing` that passed on these exact bytes (run by hand just before) already
+  // proved what preflight and verify would: its gates fail on a stale generated file, so gen has
+  // nothing to rewrite. Both are skipped, in one line, instead of spending minutes on the same answer.
+  const already = io.passedOn(io.tree());
+  if (already !== null) {
+    io.out(`lane:close: verify:fast --landing already passed on this exact tree (${already}); preflight and verify not run again`);
+  } else {
+    const remote = io.remoteGate?.(true) ?? null;
+    if (remote !== null) {
+      if (remote !== 0) {
+        io.err(`lane:close: the gate failed on the boat host (exit ${remote}); nothing landed. Fix what it names and close again.`);
+        return EXIT_VERIFY_FAILED;
+      }
+    } else {
+      stage(`lane:close: ${branch} — preflight (install, conflict markers, gen)`);
+      const preflight = io.sh(["run", "preflight", "--no-verify"], true);
+      if (preflight.status !== 0) {
+        io.err(`lane:close: preflight failed (exit ${preflight.status}); nothing landed, no tests run. Fix what it names and close again.`);
+        return EXIT_VERIFY_FAILED;
+      }
+      stage(`lane:close: ${branch} — verify:fast --landing (type-checks, gates, tests, boots and the site build)`);
+      if (!verify(io)) return EXIT_VERIFY_FAILED;
+    }
   }
-  if (verified.status !== 0) {
-    io.err(
-      `lane:close: verify:fast failed (exit ${verified.status}); nothing landed. ` +
-        "Fix what it names and close again.",
-    );
+  const verifiedTree = io.tree();
+  if (io.passedOn(verifiedTree) === null) {
+    io.err("lane:close: the files changed while verify:fast ran, so its pass covers no tree here; nothing landed. Close again.");
     return EXIT_VERIFY_FAILED;
   }
 
-  // The tests rewrote each game's suite report (here or on boat, which sends it back): write its score
+  // The tests rewrote each game's suite report: write its score
   // into the README and PLAN now, so the lane's commit carries the score its own proofs earned.
   const scored = io.sh(["run", "scripts/gen-game-suite.ts"], true);
   if (scored.status !== 0) {
     io.err(`lane:close: writing the game suite scores failed (exit ${scored.status}); nothing landed.`);
     return EXIT_VERIFY_FAILED;
   }
+  const scoredPaths = new Set(changedBetween(verifiedTree, io.tree(), io));
 
   stage("lane:close: land --commit");
   const landArgs = [
@@ -292,89 +315,97 @@ function closeHeldLane(args: LaneCloseArgs, branch: string, io: LaneIo): number 
     return landed.status;
   }
 
-  const pr = args.pr ?? branchPr(branch, io);
-  if (pr === null) {
-    io.err(`lane:close: landed ${branch} but cannot name its PR; no checks or report to print`);
-    return EXIT_CANNOT_ANSWER;
-  }
-  const view = io.sh(["run", "ci:status", "--json", "--pr", String(pr)], false);
-  const parsed = parseJson<{
-    ok: boolean;
-    message?: string;
-    state?: string;
-    url?: string;
-    counts?: { pass: number; fail: number; pending: number };
-    verdict?: string;
-    runIds?: number[];
-  }>(view.stdout);
-  const answer = "value" in parsed ? parsed.value : null;
-  const status =
-    answer !== null && answer.ok === true && answer.counts !== undefined
-      ? { counts: answer.counts, verdict: answer.verdict ?? "unknown", runIds: answer.runIds ?? [] }
-      : undefined;
-  const checksProblem =
-    "error" in parsed
-      ? parsed.error
-      : (answer?.message ?? `ci:status exited ${view.status} and printed no status`);
-
-  io.out("");
-  io.out(
-    reportSkeleton({
-      branch,
-      pr,
-      prState: answer?.state,
-      prUrl: answer?.url,
-      status,
-      checksProblem,
-      filesChanged: filesChanged(io),
-    }),
-  );
-
-  // A PR whose checks have not registered yet is handed off, not unanswered: the queue owns the
-  // wait, and `ci:status` is the one command that answers later. Only a ci:status that produced no
-  // answer at all leaves the lane unable to report.
-  if (status === undefined && answer === null) {
-    io.err(`lane:close: cannot report the checks: ${checksProblem}`);
-    return EXIT_CANNOT_ANSWER;
-  }
-  if (answer?.state !== "MERGED") io.out(queueInBackground(pr, io));
-  // A merged lane's worktree is a copy nobody will open again. Reaping here keeps
-  // `.claude/worktrees` bounded; this lane's own tree stays, since a process
-  // cannot delete the directory it runs in, and the next close takes it.
-  const reaped = io.sh(["run", "worktree", "reap", "--fetch"], false);
-  const reapLine = lastLine(reaped.stdout);
-  if (reapLine.length > 0) stage(`lane:close: ${reapLine}`);
-  return EXIT_CLOSED;
-}
-
-/**
- * Start the queue for this one PR in the background (rebase when the base moved, wait for the
- * checks, merge) and return the one line that says how to read its outcome. The lane keeps
- * working instead of sitting in the queue; `background await` blocks only when it asks.
- */
-export function queueInBackground(pr: number, io: LaneIo): string {
-  const started = io.sh(["run", "background", "start", "bun", landingScript(import.meta.url, "land-queue.ts"), "--pr", String(pr)], false);
-  const id = lastLine(started.stdout);
-  if (started.status !== 0 || id.length === 0) {
-    return `lane:close: #${pr} waits in the landing queue; ask for its checks with bun run ci:status --pr ${pr}`;
-  }
-  return (
-    `lane:close: #${pr} is handed to the landing queue and is not merged yet. ` +
-    `Next: bun run background await ${id}, as a harness background command (Bash run_in_background) with no --timeout; ` +
-    "end the turn, and its exit calls you back with the merge, or a failure to fix on this branch. " +
-    "A shell with no background mode runs it in the foreground with --timeout 540, again while it says still running. " +
-    "The idea is done when it is merged."
-  );
-}
-
-/**
- * The PR this branch handed over: open and labelled for the queue, or already merged. `land` no longer waits, so the
- * PR a lane just produced is usually still open when the report is printed.
- */
-function branchPr(branch: string, io: LaneIo): number | null {
   const remote = io.sh(["git", "remote", "get-url", "origin"], false);
   const repo = remote.status === 0 ? repoFromRemote(remote.stdout) : null;
-  if (repo === null) return null;
+  const pr = args.pr ?? (repo === null ? null : branchPr(branch, repo, io));
+  if (repo === null || pr === null) {
+    io.err(`lane:close: landed ${branch} but cannot name its PR; nothing merged`);
+    return EXIT_CANNOT_ANSWER;
+  }
+  const github = io.github?.(repo) ?? gitHub((ghArgs) => io.sh(["gh", ...ghArgs], false), repo);
+  const files = filesChanged(io);
+
+  for (let attempt = 1; attempt <= MERGE_ATTEMPTS; attempt += 1) {
+    const proof = proveHead(verifiedTree, scoredPaths, io);
+    if (proof !== null) {
+      io.err(`lane:close: ${proof}; nothing merged, and #${pr} stays open. Fix it on this branch and close again.`);
+      return EXIT_VERIFY_FAILED;
+    }
+    const head = io.sh(["git", "rev-parse", "HEAD"], false).stdout.trim();
+    const merged = mergeVerified(github, pr, head, io.pause);
+    if (merged.ok) {
+      const view = github.pull(pr);
+      io.out("");
+      io.out(reportSkeleton({ branch, pr, prUrl: view.ok ? view.value.url : undefined, merged: merged.sha, filesChanged: files }));
+      // A merged lane's worktree is a copy nobody will open again. Reaping here keeps
+      // `.claude/worktrees` bounded; this lane's own tree stays, since a process
+      // cannot delete the directory it runs in, and the next close takes it.
+      const reaped = io.sh(["run", "worktree", "reap", "--fetch"], false);
+      const reapLine = lastLine(reaped.stdout);
+      if (reapLine.length > 0) stage(`lane:close: ${reapLine}`);
+      io.out(`lane:close: merged #${pr} into beta as ${merged.sha}`);
+      return EXIT_CLOSED;
+    }
+    if (!merged.baseMoved || attempt === MERGE_ATTEMPTS) {
+      io.err(`lane:close: GitHub refused to merge #${pr}: ${merged.error}; the PR stays open.`);
+      return EXIT_VERIFY_FAILED;
+    }
+    // The base now conflicts with the branch: land rebases it (generated files regenerated) and
+    // pushes, and the next pass verifies the rebased tree before it merges.
+    io.out(`lane:close: #${pr} conflicts with beta now; rebasing, then verifying the rebased tree`);
+    const rebased = io.sh(["run", landingScript(import.meta.url, "land.ts")], true);
+    if (rebased.status !== 0) {
+      io.err(`lane:close: the rebase onto beta failed (land exited ${rebased.status}); #${pr} stays open.`);
+      return rebased.status;
+    }
+  }
+  return EXIT_VERIFY_FAILED;
+}
+
+/** `verify:fast --landing` (on the boat host when it is up), and what to do when it fails. */
+function verify(io: LaneIo): boolean {
+  const remote = io.remoteGate?.(false) ?? null;
+  if (remote !== null) {
+    if (remote === 0) return true;
+    io.err(`lane:close: verify:fast failed on the boat host (exit ${remote}); nothing merged. Fix what it names and close again.`);
+    return false;
+  }
+  const verified = io.sh(["run", "verify:fast", "--landing"], true);
+  if (verified.status !== 0) {
+    io.err(`lane:close: verify:fast failed (exit ${verified.status}); nothing merged. Fix what it names and close again.`);
+    return false;
+  }
+  return true;
+}
+
+/** Paths whose content differs between two trees. */
+function changedBetween(from: string, to: string, io: LaneIo): string[] {
+  if (from === to) return [];
+  return io.sh(["git", "diff", "--name-only", "--no-renames", from, to], false).stdout.split("\n").map((line) => line.trim()).filter(Boolean);
+}
+
+/**
+ * Why HEAD may not merge yet, or null when a passing receipt covers it. HEAD's tree is covered when
+ * verify:fast passed on it, or when it differs from the verified tree only in what lane:close wrote
+ * after that run (the suite scores, and the change note land renders, which no test or gate reads). Any
+ * other difference - a rebase, an edit made while verify ran - is verified again here.
+ */
+export function proveHead(verifiedTree: string, scoredPaths: ReadonlySet<string>, io: LaneIo): string | null {
+  const headTree = io.sh(["git", "rev-parse", "HEAD^{tree}"], false).stdout.trim();
+  if (io.passedOn(headTree) !== null) return null;
+  const differs = changedBetween(verifiedTree, headTree, io);
+  const unproven = differs.filter((path) => !scoredPaths.has(path) && !path.startsWith("changes/"));
+  if (unproven.length > 0) {
+    const named = `${unproven.slice(0, 3).join(", ")}${unproven.length > 3 ? ", ..." : ""}`;
+    io.out(`lane:close: the pushed head differs from the verified tree in ${unproven.length} file(s) (${named}); verifying it`);
+    if (!verify(io)) return "verify:fast failed on the pushed head";
+    if (io.passedOn(headTree) === null) return "the files changed while verify:fast ran on the pushed head";
+  }
+  return null;
+}
+
+/** This branch's PR: open, or already merged by an earlier close. */
+function branchPr(branch: string, repo: string, io: LaneIo): number | null {
   const listed = gitHub((args) => io.sh(["gh", ...args], false), repo).listPulls({ head: branch, state: "all", limit: 1 });
   return listed.ok ? (listed.value[0]?.number ?? null) : null;
 }
@@ -385,10 +416,9 @@ function filesChanged(io: LaneIo): string {
   return text.length > 0 ? text : "none against origin/beta";
 }
 
-/** The landing modes besides closing this lane: `--batch` and `--queue` hand the rest of argv to their script. */
+/** The landing mode besides closing this lane: `--batch` hands the rest of argv to its script. */
 export function landingMode(argv: readonly string[]): { script: string; rest: string[] } | null {
   if (argv[0] === "--batch") return { script: landingScript(import.meta.url, "land-batch.ts"), rest: argv.slice(1) };
-  if (argv[0] === "--queue") return { script: landingScript(import.meta.url, "land-queue.ts"), rest: argv.slice(1) };
   return null;
 }
 
@@ -426,7 +456,7 @@ function main(rawArgv: readonly string[]): void {
 }
 
 export const LANE_CLOSE_DURATION =
-  "this takes several minutes (gen, every gate, the tests on a boat machine, then the hand-off), longer while both boat machines are busy, which it waits for. Run it as a harness background command (Bash run_in_background) and wait for its exit before ending the turn; do not start a separate boat check first, this already uses boat.";
+  "this takes several minutes (gen, every gate, the tests and the site build, then the merge). Run it as a harness background command (Bash run_in_background) and wait for its exit before ending the turn; its last line names the merge commit. A passing verify:fast --landing of the same tree is reused, not run again.";
 
 /** `.scratch/lane-close.json` while a close runs: the repo's Stop hook reads it, so a turn cannot end mid-landing. */
 export const RUNNING_MARKER = join(".scratch", "lane-close.json");
@@ -470,7 +500,66 @@ function realIo(): LaneIo {
     pid: process.pid,
     now: Date.now,
     alive: pidIsAlive,
+    tree: () => workingTree(root).tree,
+    receiptsBehind: () => receiptsBehind(import.meta.url, root),
+    remoteGate: (withPreflight) => boatGate(withPreflight),
+    passedOn: (tree) => {
+      const base = spawnSync("git", ["merge-base", "HEAD", "origin/beta"], { cwd: root, encoding: "utf8" });
+      const mergeBase = (base.stdout ?? "").trim();
+      if (base.status !== 0 || mergeBase.length === 0) return null;
+      return passingReceipt(root, { tree, mergeBase, runtime: `bun ${Bun.version}`, scope: "landing", skillApi: false })?.path ?? null;
+    },
   };
+}
+
+/** Exit of `boat-host.sh gate` when the host cannot run the gate (it printed `degraded:` and why). */
+export const BOAT_GATE_UNAVAILABLE = 69;
+
+/**
+ * The `boat-host.sh gate` arguments for this tree: the snapshot commit of the working tree, run with
+ * this Bun so the receipt's runtime matches, planned from this lane's merge base so the receipt's
+ * key matches, with the receipts and whatever gen rewrote brought back. The install comes first: a
+ * new gate checkout on the host has no node_modules, and preflight only checks for them.
+ */
+export function boatGateArgs(input: { commit: string; mergeBase: string; bun: string; withPreflight: boolean }): string[] {
+  const steps = ["bun install --frozen-lockfile", ...(input.withPreflight ? ["bun run preflight --no-verify"] : []), `bun run verify:fast --landing --base ${input.mergeBase}`];
+  return [
+    "gate", "--repo", "jgengine", "--commit", input.commit, "--bun", input.bun, "--tree-back", "--bring", ".scratch/verify-fast/runs",
+    "--", "bash", "-c", steps.join(" && "),
+  ];
+}
+
+/**
+ * The CPU gate on Jon's boat host instead of this PC (`~/.agents/skills/boat-host`, `gate`): the
+ * working tree goes as a commit, its output streams here, and its passing receipt and gen output come
+ * back, so the receipt check below decides the merge exactly as for a gate run here. Null (run it
+ * here) when there is no boat-host tool on this machine (the host itself, CI, another PC), or the
+ * host cannot run it, which the tool reports as a `degraded:` line.
+ */
+function boatGate(withPreflight: boolean): number | null {
+  const tool = process.env["BOAT_HOST_SH"] ?? join(homedir(), ".agents", "skills", "boat-host", "boat-host.sh");
+  if (process.env["BOAT_GATE"] === "off" || !existsSync(tool)) return null;
+  const git = (args: string[]): string => {
+    const run = spawnSync("git", args, { cwd: root, encoding: "utf8" });
+    return run.status === 0 ? (run.stdout ?? "").trim() : "";
+  };
+  const tree = workingTree(root).tree;
+  const commit = git(["commit-tree", tree, "-p", "HEAD", "-m", "lane:close gate snapshot of the working tree"]);
+  const mergeBase = git(["merge-base", "HEAD", "origin/beta"]);
+  if (commit.length === 0 || mergeBase.length === 0) {
+    console.log("degraded: could not snapshot the working tree for the boat host gate; it runs on this PC");
+    return null;
+  }
+  const bash = process.platform === "win32" ? gitBash() : "bash";
+  const run = spawnSync(bash, [tool, ...boatGateArgs({ commit, mergeBase, bun: Bun.version, withPreflight })], { cwd: root, stdio: "inherit" });
+  const status = run.status ?? BOAT_GATE_UNAVAILABLE;
+  return status === BOAT_GATE_UNAVAILABLE ? null : status;
+}
+
+/** Git Bash, not the WSL `bash.exe` in System32 that a bare `bash` can resolve to on Windows. */
+function gitBash(): string {
+  const candidate = join(process.env["ProgramFiles"] ?? "C:\\Program Files", "Git", "bin", "bash.exe");
+  return existsSync(candidate) ? candidate : "bash";
 }
 
 function realLockFs(): LaneLockFs {

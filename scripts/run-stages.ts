@@ -103,6 +103,8 @@ export const CHECKS: readonly CheckDef[] = [
   { name: "games-suite-score", script: "scripts/gen-game-suite.ts", args: ["--check"], jobs: ["games"], games: true, generated: true, reads: GAME_SUITE_READS },
   { name: "games-glb-textures", script: "games/scripts/check-glb-textures.ts", jobs: [], games: true, reads: ["games/"] },
   { name: "version", script: "scripts/set-version.ts", args: ["--check"], jobs: [], reads: ["packages/"] },
+  // Draws on this PC's GPU in headless Chrome, so no CI job runs it.
+  { name: "postfx-exact", script: "scripts/check-postfx-exact.ts", jobs: [], reads: ["packages/core/src/postfx/"] },
   // Reads the site build, so CI's web-build job runs it after `bun --cwd=apps/web run build`.
   { name: "site-bundles", script: "scripts/check-site-assets.ts", args: ["--bundles"], jobs: [], games: true, skipsTests: true, reads: ["apps/", "packages/", "games/"] },
 ];
@@ -201,7 +203,7 @@ export interface GenTarget {
   readonly after?: readonly string[];
   /**
    * The committed files this generator owns outright. A rebase conflict in one is no conflict: land
-   * and the landing queue take the base's copy and rerun `bun run gen` (`scripts/generated-rebase.ts`).
+   * and lane:close take the base's copy and rerun `bun run gen` (`scripts/generated-rebase.ts`).
    * A file people also edit by hand (a tsconfig, a source file's `@skill` tag) is not listed.
    */
   readonly outputs?: readonly RegExp[];

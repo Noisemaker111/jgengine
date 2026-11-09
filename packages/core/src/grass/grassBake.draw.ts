@@ -1,7 +1,9 @@
 import * as THREE from "three";
 
 import { seededRng } from "@jgengine/core/random/rng";
+import { scrambledSobol2 } from "@jgengine/core/random/scrambledSobol";
 import { grassBladeDensity, type GrassLook } from "@jgengine/core/grass/grassKind";
+import { drawnGrassLook } from "@jgengine/core/grass/grassDrawn";
 
 import { grassBareAt, grassClumpCentre, grassFieldNoise, grassTuftReach } from "@jgengine/core/grass/grassField";
 import { hashNoise2, seedToUint32, type TerrainSeed } from "@jgengine/core/terrain/terrainSeed";
@@ -42,6 +44,7 @@ export interface GrassBakeOptions {
 
 /** A patch ready to bake: the look plus every derived number the bake and stream share. */
 export interface ResolvedGrassBake {
+  /** The look as its style draws it (`drawnGrassLook`): blade width, tuft size and heights after `detail` and `exaggeration`. */
   look: GrassLook;
   width: number;
   depth: number;
@@ -80,7 +83,7 @@ function bareCoverage(look: GrassLook, seed: string, coverageAt: TerrainHeightSa
 /** Resolve a patch's bake inputs once; the stream and every node bake read the result. */
 export function resolveGrassBake(options: GrassBakeOptions): ResolvedGrassBake {
   const size = resolveTerrainSize(options.area);
-  const look = options.look;
+  const look = drawnGrassLook(options.look);
   const columns = Math.max(1, Math.ceil(size.width / GRASS_CELL_SIZE));
   const rows = Math.max(1, Math.ceil(size.depth / GRASS_CELL_SIZE));
   const bladesPerM2 = grassBladeDensity(look);
@@ -133,27 +136,42 @@ export interface GrassTufts {
   roots: THREE.Box3;
   /** Furthest a blade reaches from its root, metres. */
   extent: number;
+  /** What a bake of the same node at a larger share needs to keep these tufts and grow only the rest. */
+  resume?: GrassBakeResume;
 }
 
-/** Patch-local XZ rectangle a node covers, clipped to the patch: `[x0, z0, x1, z1]`. */
-export function grassNodeRect(bake: ResolvedGrassBake, level: number, ix: number, iz: number): [number, number, number, number] {
+/**
+ * A finished bake's own bookkeeping. A cell's tufts at a smaller share are the first ones of its tufts
+ * at any larger share (the same seeded stream, read in the same order), so a re-bake for a nearer
+ * camera copies these and grows the rest from where each cell's stream stopped.
+ * @internal
+ */
+export interface GrassBakeResume {
+  /** Where each cell's tufts end, in bake order (before the rank sort). */
+  cellEnds: Int32Array;
+  /** Each cell's random stream cursor after its last tuft. */
+  cellCursors: Int32Array;
+  /** Bake-order index to rank-order index; absent when the bake was not reordered. */
+  rankIndex: Int32Array | undefined;
+  /** Furthest any of these tufts reaches, before the tuft template's own reach is added. */
+  reach: number;
+}
+
+/** Patch-local XZ rectangle a node covers, clipped to the patch: `[x0, z0, x1, z1]`, written into `out` when given. */
+export function grassNodeRect(bake: ResolvedGrassBake, level: number, ix: number, iz: number, out: [number, number, number, number] = [0, 0, 0, 0]): [number, number, number, number] {
   const span = GRASS_CELL_SIZE * 2 ** level;
   const x0 = -bake.width / 2 + ix * span;
   const z0 = -bake.depth / 2 + iz * span;
-  return [x0, z0, Math.min(bake.width / 2, x0 + span), Math.min(bake.depth / 2, z0 + span)];
+  out[0] = x0;
+  out[1] = z0;
+  out[2] = Math.min(bake.width / 2, x0 + span);
+  out[3] = Math.min(bake.depth / 2, z0 + span);
+  return out;
 }
 
 function smoothstep(a: number, b: number, x: number): number {
   const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
   return t * t * (3 - 2 * t);
-}
-
-/** The R2 sequence's steps (1/g and 1/g² for the plastic number g): the most even 2D progressive spread. */
-const R2_X = 0.7548776662466927;
-const R2_Z = 0.5698402909980532;
-
-function fract(value: number): number {
-  return value - Math.floor(value);
 }
 
 /** Tufts a cell keeps at `share`, given its full count and its rank offset `u`. */
@@ -173,14 +191,18 @@ export function bakeGrassNode(bake: ResolvedGrassBake, level: number, ix: number
   return step.value;
 }
 
-/** Incremental form of {@link bakeGrassNode}; each step processes at most one cell, tuft or sort item. @internal */
-export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: number, iz: number, share: number, immediate = false, progress?: (tufts: GrassTufts) => void): Generator<"work" | "tuft", GrassTufts> {
+/**
+ * Incremental form of {@link bakeGrassNode}; each step grows at most one tuft or processes one cell or
+ * a chunk of copy and sort items. `from`, an earlier bake of this node and bake at a smaller share, is
+ * kept: only the tufts it lacks are grown, and the result is the one a fresh bake gives. @internal
+ */
+export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: number, iz: number, share: number, immediate = false, progress?: (tufts: GrassTufts) => void, from?: GrassTufts): Generator<"work" | "tuft", GrassTufts> {
   const { look } = bake;
   const span = 2 ** level;
   const cx0 = ix * span, cz0 = iz * span;
   const cx1 = Math.min(bake.columns, cx0 + span), cz1 = Math.min(bake.rows, cz0 + span);
   const halfW = bake.width / 2, halfD = bake.depth / 2;
-  type Cell = { cx: number; cz: number; x0: number; z0: number; w: number; d: number; full: number };
+  type Cell = { cx: number; cz: number; x0: number; z0: number; w: number; d: number; full: number; count: number };
   const cells: Cell[] = [];
   let total = 0;
   for (let cz = cz0; cz < cz1; cz += 1) {
@@ -189,36 +211,72 @@ export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: 
       const w = Math.min(halfW, x0 + GRASS_CELL_SIZE) - x0, d = Math.min(halfD, z0 + GRASS_CELL_SIZE) - z0;
       const full = bake.tuftsPerM2 * Math.max(0, w) * Math.max(0, d);
       const u = seededRng(`${bake.seed}|${cx}|${cz}`)();
-      total += cellCount(full, u, share);
-      cells.push({ cx, cz, x0, z0, w, d, full });
+      const count = cellCount(full, u, share);
+      total += count;
+      cells.push({ cx, cz, x0, z0, w, d, full, count });
       if (!immediate) yield "work";
     }
   }
+  // An earlier bake is kept only when it is this node's at a share no larger than this one, cell by
+  // cell. A preview (`progress`) always grows from nothing.
+  let resume = progress === undefined ? from?.resume : undefined;
+  if (resume !== undefined && resume.cellEnds.length === cells.length) {
+    for (let k = 0; k < cells.length; k += 1) {
+      if (resume.cellEnds[k]! - (k === 0 ? 0 : resume.cellEnds[k - 1]!) > cells[k]!.count) { resume = undefined; break; }
+    }
+  } else resume = undefined;
+  const kept = resume === undefined ? undefined : from;
   const offsets = new Float32Array(total * 3);
   const shape = new Float32Array(total * 4);
   const vary = new Float32Array(total * 4);
   const tone = new Float32Array(total);
-  const roots = new THREE.Box3();
+  // A box grown over every root is the same box however the roots are split: start from the kept ones'.
+  const roots = kept === undefined ? new THREE.Box3() : kept.roots.clone();
   const seedNumber = seedToUint32(bake.seed);
   const clumpSeed = bake.clumpSeed;
   const point = new THREE.Vector3();
   const flutterStiff = 1 - look.blade.stiffness;
   const tuftReach = grassTuftReach(look, bake.bladesPerM2);
-  let maxReach = 0;
+  let maxReach = resume?.reach ?? 0;
   let n = 0;
+  let copied = 0;
+  /** Where each cell's tufts end: each cell grows its tufts in rising rank, so each is a sorted run. */
+  const cellEnds = new Int32Array(cells.length);
+  const cellCursors = new Int32Array(cells.length);
   let partial: GrassTufts | undefined;
-  for (const cell of cells) {
+  for (let k = 0; k < cells.length; k += 1) {
+    const cell = cells[k]!;
     const random = seededRng(`${bake.seed}|${cell.cx}|${cell.cz}`);
     const u = random();
-    const count = cellCount(cell.full, u, share);
-    // Roots follow the R2 low-discrepancy sequence from a seeded start, jittered by under half a
-    // spacing. Uniform random roots bunch into piles and leave bare holes; R2 spreads them evenly, and
-    // every prefix of it is still even, so thinning by rank for a far camera never opens holes.
-    const startX = random(), startZ = random();
-    const jitter = 0.45 / Math.sqrt(Math.max(1, cell.full));
-    for (let j = 0; j < count; j += 1) {
-      let x = cell.x0 + fract(startX + j * R2_X + (random() - 0.5) * jitter) * cell.w;
-      let z = cell.z0 + fract(startZ + j * R2_Z + (random() - 0.5) * jitter) * cell.d;
+    const count = cell.count;
+    // Roots follow a scrambled Sobol spread seeded per cell. Uniform random roots bunch into piles and
+    // leave bare holes; this spreads them evenly, and every prefix is still even, so thinning by rank
+    // for a far camera never opens holes. (R2, used before, is even too, but its short prefixes are a
+    // near-regular lattice, so a far field thinned to a few dozen tufts a cell drew rows like a
+    // planted crop; jitter big enough to hide that left the field as uneven as random.)
+    const scrambleX = Math.floor(random() * 4294967296), scrambleZ = Math.floor(random() * 4294967296);
+    let first = 0;
+    if (resume !== undefined && kept !== undefined) {
+      const start = k === 0 ? 0 : resume.cellEnds[k - 1]!;
+      first = resume.cellEnds[k]! - start;
+      const index = resume.rankIndex;
+      for (let j = 0; j < first; j += 1) {
+        const from3 = index === undefined ? start + j : index[start + j]!;
+        const o = from3 * 3, f = from3 * 4, t3 = n * 3, t4 = n * 4;
+        offsets[t3] = kept.offsets[o]!; offsets[t3 + 1] = kept.offsets[o + 1]!; offsets[t3 + 2] = kept.offsets[o + 2]!;
+        shape[t4] = kept.shape[f]!; shape[t4 + 1] = kept.shape[f + 1]!; shape[t4 + 2] = kept.shape[f + 2]!; shape[t4 + 3] = kept.shape[f + 3]!;
+        vary[t4] = kept.vary[f]!; vary[t4 + 1] = kept.vary[f + 1]!; vary[t4 + 2] = kept.vary[f + 2]!; vary[t4 + 3] = kept.vary[f + 3]!;
+        tone[n] = kept.tone[from3]!;
+        n += 1;
+        if (!immediate && ++copied === SORT_CHUNK) { copied = 0; yield "work"; }
+      }
+      // The kept tufts read the cell's stream this far: carry on from there.
+      if (first > 0) random.restore(resume.cellCursors[k]!);
+    }
+    for (let j = first; j < count; j += 1) {
+      const [sx, sz] = scrambledSobol2(j, scrambleX, scrambleZ);
+      let x = cell.x0 + sx * cell.w;
+      let z = cell.z0 + sz * cell.d;
       const clumpRoll = random(), clumpAngle = random() * Math.PI * 2, clumpReach = Math.sqrt(random()) * look.tuft.clumpSize;
       const speciesRoll = random(), flowerRoll = random(), yaw = random() * Math.PI * 2;
       const heightRoll = random(), widthRoll = random(), bendRoll = random(), gate = random(), settle = random();
@@ -250,21 +308,26 @@ export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: 
       const grown = smoothstep(look.growth.patchiness * 0.85 - 0.1, look.growth.patchiness * 0.85 + 0.04, grassFieldNoise(nx, nz, seedNumber + 31));
       height *= 0.55 + 0.45 * grown;
       const y = bake.heightAt(x, z);
-      if (look.growth.slopeThin > 0) {
-        const slope = Math.hypot(bake.heightAt(x + 0.5, z) - bake.heightAt(x - 0.5, z), bake.heightAt(x, z + 0.5) - bake.heightAt(x, z - 0.5));
-        height *= 1 - look.growth.slopeThin * 0.75 * smoothstep(0.35, 1.3, slope);
-      }
+      // The masks after the slope, measured first: a tuft one of them zeroes ends at height 0 whatever
+      // its slope (every factor is finite and none negative), so it skips the four slope samples, the
+      // costliest part of a tuft on a detailed terrain. They still multiply in their own order.
+      let edgeKeep = 1;
       if (bake.edgeFeather > 0) {
         // Tufts drop out across the feather band, so the border reads as grass growing sparser.
         const edge = Math.min(halfW - Math.abs(x), halfD - Math.abs(z));
         const inside = Math.min(1, Math.max(0, edge / bake.edgeFeather));
-        height *= gate < inside * inside ? 0.7 + 0.3 * settle : 0;
+        edgeKeep = gate < inside * inside ? 0.7 + 0.3 * settle : 0;
       }
-      for (const zone of bake.exclude) {
-        const dist = Math.max(Math.abs(x - zone.center[0]) - zone.half[0], Math.abs(z - zone.center[1]) - zone.half[1]);
-        height *= Math.min(1, Math.max(0, dist / Math.max(0.001, zone.feather ?? 1.5)));
+      let excluded = false;
+      for (const zone of bake.exclude) if (excludeKeep(zone, x, z) === 0) excluded = true;
+      const covered = Math.max(0, Math.min(1, bake.coverageAt(x, z))) * smoothstep(bake.growAbove, bake.growAbove + 1, y);
+      if (look.growth.slopeThin > 0 && edgeKeep !== 0 && !excluded && covered !== 0) {
+        const slope = Math.hypot(bake.heightAt(x + 0.5, z) - bake.heightAt(x - 0.5, z), bake.heightAt(x, z + 0.5) - bake.heightAt(x, z - 0.5));
+        height *= 1 - look.growth.slopeThin * 0.75 * smoothstep(0.35, 1.3, slope);
       }
-      height *= Math.max(0, Math.min(1, bake.coverageAt(x, z))) * smoothstep(bake.growAbove, bake.growAbove + 1, y);
+      if (bake.edgeFeather > 0) height *= edgeKeep;
+      for (const zone of bake.exclude) height *= excludeKeep(zone, x, z);
+      height *= covered;
       // A blade masked down to nothing narrows with it, so no flat sliver lies on bare ground.
       const width = look.blade.bladeWidth * (1 - look.blade.widthVariation * 0.6 * (1 - widthRoll)) * (species === 1 ? look.mix.mixWidth : 1) * Math.min(1, height / Math.max(1e-4, look.blade.bladeHeight * 0.2));
       const bend = look.blade.curvature * (0.6 + 0.8 * bendRoll) * (1 + flutterStiff * 0.4);
@@ -293,44 +356,73 @@ export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: 
       }
       if (!immediate) yield "tuft";
     }
+    cellEnds[k] = n;
+    cellCursors[k] = random.state();
   }
-  const tufts = { count: total, offsets, shape, vary, tone, ranks: new Float32Array(total), roots, extent: maxReach + tuftReach };
-  if (cells.length <= 1) {
-    for (let i = 0; i < total; i += 1) { tufts.ranks[i] = vary[i * 4 + 3]!; if (!immediate) yield "work"; }
+  const sorted = cells.length > 1;
+  const resumeOut: GrassBakeResume = { cellEnds, cellCursors, rankIndex: sorted ? new Int32Array(total) : undefined, reach: maxReach };
+  const tufts: GrassTufts = { count: total, offsets, shape, vary, tone, ranks: new Float32Array(total), roots, extent: maxReach + tuftReach, resume: resumeOut };
+  if (!sorted) {
+    for (let i = 0; i < total; i += 1) { tufts.ranks[i] = vary[i * 4 + 3]!; if (!immediate && i % SORT_CHUNK === SORT_CHUNK - 1) yield "work"; }
     return tufts;
   }
-  return yield* sortByRank(tufts, immediate);
+  return yield* sortByRank(tufts, cellEnds, resumeOut.rankIndex!, immediate);
 }
 
-function* sortByRank(tufts: GrassTufts, immediate: boolean): Generator<"work", GrassTufts> {
-  let order = new Array<number>(tufts.count);
-  let scratch = new Array<number>(tufts.count);
-  for (let i = 0; i < order.length; i += 1) { order[i] = i; if (!immediate) yield "work"; }
-  if (immediate) order.sort((a, b) => tufts.vary[a * 4 + 3]! - tufts.vary[b * 4 + 3]!);
-  for (let width = 1; !immediate && width < order.length; width *= 2) {
-    for (let start = 0; start < order.length; start += width * 2) {
-      const middle = Math.min(start + width, order.length), end = Math.min(start + width * 2, order.length);
+/** Sort items moved between yields: one yield per item cost more than the moves themselves. */
+const SORT_CHUNK = 64;
+
+/** How much of a tuft an exclusion zone keeps: 0 inside its box, 1 past its feather. */
+function excludeKeep(zone: GrassExclusion, x: number, z: number): number {
+  const dist = Math.max(Math.abs(x - zone.center[0]) - zone.half[0], Math.abs(z - zone.center[1]) - zone.half[1]);
+  return Math.min(1, Math.max(0, dist / Math.max(0.001, zone.feather ?? 1.5)));
+}
+
+/**
+ * Tufts in rank order, stable. Each cell's tufts were grown in rising rank, so `runEnds` (where each
+ * cell's run ends) marks sorted runs and only the runs are merged: the same order a stable sort of
+ * every tuft gives, in a few passes rather than one per doubling from single tufts. `rankIndex`
+ * receives where each tuft landed.
+ */
+function* sortByRank(tufts: GrassTufts, runEnds: ArrayLike<number>, rankIndex: Int32Array, immediate: boolean): Generator<"work", GrassTufts> {
+  const count = tufts.count;
+  const rank = tufts.vary;
+  let order = new Int32Array(count);
+  let scratch = new Int32Array(count);
+  for (let i = 0; i < count; i += 1) order[i] = i;
+  // Run boundaries, merged pairwise each pass: [0, end0, end1, ...].
+  let bounds = [0, ...Array.from(runEnds)];
+  let moved = 0;
+  while (bounds.length > 2) {
+    const next = [0];
+    for (let r = 0; r + 1 < bounds.length; r += 2) {
+      const start = bounds[r]!, middle = bounds[r + 1]!, end = bounds[r + 2] ?? middle;
       let left = start, right = middle;
       for (let to = start; to < end; to += 1) {
-        if (right >= end || (left < middle && tufts.vary[order[left]! * 4 + 3]! <= tufts.vary[order[right]! * 4 + 3]!)) scratch[to] = order[left++]!;
+        if (right >= end || (left < middle && rank[order[left]! * 4 + 3]! <= rank[order[right]! * 4 + 3]!)) scratch[to] = order[left++]!;
         else scratch[to] = order[right++]!;
-        yield "work";
+        if (!immediate && ++moved === SORT_CHUNK) { moved = 0; yield "work"; }
       }
+      next.push(end);
     }
     [order, scratch] = [scratch, order];
+    bounds = next;
   }
   const offsets = new Float32Array(tufts.offsets.length);
   const shape = new Float32Array(tufts.shape.length);
   const vary = new Float32Array(tufts.vary.length);
   const tone = new Float32Array(tufts.tone.length);
-  for (let to = 0; to < order.length; to += 1) {
+  const fromOffsets = tufts.offsets, fromShape = tufts.shape, fromTone = tufts.tone;
+  for (let to = 0; to < count; to += 1) {
     const from = order[to]!;
-    offsets.set(tufts.offsets.subarray(from * 3, from * 3 + 3), to * 3);
-    shape.set(tufts.shape.subarray(from * 4, from * 4 + 4), to * 4);
-    vary.set(tufts.vary.subarray(from * 4, from * 4 + 4), to * 4);
-    tone[to] = tufts.tone[from]!;
-    tufts.ranks[to] = tufts.vary[from * 4 + 3]!;
-    if (!immediate) yield "work";
+    const o = from * 3, t3 = to * 3, f = from * 4, t4 = to * 4;
+    offsets[t3] = fromOffsets[o]!; offsets[t3 + 1] = fromOffsets[o + 1]!; offsets[t3 + 2] = fromOffsets[o + 2]!;
+    shape[t4] = fromShape[f]!; shape[t4 + 1] = fromShape[f + 1]!; shape[t4 + 2] = fromShape[f + 2]!; shape[t4 + 3] = fromShape[f + 3]!;
+    vary[t4] = rank[f]!; vary[t4 + 1] = rank[f + 1]!; vary[t4 + 2] = rank[f + 2]!; vary[t4 + 3] = rank[f + 3]!;
+    tone[to] = fromTone[from]!;
+    tufts.ranks[to] = rank[f + 3]!;
+    rankIndex[from] = to;
+    if (!immediate && ++moved === SORT_CHUNK) { moved = 0; yield "work"; }
   }
   return { ...tufts, offsets, shape, vary, tone };
 }

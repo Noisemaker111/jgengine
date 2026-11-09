@@ -31,6 +31,7 @@ import {
   type GraphicsProfileOverrides,
 } from "@jgengine/core/settings/graphicsSettings";
 import { FRAME_RATE_LIMIT_DISPLAY, frameRateLimitOptions } from "@jgengine/core/settings/frameRateLimit";
+import { readRendererBackend, RENDERER_BACKEND_OPTIONS } from "@jgengine/core/settings/rendererBackend";
 import {
   DISPLAY_MODE_FULLSCREEN,
   DISPLAY_MODE_OPTIONS,
@@ -349,6 +350,15 @@ export function graphicsSettingRows(
           saveDesktopFrameRate(value).catch((error: unknown) => console.warn("frame rate not saved for the next launch", error));
         }
       },
+    },
+    {
+      // Switching remounts the canvas on the new API; a browser without WebGPU keeps drawing with WebGL.
+      id: SETTING_IDS.graphicsRenderer,
+      label: "Renderer",
+      kind: "select",
+      value: readRendererBackend(store),
+      options: RENDERER_BACKEND_OPTIONS,
+      set: (value) => store.set(SETTING_IDS.graphicsRenderer, String(value)),
     },
     {
       id: SETTING_IDS.graphicsAnisotropy,

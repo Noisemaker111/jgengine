@@ -5,6 +5,7 @@ import type { AtmosphereConfig } from "@jgengine/core/render/postProcessing";
 
 import { windClock, windDirection, windGust } from "@jgengine/core/model/modelWind.draw";
 import { findKeyLight, towardLight } from "./contactShadowPass.draw";
+import { HALF_ROUNDING_GLSL } from "./halfPrecision.draw";
 import { visitVisible } from "@jgengine/core/visibility/visitVisible.draw";
 
 const vertexShader = /* glsl */ `
@@ -17,11 +18,12 @@ const vertexShader = /* glsl */ `
 
 /**
  * Height haze plus light shafts in one full-screen pass. Writes premultiplied haze-and-shaft light in
- * rgb and the haze cover in alpha, so one blended draw composites it over the frame.
+ * rgb and the haze cover in alpha, blended straight over the frame.
  * @internal
  */
-export function atmosphereFragment(steps: number, variationTaps = 0): string {
+export function atmosphereFragment(steps: number, variationTaps = 0, truncated = true): string {
   return /* glsl */ `
+  ${truncated ? HALF_ROUNDING_GLSL : ""}
   uniform sampler2D tDepth;
   uniform mat4 uProjectionInverse;
   uniform mat4 uCameraWorld;
@@ -165,18 +167,12 @@ export function atmosphereFragment(steps: number, variationTaps = 0): string {
       // Isotropic phase (1 / 4pi); the strength knob lets a game push a smoky interior further.
       glow *= uLampStrength * 0.0796;
     }
-    gl_FragColor = vec4(haze * cover + shafts + glow, cover);
+    // Truncated as the half-float target it once drew into truncated it: the blend reads a wider
+    // source than that target held, which moved a few texels a frame by one half-float step.
+    gl_FragColor = ${truncated ? "rtz16(vec4(haze * cover + shafts + glow, cover))" : "vec4(haze * cover + shafts + glow, cover)"};
   }
 `;
 }
-
-const applyFragment = /* glsl */ `
-  uniform sampler2D tAtmosphere;
-  varying vec2 vUv;
-  void main() {
-    gl_FragColor = texture2D(tAtmosphere, vUv);
-  }
-`;
 
 const LIGHT_RESCAN_FRAMES = 90;
 /** Point and spot lights the haze glows around at once, nearest the camera first. */
@@ -236,18 +232,23 @@ export function sunShaftVisibility(uv: { x: number; y: number }, inFront: boolea
 /**
  * Sunlit air over the lit HDR frame: exponential height haze that fades distant ground into the sky
  * and brightens toward the sun, plus screen-space shafts where the sky shows through gaps. It reads
- * the beauty depth, so like contact shadows it draws into a target of its own and blends that over the
- * frame. With no shadow-casting sun it is skipped, unless the config is `indoor`: then the shafts drop
- * out and the haze and lamp glow keep running.
+ * the beauty depth, which the composer's buffers never carry, so the march blends over the frame in
+ * one draw. It used to march into a half-float target of its own and blend that over the frame; the
+ * march now truncates its output the way that target write did (`rtz16`), so the blend sees the same
+ * source bits without the extra full-screen write and read (`bun run perf post-audit` checks it).
+ * With no shadow-casting sun it is skipped, unless the config is `indoor`: then the shafts drop out
+ * and the haze and lamp glow keep running.
  * @internal
  */
 export class AtmospherePass extends Pass {
   readonly material: THREE.ShaderMaterial;
-  readonly applyMaterial: THREE.ShaderMaterial;
-  readonly target: THREE.WebGLRenderTarget;
+  /** The march's step and variation-tap counts, so the post audit can build the unrounded march to compare with. */
+  readonly marchSteps: number;
+  readonly marchTaps: number;
   private readonly quad: FullScreenQuad;
-  private readonly applyQuad: FullScreenQuad;
   private light: THREE.DirectionalLight | null = null;
+  /** A dry run (the shader warmup's) draws even outdoors with no sun yet, so the programs link off the frame. */
+  dry = false;
   private lamps: HazeLamp[] = [];
   private framesSinceScan = LIGHT_RESCAN_FRAMES;
   private frame = 0;
@@ -271,7 +272,8 @@ export class AtmospherePass extends Pass {
     this.indoor = settings.indoor;
     this.tint = settings.color === "" ? null : new THREE.Color(settings.color);
     this.drift = settings.drift;
-    this.target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, depthBuffer: false });
+    this.marchSteps = Math.max(1, steps);
+    this.marchTaps = settings.variation > 0 ? variationTaps : 0;
     this.material = new THREE.ShaderMaterial({
       uniforms: {
         tDepth: { value: depth },
@@ -302,14 +304,7 @@ export class AtmospherePass extends Pass {
         uDrift: { value: this.driftOffset },
       },
       vertexShader,
-      fragmentShader: atmosphereFragment(Math.max(1, steps), settings.variation > 0 ? variationTaps : 0),
-      depthTest: false,
-      depthWrite: false,
-    });
-    this.applyMaterial = new THREE.ShaderMaterial({
-      uniforms: { tAtmosphere: { value: this.target.texture } },
-      vertexShader,
-      fragmentShader: applyFragment,
+      fragmentShader: atmosphereFragment(this.marchSteps, this.marchTaps),
       depthTest: false,
       depthWrite: false,
       transparent: true,
@@ -321,7 +316,6 @@ export class AtmospherePass extends Pass {
       blendDstAlpha: THREE.OneFactor,
     });
     this.quad = new FullScreenQuad(this.material);
-    this.applyQuad = new FullScreenQuad(this.applyMaterial);
   }
 
   private keyLight(): THREE.DirectionalLight | null {
@@ -338,13 +332,12 @@ export class AtmospherePass extends Pass {
   }
 
   override setSize(width: number, height: number): void {
-    this.target.setSize(width, height);
     this.aspect = width / Math.max(1, height);
   }
 
   override render(renderer: THREE.WebGLRenderer, _writeBuffer: THREE.WebGLRenderTarget, readBuffer: THREE.WebGLRenderTarget): void {
     const light = this.keyLight();
-    if (light === null && !this.indoor) return;
+    if (light === null && !this.indoor && !this.dry) return;
     const uniforms = this.material.uniforms;
     // No sun indoors: the haze and the lamp glow still run, the shafts and the sun's warmth do not.
     const sun = light === null ? (uniforms["uSunDirection"]!.value as THREE.Vector3).set(0, 1, 0) : towardLight(light, uniforms["uSunDirection"]!.value as THREE.Vector3);
@@ -372,12 +365,11 @@ export class AtmospherePass extends Pass {
     this.frame = (this.frame + 1) % 64;
     uniforms["uFrame"]!.value = this.frame;
 
-    renderer.setRenderTarget(this.target);
-    this.quad.render(renderer);
+    // Drawn over the frame, so the renderer must not clear the target first.
     const autoClear = renderer.autoClear;
     renderer.autoClear = false;
     renderer.setRenderTarget(readBuffer);
-    this.applyQuad.render(renderer);
+    this.quad.render(renderer);
     renderer.autoClear = autoClear;
   }
 
@@ -416,10 +408,7 @@ export class AtmospherePass extends Pass {
   }
 
   override dispose(): void {
-    this.target.dispose();
     this.material.dispose();
-    this.applyMaterial.dispose();
     this.quad.dispose();
-    this.applyQuad.dispose();
   }
 }

@@ -16,7 +16,9 @@ import {
   sweepCaptureProfiles,
   watchPageExceptions,
   withBrowserSession,
+  sessionChromePriority,
   type FrameClock,
+  type SessionChromePriority,
 } from "./browser-lib";
 import { parseGraphicsTier, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 import { engineRecord, resolveEngineIdentity, type EngineRecord } from "./engineIdentity";
@@ -41,6 +43,9 @@ import {
 import type { SystemProbeReading } from "../packages/core/src/devtools/types";
 import { renderBreakdownText, type FrameBreakdownSummary } from "../packages/core/src/devtools/frameBreakdown";
 import { compareBreakdowns, readBreakdown, resetBreakdown, startPath, type PerfPath } from "./perf-breakdown";
+import { acquirePerfLock, perfLockWaitedMs, withPerfLock } from "./perf-lock";
+import { markStep } from "./hangReport";
+import { currentPriority, type PriorityLabel } from "./machine-priority";
 import { provisionCapturedGame } from "./provisionCapture";
 import {
   ACCESSIBILITY_SETTING_IDS,
@@ -727,8 +732,16 @@ export const DRAW_FRAME_COUNTER_SCRIPT = `(() => {
     wrapped.add(countedExtension);
     proto.getExtension = countedExtension;
   }
+  // The WebGPU backend's GL-shaped context is not a native prototype, so its draws come from its own
+  // counter (one per GL draw call, as here); without it every WebGPU record read 0 draws a frame.
+  let gpuContext = null;
+  let gpuDraws = 0;
   const tick = () => {
-    if (state.counting) state.frames.push(state.pending);
+    const live = globalThis.__jgWebGpu;
+    if (live !== gpuContext) { gpuContext = live ?? null; gpuDraws = gpuContext?.stats?.draws ?? 0; }
+    const drawsNow = gpuContext?.stats?.draws ?? 0;
+    if (state.counting) state.frames.push(state.pending + drawsNow - gpuDraws);
+    gpuDraws = drawsNow;
     state.pending = 0;
     requestAnimationFrame(tick);
   };
@@ -737,6 +750,7 @@ export const DRAW_FRAME_COUNTER_SCRIPT = `(() => {
     start() {
       state.frames = [];
       state.pending = 0;
+      gpuDraws = gpuContext?.stats?.draws ?? 0;
       state.counting = true;
     },
     stop() {
@@ -967,6 +981,71 @@ export interface PerfRecord extends Omit<PerfReport, "quality"> {
   movement?: { start: readonly number[] | null; end: readonly number[] | null; displacement: number | null; focus: readonly (string | null)[]; errors: string[] };
   /** Where each frame went over the measured window; null when the page has no dev telemetry. */
   breakdown?: FrameBreakdownSummary | null;
+  /**
+   * A second window on the same path with every draw timed on its own (`gpuTiming: "draws"`): the
+   * GPU work per pass and material. `breakdown`'s pass timers also count the GPU waiting on the CPU.
+   * Absent unless asked for (`gpuWork`), and in older records.
+   */
+  gpuWork?: FrameBreakdownSummary | null;
+  /** The GPU API that actually drew the window, and the WebGPU backend's warnings when it was that one. */
+  backend?: BackendReading;
+  /**
+   * Where the run sat on the machine: seconds it queued for the perf lock before measuring, the
+   * priority its Chrome drew at, and the priority of the process that measured. A number taken
+   * below normal also measured whatever outranked it; absent in older records.
+   */
+  machine?: RunMachine;
+}
+
+export interface RunMachine {
+  lockWaitSeconds: number;
+  chromePriority: SessionChromePriority | "unknown";
+  launcherPriority: PriorityLabel;
+}
+
+/** This run's {@link RunMachine}, read when a record is built. */
+export function runMachine(): RunMachine {
+  return { lockWaitSeconds: Math.round(perfLockWaitedMs() / 1000), chromePriority: sessionChromePriority() ?? "unknown", launcherPriority: currentPriority() };
+}
+
+/** The clause a summary line adds about the run's place on the machine, or "" for an older record. */
+export function machineClause(machine: RunMachine | undefined): string {
+  if (machine === undefined) return "";
+  return `, waited ${machine.lockWaitSeconds} s for the perf lock, Chrome at ${machine.chromePriority} priority (measured from ${machine.launcherPriority})`;
+}
+
+/** Which backend drew the page: `webgpu` only when the engine's WebGPU context is live. */
+export interface BackendReading {
+  drawing: "webgl" | "webgpu";
+  /** The WebGPU context's distinct warnings (what it could not draw as WebGL would), first 20. */
+  warnings: string[];
+}
+
+/**
+ * Page expression for a {@link BackendReading}. WebGPU errors come first so the first-20 cut never
+ * hides one behind ordinary warnings.
+ */
+export const BACKEND_READING_SCRIPT = `(() => { const g = globalThis.__jgWebGpu; if (!g) return { drawing: "webgl", warnings: [] }; const keys = [...g.warnings.keys()]; return { drawing: "webgpu", warnings: [...keys.filter((k) => k.startsWith("WebGPU:")), ...keys.filter((k) => !k.startsWith("WebGPU:"))].slice(0, 20) }; })()`;
+
+/**
+ * The warnings that are WebGPU errors (the device's uncaptured errors, `WebGPU: ...`). One means a
+ * command buffer failed validation and its GPU work was dropped, so the run drew less than the
+ * game asked for and its frame times are not comparable: a broken timestamp resolve once made
+ * every WebGPU frame look faster this way.
+ */
+export function gpuErrors(backend: { warnings: readonly string[] } | undefined): string[] {
+  return backend?.warnings.filter((warning) => warning.startsWith("WebGPU:")) ?? [];
+}
+
+/** The `degraded:` line for a run whose GPU work was dropped, or null when it was not. */
+export function gpuErrorLine(backend: { warnings: readonly string[] } | undefined): string | null {
+  const errors = gpuErrors(backend);
+  return errors.length === 0 ? null : `degraded: ${errors.length} WebGPU error(s) dropped GPU work, so this run's frame times are not comparable; first: ${errors[0]}`;
+}
+
+async function readBackend(session: CdpSession): Promise<BackendReading> {
+  const reading = await session.evaluate<BackendReading>(BACKEND_READING_SCRIPT);
+  return reading ?? { drawing: "webgl", warnings: [] };
 }
 
 async function playerPosition(session: CdpSession): Promise<{ position: number[] | null; error: string | null; focus: string | null }> {
@@ -1025,6 +1104,12 @@ export interface RawProfile {
 export interface MeasureOptions {
   /** Page target to measure; the caller owns opening and closing it. */
   session: CdpSession;
+  /**
+   * Links the game's asset packs before measuring (default: `provisionCapturedGame`, which pulls
+   * missing packs over the network). A test with a fake page passes a no-op: on a fresh machine
+   * the pull outlasted the test's 20 s limit.
+   */
+  provision?: (gameDir: string, log: (line: string) => void) => Promise<unknown>;
   /** Dev-server base URL, e.g. `http://127.0.0.1:4601`. */
   base: string;
   game: string;
@@ -1054,6 +1139,47 @@ export interface MeasureOptions {
   size?: { width: number; height: number };
   /** CPU and call rows the breakdown keeps (default 15); a report that sums costs by group needs the tail too. */
   breakdownTop?: number;
+  /** After the frame window, time every draw for a few seconds more and save it as `gpuWork`. */
+  gpuWork?: boolean;
+}
+
+/** Seconds of draw-timed frames a `gpuWork` window keeps. */
+export const GPU_WORK_SECONDS = 3;
+
+/**
+ * One readiness window for the game page: it outlasts the page's own readiness budget (2.5 minutes,
+ * past the shader warmup's cap). A PC busy for the whole window gets a second one, so a caller's
+ * deadline for one game allows {@link PAGE_READY_MS} twice.
+ */
+export const PAGE_READY_MS = 210_000;
+
+/**
+ * The hard deadline of one game's browser session: two readiness windows, the warmup and every
+ * window the run measures (`windowSeconds` in all), and two minutes for the browser, provisioning
+ * and reads. A fixed 300 s killed a busy PC's page while the capture had just granted its second
+ * window, so the measurement never ran.
+ */
+export function gameSessionDeadlineMs(warmupMs: number, windowSeconds: number): number {
+  return 2 * PAGE_READY_MS + warmupMs + windowSeconds * 1000 + 120_000;
+}
+
+/**
+ * Time every draw for a window and read it back, then return the page to pass timers. Null when the
+ * page has no breakdown or the window resolved no GPU timer.
+ */
+export async function measureGpuWork(session: CdpSession, top: number, seconds = GPU_WORK_SECONDS): Promise<FrameBreakdownSummary | null> {
+  const switched = await session.evaluate<boolean>(`(() => { const b = globalThis.__jgFrameBreakdown; if (!b || typeof b.gpuTiming !== "function") return false; b.gpuTiming("draws"); return true; })()`);
+  if (switched !== true) return null;
+  try {
+    // A frame or two runs before the switch reaches it, and its timers resolve a few frames late.
+    await session.evaluate(`new Promise((r) => setTimeout(r, 300))`, { awaitPromise: true });
+    await resetBreakdown(session);
+    await session.evaluate(`new Promise((r) => setTimeout(r, ${Math.round(seconds * 1000)}))`, { awaitPromise: true });
+    const summary = await session.evaluate<FrameBreakdownSummary | null>(`globalThis.__jgFrameBreakdown?.summary({ top: ${Math.max(1, Math.floor(top))} }) ?? null`);
+    return summary === null || summary === undefined || summary.gpu === null ? null : summary;
+  } finally {
+    await session.evaluate(`globalThis.__jgFrameBreakdown?.gpuTiming?.("span")`);
+  }
 }
 
 export interface PerfMeasure {
@@ -1126,19 +1252,25 @@ export function writePerfRecord(record: PerfRecord, path: string): void {
 
 /**
  * Play one game and measure it: warm up, sample frame deltas, snapshot renderer
- * and scene counts, and read the GL objects created after warmup.
+ * and scene counts, and read the GL objects created after warmup. Page load, warmup and the
+ * windows hold the machine-wide perf lock, so no other timed run shares the machine with them.
  */
 export async function measureGame(options: MeasureOptions): Promise<PerfMeasure> {
+  // A game whose packs are not linked into this checkout draws placeholder boxes, and its frame
+  // times describe the boxes; link them first, the same as shoot and drive do.
+  // Each phase names itself, so a session killed at its deadline says which one hung.
+  markStep(`perf ${options.game}: link asset packs`);
+  await (options.provision ?? provisionCapturedGame)(join(repoRoot, "games", options.game), (line) => console.error(`perf: ${line}`));
+  return withPerfLock(`perf ${options.game}`, () => measureProvisioned(options));
+}
+
+async function measureProvisioned(options: MeasureOptions): Promise<PerfMeasure> {
   const { session, base, game, quality, seconds = DEFAULT_SECONDS, warmupMs = WARMUP_MS } = options;
   const draft = options.draft ?? false;
   const profileRun = options.profile ?? true;
   const settings = options.settings ?? [];
   const params = options.params ?? [];
   const frameClock = options.frameClock ?? "capped";
-
-  // A game whose packs are not linked into this checkout draws placeholder boxes, and its frame
-  // times describe the boxes; link them first, the same as shoot and drive do.
-  await provisionCapturedGame(join(repoRoot, "games", game), (line) => console.error(`perf: ${line}`));
 
   let clockProbeMs: number | null = null;
   if (frameClock === "uncapped") {
@@ -1161,7 +1293,8 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
   // Same navigation the capture tools use: it fails on a page exception or a failed document
   // instead of waiting out the readiness timeout. The timeout outlasts the page's own readiness
   // budget (2.5 minutes, past the shader warmup's cap), so a slow load reports its own reason.
-  await navigateCapturePage(session, url.toString(), 210_000);
+  markStep(`perf ${game}: load the page`);
+  await navigateCapturePage(session, url.toString(), PAGE_READY_MS);
   // The tier the game resolved, not the flag: a record that names a tier it never rendered at is
   // exactly the evidence gap this flag closes.
   const reportedTier = await readReportedQuality(session);
@@ -1174,7 +1307,11 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
     console.error(`perf: software rasterizer (${gpu}) — frame times are not a GPU measurement`);
   }
 
+  markStep(`perf ${game}: warm up`);
   await session.evaluate(`new Promise((r) => setTimeout(r, ${warmupMs}))`, { awaitPromise: true });
+  const backend = await readBackend(session);
+  const asked = settings.find((setting) => setting.id === "graphics.renderer")?.value;
+  if (asked !== undefined && asked !== backend.drawing) console.error(`degraded: asked for the ${String(asked)} backend but ${backend.drawing} drew the page`);
   const movementStart = await playerPosition(session);
   const releasePath = await startPath(session, options.path ?? "still");
   await session.evaluate(`window.__jgPerfGl?.reset?.()`);
@@ -1185,12 +1322,17 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
   // percentiles are the loop the player gets; the profile window is separate.
   await session.evaluate(`globalThis.__jgPerfDraws?.start?.()`);
   const startedAt = Date.now();
+  markStep(`perf ${game}: frame window`);
   const deltas = (await session.evaluate<number[]>(SAMPLE_FRAMES_SCRIPT(seconds * 1000), { awaitPromise: true })) ?? [];
   const drawFrames = (await session.evaluate<number[]>(`globalThis.__jgPerfDraws?.stop?.() ?? []`)) ?? [];
   const movementEnd = await playerPosition(session);
   const windowMs = Date.now() - startedAt;
   const frameDraws = summarizeFrameDraws(drawFrames);
+  markStep(`perf ${game}: read the breakdown`);
   const breakdown = hasBreakdown ? await readBreakdown(session, undefined, options.breakdownTop) : null;
+  markStep(`perf ${game}: draw-timed GPU window`);
+  const gpuWork = hasBreakdown && options.gpuWork === true ? await measureGpuWork(session, options.breakdownTop ?? 15) : undefined;
+  if (gpuWork === null) console.error("degraded: the draw-timed GPU window resolved no timers, so the record has pass spans only");
 
   const snapshot = await session.evaluate<{
     frame: { avgSimMs?: number; avgOutsideMs?: number; phases?: unknown[] } | null;
@@ -1201,6 +1343,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
     longFrames?: unknown[];
   }>(`window.__jgengineAgent?.handle?.({ method: "debug_snapshot" })?.snapshot ?? null`);
   const gl = (await session.evaluate<GlCounts | null>(`globalThis.__jgPerfGl ?? null`)) ?? { counts: {}, since: {} };
+  markStep(`perf ${game}: count scene nodes`);
   const sceneNodes = await measureSceneNodes(session);
   const size = await session.evaluate<{ w: number; h: number }>(`({ w: innerWidth, h: innerHeight })`);
 
@@ -1227,6 +1370,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
       // Collected objects are the garbage itself; without these flags only survivors are counted.
       await session.send("HeapProfiler.startSampling", { samplingInterval: 16_384, includeObjectsCollectedByMajorGC: true, includeObjectsCollectedByMinorGC: true });
     }
+    markStep(`perf ${game}: CPU profile window`);
     await session.send("Profiler.start");
     const profiledAt = Date.now();
     await session.evaluate(`new Promise((r) => setTimeout(r, ${seconds * 1000}))`, { awaitPromise: true });
@@ -1242,10 +1386,15 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
 
   await releasePath();
   const top = raw === null ? [] : aggregateSelfTime(raw, profiledMs);
+  // Read again after the window: a WebGPU error raised while it was measured belongs to this run.
+  const drew = await readBackend(session);
+  const dropped = gpuErrorLine(drew);
+  if (dropped !== null) console.error(dropped);
 
   const record: PerfRecord = {
     game,
     gpu,
+    backend: drew,
     quality: reportedTier ?? quality ?? "unknown",
     viewport: `${size?.w ?? 0}x${size?.h ?? 0}`,
     seconds: Math.round((windowMs / 1000) * 10) / 10,
@@ -1291,6 +1440,8 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
     path: options.path ?? "still",
     movement: movementEvidence(movementStart, movementEnd),
     breakdown,
+    ...(gpuWork === undefined ? {} : { gpuWork }),
+    machine: runMachine(),
   };
 
   const draws = record.render.draws;
@@ -1402,6 +1553,10 @@ async function main(): Promise<void> {
    * one launch. A function so a daemon that dies under a run can be retried cold once.
    */
   const runPerf = async (daemon: ShootDaemonState | null, browser: "cold" | "warm"): Promise<number> => {
+    // The lock first, then the server, then the browser: a server obtained before a 503 s wait was
+    // gone after it (the broker had been restarted; ERR_CONNECTION_REFUSED, 2026-11-08). Taken before
+    // the shared browser's turn, so a run queued for the lock never stalls the daemon's other captures.
+    const releaseLock = await acquirePerfLock(`perf ${pending.join(" ")}`);
     const server = daemon === null ? await ensureDevServer(repoRoot) : await ensureDaemonTarget(daemon, "dev");
     return withDaemonWatch(daemon, withBrowserSession(
       {
@@ -1412,6 +1567,8 @@ async function main(): Promise<void> {
         hardDeadlineMs: pending.length * 300_000,
         frameClock,
         headed,
+        // The frame time is the product, so the browser draws at normal priority (scripts/perf.ts).
+        chromePriority: "normal",
         server: server.child,
         serverPid: server.pid,
         debugPort: daemon?.chromePort,
@@ -1454,7 +1611,7 @@ async function main(): Promise<void> {
         }
         return failed.length === 0 ? 0 : 1;
       },
-    ));
+    )).finally(releaseLock);
   };
 
   const exitCode = await runWithDaemonRecovery(warm, (daemon, mode) =>
@@ -1549,7 +1706,7 @@ export function perfBatchTable(rows: readonly PerfBatchRow[]): string {
 
 /** The text a person reads after a run: the breakdown, the run's conditions, and the diff when asked. */
 export function perfSummaryText(record: PerfRecord, baseline: PerfRecord | null): string {
-  const conditions = `${record.viewport}, ${record.quality} tier, ${record.frameClock} clock, path ${record.path ?? "still"}, ${record.gpu}`;
+  const conditions = `${record.viewport}, ${record.quality} tier, ${record.frameClock} clock, path ${record.path ?? "still"}, ${record.gpu}${machineClause(record.machine)}`;
   const lines: string[] = [];
   if (record.breakdown === null || record.breakdown === undefined) {
     lines.push(`${record.game}: no frame breakdown (the page has no dev telemetry); frame avg ${record.frame.avgMs} ms, p95 ${record.frame.p95Ms} ms`);

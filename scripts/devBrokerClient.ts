@@ -33,7 +33,8 @@ export async function brokerStatusOrNull(timeoutMs = 1_500): Promise<BrokerStatu
 
 export async function stopBroker(): Promise<boolean> {
   if ((await brokerStatusOrNull()) === null) return false;
-  await localPostJson(`${brokerBase()}/v1/stop`, {}, 5_000).catch(() => null);
+  const by = `${process.argv.slice(1).join(" ")} in ${process.cwd()} (pid ${process.pid})`;
+  await localPostJson(`${brokerBase()}/v1/stop`, { by }, 5_000).catch(() => null);
   for (let attempt = 0; attempt < 40; attempt += 1) {
     if ((await brokerStatusOrNull(500)) === null) return true;
     await new Promise((resolve) => setTimeout(resolve, 250));
@@ -43,8 +44,8 @@ export async function stopBroker(): Promise<boolean> {
 
 /**
  * Start the broker so it outlives this run and holds none of its handles. It must not share this
- * run's Windows job either: fairshare ends a slot's whole job when the command's shell exits, and a
- * broker started from a slotted `bun run shoot` died with it (about ten times in an hour on
+ * run's Windows job either: a runner that ends its whole job when the command's shell exits killed a
+ * broker started from `bun run shoot` with it (about ten times in an hour on
  * 2026-11-08), taking its Chrome, its dev servers and every capture on them along.
  */
 function launchBroker(script: string): void {

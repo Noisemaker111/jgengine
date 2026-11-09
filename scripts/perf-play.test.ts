@@ -1,9 +1,14 @@
 import { createServer, type Server } from "node:http";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { expect, test } from "bun:test";
 
 import { chromeFrameClockArgs, startBrowser, type ChromeLaunchOptions } from "./browser-lib";
+import { PERF_LOCK_ENV } from "./perf-lock";
+
+// measureGame takes the machine-wide perf lock; a fake page must never queue behind a real run.
+process.env[PERF_LOCK_ENV] = join(tmpdir(), `jg-perf-lock-test-${process.pid}`, "perf.lock");
 import {
   aggregateInclusiveTime,
   aggregateSelfTime,
@@ -94,6 +99,21 @@ test("whole-frame draws include extension calls once, even when the extension or
   ticks.shift()?.();
   expect(scope.__jgPerfDraws?.stop()).toEqual([2]);
   expect(calls).toBe(2);
+});
+
+test("the draw counter counts the WebGPU context's draws, which no native prototype sees", () => {
+  const ticks: (() => void)[] = [];
+  const stats = { draws: 40 };
+  const scope: { __jgWebGpu?: { stats: typeof stats }; __jgPerfDraws?: { start(): void; stop(): number[] } } = {};
+  new Function("globalThis", "requestAnimationFrame", DRAW_FRAME_COUNTER_SCRIPT)(scope, (tick: () => void) => ticks.push(tick));
+  scope.__jgWebGpu = { stats };
+  ticks.shift()?.();
+  scope.__jgPerfDraws?.start();
+  stats.draws += 116;
+  ticks.shift()?.();
+  stats.draws += 120;
+  ticks.shift()?.();
+  expect(scope.__jgPerfDraws?.stop()).toEqual([116, 120]);
 });
 
 test("parsePerfArgs reads one game with its flags", () => {
@@ -462,12 +482,15 @@ function fakePerfSession(options: { clock?: number[]; frames?: number[]; gpu?: s
 
 test("a record says which clock produced its frame times, so the two never get compared", async () => {
   const base = "http://127.0.0.1:4601";
-  const capped = await measureGame({ session: fakePerfSession(), base, game: "beacon-bastion", warmupMs: 0, seconds: 0.001, profile: false });
+  // A fake page draws nothing, so the game's asset packs are never pulled for it.
+  const provision = async () => {};
+  const capped = await measureGame({ session: fakePerfSession(), base, game: "beacon-bastion", warmupMs: 0, seconds: 0.001, profile: false, provision });
   expect(capped.record.frameClock).toBe("capped");
   expect(capped.record.frame.avgMs).toBe(6);
 
   const uncapped = await measureGame({
     session: fakePerfSession({ clock: [0.8, 0.9, 0.7] }),
+    provision,
     base,
     game: "beacon-bastion",
     warmupMs: 0,
@@ -480,6 +503,7 @@ test("a record says which clock produced its frame times, so the two never get c
   await expect(
     measureGame({
       session: fakePerfSession({ clock: [16.7, 16.7, 16.8] }),
+      provision,
       base,
       game: "beacon-bastion",
       warmupMs: 0,

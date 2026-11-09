@@ -1,42 +1,174 @@
-import { ambientFauna } from "./game/ambientFauna";
-import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
-import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
-import { authoredSpawnPosition, authoredSpawnRotation } from "@jgengine/core/world/authoredSpawn";
-import { createGameFlowSystem, menuPane } from "@jgengine/core/game/gameFlow";
-import { gamePhase } from "@jgengine/core/game/gamePhase";
-import { onboardingOf } from "@jgengine/core/onboarding/onboardingSystem";
-import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/shell/gameKit";
+// Every import is one name per line, even a single name: a lane that adds a name, a prompt source or a
+// system adds a line, which a rebase keeps beside another lane's (scripts/generated-rebase.ts). Two lanes
+// adding a name to one import line, or a source to one list expression, was a hand rebase each time.
+import {
+  ambientFauna,
+} from "./game/ambientFauna";
+import {
+  hdriEnvironment,
+} from "@jgengine/assets/catalogs/hdriLibrary";
+import {
+  lutGrade,
+} from "@jgengine/assets/catalogs/lutGrades";
+import {
+  authoredSpawnPosition,
+  authoredSpawnRotation,
+} from "@jgengine/core/world/authoredSpawn";
+import {
+  createGameFlowSystem,
+  menuPane,
+} from "@jgengine/core/game/gameFlow";
+import {
+  gamePhase,
+} from "@jgengine/core/game/gamePhase";
+import {
+  onboardingOf,
+} from "@jgengine/core/onboarding/onboardingSystem";
+import {
+  DEFAULT_WALK_CODES,
+  defineGame,
+} from "@jgengine/shell/gameKit";
 
-import { fernwildKit } from "./art/look";
-import { editorLayers } from "./editorLayers";
-import { assets } from "./game/assets";
-import { baseGhost, basePrompts, baseView, fuelNear, lastPiece, piecesBuilt, stations, storeView } from "./game/base";
-import { cavePrompts, cavesOf, cavesView } from "./game/caves";
-import { eggPrompts, eggsOnGround } from "./game/eggs";
-import { EGG_SIZES, eggItem, KIBBLE_TIERS, kibbleItem } from "./game/data/kibble";
-import { bodyPrompts, bodyView } from "./game/deathBody";
-import { breedingPrompts, breedingView } from "./game/breeding";
-import { broodView, obeliskPrompts } from "./game/broodmother";
-import { BROOD_PHASES, BROOD_TIERS } from "./game/data/bosses";
-import { airliftView, mountSwim, awakeTamingProgress, creatureCard, creaturePrompts, lineageStrays, creaturesView, speciesNear, wildCountNear, wildHurtNear, nearestTameStance, wildLevelNear, mountCanFly, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
-import { tameFood } from "./game/tameHunger";
-import { STRUCTURES } from "./game/data/structures";
-import { content } from "./game/content";
-import { itemTraits } from "./game/data/items";
-import { SURVIVOR } from "./game/data/survivor";
-import { entityModels, objectModels, scatterModels, rockSolids } from "./game/models";
-import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./game/bags";
-import { nearestSupplyDrop, supplyDropPrompts } from "./game/supplyDrops";
-import { canRun, nearestHarvestable, survivorPrompts, survivorView } from "./game/survivor";
-import { CLIMB_SPEED } from "./game/data/flight";
-import { SWIM_SLOW } from "./game/data/swim";
-import { firstDay, PREY } from "./game/onboarding";
-import { dossierView, nearestUnreadNote, notePrompts } from "./game/dossier";
-import { openScreen } from "./game/screens";
-import { GameUI } from "./game/ui/GameUI";
-import { BaseWorld } from "./game/ui/BaseWorld";
-import { onNewPlayer, survivorStart, systems } from "./loop";
-import { time, world } from "./world";
+import {
+  fernwildKit,
+} from "./art/look";
+import {
+  editorLayers,
+} from "./editorLayers";
+import {
+  assets,
+} from "./game/assets";
+import {
+  baseGhost,
+  basePrompts,
+  baseView,
+  fuelNear,
+  lastPiece,
+  piecesBuilt,
+  stations,
+  storeView,
+} from "./game/base";
+import {
+  cavePrompts,
+  cavesOf,
+  cavesView,
+} from "./game/caves";
+import {
+  eggPrompts,
+  eggsOnGround,
+} from "./game/eggs";
+import {
+  EGG_SIZES,
+  eggItem,
+  KIBBLE_TIERS,
+  kibbleItem,
+} from "./game/data/kibble";
+import {
+  bodyPrompts,
+  bodyView,
+} from "./game/deathBody";
+import {
+  breedingPrompts,
+  breedingView,
+} from "./game/breeding";
+import {
+  broodView,
+  obeliskPrompts,
+} from "./game/broodmother";
+import {
+  BROOD_PHASES,
+  BROOD_TIERS,
+} from "./game/data/bosses";
+import {
+  airliftView,
+  awakeTamingProgress,
+  creatureCard,
+  creaturePrompts,
+  creaturesView,
+  lastTame,
+  lineageStrays,
+  mountCanFly,
+  mountSwim,
+  nearestCarcass,
+  nearestTame,
+  nearestTameStance,
+  nearestThreat,
+  nearestWild,
+  speciesNear,
+  wildCountNear,
+  wildHurtNear,
+  wildLevelNear,
+} from "./game/creatures";
+import {
+  tameFood,
+} from "./game/tameHunger";
+import {
+  STRUCTURES,
+} from "./game/data/structures";
+import {
+  content,
+} from "./game/content";
+import {
+  itemTraits,
+} from "./game/data/items";
+import {
+  SURVIVOR,
+} from "./game/data/survivor";
+import {
+  entityModels,
+  objectModels,
+  scatterModels,
+  rockSolids,
+} from "./game/models";
+import {
+  BAG,
+  BAG_SLOTS,
+  HOTBAR,
+  HOTBAR_SLOTS,
+} from "./game/bags";
+import {
+  nearestSupplyDrop,
+  supplyDropPrompts,
+} from "./game/supplyDrops";
+import {
+  canRun,
+  nearestHarvestable,
+  survivorPrompts,
+  survivorView,
+} from "./game/survivor";
+import {
+  CLIMB_SPEED,
+} from "./game/data/flight";
+import {
+  SWIM_SLOW,
+} from "./game/data/swim";
+import {
+  firstDay,
+  PREY,
+} from "./game/onboarding";
+import {
+  dossierView,
+  nearestUnreadNote,
+  notePrompts,
+} from "./game/dossier";
+import {
+  openScreen,
+} from "./game/screens";
+import {
+  GameUI,
+} from "./game/ui/GameUI";
+import {
+  BaseWorld,
+} from "./game/ui/BaseWorld";
+import {
+  onNewPlayer,
+  survivorStart,
+  systems,
+} from "./loop";
+import {
+  time,
+  world,
+} from "./world";
 
 const SPAWN_YAW = authoredSpawnRotation(editorLayers);
 const SPAWN_AT = authoredSpawnPosition(editorLayers);
@@ -109,11 +241,32 @@ export const game = defineGame({
   },
   controls: {
     // A ridden flyer hovers: Space climbs, C dives, WASD flies at the mount's own speed; out of stamina it drops.
-    movement: { canSprint: canRun, swim: { speedMultiplier: SWIM_SLOW, dive: true }, feel: { runMultiplier: SURVIVOR.runMultiplier }, flight: { mode: "hover", verticalSpeed: CLIMB_SPEED, canFly: mountCanFly } },
+    movement: {
+      canSprint: canRun,
+      swim: { speedMultiplier: SWIM_SLOW, dive: true },
+      feel: { runMultiplier: SURVIVOR.runMultiplier },
+      flight: { mode: "hover", verticalSpeed: CLIMB_SPEED, canFly: mountCanFly },
+    },
     // The camera starts behind the survivor on the authored spawn facing, so you wash up looking inland.
-    prompts: (ctx) => [...survivorPrompts(ctx), ...creaturePrompts(ctx), ...basePrompts(ctx), ...cavePrompts(ctx), ...bodyPrompts(ctx), ...supplyDropPrompts(ctx), ...eggPrompts(ctx), ...breedingPrompts(ctx), ...obeliskPrompts(ctx), ...notePrompts(ctx)],
+    // One prompt source per line, in the order the prompts show.
+    prompts: (ctx) => [
+      ...survivorPrompts(ctx),
+      ...creaturePrompts(ctx),
+      ...basePrompts(ctx),
+      ...cavePrompts(ctx),
+      ...bodyPrompts(ctx),
+      ...supplyDropPrompts(ctx),
+      ...eggPrompts(ctx),
+      ...breedingPrompts(ctx),
+      ...obeliskPrompts(ctx),
+      ...notePrompts(ctx),
+    ],
   },
-  systems: [createGameFlowSystem(), ...systems, firstDay],
+  systems: [
+    createGameFlowSystem(),
+    ...systems,
+    firstDay,
+  ],
   newGame: survivorStart,
   loop: { onNewPlayer },
   GameUI,

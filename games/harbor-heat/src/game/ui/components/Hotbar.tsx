@@ -25,7 +25,7 @@ export function BeltHotbar() {
   const filled = slots.slice(0, 4).map((slot, index) => ({ itemId: slot?.itemId ?? null, index })).filter((slot): slot is { itemId: string; index: number } => slot.itemId !== null);
   if (filled.length === 0) return null;
   return (
-    <HudFade watch={[selected, ammo.ammo_9mm, ammo.ammo_shell, filled.length]} idleMs={5000} dimTo={0.62} className="hh-belt">
+    <HudFade watch={() => [selected, ammo.ammo_9mm, ammo.ammo_shell, filled.length]} idleMs={5000} dimTo={0.62} className="hh-belt">
       {filled.map(({ itemId, index }) => {
         const weapon = weaponById(itemId);
         const rounds = weapon === undefined || weapon.ammo === "none" ? undefined : ammo[AMMO_STAT_IDS[weapon.ammo] as keyof typeof ammo];

@@ -21,7 +21,7 @@ import type {
 import type { AvoidZone } from "../world/geometry";
 import type { SurfaceMaterialSpec } from "../material/surfaceMaterialGenerator";
 import { type TerrainPathProfile, withPathProfiles } from "./pathTerrain";
-import { buildPolylineIndex } from "../world/polylineIndex";
+import { buildPolylineIndex, createPolylineHit } from "../world/polylineIndex";
 import { distanceToRing, pointInPolygon, polygonSignedArea } from "../world/polygon";
 import type { Vec2 } from "../world/geometry";
 import { buildSpatialBuckets } from "../spatial/spatialBuckets";
@@ -459,10 +459,11 @@ export function roadDrapedField(base: TerrainField, roads: readonly RoadEnvironm
     half: road.width / 2,
     index: buildPolylineIndex(road.path),
   }));
+  const hit = createPolylineHit();
   const sampleHeight = (x: number, z: number): number => {
     let lift = 0;
     for (const road of draped) {
-      if (road.elevation > lift && road.index.nearest(x, z, road.half) !== null) lift = road.elevation;
+      if (road.elevation > lift && road.index.nearest(x, z, road.half, hit) !== null) lift = road.elevation;
     }
     return base.sampleHeight(x, z) + lift;
   };
@@ -1006,8 +1007,9 @@ export function createTerrainPaletteSampler(
   const nearby: number[] = [];
   return (x, z) => {
     let palette = bandSampler === null ? base : bandSampler(z);
-    for (const index of buckets.query(x, z, x, z, nearby)) {
-      const region = regions[index]!;
+    const found = buckets.query(x, z, x, z, nearby);
+    for (let k = 0; k < found; k += 1) {
+      const region = regions[nearby[k]!]!;
       const distance = region.coreDistance(x, z);
       if (distance <= 0) {
         palette = region.palette;
@@ -1045,6 +1047,7 @@ function resolveRegionShape(region: TerrainMaterialRegion): {
     const falloff = region.falloff ?? half;
     const index = buildPolylineIndex(region.points);
     const limit = half + falloff;
+    const scratch = createPolylineHit();
     let minX = Number.POSITIVE_INFINITY;
     let minZ = Number.POSITIVE_INFINITY;
     let maxX = Number.NEGATIVE_INFINITY;
@@ -1059,7 +1062,7 @@ function resolveRegionShape(region: TerrainMaterialRegion): {
     return {
       falloff,
       coreDistance: (x, z) => {
-        const hit = index.nearest(x, z, limit);
+        const hit = index.nearest(x, z, limit, scratch);
         return hit === null ? Number.POSITIVE_INFINITY : Math.max(0, hit.distance - half);
       },
       minX: empty ? 0 : minX - limit,
@@ -1140,7 +1143,12 @@ function withFlattenMasks(
     const base = sampleHeight(x, z);
     let height = base;
     for (const mask of resolved) {
-      const distance = Math.hypot(x - mask.center[0], z - mask.center[1]);
+      const dx = x - mask.center[0];
+      const dz = z - mask.center[1];
+      // A hypot is never below its larger side: a point outside the mask's square leaves the height alone.
+      const outer = Math.max(mask.radius, mask.radius + mask.falloff);
+      if (Math.abs(dx) > outer || Math.abs(dz) > outer) continue;
+      const distance = Math.hypot(dx, dz);
       if (distance <= mask.radius) {
         height = mask.target;
       } else if (distance <= mask.radius + mask.falloff) {
@@ -1208,9 +1216,10 @@ export function heightMapField(config: HeightMapFieldConfig): TerrainField {
 /**
  * Signed distance to a set of shore rings, positive inside: exact within `reach` of a shore (through each
  * ring's segment index, so a sample tests a handful of segments), and `reach` (land) or -Infinity (sea)
- * beyond it, read from a coarse land grid filled on demand.
+ * beyond it, read from a coarse land grid filled on demand. Land at least `landCap` inside every shore
+ * reads `reach` too: pass the distance past which the caller's answer no longer changes.
  */
-function outlineSignedDistance(rings: readonly (readonly (readonly [number, number])[])[], reach: number): (x: number, z: number) => number {
+function outlineSignedDistance(rings: readonly (readonly (readonly [number, number])[])[], reach: number, landCap = reach): (x: number, z: number) => number {
   const shores = rings.map((source) => {
     const ring = polygonSignedArea(source as readonly Vec2[]) >= 0 ? source : [...source].reverse();
     const closed = [...ring, ring[0]!] as Vec2[];
@@ -1241,6 +1250,7 @@ function outlineSignedDistance(rings: readonly (readonly (readonly [number, numb
   // past reach, 3 a shore runs within reach of the cell (samples there measure exactly). Most of an
   // island is far from its shore, so most samples are answered by one array read.
   const grid = new Uint8Array(columns * rows);
+  const scratch = createPolylineHit();
   const halfDiagonal = cell * Math.SQRT1_2;
   // Whether each cell's centre is on land (1) or sea (2), for samples past reach inside a near cell.
   const centreSide = new Uint8Array(columns * rows);
@@ -1257,7 +1267,7 @@ function outlineSignedDistance(rings: readonly (readonly (readonly [number, numb
     if (grid[key] === 0) {
       const cx = minX + (column + 0.5) * cell;
       const cz = minZ + (row + 0.5) * cell;
-      const near = shores.some((shore) => shore.index.nearest(cx, cz, reach + halfDiagonal) !== null);
+      const near = shores.some((shore) => shore.index.nearest(cx, cz, reach + halfDiagonal, scratch) !== null);
       grid[key] = near ? 3 : centreOnLand(key, column, row) ? 1 : 2;
     }
     return grid[key]!;
@@ -1267,7 +1277,7 @@ function outlineSignedDistance(rings: readonly (readonly (readonly [number, numb
     let near = false;
     for (const shore of shores) {
       if (x < shore.minX || x > shore.maxX || z < shore.minZ || z > shore.maxZ) continue;
-      const hit = shore.index.nearest(x, z, reach);
+      const hit = shore.index.nearest(x, z, reach, scratch);
       if (hit === null) continue;
       near = true;
       const normal = shore.normals[hit.segment]!;
@@ -1289,6 +1299,30 @@ function outlineSignedDistance(rings: readonly (readonly (readonly [number, numb
     const row = Math.floor((z - minZ) / cell);
     return centreOnLand(row * columns + column, column, row) ? reach : Number.NEGATIVE_INFINITY;
   };
+  // A finer grid inside the near cells, for a caller that reads land distances only up to `landCap`:
+  // per fine cell, 0 unknown, 1 land at least `landCap` from every shore, 2 anything else. Most of an
+  // island's land near its shore is still that far from it, and one array read answers it.
+  // At most 1024 cells a side, so a short cap over a large map cannot claim a huge grid.
+  const fineCell = Math.max(landCap / 4, (Math.max(columns, rows) * cell) / 1024);
+  const fineColumns = landCap < reach ? Math.max(1, Math.ceil((columns * cell) / fineCell)) : 0;
+  const fineRows = landCap < reach ? Math.max(1, Math.ceil((rows * cell) / fineCell)) : 0;
+  const fine = new Uint8Array(fineColumns * fineRows);
+  const fineHalfDiagonal = fineCell * Math.SQRT1_2;
+  const deepLand = (x: number, z: number): boolean => {
+    const column = Math.floor((x - minX) / fineCell);
+    const row = Math.floor((z - minZ) / fineCell);
+    if (column < 0 || row < 0 || column >= fineColumns || row >= fineRows) return false;
+    const key = row * fineColumns + column;
+    if (fine[key] === 0) {
+      const cx = minX + (column + 0.5) * fineCell;
+      const cz = minZ + (row + 0.5) * fineCell;
+      // No shore within the cap plus half the cell's diagonal of its centre: every point in it is at
+      // least the cap from every shore, on the side its centre is on.
+      const clear = shores.every((shore) => shore.index.nearest(cx, cz, landCap + fineHalfDiagonal, scratch) === null);
+      fine[key] = clear && shores.some((shore) => pointInPolygon(shore.ring as readonly Vec2[], cx, cz)) ? 1 : 2;
+    }
+    return fine[key] === 1;
+  };
   return (x, z) => {
     const column = Math.floor((x - minX) / cell);
     const row = Math.floor((z - minZ) / cell);
@@ -1296,6 +1330,7 @@ function outlineSignedDistance(rings: readonly (readonly (readonly [number, numb
     const state = cellState(column, row);
     if (state === 1) return reach;
     if (state === 2) return Number.NEGATIVE_INFINITY;
+    if (fineColumns > 0 && deepLand(x, z)) return reach;
     return exact(x, z);
   };
 }
@@ -1339,8 +1374,10 @@ export function withCoast(height: (x: number, z: number) => number, coast: Terra
   if (rings.length > 0) {
     // Past this distance the outline no longer shapes the ground: land is full height, sea is the floor.
     const reach = Math.max(falloff, shelf) * (1 + wobble);
-    const signedDistance = outlineSignedDistance(rings, reach);
     const roughness = wobble * falloff * 0.35;
+    // `rough` stays within ±1, so land this far in keeps `inside` past the falloff, where `shape`'s ease
+    // is exactly 1 and the height no longer depends on the distance; the metre covers rounding.
+    const signedDistance = outlineSignedDistance(rings, reach, falloff + Math.abs(roughness) + 1);
     return (x, z) => {
       const signed = signedDistance(x, z);
       if (signed === Number.NEGATIVE_INFINITY) return floor;

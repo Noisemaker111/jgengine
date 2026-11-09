@@ -24,6 +24,8 @@ export async function frameTelemetryMode(flag: string | null, probe: () => Promi
 }
 /** How long after the sampler starts the GL counters get their post-warmup baseline. */
 export const TELEMETRY_WARMUP_MS = 5_000;
+/** How long the page waits for the dev server's report route before running without telemetry. */
+export const REPORT_PROBE_TIMEOUT_MS = 30_000;
 /** Cadence of the push to the dev server, in milliseconds. */
 export const REPORT_PUSH_MS = 1_000;
 
@@ -231,13 +233,19 @@ export function reportGameId(displayName: string): string {
  * nothing — no timers, no GL wrapping, no `window.__JG`. The website dev server serves
  * the /play runner as a production build, which is why a build-time `PROD` check would
  * wrongly disable the report there.
+ *
+ * The wait is long because the probe runs while the page is still loading: on a busy PC the
+ * request queues behind the page's own module and model downloads for seconds. A 1.5 s
+ * limit turned telemetry off at random under load (perf records without a frame breakdown,
+ * Nov 2026). A host that answers, even with a 404 page, costs nothing extra; one that never
+ * answers leaves a `degraded:` warning in the page log saying telemetry is off and why.
  * @internal
  */
 export async function probeReportRoute(
   endpoint = REPORT_ENDPOINT_PATH,
   game = "",
   fetchImpl: typeof fetch | null = typeof fetch === "function" ? fetch : null,
-  timeoutMs = 1_500,
+  timeoutMs = REPORT_PROBE_TIMEOUT_MS,
 ): Promise<boolean> {
   if (fetchImpl === null) return false;
   try {
@@ -249,7 +257,10 @@ export async function probeReportRoute(
     if (!type.includes("application/json")) return false;
     const body = (await response.json()) as { error?: unknown; frame?: unknown };
     return typeof body?.error === "string" || body?.frame !== undefined;
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.name === "TimeoutError") {
+      console.warn(`[jgengine:perf] degraded: dev telemetry is off: ${endpoint} did not answer within ${timeoutMs / 1000} s`);
+    }
     return false;
   }
 }

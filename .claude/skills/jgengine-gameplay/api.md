@@ -713,7 +713,7 @@
 - `MENU_PANE_STORE_KEY` (const): const MENU_PANE_STORE_KEY: "jg.menuPane" — ⚠ undocumented
 - `MenuPane` (type): type MenuPane = "controls" | "settings" | "credits" — A pane the title or pause menu shows beside its verbs.
 - `continueGame` (function): function continueGame(ctx: GameContext): Promise<boolean> — Load the save and play it; resolves `false` (and stays put) when there is none.
-- `createGameFlowSystem` (function): function createGameFlowSystem(options: GameFlowOptions = {}): SystemDefinition — Title, play, pause and checkpoints as one system. Boot stops the clock behind the title; the `pause` command (bind it to Esc / P) opens and closes the pause menu; the `start` command leaves the title straight into play, which is what a capture or a drive runs to skip the menu; the `menu.pane` command shows a menu's Controls, Settings or Credits pane, as choosing that verb does, so a proof reads the credits through {@link menuPane}; the `settings.rebind` command binds an action to new keys (null restores the game's), as the Controls settings do; `save` and `continue` run the pause menu's Save and the title's Continue. Pair it with `GameFlowUI` from `@jgengine/core/menu/gameFlowMenus.view`.
+- `createGameFlowSystem` (function): function createGameFlowSystem(options: GameFlowOptions = {}): SystemDefinition — Title, play, pause and checkpoints as one system. Boot stops the clock behind the title and defines the game-flow commands, each described where this file lists it, so a menu, a capture or a proof runs the same verbs (the `start` command skips the title). Pair it with `GameFlowUI` from `@jgengine/core/menu/gameFlowMenus.view`.
 - `menuPane` (function): function menuPane(ctx: GameContext): MenuPane | null — The pane the title or pause menu shows, or null for its default (the briefing on the title, nothing on pause).
 - `newGame` (function): function newGame(ctx: GameContext, restart?: () => void): Promise<void> — A fresh run: clears the save, then plays. When a run already played in this world, `restart` is called instead so nothing carries over (the browser host passes a page reload).
 - `openTitle` (function): function openTitle(ctx: GameContext): void — Stop the clock and show the title (`"menu"` phase).
@@ -2804,6 +2804,10 @@
 - `seededRng` (function): function seededRng(seed: string | number): SeededRng — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
 - `seededStreams` (function): function seededStreams(seed: string | number): (stream: string) => () => number — Derives independent, deterministic {@link seededRng} streams from one base seed, keyed by stream name.
 - `stepRandomSeed` (function): function stepRandomSeed(seed: RandomSeed): readonly [value: number, next: RandomSeed] — One step of the {@link seededRng} recurrence in pure (seed in, seed out) form — the same mulberry32-style generator, shared by every state machine that persists its own PRNG cursor instead of closing over a generator.
+
+## @jgengine/core/random/scrambledSobol
+
+- `scrambledSobol2` (function): function scrambledSobol2(index: number, seedX: number, seedY: number): [number, number] — Point `index` (0, 1, 2, ...) of a 2D Sobol sequence Owen-scrambled by two 32-bit seeds, in [0, 1)². Every prefix is spread evenly (each first 2^m points fill every 1/2^m-area box of a net once), so thinning a field to its first n points never opens holes; unlike R2 or another rank-1 lattice, no prefix lines up in rows, because the scramble breaks the sequence's digit structure. One seed pair per field or cell gives that field its own independent spread (Burley 2020, "Practical Hash-based Owen Scrambling").
 
 ## @jgengine/core/random/seedLink
 

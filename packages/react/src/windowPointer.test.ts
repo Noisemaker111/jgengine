@@ -10,6 +10,8 @@ setDefaultTimeout(30_000);
 const scratch = resolve(import.meta.dir, "../../../.scratch/window-pointer-test");
 let browser: Browser, page: Page, input: CDPSession, server: ReturnType<typeof Bun.serve>;
 beforeAll(async () => {
+  // A run killed mid-test (a timeout) leaves its links here; the next run must not fail on EEXIST.
+  await rm(scratch, { recursive: true, force: true });
   await mkdir(`${scratch}/node_modules/@jgengine`, { recursive: true });
   for (const peer of ["react", "react-dom"]) await symlink(resolve(import.meta.dir, "../node_modules", peer), `${scratch}/node_modules/${peer}`, "dir");
   await installPublicPackages(scratch, ["core", "react"]);

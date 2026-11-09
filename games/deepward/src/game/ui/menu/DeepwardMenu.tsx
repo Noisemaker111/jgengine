@@ -70,18 +70,16 @@ function replaceable(): string | null {
 
 /** The words a dive is described in: whose Life it is, what it carries. */
 function DiveLine() {
-  const view = useStore(viewStore);
-  const dive = view.dive;
-  if (dive === null) return <span>Marrow &middot; Life {view.home.life} &middot; {view.home.stash.length} banked</span>;
-  return <span>Bellwether &middot; Life {view.home.life} &middot; carry {dive.cache.length}</span>;
+  const line = useStore(viewStore, (v) => ({ life: v.home.life, banked: v.home.stash.length, carry: v.dive?.cache.length ?? null }));
+  if (line.carry === null) return <span>Marrow &middot; Life {line.life} &middot; {line.banked} banked</span>;
+  return <span>Bellwether &middot; Life {line.life} &middot; carry {line.carry}</span>;
 }
 
 /** The New dive pane: a fresh Life starts at the home, ready to walk to the garage. */
 function NewDivePane({ slot, onBegin }: { slot: string | null; onBegin: () => void }): ReactNode {
-  const view = useStore(viewStore);
+  const { life, air } = useStore(viewStore, (v) => ({ life: v.home.life, air: v.home.refits.includes("tank") ? 145 : 110 }));
   const occupancy = recordSlots.get(slot ?? "");
   const replacing = occupancy !== null && !occupancy.empty;
-  const air = view.home.refits.includes("tank") ? 145 : 110;
   return (
     <div data-new-dive-pane="" className="dw-log">
       <LogHead tag={slot === null ? "no record free" : recordLabel(slot)}>New dive</LogHead>
@@ -90,7 +88,7 @@ function NewDivePane({ slot, onBegin }: { slot: string | null; onBegin: () => vo
         <div><dt>Air</dt><dd>{air}<small>s</small></dd></div>
         <div><dt>Cache</dt><dd>4&times;3</dd></div>
         <div><dt>Load</dt><dd>12<small>kg</small></dd></div>
-        <div><dt>Life</dt><dd>{view.home.life}</dd></div>
+        <div><dt>Life</dt><dd>{life}</dd></div>
       </dl>
       {replacing && slot !== null ? <p className="dw-log-warn">{recordLabel(slot)} is held. A new dive replaces it.</p> : null}
       <KitButton
@@ -111,20 +109,23 @@ function NewDivePane({ slot, onBegin }: { slot: string | null; onBegin: () => vo
 
 /** The frozen dive computer: what the pause is holding, in four numbers. */
 function HeldBoard({ hint }: { hint?: string | undefined }): ReactNode {
-  const view = useStore(viewStore);
-  const dive = view.dive;
-  const at = useGameStore((state) => state.scene.entity.get(state.player.userId)?.position ?? ([0, 0, 0] as const));
-  const rows: [string, ReactNode][] = dive === null
-    ? [["Scrip", view.home.bank.banked], ["Stash", view.home.stash.length], ["Returns", view.home.extractions], ["Life", view.home.life]]
+  const board = useGameStore((state) => {
+    const view = viewStore.read(state), dive = view.dive;
+    if (dive === null) return { diving: false, scrip: view.home.bank.banked, stash: view.home.stash.length, returns: view.home.extractions, life: view.home.life, air: 0, depth: 0, carry: 0, suit: 0 };
+    const at = state.scene.entity.get(state.player.userId)?.position ?? ([0, 0, 0] as const);
+    return { diving: true, scrip: 0, stash: 0, returns: 0, life: 0, air: Math.ceil(dive.oxygen), depth: depthAt(at, "vault"), carry: loadOf(dive.cache).mass, suit: Math.ceil(dive.health) };
+  });
+  const rows: [string, ReactNode][] = !board.diving
+    ? [["Scrip", board.scrip], ["Stash", board.stash], ["Returns", board.returns], ["Life", board.life]]
     : [
-        ["Air", <>{Math.ceil(dive.oxygen)}<small>s</small></>],
-        ["Depth", String(depthAt(at, "vault")).padStart(2, "0")],
-        ["Carry", <>{loadOf(dive.cache).mass}<small>/{CACHE_WEIGHT}</small></>],
-        ["Suit", <>{Math.ceil(dive.health)}<small>%</small></>],
+        ["Air", <>{board.air}<small>s</small></>],
+        ["Depth", String(board.depth).padStart(2, "0")],
+        ["Carry", <>{board.carry}<small>/{CACHE_WEIGHT}</small></>],
+        ["Suit", <>{board.suit}<small>%</small></>],
       ];
   return (
     <div className="dw-log" data-held-board="">
-      <LogHead tag={dive === null ? "Marrow" : "Bellwether"}>{dive === null ? "Home held" : "Dive held"}</LogHead>
+      <LogHead tag={board.diving ? "Bellwether" : "Marrow"}>{board.diving ? "Dive held" : "Home held"}</LogHead>
       <dl className="dw-log-stats dw-log-stats-big">
         {rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
       </dl>
@@ -141,7 +142,7 @@ export function DeepwardMenu(): ReactNode {
   const ctx = useGameContext();
   const phase = useOptionalGamePhase();
   const settings = useSettings();
-  const view = useStore(viewStore);
+  const view = useStore(viewStore, (v) => ({ mode: v.mode, diving: v.dive !== null, life: v.home.life, banked: v.home.bank.banked }));
   const slots = useSaveSlots(recordSlots);
   const [screen, setScreen] = useState<Screen>(phase === "paused" ? "pause" : "title");
   const [busy, setBusy] = useState<string | null>(null);
@@ -266,7 +267,7 @@ export function DeepwardMenu(): ReactNode {
         if (id === "continue" && recent !== null) void openRecord(recent.id);
         else if (id === "records") void refreshRecordSlots(ctx);
       }}
-      footer={<span className="dw-console-foot">Marrow / {recordLabel(open)} &middot; Life {view.home.life} &middot; {view.home.bank.banked} scrip{notice === null ? "" : ` · ${notice}`}</span>}
+      footer={<span className="dw-console-foot">Marrow / {recordLabel(open)} &middot; Life {view.life} &middot; {view.banked} scrip{notice === null ? "" : ` · ${notice}`}</span>}
       controlHint={<KeyLegend pause={false} />}
       style={MENU_TOKENS}
     />
@@ -275,13 +276,13 @@ export function DeepwardMenu(): ReactNode {
   const pauseMenu = (
     <PauseMenu
       open={screen === "pause"}
-      label={view.dive === null ? "The home is held" : "The dive is held"}
+      label={!view.diving ? "The home is held" : "The dive is held"}
       className="dw-console"
       onBack={back}
       onResume={back}
-      logo={{ text: <Nameplate small word={view.dive === null ? "HOME HELD" : "DIVE HELD"} sub={<DiveLine />} />, title: "Hold" }}
+      logo={{ text: <Nameplate small word={!view.diving ? "HOME HELD" : "DIVE HELD"} sub={<DiveLine />} />, title: "Hold" }}
       items={[
-        { id: "resume", label: view.dive === null ? "Back to Marrow" : "Back to the dive" },
+        { id: "resume", label: !view.diving ? "Back to Marrow" : "Back to the dive" },
         { id: "save", label: `Save to ${recordLabel(open)}`, hint: "Life and haul, as they stand" },
         { id: "settings", label: "Settings" },
         { id: "credits", label: "Credits" },
@@ -301,7 +302,7 @@ export function DeepwardMenu(): ReactNode {
         else if (id === "save") void saveHere();
         else if (id === "title") void whileLoading("Writing the record", () => withdrawToTitle(ctx));
       }}
-      footer={<span className="dw-console-foot">{notice ?? `${view.home.bank.banked} scrip banked · Life ${view.home.life}`}</span>}
+      footer={<span className="dw-console-foot">{notice ?? `${view.banked} scrip banked · Life ${view.life}`}</span>}
       controlHint={<KeyLegend pause />}
       style={MENU_TOKENS}
     />

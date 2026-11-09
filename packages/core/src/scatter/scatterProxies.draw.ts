@@ -25,35 +25,49 @@ const PALM_BARK = "#8a7355";
 const PALM_FROND = "#4c8b3d";
 const CYPRESS = "#31502f";
 
-/** Concatenates part geometries into one vertex-colored buffer (position + normal + color). */
+/**
+ * Concatenates part geometries into one vertex-colored, indexed buffer (position + normal + color).
+ * Each part keeps its own index, so its shared vertices are shaded once per instance rather than once
+ * per triangle corner; a part without one gets the identity index.
+ */
 function mergeParts(parts: ProxyPart[]): THREE.BufferGeometry {
-  const geos = parts.map((part) => (part.geometry.index === null ? part.geometry : part.geometry.toNonIndexed()));
   let total = 0;
-  for (const geo of geos) total += (geo.attributes["position"] as THREE.BufferAttribute).count;
+  let corners = 0;
+  for (const part of parts) {
+    const count = (part.geometry.attributes["position"] as THREE.BufferAttribute).count;
+    total += count;
+    corners += part.geometry.index === null ? count : part.geometry.index.count;
+  }
   const position = new Float32Array(total * 3);
   const normal = new Float32Array(total * 3);
   const color = new Float32Array(total * 3);
+  const index = total > 65535 ? new Uint32Array(corners) : new Uint16Array(corners);
   const tint = new THREE.Color();
   let offset = 0;
-  for (let i = 0; i < geos.length; i += 1) {
-    const geo = geos[i]!;
+  let corner = 0;
+  for (const part of parts) {
+    const geo = part.geometry;
     const pos = geo.attributes["position"] as THREE.BufferAttribute;
     const nor = geo.attributes["normal"] as THREE.BufferAttribute;
     position.set(pos.array as Float32Array, offset * 3);
     normal.set(nor.array as Float32Array, offset * 3);
-    tint.set(parts[i]!.color);
+    tint.set(part.color);
     for (let v = 0; v < pos.count; v += 1) {
       color[(offset + v) * 3] = tint.r;
       color[(offset + v) * 3 + 1] = tint.g;
       color[(offset + v) * 3 + 2] = tint.b;
     }
+    const source = geo.index;
+    if (source === null) for (let v = 0; v < pos.count; v += 1) index[corner++] = offset + v;
+    else for (let i = 0; i < source.count; i += 1) index[corner++] = offset + source.getX(i);
     offset += pos.count;
   }
-  for (const geo of geos) geo.dispose();
+  for (const part of parts) part.geometry.dispose();
   const merged = new THREE.BufferGeometry();
   merged.setAttribute("position", new THREE.BufferAttribute(position, 3));
   merged.setAttribute("normal", new THREE.BufferAttribute(normal, 3));
   merged.setAttribute("color", new THREE.BufferAttribute(color, 3));
+  merged.setIndex(new THREE.BufferAttribute(index, 1));
   merged.computeBoundingSphere();
   return merged;
 }

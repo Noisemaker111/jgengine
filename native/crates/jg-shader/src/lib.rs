@@ -41,6 +41,9 @@ pub struct UniformSlot {
     /// Array element count (1 when not an array) and stride.
     pub count: u32,
     pub stride: u32,
+    /// Declared as an array (GL names it `name[0]`), even with one element.
+    #[serde(default)]
+    pub array: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -52,6 +55,10 @@ pub struct SamplerSlot {
     pub sampler_binding: u32,
     pub kind: SamplerKind,
     pub dim: TextureDim,
+    /// Declared as an array (GL names it `name[0]`), even with one element: three binds an array
+    /// uniform's textures only under that name.
+    #[serde(default)]
+    pub array: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -70,7 +77,7 @@ pub struct Translated {
     pub layout: ProgramLayout,
 }
 
-fn to_wgsl(src: &str, stage: naga::ShaderStage) -> Result<(naga::Module, String), String> {
+fn to_wgsl(src: &str, stage: naga::ShaderStage, reparse: bool) -> Result<(naga::Module, String), String> {
     let mut fe = naga::front::glsl::Frontend::default();
     let module = fe.parse(&naga::front::glsl::Options::from(stage), src).map_err(|e| {
         let mut msg = String::new();
@@ -90,7 +97,10 @@ fn to_wgsl(src: &str, stage: naga::ShaderStage) -> Result<(naga::Module, String)
     let wgsl = format!("diagnostic(off, derivative_uniformity);\n{}", naga::back::wgsl::write_string(&module, &info, naga::back::wgsl::WriterFlags::empty()).map_err(|e| format!("{stage:?} wgsl: {e}"))?);
     // The device parses this text, not the module above: parse and validate it the same way, so a
     // WGSL the writer emits but the reader rejects fails here with its message, not as an invalid
-    // shader module at draw time.
+    // shader module at draw time. A browser's own WGSL compiler repeats this check, so it may skip it.
+    if !reparse {
+        return Ok((module, wgsl));
+    }
     let reread = naga::front::wgsl::parse_str(&wgsl).map_err(|e| format!("{stage:?} emitted WGSL does not parse: {}", e.emit_to_string(&wgsl)))?;
     naga::valid::Validator::new(naga::valid::ValidationFlags::all(), naga::valid::Capabilities::default()).validate(&reread).map_err(|e| format!("{stage:?} emitted WGSL does not validate: {}", e.emit_to_string(&wgsl)))?;
     Ok((module, wgsl))
@@ -98,6 +108,12 @@ fn to_wgsl(src: &str, stage: naga::ShaderStage) -> Result<(naga::Module, String)
 
 /// Translate one program. `vert`/`frag` are the sources exactly as three passed them to GL.
 pub fn translate(vert: &str, frag: &str) -> Result<Translated, String> {
+    translate_with(vert, frag, true)
+}
+
+/// [`translate`], choosing whether the emitted WGSL is parsed and validated again (a third of the
+/// time). The browser build skips it: the browser validates every shader module it creates.
+pub fn translate_with(vert: &str, frag: &str, reparse: bool) -> Result<Translated, String> {
     // A GLSL ES 1.00 RawShaderMaterial: WebGL 2 compiles it as is; here it gets the prefix three
     // gives its GLSL 3 shaders, which is the same program in GLSL ES 3.00.
     let (vert, frag) = if vert.contains("#version 300 es") {
@@ -111,8 +127,8 @@ pub fn translate(vert: &str, frag: &str) -> Result<Translated, String> {
     let v = preprocess::Preprocessor::new().run(&vert).map_err(|e| format!("vertex preprocess: {e}"))?;
     let f = preprocess::Preprocessor::new().run(&frag).map_err(|e| format!("fragment preprocess: {e}"))?;
     let out = rewrite::rewrite(&v, &f)?;
-    let (vmod, vertex_wgsl) = to_wgsl(&out.vertex, naga::ShaderStage::Vertex).map_err(|e| format!("{e}\n--- rewritten vertex ---\n{}", numbered(&out.vertex, &e)))?;
-    let (fmod, fragment_wgsl) = to_wgsl(&out.fragment, naga::ShaderStage::Fragment).map_err(|e| format!("{e}\n--- rewritten fragment ---\n{}", numbered(&out.fragment, &e)))?;
+    let (vmod, vertex_wgsl) = to_wgsl(&out.vertex, naga::ShaderStage::Vertex, reparse).map_err(|e| format!("{e}\n--- rewritten vertex ---\n{}", numbered(&out.vertex, &e)))?;
+    let (fmod, fragment_wgsl) = to_wgsl(&out.fragment, naga::ShaderStage::Fragment, reparse).map_err(|e| format!("{e}\n--- rewritten fragment ---\n{}", numbered(&out.fragment, &e)))?;
     check_interface(&vmod, &fmod)?;
     let mut uniforms = Vec::new();
     let mut size = 16;

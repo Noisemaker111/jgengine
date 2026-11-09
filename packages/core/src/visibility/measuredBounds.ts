@@ -12,7 +12,7 @@ export interface RenderSphere {
   readonly offsetY: number;
 }
 
-type MeasuredBoxes = Record<"entity" | "object", Map<string, RenderBox>>;
+type MeasuredBoxes = Record<"entity" | "object", Map<string, RenderBox>> & { revision: number };
 
 const boxesByContext = new WeakMap<object, MeasuredBoxes>();
 const sphereByBox = new WeakMap<RenderBox, RenderSphere>();
@@ -25,7 +25,7 @@ const sphereByBox = new WeakMap<RenderBox, RenderSphere>();
 export function recordRenderBounds(ctx: GameContext, target: "entity" | "object", key: string, box: RenderBox): void {
   let boxes = boxesByContext.get(ctx);
   if (boxes === undefined) {
-    boxes = { entity: new Map(), object: new Map() };
+    boxes = { entity: new Map(), object: new Map(), revision: 0 };
     boxesByContext.set(ctx, boxes);
   }
   const map = boxes[target];
@@ -37,6 +37,12 @@ export function recordRenderBounds(ctx: GameContext, target: "entity" | "object"
   };
   if (previous !== undefined && sameBox(previous, merged)) return;
   map.set(key, merged);
+  boxes.revision += 1;
+}
+
+/** Moves whenever {@link recordRenderBounds} changes a box of `ctx`, so a reader can skip while it holds. @internal */
+export function renderBoundsRevision(ctx: GameContext): number {
+  return boxesByContext.get(ctx)?.revision ?? 0;
 }
 
 function sameBox(a: RenderBox, b: RenderBox): boolean {

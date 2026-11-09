@@ -32,7 +32,7 @@ export function VitalsPlate({ combat = false }: { combat?: boolean }) {
   // Wake on a pip changing, not on every point of regen.
   const step = (value: number, max: number) => Math.ceil((value / Math.max(1, max)) * PIPS);
   return (
-    <HudFade watch={[step(sh, shMax), step(hp, hpMax), level?.current, points]} hold={combat || low || sh < shMax} dimTo={0.5} idleMs={5000}>
+    <HudFade watch={() => [step(sh, shMax), step(hp, hpMax), level?.current, points]} hold={() => combat || low || sh < shMax} dimTo={0.5} idleMs={5000}>
       <Plate material="carbon" cut="notch" depth={12} rim="#4a3b29" padding="0" className={`ss-vitals ${low ? "low" : ""}`} style={{ "--ss-char": character?.color ?? SIGNAL.amber } as CSSProperties}>
         <span className="ss-vitals-head">
           <span className="ss-level" title="Level">{level?.current ?? 1}</span>

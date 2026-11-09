@@ -4,7 +4,7 @@ import { requireUniform } from "../render/uniformMaterial.draw";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { EffectComposer, RenderPass, UnrealBloomPass, type Pass, type ShaderPass } from "three-stdlib";
+import { EffectComposer, RenderPass, type Pass, type ShaderPass } from "three-stdlib";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { GTAOPass } from "three/examples/jsm/postprocessing/GTAOPass.js";
 import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass.js";
@@ -43,30 +43,36 @@ import { readSkyLight } from "@jgengine/core/sky/skyLight.draw";
 import { ExposureMeterPass } from "./autoExposure.draw";
 import { AtmospherePass } from "./atmospherePass.draw";
 import { BeautyPass } from "./beautyPass.draw";
+import { BloomPass } from "./bloomPass.draw";
 import { ContactShadowPass } from "./contactShadowPass.draw";
 import { createGradePass } from "./gradeShader.draw";
 import { MotionBlurPass } from "./motionBlurPass.draw";
 import { SsrPass } from "./ssrPass.draw";
 import { postfxTierPolicy } from "./postfxTierPolicy";
-import { releasePostfxOverlayTracking, restorePostfxOverlays } from "./postfxOverlay.draw";
+import { excludesOverlays, excludesOverlaysAndUnmodelled, type PrepassExclusion } from "./postfxOverlay.draw";
 import { RevealFadePass, RevealSnapshotPass, stepRevealFade } from "./revealFade.draw";
-import { hideForOutlinePrepass, StylizePass } from "./stylizePass.draw";
+import { SceneCompositePass } from "./sceneCompositePass.draw";
+import { PostAudit } from "./postAudit.draw";
+import { devtools } from "@jgengine/core/devtools/devtools";
+import { excludesFromOutline, StylizePass } from "./stylizePass.draw";
 import { renderShadowlessPrepass } from "./shadowPrepass.draw";
 import { JitteredRenderPass, TemporalAaPass } from "./temporalAaPass.draw";
 
 /**
  * GTAO renders the scene with an `overrideMaterial` normal/depth prepass when it has no GBuffer,
  * which stamps transparent overlay quads (additive VFX sprites, telegraphs, debug gizmos) into the
- * AO buffers as opaque squares — the AO composite then multiplies them toward black. Hide marked
- * overlay subtrees for the whole pass: the beauty buffer it composites over was already rendered
- * with them in. A chain whose AO reads the beauty pass's own depth buffer draws no prepass, so
- * nothing is stamped and the cached hide list is empty.
+ * AO buffers as opaque squares — the AO composite then multiplies them toward black. The prepass
+ * leaves marked overlay subtrees out: the beauty buffer it composites over was already rendered
+ * with them in. A chain whose AO reads the beauty pass's own depth buffer draws no prepass.
  */
+const gtaoExcludes: PrepassExclusion = excludesOverlaysAndUnmodelled;
+const gtaoAndOutlineExcludes: PrepassExclusion = (node) => excludesOverlaysAndUnmodelled(node) || excludesFromOutline(node);
+
 /**
  * GTAO's own `_overrideVisibility` walks the whole scene to hide points and lines before its normal
- * render. `renderShadowlessPrepass` already hides the same set from a cached list, so that walk is
- * skipped here; three only fills its cache with objects it hid, so leaving it empty restores nothing.
- * The hooks are optional: a three version without them leaves the walk in place.
+ * render. `renderShadowlessPrepass` already leaves the same set out of the prepass's draws, so that
+ * walk is skipped here; three only fills its cache with objects it hid, so leaving it empty restores
+ * nothing. The hooks are optional: a three version without them leaves the walk in place.
  * @internal
  */
 export type GtaoVisibilityHooks = {
@@ -91,10 +97,10 @@ export function skipGtaoVisibilityWalk(pass: object): boolean {
 const AO_RESOLUTION = 0.5;
 
 class OverlayAwareGTAOPass extends GTAOPass {
-  private readonly hiddenOverlays: THREE.Object3D[] = [];
-  private readonly hiddenForOutline: THREE.Object3D[] = [];
-  /** Set when the outline pass reads this prepass: it then also hides what an outline must not see. */
+  /** Set when the outline pass reads this prepass: it then also leaves out what an outline must not see. */
   private outlineReads = false;
+  /** When set, the denoised AO goes to this pass instead of being multiplied onto the frame here. */
+  composite: SceneCompositePass | null = null;
 
   /** The normal/depth prepass this pass draws each frame, for the outline pass to read instead of drawing its own; null when AO reads the beauty depth. */
   shareOutlinePrepass(): { normal: THREE.Texture; depth: THREE.Texture } | null {
@@ -135,25 +141,56 @@ class OverlayAwareGTAOPass extends GTAOPass {
   ): void {
     const rendersGbuffer = (this as unknown as { _renderGBuffer?: boolean })._renderGBuffer !== false;
     if (!rendersGbuffer) {
+      this.renderAo(renderer, writeBuffer, readBuffer, deltaTime, maskActive);
+      return;
+    }
+    renderShadowlessPrepass(renderer, this.scene, this.outlineReads ? gtaoAndOutlineExcludes : gtaoExcludes, () =>
+      this.renderAo(renderer, writeBuffer, readBuffer, deltaTime, maskActive));
+  }
+
+  /**
+   * three's default output copies the whole frame into the other buffer and multiplies the AO onto
+   * the copy: a full-screen read and write that changes no pixel. The multiply is drawn onto the
+   * frame where it is instead, with three's own quad and blend material, so the result is the same
+   * bits for one full-screen pass less.
+   */
+  private renderAo(
+    renderer: THREE.WebGLRenderer,
+    writeBuffer: THREE.WebGLRenderTarget,
+    readBuffer: THREE.WebGLRenderTarget,
+    deltaTime: number,
+    maskActive: boolean,
+  ): void {
+    const quad = (this as unknown as { _fsQuad?: { material: THREE.Material; render(renderer: THREE.WebGLRenderer): void } })._fsQuad;
+    const inPlace = quad !== undefined && !this.renderToScreen && this.output === GTAOPass.OUTPUT.Default;
+    this.needsSwap = !inPlace;
+    if (!inPlace) {
       super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive);
       return;
     }
-    renderShadowlessPrepass(renderer, this.scene, this.hiddenOverlays, () => {
-      if (!this.outlineReads) return super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive);
-      hideForOutlinePrepass(this.scene, this.hiddenForOutline);
-      try {
-        return super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive);
-      } finally {
-        restorePostfxOverlays(this.hiddenForOutline);
-      }
-    }, true);
+    this.output = GTAOPass.OUTPUT.Off;
+    try {
+      super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive);
+    } finally {
+      this.output = GTAOPass.OUTPUT.Default;
+    }
+    if (this.composite !== null) {
+      this.composite.takeAo(this.pdRenderTarget.texture, this.blendIntensity);
+      return;
+    }
+    const autoClear = renderer.autoClear;
+    renderer.autoClear = false;
+    renderer.setRenderTarget(readBuffer);
+    requireUniform(this.blendMaterial.uniforms, "intensity").value = this.blendIntensity;
+    requireUniform(this.blendMaterial.uniforms, "tDiffuse").value = this.pdRenderTarget.texture;
+    quad.material = this.blendMaterial;
+    quad.render(renderer);
+    renderer.autoClear = autoClear;
   }
 }
 
 /** DOF's depth prepass has the same `overrideMaterial` overlay-stamping problem as GTAO. */
 class OverlayAwareBokehPass extends BokehPass {
-  private readonly hiddenOverlays: THREE.Object3D[] = [];
-
   override render(
     renderer: THREE.WebGLRenderer,
     writeBuffer: THREE.WebGLRenderTarget,
@@ -161,7 +198,7 @@ class OverlayAwareBokehPass extends BokehPass {
     deltaTime: number,
     maskActive: boolean,
   ): void {
-    renderShadowlessPrepass(renderer, this.scene, this.hiddenOverlays, () =>
+    renderShadowlessPrepass(renderer, this.scene, excludesOverlays, () =>
       super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive));
   }
 }
@@ -297,9 +334,11 @@ export function disposeGraph(built: BuiltGraph): void {
  */
 function dryRender(built: BuiltGraph, every = false): void {
   const passes = built.composer.passes;
-  const meters = passes.filter((pass): pass is ExposureMeterPass => pass instanceof ExposureMeterPass);
+  // A pass with a `dry` switch draws everything it could draw in play (a mask with nothing glossy
+  // in view, a velocity buffer with nothing moving), so a program it only needs later links now.
+  const dryable = passes.filter((pass): pass is Pass & { dry: boolean } => typeof (pass as { dry?: unknown }).dry === "boolean");
   const enabled = passes.map((pass) => pass.enabled);
-  for (const meter of meters) meter.dry = true;
+  for (const pass of dryable) pass.dry = true;
   if (every) for (const pass of passes) pass.enabled = true;
   try {
     built.composer.render(0);
@@ -307,7 +346,7 @@ function dryRender(built: BuiltGraph, every = false): void {
     passes.forEach((pass, index) => {
       pass.enabled = enabled[index]!;
     });
-    for (const meter of meters) meter.dry = false;
+    for (const pass of dryable) pass.dry = false;
     for (const pass of passes) if (pass instanceof TemporalAaPass) pass.reset();
   }
 }
@@ -466,7 +505,8 @@ export function buildPostGraph(
   };
   const taa = plan.taa && beautyDepth !== null ? passNamed(new TemporalAaPass(camera, beautyDepth, width, height), "TemporalAaPass") : null;
   const scenePass = taa === null ? passNamed(new RenderPass(scene, camera), "RenderPass") : passNamed(new JitteredRenderPass(scene, camera, taa), "JitteredRenderPass");
-  composer.addPass(beautyDepth === null ? scenePass : passNamed(new BeautyPass(scenePass, beautyDepth, width, height), "BeautyPass"));
+  const beauty = beautyDepth === null ? null : passNamed(new BeautyPass(scenePass, beautyDepth, width, height), "BeautyPass");
+  composer.addPass(beauty ?? scenePass);
 
   let aoPass: OverlayAwareGTAOPass | null = null;
   if (plan.ao !== null) {
@@ -485,9 +525,22 @@ export function buildPostGraph(
     built.push("ao");
   }
 
+  let contactPass: ContactShadowPass | null = null;
   if (plan.contactShadows !== null && beautyDepth !== null) {
-    effect(passNamed(new ContactShadowPass(scene, camera, beautyDepth, plan.contactShadows, plan.contactShadowSteps), "ContactShadowPass"));
+    contactPass = passNamed(new ContactShadowPass(scene, camera, beautyDepth, plan.contactShadows, plan.contactShadowSteps), "ContactShadowPass");
+    effect(contactPass);
     built.push("contactShadows");
+  }
+  // The beauty copy, AO multiply and contact-shadow multiply become one draw. It is not an effect:
+  // with the effects off it is the beauty copy alone. At an AO blend other than 1 the GPU rounds
+  // three's `mix` differently inside a larger shader (measured on the RTX 3070), so such a chain
+  // keeps the separate draws and its exact image.
+  if (beauty !== null && (aoPass !== null || contactPass !== null) && (aoPass === null || aoPass.blendIntensity === 1)) {
+    const composite = passNamed(new SceneCompositePass(beauty.target.texture), "SceneCompositePass");
+    beauty.copies = false;
+    if (aoPass !== null) aoPass.composite = composite;
+    if (contactPass !== null) contactPass.composite = composite;
+    composer.addPass(composite);
   }
   if (plan.ssr !== null && beautyDepth !== null) {
     effect(passNamed(new SsrPass(scene, camera, beautyDepth, plan.ssr, plan.ssrSteps), "SsrPass"));
@@ -501,13 +554,13 @@ export function buildPostGraph(
   if (plan.bloom !== null) {
     effect(
       passNamed(
-        new UnrealBloomPass(
+        new BloomPass(
           new THREE.Vector2(width, height),
           plan.bloom.strength ?? 0.32,
           plan.bloom.radius ?? 0.55,
           plan.bloom.threshold ?? 0.85,
         ),
-        "UnrealBloomPass",
+        "BloomPass",
       ),
     );
     built.push("bloom");
@@ -575,7 +628,7 @@ export function buildPostGraph(
   let reveal: BuiltGraph["reveal"] = null;
   if (effects.length > 0) {
     const fade = passNamed(new RevealFadePass(width, height), "RevealFadePass");
-    reveal = { snapshot: passNamed(new RevealSnapshotPass(fade), "RevealSnapshotPass"), fade };
+    reveal = { snapshot: passNamed(new RevealSnapshotPass(fade, beauty?.target.texture ?? null), "RevealSnapshotPass"), fade };
     composer.addPass(fade);
     composer.insertPass(reveal.snapshot, 1);
   }
@@ -599,7 +652,7 @@ export function buildPostGraph(
 /**
  * Mounts an `EffectComposer` inside the shell Canvas and takes over rendering
  * (priority-1 `useFrame`, which disables R3F auto-render) to run the configured
- * post chain: RenderPass → GTAO → contact shadows → SSR → atmosphere → UnrealBloom → DOF → motion
+ * post chain: RenderPass → GTAO → contact shadows → their composite → SSR → atmosphere → UnrealBloom → DOF → motion
  * blur → SMAA or TAA → exposure meter → OutputPass → Stylize → Grade. Rendered only
  * when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
  *
@@ -633,6 +686,20 @@ export function PostProcessing({
   const size = useThree((s) => s.size);
 
   const builtRef = useRef<BuiltGraph | null>(null);
+  const auditRef = useRef<PostAudit | null>(null);
+
+  useEffect(() => {
+    // `bun run perf post-audit` loads the page with this flag: every changed draw is compared with three's.
+    const auditing = typeof window !== "undefined" && new URLSearchParams(window.location?.search ?? "").get("postAudit") === "1";
+    const audit = new PostAudit(auditing);
+    auditRef.current = audit;
+    const unregister = devtools.probes.registerSystem("render/postfx", { counters: () => ({ ...audit.stats }) });
+    return () => {
+      unregister();
+      audit.dispose();
+      if (auditRef.current === audit) auditRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     const width = Math.max(1, size.width);
@@ -659,7 +726,6 @@ export function PostProcessing({
       stopped = true;
       unwarm();
       disposeGraph(graph);
-      releasePostfxOverlayTracking(scene);
       builtRef.current = null;
     };
   }, [gl, scene, camera, config, quality, stages, immediate]);
@@ -688,6 +754,7 @@ export function PostProcessing({
     measureComposerPasses(built.composer);
     for (const pass of built.composer.passes) if (pass instanceof ExposureMeterPass) pass.collect();
     built.composer.render(delta);
+    auditRef.current?.afterFrame(gl, built.composer.passes);
     for (const pass of built.composer.passes) if (pass instanceof ExposureMeterPass) pass.frameEnd();
     advanceRevealFade(built, delta);
   }, 1);

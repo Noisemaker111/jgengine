@@ -10,7 +10,7 @@ const CENTRE = { x: WIDTH / 2, y: HEIGHT / 2 };
  * A page whose target is the projection of a yaw offset: a pointer-locked view turns by
  * `movementX / pxPerRad` pixels of projection, so the harness has to learn that cost.
  */
-function fakePage(options: { pxPerRad?: number; locked?: boolean; deliverMovement?: "cdp" | "none" } = {}) {
+function fakePage(options: { pxPerRad?: number; locked?: boolean; deliverMovement?: "cdp" | "zero" | "none" } = {}) {
   const pxPerRad = options.pxPerRad ?? 900;
   const sent: { x: number; y: number }[] = [];
   const events: string[] = [];
@@ -21,7 +21,7 @@ function fakePage(options: { pxPerRad?: number; locked?: boolean; deliverMovemen
       if (method === "Input.dispatchMouseEvent") {
         state.last = { x: Number(params?.["x"]), y: Number(params?.["y"]) };
         state.sent.push(state.last);
-        if (options.locked === true && options.deliverMovement !== "none") state.yaw -= (state.last.x - CENTRE.x) / pxPerRad;
+        if (options.locked === true && (options.deliverMovement ?? "cdp") === "cdp") state.yaw -= (state.last.x - CENTRE.x) / pxPerRad;
       }
       if (method === "Runtime.evaluate" && JSON.stringify(params).includes("requestPointerLock")) {
         return { result: { value: options.locked === true ? "locked" : "refused" } };
@@ -36,7 +36,8 @@ function fakePage(options: { pxPerRad?: number; locked?: boolean; deliverMovemen
           state.acc = { x: 0, y: 0 };
           return true;
         }
-        const delivered = options.deliverMovement === "none" ? state.acc : { x: state.last.x - CENTRE.x + state.acc.x, y: state.last.y - CENTRE.y + state.acc.y };
+        // "zero": the browser reports the move event but with no movement in it.
+        const delivered = (options.deliverMovement ?? "cdp") !== "cdp" ? state.acc : { x: state.last.x - CENTRE.x + state.acc.x, y: state.last.y - CENTRE.y + state.acc.y };
         const seen = options.deliverMovement === "none" ? state.synthetic : 1 + state.synthetic;
         return { x: delivered.x, y: delivered.y, seen };
       }
@@ -80,6 +81,14 @@ describe("aim steps", () => {
 
   test("look falls back to a page move carrying the deltas when CDP delivers none", async () => {
     const { session, state } = fakePage({ locked: true, deliverMovement: "none" });
+    const before = state.yaw;
+    await lookDrivePointer(session, 120, 0);
+    expect(state.synthetic).toBe(1);
+    expect(state.yaw).toBeLessThan(before);
+  });
+
+  test("look falls back to a page move when CDP delivers the move with no movement in it", async () => {
+    const { session, state } = fakePage({ locked: true, deliverMovement: "zero" });
     const before = state.yaw;
     await lookDrivePointer(session, 120, 0);
     expect(state.synthetic).toBe(1);

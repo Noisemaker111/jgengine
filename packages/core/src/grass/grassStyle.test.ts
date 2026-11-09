@@ -7,7 +7,7 @@ import { environment, grass } from "@jgengine/core/world/features";
 
 describe("grass style", () => {
   test("a scene that sets nothing draws at realism 0.5 with the pre-style normal lift", () => {
-    expect(GRASS_STYLE_DEFAULTS).toEqual({ realism: 0.5, normalLift: 0.6 });
+    expect(GRASS_STYLE_DEFAULTS).toEqual({ realism: 0.5, normalLift: 0.6, detail: 0.5, exaggeration: 0.5, shading: 0.5, colourSteps: 0, saturation: 0.5, contrast: 0.5, outline: 0 });
     expect(readGrassLook({}).style).toEqual(GRASS_STYLE_DEFAULTS);
   });
 
@@ -43,7 +43,7 @@ describe("grass style", () => {
   });
 
   test("a named preset backs the sliders it sets", () => {
-    expect(resolveGrassStyle(undefined, { preset: "cartoon" }, undefined)).toEqual({ realism: 0, normalLift: 0.85 });
+    expect(resolveGrassStyle(undefined, { preset: "cartoon" }, undefined)).toEqual({ realism: 0, normalLift: 0.85, detail: 0, exaggeration: 1, shading: 0, colourSteps: 1, saturation: 0.65, contrast: 0.75, outline: 0.6 });
     expect(resolveGrassStyle({ preset: "realistic" }, { preset: "cartoon" }, undefined).realism).toBe(1);
     expect(GRASS_STYLE_SCHEMA.presets?.map((preset) => preset.id)).toEqual(["cartoon", "painterly", "animated", "realistic"]);
   });

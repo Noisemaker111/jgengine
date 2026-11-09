@@ -9,6 +9,44 @@ test("the reflection march takes as many steps as the tier pays for", () => {
   expect(ssrFragment(32)).toContain("/ 32.0");
 });
 
+/** A renderer that records what each render call drew: the scene's materials, or the quad's. */
+function recordingRenderer(): { renderer: THREE.WebGLRenderer; drawn: string[][] } {
+  const drawn: string[][] = [];
+  const fake = {
+    shadowMap: { autoUpdate: true },
+    getClearColor: (target: THREE.Color) => target,
+    getClearAlpha: () => 1,
+    setClearColor: () => {},
+    setRenderTarget: () => {},
+    clear: () => {},
+    render: (scene: THREE.Object3D) => {
+      const materials: string[] = [];
+      scene.traverse((node) => {
+        const material = (node as THREE.Mesh).material;
+        if (material instanceof THREE.Material) materials.push(material instanceof THREE.ShaderMaterial && material.fragmentShader.includes("uGloss") ? "mask" : "march");
+      });
+      drawn.push(materials);
+    },
+  };
+  return { renderer: fake as unknown as THREE.WebGLRenderer, drawn };
+}
+
+test("a dry run draws the mask and the march with nothing glossy in view, so both link before play needs them", () => {
+  const pass = new SsrPass(new THREE.Scene(), new THREE.PerspectiveCamera(), new THREE.DepthTexture(4, 4), DEFAULT_SSR, 8);
+  const target = new THREE.WebGLRenderTarget(4, 4);
+  const { renderer, drawn } = recordingRenderer();
+  try {
+    pass.render(renderer, target, target);
+    expect(drawn).toEqual([]);
+    pass.dry = true;
+    pass.render(renderer, target, target);
+    expect(drawn).toEqual([["mask"], ["march"]]);
+  } finally {
+    pass.dispose();
+    target.dispose();
+  }
+});
+
 test("authored values reach the shader clamped to their sane ranges", () => {
   const pass = new SsrPass(new THREE.Scene(), new THREE.PerspectiveCamera(), new THREE.DepthTexture(4, 4), { ...DEFAULT_SSR, reflectance: 3, maxDistance: -5, thickness: 0 }, 8);
   try {

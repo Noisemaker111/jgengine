@@ -1,6 +1,6 @@
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
 import { useFrame, useThree } from "@react-three/fiber";
-import { Group, Vector3 } from "three";
+import { Group, PointLight, Vector3 } from "three";
 import { useRef, useState } from "react";
 import { useGameContext } from "@jgengine/react/provider";
 import { WeatherLayer } from "@jgengine/core/weather/WeatherLayer.draw";
@@ -135,6 +135,9 @@ const FINISH = {
  * hand-tuned table — a table drifts out of sync the moment a barrel length changes. Matches the
  * blaster group's own `position` and `rotation={[0, PI, 0]}`, so the sign is already flipped.
  */
+/** The muzzle light's intensity while a flash shows. */
+const FLASH_LIGHT = 5;
+
 function muzzleOffsetZ(family: GunFamily): number {
   const spec = FAMILY_BLASTER[family];
   const tip = spec.body[2] / 2 + spec.barrel[1] + (spec.brake === null ? 0 : 0.045);
@@ -360,6 +363,7 @@ export function FerralonViewmodel() {
   const camera = useThree((state) => state.camera);
   const rig = useRef<Group>(null);
   const flash = useRef<Group>(null);
+  const flashLight = useRef<PointLight>(null);
   const lastCameraPos = useRef(new Vector3());
   const bobTime = useRef(0);
   const gunId = equippedGun();
@@ -400,24 +404,28 @@ export function FerralonViewmodel() {
       flash.current.visible = visible;
       if (visible) flash.current.rotation.z = (nowMs % 97) / 15;
     }
+    if (flashLight.current) flashLight.current.intensity = muzzleFlashVisible(nowMs) ? FLASH_LIGHT : 0;
   });
 
-  if (gun === undefined) return null;
-  const muzzleZ = muzzleOffsetZ(gun.family);
+  const muzzleZ = gun === undefined ? 0 : muzzleOffsetZ(gun.family);
   return (
     <group ref={rig} renderOrder={999}>
-      <GunMesh gun={gun} />
-      <group ref={flash} position={[0, 0.012, muzzleZ]} visible={false}>
-        <mesh>
-          <planeGeometry args={[0.11, 0.11]} />
-          <meshBasicMaterial color="#ffd76a" transparent opacity={0.9} depthWrite={false} />
-        </mesh>
-        <mesh rotation={[0, Math.PI / 2, 0]}>
-          <planeGeometry args={[0.11, 0.11]} />
-          <meshBasicMaterial color="#ff9a3e" transparent opacity={0.8} depthWrite={false} />
-        </mesh>
-        <pointLight color="#ffb347" intensity={5} distance={3} />
-      </group>
+      {gun !== undefined && <>
+        <GunMesh gun={gun} />
+        <group ref={flash} position={[0, 0.012, muzzleZ]} visible={false}>
+          <mesh>
+            <planeGeometry args={[0.11, 0.11]} />
+            <meshBasicMaterial color="#ffd76a" transparent opacity={0.9} depthWrite={false} />
+          </mesh>
+          <mesh rotation={[0, Math.PI / 2, 0]}>
+            <planeGeometry args={[0.11, 0.11]} />
+            <meshBasicMaterial color="#ff9a3e" transparent opacity={0.8} depthWrite={false} />
+          </mesh>
+        </group>
+      </>}
+      {/* Mounted with or without a gun, outside the hidden flash group, and dimmed between shots: hiding or
+          unmounting a light changes the scene's light count, and every lit material recompiles. */}
+      <pointLight ref={flashLight} position={[0, 0.012, muzzleZ]} color="#ffb347" intensity={0} distance={3} />
     </group>
   );
 }

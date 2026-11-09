@@ -95,6 +95,22 @@ describe("cullSmallShadowCasters", () => {
     expect(nested.castShadow).toBe(true);
   });
 
+  test("a batch that joins the scene empty and fills afterwards keeps its shadow", () => {
+    // The static scenery pool adds each BatchedMesh before its first instance; judged empty it lost
+    // its shadow for the session, so Odd Orbit's first load drew fewer shadows than a remount.
+    const scene = new THREE.Scene();
+    cullSmallShadowCasters(scene);
+    const pooled = new THREE.BatchedMesh(16, 1024, 2048, new THREE.MeshStandardMaterial());
+    pooled.castShadow = true;
+    const instanced = new THREE.InstancedMesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), new THREE.MeshStandardMaterial(), 4);
+    instanced.count = 0;
+    instanced.castShadow = true;
+    scene.add(pooled, instanced);
+    expect(pooled.castShadow).toBe(true);
+    expect(instanced.castShadow).toBe(true);
+    expect(pooled.customDepthMaterial).toBeInstanceOf(THREE.MeshDepthMaterial);
+  });
+
   test("stops watching a subtree once it leaves the tree, and watches it again when it returns", () => {
     const scene = new THREE.Scene();
     const holder = new THREE.Group();

@@ -17,6 +17,7 @@ import { sceneProbeReading } from "@jgengine/core/devtools/discover";
 import { CascadedShadows } from "./CascadedShadows.draw";
 import { lightShadowFilter } from "./softShadows";
 import { cullSmallShadowCasters, MIN_SHADOW_CASTER_RADIUS, type ShadowCasterCull } from "./shadowCasters.draw";
+import { installShadowCache } from "./shadowCache.draw";
 import { minShadowCasterRadius, resolveCascadeCount, resolveShadowMapSize, SHADOW_CASTER_RADIUS_REFERENCE_MAP } from "./shadowTiers";
 
 /** three.js lights default to white; an unset light colour means this. */
@@ -156,6 +157,44 @@ export function ConfiguredLighting({
       cullRef.current = null;
     };
   }, [scene, shadowsCast, casterRadius]);
+  const gl = useThree((s) => s.gl);
+  useEffect(() => {
+    if (!shadowsCast) return;
+    // Every backend: the audit reads back through a fence, which the WebGPU backend answers too, so
+    // `perf shadow-audit --renderer webgpu` proves its cached maps as it does WebGL's.
+    const cache = installShadowCache(gl, scene);
+    if (typeof window !== "undefined") {
+      window.__jgShadowCache = cache.handle;
+      // `bun run perf shadow-audit` loads the page with this flag: every cached map is checked against a full redraw.
+      if (new URLSearchParams(window.location?.search ?? "").get("shadowAudit") === "1") cache.handle.setAudit(true);
+    }
+    const unregister = devtools.probes.registerSystem("render/shadow-cache", {
+      counters: () => {
+        const stats = cache.handle.stats();
+        return {
+          casters: stats.casters,
+          static: stats.staticCasters,
+          checks: stats.checks,
+          cpuMs: stats.cpuMs,
+          ...stats.passes,
+          auditMaps: stats.audit.maps,
+          auditMismatchedMaps: stats.audit.mismatchedMaps,
+          auditMismatchedTexels: stats.audit.mismatchedTexels,
+          auditFailed: stats.audit.failed,
+          auditSkipped: stats.audit.skipped,
+        };
+      },
+      state: () => {
+        const { passes, staticCasters, casters } = cache.handle.stats();
+        return `${staticCasters}/${casters} casters static · passes full ${passes.full} rebuild ${passes.rebuild} reuse ${passes.reuse} hold ${passes.hold}`;
+      },
+    });
+    return () => {
+      unregister();
+      if (typeof window !== "undefined" && window.__jgShadowCache === cache.handle) delete window.__jgShadowCache;
+      cache.dispose();
+    };
+  }, [gl, scene, shadowsCast]);
   useEffect(() => {
     const casterStats = sceneProbeReading(() => cullRef.current?.stats());
     return devtools.probes.registerSystem("render/shadows", {

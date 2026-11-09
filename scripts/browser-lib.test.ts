@@ -47,6 +47,7 @@ import {
   sweepOrphanProfiles,
   sweepStaleProfiles,
   sweepStrayBrowsers,
+  killAndConfirmExit,
   pidAlive,
   findChromeExecutable,
   waitForPidExit,
@@ -171,7 +172,7 @@ describe("Chrome launch mode", () => {
 
 describe("Chrome graphics profile", () => {
   test("uses native GPU locally instead of forcing CPU-bound SwiftShader", () => {
-    expect(chromeGraphicsArgs({}, "win32")).toEqual(["--ignore-gpu-blocklist"]);
+    expect(chromeGraphicsArgs({}, "win32")).toEqual(["--ignore-gpu-blocklist", "--enable-webgpu-developer-features"]);
   });
 
   test("uses SwiftShader in CI or when explicitly requested", () => {
@@ -357,7 +358,7 @@ describe("native legacy capture readiness", () => {
 
   test("native opt-in requires settled nonblank canvas pixels, without writing readiness flags", async () => {
     const fixture = legacy();
-    await expect(navigateCapturePage(fixture.session, "http://native", 100, { legacyCanvas: true })).resolves.toBeUndefined();
+    await expect(navigateCapturePage(fixture.session, "http://native", 5_000, { legacyCanvas: true })).resolves.toBeUndefined();
     expect(fixture.captured()).toBe(1);
     expect(fixture.subscriptions()).toBe(0);
   });
@@ -372,13 +373,15 @@ describe("native legacy capture readiness", () => {
     await expect(navigateCapturePage(loading.session, "http://native", 30, { legacyCanvas: true })).rejects.toThrow("timed out waiting");
     expect(loading.captured()).toBe(0);
     const error = legacy({ statuses: [null, "error"] });
-    await expect(navigateCapturePage(error.session, "http://native", 100, { legacyCanvas: true })).rejects.toThrow("late asset failure");
+    // A case that expects the page's own error, not a timeout, gets a budget it never reaches: the error
+    // ends it at once. 30-100 ms ran out first on a starved PC (verify runs below normal priority).
+    await expect(navigateCapturePage(error.session, "http://native", 5_000, { legacyCanvas: true })).rejects.toThrow("late asset failure");
     expect(error.captured()).toBe(0);
   });
   test("transient loading and error during screenshot still win even after the flag disappears", async () => {
     for (const status of ["loading", "error"]) {
       const fixture = legacy({ lateSignal: status });
-      await expect(navigateCapturePage(fixture.session, "http://native", 30, { legacyCanvas: true })).rejects.toThrow(status === "error" ? "late asset failure" : "timed out waiting");
+      await expect(navigateCapturePage(fixture.session, "http://native", status === "error" ? 5_000 : 30, { legacyCanvas: true })).rejects.toThrow(status === "error" ? "late asset failure" : "timed out waiting");
       expect(fixture.captured()).toBe(1);
     }
   });
@@ -611,7 +614,7 @@ describe("software GL backend", () => {
     expect(chromeRenderArgs("llvmpipe")).toContain("--use-angle=gl");
     expect(chromeRenderArgs("llvmpipe")).not.toContain("--headless=new");
     expect(chromeRenderArgs("swiftshader")).toEqual(expect.arrayContaining(["--headless=new", "--use-angle=swiftshader"]));
-    expect(chromeRenderArgs(null)).toEqual(["--headless=new", "--ignore-gpu-blocklist"]);
+    expect(chromeRenderArgs(null)).toEqual(["--headless=new", "--ignore-gpu-blocklist", "--enable-webgpu-developer-features"]);
   });
 });
 
@@ -864,17 +867,21 @@ describe("capture profile sweep", () => {  test("removes only stale jg dirs whos
       writeFileSync(file, "not a profile");
       const leakedChrome = mkdtempSync(join(root, "jg-shoot-"));
       writeFileSync(join(leakedChrome, "Local State"), "{}");
+      // A desktop app's WebView2 profile, left locked by perf desktop.
+      const leakedWebView = mkdtempSync(join(root, "jg-desktop-flow-"));
+      mkdirSync(join(leakedWebView, "EBWebView"));
       // An agent's own folder that happens to start with jg-: screenshots, no browser files.
       const agentScratch = join(root, "jg-scratch");
       mkdirSync(join(agentScratch, "shots"), { recursive: true });
       writeFileSync(join(agentScratch, "shots", "s1.png"), "png");
       const stale = new Date(Date.now() - 4 * 60 * 60 * 1000);
       const fresh = new Date(Date.now() - 20 * 60 * 1000);
-      for (const dir of [leaked, liveOwned, foreign, leakedChrome, agentScratch]) utimesSync(dir, stale, stale);
+      for (const dir of [leaked, liveOwned, foreign, leakedChrome, leakedWebView, agentScratch]) utimesSync(dir, stale, stale);
       utimesSync(recent, fresh, fresh);
       utimesSync(file, stale, stale);
 
-      expect(sweepStaleProfiles(root)).toBe(2);
+      expect(sweepStaleProfiles(root)).toBe(3);
+      expect(existsSync(leakedWebView)).toBe(false);
       expect(sweepOrphanProfiles(root)).toBe(0);
 
       expect(existsSync(agentScratch)).toBe(true);
@@ -951,6 +958,7 @@ describe("capture profile sweep", () => {  test("removes only stale jg dirs whos
       const leaked = agedProfile(root, "jg-leaked-", 60);
       const reported: string[] = [];
       const removed = sweepCaptureProfiles(root, {
+        processes: [],
         freeBytes: 200 * 1024 ** 3,
         log: (line) => {
           reported.push(line);
@@ -976,6 +984,7 @@ describe("capture profile sweep", () => {  test("removes only stale jg dirs whos
       const sixMinutes = agedProfile(root, "jg-six-", 6);
       const reported: string[] = [];
       const removed = sweepCaptureProfiles(root, {
+        processes: [],
         freeBytes: 8 * 1024 ** 3,
         log: (line) => {
           reported.push(line);
@@ -1008,7 +1017,8 @@ describe("capture profile sweep", () => {  test("removes only stale jg dirs whos
         const recent = new Date(Date.now() - 6 * 60_000);
         utimesSync(liveSix, recent, recent);
 
-        const removed = sweepCaptureProfiles(root, { freeBytes, log: () => {} });
+        const removed = sweepCaptureProfiles(root, {
+        processes: [], freeBytes, log: () => {} });
         console.error(`proof (c): ${Math.round(freeBytes / 1024 ** 3)} GB free — removed ${removed} of 2, kept both live-browser profiles`);
 
         expect(removed).toBe(0);
@@ -1025,7 +1035,8 @@ describe("capture profile sweep", () => {  test("removes only stale jg dirs whos
     try {
       const twenty = agedProfile(root, "jg-twenty-", 20);
       const hour = agedProfile(root, "jg-hour-", 60);
-      const removed = sweepCaptureProfiles(root, { freeBytes: null, log: () => {} });
+      const removed = sweepCaptureProfiles(root, {
+        processes: [], freeBytes: null, log: () => {} });
       expect(removed).toBe(1);
       expect(existsSync(twenty)).toBe(true);
       expect(existsSync(hour)).toBe(false);
@@ -1069,6 +1080,16 @@ describe("headed is a deliberate act", () => {
 });
 
 describe("stray browser sweep", () => {
+  test("a kill counts by the exit, not the kill command: a taskkill that timed out on a busy PC still ended its browser", () => {
+    let alive = true;
+    const timedOut = (): boolean => {
+      alive = false;
+      return false;
+    };
+    expect(killAndConfirmExit(1234, timedOut, () => alive, () => {})).toBe(true);
+    expect(killAndConfirmExit(1234, () => true, () => true, () => {})).toBe(false);
+  });
+
   const DEAD_PID = 999_999;
   const chrome = ((): string | null => {
     try {
@@ -1102,12 +1123,20 @@ describe("stray browser sweep", () => {
           "--no-first-run",
           "--no-default-browser-check",
           "--no-sandbox",
+          "--remote-debugging-port=0",
           "about:blank",
         ],
         { stdio: "ignore", windowsHide: true },
       );
       try {
         expect(pidAlive(child.pid)).toBe(true);
+        // Sweep a browser that has finished starting: Chrome writes DevToolsActivePort once it is up.
+        // Swept mid-start on a loaded PC, helpers it spawned after the kill outlived it (2026-11-08).
+        const started = Date.now() + 30_000;
+        while (!existsSync(join(dir, "DevToolsActivePort")) && Date.now() < started) {
+          await new Promise((r) => setTimeout(r, 100)); // wait-ok: polling for Chrome's own ready file
+        }
+        expect(existsSync(join(dir, "DevToolsActivePort"))).toBe(true);
         const result = sweepStrayBrowsers(root);
         console.error(
           `proof (1): planted Chrome pid ${child.pid} with dead run ${DEAD_PID} — killed ${result.killed}, profiles removed ${result.profilesRemoved}`,
@@ -1189,6 +1218,69 @@ describe("stray browser sweep", () => {
       expect(killed).toEqual([6002]);
       expect(result.killed).toBe(1);
       expect(existsSync(warm)).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("every process left on a stray profile is killed before the profile is removed", () => {
+    const root = mkdtempSync(join(tmpdir(), "jg-stray-orphans-"));
+    try {
+      const dir = profile(root, "jg-drive-orphans", DEAD_PID);
+      const killed: number[] = [];
+      const startedAt = Date.now() - 60 * 60 * 1000;
+      const helper = (pid: number) => ({ pid, parentPid: DEAD_PID, startedAt, commandLine: `chrome.exe --type=renderer --user-data-dir=${dir}` });
+      const result = sweepStrayBrowsers(root, {
+        processes: [helper(7101), helper(7102), helper(7103)],
+        kill: (pid) => killed.push(pid),
+        isAlive: (pid) => pid !== undefined && pid !== DEAD_PID && !killed.includes(pid),
+      });
+      expect(killed).toEqual([7101, 7102, 7103]);
+      expect(result).toEqual({ killed: 1, profilesRemoved: 1 });
+      expect(existsSync(dir)).toBe(false);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("a stray whose kill is refused is left with its profile, though it no longer answers as alive", () => {
+    const root = mkdtempSync(join(tmpdir(), "jg-stray-refused-"));
+    try {
+      const dir = profile(root, "jg-drive-refused", DEAD_PID);
+      const removed: string[] = [];
+      const startedAt = Date.now() - 60 * 60 * 1000;
+      const result = sweepStrayBrowsers(root, {
+        processes: [
+          { pid: 7201, parentPid: DEAD_PID, startedAt, commandLine: `chrome.exe --type=utility --user-data-dir=${dir}` },
+          { pid: 7202, parentPid: DEAD_PID, startedAt, commandLine: `chrome.exe --type=gpu-process --user-data-dir=${dir}` },
+        ],
+        kill: (pid) => pid !== 7201,
+        isAlive: () => false,
+        remove: (path) => removed.push(path),
+      });
+      expect(result).toEqual({ killed: 0, profilesRemoved: 0 });
+      expect(removed).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("a stray the kill cannot end is left with its profile, without waiting on either", () => {
+    const root = mkdtempSync(join(tmpdir(), "jg-stray-stuck-"));
+    try {
+      const dir = profile(root, "jg-drive-stuck", DEAD_PID);
+      const removed: string[] = [];
+      const started = Date.now();
+      const result = sweepStrayBrowsers(root, {
+        processes: [{ pid: 7001, parentPid: DEAD_PID, startedAt: Date.now() - 60 * 60 * 1000, commandLine: `chrome.exe --user-data-dir=${dir}` }],
+        kill: () => {},
+        isAlive: (pid) => pid === 7001,
+        remove: (path) => removed.push(path),
+      });
+      expect(result).toEqual({ killed: 0, profilesRemoved: 0 });
+      expect(removed).toEqual([]);
+      expect(existsSync(dir)).toBe(true);
+      expect(Date.now() - started).toBeLessThan(1_000);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

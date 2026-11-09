@@ -18,8 +18,8 @@ import { measureLocalBounds, reportMeasuredBounds } from "@jgengine/core/model/m
 import { recordRenderBounds } from "@jgengine/core/visibility/measuredBounds";
 import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "@jgengine/core/model/measureCollisionMesh.draw";
 import { buildScatterModelSources, disposeScatterModelSources, type ScatterModelSource } from "@jgengine/core/scatter/scatterModels.draw";
-import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.draw";
-import { acquireImpostor, createImpostorMaterials, IMPOSTOR_MIN_RADIUS, impostorCard, impostorDistance, impostorSettingsForQuality, impostorSwitch, releaseImpostor, sourceRadius, type ImpostorAtlas, type ImpostorEntry } from "@jgengine/core/lod/impostor.draw";
+import { useRenderVisibility, useVisibilityChanges } from "@jgengine/core/visibility/CullingProvider.draw";
+import { createImpostorMaterials, IMPOSTOR_MIN_RADIUS, impostorCard, impostorDistance, impostorSettingsForQuality, impostorSwitch, sourceRadius, useImpostorEntry, type ImpostorAtlas } from "@jgengine/core/lod/impostor.draw";
 import { acquireImpostorCardPool, ImpostorCardPool, releaseImpostorCardPool, type ImpostorCardSlice } from "@jgengine/core/lod/impostorCardPool.draw";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
@@ -85,6 +85,68 @@ export class LevelAssignment extends Map<string, number> {
 interface StaticMembers {
   current: SceneObject[];
   version: number;
+  /** The write steps of the opaque sources drawing these members, run by the batch from one frame callback. */
+  readonly steps: SourceSteps;
+}
+
+/** One source's per-frame write, held by reference so a re-render swaps it in place. @internal */
+export interface SourceStep {
+  run(): void;
+}
+
+/**
+ * The write steps of one batch's sources. `run` calls every step after the placed objects or the
+ * gathered members changed, and otherwise only the steps marked since the last run, so a still batch
+ * costs one compare a frame however many sources it has.
+ * @internal
+ */
+export class SourceSteps {
+  readonly all = new Set<SourceStep>();
+  readonly pending = new Set<SourceStep>();
+  private objects = -1;
+  private members = -1;
+
+  add(step: SourceStep): void {
+    this.all.add(step);
+    this.pending.add(step);
+  }
+
+  delete(step: SourceStep): void {
+    this.all.delete(step);
+    this.pending.delete(step);
+  }
+
+  /** Run the steps due, given the object store's version and the members' gather count. */
+  run(objects: number, members: number): void {
+    if (this.objects !== objects || this.members !== members) {
+      this.objects = objects;
+      this.members = members;
+      this.pending.clear();
+      for (const step of this.all) step.run();
+      return;
+    }
+    if (this.pending.size === 0) return;
+    for (const step of this.pending) step.run();
+    this.pending.clear();
+  }
+}
+
+/**
+ * Join `run` to the sources `members` drives. It runs on the frame after any render of its owner and
+ * after the batch's members or a placed object changed; on any other frame it is not called at all.
+ * A world of a thousand still props paid a callback per source per frame only to find nothing new.
+ */
+function useSourceStep(members: StaticMembers, run: () => void): { mark(): void } {
+  const step = useMemo((): SourceStep => ({ run }), []);
+  useLayoutEffect(() => {
+    step.run = run;
+    members.steps.pending.add(step);
+  });
+  useLayoutEffect(() => {
+    members.steps.add(step);
+    return () => members.steps.delete(step);
+  }, [members, step]);
+  return useMemo(() => ({ mark: () => void members.steps.pending.add(step) }), [members, step]);
 }
 
 /**
@@ -94,14 +156,30 @@ interface StaticMembers {
  */
 function useObjectChanges(): { take(): boolean; mark(): void } {
   const ctx = useGameContext();
-  const flag = useMemo(() => {
-    let dirty = true;
-    return { mark: () => { dirty = true; }, take: () => { const was = dirty; dirty = false; return was; } };
-  }, []);
+  const flag = useMemo(createChangeFlag, []);
   useEffect(() => {
     flag.mark();
     return ctx.scene.object.subscribe(flag.mark);
   }, [ctx, flag]);
+  return flag;
+}
+
+/** A flag that `mark` raises and `take` answers and lowers; raised at first. */
+function createChangeFlag(): { take(): boolean; mark(): void } {
+  let dirty = true;
+  return { mark: () => { dirty = true; }, take: () => { const was = dirty; dirty = false; return was; } };
+}
+
+/**
+ * Whether one of `objects` entered or left the render-visible set since the owner last asked: `take()`
+ * answers and resets. True at first and for a new list. A batch reads the visibility of its own members
+ * alone, so it gathers them again only then, not on every frame a walking camera moved some other id.
+ */
+function useMemberVisibilityChanges(objects: readonly SceneObject[]): { take(): boolean } {
+  const flag = useMemo(createChangeFlag, []);
+  const ids = useMemo(() => objects.map((object) => object.instanceId), [objects]);
+  useEffect(() => flag.mark(), [flag, ids]);
+  useVisibilityChanges(ids, flag.mark);
   return flag;
 }
 
@@ -130,15 +208,17 @@ function useBatchMembers(batch: StaticObjectBatch): { objects: readonly SceneObj
 function useStaticMembers(batch: StaticObjectBatch, objects: readonly SceneObject[], assignment?: LevelAssignment, level?: number, drawn = true): StaticMembers {
   const ctx = useGameContext();
   const visibility = useRenderVisibility();
-  const members = useMemo((): StaticMembers => ({ current: [], version: 0 }), []);
+  const members = useMemo((): StaticMembers => ({ current: [], version: 0, steps: new SourceSteps() }), []);
   const changed = useObjectChanges();
-  const gathered = useRef<{ visible: unknown; objects: unknown; assignment: unknown; revision: number; level: unknown }>({ visible: null, objects: null, assignment: null, revision: -1, level: null });
+  const shown = useMemberVisibilityChanges(objects);
+  const gathered = useRef<{ objects: unknown; assignment: unknown; revision: number; level: unknown }>({ objects: null, assignment: null, revision: -1, level: null });
   useSharedFrame(() => {
     const last = gathered.current;
     const objectsChanged = changed.take();
+    const visibilityChanged = shown.take();
     const revision = assignment?.revision ?? 0;
-    if (!objectsChanged && last.visible === visibility.current && last.objects === objects && last.assignment === assignment && last.revision === revision && last.level === level) return;
-    gathered.current = { visible: visibility.current, objects, assignment, revision, level };
+    if (!objectsChanged && !visibilityChanged && last.objects === objects && last.assignment === assignment && last.revision === revision && last.level === level) return;
+    gathered.current = { objects, assignment, revision, level };
     members.version += 1;
     const accept = assignment !== undefined && level !== undefined
       ? (live: SceneObject) => assignment.get(live.instanceId) === level
@@ -149,6 +229,8 @@ function useStaticMembers(batch: StaticObjectBatch, objects: readonly SceneObjec
         isCompatibleStaticObject(object, batch.model, ctx.scene.object.catalog(id)) ? object : null;
     }, visibility.current, accept, members.current);
   }, CAMERA_POST_FRAME_PRIORITY + 0.15, drawn);
+  // Every source of the batch after a gather or a placed object's change; otherwise only those whose own inputs changed.
+  useSharedFrame(() => members.steps.run(ctx.scene.object.version(), members.version), CAMERA_POST_FRAME_PRIORITY + 0.2, drawn);
   return members;
 }
 
@@ -212,7 +294,7 @@ function PooledObjectSource({ slot, source, members, objects }: {
   const checkedVersion = useRef(-1);
   const syncedAt = useRef<{ slot: StaticDrawSlot; members: number; placed: unknown; slotOf: unknown } | null>(null);
   const live = useMemo((): SceneObject[] => [], []);
-  useSharedFrame(() => {
+  useSourceStep(members, () => {
     const version = ctx.scene.object.version();
     const last = placed.current;
     if (last === null || last.slot !== slot || last.objects !== objects || checkedVersion.current !== version) {
@@ -230,7 +312,7 @@ function PooledObjectSource({ slot, source, members, objects }: {
     if (synced?.slot === slot && synced.members === members.version && synced.placed === placed.current && synced.slotOf === slotOf) return;
     syncedAt.current = { slot, members: members.version, placed: placed.current, slotOf };
     slot.sync(members.current, slotOf, matrixOf);
-  }, CAMERA_POST_FRAME_PRIORITY + 0.2);
+  });
   return null;
 }
 
@@ -245,26 +327,33 @@ function InstancedObjectSource({ source, members, capacity }: {
   const blends = useMemo(() => blendsSource(source), [source]);
   const eye = useMemo(() => new THREE.Vector3(), []);
   const ordered = useMemo((): SceneObject[] => [], []);
+  const syncedAt = useRef<{ mesh: THREE.InstancedMesh | null; members: number }>({ mesh: null, members: -1 });
+  // An opaque source's instances follow the members alone, so the batch runs it after a gather; a
+  // see-through one re-sorts as the camera moves, so it writes every frame on its own.
+  const opaque = useSourceStep(members, () => {
+    const mesh = ref.current;
+    if (blends || mesh === null) return;
+    const synced = syncedAt.current;
+    if (synced.mesh === mesh && synced.members === members.version) return;
+    synced.mesh = mesh;
+    synced.members = members.version;
+    syncStaticObjectSource(mesh, source, members.current, scratch);
+  });
   const attach = useCallback((mesh: THREE.InstancedMesh | null) => {
     ref.current = mesh;
-    if (mesh !== null) freezeStaticTransforms(mesh);
-  }, []);
+    if (mesh === null) return;
+    freezeStaticTransforms(mesh);
+    opaque.mark();
+  }, [opaque]);
   useEffect(() => {
     const mesh = ref.current;
     return () => { mesh?.dispose(); };
   }, [capacity, source]);
-  const syncedAt = useRef<{ mesh: THREE.InstancedMesh | null; members: number }>({ mesh: null, members: -1 });
   useSharedFrame((state) => {
     const mesh = ref.current;
     if (mesh === null) return;
-    // An opaque source's instances follow the members alone; a see-through one re-sorts as the camera moves.
-    const synced = syncedAt.current;
-    if (!blends && synced.mesh === mesh && synced.members === members.version) return;
-    synced.mesh = mesh;
-    synced.members = members.version;
-    const drawn = blends ? sortFarToNear(members.current, state.camera.getWorldPosition(eye), ordered) : members.current;
-    syncStaticObjectSource(mesh, source, drawn, scratch);
-  }, CAMERA_POST_FRAME_PRIORITY + 0.2);
+    syncStaticObjectSource(mesh, source, sortFarToNear(members.current, state.camera.getWorldPosition(eye), ordered), scratch);
+  }, CAMERA_POST_FRAME_PRIORITY + 0.2, blends);
   return <instancedMesh ref={attach} args={[source.geometry, source.material, capacity]} userData={{ [STATIC_BATCH_MESH_KEY]: true }} castShadow={source.castShadow ?? false} receiveShadow={source.receiveShadow ?? false} dispose={null} />;
 }
 
@@ -334,15 +423,10 @@ function ImpostorStaticObjects({ batch, objects, sources, radius }: {
   radius: number;
 }) {
   const ctx = useGameContext();
-  const gl = useThree((state) => state.gl);
   const quality = useTerrainQuality();
   const settings = useMemo(() => impostorSettingsForQuality(quality), [quality]);
   const key = useMemo(() => `object:${batch.model.url}:${JSON.stringify(batch.model)}`, [batch.model]);
-  const [entry, setEntry] = useState<ImpostorEntry | null>(null);
-  useEffect(() => {
-    setEntry(acquireImpostor(key, gl, sources, settings));
-    return () => releaseImpostor(key, settings);
-  }, [key, gl, sources, settings]);
+  const entry = useImpostorEntry(key, sources, settings);
   const assignment = useMemo(() => new LevelAssignment(), []);
   const camera = useMemo(() => new THREE.Vector3(), []);
   const ready = entry?.atlas != null && entry.materials !== null;
@@ -381,12 +465,15 @@ function ImpostorCards({ poolKey, atlas, materials, objects, assignment, level }
   atlas: ImpostorAtlas;
   materials: { material: THREE.MeshStandardMaterial; depth: THREE.MeshDepthMaterial };
   objects: readonly SceneObject[];
-  assignment: ReadonlyMap<string, number>;
+  assignment: LevelAssignment;
   level: number;
 }) {
   const ctx = useGameContext();
   const scene = useThree((state) => state.scene);
   const visibility = useRenderVisibility();
+  const changed = useObjectChanges();
+  const shown = useMemberVisibilityChanges(objects);
+  const written = useRef<{ card: unknown; revision: number; objects: unknown; level: number } | null>(null);
   const [card, setCard] = useState<{ pool: ImpostorCardPool; slice: ImpostorCardSlice } | null>(null);
   useEffect(() => {
     const pool = acquireImpostorCardPool(poolKey, scene, materials.material, () => new ImpostorCardPool(impostorCard(atlas), materials.material, materials.depth));
@@ -400,6 +487,13 @@ function ImpostorCards({ poolKey, atlas, materials, objects, assignment, level }
   }, [poolKey, atlas, materials, scene, objects.length]);
   useSharedFrame(() => {
     if (card === null) return;
+    // The cards follow their placements, the visible set and the level switch alone: rewritten only after one moved.
+    const objectsChanged = changed.take();
+    const visibilityChanged = shown.take();
+    const last = written.current;
+    if (!objectsChanged && !visibilityChanged && last !== null && last.card === card && last.revision === assignment.revision &&
+      last.objects === objects && last.level === level) return;
+    written.current = { card, revision: assignment.revision, objects, level };
     const { slice } = card;
     let count = 0;
     for (const object of objects) {
@@ -415,6 +509,7 @@ function ImpostorCards({ poolKey, atlas, materials, objects, assignment, level }
     }
     slice.count = count;
     slice.ids.length = count;
+    slice.version += 1;
   }, CAMERA_POST_FRAME_PRIORITY + 0.2);
   useSharedFrame((state) => card?.pool.pack(state.clock.elapsedTime), CAMERA_POST_FRAME_PRIORITY + 0.3);
   return null;
@@ -462,7 +557,7 @@ function VariantImpostorLevel({ model, meta, objects, level, assignment }: {
   meta: BuiltLodMeta;
   objects: readonly SceneObject[];
   level: number;
-  assignment: ReadonlyMap<string, number>;
+  assignment: LevelAssignment;
 }) {
   const atlas = useBakedImpostor(model, meta);
   const materials = useMemo(() => atlas === null ? null : createImpostorMaterials(atlas), [atlas]);
@@ -478,13 +573,22 @@ function VariantImpostorLevel({ model, meta, objects, level, assignment }: {
 export function LevelSingles({ objects, level, assignment, single }: {
   objects: readonly SceneObject[];
   level: number;
-  assignment: ReadonlyMap<string, number>;
+  assignment: LevelAssignment;
   single: (object: SceneObject) => ReactNode;
 }) {
   const ctx = useGameContext();
   const visibility = useRenderVisibility();
   const [members, setMembers] = useState<readonly SceneObject[]>(objects);
+  const changed = useObjectChanges();
+  const shown = useMemberVisibilityChanges(objects);
+  const gathered = useRef<{ revision: number; objects: unknown; level: number } | null>(null);
   useSharedFrame(() => {
+    const objectsChanged = changed.take();
+    const visibilityChanged = shown.take();
+    const last = gathered.current;
+    if (!objectsChanged && !visibilityChanged && last !== null && last.revision === assignment.revision &&
+      last.objects === objects && last.level === level) return;
+    gathered.current = { revision: assignment.revision, objects, level };
     const next = objects.flatMap((object) => {
       const live = ctx.scene.object.get(object.instanceId);
       if (live === null || !visibility.current(live.instanceId)) return [];

@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { summarizeBreakdown, type FrameBreakdownRecord } from "../packages/core/src/devtools/frameBreakdown";
-import { compareBreakdowns, readBreakdown, startPath } from "./perf-breakdown";
+import { compareBreakdowns, readBreakdown, renderHitchSession, startPath } from "./perf-breakdown";
 
 test("comparison does not turn missing GPU samples into zero", () => {
   const frame: FrameBreakdownRecord = { intervalMs: 10, workMs: 5, cpu: {}, gpu: null, draws: 0, triangles: 0, compiles: 0, compileMs: 0, uploads: 0, uploadBytes: 0, uploadMs: 0, heapMb: null, heapDropMb: 0 };
@@ -82,4 +82,17 @@ test("a missing source map labels the transformed location and leaves source unr
   const result = await readBreakdown(session as never);
   expect(result?.cpu[0]?.name).toBe("frame#2 generated /generated.js:31");
   expect(result?.sources).toEqual({ resolved: 0, unresolved: 1 });
+});
+
+test("a stall behind the travel card is counted apart from the ones the player saw", () => {
+  const text = renderHitchSession({
+    seconds: 60, frames: 3600, gcMb: 12, dropped: 0,
+    hitches: [
+      { atS: 20.5, ms: 2634.7, cause: "compile", detail: "7 shader programs", covered: "travel card" },
+      { atS: 30, ms: 48, cause: "gc", detail: "freed 3 MB" },
+    ],
+  }, "hitches");
+  expect(text).toContain("hitches the player saw over 33 ms: 1, worst 48 ms; by cause: gc 1");
+  expect(text).toContain("behind a travel card or cover: 1, worst 2634.7 ms");
+  expect(text).toContain("[travel card] compile: 7 shader programs");
 });

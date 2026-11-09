@@ -18,6 +18,8 @@ describe("extractPackageSurface", () => {
     }
   });
 
+  // A type-checked walk of every core module (1,350 of them): 7-20 s on a PC under load, so the
+  // test shard's 20 s default failed it on a busy machine while beta and branches took the same time.
   test("core package surface includes createSimClock", () => {
     const surface = extractPackageSurface(join(root, "packages", "core"));
     expect(surface.name.length).toBeGreaterThan(0);
@@ -34,5 +36,5 @@ describe("extractPackageSurface", () => {
         expect(exported.name.startsWith("_")).toBe(false);
       }
     }
-  });
+  }, 90_000);
 });

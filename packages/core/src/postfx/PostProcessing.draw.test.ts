@@ -8,6 +8,7 @@ import { advanceRevealFade, buildPostGraph, disposeGraph, planPostStages, resolv
 import { ExposureMeterPass } from "./autoExposure.draw";
 import { BeautyPass } from "./beautyPass.draw";
 import { RevealFadePass, RevealSnapshotPass } from "./revealFade.draw";
+import { SceneCompositePass } from "./sceneCompositePass.draw";
 import { JitteredRenderPass, TemporalAaPass } from "./temporalAaPass.draw";
 
 test("graph resizes and disposes the current Three Bokeh through its pass lifecycle", () => {
@@ -54,6 +55,7 @@ const stubRenderer = () =>
   ({
     getPixelRatio: () => 1,
     getSize: (target: THREE.Vector2) => target.set(8, 8),
+    getDrawingBufferSize: (target: THREE.Vector2) => target.set(320, 180),
   }) as unknown as THREE.WebGLRenderer;
 
 const bare = {
@@ -231,15 +233,29 @@ describe("effects after the reveal", () => {
   const fullChain = () =>
     withImage(() => buildPostGraph(stubRenderer(), new THREE.Scene(), new THREE.PerspectiveCamera(), planPostStages({ toneMapping: "aces", ao: undefined, bloom: {} }, "high"), 320, 180));
 
-  test("a chain starts with only the beauty pass, the exposure meter, the OutputPass and the grade on", () => {
+  test("the AO, contact-shadow and beauty-copy draws merge into one only at an AO blend of 1", () => {
+    const build = (blend: number) =>
+      withImage(() => buildPostGraph(stubRenderer(), new THREE.Scene(), new THREE.PerspectiveCamera(), planPostStages({ toneMapping: "aces", ao: { blend }, bloom: {} }, "high"), 320, 180));
+    const merged = build(1);
+    expect(merged.composer.passes.some((pass) => pass instanceof SceneCompositePass)).toBe(true);
+    expect((merged.composer.passes[0] as BeautyPass).copies).toBe(false);
+    disposeGraph(merged);
+    const separate = build(0.8);
+    expect(separate.composer.passes.some((pass) => pass instanceof SceneCompositePass)).toBe(false);
+    expect((separate.composer.passes[0] as BeautyPass).copies).toBe(true);
+    disposeGraph(separate);
+  });
+
+  test("a chain starts with only the beauty pass and its composite, the exposure meter, the OutputPass and the grade on", () => {
     const graph = fullChain();
     const on = graph.composer.passes.filter((pass) => pass.enabled);
-    expect(on).toHaveLength(4);
+    expect(on).toHaveLength(5);
     expect(on[0]).toBeInstanceOf(BeautyPass);
     expect((on[0] as BeautyPass).scenePass).toBeInstanceOf(JitteredRenderPass);
-    expect(on[1]).toBeInstanceOf(ExposureMeterPass);
-    expect(on[2]).toBeInstanceOf(OutputPass);
-    expect(on[3]).toBe(graph.grade!);
+    expect(on[1]).toBeInstanceOf(SceneCompositePass);
+    expect(on[2]).toBeInstanceOf(ExposureMeterPass);
+    expect(on[3]).toBeInstanceOf(OutputPass);
+    expect(on[4]).toBe(graph.grade!);
     expect(graph.effects.length).toBe(graph.stages.length - 2);
     expect(graph.composer.passes[1]).toBeInstanceOf(RevealSnapshotPass);
     // The fade sits right before the grade, so the grade lands on both pictures alike.

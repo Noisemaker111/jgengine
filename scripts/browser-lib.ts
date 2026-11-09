@@ -12,15 +12,16 @@ import {
   unlinkSync,
   writeFileSync,
 } from "node:fs";
-import { cpus, tmpdir } from "node:os";
+import { cpus, getPriority, tmpdir } from "node:os";
 import { basename, dirname, join, parse, resolve } from "node:path";
 
 import { BUSY_PC_PERCENT, cpuBusyPercent, readinessTimeoutLine, retrySettleMs, shouldRetryCapture, type CpuSample } from "./capture-retry";
 import { clearViteCaches, headRevision, revisionDrifted, shortRevision } from "./captureRevision";
 import { brokerServer } from "./devBrokerClient";
 import { checkMarkedServer, checkoutIdentity, devServerIdentity, isUp, listMarkers, markerPath, readMarker, readServerIdentity, writeMarker } from "./devServerMarker";
-import { currentStep, describeHang, markStep } from "./hangReport";
+import { currentStep, describeHang, markStep, pausableDeadline, pausedTotal } from "./hangReport";
 import { localGet } from "./localhostHttp";
+import { currentPriority, lowerToBelowNormal, type PriorityLabel, priorityLabel, restoreNormalPriority } from "./machine-priority";
 import { startOutsideCaller } from "./outsideCaller";
 import { computeShotMetrics, deadViewport } from "./shot-metrics";
 import { removeDirSync } from "./removeDir";
@@ -141,6 +142,19 @@ export function buildBrowserFixture(entry: string): string {
   return build.stdout;
 }
 
+/**
+ * A capture Chrome on the real GPU. WebGPU developer features keep GPU timestamps exact: Chrome
+ * otherwise rounds them to 100 µs, which buries a 0.3 ms pass in rounding.
+ */
+const HARDWARE_GPU_ARGS = ["--ignore-gpu-blocklist", "--enable-webgpu-developer-features"];
+
+/**
+ * `performance.memory` reports the exact heap on every read instead of a bucketed, cached figure,
+ * so the frame breakdown sees a collection in the frame it happened and its hitch reads "gc"
+ * rather than "other". The desktop harness passes it to WebView2 too.
+ */
+export const PRECISE_HEAP_ARG = "--enable-precise-memory-info";
+
 /** Native GPU locally; deterministic software GL only when explicitly requested or in CI. */
 export function chromeGraphicsArgs(
   env: NodeJS.ProcessEnv = process.env,
@@ -150,7 +164,7 @@ export function chromeGraphicsArgs(
     (env["JG_CAPTURE_SOFTWARE_GL"] !== "0" && (env["CI"] !== undefined || platform === "linux"));
   return software
     ? ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"]
-    : ["--ignore-gpu-blocklist"];
+    : [...HARDWARE_GPU_ARGS];
 }
 
 /** Frame clock a capture browser runs requestAnimationFrame on. */
@@ -209,7 +223,7 @@ export function chromeRenderArgs(backend: SoftwareGl | null, headed = false): st
   if (backend === "llvmpipe") {
     return ["--ozone-platform=x11", "--use-angle=gl", "--ignore-gpu-blocklist", "--window-size=2560,2560"];
   }
-  return ["--headless=new", ...(backend === "swiftshader" ? chromeGraphicsArgs({ JG_CAPTURE_SOFTWARE_GL: "1" }) : ["--ignore-gpu-blocklist"])];
+  return ["--headless=new", ...(backend === "swiftshader" ? chromeGraphicsArgs({ JG_CAPTURE_SOFTWARE_GL: "1" }) : [...HARDWARE_GPU_ARGS])];
 }
 
 /**
@@ -447,6 +461,8 @@ async function serverFromBroker(cwd: string, kind: "runner" | "website", portEnv
  * Port is derived from the worktree path; a live server on that port is
  * reused only when a marker file proves it belongs to this identity.
  */
+const DEV_SERVER_BOOT_MS = 90_000;
+
 export async function ensureDevServer(cwd = process.cwd()): Promise<EnsureDevServerResult> {
   const brokered = await serverFromBroker(cwd, "runner", "JG_DEV_PORT");
   if (brokered !== null) return brokered;
@@ -491,7 +507,9 @@ export async function ensureDevServer(cwd = process.cwd()): Promise<EnsureDevSer
   writeMarker({ identity, port, pid, head: headRevision(cwd), kind: "runner" });
 
   const finalBase = `http://127.0.0.1:${port}`;
-  for (let attempt = 0; attempt < 60; attempt += 1) {
+  // 90 s: a cold boot with its dep cache cleared took past the old 30 s on a loaded PC, and the
+  // drive failed before Vite answered. A Vite that exits early still fails at once, below.
+  for (let attempt = 0; attempt < DEV_SERVER_BOOT_MS / 500; attempt += 1) {
     await new Promise((r) => setTimeout(r, 500));
     if (await isUp(finalBase)) {
       const confirmed = await confirmLaunchedServer(finalBase, port, identity, "runner", cwd);
@@ -508,11 +526,14 @@ export async function ensureDevServer(cwd = process.cwd()): Promise<EnsureDevSer
   }
   if (child !== null) child.kill();
   else killPid(pid, true);
+  // The runner's Vite is apps/dev's own dependency; the root never had it, so checking only there
+  // called every slow boot "vite is missing".
   const viteInstalled =
+    existsSync(join(cwd, "apps", "dev", "node_modules", "vite")) ||
     existsSync(join(cwd, "node_modules", ".bin", "vite")) ||
     existsSync(join(cwd, "node_modules", "vite"));
   const hint = viteInstalled
-    ? "the apps/dev Vite server never became reachable — check for a port conflict or a Vite boot error"
+    ? `the apps/dev Vite server never became reachable in ${DEV_SERVER_BOOT_MS / 1000} s — check for a port conflict or a Vite boot error`
     : "node_modules looks incomplete (vite is missing) — run `bun scripts/ensure-ready.ts` (or `bun install`) first";
   throw new Error(`Dev server failed to start on :${port} for ${identity} — ${hint}`);
 }
@@ -585,24 +606,32 @@ export async function ensureWebServer(cwd = process.cwd()): Promise<EnsureDevSer
  * group on posix (SIGKILL to `-pid`) before falling back to the bare pid —
  * used when we own a detached launcher whose children must die with it.
  */
-export function killPid(pid: number | undefined, tree = false): void {
-  if (pid === undefined || !Number.isFinite(pid) || pid <= 0) return;
+/**
+ * Kill `pid` (and its tree). True when it is gone or going; false when the kill was refused. On
+ * Windows a process can be stuck past `taskkill` ("there is no running instance of the task",
+ * exit 255) while `process.kill(pid, 0)` already calls it dead, so only this answer tells a caller
+ * that its files stay locked.
+ */
+export function killPid(pid: number | undefined, tree = false): boolean {
+  if (pid === undefined || !Number.isFinite(pid) || pid <= 0) return true;
   if (process.platform === "win32") {
-    spawnSync("taskkill", ["/pid", String(pid), "/T", "/F"], { stdio: "ignore", windowsHide: true, timeout: 15_000 });
-    return;
+    const status = spawnSync("taskkill", ["/pid", String(pid), "/T", "/F"], { stdio: "ignore", windowsHide: true, timeout: 15_000 }).status;
+    // 128: no such process, already gone.
+    return status === 0 || status === 128;
   }
   if (tree) {
     try {
       process.kill(-pid, "SIGKILL");
-      return;
+      return true;
     } catch {
       /* group gone or ungrouped — fall through to the bare pid */
     }
   }
   try {
     process.kill(pid, "SIGKILL");
-  } catch {
-    /* already gone */
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === "ESRCH";
   }
 }
 
@@ -1060,7 +1089,8 @@ export function removeProfileDir(userDataDir: string): void {
  */
 function isBrowserProfile(dir: string): boolean {
   const names = readdirSync(dir);
-  return names.length === 0 || [PROFILE_OWNER_FILE, PROFILE_RUN_FILE, "Local State", "Default"].some((name) => names.includes(name));
+  // `EBWebView` is a WebView2 user data folder (perf desktop launches an app on its own one).
+  return names.length === 0 || [PROFILE_OWNER_FILE, PROFILE_RUN_FILE, "Local State", "Default", "EBWebView"].some((name) => names.includes(name));
 }
 
 function readOwnerPid(dir: string): number | undefined {
@@ -1155,12 +1185,25 @@ export function listBrowserProcesses(): BrowserProcess[] {
   if (process.platform === "win32") {
     // Encoded, because `-Command` through argv mangles the quotes inside a WQL filter.
     const encoded = Buffer.from(WINDOWS_PROCESS_QUERY, "utf16le").toString("base64");
-    const query = spawnSync(
-      "powershell.exe",
+    const run = (shell: string) => spawnSync(
+      shell,
       ["-NoProfile", "-NonInteractive", "-EncodedCommand", encoded],
       { encoding: "utf8", windowsHide: true, timeout: 20_000 },
     );
-    return query.status === 0 ? parseRows(query.stdout ?? "") : [];
+    // PowerShell 7 starts in about 0.4 s; Windows PowerShell 5 took 3.5 to 8 s on a busy PC, and
+    // every capture start runs this query (2026-11-08).
+    let query = run("pwsh");
+    if (query.error !== undefined) {
+      console.error(`degraded: pwsh is not installed (${query.error.message}); listing browsers with Windows PowerShell, which starts seconds slower`);
+      query = run("powershell.exe");
+    }
+    if (query.status !== 0) {
+      // Silent before: on a loaded PC the 20 s query timed out, the sweep saw no browsers, and a
+      // test read that as "nothing stray" (2026-11-08).
+      console.error(`degraded: could not list browser processes (${query.error?.message ?? `exit ${query.status}`}); no stray browser is swept this time`);
+      return [];
+    }
+    return parseRows(query.stdout ?? "");
   }
   const withElapsed = spawnSync("ps", ["-eo", "pid=,ppid=,etimes=,args="], { encoding: "utf8", timeout: 20_000 });
   const ps = withElapsed.status === 0 ? withElapsed : spawnSync("ps", ["-axo", "pid=,ppid=,command="], { encoding: "utf8", timeout: 20_000 });
@@ -1219,13 +1262,32 @@ export function daemonProfiles(root = tmpdir()): Set<string> {
   return profiles;
 }
 
+/**
+ * Kill `pid`'s tree and wait for it to exit; true once it has. The exit decides, not the kill
+ * command's status: on a PC at 100% CPU taskkill outlived its own 15 s limit while the browser it
+ * was ending died anyway, and the sweep then left that profile behind as a survivor (2026-11-08).
+ * A killed Chrome also holds its profile's files until it has exited, and Windows keeps a folder
+ * whose files are still open, so the wait comes before the profile is removed.
+ */
+export function killAndConfirmExit(
+  pid: number,
+  kill: (pid: number, tree: boolean) => unknown = killPid,
+  alive: (pid: number) => boolean = pidAlive,
+  waitForExit: (pid: number, timeoutMs: number) => void = waitForExitSync,
+): boolean {
+  kill(pid, true);
+  waitForExit(pid, 10_000);
+  return !alive(pid);
+}
+
 export interface StrayBrowserSweepOptions {
   now?: number;
   /** Age past which an unowned visible browser is leaked; defaults to {@link STRAY_BROWSER_MS}. */
   maxAgeMs?: number;
   /** Replace the live process list (tests). */
   processes?: readonly BrowserProcess[];
-  kill?: (pid: number) => void;
+  /** False when the kill was refused (see {@link killPid}); the profile is then left alone. */
+  kill?: (pid: number) => unknown;
   remove?: (dir: string) => void;
   isAlive?: (pid: number | undefined) => boolean;
 }
@@ -1242,20 +1304,23 @@ export function sweepStrayBrowsers(root = tmpdir(), options: StrayBrowserSweepOp
   const now = options.now ?? Date.now();
   const maxAgeMs = options.maxAgeMs ?? STRAY_BROWSER_MS;
   const isAlive = options.isAlive ?? pidAlive;
-  // A killed Chrome holds its profile's files until it has exited, and Windows keeps a folder whose
-  // files are still open, so the real kill waits for the exit before the profile is removed.
-  const kill = options.kill ?? ((pid: number) => {
-    killPid(pid, true);
-    waitForExitSync(pid, 10_000);
-  });
+  const kill = options.kill ?? ((pid: number) => killAndConfirmExit(pid));
   const remove = options.remove ?? removeProfileDir;
-  const processes = options.processes ?? listBrowserProcesses();
-  const seen = new Set<string>();
-  const result: StrayBrowserSweepResult = { killed: 0, profilesRemoved: 0 };
-  for (const process of processes) {
+  // A browser whose main process died leaves its helpers (GPU, renderers, utilities) as siblings
+  // with no parent, so killing one helper's tree ends only that helper. Every process on a stray
+  // profile is killed: two such profiles kept 9 helpers alive for days and stalled each capture
+  // start for 20 s (2026-11-08).
+  const byProfile = new Map<string, BrowserProcess[]>();
+  for (const process of options.processes ?? listBrowserProcesses()) {
     const dir = profileDirUnderRoot(process.commandLine, root);
-    if (dir === undefined || seen.has(dir)) continue;
-    seen.add(dir);
+    if (dir === undefined) continue;
+    const group = byProfile.get(dir);
+    if (group === undefined) byProfile.set(dir, [process]);
+    else group.push(process);
+  }
+  const result: StrayBrowserSweepResult = { killed: 0, profilesRemoved: 0 };
+  for (const [dir, group] of byProfile) {
+    const process = group[0]!;
     if (ownedProfiles.has(dir)) continue;
     const headless = process.commandLine.includes("--headless");
     const runPid = readRunPid(dir);
@@ -1273,7 +1338,14 @@ export function sweepStrayBrowsers(root = tmpdir(), options: StrayBrowserSweepOp
       stray = !isAlive(process.parentPid) && startedAt !== undefined && now - startedAt >= maxAgeMs;
     }
     if (!stray) continue;
-    kill(process.pid);
+    const refused = new Set(group.filter(({ pid }) => kill(pid) === false).map(({ pid }) => pid));
+    // A process the kill could not end still holds the profile: deleting it would only retry for
+    // 10 s and fail.
+    const survivors = group.filter(({ pid }) => refused.has(pid) || isAlive(pid)).map(({ pid }) => pid);
+    if (survivors.length > 0) {
+      console.error(`degraded: browser process(es) ${survivors.join(", ")} on ${dir} survived the kill; the profile stays until they exit`);
+      continue;
+    }
     result.killed += 1;
     remove(dir);
     if (!existsSync(dir)) result.profilesRemoved += 1;
@@ -1451,6 +1523,7 @@ export function launchChrome(
       "--disable-default-apps",
       "--mute-audio",
       "--hide-scrollbars",
+      PRECISE_HEAP_ARG,
       "--no-sandbox",
       "--disable-dev-shm-usage",
       "about:blank",
@@ -1466,7 +1539,34 @@ export function launchChrome(
   );
   if (child.pid !== undefined) writeFileSync(join(userDataDir, PROFILE_OWNER_FILE), String(child.pid));
   trackProfileBrowser(userDataDir, child.pid);
+  // Set before Chrome forks its GPU and renderer processes, which inherit the browser's class.
+  const priority = options.priority === "normal" ? restoreNormalPriority(child.pid) : currentPriority(child.pid);
+  if (child.pid !== undefined) launchedPriorities.set(child.pid, priority);
+  if (!options.persistent && child.pid !== undefined) startChromeWatchdog(child.pid, userDataDir);
   return Object.assign(child, { userDataDir });
+}
+
+/** The priority a Chrome this process launched runs at, by browser pid. */
+const launchedPriorities = new Map<number, PriorityLabel>();
+
+/**
+ * Start the detached watchdog that ends this Chrome's tree and profile when this process dies
+ * without running its exit handlers (`taskkill /F`, a stopped job): `scripts/chrome-watchdog.ts`.
+ * Tests that fake the launch never reach here.
+ */
+export function startChromeWatchdog(chromePid: number, userDataDir: string, launcherPid = process.pid): number | undefined {
+  try {
+    const watchdog = spawn(process.execPath, [join(import.meta.dir, "chrome-watchdog.ts"), String(launcherPid), String(chromePid), userDataDir], {
+      stdio: "ignore",
+      windowsHide: true,
+      detached: true,
+    });
+    watchdog.unref();
+    return watchdog.pid;
+  } catch (error) {
+    console.error(`degraded: no watchdog for Chrome ${chromePid} (${error instanceof Error ? error.message : String(error)}); a killed launcher would leave it running`);
+    return undefined;
+  }
 }
 
 /** Launch persistent headless Chrome without retaining a Windows child-process handle in Bun. */
@@ -1501,6 +1601,7 @@ export function launchPersistentChrome(
     "--disable-default-apps",
     "--mute-audio",
     "--hide-scrollbars",
+    PRECISE_HEAP_ARG,
     ...chromeGraphicsArgs(),
     "--no-sandbox",
     "--disable-dev-shm-usage",
@@ -1508,13 +1609,16 @@ export function launchPersistentChrome(
   ];
   let pid: number;
   try {
-    // Outside this run's tree and Windows job, so a fairshare slot ending does not end the daemon.
+    // Outside this run's tree and Windows job, so the job ending does not end the daemon.
     pid = startOutsideCaller(chrome, args, { cwd: userDataDir });
   } catch (error) {
     removeProfileDir(userDataDir);
     throw new Error(`Persistent Chrome launch failed: ${error instanceof Error ? error.message : String(error)}`);
   }
   writeFileSync(join(userDataDir, PROFILE_OWNER_FILE), String(pid));
+  // Created by WMI, it inherits nothing from this process: put it below normal like every capture
+  // browser, before it starts most of its GPU and renderer processes.
+  lowerToBelowNormal(pid);
   detachProfileDir(userDataDir);
   return { pid, child: null, userDataDir };
 }
@@ -1535,6 +1639,12 @@ export interface ChromeLaunchOptions {
    * capture can never put a Chrome on Jon's desktop by accident; only `--headed` sets it.
    */
   headed?: boolean;
+  /**
+   * `normal` puts the browser back to normal priority after launch, for a mode whose product is a
+   * frame time (the launcher itself runs below normal, see `scripts/machine-priority.ts`). The
+   * default inherits the launcher's priority, which is what a capture or a byte count wants.
+   */
+  priority?: "normal" | "inherit";
 }
 
 export interface StartBrowserOptions<L extends LaunchableBrowser = ChromeProcess> {
@@ -1551,6 +1661,8 @@ export interface StartBrowserOptions<L extends LaunchableBrowser = ChromeProcess
   frameClock?: FrameClock;
   /** Launch a real (off-screen) window instead of headless Chrome. */
   headed?: boolean;
+  /** `normal` for a Chrome whose frame times are the product; see {@link ChromeLaunchOptions.priority}. */
+  priority?: "normal" | "inherit";
   /** Prove the page layer answers; defaults to opening and closing a page target. */
   pageProbe?: (debugPort: number, profilePath: string) => Promise<void>;
   /** Read the port a browser launched on port 0 published; defaults to its profile's DevToolsActivePort. */
@@ -1618,11 +1730,12 @@ export async function startBrowser<L extends LaunchableBrowser = ChromeProcess>(
   const publishedPort = options.publishedPort ?? publishedDebugPort;
   const pageProbe = options.pageProbe ?? defaultPageProbe;
   const launchOptions: ChromeLaunchOptions | undefined =
-    options.frameClock === undefined && options.headed !== true
+    options.frameClock === undefined && options.headed !== true && options.priority === undefined
       ? undefined
       : {
           ...(options.frameClock === undefined ? {} : { frameClock: options.frameClock }),
           ...(options.headed === true ? { headed: true } : {}),
+          ...(options.priority === undefined ? {} : { priority: options.priority }),
         };
   const attempts = 2;
   let last: BrowserLaunchError | null = null;
@@ -1874,18 +1987,19 @@ export async function captureViewportPng(
  */
 export async function waitCaptureReady(session: CdpSession, timeoutMs: number): Promise<void> {
   const wait = readinessWait(timeoutMs);
-  let last: { status: string | null; error: string | null; href: string | null } | undefined;
+  let last: { status: string | null; error: string | null; href: string | null; stage: string | null } | undefined;
   for (;;) {
-    last = (await session.evaluate<{ status: string | null; error: string | null; href: string | null }>(`({
+    last = (await session.evaluate<{ status: string | null; error: string | null; href: string | null; stage: string | null }>(`({
       status: document.documentElement.dataset.jgCapture ?? null,
       error: document.documentElement.dataset.jgCaptureError ?? null,
-      href: location.href
+      href: location.href,
+      stage: document.documentElement.dataset.jgCaptureStage ?? null
     })`)) ?? undefined;
     const status = last?.status;
     if (status === "ready") return;
     if (status === "error") throw new Error(`capture error: ${last?.error ?? "unknown"}`);
     if (typeof last?.href === "string" && last.href.startsWith("chrome-error://")) throw new Error(wait.failure(last.status, last.href, ""));
-    if (!wait.goOn(last?.status ?? null)) throw new Error(wait.failure(last?.status ?? null, last?.href ?? null, ""));
+    if (!wait.goOn(last?.status ?? null)) throw new Error(wait.failure(last?.status ?? null, last?.href ?? null, "", last?.stage));
     await new Promise((r) => setTimeout(r, 100));
   }
 }
@@ -1907,7 +2021,8 @@ function cpuSample(): CpuSample {
  */
 function readinessWait(timeoutMs: number): {
   goOn(status: string | null): boolean;
-  failure(status: string | null, href: string | null, url: string): string;
+  /** `stage` is what the page's gate was still waiting on (`data-jg-capture-stage`), when it said. */
+  failure(status: string | null, href: string | null, url: string, stage?: string | null): string;
 } {
   const startedAt = Date.now();
   const since = cpuSample();
@@ -1923,8 +2038,8 @@ function readinessWait(timeoutMs: number): {
       console.error(`capture: the PC's CPU is ${busy}% busy, so the page (${status === null ? "no capture status yet" : `still "${status}"`}) gets another ${Math.round(timeoutMs / 1000)}s`);
       return true;
     },
-    failure(status, href, url) {
-      return readinessTimeoutLine({ waitedMs: Date.now() - startedAt, status, href, url, cpuBusy: cpuBusyPercent(since, cpuSample()) });
+    failure(status, href, url, stage) {
+      return readinessTimeoutLine({ waitedMs: Date.now() - startedAt, status, href, url, cpuBusy: cpuBusyPercent(since, cpuSample()), stage: stage ?? null });
     },
   };
 }
@@ -2222,6 +2337,7 @@ const CAPTURE_READINESS_EXPR = `(() => {
   return {
     status: document.documentElement.dataset.jgCapture ?? null,
     error: document.documentElement.dataset.jgCaptureError ?? null,
+    stage: document.documentElement.dataset.jgCaptureStage ?? null,
     sizedCanvas: canvas !== null && canvas.clientWidth > 10 && canvas.clientHeight > 10 && canvas.width > 10 && canvas.height > 10 &&
       document.querySelector("[data-shell-code-loading]") === null
   };
@@ -2237,7 +2353,7 @@ export async function navigateCapturePage(
   let handshakeSeen = false;
   let pageFailure: string | undefined;
   let frameId: string | undefined;
-  let signalled: { status: string | null; error: string | null; sizedCanvas?: boolean } | undefined;
+  let signalled: { status: string | null; error: string | null; stage?: string | null; sizedCanvas?: boolean } | undefined;
   const requestFrames = new Map<string, string>();
   const pendingDocumentFailures: Array<{ frameId?: string | undefined; message: string }> = [];
   const offSignal = session.on("Runtime.bindingCalled", (params) => {
@@ -2284,6 +2400,7 @@ export async function navigateCapturePage(
 
     const wait = readinessWait(timeoutMs);
     let lastStatus: string | null = null;
+    let stage: string | null = null;
     // The pushed signal is the fast path; the evaluate below is the backstop, polled slowly
     // so it does not itself compete with the page for the main thread.
     let nextPollAt = Date.now();
@@ -2293,8 +2410,9 @@ export async function navigateCapturePage(
         (signalled?.status === "ready" || signalled?.status === "error" ? signalled : undefined) ??
         (Date.now() >= nextPollAt
           ? ((nextPollAt = Date.now() + 500),
-            await session.evaluate<{ status: string | null; error: string | null; sizedCanvas?: boolean }>(CAPTURE_READINESS_EXPR))
+            await session.evaluate<{ status: string | null; error: string | null; stage?: string | null; sizedCanvas?: boolean }>(CAPTURE_READINESS_EXPR))
           : undefined);
+      stage = remote?.stage ?? stage;
       if (remote?.status === "ready") return;
       if (remote?.status === "error") throw new Error(`capture error: ${remote.error ?? "unknown"}`);
       if (remote?.status != null) {
@@ -2329,7 +2447,7 @@ export async function navigateCapturePage(
     }
     if (pageFailure !== undefined) throw new Error(pageFailure);
     const href: unknown = await session.evaluate<unknown>("location.href").catch(() => null);
-    throw new Error(wait.failure(lastStatus, typeof href === "string" ? href : null, url));
+    throw new Error(wait.failure(lastStatus, typeof href === "string" ? href : null, url, stage));
   } finally {
     offSignal();
     offException();
@@ -2482,6 +2600,32 @@ export interface WithBrowserSessionOptions {
    * The wait sits outside the hard deadline, which covers only this run's own work.
    */
   turn?: (() => Promise<() => Promise<void>>) | undefined;
+  /** `normal` for a session whose product is a frame time; see {@link ChromeLaunchOptions.priority}. */
+  chromePriority?: "normal" | "inherit" | undefined;
+}
+
+/** What the current session's Chrome runs at, for the record a measurement writes. */
+export type SessionChromePriority = PriorityLabel | "daemon";
+
+let sessionPriority: SessionChromePriority | null = null;
+let sessionChromePid: number | null = null;
+
+/**
+ * The priority of the Chrome the latest {@link withBrowserSession} launched, `daemon` when it
+ * attached to a browser another process owns, or null before the first session. Read live while
+ * that Chrome runs, because something outside the run (Owl's machine-wide sweep) may have changed
+ * it since launch; after it exits, the last value read stays, so a mode's closing summary can say
+ * what its browser ran at.
+ */
+export function sessionChromePriority(): SessionChromePriority | null {
+  if (sessionChromePid !== null) {
+    try {
+      sessionPriority = priorityLabel(getPriority(sessionChromePid));
+    } catch {
+      sessionChromePid = null;
+    }
+  }
+  return sessionPriority;
 }
 
 /**
@@ -2516,7 +2660,8 @@ export async function withBrowserSession(
     }
   }
 
-  const watchdog = setTimeout(() => {
+  // Time `fn` spends queued for the perf lock is given back: the deadline covers this run's own work.
+  const cancelWatchdog = pausableDeadline(hardDeadlineMs, () => pausedTotal(currentStep()), () => {
     console.error(
       `browser session: still running after the ${Math.round(hardDeadlineMs / 1000)}s hard deadline, ${describeHang(currentStep())} — force-killing Chrome and dev server`,
     );
@@ -2527,8 +2672,7 @@ export async function withBrowserSession(
     killPid(options.serverPid, true);
     if (chrome !== null) removeProfileDir(chrome.userDataDir);
     process.exit(124);
-  }, hardDeadlineMs);
-  watchdog.unref();
+  }, { unref: true });
 
   try {
     markStep(
@@ -2538,6 +2682,8 @@ export async function withBrowserSession(
     );
     if (options.connect !== undefined || attach) {
       await waitForDebugger(debugPort, 5_000);
+      sessionChromePid = null;
+      sessionPriority = "daemon";
     } else {
       const started = await startBrowser({
         debugPort,
@@ -2546,9 +2692,13 @@ export async function withBrowserSession(
         ...(options.pageProbe === undefined ? {} : { pageProbe: options.pageProbe }),
         ...(options.frameClock === undefined ? {} : { frameClock: options.frameClock }),
         ...(options.headed === true ? { headed: true } : {}),
+        ...(options.chromePriority === undefined ? {} : { priority: options.chromePriority }),
       });
       chrome = started.browser;
       debugPort = started.debugPort;
+      // A test's fake launch records nothing; its session then reports the launcher's own priority.
+      sessionChromePid = chrome.pid !== undefined && launchedPriorities.has(chrome.pid) ? chrome.pid : null;
+      sessionPriority = (chrome.pid === undefined ? undefined : launchedPriorities.get(chrome.pid)) ?? currentPriority();
     }
     markStep("run the capture");
     const result = await fn({ debugPort, chrome });
@@ -2557,7 +2707,7 @@ export async function withBrowserSession(
     exitCode = 1;
     console.error(error instanceof Error ? error.message : error);
   } finally {
-    clearTimeout(watchdog);
+    cancelWatchdog();
     await releaseTurn?.().catch(() => {});
     if (!leaveWarm) {
       launchedProfiles.delete(debugPort);

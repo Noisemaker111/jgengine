@@ -2,8 +2,10 @@ import { describe, expect, test } from "bun:test";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { canvasCover } from "@jgengine/core/ui/canvasCover.view";
+import { createSettingsStore } from "@jgengine/core/settings/settingsModel";
+import { withRendererBackendOverride } from "@jgengine/core/settings/rendererBackend";
 
-import { applyTimeScale, CAPTURE_COMMAND_INPUT, installAgentBridge, playerPoseReport, waitForEditorHost } from "./agentBridge.draw";
+import { applySetting, applyTimeScale, CAPTURE_COMMAND_INPUT, installAgentBridge, playerPoseReport, waitForEditorHost } from "./agentBridge.draw";
 
 describe("waitForEditorHost", () => {
   test("resolves true as soon as the host goes live", async () => {
@@ -129,5 +131,20 @@ describe("applyTimeScale", () => {
     const ctx = clock();
     for (const bad of ["2", -1, Number.NaN, 500]) expect(applyTimeScale(ctx, bad).ok).toBe(false);
     expect(ctx.time.timescale()).toBe(1);
+  });
+});
+
+describe("applySetting", () => {
+  test("setting_set switches the pinned renderer on a live page and setting_get reads it back", () => {
+    const store = withRendererBackendOverride(createSettingsStore(null), "webgl");
+    expect(applySetting(store, { method: "setting_get", id: "graphics.renderer" }, false)).toEqual({ ok: true, id: "graphics.renderer", value: "webgl" });
+    expect(applySetting(store, { method: "setting_set", id: "graphics.renderer", value: "webgpu" }, true)).toEqual({ ok: true, id: "graphics.renderer", value: "webgpu" });
+  });
+
+  test("refuses a missing id or value, and a page without settings", () => {
+    const store = createSettingsStore(null);
+    expect(applySetting(store, { method: "setting_set", value: "x" }, true).ok).toBe(false);
+    expect(applySetting(store, { method: "setting_set", id: "graphics.renderer", value: { nested: true } }, true).ok).toBe(false);
+    expect(applySetting(undefined, { method: "setting_get", id: "graphics.renderer" }, false).ok).toBe(false);
   });
 });

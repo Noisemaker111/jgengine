@@ -100,6 +100,12 @@ describe("a readiness timeout names its cause in one line", () => {
     expect(line).toContain("the page never loaded: nothing answered at http://127.0.0.1:4845, so the dev server is gone");
   });
 
+  test("the line says what the page's gate was still waiting on, when the page said", () => {
+    const line = readinessTimeoutLine({ ...base, status: "settling", href: base.url, cpuBusy: 20, stage: "models streaming; 2 pending: /models/car.glb (2)" });
+    expect(line).toContain('the page was still "settling" (models streaming; 2 pending: /models/car.glb (2))');
+    expect(isStaleCaptureFailure(line)).toBe(true);
+  });
+
   test("a page that never started the handshake says so", () => {
     expect(readinessTimeoutLine({ ...base, status: null, href: base.url, cpuBusy: 10 })).toContain("never started the capture handshake");
   });

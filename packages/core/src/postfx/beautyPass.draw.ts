@@ -9,7 +9,8 @@ void main() {
 }
 `;
 
-const copyShader = /* glsl */ `
+/** The beauty copy's fragment shader, exported for the GPU check of the pass that replaces it. @internal */
+export const BEAUTY_COPY_FRAGMENT = /* glsl */ `
 uniform sampler2D tDiffuse;
 varying vec2 vUv;
 void main() {
@@ -27,7 +28,8 @@ void main() {
  */
 export class BeautyPass extends Pass {
   readonly target: THREE.WebGLRenderTarget;
-  private readonly material: THREE.ShaderMaterial;
+  /** The copy into the chain; `bun run perf post-audit` draws it as the reference for the composite. */
+  readonly material: THREE.ShaderMaterial;
   private readonly quad: FullScreenQuad;
 
   constructor(
@@ -39,7 +41,7 @@ export class BeautyPass extends Pass {
     super();
     this.needsSwap = false;
     this.target = new THREE.WebGLRenderTarget(width, height, { type: THREE.HalfFloatType, depthTexture: depth });
-    this.material = new THREE.ShaderMaterial({ uniforms: { tDiffuse: { value: this.target.texture } }, vertexShader, fragmentShader: copyShader, depthTest: false, depthWrite: false });
+    this.material = new THREE.ShaderMaterial({ uniforms: { tDiffuse: { value: this.target.texture } }, vertexShader, fragmentShader: BEAUTY_COPY_FRAGMENT, depthTest: false, depthWrite: false });
     this.quad = new FullScreenQuad(this.material);
   }
 
@@ -48,9 +50,13 @@ export class BeautyPass extends Pass {
     this.scenePass.setSize(width, height);
   }
 
+  /** False when a later pass (`SceneCompositePass`) reads {@link target} itself, so the copy would be redrawn over. */
+  copies = true;
+
   override render(renderer: THREE.WebGLRenderer, writeBuffer: THREE.WebGLRenderTarget, readBuffer: THREE.WebGLRenderTarget): void {
     this.scenePass.renderToScreen = false;
     this.scenePass.render(renderer, writeBuffer, this.target);
+    if (!this.copies && !this.renderToScreen) return;
     renderer.setRenderTarget(this.renderToScreen ? null : readBuffer);
     this.quad.render(renderer);
   }

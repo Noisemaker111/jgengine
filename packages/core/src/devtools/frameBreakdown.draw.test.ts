@@ -59,6 +59,64 @@ test("bounds retained callbacks and draw identities under churn", () => {
   }
 });
 
+test("a frame names each draw that fed a program a vertex layout or colour target it had not drawn with", () => {
+  const prior = Reflect.get(globalThis, "window");
+  Reflect.set(globalThis, "window", { location: { search: "" } });
+  const subscribers: { ref: { current: (state: unknown, delta: number) => void }; priority: number }[] = [];
+  const internal = { subscribers, subscribe(ref: { current: (state: unknown, delta: number) => void }, priority: number) {
+    const entry = { ref, priority }; subscribers.push(entry);
+    return () => { const index = subscribers.indexOf(entry); if (index >= 0) subscribers.splice(index, 1); };
+  } };
+  // One program shared by two materials, as three links one program for every material alike.
+  const program = { getAttributes: () => ({ position: {}, color: {} }) };
+  const programs = new Map<object, { currentProgram: object }>();
+  let target: object | null = null;
+  const renderer = {
+    getContext: () => ({ getExtension: () => null }), shadowMap: {}, info: { programs: [] }, render() {},
+    properties: { get: (material: object) => programs.get(material) ?? {} },
+    getRenderTarget: () => target,
+    renderBufferDirect(_a: unknown, _b: unknown, _c: unknown, _d: unknown, _e: unknown, _f: unknown) {},
+  };
+  const hull = { name: "Hull" };
+  const rock = { name: "Rock" };
+  programs.set(hull, { currentProgram: program }).set(rock, { currentProgram: program });
+  const float3 = { itemSize: 3, array: new Float32Array(3) };
+  const plain = { attributes: { position: float3 } };
+  const tinted = { attributes: { position: float3, color: { itemSize: 4, normalized: true, array: new Uint8Array(4) } } };
+  const breakdown = installFrameBreakdown(renderer as never, { getState: () => ({ internal }) } as never);
+  const draws: [object, object, object | null][] = [];
+  internal.subscribe({ current: () => { for (const [geometry, material, bound] of draws) { target = bound; renderer.renderBufferDirect(null, null, geometry, material, { name: "Mesh" }, null); } target = null; } }, 0);
+  // A frame's record is filed when the next frame starts: draw, then run an empty frame to file it.
+  const frame = (next: [object, object, object | null][]) => {
+    for (const batch of [next, []]) { draws.splice(0, draws.length, ...batch); for (const { ref } of subscribers) ref.current({}, 1 / 60); }
+    // Material name and what was new; the labels' ids and object kind are the recorder's usual naming.
+    return breakdown.records().at(-1)?.firstDraws?.map((draw) => `${draw.split("#")[0]} → ${draw.split(" → ")[1]}`);
+  };
+  const halfFloat = { textures: [{ type: 1016 }] };
+  try {
+    expect(frame([[plain, hull, null]])).toEqual(["Hull → first draw, screen"]);
+    // The same program and layout from another material is no new pair.
+    expect(frame([[plain, rock, null], [plain, hull, null]])).toBeUndefined();
+    expect(frame([[tinted, rock, null], [plain, hull, halfFloat], [plain, hull, halfFloat]])).toEqual([
+      "Rock → screen, new vertex layout color:4n:Uint8Array,position:3:Float32Array",
+      "Hull → half-float",
+    ]);
+    expect(frame([[tinted, rock, halfFloat], [plain, rock, null]])).toEqual(["Rock → half-float"]);
+    // The GPU process builds that shader when it reaches the draw: a stall a frame later still names it.
+    const msaa = { textures: [{ type: 1016 }], samples: 4 };
+    frame([[plain, hull, msaa]]);
+    let stall = true;
+    internal.subscribe({ current: () => { if (!stall) return; stall = false; const until = performance.now() + 45; while (performance.now() < until); } }, 1);
+    frame([]);
+    const [hitch] = breakdown.session().hitches;
+    expect(hitch?.detail).toContain("first draws of 1 program and layout pair(s): Hull");
+    expect(hitch?.detail).toContain("→ half-float msaa (frame before)");
+  } finally {
+    breakdown.dispose();
+    if (prior === undefined) Reflect.deleteProperty(globalThis, "window"); else Reflect.set(globalThis, "window", prior);
+  }
+});
+
 test("disposing and reinstalling the recorder restores live callbacks", () => {
   const prior = Reflect.get(globalThis, "window");
   Reflect.set(globalThis, "window", { location: { search: "" } });
@@ -88,6 +146,26 @@ test("disposing and reinstalling the recorder restores live callbacks", () => {
     first.dispose();
     if (prior === undefined) Reflect.deleteProperty(globalThis, "window"); else Reflect.set(globalThis, "window", prior);
   }
+});
+
+test("a remount's late cleanup leaves the next recorder published", () => {
+  const prior = Reflect.get(globalThis, "window");
+  const page: { location: { search: string }; __jgFrameBreakdown?: unknown } = { location: { search: "" } };
+  Reflect.set(globalThis, "window", page);
+  const internal = { subscribe: () => () => undefined };
+  const store = { getState: () => ({ internal }) };
+  const renderer = { getContext: () => ({ getExtension: () => null }), shadowMap: {}, info: { programs: [] }, render() {} };
+  const first = installFrameBreakdown(renderer as never, store as never);
+  const second = installFrameBreakdown(renderer as never, store as never);
+  try {
+    // React mounts the new canvas's recorder, then runs the old one's cleanup.
+    first.dispose();
+    expect(page.__jgFrameBreakdown).toBe(second);
+  } finally {
+    second.dispose();
+    if (prior === undefined) Reflect.deleteProperty(globalThis, "window"); else Reflect.set(globalThis, "window", prior);
+  }
+  expect(page.__jgFrameBreakdown).toBeUndefined();
 });
 
 test("records real shared members and repeated render calls through the frame loop", () => {
@@ -158,6 +236,71 @@ test("unresolved and disjoint GPU queries remain unavailable until complete", ()
     expect(breakdown.records()[0]?.gpu?.["main"]).toBe(1);
     disjoint = true; frame();
     expect(breakdown.records()[2]?.gpu).toBeNull();
+  } finally {
+    breakdown.dispose();
+    if (prior === undefined) Reflect.deleteProperty(globalThis, "window"); else Reflect.set(globalThis, "window", prior);
+  }
+});
+
+test("draw timing credits each draw's GPU time to its pass and material, never the CPU wait between them", () => {
+  const prior = Reflect.get(globalThis, "window");
+  Reflect.set(globalThis, "window", { location: { search: "" } });
+  const subscribers: { ref: { current: (state: unknown, delta: number) => void }; priority: number }[] = [];
+  const internal = { subscribers, subscribe(ref: { current: (state: unknown, delta: number) => void }, priority: number) {
+    const entry = { ref, priority }; subscribers.push(entry); subscribers.sort((a, b) => a.priority - b.priority);
+    return () => { const index = subscribers.indexOf(entry); if (index >= 0) subscribers.splice(index, 1); };
+  } };
+  // A fake GPU clock: each draw costs 1 ms of GPU work, and the CPU's submission between draws
+  // leaves the GPU idle for 3 ms, which an open timer counts the way TIME_ELAPSED does.
+  let clock = 0;
+  const begun = new Map<object, number>();
+  const result = new Map<object, number>();
+  let open: object | null = null;
+  const gl = {
+    QUERY_RESULT_AVAILABLE: 1, QUERY_RESULT: 2,
+    getExtension: () => ({ TIME_ELAPSED_EXT: 3, GPU_DISJOINT_EXT: 4 }),
+    createQuery: () => ({}),
+    beginQuery(_target: number, query: object) { if (open !== null) throw new Error("only one timer runs at a time"); open = query; begun.set(query, clock); },
+    endQuery() { if (open === null) throw new Error("no timer running"); result.set(open, (clock - (begun.get(open) ?? clock)) * 1e6); open = null; },
+    deleteQuery() {},
+    getParameter: () => false,
+    getQueryParameter: (query: object, name: number) => name === 1 ? result.has(query) : result.get(query),
+    drawElements() { clock += 1; },
+    clear() { clock += 0.5; },
+  };
+  const mesh = { name: "Rock", type: "Mesh", id: 1, parent: null };
+  const geometry = { type: "BoxGeometry", index: { count: 36 } };
+  const material = { name: "Stone", type: "MeshStandardMaterial", id: 7 };
+  const renderer = {
+    getContext: () => gl, shadowMap: {}, info: { programs: [] },
+    renderBufferDirect(_c: unknown, _s: unknown, _g: unknown, _m: unknown, _o: unknown, _gr: unknown) {
+      clock += 2; // three binds the program, uniforms and textures: the GPU idles again
+      gl.drawElements();
+    },
+    clear() { gl.clear(); },
+    render() {
+      renderer.clear();
+      for (let draw = 0; draw < 3; draw += 1) {
+        clock += 3; // CPU submission: the GPU idles
+        renderer.renderBufferDirect(null, null, geometry, material, mesh, null);
+      }
+    },
+  };
+  const store = { getState: () => ({ internal }) };
+  const breakdown = installFrameBreakdown(renderer as never, store as never);
+  internal.subscribe({ current: () => renderer.render() }, 0);
+  const frame = () => { for (const { ref } of subscribers) ref.current({}, 1 / 60); };
+  try {
+    frame(); frame(); frame();
+    expect(breakdown.records()[0]?.gpu?.["main"]).toBe(18.5);
+    breakdown.gpuTiming("draws");
+    breakdown.reset();
+    frame(); frame(); frame();
+    const summary = breakdown.summary();
+    expect(summary.gpuTiming).toBe("draws");
+    expect(breakdown.records()[0]?.gpu?.["main"]).toBe(3.5);
+    expect(summary.materials[0]).toMatchObject({ label: "Stone#7", gpuMs: 3 });
+    expect(breakdown.gpuTiming("span")).toBe("span");
   } finally {
     breakdown.dispose();
     if (prior === undefined) Reflect.deleteProperty(globalThis, "window"); else Reflect.set(globalThis, "window", prior);

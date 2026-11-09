@@ -15,6 +15,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { openPageSession, withBrowserSession } from "./browser-lib";
 import { launchAndMeasure } from "./perf-desktop";
+import { withPerfLock } from "./perf-lock";
 import { exportNativeScene } from "./native-export";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -82,7 +83,7 @@ function imageSummary(frames: DiffFrame[]): string {
  * the game's `capture.play`, the settle, then the same "walk" path the export recorded.
  */
 async function desktopRow(appExe: string, size: [number, number], seconds: number, out: string): Promise<Row> {
-  const r = await launchAndMeasure({ exe: appExe, uncapped: true, seconds, port: 9391, out, maps: `${dirname(appExe)}.private-maps`, size: { width: size[0], height: size[1] } });
+  const r = await launchAndMeasure({ exe: appExe, uncapped: true, seconds, port: null, out, maps: `${dirname(appExe)}.private-maps`, size: { width: size[0], height: size[1] }, flow: null, renderers: ["webgl"], trace: false, returning: false }, "webgl");
   const b = r.breakdown;
   return { row: "A", label: "current engine, desktop WebView2 uncapped", fps: r.frame.fps, frameP50: r.rafP50Ms, frameP99: r.rafP99Ms, cpuP50: b?.work.p50 ?? null, gpuP50: b?.gpu?.p50 ?? null, image: "reference (three.js)", note: `${r.viewport}, ${b?.counts.drawsAvg.toFixed(0) ?? "?"} draws avg; ${r.start}` };
 }
@@ -116,7 +117,8 @@ async function webRow(recording: string, out: string): Promise<Row> {
   });
   try {
     let result: Record<string, unknown> | null = null;
-    const code = await withBrowserSession({ keep: false, timeoutMs: 600_000, frameClock: "uncapped" }, async ({ debugPort }) => {
+    // Inside the rows' perf lock; the frame time is the product, so the browser draws at normal priority (scripts/perf.ts).
+    const code = await withBrowserSession({ keep: false, timeoutMs: 600_000, frameClock: "uncapped", chromePriority: "normal" }, async ({ debugPort }) => {
       const session = await openPageSession(debugPort);
       try {
         await session.send("Page.navigate", { url: `http://127.0.0.1:${server.port}/` });
@@ -181,13 +183,14 @@ async function main(argv: string[]): Promise<number> {
   const rows: Row[] = [];
   const results = join(recording, "rows");
   mkdirSync(results, { recursive: true });
-  if (args.rows.has("A")) {
-    if (args.desktop === null) throw new Error(`row A needs --desktop <app.exe> from: bun run jgengine desktop games/${args.game} --diagnostics`);
-    rows.push(await desktopRow(resolve(args.desktop), manifest.canvas, args.seconds, join(results, "A.json")));
-  }
-  if (args.rows.has("B")) rows.push(nativeRow("B", recording, hasRules, "js", files, join(results, "B.json"), image));
-  if (args.rows.has("C") && hasRules) rows.push(nativeRow("C", recording, hasRules, "rust", files, join(results, "C.json"), image));
-  if (args.rows.has("D")) rows.push(await webRow(recording, join(results, "D.json")));
+  if (args.rows.has("A") && args.desktop === null) throw new Error(`row A needs --desktop <app.exe> from: bun run jgengine desktop games/${args.game} --diagnostics`);
+  // Every row is timed, so all four hold the machine-wide perf lock; the export and replay above are not.
+  await withPerfLock(`perf native ${args.game}`, async () => {
+    if (args.rows.has("A") && args.desktop !== null) rows.push(await desktopRow(resolve(args.desktop), manifest.canvas, args.seconds, join(results, "A.json")));
+    if (args.rows.has("B")) rows.push(nativeRow("B", recording, hasRules, "js", files, join(results, "B.json"), image));
+    if (args.rows.has("C") && hasRules) rows.push(nativeRow("C", recording, hasRules, "rust", files, join(results, "C.json"), image));
+    if (args.rows.has("D")) rows.push(await webRow(recording, join(results, "D.json")));
+  });
   const table = renderTable(args.game, rows);
   writeFileSync(join(recording, "compare.json"), `${JSON.stringify({ game: args.game, at: new Date().toISOString(), canvas: manifest.canvas, seconds: args.seconds, rows, diff }, null, 1)}\n`);
   console.log(table);

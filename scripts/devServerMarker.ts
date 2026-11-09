@@ -1,7 +1,6 @@
 import { existsSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
-import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 
 import { headRevision } from "./captureRevision";
 import { localOk, localRequest } from "./localhostHttp";
@@ -230,15 +229,19 @@ export function devServerIdentity(cwd = process.cwd()): string {
   return served === null ? checkoutIdentity(cwd) : `${checkoutIdentity(cwd)}|game-dir:${served}`;
 }
 
-/** Stable identity for this checkout (worktree path or monorepo root). */
+/**
+ * Stable identity for this checkout (worktree path or monorepo root), in git's form: the nearest
+ * folder holding `.git` (a folder in the main checkout, a file in a worktree), with forward slashes.
+ * Read from the disk, not from `git rev-parse`: the daemon's state file and Chrome port both hash it,
+ * and a git call that timed out on a loaded PC fell back to another spelling of the path, so one run
+ * looked for its own daemon under a second identity and stopped with "stopped while starting Vite target".
+ */
 export function checkoutIdentity(cwd = process.cwd()): string {
-  try {
-    const top = spawnSync("git", ["rev-parse", "--show-toplevel"], { cwd, encoding: "utf8", windowsHide: true, timeout: 5_000 });
-    if (top.status === 0 && top.stdout.trim().length > 0) return top.stdout.trim();
-  } catch {
-    /* fall through */
+  const start = resolve(cwd);
+  for (let dir = start; ; dir = dirname(dir)) {
+    if (existsSync(join(dir, ".git"))) return dir.replaceAll("\\", "/");
+    if (dirname(dir) === dir) return start.replaceAll("\\", "/");
   }
-  return resolve(cwd);
 }
 
 export interface RunningDevServer {

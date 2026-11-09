@@ -8,12 +8,13 @@ import { acquireImpostorCardPool, ImpostorCardPool, releaseImpostorCardPool } fr
 const cardMaterial = new THREE.MeshStandardMaterial();
 const makePool = () => new ImpostorCardPool(new THREE.PlaneGeometry(2, 2), cardMaterial, new THREE.MeshDepthMaterial());
 
-function fill(slice: { matrices: Float32Array; ids: string[]; count: number }, ids: string[]) {
+function fill(slice: { matrices: Float32Array; ids: string[]; count: number; version: number }, ids: string[]) {
   ids.forEach((id, index) => {
     slice.matrices.set(new THREE.Matrix4().makeTranslation(index * 10, 0, 0).elements, index * 16);
     slice.ids[index] = id;
   });
   slice.count = ids.length;
+  slice.version += 1;
 }
 
 test("every batch's far placements pack into one draw, ids in the same order", () => {
@@ -33,11 +34,33 @@ test("it packs once per frame, grows past its first capacity, and hides when emp
   pool.pack(1);
   expect(pool.mesh.count).toBe(40);
   slice.count = 0;
+  slice.version += 1;
   pool.pack(1);
   expect(pool.mesh.count).toBe(40);
   pool.pack(2);
   expect(pool.mesh.count).toBe(0);
   expect(pool.mesh.visible).toBe(false);
+});
+
+test("an unchanged pool keeps its instances without packing again, and packs after a rewrite or a slice leaving", () => {
+  const pool = makePool();
+  const first = pool.slice(2);
+  const second = pool.slice(2);
+  fill(first, ["a", "b"]);
+  fill(second, ["c"]);
+  pool.pack(1);
+  const packed = pool.mesh.instanceMatrix.version;
+  pool.pack(2);
+  expect(pool.mesh.instanceMatrix.version).toBe(packed);
+  expect(pool.mesh.count).toBe(3);
+  fill(first, ["d"]);
+  pool.pack(3);
+  expect(pool.mesh.count).toBe(2);
+  expect(pool.mesh.userData[POINTER_OBJECT_INSTANCES_KEY]).toEqual(["d", "c"]);
+  pool.drop(second);
+  pool.pack(4);
+  expect(pool.mesh.count).toBe(1);
+  expect(pool.mesh.userData[POINTER_OBJECT_INSTANCES_KEY]).toEqual(["d"]);
 });
 
 test("the shared pool stays in the scene until its last user leaves", () => {

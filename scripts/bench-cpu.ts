@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { withPerfLock } from "./perf-lock";
 import { TIMING_GATE_ENV } from "./timing-budget";
 
 /**
@@ -39,10 +40,15 @@ if (import.meta.main) {
     process.exit(2);
   }
 
-  const result = spawnSync("bun", ["test", "--timeout", "600000", ...BENCH_FILES], {
-    cwd: root,
-    stdio: "inherit",
-    env: { ...process.env, [TIMING_GATE_ENV]: "1" },
+  // Every budget here is wall-clock, so the whole run holds the machine-wide perf lock: a browser
+  // run timing frames beside it would fail these ceilings and read slower itself.
+  const status = await withPerfLock("perf timing", async () => {
+    const result = spawnSync("bun", ["test", "--timeout", "600000", ...BENCH_FILES], {
+      cwd: root,
+      stdio: "inherit",
+      env: { ...process.env, [TIMING_GATE_ENV]: "1" },
+    });
+    return result.status ?? 1;
   });
-  process.exit(result.status ?? 1);
+  process.exit(status);
 }

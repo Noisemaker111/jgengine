@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import type { Vec2 } from "./geometry";
-import { buildPolylineIndex } from "./polylineIndex";
+import { buildPolylineIndex, createPolylineHit } from "./polylineIndex";
 
 /** Brute force over every segment — the answer the index must reproduce exactly. */
 function scan(points: readonly Vec2[], x: number, z: number, limit: number): { distance: number; point: Vec2 } | null {
@@ -63,6 +63,44 @@ describe("buildPolylineIndex", () => {
           expect(actual!.point).toEqual(expected.point);
         }
       }
+    }
+  });
+
+  test("a bound exactly the nearest distance still hits, wherever the cell's clearance stands", () => {
+    // The per-cell miss shortcut must never hide a hit right at the bound: each query asks for exactly
+    // the distance a full scan measures, after other queries filled the cells' clearances.
+    const random = seeded(20261109);
+    for (let shape = 0; shape < 8; shape += 1) {
+      const points = randomPolyline(random, 4 + shape * 5, 400);
+      const index = buildPolylineIndex(points, shape % 2 === 0 ? 0 : 120);
+      for (let query = 0; query < 400; query += 1) {
+        const x = (random() - 0.5) * 700;
+        const z = (random() - 0.5) * 700;
+        const expected = scan(points, x, z, Number.POSITIVE_INFINITY)!;
+        const atBound = index.nearest(x, z, expected.distance);
+        expect(atBound).not.toBeNull();
+        expect(atBound!.distance).toBe(expected.distance);
+        expect(index.nearest(x, z, expected.distance * (1 - 1e-12) - 1e-12)).toBeNull();
+      }
+    }
+  });
+
+  test("a hit written into the caller's object is the same hit a fresh object carries", () => {
+    const random = seeded(20261108);
+    const points = randomPolyline(random, 30, 400);
+    const index = buildPolylineIndex(points);
+    const out = createPolylineHit();
+    for (let query = 0; query < 500; query += 1) {
+      const x = (random() - 0.5) * 900;
+      const z = (random() - 0.5) * 900;
+      const fresh = index.nearest(x, z, 120);
+      const written = index.nearest(x, z, 120, out);
+      if (fresh === null) {
+        expect(written).toBeNull();
+        continue;
+      }
+      expect(written).toBe(out);
+      expect({ ...written!, point: [...written!.point] }).toEqual(fresh as never);
     }
   });
 

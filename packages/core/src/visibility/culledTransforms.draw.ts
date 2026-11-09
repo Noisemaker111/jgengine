@@ -145,22 +145,75 @@ function updateShownNode(node: THREE.Object3D, force: boolean): boolean {
 }
 
 /**
- * Parents before children, with its own stack: a recursive walk over a scene's mix of node classes
- * cost several times more than the work it did at each node.
+ * Where three's render walk must start for its result to be unchanged: the shown nodes three acts on
+ * (a mesh, line, points, sprite, light or LOD, or a group whose `renderOrder` sets its subtree's sort
+ * order), and frozen subtrees, each with no other such node above it, in the walk's own order. Three
+ * walks everything under a start, so what it skips is only the plain groups, bones and hidden
+ * branches above the starts, which it would have passed through doing nothing.
  */
-function updateShownMatrixWorld(root: THREE.Object3D, force: boolean): void {
+function startsWalk(node: THREE.Object3D): boolean {
+  const any = node as THREE.Object3D & { isMesh?: boolean; isLine?: boolean; isPoints?: boolean; isSprite?: boolean; isLight?: boolean; isLOD?: boolean; isGroup?: boolean };
+  return any.isMesh === true || any.isLine === true || any.isPoints === true || any.isSprite === true ||
+    any.isLight === true || any.isLOD === true || (any.isGroup === true && node.renderOrder !== 0);
+}
+
+/** The step runs the matrix update (off for a frozen subtree, visited only to start the walk there). */
+const MATRIX = 1;
+/** The node is shown (it and every ancestor visible) and no walk start is above it. */
+const COLLECT = 2;
+
+/** The walk starts the scene's last matrix pass found; `serial` changes with every pass. */
+export interface SceneWalkStarts {
+  readonly starts: readonly THREE.Object3D[];
+  readonly serial: number;
+}
+
+const walkStarts = new WeakMap<THREE.Object3D, SceneWalkStarts>();
+let walkSerial = 0;
+
+/**
+ * Parents before children, with its own stack: a recursive walk over a scene's mix of node classes
+ * cost several times more than the work it did at each node. The same pass lists the scene's walk
+ * starts (see {@link startsWalk}), in three's walk order.
+ */
+function updateShownMatrixWorld(root: THREE.Object3D, force: boolean): THREE.Object3D[] {
+  const starts: THREE.Object3D[] = [];
   const nodes: THREE.Object3D[] = [root];
   const forced: boolean[] = [force];
+  const modes: number[] = [root.visible ? MATRIX | COLLECT : MATRIX];
   for (let node = nodes.pop(); node !== undefined; node = nodes.pop()) {
-    const childForce = updateShownNode(node, forced.pop() === true);
+    const mode = modes.pop()!;
+    const nodeForce = forced.pop() === true;
+    if ((mode & MATRIX) === 0) {
+      // A shown frozen subtree: pushed only to keep its place in the order; three walks it from here.
+      starts.push(node);
+      continue;
+    }
+    const childForce = updateShownNode(node, nodeForce);
+    let collect = (mode & COLLECT) !== 0;
+    if (collect && node !== root && startsWalk(node)) {
+      starts.push(node);
+      collect = false;
+    }
     const children = node.children;
     for (let index = children.length - 1; index >= 0; index -= 1) {
       const child = children[index];
-      if (child === undefined || isFrozenRoot(child) || (!child.visible && culled.has(child))) continue;
+      if (child === undefined) continue;
+      if (isFrozenRoot(child) || (!child.visible && culled.has(child))) {
+        // A shown frozen subtree is not updated, but three still walks it: it is a start of its own.
+        if (collect && child.visible && isFrozenRoot(child)) {
+          nodes.push(child);
+          forced.push(false);
+          modes.push(COLLECT);
+        }
+        continue;
+      }
       nodes.push(child);
       forced.push(childForce);
+      modes.push(collect && child.visible ? MATRIX | COLLECT : MATRIX);
     }
   }
+  return starts;
 }
 
 /**
@@ -169,10 +222,21 @@ function updateShownMatrixWorld(root: THREE.Object3D, force: boolean): void {
  * and recomposes only nodes whose position, rotation or scale changed, so a still prop costs a compare.
  * A subtree `freezeStaticTransforms` froze is skipped whole: static content costs nothing here.
  * A matrix written by hand needs `matrixAutoUpdate = false`, as in three.
+ * The pass also records the scene's walk starts for {@link sceneWalkStarts}.
  * @internal
  */
 export function skipCulledMatrices(scene: THREE.Object3D): void {
   scene.updateMatrixWorld = function updateMatrixWorld(this: THREE.Object3D, force?: boolean) {
-    updateShownMatrixWorld(this, force === true);
+    walkSerial += 1;
+    walkStarts.set(this, { starts: updateShownMatrixWorld(this, force === true), serial: walkSerial });
   };
+}
+
+/**
+ * The walk starts the last matrix pass of `scene` found, or undefined before its first pass. Valid
+ * only until something shows a hidden node, adds a node or moves one: use it straight after a pass.
+ * @internal
+ */
+export function sceneWalkStarts(scene: THREE.Object3D): SceneWalkStarts | undefined {
+  return walkStarts.get(scene);
 }

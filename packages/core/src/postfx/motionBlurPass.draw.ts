@@ -3,7 +3,12 @@ import { FullScreenQuad, Pass } from "three-stdlib";
 
 import type { MotionBlurConfig } from "@jgengine/core/render/postProcessing";
 
+import { proxyGeometry } from "./proxyGeometry.draw";
+
 const bodies = new Set<THREE.Object3D>();
+/** What the velocity shader reads: every body shares one plain and one skinned program. */
+const VELOCITY_ATTRIBUTES = ["position"] as const;
+const SKINNED_VELOCITY_ATTRIBUTES = ["position", "skinIndex", "skinWeight"] as const;
 
 /**
  * Let motion blur follow a moving body (a character, a car, a thrown crate) along its own screen
@@ -163,6 +168,10 @@ export class MotionBlurPass extends Pass {
   private hasPrevious = false;
   private frame = 0;
   private readonly settings: Required<MotionBlurConfig>;
+  /** A dry run (the shader warmup's) draws stand-in bodies, so the velocity programs link off the frame. */
+  dry = false;
+  private dryProxies: VelocityProxy[] | null = null;
+  private readonly clearColor = new THREE.Color();
 
   constructor(
     private readonly camera: THREE.Camera,
@@ -206,6 +215,33 @@ export class MotionBlurPass extends Pass {
   private proxyFor(mesh: THREE.Mesh): VelocityProxy {
     let proxy = this.proxies.get(mesh);
     if (proxy !== undefined) return proxy;
+    proxy = this.createProxy(mesh);
+    this.proxies.set(mesh, proxy);
+    this.every.add(proxy);
+    return proxy;
+  }
+
+  /**
+   * A plain and a skinned body that are never pruned: a dry run (the shader warmup's) draws them so
+   * both velocity programs link before the first body moves, and their materials keep those
+   * programs alive while the bodies that use them come and go. Before, a creature that walked in
+   * linked its velocity program mid-play, and so did the next one after the last was pruned.
+   */
+  private standIns(): VelocityProxy[] {
+    if (this.dryProxies !== null) return this.dryProxies;
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(new Float32Array(9), 3));
+    geometry.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(new Uint16Array(12), 4));
+    geometry.setAttribute("skinWeight", new THREE.Float32BufferAttribute(new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]), 4));
+    const bone = new THREE.Bone();
+    const skinned = new THREE.SkinnedMesh(geometry);
+    skinned.add(bone);
+    skinned.bind(new THREE.Skeleton([bone]));
+    this.dryProxies = [this.createProxy(new THREE.Mesh(geometry)), this.createProxy(skinned)];
+    return this.dryProxies;
+  }
+
+  private createProxy(mesh: THREE.Mesh): VelocityProxy {
     const previousModel = new THREE.Matrix4();
     const material = new THREE.ShaderMaterial({
       uniforms: {
@@ -219,16 +255,13 @@ export class MotionBlurPass extends Pass {
     });
     let copy: THREE.Mesh;
     if (mesh instanceof THREE.SkinnedMesh) {
-      const skinnedCopy = new THREE.SkinnedMesh(mesh.geometry, material);
+      const skinnedCopy = new THREE.SkinnedMesh(proxyGeometry(mesh.geometry, SKINNED_VELOCITY_ATTRIBUTES), material);
       skinnedCopy.bind(mesh.skeleton, mesh.bindMatrix);
       copy = skinnedCopy;
-    } else copy = new THREE.Mesh(mesh.geometry, material);
+    } else copy = new THREE.Mesh(proxyGeometry(mesh.geometry, VELOCITY_ATTRIBUTES), material);
     copy.matrixAutoUpdate = false;
     copy.matrixWorldAutoUpdate = false;
-    proxy = { source: mesh, mesh: copy, material, previousModel, previous: mesh.matrixWorld.clone(), seen: -1 };
-    this.proxies.set(mesh, proxy);
-    this.every.add(proxy);
-    return proxy;
+    return { source: mesh, mesh: copy, material, previousModel, previous: mesh.matrixWorld.clone(), seen: -1 };
   }
 
   /** Release the copies of meshes no body has shown for a few seconds (a despawned enemy, a swapped look). */
@@ -271,8 +304,14 @@ export class MotionBlurPass extends Pass {
     if (!this.hasPrevious) this.previousViewProjection.copy(this.currentViewProjection);
     this.gatherBodies();
     this.pruneProxies();
+    if (this.dry) {
+      for (const proxy of this.standIns()) {
+        this.velocityScene.add(proxy.mesh);
+        this.active.push(proxy);
+      }
+    }
 
-    const clearColor = renderer.getClearColor(new THREE.Color());
+    const clearColor = renderer.getClearColor(this.clearColor);
     const clearAlpha = renderer.getClearAlpha();
     renderer.setRenderTarget(this.velocity);
     renderer.setClearColor(0x000000, 0);
@@ -311,5 +350,8 @@ export class MotionBlurPass extends Pass {
     this.velocityScene.clear();
     for (const proxy of this.every) proxy.material.dispose();
     this.every.clear();
+    for (const proxy of this.dryProxies ?? []) proxy.material.dispose();
+    this.dryProxies?.[0]?.source.geometry.dispose();
+    this.dryProxies = null;
   }
 }

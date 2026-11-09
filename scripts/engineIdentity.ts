@@ -37,7 +37,9 @@ export const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
 function git(args: string[], cwd: string): string | null {
   try {
-    const run = spawnSync("git", args, { cwd, encoding: "utf8", windowsHide: true, timeout: 5_000 });
+    // No optional locks: `git status` otherwise takes the index lock to refresh it, and one killed at
+    // the timeout on a loaded PC left index.lock behind, failing every later git command in the tree.
+    const run = spawnSync("git", args, { cwd, encoding: "utf8", windowsHide: true, timeout: 5_000, env: { ...process.env, GIT_OPTIONAL_LOCKS: "0" } });
     return run.status === 0 ? run.stdout.trim() : null;
   } catch {
     return null;

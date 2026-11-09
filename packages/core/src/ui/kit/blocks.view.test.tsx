@@ -139,12 +139,14 @@ describe("gameFontStacks", () => {
 describe("HudFade and GameCursor", () => {
   test("a HUD group starts awake at full strength", () => {
     const html = renderToStaticMarkup(
-      <HudFade watch={[100]}>
+      <HudFade watch={() => [100]}>
         <span>HP</span>
       </HudFade>,
     );
     expect(html).toContain('data-jg-hud-fade="awake"');
     expect(html).toContain("opacity:1");
+    // Its own layer, so dimming never repaints the group (the first repaint froze Deepward ~0.5 s).
+    expect(html).toContain("will-change:opacity");
   });
 
   test("the cursor renders hidden until it has a target", () => {

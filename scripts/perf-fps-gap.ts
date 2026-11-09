@@ -5,14 +5,16 @@ import { join, resolve } from "node:path";
 import { ensureDevServer, killPid, killProcessTree, openPageSession, withBrowserSession } from "./browser-lib";
 import { FRAME_GAMES } from "./ci-scope";
 import { engineRecord, resolveEngineIdentity } from "./engineIdentity";
-import { debugPortFor, GATE_SIZE } from "./perf-gate";
-import { measureGame, parseSettingSpec, type AllocationEntry, type PerfRecord, type ProfileNode, type RawProfile } from "./perf-play";
+import { GATE_SIZE } from "./perf-gate";
+import { acquirePerfLock } from "./perf-lock";
+import { gameSessionDeadlineMs, GPU_WORK_SECONDS, gpuErrors, machineClause, measureGame, parseSettingSpec, type AllocationEntry, type PerfRecord, type ProfileNode, type RawProfile } from "./perf-play";
 import type { FrameBreakdownSummary, NamedCost } from "../packages/core/src/devtools/frameBreakdown";
+import { parseRendererBackend, type RendererBackend } from "../packages/core/src/settings/rendererBackend";
 
 /**
  * How far each game is from 360 fps, and what stands in the way, grouped into engine-level work.
  *
- *   bun run perf fps-gap [--games a,b] [--seconds n] [--records <dir>] [--markdown]
+ *   bun run perf fps-gap [--games a,b] [--renderer webgl|webgpu|both] [--seconds n] [--records <dir>] [--markdown]
  *
  * Every game is measured the way the frame gate measures it (1600x900, high tier, automatic
  * quality off, walking, uncapped clock), with a CPU and allocation profile after the frame window.
@@ -51,9 +53,11 @@ export interface FpsGapArgs {
   /** Read saved entries from `records` instead of measuring. */
   reuse: boolean;
   markdown: boolean;
+  /** The backends each game is measured on, in order; `both` compares them side by side. */
+  renderers: RendererBackend[];
 }
 
-const USAGE = `usage: bun run perf fps-gap [--games a,b] [--seconds n] [--records <dir>] [--markdown]
+const USAGE = `usage: bun run perf fps-gap [--games a,b] [--renderer webgl|webgpu|both] [--seconds n] [--records <dir>] [--markdown]
 
   Measures every playable game at the frame gate's conditions (${GATE_SIZE.width}x${GATE_SIZE.height}, high tier,
   automatic quality off, walking, uncapped clock) and prints each against the ${FPS_GAP_BUDGET_MS.toFixed(2)} ms
@@ -63,6 +67,8 @@ const USAGE = `usage: bun run perf fps-gap [--games a,b] [--seconds n] [--record
   A report, not a gate: nothing fails for being slow.
 
   --games      comma-separated game ids (default: every game under games/ with a web entry)
+  --renderer   the GPU backend to draw with (default webgl); both measures each game on WebGL then
+               WebGPU and adds a table comparing their frame times. WebGPU records go in <records>/webgpu
   --seconds    measured window per game (default ${DEFAULT_SECONDS}); the profile window is as long again
   --records    directory each game's entry is written to (default .scratch/perf-fps-gap)
   --reuse      print the report from the entries already in --records instead of measuring
@@ -74,16 +80,22 @@ export function parseFpsGapArgs(argv: readonly string[]): FpsGapArgs | "help" {
   let records = DEFAULT_RECORDS;
   let reuse = false;
   let markdown = false;
+  let renderers: RendererBackend[] = ["webgl"];
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index] ?? "";
     if (arg === "--help" || arg === "-h") return "help";
     if (arg === "--markdown") { markdown = true; continue; }
     if (arg === "--reuse") { reuse = true; continue; }
-    if (arg === "--games" || arg === "--seconds" || arg === "--records") {
+    if (arg === "--games" || arg === "--seconds" || arg === "--records" || arg === "--renderer") {
       const value = argv[index + 1];
       if (value === undefined || value.startsWith("--")) throw new Error(`${arg} needs a value`);
       index += 1;
       if (arg === "--games") games = value.split(",").map((id) => id.trim()).filter((id) => id.length > 0);
+      else if (arg === "--renderer") {
+        const backend = parseRendererBackend(value);
+        if (value !== "both" && backend === null) throw new Error(`--renderer must be webgl, webgpu or both (got ${value})`);
+        renderers = backend === null ? ["webgl", "webgpu"] : [backend];
+      }
       else if (arg === "--records") records = resolve(value);
       else {
         const parsed = Number(value);
@@ -95,7 +107,7 @@ export function parseFpsGapArgs(argv: readonly string[]): FpsGapArgs | "help" {
     throw new Error(`unknown argument ${arg}`);
   }
   if (games !== undefined && games.length === 0) throw new Error("--games needs at least one game id");
-  return { games: games ?? [...FRAME_GAMES], seconds, records, reuse, markdown };
+  return { games: games ?? [...FRAME_GAMES], seconds, records, reuse, markdown, renderers };
 }
 
 /** The layer a sampled function belongs to, from its script URL. */
@@ -106,12 +118,14 @@ export function profileLayerOf(node: Pick<ProfileNode, "callFrame">): string {
     if (functionName === "(idle)") return "idle";
     if (functionName === "(program)") return "browser (layout, paint, compositing, GPU process)";
     if (functionName === "(root)" || functionName === "") return "idle";
-    return "native calls (WebGL and DOM)";
+    return "native calls (WebGL, WebGPU and DOM)";
   }
   if (/three\.module|\/three\/|three-stdlib|postprocessing/.test(url)) return "three.js";
   if (/react-three|@react-three/.test(url)) return "react-three-fiber";
   if (/react-dom|react_dom|scheduler|\/react\b|react\.js|react_jsx/.test(url)) return "React";
   if (/\/games\/[^/]+\/src\//.test(url)) return "game code";
+  // The engine's WebGL-shaped WebGPU context, apart: its JS is what the WebGPU backend adds over WebGL.
+  if (/\/packages\/core\/src\/webgpu\//.test(url)) return "WebGPU context";
   if (/\/packages\/[^/]+\/src\//.test(url) || /\/src\//.test(url)) return "engine code";
   if (/\/node_modules\/|\/\.vite\/deps\//.test(url)) return "other dependencies";
   return "other scripts";
@@ -167,8 +181,12 @@ export function gpuGroupOf(pass: string): string {
 const UNATTRIBUTED = "untimed work inside the frame (r3f loop, React effects)";
 const BETWEEN = "between frames (GPU wait, compositing, React commits, GC)";
 
-/** Average ms per frame by group for one game: CPU groups, GPU groups, and the frame's unexplained time. */
-export function groupCosts(breakdown: FrameBreakdownSummary): { cpu: Map<string, number>; gpu: Map<string, number> } {
+/**
+ * Average ms per frame by group for one game: CPU groups, GPU groups, and the frame's unexplained time.
+ * GPU groups come from `gpuWork` (every draw timed on its own) when the record has it, since the
+ * frame window's pass timers also count the GPU waiting on the CPU.
+ */
+export function groupCosts(breakdown: FrameBreakdownSummary, gpuWork?: FrameBreakdownSummary | null): { cpu: Map<string, number>; gpu: Map<string, number> } {
   const cpu = new Map<string, number>();
   let named = 0;
   for (const row of breakdown.cpu) {
@@ -181,7 +199,7 @@ export function groupCosts(breakdown: FrameBreakdownSummary): { cpu: Map<string,
   const between = breakdown.frame.avg - breakdown.work.avg;
   if (between > 0) cpu.set(BETWEEN, between);
   const gpu = new Map<string, number>();
-  for (const pass of breakdown.passes) {
+  for (const pass of (gpuWork ?? breakdown).passes) {
     const group = gpuGroupOf(pass.name);
     gpu.set(group, (gpu.get(group) ?? 0) + pass.avgMs);
   }
@@ -213,7 +231,7 @@ export function workItems(entries: readonly FpsGapEntry[]): WorkItem[] {
   for (const { record } of entries) {
     const breakdown = record.breakdown;
     if (breakdown === null || breakdown === undefined) continue;
-    const { cpu, gpu } = groupCosts(breakdown);
+    const { cpu, gpu } = groupCosts(breakdown, record.gpuWork);
     for (const [group, ms] of cpu) add(group, "CPU", record.game, ms);
     for (const [group, ms] of gpu) add(group, "GPU", record.game, ms);
     // Garbage the window collected, spread over its frames: the per-frame share of collection pauses
@@ -278,22 +296,24 @@ export function renderFpsGapReport(entries: readonly FpsGapEntry[], options: { m
   }))];
   const budget = ms2(FPS_GAP_BUDGET_MS);
   out.push(`360 fps gap: every cost against the ${budget} ms frame (360 fps). ${entries.length} games.`);
-  if (first !== undefined) out.push(`Conditions: ${first.viewport}, ${first.quality} tier, ${first.frameClock} clock, path ${first.path ?? "still"}, ${first.gpu}${engines.length === 0 ? "" : `, engine ${engines.join(" and ")}`}.`);
+  if (first !== undefined) out.push(`Conditions: ${first.viewport}, ${first.quality} tier, ${first.frameClock} clock, path ${first.path ?? "still"}, ${first.gpu}${engines.length === 0 ? "" : `, engine ${engines.join(" and ")}`}${machineClause(first.machine)}.`);
   out.push("CPU is main-thread work per frame and GPU the timer-query sum of the passes; cost is the larger p50, so 'x budget' and 'ceiling fps' assume the two overlap fully.");
+  out.push("GPU is the GPU's work: a second window on the same path times every draw and clear on its own ('GPU span' is the frame window's pass timers, which also count the GPU idle while the CPU submits; a record without the draw-timed window shows its span in both).");
   out.push("These are the dev server's build (development React, unminified modules) in headless Chrome; a production desktop build spends less CPU (`bun run perf desktop --launch <app.exe> --uncapped`).", "");
 
-  const summary: Table = { head: ["game", "frame p50", "p95", "p99", "CPU p50", "GPU p50", "bound", "x budget", "ceiling fps", "draws", "triangles", "nodes", "GC MB/8s", "hitches"], rows: [] };
+  const summary: Table = { head: ["game", "frame p50", "p95", "p99", "CPU p50", "GPU p50", "GPU span p50", "bound", "x budget", "ceiling fps", "draws", "triangles", "nodes", "GC MB/8s", "hitches"], rows: [] };
   for (const { record } of entries) {
     const b = record.breakdown;
     if (b === null || b === undefined) {
-      summary.rows.push([record.game, `${ms2(record.frame.avgMs)} avg`, ms2(record.frame.p95Ms), "-", "-", "-", "-", "-", "-", String(record.render.drawsFrame ?? "-"), String(record.render.triangles ?? "-"), String(record.render.nodes ?? "-"), "-", String(record.frame.longFrames)]);
+      summary.rows.push([record.game, `${ms2(record.frame.avgMs)} avg`, ms2(record.frame.p95Ms), "-", "-", "-", "-", "-", "-", "-", String(record.render.drawsFrame ?? "-"), String(record.render.triangles ?? "-"), String(record.render.nodes ?? "-"), "-", String(record.frame.longFrames)]);
       continue;
     }
-    const cost = frameCost(b);
+    const gpu = (record.gpuWork ?? b).gpu;
+    const cost = frameCost({ work: b.work, gpu });
     summary.rows.push([
       record.game,
       ms2(b.frame.p50), ms2(b.frame.p95), ms2(b.frame.p99),
-      ms2(b.work.p50), b.gpu === null ? "n/a" : ms2(b.gpu.p50),
+      ms2(b.work.p50), gpu === null ? "n/a" : ms2(gpu.p50), b.gpu === null ? "n/a" : ms2(b.gpu.p50),
       cost.bound,
       `${(cost.ms / FPS_GAP_BUDGET_MS).toFixed(1)}x`,
       String(Math.round(1000 / Math.max(cost.ms, 0.01))),
@@ -310,7 +330,7 @@ export function renderFpsGapReport(entries: readonly FpsGapEntry[], options: { m
     detail.rows.push([
       record.game,
       b === null || b === undefined ? "-" : top(b.cpu, 4),
-      b === null || b === undefined ? "-" : top(b.passes, 3),
+      b === null || b === undefined ? "-" : top((record.gpuWork ?? b).passes, 3),
       layers.slice(0, 4).map((layer) => `${layer.layer} ${layer.pct}`).join("; "),
       allocators.slice(0, 3).map((entry) => `${entry.fn} ${entry.mbPerSecond}`).join("; "),
     ]);
@@ -329,6 +349,46 @@ export function renderFpsGapReport(entries: readonly FpsGapEntry[], options: { m
   return out.join("\n");
 }
 
+/** Where one backend's entries are saved: WebGL at the records root as before, WebGPU in a folder of its own. */
+export function recordsFor(records: string, backend: RendererBackend): string {
+  return backend === "webgl" ? records : join(records, backend);
+}
+
+/**
+ * Frame times per game on each backend side by side. A backend that fell back to WebGL is named,
+ * so a WebGPU column never silently holds WebGL numbers.
+ */
+export function renderBackendComparison(byBackend: ReadonlyMap<RendererBackend, readonly FpsGapEntry[]>, options: { markdown: boolean }): string {
+  const backends = [...byBackend.keys()];
+  const games = [...new Set(backends.flatMap((backend) => byBackend.get(backend)!.map((entry) => entry.record.game)))];
+  const head = ["game", ...backends.flatMap((backend) => [`${backend} p50`, `${backend} p99`]), ...(backends.length === 2 ? [`p50 change`] : []), "notes"];
+  const rows = games.map((game) => {
+    const cells: string[] = [game];
+    const p50s: (number | null)[] = [];
+    const notes: string[] = [];
+    for (const backend of backends) {
+      const record = byBackend.get(backend)!.find((entry) => entry.record.game === game)?.record;
+      const frame = record?.breakdown?.frame;
+      cells.push(frame === undefined ? "-" : ms2(frame.p50), frame === undefined ? "-" : ms2(frame.p99));
+      const drawing = record?.backend?.drawing;
+      if (record !== undefined && drawing !== undefined && drawing !== backend) notes.push(`${backend} run drew with ${drawing}`);
+      // Dropped GPU work draws less than the game asked for, so its frame times are kept out of the change.
+      const errors = gpuErrors(record?.backend).length;
+      const warnings = (record?.backend?.warnings.length ?? 0) - errors;
+      if (errors > 0) notes.push(`${backend}: ${errors} WebGPU errors, GPU work dropped, not comparable`);
+      if (warnings > 0) notes.push(`${backend}: ${warnings} warnings`);
+      p50s.push(errors > 0 ? null : frame?.p50 ?? null);
+    }
+    if (backends.length === 2) {
+      const [a, b] = p50s;
+      cells.push(a == null || b == null ? "-" : `${b <= a ? "" : "+"}${Math.round(((b - a) / a) * 100)}%`);
+    }
+    cells.push(notes.join("; ") || "-");
+    return cells;
+  });
+  return renderTable({ head, rows }, options.markdown);
+}
+
 /** Saved entries in `dir`, one per game asked for; a missing one is named rather than skipped. */
 export function readEntries(dir: string, games: readonly string[]): { entries: FpsGapEntry[]; missing: string[] } {
   const entries: FpsGapEntry[] = [];
@@ -341,14 +401,19 @@ export function readEntries(dir: string, games: readonly string[]): { entries: F
   return { entries, missing };
 }
 
-async function measureAll(args: FpsGapArgs, engine: PerfRecord["engine"]): Promise<string[]> {
+async function measureAll(args: FpsGapArgs, backend: RendererBackend, engine: PerfRecord["engine"]): Promise<string[]> {
   const started: Awaited<ReturnType<typeof ensureDevServer>>[] = [];
   const failed: string[] = [];
+  const records = recordsFor(args.records, backend);
   let previous: string | null = null;
   try {
     for (const [index, game] of args.games.entries()) {
-      console.error(`perf fps-gap: ${game} (${index + 1}/${args.games.length})`);
+      console.error(`perf fps-gap: ${game} on ${backend} (${index + 1}/${args.games.length})`);
+      let releaseLock = (): void => {};
       try {
+        // The lock first: this game's server check and Chrome launch sit inside it, so a server
+        // obtained before a long wait cannot be gone after it.
+        releaseLock = await acquirePerfLock(`perf fps-gap ${game}`);
         // Checked before every game: a dev server that died under the last one is restarted, and named,
         // instead of every remaining game failing on a refused connection.
         const server = await ensureDevServer(repoRoot);
@@ -358,7 +423,9 @@ async function measureAll(args: FpsGapArgs, engine: PerfRecord["engine"]): Promi
         }
         previous = game;
         const exit = await withBrowserSession(
-          { keep: false, debugPort: debugPortFor(index), timeoutMs: 180_000, hardDeadlineMs: 300_000, frameClock: "uncapped" },
+          // Frame window, profile window and the draw-timed GPU window.
+          // The frame time is the product, so the browser draws at normal priority (scripts/perf.ts).
+          { keep: false, timeoutMs: 180_000, hardDeadlineMs: gameSessionDeadlineMs(WARMUP_MS, args.seconds * 2 + GPU_WORK_SECONDS), frameClock: "uncapped", chromePriority: "normal" },
           async ({ debugPort }) => {
             const session = await openPageSession(debugPort);
             try {
@@ -373,9 +440,10 @@ async function measureAll(args: FpsGapArgs, engine: PerfRecord["engine"]): Promi
                 allocations: true,
                 frameClock: "uncapped",
                 path: "walk",
-                settings: [parseSettingSpec("graphics.auto=false")],
+                settings: [parseSettingSpec("graphics.auto=false"), parseSettingSpec(`renderer=${backend}`)],
                 size: GATE_SIZE,
                 breakdownTop: BREAKDOWN_TOP,
+                gpuWork: true,
               });
               if (measured.record.breakdown === null || measured.record.breakdown === undefined) {
                 throw new Error("the page installed no frame breakdown, so CPU, GPU and their groups are unknown; measure it again");
@@ -386,8 +454,8 @@ async function measureAll(args: FpsGapArgs, engine: PerfRecord["engine"]): Promi
                 layers: measured.profile === null ? [] : profileLayers(measured.profile),
                 allocators: measured.allocators ?? [],
               };
-              mkdirSync(args.records, { recursive: true });
-              writeFileSync(join(args.records, `${game}.json`), `${JSON.stringify(entry, null, 2)}\n`);
+              mkdirSync(records, { recursive: true });
+              writeFileSync(join(records, `${game}.json`), `${JSON.stringify(entry, null, 2)}\n`);
               const b = measured.record.breakdown;
               console.error(`perf fps-gap: ${game} frame p50 ${b?.frame.p50 ?? measured.record.frame.avgMs} ms, CPU ${b?.work.p50 ?? "?"} ms, GPU ${b?.gpu?.p50 ?? "?"} ms`);
             } finally {
@@ -399,6 +467,8 @@ async function measureAll(args: FpsGapArgs, engine: PerfRecord["engine"]): Promi
       } catch (error) {
         console.error(`perf fps-gap: ${game} could not be measured — ${error instanceof Error ? error.message : String(error)}`);
         failed.push(game);
+      } finally {
+        releaseLock();
       }
     }
   } finally {
@@ -419,14 +489,20 @@ async function main(): Promise<void> {
   const identity = resolveEngineIdentity();
   console.error(identity.line);
   const engine = engineRecord(identity) ?? undefined;
-  const failed = parsed.reuse ? [] : await measureAll(parsed, engine);
-  const { entries, missing } = readEntries(parsed.records, parsed.games.filter((game) => !failed.includes(game)));
-  console.log(renderFpsGapReport(entries, { markdown: parsed.markdown }));
-  const absent = [...failed, ...missing];
-  if (absent.length > 0) {
-    console.error(`perf fps-gap: no measurement for ${absent.join(", ")}`);
-    process.exitCode = 1;
+  const byBackend = new Map<RendererBackend, FpsGapEntry[]>();
+  for (const backend of parsed.renderers) {
+    const failed = parsed.reuse ? [] : await measureAll(parsed, backend, engine);
+    const { entries, missing } = readEntries(recordsFor(parsed.records, backend), parsed.games.filter((game) => !failed.includes(game)));
+    byBackend.set(backend, entries);
+    if (parsed.renderers.length > 1) console.log(`\n## ${backend}\n`);
+    console.log(renderFpsGapReport(entries, { markdown: parsed.markdown }));
+    const absent = [...failed, ...missing];
+    if (absent.length > 0) {
+      console.error(`perf fps-gap: no ${backend} measurement for ${absent.join(", ")}`);
+      process.exitCode = 1;
+    }
   }
+  if (byBackend.size > 1) console.log(`\nFrame time by backend (same walk, same conditions):\n\n${renderBackendComparison(byBackend, { markdown: parsed.markdown })}`);
 }
 
 if (import.meta.main) await main();

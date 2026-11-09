@@ -1,9 +1,9 @@
-import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useFrame } from "@react-three/fiber";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
-import { acquireImpostor, impostorCard, impostorDistance, impostorSettingsForQuality, impostorSwitch, releaseImpostor, type ImpostorEntry } from "@jgengine/core/lod/impostor.draw";
+import { impostorCard, impostorDistance, impostorSettingsForQuality, impostorSwitch, useImpostorEntry } from "@jgengine/core/lod/impostor.draw";
 import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import type { ScatterBatch } from "./InstancedScatter.draw";
@@ -37,16 +37,18 @@ export function markFarPlacements(
 ): { far: number; changed: boolean } {
   let far = 0;
   let changed = false;
-  instances.forEach((instance, index) => {
-    const dx = instance.x - camera.x;
-    const dy = instance.y - camera.y;
-    const dz = instance.z - camera.z;
+  const cx = camera.x, cy = camera.y, cz = camera.z;
+  for (let index = 0; index < instances.length; index += 1) {
+    const instance = instances[index]!;
+    const dx = instance.x - cx;
+    const dy = instance.y - cy;
+    const dz = instance.z - cz;
     const isFar = impostorSwitch(Math.sqrt(dx * dx + dy * dy + dz * dz), thresholds[index]!, flags[index] === 1);
     const flag = isFar ? 1 : 0;
     if (flags[index] !== flag) changed = true;
     flags[index] = flag;
     if (isFar) far += 1;
-  });
+  }
   return { far, changed };
 }
 
@@ -64,15 +66,9 @@ export function ScatterImpostorField({ cacheKey, sources, farSources, batches, r
   batches: readonly ScatterBatch[];
   radius: number;
 }) {
-  const gl = useThree((state) => state.gl);
   const quality = useTerrainQuality();
   const settings = useMemo(() => impostorSettingsForQuality(quality), [quality]);
-  const [entry, setEntry] = useState<ImpostorEntry | null>(null);
-  useEffect(() => {
-    const acquired = acquireImpostor(cacheKey, gl, farSources ?? sources, settings);
-    setEntry(acquired);
-    return () => releaseImpostor(cacheKey, settings);
-  }, [cacheKey, gl, sources, farSources, settings]);
+  const entry = useImpostorEntry(cacheKey, farSources ?? sources, settings);
 
   // Near draws are cached per batch object: a batch that comes back unchanged (every chunk but the one
   // a felled tree stood in) keeps its mesh, so clearing a placement does not rebuild the species.
@@ -141,19 +137,28 @@ export function ScatterImpostorField({ cacheKey, sources, farSources, batches, r
     if (!fresh && lastSplit.current !== null && lastSplit.current.distanceToSquared(camera) < SPLIT_MOVE * SPLIT_MOVE) return;
     lastFar.current = far;
     lastSplit.current = (lastSplit.current ?? new THREE.Vector3()).copy(camera);
-    farMatrices.length = 0;
-    batches.forEach((batch, batchIndex) => {
+    let anyDirty = false;
+    for (let batchIndex = 0; batchIndex < batches.length; batchIndex += 1) {
+      const batch = batches[batchIndex]!;
       const batchFlags = flags[batchIndex]!;
       if (far === null) {
-        dirty[batchIndex] = batchFlags.some((flag) => flag === 1) || fresh ? 1 : 0;
+        dirty[batchIndex] = batchFlags.includes(1) || fresh ? 1 : 0;
         batchFlags.fill(0);
-        return;
+      } else {
+        dirty[batchIndex] = markFarPlacements(batch.instances, thresholds[batchIndex]!, batchFlags, camera).changed || fresh ? 1 : 0;
       }
-      dirty[batchIndex] = markFarPlacements(batch.instances, thresholds[batchIndex]!, batchFlags, camera).changed || fresh ? 1 : 0;
-      batchFlags.forEach((flag, index) => {
-        if (flag === 1) farMatrices.push(batch.matrices[index]!);
-      });
-    });
+      if (dirty[batchIndex] === 1) anyDirty = true;
+    }
+    // No placement crossed its switch distance: the near draws and the far list are what they were.
+    if (!anyDirty) return;
+    if (far !== null) {
+      farMatrices.length = 0;
+      for (let batchIndex = 0; batchIndex < batches.length; batchIndex += 1) {
+        const batchFlags = flags[batchIndex]!;
+        const matrices = batches[batchIndex]!.matrices;
+        for (let index = 0; index < batchFlags.length; index += 1) if (batchFlags[index] === 1) farMatrices.push(matrices[index]!);
+      }
+    }
     // Only chunks where a placement crossed its switch distance re-upload their near draws.
     for (const draw of near) {
       if (dirty[draw.batchIndex] !== 1) continue;

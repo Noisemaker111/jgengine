@@ -24,7 +24,7 @@ export function RosterPanel({ compact = false }: { compact?: boolean }) {
   });
   const worried = household.order.some((id) => household.members[id]?.concern || household.members[id]?.recovering);
   return (
-    <HudFade watch={[labels.join("|"), household.selectedMemberId]} hold={worried || household.selectedMemberId !== null} dimTo={0.55} idleMs={7000}>
+    <HudFade watch={() => [labels.join("|"), household.selectedMemberId]} hold={() => worried || household.selectedMemberId !== null} dimTo={0.55} idleMs={7000}>
       <section className={`orbit-roster ${compact ? "compact" : ""}`} aria-label="Household">
         {household.order.map((id, index) => {
           const member = household.members[id];

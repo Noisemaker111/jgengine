@@ -2,6 +2,7 @@ import { biomeBandsForSky } from "@jgengine/core/sky/skyBands";
 import { CharacterMotionContext } from "@jgengine/core/anim/characterMotion.draw";
 import { lightingHasSoftShadows } from "@jgengine/core/lighting/softShadows";
 import { Canvas } from "@react-three/fiber";
+import { useEngineRendererFactory } from "@jgengine/core/webgpu/engineRenderer.draw";
 import {
   useMemo,
   useEffect,
@@ -69,6 +70,7 @@ import {
 } from "@jgengine/core/input/selectionGesture";
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "@jgengine/core/audio/AudioComponents.draw";
 import { skipCulledMatrices } from "@jgengine/core/visibility/culledTransforms.draw";
+import { installFlatSceneWalk } from "@jgengine/core/render/flatSceneWalk.draw";
 import { StaticDrawPoolDriver } from "@jgengine/core/instancing/StaticObjectModels.draw";
 import { MeshLodSettings } from "@jgengine/core/lod/builtLods.draw";
 import type { AudioEngine } from "@jgengine/core/audio/audioEngine.view";
@@ -362,6 +364,8 @@ export function Shell3dPresentation({
   const sunFromLighting = lighting?.directional?.[0]?.position;
   const sceneLighting = useMemo(() => (cinematicLook ? balanceLightingForIbl(lighting) : lighting), [cinematicLook, lighting]);
   const worldProbe = useMemo(() => worldProbeForQuality(graphics.quality), [graphics.quality]);
+  // Null while the backend is prepared: the canvas mounts once its renderer can be made without awaiting.
+  const rendererFactory = useEngineRendererFactory(graphics.renderer);
   const effectiveSky = useMemo(() => {
     if (authoredSky === undefined) return undefined;
     const bearing =
@@ -697,10 +701,13 @@ export function Shell3dPresentation({
           >
             <GameViewportProvider platforms={playable.controls?.platforms}>
               <ColorblindFrame mode={colorblind} style={{ position: "absolute", inset: 0 }}>
+                {rendererFactory === null ? null : (
                 <Canvas
+                  key={rendererFactory.backend}
                   onCreated={({ gl, scene }) => {
                     setCanvasElement(gl.domElement);
                     skipCulledMatrices(scene);
+                    installFlatSceneWalk(gl, scene);
                     if (ktx2SupportDetected.current) return;
                     ktx2SupportDetected.current = true;
                     detectKtx2Support(gl);
@@ -722,7 +729,7 @@ export function Shell3dPresentation({
                   }
                   shadows={graphics.shadows ? "percentage" : false}
                   dpr={[Math.min(1, graphics.dpr), graphics.dpr]}
-                  gl={{ powerPreference: "high-performance" }}
+                  gl={rendererFactory}
                   style={{ touchAction: "none" }}
                 >
                   <CanvasCoverFrameloop authored={canvasFrameloop} />
@@ -923,6 +930,7 @@ export function Shell3dPresentation({
                     />
                   )}
                 </Canvas>
+                )}
               </ColorblindFrame>
               <SceneWarmupCoverLive store={warmup} />
               {poster ? null : <BootDirector ctx={ctx} warmup={warmup} />}

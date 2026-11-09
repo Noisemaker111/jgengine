@@ -82,8 +82,8 @@ function Ledger() {
   return (
     <HudFade
       className="ec-stock-fade"
-      watch={[hud.gold, hud.lumber, hud.foodUsed, hud.foodCap, hud.enemyKeepHp, hud.playerKeepHp, hud.wavesSent]}
-      hold={keepLow || waveNear}
+      watch={() => [hud.gold, hud.lumber, hud.foodUsed, hud.foodCap, hud.enemyKeepHp, hud.playerKeepHp, hud.wavesSent]}
+      hold={() => keepLow || waveNear}
       dimTo={0.62}
       idleMs={4500}
     >
@@ -167,8 +167,8 @@ function OrdersNote() {
   return (
     <HudFade
       className="ec-objectives-fade"
-      watch={[campaign?.step, campaign?.objective, campaign?.counted, hud.enemyKeepHp <= 0]}
-      hold={pressing}
+      watch={() => [campaign?.step, campaign?.objective, campaign?.counted, hud.enemyKeepHp <= 0]}
+      hold={() => pressing}
       dimTo={0.55}
       idleMs={6000}
     >

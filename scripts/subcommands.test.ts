@@ -19,7 +19,7 @@ describe("resolveVerb", () => {
   });
 
   test("a guarded verb runs under scripts/guard.ts with its own limit, as one command so guard passes the flags", () => {
-    expect(resolveVerb(PERF, ["gate", "--jobs", "8"])).toEqual(["bun", "scripts/guard.ts", "1500", "bun scripts/perf-gate.ts", "--jobs", "8"]);
+    expect(resolveVerb(PERF, ["gate", "--jobs", "8"])).toEqual(["bun", "scripts/guard.ts", "5400", "bun scripts/perf-gate.ts", "--jobs", "8"]);
   });
 
   test("a first word that names no verb goes to the fallback with that word kept", () => {

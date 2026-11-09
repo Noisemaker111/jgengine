@@ -4,6 +4,7 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { join } from "node:path";
 
+import { BROKER_PROTOCOL } from "./devBroker";
 import { brokerStatusOrNull, captureQueueLine, captureWaitMs, ensureBroker, stopBroker, treeFingerprint } from "./devBrokerClient";
 
 async function freePort(): Promise<number> {
@@ -63,7 +64,7 @@ describe("broker client", () => {
         await Bun.sleep(100);
         status = await brokerStatusOrNull(500);
       }
-      expect(status).toMatchObject({ protocol: 1, pid: first.pid, servers: [], chrome: null });
+      expect(status).toMatchObject({ protocol: BROKER_PROTOCOL, pid: first.pid, servers: [], chrome: null });
       const second = spawn(process.execPath, [join(import.meta.dir, "devBroker.ts"), "serve"], { env, stdio: "ignore", windowsHide: true });
       const secondCode = await new Promise<number | null>((resolve) => second.once("exit", resolve));
       expect(secondCode).toBe(0);
@@ -76,6 +77,33 @@ describe("broker client", () => {
       else process.env["JG_BROKER_PORT"] = before;
     }
   }, 30_000);
+});
+
+test("a busy broker from a checkout before brokers left their starter's job is passed by, never leaned on", async () => {
+  // Protocol 1 brokers ran inside the Windows job of the run that started them and died with it.
+  const port = await freePort();
+  const old = Bun.serve({
+    port,
+    hostname: "127.0.0.1",
+    fetch: (request) =>
+      new URL(request.url).pathname === "/v1/status"
+        ? Response.json({ protocol: 1, pid: 1, servers: [], chrome: null, leases: 2 })
+        : new Response("not found", { status: 404 }),
+  });
+  const before = { port: process.env["JG_BROKER_PORT"], on: process.env["JG_BROKER"] };
+  process.env["JG_BROKER_PORT"] = String(port);
+  process.env["JG_BROKER"] = "1";
+  const lines: string[] = [];
+  try {
+    expect(await ensureBroker({ log: (line) => lines.push(line) })).toBeNull();
+    expect(lines.join("\n")).toContain(`speaks protocol 1, this checkout ${BROKER_PROTOCOL}, and it is busy`);
+  } finally {
+    void old.stop(true);
+    for (const [key, value] of [["JG_BROKER_PORT", before.port], ["JG_BROKER", before.on]] as const) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
 });
 
 test("a run queued for the shared browser names who holds it, so a wait never reads as a hang", () => {

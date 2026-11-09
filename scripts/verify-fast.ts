@@ -4,7 +4,7 @@
 // tests that can reach it and the cheap static gates the `quick` CI job runs, then
 // runs only those.
 //
-//   bun run verify:fast              # the loop while iterating: seconds
+//   bun run verify:fast              # the loop while iterating, and what lane:close runs
 //   bun run verify:fast --full       # everything CI runs; reproduce CI failures
 //   bun run verify:fast --plan       # the steps and their commands, nothing run
 //   bun run verify:fast --json       # one { ok, ms, checks } document on stdout
@@ -14,6 +14,10 @@
 // type error is reported in seconds instead of after minutes of tests that were never the problem.
 // `--cheap` (the landing's preflight) runs every gate CI's quick and types jobs run and reports
 // every failure in one pass instead.
+//
+// A passing run records the working tree's id in its receipt. A later run on the same tree, against
+// the same merge base, with no more to prove, prints one line naming that receipt and runs nothing:
+// a hand run that passed is the landing's proof, and lane:close does not pay for it again.
 //
 // Exit: 0 verified, 1 a step failed. A change no test can be attributed to (a root config, the lockfile, a source
 // file under no tested root) runs every test file and type-check; `--plan` names it.
@@ -36,8 +40,7 @@ import { isVerbose, takeVerboseFlag } from "./verbosity";
 import { siteGames } from "./siteGames";
 import { runSteps, type ScheduledStep, type StepResult } from "./stepScheduler";
 import { TEST_ROOTS, walkTestFiles } from "./test-shard";
-import { createVerifyReceipt } from "./verify-receipt";
-import { boatForThisRun, EXIT_BOAT_SPENT, localTestFiles, MODEL_TEST_REASON, placeSteps, runPlaced, withHeavySlot, type BoatReceipt, type Where } from "./verify-boat";
+import { createVerifyReceipt, passingReceipt, workingTree, type ReuseKey } from "./verify-receipt";
 
 const VERIFY_FAST_USAGE = {
   summary: "run only the tests and static gates this branch's diff reaches, in seconds",
@@ -45,13 +48,13 @@ const VERIFY_FAST_USAGE = {
   flags: [
     { flag: "--full", detail: "what CI runs; use to reproduce a CI failure" },
     { flag: "--cheap", detail: "only the type-checks and gates, no tests or boots; `bun run preflight` runs this" },
-    { flag: "--landing", detail: "every gate CI runs (as --cheap) and the tests and boots, in one run; `bun run lane:close` runs this" },
+    { flag: "--landing", detail: "also build the site and check its bundle budgets when the change reaches them; `bun run lane:close` runs this, and reuses a passing --landing run of the same tree" },
     { flag: "--plan", detail: "print the steps and their commands, run nothing" },
     { flag: "--json", detail: "one { ok, ms, checks } document on stdout" },
     { flag: "--base <ref>", detail: "diff against this ref (default: origin/beta)" },
     { flag: "--jobs <n>", detail: "steps to run at once (default: half the cores, at most 6)" },
     { flag: "--skill-api", detail: "also run `check skill-api`, the 21 s generated api.md check (`bun run gen` regenerates it before a landing)" },
-    { flag: "--no-cache", detail: "run every unit, including those that passed before with the same inputs" },
+    { flag: "--no-cache", detail: "run every unit, including those that passed before with the same inputs, and never reuse a passing run of the same tree" },
     { flag: "--verbose", detail: "also print the plan, each PASS line and the cache notes (by default only failures and the total)" },
   ],
   example: "bun run verify:fast --plan",
@@ -102,8 +105,6 @@ export interface Step extends ScheduledStep {
    * lanes guessing and pushed them to CI to find out.
    */
   fix?: string | undefined;
-  /** This step needs this PC (a Windows-only test, the asset store), and why; absent, Linux can run it (scripts/verify-boat.ts). */
-  localBecause?: string | undefined;
   /** The units this step settles; each is remembered as passed when the step passes, and a test file also when its own tests all passed in a step that failed. */
   units?: Unit[];
 }
@@ -152,6 +153,11 @@ export interface Plan {
    * boots a game, so this is the only place a boot regression is caught before merge.
    */
   boots: string[];
+  /**
+   * `--landing` only: build the site and hold each game's download to its budget, as CI's web-build
+   * job did for every PR (a game's first download over budget, and a build that broke, reached it).
+   */
+  webBuild: boolean;
   /**
    * The files whose content decides each unit's result, keyed `test:<file>`, `typecheck:<dir>` and
    * `boot:<game>` (see `unitInputs`; `*` is the whole tree). A unit whose inputs are byte-identical
@@ -438,6 +444,8 @@ export function verifyPlan(input: {
   graph: ImportGraph;
   /** Changed paths that need no test (pure renames). */
   exempt?: readonly string[];
+  /** What `lane:close` runs: also the site build and its bundle budgets when the change reaches them. */
+  landing?: boolean;
 }): Plan {
   const changed = [...new Set(input.changed)].sort();
   const deleted = [...new Set(input.deleted ?? [])].sort();
@@ -495,11 +503,31 @@ export function verifyPlan(input: {
   }
 
   // A file no test reaches is still covered when its package's whole suite runs: that is the suite
-  // CI runs for it. A root script's suite is every `scripts/` test (CI's shard i), since those tests
-  // reach the scripts by spawning them, which no import shows. Only a file under no tested root at
-  // all stays unattributed, and the run says so rather than passing it.
+  // CI runs for it. Only a file under no tested root at all stays unattributed, and the run says so
+  // rather than passing it.
   const unattributed: string[] = [];
   const suites: string[] = [];
+  const addSuite = (dir: string, match: (test: string) => boolean = (test) => test.startsWith(`${dir}/`)): void => {
+    for (const test of input.testFiles) if (match(test)) tests.add(test);
+    if (!suites.includes(dir)) suites.push(dir);
+  };
+  // Reach the graph cannot see, each found by PR CI after this command had passed (7 Nov audit):
+  // - a root script's tests reach other scripts by spawning them, so any script change runs every
+  //   `scripts/` test (CI's shard i): a capture flag change broke captureCliParity's spawned run;
+  // - a package's tests read its data files from disk, so a changed non-source file in a package
+  //   runs that package's suite: a material manifest edit broke assets' verifyData;
+  // - the games' own scripts and the `*.games.test.ts` checks read every game from disk, so a game
+  //   change runs them, as CI's games job does: a game's PLAN broke the suite score check.
+  if (touchedPaths.some((path) => path.startsWith("scripts/") && SOURCE_FILE.test(path) && !DECLARATION.test(path))) addSuite("scripts");
+  for (const path of touchedPaths) {
+    const workspace = workspaceOf(path, input.workspaces);
+    if (workspace === null || !CONTAINED.test(workspace.dir) || GAME_DIR.test(workspace.dir)) continue;
+    if ((!SOURCE_FILE.test(path) || DECLARATION.test(path)) && !path.endsWith(".md")) addSuite(workspace.dir);
+  }
+  if (touchedPaths.some((path) => /^games\/[^/]+\//.test(path))) {
+    for (const dir of ["games/scripts", "games/shared"]) addSuite(dir);
+    addSuite("*.games.test", (test) => /\.games\.test\.[cm]?[jt]sx?$/.test(test));
+  }
   for (const path of runtime) {
     if (ownTests(path, input.testFiles).length > 0 || (testedBy.get(path) ?? []).length > 0) continue;
     const suiteDir = workspaceOf(path, input.workspaces)?.dir ?? (path.startsWith("scripts/") ? "scripts" : null);
@@ -549,8 +577,15 @@ export function verifyPlan(input: {
     fallback,
     suites: suites.sort(),
     boots,
+    webBuild: input.landing === true && reachesSite(touchedPaths),
     inputs,
   };
+}
+
+/** Whether a change can alter the built site: a source or asset under apps/, packages/ or games/, not a note. */
+export function reachesSite(paths: readonly string[]): boolean {
+  const check = findCheck("site-bundles");
+  return check !== undefined && paths.some((path) => !path.endsWith(".md") && !isTestFile(path) && reachedBy(check, [path]));
 }
 
 /**
@@ -635,8 +670,8 @@ export interface FastOptions {
   reportDir?: string;
   /** Every file in the checkout, so a gate's pass is keyed on the files its row reads; absent, on the whole tree. */
   tree?: readonly string[];
-  /** Test files that must run on this PC, with why (`localTestFiles`): they get a step of their own. */
-  localTests?: ReadonlyMap<string, string>;
+  /** Test files that read downloaded models (`modelTestFiles`): they get a step of their own, after the models are linked. */
+  modelTests?: ReadonlySet<string>;
 }
 
 /**
@@ -663,10 +698,10 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
     // The tests named after the changed files, and the changed tests themselves, run first in a step
     // of their own: a break in `pick.ts` reaches a thousand files, the run stops at the first red,
     // and without this `pick.test.ts` sat in a chunk that never ran while the red named a loot table.
-    const here = files.filter((file) => options.localTests?.has(file) === true);
-    const linux = files.filter((file) => options.localTests?.has(file) !== true);
-    const own = new Set(plan.changed.flatMap((file) => ownTests(file, linux)));
-    const rest = linux.filter((file) => !own.has(file));
+    const readers = files.filter((file) => options.modelTests?.has(file) === true);
+    const plain = files.filter((file) => options.modelTests?.has(file) !== true);
+    const own = new Set(plan.changed.flatMap((file) => ownTests(file, plain)));
+    const rest = plain.filter((file) => !own.has(file));
     const testStep = (group: readonly string[], name: string, index: number, first: boolean): Step => ({
       name,
       command: [
@@ -682,22 +717,16 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
       units: tests.filter((settles) => group.includes(settles.id.slice("test:".length))),
     });
     if (own.size > 0) steps.push(testStep([...own], `test ${own.size} own file(s)`, 0, true));
-    // The files that read this PC's models or depend on Windows run here, in one step of their own.
-    if (here.length > 0) {
-      const reasons = [...new Set(here.map((file) => options.localTests!.get(file)!))];
-      const isOwn = plan.changed.some((file) => ownTests(file, here).length > 0);
-      // A worktree starts with no models: link (or, once per machine, download) the packs those tests read
-      // first, or every model they check reads as missing. A test outside a game's folder gets every game's.
-      const readers = here.filter((file) => options.localTests!.get(file) === MODEL_TEST_REASON);
+    // The files that read downloaded models run in one step of their own. A worktree starts with no
+    // models: link (or, once per machine, download) the packs those tests read first, or every model
+    // they check reads as missing. A test outside a game's folder gets every game's.
+    if (readers.length > 0) {
+      const isOwn = plan.changed.some((file) => ownTests(file, readers).length > 0);
       const owners = readers.map((file) => /^games\/([^/]+)\//.exec(file)?.[1]);
       const provision = owners.includes(undefined) ? [] : [...new Set(owners as string[])].sort();
       const provisionStep = `provision models for tests${provision.length > 0 ? ` ${provision.join(" ")}` : ""}`;
-      if (readers.length > 0) steps.push({ name: provisionStep, command: ["bun", "games/scripts/provision-assets.ts", ...provision], cost: 2, localBecause: MODEL_TEST_REASON });
-      steps.push({
-        ...testStep(here, `test ${here.length} file(s) on this PC`, 999, isOwn),
-        localBecause: reasons.join("; "),
-        ...(readers.length > 0 ? { needs: [provisionStep] } : {}),
-      });
+      steps.push({ name: provisionStep, command: ["bun", "games/scripts/provision-assets.ts", ...provision], cost: 2 });
+      steps.push({ ...testStep(readers, `test ${readers.length} file(s) that read downloaded models`, 999, isOwn), needs: [provisionStep] });
     }
     if (rest.length > 0) {
       const total = rest.reduce((sum, file) => sum + cost[file]!, 0);
@@ -737,6 +766,14 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
       cost: 40,
       units: boots,
     });
+  }
+  if (plan.webBuild) {
+    const built = unit("web-build", [WHOLE_TREE]);
+    const budget = unit("gate:site-bundles", [WHOLE_TREE]);
+    if (!fresh(built.id, built.inputs) || !fresh(budget.id, budget.inputs)) {
+      steps.push({ name: "web-build", command: ["bun", "--cwd=apps/web", "run", "build"], cost: 40, units: [built] });
+      steps.push({ name: "site-bundles", command: ["bun", "run", "check", "site-bundles"], needs: ["web-build"], units: [budget] });
+    }
   }
   return options.cheap === true ? steps.filter((step) => step.first === true && step.command[1] !== "test") : steps;
 }
@@ -914,15 +951,53 @@ export async function jsonRun(
   return checks.every((check) => check.ok) ? EXIT_VERIFIED : EXIT_FAILED;
 }
 
-async function run(step: Step, root: string): Promise<StepResult> {
-  const started = Date.now();
-  const proc = Bun.spawn(step.command, { cwd: root, stdout: "pipe", stderr: "pipe" });
+async function spawnStep(command: readonly string[], root: string): Promise<{ ok: boolean; output: string }> {
+  const proc = Bun.spawn([...command], { cwd: root, stdout: "pipe", stderr: "pipe" });
   const [stdout, stderr, code] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
     proc.exited,
   ]);
-  return { name: step.name, ok: code === 0, ms: Date.now() - started, output: `${stdout}${stderr}` };
+  return { ok: code === 0, output: `${stdout}${stderr}` };
+}
+
+/**
+ * The files to rerun when every failure in a `bun test` output is a timeout (a test's or a hook's),
+ * or null when any failure is something else. On a PC held at 100% by other threads' work a test can
+ * wait seconds for each slice: land-commit.test.ts failed 9 of 20 tests that way and passed on the
+ * next run (2026-11-09), and a whole landing went red for it.
+ */
+export function timedOutFiles(output: string): string[] | null {
+  const lines = output.split(/\r?\n/);
+  const files = new Set<string>();
+  let file: string | null = null;
+  let failures = 0;
+  for (const [index, line] of lines.entries()) {
+    const header = /^(\S+\.(?:test|spec)\.[cm]?[jt]sx?):$/.exec(line.trim());
+    if (header !== null) file = header[1]!.replace(/\\/g, "/");
+    if (!line.startsWith("(fail)")) continue;
+    failures += 1;
+    const next = lines[index + 1]?.trim() ?? "";
+    if (file === null || !/^\^ (?:this test timed out after|a beforeEach\/afterEach hook timed out)/.test(next)) return null;
+    files.add(file);
+  }
+  return failures > 0 ? [...files] : null;
+}
+
+async function run(step: Step, root: string): Promise<StepResult> {
+  const started = Date.now();
+  const first = await spawnStep(step.command, root);
+  const timedOut = !first.ok && step.command[1] === "test" ? timedOutFiles(first.output) : null;
+  if (timedOut === null) return { name: step.name, ok: first.ok, ms: Date.now() - started, output: first.output };
+  // Only the files that timed out, once, with the step's own flags but no report file: a real hang
+  // times out again and the step stays red with its first output.
+  const flags = step.command.slice(2).filter((word) => word.startsWith("--") && !word.startsWith("--reporter") && !TEST_FILE.test(word));
+  const timeoutFlag = step.command.indexOf("--timeout");
+  const rerun = ["bun", "test", ...flags, ...(timeoutFlag >= 0 ? [step.command[timeoutFlag + 1]!] : []), ...timedOut];
+  const again = await spawnStep(rerun, root);
+  const line = `degraded: ${step.name}: ${timedOut.join(", ")} timed out (a starved run on a busy PC); ${again.ok ? "passed" : "failed again"} when rerun once`;
+  console.log(line);
+  return { name: step.name, ok: again.ok, ms: Date.now() - started, output: again.ok ? line : `${first.output}\n${line}\n${again.output}` };
 }
 
 /**
@@ -974,11 +1049,7 @@ export function rerunFailing(step: Pick<Step, "name" | "command">, output: strin
 
 function printPlan(plan: Plan, steps: readonly Step[]): void {
   for (const path of plan.changed) console.log(`  changed  ${path}`);
-  const placement = placeSteps(steps);
-  for (const step of steps) {
-    const place = placement.get(step.name);
-    console.log(`  step     ${step.name}  [${place?.where === "boat" ? "boat" : `this PC: ${place?.why ?? "local"}`}]  (${step.command.join(" ")})`);
-  }
+  for (const step of steps) console.log(`  step     ${step.name}  (${step.command.join(" ")})`);
   if (plan.fallback.length > 0) {
     console.log(`  no test can be attributed to ${plan.fallback.length} changed file(s), so every test file and type-check runs:`);
     for (const path of plan.fallback) console.log(`    ${path}`);
@@ -1000,19 +1071,20 @@ function receiptPlan(root: string, base: string, argv: readonly string[], change
   };
 }
 
-/** One line on where the run went: the boat machine's id, cost and time, and how many steps ran here. */
-export function boatLine(boat: BoatReceipt, placement: ReadonlyMap<string, { where: Where }>): string | null {
-  const here = [...placement.values()].filter((place) => place.where === "local").length;
-  if (boat.status === "off") return null;
-  if (boat.status === "spent") {
-    const linux = placement.size - here;
-    return `verify:fast: boat had no start (${boat.why ?? "no reason given"}); ${linux} Linux step(s) not run, here or there${boat.until === undefined ? "" : `; boat takes starts again from ${boat.until}`}`;
+/** A test file that imports the CI skip for downloaded models (`games/shared/assetTest.ts`). */
+const MODEL_TEST_SOURCE = /from\s+["'][^"']*\/assetTest(\.ts)?["']/;
+
+/** The test files among `files` that read downloaded models, which verify:fast links before they run. */
+export function modelTestFiles(root: string, files: readonly string[], read: (path: string) => string = (path) => readFileSync(join(root, path), "utf8")): Set<string> {
+  const readers = new Set<string>();
+  for (const file of files) {
+    try {
+      if (MODEL_TEST_SOURCE.test(read(file))) readers.add(file);
+    } catch {
+      // A file that cannot be read is left to its own test step to report.
+    }
   }
-  if (boat.status === "unusable") return `verify:fast: boat unusable (${boat.why ?? "no reason given"}); all ${placement.size} step(s) ran on this PC`;
-  const cost = boat.costUsd === undefined ? "" : `, $${boat.costUsd.toFixed(4)}`;
-  const time = boat.seconds === undefined ? "" : `, ${boat.seconds} s`;
-  const waited = boat.waitedMs !== undefined && boat.waitedMs > 1000 ? `, waited ${Math.round(boat.waitedMs / 1000)} s for a machine` : "";
-  return `verify:fast: ${boat.steps.length} step(s) on boat ${boat.runId ?? "(no id)"} ${boat.status}${cost}${time}${waited}; ${here} on this PC${boat.why === undefined ? "" : ` (${boat.why})`}`;
+  return readers;
 }
 
 export function parseVerifyArgs(argv: readonly string[]) {
@@ -1032,9 +1104,6 @@ export function parseVerifyArgs(argv: readonly string[]) {
   return { base, jobs, full, planOnly, json, cheap, landing, skillApi: parsed.values["skill-api"] === true };
 }
 
-/** Set when boat had no start for a run's Linux steps: the exit is then EXIT_BOAT_SPENT, not a plain failure. */
-let boatSpent = false;
-
 async function main(argv: readonly string[]): Promise<number> {
   const root = fileURLToPath(new URL("..", import.meta.url));
   const { base, jobs, full, planOnly, json, cheap, landing, skillApi } = parseVerifyArgs(argv);
@@ -1047,43 +1116,48 @@ async function main(argv: readonly string[]): Promise<number> {
   // kept for --verbose, and for --plan, whose whole point is to show them.
   const say = (line: string): void => console.log(line);
   const note = planOnly || isVerbose() ? say : (): void => {};
-  // Where the steps run (scripts/verify-boat.ts): the Linux ones on a boat machine, the rest here in
-  // a fairshare slot. Its notes (waiting for a machine, boat unusable) always print: they explain the wait.
-  const tell = json ? (line: string): void => console.error(line) : say;
-  const boat = planOnly ? null : boatForThisRun(root);
   const execute = async (steps: Step[], failFast: boolean, print: boolean): Promise<StepResult[]> => {
     if (receipt === null) throw new Error("missing run receipt");
-    const placed = await runPlaced({
-      root,
-      steps,
-      jobs,
+    return runSteps(steps, jobs, (step) => run(step, root), {
       failFast,
-      baseRef: base,
-      runLocal: (step) => run(step, root),
-      schedule: (group, lanes, runOne, options) => runSteps(group, lanes, runOne, options),
-      onStart: (step, where) => {
-        receipt.start(step);
-        receipt.annotate(step.name, { where });
-      },
-      onSettle: (result, where) => {
+      onStart: (step) => receipt.start(step),
+      onSettle: (result) => {
         receipt.settle(result);
-        receipt.annotate(result.name, { where });
         if (!print || result.blockedBy !== undefined) return;
-        (result.ok ? note : say)(`${result.ok ? "PASS" : "FAIL"}  ${result.name}  ${(result.ms / 1000).toFixed(1)}s${where === "boat" ? "  (boat)" : ""}`);
+        (result.ok ? note : say)(`${result.ok ? "PASS" : "FAIL"}  ${result.name}  ${(result.ms / 1000).toFixed(1)}s`);
         const step = steps.find((candidate) => candidate.name === result.name);
         if (!result.ok && step !== undefined) printFailure(root, step, result.output);
       },
-      note: tell,
-      boat,
-      withSlot: (work) => withHeavySlot(work, { note: tell }),
     });
-    for (const [name, place] of placed.placement) receipt.annotate(name, { where: place.where, placedBecause: place.why });
-    receipt.note({ boat: placed.boat });
-    if (placed.boat.status === "spent") boatSpent = true;
-    const line = boatLine(placed.boat, placed.placement);
-    if (line !== null) tell(line);
-    return placed.results;
   };
+
+  // The tree this run proves, and whether a passing run already proved it. Taken before planning, so
+  // a reused run costs a git write-tree and nothing else.
+  const key: ReuseKey | null = planOnly
+    ? null
+    : { tree: workingTree(root).tree, mergeBase: git(root, ["merge-base", "HEAD", base]).trim(), runtime: `bun ${Bun.version}`, scope: full ? "full" : cheap ? "cheap" : landing ? "landing" : "fast", skillApi };
+  /** Settle the receipt; a pass keeps its tree only when the files did not change while it ran. */
+  const finish = (ok: boolean): void => {
+    if (receipt === null) return;
+    if (ok && key !== null && workingTree(root).tree !== key.tree) {
+      receipt.note({ tree: null, treeChanged: "the files changed while this ran, so this pass stands for no tree" });
+    }
+    receipt.finish(ok);
+  };
+  if (key !== null && receipt !== null) {
+    receipt.note({ ...key });
+    const reused = argv.includes("--no-cache") ? null : passingReceipt(root, key);
+    if (reused !== null) {
+      receipt.note({ reusedFrom: reused.path });
+      receipt.finish(true);
+      const line = `verify:fast: this exact tree already passed (${relative(root, reused.path).replaceAll("\\", "/")}, ${reused.endedAt}); not run again. --no-cache runs it.`;
+      if (json) {
+        console.error(line);
+        console.log(JSON.stringify(jsonReport([], Date.now() - started)));
+      } else console.log(line);
+      return EXIT_VERIFIED;
+    }
+  }
 
   try {
   let changed: string[];
@@ -1091,7 +1165,7 @@ async function main(argv: readonly string[]): Promise<number> {
     changed = changedFiles(root, base);
   } catch (error) {
     const message = (error as Error).message;
-    receipt?.finish(false);
+    finish(false);
     if (json) {
       console.log(JSON.stringify(jsonReport([{ name: "changed files", ok: false, ms: 0 }], Date.now() - started)));
       console.error(message);
@@ -1103,7 +1177,7 @@ async function main(argv: readonly string[]): Promise<number> {
 
   if (changed.length === 0) {
     receipt?.plan(receiptPlan(root, base, argv, changed, [], [], jobs, started), []);
-    receipt?.finish(true);
+    finish(true);
     if (json) {
       console.log(JSON.stringify(jsonReport([], Date.now() - started)));
       return EXIT_VERIFIED;
@@ -1129,13 +1203,13 @@ async function main(argv: readonly string[]): Promise<number> {
       const runs = await withHeavyServer(root, steps, () => execute(steps, false, false));
       for (const result of runs) if (!result.ok && result.output.length > 0) console.error(result.output);
       const checks = runs.map((result) => ({ name: result.name, ok: result.ok, ms: result.ms }));
-      receipt.finish(checks.every((check) => check.ok));
+      finish(checks.every((check) => check.ok));
       console.log(JSON.stringify(jsonReport(checks, Date.now() - started)));
       return checks.every((check) => check.ok) ? EXIT_VERIFIED : EXIT_FAILED;
     }
     const failures: string[] = [];
     const runs = await withHeavyServer(root, steps, () => execute(steps, false, true));
-    receipt.finish(runs.every((result) => result.ok));
+    finish(runs.every((result) => result.ok));
     for (const result of runs) if (!result.ok) failures.push(result.name);
     const seconds = (Date.now() - started) / 1000;
     console.log(`\ntotal ${seconds.toFixed(1)}s — ${steps.length - failures.length} passed, ${failures.length} failed`);
@@ -1155,9 +1229,11 @@ async function main(argv: readonly string[]): Promise<number> {
     workspaces: allWorkspaces,
     graph,
     exempt: pureRenames(root, base),
+    landing,
   });
-  // `--cheap` is the landing's half (`bun run preflight`): every CI gate, not the iteration subset.
-  const plan = cheap || landing ? { ...planned, gates: landingGates(planned.changed) } : planned;
+  // Every CI gate the change reaches, not the iteration subset: a passing hand run is then all a landing
+  // needs, and lane:close reuses it instead of running it again.
+  const plan = { ...planned, gates: landingGates(planned.changed) };
   const cache = argv.includes("--no-cache")
     ? null
     : openPassCache({
@@ -1183,7 +1259,7 @@ async function main(argv: readonly string[]): Promise<number> {
     testCosts,
     reportDir,
     tree,
-    localTests: localTestFiles(root, planned.tests),
+    modelTests: modelTestFiles(root, planned.tests),
     fresh: (unit, inputs) => {
       const hit = cache?.fresh(unit, inputs) === true;
       if (hit) skipped.push(unit);
@@ -1233,7 +1309,7 @@ async function main(argv: readonly string[]): Promise<number> {
   if (json) {
     const results = await execute(steps, !cheap, false);
     remember(results);
-    receipt.finish(results.every((result) => result.ok));
+    finish(results.every((result) => result.ok));
     for (const result of results) if (!result.ok && result.output.length > 0) console.error(result.output);
     console.log(JSON.stringify(jsonReport(results, Date.now() - started)));
     return results.every((result) => result.ok) ? EXIT_VERIFIED : EXIT_FAILED;
@@ -1246,7 +1322,7 @@ async function main(argv: readonly string[]): Promise<number> {
   // that fixed one gate only to meet the next cost a close per gate.
   const results = await execute(steps, !cheap, true);
   remember(results);
-  receipt.finish(results.every((result) => result.ok));
+  finish(results.every((result) => result.ok));
   const failures = results.filter((result) => !result.ok && result.blockedBy === undefined).map((result) => result.name);
   const notRun = results.filter((result) => result.blockedBy !== undefined).map((result) => result.name);
   const seconds = (Date.now() - started) / 1000;
@@ -1283,7 +1359,7 @@ if (import.meta.main) {
     parseVerifyArgs(argv);
     if (printHelpIfAsked("verify-fast", VERIFY_FAST_USAGE, argv)) process.exit(EXIT_VERIFIED);
     const code = await main(argv);
-    process.exit(code === EXIT_FAILED && boatSpent ? EXIT_BOAT_SPENT : code);
+    process.exit(code);
   } catch (error) {
     console.error(`verify:fast: ${(error as Error).message}`);
     process.exit(EXIT_FAILED);

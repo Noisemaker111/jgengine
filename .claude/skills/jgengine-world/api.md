@@ -908,7 +908,7 @@
 - `InteriorDressing` (function): function InteriorDressing({ plan, surfaces, cableColor = "#141414", decalSeed = "interior", decals = true }: InteriorDressingProps): React.JSX.Element — The drawn side of a planned interior: trims, pipes, fittings and lamp housings as static instance batches, every cable as one merged tube, and every stain style as one instanced decal mesh. A whole floor costs a handful of draws however many pieces it has. Pair it with {@link PracticalLights} for the lamps' light.
 - `InteriorDressingProps` (interface): interface InteriorDressingProps — Props for {@link InteriorDressing}.
 - `InteriorDressingSurfaces` (interface): interface InteriorDressingSurfaces — The surface each dressing family wears. Any family left out falls back to a plain painted default.
-- `PracticalLights` (function): function PracticalLights({ fixtures, count = 6, shadowed = 0, color = "#ffe2b0", intensity = 14, distance = 9, angle = 1.05, penumbra = 0.6, reach = 28, every = 8 }: PracticalLightsProps): React.JSX.Element — A fixed pool of spot lights that follows the camera through a planned interior, lighting the lamps nearest the eye and aiming each down and out from its wall. The pool size and shadow count never change, so walking a floor of hundreds of lamps costs the same few lights.
+- `PracticalLights` (function): function PracticalLights({ fixtures, count = 6, shadowed = 0, lit = count, color = "#ffe2b0", intensity = 14, distance = 9, angle = 1.05, penumbra = 0.6, reach = 28, every = 8 }: PracticalLightsProps): React.JSX.Element — A fixed pool of spot lights that follows the camera through a planned interior, lighting the lamps nearest the eye and aiming each down and out from its wall. The pool size and shadow count never change, so walking a floor of hundreds of lamps costs the same few lights.
 - `PracticalLightsProps` (interface): interface PracticalLightsProps — Props for {@link PracticalLights}.
 
 ## @jgengine/core/buildings/buildingGenerator
@@ -1778,7 +1778,7 @@
 
 ## @jgengine/core/grass/GrassCover.draw
 
-- `GrassCover` (function): function GrassCover({ area, seed, colorBase, colorTip, strength, edgeFeather, heightAt, coverageAt, segments, lift, shadeAt, position, }: GrassCoverProps): React.JSX.Element | null — The turf surface under one authored `grass_field` patch: a ground-draped, edge-feathered mat that turns a bare pavement footprint into grass the blade field stands in. Bounded to one draw and a {@link GRASS_COVER_MAX_SEGMENTS}² grid, so a large park still costs a single mesh.
+- `GrassCover` (function): function GrassCover({ area, seed, colorBase, colorTip, strength, edgeFeather, heightAt, coverageAt, segments, lift, shadeAt, detail = 0.5, position, }: GrassCoverProps): React.JSX.Element | null — The turf surface under one authored `grass_field` patch: a ground-draped, edge-feathered mat that turns a bare pavement footprint into grass the blade field stands in. Bounded to one draw and a {@link GRASS_COVER_MAX_SEGMENTS}² grid, so a large park still costs a single mesh.
 - `GrassCoverProps` (interface): interface GrassCoverProps — Props for {@link GrassCover}: one authored patch's footprint, colours and drape samplers.
 
 ## @jgengine/core/grass/GrassPatch.draw
@@ -1795,7 +1795,7 @@
 - `ResolvedGrassBake` (interface): interface ResolvedGrassBake — A patch ready to bake: the look plus every derived number the bake and stream share.
 - `bakeGrassNode` (function): function bakeGrassNode(bake: ResolvedGrassBake, level: number, ix: number, iz: number, share: number): GrassTufts — Seeded tufts for one stream node at `share` of full detail (0..1]. Each base cell inside the node grows its own seeded sequence, so the result never depends on which node asked or how big it is.
 - `grassFieldColors` (function): function grassFieldColors(look: GrassLook): { base: THREE.Color; tip: THREE.Color } — The look's colours after season and dryness, as the turf mat and far field show them. Mirrors the blade shader's colour path at the field's average tone.
-- `grassNodeRect` (function): function grassNodeRect(bake: ResolvedGrassBake, level: number, ix: number, iz: number): [number, number, number, number] — Patch-local XZ rectangle a node covers, clipped to the patch: `[x0, z0, x1, z1]`.
+- `grassNodeRect` (function): function grassNodeRect(bake: ResolvedGrassBake, level: number, ix: number, iz: number, out: [number, number, number, number] = [0, 0, 0, 0]): [number, number, number, number] — Patch-local XZ rectangle a node covers, clipped to the patch: `[x0, z0, x1, z1]`, written into `out` when given.
 - `grassTuftsBelow` (function): function grassTuftsBelow(ranks: Float32Array, share: number): number — Number of sorted tufts whose rank is below `share`.
 - `resolveGrassBake` (function): function resolveGrassBake(options: GrassBakeOptions): ResolvedGrassBake — Resolve a patch's bake inputs once; the stream and every node bake read the result.
 
@@ -1805,6 +1805,12 @@
 - `GRASS_COVER_TILE_METRES` (const): const GRASS_COVER_TILE_METRES: 3 — World metres one cover-texture tile spans; the mat's own grain is sampled in world space.
 - `GrassCoverGeometry` (interface): interface GrassCoverGeometry — Bake result for {@link createGrassCoverGeometry}; empty arrays when the mat is switched off.
 - `GrassCoverGeometryOptions` (interface): interface GrassCoverGeometryOptions — Inputs for {@link createGrassCoverGeometry}.
+
+## @jgengine/core/grass/grassDrawn
+
+- `drawnGrassLook` (function): function drawnGrassLook(look: GrassLook): GrassLook — The blades a look's style draws. `detail` trades blade count for width (`grassDetailScale`); blade count follows width through `grassBladeDensity`, so the ground covered stays the same. How the extra blades group follows the species' `clumping` ({@link grassTuftGrowth}): a sward spreads them over fuller and more tufts, a bunchgrass keeps its clumps and fills them. `exaggeration` evens heights, widths and deepens curls toward the cartoon end, and grows irregular lengths toward the natural end (mown looks stay even: their tips are cut). Flower share follows the tuft count, so flowers per m² hold. At the default style this is the look itself.
+- `grassMownAmount` (function): function grassMownAmount(look: Pick<GrassLook, "blade">): number — How mown a look reads, 0..1: short blades cut to an even height (a lawn, a green, a pitch). The natural end of `exaggeration` keeps a mown look's heights even and ends its blades blunt and torn, where an unmown look grows irregular lengths with pointed tips.
+- `grassTuftGrowth` (function): function grassTuftGrowth(scale: number, clumping: number): number — How much fuller each tuft grows when `detail` multiplies the blades by `scale`; the rest of the scale becomes more tufts. A sward (`clumping` 0) splits it evenly, `sqrt(scale)` each way; a bunchgrass (`clumping` 1) puts it all in its tufts, so its clumps keep their place and their cover and only grow finer. Spreading a tussock's fine blades over more tufts thinned every clump into one even haze at realism 1.
 
 ## @jgengine/core/grass/grassField
 
@@ -1865,12 +1871,17 @@
 
 - `GRASS_REALISM_DEFAULT` (const): const GRASS_REALISM_DEFAULT: 0.5 — The realism a scene that sets none draws at: the look grass had before styles.
 - `GRASS_STYLE_CURVES` (const): const GRASS_STYLE_CURVES: Readonly<Record<GrassStyleSlider, (realism: number) => number>> — Each slider's value at a realism, when nothing sets it by hand. Every curve passes through the pre-style look at 0.5.
-- `GRASS_STYLE_DEFAULTS` (const): const GRASS_STYLE_DEFAULTS: GrassStyle — The style a scene that sets nothing draws with.
-- `GRASS_STYLE_SCHEMA` (const): const GRASS_STYLE_SCHEMA: ParamSchema<readonly [{ readonly type: "range"; readonly key: "realism"; readonly label: "realism (cartoon → photoreal)"; readonly min: 0; readonly max: 1; readonly step: 0.01; readonly default: 0.5; }, { readonly type: "range"; readonly key: "normalLift"; readonly label: "… — The grass style schema: the editor's grass style sections, their presets and every style parse.
+- `GRASS_STYLE_DEFAULTS` (const): const GRASS_STYLE_DEFAULTS: GrassStyle — The style a scene that sets nothing draws with (a page's `?realism=` aside).
+- `GRASS_STYLE_SCHEMA` (const): const GRASS_STYLE_SCHEMA: ParamSchema<readonly [{ readonly type: "range"; readonly key: "realism"; readonly label: "realism (cartoon → photoreal)"; readonly min: 0; readonly max: 1; readonly step: 0.01; readonly default: 0.5; }, { readonly type: "range"; readonly key: "detail"; readonly label: "deta… — The grass style schema: the editor's grass style sections, their presets and every style parse.
 - `GrassStyle` (interface): interface GrassStyle — How a grass field is drawn.
 - `GrassStyleSettings` (type): type GrassStyleSettings = Partial<GrassStyle> & { preset?: string } — A style as authored: any sliders, plus an optional named preset (`cartoon`, `painterly`, `animated`, `realistic`) backing the ones left unset.
 - `GrassStyleSlider` (type): type GrassStyleSlider = Exclude<keyof GrassStyle, "realism"> — The style sliders `realism` drives: every style knob but `realism` itself.
 - `GrassStyleTuning` (type): type GrassStyleTuning = Partial<Record<GrassStyleSlider, number>> — A species' own tuning of style sliders, as it would be drawn at the default realism.
+- `grassColourFactor` (function): function grassColourFactor(value: number): number — `saturation` or `contrast` as the factor the shader scales by: 1 at 0.5, 0.4 at 0, 1.6 at 1.
+- `grassDetailScale` (function): function grassDetailScale(detail: number): number — Blades drawn per blade a species grows, at a `detail`: 1 at 0.5, rising to 6 at 1 and falling to half at 0. Each blade's width divides by the same number, so count times width, the ground the blades cover, never changes with detail.
+- `grassExaggerationAmount` (function): function grassExaggerationAmount(exaggeration: number): number — `exaggeration` as -1 (natural) .. 0 (the species as it is) .. 1 (cartoon).
+- `grassRealismFromPage` (function): function grassRealismFromPage(): number | undefined — The realism a page asks for with `?realism=<0..1>`, else undefined. It overrides every patch's and world's realism, so a board or perf run can draw any scene at any realism (`bun run shoot ... --param realism=1`, `bun run perf ... --param realism=1`); sliders set by hand still win.
+- `grassShadingAmounts` (function): function grassShadingAmounts(shading: number): { cel: number; sheen: number } — `shading` as the two blends the shader applies: `cel` toward flat bands and a rim light (1 at shading 0, 0 from 0.5 up) and `sheen` toward a glossy, see-through blade (0 up to 0.5, 1 at 1). Both are 0 at the default, where the blade lights exactly as before.
 
 ## @jgengine/core/grass/grassWind
 
@@ -2206,6 +2217,12 @@
 - `PartitionInstancesOptions` (interface): interface PartitionInstancesOptions — Knobs for {@link partitionInstances}.
 - `partitionInstances` (function): function partitionInstances(geometry: THREE.BufferGeometry, matrices: readonly THREE.Matrix4[], options: PartitionInstancesOptions = {}): InstanceChunk[] — Split instance matrices into XZ cells by where each instance's geometry actually lands, so far or offscreen cells are culled as a unit. A batch that already fits one cell stays a single `compact` chunk, even across the grid origin. Instance order is kept within each chunk.
 
+## @jgengine/core/instancing/instanceCountGuard.draw
+
+- `clampInstanceCount` (function): function clampInstanceCount(mesh: InstancedMesh, report: (message: string) => void = console.error): boolean — Hold `mesh.count` to its instance buffers, and name the mesh once with an error so the code that set the count can be fixed (Harbor Heat asked 17-28 instances of a 16-instance buffer). Returns whether it clamped.
+- `guardInstanceCounts` (function): function guardInstanceCounts(renderer: WebGLRenderer): void — Clamp every InstancedMesh `renderer` draws, in the main and shadow passes alike: both go through `renderBufferDirect`, whatever `onBeforeRender` a mesh installs. Idempotent per renderer.
+- `instanceCapacity` (function): function instanceCapacity(mesh: Pick<InstancedMesh, "count" | "instanceMatrix" | "instanceColor">): number — Instances an InstancedMesh can draw: its `count`, held to what its instance buffers hold. three clamps an InstancedBufferGeometry's `instanceCount` to its attributes but draws an InstancedMesh's `count` as asked, so a count past `instanceMatrix` reads past the buffer: WebGL draws those instances from zero matrices (nothing shows), WebGPU and native backends reject or clamp the draw.
+
 ## @jgengine/core/instancing/instanceUpload.draw
 
 - `InstanceColors` (type): type InstanceColors = readonly THREE.Color[] | ((index: number, out: THREE.Color) => void) — Per-instance tint: a ready list of colors, or a writer that fills each one.
@@ -2487,6 +2504,10 @@
 - `DEFAULT_IBL_AMBIENT_SCALE` (const): const DEFAULT_IBL_AMBIENT_SCALE: 0.5 — Ambient multiplier applied under image-based light when `iblAmbientScale` is unset.
 - `FALLBACK_KEY_LIGHT` (const): const FALLBACK_KEY_LIGHT: Readonly<DirectionalLightingConfig> — Soft key added when authored lighting has no directional light: high, off to one side, shadowless.
 - `balanceLightingForIbl` (function): function balanceLightingForIbl(lighting: LightingConfig | undefined): LightingConfig | undefined — Rebalance authored lighting for a scene that also has image-based light: trim the flat ambient term by `iblAmbientScale` (default 0.5) and, when no directional light is authored, add {@link FALLBACK_KEY_LIGHT} tinted by the ambient colour so forms keep a lit and a shaded side. Returns the input unchanged when there is nothing to adjust.
+
+## @jgengine/core/lighting/shadowCache
+
+- `ShadowPassPlan` (type): type ShadowPassPlan = | "full" /** Draw the static casters into the layer, then copy it into the map and draw the changed casters over it. */ | "rebuild" /** Copy the layer into the map and draw the changed casters over it. */ | "reuse" /** The map already holds exactly the layer and no changed cast… — Same-image shadow caching, the renderer-agnostic half: what one light's depth pass draws this frame.
 
 ## @jgengine/core/lighting/softShadows
 
@@ -4549,7 +4570,7 @@
 
 ## @jgengine/core/postfx/PostProcessing.draw
 
-- `PostProcessing` (function): function PostProcessing({ config, quality = "high", stages, immediate = false, }: { config: PostProcessingConfig; quality?: GraphicsQuality; stages?: Partial<GraphicsPostStages>; immediate?: boolean; }): null — Mounts an `EffectComposer` inside the shell Canvas and takes over rendering (priority-1 `useFrame`, which disables R3F auto-render) to run the configured post chain: RenderPass → GTAO → contact shadows → SSR → atmosphere → UnrealBloom → DOF → motion blur → SMAA or TAA → exposure meter → OutputPass → Stylize → Grade. Rendered only when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
+- `PostProcessing` (function): function PostProcessing({ config, quality = "high", stages, immediate = false, }: { config: PostProcessingConfig; quality?: GraphicsQuality; stages?: Partial<GraphicsPostStages>; immediate?: boolean; }): null — Mounts an `EffectComposer` inside the shell Canvas and takes over rendering (priority-1 `useFrame`, which disables R3F auto-render) to run the configured post chain: RenderPass → GTAO → contact shadows → their composite → SSR → atmosphere → UnrealBloom → DOF → motion blur → SMAA or TAA → exposure meter → OutputPass → Stylize → Grade. Rendered only when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
 
 ## @jgengine/core/postfx/ScreenEffectsOverlay.draw
 
@@ -4572,6 +4593,10 @@
 ## @jgengine/core/postfx/motionBlurPass.draw
 
 - `registerMotionBlurBody` (function): function registerMotionBlurBody(root: THREE.Object3D): () => void — Let motion blur follow a moving body (a character, a car, a thrown crate) along its own screen motion. Every model entity registers itself; register anything else that moves. Returns the unregister call. Only registered bodies are walked each frame, never the whole scene.
+
+## @jgengine/core/postfx/postAudit.draw
+
+- `PostAuditStats` (type): type PostAuditStats = { /** Frames that drew at least one changed draw. */ changedFrames: number; /** * Audited frames; those dropped because a program either way was still linking (the engine holds * such a draw, which would leave its target as it was); those that threw. */ auditFrames: number; aud… — What the changed draws did and, with the audit on, what comparing them with three's draws found.
 
 ## @jgengine/core/postfx/postfxOverlay.draw
 
@@ -5026,6 +5051,7 @@
 
 ## @jgengine/core/scene/decalTexture
 
+- `DecalPaint` (interface): interface DecalPaint — The paint a stencil or chevron decal is sprayed in.
 - `DecalTextureData` (interface): interface DecalTextureData — Row-major RGBA bytes plus their edge length, ready for a `THREE.DataTexture`.
 
 ## @jgengine/core/scene/entityStats
@@ -5257,6 +5283,10 @@
 - `Targeting` (interface): interface Targeting { setTarget(fromId: string, toId: string | null): void; getTarget(fromId: string): string | null; cycleTarget(fromId: string, options?: CycleTargetOptions): string | null; clearAll(instanceId: string): void } — ⚠ undocumented
 - `TargetingOptions` (interface): interface TargetingOptions { candidates: () => string[]; classify?: (fromId: string, toId: string) => TargetRelation; orderBy?: (a: string, b: string) => number; distance?: (fromId: string, toId: string) => number | null } — ⚠ undocumented
 - `createTargeting` (function): function createTargeting(options: TargetingOptions): Targeting — ⚠ undocumented
+
+## @jgengine/core/scene/useDecalTexture.draw
+
+- `useDecalTexture` (function): function useDecalTexture(style: DecalStyle, seed: string, size: number, paint: DecalPaint, configure: (texture: THREE.DataTexture) => void): THREE.DataTexture — A procedural decal's texture, baked on a worker. Until the bake lands the texture is clear (alpha 0), so the decal shows nothing rather than a black square, and the scene's covered warmup (the loading cover, a travel card) waits for the bake, so a place is revealed with its decals painted. A look baked before fills the texture at once. `configure` sets filtering and colour space; it runs once, before the first upload.
 
 ## @jgengine/core/scene/vehicleSeat
 
@@ -5971,6 +6001,10 @@
 - `HlodConfig` (interface): interface HlodConfig — Far static cells draw one merged proxy instead of their props. Every cell of batched static props switches to its proxy from `distance` metres (camera to the cell's bounds) plus half the `hysteresis` band, and back below `distance` minus half of it; `cluster` is the proxy's detail in metres: vertices closer than it merge.
 - `VisibilityConfig` (interface): interface VisibilityConfig — Per-game visibility configuration, surfaced on `PlayableGame.visibility`. Everything is optional: an existing game that sets nothing gets the conservative engine defaults automatically. This is the scene-level and per-kind override seam (requirement: per-object, per-layer, per-scene, and global controls).
 
+## @jgengine/core/visibility/culledTransforms.draw
+
+- `SceneWalkStarts` (interface): interface SceneWalkStarts — The walk starts the scene's last matrix pass found; `serial` changes with every pass.
+
 ## @jgengine/core/visibility/diagnostics
 
 - `VisibilityStats` (interface): interface VisibilityStats — Per-frame visibility + streaming counters. The VisibilitySystem fills the culling and timing fields; the AssetStreamingSystem fills the asset fields. Everything is a plain number so a HUD or the devtools hub can read it without adapters.
@@ -6042,11 +6076,13 @@
 
 ## @jgengine/core/visibility/visibilitySystem
 
+- `IdSet` (interface): interface IdSet extends Iterable<string> — A read-only set of ids: membership, count and iteration.
 - `Renderable` (interface): interface Renderable — A scene object the visibility system considers. A normal game object already carries a position and a version counter, so it becomes cullable automatically — no separate "cullable" component. Everything else is optional override.
+- `RenderableSource` (interface): interface RenderableSource — One group of renderables a {@link VisibilitySystem} walks, such as the scene's actors or its props.
 - `VisibilityDebugSnapshot` (interface): interface VisibilityDebugSnapshot { cameras: {id: string; kind: CameraKind; corners: number[]; preloadMargin: number}[]; bounds: {id: string; minX: number; minY: number; minZ: number; maxX: number; maxY: number; maxZ: number; visible: boolean}[]; partitions: {key: string; c… — ⚠ undocumented
-- `VisibilityResult` (interface): interface VisibilityResult { readonly visible: ReadonlySet<string>; readonly preload: ReadonlySet<string>; readonly stats: VisibilityStats; readonly generation: number } — ⚠ undocumented
+- `VisibilityResult` (interface): interface VisibilityResult { readonly visible: IdSet; readonly preload: IdSet; readonly stats: VisibilityStats; readonly generation: number; readonly changed: readonly string[] } — ⚠ undocumented
 - `VisibilitySystem` (interface): interface VisibilitySystem { update(): VisibilityResult; isVisible(id: string): boolean; isPreloaded(id: string): boolean; boundsOf(id: string): RenderBounds | undefined; settings(): CullingSettings; setSettings(patch: Partial<CullingSettings>): void; stats(): Visibi… — ⚠ undocumented
-- `VisibilitySystemOptions` (interface): interface VisibilitySystemOptions { readonly renderables: () => Iterable<Renderable>; readonly cameras: () => readonly CameraVisibilityContext[]; readonly settings?: Partial<CullingSettings>; readonly sceneOverrides?: ObjectVisibilityOverrides; readonly globalOverrides?: Ob… — ⚠ undocumented
+- `VisibilitySystemOptions` (interface): interface VisibilitySystemOptions { readonly sources: readonly RenderableSource[]; readonly cameras: () => readonly CameraVisibilityContext[]; readonly settings?: Partial<CullingSettings>; readonly sceneOverrides?: ObjectVisibilityOverrides; readonly globalOverrides?: Objec… — ⚠ undocumented
 - `createVisibilitySystem` (function): function createVisibilitySystem(options: VisibilitySystemOptions): VisibilitySystem — ⚠ undocumented
 
 ## @jgengine/core/water/Ocean.draw
@@ -6212,6 +6248,55 @@
 - `WeatherUniformOptions` (interface): interface WeatherUniformOptions — Options for the shared weather uniforms: wind, lightning, time scale or an authoritative clock, and an authored weather sampler.
 - `WeatherUniformSet` (interface): interface WeatherUniformSet extends WeatherShelterUniforms — Uniforms every weather field shares: time, wind, lightning flash, rain, snow and dust amounts, and roof shelters.
 - `WeatherVector` (type): type WeatherVector = readonly [number, number, number] — An `[x, y, z]` world vector, such as the wind.
+
+## @jgengine/core/webgpu/engineRenderer.draw
+
+- `EngineRendererFactory` (interface): interface EngineRendererFactory — React Three Fiber's `gl` factory for one canvas mount; it never awaits.
+- `prepareEngineRenderer` (function): function prepareEngineRenderer(backend: RendererBackend): Promise<EngineRendererFactory> — Do the asynchronous part of starting `backend` (on WebGPU: the shader translator and one device) and return the synchronous factory for one canvas. The device belongs to the first canvas the factory draws on, and that canvas's context loss destroys it.
+- `rendererBackendOf` (function): function rendererBackendOf(renderer: WebGLRenderer): RendererBackend — Which backend actually draws `renderer` (`webgl` for one this module did not make).
+- `useEngineRendererFactory` (function): function useEngineRendererFactory(backend: RendererBackend): EngineRendererFactory | null — The renderer factory for `backend`, or `null` while it is being prepared. Mount the canvas only once it is non-null and its `backend` matches, keyed by that backend, so each canvas mount gets its own prepared device.
+- `webGpuContextOf` (function): function webGpuContextOf(renderer: WebGLRenderer): WebGpuGl | null — The WebGPU context behind `renderer`, for counters and diagnostics; `null` on WebGL.
+
+## @jgengine/core/webgpu/glFormats.draw
+
+- `GlTextureFormat` (interface): interface GlTextureFormat { format: GPUTextureFormat; bytes: number; block: number; sourceBytes?: number; widen?: {channels: 3; alpha: number; element: 1 | 2 | 4}; renderable: boolean; binding: TextureBinding } — ⚠ undocumented · used by `glTextureFormat`: The WebGPU format for a GL internal format, or for an unsized one (`RGBA` + `UNSIGNED_BYTE`) with its type.
+- `InstancedAttribute` (interface): interface InstancedAttribute — One per-instance attribute of a draw, on its buffer's GL layout.
+- `TextureBinding` (type): type TextureBinding = "float" | "unfilterable" | "depth" | "uint" | "sint" — WebGL 2 enums mapped to WebGPU, for the GL-shaped WebGPU context three's WebGLRenderer drives (`webgpuGl.draw.ts`). GL numbers are written out so this file needs no browser globals.
+- `addressMode` (function): function addressMode(wrap: number): GPUAddressMode — ⚠ undocumented
+- `blendFactor` (function): function blendFactor(f: number): GPUBlendFactor — ⚠ undocumented
+- `blendOperation` (function): function blendOperation(e: number): GPUBlendOperation — ⚠ undocumented
+- `compareFunction` (function): function compareFunction(f: number): GPUCompareFunction — ⚠ undocumented
+- `componentBytes` (function): function componentBytes(type: number): number — Bytes of one component of a GL vertex attribute type.
+- `glTextureFormat` (function): function glTextureFormat(internal: number, format = 0, type = 0): GlTextureFormat | null — The WebGPU format for a GL internal format, or for an unsized one (`RGBA` + `UNSIGNED_BYTE`) with its type. `null` when WebGPU has no such format.
+- `hasStencil` (function): function hasStencil(format: GPUTextureFormat): boolean — ⚠ undocumented
+- `instancesThatFit` (function): function instancesThatFit(instances: number, attributes: readonly InstancedAttribute[]): number — How many of `instances` the draw's per-instance buffers hold. WebGL draws the instances past the end with zeroed attributes (robust access); WebGPU rejects or clamps such a draw by driver, so the backend draws only these and reports the overrun.
+- `isDepthFormat` (function): function isDepthFormat(format: GPUTextureFormat): boolean — ⚠ undocumented
+- `minFilter` (function): function minFilter(m: number): [GPUFilterMode, GPUMipmapFilterMode, boolean] — GL min filter: (filter, mipmap filter, samples mips).
+- `stencilOperation` (function): function stencilOperation(op: number): GPUStencilOperation — ⚠ undocumented
+- `textureBinding` (function): function textureBinding(format: GlTextureFormat, float32Filterable: boolean): TextureBinding — A texture format's bind type when `float32-filterable` is (or is not) enabled.
+- `topology` (function): function topology(mode: number): GPUPrimitiveTopology | null — GL draw mode to topology; LINE_LOOP and TRIANGLE_FAN have none (`null`).
+- `vertexFormat` (function): function vertexFormat(type: number, size: number, normalized: boolean, integer: boolean, shaderKind: "f" | "i" | "u"): GPUVertexFormat | null — The WebGPU vertex format GL reads this attribute as, or `null` when none matches and the data must be converted to Float32 (`readAsFloat`): unnormalized integers read by a float input (GL turns 7 into 7.0) and 3-component 8/16-bit data.
+
+## @jgengine/core/webgpu/glslToWgsl.draw
+
+- `PendingTranslation` (interface): interface PendingTranslation — A translation running on a worker.
+- `TranslateResult` (type): type TranslateResult = { ok: WgslProgram } | { error: string } — What translating one program gives: the program, or why it does not translate.
+- `WgslProgram` (interface): interface WgslProgram — The translated program and what feeding it takes.
+- `WgslSamplerSlot` (interface): interface WgslSamplerSlot — A sampler uniform split into a texture and a sampler binding in group 1.
+- `WgslUniformSlot` (interface): interface WgslUniformSlot — Where one of three's uniform names lives in the program's std140 block.
+- `WgslVertexInput` (interface): interface WgslVertexInput — three.js GLSL ES 3.00 programs translated to WGSL by `native/crates/jg-shader` (naga), built to `glslToWgsl.wasm` by `bun scripts/build-glsl-translator.ts`. Loaded once per page. {@link translateGlslAsync} translates on a few worker threads, as a GPU driver compiles WebGL programs in parallel; {@link translateGlsl} translates on the calling thread.
+- `loadGlslTranslator` (function): function loadGlslTranslator(url: URL | string = new URL("./glslToWgsl.wasm", import.meta.url)): Promise<void> — Fetch and compile the translator once. Resolves when {@link translateGlsl} can run.
+- `translateGlsl` (function): function translateGlsl(vertex: string, fragment: string): TranslateResult — Translate one program exactly as three passed it to GL. Returns the WGSL and layout, or the translator's error (what a failed `linkProgram` reports).
+- `translateGlslAsync` (function): function translateGlslAsync(vertex: string, fragment: string): PendingTranslation — Start translating one program on the least busy worker. Without workers the translation runs when {@link PendingTranslation.finish} is called.
+
+## @jgengine/core/webgpu/webgpuGl.draw
+
+- `WebGpuDevice` (interface): interface WebGpuDevice — A WebGPU device ready for one canvas, from {@link requestWebGpuDevice}.
+- `WebGpuGl` (class): class WebGpuGl extends GlConstants — The GL-shaped context. Construct through {@link createWebGpuGl}.
+- `WebGpuGlAttributes` (interface): interface WebGpuGlAttributes — Context attributes the canvas was asked for (WebGL's `getContextAttributes`).
+- `WebGpuGlStats` (interface): interface WebGpuGlStats — Counters a perf probe reads per frame.
+- `createWebGpuGl` (function): function createWebGpuGl(canvas: HTMLCanvasElement, gpu: WebGpuDevice, attributes: Partial<WebGpuGlAttributes> = {}): WebGpuGl | null — The GL-shaped context for `canvas` on a device from {@link requestWebGpuDevice}, or `null` when the canvas gives no WebGPU context.
+- `requestWebGpuDevice` (function): function requestWebGpuDevice(powerPreference: WebGLPowerPreference = "high-performance"): Promise<WebGpuDevice | null> — Request the WebGPU device, or `null` when this browser has no usable WebGPU adapter. This is the only asynchronous step; {@link createWebGpuGl} then makes the context synchronously, so a renderer factory never awaits (see `engineRenderer.draw.ts` for why that matters).
 
 ## @jgengine/core/world
 
@@ -6409,7 +6494,7 @@
 - `GRASS_GENERATOR` (const): const GRASS_GENERATOR: GeneratorDefinition<ParamSchema<readonly [RangeParamField & { key: "density"; }, RangeParamField & { key: "bladeHeight"; }, RangeParamField & { key: "heightVariation"; }, RangeParamField & { key: "bladeWidth"; }, RangeParamField & { key: "widthVariation"; }, RangeParamField & … — The grass generator: one schema from cushion moss and putting greens to reed beds, crops and pampas plumes. Detail picks the blade segments (4 at full detail, 2 at half, 1 at a quarter), so a baked variant carries its LODs.
 - `GRASS_PRESETS` (const): const GRASS_PRESETS: { id: "green" | "fairway" | "lawn" | "kentucky-bluegrass" | "perennial-ryegrass" | "tall-fescue" | "bermuda" | "zoysia" | "st-augustine" | "buffalo-grass" | "overgrown-lawn" | "shade-lawn" | "sports-pitch" | "worn-lawn" | "meadow" | "hay-meadow" | "wildflower-meadow" | "timothy-… — Every grass species as an inspector preset: the full knob set over the defaults, listed under its habitat. A field names one with `species` and any knob it also sets wins over the species. Presets hold what grows only; a species' style tuning is read through the `species` id (`readGrassLook`).
 - `GRASS_SCHEMA` (const): const GRASS_SCHEMA: ParamSchema<readonly [RangeParamField & { key: "density"; }, RangeParamField & { key: "bladeHeight"; }, RangeParamField & { key: "heightVariation"; }, RangeParamField & { key: "bladeWidth"; }, RangeParamField & { key: "widthVariation"; }, RangeParamField & { key: "profile"; }, Ra… — The grass parameter schema: drives the inspector, the variant grid and every `meta` parse.
-- `GRASS_STYLE_SCHEMA` (const): const GRASS_STYLE_SCHEMA: ParamSchema<readonly [{ readonly type: "range"; readonly key: "realism"; readonly label: "realism (cartoon → photoreal)"; readonly min: 0; readonly max: 1; readonly step: 0.01; readonly default: 0.5; }, { readonly type: "range"; readonly key: "normalLift"; readonly label: "… — The grass style schema: the editor's grass style sections, their presets and every style parse.
+- `GRASS_STYLE_SCHEMA` (const): const GRASS_STYLE_SCHEMA: ParamSchema<readonly [{ readonly type: "range"; readonly key: "realism"; readonly label: "realism (cartoon → photoreal)"; readonly min: 0; readonly max: 1; readonly step: 0.01; readonly default: 0.5; }, { readonly type: "range"; readonly key: "detail"; readonly label: "deta… — The grass style schema: the editor's grass style sections, their presets and every style parse.
 - `GROUND_DECAL_LAYERS` (const): const GROUND_DECAL_LAYERS: { readonly road: 0.06; readonly junction: 0.06; readonly marking: 0.11; readonly glow: 0.14; } — The single owning table of ground-decal Y offsets, in world units above the sampled terrain.
 - `GeneratedAsset` (interface): interface GeneratedAsset — A resolved generator asset: its parts plus the overall local-space bounds (min/max corners).
 - `GeneratedPart` (interface): interface GeneratedPart — One generated primitive part — a box/panel placed in the asset's local space.

@@ -1,5 +1,8 @@
+import { useThree } from "@react-three/fiber";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
+import { linkAhead, warmupWaitsFor } from "@jgengine/core/render/shaderWarmup.draw";
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
 /** How sharp an impostor atlas is: `frames`×`frames` views over the upper hemisphere, `cell` pixels each. @internal */
@@ -152,9 +155,44 @@ const bakeUp = new THREE.Vector3();
  * @internal
  */
 export function bakeImpostor(renderer: THREE.WebGLRenderer, sources: readonly ImpostorSource[], settings: ImpostorSettings): ImpostorAtlas | null {
+  const plan = planBake(sources);
+  return plan === null ? null : drawBake(renderer, plan, settings);
+}
+
+/**
+ * {@link bakeImpostor} for a game in play: the bake's programs are linked first, off the frame, and
+ * the bake draws once they are ready. A bake that links on the spot holds the frame on the driver,
+ * 0.7 s for a new model mid-game. Resolves null when the model has nothing to bake, or when `stop`
+ * says the bake is no longer wanted.
+ * @internal
+ */
+export async function bakeImpostorLinked(renderer: THREE.WebGLRenderer, sources: readonly ImpostorSource[], settings: ImpostorSettings, stop: () => boolean = () => false): Promise<ImpostorAtlas | null> {
+  const plan = planBake(sources);
+  if (plan === null) return null;
+  try {
+    await linkAhead(renderer, () => compileBake(renderer, plan), stop);
+  } catch {
+    // A renderer that refuses the early link still bakes; it just waits at the draw.
+  }
+  if (stop()) {
+    releaseBakeMaterials(renderer, plan.owned);
+    return null;
+  }
+  return drawBake(renderer, plan, settings);
+}
+
+/** A bake ready to draw: the model in its own scene with both passes' materials, and its bounds. */
+interface BakePlan {
+  scene: THREE.Scene;
+  owned: THREE.Material[];
+  meshes: { mesh: THREE.Mesh; albedo: THREE.Material | THREE.Material[]; normal: THREE.Material | THREE.Material[] }[];
+  sphere: THREE.Sphere;
+}
+
+function planBake(sources: readonly ImpostorSource[]): BakePlan | null {
   const scene = new THREE.Scene();
   const owned: THREE.Material[] = [];
-  const meshes: { mesh: THREE.Mesh; albedo: THREE.Material | THREE.Material[]; normal: THREE.Material | THREE.Material[] }[] = [];
+  const meshes: BakePlan["meshes"] = [];
   for (const source of sources) {
     const list = Array.isArray(source.material) ? source.material : [source.material];
     const baked = list.map(bakeMaterials);
@@ -174,7 +212,53 @@ export function bakeImpostor(renderer: THREE.WebGLRenderer, sources: readonly Im
     for (const material of owned) material.dispose();
     return null;
   }
-  const sphere = bounds.getBoundingSphere(new THREE.Sphere());
+  return { scene, owned, meshes, sphere: bounds.getBoundingSphere(new THREE.Sphere()) };
+}
+
+/** Link both passes' programs as the bake will draw them: albedo into an sRGB atlas, normals into a linear one. */
+function compileBake(renderer: THREE.WebGLRenderer, plan: BakePlan): void {
+  const previous = renderer.getRenderTarget();
+  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.01, 4);
+  const targets = { albedo: atlasTarget(1, true), normal: atlasTarget(1, false) };
+  try {
+    for (const pass of ["albedo", "normal"] as const) {
+      for (const entry of plan.meshes) entry.mesh.material = entry[pass];
+      renderer.setRenderTarget(targets[pass]);
+      renderer.compile(plan.scene, camera);
+    }
+  } finally {
+    renderer.setRenderTarget(previous);
+    targets.albedo.dispose();
+    targets.normal.dispose();
+  }
+}
+
+/**
+ * Each renderer's bake programs, each kept linked by one material that used it. three frees a program
+ * when its last material is disposed, so without a keeper every bake would link its programs again.
+ */
+const bakeKeepers = new WeakMap<THREE.WebGLRenderer, Set<unknown>>();
+
+/** Dispose a bake's materials, keeping one for each program no earlier bake kept, with its textures let go. */
+function releaseBakeMaterials(renderer: THREE.WebGLRenderer, owned: readonly THREE.Material[]): void {
+  let kept = bakeKeepers.get(renderer);
+  if (kept === undefined) bakeKeepers.set(renderer, (kept = new Set()));
+  const properties = (renderer as { properties?: { get?: (material: object) => unknown } }).properties;
+  for (const material of owned) {
+    const program = (properties?.get?.(material) as { currentProgram?: unknown } | undefined)?.currentProgram;
+    if (program == null || kept.has(program)) {
+      material.dispose();
+      continue;
+    }
+    kept.add(program);
+    // The keeper never draws again, so dropping its textures leaves its program as it is.
+    if (material instanceof THREE.MeshBasicMaterial) material.map = null;
+    if (material instanceof THREE.ShaderMaterial) material.uniforms["uMap"]!.value = null;
+  }
+}
+
+function drawBake(renderer: THREE.WebGLRenderer, plan: BakePlan, settings: ImpostorSettings): ImpostorAtlas {
+  const { scene, owned, meshes, sphere } = plan;
   const radius = sphere.radius * 1.04;
   const size = settings.frames * settings.cell;
   const albedoTarget = atlasTarget(size, true);
@@ -217,7 +301,7 @@ export function bakeImpostor(renderer: THREE.WebGLRenderer, sources: readonly Im
   renderer.autoClear = previousAutoClear;
   renderer.setClearColor(previousClear, previousAlpha);
   renderer.shadowMap.autoUpdate = previousShadows;
-  for (const material of owned) material.dispose();
+  releaseBakeMaterials(renderer, owned);
 
   return {
     albedo: albedoTarget.texture,
@@ -350,15 +434,33 @@ export function impostorSwitch(distance: number, threshold: number, wasFar: bool
 
 /** A baked model shared by every draw of it, and its card materials. @internal */
 export interface ImpostorEntry {
+  /** Null until the bake has drawn, and after it when the model had nothing to bake. */
   atlas: ImpostorAtlas | null;
   materials: { material: THREE.MeshStandardMaterial; depth: THREE.MeshDepthMaterial } | null;
   users: number;
+  /** Whether the bake has finished: its programs link off the frame first, so it lands a few frames later. */
+  baked: boolean;
+  /** Resolves when the bake has finished, or was dropped. */
+  ready: Promise<void>;
 }
 
-const cache = new Map<string, ImpostorEntry & { modelGone: boolean }>();
+type CachedImpostor = ImpostorEntry & { modelGone: boolean; freed: boolean; renderer: THREE.WebGLRenderer };
 
-function freeImpostor(id: string, entry: ImpostorEntry): void {
-  if (cache.get(id) === entry) cache.delete(id);
+/**
+ * Bakes by model and quality, one per renderer: an atlas is a render target of the context that
+ * baked it, and a remounted canvas (a renderer switch, a scene change) has a new context that
+ * cannot draw it.
+ */
+const cache = new Map<string, CachedImpostor[]>();
+
+function freeImpostor(id: string, entry: CachedImpostor): void {
+  const held = cache.get(id);
+  if (held !== undefined) {
+    const rest = held.filter((other) => other !== entry);
+    if (rest.length === 0) cache.delete(id);
+    else cache.set(id, rest);
+  }
+  entry.freed = true;
   entry.atlas?.dispose();
   entry.materials?.material.dispose();
   entry.materials?.depth.dispose();
@@ -368,8 +470,9 @@ function freeImpostor(id: string, entry: ImpostorEntry): void {
  * The shared impostor for a model: baked once per model and quality, and kept for as long as the
  * model's own geometry is, so batches that come and go as a game plays (a grove burnt down and
  * regrown, a district streamed out and back) take the same bake instead of baking again mid-play.
- * It is freed once the model's geometry is disposed and its last user has gone. Returns null when
- * the model has nothing to bake.
+ * It is freed once the model's geometry is disposed and its last user has gone. A bake belongs to
+ * the renderer that made it: another renderer bakes its own, and an unused bake of a renderer that
+ * is gone is freed then. Returns null when the model has nothing to bake.
  * @internal
  */
 export function acquireImpostor(
@@ -379,12 +482,21 @@ export function acquireImpostor(
   settings: ImpostorSettings,
 ): ImpostorEntry {
   const id = `${key}|${settings.frames}x${settings.cell}`;
-  let entry = cache.get(id);
+  let entry = cache.get(id)?.find((held) => held.renderer === renderer);
   if (entry === undefined) {
-    const atlas = bakeImpostor(renderer, sources, settings);
-    const made = { atlas, materials: atlas === null ? null : createImpostorMaterials(atlas), users: 0, modelGone: false };
+    for (const stale of cache.get(id) ?? []) if (stale.users === 0) freeImpostor(id, stale);
+    const made: CachedImpostor = { atlas: null, materials: null, users: 0, baked: false, ready: Promise.resolve(), modelGone: false, freed: false, renderer };
+    made.ready = bakeImpostorLinked(renderer, sources, settings, () => made.freed).then((atlas) => {
+      if (made.freed) {
+        atlas?.dispose();
+        return;
+      }
+      made.atlas = atlas;
+      made.materials = atlas === null ? null : createImpostorMaterials(atlas);
+      made.baked = true;
+    });
     entry = made;
-    cache.set(id, made);
+    cache.set(id, [...(cache.get(id) ?? []), made]);
     const model = sources[0]?.geometry;
     const gone = () => {
       model?.removeEventListener("dispose", gone);
@@ -398,12 +510,55 @@ export function acquireImpostor(
 }
 
 /** Drop one user of a shared impostor; the bake stays for the next user unless its model is gone. @internal */
-export function releaseImpostor(key: string, settings: ImpostorSettings): void {
+export function releaseImpostor(key: string, renderer: THREE.WebGLRenderer, settings: ImpostorSettings): void {
   const id = `${key}|${settings.frames}x${settings.cell}`;
-  const entry = cache.get(id);
+  const entry = cache.get(id)?.find((held) => held.renderer === renderer);
   if (entry === undefined) return;
   entry.users = Math.max(0, entry.users - 1);
   if (entry.users === 0 && entry.modelGone) freeImpostor(id, entry);
+}
+
+/**
+ * A component's share of the impostor for `key`: null until its bake has landed. The bake links its
+ * programs off the frame first, so the far placements draw as models a few frames longer; the
+ * scene's covered warmup (the loading cover, a travel card) waits until the component has drawn its
+ * cards with it, so a place is revealed with the impostor's own materials already linked rather than
+ * linking them in the first frames of play.
+ * @internal
+ */
+export function useImpostorEntry(key: string, sources: readonly ImpostorSource[], settings: ImpostorSettings): ImpostorEntry | null {
+  const gl = useThree((state) => state.gl);
+  const scene = useThree((state) => state.scene);
+  const [entry, setEntry] = useState<ImpostorEntry | null>(null);
+  const landed = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    let live = true;
+    const acquired = acquireImpostor(key, gl, sources, settings);
+    if (acquired.baked) setEntry(acquired);
+    else {
+      setEntry(null);
+      warmupWaitsFor(scene, new Promise<void>((resolve) => { landed.current = resolve; }));
+      void acquired.ready.then(() => {
+        if (!live) return;
+        setEntry(acquired);
+        // Nothing to draw: there are no cards to wait for.
+        if (acquired.atlas === null) landed.current?.();
+      });
+    }
+    return () => {
+      live = false;
+      landed.current?.();
+      landed.current = null;
+      releaseImpostor(key, gl, settings);
+    };
+  }, [key, gl, scene, sources, settings]);
+  // Runs after the children's effects, so the cards built from this entry are in the scene by now.
+  useEffect(() => {
+    if (entry?.baked !== true) return;
+    landed.current?.();
+    landed.current = null;
+  }, [entry]);
+  return entry;
 }
 
 /** The unit card every instance of `atlas` draws, bounded by the model it stands in for so culling stays honest. @internal */

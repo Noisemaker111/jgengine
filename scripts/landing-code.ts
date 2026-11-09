@@ -5,12 +5,18 @@
 // lanes made after it landed, and every older lane kept hitting the old bug. Now lane:close fetches
 // beta, unpacks beta's `scripts/` once per version of that folder into `<git common dir>/jg-landing/<tree>/`,
 // and re-runs itself from there. That copy carries a marker file; code running from it acts on the
-// checkout it was started in (the lane), and starts land, the queue and the batch from the same copy.
+// checkout it was started in (the lane), and starts land and the batch from the same copy.
 //
 // Only the landing code moves: preflight, verify:fast, gen and the tests are the lane's own, since
-// they check the lane's code.
+// they check the lane's code. One exception: a lane that itself changes the landing (lane-close, land,
+// this file, the GitHub client, the receipt reader) runs its own copy, so a change to how lanes land
+// lands through itself.
+//
+// The seam between the two is the verify:fast receipt: the lane's verify:fast writes it and beta's
+// lane:close reads it to decide what may merge. A lane whose receipt module is not beta's is told to
+// merge beta before anything runs (`receiptsBehind`).
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -50,7 +56,7 @@ export function landingRoot(metaUrl: string): string {
 }
 
 /**
- * How to start the landing script `name` (`land.ts`, `land-queue.ts`): `scripts/<name>` from the
+ * How to start the landing script `name` (`land.ts`, `land-batch.ts`): `scripts/<name>` from the
  * checkout, or by its full path from the unpacked copy the caller runs from.
  */
 export function landingScript(metaUrl: string, name: string): string {
@@ -157,9 +163,37 @@ function prune(cache: string, keep: string, now: number): void {
   }
 }
 
+/** What a verify:fast receipt records and how lane:close finds the one that covers a tree (`ReuseKey`). */
+export const RECEIPT_MODULE = "scripts/verify-receipt.ts";
+
+/** The modules that decide how a lane lands; a lane that changes one lands with its own copy. */
+export const LANDING_MODULES = ["scripts/lane-close.ts", "scripts/land.ts", "scripts/landing-code.ts", "scripts/github.ts", RECEIPT_MODULE] as const;
+
 /**
- * Where `lane:close` should run from: null to carry on here (this already is beta's landing code, or
- * beta predates running from a copy), else the copy of beta's `lane-close.ts` to hand the run to.
+ * Why the lane at `laneRoot` cannot merge through the landing code at `metaUrl` yet, or null. Only beta's
+ * copy can disagree with the lane: lane:close merges on a receipt it reads with its own
+ * `verify-receipt.ts`, while the receipt comes from the lane's verify:fast. When the two files differ,
+ * the lane writes receipts in a form beta's copy may not match, and no pass can let it merge. On
+ * 2026-11-08 a lane branched before receipts recorded their tree passed a 40-minute verify:fast and was
+ * then refused with "the files changed while verify:fast ran". Line endings are not a difference.
+ */
+export function receiptsBehind(metaUrl: string, laneRoot: string): string | null {
+  if (!isLandingCopy(metaUrl)) return null;
+  const read = (dir: string): string | null => {
+    try {
+      return readFileSync(join(dir, RECEIPT_MODULE), "utf8").replace(/\r\n/g, "\n");
+    } catch {
+      return null;
+    }
+  };
+  if (read(codeDir(metaUrl)) === read(laneRoot)) return null;
+  return `this lane's ${RECEIPT_MODULE} is older than beta's, so beta's landing code cannot read what its verify:fast records`;
+}
+
+/**
+ * Where `lane:close` should run from: null to carry on here (this already is beta's landing code, beta
+ * predates running from a copy, or this lane changes the landing code itself), else the copy of beta's
+ * `lane-close.ts` to hand the run to.
  */
 export function betaLaneClose(
   metaUrl: string,
@@ -171,6 +205,15 @@ export function betaLaneClose(
   const beta = unpackBetaLanding(checkout, git);
   if ("problem" in beta) return beta;
   if (beta.note !== undefined) log(`lane:close: ${beta.note}`);
+  const base = git(["merge-base", "HEAD", "origin/beta"]);
+  if (base.status === 0 && base.stdout.trim().length > 0) {
+    const own = git(["diff", "--name-only", base.stdout.trim(), "--", ...LANDING_MODULES]);
+    const changed = lines(own.stdout);
+    if (own.status === 0 && changed.length > 0) {
+      log(`lane:close: this lane changes the landing code (${changed.join(", ")}), so it lands with its own copy`);
+      return null;
+    }
+  }
   // Beta's code from before this file existed cannot run from a copy (it would act on the copy):
   // this lane's code is then the newer landing code.
   if (!existsSync(join(beta.dir, "scripts", "landing-code.ts"))) return null;

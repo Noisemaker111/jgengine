@@ -59,6 +59,33 @@ describe("which run is this release's", () => {
     expect(pickRun([stale], sha)?.databaseId).toBe(1);
   });
 
+  test("a commit just pushed to main takes no run created before the push, even before its CI is listed", async () => {
+    const sha = "a".repeat(40);
+    const stale = run({ databaseId: 1, headSha: sha, conclusion: "failure", createdAt: "2026-11-08T02:58:00Z" });
+    const fresh = run({ databaseId: 2, headSha: sha, createdAt: "2026-11-08T03:20:00Z" });
+    let lists = 0;
+    const result = await awaitPublish({
+      version: "0.54.0",
+      sha,
+      notBefore: "2026-11-08T03:05:00Z",
+      gh: (args) => {
+        if (args[0] === "run" && args.includes("ci.yml")) return { status: 0, stdout: "[]", stderr: "" };
+        if (args[0] === "run") {
+          lists += 1;
+          return { status: 0, stdout: JSON.stringify(lists < 3 ? [stale] : [fresh, stale]), stderr: "" };
+        }
+        return { status: 0, stdout: JSON.stringify(fresh), stderr: "" };
+      },
+      registry: served,
+      graceMs: 60_000,
+      now: () => 0,
+      sleep: async () => {},
+      log: () => {},
+    });
+    expect(result.ok).toBe(true);
+    expect(result.runId).toBe(2);
+  });
+
   test("a commit with no publish run is null, not the newest run of anything", () => {
     expect(pickRun([run({ headSha: "b".repeat(40) })], "a".repeat(40))).toBeNull();
   });
