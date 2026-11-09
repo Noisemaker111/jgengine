@@ -30,6 +30,13 @@ export interface EngineFrameState {
   /** r3f's name for the renderer, kept so converted callbacks read drop-in. */
   readonly gl: THREE.WebGLRenderer;
   readonly scene: THREE.Scene;
+  /**
+   * The real scene this state renders, even when `scene` is a scoped parent
+   * (see {@link childFrameState}). Draws that set scene-level state —
+   * environment, fog, background, shadow caches — must use this, not `scene`.
+   * Absent on states built directly over a renderer root.
+   */
+  readonly rootScene?: THREE.Scene;
   readonly camera: THREE.Camera;
   readonly clock: THREE.Clock;
   /** r3f's `size`: the canvas's CSS pixel size, live across resizes. */
@@ -89,9 +96,10 @@ export interface EngineFrameBoard {
  * A frame state scoped to a subtree: draws mounted through this add their
  * objects under `parent` instead of the scene root. `scene` stays typed as
  * Scene for the renderer; only `.add`/`.remove` are used by draws.
+ * `rootScene` keeps the real scene reachable for scene-level state.
  */
 export function childFrameState(state: EngineFrameState, parent: THREE.Object3D): EngineFrameState {
-  return { ...state, scene: parent as THREE.Scene };
+  return { ...state, scene: parent as THREE.Scene, rootScene: state.rootScene ?? state.scene };
 }
 
 /**

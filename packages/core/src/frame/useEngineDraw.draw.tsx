@@ -1,5 +1,5 @@
 import { useThree } from "@react-three/fiber";
-import { useEffect, useRef, type DependencyList } from "react";
+import { useEffect, useMemo, useRef, type DependencyList } from "react";
 import * as THREE from "three";
 
 import { childFrameState, type EngineDraw, type EngineFrameState } from "./engineLoop.draw";
@@ -36,11 +36,11 @@ function unmountDraw(mounted: MountedDraw): void {
  */
 export function EngineDrawMount({ create, deps }: { create: () => EngineDraw; deps: DependencyList }) {
   const root = useThree();
-  const ref = useRef<THREE.Group>(null);
+  // A primitive object, not a `<group>` intrinsic: bare test roots have no THREE
+  // catalogue extension, and the draw only needs a stable parent transform.
+  const parent = useMemo(() => new THREE.Group(), []);
   const mounted = useRef<MountedDraw | null>(null);
   useEffect(() => {
-    const parent = ref.current;
-    if (parent === null) return;
     const next = mountDraw(create(), parent, frameStateFromR3F(root, 0));
     mounted.current = next;
     return () => {
@@ -50,11 +50,11 @@ export function EngineDrawMount({ create, deps }: { create: () => EngineDraw; de
     // `create` and `root` are intentionally excluded: callers pass fresh
     // closures through `deps`, and the RootState reference is stable.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+  }, [parent, ...deps]);
   useEffect(() => {
     mounted.current?.draw.update?.(mounted.current.state);
   });
-  return <group ref={ref} />;
+  return <primitive object={parent} />;
 }
 
 /**
