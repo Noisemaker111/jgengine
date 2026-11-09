@@ -1138,6 +1138,18 @@ describe("work that draws the scene for itself", () => {
     expect(drawsHeld(renderer)).toBe(false);
   });
 
+  test("drawsHeld still sees an outer hold after an inner one nested in it is released", () => {
+    const renderer = { render() {} };
+    let outer = true;
+    const releaseOuter = holdDraws(renderer, { holding: () => outer });
+    const releaseInner = holdDraws(renderer, { holding: () => false });
+    releaseInner();
+    expect(drawsHeld(renderer)).toBe(true);
+    outer = false;
+    expect(drawsHeld(renderer)).toBe(false);
+    releaseOuter();
+  });
+
   test("a scene drawn into a target as well as the canvas links both sets of programs", async () => {
     const scene = new Scene();
     scene.add(meshAt(0, 0, -5));

@@ -4570,7 +4570,7 @@
 
 ## @jgengine/core/postfx/PostProcessing.draw
 
-- `PostProcessing` (function): function PostProcessing({ config, quality = "high", stages, immediate = false, }: { config: PostProcessingConfig; quality?: GraphicsQuality; stages?: Partial<GraphicsPostStages>; immediate?: boolean; }): null — Mounts an `EffectComposer` inside the shell Canvas and takes over rendering (priority-1 `useFrame`, which disables R3F auto-render) to run the configured post chain: RenderPass → GTAO → contact shadows → SSR → atmosphere → UnrealBloom → DOF → motion blur → SMAA or TAA → exposure meter → OutputPass → Stylize → Grade. Rendered only when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
+- `PostProcessing` (function): function PostProcessing({ config, quality = "high", stages, immediate = false, }: { config: PostProcessingConfig; quality?: GraphicsQuality; stages?: Partial<GraphicsPostStages>; immediate?: boolean; }): null — Mounts an `EffectComposer` inside the shell Canvas and takes over rendering (priority-1 `useFrame`, which disables R3F auto-render) to run the configured post chain: RenderPass → GTAO → contact shadows → their composite → SSR → atmosphere → UnrealBloom → DOF → motion blur → SMAA or TAA → exposure meter → OutputPass → Stylize → Grade. Rendered only when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
 
 ## @jgengine/core/postfx/ScreenEffectsOverlay.draw
 
@@ -4593,6 +4593,10 @@
 ## @jgengine/core/postfx/motionBlurPass.draw
 
 - `registerMotionBlurBody` (function): function registerMotionBlurBody(root: THREE.Object3D): () => void — Let motion blur follow a moving body (a character, a car, a thrown crate) along its own screen motion. Every model entity registers itself; register anything else that moves. Returns the unregister call. Only registered bodies are walked each frame, never the whole scene.
+
+## @jgengine/core/postfx/postAudit.draw
+
+- `PostAuditStats` (type): type PostAuditStats = { /** Frames that drew at least one changed draw. */ changedFrames: number; /** * Audited frames; those dropped because a program either way was still linking (the engine holds * such a draw, which would leave its target as it was); those that threw. */ auditFrames: number; aud… — What the changed draws did and, with the audit on, what comparing them with three's draws found.
 
 ## @jgengine/core/postfx/postfxOverlay.draw
 

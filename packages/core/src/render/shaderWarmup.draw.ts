@@ -715,14 +715,20 @@ type RenderMethod = (scene: never, camera: never) => unknown;
 /** three's per-draw call, `renderBufferDirect(camera, scene, geometry, material, object, group)`; every pass draws through it. */
 type DrawMethod = (camera: Camera, scene: Scene, geometry: BufferGeometry, material: Material, object: Object3D, group: unknown) => unknown;
 
-const heldRenderers = new WeakMap<object, () => boolean>();
+/** Every hold on a renderer still installed: holds nest (the warmup gate keeps one for the frame and one for a watched view). */
+const heldRenderers = new WeakMap<object, Set<() => boolean>>();
 
 /**
  * Whether a draw on `renderer` right now would be swallowed by a {@link holdDraws}, so work that
- * draws for its own sake (a reflection capture) waits instead of capturing nothing. @internal
+ * draws for its own sake (a reflection capture, the post audit) waits instead of capturing nothing.
+ * @internal
  */
 export function drawsHeld(renderer: object): boolean {
-  return heldRenderers.get(renderer)?.() ?? false;
+  const holds = heldRenderers.get(renderer);
+  if (holds === undefined || holds.size === 0) return false;
+  if (drawingForWarmup) return true;
+  for (const holding of holds) if (holding()) return true;
+  return false;
 }
 
 const targetDrawers = new WeakMap<Object3D, number>();
@@ -758,7 +764,9 @@ export function holdDraws(renderer: { render: RenderMethod; getRenderTarget?(): 
   const previous = renderer.render;
   let released = false;
   const holding = options.holding ?? (() => true);
-  heldRenderers.set(renderer, holding);
+  let holds = heldRenderers.get(renderer);
+  if (holds === undefined) heldRenderers.set(renderer, (holds = new Set()));
+  holds.add(holding);
   const held = function (this: unknown, scene: never, camera: never): unknown {
     if (!released && (drawingForWarmup || (options.holding?.() ?? true))) {
       const object = scene as Object3D & { overrideMaterial?: unknown; material?: unknown };
@@ -777,7 +785,7 @@ export function holdDraws(renderer: { render: RenderMethod; getRenderTarget?(): 
   return () => {
     if (released) return;
     released = true;
-    if (heldRenderers.get(renderer) === holding) heldRenderers.delete(renderer);
+    holds.delete(holding);
     if (renderer.render !== held) return;
     if (owned) renderer.render = previous;
     else delete (renderer as { render?: unknown }).render;
