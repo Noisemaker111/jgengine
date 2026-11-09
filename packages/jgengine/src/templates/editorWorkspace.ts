@@ -49,7 +49,7 @@ const editorIndexHtml = `<!doctype html>
 </html>
 `;
 
-const editorIndexCss = `@import "tailwindcss";
+const editorIndexCss = `@import "tailwindcss" source(".");
 @source "../node_modules/@jgengine/react/dist";
 @source "../node_modules/@jgengine/shell/dist";
 @source "../node_modules/@jgengine/editor/dist";

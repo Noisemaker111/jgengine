@@ -223,7 +223,8 @@ const tsconfigJson = (variant: TemplateVariant) => `${JSON.stringify(
 // Tailwind v4 only emits utility classes it finds in @source-scanned files. The F2+E editor summon
 // (GameHost) mounts @jgengine/editor's chrome into THIS page, so its classes must be scanned here too
 // — omit the editor @source and the summoned editor renders unstyled (all-white, no theme) from day one.
-const indexCss = (variant: TemplateVariant, editor: boolean) => `@import "tailwindcss";
+// `source(".")` keeps the automatic scan in src/: from the Vite root it reads every model in public/.
+const indexCss = (variant: TemplateVariant, editor: boolean) => `@import "tailwindcss" source(".");
 @import "${variant === "in-repo" ? "../../../packages/react/src/styles.css" : "@jgengine/react/styles.css"}";
 @import "./style.css";
 ${
