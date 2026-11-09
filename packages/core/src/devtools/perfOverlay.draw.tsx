@@ -1,12 +1,13 @@
-import { useStore, useThree } from "@react-three/fiber";
+import { useStore, type RootStore } from "@react-three/fiber";
 import { useEffect, useRef, type ReactElement } from "react";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import type { NamedCost } from "./frameBreakdown";
 import { installFrameBreakdown } from "./frameBreakdown.draw";
 import { countSceneNodes } from "./frameSampler.view";
-import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Frames the FPS graph keeps. */
 export const PERF_OVERLAY_FRAMES = 120;
@@ -44,48 +45,62 @@ export function overlayFps(sample: PerfOverlaySample): number {
 }
 
 /**
+ * Draw-side form of {@link PerfOverlayProbe}: samples frame times, draws, triangles, nodes, linked
+ * programs and the costliest subsystems into `sample`. `getStore` supplies the r3f root store the
+ * frame breakdown hooks while the shell still renders through fiber; it may return null once the
+ * engine loop owns frames, in which case no breakdown is installed.
+ * @internal
+ */
+export function perfOverlayProbeDraw(sample: PerfOverlaySample, getStore: () => RootStore | null): EngineDraw {
+  let last: number | null = null;
+  let counted = 0;
+  let owned: ReturnType<typeof installFrameBreakdown> | null = null;
+  return {
+    mount(state: EngineFrameState) {
+      if (typeof window === "undefined" || window.__jgFrameBreakdown !== undefined) return;
+      const store = getStore();
+      if (store === null) return;
+      try {
+        owned = installFrameBreakdown(state.gl, store);
+      } catch {
+        owned = null;
+      }
+    },
+    frame(state: EngineFrameState) {
+      const now = performance.now();
+      if (last !== null) {
+        sample.intervals[sample.head] = now - last;
+        sample.head = (sample.head + 1) % PERF_OVERLAY_FRAMES;
+        sample.frames += 1;
+      }
+      last = now;
+      const render = devtools.render.latest();
+      sample.draws = render?.drawCalls ?? state.gl.info.render.calls;
+      sample.triangles = render?.triangles ?? state.gl.info.render.triangles;
+      sample.programs = state.gl.info.programs?.length ?? null;
+      if (now - counted >= NODE_COUNT_MS) {
+        counted = now;
+        sample.nodes = countSceneNodes(state.scene).nodes;
+        const breakdown = typeof window === "undefined" ? undefined : window.__jgFrameBreakdown;
+        sample.systems = breakdown === undefined ? [] : breakdown.summary({ top: TOP_SYSTEMS, last: 60 }).cpu.slice(0, TOP_SYSTEMS);
+      }
+    },
+    dispose() {
+      // Telemetry may have replaced it since; only take down our own.
+      if (owned !== null && typeof window !== "undefined" && window.__jgFrameBreakdown === owned) owned.dispose();
+      owned = null;
+    },
+  };
+}
+
+/**
  * Samples the live scene for the F3 overlay: frame times, draws, triangles, nodes, linked programs and
  * the costliest subsystems. It installs the frame breakdown while open when the dev telemetry has not,
  * and removes what it installed on close. Mount inside the Canvas. @internal
  */
 export function PerfOverlayProbe({ sample }: { sample: PerfOverlaySample }): null {
-  const gl = useThree((state) => state.gl);
-  const scene = useThree((state) => state.scene);
   const store = useStore();
-  const last = useRef<number | null>(null);
-  const counted = useRef(0);
-  useEffect(() => {
-    if (typeof window === "undefined" || window.__jgFrameBreakdown !== undefined) return;
-    let owned: ReturnType<typeof installFrameBreakdown> | null = null;
-    try {
-      owned = installFrameBreakdown(gl, store);
-    } catch {
-      owned = null;
-    }
-    return () => {
-      // Telemetry may have replaced it since; only take down our own.
-      if (owned !== null && window.__jgFrameBreakdown === owned) owned.dispose();
-    };
-  }, [gl, store]);
-  useFrameTask(() => {
-    const now = performance.now();
-    if (last.current !== null) {
-      sample.intervals[sample.head] = now - last.current;
-      sample.head = (sample.head + 1) % PERF_OVERLAY_FRAMES;
-      sample.frames += 1;
-    }
-    last.current = now;
-    const render = devtools.render.latest();
-    sample.draws = render?.drawCalls ?? gl.info.render.calls;
-    sample.triangles = render?.triangles ?? gl.info.render.triangles;
-    sample.programs = gl.info.programs?.length ?? null;
-    if (now - counted.current >= NODE_COUNT_MS) {
-      counted.current = now;
-      sample.nodes = countSceneNodes(scene).nodes;
-      const breakdown = typeof window === "undefined" ? undefined : window.__jgFrameBreakdown;
-      sample.systems = breakdown === undefined ? [] : breakdown.summary({ top: TOP_SYSTEMS, last: 60 }).cpu.slice(0, TOP_SYSTEMS);
-    }
-  });
+  useEngineDraw(() => perfOverlayProbeDraw(sample, () => store), [sample, store]);
   return null;
 }
 

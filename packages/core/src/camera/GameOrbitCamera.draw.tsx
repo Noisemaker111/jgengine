@@ -22,6 +22,7 @@ import {
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
+import { registerCameraControls } from "./activeControls.draw";
 import { usePlayerFov, type PlayerFovState } from "./PlayerFov.draw";
 import type { Xyz } from "@jgengine/core/math/xyz";
 import type { CameraFollowState } from "@jgengine/core/camera/cameraConfig";
@@ -79,6 +80,7 @@ export interface GameOrbitCameraDrawProps extends GameOrbitCameraProps {
  */
 export function gameOrbitCameraDraw(getProps: () => GameOrbitCameraDrawProps): EngineDraw {
   let controls: OrbitControls | null = null;
+  let unregisterControls: (() => void) | null = null;
   let runtime: OrbitFollowRuntimeState | null = null;
   let dragging = false;
   let appliedPatch: GameOrbitCameraProps["config"] | null = null;
@@ -135,6 +137,7 @@ export function gameOrbitCameraDraw(getProps: () => GameOrbitCameraDrawProps): E
       controls = new OrbitControls(state.camera, state.gl.domElement);
       controls.addEventListener("start", onStart);
       controls.addEventListener("end", onEnd);
+      unregisterControls = registerCameraControls(controls);
       syncConfig();
     },
     update() {
@@ -257,6 +260,8 @@ export function gameOrbitCameraDraw(getProps: () => GameOrbitCameraDrawProps): E
     dispose() {
       controls?.removeEventListener("start", onStart);
       controls?.removeEventListener("end", onEnd);
+      unregisterControls?.();
+      unregisterControls = null;
       controls?.dispose();
       controls = null;
       runtime = null;
