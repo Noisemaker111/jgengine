@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { abVerdict, affectedGames, baseTreeName, bracketedLogRatio, homeRequest, medianMs, parseAbArgs, plantScript, renderAbTable, t99, treeFingerprint, type AbGameResult } from "./perf-ab";
+import { abVerdict, affectedGames, baseTreeName, bracketedLogRatio, homeRequest, medianMs, parseAbArgs, plantScript, renderAbTable, rendererCpuPct, t99, treeFingerprint, type AbGameResult } from "./perf-ab";
 
 const GAMES = ["deepward", "harbor-heat", "scrap-signal"];
 const options = { minBlocks: 4, maxBlocks: 16, marginPct: 3 };
@@ -113,6 +113,14 @@ test("the fingerprint changes when a served file is edited, not when the edit is
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+  // About twenty git processes; past bun's 5 s default on a PC at full load.
+}, 30_000);
+
+test("renderer CPU sums the renderers alive at both readings, as a percent of one core", () => {
+  const before = new Map([["renderer:1", 10], ["renderer:2", 4], ["gpu:3", 1]]);
+  const after = new Map([["renderer:1", 12], ["renderer:2", 4.5], ["gpu:3", 9], ["renderer:4", 50]]);
+  expect(rendererCpuPct(before, after, 2_000)).toBe(125);
+  expect(rendererCpuPct(before, before, 2_000)).toBe(0);
 });
 
 test("every window's walk starts from the warmed-up pose", () => {

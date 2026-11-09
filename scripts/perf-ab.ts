@@ -14,6 +14,7 @@ import { acquirePerfLock } from "./perf-lock";
 import { cappedClockProblem, PAGE_READY_MS, parseSettingSpec, perfPageUrl, perfSettingsScript, probeFrameClockMs, SAMPLE_FRAMES_SCRIPT, type PerfSettingOverride } from "./perf-play";
 import { localGet } from "./localhostHttp";
 import { currentPriority, restoreNormalPriority } from "./machine-priority";
+import { resumeProcesses, suspendProcesses } from "./process-suspend";
 import { provisionCapturedGame } from "./provisionCapture";
 
 /**
@@ -305,9 +306,13 @@ interface Home {
 interface SidePage {
   side: Side;
   session: CdpSession;
+  /** The side's own browser, for its process list. */
+  browser: CdpSession;
   /** Where the player stood after warmup; every window's walk starts here, so windows replay one route. */
   home: Home | null;
   stopPath: () => Promise<void>;
+  /** Renderer pids suspended while the other side is timed. */
+  frozen: number[];
 }
 
 export interface AbWindow {
@@ -315,12 +320,14 @@ export interface AbWindow {
   side: Side;
   medianMs: number;
   frames: number;
-  /** Each renderer's CPU over the window, % of a core, busiest first. */
-  renderers: number[];
-  /** The GPU process's CPU over the window, % of a core. */
-  gpu: number;
-  /** Chrome processes that sat below normal priority before the window and were raised to normal. */
+  /** CPU of the timed side's renderers over the window, % of one core. */
+  timedCpu: number;
+  /** CPU of the other side's renderers over the window, % of one core: 0 while they are suspended. */
+  idleCpu: number;
+  /** The timed side's renderer and GPU processes that sat below normal priority before the window and were raised. */
   raised: string[];
+  /** Those still below normal when the window ended: Chrome lowered them again during it. */
+  lowAfter: string[];
 }
 
 export interface AbGameResult {
@@ -332,10 +339,9 @@ export interface AbGameResult {
   lockSeconds: number;
 }
 
-async function openSide(side: Side, debugPort: number, serve: (side: Side) => Promise<string>, game: string, args: AbArgs): Promise<SidePage> {
+async function openSide(side: Side, debugPort: number, browser: CdpSession, serve: (side: Side) => Promise<string>, game: string, args: AbArgs): Promise<SidePage> {
   const session = await openPageSession(debugPort);
   await session.send("Page.enable");
-  await session.send("Debugger.enable");
   const settings = [parseSettingSpec("graphics.auto=false"), ...args.settings];
   await session.send("Page.addScriptToEvaluateOnNewDocument", { source: perfSettingsScript(settings) });
   if (side === "branch" && args.plantMs > 0) await session.send("Page.addScriptToEvaluateOnNewDocument", { source: plantScript(args.plantMs) });
@@ -356,7 +362,7 @@ async function openSide(side: Side, debugPort: number, serve: (side: Side) => Pr
   const pose = await session.evaluate<{ ok: boolean; position?: number[]; rotationY?: number }>(`window.__jgengineAgent?.handle?.({ method: "player_pose" }) ?? { ok: false }`);
   const [x, y, z] = pose?.position ?? [];
   const home = pose?.ok === true && x !== undefined && y !== undefined && z !== undefined ? { x, y, z, yaw: pose.rotationY ?? 0 } : null;
-  return { side, session, home, stopPath: async () => {} };
+  return { side, session, browser, home, stopPath: async () => {}, frozen: [] };
 }
 
 /** The bridge request that puts the player back where the window's walk starts. */
@@ -364,20 +370,22 @@ export function homeRequest(home: Home): string {
   return JSON.stringify({ method: "teleport", x: home.x, y: home.y, z: home.z, yaw: home.yaw });
 }
 
+/**
+ * Freeze a side: release its keys, then suspend every renderer process of its browser. A debugger
+ * pause stopped only the page's main thread, and a paused game page kept three renderer processes at
+ * 100-130% of a core each (harbor-heat, 2026-11-09), drawing against the side being timed.
+ */
 async function pause(page: SidePage): Promise<void> {
   await page.stopPath();
   page.stopPath = async () => {};
-  // Pauses at the page's next script, its next animation frame: no frames, no GPU work until resumed.
-  const paused = new Promise<void>((resolvePaused) => {
-    const off = page.session.on("Debugger.paused", () => { off(); resolvePaused(); });
-  });
-  await page.session.send("Debugger.pause");
-  await Promise.race([paused, new Promise((r) => setTimeout(r, 2_000))]);
+  const pids = [...(await processCpu(page.browser)).keys()].flatMap((key) => (key.startsWith("renderer:") ? [Number(key.slice("renderer:".length))] : []));
+  await suspendProcesses(pids);
+  page.frozen = pids;
 }
 
 async function resume(page: SidePage, path: PerfPath): Promise<void> {
-  await page.session.send("Debugger.resume");
-  // The newest page is the browser's foreground one; the other would be timed as a background tab.
+  await resumeProcesses(page.frozen);
+  page.frozen = [];
   await page.session.send("Page.bringToFront");
   // A walk that went on from wherever the last window left it read 10.7-23 ms from one 2 s window to
   // the next on one build (harbor-heat pilot, 2026-11-09): each window saw new ground. From the same
@@ -394,24 +402,37 @@ async function measureWindow(page: SidePage, seconds: number): Promise<number[]>
   return (await page.session.evaluate<number[]>(SAMPLE_FRAMES_SCRIPT(seconds * 1000), { awaitPromise: true })) ?? [];
 }
 
-async function measurePair(game: string, serve: (side: Side) => Promise<string>, args: AbArgs, debugPort: number): Promise<Omit<AbGameResult, "lockSeconds">> {
-  const probe = await openPageSession(debugPort);
-  try {
-    const problem = cappedClockProblem(await probeFrameClockMs(probe));
-    if (problem !== null) throw new Error(`the uncapped clock did not take: ${problem}`);
-  } finally {
-    await probe.close();
+async function browserSession(port: number, side: Side): Promise<CdpSession> {
+  const version = JSON.parse(await localGet(`http://127.0.0.1:${port}/json/version`, 5_000)) as { webSocketDebuggerUrl?: string };
+  if (version.webSocketDebuggerUrl === undefined) throw new Error(`the ${side} browser named no debugger endpoint`);
+  return CdpSession.connect(version.webSocketDebuggerUrl, 10_000);
+}
+
+/**
+ * Each side has a Chrome of its own with one page. Two pages in one Chrome were not equal: Chrome
+ * kept the renderers of the page it treated as background at low priority, re-lowering them within a
+ * window of being raised, and a same-code no-op read -35% (harbor-heat, 2026-11-09).
+ */
+async function measurePair(game: string, serve: (side: Side) => Promise<string>, args: AbArgs, ports: Record<Side, number>): Promise<Omit<AbGameResult, "lockSeconds">> {
+  for (const side of ["base", "branch"] as const) {
+    const probe = await openPageSession(ports[side]);
+    try {
+      const problem = cappedClockProblem(await probeFrameClockMs(probe));
+      if (problem !== null) throw new Error(`the ${side} browser's uncapped clock did not take: ${problem}`);
+    } finally {
+      await probe.close();
+    }
   }
   const pages: Partial<Record<Side, SidePage>> = {};
-  const version = JSON.parse(await localGet(`http://127.0.0.1:${debugPort}/json/version`, 5_000)) as { webSocketDebuggerUrl?: string };
-  if (version.webSocketDebuggerUrl === undefined) throw new Error("the browser named no debugger endpoint");
-  const browser = await CdpSession.connect(version.webSocketDebuggerUrl, 10_000);
+  const browsers: Partial<Record<Side, CdpSession>> = {};
   try {
-    // Base loads first and waits paused while the branch loads, so neither page draws while the other is timed.
+    browsers.base = await browserSession(ports.base, "base");
+    browsers.branch = await browserSession(ports.branch, "branch");
+    // Base loads first and waits frozen while the branch loads, so neither page draws while the other is timed.
     const loadAt = Date.now();
-    pages.base = await openSide("base", debugPort, serve, game, args);
+    pages.base = await openSide("base", ports.base, browsers.base, serve, game, args);
     await pause(pages.base);
-    pages.branch = await openSide("branch", debugPort, serve, game, args);
+    pages.branch = await openSide("branch", ports.branch, browsers.branch, serve, game, args);
     await pause(pages.branch);
     const measureAt = Date.now();
     // A walk with no player to put back (a camera-only game pans away) would see new ground every
@@ -425,16 +446,22 @@ async function measurePair(game: string, serve: (side: Side) => Promise<string>,
     const windows: AbWindow[] = [];
     const run = async (side: Side, block: number): Promise<number> => {
       const page = pages[side]!;
+      const other = pages[side === "base" ? "branch" : "base"]!;
       await resume(page, path);
-      const cpuBefore = await processCpu(browser);
-      const lowered = equalizePriorities(cpuBefore);
+      const [timedBefore, idleBefore] = [await processCpu(page.browser), await processCpu(other.browser)];
+      const raised = equalizePriorities(timedBefore, true);
       const windowAt = Date.now();
       const deltas = await measureWindow(page, args.windowSeconds);
-      const cpu = cpuShares(cpuBefore, await processCpu(browser), Date.now() - windowAt);
+      const ms = Date.now() - windowAt;
+      const [timedAfter, idleAfter] = [await processCpu(page.browser), await processCpu(other.browser)];
+      const lowAfter = equalizePriorities(timedAfter, false);
       await pause(page);
       const median = medianMs(deltas);
       if (!Number.isFinite(median)) throw new Error(`the ${side} page drew no frames in pair ${block}`);
-      windows.push({ block, side, medianMs: Math.round(median * 1000) / 1000, frames: deltas.length, ...cpu, raised: lowered });
+      windows.push({
+        block, side, medianMs: Math.round(median * 1000) / 1000, frames: deltas.length,
+        timedCpu: rendererCpuPct(timedBefore, timedAfter, ms), idleCpu: rendererCpuPct(idleBefore, idleAfter, ms), raised, lowAfter,
+      });
       return median;
     };
     // One pair first, thrown away: each page's first window after its warmup pause is not like the rest.
@@ -455,27 +482,32 @@ async function measurePair(game: string, serve: (side: Side) => Promise<string>,
       before = after;
       if (verdict !== null) {
         console.error(`perf ab: ${game}: ${verdict.blocks} pairs in ${Math.round((Date.now() - measureAt) / 1000)} s`);
+        const busyIdle = windows.filter((window) => window.idleCpu > IDLE_CPU_MAX_PCT).length;
+        if (busyIdle > 0) console.error(`degraded: in ${busyIdle} of ${windows.length} windows the frozen side's renderers still used over ${IDLE_CPU_MAX_PCT}% of a core`);
         const side = (which: Side) => medianMs(windows.filter((window) => window.side === which && window.block > 0).map((window) => window.medianMs));
         return { game, verdict, baseMs: side("base"), branchMs: side("branch"), windows };
       }
     }
     throw new Error("the block loop ended without a verdict");
   } finally {
+    for (const page of Object.values(pages)) await resumeProcesses(page.frozen).catch(() => {});
     for (const page of Object.values(pages)) {
-      await page.session.send("Debugger.resume").catch(() => {});
       await page.stopPath().catch(() => {});
       await page.session.close().catch(() => {});
     }
-    await browser.close().catch(() => {});
+    for (const browser of Object.values(browsers)) await browser.close().catch(() => {});
   }
 }
 
+/** A frozen side whose renderers use more than this share of a core over a window was not frozen. */
+const IDLE_CPU_MAX_PCT = 5;
+
 /**
- * Put every renderer and the GPU process at normal priority before a window, and name the ones that
- * were lower: Chrome lowers the renderers of pages it treats as background, and the page timed after
- * the other was made first would be timed at that lower priority on a busy PC.
+ * The renderer and GPU processes below normal priority, named; with `raise`, each is put back to
+ * normal. Chrome lowers renderers it treats as background, and a side timed at low priority on a busy
+ * PC is timed against the PC.
  */
-function equalizePriorities(processes: ReadonlyMap<string, number>): string[] {
+function equalizePriorities(processes: ReadonlyMap<string, number>, raise: boolean): string[] {
   const lowered: string[] = [];
   for (const key of processes.keys()) {
     const [type, id] = key.split(":");
@@ -484,29 +516,25 @@ function equalizePriorities(processes: ReadonlyMap<string, number>): string[] {
     const before = currentPriority(pid);
     if (before === "normal") continue;
     lowered.push(`${type} ${pid} (${before})`);
-    restoreNormalPriority(pid);
+    if (raise) restoreNormalPriority(pid);
   }
   return lowered;
 }
 
-/** CPU seconds so far per Chrome process, by type and pid. */
+/** CPU seconds so far per process of one browser, keyed `<type>:<pid>`. */
 async function processCpu(browser: CdpSession): Promise<Map<string, number>> {
   const info = await browser.send("SystemInfo.getProcessInfo");
   const list = (info["processInfo"] ?? []) as Array<{ type: string; id: number; cpuTime: number }>;
   return new Map(list.map((process) => [`${process.type}:${process.id}`, process.cpuTime]));
 }
 
-/**
- * Each renderer's and the GPU process's CPU over a window as a percent of one core, renderers busiest
- * first: the paused page's renderer should sit near 0, or it was drawing while the other was timed.
- */
-export function cpuShares(before: ReadonlyMap<string, number>, after: ReadonlyMap<string, number>, windowMs: number): { renderers: number[]; gpu: number } {
-  const share = (key: string) => Math.round((((after.get(key) ?? 0) - (before.get(key) ?? 0)) * 1000 * 100) / Math.max(windowMs, 1));
-  const keys = [...after.keys()].filter((key) => before.has(key));
-  return {
-    renderers: keys.filter((key) => key.startsWith("renderer:")).map(share).sort((a, b) => b - a),
-    gpu: keys.filter((key) => key.startsWith("gpu:")).map(share).reduce((sum, value) => sum + value, 0),
-  };
+/** Renderer CPU between two readings of one browser, as a percent of one core over `windowMs`. */
+export function rendererCpuPct(before: ReadonlyMap<string, number>, after: ReadonlyMap<string, number>, windowMs: number): number {
+  let seconds = 0;
+  for (const [key, cpu] of after) {
+    if (key.startsWith("renderer:") && before.has(key)) seconds += cpu - (before.get(key) ?? 0);
+  }
+  return Math.round((seconds * 1000 * 100) / Math.max(windowMs, 1));
 }
 
 const CALL_TEXT: Record<AbCall, string> = { slower: "slower", faster: "faster", same: "no difference", unclear: "unclear" };
@@ -574,13 +602,14 @@ async function main(): Promise<number> {
       const heldAt = Date.now();
       try {
         let measured: Omit<AbGameResult, "lockSeconds"> | null = null;
-        const exit = await withBrowserSession(
-          { keep: false, timeoutMs: 180_000, hardDeadlineMs: 2 * 2 * PAGE_READY_MS + 2 * WARMUP_MS + parsed.maxBlocks * 2 * (parsed.windowSeconds * 1000 + SETTLE_MS + 1_000) + 120_000, frameClock: "uncapped", chromePriority: "normal" },
-          async ({ debugPort }) => {
-            measured = await measurePair(game, serve, parsed, debugPort);
-          },
-        );
-        if (exit !== 0 || measured === null) throw new Error(`the browser session exited ${exit}`);
+        const session = { keep: false, timeoutMs: 180_000, hardDeadlineMs: 2 * 2 * PAGE_READY_MS + 2 * WARMUP_MS + (parsed.maxBlocks + 2) * 2 * (parsed.windowSeconds * 1000 + SETTLE_MS + 1_000) + 120_000, frameClock: "uncapped", chromePriority: "normal" } as const;
+        let inner = 0;
+        const exit = await withBrowserSession(session, async ({ debugPort: basePort }) => {
+          inner = await withBrowserSession(session, async ({ debugPort: branchPort }) => {
+            measured = await measurePair(game, serve, parsed, { base: basePort, branch: branchPort });
+          });
+        });
+        if (exit !== 0 || inner !== 0 || measured === null) throw new Error(`the browser sessions exited ${exit} and ${inner}`);
         const now = { base: treeFingerprint(base.dir), branch: treeFingerprint(repoRoot) };
         for (const side of ["base", "branch"] as const) {
           if (now[side] !== fingerprints[side]) throw new Error(`the ${side} checkout's files changed while ${game} was measured, so its numbers describe neither version; measure again without editing`);
