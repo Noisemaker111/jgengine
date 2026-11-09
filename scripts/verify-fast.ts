@@ -952,15 +952,53 @@ export async function jsonRun(
   return checks.every((check) => check.ok) ? EXIT_VERIFIED : EXIT_FAILED;
 }
 
-async function run(step: Step, root: string): Promise<StepResult> {
-  const started = Date.now();
-  const proc = Bun.spawn(step.command, { cwd: root, stdout: "pipe", stderr: "pipe" });
+async function spawnStep(command: readonly string[], root: string): Promise<{ ok: boolean; output: string }> {
+  const proc = Bun.spawn([...command], { cwd: root, stdout: "pipe", stderr: "pipe" });
   const [stdout, stderr, code] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
     proc.exited,
   ]);
-  return { name: step.name, ok: code === 0, ms: Date.now() - started, output: `${stdout}${stderr}` };
+  return { ok: code === 0, output: `${stdout}${stderr}` };
+}
+
+/**
+ * The files to rerun when every failure in a `bun test` output is a timeout (a test's or a hook's),
+ * or null when any failure is something else. verify runs below normal priority (Jon's game comes
+ * first), so on a PC held at 100% by normal-priority work a test can wait seconds for each slice:
+ * land-commit.test.ts failed 9 of 20 tests that way and passed on the next run (2026-11-09).
+ */
+export function timedOutFiles(output: string): string[] | null {
+  const lines = output.split(/\r?\n/);
+  const files = new Set<string>();
+  let file: string | null = null;
+  let failures = 0;
+  for (const [index, line] of lines.entries()) {
+    const header = /^(\S+\.(?:test|spec)\.[cm]?[jt]sx?):$/.exec(line.trim());
+    if (header !== null) file = header[1]!.replace(/\\/g, "/");
+    if (!line.startsWith("(fail)")) continue;
+    failures += 1;
+    const next = lines[index + 1]?.trim() ?? "";
+    if (file === null || !/^\^ (?:this test timed out after|a beforeEach\/afterEach hook timed out)/.test(next)) return null;
+    files.add(file);
+  }
+  return failures > 0 ? [...files] : null;
+}
+
+async function run(step: Step, root: string): Promise<StepResult> {
+  const started = Date.now();
+  const first = await spawnStep(step.command, root);
+  const timedOut = !first.ok && step.command[1] === "test" ? timedOutFiles(first.output) : null;
+  if (timedOut === null) return { name: step.name, ok: first.ok, ms: Date.now() - started, output: first.output };
+  // Only the files that timed out, once, with the step's own flags but no report file: a real hang
+  // times out again and the step stays red with its first output.
+  const flags = step.command.slice(2).filter((word) => word.startsWith("--") && !word.startsWith("--reporter") && !TEST_FILE.test(word));
+  const timeoutFlag = step.command.indexOf("--timeout");
+  const rerun = ["bun", "test", ...flags, ...(timeoutFlag >= 0 ? [step.command[timeoutFlag + 1]!] : []), ...timedOut];
+  const again = await spawnStep(rerun, root);
+  const line = `degraded: ${step.name}: ${timedOut.join(", ")} timed out (a starved below-normal run); ${again.ok ? "passed" : "failed again"} when rerun once`;
+  console.log(line);
+  return { name: step.name, ok: again.ok, ms: Date.now() - started, output: again.ok ? line : `${first.output}\n${line}\n${again.output}` };
 }
 
 /**
