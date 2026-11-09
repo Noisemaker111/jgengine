@@ -20,6 +20,9 @@ import { useHudInteract } from "@jgengine/core/hud/hudInteract.view";
 import { hashString } from "@jgengine/core/random/rng";
 import { actionGlyph, useInputDevice } from "../../input/inputDevice.view";
 import { KitFrame, type KitFrameLook } from "./kitFrame.view";
+import { memoView } from "../memoView.view";
+import { useLiveSelect } from "../liveBind.view";
+import { isLive, type Live } from "../liveValue";
 import {
   uiKitVars,
   type KitButtonProps,
@@ -200,11 +203,11 @@ export function kitHudBridge(ground: "pane" | "dialog"): CSSProperties {
   } as CSSProperties;
 }
 
-function FallbackStyles({ kit }: { kit: UiKit }): null {
+/** Inserts the kit's stylesheet for a part drawn outside a {@link UiKitRoot} (previews, portals). */
+function useKitStyles(kit: UiKit): void {
   useInsertionEffect(() => {
     ensureUiKitStyles(kit);
   }, [kit]);
-  return null;
 }
 
 /**
@@ -246,8 +249,9 @@ export type KitButtonHostProps = (KitButtonProps & { cue?: string | undefined; m
  *
  * @capability kit-button a button drawn by the active UI kit, or made of a material (steel, wood, enamel…), with UI cue sounds
  */
-export function KitButton(props: KitButtonHostProps): ReactNode {
+export const KitButton = memoView("KitButton", (props: KitButtonHostProps): ReactNode => {
   const kit = useUiKit();
+  useKitStyles(kit);
   const report = useHudInteract("button", props.cue ?? (props.material === undefined ? undefined : "confirm"));
   if (props.material !== undefined) {
     const { cue: _cue, ...frame } = props;
@@ -256,27 +260,24 @@ export function KitButton(props: KitButtonHostProps): ReactNode {
   const { cue: _cue, onPointerEnter, onPointerDown, onClick, disabled, material: _material, ...rest } = props;
   const Button = kit.components.Button;
   return (
-    <>
-      <FallbackStyles kit={kit} />
-      <Button
-        {...rest}
-        disabled={disabled}
-        onPointerEnter={(event) => {
-          if (disabled !== true) report("hover");
-          onPointerEnter?.(event);
-        }}
-        onPointerDown={(event) => {
-          if (disabled !== true) report("press");
-          onPointerDown?.(event);
-        }}
-        onClick={(event) => {
-          report("activate");
-          onClick?.(event);
-        }}
-      />
-    </>
+    <Button
+      {...rest}
+      disabled={disabled}
+      onPointerEnter={(event) => {
+        if (disabled !== true) report("hover");
+        onPointerEnter?.(event);
+      }}
+      onPointerDown={(event) => {
+        if (disabled !== true) report("press");
+        onPointerDown?.(event);
+      }}
+      onClick={(event) => {
+        report("activate");
+        onClick?.(event);
+      }}
+    />
   );
-}
+});
 
 /** A {@link KitPanel} made of a material instead of drawn by the kit; it holds its children as given. */
 export interface KitMaterialPanelProps extends KitFrameLook, Omit<HTMLAttributes<HTMLElement>, "color"> {
@@ -303,9 +304,10 @@ export type KitPanelHostProps = (KitPanelProps & { open?: boolean; material?: un
  *
  * @capability kit-panel a content surface drawn by the active UI kit, or made of a material with a cut silhouette, with enter/exit motion
  */
-export function KitPanel(props: KitPanelHostProps): ReactNode {
+export const KitPanel = memoView("KitPanel", (props: KitPanelHostProps): ReactNode => {
   const { open } = props;
   const kit = useUiKit();
+  useKitStyles(kit);
   const presence = useKitPresence(open ?? true, props.material === undefined ? kit.motion.exitMs : 0);
   const report = useHudInteract("panel");
   const wasOpen = useRef(open);
@@ -321,38 +323,53 @@ export function KitPanel(props: KitPanelHostProps): ReactNode {
   }
   const { open: _open, material: _material, ...panel } = props;
   const Panel = kit.components.Panel;
-  return (
-    <>
-      <FallbackStyles kit={kit} />
-      <Panel {...panel} leaving={panel.leaving === true || presence.leaving} />
-    </>
-  );
+  return <Panel {...panel} leaving={panel.leaving === true || presence.leaving} />;
+});
+
+/** Props for {@link KitMeter}: the kit meter's, with a value that may be {@link live} and a readout that may be worked out from it. */
+export interface KitMeterHostProps extends Omit<KitMeterProps, "value" | "readout"> {
+  /** The value now, or `live(() => value)` for one that moves every frame or tick. */
+  value: Live<number>;
+  /** `true` prints `value / max`; a node prints itself; a function prints its text for the value drawn. */
+  readout?: KitMeterProps["readout"] | ((value: number, max: number) => string);
 }
 
-/** The active kit's meter. @capability kit-meter a value meter (bar, segments, ring) drawn by the active UI kit */
-export function KitMeter(props: KitMeterProps): ReactNode {
-  const kit = useUiKit();
-  const Meter = kit.components.Meter;
-  return (
-    <>
-      <FallbackStyles kit={kit} />
-      <Meter {...props} />
-    </>
-  );
+/** Steps a live meter value is drawn at: finer than a pixel on any meter, so a value that creeps every frame redraws the leaf only when it visibly moves. */
+const LIVE_METER_STEPS = 1000;
+
+function drawnMeter(value: number, max: number, readout: KitMeterHostProps["readout"], quantize: boolean): readonly [number, KitMeterProps["readout"]] {
+  const drawn = quantize && max > 0 ? (Math.round((value / max) * LIVE_METER_STEPS) / LIVE_METER_STEPS) * max : value;
+  return [drawn, typeof readout === "function" ? readout(value, max) : readout];
 }
+
+function sameDrawnMeter(previous: readonly [number, KitMeterProps["readout"]], next: readonly [number, KitMeterProps["readout"]]): boolean {
+  return Object.is(previous[0], next[0]) && Object.is(previous[1], next[1]);
+}
+
+/**
+ * The active kit's meter. Give `value={live(() => fuel(ctx))}` for a value that moves every frame: the
+ * meter reads it each frame and redraws only itself, only when the bar or its readout visibly changes.
+ *
+ * @capability kit-meter a value meter (bar, segments, ring) drawn by the active UI kit, fed a plain or live value
+ */
+export const KitMeter = memoView("KitMeter", ({ value, readout, ...props }: KitMeterHostProps): ReactNode => {
+  const kit = useUiKit();
+  useKitStyles(kit);
+  const max = props.max ?? 1;
+  const quantize = isLive(value);
+  const [drawn, text] = useLiveSelect(value, (now) => drawnMeter(now, max, readout, quantize), sameDrawnMeter);
+  const Meter = kit.components.Meter;
+  return <Meter {...props} value={drawn} {...(text === undefined ? {} : { readout: text })} />;
+});
 
 /** The active kit's prompt with an explicit glyph. Prefer {@link KitActionPrompt}, which picks the glyph per device. */
-export function KitPrompt(props: Omit<KitPromptProps, "device"> & { device?: KitPromptProps["device"] }): ReactNode {
+export const KitPrompt = memoView("KitPrompt", (props: Omit<KitPromptProps, "device"> & { device?: KitPromptProps["device"] }): ReactNode => {
   const kit = useUiKit();
+  useKitStyles(kit);
   const live = useInputDevice();
   const Prompt = kit.components.Prompt;
-  return (
-    <>
-      <FallbackStyles kit={kit} />
-      <Prompt {...props} device={props.device ?? live} />
-    </>
-  );
-}
+  return <Prompt {...props} device={props.device ?? live} />;
+});
 
 /** Props for {@link KitActionPrompt}. */
 export interface KitActionPromptProps {
@@ -376,54 +393,38 @@ export interface KitActionPromptProps {
  *
  * @capability kit-action-prompt a device-correct "press X to do Y" prompt (keyboard key, pad button, tap) in the active UI kit
  */
-export function KitActionPrompt({ action, label, progress, tone, onActivate, fallbackGlyph, className, style }: KitActionPromptProps): ReactNode {
+export const KitActionPrompt = memoView("KitActionPrompt", ({ action, label, progress, tone, onActivate, fallbackGlyph, className, style }: KitActionPromptProps): ReactNode => {
   const context = useContext(UiKitContext);
   const kit = context?.kit ?? plainKit;
+  useKitStyles(kit);
   const device = useInputDevice();
   if (device === "touch" && onActivate === undefined) return null;
   const glyph = (context?.bindings === undefined ? null : actionGlyph(context.bindings, action, device, context.glyphSet)) ?? fallbackGlyph ?? null;
   if (glyph === null) return null;
   const Prompt = kit.components.Prompt;
-  return (
-    <>
-      <FallbackStyles kit={kit} />
-      <Prompt glyph={glyph} label={label} device={device} progress={progress} tone={tone} onActivate={onActivate} className={className} style={style} />
-    </>
-  );
-}
+  return <Prompt glyph={glyph} label={label} device={device} progress={progress} tone={tone} onActivate={onActivate} className={className} style={style} />;
+});
 
 /** The active kit's toast. @capability kit-toast a short message drawn by the active UI kit, with its enter/exit motion */
-export function KitToast(props: KitToastProps): ReactNode {
+export const KitToast = memoView("KitToast", (props: KitToastProps): ReactNode => {
   const kit = useUiKit();
+  useKitStyles(kit);
   const Toast = kit.components.Toast;
-  return (
-    <>
-      <FallbackStyles kit={kit} />
-      <Toast {...props} />
-    </>
-  );
-}
+  return <Toast {...props} />;
+});
 
 /** The active kit's menu list. Navigation comes from `useMenuNav`. @capability kit-menu a verb list drawn by the active UI kit over shared menu navigation */
-export function KitMenu(props: KitMenuProps): ReactNode {
+export const KitMenu = memoView("KitMenu", (props: KitMenuProps): ReactNode => {
   const kit = useUiKit();
+  useKitStyles(kit);
   const Menu = kit.components.Menu;
-  return (
-    <>
-      <FallbackStyles kit={kit} />
-      <Menu {...props} />
-    </>
-  );
-}
+  return <Menu {...props} />;
+});
 
 /** The active kit's minimap frame. @capability kit-minimap-frame a minimap or radar frame drawn by the active UI kit */
-export function KitMinimapFrame(props: KitMinimapFrameProps): ReactNode {
+export const KitMinimapFrame = memoView("KitMinimapFrame", (props: KitMinimapFrameProps): ReactNode => {
   const kit = useUiKit();
+  useKitStyles(kit);
   const MinimapFrame = kit.components.MinimapFrame;
-  return (
-    <>
-      <FallbackStyles kit={kit} />
-      <MinimapFrame {...props} />
-    </>
-  );
-}
+  return <MinimapFrame {...props} />;
+});

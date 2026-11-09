@@ -1,5 +1,5 @@
 import { useFrame, useLoader } from "@react-three/fiber";
-import { Component, Suspense, useEffect, useMemo, useRef, type ReactNode } from "react";
+import { Component, Suspense, useCallback, useEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
@@ -8,6 +8,7 @@ import { hashString } from "@jgengine/core/random/rng";
 import { cloneModelScene, disposeClonedMaterials, modelPlacementTransform, standardMaterialsOf } from "@jgengine/core/model/modelRender.draw";
 import { useModelAnimation } from "@jgengine/core/anim/useModelAnimation.draw";
 import { useStore } from "@jgengine/react/store";
+import { useGameContext } from "@jgengine/react/provider";
 
 import { bodyColor, type AlienBodyPlan } from "../creatures/bodyPlan";
 import { moodOfNeeds } from "../agents";
@@ -60,7 +61,8 @@ function AlienModel({
   scale: [number, number, number];
   color: string;
   emissive: string;
-  emissiveIntensity: number;
+  /** The glow follows the being's mood every tick; it is written to the materials each frame, not through a render. */
+  emissiveIntensity: () => number;
 }): ReactNode {
   const gltf = useLoader(sharedGltfLoader, meshUrl);
 
@@ -80,9 +82,15 @@ function AlienModel({
     for (const [index, material] of materials.entries()) {
       material.color.copy(nativeColors[index]!).lerp(tint, 0.8);
       material.emissive.set(emissive);
-      material.emissiveIntensity = emissiveIntensity;
+      material.emissiveIntensity = emissiveIntensity();
     }
-  }, [materials, nativeColors, color, emissive, emissiveIntensity]);
+  }, [materials, nativeColors, color, emissive]);
+  useFrame(() => {
+    const intensity = emissiveIntensity();
+    for (const material of materials) {
+      if (material.emissiveIntensity !== intensity) material.emissiveIntensity = intensity;
+    }
+  });
 
   return (
     <group scale={scale}>
@@ -95,14 +103,20 @@ function AlienModel({
 
 export function AlienMesh({ entity }: { entity: SceneEntity }): ReactNode {
   const plan = planOf(entity);
-  const household = useStore(householdStore);
+  const ctx = useGameContext();
   const groupRef = useRef<THREE.Group>(null);
   const phase = useMemo(() => (hashString(entity.id) % 628) / 100, [entity.id]);
-  
-
-  const member = household.members[entity.id];
-  const moving = member !== undefined && (member.action.kind === "seek" || member.action.kind === "wander");
-  const mood = member !== undefined ? moodOfNeeds(member.needs) : null;
+  const { moving, tier } = useStore(householdStore, (household) => {
+    const member = household.members[entity.id];
+    return {
+      moving: member !== undefined && (member.action.kind === "seek" || member.action.kind === "wander"),
+      tier: member !== undefined ? moodOfNeeds(member.needs).tier : null,
+    };
+  });
+  const glow = useCallback(() => {
+    const member = householdStore.read(ctx).members[entity.id];
+    return member !== undefined ? 0.025 + (moodOfNeeds(member.needs).score / 100) * 0.06 : 0.025;
+  }, [ctx, entity.id]);
 
   useFrame(({ clock }) => {
     const t = clock.elapsedTime;
@@ -115,14 +129,13 @@ export function AlienMesh({ entity }: { entity: SceneEntity }): ReactNode {
   const meshUrl = resolveAlienMeshUrl(plan.shape);
 
   const color = bodyColor(plan, 72);
-  const emissive = (mood === null ? undefined : MOOD_COLORS[mood.tier]) ?? "#000000";
-  const emissiveIntensity = mood !== null ? 0.025 + (mood.score / 100) * 0.06 : 0.025;
+  const emissive = (tier === null ? undefined : MOOD_COLORS[tier]) ?? "#000000";
   const scale = bodyScale(plan);
   return (
     <group ref={groupRef}>
       <ModelErrorBoundary>
         <Suspense fallback={null}>
-          <AlienModel meshUrl={meshUrl} instanceId={entity.id} scale={scale} color={color} emissive={emissive} emissiveIntensity={emissiveIntensity} />
+          <AlienModel meshUrl={meshUrl} instanceId={entity.id} scale={scale} color={color} emissive={emissive} emissiveIntensity={glow} />
         </Suspense>
       </ModelErrorBoundary>
     </group>

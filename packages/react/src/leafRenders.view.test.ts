@@ -67,7 +67,24 @@ beforeAll(async () => {
       return <section data-mode={mode}><AirReadout /><Sibling /><Hint /></section>;
     }
 
-    createRoot(document.getElementById('root')).render(<GameProvider context={ctx}><Panel /></GameProvider>);
+    class Catch extends React.Component {
+      state = { error: null };
+      static getDerivedStateFromError(error) { return { error }; }
+      render() { return this.state.error ? <p id="caught">{this.state.error.name}: {this.state.error.message}</p> : this.props.children; }
+    }
+    /** The slow way: a whole number that changes every tick selected into React state. */
+    function TickClock() {
+      const elapsed = useStore(hud, (state) => state.elapsed);
+      return <i id="tick-clock">{elapsed.toFixed(2)}</i>;
+    }
+    let showClock = () => {};
+    function SlowCorner() {
+      const [on, setOn] = React.useState(false);
+      showClock = setOn;
+      return on ? <Catch><TickClock /></Catch> : null;
+    }
+
+    createRoot(document.getElementById('root')).render(<GameProvider context={ctx}><Panel /><SlowCorner /></GameProvider>);
 
     const read = () => ({ ...counts, airText: document.getElementById('air')?.textContent ?? '', hintText: document.getElementById('hint')?.textContent ?? '' });
     window.fixture = {
@@ -79,6 +96,14 @@ beforeAll(async () => {
           flushFrameBinds();
         }
         return read();
+      },
+      /** Mount the slow clock and run simulation ticks that move it; returns what the error boundary caught. */
+      slowWay(times) {
+        flushSync(() => showClock(true));
+        for (let i = 0; i < times; i += 1) {
+          flushSync(() => ctx.sim.advance(1 / 60, () => hud.update(ctx, (state) => ({ ...state, elapsed: state.elapsed + 1 / 60 }))));
+        }
+        return document.getElementById('caught')?.textContent ?? '';
       },
       hint(text) {
         flushSync(() => hud.update(ctx, (state) => ({ ...state, hint: text })));
@@ -111,6 +136,7 @@ afterAll(async () => {
 
 const counts = (): Promise<Counts> => page.evaluate(() => (window as unknown as { fixture: { counts(): Counts } }).fixture.counts());
 const tick = (times: number): Promise<Counts> => page.evaluate(n => (window as unknown as { fixture: { tick(n: number): Counts } }).fixture.tick(n), times);
+const slowWay = (times: number): Promise<string> => page.evaluate(n => (window as unknown as { fixture: { slowWay(n: number): string } }).fixture.slowWay(n), times);
 const hint = (text: string): Promise<Counts> => page.evaluate(t => (window as unknown as { fixture: { hint(t: string): Counts } }).fixture.hint(t), text);
 
 describe("a changing value updates only its own leaf", () => {
@@ -132,5 +158,14 @@ describe("a changing value updates only its own leaf", () => {
     expect(after.panel - before.panel).toBe(0);
     expect(after.sibling - before.sibling).toBe(0);
     expect(after.air - before.air).toBe(0);
+  });
+});
+
+describe("the slow way fails loudly", () => {
+  test("a component that selects a value changing every tick throws PerFrameRenderError naming it", async () => {
+    const caught = await slowWay(130);
+    expect(caught).toStartWith("PerFrameRenderError: [jgengine] TickClock re-renders on nearly every tick");
+    const after = await counts();
+    expect(after.panel).toBe(1);
   });
 });

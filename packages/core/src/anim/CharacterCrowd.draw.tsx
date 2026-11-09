@@ -37,6 +37,7 @@ import {
   createCrowdUniforms,
   patchCrowdMaterial,
 } from "./SkinnedInstances.draw";
+import { memoView } from "../ui/memoView.view";
 
 function CrowdBatch({
   kind,
@@ -249,7 +250,7 @@ export interface CharacterCrowdProps {
  * canvas as the entity markers; unmount it to fall back to per-entity rigs.
  * @capability character-crowd draw animated or static characters as batched instanced draws instead of posing each skeleton
  */
-export function CharacterCrowd({ models, registry, fps = 24, onPick }: CharacterCrowdProps) {
+export const CharacterCrowd = memoView("CharacterCrowd", function CharacterCrowd({ models, registry, fps = 24, onPick }: CharacterCrowdProps) {
   const held = useRef(new Map<string, ModelConfig>());
   const kinds = useMemo(() => stableCrowdKinds(models, held.current), [models]);
 
@@ -275,4 +276,4 @@ export function CharacterCrowd({ models, registry, fps = 24, onPick }: Character
       ))}
     </>
   );
-}
+});

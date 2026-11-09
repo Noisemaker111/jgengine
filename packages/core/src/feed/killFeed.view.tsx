@@ -1,38 +1,38 @@
-import { useEffect, useReducer, useRef, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useRef, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 
 import type { EventTicker, EventTickerView } from "@jgengine/core/feed/eventTicker";
 
 import { GameIcon, isGameIconName } from "../ui/icons/gameIcons.view";
+import { memoView } from "../ui/memoView.view";
+import { subscribeFrameBind, useFrameBind } from "../ui/liveBind.view";
 
 /**
- * Subscribe to an event ticker and re-render it on an animation frame (unless the game
- * already ticks it), returning the live entries newest-first with `fade` applied. Driving
- * the frame loop is what makes entries visibly fade and drop as they age out.
+ * Subscribe to an event ticker, returning the live entries newest-first with `fade` applied. It
+ * re-renders only when an entry arrives or ages out (checked each frame while `animate`); the fade
+ * itself is drawn per frame by {@link KillFeed} without a render.
  *
- * @capability use-event-ticker React hook binding an event-ticker — re-renders per frame so entries fade and drop live, returning the current newest-first views
+ * @capability use-event-ticker React hook binding an event-ticker — re-renders when entries arrive or expire, returning the current newest-first views
  */
 export function useEventTicker(ticker: EventTicker, animate = true): EventTickerView[] {
-  const [, bump] = useReducer((n: number) => n + 1, 0);
-  const rafRef = useRef(0);
-
-  useEffect(() => ticker.subscribe(bump), [ticker]);
-
-  useEffect(() => {
-    if (!animate) return;
-    let running = true;
-    const loop = (): void => {
-      if (!running) return;
-      bump();
-      rafRef.current = requestAnimationFrame(loop);
-    };
-    rafRef.current = requestAnimationFrame(loop);
-    return () => {
-      running = false;
-      cancelAnimationFrame(rafRef.current);
-    };
-  }, [ticker, animate]);
-
+  const subscribe = useCallback(
+    (changed: () => void) => {
+      const off = ticker.subscribe(changed);
+      // An entry ages out on its own: watch the list each frame, re-render only when one leaves.
+      const offFrames = animate ? subscribeFrameBind(changed) : () => undefined;
+      return () => {
+        off();
+        offFrames();
+      };
+    },
+    [ticker, animate],
+  );
+  const read = useCallback(() => ticker.recent().map((entry) => entry.id).join("\n"), [ticker]);
+  useSyncExternalStore(subscribe, read, read);
   return ticker.recent();
+}
+
+function rowFade(fade: number): { opacity: string; transform: string } {
+  return { opacity: String(1 - fade * 0.85), transform: `translateX(${fade * 8}px)` };
 }
 
 /** Per-`kind` styling for a kill-feed row — accent color and an optional icon. */
@@ -106,7 +106,7 @@ export interface KillFeedProps {
  *
  * @capability kill-feed vertical event/kill-feed ticker rendering a core event-ticker as a fading, newest-on-top stack of per-kind iconned, accent-colored rows over HudTheme tokens
  */
-export function KillFeed({
+export const KillFeed = memoView("KillFeed", function KillFeed({
   ticker,
   kindStyles,
   theme,
@@ -122,9 +122,26 @@ export function KillFeed({
   const recent = useEventTicker(ticker, animate);
   const entries = oldestFirst ? [...recent].reverse() : recent;
   const t = resolveTheme(theme);
+  const feed = useRef<HTMLDivElement>(null);
+  // Rows fade as they age, every frame: each row's opacity and slide are written to its node.
+  useFrameBind(
+    feed,
+    () => (animate ? ticker.recent().map((entry) => `${entry.id}:${Math.round(entry.fade * 1000)}`).join("|") : ""),
+    (_key, element) => {
+      if (!animate) return;
+      for (const entry of ticker.recent()) {
+        const row = element.querySelector<HTMLElement>(`[data-kill-feed-row="${CSS.escape(String(entry.id))}"]`);
+        if (row === null) continue;
+        const { opacity, transform } = rowFade(entry.fade);
+        row.style.opacity = opacity;
+        row.style.transform = transform;
+      }
+    },
+  );
 
   return (
     <div
+      ref={feed}
       className={className}
       data-kill-feed=""
       style={{
@@ -142,7 +159,7 @@ export function KillFeed({
         const kindStyle = kindStyles?.[entry.kind];
         const accent = kindStyle?.accent ?? t.accent;
         const iconName = entry.icon ?? kindStyle?.icon;
-        const opacity = 1 - entry.fade * 0.85;
+        const { opacity, transform } = rowFade(entry.fade);
         return (
           <div
             key={entry.id}
@@ -163,7 +180,7 @@ export function KillFeed({
               whiteSpace: "nowrap",
               opacity,
               boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
-              transform: `translateX(${entry.fade * 8}px)`,
+              transform,
               willChange: "opacity, transform",
               ...rowStyle,
             }}
@@ -181,4 +198,4 @@ export function KillFeed({
       })}
     </div>
   );
-}
+});

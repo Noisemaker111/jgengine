@@ -3,7 +3,7 @@ import { ContinuePane, CreditsPane, SaveSlotsPane } from "@jgengine/core/menu/ga
 import { GameMenu } from "@jgengine/core/menu/gameMenu.view";
 import { PauseMenu } from "@jgengine/core/menu/pauseMenu.view";
 import { useGame, useGameClock, useGameStore } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
+import { park } from "../../park";
 import { useSaveSlots } from "@jgengine/core/save/saveSlots.view";
 import { useSettings } from "@jgengine/core/settings/settings.view";
 import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";
@@ -14,7 +14,7 @@ import { parkSlots, refreshParkSlot } from "../../parkSlot";
 import { FIRST_SCENARIO, SCENARIOS, scenarioDef, scenarioLock } from "../../scenarios";
 import { session } from "../../session";
 import { resultOpen } from "../components/ParkFlow";
-import { parkFlags, usePark } from "../usePark";
+import { parkFlags } from "../parkFlags";
 
 /** Capture-only focus request: a shot declares which verb it wants highlighted. */
 export const parkFocus: { id: string | null } = { id: null };
@@ -32,10 +32,7 @@ export function ParkMenu({ reducedMotion, onReducedMotion }: ParkMenuProps): Rea
   const { commands } = useGame();
   const clock = useGameClock();
   useGameStore(() => [session.started, session.hasSave, session.saveStatus].join("|"));
-  const ctx = useGameContext();
-  const w = usePark();
-  const day = w.num("park.day");
-  const flags = parkFlags(w);
+  const { day, flags, resultUp } = useGameStore((c) => { const w = park.of(c); return { day: w.num("park.day"), flags: parkFlags(w), resultUp: resultOpen(c) }; });
   const slots = useSaveSlots(parkSlots);
   const [notice, setNotice] = useState<string | null>(null);
   const [name, setName] = useState(parkProfile.name ?? "");
@@ -44,7 +41,7 @@ export function ParkMenu({ reducedMotion, onReducedMotion }: ParkMenuProps): Rea
   const settings = <ParkSettings reducedMotion={reducedMotion} onReducedMotion={onReducedMotion} />;
 
   if (session.started) {
-    if (!clock.paused || resultOpen(ctx)) return null;
+    if (!clock.paused || resultUp) return null;
     return (
       <PauseMenu open label="The midway can wait" onResume={() => commands.run("pauseToggle", {})} eyebrow="The midway can wait" logo={LOGO} style={TOKENS}
         tagline="Your visitors and finances are paused." footer={<span>Brightway Park · day {day}</span>}

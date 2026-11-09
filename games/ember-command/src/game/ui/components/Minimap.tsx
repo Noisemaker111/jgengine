@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { MinimapChrome, useMarkers, type MinimapChromeMarker } from "@jgengine/core/map/map.view";
-import { useLiveMarkers } from "@jgengine/react/hooks";
+import { MinimapChrome, type MinimapChromeMarker } from "@jgengine/core/map/map.view";
+import { useGameContext } from "@jgengine/react/provider";
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { live } from "@jgengine/core/ui/liveValue";
 import { projectToMinimap, type MinimapView } from "@jgengine/core/map/minimap";
 
 import { enemyDrawn, fogLevel, fogSnapshot, FOG_ALPHA, type FogCellsSnapshot } from "../../fog";
@@ -80,43 +82,60 @@ export function fogPaths(snapshot: FogCellsSnapshot): { unseen: string; explored
   return { unseen, explored };
 }
 
-/** A live top-down radar built on the shared minimap primitives: own forces blue, hero gold,
- * Marauders red, gold seams amber. `useLiveMarkers` rescans scene poses each HUD tick;
- * faction/kind come from the session roster, then `MinimapChrome` plots the dots over the
- * game's own square battlefield frame. Fog of war: unseen ground is black, explored-but-unseen
- * ground is dimmed, and a Marauder unit outside Vanguard sight has no blip at all. */
-export function TacticalMinimap() {
-  const fog = useFogSnapshot();
-
-  const markers = useLiveMarkers((set, ctx) => {
-    for (const e of ctx.scene.entity.list()) {
-      const unit = session.units.get(e.id);
-      if (unit !== undefined) {
-        const x = e.position[0];
-        const z = e.position[2];
-        // Enemy units stay off the map until a friendly eye reaches them.
-        if (unit.faction === "enemy" && unit.kind === "unit" && !enemyDrawn(session.fog, x, z)) continue;
-        const side = unit.faction === "player" ? "player" : "enemy";
-        const role = unit.kind === "building" ? "Building" : unit.catalogId === "hero" ? "Hero" : "Unit";
-        set.add({ id: e.id, kind: `${side}${role}`, position: e.position });
-      } else if (e.name === "goldmine") {
-        // Terrain the army has never reached is hidden entirely, seams included.
-        if (fogLevel(session.fog, e.position[0], e.position[2]) === "unseen") continue;
-        set.add({ id: e.id, kind: "goldmine", position: e.position });
-      }
+/** Every blip on the tactical map now: friendly and seen enemy units, buildings and surveyed gold seams. */
+function tacticalDots(ctx: GameContext): MinimapChromeMarker[] {
+  const dots: MinimapChromeMarker[] = [];
+  for (const e of ctx.scene.entity.list()) {
+    const unit = session.units.get(e.id);
+    let kind: string | null = null;
+    if (unit !== undefined) {
+      const x = e.position[0];
+      const z = e.position[2];
+      // Enemy units stay off the map until a friendly eye reaches them.
+      if (unit.faction === "enemy" && unit.kind === "unit" && !enemyDrawn(session.fog, x, z)) continue;
+      const side = unit.faction === "player" ? "player" : "enemy";
+      const role = unit.kind === "building" ? "Building" : unit.catalogId === "hero" ? "Hero" : "Unit";
+      kind = `${side}${role}`;
+    } else if (e.name === "goldmine") {
+      // Terrain the army has never reached is hidden entirely, seams included.
+      if (fogLevel(session.fog, e.position[0], e.position[2]) === "unseen") continue;
+      kind = "goldmine";
     }
-  });
-
-  const dots: MinimapChromeMarker[] = useMarkers(markers).map((m) => {
-    const blip = BLIP[m.kind] ?? { color: "#5b9bff", radius: 2.4, stroke: false };
-    return {
-      id: m.id,
-      position: m.position,
+    if (kind === null) continue;
+    const blip = BLIP[kind] ?? { color: "#5b9bff", radius: 2.4, stroke: false };
+    dots.push({
+      id: e.id,
+      position: [e.position[0], e.position[1], e.position[2]],
       color: blip.color,
       radius: blip.radius,
       ...(blip.stroke ? { strokeColor: INK, strokeWidth: 0.9 } : {}),
-    };
-  });
+    });
+  }
+  return dots;
+}
+
+/** A live top-down radar built on the shared minimap primitives: own forces blue, hero gold,
+ * Marauders red, gold seams amber. The blips are rescanned from scene poses every 100 ms and handed
+ * to `MinimapChrome` as a live value, which moves them over the game's own square battlefield frame
+ * without a render. Fog of war: unseen ground is black, explored-but-unseen ground is dimmed, and a
+ * Marauder unit outside Vanguard sight has no blip at all. */
+export function TacticalMinimap() {
+  const fog = useFogSnapshot();
+
+  const ctx = useGameContext();
+  // Units move every frame; the blips are rescanned every 100 ms as before, and the chrome moves them without a render.
+  const dots = useMemo(() => {
+    let scannedAt = Number.NEGATIVE_INFINITY;
+    let list: MinimapChromeMarker[] = [];
+    return live(() => {
+      const now = performance.now();
+      if (now - scannedAt >= 100) {
+        scannedAt = now;
+        list = tacticalDots(ctx);
+      }
+      return list;
+    });
+  }, [ctx]);
 
   const fogPaint = useMemo(() => (fog === null ? null : fogPaths(fog)), [fog]);
 

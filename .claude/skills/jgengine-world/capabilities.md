@@ -521,7 +521,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## character-crowd — draw animated or static characters as batched instanced draws instead of posing each skeleton
 
-- `CharacterCrowd` (function) · `import { CharacterCrowd } from "@jgengine/core/anim/CharacterCrowd.draw"`
+- `CharacterCrowd` (const) · `import { CharacterCrowd } from "@jgengine/core/anim/CharacterCrowd.draw"`
 
 ## character-motion — switch foot IK, glance and locomotion per game, model or entity
 
@@ -1534,7 +1534,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## particle-field — render a core particle pool as soft points, velocity streaks, connected ribbons, flakes, flames, smoke sprites, or ground ripples
 
-- `ParticleField` (function) · `import { ParticleField } from "@jgengine/core/vfx/ParticleField.draw"`
+- `ParticleField` (const) · `import { ParticleField } from "@jgengine/core/vfx/ParticleField.draw"`
 
 ## particle-system — deterministic pooled particle emitter with spawn volumes, force fields, bounded collision/death events, live tuning, SoA render buffers, and serializable state
 
@@ -2319,7 +2319,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## tween-number — rolling number readout with an up/down delta flash
 
-- `TweenNumber` (function) · `import { TweenNumber } from "@jgengine/core/anim/tweenNumber.view"`
+- `TweenNumber` (const) · `import { TweenNumber } from "@jgengine/core/anim/tweenNumber.view"`
 
 ## tweened-value — animate a displayed number toward its target, honouring reduced motion
 

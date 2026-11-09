@@ -5,6 +5,8 @@ import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { HudButton } from "@jgengine/core/hud/hudButton.view";
 import { useGame, useSceneObjects } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/react/provider";
+import { LiveText } from "@jgengine/core/ui/liveBind.view";
 import { useStore } from "@jgengine/react/store";
 import { GAME_FONTS } from "../../art/fonts/fonts";
 import { householdStore } from "../session/store";
@@ -28,6 +30,53 @@ function readPreferences(): OrbitPreferences {
   catch { return { calm: false, contrast: false }; }
 }
 
+/** The pantry and bills drawer: today's books, rations and repairs, with the ticking credits written live. */
+function PantryLedger({ command }: { command: (name: string, data?: Record<string, unknown>) => unknown }) {
+  const ctx = useGameContext();
+  const objects = useSceneObjects();
+  const ledger = useStore(householdStore, (state) => ({
+    dayHarvest: state.dayHarvest,
+    bill: Math.round(nextBill(state, objects)),
+    credits: Math.floor(state.credits),
+    debt: state.debt,
+    lastDay: state.lastDay === null ? null : { ...state.lastDay },
+    pantry: state.pantry,
+    reliefDay: state.reliefDay,
+    day: state.day,
+    canBuy: state.credits >= RATION_BUNDLE.cost && state.pantry + RATION_BUNDLE.quantity <= PANTRY_CAP,
+    canRelief: state.reliefDay !== state.day && state.pantry < 4 && state.credits < RATION_BUNDLE.cost,
+    broken: (state.hazards?.broken ?? []).flatMap((id) => {
+      const obj = objects.find((o) => o.instanceId === id);
+      return obj === undefined ? [] : [{ id, catalogId: obj.catalogId, affordable: state.credits >= repairCost(obj.catalogId) }];
+    }),
+    hullLeak: state.hazards?.hullLeak === true,
+    canPatch: state.credits >= HULL_PATCH_COST,
+  }));
+  const { canBuy, canRelief } = ledger;
+  return <>
+    <div className="orbit-balance">
+      <span>Earned today<LiveText as="b" get={() => creditsText(householdStore.read(ctx).dayIncome)} /></span>
+      <span>Grown today<b>{ledger.dayHarvest} rations</b></span>
+      <span>Due at midnight<b>{ledger.bill}</b></span>
+      <span>In the jar<b>{creditsText(ledger.credits)}</b></span>
+      {ledger.debt > 0 && <span className="warning">Debt carried<b>{creditsText(ledger.debt)}</b></span>}
+    </div>
+    {ledger.lastDay && <p className="orbit-day-report">Yesterday: {creditsText(ledger.lastDay.income)} earned, {ledger.lastDay.harvest} rations grown, {ledger.lastDay.bill} billed, {ledger.lastDay.missed} shifts missed.</p>}
+    <HudButton disabled={!canBuy} onClick={() => command("household.rations")}>Buy {RATION_BUNDLE.quantity} rations · {RATION_BUNDLE.cost} credits</HudButton>
+    <p className="orbit-fine">{canBuy ? "Each meal uses one ration." : ledger.pantry + RATION_BUNDLE.quantity > PANTRY_CAP ? "The pantry has no room for six more." : <LiveText get={() => `Need ${creditsText(RATION_BUNDLE.cost - householdStore.read(ctx).credits)} more credits.`} />}</p>
+    <HudButton disabled={!canRelief} onClick={() => command("household.relief")}>Emergency {RELIEF.quantity} rations · +{RELIEF.debt} debt</HudButton>
+    <p className="orbit-fine">{canRelief ? "Once a day. The next bill repays up to 40." : ledger.reliefDay === ledger.day ? "Relief already taken today." : "Only when under 4 rations and 36 credits."}</p>
+    {(ledger.broken.length > 0 || ledger.hullLeak) && <>
+      <h3 className="orbit-repairs-head">Repairs</h3>
+      {ledger.broken.map(({ id, catalogId, affordable }) => (
+        <HudButton key={id} disabled={!affordable} onClick={() => command("household.repair", { id })}>Mend the {FURNITURE_BY_ID[catalogId]?.name ?? "furnishing"} · {repairCost(catalogId)} credits</HudButton>
+      ))}
+      {ledger.hullLeak && <HudButton disabled={!ledger.canPatch} onClick={() => command("household.patchHull")}>Patch the torpor wing · {HULL_PATCH_COST} credits</HudButton>}
+      <p className="orbit-fine">Broken furnishings stand idle and an inspector fines a habitat in disrepair.</p>
+    </>}
+  </>;
+}
+
 /**
  * The habitat HUD as the household's own kitchen: a wall clock and calendar top-left, the fridge
  * door top-right, the beings as magnets down the left, and a tray of three tools at the foot.
@@ -37,10 +86,15 @@ export function GameUI() {
   useGameFonts(GAME_FONTS);
   const layout = useHudLayout({ storageKey: "odd-orbit" });
   const profile = useDisplayProfile();
-  const household = useStore(householdStore);
-  const session = useStore(orbitSession);
+  // The habitat writes the household every tick; the frame needs only which panels are up.
+  const household = useStore(householdStore, (state) => ({
+    selectedMemberId: state.selectedMemberId,
+    buildTool: state.buildTool,
+    transmission: state.incident != null && state.charter?.review == null,
+    pantryLow: state.pantry < 4,
+  }));
+  const session = useStore(orbitSession, (state) => ({ screen: state.screen }));
   const { commands } = useGame();
-  const objects = useSceneObjects();
   const panels = usePanels([{ id: "build", group: "habitat" }, { id: "ledger", group: "habitat" }]);
   const drawer = panels.isOpen("build") ? "build" : panels.isOpen("ledger") ? "ledger" : null;
   const setDrawer = (id: "build" | "ledger" | null) => { if (id) panels.open(id); else { panels.close("build"); panels.close("ledger"); } };
@@ -50,10 +104,6 @@ export function GameUI() {
   const compact = profile.compact;
   const landscape = compact && !profile.portrait;
   const phone = compact && !landscape;
-  const canBuy = household.credits >= RATION_BUNDLE.cost && household.pantry + RATION_BUNDLE.quantity <= PANTRY_CAP;
-  const canRelief = household.reliefDay !== household.day && household.pantry < 4 && household.credits < RATION_BUNDLE.cost;
-  const bill = nextBill(household, objects);
-  const broken = (household.hazards?.broken ?? []).flatMap((id) => { const obj = objects.find((o) => o.instanceId === id); return obj === undefined ? [] : [{ id, catalogId: obj.catalogId }]; });
   const setPreference = (key: keyof OrbitPreferences, value: boolean) => {
     const next = { ...preferences, [key]: value };
     setPreferences(next);
@@ -76,7 +126,7 @@ export function GameUI() {
         <HudPanel id="clock" anchor="top-left" priority="critical"><HouseClock compact={compact} /></HudPanel>
         <HudPanel id="fridge" anchor="top-right" priority="critical"><FridgeMagnets compact={phone} /></HudPanel>
         {!sheetOpen && <HudPanel id="charter" anchor="top-right" order={1} chip="charter"><CharterNote compact={phone} /></HudPanel>}
-        {household.incident != null && household.charter?.review == null && <HudPanel id="transmission" anchor="top" priority="critical"><TransmissionSlip /></HudPanel>}
+        {household.transmission && <HudPanel id="transmission" anchor="top" priority="critical"><TransmissionSlip /></HudPanel>}
         <HudPanel id="roster" anchor="left" priority="critical"><RosterPanel compact={compact} /></HudPanel>
         {household.selectedMemberId && !drawer && <HudPanel id="inspector" anchor="right" priority="critical"><Inspector /></HudPanel>}
         {drawer && <HudPanel id="drawer" anchor="right" priority="critical">
@@ -87,28 +137,7 @@ export function GameUI() {
               <Enamel as="button" tone="cream" radius={99} padding="0" className="orbit-close" aria-label="Close habitat panel" onClick={() => setDrawer(null)}><GameIcon name="cross" size={14} /></Enamel>
             </header>
             <div className="orbit-drawer-body">
-              {drawer === "build" ? <BuildPalette onChoose={() => setDrawer(null)} /> : <>
-                <div className="orbit-balance">
-                  <span>Earned today<b>{creditsText(household.dayIncome)}</b></span>
-                  <span>Grown today<b>{household.dayHarvest} rations</b></span>
-                  <span>Due at midnight<b>{Math.round(bill)}</b></span>
-                  <span>In the jar<b>{creditsText(Math.floor(household.credits))}</b></span>
-                  {household.debt > 0 && <span className="warning">Debt carried<b>{creditsText(household.debt)}</b></span>}
-                </div>
-                {household.lastDay && <p className="orbit-day-report">Yesterday: {creditsText(household.lastDay.income)} earned, {household.lastDay.harvest} rations grown, {household.lastDay.bill} billed, {household.lastDay.missed} shifts missed.</p>}
-                <HudButton disabled={!canBuy} onClick={() => command("household.rations")}>Buy {RATION_BUNDLE.quantity} rations · {RATION_BUNDLE.cost} credits</HudButton>
-                <p className="orbit-fine">{canBuy ? "Each meal uses one ration." : household.pantry + RATION_BUNDLE.quantity > PANTRY_CAP ? "The pantry has no room for six more." : `Need ${creditsText(RATION_BUNDLE.cost - household.credits)} more credits.`}</p>
-                <HudButton disabled={!canRelief} onClick={() => command("household.relief")}>Emergency {RELIEF.quantity} rations · +{RELIEF.debt} debt</HudButton>
-                <p className="orbit-fine">{canRelief ? "Once a day. The next bill repays up to 40." : household.reliefDay === household.day ? "Relief already taken today." : "Only when under 4 rations and 36 credits."}</p>
-                {(broken.length > 0 || household.hazards?.hullLeak === true) && <>
-                  <h3 className="orbit-repairs-head">Repairs</h3>
-                  {broken.map(({ id, catalogId }) => (
-                    <HudButton key={id} disabled={household.credits < repairCost(catalogId)} onClick={() => command("household.repair", { id })}>Mend the {FURNITURE_BY_ID[catalogId]?.name ?? "furnishing"} · {repairCost(catalogId)} credits</HudButton>
-                  ))}
-                  {household.hazards?.hullLeak === true && <HudButton disabled={household.credits < HULL_PATCH_COST} onClick={() => command("household.patchHull")}>Patch the torpor wing · {HULL_PATCH_COST} credits</HudButton>}
-                  <p className="orbit-fine">Broken furnishings stand idle and an inspector fines a habitat in disrepair.</p>
-                </>}
-              </>}
+              {drawer === "build" ? <BuildPalette onChoose={() => setDrawer(null)} /> : <PantryLedger command={command} />}
             </div>
           </KitPanel>
         </HudPanel>}
@@ -117,8 +146,8 @@ export function GameUI() {
             <Enamel as="button" tone="butter" radius={20} padding="0" className="orbit-tool" aria-expanded={drawer === "build"} onClick={() => setDrawer(drawer === "build" ? null : "build")}>
               <GameIcon name="hammer" size={22} /><span>Furnish</span>
             </Enamel>
-            <Enamel as="button" tone={household.pantry < 4 ? "coral" : "mint"} radius={20} padding="0" className="orbit-tool" aria-expanded={drawer === "ledger"} onClick={() => setDrawer(drawer === "ledger" ? null : "ledger")}>
-              <GameIcon name="bread" size={22} /><span>Pantry</span>{household.pantry < 4 && <i className="orbit-badge" aria-label="Pantry is low">!</i>}
+            <Enamel as="button" tone={household.pantryLow ? "coral" : "mint"} radius={20} padding="0" className="orbit-tool" aria-expanded={drawer === "ledger"} onClick={() => setDrawer(drawer === "ledger" ? null : "ledger")}>
+              <GameIcon name="bread" size={22} /><span>Pantry</span>{household.pantryLow && <i className="orbit-badge" aria-label="Pantry is low">!</i>}
             </Enamel>
             <Enamel as="button" tone="lilac" radius={20} padding="0" className="orbit-tool" onClick={() => command("orbit.pause")}>
               <GameIcon name="tome" size={22} /><span>Handbook</span>

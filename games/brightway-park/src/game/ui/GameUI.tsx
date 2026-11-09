@@ -1,7 +1,6 @@
 import { type CSSProperties, useState } from "react";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/core/hud/hudLayout.view";
 import { useGame, useGameClock, useGameStore } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
 import { useGameFonts } from "@jgengine/core/ui/fonts.view";
 import { usePanels } from "@jgengine/core/ui/panels.view";
 import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";
@@ -18,7 +17,6 @@ import { ResearchPanel } from "./components/ResearchPanel";
 import { ParkHint } from "./components/ParkHint";
 import { currentHint } from "../onboarding";
 import { session } from "../session";
-import { usePark } from "./usePark";
 
 const MOTION_KEY = "brightway-park.reduced-motion";
 function savedMotion(): boolean { try { return localStorage.getItem(MOTION_KEY) === "true"; } catch { return false; } }
@@ -28,14 +26,12 @@ export function GameUI() {
   const { commands } = useGame(); const clock = useGameClock();
   const started = useGameStore(() => session.started);
   const inspecting = useGameStore((ctx) => session.selectedObject !== null || ctx.scene.entity.selection.list().length > 0);
-  // The world holds game over, the ribbon and the scenario result; re-read them when it changes.
-  const w = usePark();
-  const ctx = useGameContext();
-  const hinting = currentHint(ctx) !== null;
+  const hinting = useGameStore((c) => currentHint(c) !== null);
+  const resultUp = useGameStore((c) => resultOpen(c));
   const [reducedMotion, setReducedMotion] = useState(savedMotion);
   const layout = useHudLayout({ storageKey: "brightway-park" });
   // While the pause board or a result screen is up it owns the keys, so the palette hotkeys stand down.
-  const panels = usePanels(PARK_PANELS, { hotkeys: started && !clock.paused && !resultOpen(ctx) });
+  const panels = usePanels(PARK_PANELS, { hotkeys: started && !clock.paused && !resultUp });
   const onReducedMotion = (next: boolean) => {
     setReducedMotion(next);
     try { localStorage.setItem(MOTION_KEY, String(next)); } catch { /* Preferences remain usable for this session. */ }

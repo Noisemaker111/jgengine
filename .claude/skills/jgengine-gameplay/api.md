@@ -576,11 +576,11 @@
 
 ## @jgengine/core/feed/killFeed.view
 
-- `KillFeed` (function): function KillFeed({ ticker, kindStyles, theme, iconSize = 18, animate = true, zIndex = 40, renderIcon, rowStyle, oldestFirst = false, className, style, }: KillFeedProps): ReactNode — A vertical event/kill-feed ticker: renders an {@link EventTicker}'s recent entries as a stack of rows, newest on top, each with its `fade` `0..1` mapped to opacity so entries dim and drop as they age out. Each row shows an optional per-kind (or per-entry) {@link GameIcon} and a per-kind accent color from `kindStyles`, styled with HudTheme tokens. Presentation only: all capping/timing lives in the core ticker, and the free-string `kind`/`text`/`icon` are never interpreted here — a game colors and icons each variant via `kindStyles`.
+- `KillFeed` (const): const KillFeed: React.NamedExoticComponent<KillFeedProps> — A vertical event/kill-feed ticker: renders an {@link EventTicker}'s recent entries as a stack of rows, newest on top, each with its `fade` `0..1` mapped to opacity so entries dim and drop as they age out. Each row shows an optional per-kind (or per-entry) {@link GameIcon} and a per-kind accent color from `kindStyles`, styled with HudTheme tokens. Presentation only: all capping/timing lives in the core ticker, and the free-string `kind`/`text`/`icon` are never interpreted here — a game colors and icons each variant via `kindStyles`.
 - `KillFeedKindStyle` (interface): interface KillFeedKindStyle — Per-`kind` styling for a kill-feed row — accent color and an optional icon.
 - `KillFeedProps` (interface): interface KillFeedProps — Props for {@link KillFeed}.
 - `KillFeedTheme` (interface): interface KillFeedTheme — Reskin tokens for {@link KillFeed}.
-- `useEventTicker` (function): function useEventTicker(ticker: EventTicker, animate = true): EventTickerView[] — Subscribe to an event ticker and re-render it on an animation frame (unless the game already ticks it), returning the live entries newest-first with `fade` applied. Driving the frame loop is what makes entries visibly fade and drop as they age out.
+- `useEventTicker` (function): function useEventTicker(ticker: EventTicker, animate = true): EventTickerView[] — Subscribe to an event ticker, returning the live entries newest-first with `fade` applied. It re-renders only when an entry arrives or ages out (checked each frame while `animate`); the fade itself is drawn per frame by {@link KillFeed} without a render.
 
 ## @jgengine/core/game/clipRoles
 
@@ -2422,10 +2422,10 @@
 
 ## @jgengine/core/mission/objectiveBanner.view
 
-- `ObjectiveBannerHost` (function): function ObjectiveBannerHost({ controller, theme, kindThemes, animate = true, dismissOnClick = false, zIndex = 50, placement = "overlay", className, style, }: ObjectiveBannerHostProps): ReactNode — A full-screen overlay (or, with `placement: "inline"`, a block in a HUD slot) that renders an {@link ObjectiveBannerController} as the classic transient centered title stamp — "WAVE 3", "VICTORY", "OBJECTIVE COMPLETE" — flying in, holding, and fading out. It subscribes to the model, drives `advance()` on an animation frame (unless the game ticks it), and maps the current banner's phase + progress to opacity/scale/translate. Reskin the base look with {@link ObjectiveBannerTheme} and color each variant via `kindThemes` keyed on the game-owned `kind`. Presentation only: all timing and queueing live in the core model, and `kind` is never interpreted here.
+- `ObjectiveBannerHost` (const): const ObjectiveBannerHost: React.NamedExoticComponent<ObjectiveBannerHostProps> — A full-screen overlay (or, with `placement: "inline"`, a block in a HUD slot) that renders an {@link ObjectiveBannerController} as the classic transient centered title stamp — "WAVE 3", "VICTORY", "OBJECTIVE COMPLETE" — flying in, holding, and fading out. It subscribes to the model, drives `advance()` on an animation frame (unless the game ticks it), and maps the current banner's phase + progress to opacity/scale/translate. Reskin the base look with {@link ObjectiveBannerTheme} and color each variant via `kindThemes` keyed on the game-owned `kind`. Presentation only: all timing and queueing live in the core model, and `kind` is never interpreted here.
 - `ObjectiveBannerHostProps` (interface): interface ObjectiveBannerHostProps — Props for {@link ObjectiveBannerHost}.
-- `ObjectiveBannerTheme` (interface): interface ObjectiveBannerTheme — Reskin tokens for {@link ObjectiveBannerHost}. Per-`kind` overrides layer on top.
-- `useObjectiveBanner` (function): function useObjectiveBanner(controller: ObjectiveBannerController, animate = true): ObjectiveBannerView | null — Subscribe to a banner controller, drive its clock on an animation frame (unless the game already ticks it), and return the banner to draw right now — or `null` when idle. Re-renders every frame while a banner is animating.
+- `ObjectiveBannerTheme` (interface): interface ObjectiveBannerTheme { accent?: string; title?: string; subtitle?: string; fontFamily?: string; titleSize?: string; subtitleSize?: string } — ⚠ undocumented · used by `OnboardingBanner` (@jgengine/core/onboarding/onboarding.view): The step-done banner ("Gather stone" / "Next: Craft a Stone Pick") through `ObjectiveBannerHost`.
+- `useObjectiveBanner` (function): function useObjectiveBanner(controller: ObjectiveBannerController, animate = true): ObjectiveBannerView | null — Subscribe to a banner controller, drive its clock on an animation frame (unless the game already ticks it), and return the banner to draw right now — or `null` when idle. Re-renders when a banner or its phase changes; its motion is drawn per frame by the host.
 
 ## @jgengine/core/mission/objectives
 
@@ -2555,7 +2555,7 @@
 
 ## @jgengine/core/notifications/toastStack.view
 
-- `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack. Reach for this when the message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot log); for ad-hoc player messages push to `ctx.game.notices`, which the shell draws as a {@link NoticeStack}.
+- `ToastStack` (const): const ToastStack: React.NamedExoticComponent<{ action: string; limit?: number | undefined; className?: string | undefined; renderToast?: ((entry: FeedEntry<unknown>, index: number) => React.ReactNode) | undefined; }> — Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack. Reach for this when the message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot log); for ad-hoc player messages push to `ctx.game.notices`, which the shell draws as a {@link NoticeStack}.
 
 ## @jgengine/core/onboarding/OnboardingPointer.draw
 

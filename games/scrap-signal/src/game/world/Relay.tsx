@@ -8,7 +8,7 @@ import { RELAY, relayStore } from "../relay";
 /** Original salvage antenna: copper coils, ceramic insulators, riveted feet and a split tuning fork. */
 export function SalvageRelay() {
   const ctx = useGameContext();
-  const state = useStore(relayStore);
+  const state = useStore(relayStore, (relay) => ({ phase: relay.phase, rewarded: relay.rewarded, wave: relay.wave }));
   const rotor = useRef<Group>(null);
   const live = state.phase === "defend" || state.phase === "upload";
   const color = state.rewarded ? "#7ef1bf" : live ? "#ffbb55" : "#64dbea";

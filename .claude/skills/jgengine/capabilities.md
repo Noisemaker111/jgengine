@@ -110,11 +110,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## hud-canvas — the HUD root surface — design-resolution scaling plus live panel-placement editing (F2+C)
 
-- `HudCanvas` (function) · `import { HudCanvas } from "@jgengine/shell/gameKit"`
+- `HudCanvas` (const) · `import { HudCanvas } from "@jgengine/shell/gameKit"`
 
 ## hud-clock — in-game time-of-day readout bound to the sim clock
 
-- `Clock` (function) · `import { Clock } from "@jgengine/shell/gameKit"`
+- `Clock` (const) · `import { Clock } from "@jgengine/shell/gameKit"`
 
 ## hud-coins — currency counter widget bound to a currency id
 
@@ -122,11 +122,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## hud-fade — HUD group that fades when idle and returns when its values change
 
-- `HudFade` (function) · `import { HudFade } from "@jgengine/shell/gameKit"`
+- `HudFade` (const) · `import { HudFade } from "@jgengine/shell/gameKit"`
 
 ## hud-hotbar — optional inventory hotbar building block — games own slot chrome
 
-- `Hotbar` (function) · `import { Hotbar } from "@jgengine/shell/gameKit"`
+- `Hotbar` (const) · `import { Hotbar } from "@jgengine/shell/gameKit"`
 
 ## hud-layout — persistent, live-editable HUD panel layout state for `HudCanvas`
 
@@ -134,7 +134,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## hud-panel — anchored HUD slot — drop any widget in a named, player-movable panel
 
-- `HudPanel` (function) · `import { HudPanel } from "@jgengine/shell/gameKit"`
+- `HudPanel` (const) · `import { HudPanel } from "@jgengine/shell/gameKit"`
 
 ## hud-slots — a play HUD of edge-pinned, player-movable panels in one component
 

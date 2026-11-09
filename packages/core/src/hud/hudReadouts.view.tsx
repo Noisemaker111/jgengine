@@ -1,12 +1,16 @@
-import { useMemo, type CSSProperties, type ReactNode } from "react";
+import { useRef, type CSSProperties, type ReactNode } from "react";
 
 import { groundSpeed } from "@jgengine/core/scene/entityStore";
 
 import { iconForItemId } from "@jgengine/core/ui/icons/gameIcons.view";
 import { hudFrameStyle } from "./hudFrame.view";
 import { IconTreatment, schoolForItem } from "@jgengine/core/ui/icons/iconTreatment.view";
-import { useCurrency, useGameClock, useGameStore, useInventory, localPlayerEntity } from "@jgengine/react/hooks";
+import { useCurrency, useGameCalendar, useGameClock, useInventory, localPlayerEntity } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/react/provider";
+import { LiveText, useFrameBind } from "@jgengine/core/ui/liveBind.view";
+import { isLive, readLive, type Live } from "@jgengine/core/ui/liveValue";
 import { hudType } from "./hudTokens";
+import { memoView } from "../ui/memoView.view";
 
 /**
  * Optional HUD building blocks bound to live game state — not a finished game face. Every game
@@ -28,7 +32,7 @@ const PANEL: CSSProperties = hudFrameStyle("glass");
   *
  * @capability hud-hotbar optional inventory hotbar building block — games own slot chrome
  */
-export function Hotbar({
+export const Hotbar = memoView("Hotbar", function Hotbar({
   inventoryId,
   activeSlot,
   keys,
@@ -94,14 +98,14 @@ export function Hotbar({
       })}
     </div>
   );
-}
+});
 
 /**
  * A speedometer for an entity (defaults to the local player) — an SVG arc gauge + a digital readout.
  * `scale` converts world units/second to your display unit (3.6 → km/h, 2.237 → mph); `max` sets the
  * gauge's top of scale.
  */
-export function Speedometer({
+export const Speedometer = memoView("Speedometer", function Speedometer({
   entityId,
   scale = 3.6,
   unit = "km/h",
@@ -118,11 +122,12 @@ export function Speedometer({
   style?: CSSProperties;
   className?: string;
 }) {
-  const speed = useGameStore((ctx) => {
+  const ctx = useGameContext();
+  const speed = (): number => {
     const entity = entityId === undefined ? localPlayerEntity(ctx) : ctx.scene.entity.get(entityId);
     return entity === null ? 0 : groundSpeed(entity) * scale;
-  });
-  const fraction = Math.max(0, Math.min(1, speed / max));
+  };
+  const needle = useRef<SVGPathElement>(null);
   // 240° sweep from -210° to +30°.
   const startDeg = -210;
   const sweep = 240;
@@ -135,17 +140,25 @@ export function Speedometer({
     const large = sweep * (toFrac - fromFrac) > 180 ? 1 : 0;
     return `M ${cx + radius * Math.cos(a0)} ${cy + radius * Math.sin(a0)} A ${radius} ${radius} 0 ${large} 1 ${cx + radius * Math.cos(a1)} ${cy + radius * Math.sin(a1)}`;
   };
+  useFrameBind(
+    needle,
+    () => Math.max(0, Math.min(1, speed() / max)),
+    (fraction, path) => {
+      path.setAttribute("d", arc(0, fraction));
+      path.setAttribute("stroke", fraction > 0.85 ? "#f87171" : "#38bdf8");
+    },
+  );
   return (
     <div className={className} style={{ ...PANEL, width: size, padding: 6, textAlign: "center", ...style }}>
       <svg width={size - 12} height={(size - 12) * 0.72} viewBox={`0 0 ${size} ${size * 0.72}`} style={{ display: "block", margin: "0 auto" }}>
         <path d={arc(0, 1)} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={7} strokeLinecap="round" />
-        <path d={arc(0, fraction)} fill="none" stroke={fraction > 0.85 ? "#f87171" : "#38bdf8"} strokeWidth={7} strokeLinecap="round" />
+        <path ref={needle} fill="none" strokeWidth={7} strokeLinecap="round" />
       </svg>
-      <div style={{ marginTop: -8, fontVariantNumeric: "tabular-nums", fontWeight: 700, fontSize: 18, lineHeight: 1 }}>{Math.round(speed)}</div>
+      <LiveText as="div" style={{ marginTop: -8, fontVariantNumeric: "tabular-nums", fontWeight: 700, fontSize: 18, lineHeight: 1 }} get={() => Math.round(speed())} />
       <div style={{ fontSize: hudType("xs"), opacity: 0.6, letterSpacing: 0.4, textTransform: "uppercase" }}>{unit}</div>
     </div>
   );
-}
+});
 
 /**
  * A time-of-day clock reading the sim calendar — `Day N · HH:MM`, 24h or 12h. `controls` adds
@@ -154,7 +167,7 @@ export function Speedometer({
   *
  * @capability hud-clock in-game time-of-day readout bound to the sim clock
  */
-export function Clock({
+export const Clock = memoView("Clock", function Clock({
   format = "24h",
   showDay = true,
   controls = false,
@@ -167,20 +180,13 @@ export function Clock({
   style?: CSSProperties;
   className?: string;
 }) {
+  const ctx = useGameContext();
   const clock = useGameClock();
-  const { hour, minute, day } = clock.calendar;
-  const label = useMemo(() => {
-    const mm = minute.toString().padStart(2, "0");
-    if (format === "12h") {
-      const h12 = hour % 12 === 0 ? 12 : hour % 12;
-      return `${h12}:${mm} ${hour < 12 ? "AM" : "PM"}`;
-    }
-    return `${hour.toString().padStart(2, "0")}:${mm}`;
-  }, [hour, minute, format]);
+  const day = useGameCalendar((calendar) => calendar.day);
   return (
     <div className={className} style={{ ...PANEL, padding: "5px 10px", display: "inline-flex", alignItems: "center", gap: 8, fontVariantNumeric: "tabular-nums", ...style }}>
       {showDay ? <span style={{ fontSize: hudType("xs"), opacity: 0.6 }}>Day {day + 1}</span> : null}
-      <span style={{ fontWeight: 700, fontSize: 14 }}>{label}</span>
+      <LiveText style={{ fontWeight: 700, fontSize: 14 }} get={() => clockLabel(ctx.time.calendar(), format)} />
       {controls ? (
         <span style={{ display: "inline-flex", gap: 3, marginLeft: 4 }}>
           <ClockPill label={clock.paused ? "▶" : "❚❚"} active={false} onClick={() => (clock.paused ? clock.controls.play() : clock.controls.pause())} />
@@ -191,6 +197,15 @@ export function Clock({
       ) : null}
     </div>
   );
+});
+
+function clockLabel({ hour, minute }: { hour: number; minute: number }, format: "24h" | "12h"): string {
+  const mm = minute.toString().padStart(2, "0");
+  if (format === "12h") {
+    const h12 = hour % 12 === 0 ? 12 : hour % 12;
+    return `${h12}:${mm} ${hour < 12 ? "AM" : "PM"}`;
+  }
+  return `${hour.toString().padStart(2, "0")}:${mm}`;
 }
 
 function ClockPill({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
@@ -239,7 +254,7 @@ export function Coins({
 }
 
 /** A minimal center crosshair reticle — four ticks around a gap. Purely presentational. */
-export function Crosshair({
+export const Crosshair = memoView("Crosshair", function Crosshair({
   size = 18,
   gap = 5,
   thickness = 2,
@@ -247,22 +262,42 @@ export function Crosshair({
   style,
   className,
 }: {
-  size?: number;
-  gap?: number;
+  /** Box size in px; `live(() => px)` when it breathes every frame. */
+  size?: Live<number>;
+  /** Centre gap in px; `live(() => px)` when it opens and closes with spread every frame. */
+  gap?: Live<number>;
   thickness?: number;
   color?: string;
   style?: CSSProperties;
   className?: string;
 }) {
+  const box = useRef<HTMLDivElement>(null);
+  useFrameBind(
+    box,
+    () => (isLive(size) || isLive(gap) ? `${readLive(size)}:${readLive(gap)}` : null),
+    (key, element) => {
+      if (key === null) return;
+      const [boxSize = 0, centreGap = 0] = key.split(":").map(Number);
+      const arm = `${boxSize / 2 - centreGap}px`;
+      element.style.width = `${boxSize}px`;
+      element.style.height = `${boxSize}px`;
+      const [up, down, left, right] = Array.from(element.children, (child) => (child instanceof HTMLElement ? child : null));
+      if (up) up.style.height = arm;
+      if (down) down.style.height = arm;
+      if (left) left.style.width = arm;
+      if (right) right.style.width = arm;
+    },
+  );
+  const boxSize = readLive(size), centreGap = readLive(gap);
   const tick = (extra: CSSProperties): CSSProperties => ({ position: "absolute", background: color, borderRadius: thickness, ...extra });
   return (
     <div className={className} style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", ...style }}>
-      <div style={{ position: "relative", width: size, height: size }}>
-        <div style={tick({ left: "50%", top: 0, width: thickness, height: size / 2 - gap, transform: "translateX(-50%)" })} />
-        <div style={tick({ left: "50%", bottom: 0, width: thickness, height: size / 2 - gap, transform: "translateX(-50%)" })} />
-        <div style={tick({ top: "50%", left: 0, height: thickness, width: size / 2 - gap, transform: "translateY(-50%)" })} />
-        <div style={tick({ top: "50%", right: 0, height: thickness, width: size / 2 - gap, transform: "translateY(-50%)" })} />
+      <div ref={box} style={{ position: "relative", width: boxSize, height: boxSize }}>
+        <div style={tick({ left: "50%", top: 0, width: thickness, height: boxSize / 2 - centreGap, transform: "translateX(-50%)" })} />
+        <div style={tick({ left: "50%", bottom: 0, width: thickness, height: boxSize / 2 - centreGap, transform: "translateX(-50%)" })} />
+        <div style={tick({ top: "50%", left: 0, height: thickness, width: boxSize / 2 - centreGap, transform: "translateY(-50%)" })} />
+        <div style={tick({ top: "50%", right: 0, height: thickness, width: boxSize / 2 - centreGap, transform: "translateY(-50%)" })} />
       </div>
     </div>
   );
-}
+});

@@ -2,6 +2,8 @@ import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { useCurrency, useEntityStat, useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
 import { HudButton } from "@jgengine/core/hud/hudButton.view";
 import { useStore } from "@jgengine/react/store";
+import { useGameContext } from "@jgengine/react/provider";
+import { LiveText } from "@jgengine/core/ui/liveBind.view";
 
 import { RIFT_REROLL_CORES, riftBoard, riftLeaveSeconds, riftMutatorsFor, riftStore, riftTerminalOpenStore } from "../../rift/rift";
 import { MEDAL_REWARDS, RIFT_TIER_COUNT, medalTargets, mutatorById, riftEventId, riftScaling, romanTier } from "../../rift/tiers";
@@ -46,7 +48,7 @@ export function OverdriveTerminal() {
   const { commands } = useGame();
   const { userId } = usePlayer();
   const open = useStore(riftTerminalOpenStore);
-  const rift = useStore(riftStore);
+  const rift = useStore(riftStore, (state) => ({ selected: state.selected }));
   const cores = useCurrency("cores");
   const level = Math.round(useEntityStat(userId, "level")?.current ?? 1);
   const board = useGameStore((ctx) => riftBoard(ctx));
@@ -131,20 +133,33 @@ export function OverdriveTerminal() {
 /** The live run on the rig: tier, clock against the next medal, the wave, its mutators, and its result. */
 export function OverdriveCard() {
   const { commands } = useGame();
-  const rift = useStore(riftStore);
-  const leave = useGameStore((ctx) => riftLeaveSeconds(ctx));
-  const board = useGameStore((ctx) => riftBoard(ctx));
-  const run = rift.run;
+  const ctx = useGameContext();
+  // The run as the card prints it: the clock and the countdown tick every frame, so the card takes their
+  // medal pace, whole seconds and lit pips, and the clock itself is a live text.
+  const run = useStore(riftStore, (state) => {
+    const current = state.run;
+    if (current === null) return null;
+    const targets = medalTargets(current.tier);
+    const { elapsed: _elapsed, countdown, ...rest } = current;
+    const pace: "gold" | "silver" | "bronze" = current.elapsed <= targets.gold ? "gold" : current.elapsed <= targets.silver ? "silver" : "bronze";
+    return {
+      ...rest,
+      pace,
+      countdown: countdown === null ? null : Math.ceil(countdown),
+      countdownPips: countdown === null || current.countdownTotal <= 0 ? 0 : countdown > 0 ? Math.max(1, Math.ceil(Math.max(0, Math.min(1, countdown / current.countdownTotal)) * 12 - 0.001)) : 0,
+    };
+  });
+  const leave = useGameStore((c) => { const seconds = riftLeaveSeconds(c); return seconds === null ? null : Math.ceil(seconds); });
+  const board = useGameStore((c) => riftBoard(c));
   if (run === null) return null;
   const live = run.phase === "running" || run.phase === "intermission";
   const target = board.next(riftEventId(run.tier));
-  const targets = medalTargets(run.tier);
-  const pace = run.elapsed <= targets.gold ? "gold" : run.elapsed <= targets.silver ? "silver" : "bronze";
+  const pace = run.pace;
   return (
     <Plate material="carbon" cut="notch" depth={10} rim={live ? SIGNAL.red : SIGNAL.rimHot} padding="8px 10px" className="od-card">
       <div className="od-card-head">
         <Stamp tone={live ? "red" : "amber"}>Overdrive {romanTier(run.tier)}</Stamp>
-        <span className="od-clock" style={{ color: live ? MEDAL_COLOR[pace] : undefined }}>{clock(run.elapsed)}</span>
+        <LiveText className="od-clock" style={{ color: live ? MEDAL_COLOR[pace] : undefined }} get={() => clock(riftStore.read(ctx).run?.elapsed ?? 0)} />
       </div>
       {live ? (
         <>
@@ -155,11 +170,11 @@ export function OverdriveCard() {
           <div className="od-mutators small"><MutatorChips ids={run.mutators} /></div>
           {run.phase === "intermission" && run.countdown !== null ? (
             <div className="od-intermission">
-              <Pips value={run.countdown} max={run.countdownTotal} count={12} color={SIGNAL.amber} />
-              <HudButton onClick={() => commands.run("rift.callWave", {})} className="od-call">Call wave [N] · {Math.ceil(run.countdown)}s</HudButton>
+              <Pips value={run.countdownPips} max={12} count={12} color={SIGNAL.amber} />
+              <HudButton onClick={() => commands.run("rift.callWave", {})} className="od-call">Call wave [N] · {run.countdown}s</HudButton>
             </div>
           ) : null}
-          {leave !== null ? <div className="od-warn">Back to the wreck — {Math.ceil(leave)}s</div> : null}
+          {leave !== null ? <div className="od-warn">Back to the wreck — {leave}s</div> : null}
         </>
       ) : (
         <>

@@ -2,6 +2,7 @@ import { type CSSProperties, type ReactNode } from "react";
 
 import { GameIcon, iconForAction, iconForItemId, type GameIconName } from "./gameIcons.view";
 import { hudType } from "@jgengine/core/hud/hudTokens";
+import { memoView } from "../memoView.view";
 
 /**
  * `IconTreatment` (#1035): a procedural painted-icon face — a glyph over a school-keyed radial
@@ -87,7 +88,7 @@ export interface IconTreatmentProps {
 }
 
 /** A painted icon face — gradient + vignette + gloss behind a glyph, with count/keycap badges. */
-export function IconTreatment({
+export const IconTreatment = memoView("IconTreatment", function IconTreatment({
   icon,
   glyph,
   school = "neutral",
@@ -151,7 +152,7 @@ export function IconTreatment({
       ) : null}
     </div>
   );
-}
+});
 
 /** Maps an item id to a treated icon — resolves a `GameIcon` glyph and an inferred school. */
 export function treatedItemIcon(itemId: string, options: { size?: number; count?: number; keycap?: string } = {}): ReactNode {

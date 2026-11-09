@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { memoView } from "../memoView.view";
 
 export const GAME_ICON_NAMES = [
   "sword",
@@ -611,7 +612,7 @@ const ICONS: Record<GameIconName, ReactNode> = {
   ),
 };
 
-export function GameIcon({
+export const GameIcon = memoView("GameIcon", function GameIcon({
   name,
   size = 24,
   color,
@@ -637,7 +638,7 @@ export function GameIcon({
       {ICONS[name]}
     </svg>
   );
-}
+});
 
 const ITEM_ID_RULES: readonly [readonly string[], GameIconName][] = [
   [["crossbow"], "crossbow"],

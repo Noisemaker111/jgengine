@@ -353,7 +353,7 @@
 
 ## @jgengine/core/anim/CharacterCrowd.draw
 
-- `CharacterCrowd` (function): function CharacterCrowd({ models, registry, fps = 24, onPick }: CharacterCrowdProps): React.JSX.Element — Draws characters through the GPU batch path: one baked rig per character kind, one instanced draw per material, every member's clip, time offset and speed sampled in the vertex shader. The entity markers decide who is batched (their `lod` tiers and the batch capacity) and write poses into `registry`; this layer owns the bakes, the materials and the instance buffers. Mount it in the same canvas as the entity markers; unmount it to fall back to per-entity rigs.
+- `CharacterCrowd` (const): const CharacterCrowd: React.NamedExoticComponent<CharacterCrowdProps> — Draws characters through the GPU batch path: one baked rig per character kind, one instanced draw per material, every member's clip, time offset and speed sampled in the vertex shader. The entity markers decide who is batched (their `lod` tiers and the batch capacity) and write poses into `registry`; this layer owns the bakes, the materials and the instance buffers. Mount it in the same canvas as the entity markers; unmount it to fall back to per-entity rigs.
 - `CharacterCrowdProps` (interface): interface CharacterCrowdProps — Props for {@link CharacterCrowd}.
 
 ## @jgengine/core/anim/PartMotion.draw
@@ -563,7 +563,7 @@
 ## @jgengine/core/anim/tweenNumber.view
 
 - `TweenDelta` (type): type TweenDelta = "up" | "down" — Direction of the last change, for the delta flash.
-- `TweenNumber` (function): function TweenNumber({ value, format = defaultFormat, flash = true, durationMs, ease, className, style }: TweenNumberProps): ReactNode — A counter that rolls to each new value and flashes the `--jg-success` / `--jg-danger` color with a small scale pop on the change (`data-jg-delta="up" | "down"`). Tabular digits keep its width stable.
+- `TweenNumber` (const): const TweenNumber: React.NamedExoticComponent<TweenNumberProps> — A counter that rolls to each new value and flashes the `--jg-success` / `--jg-danger` color with a small scale pop on the change (`data-jg-delta="up" | "down"`). Tabular digits keep its width stable.
 - `TweenNumberProps` (interface): interface TweenNumberProps extends TweenOptions — Props for {@link TweenNumber}.
 - `TweenOptions` (interface): interface TweenOptions — Options for {@link useTweenedValue}.
 - `tweenAt` (function): function tweenAt(from: number, to: number, t: number, ease: (t: number) => number = easeOutCubic): number — Value at progress `t` (0–1) between `from` and `to` under `ease`.
@@ -2619,7 +2619,7 @@
 - `MapLegendProps` (interface): interface MapLegendProps — Props for {@link MapLegend}.
 - `MapViewport` (interface): interface MapViewport — Pan/zoom transform applied to a {@link WorldMapSurface}'s content group.
 - `Minimap` (function): function Minimap({ markers, center, worldRadius, fog, size = 176, facingYaw = 0, rotate = false, kindStyles = DEFAULT_MARKER_KINDS, background, mapBounds, routes, zones, cellStates, onWorldClick, className, style, title = "Map", children, }: MinimapProps): ReactNode — Framed circular minimap: optional baked terrain background, reveal-on-event fog overlay, categorized marker icons, and a facing arrow. Reads static marker views, an external marker source, or a native `MarkerSet`; supply your own `kindStyles` palette to reskin. Does not require `GameProvider`.
-- `MinimapChrome` (function): function MinimapChrome({ view, frame = false, frameColor = "rgba(148,163,184,0.4)", frameStrokeWidth = 1.5, cardinalLabel = "N", markers = [], markerColor = "#e2e8f0", markerRadius = 5, className, handle, }: MinimapChromeProps): ReactNode — Headless minimap chrome — nests inside a game's own `<svg>`: an optional ring frame, and edge-clamped marker dots that draw as directional arrows when a marker carries a `heading` (the compass-arrow / player-blip layer ~8 games were re-drawing by hand over `projectToMinimap`/`clampToMinimapEdge`). Renders a bare `<g>` — no background, panel, or title; compose your own content layer (routes, zones, terrain) as sibling SVG nodes for full control of z-order, or call `MinimapChrome` twice (once for `frame`, again for `markers`) to sandwich custom content between the ring and the blips.
+- `MinimapChrome` (function): function MinimapChrome({ view, frame = false, frameColor = "rgba(148,163,184,0.4)", frameStrokeWidth = 1.5, cardinalLabel = "N", markers: markerSource = NO_CHROME_MARKERS, markerColor = "#e2e8f0", markerRadius = 5, className, handle, }: MinimapChromeProps): ReactNode — Headless minimap chrome — nests inside a game's own `<svg>`: an optional ring frame, and edge-clamped marker dots that draw as directional arrows when a marker carries a `heading` (the compass-arrow / player-blip layer ~8 games were re-drawing by hand over `projectToMinimap`/`clampToMinimapEdge`). Renders a bare `<g>` — no background, panel, or title; compose your own content layer (routes, zones, terrain) as sibling SVG nodes for full control of z-order, or call `MinimapChrome` twice (once for `frame`, again for `markers`) to sandwich custom content between the ring and the blips.
 - `MinimapChromeHandle` (interface): interface MinimapChromeHandle — Moves an already-drawn `MinimapChrome`'s markers in place. `place` writes the same positions, rotations and visibility a render with these props would, to markers with the ids the chrome last rendered; markers it has not rendered yet need a render first.
 - `MinimapChromeMarker` (interface): interface MinimapChromeMarker — One dot (or, with `heading`, a rotated arrow) drawn by `MinimapChrome`.
 - `MinimapChromeProps` (interface): interface MinimapChromeProps — Props for `MinimapChrome`.
@@ -5794,7 +5794,7 @@
 
 ## @jgengine/core/time/simClock
 
-- `CalendarTime` (interface): interface CalendarTime { totalSeconds: number; day: number; hour: number; minute: number; second: number; dayFraction: number; year: number; dayOfYear: number; yearFraction: number; season?: string | undefined } — ⚠ undocumented
+- `CalendarTime` (interface): interface CalendarTime { totalSeconds: number; day: number; hour: number; minute: number; second: number; dayFraction: number; year: number; dayOfYear: number; yearFraction: number; season?: string | undefined } — ⚠ undocumented · used by `useGameCalendar` (@jgengine/react): A slow part of the sim calendar (the day, the season, the hour), re-rendering only when it changes: `useGameCalendar((c) => c.day)`.
 - `ClockSnapshot` (interface): interface ClockSnapshot { now: number; paused: boolean; speed: number; playSpeed: number; timescale: number; scale: number; speeds: readonly number[]; calendar: CalendarTime } — ⚠ undocumented
 - `SimClock` (interface): interface SimClock { advance(realDt: number): number; now(): number; advancedSeconds?(): number; snapshot(): ClockSnapshot; hydrate(snapshot: ClockSnapshot): void; calendar(): CalendarTime; isPaused(): boolean; speed(): number; pause(): void; play(): void; st… — ⚠ undocumented · used by `createSimContext` (@jgengine/core/runtime/simContext): Build `ctx.sim` for a context; `createGameContext` calls this from `definition.simulation`.
 - `SimClockOptions` (interface): interface SimClockOptions { config?: TimeConfig | undefined; onChange?: () => void } — ⚠ undocumented
@@ -5844,7 +5844,7 @@
 ## @jgengine/core/vfx/ParticleField.draw
 
 - `ParticleBlending` (type): type ParticleBlending = "additive" | "normal" — How particle fragments composite on screen.
-- `ParticleField` (function): function ParticleField({ system, advance = true, blending = "additive", scale = 300, depthWrite = false, render, metrics }: ParticleFieldProps): ReactElement — Render one pooled simulation through a point cloud or instanced quads. Output selection does not replace spawn, forces, collisions, or deterministic state.
+- `ParticleField` (const): const ParticleField: React.MemoExoticComponent<({ system, advance, blending, scale, depthWrite, render, metrics }: ParticleFieldProps) => React.ReactElement<unknown, string | React.JSXElementConstructor<any>>> — Render one pooled simulation through a point cloud or instanced quads. Output selection does not replace spawn, forces, collisions, or deterministic state.
 - `ParticleFieldProps` (interface): interface ParticleFieldProps — Props for the existing pooled particle renderer.
 
 ## @jgengine/core/vfx/effectLibrary

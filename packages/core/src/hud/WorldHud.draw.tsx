@@ -1,6 +1,6 @@
 import { Html, Line } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { CombatTelegraphEvent, EntityFloatTextEvent } from "@jgengine/core/game/events";
@@ -191,6 +191,16 @@ export interface WorldNameplatesProps {
   renderNameplate?: (sample: NameplateSample) => ReactNode;
 }
 
+/** The same plates with the same names and health: a plate the camera moved needs no render. */
+function samePlates(previous: readonly NameplateSample[], next: readonly NameplateSample[]): boolean {
+  if (previous.length !== next.length) return false;
+  for (let index = 0; index < next.length; index += 1) {
+    const a = previous[index], b = next[index];
+    if (a === undefined || b === undefined || a.id !== b.id || a.name !== b.name || a.percent !== b.percent) return false;
+  }
+  return true;
+}
+
 /**
  * Billboarded name + 78×6px HP bar over every nearby non-local entity that
  * passes `roles`/`maxDistance` — headless (className/data-* slots on every
@@ -222,6 +232,8 @@ export function WorldNameplates({
   const size = useThree((state) => state.size);
   const [samples, setSamples] = useState<readonly NameplateSample[]>([]);
   const samplesRef = useRef<NameplateSample[]>([]);
+  const shownRef = useRef<readonly NameplateSample[]>([]);
+  const platesRef = useRef(new Map<string, HTMLDivElement>());
   const projectRef = useRef(new THREE.Vector3());
   const lastTickRef = useRef(-Infinity);
   const warnRef = useRef<RangeWarnState | null>(null);
@@ -260,7 +272,19 @@ export function WorldNameplates({
         ),
       );
     }
-    setSamples([...samplesRef.current]);
+    const next = samplesRef.current;
+    if (renderNameplate !== undefined || !samePlates(shownRef.current, next)) {
+      shownRef.current = next.map((sample) => ({ ...sample }));
+      setSamples(shownRef.current);
+      return;
+    }
+    // Same plates: only the camera moved them, so move their nodes without a render.
+    for (const sample of next) {
+      const node = platesRef.current.get(sample.id);
+      if (node === undefined) continue;
+      node.style.left = `${sample.x}px`;
+      node.style.top = `${sample.y}px`;
+    }
   }, CAMERA_POST_FRAME_PRIORITY + 0.01);
 
   return (
@@ -274,6 +298,7 @@ export function WorldNameplates({
           ) : (
             <div
               key={sample.id}
+              ref={(node) => { if (node === null) platesRef.current.delete(sample.id); else platesRef.current.set(sample.id, node); }}
               className={nameplateClassName}
               data-nameplate={sample.id}
               style={{
@@ -393,7 +418,7 @@ interface Floater {
   event: EntityFloatTextEvent;
 }
 
-function FloatTextItem({ event, lifeMs }: { event: EntityFloatTextEvent; lifeMs: number }) {
+const FloatTextItem = memo(function FloatTextItem({ event, lifeMs }: { event: EntityFloatTextEvent; lifeMs: number }) {
   const [shown, setShown] = useState(false);
   const style = useMemo(() => resolveFloatTextStyle(event), [event]);
   useEffect(() => {
@@ -416,7 +441,7 @@ function FloatTextItem({ event, lifeMs }: { event: EntityFloatTextEvent; lifeMs:
       {event.text}
     </span>
   );
-}
+});
 
 export function WorldFloatText({ height = 1.9, lifeMs = 950 }: { height?: number; lifeMs?: number }) {
   const ctx = useGameContext();

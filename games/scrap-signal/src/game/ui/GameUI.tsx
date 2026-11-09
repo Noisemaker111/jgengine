@@ -38,8 +38,7 @@ export function GameUI() {
   const combat = useHostilesNear();
   const [overlay, setOverlay] = useState<HTMLElement | null>(null);
   const { phase } = useGamePhase();
-  const riftRun = useStore(riftStore).run;
-  const inRun = riftRun !== null && (riftRun.phase === "running" || riftRun.phase === "intermission");
+  const inRun = useStore(riftStore, (state) => state.run !== null && (state.run.phase === "running" || state.run.phase === "intermission"));
   // The front end replaces the field: the menu is the only surface a boot shows, and no run overlay
   // paints through it. A run's HUD mounts when the player leaves the menu.
   if (phase === "menu") return <ScrapMenu />;

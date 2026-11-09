@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode, RefObject } from "react";
 import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { HudCanvas, HudFade, HudPanel, useHudLayout } from "@jgengine/core/hud/hudLayout.view";
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { memoView } from "@jgengine/core/ui/memoView.view";
 import { useEntityStat, useGame } from "@jgengine/react/hooks";
 
 import { hudStore, type ArmyUnit, type HeroKitEntry, type HudSnapshot } from "../../hudStore";
@@ -42,7 +43,7 @@ function useHud(): HudSnapshot {
  * A bar ruled in ink on the sheet: an outlined box filled with a hatched wash of one colour. It is a
  * meter for assistive tech, and the number beside it is the exact reading.
  */
-function InkBar({ value, max, color, label, className }: { value: number; max: number; color: string; label: string; className?: string }) {
+const InkBar = memoView("InkBar", function InkBar({ value, max, color, label, className }: { value: number; max: number; color: string; label: string; className?: string }) {
   const ratio = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
   return (
     <span
@@ -57,17 +58,17 @@ function InkBar({ value, max, color, label, className }: { value: number; max: n
       <span />
     </span>
   );
-}
+});
 
 /** One entry on the ledger strip: a glyph and its count, written in the quartermaster's hand. */
-function LedgerEntry({ icon, value, warn, label }: { icon: string; value: string; warn?: boolean; label: string }) {
+const LedgerEntry = memoView("LedgerEntry", function LedgerEntry({ icon, value, warn, label }: { icon: string; value: string; warn?: boolean; label: string }) {
   return (
     <span className="ec-ledger-entry" data-warn={warn === true ? "" : undefined} aria-label={label}>
       <GlyphIcon name={icon} className="ec-ledger-glyph" />
       <b>{value}</b>
     </span>
   );
-}
+});
 
 /**
  * The ledger strip along the top of the war table: stores, both keeps' walls and the reinforcement
@@ -194,7 +195,7 @@ interface Tip {
 }
 
 /** One stone token on the command board: a gilt glyph, its key carved in the corner, its cost below. */
-function Slot({
+const Slot = memoView("Slot", function Slot({
   icon,
   hotkey,
   foot,
@@ -232,7 +233,7 @@ function Slot({
       {foot !== undefined ? <span className="ec-slot-foot">{foot}</span> : null}
     </button>
   );
-}
+});
 
 function costFoot(gold?: number, lumber?: number): string {
   return [gold ? String(gold) : "", lumber ? `·${lumber}` : ""].filter(Boolean).join("");

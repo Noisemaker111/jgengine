@@ -1,19 +1,22 @@
 import { LevelUpFlash } from "@jgengine/core/ui/components.view";
-import { useEntityStat, useGameStore, usePlayer } from "@jgengine/react/hooks";
+import { useRef } from "react";
+import { useEntityStat, useGameStore, useGameTimeWindow, usePlayer } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/react/provider";
+import { useFrameBind } from "@jgengine/core/ui/liveBind.view";
+import { live } from "@jgengine/core/ui/liveValue";
 import { usePlayerFov } from "@jgengine/core/camera/PlayerFov.draw";
 import { Crosshair } from "@jgengine/core/hud/hudReadouts.view";
 import { lastHit, lastHurtAtMs } from "../../feel";
 import { handlingView } from "../../handling";
 
-function useNowMs(): number {
-  return useGameStore((ctx) => ctx.time.now() * 1000);
-}
-
 export function HitMarker() {
-  const nowMs = useNowMs();
-  const hit = lastHit();
-  const age = nowMs - hit.atMs;
-  if (age < 0 || age > 220) return null;
+  // The hit on screen, or null once its 220 ms are up: a new hit or the end of the window re-renders, nothing else.
+  const hit = useGameStore((ctx) => {
+    const last = lastHit();
+    const age = ctx.time.now() * 1000 - last.atMs;
+    return age < 0 || age > 220 ? null : { atMs: last.atMs, kill: last.kill, crit: last.crit };
+  });
+  if (hit === null) return null;
   const color = hit.kill ? "#e23c2e" : hit.crit ? "#ffb400" : "#f5f0e6";
   const size = hit.crit || hit.kill ? 30 : 22;
   return (
@@ -44,37 +47,56 @@ export function spreadRadiusPx(spread: number, fovDeg: number, viewportHeight: n
 const RETICLE_OUTLINE = { filter: "drop-shadow(0 0 1px #000) drop-shadow(0 0 1px #000) drop-shadow(0 0 3px rgba(0,0,0,0.7))" };
 
 export function SpreadReticle() {
-  const view = useGameStore((ctx) => handlingView(ctx));
+  const ctx = useGameContext();
+  const armed = useGameStore((c) => handlingView(c) !== null);
   const { fov } = usePlayerFov();
-  if (view === null) {
+  const fovRef = useRef(fov);
+  fovRef.current = fov;
+  const frame = useRef<HTMLDivElement>(null);
+  // The cone opens and closes every frame: the gap, the box and the fade are written to their nodes, never rendered.
+  const reticle = () => {
+    const view = handlingView(ctx);
+    if (view === null) return { gap: 0, opacity: 1 };
+    const { spread, adsProgress } = view.handling;
+    const zoom = 1 + ((view.presentation?.adsZoom ?? 1) - 1) * adsProgress;
+    return { gap: Math.max(3, Math.min(90, spreadRadiusPx(spread, fovRef.current * zoom, window.innerHeight))), opacity: 1 - adsProgress * 0.35 };
+  };
+  useFrameBind(frame, () => { const { gap, opacity } = reticle(); return `${Math.round(gap)}:${opacity}`; }, (key, element) => {
+    const [gap = "0", opacity = "1"] = key.split(":");
+    element.dataset["reticleGap"] = gap;
+    if (armed) element.style.opacity = opacity;
+  });
+  if (!armed) {
     return (
-      <div data-reticle-gap={0} className="pointer-events-none absolute inset-0 z-30">
+      <div ref={frame} data-reticle-gap={0} className="pointer-events-none absolute inset-0 z-30">
         <Crosshair style={RETICLE_OUTLINE} />
       </div>
     );
   }
-  const { spread, adsProgress } = view.handling;
-  const zoom = 1 + ((view.presentation?.adsZoom ?? 1) - 1) * adsProgress;
-  const gap = Math.max(3, Math.min(90, spreadRadiusPx(spread, fov * zoom, window.innerHeight)));
+  const now = reticle();
   return (
-    <div data-reticle-gap={Math.round(gap)} className="pointer-events-none absolute inset-0 z-30" style={{ opacity: 1 - adsProgress * 0.35 }}>
-      <Crosshair gap={gap} size={gap * 2 + 28} thickness={3} color="#fff4e2" style={RETICLE_OUTLINE} />
+    <div ref={frame} data-reticle-gap={Math.round(now.gap)} className="pointer-events-none absolute inset-0 z-30" style={{ opacity: now.opacity }}>
+      <Crosshair gap={live(() => reticle().gap)} size={live(() => reticle().gap * 2 + 28)} thickness={3} color="#fff4e2" style={RETICLE_OUTLINE} />
     </div>
   );
 }
 
+function vignetteShadow(strength: number): string {
+  return `inset 0 0 ${90 + strength * 80}px ${20 + strength * 40}px rgba(190, 30, 16, ${0.35 * strength + 0.15})`;
+}
+
 export function DamageVignette() {
-  const nowMs = useNowMs();
-  const hurtAt = lastHurtAtMs();
-  const age = nowMs - hurtAt;
-  if (age < 0 || age > 450) return null;
-  const strength = 1 - age / 450;
-  return (
-    <div
-      className="pointer-events-none absolute inset-0 z-30"
-      style={{ boxShadow: `inset 0 0 ${90 + strength * 80}px ${20 + strength * 40}px rgba(190, 30, 16, ${0.35 * strength + 0.15})` }}
-    />
-  );
+  const ctx = useGameContext();
+  const hurtAt = useGameStore(() => lastHurtAtMs());
+  const shown = useGameTimeWindow(hurtAt, 450);
+  const edge = useRef<HTMLDivElement>(null);
+  // The red edge fades over 450 ms: each frame writes its strength to the node.
+  const strength = () => Math.max(0, Math.min(1, 1 - (ctx.time.now() * 1000 - hurtAt) / 450));
+  useFrameBind(edge, strength, (value, element) => {
+    element.style.boxShadow = vignetteShadow(value);
+  });
+  if (!shown) return null;
+  return <div ref={edge} className="pointer-events-none absolute inset-0 z-30" style={{ boxShadow: vignetteShadow(strength()) }} />;
 }
 
 export function LevelUpBurst() {

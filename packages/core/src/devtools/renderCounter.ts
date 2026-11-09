@@ -10,11 +10,14 @@ export interface ComponentRenders {
   name: string;
   renders: number;
   perSecond: number;
+  perFrame: number;
 }
 
 /** Every commit and component render since the counter was installed or reset. */
 export interface RenderCounts {
   seconds: number;
+  /** Animation frames the page ran over the same span: a page that renders slowly is judged per frame, not per second. */
+  frames: number;
   commits: number;
   renders: number;
   components: ComponentRenders[];
@@ -45,7 +48,15 @@ export function installRenderCounter(scope: { __REACT_DEVTOOLS_GLOBAL_HOOK__?: u
   if (scope.__REACT_DEVTOOLS_GLOBAL_HOOK__ !== undefined) return null;
   const counts = new Map<string, number>();
   let commits = 0;
+  let frames = 0;
   let since = performance.now();
+  if (typeof requestAnimationFrame === "function") {
+    const frame = () => {
+      frames += 1;
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  }
   type Fiber = { tag: number; type: unknown; flags: number; alternate: Fiber | null; child: Fiber | null; sibling: Fiber | null };
   const nameOf = (type: unknown): string => {
     if (typeof type === "function") return String(Reflect.get(type, "displayName") ?? "") || type.name || "Anonymous";
@@ -93,13 +104,19 @@ export function installRenderCounter(scope: { __REACT_DEVTOOLS_GLOBAL_HOOK__?: u
     reset() {
       counts.clear();
       commits = 0;
+      frames = 0;
       since = performance.now();
     },
     read() {
       const seconds = (performance.now() - since) / 1000;
-      const components = [...counts].map(([name, renders]) => ({ name, renders, perSecond: Math.round((renders / Math.max(seconds, 0.001)) * 10) / 10 }));
+      const components = [...counts].map(([name, renders]) => ({
+        name,
+        renders,
+        perSecond: Math.round((renders / Math.max(seconds, 0.001)) * 10) / 10,
+        perFrame: Math.round((renders / Math.max(frames, 1)) * 100) / 100,
+      }));
       components.sort((a, b) => b.renders - a.renders);
-      return { seconds: Math.round(seconds * 10) / 10, commits, renders: components.reduce((sum, entry) => sum + entry.renders, 0), components };
+      return { seconds: Math.round(seconds * 10) / 10, frames, commits, renders: components.reduce((sum, entry) => sum + entry.renders, 0), components };
     },
     count: (name) => counts.get(name) ?? 0,
   };

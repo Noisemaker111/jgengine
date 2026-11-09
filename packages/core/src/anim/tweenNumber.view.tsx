@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 
 import { useReducedMotion } from "../ui/accessibility.view";
 import { useEngineStyles } from "@jgengine/react/engineStyles";
+import { memoView } from "../ui/memoView.view";
 
 /** Value at progress `t` (0–1) between `from` and `to` under `ease`. */
 export function tweenAt(from: number, to: number, t: number, ease: (t: number) => number = easeOutCubic): number {
@@ -70,7 +71,7 @@ const defaultFormat = (value: number): ReactNode => Math.round(value).toLocaleSt
  *
  * @capability tween-number rolling number readout with an up/down delta flash
  */
-export function TweenNumber({ value, format = defaultFormat, flash = true, durationMs, ease, className, style }: TweenNumberProps): ReactNode {
+export const TweenNumber = memoView("TweenNumber", function TweenNumber({ value, format = defaultFormat, flash = true, durationMs, ease, className, style }: TweenNumberProps): ReactNode {
   useEngineStyles();
   const shown = useTweenedValue(value, { durationMs, ease });
   const previous = useRef(value);
@@ -88,4 +89,4 @@ export function TweenNumber({ value, format = defaultFormat, flash = true, durat
       </span>
     </span>
   );
-}
+});

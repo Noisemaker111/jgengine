@@ -1,4 +1,6 @@
-import { forwardRef, useEffect, useRef, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
+import { useEffect, useRef, type CSSProperties, type HTMLAttributes, type ReactNode, type Ref } from "react";
+
+import { memoView } from "../ui/memoView.view";
 
 import { useReducedMotion } from "@jgengine/core/ui/accessibility.view";
 import { useEngineStyles } from "@jgengine/react/engineStyles";
@@ -45,10 +47,22 @@ const EXIT_MS = 140;
  *
  * @capability hud-surface themed panel frame with elevation, header slots, landmark element, and open/close transitions
  */
-export const HudSurface = forwardRef<HTMLElement, HudSurfaceProps>(function HudSurface(
-  { as: Element = "div", open, title, aside, elevation = "raised", padding, width, interactive = true, cue, onInteract, style, children, ...rest },
+export const HudSurface = memoView("HudSurface", function HudSurface({
+  as: Element = "div",
+  open,
+  title,
+  aside,
+  elevation = "raised",
+  padding,
+  width,
+  interactive = true,
+  cue,
+  onInteract,
+  style,
+  children,
   ref,
-) {
+  ...rest
+}: HudSurfaceProps & { ref?: Ref<HTMLElement> }): ReactNode {
   useEngineStyles();
   const reduced = useReducedMotion();
   const shown = open ?? true;

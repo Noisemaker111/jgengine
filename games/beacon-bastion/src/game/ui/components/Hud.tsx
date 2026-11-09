@@ -1,3 +1,5 @@
+import { useRef } from "react";
+import { useFrameBind } from "@jgengine/core/ui/liveBind.view";
 import { useActionBindings } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
@@ -240,11 +242,23 @@ export function ReleaseHorn() {
  * goes dark while it recovers, and fills back up like a rising flame. Beacon Fire arms and waits for
  * a click on the road.
  */
+/** How far a rite has recharged, as the stone's fill height: it climbs every frame of a cooldown. */
+function riteFill(id: string): number {
+  const slot = session.abilities.snapshot().find((entry) => entry.id === id);
+  return slot === undefined ? 100 : Math.round((1 - slot.cooldownFraction) * 100);
+}
+
+function RiteFill({ id }: { id: string }) {
+  const fill = useRef<HTMLSpanElement>(null);
+  useFrameBind(fill, () => riteFill(id), (height, element) => { element.style.height = `${height}%`; });
+  return <span ref={fill} className="bb-rite-fill" style={{ height: `${riteFill(id)}%` }} aria-hidden />;
+}
+
 export function AbilityStones() {
   const keybinds = useActionBindings();
   const { commands } = useGame();
   const armed = useGameStore(() => session.armedAbility);
-  const slots = useGameStore(() => session.abilities.snapshot().map((slot) => ({ id: slot.id, ready: slot.ready, fraction: slot.cooldownFraction, left: Math.ceil(slot.cooldownRemainingMs / 1000) })));
+  const slots = useGameStore(() => session.abilities.snapshot().map((slot) => ({ id: slot.id, ready: slot.ready, left: Math.ceil(slot.cooldownRemainingMs / 1000) })));
   return (
     <div className="bb-rites" data-jg="abilities">
       {slots.map((slot) => {
@@ -267,7 +281,7 @@ export function AbilityStones() {
             cue={slot.ready ? "confirm" : undefined}
             onClick={() => commands.run(`ability.${slot.id}`, {})}
           >
-            <span className="bb-rite-fill" style={{ height: `${Math.round((1 - slot.fraction) * 100)}%` }} aria-hidden />
+            <RiteFill id={slot.id} />
             <GameIcon name={def.icon} size={22} />
             <span className="bb-rite-name">{slot.ready ? def.label : `${slot.left}s`}</span>
             {key === null ? null : <kbd>{key}</kbd>}

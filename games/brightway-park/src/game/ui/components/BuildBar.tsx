@@ -20,10 +20,9 @@ import { placementHintStore } from "../../build/placementHint";
 import { isLandTool, LAND_COST, LAND_TOOLS } from "../../build/terrain";
 import { LINE_KINDS } from "../../build/commands";
 import { canUndoBuild } from "../../build/undo";
-import { PRICE_TOLERANCE } from "../../park";
+import { park, PRICE_TOLERANCE } from "../../park";
 import { guestRidePreference, rideFit } from "../../sim/rideExperience";
 import { coasterCircuit } from "../../rides";
-import { usePark } from "../usePark";
 
 /** The three numbers a ride is judged by, as a compact line. */
 function ratingsLine(def: BuildableDef): string {
@@ -49,9 +48,12 @@ export function BuildBar({ onClose, onResearch }: { onClose: () => void; onResea
   const [category, setCategory] = useState<BuildCategory>("ride");
   const [group, setGroup] = useState<RideGroup>("gentle");
   const { commands } = useGame();
-  const w = usePark();
   const ctx = useGameContext();
-  const cash = w.num("park.cash");
+  // Which tickets the till can pay for and which the lab still holds: the bar redraws when one flips, not as cash ticks.
+  const stock = useGameStore((c) => {
+    const w = park.of(c), cash = w.num("park.cash");
+    return { landPoor: cash < LAND_COST, poor: Object.values(BUILDABLES).filter((d) => cash < d.cost).map((d) => d.id), locked: Object.values(BUILDABLES).filter((d) => w.canPlace(d.id)?.reason === "locked").map((d) => d.id) };
+  });
   const selected = useGameStore(() => session.selectedTool);
   const undoable = useGameStore(() => canUndoBuild());
   const refusal = useStore(placementHintStore);
@@ -86,15 +88,15 @@ export function BuildBar({ onClose, onResearch }: { onClose: () => void; onResea
         <div className="bw-tickets" role="group" aria-label="Blueprints">
           {category === "land" ? Object.entries(LAND_TOOLS).map(([id, tool]) => (
             <KitButton key={id} pressed={selected === id} variant={selected === id ? "primary" : "secondary"} icon={tool.icon} title={tool.blurb} onClick={() => commands.run("build.select", { id })}
-              glyph={<span data-bad={cash < LAND_COST ? "" : undefined}>${LAND_COST}</span>}>{tool.label}</KitButton>
+              glyph={<span data-bad={stock.landPoor ? "" : undefined}>${LAND_COST}</span>}>{tool.label}</KitButton>
           )) : null}
           {items.map((def) => {
             // Locked is the world's word: the kind's `when` reads its lab topic. A locked ticket opens the lab.
-            const locked = w.canPlace(def.id)?.reason === "locked";
+            const locked = stock.locked.includes(def.id);
             return <KitButton key={def.id} data-build-item={def.id} pressed={selected === def.id} variant={selected === def.id ? "primary" : "secondary"} icon={locked ? "🔬" : def.icon}
               title={locked ? `${def.blurb} (research it in the lab first)` : def.blurb}
               onClick={() => (locked ? onResearch() : commands.run("build.select", { id: def.id }))}
-              glyph={locked ? `Lab $${(def.research?.cost ?? 0).toLocaleString()}` : <span data-bad={cash < def.cost ? "" : undefined}>${def.cost.toLocaleString()}</span>}>{def.label}</KitButton>;
+              glyph={locked ? `Lab $${(def.research?.cost ?? 0).toLocaleString()}` : <span data-bad={stock.poor.includes(def.id) ? "" : undefined}>${def.cost.toLocaleString()}</span>}>{def.label}</KitButton>;
           })}
         </div>
       </KitPanel>

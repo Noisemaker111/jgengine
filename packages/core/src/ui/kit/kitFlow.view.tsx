@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
+import { LiveText, useFrameBind, useLiveSelect } from "../liveBind.view";
+import { isLive, live, readLive, type Live } from "../liveValue";
+import { memoView } from "../memoView.view";
+
 import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
 import { useUiCue } from "../uiCues.view";
 import type { KitTone } from "./uiKit.view";
@@ -47,14 +51,15 @@ export interface KitObjectiveProps {
   eyebrow?: ReactNode | undefined;
   /** Optional checklist; done steps are struck. */
   steps?: readonly KitObjectiveStep[] | undefined;
-  /** Metres to the target; shown as "72 m". */
-  distance?: number;
+  /** Metres to the target; shown as "72 m". Give `live(() => metres)` when it moves every frame. */
+  distance?: Live<number>;
   /**
    * Direction to the target relative to where the player faces, radians clockwise (0 = straight
-   * ahead). Shows an arrow so the player never walks the wrong way.
+   * ahead). Shows an arrow so the player never walks the wrong way. Live when it moves every frame.
    */
-  bearing?: number;
-  deadline?: KitObjectiveDeadline | undefined;
+  bearing?: Live<number>;
+  /** The countdown; `live(() => ({ remaining, total }))` when it ticks. */
+  deadline?: Live<KitObjectiveDeadline> | undefined;
   /** Seconds left at which the deadline turns urgent. Default the larger of 10 s and a quarter of the total. */
   urgentAt?: number;
   /** Shown once the player has made no progress for `hintAfter` seconds. */
@@ -78,7 +83,7 @@ export interface KitObjectiveProps {
  *
  * @capability kit-objective first-minute guidance in the active UI kit — goal, distance and direction, checklist, countdown with urgency warnings, idle hint, next-action prompt
  */
-export function KitObjective({
+export const KitObjective = memoView("KitObjective", function KitObjective({
   title,
   eyebrow,
   steps,
@@ -94,7 +99,7 @@ export function KitObjective({
   style,
 }: KitObjectiveProps): ReactNode {
   const cue = useUiCue();
-  const stage = deadline === undefined ? "calm" : deadlineStage(deadline, urgentAt);
+  const stage = useLiveSelect(deadline, (now) => (now === undefined ? "calm" : deadlineStage(now, urgentAt)));
   const lastStage = useRef<KitDeadlineStage>(stage);
   useEffect(() => {
     if (stage !== lastStage.current && stage !== "calm") cue(stage === "urgent" ? "deny" : "notify");
@@ -114,23 +119,32 @@ export function KitObjective({
   }, [progressKey, hintAfter, hint === undefined]);
 
   const tone: KitTone = stage === "urgent" ? "bad" : stage === "warn" ? "warn" : "accent";
+  const arrow = useRef<SVGSVGElement>(null);
+  useFrameBind(
+    arrow,
+    () => (isLive(bearing) ? readLive(bearing) : null),
+    (radians, element) => {
+      if (radians !== null) element.style.transform = `rotate(${radians}rad)`;
+    },
+  );
   const aside =
     distance === undefined ? undefined : (
       <span data-jg-objective-distance="" style={{ display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}>
         {bearing === undefined ? null : (
           <svg
+            ref={arrow}
             data-jg-objective-arrow=""
             aria-hidden="true"
             viewBox="0 0 24 24"
             width="1.15em"
             height="1.15em"
-            style={{ display: "block", flex: "none", transform: `rotate(${bearing}rad)`, transition: "transform 120ms linear" }}
+            style={{ display: "block", flex: "none", ...(isLive(bearing) ? {} : { transform: `rotate(${bearing}rad)` }), transition: "transform 120ms linear" }}
           >
             {/* Head and shaft: a bare arrowhead turned to 5 o'clock reads as pointing left. */}
             <path d="M12 1.5 L21.5 11.5 L15.5 11.5 L15.5 22.5 L8.5 22.5 L8.5 11.5 L2.5 11.5 Z" fill="currentColor" stroke="var(--kit-surface, #fff)" strokeWidth="1.5" strokeLinejoin="round" />
           </svg>
         )}
-        {Math.round(distance)} m
+        {isLive(distance) ? <LiveText get={() => `${Math.round(readLive(distance))} m`} /> : <>{Math.round(distance)} m</>}
       </span>
     );
   return (
@@ -149,7 +163,7 @@ export function KitObjective({
               </ul>
             )}
             {deadline === undefined ? null : (
-              <KitMeter value={deadline.remaining} max={deadline.total} tone={tone === "accent" ? "good" : tone} readout={formatCountdown(deadline.remaining)} size="sm" />
+              <KitObjectiveCountdown deadline={deadline} tone={tone === "accent" ? "good" : tone} />
             )}
             {stuck && hint !== undefined ? <div data-jg-objective-hint="">{hint}</div> : null}
           </div>
@@ -157,6 +171,19 @@ export function KitObjective({
       </KitPanel>
       {prompt === undefined ? null : <KitActionPrompt {...prompt} />}
     </div>
+  );
+});
+
+function KitObjectiveCountdown({ deadline, tone }: { deadline: Live<KitObjectiveDeadline>; tone: KitTone }): ReactNode {
+  const total = useLiveSelect(deadline, (now) => now.total);
+  return (
+    <KitMeter
+      value={isLive(deadline) ? live(() => readLive(deadline).remaining) : deadline.remaining}
+      max={total}
+      tone={tone}
+      readout={(remaining) => formatCountdown(remaining)}
+      size="sm"
+    />
   );
 }
 
@@ -199,7 +226,7 @@ export interface KitResultScreenProps {
  *
  * @capability kit-result-screen run/day/level result screen in the active UI kit — scrim, summary, tally, keyboard/gamepad/touch choices, kit motion
  */
-export function KitResultScreen({ open, tone = "neutral", eyebrow, title, summary, stats, actions, onAction, onBack, className, style }: KitResultScreenProps): ReactNode {
+export const KitResultScreen = memoView("KitResultScreen", function KitResultScreen({ open, tone = "neutral", eyebrow, title, summary, stats, actions, onAction, onBack, className, style }: KitResultScreenProps): ReactNode {
   const kit = useUiKit();
   const presence = useKitPresence(open, kit.motion.exitMs);
   const primary = actions.find((action) => action.primary === true) ?? actions[0];
@@ -274,7 +301,7 @@ export function KitResultScreen({ open, tone = "neutral", eyebrow, title, summar
       </KitPanel>
     </div>
   );
-}
+});
 
 /** Props for {@link KitBanner}. */
 export interface KitBannerProps {
@@ -297,7 +324,7 @@ export interface KitBannerProps {
  *
  * @capability kit-banner a phase-change banner (day, wave, run start) in the active UI kit, shown when its cue changes
  */
-export function KitBanner({ cue, title, subtitle, tone, ms = 2400, initial = false, className, style }: KitBannerProps): ReactNode {
+export const KitBanner = memoView("KitBanner", function KitBanner({ cue, title, subtitle, tone, ms = 2400, initial = false, className, style }: KitBannerProps): ReactNode {
   const first = useRef(true);
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -317,4 +344,4 @@ export function KitBanner({ cue, title, subtitle, tone, ms = 2400, initial = fal
       <KitPanel variant="strip" open={open} tone={tone} title={title} aside={subtitle} />
     </div>
   );
-}
+});

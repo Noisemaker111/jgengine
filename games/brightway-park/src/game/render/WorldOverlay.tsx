@@ -1,6 +1,7 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import { pathFollowSeek } from "@jgengine/core/nav/pathFollow";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
@@ -125,9 +126,7 @@ function Ghost({kind,at,y,valid}:{kind:string;at:[number,number];y:number;valid:
  * lighter top so the steps read from the park camera.
  */
 function Land() {
-  const ctx=useGameContext();
-  useGameStore(c=>park.store.read(c));
-  const cells=raisedCells(park.of(ctx));
+  const cells=useGameStore(c=>raisedCells(park.of(c)).map(({col,row,level})=>({col,row,level})));
   return <group>{cells.map(({col,row,level})=>{const [x,z]=cellCentre(col,row);const h=level*LEVEL_HEIGHT;return <group key={`${col},${row}`}>
     <mesh position={[x,h/2,z]} castShadow receiveShadow raycast={()=>{}}><boxGeometry args={[GRID,h,GRID]}/><meshStandardMaterial color={level%2===0?"#5f9a47":"#6aa851"}/></mesh>
     <mesh position={[x,h+.01,z]} rotation={[-Math.PI/2,0,0]} receiveShadow raycast={()=>{}}><planeGeometry args={[GRID,GRID]}/><meshStandardMaterial color={level%2===0?"#79b85a":"#86c565"}/></mesh>
@@ -137,7 +136,6 @@ function Blueprint() {
   const {gl,camera}=useThree(); const ctx=useGameContext(); const [hover,setHover]=useState<[number,number]|null>(null);
   const [down,setDown]=useState<[number,number]|null>(null);
   const selected=useGameStore(()=>session.selectedTool);
-  useGameStore(c=>park.store.read(c));
   useEffect(()=>{
     const ray=new Raycaster(),plane=new Plane(new Vector3(0,1,0),0),hit=new Vector3();
     const move=(e:PointerEvent)=>{
@@ -166,26 +164,43 @@ function Blueprint() {
     gl.domElement.addEventListener("pointermove",move);gl.domElement.addEventListener("pointerleave",leave);
     return()=>{gl.domElement.removeEventListener("pointermove",move);gl.domElement.removeEventListener("pointerleave",leave);gl.domElement.removeEventListener("pointerdown",inspect);gl.domElement.removeEventListener("pointerdown",press);window.removeEventListener("pointerup",release);};
   },[gl,camera,ctx]);
-  const def=selected?BUILDABLES[selected]??null:null;
-  const check=def&&hover?placementAt(park.of(ctx),def.id,...hover):null;
-  const landRefusal=isLandTool(selected)&&hover?landCheck(ctx,selected,...hover):null;
-  const refusal=isLandTool(selected)?landRefusal:check===null?null:hoverRefusal(check);
+  const view=useGameStore(c=>blueprintView(c,selected,hover,down));
+  const refusal=view===null?null:view.refusal;
   useEffect(()=>{if(placementHintStore.read(ctx)!==refusal)placementHintStore.write(ctx,refusal);return()=>{if(placementHintStore.read(ctx)!==null)placementHintStore.write(ctx,null);};},[ctx,refusal]);
-  if(isLandTool(selected)&&hover){
-    const color=landRefusal===null?(selected==="land_raise"?"#7cf3c8":"#f3c87c"):"#ef7059";
-    const cells=rectCells(tileAt(...(down??hover)),tileAt(...hover));
-    return <group>{cells.map(([col,row])=>{const [x,z]=cellCentre(col,row);const y=groundAt(park.of(ctx),x,z);return <mesh key={`${col},${row}`} position={[x,y+.25,z]} rotation={[-Math.PI/2,0,0]} raycast={()=>{}}><planeGeometry args={[GRID-.2,GRID-.2]}/><meshBasicMaterial color={color} transparent opacity={.45} depthWrite={false}/></mesh>;})}</group>;
+  if(view===null)return null;
+  if(view.mode==="land"){
+    return <group>{view.cells.map(({key,x,y,z})=><mesh key={key} position={[x,y+.25,z]} rotation={[-Math.PI/2,0,0]} raycast={()=>{}}><planeGeometry args={[GRID-.2,GRID-.2]}/><meshBasicMaterial color={view.color} transparent opacity={.45} depthWrite={false}/></mesh>)}</group>;
   }
-  if(!def||!hover)return null;
-  const valid=refusal===null;
-  const color=valid?"#7cf3c8":"#ef7059";
+  return <group>{view.ghost!==null&&<Suspense fallback={null}><Ghost kind={view.kind} at={[view.ghost.x,view.ghost.z]} y={view.ghost.y} valid={view.refusal===null}/></Suspense>}{view.patrol!==null&&<PatrolRing x={view.patrol.x} z={view.patrol.z} radius={view.patrol.radius}/>}{view.cells.map(({key,x,y,z,color})=><mesh key={key} position={[x,y+.22,z]} rotation={[-Math.PI/2,0,0]} raycast={()=>{}}><planeGeometry args={[GRID-.12,GRID-.12]}/><meshBasicMaterial color={color} transparent opacity={.4} depthWrite={false}/></mesh>)}</group>;
+}
+type BlueprintView =
+  | {mode:"land";refusal:string|null;color:string;cells:{key:string;x:number;y:number;z:number}[]}
+  | {mode:"build";refusal:string|null;kind:string;ghost:{x:number;y:number;z:number}|null;patrol:{x:number;z:number;radius:number}|null;cells:{key:string;x:number;y:number;z:number;color:string}[]};
+/** What the blueprint draws under the cursor, as plain values: it redraws when the hover, the tool or the answer changes, not every tick. */
+function blueprintView(ctx:GameContext,selected:string|null,hover:[number,number]|null,down:[number,number]|null):BlueprintView|null{
   const w=park.of(ctx);
+  const def=selected?BUILDABLES[selected]??null:null;
+  if(isLandTool(selected)&&hover){
+    const landRefusal=landCheck(ctx,selected,...hover);
+    const color=landRefusal===null?(selected==="land_raise"?"#7cf3c8":"#f3c87c"):"#ef7059";
+    const cells=rectCells(tileAt(...(down??hover)),tileAt(...hover)).map(([col,row])=>{const [x,z]=cellCentre(col,row);return {key:`${col},${row}`,x,y:groundAt(w,x,z),z};});
+    return {mode:"land",refusal:landRefusal,color,cells};
+  }
+  if(isLandTool(selected))return null;
+  if(!def||!hover)return null;
+  const refusal=hoverRefusal(placementAt(w,def.id,...hover));
+  const color=refusal===null?"#7cf3c8":"#ef7059";
   // Dragging a path or queue shows the whole line it will lay.
   const dragging=down!==null&&LINE_KINDS.has(def.id)&&tileAt(...down).join()!==tileAt(...hover).join();
   const centres=dragging?lineCells(tileAt(...down),tileAt(...hover)).map(([c,r])=>cellCentre(c,r)):cellCentres(def.id,cellFor(def.id,...hover));
   const mid=centres.reduce((a,[x,z])=>[a[0]+x/centres.length,a[1]+z/centres.length],[0,0]);
   const lineColor=(x:number,z:number)=>dragging?(placementAt(w,def.id,x,z).ok?"#7cf3c8":"#ef7059"):color;
-  return <group>{!dragging&&<Suspense fallback={null}><Ghost kind={def.id} at={mid as [number,number]} y={groundAt(w,mid[0]!,mid[1]!)} valid={valid}/></Suspense>}{def.staff&&<PatrolRing x={mid[0]!} z={mid[1]!} radius={def.staff.patrol}/>}{centres.map(([x,z])=>{const key=`${x},${z}`;return <mesh key={key} position={[x,groundAt(w,x,z)+.22,z]} rotation={[-Math.PI/2,0,0]} raycast={()=>{}}><planeGeometry args={[GRID-.12,GRID-.12]}/><meshBasicMaterial color={lineColor(x,z)} transparent opacity={.4} depthWrite={false}/></mesh>;})}</group>;
+  return {
+    mode:"build",refusal,kind:def.id,
+    ghost:dragging?null:{x:mid[0]!,y:groundAt(w,mid[0]!,mid[1]!),z:mid[1]!},
+    patrol:def.staff?{x:mid[0]!,z:mid[1]!,radius:def.staff.patrol}:null,
+    cells:centres.map(([x,z])=>({key:`${x},${z}`,x,y:groundAt(w,x,z),z,color:lineColor(x,z)})),
+  };
 }
 /** A staff post's patrol area on the ground: where its person walks and does its job. */
 function PatrolRing({x,z,radius}:{x:number;z:number;radius:number}) {

@@ -73,6 +73,8 @@ export type DriveArgs = {
   hitches: boolean;
   /** `--renders`: count every React component render of the run and print the busiest components. */
   renders: boolean;
+  /** `--renders-settle <ms>`: play this long before the render count starts, so loading and first mounts stay out of a steady-play reading. */
+  rendersSettleMs: number;
   /** `--allocations`: sample who allocated what over the run and print the biggest allocators. */
   allocations: boolean;
   /** `--cpu`: sample the page's CPU over the run and list the functions that took each hitch. */
@@ -143,6 +145,8 @@ Notes:
   --renders counts every React component render over the run (a stand-in for React DevTools'
   hook, installed before React loads) and prints the components that rendered most, so a HUD
   that re-renders whole on every tick shows by name. Names are readable on a dev page.
+  --renders-settle <ms> lets the game play that long before counting, so models still loading
+  and panels mounting stay out of a steady-play reading.
   --allocations samples every allocation over the run, the garbage included, and prints the
   functions that allocated most per second: what the garbage collection pauses in --hitches
   are collecting. The sampler costs a little per allocation, so measure stalls without it.
@@ -196,6 +200,10 @@ export function parseDriveArgs(argv: string[]): DriveArgs {
   // `--hitches` is parsed here too: it reads the engine's frame breakdown, which the portable harness lacks.
   const hitches = quick.argv.includes("--hitches");
   const renders = quick.argv.includes("--renders");
+  const settleAt = quick.argv.indexOf("--renders-settle");
+  const rendersSettleMs = settleAt < 0 ? 0 : Number(quick.argv[settleAt + 1]);
+  if (!(rendersSettleMs >= 0)) throw new Error(`drive: --renders-settle takes milliseconds, got ${quick.argv[settleAt + 1]}`);
+  if (settleAt >= 0) quick.argv.splice(settleAt, 2);
   const allocations = quick.argv.includes("--allocations");
   const trace = quick.argv.includes("--trace");
   const cpu = quick.argv.includes("--cpu");
@@ -271,6 +279,7 @@ export function parseDriveArgs(argv: string[]): DriveArgs {
     log: str("log"),
     hitches,
     renders,
+    rendersSettleMs,
     allocations,
     trace,
     cpu,

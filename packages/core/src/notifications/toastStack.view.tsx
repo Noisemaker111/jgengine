@@ -4,6 +4,7 @@ import { lootDropsOf } from "@jgengine/core/game/events";
 import type { FeedEntry } from "@jgengine/core/feed/feed";
 
 import { useFeed } from "@jgengine/react/hooks";
+import { memoView } from "../ui/memoView.view";
 
 function defaultToast(entry: FeedEntry): ReactNode {
   const drops = lootDropsOf(entry.data);
@@ -18,7 +19,7 @@ function defaultToast(entry: FeedEntry): ReactNode {
  * message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot
  * log); for ad-hoc player messages push to `ctx.game.notices`, which the shell draws as a {@link NoticeStack}.
  */
-export function ToastStack({
+export const ToastStack = memoView("ToastStack", function ToastStack({
   action,
   limit = 4,
   className,
@@ -48,4 +49,4 @@ export function ToastStack({
       ))}
     </div>
   );
-}
+});

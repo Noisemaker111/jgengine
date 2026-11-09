@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 
 import type {
   ObjectiveBannerController,
@@ -6,11 +6,13 @@ import type {
   ObjectiveBannerView,
 } from "@jgengine/core/mission/objectiveBanner";
 import { lerp } from "../math/scalar";
+import { memoView } from "../ui/memoView.view";
+import { subscribeFrameBind, useFrameBind } from "../ui/liveBind.view";
 
 /**
  * Subscribe to a banner controller, drive its clock on an animation frame (unless
  * the game already ticks it), and return the banner to draw right now — or `null`
- * when idle. Re-renders every frame while a banner is animating.
+ * when idle. Re-renders when a banner or its phase changes; its motion is drawn per frame by the host.
  *
  * @capability use-objective-banner React hook binding an objective-banner controller — advances its clock per frame and returns the current banner view
  */
@@ -18,30 +20,16 @@ export function useObjectiveBanner(
   controller: ObjectiveBannerController,
   animate = true,
 ): ObjectiveBannerView | null {
-  const [, bump] = useReducer((n: number) => n + 1, 0);
-  const rafRef = useRef(0);
-
-  useEffect(() => controller.subscribe(bump), [controller]);
-
-  useEffect(() => {
-    if (!animate) return;
-    let running = true;
-    const loop = (): void => {
-      if (!running) return;
-      controller.advance();
-      rafRef.current = requestAnimationFrame(loop);
-    };
-    rafRef.current = requestAnimationFrame(loop);
-    return () => {
-      running = false;
-      cancelAnimationFrame(rafRef.current);
-    };
-  }, [controller, animate]);
-
+  useEffect(() => (animate ? subscribeFrameBind(() => controller.advance()) : undefined), [controller, animate]);
+  // A banner's motion runs every frame and is drawn by its host; the component re-renders when a banner or its phase changes.
+  const read = useCallback(() => {
+    const view = controller.current();
+    return view === null ? "" : `${view.id}:${view.phase}`;
+  }, [controller]);
+  useSyncExternalStore(controller.subscribe, read, read);
   return controller.current();
 }
 
-/** Reskin tokens for {@link ObjectiveBannerHost}. Per-`kind` overrides layer on top. */
 export interface ObjectiveBannerTheme {
   /** Accent for the title glow and the divider rule. Default reads `--jg-accent`. */
   accent?: string;
@@ -134,7 +122,7 @@ export interface ObjectiveBannerHostProps {
  *
  * @capability objective-banner-host full-screen overlay that renders a core objective-banner controller as a fly-in / hold / fade-out centered title + subtitle stamp, theme- and per-kind-skinnable
  */
-export function ObjectiveBannerHost({
+export const ObjectiveBannerHost = memoView("ObjectiveBannerHost", function ObjectiveBannerHost({
   controller,
   theme,
   kindThemes,
@@ -146,6 +134,20 @@ export function ObjectiveBannerHost({
   style,
 }: ObjectiveBannerHostProps): ReactNode {
   const view = useObjectiveBanner(controller, animate);
+  const banner = useRef<HTMLDivElement>(null);
+  useFrameBind(
+    banner,
+    () => {
+      const now = controller.current();
+      return now === null ? null : bannerMotion(now.phase, now.progress);
+    },
+    (motion, element) => {
+      if (motion === null) return;
+      element.style.opacity = String(motion.opacity);
+      element.style.transform = `translateY(${motion.translateY}px) scale(${motion.scale})`;
+    },
+    (a, b) => a === b || (a !== null && b !== null && a.opacity === b.opacity && a.translateY === b.translateY && a.scale === b.scale),
+  );
   if (view === null) return null;
 
   const merged = { ...theme, ...kindThemes?.[view.kind] };
@@ -170,6 +172,7 @@ export function ObjectiveBannerHost({
       }}
     >
       <div
+        ref={banner}
         data-objective-banner={view.id}
         data-kind={view.kind}
         data-phase={view.phase}
@@ -226,4 +229,4 @@ export function ObjectiveBannerHost({
       </div>
     </div>
   );
-}
+});

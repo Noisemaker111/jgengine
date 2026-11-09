@@ -239,7 +239,7 @@ export function installAgentBridge(options: {
       case "scene_counts": {
         const ctx = getContext();
         if (ctx === null) return { ok: false, error: "no game context yet" };
-        return { ok: true, entities: ctx.scene.entity.ids().length, objects: ctx.scene.object.ids().length };
+        return { ok: true, entities: ctx.scene.entity.ids().length, objects: ctx.scene.object.ids().length, tick: ctx.sim.tick() };
       }
       case "player_pose": {
         const pose = playerPoseReport(getContext());

@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type DependencyList } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { AxisChannel, type AxisChannelConfig } from "@jgengine/core/input/axisInput";
-import { createMarkerSet, type MarkerSet } from "@jgengine/core/map/markers";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { dispatchCommand, type DispatchedCommandResult } from "@jgengine/core/commands/commandDispatch";
 import type { AbilityKit, AbilitySlotSnapshot } from "@jgengine/core/combat/abilityKit";
@@ -29,7 +28,7 @@ import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
 import type { RosterEntry } from "@jgengine/core/scene/roster";
 import type { WorldItemRecord } from "@jgengine/core/loot/groundItem";
-import type { ClockSnapshot, SimClock } from "@jgengine/core/time/simClock";
+import type { CalendarTime, ClockSnapshot, SimClock } from "@jgengine/core/time/simClock";
 import {
   resolveActivePrompt,
   type PositionedPrompt,
@@ -39,9 +38,23 @@ import { readBuildEnv } from "@jgengine/core/devtools/saveEndpoint";
 import { useGameContext, useOptionalGameContext } from "./provider";
 
 const noopSubscribe = (): (() => void) => () => undefined;
-import { createSelectCache, createSelectionRate, readSelectSnapshot, shallowEqual } from "./selectSnapshot";
+import { createSelectCache, createSelectionHeat, devFrameIndex, HOT_SELECTION_WINDOW, readSelectSnapshot, selectionEqual, type HotSelectionPace } from "./selectSnapshot";
 
-const DEV_BUILD = readBuildEnv().DEV === true;
+const BUILD_ENV = readBuildEnv();
+/** Dev builds and tests judge every store selection's pace; a production build pays nothing for it. */
+const WATCH_PACE = BUILD_ENV.DEV === true || BUILD_ENV.NODE_ENV === "test";
+
+/** The error a component that re-renders every frame or tick from the store fails with in a dev build or test. */
+export class PerFrameRenderError extends Error {
+  constructor(component: string, pace: HotSelectionPace) {
+    super(
+      `[jgengine] ${component} re-renders on nearly every ${pace} from the game store (it changed on at least ${Math.round(HOT_SELECTION_WINDOW * 0.9)} of ${HOT_SELECTION_WINDOW} ${pace}s). ` +
+        "Select only what it shows. Draw a value that moves every frame or tick into its own node: LiveText or useFrameBind (@jgengine/core/ui/liveBind.view), " +
+        "or hand an engine UI part live(() => value) (KitMeter value, KitObjective distance and deadline).",
+    );
+    this.name = "PerFrameRenderError";
+  }
+}
 
 /** The component a hook runs in, read once off the stack for a warning. */
 function callerComponent(): string {
@@ -52,17 +65,17 @@ function callerComponent(): string {
 
 /**
  * Select from the game store and re-render when the selection changes. The selector runs once per
- * store version; a selection equal to the last one (`isEqual`, default {@link shallowEqual}: the same
+ * store version; a selection equal to the last one (`isEqual`, default {@link selectionEqual}: the same
  * value, or an array or plain object of the same values) is no change, so a component that picks
  * `(ctx) => ({ mode: view(ctx).mode, panel: view(ctx).panel })` re-renders only when one of those does.
  * Select only what the component shows. A value that moves every frame or tick (a timer, a meter, a
  * position) never goes through here: bind it to its own node with `LiveText` or `useFrameBind`
- * (`@jgengine/core/ui/liveBind.view`). In a dev build a component whose selection changes about every
- * frame says so in the console.
+ * (`@jgengine/core/ui/liveBind.view`). In a dev build or a test, a component whose selection changes on
+ * nearly every rendered frame or simulation tick fails with a {@link PerFrameRenderError} naming it.
  */
 export function useGameStore<T>(
   selector: (ctx: GameContext) => T,
-  isEqual: (previous: T, next: T) => boolean = shallowEqual,
+  isEqual: (previous: T, next: T) => boolean = selectionEqual,
 ): T {
   const ctx = useGameContext();
   const selectorRef = useRef(selector);
@@ -70,16 +83,23 @@ export function useGameStore<T>(
   const isEqualRef = useRef(isEqual);
   isEqualRef.current = isEqual;
   const cacheRef = useRef(createSelectCache<number, T>());
-  const rateRef = useRef<ReturnType<typeof createSelectionRate> | null>(null);
+  const heatRef = useRef<ReturnType<typeof createSelectionHeat> | null>(null);
+  const hotRef = useRef<PerFrameRenderError | null>(null);
   // Named on the first render, while the component is on the stack: the store reads the snapshot later, from React's own code.
   const nameRef = useRef("a component");
-  if (DEV_BUILD && rateRef.current === null) {
-    rateRef.current = createSelectionRate();
+  if (WATCH_PACE && heatRef.current === null) {
+    heatRef.current = createSelectionHeat();
     nameRef.current = callerComponent();
   }
 
+  const selectedWith = useRef(selector);
   const getSnapshot = useCallback(() => {
     const cache = cacheRef.current;
+    // A selector that closes over props or state is read again after the render that changed them, not only after a store write.
+    if (selectedWith.current !== selectorRef.current) {
+      selectedWith.current = selectorRef.current;
+      cache.snapshot = Number.NaN;
+    }
     const before = cache.ready ? cache.value : undefined;
     const value = readSelectSnapshot(
       cache,
@@ -87,10 +107,13 @@ export function useGameStore<T>(
       () => selectorRef.current(ctx),
       (previous, next) => isEqualRef.current(previous, next),
     );
-    if (rateRef.current !== null && before !== undefined && value !== before && rateRef.current.changed()) {
-      console.warn(
-        `[jgengine] ${nameRef.current} re-renders on almost every frame from the game store. Select only what it shows, and bind values that move every frame or tick with LiveText or useFrameBind (@jgengine/core/ui/liveBind.view), so only the changing text or bar updates.`,
-      );
+    if (hotRef.current !== null) throw hotRef.current;
+    if (heatRef.current !== null && before !== undefined && value !== before) {
+      const pace = heatRef.current.changed(devFrameIndex(), ctx.sim.tick());
+      if (pace !== null) {
+        hotRef.current = new PerFrameRenderError(nameRef.current, pace);
+        throw hotRef.current;
+      }
     }
     return value;
   }, [ctx]);
@@ -472,10 +495,44 @@ export function localPlayerEntity(ctx: GameContext): SceneEntity | null {
   );
 }
 
-export function useGameClock(): ClockSnapshot & { controls: SimClock } {
+/** The clock's settings a control shows: they change when the player pauses or picks a speed, never as time passes. */
+export type GameClockControls = Pick<ClockSnapshot, "paused" | "speed" | "playSpeed" | "timescale" | "scale" | "speeds"> & { controls: SimClock };
+
+/**
+ * Pause state and speed for a time control, re-rendering only when the player pauses or changes speed.
+ * Time itself is not here because it moves every tick: draw it with `LiveText`
+ * (`get={() => ctx.time.calendar().hour}`), or take a slow part of it with {@link useGameCalendar}.
+ */
+export function useGameClock(): GameClockControls {
   const ctx = useGameContext();
-  useSyncExternalStore(ctx.subscribe, ctx.version, ctx.version);
-  return { ...ctx.time.snapshot(), controls: ctx.time };
+  const settings = useGameStore((c) => {
+    const snapshot = c.time.snapshot();
+    return { paused: snapshot.paused, speed: snapshot.speed, playSpeed: snapshot.playSpeed, timescale: snapshot.timescale, scale: snapshot.scale, speeds: snapshot.speeds };
+  });
+  return useMemo(() => ({ ...settings, controls: ctx.time }), [settings, ctx]);
+}
+
+/**
+ * True while game time is less than `windowMs` past `atMs` (both in game milliseconds,
+ * `ctx.time.now() * 1000`), so a hit marker, a zone banner or a radio line shows for a spell after its
+ * moment. It re-renders only when the window opens and when it closes; animate inside the window with
+ * `useFrameBind`, never by reading the time in render.
+ */
+export function useGameTimeWindow(atMs: number | null | undefined, windowMs: number): boolean {
+  return useGameStore((ctx) => {
+    if (atMs === null || atMs === undefined) return false;
+    const age = ctx.time.now() * 1000 - atMs;
+    return age >= 0 && age <= windowMs;
+  });
+}
+
+/**
+ * A slow part of the sim calendar (the day, the season, the hour), re-rendering only when it changes:
+ * `useGameCalendar((c) => c.day)`. A value that moves every tick (minutes on a fast clock, seconds)
+ * belongs in `LiveText`, not here.
+ */
+export function useGameCalendar<T>(select: (calendar: CalendarTime) => T): T {
+  return useGameStore((ctx) => select(ctx.time.calendar()));
 }
 
 export function useActivePrompt<T extends PositionedPrompt>(prompts?: readonly T[]): T | null {
@@ -579,46 +636,6 @@ export function useEventMeter(meter: EventMeter, options?: AbilitySlotBindingOpt
   const view = { value: meter.value(), fraction: meter.fraction(), tier: meter.tier(), ready: meter.ready() };
   previous.current = view;
   return view;
-}
-
-/**
- * A self-ticking {@link MarkerSet} kept in sync with the live scene: on a
- * heartbeat (default 100ms, and once immediately) it clears the set and calls
- * `rebuild(markers, ctx)` to repopulate it from the current scene, so a HUD map
- * never hand-rolls a `setInterval` + `markers.clear()` + rescan. Each heartbeat
- * also re-renders the calling component, so player-centered props derived from
- * the live scene each tick (`center`, `facingYaw`, zone name) stay fresh — this
- * fully subsumes the hand-rolled ticker, not just the marker rebuild. The set is
- * stable across renders and re-seeded whenever `ctx`, `intervalMs`, or the
- * supplied `deps` change. SSR-safe: the heartbeat only arms when `window` is
- * available.
- *
- * @capability live-markers a self-ticking MarkerSet kept in sync from the live scene each HUD tick — pass a rebuild(markers, ctx) that clears+repopulates, no hand-rolled setInterval
- */
-export function useLiveMarkers(
-  rebuild: (markers: MarkerSet, ctx: GameContext) => void,
-  options?: { intervalMs?: number; deps?: DependencyList },
-): MarkerSet {
-  const ctx = useGameContext();
-  const markers = useMemo(() => createMarkerSet(() => ctx.time.now()), [ctx]);
-  const rebuildRef = useRef(rebuild);
-  rebuildRef.current = rebuild;
-  const intervalMs = options?.intervalMs ?? 100;
-  const deps = options?.deps ?? [];
-  const [, forceTick] = useState(0);
-  useEffect(() => {
-    const run = (): void => {
-      markers.clear();
-      rebuildRef.current(markers, ctx);
-      forceTick((value) => (value + 1) % 1_000_000);
-    };
-    run();
-    if (intervalMs <= 0 || typeof window === "undefined") return undefined;
-    const id = window.setInterval(run, intervalMs);
-    return () => window.clearInterval(id);
-    // deps is spread so callers can re-seed on their own inputs.
-  }, [markers, ctx, intervalMs, ...deps]);
-  return markers;
 }
 
 type HeldKeyEventTarget = Pick<Window, "addEventListener" | "removeEventListener">;

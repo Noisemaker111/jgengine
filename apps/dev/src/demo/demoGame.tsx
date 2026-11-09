@@ -10,6 +10,7 @@ import { Coins, Hotbar } from "@jgengine/core/hud/hudReadouts.view";
 import { useEntityStat, useFeed, useGameClock, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
 import type { KitTone } from "@jgengine/core/ui/kit/uiKit.view";
 import { KitMeter } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { LiveText } from "@jgengine/core/ui/liveBind.view";
 
 import type { PlayableGame } from "@jgengine/shell/registry";
 
@@ -228,12 +229,12 @@ function HotbarPanel() {
 }
 
 function ClockPanel() {
-  const { paused, playSpeed, speeds, calendar, controls } = useGameClock();
+  const { paused, playSpeed, speeds, controls } = useGameClock();
   const pad = (value: number) => value.toString().padStart(2, "0");
   return (
     <div className="pointer-events-auto flex items-center gap-2 rounded bg-black/60 px-2 py-1 text-xs">
       <span className="tabular-nums text-white">
-        Day {calendar.day + 1} · {pad(calendar.hour)}:{pad(calendar.minute)}
+        <LiveText get={() => { const calendar = controls.calendar(); return `Day ${calendar.day + 1} · ${pad(calendar.hour)}:${pad(calendar.minute)}`; }} />
       </span>
       <button
         onClick={() => controls.toggle()}

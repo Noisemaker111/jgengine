@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { HudPanel, useBrowserSuspension, useDisplayProfile } from "@jgengine/react";
 import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { HudFade } from "@jgengine/core/hud/hudLayout.view";
+import { LiveText } from "@jgengine/core/ui/liveBind.view";
 import { useGame, useGamePhase, useGameStore } from "@jgengine/react/hooks";
 import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
 import { useGameContext } from "@jgengine/react/provider";
@@ -22,13 +23,18 @@ export function Operations() {
   const settings = useSettings();
   const profile = useDisplayProfile();
   const character = useStore(characterIdStore);
-  const relay = useStore(relayStore);
-  const riftRun = useStore(riftStore).run;
+  // The contract as the card prints it: upload and the window tick every frame, so the card takes whole pips and seconds.
+  const relay = useStore(relayStore, (state) => {
+    const { upload, remaining, session: _session, ...rest } = state;
+    const ended = state.phase === "won" || state.phase === "lost";
+    return { ...rest, uploadPips: upload > 0 ? Math.max(1, Math.ceil(Math.max(0, Math.min(1, upload / RELAY.uploadSeconds)) * 12 - 0.001)) : 0, remaining: ended ? remaining : Math.ceil(remaining) };
+  });
+  const riftLive = useStore(riftStore, (state) => state.run !== null && (state.run.phase === "running" || state.run.phase === "intermission"));
   const vendor = useStore(vendorOpenStore);
   const travel = useStore(travelOpenStore);
   const skills = useStore(skillsOpenStore);
   const market = useStore(blackMarketOpenStore);
-  const distance = useGameStore(relayDistance);
+  const outsideRing = useGameStore((c) => relayDistance(c) > RELAY.radius);
   const [manual, setManual] = useState(false);
   const [page, setPage] = useState<TerminalPage>("menu");
   const [saveMessage, setSaveMessage] = useState("");
@@ -83,20 +89,20 @@ export function Operations() {
   const result = relay.phase === "won" || relay.phase === "lost";
   return <>
     {/* An idle contract gives way to a live Overdrive run, as the mission log does. */}
-    {!active && riftRun !== null && (riftRun.phase === "running" || riftRun.phase === "intermission") ? null : (
+    {!active && riftLive ? null : (
     <HudPanel id="dead-air" anchor="top-left" chip="dead air" interactive>
-      <HudFade watch={() => [relay.phase, relay.wave, relay.rewarded, relay.enemies.length, Math.round(distance / 20)]} hold={() => active} dimTo={0.55} idleMs={7000}>
+      <HudFade watch={() => [relay.phase, relay.wave, relay.rewarded, relay.enemies.length, Math.round(relayDistance(ctx) / 20)]} hold={() => active} dimTo={0.55} idleMs={7000}>
         <Plate material="hull" cut="notch" depth={10} rim="#22363c" padding="0" className={`ss-contract ${active ? "live" : ""}`}>
           <div className="ss-contract-head">
             <Stamp tone="phosphor">{relay.rewarded ? "Carrier restored" : "Salvage contract"}</Stamp>
             <Waveform color={active ? SIGNAL.amber : SIGNAL.phosphorDim} seed={relay.wave + 2} />
           </div>
           <Crt className="ss-contract-tube">
-            <strong className="ss-contract-name">DEAD AIR <span>{active ? `${relay.wave}/3` : `${Math.round(distance)} m`}</span></strong>
-            <p>{active ? relay.phase === "defend" ? `Clear the ambush · ${relay.enemies.length} hostiles` : distance > RELAY.radius ? "Return to the copper ring to upload" : "Hold position · uploading carrier" : "Copper-ring relay · north of crash site"}</p>
+            <strong className="ss-contract-name">DEAD AIR <span>{active ? `${relay.wave}/3` : <LiveText get={() => `${Math.round(relayDistance(ctx))} m`} />}</span></strong>
+            <p>{active ? relay.phase === "defend" ? `Clear the ambush · ${relay.enemies.length} hostiles` : outsideRing ? "Return to the copper ring to upload" : "Hold position · uploading carrier" : "Copper-ring relay · north of crash site"}</p>
             {active ? <>
-              <div className="ss-contract-meter"><Pips value={relay.upload} max={RELAY.uploadSeconds} count={12} color={SIGNAL.phosphor} /><b>{relay.upload.toFixed(1)}/6s</b></div>
-              <small>{Math.ceil(relay.remaining)}s window</small>
+              <div className="ss-contract-meter"><Pips value={relay.uploadPips} max={12} count={12} color={SIGNAL.phosphor} /><LiveText as="b" get={() => `${relayStore.read(ctx).upload.toFixed(1)}/6s`} /></div>
+              <small>{relay.remaining}s window</small>
             </> : <small>Walk to the console · E to begin{relay.rewarded ? " · replay available" : " · $120 + 3 cores"}</small>}
           </Crt>
           {active && <>

@@ -2,7 +2,8 @@
  * Bundle one browser test fixture to stdout (`buildBrowserFixture` in `browser-lib.ts`). It is
  * `bun build --target=browser` plus the one Vite convention engine source uses that Bun's bundler
  * lacks: an `?url` import (the bundled Draco and Basis decoders, `decoderFiles.ts`) becomes the
- * imported file's path, which a fixture never fetches.
+ * imported file's path, which a fixture never fetches. A fixture is a test, so engine source reads
+ * the test build flags (`readBuildEnv()` sees `NODE_ENV: "test"`) and its dev-and-test checks run.
  *
  *   bun scripts/build-browser-fixture.ts <entry>
  */
@@ -17,6 +18,7 @@ if (entry === undefined) {
 const result = await Bun.build({
   entrypoints: [entry],
   target: "browser",
+  define: { "import.meta.env": JSON.stringify({ NODE_ENV: "test" }) },
   plugins: [
     {
       name: "vite-url-imports",
