@@ -17,13 +17,16 @@ export function FrameBoardPump(): null {
   useEffect(() => {
     const facade = (state: RootState, delta: number): EngineFrameState => ({
       renderer: state.gl,
+      gl: state.gl,
       scene: state.scene,
       camera: state.camera,
       clock: state.clock,
+      size: state.size,
       elapsed: state.clock.elapsedTime,
       delta,
       width: state.size.width,
       height: state.size.height,
+      frameloop: state.frameloop,
       invalidate: () => state.invalidate(),
       setCovered: (covered: boolean) => state.setFrameloop(covered ? "never" : "always"),
       get covered() {

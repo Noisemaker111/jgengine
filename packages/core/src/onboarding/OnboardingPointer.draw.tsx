@@ -1,6 +1,8 @@
 import { Html } from "@react-three/drei";
-import { useFrame, useThree } from "@react-three/fiber";
-import { useRef, useState, type ReactNode } from "react";
+import { useThree } from "@react-three/fiber";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+
+import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
 
 import { WaypointMarkers, type WaypointMarkerTheme } from "@jgengine/core/map/waypointMarkers.view";
 import { waypointAnchor } from "@jgengine/core/map/waypoints";
@@ -31,7 +33,7 @@ export function OnboardingPointer({ ctx, theme }: { ctx: GameContext; theme?: Wa
   };
   // Re-render only when the pin moves a pixel or its distance changes, so a still camera (and the
   // shader warmup behind the loading cover) costs no React work.
-  useFrame(() => {
+  useEffect(() => joinFrameTask(0, () => {
     if (runtime === null) return;
     const now = runtime.waypoints
       .list()
@@ -43,7 +45,7 @@ export function OnboardingPointer({ ctx, theme }: { ctx: GameContext; theme?: Wa
     if (now === drawn.current) return;
     drawn.current = now;
     setTick((n) => (n + 1) % 1_000_000);
-  });
+  }), [runtime, project]);
   if (runtime === null) return null;
   return (
     <Html fullscreen calculatePosition={pinToViewport} zIndexRange={[25, 0]} style={{ pointerEvents: "none" }}>

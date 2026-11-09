@@ -1,4 +1,4 @@
-import { useFrame } from "@react-three/fiber";
+import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
@@ -33,13 +33,13 @@ export function InstancedJoints({ world, color = "#f5c542" }: InstancedJointsPro
     attribute.setUsage(THREE.DynamicDrawUsage);
   }, [attribute]);
 
-  useFrame(() => {
+  useEffect(() => joinFrameTask(0, () => {
     const geometry = geometryRef.current;
     if (geometry === null) return;
     const count = world.readJointSegments(positions);
     attribute.needsUpdate = true;
     geometry.setDrawRange(0, count * 2);
-  });
+  }), [world, positions, attribute]);
 
   return (
     <lineSegments frustumCulled={false}>

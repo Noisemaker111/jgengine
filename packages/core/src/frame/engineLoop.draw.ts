@@ -25,9 +25,13 @@ export type EngineFrameloop = "always" | "demand" | "never";
 /** Everything a system may read on a rendered frame. Mutable, reused per frame. */
 export interface EngineFrameState {
   readonly renderer: THREE.WebGLRenderer;
+  /** r3f's name for the renderer, kept so converted callbacks read drop-in. */
+  readonly gl: THREE.WebGLRenderer;
   readonly scene: THREE.Scene;
   readonly camera: THREE.Camera;
   readonly clock: THREE.Clock;
+  /** r3f's `size`: the canvas's CSS pixel size, live across resizes. */
+  readonly size: { width: number; height: number };
   /** Seconds since the loop started (r3f's `clock.elapsedTime`). */
   elapsed: number;
   /** Seconds since the previous rendered frame. */
@@ -35,6 +39,8 @@ export interface EngineFrameState {
   /** Canvas CSS pixel size. */
   width: number;
   height: number;
+  /** The loop's frameloop mode. */
+  readonly frameloop: EngineFrameloop;
   /** Demand mode: ask for another rendered frame. No-op under always/never. */
   invalidate(): void;
   /** Pause or resume advancing+rendering while a surface covers the canvas. */
@@ -115,6 +121,8 @@ function applySize(loop: EngineLoop, canvas: HTMLCanvasElement): void {
   renderer.setSize(width, height, false);
   state.width = width;
   state.height = height;
+  state.size.width = width;
+  state.size.height = height;
   // r3f's updateCamera: ortho frusta are pixel-sized (pixel-perfect convention),
   // perspective keeps an aspect. `camera.manual` rigs own their projection.
   const manual = (camera as { manual?: boolean }).manual === true;
@@ -173,15 +181,21 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
   let paceBase: number | null = null;
 
   const clock = new THREE.Clock();
+  const size = { width: 0, height: 0 };
   const state = {
     renderer,
+    gl: renderer,
     scene,
     camera,
     clock,
+    size,
     elapsed: 0,
     delta: 0,
     width: 0,
     height: 0,
+    get frameloop() {
+      return frameloop;
+    },
     invalidate() {
       if (frameloop === "demand") invalidated = true;
     },

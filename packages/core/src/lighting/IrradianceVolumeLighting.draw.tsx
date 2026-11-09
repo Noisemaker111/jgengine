@@ -1,5 +1,5 @@
-import { useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 import {
@@ -31,7 +31,7 @@ export function IrradianceVolumeLighting({ volumes }: IrradianceVolumeLightingPr
   const probeRef = useRef<THREE.LightProbe>(null);
   const sampled = useMemo(() => new Float32Array(PROBE_STRIDE), []);
 
-  useFrame((state) => {
+  useEffect(() => joinFrameTask(0, (state) => {
     const probe = probeRef.current;
     if (probe === null) return;
     const position = state.camera.position;
@@ -41,7 +41,7 @@ export function IrradianceVolumeLighting({ volumes }: IrradianceVolumeLightingPr
     for (let band = 0; band < SH_COEFFICIENTS; band += 1) {
       probe.sh.coefficients[band]!.set(sampled[band * 3]!, sampled[band * 3 + 1]!, sampled[band * 3 + 2]!);
     }
-  });
+  }), [volumes, sampled]);
 
   return <lightProbe ref={probeRef} />;
 }
