@@ -1,20 +1,21 @@
 // @skill jgengine-world
-import { useThree } from "@react-three/fiber";
-import { useEffect, useRef, useState, type ReactElement } from "react";
-import type { Group } from "three";
+import type { ReactElement } from "react";
+import * as THREE from "three";
 
+import { useGameContext, type GameContext } from "@jgengine/react/provider";
 import { devtools } from "@jgengine/core/devtools/devtools";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { childFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { warmupSpawnables } from "@jgengine/core/render/shaderWarmup.draw";
 import { DEFAULT_GRAPHICS_PROFILES } from "@jgengine/core/settings/graphicsProfile";
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 import { createParticleSystem, type ParticleEvent, type ParticleSystem } from "@jgengine/core/vfx/particles";
 import { planParticleBudget } from "@jgengine/core/vfx/particleBudget";
 import type { ParticleCollisionEffect, ParticleEmitterSpec, ParticleRenderHint } from "@jgengine/core/vfx/particleDirector";
-import { useGameContext } from "@jgengine/react/provider";
-
-import { fieldPrograms, ParticleField, type ParticleFieldMetrics } from "./ParticleField.draw";
 import type { Vec3 } from "@jgengine/core/world/geometry";
-import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
+
+import { fieldPrograms, particleFieldDraw, type ParticleFieldMetrics } from "./ParticleField.draw";
 
 interface ParticlePose { position: Vec3; yaw: number; found: boolean }
 
@@ -22,8 +23,10 @@ interface EmitterInstance {
   spec: ParticleEmitterSpec;
   system: ParticleSystem;
   poolMax: number;
-  group: Group | null;
+  group: THREE.Group | null;
   pose: ParticlePose;
+  draw: EngineDraw | null;
+  fieldKey: string;
 }
 
 interface BurstInstance {
@@ -34,6 +37,8 @@ interface BurstInstance {
   position: Vec3;
   rotationY: number;
   collisionEffect?: ParticleCollisionEffect | undefined;
+  group: THREE.Group;
+  draw: EngineDraw | null;
 }
 
 const MAX_CONCURRENT_BURSTS = 32;
@@ -66,27 +71,28 @@ export function resolveParticleDelta(previousTime: number, gameTime: number): nu
   return Number.isFinite(previousTime) && Number.isFinite(gameTime) ? Math.max(0, Math.min(0.1, gameTime - previousTime)) : 0;
 }
 
-/** Renders the existing director and pooled simulator; named bursts reuse the standing pool. @internal */
-export function ParticleEmitters({ quality, particleCap, particleBudget, diagnostics = false }: { quality: GraphicsQuality; particleCap?: number; particleBudget?: number; diagnostics?: boolean }): ReactElement {
-  const ctx = useGameContext();
-  const emittersRef = useRef(new Map<string, EmitterInstance>());
-  const burstsRef = useRef<BurstInstance[]>([]);
-  const previousTime = useRef(ctx.time.now());
-  const budget = useRef<{ cap: number; particles: number; dropped: string[] }>({ cap: 0, particles: 0, dropped: [] });
-  const timing = useRef({ poolsCreated: 0, poolsRetired: 0, updateSamples: 0, lastUpdateMs: 0, totalUpdateMs: 0, maxUpdateMs: 0, droppedCatchupSeconds: 0 });
-  const resources = useRef<ParticleFieldMetrics>({ fieldsMounted: 0, fieldsUnmounted: 0, liveFields: 0, attributeBytes: 0, totalUploadMs: 0, maxUploadMs: 0, uploadSamples: 0 });
-  const [, setGeneration] = useState(0);
-  const scene = useThree((state) => state.scene);
+function fieldKeyOf(blending: "additive" | "normal", render: ParticleRenderHint | undefined): string {
+  return `${blending}|${render?.shape ?? "point"}|${render?.stretch ?? 0.08}`;
+}
 
-  // A burst mounts its field on the frame it fires; its program is linked under the loading cover instead.
-  useEffect(() => {
-    const programs = fieldPrograms();
-    const unregister = warmupSpawnables(scene, () => programs.objects);
-    return () => {
-      unregister();
-      programs.dispose();
-    };
-  }, [scene]);
+/**
+ * Renders the existing director and pooled simulator; named bursts reuse the standing pool.
+ * @internal
+ */
+export function particleEmittersDraw(
+  ctx: GameContext,
+  { quality, particleCap, particleBudget, diagnostics = false }: { quality: GraphicsQuality; particleCap?: number; particleBudget?: number; diagnostics?: boolean },
+): EngineDraw {
+  const emitters = new Map<string, EmitterInstance>();
+  const bursts: BurstInstance[] = [];
+  let previousTime = ctx.time.now();
+  const budget = { cap: 0, particles: 0, dropped: [] as string[] };
+  const timing = { poolsCreated: 0, poolsRetired: 0, updateSamples: 0, lastUpdateMs: 0, totalUpdateMs: 0, maxUpdateMs: 0, droppedCatchupSeconds: 0 };
+  const resources: ParticleFieldMetrics = { fieldsMounted: 0, fieldsUnmounted: 0, liveFields: 0, attributeBytes: 0, totalUploadMs: 0, maxUploadMs: 0, uploadSamples: 0 };
+  const mountDispose: (() => void)[] = [];
+  let state: EngineFrameState | null = null;
+  let unsubscribe: (() => void) | null = null;
+  let unregisterProbe: (() => void) | null = null;
 
   function pose(spec: ParticleEmitterSpec): ParticlePose {
     const offset = spec.offset ?? [0, 0, 0];
@@ -94,6 +100,31 @@ export function ParticleEmitters({ quality, particleCap, particleBudget, diagnos
     if (entity === undefined || entity === null) return { position: offset, yaw: 0, found: spec.follow === undefined };
     if (spec.space === "local") return { position: transformParticleVector(offset, entity.position, entity.rotationY), yaw: entity.rotationY, found: true };
     return { position: [entity.position[0] + offset[0], entity.position[1] + offset[1], entity.position[2] + offset[2]], yaw: 0, found: true };
+  }
+
+  function fieldState(parent: THREE.Group): EngineFrameState {
+    return childFrameState(state as EngineFrameState, parent);
+  }
+
+  function mountField(parent: THREE.Group, system: ParticleSystem, blending: "additive" | "normal", render: ParticleRenderHint | undefined): EngineDraw | null {
+    if (state === null) return null;
+    const draw = particleFieldDraw(system, { advance: false, blending, render, metrics: diagnostics ? resources : undefined });
+    draw.mount?.(fieldState(parent));
+    return draw;
+  }
+
+  function dropGroup(group: THREE.Group): void {
+    group.parent?.remove(group);
+    group.clear();
+  }
+
+  function dropEmitter(id: string): void {
+    const instance = emitters.get(id);
+    if (instance === undefined) return;
+    if (instance.draw !== null && instance.group !== null && state !== null) instance.draw.dispose?.(fieldState(instance.group));
+    if (instance.group !== null) dropGroup(instance.group);
+    emitters.delete(id);
+    timing.poolsRetired++;
   }
 
   function syncPose(instance: EmitterInstance): void {
@@ -114,7 +145,7 @@ export function ParticleEmitters({ quality, particleCap, particleBudget, diagnos
     return (from: Vec3, to: Vec3) => {
       const current = spec();
       const local = current.space === "local";
-      const resolved = frozenPose ?? emittersRef.current.get(current.id)?.pose ?? pose(current);
+      const resolved = frozenPose ?? emitters.get(current.id)?.pose ?? pose(current);
       const start = local ? transformParticleVector(from, resolved.position, resolved.yaw) : from;
       const end = local ? transformParticleVector(to, resolved.position, resolved.yaw) : to;
       const direction: Vec3 = [end[0] - start[0], end[1] - start[1], end[2] - start[2]];
@@ -135,7 +166,7 @@ export function ParticleEmitters({ quality, particleCap, particleBudget, diagnos
       const current = spec();
       const influence = current.environment;
       if (influence === undefined) { out[0] = out[1] = out[2] = 0; return out; }
-      const resolved = frozenPose ?? emittersRef.current.get(current.id)?.pose ?? pose(current);
+      const resolved = frozenPose ?? emitters.get(current.id)?.pose ?? pose(current);
       const local = current.space === "local";
       const world = local ? transformParticleVector(position, resolved.position, resolved.yaw, false, worldScratch) : position;
       const force = ctx.environment.accelerationAt(world, ctx.time.now(), influence.windResponse ?? 0, influence.maxAcceleration ?? 100, influence.mask ?? 0xffffffff, forceScratch);
@@ -145,164 +176,206 @@ export function ParticleEmitters({ quality, particleCap, particleBudget, diagnos
     };
   }
 
-  useEffect(() => {
-    const emitters = emittersRef.current;
-    function sync(): void {
-      let changed = false;
-      const tier = DEFAULT_GRAPHICS_PROFILES[quality];
-      const cap = particleBudget ?? tier.particleBudget;
-      const specs = ctx.particles.emitters();
-      const queued = ctx.particles.drainBursts();
-      const plan = planParticleBudget([
-        ...specs.map((spec) => ({ id: spec.id, priority: spec.priority ?? 0, ...(spec.config.max === undefined ? {} : { requested: spec.config.max }) })),
-        ...queued.map((burst) => ({ id: `burst:${burst.seq}`, priority: burst.priority ?? 0, requested: Math.min(burst.count, burst.config.max ?? burst.count) })),
-      ], cap, { effectCap: particleCap !== undefined && Number.isFinite(particleCap) ? particleCap : tier.particleCap });
-      const granted = new Map(plan.grants.map((grant) => [grant.id, grant.particles]));
-      budget.current = { cap, particles: plan.particles, dropped: plan.dropped };
-      const liveIds = new Set<string>();
-      for (const spec of specs) {
-        const poolMax = granted.get(spec.id) ?? 0;
-        if (poolMax <= 0) { emitters.delete(spec.id); continue; }
-        liveIds.add(spec.id);
-        const current = emitters.get(spec.id);
-        if (current === undefined || current.poolMax !== poolMax) {
-          const next: EmitterInstance = { spec, poolMax, group: current?.group ?? null, pose: pose(spec),
-            system: createParticleSystem({ ...spec.config, max: poolMax, seed: spec.config.seed ?? spec.id }, { collision: collisionFor(() => next.spec), acceleration: accelerationFor(() => next.spec) }) };
-          if (current !== undefined) {
-            next.system.restore(current.system.snapshot());
-            next.system.configure({ ...spec.config, max: poolMax, seed: spec.config.seed ?? spec.id }, true);
+  function sync(): void {
+    if (state === null) return;
+    const tier = DEFAULT_GRAPHICS_PROFILES[quality];
+    const cap = particleBudget ?? tier.particleBudget;
+    const specs = ctx.particles.emitters();
+    const queued = ctx.particles.drainBursts();
+    const plan = planParticleBudget([
+      ...specs.map((spec) => ({ id: spec.id, priority: spec.priority ?? 0, ...(spec.config.max === undefined ? {} : { requested: spec.config.max }) })),
+      ...queued.map((burst) => ({ id: `burst:${burst.seq}`, priority: burst.priority ?? 0, requested: Math.min(burst.count, burst.config.max ?? burst.count) })),
+    ], cap, { effectCap: particleCap !== undefined && Number.isFinite(particleCap) ? particleCap : tier.particleCap });
+    const granted = new Map(plan.grants.map((grant) => [grant.id, grant.particles]));
+    budget.cap = cap; budget.particles = plan.particles; budget.dropped = plan.dropped;
+    const liveIds = new Set<string>();
+    for (const spec of specs) {
+      const poolMax = granted.get(spec.id) ?? 0;
+      if (poolMax <= 0) { dropEmitter(spec.id); continue; }
+      liveIds.add(spec.id);
+      const current = emitters.get(spec.id);
+      const blending = spec.blending ?? "normal";
+      const key = fieldKeyOf(blending, spec.render);
+      if (current === undefined || current.poolMax !== poolMax) {
+        const group = new THREE.Group();
+        state.scene.add(group);
+        const next: EmitterInstance = { spec, poolMax, group, pose: pose(spec), fieldKey: key,
+          system: createParticleSystem({ ...spec.config, max: poolMax, seed: spec.config.seed ?? spec.id }, { collision: collisionFor(() => next.spec), acceleration: accelerationFor(() => next.spec) }),
+          draw: null };
+        next.draw = mountField(group, next.system, blending, spec.render);
+        if (current !== undefined) {
+          next.system.restore(current.system.snapshot());
+          next.system.configure({ ...spec.config, max: poolMax, seed: spec.config.seed ?? spec.id }, true);
+          dropEmitter(spec.id);
+        }
+        timing.poolsCreated++;
+        emitters.set(spec.id, next);
+        syncPose(next);
+      } else if (current.spec !== spec) {
+        if (current.fieldKey !== key) {
+          // Field-affecting props changed: swap the field draw, keep the pool.
+          if (current.draw !== null && current.group !== null) current.draw.dispose?.(fieldState(current.group));
+          current.group?.clear();
+          current.draw = mountField(current.group as THREE.Group, current.system, blending, spec.render);
+          current.fieldKey = key;
+        }
+        current.system.configure({ ...spec.config, max: poolMax, seed: spec.config.seed ?? spec.id }, true);
+        current.spec = spec;
+        syncPose(current);
+      }
+    }
+    for (const id of emitters.keys()) {
+      if (liveIds.has(id)) continue;
+      dropEmitter(id);
+    }
+    for (const burst of queued) {
+      const named = burst.emitterId === undefined ? undefined : emitters.get(burst.emitterId);
+      if (named !== undefined) {
+        syncPose(named);
+        named.system.emit(burst.count);
+        continue;
+      }
+      const poolMax = granted.get(`burst:${burst.seq}`) ?? 0;
+      if (poolMax <= 0) continue;
+      const spec: ParticleEmitterSpec = { id: `burst:${burst.seq}`, config: burst.config, ...burst.options };
+      const resolved = pose(spec);
+      const system = createParticleSystem({ ...burst.config, rate: 0, max: poolMax, seed: burst.config.seed ?? burst.seq }, { collision: collisionFor(() => spec, resolved), acceleration: accelerationFor(() => spec, resolved) });
+      if (spec.space !== "local") {
+        const base = spec.follow === undefined ? burst.config.position ?? [0, 0, 0] : [0, 0, 0];
+        system.configure({ position: [resolved.position[0] + base[0], resolved.position[1] + base[1], resolved.position[2] + base[2]] });
+      }
+      system.emit(Math.min(burst.count, poolMax));
+      timing.poolsCreated++;
+      const group = new THREE.Group();
+      const burstPosition: Vec3 = spec.space === "local" ? resolved.position : [0, 0, 0];
+      const burstYaw = spec.space === "local" ? resolved.yaw : 0;
+      group.position.set(...burstPosition);
+      group.rotation.y = burstYaw;
+      state.scene.add(group);
+      const blending = burst.blending ?? "additive";
+      const draw = mountField(group, system, blending, spec.render);
+      bursts.push({ seq: burst.seq, system, blending, render: spec.render, collisionEffect: spec.collisionEffect,
+        position: burstPosition, rotationY: burstYaw, group, draw });
+      if (bursts.length > MAX_CONCURRENT_BURSTS) {
+        const dropped = bursts.shift();
+        if (dropped !== undefined) {
+          dropped.draw?.dispose?.(fieldState(dropped.group));
+          dropGroup(dropped.group);
+          timing.poolsRetired++;
+        }
+      }
+    }
+  }
+
+  return {
+    mount(mountState: EngineFrameState) {
+      state = mountState;
+      previousTime = ctx.time.now();
+      // A burst mounts its field on the frame it fires; its program is linked under the loading cover instead.
+      const programs = fieldPrograms();
+      const scene = mountState.rootScene ?? mountState.scene;
+      const unregisterWarmup = warmupSpawnables(scene, () => programs.objects);
+      mountDispose.push(() => {
+        unregisterWarmup();
+        programs.dispose();
+      });
+      sync();
+      unsubscribe = ctx.particles.subscribe(sync);
+      if (diagnostics) {
+        unregisterProbe = devtools.probes.register("particles", () => {
+          let count = 0, capacity = 0, renderBufferBytes = 0;
+          const read = (system: ParticleSystem) => {
+            const buffers = system.buffers();
+            count += system.count();
+            capacity += buffers.positions.length / 3;
+            renderBufferBytes += buffers.positions.byteLength + buffers.previousPositions.byteLength + buffers.velocities.byteLength + buffers.sizes.byteLength + buffers.colors.byteLength + buffers.alphas.byteLength + buffers.ids.byteLength;
+          };
+          for (const instance of emitters.values()) read(instance.system);
+          for (const burst of bursts) read(burst.system);
+          const sample = timing, fields = resources;
+          return { scope: "ParticleEmitters", emitters: emitters.size, bursts: bursts.length, count, capacity, renderBufferBytes,
+            cap: budget.cap, budgetParticles: budget.particles, dropped: budget.dropped.length, droppedIds: budget.dropped,
+            poolsCreated: sample.poolsCreated, poolsRetired: sample.poolsRetired,
+            updateSamples: sample.updateSamples, lastUpdateMs: sample.lastUpdateMs, maxUpdateMs: sample.maxUpdateMs,
+            avgUpdateMs: sample.updateSamples === 0 ? 0 : sample.totalUpdateMs / sample.updateSamples,
+            droppedCatchupSeconds: sample.droppedCatchupSeconds,
+            resources: { ...fields, avgUploadMsPerField: fields.uploadSamples === 0 ? 0 : fields.totalUploadMs / fields.uploadSamples } };
+        });
+      }
+    },
+    frame(frameState: EngineFrameState) {
+      const started = diagnostics ? performance.now() : 0;
+      const gameTime = ctx.time.now();
+      const dt = resolveParticleDelta(previousTime, gameTime);
+      if (diagnostics) timing.droppedCatchupSeconds += Math.max(0, gameTime - previousTime - dt);
+      previousTime = gameTime;
+      const impacts: { effect: ParticleCollisionEffect; event: ParticleEvent }[] = [];
+      const collect = (id: string, system: ParticleSystem, effect?: ParticleCollisionEffect, origin?: Vec3, yaw = 0) => {
+        const events = system.drainEvents();
+        for (const event of events) {
+          if (origin !== undefined) {
+            event.position = transformParticleVector(event.position, origin, yaw);
+            event.velocity = transformParticleVector(event.velocity, [0, 0, 0], yaw);
+            if (event.normal !== undefined) event.normal = transformParticleVector(event.normal, [0, 0, 0], yaw);
           }
-          timing.current.poolsCreated++;
-          if (current !== undefined) timing.current.poolsRetired++;
-          emitters.set(spec.id, next);
-          syncPose(next);
-          changed = true;
-        } else if (current.spec !== spec) {
-          if (specNeedsRender(current.spec, spec)) changed = true;
-          current.system.configure({ ...spec.config, max: poolMax, seed: spec.config.seed ?? spec.id }, true);
-          current.spec = spec;
-          syncPose(current);
+          if (effect !== undefined && event.type === "collision" && impacts.length < 16) impacts.push({ effect, event });
         }
-      }
-      for (const id of emitters.keys()) {
-        if (liveIds.has(id)) continue;
-        emitters.delete(id);
-        timing.current.poolsRetired++;
-        changed = true;
-      }
-      for (const burst of queued) {
-        const named = burst.emitterId === undefined ? undefined : emitters.get(burst.emitterId);
-        if (named !== undefined) {
-          syncPose(named);
-          named.system.emit(burst.count);
-          continue;
-        }
-        const poolMax = granted.get(`burst:${burst.seq}`) ?? 0;
-        if (poolMax <= 0) continue;
-        const spec: ParticleEmitterSpec = { id: `burst:${burst.seq}`, config: burst.config, ...burst.options };
-        const resolved = pose(spec);
-        const system = createParticleSystem({ ...burst.config, rate: 0, max: poolMax, seed: burst.config.seed ?? burst.seq }, { collision: collisionFor(() => spec, resolved), acceleration: accelerationFor(() => spec, resolved) });
-        if (spec.space !== "local") {
-          const base = spec.follow === undefined ? burst.config.position ?? [0, 0, 0] : [0, 0, 0];
-          system.configure({ position: [resolved.position[0] + base[0], resolved.position[1] + base[1], resolved.position[2] + base[2]] });
-        }
-        system.emit(Math.min(burst.count, poolMax));
-        timing.current.poolsCreated++;
-        burstsRef.current.push({ seq: burst.seq, system, blending: burst.blending ?? "additive", render: spec.render, collisionEffect: spec.collisionEffect,
-          position: spec.space === "local" ? resolved.position : [0, 0, 0], rotationY: spec.space === "local" ? resolved.yaw : 0 });
-        if (burstsRef.current.length > MAX_CONCURRENT_BURSTS) { burstsRef.current.shift(); timing.current.poolsRetired++; }
-        changed = true;
-      }
-      if (changed) setGeneration((n) => n + 1);
-    }
-    sync();
-    const off = ctx.particles.subscribe(sync);
-    return off;
-  }, [ctx, quality, particleCap, particleBudget]);
-
-  useEffect(() => {
-    if (!diagnostics) return;
-    return devtools.probes.register("particles", () => {
-      let count = 0, capacity = 0, renderBufferBytes = 0;
-      const read = (system: ParticleSystem) => {
-        const buffers = system.buffers();
-        count += system.count();
-        capacity += buffers.positions.length / 3;
-        renderBufferBytes += buffers.positions.byteLength + buffers.previousPositions.byteLength + buffers.velocities.byteLength + buffers.sizes.byteLength + buffers.colors.byteLength + buffers.alphas.byteLength + buffers.ids.byteLength;
+        ctx.particles.reportEvents(id, events);
       };
-      for (const instance of emittersRef.current.values()) read(instance.system);
-      for (const burst of burstsRef.current) read(burst.system);
-      const sample = timing.current, fields = resources.current;
-      return { scope: "ParticleEmitters", emitters: emittersRef.current.size, bursts: burstsRef.current.length, count, capacity, renderBufferBytes,
-        cap: budget.current.cap, budgetParticles: budget.current.particles, dropped: budget.current.dropped.length, droppedIds: budget.current.dropped,
-        poolsCreated: sample.poolsCreated, poolsRetired: sample.poolsRetired,
-        updateSamples: sample.updateSamples, lastUpdateMs: sample.lastUpdateMs, maxUpdateMs: sample.maxUpdateMs,
-        avgUpdateMs: sample.updateSamples === 0 ? 0 : sample.totalUpdateMs / sample.updateSamples,
-        droppedCatchupSeconds: sample.droppedCatchupSeconds,
-        resources: { ...fields, avgUploadMsPerField: fields.uploadSamples === 0 ? 0 : fields.totalUploadMs / fields.uploadSamples } };
-    });
-  }, [ctx, diagnostics]);
-
-  useEffect(() => {
-    previousTime.current = ctx.time.now();
-    return () => {
-      timing.current.poolsRetired += emittersRef.current.size + burstsRef.current.length;
-      emittersRef.current.clear(); burstsRef.current = [];
-    };
-  }, [ctx]);
-
-  useFrameTask(() => {
-    const started = diagnostics ? performance.now() : 0;
-    const gameTime = ctx.time.now();
-    const dt = resolveParticleDelta(previousTime.current, gameTime);
-    if (diagnostics) timing.current.droppedCatchupSeconds += Math.max(0, gameTime - previousTime.current - dt);
-    previousTime.current = gameTime;
-    const impacts: { effect: ParticleCollisionEffect; event: ParticleEvent }[] = [];
-    const collect = (id: string, system: ParticleSystem, effect?: ParticleCollisionEffect, origin?: Vec3, yaw = 0) => {
-      const events = system.drainEvents();
-      for (const event of events) {
-        if (origin !== undefined) {
-          event.position = transformParticleVector(event.position, origin, yaw);
-          event.velocity = transformParticleVector(event.velocity, [0, 0, 0], yaw);
-          if (event.normal !== undefined) event.normal = transformParticleVector(event.normal, [0, 0, 0], yaw);
-        }
-        if (effect !== undefined && event.type === "collision" && impacts.length < 16) impacts.push({ effect, event });
+      for (const instance of emitters.values()) {
+        syncPose(instance);
+        instance.system.update(dt);
+        const resolved = instance.spec.space === "local" ? instance.pose : undefined;
+        collect(instance.spec.id, instance.system, instance.spec.collisionEffect, resolved?.position, resolved?.yaw);
       }
-      ctx.particles.reportEvents(id, events);
-    };
-    for (const instance of emittersRef.current.values()) {
-      syncPose(instance);
-      instance.system.update(dt);
-      const resolved = instance.spec.space === "local" ? instance.pose : undefined;
-      collect(instance.spec.id, instance.system, instance.spec.collisionEffect, resolved?.position, resolved?.yaw);
-    }
-    let finished = false;
-    for (const burst of burstsRef.current) {
-      burst.system.update(dt);
-      collect(`burst:${burst.seq}`, burst.system, burst.collisionEffect, burst.position, burst.rotationY);
-      if (burst.system.count() === 0) { finished = true; timing.current.poolsRetired++; }
-    }
-    if (finished) {
-      burstsRef.current = burstsRef.current.filter((burst) => burst.system.count() > 0);
-      setGeneration((n) => n + 1);
-    }
-    for (const { effect, event } of impacts) {
-      const { collision: _, ...config } = effect.config;
-      ctx.particles.burst({ ...config, position: event.position, rate: 0, deathEvents: false }, effect.count, effect.blending, { render: effect.render });
-    }
-    if (diagnostics) {
-      const elapsed = performance.now() - started, sample = timing.current;
-      sample.lastUpdateMs = elapsed; sample.totalUpdateMs += elapsed; sample.maxUpdateMs = Math.max(sample.maxUpdateMs, elapsed); sample.updateSamples++;
-    }
-  });
+      let finished = false;
+      for (const burst of bursts) {
+        burst.system.update(dt);
+        collect(`burst:${burst.seq}`, burst.system, burst.collisionEffect, burst.position, burst.rotationY);
+        if (burst.system.count() === 0) finished = true;
+      }
+      if (finished) {
+        for (let i = bursts.length - 1; i >= 0; i -= 1) {
+          const burst = bursts[i]!;
+          if (burst.system.count() > 0) continue;
+          burst.draw?.dispose?.(fieldState(burst.group));
+          dropGroup(burst.group);
+          bursts.splice(i, 1);
+          timing.poolsRetired++;
+        }
+      }
+      for (const { effect, event } of impacts) {
+        const { collision: _, ...config } = effect.config;
+        ctx.particles.burst({ ...config, position: event.position, rate: 0, deathEvents: false }, effect.count, effect.blending, { render: effect.render });
+      }
+      // Fields pack their buffers after the systems advance so a frame never shows last tick's sim.
+      for (const instance of emitters.values()) instance.draw?.frame?.(frameState);
+      for (const burst of bursts) burst.draw?.frame?.(frameState);
+      if (diagnostics) {
+        const elapsed = performance.now() - started;
+        timing.lastUpdateMs = elapsed; timing.totalUpdateMs += elapsed; timing.maxUpdateMs = Math.max(timing.maxUpdateMs, elapsed); timing.updateSamples++;
+      }
+    },
+    dispose() {
+      unsubscribe?.();
+      unsubscribe = null;
+      unregisterProbe?.();
+      unregisterProbe = null;
+      for (const dispose of mountDispose.splice(0)) dispose();
+      timing.poolsRetired += emitters.size + bursts.length;
+      for (const id of [...emitters.keys()]) dropEmitter(id);
+      for (const burst of bursts.splice(0)) {
+        burst.draw?.dispose?.(fieldState(burst.group));
+        dropGroup(burst.group);
+      }
+      state = null;
+    },
+  };
+}
 
-  return <>
-    {Array.from(emittersRef.current.values()).map((instance) => <group key={instance.spec.id}
-      ref={(group) => { instance.group = group; }}>
-      <ParticleField system={instance.system} advance={false} blending={instance.spec.blending ?? "normal"} render={instance.spec.render} metrics={diagnostics ? resources.current : undefined} />
-    </group>)}
-    {burstsRef.current.map((burst) => <group key={burst.seq} position={burst.position} rotation={[0, burst.rotationY, 0]}>
-      <ParticleField system={burst.system} advance={false} blending={burst.blending} render={burst.render} metrics={diagnostics ? resources.current : undefined} />
-    </group>)}
-  </>;
+/** Renders the director's emitters and bursts. @internal */
+export function ParticleEmitters({ quality, particleCap, particleBudget, diagnostics = false }: { quality: GraphicsQuality; particleCap?: number; particleBudget?: number; diagnostics?: boolean }): ReactElement {
+  const ctx = useGameContext();
+  useEngineDraw(() => particleEmittersDraw(ctx, { quality, particleCap, particleBudget, diagnostics }), [ctx, quality, particleCap, particleBudget, diagnostics]);
+  return <></>;
 }
