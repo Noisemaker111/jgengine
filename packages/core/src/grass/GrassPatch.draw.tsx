@@ -160,7 +160,7 @@ export function grassPatchDraw(getProps: () => GrassPatchProps): EngineDraw {
         };
         cover = grassCoverDraw(() => coverProps);
         coverState = childFrameState(state, group);
-        cover.mount(coverState);
+        cover.mount?.(coverState);
       }
       // The first view counts as loading, so play and captures never start on a half-grown field.
       filling = trackSceneWork("grass-fill");

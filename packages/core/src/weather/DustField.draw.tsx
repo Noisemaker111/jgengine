@@ -57,6 +57,22 @@ function uniformOptions(props: DustFieldProps): WeatherUniformOptions {
   return { wind: props.wind, timeScale: props.timeScale, timeSeconds: props.timeSeconds };
 }
 
+type DustMaterialUniforms = {
+  uTime: WeatherUniformSet["time"];
+  uShelterCenters: WeatherUniformSet["shelterCenters"];
+  uShelterShapes: WeatherUniformSet["shelterShapes"];
+  uShelterCount: WeatherUniformSet["shelterCount"];
+  uWind: WeatherUniformSet["wind"];
+  uAnchor: { value: THREE.Vector3 };
+  uVolume: { value: THREE.Vector3 };
+  uSpeed: { value: number };
+  uSize: { value: number };
+  uSway: { value: number };
+  uOpacity: { value: number };
+  uColor: { value: THREE.Color };
+  uGroundBias: { value: number };
+};
+
 /**
  * Renders wind-borne particulate as camera-facing motes. Reach for it whenever the air itself
  * should read as weather — a desert gale, ash off a volcano, pollen in a meadow, grain dust in a
@@ -70,7 +86,7 @@ function uniformOptions(props: DustFieldProps): WeatherUniformOptions {
 export function dustFieldDraw(getProps: () => DustFieldProps, uniforms?: WeatherUniformSet): EngineDraw {
   let mesh: THREE.Mesh | null = null;
   let geometry: THREE.InstancedBufferGeometry | null = null;
-  let material: UniformMaterial | null = null;
+  let material: UniformMaterial<DustMaterialUniforms> | null = null;
   let shared: WeatherUniformSet | null = null;
   let leaveTicker = () => {};
 

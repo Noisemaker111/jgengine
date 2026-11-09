@@ -54,6 +54,22 @@ function uniformOptions(props: RainFieldProps): WeatherUniformOptions {
   return { wind: props.wind, lightning: props.lightning, timeScale: props.timeScale, timeSeconds: props.timeSeconds };
 }
 
+type RainMaterialUniforms = {
+  uTime: WeatherUniformSet["time"];
+  uShelterCenters: WeatherUniformSet["shelterCenters"];
+  uShelterShapes: WeatherUniformSet["shelterShapes"];
+  uShelterCount: WeatherUniformSet["shelterCount"];
+  uWind: WeatherUniformSet["wind"];
+  uLightning: WeatherUniformSet["lightning"];
+  uAnchor: { value: THREE.Vector3 };
+  uVolume: { value: THREE.Vector3 };
+  uSpeed: { value: number };
+  uLength: { value: number };
+  uWidth: { value: number };
+  uOpacity: { value: number };
+  uColor: { value: THREE.Color };
+};
+
 /**
  * GPU-animated rain streaks around the camera, sheltered under authored roofs.
  * `uniforms` is the resolved shared set (the React path's `useWeatherUniformSet`,
@@ -64,7 +80,7 @@ export function rainFieldDraw(getProps: () => RainFieldProps, uniforms?: Weather
   const source = {};
   let mesh: THREE.Mesh | null = null;
   let geometry: THREE.InstancedBufferGeometry | null = null;
-  let material: UniformMaterial | null = null;
+  let material: UniformMaterial<RainMaterialUniforms> | null = null;
   let shared: WeatherUniformSet | null = null;
   let leaveTicker = () => {};
 

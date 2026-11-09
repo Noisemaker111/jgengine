@@ -46,6 +46,21 @@ function uniformOptions(props: SnowFieldProps): WeatherUniformOptions {
   return { wind: props.wind, timeScale: props.timeScale, timeSeconds: props.timeSeconds };
 }
 
+type SnowMaterialUniforms = {
+  uTime: WeatherUniformSet["time"];
+  uShelterCenters: WeatherUniformSet["shelterCenters"];
+  uShelterShapes: WeatherUniformSet["shelterShapes"];
+  uShelterCount: WeatherUniformSet["shelterCount"];
+  uWind: WeatherUniformSet["wind"];
+  uAnchor: { value: THREE.Vector3 };
+  uVolume: { value: THREE.Vector3 };
+  uSpeed: { value: number };
+  uSize: { value: number };
+  uSway: { value: number };
+  uOpacity: { value: number };
+  uColor: { value: THREE.Color };
+};
+
 /**
  * GPU-animated drifting snowflakes around the camera, sheltered under authored roofs.
  * `uniforms` is the resolved shared set (the React path's `useWeatherUniformSet`,
@@ -55,7 +70,7 @@ function uniformOptions(props: SnowFieldProps): WeatherUniformOptions {
 export function snowFieldDraw(getProps: () => SnowFieldProps, uniforms?: WeatherUniformSet): EngineDraw {
   let mesh: THREE.Mesh | null = null;
   let geometry: THREE.InstancedBufferGeometry | null = null;
-  let material: UniformMaterial | null = null;
+  let material: UniformMaterial<SnowMaterialUniforms> | null = null;
   let shared: WeatherUniformSet | null = null;
   let leaveTicker = () => {};
 

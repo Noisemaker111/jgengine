@@ -28,6 +28,14 @@ export interface RainImpactFieldProps {
 
 const NO_UNIFORM_OPTIONS: WeatherUniformOptions = {};
 
+type RainImpactMaterialUniforms = {
+  uTime: WeatherUniformSet["time"];
+  uRain: WeatherUniformSet["rain"];
+  uAnchor: { value: THREE.Vector2 };
+  uExtent: { value: number };
+  uColor: { value: THREE.Color };
+};
+
 /**
  * Bounded ground ripples sharing precipitation intensity and authoritative animation time.
  * `uniforms` is the resolved shared set (the React path's `useWeatherUniformSet`, already
@@ -37,7 +45,7 @@ const NO_UNIFORM_OPTIONS: WeatherUniformOptions = {};
 export function rainImpactFieldDraw(getProps: () => RainImpactFieldProps, uniforms?: WeatherUniformSet): EngineDraw {
   let mesh: THREE.Mesh | null = null;
   let geometry: THREE.InstancedBufferGeometry | null = null;
-  let material: UniformMaterial | null = null;
+  let material: UniformMaterial<RainImpactMaterialUniforms> | null = null;
   let shared: WeatherUniformSet | null = null;
   let capacity = 0;
   let size = 48;
