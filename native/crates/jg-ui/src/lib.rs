@@ -453,7 +453,15 @@ pub fn values_len() -> u32 {
 /// Call once, after the canvas is in the DOM.
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen::prelude::wasm_bindgen]
+pub fn echo_len(s: &str) -> u32 {
+    web_sys::console::log_1(&format!("echo_len '{}' len={}", s, s.len()).into());
+    s.len() as u32
+}
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen::prelude::wasm_bindgen]
 pub fn mount(canvas_id: &str) {
+    web_sys::console::log_1(&format!("jg-ui mount canvas_id='{canvas_id}' len={}", canvas_id.len()).into());
     let mut spec = AppSpec::new("jg-ui", (800.0, 600.0), Ui::default, view);
     spec.poll = Some(|_s: &mut Ui, _t: f64, _tx: &mut Tx| true);
     let app = App::new(spec)

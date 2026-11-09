@@ -1,0 +1,20 @@
+[package]
+name = "rune-knobs"
+version = "0.0.1"
+edition.workspace = true
+license.workspace = true
+description = "Live tuning values for Rune apps: knobs in groups, and the ⌘⇧K panel that tunes them."
+
+[dependencies]
+rune = { path = "../rune" }
+
+[features]
+# The panel and its live values. Dev builds only: without it, knobs read their defaults.
+panel = []
+
+[dev-dependencies]
+# The tests drive the panel, so they build with it on.
+rune-knobs = { path = ".", features = ["panel"] }
+
+[lints]
+workspace = true

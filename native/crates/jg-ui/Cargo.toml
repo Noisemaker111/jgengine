@@ -9,8 +9,11 @@ description = "The engine's Rune UI layer: a declarative widget tree from TypeSc
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-# Rune is pre-release and takes no pull requests: pinned to a commit of `dev` (never rewritten).
-rune = { git = "https://github.com/anomalyco/rune", rev = "d751f07106eac47bdd4e33756dee71e1f593c9e2", default-features = false, features = ["embedded-fonts"] }
+# Rune is pre-release and takes no pull requests: vendored at native/vendor/rune
+# (upstream dev d751f071) with the jgengine web-transparency patch in
+# crates/rune/src/platform/web.rs. See native/vendor/rune/VENDORED.md.
+rune = { path = "../../vendor/rune/crates/rune", default-features = false, features = ["embedded-fonts"] }
 serde.workspace = true
 serde_json.workspace = true
 wasm-bindgen = "0.2"
+web-sys = { version = "0.3", features = ["console"] }

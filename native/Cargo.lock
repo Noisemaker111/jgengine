@@ -1198,6 +1198,7 @@ dependencies = [
  "serde",
  "serde_json",
  "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]
@@ -2400,7 +2401,6 @@ dependencies = [
 [[package]]
 name = "rune"
 version = "0.0.1"
-source = "git+https://github.com/anomalyco/rune?rev=d751f07106eac47bdd4e33756dee71e1f593c9e2#d751f07106eac47bdd4e33756dee71e1f593c9e2"
 dependencies = [
  "accesskit",
  "arboard",
@@ -2465,12 +2465,10 @@ dependencies = [
 [[package]]
 name = "rune-motion"
 version = "0.1.0"
-source = "git+https://github.com/anomalyco/rune?rev=d751f07106eac47bdd4e33756dee71e1f593c9e2#d751f07106eac47bdd4e33756dee71e1f593c9e2"
 
 [[package]]
 name = "rune-staging"
 version = "0.0.1"
-source = "git+https://github.com/anomalyco/rune?rev=d751f07106eac47bdd4e33756dee71e1f593c9e2#d751f07106eac47bdd4e33756dee71e1f593c9e2"
 dependencies = [
  "wgpu",
 ]
@@ -2478,7 +2476,6 @@ dependencies = [
 [[package]]
 name = "rune-taffy"
 version = "0.0.1"
-source = "git+https://github.com/anomalyco/rune?rev=d751f07106eac47bdd4e33756dee71e1f593c9e2#d751f07106eac47bdd4e33756dee71e1f593c9e2"
 dependencies = [
  "taffy",
 ]

@@ -1,0 +1,449 @@
+[
+    Heading(
+        2,
+        Inline {
+            text: "What's happening",
+            spans: [],
+            links: [],
+        },
+    ),
+    Para(
+        Inline {
+            text: "The server sends a heartbeat every 10 seconds, but \u{202f}\u{202f}stream.ts\u{202f}\u{202f} only reconnects on an \u{202f}\u{202f}error\u{202f}\u{202f} event. When the machine sleeps, the TCP connection goes half-open: the client never sees an error, so it waits forever. See the retry notes for the long version, which is deliberately wordy so that this paragraph has to wrap onto several lines at every width.",
+            spans: [
+                (
+                    35,
+                    45,
+                    Strong,
+                ),
+                (
+                    51,
+                    57,
+                    CodePad,
+                ),
+                (
+                    57,
+                    66,
+                    Code,
+                ),
+                (
+                    66,
+                    72,
+                    CodePad,
+                ),
+                (
+                    95,
+                    101,
+                    CodePad,
+                ),
+                (
+                    101,
+                    106,
+                    Code,
+                ),
+                (
+                    106,
+                    112,
+                    CodePad,
+                ),
+                (
+                    184,
+                    190,
+                    Em,
+                ),
+                (
+                    237,
+                    252,
+                    Link,
+                ),
+            ],
+            links: [
+                (
+                    237,
+                    252,
+                    "https://example.com/retry",
+                ),
+            ],
+        },
+    ),
+    Para(
+        Inline {
+            text: "Two smaller problems make it worse:",
+            spans: [],
+            links: [],
+        },
+    ),
+    List {
+        start: None,
+        items: [
+            [
+                Para(
+                    Inline {
+                        text: "\u{202f}\u{202f}backoff.ts\u{202f}\u{202f} resets its delay on every message, so a flapping server is retried at full speed.",
+                        spans: [
+                            (
+                                0,
+                                6,
+                                CodePad,
+                            ),
+                            (
+                                6,
+                                16,
+                                Code,
+                            ),
+                            (
+                                16,
+                                22,
+                                CodePad,
+                            ),
+                            (
+                                43,
+                                48,
+                                Em,
+                            ),
+                        ],
+                        links: [],
+                    },
+                ),
+            ],
+            [
+                Para(
+                    Inline {
+                        text: "The sidebar store ignores \u{202f}\u{202f}session.updated\u{202f}\u{202f} events that arrive before the first list fetch.",
+                        spans: [
+                            (
+                                26,
+                                32,
+                                CodePad,
+                            ),
+                            (
+                                32,
+                                47,
+                                Code,
+                            ),
+                            (
+                                47,
+                                53,
+                                CodePad,
+                            ),
+                        ],
+                        links: [],
+                    },
+                ),
+                List {
+                    start: None,
+                    items: [
+                        [
+                            Para(
+                                Inline {
+                                    text: "A nested point with \u{202f}\u{202f}code\u{202f}\u{202f} in it.",
+                                    spans: [
+                                        (
+                                            20,
+                                            26,
+                                            CodePad,
+                                        ),
+                                        (
+                                            26,
+                                            30,
+                                            Code,
+                                        ),
+                                        (
+                                            30,
+                                            36,
+                                            CodePad,
+                                        ),
+                                    ],
+                                    links: [],
+                                },
+                            ),
+                        ],
+                    ],
+                },
+            ],
+        ],
+    },
+    Heading(
+        3,
+        Inline {
+            text: "The fix",
+            spans: [],
+            links: [],
+        },
+    ),
+    Para(
+        Inline {
+            text: "Treat silence as failure. If no event or heartbeat arrives for 25 seconds, close the stream and reconnect with backoff:",
+            spans: [],
+            links: [],
+        },
+    ),
+    Code(
+        "const QUIET_MS = 25_000\n\nfunction watchdog(stream: EventStream, reconnect: () => void) {\n  let timer = setTimeout(fire, QUIET_MS) // restarted on every message\n  function fire() {\n    stream.close()\n    reconnect()\n  }\n  stream.on(\"message\", () => {\n    clearTimeout(timer)\n    timer = setTimeout(fire, QUIET_MS)\n  })\n}",
+    ),
+    Code(
+        "plain text fence, no language\n  keeps its   spacing",
+    ),
+    Quote(
+        [
+            Para(
+                Inline {
+                    text: "Quoted advice: the reset must wait for a healthy minute. It spans two lines.",
+                    spans: [],
+                    links: [],
+                },
+            ),
+        ],
+    ),
+    List {
+        start: Some(
+            1,
+        ),
+        items: [
+            [
+                Para(
+                    Inline {
+                        text: "Watchdog: closes and reopens the stream after 25 s of silence.",
+                        spans: [
+                            (
+                                0,
+                                8,
+                                Strong,
+                            ),
+                        ],
+                        links: [],
+                    },
+                ),
+            ],
+            [
+                Para(
+                    Inline {
+                        text: "Backoff: the delay only resets after a minute of healthy traffic.",
+                        spans: [
+                            (
+                                0,
+                                7,
+                                Strong,
+                            ),
+                        ],
+                        links: [],
+                    },
+                ),
+            ],
+            [
+                Para(
+                    Inline {
+                        text: "Sidebar: early events are queued until the list loads.",
+                        spans: [
+                            (
+                                0,
+                                7,
+                                Strong,
+                            ),
+                        ],
+                        links: [],
+                    },
+                ),
+            ],
+        ],
+    },
+    List {
+        start: None,
+        items: [
+            [
+                Para(
+                    Inline {
+                        text: "watchdog added",
+                        spans: [],
+                        links: [],
+                    },
+                ),
+            ],
+            [
+                Para(
+                    Inline {
+                        text: "reconnect test",
+                        spans: [],
+                        links: [],
+                    },
+                ),
+            ],
+            [
+                Para(
+                    Inline {
+                        text: "docs",
+                        spans: [],
+                        links: [],
+                    },
+                ),
+            ],
+        ],
+    },
+    Table(
+        Table {
+            align: [
+                Start,
+                End,
+                Center,
+            ],
+            head: [
+                Inline {
+                    text: "Case",
+                    spans: [],
+                    links: [],
+                },
+                Inline {
+                    text: "Delay",
+                    spans: [],
+                    links: [],
+                },
+                Inline {
+                    text: "Resets",
+                    spans: [],
+                    links: [],
+                },
+            ],
+            rows: [
+                [
+                    Inline {
+                        text: "flapping",
+                        spans: [],
+                        links: [],
+                    },
+                    Inline {
+                        text: "1s, 2s, 4s",
+                        spans: [],
+                        links: [],
+                    },
+                    Inline {
+                        text: "no",
+                        spans: [],
+                        links: [],
+                    },
+                ],
+                [
+                    Inline {
+                        text: "healthy minute",
+                        spans: [],
+                        links: [],
+                    },
+                    Inline {
+                        text: "1s",
+                        spans: [],
+                        links: [],
+                    },
+                    Inline {
+                        text: "yes",
+                        spans: [],
+                        links: [],
+                    },
+                ],
+                [
+                    Inline {
+                        text: "capped",
+                        spans: [],
+                        links: [],
+                    },
+                    Inline {
+                        text: "30s",
+                        spans: [],
+                        links: [],
+                    },
+                    Inline {
+                        text: "no",
+                        spans: [],
+                        links: [],
+                    },
+                ],
+            ],
+            open: false,
+        },
+    ),
+    Rule,
+    Mermaid(
+        "graph TD\n  A[Event arrives] --> B{Quiet for 25 s?}\n  B -- yes --> C[Close stream]\n  C --> D[Reconnect with backoff]\n  B -- no --> A",
+    ),
+    Mermaid(
+        "sequenceDiagram\n  participant C as Client\n  participant S as Server\n  C->>S: open stream\n  S-->>C: heartbeat\n  Note over C: 25 s of silence\n  C->>S: reconnect",
+    ),
+    Mermaid(
+        "graph LR\n  this is not valid",
+    ),
+    Para(
+        Inline {
+            text: "Done. All 14 tests in \u{202f}\u{202f}src/net\u{202f}\u{202f} pass.",
+            spans: [
+                (
+                    22,
+                    28,
+                    CodePad,
+                ),
+                (
+                    28,
+                    35,
+                    Code,
+                ),
+                (
+                    35,
+                    41,
+                    CodePad,
+                ),
+            ],
+            links: [],
+        },
+    ),
+]
+-- highlights (ts)
+0..5 "const" Kind(Keyword)
+6..14 "QUIET_MS" Kind(Number)
+15..16 "=" Kind(Punctuation)
+17..23 "25_000" Kind(Number)
+25..33 "function" Kind(Keyword)
+34..42 "watchdog" Kind(Function)
+42..43 "(" Kind(Punctuation)
+49..50 ":" Kind(Punctuation)
+51..62 "EventStream" Kind(Type)
+62..63 "," Kind(Punctuation)
+73..74 ":" Kind(Punctuation)
+75..77 "()" Kind(Punctuation)
+78..80 "=>" Kind(Punctuation)
+81..85 "void" Kind(Keyword)
+85..86 ")" Kind(Punctuation)
+87..88 "{" Kind(Punctuation)
+91..94 "let" Kind(Keyword)
+101..102 "=" Kind(Punctuation)
+103..113 "setTimeout" Kind(Function)
+113..114 "(" Kind(Punctuation)
+118..119 "," Kind(Punctuation)
+120..128 "QUIET_MS" Kind(Number)
+128..129 ")" Kind(Punctuation)
+130..159 "// restarted on every message" Kind(Comment)
+162..170 "function" Kind(Keyword)
+171..175 "fire" Kind(Function)
+175..177 "()" Kind(Punctuation)
+178..179 "{" Kind(Punctuation)
+190..191 "." Kind(Punctuation)
+191..196 "close" Kind(Function)
+196..198 "()" Kind(Punctuation)
+203..212 "reconnect" Kind(Function)
+212..214 "()" Kind(Punctuation)
+217..218 "}" Kind(Punctuation)
+227..228 "." Kind(Punctuation)
+228..230 "on" Kind(Function)
+230..231 "(" Kind(Punctuation)
+231..240 "\"message\"" Kind(String)
+240..241 "," Kind(Punctuation)
+242..244 "()" Kind(Punctuation)
+245..247 "=>" Kind(Punctuation)
+248..249 "{" Kind(Punctuation)
+254..266 "clearTimeout" Kind(Function)
+266..267 "(" Kind(Punctuation)
+272..273 ")" Kind(Punctuation)
+284..285 "=" Kind(Punctuation)
+286..296 "setTimeout" Kind(Function)
+296..297 "(" Kind(Punctuation)
+301..302 "," Kind(Punctuation)
+303..311 "QUIET_MS" Kind(Number)
+311..312 ")" Kind(Punctuation)
+315..317 "})" Kind(Punctuation)
+318..319 "}" Kind(Punctuation)

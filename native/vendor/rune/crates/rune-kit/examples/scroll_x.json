@@ -1,0 +1,7 @@
+[
+  {"t": 0.3, "type": "scroll", "key": "strip", "dx": -400, "dur": 0.3},
+  {"t": 1.1, "type": "scroll", "key": "strip", "dx": -20, "dy": -90, "dur": 0.3},
+  {"t": 1.9, "type": "scroll", "key": "code", "dx": -340, "dur": 0.4},
+  {"t": 2.7, "type": "scroll", "key": "table", "dx": -260, "dur": 0.3},
+  {"t": 3.5, "type": "mark", "name": "end"}
+]

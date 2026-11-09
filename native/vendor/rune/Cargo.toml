@@ -1,0 +1,78 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/rune",
+    "crates/rune-ref",
+    "crates/rune-motion",
+    "crates/rune-staging",
+    "crates/rune-kit",
+    "crates/rune-fx",
+    "crates/rune-light",
+    "crates/procwatch",
+    "crates/rune-register",
+    "crates/rune-knobs",
+    "crates/rune-mac",
+    "crates/rune-mermaid",
+    "crates/rune-perf",
+    "crates/rune-taffy",
+    "themes/opencode",
+]
+exclude = ["tools/rune-dev-guard"]
+
+[workspace.package]
+edition = "2024"
+license = "MIT"
+
+[profile.dev.package."*"]
+debug = false
+
+[profile.release]
+codegen-units = 16
+incremental = true
+
+# Benchmarks and perf numbers. Same codegen as release, without incremental, which can move
+# frame timings. The runtime bench scripts refuse binaries built with any other profile.
+[profile.perf]
+inherits = "release"
+opt-level = 3
+codegen-units = 16
+lto = false
+debug = false
+incremental = false
+
+# `cargo bench` inherits release; scripts/check-reference-instructions.sh compares its instruction
+# counts across revisions.
+[profile.bench]
+incremental = false
+
+[profile.rune-hot]
+inherits = "dev"
+debug = 0
+incremental = true
+
+[profile.rune-hot.package.png]
+opt-level = 3
+
+[profile.rune-hot.package.fdeflate]
+opt-level = 3
+
+[workspace.lints.rust]
+# shared-lints begin
+unsafe_op_in_unsafe_fn = "deny"
+unused_must_use = "deny"
+# shared-lints end
+unsafe_code = "allow" # shared: forbid; GPU and FFI code needs unsafe
+
+[workspace.lints.clippy]
+# shared-lints begin
+await_holding_lock = "deny"
+await_holding_refcell_ref = "deny"
+dbg_macro = "deny"
+disallowed_types = "deny"
+expect_used = "warn"
+todo = "warn"
+unwrap_used = "warn"
+# shared-lints end
+undocumented_unsafe_blocks = "warn" # shared: deny; errors left
+let_underscore_must_use = "warn" # shared: deny; errors left
+disallowed_methods = "warn" # shared: deny; errors left

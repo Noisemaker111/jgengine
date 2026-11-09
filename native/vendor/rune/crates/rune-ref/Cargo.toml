@@ -1,0 +1,29 @@
+[package]
+name = "rune-ref"
+version = "0.0.1"
+edition.workspace = true
+license.workspace = true
+
+[features]
+gpu = ["dep:rune"]
+
+[dependencies]
+libm = { version = "=0.2.16", default-features = false, features = ["force-soft-floats"] }
+blake3 = "1"
+half = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rune = { path = "../rune", optional = true }
+
+[dev-dependencies]
+proptest = "1"
+
+[target.'cfg(target_os = "linux")'.dev-dependencies]
+gungraun = "=0.20.0"
+
+[[bench]]
+name = "instructions"
+harness = false
+
+[lints]
+workspace = true

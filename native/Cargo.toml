@@ -12,6 +12,7 @@ members = [
     "crates/jg-native",
     "crates/jg-web",
 ]
+exclude = ["vendor/rune"]
 
 [workspace.package]
 edition = "2024"
