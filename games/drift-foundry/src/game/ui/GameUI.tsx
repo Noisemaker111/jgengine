@@ -7,6 +7,8 @@ import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 import { GameIcon, type GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
 import { useGameFonts } from "@jgengine/core/ui/fonts.view";
+import { LiveText, perFrame } from "@jgengine/core/ui/liveBind.view";
+import { live } from "@jgengine/core/ui/liveValue";
 import { useRegisterLayoutRegion } from "@jgengine/core/ui/viewport.view";
 import { useActionBindings } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
@@ -40,17 +42,18 @@ const RunRail = memo(function RunRail({ onPause }: { onPause: () => void }) {
   );
 });
 
-// Each panel re-renders only when something it shows changes, not on every tick of the run.
+/** A label with its metre count taken out: the count is drawn live, the rest changes at a moment. */
+const withoutMetres = (text: string) => text.replace(/\d+ ?m\b/g, "");
+
+// Each panel re-renders only when something it shows changes; speed, distances and clocks are live values.
 type TachProps = Parameters<typeof Tach>[0];
 const DashPanel = memo(function DashPanel(props: TachProps) {
   return <HudPanel id="dash" anchor="bottom-left" priority="critical" interactive={false}><div className="fd-dash"><Tach {...props}/></div></HudPanel>;
-}, (a, b) => Math.round(a.kmh) === Math.round(b.kmh) && Math.round(a.redline) === Math.round(b.redline) && a.airborne === b.airborne && a.bent === b.bent && a.armor === b.armor);
+}, (a, b) => Math.round(a.redline) === Math.round(b.redline) && a.airborne === b.airborne && a.bent === b.bent && a.armor === b.armor);
 
-/** What the crusher bar draws: metres, the jaw to a tenth of a percent, and its fade bucket. */
-const crusherShown = (gap: number) => `${Math.round(gap)}|${Math.round((1 - Math.min(60, Math.max(0, gap)) / 60) * 1000)}|${Math.round(gap / 6)}|${gap < 22}`;
-const CrusherPanel = memo(function CrusherPanel({ gap, surge }: { gap: number; surge: boolean }) {
-  return <HudPanel id="crusher" anchor="bottom" priority="critical" interactive={false}><CrusherBar gap={gap} surge={surge}/></HudPanel>;
-}, (a, b) => a.surge === b.surge && crusherShown(a.gap) === crusherShown(b.gap));
+const CrusherPanel = memo(function CrusherPanel(props: Parameters<typeof CrusherBar>[0]) {
+  return <HudPanel id="crusher" anchor="bottom" priority="critical" interactive={false}><CrusherBar {...props}/></HudPanel>;
+}, (a, b) => a.surge === b.surge && a.danger === b.danger);
 
 type Track = typeof ROW_SIX_TRACK;
 const mainGateLists = new WeakMap<Track, Track["gates"]>();
@@ -62,25 +65,43 @@ function mainGates(track: Track): Track["gates"] {
   mainGateLists.set(track, gates);
   return gates;
 }
-type RouteProps = Required<Pick<Parameters<typeof RouteRule>[0], "length" | "gates">> & Omit<Parameters<typeof RouteRule>[0], "length" | "gates"> & { clearedCount: number };
-const routeAlong = (props: Pick<RouteProps, "z" | "length">) => Math.round((Math.min(props.length, Math.max(0, props.z)) / props.length) * 1000);
-const RoutePanel = memo(function RoutePanel({ clearedCount: _clearedCount, ...props }: RouteProps) {
+type RouteProps = Required<Pick<Parameters<typeof RouteRule>[0], "length" | "gates">> & Omit<Parameters<typeof RouteRule>[0], "length" | "gates"> & { clearedCount: number; nextShown: string };
+const RoutePanel = memo(function RoutePanel({ clearedCount: _clearedCount, nextShown: _nextShown, ...props }: RouteProps) {
   return <HudPanel id="route" anchor="bottom-right" chip="route" interactive={false}><RouteRule {...props}/></HudPanel>;
-}, (a, b) => a.cleared === b.cleared && a.clearedCount === b.clearedCount && a.next === b.next && a.atRisk === b.atRisk && a.gates === b.gates && a.length === b.length && routeAlong(a) === routeAlong(b));
+}, (a, b) => a.cleared === b.cleared && a.clearedCount === b.clearedCount && a.nextShown === b.nextShown && a.atRisk === b.atRisk && a.gates === b.gates && a.length === b.length);
 
 type TowerProps = Parameters<typeof TimingTower>[0];
 /** Everything the timing tower prints, as one string: the lap clock to a tenth, the field, the event and ghost. */
-const towerShown = ({ race, event, ghost }: TowerProps) => JSON.stringify([
-  race.place, race.total, race.lap, race.laps, race.lapTime.toFixed(1), race.standings.map((entry) => [entry.id, entry.place, entry.name]),
+const towerShown = ({ race, event, ghost }: Pick<TowerProps, "race" | "event" | "ghost">) => JSON.stringify([
+  race.place, race.total, race.lap, race.laps, race.standings.map((entry) => [entry.id, entry.place, entry.name]),
   event ?? null, ghost == null ? null : [ghost.best.toFixed(1), ghost.aheadMetres],
 ]);
 const TowerPanel = memo(function TowerPanel(props: TowerProps) {
   return <HudPanel id="tower" anchor="top-left" chip="standings" interactive={false}><TimingTower {...props}/></HudPanel>;
 }, (a, b) => towerShown(a) === towerShown(b));
 
+/** The live half of the race HUD: read once a frame from the session, for every value that moves with the kart. */
+function useLiveRace(session: RunSession | undefined) {
+  return useMemo(() => {
+    const hud = perFrame(() => {
+      const snapshot = session?.snapshot();
+      return snapshot === undefined || snapshot.phase !== "running" ? null : raceHud(snapshot);
+    });
+    return {
+      kmh: live(() => hud()?.dash.kmh ?? 0),
+      lapTime: live(() => hud()?.tower.race.lapTime ?? 0),
+      eyebrow: live(() => hud()?.sign.eyebrow ?? ""),
+      gap: live(() => hud()?.crusher.gap ?? 0),
+      z: live(() => hud()?.route.z ?? 0),
+      next: live(() => hud()?.route.next ?? ""),
+      tagMetres: () => hud()?.tag?.metres ?? 0,
+    };
+  }, [session]);
+}
+
 const SignPanel = memo(function SignPanel(props: Parameters<typeof GateSign>[0]) {
   return <HudPanel id="sign" anchor="top" priority="critical" interactive={false}><GateSign {...props}/></HudPanel>;
-});
+}, (a, b) => a.call === b.call && a.sub === b.sub && a.tone === b.tone);
 const RailPanel = memo(function RailPanel({ onPause }: { onPause: () => void }) {
   return <HudPanel id="rail" anchor="top-right" priority="critical"><RunRail onPause={onPause}/></HudPanel>;
 });
@@ -89,10 +110,10 @@ const RackPanel = memo(function RackPanel(props: Parameters<typeof BuildRack>[0]
 }, (before, after) => PART_SLOTS.every((slot) => before.installed[slot] === after.installed[slot]));
 
 type PartDef = NonNullable<ReturnType<typeof partById>>;
-const TagPanel = memo(function TagPanel({ metres, offered, replacing, armed }: { metres: number; offered: PartDef; replacing: PartDef; armed: boolean }) {
+const TagPanel = memo(function TagPanel({ metres, offered, replacing, armed }: { metres: () => number; offered: PartDef; replacing: PartDef; armed: boolean }) {
   const speedDelta = (claimedChange(offered, "topSpeed") - claimedChange(replacing, "topSpeed")) * 3.6;
   return <HudPanel id="tag" anchor="right" priority="critical" interactive={false}><SalvageTag>
-    <span className="fd-tag-head"><b>{metres}m</b> {offered.slot}</span>
+    <span className="fd-tag-head"><LiveText as="b" get={() => `${metres()}m`} /> {offered.slot}</span>
     <strong>{offered.label} or keep {replacing.label}?</strong>
     <p className="fd-tag-blurb">{offered.blurb}</p>
     <p className="fd-tag-delta">Speed {speedDelta > 0 ? "+" : ""}{speedDelta.toFixed(0)} km/h · steering {(claimedChange(offered, "turnRate") - claimedChange(replacing, "turnRate")).toFixed(1)}</p>
@@ -154,12 +175,13 @@ function raceHudShown(snapshot: SessionSnapshot): string {
   const cached = shownCache.get(snapshot);
   if (cached !== undefined) return cached;
   const { tower, sign, installed, tag, dash, crusher, route } = raceHud(snapshot);
+  // Speed, distances, the lap clock and the jaw move every frame and are drawn live; only what changes at a moment is here.
   const shown = JSON.stringify([
-    snapshot.track.id, towerShown(tower), sign, PART_SLOTS.map((slot) => installed[slot]?.id ?? null),
-    tag === null ? null : [tag.metres, tag.offered.id, tag.replacing.id, tag.armed],
-    Math.round(dash.kmh), Math.round(dash.redline), dash.airborne, dash.bent, dash.armor,
-    crusherShown(crusher.gap), crusher.surge,
-    routeAlong(route), route.length, route.cleared.size, route.atRisk, route.next,
+    snapshot.track.id, towerShown(tower), { ...sign, eyebrow: withoutMetres(sign.eyebrow) }, PART_SLOTS.map((slot) => installed[slot]?.id ?? null),
+    tag === null ? null : [tag.offered.id, tag.replacing.id, tag.armed],
+    Math.round(dash.redline), dash.airborne, dash.bent, dash.armor,
+    crusher.gap < 22, crusher.surge,
+    route.length, route.cleared.size, route.atRisk, withoutMetres(route.next),
   ]);
   shownCache.set(snapshot, shown);
   return shown;
@@ -231,6 +253,7 @@ export function GameUI() {
     window.addEventListener("keyup", release);
     return () => { window.removeEventListener("keydown", key); window.removeEventListener("keyup", release); };
   }, [ctx, session, commands, settings.isOpen, drive]);
+  const liveRace = useLiveRace(session);
   const togglePause = useCallback(() => {
     if (!session) return;
     session.togglePause();
@@ -244,14 +267,14 @@ export function GameUI() {
     <RunMenus snapshot={snapshot} session={session} publish={() => publishSession(ctx, session)}/>
     <div className="fd-ui" ref={uiRef}>
     {hud !== null && <><HudCanvas layout={layout} editChord={false}>
-      <TowerPanel {...hud.tower}/>
-      <SignPanel {...hud.sign}/>
+      <TowerPanel race={hud.tower.race} lapTime={liveRace.lapTime} event={hud.tower.event} ghost={hud.tower.ghost}/>
+      <SignPanel {...hud.sign} eyebrow={liveRace.eyebrow}/>
       <RailPanel onPause={togglePause}/>
       <RackPanel installed={hud.installed}/>
-      {hud.tag === null ? null : <TagPanel {...hud.tag}/>}
-      <DashPanel {...hud.dash}/>
-      <CrusherPanel {...hud.crusher}/>
-      <RoutePanel {...hud.route}/>
+      {hud.tag === null ? null : <TagPanel {...hud.tag} metres={liveRace.tagMetres}/>}
+      <DashPanel {...hud.dash} kmh={liveRace.kmh}/>
+      <CrusherPanel gap={liveRace.gap} danger={hud.crusher.gap < 22} surge={hud.crusher.surge}/>
+      <RoutePanel {...hud.route} z={liveRace.z} next={liveRace.next} nextShown={withoutMetres(hud.route.next)}/>
     </HudCanvas>
     <TouchControls drive={drive}/></>}
     {(snapshot.phase === "won" || snapshot.phase === "crushed") && <RunResults snapshot={snapshot} onRestart={() => commands.run("restart", {})} onTitle={returnToTitle}/>}

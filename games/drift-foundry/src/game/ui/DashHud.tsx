@@ -1,4 +1,6 @@
-import type { CSSProperties, ReactNode } from "react";
+import { useRef, type CSSProperties, type ReactNode } from "react";
+import { LiveText, useFrameBind } from "@jgengine/core/ui/liveBind.view";
+import { readLive, type Live } from "@jgengine/core/ui/liveValue";
 import { type KitMaterial } from "@jgengine/core/ui/kit/kitFrame.view";
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { GameIcon, type GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
@@ -27,9 +29,11 @@ const ROUTE_LENGTH = 470;
 export const plate = (rim: string): { edge: "none"; shadow: false; style: CSSProperties } => ({ edge: "none", shadow: false, style: { "--fd-rim": rim } as CSSProperties });
 
 /** Speed on a 240° dial: the needle is its own layer and turns on the compositor. */
-export function Tach({ kmh, redline, airborne, bent, armor }: { kmh: number; redline: number; airborne: boolean; bent: boolean; armor: boolean }): ReactNode {
+export function Tach({ kmh, redline, airborne, bent, armor }: { kmh: Live<number>; redline: number; airborne: boolean; bent: boolean; armor: boolean }): ReactNode {
   const MAX = 140, START = 150, SWEEP = 240;
-  const speed = Math.max(0, Math.round(kmh));
+  const root = useRef<HTMLDivElement>(null);
+  const speedNow = () => Math.max(0, Math.round(readLive(kmh)));
+  const speed = speedNow();
   const at = (v: number) => START + (SWEEP * Math.min(MAX, Math.max(0, v))) / MAX;
   const polar = (deg: number, r: number) => [100 + Math.cos((deg * Math.PI) / 180) * r, 100 + Math.sin((deg * Math.PI) / 180) * r] as const;
   const arc = (from: number, to: number, r: number) => {
@@ -38,6 +42,19 @@ export function Tach({ kmh, redline, airborne, bent, armor }: { kmh: number; red
     return `M${x1.toFixed(2)} ${y1.toFixed(2)} A${r} ${r} 0 ${large} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
   };
   const red = Math.min(MAX, Math.max(20, Math.round(redline)));
+  // Speed moves every frame: the needle, the lit arc, the readout and the label are written to their nodes.
+  useFrameBind(root, speedNow, (value, element) => {
+    element.setAttribute("aria-label", `${value} kilometres an hour`);
+    const lit = element.querySelector<SVGPathElement>(".fd-tach-lit");
+    if (lit !== null) {
+      if (value > 0) lit.setAttribute("d", arc(0, Math.min(value, MAX), 82));
+      else lit.removeAttribute("d");
+    }
+    const needle = element.querySelector<HTMLElement>(".fd-tach-needle");
+    if (needle !== null) needle.style.transform = `rotate(${at(value).toFixed(1)}deg)`;
+    const read = element.querySelector(".fd-tach-read b");
+    if (read !== null) read.textContent = String(value);
+  });
   const ticks: ReactNode[] = [];
   for (let v = 0; v <= MAX; v += 10) {
     const major = v % 20 === 0;
@@ -49,7 +66,7 @@ export function Tach({ kmh, redline, airborne, bent, armor }: { kmh: number; red
     }
   }
   return (
-    <div className="fd-tach" role="img" aria-label={`${speed} kilometres an hour`}>
+    <div ref={root} className="fd-tach" role="img" aria-label={`${speed} kilometres an hour`}>
       <svg viewBox="0 0 200 200" aria-hidden="true">
         <defs>
           <linearGradient id="fd-bezel" x1="0" y1="0" x2="0" y2="1">
@@ -66,7 +83,7 @@ export function Tach({ kmh, redline, airborne, bent, armor }: { kmh: number; red
         <circle cx="100" cy="100" r="95" fill="url(#fd-bezel)" />
         <circle cx="100" cy="100" r="86" fill="url(#fd-face)" />
         <path d={arc(red, MAX, 82)} className="fd-tach-redline" />
-        {speed > 0 ? <path d={arc(0, Math.min(speed, MAX), 82)} className="fd-tach-lit" /> : null}
+        <path d={speed > 0 ? arc(0, Math.min(speed, MAX), 82) : undefined} className="fd-tach-lit" />
         {ticks}
         <text x="100" y="80" className="fd-tach-brand">ROW SIX</text>
       </svg>
@@ -91,13 +108,13 @@ function Lamp({ on, tone, label }: { on: boolean; tone: "teal" | "red" | "yellow
 }
 
 /** The pit-lane timing board: place, lap and the field in order. */
-export function TimingTower({ race, event, ghost }: { race: RaceSnapshot; event?: { label: string; next: { medal: string; text: string } | null }; ghost?: { best: number; aheadMetres: number | null } | null }): ReactNode {
+export function TimingTower({ race, lapTime, event, ghost }: { race: Omit<RaceSnapshot, "lapTime">; lapTime: Live<number>; event?: { label: string; next: { medal: string; text: string } | null }; ghost?: { best: number; aheadMetres: number | null } | null }): ReactNode {
   return (
     <HudFade watch={() => [race.place, race.lap, race.standings.map((entry) => entry.id).join()]} idleMs={5000} dimTo={0.55} className="fd-tower-wrap">
       <section className="fd-tower" aria-label="Race position">
         <header className="fd-tower-head">
           <span className="fd-tower-pos"><small>P</small>{race.place}<em>/{race.total}</em></span>
-          <span className="fd-tower-lap"><span>LAP {race.lap}/{race.laps}</span><em>{race.lapTime.toFixed(1)}s</em></span>
+          <span className="fd-tower-lap"><span>LAP {race.lap}/{race.laps}</span><LiveText as="em" get={() => `${readLive(lapTime).toFixed(1)}s`} /></span>
         </header>
         <ol className="fd-tower-field">
           {race.standings.map((entry) => (
@@ -121,14 +138,14 @@ export function TimingTower({ race, event, ghost }: { race: RaceSnapshot; event?
 }
 
 /** The next barrier as a painted gate sign hung over the road. */
-export function GateSign({ eyebrow, call, sub, tone }: { eyebrow: string; call: string; sub: string; tone: "plow" | "jump" | "launch" | "stop" | "home" }): ReactNode {
+export function GateSign({ eyebrow, call, sub, tone }: { eyebrow: Live<string>; call: string; sub: string; tone: "plow" | "jump" | "launch" | "stop" | "home" }): ReactNode {
   const tint = tone === "launch" ? TEAL : tone === "stop" ? "#e2452e" : YELLOW;
   return (
-    <HudFade watch={() => [call, eyebrow.replace(/\d+ ?m$/, "")]} hold={() => tone === "launch" || tone === "stop"} idleMs={6000} dimTo={0.7} className="fd-sign-wrap">
+    <HudFade watch={() => [call, readLive(eyebrow).replace(/\d+ ?m$/, "")]} hold={() => tone === "launch" || tone === "stop"} idleMs={6000} dimTo={0.7} className="fd-sign-wrap">
       <KitPanel material="enamel" cut="chamfer" depth={10} tint={tint} {...plate("#151515")} padding="0" className="fd-rimmed fd-sign" data-tone={tone}>
         <span className="fd-sign-band" aria-hidden="true" />
         <span className="fd-sign-body" role="status">
-          <span className="fd-sign-eyebrow">{eyebrow}</span>
+          <LiveText className="fd-sign-eyebrow" get={() => readLive(eyebrow)} />
           <b className="fd-sign-call">{call}</b>
           <span className="fd-sign-sub">{sub}</span>
         </span>
@@ -138,16 +155,26 @@ export function GateSign({ eyebrow, call, sub, tone }: { eyebrow: string; call: 
 }
 
 /** The compactor behind you: the striped jaw grows across the bar as it closes. */
-export function CrusherBar({ gap, surge }: { gap: number; surge: boolean }): ReactNode {
-  const metres = Math.max(0, Math.round(gap));
-  const danger = gap < 22;
-  const closed = Math.round((1 - Math.min(60, Math.max(0, gap)) / 60) * 1000) / 10;
+export function CrusherBar({ gap, danger, surge }: { gap: Live<number>; danger: boolean; surge: boolean }): ReactNode {
+  const bar = useRef<HTMLDivElement>(null);
+  const metresNow = () => Math.max(0, Math.round(readLive(gap)));
+  const closedNow = () => Math.round((1 - Math.min(60, Math.max(0, readLive(gap))) / 60) * 1000) / 10;
+  // The jaw closes and the metres count every frame: written to their nodes.
+  useFrameBind(bar, () => `${metresNow()}|${closedNow()}`, (_key, element) => {
+    const metres = metresNow();
+    element.setAttribute("aria-label", `Compactor ${metres} metres behind`);
+    const jaw = element.querySelector<HTMLElement>(".fd-crusher-jaw");
+    if (jaw !== null) jaw.style.transform = `translateX(${(closedNow() - 100).toFixed(1)}%)`;
+    const read = element.querySelector(".fd-crusher-gap b");
+    if (read !== null) read.textContent = `${metres}m`;
+  });
+  const metres = metresNow();
   return (
-    <HudFade watch={() => [Math.round(gap / 6), danger, surge]} hold={() => danger || surge} idleMs={4000} dimTo={0.5} className="fd-crusher-wrap">
-      <div className="fd-crusher" data-danger={danger ? "" : undefined} aria-label={`Compactor ${metres} metres behind`}>
+    <HudFade watch={() => [Math.round(readLive(gap) / 6), danger, surge]} hold={() => danger || surge} idleMs={4000} dimTo={0.5} className="fd-crusher-wrap">
+      <div ref={bar} className="fd-crusher" data-danger={danger ? "" : undefined} aria-label={`Compactor ${metres} metres behind`}>
         <span className="fd-crusher-label">COMPACTOR{surge ? <em> surge</em> : null}</span>
         <span className="fd-crusher-track" aria-hidden="true">
-          <span className="fd-crusher-jaw" style={{ transform: `translateX(${(closed - 100).toFixed(1)}%)` }} />
+          <span className="fd-crusher-jaw" style={{ transform: `translateX(${(closedNow() - 100).toFixed(1)}%)` }} />
           <span className="fd-crusher-car" />
         </span>
         <span className="fd-crusher-gap"><b>{metres}m</b> BEHIND</span>
@@ -157,20 +184,26 @@ export function CrusherBar({ gap, surge }: { gap: number; surge: boolean }): Rea
 }
 
 /** The corridor as a steel rule: barriers punched in, the buggy riding along it, the haul at stake. */
-export function RouteRule({ z, cleared, next, atRisk, length = ROUTE_LENGTH, gates = ROUTE_GATES }: { z: number; cleared: ReadonlySet<string>; next: string; atRisk: number; length?: number; gates?: readonly RouteGate[] }): ReactNode {
-  const along = Math.round((Math.min(length, Math.max(0, z)) / length) * 1000) / 10;
+export function RouteRule({ z, cleared, next, atRisk, length = ROUTE_LENGTH, gates = ROUTE_GATES }: { z: Live<number>; cleared: ReadonlySet<string>; next: Live<string>; atRisk: number; length?: number; gates?: readonly RouteGate[] }): ReactNode {
+  const alongNow = () => Math.round((Math.min(length, Math.max(0, readLive(z))) / length) * 1000) / 10;
+  const ride = useRef<HTMLSpanElement>(null);
+  // The buggy rides along the rule every frame: its position is written to the node.
+  useFrameBind(ride, alongNow, (along, element) => {
+    element.style.transform = `translateX(${along}%)`;
+  });
+  const along = alongNow();
   return (
-    <HudFade watch={() => [cleared.size, next.replace(/\d+m/, ""), atRisk]} idleMs={5000} dimTo={0.55} className="fd-route-wrap">
+    <HudFade watch={() => [cleared.size, readLive(next).replace(/\d+m/, ""), atRisk]} idleMs={5000} dimTo={0.55} className="fd-route-wrap">
       <section className="fd-route" aria-label="Corridor">
-        <header className="fd-route-head"><span><b>{gates.filter((gate) => cleared.has(gate.id)).length}</b>/{gates.length} barriers</span><span>{Math.floor(along)}%</span></header>
+        <header className="fd-route-head"><span><b>{gates.filter((gate) => cleared.has(gate.id)).length}</b>/{gates.length} barriers</span><LiveText get={() => `${Math.floor(alongNow())}%`} /></header>
         <div className="fd-route-rule" aria-hidden="true">
           {gates.map((gate) => (
             <i key={gate.id} className="fd-route-gate" data-cleared={cleared.has(gate.id) ? "" : undefined} data-kind={gate.requirement} data-shortcut={gate.route === "main" ? undefined : ""} style={{ left: `${(gate.atZ / length) * 100}%` }} />
           ))}
-          <span className="fd-route-ride" style={{ transform: `translateX(${along}%)` }}><span className="fd-route-car" /></span>
+          <span ref={ride} className="fd-route-ride" style={{ transform: `translateX(${along}%)` }}><span className="fd-route-car" /></span>
           <span className="fd-route-flag"><GameIcon name="flag" size={14} color={YELLOW} /></span>
         </div>
-        <p className="fd-route-next">{next}</p>
+        <LiveText as="p" className="fd-route-next" get={() => readLive(next)} />
         <p className="fd-route-risk"><b>{atRisk} cr AT RISK</b></p>
       </section>
     </HudFade>

@@ -16,10 +16,36 @@ type FrameSubscriber = () => void;
 const subscribers = new Set<FrameSubscriber>();
 let sharedRaf = 0;
 
+/** The frame the shared loop is running now, or -1 outside it. */
+let runningFrame = -1;
+let frameCount = 0;
+
 function sharedTick(): void {
   sharedRaf = 0;
+  runningFrame = frameCount;
+  frameCount += 1;
   for (const subscriber of subscribers) subscriber();
+  runningFrame = -1;
   if (subscribers.size > 0 && typeof requestAnimationFrame !== "undefined") sharedRaf = requestAnimationFrame(sharedTick);
+}
+
+/**
+ * Wrap a costly read that several live bindings share (a snapshot, a view of the race) so it runs once
+ * per frame: inside the shared loop every caller in the same frame gets the same result; outside it
+ * (a render) it reads fresh.
+ *
+ * ```tsx
+ * const hud = useMemo(() => perFrame(() => raceHud(session.snapshot())), [session]);
+ * <LiveText get={() => Math.round(hud().dash.kmh)} />
+ * ```
+ */
+export function perFrame<T>(read: () => T): () => T {
+  let cached: { frame: number; value: T } | null = null;
+  return () => {
+    if (runningFrame < 0) return read();
+    if (cached === null || cached.frame !== runningFrame) cached = { frame: runningFrame, value: read() };
+    return cached.value;
+  };
 }
 
 /** Run `subscriber` once per animation frame, on the one loop every live binding shares. */
