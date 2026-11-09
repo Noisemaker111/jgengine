@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
 
-import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { hashString, seededRng } from "@jgengine/core/random/rng";
 import { lightningStrikeEnvelope } from "./weatherMath";
 import type { WeatherVector } from "./weatherUniforms.draw";
-import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Props for {@link LightningStrike}: bolt start and end, a key that restarts it, a seed for its shape and visibility. */
 export interface LightningStrikeProps {
@@ -105,71 +105,102 @@ function writeLightningGeometry(geometry: THREE.BufferGeometry, segments: Lightn
   geometry.computeBoundingSphere();
 }
 
-/** A jagged, briefly flashing lightning bolt from `origin` to `target`. */
-export function LightningStrike({
-  origin,
-  target,
-  strikeKey = 0,
-  seed = 451,
-  visible = true,
-  duration = 0.18,
-  color = DEFAULT_COLOR,
-  glow = 2.4,
-  branches = 5,
-  jaggedness = 0.08,
-  impactLight = 26,
-  renderOrder = 20,
-  timeSeconds,
-  startedAt,
-}: LightningStrikeProps) {
-  const localTime = useRef(0);
-  const startRef = useRef<number | null>(null);
-  const lightRef = useRef<THREE.PointLight | null>(null);
-  const geometry = useDisposable(() => new THREE.BufferGeometry(), []);
-  const material = useDisposable(
-    () =>
-      new THREE.LineBasicMaterial({
-        color,
-        transparent: true,
-        opacity: 0,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-      }),
-    [color],
-  );
-  const line = useMemo(() => {
-    const next = new THREE.LineSegments(geometry, material);
-    next.frustumCulled = false;
-    next.renderOrder = renderOrder;
-    return next;
-  }, [geometry, material, renderOrder]);
+/**
+ * Draw-side form of {@link LightningStrike}: owns the bolt geometry, additive line material and
+ * impact light, rebuilding the bolt when its shape inputs or visibility change and fading it with
+ * the strike envelope each frame. @internal
+ */
+export function lightningStrikeDraw(getProps: () => LightningStrikeProps): EngineDraw {
+  const geometry = new THREE.BufferGeometry();
+  const material = new THREE.LineBasicMaterial({
+    color: DEFAULT_COLOR,
+    transparent: true,
+    opacity: 0,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const line = new THREE.LineSegments(geometry, material);
+  line.frustumCulled = false;
+  const light = new THREE.PointLight(DEFAULT_COLOR, 0, 56, 2);
+  let localTime = 0;
+  let startAt: number | null = null;
+  let builtKey = "";
+  let appliedColor: THREE.ColorRepresentation | null = null;
 
-  useEffect(() => {
+  const sync = (_state: EngineFrameState) => {
+    const props = getProps();
+    const color = props.color ?? DEFAULT_COLOR;
+    if (appliedColor !== color) {
+      appliedColor = color;
+      material.color.set(color);
+      light.color.set(color);
+    }
+    line.renderOrder = props.renderOrder ?? 20;
+    light.position.set(props.target[0], props.target[1], props.target[2]);
+    const key = [
+      props.origin[0], props.origin[1], props.origin[2],
+      props.target[0], props.target[1], props.target[2],
+      (props.seed ?? 451) ^ hashString(String(props.strikeKey ?? 0)),
+      props.branches ?? 5,
+      props.jaggedness ?? 0.08,
+    ].join(",");
+    const visible = props.visible ?? true;
     if (!visible) {
-      startRef.current = null;
+      builtKey = "";
+      startAt = null;
       material.opacity = 0;
-      if (lightRef.current !== null) lightRef.current.intensity = 0;
+      light.intensity = 0;
       return;
     }
-    writeLightningGeometry(
-      geometry,
-      createLightningSegments(origin, target, seed ^ hashString(String(strikeKey)), branches, jaggedness),
-    );
-    startRef.current = startedAt ?? timeSeconds?.() ?? localTime.current;
-  }, [branches, duration, geometry, jaggedness, material, origin, seed, strikeKey, target, visible, startedAt, timeSeconds]);
+    const restart = builtKey !== key || startAt === null;
+    if (restart) {
+      builtKey = key;
+      writeLightningGeometry(
+        geometry,
+        createLightningSegments(
+          props.origin,
+          props.target,
+          (props.seed ?? 451) ^ hashString(String(props.strikeKey ?? 0)),
+          props.branches ?? 5,
+          props.jaggedness ?? 0.08,
+        ),
+      );
+      startAt = props.startedAt ?? props.timeSeconds?.() ?? localTime;
+    }
+  };
 
-  useFrameTask((_state, delta) => {
-    localTime.current += delta;
-    const now = timeSeconds?.() ?? localTime.current;
-    const amount = visible && startRef.current !== null ? lightningStrikeEnvelope(now, startRef.current, duration, seed ^ hashString(String(strikeKey))) : 0;
-    material.opacity = amount * glow;
-    if (lightRef.current !== null) lightRef.current.intensity = amount * impactLight;
-  });
+  return {
+    mount(state) {
+      state.scene.add(line);
+      state.scene.add(light);
+      sync(state);
+    },
+    update: sync,
+    frame(state: EngineFrameState) {
+      sync(state);
+      localTime += state.delta;
+      const props = getProps();
+      const visible = props.visible ?? true;
+      const seedKey = (props.seed ?? 451) ^ hashString(String(props.strikeKey ?? 0));
+      const now = props.timeSeconds?.() ?? localTime;
+      const amount = visible && startAt !== null
+        ? lightningStrikeEnvelope(now, startAt, props.duration ?? 0.18, seedKey)
+        : 0;
+      material.opacity = amount * (props.glow ?? 2.4);
+      light.intensity = amount * (props.impactLight ?? 26);
+    },
+    dispose(state) {
+      state.scene.remove(line);
+      state.scene.remove(light);
+      geometry.dispose();
+      material.dispose();
+    },
+  };
+}
 
-  return (
-    <>
-      <primitive object={line} />
-      <pointLight ref={lightRef} position={[target[0], target[1], target[2]]} color={color} intensity={0} distance={56} decay={2} />
-    </>
-  );
+/** A jagged, briefly flashing lightning bolt from `origin` to `target`. */
+export function LightningStrike(props: LightningStrikeProps) {
+  const latest = useRef(props);
+  latest.current = props;
+  return <EngineDrawMount create={() => lightningStrikeDraw(() => latest.current)} deps={[]} />;
 }
