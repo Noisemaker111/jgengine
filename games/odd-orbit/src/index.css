@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import "tailwindcss" source(".");
 @import "../../../packages/react/src/styles.css";
 @import "./style.css";
 @source "../../../packages/react/src";
