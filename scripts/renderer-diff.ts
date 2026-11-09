@@ -1,4 +1,5 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -7,6 +8,7 @@ import { applyDevice, ensureDevServer, navigateCapturePage, openPageSession, wit
 import { GATE_SIZE } from "./perf-gate";
 import { perfLockTurn } from "./perf-lock";
 import { perfPageUrl, SAMPLE_FRAMES_SCRIPT } from "./perf-play";
+import { markStep } from "./hangReport";
 import { diffImages, type ShotDiff } from "./shot-diff";
 
 /**
@@ -136,33 +138,43 @@ async function switchTo(session: CdpSession, backend: "webgl" | "webgpu"): Promi
 }
 
 async function compareGame(session: CdpSession, base: string, game: string, outDir: string, settleMs: number, seconds: number): Promise<RendererDiffResult> {
-  const timed = async () => (seconds > 0 ? await timeFrames(session, seconds) : null);
+  const timed = async (label: string) => {
+    if (seconds <= 0) return null;
+    markStep(`time ${label} frames`);
+    return await timeFrames(session, seconds);
+  };
+  markStep(`load ${game} on webgl`);
   await applyDevice(session, "desktop", "full", { width: GATE_SIZE.width, height: GATE_SIZE.height });
   const url = perfPageUrl({ base, game, quality: "high", telemetry: "off", params: [["renderer", "webgl"]] });
   await navigateCapturePage(session, url.toString(), 240_000);
   const frozen = await bridge(session, { method: "time_scale", scale: 0 });
   if (!frozen.ok) throw new Error(`could not freeze game time: ${frozen.error}`);
   await sleep(settleMs);
+  markStep("settle and shoot webgl");
   const webglExposure = await settleExposure(session, "webgl");
   const webgl = await screenshot(session);
   await sleep(1000);
   const webglAgain = await screenshot(session);
-  const webglFrames = await timed();
+  const webglFrames = await timed("webgl");
 
+  markStep("switch to webgpu");
   const switchSeconds = await switchTo(session, "webgpu");
   // Time stays frozen across the remount; the settle lets streamed content and the exposure meter land.
   await bridge(session, { method: "time_scale", scale: 0 });
   await sleep(settleMs);
+  markStep("settle and shoot webgpu");
   const webgpuExposure = await settleExposure(session, "webgpu");
   const webgpu = await screenshot(session);
-  const webgpuFrames = await timed();
+  const webgpuFrames = await timed("webgpu");
   const warnings = (await session.evaluate<string[]>(`[...(globalThis.__jgWebGpu?.warnings?.keys() ?? [])].map((w) => w.slice(0, 300))`)) ?? [];
+  markStep("switch back to webgl");
   await switchTo(session, "webgl");
   await bridge(session, { method: "time_scale", scale: 0 });
   await sleep(settleMs);
+  markStep("settle and shoot remounted webgl");
   const remountedExposure = await settleExposure(session, "remounted webgl");
   const webglRemounted = await screenshot(session);
-  const remountedFrames = await timed();
+  const remountedFrames = await timed("remounted webgl");
 
   mkdirSync(outDir, { recursive: true });
   writeFileSync(join(outDir, "webgl.png"), webgl.bytes);
@@ -223,8 +235,35 @@ export function frameTable(results: readonly RendererDiffResult[]): string {
   return ["| game | WebGL p50 ms (before / after) | WebGPU p50 ms | WebGPU / WebGL | faster |", "| --- | --- | ---: | ---: | --- |", ...rows].join("\n");
 }
 
+/**
+ * Several games run one process each: a game that hangs past the browser session's hard deadline is
+ * killed with its process, and the games after it still run (one hang used to end the whole list).
+ */
+function runEachGame(args: ReturnType<typeof parseRendererDiffArgs>): void {
+  const failed: string[] = [];
+  const results: RendererDiffResult[] = [];
+  for (const game of args.games) {
+    const resultFile = join(args.out, game, "result.json");
+    rmSync(resultFile, { force: true });
+    const run = spawnSync(process.execPath, [fileURLToPath(import.meta.url), game, "--out", args.out, "--settle", String(args.settleMs), "--seconds", String(args.seconds), "--no-table"], { stdio: "inherit" });
+    if (run.status === 0 && existsSync(resultFile)) results.push(JSON.parse(readFileSync(resultFile, "utf8")) as RendererDiffResult);
+    else {
+      if (run.status !== 1) console.error(`renderer-diff: ${game} could not be compared (its run exited ${run.status ?? run.signal})`);
+      failed.push(game);
+    }
+  }
+  const table = frameTable(results);
+  if (table !== "") console.error(`\nSame frozen moment on each backend, uncapped:\n${table}`);
+  if (failed.length > 0) {
+    console.error(`renderer-diff: not compared: ${failed.join(", ")}`);
+    process.exitCode = 1;
+  }
+}
+
 async function main(): Promise<void> {
-  const args = parseRendererDiffArgs(process.argv.slice(2));
+  const argv = process.argv.slice(2);
+  const args = parseRendererDiffArgs(argv.filter((arg) => arg !== "--no-table"));
+  if (args.games.length > 1) return runEachGame(args);
   const failed: string[] = [];
   const results: RendererDiffResult[] = [];
   for (const game of args.games) {
@@ -257,7 +296,7 @@ async function main(): Promise<void> {
     }
   }
   const table = frameTable(results);
-  if (table !== "") console.error(`\nSame frozen moment on each backend, uncapped:\n${table}`);
+  if (table !== "" && !argv.includes("--no-table")) console.error(`\nSame frozen moment on each backend, uncapped:\n${table}`);
   if (failed.length > 0) process.exitCode = 1;
 }
 
