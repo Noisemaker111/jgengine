@@ -1,3 +1,5 @@
+import type { Ref } from "react";
+import type { Group } from "three";
 import { IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";
 import { stationAssets } from "./assets";
 import type { Triple } from "./art";
@@ -26,15 +28,21 @@ export function serviceWeaponPose(dive: WeaponPoseInput) {
     turn: [kick * 0.07 + reload * 0.13, 0, -reload * 0.24] as Triple,
     kick, magazineOffset: reload * 0.07, flash: dive.flash > 0 };
 }
+/** Where the weapon body sits for a pose: kicked back by recoil, dropped while the magazine is out. */
+export function serviceWeaponBody(pose: { kick: number; magazineOffset: number }): Triple {
+  return [0, -pose.magazineOffset * 0.2, pose.kick * 0.012];
+}
 /** The magazine figure the HUD's "n / 6" line counts against. */
 export const WEAPON_MAGAZINE = MAGAZINE;
 /** Original grip-origin models share the accepted pose and exact gameplay muzzle anchors. */
-export function ServiceWeapon({kind,flash=false,kick=0,magazineOffset=0,shadows='both'}:{
+export function ServiceWeapon({kind,flash=false,kick=0,magazineOffset=0,shadows='both',body}:{
  kind:ServiceWeaponKind;flash?:boolean;kick?:number;magazineOffset?:number;shadows?:'none'|'both';
+ /** The kicked and reloading body, for a caller that moves it each frame with {@link serviceWeaponBody}. */
+ body?:Ref<Group>;
 }) {
  const asset=stationAssets.resolve(kind==='sidearm'?'deepward/service-sidearm':'deepward/service-rifle');
  if(!asset)throw Error(`Missing original weapon catalog asset: ${kind}`);
- return <group position-z={kick*0.012} position-y={-magazineOffset*0.2}>
+ return <group ref={body ?? null} position-z={kick*0.012} position-y={-magazineOffset*0.2}>
   <IsolatedEntityModel model={{...asset,anchor:'origin',shadows,animation:'none'}} />
   {flash && <group position={WEAPON_MUZZLE[kind]}>
    <mesh position-z={-0.035} rotation-x={-Math.PI/2}><coneGeometry args={[0.055,0.09,6]} /><meshBasicMaterial color='#ffe4a0' /></mesh>

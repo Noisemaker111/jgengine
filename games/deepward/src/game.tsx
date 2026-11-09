@@ -1,5 +1,5 @@
 import "./style.css";
-import { memo, useCallback, useEffect, useMemo, useRef, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import { useSceneSwap } from "@jgengine/core/render/sceneSwap.draw";
 import { useFrame } from "@react-three/fiber";
 import { Group, SpotLight, Vector3, type PointLight } from "three";
@@ -19,7 +19,7 @@ import { ALARM_LAMPS, alarmCreatures, alarmLampAt, Headlamp, MarrowBays, Stratum
 import { PALETTE as C, signTexture, IndustrialBox, SALVAGE_PLACARD, type Triple } from "./game/art";
 import { surfaceMaterial, type IndustrialSurface } from "./game/industrialMaterials";
 import { FITTER_FLASH, FitterModel, fitterHit } from "./game/fitterArt";
-import { ServiceWeapon, serviceWeaponPose } from "./game/weaponArt";
+import { ServiceWeapon, serviceWeaponBody, serviceWeaponPose } from "./game/weaponArt";
 import { activeRoomLamps, deriveRoomPresentation, isBayWall, lampFlicker, ROOM_LIGHT_BUDGET, ROOM_LIGHT_REACH, ROOM_LIGHT_INTENSITY } from "./game/roomPresentation";
 import { captureProbe, initialize, keybinds, seatPlayer, setAim, tickControls, viewStore, type View } from "./game/controls";
 import { registerCaptureCommands } from "./game/capture";
@@ -227,9 +227,19 @@ function Tracer({ from, to }: { from: Point; to: Point }) {
 }
 function Hand() {
   const ctx = useGameContext(), ref = useRef<Group>(null);
-  // Only what the weapon pose reads: these move during a reload, a hit or a shot, not every tick.
-  const view = useStore(viewStore, v => ({ mode: v.mode, hand: v.dive?.hand ?? null, reload: v.ammo?.reloadProgress ?? 0, hurt: v.dive?.hurt ?? 0, flash: v.dive?.flash ?? 0 }));
+  // The weapon redraws when it is drawn, swapped or flashes; reload, hurt and recoil move it every frame without a render.
+  const view = useStore(viewStore, v => ({ mode: v.mode, hand: v.dive?.hand ?? null, flash: (v.dive?.flash ?? 0) > 0 }));
+  const posed = useRef<Group>(null), body = useRef<Group>(null);
   const dir = useMemo(() => new Vector3(), []);
+  const applyPose = () => {
+    const v = viewStore.read(ctx);
+    if (v.dive === null) return;
+    const pose = serviceWeaponPose({ hand: v.dive.hand, reload: v.ammo?.reloadProgress ?? 0, hurt: v.dive.hurt, flash: v.dive.flash });
+    posed.current?.position.set(...pose.at);
+    posed.current?.rotation.set(...pose.turn);
+    body.current?.position.set(...serviceWeaponBody(pose));
+  };
+  useLayoutEffect(applyPose);
   useFrame(({ camera }) => {
     camera.getWorldDirection(dir);
     setAim(ctx, [dir.x, dir.y, dir.z]);
@@ -237,10 +247,10 @@ function Hand() {
     if (hand === null) return;
     hand.position.copy(camera.position); hand.quaternion.copy(camera.quaternion);
     hand.translateX(0.26); hand.translateY(-0.26); hand.translateZ(-0.55);
+    applyPose();
   });
-  const pose = view.hand === null ? null : serviceWeaponPose({ hand: view.hand, reload: view.reload, hurt: view.hurt, flash: view.flash });
   return <group ref={ref} visible={view.mode === "dive"}>
-    {pose !== null && view.hand !== null && <group position={pose.at} rotation={pose.turn}><ServiceWeapon kind={view.hand} shadows="none" flash={pose.flash} kick={pose.kick} magazineOffset={pose.magazineOffset} /></group>}
+    {view.hand !== null && <group ref={posed}><ServiceWeapon kind={view.hand} shadows="none" flash={view.flash} body={body} /></group>}
   </group>;
 }
 /** The floor's fixed dressing, re-rendered only when something on it is worked, taken or scanned. */
