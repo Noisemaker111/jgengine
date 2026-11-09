@@ -82,7 +82,7 @@ function fieldKeyOf(blending: "additive" | "normal", render: ParticleRenderHint 
  */
 export function particleEmittersDraw(
   ctx: GameContext,
-  { quality, particleCap, particleBudget, diagnostics = false }: { quality: GraphicsQuality; particleCap?: number; particleBudget?: number; diagnostics?: boolean },
+  { quality, particleCap, particleBudget, diagnostics = false }: { quality: GraphicsQuality; particleCap?: number | undefined; particleBudget?: number | undefined; diagnostics?: boolean | undefined },
 ): EngineDraw {
   const emitters = new Map<string, EmitterInstance>();
   const bursts: BurstInstance[] = [];

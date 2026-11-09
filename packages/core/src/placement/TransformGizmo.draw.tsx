@@ -53,6 +53,7 @@ export interface TransformGizmoProps {
 export function transformGizmoDraw(getProps: () => TransformGizmoProps): EngineDraw {
   const group = new THREE.Group();
   let controls: TransformControls | null = null;
+  let helper: THREE.Object3D | null = null;
   let dragging = false;
   let anchorKey = "";
 
@@ -114,7 +115,8 @@ export function transformGizmoDraw(getProps: () => TransformGizmoProps): EngineD
       controls.size = getProps().size ?? 0.85;
       controls.addEventListener("mouseDown", onMouseDown);
       controls.addEventListener("mouseUp", onMouseUp);
-      state.scene.add(controls);
+      helper = controls.getHelper();
+      state.scene.add(helper);
       controls.attach(group);
       syncProps();
     },
@@ -126,7 +128,8 @@ export function transformGizmoDraw(getProps: () => TransformGizmoProps): EngineD
       controls?.removeEventListener("mouseUp", onMouseUp);
       controls?.detach();
       if (controls !== null) {
-        state.scene.remove(controls);
+        if (helper !== null) state.scene.remove(helper);
+        helper = null;
         controls.dispose();
       }
       controls = null;

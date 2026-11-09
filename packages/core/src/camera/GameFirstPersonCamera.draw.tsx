@@ -1,4 +1,4 @@
-import { useRef, type ComponentType, type MutableRefObject } from "react";
+import { useEffect, useRef, type ComponentType, type MutableRefObject } from "react";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import type { CameraWeaponView, FirstPersonCameraConfig } from "@jgengine/core/game/playableGame";

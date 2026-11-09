@@ -18,6 +18,7 @@ import {
   seedOrbitFollowState,
   type OrbitCameraConfig,
   type OrbitFollowRuntimeState,
+  type ResolvedOrbitCameraConfig,
 } from "./orbitCameraMath";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
@@ -84,7 +85,7 @@ export function gameOrbitCameraDraw(getProps: () => GameOrbitCameraDrawProps): E
   let runtime: OrbitFollowRuntimeState | null = null;
   let dragging = false;
   let appliedPatch: GameOrbitCameraProps["config"] | null = null;
-  let resolved: OrbitCameraConfig | null = null;
+  let resolved: ResolvedOrbitCameraConfig | null = null;
   const raycaster = new Raycaster();
   const collisionDir = new Vector3();
   const collisionOrigin = new Vector3();

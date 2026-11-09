@@ -1,10 +1,12 @@
 // @skill jgengine-world
-import { useEffect, useMemo, useRef } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
+
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import type { FireLandscape } from "./fireLandscape";
 import { seededRng } from "../random/rng";
-import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Props for {@link FireLandscapeView}. */
 export interface FireLandscapeViewProps {
@@ -128,11 +130,17 @@ function paint(fire: FireLandscape, i: number, data: Uint8Array): void {
  * billboards as tall as each cell's flame length, and smoke puffs rising from burning cells and drifting
  * downwind. Per-frame work is bounded by the burning cells plus `overlayCellsPerFrame`.
  */
-export function FireLandscapeView({ fire, heightAt, wind = [0, 0], maxFlames = 2048, maxSmoke = 1024, overlayCellsPerFrame = 4096 }: FireLandscapeViewProps) {
+export function fireLandscapeDraw(getProps: () => FireLandscapeViewProps): EngineDraw {
+  let fire = getProps().fire;
   const { cols, rows, cellSize, originX, originZ } = fire;
+  let heightAt = getProps().heightAt;
+  let wind = getProps().wind ?? ([0, 0] as const);
+  let maxFlames = getProps().maxFlames ?? 2048;
+  let maxSmoke = getProps().maxSmoke ?? 1024;
+  let overlayCellsPerFrame = getProps().overlayCellsPerFrame ?? 4096;
   const groundY = (x: number, z: number): number => heightAt?.(x, z) ?? 0;
 
-  const overlay = useMemo(() => {
+  const overlay = (() => {
     const data = new Uint8Array(cols * rows * 4);
     const texture = new THREE.DataTexture(data, cols, rows, THREE.RGBAFormat);
     texture.magFilter = THREE.LinearFilter;
@@ -153,9 +161,9 @@ export function FireLandscapeView({ fire, heightAt, wind = [0, 0], maxFlames = 2
     const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
     return { data, texture, geometry, material };
     // heightAt is read once: the ground under a fire does not move.
-  }, [cols, rows, cellSize, originX, originZ]);
+  })();
 
-  const flames = useMemo(() => {
+  const flames = (() => {
     const parts = billboardGeometry(maxFlames);
     const material = new THREE.ShaderMaterial({
       vertexShader: billboardVertex,
@@ -166,9 +174,9 @@ export function FireLandscapeView({ fire, heightAt, wind = [0, 0], maxFlames = 2
       blending: THREE.AdditiveBlending,
     });
     return { ...parts, material };
-  }, [maxFlames]);
+  })();
 
-  const smoke = useMemo(() => {
+  const smoke = (() => {
     const parts = billboardGeometry(maxSmoke);
     const material = new THREE.ShaderMaterial({ vertexShader: billboardVertex, fragmentShader: smokeFragment, transparent: true, depthWrite: false });
     return {
@@ -183,144 +191,159 @@ export function FireLandscapeView({ fire, heightAt, wind = [0, 0], maxFlames = 2
       dark: new Float32Array(maxSmoke),
       alive: 0,
     };
-  }, [maxSmoke]);
+  })();
 
-  useEffect(
-    () => () => {
+  const cursor = { row: 0, lastTime: Number.NaN, random: seededRng("fire-smoke"), spawnDebt: 0 };
+  const group = new THREE.Group();
+  const overlayMesh = new THREE.Mesh(overlay.geometry, overlay.material);
+  overlayMesh.renderOrder = 4;
+  const flameMesh = new THREE.Mesh(flames.geometry, flames.material);
+  flameMesh.frustumCulled = false;
+  flameMesh.renderOrder = 11;
+  const smokeMesh = new THREE.Mesh(smoke.geometry, smoke.material);
+  smokeMesh.frustumCulled = false;
+  smokeMesh.renderOrder = 12;
+
+  return {
+    mount(state: EngineFrameState) {
+      group.add(overlayMesh, flameMesh, smokeMesh);
+      state.scene.add(group);
+    },
+    frame(state: EngineFrameState) {
+      const props = getProps();
+      fire = props.fire;
+      heightAt = props.heightAt;
+      wind = props.wind ?? ([0, 0] as const);
+      maxFlames = props.maxFlames ?? 2048;
+      maxSmoke = props.maxSmoke ?? 1024;
+      overlayCellsPerFrame = props.overlayCellsPerFrame ?? 4096;
+      const c = cursor;
+      const n = cols * rows;
+      const { data } = overlay;
+      const jumped = Number.isNaN(c.lastTime) || fire.time < c.lastTime;
+      c.lastTime = fire.time;
+      const active = fire.activeCells();
+      if (jumped) for (let i = 0; i < n; i++) paint(fire, i, data);
+      else {
+        for (const i of active) paint(fire, i, data);
+        const sweepRows = Math.max(1, Math.min(rows, Math.ceil(overlayCellsPerFrame / cols)));
+        for (let k = 0; k < sweepRows; k++) {
+          const r = (c.row + k) % rows;
+          for (let col = 0; col < cols; col++) paint(fire, r * cols + col, data);
+        }
+        c.row = (c.row + sweepRows) % rows;
+      }
+      overlay.texture.needsUpdate = true;
+
+      const { flameLength, intensity, state: burn, kind } = fire.layers;
+      const fc = flames.center.array;
+      const fs = flames.size.array;
+      const fh = flames.shade.array;
+      let flameCount = 0;
+      const stride = Math.max(1, Math.ceil(active.length / maxFlames));
+      for (let k = 0; k < active.length && flameCount < maxFlames; k += stride) {
+        const i = active[k] ?? 0;
+        if ((burn[i] ?? 0) !== 1) continue;
+        const col = i % cols;
+        const row = (i - col) / cols;
+        const x = originX + (col + 0.5) * cellSize;
+        const z = originZ + (row + 0.5) * cellSize;
+        const length = Math.max(0.3, flameLength[i] ?? 0);
+        fc[flameCount * 3] = x;
+        fc[flameCount * 3 + 1] = groundY(x, z);
+        fc[flameCount * 3 + 2] = z;
+        fs[flameCount * 2] = Math.min(cellSize * 1.1, Math.max(0.5, length * 0.6)) * Math.sqrt(stride);
+        fs[flameCount * 2 + 1] = length;
+        fh[flameCount * 2] = Math.min(1, Math.sqrt((intensity[i] ?? 0) / 4000));
+        fh[flameCount * 2 + 1] = ((i * 2654435761) >>> 0) / 4294967296;
+        flameCount++;
+      }
+      flames.geometry.instanceCount = flameCount;
+      flames.center.needsUpdate = true;
+      flames.size.needsUpdate = true;
+      flames.shade.needsUpdate = true;
+      const timeUniform = flames.material.uniforms["uTime"];
+      if (timeUniform !== undefined) timeUniform.value = state.clock.elapsedTime;
+
+      const delta = Math.min(0.1, state.delta);
+      const next = c.random;
+      let alive = 0;
+      for (let p = 0; p < smoke.alive; p++) {
+        const age = (smoke.age[p] ?? 0) + delta;
+        if (age >= (smoke.life[p] ?? 0)) continue;
+        smoke.x[alive] = (smoke.x[p] ?? 0) + wind[0] * delta;
+        smoke.z[alive] = (smoke.z[p] ?? 0) + wind[1] * delta;
+        smoke.y[alive] = (smoke.y[p] ?? 0) + (smoke.rise[p] ?? 0) * delta;
+        smoke.rise[alive] = smoke.rise[p] ?? 0;
+        smoke.age[alive] = age;
+        smoke.life[alive] = smoke.life[p] ?? 0;
+        smoke.dark[alive] = smoke.dark[p] ?? 0;
+        alive++;
+      }
+      if (active.length > 0) {
+        c.spawnDebt += delta * Math.min(maxSmoke / 6, active.length * 0.6);
+        while (c.spawnDebt >= 1 && alive < maxSmoke) {
+          c.spawnDebt -= 1;
+          const i = active[Math.floor(next() * active.length)] ?? 0;
+          const col = i % cols;
+          const row = (i - col) / cols;
+          const x = originX + (col + next()) * cellSize;
+          const z = originZ + (row + next()) * cellSize;
+          const heat = Math.sqrt(Math.max(0, intensity[i] ?? 0));
+          smoke.x[alive] = x;
+          smoke.z[alive] = z;
+          smoke.y[alive] = groundY(x, z) + Math.max(0.5, flameLength[i] ?? 0) * 0.8;
+          smoke.rise[alive] = 1.2 + 0.04 * heat + next();
+          smoke.age[alive] = 0;
+          smoke.life[alive] = 5 + 5 * next();
+          smoke.dark[alive] = (kind[i] ?? 0) >= 2 ? 1 : (burn[i] ?? 0) === 2 ? 0.2 : 0.5;
+          alive++;
+        }
+        c.spawnDebt = Math.min(c.spawnDebt, 1);
+      }
+      smoke.alive = alive;
+      const sc = smoke.center.array;
+      const ss = smoke.size.array;
+      const sh = smoke.shade.array;
+      for (let p = 0; p < alive; p++) {
+        const t = (smoke.age[p] ?? 0) / Math.max(1e-3, smoke.life[p] ?? 1);
+        const size = cellSize * 3 + 14 * t * Math.max(1, cellSize);
+        sc[p * 3] = smoke.x[p] ?? 0;
+        sc[p * 3 + 1] = (smoke.y[p] ?? 0) - size / 2;
+        sc[p * 3 + 2] = smoke.z[p] ?? 0;
+        ss[p * 2] = size;
+        ss[p * 2 + 1] = size;
+        sh[p * 2] = 0.55 * Math.min(1, t * 6) * (1 - t);
+        sh[p * 2 + 1] = smoke.dark[p] ?? 0;
+      }
+      smoke.geometry.instanceCount = alive;
+      smoke.center.needsUpdate = true;
+      smoke.size.needsUpdate = true;
+      smoke.shade.needsUpdate = true;
+    },
+    dispose(state: EngineFrameState) {
+      state.scene.remove(group);
+      group.clear();
       overlay.texture.dispose();
       overlay.geometry.dispose();
       overlay.material.dispose();
-    },
-    [overlay],
-  );
-  useEffect(
-    () => () => {
       flames.geometry.dispose();
       flames.material.dispose();
-    },
-    [flames],
-  );
-  useEffect(
-    () => () => {
       smoke.geometry.dispose();
       smoke.material.dispose();
     },
-    [smoke],
-  );
+  };
+}
 
-  const cursor = useRef({ row: 0, lastTime: Number.NaN, random: seededRng("fire-smoke"), spawnDebt: 0 });
-
-  useFrameTask((state, delta) => {
-    const c = cursor.current;
-    const n = cols * rows;
-    const { data } = overlay;
-    const jumped = Number.isNaN(c.lastTime) || fire.time < c.lastTime;
-    c.lastTime = fire.time;
-    const active = fire.activeCells();
-    if (jumped) for (let i = 0; i < n; i++) paint(fire, i, data);
-    else {
-      for (const i of active) paint(fire, i, data);
-      const sweepRows = Math.max(1, Math.min(rows, Math.ceil(overlayCellsPerFrame / cols)));
-      for (let k = 0; k < sweepRows; k++) {
-        const r = (c.row + k) % rows;
-        for (let col = 0; col < cols; col++) paint(fire, r * cols + col, data);
-      }
-      c.row = (c.row + sweepRows) % rows;
-    }
-    overlay.texture.needsUpdate = true;
-
-    const { flameLength, intensity, state: burn, kind } = fire.layers;
-    const fc = flames.center.array;
-    const fs = flames.size.array;
-    const fh = flames.shade.array;
-    let flameCount = 0;
-    const stride = Math.max(1, Math.ceil(active.length / maxFlames));
-    for (let k = 0; k < active.length && flameCount < maxFlames; k += stride) {
-      const i = active[k] ?? 0;
-      if ((burn[i] ?? 0) !== 1) continue;
-      const col = i % cols;
-      const row = (i - col) / cols;
-      const x = originX + (col + 0.5) * cellSize;
-      const z = originZ + (row + 0.5) * cellSize;
-      const length = Math.max(0.3, flameLength[i] ?? 0);
-      fc[flameCount * 3] = x;
-      fc[flameCount * 3 + 1] = groundY(x, z);
-      fc[flameCount * 3 + 2] = z;
-      fs[flameCount * 2] = Math.min(cellSize * 1.1, Math.max(0.5, length * 0.6)) * Math.sqrt(stride);
-      fs[flameCount * 2 + 1] = length;
-      fh[flameCount * 2] = Math.min(1, Math.sqrt((intensity[i] ?? 0) / 4000));
-      fh[flameCount * 2 + 1] = ((i * 2654435761) >>> 0) / 4294967296;
-      flameCount++;
-    }
-    flames.geometry.instanceCount = flameCount;
-    flames.center.needsUpdate = true;
-    flames.size.needsUpdate = true;
-    flames.shade.needsUpdate = true;
-    const time = flames.material.uniforms["uTime"];
-    if (time !== undefined) time.value = state.clock.elapsedTime;
-
-    const dt = Math.min(0.1, delta);
-    const next = c.random;
-    let alive = 0;
-    for (let p = 0; p < smoke.alive; p++) {
-      const age = (smoke.age[p] ?? 0) + dt;
-      if (age >= (smoke.life[p] ?? 0)) continue;
-      smoke.x[alive] = (smoke.x[p] ?? 0) + wind[0] * dt;
-      smoke.z[alive] = (smoke.z[p] ?? 0) + wind[1] * dt;
-      smoke.y[alive] = (smoke.y[p] ?? 0) + (smoke.rise[p] ?? 0) * dt;
-      smoke.rise[alive] = smoke.rise[p] ?? 0;
-      smoke.age[alive] = age;
-      smoke.life[alive] = smoke.life[p] ?? 0;
-      smoke.dark[alive] = smoke.dark[p] ?? 0;
-      alive++;
-    }
-    if (active.length > 0) {
-      c.spawnDebt += dt * Math.min(maxSmoke / 6, active.length * 0.6);
-      while (c.spawnDebt >= 1 && alive < maxSmoke) {
-        c.spawnDebt -= 1;
-        const i = active[Math.floor(next() * active.length)] ?? 0;
-        const col = i % cols;
-        const row = (i - col) / cols;
-        const x = originX + (col + next()) * cellSize;
-        const z = originZ + (row + next()) * cellSize;
-        const heat = Math.sqrt(Math.max(0, intensity[i] ?? 0));
-        smoke.x[alive] = x;
-        smoke.z[alive] = z;
-        smoke.y[alive] = groundY(x, z) + Math.max(0.5, flameLength[i] ?? 0) * 0.8;
-        smoke.rise[alive] = 1.2 + 0.04 * heat + next();
-        smoke.age[alive] = 0;
-        smoke.life[alive] = 5 + 5 * next();
-        smoke.dark[alive] = (kind[i] ?? 0) >= 2 ? 1 : (burn[i] ?? 0) === 2 ? 0.2 : 0.5;
-        alive++;
-      }
-      c.spawnDebt = Math.min(c.spawnDebt, 1);
-    }
-    smoke.alive = alive;
-    const sc = smoke.center.array;
-    const ss = smoke.size.array;
-    const sh = smoke.shade.array;
-    for (let p = 0; p < alive; p++) {
-      const t = (smoke.age[p] ?? 0) / Math.max(1e-3, smoke.life[p] ?? 1);
-      const size = cellSize * 3 + 14 * t * Math.max(1, cellSize);
-      sc[p * 3] = smoke.x[p] ?? 0;
-      sc[p * 3 + 1] = (smoke.y[p] ?? 0) - size / 2;
-      sc[p * 3 + 2] = smoke.z[p] ?? 0;
-      ss[p * 2] = size;
-      ss[p * 2 + 1] = size;
-      sh[p * 2] = 0.55 * Math.min(1, t * 6) * (1 - t);
-      sh[p * 2 + 1] = smoke.dark[p] ?? 0;
-    }
-    smoke.geometry.instanceCount = alive;
-    smoke.center.needsUpdate = true;
-    smoke.size.needsUpdate = true;
-    smoke.shade.needsUpdate = true;
-  });
-
-  return (
-    <group>
-      <mesh geometry={overlay.geometry} material={overlay.material} renderOrder={4} />
-      <mesh geometry={flames.geometry} material={flames.material} frustumCulled={false} renderOrder={11} />
-      <mesh geometry={smoke.geometry} material={smoke.material} frustumCulled={false} renderOrder={12} />
-    </group>
-  );
+/**
+ * Draw a {@link FireLandscape}: a ground overlay of flaming, smouldering, charred and ashen cells, flame
+ * billboards as tall as each cell's flame length, and smoke puffs rising from burning cells and drifting
+ * downwind. Per-frame work is bounded by the burning cells plus `overlayCellsPerFrame`.
+ */
+export function FireLandscapeView(props: FireLandscapeViewProps) {
+  const latest = useRef(props);
+  latest.current = props;
+  // The grid and billboard capacities size the GPU buffers, so they remount the draw like the old
+  // memos did; wind, heightAt and the sweep budget retune through the props read each frame.
+  return <EngineDrawMount create={() => fireLandscapeDraw(() => latest.current)} deps={[props.fire, props.maxFlames, props.maxSmoke]} />;
 }

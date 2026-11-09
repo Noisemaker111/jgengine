@@ -1,16 +1,17 @@
-import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import { nearestFixtures, type InteriorDecal, type InteriorDecalStyle, type InteriorDressingPlan, type InteriorFixture } from "@jgengine/core/world/interiorDressing";
 
 import type { AuthoredSurfaceConfig } from "@jgengine/core/material/authoredSurfaceMaterial.draw";
-import { useDecalTexture } from "@jgengine/core/scene/useDecalTexture.draw";
+import { acquireDecalTexture, type DecalTextureLease } from "@jgengine/core/scene/useDecalTexture.draw";
 import { hashUnit } from "@jgengine/core/random/rng";
-import { StaticShapeInstances, type StaticShapeInstance } from "@jgengine/core/instancing/staticShapeInstances.draw";
+import { staticShapeInstancesDraw, type StaticShapeInstance } from "@jgengine/core/instancing/staticShapeInstances.draw";
 import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
-import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
-import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** The surface each dressing family wears. Any family left out falls back to a plain painted default. */
 export interface InteriorDressingSurfaces {
@@ -141,29 +142,71 @@ export function writeInteriorDecals(mesh: THREE.InstancedMesh, decals: readonly 
   );
 }
 
-function DecalStyleBatch({ style, decals, seed }: { style: InteriorDecalStyle; decals: readonly InteriorDecal[]; seed: string }) {
-  const ref = useRef<THREE.InstancedMesh>(null);
-  const geometry = useDisposable(() => new THREE.PlaneGeometry(1, 1), []);
-  const texture = useDecalTexture(style, `${seed}:${style}`, 128, {}, (map) => {
-    map.colorSpace = THREE.SRGBColorSpace;
-    map.magFilter = THREE.LinearFilter;
-    map.minFilter = THREE.LinearMipmapLinearFilter;
-    map.generateMipmaps = true;
-  });
-  const material = useDisposable(() => {
-    // Instance colour carries each stain's opacity; the alpha map is the coverage.
-    const wet = style === "wet";
-    const roughness = wet ? 0.06 : style === "hazard" ? 0.6 : style === "paper" ? 0.85 : 0.95;
-    const surface = new THREE.MeshStandardMaterial({ map: texture, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, roughness, metalness: wet ? 0.2 : 0 });
-    surface.onBeforeCompile = (shader) => {
-      shader.fragmentShader = shader.fragmentShader.replace("#include <color_fragment>", "#include <color_fragment>\n#ifdef USE_INSTANCING_COLOR\n diffuseColor.a *= vColor.r;\n diffuseColor.rgb /= max(vColor.rgb, vec3(1e-3));\n#endif");
-    };
-    return surface;
-  }, [texture, style]);
-  useLayoutEffect(() => {
-    if (ref.current !== null) writeInteriorDecals(ref.current, decals);
-  }, [decals]);
-  return <instancedMesh ref={ref} args={[geometry, material, decals.length]} receiveShadow renderOrder={2} />;
+/** One stain style as a single instanced decal mesh, its texture baked on a worker. */
+function decalStyleBatchDraw({ style, decals, seed }: { style: InteriorDecalStyle; decals: readonly InteriorDecal[]; seed: string }): EngineDraw {
+  let mesh: THREE.InstancedMesh | null = null;
+  let geometry: THREE.PlaneGeometry | null = null;
+  let material: THREE.MeshStandardMaterial | null = null;
+  let lease: DecalTextureLease | null = null;
+  return {
+    mount(state: EngineFrameState) {
+      geometry = new THREE.PlaneGeometry(1, 1);
+      lease = acquireDecalTexture(style, `${seed}:${style}`, 128, {}, (map) => {
+        map.colorSpace = THREE.SRGBColorSpace;
+        map.magFilter = THREE.LinearFilter;
+        map.minFilter = THREE.LinearMipmapLinearFilter;
+        map.generateMipmaps = true;
+      }, state);
+      // Instance colour carries each stain's opacity; the alpha map is the coverage.
+      const wet = style === "wet";
+      const roughness = wet ? 0.06 : style === "hazard" ? 0.6 : style === "paper" ? 0.85 : 0.95;
+      material = new THREE.MeshStandardMaterial({ map: lease.texture, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, roughness, metalness: wet ? 0.2 : 0 });
+      material.onBeforeCompile = (shader) => {
+        shader.fragmentShader = shader.fragmentShader.replace("#include <color_fragment>", "#include <color_fragment>\n#ifdef USE_INSTANCING_COLOR\n diffuseColor.a *= vColor.r;\n diffuseColor.rgb /= max(vColor.rgb, vec3(1e-3));\n#endif");
+      };
+      mesh = new THREE.InstancedMesh(geometry, material, decals.length);
+      mesh.receiveShadow = true;
+      mesh.renderOrder = 2;
+      writeInteriorDecals(mesh, decals);
+      state.scene.add(mesh);
+    },
+    dispose(state: EngineFrameState) {
+      if (mesh !== null) {
+        state.scene.remove(mesh);
+        mesh.dispose();
+        mesh = null;
+      }
+      geometry?.dispose();
+      geometry = null;
+      material?.dispose();
+      material = null;
+      lease?.dispose();
+      lease = null;
+    },
+  };
+}
+
+/** Every cable as one mesh, or none when the plan has no cables. */
+function interiorCablesDraw(plan: InteriorDressingPlan, cableColor: THREE.ColorRepresentation): EngineDraw {
+  const geometry = interiorCableGeometry(plan);
+  const material = new THREE.MeshStandardMaterial({ color: cableColor, roughness: 0.75, metalness: 0 });
+  let mesh: THREE.Mesh | null = null;
+  return {
+    mount(state: EngineFrameState) {
+      if (geometry === null) return;
+      mesh = new THREE.Mesh(geometry, material);
+      mesh.receiveShadow = true;
+      state.scene.add(mesh);
+    },
+    dispose(state: EngineFrameState) {
+      if (mesh !== null) {
+        state.scene.remove(mesh);
+        mesh = null;
+      }
+      geometry?.dispose();
+      material.dispose();
+    },
+  };
 }
 
 /** Props for {@link InteriorDressing}. */
@@ -179,21 +222,82 @@ export interface InteriorDressingProps {
 }
 
 /**
+ * The drawn side of a planned interior as one draw: trims, pipes, fittings and lamp housings as
+ * static instance batches, every cable as one merged tube, and every stain style as one instanced
+ * decal mesh. A whole floor costs a handful of draws however many pieces it has. Pair it with
+ * {@link practicalLightsDraw} for the lamps' light.
+ * @capability interior-dressing render a planned interior's trims, pipes, cables, lamps and stains in a few instanced draws
+ */
+export function interiorDressingDraw(getProps: () => InteriorDressingProps): EngineDraw {
+  let children: EngineDraw[] = [];
+  let shapes: readonly StaticShapeInstance[] = [];
+  let lastPlan: InteriorDressingPlan | null = null;
+  let lastSurfaces: InteriorDressingProps["surfaces"] | null = null;
+  let lastDecals = true;
+  let lastDecalSeed = "interior";
+  let lastCableColor: THREE.ColorRepresentation = "#141414";
+
+  const rebuild = (state: EngineFrameState) => {
+    for (const child of children) child.dispose?.(state);
+    children = [];
+    const props = getProps();
+    shapes = interiorDressingShapes(props.plan, props.surfaces);
+    if (shapes.length > 0) children.push(staticShapeInstancesDraw(() => shapes));
+    if (props.plan.cables.length > 0) children.push(interiorCablesDraw(props.plan, props.cableColor ?? "#141414"));
+    const seed = props.decalSeed ?? "interior";
+    for (const [style, list] of groupInteriorDecals(props.decals === false ? [] : props.plan.decals)) {
+      children.push(decalStyleBatchDraw({ style, decals: list, seed }));
+    }
+    for (const child of children) child.mount?.(state);
+  };
+
+  const sync = (state: EngineFrameState) => {
+    const props = getProps();
+    const surfaces = props.surfaces;
+    const decals = props.decals !== false;
+    const seed = props.decalSeed ?? "interior";
+    const cableColor = props.cableColor ?? "#141414";
+    if (props.plan === lastPlan && surfaces === lastSurfaces && decals === lastDecals && seed === lastDecalSeed && cableColor === lastCableColor && children.length > 0) return;
+    // Cable geometry keys on the plan alone, like the old useDisposable; everything else rebuilt
+    // together is cheap next to a plan change.
+    lastPlan = props.plan;
+    lastSurfaces = surfaces;
+    lastDecals = decals;
+    lastDecalSeed = seed;
+    lastCableColor = cableColor;
+    rebuild(state);
+  };
+
+  return {
+    mount(state) {
+      sync(state);
+    },
+    update(state) {
+      sync(state);
+      for (const child of children) child.update?.(state);
+    },
+    frame(state) {
+      for (const child of children) child.frame?.(state);
+    },
+    dispose(state) {
+      for (const child of children) child.dispose?.(state);
+      children = [];
+      lastPlan = null;
+    },
+  };
+}
+
+/**
  * The drawn side of a planned interior: trims, pipes, fittings and lamp housings as static instance
  * batches, every cable as one merged tube, and every stain style as one instanced decal mesh. A
  * whole floor costs a handful of draws however many pieces it has. Pair it with
  * {@link PracticalLights} for the lamps' light.
  * @capability interior-dressing render a planned interior's trims, pipes, cables, lamps and stains in a few instanced draws
  */
-export function InteriorDressing({ plan, surfaces, cableColor = "#141414", decalSeed = "interior", decals = true }: InteriorDressingProps) {
-  const shapes = useMemo(() => interiorDressingShapes(plan, surfaces), [plan, surfaces]);
-  const cables = useDisposable(() => interiorCableGeometry(plan) ?? new THREE.BufferGeometry(), [plan]);
-  const groups = useMemo(() => [...groupInteriorDecals(decals ? plan.decals : [])], [plan, decals]);
-  return <group>
-    {shapes.length > 0 && <StaticShapeInstances instances={shapes} />}
-    {plan.cables.length > 0 && <mesh geometry={cables} receiveShadow><meshStandardMaterial color={cableColor} roughness={0.75} metalness={0} /></mesh>}
-    {groups.map(([style, list]) => <DecalStyleBatch key={style} style={style} decals={list} seed={decalSeed} />)}
-  </group>;
+export function InteriorDressing(props: InteriorDressingProps) {
+  const latest = useRef(props);
+  latest.current = props;
+  return <EngineDrawMount create={() => interiorDressingDraw(() => latest.current)} deps={[]} />;
 }
 
 /**
@@ -240,65 +344,151 @@ export interface PracticalLightsProps {
  * never change, so walking a floor of hundreds of lamps costs the same few lights.
  * @capability practical-lights light the planned lamps nearest the camera with a fixed, shadow-capped spot-light pool
  */
-export function PracticalLights({ fixtures, count = 6, shadowed = 0, lit = count, color = "#ffe2b0", intensity = 14, distance = 9, angle = 1.05, penumbra = 0.6, reach = 28, every = 8 }: PracticalLightsProps) {
-  // A dead lamp never takes a light from the pool; a fixture planned without a state burns.
-  const burning = useMemo(() => fixtures.filter((fixture) => fixture.state !== "dead"), [fixtures]);
-  const flickers = useRef<(number | null)[]>([]);
-  const lights = useMemo(() => Array.from({ length: Math.max(0, count) }, (_, index) => {
-    const light = new THREE.SpotLight(color, 0, distance, angle, penumbra, 2);
-    light.castShadow = index < shadowed;
-    if (light.castShadow) {
-      light.shadow.mapSize.set(512, 512);
-      light.shadow.bias = -0.0004;
-      light.shadow.normalBias = 0.02;
-      light.shadow.camera.near = 0.1;
-    }
-    return light;
-    // Pool shape is fixed for the component's life; colour and the rest update below.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [count, shadowed]);
-  useEffect(() => {
+export function practicalLightsDraw(getProps: () => PracticalLightsProps): EngineDraw {
+  const group = new THREE.Group();
+  let lights: THREE.SpotLight[] = [];
+  let flickers: (number | null)[] = [];
+  let burning: InteriorFixture[] = [];
+  let lastFixtures: readonly InteriorFixture[] | null = null;
+  let lastCount = -1;
+  let lastShadowed = -1;
+  let lastColor = "";
+  let lastDistance = 0;
+  let lastAngle = 0;
+  let lastPenumbra = 0;
+  let frame = 0;
+  // The pool picks on its first frame, then every `every` frames — the old ref seeded at `every`.
+  let firstPick = true;
+
+  const buildPool = () => {
+    const props = getProps();
+    const count = Math.max(0, props.count ?? 6);
+    const shadowed = props.shadowed ?? 0;
+    const color = props.color ?? "#ffe2b0";
+    const distance = props.distance ?? 9;
+    const angle = props.angle ?? 1.05;
+    const penumbra = props.penumbra ?? 0.6;
     for (const light of lights) {
-      light.color.set(color);
-      light.distance = distance;
-      light.angle = angle;
-      light.penumbra = penumbra;
+      group.remove(light);
+      group.remove(light.target);
+      light.dispose();
     }
-  }, [lights, color, distance, angle, penumbra]);
-  useEffect(() => () => {
-    for (const light of lights) light.dispose();
-  }, [lights]);
-  const frame = useRef(every);
-  useFrameTask(({ camera, clock }) => {
-    frame.current += 1;
-    if (frame.current < every) {
-      const t = clock.elapsedTime;
-      flickers.current.forEach((phase, index) => {
-        if (phase !== null && lights[index] !== undefined) lights[index]!.intensity = intensity * practicalFlicker(t, phase);
-      });
+    lights = Array.from({ length: count }, (_, index) => {
+      const light = new THREE.SpotLight(color, 0, distance, angle, penumbra, 2);
+      light.castShadow = index < shadowed;
+      if (light.castShadow) {
+        light.shadow.mapSize.set(512, 512);
+        light.shadow.bias = -0.0004;
+        light.shadow.normalBias = 0.02;
+        light.shadow.camera.near = 0.1;
+      }
+      group.add(light);
+      group.add(light.target);
+      return light;
+    });
+    flickers = lights.map(() => null);
+    lastCount = count;
+    lastShadowed = shadowed;
+    lastColor = String(color);
+    lastDistance = distance;
+    lastAngle = angle;
+    lastPenumbra = penumbra;
+  };
+
+  const syncProps = () => {
+    const props = getProps();
+    const fixtures = props.fixtures;
+    if (fixtures !== lastFixtures) {
+      lastFixtures = fixtures;
+      // A dead lamp never takes a light from the pool; a fixture planned without a state burns.
+      burning = fixtures.filter((fixture) => fixture.state !== "dead");
+    }
+    const count = Math.max(0, props.count ?? 6);
+    const shadowed = props.shadowed ?? 0;
+    if (count !== lastCount || shadowed !== lastShadowed) {
+      buildPool();
       return;
     }
-    frame.current = 0;
-    const eye = camera.position;
-    const picked = nearestFixtures(burning, [eye.x, eye.y, eye.z], Math.min(lights.length, Math.max(0, lit)), reach);
-    lights.forEach((light, index) => {
-      const fixture = picked[index];
-      // A dark light keeps its shadow slot (the count is what shaders compile for) but draws no shadow map.
-      if (light.castShadow) light.shadow.autoUpdate = fixture !== undefined;
-      if (fixture === undefined) {
-        light.intensity = 0;
-        flickers.current[index] = null;
+    const color = String(props.color ?? "#ffe2b0");
+    const distance = props.distance ?? 9;
+    const angle = props.angle ?? 1.05;
+    const penumbra = props.penumbra ?? 0.6;
+    if (color !== lastColor || distance !== lastDistance || angle !== lastAngle || penumbra !== lastPenumbra) {
+      lastColor = color;
+      lastDistance = distance;
+      lastAngle = angle;
+      lastPenumbra = penumbra;
+      for (const light of lights) {
+        light.color.set(color);
+        light.distance = distance;
+        light.angle = angle;
+        light.penumbra = penumbra;
+      }
+    }
+  };
+
+  return {
+    mount(state: EngineFrameState) {
+      buildPool();
+      syncProps();
+      state.scene.add(group);
+    },
+    update() {
+      syncProps();
+    },
+    frame(state: EngineFrameState) {
+      const props = getProps();
+      const every = props.every ?? 8;
+      const lit = props.lit ?? lights.length;
+      const intensity = props.intensity ?? 14;
+      const reach = props.reach ?? 28;
+      frame += 1;
+      const t = state.clock.elapsedTime;
+      if (!firstPick && frame < every) {
+        flickers.forEach((phase, index) => {
+          const light = lights[index];
+          if (phase !== null && light !== undefined) light.intensity = intensity * practicalFlicker(t, phase);
+        });
         return;
       }
-      const phase = fixture.state === "flicker" ? hashUnit(fixture.id) : null;
-      flickers.current[index] = phase;
-      light.intensity = phase === null ? intensity : intensity * practicalFlicker(clock.elapsedTime, phase);
-      light.position.set(...fixture.light);
-      light.target.position.set(fixture.light[0] + fixture.normal[0] * 1.6, fixture.light[1] - 2.4, fixture.light[2] + fixture.normal[2] * 1.6);
-      light.target.updateMatrixWorld();
-    });
-  });
-  return <group>
-    {lights.map((light, index) => <group key={index}><primitive object={light} /><primitive object={light.target} /></group>)}
-  </group>;
+      firstPick = false;
+      frame = 0;
+      const eye = state.camera.position;
+      const picked = nearestFixtures(burning, [eye.x, eye.y, eye.z], Math.min(lights.length, Math.max(0, lit)), reach);
+      lights.forEach((light, index) => {
+        const fixture = picked[index];
+        // A dark light keeps its shadow slot (the count is what shaders compile for) but draws no shadow map.
+        if (light.castShadow) light.shadow.autoUpdate = fixture !== undefined;
+        if (fixture === undefined) {
+          light.intensity = 0;
+          flickers[index] = null;
+          return;
+        }
+        const phase = fixture.state === "flicker" ? hashUnit(fixture.id) : null;
+        flickers[index] = phase;
+        light.intensity = phase === null ? intensity : intensity * practicalFlicker(t, phase);
+        light.position.set(...fixture.light);
+        light.target.position.set(fixture.light[0] + fixture.normal[0] * 1.6, fixture.light[1] - 2.4, fixture.light[2] + fixture.normal[2] * 1.6);
+        light.target.updateMatrixWorld();
+      });
+    },
+    dispose(state: EngineFrameState) {
+      state.scene.remove(group);
+      group.clear();
+      for (const light of lights) light.dispose();
+      lights = [];
+    },
+  };
+}
+
+/**
+ * A fixed pool of spot lights that follows the camera through a planned interior, lighting the
+ * lamps nearest the eye and aiming each down and out from its wall. The pool size and shadow count
+ * never change, so walking a floor of hundreds of lamps costs the same few lights.
+ * @capability practical-lights light the planned lamps nearest the camera with a fixed, shadow-capped spot-light pool
+ */
+export function PracticalLights(props: PracticalLightsProps) {
+  const latest = useRef(props);
+  latest.current = props;
+  return <EngineDrawMount create={() => practicalLightsDraw(() => latest.current)} deps={[]} />;
 }

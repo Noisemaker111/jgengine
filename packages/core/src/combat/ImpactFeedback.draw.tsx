@@ -17,13 +17,13 @@ import { visitVisible } from "@jgengine/core/visibility/visitVisible.draw";
 /** What {@link ImpactFeedback} reacts with; every field defaults on. */
 export interface ImpactFeedbackOptions {
   /** Damage type / effect id → class, for names the built-in weapon words do not cover. */
-  classes?: Readonly<Record<string, ImpactClass>>;
+  classes?: Readonly<Record<string, ImpactClass>> | undefined;
   /** Marks where direct-fire shots miss into a surface. */
-  marks?: boolean;
+  marks?: boolean | undefined;
   /** Short time stop on the local player's heavy hits, hits taken and kills. */
-  hitstop?: boolean;
+  hitstop?: boolean | undefined;
   /** Killed rigged characters fall as ragdolls before they fade. */
-  ragdolls?: boolean;
+  ragdolls?: boolean | undefined;
 }
 
 const MARK_LIFE_S = 25;

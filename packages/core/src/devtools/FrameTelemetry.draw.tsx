@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { useStore } from "@react-three/fiber";
-import type { RootState } from "@react-three/fiber";
+import type { RootStore } from "@react-three/fiber";
 import type * as THREE from "three";
 
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
@@ -30,7 +30,7 @@ import { installFrameBreakdown } from "./frameBreakdown.draw";
  * old effect deps.
  * @internal
  */
-export function frameTelemetryDraw(getProps: () => { game: string; quality: PerfQuality }, store: RootState): EngineDraw {
+export function frameTelemetryDraw(getProps: () => { game: string; quality: PerfQuality }, store: RootStore): EngineDraw {
   let gl: THREE.WebGLRenderer | null = null;
   let scene: THREE.Scene | null = null;
   let generation = 0;

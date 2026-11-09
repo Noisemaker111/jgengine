@@ -243,13 +243,11 @@ export function environmentLightingDraw(getProps: () => EnvironmentLightingProps
  * Opt out of cinematic IBL with `look: "flat"` on the shell presentation.
  * @internal shell-internal default lighting; games never import it.
  */
-export function EnvironmentLighting(props: EnvironmentLightingProps): null {
+export function EnvironmentLighting(props: EnvironmentLightingProps) {
   const latest = useRef(props);
   latest.current = props;
   return <EngineDrawMount create={() => environmentLightingDraw(() => latest.current)} deps={[]} />;
 }
-
-const probeEye = new THREE.Vector3();
 
 /** @internal Default IBL strength for the procedural probe: enough sky fill and sun lobe to model forms. */
 export const DEFAULT_IBL_INTENSITY = 0.45;

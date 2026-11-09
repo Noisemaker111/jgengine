@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 
 import { deathRemovesEntity } from "@jgengine/core/combat/death";
+import type { EntityDiedEvent } from "@jgengine/core/game/events";
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { mapRigToStandard, RIG_SCHEMES, type SkeletonMap } from "@jgengine/core/anim/skeletonStandard";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
@@ -111,7 +112,7 @@ export function corpseRagdollsDraw(ctx: GameContext, getProps: () => CorpseRagdo
     corpse.ragdollLeave = leave;
   };
 
-  const onDied = (event: { instanceId: string }) => {
+  const onDied = (event: EntityDiedEvent) => {
     if (!deathRemovesEntity(event)) return;
     stats.deaths += 1;
     const source = bodies.get(event.instanceId);

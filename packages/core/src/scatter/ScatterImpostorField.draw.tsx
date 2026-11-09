@@ -15,16 +15,6 @@ import { freezeStaticTransforms } from "@jgengine/core/model/staticTransforms.dr
 /** Camera travel in metres before the near/far split is recomputed. */
 const SPLIT_MOVE = 1;
 
-interface NearDraw {
-  mesh: THREE.InstancedMesh;
-  /** Index of this draw's batch in `batches`. */
-  batchIndex: number;
-  /** Placement × source matrices, composed once. */
-  composed: Float32Array;
-  /** Scratch: which placements this frame keeps near, in draw order. */
-  kept: Uint32Array;
-}
-
 /**
  * Marks each placement near (0) or far (1) from `camera`, holding the switch band so a placement at
  * its threshold does not flicker. Returns how many are far and whether any placement switched, so a
