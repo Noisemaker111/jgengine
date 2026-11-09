@@ -76,6 +76,27 @@ export function sceneObjectAttachDraw(object: THREE.Object3D, attach: boolean): 
 }
 
 /**
+ * Attach a caller-owned {@link THREE.Object3D} under the nearest
+ * {@link EngineSceneContext} parent (or the scene root) on the engine loop —
+ * the context-aware form of {@link sceneObjectAttachDraw} for objects a
+ * component moves per-frame and cannot hand to {@link EngineDrawMount}.
+ * Under r3f this is a no-op: the matching {@link SceneObjectPortal} primitive
+ * parents the object through the reconciler instead. @internal
+ */
+export function useSceneObjectAttach(object: THREE.Object3D): void {
+  const host = useEngineHost();
+  const sceneParent = useContext(EngineSceneContext);
+  useEngineDraw(() => ({
+    mount(state: EngineFrameState) {
+      if (!host.r3f) (sceneParent ?? state.scene).add(object);
+    },
+    dispose(state: EngineFrameState) {
+      if (!host.r3f) (sceneParent ?? state.scene).remove(object);
+    },
+  }), [object, host.r3f, sceneParent]);
+}
+
+/**
  * A positioned {@link THREE.Group} parenting `children`'s scene objects on either host — the
  * draw-side form of `<group position={...}>`: under r3f a primitive at the JSX position, under
  * the engine loop a scene attachment plus an {@link EngineSceneContext} for descendants.
@@ -83,10 +104,20 @@ export function sceneObjectAttachDraw(object: THREE.Object3D, attach: boolean): 
  */
 export function SceneObjectGroup({
   position,
+  rotation,
+  rotationY,
+  scale,
+  visible,
   userData,
   children,
 }: {
   position?: readonly [number, number, number] | undefined;
+  /** Euler XYZ rotation in radians (the r3f `rotation={[x,y,z]}` form). */
+  rotation?: readonly [number, number, number] | undefined;
+  /** Y-rotation in radians — the common `<group rotation-y>` case. */
+  rotationY?: number | undefined;
+  scale?: readonly [number, number, number] | undefined;
+  visible?: boolean | undefined;
   /** Tags the group for scene scans (postfx overlay exclusion, camera collision). */
   userData?: Record<string, unknown> | undefined;
   children?: ReactNode;
@@ -99,7 +130,11 @@ export function SceneObjectGroup({
   }, [userData]);
   useEffect(() => {
     if (position !== undefined) group.position.set(position[0], position[1], position[2]);
-  }, [group, position]);
+    if (rotation !== undefined) group.rotation.set(rotation[0], rotation[1], rotation[2]);
+    else if (rotationY !== undefined) group.rotation.y = rotationY;
+    if (scale !== undefined) group.scale.set(scale[0], scale[1], scale[2]);
+    if (visible !== undefined) group.visible = visible;
+  }, [group, position, rotation, rotationY, scale, visible]);
   useEngineDraw(() => sceneObjectAttachDraw(group, !host.r3f), [group, host.r3f]);
   return <SceneObjectPortal object={group}>{children}</SceneObjectPortal>;
 }
@@ -177,4 +212,52 @@ export function useEngineDraw(create: () => EngineDraw, deps: DependencyList): v
   useEffect(() => {
     mounted.current?.draw.update?.(mounted.current.state);
   });
+}
+
+/**
+ * Transform fields shared by {@link meshDraw} and the `SceneObjectGroup` props:
+ * position, XYZ euler rotation, scale and visibility, matching what r3f JSX
+ * props used to set on `<group>`/`<mesh>`.
+ */
+export interface DrawTransform {
+  position?: readonly [number, number, number] | undefined;
+  /** Euler XYZ rotation in radians (the r3f `rotation={[x,y,z]}` form). */
+  rotation?: readonly [number, number, number] | undefined;
+  scale?: readonly [number, number, number] | undefined;
+  visible?: boolean | undefined;
+}
+
+/**
+ * A static mesh as an {@link EngineDraw}: one `THREE.Mesh` with the given
+ * geometry and material, transform applied once at creation, attached under
+ * `state.scene` (so it inherits whatever parent mounted it). Geometry and
+ * material are caller-owned — the draw disposes both on `dispose`.
+ * @internal
+ */
+export function meshDraw(options: {
+  geometry: THREE.BufferGeometry;
+  material: THREE.Material | THREE.Material[];
+  castShadow?: boolean | undefined;
+  receiveShadow?: boolean | undefined;
+  renderOrder?: number | undefined;
+} & DrawTransform): EngineDraw {
+  const mesh = new THREE.Mesh(options.geometry, options.material);
+  if (options.position !== undefined) mesh.position.set(options.position[0], options.position[1], options.position[2]);
+  if (options.rotation !== undefined) mesh.rotation.set(options.rotation[0], options.rotation[1], options.rotation[2]);
+  if (options.scale !== undefined) mesh.scale.set(options.scale[0], options.scale[1], options.scale[2]);
+  if (options.visible !== undefined) mesh.visible = options.visible;
+  if (options.castShadow !== undefined) mesh.castShadow = options.castShadow;
+  if (options.receiveShadow !== undefined) mesh.receiveShadow = options.receiveShadow;
+  if (options.renderOrder !== undefined) mesh.renderOrder = options.renderOrder;
+  return {
+    mount(state: EngineFrameState) {
+      state.scene.add(mesh);
+    },
+    dispose(state: EngineFrameState) {
+      state.scene.remove(mesh);
+      options.geometry.dispose();
+      const materials = Array.isArray(options.material) ? options.material : [options.material];
+      for (const material of materials) material.dispose();
+    },
+  };
 }

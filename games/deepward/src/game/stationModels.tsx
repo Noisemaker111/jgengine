@@ -1,5 +1,6 @@
 import type { AssetCatalog } from '@jgengine/core/scene/assetCatalog';
 import { IsolatedEntityModel } from '@jgengine/core/model/SceneModels.draw';
+import { SceneObjectGroup } from '@jgengine/core/frame/useEngineDraw.draw';
 import { editorLayers, type Place } from '../world';
 
 export function stationModelMarkers(place: Place) {
@@ -24,8 +25,8 @@ export function StationModels({ place, assets }: { place: Place; assets: AssetCa
  return <>{stationModelMarkers(place).map(marker=>{
   const asset = marker.catalogId ? assets.resolve(marker.catalogId) : null;
   if(!asset)throw Error(`Unresolved Deepward station model: ${marker.id} / ${marker.catalogId}`);
-  return <group key={marker.id} position={[marker.position.x,marker.position.y,marker.position.z]} rotation-y={marker.rotationY??0}>
+  return <SceneObjectGroup key={marker.id} position={[marker.position.x,marker.position.y,marker.position.z]} rotationY={marker.rotationY??0}>
    <IsolatedEntityModel model={{...asset,y:-(asset.dims?.minY ?? 0),anchor:'origin',shadows:'both',animation:'none'}} />
-  </group>;
+  </SceneObjectGroup>;
  })}</>;
 }

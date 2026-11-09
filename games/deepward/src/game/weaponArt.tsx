@@ -1,6 +1,10 @@
-import type { Ref } from "react";
+import { useEffect, useMemo, type Ref } from "react";
+import * as THREE from "three";
 import type { Group } from "three";
 import { IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";
+import { SceneObjectGroup, SceneObjectPortal, useSceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
+import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { stationAssets } from "./assets";
 import type { Triple } from "./art";
 import { MAGAZINE } from "./combat";
@@ -34,6 +38,37 @@ export function serviceWeaponBody(pose: { kick: number; magazineOffset: number }
 }
 /** The magazine figure the HUD's "n / 6" line counts against. */
 export const WEAPON_MAGAZINE = MAGAZINE;
+/** The muzzle flash cones/sparks as a draw under the muzzle-offset group. */
+function weaponFlashDraw(): EngineDraw {
+  const group = new THREE.Group();
+  return {
+    mount(state: EngineFrameState) {
+      state.scene.add(group);
+      const cone = new THREE.Mesh(
+        new THREE.ConeGeometry(0.055, 0.09, 6),
+        new THREE.MeshBasicMaterial({ color: "#ffe4a0" }),
+      );
+      cone.position.set(0, 0, -0.035);
+      cone.rotation.x = -Math.PI / 2;
+      const spark = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.032),
+        new THREE.MeshBasicMaterial({ color: "#fff6dc" }),
+      );
+      spark.position.set(0, 0, -0.008);
+      group.add(cone, spark);
+    },
+    dispose(state: EngineFrameState) {
+      state.scene.remove(group);
+      group.traverse((node) => {
+        if (node instanceof THREE.Mesh) {
+          node.geometry.dispose();
+          (node.material as THREE.Material).dispose();
+        }
+      });
+    },
+  };
+}
+
 /** Original grip-origin models share the accepted pose and exact gameplay muzzle anchors. */
 export function ServiceWeapon({kind,flash=false,kick=0,magazineOffset=0,shadows='both',body}:{
  kind:ServiceWeaponKind;flash?:boolean;kick?:number;magazineOffset?:number;shadows?:'none'|'both';
@@ -42,11 +77,26 @@ export function ServiceWeapon({kind,flash=false,kick=0,magazineOffset=0,shadows=
 }) {
  const asset=stationAssets.resolve(kind==='sidearm'?'deepward/service-sidearm':'deepward/service-rifle');
  if(!asset)throw Error(`Missing original weapon catalog asset: ${kind}`);
- return <group ref={body ?? null} position-z={kick*0.012} position-y={-magazineOffset*0.2}>
+ // A real Group the caller can move per-frame; attached under the engine loop, a primitive under r3f.
+ const group = useMemo(() => new THREE.Group(), []);
+ useEffect(() => {
+  group.position.set(0, -magazineOffset * 0.2, kick * 0.012);
+ }, [group, kick, magazineOffset]);
+ useEffect(() => {
+  if (body === undefined || body === null) return;
+  if (typeof body === "function") body(group);
+  else body.current = group;
+  return () => {
+   if (typeof body !== "function") body.current = null;
+  };
+ }, [body, group]);
+ useSceneObjectAttach(group);
+ return <SceneObjectPortal object={group}>
   <IsolatedEntityModel model={{...asset,anchor:'origin',shadows,animation:'none'}} />
-  {flash && <group position={WEAPON_MUZZLE[kind]}>
-   <mesh position-z={-0.035} rotation-x={-Math.PI/2}><coneGeometry args={[0.055,0.09,6]} /><meshBasicMaterial color='#ffe4a0' /></mesh>
-   <mesh position-z={-0.008}><octahedronGeometry args={[0.032]} /><meshBasicMaterial color='#fff6dc' /></mesh>
-  </group>}
- </group>;
+  {flash ? (
+   <SceneObjectGroup position={WEAPON_MUZZLE[kind]}>
+    <EngineDrawMount create={weaponFlashDraw} deps={[]} />
+   </SceneObjectGroup>
+  ) : null}
+ </SceneObjectPortal>;
 }

@@ -1,7 +1,10 @@
-import { Suspense, useEffect, useMemo } from "react";
-import { BoxGeometry, BufferGeometry, CapsuleGeometry, CatmullRomCurve3, CylinderGeometry, LatheGeometry, SphereGeometry, TorusGeometry, TubeGeometry, Vector2, Vector3 } from "three";
+import { useEffect, useMemo } from "react";
+import { BoxGeometry, BufferGeometry, CapsuleGeometry, CatmullRomCurve3, CylinderGeometry, LatheGeometry, Mesh, MeshStandardMaterial, SphereGeometry, TorusGeometry, TubeGeometry, Vector2, Vector3 } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import { AuthoredSurfaceMaterial } from "@jgengine/core/material/authoredSurfaceMaterial.draw";
+import { authoredSurfaceMaterial, type AuthoredSurfaceConfig, type SurfaceShape } from "@jgengine/core/material/authoredSurfaceMaterial.draw";
+import { loadDraw } from "@jgengine/core/frame/loadDraw.draw";
+import { EngineDrawMount, SceneObjectGroup, meshDraw } from "@jgengine/core/frame/useEngineDraw.draw";
+import type { EngineDraw } from "@jgengine/core/frame/engineLoop.draw";
 import { librarySurface } from "./interiorLook";
 
 /**
@@ -34,6 +37,23 @@ function useGeometry(build: () => BufferGeometry, deps: unknown[]): BufferGeomet
   const geometry = useMemo(build, deps);
   useEffect(() => () => geometry.dispose(), [geometry]);
   return geometry;
+}
+
+/** A merged-geometry mesh in an authored surface finish: the material leases draw-side like the old Suspense material did. */
+function surfaceMeshDraw(geometry: BufferGeometry, surface: AuthoredSurfaceConfig, shape: SurfaceShape, castShadow: boolean, receiveShadow: boolean): EngineDraw {
+  return loadDraw({
+    load: () => authoredSurfaceMaterial(surface, shape),
+    build: (lease, parent) => {
+      const mesh = new Mesh(geometry, lease.material);
+      mesh.castShadow = castShadow;
+      mesh.receiveShadow = receiveShadow;
+      parent.add(mesh);
+      return () => {
+        parent.remove(mesh);
+        lease.dispose();
+      };
+    },
+  });
 }
 
 const SUIT_STEEL = librarySurface("metal/steel", "#59615f");
@@ -74,12 +94,12 @@ export function SuitStand({ canvas }: { canvas: string }) {
   ]), []);
   const visor = useGeometry(() => merged([[0, 0], [Math.PI / 2, 0], [-Math.PI / 2, 0]].map(([turn]) =>
     at(new CylinderGeometry(0.075, 0.075, 0.03, 16), Math.sin(turn!) * 0.272, 1.92, Math.cos(turn!) * 0.268, Math.PI / 2, turn!))), []);
-  return <Suspense fallback={null}>
-    <mesh geometry={suit} castShadow receiveShadow><AuthoredSurfaceMaterial surface={cloth} /></mesh>
-    <mesh geometry={metal} castShadow receiveShadow><AuthoredSurfaceMaterial surface={SUIT_STEEL} shape="cylinder" /></mesh>
-    <mesh geometry={brass} castShadow><AuthoredSurfaceMaterial surface={SUIT_BRASS} shape="cylinder" /></mesh>
-    <mesh geometry={visor}><meshStandardMaterial {...VISOR} /></mesh>
-  </Suspense>;
+  return <>
+    <EngineDrawMount create={() => surfaceMeshDraw(suit, cloth, "box", true, true)} deps={[suit, cloth]} />
+    <EngineDrawMount create={() => surfaceMeshDraw(metal, SUIT_STEEL, "cylinder", true, true)} deps={[metal]} />
+    <EngineDrawMount create={() => surfaceMeshDraw(brass, SUIT_BRASS, "cylinder", true, false)} deps={[brass]} />
+    <EngineDrawMount create={() => meshDraw({ geometry: visor, material: new MeshStandardMaterial(VISOR) })} deps={[visor]} />
+  </>;
 }
 
 const LOCKER_PAINT = librarySurface("metal/painted", "#55705f");
@@ -108,16 +128,16 @@ export function ShiftLocker({ ajar = 0 }: { ajar?: number }) {
     ...[-0.3, 0.3].map(x => at(new BoxGeometry(0.06, 0.06, 0.6), x, 0.0, -0.04)),
   ]), []);
   const handle = useGeometry(() => at(new BoxGeometry(0.03, 0.22, 0.04), 0.33, 0, 0.035), []);
-  return <Suspense fallback={null}>
-    <mesh geometry={body} castShadow receiveShadow><AuthoredSurfaceMaterial surface={LOCKER_PAINT} /></mesh>
-    <group position={[0.0075, 1.13, 0.32]}>
-      <group position={[0.385, 0, 0]} rotation-y={ajar}>
-        <group position={[-0.385, 0, 0]}>
-          <mesh geometry={door} castShadow receiveShadow><AuthoredSurfaceMaterial surface={LOCKER_PAINT} /></mesh>
-          <mesh geometry={handle} castShadow><AuthoredSurfaceMaterial surface={LOCKER_STEEL} /></mesh>
-        </group>
-      </group>
-    </group>
-    <mesh geometry={steel} castShadow><AuthoredSurfaceMaterial surface={LOCKER_STEEL} /></mesh>
-  </Suspense>;
+  return <>
+    <EngineDrawMount create={() => surfaceMeshDraw(body, LOCKER_PAINT, "box", true, true)} deps={[body]} />
+    <SceneObjectGroup position={[0.0075, 1.13, 0.32]}>
+      <SceneObjectGroup position={[0.385, 0, 0]} rotationY={ajar}>
+        <SceneObjectGroup position={[-0.385, 0, 0]}>
+          <EngineDrawMount create={() => surfaceMeshDraw(door, LOCKER_PAINT, "box", true, true)} deps={[door]} />
+          <EngineDrawMount create={() => surfaceMeshDraw(handle, LOCKER_STEEL, "box", true, false)} deps={[handle]} />
+        </SceneObjectGroup>
+      </SceneObjectGroup>
+    </SceneObjectGroup>
+    <EngineDrawMount create={() => surfaceMeshDraw(steel, LOCKER_STEEL, "box", true, false)} deps={[steel]} />
+  </>;
 }

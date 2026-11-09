@@ -1,7 +1,8 @@
-import { CanvasTexture, SRGBColorSpace } from "three";
-import { Shape } from "three";
+import { BoxGeometry, CanvasTexture, CylinderGeometry, ExtrudeGeometry, Group, Mesh, MeshStandardMaterial, Shape, SRGBColorSpace } from "three";
 import { createElement, useMemo } from "react";
-import { PALETTE, surfaceMaterial, type IndustrialSurface } from "./industrialMaterials";
+import { EngineDrawMount, meshDraw } from "@jgengine/core/frame/useEngineDraw.draw";
+import type { EngineDraw } from "@jgengine/core/frame/engineLoop.draw";
+import { PALETTE, surfaceMaterialParams, type IndustrialSurface } from "./industrialMaterials";
 export { PALETTE } from "./industrialMaterials";
 /** Original Deepward signs and surface artwork. No asset fetches or external art. */
 export function signTexture(title: string, subtitle: string, color = PALETTE.cyan): CanvasTexture {
@@ -45,16 +46,31 @@ export function casingProfile(width: number, height: number): Shape {
   shape.closePath();
   return shape;
 }
-function material({ surface = "paint", color, emission = 0 }: PartProps) {
-  return createElement("meshStandardMaterial", surfaceMaterial(surface, color, emission));
+function material(props: PartProps) {
+  return new MeshStandardMaterial(surfaceMaterialParams(props.surface ?? "paint", props.color, props.emission ?? 0));
+}
+function mount(create: () => EngineDraw, deps: readonly unknown[]) {
+  return createElement(EngineDrawMount, { create, deps });
 }
 export function IndustrialBox(props: PartProps & { size: Triple }) {
-  return createElement("mesh", { position: props.at, rotation: props.turn, castShadow: true, receiveShadow: true },
-    createElement("boxGeometry", { args: props.size }), material(props));
+  return mount(() => meshDraw({
+    geometry: new BoxGeometry(...props.size),
+    material: material(props),
+    position: props.at,
+    rotation: props.turn,
+    castShadow: true,
+    receiveShadow: true,
+  }), [props.at, props.turn, props.surface, props.color, props.emission, props.size]);
 }
 export function IndustrialCylinder(props: PartProps & { radius: number; length: number; tip?: number }) {
-  return createElement("mesh", { position: props.at, rotation: props.turn, castShadow: true, receiveShadow: true },
-    createElement("cylinderGeometry", { args: [props.tip ?? props.radius, props.radius, props.length, 12] }), material(props));
+  return mount(() => meshDraw({
+    geometry: new CylinderGeometry(props.tip ?? props.radius, props.radius, props.length, 12),
+    material: material(props),
+    position: props.at,
+    rotation: props.turn,
+    castShadow: true,
+    receiveShadow: true,
+  }), [props.at, props.turn, props.surface, props.color, props.emission, props.radius, props.length, props.tip]);
 }
 export function casingGeometryParameters([w, h, d]: Triple) {
   const bevel = Math.min(w, h, d) * 0.08;
@@ -67,7 +83,25 @@ export function casingGeometryParameters([w, h, d]: Triple) {
 export function IndustrialCasing(props: PartProps & { size: Triple }) {
   const [w, h, d] = props.size;
   const { shape, options, offset } = useMemo(() => casingGeometryParameters([w, h, d]), [w, h, d]);
-  return createElement("group", { position: props.at, rotation: props.turn },
-    createElement("mesh", { position: [0, 0, offset], castShadow: true, receiveShadow: true },
-      createElement("extrudeGeometry", { args: [shape, options] }), material(props)));
+  return mount(() => {
+    const group = new Group();
+    group.position.set(props.at[0], props.at[1], props.at[2]);
+    if (props.turn !== undefined) group.rotation.set(props.turn[0], props.turn[1], props.turn[2]);
+    const mat = material(props);
+    const mesh = new Mesh(new ExtrudeGeometry(shape, options), mat);
+    mesh.position.z = offset;
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    group.add(mesh);
+    return {
+      mount(state) {
+        state.scene.add(group);
+      },
+      dispose(state) {
+        state.scene.remove(group);
+        mesh.geometry.dispose();
+        mat.dispose();
+      },
+    };
+  }, [props.at, props.turn, props.surface, props.color, props.emission, shape, options, offset]);
 }
