@@ -622,8 +622,13 @@ async function main(): Promise<number> {
     if (server.pid !== undefined) started.push(server);
     return server.base;
   };
-  await serve("base");
-  await serve("branch");
+  for (const side of ["base", "branch"] as const) {
+    try {
+      await serve(side);
+    } catch (error) {
+      console.error(`degraded: the ${side} dev server did not start before the lock (${error instanceof Error ? error.message : String(error)}); its page asks for it again inside the lock`);
+    }
+  }
 
   const results: AbGameResult[] = [];
   let failure: string | null = null;
