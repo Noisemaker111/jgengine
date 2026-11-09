@@ -23,12 +23,17 @@ import { provisionCapturedGame } from "./provisionCapture";
  *
  *   bun run perf ab [--games a,b] [--base <ref|dir>] [--window s] [--blocks min,max] [--margin pct] [--markdown]
  *
- * Both sides load once, in one Chrome, from their own checkouts and dev servers: the base from a
- * detached worktree at the base commit, the branch from this checkout. Then they take turns: one page
- * runs a short window while the other is paused in the debugger (no frames, no GPU work), and each
- * block of two windows gives one paired ratio. Blocks alternate which side goes first. The run stops
- * as soon as the 99% interval of the mean ratio answers the question (excludes no change, or sits
- * within the margin), or at the block limit.
+ * Both sides load once, each in a Chrome of its own, from their own checkouts and dev servers: the
+ * base from a detached worktree at the base commit, the branch from this checkout. Then they take
+ * turns in short windows, base, branch, base, ..., while the other side's renderer processes are
+ * suspended (no frames, no CPU, no GPU work). Each branch window against the base windows either side
+ * of it is one ratio. The run stops as soon as the 99% interval of the mean ratio answers the
+ * question (excludes no change, or sits within the margin), or at the pair limit.
+ *
+ * The player stands still by default: on 2026-11-09 under the PC's usual load, a pair of standing
+ * windows varied 5.1% and a pair of walking ones 10.5% (harbor-heat), so a walking answer within 4%
+ * took about 55 pairs against 13. `--path walk` starts every window's walk from one spot, for a change
+ * whose cost only shows in motion.
  *
  * Why not the four-run fps-gap A/B threads wrote by hand (beta, branch, branch, beta): each run
  * reloads the page, profiles and times the GPU, which a verdict does not need, and the same commit's
@@ -46,9 +51,13 @@ const SETTLE_MS = 500;
 const WARMUP_MS = 5_000;
 const DEFAULT_WINDOW_SECONDS = 2;
 const DEFAULT_MIN_BLOCKS = 4;
-const DEFAULT_MAX_BLOCKS = 16;
-/** A change inside this many percent counts as no difference when the interval fits inside it. */
-const DEFAULT_MARGIN_PCT = 2;
+const DEFAULT_MAX_BLOCKS = 30;
+/**
+ * A change inside this many percent counts as no difference when the interval fits inside it: below the
+ * 5% a run must find. Simulated at 5% pair noise with 4-30 pairs: a no-op reads no difference 87% of
+ * the time and changed 6%, and a 5% change reads slower 99.3% of the time.
+ */
+const DEFAULT_MARGIN_PCT = 4;
 
 /** Two-sided 99% Student t critical values, by degrees of freedom 1..30 (beyond 30, 2.70 is within 2%). */
 const T99 = [63.657, 9.925, 5.841, 4.604, 4.032, 3.707, 3.499, 3.355, 3.25, 3.169, 3.106, 3.055, 3.012, 2.977, 2.947, 2.921, 2.898, 2.878, 2.861, 2.845, 2.831, 2.819, 2.807, 2.797, 2.787, 2.779, 2.771, 2.763, 2.756, 2.75];
@@ -76,11 +85,12 @@ export interface AbArgs {
 const USAGE = `usage: bun run perf ab [--games a,b] [--base <ref|dir>] [--window s] [--blocks min,max] [--margin pct]
                        [--path walk|still] [--set key=value ...] [--out dir] [--markdown] [--plant-ms n]
 
-  Is this branch faster or slower than its base, per game: the base and the branch load once each in
-  one Chrome, then take turns running ${DEFAULT_WINDOW_SECONDS} s windows (the other page paused) at the frame gate's
-  conditions (${GATE_SIZE.width}x${GATE_SIZE.height}, high tier, automatic quality off, uncapped clock, walking). Each
-  pair of windows is one ratio; the run stops when the 99% interval of the mean ratio says slower,
-  faster, or within the margin, and prints one row per game. Stops at the first game that fails.
+  Is this branch faster or slower than its base, per game: the base and the branch load once each, in
+  a Chrome of their own, then take turns running ${DEFAULT_WINDOW_SECONDS} s windows (the other side suspended) at the
+  frame gate's conditions (${GATE_SIZE.width}x${GATE_SIZE.height}, high tier, automatic quality off, uncapped clock),
+  the player standing still. Each branch window against the base windows either side is one ratio; the
+  run stops when the 99% interval of the mean ratio says slower, faster, or within the margin, and
+  prints one row per game. Stops at the first game that fails.
 
   --games    comma-separated ids (default: the games the diff from the base can change: a game's own
              folder, or every game when packages/, apps/dev or the lockfile changed)
@@ -89,7 +99,7 @@ const USAGE = `usage: bun run perf ab [--games a,b] [--base <ref|dir>] [--window
   --window   seconds per window (default ${DEFAULT_WINDOW_SECONDS})
   --blocks   fewest and most pairs per game (default ${DEFAULT_MIN_BLOCKS},${DEFAULT_MAX_BLOCKS})
   --margin   a change whose interval fits inside +-margin % reads as no difference (default ${DEFAULT_MARGIN_PCT})
-  --path     walk (default) or still
+  --path     still (default) or walk: every window walks forward from one spot, about twice as noisy
   --set      a setting for both sides, as perf <game> --set
   --out      where each game's windows are written as JSON (default .scratch/perf-ab)
   --markdown print the table as Markdown
@@ -99,7 +109,7 @@ const USAGE = `usage: bun run perf ab [--games a,b] [--base <ref|dir>] [--window
 export function parseAbArgs(argv: readonly string[]): AbArgs | "help" {
   const args: AbArgs = {
     games: null, base: null, windowSeconds: DEFAULT_WINDOW_SECONDS, minBlocks: DEFAULT_MIN_BLOCKS, maxBlocks: DEFAULT_MAX_BLOCKS,
-    marginPct: DEFAULT_MARGIN_PCT, path: "walk", settings: [], out: join(repoRoot, ".scratch", "perf-ab"), markdown: false, plantMs: 0,
+    marginPct: DEFAULT_MARGIN_PCT, path: "still", settings: [], out: join(repoRoot, ".scratch", "perf-ab"), markdown: false, plantMs: 0,
   };
   const number = (flag: string, value: string, min: number): number => {
     const parsed = Number(value);
@@ -619,21 +629,9 @@ async function main(): Promise<number> {
   const fingerprints = { base: treeFingerprint(base.dir), branch: treeFingerprint(repoRoot) };
   mkdirSync(parsed.out, { recursive: true });
 
-  // Vite boots here, outside the lock (it is CPU work, not timed); each game checks its servers again
-  // inside the lock, so one that died during a long wait is started again rather than refused.
+  // Each page asks for its side's server when it loads, under the perf lock (scripts/perf-lock.ts):
+  // a server asked for before a long wait can be gone after it.
   const started: EnsureDevServerResult[] = [];
-  const serve = async (side: Side): Promise<string> => {
-    const server = await ensureDevServer(side === "base" ? base.dir : repoRoot);
-    if (server.pid !== undefined) started.push(server);
-    return server.base;
-  };
-  for (const side of ["base", "branch"] as const) {
-    try {
-      await serve(side);
-    } catch (error) {
-      console.error(`degraded: the ${side} dev server did not start before the lock (${error instanceof Error ? error.message : String(error)}); its page asks for it again inside the lock`);
-    }
-  }
 
   const results: AbGameResult[] = [];
   let failure: string | null = null;
@@ -641,6 +639,11 @@ async function main(): Promise<number> {
     for (const game of games) {
       for (const dir of [base.dir, repoRoot]) await provisionCapturedGame(join(dir, "games", game), (line) => console.error(`perf ab: ${line}`));
       const releaseLock = await acquirePerfLock(`perf ab ${game}`);
+      const serve = async (side: Side): Promise<string> => {
+        const server = await ensureDevServer(side === "base" ? base.dir : repoRoot);
+        if (server.pid !== undefined) started.push(server);
+        return server.base;
+      };
       const heldAt = Date.now();
       try {
         let measured: Omit<AbGameResult, "lockSeconds"> | null = null;
@@ -675,7 +678,7 @@ async function main(): Promise<number> {
   }
   if (results.length > 0) {
     const plant = parsed.plantMs > 0 ? ` A ${parsed.plantMs} ms busy-wait was planted in every branch frame.` : "";
-    console.log(`Branch ${branchHead} against base ${base.label}: frame time per game, ${parsed.windowSeconds} s windows taken in turns, walking, ${GATE_SIZE.width}x${GATE_SIZE.height}, high tier, uncapped. Positive change = the branch's frames take longer.${plant}\n`);
+    console.log(`Branch ${branchHead} against base ${base.label}: frame time per game, ${parsed.windowSeconds} s windows taken in turns, ${parsed.path === "walk" ? "walking" : "standing still"}, ${GATE_SIZE.width}x${GATE_SIZE.height}, high tier, uncapped. Positive change = the branch's frames take longer.${plant}\n`);
     console.log(renderAbTable(results, { markdown: parsed.markdown, marginPct: parsed.marginPct }));
   }
   console.error(`perf ab: ${Math.round((Date.now() - startedAt) / 1000)} s in all`);

@@ -77,6 +77,9 @@ test("parseAbArgs reads every flag and refuses bad values", () => {
   expect(parsed.plantMs).toBe(1.2);
   expect(parsed.markdown).toBe(true);
   expect(parseAbArgs(["--help"])).toBe("help");
+  const defaults = parseAbArgs([]);
+  if (defaults === "help") throw new Error("parsed as help");
+  expect([defaults.path, defaults.marginPct, defaults.minBlocks, defaults.maxBlocks, defaults.windowSeconds]).toEqual(["still", 4, 4, 30, 2]);
   expect(() => parseAbArgs(["--blocks", "9,3"])).toThrow("max >= min");
   expect(() => parseAbArgs(["--games"])).toThrow("needs a value");
   expect(() => parseAbArgs(["--path", "fly"])).toThrow("walk or still");
