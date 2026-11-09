@@ -1,5 +1,3 @@
-import { Html } from "@react-three/drei";
-import { useThree } from "@react-three/fiber";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
@@ -9,10 +7,9 @@ import { waypointAnchor } from "@jgengine/core/map/waypoints";
 import { onboardingOf } from "@jgengine/core/onboarding/onboardingSystem";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
+import { HudOverlay } from "@jgengine/core/hud/hudOverlay.draw";
 
-function pinToViewport(_el: unknown, _camera: unknown, size: { width: number; height: number }): [number, number] {
-  return [size.width / 2, size.height / 2];
-}
 
 /**
  * The onboarding's on-screen pointer, mounted in a game's `WorldOverlay`: a pin over the current
@@ -23,7 +20,7 @@ function pinToViewport(_el: unknown, _camera: unknown, size: { width: number; he
  */
 export function OnboardingPointer({ ctx, theme }: { ctx: GameContext; theme?: WaypointMarkerTheme }): ReactNode {
   const runtime = onboardingOf(ctx);
-  const size = useThree((state) => state.size);
+  const size = useEngineHost().frame.size;
   const project = useWorldProjection();
   const [, setTick] = useState(0);
   const drawn = useRef("");
@@ -48,7 +45,7 @@ export function OnboardingPointer({ ctx, theme }: { ctx: GameContext; theme?: Wa
   }), [runtime, project]);
   if (runtime === null) return null;
   return (
-    <Html fullscreen calculatePosition={pinToViewport} zIndexRange={[25, 0]} style={{ pointerEvents: "none" }}>
+    <HudOverlay zIndex={25}>
       <WaypointMarkers
         entries={runtime.waypoints}
         project={project}
@@ -57,6 +54,6 @@ export function OnboardingPointer({ ctx, theme }: { ctx: GameContext; theme?: Wa
         kindColors={{ objective: theme?.color ?? "#facc15" }}
         {...(theme === undefined ? {} : { theme })}
       />
-    </Html>
+    </HudOverlay>
   );
 }

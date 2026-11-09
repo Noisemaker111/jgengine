@@ -1,11 +1,11 @@
-import { Html } from "@react-three/drei";
-import { useThree } from "@react-three/fiber";
 import { useRef, useState, type CSSProperties } from "react";
 
 import type { FloatingTextField, FloatingTextView } from "@jgengine/core/hud/floatingText";
 import { FloatingText, type FloatingTextLayoutOptions } from "@jgengine/core/hud/floatingText.view";
 
 import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
+import { HudOverlay } from "@jgengine/core/hud/hudOverlay.draw";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Props for {@link WorldFloatingText}. */
@@ -26,13 +26,6 @@ export interface WorldFloatingTextProps extends FloatingTextLayoutOptions {
   className?: string;
 }
 
-function pinToViewport(
-  _el: unknown,
-  _camera: unknown,
-  size: { width: number; height: number },
-): [number, number] {
-  return [size.width / 2, size.height / 2];
-}
 
 /**
  * R3F one-line drop-in for world-anchored floating text: mounts inside the scene,
@@ -53,7 +46,7 @@ export function WorldFloatingText({
   className,
   ...layout
 }: WorldFloatingTextProps) {
-  const size = useThree((state) => state.size);
+  const size = useEngineHost().frame.size;
   const project = useWorldProjection();
   const [, setTick] = useState(0);
   const showing = useRef(false);
@@ -67,7 +60,7 @@ export function WorldFloatingText({
     setTick((n) => (n + 1) % 1_000_000);
   });
   return (
-    <Html fullscreen calculatePosition={pinToViewport} zIndexRange={[20, 0]} style={{ pointerEvents: "none" }}>
+    <HudOverlay zIndex={20}>
       <FloatingText
         entries={field.active()}
         project={project}
@@ -77,6 +70,6 @@ export function WorldFloatingText({
         className={className}
         {...layout}
       />
-    </Html>
+    </HudOverlay>
   );
 }

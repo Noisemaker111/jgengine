@@ -1,6 +1,4 @@
 // @skill jgengine-ui
-import { Html } from "@react-three/drei";
-import { useThree } from "@react-three/fiber";
 import { useMemo, useRef, useState } from "react";
 import { PerspectiveCamera, Vector3, type Camera } from "three";
 
@@ -13,6 +11,8 @@ import {
 import { useSceneEntities } from "@jgengine/react/hooks";
 import { frustumSampleDisplayEqual } from "@jgengine/core/sensor/frustumSampleEqual";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
+import { HudOverlay } from "@jgengine/core/hud/hudOverlay.draw";
 
 export { frustumSampleDisplayEqual } from "@jgengine/core/sensor/frustumSampleEqual";
 
@@ -26,8 +26,7 @@ export interface FrustumSensorProbeOptions extends FramingConfig {
 }
 
 export function useFrustumSensor(options: FrustumSensorProbeOptions): FrustumSample | null {
-  const camera = useThree((state) => state.camera);
-  const size = useThree((state) => state.size);
+  const host = useEngineHost();
   const entities = useSceneEntities();
   const sensor = useMemo(() => createFrustumSensor(options), []);
   const [best, setBest] = useState<FrustumSample | null>(null);
@@ -41,6 +40,8 @@ export function useFrustumSensor(options: FrustumSensorProbeOptions): FrustumSam
       if (entity === undefined) continue;
       targets.push({ id, position: entity.position, radius: options.subjectRadius });
     }
+    const camera = host.frame.camera;
+    const size = host.frame.size;
     let leader: FrustumSample | null = null;
     if (targets.length > 0) {
       camera.getWorldDirection(forward.current);
@@ -79,7 +80,7 @@ export function useFrustumSensor(options: FrustumSensorProbeOptions): FrustumSam
 export function FrustumSensorReadout(props: FrustumSensorProbeOptions & { wrapperClassName?: string; className?: string }) {
   const sample = useFrustumSensor(props);
   return (
-    <Html fullscreen calculatePosition={(_el, _camera, size) => [size.width / 2, size.height / 2]}>
+    <HudOverlay zIndex={20}>
       <div className={props.wrapperClassName ?? "pointer-events-none absolute bottom-24 right-4"}>
         {sample === null ? (
           <div className={props.className ?? "rounded border border-white/15 bg-black/60 px-3 py-1.5 text-xs text-white/50"}>
@@ -98,6 +99,6 @@ export function FrustumSensorReadout(props: FrustumSensorProbeOptions & { wrappe
           </div>
         )}
       </div>
-    </Html>
+    </HudOverlay>
   );
 }

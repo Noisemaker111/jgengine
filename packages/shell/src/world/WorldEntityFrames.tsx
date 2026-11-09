@@ -1,7 +1,7 @@
-import { Html } from "@react-three/drei";
 import { useCallback, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
+import { HudOverlay } from "@jgengine/core/hud/hudOverlay.draw";
 import {
   EntityFrames,
   type EntityFrameEntry,
@@ -75,13 +75,6 @@ export interface WorldEntityFramesProps<E extends EntityFrameEntry> extends Enti
   anchorTransform?: string;
 }
 
-function pinToViewport(
-  _el: THREE.Object3D,
-  _camera: THREE.Camera,
-  size: { width: number; height: number },
-): [number, number] {
-  return [size.width / 2, size.height / 2];
-}
 
 /**
  * R3F convenience that mounts inside the scene, samples the live camera each
@@ -108,12 +101,7 @@ export function WorldEntityFrames<E extends EntityFrameEntry>({
   const [, setTick] = useState(0);
   useThreeFrameTick(setTick, tickMs);
   return (
-    <Html
-      fullscreen
-      calculatePosition={pinToViewport}
-      zIndexRange={[19, 0]}
-      style={{ pointerEvents: "none" }}
-    >
+    <HudOverlay zIndex={19}>
       <EntityFrames
         entries={entries}
         project={project}
@@ -123,7 +111,7 @@ export function WorldEntityFrames<E extends EntityFrameEntry>({
         anchorTransform={anchorTransform}
         {...layout}
       />
-    </Html>
+    </HudOverlay>
   );
 }
 
