@@ -22,6 +22,13 @@ test("a no-op reads as no difference once the interval fits inside the margin", 
   expect(abVerdict(ratios([0.4, -0.3, 0.2, -0.1]), options)?.call).toBe("same");
 });
 
+test("an interval past zero but not past the 1% floor is not called a change", () => {
+  // The 2026-11-09 no-op: +3.4%, interval +0.1% to +6.9%, the same game code on both sides.
+  const nearZero = ratios([3.4, 0.2, 6.6, 3.5, 0.3, 6.5, 3.4, 0.4, 6.4]);
+  expect(abVerdict(nearZero, { ...options, floorPct: 0 })?.call).toBe("slower");
+  expect(abVerdict(nearZero, options)).toBeNull();
+});
+
 test("a faster branch reads as faster", () => {
   expect(abVerdict(ratios([-8, -7.5, -9, -8.2]), options)?.call).toBe("faster");
 });

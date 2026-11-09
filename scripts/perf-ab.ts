@@ -54,10 +54,19 @@ const DEFAULT_MIN_BLOCKS = 4;
 const DEFAULT_MAX_BLOCKS = 30;
 /**
  * A change inside this many percent counts as no difference when the interval fits inside it: below the
- * 5% a run must find. Simulated at 5% pair noise with 4-30 pairs: a no-op reads no difference 87% of
- * the time and changed 6%, and a 5% change reads slower 99.3% of the time.
+ * 5% a run must find. Simulated at 5% pair noise (a busy PC, harbor-heat standing still) with 4-30
+ * pairs and the 1% floor: a no-op reads no difference 89% of the time and changed 1.6%, and a 5% change
+ * reads slower 94% of the time; at 3% noise, 99.4% and 99.7%.
  */
 const DEFAULT_MARGIN_PCT = 4;
+
+/**
+ * A change is called only when its whole interval is past this many percent, not merely past zero.
+ * Checked after every pair, a 99% interval past zero called a no-op slower about 6% of the time
+ * (harbor-heat read +3.4%, +0.1 to +6.9, with the same game code both sides, 2026-11-09), which over
+ * a nine-game sweep is a false regression in about every other run.
+ */
+const CHANGE_FLOOR_PCT = 1;
 
 /** Two-sided 99% Student t critical values, by degrees of freedom 1..30 (beyond 30, 2.70 is within 2%). */
 const T99 = [63.657, 9.925, 5.841, 4.604, 4.032, 3.707, 3.499, 3.355, 3.25, 3.169, 3.106, 3.055, 3.012, 2.977, 2.947, 2.921, 2.898, 2.878, 2.861, 2.845, 2.831, 2.819, 2.807, 2.797, 2.787, 2.779, 2.771, 2.763, 2.756, 2.75];
@@ -187,7 +196,7 @@ export interface AbVerdict {
  * `null` while the run should go on: fewer than `minBlocks`, or an interval that neither excludes no
  * change nor fits inside +-margin. At `maxBlocks` it always answers, `unclear` when still undecided.
  */
-export function abVerdict(logRatios: readonly number[], options: { minBlocks: number; maxBlocks: number; marginPct: number }): AbVerdict | null {
+export function abVerdict(logRatios: readonly number[], options: { minBlocks: number; maxBlocks: number; marginPct: number; floorPct?: number }): AbVerdict | null {
   const n = logRatios.length;
   if (n < Math.max(2, options.minBlocks)) return null;
   const mean = logRatios.reduce((sum, value) => sum + value, 0) / n;
@@ -196,8 +205,9 @@ export function abVerdict(logRatios: readonly number[], options: { minBlocks: nu
   const pct = (log: number) => Math.round((Math.exp(log) - 1) * 1000) / 10;
   const verdict = (call: AbCall): AbVerdict => ({ call, blocks: n, changePct: pct(mean), lowPct: pct(mean - half), highPct: pct(mean + half) });
   const margin = Math.log(1 + options.marginPct / 100);
-  if (mean - half > 0) return verdict("slower");
-  if (mean + half < 0) return verdict("faster");
+  const floor = Math.log(1 + (options.floorPct ?? CHANGE_FLOOR_PCT) / 100);
+  if (mean - half > floor) return verdict("slower");
+  if (mean + half < -floor) return verdict("faster");
   if (mean - half >= -margin && mean + half <= margin) return verdict("same");
   return n >= options.maxBlocks ? verdict("unclear") : null;
 }
