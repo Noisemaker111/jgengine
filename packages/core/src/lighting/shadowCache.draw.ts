@@ -1168,6 +1168,7 @@ class ShadowCache {
     planned.length = 0;
     let checked = false;
     let allFull = true;
+    let needsTracker = false;
     try {
       for (const light of lights) {
         const shadow = managedShadow(light);
@@ -1182,9 +1183,16 @@ class ShadowCache {
         }
         record.seenFrame = this.frame;
         const key = lightKey(light, shadow, camera, reversed, type, record.key);
-        // Only a light that may skip casters needs them checked: a far cascade stepping a texel draws them all.
-        const mayCache = shadowPassMayCache(record.state, key);
-        if (mayCache && !checked) {
+        const state = record.state;
+        // A pass can leave the full draw only at the layer's key, or at the drawn key once it has
+        // held rebuildAfter passes; anything else plans full and never reads the tracker. A repeat
+        // of a pass already served this frame records hold, which still needs the reach count.
+        const mayCache = shadowPassMayCache(state, key);
+        const repeat = frameToken !== undefined && record.servedFrame === frameToken && sameShadowKey(state.drawnKey, key);
+        const couldServe = mayCache && ((!state.layerStale && sameShadowKey(state.layerKey, key)) ||
+          (sameShadowKey(state.drawnKey, key) && state.heldPasses + 1 >= state.rebuildAfter));
+        if (couldServe || repeat) needsTracker = true;
+        if (needsTracker && !checked) {
           checked = true;
           // The scene does not change between a frame's renders, so one check serves them all.
           if (frameToken === undefined || frameToken !== this.lastCheckToken) {
@@ -1195,11 +1203,8 @@ class ShadowCache {
             this.lastCheckToken = frameToken;
           }
         }
-        const reaches = mayCache && this.tracker.dynamicReaches(shadow.getFrustum(), passLayers(shadow, camera));
-        // A post pass that renders the scene again in the same frame asks for the same maps the
-        // first render just drew: the light's map already holds this key's image, so the pass holds.
-        const repeat = frameToken !== undefined && record.servedFrame === frameToken && sameShadowKey(record.state.drawnKey, key);
-        const plan = repeat ? "hold" : planShadowPass(record.state, key, reaches);
+        const reaches = (couldServe || repeat) && mayCache && this.tracker.dynamicReaches(shadow.getFrustum(), passLayers(shadow, camera));
+        const plan = repeat ? "hold" : planShadowPass(state, key, reaches);
         if (plan !== "full") allFull = false;
         planned.push({ light, shadow, record, key, plan, reaches });
       }
