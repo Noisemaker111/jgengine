@@ -2,7 +2,7 @@ import { useStore, type RootState } from "@react-three/fiber";
 import { useEffect } from "react";
 
 import { bindFrameSource } from "@jgengine/core/frame/frameBoard.draw";
-import type { EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { frameStateFromR3F } from "@jgengine/core/frame/r3fFrameState.draw";
 
 /**
  * Temporary bridge while the Canvas still owns rendering: binds the shared
@@ -15,26 +15,8 @@ import type { EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 export function FrameBoardPump(): null {
   const store = useStore();
   useEffect(() => {
-    const facade = (state: RootState, delta: number): EngineFrameState => ({
-      renderer: state.gl,
-      gl: state.gl,
-      scene: state.scene,
-      camera: state.camera,
-      clock: state.clock,
-      size: state.size,
-      elapsed: state.clock.elapsedTime,
-      delta,
-      width: state.size.width,
-      height: state.size.height,
-      frameloop: state.frameloop,
-      invalidate: () => state.invalidate(),
-      setCovered: (covered: boolean) => state.setFrameloop(covered ? "never" : "always"),
-      get covered() {
-        return state.frameloop === "never";
-      },
-    });
     bindFrameSource((priority, run) => {
-      const task = { current: (state: RootState, delta: number) => run(facade(state, delta), delta) };
+      const task = { current: (state: RootState, delta: number) => run(frameStateFromR3F(state, delta), delta) };
       return store.getState().internal.subscribe(task, priority, store);
     });
     return () => bindFrameSource(null);

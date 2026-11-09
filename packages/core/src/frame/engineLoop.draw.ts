@@ -55,7 +55,7 @@ export interface EngineDraw {
   /** Once, after the scene exists and before the first frame. Add objects here. */
   mount?(state: EngineFrameState): void;
   /** Every rendered frame, in priority then registration order. */
-  frame(state: EngineFrameState): void;
+  frame?(state: EngineFrameState): void;
   /** Once, on teardown. Remove objects and free GPU resources here. */
   dispose?(state: EngineFrameState): void;
 }

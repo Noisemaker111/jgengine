@@ -1,5 +1,7 @@
-import { useMemo } from "react";
 import { AxesHelper } from "three";
+
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
 /**
  * Renders colored axes at the given position for orientation debugging.
@@ -8,9 +10,24 @@ import { AxesHelper } from "three";
  * Enable with ?axes=1 or ?debug=axes in the URL.
  * See docs/design/asset-spatial-contract.md for the full spatial contract.
  */
+export function sceneAxesHelperDraw({ position = [0, 0, 0], size = 2 }: { position?: [number, number, number]; size?: number }): EngineDraw {
+  let axes: AxesHelper | null = null;
+  return {
+    mount(state: EngineFrameState) {
+      axes = new AxesHelper(size);
+      axes.position.set(position[0], position[1], position[2]);
+      state.scene.add(axes);
+    },
+    dispose(state: EngineFrameState) {
+      if (axes !== null) state.scene.remove(axes);
+      axes = null;
+    },
+  };
+}
+
 export function SceneAxesHelper({ position = [0, 0, 0], size = 2 }: { position?: [number, number, number]; size?: number }) {
-  const axes = useMemo(() => new AxesHelper(size), [size]);
-  return <primitive object={axes} position={position} />;
+  useEngineDraw(() => sceneAxesHelperDraw({ position, size }), [position, size]);
+  return null;
 }
 
 export function useShowSceneAxes(): boolean {
