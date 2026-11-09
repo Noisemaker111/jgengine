@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { useGameContext } from "@jgengine/react/provider";
@@ -9,7 +9,9 @@ import { StaticShapeInstances } from "@jgengine/core/instancing/staticShapeInsta
 
 import { buildCost, keep, towerStats } from "../keep";
 import { session } from "../session";
-import { activeProjectiles } from "../combat/pendingProjectiles";
+import { activeProjectiles, type PendingProjectile } from "../combat/pendingProjectiles";
+import { live } from "@jgengine/core/ui/liveValue";
+import { useLiveSelect } from "@jgengine/core/ui/liveBind.view";
 import { BUILD_PLOTS, FLANK_POINT_KEY, HAS_FLANK, ROUTES, SPAWN_POINT, groundHeightAt } from "./path";
 
 /** Where the east flank road opens. */
@@ -140,26 +142,43 @@ function SpawnGate({ at, facing = 0 }: { at: readonly [number, number, number]; 
   );
 }
 
+function boltPosition(bolt: PendingProjectile, now: number): [number, number, number] {
+  const t = Math.min(1, (now - bolt.spawnedAt) / bolt.travelSeconds);
+  return [
+    bolt.from[0] + (bolt.to[0] - bolt.from[0]) * t,
+    bolt.from[1] + 0.9 + (bolt.to[1] - bolt.from[1]) * t,
+    bolt.from[2] + (bolt.to[2] - bolt.from[2]) * t,
+  ];
+}
+
+const sameBolts = (a: readonly PendingProjectile[], b: readonly PendingProjectile[]): boolean =>
+  a.length === b.length && a.every((bolt, index) => bolt.id === b[index]?.id);
+
+/** Bolts in flight: the list re-renders when one is fired or lands, and each bolt moves every frame without a render. */
 function ProjectileBolts() {
   const ctx = useGameContext();
-  const [, setTick] = useState(0);
-  useFrame(() => setTick((value) => value + 1));
-  const now = ctx.time.now();
-  const bolts = activeProjectiles(now);
+  const source = useMemo(() => live(() => [...activeProjectiles(ctx.time.now())]), [ctx]);
+  const bolts = useLiveSelect(source, (list) => list, sameBolts);
+  const meshes = useRef(new Map<PendingProjectile["id"], THREE.Mesh>());
+  useFrame(() => {
+    const now = ctx.time.now();
+    for (const bolt of activeProjectiles(now)) {
+      const mesh = meshes.current.get(bolt.id);
+      if (mesh !== undefined) mesh.position.set(...boltPosition(bolt, now));
+    }
+  });
   return (
     <>
-      {bolts.map((bolt) => {
-        const t = Math.min(1, (now - bolt.spawnedAt) / bolt.travelSeconds);
-        const x = bolt.from[0] + (bolt.to[0] - bolt.from[0]) * t;
-        const y = bolt.from[1] + 0.9 + (bolt.to[1] - bolt.from[1]) * t;
-        const z = bolt.from[2] + (bolt.to[2] - bolt.from[2]) * t;
-        return (
-          <mesh key={bolt.id} position={[x, y, z]}>
-            <sphereGeometry args={[0.14, 8, 8]} />
-            <meshStandardMaterial color={bolt.color} emissive={bolt.color} emissiveIntensity={0.9} />
-          </mesh>
-        );
-      })}
+      {bolts.map((bolt) => (
+        <mesh
+          key={bolt.id}
+          ref={(mesh) => { if (mesh === null) meshes.current.delete(bolt.id); else meshes.current.set(bolt.id, mesh); }}
+          position={boltPosition(bolt, ctx.time.now())}
+        >
+          <sphereGeometry args={[0.14, 8, 8]} />
+          <meshStandardMaterial color={bolt.color} emissive={bolt.color} emissiveIntensity={0.9} />
+        </mesh>
+      ))}
     </>
   );
 }
