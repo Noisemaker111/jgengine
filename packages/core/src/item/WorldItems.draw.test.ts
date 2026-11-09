@@ -1,12 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import { act, createRoot, extend } from "@react-three/fiber";
-import { createElement, type ReactElement } from "react";
+import { createElement, Fragment, type ReactElement } from "react";
 import * as THREE from "three";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { GameProvider } from "@jgengine/react/provider";
 import { useWorldItems } from "@jgengine/react/hooks";
+import { FrameBoardPump } from "@jgengine/core/frame/frameBoardPump.draw";
 
 import { WorldItems } from "./WorldItems.draw";
 import { POINTER_ENTITY_KEY } from "@jgengine/core/input/pointerService.draw";
@@ -98,7 +99,7 @@ describe("world item marker list", () => {
     const ctx = fixture();
     const first = ctx.scene.worldItem.spawn({ itemId: "crate", position: [2, 0, -3] });
     const config = { rarityStyle: { common: { color: "#cfd6de" } } };
-    await mounted(ctx, createElement(WorldItems, { config }), async ({ scene, advance, mutate }) => {
+    await mounted(ctx, createElement(Fragment, null, createElement(FrameBoardPump), createElement(WorldItems, { config })), async ({ scene, advance, mutate }) => {
       const group = markerGroup(scene, first.instanceId);
       expect(group).not.toBeNull();
       await advance(16);

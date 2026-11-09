@@ -19,6 +19,14 @@ export interface BuildingRenderPolicy {
 const UNLIMITED: BuildingRenderPolicy = { enabled: false, minDistance: 0, maxDistance: Infinity, hysteresis: 0 };
 const BuildingRenderContext = createContext<BuildingRenderPolicy>(UNLIMITED);
 
+/** The policy the most recently mounted {@link BuildingRenderBudget} resolved; draws read it without React context. @internal */
+let currentPolicy: BuildingRenderPolicy = UNLIMITED;
+
+/** The distance policy facade parts under the nearest budget follow, for draw-side chunks. @internal */
+export function buildingRenderPolicy(): BuildingRenderPolicy {
+  return currentPolicy;
+}
+
 /** Resolve existing visibility overrides over the already resolved graphics-tier distance. @internal */
 export function resolveBuildingRenderPolicy(drawDistance: number, config?: VisibilityConfig, cullingDisabled = false): BuildingRenderPolicy {
   const culling = config?.culling;
@@ -40,7 +48,11 @@ export function BuildingRenderBudget({ drawDistance, visibility, cullingDisabled
   cullingDisabled?: boolean;
   children: ReactNode;
 }) {
-  const policy = useMemo(() => resolveBuildingRenderPolicy(drawDistance, visibility, cullingDisabled), [drawDistance, visibility, cullingDisabled]);
+  const policy = useMemo(() => {
+    const resolved = resolveBuildingRenderPolicy(drawDistance, visibility, cullingDisabled);
+    currentPolicy = resolved;
+    return resolved;
+  }, [drawDistance, visibility, cullingDisabled]);
   return <BuildingRenderContext.Provider value={policy}>{children}</BuildingRenderContext.Provider>;
 }
 
@@ -90,20 +102,50 @@ export function useBuildingChunkBudget(meshRef: RefObject<THREE.InstancedMesh | 
   useFrameTask(({ camera }) => {
     const mesh = meshRef.current;
     if (mesh === null) return;
-    const chunk = scratch.current;
-    camera.getWorldPosition(chunk.camera);
-    if (chunk.mesh !== mesh || chunk.bounds !== bounds || chunk.frustum !== mesh.boundingSphere?.radius || !chunk.placed.equals(mesh.matrixWorld)) {
-      if (chunk.mesh !== mesh) mesh.updateWorldMatrix(true, false);
-      chunk.mesh = mesh;
-      chunk.bounds = bounds;
-      chunk.placed.copy(mesh.matrixWorld);
-      mesh.visible = buildingChunkWithinBudget(bounds, mesh.matrixWorld, chunk.camera, policy, mesh.visible, chunk.box, chunk.sphere, mesh.boundingSphere);
-      chunk.frustum = mesh.boundingSphere?.radius;
-      return;
-    }
-    if (!policy.enabled) return;
-    const { center, radius } = chunk.sphere;
-    mesh.visible = !culledByDistance(chunk.camera.x, chunk.camera.y, chunk.camera.z, center.x, center.y, center.z,
-      policy.minDistance, policy.maxDistance, radius, mesh.visible ? policy.hysteresis : 0);
+    syncBuildingChunkBudget(mesh, bounds, policy, camera, scratch.current);
   }, CAMERA_POST_FRAME_PRIORITY);
+}
+
+/** Scratch state for {@link syncBuildingChunkBudget}; one per draw instance. @internal */
+export interface BuildingChunkBudgetScratch {
+  box: THREE.Box3;
+  sphere: THREE.Sphere;
+  camera: THREE.Vector3;
+  placed: THREE.Matrix4;
+  mesh: THREE.InstancedMesh | null;
+  bounds: THREE.Box3 | null;
+  frustum: number | undefined;
+}
+
+export function buildingChunkBudgetScratch(): BuildingChunkBudgetScratch {
+  return { box: new THREE.Box3(), sphere: new THREE.Sphere(), camera: new THREE.Vector3(), placed: new THREE.Matrix4(), mesh: null, bounds: null, frustum: undefined };
+}
+
+/**
+ * The draw-side form of {@link useBuildingChunkBudget}: the same one-distance-test-per-chunk frame
+ * at camera-post priority, reading the policy from {@link buildingRenderPolicy} when `policy` is
+ * omitted. Call once per frame from the owning draw.
+ * @internal
+ */
+export function syncBuildingChunkBudget(
+  mesh: THREE.InstancedMesh,
+  bounds: THREE.Box3,
+  camera: THREE.Camera,
+  scratch: BuildingChunkBudgetScratch,
+  policy: BuildingRenderPolicy = buildingRenderPolicy(),
+): void {
+  camera.getWorldPosition(scratch.camera);
+  if (scratch.mesh !== mesh || scratch.bounds !== bounds || scratch.frustum !== mesh.boundingSphere?.radius || !scratch.placed.equals(mesh.matrixWorld)) {
+    if (scratch.mesh !== mesh) mesh.updateWorldMatrix(true, false);
+    scratch.mesh = mesh;
+    scratch.bounds = bounds;
+    scratch.placed.copy(mesh.matrixWorld);
+    mesh.visible = buildingChunkWithinBudget(bounds, mesh.matrixWorld, scratch.camera, policy, mesh.visible, scratch.box, scratch.sphere, mesh.boundingSphere);
+    scratch.frustum = mesh.boundingSphere?.radius;
+    return;
+  }
+  if (!policy.enabled) return;
+  const { center, radius } = scratch.sphere;
+  mesh.visible = !culledByDistance(scratch.camera.x, scratch.camera.y, scratch.camera.z, center.x, center.y, center.z,
+    policy.minDistance, policy.maxDistance, radius, mesh.visible ? policy.hysteresis : 0);
 }

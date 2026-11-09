@@ -417,6 +417,80 @@ export function useOverrideMapSets(models: readonly Pick<ModelConfig, "material"
   }, [entries, views, models.length]);
 }
 
+/** An owned {@link useModelMaterialTextures} result plus the texture views to dispose. @internal */
+export interface ModelMaterialTexturesLease {
+  readonly global: MaterialOverrideTextures;
+  readonly assets: ReadonlyMap<string, MaterialOverrideTextures>;
+  dispose(): void;
+}
+
+const materialTextureLoader = new MaterialTextureLoader();
+const materialTextureLoads = new Map<string, Promise<THREE.Texture>>();
+
+/** One shared decode per map URL, matching the `useLoader` cache the hook path used. @internal */
+function loadMaterialTexture(url: string): Promise<THREE.Texture> {
+  let pending = materialTextureLoads.get(url);
+  if (pending === undefined) {
+    pending = new Promise((resolve, reject) => {
+      materialTextureLoader.load(url, resolve, undefined, reject);
+    });
+    materialTextureLoads.set(url, pending);
+    pending.catch(() => materialTextureLoads.delete(url));
+  }
+  return pending;
+}
+
+/**
+ * The draw-side form of {@link useModelMaterialTextures}: resolves the same override and
+ * material-asset map entries through the shared texture cache and returns owned views grouped
+ * exactly like the hook. The caller disposes the views with the built sources.
+ * @internal
+ */
+export function modelMaterialTextures(
+  model: Pick<ModelConfig, "material" | "materialAssets" | "materialAssignments">,
+  renderer?: THREE.WebGLRenderer | null,
+): Promise<ModelMaterialTexturesLease> {
+  const ids = new Set(model.materialAssignments?.map(assignment => assignment.materialId));
+  const referenced = (model.materialAssets ?? []).filter(asset => ids.has(asset.id));
+  const entries: { assetId?: string; role: MaterialTextureRole; metadata: MaterialTextureMetadata }[] = overrideMapEntries(model.material?.maps);
+  for (const asset of referenced) for (const [role, metadata] of Object.entries(asset.textures ?? {})) entries.push({ assetId: asset.id, role: role as MaterialTextureRole, metadata: metadata! });
+  if (entries.some(entry => /\.ktx2(?:[?#]|$)/i.test(entry.metadata.url)) && renderer !== undefined && renderer !== null) detectKtx2Support(renderer);
+  if (entries.length === 0) {
+    return Promise.resolve({ global: {}, assets: new Map(), dispose() {} });
+  }
+  return Promise.all(entries.map(entry => loadMaterialTexture(entry.metadata.url))).then(sources => {
+    const owned: THREE.Texture[] = [];
+    try {
+      const views = entries.map((entry, index) => {
+        const view = configureMaterialTexture(entry.role, entry.metadata, sources[index]!);
+        view.flipY = false;
+        owned.push(view);
+        return view;
+      });
+      const global: MaterialOverrideTextures = {};
+      const assets = new Map<string, MaterialOverrideTextures>();
+      entries.forEach((entry, index) => {
+        if (entry.assetId === undefined) global[entry.role] = views[index]!;
+        else {
+          let textures = assets.get(entry.assetId);
+          if (textures === undefined) { textures = {}; assets.set(entry.assetId, textures); }
+          textures[entry.role] = views[index]!;
+        }
+      });
+      return {
+        global,
+        assets,
+        dispose() {
+          for (const texture of owned) texture.dispose();
+        },
+      };
+    } catch (error) {
+      for (const texture of owned) texture.dispose();
+      throw error;
+    }
+  });
+}
+
 function overrideMapEntries(maps: Partial<Record<MaterialTextureRole, string>> | undefined): { role: MaterialTextureRole; metadata: MaterialTextureMetadata }[] {
   const result: { role: MaterialTextureRole; metadata: MaterialTextureMetadata }[] = [];
   for (const [role, url] of Object.entries(maps ?? {})) if (url !== undefined) result.push({ role: role as MaterialTextureRole, metadata: { url, colorSpace: MATERIAL_TEXTURE_SEMANTICS[role as MaterialTextureRole].colorSpace } });
