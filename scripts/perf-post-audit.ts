@@ -5,16 +5,16 @@ import { runAudit, type AuditKind, type AuditRow } from "./perf-shadow-audit";
 /**
  * Proves the post chain draws the bits three's own passes drew, on live game frames.
  *
- *   bun run perf post-audit [--games a,b] [--seconds n] [--path walk|still]
+ *   bun run perf post-audit [--games a,b] [--seconds n] [--path walk|still] [--renderer webgl|webgpu]
  *
  * Each game is played at the frame gate's conditions with `?postAudit=1`: every 20th frame that drew
  * one of the chain's changed draws (the beauty/AO/contact-shadow composite, the atmosphere's single
- * blend, bloom without its clears, the grade doing the OutputPass's work and temporal AA's sharpen),
- * the page draws each of them again both ways from the same inputs and counts the texels whose bits
- * differ. Any differing texel fails the run: the frame must be the same image, not a close one.
+ * blend, bloom without its clears), the page draws each of them again both ways from the same inputs
+ * and counts the texels whose bits differ. Any differing texel fails the run: the frame must be the
+ * same image, not a close one.
  */
 
-const USAGE = `usage: bun run perf post-audit [--games a,b] [--seconds n] [--path walk|still]
+const USAGE = `usage: bun run perf post-audit [--games a,b] [--seconds n] [--path walk|still] [--renderer webgl|webgpu]
 
   Plays each game (${GATE_SIZE.width}x${GATE_SIZE.height}, high tier, automatic quality off) with the post chain's audit on:
   each draw the chain does differently from three's passes is drawn three's way too, from the same
@@ -22,7 +22,8 @@ const USAGE = `usage: bun run perf post-audit [--games a,b] [--seconds n] [--pat
 
   --games    comma-separated game ids (default: every game the frame gate measures)
   --seconds  measured window per game (default 8)
-  --path     walk (default) or still`;
+  --path     walk (default) or still
+  --renderer the backend that draws: webgl (default) or webgpu`;
 
 export type PostAuditVerdict = "identical" | "nothing changed" | "nothing compared" | "comparison failed" | `differs: ${string}` | "not measured";
 
