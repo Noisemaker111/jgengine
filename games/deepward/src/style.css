@@ -1,9 +1,8 @@
 @import "@jgengine/react/styles.css";
 @import "tailwindcss" source(".");
-@source "../node_modules/@jgengine/react/dist";
-@source "../node_modules/@jgengine/shell/dist";
-@source "../../node_modules/@jgengine/react/dist";
-@source "../../node_modules/@jgengine/shell/dist";
+@source "../../../packages/react/src";
+@source "../../../packages/shell/src";
+@source "../../../packages/editor/src";
 
 :root { color-scheme: dark; font-family: "Rajdhani", "Share Tech Mono", sans-serif; background: #0b171b; color: #eceddc; }
 * { box-sizing: border-box; }

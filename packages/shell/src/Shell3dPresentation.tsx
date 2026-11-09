@@ -674,11 +674,15 @@ export function Shell3dPresentation({
           rebind={rebindAction}
           resetBinding={resetActionBinding}
         >
+          {/* The surface's size is inline: a game stylesheet whose Tailwind scan misses the
+              shell's sources must not collapse it to zero, or the canvas never configures and
+              the warmup cover waits forever (#3097). */}
           <div
             ref={wrapperRef}
             tabIndex={0}
             data-jg-play-surface=""
             {...(poster && posterFrozen ? { "data-poster-ready": "" } : {})}
+            style={{ position: "relative", width: "100%", height: "100%" }}
             className="relative h-full w-full bg-neutral-950 outline-none"
             onKeyDown={keys.onKeyDown}
             onKeyUp={keys.onKeyUp}
