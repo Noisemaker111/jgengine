@@ -52,7 +52,10 @@ import { postfxTierPolicy } from "./postfxTierPolicy";
 import { excludesOverlays, excludesOverlaysAndUnmodelled, type PrepassExclusion } from "./postfxOverlay.draw";
 import { RevealFadePass, RevealSnapshotPass, stepRevealFade } from "./revealFade.draw";
 import { SceneCompositePass } from "./sceneCompositePass.draw";
-import { PostAudit } from "./postAudit.draw";\nimport { devtools } from "@jgengine/core/devtools/devtools";\nimport { excludesFromOutline, StylizePass } from "./stylizePass.draw";\nimport { renderShadowlessPrepass } from "./shadowPrepass.draw";
+import { PostAudit } from "./postAudit.draw";
+import { devtools } from "@jgengine/core/devtools/devtools";
+import { excludesFromOutline, StylizePass } from "./stylizePass.draw";
+import { renderShadowlessPrepass } from "./shadowPrepass.draw";
 import { JitteredRenderPass, TemporalAaPass } from "./temporalAaPass.draw";
 
 /**
