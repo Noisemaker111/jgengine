@@ -1,9 +1,9 @@
-import { OrbitControls } from "@react-three/drei";
-import { useThree } from "@react-three/fiber";
-import { useEffect, useRef, type ComponentRef } from "react";
+import { useRef } from "react";
 import { MOUSE } from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
-type OrbitControlsImpl = NonNullable<ComponentRef<typeof OrbitControls>>;
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import {
   resolveInspectionCameraConfig,
@@ -17,51 +17,72 @@ export interface GameInspectionCameraProps {
   config?: InspectionCameraConfig | undefined;
 }
 
-/** Model-viewer / editor rig (#207.7, #866): left-click selects (editor), middle-drag pans, right-drag orbits, scroll zooms toward a configurable anchor. Orbits a fixed `target`; never reads player/entity state. */
-export function GameInspectionCamera({ config: configPatch }: GameInspectionCameraProps) {
-  const config = resolveInspectionCameraConfig(configPatch);
-  const controlsRef = useRef<OrbitControlsImpl>(null);
-  const camera = useThree((state) => state.camera);
-  const seededRef = useRef(false);
-
-  useEffect(() => {
-    if (seededRef.current) return;
-    const seeded = seedInspectionCamera(config);
-    camera.position.set(seeded.camera.x, seeded.camera.y, seeded.camera.z);
-    camera.lookAt(seeded.target.x, seeded.target.y, seeded.target.z);
-    controlsRef.current?.target.set(seeded.target.x, seeded.target.y, seeded.target.z);
-    controlsRef.current?.update();
-    seededRef.current = true;
-  }, [camera, config]);
-
-  useEffect(() => {
-    if (!seededRef.current) return;
-    const controls = controlsRef.current;
+/**
+ * Model-viewer / editor rig (#207.7, #866): left-click selects (editor), middle-drag pans, right-drag orbits, scroll zooms toward a configurable anchor. Orbits a fixed `target`; never reads player/entity state.
+ * @internal
+ */
+export function gameInspectionCameraDraw(getConfig: () => InspectionCameraConfig | undefined): EngineDraw {
+  let controls: OrbitControls | null = null;
+  let seeded = false;
+  let appliedTarget: { x: number; y: number; z: number } | null = null;
+  const sync = (state: EngineFrameState) => {
     if (controls === null) return;
-    const previous = controls.target.clone();
-    controls.target.set(config.target.x, config.target.y, config.target.z);
-    camera.position.add(controls.target.clone().sub(previous));
-    controls.update();
-  }, [camera, config.target.x, config.target.y, config.target.z]);
+    const config = resolveInspectionCameraConfig(getConfig());
+    controls.enableDamping = true;
+    controls.dampingFactor = config.dampingFactor;
+    controls.rotateSpeed = config.rotateSpeed;
+    controls.zoomSpeed = config.zoomSpeed;
+    controls.zoomToCursor = resolveInspectionZoomToCursor(config.anchor);
+    controls.enablePan = config.pan;
+    controls.enableRotate = true;
+    controls.enableZoom = true;
+    controls.minDistance = config.minDistance;
+    controls.maxDistance = config.maxDistance;
+    controls.minPolarAngle = config.minPolarAngle;
+    controls.maxPolarAngle = config.maxPolarAngle;
+    controls.screenSpacePanning = true;
+    controls.mouseButtons = { MIDDLE: MOUSE.PAN, RIGHT: MOUSE.ROTATE };
+    if (!seeded) {
+      const seed = seedInspectionCamera(config);
+      state.camera.position.set(seed.camera.x, seed.camera.y, seed.camera.z);
+      state.camera.lookAt(seed.target.x, seed.target.y, seed.target.z);
+      controls.target.set(seed.target.x, seed.target.y, seed.target.z);
+      controls.update();
+      seeded = true;
+      appliedTarget = { x: config.target.x, y: config.target.y, z: config.target.z };
+      return;
+    }
+    const previous = appliedTarget;
+    if (previous !== null && (previous.x !== config.target.x || previous.y !== config.target.y || previous.z !== config.target.z)) {
+      const before = controls.target.clone();
+      controls.target.set(config.target.x, config.target.y, config.target.z);
+      state.camera.position.add(controls.target.clone().sub(before));
+      controls.update();
+      appliedTarget = { x: config.target.x, y: config.target.y, z: config.target.z };
+    }
+  };
+  return {
+    mount(state: EngineFrameState) {
+      controls = new OrbitControls(state.camera, state.gl.domElement);
+      sync(state);
+    },
+    frame() {
+      controls?.update();
+    },
+    update: sync,
+    dispose() {
+      controls?.dispose();
+      controls = null;
+      seeded = false;
+      appliedTarget = null;
+    },
+  };
+}
 
-  return (
-    <OrbitControls
-      ref={controlsRef}
-      makeDefault
-      enableDamping
-      dampingFactor={config.dampingFactor}
-      rotateSpeed={config.rotateSpeed}
-      zoomSpeed={config.zoomSpeed}
-      zoomToCursor={resolveInspectionZoomToCursor(config.anchor)}
-      enablePan={config.pan}
-      enableRotate
-      enableZoom
-      minDistance={config.minDistance}
-      maxDistance={config.maxDistance}
-      minPolarAngle={config.minPolarAngle}
-      maxPolarAngle={config.maxPolarAngle}
-      screenSpacePanning
-      mouseButtons={{ MIDDLE: MOUSE.PAN, RIGHT: MOUSE.ROTATE }}
-    />
-  );
+/** Model-viewer / editor rig (#207.7, #866): left-click selects (editor), middle-drag pans, right-drag orbits, scroll zooms toward a configurable anchor. Orbits a fixed `target`; never reads player/entity state. */
+export function GameInspectionCamera({ config }: GameInspectionCameraProps) {
+  const latest = useRef(config);
+  latest.current = config;
+  useEngineDraw(() => gameInspectionCameraDraw(() => latest.current), []);
+  return null;
 }

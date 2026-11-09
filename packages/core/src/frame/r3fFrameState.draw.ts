@@ -21,6 +21,7 @@ export function frameStateFromR3F(state: RootState, delta: number): EngineFrameS
     width: state.size.width,
     height: state.size.height,
     frameloop: state.frameloop as EngineFrameloop,
+    renderPriority: state.internal.priority,
     invalidate: () => state.invalidate(),
     setCovered: (covered: boolean) => state.setFrameloop(covered ? "never" : "always"),
     get covered() {

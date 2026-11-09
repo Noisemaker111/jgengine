@@ -1,5 +1,8 @@
-import { addAfterEffect, useThree } from "@react-three/fiber";
-import { useEffect } from "react";
+import { useRef } from "react";
+
+import { joinAfterRenderTask } from "@jgengine/core/frame/afterRenderBoard.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import { registerSceneCapture } from "./sceneCaptureRequest.draw";
 
@@ -65,9 +68,30 @@ export function captureNextFrame(gl: CaptureRenderer): Promise<string | null> {
       clearTimeout(timer);
       resolve(image);
     };
-    const unsubscribe = addAfterEffect(() => finish(captureCanvas(gl)));
+    const unsubscribe = joinAfterRenderTask(() => finish(captureCanvas(gl)));
     const timer = setTimeout(() => finish(null), FRAME_WAIT_MS);
   });
+}
+
+/**
+ * In-canvas binder that registers the live renderer for `requestSceneCapture` and
+ * `requestSceneThumbnail` (a photo-mode Capture button, a save slot's thumbnail), which wait for this
+ * mount and the first painted frame. Mounted inside the game's `WorldOverlay`. Renders nothing.
+ *
+ * @capability scene-capture-binding expose the live renderer to outside-canvas HUD (photo mode, save thumbnails)
+ */
+export function sceneCaptureBindingDraw(): EngineDraw {
+  let unregister: (() => void) | null = null;
+  return {
+    mount(state: EngineFrameState) {
+      const renderer = state.gl;
+      unregister = registerSceneCapture(() => captureNextFrame(renderer));
+    },
+    dispose() {
+      unregister?.();
+      unregister = null;
+    },
+  };
 }
 
 /**
@@ -78,7 +102,8 @@ export function captureNextFrame(gl: CaptureRenderer): Promise<string | null> {
  * @capability scene-capture-binding expose the live scene to outside-Canvas HUD (photo mode, save thumbnails)
  */
 export function SceneCaptureBinding(): null {
-  const gl = useThree((state) => state.gl);
-  useEffect(() => registerSceneCapture(() => captureNextFrame(gl)), [gl]);
+  const created = useRef<EngineDraw | null>(null);
+  if (created.current === null) created.current = sceneCaptureBindingDraw();
+  useEngineDraw(() => created.current as EngineDraw, []);
   return null;
 }

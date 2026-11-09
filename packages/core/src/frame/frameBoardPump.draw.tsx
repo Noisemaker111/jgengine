@@ -1,6 +1,7 @@
-import { useStore, type RootState } from "@react-three/fiber";
+import { addAfterEffect, addEffect, useStore, type RootState } from "@react-three/fiber";
 import { useEffect } from "react";
 
+import { flushAfterRenderTasks, flushBeforeRenderTasks } from "./afterRenderBoard.draw";
 import { bindFrameSource } from "./frameBoard.draw";
 import { frameStateFromR3F } from "./r3fFrameState.draw";
 
@@ -20,7 +21,13 @@ export function FrameBoardPump(): null {
       const task = { current: (state: RootState, delta: number) => run(frameStateFromR3F(state, delta), delta) };
       return store.getState().internal.subscribe(task, priority, store);
     });
-    return () => bindFrameSource(null);
+    const leaveBefore = addEffect(flushBeforeRenderTasks);
+    const leaveAfter = addAfterEffect(flushAfterRenderTasks);
+    return () => {
+      bindFrameSource(null);
+      leaveBefore();
+      leaveAfter();
+    };
   }, [store]);
   return null;
 }

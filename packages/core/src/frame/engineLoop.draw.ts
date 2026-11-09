@@ -18,6 +18,7 @@
 import * as THREE from "three";
 
 import { paceFrame } from "../settings/frameRateLimit";
+import { flushAfterRenderTasks, flushBeforeRenderTasks } from "./afterRenderBoard.draw";
 import { bindFrameSource, joinFrameTask, type FrameSource } from "./frameBoard.draw";
 
 /** Frameloop modes the shell's Canvas accepted. */
@@ -47,6 +48,12 @@ export interface EngineFrameState {
   /** Pause or resume advancing+rendering while a surface covers the canvas. */
   setCovered(covered: boolean): void;
   readonly covered: boolean;
+  /**
+   * r3f's `internal.priority`: nonzero when this canvas renders as one viewport of a
+   * priority/scissored composition rather than the default target. Systems that
+   * draw the scene into their own buffer (the post chain, the warmup gate) read it.
+   */
+  readonly renderPriority: number;
 }
 
 /** One ordered participant in the frame. Lower `priority` runs first; render happens after all. */
@@ -137,6 +144,8 @@ export interface EngineLoopOptions {
     far?: number;
   };
   frameloop?: EngineFrameloop;
+  /** r3f Canvas `priority`: nonzero marks a scissored viewport render, not the default target. */
+  renderPriority?: number;
   /** Rendered fps cap; 0 or undefined renders every admitted refresh. */
   fpsLimit?: number;
   /** r3f `dpr`: a number, or `[min, max]` clamping `devicePixelRatio`. */
@@ -257,6 +266,7 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
     get covered() {
       return covered;
     },
+    renderPriority: options.renderPriority ?? 0,
   } as EngineFrameState;
 
   function advance(elapsedOverride?: number): void {
@@ -273,8 +283,10 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
       state.elapsed = clock.elapsedTime;
       pacedElapsed = null;
     }
+    flushBeforeRenderTasks();
     for (const draw of draws) draw.frame?.(state);
     renderer.render(scene, camera);
+    flushAfterRenderTasks();
     invalidated = false;
   }
 
