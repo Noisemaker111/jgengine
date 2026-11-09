@@ -120,15 +120,15 @@ test("shapes a shared draw cannot take keep their own draw", () => {
   const transparent = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.5 }));
   const hooked = new THREE.Mesh(new THREE.BoxGeometry(), opaque);
   hooked.onBeforeRender = () => {};
-  const mirrored = new THREE.Mesh(new THREE.BoxGeometry(), opaque);
-  mirrored.scale.x = -1;
+  const flat = new THREE.Mesh(new THREE.BoxGeometry(), opaque);
+  flat.scale.y = 0;
   const layered = new THREE.Mesh(new THREE.BoxGeometry(), opaque);
   layered.layers.set(2);
   const multi = new THREE.Mesh(new THREE.BoxGeometry(), [opaque, opaque]);
-  scene.add(transparent, hooked, mirrored, layered, multi);
+  scene.add(transparent, hooked, flat, layered, multi);
   scene.updateMatrixWorld();
-  expect(batcher.stats()).toMatchObject({ batched: 0, single: 5, reasons: { transparent: 1, renderHook: 1, mirrored: 1, layers: 1, multiMaterial: 1 } });
-  expect([transparent, hooked, mirrored, multi].every((mesh) => mesh.layers.mask === 1)).toBe(true);
+  expect(batcher.stats()).toMatchObject({ batched: 0, single: 5, reasons: { transparent: 1, renderHook: 1, flat: 1, layers: 1, multiMaterial: 1 } });
+  expect([transparent, hooked, flat, multi].every((mesh) => mesh.layers.mask === 1)).toBe(true);
   expect(layered.layers.mask).toBe(1 << 2);
 });
 
@@ -229,6 +229,29 @@ test("a batch the matrix pass creates is under one of that pass's render walk st
   expect(batch.visible).toBe(true);
   const starts = sceneWalkStarts(scene)?.starts ?? [];
   expect(starts.some((start) => start === batch || start === batch.parent)).toBe(true);
+});
+
+test("mirrored meshes draw in a batch whose own matrix carries the mirror, so three flips their winding and each lands where it stands; one that turns back moves batch", () => {
+  const { scene, batcher } = setup();
+  const paint = new THREE.MeshStandardMaterial();
+  const left = new THREE.Mesh(new THREE.BoxGeometry(), paint);
+  left.position.set(-4, 0, 2);
+  left.scale.x = -1;
+  const right = new THREE.Mesh(new THREE.BoxGeometry(), paint);
+  right.position.set(4, 0, 2);
+  scene.add(left, right);
+  scene.updateMatrixWorld();
+  expect(batcher.stats()).toMatchObject({ batched: 2, single: 0, batches: 2 });
+  const mirroredBatch = batchesOf(scene).find((batch) => batch.matrixWorld.determinant() < 0);
+  if (mirroredBatch === undefined) throw new Error("no mirrored batch");
+  // What the batch draws for its instance: its own world matrix times the instance matrix.
+  const drawn = mirroredBatch.matrixWorld.clone().multiply(mirroredBatch.getMatrixAt(0, new THREE.Matrix4()));
+  expect(drawn.elements.map((value) => Math.round(value * 1e6) / 1e6)).toEqual(left.matrixWorld.elements.map((value) => Math.round(value * 1e6) / 1e6));
+  scene.updateMatrixWorld();
+  expect(mirroredBatch.matrixWorld.determinant()).toBeLessThan(0);
+  left.scale.x = 1;
+  scene.updateMatrixWorld();
+  expect(batcher.stats()).toMatchObject({ batched: 2, single: 0, drawn: 1, shown: 2 });
 });
 
 function poles(material: THREE.Material, count: number, x: number): THREE.InstancedMesh {

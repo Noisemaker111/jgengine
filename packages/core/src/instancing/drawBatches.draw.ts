@@ -52,6 +52,8 @@ interface BatchGroup {
   readonly key: string;
   readonly mesh: THREE.BatchedMesh;
   readonly material: THREE.Material;
+  /** Its instances turn their faces (negative scale); the batch's own matrix carries the mirror. */
+  readonly mirrored: boolean;
   readonly geometries: Map<THREE.BufferGeometry, { id: number; refs: number }>;
   vertexCapacity: number;
   indexCapacity: number;
@@ -268,7 +270,8 @@ function batchKeyOf(mesh: THREE.Mesh, instanced: THREE.InstancedMesh | null): st
   // which is what the batch casts with.
   const depth = mesh.customDepthMaterial;
   if ((depth !== undefined && !isStableShadowDepth(depth)) || mesh.customDistanceMaterial !== undefined) return reject("customDepth");
-  if (mesh.matrixWorld.determinant() <= 0) return reject("mirrored");
+  const side = sideOf(mesh, instanced);
+  if (side === 0) return reject(instanced === null ? "flat" : "mirroredMix");
   if (geometryLayout(mesh.geometry) === null) return reject("geometry");
   const material = mesh.material;
   if (Array.isArray(material)) return reject("multiMaterial");
@@ -278,8 +281,29 @@ function batchKeyOf(mesh: THREE.Mesh, instanced: THREE.InstancedMesh | null): st
   const signature = materialSignature(material);
   if (signature === null) return reject("materialValue");
   for (let node: THREE.Object3D | null = mesh; node !== null; node = node.parent) if (isPostfxOverlay(node)) return reject("overlay");
-  return `${mesh.castShadow ? 1 : 0}${mesh.receiveShadow ? 1 : 0}${mesh.frustumCulled ? 1 : 0}#${mesh.renderOrder}#${geometryLayout(mesh.geometry) ?? ""}#${signature}`;
+  return `${mesh.castShadow ? 1 : 0}${mesh.receiveShadow ? 1 : 0}${mesh.frustumCulled ? 1 : 0}${side < 0 ? "m" : ""}#${mesh.renderOrder}#${geometryLayout(mesh.geometry) ?? ""}#${signature}`;
 }
+
+/**
+ * Which way the mesh's world matrices turn its faces: 1 as authored, -1 mirrored (a negative scale
+ * turns front faces back, and three flips the winding per object for it), 0 for a flattened matrix
+ * or an instanced mesh whose instances disagree, which no one batch can draw.
+ */
+function sideOf(mesh: THREE.Mesh, instanced: THREE.InstancedMesh | null): number {
+  const world = mesh.matrixWorld;
+  if (instanced === null) return Math.sign(world.determinant());
+  let side = 0;
+  const array = instanced.instanceMatrix.array;
+  for (let index = 0; index < instanced.count; index += 1) {
+    const sign = Math.sign(instanceWorld.fromArray(array, index * 16).premultiply(world).determinant());
+    if (sign === 0 || (side !== 0 && sign !== side)) return 0;
+    side = sign;
+  }
+  return side;
+}
+
+/** A mirrored batch's own world matrix: three draws an object whose matrix turns its faces with the winding flipped, so the batch carries the mirror and each instance the rest. Its own inverse. */
+const MIRROR = new THREE.Matrix4().makeScale(-1, 1, 1);
 
 function vertexCount(geometry: THREE.BufferGeometry): number {
   return geometry.getAttribute("position").count;
@@ -383,31 +407,39 @@ export class DrawBatcher implements ShownMeshVisitor {
       record.checked = pass;
       if (record.changed()) this.unsettle(record);
     }
-    const group = entry.group;
+    let group = entry.group;
     if (group === null) return;
     if (moved && !this.writeMatrices(entry, group)) {
+      // It turned inside out (or back) since it was placed: it moves to the batch for its new side.
       this.unplace(entry);
-      entry.retryAt = pass + RETRY_AFTER_PASSES;
-      entry.reason = "mirrored";
-      return;
+      this.place(entry);
+      group = entry.group;
+      if (group === null) return;
+      if (!this.writeMatrices(entry, group)) {
+        this.unplace(entry);
+        entry.retryAt = pass + RETRY_AFTER_PASSES;
+        entry.reason = "mirroredMix";
+        return;
+      }
     }
     if (shown !== entry.shown) this.show(entry, group, shown);
   }
 
-  /** Write the entry's world matrices into its batch instances; false when one is mirrored, which a batch cannot draw. */
+  /**
+   * Write the entry's world matrices into its batch instances, through the mirror for a mirrored
+   * batch; false when one turns its faces the other way from the batch's side.
+   */
   private writeMatrices(entry: DrawEntry, group: BatchGroup): boolean {
     const world = entry.mesh.matrixWorld;
     const instanced = entry.instanced;
     const instances = entry.instances;
-    if (instanced === null) {
-      if (world.determinant() <= 0) return false;
-      group.mesh.setMatrixAt(instances[0] ?? -1, world);
-      return true;
-    }
-    const array = instanced.instanceMatrix.array;
-    for (let index = 0; index < instances.length; index += 1) {
-      instanceWorld.fromArray(array, index * 16).premultiply(world);
-      if (instanceWorld.determinant() <= 0) return false;
+    const side = group.mirrored ? -1 : 1;
+    const count = instanced === null ? 1 : instances.length;
+    for (let index = 0; index < count; index += 1) {
+      if (instanced === null) instanceWorld.copy(world);
+      else instanceWorld.fromArray(instanced.instanceMatrix.array, index * 16).premultiply(world);
+      if (Math.sign(instanceWorld.determinant()) !== side) return false;
+      if (group.mirrored) instanceWorld.premultiply(MIRROR);
       group.mesh.setMatrixAt(instances[index] ?? -1, instanceWorld);
     }
     return true;
@@ -580,9 +612,17 @@ export class DrawBatcher implements ShownMeshVisitor {
     batch.raycast = () => {};
     mirrorSourceTextures(batch, material, shared.material);
     batch.visible = false;
+    const mirrored = key.slice(0, key.indexOf("#")).endsWith("m");
+    if (mirrored) {
+      // Under the frozen parent nothing recomputes it: the mirror stays the batch's world matrix.
+      batch.matrixAutoUpdate = false;
+      batch.matrixWorldAutoUpdate = false;
+      batch.matrix.copy(MIRROR);
+      batch.matrixWorld.copy(MIRROR);
+    }
     this.parent.add(batch);
     if (batch.castShadow) giveStableShadowDepth(batch);
-    return { key, mesh: batch, material: shared.material, geometries: new Map(), vertexCapacity, indexCapacity, instances: 0, shown: 0 };
+    return { key, mesh: batch, material: shared.material, mirrored, geometries: new Map(), vertexCapacity, indexCapacity, instances: 0, shown: 0 };
   }
 
   private disposeGroup(group: BatchGroup): void {
