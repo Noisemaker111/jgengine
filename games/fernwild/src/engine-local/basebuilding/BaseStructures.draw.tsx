@@ -2,7 +2,7 @@ import { useRef } from "react";
 import * as THREE from "three";
 
 import type { BaseBuilding, StructurePlan, StructureWorldBox } from "./baseBuilding";
-import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
+import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 
 /** Props for {@link BaseStructures}. */
@@ -118,6 +118,5 @@ function baseStructuresDraw(getProps: () => BaseStructuresProps): EngineDraw {
 export function BaseStructures(props: BaseStructuresProps) {
   const latest = useRef(props);
   latest.current = props;
-  useEngineDraw(() => baseStructuresDraw(() => latest.current), []);
-  return null;
+  return <EngineDrawMount create={() => baseStructuresDraw(() => latest.current)} deps={[]} />;
 }

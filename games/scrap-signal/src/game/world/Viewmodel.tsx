@@ -1,6 +1,6 @@
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
-import { useThree } from "@react-three/fiber";
-import { Group, PointLight, Vector3 } from "three";
+import { BoxGeometry, CircleGeometry, CylinderGeometry, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, PointLight, TorusGeometry, Vector3 } from "three";
+import type { BufferGeometry, Material } from "three";
 import { useRef, useState } from "react";
 import { useGameContext } from "@jgengine/react/provider";
 import { WeatherLayer } from "@jgengine/core/weather/WeatherLayer.draw";
@@ -13,6 +13,10 @@ import { ELEMENT_COLORS } from "../palette";
 import { SalvageRelay } from "./Relay";
 import { QuestMarker } from "./QuestMarker";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
+import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 /**
  * Blaster silhouettes, built from primitives rather than cast from a model pack.
@@ -146,152 +150,131 @@ function muzzleOffsetZ(family: GunFamily): number {
 }
 
 /** Barrel-shroud vent slots, spaced along whatever barrel the family actually has. */
-function BarrelVents({ barrelR, barrelZ, barrelL, y }: { barrelR: number; barrelZ: number; barrelL: number; y: number }) {
+function addVents(parent: Group, owned: BufferGeometry[], barrelR: number, barrelZ: number, barrelL: number, y: number, material: Material): void {
   const slots = barrelL < 0.16 ? 2 : 3;
   const step = (barrelL * 0.6) / slots;
-  return (
-    <>
-      {Array.from({ length: slots }, (_, index) => (
-        <mesh key={index} position={[0, y + barrelR * 0.9, barrelZ + barrelL * 0.24 - index * step]}>
-          <boxGeometry args={[barrelR * 2.3, barrelR * 0.5, barrelR * 0.6]} />
-          <meshStandardMaterial {...FINISH.polymer} />
-        </mesh>
-      ))}
-    </>
-  );
+  for (let index = 0; index < slots; index += 1) {
+    const geometry = new BoxGeometry(barrelR * 2.3, barrelR * 0.5, barrelR * 0.6);
+    owned.push(geometry);
+    const mesh = new Mesh(geometry, material);
+    mesh.position.set(0, y + barrelR * 0.9, barrelZ + barrelL * 0.24 - index * step);
+    parent.add(mesh);
+  }
 }
 
-function GunMesh({ gun }: { gun: GunDef }) {
+/**
+ * Builds one gun's mesh tree imperatively — the same parts the old JSX composed, with materials
+ * cached per finish and every geometry/material handed back for disposal on a gun swap.
+ */
+function buildGun(gun: GunDef): { group: Group; flash: Group; muzzleZ: number; dispose(): void } {
   const spec = FAMILY_BLASTER[gun.family];
-  const plating = MANUFACTURER_COLORS[gun.manufacturer] ?? "#7a6a58";
-  const accent = MANUFACTURER_ACCENTS[gun.manufacturer] ?? "#ffb400";
+  const group = new Group();
+  group.rotation.set(0, Math.PI, 0);
+  group.position.set(0, -0.02, -0.1);
+  const ownedGeometries: BufferGeometry[] = [];
+  const ownedMaterials: Material[] = [];
+  const finishMaterials = new Map<keyof typeof FINISH, MeshStandardMaterial>();
+  const finish = (key: keyof typeof FINISH): MeshStandardMaterial => {
+    let material = finishMaterials.get(key);
+    if (material === undefined) {
+      material = new MeshStandardMaterial({ ...FINISH[key] });
+      finishMaterials.set(key, material);
+      ownedMaterials.push(material);
+    }
+    return material;
+  };
+  const extraMaterials: Material[] = [];
+  const plating = new MeshStandardMaterial({ color: MANUFACTURER_COLORS[gun.manufacturer] ?? "#7a6a58", metalness: 0.3, roughness: 0.5 });
+  const accent = new MeshStandardMaterial({ color: MANUFACTURER_ACCENTS[gun.manufacturer] ?? "#ffb400", emissive: MANUFACTURER_ACCENTS[gun.manufacturer] ?? "#ffb400", emissiveIntensity: 1.1, roughness: 0.35 });
+  extraMaterials.push(plating, accent);
   const glow = gun.element !== "none" ? ELEMENT_COLORS[gun.element] : null;
+  const glowMaterial = glow === null ? null : new MeshStandardMaterial({ color: glow, emissive: glow, emissiveIntensity: 1.8, roughness: 0.3 });
+  if (glowMaterial !== null) extraMaterials.push(glowMaterial);
+  const lensMaterial = new MeshStandardMaterial({ color: "#3fd8ff", emissive: "#3fd8ff", emissiveIntensity: 2.2, roughness: 0.2 });
+  extraMaterials.push(lensMaterial);
+
+  const geo = <T extends BufferGeometry>(geometry: T): T => { ownedGeometries.push(geometry); return geometry; };
+  const part = (geometry: BufferGeometry, material: Material, x: number, y: number, z: number, rotation?: readonly [number, number, number]): Mesh => {
+    const mesh = new Mesh(geometry, material);
+    mesh.position.set(x, y, z);
+    if (rotation !== undefined) mesh.rotation.set(rotation[0], rotation[1], rotation[2]);
+    group.add(mesh);
+    return mesh;
+  };
+
   const [bodyW, bodyH, bodyL] = spec.body;
   const [barrelR, barrelL] = spec.barrel;
   const barrelZ = -(bodyL / 2 + barrelL / 2);
   const barrelY = bodyH * 0.16;
   const braced = spec.optic !== null;
 
-  return (
-    <group rotation={[0, Math.PI, 0]} position={[0, -0.02, -0.1]}>
-      {/* Receiver */}
-      <mesh castShadow={false}>
-        <boxGeometry args={[bodyW, bodyH, bodyL]} />
-        <meshStandardMaterial {...FINISH.receiver} />
-      </mesh>
-      {/* Polished top rail. The one part that always catches the sky, so the weapon has a lit upper
-          edge instead of ending in a flat dark boundary against bright sand. */}
-      <mesh position={[0, bodyH / 2 + 0.004, -bodyL * 0.04]}>
-        <boxGeometry args={[bodyW * 0.5, 0.008, bodyL * 0.82]} />
-        <meshStandardMaterial {...FINISH.bright} />
-      </mesh>
-      {/* Manufacturer plating along the receiver flank — where the brand colour reads. */}
-      <mesh position={[bodyW / 2 + 0.004, bodyH * 0.1, 0]}>
-        <boxGeometry args={[0.008, bodyH * 0.55, bodyL * 0.7]} />
-        <meshStandardMaterial color={plating} metalness={0.3} roughness={0.5} />
-      </mesh>
-      <mesh position={[-(bodyW / 2 + 0.004), bodyH * 0.1, 0]}>
-        <boxGeometry args={[0.008, bodyH * 0.55, bodyL * 0.7]} />
-        <meshStandardMaterial color={plating} metalness={0.3} roughness={0.5} />
-      </mesh>
-      {/* Brand accent line, both flanks, riding the bottom of the plating. */}
-      <mesh position={[bodyW / 2 + 0.009, -bodyH * 0.1, 0]}>
-        <boxGeometry args={[0.004, bodyH * 0.1, bodyL * 0.58]} />
-        <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={1.1} roughness={0.35} />
-      </mesh>
-      <mesh position={[-(bodyW / 2 + 0.009), -bodyH * 0.1, 0]}>
-        <boxGeometry args={[0.004, bodyH * 0.1, bodyL * 0.58]} />
-        <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={1.1} roughness={0.35} />
-      </mesh>
-      {/* Ejection port and charging handle — small asymmetries that stop the flank reading as a slab. */}
-      <mesh position={[bodyW / 2 + 0.005, bodyH * 0.18, -bodyL * 0.1]}>
-        <boxGeometry args={[0.007, bodyH * 0.24, bodyL * 0.2]} />
-        <meshStandardMaterial {...FINISH.polymer} />
-      </mesh>
-      <mesh position={[bodyW / 2 + 0.014, bodyH * 0.3, bodyL * 0.16]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.008, 0.008, 0.03, 8]} />
-        <meshStandardMaterial {...FINISH.bright} />
-      </mesh>
-      {/* Barrel */}
-      <mesh position={[0, barrelY, barrelZ]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[barrelR, barrelR, barrelL, 12]} />
-        <meshStandardMaterial {...FINISH.barrel} />
-      </mesh>
-      <BarrelVents barrelR={barrelR} barrelZ={barrelZ} barrelL={barrelL} y={barrelY} />
-      {/* Muzzle collar: a bright ring at the bore so the far end of the silhouette resolves. */}
-      <mesh position={[0, barrelY, barrelZ - barrelL / 2 + 0.008]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[barrelR * 1.25, barrelR * 1.25, 0.016, 12]} />
-        <meshStandardMaterial {...FINISH.bright} />
-      </mesh>
-      {spec.brake === null ? null : (
-        <mesh position={[0, barrelY, barrelZ - barrelL / 2]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[spec.brake, barrelR * 1.2, 0.045, 12]} />
-          <meshStandardMaterial {...FINISH.barrel} />
-        </mesh>
-      )}
-      {/* Grip, angled back into the palm. */}
-      <mesh position={[0, -(bodyH * 0.62), bodyL * 0.3]} rotation={[0.32, 0, 0]}>
-        <boxGeometry args={[bodyW * 0.8, bodyH * 0.9, bodyL * 0.22]} />
-        <meshStandardMaterial {...FINISH.polymer} />
-      </mesh>
-      {/* Trigger guard — a hoop of daylight under the receiver reads as a real weapon, not a block. */}
-      <mesh position={[0, -(bodyH * 0.5), bodyL * 0.16]} rotation={[0, Math.PI / 2, 0]}>
-        <torusGeometry args={[bodyH * 0.24, 0.005, 6, 14]} />
-        <meshStandardMaterial {...FINISH.receiver} />
-      </mesh>
-      {/* Braced families get a foregrip; it is the silhouette difference between a rifle and a pistol. */}
-      {braced ? (
-        <mesh position={[0, barrelY - barrelR - 0.028, barrelZ + barrelL * 0.18]} rotation={[0.22, 0, 0]}>
-          <boxGeometry args={[bodyW * 0.55, 0.055, bodyL * 0.13]} />
-          <meshStandardMaterial {...FINISH.polymer} />
-        </mesh>
-      ) : null}
-      {spec.magazine === null ? null : (
-        <mesh position={[0, -(bodyH / 2 + spec.magazine[1] / 2), -bodyL * 0.08]}>
-          <boxGeometry args={spec.magazine as unknown as [number, number, number]} />
-          <meshStandardMaterial {...FINISH.polymer} />
-        </mesh>
-      )}
-      {spec.optic === null ? null : (
-        <>
-          <mesh position={[0, bodyH / 2 + spec.optic[1] / 2 + 0.006, bodyL * 0.05]}>
-            <boxGeometry args={spec.optic as unknown as [number, number, number]} />
-            <meshStandardMaterial {...FINISH.polymer} />
-          </mesh>
-          {/* Lit optic lens — the same cold cyan the machines' optics use, so player and enemy read
-              as the same technology. */}
-          <mesh
-            position={[0, bodyH / 2 + spec.optic[1] / 2 + 0.006, bodyL * 0.05 - spec.optic[2] / 2 - 0.002]}
-            rotation={[0, Math.PI, 0]}
-          >
-            <circleGeometry args={[spec.optic[1] * 0.42, 12]} />
-            <meshStandardMaterial color="#3fd8ff" emissive="#3fd8ff" emissiveIntensity={2.2} roughness={0.2} />
-          </mesh>
-        </>
-      )}
-      {/* Iron sights when there is no optic, so every family has something above the bore line. */}
-      {spec.optic === null ? (
-        <>
-          <mesh position={[0, bodyH / 2 + 0.012, -bodyL * 0.4]}>
-            <boxGeometry args={[0.005, 0.016, 0.005]} />
-            <meshStandardMaterial {...FINISH.bright} />
-          </mesh>
-          <mesh position={[0, bodyH / 2 + 0.011, bodyL * 0.36]}>
-            <boxGeometry args={[0.018, 0.012, 0.005]} />
-            <meshStandardMaterial {...FINISH.bright} />
-          </mesh>
-        </>
-      ) : null}
-      {/* Element charge cell: the loudest emissive on the gun, so the element read comes off the
-          weapon itself rather than only off the HUD card. */}
-      {glow === null ? null : (
-        <mesh position={[0, bodyH * 0.05, bodyL * 0.12]}>
-          <boxGeometry args={[bodyW * 1.06, bodyH * 0.2, bodyL * 0.18]} />
-          <meshStandardMaterial color={glow} emissive={glow} emissiveIntensity={1.8} roughness={0.3} />
-        </mesh>
-      )}
-    </group>
-  );
+  // Receiver
+  part(geo(new BoxGeometry(bodyW, bodyH, bodyL)), finish("receiver"), 0, 0, 0);
+  // Polished top rail — the one part that always catches the sky.
+  part(geo(new BoxGeometry(bodyW * 0.5, 0.008, bodyL * 0.82)), finish("bright"), 0, bodyH / 2 + 0.004, -bodyL * 0.04);
+  // Manufacturer plating along both receiver flanks.
+  part(geo(new BoxGeometry(0.008, bodyH * 0.55, bodyL * 0.7)), plating, bodyW / 2 + 0.004, bodyH * 0.1, 0);
+  part(geo(new BoxGeometry(0.008, bodyH * 0.55, bodyL * 0.7)), plating, -(bodyW / 2 + 0.004), bodyH * 0.1, 0);
+  // Brand accent line, both flanks, riding the bottom of the plating.
+  part(geo(new BoxGeometry(0.004, bodyH * 0.1, bodyL * 0.58)), accent, bodyW / 2 + 0.009, -bodyH * 0.1, 0);
+  part(geo(new BoxGeometry(0.004, bodyH * 0.1, bodyL * 0.58)), accent, -(bodyW / 2 + 0.009), -bodyH * 0.1, 0);
+  // Ejection port and charging handle.
+  part(geo(new BoxGeometry(0.007, bodyH * 0.24, bodyL * 0.2)), finish("polymer"), bodyW / 2 + 0.005, bodyH * 0.18, -bodyL * 0.1);
+  part(geo(new CylinderGeometry(0.008, 0.008, 0.03, 8)), finish("bright"), bodyW / 2 + 0.014, bodyH * 0.3, bodyL * 0.16, [0, 0, Math.PI / 2]);
+  // Barrel, muzzle collar, optional brake.
+  part(geo(new CylinderGeometry(barrelR, barrelR, barrelL, 12)), finish("barrel"), 0, barrelY, barrelZ, [Math.PI / 2, 0, 0]);
+  addVents(group, ownedGeometries, barrelR, barrelZ, barrelL, barrelY, finish("polymer"));
+  part(geo(new CylinderGeometry(barrelR * 1.25, barrelR * 1.25, 0.016, 12)), finish("bright"), 0, barrelY, barrelZ - barrelL / 2 + 0.008, [Math.PI / 2, 0, 0]);
+  if (spec.brake !== null) {
+    part(geo(new CylinderGeometry(spec.brake, barrelR * 1.2, 0.045, 12)), finish("barrel"), 0, barrelY, barrelZ - barrelL / 2, [Math.PI / 2, 0, 0]);
+  }
+  // Grip, trigger guard, braced foregrip.
+  part(geo(new BoxGeometry(bodyW * 0.8, bodyH * 0.9, bodyL * 0.22)), finish("polymer"), 0, -(bodyH * 0.62), bodyL * 0.3, [0.32, 0, 0]);
+  part(geo(new TorusGeometry(bodyH * 0.24, 0.005, 6, 14)), finish("receiver"), 0, -(bodyH * 0.5), bodyL * 0.16, [0, Math.PI / 2, 0]);
+  if (braced) {
+    part(geo(new BoxGeometry(bodyW * 0.55, 0.055, bodyL * 0.13)), finish("polymer"), 0, barrelY - barrelR - 0.028, barrelZ + barrelL * 0.18, [0.22, 0, 0]);
+  }
+  if (spec.magazine !== null) {
+    part(geo(new BoxGeometry(spec.magazine[0], spec.magazine[1], spec.magazine[2])), finish("polymer"), 0, -(bodyH / 2 + spec.magazine[1] / 2), -bodyL * 0.08);
+  }
+  if (spec.optic !== null) {
+    part(geo(new BoxGeometry(spec.optic[0], spec.optic[1], spec.optic[2])), finish("polymer"), 0, bodyH / 2 + spec.optic[1] / 2 + 0.006, bodyL * 0.05);
+    // Lit optic lens — the same cold cyan the machines' optics use.
+    part(geo(new CircleGeometry(spec.optic[1] * 0.42, 12)), lensMaterial, 0, bodyH / 2 + spec.optic[1] / 2 + 0.006, bodyL * 0.05 - spec.optic[2] / 2 - 0.002, [0, Math.PI, 0]);
+  } else {
+    // Iron sights when there is no optic.
+    part(geo(new BoxGeometry(0.005, 0.016, 0.005)), finish("bright"), 0, bodyH / 2 + 0.012, -bodyL * 0.4);
+    part(geo(new BoxGeometry(0.018, 0.012, 0.005)), finish("bright"), 0, bodyH / 2 + 0.011, bodyL * 0.36);
+  }
+  // Element charge cell: the loudest emissive on the gun.
+  if (glowMaterial !== null) {
+    part(geo(new BoxGeometry(bodyW * 1.06, bodyH * 0.2, bodyL * 0.18)), glowMaterial, 0, bodyH * 0.05, bodyL * 0.12);
+  }
+
+  const muzzleZ = muzzleOffsetZ(gun.family);
+  const flash = new Group();
+  flash.position.set(0, 0.012, muzzleZ);
+  flash.visible = false;
+  const flashGeometry = geo(new PlaneGeometry(0.11, 0.11));
+  const flashMaterialA = new MeshBasicMaterial({ color: "#ffd76a", transparent: true, opacity: 0.9, depthWrite: false });
+  const flashMaterialB = new MeshBasicMaterial({ color: "#ff9a3e", transparent: true, opacity: 0.8, depthWrite: false });
+  ownedMaterials.push(flashMaterialA, flashMaterialB);
+  const flashA = new Mesh(flashGeometry, flashMaterialA);
+  const flashB = new Mesh(flashGeometry, flashMaterialB);
+  flashB.rotation.y = Math.PI / 2;
+  flash.add(flashA, flashB);
+  group.add(flash);
+
+  return {
+    group,
+    flash,
+    muzzleZ,
+    dispose() {
+      for (const geometry of ownedGeometries) geometry.dispose();
+      for (const material of ownedMaterials) material.dispose();
+      for (const material of finishMaterials.values()) material.dispose();
+    },
+  };
 }
 
 /**
@@ -301,12 +284,13 @@ function GunMesh({ gun }: { gun: GunDef }) {
  */
 function FerralonAir() {
   const ctx = useGameContext();
-  const camera = useThree((state) => state.camera);
+  const host = useEngineHost();
   const [air, setAir] = useState(() => airAt(null));
   const [strength, setStrength] = useState(1);
   const zoneId = useRef<string | null>(null);
 
   useFrameTask(() => {
+    const camera = host.frame.camera;
     const zone = zoneAt(camera.position.x, camera.position.z);
     const nextId = zone?.id ?? null;
     if (nextId !== zoneId.current) {
@@ -359,75 +343,97 @@ export function FerralonWorldOverlay() {
   );
 }
 
-export function FerralonViewmodel() {
-  const ctx = useGameContext();
-  const camera = useThree((state) => state.camera);
-  const rig = useRef<Group>(null);
-  const flash = useRef<Group>(null);
-  const flashLight = useRef<PointLight>(null);
-  const lastCameraPos = useRef(new Vector3());
-  const bobTime = useRef(0);
-  const gunId = equippedGun();
-  const gun = gunId === null ? undefined : gunById(gunId);
+/**
+ * The first-person rig as one draw: the gun group (rebuilt on weapon swap), the muzzle flash and
+ * its light all live under a camera-posed group updated every frame — no React state, no refs.
+ */
+function viewmodelDraw(get: () => { ctx: GameContext; gun: GunDef | undefined }): EngineDraw {
+  const rig = new Group();
+  rig.renderOrder = 999;
+  // Mounted with or without a gun, outside the hidden flash group, and dimmed between shots: hiding or
+  // unmounting a light changes the scene's light count, and every lit material recompiles.
+  const flashLight = new PointLight("#ffb347", 0, 3);
+  rig.add(flashLight);
+  const lastCameraPos = new Vector3();
+  let bobTime = 0;
+  let lastGun: GunDef | undefined | null = null;
+  let gunLease: { group: Group; flash: Group; muzzleZ: number; dispose(): void } | null = null;
 
-  useFrameTask((state, dt) => {
-    const group = rig.current;
-    if (group === null) return;
-    const nowMs = gameNow();
-
-    const speed = lastCameraPos.current.distanceTo(camera.position) / Math.max(dt, 1 / 240);
-    lastCameraPos.current.copy(camera.position);
-    const moving = Math.min(1, speed / 6);
-    bobTime.current += dt * (4 + moving * 6);
-
-    const recoil = recoilAt(nowMs);
-
-    let reloadDip = 0;
-    let reloadSpin = 0;
-    if (gun !== undefined && isReloading(ctx, gun)) {
-      reloadDip = 0.16;
-      reloadSpin = Math.sin(state.clock.elapsedTime * 9) * 0.35;
+  const syncGun = (gun: GunDef | undefined) => {
+    if (gun === lastGun) return;
+    lastGun = gun;
+    if (gunLease !== null) {
+      rig.remove(gunLease.group);
+      gunLease.dispose();
+      gunLease = null;
     }
+    if (gun !== undefined) {
+      gunLease = buildGun(gun);
+      rig.add(gunLease.group);
+      flashLight.position.set(0, 0.012, gunLease.muzzleZ);
+    } else {
+      flashLight.position.set(0, 0.012, 0);
+    }
+  };
 
-    // Aimed, the gun comes up to the centre line and the walk bob mostly settles.
-    const ads = handlingView(ctx)?.handling.adsProgress ?? 0;
-    const bob = (0.4 + moving) * (1 - ads * 0.75);
-    group.position.copy(camera.position);
-    group.quaternion.copy(camera.quaternion);
-    group.translateX(0.24 * (1 - ads) + Math.sin(bobTime.current) * 0.006 * bob);
-    group.translateY(-0.24 + ads * 0.125 - reloadDip + Math.abs(Math.cos(bobTime.current)) * 0.009 * bob + recoil * 0.02);
-    group.translateZ(-0.5 + ads * 0.08 + recoil * 0.07);
-    group.rotateX(recoil * 0.09 - reloadSpin * 0.6);
-    group.rotateZ(reloadSpin * 0.12);
+  return {
+    mount(state: EngineFrameState) {
+      state.scene.add(rig);
+    },
+    frame(state: EngineFrameState, dt: number) {
+      const { ctx, gun } = get();
+      syncGun(gun);
+      const camera = state.camera;
+      const nowMs = gameNow();
 
-    if (flash.current) {
+      const speed = lastCameraPos.distanceTo(camera.position) / Math.max(dt, 1 / 240);
+      lastCameraPos.copy(camera.position);
+      const moving = Math.min(1, speed / 6);
+      bobTime += dt * (4 + moving * 6);
+
+      const recoil = recoilAt(nowMs);
+
+      let reloadDip = 0;
+      let reloadSpin = 0;
+      if (gun !== undefined && isReloading(ctx, gun)) {
+        reloadDip = 0.16;
+        reloadSpin = Math.sin(state.clock.elapsedTime * 9) * 0.35;
+      }
+
+      // Aimed, the gun comes up to the centre line and the walk bob mostly settles.
+      const ads = handlingView(ctx)?.handling.adsProgress ?? 0;
+      const bob = (0.4 + moving) * (1 - ads * 0.75);
+      rig.position.copy(camera.position);
+      rig.quaternion.copy(camera.quaternion);
+      rig.translateX(0.24 * (1 - ads) + Math.sin(bobTime) * 0.006 * bob);
+      rig.translateY(-0.24 + ads * 0.125 - reloadDip + Math.abs(Math.cos(bobTime)) * 0.009 * bob + recoil * 0.02);
+      rig.translateZ(-0.5 + ads * 0.08 + recoil * 0.07);
+      rig.rotateX(recoil * 0.09 - reloadSpin * 0.6);
+      rig.rotateZ(reloadSpin * 0.12);
+
+      const flash = gunLease?.flash ?? null;
       const visible = muzzleFlashVisible(nowMs);
-      flash.current.visible = visible;
-      if (visible) flash.current.rotation.z = (nowMs % 97) / 15;
-    }
-    if (flashLight.current) flashLight.current.intensity = muzzleFlashVisible(nowMs) ? FLASH_LIGHT : 0;
-  });
-
-  const muzzleZ = gun === undefined ? 0 : muzzleOffsetZ(gun.family);
-  return (
-    <group ref={rig} renderOrder={999}>
-      {gun !== undefined && <>
-        <GunMesh gun={gun} />
-        <group ref={flash} position={[0, 0.012, muzzleZ]} visible={false}>
-          <mesh>
-            <planeGeometry args={[0.11, 0.11]} />
-            <meshBasicMaterial color="#ffd76a" transparent opacity={0.9} depthWrite={false} />
-          </mesh>
-          <mesh rotation={[0, Math.PI / 2, 0]}>
-            <planeGeometry args={[0.11, 0.11]} />
-            <meshBasicMaterial color="#ff9a3e" transparent opacity={0.8} depthWrite={false} />
-          </mesh>
-        </group>
-      </>}
-      {/* Mounted with or without a gun, outside the hidden flash group, and dimmed between shots: hiding or
-          unmounting a light changes the scene's light count, and every lit material recompiles. */}
-      <pointLight ref={flashLight} position={[0, 0.012, muzzleZ]} color="#ffb347" intensity={0} distance={3} />
-    </group>
-  );
+      if (flash !== null) {
+        flash.visible = visible;
+        if (visible) flash.rotation.z = (nowMs % 97) / 15;
+      }
+      flashLight.intensity = visible ? FLASH_LIGHT : 0;
+    },
+    dispose(state: EngineFrameState) {
+      state.scene.remove(rig);
+      rig.clear();
+      if (gunLease !== null) gunLease.dispose();
+      gunLease = null;
+      flashLight.dispose();
+    },
+  };
 }
 
+export function FerralonViewmodel() {
+  const ctx = useGameContext();
+  const gunId = equippedGun();
+  const gun = gunId === null ? undefined : gunById(gunId);
+  const latest = useRef({ ctx, gun });
+  latest.current = { ctx, gun };
+  return <EngineDrawMount create={() => viewmodelDraw(() => latest.current)} deps={[ctx]} />;
+}
