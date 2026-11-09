@@ -26,7 +26,7 @@ fn text(ptr: *const u8, len: usize) -> String {
 #[unsafe(no_mangle)]
 pub extern "C" fn jg_translate(vert: *const u8, vert_len: usize, frag: *const u8, frag_len: usize) -> *mut u8 {
     let (v, f) = (text(vert, vert_len), text(frag, frag_len));
-    let result = std::panic::catch_unwind(|| jg_shader::translate_with(&v, &f, false));
+    let result = std::panic::catch_unwind(|| jg_shader::translate_split_with(&v, &f, false));
     let json = match result {
         Ok(Ok(t)) => serde_json::json!({ "ok": t }).to_string(),
         Ok(Err(e)) => serde_json::json!({ "error": e }).to_string(),

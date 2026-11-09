@@ -2,7 +2,7 @@
 //! that runs the same on WebGPU. See the module doc in `mod.rs` for the list of rewrites.
 
 use super::preprocess::{tokenize, Tok};
-use super::{SamplerSlot, UniformSlot, VertexInput};
+use super::{SamplerSlot, UniformBlock, UniformSlot, VertexInput};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap, HashSet};
 
@@ -36,8 +36,28 @@ pub struct Rewritten {
     pub samplers: Vec<SamplerSlot>,
     pub renames: Renames,
     pub fragment_outputs: u32,
-    pub block_size_hint: u32,
+    /// Estimated bytes per block; `object_size_hint` is 0 for an unsplit rewrite.
+    pub shared_size_hint: u32,
+    pub object_size_hint: u32,
 }
+
+/// Uniform names three.js writes per drawn object (WebGLRenderer's per-object uniform block):
+/// they change every draw, so the backend restages them per pass. Everything else a program
+/// declares is shared state that changes at most once per frame. A name missing here only costs
+/// extra restaging, never correctness: an object uniform left in the shared block still renders
+/// right as long as its writes flush between submits.
+const OBJECT_UNIFORMS: &[&str] = &[
+    "modelMatrix",
+    "modelViewMatrix",
+    "normalMatrix",
+    "bindMatrix",
+    "bindMatrixInverse",
+    "morphTargetBaseInfluence",
+    "morphTargetInfluences",
+    "receiveShadow",
+    "center",
+    "_gl_DrawID",
+];
 
 fn sampler_info(ty: &str) -> Option<(&'static str, &'static str, &'static str, SamplerKind, TextureDim)> {
     // (texture type, sampler type, combined constructor, kind, dim)
@@ -493,7 +513,7 @@ fn rewrite_params(header: &[Tok]) -> (Vec<Tok>, HashSet<usize>, HashMap<String, 
     (out, positions, local)
 }
 
-pub fn rewrite(vert: &str, frag: &str) -> Result<Rewritten, String> {
+pub fn rewrite(vert: &str, frag: &str, split: bool) -> Result<Rewritten, String> {
     let vitems = exact_hash_corners(split_items(vert)?);
     let fitems = exact_hash_corners(split_items(frag)?);
 
@@ -542,9 +562,16 @@ pub fn rewrite(vert: &str, frag: &str) -> Result<Rewritten, String> {
     rules.simple.insert("isinf".into(), "jg_isinf".into());
     rules.simple.insert("isnan".into(), "jg_isnan".into());
     rules.simple.insert("gl_PointCoord".into(), "vec2(0.5)".into());
-    let mut members = String::new();
-    let mut hint = 0u32;
+    let mut shared_members = String::new();
+    let mut object_members = String::new();
+    let mut shared_hint = 0u32;
+    let mut object_hint = 0u32;
     for (ty, name, arr) in &block {
+        let (members, hint) = if split && OBJECT_UNIFORMS.contains(&name.as_str()) {
+            (&mut object_members, &mut object_hint)
+        } else {
+            (&mut shared_members, &mut shared_hint)
+        };
         if ty == "bool" {
             if arr.is_some() {
                 return Err(format!("bool array uniform {name}"));
@@ -552,7 +579,7 @@ pub fn rewrite(vert: &str, frag: &str) -> Result<Rewritten, String> {
             renames.bools.insert(name.clone());
             rules.simple.insert(name.clone(), format!("({name}_jgb != 0)"));
             members.push_str(&format!("  int {name}_jgb;\n"));
-            hint += 16;
+            *hint += 16;
             continue;
         }
         if let (Some(a), Some((kind, n))) = (arr, components(ty)) {
@@ -560,14 +587,14 @@ pub fn rewrite(vert: &str, frag: &str) -> Result<Rewritten, String> {
             renames.arrays.insert(name.clone(), (member.clone(), n));
             rules.indexed_any.insert(name.clone(), (member.clone(), format!(".{}", swizzle(n))));
             members.push_str(&format!("  {} {member}[{a}];\n", vec4_of(kind)));
-            hint += 16 * a.trim().parse::<u32>().unwrap_or(1);
+            *hint += 16 * a.trim().parse::<u32>().unwrap_or(1);
             continue;
         }
         match arr {
             Some(a) => members.push_str(&format!("  {ty} {name}[{a}];\n")),
             None => members.push_str(&format!("  {ty} {name};\n")),
         }
-        hint += 16;
+        *hint += 16;
     }
 
     // Samplers: a texture and a sampler binding each, in group 1.
@@ -628,7 +655,7 @@ pub fn rewrite(vert: &str, frag: &str) -> Result<Rewritten, String> {
 
     let uses_modf = vert.contains("modf") || frag.contains("modf");
     let uses_float_class = ["isinf", "isnan"].iter().any(|f| vert.contains(f) || frag.contains(f));
-    let header = |members: &str| -> String {
+    let header = |shared_members: &str, object_members: &str| -> String {
         let mut s = String::from("#version 450\n");
         for (name, toks) in &structs {
             // Only a struct the uniform block holds takes std140 padding; the others are built with
@@ -652,9 +679,20 @@ pub fn rewrite(vert: &str, frag: &str) -> Result<Rewritten, String> {
                 }
             }
         }
-        if !members.is_empty() {
+        if split {
+            if !shared_members.is_empty() {
+                s.push_str("layout(set = 0, binding = 0, std140) uniform JgShared {\n");
+                s.push_str(shared_members);
+                s.push_str("};\n");
+            }
+            if !object_members.is_empty() {
+                s.push_str("layout(set = 0, binding = 1, std140) uniform JgObject {\n");
+                s.push_str(object_members);
+                s.push_str("};\n");
+            }
+        } else if !shared_members.is_empty() {
             s.push_str("layout(set = 0, binding = 0, std140) uniform JgUniforms {\n");
-            s.push_str(members);
+            s.push_str(shared_members);
             s.push_str("};\n");
         }
         s.push_str(&sampler_decls);
@@ -662,7 +700,7 @@ pub fn rewrite(vert: &str, frag: &str) -> Result<Rewritten, String> {
     };
 
     // ---- vertex ----
-    let mut vsrc = header(&members);
+    let mut vsrc = header(&shared_members, &object_members);
     let mut inputs = Vec::new();
     let mut location = 0u32;
     let mut setup = String::new();
@@ -716,7 +754,7 @@ pub fn rewrite(vert: &str, frag: &str) -> Result<Rewritten, String> {
     ));
 
     // ---- fragment ----
-    let mut fsrc = header(&members);
+    let mut fsrc = header(&shared_members, &object_members);
     let mut outputs = 0u32;
     let mut copy_in = String::new();
     for it in &fitems {
@@ -761,7 +799,16 @@ pub fn rewrite(vert: &str, frag: &str) -> Result<Rewritten, String> {
         fsrc.push_str(&format!("void main() {{\n{copy_in}  jg_main();\n}}\n"));
     }
 
-    Ok(Rewritten { vertex: vsrc, fragment: fsrc, inputs, samplers: slots, renames, fragment_outputs: outputs.max(1), block_size_hint: hint })
+    Ok(Rewritten {
+        vertex: vsrc,
+        fragment: fsrc,
+        inputs,
+        samplers: slots,
+        renames,
+        fragment_outputs: outputs.max(1),
+        shared_size_hint: shared_hint,
+        object_size_hint: if split { object_hint } else { 0 },
+    })
 }
 
 fn arr_len(arr: &Option<String>) -> Result<u32, String> {
@@ -947,17 +994,25 @@ fn emit_code(items: &[Item], rules: &Rules, out: &mut String, wrap_main: bool, v
     Ok(())
 }
 
-/// Every uniform three names, located in the module's block: offsets come from naga's layout.
-pub fn uniform_slots(module: &naga::Module, renames: &Renames) -> (Vec<UniformSlot>, u32) {
+/// Every uniform three names, located in the module's blocks: offsets come from naga's layout.
+/// Returns the slots plus each block's span: binding 0 is the shared block, binding 1 the
+/// per-object block (absent when the rewrite was unsplit).
+pub fn uniform_slots(module: &naga::Module, renames: &Renames) -> (Vec<UniformSlot>, u32, u32) {
     let mut out = Vec::new();
-    let mut size = 0;
+    let mut shared_size = 0;
+    let mut object_size = 0;
     for (_, var) in module.global_variables.iter() {
         if var.space != naga::AddressSpace::Uniform {
             continue;
         }
+        let Some(binding) = var.binding else { continue };
+        let block = if binding.binding == 1 { UniformBlock::Object } else { UniformBlock::Shared };
         let ty = &module.types[var.ty];
         let naga::TypeInner::Struct { members, span } = &ty.inner else { continue };
-        size = *span;
+        match block {
+            UniformBlock::Shared => shared_size = shared_size.max(*span),
+            UniformBlock::Object => object_size = object_size.max(*span),
+        }
         for m in members {
             let Some(mname) = &m.name else { continue };
             let name = if let Some(n) = mname.strip_suffix("_jgb") {
@@ -967,10 +1022,10 @@ pub fn uniform_slots(module: &naga::Module, renames: &Renames) -> (Vec<UniformSl
             } else {
                 mname.clone()
             };
-            walk(module, m.ty, &name, m.offset, &mut out, renames.arrays.get(&name).map(|v| v.1));
+            walk(module, m.ty, &name, m.offset, &mut out, renames.arrays.get(&name).map(|v| v.1), block);
         }
     }
-    (out, size)
+    (out, shared_size, object_size)
 }
 
 fn scalar_kind(s: naga::Scalar) -> char {
@@ -983,12 +1038,12 @@ fn scalar_kind(s: naga::Scalar) -> char {
 }
 
 /// `packed`: a float/vec2 array stored as vec4s keeps three's element width (`packed` components).
-fn walk(module: &naga::Module, ty: naga::Handle<naga::Type>, name: &str, offset: u32, out: &mut Vec<UniformSlot>, packed: Option<u32>) {
+fn walk(module: &naga::Module, ty: naga::Handle<naga::Type>, name: &str, offset: u32, out: &mut Vec<UniformSlot>, packed: Option<u32>, block: UniformBlock) {
     match &module.types[ty].inner {
-        naga::TypeInner::Scalar(s) => out.push(UniformSlot { name: name.into(), offset, kind: scalar_kind(*s), columns: 1, rows: 1, column_stride: 0, count: 1, stride: 4, array: false }),
-        naga::TypeInner::Vector { size, scalar } => out.push(UniformSlot { name: name.into(), offset, kind: scalar_kind(*scalar), columns: 1, rows: *size as u32, column_stride: 0, count: 1, stride: 16, array: false }),
+        naga::TypeInner::Scalar(s) => out.push(UniformSlot { name: name.into(), offset, kind: scalar_kind(*s), columns: 1, rows: 1, column_stride: 0, count: 1, stride: 4, array: false, block }),
+        naga::TypeInner::Vector { size, scalar } => out.push(UniformSlot { name: name.into(), offset, kind: scalar_kind(*scalar), columns: 1, rows: *size as u32, column_stride: 0, count: 1, stride: 16, array: false, block }),
         naga::TypeInner::Matrix { columns, rows, scalar } => {
-            out.push(UniformSlot { name: name.into(), offset, kind: scalar_kind(*scalar), columns: *columns as u32, rows: *rows as u32, column_stride: if *rows as u32 == 2 { 8 } else { 16 }, count: 1, stride: 0, array: false })
+            out.push(UniformSlot { name: name.into(), offset, kind: scalar_kind(*scalar), columns: *columns as u32, rows: *rows as u32, column_stride: if *rows as u32 == 2 { 8 } else { 16 }, count: 1, stride: 0, array: false, block })
         }
         naga::TypeInner::Array { base, size, stride } => {
             let count = match size {
@@ -1000,13 +1055,13 @@ fn walk(module: &naga::Module, ty: naga::Handle<naga::Type>, name: &str, offset:
                     for i in 0..count {
                         for m in members {
                             let mname = m.name.clone().unwrap_or_default();
-                            walk(module, m.ty, &format!("{name}[{i}].{mname}"), offset + i * stride + m.offset, out, None);
+                            walk(module, m.ty, &format!("{name}[{i}].{mname}"), offset + i * stride + m.offset, out, None, block);
                         }
                     }
                 }
                 _ => {
                     let mut tmp = Vec::new();
-                    walk(module, *base, name, offset, &mut tmp, None);
+                    walk(module, *base, name, offset, &mut tmp, None, block);
                     if let Some(mut slot) = tmp.pop() {
                         if let Some(n) = packed {
                             slot.rows = n;
@@ -1022,7 +1077,7 @@ fn walk(module: &naga::Module, ty: naga::Handle<naga::Type>, name: &str, offset:
         naga::TypeInner::Struct { members, .. } => {
             for m in members {
                 let mname = m.name.clone().unwrap_or_default();
-                walk(module, m.ty, &format!("{name}.{mname}"), offset + m.offset, out, None);
+                walk(module, m.ty, &format!("{name}.{mname}"), offset + m.offset, out, None, block);
             }
         }
         _ => {}
