@@ -13,7 +13,7 @@ if (!pr || !/^\d+$/.test(pr)) {
   console.log("usage: tally-pr.ts <pr-number>");
   process.exit(0);
 }
-const cli = process.env.TALLY_CLI || join(homedir(), "Projects", "tally", "src", "cli.mjs");
+const cli = process.env["TALLY_CLI"] || join(homedir(), "Projects", "tally", "src", "cli.mjs");
 if (!existsSync(cli)) {
   console.log("degraded: tally cli not found (set TALLY_CLI to tally's src/cli.mjs); benchmark skipped");
   process.exit(0);
