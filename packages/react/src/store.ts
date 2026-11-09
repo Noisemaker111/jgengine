@@ -1,7 +1,7 @@
 import type { StoreHandle } from "@jgengine/core/store/defineStore";
 import type { KeyedStoreHandle } from "@jgengine/core/store/defineKeyedStore";
 import { useGameStore } from "./hooks";
-import { shallowEqual } from "./selectSnapshot";
+import { selectionEqual } from "./selectSnapshot";
 
 /**
  * Subscribe a component to a typed store slot defined with `defineStore`. Returns the current value
@@ -22,12 +22,12 @@ export function useStore<T, S>(
 export function useStore<T, S>(
   handle: StoreHandle<T>,
   selector?: (value: T) => S,
-  isEqual: (previous: S, next: S) => boolean = shallowEqual,
+  isEqual: (previous: S, next: S) => boolean = selectionEqual,
 ): T | S {
   const select = selector;
   return useGameStore(
     (ctx) => (select === undefined ? handle.read(ctx) : select(handle.read(ctx))),
-    select === undefined ? shallowEqual : (isEqual as (previous: T | S, next: T | S) => boolean),
+    select === undefined ? selectionEqual : (isEqual as (previous: T | S, next: T | S) => boolean),
   );
 }
 
@@ -52,11 +52,11 @@ export function useKeyedStore<T, S>(
   handle: KeyedStoreHandle<T>,
   id: string,
   selector?: (value: T) => S,
-  isEqual: (previous: S, next: S) => boolean = shallowEqual,
+  isEqual: (previous: S, next: S) => boolean = selectionEqual,
 ): T | S {
   const select = selector;
   return useGameStore(
     (ctx) => (select === undefined ? handle.read(ctx, id) : select(handle.read(ctx, id))),
-    select === undefined ? shallowEqual : (isEqual as (previous: T | S, next: T | S) => boolean),
+    select === undefined ? selectionEqual : (isEqual as (previous: T | S, next: T | S) => boolean),
   );
 }

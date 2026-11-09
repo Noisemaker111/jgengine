@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createSelectCache, createSelectionHeat, HOT_SELECTION_WINDOW, readSelectSnapshot, shallowEqual } from "./selectSnapshot";
+import { createSelectCache, createSelectionHeat, HOT_SELECTION_WINDOW, readSelectSnapshot, selectionEqual } from "./selectSnapshot";
 
 describe("readSelectSnapshot", () => {
   test("returns the first computed value and caches it", () => {
@@ -66,16 +66,17 @@ describe("readSelectSnapshot", () => {
   });
 });
 
-describe("shallowEqual", () => {
-  test("compares one level of arrays and plain objects by identity", () => {
+describe("selectionEqual", () => {
+  test("compares arrays and plain objects by their values all the way down, records by identity", () => {
     const item = { id: "wire" };
-    expect(shallowEqual([1, item], [1, item])).toBe(true);
-    expect(shallowEqual([1, item], [1, { id: "wire" }])).toBe(false);
-    expect(shallowEqual({ a: 1, b: item }, { a: 1, b: item })).toBe(true);
-    expect(shallowEqual({ a: 1 }, { a: 1, b: 2 })).toBe(false);
-    expect(shallowEqual([1], { 0: 1 })).toBe(false);
-    expect(shallowEqual(new Map(), new Map())).toBe(false);
-    expect(shallowEqual(Number.NaN, Number.NaN)).toBe(true);
+    expect(selectionEqual([1, item], [1, item])).toBe(true);
+    expect(selectionEqual([1, item], [1, { id: "wire" }])).toBe(true);
+    expect(selectionEqual({ steps: [{ id: "a", done: true }] }, { steps: [{ id: "a", done: true }] })).toBe(true);
+    expect(selectionEqual({ steps: [{ id: "a", done: true }] }, { steps: [{ id: "a", done: false }] })).toBe(false);
+    expect(selectionEqual({ a: 1 }, { a: 1, b: 2 })).toBe(false);
+    expect(selectionEqual([1], { 0: 1 })).toBe(false);
+    expect(selectionEqual(new Map(), new Map())).toBe(false);
+    expect(selectionEqual(Number.NaN, Number.NaN)).toBe(true);
   });
 });
 

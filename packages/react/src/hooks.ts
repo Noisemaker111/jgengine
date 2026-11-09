@@ -39,7 +39,7 @@ import { readBuildEnv } from "@jgengine/core/devtools/saveEndpoint";
 import { useGameContext, useOptionalGameContext } from "./provider";
 
 const noopSubscribe = (): (() => void) => () => undefined;
-import { createSelectCache, createSelectionHeat, devFrameIndex, HOT_SELECTION_WINDOW, readSelectSnapshot, shallowEqual, type HotSelectionPace } from "./selectSnapshot";
+import { createSelectCache, createSelectionHeat, devFrameIndex, HOT_SELECTION_WINDOW, readSelectSnapshot, selectionEqual, type HotSelectionPace } from "./selectSnapshot";
 
 const BUILD_ENV = readBuildEnv();
 /** Dev builds and tests judge every store selection's pace; a production build pays nothing for it. */
@@ -66,7 +66,7 @@ function callerComponent(): string {
 
 /**
  * Select from the game store and re-render when the selection changes. The selector runs once per
- * store version; a selection equal to the last one (`isEqual`, default {@link shallowEqual}: the same
+ * store version; a selection equal to the last one (`isEqual`, default {@link selectionEqual}: the same
  * value, or an array or plain object of the same values) is no change, so a component that picks
  * `(ctx) => ({ mode: view(ctx).mode, panel: view(ctx).panel })` re-renders only when one of those does.
  * Select only what the component shows. A value that moves every frame or tick (a timer, a meter, a
@@ -76,7 +76,7 @@ function callerComponent(): string {
  */
 export function useGameStore<T>(
   selector: (ctx: GameContext) => T,
-  isEqual: (previous: T, next: T) => boolean = shallowEqual,
+  isEqual: (previous: T, next: T) => boolean = selectionEqual,
 ): T {
   const ctx = useGameContext();
   const selectorRef = useRef(selector);
@@ -93,8 +93,14 @@ export function useGameStore<T>(
     nameRef.current = callerComponent();
   }
 
+  const selectedWith = useRef(selector);
   const getSnapshot = useCallback(() => {
     const cache = cacheRef.current;
+    // A selector that closes over props or state is read again after the render that changed them, not only after a store write.
+    if (selectedWith.current !== selectorRef.current) {
+      selectedWith.current = selectorRef.current;
+      cache.snapshot = Number.NaN;
+    }
     const before = cache.ready ? cache.value : undefined;
     const value = readSelectSnapshot(
       cache,
