@@ -37,7 +37,9 @@ import { provisionCapturedGame } from "./provisionCapture";
  * for the same reason, so the base is always measured beside the branch.
  */
 
-const repoRoot = fileURLToPath(new URL("..", import.meta.url));
+// No trailing separator: the dev-server broker keys a server by its directory as given, and two
+// spellings of one tree had it start a second server on the same port mid-run, reloading the page.
+const repoRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
 
 /** Ms of frames thrown away after a page resumes, before its window: the first frames after a pause catch up. */
 const SETTLE_MS = 500;
