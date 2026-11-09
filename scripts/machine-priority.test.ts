@@ -37,7 +37,8 @@ describe("machine priority", () => {
     expect(result.again).toBe("below-normal");
     expect(result.label).toBe("below-normal");
     expect(priorityLabel(result.child)).toBe("below-normal");
-  });
+    // Below-normal children on a saturated PC can wait seconds for a slice; what is checked is the label.
+  }, 30_000);
 
   test.if(process.platform === "win32")("restoreNormalPriority puts a measured child back to normal while the launcher stays below", () => {
     const out = inChild(`
@@ -57,5 +58,5 @@ describe("machine priority", () => {
     expect(result.restored).toBe("normal");
     expect(result.read).toBe(0);
     expect(result.launcher).toBe("below-normal");
-  });
+  }, 30_000);
 });

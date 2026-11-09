@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import { type CdpSession, ensureDevServer, openPageSession, withBrowserSession } from "./browser-lib";
 import { FRAME_GAMES } from "./ci-scope";
-import { perfLockTurn, withPerfLock } from "./perf-lock";
+import { acquirePerfLock, withPerfLock } from "./perf-lock";
 
 /**
  * Per-game network audit, printed as one JSON line per game.
@@ -506,15 +506,17 @@ async function measureGame(
 
 async function main(): Promise<void> {
   const { games, seconds, json, timeoutSeconds, dump, url } = parseArgs(process.argv.slice(2));
+  // The lock first: the server and Chrome come after any wait, so neither is stale by the time the
+  // batch measures (the per-game take inside is re-entrant).
+  const releaseLock = await acquirePerfLock(`perf network ${games.join(" ")}`);
   const server = url === undefined ? await ensureDevServer(repoRoot) : null;
   const base = url ?? server!.base;
   const browserTimeoutMs = (seconds + timeoutSeconds * 2 + 120) * 1000 * games.length;
   const lines: string[] = [];
 
   const exitCode = await withBrowserSession(
-    // The batch holds the lock from before its Chrome launches (the per-game take inside is re-entrant);
-    // bytes are the product, so the browser keeps the inherited below-normal priority (scripts/perf.ts).
-    { keep: false, timeoutMs: browserTimeoutMs, server: server?.child ?? null, serverPid: server?.pid, turn: perfLockTurn(`perf network ${games.join(" ")}`, undefined) },
+    // Bytes are the product, so the browser keeps the inherited below-normal priority (scripts/perf.ts).
+    { keep: false, timeoutMs: browserTimeoutMs, server: server?.child ?? null, serverPid: server?.pid },
     async ({ debugPort }) => {
       const session = await openPageSession(debugPort);
       try {
@@ -539,7 +541,7 @@ async function main(): Promise<void> {
         await session.close();
       }
     },
-  );
+  ).finally(releaseLock);
 
   if (json !== undefined && lines.length > 0) {
     writeFileSync(json, `${lines.join("\n")}\n`);

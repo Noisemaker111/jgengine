@@ -43,7 +43,7 @@ import {
 import type { SystemProbeReading } from "../packages/core/src/devtools/types";
 import { renderBreakdownText, type FrameBreakdownSummary } from "../packages/core/src/devtools/frameBreakdown";
 import { compareBreakdowns, readBreakdown, resetBreakdown, startPath, type PerfPath } from "./perf-breakdown";
-import { perfLockTurn, perfLockWaitedMs, withPerfLock } from "./perf-lock";
+import { acquirePerfLock, perfLockWaitedMs, withPerfLock } from "./perf-lock";
 import { markStep } from "./hangReport";
 import { currentPriority, type PriorityLabel } from "./machine-priority";
 import { provisionCapturedGame } from "./provisionCapture";
@@ -1544,6 +1544,10 @@ async function main(): Promise<void> {
    * one launch. A function so a daemon that dies under a run can be retried cold once.
    */
   const runPerf = async (daemon: ShootDaemonState | null, browser: "cold" | "warm"): Promise<number> => {
+    // The lock first, then the server, then the browser: a server obtained before a 503 s wait was
+    // gone after it (the broker had been restarted; ERR_CONNECTION_REFUSED, 2026-11-08). Taken before
+    // the shared browser's turn, so a run queued for the lock never stalls the daemon's other captures.
+    const releaseLock = await acquirePerfLock(`perf ${pending.join(" ")}`);
     const server = daemon === null ? await ensureDevServer(repoRoot) : await ensureDaemonTarget(daemon, "dev");
     return withDaemonWatch(daemon, withBrowserSession(
       {
@@ -1561,8 +1565,7 @@ async function main(): Promise<void> {
         debugPort: daemon?.chromePort,
         attach: daemon !== null,
         leaveWarm: daemon !== null,
-        // The batch holds the perf lock, taken before the shared browser's turn so waiting for it never stalls other captures.
-        turn: perfLockTurn(`perf ${pending.join(" ")}`, brokerTurn(daemon, repoRoot)),
+        turn: brokerTurn(daemon, repoRoot),
       },
       async ({ debugPort }) => {
         const failed: string[] = [];
@@ -1599,7 +1602,7 @@ async function main(): Promise<void> {
         }
         return failed.length === 0 ? 0 : 1;
       },
-    ));
+    )).finally(releaseLock);
   };
 
   const exitCode = await runWithDaemonRecovery(warm, (daemon, mode) =>

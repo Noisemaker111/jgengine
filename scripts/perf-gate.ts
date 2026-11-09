@@ -10,7 +10,7 @@ import {
   withBrowserSession,
 } from "./browser-lib";
 import { FRAME_GAMES } from "./ci-scope";
-import { perfLockTurn } from "./perf-lock";
+import { acquirePerfLock } from "./perf-lock";
 import { gameSessionDeadlineMs, machineClause, measureGame, parseSettingSpec, runMachine, writePerfRecord } from "./perf-play";
 import { parseGraphicsTier, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 import {
@@ -182,18 +182,21 @@ async function main(): Promise<void> {
   const known = readKnownSlow(repoRoot);
   const added = knownSlowAdded(known, readBaseKnownSlow(repoRoot, "origin/beta"));
 
-  const server = await ensureDevServer(repoRoot);
+  // Checked again under the lock before every game: a server obtained before a long wait can be gone after it.
+  let server = await ensureDevServer(repoRoot);
   let rasterizerPrinted = false;
 
   const measureOne = async (game: string, index: number): Promise<GameOutcome> => {
     const loaded = budgets.get(game)!;
     console.log(`perf gate: ${game} budget ${loaded.source}`);
     let outcome: GameOutcome = { game, summary: null, violations: [], error: null };
+    // The lock is held from before this game's server check and Chrome launch until the session
+    // ends, so the gate and another worktree's run interleave game by game; the frame time is the
+    // product, so the browser draws at normal priority (scripts/perf.ts).
+    const releaseLock = await acquirePerfLock(`perf gate ${game}`);
+    server = await ensureDevServer(repoRoot);
     const exitCode = await withBrowserSession(
-      // The lock is taken before this game's Chrome launches and freed after it, so the gate and
-      // another worktree's run interleave game by game; the frame time is the product, so the
-      // browser draws at normal priority (scripts/perf.ts).
-      { keep: false, debugPort: debugPortFor(index), timeoutMs: 180_000, hardDeadlineMs: gameSessionDeadlineMs(WARMUP_MS, seconds), frameClock: "uncapped", turn: perfLockTurn(`perf gate ${game}`, undefined), chromePriority: "normal" },
+      { keep: false, debugPort: debugPortFor(index), timeoutMs: 180_000, hardDeadlineMs: gameSessionDeadlineMs(WARMUP_MS, seconds), frameClock: "uncapped", chromePriority: "normal" },
       async ({ debugPort }) => {
         const session = await openPageSession(debugPort);
         try {
@@ -239,7 +242,7 @@ async function main(): Promise<void> {
           await session.close();
         }
       },
-    );
+    ).finally(releaseLock);
     if (exitCode !== 0 && outcome.error === null && outcome.violations.length === 0) {
       outcome = { ...outcome, error: `perf gate: ${game} could not be measured — its browser session failed (exit ${exitCode})` };
     }

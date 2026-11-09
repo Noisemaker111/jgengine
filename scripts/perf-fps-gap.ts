@@ -6,7 +6,7 @@ import { ensureDevServer, killPid, killProcessTree, openPageSession, withBrowser
 import { FRAME_GAMES } from "./ci-scope";
 import { engineRecord, resolveEngineIdentity } from "./engineIdentity";
 import { debugPortFor, GATE_SIZE } from "./perf-gate";
-import { perfLockTurn } from "./perf-lock";
+import { acquirePerfLock } from "./perf-lock";
 import { gameSessionDeadlineMs, GPU_WORK_SECONDS, gpuErrors, machineClause, measureGame, parseSettingSpec, type AllocationEntry, type PerfRecord, type ProfileNode, type RawProfile } from "./perf-play";
 import type { FrameBreakdownSummary, NamedCost } from "../packages/core/src/devtools/frameBreakdown";
 import { parseRendererBackend, type RendererBackend } from "../packages/core/src/settings/rendererBackend";
@@ -407,7 +407,11 @@ async function measureAll(args: FpsGapArgs, backend: RendererBackend, engine: Pe
   try {
     for (const [index, game] of args.games.entries()) {
       console.error(`perf fps-gap: ${game} on ${backend} (${index + 1}/${args.games.length})`);
+      let releaseLock = (): void => {};
       try {
+        // The lock first: this game's server check and Chrome launch sit inside it, so a server
+        // obtained before a long wait cannot be gone after it.
+        releaseLock = await acquirePerfLock(`perf fps-gap ${game}`);
         // Checked before every game: a dev server that died under the last one is restarted, and named,
         // instead of every remaining game failing on a refused connection.
         const server = await ensureDevServer(repoRoot);
@@ -418,9 +422,8 @@ async function measureAll(args: FpsGapArgs, backend: RendererBackend, engine: Pe
         previous = game;
         const exit = await withBrowserSession(
           // Frame window, profile window and the draw-timed GPU window.
-          // The lock is held from before this game's Chrome launches until it closes; the frame time
-          // is the product, so the browser draws at normal priority (scripts/perf.ts).
-          { keep: false, debugPort: debugPortFor(index), timeoutMs: 180_000, hardDeadlineMs: gameSessionDeadlineMs(WARMUP_MS, args.seconds * 2 + GPU_WORK_SECONDS), frameClock: "uncapped", turn: perfLockTurn(`perf fps-gap ${game}`, undefined), chromePriority: "normal" },
+          // The frame time is the product, so the browser draws at normal priority (scripts/perf.ts).
+          { keep: false, debugPort: debugPortFor(index), timeoutMs: 180_000, hardDeadlineMs: gameSessionDeadlineMs(WARMUP_MS, args.seconds * 2 + GPU_WORK_SECONDS), frameClock: "uncapped", chromePriority: "normal" },
           async ({ debugPort }) => {
             const session = await openPageSession(debugPort);
             try {
@@ -462,6 +465,8 @@ async function measureAll(args: FpsGapArgs, backend: RendererBackend, engine: Pe
       } catch (error) {
         console.error(`perf fps-gap: ${game} could not be measured — ${error instanceof Error ? error.message : String(error)}`);
         failed.push(game);
+      } finally {
+        releaseLock();
       }
     }
   } finally {

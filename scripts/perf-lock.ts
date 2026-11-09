@@ -10,8 +10,9 @@ import { beginPause, endPause, markStep } from "./hangReport";
  * desktop build, so two never overlap. On 2026-11-08 six threads timed games at once, the PC sat at
  * 87-99% CPU, and in four hours none of them got a number worth reading.
  *
- * Held around page load, warmup and the measurement windows only: never around builds, installs or
- * Vite startup. Who takes it: `measureGame` in perf-play (perf play, gate, fps-gap, shadow-audit;
+ * Held around the dev-server check, browser launch, page load, warmup and the measurement windows:
+ * never around builds or installs. The server check sits inside because a server obtained before a
+ * 503 s wait was gone after it (the broker had been restarted; 2026-11-08). Who takes it: `measureGame` in perf-play (perf play, gate, fps-gap, shadow-audit;
  * `perf play` holds it across its one-browser batch), perf network, perf desktop from app launch to
  * close, perf native's timed rows, and `drive --hitches` or `--trace`. Shoot and a plain drive time no frames,
  * and perf live only reads a page already open, so they do not wait for it. It is a mutex, not a

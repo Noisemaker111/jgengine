@@ -144,13 +144,14 @@ describe("deadlines give back time queued for the lock", () => {
 
 test("every entry point that times frames takes the lock", () => {
   // Removing one of these calls lets two timed runs overlap again, the failure this lock exists for.
-  // The `turn` takers hold it before their Chrome launches, so a queued run has no uncapped browser idling.
+  // The `acquirePerfLock` takers hold it before their server check and Chrome launch, so a queued run
+  // has no uncapped browser idling and no server that a long wait can outlive.
   const takers: Record<string, string[]> = {
-    "perf-play.ts": ["withPerfLock(`perf ${options.game}`", "turn: perfLockTurn(`perf ${pending.join"],
-    "perf-gate.ts": ["turn: perfLockTurn(`perf gate"],
-    "perf-fps-gap.ts": ["turn: perfLockTurn(`perf fps-gap"],
-    "perf-shadow-audit.ts": ["turn: perfLockTurn(`perf shadow-audit"],
-    "perf-network.ts": ["withPerfLock(`perf network", "turn: perfLockTurn(`perf network"],
+    "perf-play.ts": ["withPerfLock(`perf ${options.game}`", "acquirePerfLock(`perf ${pending.join"],
+    "perf-gate.ts": ["acquirePerfLock(`perf gate"],
+    "perf-fps-gap.ts": ["acquirePerfLock(`perf fps-gap"],
+    "perf-shadow-audit.ts": ["acquirePerfLock(`perf shadow-audit"],
+    "perf-network.ts": ["withPerfLock(`perf network", "acquirePerfLock(`perf network"],
     "perf-desktop.ts": ["withPerfLock(`perf desktop"],
     "perf-native.ts": ["withPerfLock(`perf native"],
     "bench-cpu.ts": ["withPerfLock(\"perf timing\""],
