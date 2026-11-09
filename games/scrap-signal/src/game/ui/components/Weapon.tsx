@@ -1,8 +1,7 @@
 import type { CSSProperties } from "react";
 import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { HudFade } from "@jgengine/core/hud/hudLayout.view";
-import { useEntityStat, useGameStore, useInventory, usePlayer } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
+import { useEntityStat, useGameStore, useGameTimeWindow, useInventory, usePlayer } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 import { AMMO_LABELS, AMMO_STAT_IDS } from "../../ammo";
 import { activePerkBuffs } from "../../combat/gunPerks";
@@ -16,32 +15,28 @@ export function useSelectedSlot(): number {
   return useStore(selectedSlotStore);
 }
 
-function useNowMs(): number {
-  return useGameStore((ctx) => ctx.time.now() * 1000);
-}
-
 export function AmmoPlate({ combat = false }: { combat?: boolean }) {
-  const ctx = useGameContext();
   const { userId } = usePlayer();
   const selected = useSelectedSlot();
   const slots = useInventory("hotbar");
-  // Subscribe to the frame clock so the loaded count and reload state refresh live as the player fires;
-  // magazine state is plain per-context data, not a reactive store, so this drives the re-read each frame.
-  useNowMs();
   const stack = slots[selected] ?? null;
   const gun = stack === null ? undefined : gunById(stack.itemId);
+  // Magazine state is plain per-context data: select what the plate prints, so it re-renders per shot, reload and buff second.
+  const mag = useGameStore((c) => gun === undefined ? null : {
+    loaded: magLoaded(c, gun),
+    reloading: isReloading(c, gun),
+    buffs: activePerkBuffs(c, gun).map((buff) => ({ label: buff.label, stacks: buff.stacks, leftMs: Math.ceil(buff.leftMs / 1000) * 1000 })),
+  });
   const reserve = useEntityStat(userId, AMMO_STAT_IDS[gun?.ammo ?? "pistol"]);
   const grenades = useEntityStat(userId, "grenades");
 
-  if (gun === undefined) {
+  if (gun === undefined || mag === null) {
     return <Stamp tone="dim" className="ss-no-gun">No weapon · find a gun</Stamp>;
   }
-  const loaded = magLoaded(ctx, gun);
-  const reloading = isReloading(ctx, gun);
+  const { loaded, reloading, buffs } = mag;
   const rarity = RARITY_COLORS[gun.rarity];
   const reserveCount = Math.round(reserve?.current ?? 0);
   const grenadeCount = Math.round(grenades?.current ?? 0);
-  const buffs = activePerkBuffs(ctx, gun);
   return (
     <HudFade watch={() => [gun.id, loaded, reloading, reserveCount, grenadeCount]} hold={() => combat || reloading || loaded === 0} dimTo={0.5} idleMs={5000}>
       <Plate material="hull" tint="#283135" cut="notch" depth={12} rim="#34444a" padding="0" className="ss-ammo" style={{ "--ss-rarity": rarity } as CSSProperties}>
@@ -96,9 +91,9 @@ export function WeaponHotbar({ combat = false }: { combat?: boolean }) {
 
 /** The pickup scan: the new gun’s numbers on a tube for five seconds after it is picked up. */
 export function ItemCard() {
-  const nowMs = useNowMs();
   const pickup = useStore(lastPickupStore);
-  if (pickup === null || nowMs - pickup.atMs > 5000) return null;
+  const shown = useGameTimeWindow(pickup?.atMs, 5000);
+  if (pickup === null || !shown) return null;
   const gun: GunDef | undefined = gunById(pickup.gunId);
   if (gun === undefined) return null;
   const rarity = RARITY_COLORS[gun.rarity];

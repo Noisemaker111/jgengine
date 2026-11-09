@@ -514,6 +514,20 @@ export function useGameClock(): GameClockControls {
 }
 
 /**
+ * True while game time is less than `windowMs` past `atMs` (both in game milliseconds,
+ * `ctx.time.now() * 1000`), so a hit marker, a zone banner or a radio line shows for a spell after its
+ * moment. It re-renders only when the window opens and when it closes; animate inside the window with
+ * `useFrameBind`, never by reading the time in render.
+ */
+export function useGameTimeWindow(atMs: number | null | undefined, windowMs: number): boolean {
+  return useGameStore((ctx) => {
+    if (atMs === null || atMs === undefined) return false;
+    const age = ctx.time.now() * 1000 - atMs;
+    return age >= 0 && age <= windowMs;
+  });
+}
+
+/**
  * A slow part of the sim calendar (the day, the season, the hour), re-rendering only when it changes:
  * `useGameCalendar((c) => c.day)`. A value that moves every tick (minutes on a fast clock, seconds)
  * belongs in `LiveText`, not here.

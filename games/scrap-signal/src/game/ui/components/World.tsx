@@ -1,4 +1,4 @@
-import { useCurrency, useGame, useGameStore } from "@jgengine/react/hooks";
+import { useCurrency, useGame, useGameStore, useGameTimeWindow } from "@jgengine/react/hooks";
 import { HudButton } from "@jgengine/core/hud/hudButton.view";
 import { ScrapPanel } from "./ScrapPanel";
 import { useStore } from "@jgengine/react/store";
@@ -17,14 +17,10 @@ import { FERRALON } from "../../palette";
 import { Plate, Waveform } from "../fiction/kit";
 import { Counter } from "./Mission";
 
-function useNowMs(): number {
-  return useGameStore((ctx) => ctx.time.now() * 1000);
-}
-
 export function ZoneBanner() {
-  const nowMs = useNowMs();
   const zone = useStore(currentZoneStore);
-  if (zone === null || nowMs - zone.atMs > 4000) return null;
+  const shown = useGameTimeWindow(zone?.atMs, 4000);
+  if (zone === null || !shown) return null;
   return (
     <div key={zone.name} className="scrap-banner ss-zone">
       <span className="ss-zone-name">{zone.name}</span>
@@ -35,9 +31,9 @@ export function ZoneBanner() {
 
 /** An incoming transmission from a crewmate, on the rig’s radio strip. */
 export function EchoBox() {
-  const nowMs = useNowMs();
   const line = useStore(speechStore);
-  if (line === null || nowMs - line.atMs > 12000) return null;
+  const shown = useGameTimeWindow(line?.atMs, 12000);
+  if (line === null || !shown) return null;
   return (
     <Plate material="carbon" cut="notch" depth={10} rim="#2c4d4a" padding="0" className="ss-echo">
       <span className="ss-echo-head"><span className="ss-led on" aria-hidden="true" /><b>ECHO — {line.speaker}</b><Waveform seed={line.speaker.length} /></span>
@@ -125,8 +121,8 @@ export function BlackMarketPanel() {
 
 export function ReactorEnding() {
   const reactor = useStore(reactorOpenStore);
-  const nowMs = useNowMs();
-  if (reactor === null || nowMs - reactor.atMs > 16000) return null;
+  const shown = useGameTimeWindow(reactor?.atMs, 16000);
+  if (reactor === null || !shown) return null;
   return (
     <div className="pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center">
       <div className="absolute inset-0" style={{ boxShadow: `inset 0 0 220px 80px ${FERRALON.hudAmber}44` }} />

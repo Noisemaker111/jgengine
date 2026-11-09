@@ -8,6 +8,7 @@ import { IconTreatment, schoolForItem } from "@jgengine/core/ui/icons/iconTreatm
 import { useCurrency, useGameCalendar, useGameClock, useInventory, localPlayerEntity } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { LiveText, useFrameBind } from "@jgengine/core/ui/liveBind.view";
+import { isLive, readLive, type Live } from "@jgengine/core/ui/liveValue";
 import { hudType } from "./hudTokens";
 import { memoView } from "../ui/memoView.view";
 
@@ -261,21 +262,41 @@ export const Crosshair = memoView("Crosshair", function Crosshair({
   style,
   className,
 }: {
-  size?: number;
-  gap?: number;
+  /** Box size in px; `live(() => px)` when it breathes every frame. */
+  size?: Live<number>;
+  /** Centre gap in px; `live(() => px)` when it opens and closes with spread every frame. */
+  gap?: Live<number>;
   thickness?: number;
   color?: string;
   style?: CSSProperties;
   className?: string;
 }) {
+  const box = useRef<HTMLDivElement>(null);
+  useFrameBind(
+    box,
+    () => (isLive(size) || isLive(gap) ? `${readLive(size)}:${readLive(gap)}` : null),
+    (key, element) => {
+      if (key === null) return;
+      const [boxSize = 0, centreGap = 0] = key.split(":").map(Number);
+      const arm = `${boxSize / 2 - centreGap}px`;
+      element.style.width = `${boxSize}px`;
+      element.style.height = `${boxSize}px`;
+      const [up, down, left, right] = Array.from(element.children, (child) => (child instanceof HTMLElement ? child : null));
+      if (up) up.style.height = arm;
+      if (down) down.style.height = arm;
+      if (left) left.style.width = arm;
+      if (right) right.style.width = arm;
+    },
+  );
+  const boxSize = readLive(size), centreGap = readLive(gap);
   const tick = (extra: CSSProperties): CSSProperties => ({ position: "absolute", background: color, borderRadius: thickness, ...extra });
   return (
     <div className={className} style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", ...style }}>
-      <div style={{ position: "relative", width: size, height: size }}>
-        <div style={tick({ left: "50%", top: 0, width: thickness, height: size / 2 - gap, transform: "translateX(-50%)" })} />
-        <div style={tick({ left: "50%", bottom: 0, width: thickness, height: size / 2 - gap, transform: "translateX(-50%)" })} />
-        <div style={tick({ top: "50%", left: 0, height: thickness, width: size / 2 - gap, transform: "translateY(-50%)" })} />
-        <div style={tick({ top: "50%", right: 0, height: thickness, width: size / 2 - gap, transform: "translateY(-50%)" })} />
+      <div ref={box} style={{ position: "relative", width: boxSize, height: boxSize }}>
+        <div style={tick({ left: "50%", top: 0, width: thickness, height: boxSize / 2 - centreGap, transform: "translateX(-50%)" })} />
+        <div style={tick({ left: "50%", bottom: 0, width: thickness, height: boxSize / 2 - centreGap, transform: "translateX(-50%)" })} />
+        <div style={tick({ top: "50%", left: 0, height: thickness, width: boxSize / 2 - centreGap, transform: "translateY(-50%)" })} />
+        <div style={tick({ top: "50%", right: 0, height: thickness, width: boxSize / 2 - centreGap, transform: "translateY(-50%)" })} />
       </div>
     </div>
   );

@@ -77,7 +77,7 @@ export function flushFrameBinds(): void {
  * is read once per frame; `apply` writes the node (its text, a style, an attribute) before the first
  * paint and then on every frame whose value differs from the last one written (`isEqual`, default
  * `Object.is`). `get`, `apply` and `isEqual` are read fresh each frame, so closures over props stay
- * current. Do not also set what `apply` writes from JSX: React would put its own value back.
+ * current. JSX may set the starting value of what `apply` writes: the binding writes again after every render of its component.
  *
  * ```tsx
  * const bar = useRef<HTMLElement>(null);
@@ -98,19 +98,22 @@ export function useFrameBind<T, E extends Element = Element>(
   applyRef.current = apply;
   const isEqualRef = useRef(isEqual);
   isEqualRef.current = isEqual;
+  const written = useRef<{ value: T; element: E } | null>(null);
+  const run = useRef(() => {
+    const element = ref.current;
+    if (element === null) return;
+    const value = getRef.current();
+    const last = written.current;
+    if (last !== null && last.element === element && isEqualRef.current(last.value, value)) return;
+    written.current = { value, element };
+    applyRef.current(value, element);
+  });
+  // After any render of the host, write again: JSX may have put a render-time value on the same property.
   useLayoutEffect(() => {
-    let written: { value: T; element: E } | null = null;
-    const run = () => {
-      const element = ref.current;
-      if (element === null) return;
-      const value = getRef.current();
-      if (written !== null && written.element === element && isEqualRef.current(written.value, value)) return;
-      written = { value, element };
-      applyRef.current(value, element);
-    };
-    run();
-    return subscribeFrameBind(run);
-  }, [ref]);
+    written.current = null;
+    run.current();
+  });
+  useLayoutEffect(() => subscribeFrameBind(() => run.current()), []);
 }
 
 /** Inline and block elements a live text can be. */
