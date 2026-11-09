@@ -101,7 +101,7 @@ const STAMPS_PER_BATCH = 4096;
 /** Texture sets a program keeps before it starts over: a program drawn with every texture of a long session stays bounded. */
 const MAX_TEXTURE_SETS = 512;
 
-interface GlBuffer { kind: "buffer"; id: number; gpu: GPUBuffer | null; size: number; data: ArrayBufferView | null; version: number; usedBatch: number; floatCopies: Map<string, { version: number; gpu: GPUBuffer }> | null; deleted: boolean }
+interface GlBuffer { kind: "buffer"; id: number; gpu: GPUBuffer | null; size: number; data: ArrayBufferView | null; version: number; usedBatch: number; floatCopies: Map<unknown, { version: number; gpu: GPUBuffer; out?: Float32Array }> | null; deleted: boolean }
 interface GlTexture {
   kind: "texture"; id: number; target: number; gpu: GPUTexture | null; format: GlTextureFormat | null; width: number; height: number; depth: number; levels: number; immutable: boolean;
   wrap: [number, number, number]; minFilter: number; magFilter: number; compareMode: number; compareFunc: number; anisotropy: number; baseLevel: number; maxLevel: number;
@@ -177,7 +177,7 @@ interface VertexSlot {
   buffer: GlBuffer | null; offset: number; stride: number; step: GPUVertexStepMode; attributes: GPUVertexAttribute[]; convert: { type: number; size: number; normalized: boolean } | null; constant: boolean;
   sources: AttribSource[];
   /** Several GL buffers interleaved into one, built on the CPU when a draw has more buffers than WebGPU binds. */
-  packed: { gpu: GPUBuffer | null; ids: number[]; versions: number[] } | null;
+  packed: { gpu: GPUBuffer | null; ids: number[]; versions: number[]; out?: Uint8Array } | null;
 }
 interface VertexPlan {
   /** The interned vertex layout (`key`): a plan rebuilt with the same layout keeps its pipelines. */
@@ -246,7 +246,29 @@ class RecordedPass {
   constantBase = 0;
   /** Where they end, set when the pass ends. */
   constantEnd = 0;
-  constructor(public descriptor: GPURenderPassDescriptor, readonly fb: GlFramebuffer | null, readonly plan: PassPlan, readonly ordinal: number) {}
+  descriptor: GPURenderPassDescriptor;
+  fb: GlFramebuffer | null;
+  plan: PassPlan;
+  ordinal: number;
+  constructor(descriptor: GPURenderPassDescriptor, fb: GlFramebuffer | null, plan: PassPlan, ordinal: number) {
+    this.descriptor = descriptor;
+    this.fb = fb;
+    this.plan = plan;
+    this.ordinal = ordinal;
+  }
+  /** Forget the last use so the pass can record a new one; the ops array keeps its capacity. */
+  reset(descriptor: GPURenderPassDescriptor, fb: GlFramebuffer | null, plan: PassPlan, ordinal: number): void {
+    this.descriptor = descriptor;
+    this.fb = fb;
+    this.plan = plan;
+    this.ordinal = ordinal;
+    this.owned = false;
+    this.uniformBase = 0;
+    this.uniformEnd = 0;
+    this.constantBase = 0;
+    this.constantEnd = 0;
+    this.ops.length = 0;
+  }
   setPipeline(pipeline: GPURenderPipeline): void { this.ops.push(OP_PIPELINE, pipeline); }
   setBindGroup(index: number, group: GPUBindGroup, offsets?: Uint32Array, start?: number, _count?: number): void {
     if (offsets === undefined) this.ops.push(OP_GROUP, index, group);
@@ -650,6 +672,10 @@ export class WebGpuGl extends GlConstants {
   private pass: RecordedPass | null = null;
   /** Passes ended but not yet encoded, and encoder work recorded after them, in order (see {@link RecordedPass}). */
   private readonly unencoded: (RecordedPass | RecordedAction)[] = [];
+  /** Encoded passes kept for their ops array's capacity; a frame records the same passes again. */
+  private readonly passPool: RecordedPass[] = [];
+  /** Scratch for a pass's relative ops; a replay match compares against it without allocating. */
+  private readonly relScratch: unknown[] = [];
   private readonly replayOffset = new Uint32Array(1);
   /**
    * Changes at every pass and every submit: a program copies its object uniforms into the ring once
@@ -2120,12 +2146,17 @@ struct U { shift: vec2<i32> };
 
   private encodeEnded(): GPUCommandEncoder {
     const encoder = (this.encoder ??= this.device.createCommandEncoder());
-    if (this.unencoded.length > 0) {
-      for (const entry of this.unencoded.splice(0)) {
-        if (entry instanceof RecordedPass) this.encodePass(entry, encoder);
-        else entry.run(encoder);
-      }
+    const pending = this.unencoded;
+    const count = pending.length;
+    for (let i = 0; i < count; i += 1) {
+      const entry = pending[i]!;
+      if (entry instanceof RecordedPass) {
+        this.encodePass(entry, encoder);
+        this.passPool.push(entry);
+      } else entry.run(encoder);
     }
+    if (pending.length === count) pending.length = 0;
+    else { pending.copyWithin(0, count); pending.length -= count; }
     return encoder;
   }
 
@@ -2137,7 +2168,7 @@ struct U { shift: vec2<i32> };
    * on a CPU-bound frame (#3066).
    */
   private encodePass(rp: RecordedPass, encoder: GPUCommandEncoder): void {
-    const ops = rp.ops.length > 0 ? this.relativeOps(rp) : null;
+    const ops = rp.ops.length > 0 ? this.relativeOps(rp, this.relScratch) : null;
     if (ops === null) {
       if (rp.ops.length > 0) this.stats.unreplayablePasses += 1;
       rp.encode(encoder, this.replayOffset);
@@ -2151,7 +2182,8 @@ struct U { shift: vec2<i32> };
     const at = kept.findIndex((candidate) => sameOps(candidate.ops, ops));
     if (at < 0) {
       // A pass that alternates between two forms (a ping-pong target read on alternate frames) keeps both.
-      kept.unshift({ ops, repeats: 0, steps: null, buffer: null, constantsAt: 0, constantRoom: 0 });
+      // The scratch is rewritten by the next pass, so a kept form stores its own copy.
+      kept.unshift({ ops: ops.slice(), repeats: 0, steps: null, buffer: null, constantsAt: 0, constantRoom: 0 });
       for (const dropped of kept.splice(REPLAY_FORMS)) if (dropped.buffer !== null) this.retire(dropped.buffer);
       this.stats.changedPasses += 1;
       rp.encode(encoder, this.replayOffset);
@@ -2174,21 +2206,22 @@ struct U { shift: vec2<i32> };
     this.stats.replayedPasses += 1;
   }
 
-  /** `rp`'s commands with uniform binds made relative to its range, or null when it binds something a replay cannot carry. */
-  private relativeOps(rp: RecordedPass): unknown[] | null {
+  /** `rp`'s commands with uniform binds made relative to its range, written into `out`; null when it binds something a replay cannot carry. */
+  private relativeOps(rp: RecordedPass, out: unknown[]): unknown[] | null {
     const ops = rp.ops as any[];
-    const out = ops.slice();
+    out.length = 0;
     for (let i = 0; i < ops.length;) {
       switch (ops[i] as number) {
-        case OP_PIPELINE: case OP_STENCIL_REF: case OP_BLEND: i += 2; break;
-        case OP_GROUP: case OP_INDEX: i += 3; break;
+        case OP_PIPELINE: case OP_STENCIL_REF: case OP_BLEND:
+          out.push(ops[i], ops[i + 1]); i += 2; break;
+        case OP_GROUP: case OP_INDEX:
+          out.push(ops[i], ops[i + 1], ops[i + 2]); i += 3; break;
         case OP_GROUP_OFFSET: {
           const size = this.ringGroupSizes.get(ops[i + 2]);
           const offset = ops[i + 3] as number;
           if (size === undefined || offset < rp.uniformBase || offset + size > rp.uniformEnd) return null;
           // The group stays: a program's uniform group names its shared buffer for the replay bind group.
-          out[i + 3] = offset - rp.uniformBase;
-          i += 4;
+          out.push(ops[i], ops[i + 1], ops[i + 2], offset - rp.uniformBase); i += 4;
           break;
         }
         case OP_VERTEX: {
@@ -2196,15 +2229,17 @@ struct U { shift: vec2<i32> };
           if (ops[i + 2] === this.constantRing) {
             const offset = ops[i + 3] as number;
             if (offset < rp.constantBase || offset >= rp.constantEnd) return null;
-            out[i + 2] = CONSTANTS;
-            out[i + 3] = offset - rp.constantBase;
-          }
+            out.push(ops[i], ops[i + 1], CONSTANTS, offset - rp.constantBase);
+          } else out.push(ops[i], ops[i + 1], ops[i + 2], ops[i + 3]);
           i += 4;
           break;
         }
-        case OP_DRAW: case OP_SCISSOR: i += 5; break;
-        case OP_DRAW_INDEXED: i += 6; break;
-        case OP_VIEWPORT: i += 7; break;
+        case OP_DRAW: case OP_SCISSOR:
+          out.push(ops[i], ops[i + 1], ops[i + 2], ops[i + 3], ops[i + 4]); i += 5; break;
+        case OP_DRAW_INDEXED:
+          out.push(ops[i], ops[i + 1], ops[i + 2], ops[i + 3], ops[i + 4], ops[i + 5]); i += 6; break;
+        case OP_VIEWPORT:
+          out.push(ops[i], ops[i + 1], ops[i + 2], ops[i + 3], ops[i + 4], ops[i + 5], ops[i + 6]); i += 7; break;
         default: return null;
       }
     }
@@ -2486,7 +2521,9 @@ struct U { shift: vec2<i32> };
     if (timestampWrites !== undefined) descriptor = { ...descriptor, timestampWrites };
     const ordinal = this.passOrdinals.get(fb) ?? 0;
     this.passOrdinals.set(fb, ordinal + 1);
-    this.pass = new RecordedPass(descriptor, fb, plan, ordinal);
+    const pooled = this.passPool.pop();
+    if (pooled === undefined) this.pass = new RecordedPass(descriptor, fb, plan, ordinal);
+    else { pooled.reset(descriptor, fb, plan, ordinal); this.pass = pooled; }
     this.pass.uniformBase = Math.ceil(this.stagingUsed / this.uniformAlign) * this.uniformAlign;
     this.pass.constantBase = this.constantsUsed * 4;
     this.slotEpoch += 1;
@@ -3033,7 +3070,9 @@ struct O { ${outputs} };
       const length = src.buffer.data!.byteLength;
       count = Math.min(count, length < src.offset + bytes ? 0 : Math.floor((length - src.offset - bytes) / src.stride) + 1);
     }
-    const out = new Uint8Array(Math.max(4, count * slot.stride));
+    const need = Math.max(4, count * slot.stride);
+    const out = packed.out !== undefined && packed.out.byteLength >= need ? packed.out : new Uint8Array(need);
+    packed.out = out;
     const view = new DataView(out.buffer);
     slot.sources.forEach((src, k) => {
       const at = slot.attributes[k]!.offset;
@@ -3061,14 +3100,15 @@ struct O { ${outputs} };
 
   private floatCopy(b: GlBuffer, c2: { type: number; size: number; normalized: boolean; offset: number; stride: number }): GPUBuffer | null {
     if (b.data === null) return null;
-    const key = `${c2.type},${c2.size},${c2.normalized},${c2.offset},${c2.stride}`;
+    // The convert object is the vertex plan's own, stable across draws: keying by it builds no string per draw.
     b.floatCopies ??= new Map();
-    const known = b.floatCopies.get(key);
+    const known = b.floatCopies.get(c2);
     if (known !== undefined && known.version === b.version) return known.gpu;
     const src = new DataView(b.data.buffer, b.data.byteOffset, b.data.byteLength);
     const element = componentBytes(c2.type);
     const count = Math.max(0, Math.floor((b.data.byteLength - c2.offset - c2.size * element) / c2.stride) + 1);
-    const out = new Float32Array(Math.max(1, count * c2.size));
+    const need = Math.max(1, count * c2.size);
+    const out = known?.out !== undefined && known.out.length >= need ? known.out : new Float32Array(need);
     for (let i = 0; i < count; i += 1) {
       for (let k = 0; k < c2.size; k += 1) out[i * c2.size + k] = readComponent(src, c2.offset + i * c2.stride + k * element, c2.type, c2.normalized);
     }
@@ -3078,7 +3118,7 @@ struct O { ${outputs} };
       gpu = this.device.createBuffer({ size: Math.max(4, out.byteLength), usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST });
     }
     this.queue.writeBuffer(gpu, 0, out);
-    b.floatCopies.set(key, { version: b.version, gpu });
+    b.floatCopies.set(c2, { version: b.version, gpu, out });
     return gpu;
   }
 
