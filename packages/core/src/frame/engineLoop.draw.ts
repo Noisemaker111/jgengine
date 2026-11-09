@@ -17,6 +17,7 @@
 import * as THREE from "three";
 
 import { paceFrame } from "../settings/frameRateLimit";
+import { bindFrameSource, joinFrameTask, type FrameSource } from "./frameBoard.draw";
 
 /** Frameloop modes the shell's Canvas accepted. */
 export type EngineFrameloop = "always" | "demand" | "never";
@@ -248,41 +249,12 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
     if (index >= 0) draws.splice(index, 1);
   }
 
-  // One group draw per priority level, shared by every join at that level —
-  // the useSharedFrame shape: N callers pay one frame callback, not N.
-  const sharedTasks = new Map<number, { tasks: Set<(state: EngineFrameState, delta: number) => void>; draw: EngineDraw }>();
-  const sharedBoard: EngineFrameBoard = {
-    join(priority, task) {
-      let group = sharedTasks.get(priority);
-      if (group === undefined) {
-        const tasks = new Set<(state: EngineFrameState, delta: number) => void>();
-        const draw: EngineDraw = {
-          priority,
-          frame(state) {
-            for (const each of tasks) each(state, state.delta);
-          },
-        };
-        group = { tasks, draw };
-        sharedTasks.set(priority, group);
-        insertDraw(draw);
-      }
-      const joined = group;
-      joined.tasks.add(task);
-      return () => {
-        joined.tasks.delete(task);
-        if (joined.tasks.size > 0 || sharedTasks.get(priority) !== joined) return;
-        sharedTasks.delete(priority);
-        removeDraw(joined.draw);
-      };
-    },
-  };
-
   const loop: EngineLoop = {
     state,
     scene,
     camera,
     renderer,
-    tasks: sharedBoard,
+    tasks: { join: joinFrameTask },
     add(draw) {
       insertDraw(draw);
       draw.mount?.(state);
@@ -332,5 +304,17 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
   options.onCreated?.(state);
   invalidated = true;
   if (frameloop !== "never") raf = requestAnimationFrame(frame);
+  // The shared board's tasks become ordered draws on this loop; files that
+  // joined while the r3f pump drove re-attach here without re-subscribing.
+  const source: FrameSource = (priority, run) => loop.add({
+    priority,
+    frame: (frameState) => run(frameState, frameState.delta),
+  });
+  bindFrameSource(source);
+  const priorDispose = loop.dispose;
+  loop.dispose = () => {
+    bindFrameSource(null);
+    priorDispose();
+  };
   return loop;
 }

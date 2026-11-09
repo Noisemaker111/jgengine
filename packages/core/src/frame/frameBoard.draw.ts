@@ -1,0 +1,77 @@
+/**
+ * The frame-task board every converted `useFrame`/`useSharedFrame`/
+ * `useFrameWhile` call joins. One board, one frame source: while the shell
+ * still renders through r3f, `R3fFramePump` binds the source to r3f's
+ * subscriber list; once `createEngineLoop` owns the canvas it binds the same
+ * board to the engine loop's ordered draws. Converted files never care which
+ * side is driving — they join a priority and leave.
+ *
+ * Tasks at one priority share a single subscription (the useSharedFrame
+ * shape): N callers pay one frame slot, not N, and run in join order.
+ */
+import type { EngineFrameState } from "./engineLoop.draw";
+
+export type FrameTask = (state: EngineFrameState, delta: number) => void;
+
+/**
+ * Attaches one priority level to the driving frame source and returns the
+ * detach. `run` is the group's shared callback; the source decides how it is
+ * scheduled (an r3f subscriber today, an ordered engine draw after cutover).
+ */
+export type FrameSource = (
+  priority: number,
+  run: (state: EngineFrameState, delta: number) => void,
+) => () => void;
+
+interface PriorityGroup {
+  readonly tasks: Set<FrameTask>;
+  detach: (() => void) | null;
+}
+
+const groups = new Map<number, PriorityGroup>();
+let source: FrameSource | null = null;
+
+function attach(group: PriorityGroup, priority: number): void {
+  if (source === null) return;
+  group.detach = source(priority, (state, delta) => {
+    for (const task of group.tasks) task(state, delta);
+  });
+}
+
+/**
+ * Bind the board to a frame source. Groups already joined re-attach under the
+ * new source, so the r3f pump and the engine loop can take over from each
+ * other without converted callers re-subscribing. `null` detaches everything
+ * (used while no canvas drives frames, e.g. between shells).
+ */
+export function bindFrameSource(next: FrameSource | null): void {
+  for (const group of groups.values()) {
+    group.detach?.();
+    group.detach = null;
+  }
+  source = next;
+  if (next === null) return;
+  for (const [priority, group] of groups) attach(group, priority);
+}
+
+/**
+ * Run `task(state, delta)` on every rendered frame at `priority` — r3f's
+ * `useFrame` order: subscribers ascending by priority, one render after all.
+ * Returns the leave; the group's subscription ends when its last task leaves.
+ */
+export function joinFrameTask(priority: number, task: FrameTask): () => void {
+  let group = groups.get(priority);
+  if (group === undefined) {
+    group = { tasks: new Set(), detach: null };
+    groups.set(priority, group);
+  }
+  const joined = group;
+  joined.tasks.add(task);
+  if (joined.detach === null) attach(joined, priority);
+  return () => {
+    joined.tasks.delete(task);
+    if (joined.tasks.size > 0 || groups.get(priority) !== joined) return;
+    joined.detach?.();
+    groups.delete(priority);
+  };
+}

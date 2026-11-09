@@ -126,6 +126,7 @@ import { usePresentationLook } from "@jgengine/core/render/presentationLook.draw
 import type { GameLookInput } from "@jgengine/core/render/lookPreset";
 import { WorldView, RemotePlayers } from "./world/WorldScene";
 import { FrameDriver } from "./drivers/FrameDriver";
+import { FrameBoardPump } from "./drivers/FrameBoardPump";
 import { GamepadSource } from "@jgengine/core/input/gamepadSource.draw";
 import { SplitScreenRenderer, useSeatViewports } from "@jgengine/core/camera/Viewports.draw";
 import { localPlayers } from "@jgengine/core/runtime/localPlayers";
@@ -732,6 +733,7 @@ export function Shell3dPresentation({
                   gl={rendererFactory}
                   style={{ touchAction: "none" }}
                 >
+                  <FrameBoardPump />
                   <CanvasCoverFrameloop authored={canvasFrameloop} />
                   <TextureFiltering anisotropy={graphics.profile.anisotropy} />
                   {graphics.frameRateLimit > 0 && !poster ? <FrameRateLimiter fps={graphics.frameRateLimit} /> : null}
