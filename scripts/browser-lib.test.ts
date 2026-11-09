@@ -357,7 +357,7 @@ describe("native legacy capture readiness", () => {
 
   test("native opt-in requires settled nonblank canvas pixels, without writing readiness flags", async () => {
     const fixture = legacy();
-    await expect(navigateCapturePage(fixture.session, "http://native", 100, { legacyCanvas: true })).resolves.toBeUndefined();
+    await expect(navigateCapturePage(fixture.session, "http://native", 5_000, { legacyCanvas: true })).resolves.toBeUndefined();
     expect(fixture.captured()).toBe(1);
     expect(fixture.subscriptions()).toBe(0);
   });
@@ -372,13 +372,15 @@ describe("native legacy capture readiness", () => {
     await expect(navigateCapturePage(loading.session, "http://native", 30, { legacyCanvas: true })).rejects.toThrow("timed out waiting");
     expect(loading.captured()).toBe(0);
     const error = legacy({ statuses: [null, "error"] });
-    await expect(navigateCapturePage(error.session, "http://native", 100, { legacyCanvas: true })).rejects.toThrow("late asset failure");
+    // A case that expects the page's own error, not a timeout, gets a budget it never reaches: the error
+    // ends it at once. 30-100 ms ran out first on a starved PC (verify runs below normal priority).
+    await expect(navigateCapturePage(error.session, "http://native", 5_000, { legacyCanvas: true })).rejects.toThrow("late asset failure");
     expect(error.captured()).toBe(0);
   });
   test("transient loading and error during screenshot still win even after the flag disappears", async () => {
     for (const status of ["loading", "error"]) {
       const fixture = legacy({ lateSignal: status });
-      await expect(navigateCapturePage(fixture.session, "http://native", 30, { legacyCanvas: true })).rejects.toThrow(status === "error" ? "late asset failure" : "timed out waiting");
+      await expect(navigateCapturePage(fixture.session, "http://native", status === "error" ? 5_000 : 30, { legacyCanvas: true })).rejects.toThrow(status === "error" ? "late asset failure" : "timed out waiting");
       expect(fixture.captured()).toBe(1);
     }
   });
