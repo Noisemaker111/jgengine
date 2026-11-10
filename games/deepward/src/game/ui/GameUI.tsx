@@ -25,7 +25,6 @@ import { DeepwardMenu } from "./menu/DeepwardMenu";
 import { RECORD_KEY, SAVE_KEY } from "../save";
 import { ActionPlate, DepthStrip, DiveComputer, Docket, HoldTab, KitCounter, CommsLine, VisorReticle, SearchBar, Visor } from "./VisorHud";
 import { FabricatorSheet } from "./FabricatorSheet";
-import { RuneGameUI } from "./rune/RuneGameUI";
 import { marrowOf, marrowState } from "../marrow";
 import { nextGoal, sealMark } from "../deep";
 import { crushDamage, STRATA } from "../strata";
@@ -109,7 +108,7 @@ function TravelCard() {
   return swapping ? <div className="dw-travel" role="status"><span>{where}</span></div> : null;
 }
 
-function ReactGameUI() {
+export function GameUI() {
   useGameFonts(GAME_FONTS);
   const ctx = useGameContext();
   const screen = useStore(viewStore, v => ({ panel: v.panel, mode: v.mode, paused: v.paused, diving: v.dive !== null, low: v.dive !== null && v.dive.oxygen <= 25 }));
@@ -393,11 +392,3 @@ function SaveSheet({ dialogRef, command }: { dialogRef: DialogRef; command: Comm
     <HudButton onClick={() => window.location.reload()}>Reload saved Marrow</HudButton>
   </HudSurface></div>;
 }
-
-/**
- * `?ui=rune` mounts the Rune port of this HUD in its place, for the port's own work: it does not
- * yet wrap text, draw the paper docket or the key chips. The page is one or the other for its life.
- */
-const RUNE_UI = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("ui") === "rune";
-
-export const GameUI = RUNE_UI ? RuneGameUI : ReactGameUI;

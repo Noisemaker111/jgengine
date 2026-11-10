@@ -15,6 +15,7 @@ import {
   parseClipPath, parseColor,
   parseDim,
   parseGradient,
+  placeLayer,
   parsePlacement,
   parsePx,
   parseRadius,
@@ -140,8 +141,8 @@ function hasBoxPaint(style: CSSStyleDeclaration): boolean {
   if (style.backgroundImage !== "none") return true;
   const background = parseColor(style.backgroundColor);
   if (background !== null && colorAlpha(background) > 0) return true;
-  if (parsePx(style.borderTopWidth) + parsePx(style.borderBottomWidth) + parsePx(style.borderLeftWidth) + parsePx(style.borderRightWidth) > 0) return true;
-  return parsePx(style.paddingLeft) + parsePx(style.paddingRight) + parsePx(style.marginLeft) + parsePx(style.marginRight) > 0;
+  // Space around an unpainted inline element is dropped rather than breaking the line of text it sits in.
+  return parsePx(style.borderTopWidth) + parsePx(style.borderBottomWidth) + parsePx(style.borderLeftWidth) + parsePx(style.borderRightWidth) > 0;
 }
 
 function readTextStyle(element: Element, style: CSSStyleDeclaration): TextStyle {
@@ -309,7 +310,97 @@ function transformOf(element: Element): string {
   return typed?.get("transform")?.toString() ?? "none";
 }
 
-function boxOf(element: Element, style: CSSStyleDeclaration, report: MirrorReport, pseudo = false): WireBox {
+/** `@keyframes` rules by name, found again when a stylesheet is added. */
+let keyframeRules = new Map<string, CSSKeyframesRule>();
+let keyframeSheets = -1;
+
+function collectKeyframes(rules: CSSRuleList, out: Map<string, CSSKeyframesRule>): void {
+  for (const rule of rules) {
+    if (rule instanceof CSSKeyframesRule) out.set(rule.name, rule);
+    else if ("cssRules" in rule) collectKeyframes((rule as CSSGroupingRule).cssRules, out);
+  }
+}
+
+function keyframesNamed(name: string): CSSKeyframesRule | undefined {
+  if (keyframeSheets !== document.styleSheets.length) {
+    keyframeSheets = document.styleSheets.length;
+    keyframeRules = new Map();
+    for (const sheet of document.styleSheets) {
+      try {
+        collectKeyframes(sheet.cssRules, keyframeRules);
+      } catch {
+        // A stylesheet from another origin keeps its rules to itself.
+      }
+    }
+  }
+  return keyframeRules.get(name);
+}
+
+const seconds = (text: string): number => (text.endsWith("ms") ? parseFloat(text) / 1000 : parseFloat(text)) || 0;
+/** The animations whose end was already announced, per element. */
+const announced = new WeakMap<Element, Set<string>>();
+
+/**
+ * An undisplayed element never runs its CSS animations, so the mirror shows where each one ends:
+ * the last keyframe of an animation that keeps it (`forwards`), and otherwise the element's own
+ * style. Code waiting on `animationend` hears it after the animation's time. A looping animation
+ * shows its resting style.
+ */
+function animationEnd(element: Element, style: CSSStyleDeclaration): Record<string, string> | null {
+  const names = style.animationName.split(", ");
+  if (names.every((name) => name === "none" || name === "")) return null;
+  const pick = (list: string, index: number): string => {
+    const parts = list.split(", ");
+    return parts[index % parts.length] ?? "";
+  };
+  let out: Record<string, string> | null = null;
+  names.forEach((name, index) => {
+    const rule = name === "none" ? undefined : keyframesNamed(name);
+    if (rule === undefined) return;
+    const count = pick(style.animationIterationCount, index);
+    if (count === "infinite") return;
+    const turns = parseFloat(count) || 1;
+    let heard = announced.get(element);
+    if (heard === undefined) announced.set(element, (heard = new Set()));
+    if (!heard.has(name)) {
+      heard.add(name);
+      const wait = (seconds(pick(style.animationDelay, index)) + seconds(pick(style.animationDuration, index)) * turns) * 1000;
+      setTimeout(() => {
+        if (element.isConnected) element.dispatchEvent(new AnimationEvent("animationend", { animationName: name, bubbles: true }));
+      }, Math.max(0, wait));
+    }
+    const fill = pick(style.animationFillMode, index);
+    if (fill !== "forwards" && fill !== "both") return;
+    const direction = pick(style.animationDirection, index);
+    const backwards = direction === "reverse" || (direction === "alternate" && turns % 2 === 0) || (direction === "alternate-reverse" && turns % 2 === 1);
+    const last = backwards ? ["0%", "from"] : ["100%", "to"];
+    for (const frame of rule.cssRules) {
+      if (!(frame instanceof CSSKeyframeRule) || !frame.keyText.split(",").some((key) => last.includes(key.trim()))) continue;
+      for (const property of frame.style) {
+        const value = frame.style.getPropertyValue(property);
+        if (value.includes("var(")) continue;
+        out ??= {};
+        out[property.replace(/-([a-z])/g, (_dash, letter: string) => letter.toUpperCase())] = value;
+      }
+    }
+  });
+  return out;
+}
+
+/** `style` with `over` in place of the properties it names. */
+function styleWith(style: CSSStyleDeclaration, over: Record<string, string>): CSSStyleDeclaration {
+  return new Proxy(style, {
+    get(target, property) {
+      if (typeof property === "string" && property in over) return over[property];
+      const value: unknown = Reflect.get(target, property);
+      return typeof value === "function" ? (value as (...args: unknown[]) => unknown).bind(target) : value;
+    },
+  });
+}
+
+function boxOf(element: Element, computed: CSSStyleDeclaration, report: MirrorReport, pseudo = false): WireBox {
+  const ended = pseudo ? null : animationEnd(element, computed);
+  const style = ended === null ? computed : styleWith(computed, ended);
   const box: WireBox = { k: "x", id: idOf(element) };
   const display = style.display;
   const flex = display.endsWith("flex");
@@ -415,7 +506,12 @@ function boxOf(element: Element, style: CSSStyleDeclaration, report: MirrorRepor
   const image = style.backgroundImage;
   if (image !== "none" && image !== "") {
     const layers: (WireLayer | { flat: number })[] = [];
-    for (const part of splitTop(image, ",").reverse()) {
+    const parts = splitTop(image, ",");
+    const sizes = splitTop(style.backgroundSize, ",");
+    const positions = splitTop(style.backgroundPosition, ",");
+    const repeats = splitTop(style.backgroundRepeat, ",");
+    for (let index = parts.length - 1; index >= 0; index -= 1) {
+      const part = (parts[index] ?? "").trim();
       if (part === "none") continue;
       if (part.startsWith("url(")) {
         // A background picture never sizes its box, unlike an `<img>`.
@@ -426,7 +522,7 @@ function boxOf(element: Element, style: CSSStyleDeclaration, report: MirrorRepor
       }
       const layer = parseGradient(part);
       if (layer === null) report.add(`background-image: ${part.slice(0, 60)}`, element);
-      else layers.push(layer);
+      else layers.push(placeLayer(layer, sizes[index % sizes.length] ?? "auto", positions[index % positions.length] ?? "0% 0%", repeats[index % repeats.length] ?? "repeat"));
     }
     if (layers.length > 0) box["ly"] = layers;
   }
@@ -437,7 +533,7 @@ function boxOf(element: Element, style: CSSStyleDeclaration, report: MirrorRepor
   const opacity = parseFloat(style.opacity);
   if (opacity < 1) box["op"] = opacity;
   if (style.visibility === "hidden" || style.visibility === "collapse") box["op"] = 0;
-  const transform = parseTransform(style.translate, style.rotate, style.scale, pseudo ? style.transform : transformOf(element));
+  const transform = parseTransform(style.translate, style.rotate, style.scale, pseudo || ended?.["transform"] !== undefined ? style.transform : transformOf(element));
   if (transform !== null) {
     if (transform.lost !== null) report.add(`transform: ${transform.lost}`, element);
     box["tf"] = [transform.x, transform.y, transform.rotate, transform.scale, transform.fx, transform.fy];
@@ -476,7 +572,13 @@ function boxOf(element: Element, style: CSSStyleDeclaration, report: MirrorRepor
       delete box["bg"];
     }
   }
-  if (style.mixBlendMode !== "normal") report.add(`mix-blend-mode: ${style.mixBlendMode}`, element);
+  if (style.mixBlendMode !== "normal") {
+    // A blended layer drawn unblended would cover what it is meant to tint, so it is left out.
+    report.add(`mix-blend-mode: ${style.mixBlendMode}`, element);
+    delete box["bg"];
+    delete box["ly"];
+    delete box["bgi"];
+  }
   if (style.pointerEvents !== "none" && style.visibility !== "hidden") box["hit"] = 1;
   const z = style.zIndex;
   if (z !== "auto") box["z"] = Number.parseInt(z, 10) || 0;
@@ -583,12 +685,24 @@ function adopt(box: WireBox, children: WireBox[]): void {
     delete box.c;
     return;
   }
-  // Boxes with a z-index paint in that order; in-flow ones keep their layout order.
-  const floating = children.filter((child) => child["pos"] === 2 && typeof child["z"] === "number");
-  if (floating.length > 0) {
-    const rest = children.filter((child) => !floating.includes(child));
-    floating.sort((a, b) => (a["z"] as number) - (b["z"] as number));
-    box.c = [...floating.filter((child) => (child["z"] as number) < 0), ...rest, ...floating.filter((child) => (child["z"] as number) >= 0)];
+  // In-flow boxes keep their layout order. An out-of-flow box paints by its z-index: under the
+  // flow when it is negative or lower than an in-flow sibling's, above it otherwise.
+  const z = (child: WireBox): number | null => (typeof child["z"] === "number" ? child["z"] : null);
+  let flowTop = 0;
+  for (const child of children) if (child["pos"] !== 2) flowTop = Math.max(flowTop, z(child) ?? 0);
+  const under: WireBox[] = [];
+  const over: WireBox[] = [];
+  const rest: WireBox[] = [];
+  for (const child of children) {
+    const level = z(child);
+    if (child["pos"] !== 2 || (level === null && flowTop === 0)) rest.push(child);
+    else if ((level ?? 0) < 0 || (level ?? 0) < flowTop) under.push(child);
+    else if (level === null) rest.push(child);
+    else over.push(child);
+  }
+  if (under.length > 0 || over.length > 0) {
+    const byLevel = (a: WireBox, b: WireBox): number => (z(a) ?? 0) - (z(b) ?? 0);
+    box.c = [...under.sort(byLevel), ...rest, ...over.sort(byLevel)];
   } else {
     box.c = children;
   }

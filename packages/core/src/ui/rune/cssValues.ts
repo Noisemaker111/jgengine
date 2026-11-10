@@ -326,6 +326,59 @@ function averageOfRepeat(stops: RawStop[]): number | null {
   return pack(r / a, g / a, b / a, a);
 }
 
+/** The colour a gradient averages to: what a small repeated tile of it reads as. */
+export function averageOfStops(stops: [number, number][]): number {
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  let a = 0;
+  const add = (color: number, share: number): void => {
+    const alpha = (color & 0xff) / 255;
+    r += (((color >>> 24) & 0xff) / 255) * alpha * share;
+    g += (((color >>> 16) & 0xff) / 255) * alpha * share;
+    b += (((color >>> 8) & 0xff) / 255) * alpha * share;
+    a += alpha * share;
+  };
+  const first = stops[0];
+  const last = stops[stops.length - 1];
+  if (first === undefined || last === undefined) return 0;
+  add(first[1], Math.max(0, first[0]));
+  for (let i = 1; i < stops.length; i += 1) {
+    const p = stops[i - 1] as [number, number];
+    const q = stops[i] as [number, number];
+    const span = Math.min(1, q[0]) - Math.max(0, p[0]);
+    if (span <= 0) continue;
+    add(p[1], span * 0.5);
+    add(q[1], span * 0.5);
+  }
+  add(last[1], Math.max(0, 1 - last[0]));
+  if (a <= 0) return 0;
+  return pack(r / a, g / a, b / a, a);
+}
+
+/**
+ * A background layer with its `background-size`, `background-position` and `background-repeat`
+ * applied: unchanged when it covers the box, placed (`bs`, `bp`) when it is one sized piece, and
+ * its average colour when it is a small tile repeated across the box.
+ */
+export function placeLayer<L extends WireLayer | { flat: number }>(layer: L, size: string, position: string, repeat: string): L | { flat: number } | (L & { bs: number[]; bp: number[] }) {
+  const sizes = splitTop(size.trim(), " ");
+  if (sizes.length === 0 || sizes[0] === "auto" || sizes[0] === "cover" || sizes[0] === "contain" || sizes[0] === "") return layer;
+  const w = parseLengthPercent(sizes[0] ?? "");
+  const h = sizes[1] === undefined || sizes[1] === "auto" ? ([0, 1] as [number, number]) : parseLengthPercent(sizes[1]);
+  if (w === null || h === null) return layer;
+  if (w[0] === 0 && w[1] === 1 && h[0] === 0 && h[1] === 1) return layer;
+  if (!repeat.includes("no-repeat")) {
+    // A tile that still spans the box one way is drawn once; a small one reads as its average.
+    if ("flat" in layer) return layer;
+    return { flat: averageOfStops(layer.st) };
+  }
+  const at = splitTop(position.trim(), " ");
+  const x = parseLengthPercent(at[0] ?? "0%") ?? [0, 0];
+  const y = parseLengthPercent(at[1] ?? "0%") ?? [0, 0];
+  return { ...layer, bs: [w[0], w[1], h[0], h[1]], bp: [x[0], x[1], y[0], y[1]] };
+}
+
 /** One computed `background-image` layer; `null` when it is not a gradient this painter draws. */
 export function parseGradient(text: string): WireLayer | { flat: number } | null {
   const open = text.indexOf("(");

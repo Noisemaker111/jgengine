@@ -137,6 +137,12 @@ pub struct Layer {
     pub ry: f32,
     #[serde(default)]
     pub st: Vec<(f32, Rgba)>,
+    /// `background-size` of a layer drawn once: `[w points, w fraction, h points, h fraction]` of the box.
+    #[serde(default)]
+    pub bs: Option<[f32; 4]>,
+    /// Its `background-position`: `[x points, x fraction, y points, y fraction]` of the room left over.
+    #[serde(default)]
+    pub bp: Option<[f32; 4]>,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -551,7 +557,7 @@ fn size_of(id: u32) -> Option<[f32; 2]> {
 
 /// Whether this box's paint depends on its own laid-out size.
 fn needs_size(b: &Box_) -> bool {
-    b.ly.iter().any(|l| l.g == 1 && l.flat.is_none())
+    b.ly.iter().any(|l| (l.g == 1 && l.flat.is_none()) || l.bs.is_some())
         || b.tf.is_some_and(|t| t[4] != 0.0 || t[5] != 0.0)
         || b.rad.is_some_and(|r| r.iter().any(|v| *v < 0.0))
         || b.svg.is_some()
@@ -661,7 +667,7 @@ fn clipped_paint(b: &Box_, size: [f32; 2], poly: &[[f32; 2]]) -> rune::Shape {
     if poly.len() < 3 {
         return shape;
     }
-    for l in &b.ly {
+    for l in b.ly.iter().filter(|l| l.bs.is_none()) {
         if let Some(c) = l.flat {
             shape = shape.fill(poly.clone(), c.0);
             continue;
@@ -703,6 +709,15 @@ fn clipped_paint(b: &Box_, size: [f32; 2], poly: &[[f32; 2]]) -> rune::Shape {
         }
     }
     shape
+}
+
+/// The sheet one background layer paints on: the whole box, or the piece its size and position give.
+fn layer_sheet(l: &Layer, radii: Option<[f32; 4]>, size: [f32; 2]) -> El {
+    let Some(bs) = l.bs else { return paint_layer(sheet(radii), l, size) };
+    let (w, h) = (bs[0] + bs[1] * size[0], bs[2] + bs[3] * size[1]);
+    let bp = l.bp.unwrap_or([0.0; 4]);
+    let (x, y) = (bp[0] + bp[1] * (size[0] - w), bp[2] + bp[3] * (size[1] - h));
+    paint_layer(el().pin(Some(x), Some(y), None, None).size(w.max(0.0), h.max(0.0)), l, [w, h])
 }
 
 /// A full-size, out-of-flow sheet for one more background layer.
@@ -820,14 +835,14 @@ pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
     // The lowest gradient paints on the box itself; the rest are full-size sheets above it.
     let mut layers = if clipped { [].iter() } else { b.ly.iter() };
     if let Some(first) = layers.next() {
-        e = if first.flat.is_some() && b.bg.is_some() {
-            e.child(paint_layer(sheet(radii), first, size))
+        e = if (first.flat.is_some() && b.bg.is_some()) || first.bs.is_some() {
+            e.child(layer_sheet(first, radii, size))
         } else {
             paint_layer(e, first, size)
         };
     }
     for l in layers {
-        e = e.child(paint_layer(sheet(radii), l, size));
+        e = e.child(layer_sheet(l, radii, size));
     }
     // A clipped box keeps its shape and loses the picture, which would paint past the cut corners.
     if let (Some(url), false) = (&b.bgi, clipped) {
