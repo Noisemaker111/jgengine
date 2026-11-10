@@ -530,7 +530,9 @@ function boxOfStyle(element: Element, style: CSSStyleDeclaration, report: Mirror
     if (around.display.endsWith("flex")) {
       const across = around.flexDirection.startsWith("column") ? "w" : "h";
       const autoMargin = across === "w" ? style.marginLeft === "auto" || style.marginRight === "auto" : style.marginTop === "auto" || style.marginBottom === "auto";
-      if (box[across] === "100%" && !autoMargin) {
+      const bounded = (across === "w" ? style.maxWidth : style.maxHeight) !== "none";
+      const stretches = around.alignItems === "normal" || around.alignItems === "stretch";
+      if (box[across] === "100%" && !autoMargin && !bounded && stretches) {
         delete box[across];
         box["asf"] = 4;
       }
