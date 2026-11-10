@@ -77,7 +77,7 @@ export const markupHost: Host<MarkupNode> = {
 };
 
 function escapeText(text: string): string {
-  return text.replace(/[&<>]/g, (c) => (c === "&" ? "&amp;" : c === "<" ? "&lt;" : "&gt;"));
+  return escapeAttribute(text);
 }
 
 function escapeAttribute(text: string): string {

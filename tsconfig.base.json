@@ -8,6 +8,8 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "@jgengine/core/ui/jsx",
     "paths": {
       "@jgengine/assets": ["./packages/assets/src/index.ts"],
       "@jgengine/assets/*": ["./packages/assets/src/*"],

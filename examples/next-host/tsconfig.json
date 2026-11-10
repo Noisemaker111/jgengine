@@ -13,6 +13,7 @@
       "DOM.Iterable"
     ],
     "jsx": "preserve",
+    "jsxImportSource": "react",
     "allowJs": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,

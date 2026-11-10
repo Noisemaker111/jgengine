@@ -199,6 +199,12 @@ export function portSource(path: string, text: string): { text: string; notes: s
     const target = SPECIFIERS[specifier];
     return target === undefined ? whole : `${lead}${quote}${target}${quote}`;
   });
+  // A test that borrowed another package's React renderer by path imports the engine's instead.
+  const borrowed = /(?:\/\/[^\n]*\n)*const \{ renderToStaticMarkup \} = \(await import\(Bun\.resolveSync\("react-dom\/server"[^\n]*\n(?:[^\n]*\n)*?\};\n/;
+  if (borrowed.test(out)) {
+    out = out.replace(borrowed, `import { renderToStaticMarkup } from "${RUNTIME}/markup";\n`);
+    if (!/\bjoin\(/.test(out)) out = out.replace(/import \{ join \} from "node:path";\n/, "");
+  }
   return { text: out, notes };
 }
 

@@ -78,7 +78,17 @@ interface StoreCell {
   subscribe: ((onChange: () => void) => () => void) | null;
   unsubscribe: (() => void) | null;
 }
-type HookCell = StateCell | MemoCell | RefCell | EffectCell | StoreCell;
+interface DeferredCell {
+  tag: "deferred";
+  shown: unknown;
+  /** Set for the background pass that brings `shown` up to the wanted value. */
+  advance: boolean;
+}
+type HookCell = StateCell | MemoCell | RefCell | EffectCell | StoreCell | DeferredCell;
+
+/** How long one slice of a background pass renders before it gives the page back. */
+const SLICE_MS = 5;
+const now = (): number => performance.now();
 
 interface Slot {
   key: string;
@@ -209,6 +219,13 @@ function slotsOf(children: unknown): Slot[] {
   return out;
 }
 
+/** The render counter (`devtools/renderCounter.ts`), when a test or a measured page installed one. */
+interface RenderSink {
+  render(type: unknown): void;
+  commit(): void;
+}
+const renderSink = (): RenderSink | undefined => (globalThis as { __jgRenderSink?: RenderSink }).__jgRenderSink;
+
 /** One mounted tree and its scheduler. */
 export class Root<N = unknown> {
   readonly host: Host<N>;
@@ -216,6 +233,23 @@ export class Root<N = unknown> {
   private readonly dirty = new Set<Fiber<N>>();
   private readonly resync = new Set<Fiber<N>>();
   private effects: { fiber: Fiber<N>; cell: EffectCell }[] = [];
+  /** Fibers whose ref is attached at commit, after every removed fiber has let go of the same ref. */
+  private attaching: Fiber<N>[] = [];
+  /**
+   * The background pass (`useDeferredValue`): the components that follow a deferred value render a
+   * slice at a time, and what they change on screen, their placements and their effects are held
+   * and applied together when the last slice is in, so the old tree shows whole until then.
+   */
+  private readonly deferred = new Map<DeferredCell, Fiber<N>>();
+  private readonly later = new Set<Fiber<N>>();
+  private passActive = false;
+  private slicing = false;
+  private sliceWork = 0;
+  private deadline = 0;
+  private backgroundQueued = false;
+  private heldEffects: { fiber: Fiber<N>; cell: EffectCell }[] = [];
+  private heldMutations: (() => void)[] = [];
+  private readonly heldResync = new Set<Fiber<N>>();
   private readonly mounted: Fiber<N>[] = [];
   private readonly updated: { fiber: Fiber<N>; prevProps: Props; prevState: object }[] = [];
   private scheduled = false;
@@ -265,13 +299,76 @@ export class Root<N = unknown> {
       batchedRoots.add(this as Root<unknown>);
       return;
     }
-    afterTask(() => {
+    const apply = (): void => {
       if (this.scheduled) this.flush();
-    });
+    };
+    if (inDiscreteEvent()) queueMicrotask(apply);
+    else afterTask(apply);
   }
 
   get pending(): boolean {
-    return this.dirty.size > 0;
+    return this.dirty.size > 0 || this.later.size > 0 || this.deferred.size > 0;
+  }
+
+  /** Bring `cell` up to date in a background pass. False when this root renders once and never updates. */
+  defer(fiber: Fiber<N>, cell: DeferredCell): boolean {
+    if (!this.live) return false;
+    this.deferred.set(cell, fiber);
+    this.queueBackground();
+    return true;
+  }
+
+  private queueBackground(): void {
+    if (this.backgroundQueued) return;
+    this.backgroundQueued = true;
+    afterTask(() => {
+      this.backgroundQueued = false;
+      this.backgroundSlice();
+    });
+  }
+
+  /** Render one slice of the background pass; `whole` (tests, `act`) runs it to the end. */
+  backgroundSlice(whole = false): void {
+    if (this.flushing) {
+      this.queueBackground();
+      return;
+    }
+    if (!this.passActive) {
+      if (this.deferred.size === 0) return;
+      this.passActive = true;
+      for (const [cell, fiber] of this.deferred) {
+        if (fiber.dead) continue;
+        cell.advance = true;
+        this.later.add(fiber);
+      }
+      this.deferred.clear();
+    }
+    for (const fiber of this.later) {
+      if (fiber.dead) continue;
+      fiber.dirty = true;
+      this.dirty.add(fiber);
+    }
+    this.later.clear();
+    this.slicing = true;
+    this.sliceWork = 0;
+    this.deadline = whole ? Infinity : now() + SLICE_MS;
+    try {
+      this.flush();
+    } finally {
+      this.slicing = false;
+    }
+    if (this.later.size > 0) {
+      this.queueBackground();
+      return;
+    }
+    this.passActive = false;
+    for (const mutate of this.heldMutations.splice(0)) mutate();
+    for (const parent of this.heldResync) this.resync.add(parent);
+    this.heldResync.clear();
+    this.effects.push(...this.heldEffects.splice(0));
+    this.commit();
+    if (this.dirty.size > 0) this.flush();
+    if (this.deferred.size > 0) this.queueBackground();
   }
 
   flush(): void {
@@ -288,7 +385,9 @@ export class Root<N = unknown> {
         const batch = [...this.dirty].sort((a, b) => a.depth - b.depth);
         this.dirty.clear();
         for (const fiber of batch) {
-          if (fiber.dirty && !fiber.dead) this.update(fiber, fiber.element, true);
+          if (!fiber.dirty || fiber.dead) continue;
+          if (this.slicing && this.sliceWork > 0 && now() > this.deadline) this.later.add(fiber);
+          else this.update(fiber, fiber.element, true);
         }
         this.commit();
       }
@@ -339,13 +438,15 @@ export class Root<N = unknown> {
   }
 
   private markResync(parent: Fiber<N>): void {
-    this.resync.add(this.hostParentOf(parent));
+    (this.slicing ? this.heldResync : this.resync).add(this.hostParentOf(parent));
   }
 
   private update(fiber: Fiber<N>, element: UiElement | string | null, force: boolean): void {
     if (fiber.kind === "text") {
       if (element !== fiber.element && typeof element === "string" && fiber.node !== null) {
-        this.host.setText(fiber.node, element);
+        const node = fiber.node;
+        if (this.slicing) this.heldMutations.push(() => this.host.setText(node, element));
+        else this.host.setText(node, element);
       }
       fiber.element = element;
       return;
@@ -369,13 +470,26 @@ export class Root<N = unknown> {
         }
       }
     }
+    if (this.slicing && this.sliceWork > 0 && (fiber.kind === "fn" || fiber.kind === "class") && now() > this.deadline) {
+      // Out of time: this component, and everything under it, renders in a later slice.
+      fiber.element = element;
+      fiber.dirty = true;
+      this.later.add(fiber);
+      return;
+    }
     fiber.element = element;
     fiber.props = nextProps;
     fiber.dirty = false;
     this.dirty.delete(fiber);
+    this.later.delete(fiber);
     switch (fiber.kind) {
       case "host": {
-        if (fiber.node !== null) this.host.updateProps(fiber.node, fiber.type as string, prevProps === EMPTY_PROPS ? null : prevProps, nextProps);
+        if (fiber.node !== null) {
+          const node = fiber.node;
+          // A node already on screen keeps its look until the background pass lands whole.
+          if (this.slicing && prevProps !== EMPTY_PROPS) this.heldMutations.push(() => this.host.updateProps(node, fiber.type as string, prevProps, nextProps));
+          else this.host.updateProps(node, fiber.type as string, prevProps === EMPTY_PROPS ? null : prevProps, nextProps);
+        }
         this.setRef(fiber, nextProps["ref"]);
         this.reconcile(fiber, nextProps["dangerouslySetInnerHTML"] === undefined ? nextProps["children"] : null);
         return;
@@ -446,6 +560,8 @@ export class Root<N = unknown> {
   private renderFunction(fiber: Fiber<N>, props: Props): void {
     const type = fiber.type;
     const component = (typeof type === "object" && type !== null ? (type as MemoType).inner : type) as FunctionComponent<Props>;
+    renderSink()?.render(component);
+    this.sliceWork += 1;
     if (fiber.hooks === null) fiber.hooks = [];
     let result: UiNode = null;
     let rounds = 0;
@@ -479,6 +595,8 @@ export class Root<N = unknown> {
 
   private renderClass(fiber: Fiber<N>, prevProps: Props, props: Props): void {
     const type = fiber.type as ClassType;
+    renderSink()?.render(type);
+    this.sliceWork += 1;
     let instance = fiber.instance;
     const first = instance === null;
     if (instance === null) {
@@ -599,7 +717,9 @@ export class Root<N = unknown> {
   private teardown(fiber: Fiber<N>): void {
     fiber.dead = true;
     this.dirty.delete(fiber);
+    this.later.delete(fiber);
     this.resync.delete(fiber);
+    this.heldResync.delete(fiber);
     if (fiber.kind === "portal" && fiber.node !== null) {
       for (const node of fiber.placed) this.host.remove(fiber.node, node);
       fiber.placed = [];
@@ -637,7 +757,7 @@ export class Root<N = unknown> {
     if (ref === fiber.ref) return;
     if (fiber.ref !== null && fiber.ref !== undefined) this.assignRef(fiber.ref, null);
     fiber.ref = ref ?? null;
-    if (fiber.ref !== null) this.assignRef(fiber.ref, fiber.node);
+    if (fiber.ref !== null) this.attaching.push(fiber);
   }
 
   private assignRef(ref: unknown, value: unknown): void {
@@ -672,6 +792,10 @@ export class Root<N = unknown> {
       }
     }
     this.host.commitDone?.();
+    renderSink()?.commit();
+    const attaching = this.attaching;
+    this.attaching = [];
+    for (const fiber of attaching) if (!fiber.dead && fiber.ref !== null) this.assignRef(fiber.ref, fiber.node);
     // Children before parents, as a parent's effect may read what a child registered.
     const effects = this.effects.sort((a, b) => b.fiber.depth - a.fiber.depth);
     this.effects = [];
@@ -708,7 +832,7 @@ export class Root<N = unknown> {
   queueEffect(fiber: Fiber<N>, cell: EffectCell): void {
     if (!this.live) return;
     cell.pending = true;
-    this.effects.push({ fiber, cell });
+    (this.slicing ? this.heldEffects : this.effects).push({ fiber, cell });
   }
 }
 
@@ -727,6 +851,23 @@ function reportError(error: unknown): void {
 }
 
 // ------------------------------------------------------------------ batching
+
+/** What the player did once (a press, a key, a release), as opposed to a stream (moves, scrolls). */
+const DISCRETE_EVENTS = new Set([
+  "click", "dblclick", "auxclick", "contextmenu", "pointerdown", "pointerup", "pointercancel", "mousedown", "mouseup",
+  "touchstart", "touchend", "touchcancel", "keydown", "keyup", "keypress", "input", "beforeinput", "change", "submit", "reset",
+  "focusin", "focusout", "dragstart", "dragend", "drop", "cut", "copy", "paste", "compositionstart", "compositionend",
+]);
+
+/**
+ * True while the browser is delivering one of those to a listener the page added itself (the
+ * engine's own listeners apply state with `flushSync`): state set there applies as the handler
+ * returns, so what the player did shows before anything else runs.
+ */
+function inDiscreteEvent(): boolean {
+  const event = (globalThis as { event?: { type?: unknown } }).event;
+  return event !== undefined && event !== null && typeof event.type === "string" && DISCRETE_EVENTS.has(event.type);
+}
 
 /**
  * State set outside an input handler applies in its own task, after the browser has finished
@@ -788,6 +929,7 @@ export function act<T>(fn: () => T | Promise<T>): Promise<T> & { then: Promise<T
         if (root.pending) {
           any = true;
           root.flush();
+          root.backgroundSlice(true);
         }
       }
       if (!any) return;
@@ -997,8 +1139,24 @@ export function useId(): string {
   return useMemo(() => fiber.root.nextId(), []);
 }
 
+/**
+ * `value`, trailing while what depends on it renders in the background a slice at a time: the
+ * component first renders again with the value it had, then the root builds the new tree between
+ * frames and shows it whole.
+ */
 export function useDeferredValue<T>(value: T): T {
-  return value;
+  const fiber = currentFiber();
+  const cell = nextCell<DeferredCell>(() => ({ tag: "deferred", shown: value, advance: false }));
+  if (Object.is(cell.shown, value)) {
+    cell.advance = false;
+    return value;
+  }
+  if (cell.advance || !fiber.root.defer(fiber, cell)) {
+    cell.advance = false;
+    cell.shown = value;
+    return value;
+  }
+  return cell.shown as T;
 }
 
 export function useTransition(): [boolean, (run: () => void) => void] {
