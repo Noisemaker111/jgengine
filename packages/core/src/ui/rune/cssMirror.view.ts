@@ -205,6 +205,41 @@ function inlineRuns(element: Element, style: TextStyle, out: Run[], fresh: boole
   return true;
 }
 
+const EMOJI_ONLY = /^(?:\p{Extended_Pictographic}|\p{Emoji_Modifier}|\p{Regional_Indicator}|[\u200d\ufe0f\s])+$/u;
+const EMOJI_DRAWN = /\p{Emoji_Presentation}|\ufe0f/u;
+const emojiPictures = new Map<string, { url: string; w: number; h: number } | null>();
+
+/**
+ * Colour emoji as a picture. Rune's fonts hold no colour glyphs, so text that is only emoji (a
+ * ride's icon, a tab's mark) is drawn once by the browser, in the system's emoji font, and shown
+ * as an image the size the text would take.
+ */
+function emojiPicture(text: string, size: number): { url: string; w: number; h: number } | null {
+  if (!(size > 0) || !EMOJI_ONLY.test(text) || !EMOJI_DRAWN.test(text)) return null;
+  const key = `${size}|${text}`;
+  const known = emojiPictures.get(key);
+  if (known !== undefined) return known;
+  let made: { url: string; w: number; h: number } | null = null;
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+  if (context !== null) {
+    const font = `${size}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
+    context.font = font;
+    const w = Math.max(1, Math.ceil(context.measureText(text).width));
+    const h = Math.max(1, Math.round(size * 1.25));
+    const scale = 3;
+    canvas.width = w * scale;
+    canvas.height = h * scale;
+    context.scale(scale, scale);
+    context.font = font;
+    context.textBaseline = "middle";
+    context.fillText(text, 0, h / 2 + size * 0.04);
+    made = { url: canvas.toDataURL("image/png"), w, h };
+  }
+  emojiPictures.set(key, made);
+  return made;
+}
+
 function fontOf(style: TextStyle): { f: string; z: number; w: number; i: boolean; lh: number; ls: number } {
   return { f: style.f, z: style.z, w: style.w, i: style.i, lh: style.lh, ls: style.ls };
 }
@@ -912,8 +947,17 @@ export function mirrorElement(element: Element, report: MirrorReport, inherited:
   const onlyInline = element.firstChild !== null && inlineRuns(element, textStyle, runs, true);
   if (onlyInline) {
     const text = textOf(runs, textStyle, report, element);
-    if (text !== null) box["t"] = text;
-    box["txt"] = 1;
+    const picture = text === null ? null : emojiPicture(String(text["s"]), Number(text["z"]));
+    if (picture !== null) {
+      // Not marked as a text box: a change of its text mirrors the element again.
+      box["img"] = picture.url;
+      box["fit"] = 2;
+      if (box["w"] === undefined) box["w"] = picture.w;
+      if (box["h"] === undefined) box["h"] = picture.h;
+    } else {
+      if (text !== null) box["t"] = text;
+      box["txt"] = 1;
+    }
   } else {
     let inlineRow = false;
     for (let node = element.firstChild; node !== null; node = node.nextSibling) {
@@ -959,6 +1003,15 @@ export function mirrorElement(element: Element, report: MirrorReport, inherited:
       for (const child of children) {
         if (child.id !== 0 && child["inl"] !== 1 && child["pos"] !== 2 && child["w"] === undefined && child["fb"] === undefined) child["fb"] = "100%";
       }
+    }
+  }
+  // A grid item placed at the start, middle or end of its cell is as wide as its content, but no
+  // wider than the cell (CSS `fit-content`); the layout engine would let it run past.
+  if (box["d"] === 2) {
+    const containerAlign = box["ji"];
+    for (const child of children) {
+      const align = child["jsf"] ?? containerAlign;
+      if ((align === 1 || align === 2 || align === 3) && child["pos"] !== 2 && child["w"] === undefined && child["mxw"] === undefined) child["mxw"] = "100%";
     }
   }
   const after = pseudoBox(element, "::after", report);

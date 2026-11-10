@@ -137,6 +137,12 @@ pub struct Layer {
     pub ry: f32,
     #[serde(default)]
     pub st: Vec<(f32, Rgba)>,
+    /// A repeating linear gradient: one repeat's length in points (stops are fractions of it) and
+    /// where the first repeat starts along the gradient line.
+    #[serde(default)]
+    pub per: f32,
+    #[serde(default)]
+    pub off: f32,
     /// `background-size` of a layer drawn once: `[w points, w fraction, h points, h fraction]` of the box.
     #[serde(default)]
     pub bs: Option<[f32; 4]>,
@@ -549,6 +555,84 @@ fn layout(b: &Box_, s: &mut Style) {
     }
 }
 
+/// The dashes of a border `[top, right, bottom, left]` wide, each side on its own: three widths on
+/// and two off for dashed, one and one for dotted.
+fn dashes_shape(widths: [f32; 4], color: Color, dash: u8, size: [f32; 2]) -> rune::Shape {
+    let [w, h] = size;
+    let mut shape = rune::Shape::new();
+    for (side, width) in widths.into_iter().enumerate() {
+        if width <= 0.0 {
+            continue;
+        }
+        let (on, off) = if dash == 1 { (width, width) } else { (width * 3.0, width * 2.0) };
+        let along = if side % 2 == 0 { w } else { h };
+        let mut at = 0.0;
+        while at < along {
+            let end = (at + on).min(along);
+            let rect = match side {
+                0 => [[at, 0.0], [end, 0.0], [end, width], [at, width]],
+                1 => [[w - width, at], [w, at], [w, end], [w - width, end]],
+                2 => [[at, h - width], [end, h - width], [end, h], [at, h]],
+                _ => [[0.0, at], [width, at], [width, end], [0.0, end]],
+            };
+            shape = shape.fill(rect.to_vec(), color);
+            at += on + off;
+        }
+    }
+    shape
+}
+
+/// A repeating linear gradient as bands across the box, one per pair of stops in each repeat
+/// (hazard stripes, tape, ruled paper). A band between two colours is drawn in four steps.
+fn stripes_shape(l: &Layer, size: [f32; 2]) -> rune::Shape {
+    let [w, h] = size;
+    stripes(rune::Shape::new(), l, size, &[[0.0, 0.0], [w, 0.0], [w, h], [0.0, h]])
+}
+
+/// The bands of `stripes_shape`, cut to `poly` and added to `shape`.
+fn stripes(mut shape: rune::Shape, l: &Layer, size: [f32; 2], poly: &[[f32; 2]]) -> rune::Shape {
+    let [w, h] = size;
+    if w <= 0.0 || h <= 0.0 || l.st.len() < 2 {
+        return shape;
+    }
+    let stops: Vec<(f32, Color)> = l.st.iter().map(|(t, c)| (*t, c.0)).collect();
+    let n = [l.a.sin(), -l.a.cos()];
+    let length = (w * n[0]).abs() + (h * n[1]).abs();
+    let repeats = (length / l.per).ceil() as i32 + 1;
+    if length <= 0.0 || repeats > 240 {
+        let mid = stop_color(&stops, 0.5);
+        return if mid.a > 0.0 { shape.fill(poly.to_vec(), mid) } else { shape };
+    }
+    let start = n[0] * w * 0.5 + n[1] * h * 0.5 - length * 0.5 + l.off;
+    let first = -(l.off / l.per).ceil() as i32;
+    for k in first..repeats {
+        let base = start + k as f32 * l.per;
+        for pair in stops.windows(2) {
+            let (a, b) = (pair[0], pair[1]);
+            if b.0 - a.0 <= 1e-5 {
+                continue;
+            }
+            let steps = if a.1 == b.1 { 1 } else { 4 };
+            for step in 0..steps {
+                let (t0, t1) = (a.0 + (b.0 - a.0) * step as f32 / steps as f32, a.0 + (b.0 - a.0) * (step + 1) as f32 / steps as f32);
+                let color = stop_color(&stops, (t0 + t1) * 0.5);
+                if color.a <= 0.0 {
+                    continue;
+                }
+                let lap = if color.a >= 1.0 { 0.2 } else { 0.0 };
+                let mut piece = cut(poly, n, base + t0 * l.per - lap, false);
+                if piece.len() >= 3 {
+                    piece = cut(&piece, n, base + t1 * l.per + lap, true);
+                }
+                if piece.len() >= 3 {
+                    shape = shape.fill(piece, color);
+                }
+            }
+        }
+    }
+    shape
+}
+
 /// A conic gradient as wedges round its centre, each in the colour at its middle: a ring that
 /// fills with a value, a pie, a dial. On a round box the wedges end on the circle; otherwise at
 /// the box's edges.
@@ -600,6 +684,9 @@ fn paint_layer(e: El, l: &Layer, radii: Option<[f32; 4]>, size: [f32; 2]) -> El 
     if l.g == 2 {
         return e.shape(conic_shape(l, radii, size));
     }
+    if l.g == 0 && l.per > 0.0 {
+        return e.shape(stripes_shape(l, size));
+    }
     let stops: Vec<(f32, Color)> = l.st.iter().map(|(t, c)| (*t, c.0)).collect();
     if l.g != 1 {
         return e.linear_gradient(l.a, stops);
@@ -635,8 +722,14 @@ fn size_of(id: u32) -> Option<[f32; 2]> {
 }
 
 /// Whether this box's paint depends on its own laid-out size.
+/// A dashed or dotted border that is not the same width on every side.
+fn dashed_sides(b: &Box_) -> bool {
+    b.dash != 0 && b.bw.is_some_and(|w| w.iter().any(|v| *v != w[0]))
+}
+
 fn needs_size(b: &Box_) -> bool {
-    b.ly.iter().any(|l| (l.g != 0 && l.flat.is_none()) || l.bs.is_some())
+    dashed_sides(b) ||
+    b.ly.iter().any(|l| ((l.g != 0 || l.per > 0.0) && l.flat.is_none()) || l.bs.is_some())
         || b.tf.is_some_and(|t| t[4] != 0.0 || t[5] != 0.0)
         || b.rad.is_some_and(|r| r.iter().any(|v| *v < 0.0))
         || b.svg.is_some()
@@ -752,6 +845,10 @@ fn clipped_paint(b: &Box_, size: [f32; 2], poly: &[[f32; 2]]) -> rune::Shape {
             continue;
         }
         let stops: Vec<(f32, Color)> = l.st.iter().map(|(t, c)| (*t, c.0)).collect();
+        if l.g == 0 && l.per > 0.0 {
+            shape = stripes(shape, l, size, &poly);
+            continue;
+        }
         if l.g != 0 {
             // A radial or conic gradient inside a clipped box paints as its middle colour.
             let mid = stop_color(&stops, 0.5);
@@ -924,6 +1021,9 @@ pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
                 e = e.child(sheet(radii).border_sides(widths, color).inert());
             }
         }
+    } else if let (Some(w), Some(c), true, false) = (b.bw, b.bc, dashed_sides(b), skewed) {
+        // Rune dashes a border all the way round; a rule dashed on some sides only is drawn side by side.
+        e = e.child(sheet(None).shape(dashes_shape(w, c.0, b.dash, size)).inert());
     } else if let (Some(w), Some(c), false) = (b.bw, b.bc, skewed) {
         if w.iter().any(|v| *v > 0.0) {
             e = e.border_sides(w, c.0);

@@ -243,6 +243,9 @@ export interface WireLayer {
   rf?: [number, number] | "corner" | "side";
   circle?: boolean;
   st: [number, number][];
+  /** A repeating linear gradient: the length of one repeat in points, and where the first starts. */
+  per?: number;
+  off?: number;
   /** A layer drawn once: its size and where it sits (`placeLayer`). */
   bs?: number[];
   bp?: number[];
@@ -418,6 +421,14 @@ export function parseGradient(text: string): WireLayer | { flat: number } | null
     const stops = parseStops(args.slice(first));
     if (stops === null || stops.length === 0) return null;
     if (repeating) {
+      // Stripes wide enough to see are drawn as stripes; finer ones read as their average colour.
+      const from = stops[0]?.at ?? null;
+      const to = stops[stops.length - 1]?.at ?? null;
+      if (from !== null && to !== null && to - from >= 3 && stops.every((s) => s.at === null || s.px)) {
+        const period = to - from;
+        const scaled = stops.map((s) => ({ ...s, at: s.at === null ? null : (s.at - from) / period, px: false }));
+        return { g: 0, a: angle, st: spreadStops(scaled), per: period, off: from };
+      }
       const flat = averageOfRepeat(stops);
       return flat === null ? null : { flat };
     }
