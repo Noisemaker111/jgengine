@@ -739,7 +739,21 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   ctx.sim.addStage({ id: "authored-environment", phase: "afterTick", run: (_dt, _tick, gameDt) => authoredEnvironment.step(gameDt) });
   ctx.sim.addStage({ id: "projectile-targets", phase: "beforeMovement", run: (_dt, _tick, gameDt) => combat.captureProjectileTargets(gameDt) });
   ctx.sim.addStage({ id: "projectile-travel", phase: "afterTick", run: (_dt, _tick, gameDt) => projectiles.advanceProjectiles(gameDt, time.now()) });
-  registerSave({ key: "environment", snapshot: authoredEnvironment.snapshot, hydrate: (state) => authoredEnvironment.restore(state as AuthoredSimulationSnapshot) });
+  registerSave({
+    key: "environment",
+    snapshot: authoredEnvironment.snapshot,
+    // Wet surfaces, fires and flocks are derived from the authored document. A save written against an
+    // older document (a habitat added or removed since) cannot be restored onto this one; `restore`
+    // validates before it changes anything, so the authored state stands and the rest of the save loads.
+    // Throwing here made Harbor Heat unopenable on 0.55.0 for anyone holding a save from 0.54.0.
+    hydrate: (state) => {
+      try {
+        authoredEnvironment.restore(state as AuthoredSimulationSnapshot);
+      } catch (error) {
+        console.warn(`degraded: saved environment does not fit this game's authored world (${error instanceof Error ? error.message : String(error)}); starting it fresh`);
+      }
+    },
+  });
   registerSave({ key: "projectiles", snapshot: projectiles.snapshot, hydrate: (state) => projectiles.restore(state as ReturnType<typeof projectiles.snapshot>) });
   registerSave({
     key: "sim",

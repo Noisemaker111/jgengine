@@ -539,4 +539,28 @@ describe("ctx.game.save", () => {
     expect(replication).not.toHaveProperty("unlocks");
     expect(replication).not.toHaveProperty("roster");
   });
+
+  test("a save whose environment no longer fits the authored world still loads the rest of the save", () => {
+    const make = () => createGameContext({ definition: offlineGame(false), content: { defaultRarity: "common" }, player: { userId: "p1", isNew: true } });
+    const source = make();
+    for (let i = 0; i < 5; i++) source.sim.advance(0.02, () => {});
+    expect(source.sim.tick()).toBeGreaterThan(0);
+    const saved = source.state() as Record<string, unknown>;
+    const environment = saved["environment"] as { flocks: unknown[] };
+    // A save written when the game authored one more habitat than it does now.
+    environment.flocks = [...environment.flocks, { id: "gulls-removed-since", agents: [], routeIndex: 0 }];
+
+    const restored = make();
+    const warn = console.warn;
+    const warnings: string[] = [];
+    console.warn = (line: unknown) => { warnings.push(String(line)); };
+    try {
+      restored.restore(saved);
+    } finally {
+      console.warn = warn;
+    }
+    // `sim` is restored after `environment`, so it only arrives when the environment mismatch did not abort the load.
+    expect(restored.sim.tick()).toBe(source.sim.tick());
+    expect(warnings.some((line) => line.startsWith("degraded: saved environment does not fit"))).toBe(true);
+  });
 });
