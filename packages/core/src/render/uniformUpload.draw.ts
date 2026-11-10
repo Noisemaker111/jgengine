@@ -7,22 +7,18 @@
  * here, once per context prototype, keeps the upload allocation-free for every game; the values
  * and validation are identical because a typed-array store performs the same ToNumber/ToInt32
  * conversion Blink's sequence binding did.
+ *
+ * The wrappers keep fixed arity on purpose: a `...args` rest parameter would allocate an array
+ * per call and cost more than the conversion saves.
  */
 
 type PooledBuffer = Float32Array | Int32Array | Uint32Array;
 type BufferCtor = Float32ArrayConstructor | Int32ArrayConstructor | Uint32ArrayConstructor;
 
-const FLOAT_UPLOADS = [
-  "uniform1fv",
-  "uniform2fv",
-  "uniform3fv",
-  "uniform4fv",
-  "uniformMatrix2fv",
-  "uniformMatrix3fv",
-  "uniformMatrix4fv",
-] as const;
-const INT_UPLOADS = ["uniform1iv", "uniform2iv", "uniform3iv", "uniform4iv"] as const;
-const UINT_UPLOADS = ["uniform1uiv", "uniform2uiv", "uniform3uiv", "uniform4uiv"] as const;
+const FLOAT_VECTOR_UPLOADS = ["uniform1fv", "uniform2fv", "uniform3fv", "uniform4fv"] as const;
+const FLOAT_MATRIX_UPLOADS = ["uniformMatrix2fv", "uniformMatrix3fv", "uniformMatrix4fv"] as const;
+const INT_VECTOR_UPLOADS = ["uniform1iv", "uniform2iv", "uniform3iv", "uniform4iv"] as const;
+const UINT_VECTOR_UPLOADS = ["uniform1uiv", "uniform2uiv", "uniform3uiv", "uniform4uiv"] as const;
 
 const pools = new Map<BufferCtor, Map<number, PooledBuffer>>();
 const patched = new WeakSet<object>();
@@ -59,15 +55,28 @@ export function pooledUniformData(data: unknown, ctor: BufferCtor): PooledBuffer
   return buffer;
 }
 
-type UniformMethod = (this: WebGL2RenderingContext, ...args: unknown[]) => unknown;
+type VectorUpload = (this: WebGL2RenderingContext, location: unknown, data: unknown) => unknown;
+type MatrixUpload = (this: WebGL2RenderingContext, location: unknown, transpose: unknown, data: unknown) => unknown;
 
-function wrapUpload(table: Record<string, unknown>, name: string, ctor: BufferCtor): void {
-  const original = table[name] as UniformMethod | undefined;
+function wrapVectorUpload(table: Record<string, unknown>, name: string, ctor: BufferCtor): void {
+  const original = table[name] as VectorUpload | undefined;
   if (typeof original !== "function" || (original as { __jgPooled?: boolean }).__jgPooled === true) return;
-  const wrapped: UniformMethod = function (this: WebGL2RenderingContext, ...args: unknown[]) {
-    const converted = pooledUniformData(args[args.length - 1], ctor);
-    if (converted !== undefined) args[args.length - 1] = converted;
-    return original.apply(this, args);
+  const wrapped: VectorUpload = function (this: WebGL2RenderingContext, location: unknown, data: unknown) {
+    const converted = pooledUniformData(data, ctor);
+    return converted === undefined ? original.call(this, location, data) : original.call(this, location, converted);
+  };
+  (wrapped as { __jgPooled?: boolean }).__jgPooled = true;
+  table[name] = wrapped;
+}
+
+function wrapMatrixUpload(table: Record<string, unknown>, name: string, ctor: BufferCtor): void {
+  const original = table[name] as MatrixUpload | undefined;
+  if (typeof original !== "function" || (original as { __jgPooled?: boolean }).__jgPooled === true) return;
+  const wrapped: MatrixUpload = function (this: WebGL2RenderingContext, location: unknown, transpose: unknown, data: unknown) {
+    const converted = pooledUniformData(data, ctor);
+    return converted === undefined
+      ? original.call(this, location, transpose, data)
+      : original.call(this, location, transpose, converted);
   };
   (wrapped as { __jgPooled?: boolean }).__jgPooled = true;
   table[name] = wrapped;
@@ -81,11 +90,12 @@ export function patchUniformUploads(proto: object): void {
   if (patched.has(proto)) return;
   patched.add(proto);
   // type-escape: the fifteen uniform*{f,i,ui}v entry points share one (location, ..., data) tail,
-  // so one generic wrapper serves them all; the prototype table has per-name signatures.
+  // so one generic wrapper per arity serves them all; the prototype table has per-name signatures.
   const table = proto as Record<string, unknown>;
-  for (const name of FLOAT_UPLOADS) wrapUpload(table, name, Float32Array);
-  for (const name of INT_UPLOADS) wrapUpload(table, name, Int32Array);
-  for (const name of UINT_UPLOADS) wrapUpload(table, name, Uint32Array);
+  for (const name of FLOAT_VECTOR_UPLOADS) wrapVectorUpload(table, name, Float32Array);
+  for (const name of INT_VECTOR_UPLOADS) wrapVectorUpload(table, name, Int32Array);
+  for (const name of UINT_VECTOR_UPLOADS) wrapVectorUpload(table, name, Uint32Array);
+  for (const name of FLOAT_MATRIX_UPLOADS) wrapMatrixUpload(table, name, Float32Array);
 }
 
 let installed = false;
