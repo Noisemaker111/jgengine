@@ -1,5 +1,4 @@
-import { Html, Line } from "@react-three/drei";
-import { useFrame, useThree } from "@react-three/fiber";
+import { HudOverlay } from "./hudOverlay.draw";
 import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
@@ -28,18 +27,14 @@ import {
 import { telegraphDecalPose, telegraphPulseOpacity } from "@jgengine/core/combat/telegraphPulse";
 import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.draw";
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
+import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
+import { type EngineDraw, type EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 
 export type { NameplateSample, WorldBarSample } from "@jgengine/core/hud/barSamples.draw";
 export { collectNameplateSamples, collectWorldBarSamples, paintWorldBarSamples } from "@jgengine/core/hud/barSamples.draw";
 export { telegraphPulseOpacity } from "@jgengine/core/combat/telegraphPulse";
-
-function pinOverlayToViewport(
-  _el: THREE.Object3D,
-  _camera: THREE.Camera,
-  size: { width: number; height: number },
-): [number, number] {
-  return [size.width / 2, size.height / 2];
-}
 
 interface RangeWarnState {
   warn: ReturnType<typeof createOverlayRangeWarn>;
@@ -93,9 +88,7 @@ export function WorldEntityBars({
   maxSamples?: number;
 }) {
   const ctx = useGameContext();
-  const camera = useThree((state) => state.camera);
-  const size = useThree((state) => state.size);
-  const gl = useThree((state) => state.gl);
+  const host = useEngineHost();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const samplesRef = useRef<WorldBarSample[]>([]);
   const projectRef = useRef(new THREE.Vector3());
@@ -103,7 +96,8 @@ export function WorldEntityBars({
   const warnRef = useRef<RangeWarnState | null>(null);
   const visibility = useRenderVisibility();
 
-  useFrame((state) => {
+  useFrameTask((state) => {
+    const { camera, gl, size } = host.frame;
     const nowMs = state.clock.elapsedTime * 1000;
     const canvas = canvasRef.current;
     if (canvas === null) return;
@@ -155,12 +149,12 @@ export function WorldEntityBars({
   }, CAMERA_POST_FRAME_PRIORITY + 0.01);
 
   return (
-    <Html fullscreen calculatePosition={pinOverlayToViewport} zIndexRange={[20, 0]} style={{ pointerEvents: "none" }}>
+    <HudOverlay zIndex={20}>
       <canvas
         ref={canvasRef}
         style={{ width: "100%", height: "100%", display: "block", pointerEvents: "none" }}
       />
-    </Html>
+    </HudOverlay>
   );
 }
 
@@ -228,8 +222,7 @@ export function WorldNameplates({
   renderNameplate,
 }: WorldNameplatesProps) {
   const ctx = useGameContext();
-  const camera = useThree((state) => state.camera);
-  const size = useThree((state) => state.size);
+  const host = useEngineHost();
   const [samples, setSamples] = useState<readonly NameplateSample[]>([]);
   const samplesRef = useRef<NameplateSample[]>([]);
   const shownRef = useRef<readonly NameplateSample[]>([]);
@@ -239,7 +232,8 @@ export function WorldNameplates({
   const warnRef = useRef<RangeWarnState | null>(null);
   const visibility = useRenderVisibility();
 
-  useFrame((state) => {
+  useFrameTask((state) => {
+    const { camera, size } = host.frame;
     const nowMs = state.clock.elapsedTime * 1000;
     if (nowMs - lastTickRef.current < Math.max(0, tickMs)) return;
     lastTickRef.current = nowMs;
@@ -288,7 +282,7 @@ export function WorldNameplates({
   }, CAMERA_POST_FRAME_PRIORITY + 0.01);
 
   return (
-    <Html fullscreen calculatePosition={pinOverlayToViewport} zIndexRange={[19, 0]} style={{ pointerEvents: "none" }}>
+    <HudOverlay zIndex={19}>
       <div className={className} data-nameplates>
         {samples.map((sample) =>
           renderNameplate !== undefined ? (
@@ -356,7 +350,7 @@ export function WorldNameplates({
           ),
         )}
       </div>
-    </Html>
+    </HudOverlay>
   );
 }
 
@@ -381,35 +375,87 @@ export interface WorldObjectHighlightsProps {
 export function WorldObjectHighlights({ color = "#facc15", radius, y = 0.05 }: WorldObjectHighlightsProps) {
   const ctx = useGameContext();
   const ids = useGameStore((c): readonly string[] => c.scene.object.selection.list());
-  return (
-    <>
-      {ids.map((id) => {
-        const object = ctx.scene.object.get(id);
-        if (object === null) return null;
-        const halfExtents = ctx.scene.object.catalog(id)?.halfExtents;
-        const ringRadius =
-          radius ?? (halfExtents === undefined ? 1.2 : Math.max(halfExtents[0], halfExtents[2]) * 1.35);
-        return (
-          <mesh
-            key={id}
-            position={[object.position[0], object.position[1] + y, object.position[2]]}
-            rotation={[-Math.PI / 2, 0, 0]}
-            renderOrder={998}
-          >
-            <ringGeometry args={[ringRadius * 0.82, ringRadius, 40]} />
-            <meshBasicMaterial
-              color={color}
-              transparent
-              opacity={0.85}
-              side={THREE.DoubleSide}
-              depthWrite={false}
-              toneMapped={false}
-            />
-          </mesh>
-        );
-      })}
-    </>
-  );
+  const latest = useRef({ ids, color, radius, y, ctx });
+  latest.current = { ids, color, radius, y, ctx };
+  return <EngineDrawMount create={() => worldObjectHighlightsDraw(latest)} deps={[latest]} />;
+}
+
+/** Ground rings over every selected placed object — one draw reconciling ring meshes per id. */
+function worldObjectHighlightsDraw(latest: {
+  current: {
+    ids: readonly string[];
+    color: string;
+    radius: number | undefined;
+    y: number;
+    ctx: GameContext;
+  };
+}): EngineDraw {
+  const rings = new Map<string, THREE.Mesh>();
+  const group = new THREE.Group();
+  group.renderOrder = 998;
+  let built: { ids: readonly string[]; color: string; radius: number | undefined; y: number } | null = null;
+
+  const build = () => {
+    const { ids, color, radius, y, ctx } = latest.current;
+    for (const [id, mesh] of rings) {
+      if (!ids.includes(id)) {
+        group.remove(mesh);
+        mesh.geometry.dispose();
+        (mesh.material as THREE.Material).dispose();
+        rings.delete(id);
+      }
+    }
+    for (const id of ids) {
+      if (rings.has(id)) continue;
+      const object = ctx.scene.object.get(id);
+      if (object === null) continue;
+      const halfExtents = ctx.scene.object.catalog(id)?.halfExtents;
+      const ringRadius =
+        radius ?? (halfExtents === undefined ? 1.2 : Math.max(halfExtents[0], halfExtents[2]) * 1.35);
+      const geometry = new THREE.RingGeometry(ringRadius * 0.82, ringRadius, 40);
+      const material = new THREE.MeshBasicMaterial({
+        color,
+        transparent: true,
+        opacity: 0.85,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        toneMapped: false,
+      });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.set(object.position[0], object.position[1] + y, object.position[2]);
+      mesh.rotation.set(-Math.PI / 2, 0, 0);
+      mesh.renderOrder = 998;
+      rings.set(id, mesh);
+      group.add(mesh);
+    }
+    built = { ids, color, radius, y };
+  };
+
+  return {
+    mount(state: EngineFrameState) {
+      state.scene.add(group);
+      build();
+    },
+    update(_state: EngineFrameState) {
+      const { ids, color, radius, y } = latest.current;
+      const same =
+        built !== null &&
+        built.color === color &&
+        built.radius === radius &&
+        built.y === y &&
+        built.ids.length === ids.length &&
+        built.ids.every((id, index) => ids[index] === id);
+      if (!same) build();
+    },
+    dispose(state: EngineFrameState) {
+      state.scene.remove(group);
+      for (const mesh of rings.values()) {
+        mesh.geometry.dispose();
+        (mesh.material as THREE.Material).dispose();
+      }
+      rings.clear();
+    },
+  };
 }
 
 interface Floater {
@@ -445,9 +491,14 @@ const FloatTextItem = memo(function FloatTextItem({ event, lifeMs }: { event: En
 
 export function WorldFloatText({ height = 1.9, lifeMs = 950 }: { height?: number; lifeMs?: number }) {
   const ctx = useGameContext();
+  const host = useEngineHost();
   const [floaters, setFloaters] = useState<Floater[]>([]);
   const nextId = useRef(0);
   const timers = useRef(new Set<number>());
+  const nodesRef = useRef(new Map<number, HTMLDivElement>());
+  const projectRef = useRef(new THREE.Vector3());
+  const latest = useRef({ floaters, height });
+  latest.current = { floaters, height };
   useEffect(() => {
     const pending = timers.current;
     const off = ctx.game.events.on("entity.floatText", (event) => {
@@ -455,6 +506,7 @@ export function WorldFloatText({ height = 1.9, lifeMs = 950 }: { height?: number
       setFloaters((current) => [...current, { id, position: event.position, event }]);
       const timer = window.setTimeout(() => {
         pending.delete(timer);
+        nodesRef.current.delete(id);
         setFloaters((current) => current.filter((floater) => floater.id !== id));
       }, lifeMs);
       pending.add(timer);
@@ -465,20 +517,36 @@ export function WorldFloatText({ height = 1.9, lifeMs = 950 }: { height?: number
       pending.clear();
     };
   }, [ctx, lifeMs]);
+  // Html's position={...} projected every frame; the DOM overlay does the same write directly.
+  useFrameTask(() => {
+    const { camera, size } = host.frame;
+    const { floaters: active, height: lift } = latest.current;
+    camera.updateMatrixWorld();
+    for (const floater of active) {
+      const node = nodesRef.current.get(floater.id);
+      if (node === undefined) continue;
+      projectRef.current.set(
+        floater.position[0],
+        floater.position[1] + lift,
+        floater.position[2],
+      ).project(camera);
+      const x = (projectRef.current.x * 0.5 + 0.5) * size.width;
+      const y = (-projectRef.current.y * 0.5 + 0.5) * size.height;
+      node.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
+    }
+  }, CAMERA_POST_FRAME_PRIORITY + 0.02);
   return (
-    <>
+    <HudOverlay zIndex={30}>
       {floaters.map((floater) => (
-        <Html
+        <div
           key={floater.id}
-          position={[floater.position[0], floater.position[1] + height, floater.position[2]]}
-          center
-          distanceFactor={12}
-          zIndexRange={[30, 0]}
+          ref={(node) => { if (node === null) nodesRef.current.delete(floater.id); else nodesRef.current.set(floater.id, node); }}
+          style={{ position: "absolute", left: 0, top: 0, pointerEvents: "none" }}
         >
           <FloatTextItem event={floater.event} lifeMs={lifeMs} />
-        </Html>
+        </div>
       ))}
-    </>
+    </HudOverlay>
   );
 }
 
@@ -488,38 +556,74 @@ interface ActiveTelegraph {
   bornMs: number;
 }
 
-function TelegraphGeometry({ shape }: { shape: TelegraphShape }) {
-  if (shape.kind === "circle") return <circleGeometry args={[shape.radius, 48]} />;
-  if (shape.kind === "ring") return <ringGeometry args={[shape.innerRadius, shape.radius, 48]} />;
-  if (shape.kind === "cone") return <circleGeometry args={[shape.radius, 40, -shape.angle / 2, shape.angle]} />;
-  return <planeGeometry args={[shape.width, shape.length]} />;
+function telegraphGeometry(shape: TelegraphShape): THREE.BufferGeometry {
+  if (shape.kind === "circle") return new THREE.CircleGeometry(shape.radius, 48);
+  if (shape.kind === "ring") return new THREE.RingGeometry(shape.innerRadius, shape.radius, 48);
+  if (shape.kind === "cone") return new THREE.CircleGeometry(shape.radius, 40, -shape.angle / 2, shape.angle);
+  return new THREE.PlaneGeometry(shape.width, shape.length);
 }
 
-function TelegraphDecal({ active }: { active: ActiveTelegraph }) {
-  const materialRef = useRef<THREE.MeshBasicMaterial>(null);
-  const shape = active.event.shape;
-  const pose = telegraphDecalPose(shape, active.event.position, active.event.dir ?? 0);
-  const color = active.event.kind === "danger" ? "#ef4444" : "#f59e0b";
-  useFrame(() => {
-    const material = materialRef.current;
-    if (material === null) return;
-    material.opacity = telegraphPulseOpacity(active.bornMs, active.event.windupMs, performance.now());
-  });
-  return (
-    <mesh position={pose.position} rotation={pose.rotation} renderOrder={999}>
-      <TelegraphGeometry shape={shape} />
-      <meshBasicMaterial
-        ref={materialRef}
-        color={color}
-        transparent
-        opacity={0.45}
-        side={THREE.DoubleSide}
-        depthWrite={false}
-        depthTest={false}
-        toneMapped={false}
-      />
-    </mesh>
-  );
+interface TelegraphDecalEntry {
+  mesh: THREE.Mesh;
+  material: THREE.MeshBasicMaterial;
+}
+
+/** One draw owning every live telegraph decal — reconciles meshes as events arrive and expire. */
+function worldTelegraphsDraw(latest: { current: readonly ActiveTelegraph[] }): EngineDraw {
+  const group = new THREE.Group();
+  const decals = new Map<number, TelegraphDecalEntry>();
+
+  const disposeEntry = (entry: TelegraphDecalEntry) => {
+    group.remove(entry.mesh);
+    entry.mesh.geometry.dispose();
+    entry.material.dispose();
+  };
+
+  return {
+    mount(state: EngineFrameState) {
+      state.scene.add(group);
+    },
+    frame() {
+      const active = latest.current;
+      const now = performance.now();
+      for (const [key, entry] of decals) {
+        if (!active.some((t) => t.key === key)) {
+          disposeEntry(entry);
+          decals.delete(key);
+        }
+      }
+      for (const t of active) {
+        const existing = decals.get(t.key);
+        if (existing !== undefined) {
+          existing.material.opacity = telegraphPulseOpacity(t.bornMs, t.event.windupMs, now);
+          continue;
+        }
+        const shape = t.event.shape;
+        const pose = telegraphDecalPose(shape, t.event.position, t.event.dir ?? 0);
+        const color = t.event.kind === "danger" ? "#ef4444" : "#f59e0b";
+        const material = new THREE.MeshBasicMaterial({
+          color,
+          transparent: true,
+          opacity: 0.45,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+          depthTest: false,
+          toneMapped: false,
+        });
+        const mesh = new THREE.Mesh(telegraphGeometry(shape), material);
+        mesh.position.set(pose.position[0], pose.position[1], pose.position[2]);
+        mesh.rotation.set(pose.rotation[0], pose.rotation[1], pose.rotation[2]);
+        mesh.renderOrder = 999;
+        decals.set(t.key, { mesh, material });
+        group.add(mesh);
+      }
+    },
+    dispose(state: EngineFrameState) {
+      for (const entry of decals.values()) disposeEntry(entry);
+      decals.clear();
+      state.scene.remove(group);
+    },
+  };
 }
 
 export function WorldTelegraphs() {
@@ -527,6 +631,8 @@ export function WorldTelegraphs() {
   const [telegraphs, setTelegraphs] = useState<ActiveTelegraph[]>([]);
   const key = useRef(0);
   const timers = useRef(new Set<number>());
+  const latest = useRef<readonly ActiveTelegraph[]>(telegraphs);
+  latest.current = telegraphs;
   useEffect(() => {
     const pending = timers.current;
     const off = ctx.game.events.on("combat.telegraph", (event) => {
@@ -548,13 +654,7 @@ export function WorldTelegraphs() {
       pending.clear();
     };
   }, [ctx]);
-  return (
-    <>
-      {telegraphs.map((active) => (
-        <TelegraphDecal key={active.key} active={active} />
-      ))}
-    </>
-  );
+  return <EngineDrawMount create={() => worldTelegraphsDraw(latest)} deps={[latest]} />;
 }
 
 interface Tracer {
@@ -583,12 +683,61 @@ export function startFromMuzzle(ctx: GameContext, from: string, camera: THREE.Ca
   readEntityMuzzle(from, start);
 }
 
+interface TracerLine {
+  line: THREE.Line;
+  material: THREE.LineBasicMaterial;
+}
+
+/** Tracer lines as one draw reconciling `THREE.Line` objects — the drei `<Line>` replacement. */
+function projectileTracersDraw(latest: { current: readonly Tracer[] }): EngineDraw {
+  const group = new THREE.Group();
+  const lines = new Map<number, TracerLine>();
+  return {
+    mount(state: EngineFrameState) {
+      state.scene.add(group);
+    },
+    update(_state: EngineFrameState) {
+      const active = latest.current;
+      for (const [id, entry] of lines) {
+        if (!active.some((t) => t.id === id)) {
+          group.remove(entry.line);
+          entry.line.geometry.dispose();
+          entry.material.dispose();
+          lines.delete(id);
+        }
+      }
+      for (const tracer of active) {
+        if (lines.has(tracer.id)) continue;
+        const material = new THREE.LineBasicMaterial({
+          color: "#fde68a",
+          transparent: true,
+          opacity: 0.9,
+        });
+        const geometry = new THREE.BufferGeometry().setFromPoints(tracer.points);
+        const line = new THREE.Line(geometry, material);
+        lines.set(tracer.id, { line, material });
+        group.add(line);
+      }
+    },
+    dispose(state: EngineFrameState) {
+      for (const entry of lines.values()) {
+        entry.line.geometry.dispose();
+        entry.material.dispose();
+      }
+      lines.clear();
+      state.scene.remove(group);
+    },
+  };
+}
+
 export function ProjectileTracers({ lifeMs = 200 }: { lifeMs?: number }) {
   const ctx = useGameContext();
-  const camera = useThree((state) => state.camera);
+  const host = useEngineHost();
   const [tracers, setTracers] = useState<Tracer[]>([]);
   const nextId = useRef(0);
   const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
+  const latest = useRef<readonly Tracer[]>(tracers);
+  latest.current = tracers;
   useEffect(() => {
     const unsub = ctx.game.events.on("projectile.settled", (event) => {
       // fireProjectile is a generic seam (bullets, bolts, grenades, launchers). A straight
@@ -597,7 +746,7 @@ export function ProjectileTracers({ lifeMs = 200 }: { lifeMs?: number }) {
       if (event.ballistic) return;
       const id = nextId.current++;
       const start = new THREE.Vector3(event.origin[0], event.origin[1], event.origin[2]);
-      startFromMuzzle(ctx, event.from, camera, start);
+      startFromMuzzle(ctx, event.from, host.frame.camera, start);
       setTracers((current) => [
         ...current,
         {
@@ -616,14 +765,8 @@ export function ProjectileTracers({ lifeMs = 200 }: { lifeMs?: number }) {
       for (const handle of timers.current) clearTimeout(handle);
       timers.current.clear();
     };
-  }, [ctx, camera, lifeMs]);
-  return (
-    <>
-      {tracers.map((tracer) => (
-        <Line key={tracer.id} points={tracer.points} color="#fde68a" lineWidth={3} transparent opacity={0.9} />
-      ))}
-    </>
-  );
+  }, [ctx, host, lifeMs]);
+  return <EngineDrawMount create={() => projectileTracersDraw(latest)} deps={[latest]} />;
 }
 
 export function Reticle({ className }: { className?: string }) {

@@ -1,4 +1,3 @@
-import { useFrame, useThree } from "@react-three/fiber";
 import { useMemo, useRef, useSyncExternalStore } from "react";
 import * as THREE from "three";
 
@@ -12,6 +11,8 @@ import {
 } from "@jgengine/core/game/viewports";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { localPlayers, type LocalPlayerSlot } from "@jgengine/core/runtime/localPlayers";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import { createChaseRigState, resolveChase, resolveTopDown, stepChase, topDownPose, type CameraPose, type ChaseRigState } from "./rigMath";
 import type { Xyz } from "@jgengine/core/math/xyz";
@@ -50,74 +51,37 @@ function seatRigKind(camera: ViewportCameraConfig | undefined, main: GameCameraC
   return camera?.rig ?? (main?.rig === "topDown" ? "topDown" : "chase");
 }
 
-/**
- * Draws one scissored render per viewport. The primary seat keeps the main camera and its rig; every
- * other seat gets a follow camera (chase or top-down) on its possessed entity. Mounted only while more
- * than one viewport is drawn, since a render-priority frame callback takes over R3F's own render.
- * @internal
- */
-export function SplitScreenRenderer({
-  ctx,
-  viewports,
-  config,
-  mainCamera,
-}: {
+export interface SplitScreenRendererProps {
   ctx: GameContext;
   viewports: readonly ViewportDef[];
   config: ViewportsConfig | undefined;
   mainCamera: GameCameraConfig | undefined;
-}) {
-  const gl = useThree((state) => state.gl);
-  const scene = useThree((state) => state.scene);
-  const camera = useThree((state) => state.camera);
-  const size = useThree((state) => state.size);
-  const rigs = useRef(new Map<string, SeatRig>());
+}
 
-  useFrame((_state, dt) => {
-    const seats = localPlayers(ctx);
-    let yaws = SEAT_YAW.get(ctx);
-    if (yaws === undefined) {
-      yaws = new Map();
-      SEAT_YAW.set(ctx, yaws);
-    }
-    gl.setScissorTest(true);
-    for (const def of viewports) {
-      const slot = seats.slot(def.slot);
-      if (slot === null) continue;
-      const pixels = viewportPixels(def.rect, size.width, size.height);
-      const view = slot.index === 0 ? camera : seatCamera(slot, def.camera ?? config?.camera, dt, yaws);
-      if (view instanceof THREE.PerspectiveCamera) {
-        view.aspect = pixels.width / pixels.height;
-        view.updateProjectionMatrix();
-      }
-      gl.setViewport(pixels.x, pixels.y, pixels.width, pixels.height);
-      gl.setScissor(pixels.x, pixels.y, pixels.width, pixels.height);
-      gl.render(scene, view);
-    }
-    gl.setScissorTest(false);
-    gl.setViewport(0, 0, size.width, size.height);
-    if (camera instanceof THREE.PerspectiveCamera) {
-      camera.aspect = size.width / size.height;
-      camera.updateProjectionMatrix();
-    }
-  }, 1);
+/**
+ * Draw-side form of {@link SplitScreenRenderer}: one scissored render per viewport at render
+ * priority, seat rigs persisting across prop changes.
+ * @internal
+ */
+export function splitScreenRendererDraw(getProps: () => SplitScreenRendererProps): EngineDraw {
+  const rigs = new Map<string, SeatRig>();
 
-  function seatCamera(slot: LocalPlayerSlot, cameraConfig: ViewportCameraConfig | undefined, dt: number, yaws: Map<string, number>) {
-    let rig = rigs.current.get(slot.slotId);
+  function seatCamera(slot: LocalPlayerSlot, cameraConfig: ViewportCameraConfig | undefined, dt: number, yaws: Map<string, number>, props: SplitScreenRendererProps, mainCamera: THREE.Camera) {
+    let rig = rigs.get(slot.slotId);
     if (rig === undefined) {
       const created = new THREE.PerspectiveCamera();
-      if (camera instanceof THREE.PerspectiveCamera) {
-        created.near = camera.near;
-        created.far = camera.far;
+      if (mainCamera instanceof THREE.PerspectiveCamera) {
+        created.near = mainCamera.near;
+        created.far = mainCamera.far;
       }
       rig = { camera: created, chase: createChaseRigState() };
-      rigs.current.set(slot.slotId, rig);
+      rigs.set(slot.slotId, rig);
     }
-    const entity = ctx.scene.entity.get(ctx.player.possession.active(slot.userId));
+    const entity = props.ctx.scene.entity.get(props.ctx.player.possession.active(slot.userId));
     const follow: Xyz = entity === null ? { x: 0, y: 0, z: 0 } : { x: entity.position[0], y: entity.position[1], z: entity.position[2] };
     let pose: CameraPose;
-    if (seatRigKind(cameraConfig, mainCamera) === "topDown") {
-      const resolved = resolveTopDown(cameraConfig?.topDown ?? mainCamera?.rigs?.topDown);
+    if (seatRigKind(cameraConfig, props.mainCamera) === "topDown") {
+      const resolved = resolveTopDown(cameraConfig?.topDown ?? props.mainCamera?.rigs?.topDown);
       pose = topDownPose(follow, resolved, rig.camera.fov);
       yaws.set(slot.userId, resolved.yaw);
     } else {
@@ -132,7 +96,7 @@ export function SplitScreenRenderer({
           lookBack: false,
           fovKick: 0,
         },
-        resolveChase(cameraConfig?.chase ?? mainCamera?.rigs?.chase),
+        resolveChase(cameraConfig?.chase ?? props.mainCamera?.rigs?.chase),
         dt,
       );
       pose = step.pose;
@@ -144,5 +108,53 @@ export function SplitScreenRenderer({
     return rig.camera;
   }
 
+  return {
+    priority: 1,
+    frame(state: EngineFrameState) {
+      const props = getProps();
+      const gl = state.gl;
+      const seats = localPlayers(props.ctx);
+      let yaws = SEAT_YAW.get(props.ctx);
+      if (yaws === undefined) {
+        yaws = new Map();
+        SEAT_YAW.set(props.ctx, yaws);
+      }
+      gl.setScissorTest(true);
+      for (const def of props.viewports) {
+        const slot = seats.slot(def.slot);
+        if (slot === null) continue;
+        const pixels = viewportPixels(def.rect, state.size.width, state.size.height);
+        const view = slot.index === 0 ? state.camera : seatCamera(slot, def.camera ?? props.config?.camera, state.delta, yaws, props, state.camera);
+        if (view instanceof THREE.PerspectiveCamera) {
+          view.aspect = pixels.width / pixels.height;
+          view.updateProjectionMatrix();
+        }
+        gl.setViewport(pixels.x, pixels.y, pixels.width, pixels.height);
+        gl.setScissor(pixels.x, pixels.y, pixels.width, pixels.height);
+        gl.render(state.scene, view);
+      }
+      gl.setScissorTest(false);
+      gl.setViewport(0, 0, state.size.width, state.size.height);
+      if (state.camera instanceof THREE.PerspectiveCamera) {
+        state.camera.aspect = state.size.width / state.size.height;
+        state.camera.updateProjectionMatrix();
+      }
+    },
+    dispose() {
+      rigs.clear();
+    },
+  };
+}
+
+/**
+ * Draws one scissored render per viewport. The primary seat keeps the main camera and its rig; every
+ * other seat gets a follow camera (chase or top-down) on its possessed entity. Mounted only while more
+ * than one viewport is drawn, since a render-priority frame callback takes over R3F's own render.
+ * @internal
+ */
+export function SplitScreenRenderer(props: SplitScreenRendererProps) {
+  const latest = useRef<SplitScreenRendererProps>(props);
+  latest.current = props;
+  useEngineDraw(() => splitScreenRendererDraw(() => latest.current), []);
   return null;
 }

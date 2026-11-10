@@ -1,4 +1,4 @@
-import { useThree } from "@react-three/fiber";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { memo, useEffect } from "react";
 import * as THREE from "three";
 
@@ -15,9 +15,7 @@ const GROUND_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
  * @internal — mounted by `EditorApp`'s world overlay.
  */
 export const AssetDropZone = memo(function AssetDropZone({ api, library }: { api: EditorHostApi; library?: LibraryDropTarget | undefined }) {
-  const gl = useThree((state) => state.gl);
-  const camera = useThree((state) => state.camera);
-  const scene = useThree((state) => state.scene);
+  const { gl, camera, scene } = useEngineHost().frame;
 
   useEffect(() => {
     const canvas = gl.domElement;

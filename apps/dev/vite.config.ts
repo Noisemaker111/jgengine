@@ -10,6 +10,7 @@ import { parseDevProxyTable } from "../../packages/core/src/data/devProxy";
 import { tunableDiscoveryPlugin } from "../../packages/core/src/devtools/transformTunables";
 import { devServerMarkerPlugin } from "../../scripts/devServerMarker";
 import { startTextureCompression } from "../../games/shared/provisionAssets";
+import { viteJgUiWasm } from "../../games/shared/viteJgUiWasm";
 import { devReportPlugin } from "./devReportPlugin";
 import { gamePublicPlugin } from "./gamePublicPlugin";
 
@@ -96,7 +97,7 @@ const devProxy: Record<string, string | ProxyOptions> = Object.fromEntries(
 );
 
 export default defineConfig({
-  plugins: [devServerMarkerPlugin({ kind: "runner" }), tunableDiscoveryPlugin(), devSave(servedGameDir), devReportPlugin(), gamePublicPlugin(servedGameDir, gamesDir), textureCompression(), react(), tailwindcss()],
+  plugins: [devServerMarkerPlugin({ kind: "runner" }), tunableDiscoveryPlugin(), devSave(servedGameDir), devReportPlugin(), gamePublicPlugin(servedGameDir, gamesDir), textureCompression(), viteJgUiWasm(), react(), tailwindcss()],
   clearScreen: false,
   build: {
     target: "es2022",
@@ -112,7 +113,7 @@ export default defineConfig({
     // Games sit outside this workspace package.
     // Resolve their shared runtime dependencies from apps/dev so Bun's workspace
     // links are used even when the importing file lives under ../../games.
-    dedupe: ["react", "react-dom", "three", "@react-three/fiber", "@react-three/drei"],
+    dedupe: ["react", "react-dom", "three"],
     extensions: [".ts", ".tsx", ".mjs", ".js", ".jsx", ".json"],
     alias: [
       { find: /^@\/components\/ui\/(.*)$/, replacement: `${registryUi}/$1` },

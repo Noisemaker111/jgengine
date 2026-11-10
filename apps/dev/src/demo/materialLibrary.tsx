@@ -1,13 +1,16 @@
 import { hdriEnvironment, HDRI_LIBRARY, type HdriId } from "@jgengine/assets/catalogs/hdriLibrary";
 import { lutGrade, LUT_GRADES, type LutGradeId } from "@jgengine/assets/catalogs/lutGrades";
 import { filterLibraryMaterials, libraryMaterialAsset, type LibraryGroup, type LibraryMaterial } from "@jgengine/assets/catalogs/materialLibrary";
-import { Suspense, useMemo } from "react";
+import { useMemo } from "react";
 import * as THREE from "three";
 
 import type { PlayableGame } from "@jgengine/shell/registry";
+import type { MaterialAsset } from "@jgengine/core/material/materialAsset";
 import { EnvironmentLighting } from "@jgengine/core/lighting/EnvironmentLighting.draw";
-import { MaterialAssetSurface } from "@jgengine/core/material/materialAsset.draw";
-import { TriplanarAssetMaterial } from "@jgengine/core/material/triplanarMaterial.draw";
+import { leasedMaterialMeshDraw, materialAssetMaterial } from "@jgengine/core/material/materialAsset.draw";
+import { triplanarAssetMaterial } from "@jgengine/core/material/triplanarMaterial.draw";
+import { meshDraw, useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
+import { StageDraw } from "@jgengine/core/stage/stageDraw.draw";
 
 import { demoGame } from "./demoGame";
 import { MATERIAL_SHEET_FLAT as FLAT } from "./materialLibraryFlat";
@@ -60,6 +63,52 @@ interface WorldSurface {
   scale: [number, number];
 }
 
+type SheetMode = "flat" | "uv" | "triplanar";
+
+/** One library surface as a draw: flat colour, UV-mapped or world-space triplanar leased material. */
+function LibraryCell({ geometry, position, rotation, scale, asset, mode, flatColor, tileMetres, sharpness, castShadow = false, receiveShadow = false }: {
+  geometry: THREE.BufferGeometry;
+  position: readonly [number, number, number];
+  rotation?: readonly [number, number, number] | undefined;
+  scale?: readonly [number, number, number] | undefined;
+  asset: MaterialAsset;
+  mode: SheetMode;
+  flatColor?: string | undefined;
+  tileMetres?: number | undefined;
+  sharpness?: number | undefined;
+  castShadow?: boolean | undefined;
+  receiveShadow?: boolean | undefined;
+}) {
+  const draw = useMemo(() => {
+    const transform = {
+      position,
+      ...(rotation === undefined ? {} : { rotation }),
+      ...(scale === undefined ? {} : { scale }),
+      castShadow,
+      receiveShadow,
+      disposeGeometry: false,
+    };
+    if (mode === "flat") {
+      return meshDraw({
+        ...transform,
+        geometry,
+        material: new THREE.MeshStandardMaterial({ color: flatColor ?? "#4a4a4a", roughness: 0.85 }),
+      });
+    }
+    const load = mode === "uv"
+      ? (renderer: THREE.WebGLRenderer | null) => materialAssetMaterial(asset, tileMetres === undefined ? {} : { repeatMetres: tileMetres }, renderer)
+      : () => triplanarAssetMaterial(asset, { ...(tileMetres === undefined ? {} : { tileMetres }), ...(sharpness === undefined ? {} : { sharpness }) });
+    return leasedMaterialMeshDraw({
+      ...transform,
+      geometry,
+      load,
+      fallback: new THREE.MeshStandardMaterial({ color: "#4a4a4a", roughness: 1 }),
+    });
+  }, [geometry, position, rotation, scale, asset, mode, flatColor, tileMetres, sharpness, castShadow, receiveShadow]);
+  useEngineDraw(() => draw, [draw]);
+  return null;
+}
+
 /** World surfaces at their authored tile metres: a street, its buildings and a station interior. */
 const WORLD: readonly WorldSurface[] = [
   { name: "road/marked", position: [0, 0, 0], rotation: [-Math.PI / 2, 0, 0], scale: [26, 22] },
@@ -72,19 +121,26 @@ const WORLD: readonly WorldSurface[] = [
 ];
 
 function World() {
+  const mode: SheetMode = flat ? "flat" : uvProjection ? "uv" : "triplanar";
   return <>
-    <ambientLight intensity={0.25} />
+    <StageDraw spec={{ lights: [
+      { kind: "ambient", intensity: 0.25 },
+      { kind: "directional", position: [8, 12, 6], intensity: 1.6, castShadow: true },
+    ] }} />
     <EnvironmentLighting intensity={0.5} skyColor="#cfe0f5" groundColor="#4a4d50" sunDirection={[8, 12, 6]} />
-    <directionalLight position={[8, 12, 6]} intensity={1.6} castShadow />
-    {WORLD.map((surface) => <mesh key={surface.name} geometry={WORLD_PLANE} position={surface.position} rotation={surface.rotation} scale={[surface.scale[0], surface.scale[1], 1]} receiveShadow>
-      {flat
-        ? <meshStandardMaterial color={FLAT[findGroup(surface.name)]} roughness={0.8} />
-        : <Suspense fallback={<meshStandardMaterial color="#4a4a4a" roughness={1} />}>
-            {uvProjection
-              ? <MaterialAssetSurface asset={libraryMaterialAsset(surface.name, { basePath: BASE_PATH })} />
-              : <TriplanarAssetMaterial asset={libraryMaterialAsset(surface.name, { basePath: BASE_PATH })} />}
-          </Suspense>}
-    </mesh>)}
+    {WORLD.map((surface) => (
+      <LibraryCell
+        key={surface.name}
+        geometry={WORLD_PLANE}
+        position={surface.position}
+        rotation={surface.rotation}
+        scale={[surface.scale[0], surface.scale[1], 1]}
+        asset={libraryMaterialAsset(surface.name, { basePath: BASE_PATH })}
+        mode={mode}
+        flatColor={FLAT[findGroup(surface.name)]}
+        receiveShadow
+      />
+    ))}
   </>;
 }
 
@@ -102,27 +158,42 @@ function Sheet({ entries }: { entries: readonly LibraryMaterial[] }) {
       return { entry, position: [(column - (COLUMNS - 1) / 2) * SPACING, top - row * SPACING, 0] as [number, number, number] };
     });
   }, [entries]);
+  const mode: SheetMode = flat ? "flat" : uvProjection || compare ? "uv" : "triplanar";
+  const triplanarMode: SheetMode = "triplanar";
   return <>
-    <ambientLight intensity={0.35} />
+    <StageDraw spec={{ lights: [
+      { kind: "ambient", intensity: 0.35 },
+      ...(hdriId === undefined ? [
+        { kind: "directional" as const, position: [6, 9, 8] as const, intensity: 2 },
+        { kind: "directional" as const, position: [-7, 4, -6] as const, intensity: 0.55, color: "#cfe0ff" },
+      ] : []),
+    ] }} />
     <EnvironmentLighting intensity={0.9} skyColor="#dfe7ef" groundColor="#4a4d50" sunDirection={[6, 9, 8]} source={hdriId === undefined ? undefined : hdriEnvironment(hdriId, { intensity: 1.1 })} />
-    {hdriId === undefined ? <>
-      <directionalLight position={[6, 9, 8]} intensity={2} />
-      <directionalLight position={[-7, 4, -6]} intensity={0.55} color="#cfe0ff" />
-    </> : null}
-    {cells.map(({ entry, position }) => <mesh key={entry.name} geometry={compare ? SPHERE_UV : SPHERE} position={position} castShadow>
-      {flat
-        ? <meshStandardMaterial color={entry.response.color ?? FLAT[entry.group]} roughness={entry.response.roughness ?? 0.85} metalness={entry.response.metalness ?? 0} transparent={(entry.response.transmission ?? 0) > 0} opacity={(entry.response.transmission ?? 0) > 0 ? 0.35 : 1} />
-        : <Suspense fallback={<meshStandardMaterial color="#4a4a4a" roughness={1} />}>
-            {uvProjection || compare
-              ? <MaterialAssetSurface asset={libraryMaterialAsset(entry.name, { basePath: BASE_PATH })} {...(uvProjection ? { repeatMetres: INSPECTION_TILE_METRES } : {})} />
-              : <TriplanarAssetMaterial asset={libraryMaterialAsset(entry.name, { basePath: BASE_PATH })} tileMetres={INSPECTION_TILE_METRES} sharpness={SHARPNESS} />}
-          </Suspense>}
-    </mesh>)}
-    {compare ? cells.map(({ entry, position }) => <mesh key={`tri:${entry.name}`} geometry={SPHERE} position={[position[0] + SPACING / 2, position[1], position[2]]}>
-      <Suspense fallback={null}>
-        <TriplanarAssetMaterial asset={libraryMaterialAsset(entry.name, { basePath: BASE_PATH })} tileMetres={INSPECTION_TILE_METRES} sharpness={SHARPNESS} />
-      </Suspense>
-    </mesh>) : null}
+    {cells.map(({ entry, position }) => (
+      <LibraryCell
+        key={entry.name}
+        geometry={compare ? SPHERE_UV : SPHERE}
+        position={position}
+        asset={libraryMaterialAsset(entry.name, { basePath: BASE_PATH })}
+        mode={mode}
+        flatColor={FLAT[entry.group]}
+        {...(uvProjection ? { tileMetres: INSPECTION_TILE_METRES } : {})}
+        {...(mode === triplanarMode ? { tileMetres: INSPECTION_TILE_METRES, sharpness: SHARPNESS } : {})}
+        castShadow
+      />
+    ))}
+    {compare ? cells.map(({ entry, position }) => (
+      <LibraryCell
+        key={`tri:${entry.name}`}
+        geometry={SPHERE}
+        position={[position[0] + SPACING / 2, position[1], position[2]]}
+        asset={libraryMaterialAsset(entry.name, { basePath: BASE_PATH })}
+        mode={triplanarMode}
+        tileMetres={INSPECTION_TILE_METRES}
+        sharpness={SHARPNESS}
+        castShadow
+      />
+    )) : null}
   </>;
 }
 
@@ -148,8 +219,8 @@ export const materialLibraryGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "material-library" },
   scene: {
-    renderEntity: () => <group />,
-    renderObject: () => <group />,
+    renderEntity: () => null,
+    renderObject: () => null,
     environment: () => (worldMode ? <World /> : <Sheet entries={entries} />),
   },
   loop: { ...demoGame.loop, onTick: () => {} },

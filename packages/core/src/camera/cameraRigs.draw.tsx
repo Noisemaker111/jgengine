@@ -1,5 +1,4 @@
-import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
+import { useRef, type MutableRefObject } from "react";
 import { PerspectiveCamera, Quaternion, Vector3, type Camera } from "three";
 
 import type {
@@ -11,6 +10,7 @@ import type {
   RtsCameraConfig,
   ShoulderCameraConfig,
   SideScrollCameraConfig,
+  TopDownCameraConfig,
 } from "@jgengine/core/game/playableGame";
 import { snapPixelPerfectPosition } from "@jgengine/core/game/pixelPerfect";
 import { clamp } from "@jgengine/core/math/scalar";
@@ -54,6 +54,8 @@ import { requestRawPointerLock } from "@jgengine/core/input/pointerLock";
 import { resolveChaseHeading } from "./chaseHeading";
 
 import type { Xyz } from "@jgengine/core/math/xyz";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
 /** useFrame priority every camera rig commits its pose at, after the game simulation. */
 export const CAMERA_RIG_FRAME_PRIORITY = ORBIT_CAMERA_FRAME_PRIORITY;
@@ -108,41 +110,42 @@ function readFollow(ctx: GameContext, followId: string | null): FollowSample | n
     yaw: followPose[3],
   };
 }
+/** Everything a rig draw reads live: latest props plus the React-side singletons its wrapper resolved. */
+export interface CameraRigEnv {
+  props: RigProps & { panKeysEnabled?: boolean | undefined; rotateKeysEnabled?: boolean | undefined; onComplete?: (() => void) | undefined };
+  ctx: GameContext;
+  userId: string;
+  shake: ReturnType<typeof useCameraShake>;
+  playerFov: ReturnType<typeof usePlayerFov>;
+}
+
+const ZERO: Xyz = { x: 0, y: 0, z: 0 };
 
 /**
- * Shared per-frame finalizer every rig funnels through: applies the crossfade
- * blend captured on a rig swap, layers the trauma-channel shake, advances the
- * shake clock, and reports `onCameraFollow`. Rigs compute a clean pose; this
- * hook owns shake + transitions so they behave identically across rigs.
+ * Draw-side form of the old `useCameraCommit`: the crossfade blend captured on a rig swap, the
+ * trauma-channel shake and the `onCameraFollow` report every rig funnels through. `commit` takes
+ * the frame state's camera; `beginTransition` runs on mount and on the rig's own swap signals.
  */
-function useCameraCommit(props: RigProps, followId: string | null) {
-  const camera = useThree((state) => state.camera);
-  const shake = useCameraShake();
-  const playerFov = usePlayerFov();
-  const transitionSeconds = props.config?.transitionSeconds ?? 0.6;
-  const blendScratchRef = useRef(createCameraBlendScratch(Vector3, Quaternion));
-  const blendingRef = useRef(false);
-  const lastPoseRef = useRef<CameraPose | null>(null);
-  const farWarnedRef = useRef(false);
+function createCameraCommit(getEnv: () => CameraRigEnv) {
+  const blendScratch = createCameraBlendScratch(Vector3, Quaternion);
+  let blending = false;
+  let farWarned = false;
 
-  const beginTransition = () => {
+  const beginTransition = (camera: Camera) => {
+    const transitionSeconds = getEnv().props.config?.transitionSeconds ?? 0.6;
     if (transitionSeconds <= 0) return;
-    captureCameraBlendFrom(
-      blendScratchRef.current,
-      camera.position,
-      camera.quaternion,
-      currentFov(camera),
-      transitionSeconds,
-    );
-    blendingRef.current = true;
+    captureCameraBlendFrom(blendScratch, camera.position, camera.quaternion, currentFov(camera), transitionSeconds);
+    blending = true;
   };
 
-  const commit = (pose: CameraPose, dt: number) => {
+  const commit = (camera: Camera, pose: CameraPose, dt: number, followOverride?: string | null) => {
+    const env = getEnv();
+    const props = env.props;
+    const followId = followOverride !== undefined ? followOverride : resolveFollowId(props.followEntityId, env.userId);
     const composed: CameraPose = {
       ...pose,
-      fov: playerFov.compose(pose.fov, props.absoluteFov === true ? "absolute" : "relative"),
+      fov: env.playerFov.compose(pose.fov, props.absoluteFov === true ? "absolute" : "relative"),
     };
-    lastPoseRef.current = composed;
     applyPose(camera, composed);
 
     const lookDistance = Math.hypot(
@@ -150,19 +153,19 @@ function useCameraCommit(props: RigProps, followId: string | null) {
       pose.position.y - pose.lookAt.y,
       pose.position.z - pose.lookAt.z,
     );
-    if (!farWarnedRef.current && isPerspective(camera) && lookDistance > camera.far) {
-      farWarnedRef.current = true;
+    if (!farWarned && isPerspective(camera) && lookDistance > camera.far) {
+      farWarned = true;
       console.warn(
-        `[jgengine:camera] the "${props.config?.rig ?? "orbit"}" rig placed the camera ${Math.round(lookDistance)} world units from its look target, beyond the far plane (${camera.far}) — everything near the target is frustum-culled and the world renders empty. Check the rig config (topDown pitch is elevation: PI/2 = straight down, near 0 = grazing) or raise camera.frustum.far.`,
+        `[jgengine:camera] the "${props.config?.rig ?? "orbit"}" rig placed the camera ${Math.round(lookDistance)} world units from its look target, beyond the far plane (${camera.far}) â€” everything near the target is frustum-culled and the world renders empty. Check the rig config (topDown pitch is elevation: PI/2 = straight down, near 0 = grazing) or raise camera.frustum.far.`,
       );
     }
 
-    if (blendingRef.current) {
-      const done = applyCameraBlendStep(blendScratchRef.current, camera, composed.fov, dt);
-      if (done) blendingRef.current = false;
+    if (blending) {
+      const done = applyCameraBlendStep(blendScratch, camera, composed.fov, dt);
+      if (done) blending = false;
     }
 
-    applyCameraShake(camera, shake, dt);
+    applyCameraShake(camera, env.shake, dt);
 
     props.config?.follow?.onCameraFollow?.({
       entityId: followId ?? "",
@@ -176,118 +179,151 @@ function useCameraCommit(props: RigProps, followId: string | null) {
     });
   };
 
-  return { camera, commit, beginTransition };
+  return { beginTransition, commit };
 }
 
-function useWheelZoom(initial: number, min: number, max: number, speed: number): MutableRefObject<number> {
-  const domElement = useThree((state) => state.gl.domElement);
-  const zoomRef = useRef(initial);
-  useEffect(() => {
-    zoomRef.current = initial;
-  }, [initial]);
-  useEffect(() => {
-    const onWheel = (event: WheelEvent) => {
-      if (event.shiftKey) return;
-      zoomRef.current = clamp(zoomRef.current + Math.sign(event.deltaY) * speed, min, max);
-    };
-    domElement.addEventListener("wheel", onWheel, { passive: true });
-    return () => domElement.removeEventListener("wheel", onWheel);
-  }, [domElement, min, max, speed]);
-  return zoomRef;
+/** Draw-side form of `useHeldKeys`: window key listeners maintaining a held-code set. */
+function createHeldKeys(getCodes: () => readonly string[]): { held: Set<string>; sync(): void; dispose(): void } {
+  const held = new Set<string>();
+  let codesKey = "";
+  const down = (event: KeyboardEvent) => {
+    if (codeSet.has(event.code)) held.add(event.code);
+  };
+  const up = (event: KeyboardEvent) => {
+    held.delete(event.code);
+  };
+  let codeSet = new Set<string>();
+  window.addEventListener("keydown", down);
+  window.addEventListener("keyup", up);
+  return {
+    held,
+    sync() {
+      const codes = getCodes();
+      const key = codes.join(",");
+      if (key === codesKey) return;
+      codesKey = key;
+      codeSet = new Set(codes);
+    },
+    dispose() {
+      window.removeEventListener("keydown", down);
+      window.removeEventListener("keyup", up);
+      held.clear();
+    },
+  };
 }
+
+/** Resolve-and-cache helper: `resolveX(config)` results keyed on config identity, like the old memos. */
+function memoConfig<T>(resolve: (config: unknown) => T): (config: unknown) => T {
+  let entry: { config: unknown; value: T } | null = null;
+  return (config) => {
+    if (entry === null || entry.config !== config) entry = { config, value: resolve(config) };
+    return entry.value;
+  };
+}
+
+const UNSET_CONFIG = Symbol("unset-config");
 
 /** Overhead follow rig at a fixed height and angle. */
-export function TopDownRig(props: RigProps) {
-  const { userId } = usePlayer();
-  const ctx = useGameContext();
-  const followId = resolveFollowId(props.followEntityId, userId);
-  const config = props.config?.rigs?.topDown;
-  const resolved = useMemo(() => resolveTopDown(config), [config]);
-  const { camera, commit, beginTransition } = useCameraCommit(props, followId);
-  const followRef = useRef<Xyz | null>(null);
-  const zoomRef = useWheelZoom(
-    resolved.height,
-    (config?.zoom?.min ?? 0.6) * resolved.height,
-    (config?.zoom?.max ?? 1.8) * resolved.height,
-    config?.zoom?.speed ?? resolved.height * 0.08,
-  );
-
-  useEffect(beginTransition, []);
-
-  useFrame((_, dt) => {
-    const sample = readFollow(ctx, followId);
-    const desired = sample?.pos ?? { x: 0, y: 0, z: 0 };
-    const prev = followRef.current ?? desired;
-    const blend = 1 - Math.exp(-resolved.followSmoothing * dt);
-    const follow: Xyz = {
-      x: prev.x + (desired.x - prev.x) * blend,
-      y: prev.y + (desired.y - prev.y) * blend,
-      z: prev.z + (desired.z - prev.z) * blend,
+export function topDownRigDraw(getEnv: () => CameraRigEnv): EngineDraw {
+  const commit = createCameraCommit(getEnv);
+  const resolve = memoConfig((config: unknown) => resolveTopDown(config as TopDownCameraConfig | undefined));
+  let follow: Xyz | null = null;
+  let zoomValue = { current: 0 };
+  let lastInitial = Number.NaN;
+  const wheelSpec = () => {
+    const env = getEnv();
+    const config = env.props.config?.rigs?.topDown;
+    const resolved = resolve(config);
+    return {
+      initial: resolved.height,
+      min: (config?.zoom?.min ?? 0.6) * resolved.height,
+      max: (config?.zoom?.max ?? 1.8) * resolved.height,
+      speed: config?.zoom?.speed ?? resolved.height * 0.08,
     };
-    followRef.current = follow;
-    props.yawRef.current = resolved.yaw;
-    const pose = topDownPose(follow, { ...resolved, height: zoomRef.current }, currentFov(camera));
-    commit(pose, dt);
-  }, CAMERA_RIG_FRAME_PRIORITY);
-
-  return null;
+  };
+  return {
+    priority: CAMERA_RIG_FRAME_PRIORITY,
+    mount(state: EngineFrameState) {
+      commit.beginTransition(state.camera);
+      const spec = wheelSpec();
+      lastInitial = spec.initial;
+      zoomValue.current = spec.initial;
+      state.gl.domElement.addEventListener("wheel", onWheel);
+    },
+    update() {
+      const spec = wheelSpec();
+      if (spec.initial !== lastInitial) {
+        lastInitial = spec.initial;
+        zoomValue.current = spec.initial;
+      }
+    },
+    frame(state: EngineFrameState, dt: number) {
+      const env = getEnv();
+      const followId = resolveFollowId(env.props.followEntityId, env.userId);
+      const config = env.props.config?.rigs?.topDown;
+      const resolved = resolve(config);
+      const sample = readFollow(env.ctx, followId);
+      const desired = sample?.pos ?? ZERO;
+      const prev = follow ?? desired;
+      const blend = 1 - Math.exp(-resolved.followSmoothing * dt);
+      follow = {
+        x: prev.x + (desired.x - prev.x) * blend,
+        y: prev.y + (desired.y - prev.y) * blend,
+        z: prev.z + (desired.z - prev.z) * blend,
+      };
+      env.props.yawRef.current = resolved.yaw;
+      const pose = topDownPose(follow, { ...resolved, height: zoomValue.current }, currentFov(state.camera));
+      commit.commit(state.camera, pose, dt);
+    },
+    dispose(state: EngineFrameState) {
+      state.gl.domElement.removeEventListener("wheel", onWheel);
+      follow = null;
+    },
+  };
+  function onWheel(event: WheelEvent) {
+    if (event.shiftKey) return;
+    const spec = wheelSpec();
+    zoomValue.current = clamp(zoomValue.current + Math.sign(event.deltaY) * spec.speed, spec.min, spec.max);
+  }
 }
 
 /** Fixed side-on 2.5D follow rig: watches the followed entity from the perpendicular axis, never reading WASD/mouse-look. */
-export function SideScrollRig(props: RigProps) {
-  const { userId } = usePlayer();
-  const ctx = useGameContext();
-  const followId = resolveFollowId(props.followEntityId, userId);
-  const config: SideScrollCameraConfig | undefined = props.config?.rigs?.sideScroll;
-  const resolved = useMemo(() => resolveSideScroll(config), [config]);
-  const { camera, commit, beginTransition } = useCameraCommit(props, followId);
-  const followRef = useRef<Xyz | null>(null);
-
-  useEffect(beginTransition, []);
-
-  useFrame((_, dt) => {
-    const sample = readFollow(ctx, followId);
-    const desired = sample?.pos ?? { x: 0, y: 0, z: 0 };
-    const prev = followRef.current ?? desired;
-    const blend = sideScrollFollowBlend(resolved.followSmoothing, dt);
-    const follow: Xyz = {
-      x: prev.x + (desired.x - prev.x) * blend,
-      y: prev.y + (desired.y - prev.y) * blend,
-      z: prev.z + (desired.z - prev.z) * blend,
-    };
-    followRef.current = follow;
-    const pose = resolveSideScrollPose(follow, resolved, config?.fov ?? currentFov(camera));
-    const pixelPerfect = props.config?.lens?.projection === "orthographic" ? props.config.lens?.pixelPerfect : undefined;
-    if (pixelPerfect !== undefined) {
-      const snapped = snapPixelPerfectPosition(pose.position, pixelPerfect.pixelsPerUnit);
-      pose.position = snapped;
-      pose.lookAt = snapPixelPerfectPosition(pose.lookAt, pixelPerfect.pixelsPerUnit);
-    }
-    commit(pose, dt);
-  }, CAMERA_RIG_FRAME_PRIORITY);
-
-  return null;
-}
-
-function useHeldKeys(codes: readonly string[]): MutableRefObject<Set<string>> {
-  const held = useRef<Set<string>>(new Set());
-  useEffect(() => {
-    const set = new Set(codes);
-    const down = (event: KeyboardEvent) => {
-      if (set.has(event.code)) held.current.add(event.code);
-    };
-    const up = (event: KeyboardEvent) => {
-      held.current.delete(event.code);
-    };
-    window.addEventListener("keydown", down);
-    window.addEventListener("keyup", up);
-    return () => {
-      window.removeEventListener("keydown", down);
-      window.removeEventListener("keyup", up);
-      held.current.clear();
-    };
-  }, [codes.join(",")]);
-  return held;
+export function sideScrollRigDraw(getEnv: () => CameraRigEnv): EngineDraw {
+  const commit = createCameraCommit(getEnv);
+  const resolve = memoConfig((config: unknown) => resolveSideScroll(config as SideScrollCameraConfig | undefined));
+  let follow: Xyz | null = null;
+  return {
+    priority: CAMERA_RIG_FRAME_PRIORITY,
+    mount(state: EngineFrameState) {
+      commit.beginTransition(state.camera);
+    },
+    frame(state: EngineFrameState, dt: number) {
+      const env = getEnv();
+      const followId = resolveFollowId(env.props.followEntityId, env.userId);
+      const config = env.props.config?.rigs?.sideScroll as SideScrollCameraConfig | undefined;
+      const resolved = resolve(config);
+      const sample = readFollow(env.ctx, followId);
+      const desired = sample?.pos ?? ZERO;
+      const prev = follow ?? desired;
+      const blend = sideScrollFollowBlend(resolved.followSmoothing, dt);
+      follow = {
+        x: prev.x + (desired.x - prev.x) * blend,
+        y: prev.y + (desired.y - prev.y) * blend,
+        z: prev.z + (desired.z - prev.z) * blend,
+      };
+      const pose = resolveSideScrollPose(follow, resolved, config?.fov ?? currentFov(state.camera));
+      const pixelPerfect = env.props.config?.lens?.projection === "orthographic" ? env.props.config.lens?.pixelPerfect : undefined;
+      if (pixelPerfect !== undefined) {
+        const snapped = snapPixelPerfectPosition(pose.position, pixelPerfect.pixelsPerUnit);
+        pose.position = snapped;
+        pose.lookAt = snapPixelPerfectPosition(pose.lookAt, pixelPerfect.pixelsPerUnit);
+      }
+      commit.commit(state.camera, pose, dt);
+    },
+    dispose() {
+      follow = null;
+    },
+  };
 }
 
 const RTS_PAN_KEYS = ["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "KeyQ", "KeyE"];
@@ -295,187 +331,215 @@ const RTS_WASD_KEYS = new Set(["KeyW", "KeyA", "KeyS", "KeyD"]);
 const RTS_ROTATE_KEYS = new Set(["KeyQ", "KeyE"]);
 
 /** Strategy rig that pans with keys or screen edges, zooms and rotates over the map. */
-export function RtsRig(props: RigProps & { panKeysEnabled?: boolean | undefined; rotateKeysEnabled?: boolean | undefined }) {
-  const { userId } = usePlayer();
-  const ctx = useGameContext();
-  const followId = resolveFollowId(props.followEntityId, userId);
-  const config: RtsCameraConfig | undefined = props.config?.rigs?.rts;
-  const resolved = useMemo(() => resolveTopDown(config), [config]);
-  const { camera, commit, beginTransition } = useCameraCommit(props, followId);
-  const wasdPanEnabled = followId === null && props.panKeysEnabled !== false;
-  const rotateKeysEnabled = props.rotateKeysEnabled !== false;
-  const heldCodes = useMemo(
-    () => RTS_PAN_KEYS.filter((code) =>
-      (wasdPanEnabled || !RTS_WASD_KEYS.has(code)) && (rotateKeysEnabled || !RTS_ROTATE_KEYS.has(code))),
-    [wasdPanEnabled, rotateKeysEnabled],
-  );
-  const held = useHeldKeys(heldCodes);
-  const centerRef = useRef<Xyz>({
-    x: config?.start?.x ?? 0,
-    y: 0,
-    z: config?.start?.z ?? 0,
+export function rtsRigDraw(getEnv: () => CameraRigEnv): EngineDraw {
+  const commit = createCameraCommit(getEnv);
+  const resolve = memoConfig((config: unknown) => resolveTopDown(config as RtsCameraConfig | undefined));
+  let center: Xyz | null = null;
+  let yaw = 0;
+  let pointer: { nx: number; ny: number } | null = null;
+  let zoomValue = { current: 0 };
+  let lastInitial = Number.NaN;
+  const held = createHeldKeys(() => {
+    const env = getEnv();
+    const followId = resolveFollowId(env.props.followEntityId, env.userId);
+    const wasdPanEnabled = followId === null && env.props.panKeysEnabled !== false;
+    const rotateKeysEnabled = env.props.rotateKeysEnabled !== false;
+    return RTS_PAN_KEYS.filter((code) =>
+      (wasdPanEnabled || !RTS_WASD_KEYS.has(code)) && (rotateKeysEnabled || !RTS_ROTATE_KEYS.has(code)));
   });
-  const yawRef = useRef(resolved.yaw);
-  const pointerRef = useRef<{ nx: number; ny: number } | null>(null);
-  const domElement = useThree((state) => state.gl.domElement);
-  const zoomRef = useWheelZoom(
-    resolved.height,
-    (config?.zoom?.min ?? 0.5) * resolved.height,
-    (config?.zoom?.max ?? 2.2) * resolved.height,
-    config?.zoom?.speed ?? resolved.height * 0.09,
-  );
-
-  const edgeScroll = config?.edgeScroll ?? true;
-  const edgeMargin = typeof edgeScroll === "object" ? edgeScroll.margin ?? 0.04 : 0.04;
-  const panSpeed = config?.panSpeed ?? 24;
-  const rotateSpeed = config?.rotateSpeed ?? 1.4;
-
-  useEffect(beginTransition, []);
-
-  useEffect(() => {
-    if (edgeScroll === false) return;
-    const onMove = (event: PointerEvent) => {
-      const rect = domElement.getBoundingClientRect();
-      pointerRef.current = {
-        nx: (event.clientX - rect.left) / rect.width,
-        ny: (event.clientY - rect.top) / rect.height,
-      };
+  const wheelSpec = () => {
+    const env = getEnv();
+    const config = env.props.config?.rigs?.rts as RtsCameraConfig | undefined;
+    const resolved = resolve(config);
+    return {
+      initial: resolved.height,
+      min: (config?.zoom?.min ?? 0.5) * resolved.height,
+      max: (config?.zoom?.max ?? 2.2) * resolved.height,
+      speed: config?.zoom?.speed ?? resolved.height * 0.09,
     };
-    const onLeave = () => {
-      pointerRef.current = null;
-    };
-    domElement.addEventListener("pointermove", onMove);
-    domElement.addEventListener("pointerleave", onLeave);
-    return () => {
-      domElement.removeEventListener("pointermove", onMove);
-      domElement.removeEventListener("pointerleave", onLeave);
-    };
-  }, [domElement, edgeScroll]);
-
-  useFrame((_, dt) => {
-    const keys = held.current;
-    if (keys.has("KeyQ")) yawRef.current += rotateSpeed * dt;
-    if (keys.has("KeyE")) yawRef.current -= rotateSpeed * dt;
-
-    let panX = 0;
-    let panZ = 0;
-    if (keys.has("KeyW") || keys.has("ArrowUp")) panZ += 1;
-    if (keys.has("KeyS") || keys.has("ArrowDown")) panZ -= 1;
-    if (keys.has("KeyD") || keys.has("ArrowRight")) panX += 1;
-    if (keys.has("KeyA") || keys.has("ArrowLeft")) panX -= 1;
-
-    const pointer = pointerRef.current;
-    if (edgeScroll !== false && pointer !== null) {
-      if (pointer.nx < edgeMargin) panX -= 1;
-      else if (pointer.nx > 1 - edgeMargin) panX += 1;
-      if (pointer.ny < edgeMargin) panZ += 1;
-      else if (pointer.ny > 1 - edgeMargin) panZ -= 1;
-    }
-
-    const center = centerRef.current;
-    if (panX !== 0 || panZ !== 0) {
-      const dir = rtsPanWorldDir(panX, panZ, yawRef.current);
-      center.x += dir.x * panSpeed * dt;
-      center.z += dir.z * panSpeed * dt;
-    } else {
-      const follow = readFollow(ctx, followId);
-      if (follow !== null) {
-        center.x += (follow.pos.x - center.x) * (1 - Math.exp(-resolved.followSmoothing * dt));
-        center.z += (follow.pos.z - center.z) * (1 - Math.exp(-resolved.followSmoothing * dt));
+  };
+  const onWheel = (event: WheelEvent) => {
+    if (event.shiftKey) return;
+    const spec = wheelSpec();
+    zoomValue.current = clamp(zoomValue.current + Math.sign(event.deltaY) * spec.speed, spec.min, spec.max);
+  };
+  let domElement: HTMLElement | null = null;
+  const onPointerMove = (event: PointerEvent) => {
+    if (domElement === null) return;
+    const rect = domElement.getBoundingClientRect();
+    pointer = { nx: (event.clientX - rect.left) / rect.width, ny: (event.clientY - rect.top) / rect.height };
+  };
+  const onPointerLeave = () => {
+    pointer = null;
+  };
+  return {
+    priority: CAMERA_RIG_FRAME_PRIORITY,
+    mount(state: EngineFrameState) {
+      commit.beginTransition(state.camera);
+      domElement = state.gl.domElement;
+      domElement.addEventListener("wheel", onWheel);
+      domElement.addEventListener("pointermove", onPointerMove);
+      domElement.addEventListener("pointerleave", onPointerLeave);
+      const spec = wheelSpec();
+      lastInitial = spec.initial;
+      zoomValue.current = spec.initial;
+      const env = getEnv();
+      const config = env.props.config?.rigs?.rts as RtsCameraConfig | undefined;
+      center = { x: config?.start?.x ?? 0, y: 0, z: config?.start?.z ?? 0 };
+      yaw = resolve(config).yaw;
+      held.sync();
+    },
+    update() {
+      held.sync();
+      const spec = wheelSpec();
+      if (spec.initial !== lastInitial) {
+        lastInitial = spec.initial;
+        zoomValue.current = spec.initial;
       }
-    }
+    },
+    frame(state: EngineFrameState, dt: number) {
+      const env = getEnv();
+      held.sync();
+      const followId = resolveFollowId(env.props.followEntityId, env.userId);
+      const config = env.props.config?.rigs?.rts as RtsCameraConfig | undefined;
+      const resolved = resolve(config);
+      const keys = held.held;
+      if (keys.has("KeyQ")) yaw += (config?.rotateSpeed ?? 1.4) * dt;
+      if (keys.has("KeyE")) yaw -= (config?.rotateSpeed ?? 1.4) * dt;
 
-    applyRtsCenter(center, ctx.camera.takePanTo(), config?.bounds);
+      let panX = 0;
+      let panZ = 0;
+      if (keys.has("KeyW") || keys.has("ArrowUp")) panZ += 1;
+      if (keys.has("KeyS") || keys.has("ArrowDown")) panZ -= 1;
+      if (keys.has("KeyD") || keys.has("ArrowRight")) panX += 1;
+      if (keys.has("KeyA") || keys.has("ArrowLeft")) panX -= 1;
 
-    props.yawRef.current = yawRef.current;
-    const pose = topDownPose(
-      center,
-      { ...resolved, yaw: yawRef.current, height: zoomRef.current },
-      currentFov(camera),
-    );
-    commit(pose, dt);
-  }, CAMERA_RIG_FRAME_PRIORITY);
+      const edgeScroll = config?.edgeScroll ?? true;
+      const edgeMargin = typeof edgeScroll === "object" ? edgeScroll.margin ?? 0.04 : 0.04;
+      const panSpeed = config?.panSpeed ?? 24;
+      if (edgeScroll !== false && pointer !== null) {
+        if (pointer.nx < edgeMargin) panX -= 1;
+        else if (pointer.nx > 1 - edgeMargin) panX += 1;
+        if (pointer.ny < edgeMargin) panZ += 1;
+        else if (pointer.ny > 1 - edgeMargin) panZ -= 1;
+      }
 
-  return null;
+      if (center === null) return;
+      if (panX !== 0 || panZ !== 0) {
+        const dir = rtsPanWorldDir(panX, panZ, yaw);
+        center.x += dir.x * panSpeed * dt;
+        center.z += dir.z * panSpeed * dt;
+      } else {
+        const sample = readFollow(env.ctx, followId);
+        if (sample !== null) {
+          center.x += (sample.pos.x - center.x) * (1 - Math.exp(-resolved.followSmoothing * dt));
+          center.z += (sample.pos.z - center.z) * (1 - Math.exp(-resolved.followSmoothing * dt));
+        }
+      }
+
+      applyRtsCenter(center, env.ctx.camera.takePanTo(), config?.bounds);
+
+      env.props.yawRef.current = yaw;
+      const pose = topDownPose(
+        center,
+        { ...resolved, yaw, height: zoomValue.current },
+        currentFov(state.camera),
+      );
+      commit.commit(state.camera, pose, dt);
+    },
+    dispose(state: EngineFrameState) {
+      held.dispose();
+      const dom = state.gl.domElement;
+      dom.removeEventListener("wheel", onWheel);
+      dom.removeEventListener("pointermove", onPointerMove);
+      dom.removeEventListener("pointerleave", onPointerLeave);
+      center = null;
+      pointer = null;
+      domElement = null;
+    },
+  };
 }
 
 /** Over-the-shoulder third-person rig with mouse look and shoulder offset. */
-export function ShoulderRig(props: RigProps) {
-  const { userId } = usePlayer();
-  const ctx = useGameContext();
-  const followId = resolveFollowId(props.followEntityId, userId);
-  const config: ShoulderCameraConfig | undefined = props.config?.rigs?.shoulder;
-  const { commit, beginTransition } = useCameraCommit(props, followId);
-  const domElement = useThree((state) => state.gl.domElement);
-  const sideRef = useRef(config?.side === "left" ? -1 : 1);
-  const aimRef = useRef(0);
-  const aimingRef = useRef(false);
-  const sensitivity = config?.sensitivity ?? 0.0025;
-
-  useEffect(beginTransition, []);
-
-  useEffect(() => {
-    const requestLock = () => {
-      if (document.pointerLockElement !== domElement) requestRawPointerLock(domElement);
-    };
-    const onMove = (event: MouseEvent) => {
-      if (document.pointerLockElement !== domElement) return;
-      props.yawRef.current -= event.movementX * sensitivity;
-      props.pitchRef.current = clamp(props.pitchRef.current - event.movementY * sensitivity, -1.2, 1.2);
-    };
-    const onDown = (event: MouseEvent) => {
-      if (event.button === 2) aimingRef.current = true;
-    };
-    const onUp = (event: MouseEvent) => {
-      if (event.button === 2) aimingRef.current = false;
-    };
-    const onKey = (event: KeyboardEvent) => {
-      if (event.code === "KeyV") sideRef.current *= -1;
-    };
-    const onContext = (event: Event) => event.preventDefault();
-    domElement.addEventListener("click", requestLock);
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mousedown", onDown);
-    window.addEventListener("mouseup", onUp);
-    window.addEventListener("keydown", onKey);
-    domElement.addEventListener("contextmenu", onContext);
-    return () => {
-      domElement.removeEventListener("click", requestLock);
+export function shoulderRigDraw(getEnv: () => CameraRigEnv): EngineDraw {
+  const commit = createCameraCommit(getEnv);
+  let side = 1;
+  let aim = 0;
+  let aiming = false;
+  let domElement: HTMLElement | null = null;
+  const shoulderConfig = () => getEnv().props.config?.rigs?.shoulder as ShoulderCameraConfig | undefined;
+  const onMove = (event: MouseEvent) => {
+    if (domElement === null || document.pointerLockElement !== domElement) return;
+    const sensitivity = shoulderConfig()?.sensitivity ?? 0.0025;
+    const env = getEnv();
+    env.props.yawRef.current -= event.movementX * sensitivity;
+    env.props.pitchRef.current = clamp(env.props.pitchRef.current - event.movementY * sensitivity, -1.2, 1.2);
+  };
+  const onDown = (event: MouseEvent) => {
+    if (event.button === 2) aiming = true;
+  };
+  const onUp = (event: MouseEvent) => {
+    if (event.button === 2) aiming = false;
+  };
+  const onKey = (event: KeyboardEvent) => {
+    if (event.code === "KeyV") side *= -1;
+  };
+  const onContext = (event: Event) => event.preventDefault();
+  const requestLock = () => {
+    if (domElement !== null && document.pointerLockElement !== domElement) requestRawPointerLock(domElement);
+  };
+  return {
+    priority: CAMERA_RIG_FRAME_PRIORITY,
+    mount(state: EngineFrameState) {
+      commit.beginTransition(state.camera);
+      domElement = state.gl.domElement;
+      side = shoulderConfig()?.side === "left" ? -1 : 1;
+      domElement.addEventListener("click", requestLock);
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mousedown", onDown);
+      window.addEventListener("mouseup", onUp);
+      window.addEventListener("keydown", onKey);
+      domElement.addEventListener("contextmenu", onContext);
+    },
+    frame(state: EngineFrameState, dt: number) {
+      const env = getEnv();
+      const followId = resolveFollowId(env.props.followEntityId, env.userId);
+      const config = env.props.config?.rigs?.shoulder as ShoulderCameraConfig | undefined;
+      const turn = env.ctx.camera.takeTurnTo();
+      if (turn !== null) env.props.yawRef.current = turn;
+      const sample = readFollow(env.ctx, followId);
+      const follow = sample?.pos ?? ZERO;
+      const weapon = followId === null ? null : (env.props.config?.follow?.weapon?.(followId, env.ctx) ?? null);
+      if (weapon === null) {
+        const adsTarget = aiming ? 1 : 0;
+        aim += (adsTarget - aim) * (1 - Math.exp(-(config?.adsTransitionSpeed ?? 10) * dt));
+      } else aim = weapon.handling.adsProgress;
+      const hip = resolveShoulder(config, false);
+      const ads = resolveShoulder(config, true);
+      const blended = {
+        shoulderOffset: hip.shoulderOffset + (ads.shoulderOffset - hip.shoulderOffset) * aim,
+        heightOffset: hip.heightOffset + (ads.heightOffset - hip.heightOffset) * aim,
+        distance: hip.distance + (ads.distance - hip.distance) * aim,
+        fov: hip.fov + (ads.fov - hip.fov) * aim,
+      };
+      const handling = weapon?.handling;
+      const yaw = env.props.yawRef.current - (handling === undefined ? 0 : handling.aimYaw + handling.cameraYaw);
+      // This rig's pitch is camera elevation, so a muzzle climb lowers it.
+      const pitch = env.props.pitchRef.current - (handling === undefined ? 0 : handling.aimPitch + handling.cameraPitch);
+      const pose = shoulderPose(follow, yaw, pitch, side, blended);
+      commit.commit(state.camera, pose, dt);
+    },
+    dispose(state: EngineFrameState) {
+      const dom = state.gl.domElement;
+      dom.removeEventListener("click", requestLock);
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mousedown", onDown);
       window.removeEventListener("mouseup", onUp);
       window.removeEventListener("keydown", onKey);
-      domElement.removeEventListener("contextmenu", onContext);
-    };
-  }, [domElement, sensitivity, props.yawRef, props.pitchRef]);
-
-  useFrame((_, dt) => {
-    const turn = ctx.camera.takeTurnTo();
-    if (turn !== null) props.yawRef.current = turn;
-    const sample = readFollow(ctx, followId);
-    const follow = sample?.pos ?? { x: 0, y: 0, z: 0 };
-    const weapon = followId === null ? null : (props.config?.follow?.weapon?.(followId, ctx) ?? null);
-    if (weapon === null) {
-      const adsTarget = aimingRef.current ? 1 : 0;
-      aimRef.current += (adsTarget - aimRef.current) * (1 - Math.exp(-(config?.adsTransitionSpeed ?? 10) * dt));
-    } else aimRef.current = weapon.handling.adsProgress;
-    const hip = resolveShoulder(config, false);
-    const ads = resolveShoulder(config, true);
-    const blended = {
-      shoulderOffset: hip.shoulderOffset + (ads.shoulderOffset - hip.shoulderOffset) * aimRef.current,
-      heightOffset: hip.heightOffset + (ads.heightOffset - hip.heightOffset) * aimRef.current,
-      distance: hip.distance + (ads.distance - hip.distance) * aimRef.current,
-      fov: hip.fov + (ads.fov - hip.fov) * aimRef.current,
-    };
-    const handling = weapon?.handling;
-    const yaw = props.yawRef.current - (handling === undefined ? 0 : handling.aimYaw + handling.cameraYaw);
-    // This rig's pitch is camera elevation, so a muzzle climb lowers it.
-    const pitch = props.pitchRef.current - (handling === undefined ? 0 : handling.aimPitch + handling.cameraPitch);
-    const pose = shoulderPose(follow, yaw, pitch, sideRef.current, blended);
-    commit(pose, dt);
-  }, CAMERA_RIG_FRAME_PRIORITY);
-
-  return null;
+      dom.removeEventListener("contextmenu", onContext);
+      domElement = null;
+    },
+  };
 }
 
 function pickLockTarget(ctx: GameContext, followId: string | null, config: LockOnCameraConfig | undefined): string | null {
@@ -502,134 +566,146 @@ function pickLockTarget(ctx: GameContext, followId: string | null, config: LockO
 }
 
 /** Rig that frames the player and a locked-on target together. */
-export function LockOnRig(props: RigProps) {
-  const { userId } = usePlayer();
-  const ctx = useGameContext();
-  const followId = resolveFollowId(props.followEntityId, userId);
-  const config: LockOnCameraConfig | undefined = props.config?.rigs?.lockOn;
-  const { camera, commit, beginTransition } = useCameraCommit(props, followId);
-  const yawRef = useRef(0);
-  const seeded = useRef(false);
+export function lockOnRigDraw(getEnv: () => CameraRigEnv): EngineDraw {
+  const commit = createCameraCommit(getEnv);
+  let yaw = 0;
+  let seeded = false;
+  return {
+    priority: CAMERA_RIG_FRAME_PRIORITY,
+    mount(state: EngineFrameState) {
+      commit.beginTransition(state.camera);
+    },
+    frame(state: EngineFrameState, dt: number) {
+      const env = getEnv();
+      const followId = resolveFollowId(env.props.followEntityId, env.userId);
+      const config = env.props.config?.rigs?.lockOn as LockOnCameraConfig | undefined;
+      const sample = readFollow(env.ctx, followId);
+      const player = sample?.pos ?? ZERO;
+      const targetId = pickLockTarget(env.ctx, followId, config);
+      const targetEntity = targetId === null ? null : env.ctx.scene.entity.get(targetId);
+      const target: Xyz = targetEntity === null
+        ? { x: player.x, y: player.y, z: player.z + 1 }
+        : { x: targetEntity.position[0], y: targetEntity.position[1], z: targetEntity.position[2] };
 
-  useEffect(beginTransition, []);
-
-  useFrame((_, dt) => {
-    const sample = readFollow(ctx, followId);
-    const player = sample?.pos ?? { x: 0, y: 0, z: 0 };
-    const targetId = pickLockTarget(ctx, followId, config);
-    const targetEntity = targetId === null ? null : ctx.scene.entity.get(targetId);
-    const target: Xyz = targetEntity === null
-      ? { x: player.x, y: player.y, z: player.z + 1 }
-      : { x: targetEntity.position[0], y: targetEntity.position[1], z: targetEntity.position[2] };
-
-    const { pose, yaw } = lockOnPose(player, target, config, currentFov(camera));
-    if (!seeded.current) {
-      yawRef.current = yaw;
-      seeded.current = true;
-    } else {
-      yawRef.current = smoothYaw(yawRef.current, yaw, config?.yawSmoothing ?? 9, dt);
-    }
-    props.yawRef.current = yawRef.current;
-    commit(pose, dt);
-  }, CAMERA_RIG_FRAME_PRIORITY);
-
-  return null;
+      const { pose, yaw: targetYaw } = lockOnPose(player, target, config, currentFov(state.camera));
+      if (!seeded) {
+        yaw = targetYaw;
+        seeded = true;
+      } else {
+        yaw = smoothYaw(yaw, targetYaw, config?.yawSmoothing ?? 9, dt);
+      }
+      env.props.yawRef.current = yaw;
+      commit.commit(state.camera, pose, dt);
+    },
+    dispose() {
+      yaw = 0;
+      seeded = false;
+    },
+  };
 }
 
 /** Vehicle chase rig that trails behind the followed entity's heading. */
-export function ChaseRig(props: RigProps) {
-  const { userId } = usePlayer();
-  const ctx = useGameContext();
-  const followId = resolveFollowId(props.followEntityId, userId);
-  const config: ChaseCameraConfig | undefined = props.config?.rigs?.chase;
-  const staticResolved = useMemo(() => resolveChase(config), [config]);
-  const { camera, commit, beginTransition } = useCameraCommit(props, followId);
-  const shake = useCameraShake();
-  const stateRef = useRef<ChaseRigState>(createChaseRigState());
-  const viewRef = useRef<ChaseView | null>(null);
-  const inputSeededRef = useRef(false);
+export function chaseRigDraw(getEnv: () => CameraRigEnv): EngineDraw {
+  const commit = createCameraCommit(getEnv);
+  const staticResolve = memoConfig((config: unknown) => resolveChase(config as ChaseCameraConfig | undefined));
+  let state: ChaseRigState | null = null;
+  let view: ChaseView | null = null;
+  let inputSeeded = false;
+  return {
+    priority: CAMERA_RIG_FRAME_PRIORITY,
+    mount(frameState: EngineFrameState) {
+      commit.beginTransition(frameState.camera);
+      state = createChaseRigState();
+    },
+    frame(frameState: EngineFrameState, dt: number) {
+      const env = getEnv();
+      const followId = resolveFollowId(env.props.followEntityId, env.userId);
+      const config = env.props.config?.rigs?.chase as ChaseCameraConfig | undefined;
+      const tuning = env.ctx.camera.chaseTuning();
+      const merged = tuning === null ? config : { ...config, ...tuning };
+      const resolved = tuning === null ? staticResolve(config) : resolveChase(merged);
+      const nextView = merged?.view ?? "chase";
+      if (view !== nextView) {
+        commit.beginTransition(frameState.camera);
+        view = nextView;
+        if (state !== null) state.offset = null;
+      }
 
-  useFrame((_, dt) => {
-    const tuning = ctx.camera.chaseTuning();
-    const merged = tuning === null ? config : { ...config, ...tuning };
-    const resolved = tuning === null ? staticResolved : resolveChase(merged);
-    const view = merged?.view ?? "chase";
-    if (viewRef.current !== view) {
-      beginTransition();
-      viewRef.current = view;
-      stateRef.current.offset = null;
-    }
+      const entity = followId === null ? null : env.ctx.scene.entity.get(followId);
+      const follow: Xyz = followId === null || !env.ctx.sim.renderPose(followId, followPose) ? ZERO : { x: followPose[0], y: followPose[1], z: followPose[2] };
+      if (!inputSeeded && merged?.headingSource === "input" && nextView === "chase" && (entity !== null || env.props.config?.orbit?.initialYaw !== undefined)) {
+        env.props.yawRef.current = resolveChaseHeading(merged, entity?.rotationY ?? 0, undefined, env.props.config?.orbit?.initialYaw);
+        inputSeeded = true;
+      }
+      const turn = env.ctx.camera.takeTurnTo();
+      if (turn !== null) env.props.yawRef.current = turn;
+      const yaw = resolveChaseHeading(merged, entity?.rotationY ?? 0, env.props.yawRef.current);
+      const v = entity?.velocity;
+      const published = v !== undefined && (v[0] !== 0 || v[1] !== 0 || v[2] !== 0);
+      const lookBack = resolved.lookBackAction !== null && env.ctx.input.isDown(resolved.lookBackAction);
+      const clampBoom = resolved.collision
+        ? (pivot: Xyz, desired: Xyz) => {
+            const dx = desired.x - pivot.x;
+            const dy = desired.y - pivot.y;
+            const dz = desired.z - pivot.z;
+            const length = Math.hypot(dx, dy, dz);
+            if (length <= 1e-6) return desired;
+            const hit = env.ctx.scene.raycast({
+              origin: [pivot.x, pivot.y, pivot.z],
+              direction: [dx / length, dy / length, dz / length],
+              maxDistance: length + resolved.collisionRadius,
+              excludeInstanceIds: followId === null ? undefined : [followId],
+              filter: { entities: false },
+            });
+            return clampBoomToHit(pivot, desired, hit?.distance ?? null, resolved.collisionRadius, resolved.collisionMinDistance);
+          }
+        : undefined;
 
-    const entity = followId === null ? null : ctx.scene.entity.get(followId);
-    const follow: Xyz = followId === null || !ctx.sim.renderPose(followId, followPose) ? { x: 0, y: 0, z: 0 } : { x: followPose[0], y: followPose[1], z: followPose[2] };
-    if (!inputSeededRef.current && merged?.headingSource === "input" && view === "chase" && (entity !== null || props.config?.orbit?.initialYaw !== undefined)) {
-      props.yawRef.current = resolveChaseHeading(merged, entity?.rotationY ?? 0, undefined, props.config?.orbit?.initialYaw);
-      inputSeededRef.current = true;
-    }
-    const turn = ctx.camera.takeTurnTo();
-    if (turn !== null) props.yawRef.current = turn;
-    const yaw = resolveChaseHeading(merged, entity?.rotationY ?? 0, props.yawRef.current);
-    const v = entity?.velocity;
-    const published = v !== undefined && (v[0] !== 0 || v[1] !== 0 || v[2] !== 0);
-    const lookBack = resolved.lookBackAction !== null && ctx.input.isDown(resolved.lookBackAction);
-    const clampBoom = resolved.collision
-      ? (pivot: Xyz, desired: Xyz) => {
-          const dx = desired.x - pivot.x;
-          const dy = desired.y - pivot.y;
-          const dz = desired.z - pivot.z;
-          const length = Math.hypot(dx, dy, dz);
-          if (length <= 1e-6) return desired;
-          const hit = ctx.scene.raycast({
-            origin: [pivot.x, pivot.y, pivot.z],
-            direction: [dx / length, dy / length, dz / length],
-            maxDistance: length + resolved.collisionRadius,
-            excludeInstanceIds: followId === null ? undefined : [followId],
-            filter: { entities: false },
-          });
-          return clampBoomToHit(pivot, desired, hit?.distance ?? null, resolved.collisionRadius, resolved.collisionMinDistance);
-        }
-      : undefined;
+      if (state === null) return;
+      const step = stepChase(
+        state,
+        {
+          follow,
+          yaw,
+          bodyPitch: entity?.rotationX ?? 0,
+          velocity: published ? { x: v[0], y: v[1], z: v[2] } : null,
+          lookBack: lookBack && nextView === "chase",
+          fovKick: env.ctx.camera.takeFovKick(),
+        },
+        resolved,
+        dt,
+        nextView === "chase" ? clampBoom : undefined,
+      );
+      env.props.yawRef.current = resolveChaseHeading(merged, step.anchorYaw, env.props.yawRef.current);
 
-    const step = stepChase(
-      stateRef.current,
-      {
-        follow,
-        yaw,
-        bodyPitch: entity?.rotationX ?? 0,
-        velocity: published ? { x: v[0], y: v[1], z: v[2] } : null,
-        lookBack: lookBack && view === "chase",
-        fovKick: ctx.camera.takeFovKick(),
-      },
-      resolved,
-      dt,
-      view === "chase" ? clampBoom : undefined,
-    );
-    props.yawRef.current = resolveChaseHeading(merged, step.anchorYaw, props.yawRef.current);
+      if (nextView !== "chase") {
+        const seat =
+          nextView === "cockpit"
+            ? merged?.seatOffsets?.cockpit ?? { x: 0, y: 1.2, z: 0.1 }
+            : nextView === "hood"
+              ? merged?.seatOffsets?.hood ?? { x: 0, y: 1, z: 1.4 }
+              : merged?.seatOffsets?.rear ?? { x: 0, y: 1.6, z: -1.5 };
+        const seatLooksBack = nextView === "rear" || lookBack;
+        const pose = seatPose(follow, seatLooksBack ? yaw + Math.PI : yaw, seat, step.pose.fov);
+        if (seatLooksBack) pose.position = seatPose(follow, yaw, seat, step.pose.fov).position;
+        env.props.yawRef.current = yaw;
+        commit.commit(frameState.camera, pose, dt);
+        return;
+      }
 
-    if (view !== "chase") {
-      const seat =
-        view === "cockpit"
-          ? merged?.seatOffsets?.cockpit ?? { x: 0, y: 1.2, z: 0.1 }
-          : view === "hood"
-            ? merged?.seatOffsets?.hood ?? { x: 0, y: 1, z: 1.4 }
-            : merged?.seatOffsets?.rear ?? { x: 0, y: 1.6, z: -1.5 };
-      const seatLooksBack = view === "rear" || lookBack;
-      const pose = seatPose(follow, seatLooksBack ? yaw + Math.PI : yaw, seat, step.pose.fov);
-      if (seatLooksBack) pose.position = seatPose(follow, yaw, seat, step.pose.fov).position;
-      props.yawRef.current = yaw;
-      commit(pose, dt);
-      return;
-    }
+      if (resolved.shakePerSpeed > 0 && step.speed > 0) {
+        env.shake.add(Math.min(resolved.shakePerSpeed * step.speed * dt, 0.1));
+      }
 
-    if (resolved.shakePerSpeed > 0 && step.speed > 0) {
-      shake.add(Math.min(resolved.shakePerSpeed * step.speed * dt, 0.1));
-    }
-
-    commit(step.pose, dt);
-    if (step.roll !== 0) camera.rotateZ(step.roll);
-  }, CAMERA_RIG_FRAME_PRIORITY);
-
-  return null;
+      commit.commit(frameState.camera, step.pose, dt);
+      if (step.roll !== 0) frameState.camera.rotateZ(step.roll);
+    },
+    dispose() {
+      state = null;
+      view = null;
+      inputSeeded = false;
+    },
+  };
 }
 
 function observerSubject(
@@ -651,65 +727,149 @@ function observerSubject(
 
 /**
  * Detached spectator/photo cam (#120): binds to any entity or fixed point and
- * auto-orbits it, reading no player input at all — the van CCTV / photo-mode /
+ * auto-orbits it, reading no player input at all â€” the van CCTV / photo-mode /
+ * kill-cam rig. Distinct from every other rig, which drives from mouse/keys.
+ */
+export function observerRigDraw(getEnv: () => CameraRigEnv): EngineDraw {
+  const commit = createCameraCommit(getEnv);
+  const resolve = memoConfig((config: unknown) => resolveObserver(config as ObserverCameraConfig | undefined));
+  let angle = 0;
+  return {
+    priority: CAMERA_RIG_FRAME_PRIORITY,
+    mount(state: EngineFrameState) {
+      commit.beginTransition(state.camera);
+      const env = getEnv();
+      const config = env.props.config?.rigs?.observer as ObserverCameraConfig | undefined;
+      angle = config?.startAngle ?? 0;
+    },
+    frame(state: EngineFrameState, dt: number) {
+      const env = getEnv();
+      const followId = resolveFollowId(env.props.followEntityId, env.userId);
+      const config = env.props.config?.rigs?.observer as ObserverCameraConfig | undefined;
+      const resolved = resolve(config);
+      const bound = observerSubject(env.ctx, config, followId).boundEntityId;
+      angle += resolved.orbitSpeed * dt;
+      const { subject } = observerSubject(env.ctx, config, followId);
+      const pose = observerPose(subject, angle, resolved, config?.fov ?? currentFov(state.camera));
+      commit.commit(state.camera, pose, dt, bound);
+    },
+    dispose() {
+      angle = 0;
+    },
+  };
+}
+
+/** Plays a cinematic keyframe path and calls onComplete when it ends. */
+export function cinematicRigDraw(getEnv: () => CameraRigEnv): EngineDraw {
+  const commit = createCameraCommit(getEnv);
+  let elapsed = 0;
+  let completed = false;
+  let lastCinematic: unknown = UNSET_CONFIG;
+  return {
+    priority: CAMERA_RIG_FRAME_PRIORITY,
+    mount(state: EngineFrameState) {
+      commit.beginTransition(state.camera);
+    },
+    update(state: EngineFrameState) {
+      const cinematic = getEnv().props.config?.cinematic;
+      if (cinematic === lastCinematic) return;
+      lastCinematic = cinematic;
+      elapsed = 0;
+      completed = false;
+      commit.beginTransition(state.camera);
+    },
+    frame(state: EngineFrameState, dt: number) {
+      const env = getEnv();
+      const cinematic = env.props.config?.cinematic;
+      if (cinematic === undefined) return;
+      elapsed += dt;
+      const sample = cinematicSample(
+        cinematic.keyframes,
+        elapsed,
+        cinematic.loop ?? false,
+        currentFov(state.camera),
+      );
+      const followId = resolveFollowId(env.props.followEntityId, env.userId);
+      commit.commit(state.camera, sample.pose, dt, followId);
+      if (sample.done && !completed) {
+        completed = true;
+        env.props.onComplete?.();
+      }
+    },
+    dispose() {
+      elapsed = 0;
+      completed = false;
+      lastCinematic = UNSET_CONFIG;
+    },
+  };
+}
+
+function useRigEnv(props: CameraRigEnv["props"]): { latest: { current: CameraRigEnv } } {
+  const { userId } = usePlayer();
+  const ctx = useGameContext();
+  const shake = useCameraShake();
+  const playerFov = usePlayerFov();
+  const latest = useRef<CameraRigEnv>({ props, ctx, userId, shake, playerFov });
+  latest.current = { props, ctx, userId, shake, playerFov };
+  return { latest };
+}
+
+/** Overhead follow rig at a fixed height and angle. */
+export function TopDownRig(props: RigProps) {
+  const { latest } = useRigEnv(props);
+  useEngineDraw(() => topDownRigDraw(() => latest.current), []);
+  return null;
+}
+
+/** Fixed side-on 2.5D follow rig: watches the followed entity from the perpendicular axis, never reading WASD/mouse-look. */
+export function SideScrollRig(props: RigProps) {
+  const { latest } = useRigEnv(props);
+  useEngineDraw(() => sideScrollRigDraw(() => latest.current), []);
+  return null;
+}
+
+/** Strategy rig that pans with keys or screen edges, zooms and rotates over the map. */
+export function RtsRig(props: RigProps & { panKeysEnabled?: boolean | undefined; rotateKeysEnabled?: boolean | undefined }) {
+  const { latest } = useRigEnv(props);
+  useEngineDraw(() => rtsRigDraw(() => latest.current), []);
+  return null;
+}
+
+/** Over-the-shoulder third-person rig with mouse look and shoulder offset. */
+export function ShoulderRig(props: RigProps) {
+  const { latest } = useRigEnv(props);
+  useEngineDraw(() => shoulderRigDraw(() => latest.current), []);
+  return null;
+}
+
+/** Rig that frames the player and a locked-on target together. */
+export function LockOnRig(props: RigProps) {
+  const { latest } = useRigEnv(props);
+  useEngineDraw(() => lockOnRigDraw(() => latest.current), []);
+  return null;
+}
+
+/** Vehicle chase rig that trails behind the followed entity's heading. */
+export function ChaseRig(props: RigProps) {
+  const { latest } = useRigEnv(props);
+  useEngineDraw(() => chaseRigDraw(() => latest.current), []);
+  return null;
+}
+
+/**
+ * Detached spectator/photo cam (#120): binds to any entity or fixed point and
+ * auto-orbits it, reading no player input at all â€” the van CCTV / photo-mode /
  * kill-cam rig. Distinct from every other rig, which drives from mouse/keys.
  */
 export function ObserverRig(props: RigProps) {
-  const { userId } = usePlayer();
-  const ctx = useGameContext();
-  const config: ObserverCameraConfig | undefined = props.config?.rigs?.observer;
-  const followId = resolveFollowId(props.followEntityId, userId);
-  const resolved = useMemo(() => resolveObserver(config), [config]);
-  const angleRef = useRef(config?.startAngle ?? 0);
-  const { camera, commit, beginTransition } = useCameraCommit(
-    props,
-    observerSubject(ctx, config, followId).boundEntityId,
-  );
-
-  useEffect(beginTransition, []);
-
-  useFrame((_, dt) => {
-    angleRef.current += resolved.orbitSpeed * dt;
-    const { subject } = observerSubject(ctx, config, followId);
-    const pose = observerPose(subject, angleRef.current, resolved, config?.fov ?? currentFov(camera));
-    commit(pose, dt);
-  }, CAMERA_RIG_FRAME_PRIORITY);
-
+  const { latest } = useRigEnv(props);
+  useEngineDraw(() => observerRigDraw(() => latest.current), []);
   return null;
 }
 
 /** Plays a cinematic keyframe path and calls onComplete when it ends. */
 export function CinematicRig(props: RigProps & { onComplete?: () => void }) {
-  const { userId } = usePlayer();
-  const followId = resolveFollowId(props.followEntityId, userId);
-  const cinematic = props.config?.cinematic;
-  const { camera, commit, beginTransition } = useCameraCommit(props, followId);
-  const elapsedRef = useRef(0);
-  const completedRef = useRef(false);
-  const onCompleteRef = useRef(props.onComplete);
-  onCompleteRef.current = props.onComplete;
-
-  useEffect(() => {
-    elapsedRef.current = 0;
-    completedRef.current = false;
-    beginTransition();
-  }, [cinematic]);
-
-  useFrame((_, dt) => {
-    if (cinematic === undefined) return;
-    elapsedRef.current += dt;
-    const sample = cinematicSample(
-      cinematic.keyframes,
-      elapsedRef.current,
-      cinematic.loop ?? false,
-      currentFov(camera),
-    );
-    commit(sample.pose, dt);
-    if (sample.done && !completedRef.current) {
-      completedRef.current = true;
-      onCompleteRef.current?.();
-    }
-  }, CAMERA_RIG_FRAME_PRIORITY);
-
+  const { latest } = useRigEnv(props);
+  useEngineDraw(() => cinematicRigDraw(() => latest.current), []);
   return null;
 }

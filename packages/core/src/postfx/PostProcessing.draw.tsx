@@ -1,8 +1,7 @@
 // @skill jgengine-world
 import { definedOnly } from "../data/definedOnly";
 import { requireUniform } from "../render/uniformMaterial.draw";
-import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
 import { EffectComposer, RenderPass, type Pass, type ShaderPass } from "three-stdlib";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
@@ -57,6 +56,8 @@ import { devtools } from "@jgengine/core/devtools/devtools";
 import { excludesFromOutline, StylizePass } from "./stylizePass.draw";
 import { renderShadowlessPrepass } from "./shadowPrepass.draw";
 import { JitteredRenderPass, TemporalAaPass } from "./temporalAaPass.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
 /**
  * GTAO renders the scene with an `overrideMaterial` normal/depth prepass when it has no GBuffer,
@@ -649,11 +650,122 @@ export function buildPostGraph(
   return graph;
 }
 
+export interface PostProcessingProps {
+  config: PostProcessingConfig;
+  quality?: GraphicsQuality;
+  stages?: Partial<GraphicsPostStages>;
+  immediate?: boolean;
+}
+
+/**
+ * Draw form of the old `PostProcessing` component: owns the EffectComposer graph,
+ * the devtools audit probe, tone-mapping override and the cover-gated effect reveal.
+ * The composer renders at frame priority 1, taking over the frame like the old
+ * priority-1 `useFrame` did.
+ */
+export function postProcessingDraw(getProps: () => PostProcessingProps): EngineDraw {
+  let built: BuiltGraph | null = null;
+  let audit: PostAudit | null = null;
+  let unregister: (() => void) | null = null;
+  let unwarm: (() => void) | null = null;
+  let stopped = false;
+  let prevToneMapping: THREE.ToneMapping | undefined;
+  let prevExposure = 1;
+  let lastWidth = -1;
+  let lastHeight = -1;
+  let lastPixelRatio = -1;
+
+  return {
+    priority: 1,
+    mount(state: EngineFrameState) {
+      const props = getProps();
+      const gl = state.gl;
+      const scene = state.rootScene ?? state.scene;
+      const camera = state.camera;
+
+      // `bun run perf post-audit` loads the page with this flag: every changed draw is compared with three's.
+      const auditing = typeof window !== "undefined" && new URLSearchParams(window.location?.search ?? "").get("postAudit") === "1";
+      audit = new PostAudit(auditing);
+      const auditRef = audit;
+      unregister = devtools.probes.registerSystem("render/postfx", { counters: () => ({ ...auditRef.stats }) });
+
+      prevToneMapping = gl.toneMapping;
+      prevExposure = gl.toneMappingExposure;
+      gl.toneMapping = TONE_MAPPING[props.config.toneMapping ?? "agx"];
+      gl.toneMappingExposure = props.config.exposure ?? 1;
+
+      const width = Math.max(1, state.size.width);
+      const height = Math.max(1, state.size.height);
+      const graph = buildPostGraph(gl, scene, camera, planPostStages(props.config, props.quality ?? "high", props.stages), width, height);
+      syncSize(graph, width, height, gl.getPixelRatio());
+      built = graph;
+      lastWidth = width;
+      lastHeight = height;
+      lastPixelRatio = gl.getPixelRatio();
+      if (props.immediate === true) showEffects(graph, true);
+      unwarm = warmupDraws(scene, () => dryRender(graph));
+      stopped = false;
+      if (props.immediate !== true && graph.effects.length > 0) {
+        void (async () => {
+          await sceneRevealed(scene);
+          if (stopped) return;
+          // A link that throws leaves those programs to the effects' first frame, as before this wait.
+          await linkDrawsOffFrame(gl, scene, () => dryRender(graph, true), () => stopped).catch(() => {});
+          if (stopped) return;
+          startRevealFade(graph);
+          // On the performance timeline, so a load trace shows when the effects came in.
+          if (typeof performance.mark === "function") performance.mark("jg:postfx:effects");
+        })();
+      }
+    },
+    update(state: EngineFrameState) {
+      const graph = built;
+      if (graph === null) return;
+      const width = Math.max(1, state.size.width);
+      const height = Math.max(1, state.size.height);
+      const pixelRatio = state.gl.getPixelRatio();
+      if (width === lastWidth && height === lastHeight && pixelRatio === lastPixelRatio) return;
+      lastWidth = width;
+      lastHeight = height;
+      lastPixelRatio = pixelRatio;
+      syncSize(graph, width, height, pixelRatio);
+    },
+    frame(_state: EngineFrameState, delta: number) {
+      const graph = built;
+      if (graph === null) return;
+      if (graph.grade !== null) requireUniform(graph.grade.uniforms, "uTime").value += delta;
+      measureComposerPasses(graph.composer);
+      for (const pass of graph.composer.passes) if (pass instanceof ExposureMeterPass) pass.collect();
+      graph.composer.render(delta);
+      audit?.afterFrame(_state.gl, graph.composer.passes);
+      for (const pass of graph.composer.passes) if (pass instanceof ExposureMeterPass) pass.frameEnd();
+      advanceRevealFade(graph, delta);
+    },
+    dispose(state: EngineFrameState) {
+      stopped = true;
+      unwarm?.();
+      unwarm = null;
+      const graph = built;
+      built = null;
+      if (graph !== null) disposeGraph(graph);
+      unregister?.();
+      unregister = null;
+      audit?.dispose();
+      audit = null;
+      if (prevToneMapping !== undefined) {
+        state.gl.toneMapping = prevToneMapping;
+        prevToneMapping = undefined;
+      }
+      state.gl.toneMappingExposure = prevExposure;
+    },
+  };
+}
+
 /**
  * Mounts an `EffectComposer` inside the shell Canvas and takes over rendering
- * (priority-1 `useFrame`, which disables R3F auto-render) to run the configured
- * post chain: RenderPass → GTAO → contact shadows → their composite → SSR → atmosphere → UnrealBloom → DOF → motion
- * blur → SMAA or TAA → exposure meter → OutputPass → Stylize → Grade. Rendered only
+ * (priority-1 frame, which disables auto-render) to run the configured
+ * post chain: RenderPass â†’ GTAO â†’ contact shadows â†’ their composite â†’ SSR â†’ atmosphere â†’ UnrealBloom â†’ DOF â†’ motion
+ * blur â†’ SMAA or TAA â†’ exposure meter â†’ OutputPass â†’ Stylize â†’ Grade. Rendered only
  * when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
  *
  * `stages` (resolved from the player's graphics profile) controls expensive passes
@@ -669,95 +781,12 @@ export function buildPostGraph(
  * chain (a settings change) does the same. `immediate` draws every effect from the first frame,
  * for a single still such as a poster, which has no cover and no next frame to wait for.
  */
-export function PostProcessing({
-  config,
-  quality = "high",
-  stages,
-  immediate = false,
-}: {
-  config: PostProcessingConfig;
-  quality?: GraphicsQuality;
-  stages?: Partial<GraphicsPostStages>;
-  immediate?: boolean;
-}) {
-  const gl = useThree((s) => s.gl);
-  const scene = useThree((s) => s.scene);
-  const camera = useThree((s) => s.camera);
-  const size = useThree((s) => s.size);
-
-  const builtRef = useRef<BuiltGraph | null>(null);
-  const auditRef = useRef<PostAudit | null>(null);
-
-  useEffect(() => {
-    // `bun run perf post-audit` loads the page with this flag: every changed draw is compared with three's.
-    const auditing = typeof window !== "undefined" && new URLSearchParams(window.location?.search ?? "").get("postAudit") === "1";
-    const audit = new PostAudit(auditing);
-    auditRef.current = audit;
-    const unregister = devtools.probes.registerSystem("render/postfx", { counters: () => ({ ...audit.stats }) });
-    return () => {
-      unregister();
-      audit.dispose();
-      if (auditRef.current === audit) auditRef.current = null;
-    };
-  }, []);
-
-  useEffect(() => {
-    const width = Math.max(1, size.width);
-    const height = Math.max(1, size.height);
-    const graph = buildPostGraph(gl, scene, camera, planPostStages(config, quality, stages), width, height);
-    syncSize(graph, width, height, gl.getPixelRatio());
-    builtRef.current = graph;
-    if (immediate) showEffects(graph, true);
-    const unwarm = warmupDraws(scene, () => dryRender(graph));
-    let stopped = false;
-    if (!immediate && graph.effects.length > 0) {
-      void (async () => {
-        await sceneRevealed(scene);
-        if (stopped) return;
-        // A link that throws leaves those programs to the effects' first frame, as before this wait.
-        await linkDrawsOffFrame(gl, scene, () => dryRender(graph, true), () => stopped).catch(() => {});
-        if (stopped) return;
-        startRevealFade(graph);
-        // On the performance timeline, so a load trace shows when the effects came in.
-        if (typeof performance.mark === "function") performance.mark("jg:postfx:effects");
-      })();
-    }
-    return () => {
-      stopped = true;
-      unwarm();
-      disposeGraph(graph);
-      builtRef.current = null;
-    };
-  }, [gl, scene, camera, config, quality, stages, immediate]);
-
-  useEffect(() => {
-    const prevTone = gl.toneMapping;
-    const prevExposure = gl.toneMappingExposure;
-    gl.toneMapping = TONE_MAPPING[config.toneMapping ?? "agx"];
-    gl.toneMappingExposure = config.exposure ?? 1;
-    return () => {
-      gl.toneMapping = prevTone;
-      gl.toneMappingExposure = prevExposure;
-    };
-  }, [gl, config.toneMapping, config.exposure]);
-
-  useEffect(() => {
-    const built = builtRef.current;
-    if (built === null) return;
-    syncSize(built, Math.max(1, size.width), Math.max(1, size.height), gl.getPixelRatio());
-  }, [gl, size.width, size.height]);
-
-  useFrame((_, delta) => {
-    const built = builtRef.current;
-    if (built === null) return;
-    if (built.grade !== null) requireUniform(built.grade.uniforms, "uTime").value += delta;
-    measureComposerPasses(built.composer);
-    for (const pass of built.composer.passes) if (pass instanceof ExposureMeterPass) pass.collect();
-    built.composer.render(delta);
-    auditRef.current?.afterFrame(gl, built.composer.passes);
-    for (const pass of built.composer.passes) if (pass instanceof ExposureMeterPass) pass.frameEnd();
-    advanceRevealFade(built, delta);
-  }, 1);
-
+export function PostProcessing(props: PostProcessingProps) {
+  const latest = useRef<PostProcessingProps>(props);
+  latest.current = props;
+  useEngineDraw(
+    () => postProcessingDraw(() => latest.current),
+    [props.config, props.quality, props.stages, props.immediate],
+  );
   return null;
 }

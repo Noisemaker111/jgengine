@@ -1,9 +1,18 @@
-import { useFrame } from "@react-three/fiber";
+import { useRef } from "react";
 import * as THREE from "three";
 import { UniformMaterial } from "@jgengine/core/render/uniformMaterial.draw";
-import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
+
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { createWeatherQuadGeometry } from "./weatherGeometry.draw";
-import { useWeatherUniformSet } from "./weatherUniforms.draw";
+import {
+  createWeatherUniformSet,
+  updateWeatherUniformSet,
+  useWeatherUniformSet,
+  type WeatherUniformOptions,
+  type WeatherUniformSet,
+} from "./weatherUniforms.draw";
 
 /** Bounded ripple pool with terrain height and sky exposure query adapters. */
 export interface RainImpactFieldProps {
@@ -17,26 +26,54 @@ export interface RainImpactFieldProps {
   color?: THREE.ColorRepresentation;
 }
 
-/** Bounded ground ripples sharing precipitation intensity and authoritative animation time.
+const NO_UNIFORM_OPTIONS: WeatherUniformOptions = {};
+
+type RainImpactMaterialUniforms = {
+  uTime: WeatherUniformSet["time"];
+  uRain: WeatherUniformSet["rain"];
+  uAnchor: { value: THREE.Vector2 };
+  uExtent: { value: number };
+  uColor: { value: THREE.Color };
+};
+
+/**
+ * Bounded ground ripples sharing precipitation intensity and authoritative animation time.
+ * `uniforms` is the resolved shared set (the React path's `useWeatherUniformSet`, already
+ * ticked); without it the draw owns a local set and ticks it on the board at weather priority.
  * @capability rain-ground-ripples Render bounded rain impacts on exposed terrain using the shared precipitation clock.
  */
-export function RainImpactField({ count = 64, extent = 48, heightAt, exposureAt, seed = 11939, color = "#b8c4d8" }: RainImpactFieldProps) {
-  const capacity = Math.max(0, Math.min(256, Math.floor(Number.isFinite(count) ? count : 64)));
-  const size = Math.max(1, Number.isFinite(extent) ? extent : 48);
-  const shared = useWeatherUniformSet();
-  const geometry = useDisposable(() => {
-    const value = createWeatherQuadGeometry(capacity, seed);
-    value.setAttribute("aGround", new THREE.InstancedBufferAttribute(new Float32Array(capacity), 1));
-    value.setAttribute("aExposure", new THREE.InstancedBufferAttribute(new Float32Array(capacity), 1));
-    value.instanceCount = capacity;
-    return value;
-  }, [capacity, seed]);
-  const material = useDisposable(() => new UniformMaterial({
-    transparent: true,
-    side: THREE.DoubleSide,
-    depthWrite: false,
-    uniforms: { uTime: shared.time, uRain: shared.rain, uAnchor: { value: new THREE.Vector2() }, uExtent: { value: size }, uColor: { value: new THREE.Color(color) } },
-    vertexShader: `
+export function rainImpactFieldDraw(getProps: () => RainImpactFieldProps, uniforms?: WeatherUniformSet): EngineDraw {
+  let mesh: THREE.Mesh | null = null;
+  let geometry: THREE.InstancedBufferGeometry | null = null;
+  let material: UniformMaterial<RainImpactMaterialUniforms> | null = null;
+  let shared: WeatherUniformSet | null = null;
+  let capacity = 0;
+  let size = 48;
+  let leaveTicker = () => {};
+
+  return {
+    mount(state: EngineFrameState) {
+      const props = getProps();
+      capacity = Math.max(0, Math.min(256, Math.floor(Number.isFinite(props.count ?? 64) ? (props.count ?? 64) : 64)));
+      size = Math.max(1, Number.isFinite(props.extent ?? 48) ? (props.extent ?? 48) : 48);
+      shared = uniforms ?? createWeatherUniformSet(NO_UNIFORM_OPTIONS);
+      const set = shared;
+      geometry = createWeatherQuadGeometry(capacity, props.seed ?? 11939);
+      geometry.setAttribute("aGround", new THREE.InstancedBufferAttribute(new Float32Array(capacity), 1));
+      geometry.setAttribute("aExposure", new THREE.InstancedBufferAttribute(new Float32Array(capacity), 1));
+      geometry.instanceCount = capacity;
+      material = new UniformMaterial({
+        transparent: true,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        uniforms: {
+          uTime: set.time,
+          uRain: set.rain,
+          uAnchor: { value: new THREE.Vector2() },
+          uExtent: { value: size },
+          uColor: { value: new THREE.Color(props.color ?? "#b8c4d8") },
+        },
+        vertexShader: `
       uniform float uTime;
       uniform float uExtent;
       uniform vec2 uAnchor;
@@ -57,7 +94,7 @@ export function RainImpactField({ count = 64, extent = 48, heightAt, exposureAt,
         gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.0);
       }
     `,
-    fragmentShader: `
+        fragmentShader: `
       uniform float uRain;
       uniform vec3 uColor;
       varying vec2 vUv;
@@ -71,33 +108,74 @@ export function RainImpactField({ count = 64, extent = 48, heightAt, exposureAt,
         gl_FragColor = vec4(uColor, alpha);
       }
     `,
-  }), [shared, size, color]);
+      });
+      mesh = new THREE.Mesh(geometry, material);
+      mesh.frustumCulled = false;
+      mesh.renderOrder = 9;
+      state.scene.add(mesh);
+      if (uniforms === undefined) {
+        leaveTicker = joinFrameTask(-1, (frameState, delta) => {
+          const position = frameState.camera.position;
+          updateWeatherUniformSet(set, NO_UNIFORM_OPTIONS, delta, position.x, position.z, position.y);
+        });
+      }
+    },
+    frame(state: EngineFrameState) {
+      const props = getProps();
+      const set = shared;
+      if (set === null || mesh === null || material === null || geometry === null) return;
+      const anchorX = Math.round(state.camera.position.x / 8) * 8;
+      const anchorZ = Math.round(state.camera.position.z / 8) * 8;
+      (material.uniforms.uAnchor.value as THREE.Vector2).set(anchorX, anchorZ);
+      material.uniforms.uExtent.value = size;
+      material.uniforms.uColor.value.set(props.color ?? "#b8c4d8");
+      const spawn = geometry.getAttribute("aSpawn");
+      const ground = geometry.getAttribute("aGround");
+      const exposure = geometry.getAttribute("aExposure");
+      const heightAt = props.heightAt;
+      const exposureAt = props.exposureAt;
+      for (let i = 0; i < capacity; i += 1) {
+        const x = anchorX + (spawn.getX(i) - 0.5) * size;
+        const z = anchorZ + (spawn.getZ(i) - 0.5) * size;
+        const y = heightAt(x, z);
+        ground.setX(i, Number.isFinite(y) ? y : 0);
+        const open = exposureAt?.(x, y, z) ?? 1;
+        exposure.setX(i, Math.max(0, Math.min(1, Number.isFinite(open) ? open : 0)));
+      }
+      ground.needsUpdate = true;
+      exposure.needsUpdate = true;
+      const metrics = set.metrics?.impacts;
+      if (metrics !== undefined) {
+        metrics.count = geometry.instanceCount;
+        metrics.capacity = geometry.getAttribute("aSpawn").count;
+        metrics.heightQueries = capacity;
+        metrics.exposureQueries = exposureAt === undefined ? 0 : capacity;
+        metrics.queryBudget = capacity * (exposureAt === undefined ? 1 : 2);
+      }
+    },
+    dispose(state: EngineFrameState) {
+      leaveTicker();
+      leaveTicker = () => {};
+      if (mesh !== null) state.scene.remove(mesh);
+      geometry?.dispose();
+      material?.dispose();
+      mesh = null;
+      geometry = null;
+      material = null;
+      shared = null;
+    },
+  };
+}
 
-  useFrame((state) => {
-    const anchorX = Math.round(state.camera.position.x / 8) * 8;
-    const anchorZ = Math.round(state.camera.position.z / 8) * 8;
-    material.uniforms.uAnchor.value.set(anchorX, anchorZ);
-    const spawn = geometry.getAttribute("aSpawn");
-    const ground = geometry.getAttribute("aGround");
-    const exposure = geometry.getAttribute("aExposure");
-    for (let i = 0; i < capacity; i += 1) {
-      const x = anchorX + (spawn.getX(i) - 0.5) * size;
-      const z = anchorZ + (spawn.getZ(i) - 0.5) * size;
-      const y = heightAt(x, z);
-      ground.setX(i, Number.isFinite(y) ? y : 0);
-      const open = exposureAt?.(x, y, z) ?? 1;
-      exposure.setX(i, Math.max(0, Math.min(1, Number.isFinite(open) ? open : 0)));
-    }
-    ground.needsUpdate = true;
-    exposure.needsUpdate = true;
-    const metrics = shared.metrics?.impacts;
-    if (metrics !== undefined) {
-      metrics.count = geometry.instanceCount;
-      metrics.capacity = geometry.getAttribute("aSpawn").count;
-      metrics.heightQueries = capacity;
-      metrics.exposureQueries = exposureAt === undefined ? 0 : capacity;
-      metrics.queryBudget = capacity * (exposureAt === undefined ? 1 : 2);
-    }
-  });
-  return <mesh geometry={geometry} material={material} frustumCulled={false} renderOrder={9} />;
+export function RainImpactField(props: RainImpactFieldProps) {
+  const uniforms = useWeatherUniformSet();
+  const latest = useRef(props);
+  latest.current = props;
+  const capacity = Math.max(0, Math.min(256, Math.floor(Number.isFinite(props.count ?? 64) ? (props.count ?? 64) : 64)));
+  const size = Math.max(1, Number.isFinite(props.extent ?? 48) ? (props.extent ?? 48) : 48);
+  useEngineDraw(
+    () => rainImpactFieldDraw(() => latest.current, uniforms),
+    [capacity, props.seed, size, uniforms],
+  );
+  return null;
 }

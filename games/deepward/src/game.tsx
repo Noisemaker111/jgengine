@@ -1,8 +1,9 @@
 import "./style.css";
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import { useSceneSwap } from "@jgengine/core/render/sceneSwap.draw";
-import { useFrame } from "@react-three/fiber";
-import { Group, SpotLight, Vector3, type PointLight } from "three";
+import { CylinderGeometry, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, PointLight, SpotLight, TorusGeometry, Vector3 } from "three";
+import { SceneObjectGroup, SceneObjectPortal, EngineDrawMount, meshDraw, useSceneObjectAttach, useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { stationAssets } from "./game/assets";
 import { StationModels, hasStationModel } from "./game/stationModels";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
@@ -17,7 +18,7 @@ import { marrowOf, marrowSpec } from "./game/marrow";
 import { STRATA } from "./game/strata";
 import { ALARM_LAMPS, alarmCreatures, alarmLampAt, Headlamp, MarrowBays, StratumAtmosphere, StratumDressing, StratumLife, type StratumMarks } from "./game/strataArt";
 import { PALETTE as C, signTexture, IndustrialBox, SALVAGE_PLACARD, type Triple } from "./game/art";
-import { surfaceMaterial, type IndustrialSurface } from "./game/industrialMaterials";
+import { surfaceMaterialParams, type IndustrialSurface } from "./game/industrialMaterials";
 import { FITTER_FLASH, FitterModel, fitterHit } from "./game/fitterArt";
 import { ServiceWeapon, serviceWeaponBody, serviceWeaponPose } from "./game/weaponArt";
 import { activeRoomLamps, deriveRoomPresentation, isBayWall, lampFlicker, ROOM_LIGHT_BUDGET, ROOM_LIGHT_REACH, ROOM_LIGHT_INTENSITY } from "./game/roomPresentation";
@@ -37,6 +38,7 @@ import { deepwardKit } from "./game/ui/menu/deepwardKit";
 import { audio } from "./game/audio";
 import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
 import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 function Block({ at, size, color = C.panel, glow = false, surface }: { at: Triple; size: Triple; color?: string; glow?: boolean; surface?: IndustrialSurface }) {
   return <IndustrialBox at={at} size={size} color={color} surface={surface ?? (glow ? "lamp" : color === C.steel ? "steel" : color === C.brass ? "brass" : "paint")} emission={glow ? 0.8 : 0} />;
@@ -44,13 +46,23 @@ function Block({ at, size, color = C.panel, glow = false, surface }: { at: Tripl
 function Sign({ at, title, sub, color = C.cyan, turn = 0, width = 3.8 }: { at: Triple; title: string; sub: string; color?: string; turn?: number; width?: number }) {
   const texture = useMemo(() => signTexture(title, sub, color), [title, sub, color]);
   useEffect(() => () => texture.dispose(), [texture]);
-  return <mesh position={at} rotation-y={turn}><planeGeometry args={[width, width / 3]} /><meshBasicMaterial map={texture} /></mesh>;
+  return <EngineDrawMount create={() => meshDraw({
+    geometry: new PlaneGeometry(width, width / 3),
+    material: new MeshBasicMaterial({ map: texture }),
+    position: at,
+    rotation: [0, turn, 0],
+  })} deps={[at, turn, width, texture]} />;
 }
 function Tube({ at, radius = 0.18, height = 1, color = C.steel }: { at: Triple; radius?: number; height?: number; color?: string }) {
-  return <mesh position={at} castShadow><cylinderGeometry args={[radius, radius, height, 12]} /><meshStandardMaterial {...surfaceMaterial(color === C.steel ? "steel" : color === C.brass ? "brass" : "paint", color)} /></mesh>;
+  return <EngineDrawMount create={() => meshDraw({
+    geometry: new CylinderGeometry(radius, radius, height, 12),
+    material: new MeshStandardMaterial(surfaceMaterialParams(color === C.steel ? "steel" : color === C.brass ? "brass" : "paint", color)),
+    position: at,
+    castShadow: true,
+  })} deps={[at, radius, height, color]} />;
 }
 function RailCart({ at, home = false }: { at: Triple; home?: boolean }) {
-  return <group position={at}>
+  return <SceneObjectGroup position={at}>
     {!hasStationModel(home ? "home" : "vault", home ? "rail-garage" : "rail-extraction") && <>
     <Block at={[0, 0.24, 0]} size={[2.5, 0.48, 1.8]} color={C.steel} />
     <Block at={[0, 0.65, 0.65]} size={[2.3, 0.65, 0.18]} color={C.wall} />
@@ -59,7 +71,7 @@ function RailCart({ at, home = false }: { at: Triple; home?: boolean }) {
     <Block at={[0, 0.51, 0]} size={[1.4, 0.08, 0.12]} color={C.cyan} glow />
     </>}
     {!hasStationModel(home ? "home" : "vault", home ? "rail-garage" : "rail-extraction") && <Sign at={[0, 3.04, 0.9]} title={home ? "THE GARAGE" : "RETURN TO MARROW"} sub={home ? "BELLWETHER / LINE 06" : "THE WAY OUT IS THE WAY IN"} width={2.65} turn={home ? 0 : Math.PI} />}
-  </group>;
+  </SceneObjectGroup>;
 }
 /** The room shell and its trim in the station's own finish; `shell={false}` keeps only the signs and floor guides. */
 function Architecture({ place, shell = true }: { place: Place; shell?: boolean }) {
@@ -90,15 +102,15 @@ function Architecture({ place, shell = true }: { place: Place; shell?: boolean }
     }
     return [...groups.entries()];
   },[plan,place,shell]);
-  return <group>
+  return <>
     {batches.map(([id,parts])=><StationBatch key={id} parts={parts} />)}
     {place === "vault" && <>
       {[-1, 1].map(side => <Block key={side} at={[RETURN_SPINE!.x + side * RETURN_SPINE!.w * 0.27, 0.006, RETURN_SPINE!.z]} size={[0.075, 0.022, RETURN_SPINE!.d]} color={C.brass} glow />)}
-      {ROOMS.filter(room => room.place === "vault" && room.id !== "room-return-spine").map(room => <group key={room.id} position={[room.x, 0, room.z + room.d / 2 - 1]}>
+      {ROOMS.filter(room => room.place === "vault" && room.id !== "room-return-spine").map(room => <SceneObjectGroup key={room.id} position={[room.x, 0, room.z + room.d / 2 - 1]}>
         <Sign at={[0, 3.15, 0.15]} title={room.name.toUpperCase()} sub="RETURN RAIL  ↑  /  MARROW" width={Math.min(3.6, room.w - 1)} />
-      </group>)}
+      </SceneObjectGroup>)}
     </>}
-  </group>;
+  </>;
 }
 /** How much brighter a ceiling spot burns than the old all-round bulb: the light it no longer spends on the ceiling. */
 const ROOM_SPOT_GAIN = 1.3;
@@ -119,36 +131,52 @@ function RoomLights() {
     return light;
   }), [place]);
   const flicker = place === "home" ? 0 : STRATA[place].lamp.flicker;
-  useFrame(({ camera, clock }) => {
-    const closest = activeRoomLamps(lamps, [camera.position.x, camera.position.y, camera.position.z]);
-    lights.forEach((light, i) => {
-      const candidate = closest[i];
-      light.intensity = candidate ? ROOM_LIGHT_INTENSITY[place] * ROOM_SPOT_GAIN * lampFlicker(candidate.id, clock.elapsedTime, flicker) : 0;
-      if (candidate) light.position.set(...candidate.light);
-    });
-  });
-  return <>{lights.map((light, i) => <primitive key={i} object={light} />)}</>;
+  useEngineDraw(() => ({
+    mount(state: EngineFrameState) {
+      for (const light of lights) state.scene.add(light);
+    },
+    frame(state: EngineFrameState) {
+      const camera = state.camera;
+      const closest = activeRoomLamps(lamps, [camera.position.x, camera.position.y, camera.position.z]);
+      lights.forEach((light, i) => {
+        const candidate = closest[i];
+        light.intensity = candidate ? ROOM_LIGHT_INTENSITY[place] * ROOM_SPOT_GAIN * lampFlicker(candidate.id, state.clock.elapsedTime, flicker) : 0;
+        if (candidate) light.position.set(...candidate.light);
+      });
+    },
+    dispose(state: EngineFrameState) {
+      for (const light of lights) state.scene.remove(light);
+      for (const light of lights) light.dispose();
+    },
+  }), [lights, lamps, place, flicker]);
+  return null;
 }
 function SalvageModel({ kind, empty }: { kind: keyof typeof ITEMS; empty: boolean }) {
   const color = empty ? C.panel : ITEMS[kind].color;
-  return <group>
+  return <>
     <Block at={[0, 0.35, 0]} size={[0.95, 0.65, 0.7]} color={C.steel} />
     <Block at={[0, 0.72, -0.2]} size={[0.98, 0.12, 0.78]} color={C.panel} />
     <Block at={[0, 0.58, 0.365]} size={[0.72, 0.11, 0.04]} color={color} glow={!empty} />
-    {!empty && (kind === "wire" ? <mesh position={[0, 0.95, 0]} rotation-x={Math.PI / 2}><torusGeometry args={[0.22, 0.085, 8, 16]} /><meshStandardMaterial color={color} metalness={0.6} /></mesh>
+    {!empty && (kind === "wire"
+      ? <EngineDrawMount create={() => meshDraw({
+          geometry: new TorusGeometry(0.22, 0.085, 8, 16),
+          material: new MeshStandardMaterial({ color, metalness: 0.6 }),
+          position: [0, 0.95, 0],
+          rotation: [Math.PI / 2, 0, 0],
+        })} deps={[color]} />
       : <Tube at={[0, 0.95, 0]} radius={kind === "ink" ? 0.22 : 0.14} height={0.38} color={color} />)}
-  </group>;
+  </>;
 }
 function SalvagePlacard({ id, kind }: { id: string; kind: keyof typeof ITEMS }) {
   const { face, backing, supports } = SALVAGE_PLACARD;
-  return <group>
+  return <>
     {supports.map(part => <Block key={part.at[0]} at={part.at} size={part.size} color={C.steel} />)}
     <Block at={backing.at} size={backing.size} color={C.panel} />
     <Sign at={face.at} title={id.toUpperCase()} sub={id === "ink" ? "PRINTER RESERVE" : "SHIFT SUPPLIES"} width={face.width} color={ITEMS[kind].color} />
-  </group>;
+  </>;
 }
 function renderEntity(entity: SceneEntity): ReactNode {
-  return entity.id === PRINT_ID ? <PrintPresentation /> : <group />;
+  return entity.id === PRINT_ID ? <PrintPresentation /> : null;
 }
 /** The Fitter's model, re-rendered when its clip changes, not as it walks: the entity moves it. */
 function PrintPresentation() {
@@ -178,7 +206,7 @@ function StationLights({ place }: { place: Place }) {
 function AlarmLamps() {
   const ctx = useGameContext();
   const lamps = useRef<(PointLight | null)[]>([]);
-  useFrame(() => {
+  useFrameTask(() => {
     const dive = viewStore.read(ctx).dive;
     const alarms = dive === null ? [] : alarmCreatures(dive.fauna, dive.stratum);
     lamps.current.forEach((light, index) => {
@@ -189,24 +217,64 @@ function AlarmLamps() {
     });
   });
   return <>{Array.from({ length: ALARM_LAMPS }, (_, index) =>
-    <pointLight key={index} ref={light => { lamps.current[index] = light; }} position={[0, -50, 0]} color={C.danger} intensity={0} distance={5} />)}</>;
+    <EngineDrawMount key={index} create={() => {
+      const light = new PointLight(C.danger, 0, 5);
+      light.position.set(0, -50, 0);
+      lamps.current[index] = light;
+      return {
+        mount(state: EngineFrameState) { state.scene.add(light); },
+        dispose(state: EngineFrameState) {
+          state.scene.remove(light);
+          if (lamps.current[index] === light) lamps.current[index] = null;
+          light.dispose();
+        },
+      } satisfies EngineDraw;
+    }} deps={[index]} />)}</>;
 }
 /** Printer Zero's red lamp in the choir, dark once its pattern is copied. */
 function ZeroLamp({ place }: { place: Place }) {
   const lit = useGameStore(ctx => place === "choir" && marrowOf(ctx).fact("story.zero") !== true);
-  return <pointLight position={[PRINTER_ZERO[0], 2, PRINTER_ZERO[2] + 2]} color={C.danger} intensity={lit ? 9 : 0} distance={9} />;
+  const lightRef = useRef<PointLight | null>(null);
+  useEffect(() => { if (lightRef.current !== null) lightRef.current.intensity = lit ? 9 : 0; }, [lit]);
+  return <EngineDrawMount create={() => {
+    const light = new PointLight(C.danger, 0, 9);
+    light.position.set(PRINTER_ZERO[0], 2, PRINTER_ZERO[2] + 2);
+    lightRef.current = light;
+    return {
+      mount(state: EngineFrameState) { state.scene.add(light); },
+      dispose(state: EngineFrameState) {
+        state.scene.remove(light);
+        if (lightRef.current === light) lightRef.current = null;
+        light.dispose();
+      },
+    } satisfies EngineDraw;
+  }} deps={[]} />;
 }
 /** The steam vent's glow in the vault while it vents. */
 function VentGlow() {
   const on = useStore(viewStore, view => view.dive !== null && view.dive.stratum === "vault" && view.dive.elapsed % 8 < 3);
-  return <pointLight position={[STEAM.x, 1, STEAM.z]} color={C.danger} intensity={on ? 12 : 0} distance={7} />;
+  const lightRef = useRef<PointLight | null>(null);
+  useEffect(() => { if (lightRef.current !== null) lightRef.current.intensity = on ? 12 : 0; }, [on]);
+  return <EngineDrawMount create={() => {
+    const light = new PointLight(C.danger, 0, 7);
+    light.position.set(STEAM.x, 1, STEAM.z);
+    lightRef.current = light;
+    return {
+      mount(state: EngineFrameState) { state.scene.add(light); },
+      dispose(state: EngineFrameState) {
+        state.scene.remove(light);
+        if (lightRef.current === light) lightRef.current = null;
+        light.dispose();
+      },
+    } satisfies EngineDraw;
+  }} deps={[]} />;
 }
 /** The Fitter's red hit flash, on its chest from the entity's pose, burning while the last shot struck it. */
 function FitterFlash() {
   const ctx = useGameContext();
-  const ref = useRef<PointLight>(null);
-  useFrame(() => {
-    const light = ref.current;
+  const lightRef = useRef<PointLight | null>(null);
+  useFrameTask(() => {
+    const light = lightRef.current;
     if (light === null) return;
     const view = viewStore.read(ctx), print = view.dive?.print, entity = ctx.scene.entity.get(PRINT_ID);
     const hit = print !== undefined && entity != null && fitterHit(print, view.trace);
@@ -215,43 +283,72 @@ function FitterFlash() {
     const [x, y, z] = entity.position, yaw = entity.rotationY;
     light.position.set(x + Math.sin(yaw) * FITTER_FLASH.ahead, y + FITTER_FLASH.up, z + Math.cos(yaw) * FITTER_FLASH.ahead);
   });
-  return <pointLight ref={ref} color={FITTER_FLASH.color} intensity={0} distance={FITTER_FLASH.distance} />;
+  return <EngineDrawMount create={() => {
+    const light = new PointLight(FITTER_FLASH.color, 0, FITTER_FLASH.distance);
+    lightRef.current = light;
+    return {
+      mount(state: EngineFrameState) { state.scene.add(light); },
+      dispose(state: EngineFrameState) {
+        state.scene.remove(light);
+        if (lightRef.current === light) lightRef.current = null;
+        light.dispose();
+      },
+    } satisfies EngineDraw;
+  }} deps={[]} />;
 }
 function Tracer({ from, to }: { from: Point; to: Point }) {
   const midpoint = new Vector3((from[0] + to[0]) / 2, (from[1] + to[1]) / 2, (from[2] + to[2]) / 2);
   const direction = new Vector3(to[0] - from[0], to[1] - from[1], to[2] - from[2]);
   const length = direction.length();
-  const ref = useRef<Group>(null);
-  useEffect(() => { ref.current?.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), direction.normalize()); }, [from, to]);
-  return <group ref={ref} position={midpoint}><mesh><cylinderGeometry args={[0.018, 0.018, length, 6]} /><meshBasicMaterial color={C.amber} /></mesh></group>;
+  return <EngineDrawMount create={() => {
+    const group = new Group();
+    group.position.copy(midpoint);
+    group.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), direction.clone().normalize());
+    const material = new MeshBasicMaterial({ color: C.amber });
+    const mesh = new Mesh(new CylinderGeometry(0.018, 0.018, length, 6), material);
+    group.add(mesh);
+    return {
+      mount(state: EngineFrameState) { state.scene.add(group); },
+      dispose(state: EngineFrameState) {
+        state.scene.remove(group);
+        mesh.geometry.dispose();
+        material.dispose();
+      },
+    } satisfies EngineDraw;
+  }} deps={[from, to]} />;
 }
 function Hand() {
-  const ctx = useGameContext(), ref = useRef<Group>(null);
+  const ctx = useGameContext();
   // The weapon redraws when it is drawn, swapped or flashes; reload, hurt and recoil move it every frame without a render.
   const view = useStore(viewStore, v => ({ mode: v.mode, hand: v.dive?.hand ?? null, flash: (v.dive?.flash ?? 0) > 0 }));
-  const posed = useRef<Group>(null), body = useRef<Group>(null);
+  const hand = useMemo(() => new Group(), []);
+  const posed = useMemo(() => new Group(), []);
+  hand.add(posed);
+  const body = useRef<Group>(null);
   const dir = useMemo(() => new Vector3(), []);
   const applyPose = () => {
     const v = viewStore.read(ctx);
     if (v.dive === null) return;
     const pose = serviceWeaponPose({ hand: v.dive.hand, reload: v.ammo?.reloadProgress ?? 0, hurt: v.dive.hurt, flash: v.dive.flash });
-    posed.current?.position.set(...pose.at);
-    posed.current?.rotation.set(...pose.turn);
+    posed.position.set(...pose.at);
+    posed.rotation.set(...pose.turn);
     body.current?.position.set(...serviceWeaponBody(pose));
   };
+  useLayoutEffect(() => { hand.visible = view.mode === "dive"; }, [hand, view.mode]);
   useLayoutEffect(applyPose);
-  useFrame(({ camera }) => {
+  useSceneObjectAttach(hand);
+  useFrameTask(({ camera }) => {
     camera.getWorldDirection(dir);
     setAim(ctx, [dir.x, dir.y, dir.z]);
-    const hand = ref.current;
-    if (hand === null) return;
     hand.position.copy(camera.position); hand.quaternion.copy(camera.quaternion);
     hand.translateX(0.26); hand.translateY(-0.26); hand.translateZ(-0.55);
     applyPose();
   });
-  return <group ref={ref} visible={view.mode === "dive"}>
-    {view.hand !== null && <group ref={posed}><ServiceWeapon kind={view.hand} shadows="none" flash={view.flash} body={body} /></group>}
-  </group>;
+  return <SceneObjectPortal object={hand}>
+    <SceneObjectPortal object={posed}>
+      {view.hand !== null && <ServiceWeapon kind={view.hand} shadows="none" flash={view.flash} body={body} />}
+    </SceneObjectPortal>
+  </SceneObjectPortal>;
 }
 /** The floor's fixed dressing, re-rendered only when something on it is worked, taken or scanned. */
 function FloorDressing({ place }: { place: Place }) {
@@ -293,13 +390,17 @@ function Bays() {
 /** The steam vent in the vault: it vents three seconds in every eight. Its glow is {@link VentGlow}. */
 function SteamVent() {
   const on = useStore(viewStore, view => view.dive !== null && view.dive.elapsed % 8 < 3);
-  return <group position={[STEAM.x, 0, STEAM.z]}>
+  return <SceneObjectGroup position={[STEAM.x, 0, STEAM.z]}>
     <Block at={[0, 0.018, 0]} size={[STEAM.w, 0.025, STEAM.d]} color="#554437" />
     {Array.from({ length: 9 }, (_, i) => <Block key={i} at={[0, 0.04, -3 + i * 0.7]} size={[STEAM.w, 0.025, 0.17]} color={C.amber} />)}
     <Tube at={[1.6, 1.9, 0]} radius={0.14} height={3.8} />
     <Sign at={[0, 2.7, -3.8]} title="HOT SUPPRESSANT" sub={on ? "VENTING / KEEP CLEAR" : "PRESSURE LOW / CROSS NOW"} color={C.danger} width={3.5} />
-    {on && [-1, 0, 1].map(x => <mesh key={x} position={[x, 1.1, 0]}><cylinderGeometry args={[0.7, 0.25, 2.1, 10]} /><meshBasicMaterial color="#dec9b6" transparent opacity={0.16} depthWrite={false} /></mesh>)}
-  </group>;
+    {on && [-1, 0, 1].map(x => <EngineDrawMount key={x} create={() => meshDraw({
+      geometry: new CylinderGeometry(0.7, 0.25, 2.1, 10),
+      material: new MeshBasicMaterial({ color: "#dec9b6", transparent: true, opacity: 0.16, depthWrite: false }),
+      position: [x, 1.1, 0],
+    })} deps={[x]} />)}
+  </SceneObjectGroup>;
 }
 const NO_HARVEST: Dive["harvested"] = {};
 const NONE: string[] = [];
@@ -335,46 +436,46 @@ function WorldOverlay() {
     {!diving && <Bays />}
     {diving && <><FloorDressing place={place} /><FloorLife place={place} /></>}
     {editorLayers.markers.filter(m => m.kind === "deepward-station-sign" && m.meta?.["place"] === place).map(m => <Sign key={m.id} at={[m.position.x,m.position.y,m.position.z]} title={m.label ?? m.id} sub={String(m.meta?.["subtitle"] ?? "")} width={Number(m.meta?.["width"] ?? 2.6)} turn={m.rotationY ?? 0} color={C.amber} />)}
-    <group visible={!diving}>
+    <SceneObjectGroup visible={!diving}>
     <RailCart at={[GARAGE[0], GARAGE[1], GARAGE[2] - 0.7]} home />
 
-    <group position={[STASH[0] - 0.4, 0, STASH[2]]}>
+    <SceneObjectGroup position={[STASH[0] - 0.4, 0, STASH[2]]}>
       {!hasStationModel("home", "stash-marrow") && <>
       <Block at={[0, 0.65, 0]} size={[1.7, 1.3, 1.3]} color={C.wall} />
       <Block at={[0.86, 0.82, 0]} size={[0.04, 0.15, 0.9]} color={C.cyan} glow />
       </>}
       <Sign at={[0, 2.5, 0.7]} title="MARROW / STASH" sub={`${view.stash} ITEMS / SAVED AT HOME`} width={3.4} />
-    </group>
-    {!hasStationModel("home", "decor-home-printer") && <group position={decorPoint("decor-home-printer")}>
+    </SceneObjectGroup>
+    {!hasStationModel("home", "decor-home-printer") && <SceneObjectGroup position={decorPoint("decor-home-printer")}>
       <Block at={[0, 0.4, 0]} size={[2.6, 0.75, 1.5]} color={C.steel} />
       <Block at={[0, 1.1, -0.6]} size={[2.6, 1.5, 0.2]} color={C.wall} />
       <Sign at={[0, 2.5, -0.45]} title="THE PRINTER" sub={`HALLOWAY / LIFE ${view.life}`} color={C.amber} width={3} />
       <Tube at={[-0.85, 1.6, -0.4]} height={0.7} color={C.ink} />
-    </group>
+    </SceneObjectGroup>
     }
     <Sign at={decorPoint("sign-marrow")} title="MARROW" sub="ONE OF THE LAST LIT VAULTS" color={C.amber} turn={Math.PI} width={5.5} />
-    </group><group visible={place === "vault"}>
+    </SceneObjectGroup><SceneObjectGroup visible={place === "vault"}>
     <RailCart at={[EXIT[0], EXIT[1], EXIT[2] + 0.5]} />
-    {DECOR.filter(entry => entry.id.startsWith("locker-shift-")).map(entry => <group key={entry.id} position={[entry.position.x, entry.position.y, entry.position.z]}>
+    {DECOR.filter(entry => entry.id.startsWith("locker-shift-")).map(entry => <SceneObjectGroup key={entry.id} position={[entry.position.x, entry.position.y, entry.position.z]}>
       <ShiftLocker ajar={entry.id.endsWith("2") ? 0.35 : 0} />
       <Sign at={[0, 1.6, 0.37]} title={String(entry.meta?.["number"] ?? entry.label)} sub={String(entry.meta?.["name"] ?? "SHIFT CREW")} width={0.65} />
-    </group>)}
+    </SceneObjectGroup>)}
     <Sign at={decorPoint("sign-shift")} title="SHIFT 406" sub="REPORT TO YOUR POST" color={C.amber} />
-    {SALVAGE.map(s => <group key={s.id} position={[s.at[0], 0, s.at[2]]}>
+    {SALVAGE.map(s => <SceneObjectGroup key={s.id} position={[s.at[0], 0, s.at[2]]}>
       <SalvageModel kind={s.kind} empty={view.collected.includes(s.id)} />
       <SalvagePlacard id={s.id} kind={s.kind} />
-    </group>)}
-    {PROPS.filter(p => !hasStationModel("vault", p.id)).map((p, i) => <group key={i} position={[p.x, 0, p.z]}>
+    </SceneObjectGroup>)}
+    {PROPS.filter(p => !hasStationModel("vault", p.id)).map((p, i) => <SceneObjectGroup key={i} position={[p.x, 0, p.z]}>
       <Block at={[0, 0.7, 0]} size={[p.w, 1.4, p.d]} color={C.wall} />
       <Tube at={[0, 1.9, 0]} radius={0.5} height={1.3} />
       <Block at={[0, 1.1, p.d / 2 + 0.02]} size={[p.w * 0.6, 0.1, 0.05]} color={i === 2 ? C.ink : C.cyan} glow />
-    </group>)}
+    </SceneObjectGroup>)}
     <Sign at={decorPoint("sign-printer")} title="PRINTER 06" sub="PATTERN: FITTER / COPY 406" color={C.ink} />
     <SteamVent />
-    </group>
-    {view.drop !== null && place === "vault" && !view.collected.includes("fitter") && <group position={[view.drop[0], view.drop[1] + 0.1, view.drop[2]]} rotation={[0, Math.PI / 2, Math.PI / 2]} scale={1.35}>
+    </SceneObjectGroup>
+    {view.drop !== null && place === "vault" && !view.collected.includes("fitter") && <SceneObjectGroup position={[view.drop[0], view.drop[1] + 0.1, view.drop[2]]} rotation={[0, Math.PI / 2, Math.PI / 2]} scale={[1.35, 1.35, 1.35]}>
       <ServiceWeapon kind="service-rifle" />
-    </group>}
+    </SceneObjectGroup>}
     <ShotTrace />
     <Hand />
   </>;

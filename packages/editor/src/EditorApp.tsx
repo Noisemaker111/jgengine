@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
+import { GridHelper } from "three";
+
+import { disposeObjectTree, SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import type { EditorCatalogDefinition, EditorDocument, EditorLayersInput } from "@jgengine/core/editor/index";
 import { editorDocumentBounds, findEditorMarker } from "@jgengine/core/editor/index";
@@ -191,6 +194,17 @@ function readoutRegionFor(world: WorldFeature | undefined): GuideRegion {
 /** Idle window before the terrain overlay rebuilds off the edited field — bounds rebuild frequency during sculpting. */
 const READOUT_REBUILD_MS = 250;
 
+/** The editor's reference ground grid: 400 m across in 5 m cells, just above y=0. */
+function EditorGrid() {
+  const grid = useMemo(() => {
+    const helper = new GridHelper(400, 80, "#3b4252", "#20242e");
+    helper.position.set(0, 0.05, 0);
+    return helper;
+  }, []);
+  useEffect(() => () => disposeObjectTree(grid), [grid]);
+  return <SceneObjectAttach object={grid} />;
+}
+
 function EditorWorldOverlay({
   api,
   ui,
@@ -259,7 +273,7 @@ function EditorWorldOverlay({
       <ScatterPreview api={api} />
       <CityPreview api={api} />
       <ClipPreviewLayer api={api} ui={ui} />
-      {showGrid ? <gridHelper args={[400, 80, "#3b4252", "#20242e"]} position={[0, 0.05, 0]} /> : null}
+      {showGrid ? <EditorGrid /> : null}
       {readoutActive ? (
         <TerrainReadout
           groundHeightAt={groundHeightAt}
@@ -275,7 +289,6 @@ function EditorWorldOverlay({
         visibility={visibility}
         selection={selection}
         hoverId={hoverId}
-        onSelect={(id) => session.dispatch({ type: "select", ids: [id] })}
         activePathPoint={pathPoint}
         groundHeightAt={groundHeightAt}
       />
@@ -704,7 +717,6 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
                   document={host.api.getSession().getState().document}
                   visibility={host.api.getVisibility()}
                   selection={host.api.getSession().getState().selection}
-                  onSelect={() => {}}
                   groundHeightAt={(x, z) => ctx.world.groundHeightAt(x, z)}
                 />
               </>

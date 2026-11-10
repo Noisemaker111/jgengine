@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
+import { BoxGeometry, Group, GridHelper, Mesh, MeshStandardMaterial, PlaneGeometry } from "three";
+import { disposeObjectTree, SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { ViewportsConfig } from "@jgengine/core/game/viewports";
@@ -15,24 +17,26 @@ const VIEWPORTS: ViewportsConfig = { layout: "auto", split: "vertical" };
 
 // Pillars in the seat colours so each split-screen view reads differently.
 function Stage(): ReactNode {
-  return (
-    <>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[80, 80]} />
-        <meshStandardMaterial color="#4b6b3f" roughness={0.95} />
-      </mesh>
-      <gridHelper args={[80, 40, "#2c4428", "#3b5a33"]} position={[0, 0.01, 0]} />
-      {Array.from({ length: 16 }, (_, i) => {
-        const angle = (i / 16) * Math.PI * 2;
-        return (
-          <mesh key={i} position={[Math.cos(angle) * 12, 1.5, Math.sin(angle) * 12]} castShadow>
-            <boxGeometry args={[1, 3, 1]} />
-            <meshStandardMaterial color={SEAT_COLORS[i % SEAT_COLORS.length] ?? "#ffffff"} roughness={0.6} />
-          </mesh>
-        );
-      })}
-    </>
-  );
+  const rig = useMemo(() => {
+    const root = new Group();
+    const groundGeo = new PlaneGeometry(80, 80);
+    groundGeo.rotateX(-Math.PI / 2);
+    const ground = new Mesh(groundGeo, new MeshStandardMaterial({ color: "#4b6b3f", roughness: 0.95 }));
+    ground.receiveShadow = true;
+    const grid = new GridHelper(80, 40, "#2c4428", "#3b5a33");
+    grid.position.y = 0.01;
+    root.add(ground, grid);
+    for (let i = 0; i < 16; i += 1) {
+      const angle = (i / 16) * Math.PI * 2;
+      const pillar = new Mesh(new BoxGeometry(1, 3, 1), new MeshStandardMaterial({ color: SEAT_COLORS[i % SEAT_COLORS.length] ?? "#ffffff", roughness: 0.6 }));
+      pillar.position.set(Math.cos(angle) * 12, 1.5, Math.sin(angle) * 12);
+      pillar.castShadow = true;
+      root.add(pillar);
+    }
+    return root;
+  }, []);
+  useEffect(() => () => disposeObjectTree(rig), [rig]);
+  return <SceneObjectAttach object={rig} />;
 }
 
 function SeatHud(): ReactNode {

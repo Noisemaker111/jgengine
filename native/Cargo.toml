@@ -6,11 +6,13 @@ members = [
     "crates/jg-shader-wasm",
     "crates/jg-render",
     "crates/jg-hud",
+    "crates/jg-ui",
     "crates/jg-v8",
     "crates/jg-rules",
     "crates/jg-native",
     "crates/jg-web",
 ]
+exclude = ["vendor/rune"]
 
 [workspace.package]
 edition = "2024"

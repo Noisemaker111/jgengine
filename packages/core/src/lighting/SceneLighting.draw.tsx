@@ -1,6 +1,5 @@
-import { useEffect, useLayoutEffect, useRef } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
-import type * as THREE from "three";
+import { useRef } from "react";
+import * as THREE from "three";
 import type { DirectionalLight } from "three";
 
 import type {
@@ -14,11 +13,13 @@ import type { GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { sceneProbeReading } from "@jgengine/core/devtools/discover";
 
-import { CascadedShadows } from "./CascadedShadows.draw";
+import { cascadedShadowsDraw } from "./CascadedShadows.draw";
 import { lightShadowFilter } from "./softShadows";
 import { cullSmallShadowCasters, MIN_SHADOW_CASTER_RADIUS, type ShadowCasterCull } from "./shadowCasters.draw";
 import { installShadowCache } from "./shadowCache.draw";
 import { minShadowCasterRadius, resolveCascadeCount, resolveShadowMapSize, SHADOW_CASTER_RADIUS_REFERENCE_MAP } from "./shadowTiers";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 
 /** three.js lights default to white; an unset light colour means this. */
 const LIGHT_DEFAULT_COLOR = "#ffffff";
@@ -60,20 +61,6 @@ function usesCascades(entry: DirectionalLightingConfig): boolean {
   return (entry.castShadow ?? false) && (entry.cascades ?? 1) > 1;
 }
 
-function DirectionalShadowLight({ entry, profile, modulation }: { entry: DirectionalLightingConfig; profile?: GraphicsProfile | undefined; modulation?: DaylightModulation }) {
-  const resolved = profile === undefined
-    ? entry
-    : {
-        ...entry,
-        shadowMapSize: resolveShadowMapSize(profile, entry.shadowMapSize),
-        cascades: resolveCascadeCount(profile, entry.cascades),
-      };
-  if (usesCascades(resolved)) {
-    return <CascadedShadows entry={resolved} profile={profile} modulation={modulation} />;
-  }
-  return <SingleShadowLight entry={resolved} profile={profile} modulation={modulation} />;
-}
-
 /**
  * Refresh a directional light's shadow projection after its frustum bounds change.
  * R3F pierced `shadow-camera-*` props write the bounds but never call
@@ -85,48 +72,196 @@ export function syncShadowProjection(light: DirectionalLight): void {
   light.shadow.camera.updateProjectionMatrix();
 }
 
-function SingleShadowLight({ entry, profile, modulation }: { entry: DirectionalLightingConfig; profile?: GraphicsProfile | undefined; modulation?: DaylightModulation | undefined }) {
-  const lightRef = useRef<DirectionalLight>(null);
-  const size = entry.shadowCameraSize ?? 40;
-  const far = Math.max(200, size * 6);
-  const mapSize = entry.shadowMapSize ?? 1024;
-  const baseIntensity = entry.intensity ?? 1.3;
-  const filter = lightShadowFilter(entry, profile, size * 2, mapSize, entry.shadowNormalBias ?? 0.02);
-  useFrame(() => {
-    const light = lightRef.current;
-    if (light === null || modulation === undefined) return;
-    light.intensity = baseIntensity * modulation.sunFactor;
-    light.color.set(modulation.sunColor);
-  });
-  useLayoutEffect(() => {
-    if (lightRef.current !== null) syncShadowProjection(lightRef.current);
-  }, [size, far]);
-  useLayoutEffect(() => {
-    const light = lightRef.current;
-    if (light === null || light.shadow.map === null) return;
-    light.shadow.map.dispose();
-    light.shadow.map = null;
-  }, [mapSize]);
-  return (
-    <directionalLight
-      ref={lightRef}
-      position={[entry.position[0], entry.position[1], entry.position[2]]}
-      intensity={entry.intensity ?? 1.3}
-      color={entry.color ?? LIGHT_DEFAULT_COLOR}
-      castShadow={entry.castShadow ?? false}
-      shadow-mapSize-width={mapSize}
-      shadow-mapSize-height={mapSize}
-      shadow-camera-left={-size}
-      shadow-camera-right={size}
-      shadow-camera-top={size}
-      shadow-camera-bottom={-size}
-      shadow-camera-near={0.5}
-      shadow-camera-far={far}
-      shadow-bias={entry.shadowBias ?? -0.0004}
-      shadow-normalBias={filter.normalBias}
-      shadow-radius={filter.radius}
-    />
-  );
+/** Draw-side form of the single-shadow directional: one DirectionalLight whose shadow frustum
+ * and filter retune on prop change, with daylight modulation applied per frame. */
+function singleShadowLightDraw(getProps: () => {
+  entry: DirectionalLightingConfig;
+  profile?: GraphicsProfile | undefined;
+  modulation?: DaylightModulation | undefined;
+}): EngineDraw {
+  let light: THREE.DirectionalLight | null = null;
+  let lastSize = 0;
+  let lastFar = 0;
+  let lastMapSize = 0;
+  let baseIntensity = 1.3;
+
+  const applyEntry = () => {
+    const props = getProps();
+    const entry = props.entry;
+    if (light === null) return;
+    const size = entry.shadowCameraSize ?? 40;
+    const far = Math.max(200, size * 6);
+    const mapSize = entry.shadowMapSize ?? 1024;
+    light.position.set(entry.position[0], entry.position[1], entry.position[2]);
+    baseIntensity = entry.intensity ?? 1.3;
+    light.color.set(entry.color ?? LIGHT_DEFAULT_COLOR);
+    light.castShadow = entry.castShadow ?? false;
+    light.shadow.bias = entry.shadowBias ?? -0.0004;
+    const filter = lightShadowFilter(entry, props.profile, size * 2, mapSize, entry.shadowNormalBias ?? 0.02);
+    light.shadow.normalBias = filter.normalBias;
+    light.shadow.radius = filter.radius;
+    // R3F pierced `shadow-camera-*` props write the bounds but never call
+    // `updateProjectionMatrix()`, so depth renders with the stale default ~10×10 box
+    // and `shadowCameraSize` is silently inert.
+    const camera = light.shadow.camera;
+    camera.left = -size;
+    camera.right = size;
+    camera.top = size;
+    camera.bottom = -size;
+    camera.near = 0.5;
+    camera.far = far;
+    if (size !== lastSize || far !== lastFar) {
+      lastSize = size;
+      lastFar = far;
+      camera.updateProjectionMatrix();
+    }
+    if (mapSize !== lastMapSize) {
+      lastMapSize = mapSize;
+      light.shadow.map?.dispose();
+      light.shadow.map = null;
+    }
+    light.shadow.mapSize.set(mapSize, mapSize);
+    const modulation = props.modulation;
+    light.intensity = modulation === undefined ? baseIntensity : baseIntensity * modulation.sunFactor;
+    if (modulation !== undefined) light.color.set(modulation.sunColor);
+  };
+
+  return {
+    mount(state: EngineFrameState) {
+      light = new THREE.DirectionalLight(LIGHT_DEFAULT_COLOR, 1);
+      state.scene.add(light);
+      light.target.position.set(0, 0, 0);
+      state.scene.add(light.target);
+      lastSize = -1;
+      lastFar = -1;
+      lastMapSize = -1;
+      applyEntry();
+    },
+    update() {
+      applyEntry();
+    },
+    frame() {
+      const props = getProps();
+      const modulation = props.modulation;
+      if (light === null || modulation === undefined) return;
+      light.intensity = baseIntensity * modulation.sunFactor;
+      light.color.set(modulation.sunColor);
+    },
+    dispose(state: EngineFrameState) {
+      if (light !== null) {
+        state.scene.remove(light);
+        state.scene.remove(light.target);
+        light.shadow.map?.dispose();
+        light.dispose();
+        light = null;
+      }
+    },
+  };
+}
+
+/**
+ * Draw-side form of {@link ShadowPipeline}: the small caster cull, the static shadow cache and
+ * their devtools probes, installed once on the root scene for every shadow-casting light.
+ * @internal
+ */
+export function shadowPipelineDraw(getProps: () => { profile?: GraphicsProfile | undefined }): EngineDraw {
+  let cull: ShadowCasterCull | null = null;
+  let casterRadius = -1;
+  let shadowCache: ReturnType<typeof installShadowCache> | null = null;
+  let offCacheProbe: (() => void) | null = null;
+  let offShadowProbe: (() => void) | null = null;
+  // Counts the frames this draw sees, before the render: the shadow cache serves each light's map
+  // once per token, so a post pass that renders the scene again in the frame draws nothing twice.
+  let frameCount = 0;
+
+  const syncCull = (state: EngineFrameState) => {
+    const radius = minShadowCasterRadius(
+      getProps().profile?.shadowMapSize ?? SHADOW_CASTER_RADIUS_REFERENCE_MAP,
+      MIN_SHADOW_CASTER_RADIUS,
+    );
+    if (cull !== null && radius === casterRadius) return;
+    casterRadius = radius;
+    cull?.restore();
+    cull = cullSmallShadowCasters(state.rootScene ?? state.scene, radius);
+    offShadowProbe?.();
+    const casterStats = sceneProbeReading(() => cull?.stats());
+    offShadowProbe = devtools.probes.registerSystem("render/shadows", {
+      counters: () => casterStats() ?? { casters: 0, skipped: 0, minRadius: radius },
+      state: () => {
+        const stats = casterStats();
+        return stats === undefined
+          ? "no shadow-casting directional light"
+          : `${stats.casters} casters · ${stats.skipped} under ${stats.minRadius} m skipped`;
+      },
+    });
+  };
+
+  return {
+    mount(state: EngineFrameState) {
+      syncCull(state);
+      // Every backend: the audit reads back through a fence, which the WebGPU backend answers too, so
+      // `perf shadow-audit --renderer webgpu` proves its cached maps as it does WebGL's.
+      const cache = installShadowCache(state.gl, state.rootScene ?? state.scene, undefined, () => frameCount);
+      shadowCache = cache;
+      if (typeof window !== "undefined") {
+        window.__jgShadowCache = cache.handle;
+        // `bun run perf shadow-audit` loads the page with this flag: every cached map is checked against a full redraw.
+        if (new URLSearchParams(window.location?.search ?? "").get("shadowAudit") === "1") cache.handle.setAudit(true);
+      }
+      offCacheProbe = devtools.probes.registerSystem("render/shadow-cache", {
+        counters: () => {
+          const stats = cache.handle.stats();
+          return {
+            casters: stats.casters,
+            static: stats.staticCasters,
+            dynamic: stats.dynamicCasters,
+            alwaysDynamic: stats.alwaysDynamicCasters,
+            checks: stats.checks,
+            invocations: stats.invocations,
+            renders: stats.renders,
+            checkMs: stats.checkMs,
+            dynamicTris: stats.dynamicTris,
+            dynamicTrisInstanced: stats.dynamicTrisInstanced,
+            dynamicTrisBatched: stats.dynamicTrisBatched,
+            dynamicTrisAlways: stats.dynamicTrisAlways,
+            staticTris: stats.staticTris,
+            cpuMs: stats.cpuMs,
+            ...stats.passes,
+            auditMaps: stats.audit.maps,
+            auditMismatchedMaps: stats.audit.mismatchedMaps,
+            auditMismatchedTexels: stats.audit.mismatchedTexels,
+            auditFailed: stats.audit.failed,
+            auditSkipped: stats.audit.skipped,
+          };
+        },
+        state: () => {
+          const { passes, staticCasters, casters } = cache.handle.stats();
+          return `${staticCasters}/${casters} casters static · passes full ${passes.full} rebuild ${passes.rebuild} reuse ${passes.reuse} hold ${passes.hold}`;
+        },
+      });
+    },
+    update(state: EngineFrameState) {
+      syncCull(state);
+    },
+    frame() {
+      frameCount += 1;
+    },
+    dispose() {
+      cull?.restore();
+      cull = null;
+      casterRadius = -1;
+      if (shadowCache !== null) {
+        const handle = shadowCache.handle;
+        shadowCache.dispose();
+        shadowCache = null;
+        if (typeof window !== "undefined" && window.__jgShadowCache === handle) delete window.__jgShadowCache;
+      }
+      offCacheProbe?.();
+      offCacheProbe = null;
+      offShadowProbe?.();
+      offShadowProbe = null;
+    },
+  };
 }
 
 /**
@@ -136,152 +271,206 @@ function SingleShadowLight({ entry, profile, modulation }: { entry: DirectionalL
  * treatment as a {@link ConfiguredLighting} directional.
  * @internal
  */
-export function ShadowPipeline({ profile }: { profile?: GraphicsProfile }) {
-  const scene = useThree((s) => s.scene);
-  const gl = useThree((s) => s.gl);
-  const casterRadius = minShadowCasterRadius(
-    profile?.shadowMapSize ?? SHADOW_CASTER_RADIUS_REFERENCE_MAP,
-    MIN_SHADOW_CASTER_RADIUS,
-  );
-  const cullRef = useRef<ShadowCasterCull | null>(null);
-  // Counts the frames this component sees, before the render: the shadow cache serves each light's
-  // map once per token, so a post pass that renders the scene again in the frame draws nothing twice.
-  const frameCount = useRef(0);
-  useFrame(() => {
-    frameCount.current += 1;
-  });
-  useEffect(() => {
-    const cull = cullSmallShadowCasters(scene, casterRadius);
-    cullRef.current = cull;
-    return () => {
-      cull.restore();
-      cullRef.current = null;
-    };
-  }, [scene, casterRadius]);
-  useEffect(() => {
-    // Every backend: the audit reads back through a fence, which the WebGPU backend answers too, so
-    // `perf shadow-audit --renderer webgpu` proves its cached maps as it does WebGL's.
-    const cache = installShadowCache(gl, scene, undefined, () => frameCount.current);
-    if (typeof window !== "undefined") {
-      window.__jgShadowCache = cache.handle;
-      // `bun run perf shadow-audit` loads the page with this flag: every cached map is checked against a full redraw.
-      if (new URLSearchParams(window.location?.search ?? "").get("shadowAudit") === "1") cache.handle.setAudit(true);
-    }
-    const unregister = devtools.probes.registerSystem("render/shadow-cache", {
-      counters: () => {
-        const stats = cache.handle.stats();
-        return {
-          casters: stats.casters,
-          static: stats.staticCasters,
-          dynamic: stats.dynamicCasters,
-          alwaysDynamic: stats.alwaysDynamicCasters,
-          checks: stats.checks,
-          invocations: stats.invocations,
-          renders: stats.renders,
-          checkMs: stats.checkMs,
-          dynamicTris: stats.dynamicTris,
-          dynamicTrisInstanced: stats.dynamicTrisInstanced,
-          dynamicTrisBatched: stats.dynamicTrisBatched,
-          dynamicTrisAlways: stats.dynamicTrisAlways,
-          staticTris: stats.staticTris,
-          cpuMs: stats.cpuMs,
-          ...stats.passes,
-          auditMaps: stats.audit.maps,
-          auditMismatchedMaps: stats.audit.mismatchedMaps,
-          auditMismatchedTexels: stats.audit.mismatchedTexels,
-          auditFailed: stats.audit.failed,
-          auditSkipped: stats.audit.skipped,
-        };
-      },
-      state: () => {
-        const { passes, staticCasters, casters } = cache.handle.stats();
-        return `${staticCasters}/${casters} casters static · passes full ${passes.full} rebuild ${passes.rebuild} reuse ${passes.reuse} hold ${passes.hold}`;
-      },
-    });
-    return () => {
-      unregister();
-      if (typeof window !== "undefined" && window.__jgShadowCache === cache.handle) delete window.__jgShadowCache;
-      cache.dispose();
-    };
-  }, [gl, scene]);
-  useEffect(() => {
-    const casterStats = sceneProbeReading(() => cullRef.current?.stats());
-    return devtools.probes.registerSystem("render/shadows", {
-      counters: () => casterStats() ?? { casters: 0, skipped: 0, minRadius: casterRadius },
-      state: () => {
-        const stats = casterStats();
-        return stats === undefined
-          ? "no shadow-casting directional light"
-          : `${stats.casters} casters · ${stats.skipped} under ${stats.minRadius} m skipped`;
-      },
-    });
-  }, [casterRadius]);
-  return null;
+export function ShadowPipeline(props: { profile?: GraphicsProfile | undefined }) {
+  const latest = useRef(props);
+  latest.current = props;
+  return <EngineDrawMount create={() => shadowPipelineDraw(() => latest.current)} deps={[]} />;
 }
 
-/** Mounts the game's authored lights (ambient, hemisphere, directional with shadows, point and spot within the light budget) for the active graphics profile. */
-export function ConfiguredLighting({
-  lighting,
-  profile,
-  modulation,
-}: {
+/** Draw-side form of {@link ConfiguredLighting}: all authored lights live in one group; the light
+ * set rebuilds when the `lighting` config or `profile` identity changes, and daylight modulation
+ * retunes ambient, hemisphere and the first directional per frame. */
+export function configuredLightingDraw(getProps: () => {
+  lighting: LightingConfig;
+  profile?: GraphicsProfile | undefined;
+  modulation?: DaylightModulation | undefined;
+}): EngineDraw {
+  const group = new THREE.Group();
+  let children: EngineDraw[] = [];
+  const dynamicLights: (THREE.PointLight | THREE.SpotLight)[] = [];
+  let ambient: THREE.AmbientLight | null = null;
+  let hemisphere: THREE.HemisphereLight | null = null;
+  let baseAmbient = 0.55;
+  let baseHemisphere = 0.55;
+  let installedKey: readonly unknown[] | null = null;
+
+  // One draw per resolved directional; only the first carries daylight modulation, and the
+  // modulation object is read live so a day-cycle swap never rebuilds the lights.
+  const directionalDrawFor = (
+    entry: DirectionalLightingConfig,
+    profile: GraphicsProfile | undefined,
+    modulated: boolean,
+  ): EngineDraw => {
+    const props: { entry: DirectionalLightingConfig; profile?: GraphicsProfile | undefined; modulation?: DaylightModulation | undefined } = { entry, profile };
+    const read = () => {
+      props.modulation = modulated ? getProps().modulation : undefined;
+      return props;
+    };
+    return usesCascades(entry) ? cascadedShadowsDraw(read) : singleShadowLightDraw(read);
+  };
+
+  const clearLights = () => {
+    if (lastState !== null) for (const child of children) child.dispose?.(lastState);
+    children = [];
+    for (const light of dynamicLights.splice(0)) {
+      group.remove(light);
+      if (light instanceof THREE.SpotLight) group.remove(light.target);
+      light.shadow?.dispose();
+    }
+    if (ambient !== null) {
+      group.remove(ambient);
+      ambient.dispose();
+      ambient = null;
+    }
+    if (hemisphere !== null) {
+      group.remove(hemisphere);
+      hemisphere.dispose();
+      hemisphere = null;
+    }
+  };
+
+  let lastState: EngineFrameState | null = null;
+
+  const syncLights = (state: EngineFrameState) => {
+    lastState = state;
+    const props = getProps();
+    const { lighting, profile } = props;
+    const key: readonly unknown[] = [lighting, profile];
+    const prev = installedKey;
+    if (prev !== null && prev.length === key.length && key.every((dep, index) => dep === prev[index])) return;
+    installedKey = key;
+    clearLights();
+    const dynamic = resolveDynamicLights(lighting);
+    if (lighting.ambient !== undefined) {
+      ambient = new THREE.AmbientLight(lighting.ambient.color ?? LIGHT_DEFAULT_COLOR);
+      baseAmbient = lighting.ambient.intensity ?? 0.55;
+      ambient.intensity = baseAmbient;
+      group.add(ambient);
+    }
+    if (lighting.hemisphere !== undefined) {
+      hemisphere = new THREE.HemisphereLight(
+        lighting.hemisphere.skyColor ?? "#bfe3ff",
+        lighting.hemisphere.groundColor ?? "#4c6b34",
+        lighting.hemisphere.intensity ?? 0.55,
+      );
+      baseHemisphere = lighting.hemisphere.intensity ?? 0.55;
+      group.add(hemisphere);
+    }
+    (lighting.directional ?? []).forEach((entry, index) => {
+      const resolved = profile === undefined
+        ? entry
+        : {
+            ...entry,
+            shadowMapSize: resolveShadowMapSize(profile, entry.shadowMapSize),
+            cascades: resolveCascadeCount(profile, entry.cascades),
+          };
+      children.push(directionalDrawFor(resolved, profile, index === 0));
+    });
+    for (const entry of dynamic.point) {
+      const light = new THREE.PointLight(entry.color ?? LIGHT_DEFAULT_COLOR, entry.intensity ?? 1, entry.distance ?? 0, entry.decay ?? 2);
+      light.position.set(entry.position[0], entry.position[1], entry.position[2]);
+      light.castShadow = entry.castShadow ?? false;
+      group.add(light);
+      dynamicLights.push(light);
+    }
+    for (const entry of dynamic.spot) {
+      const light = new THREE.SpotLight(entry.color ?? LIGHT_DEFAULT_COLOR, entry.intensity ?? 1, entry.distance ?? 0, entry.angle ?? Math.PI / 6, entry.penumbra ?? 0, entry.decay ?? 2);
+      light.position.set(entry.position[0], entry.position[1], entry.position[2]);
+      light.castShadow = entry.castShadow ?? false;
+      light.target.position.set(...(entry.target ?? [0, 0, 0]));
+      group.add(light);
+      group.add(light.target);
+      dynamicLights.push(light);
+    }
+    for (const child of children) child.mount?.(state);
+  };
+
+  return {
+    mount(state: EngineFrameState) {
+      state.scene.add(group);
+      syncLights(state);
+    },
+    update(state: EngineFrameState) {
+      syncLights(state);
+      for (const child of children) child.update?.(state);
+    },
+    frame(state: EngineFrameState) {
+      const modulation = getProps().modulation;
+      if (modulation !== undefined) {
+        if (ambient !== null) ambient.intensity = baseAmbient * modulation.ambientFactor;
+        if (hemisphere !== null) hemisphere.intensity = baseHemisphere * modulation.ambientFactor;
+      }
+      for (const child of children) child.frame?.(state, state.delta);
+    },
+    dispose(state: EngineFrameState) {
+      clearLights();
+      state.scene.remove(group);
+      installedKey = null;
+      lastState = null;
+    },
+  };
+}
+
+/**
+ * Mounts the game's authored lights (ambient, hemisphere, directional with shadows, point and spot within the light budget) for the active graphics profile.
+ */
+export function ConfiguredLighting(props: {
   lighting: LightingConfig;
   profile?: GraphicsProfile;
   /** Day-cycle scaling for the first directional (the sun) and the ambient fill. */
   modulation?: DaylightModulation;
 }) {
-  const dynamic = resolveDynamicLights(lighting);
-  const ambientRef = useRef<THREE.AmbientLight>(null);
-  const hemisphereRef = useRef<THREE.HemisphereLight>(null);
-  const baseAmbient = lighting.ambient?.intensity ?? 0.55;
-  const baseHemisphere = lighting.hemisphere?.intensity ?? 0.55;
-  useFrame(() => {
-    if (modulation === undefined) return;
-    if (ambientRef.current !== null) ambientRef.current.intensity = baseAmbient * modulation.ambientFactor;
-    if (hemisphereRef.current !== null) hemisphereRef.current.intensity = baseHemisphere * modulation.ambientFactor;
-  });
-  return (
-    <>
-      {lighting.ambient !== undefined ? (
-        <ambientLight ref={ambientRef} color={lighting.ambient.color ?? LIGHT_DEFAULT_COLOR} intensity={baseAmbient} />
-      ) : null}
-      {lighting.hemisphere !== undefined ? (
-        <hemisphereLight
-          ref={hemisphereRef}
-          args={[
-            lighting.hemisphere.skyColor ?? "#bfe3ff",
-            lighting.hemisphere.groundColor ?? "#4c6b34",
-            baseHemisphere,
-          ]}
-        />
-      ) : null}
-      {(lighting.directional ?? []).map((entry, index) => (
-        <DirectionalShadowLight key={index} entry={entry} profile={profile} {...(index === 0 && modulation !== undefined ? { modulation } : {})} />
-      ))}
-      {dynamic.point.map((entry, index) => (
-        <pointLight
-          key={index}
-          position={[entry.position[0], entry.position[1], entry.position[2]]}
-          intensity={entry.intensity ?? 1}
-          color={entry.color ?? LIGHT_DEFAULT_COLOR}
-          distance={entry.distance ?? 0}
-          decay={entry.decay ?? 2}
-          castShadow={entry.castShadow ?? false}
-        />
-      ))}
-      {dynamic.spot.map((entry, index) => (
-        <spotLight key={index} position={[entry.position[0], entry.position[1], entry.position[2]]} intensity={entry.intensity ?? 1} color={entry.color ?? LIGHT_DEFAULT_COLOR} distance={entry.distance ?? 0} decay={entry.decay ?? 2} angle={entry.angle ?? Math.PI / 6} penumbra={entry.penumbra ?? 0} castShadow={entry.castShadow ?? false} target-position={[...(entry.target ?? [0, 0, 0])]} />
-      ))}
-    </>
-  );
+  const latest = useRef(props);
+  latest.current = props;
+  return <EngineDrawMount create={() => configuredLightingDraw(() => latest.current)} deps={[]} />;
+}
+
+/** Draw-side form of {@link BackdropFog}: writes the backdrop's linear or exponential fog onto the
+ * real scene (a scoped mount group's `scene` is not the scene fog lives on); clears it on dispose. */
+export function backdropFogDraw(getProps: () => { fog: BackdropConfig["fog"] }): EngineDraw {
+  return {
+    mount(state: EngineFrameState) {
+      const fog = getProps().fog;
+      if (fog === undefined) return;
+      const scene = state.rootScene ?? state.scene;
+      scene.fog = fog.density !== undefined
+        ? new THREE.FogExp2(fog.color ?? DEFAULT_BACKDROP_FOG_COLOR, fog.density)
+        : new THREE.Fog(fog.color ?? DEFAULT_BACKDROP_FOG_COLOR, fog.near ?? 10, fog.far ?? 200);
+    },
+    update(state: EngineFrameState) {
+      const fog = getProps().fog;
+      const scene = state.rootScene ?? state.scene;
+      if (fog === undefined) {
+        scene.fog = null;
+        return;
+      }
+      const current = scene.fog;
+      const color = fog.color ?? DEFAULT_BACKDROP_FOG_COLOR;
+      if (fog.density !== undefined) {
+        if (current instanceof THREE.FogExp2) {
+          current.color.set(color);
+          current.density = fog.density;
+        } else {
+          scene.fog = new THREE.FogExp2(color, fog.density);
+        }
+      } else if (current instanceof THREE.Fog && !(current instanceof THREE.FogExp2)) {
+        current.color.set(color);
+        current.near = fog.near ?? 10;
+        current.far = fog.far ?? 200;
+      } else {
+        scene.fog = new THREE.Fog(color, fog.near ?? 10, fog.far ?? 200);
+      }
+    },
+    dispose(state: EngineFrameState) {
+      const scene = state.rootScene ?? state.scene;
+      scene.fog = null;
+    },
+  };
 }
 
 /** Attaches the backdrop's linear or exponential fog to the scene; renders nothing without fog. */
-export function BackdropFog({ fog }: { fog: BackdropConfig["fog"] }) {
-  if (fog === undefined) return null;
-  return fog.density !== undefined ? (
-    <fogExp2 attach="fog" args={[fog.color ?? DEFAULT_BACKDROP_FOG_COLOR, fog.density]} />
-  ) : (
-    <fog attach="fog" args={[fog.color ?? DEFAULT_BACKDROP_FOG_COLOR, fog.near ?? 10, fog.far ?? 200]} />
-  );
+export function BackdropFog(props: { fog: BackdropConfig["fog"] }) {
+  const latest = useRef(props);
+  latest.current = props;
+  return <EngineDrawMount create={() => backdropFogDraw(() => latest.current)} deps={[]} />;
 }

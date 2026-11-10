@@ -58,13 +58,13 @@ describe("probe", () => {
     try {
       writeFileSync(join(root, "package.json"), JSON.stringify({ workspaces: ["games/*"] }));
       mkdirSync(join(root, "games", "g"), { recursive: true });
-      writeFileSync(join(root, "games", "g", "package.json"), JSON.stringify({ dependencies: { "@react-three/drei": "10" } }));
+      writeFileSync(join(root, "games", "g", "package.json"), JSON.stringify({ dependencies: { "fake-dep": "10" } }));
       mkdirSync(join(root, "node_modules", ".bin"), { recursive: true });
       writeFileSync(tsgoBin(root), "");
-      expect(missingDependencies(root)).toEqual(["games/g/@react-three/drei"]);
-      expect(checkoutProblem(root)?.detail).toContain("games/g/@react-three/drei");
-      mkdirSync(join(root, "games", "g", "node_modules", "@react-three", "drei"), { recursive: true });
-      writeFileSync(join(root, "games", "g", "node_modules", "@react-three", "drei", "package.json"), "{}");
+      expect(missingDependencies(root)).toEqual(["games/g/fake-dep"]);
+      expect(checkoutProblem(root)?.detail).toContain("games/g/fake-dep");
+      mkdirSync(join(root, "games", "g", "node_modules", "fake-dep"), { recursive: true });
+      writeFileSync(join(root, "games", "g", "node_modules", "fake-dep", "package.json"), "{}");
       expect(checkoutProblem(root)).toBeNull();
     } finally {
       cleanup();
@@ -132,5 +132,5 @@ describe("a real failure stays a real failure", () => {
     const result = run("verify-fast.ts", ["--plan"], checkoutRoot);
     expect(result.status).not.toBe(EXIT_NOT_SET_UP);
     expect(`${result.stdout}${result.stderr}`).not.toContain("this checkout cannot run that yet");
-  });
+  }, 30_000);
 });

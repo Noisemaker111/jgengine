@@ -1,9 +1,11 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { act, createRoot, useFrame, useThree } from "@react-three/fiber";
-import { createElement, Fragment, useEffect } from "react";
+import { act, createElement, Fragment, useEffect } from "react";
 import * as THREE from "three";
 
 import { canvasCover } from "@jgengine/core/ui/canvasCover.view";
+import { mountTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 import { CanvasCoverFrameloop } from "./drivers/CanvasCoverFrameloop";
 import { FrameRateLimiter } from "./drivers/FrameRateLimiter";
@@ -12,29 +14,20 @@ import { registerSceneWarmup, type ShaderWarmup } from "@jgengine/core/render/sh
 /**
  * A covered canvas must stop drawing: Harbor Heat's pause screen left a paused world, its cascade
  * shadows and two postfx prepasses drawing at ~21 fps behind an overlay nobody could see (A7.3).
- * The shell switches R3F's loop to `never` while a surface holds the cover, so nothing draws and
+ * The shell switches the loop to `never` while a surface holds the cover, so nothing draws and
  * nothing ticks; the scene itself is never touched, so the first frame after the cover lifts is the
  * state the player left. A scrim or side panel holds nothing, so the live scene keeps drawing.
  *
- * These run headless: requestAnimationFrame is stubbed so the test pumps frames itself, and only
- * when the frameloop is "always" — the condition the browser loop runs under.
+ * These run headless: the test host steps frames itself, and only when the frameloop is "always" —
+ * the condition the browser loop runs under.
  */
-
-let originalRaf: typeof globalThis.requestAnimationFrame;
-let originalCancel: typeof globalThis.cancelAnimationFrame;
 
 beforeAll(() => {
   (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-  originalRaf = globalThis.requestAnimationFrame;
-  originalCancel = globalThis.cancelAnimationFrame;
-  globalThis.requestAnimationFrame = () => 1;
-  globalThis.cancelAnimationFrame = () => {};
 });
 
 afterAll(() => {
   (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = undefined;
-  globalThis.requestAnimationFrame = originalRaf;
-  globalThis.cancelAnimationFrame = originalCancel;
 });
 
 interface Harness {
@@ -47,35 +40,19 @@ interface Harness {
   retire(): Promise<void>;
 }
 
-function fakeRenderer(onDraw: () => void): THREE.WebGLRenderer {
-  return {
-    getPixelRatio: () => 1,
-    getSize: (target: THREE.Vector2) => target.set(800, 450),
-    render() {
-      onDraw();
-    },
-    setSize() {},
-    setPixelRatio() {},
-    getContext: () => ({}),
-  } as unknown as THREE.WebGLRenderer;
-}
-
 async function mount(): Promise<Harness> {
   const counts = { draws: 0, ticks: 0 };
-  const root = createRoot({} as HTMLCanvasElement);
-  await root.configure({
-    frameloop: "always",
-    camera: new THREE.PerspectiveCamera(55, 800 / 450, 0.1, 1000),
-    size: { width: 800, height: 450, top: 0, left: 0 },
-    dpr: 1,
-    gl: () => fakeRenderer(() => {
-      counts.draws += 1;
-    }),
-  });
+  const mounted = await mountTestDraws(
+    createElement(Fragment, null, createElement(CanvasCoverFrameloop, { authored: "always" }), createElement(World)),
+    { width: 800, height: 450 },
+  );
+  // The host's stub renderer counts `render` calls into `engine.renders`; mirror them into draws.
+  const draws = () => mounted.engine.renders;
 
   function World() {
-    const scene = useThree((state) => state.scene);
-    useFrame(() => {
+    const host = useEngineHost();
+    const scene = host.frame.scene;
+    useFrameTask(() => {
       counts.ticks += 1;
     });
     useEffect(() => {
@@ -90,33 +67,17 @@ async function mount(): Promise<Harness> {
     return null;
   }
 
-  let store: ReturnType<typeof root.render> | null = null;
-  await act(async () => {
-    store = root.render(
-      createElement(
-        Fragment,
-        null,
-        createElement(CanvasCoverFrameloop, { authored: "always" }),
-        createElement(World),
-      ),
-    );
-  });
-  if (store === null) throw new Error("the R3F root did not render");
-  const rendered = store;
-
   return {
-    draws: () => counts.draws,
+    draws,
     ticks: () => counts.ticks,
-    scene: () => rendered.getState().scene,
-    frameloop: () => rendered.getState().frameloop,
-    // The browser loop calls update only while the frameloop is "always"; advancing in "never"
+    scene: () => mounted.scene,
+    frameloop: () => mounted.engine.state.frameloop,
+    // The browser loop only runs frames while the frameloop asks for them; stepping under "never"
     // is what an owner like the frame-rate limiter does, and it must be stopped too.
     pump: async (frames) => {
       for (let index = 0; index < frames; index += 1) {
-        if (rendered.getState().frameloop !== "always") continue;
-        await act(async () => {
-          rendered.getState().advance(performance.now() / 1000, true);
-        });
+        if (mounted.engine.state.frameloop !== "always") continue;
+        await mounted.advance(1 / 60);
       }
     },
     write: async (run) => {
@@ -124,9 +85,7 @@ async function mount(): Promise<Harness> {
         run();
       });
     },
-    retire: async () => {
-      await act(async () => root.unmount());
-    },
+    retire: () => mounted.unmount(),
   };
 }
 
@@ -210,45 +169,19 @@ test("an overlay that declares nothing keeps the scene drawing", async () => {
   }
 });
 
-test("the frame-rate limiter advances nothing while the canvas is covered", async () => {
-  const scheduling = { count: 0 };
-  globalThis.requestAnimationFrame = () => {
-    scheduling.count += 1;
-    return scheduling.count;
-  };
-
-  const root = createRoot({} as HTMLCanvasElement);
-  const rendered = await (async () => {
-    await root.configure({
-      frameloop: "never",
-      camera: new THREE.PerspectiveCamera(55, 800 / 450, 0.1, 1000),
-      size: { width: 800, height: 450, top: 0, left: 0 },
-      dpr: 1,
-      gl: () => fakeRenderer(() => {}),
-    });
-    let store: ReturnType<typeof root.render> | null = null;
-    await act(async () => {
-      store = root.render(createElement(FrameRateLimiter, { fps: 30 }));
-    });
-    if (store === null) throw new Error("the frame-rate limiter did not mount");
-    return store;
-  })();
-
+test("the frame-rate limiter hands its cap to the host and yields it on unmount", async () => {
+  const mounted = await mountTestDraws(createElement(FrameRateLimiter, { fps: 30 }), { width: 800, height: 450 });
   try {
-    expect(rendered.getState().frameloop).toBe("never");
-    expect(scheduling.count, "the limiter must schedule its own loop while uncovered").toBeGreaterThan(0);
+    expect(mounted.engine.fpsLimits.at(-1), "the limiter must hand its cap to the host").toBe(30);
 
     let release = () => {};
-    const schedulingBeforeCover = scheduling.count;
     await act(async () => {
       release = canvasCover.hold();
     });
-    expect(scheduling.count, "the limiter kept scheduling frames under a cover").toBe(schedulingBeforeCover);
-
     await act(async () => release());
-    expect(scheduling.count, "the limiter must resume after the cover").toBeGreaterThan(schedulingBeforeCover);
+    expect(mounted.engine.fpsLimits.at(-1), "the cap must survive a cover cycle").toBe(30);
+    expect(mounted.engine.fpsLimits, "the limiter must re-apply after the cover").toContain(0);
   } finally {
-    await act(async () => root.unmount());
-    globalThis.requestAnimationFrame = () => 1;
+    await mounted.unmount();
   }
 });

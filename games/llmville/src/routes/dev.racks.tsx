@@ -1,8 +1,10 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { Html, OrbitControls } from "@react-three/drei";
-import { Canvas } from "@react-three/fiber";
 import { useMemo, useState } from "react";
-import { PCFShadowMap } from "three";
+import { EngineCanvas } from "@jgengine/core/frame/engineCanvas.draw";
+import { useEngineRendererFactory } from "@jgengine/core/webgpu/engineRenderer.draw";
+import { AnchoredOverlay } from "@jgengine/core/hud/hudOverlay.draw";
+import { SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";
+import { CameraPoseDraw, OrbitControlsDraw, StageDraw, type StageSpec } from "@jgengine/core/stage/stageDraw.draw";
 
 import type { InfrastructureBuildItemId } from "@llmville/game/build/catalog";
 import Rack from "@/infrastructure/components/Rack";
@@ -151,7 +153,23 @@ function RackLabel({
   );
 }
 
+const RACK_STAGE: StageSpec = {
+  background: "#111719",
+  fog: { color: "#111719", near: 18, far: 54 },
+  lights: [
+    { kind: "ambient", intensity: 0.7 },
+    { kind: "hemisphere", skyColor: "#fff6e6", groundColor: "#223230", intensity: 1.05 },
+    { kind: "spot", position: [1.4, 9, 6], angle: 0.78, penumbra: 0.55, intensity: 140, castShadow: true, shadowMapSize: [1024, 1024], color: "#fff1dc" },
+    { kind: "point", position: [-7, 3, 4], intensity: 18, color: "#e0a95c" },
+    { kind: "point", position: [9, 3, 5], intensity: 25, color: "#5fc2a8" },
+  ],
+  ground: { width: 27, depth: 20, color: "#35413f", roughness: 0.82, metalness: 0.05 },
+};
+
+const RACK_ORBIT = { target: [1.4, 1.1, 0.3] as const };
+
 function DevRackGallery() {
+  const rendererFactory = useEngineRendererFactory("webgl");
   const [gpuMode, setGpuMode] = useState<GpuPreviewMode>("full");
   const [coolerMode, setCoolerMode] = useState<CoolerPreviewMode>("installed");
   const [lightMode, setLightMode] = useState<ComputeLightPreviewMode>("mixed");
@@ -177,28 +195,15 @@ function DevRackGallery() {
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#111719] text-white">
-      <Canvas
-        camera={{ position: [11.5, 7.5, 18.5], fov: 42, near: 0.1, far: 90 }}
-        shadows="percentage"
-        gl={{ antialias: true, stencil: false, depth: true }}
-        onCreated={({ gl }) => {
-          gl.shadowMap.enabled = true;
-          gl.shadowMap.type = PCFShadowMap;
-        }}
+      {rendererFactory === null ? null : (
+      <EngineCanvas
+        rendererFactory={rendererFactory}
+        camera={{ fov: 42, near: 0.1, far: 90 }}
+        shadows
       >
-        <color attach="background" args={["#111719"]} />
-        <fog attach="fog" args={["#111719", 18, 54]} />
-        <ambientLight intensity={0.7} />
-        <hemisphereLight args={["#fff6e6", "#223230", 1.05]} />
-        <spotLight position={[1.4, 9, 6]} angle={0.78} penumbra={0.55} intensity={140} castShadow shadow-mapSize={[1024, 1024]} color="#fff1dc" />
-        <pointLight position={[-7, 3, 4]} intensity={18} color="#e0a95c" />
-        <pointLight position={[9, 3, 5]} intensity={25} color="#5fc2a8" />
-
-        <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <planeGeometry args={[27, 20]} />
-          <meshStandardMaterial color="#35413f" roughness={0.82} metalness={0.05} />
-        </mesh>
-
+        <CameraPoseDraw spec={{ position: [11.5, 7.5, 18.5] }} />
+        <StageDraw spec={RACK_STAGE} />
+        <OrbitControlsDraw spec={RACK_ORBIT} />
         {RACK_PREVIEWS.map((preview, index) => {
           const column = index % 4;
           const row = Math.floor(index / 4);
@@ -207,28 +212,27 @@ function DevRackGallery() {
           const coolerId = coolerByRack.get(preview.id) ?? null;
 
           return (
-            <group key={preview.id}>
+            <SceneObjectGroup key={preview.id} position={[x, 0, z]}>
               <Rack
                 rackId={preview.id}
                 rackType={preview.id}
-                x={x}
-                z={z}
+                x={0}
+                z={0}
                 rotationY={0}
                 installedHardwareSlots={slotsByRack.get(preview.id)}
                 installedCoolerId={coolerId}
                 slotWorkloadMap={workloadMap}
               />
               {showLabels ? (
-                <Html position={[x, 3.05, z + 0.1]} center distanceFactor={8} occlude={false}>
+                <AnchoredOverlay position={[x, 3.05, z + 0.1]} distanceFactor={8}>
                   <RackLabel preview={preview} coolerId={coolerId} gpuMode={gpuMode} />
-                </Html>
+                </AnchoredOverlay>
               ) : null}
-            </group>
+            </SceneObjectGroup>
           );
         })}
-
-        <OrbitControls enablePan enableZoom enableRotate target={[1.4, 1.1, 0.3]} />
-      </Canvas>
+      </EngineCanvas>
+      )}
 
       <div className="pointer-events-auto absolute left-4 top-4 w-[360px] rounded-md border border-white/10 bg-zinc-950/85 p-3 text-xs text-zinc-200 shadow-xl backdrop-blur">
         <div className="text-sm font-semibold text-white">Rack visual gallery</div>

@@ -1,11 +1,68 @@
-import { useThree } from "@react-three/fiber";
-import { useEffect, useState } from "react";
 import * as THREE from "three";
 
 import type { TerrainMaterialMaps } from "@jgengine/core/world/features";
 
 import { ImageTextureLoader } from "./imageTexture.draw";
 import { warmupWaitsFor } from "@jgengine/core/render/shaderWarmup.draw";
+
+/** A scan tracked outside React: `useSurfaceScan`'s draw-side twin for EngineDraw factories. */
+export interface SurfaceScanTrack {
+  /** The decoded maps; `null` while loading, after a failure, or when nothing was asked for. */
+  textures(): SurfaceScanTextures | null;
+  /** True until the maps load or fail — the surface stays hidden meanwhile. */
+  pending(): boolean;
+  /** Swap `enabled`/`maps` for a new request; the old handle is released. */
+  sync(maps: TerrainMaterialMaps | undefined, enabled: boolean, scene: THREE.Scene): void;
+  release(): void;
+}
+
+/**
+ * Acquire a scan for draw code: the first holder starts the decode, `onChange` fires once the maps
+ * are ready or have failed, and the last release frees the GPU textures. `sync` follows prop changes
+ * the way the hook's effect deps did.
+ */
+export function trackSurfaceScan(maps: TerrainMaterialMaps | undefined, enabled: boolean, scene: THREE.Scene, onChange: () => void): SurfaceScanTrack {
+  let handle: ReturnType<typeof acquireSurfaceScan> | null = null;
+  let requested = false;
+  let settled = true;
+  const keyOf = (next: TerrainMaterialMaps | undefined, nextEnabled: boolean) => (next === undefined || !nextEnabled ? null : surfaceScanKey(next));
+  let key = keyOf(maps, enabled);
+  requested = key !== null;
+  if (key !== null && maps !== undefined) {
+    handle = acquireSurfaceScan(maps, () => {
+      settled = true;
+      onChange();
+    });
+    if (handle.current() === null) warmupWaitsFor(scene, handle.settled, "surface scan textures");
+    settled = handle.current() !== null || handle.failed();
+  }
+  return {
+    textures: () => handle?.current() ?? null,
+    pending: () => requested && !settled,
+    sync(next, nextEnabled, nextScene) {
+      const nextKey = keyOf(next, nextEnabled);
+      if (nextKey === key) return;
+      handle?.release();
+      handle = null;
+      key = nextKey;
+      requested = nextKey !== null;
+      settled = !requested;
+      if (nextKey !== null && next !== undefined) {
+        handle = acquireSurfaceScan(next, () => {
+          settled = true;
+          onChange();
+        });
+        if (handle.current() === null) warmupWaitsFor(nextScene, handle.settled, "surface scan textures");
+        settled = handle.current() !== null || handle.failed();
+      }
+      onChange();
+    },
+    release() {
+      handle?.release();
+      handle = null;
+    },
+  };
+}
 
 /** Decoded maps of one scanned surface, shared by every material that tiles it. */
 export interface SurfaceScanTextures {
@@ -138,28 +195,4 @@ export interface SurfaceScanState {
   textures: SurfaceScanTextures | null;
   /** True until the maps load or fail. A surface waiting on them stays hidden, so no program is linked for the look they replace. */
   pending: boolean;
-}
-
-/**
- * React handle on a scan's maps. `maps` undefined or `enabled` false (the `low` tier) asks for
- * none and is never pending. Every component naming the same URLs shares one decode. The scene's
- * shader warmup waits for the maps, and a caller hides its surface while `pending`, so the warmup
- * links only the scanned programs the first frame draws, not the procedural ones they replace.
- */
-export function useSurfaceScan(maps: TerrainMaterialMaps | undefined, enabled = true): SurfaceScanState {
-  const key = maps === undefined || !enabled ? null : surfaceScanKey(maps);
-  const scene = useThree((three) => three.scene);
-  const [state, setState] = useState<{ key: string | null; textures: SurfaceScanTextures | null; settled: boolean }>({ key: null, textures: null, settled: false });
-  useEffect(() => {
-    if (key === null || maps === undefined) return undefined;
-    const handle = acquireSurfaceScan(maps, () => setState({ key, textures: handle.current(), settled: true }));
-    const textures = handle.current();
-    if (textures === null) warmupWaitsFor(scene, handle.settled);
-    setState({ key, textures, settled: textures !== null || handle.failed() });
-    return () => handle.release();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
-  if (key === null) return { textures: null, pending: false };
-  if (state.key !== key) return { textures: null, pending: true };
-  return { textures: state.textures, pending: !state.settled };
 }

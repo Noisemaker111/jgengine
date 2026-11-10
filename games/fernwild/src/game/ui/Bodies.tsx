@@ -1,35 +1,64 @@
-import { useReducer, useRef, type ReactNode } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useRef } from "react";
+import * as THREE from "three";
+
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
-import { LightBeam } from "@jgengine/core/map/LightBeam.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { childFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
+import { lightBeamDraw } from "@jgengine/core/map/LightBeam.draw";
 
 import { bodies } from "../deathBody";
 
 /** Fallen survivors' bodies: a bundle where they fell and a pale beam of light above it to find it by. */
-export function Bodies({ ctx }: WorldOverlayProps): ReactNode {
-  const [, redraw] = useReducer((n: number) => n + 1, 0);
-  const drawn = useRef("");
-  // Bodies come and go rarely; redraw only when the set changes.
-  useFrame(() => {
-    const key = bodies(ctx)
-      .map((body) => body.id)
-      .join(",");
-    if (key !== drawn.current) {
-      drawn.current = key;
-      redraw();
+export function bodiesDraw(ctx: WorldOverlayProps["ctx"]): EngineDraw {
+  const group = new THREE.Group();
+  const geometry = new THREE.DodecahedronGeometry(0.5, 0);
+  const material = new THREE.MeshStandardMaterial({ color: "#6b4a2f", roughness: 0.95, flatShading: true });
+  const beams: EngineDraw[] = [];
+  let drawn = "";
+  const rebuild = (state: EngineFrameState) => {
+    const list = bodies(ctx);
+    const key = list.map((body) => body.id).join(",");
+    if (key === drawn) return;
+    drawn = key;
+    for (const beam of beams.splice(0)) beam.dispose?.(childFrameState(state, group));
+    group.clear();
+    for (const body of list) {
+      const holder = new THREE.Group();
+      holder.position.set(body.at[0], body.at[1], body.at[2]);
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.y = 0.25;
+      mesh.scale.set(1, 0.55, 0.8);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      holder.add(mesh);
+      const beam = lightBeamDraw({});
+      const beamState = childFrameState(state, holder);
+      beam.mount?.(beamState);
+      beams.push(beam);
+      group.add(holder);
     }
-  });
-  return (
-    <>
-      {bodies(ctx).map((body) => (
-        <group key={body.id} position={[body.at[0], body.at[1], body.at[2]]}>
-          <mesh position={[0, 0.25, 0]} scale={[1, 0.55, 0.8]} castShadow receiveShadow>
-            <dodecahedronGeometry args={[0.5, 0]} />
-            <meshStandardMaterial color="#6b4a2f" roughness={0.95} flatShading />
-          </mesh>
-          <LightBeam />
-        </group>
-      ))}
-    </>
-  );
+  };
+  return {
+    mount(state: EngineFrameState) {
+      state.scene.add(group);
+      rebuild(state);
+    },
+    frame(state: EngineFrameState) {
+      rebuild(state);
+    },
+    dispose(state: EngineFrameState) {
+      for (const beam of beams.splice(0)) beam.dispose?.(childFrameState(state, group));
+      state.scene.remove(group);
+      geometry.dispose();
+      material.dispose();
+    },
+  };
+}
+
+export function Bodies({ ctx }: WorldOverlayProps) {
+  const latest = useRef(ctx);
+  latest.current = ctx;
+  useEngineDraw(() => bodiesDraw(latest.current), []);
+  return null;
 }

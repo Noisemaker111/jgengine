@@ -102,9 +102,9 @@ export function InteriorArt({ stratum }: { stratum: Stratum }) {
       id: slot.id, regionId: stratum, item: model, x: slot.position[0], y: slot.position[1], z: slot.position[2], rotationY: slot.rotationY, scale: slot.scale,
     })),
   ], [dressing, stratum]);
-  return <group>
+  return <>
     <StaticShapeInstances instances={shapes} />
     <InteriorDressing plan={dressing.plan} surfaces={look.dressing} cableColor={look.cable} decalSeed={stratum} />
     <InstancedScatter instances={props} resolveItem={resolveProp} chunkSize={48} />
-  </group>;
+  </>;
 }

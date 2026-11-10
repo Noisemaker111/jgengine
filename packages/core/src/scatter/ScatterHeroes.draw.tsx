@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useRef } from "react";
 import * as THREE from "three";
 
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { prepareGenerator, runGenerator, type GeneratorDefinition } from "@jgengine/core/generator/generator";
 import { getGeneratorMesh, type GeneratorMeshSource } from "@jgengine/core/generator/generatorMesh.draw";
 import { composeInstance } from "@jgengine/core/instancing/instanceUpload.draw";
@@ -101,106 +102,145 @@ export interface ScatterHeroesProps {
 }
 
 /**
+ * Draw-side form of {@link ScatterHeroes}: the near placements of a unique scatter species, each
+ * grown from its own seed into its own mesh drawn through the shared static batches
+ * ({@link placeHero}), picked by {@link createScatterHeroSet} and shown only once grown, all driven
+ * by the frame instead of React refs and state. @internal
+ */
+export function scatterHeroesDraw(
+  getProps: () => ScatterHeroesProps,
+): EngineDraw {
+  const detail = () => getProps().spec.heroDetail ?? getProps().spec.detail ?? 1;
+  let heroSet = createScatterHeroSet({ heroes: getProps().spec.heroes ?? 32, distance: getProps().spec.heroDistance ?? 40 });
+  let heroSetKey = `${getProps().spec.heroes ?? 32}:${getProps().spec.heroDistance ?? 40}`;
+  let byId = new Map<string, ScatterInstance>();
+  let lastInstances: readonly ScatterInstance[] | null = null;
+  const meshes = new Map<string, HeroMesh>();
+  const growing = new Set<string>();
+  let wanted: readonly string[] = [];
+  let pending: readonly string[] = [];
+  let lastShown = Number.NEGATIVE_INFINITY;
+  let shownKey = "";
+  const lastPick = { at: Number.NEGATIVE_INFINITY, x: Number.NaN, z: Number.NaN };
+  const camera = new THREE.Vector3();
+  let live = false;
+  let scene: THREE.Scene | null = null;
+  // Set when the picks change or a mesh finishes growing; the frame loop does work only then.
+  let dirty = true;
+
+  const drop = (id: string): void => {
+    const hero = meshes.get(id);
+    if (hero === undefined) return;
+    dropHero(hero);
+    meshes.delete(id);
+  };
+
+  const grow = (id: string): void => {
+    const props = getProps();
+    const placement = byId.get(id);
+    const build = getGeneratorMesh(props.definition.output);
+    if (placement === undefined || build === undefined) return;
+    growing.add(id);
+    const meta = scatterPlacementVariant(props.definition, props.item, props.spec, id).meta;
+    const detailValue = detail();
+    prepareGenerator(props.definition, meta, { detail: detailValue })
+      .then(() => {
+        if (!live) return;
+        const sources = build(runGenerator(props.definition, meta, { detail: detailValue })) ?? [];
+        const matrix = composeInstance(new THREE.Matrix4(), [placement.x, placement.y, placement.z], [0, placement.rotationY, 0], placement.scale);
+        const target = scene;
+        if (target === null) return;
+        const hero = placeHero(staticDrawPoolFor(target), sources, matrix);
+        meshes.set(id, hero);
+        target.add(hero.group);
+      })
+      .catch((error: unknown) => console.error(`[jgengine] scatter ${props.item} failed to grow ${id}`, error))
+      .finally(() => {
+        growing.delete(id);
+        dirty = true;
+      });
+  };
+
+  const sync = () => {
+    const props = getProps();
+    const key = `${props.spec.heroes ?? 32}:${props.spec.heroDistance ?? 40}`;
+    if (key !== heroSetKey) {
+      heroSetKey = key;
+      heroSet = createScatterHeroSet({ heroes: props.spec.heroes ?? 32, distance: props.spec.heroDistance ?? 40 });
+      heroSet.setMembers(props.instances);
+      dirty = true;
+    }
+    if (props.instances !== lastInstances) {
+      lastInstances = props.instances;
+      byId = new Map(props.instances.map((instance) => [instance.id, instance]));
+      heroSet.setMembers(props.instances);
+    }
+  };
+
+  return {
+    priority: CAMERA_POST_FRAME_PRIORITY + 0.1,
+    mount(state: EngineFrameState) {
+      live = true;
+      scene = state.scene;
+      sync();
+    },
+    update() {
+      sync();
+    },
+    frame(state: EngineFrameState) {
+      sync();
+      state.camera.getWorldPosition(camera);
+      const now = state.clock.elapsedTime;
+      const last = lastPick;
+      const moved = Number.isNaN(last.x) || Math.hypot(camera.x - last.x, camera.z - last.z) > PICK_MOVE_M;
+      if (moved || now - last.at > PICK_INTERVAL_S) {
+        lastPick.at = now;
+        lastPick.x = camera.x;
+        lastPick.z = camera.z;
+        const update = heroSet.update(camera.x, camera.z);
+        for (const id of update.evicted) drop(id);
+        if (update.changed || update.evicted.length > 0) {
+          wanted = update.heroes;
+          dirty = true;
+        }
+      }
+      if (dirty) {
+        dirty = false;
+        const shown: string[] = [];
+        for (const id of wanted) {
+          if (meshes.has(id)) shown.push(id);
+          else if (!growing.has(id) && growing.size < GROWING_AT_ONCE) grow(id);
+        }
+        pending = shown;
+      }
+      // Every change of the shown set rebuilds the stand-in field's instance lists, so changes are
+      // gathered and handed over at most every SHOW_INTERVAL_S; a hero draws only once its stand-in hides.
+      if (now - lastShown < SHOW_INTERVAL_S) return;
+      const key = pending.join("|");
+      if (key === shownKey) return;
+      shownKey = key;
+      lastShown = now;
+      const shown = new Set(pending);
+      for (const [id, hero] of meshes) showHero(hero, shown.has(id));
+      getProps().onShown(shown);
+    },
+    dispose() {
+      live = false;
+      for (const id of [...meshes.keys()]) drop(id);
+      scene = null;
+    },
+  };
+}
+
+/**
  * The near placements of a unique scatter species, each grown from its own seed into its own mesh,
  * drawn through the shared static batches ({@link placeHero}). Placements are picked by {@link createScatterHeroSet}, grown a few at a time (off the main
  * thread where the generator prepares there), and a stand-in is hidden only once its own mesh is
  * ready, so nothing pops out while a tree grows.
  * @internal
  */
-export function ScatterHeroes({ item, definition, spec, instances, onShown }: ScatterHeroesProps) {
-  const scene = useThree((state) => state.scene);
-  const detail = spec.heroDetail ?? spec.detail ?? 1;
-  const heroSet = useMemo(
-    () => createScatterHeroSet({ heroes: spec.heroes ?? 32, distance: spec.heroDistance ?? 40 }),
-    [spec.heroes, spec.heroDistance],
-  );
-  const byId = useMemo(() => new Map(instances.map((instance) => [instance.id, instance])), [instances]);
-  useEffect(() => heroSet.setMembers(instances), [heroSet, instances]);
-
-  const meshes = useRef(new Map<string, HeroMesh>());
-  const growing = useRef(new Set<string>());
-  const wanted = useRef<readonly string[]>([]);
-  const pending = useRef<readonly string[]>([]);
-  const lastShown = useRef(Number.NEGATIVE_INFINITY);
-  const shownKey = useRef("");
-  const lastPick = useRef({ at: Number.NEGATIVE_INFINITY, x: Number.NaN, z: Number.NaN });
-  const camera = useMemo(() => new THREE.Vector3(), []);
-  const live = useRef(true);
-  // Set when the picks change or a mesh finishes growing; the frame loop does work only then.
-  const dirty = useRef(true);
-
-  const drop = (id: string): void => {
-    const hero = meshes.current.get(id);
-    if (hero === undefined) return;
-    dropHero(hero);
-    meshes.current.delete(id);
-  };
-
-  useEffect(() => {
-    live.current = true;
-    const held = meshes.current;
-    return () => {
-      live.current = false;
-      for (const id of [...held.keys()]) drop(id);
-    };
-  }, []);
-
-  const grow = (id: string): void => {
-    const placement = byId.get(id);
-    const build = getGeneratorMesh(definition.output);
-    if (placement === undefined || build === undefined) return;
-    growing.current.add(id);
-    const meta = scatterPlacementVariant(definition, item, spec, id).meta;
-    prepareGenerator(definition, meta, { detail })
-      .then(() => {
-        if (!live.current) return;
-        const sources = build(runGenerator(definition, meta, { detail })) ?? [];
-        const matrix = composeInstance(new THREE.Matrix4(), [placement.x, placement.y, placement.z], [0, placement.rotationY, 0], placement.scale);
-        const hero = placeHero(staticDrawPoolFor(scene), sources, matrix);
-        meshes.current.set(id, hero);
-        scene.add(hero.group);
-      })
-      .catch((error: unknown) => console.error(`[jgengine] scatter ${item} failed to grow ${id}`, error))
-      .finally(() => {
-        growing.current.delete(id);
-        dirty.current = true;
-      });
-  };
-
-  useFrame((state) => {
-    state.camera.getWorldPosition(camera);
-    const now = state.clock.elapsedTime;
-    const last = lastPick.current;
-    const moved = Number.isNaN(last.x) || Math.hypot(camera.x - last.x, camera.z - last.z) > PICK_MOVE_M;
-    if (moved || now - last.at > PICK_INTERVAL_S) {
-      lastPick.current = { at: now, x: camera.x, z: camera.z };
-      const update = heroSet.update(camera.x, camera.z);
-      for (const id of update.evicted) drop(id);
-      if (update.changed || update.evicted.length > 0) {
-        wanted.current = update.heroes;
-        dirty.current = true;
-      }
-    }
-    if (dirty.current) {
-      dirty.current = false;
-      const shown: string[] = [];
-      for (const id of wanted.current) {
-        if (meshes.current.has(id)) shown.push(id);
-        else if (!growing.current.has(id) && growing.current.size < GROWING_AT_ONCE) grow(id);
-      }
-      pending.current = shown;
-    }
-    // Every change of the shown set rebuilds the stand-in field's instance lists, so changes are
-    // gathered and handed over at most every SHOW_INTERVAL_S; a hero draws only once its stand-in hides.
-    if (now - lastShown.current < SHOW_INTERVAL_S) return;
-    const key = pending.current.join("|");
-    if (key === shownKey.current) return;
-    shownKey.current = key;
-    lastShown.current = now;
-    const shown = new Set(pending.current);
-    for (const [id, hero] of meshes.current) showHero(hero, shown.has(id));
-    onShown(shown);
-  }, CAMERA_POST_FRAME_PRIORITY + 0.1);
-
-  return null;
+export function ScatterHeroes(props: ScatterHeroesProps) {
+  const latest = useRef(props);
+  latest.current = props;
+  return <EngineDrawMount create={() => scatterHeroesDraw(() => latest.current)} deps={[]} />;
 }

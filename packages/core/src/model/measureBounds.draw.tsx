@@ -1,5 +1,4 @@
-import { useFrame } from "@react-three/fiber";
-import { useRef, type ReactNode } from "react";
+import { useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
@@ -8,6 +7,8 @@ import { useGameContext } from "@jgengine/react/provider";
 import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "./measureCollisionMesh.draw";
 import { modelBindPosePositions } from "./modelBindPose.draw";
 import { recordRenderBounds } from "@jgengine/core/visibility/measuredBounds";
+import type { EngineDraw } from "@jgengine/core/frame/engineLoop.draw";
+import { EngineDrawMount, SceneObjectPortal, useSceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 
 /** Subtrees flagged with this userData key are excluded from bounds measurement — debug gizmos,
  * selection quads, effect billboards that should not inflate the hitbox. Sprites and invisible
@@ -124,7 +125,38 @@ const MEASURE_FRAMES: readonly number[] = [1, 15, 30, 60];
  * entity-local bounds into collider resolution, so the hitbox wraps what is actually on screen
  * instead of the fixed-size fallback box. A successful measure re-reports only when the subtree
  * gained or lost meshes (async fill-in), not when idle animation nudges the same meshes.
+ * The draw-side form measures the caller's group on the same bounded retry schedule.
  */
+export function measuredBoundsDraw(getProps: () => {
+  ctx: GameContext;
+  target: "entity" | "object";
+  measureKey: string;
+  anchor: THREE.Object3D | null;
+}): EngineDraw {
+  let frame = 0;
+  let attempt = 0;
+  let lastMeshCount: number | null = null;
+  return {
+    frame() {
+      if (attempt >= MEASURE_FRAMES.length) return;
+      frame += 1;
+      if (frame < MEASURE_FRAMES[attempt]!) return;
+      attempt += 1;
+      const group = getProps().anchor;
+      if (group === null) return;
+      const measured = measureLocalBounds(group);
+      if (measured === null) return;
+      if (lastMeshCount === measured.meshCount) return;
+      lastMeshCount = measured.meshCount;
+      const props = getProps();
+      recordRenderBounds(props.ctx, props.target, props.measureKey, measured);
+      reportMeasuredBounds(props.ctx, props.target, props.measureKey, measured);
+      const triangles = measureLocalCollisionTriangles(group);
+      if (triangles !== null) reportMeasuredCollisionMesh(props.ctx, props.target, props.measureKey, triangles);
+    },
+  };
+}
+
 export function MeasuredBoundsGroup({
   target,
   measureKey,
@@ -135,27 +167,17 @@ export function MeasuredBoundsGroup({
   children: ReactNode;
 }) {
   const ctx = useGameContext();
-  const groupRef = useRef<THREE.Group>(null);
-  const frameRef = useRef(0);
-  const attemptRef = useRef(0);
-  const lastMeshCountRef = useRef<number | null>(null);
-
-  useFrame(() => {
-    if (attemptRef.current >= MEASURE_FRAMES.length) return;
-    frameRef.current += 1;
-    if (frameRef.current < MEASURE_FRAMES[attemptRef.current]!) return;
-    attemptRef.current += 1;
-    const group = groupRef.current;
-    if (group === null) return;
-    const measured = measureLocalBounds(group);
-    if (measured === null) return;
-    if (lastMeshCountRef.current === measured.meshCount) return;
-    lastMeshCountRef.current = measured.meshCount;
-    recordRenderBounds(ctx, target, measureKey, measured);
-    reportMeasuredBounds(ctx, target, measureKey, measured);
-    const triangles = measureLocalCollisionTriangles(group);
-    if (triangles !== null) reportMeasuredCollisionMesh(ctx, target, measureKey, triangles);
-  });
-
-  return <group ref={groupRef}>{children}</group>;
+  const group = useMemo(() => new THREE.Group(), []);
+  useSceneObjectAttach(group);
+  const latest = useRef({ ctx, target, measureKey });
+  latest.current = { ctx, target, measureKey };
+  return (
+    <SceneObjectPortal object={group}>
+      <EngineDrawMount
+        create={() => measuredBoundsDraw(() => ({ ...latest.current, anchor: group }))}
+        deps={[target, measureKey]}
+      />
+      {children}
+    </SceneObjectPortal>
+  );
 }

@@ -13,7 +13,6 @@
   "dependencies": {
     "@jgengine/core": "workspace:*",
     "@jgengine/shell": "workspace:*",
-    "@react-three/fiber": "catalog:",
     "react": "catalog:",
     "three": "catalog:"
   },

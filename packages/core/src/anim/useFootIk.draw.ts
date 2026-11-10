@@ -1,5 +1,4 @@
-import { useThree } from "@react-three/fiber";
-import { useLayoutEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
 import { inferLegChains, placeFeet, type FootGroundSample, type FootPlacement } from "@jgengine/core/anim/footPlacement";
@@ -10,6 +9,7 @@ import type { SceneRaycastHit, SceneRaycastInput } from "@jgengine/core/scene/sc
 import { resolveRigNode } from "@jgengine/core/model/rigNode.draw";
 import { noteCharacterMotion } from "@jgengine/core/lod/characterLod";
 import { useFrameWhile } from "@jgengine/core/render/useFrameWhile.draw";
+import type { EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 
 type FootIkConfig = Exclude<NonNullable<ModelConfig["ik"]>, "none">;
 type GroundProbe = (input: SceneRaycastInput) => SceneRaycastHit | null;
@@ -336,11 +336,8 @@ export function applyFootIk(
 const IK_FILTER = { entities: false, objects: true, walls: false, terrain: true } as const;
 
 /**
- * Runs foot IK after the model's animation mixer for `ModelConfig.ik`. Ground probes hit terrain and
- * blocking physical objects, never the model's own entity. `groundOffset` is the model-space height
- * its soles rest on (`ModelConfig.y`). `options.quiet` drops the rig diagnostics (the engine's own
- * default IK on a model that never asked for it); `options.maxCameraDistance` skips characters
- * further than that from the camera, fading their correction out.
+ * Runs foot IK after the model's animation mixer for `ModelConfig.ik` — a thin
+ * React shell over {@link FootIkDriver}; draw code uses the driver directly.
  */
 export function useFootIk(
   scene: THREE.Object3D,
@@ -350,80 +347,142 @@ export function useFootIk(
   groundOffset = 0,
   options: { quiet?: boolean; maxCameraDistance?: number } = {},
 ): void {
-  const camera = useThree((three) => three.camera);
   const quiet = options.quiet === true;
   const maxCameraDistance = options.maxCameraDistance ?? Infinity;
-  const rig = useMemo(() => (config === undefined ? null : resolveFootIkRig(scene, config, quiet)), [scene, config, quiet]);
-  const state = useRef<FootIkState>({ weight: 0, pelvis: 0 });
-  const lookAtConfig = config === undefined || config === "auto" ? undefined : config.lookAt;
-  const target = useRef<THREE.Vector3 | null>(null);
-  // One probe input and one look-at triple per mount: a rig that poses every frame allocates nothing.
-  const probe = useMemo(
-    () => ({
-      origin: [0, 0, 0] as [number, number, number],
-      direction: [0, -1, 0] as [number, number, number],
+  const driverRef = useRef<FootIkDriver | null>(null);
+  useEffect(() => {
+    const driver = new FootIkDriver({ scene, config, ctx, instanceId, groundOffset, quiet, maxCameraDistance });
+    driverRef.current = driver;
+    return () => {
+      driver.dispose();
+      if (driverRef.current === driver) driverRef.current = null;
+    };
+  }, [scene, config, ctx, instanceId, groundOffset, quiet, maxCameraDistance]);
+  useFrameWhile(config !== undefined && ctx !== null && instanceId !== undefined, (three, delta) => {
+    driverRef.current?.pose(three as EngineFrameState, delta);
+  });
+}
+
+const DEFAULT_EYE_HEIGHT = 1.5;
+
+export interface FootIkDriverOptions {
+  scene: THREE.Object3D;
+  config: FootIkConfig | undefined;
+  ctx: GameContext | null;
+  instanceId?: string | undefined;
+  groundOffset?: number | undefined;
+  quiet?: boolean | undefined;
+  maxCameraDistance?: number | undefined;
+}
+
+/**
+ * Foot IK without React: resolves the rig once, then {@link pose} applies one
+ * frame of correction after the animation mixer. `dispose` restores the
+ * animated pose. The hook and the model draw share this driver.
+ */
+export class FootIkDriver {
+  private readonly scene: THREE.Object3D;
+  private readonly ctx: GameContext | null;
+  private readonly instanceId: string | undefined;
+  private readonly groundOffset: number;
+  private readonly lookAtConfig: ModelLookAtConfig | undefined;
+  private readonly rig: FootIkRig | null;
+  private readonly state: FootIkState = { weight: 0, pelvis: 0 };
+  private target: THREE.Vector3 | null = null;
+  private readonly probe: {
+    origin: [number, number, number];
+    direction: [number, number, number];
+    maxDistance: number;
+    excludeInstanceIds: string[];
+    filter: typeof IK_FILTER;
+    accept: (hit: { blocks: boolean; purpose: string }) => boolean;
+  };
+  private readonly lookAtPoint: [number, number, number] = [0, 0, 0];
+  private readonly maxCameraDistance: number;
+
+  constructor(options: FootIkDriverOptions) {
+    this.scene = options.scene;
+    this.ctx = options.ctx;
+    this.instanceId = options.instanceId;
+    this.groundOffset = options.groundOffset ?? 0;
+    const config = options.config;
+    this.rig = config === undefined ? null : resolveFootIkRig(options.scene, config, options.quiet === true);
+    this.lookAtConfig = config === undefined || config === "auto" ? undefined : config.lookAt;
+    this.maxCameraDistance = options.maxCameraDistance ?? Infinity;
+    this.probe = {
+      origin: [0, 0, 0],
+      direction: [0, -1, 0],
       maxDistance: 0,
-      excludeInstanceIds: instanceId === undefined ? [] : [instanceId],
+      excludeInstanceIds: options.instanceId === undefined ? [] : [options.instanceId],
       filter: IK_FILTER,
       accept: (hit: { blocks: boolean; purpose: string }) => hit.blocks && hit.purpose === "physical",
-    }),
-    [instanceId],
-  );
-  const lookAtPoint = useMemo(() => [0, 0, 0] as [number, number, number], []);
-  useLayoutEffect(() => {
-    state.current = { weight: 0, pelvis: 0 };
-    target.current = null;
-    return () => {
-      if (rig !== null) {
-        if (instanceId !== undefined) noteCharacterMotion(instanceId, "feet", false);
-        restoreFootIkPose(rig);
-        scene.updateMatrixWorld(true);
-      }
     };
-  }, [rig, scene, instanceId]);
-  useFrameWhile(rig !== null && ctx !== null && instanceId !== undefined, (_three, delta) => {
+  }
+
+  /** Whether the driver has a resolved rig, live context and entity. */
+  get active(): boolean {
+    return this.rig !== null && this.ctx !== null && this.instanceId !== undefined;
+  }
+
+  /** One frame of foot correction; a no-op unless {@link active}. */
+  pose(state: EngineFrameState, delta: number): void {
+    const rig = this.rig;
+    const ctx = this.ctx;
+    const instanceId = this.instanceId;
     if (rig === null || ctx === null || instanceId === undefined) return;
-    const parent = scene.parent;
-    const originY = parent === null ? scene.position.y : parent.localToWorld(scratch.a.set(0, groundOffset, 0)).y;
-    if (maxCameraDistance !== Infinity && camera.getWorldPosition(scratch.b).distanceTo(scene.getWorldPosition(scratch.a)) > maxCameraDistance) {
-      if (state.current.weight > 0) {
+    const camera = state.camera;
+    const parent = this.scene.parent;
+    const originY = parent === null ? this.scene.position.y : parent.localToWorld(scratch.a.set(0, this.groundOffset, 0)).y;
+    if (this.maxCameraDistance !== Infinity && camera.getWorldPosition(scratch.b).distanceTo(this.scene.getWorldPosition(scratch.a)) > this.maxCameraDistance) {
+      if (this.state.weight > 0) {
         restoreFootIkPose(rig);
-        state.current = { weight: 0, pelvis: 0 };
+        this.state.weight = 0;
+        this.state.pelvis = 0;
         if (rig.legs.length > 0) noteCharacterMotion(instanceId, "feet", false);
       }
       return;
     }
-    const aim = resolveLookAtTarget(lookAtConfig?.target, ctx, target.current, lookAtConfig?.entityEyeHeight ?? DEFAULT_EYE_HEIGHT);
-    target.current = aim;
+    const aim = resolveLookAtTarget(this.lookAtConfig?.target, ctx, this.target, this.lookAtConfig?.entityEyeHeight ?? DEFAULT_EYE_HEIGHT);
+    this.target = aim;
     if (aim === null) {
       const world = camera.getWorldPosition(scratch.b);
-      lookAtPoint[0] = world.x;
-      lookAtPoint[1] = world.y;
-      lookAtPoint[2] = world.z;
+      this.lookAtPoint[0] = world.x;
+      this.lookAtPoint[1] = world.y;
+      this.lookAtPoint[2] = world.z;
     } else {
-      lookAtPoint[0] = aim.x;
-      lookAtPoint[1] = aim.y;
-      lookAtPoint[2] = aim.z;
+      this.lookAtPoint[0] = aim.x;
+      this.lookAtPoint[1] = aim.y;
+      this.lookAtPoint[2] = aim.z;
     }
     applyFootIk(
       rig,
       originY,
       (input) => {
-        probe.origin[0] = input.origin[0]!;
-        probe.origin[1] = input.origin[1]!;
-        probe.origin[2] = input.origin[2]!;
-        probe.maxDistance = input.maxDistance;
-        return ctx.scene.raycast(probe);
+        this.probe.origin[0] = input.origin[0]!;
+        this.probe.origin[1] = input.origin[1]!;
+        this.probe.origin[2] = input.origin[2]!;
+        this.probe.maxDistance = input.maxDistance;
+        return ctx.scene.raycast(this.probe);
       },
-      state.current,
+      this.state,
       delta,
-      lookAtPoint,
+      this.lookAtPoint,
     );
-    if (rig.legs.length > 0) noteCharacterMotion(instanceId, "feet", state.current.weight > 0.01);
-  });
-}
+    if (rig.legs.length > 0) noteCharacterMotion(instanceId, "feet", this.state.weight > 0.01);
+  }
 
-const DEFAULT_EYE_HEIGHT = 1.5;
+  /** Restore the animated pose and release the rig. */
+  dispose(): void {
+    const rig = this.rig;
+    if (rig !== null) {
+      if (this.instanceId !== undefined) noteCharacterMotion(this.instanceId, "feet", false);
+      restoreFootIkPose(rig);
+      this.scene.updateMatrixWorld(true);
+    }
+    this.state.weight = 0;
+    this.state.pelvis = 0;
+  }
+}
 
 /**
  * Where a look-at bone should aim this frame, or `null` when it aims at the camera. An entity

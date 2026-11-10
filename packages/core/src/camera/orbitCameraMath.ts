@@ -159,7 +159,7 @@ export function smoothBlend(deltaSeconds: number, speed: number): number {
 }
 
 /** @internal */
-export function resolveOrbitCameraConfig(patch?: OrbitCameraConfig): ResolvedOrbitCameraConfig {
+export function resolveOrbitCameraConfig(patch?: Partial<OrbitCameraConfig>): ResolvedOrbitCameraConfig {
   const resolved: ResolvedOrbitCameraConfig = {
     ...DEFAULT_ORBIT_CAMERA,
     ...patch,

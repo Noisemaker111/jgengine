@@ -3,9 +3,11 @@ import * as THREE from "three";
 
 import { clamp } from "@jgengine/core/math/scalar";
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
+import type { TerrainMaterialMaps } from "@jgengine/core/world/features";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { trackSurfaceScan, type SurfaceScanTextures, type SurfaceScanTrack } from "@jgengine/core/material/surfaceScanTextures.draw";
 
 import { SURFACE_SCAN_PARS_GLSL, surfaceScanDefines, surfaceScanKeyPart, surfaceScanUniforms, type SurfaceScanBlend } from "@jgengine/core/material/surfaceScanShader.draw";
-import type { SurfaceScanTextures } from "@jgengine/core/material/surfaceScanTextures.draw";
 import { NOISE_GLSL, SURFACE_BUMP_NORMAL_GLSL, SURFACE_FUNCTIONS_GLSL, surfaceNoiseUniforms } from "@jgengine/core/terrain/terrainSurfaceShader.draw";
 import { terrainSurfaceClass, terrainSurfaceClassIndex, terrainSurfaceRoughness, type TerrainSurfaceClass } from "@jgengine/core/terrain/terrainSurfaces.draw";
 
@@ -416,4 +418,100 @@ export function useSurfaceRibbonMaterial(options: SurfaceRibbonMaterialOptions |
   );
   useEffect(() => () => material?.dispose(), [material]);
   return material;
+}
+
+/** What {@link scannedRibbonDraw} reads each frame: the spec a scanned ribbon mesh is built from. */
+export interface ScannedRibbonSpec {
+  /** The merged ribbon geometry; the draw does not own or dispose it. */
+  geometry: THREE.BufferGeometry;
+  /** Scan map URLs to acquire; undefined asks for none. */
+  scanMaps?: TerrainMaterialMaps | undefined;
+  /** Whether the scan is wanted this frame (`surfaceDetail && quality !== "low"` at the call site). */
+  scanEnabled: boolean;
+  /** The graphics tier the material options were built with; a change rebuilds them. */
+  quality: GraphicsQuality;
+  /** Ribbon material options for the current scan textures (`null` → the flat fallback). */
+  materialOptions: (textures: SurfaceScanTextures | null) => SurfaceRibbonMaterialOptions | null;
+  /** The flat material used while `materialOptions` returns null. */
+  fallback: () => THREE.Material;
+  receiveShadow?: boolean;
+  renderOrder?: number;
+  /** Extra visibility condition ANDed with "scan settled". */
+  visible?: boolean;
+}
+
+/**
+ * One ribbon mesh whose material follows a scanned surface: hidden while the scan decodes (so the
+ * shader warmup links only the programs the first frame draws), rebuilt when the maps land or the
+ * spec changes, and swapped for the flat fallback whenever the ribbon material is absent. The
+ * EngineDraw twin of `useSurfaceScan` + `useSurfaceRibbonMaterial` + a `<mesh>`.
+ */
+export function scannedRibbonDraw(getProps: () => ScannedRibbonSpec): EngineDraw {
+  let mesh: THREE.Mesh | null = null;
+  let track: SurfaceScanTrack | null = null;
+  let ribbon: THREE.Material | null = null;
+  let flat: THREE.Material | null = null;
+  let builtFor = "";
+  let disposed = false;
+
+  function rebuild(spec: ScannedRibbonSpec): void {
+    ribbon?.dispose();
+    flat?.dispose();
+    ribbon = null;
+    flat = null;
+    const textures = track?.textures() ?? null;
+    const options = spec.materialOptions(textures);
+    if (options !== null) ribbon = createSurfaceRibbonMaterial(options);
+    else flat = spec.fallback();
+    const material = ribbon ?? flat;
+    if (mesh !== null && material !== null) mesh.material = material;
+  }
+
+  function qualityKey(spec: ScannedRibbonSpec): string {
+    return `${spec.scanEnabled}|${spec.quality}`;
+  }
+
+  return {
+    mount(state: EngineFrameState) {
+      disposed = false;
+      const spec = getProps();
+      track = trackSurfaceScan(spec.scanMaps, spec.scanEnabled, state.scene as THREE.Scene, () => {
+        if (!disposed) {
+          rebuild(getProps());
+          state.invalidate();
+        }
+      });
+      mesh = new THREE.Mesh(spec.geometry);
+      mesh.receiveShadow = spec.receiveShadow ?? true;
+      if (spec.renderOrder !== undefined) mesh.renderOrder = spec.renderOrder;
+      rebuild(spec);
+      builtFor = qualityKey(spec);
+      state.scene.add(mesh);
+    },
+    frame(state: EngineFrameState) {
+      const spec = getProps();
+      if (mesh === null || track === null) return;
+      track.sync(spec.scanMaps, spec.scanEnabled, state.scene as THREE.Scene);
+      // The graphics tier feeds the material options; a change rebuilds like a new scan would.
+      const key = qualityKey(spec);
+      if (key !== builtFor) {
+        builtFor = key;
+        rebuild(spec);
+      }
+      mesh.visible = !track.pending() && (spec.visible ?? true);
+    },
+    dispose(state: EngineFrameState) {
+      disposed = true;
+      track?.release();
+      track = null;
+      ribbon?.dispose();
+      flat?.dispose();
+      ribbon = null;
+      flat = null;
+      if (mesh !== null) {
+        state.scene.remove(mesh);
+        mesh = null;
+      }
+    },
+  };
 }

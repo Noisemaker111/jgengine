@@ -1,7 +1,6 @@
-import { OrbitControls } from "@react-three/drei";
-import { useFrame, useThree } from "@react-three/fiber";
-import { useRef, type ComponentRef, type MutableRefObject } from "react";
+import { useRef, type MutableRefObject } from "react";
 import { MOUSE, PerspectiveCamera, Raycaster, type Camera, Vector3 } from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { isCameraOccluderTransparent } from "./cameraCollision";
 import { useGameContext } from "@jgengine/react/provider";
@@ -19,8 +18,13 @@ import {
   seedOrbitFollowState,
   type OrbitCameraConfig,
   type OrbitFollowRuntimeState,
+  type ResolvedOrbitCameraConfig,
 } from "./orbitCameraMath";
-import { usePlayerFov } from "./PlayerFov.draw";
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
+import { registerCameraControls } from "./activeControls.draw";
+import { usePlayerFov, type PlayerFovState } from "./PlayerFov.draw";
 import type { Xyz } from "@jgengine/core/math/xyz";
 import type { CameraFollowState } from "@jgengine/core/camera/cameraConfig";
 
@@ -32,9 +36,6 @@ function fillDrawn(pose: RenderPose): readonly [number, number, number] {
   drawnPosition[2] = pose[2];
   return drawnPosition;
 }
-
-type OrbitControlsImpl = NonNullable<ComponentRef<typeof OrbitControls>>;
-
 
 /**
  * Mouse mapping for the orbit rig. Right-drag always orbits; left-drag orbits too unless the game uses the
@@ -66,178 +67,221 @@ export interface GameOrbitCameraProps {
   pointerControls?: boolean | undefined;
 }
 
-/** Third-person orbit camera that follows an entity, with drag-to-orbit, zoom limits and optional collision pull-in. */
-export function GameOrbitCamera({
-  yawRef,
-  pitchRef,
-  config: configPatch,
-  followEntityId,
-  resolveFollowTarget,
-  onDragChange,
-  onCameraFollow,
-  pointerControls = false,
-}: GameOrbitCameraProps) {
-  const config = resolveOrbitCameraConfig(configPatch);
-  const controlsRef = useRef<OrbitControlsImpl>(null);
-  const runtimeRef = useRef<OrbitFollowRuntimeState | null>(null);
-  const draggingRef = useRef(false);
-  const { userId } = usePlayer();
-  const ctx = useGameContext();
-  const playerFov = usePlayerFov();
-  const camera = useThree((state) => state.camera);
-  const scene = useThree((state) => state.scene);
-  const raycasterRef = useRef(new Raycaster());
-  const collisionDirRef = useRef(new Vector3());
-  const collisionOriginRef = useRef(new Vector3());
-  const followPayloadRef = useRef<CameraFollowState>({
+/** Everything the orbit draw reads each frame, resolved by the React wrapper. */
+export interface GameOrbitCameraDrawProps extends GameOrbitCameraProps {
+  ctx: GameContext;
+  userId: string;
+  playerFov: PlayerFovState;
+}
+
+/**
+ * Draw-side form of {@link GameOrbitCamera}: the follow/turn/collision math runs in `frame` at
+ * orbit priority while three's `OrbitControls` owns drag, damped zoom and polar limits.
+ * @internal
+ */
+export function gameOrbitCameraDraw(getProps: () => GameOrbitCameraDrawProps): EngineDraw {
+  let controls: OrbitControls | null = null;
+  let unregisterControls: (() => void) | null = null;
+  let runtime: OrbitFollowRuntimeState | null = null;
+  let dragging = false;
+  let appliedPatch: GameOrbitCameraProps["config"] | null = null;
+  let resolved: ResolvedOrbitCameraConfig | null = null;
+  const raycaster = new Raycaster();
+  const collisionDir = new Vector3();
+  const collisionOrigin = new Vector3();
+  const followPayload: CameraFollowState = {
     entityId: "",
     target: { x: 0, y: 0, z: 0 },
     camera: { x: 0, y: 0, z: 0 },
     distance: 0,
-  });
-  const followId = followEntityId ?? userId;
+  };
 
-  useFrame((_, delta) => {
-    const controls = controlsRef.current;
-    const entity = ctx.scene.entity.get(followId);
-    if (controls === null || entity === null) return;
-
-    if (runtimeRef.current === null) {
-      runtimeRef.current = seedOrbitFollowState({ entityPosition: entity.position, config });
-      camera.position.set(runtimeRef.current.camera.x, runtimeRef.current.camera.y, runtimeRef.current.camera.z);
-      controls.target.set(runtimeRef.current.target.x, runtimeRef.current.target.y, runtimeRef.current.target.z);
+  const syncConfig = () => {
+    if (controls === null) return;
+    const props = getProps();
+    const patch = props.config;
+    if (resolved === null || appliedPatch !== patch) {
+      appliedPatch = patch;
+      resolved = resolveOrbitCameraConfig(patch);
     }
+    const config = resolved;
+    controls.enableDamping = true;
+    controls.dampingFactor = config.dampingFactor;
+    controls.rotateSpeed = config.rotateSpeed;
+    controls.zoomSpeed = config.zoomSpeed;
+    controls.enablePan = false;
+    controls.enableRotate = true;
+    controls.enableZoom = true;
+    controls.minDistance = config.minDistance;
+    controls.maxDistance = config.maxDistance;
+    controls.maxPolarAngle = config.maxPolarAngle;
+    controls.minPolarAngle = config.minPolarAngle;
+    controls.screenSpacePanning = false;
+    controls.mouseButtons = orbitMouseButtons(props.pointerControls === true);
+  };
 
-    const turn = ctx.camera.takeTurnTo();
-    if (turn !== null) {
-      runtimeRef.current = orbitTurnTo(runtimeRef.current, turn);
-      camera.position.set(runtimeRef.current.camera.x, runtimeRef.current.camera.y, runtimeRef.current.camera.z);
+  const onStart = () => {
+    dragging = true;
+    getProps().onDragChange?.(true);
+  };
+  const onEnd = () => {
+    dragging = false;
+    getProps().onDragChange?.(false);
+    if (controls !== null && runtime !== null) {
+      runtime.lockedDistance = controls.getDistance();
     }
-    const runtime = runtimeRef.current;
-    const previousTarget = runtime.target;
-    const drawn = ctx.sim.renderPose(followId, drawnPose) ? fillDrawn(drawnPose) : entity.position;
-    const desiredTarget = resolveFollowTarget?.(entity) ?? resolveFollowTargetFromPosition(drawn, config);
-    const stepped = orbitFollowStep({
-      state: runtime,
-      desiredTarget,
-      deltaSeconds: delta,
-      config,
-      dragging: draggingRef.current,
-    });
+  };
 
-    controls.target.set(stepped.target.x, stepped.target.y, stepped.target.z);
+  return {
+    priority: ORBIT_CAMERA_FRAME_PRIORITY,
+    mount(state: EngineFrameState) {
+      controls = new OrbitControls(state.camera, state.gl.domElement);
+      controls.addEventListener("start", onStart);
+      controls.addEventListener("end", onEnd);
+      unregisterControls = registerCameraControls(controls);
+      syncConfig();
+    },
+    update() {
+      syncConfig();
+    },
+    frame(state: EngineFrameState) {
+      const props = getProps();
+      const ctl = controls;
+      if (ctl === null) return;
+      const config = resolved ?? resolveOrbitCameraConfig(props.config);
+      const camera = state.camera;
+      const entity = props.ctx.scene.entity.get(props.followEntityId ?? props.userId);
+      if (entity === null) return;
 
-    if (draggingRef.current) {
-      camera.position.x += stepped.target.x - previousTarget.x;
-      camera.position.y += stepped.target.y - previousTarget.y;
-      camera.position.z += stepped.target.z - previousTarget.z;
-    } else {
-      camera.position.set(stepped.camera.x, stepped.camera.y, stepped.camera.z);
-    }
+      if (runtime === null) {
+        runtime = seedOrbitFollowState({ entityPosition: entity.position, config });
+        camera.position.set(runtime.camera.x, runtime.camera.y, runtime.camera.z);
+        ctl.target.set(runtime.target.x, runtime.target.y, runtime.target.z);
+      }
 
-    controls.update();
+      const turn = props.ctx.camera.takeTurnTo();
+      if (turn !== null) {
+        runtime = orbitTurnTo(runtime, turn);
+        camera.position.set(runtime.camera.x, runtime.camera.y, runtime.camera.z);
+      }
+      const previousTarget = runtime.target;
+      const drawn = props.ctx.sim.renderPose(props.followEntityId ?? props.userId, drawnPose) ? fillDrawn(drawnPose) : entity.position;
+      const desiredTarget = props.resolveFollowTarget?.(entity) ?? resolveFollowTargetFromPosition(drawn, config);
+      const stepped = orbitFollowStep({
+        state: runtime,
+        desiredTarget,
+        deltaSeconds: state.delta,
+        config,
+        dragging,
+      });
 
-    let desiredDistance = 0;
-    let pulledDistance = 0;
-    if (config.collision.enabled) {
-      const t = stepped.target;
-      const dx = camera.position.x - t.x;
-      const dy = camera.position.y - t.y;
-      const dz = camera.position.z - t.z;
-      const dist = Math.hypot(dx, dy, dz);
-      desiredDistance = dist;
-      if (dist > config.collision.minTargetDistance) {
-        const dir = collisionDirRef.current.set(dx / dist, dy / dist, dz / dist);
-        const ray = raycasterRef.current;
-        ray.set(collisionOriginRef.current.set(t.x, t.y, t.z), dir);
-        ray.near = config.collision.minTargetDistance;
-        ray.far = dist;
-        // Sprites (VFX, billboards) live in the scene; three's Sprite.raycast
-        // errors every frame unless the raycaster has a camera, even though we
-        // discard sprite hits below. Setting it silences that per-frame log.
-        ray.camera = camera;
-        let blocked = 0;
-        for (const hit of ray.intersectObjects(scene.children, true)) {
-          const obj = hit.object;
-          if (!obj.visible) continue;
-          if ((obj as { isSprite?: boolean }).isSprite === true) continue;
-          // Inheritable: decor flags a group jgCameraTransparent and all children pass through.
-          if (isCameraOccluderTransparent(obj)) continue;
-          blocked = hit.distance;
-          break;
-        }
-        if (blocked > 0) {
-          const pulled = Math.max(config.collision.minTargetDistance, blocked - config.collision.padding);
-          camera.position.set(t.x + dir.x * pulled, t.y + dir.y * pulled, t.z + dir.z * pulled);
-          pulledDistance = pulled;
+      ctl.target.set(stepped.target.x, stepped.target.y, stepped.target.z);
+
+      if (dragging) {
+        camera.position.x += stepped.target.x - previousTarget.x;
+        camera.position.y += stepped.target.y - previousTarget.y;
+        camera.position.z += stepped.target.z - previousTarget.z;
+      } else {
+        camera.position.set(stepped.camera.x, stepped.camera.y, stepped.camera.z);
+      }
+
+      ctl.update();
+
+      let desiredDistance = 0;
+      let pulledDistance = 0;
+      if (config.collision.enabled) {
+        const t = stepped.target;
+        const dx = camera.position.x - t.x;
+        const dy = camera.position.y - t.y;
+        const dz = camera.position.z - t.z;
+        const dist = Math.hypot(dx, dy, dz);
+        desiredDistance = dist;
+        if (dist > config.collision.minTargetDistance) {
+          const dir = collisionDir.set(dx / dist, dy / dist, dz / dist);
+          const ray = raycaster;
+          ray.set(collisionOrigin.set(t.x, t.y, t.z), dir);
+          ray.near = config.collision.minTargetDistance;
+          ray.far = dist;
+          // Sprites (VFX, billboards) live in the scene; three's Sprite.raycast
+          // errors every frame unless the raycaster has a camera, even though we
+          // discard sprite hits below. Setting it silences that per-frame log.
+          ray.camera = camera;
+          let blocked = 0;
+          for (const hit of ray.intersectObjects(state.scene.children, true)) {
+            const obj = hit.object;
+            if (!obj.visible) continue;
+            if ((obj as { isSprite?: boolean }).isSprite === true) continue;
+            // Inheritable: decor flags a group jgCameraTransparent and all children pass through.
+            if (isCameraOccluderTransparent(obj)) continue;
+            blocked = hit.distance;
+            break;
+          }
+          if (blocked > 0) {
+            const pulled = Math.max(config.collision.minTargetDistance, blocked - config.collision.padding);
+            camera.position.set(t.x + dir.x * pulled, t.y + dir.y * pulled, t.z + dir.z * pulled);
+            pulledDistance = pulled;
+          }
         }
       }
-    }
 
-    runtimeRef.current = {
-      target: stepped.target,
-      camera: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
-      lockedDistance: draggingRef.current ? controls.getDistance() : stepped.lockedDistance,
-    };
+      runtime = {
+        target: stepped.target,
+        camera: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
+        lockedDistance: dragging ? ctl.getDistance() : stepped.lockedDistance,
+      };
 
-    const [px, , pz] = drawn;
-    yawRef.current = orbitYawFromCamera(camera.position.x, camera.position.z, px, pz);
-    if (pitchRef !== undefined) {
-      pitchRef.current = cameraLookPitch(
-        { x: camera.position.x, y: camera.position.y, z: camera.position.z },
-        stepped.target,
-      );
-    }
-    if ((camera as PerspectiveCamera).isPerspectiveCamera === true) {
-      const perspective = camera as PerspectiveCamera;
-      const targetFov =
-        pulledDistance > 0 && pulledDistance < desiredDistance
-          ? compensatedFov(playerFov.fov, desiredDistance, pulledDistance)
-          : playerFov.fov;
-      if (Math.abs(perspective.fov - targetFov) > 0.001) {
-        perspective.fov = targetFov;
-        perspective.updateProjectionMatrix();
+      const [px, , pz] = drawn;
+      props.yawRef.current = orbitYawFromCamera(camera.position.x, camera.position.z, px, pz);
+      if (props.pitchRef !== undefined) {
+        props.pitchRef.current = cameraLookPitch(
+          { x: camera.position.x, y: camera.position.y, z: camera.position.z },
+          stepped.target,
+        );
       }
-    }
-    if (onCameraFollow !== undefined) {
-      const payload = followPayloadRef.current;
-      payload.entityId = followId;
-      payload.target = stepped.target;
-      payload.camera = runtimeRef.current.camera;
-      payload.distance = runtimeRef.current.lockedDistance ?? stepped.distance;
-      onCameraFollow(payload);
-    }
-  }, ORBIT_CAMERA_FRAME_PRIORITY);
-
-  return (
-    <OrbitControls
-      ref={controlsRef}
-      enableDamping
-      dampingFactor={config.dampingFactor}
-      rotateSpeed={config.rotateSpeed}
-      zoomSpeed={config.zoomSpeed}
-      enablePan={false}
-      enableRotate
-      enableZoom
-      minDistance={config.minDistance}
-      maxDistance={config.maxDistance}
-      maxPolarAngle={config.maxPolarAngle}
-      minPolarAngle={config.minPolarAngle}
-      screenSpacePanning={false}
-      mouseButtons={orbitMouseButtons(pointerControls === true)}
-      onStart={() => {
-        draggingRef.current = true;
-        onDragChange?.(true);
-      }}
-      onEnd={() => {
-        draggingRef.current = false;
-        onDragChange?.(false);
-        if (controlsRef.current !== null && runtimeRef.current !== null) {
-          runtimeRef.current.lockedDistance = controlsRef.current.getDistance();
+      if ((camera as PerspectiveCamera).isPerspectiveCamera === true) {
+        const perspective = camera as PerspectiveCamera;
+        const targetFov =
+          pulledDistance > 0 && pulledDistance < desiredDistance
+            ? compensatedFov(props.playerFov.fov, desiredDistance, pulledDistance)
+            : props.playerFov.fov;
+        if (Math.abs(perspective.fov - targetFov) > 0.001) {
+          perspective.fov = targetFov;
+          perspective.updateProjectionMatrix();
         }
-      }}
-    />
-  );
+      }
+      if (props.onCameraFollow !== undefined) {
+        const payload = followPayload;
+        payload.entityId = props.followEntityId ?? props.userId;
+        payload.target = stepped.target;
+        payload.camera = runtime.camera;
+        payload.distance = runtime.lockedDistance ?? stepped.distance;
+        props.onCameraFollow(payload);
+      }
+    },
+    dispose() {
+      controls?.removeEventListener("start", onStart);
+      controls?.removeEventListener("end", onEnd);
+      unregisterControls?.();
+      unregisterControls = null;
+      controls?.dispose();
+      controls = null;
+      runtime = null;
+      dragging = false;
+      appliedPatch = null;
+      resolved = null;
+    },
+  };
+}
+
+/** Third-person orbit camera that follows an entity, with drag-to-orbit, zoom limits and optional collision pull-in. */
+export function GameOrbitCamera(props: GameOrbitCameraProps) {
+  const { userId } = usePlayer();
+  const ctx = useGameContext();
+  const playerFov = usePlayerFov();
+  const latest = useRef<GameOrbitCameraDrawProps>({ ...props, ctx, userId, playerFov });
+  latest.current = { ...props, ctx, userId, playerFov };
+  useEngineDraw(() => gameOrbitCameraDraw(() => latest.current), [ctx]);
+  return null;
 }
 
 /** Seed orbit target before controls mount (demo spawn at origin). */

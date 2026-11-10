@@ -1,22 +1,23 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
+import * as THREE from "three";
 
 import { runGenerator } from "@jgengine/core/generator/generator";
 import { registerGeneratorPreview, type GeneratorPreviewProps } from "@jgengine/core/generator/generatorPreview.draw";
 import { PARTS_OUTPUT, isGeneratedAsset, resolveGeneratorAsset, type GeneratedAsset } from "@jgengine/core/scene/assetGenerator";
-import { StaticShapeInstances, type StaticShapeInstance } from "@jgengine/core/instancing/staticShapeInstances.draw";
+import { childFrameState, type EngineDraw, type EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
+import { StaticShapeInstances, staticShapeInstancesDraw, type StaticShapeInstance } from "@jgengine/core/instancing/staticShapeInstances.draw";
 
 const NEUTRAL = "#b8b0a4";
 
-/** All parts of one generated asset, batched into one instanced box draw per color. */
-function GeneratedParts({ asset }: { asset: GeneratedAsset }) {
-  const instances = useMemo<StaticShapeInstance[]>(() => asset.parts.map(part => ({
+function assetInstances(asset: GeneratedAsset): StaticShapeInstance[] {
+  return asset.parts.map(part => ({
     shape: "box",
     position: part.position,
     rotation: [0, part.rotationY ?? 0, 0],
     scale: [Math.max(1e-3, part.size[0]), Math.max(1e-3, part.size[1]), Math.max(1e-3, part.size[2])],
     surface: { color: part.color ?? NEUTRAL, roughness: 0.62, metalness: 0.04 },
-  })), [asset]);
-  return <StaticShapeInstances instances={instances} />;
+  }));
 }
 
 /** Props for {@link GeneratedAsset}: the placed instance's `meta` (assetId + params + seed) and transform. */
@@ -33,14 +34,63 @@ export interface GeneratedAssetProps {
  * counterpart to placing a parametric asset — the geometry is data, recomputed from params + seed.
  * @internal — `AuthoredScene` mounts this for generator markers automatically.
  */
-export function GeneratedAssetInstance({ meta, position = [0, 0, 0], rotationY = 0 }: GeneratedAssetProps) {
-  const asset = useMemo(() => resolveGeneratorAsset(meta), [meta]);
-  if (asset === null) return null;
-  return (
-    <group position={[position[0], position[1], position[2]]} rotation={[0, rotationY, 0]}>
-      <GeneratedParts asset={asset} />
-    </group>
-  );
+export function generatedAssetInstanceDraw(getProps: () => GeneratedAssetProps): EngineDraw {
+  const group = new THREE.Group();
+  let inner: { draw: EngineDraw; state: EngineFrameState } | null = null;
+  let metaFor: Record<string, unknown> | undefined;
+  let hasMeta = false;
+  let instances: readonly StaticShapeInstance[] = [];
+  const sync = (state: EngineFrameState) => {
+    const props = getProps();
+    const position = props.position ?? [0, 0, 0];
+    group.position.set(position[0], position[1], position[2]);
+    group.rotation.set(0, props.rotationY ?? 0, 0);
+    if (hasMeta && props.meta === metaFor) return;
+    hasMeta = true;
+    metaFor = props.meta;
+    const asset = resolveGeneratorAsset(props.meta);
+    instances = asset === null ? [] : assetInstances(asset);
+    inner?.draw.dispose?.(inner.state);
+    const draw = staticShapeInstancesDraw(() => instances);
+    const childState = childFrameState(state, group);
+    draw.mount?.(childState);
+    inner = { draw, state: childState };
+  };
+  return {
+    mount(state: EngineFrameState) {
+      state.scene.add(group);
+      sync(state);
+    },
+    frame: sync,
+    update: sync,
+    dispose(state: EngineFrameState) {
+      inner?.draw.dispose?.(inner.state);
+      inner = null;
+      state.scene.remove(group);
+      group.clear();
+    },
+  };
+}
+
+/**
+ * Renders one placed generator-asset instance by re-resolving its `meta` through the registered
+ * generator and instancing the parts. Returns null when the meta names no generator. The runtime
+ * counterpart to placing a parametric asset — the geometry is data, recomputed from params + seed.
+ * @internal — `AuthoredScene` mounts this for generator markers automatically.
+ */
+export function GeneratedAssetInstance(props: GeneratedAssetProps) {
+  const latest = useRef(props);
+  latest.current = props;
+  const created = useRef<EngineDraw | null>(null);
+  if (created.current === null) created.current = generatedAssetInstanceDraw(() => latest.current);
+  useEngineDraw(() => created.current as EngineDraw, []);
+  return null;
+}
+
+/** All parts of one generated asset, batched into one instanced box draw per color. */
+function GeneratedParts({ asset }: { asset: GeneratedAsset }) {
+  const instances = useMemo<StaticShapeInstance[]>(() => assetInstances(asset), [asset]);
+  return <StaticShapeInstances instances={instances} />;
 }
 
 function variantAsset({ definition, variant }: GeneratorPreviewProps): GeneratedAsset | null {

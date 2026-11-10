@@ -1,11 +1,12 @@
 // @skill jgengine-world
-import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
 import { CSM } from "three/examples/jsm/csm/CSM.js";
 
 import type { DirectionalLightingConfig } from "@jgengine/core/game/playableGame";
 import type { GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { prepareBeforeWarmup } from "@jgengine/core/render/shaderWarmup.draw";
 import { DEFAULT_SHADOW_RADIUS, lightShadowFilter, type ShadowFilter } from "./softShadows";
 import { resolveCascadeCount, resolveShadowMapSize } from "./shadowTiers";
@@ -201,54 +202,61 @@ function isStandardMaterial(mat: THREE.Material): mat is THREE.MeshStandardMater
 }
 
 /**
- * Cascaded shadow maps for one directional light — outdoor scenes keep shadows past a
- * single 40-unit ortho frustum. Uses three.js `CSM` (shader injection on standard materials).
- *
- * Mount when `entry.cascades > 1` and `castShadow`. Replaces the single R3F directional
- * shadow light for that entry.
- *
- * @internal shell SceneLighting helper — games set `cascades` on directional lighting config.
+ * Draw-side form of {@link CascadedShadows}: the CSM is built on mount and rebuilt when the
+ * resolved cascade inputs change; per frame it applies daylight modulation, refreshes cascade
+ * centres on the texel grid and retunes soft-shadow filters.
+ * @internal
  */
-export function CascadedShadows({
-  entry,
-  profile,
-  modulation,
-}: {
+export function cascadedShadowsDraw(getProps: () => {
   entry: DirectionalLightingConfig;
   profile?: GraphicsProfile | undefined;
   modulation?: DaylightModulation | undefined;
-}): null {
-  const camera = useThree((s) => s.camera);
-  const scene = useThree((s) => s.scene);
-  const csmRef = useRef<CSM | null>(null);
-  const lightDirectionRef = useRef(new THREE.Vector3());
-  const refreshRef = useRef<CascadeRefreshState>(createCascadeRefreshState());
-  const baseNormalBiasRef = useRef(0);
-  const baseIntensity = entry.intensity ?? 1.3;
-  const maxFar = resolveShadowDistance(profile, entry.shadowMaxFar);
-  const shadowMapSize = resolveShadowMapSize(profile, entry.shadowMapSize);
-  const cascades = Math.max(2, Math.min(4, Math.floor(resolveCascadeCount(profile, entry.cascades))));
-  const softShadows = entry.lightSize !== undefined && profile?.softShadows === true;
+}): EngineDraw {
+  let csm: CSM | null = null;
+  let unbind: (() => void) | null = null;
+  const lightDirection = new THREE.Vector3();
+  let refresh = createCascadeRefreshState();
+  let baseNormalBias = 0;
+  let appliedKey = "";
 
-  useEffect(() => {
-    const lightDirection = new THREE.Vector3(
-      -entry.position[0],
-      -entry.position[1],
-      -entry.position[2],
-    );
+  const resolvedScalars = (props: ReturnType<typeof getProps>) => {
+    const entry = props.entry;
+    return {
+      cascades: Math.max(2, Math.min(4, Math.floor(resolveCascadeCount(props.profile, entry.cascades)))),
+      maxFar: resolveShadowDistance(props.profile, entry.shadowMaxFar),
+      shadowMapSize: resolveShadowMapSize(props.profile, entry.shadowMapSize),
+      softShadows: entry.lightSize !== undefined && props.profile?.softShadows === true,
+    };
+  };
+
+  const build = (state: EngineFrameState) => {
+    const props = getProps();
+    const entry = props.entry;
+    const scalars = resolvedScalars(props);
+    const key = JSON.stringify([
+      scalars.cascades, scalars.maxFar, scalars.shadowMapSize, scalars.softShadows,
+      entry.color, entry.intensity, entry.position, entry.shadowBias, entry.shadowCameraSize,
+      entry.shadowRadius,
+    ]);
+    if (key === appliedKey && csm !== null) return;
+    appliedKey = key;
+    teardown();
+    const scene = state.rootScene ?? state.scene;
+    lightDirection.set(-entry.position[0], -entry.position[1], -entry.position[2]);
     if (lightDirection.lengthSq() < 1e-8) lightDirection.set(-1, -1, -1);
     lightDirection.normalize();
 
-    const csm = new CSM({
-      camera,
+    const baseIntensity = entry.intensity ?? 1.3;
+    csm = new CSM({
+      camera: state.camera,
       parent: scene,
-      cascades,
-      maxFar,
+      cascades: scalars.cascades,
+      maxFar: scalars.maxFar,
       mode: "practical",
-      shadowMapSize,
+      shadowMapSize: scalars.shadowMapSize,
       shadowBias: entry.shadowBias ?? -0.0004,
       lightDirection,
-      lightIntensity: entry.intensity ?? 1.3,
+      lightIntensity: baseIntensity,
       lightNear: 0.5,
       lightFar: Math.max(200, (entry.shadowCameraSize ?? 40) * 6),
       lightMargin: entry.shadowCameraSize ?? 40,
@@ -258,55 +266,77 @@ export function CascadedShadows({
       light.castShadow = true;
       light.shadow.radius = entry.shadowRadius ?? DEFAULT_SHADOW_RADIUS;
     }
-    baseNormalBiasRef.current = csm.lights[0]?.shadow.normalBias ?? 0;
-    const unbind = bindCsmMaterials(scene, csm);
-    csmRef.current = csm;
-    lightDirectionRef.current.copy(lightDirection);
-    refreshRef.current = createCascadeRefreshState();
-    return () => {
-      unbind();
+    baseNormalBias = csm.lights[0]?.shadow.normalBias ?? 0;
+    unbind = bindCsmMaterials(scene, csm);
+    refresh = createCascadeRefreshState();
+  };
+
+  const teardown = () => {
+    unbind?.();
+    unbind = null;
+    if (csm !== null) {
       releaseCascadedShadows(csm);
-      csmRef.current = null;
-    };
-  }, [
-    camera,
-    scene,
-    cascades,
-    entry.color,
-    entry.intensity,
-    entry.position[0],
-    entry.position[1],
-    entry.position[2],
-    entry.shadowBias,
-    entry.shadowCameraSize,
-    shadowMapSize,
-    maxFar,
-    entry.shadowRadius,
-  ]);
-
-  useFrame(() => {
-    const csm = csmRef.current;
-    if (csm === null) return;
-    if (modulation !== undefined) {
-      // Mutated in place: changing `entry.intensity` would rebuild every cascade's shadow map.
-      for (const light of csm.lights) {
-        light.intensity = baseIntensity * modulation.sunFactor;
-        light.color.set(modulation.sunColor);
-      }
+      csm = null;
     }
-    csm.camera = camera;
-    csm.update();
-    refreshCascadesOnTexelStep(csm.lights, lightDirectionRef.current, refreshRef.current);
-    if (softShadows) {
-      for (const light of csm.lights) {
-        const filter = cascadeShadowFilter(entry, profile, light.shadow.camera, shadowMapSize, baseNormalBiasRef.current);
-        light.shadow.radius = filter.radius;
-        light.shadow.normalBias = filter.normalBias;
-      }
-    }
-  });
+    appliedKey = "";
+  };
 
-  return null;
+  return {
+    mount(state: EngineFrameState) {
+      build(state);
+    },
+    update(state: EngineFrameState) {
+      build(state);
+    },
+    frame(state: EngineFrameState) {
+      const active = csm;
+      if (active === null) return;
+      const props = getProps();
+      const entry = props.entry;
+      const baseIntensity = entry.intensity ?? 1.3;
+      const modulation = props.modulation;
+      if (modulation !== undefined) {
+        // Mutated in place: changing `entry.intensity` would rebuild every cascade's shadow map.
+        for (const light of active.lights) {
+          light.intensity = baseIntensity * modulation.sunFactor;
+          light.color.set(modulation.sunColor);
+        }
+      }
+      active.camera = state.camera;
+      active.update();
+      refreshCascadesOnTexelStep(active.lights, lightDirection, refresh);
+      if (entry.lightSize !== undefined && props.profile?.softShadows === true) {
+        const mapSize = resolveShadowMapSize(props.profile, entry.shadowMapSize);
+        for (const light of active.lights) {
+          const filter = cascadeShadowFilter(entry, props.profile, light.shadow.camera, mapSize, baseNormalBias);
+          light.shadow.radius = filter.radius;
+          light.shadow.normalBias = filter.normalBias;
+        }
+      }
+    },
+    dispose() {
+      teardown();
+    },
+  };
+}
+
+/**
+ * Cascaded shadow maps for one directional light — outdoor scenes keep shadows past a
+ * single 40-unit ortho frustum. Uses three.js `CSM` (shader injection on standard materials).
+ *
+ * Mount when `entry.cascades > 1` and `castShadow`. Replaces the single directional
+ * shadow light for that entry.
+ *
+ * @internal shell SceneLighting helper — games set `cascades` on directional lighting config.
+ */
+export function CascadedShadows(props: {
+  entry: DirectionalLightingConfig;
+  profile?: GraphicsProfile | undefined;
+  modulation?: DaylightModulation | undefined;
+}) {
+  const latest = useRef(props);
+  latest.current = props;
+  return <EngineDrawMount create={() => cascadedShadowsDraw(() => latest.current)} deps={[]} />;
 }
 
 /**

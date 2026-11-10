@@ -57,8 +57,9 @@ function nameOf(_slot: string, document: GameSaveDocument): string {
   const home = (document.systems["marrow"] ?? null) as Home | null;
   const run = (document.systems["run"] ?? null) as RunSnapshot | null;
   if (home === null) return "A Marrow record";
-  if (run !== null && run.dive !== null && run.mode !== "home") return `Dive ${run.dive.id} · Life ${home.life}`;
-  return `Halloway · Life ${home.life}`;
+  const callsign = home.callsign?.trim();
+  if (run !== null && run.dive !== null && run.mode !== "home") return `${callsign ?? `Dive ${run.dive.id}`} · Life ${home.life}`;
+  return `${callsign ?? "Halloway"} · Life ${home.life}`;
 }
 
 /** The record session's documents, as the shared index reads them. */

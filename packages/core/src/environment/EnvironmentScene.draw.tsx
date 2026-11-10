@@ -1,11 +1,11 @@
 // @skill jgengine-world
 import { oceanColor } from "@jgengine/core/water/oceanColor";
 import { waterSurfaceConfigFromDescriptor } from "@jgengine/core/water/waterSurface";
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";import { useFrame } from "@react-three/fiber";
+import { useCallback, useMemo, useRef, useSyncExternalStore } from "react";
 import { PresentationAssetBoundary } from "@jgengine/shell/presentationRecovery";
-import { PresentationRecoveredDraw, useRecoverableTexture } from "@jgengine/shell/presentationRecovery3d";
+import { PresentationRecoveredDraw } from "@jgengine/shell/presentationRecovery3d";
+import { usePresentationRetryScope } from "@jgengine/shell/presentationRecovery";
 import * as THREE from "three";
-import type { Group } from "three";
 import { useGameContext } from "@jgengine/react/provider";
 
 import { resolveBuildingPalette } from "@jgengine/core/buildings/buildings";
@@ -19,175 +19,33 @@ import type {
   RoadEnvironmentDescriptor,
   SnowEnvironmentDescriptor,
   TerrainEnvironmentDescriptor,
-  TerrainMaterialMaps,
   WeatherEnvironmentDescriptor,
   WorldBounds,
 } from "@jgengine/core/world/features";
 import {
-  createTerrainPaletteSampler,
   resolveEnvironmentField,
   resolveTerrainDetail,
-  resolveTerrainPalette,
-  type ResolvedTerrainDetail,
   type TerrainField,
 } from "@jgengine/core/terrain/terrain";
 
-import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
-import { editableTerrainFromSnapshot, type TerraformSnapshot } from "@jgengine/core/terrain/terraform";
-import { createTerrainPaintColorSampler } from "@jgengine/core/terrain/terrainPaintColor.draw";
+import type { TerraformSnapshot } from "@jgengine/core/terrain/terraform";
 import { GroundPad } from "./GroundPad.draw";
 import { Roads } from "@jgengine/core/roads/RoadRibbons.draw";
 import { terrainGroundColorSampler } from "@jgengine/core/terrain/terrainGroundColor.draw";
 import { InstancedBuildings, type InstancedBuildingPlacement } from "@jgengine/core/buildings/GeneratedBuilding.draw";
 import { GrassPatch } from "@jgengine/core/grass/GrassPatch.draw";
-import { CarvedTerrain, type CarvedTerrainProps } from "@jgengine/core/terrain/CarvedTerrain.draw";
-import { ImageTextureLoader } from "@jgengine/core/material/imageTexture.draw";
-import { trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
-import { createTerrainDetailMaterial, type TerrainSurfaceTextures } from "@jgengine/core/terrain/terrainDetailMaterial.draw";
-import { useTerrainSurfaces } from "@jgengine/core/terrain/useTerrainSurfaces.draw";
-import { type TerrainDetailMaterialTextures } from "@jgengine/core/terrain/terrainDetailMaterial.draw";
-import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
-import { createTerrainPaintTextures, packTerrainPaintWeights, type TerrainPaintTextures } from "@jgengine/core/terrain/terrainSurfaces.draw";
+import { terrainGroundDraw, type TerrainGroundDrawProps } from "./terrainGround.draw";
+import { EngineDrawMount, SceneObjectGroup, SceneObjectPortal, sceneObjectAttachDraw, useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { Ocean } from "@jgengine/core/water/Ocean.draw";
 import { oceanBedBounds } from "@jgengine/core/water/oceanBed";
 import { RainField } from "@jgengine/core/weather/RainField.draw";
 import { SnowField } from "@jgengine/core/weather/SnowField.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Props for {@link EnvironmentScene}: the environment world feature to draw. */
 export interface EnvironmentSceneProps {
   feature: EnvironmentWorldFeature;
 }
-
-interface TerrainGroundLayout {
-  field: TerrainField;
-  size: readonly [number, number];
-  segments: TerrainEnvironmentDescriptor["segments"];
-  colors: CarvedTerrainProps["colors"];
-  heightRange: readonly [number, number];
-  paletteAt: CarvedTerrainProps["paletteAt"];
-  paint?: TerrainPaintTextures | undefined;
-  center?: readonly [number, number] | undefined;
-}
-
-function TexturedTerrainGround({
-  detail,
-  layout,
-  surfaces,
-}: {
-  detail: ResolvedTerrainDetail;
-  layout: TerrainGroundLayout;
-  surfaces?: TerrainSurfaceTextures | undefined;
-}) {
-  const maps = detail.material!.maps;
-  const textures = useRecoverableTexture({
-    color: maps.color,
-    normal: maps.normal,
-    ...(maps.roughness !== undefined ? { roughness: maps.roughness } : {}),
-    ...(maps.ao !== undefined ? { ao: maps.ao } : {}),
-  });
-  useEffect(() => {
-    textures.color.colorSpace = THREE.SRGBColorSpace;
-    for (const texture of Object.values(textures)) {
-      texture.wrapS = THREE.RepeatWrapping;
-      texture.wrapT = THREE.RepeatWrapping;
-      texture.needsUpdate = true;
-    }
-  }, [textures]);
-  const quality = useTerrainQuality();
-  const material = useDisposable(
-    () => createTerrainDetailMaterial(detail, textures, { paint: layout.paint, quality, surfaces }).material,
-    [detail, textures, layout.paint, quality, surfaces],
-  );
-  return (
-    <>
-    <PresentationRecoveredDraw />
-    <CarvedTerrain
-      field={layout.field}
-      size={layout.size}
-      segments={layout.segments}
-      colors={layout.colors}
-      heightRange={layout.heightRange}
-      paletteAt={layout.paletteAt}
-      center={layout.center}
-      roughness={0.94}
-      surfaceMaterial={material}
-    />
-    </>
-  );
-}
-
-/** The map roles a detail material samples, in the order the loader starts them. */
-function scanRoles(maps: TerrainMaterialMaps): readonly (readonly [keyof TerrainDetailMaterialTextures, string])[] {
-  return [
-    ["color", maps.color],
-    ["normal", maps.normal],
-    ...(maps.roughness === undefined ? [] : ([["roughness", maps.roughness]] as const)),
-    ...(maps.ao === undefined ? [] : ([["ao", maps.ao]] as const)),
-  ];
-}
-
-/**
- * The textured ground material for a scan the game pulled rather than shipped: the maps load straight
- * through `THREE.TextureLoader`, so a missing one stays a warning instead of a suspense rejection that
- * would take the view down. `undefined` until they answer (or when one fails); the caller keeps
- * drawing the same ground mesh with the procedural material until then, so the ground is meshed once.
- */
-function useTolerantDetailMaterial(
-  detail: ResolvedTerrainDetail | undefined,
-  paint: TerrainPaintTextures | undefined,
-  surfaces: TerrainSurfaceTextures | undefined,
-): THREE.Material | undefined {
-  const maps = detail?.material?.maps;
-  const roles = maps === undefined ? [] : scanRoles(maps);
-  const key = roles.map(([role, url]) => `${role}:${url}`).join("|");
-  const [loaded, setLoaded] = useState<{ key: string; textures?: TerrainDetailMaterialTextures }>({ key });
-  useEffect(() => {
-    if (roles.length === 0) return;
-    let active = true;
-    const textures: Partial<Record<keyof TerrainDetailMaterialTextures, THREE.Texture>> = {};
-    let pending = roles.length;
-    const loader = new ImageTextureLoader();
-    // Loading until the maps answer: the textured ground is another program, which the shader
-    // warmup links while the cover is up only if it knows the procedural ground is not the last.
-    const done = trackSceneWork("terrain-detail-maps");
-    for (const [role, url] of roles) {
-      loader.load(url, (texture) => {
-        if (!active) { texture.dispose(); return; }
-        texture.colorSpace = role === "color" ? THREE.SRGBColorSpace : THREE.NoColorSpace;
-        texture.wrapS = THREE.RepeatWrapping;
-        texture.wrapT = THREE.RepeatWrapping;
-        textures[role] = texture;
-        pending -= 1;
-        if (pending === 0) {
-          setLoaded({ key, textures: textures as TerrainDetailMaterialTextures });
-          done();
-        }
-      }, undefined, () => {
-        if (!active) return;
-        active = false;
-        done();
-        console.warn(`[jgengine] terrain detail maps did not load (${url}) — keeping the procedural ground. Pull the game's asset packs (\`bun run provision\`) to restore them.`);
-        setLoaded({ key });
-      });
-    }
-    return () => {
-      active = false;
-      done();
-      for (const texture of Object.values(textures)) texture?.dispose();
-    };
-  }, [key]);
-  const quality = useTerrainQuality();
-  const material = useMemo(
-    () =>
-      detail === undefined || loaded.key !== key || loaded.textures === undefined
-        ? undefined
-        : createTerrainDetailMaterial(detail, loaded.textures, { paint, quality, surfaces }).material,
-    [detail, loaded, key, paint, quality, surfaces],
-  );
-  useEffect(() => () => material?.dispose(), [material]);
-  return material;
-}
-
 
 function TerrainGround({
   terrain,
@@ -197,94 +55,29 @@ function TerrainGround({
 }: {
   terrain: Omit<TerrainEnvironmentDescriptor, "kind">;
   field: TerrainField;
-  center?: readonly [number, number];
+  center?: readonly [number, number] | undefined;
   sculpt?: TerraformSnapshot | undefined;
 }) {
-  const detailEnabled = terrain.detail !== false;
-  const paint = useMemo(() => {
-    if (!detailEnabled || sculpt === undefined) return undefined;
-    const weights = packTerrainPaintWeights(editableTerrainFromSnapshot(sculpt));
-    return weights === undefined ? undefined : createTerrainPaintTextures(weights);
-  }, [detailEnabled, sculpt]);
-  useEffect(() => () => paint?.dispose(), [paint]);
-  const paintColorAt = useMemo(
-    () => detailEnabled || sculpt === undefined ? undefined : createTerrainPaintColorSampler(editableTerrainFromSnapshot(sculpt)),
-    [detailEnabled, sculpt],
-  );
-  const palette = useMemo(() => resolveTerrainPalette(terrain), [terrain]);
-  const paletteAt = useMemo(() => {
-    const hasRegions = terrain.materialRegions !== undefined && terrain.materialRegions.length > 0;
-    const hasBands = terrain.biomeBands !== undefined && terrain.biomeBands.length > 0;
-    if (!hasRegions && !hasBands) return undefined;
-    const sampler = createTerrainPaletteSampler(terrain);
-    if (center === undefined) return sampler;
-    return (x: number, z: number) => sampler(x - center[0], z - center[1]);
-  }, [terrain, center]);
-  const colors = useMemo(
-    () => ({
-      low: palette.low,
-      high: palette.high,
-      ...(terrain.waterLevel === undefined ? {} : { waterline: palette.waterline, waterlineHeight: terrain.waterLevel }),
-    }),
-    [palette, terrain.waterLevel],
-  );
-  const size = useMemo(() => [terrain.bounds.w, terrain.bounds.d] as const, [terrain.bounds]);
-  const heightRange = useMemo(() => {
-    const base = terrain.baseHeight ?? 0;
-    const swing = terrain.height * 1.2;
-    return [base - swing, base + swing] as const;
-  }, [terrain.baseHeight, terrain.height]);
-  const resolvedDetail = useMemo(
+  const detail = useMemo(
     () => (terrain.detail === false ? undefined : resolveTerrainDetail(terrain.detail, terrain.waterLevel)),
     [terrain.detail, terrain.waterLevel],
   );
-  const quality = useTerrainQuality();
-  // Baked in slices behind the loading cover, once per surface spec (shared across remounts).
-  const { surfaces, pending: surfacesPending } = useTerrainSurfaces(resolvedDetail?.surfaces, paint?.slots, quality);
-  useEffect(() => () => surfaces?.dispose(), [surfaces]);
-  const proceduralMaterial = useMemo(
-    () =>
-      resolvedDetail === undefined || surfacesPending || (resolvedDetail.material !== undefined && resolvedDetail.material.missing === "fail")
-        ? undefined
-        : createTerrainDetailMaterial(resolvedDetail, undefined, { paint, quality, surfaces }).material,
-    [resolvedDetail, surfacesPending, paint, quality, surfaces],
+  const required = detail?.material?.missing === "fail";
+  const scope = usePresentationRetryScope();
+  const latest = useRef<TerrainGroundDrawProps>({ terrain, field, center, sculpt });
+  latest.current = {
+    terrain,
+    field,
+    center,
+    sculpt,
+    onAssetFail: (error) => scope?.fail(error),
+  };
+  return (
+    <PresentationAssetBoundary>
+      {required ? <PresentationRecoveredDraw /> : null}
+      <EngineDrawMount create={() => terrainGroundDraw(() => latest.current)} deps={[]} />
+    </PresentationAssetBoundary>
   );
-  useEffect(() => () => proceduralMaterial?.dispose(), [proceduralMaterial]);
-
-  // A pulled scan that may be missing swaps in over the same mesh once its maps answer.
-  const tolerantMaterial = useTolerantDetailMaterial(
-    resolvedDetail?.material !== undefined && resolvedDetail.material.missing !== "fail" ? resolvedDetail : undefined,
-    paint,
-    surfaces,
-  );
-  const proceduralGround = (
-    <CarvedTerrain
-      field={field}
-      size={size}
-      segments={terrain.segments}
-      colors={colors}
-      heightRange={heightRange}
-      paletteAt={paletteAt}
-      paintColorAt={paintColorAt}
-      center={center}
-      roughness={0.94}
-      surfaceMaterial={tolerantMaterial ?? proceduralMaterial}
-    />
-  );
-
-  if (resolvedDetail?.material?.missing === "fail") {
-    return (
-      <PresentationAssetBoundary>
-        <TexturedTerrainGround
-          detail={resolvedDetail}
-          layout={{ field, size, segments: terrain.segments, colors, heightRange, paletteAt, paint, center }}
-          surfaces={surfaces}
-        />
-      </PresentationAssetBoundary>
-    );
-  }
-
-  return proceduralGround;
 }
 
 function areaCenter(area: { position?: readonly [number, number] }): readonly [number, number] {
@@ -336,7 +129,7 @@ function Precipitation({ weather }: { weather: RainEnvironmentDescriptor | SnowE
   const [cx, cz] = areaCenter(weather.area);
   if (weather.kind === "rain") {
     return (
-      <group position={[cx, 0, cz]}>
+      <SceneObjectGroup position={[cx, 0, cz]}>
         <RainField
           timeSeconds={ctx.time.now}
           density={weather.density}
@@ -348,11 +141,11 @@ function Precipitation({ weather }: { weather: RainEnvironmentDescriptor | SnowE
           wind={[weather.wind[0], 0, weather.wind[1]]}
           volume={weatherVolume(weather.area)}
         />
-      </group>
+      </SceneObjectGroup>
     );
   }
   return (
-    <group position={[cx, 0, cz]}>
+    <SceneObjectGroup position={[cx, 0, cz]}>
       <SnowField
         timeSeconds={ctx.time.now}
         density={weather.density}
@@ -364,7 +157,7 @@ function Precipitation({ weather }: { weather: RainEnvironmentDescriptor | SnowE
         wind={[weather.wind[0], 0, weather.wind[1]]}
         volume={weatherVolume(weather.area)}
       />
-    </group>
+    </SceneObjectGroup>
   );
 }
 
@@ -409,17 +202,22 @@ function useOceanBed(ocean: OceanEnvironmentDescriptor, terrain: WorldBounds | u
 
 function DynamicWater({ ocean, terrain }: { ocean: OceanEnvironmentDescriptor & { levelAt: (time: number) => number }; terrain: WorldBounds | undefined }) {
   const ctx = useGameContext();
-  const groupRef = useRef<Group>(null);
   const [x, z] = ocean.position ?? [0, 0];
   const config = useOceanConfig(ocean);
   const { bedAt, bounds } = useOceanBed(ocean, terrain);
-  useFrame(() => {
-    if (groupRef.current !== null) groupRef.current.position.y = ocean.levelAt(ctx.time.now());
+  const group = useMemo(() => {
+    const next = new THREE.Group();
+    next.position.set(0, ocean.level, 0);
+    return next;
+  }, [ocean.level]);
+  useEngineDraw(() => sceneObjectAttachDraw(group, true), [group]);
+  useFrameTask(() => {
+    group.position.y = ocean.levelAt(ctx.time.now());
   });
   return (
-    <group ref={groupRef} position={[0, ocean.level, 0]}>
+    <SceneObjectPortal object={group}>
       <Ocean position={[x, 0, z]} config={config} bedAt={bedAt} bedBounds={bounds} />
-    </group>
+    </SceneObjectPortal>
   );
 }
 

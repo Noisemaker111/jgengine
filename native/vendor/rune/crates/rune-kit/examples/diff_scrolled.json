@@ -1,0 +1,4 @@
+[
+  {"t": 0.3, "type": "scroll", "key": "scroll", "dx": -420, "dur": 0.3},
+  {"t": 1.0, "type": "mark", "name": "end"}
+]

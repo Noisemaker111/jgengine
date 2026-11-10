@@ -1,5 +1,3 @@
-import { Html } from "@react-three/drei";
-import { useFrame, useThree } from "@react-three/fiber";
 import { useRef, useState, type ReactNode } from "react";
 
 import { gamePhase } from "@jgengine/core/game/gamePhase";
@@ -7,16 +5,16 @@ import { WaypointMarkers } from "@jgengine/core/map/waypointMarkers.view";
 import type { WaypointEntry } from "@jgengine/core/map/waypoints";
 import { useGameContext } from "@jgengine/react/provider";
 import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
+import { HudOverlay } from "@jgengine/core/hud/hudOverlay.draw";
 
 import { ELEMENT_COLORS, FERRALON } from "../palette";
 import { questWaypoint } from "../quests/waypoint";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Frames between looks for the objective: enemies walk, so the marker follows them a few times a second. */
 const LOOK_EVERY_FRAMES = 8;
 
-function pinToViewport(_el: unknown, _camera: unknown, size: { width: number; height: number }): [number, number] {
-  return [size.width / 2, size.height / 2];
-}
 
 /**
  * The quest marker: a pin over the tracked objective while it is in view, an edge arrow with the
@@ -25,12 +23,12 @@ function pinToViewport(_el: unknown, _camera: unknown, size: { width: number; he
  */
 export function QuestMarker(): ReactNode {
   const ctx = useGameContext();
-  const size = useThree((state) => state.size);
+  const size = useEngineHost().frame.size;
   const project = useWorldProjection();
   const [entries, setEntries] = useState<readonly WaypointEntry[]>([]);
   const frames = useRef(0);
   const drawn = useRef("");
-  useFrame(() => {
+  useFrameTask(() => {
     frames.current += 1;
     if (frames.current % LOOK_EVERY_FRAMES !== 0) return;
     const goal = gamePhase(ctx) === "playing" ? questWaypoint(ctx) : null;
@@ -47,7 +45,7 @@ export function QuestMarker(): ReactNode {
   };
   if (entries.length === 0) return null;
   return (
-    <Html fullscreen calculatePosition={pinToViewport} zIndexRange={[25, 0]} style={{ pointerEvents: "none" }}>
+    <HudOverlay zIndex={25}>
       <WaypointMarkers
         entries={entries}
         project={project}
@@ -56,6 +54,6 @@ export function QuestMarker(): ReactNode {
         theme={{ color: FERRALON.hudAmber }}
         kindColors={{ enemy: ELEMENT_COLORS.incendiary }}
       />
-    </Html>
+    </HudOverlay>
   );
 }

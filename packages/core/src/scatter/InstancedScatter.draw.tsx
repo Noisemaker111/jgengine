@@ -1,30 +1,33 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useFrame, useLoader, useThree } from "@react-three/fiber";
+import { useRef } from "react";
 import * as THREE from "three";
 
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
-import { BootSuspenseGuard } from "@jgengine/core/boot/bootScreen.view";
-import { sharedGltfLoader, trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
 import type { ScatterInstance } from "@jgengine/core/scatter/scatterRegion";
-import { groupInstancesByCell } from "@jgengine/core/instancing/instanceCells";
 import { beginFallbackSeam, reportFallbackSeam } from "@jgengine/core/devtools/fallbackSeams";
 import { createModelVariantSelector, type ModelVariantSelector } from "@jgengine/core/lod/modelLod";
+import { trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
 
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
+import { groupInstancesByCell } from "@jgengine/core/instancing/instanceCells";
 import { composeInstance, uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { LEVEL_PASS_MIN_CAMERA_MOVE, levelPassNeeded } from "@jgengine/core/lod/levelPass.draw";
 import { variantLevelModel } from "@jgengine/core/lod/singleVariantLod.draw";
+import { preloadSceneModel } from "@jgengine/core/model/entityModelDraw.draw";
 import { buildScatterProxy } from "./scatterProxies.draw";
 import { buildScatterModelSources, disposeScatterModelSources, type ScatterModelSource } from "./scatterModels.draw";
 import { writeScatterVariantLevel } from "./scatterVariants.draw";
 import { detailDrawDistance, IMPOSTOR_MIN_RADIUS, sourceRadius } from "@jgengine/core/lod/impostor.draw";
-import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
-import { ScatterImpostorField } from "./ScatterImpostorField.draw";
-import { builtLevelSource, reskinBuiltLevel, useMeshLodView, WithBuiltLods } from "@jgengine/core/lod/builtLods.draw";
+import { terrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
+import { scatterImpostorFieldDraw } from "./ScatterImpostorField.draw";
+import { cameraFov, currentMeshLodGame, resolveBuiltLodModel } from "@jgengine/core/lod/builtLods.draw";
+import { builtLevelSource, reskinBuiltLevel } from "@jgengine/core/lod/builtLods.draw";
+import { meshLodSettings } from "@jgengine/core/lod/builtLods";
 import { DEFAULT_MESH_LOD_HYSTERESIS } from "@jgengine/core/lod/builtLods";
 import { bakeGeneratorVariants, getGenerator, prepareGeneratorVariants, type GeneratorDefinition } from "@jgengine/core/generator/generator";
 import { getGeneratorMesh } from "@jgengine/core/generator/generatorMesh.draw";
-import { ScatterHeroes } from "./ScatterHeroes.draw";
+import { scatterHeroesDraw } from "./ScatterHeroes.draw";
 import { freezeStaticTransforms } from "@jgengine/core/model/staticTransforms.draw";
 import { staticDrawPoolFor, StaticDrawSlot, type PooledPlacement, type StaticDrawPool } from "@jgengine/core/instancing/staticDrawPool.draw";
 import { staticPoolCellAt } from "@jgengine/core/instancing/staticObjectBatches.draw";
@@ -134,21 +137,82 @@ export function hideScatterPlacements(batches: readonly ScatterBatch[], hidden: 
   return shown;
 }
 
-/** One species-in-a-chunk InstancedMesh; frustum-culled as a unit so offscreen chunks cost nothing. */
-function ScatterBatchMesh({ batch, geometry }: { batch: ScatterBatch; geometry: THREE.BufferGeometry }) {
-  const meshRef = useRef<THREE.InstancedMesh>(null);
-  useEffect(() => {
-    const mesh = meshRef.current;
-    if (mesh === null) return;
-    mesh.name = `scatter:${batch.item}`;
-    uploadInstances(mesh, batch.matrices);
-    freezeStaticTransforms(mesh);
-  }, [batch]);
-  return (
-    <instancedMesh ref={meshRef} args={[geometry, undefined, batch.matrices.length]} castShadow receiveShadow>
-      <meshStandardMaterial vertexColors roughness={0.85} metalness={0} />
-    </instancedMesh>
-  );
+/** Forwards mount/frame/update/dispose to a fixed list of child draws. @internal */
+function childrenDraw(children: readonly EngineDraw[], teardown?: () => void): EngineDraw {
+  return {
+    mount(state) {
+      for (const child of children) child.mount?.(state);
+    },
+    frame(state) {
+      for (const child of children) child.frame?.(state, state.delta);
+    },
+    update(state) {
+      for (const child of children) child.update?.(state);
+    },
+    dispose(state) {
+      for (const child of children) child.dispose?.(state);
+      teardown?.();
+    },
+  };
+}
+
+/**
+ * A draw that resolves `load` into a child draw once it lands, then forwards frames to it. A load
+ * that rejects or lands after dispose reports through `fail`, the surface the Suspense boundary's
+ * error path used to be.
+ * @internal
+ */
+function asyncChildDraw(load: (state: EngineFrameState) => Promise<EngineDraw | null>, fail: (error: unknown) => void): EngineDraw {
+  let inner: EngineDraw | null = null;
+  let disposed = false;
+  return {
+    mount(state) {
+      void load(state).then((draw) => {
+        if (disposed || draw === null) {
+          draw?.dispose?.(state);
+          return;
+        }
+        inner = draw;
+        draw.mount?.(state);
+      }).catch(fail);
+    },
+    frame(state) {
+      inner?.frame?.(state, state.delta);
+    },
+    update(state) {
+      inner?.update?.(state);
+    },
+    dispose(state) {
+      disposed = true;
+      inner?.dispose?.(state);
+      inner = null;
+    },
+  };
+}
+
+/** One species-in-a-chunk InstancedMesh: a proxy batch's placements as a single GPU-instanced draw. */
+function scatterBatchMeshDraw(batch: ScatterBatch, geometry: THREE.BufferGeometry): EngineDraw {
+  const material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0 });
+  let mesh: THREE.InstancedMesh | null = null;
+  return {
+    mount(state) {
+      mesh = new THREE.InstancedMesh(geometry, material, batch.matrices.length);
+      mesh.name = `scatter:${batch.item}`;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      uploadInstances(mesh, batch.matrices);
+      freezeStaticTransforms(mesh);
+      state.scene.add(mesh);
+    },
+    dispose(state) {
+      if (mesh !== null) {
+        state.scene.remove(mesh);
+        mesh.dispose();
+        mesh = null;
+      }
+      material.dispose();
+    },
+  };
 }
 
 /** Which placements of one chunk each detail level draws, refilled by {@link pickDetailPlacements}. @internal */
@@ -374,19 +438,17 @@ export function clearDetailDraws(field: THREE.Object3D, meshes: DetailMeshes): v
  * a reserved matrix slot so the far level's instances cost a second instanced draw, not per-frame
  * allocation. A cell that holds near and far placements feeds both levels from the same batch.
  */
-function ScatterVariantSourceInstances({ source, batch, level, selector }: {
+function scatterVariantSourceDraw({ source, batch, level, selector }: {
   source: ScatterModelSource;
   batch: ScatterBatch;
   level: number;
   selector: ModelVariantSelector;
-}) {
-  const meshRef = useRef<THREE.InstancedMesh>(null);
-  const camera = useThree((state) => state.camera);
-  const slots = useMemo(() => batch.matrices.map(() => new THREE.Matrix4()), [batch]);
-  const cameraPosition = useMemo(() => new THREE.Vector3(), []);
-  const lastCamera = useRef(new THREE.Vector3(Number.POSITIVE_INFINITY, 0, 0));
-  const writeLevel = useCallback((from: THREE.Vector3) => {
-    const mesh = meshRef.current;
+}): EngineDraw {
+  const slots = batch.matrices.map(() => new THREE.Matrix4());
+  const cameraPosition = new THREE.Vector3();
+  const lastCamera = new THREE.Vector3(Number.POSITIVE_INFINITY, 0, 0);
+  let mesh: THREE.InstancedMesh | null = null;
+  const writeLevel = (from: THREE.Vector3) => {
     if (mesh === null) return;
     const count = writeScatterVariantLevel(
       level,
@@ -398,58 +460,53 @@ function ScatterVariantSourceInstances({ source, batch, level, selector }: {
       slots,
     );
     uploadInstances(mesh, { count, at: (index, out) => out.copy(slots[index]!) });
-  }, [level, selector, batch, source, slots]);
-  useLayoutEffect(() => {
-    camera.getWorldPosition(cameraPosition);
-    lastCamera.current.copy(cameraPosition);
-    writeLevel(cameraPosition);
-    if (meshRef.current !== null) freezeStaticTransforms(meshRef.current);
-  }, [camera, writeLevel, cameraPosition]);
-  useFrame((state) => {
-    state.camera.getWorldPosition(cameraPosition);
-    if (!levelPassNeeded(lastCamera.current, cameraPosition, LEVEL_PASS_MIN_CAMERA_MOVE)) return;
-    lastCamera.current.copy(cameraPosition);
-    writeLevel(cameraPosition);
-  }, CAMERA_POST_FRAME_PRIORITY + 0.1);
-  return (
-    <instancedMesh
-      ref={meshRef}
-      name={`scatter:${batch.item}`}
-      args={[source.geometry, source.material, batch.matrices.length]}
-      castShadow={source.skipShadow !== true && (source.castShadow ?? true)}
-      receiveShadow={source.receiveShadow ?? true}
-    />
-  );
+  };
+  return {
+    priority: CAMERA_POST_FRAME_PRIORITY + 0.1,
+    mount(state) {
+      mesh = new THREE.InstancedMesh(source.geometry, source.material, batch.matrices.length);
+      mesh.name = `scatter:${batch.item}`;
+      mesh.castShadow = source.skipShadow !== true && (source.castShadow ?? true);
+      mesh.receiveShadow = source.receiveShadow ?? true;
+      state.camera.getWorldPosition(cameraPosition);
+      lastCamera.copy(cameraPosition);
+      writeLevel(cameraPosition);
+      freezeStaticTransforms(mesh);
+      state.scene.add(mesh);
+    },
+    frame(state) {
+      state.camera.getWorldPosition(cameraPosition);
+      if (!levelPassNeeded(lastCamera, cameraPosition, LEVEL_PASS_MIN_CAMERA_MOVE)) return;
+      lastCamera.copy(cameraPosition);
+      writeLevel(cameraPosition);
+    },
+    dispose(state) {
+      if (mesh !== null) {
+        state.scene.remove(mesh);
+        mesh.dispose();
+        mesh = null;
+      }
+    },
+  };
 }
 
 /** Renders one level of a variant model: the level's own GLB harvested into instanced draws. */
-function ScatterVariantLevel({ model, url, level, selector, batches }: {
+function scatterVariantLevelDraw({ model, url, level, selector, batches }: {
   model: ModelConfig;
   url: string;
   level: number;
   selector: ModelVariantSelector;
   batches: ScatterBatch[];
-}) {
-  const gltf = useLoader(sharedGltfLoader, url);
-  const { sources, root } = useMemo(() => {
-    return buildScatterModelSources(gltf.scene, variantLevelModel(model, level));
-  }, [gltf, model, level]);
-  useEffect(() => () => disposeScatterModelSources(root), [root]);
-  return (
-    <>
-      {sources.map((source, sourceIndex) =>
-        batches.map((batch) => (
-          <ScatterVariantSourceInstances
-            key={`${batch.key}:${sourceIndex}`}
-            source={source}
-            batch={batch}
-            level={level}
-            selector={selector}
-          />
-        )),
-      )}
-    </>
-  );
+}): EngineDraw {
+  return asyncChildDraw(async () => {
+    const gltf = await preloadSceneModel(url);
+    const { sources, root } = buildScatterModelSources(gltf.scene, variantLevelModel(model, level));
+    const children = sources.flatMap((source) => batches.map((batch) => scatterVariantSourceDraw({ source, batch, level, selector })));
+    return childrenDraw(children, () => disposeScatterModelSources(root));
+  }, (error) => {
+    console.error(`[jgengine] scatter level ${url} failed to load`, error);
+    reportFallbackSeam("scatter", "renderError");
+  });
 }
 
 /**
@@ -457,19 +514,12 @@ function ScatterVariantLevel({ model, url, level, selector, batches }: {
  * claiming only the placements the one shared selector put on it. The selector lives here so a
  * placement keeps its hysteresis across every level component instead of each level deciding alone.
  */
-function ScatterVariantSpecies({ model, batches }: { model: ModelConfig; batches: ScatterBatch[] }) {
+function scatterVariantSpeciesDraw({ model, batches }: { model: ModelConfig; batches: ScatterBatch[] }): EngineDraw {
   const variants = model.variants!;
-  const selector = useMemo(() => createModelVariantSelector(variants), [variants]);
-  useEffect(() => () => selector.clear(), [selector]);
-  return (
-    <>
-      {variants.levels.map((level, index) => (
-        <BootSuspenseGuard key={`${level.url}:${index}`} area={`scatter level ${level.url}:${index}`}>
-          <ScatterVariantLevel model={model} url={level.url} level={index} selector={selector} batches={batches} />
-        </BootSuspenseGuard>
-      ))}
-    </>
-  );
+  const selector = createModelVariantSelector(variants);
+  const children = variants.levels.map((level, index) =>
+    scatterVariantLevelDraw({ model, url: level.url, level: index, selector, batches }));
+  return childrenDraw(children, () => selector.clear());
 }
 
 /** A batch's footprint on the ground: its centre and the radius that reaches its farthest placement. @internal */
@@ -517,42 +567,60 @@ export function withoutFarShadows(levels: readonly ScatterChunkLevel[]): Scatter
  * own distance picks, with `hysteresis` (a share of each switch distance). A chunk the camera is out of
  * reach of is skipped whole, and the pass runs again only when the camera has moved.
  */
-function ScatterDetailInstances({ levels, batches, radius, hysteresis = 0 }: { levels: readonly ScatterChunkLevel[]; batches: ScatterBatch[]; radius: number; hysteresis?: number }) {
-  const quality = useTerrainQuality();
-  const reach = useMemo(() => detailDrawDistance(radius, quality), [radius, quality]);
-  const footprints = useMemo(() => batches.map(scatterBatchFootprint), [batches]);
-  const picks = useMemo(() => batches.map((batch) => createDetailPicks(batch.instances.length, levels.length)), [batches, levels]);
-  const group = useMemo(() => new THREE.Group(), []);
-  const pool = staticDrawPoolFor(useThree((state) => state.scene));
-  const meshes = useMemo<DetailMeshes>(() => [], [picks]);
-  const cameraPosition = useMemo(() => new THREE.Vector3(), []);
-  const lastCamera = useMemo(() => new THREE.Vector3(Number.POSITIVE_INFINITY, 0, 0), [picks, reach, hysteresis]);
-  useEffect(() => () => {
-    clearDetailDraws(group, meshes);
-    // A remount keeps these memos: start the next pass from nothing drawn.
-    for (const pick of picks) clearDetailPicks(pick);
-    lastCamera.set(Number.POSITIVE_INFINITY, 0, 0);
-  }, [group, meshes, picks, lastCamera]);
-  useFrame((state) => {
-    state.camera.getWorldPosition(cameraPosition);
-    if (!levelPassNeeded(lastCamera, cameraPosition, LEVEL_PASS_MIN_CAMERA_MOVE)) return;
-    lastCamera.copy(cameraPosition);
-    for (let index = 0; index < footprints.length; index += 1) {
-      const footprint = footprints[index];
-      const batch = batches[index];
-      const pick = picks[index];
-      if (footprint === undefined || batch === undefined || pick === undefined) continue;
-      const near = Math.hypot(cameraPosition.x - footprint.x, cameraPosition.z - footprint.z) - footprint.radius;
-      const changed = near > reach
-        ? clearDetailPicks(pick)
-        : pickDetailPlacements(pick, levels, batch.instances, cameraPosition.x, cameraPosition.z, reach, hysteresis);
-      if (!changed) continue;
-      levels.forEach((level, levelIndex) => {
-        if (pick.dirty[levelIndex] === 1) syncDetailDraws(group, meshes, index, batch, pick, levelIndex, level.sources, pool);
-      });
-    }
-  }, CAMERA_POST_FRAME_PRIORITY + 0.1);
-  return <primitive object={group} />;
+function scatterDetailDraw({ levels, batches, radius, hysteresis = 0 }: { levels: readonly ScatterChunkLevel[]; batches: ScatterBatch[]; radius: number; hysteresis?: number }): EngineDraw {
+  const footprints = batches.map(scatterBatchFootprint);
+  const picks = batches.map((batch) => createDetailPicks(batch.instances.length, levels.length));
+  const group = new THREE.Group();
+  const meshes: DetailMeshes = [];
+  const cameraPosition = new THREE.Vector3();
+  const lastCamera = new THREE.Vector3(Number.POSITIVE_INFINITY, 0, 0);
+  let pool: StaticDrawPool | null = null;
+  let reach = 0;
+  let lastQuality: ReturnType<typeof terrainQuality> | null = null;
+  return {
+    priority: CAMERA_POST_FRAME_PRIORITY + 0.1,
+    mount(state) {
+      state.scene.add(group);
+      // The pool keys on the real scene, matching what useThree(state => state.scene) returned.
+      pool = staticDrawPoolFor(state.rootScene ?? state.scene);
+      lastQuality = terrainQuality();
+      reach = detailDrawDistance(radius, lastQuality);
+    },
+    frame(state) {
+      const active = pool;
+      if (active === null) return;
+      const quality = terrainQuality();
+      if (quality !== lastQuality) {
+        lastQuality = quality;
+        reach = detailDrawDistance(radius, quality);
+        // A new reach re-picks every chunk, as the remounted memos did.
+        lastCamera.set(Number.POSITIVE_INFINITY, 0, 0);
+      }
+      state.camera.getWorldPosition(cameraPosition);
+      if (!levelPassNeeded(lastCamera, cameraPosition, LEVEL_PASS_MIN_CAMERA_MOVE)) return;
+      lastCamera.copy(cameraPosition);
+      for (let index = 0; index < footprints.length; index += 1) {
+        const footprint = footprints[index];
+        const batch = batches[index];
+        const pick = picks[index];
+        if (footprint === undefined || batch === undefined || pick === undefined) continue;
+        const near = Math.hypot(cameraPosition.x - footprint.x, cameraPosition.z - footprint.z) - footprint.radius;
+        const changed = near > reach
+          ? clearDetailPicks(pick)
+          : pickDetailPlacements(pick, levels, batch.instances, cameraPosition.x, cameraPosition.z, reach, hysteresis);
+        if (!changed) continue;
+        levels.forEach((level, levelIndex) => {
+          if (pick.dirty[levelIndex] === 1) syncDetailDraws(group, meshes, index, batch, pick, levelIndex, level.sources, active);
+        });
+      }
+    },
+    dispose(state) {
+      clearDetailDraws(group, meshes);
+      for (const pick of picks) clearDetailPicks(pick);
+      state.scene.remove(group);
+      pool = null;
+    },
+  };
 }
 
 /**
@@ -581,50 +649,78 @@ export function placementLevel(levels: readonly { maxDistance: number }[], dista
  * rocks, huts) draws its distant placements as impostor cards in one draw for the whole field; a
  * smaller one stops drawing past its detail distance.
  */
-function ScatterSingleSpecies({ model, batches }: { model: ModelConfig; batches: ScatterBatch[] }) {
-  return (
-    <WithBuiltLods model={model} impostors={false}>
-      {({ model: resolved }) => <ScatterBuiltSpecies model={model} levels={resolved.variants?.levels ?? null} hysteresis={resolved.variants?.hysteresisRatio ?? 0} batches={batches} />}
-    </WithBuiltLods>
-  );
+function scatterSingleSpeciesDraw({ model, batches }: { model: ModelConfig; batches: ScatterBatch[] }): EngineDraw {
+  const game = currentMeshLodGame();
+  return asyncChildDraw(async (state) => {
+    const resolved = await resolveBuiltLodModel(model, false, cameraFov(state.camera), game);
+    const resolvedModel = resolved.model;
+    return scatterBuiltSpeciesDraw({
+      model,
+      levels: resolvedModel.variants?.levels ?? null,
+      hysteresis: resolvedModel.variants?.hysteresisRatio ?? 0,
+      batches,
+      cacheKey: `scatter:${model.url}:${JSON.stringify(model)}`,
+    });
+  }, (error) => {
+    console.error(`[jgengine] scatter species ${model.url} failed to resolve`, error);
+    reportFallbackSeam("scatter", "renderError");
+  });
 }
 
 /** A catalog species and the built levels it switches through per chunk (none when nothing was built). */
-function ScatterBuiltSpecies({ model, levels, hysteresis, batches }: {
+function scatterBuiltSpeciesDraw({ model, levels, hysteresis, batches, cacheKey }: {
   model: ModelConfig;
   levels: readonly { url: string; maxDistance?: number }[] | null;
   hysteresis: number;
   batches: ScatterBatch[];
-}) {
-  const urls = useMemo(() => levels === null ? [model.url] : levels.map((level) => level.url), [levels, model.url]);
-  const gltfs = useLoader(sharedGltfLoader, urls);
-  const harvested = useMemo(() => {
-    const source = gltfs[0];
-    return gltfs.map((gltf, index) => {
-      const built = builtLevelSource(urls[index] ?? "");
+  cacheKey: string;
+}): EngineDraw {
+  const urls = levels === null ? [model.url] : levels.map((level) => level.url);
+  return asyncChildDraw(async () => {
+    const gltfs = await Promise.all(urls.map((url) => preloadSceneModel(url)));
+    const harvested = gltfs.map((gltf, index) => {
+      const url = urls[index] ?? model.url;
+      const built = builtLevelSource(url);
+      const source = gltfs[0];
       if (built !== null && source !== undefined) reskinBuiltLevel(gltf.scene, source);
-      return buildScatterModelSources(gltf.scene, { ...model, url: urls[index] ?? model.url }, built?.bounds);
+      return buildScatterModelSources(gltf.scene, { ...model, url }, built?.bounds);
     });
-  }, [gltfs, urls, model]);
-  useEffect(() => () => harvested.forEach(({ root }) => disposeScatterModelSources(root)), [harvested]);
-  const chunkLevels = useMemo(() => withoutFarShadows(harvested.map(({ sources }, index) => ({ sources, maxDistance: levels?.[index]?.maxDistance ?? Infinity }))), [harvested, levels]);
-  return <ScatterSourcesField cacheKey={`scatter:${model.url}:${JSON.stringify(model)}`} levels={chunkLevels} batches={batches} hysteresis={hysteresis} />;
+    const chunkLevels: ScatterChunkLevel[] = withoutFarShadows(harvested.map(({ sources }, index) => ({
+      sources,
+      maxDistance: levels?.[index]?.maxDistance ?? Infinity,
+    })));
+    const field = scatterSourcesFieldDraw({ cacheKey, levels: chunkLevels, batches, hysteresis });
+    return {
+      mount: (state: EngineFrameState) => field.mount?.(state),
+      frame: (state: EngineFrameState) => field.frame?.(state, state.delta),
+      update: (state: EngineFrameState) => field.update?.(state),
+      dispose: (state: EngineFrameState) => {
+        field.dispose?.(state);
+        for (const { root } of harvested) disposeScatterModelSources(root);
+      },
+    };
+  }, (error) => {
+    console.error(`[jgengine] scatter species ${model.url} failed to load`, error);
+    reportFallbackSeam("scatter", "renderError");
+  });
 }
 
 /** A species draw: big ones get the impostor far field, small ones stop past their detail distance. */
-function ScatterSourcesField({ cacheKey, sources: given, levels: chunkLevels, farSources, batches, hysteresis }: {
+function scatterSourcesFieldDraw({ cacheKey, sources: given, levels: chunkLevels, farSources, batches, hysteresis }: {
   cacheKey: string;
   sources?: ScatterModelSource[];
   levels?: readonly ScatterChunkLevel[];
   farSources?: ScatterModelSource[] | undefined;
   batches: ScatterBatch[];
   hysteresis?: number;
-}) {
-  const levels = useMemo(() => chunkLevels ?? [{ sources: given ?? [], maxDistance: Infinity }], [chunkLevels, given]);
+}): EngineDraw {
+  const levels = chunkLevels ?? [{ sources: given ?? [], maxDistance: Infinity }];
   const sources = levels[0]?.sources ?? [];
-  const radius = useMemo(() => sourceRadius(sources), [sources]);
-  if (radius >= IMPOSTOR_MIN_RADIUS) return <ScatterImpostorField cacheKey={cacheKey} sources={sources} farSources={farSources} batches={batches} radius={radius} />;
-  return <ScatterDetailInstances levels={levels} batches={batches} radius={radius} {...(hysteresis === undefined ? {} : { hysteresis })} />;
+  const radius = sourceRadius(sources);
+  if (radius >= IMPOSTOR_MIN_RADIUS) {
+    return scatterImpostorFieldDraw({ cacheKey, sources, farSources, batches, radius });
+  }
+  return scatterDetailDraw({ levels, batches, radius, ...(hysteresis === undefined ? {} : { hysteresis }) });
 }
 
 const IDENTITY = new THREE.Matrix4();
@@ -646,30 +742,23 @@ interface GeneratorBake {
   options: Parameters<typeof bakeGeneratorVariants>[2];
 }
 
+function collectBakedGeometries(variants: readonly (readonly (readonly ScatterModelSource[])[])[]): THREE.BufferGeometry[] {
+  return variants.flatMap((levels) => levels.flatMap((sources) => sources.map((source) => source.geometry)));
+}
+
+function disposeBakedGeometries(geometries: readonly THREE.BufferGeometry[]): void {
+  for (const geometry of geometries) geometry.dispose();
+}
+
 /**
  * Bake a generator's variants at every detail in `bake.definition.lods` into draw sources: per variant,
  * per detail. A generator with a `prepare` step (a grown plant) prepares them off the frame first,
- * counted as scene loading under `work`; until then, and for no bake, there are none.
+ * counted as scene loading under `work`; until then, and for no bake, there are none. Returns the
+ * cancel for the in-flight prepare.
  */
-function useBakedVariants(bake: GeneratorBake | null, work: string): { ready: boolean; variants: ScatterModelSource[][][] } {
-  const [prepared, setPrepared] = useState<GeneratorBake | null>(null);
-  useEffect(() => {
-    if (bake === null || bake.definition.prepare === undefined) return;
-    let live = true;
-    const done = trackSceneWork(work);
-    prepareGeneratorVariants(bake.definition, bake.base, bake.options)
-      .then(() => {
-        if (live) setPrepared(bake);
-      })
-      .catch((error: unknown) => console.error(`[jgengine] ${work} failed to prepare`, error))
-      .finally(done);
-    return () => {
-      live = false;
-    };
-  }, [bake, work]);
-  const ready = bake !== null && (bake.definition.prepare === undefined || prepared === bake);
-  const variants = useMemo(() => {
-    if (bake === null || !ready) return [];
+function bakeGeneratorDraw(bake: GeneratorBake, work: string, onDone: (variants: ScatterModelSource[][][]) => void): () => void {
+  let live = true;
+  const bakeNow = (): ScatterModelSource[][][] => {
     const build = getGeneratorMesh(bake.definition.output);
     if (build === undefined) return [];
     return bakeGeneratorVariants(bake.definition, bake.base, bake.options).map((variant) => variant.lods.map((lod) => (build(lod.output) ?? []).map((source): ScatterModelSource => {
@@ -678,9 +767,23 @@ function useBakedVariants(bake: GeneratorBake | null, work: string): { ready: bo
       const small = (source.geometry.boundingSphere?.radius ?? 1) < SMALL_SHADOW_RADIUS;
       return { ...source, localMatrix: IDENTITY, ...(small ? { skipShadow: true } : {}) };
     })));
-  }, [bake, ready]);
-  useEffect(() => () => variants.forEach((levels) => levels.forEach((sources) => sources.forEach((source) => source.geometry.dispose()))), [variants]);
-  return { ready, variants };
+  };
+  if (bake.definition.prepare === undefined) {
+    onDone(bakeNow());
+    return () => {
+      live = false;
+    };
+  }
+  const done = trackSceneWork(work);
+  prepareGeneratorVariants(bake.definition, bake.base, bake.options)
+    .then(() => {
+      if (live) onDone(bakeNow());
+    })
+    .catch((error: unknown) => console.error(`[jgengine] ${work} failed to prepare`, error))
+    .finally(done);
+  return () => {
+    live = false;
+  };
 }
 
 /**
@@ -690,64 +793,172 @@ function useBakedVariants(bake: GeneratorBake | null, work: string): { ready: bo
  * so more variants cost near draws, not atlas memory. A species too small for an impostor also bakes
  * the generator's coarser levels when the game sets `visibility.meshLods`, and each placement draws
  * the one its size on screen calls for. A unique species (`variants: "unique"`) also grows its near
- * placements one by one from their own seeds ({@link ScatterHeroes}) and hides their stand-ins once
+ * placements one by one from their own seeds ({@link scatterHeroesDraw}) and hides their stand-ins once
  * each is ready.
  */
-function ScatterGeneratorSpecies({ item, species }: { item: string; species: ScatterGeneratorSpeciesDraw }) {
+function scatterGeneratorSpeciesDraw({ item, species }: { item: string; species: ScatterGeneratorSpeciesDraw }): EngineDraw {
   const { definition, spec } = species;
-  const key = useMemo(() => `generator:${item}:${JSON.stringify(spec)}`, [item, spec]);
+  const key = `generator:${item}:${JSON.stringify(spec)}`;
   const detail = spec.detail ?? 1;
-  const base = useMemo(() => scatterGeneratorBase(spec, definition.schema), [spec, definition]);
-  const options = useMemo(() => ({
+  const base = scatterGeneratorBase(spec, definition.schema);
+  const options = {
     count: scatterGeneratorVariantCount(spec),
     explore: spec.explore ?? 0.3,
     seed: item,
     ...(spec.keep === undefined ? {} : { keep: spec.keep }),
-  }), [spec, item]);
-  const nearBake = useMemo((): GeneratorBake => ({ definition: { ...definition, lods: [detail] }, base, options }), [definition, detail, base, options]);
-  const { ready, variants: near } = useBakedVariants(nearBake, `scatter-${item}`);
-  const { settings, fovY } = useMeshLodView();
-  const radius = useMemo(() => sourceRadius(near[0]?.[0] ?? []), [near]);
-  const coarser = useMemo(
-    () => settings === null || radius <= 0 || radius >= IMPOSTOR_MIN_RADIUS ? [] : coarserScatterLevels(detail, definition.lods, settings.screenSizes, radius, fovY),
-    [settings, radius, detail, definition, fovY],
-  );
-  const farBake = useMemo((): GeneratorBake | null => coarser.length === 0 ? null : { definition: { ...definition, lods: coarser.map((level) => level.detail) }, base, options }, [coarser, definition, base, options]);
-  const { variants: far } = useBakedVariants(farBake, `scatter-${item}-levels`);
-  const levels = useMemo(() => near.map((nearLevels, variant): ScatterChunkLevel[] => {
-    const own = nearLevels[0] ?? [];
-    const farLevels = far[variant];
-    const list = farLevels === undefined
-      ? [{ sources: own, maxDistance: Infinity }]
-      : [
-          { sources: own, maxDistance: coarser[0]?.from ?? Infinity },
-          ...coarser.map((_, index) => ({ sources: farLevels[index] ?? [], maxDistance: coarser[index + 1]?.from ?? Infinity })),
-        ];
-    return withoutFarShadows(list);
-  }), [near, far, coarser]);
-  const variants = useMemo(() => near.map((nearLevels) => nearLevels[0] ?? []), [near]);
-  const hysteresis = settings?.hysteresis ?? DEFAULT_MESH_LOD_HYSTERESIS;
+  };
+  const nearBake: GeneratorBake = { definition: { ...definition, lods: [detail] }, base, options };
   const unique = isUniqueScatterItem(spec);
-  const [heroes, setHeroes] = useState<ReadonlySet<string>>(NO_HEROES);
-  const instances = useMemo(
-    () => unique ? [...species.byVariant.values()].flatMap((batches) => batches.flatMap((batch) => batch.instances)) : [],
-    [unique, species],
-  );
-  const byVariant = useMemo(
-    () => heroes.size === 0 ? species.byVariant : new Map([...species.byVariant].map(([variant, batches]) => [variant, hideScatterPlacements(batches, heroes)])),
-    [species, heroes],
-  );
-  return (
-    <>
-      {[...byVariant.entries()].map(([variant, batches]) => {
-        const variantLevels = levels[variant];
-        return variantLevels === undefined || (variantLevels[0]?.sources.length ?? 0) === 0
-          ? null
-          : <ScatterSourcesField key={variant} cacheKey={key} levels={variantLevels} farSources={variants[0]} batches={batches} hysteresis={hysteresis} />;
-      })}
-      {unique && ready ? <ScatterHeroes item={item} definition={definition} spec={spec} instances={instances} onShown={setHeroes} /> : null}
-    </>
-  );
+  const instances = unique
+    ? [...species.byVariant.values()].flatMap((batches) => batches.flatMap((batch) => batch.instances))
+    : [];
+
+  let state: EngineFrameState | null = null;
+  let disposed = false;
+  let nearReady = false;
+  let near: ScatterModelSource[][][] = [];
+  let far: ScatterModelSource[][][] = [];
+  let coarser: ReturnType<typeof coarserScatterLevels> = [];
+  let settings: ReturnType<typeof meshLodSettings> = null;
+  let fields: EngineDraw[] = [];
+  let heroesDraw: EngineDraw | null = null;
+  let heroes: ReadonlySet<string> = NO_HEROES;
+  let nearGeometries: THREE.BufferGeometry[] = [];
+  let farGeometries: THREE.BufferGeometry[] = [];
+  let cancelNear = () => {};
+  let cancelFar = () => {};
+  let lastGame: unknown = undefined;
+  let lastFovKey = -1;
+  let lastFieldKey = "";
+  let lastCoarserKey = "";
+
+  const rebuildFields = () => {
+    const s = state;
+    if (s === null || disposed) return;
+    for (const field of fields) field.dispose?.(s);
+    fields = [];
+    if (!nearReady) return;
+    const levels = near.map((nearLevels, variant): ScatterChunkLevel[] => {
+      const own = nearLevels[0] ?? [];
+      const farLevels = far[variant];
+      if (farLevels === undefined) return withoutFarShadows([{ sources: own, maxDistance: Infinity }]);
+      return withoutFarShadows([
+        { sources: own, maxDistance: coarser[0]?.from ?? Infinity },
+        ...coarser.map((_, index) => ({ sources: farLevels[index] ?? [], maxDistance: coarser[index + 1]?.from ?? Infinity })),
+      ]);
+    });
+    const variantsSources = near.map((nearLevels) => nearLevels[0] ?? []);
+    const hysteresis = settings?.hysteresis ?? DEFAULT_MESH_LOD_HYSTERESIS;
+    const byVariant = heroes.size === 0
+      ? species.byVariant
+      : new Map([...species.byVariant].map(([variant, batches]) => [variant, hideScatterPlacements(batches, heroes)]));
+    for (const [variant, batches] of byVariant) {
+      const variantLevels = levels[variant];
+      if (variantLevels === undefined || (variantLevels[0]?.sources.length ?? 0) === 0) continue;
+      const field = scatterSourcesFieldDraw({ cacheKey: key, levels: variantLevels, farSources: variantsSources[0], batches, hysteresis });
+      fields.push(field);
+      field.mount?.(s);
+    }
+    if (unique && heroesDraw === null) {
+      heroesDraw = scatterHeroesDraw(() => ({
+        item,
+        definition,
+        spec,
+        instances,
+        onShown: (shown) => {
+          heroes = shown;
+          rebuildFields();
+        },
+      }));
+      heroesDraw.mount?.(s);
+    }
+  };
+
+  const syncLevels = (s: EngineFrameState) => {
+    const game = currentMeshLodGame();
+    const fovY = cameraFov(s.camera);
+    const fovKey = Math.round(fovY * 1000);
+    if (game === lastGame && fovKey === lastFovKey) return;
+    lastGame = game;
+    lastFovKey = fovKey;
+    settings = meshLodSettings(game, undefined);
+    const radius = sourceRadius(near[0]?.[0] ?? []);
+    const nextCoarser = settings === null || radius <= 0 || radius >= IMPOSTOR_MIN_RADIUS
+      ? []
+      : coarserScatterLevels(detail, definition.lods, settings.screenSizes, radius, fovY);
+    const hysteresis = settings?.hysteresis ?? DEFAULT_MESH_LOD_HYSTERESIS;
+    const coarserKey = nextCoarser.map((level) => level.detail).join(",");
+    const fieldKey = `${settings?.screenSizes.join(",") ?? "off"}|${hysteresis}|${coarserKey}`;
+    if (fieldKey === lastFieldKey) return;
+    const coarserChanged = coarserKey !== lastCoarserKey;
+    lastFieldKey = fieldKey;
+    lastCoarserKey = coarserKey;
+    coarser = nextCoarser;
+    if (!coarserChanged) {
+      rebuildFields();
+      return;
+    }
+    cancelFar();
+    far = [];
+    disposeBakedGeometries(farGeometries);
+    farGeometries = [];
+    if (nextCoarser.length === 0) {
+      rebuildFields();
+      return;
+    }
+    const farBake: GeneratorBake = { definition: { ...definition, lods: nextCoarser.map((level) => level.detail) }, base, options };
+    cancelFar = bakeGeneratorDraw(farBake, `scatter-${item}-levels`, (variants) => {
+      if (disposed) {
+        disposeBakedGeometries(collectBakedGeometries(variants));
+        return;
+      }
+      far = variants;
+      farGeometries = collectBakedGeometries(variants);
+      rebuildFields();
+    });
+  };
+
+  return {
+    priority: CAMERA_POST_FRAME_PRIORITY + 0.1,
+    mount(s) {
+      state = s;
+      cancelNear = bakeGeneratorDraw(nearBake, `scatter-${item}`, (variants) => {
+        if (disposed) {
+          disposeBakedGeometries(collectBakedGeometries(variants));
+          return;
+        }
+        near = variants;
+        nearGeometries = collectBakedGeometries(variants);
+        nearReady = true;
+        rebuildFields();
+      });
+    },
+    frame(s) {
+      state = s;
+      for (const field of fields) field.frame?.(s, s.delta);
+      heroesDraw?.frame?.(s, s.delta);
+      if (nearReady && !disposed) syncLevels(s);
+    },
+    update(s) {
+      state = s;
+      for (const field of fields) field.update?.(s);
+      heroesDraw?.update?.(s);
+    },
+    dispose(s) {
+      disposed = true;
+      cancelNear();
+      cancelFar();
+      for (const field of fields) field.dispose?.(s);
+      fields = [];
+      heroesDraw?.dispose?.(s);
+      heroesDraw = null;
+      disposeBakedGeometries(nearGeometries);
+      disposeBakedGeometries(farGeometries);
+      nearGeometries = [];
+      farGeometries = [];
+      state = null;
+    },
+  };
 }
 
 /** The generator a palette item grows from: its mapping, else a registered generator whose id is the item and whose output draws as meshes. */
@@ -758,10 +969,10 @@ function generatorSpec(item: string, resolved: ModelConfig | ScatterGeneratorIte
 }
 
 /** One species draw: the level switch for a model with `variants`, the single GLB otherwise. */
-function ScatterModelSpecies({ model, batches }: { model: ModelConfig; batches: ScatterBatch[] }) {
+function scatterModelSpeciesDraw({ model, batches }: { model: ModelConfig; batches: ScatterBatch[] }): EngineDraw {
   return model.variants === undefined
-    ? <ScatterSingleSpecies model={model} batches={batches} />
-    : <ScatterVariantSpecies model={model} batches={batches} />;
+    ? scatterSingleSpeciesDraw({ model, batches })
+    : scatterVariantSpeciesDraw({ model, batches });
 }
 
 /** Props for {@link InstancedScatter}: the resolved instances plus chunking/instance-cap knobs. */
@@ -784,6 +995,16 @@ export interface InstancedScatterProps {
   hidden?: ReadonlySet<string>;
 }
 
+interface ScatterPipelineInputs {
+  instances: readonly ScatterInstance[];
+  hidden: ReadonlySet<string> | undefined;
+  chunkSize: number;
+  maxInstances: number;
+  maxChunks: number;
+  resolveItem: InstancedScatterProps["resolveItem"];
+  resolutionKey: string;
+}
+
 /**
  * Renders resolved {@link ScatterInstance}s grouped into per-chunk, per-species GPU-instanced draws
  * that frustum-cull independently. Species with no `resolveItem` mapping (or a `null` result) render
@@ -792,22 +1013,16 @@ export interface InstancedScatterProps {
  * runtime foliage renderer shared by the editor's scatter preview and games that consume
  * `resolveScatter` — never one node per placement.
  */
-export function InstancedScatter({
-  instances,
-  chunkSize = DEFAULT_CHUNK_SIZE,
-  maxInstances = DEFAULT_MAX_INSTANCES,
-  maxChunks = DEFAULT_MAX_CHUNKS,
-  resolveItem,
-  hidden,
-}: InstancedScatterProps) {
-  const capped = useMemo(() => capScatterInstances(instances, maxInstances), [instances, maxInstances]);
-  const items = useMemo(() => [...new Set(capped.map((instance) => instance.item))], [capped]);
-  // Asked every render and keyed by what came back, not by the function: a game passes an inline
-  // `resolveItem`, and keying on it rebuilt every species' draws, and relinked their shaders, on
-  // each render of the game's world.
-  const resolutions = items.map((item) => resolveItem?.(item) ?? null);
-  const resolutionKey = JSON.stringify(resolutions);
-  const resolved = useMemo(() => {
+export function instancedScatterDraw(getProps: () => InstancedScatterProps): EngineDraw {
+  let children: EngineDraw[] = [];
+  let geometries = new Map<string, THREE.BufferGeometry>();
+  let last: ScatterPipelineInputs | null = null;
+
+  const rebuild = (s: EngineFrameState, inputs: ScatterPipelineInputs) => {
+    const capped = capScatterInstances(inputs.instances, inputs.maxInstances);
+    const items = [...new Set(capped.map((instance) => instance.item))];
+    const resolutions = items.map((item) => inputs.resolveItem?.(item) ?? null);
+    const resolutionKey = JSON.stringify(resolutions);
     const byItem = new Map<string, ModelConfig | ScatterGeneratorItem | null>(items.map((item, index) => [item, resolutions[index] ?? null]));
     const generators = new Map<string, { definition: GeneratorDefinition; spec: ScatterGeneratorItem }>();
     for (const [item, result] of byItem) {
@@ -815,46 +1030,41 @@ export function InstancedScatter({
       const definition = spec === null ? undefined : getGenerator(spec.generator);
       if (spec !== null && definition !== undefined) generators.set(item, { definition, spec });
     }
-    return { byItem, generators };
-  }, [items, resolutionKey]); // `resolutionKey` stands for `resolutions`
-  const assigned = useMemo(
-    () => resolved.generators.size === 0 ? capped : assignScatterVariants(capped, (item) => {
+    const resolved = { byItem, generators };
+    const assigned = resolved.generators.size === 0 ? capped : assignScatterVariants(capped, (item) => {
       const generator = resolved.generators.get(item);
       return generator === undefined ? undefined : scatterGeneratorVariantCount(generator.spec);
-    }),
-    [capped, resolved],
-  );
-  // The grid is sized from every placement, not the shown ones, so clearing a tree never re-chunks the field.
-  const edge = useMemo(() => scatterChunkSize(assigned, chunkSize, maxChunks), [assigned, chunkSize, maxChunks]);
-  const allBatches = useMemo(() => {
-    if (resolved.generators.size === 0) return scatterBatchInstances(assigned, edge);
-    // A generator species splits into variants, each its own draw per chunk; a coarser grid for it
-    // keeps its chunk-times-variant count near what one model species costs, since every chunk draw
-    // is a scene node walked each frame.
-    const plain: ScatterInstance[] = [];
-    const grown = new Map<string, { variants: number; instances: ScatterInstance[] }>();
-    for (const instance of assigned) {
-      const tagged = parseScatterVariantItem(instance.item);
-      const generator = tagged === null ? undefined : resolved.generators.get(tagged.item);
-      if (tagged === null || generator === undefined) {
-        plain.push(instance);
-        continue;
+    });
+    // The grid is sized from every placement, not the shown ones, so clearing a tree never re-chunks the field.
+    const edge = scatterChunkSize(assigned, inputs.chunkSize, inputs.maxChunks);
+    const allBatches = (() => {
+      if (resolved.generators.size === 0) return scatterBatchInstances(assigned, edge);
+      // A generator species splits into variants, each its own draw per chunk; a coarser grid for it
+      // keeps its chunk-times-variant count near what one model species costs, since every chunk draw
+      // is a scene node walked each frame.
+      const plain: ScatterInstance[] = [];
+      const grown = new Map<string, { variants: number; instances: ScatterInstance[] }>();
+      for (const instance of assigned) {
+        const tagged = parseScatterVariantItem(instance.item);
+        const generator = tagged === null ? undefined : resolved.generators.get(tagged.item);
+        if (tagged === null || generator === undefined) {
+          plain.push(instance);
+          continue;
+        }
+        const entry = grown.get(tagged.item) ?? { variants: scatterGeneratorVariantCount(generator.spec), instances: [] };
+        entry.instances.push(instance);
+        grown.set(tagged.item, entry);
       }
-      const entry = grown.get(tagged.item) ?? { variants: scatterGeneratorVariantCount(generator.spec), instances: [] };
-      entry.instances.push(instance);
-      grown.set(tagged.item, entry);
-    }
-    const out = scatterBatchInstances(plain, edge);
-    for (const { variants, instances } of grown.values()) out.push(...scatterBatchInstances(instances, edge * Math.sqrt(variants)));
-    return out;
-  }, [assigned, edge, resolved]);
-  const batches = useMemo(() => hideScatterPlacements(allBatches, hidden), [allBatches, hidden]);
+      const out = scatterBatchInstances(plain, edge);
+      for (const { variants, instances } of grown.values()) out.push(...scatterBatchInstances(instances, edge * Math.sqrt(variants)));
+      return out;
+    })();
+    const batches = hideScatterPlacements(allBatches, inputs.hidden);
 
-  const { proxyBatches, modelSpecies, generatorSpecies } = useMemo(() => {
     // Dev diagnostic (no-op unless armed): re-zero the scatter seam before re-tallying which species
     // fall to a stylized proxy (no resolveItem mapping / a null result). Reported once per species.
     beginFallbackSeam("scatter");
-    const proxy: ScatterBatch[] = [];
+    const proxyBatches: ScatterBatch[] = [];
     const bySpecies = new Map<string, { model: ModelConfig; batches: ScatterBatch[] }>();
     const knownProxy = new Set<string>();
     const grown = new Map<string, ScatterGeneratorSpeciesDraw>();
@@ -875,44 +1085,109 @@ export function InstancedScatter({
         continue;
       }
       if (knownProxy.has(batch.item)) {
-        proxy.push(batch);
+        proxyBatches.push(batch);
         continue;
       }
       const model = resolved.byItem.get(batch.item) ?? null;
       if (model === null || isScatterGeneratorItem(model)) {
         knownProxy.add(batch.item);
         reportFallbackSeam("scatter", "omittedMapping");
-        proxy.push(batch);
+        proxyBatches.push(batch);
         continue;
       }
       bySpecies.set(batch.item, { model, batches: [batch] });
     }
-    return { proxyBatches: proxy, modelSpecies: [...bySpecies.entries()], generatorSpecies: [...grown.entries()] };
-  }, [batches, resolved]);
+    const nextGeometries = new Map<string, THREE.BufferGeometry>();
+    for (const item of new Set(proxyBatches.map((batch) => batch.item))) {
+      nextGeometries.set(item, buildScatterProxy(item));
+    }
+    const nextChildren: EngineDraw[] = [];
+    for (const batch of proxyBatches) {
+      const geometry = nextGeometries.get(batch.item);
+      if (geometry !== undefined) nextChildren.push(scatterBatchMeshDraw(batch, geometry));
+    }
+    for (const [, species] of bySpecies) {
+      nextChildren.push(scatterModelSpeciesDraw({ model: species.model, batches: species.batches }));
+    }
+    for (const [speciesItem, species] of grown) {
+      nextChildren.push(scatterGeneratorSpeciesDraw({ item: speciesItem, species }));
+    }
 
-  const geometries = useMemo(() => {
-    const items = new Set(proxyBatches.map((batch) => batch.item));
-    const map = new Map<string, THREE.BufferGeometry>();
-    for (const item of items) map.set(item, buildScatterProxy(item));
-    return map;
-  }, [proxyBatches]);
-  useEffect(() => () => geometries.forEach((geometry) => geometry.dispose()), [geometries]);
+    for (const child of children) child.dispose?.(s);
+    for (const geometry of geometries.values()) geometry.dispose();
+    children = nextChildren;
+    geometries = nextGeometries;
+    for (const child of children) child.mount?.(s);
+    last = { ...inputs, resolutionKey };
+  };
 
-  if (batches.length === 0) return null;
-  return (
-    <>
-      {proxyBatches.map((batch) => {
-        const geometry = geometries.get(batch.item);
-        return geometry === undefined ? null : <ScatterBatchMesh key={batch.key} batch={batch} geometry={geometry} />;
-      })}
-      {modelSpecies.map(([item, species]) => (
-        <BootSuspenseGuard key={item} area={`scatter species ${item}`}>
-          <ScatterModelSpecies model={species.model} batches={species.batches} />
-        </BootSuspenseGuard>
-      ))}
-      {generatorSpecies.map(([item, species]) => (
-        <ScatterGeneratorSpecies key={item} item={item} species={species} />
-      ))}
-    </>
-  );
+  const sync = (s: EngineFrameState) => {
+    const props = getProps();
+    const inputs: ScatterPipelineInputs = {
+      instances: props.instances,
+      hidden: props.hidden,
+      chunkSize: props.chunkSize ?? DEFAULT_CHUNK_SIZE,
+      maxInstances: props.maxInstances ?? DEFAULT_MAX_INSTANCES,
+      maxChunks: props.maxChunks ?? DEFAULT_MAX_CHUNKS,
+      resolveItem: props.resolveItem,
+      resolutionKey: "",
+    };
+    if (last !== null) {
+      const pipelineSame = inputs.instances === last.instances
+        && inputs.hidden === last.hidden
+        && inputs.chunkSize === last.chunkSize
+        && inputs.maxInstances === last.maxInstances
+        && inputs.maxChunks === last.maxChunks;
+      if (pipelineSame && inputs.resolveItem === last.resolveItem) return;
+      if (pipelineSame) {
+        // Asked every sync and keyed by what came back, not by the function: a game passes an inline
+        // `resolveItem`, and keying on it rebuilt every species' draws, and relinked their shaders, on
+        // each render of the game's world.
+        const capped = capScatterInstances(inputs.instances, inputs.maxInstances);
+        const items = [...new Set(capped.map((instance) => instance.item))];
+        const resolutionKey = JSON.stringify(items.map((item) => inputs.resolveItem?.(item) ?? null));
+        if (resolutionKey === last.resolutionKey) {
+          last = { ...inputs, resolutionKey };
+          return;
+        }
+      }
+    }
+    // The resolutions are computed inside rebuild; the key stands for them there.
+    rebuild(s, inputs);
+  };
+
+  return {
+    priority: CAMERA_POST_FRAME_PRIORITY + 0.1,
+    mount(s) {
+      sync(s);
+    },
+    update(s) {
+      sync(s);
+      for (const child of children) child.update?.(s);
+    },
+    frame(s) {
+      for (const child of children) child.frame?.(s, s.delta);
+    },
+    dispose(s) {
+      for (const child of children) child.dispose?.(s);
+      children = [];
+      for (const geometry of geometries.values()) geometry.dispose();
+      geometries = new Map();
+      last = null;
+    },
+  };
+}
+
+/**
+ * Renders resolved {@link ScatterInstance}s grouped into per-chunk, per-species GPU-instanced draws
+ * that frustum-cull independently. Species with no `resolveItem` mapping (or a `null` result) render
+ * as stylized proxy models (trunked trees, stacked pines, round bushes, faceted rocks, grass tufts);
+ * species `resolveItem` resolves to a `ModelConfig` GPU-instance the real catalog GLB instead. The one
+ * runtime foliage renderer shared by the editor's scatter preview and games that consume
+ * `resolveScatter` — never one node per placement.
+ */
+export function InstancedScatter(props: InstancedScatterProps) {
+  const latest = useRef(props);
+  latest.current = props;
+  return <EngineDrawMount create={() => instancedScatterDraw(() => latest.current)} deps={[]} />;
 }

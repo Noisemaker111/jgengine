@@ -3,6 +3,7 @@ import { environment, terrain } from "@jgengine/core/world/features";
 import type { PlayableGame } from "@jgengine/shell/registry";
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 
+import { StageDraw } from "@jgengine/core/stage/stageDraw.draw";
 import { demoGame } from "./demoGame";
 
 const params = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search);
@@ -32,11 +33,13 @@ const feature = environment({
 /** One flat field seen from the same RTS height in each mode; only the ground material differs. */
 function Ground() {
   return (
-    <group>
-      <ambientLight intensity={0.25} />
-      <directionalLight position={[16, 24, 12]} intensity={1.4} />
+    <>
+      <StageDraw spec={{ lights: [
+        { kind: "ambient", intensity: 0.25 },
+        { kind: "directional", position: [16, 24, 12], intensity: 1.4 },
+      ] }} />
       <EnvironmentScene feature={feature} />
-    </group>
+    </>
   );
 }
 
@@ -50,8 +53,8 @@ export const terrainMacroGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "terrain-macro" },
   scene: {
-    renderEntity: () => <group />,
-    renderObject: () => <group />,
+    renderEntity: () => null,
+    renderObject: () => null,
     environment: Ground,
   },
   loop: { ...demoGame.loop, onTick: () => {} },

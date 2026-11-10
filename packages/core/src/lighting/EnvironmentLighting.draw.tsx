@@ -1,12 +1,13 @@
 import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import { reportTextureLoadError } from "@jgengine/core/devtools/textureErrors";
-import { useThree, useFrame } from "@react-three/fiber";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
 import { EXRLoader } from "three/examples/jsm/loaders/EXRLoader.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import type { EnvironmentSource } from "@jgengine/core/lighting/environmentLighting";
 
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { linkPmremBake, PMREM_BAKE_CAMERA } from "./pmremLink.draw";
 import { warmupDrawsToTarget, warmupWaitsFor } from "@jgengine/core/render/shaderWarmup.draw";
 import { WorldReflectionProbe, type WorldProbeSettings } from "./reflectionProbe.draw";
@@ -44,6 +45,196 @@ export interface EnvironmentLightingProps {
 }
 
 /**
+ * Draw-side form of {@link EnvironmentLighting}: image-based lighting from a procedural
+ * sky/horizon/ground probe with an HDR sun (not three's stock RoomEnvironment gray studio box).
+ * Metals and dielectrics pick up sky color, a sun glint and a directional sky fill; a bake
+ * rebuilds only when its inputs change identity, exactly like the old effect deps, so a daylight
+ * cycle regenerates the environment map with the authored world.
+ *
+ * Opt out of cinematic IBL with `look: "flat"` on the shell presentation.
+ * @internal shell-internal default lighting; games never import it.
+ */
+export function environmentLightingDraw(getProps: () => EnvironmentLightingProps): EngineDraw {
+  const probeEye = new THREE.Vector3();
+  let probe: WorldReflectionProbe | null = null;
+  let probeDeps: readonly unknown[] | null = null;
+  let untarget: (() => void) | null = null;
+  let releaseBake: (() => void) | null = null;
+  let bakeDeps: readonly unknown[] | null = null;
+  let gl: THREE.WebGLRenderer | null = null;
+  let scene: THREE.Scene | null = null;
+
+  const syncProbe = () => {
+    const props = getProps();
+    if (gl === null || scene === null) return;
+    const authoredMap = props.source?.kind === "hdri" || props.source?.kind === "cube";
+    const worldProbe = props.worldProbe ?? null;
+    const deps: readonly unknown[] = [authoredMap, worldProbe?.size, worldProbe?.interval, worldProbe?.moveDistance];
+    const prev = probeDeps;
+    if (prev !== null && prev.length === deps.length && deps.every((dep, index) => dep === prev[index])) return;
+    probeDeps = deps;
+    untarget?.();
+    untarget = null;
+    probe?.dispose();
+    probe = null;
+    if (worldProbe !== null && !authoredMap) {
+      probe = new WorldReflectionProbe(gl, worldProbe);
+      // The probe draws the scene into a cube target, which links the target's programs.
+      untarget = warmupDrawsToTarget(scene);
+    }
+  };
+
+  const bake = () => {
+    releaseBake?.();
+    releaseBake = null;
+    const props = getProps();
+    if (gl === null || scene === null) return;
+    const renderer = gl;
+    const target = scene;
+    const { source, intensity = DEFAULT_IBL_INTENSITY, skyColor = "#87b5e0", groundColor = "#3d4a38", horizonTint = "#ffffff", sunDirection, sunColor = "#fff2d6", worldProbe = null } = props;
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    let baked: THREE.WebGLRenderTarget | undefined;
+    let loadedTexture: THREE.Texture | THREE.CubeTexture | undefined;
+    let cancelled = false;
+    let appliedRotation: THREE.Euler | undefined;
+    let appliedRotationValue: THREE.Euler | undefined;
+    const previous = target.environment;
+    const previousRotation = target.environmentRotation;
+    const previousIntensity = target.environmentIntensity;
+    const appliedIntensity = source?.intensity ?? intensity;
+    target.environmentIntensity = appliedIntensity;
+    const release = () => {
+      if (cancelled) return;
+      cancelled = true;
+      if (baked !== undefined && target.environment === baked.texture) {
+        target.environment = previous;
+        target.environmentIntensity = previousIntensity;
+      }
+      if (appliedRotation !== undefined && appliedRotationValue !== undefined && target.environmentRotation === appliedRotation && appliedRotation.equals(appliedRotationValue)) target.environmentRotation = previousRotation;
+      if (target.environmentIntensity === appliedIntensity) target.environmentIntensity = previousIntensity;
+      pmrem.dispose();
+      baked?.dispose();
+      loadedTexture?.dispose();
+    };
+    releaseBake = release;
+    const effective = source?.kind === "gradient" ? source : undefined;
+    const apply = (next: THREE.WebGLRenderTarget, rotation?: number) => {
+      if (cancelled) { next.dispose(); return; }
+      baked = next;
+      target.environment = next.texture;
+      if (rotation !== undefined) {
+        appliedRotation = new THREE.Euler(0, rotation, 0);
+        appliedRotationValue = appliedRotation.clone();
+        target.environmentRotation = appliedRotation;
+      }
+    };
+    try {
+      if (source?.kind === "hdri") {
+        const Loader = /\.exr(?:$|\?)/i.test(source.url) ? EXRLoader : RGBELoader;
+        warmupWaitsFor(target, new Loader().loadAsync(resolveAssetBaseUrl(source.url)).then((texture) => {
+          if (cancelled) { texture.dispose(); return; }
+          loadedTexture = texture;
+          texture.mapping = THREE.EquirectangularReflectionMapping;
+          const size = Math.max(16, ((texture.image as { width?: number } | undefined)?.width ?? 1024) / 4);
+          return linkPmremBake(renderer, pmrem, size, () => pmrem.compileEquirectangularShader(), () => cancelled).then(() => {
+            if (!cancelled) apply(pmrem.fromEquirectangular(texture), source.rotation);
+          });
+        }).catch((error) => {
+          if (cancelled) return;
+          reportTextureLoadError(source.url);
+          console.warn(`[jgengine] environment illumination failed: ${source.url}`, error);
+        }), `environment map ${source.url}`);
+      } else if (source?.kind === "cube") {
+        warmupWaitsFor(target, new THREE.CubeTextureLoader().loadAsync(source.urls.map(resolveAssetBaseUrl)).then((texture) => {
+          if (cancelled) { texture.dispose(); return; }
+          loadedTexture = texture;
+          const face = (texture.image as { width?: number; image?: { width?: number } }[] | undefined)?.[0];
+          const size = face?.width ?? face?.image?.width ?? PMREM_SCENE_SIZE;
+          return linkPmremBake(renderer, pmrem, size, () => pmrem.compileCubemapShader(), () => cancelled).then(() => {
+            if (!cancelled) apply(pmrem.fromCubemap(texture));
+          });
+        }).catch((error) => {
+          if (cancelled) return;
+          for (const url of source.urls) reportTextureLoadError(url);
+          console.warn(`[jgengine] cube environment illumination failed: ${source.urls.join(", ")}`, error);
+        }), "cube environment map");
+      } else {
+        const probeScene = buildSkyProbeScene({ skyColor: effective?.sky ?? skyColor, groundColor: effective?.ground ?? groundColor, horizonTint, sunDirection, sunColor: effective?.sun ?? sunColor });
+        // With a world probe, the sky bake matches its size: a lit program is built for its
+        // environment's size, so a probe that took over at another size would relink every one.
+        const size = worldProbe?.size ?? PMREM_SCENE_SIZE;
+        const bakedPromise = linkPmremBake(renderer, pmrem, size, () => renderer.compile(probeScene, PMREM_BAKE_CAMERA), () => cancelled)
+          .then(() => {
+            if (!cancelled) apply(pmrem.fromScene(probeScene, 0.04, 0.1, 100, { size }));
+          })
+          .finally(() => disposeScene(probeScene));
+        // Every lit material links a different program with an environment map, so the scene's
+        // warmup waits for this one rather than linking programs the first frame never draws.
+        warmupWaitsFor(target, bakedPromise, "sky environment bake");
+        bakedPromise.catch((error: unknown) => {
+          if (!cancelled) console.warn("[jgengine] environment probe bake failed", error);
+        });
+      }
+    } catch (error) {
+      release();
+      throw error;
+    }
+  };
+
+  const sync = () => {
+    const props = getProps();
+    syncProbe();
+    const deps: readonly unknown[] = [
+      gl, scene, props.worldProbe?.size, props.source, props.intensity ?? DEFAULT_IBL_INTENSITY,
+      props.skyColor ?? "#87b5e0", props.groundColor ?? "#3d4a38", props.horizonTint ?? "#ffffff",
+      props.sunColor ?? "#fff2d6",
+      props.sunDirection?.[0], props.sunDirection?.[1], props.sunDirection?.[2],
+    ];
+    const prev = bakeDeps;
+    if (prev !== null && prev.length === deps.length && deps.every((dep, index) => dep === prev[index])) return;
+    bakeDeps = deps;
+    bake();
+  };
+
+  return {
+    mount(state: EngineFrameState) {
+      gl = state.gl;
+      // Environment state belongs to the rendered scene, not the mount group.
+      scene = state.rootScene ?? state.scene;
+      sync();
+    },
+    update() {
+      sync();
+    },
+    frame(state: EngineFrameState) {
+      sync();
+      const props = getProps();
+      const current = probe;
+      const target = scene;
+      if (current !== null && target !== null) {
+        current.step(target, state.camera.getWorldPosition(probeEye), state.delta);
+      }
+      const daylight = props.daylight;
+      if (daylight === undefined || target === null || target.environment === null) return;
+      // Ambient fill and the probe's sun lobe fade together; the probe's colours stay authored.
+      target.environmentIntensity = (props.source?.intensity ?? props.intensity ?? DEFAULT_IBL_INTENSITY) * (daylight.ambientFactor * 0.6 + daylight.sunFactor * 0.4);
+    },
+    dispose() {
+      releaseBake?.();
+      releaseBake = null;
+      untarget?.();
+      untarget = null;
+      probe?.dispose();
+      probe = null;
+      gl = null;
+      scene = null;
+      probeDeps = null;
+      bakeDeps = null;
+    },
+  };
+}
+
+/**
  * Image-based lighting from a procedural sky/horizon/ground probe with an HDR sun (not three's stock
  * RoomEnvironment gray studio box). Metals and dielectrics pick up sky color, a sun glint and a
  * directional sky fill; re-render when sky/sun props change so a daylight cycle
@@ -52,137 +243,11 @@ export interface EnvironmentLightingProps {
  * Opt out of cinematic IBL with `look: "flat"` on the shell presentation.
  * @internal shell-internal default lighting; games never import it.
  */
-export function EnvironmentLighting({
-  source,
-  intensity = DEFAULT_IBL_INTENSITY,
-  skyColor = "#87b5e0",
-  groundColor = "#3d4a38",
-  horizonTint = "#ffffff",
-  sunDirection,
-  sunColor = "#fff2d6",
-  daylight,
-  worldProbe = null,
-}: EnvironmentLightingProps): null {
-  const gl = useThree((state) => state.gl);
-  const scene = useThree((state) => state.scene);
-  const probeRef = useRef<WorldReflectionProbe | null>(null);
-  const authoredMap = source?.kind === "hdri" || source?.kind === "cube";
-
-  useEffect(() => {
-    if (worldProbe === null || authoredMap) return;
-    const probe = new WorldReflectionProbe(gl, worldProbe);
-    probeRef.current = probe;
-    // The probe draws the scene into a cube target, which links the target's programs.
-    const untarget = warmupDrawsToTarget(scene);
-    return () => {
-      untarget();
-      probeRef.current = null;
-      probe.dispose();
-    };
-  }, [gl, scene, authoredMap, worldProbe?.size, worldProbe?.interval, worldProbe?.moveDistance]);
-
-  useEffect(() => {
-    const pmrem = new THREE.PMREMGenerator(gl);
-    let target: THREE.WebGLRenderTarget | undefined;
-    let loadedTexture: THREE.Texture | THREE.CubeTexture | undefined;
-    let cancelled = false;
-    let appliedRotation: THREE.Euler | undefined;
-    let appliedRotationValue: THREE.Euler | undefined;
-    const previous = scene.environment;
-    const previousRotation = scene.environmentRotation;
-    const previousIntensity = scene.environmentIntensity;
-    const appliedIntensity = source?.intensity ?? intensity;
-    scene.environmentIntensity = appliedIntensity;
-    const release = () => {
-      if (cancelled) return;
-      cancelled = true;
-      if (target !== undefined && scene.environment === target.texture) {
-        scene.environment = previous;
-        scene.environmentIntensity = previousIntensity;
-      }
-      if (appliedRotation !== undefined && scene.environmentRotation === appliedRotation && appliedRotation.equals(appliedRotationValue!)) scene.environmentRotation = previousRotation;
-      if (scene.environmentIntensity === appliedIntensity) scene.environmentIntensity = previousIntensity;
-      pmrem.dispose();
-      target?.dispose();
-      loadedTexture?.dispose();
-    };
-    const effective = source?.kind === "gradient" ? source : undefined;
-    const apply = (next: THREE.WebGLRenderTarget, rotation?: number) => {
-      if (cancelled) { next.dispose(); return; }
-      target = next;
-      scene.environment = next.texture;
-      if (rotation !== undefined) {
-        appliedRotation = new THREE.Euler(0, rotation, 0);
-        appliedRotationValue = appliedRotation.clone();
-        scene.environmentRotation = appliedRotation;
-      }
-    };
-    try {
-      if (source?.kind === "hdri") {
-        const Loader = /\.exr(?:$|\?)/i.test(source.url) ? EXRLoader : RGBELoader;
-        warmupWaitsFor(scene, new Loader().loadAsync(resolveAssetBaseUrl(source.url)).then((texture) => {
-          if (cancelled) { texture.dispose(); return; }
-          loadedTexture = texture;
-          texture.mapping = THREE.EquirectangularReflectionMapping;
-          const size = Math.max(16, ((texture.image as { width?: number } | undefined)?.width ?? 1024) / 4);
-          return linkPmremBake(gl, pmrem, size, () => pmrem.compileEquirectangularShader(), () => cancelled).then(() => {
-            if (!cancelled) apply(pmrem.fromEquirectangular(texture), source.rotation);
-          });
-        }).catch((error) => {
-          if (cancelled) return;
-          reportTextureLoadError(source.url);
-          console.warn(`[jgengine] environment illumination failed: ${source.url}`, error);
-        }));
-      } else if (source?.kind === "cube") {
-        warmupWaitsFor(scene, new THREE.CubeTextureLoader().loadAsync(source.urls.map(resolveAssetBaseUrl)).then((texture) => {
-          if (cancelled) { texture.dispose(); return; }
-          loadedTexture = texture;
-          const face = (texture.image as { width?: number; image?: { width?: number } }[] | undefined)?.[0];
-          const size = face?.width ?? face?.image?.width ?? PMREM_SCENE_SIZE;
-          return linkPmremBake(gl, pmrem, size, () => pmrem.compileCubemapShader(), () => cancelled).then(() => {
-            if (!cancelled) apply(pmrem.fromCubemap(texture));
-          });
-        }).catch((error) => {
-          if (cancelled) return;
-          for (const url of source.urls) reportTextureLoadError(url);
-          console.warn(`[jgengine] cube environment illumination failed: ${source.urls.join(", ")}`, error);
-        }));
-      } else {
-        const probe = buildSkyProbeScene({ skyColor: effective?.sky ?? skyColor, groundColor: effective?.ground ?? groundColor, horizonTint, sunDirection, sunColor: effective?.sun ?? sunColor });
-        // With a world probe, the sky bake matches its size: a lit program is built for its
-        // environment's size, so a probe that took over at another size would relink every one.
-        const size = worldProbe?.size ?? PMREM_SCENE_SIZE;
-        const baked = linkPmremBake(gl, pmrem, size, () => gl.compile(probe, PMREM_BAKE_CAMERA), () => cancelled)
-          .then(() => {
-            if (!cancelled) apply(pmrem.fromScene(probe, 0.04, 0.1, 100, { size }));
-          })
-          .finally(() => disposeScene(probe));
-        // Every lit material links a different program with an environment map, so the scene's
-        // warmup waits for this one rather than linking programs the first frame never draws.
-        warmupWaitsFor(scene, baked);
-        baked.catch((error: unknown) => {
-          if (!cancelled) console.warn("[jgengine] environment probe bake failed", error);
-        });
-      }
-    } catch (error) {
-      release();
-      throw error;
-    }
-    return release;
-  }, [gl, scene, worldProbe?.size, source, intensity, skyColor, groundColor, horizonTint, sunColor, sunDirection?.[0], sunDirection?.[1], sunDirection?.[2]]);
-
-  useFrame((state, delta) => {
-    const probe = probeRef.current;
-    probe?.step(scene, state.camera.getWorldPosition(probeEye), delta);
-    if (daylight === undefined || scene.environment === null) return;
-    // Ambient fill and the probe's sun lobe fade together; the probe's colours stay authored.
-    scene.environmentIntensity = (source?.intensity ?? intensity) * (daylight.ambientFactor * 0.6 + daylight.sunFactor * 0.4);
-  });
-
-  return null;
+export function EnvironmentLighting(props: EnvironmentLightingProps) {
+  const latest = useRef(props);
+  latest.current = props;
+  return <EngineDrawMount create={() => environmentLightingDraw(() => latest.current)} deps={[]} />;
 }
-
-const probeEye = new THREE.Vector3();
 
 /** @internal Default IBL strength for the procedural probe: enough sky fill and sun lobe to model forms. */
 export const DEFAULT_IBL_INTENSITY = 0.45;

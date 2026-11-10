@@ -12,8 +12,8 @@ const scratch = resolve(import.meta.dir, "../../../../.scratch/model-animation-h
 let browser: Browser, server: ReturnType<typeof Bun.serve>;
 beforeAll(async () => {
   await rm(scratch, { recursive: true, force: true });
-  await mkdir(`${scratch}/node_modules/@react-three`, { recursive: true });
-  for (const pkg of ["react", "react-dom", "three", "@react-three/fiber", "@react-three/drei"]) {
+  await mkdir(`${scratch}/node_modules`, { recursive: true });
+  for (const pkg of ["react", "react-dom", "three"]) {
     const owner = pkg === "react-dom" ? "react" : "shell";
     await symlink(resolve(import.meta.dir, "../../../../packages", owner, "node_modules", pkg), `${scratch}/node_modules/${pkg}`, "dir");
   }
@@ -21,7 +21,7 @@ beforeAll(async () => {
     import React from 'react';
     import {createRoot} from 'react-dom/client';
     import {flushSync} from 'react-dom';
-    import {context as FiberContext} from '@react-three/fiber';
+    import {EngineHostProvider} from '@jgengine/core/frame/engineHost.draw';
     import {GameProvider} from '@jgengine/react/provider';
     import {useModelAnimation,diagnoseModelAnimation} from '@jgengine/core/anim/useModelAnimation.draw';
     import {FrameDriver} from '@jgengine/shell/drivers/FrameDriver';
@@ -32,6 +32,7 @@ beforeAll(async () => {
     import {defineGameDefinition} from '@jgengine/core/game/defineGame';
     import {createAssetCatalog} from '@jgengine/core/scene/assetCatalog';
     import {seededRng} from '@jgengine/core/random/rng';
+    import {bindFrameSource} from '@jgengine/core/frame/frameBoard.draw';
     import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
     import {MeshoptDecoder} from 'three/examples/jsm/libs/meshopt_decoder.module.js';
     import {clone} from 'three/examples/jsm/utils/SkeletonUtils.js';
@@ -48,10 +49,10 @@ beforeAll(async () => {
       const initial=rng.state();const expected=seededRng('unused');expected.restore(initial);
       const scenes=Array.from({length:count},()=>clone(gltf.scene));const bind=scenes.map(values);
       scenes.forEach((_,i)=>ctx.scene.entity.spawn('hero',{id:'actor'+i,position:[0,0,0]}));
-      const callbacks=new Set();const state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};
-      const store=selector=>selector(state);store.getState=()=>state;
+      const callbacks=new Set();const state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};bindFrameSource((priority,run)=>{const ref={current:(s,d)=>run(s,d)};callbacks.add(ref);return()=>callbacks.delete(ref)});
+      const host={frame:state};
       const element=document.createElement('div');document.body.append(element);const root=createRoot(element);
-      flushSync(()=>root.render(<GameProvider context={ctx}><FiberContext.Provider value={store}>{scenes.map((scene,i)=><Model key={i} scene={scene} id={'actor'+i} animation={animation}/>)}</FiberContext.Provider></GameProvider>));
+      flushSync(()=>root.render(<GameProvider context={ctx}><EngineHostProvider host={host}>{scenes.map((scene,i)=><Model key={i} scene={scene} id={'actor'+i} animation={animation}/>)}</EngineHostProvider></GameProvider>));
       const frame=delta=>{for(const ref of callbacks)ref.current(state,delta)};
       const attack=id=>ctx.game.events.emit('entity.animation',{instanceId:id,event:'attack'});
       frame(0);
@@ -73,12 +74,12 @@ beforeAll(async () => {
       ctx.scene.entity.spawn('hero',{id:'actor0',position:[0,0,0]});
       const config={states:{idle:'Idle',walk:'Walking_A',run:'Running_A'},oneShots:{attack:variants}};
       const animation=explicitGraph?{graph:locomotionGraph({...config.states,oneShots:config.oneShots})}:config;
-      const callbacks=new Set();const state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};
-      const store=selector=>selector(state);store.getState=()=>state;
+      const callbacks=new Set();const state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};bindFrameSource((priority,run)=>{const ref={current:(s,d)=>run(s,d)};callbacks.add(ref);return()=>callbacks.delete(ref)});
+      const host={frame:state};
       const element=document.createElement('div');document.body.append(element);const root=createRoot(element);
       let active=animation;let uncacheCount=0;const originalUncache=AnimationMixer.prototype.uncacheRoot;
       AnimationMixer.prototype.uncacheRoot=function(scene){uncacheCount++;return originalUncache.call(this,scene)};
-      const render=()=>flushSync(()=>root.render(<GameProvider context={ctx}><FiberContext.Provider value={store}><Model scene={scene} id='actor0' animation={freshEachRender?JSON.parse(JSON.stringify(active)):active}/></FiberContext.Provider></GameProvider>));
+      const render=()=>flushSync(()=>root.render(<GameProvider context={ctx}><EngineHostProvider host={host}><Model scene={scene} id='actor0' animation={freshEachRender?JSON.parse(JSON.stringify(active)):active}/></EngineHostProvider></GameProvider>));
       const frame=delta=>{for(const ref of callbacks)ref.current(state,delta)};
       const poses=[];render();frame(0);
       for(let i=0;i<30;i++){
@@ -114,14 +115,14 @@ beforeAll(async () => {
       const ctx=createGameContext({definition:defineGameDefinition({name:'discontinuity-proof',assets:createAssetCatalog(),multiplayer:'off'}),content:{},player:{userId:'player',isNew:true}});
       ctx.scene.entity.spawn('hero',{id,position:[0,0,0]});
       const animation={...config,oneShots:{...config.oneShots,death:'Death_A'},...(mode==='paused'?{paused:true}:{})};
-      const callbacks=new Set(),state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};
-      const store=selector=>selector(state);store.getState=()=>state;
+      const callbacks=new Set(),state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};bindFrameSource((priority,run)=>{const ref={current:(s,d)=>run(s,d)};callbacks.add(ref);return()=>callbacks.delete(ref)});
+      const host={frame:state};
       const actions=[];let cleanups=0;
       const originalAction=AnimationMixer.prototype.clipAction,originalUncache=AnimationMixer.prototype.uncacheRoot;
       AnimationMixer.prototype.clipAction=function(...args){const action=originalAction.apply(this,args);actions.push(action);return action};
       AnimationMixer.prototype.uncacheRoot=function(...args){cleanups++;return originalUncache.apply(this,args)};
       const element=document.createElement('div');document.body.append(element);const root=createRoot(element);
-      const render=()=>flushSync(()=>root.render(<GameProvider context={ctx}><FiberContext.Provider value={store}><Model scene={scene} id={id} animation={animation}/></FiberContext.Provider></GameProvider>));
+      const render=()=>flushSync(()=>root.render(<GameProvider context={ctx}><EngineHostProvider host={host}><Model scene={scene} id={id} animation={animation}/></EngineHostProvider></GameProvider>));
       const frame=delta=>{for(const ref of callbacks)ref.current(state,delta)};
       const weights=()=>Object.fromEntries(actions.map(action=>[action.getClip().name,action.getEffectiveWeight()]));
       const at=()=>ctx.scene.entity.get(id).position;
@@ -153,14 +154,14 @@ beforeAll(async () => {
       const ctx=createGameContext({definition:defineGameDefinition({name:'clock-proof',assets:createAssetCatalog(),multiplayer:'off'}),content:{},player:{userId:'player',isNew:true},rng:seededRng('clock-gameplay')});
       ctx.scene.entity.spawn('hero',{id,position:[0,0,0]});
       const animation=single?{clip:'Idle'}:config;
-      const callbacks=new Set(),state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};
-      const store=selector=>selector(state);store.getState=()=>state;
+      const callbacks=new Set(),state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};bindFrameSource((priority,run)=>{const ref={current:(s,d)=>run(s,d)};callbacks.add(ref);return()=>callbacks.delete(ref)});
+      const host={frame:state};
       const actions=[];let cleanups=0;
       const originalAction=AnimationMixer.prototype.clipAction,originalUncache=AnimationMixer.prototype.uncacheRoot;
       AnimationMixer.prototype.clipAction=function(...args){const action=originalAction.apply(this,args);actions.push(action);return action};
       AnimationMixer.prototype.uncacheRoot=function(...args){cleanups++;return originalUncache.apply(this,args)};
       const element=document.createElement('div');document.body.append(element);const root=createRoot(element);
-      const content=<FiberContext.Provider value={store}><Model scene={scene} id={binding==='unbound'?undefined:id} animation={animation}/></FiberContext.Provider>;
+      const content=<EngineHostProvider host={host}><Model scene={scene} id={binding==='unbound'?undefined:id} animation={animation}/></EngineHostProvider>;
       flushSync(()=>root.render(binding==='noctx'?content:<GameProvider context={ctx}>{content}</GameProvider>));
       const frame=delta=>{ctx.sim.advance(delta,()=>{});for(const ref of callbacks)ref.current(state,delta)};
       const sample=()=>({pose:values(scene),actions:actions.map(a=>({clip:a.getClip().name,duration:a.getClip().duration,time:a.time,weight:a.getEffectiveWeight()})),rng:ctx.rng.state()});
@@ -190,14 +191,14 @@ beforeAll(async () => {
       ctx.time.setSpeed(rate);ctx.time.setTimescale(timescale);
       ctx.scene.entity.spawn('hero',{id,position:[0,0,0]});
       const animation={...(single?{clip:'Idle'}:explicitGraph?{graph:locomotionGraph(config.states)}:{states:config.states}),...(clock===null?{}:{clock}),timeScale:authoredRate,...(held?{paused:true,time:.3}:{})};
-      const callbacks=new Set(),state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};
-      const store=selector=>selector(state);store.getState=()=>state;
+      const callbacks=new Set(),state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};bindFrameSource((priority,run)=>{const ref={current:(s,d)=>run(s,d)};callbacks.add(ref);return()=>callbacks.delete(ref)});
+      const host={frame:state};
       const actions=[];let cleanups=0;
       const originalAction=AnimationMixer.prototype.clipAction,originalUncache=AnimationMixer.prototype.uncacheRoot;
       AnimationMixer.prototype.clipAction=function(...args){const action=originalAction.apply(this,args);actions.push(action);return action};
       AnimationMixer.prototype.uncacheRoot=function(...args){cleanups++;return originalUncache.apply(this,args)};
       const element=document.createElement('div');document.body.append(element);const root=createRoot(element);
-      const content=<FiberContext.Provider value={store}><Model scene={scene} id={binding==='unbound'?undefined:id} animation={animation}/><Model scene={peer} animation={{clip:'Idle'}}/></FiberContext.Provider>;
+      const content=<EngineHostProvider host={host}><Model scene={scene} id={binding==='unbound'?undefined:id} animation={animation}/><Model scene={peer} animation={{clip:'Idle'}}/></EngineHostProvider>;
       flushSync(()=>root.render(binding==='noctx'?content:<GameProvider context={ctx}>{content}</GameProvider>));
       const sample=target=>({pose:values(target),actions:actions.filter(a=>a.getMixer().getRoot()===target&&a.getEffectiveWeight()>1e-6).map(a=>({clip:a.getClip().name,duration:a.getClip().duration,time:a.time,weight:a.getEffectiveWeight()}))});
       const before=sample(scene);
@@ -219,15 +220,15 @@ beforeAll(async () => {
       const scene=clone(gltf.scene),bind=values(scene);
       const available=mode==='empty'?[]:mode==='noidle'?gltf.animations.filter(c=>!c.name.toLowerCase().includes('idle')):gltf.animations;
       const diagnostics=diagnoseModelAnimation(scene,{auto:true,clock:'game'},available);
-      const callbacks=new Set(),state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};
-      const store=selector=>selector(state);store.getState=()=>state;
+      const callbacks=new Set(),state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};bindFrameSource((priority,run)=>{const ref={current:(s,d)=>run(s,d)};callbacks.add(ref);return()=>callbacks.delete(ref)});
+      const host={frame:state};
       const warnings=[];let cleanups=0;
       const originalWarn=console.warn,originalUncache=AnimationMixer.prototype.uncacheRoot;
       console.warn=(...args)=>warnings.push(args.join(' '));
       AnimationMixer.prototype.uncacheRoot=function(...args){cleanups++;return originalUncache.apply(this,args)};
       const element=document.createElement('div');document.body.append(element);const root=createRoot(element);
       function AutoModel({animation}){useModelAnimation(scene,available,animation);return null}
-      const render=animation=>flushSync(()=>root.render(<FiberContext.Provider value={store}><AutoModel animation={animation}/></FiberContext.Provider>));
+      const render=animation=>flushSync(()=>root.render(<EngineHostProvider host={host}><AutoModel animation={animation}/></EngineHostProvider>));
       render('none');render({auto:true,clock:'game'});render({auto:true,clock:'game'});
       for(const ref of callbacks)ref.current(state,.2);
       const after=values(scene),explicitWarnings=[...warnings];
@@ -245,8 +246,8 @@ beforeAll(async () => {
       if(mode==='late')ctx.sim.advance(2,()=>{});
       if(mode==='missing')delete ctx.time.advancedSeconds;
       const animation=single?{clip:'Idle',clock}:{...config,clock};
-      const callbacks=new Map(),driverErrors=[],warnings=[];const state={invalidate:()=>{},internal:{subscribe:(ref,priority=0)=>{callbacks.set(ref,priority);return()=>callbacks.delete(ref)}}};
-      const store=selector=>selector(state);store.getState=()=>state;
+      const callbacks=new Map(),driverErrors=[],warnings=[];const state={invalidate:()=>{},internal:{subscribe:(ref,priority=0)=>{callbacks.set(ref,priority);return()=>callbacks.delete(ref)}}};bindFrameSource((priority,run)=>{const ref={current:(s,d)=>run(s,d)};callbacks.set(ref,priority);return()=>callbacks.delete(ref)});
+      const host={frame:state};
       const actions=[];let cleanups=0;
       const originalAction=AnimationMixer.prototype.clipAction,originalUncache=AnimationMixer.prototype.uncacheRoot,originalWarn=console.warn;
       AnimationMixer.prototype.clipAction=function(...args){const action=originalAction.apply(this,args);actions.push(action);return action};
@@ -259,7 +260,7 @@ beforeAll(async () => {
       const tracker=createActionStateTracker({}),gate={current:false};
       const driver=<FrameDriver ctx={ctx} playable={playable} tracker={tracker} yawRef={{current:0}} pitchRef={{current:0}} primaryClickRef={{current:false}} pointerAxisRef={{current:null}} analogRef={{current:null}} gateRef={gate} onRuntimeError={(error,phase)=>driverErrors.push({error:String(error),phase})} multiplayer={null} serverIdRef={{current:null}} pointerService={null} pointerAim={false} pingCommand={undefined} poster={false} onPosterSettled={()=>{}} authoritativeFrameRef={{current:null}}/>;
       const element=document.createElement('div');document.body.append(element);const root=createRoot(element);
-      flushSync(()=>root.render(<GameProvider context={ctx}><FiberContext.Provider value={store}>{driver}<Model scene={scene} id={id} animation={animation}/><Model scene={peer} animation={{clip:'Idle'}}/></FiberContext.Provider></GameProvider>));
+      flushSync(()=>root.render(<GameProvider context={ctx}><EngineHostProvider host={host}>{driver}<Model scene={scene} id={id} animation={animation}/><Model scene={peer} animation={{clip:'Idle'}}/></EngineHostProvider></GameProvider>));
       const frame=delta=>{for(const [ref]of[...callbacks].sort((a,b)=>a[1]-b[1]))ref.current(state,delta)};
       const sample=target=>({pose:values(target),actions:actions.filter(a=>a.getMixer().getRoot()===target&&a.getEffectiveWeight()>1e-6).map(a=>({clip:a.getClip().name,duration:a.getClip().duration,time:a.time,weight:a.getEffectiveWeight()}))});
       frame(0);const before=sample(scene),beforeClock=ctx.time.now(),initialAcceptedProgress=ctx.time.advancedSeconds?.();
@@ -293,10 +294,10 @@ beforeAll(async () => {
       ctx.scene.entity.spawn('hero',{id,position:[0,0,0]});
       if(mode==='pause')ctx.time.pause();
       if(mode==='timescale-zero')ctx.time.setTimescale(0);
-      const callbacks=new Set(),state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};
-      const store=selector=>selector(state);store.getState=()=>state;
+      const callbacks=new Set(),state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};bindFrameSource((priority,run)=>{const ref={current:(s,d)=>run(s,d)};callbacks.add(ref);return()=>callbacks.delete(ref)});
+      const host={frame:state};
       const element=document.createElement('div');document.body.append(element);const root=createRoot(element);
-      flushSync(()=>root.render(<GameProvider context={ctx}><FiberContext.Provider value={store}><Model scene={scene} id={id} animation={config}/></FiberContext.Provider></GameProvider>));
+      flushSync(()=>root.render(<GameProvider context={ctx}><EngineHostProvider host={host}><Model scene={scene} id={id} animation={config}/></EngineHostProvider></GameProvider>));
       const frame=delta=>{ctx.sim.advance(delta,()=>{});for(const ref of callbacks)ref.current(state,delta)};
       const mounted=values(scene);
       frame(1/60);const first=values(scene);

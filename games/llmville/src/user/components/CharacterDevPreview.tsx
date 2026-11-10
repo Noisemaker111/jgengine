@@ -1,5 +1,8 @@
-import { Canvas, useThree } from "@react-three/fiber";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { EngineCanvas } from "@jgengine/core/frame/engineCanvas.draw";
+import { useEngineRendererFactory } from "@jgengine/core/webgpu/engineRenderer.draw";
+import { SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";
+import { CameraPoseDraw, StageDraw, type StageSpec } from "@jgengine/core/stage/stageDraw.draw";
 import type {
   CharacterFishColorId,
   CharacterHoodieColorId,
@@ -28,16 +31,6 @@ interface CharacterViewProps {
   viewAngle?: CharacterViewAngle;
 }
 
-function CameraRig({ position, target }: { position: [number, number, number]; target: [number, number, number] }) {
-  const { camera } = useThree();
-  useEffect(() => {
-    camera.position.set(position[0], position[1], position[2]);
-    camera.lookAt(target[0], target[1], target[2]);
-    camera.updateProjectionMatrix();
-  }, [camera, position, target]);
-  return null;
-}
-
 const CAMERA_BY_ANGLE: Record<CharacterViewAngle, [number, number, number]> = {
   front: [0, 1.32, -3.15],
   "fixed-front": [0, 1.32, -3.15],
@@ -45,7 +38,29 @@ const CAMERA_BY_ANGLE: Record<CharacterViewAngle, [number, number, number]> = {
   diagonal: [2.25, 1.45, -2.15],
 };
 
+const STAGE: StageSpec = {
+  background: "#0f1715",
+  lights: [
+    { kind: "ambient", intensity: 0.65, color: "#f4ecdd" },
+    { kind: "hemisphere", skyColor: "#5fc2a8", groundColor: "#1f2b28", intensity: 0.35 },
+    {
+      kind: "directional",
+      castShadow: true,
+      position: [1.8, 3.8, 2.2],
+      intensity: 1.1,
+      color: "#f8f1e0",
+      shadowMapSize: [1024, 1024],
+      shadowCamera: { near: 1, far: 20, left: -2, right: 2, top: 3, bottom: -1 },
+    },
+    { kind: "directional", position: [-2.2, 1.8, -1.5], intensity: 0.35, color: "#a8c5b8" },
+    { kind: "directional", position: [0, 2, -3.5], intensity: 0.28, color: "#e0d3b8" },
+  ],
+  ground: { shape: "circle", radius: 1.1, color: "#111a18", roughness: 0.92, metalness: 0, y: 0.001 },
+  grid: { size: 2.2, divisions: 11, color: "#1a2623", y: 0.002 },
+};
+
 function CharacterView({ yaw, look, walkPhase, isWalking, label, viewAngle = "front" }: CharacterViewProps) {
+  const rendererFactory = useEngineRendererFactory("webgl");
   const camPos = CAMERA_BY_ANGLE[viewAngle];
   const camTarget: [number, number, number] = [0, 1.15, 0];
 
@@ -53,61 +68,27 @@ function CharacterView({ yaw, look, walkPhase, isWalking, label, viewAngle = "fr
     <div className="flex flex-col">
       <div className="mb-1 text-center text-xs font-semibold tracking-[2px] text-brand-cream/70">{label}</div>
       <div className="overflow-hidden rounded-xl border border-white/10 bg-[#0a100e]">
-        <Canvas
-          shadows
-          camera={{ fov: 32, near: 0.1, far: 30 }}
-          gl={{ antialias: true, alpha: false, preserveDrawingBuffer: true }}
-          style={{ width: "100%", height: "560px", background: "#0f1715" }}
-          dpr={[1, 2]}
-        >
-          <Suspense fallback={null}>
-            <CameraRig position={camPos} target={camTarget} />
-
-            <color attach="background" args={["#0f1715"]} />
-
-            {/* Studio lighting tuned for form + details (not game mood) */}
-            <ambientLight intensity={0.65} color="#f4ecdd" />
-            <hemisphereLight args={["#5fc2a8", "#1f2b28", 0.35]} />
-            <directionalLight
-              castShadow
-              position={[1.8, 3.8, 2.2]}
-              intensity={1.1}
-              color="#f8f1e0"
-              shadow-mapSize={[1024, 1024]}
-              shadow-camera-near={1}
-              shadow-camera-far={20}
-              shadow-camera-left={-2}
-              shadow-camera-right={2}
-              shadow-camera-top={3}
-              shadow-camera-bottom={-1}
-            />
-            <directionalLight position={[-2.2, 1.8, -1.5]} intensity={0.35} color="#a8c5b8" />
-            {/* Subtle rim */}
-            <directionalLight position={[0, 2, -3.5]} intensity={0.28} color="#e0d3b8" />
-
-            <group rotation={[0, yaw, 0]}>
+        {rendererFactory === null ? null : (
+          <EngineCanvas
+            rendererFactory={rendererFactory}
+            shadows
+            camera={{ fov: 32, near: 0.1, far: 30 }}
+            preserveDrawingBuffer
+            style={{ width: "100%", height: "560px", background: "#0f1715" }}
+            dpr={[1, 2]}
+          >
+            <CameraPoseDraw spec={{ position: camPos, target: camTarget }} />
+            <StageDraw spec={STAGE} />
+            <SceneObjectGroup rotationY={yaw}>
               <PlayerCharacterFigure
                 look={look}
                 scale={1.0}
                 walkPhase={walkPhase}
                 isWalking={isWalking}
               />
-            </group>
-
-            {/* Simple floor disc */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.001, 0]} receiveShadow>
-              <circleGeometry args={[1.1, 64]} />
-              <meshStandardMaterial
-                color="#111a18"
-                roughness={0.92}
-                metalness={0}
-              />
-            </mesh>
-
-            {/* Very faint grid for scale reference */}
-            <gridHelper args={[2.2, 11, "#1a2623", "#1a2623"]} position={[0, 0.002, 0]} />
-          </Suspense>
-        </Canvas>
+            </SceneObjectGroup>
+          </EngineCanvas>
+        )}
       </div>
     </div>
   );

@@ -1,11 +1,10 @@
 // @skill jgengine-world
-import { useFrame } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
 
 import type { PhysicsWorld } from "@jgengine/core/physics/physicsWorld";
-
-import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
 /** Props for InstancedBodies: the physics world to draw and optional state tinting. */
 export interface InstancedBodiesProps {
@@ -29,37 +28,26 @@ const DEFAULT_BASE = new THREE.Color(0.62, 0.64, 0.68);
  * Transforms are written directly into `instanceMatrix.array` each frame (bodies never touch
  * the per-entity React path). Reusable by any game: hand it a physics world and go.
  * @capability physics-body-instances Draw every physics body as one instanced mesh
+ * @internal
  */
-export function InstancedBodies({ world, debugTint = false, baseColors, epoch = 0 }: InstancedBodiesProps) {
-  const meshRef = useRef<THREE.InstancedMesh>(null);
-  const geometry = useDisposable(() => new THREE.BoxGeometry(1, 1, 1), []);
-  const material = useDisposable(
-    () => new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0, vertexColors: false }),
-    [],
-  );
-  const capacity = world.capacity;
-
-  const instanceColor = useMemo(
-    () => new THREE.InstancedBufferAttribute(new Float32Array(capacity * 3), 3),
-    [capacity],
-  );
-
-  useEffect(() => {
-    const mesh = meshRef.current;
-    if (mesh === null) return;
-    mesh.instanceColor = instanceColor;
-    mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    instanceColor.setUsage(THREE.DynamicDrawUsage);
-  }, [instanceColor]);
-
-  const lastTintRef = useRef<boolean | null>(null);
-  useEffect(() => {
-    lastTintRef.current = null;
-  }, [epoch, debugTint]);
-
-  useFrame(() => {
-    const mesh = meshRef.current;
-    if (mesh === null) return;
+export function instancedBodiesDraw(getProps: () => InstancedBodiesProps): EngineDraw {
+  const group = new THREE.Group();
+  let mesh: THREE.InstancedMesh | null = null;
+  let geometry: THREE.BoxGeometry | null = null;
+  let material: THREE.MeshStandardMaterial | null = null;
+  let instanceColor: THREE.InstancedBufferAttribute | null = null;
+  let lastTint: boolean | null = null;
+  let epochFor = -1;
+  let debugTintFor: boolean | undefined;
+  const sync = (_state: EngineFrameState) => {
+    if (mesh === null || instanceColor === null) return;
+    const props = getProps();
+    const { world, debugTint = false, baseColors, epoch = 0 } = props;
+    if (epoch !== epochFor || debugTint !== debugTintFor) {
+      epochFor = epoch;
+      debugTintFor = debugTint;
+      lastTint = null;
+    }
     const count = world.count;
     mesh.count = count;
 
@@ -88,11 +76,11 @@ export function InstancedBodies({ world, debugTint = false, baseColors, epoch = 
         c[o + 2] = col.b;
       }
       instanceColor.needsUpdate = true;
-    } else if (lastTintRef.current !== false) {
+    } else if (lastTint !== false) {
       if (baseColors !== undefined) {
-        c.set(baseColors.subarray(0, capacity * 3));
+        c.set(baseColors.subarray(0, world.capacity * 3));
       } else {
-        for (let i = 0; i < capacity; i += 1) {
+        for (let i = 0; i < world.capacity; i += 1) {
           const o = i * 3;
           c[o] = DEFAULT_BASE.r;
           c[o + 1] = DEFAULT_BASE.g;
@@ -101,16 +89,52 @@ export function InstancedBodies({ world, debugTint = false, baseColors, epoch = 
       }
       instanceColor.needsUpdate = true;
     }
-    lastTintRef.current = debugTint;
-  });
+    lastTint = debugTint;
+  };
+  return {
+    mount(state: EngineFrameState) {
+      const capacity = getProps().world.capacity;
+      geometry = new THREE.BoxGeometry(1, 1, 1);
+      material = new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0, vertexColors: false });
+      instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(capacity * 3), 3);
+      mesh = new THREE.InstancedMesh(geometry, material, capacity);
+      mesh.instanceColor = instanceColor;
+      mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      instanceColor.setUsage(THREE.DynamicDrawUsage);
+      mesh.frustumCulled = false;
+      mesh.castShadow = false;
+      mesh.receiveShadow = false;
+      group.add(mesh);
+      state.scene.add(group);
+    },
+    frame: sync,
+    update: sync,
+    dispose(state: EngineFrameState) {
+      state.scene.remove(group);
+      group.clear();
+      mesh?.dispose();
+      mesh = null;
+      geometry?.dispose();
+      geometry = null;
+      material?.dispose();
+      material = null;
+      instanceColor = null;
+      lastTint = null;
+      epochFor = -1;
+      debugTintFor = undefined;
+    },
+  };
+}
 
-  return (
-    <instancedMesh
-      ref={meshRef}
-      args={[geometry, material, capacity]}
-      frustumCulled={false}
-      castShadow={false}
-      receiveShadow={false}
-    />
-  );
+/**
+ * Renders a PhysicsWorld's box bodies as a single InstancedMesh — one draw call per batch.
+ * Transforms are written directly into `instanceMatrix.array` each frame (bodies never touch
+ * the per-entity React path). Reusable by any game: hand it a physics world and go.
+ * @capability physics-body-instances Draw every physics body as one instanced mesh
+ */
+export function InstancedBodies(props: InstancedBodiesProps) {
+  const latest = useRef(props);
+  latest.current = props;
+  useEngineDraw(() => instancedBodiesDraw(() => latest.current), [props.world]);
+  return null;
 }

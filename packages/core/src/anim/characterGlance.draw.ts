@@ -1,10 +1,10 @@
-import { useThree } from "@react-three/fiber";
-import { useLayoutEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { noteCharacterMotion } from "@jgengine/core/lod/characterLod";
 import { useFrameWhile } from "@jgengine/core/render/useFrameWhile.draw";
+import type { EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 
 /**
  * Tuning for the default head turn a rigged character makes toward the local player. Angles are
@@ -194,36 +194,52 @@ const scratchTarget = new THREE.Vector3();
 const scratchOrigin = new THREE.Vector3();
 const scratchCamera = new THREE.Vector3();
 
+export interface GlanceDriverOptions {
+  scene: THREE.Object3D;
+  enabled: boolean;
+  ctx: GameContext | null;
+  instanceId?: string | undefined;
+  maxCameraDistance: number;
+}
+
 /**
- * Default glance for a rigged character: its head turns toward the local player when they come
- * close, from any angle in front of it, and turns back when they leave. The local player's own
- * model never glances. `maxCameraDistance` skips the work for characters too far away to read.
+ * The default head glance without React: resolves the rig once, then
+ * {@link pose} turns the head toward the local player each frame. `dispose`
+ * restores the animated pose. Shared by the hook and the model draw.
  */
-export function useCharacterGlance(
-  scene: THREE.Object3D,
-  enabled: boolean,
-  ctx: GameContext | null,
-  instanceId: string | undefined,
-  maxCameraDistance: number,
-): void {
-  const camera = useThree((three) => three.camera);
-  const rig = useMemo(() => (enabled ? findGlanceRig(scene) : null), [scene, enabled]);
-  const state = useRef<GlanceState>(createGlanceState());
-  useLayoutEffect(() => {
-    state.current = createGlanceState();
-    return () => {
-      if (rig === null) return;
-      if (instanceId !== undefined) noteCharacterMotion(instanceId, "glance", false);
-      for (const [bone, record] of rig.written) if (bone.quaternion.equals(record.written)) bone.quaternion.copy(record.animated);
-    };
-  }, [rig, instanceId]);
-  useFrameWhile(rig !== null && ctx !== null && instanceId !== undefined, (_three, delta) => {
+export class GlanceDriver {
+  private readonly scene: THREE.Object3D;
+  private readonly ctx: GameContext | null;
+  private readonly instanceId: string | undefined;
+  private readonly maxCameraDistance: number;
+  private readonly rig: GlanceRig | null;
+  private readonly state: GlanceState = createGlanceState();
+
+  constructor(options: GlanceDriverOptions) {
+    this.scene = options.scene;
+    this.ctx = options.ctx;
+    this.instanceId = options.instanceId;
+    this.maxCameraDistance = options.maxCameraDistance;
+    this.rig = options.enabled ? findGlanceRig(options.scene) : null;
+  }
+
+  /** Whether the driver has a resolved rig, live context and entity. */
+  get active(): boolean {
+    return this.rig !== null && this.ctx !== null && this.instanceId !== undefined;
+  }
+
+  /** One frame of the glance; a no-op unless {@link active}. */
+  pose(state: EngineFrameState, delta: number): void {
+    const rig = this.rig;
+    const ctx = this.ctx;
+    const instanceId = this.instanceId;
     if (rig === null || ctx === null || instanceId === undefined || instanceId === ctx.player.userId) return;
     const self = ctx.scene.entity.get(instanceId);
     if (self === null || self === undefined) return;
-    const origin = scene.getWorldPosition(scratchOrigin);
+    const camera = state.camera;
+    const origin = this.scene.getWorldPosition(scratchOrigin);
     const cameraAt = camera.getWorldPosition(scratchCamera);
-    if (cameraAt.distanceTo(origin) > maxCameraDistance && state.current.weight === 0) return;
+    if (cameraAt.distanceTo(origin) > this.maxCameraDistance && this.state.weight === 0) return;
     const player = ctx.scene.entity.get(ctx.player.userId);
     let target: THREE.Vector3 | null;
     if (player === null || player === undefined) target = cameraAt;
@@ -232,7 +248,44 @@ export function useCharacterGlance(
       const eye = scratchTarget.y - origin.y;
       target = scratchTarget.set(player.position[0], player.position[1] + eye, player.position[2]);
     }
-    applyGlance(rig, self.rotationY ?? 0, target, state.current, Math.min(delta, 0.1));
-    noteCharacterMotion(instanceId, "glance", state.current.weight > 0);
+    applyGlance(rig, self.rotationY ?? 0, target, this.state, Math.min(delta, 0.1));
+    noteCharacterMotion(instanceId, "glance", this.state.weight > 0);
+  }
+
+  /** Restore the animated pose and release the rig. */
+  dispose(): void {
+    const rig = this.rig;
+    if (rig === null) return;
+    if (this.instanceId !== undefined) noteCharacterMotion(this.instanceId, "glance", false);
+    for (const [bone, record] of rig.written) if (bone.quaternion.equals(record.written)) bone.quaternion.copy(record.animated);
+    this.state.weight = 0;
+    this.state.engaged = false;
+  }
+}
+
+/**
+ * Default glance for a rigged character: its head turns toward the local player when they come
+ * close, from any angle in front of it, and turns back when they leave. The local player's own
+ * model never glances. `maxCameraDistance` skips the work for characters too far away to read.
+ * A thin React shell over {@link GlanceDriver}.
+ */
+export function useCharacterGlance(
+  scene: THREE.Object3D,
+  enabled: boolean,
+  ctx: GameContext | null,
+  instanceId: string | undefined,
+  maxCameraDistance: number,
+): void {
+  const driverRef = useRef<GlanceDriver | null>(null);
+  useEffect(() => {
+    const driver = new GlanceDriver({ scene, enabled, ctx, instanceId, maxCameraDistance });
+    driverRef.current = driver;
+    return () => {
+      driver.dispose();
+      if (driverRef.current === driver) driverRef.current = null;
+    };
+  }, [scene, enabled, ctx, instanceId, maxCameraDistance]);
+  useFrameWhile(enabled && ctx !== null && instanceId !== undefined, (three, delta) => {
+    driverRef.current?.pose(three as EngineFrameState, delta);
   });
 }

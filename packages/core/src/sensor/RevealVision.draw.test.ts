@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { act, createRoot, extend } from "@react-three/fiber";
-import { createElement, Profiler, type ReactElement } from "react";
+import { act, createElement, Profiler, type ReactElement } from "react";
 import * as THREE from "three";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { GameProvider } from "@jgengine/react/provider";
+import { mountTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
 
 import { RevealHighlights } from "./RevealVision.draw";
 
@@ -28,36 +28,24 @@ interface Stage {
 let commits = 0;
 
 async function mounted(ctx: GameContext, element: ReactElement, run: (stage: Stage) => Promise<void>) {
-  const environment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
-  const previous = environment.IS_REACT_ACT_ENVIRONMENT;
-  environment.IS_REACT_ACT_ENVIRONMENT = true;
-  extend(THREE);
-  const root = createRoot({} as HTMLCanvasElement);
-  await root.configure({
-    frameloop: "never",
-    size: { width: 400, height: 300, top: 0, left: 0 },
-    dpr: 1,
-    gl: () => ({ render() {}, setSize() {}, setPixelRatio() {} }) as unknown as THREE.WebGLRenderer,
-  });
+  const m = await mountTestDraws(
+    createElement(
+      GameProvider,
+      { context: ctx },
+      createElement(
+        Profiler,
+        { id: "reveal", onRender: () => { commits += 1; } },
+        element,
+      ),
+    ),
+    { width: 400, height: 300 },
+  );
   try {
-    let scene!: THREE.Scene;
-    let store!: ReturnType<typeof root.render>;
-    await act(async () => {
-      store = root.render(
-        createElement(
-          GameProvider,
-          { context: ctx },
-          createElement(Profiler, { id: "reveal", onRender: () => { commits += 1; } }, element),
-        ),
-      );
-      scene = store.getState().scene;
-    });
-    const advance = async (ms: number) => act(async () => { store.getState().advance(ms); });
+    const advance = async (ms: number) => m.advance(ms / 1000);
     const mutate = async (write: () => void) => act(async () => { write(); });
-    await run({ scene, advance, mutate });
+    await run({ scene: m.scene, advance, mutate });
   } finally {
-    await act(async () => root.unmount());
-    environment.IS_REACT_ACT_ENVIRONMENT = previous;
+    await m.unmount();
   }
 }
 

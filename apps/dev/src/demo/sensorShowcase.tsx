@@ -1,4 +1,6 @@
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
+import * as THREE from "three";
+import { SceneObjectList } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
@@ -125,16 +127,21 @@ function useDarkSight(): [boolean, () => void] {
 function GhostTrail() {
   const buffer = useSessionRecorder(CULPRIT_ID, { maxDurationSeconds: 6 });
   const frames = buffer.frames().filter((_, index) => index % 6 === 0);
-  return (
-    <>
-      {frames.map((frame, index) => (
-        <mesh key={index} position={[frame.data.position[0], frame.data.position[1] + 0.2, frame.data.position[2]]}>
-          <sphereGeometry args={[0.08, 8, 8]} />
-          <meshBasicMaterial color="#a78bfa" transparent opacity={0.45} depthTest={false} />
-        </mesh>
-      ))}
-    </>
-  );
+  const ghosts = useMemo(() => {
+    const geometry = new THREE.SphereGeometry(0.08, 8, 8);
+    const material = new THREE.MeshBasicMaterial({ color: "#a78bfa", transparent: true, opacity: 0.45, depthTest: false });
+    return frames.map((frame) => {
+      const ghost = new THREE.Mesh(geometry, material);
+      ghost.position.set(frame.data.position[0], frame.data.position[1] + 0.2, frame.data.position[2]);
+      return ghost;
+    });
+  }, [frames]);
+  useEffect(() => () => {
+    for (const ghost of ghosts) ghost.geometry.dispose();
+    const material = ghosts[0]?.material;
+    if (material !== undefined && !Array.isArray(material)) material.dispose();
+  }, [ghosts]);
+  return <SceneObjectList objects={ghosts} />;
 }
 
 function SensorWorldOverlay() {

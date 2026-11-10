@@ -1,5 +1,8 @@
-import { Html } from "@react-three/drei";
 import { useEffect, useMemo, useState } from "react";
+import * as THREE from "three";
+import { disposeObjectTree, SceneObjectAttach, SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";
+import { AnchoredOverlay } from "@jgengine/core/hud/hudOverlay.draw";
+import { AttachedMeshes } from "./drawHelpers";
 
 import { prepareGenerator, runGenerator } from "@jgengine/core/generator/generator";
 import { trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
@@ -35,15 +38,18 @@ function LibraryTree({ species, label, position }: { species: string; label: str
   }, [meta, species]);
   const sources = useMemo(() => (mesh === null ? [] : plantMeshSources(mesh)), [mesh]);
   useEffect(() => () => sources.forEach((source) => source.geometry.dispose()), [sources]);
+  const meshes = useMemo(
+    () => sources.map((source) => new THREE.Mesh(source.geometry, source.material)),
+    [sources],
+  );
+  const labelPosition: [number, number, number] = [position[0], position[1] - 0.5, position[2] + 4];
   return (
-    <group position={position}>
-      {sources.map((source, index) => (
-        <mesh key={index} geometry={source.geometry} material={source.material} castShadow receiveShadow />
-      ))}
-      <Html position={[0, -0.5, 4]} center zIndexRange={[10, 0]} style={{ pointerEvents: "none" }}>
+    <SceneObjectGroup position={position}>
+      <AttachedMeshes meshes={meshes} castShadow receiveShadow />
+      <AnchoredOverlay position={labelPosition} zIndex={10}>
         <div style={{ color: "#fff", font: "600 11px sans-serif", whiteSpace: "nowrap", textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}>{label}</div>
-      </Html>
-    </group>
+      </AnchoredOverlay>
+    </SceneObjectGroup>
   );
 }
 
@@ -51,12 +57,18 @@ const rowOf = (index: number): number => Math.floor(index / SHEET.perRow);
 const rowX = (row: number): number => row * SHEET.rowGap;
 
 function PlantLibrary() {
+  const ground = useMemo(() => {
+    const geo = new THREE.PlaneGeometry(rowX(rowOf(PLANT_LIBRARY.length - 1)) + 400, 300);
+    geo.rotateX(-Math.PI / 2);
+    const groundMesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: "#6b7a4a", roughness: 1 }));
+    groundMesh.position.set(rowX(rowOf(PLANT_LIBRARY.length - 1)) / 2, 0, 0);
+    groundMesh.receiveShadow = true;
+    return groundMesh;
+  }, []);
+  useEffect(() => () => disposeObjectTree(ground), [ground]);
   return (
-    <group>
-      <mesh rotation-x={-Math.PI / 2} position={[rowX(rowOf(PLANT_LIBRARY.length - 1)) / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[rowX(rowOf(PLANT_LIBRARY.length - 1)) + 400, 300]} />
-        <meshStandardMaterial color="#6b7a4a" roughness={1} />
-      </mesh>
+    <>
+      <SceneObjectAttach object={ground} />
       {PLANT_LIBRARY.map((species, index) => (
         <LibraryTree
           key={species.id}
@@ -65,7 +77,7 @@ function PlantLibrary() {
           position={[rowX(rowOf(index)) + ((index % SHEET.perRow) - (SHEET.perRow - 1) / 2) * SHEET.spacing, 0, 0]}
         />
       ))}
-    </group>
+    </>
   );
 }
 
@@ -78,8 +90,8 @@ export const plantLibraryGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "plant-library" },
   scene: {
-    renderEntity: () => <group />,
-    renderObject: () => <group />,
+    renderEntity: () => null,
+    renderObject: () => null,
     environment: () => <PlantLibrary />,
   },
   loop: { ...demoGame.loop, onTick: () => {} },

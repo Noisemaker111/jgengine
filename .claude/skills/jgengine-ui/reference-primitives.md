@@ -113,7 +113,7 @@ Lighting is `defineGame({ lighting })` (`LightingConfig`): ambient / hemisphere 
 
 Three composable-chrome seams for FPS/TPS polish — a placement hook plus a good default, never a forced look:
 
-- **Custom viewmodel.** `defineGame({ viewmodel })` supplies a component rendered inside the shell's camera-locked, muzzle-tracked anchor in place of the built-in three-mesh gun — read when the active rig is first-person. It receives `ViewmodelProps` (`@jgengine/core/camera/GameFirstPersonCamera.draw`): `{ cuesRef }`, a live `MutableRefObject<EntityRenderCues>` for the followed entity — read `cuesRef.current` inside your own `useFrame` to drive bob/recoil/reload poses; never store it as render state (it updates every frame). `camera.firstPerson.viewmodel: false` renders no viewmodel at all regardless of `defineGame`'s `viewmodel` field — the explicit opt-out always wins. `readFirstPersonMuzzle(target: THREE.Vector3, camera?: THREE.Camera)` (also `@jgengine/core/camera/GameFirstPersonCamera.draw`) writes the live presentation muzzle world position into `target`; pass the active Three.js camera to isolate canvases. It returns `false` without changing `target` when no muzzle is available — the seam for muzzle-flash lights, tracer origins, or shell casings.
+- **Custom viewmodel.** `defineGame({ viewmodel })` supplies a component rendered inside the shell's camera-locked, muzzle-tracked anchor in place of the built-in three-mesh gun — read when the active rig is first-person. It receives `ViewmodelProps` (`@jgengine/core/camera/GameFirstPersonCamera.draw`): `{ cuesRef }`, a live `MutableRefObject<EntityRenderCues>` for the followed entity — read `cuesRef.current` inside your own `useFrameTask` (`@jgengine/core/frame/useFrameTask.draw`) to drive bob/recoil/reload poses; never store it as render state (it updates every frame). `camera.firstPerson.viewmodel: false` renders no viewmodel at all regardless of `defineGame`'s `viewmodel` field — the explicit opt-out always wins. `readFirstPersonMuzzle(target: THREE.Vector3, camera?: THREE.Camera)` (also `@jgengine/core/camera/GameFirstPersonCamera.draw`) writes the live presentation muzzle world position into `target`; pass the active Three.js camera to isolate canvases. It returns `false` without changing `target` when no muzzle is available — the seam for muzzle-flash lights, tracer origins, or shell casings.
 - **Weapon pose.** `camera.weapon: (entityId) => { handling, presentation } | null` hands the rigs the held weapon's `createWeaponHandling` frame and a `WeaponPresentationTuning` (`@jgengine/core/combat/weaponPresentation`). First person poses the viewmodel anchor from it (hip and ADS offsets, viewmodel FOV, `adsZoom`, sway from look speed, bob from `cuesRef`, recoil kick) and adds the recoil to the look; `shoulder` takes its ADS blend from `adsProgress` and adds the same recoil. A custom `viewmodel` rides the posed anchor. `bun run drive weapon-handling` (and `weapon-handling-shoulder`) is the dev demo.
 - **`WorldOverlay` receives `{ ctx }`.** `defineGame({ WorldOverlay })` components take `WorldOverlayProps` (`@jgengine/core/game/playableGame`) — `ctx: GameContext` handed directly, no extra hook or module-global workaround needed to reach engine state from canvas-layer VFX. Shared bars/nameplates mounted there inherit the renderer's visibility context; both omit the local account and its currently possessed body. Occlusion still uses the render camera and the authored overlay anchor, with `occlude: false` as an explicit through-wall reveal. Custom geometry retains the overlay's camera-transparent policy.
 - **Render cues for any custom rig.** `useEntityRenderCues(instanceId, tuning?)` (`@jgengine/core/anim/useEntityRenderCues.draw`) returns the same `cuesRef` the viewmodel gets, for a custom `renderEntity` component: velocity-driven `bobPhase`, `firing`/`recoil` from `ctx.game.playEntityAnimation(instanceId, "fire")`, `reloading` from `"reload"`/`"reloadEnd"`, `hit` from `combat.hitReaction`, `dead` from `entity.died` — no diffing the parent group's position, no game-side module map for attack timing. `RenderCueTuning` (`@jgengine/core/combat/renderCues`) overrides the bob rate / recoil decay / pulse durations; see `jgengine-combat`'s `combat/renderCues` for the underlying pure math.
@@ -121,21 +121,26 @@ A custom `WorldOverlay` rig can keep `camera.firstPerson.viewmodel: false` and
 register its own live muzzle for the shell's tracer presentation:
 
 ```tsx
-import { useEffect, useRef } from "react";
-import { useThree } from "@react-three/fiber";
-import type { Object3D } from "three";
+import { useEffect, useMemo } from "react";
+import { Group, Object3D } from "three";
 import { registerFirstPersonMuzzle } from "@jgengine/core/camera/customMuzzle.draw";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
+import { useSceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 
 function CustomRig() {
-  const camera = useThree((state) => state.camera);
-  const muzzle = useRef<Object3D>(null);
+  const camera = useEngineHost().frame.camera;
+  const rig = useMemo(() => {
+    const group = new Group();
+    const muzzle = new Object3D();
+    group.add(muzzle); // plus the game-owned animated weapon geometry
+    return { group, muzzle };
+  }, []);
+  useSceneObjectAttach(rig.group);
   useEffect(() => registerFirstPersonMuzzle(camera, (target) => {
-    const tip = muzzle.current;
-    if (tip === null) return false;
-    tip.getWorldPosition(target);
+    rig.muzzle.getWorldPosition(target);
     return true;
-  }), [camera]);
-  return <group>{/* game-owned animated weapon geometry */}<object3D ref={muzzle} /></group>;
+  }), [camera, rig]);
+  return null;
 }
 ```
 
@@ -175,13 +180,13 @@ The shell's `EntitySprite` changes atlas UVs without uploading the image again. 
 
 ## Model instances
 
-Custom R3F model components use `useModelInstance` (`@jgengine/core/model/useModelInstance.draw`) inside Canvas and Suspense. Pass the model's URL, placement, shadows and animation; render its returned `scene` with `position` and uniform `scale`. The imported `content` stays inside that placement frame, so imported pivots/transforms and root animation survive normalization. The hook shares the diagnostic loader and bind-pose placement used by `EntityModel`, and releases cloned materials and bone textures on replacement/unmount. It works without a game provider. Placement retuning uses the initially configured bind frame even after root animation has moved the content. Geometry/textures retained by the loader remain shared; resources introduced or replaced by `configure` stay caller-owned.
+Custom model renderers use `modelInstanceDraw(model, options)` (`@jgengine/core/model/modelInstanceDraw.draw`), an engine draw mounted with `useEngineDraw` / `EngineDrawMount` (`@jgengine/core/frame/useEngineDraw.draw`). Pass the model's URL, placement, shadows and animation; `onReady` hands back the placed `group`, its `scene` and `content`, and the `position` and uniform `scale`. The imported `content` stays inside that placement frame, so imported pivots/transforms and root animation survive normalization. The draw shares the diagnostic loader and bind-pose placement used by `EntityModel`, and releases cloned materials and bone textures on replacement/unmount. It works without a game provider. Placement retuning uses the initially configured bind frame even after root animation has moved the content. Geometry/textures retained by the loader remain shared; resources introduced or replaced by `configure` stay caller-owned.
 
 Use the optional `configure(content)` callback for initial caller-owned styling or deformation; memoize it, since a changed callback rebuilds the clone. Live mood colors or custom motion can update `content` in caller effects without replacing it. Texture loading, material-map application and extra geometry remain caller-owned; `EntityModel` supplies those for ordinary model configurations. Each clone owns its pose, bone textures and cloned materials, with one skeleton/material per shared source skeleton/material. Geometry and image textures stay in the loader cache. Apply material overrides with `clone: false` to an instance that already owns its materials. Attachments own their separate cleanup.
 
-For non-hook consumers, `cloneModelScene` and `disposeModelScene` (`@jgengine/core/model/modelRender.draw`) provide the same resource ownership. `cloneMaterials: false` borrows source materials; do not mutate them.
+For other consumers, `cloneModelScene` and `disposeModelScene` (`@jgengine/core/model/modelRender.draw`) provide the same resource ownership. `cloneMaterials: false` borrows source materials; do not mutate them.
 
-`useModelInstance` already mounts `useModelAnimation`; do not mount a second driver on that instance. Other custom scene owners use `useModelAnimation` (`@jgengine/core/anim/useModelAnimation.draw`) instead of creating a mixer in game code. It releases mixer bindings on replacement/unmount and skips updates for paused or completed single clips. Configuration and animation events request a frame without continuously waking a frozen poster.
+`modelInstanceDraw` already binds the animation driver; do not mount a second driver on that instance. Other custom scene owners use `useModelAnimation` (`@jgengine/core/anim/useModelAnimation.draw`) instead of creating a mixer in game code. It releases mixer bindings on replacement/unmount and skips updates for paused or completed single clips. Configuration and animation events request a frame without continuously waking a frozen poster.
 
 `EntityModel` starts resolved part, attachment and material-map requests alongside the root model through the existing loader cache. Loaded maps apply before their next draw, without eagerly uploading an unconfigured color texture. Keep per-part error boundaries; a failed texture or attachment still reports its own fallback.
 

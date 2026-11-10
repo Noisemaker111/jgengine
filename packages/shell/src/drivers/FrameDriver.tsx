@@ -1,5 +1,4 @@
 import type { ReplayRecorder } from "@jgengine/core/replay/replayRecording";
-import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 
 import { RESERVED_INPUT_ACTIONS, dispatchBoundAction, heldActionsFor, shouldFireBoundAction } from "@jgengine/core/input/boundActionDispatch";
@@ -36,6 +35,7 @@ import type { PlayableGame } from "../registry";
 import type { AuthoritativeFrameHandler } from "@jgengine/core/multiplayer/authoritativeSync";
 import { createPredictionBuffer } from "@jgengine/core/runtime/prediction";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 const TURN_SPEED = 2.4;
 
@@ -456,7 +456,7 @@ export function FrameDriver({
   const idleStep = useMemo(() => createIdleTask(() => stepAheadRef.current()), []);
   useEffect(() => () => idleStep.dispose(), [idleStep]);
 
-  useFrame((_state, rawDt) => {
+  useFrameTask((_state, rawDt) => {
     if (poster) {
       if (posterDoneRef.current) return;
       posterElapsedRef.current += Math.min(rawDt, 0.05);

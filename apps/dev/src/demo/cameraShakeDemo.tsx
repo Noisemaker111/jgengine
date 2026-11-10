@@ -1,4 +1,6 @@
-import { useEffect, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, type CSSProperties, type ReactNode } from "react";
+import { BoxGeometry, Group, Mesh, MeshStandardMaterial, SphereGeometry } from "three";
+import { disposeObjectTree, SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
@@ -91,25 +93,25 @@ function CameraShakeUI(): ReactNode {
 // A cluster of lit blocks so the shake reads: their straight edges tilt with the
 // camera roll and slide with the positional kick.
 function ShakeStage(): ReactNode {
+  const blocks = useMemo(() => {
+    const root = new Group();
+    const add = (geometry: import("three").BufferGeometry, color: string, position: readonly [number, number, number], roughness: number) => {
+      const block = new Mesh(geometry, new MeshStandardMaterial({ color, metalness: 0.2, roughness }));
+      block.position.set(position[0], position[1], position[2]);
+      block.castShadow = true;
+      root.add(block);
+    };
+    add(new BoxGeometry(2.4, 2.4, 2.4), "#f97316", [0, 1.2, 0], 0.5);
+    add(new BoxGeometry(1.8, 1.8, 1.8), "#38bdf8", [-4, 0.9, -2], 0.5);
+    add(new BoxGeometry(1.4, 3, 1.4), "#a855f7", [4.2, 1.5, -1], 0.5);
+    add(new SphereGeometry(1.1, 24, 24), "#4ade80", [2, 0.7, 4], 0.4);
+    return root;
+  }, []);
+  useEffect(() => () => disposeObjectTree(blocks), [blocks]);
   return (
     <>
       <EnvironmentScene feature={terrainFeature} />
-      <mesh position={[0, 1.2, 0]} castShadow>
-        <boxGeometry args={[2.4, 2.4, 2.4]} />
-        <meshStandardMaterial color="#f97316" metalness={0.2} roughness={0.5} />
-      </mesh>
-      <mesh position={[-4, 0.9, -2]} castShadow>
-        <boxGeometry args={[1.8, 1.8, 1.8]} />
-        <meshStandardMaterial color="#38bdf8" metalness={0.2} roughness={0.5} />
-      </mesh>
-      <mesh position={[4.2, 1.5, -1]} castShadow>
-        <boxGeometry args={[1.4, 3, 1.4]} />
-        <meshStandardMaterial color="#a855f7" metalness={0.2} roughness={0.5} />
-      </mesh>
-      <mesh position={[2, 0.7, 4]} castShadow>
-        <sphereGeometry args={[1.1, 24, 24]} />
-        <meshStandardMaterial color="#4ade80" metalness={0.2} roughness={0.4} />
-      </mesh>
+      <SceneObjectAttach object={blocks} />
     </>
   );
 }

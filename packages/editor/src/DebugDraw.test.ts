@@ -1,43 +1,34 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { act, createRoot, extend, type ReconcilerRoot, type RootStore } from "@react-three/fiber";
+import { afterEach, describe, expect, test } from "bun:test";
 import { createElement } from "react";
 import * as THREE from "three";
 import { createEmptyEditorDocument, type EditorMarker } from "@jgengine/core/editor/index";
+import { mountTestDraws, type MountedTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
 import { EditorLayerOverlays } from "./DebugDraw";
 
-extend({ Group: THREE.Group, Mesh: THREE.Mesh, MeshBasicMaterial: THREE.MeshBasicMaterial });
-const roots: ReconcilerRoot<HTMLCanvasElement>[] = [];
-const actEnvironment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
-const previousActEnvironment = actEnvironment.IS_REACT_ACT_ENVIRONMENT;
-beforeEach(() => { actEnvironment.IS_REACT_ACT_ENVIRONMENT = true; });
+const mountedDraws: MountedTestDraws[] = [];
+
 afterEach(async () => {
-  for (const root of roots.splice(0)) await act(async () => root.unmount());
-  actEnvironment.IS_REACT_ACT_ENVIRONMENT = previousActEnvironment;
+  for (const mounted of mountedDraws.splice(0)) await mounted.unmount();
 });
 
 async function harness(marker: EditorMarker) {
-  const root = createRoot({} as HTMLCanvasElement);
-  roots.push(root);
-  await root.configure({
-    frameloop: "never", size: { width: 100, height: 100, top: 0, left: 0 }, dpr: 1,
-    gl: () => ({ render() {}, setSize() {}, setPixelRatio() {} }) as unknown as THREE.WebGLRenderer,
-  });
   const document = { ...createEmptyEditorDocument(), markers: [marker] };
-  let store: RootStore;
+  let mounted: MountedTestDraws | undefined;
   const render = async (selected = false, hovered = false) => {
-    await act(async () => {
-      store = root.render(createElement(EditorLayerOverlays, {
-        document, visibility: {}, selection: selected ? [marker.id] : [], hoverId: hovered ? marker.id : null,
-        onSelect: () => {},
-      }));
+    const element = createElement(EditorLayerOverlays, {
+      document, visibility: {}, selection: selected ? [marker.id] : [], hoverId: hovered ? marker.id : null,
     });
+    if (mounted === undefined) mounted = await mountTestDraws(element, { width: 100, height: 100 });
+    else await mounted.render(element);
+    mountedDraws.push(mounted);
+    for (let i = 0; i < 3; i += 1) await mounted.advance(1 / 60);
   };
   const glyph = () => {
     let found: THREE.Object3D | undefined;
-    store.getState().scene.traverse((object) => { if (object.userData.jgEditorId === marker.id) found = object; });
+    mounted!.scene.traverse((object) => { if (object.userData.jgEditorId === marker.id) found = object; });
     return found!;
   };
-  return { render, glyph };
+  return { render, glyph, unmount: async () => { await mounted?.unmount(); mountedDraws.splice(mountedDraws.indexOf(mounted!), 1); } };
 }
 
 function sphereMeshes(glyph: THREE.Object3D): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[] {

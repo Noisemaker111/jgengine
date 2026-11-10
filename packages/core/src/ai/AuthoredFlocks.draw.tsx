@@ -1,18 +1,21 @@
 // @skill jgengine-world
-import { useFrame, useLoader } from "@react-three/fiber";
-import { Suspense, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
+import { useMemo, useRef } from "react";
 import * as THREE from "three";
 
 import type { FlockStepAgent } from "@jgengine/core/ai/flock";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
+import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { useGameContext } from "@jgengine/react/provider";
 
-import { IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";
-import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
+import { isolatedEntityModelDraw, preloadSceneModel } from "@jgengine/core/model/entityModelDraw.draw";
 import { resolveModel } from "@jgengine/core/model/resolveModel";
 import { canInstanceStaticScene } from "@jgengine/core/instancing/staticObjectBatches.draw";
 import { buildScatterModelSources, disposeScatterModelSources, type ScatterModelSource } from "@jgengine/core/scatter/scatterModels.draw";
+import { childFrameState, type EngineDraw, type EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
+import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 /** Caller-owned species models for authored habitat agents. */
 export interface AuthoredFlocksProps {
@@ -85,7 +88,7 @@ function speciesAgents(flocks: readonly { role: string; species: string; agents:
  * own rig. Unmapped species have no substitute geometry.
  * @capability authored-flocks render authored habitat agents through caller-selected animated species models with velocity orientation and bounded model lifetime
  */
-export function AuthoredFlocks({ models, assets, forward = [0, 0, -1], maxInstances = 256 }: AuthoredFlocksProps): ReactElement {
+export function AuthoredFlocks({ models, assets, forward = [0, 0, -1], maxInstances = 256 }: AuthoredFlocksProps) {
   const ctx = useGameContext();
   const speciesModels = useMemo(() => {
     const resolved = new Map<string, ModelConfig>();
@@ -101,119 +104,219 @@ export function AuthoredFlocks({ models, assets, forward = [0, 0, -1], maxInstan
     return axis.lengthSq() === 0 ? axis.set(0, 0, -1) : axis;
   }, [forward[0], forward[1], forward[2]]);
   const limit = Number.isFinite(maxInstances) ? Math.max(0, Math.min(1024, Math.floor(maxInstances))) : 256;
-  // Each species' share of `limit`, in flock order; a species drawing no agent is unmounted.
-  const caps = useRef(new Map<string, number>());
-  const [shown, setShown] = useState<readonly string[]>([]);
-
-  useFrame(() => {
-    const next = caps.current;
-    for (const species of next.keys()) next.set(species, 0);
-    let count = 0;
-    for (const flock of ctx.environment.flocks()) {
-      if (flock.role !== "cosmetic" || !speciesModels.has(flock.species) || count >= limit) continue;
-      const taken = Math.min(flock.agents.length, limit - count);
-      next.set(flock.species, (next.get(flock.species) ?? 0) + taken);
-      count += taken;
-    }
-    let changed = false;
-    for (const [species, cap] of next) if ((cap > 0) !== shown.includes(species)) changed = true;
-    if (changed) setShown([...next].filter(([, cap]) => cap > 0).map(([species]) => species));
-  });
-
-  return (
-    <>
-      {shown.map((species) => (
-        <Suspense key={species} fallback={null}>
-          <FlockSpecies species={species} model={speciesModels.get(species)!} caps={caps} limit={limit} nose={nose} />
-        </Suspense>
-      ))}
-    </>
-  );
+  const latest = useRef({ ctx, speciesModels, nose, limit });
+  latest.current = { ctx, speciesModels, nose, limit };
+  useEngineDraw(() => authoredFlocksDraw(() => latest.current), [speciesModels, nose, limit]);
+  return null;
 }
 
-interface SpeciesProps {
+interface FlockDrawEnv {
+  ctx: GameContext;
+  speciesModels: ReadonlyMap<string, ModelConfig>;
+  nose: THREE.Vector3;
+  limit: number;
+}
+
+/** A child draw mounted under a parent group: fresh child frame state per call, board-joined frame. */
+class ChildDraw {
+  private leave: (() => void) | null = null;
+  constructor(private readonly draw: EngineDraw, private readonly parent: THREE.Object3D) {}
+  mount(state: EngineFrameState): void {
+    const parent = this.parent;
+    this.draw.mount?.(childFrameState(state, parent));
+    this.leave = joinFrameTask(this.draw.priority ?? 0, (s, delta) => this.draw.frame?.(childFrameState(s, parent), delta));
+  }
+  dispose(state: EngineFrameState): void {
+    this.leave?.();
+    this.leave = null;
+    this.draw.dispose?.(childFrameState(state, this.parent));
+  }
+}
+
+interface SpeciesEntry {
+  mounted: ChildDraw | null;
+  cancelled: boolean;
+}
+
+/**
+ * Every species' share of `limit`, in flock order; a species drawing no agent keeps no draw. The
+ * per-frame reconcile mounts a species' draw once its model resolves and drops it when its share
+ * empties — the draw-side `AuthoredFlocks` + `FlockSpecies`.
+ */
+function authoredFlocksDraw(getEnv: () => FlockDrawEnv): EngineDraw {
+  const group = new THREE.Group();
+  const caps = new Map<string, number>();
+  const species = new Map<string, SpeciesEntry>();
+  let stateRef: EngineFrameState | null = null;
+  let leaveTask: (() => void) | null = null;
+
+  const dropSpecies = (key: string, state: EngineFrameState) => {
+    const entry = species.get(key);
+    if (entry === undefined) return;
+    entry.cancelled = true;
+    entry.mounted?.dispose(state);
+    species.delete(key);
+  };
+
+  const loadSpecies = async (key: string, model: ModelConfig) => {
+    const entry: SpeciesEntry = { mounted: null, cancelled: false };
+    species.set(key, entry);
+    try {
+      const gltf = await preloadSceneModel(model.url);
+      if (entry.cancelled || stateRef === null) return;
+      const env = getEnv();
+      const draw = flockSpeciesInstances(model, gltf)
+        ? instancedFlockDraw({ ctx: env.ctx, species: key, model, gltf, caps, nose: env.nose, limit: env.limit })
+        : riggedFlockDraw({ ctx: env.ctx, species: key, model, caps, nose: env.nose });
+      const mounted = new ChildDraw(draw, group);
+      mounted.mount(stateRef);
+      entry.mounted = mounted;
+    } catch (error) {
+      // A species that fails to load or harvest draws nothing, like the old Suspense/boundary null.
+      console.error("[jgengine:flocks] species load failed", key, model.url, error);
+    }
+  };
+
+  return {
+    mount(state: EngineFrameState) {
+      stateRef = state;
+      state.scene.add(group);
+      leaveTask = joinFrameTask(0, () => {
+        const env = getEnv();
+        for (const key of caps.keys()) caps.set(key, 0);
+        let count = 0;
+        for (const flock of env.ctx.environment.flocks()) {
+          if (flock.role !== "cosmetic" || !env.speciesModels.has(flock.species) || count >= env.limit) continue;
+          const taken = Math.min(flock.agents.length, env.limit - count);
+          caps.set(flock.species, (caps.get(flock.species) ?? 0) + taken);
+          count += taken;
+        }
+        for (const key of [...species.keys()]) {
+          if ((caps.get(key) ?? 0) <= 0) dropSpecies(key, state);
+        }
+        for (const [key, cap] of caps) {
+          if (cap <= 0 || species.has(key)) continue;
+          const model = env.speciesModels.get(key);
+          if (model === undefined || stateRef === null) continue;
+          void loadSpecies(key, model);
+        }
+      });
+    },
+    dispose(state: EngineFrameState) {
+      leaveTask?.();
+      leaveTask = null;
+      for (const key of [...species.keys()]) dropSpecies(key, state);
+      stateRef = null;
+      state.scene.remove(group);
+    },
+  };
+}
+
+/** A species whose model instances as-is: one instanced draw per material, posed every frame. */
+function instancedFlockDraw(args: {
+  ctx: GameContext;
   species: string;
   model: ModelConfig;
-  caps: { current: ReadonlyMap<string, number> };
-  limit: number;
+  gltf: GLTF;
+  caps: ReadonlyMap<string, number>;
   nose: THREE.Vector3;
-}
-
-function FlockSpecies(props: SpeciesProps): ReactElement {
-  const gltf = useLoader(sharedGltfLoader, props.model.url);
-  const instanced = useMemo(() => flockSpeciesInstances(props.model, gltf), [props.model, gltf]);
-  return instanced ? <InstancedFlock {...props} gltf={gltf} /> : <RiggedFlock {...props} />;
-}
-
-function InstancedFlock({ species, model, caps, limit, nose, gltf }: SpeciesProps & { gltf: { scene: THREE.Object3D } }): ReactElement {
-  const ctx = useGameContext();
-  const harvested = useMemo(() => buildScatterModelSources(gltf.scene, model), [gltf, model]);
-  useEffect(() => () => disposeScatterModelSources(harvested.root), [harvested]);
-  const meshes = useRef<(THREE.InstancedMesh | null)[]>([]);
-  const scratch = useMemo(() => ({ pose: new THREE.Object3D(), direction: new THREE.Vector3(), matrix: new THREE.Matrix4(), agents: [] as FlockStepAgent[] }), []);
-  useFrame(() => {
-    const agents = speciesAgents(ctx.environment.flocks(), species, caps.current.get(species) ?? 0, scratch.agents);
-    harvested.sources.forEach((source, index) => {
-      const mesh = meshes.current[index];
-      if (mesh !== null && mesh !== undefined) writeFlockInstances(mesh, source, agents, nose, scratch);
-    });
-  });
-  return (
-    <>
-      {harvested.sources.map((source, index) => (
-        <instancedMesh
-          key={index}
-          ref={(mesh: THREE.InstancedMesh | null) => {
-            meshes.current[index] = mesh;
-            if (mesh !== null) mesh.count = 0;
-          }}
-          args={[source.geometry, source.material, limit]}
-          castShadow={source.castShadow ?? false}
-          receiveShadow={source.receiveShadow ?? false}
-          dispose={null}
-        />
-      ))}
-    </>
-  );
-}
-
-/** An animated species: each agent on its own rig, keyed by flock and slot so a rig follows one bird. */
-function RiggedFlock({ species, model, caps, nose }: SpeciesProps): ReactElement {
-  const ctx = useGameContext();
-  const entries = useRef(new Map<string, { agent: FlockStepAgent; group: THREE.Group | null }>());
-  const seen = useRef(new Set<string>());
-  const direction = useRef(new THREE.Vector3());
-  const [, setGeneration] = useState(0);
-
-  useFrame(() => {
-    let changed = false;
-    let count = 0;
-    const cap = caps.current.get(species) ?? 0;
-    seen.current.clear();
-    for (const flock of ctx.environment.flocks()) {
-      if (flock.role !== "cosmetic" || flock.species !== species) continue;
-      for (let i = 0; i < flock.agents.length && count < cap; i++, count++) {
-        const key = `${flock.id}:${i}`;
-        const agent = flock.agents[i]!;
-        seen.current.add(key);
-        const current = entries.current.get(key);
-        if (current === undefined) {
-          entries.current.set(key, { agent, group: null });
-          changed = true;
-        } else {
-          current.agent = agent;
-          if (current.group !== null) applyFlockPose(current.group, agent, nose, direction.current);
+  limit: number;
+}): EngineDraw {
+  const harvested = buildScatterModelSources(args.gltf.scene, args.model);
+  const meshes: (THREE.InstancedMesh | null)[] = [];
+  const scratch = { pose: new THREE.Object3D(), direction: new THREE.Vector3(), matrix: new THREE.Matrix4(), agents: [] as FlockStepAgent[] };
+  let leave: (() => void) | null = null;
+  return {
+    mount(state: EngineFrameState) {
+      harvested.sources.forEach((source, index) => {
+        const mesh = new THREE.InstancedMesh(source.geometry, source.material, args.limit);
+        mesh.castShadow = source.castShadow ?? false;
+        mesh.receiveShadow = source.receiveShadow ?? false;
+        mesh.count = 0;
+        state.scene.add(mesh);
+        meshes[index] = mesh;
+      });
+      leave = joinFrameTask(0, () => {
+        const agents = speciesAgents(args.ctx.environment.flocks(), args.species, args.caps.get(args.species) ?? 0, scratch.agents);
+        harvested.sources.forEach((source, index) => {
+          const mesh = meshes[index];
+          if (mesh !== null && mesh !== undefined) writeFlockInstances(mesh, source, agents, args.nose, scratch);
+        });
+      });
+    },
+    dispose(state: EngineFrameState) {
+      leave?.();
+      for (const mesh of meshes) {
+        if (mesh !== null && mesh !== undefined) {
+          state.scene.remove(mesh);
+          mesh.dispose();
         }
       }
-    }
-    for (const key of entries.current.keys()) if (!seen.current.has(key)) { entries.current.delete(key); changed = true; }
-    if (changed) setGeneration((n) => n + 1);
-  });
+      meshes.length = 0;
+      disposeScatterModelSources(harvested.root);
+    },
+  };
+}
 
-  return <>{Array.from(entries.current, ([key, entry]) => <group key={key} ref={(group) => {
-    entry.group = group;
-    if (group !== null) applyFlockPose(group, entry.agent, nose, direction.current);
-  }}>
-    <IsolatedEntityModel model={model} />
-  </group>)}</>;
+/** An animated species: each agent on its own rig under a keyed group, reconciled every frame. */
+function riggedFlockDraw(args: {
+  ctx: GameContext;
+  species: string;
+  model: ModelConfig;
+  caps: ReadonlyMap<string, number>;
+  nose: THREE.Vector3;
+}): EngineDraw {
+  const group = new THREE.Group();
+  const entries = new Map<string, { agentGroup: THREE.Group; mounted: ChildDraw }>();
+  const seen = new Set<string>();
+  const direction = new THREE.Vector3();
+  let stateRef: EngineFrameState | null = null;
+  let leave: (() => void) | null = null;
+
+  const dropEntry = (key: string, state: EngineFrameState) => {
+    const entry = entries.get(key);
+    if (entry === undefined) return;
+    entry.mounted.dispose(state);
+    group.remove(entry.agentGroup);
+    entries.delete(key);
+  };
+
+  return {
+    mount(state: EngineFrameState) {
+      stateRef = state;
+      state.scene.add(group);
+      leave = joinFrameTask(0, () => {
+        if (stateRef === null) return;
+        let count = 0;
+        const cap = args.caps.get(args.species) ?? 0;
+        seen.clear();
+        for (const flock of args.ctx.environment.flocks()) {
+          if (flock.role !== "cosmetic" || flock.species !== args.species) continue;
+          for (let i = 0; i < flock.agents.length && count < cap; i++, count++) {
+            const key = `${flock.id}:${i}`;
+            const agent = flock.agents[i]!;
+            seen.add(key);
+            const current = entries.get(key);
+            if (current === undefined) {
+              const agentGroup = new THREE.Group();
+              applyFlockPose(agentGroup, agent, args.nose, direction);
+              const mounted = new ChildDraw(isolatedEntityModelDraw({ model: args.model, ctx: args.ctx }), agentGroup);
+              mounted.mount(stateRef);
+              group.add(agentGroup);
+              entries.set(key, { agentGroup, mounted });
+            } else {
+              applyFlockPose(current.agentGroup, agent, args.nose, direction);
+            }
+          }
+        }
+        for (const key of entries.keys()) if (!seen.has(key)) dropEntry(key, stateRef);
+      });
+    },
+    dispose(state: EngineFrameState) {
+      leave?.();
+      for (const key of [...entries.keys()]) dropEntry(key, state);
+      stateRef = null;
+      state.scene.remove(group);
+    },
+  };
 }

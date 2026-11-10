@@ -1,5 +1,6 @@
-import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, type ReactElement } from "react";
+
+import { useFrameJoin } from "@jgengine/core/frame/engineHost.draw";
 
 /** Mutable frame tally shared between the in-Canvas probe and the DOM readout. */
 export interface FrameTally {
@@ -8,9 +9,10 @@ export interface FrameTally {
 
 /** Counts rendered frames. Mount inside the Canvas. @internal */
 export function FpsProbe({ tally }: { tally: FrameTally }): null {
-  useFrame(() => {
+  const joinFrame = useFrameJoin();
+  useEffect(() => joinFrame(0, () => {
     tally.frames += 1;
-  });
+  }), [tally]);
   return null;
 }
 

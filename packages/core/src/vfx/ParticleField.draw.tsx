@@ -1,9 +1,10 @@
-import { useFrame, useThree } from "@react-three/fiber";
-import { memo, useEffect, useMemo, useRef, type ReactElement } from "react";
+import type { ReactElement } from "react";
 import * as THREE from "three";
 
 import type { ParticleBuffers, ParticleSystem } from "@jgengine/core/vfx/particles";
 import type { ParticleRenderHint } from "@jgengine/core/vfx/particleDirector";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
 /** How particle fragments composite on screen. */
 export type ParticleBlending = "additive" | "normal";
@@ -129,20 +130,8 @@ export interface ParticleFieldMetrics {
   uploadSamples: number;
 }
 
-/** Props for the existing pooled particle renderer. */
-export interface ParticleFieldProps {
-  system: ParticleSystem;
-  /** Disable when an external loop already advances this system. Default true. */
-  advance?: boolean;
-  blending?: ParticleBlending;
-  /** Pixel multiplier for point output. Quad outputs use particle sizes in world units. */
-  scale?: number;
-  depthWrite?: boolean;
-  /** Point, instanced sprite, velocity streak, connected ribbon, or ground ripple output. */
-  render?: ParticleRenderHint | undefined;
-  /** @internal Optional diagnostics; omitted in production. */
-  metrics?: ParticleFieldMetrics | undefined;
-}
+/** Props for the existing pooled particle renderer. @deprecated use {@link ParticleFieldDrawOptions} plus `system`. */
+export type ParticleFieldProps = ParticleFieldDrawOptions & { system: ParticleSystem };
 
 /** Materials of fields that left, by what they were made with, for the next field made the same way. */
 const spareFieldMaterials = new Map<string, THREE.ShaderMaterial[]>();
@@ -284,55 +273,82 @@ export function packFieldFrame(field: FieldGeometry, buffers: ParticleBuffers): 
   packed.needsUpdate = true;
 }
 
+export interface ParticleFieldDrawOptions {
+  /** Disable when an external loop already advances this system. Default true; a function is read per frame. */
+  advance?: boolean | (() => boolean);
+  blending?: ParticleBlending;
+  /** Pixel multiplier for point output. Quad outputs use particle sizes in world units. */
+  scale?: number;
+  depthWrite?: boolean;
+  /** Point, instanced sprite, velocity streak, connected ribbon, or ground ripple output. */
+  render?: ParticleRenderHint | undefined;
+  /** @internal Optional diagnostics; omitted in production. */
+  metrics?: ParticleFieldMetrics | undefined;
+}
+
 /**
- * Render one pooled simulation through a point cloud or instanced quads. Output
- * selection does not replace spawn, forces, collisions, or deterministic state.
+ * One pooled simulation drawn as a point cloud or instanced quads, as an {@link EngineDraw}.
+ * Output selection does not replace spawn, forces, collisions, or deterministic state.
  * @capability particle-field render a core particle pool as soft points, velocity streaks, connected ribbons, flakes, flames, smoke sprites, or ground ripples
  */
-export const ParticleField = memo(function ParticleField({ system, advance = true, blending = "additive", scale = 300, depthWrite = false, render, metrics }: ParticleFieldProps): ReactElement {
-  const dpr = useThree((state) => state.viewport.dpr);
+export function particleFieldDraw(system: ParticleSystem, options: ParticleFieldDrawOptions = {}): EngineDraw {
+  const { advance = true, blending = "additive", scale = 300, depthWrite = false, render, metrics } = options;
   const shape = render?.shape ?? "point";
   const quad = shape !== "point";
-  const { field, material } = useMemo(() => {
-    const mat = takeFieldMaterial(quad, depthWrite, blending);
-    mat.uniforms["uScale"]!.value = scale;
-    mat.uniforms["uShape"]!.value = SHAPES[shape];
-    mat.uniforms["uStretch"]!.value = render?.stretch ?? 0.08;
-    return { field: createFieldGeometry(system.buffers().positions.length / 3, quad, shape === "ribbon"), material: mat };
-  }, [system, quad, shape, scale, depthWrite, blending]);
-  const geometry = field.geometry;
+  const field = createFieldGeometry(system.buffers().positions.length / 3, quad, shape === "ribbon");
+  const { geometry } = field;
+  const material = takeFieldMaterial(quad, depthWrite, blending);
+  material.uniforms["uScale"]!.value = scale;
+  material.uniforms["uShape"]!.value = SHAPES[shape];
+  material.uniforms["uStretch"]!.value = render?.stretch ?? 0.08;
+  const object = quad ? new THREE.Mesh(geometry, material) : new THREE.Points(geometry, material);
+  object.frustumCulled = false;
+  const arrays = new Set<ArrayBufferLike>(Object.values(geometry.attributes).map((attribute) => attribute.array.buffer));
+  let bytes = geometry.index?.array.byteLength ?? 0;
+  for (const array of arrays) bytes += array.byteLength;
+  let uploadedCount = -1;
 
-  useEffect(() => {
-    const arrays = new Set<ArrayBufferLike>(Object.values(geometry.attributes).map((attribute) => attribute.array.buffer));
-    let bytes = geometry.index?.array.byteLength ?? 0;
-    for (const array of arrays) bytes += array.byteLength;
-    if (metrics !== undefined) { metrics.fieldsMounted++; metrics.liveFields++; metrics.attributeBytes += bytes; }
-    return () => {
-      geometry.dispose(); returnFieldMaterial(material);
+  return {
+    mount(state: EngineFrameState) {
+      state.scene.add(object);
+      if (metrics !== undefined) { metrics.fieldsMounted++; metrics.liveFields++; metrics.attributeBytes += bytes; }
+    },
+    frame(state: EngineFrameState) {
+      const started = metrics === undefined ? 0 : performance.now();
+      const advancing = typeof advance === "function" ? advance() : advance;
+      if (advancing) system.update(Math.min(state.delta, 0.1));
+      const buffers = system.buffers();
+      const count = buffers.count;
+      // An idle emitter has nothing to send; a live one sends its live particles, not the whole pool.
+      if (count === 0 && uploadedCount === 0) return;
+      uploadedCount = count;
+      packFieldFrame(field, buffers);
+      if (count === 0) return;
+      material.uniforms["uScale"]!.value = scale * state.renderer.getPixelRatio();
+      material.uniforms["uStretch"]!.value = render?.stretch ?? 0.08;
+      if (metrics !== undefined) {
+        const elapsed = performance.now() - started;
+        metrics.totalUploadMs += elapsed;
+        metrics.maxUploadMs = Math.max(metrics.maxUploadMs, elapsed);
+        metrics.uploadSamples++;
+      }
+    },
+    dispose(state: EngineFrameState) {
+      state.scene.remove(object);
+      geometry.dispose();
+      returnFieldMaterial(material);
       if (metrics !== undefined) { metrics.fieldsUnmounted++; metrics.liveFields--; metrics.attributeBytes -= bytes; }
-    };
-  }, [geometry, material, metrics]);
+    },
+  };
+}
 
-  const uploadedCount = useRef(-1);
-  useFrame((_, delta) => {
-    const started = metrics === undefined ? 0 : performance.now();
-    if (advance) system.update(Math.min(delta, 0.1));
-    const buffers = system.buffers();
-    const count = buffers.count;
-    // An idle emitter has nothing to send; a live one sends its live particles, not the whole pool.
-    if (count === 0 && uploadedCount.current === 0) return;
-    uploadedCount.current = count;
-    packFieldFrame(field, buffers);
-    if (count === 0) return;
-    material.uniforms["uScale"]!.value = scale * dpr;
-    material.uniforms["uStretch"]!.value = render?.stretch ?? 0.08;
-    if (metrics !== undefined) {
-      const elapsed = performance.now() - started;
-      metrics.totalUploadMs += elapsed;
-      metrics.maxUploadMs = Math.max(metrics.maxUploadMs, elapsed);
-      metrics.uploadSamples++;
-    }
-  });
-
-  return quad ? <mesh geometry={geometry} material={material} frustumCulled={false} /> : <points geometry={geometry} material={material} frustumCulled={false} />;
-});
+/** React mount for {@link particleFieldDraw}; props changes that affect the program remount it. */
+export function ParticleField(props: ParticleFieldDrawOptions & { system: ParticleSystem }): ReactElement {
+  const { system, advance = true, blending = "additive", scale = 300, depthWrite = false, render, metrics } = props;
+  const shape = render?.shape ?? "point";
+  useEngineDraw(
+    () => particleFieldDraw(system, { advance, blending, scale, depthWrite, render, metrics }),
+    [system, shape, scale, depthWrite, blending, metrics],
+  );
+  return <></>;
+}

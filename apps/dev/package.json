@@ -14,8 +14,6 @@
     "@jgengine/rapier": "workspace:*",
     "@jgengine/convex": "workspace:*",
     "@jgengine/shell": "workspace:*",
-    "@react-three/drei": "catalog:",
-    "@react-three/fiber": "catalog:",
     "convex": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",

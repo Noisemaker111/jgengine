@@ -305,6 +305,11 @@
 - `HudLayoutPersistProvider` (function): function HudLayoutPersistProvider({ onPanelCommit, children, }: { onPanelCommit: HudLayoutPersist; children?: ReactNode; }): React.JSX.Element — Provides {@link HudLayoutPersist} / `onPanelCommit` to descendant `useHudLayout` calls. Mount around game UI when a host can accept document UI patches (editor). Absent provider → canvas moves/resizes are no-ops for document writes.
 - `useHudLayoutPersist` (function): function useHudLayoutPersist(): HudLayoutPersist | null — Injected panel-commit port, or `null` when no host has provided one.
 
+## @jgengine/core/hud/hudOverlay.draw
+
+- `AnchoredOverlay` (function): function AnchoredOverlay({ position, anchor, localPosition, distanceFactor, zIndex = 0, children, }: { /** World-space anchor. Mutually exclusive with `anchor`+`localPosition`. */ position?: readonly [number, number, number] | undefined; /** Scene object the overlay follows; `localPosition` is its l… — A world-anchored DOM overlay: drei's `<Html position center>` while r3f owns the canvas; under the engine loop a div projected to the anchor every frame, with `distanceFactor` scaling matched to drei's `distanceFactor / (2·tan(fov/2)·distance)`. Hidden when the anchor leaves the frustum.
+- `HudOverlay` (function): function HudOverlay({ zIndex, children }: { zIndex: number; children: ReactNode }): React.JSX.Element — Fullscreen DOM overlay over the 3D canvas. drei's `<Html fullscreen>` while r3f still owns the canvas (it portals out of the reconciler); a plain absolutely-positioned div once the engine loop renders children into the shell's positioned wrapper. Samples are CSS px relative to the canvas top-left either way.
+
 ## @jgengine/core/hud/hudPanelLayout
 
 - `HudPanelClaim` (interface): interface HudPanelClaim — One HUD panel asking for room. Panels that share an `anchor` stack outward from that edge in `order`; the solver then moves, collapses or shrinks whatever would land on something else.
@@ -755,19 +760,21 @@
 
 ## @jgengine/core/render/EntityPreview.draw
 
-- `EntityPreview` (function): function EntityPreview({ children, model, instanceId, mood = "studio", backdrop, turntable = 0, faceCamera = false, forward, environment = true, cameraPosition = [0, 1, 3], cameraTarget, fov = 35, dpr = [1, 2], className, style, }: EntityPreviewProps): React.JSX.Element — Drop-in live 3D preview of a single entity — the character-screen portrait, unit inspector, or loadout viewer. It owns all the plumbing a game would otherwise re-derive by hand: a nested `<Canvas>`, the {@link GameContextBridge} that carries the running `GameContext` across the R3F reconciler boundary (so the subject's `useEntityRenderCues` / `useGameContext` hooks resolve and it mirrors the live game), a {@link StudioStage} 3-point lighting rig with optional turntable / face-camera, and a capture-friendly GL surface. The game keeps ownership of its `renderEntity`: pass it as `children`, or hand a native `model` (+ `instanceId`) for an engine-composed body. Bound to a live `instanceId`, the portrait walks, flinches, and topples in lockstep with the world instead of a canned spin.
+- `EntityPreview` (function): function EntityPreview({ children, model, instanceId, mood = "studio", backdrop, turntable = 0, faceCamera = false, forward, environment = true, cameraPosition = [0, 1, 3], cameraTarget, fov = 35, dpr = [1, 2], className, style, }: EntityPreviewProps): React.JSX.Element — Drop-in live 3D preview of a single entity — the character-screen portrait, unit inspector, or loadout viewer. It owns all the plumbing a game would otherwise re-derive by hand: a nested {@link EngineCanvas} (WebGL, matching the old r3f preview), the {@link GameContextBridge} that carries the running `GameContext` to the subject's `useEntityRenderCues` / `useGameContext` hooks, a {@link StudioStage} 3-point lighting rig with optional turntable / face-camera, and a capture-friendly GL surface (`preserveDrawingBuffer`). The game keeps ownership of its `renderEntity`: pass it as `children`, or hand a native `model` (+ `instanceId`) for an engine-composed body. Bound to a live `instanceId`, the portrait walks, flinches, and topples in lockstep with the world instead of a canned spin.
 - `EntityPreviewProps` (interface): interface EntityPreviewProps — Props for {@link EntityPreview}.
 
 ## @jgengine/core/render/SpriteBatch.draw
 
-- `SpriteBatch` (function): function SpriteBatch({ url, columns = 1, rows = 1, capacity = DEFAULT_CAPACITY, instances, plane = "xy", billboard = false, pixelated = true, alphaTest = DEFAULT_ALPHA_TEST, opacity = 1, }: SpriteBatchProps): React.JSX.Element — Renders a sprite sheet / tile atlas as a single InstancedMesh — one draw call for the whole batch. Each instance picks its atlas frame via a per-instance UV offset attribute patched into the material's vertex shader, so platformer/puzzle-grid presentation never needs one draw call per sprite. Transforms and UV offsets are written directly into the mesh's typed arrays each frame from a plain instance list (bodies never touch the per-entity React path).
+- `SpriteBatch` (function): function SpriteBatch(props: SpriteBatchProps): React.JSX.Element — Renders a sprite sheet / tile atlas as a single InstancedMesh — one draw call for the whole batch. Thin React bridge over {@link spriteBatchDraw}.
 - `SpriteBatchInstance` (interface): interface SpriteBatchInstance — One sprite in a batch: world position, size and atlas frame.
 - `SpriteBatchProps` (interface): interface SpriteBatchProps — Props for SpriteBatch: atlas URL and grid, and the sprites to draw.
+- `spriteBatchDraw` (function): function spriteBatchDraw(getProps: () => SpriteBatchProps): EngineDraw — Renders a sprite sheet / tile atlas as a single InstancedMesh — one draw call for the whole batch. Each instance picks its atlas frame via a per-instance UV offset attribute patched into the material's vertex shader, so platformer/puzzle-grid presentation never needs one draw call per sprite. Transforms and UV offsets are written directly into the mesh's typed arrays each frame from a plain instance list (bodies never touch the per-entity React path).
 
 ## @jgengine/core/render/TileLayerRenderer.draw
 
-- `TileLayerRenderer` (function): function TileLayerRenderer({ config, parallax = [1, 1], pixelated = true }: TileLayerRendererProps): React.JSX.Element | null — Renders a tilemap as one instanced quad mesh with atlas UV rectangles.
+- `TileLayerRenderer` (function): function TileLayerRenderer(props: TileLayerRendererProps): React.JSX.Element — Thin React bridge: mounts {@link tileLayerRendererDraw} under the JSX parent.
 - `TileLayerRendererProps` (interface): interface TileLayerRendererProps — Inputs for the instanced textured tile-layer renderer.
+- `tileLayerRendererDraw` (function): function tileLayerRendererDraw({ config, parallax = [1, 1], pixelated = true }: TileLayerRendererProps): EngineDraw — Renders a tilemap as one instanced quad mesh with atlas UV rectangles.
 
 ## @jgengine/core/render/ambientLife
 
@@ -1645,6 +1652,14 @@
 
 - `RotateDeviceScreen` (function): function RotateDeviceScreen({ title = "Turn your device", description, requiredOrientation = "landscape", accent = "var(--jg-accent, #8ea2ff)", icon, className, style, }: { /** Short headline. */ title?: string; /** One concise explanatory line. Defaults from `requiredOrientation`. */ description?: … — Full-viewport, non-dismissible rotate-device gate shown when a game requires an orientation the device isn't in.
 
+## @jgengine/core/ui/runeUi.view
+
+- `RuneUi` (class): class RuneUi — One mounted Rune UI layer. Create once per page; games describe their trees with {@link RuneUi.setSpec} and bind live values with {@link RuneUi.bind}.
+- `RuneUiEvent` (interface): interface RuneUiEvent { id: string; kind: string; value?: number; text?: string } — ⚠ undocumented
+- `RuneUiFrame` (interface): interface RuneUiFrame { events: RuneUiEvent[]; regions: [number, number, number, number][]; modal: boolean } — ⚠ undocumented
+- `RuneUiNode` (interface): interface RuneUiNode — The engine's Rune UI bridge: mounts the jg-ui wasm (Rune compiled to WebAssembly, drawn on a transparent WebGPU canvas over the game's three.js canvas) and speaks its protocol — a declarative widget tree (`setSpec`), one shared f32 value buffer written once per frame (`bind`), and events plus hit regions back through a single per-frame payload.
+- `RuneUiOptions` (interface): interface RuneUiOptions { canvasId?: string; baseUrl?: string; fonts?: readonly string[]; sans?: string; mono?: string; zIndex?: number } — ⚠ undocumented
+
 ## @jgengine/core/ui/sceneSwap.view
 
 - `sceneSwapping` (function): function sceneSwapping(): boolean — True while a scene swap's card is up, outside React (the frame breakdown marks stalls drawn behind it).
@@ -1863,7 +1878,7 @@
 - `FullscreenMap` (function): function FullscreenMap({ open = true, bounds, contentWidth = 900, minScale = 0.5, maxScale = 8, title = "Map", onClose, onWorldClick, tool = "pan", onStrokeComplete, drawTone = "info", drawWidth = 3, children, overlayClassName, overlayStyle, ...surfaceProps }: FullscreenMapProps): ReactNode — Fullscreen pan/zoom world-map overlay — the enlarged "press M" map. Wheel to zoom (toward the cursor), drag to pan, and click to place (wire `onWorldClick` to a waypoint/annotation store). Switch `tool` to `"draw"` to freehand-draw strokes committed to `onStrokeComplete` (wire to `createAnnotationLayer`). Reuses {@link WorldMapSurface} for rendering, so terrain bake, fog, routes, zones, markers, and the player arrow all appear; a drag never fires `onWorldClick`. Compose a {@link MapLegend} or tool palette via `children`.
 - `FullscreenMapProps` (interface): interface FullscreenMapProps extends Omit<WorldMapSurfaceProps, "canvasWidth" | "canvasHeight" | "viewport" | "width" | "height" | "style"> — Props for {@link FullscreenMap}.
 - `GameClockControls` (type): type GameClockControls = Pick<ClockSnapshot, "paused" | "speed" | "playSpeed" | "timescale" | "scale" | "speeds"> & { controls: SimClock } — The clock's settings a control shows: they change when the player pauses or picks a speed, never as time passes.
-- `GameContextBridge` (function): function GameContextBridge({ context, children, }: { context: GameContext | null; children?: ReactNode; }): React.JSX.Element — Re-provide a captured {@link GameContext} across a nested React reconciler boundary. The `<Canvas>` of `@react-three/fiber` renders its children in a *separate* React root, so a `GameProvider` in the outer tree does NOT reach inside it — hooks like `useGameContext` / `useEntityRenderCues` throw. The fix the shell already uses internally: capture the context outside the boundary (with {@link useOptionalGameContext}) and wrap the inner tree in `GameContextBridge`. A `null` context renders children unchanged, so the same code works in showcases with no running game. This is the seam behind `EntityPreview` — reach for it directly when building a bespoke nested canvas.
+- `GameContextBridge` (function): function GameContextBridge({ context, children, }: { context: GameContext | null; children?: ReactNode; }): React.JSX.Element — Re-provide a captured {@link GameContext} across a nested React reconciler boundary. A nested renderer that mounts its own React root does NOT inherit a `GameProvider` from the outer tree â€” hooks like `useGameContext` / `useEntityRenderCues` throw. The fix the shell already uses internally: capture the context outside the boundary (with {@link useOptionalGameContext}) and wrap the inner tree in `GameContextBridge`. A `null` context renders children unchanged, so the same code works in showcases with no running game. This is the seam behind `EntityPreview` — reach for it directly when building a bespoke nested canvas.
 - `GameCursor` (function): function GameCursor({ variant = "brackets", color, gap = 6, thickness = 3, arm = 14, className, style }: GameCursorProps): ReactNode — A game-style selection cursor for a menu: corner brackets, a pointer or a bar that glides to whichever item the keyboard, gamepad or mouse selects, instead of a browser focus ring. Drop it inside the menu's positioned container; it follows the `useMenuNav` current item, then focus, then the hovered control, and hides when nothing is selected. Reduced motion makes it jump.
 - `GameCursorProps` (interface): interface GameCursorProps — Props for {@link GameCursor}.
 - `GameCursorStyle` (type): type GameCursorStyle = "brackets" | "chevron" | "bar" | "diamond" | "frame" — How the cursor marks the selected item.
@@ -2012,6 +2027,7 @@
 - `MapLegend` (function): function MapLegend({ kinds, labels, kindStyles = DEFAULT_MARKER_KINDS, title = "Legend", className, style, }: MapLegendProps): ReactNode — Marker-kind key for a map/minimap — glyph + color swatch per kind, labelled. Reads the same `kindStyles` the map renders with, so the legend can never drift from the pins.
 - `MapLegendProps` (interface): interface MapLegendProps — Props for {@link MapLegend}.
 - `MapViewport` (interface): interface MapViewport — Pan/zoom transform applied to a {@link WorldMapSurface}'s content group.
+- `MarkerAccess` (interface): interface MarkerAccess<TMarker extends MarkerView> — ⚠ undocumented · used by `markerAccess`: Non-hook access to a marker collection's subscribe/snapshot pair, for draw factories.
 - `MedalToken` (type): type MedalToken = "gold" | "silver" | "bronze" — The medal tokens {@link medalFor} emits for the podium.
 - `MenuNavContainerProps` (interface): interface MenuNavContainerProps — The container props that make a menu navigable.
 - `MenuNavController` (interface): interface MenuNavController — The live navigation controller returned by {@link useMenuNav}.
@@ -2236,6 +2252,7 @@
 - `layoutFloatingText` (function): function layoutFloatingText(views: readonly FloatingTextView[], project: ProjectEntity, options: FloatingTextLayoutOptions = {}): FloatingTextPlacement[] — Pure layout core: projects each view, drops the ones behind the camera or (when `viewport` is set) off-screen, and returns the survivors sorted farthest-first so nearer text paints on top. No React, no DOM — unit-testable.
 - `loadGameFonts` (function): function loadGameFonts(faces: readonly GameFontFace[]): void — Registers `faces` with the document's font set once each and starts loading them. Safe on the server.
 - `localPlayerEntity` (function): function localPlayerEntity(ctx: GameContext): SceneEntity | null — ⚠ undocumented
+- `markerAccess` (function): function markerAccess(markers: MarkerCollection): MarkerAccess<MarkerView> — Non-hook access to a marker collection's subscribe/snapshot pair, for draw factories.
 - `meterFraction` (function): function meterFraction(value: number, max = 1): number — Fill 0..1 for a meter, clamped; `max <= 0` reads as empty.
 - `meterSegmentsLit` (function): function meterSegmentsLit(value: number, max = 1, segments = 10): number — Cell states for a segmented meter: how many of `segments` are lit for `value / max`.
 - `missingKitParts` (function): function missingKitParts(kit: Pick<UiKit, "components">): UiKitPart[] — Parts a kit is missing, for tests and dev checks. Empty when the kit is complete.
@@ -2462,7 +2479,7 @@
 
 ## @jgengine/react/provider
 
-- `GameContextBridge` (function): function GameContextBridge({ context, children, }: { context: GameContext | null; children?: ReactNode; }): React.JSX.Element — Re-provide a captured {@link GameContext} across a nested React reconciler boundary. The `<Canvas>` of `@react-three/fiber` renders its children in a *separate* React root, so a `GameProvider` in the outer tree does NOT reach inside it — hooks like `useGameContext` / `useEntityRenderCues` throw. The fix the shell already uses internally: capture the context outside the boundary (with {@link useOptionalGameContext}) and wrap the inner tree in `GameContextBridge`. A `null` context renders children unchanged, so the same code works in showcases with no running game. This is the seam behind `EntityPreview` — reach for it directly when building a bespoke nested canvas.
+- `GameContextBridge` (function): function GameContextBridge({ context, children, }: { context: GameContext | null; children?: ReactNode; }): React.JSX.Element — Re-provide a captured {@link GameContext} across a nested React reconciler boundary. A nested renderer that mounts its own React root does NOT inherit a `GameProvider` from the outer tree â€” hooks like `useGameContext` / `useEntityRenderCues` throw. The fix the shell already uses internally: capture the context outside the boundary (with {@link useOptionalGameContext}) and wrap the inner tree in `GameContextBridge`. A `null` context renders children unchanged, so the same code works in showcases with no running game. This is the seam behind `EntityPreview` — reach for it directly when building a bespoke nested canvas.
 - `GameProvider` (function): function GameProvider({ context, children }: { context: GameContext; children?: ReactNode }): React.JSX.Element — ⚠ undocumented
 - `useGameContext` (function): function useGameContext(): GameContext — ⚠ undocumented
 - `useOptionalGameContext` (function): function useOptionalGameContext(): GameContext | null — The game context if a `GameProvider` is present, otherwise `null` — for chrome that may render outside a running game (showcases, previews).
@@ -2538,6 +2555,6 @@
 
 ## @jgengine/shell/world/WorldScene
 
-- `RemotePlayers` (function): function RemotePlayers({ rows, presenceInterpolationMs = 100 }: { rows: PresencePoseRow[]; presenceInterpolationMs?: number }): React.JSX.Element — ⚠ undocumented
+- `RemotePlayers` (function): function RemotePlayers({ rows, presenceInterpolationMs = 100 }: { rows: PresencePoseRow[]; presenceInterpolationMs?: number }): null — ⚠ undocumented
 - `WorldView` (function): function WorldView({ entitySprites, entityModels, objectModels, objectStyles, environment, assets, renderEntity, renderObject, selectedIds, hideLocalActor, editorLayers, }: { entitySprites: Record<string, EntitySpriteConfig> | undefined; entityModels: Record<string, string | ModelConfig> | undefined… — ⚠ undocumented
 - `drawsScaledModel` (function): function drawsScaledModel(object: Pick<SceneObject, "visual">): boolean — Whether an object draws its catalog model through a per-placement scale group. A scaled placement skips the per-catalog bounds measurement, which would otherwise record one instance's stretched size as every instance's footprint.

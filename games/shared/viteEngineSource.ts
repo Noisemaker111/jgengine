@@ -11,7 +11,7 @@ export interface Alias {
 const packagesDir = fileURLToPath(new URL("../../packages", import.meta.url));
 
 /** The rendering libraries engine packages take as peers; the game's copy is the one copy. */
-export const ENGINE_PEERS = ["react", "react-dom", "three", "@react-three/fiber", "@react-three/drei", "three-stdlib"] as const;
+export const ENGINE_PEERS = ["react", "react-dom", "three", "three-stdlib"] as const;
 
 /** `@jgengine/<pkg>` and `@jgengine/<pkg>/<path>` resolved to `packages/<pkg>/src`, so a game runs the engine in this repo with no build. */
 export function engineSourceAliases(dir = packagesDir): Alias[] {

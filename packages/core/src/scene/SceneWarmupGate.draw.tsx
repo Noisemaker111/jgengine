@@ -1,11 +1,13 @@
-import { addAfterEffect, addEffect, useThree } from "@react-three/fiber";
-import { useEffect, useSyncExternalStore } from "react";
+import { useRef, useSyncExternalStore } from "react";
 
 import type { BootStep } from "@jgengine/core/boot/bootSequence";
 import { BootLoadingScreen, useBootStep } from "@jgengine/core/boot/bootScreen.view";
 import { devtools } from "@jgengine/core/devtools/devtools";
+import { joinAfterRenderTask, joinBeforeRenderTask } from "@jgengine/core/frame/afterRenderBoard.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
-import { createShaderWarmup, deferUnlinkedDraws, firstUnlinkedDrawable, holdDraws, registerSceneWarmup, SHADER_WARMUP_DEFAULTS, type HeldDraw, type ShaderWarmupState } from "@jgengine/core/render/shaderWarmup.draw";
+import { createShaderWarmup, deferUnlinkedDraws, firstUnlinkedDrawable, holdDraws, registerSceneWarmup, SHADER_WARMUP_DEFAULTS, warmupHoldLabels, type HeldDraw, type ShaderWarmupState } from "@jgengine/core/render/shaderWarmup.draw";
 
 /** Warmup state before the gate has run, so the loading screen covers the very first frame. @internal */
 export const SCENE_WARMUP_PENDING: ShaderWarmupState = { phase: "waiting", rounds: 0, programs: 0, planned: 0, deferred: 0, progress: 0, elapsedMs: 0 };
@@ -39,6 +41,11 @@ export function createSceneWarmupStore(): SceneWarmupStore {
   };
 }
 
+export interface SceneWarmupGateProps {
+  onState: (state: ShaderWarmupState) => void;
+  sceneDrawsToTarget?: boolean;
+}
+
 /**
  * Compiles the mounted scene's shaders behind the loading screen and reports progress to it.
  * Mounted inside the canvas, after the world, so the first round sees the world's materials.
@@ -48,102 +55,128 @@ export function createSceneWarmupStore(): SceneWarmupStore {
  * too. Draws outside the loop (an environment bake) still run.
  * @internal
  */
-export function SceneWarmupGate({ onState, sceneDrawsToTarget }: { onState: (state: ShaderWarmupState) => void; sceneDrawsToTarget?: boolean }) {
-  const gl = useThree((state) => state.gl);
-  const scene = useThree((state) => state.scene);
-  const camera = useThree((state) => state.camera);
-  // With no answer from the canvas owner, a priority frame loop is taken for the post chain, which
-  // draws the scene into its own buffer. A scissored split-screen loop also takes priority and draws
-  // the canvas, so the composition passes the answer where it knows it.
-  const internal = useThree((state) => state.internal);
-  useEffect(() => {
-    let inFrame = false;
-    const enterFrame = addEffect(() => {
-      inFrame = true;
-    });
-    const leaveFrame = addAfterEffect(() => {
-      inFrame = false;
-    });
-    let held: HeldDraw[] = [];
-    const releaseDraws = holdDraws(gl, { holding: () => inFrame, onHeld: (draw) => held.push(draw) });
-    const release = (): void => {
-      releaseDraws();
-      enterFrame();
-      leaveFrame();
-      held = [];
-    };
-    const warmup = createShaderWarmup({
-      renderer: gl,
-      scene,
-      camera,
-      onState,
-      sceneDrawsToTarget: () => sceneDrawsToTarget ?? internal.priority > 0,
-      takeHeldDraws: () => {
-        const taken = held;
+export function sceneWarmupGateDraw(getProps: () => SceneWarmupGateProps): EngineDraw {
+  let disposed = false;
+  let warmup: ReturnType<typeof createShaderWarmup> | null = null;
+  let unwatch = (): void => {};
+  let release = (): void => {};
+  let unregisterWarmup: (() => void) | null = null;
+  let unregisterProbe: (() => void) | null = null;
+  return {
+    mount(state: EngineFrameState) {
+      const { gl, scene, camera } = state;
+      let inFrame = false;
+      const leaveBefore = joinBeforeRenderTask(() => {
+        inFrame = true;
+      });
+      const leaveAfter = joinAfterRenderTask(() => {
+        inFrame = false;
+      });
+      let held: HeldDraw[] = [];
+      const releaseDraws = holdDraws(gl, { holding: () => inFrame, onHeld: (draw) => held.push(draw) });
+      release = (): void => {
+        releaseDraws();
+        leaveBefore();
+        leaveAfter();
         held = [];
-        return taken;
-      },
-    });
-    // After the reveal, a frame that would link a program mid-draw (a level the Play press spawns,
-    // a pooled effect turning on) is skipped instead: the canvas keeps its last image while the
-    // warmup links the new content off the frame, then drawing resumes with nothing left to link.
-    let watchUntil = 0;
-    let preparing = false;
-    const watch = (): void => {
-      watchUntil = performance.now() + SHADER_WARMUP_DEFAULTS.watchMs;
-    };
-    const linkedPrograms = (): number => gl.info.programs?.length ?? 0;
-    /** `found`: a frame saw content to link, rather than the cover lifting. */
-    const prepare = (found: boolean): Promise<void> => {
-      preparing = true;
-      const before = linkedPrograms();
-      return warmup.prepare().finally(() => {
-        preparing = false;
-        // A prepare a frame asked for that linked nothing found nothing it could link: stop looking
-        // rather than hold frame after frame for something that never gets a program.
-        if (!found || linkedPrograms() > before) watch();
-        else watchUntil = 0;
-      });
-    };
-    let unwatch = (): void => {};
-    let disposed = false;
-    void warmup.done.then((state) => {
-      release();
-      if (disposed || state.phase !== "ready") return;
-      watch();
-      let inWatchedFrame = false;
-      const releaseWatchDraws = holdDraws(gl, { holding: () => inWatchedFrame && preparing });
-      // Whatever mounts later in play, or turns visible mid-frame, is left out until it is linked.
-      const undoDefer = deferUnlinkedDraws(gl, scene, () => !preparing);
-      const enterWatched = addEffect(() => {
-        inWatchedFrame = true;
-        if (preparing || performance.now() > watchUntil) return;
-        if (firstUnlinkedDrawable(gl, scene, camera) !== null) void prepare(true);
-      });
-      const leaveWatched = addAfterEffect(() => {
-        inWatchedFrame = false;
-      });
-      unwatch = () => {
-        undoDefer();
-        releaseWatchDraws();
-        enterWatched();
-        leaveWatched();
       };
-    });
-    const unregisterWarmup = registerSceneWarmup(scene, { ...warmup, prepare: () => prepare(false) });
-    const unregister = devtools.probes.register("sceneWarmup", () => {
-      const state = warmup.state();
-      return `${state.phase}, ${state.rounds} rounds, ${state.programs} programs, ${state.planned} planned, ${state.deferred} deferred, ${state.elapsedMs}ms`;
-    });
-    return () => {
+      const active = createShaderWarmup({
+        renderer: gl,
+        scene,
+        camera,
+        onState: (warmupState) => getProps().onState(warmupState),
+        // With no answer from the canvas owner, a priority frame loop is taken for the post chain, which
+        // draws the scene into its own buffer. A scissored split-screen loop also takes priority and draws
+        // the canvas, so the composition passes the answer where it knows it.
+        sceneDrawsToTarget: () => getProps().sceneDrawsToTarget ?? state.renderTakenOver,
+        takeHeldDraws: () => {
+          const taken = held;
+          held = [];
+          return taken;
+        },
+      });
+      warmup = active;
+      // After the reveal, a frame that would link a program mid-draw (a level the Play press spawns,
+      // a pooled effect turning on) is skipped instead: the canvas keeps its last image while the
+      // warmup links the new content off the frame, then drawing resumes with nothing left to link.
+      let watchUntil = 0;
+      let preparing = false;
+      const watch = (): void => {
+        watchUntil = performance.now() + SHADER_WARMUP_DEFAULTS.watchMs;
+      };
+      const linkedPrograms = (): number => gl.info.programs?.length ?? 0;
+      /** `found`: a frame saw content to link, rather than the cover lifting. */
+      const prepare = (found: boolean): Promise<void> => {
+        preparing = true;
+        const before = linkedPrograms();
+        return active.prepare().finally(() => {
+          preparing = false;
+          // A prepare a frame asked for that linked nothing found nothing it could link: stop looking
+          // rather than hold frame after frame for something that never gets a program.
+          if (!found || linkedPrograms() > before) watch();
+          else watchUntil = 0;
+        });
+      };
+      void active.done.then((warmupState) => {
+        release();
+        if (disposed || warmupState.phase !== "ready") return;
+        watch();
+        let inWatchedFrame = false;
+        const releaseWatchDraws = holdDraws(gl, { holding: () => inWatchedFrame && preparing });
+        // Whatever mounts later in play, or turns visible mid-frame, is left out until it is linked.
+        const undoDefer = deferUnlinkedDraws(gl, scene, () => !preparing);
+        const leaveWatchedBefore = joinBeforeRenderTask(() => {
+          inWatchedFrame = true;
+          if (preparing || performance.now() > watchUntil) return;
+          if (firstUnlinkedDrawable(gl, scene, camera) !== null) void prepare(true);
+        });
+        const leaveWatchedAfter = joinAfterRenderTask(() => {
+          inWatchedFrame = false;
+        });
+        unwatch = () => {
+          undoDefer();
+          releaseWatchDraws();
+          leaveWatchedBefore();
+          leaveWatchedAfter();
+        };
+      });
+      unregisterWarmup = registerSceneWarmup(scene, { ...active, prepare: () => prepare(false) });
+      unregisterProbe = devtools.probes.register("sceneWarmup", () => {
+        const warmupState = active.state();
+        const holds = warmupHoldLabels(scene);
+        const waiting = holds.length === 0 ? "" : `, waiting on ${holds.join("; ")}`;
+        return `${warmupState.phase}, ${warmupState.rounds} rounds, ${warmupState.programs} programs, ${warmupState.planned} planned, ${warmupState.deferred} deferred, ${warmupState.elapsedMs}ms${waiting}`;
+      });
+    },
+    dispose() {
       disposed = true;
-      warmup.cancel();
-      unregisterWarmup();
+      warmup?.cancel();
+      unregisterWarmup?.();
+      unregisterWarmup = null;
       unwatch();
       release();
-      unregister();
-    };
-  }, [gl, scene, camera, onState]);
+      unregisterProbe?.();
+      unregisterProbe = null;
+      warmup = null;
+    },
+  };
+}
+
+/**
+ * Compiles the mounted scene's shaders behind the loading screen and reports progress to it.
+ * Mounted inside the canvas, after the world, so the first round sees the world's materials.
+ * The frame loop draws nothing until the warmup reveals: it keeps ticking, but a draw would link
+ * every unready program synchronously on the main thread and freeze the menu above the cover.
+ * What it tried to draw is handed to the warmup, so post passes and override passes are linked
+ * too. Draws outside the loop (an environment bake) still run.
+ * @internal
+ */
+export function SceneWarmupGate(props: SceneWarmupGateProps) {
+  const latest = useRef(props);
+  latest.current = props;
+  const created = useRef<EngineDraw | null>(null);
+  if (created.current === null) created.current = sceneWarmupGateDraw(() => latest.current);
+  useEngineDraw(() => created.current as EngineDraw, []);
   return null;
 }
 

@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import { act, createRoot, type RootStore } from "@react-three/fiber";
 import { createElement } from "react";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -9,6 +8,7 @@ import { clone } from "three/examples/jsm/utils/SkeletonUtils.js";
 
 import type { SceneRaycastHit, SceneRaycastInput } from "@jgengine/core/scene/sceneRaycast";
 import { applyFootIk, resolveFootIkRig, useFootIk, type FootIkState } from "./useFootIk.draw";
+import { mountTestDraws, type MountedTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
 import { modelPlacementTransform } from "@jgengine/core/model/modelRender.draw";
 import { measureLocalBounds } from "@jgengine/core/model/measureBounds.draw";
 import { measureLocalCollisionTriangles } from "@jgengine/core/model/measureCollisionMesh.draw";
@@ -406,37 +406,29 @@ async function loadKnight(name = "Knight"): Promise<GLTF> {
 }
 
 async function footIkHarness(scene: THREE.Object3D, entities?: Record<string, [number, number, number]>) {
-  const actEnvironment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
-  const previous = actEnvironment.IS_REACT_ACT_ENVIRONMENT;
-  actEnvironment.IS_REACT_ACT_ENVIRONMENT = true;
-  const root = createRoot({} as HTMLCanvasElement);
-  await root.configure({
-    frameloop: "never", size: { width: 100, height: 100, top: 0, left: 0 }, dpr: 1,
-    gl: () => ({ render() {}, setSize() {}, setPixelRatio() {} }) as unknown as THREE.WebGLRenderer,
-  });
+  let mounted: MountedTestDraws | undefined;
   const ctx = {
     scene: {
       raycast: ground((x) => x > 0 ? 0.12 : -0.1).probe,
       entity: { get: (id: string) => (entities?.[id] === undefined ? null : { id, position: entities[id] }) },
     },
   } as unknown as import("@jgengine/core/runtime/gameContextTypes").GameContext;
-  let store: RootStore;
   function Model({ config }: { config: import("@jgengine/core/game/playableGame").ModelConfig["ik"] }) {
     useFootIk(scene, config, ctx, "hero");
-    return createElement("primitive", { object: scene });
+    return null;
   }
   const render = async (config: import("@jgengine/core/game/playableGame").ModelConfig["ik"]) => {
-    await act(async () => { store = root.render(createElement(Model, { config })); });
-  };
-  const frames = (count: number) => {
-    for (let frame = 0; frame < count; frame++) {
-      const state = store.getState();
-      state.advance(state.clock.elapsedTime + 1 / 60, false);
+    if (mounted === undefined) {
+      mounted = await mountTestDraws(createElement(Model, { config }), { width: 100, height: 100 });
+    } else {
+      await mounted.render(createElement(Model, { config }));
     }
   };
+  const frames = async (count: number) => {
+    for (let frame = 0; frame < count; frame++) await mounted!.advance(1 / 60);
+  };
   return { render, frames, unmount: async () => {
-    await act(async () => root.unmount());
-    actEnvironment.IS_REACT_ACT_ENVIRONMENT = previous;
+    await mounted?.unmount();
   } };
 }
 
@@ -449,13 +441,13 @@ describe("useFootIk lifecycle", () => {
     const h = await footIkHarness(scene);
     try {
       await h.render("auto");
-      h.frames(90);
+      await h.frames(90);
       expect(hips.position.distanceTo(originalPosition)).toBeGreaterThan(0.05);
       await h.render(undefined);
       expect(hips.position.distanceTo(originalPosition)).toBeLessThan(1e-6);
       expect(scene.getObjectByName("upperlegl")!.quaternion.angleTo(originalRotation)).toBeLessThan(1e-6);
       await h.render("auto");
-      h.frames(1);
+      await h.frames(1);
       expect(hips.position.distanceTo(originalPosition)).toBeGreaterThan(0);
       expect(hips.position.distanceTo(originalPosition)).toBeLessThan(0.01);
     } finally {
@@ -472,10 +464,10 @@ describe("useFootIk lifecycle", () => {
     const h = await footIkHarness(scene);
     try {
       await h.render("auto");
-      h.frames(90);
+      await h.frames(90);
       expect(leftThigh.quaternion.angleTo(originalRotation)).toBeGreaterThan(0.01);
       await h.render({ feet: [{ root: "upperlegr", mid: "lowerlegr", tip: "footr" }] });
-      h.frames(1);
+      await h.frames(1);
       expect(leftThigh.quaternion.angleTo(originalRotation)).toBeLessThan(1e-6);
       expect(hips.position.distanceTo(originalPosition)).toBeLessThan(0.01);
     } finally {
@@ -490,7 +482,7 @@ describe("useFootIk lifecycle", () => {
     const hips = scene.getObjectByName("hips")!;
     const h = await footIkHarness(scene);
     await h.render("auto");
-    h.frames(90);
+    await h.frames(90);
     hips.position.set(0.1, 1.3, -0.2);
     await h.unmount();
     expect(leftThigh.quaternion.angleTo(originalRotation)).toBeLessThan(1e-6);
@@ -503,7 +495,7 @@ describe("useFootIk lifecycle", () => {
     const h = await footIkHarness(scene, { mark: [6, 0, 0] });
     try {
       await h.render({ feet: [], lookAt: { bone: "head", target: { entity: "mark" }, entityEyeHeight: 1.5 } });
-      h.frames(60);
+      await h.frames(60);
       const from = head.getWorldPosition(new THREE.Vector3());
       const wanted = new THREE.Vector3(6, 1.5, 0).sub(from).normalize();
       const facing = new THREE.Vector3(0, 0, 1).applyQuaternion(head.getWorldQuaternion(new THREE.Quaternion()));
@@ -520,7 +512,7 @@ describe("useFootIk lifecycle", () => {
       const h = await footIkHarness(scene);
       try {
         await h.render({ feet: [], lookAt: { bone: "head", target } });
-        h.frames(60);
+        await h.frames(60);
         return head.getWorldQuaternion(new THREE.Quaternion());
       } finally {
         await h.unmount();

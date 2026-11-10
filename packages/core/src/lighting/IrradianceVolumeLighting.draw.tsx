@@ -1,5 +1,5 @@
-import { useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 import {
@@ -28,21 +28,32 @@ export interface IrradianceVolumeLightingProps {
  * @internal shell-internal lighting; games author the volume on the scene document.
  */
 export function IrradianceVolumeLighting({ volumes }: IrradianceVolumeLightingProps) {
-  const probeRef = useRef<THREE.LightProbe>(null);
+  const probeRef = useRef<THREE.LightProbe | null>(null);
   const sampled = useMemo(() => new Float32Array(PROBE_STRIDE), []);
 
-  useFrame((state) => {
-    const probe = probeRef.current;
-    if (probe === null) return;
-    const position = state.camera.position;
-    const volume = selectIrradianceVolume(volumes, [position.x, position.y, position.z]);
-    if (volume === undefined) return;
-    if (!sampleIrradianceVolume(volume, [position.x, position.y, position.z], sampled)) return;
-    for (let band = 0; band < SH_COEFFICIENTS; band += 1) {
-      probe.sh.coefficients[band]!.set(sampled[band * 3]!, sampled[band * 3 + 1]!, sampled[band * 3 + 2]!);
-    }
-  });
+  useEffect(() => {
+    const probe = new THREE.LightProbe();
+    probeRef.current = probe;
+    let scene: THREE.Scene | null = null;
+    const leave = joinFrameTask(0, (state) => {
+      scene ??= state.scene;
+      scene.add(probe);
+      const position = state.camera.position;
+      const volume = selectIrradianceVolume(volumes, [position.x, position.y, position.z]);
+      if (volume === undefined) return;
+      if (!sampleIrradianceVolume(volume, [position.x, position.y, position.z], sampled)) return;
+      for (let band = 0; band < SH_COEFFICIENTS; band += 1) {
+        probe.sh.coefficients[band]!.set(sampled[band * 3]!, sampled[band * 3 + 1]!, sampled[band * 3 + 2]!);
+      }
+    });
+    return () => {
+      leave();
+      probeRef.current = null;
+      scene?.remove(probe);
+      probe.dispose();
+    };
+  }, [volumes, sampled]);
 
-  return <lightProbe ref={probeRef} />;
+  return null;
 }
 

@@ -1,6 +1,7 @@
-import { Html } from "@react-three/drei";
-import { useFrame, useThree } from "@react-three/fiber";
 import { useCallback, useRef, useState, type ReactNode } from "react";
+import { HudOverlay } from "@jgengine/core/hud/hudOverlay.draw";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 import * as THREE from "three";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
@@ -54,26 +55,18 @@ function onNewPlayer(ctx: GameContext): void {
   ctx.scene.entity.spawn(HERO, { id: ctx.player.userId, position: [0, 0, 0], role: "player" });
 }
 
-/** Pins the fullscreen `<Html>` overlay at the viewport center (like WorldEntityFrames). */
-function pinToCenter(
-  _el: THREE.Object3D,
-  _camera: THREE.Camera,
-  size: { width: number; height: number },
-): [number, number] {
-  return [size.width / 2, size.height / 2];
-}
-
 /**
  * In-scene overlay: samples the live R3F camera each frame, projects every
  * waypoint through the shell world projection, and renders the screen-space
  * {@link WaypointMarkers}. Distance is the 3D camera→waypoint distance.
  */
 function WaypointOverlay({ tracker }: { tracker: WaypointStore }): ReactNode {
-  const camera = useThree((state) => state.camera);
-  const size = useThree((state) => state.size);
+  const host = useEngineHost();
+  const camera = host.frame.camera;
+  const size = host.frame.size;
   const project = useWorldProjection();
   const [, setTick] = useState(0);
-  useFrame(() => setTick((n) => (n + 1) % 1_000_000));
+  useFrameTask(() => setTick((n) => (n + 1) % 1_000_000));
 
   const scratch = useRef(new THREE.Vector3());
   const distanceOf = useCallback(
@@ -82,7 +75,7 @@ function WaypointOverlay({ tracker }: { tracker: WaypointStore }): ReactNode {
   );
 
   return (
-    <Html fullscreen calculatePosition={pinToCenter} zIndexRange={[30, 0]} style={{ pointerEvents: "none" }}>
+    <HudOverlay zIndex={30}>
       <WaypointMarkers
         entries={tracker}
         project={project}
@@ -91,7 +84,7 @@ function WaypointOverlay({ tracker }: { tracker: WaypointStore }): ReactNode {
         kindColors={KIND_COLORS}
         margin={34}
       />
-    </Html>
+    </HudOverlay>
   );
 }
 

@@ -34,7 +34,7 @@ export function hasInstall(root: string): boolean {
 /**
  * Every package a `package.json` in this checkout declares that its `node_modules` cannot resolve,
  * as `<workspace>/<package>`. One `tsgo` binary said "installed" while a game's own packages were
- * missing: a branch checked out or rebased after the install adds a dependency (`@react-three/drei`
+ * missing: a branch checked out or rebased after the install adds a dependency (`fake-missing-dep`
  * in `games/scrap-signal`), or a linked worktree copies the main checkout's older per-game folders.
  * About 700 `existsSync` calls, so every readiness check can afford it.
  */

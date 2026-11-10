@@ -1,7 +1,6 @@
 import { modelWithAuthoredMaterials } from "@jgengine/core/editor/materialAuthoring";
 import { modelWithAuthoredNodeVisibility } from "@jgengine/core/editor/modelNodeVisibility";
-import { useFrame, useThree } from "@react-three/fiber";
-import { memo, useCallback, useEffect, useMemo, useRef, useSyncExternalStore, type ComponentType, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useSyncExternalStore, type ComponentType, type MutableRefObject, type ReactNode } from "react";
 import * as THREE from "three";
 
 import { createEmptyEditorDocument, type EditorDocument } from "@jgengine/core/editor/index";
@@ -17,6 +16,7 @@ import { objectVisualScale, type ObjectStore, type SceneObject } from "@jgengine
 import { WORLD_ITEM_ENTITY_NAME } from "@jgengine/core/loot/groundItem";
 import type { EntitySpriteConfig, ModelConfig, ObjectStyle } from "@jgengine/core/game/playableGame";
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
+import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import {
   beginFallbackSeam,
   endFallbackPass,
@@ -25,11 +25,14 @@ import {
 import { useGameContext } from "@jgengine/react/provider";
 import { useSceneEntityIds, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
 
-import { DefaultSurface, detailMaps } from "@jgengine/core/material/defaultSurface.draw";
-import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
+import { defaultSurfaceMaterial, detailMaps } from "@jgengine/core/material/defaultSurface.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw, SceneObjectPortal, mountChildDraw, unmountChildDraw, type MountedChildDraw } from "@jgengine/core/frame/useEngineDraw.draw";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { WindClock } from "@jgengine/core/model/modelWind.draw";
 import { MeasuredBoundsGroup } from "@jgengine/core/model/measureBounds.draw";
-import { EntitySprite, IsolatedEntityModel, useEntityLookModel } from "@jgengine/core/model/SceneModels.draw";
+import { useEntityLookModel } from "@jgengine/core/model/SceneModels.draw";
+import { entitySpriteDraw, isolatedEntityModelDraw } from "@jgengine/core/model/entityModelDraw.draw";
 import { CharacterCrowd } from "@jgengine/core/anim/CharacterCrowd.draw";
 import {
   CharacterCrowdRegistry,
@@ -47,7 +50,7 @@ import {
 } from "@jgengine/core/lod/characterLod";
 import { resolveEntityModel, resolveObjectModel, type EntityModelCacheEntry, type ObjectModelCacheEntry } from "@jgengine/core/model/resolveModel";
 import { modelLooks } from "@jgengine/core/model/modelLook";
-import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.draw";
+import { useRenderVisibility, type VisiblePredicate } from "@jgengine/core/visibility/CullingProvider.draw";
 import { setCulled } from "@jgengine/core/visibility/culledTransforms.draw";
 import { CellStreamingDriver } from "@jgengine/core/visibility/cellStreaming.draw";
 import { writePoseIfChanged, writeRenderPoseIfChanged, emptyPoseMemo, type PoseMemo } from "@jgengine/core/anim/entityPose";
@@ -64,6 +67,238 @@ const EMPTY_DOCUMENT = createEmptyEditorDocument();
 const GROUND_SIZE = 160;
 const GROUND_SEGMENTS = 80;
 
+/** Add `root` under `parent` now; `dispose` removes it and disposes every mesh's geometry and material. */
+function trackedVisual(parent: THREE.Object3D, root: THREE.Object3D): { dispose(): void } {
+  parent.add(root);
+  return {
+    dispose() {
+      parent.remove(root);
+      root.traverse((object) => {
+        const mesh = object as THREE.Mesh;
+        if (mesh.isMesh === true) {
+          mesh.geometry.dispose();
+          const material = mesh.material;
+          if (Array.isArray(material)) for (const entry of material) entry.dispose();
+          else material.dispose();
+        }
+      });
+    },
+  };
+}
+
+interface EntityMarkerSnapshot {
+  /** Custom React content claimed this entity (never `null`/`undefined`). */
+  hasCustom: boolean;
+  /** `renderEntity` was absent entirely (`undefined`), which alone gates crowd batching. */
+  customMissing: boolean;
+  model: ModelConfig | undefined;
+  sprite: EntitySpriteConfig | undefined;
+  prop: boolean;
+  color: string;
+  isLocal: boolean;
+  targeted: boolean;
+  selected: boolean;
+}
+
+type EntityVisualKind = "custom" | "model" | "sprite" | "prop" | "capsule";
+
+/**
+ * One entity's marker as an {@link EngineDraw}: pose writes, render visibility, culling, crowd
+ * batching and LOD tiers in `frame`; selection/target rings and the visual branch (custom portal,
+ * model, sprite, or primitive fallback) reconciled in `update`. `markerRoot` and `contentGroup`
+ * are React-created so {@link SceneObjectPortal} can parent custom content under them on either
+ * host; the draw adds `contentGroup` under `markerRoot` itself.
+ */
+function entityMarkerDraw(options: {
+  entityId: string;
+  measureKey: string;
+  ctx: GameContext;
+  visible: MutableRefObject<VisiblePredicate>;
+  latest: { current: EntityMarkerSnapshot };
+  crowd: CharacterCrowdRegistry | undefined;
+  markerRoot: THREE.Group;
+  contentGroup: THREE.Group;
+}): EngineDraw {
+  const { entityId, measureKey, ctx, visible, latest, crowd, markerRoot, contentGroup } = options;
+  markerRoot.userData[POINTER_ENTITY_KEY] = entityId;
+  markerRoot.matrixAutoUpdate = false;
+  markerRoot.add(contentGroup);
+
+  const selectedRing = new THREE.Mesh(
+    new THREE.RingGeometry(0.8, 0.95, 32),
+    new THREE.MeshBasicMaterial({ color: "#34d399", transparent: true, opacity: 0.9 }),
+  );
+  selectedRing.rotation.x = -Math.PI / 2;
+  selectedRing.position.y = 0.02;
+  selectedRing.visible = false;
+  const targetRing = new THREE.Mesh(
+    new THREE.RingGeometry(0.6, 0.75, 28),
+    new THREE.MeshBasicMaterial({ color: "#f87171" }),
+  );
+  targetRing.rotation.x = -Math.PI / 2;
+  targetRing.position.y = 0.03;
+  targetRing.visible = false;
+  markerRoot.add(selectedRing, targetRing);
+
+  const scratch: RenderPose = [0, 0, 0, 0];
+  const memo: PoseMemo = emptyPoseMemo();
+  let tierRef: CharacterLodTier | undefined;
+  let child: MountedChildDraw | null = null;
+  let visual: { dispose(): void } | null = null;
+  let built: { kind: EntityVisualKind; model: ModelConfig | undefined; sprite: EntitySpriteConfig | undefined; color: string } | null = null;
+  let scaledGroup: THREE.Group | null = null;
+  let crowdModel: ModelConfig | undefined;
+  let crowdKind: string | undefined;
+  let crowdTint: string | undefined;
+
+  const teardownVisual = () => {
+    if (child !== null) {
+      unmountChildDraw(child);
+      child = null;
+    }
+    visual?.dispose();
+    visual = null;
+    scaledGroup = null;
+    built = null;
+  };
+
+  const syncVisual = (state: EngineFrameState) => {
+    const snap = latest.current;
+    selectedRing.visible = snap.selected;
+    targetRing.visible = snap.targeted;
+
+    const cModel = snap.customMissing && !snap.isLocal && snap.model !== undefined && crowd !== undefined && crowdEligible(snap.model) ? snap.model : undefined;
+    crowdModel = cModel;
+    crowdKind = cModel === undefined ? undefined : crowdKindOf(cModel);
+    crowdTint = cModel === undefined ? undefined : crowdTintOf(cModel);
+
+    const kind: EntityVisualKind = snap.hasCustom
+      ? "custom"
+      : snap.model !== undefined
+        ? "model"
+        : snap.sprite !== undefined
+          ? "sprite"
+          : snap.prop
+            ? "prop"
+            : "capsule";
+    if (
+      built !== null &&
+      built.kind === kind &&
+      built.model === snap.model &&
+      built.sprite === snap.sprite &&
+      (kind === "model" || kind === "sprite" || kind === "custom" || built.color === snap.color)
+    ) {
+      if (scaledGroup !== null) scaledGroup.scale.setScalar(ctx.scene.entity.visualScaleOf(entityId));
+      return;
+    }
+    teardownVisual();
+    built = { kind, model: snap.model, sprite: snap.sprite, color: snap.color };
+
+    if (kind === "model" && snap.model !== undefined) {
+      const sprite = snap.sprite;
+      child = mountChildDraw(
+        isolatedEntityModelDraw({
+          model: snap.model,
+          instanceId: entityId,
+          measure: { target: "entity", key: measureKey },
+          ctx,
+          seam: "entity",
+          fallback: sprite === undefined ? undefined : () => entitySpriteDraw(sprite),
+        }),
+        contentGroup,
+        state,
+      );
+      return;
+    }
+    if (kind === "sprite" && snap.sprite !== undefined) {
+      child = mountChildDraw(entitySpriteDraw(snap.sprite), contentGroup, state);
+      return;
+    }
+    if (kind === "custom") return;
+
+    if (kind === "prop") {
+      const mesh = new THREE.Mesh(
+        new THREE.SphereGeometry(0.45, 24, 24),
+        defaultSurfaceMaterial({ color: snap.color }),
+      );
+      mesh.position.y = 0.5;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      visual = trackedVisual(contentGroup, mesh);
+      return;
+    }
+    const inner = new THREE.Group();
+    inner.scale.setScalar(ctx.scene.entity.visualScaleOf(entityId));
+    scaledGroup = inner;
+    const capsule = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.35, 1.1, 6, 14),
+      defaultSurfaceMaterial({ color: snap.color, roughness: 0.6 }),
+    );
+    capsule.position.y = 0.95;
+    capsule.castShadow = true;
+    capsule.receiveShadow = true;
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.16), new THREE.MeshStandardMaterial({ color: "#f8fafc" }));
+    head.position.set(0, 1.35, 0.32);
+    inner.add(capsule, head);
+    visual = trackedVisual(contentGroup, inner);
+  };
+
+  return {
+    mount(state: EngineFrameState) {
+      state.scene.add(markerRoot);
+      syncVisual(state);
+    },
+    update(state: EngineFrameState) {
+      syncVisual(state);
+    },
+    frame(state: EngineFrameState) {
+      const live = ctx.scene.entity.get(entityId);
+      if (live === null) return;
+      writeRenderPoseIfChanged(markerRoot, ctx, entityId, live, scratch, memo);
+      const inView = visible.current(entityId);
+      const shown = live.hidden !== true && inView;
+      let batched = false;
+      const [x, y, z] = live.position;
+      const distance = Math.sqrt(
+        (state.camera.position.x - x) ** 2 + (state.camera.position.y - y) ** 2 + (state.camera.position.z - z) ** 2,
+      );
+      const snap = latest.current;
+      const crowdReady = crowdModel !== undefined && crowd !== undefined && crowdKind !== undefined && crowdKindReady(crowdKind);
+      let tier = characterViewTier({ shown, local: snap.isLocal, lod: snap.model?.lod, distance, crowd: crowdReady, previous: tierRef });
+      if (tier === "crowd" && crowd !== undefined && crowdKind !== undefined) {
+        // A painted character keeps its own rig: its strokes live on its materials, not in the batch.
+        const painted = ctx.scene.entity.paint.version(entityId) !== 0;
+        batched = !painted && crowd.claim(entityId, crowdKind, { x, y, z, rotationY: live.rotationY ?? 0, speed: groundSpeed(live), size: live.size ?? 1, tint: crowdTint });
+        // An over-cap batch leaves the rest of its kind on their own rigs at the tier their distance
+        // earns, so a crowded scene loses draws rather than characters.
+        if (!batched) tier = characterRigTier(distance, snap.model?.lod === false ? undefined : snap.model?.lod);
+      }
+      setCharacterLodTier(entityId, tier);
+      if (!batched) crowd?.delete(entityId);
+      tierRef = tier;
+      // The marker itself stays mounted and visible while a batch draws the character: its status
+      // rings and the hit test on its rig have to behave as they do when it draws itself.
+      contentGroup.visible = !batched;
+      // A per-instance size (a baby growing up) scales the model about its feet.
+      contentGroup.scale.setScalar(live.size ?? 1);
+      markerRoot.visible = shown;
+      setCulled(markerRoot, !inView);
+    },
+    dispose(state: EngineFrameState) {
+      teardownVisual();
+      crowd?.delete(entityId);
+      clearCharacterLodTier(entityId);
+      markerRoot.remove(contentGroup);
+      markerRoot.remove(selectedRing, targetRing);
+      selectedRing.geometry.dispose();
+      (selectedRing.material as THREE.Material).dispose();
+      targetRing.geometry.dispose();
+      (targetRing.material as THREE.Material).dispose();
+      state.scene.remove(markerRoot);
+    },
+  };
+}
+
 // Memoized: the entity list re-renders whenever one entity comes or goes, and every other marker's
 // inputs are unchanged then (entities are updated in place, and their models resolve to one object).
 const EntityMarker = memo(function EntityMarker({
@@ -75,7 +310,6 @@ const EntityMarker = memo(function EntityMarker({
   targeted,
   selected,
   crowd,
-  onSelect,
 }: {
   entity: SceneEntity;
   custom: ReactNode | undefined;
@@ -85,126 +319,59 @@ const EntityMarker = memo(function EntityMarker({
   targeted: boolean;
   selected: boolean;
   crowd: CharacterCrowdRegistry | undefined;
-  onSelect: (entity: SceneEntity) => void;
 }) {
-  const groupRef = useRef<THREE.Group>(null);
-  const modelRef = useRef<THREE.Group>(null);
   const ctx = useGameContext();
   const visibleRef = useRenderVisibility();
   const model = useEntityLookModel(baseModel, entity.id);
-  const entityId = entity.id;
-  const role = entity.role;
-  const name = entity.name;
-  const color = isLocal ? "#4ade80" : role === "npc" ? colorFromId(name) : "#9ca3af";
-  const tierRef = useRef<CharacterLodTier | undefined>(undefined);
-  const crowdModel = custom === undefined && !isLocal && crowdEligible(model) && crowd !== undefined ? model : undefined;
-  const crowdKind = crowdModel === undefined ? undefined : crowdKindOf(crowdModel);
-  const crowdTint = crowdModel === undefined ? undefined : crowdTintOf(crowdModel);
-
-  const scratchRef = useRef<RenderPose>([0, 0, 0, 0]);
-  const memoRef = useRef<PoseMemo>(emptyPoseMemo());
-  useFrame((state) => {
-    const group = groupRef.current;
-    if (group === null) return;
-    const live = ctx.scene.entity.get(entityId);
-    if (live === null) return;
-    writeRenderPoseIfChanged(group, ctx, entityId, live, scratchRef.current, memoRef.current);
-    const inView = visibleRef.current(entityId);
-    const shown = live.hidden !== true && inView;
-    let batched = false;
-    const [x, y, z] = live.position;
-    const distance = Math.sqrt(
-      (state.camera.position.x - x) ** 2 + (state.camera.position.y - y) ** 2 + (state.camera.position.z - z) ** 2,
-    );
-    const crowdReady = crowdModel !== undefined && crowd !== undefined && crowdKind !== undefined && crowdKindReady(crowdKind);
-    let tier = characterViewTier({ shown, local: isLocal, lod: model?.lod, distance, crowd: crowdReady, previous: tierRef.current });
-    if (tier === "crowd" && crowd !== undefined && crowdKind !== undefined) {
-      // A painted character keeps its own rig: its strokes live on its materials, not in the batch.
-      const painted = ctx.scene.entity.paint.version(entityId) !== 0;
-      batched = !painted && crowd.claim(entityId, crowdKind, { x, y, z, rotationY: live.rotationY ?? 0, speed: groundSpeed(live), size: live.size ?? 1, tint: crowdTint });
-      // An over-cap batch leaves the rest of its kind on their own rigs at the tier their distance
-      // earns, so a crowded scene loses draws rather than characters.
-      if (!batched) tier = characterRigTier(distance, model?.lod === false ? undefined : model?.lod);
-    }
-    setCharacterLodTier(entityId, tier);
-    if (!batched) crowd?.delete(entityId);
-    tierRef.current = tier;
-    // The marker itself stays mounted and visible while a batch draws the character: its status
-    // rings and the hit test on its rig have to behave as they do when it draws itself.
-    if (modelRef.current !== null) {
-      modelRef.current.visible = !batched;
-      // A per-instance size (a baby growing up) scales the model about its feet.
-      modelRef.current.scale.setScalar(live.size ?? 1);
-    }
-    group.visible = shown;
-    setCulled(group, !inView);
+  const markerRoot = useMemo(() => new THREE.Group(), []);
+  const contentGroup = useMemo(() => new THREE.Group(), []);
+  const latest = useRef<EntityMarkerSnapshot>({
+    hasCustom: false,
+    customMissing: true,
+    model: undefined,
+    sprite: undefined,
+    prop: false,
+    color: "#9ca3af",
+    isLocal: false,
+    targeted: false,
+    selected: false,
   });
-
-  useEffect(
-    () => () => {
-      crowd?.delete(entityId);
-      clearCharacterLodTier(entityId);
-    },
-    [crowd, entityId],
+  const color = isLocal ? "#4ade80" : entity.role === "npc" ? colorFromId(entity.name) : "#9ca3af";
+  latest.current = {
+    hasCustom: custom !== undefined && custom !== null,
+    customMissing: custom === undefined,
+    model,
+    sprite,
+    prop: entity.role === "prop",
+    color,
+    isLocal,
+    targeted,
+    selected,
+  };
+  useEngineDraw(
+    () =>
+      entityMarkerDraw({
+        entityId: entity.id,
+        measureKey: entity.name,
+        ctx,
+        visible: visibleRef,
+        latest,
+        crowd,
+        markerRoot,
+        contentGroup,
+      }),
+    [entity.id, entity.name, entity.role, ctx, visibleRef, latest, crowd, markerRoot, contentGroup],
   );
-
   return (
-    <group
-      ref={groupRef}
-      matrixAutoUpdate={false}
-      userData={{ [POINTER_ENTITY_KEY]: entityId }}
-      onPointerDown={(event) => {
-        event.stopPropagation();
-        if (isLocal) return;
-        const live = ctx.scene.entity.get(entityId);
-        if (live !== null) onSelect(live);
-      }}
-    >
-      {selected ? (
-        <mesh rotation-x={-Math.PI / 2} position-y={0.02}>
-          <ringGeometry args={[0.8, 0.95, 32]} />
-          <meshBasicMaterial color="#34d399" transparent opacity={0.9} />
-        </mesh>
-      ) : null}
-      <group ref={modelRef}>
-        {custom !== undefined && custom !== null ? (
-          <MeasuredBoundsGroup target="entity" measureKey={name}>
+    <SceneObjectPortal object={markerRoot}>
+      {custom !== undefined && custom !== null ? (
+        <SceneObjectPortal object={contentGroup}>
+          <MeasuredBoundsGroup target="entity" measureKey={entity.name}>
             {custom}
           </MeasuredBoundsGroup>
-        ) : model !== undefined ? (
-          <IsolatedEntityModel
-            model={model}
-            instanceId={entityId}
-            measure={{ target: "entity", key: name }}
-            fallback={sprite !== undefined ? <EntitySprite sprite={sprite} /> : undefined}
-          />
-        ) : sprite !== undefined ? (
-          <EntitySprite sprite={sprite} />
-        ) : role === "prop" ? (
-          <mesh position-y={0.5} castShadow receiveShadow>
-            <sphereGeometry args={[0.45, 24, 24]} />
-            <DefaultSurface color={color} />
-          </mesh>
-        ) : (
-          <group scale={ctx.scene.entity.visualScaleOf(entityId)}>
-            <mesh position-y={0.95} castShadow receiveShadow>
-              <capsuleGeometry args={[0.35, 1.1, 6, 14]} />
-              <DefaultSurface color={color} roughness={0.6} />
-            </mesh>
-            <mesh position={[0, 1.35, 0.32]}>
-              <boxGeometry args={[0.16, 0.16, 0.16]} />
-              <meshStandardMaterial color="#f8fafc" />
-            </mesh>
-          </group>
-        )}
-      </group>
-      {targeted ? (
-        <mesh rotation-x={-Math.PI / 2} position-y={0.03}>
-          <ringGeometry args={[0.6, 0.75, 28]} />
-          <meshBasicMaterial color="#f87171" />
-        </mesh>
+        </SceneObjectPortal>
       ) : null}
-    </group>
+    </SceneObjectPortal>
   );
 });
 
@@ -218,6 +385,133 @@ export function drawsScaledModel(object: Pick<SceneObject, "visual">): boolean {
   return object.visual?.scale !== undefined;
 }
 
+interface ObjectMarkerSnapshot {
+  hasCustom: boolean;
+  model: ModelConfig | undefined;
+  hidden: boolean;
+  drawsScaled: boolean;
+  scale: readonly [number, number, number];
+  color: string;
+  opacity: number;
+}
+
+type ObjectVisualKind = "custom" | "model" | "modelScaled" | "hidden" | "box";
+
+function objectMarkerDraw(options: {
+  instanceId: string;
+  catalogId: string;
+  ctx: GameContext;
+  visible: MutableRefObject<VisiblePredicate>;
+  latest: { current: ObjectMarkerSnapshot };
+  markerRoot: THREE.Group;
+}): EngineDraw {
+  const { instanceId, catalogId, ctx, visible, latest, markerRoot } = options;
+  markerRoot.userData[POINTER_OBJECT_KEY] = instanceId;
+  markerRoot.matrixAutoUpdate = false;
+
+  const memo: PoseMemo = emptyPoseMemo();
+  let child: MountedChildDraw | null = null;
+  let visual: { dispose(): void } | null = null;
+  let scaledGroup: THREE.Group | null = null;
+  let built: { kind: ObjectVisualKind; model: ModelConfig | undefined; scale: readonly [number, number, number]; color: string; opacity: number } | null = null;
+
+  const teardownVisual = () => {
+    if (child !== null) {
+      unmountChildDraw(child);
+      child = null;
+    }
+    visual?.dispose();
+    visual = null;
+    if (scaledGroup !== null) markerRoot.remove(scaledGroup);
+    scaledGroup = null;
+    built = null;
+  };
+
+  const syncVisual = (state: EngineFrameState) => {
+    const snap = latest.current;
+    const kind: ObjectVisualKind = snap.hasCustom
+      ? "custom"
+      : snap.model !== undefined
+        ? snap.drawsScaled
+          ? "modelScaled"
+          : "model"
+        : snap.hidden
+          ? "hidden"
+          : "box";
+    if (
+      built !== null &&
+      built.kind === kind &&
+      built.model === snap.model &&
+      built.scale[0] === snap.scale[0] &&
+      built.scale[1] === snap.scale[1] &&
+      built.scale[2] === snap.scale[2] &&
+      built.color === snap.color &&
+      built.opacity === snap.opacity
+    ) {
+      return;
+    }
+    teardownVisual();
+    built = { kind, model: snap.model, scale: snap.scale, color: snap.color, opacity: snap.opacity };
+
+    if (kind === "model" && snap.model !== undefined) {
+      child = mountChildDraw(
+        isolatedEntityModelDraw({
+          model: snap.model,
+          instanceId,
+          measure: { target: "object", key: catalogId },
+          ctx,
+          seam: "object",
+        }),
+        markerRoot,
+        state,
+      );
+      return;
+    }
+    if (kind === "modelScaled" && snap.model !== undefined) {
+      const inner = new THREE.Group();
+      inner.scale.set(snap.scale[0], snap.scale[1], snap.scale[2]);
+      scaledGroup = inner;
+      markerRoot.add(inner);
+      child = mountChildDraw(isolatedEntityModelDraw({ model: snap.model, instanceId, ctx }), inner, state);
+      return;
+    }
+    if (kind === "custom" || kind === "hidden") return;
+
+    const material = defaultSurfaceMaterial({ color: snap.color, transparent: snap.opacity < 1, opacity: snap.opacity });
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), material);
+    mesh.position.y = 0.5 * snap.scale[1];
+    mesh.scale.set(snap.scale[0], snap.scale[1], snap.scale[2]);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    visual = trackedVisual(markerRoot, mesh);
+  };
+
+  return {
+    mount(state: EngineFrameState) {
+      state.scene.add(markerRoot);
+      syncVisual(state);
+    },
+    update(state: EngineFrameState) {
+      syncVisual(state);
+    },
+    frame() {
+      const live = ctx.scene.object.get(instanceId);
+      // Removed: the object list does not re-render for a removal, so the marker hides itself.
+      if (live === null) {
+        markerRoot.visible = false;
+        return;
+      }
+      writePoseIfChanged(markerRoot, live, memo);
+      markerRoot.visible = visible.current(instanceId);
+      setCulled(markerRoot, !markerRoot.visible);
+    },
+    dispose(state: EngineFrameState) {
+      teardownVisual();
+      state.scene.remove(markerRoot);
+    },
+  };
+}
+
 const ObjectMarker = memo(function ObjectMarker({
   object,
   custom,
@@ -229,130 +523,147 @@ const ObjectMarker = memo(function ObjectMarker({
   model: ModelConfig | undefined;
   style: ObjectStyle | undefined;
 }) {
-  const groupRef = useRef<THREE.Group>(null);
   const ctx = useGameContext();
   const visibleRef = useRenderVisibility();
-  const instanceId = object.instanceId;
-  const memoRef = useRef<PoseMemo>(emptyPoseMemo());
+  const markerRoot = useMemo(() => new THREE.Group(), []);
   const [scaleX, scaleY, scaleZ] = objectVisualScale(object.visual);
-  const color = object.visual?.color ?? style?.color ?? colorFromId(object.catalogId);
-  const opacity = object.visual?.opacity ?? style?.opacity ?? 1;
-
-  useFrame(() => {
-    const group = groupRef.current;
-    if (group === null) return;
-    const live = ctx.scene.object.get(instanceId);
-    // Removed: the object list does not re-render for a removal, so the marker hides itself.
-    if (live === null) {
-      group.visible = false;
-      return;
-    }
-    writePoseIfChanged(group, live, memoRef.current);
-    group.visible = visibleRef.current(instanceId);
-    setCulled(group, !group.visible);
+  const latest = useRef<ObjectMarkerSnapshot>({
+    hasCustom: false,
+    model: undefined,
+    hidden: false,
+    drawsScaled: false,
+    scale: [1, 1, 1],
+    color: "#9ca3af",
+    opacity: 1,
   });
-
+  latest.current = {
+    hasCustom: custom !== undefined && custom !== null,
+    model,
+    hidden: style?.hidden === true,
+    drawsScaled: drawsScaledModel(object),
+    scale: [scaleX, scaleY, scaleZ],
+    color: object.visual?.color ?? style?.color ?? colorFromId(object.catalogId),
+    opacity: object.visual?.opacity ?? style?.opacity ?? 1,
+  };
+  useEngineDraw(
+    () =>
+      objectMarkerDraw({
+        instanceId: object.instanceId,
+        catalogId: object.catalogId,
+        ctx,
+        visible: visibleRef,
+        latest,
+        markerRoot,
+      }),
+    [object.instanceId, object.catalogId, ctx, visibleRef, latest, markerRoot],
+  );
   return (
-    <group ref={groupRef} matrixAutoUpdate={false} userData={{ [POINTER_OBJECT_KEY]: instanceId }}>
+    <SceneObjectPortal object={markerRoot}>
       {custom !== undefined && custom !== null ? (
         <MeasuredBoundsGroup target="object" measureKey={object.catalogId}>
           {custom}
         </MeasuredBoundsGroup>
-      ) : model !== undefined ? (
-        !drawsScaledModel(object) ? (
-          <IsolatedEntityModel model={model} instanceId={instanceId} measure={{ target: "object", key: object.catalogId }} />
-        ) : (
-          <group scale={[scaleX, scaleY, scaleZ]}>
-            <IsolatedEntityModel model={model} instanceId={instanceId} />
-          </group>
-        )
-      ) : style?.hidden === true ? null : (
-        <mesh position-y={0.5 * scaleY} scale={[scaleX, scaleY, scaleZ]} castShadow receiveShadow>
-          <boxGeometry args={[1, 1, 1]} />
-          <DefaultSurface color={color} transparent={opacity < 1} opacity={opacity} />
-        </mesh>
-      )}
-    </group>
+      ) : null}
+    </SceneObjectPortal>
   );
 });
 
-function GroundPlane() {
-  const geometry = useMemo(() => {
-    const next = new THREE.PlaneGeometry(GROUND_SIZE, GROUND_SIZE, GROUND_SEGMENTS, GROUND_SEGMENTS);
-    const positions = next.getAttribute("position");
-    const base = new THREE.Color("#33452f");
-    const high = new THREE.Color("#4a5c3a");
-    const colors = new Float32Array(positions.count * 3);
-    const tmp = new THREE.Color();
-    for (let index = 0; index < positions.count; index += 1) {
-      const x = positions.getX(index);
-      const y = positions.getY(index);
-      const height =
-        Math.sin(x * 0.16) * 0.12 +
-        Math.cos(y * 0.11) * 0.1 +
-        Math.sin((x + y) * 0.05) * 0.16;
-      positions.setZ(index, height);
-      const blend = 0.5 + Math.sin(x * 0.21) * 0.25 + Math.cos(y * 0.17) * 0.25;
-      tmp.copy(base).lerp(high, Math.min(1, Math.max(0, blend)));
-      colors[index * 3] = tmp.r;
-      colors[index * 3 + 1] = tmp.g;
-      colors[index * 3 + 2] = tmp.b;
-    }
-    next.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-    next.computeVertexNormals();
-    return next;
-  }, []);
-  const material = useDisposable(() => {
-    const normal = detailMaps().normal.clone();
-    normal.repeat.set(48, 48);
-    normal.needsUpdate = true;
-    return new THREE.MeshStandardMaterial({
-      vertexColors: true,
-      roughness: 0.95,
-      metalness: 0,
-      normalMap: normal,
-      normalScale: new THREE.Vector2(0.8, 0.8),
-      envMapIntensity: 0.4,
-    });
-  }, []);
+function groundPlaneDraw(): EngineDraw {
+  let mesh: THREE.Mesh | null = null;
+  let geometry: THREE.BufferGeometry | null = null;
+  let material: THREE.MeshStandardMaterial | null = null;
+  let normalMap: THREE.Texture | null = null;
+  return {
+    mount(state: EngineFrameState) {
+      geometry = new THREE.PlaneGeometry(GROUND_SIZE, GROUND_SIZE, GROUND_SEGMENTS, GROUND_SEGMENTS);
+      const positions = geometry.getAttribute("position");
+      const base = new THREE.Color("#33452f");
+      const high = new THREE.Color("#4a5c3a");
+      const colors = new Float32Array(positions.count * 3);
+      const tmp = new THREE.Color();
+      for (let index = 0; index < positions.count; index += 1) {
+        const x = positions.getX(index);
+        const y = positions.getY(index);
+        const height =
+          Math.sin(x * 0.16) * 0.12 +
+          Math.cos(y * 0.11) * 0.1 +
+          Math.sin((x + y) * 0.05) * 0.16;
+        positions.setZ(index, height);
+        const blend = 0.5 + Math.sin(x * 0.21) * 0.25 + Math.cos(y * 0.17) * 0.25;
+        tmp.copy(base).lerp(high, Math.min(1, Math.max(0, blend)));
+        colors[index * 3] = tmp.r;
+        colors[index * 3 + 1] = tmp.g;
+        colors[index * 3 + 2] = tmp.b;
+      }
+      geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+      geometry.computeVertexNormals();
+      normalMap = detailMaps().normal.clone();
+      normalMap.repeat.set(48, 48);
+      normalMap.needsUpdate = true;
+      material = new THREE.MeshStandardMaterial({
+        vertexColors: true,
+        roughness: 0.95,
+        metalness: 0,
+        normalMap,
+        normalScale: new THREE.Vector2(0.8, 0.8),
+        envMapIntensity: 0.4,
+      });
+      mesh = new THREE.Mesh(geometry, material);
+      mesh.rotation.x = -Math.PI / 2;
+      mesh.receiveShadow = true;
+      state.scene.add(mesh);
+    },
+    dispose(state: EngineFrameState) {
+      if (mesh !== null) state.scene.remove(mesh);
+      geometry?.dispose();
+      material?.dispose();
+      normalMap?.dispose();
+      mesh = null;
+      geometry = null;
+      material = null;
+      normalMap = null;
+    },
+  };
+}
 
-  return <mesh rotation-x={-Math.PI / 2} geometry={geometry} material={material} receiveShadow />;
+function GroundPlane() {
+  useEngineDraw(() => groundPlaneDraw(), []);
+  return null;
+}
+
+const ROCK_COUNT = 18;
+
+function rockFieldDraw(): EngineDraw {
+  const root = new THREE.Group();
+  const geometry = new THREE.DodecahedronGeometry(0.8, 1);
+  const material = defaultSurfaceMaterial({ color: "#6b6f63", roughness: 0.95 });
+  for (let index = 0; index < ROCK_COUNT; index += 1) {
+    const angle = index * 2.399963229728653;
+    const radius = 10 + ((index * 17) % 58);
+    const scale = 0.45 + ((index * 13) % 11) / 10;
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(Math.cos(angle) * radius, 0.25 * scale, Math.sin(angle) * radius);
+    mesh.rotation.set(0.1, angle, -0.08);
+    mesh.scale.set(scale * 1.4, scale * 0.7, scale);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    root.add(mesh);
+  }
+  return {
+    mount(state: EngineFrameState) {
+      state.scene.add(root);
+    },
+    dispose(state: EngineFrameState) {
+      state.scene.remove(root);
+      geometry.dispose();
+      material.dispose();
+    },
+  };
 }
 
 function RockField() {
-  const rocks = useMemo(
-    () =>
-      Array.from({ length: 18 }, (_, index) => {
-        const angle = index * 2.399963229728653;
-        const radius = 10 + ((index * 17) % 58);
-        return {
-          id: `rock-${index}`,
-          x: Math.cos(angle) * radius,
-          z: Math.sin(angle) * radius,
-          scale: 0.45 + ((index * 13) % 11) / 10,
-          rotation: angle,
-        };
-      }),
-    [],
-  );
-
-  return (
-    <>
-      {rocks.map((rock) => (
-        <mesh
-          key={rock.id}
-          position={[rock.x, 0.25 * rock.scale, rock.z]}
-          rotation={[0.1, rock.rotation, -0.08]}
-          scale={[rock.scale * 1.4, rock.scale * 0.7, rock.scale]}
-          castShadow
-          receiveShadow
-        >
-          <dodecahedronGeometry args={[0.8, 1]} />
-          <DefaultSurface color="#6b6f63" roughness={0.95} />
-        </mesh>
-      ))}
-    </>
-  );
+  useEngineDraw(() => rockFieldDraw(), []);
+  return null;
 }
 
 function WorldEnvironment({ environment: Environment }: { environment: ComponentType | undefined }) {
@@ -403,6 +714,16 @@ function WorldEntities({
     },
     [ctx, player.userId],
   );
+  // The canvas pointer-down used to reach a marker through r3f's event system; the shell dispatches
+  // the hit entity id here instead, on either render host.
+  useEffect(() => {
+    registerWorldEntityPointerDown((entityId) => {
+      if (entityId === controlledId) return;
+      const live = ctx.scene.entity.get(entityId);
+      if (live !== null) handleSelect(live);
+    });
+    return () => registerWorldEntityPointerDown(null);
+  }, [controlledId, ctx, handleSelect]);
   // Dev diagnostic (no-op unless armed): re-zero the entity seam before this render re-tallies which
   // actors fall back to primitives. Committing the log runs in a useEffect after the render.
   beginFallbackSeam("entity");
@@ -434,7 +755,6 @@ function WorldEntities({
         targeted={entityId === targetId}
         selected={selectedIds.has(entityId)}
         crowd={crowdRegistry}
-        onSelect={handleSelect}
       />
     );
   });
@@ -489,7 +809,8 @@ function WorldObjects({
   editorLayers?: EditorDocument | undefined;
 }) {
   const ctx = useGameContext();
-  const scene = useThree((state) => state.scene);
+  const host = useEngineHost();
+  const scene = host.frame.scene;
   const readIds = useMemo(() => placedObjectIds(ctx.scene.object), [ctx]);
   const objectIds = useSyncExternalStore(ctx.scene.object.subscribeMembership, readIds, readIds);
   const document = useLiveEditorDocument(editorLayers ?? EMPTY_DOCUMENT, editorLayers !== undefined);
@@ -599,63 +920,104 @@ export function WorldView({
   );
 }
 
-export function RemotePlayers({ rows, presenceInterpolationMs = 100 }: { rows: PresencePoseRow[]; presenceInterpolationMs?: number }) {  const groups = useRef(new Map<string, THREE.Group>());
-  const buffers = useRef(new Map<string, SnapshotBuffer<PresencePoseRow>>());
-  const rowsRef = useRef(rows);
-  rowsRef.current = rows;
-  useEffect(() => {
-    const active = new Set(rows.map((row) => row.userId));
-    for (const row of rows) {
-      let buffer = buffers.current.get(row.userId);
-      if (buffer === undefined) {
-        buffer = createSnapshotBuffer({ delayMs: presenceInterpolationMs, capacity: 16 });
-        buffers.current.set(row.userId, buffer);
-      } else {
-        buffer.retune({ delayMs: presenceInterpolationMs });
-      }
-      buffer.push(row.lastSeenAt, row);
-    }
-    for (const userId of buffers.current.keys()) {
-      if (!active.has(userId)) buffers.current.delete(userId);
-    }
-  }, [rows, presenceInterpolationMs]);
-  useFrame(({ clock }) => {
-    const now = clock.getElapsedTime() * 1000;
-    for (const [userId, buffer] of buffers.current) {
-      const group = groups.current.get(userId);
-      const sample = buffer.sampleAt(now);
-      if (group === undefined || sample === null) continue;
-      const before = sample.before;
-      const after = sample.after;
-      group.position.set(
-        before.position.x + (after.position.x - before.position.x) * sample.alpha,
-        before.position.y + (after.position.y - before.position.y) * sample.alpha,
-        before.position.z + (after.position.z - before.position.z) * sample.alpha,
-      );
-      group.rotation.y = before.rotationY + (after.rotationY - before.rotationY) * sample.alpha;
-    }
-  });
-  return (
-    <>
-      {rows.map((row) => (
-        <group
-          key={row.userId}
-          ref={(group) => {
-            if (group === null) groups.current.delete(row.userId);
-            else groups.current.set(row.userId, group);
-          }}
-        >
-          <mesh position-y={0.95}>
-            <capsuleGeometry args={[0.35, 1.1, 6, 14]} />
-            <meshStandardMaterial color={colorFromId(row.userId)} />
-          </mesh>
-          <mesh position={[0, 1.35, 0.32]}>
-            <boxGeometry args={[0.16, 0.16, 0.16]} />
-            <meshStandardMaterial color="#f8fafc" />
-          </mesh>
-        </group>
-      ))}
-    </>
-  );
+let worldEntityPointerDown: ((entityId: string) => void) | null = null;
+
+/** WorldEntities registers its entity-select handler here; the shell dispatches canvas pointer-down hits. @internal */
+export function registerWorldEntityPointerDown(handler: ((entityId: string) => void) | null): void {
+  worldEntityPointerDown = handler;
 }
 
+/** Dispatch a canvas pointer-down that hit `entityId` to the world select handler, if one is mounted. @internal */
+export function dispatchWorldEntityPointerDown(entityId: string): void {
+  worldEntityPointerDown?.(entityId);
+}
+
+const PLAYER_BODY_GEO = { capsule: [0.35, 1.1, 6, 14] as const, box: [0.16, 0.16, 0.16] as const };
+
+function remotePlayersDraw(getRows: () => readonly PresencePoseRow[], getDelay: () => number): EngineDraw {
+  const root = new THREE.Group();
+  const capsuleGeometry = new THREE.CapsuleGeometry(...PLAYER_BODY_GEO.capsule);
+  const boxGeometry = new THREE.BoxGeometry(...PLAYER_BODY_GEO.box);
+  const headMaterial = new THREE.MeshStandardMaterial({ color: "#f8fafc" });
+  interface RowEntry {
+    group: THREE.Group;
+    buffer: SnapshotBuffer<PresencePoseRow>;
+    bodyMaterial: THREE.MeshStandardMaterial;
+  }
+  const entries = new Map<string, RowEntry>();
+  let lastRows: readonly PresencePoseRow[] | null = null;
+  let lastDelay = -1;
+
+  const reconcile = () => {
+    const rows = getRows();
+    const delay = getDelay();
+    if (rows === lastRows && delay === lastDelay) return;
+    lastRows = rows;
+    lastDelay = delay;
+    const active = new Set(rows.map((row) => row.userId));
+    for (const row of rows) {
+      let entry = entries.get(row.userId);
+      if (entry === undefined) {
+        const group = new THREE.Group();
+        const bodyMaterial = new THREE.MeshStandardMaterial({ color: colorFromId(row.userId) });
+        const body = new THREE.Mesh(capsuleGeometry, bodyMaterial);
+        body.position.y = 0.95;
+        const head = new THREE.Mesh(boxGeometry, headMaterial);
+        head.position.set(0, 1.35, 0.32);
+        group.add(body, head);
+        root.add(group);
+        entry = { group, buffer: createSnapshotBuffer({ delayMs: delay, capacity: 16 }), bodyMaterial };
+        entries.set(row.userId, entry);
+      } else {
+        entry.buffer.retune({ delayMs: delay });
+      }
+      entry.buffer.push(row.lastSeenAt, row);
+    }
+    for (const [userId, entry] of entries) {
+      if (active.has(userId)) continue;
+      root.remove(entry.group);
+      entry.bodyMaterial.dispose();
+      entries.delete(userId);
+    }
+  };
+
+  return {
+    mount(state: EngineFrameState) {
+      state.scene.add(root);
+      reconcile();
+    },
+    update: reconcile,
+    frame(state: EngineFrameState) {
+      const now = state.clock.getElapsedTime() * 1000;
+      for (const entry of entries.values()) {
+        const sample = entry.buffer.sampleAt(now);
+        if (sample === null) continue;
+        const before = sample.before;
+        const after = sample.after;
+        entry.group.position.set(
+          before.position.x + (after.position.x - before.position.x) * sample.alpha,
+          before.position.y + (after.position.y - before.position.y) * sample.alpha,
+          before.position.z + (after.position.z - before.position.z) * sample.alpha,
+        );
+        entry.group.rotation.y = before.rotationY + (after.rotationY - before.rotationY) * sample.alpha;
+      }
+    },
+    dispose(state: EngineFrameState) {
+      state.scene.remove(root);
+      for (const entry of entries.values()) entry.bodyMaterial.dispose();
+      entries.clear();
+      capsuleGeometry.dispose();
+      boxGeometry.dispose();
+      headMaterial.dispose();
+    },
+  };
+}
+
+export function RemotePlayers({ rows, presenceInterpolationMs = 100 }: { rows: PresencePoseRow[]; presenceInterpolationMs?: number }) {
+  const rowsRef = useRef(rows);
+  rowsRef.current = rows;
+  const delayRef = useRef(presenceInterpolationMs);
+  delayRef.current = presenceInterpolationMs;
+  useEngineDraw(() => remotePlayersDraw(() => rowsRef.current, () => delayRef.current), []);
+  return null;
+}

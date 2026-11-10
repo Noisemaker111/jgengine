@@ -8,9 +8,9 @@ export function GameProvider({ context, children }: { context: GameContext; chil
 }
 
 /**
- * Re-provide a captured {@link GameContext} across a nested React reconciler boundary. The `<Canvas>`
- * of `@react-three/fiber` renders its children in a *separate* React root, so a `GameProvider` in the
- * outer tree does NOT reach inside it — hooks like `useGameContext` / `useEntityRenderCues` throw. The
+ * Re-provide a captured {@link GameContext} across a nested React reconciler boundary. A nested
+ * renderer that mounts its own React root does NOT inherit a `GameProvider` from the outer
+ * tree â€” hooks like `useGameContext` / `useEntityRenderCues` throw. The
  * fix the shell already uses internally: capture the context outside the boundary (with
  * {@link useOptionalGameContext}) and wrap the inner tree in `GameContextBridge`. A `null` context
  * renders children unchanged, so the same code works in showcases with no running game. This is the

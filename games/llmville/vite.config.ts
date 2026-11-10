@@ -14,7 +14,7 @@ export default defineConfig({
     tanstackRouter({
       // Keep route components out of the startup bundle. Without this, the
       // generated route tree eagerly imports every page (including dev-only 3D
-      // previews), which forces three.js/R3F into the first load of /, /login,
+      // previews), which forces three.js into the first load of /, /login,
       // and /signup.
       autoCodeSplitting: true,
     }),
@@ -34,13 +34,13 @@ export default defineConfig({
   build: {
     rolldownOptions: {
       output: {
-        // Split heavy, stable vendors into their own chunks. three.js / R3F only
+        // Split heavy, stable vendors into their own chunks. three.js only
         // load with the lazy game-session chunk (never on the landing page), and
         // pinning them to a stable hash lets the browser cache them across app
         // deploys and lets us preload them independently during the auth wait.
         codeSplitting: {
           groups: [
-            { name: "three-vendor", test: /node_modules[\\/](three|three-stdlib|@react-three)[\\/]/ },
+            { name: "three-vendor", test: /node_modules[\\/](three|three-stdlib)[\\/]/ },
             { name: "react-vendor", test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/, priority: 2 },
             { name: "router-vendor", test: /node_modules[\\/]@tanstack[\\/]/, priority: 2 },
           ],

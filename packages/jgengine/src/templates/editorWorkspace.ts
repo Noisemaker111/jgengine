@@ -14,8 +14,6 @@ const editorPackageJson = (engineVersion: string) => `${JSON.stringify(
       "@jgengine/node": `^${engineVersion}`,
       "@jgengine/react": `^${engineVersion}`,
       "@jgengine/shell": `^${engineVersion}`,
-      "@react-three/drei": "^10.7.9",
-      "@react-three/fiber": "~9.7.0",
       react: "19.2.3",
       "react-dom": "19.2.3",
       three: "^0.187.0",

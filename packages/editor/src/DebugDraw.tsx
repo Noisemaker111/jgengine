@@ -1,4 +1,3 @@
-import { Html } from "@react-three/drei";
 import { memo, useEffect, useMemo } from "react";
 import * as THREE from "three";
 
@@ -12,6 +11,8 @@ import type {
   EditorVolume,
 } from "@jgengine/core/editor/index";
 import { markerCatalogId } from "@jgengine/core/world/authoredObjects";
+import { AnchoredOverlay } from "@jgengine/core/hud/hudOverlay.draw";
+import { SceneObjectAttach, SceneObjectGroup, SceneObjectList } from "@jgengine/core/frame/useEngineDraw.draw";
 
 const DEFAULT_COLORS: Record<string, string> = {
   player_spawn: "#22d3ee",
@@ -122,7 +123,6 @@ const MarkerMesh = memo(function MarkerMesh({
   marker,
   selected,
   hovered,
-  onSelect,
   sharedSphere,
   sharedCone,
   groundHeightAt,
@@ -130,7 +130,6 @@ const MarkerMesh = memo(function MarkerMesh({
   marker: EditorMarker;
   selected: boolean;
   hovered: boolean;
-  onSelect: (id: string) => void;
   sharedSphere: THREE.SphereGeometry;
   sharedCone: THREE.ConeGeometry;
   groundHeightAt?: ((x: number, z: number) => number) | undefined;
@@ -140,29 +139,57 @@ const MarkerMesh = memo(function MarkerMesh({
   const baseY = groundHeightAt !== undefined ? groundHeightAt(marker.position.x, marker.position.z) : marker.position.y;
   const fill = emphasisColor(selected, hovered, color);
   const modelBacked = markerCatalogId(marker) !== null;
+  const bodyMaterial = useMemo(
+    () =>
+      new THREE.MeshBasicMaterial({
+        color: fill,
+        transparent: true,
+        opacity: selected ? 1 : hovered ? 0.9 : 1,
+        wireframe: modelBacked,
+        depthWrite: !modelBacked,
+      }),
+    [fill, selected, hovered, modelBacked],
+  );
+  const haloMaterial = useMemo(
+    () =>
+      new THREE.MeshBasicMaterial({
+        color: fill,
+        transparent: true,
+        opacity: selected ? 0.28 : 0.18,
+        wireframe: modelBacked,
+        depthWrite: false,
+      }),
+    [fill, selected, hovered, modelBacked],
+  );
+  const arrowMaterial = useMemo(
+    () => new THREE.MeshBasicMaterial({ color: selected || hovered ? fill : color }),
+    [selected, hovered, fill, color],
+  );
+  useEffect(() => () => bodyMaterial.dispose(), [bodyMaterial]);
+  useEffect(() => () => haloMaterial.dispose(), [haloMaterial]);
+  useEffect(() => () => arrowMaterial.dispose(), [arrowMaterial]);
+  const body = useMemo(() => new THREE.Mesh(sharedSphere, bodyMaterial), [sharedSphere, bodyMaterial]);
+  const halo = useMemo(() => {
+    const mesh = new THREE.Mesh(sharedSphere, haloMaterial);
+    mesh.scale.setScalar(1.18);
+    return mesh;
+  }, [sharedSphere, haloMaterial]);
+  const arrow = useMemo(() => {
+    const mesh = new THREE.Mesh(sharedCone, arrowMaterial);
+    mesh.position.set(0, 1.35, 0);
+    return mesh;
+  }, [sharedCone, arrowMaterial]);
   return (
-    <group
+    <SceneObjectGroup
       position={[marker.position.x, baseY + 1.2, marker.position.z]}
-      rotation-y={marker.rotationY ?? 0}
-      scale={scale}
+      rotationY={marker.rotationY ?? 0}
+      scale={[scale, scale, scale]}
       userData={{ jgEditorId: marker.id }}
-      onClick={(event) => {
-        event.stopPropagation();
-        onSelect(marker.id);
-      }}
     >
-      <mesh geometry={sharedSphere}>
-        <meshBasicMaterial color={fill} transparent opacity={selected ? 1 : hovered ? 0.9 : 1} wireframe={modelBacked} depthWrite={!modelBacked} />
-      </mesh>
-      {selected || hovered ? (
-        <mesh geometry={sharedSphere} scale={1.18}>
-          <meshBasicMaterial color={fill} transparent opacity={selected ? 0.28 : 0.18} wireframe={modelBacked} depthWrite={false} />
-        </mesh>
-      ) : null}
-      <mesh position={[0, 1.35, 0]} geometry={sharedCone}>
-        <meshBasicMaterial color={selected || hovered ? fill : color} />
-      </mesh>
-    </group>
+      <SceneObjectAttach object={body} />
+      {selected || hovered ? <SceneObjectAttach object={halo} /> : null}
+      <SceneObjectAttach object={arrow} />
+    </SceneObjectGroup>
   );
 });
 
@@ -171,12 +198,10 @@ const VolumeShapeLines = memo(function VolumeShapeLines({
   volume,
   selected,
   hovered,
-  onSelect,
 }: {
   volume: EditorVolume;
   selected: boolean;
   hovered: boolean;
-  onSelect: (id: string) => void;
 }) {
   const color = colorFor(volume.kind, volume.color);
   const object = useMemo(() => {
@@ -210,16 +235,12 @@ const VolumeShapeLines = memo(function VolumeShapeLines({
   );
 
   return (
-    <group
+    <SceneObjectGroup
       position={[volume.center.x, volume.center.y, volume.center.z]}
       userData={{ jgEditorId: volume.id }}
-      onClick={(event) => {
-        event.stopPropagation();
-        onSelect(volume.id);
-      }}
     >
-      <primitive object={object} />
-    </group>
+      <SceneObjectAttach object={object} />
+    </SceneObjectGroup>
   );
 });
 
@@ -228,14 +249,12 @@ const PathRibbon = memo(function PathRibbon({
   selected,
   hovered,
   activePointIndex,
-  onSelect,
   groundHeightAt,
 }: {
   path: EditorPath;
   selected: boolean;
   hovered: boolean;
   activePointIndex: number | null;
-  onSelect: (id: string) => void;
   groundHeightAt?: ((x: number, z: number) => number) | undefined;
 }) {
   const color = colorFor(path.kind, path.color);
@@ -277,25 +296,32 @@ const PathRibbon = memo(function PathRibbon({
     [object],
   );
 
+  const pointMeshes = useMemo(() => {
+    if (!selected) return [];
+    return path.points.map((point, index) => {
+      const geometry = new THREE.SphereGeometry(index === activePointIndex ? 0.7 : 0.45, 8, 8);
+      const material = new THREE.MeshBasicMaterial({ color: index === activePointIndex ? "#22d3ee" : "#ffffff" });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.set(point.x, yAt(point) + 0.8, point.z);
+      return mesh;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [path.points, selected, activePointIndex, groundHeightAt]);
+  useEffect(
+    () => () => {
+      for (const mesh of pointMeshes) {
+        mesh.geometry.dispose();
+        (mesh.material as THREE.Material).dispose();
+      }
+    },
+    [pointMeshes],
+  );
   if (object === null) return null;
   return (
-    <group
-      userData={{ jgEditorId: path.id }}
-      onClick={(event) => {
-        event.stopPropagation();
-        onSelect(path.id);
-      }}
-    >
-      <primitive object={object} />
-      {selected
-        ? path.points.map((point, index) => (
-            <mesh key={index} position={[point.x, yAt(point) + 0.8, point.z]}>
-              <sphereGeometry args={[index === activePointIndex ? 0.7 : 0.45, 8, 8]} />
-              <meshBasicMaterial color={index === activePointIndex ? "#22d3ee" : "#ffffff"} />
-            </mesh>
-          ))
-        : null}
-    </group>
+    <SceneObjectGroup userData={{ jgEditorId: path.id }}>
+      <SceneObjectAttach object={object} />
+      <SceneObjectList objects={pointMeshes} />
+    </SceneObjectGroup>
   );
 });
 
@@ -303,38 +329,47 @@ const NotePin = memo(function NotePin({
   note,
   selected,
   hovered,
-  onSelect,
   groundHeightAt,
 }: {
   note: EditorNote;
   selected: boolean;
   hovered: boolean;
-  onSelect: (id: string) => void;
   groundHeightAt?: ((x: number, z: number) => number) | undefined;
 }) {
   const color = colorFor("note", note.color);
   const baseY = groundHeightAt !== undefined ? groundHeightAt(note.position.x, note.position.z) : note.position.y;
   const fill = emphasisColor(selected, hovered, color);
+  const scale = selected ? 1.32 : hovered ? 1.15 : 1;
+  const bodyMaterial = useMemo(
+    () => new THREE.MeshBasicMaterial({ color: fill, transparent: true, opacity: selected ? 1 : hovered ? 0.9 : 1 }),
+    [fill, selected, hovered],
+  );
+  const haloMaterial = useMemo(
+    () => new THREE.MeshBasicMaterial({ color: fill, transparent: true, opacity: selected ? 0.28 : 0.16, depthWrite: false }),
+    [fill, selected, hovered],
+  );
+  useEffect(() => () => bodyMaterial.dispose(), [bodyMaterial]);
+  useEffect(() => () => haloMaterial.dispose(), [haloMaterial]);
+  const bodyGeometry = useMemo(() => new THREE.OctahedronGeometry(0.6), []);
+  const body = useMemo(() => {
+    const mesh = new THREE.Mesh(bodyGeometry, bodyMaterial);
+    mesh.scale.setScalar(scale);
+    return mesh;
+  }, [bodyGeometry, bodyMaterial, scale]);
+  const halo = useMemo(() => {
+    const mesh = new THREE.Mesh(bodyGeometry, haloMaterial);
+    mesh.scale.setScalar(1.22);
+    return mesh;
+  }, [bodyGeometry, haloMaterial]);
+  useEffect(() => () => bodyGeometry.dispose(), [bodyGeometry]);
   return (
-    <group
+    <SceneObjectGroup
       position={[note.position.x, baseY + 1, note.position.z]}
       userData={{ jgEditorId: note.id }}
-      onClick={(event) => {
-        event.stopPropagation();
-        onSelect(note.id);
-      }}
     >
-      <mesh scale={selected ? 1.32 : hovered ? 1.15 : 1}>
-        <octahedronGeometry args={[0.6]} />
-        <meshBasicMaterial color={fill} transparent opacity={selected ? 1 : hovered ? 0.9 : 1} />
-      </mesh>
-      {selected || hovered ? (
-        <mesh scale={1.22}>
-          <octahedronGeometry args={[0.6]} />
-          <meshBasicMaterial color={fill} transparent opacity={selected ? 0.28 : 0.16} depthWrite={false} />
-        </mesh>
-      ) : null}
-      <Html center distanceFactor={40} style={{ pointerEvents: "none" }}>
+      <SceneObjectAttach object={body} />
+      {selected || hovered ? <SceneObjectAttach object={halo} /> : null}
+      <AnchoredOverlay position={[0, 0, 0]} localPosition={[0, 0, 0]} anchor={undefined} distanceFactor={40}>
         <div
           style={{
             transform: "translateY(-24px)",
@@ -351,8 +386,8 @@ const NotePin = memo(function NotePin({
         >
           {note.text}
         </div>
-      </Html>
-    </group>
+      </AnchoredOverlay>
+    </SceneObjectGroup>
   );
 });
 
@@ -381,16 +416,32 @@ export function PathDraftPreview({ points }: { points: readonly EditorVec3[] }) 
     [object],
   );
 
+  const pointMeshes = useMemo(
+    () =>
+      points.map((point) => {
+        const mesh = new THREE.Mesh(
+          new THREE.SphereGeometry(0.5, 8, 8),
+          new THREE.MeshBasicMaterial({ color: "#22d3ee" }),
+        );
+        mesh.position.set(point.x, point.y + 0.8, point.z);
+        return mesh;
+      }),
+    [points],
+  );
+  useEffect(
+    () => () => {
+      for (const mesh of pointMeshes) {
+        mesh.geometry.dispose();
+        (mesh.material as THREE.Material).dispose();
+      }
+    },
+    [pointMeshes],
+  );
   return (
-    <group>
-      {object !== null ? <primitive object={object} /> : null}
-      {points.map((point, index) => (
-        <mesh key={index} position={[point.x, point.y + 0.8, point.z]}>
-          <sphereGeometry args={[0.5, 8, 8]} />
-          <meshBasicMaterial color="#22d3ee" />
-        </mesh>
-      ))}
-    </group>
+    <>
+      {object !== null ? <SceneObjectAttach object={object} /> : null}
+      <SceneObjectList objects={pointMeshes} />
+    </>
   );
 }
 
@@ -400,7 +451,6 @@ export function EditorLayerOverlays({
   visibility,
   selection,
   hoverId = null,
-  onSelect,
   activePathPoint,
   groundHeightAt,
 }: {
@@ -409,7 +459,6 @@ export function EditorLayerOverlays({
   selection: readonly string[];
   /** Pre-selection hover id from viewport pointer pick; ignored when already selected. */
   hoverId?: string | null;
-  onSelect: (id: string) => void;
   activePathPoint?: { pathId: string; index: number } | null;
   groundHeightAt?: (x: number, z: number) => number;
 }) {
@@ -450,14 +499,13 @@ export function EditorLayerOverlays({
   );
 
   return (
-    <group>
+    <>
       {volumes.map((volume) => (
         <VolumeShapeLines
           key={volume.id}
           volume={volume}
           selected={selected.has(volume.id)}
           hovered={isHovered(volume.id)}
-          onSelect={onSelect}
         />
       ))}
       {paths.map((path) => (
@@ -469,7 +517,6 @@ export function EditorLayerOverlays({
           activePointIndex={
             activePathPoint != null && activePathPoint.pathId === path.id ? activePathPoint.index : null
           }
-          onSelect={onSelect}
           groundHeightAt={groundHeightAt}
         />
       ))}
@@ -479,7 +526,6 @@ export function EditorLayerOverlays({
           marker={marker}
           selected={selected.has(marker.id)}
           hovered={isHovered(marker.id)}
-          onSelect={onSelect}
           sharedSphere={sharedSphere}
           sharedCone={sharedCone}
           groundHeightAt={groundHeightAt}
@@ -491,10 +537,9 @@ export function EditorLayerOverlays({
           note={note}
           selected={selected.has(note.id)}
           hovered={isHovered(note.id)}
-          onSelect={onSelect}
           groundHeightAt={groundHeightAt}
         />
       ))}
-    </group>
+    </>
   );
 }

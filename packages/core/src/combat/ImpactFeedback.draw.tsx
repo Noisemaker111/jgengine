@@ -1,5 +1,4 @@
-import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
@@ -9,6 +8,8 @@ import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 import { useAccessibilitySettings } from "@jgengine/core/settings/accessibilitySettings.view";
 import { useGameContext } from "@jgengine/react/provider";
 
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { cameraShake } from "@jgengine/core/camera/shake/cameraShake";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { visitVisible } from "@jgengine/core/visibility/visitVisible.draw";
@@ -16,13 +17,13 @@ import { visitVisible } from "@jgengine/core/visibility/visitVisible.draw";
 /** What {@link ImpactFeedback} reacts with; every field defaults on. */
 export interface ImpactFeedbackOptions {
   /** Damage type / effect id → class, for names the built-in weapon words do not cover. */
-  classes?: Readonly<Record<string, ImpactClass>>;
+  classes?: Readonly<Record<string, ImpactClass>> | undefined;
   /** Marks where direct-fire shots miss into a surface. */
-  marks?: boolean;
+  marks?: boolean | undefined;
   /** Short time stop on the local player's heavy hits, hits taken and kills. */
-  hitstop?: boolean;
+  hitstop?: boolean | undefined;
   /** Killed rigged characters fall as ragdolls before they fade. */
-  ragdolls?: boolean;
+  ragdolls?: boolean | undefined;
 }
 
 const MARK_LIFE_S = 25;
@@ -209,50 +210,77 @@ export function classFor(item: string, effect: string, classes?: Readonly<Record
 
 const scratch = { matrix: new THREE.Matrix4(), scale: new THREE.Vector3(), spin: new THREE.Quaternion(), normal: new THREE.Vector3() };
 
-/**
- * The engine's default impact layer, mounted with the combat presentation: every `combat.damage`
- * with a position throws sparks and dust sized by its {@link ImpactClass}, a direct-fire shot that
- * misses leaves a scorch mark on the surface it hit, an explosion or crash near the local player kicks the
- * camera and rumbles the pad (no kick with reduced motion), and the local player's heavy hits, hits taken and
- * kills stop the game clock for a few dozen milliseconds. Damage over time (status ticks) is quiet.
- * Marks are off on the `low` graphics tier.
- */
-export function ImpactFeedback({ classes, marks = true, hitstop = true }: ImpactFeedbackOptions) {
-  const ctx = useGameContext();
-  const quality = useTerrainQuality();
-  const reducedMotion = useAccessibilitySettings().reducedMotion;
-  const scene = useThree((three) => three.scene);
-  const camera = useThree((three) => three.camera);
-  const limit = marks ? MARK_LIMIT[quality] : 0;
-  const stop = useMemo(() => createHitstop(ctx.time), [ctx]);
-  const list = useRef<Mark[]>([]);
-  const mesh = useRef<THREE.InstancedMesh>(null);
-  const dirty = useRef(false);
-  const geometry = useMemo(() => new THREE.PlaneGeometry(1, 1), []);
-  const material = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        map: markTexture(),
-        transparent: true,
-        depthWrite: false,
-        roughness: 0.95,
-        polygonOffset: true,
-        polygonOffsetFactor: -4,
-        polygonOffsetUnits: -4,
-      }),
-    [],
-  );
-  useEffect(() => () => {
-    geometry.dispose();
-    material.map?.dispose();
-    material.dispose();
-  }, [geometry, material]);
+/** Props the impact draw reads; resolved by the React wrapper each commit. */
+export interface ImpactFeedbackDrawProps extends ImpactFeedbackOptions {
+  ctx: GameContext;
+  quality: GraphicsQuality;
+  reducedMotion: boolean;
+}
 
-  useEffect(() => {
+function markLimit(props: ImpactFeedbackDrawProps): number {
+  return props.marks === false ? 0 : MARK_LIMIT[props.quality];
+}
+
+/**
+ * Draw-side form of {@link ImpactFeedback}: every `combat.damage` with a position throws sparks and
+ * dust sized by its {@link ImpactClass}, a direct-fire shot that misses leaves a scorch mark on the
+ * surface it hit, an explosion or crash near the local player kicks the camera and rumbles the pad
+ * (no kick with reduced motion), and the local player's heavy hits, hits taken and kills stop the
+ * game clock for a few dozen milliseconds. Damage over time (status ticks) is quiet. Marks are off
+ * on the `low` graphics tier. Event handlers read the latest props per event; only a `ctx` swap
+ * resubscribes, matching the old effect deps.
+ * @internal
+ */
+export function impactFeedbackDraw(getProps: () => ImpactFeedbackDrawProps): EngineDraw {
+  const list: Mark[] = [];
+  const dirty = { current: false };
+  const geometry = new THREE.PlaneGeometry(1, 1);
+  const material = new THREE.MeshStandardMaterial({
+    map: markTexture(),
+    transparent: true,
+    depthWrite: false,
+    roughness: 0.95,
+    polygonOffset: true,
+    polygonOffsetFactor: -4,
+    polygonOffsetUnits: -4,
+  });
+  // The raycast scene is the rendered root; the marks mesh parents under the scoped mount
+  // parent so it keeps the postfx overlay grouping it had as a JSX child.
+  let scene: THREE.Scene | null = null;
+  let host: THREE.Object3D | null = null;
+  let camera: THREE.Camera | null = null;
+  let mesh: THREE.InstancedMesh | null = null;
+  let meshLimit = -1;
+  let subscribedCtx: GameContext | null = null;
+  let stop: ReturnType<typeof createHitstop> | null = null;
+  const offHandlers: (() => void)[] = [];
+  let disposeProbe: (() => void) | null = null;
+
+  const syncMesh = () => {
+    const limit = markLimit(getProps());
+    if (limit === meshLimit) return;
+    meshLimit = limit;
+    if (mesh !== null) {
+      host?.remove(mesh);
+      mesh.dispose();
+      mesh = null;
+    }
+    if (limit > 0 && host !== null) {
+      mesh = new THREE.InstancedMesh(geometry, material, limit);
+      mesh.count = 0;
+      mesh.frustumCulled = false;
+      mesh.receiveShadow = true;
+      host.add(mesh);
+    }
+  };
+
+  const subscribe = (ctx: GameContext) => {
+    stop = createHitstop(ctx.time);
     const player = ctx.player.userId;
     let lastKick = -Infinity;
     let lastRefine = -Infinity;
     const burst = (cls: ImpactClass, at: readonly [number, number, number]) => {
+      const props = getProps();
       const profile = IMPACT_PROFILES[cls];
       const position: [number, number, number] = [at[0], at[1], at[2]];
       if (profile.sparks !== null) ctx.particles.play(profile.sparks.effect, { position, burst: profile.sparks.count });
@@ -267,26 +295,29 @@ export function ImpactFeedback({ classes, marks = true, hitstop = true }: Impact
       if (kick <= 0) return;
       lastKick = now;
       stats.kicks += 1;
-      if (!reducedMotion) cameraShake(kick);
+      if (!props.reducedMotion) cameraShake(kick);
       ctx.input.haptics(player).pulse("impact", { strong: Math.min(1, kick * 1.6), weak: Math.min(1, kick), ms: 120 + kick * 300 }, 3);
     };
-    const offDamage = ctx.game.events.on("combat.damage", (event) => {
+    offHandlers.push(ctx.game.events.on("combat.damage", (event) => {
+      const props = getProps();
       if (event.status !== undefined || event.amount <= 0) return;
       const target = ctx.scene.entity.get(event.target);
       const at = event.position ?? (target === null ? undefined : ([target.position[0], target.position[1] + 1, target.position[2]] as const));
-      const cls = impactClassFor(event.type, classes);
+      const cls = impactClassFor(event.type, props.classes);
       if (at !== undefined) burst(cls, at);
-      if (!hitstop || (event.source !== player && event.target !== player)) return;
+      if (props.hitstop === false || (event.source !== player && event.target !== player)) return;
       const profile = IMPACT_PROFILES[cls];
       const ms = event.lethal && event.target !== player ? profile.killHitstopMs : profile.hitstopMs;
       if (ms > 0) stats.hitstops += 1;
-      stop.start(ms, performance.now());
-    });
-    const offSettled = ctx.game.events.on("projectile.settled", (event) => {
+      stop?.start(ms, performance.now());
+    }));
+    offHandlers.push(ctx.game.events.on("projectile.settled", (event) => {
+      const props = getProps();
+      const limit = markLimit(props);
       // A direct hit is drawn by its combat.damage; an arced shot also bursts where it landed.
       if (event.hit && !event.ballistic) return;
       // The weapon names the impact better than the effect ("grenade_pineapple" vs "damage").
-      const cls = event.impact ?? (event.item === undefined ? impactClassFor(event.effect, classes) : classFor(event.item, event.effect, classes));
+      const cls = event.impact ?? (event.item === undefined ? impactClassFor(event.effect, props.classes) : classFor(event.item, event.effect, props.classes));
       const profile = IMPACT_PROFILES[cls];
       // An arced shot lands where it settled; look straight down there for the surface.
       const from = event.ballistic ? ([event.at[0], event.at[1] + 1, event.at[2]] as const) : event.origin;
@@ -296,7 +327,7 @@ export function ImpactFeedback({ classes, marks = true, hitstop = true }: Impact
       const length = Math.hypot(dx, dy, dz);
       let point: readonly [number, number, number] = event.at;
       let normal: readonly [number, number, number] | null = null;
-      if (length > 1e-3) {
+      if (length > 1e-3 && scene !== null && camera !== null) {
         const hit = ctx.scene.raycast({
           origin: from,
           direction: [dx / length, dy / length, dz / length],
@@ -313,7 +344,7 @@ export function ImpactFeedback({ classes, marks = true, hitstop = true }: Impact
           const back = Math.min(hit.distance, SURFACE_LOOKBACK_M);
           const start = [hit.point[0] - direction[0] * back, hit.point[1] - direction[1] * back, hit.point[2] - direction[2] * back] as const;
           const started = performance.now();
-          drawn = drawnSurfaceHit(scene, start, direction, back + 0.05, mesh.current, camera);
+          drawn = drawnSurfaceHit(scene, start, direction, back + 0.05, mesh, camera);
           if (drawn !== null) drawn.distance += hit.distance - back;
           const spent = performance.now() - started;
           stats.surfaceMsMax = Math.max(stats.surfaceMsMax, spent);
@@ -333,48 +364,95 @@ export function ImpactFeedback({ classes, marks = true, hitstop = true }: Impact
       if (limit === 0 || normal === null || profile.markSize <= 0) return;
       const n = scratch.normal.set(normal[0], normal[1], normal[2]).normalize();
       const quaternion = new THREE.Quaternion().setFromUnitVectors(Z, n).multiply(scratch.spin.setFromAxisAngle(Z, Math.random() * Math.PI * 2));
-      const marksNow = list.current;
-      marksNow.push({ born: performance.now() / 1000, size: profile.markSize * (0.8 + Math.random() * 0.4), position: new THREE.Vector3(point[0], point[1], point[2]).addScaledVector(n, 0.03), quaternion });
-      if (marksNow.length > limit) marksNow.splice(0, marksNow.length - limit);
+      list.push({ born: performance.now() / 1000, size: profile.markSize * (0.8 + Math.random() * 0.4), position: new THREE.Vector3(point[0], point[1], point[2]).addScaledVector(n, 0.03), quaternion });
+      if (list.length > limit) list.splice(0, list.length - limit);
       stats.marks += 1;
       dirty.current = true;
-    });
-    const disposeProbe = devtools.probes.registerSystem("render/impacts", {
-      counters: () => ({ ...stats, live: list.current.length }),
-      state: () => `${stats.bursts} bursts · ${list.current.length} marks · ${stats.kicks} kicks · ${stats.hitstops} hit-stops`,
-    });
-    return () => {
-      disposeProbe();
-      offDamage();
-      offSettled();
-    };
-  }, [ctx, scene, camera, classes, hitstop, limit, stop, reducedMotion]);
+    }));
+  };
 
-  useFrame(() => {
-    const now = performance.now();
-    stop.tick(now);
-    const instanced = mesh.current;
-    if (instanced === null) return;
-    const seconds = now / 1000;
-    const marksNow = list.current;
-    while (marksNow.length > 0 && seconds - marksNow[0]!.born > MARK_LIFE_S) {
-      marksNow.shift();
-      dirty.current = true;
-    }
-    const fading = marksNow.length > 0 && seconds - marksNow[0]!.born > MARK_LIFE_S - MARK_FADE_S;
-    if (!dirty.current && !fading) return;
-    for (let i = 0; i < marksNow.length; i += 1) {
-      const mark = marksNow[i]!;
-      const fade = Math.min(1, (MARK_LIFE_S - (seconds - mark.born)) / MARK_FADE_S);
-      scratch.scale.setScalar(mark.size * Math.max(0, fade));
-      instanced.setMatrixAt(i, scratch.matrix.compose(mark.position, mark.quaternion, scratch.scale));
-    }
-    instanced.count = marksNow.length;
-    instanced.instanceMatrix.needsUpdate = true;
-    instanced.computeBoundingSphere();
-    dirty.current = false;
-  });
+  const syncSubscription = () => {
+    const ctx = getProps().ctx;
+    if (ctx === subscribedCtx) return;
+    for (const off of offHandlers.splice(0)) off();
+    subscribedCtx = ctx;
+    subscribe(ctx);
+  };
 
-  if (limit === 0) return null;
-  return <instancedMesh ref={mesh} args={[geometry, material, limit]} count={0} frustumCulled={false} receiveShadow />;
+  return {
+    mount(state: EngineFrameState) {
+      scene = state.rootScene ?? state.scene;
+      host = state.scene;
+      camera = state.camera;
+      syncMesh();
+      syncSubscription();
+      disposeProbe = devtools.probes.registerSystem("render/impacts", {
+        counters: () => ({ ...stats, live: list.length }),
+        state: () => `${stats.bursts} bursts · ${list.length} marks · ${stats.kicks} kicks · ${stats.hitstops} hit-stops`,
+      });
+    },
+    update() {
+      syncMesh();
+      syncSubscription();
+    },
+    frame() {
+      const now = performance.now();
+      stop?.tick(now);
+      const instanced = mesh;
+      if (instanced === null) return;
+      const seconds = now / 1000;
+      while (list.length > 0 && seconds - list[0]!.born > MARK_LIFE_S) {
+        list.shift();
+        dirty.current = true;
+      }
+      const fading = list.length > 0 && seconds - list[0]!.born > MARK_LIFE_S - MARK_FADE_S;
+      if (!dirty.current && !fading) return;
+      for (let i = 0; i < list.length; i += 1) {
+        const mark = list[i]!;
+        const fade = Math.min(1, (MARK_LIFE_S - (seconds - mark.born)) / MARK_FADE_S);
+        scratch.scale.setScalar(mark.size * Math.max(0, fade));
+        instanced.setMatrixAt(i, scratch.matrix.compose(mark.position, mark.quaternion, scratch.scale));
+      }
+      instanced.count = list.length;
+      instanced.instanceMatrix.needsUpdate = true;
+      instanced.computeBoundingSphere();
+      dirty.current = false;
+    },
+    dispose() {
+      for (const off of offHandlers.splice(0)) off();
+      subscribedCtx = null;
+      stop = null;
+      disposeProbe?.();
+      disposeProbe = null;
+      if (mesh !== null) {
+        host?.remove(mesh);
+        mesh.dispose();
+        mesh = null;
+      }
+      meshLimit = -1;
+      geometry.dispose();
+      material.map?.dispose();
+      material.dispose();
+      scene = null;
+      host = null;
+      camera = null;
+    },
+  };
+}
+
+/**
+ * The engine's default impact layer, mounted with the combat presentation: every `combat.damage`
+ * with a position throws sparks and dust sized by its {@link ImpactClass}, a direct-fire shot that
+ * misses leaves a scorch mark on the surface it hit, an explosion or crash near the local player kicks the
+ * camera and rumbles the pad (no kick with reduced motion), and the local player's heavy hits, hits taken and
+ * kills stop the game clock for a few dozen milliseconds. Damage over time (status ticks) is quiet.
+ * Marks are off on the `low` graphics tier.
+ */
+export function ImpactFeedback(props: ImpactFeedbackOptions) {
+  const ctx = useGameContext();
+  const quality = useTerrainQuality();
+  const reducedMotion = useAccessibilitySettings().reducedMotion;
+  const latest = useRef<ImpactFeedbackDrawProps>({ ctx, quality, reducedMotion, classes: props.classes, marks: props.marks, hitstop: props.hitstop });
+  latest.current = { ctx, quality, reducedMotion, classes: props.classes, marks: props.marks, hitstop: props.hitstop };
+  return <EngineDrawMount create={() => impactFeedbackDraw(() => latest.current)} deps={[ctx]} />;
 }

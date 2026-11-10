@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
 
 import {
   gamepadFeelOptions,
@@ -20,6 +19,7 @@ import {
   stepGamepadPoll,
 } from "./gamepadPoll";
 import { PAD_HAPTIC_EFFECT_MS, emptyPadHapticState, stepPadHaptics, type PadHapticState } from "@jgengine/core/haptics/padHaptics";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 export { mergeGamepadFrame, mergeGamepadInput } from "./gamepadMerge";
 
 const NO_PADS: readonly (Gamepad | null)[] = [];
@@ -152,7 +152,7 @@ export function GamepadSource({
   const route = useRef(emptyGamepadRoute());
   const seatFrame = useRef<GamepadFrame>({ held: [], analog: {} });
   const seatsPublished = useRef(new Set<string>());
-  useFrame((_state, dt) => {
+  useFrameTask((_state, dt) => {
     const pads: ArrayLike<GamepadSample | null> = synthetic ?? browserPads();
     driveHaptics(dt, pads);
     if (seats === undefined) {

@@ -1,6 +1,8 @@
-import { useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
-import type * as THREE from "three";
+import { useEffect, useMemo } from "react";
+import * as THREE from "three";
+import { disposeObjectTree, SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
+import { box, std } from "./drawHelpers";
 import type { AxisBinding } from "@jgengine/core/input/axisInput";
 import type { ActionContext, ActiveContextAxes } from "@jgengine/core/input/actionContexts";
 import {
@@ -25,7 +27,6 @@ import {
 import { nextChaseView } from "@jgengine/core/runtime/cameraDirector";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { useGameStore } from "@jgengine/react/hooks";
 import { defineGame } from "@jgengine/shell/defineGame";
 import type { PlayableGame } from "@jgengine/shell/registry";
@@ -235,126 +236,129 @@ function onTick(ctx: GameContext, dt: number): void {
   haptics.set("road", { strong: out.rumbleStrong, weak: out.rumbleWeak });
 }
 
-function CarBody({ entity }: { entity: SceneEntity }) {
-  const frontLeft = useRef<THREE.Group>(null);
-  const frontRight = useRef<THREE.Group>(null);
-  const body = useRef<THREE.Group>(null);
-  useFrame(() => {
+function CarBody() {
+  const rig = useMemo(() => {
+    const root = new THREE.Group();
+    const bodyG = new THREE.Group();
+    bodyG.position.set(0, 0.62, 0);
+    root.add(bodyG);
+    box(bodyG, [1.74, 0.5, 4.1], [0, 0, 0], std("#dc2626", 0.35, { metalness: 0.3 }));
+    box(bodyG, [1.46, 0.42, 1.9], [0, 0.42, -0.25], std("#1f2937", 0.2, { metalness: 0.5 }));
+    const head = box(bodyG, [1.5, 0.12, 0.04], [0, 0.05, 2.06], new THREE.MeshStandardMaterial({ color: "#fde68a", emissive: new THREE.Color("#fde68a"), emissiveIntensity: 0.6, roughness: 0.5 }));
+    head.castShadow = false;
+    const wheelGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.24, 18);
+    const wheelMat = std("#111827", 0.9);
+    const positions: readonly [number, number, number][] = [[0.84, 0.32, 1.28], [-0.84, 0.32, 1.28], [0.84, 0.32, -1.27], [-0.84, 0.32, -1.27]];
+    const wheels = positions.map(([x, y, z], index) => {
+      const pivot = new THREE.Group();
+      pivot.position.set(x, y, z);
+      const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+      wheel.rotation.z = Math.PI / 2;
+      wheel.castShadow = true;
+      pivot.add(wheel);
+      root.add(pivot);
+      return index < 2 ? pivot : null;
+    });
+    return { root, body: bodyG, frontLeft: wheels[0]!, frontRight: wheels[1]! };
+  }, []);
+  useEffect(() => () => disposeObjectTree(rig.root), [rig]);
+  useFrameTask(() => {
     const step = run?.last;
     if (step === null || step === undefined) return;
     const steer = -step.steering.steerAngle;
-    if (frontLeft.current !== null) frontLeft.current.rotation.y = steer;
-    if (frontRight.current !== null) frontRight.current.rotation.y = steer;
-    if (body.current !== null) {
-      // +x is the car's left, and a positive roll means a right-hand turn, so the body leans outward by rolling -z.
-      body.current.rotation.z = -step.body.bodyRoll;
-      body.current.rotation.x = step.body.bodyPitch;
-    }
+    rig.frontLeft.rotation.y = steer;
+    rig.frontRight.rotation.y = steer;
+    // +x is the car's left, and a positive roll means a right-hand turn, so the body leans outward by rolling -z.
+    rig.body.rotation.z = -step.body.bodyRoll;
+    rig.body.rotation.x = step.body.bodyPitch;
   });
-  const wheel = (
-    <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
-      <cylinderGeometry args={[0.32, 0.32, 0.24, 18]} />
-      <meshStandardMaterial color="#111827" roughness={0.9} />
-    </mesh>
-  );
-  return (
-    <group key={entity.id}>
-      <group ref={body} position={[0, 0.62, 0]}>
-        <mesh castShadow>
-          <boxGeometry args={[1.74, 0.5, 4.1]} />
-          <meshStandardMaterial color="#dc2626" roughness={0.35} metalness={0.3} />
-        </mesh>
-        <mesh position={[0, 0.42, -0.25]} castShadow>
-          <boxGeometry args={[1.46, 0.42, 1.9]} />
-          <meshStandardMaterial color="#1f2937" roughness={0.2} metalness={0.5} />
-        </mesh>
-        <mesh position={[0, 0.05, 2.06]}>
-          <boxGeometry args={[1.5, 0.12, 0.04]} />
-          <meshStandardMaterial color="#fde68a" emissive="#fde68a" emissiveIntensity={0.6} />
-        </mesh>
-      </group>
-      <group ref={frontLeft} position={[0.84, 0.32, 1.28]}>{wheel}</group>
-      <group ref={frontRight} position={[-0.84, 0.32, 1.28]}>{wheel}</group>
-      <group position={[0.84, 0.32, -1.27]}>{wheel}</group>
-      <group position={[-0.84, 0.32, -1.27]}>{wheel}</group>
-    </group>
-  );
+  return <SceneObjectAttach object={rig.root} />;
 }
 
-function BikeBody({ entity }: { entity: SceneEntity }) {
-  const fork = useRef<THREE.Group>(null);
-  const body = useRef<THREE.Group>(null);
-  useFrame(() => {
+function BikeBody() {
+  const rig = useMemo(() => {
+    const root = new THREE.Group();
+    box(root, [0.34, 0.42, 1.3], [0, 0.62, 0], std("#2563eb", 0.35, { metalness: 0.3 }));
+    box(root, [0.38, 0.55, 0.36], [0, 1.05, -0.15], std("#1f2937", 0.6));
+    const wheelGeo = new THREE.CylinderGeometry(0.31, 0.31, 0.16, 20);
+    const wheelMat = std("#111827", 0.9);
+    const fork = new THREE.Group();
+    fork.position.set(0, 0.31, 0.71);
+    const frontWheel = new THREE.Mesh(wheelGeo, wheelMat);
+    frontWheel.rotation.z = Math.PI / 2;
+    frontWheel.castShadow = true;
+    fork.add(frontWheel);
+    const rearPivot = new THREE.Group();
+    rearPivot.position.set(0, 0.31, -0.71);
+    const rearWheel = new THREE.Mesh(wheelGeo, wheelMat);
+    rearWheel.rotation.z = Math.PI / 2;
+    rearWheel.castShadow = true;
+    rearPivot.add(rearWheel);
+    root.add(fork, rearPivot);
+    return { root, fork };
+  }, []);
+  useEffect(() => () => disposeObjectTree(rig.root), [rig]);
+  useFrameTask(() => {
     const step = run?.last;
     if (step === null || step === undefined) return;
-    if (fork.current !== null) fork.current.rotation.y = -step.steering.steerAngle;
-    if (body.current !== null) {
-      // Lean rolls the whole bike about its contact line; a positive lean drops the right (-x) side.
-      body.current.rotation.z = step.body.lean;
-      body.current.rotation.x = step.body.bodyPitch;
-    }
+    rig.fork.rotation.y = -step.steering.steerAngle;
+    // Lean rolls the whole bike about its contact line; a positive lean drops the right (-x) side.
+    rig.root.rotation.z = step.body.lean;
+    rig.root.rotation.x = step.body.bodyPitch;
   });
-  const wheel = (
-    <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
-      <cylinderGeometry args={[0.31, 0.31, 0.16, 20]} />
-      <meshStandardMaterial color="#111827" roughness={0.9} />
-    </mesh>
-  );
-  return (
-    <group key={entity.id} ref={body}>
-      <mesh position={[0, 0.62, 0]} castShadow>
-        <boxGeometry args={[0.34, 0.42, 1.3]} />
-        <meshStandardMaterial color="#2563eb" roughness={0.35} metalness={0.3} />
-      </mesh>
-      <mesh position={[0, 1.05, -0.15]} castShadow>
-        <boxGeometry args={[0.38, 0.55, 0.36]} />
-        <meshStandardMaterial color="#1f2937" roughness={0.6} />
-      </mesh>
-      <group ref={fork} position={[0, 0.31, 0.71]}>{wheel}</group>
-      <group position={[0, 0.31, -0.71]}>{wheel}</group>
-    </group>
-  );
+  return <SceneObjectAttach object={rig.root} />;
 }
 
 function Course(_props: WorldOverlayProps) {
-  const stripes = useMemo(() => Array.from({ length: 40 }, (_, i) => i * 12 - 60), []);
-  return (
-    <>
-      <mesh position={[0, -0.06, 150]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[1400, 1400]} />
-        <meshStandardMaterial color="#4d7c3a" roughness={1} />
-      </mesh>
-      <mesh position={[0, 0.03, 150]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[14, 460]} />
-        <meshStandardMaterial color="#374151" roughness={0.95} polygonOffset polygonOffsetFactor={-2} />
-      </mesh>
-      {stripes.map((z) => (
-        <mesh key={z} position={[0, 0.05, z]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[0.25, 5]} />
-          <meshStandardMaterial color="#f8fafc" polygonOffset polygonOffsetFactor={-4} />
-        </mesh>
-      ))}
-      <mesh position={[0, 0.02, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <circleGeometry args={[34, 64]} />
-        <meshStandardMaterial color="#4b5563" roughness={0.9} polygonOffset polygonOffsetFactor={-1} />
-      </mesh>
-      <mesh
-        position={[handlingDemoRamp.center[0], handlingDemoRamp.center[1] - 0.05, handlingDemoRamp.center[2]]}
-        rotation={[-handlingDemoRamp.pitch, 0, 0]}
-        castShadow
-        receiveShadow
-      >
-        <boxGeometry args={[handlingDemoRamp.width, 0.1, handlingDemoRamp.length]} />
-        <meshStandardMaterial color="#eab308" roughness={0.8} />
-      </mesh>
-      {CONES.map(([x, z]) => (
-        <mesh key={`${x}:${z}`} position={[x, 0.35, z]} castShadow>
-          <coneGeometry args={[0.28, 0.7, 14]} />
-          <meshStandardMaterial color="#f97316" />
-        </mesh>
-      ))}
-    </>
-  );
+  const rig = useMemo(() => {
+    const root = new THREE.Group();
+    const groundGeo = new THREE.PlaneGeometry(1400, 1400);
+    groundGeo.rotateX(-Math.PI / 2);
+    const ground = new THREE.Mesh(groundGeo, std("#4d7c3a", 1));
+    ground.position.set(0, -0.06, 150);
+    ground.receiveShadow = true;
+    root.add(ground);
+    const roadGeo = new THREE.PlaneGeometry(14, 460);
+    roadGeo.rotateX(-Math.PI / 2);
+    const road = new THREE.Mesh(roadGeo, new THREE.MeshStandardMaterial({ color: "#374151", roughness: 0.95, polygonOffset: true, polygonOffsetFactor: -2 }));
+    road.position.set(0, 0.03, 150);
+    road.receiveShadow = true;
+    root.add(road);
+    const stripeGeo = new THREE.PlaneGeometry(0.25, 5);
+    stripeGeo.rotateX(-Math.PI / 2);
+    const stripeMat = new THREE.MeshStandardMaterial({ color: "#f8fafc", polygonOffset: true, polygonOffsetFactor: -4 });
+    for (let i = 0; i < 40; i += 1) {
+      const stripe = new THREE.Mesh(stripeGeo, stripeMat);
+      stripe.position.set(0, 0.05, i * 12 - 60);
+      root.add(stripe);
+    }
+    const padGeo = new THREE.CircleGeometry(34, 64);
+    padGeo.rotateX(-Math.PI / 2);
+    const pad = new THREE.Mesh(padGeo, new THREE.MeshStandardMaterial({ color: "#4b5563", roughness: 0.9, polygonOffset: true, polygonOffsetFactor: -1 }));
+    pad.position.set(0, 0.02, -40);
+    pad.receiveShadow = true;
+    root.add(pad);
+    const ramp = new THREE.Mesh(
+      new THREE.BoxGeometry(handlingDemoRamp.width, 0.1, handlingDemoRamp.length),
+      std("#eab308", 0.8),
+    );
+    ramp.position.set(handlingDemoRamp.center[0], handlingDemoRamp.center[1] - 0.05, handlingDemoRamp.center[2]);
+    ramp.rotation.x = -handlingDemoRamp.pitch;
+    ramp.castShadow = true;
+    ramp.receiveShadow = true;
+    root.add(ramp);
+    const coneGeo = new THREE.ConeGeometry(0.28, 0.7, 14);
+    const coneMat = std("#f97316", 0.9);
+    for (const [x, z] of CONES) {
+      const cone = new THREE.Mesh(coneGeo, coneMat);
+      cone.position.set(x, 0.35, z);
+      cone.castShadow = true;
+      root.add(cone);
+    }
+    return root;
+  }, []);
+  useEffect(() => () => disposeObjectTree(rig), [rig]);
+  return <SceneObjectAttach object={rig} />;
 }
 
 function Telemetry() {
@@ -449,7 +453,7 @@ function makeGame(name: string, choice: DemoVehicle): PlayableGame {
     },
     scene: {
       renderEntity: (entity) =>
-        entity.name !== CAR ? null : choice.kind === "bike" ? <BikeBody entity={entity} /> : <CarBody entity={entity} />,
+        entity.name !== CAR ? null : choice.kind === "bike" ? <BikeBody /> : <CarBody />,
       WorldOverlay: Course,
     },
     GameUI: Telemetry,

@@ -1,7 +1,9 @@
 // @skill jgengine-assets
-import { useThree } from "@react-three/fiber";
-import { useLayoutEffect } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
+
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
 const TEXTURE_SLOTS = [
   "map",
@@ -47,18 +49,37 @@ export function retuneTextureAnisotropy(root: THREE.Object3D, from: number, to: 
  * scene once per change for textures loaded before. No per-frame work.
  * @internal shell-internal; driven by `GraphicsProfile.anisotropy`.
  */
-export function TextureFiltering({ anisotropy }: { anisotropy: number }): null {
-  const gl = useThree((state) => state.gl);
-  const scene = useThree((state) => state.scene);
-  useLayoutEffect(() => {
-    const target = Math.max(1, Math.min(anisotropy, gl.capabilities.getMaxAnisotropy()));
-    const previous = THREE.Texture.DEFAULT_ANISOTROPY;
-    if (previous === target) return;
+export function textureFilteringDraw(getAnisotropy: () => number): EngineDraw {
+  let original: number | null = null;
+  const sync = (state: EngineFrameState) => {
+    const target = Math.max(1, Math.min(getAnisotropy(), state.gl.capabilities.getMaxAnisotropy()));
+    if (original === null) original = THREE.Texture.DEFAULT_ANISOTROPY;
+    const current = THREE.Texture.DEFAULT_ANISOTROPY;
+    if (current === target) return;
     THREE.Texture.DEFAULT_ANISOTROPY = target;
-    retuneTextureAnisotropy(scene, previous, target);
-    return () => {
-      THREE.Texture.DEFAULT_ANISOTROPY = previous;
-    };
-  }, [gl, scene, anisotropy]);
+    retuneTextureAnisotropy(state.scene, current, target);
+  };
+  return {
+    mount: sync,
+    update: sync,
+    dispose() {
+      if (original !== null) {
+        THREE.Texture.DEFAULT_ANISOTROPY = original;
+        original = null;
+      }
+    },
+  };
+}
+
+/**
+ * Applies the player's texture-filtering choice. Sets three's construction-time default so
+ * every texture loaded afterwards (GLTF, texture loaders) samples anisotropically, and walks the
+ * scene once per change for textures loaded before. No per-frame work.
+ * @internal shell-internal; driven by `GraphicsProfile.anisotropy`.
+ */
+export function TextureFiltering({ anisotropy }: { anisotropy: number }) {
+  const latest = useRef(anisotropy);
+  latest.current = anisotropy;
+  useEngineDraw(() => textureFilteringDraw(() => latest.current), []);
   return null;
 }

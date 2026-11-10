@@ -6,6 +6,57 @@ import type { BuildingSurfaceMaps, BuildingSurfaceMaterial } from "@jgengine/cor
 import type { MaterialOverrideTextures } from "@jgengine/core/material/materialOverride.draw";
 import { ImageTextureLoader } from "@jgengine/core/material/imageTexture.draw";
 
+/** An owned set of surface-map clones; `dispose` releases every clone, never the shared sources. @internal */
+export interface BuildingSurfaceTextureLease {
+  readonly textures: MaterialOverrideTextures | undefined;
+  dispose(): void;
+}
+
+const EMPTY_SURFACE_LEASE: BuildingSurfaceTextureLease = { textures: undefined, dispose() {} };
+
+/**
+ * The draw-side form of {@link useBuildingSurfaceTextures}: resolves the same per-role map loads,
+ * clones and tiling, and returns them with an explicit dispose. Resolves `textures: undefined`
+ * until maps arrive — or forever when the surface names none or every file is missing.
+ * @internal
+ */
+export function buildingSurfaceTextures(surface: BuildingSurfaceMaterial | undefined): Promise<BuildingSurfaceTextureLease> {
+  const maps = surface?.maps;
+  const entries: [SurfaceRole, string][] = [];
+  if (maps?.color !== undefined) entries.push(["color", maps.color]);
+  if (maps?.normal !== undefined) entries.push(["normal", maps.normal]);
+  if (maps?.roughness !== undefined) entries.push(["roughness", maps.roughness]);
+  if (maps?.ao !== undefined) entries.push(["ao", maps.ao]);
+  if (maps?.metalness !== undefined) entries.push(["metalness", maps.metalness]);
+  if (entries.length === 0) return Promise.resolve(EMPTY_SURFACE_LEASE);
+  const [repeatX, repeatY] = surface === undefined ? [1, 1] : repeatOf(surface);
+  return Promise.all(entries.map(([role, url]) => loadSurfaceTexture(url).then((texture) => [role, texture] as const))).then((results) => {
+    const loaded: Partial<Record<SurfaceRole, THREE.Texture>> = {};
+    for (const [role, texture] of results) if (texture !== null) loaded[role] = texture;
+    if (Object.keys(loaded).length === 0) return EMPTY_SURFACE_LEASE;
+    const out: MaterialOverrideTextures = {};
+    const owned: THREE.Texture[] = [];
+    for (const role of SURFACE_ROLES) {
+      const source = loaded[role];
+      if (source === undefined) continue;
+      const texture = source.clone();
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(repeatX, repeatY);
+      texture.colorSpace = role === "color" ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+      texture.needsUpdate = true;
+      out[role] = texture;
+      owned.push(texture);
+    }
+    return {
+      textures: out,
+      dispose() {
+        for (const texture of owned) texture.dispose();
+      },
+    };
+  });
+}
+
 const SURFACE_ROLES = ["color", "normal", "roughness", "ao", "metalness"] as const;
 type SurfaceRole = (typeof SURFACE_ROLES)[number];
 

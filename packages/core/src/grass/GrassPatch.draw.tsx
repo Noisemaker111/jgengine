@@ -1,13 +1,12 @@
-import { useFrame, type ThreeElements } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
-import { Vector3, type Group } from "three";
+import { useRef } from "react";
+import { Euler, Group, Vector3 } from "three";
 import type * as THREE from "three";
 
 import type { GrassLook } from "@jgengine/core/grass/grassKind";
 
 import { seedToUint32, type TerrainSeed } from "@jgengine/core/terrain/terrainSeed";
 import { resolveTerrainSize, type TerrainArea, type TerrainHeightSampler } from "@jgengine/core/terrain/terrainMath.draw";
-import { GrassCover } from "./GrassCover.draw";
+import { grassCoverDraw, type GrassCoverProps } from "./GrassCover.draw";
 import { GRASS_COVER_MAX_SEGMENTS } from "./grassCoverGeometry.draw";
 import { grassCushionShadeAt, grassStripeAt } from "./grassField";
 import { grassFieldColors, resolveGrassBake, type GrassExclusion } from "./grassBake.draw";
@@ -16,6 +15,8 @@ import { grassWindAt, grassWindLook, type GrassWindSource } from "./grassWind";
 import { GrassStream } from "./grassStream.draw";
 import { GrassFrameShare } from "./grassFrameShare";
 import { trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
+import { childFrameState, type EngineDraw, type EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw, type DrawAttachProps } from "@jgengine/core/frame/useEngineDraw.draw";
 
 /** Milliseconds of grass work one frame may spend, across every patch, once the view has filled. */
 const BAKE_SLICE_MS = 3;
@@ -34,7 +35,7 @@ function grassCoverLift(look: GrassLook): number {
 }
 
 /** Props for {@link GrassPatch}. */
-export interface GrassPatchProps extends Omit<ThreeElements["group"], "children"> {
+export interface GrassPatchProps extends Pick<DrawAttachProps, "position" | "rotation" | "scale" | "visible"> {
   /** The patch's look (`readGrassLook` from a `grass_field` volume, or a `grass()` descriptor's `look`). */
   look: GrassLook;
   /** Footprint size in metres, centred on the group origin. */
@@ -61,101 +62,165 @@ export interface GrassPatchProps extends Omit<ThreeElements["group"], "children"
   wind?: GrassWindSource | undefined;
 }
 
+function applyGroupProps(group: Group, props: GrassPatchProps): void {
+  const position = props.position;
+  if (position !== undefined) {
+    if (Array.isArray(position)) group.position.set(position[0], position[1], position[2]);
+    else if (position instanceof Vector3) group.position.copy(position);
+  }
+  const rotation = props.rotation;
+  if (rotation !== undefined) {
+    if (Array.isArray(rotation)) group.rotation.set(rotation[0], rotation[1], rotation[2]);
+    else if (rotation instanceof Euler) group.rotation.copy(rotation);
+  }
+  const scale = props.scale;
+  if (scale !== undefined) {
+    if (Array.isArray(scale)) group.scale.set(scale[0], scale[1], scale[2]);
+    else if (scale instanceof Vector3) group.scale.copy(scale);
+  }
+  if (props.visible !== undefined) group.visible = props.visible;
+}
+
 /**
  * The engine's one grass renderer: a camera-streamed blade field over a turf mat. Work follows the
  * camera — nodes near it bake every tuft, far ones a thinning share, and nothing past the distance
  * where a blade would be under a pixel — so a patch of any size costs what the view shows.
  */
-export function GrassPatch({
-  look,
-  area,
-  seed,
-  edgeFeather,
-  exclude,
-  heightAt,
-  heightRevision,
-  coverageAt,
-  baseHeight,
-  groundColor,
-  castShadow = false,
-  receiveShadow = true,
-  frustumCulled = true,
-  wind,
-  ...groupProps
-}: GrassPatchProps) {
-  const size = resolveTerrainSize(area);
-  const bake = useMemo(
-    () => resolveGrassBake({ look, area, ...(seed === undefined ? {} : { seed }), ...(edgeFeather === undefined ? {} : { edgeFeather }),
-      ...(exclude === undefined ? {} : { exclude }), ...(heightAt === undefined ? {} : { heightAt }), ...(coverageAt === undefined ? {} : { coverageAt }),
-      ...(baseHeight === undefined ? {} : { baseHeight }) }),
-    [look, area, seed, edgeFeather, exclude, heightAt, coverageAt, baseHeight],
-  );
-  // Under a shared wind the sway can reach a full bend, so bounds are sized for it.
-  const windy = wind !== undefined;
-  const handle = useMemo(() => createGrassMaterial(windy ? { ...look, wind: { ...look.wind, windStrength: Math.max(1, look.wind.windStrength) } } : look, groundColor), [look, groundColor, windy]);
-  const origin = useRef<Group>(null);
-  const world = useMemo(() => new Vector3(), []);
-  const stream = useMemo(() => new GrassStream(bake, handle, { castShadow, receiveShadow, frustumCulled, ...(heightRevision === undefined ? {} : { heightRevision }) }), [bake, handle, castShadow, receiveShadow, frustumCulled, heightRevision]);
-  // The first view counts as loading, so play and captures never start on a half-grown field.
-  const filling = useRef<(() => void) | undefined>(undefined);
-  useEffect(() => {
-    filling.current = trackSceneWork("grass-fill");
-    return () => {
-      filling.current?.();
-      filling.current = undefined;
-      stream.dispose();
-    };
-  }, [stream]);
-  useEffect(() => () => handle.material.dispose(), [handle]);
-  useFrame((state) => {
-    handle.uniforms.uTime.value = state.clock.elapsedTime;
-    if (wind !== undefined) {
-      origin.current?.getWorldPosition(world);
-      setGrassWindUniforms(handle.uniforms, { ...grassWindLook(look.wind, grassWindAt(wind, world.x, world.z, state.clock.elapsedTime), wind.response ?? 1), stiffness: look.blade.stiffness });
-    }
-    stream.update(state.camera, state.size.height, frameShare.slice(state.gl, state.clock.elapsedTime, stream.filled ? BAKE_SLICE_MS : FILL_SLICE_MS));
-    if (stream.busy) frameShare.stillBusy(state.gl);
-    if (stream.filled && filling.current !== undefined) {
-      filling.current();
-      filling.current = undefined;
-    }
-  });
+export function grassPatchDraw(getProps: () => GrassPatchProps): EngineDraw {
+  let group: Group | null = null;
+  let stream: GrassStream | null = null;
+  let handle: ReturnType<typeof createGrassMaterial> | null = null;
+  let cover: EngineDraw | null = null;
+  let coverState: EngineFrameState | null = null;
+  let filling: (() => void) | undefined;
+  const world = new Vector3();
 
-  const colors = useMemo(() => grassFieldColors(look), [look]);
-  const coverArea = useMemo(() => [size.width, size.depth] as const, [size.width, size.depth]);
-  const coverSeed = seedToUint32(bake.seed) % 100000;
-  const striped = look.mowing.stripeWidth > 0 && look.mowing.stripeContrast > 0;
-  const cushioned = look.tuft.cushion > 0;
-  const shadeAt = useMemo(() => {
-    if (!striped && !cushioned) return undefined;
-    const halfW = bake.width / 2, halfD = bake.depth / 2;
-    return (x: number, z: number) =>
-      (striped ? grassStripeAt(look, x, z) * look.mowing.stripeContrast : 0) + (cushioned ? grassCushionShadeAt(look, bake.clumpSeed, halfW, halfD, x, z) : 0);
-  }, [striped, cushioned, look, bake]);
-  // A striped or cushioned mat needs a few cells per stripe or mound, or the shading aliases into blotches.
-  const feature = Math.min(striped ? look.mowing.stripeWidth : Infinity, cushioned ? look.tuft.clumpSize * 2 : Infinity);
-  const coverSegments = Number.isFinite(feature)
-    ? Math.min(GRASS_COVER_MAX_SEGMENTS, Math.max(Math.round(Math.max(size.width, size.depth) / 2), Math.ceil((Math.max(size.width, size.depth) * 8) / feature)))
-    : undefined;
-  return (
-    <group ref={origin} {...groupProps}>
-      {look.growth.groundCover > 0 ? (
-        <GrassCover
-          area={coverArea}
-          seed={coverSeed}
-          colorBase={colors.base}
-          colorTip={colors.tip}
-          strength={look.growth.groundCover}
-          edgeFeather={bake.edgeFeather}
-          heightAt={bake.heightAt}
-          coverageAt={bake.turfAt}
-          shadeAt={shadeAt}
-          detail={look.style.detail}
-          lift={grassCoverLift(look)}
-          {...(coverSegments === undefined ? {} : { segments: coverSegments })}
-        />
-      ) : null}
-      <primitive object={stream.group} />
-    </group>
-  );
+  return {
+    mount(state: EngineFrameState) {
+      const props = getProps();
+      const size = resolveTerrainSize(props.area);
+      const bake = resolveGrassBake({
+        look: props.look,
+        area: props.area,
+        ...(props.seed === undefined ? {} : { seed: props.seed }),
+        ...(props.edgeFeather === undefined ? {} : { edgeFeather: props.edgeFeather }),
+        ...(props.exclude === undefined ? {} : { exclude: props.exclude }),
+        ...(props.heightAt === undefined ? {} : { heightAt: props.heightAt }),
+        ...(props.coverageAt === undefined ? {} : { coverageAt: props.coverageAt }),
+        ...(props.baseHeight === undefined ? {} : { baseHeight: props.baseHeight }),
+      });
+      // Under a shared wind the sway can reach a full bend, so bounds are sized for it.
+      const windy = props.wind !== undefined;
+      handle = createGrassMaterial(
+        windy ? { ...props.look, wind: { ...props.look.wind, windStrength: Math.max(1, props.look.wind.windStrength) } } : props.look,
+        props.groundColor,
+      );
+      group = new Group();
+      applyGroupProps(group, props);
+      state.scene.add(group);
+      stream = new GrassStream(bake, handle, {
+        castShadow: props.castShadow ?? false,
+        receiveShadow: props.receiveShadow ?? true,
+        frustumCulled: props.frustumCulled ?? true,
+        ...(props.heightRevision === undefined ? {} : { heightRevision: props.heightRevision }),
+      });
+      group.add(stream.group);
+      if (props.look.growth.groundCover > 0) {
+        const colors = grassFieldColors(props.look);
+        const coverArea: [number, number] = [size.width, size.depth];
+        const coverSeed = seedToUint32(bake.seed) % 100000;
+        const striped = props.look.mowing.stripeWidth > 0 && props.look.mowing.stripeContrast > 0;
+        const cushioned = props.look.tuft.cushion > 0;
+        const shadeAt = !striped && !cushioned ? undefined : (() => {
+          const halfW = bake.width / 2;
+          const halfD = bake.depth / 2;
+          return (x: number, z: number) =>
+            (striped ? grassStripeAt(props.look, x, z) * props.look.mowing.stripeContrast : 0)
+            + (cushioned ? grassCushionShadeAt(props.look, bake.clumpSeed, halfW, halfD, x, z) : 0);
+        })();
+        // A striped or cushioned mat needs a few cells per stripe or mound, or the shading aliases into blotches.
+        const feature = Math.min(striped ? props.look.mowing.stripeWidth : Infinity, cushioned ? props.look.tuft.clumpSize * 2 : Infinity);
+        const coverSegments = Number.isFinite(feature)
+          ? Math.min(GRASS_COVER_MAX_SEGMENTS, Math.max(Math.round(Math.max(size.width, size.depth) / 2), Math.ceil((Math.max(size.width, size.depth) * 8) / feature)))
+          : undefined;
+        const coverProps: GrassCoverProps = {
+          area: coverArea,
+          seed: coverSeed,
+          colorBase: colors.base,
+          colorTip: colors.tip,
+          strength: props.look.growth.groundCover,
+          edgeFeather: bake.edgeFeather,
+          heightAt: bake.heightAt,
+          coverageAt: bake.turfAt,
+          detail: props.look.style.detail,
+          lift: grassCoverLift(props.look),
+          ...(shadeAt === undefined ? {} : { shadeAt }),
+          ...(coverSegments === undefined ? {} : { segments: coverSegments }),
+        };
+        cover = grassCoverDraw(() => coverProps);
+        coverState = childFrameState(state, group);
+        cover.mount?.(coverState);
+      }
+      // The first view counts as loading, so play and captures never start on a half-grown field.
+      filling = trackSceneWork("grass-fill");
+    },
+    frame(state: EngineFrameState) {
+      const props = getProps();
+      if (group !== null) applyGroupProps(group, props);
+      if (handle === null || stream === null || group === null) return;
+      handle.uniforms.uTime.value = state.clock.elapsedTime;
+      if (props.wind !== undefined) {
+        group.getWorldPosition(world);
+        setGrassWindUniforms(handle.uniforms, { ...grassWindLook(props.look.wind, grassWindAt(props.wind, world.x, world.z, state.clock.elapsedTime), props.wind.response ?? 1), stiffness: props.look.blade.stiffness });
+      }
+      stream.update(state.camera, state.size.height, frameShare.slice(state.gl, state.clock.elapsedTime, stream.filled ? BAKE_SLICE_MS : FILL_SLICE_MS));
+      if (stream.busy) frameShare.stillBusy(state.gl);
+      if (stream.filled && filling !== undefined) {
+        filling();
+        filling = undefined;
+      }
+      cover?.frame?.(coverState ?? state, (coverState ?? state).delta);
+    },
+    dispose(state: EngineFrameState) {
+      filling?.();
+      filling = undefined;
+      cover?.dispose?.(coverState ?? state);
+      cover = null;
+      coverState = null;
+      stream?.dispose();
+      stream = null;
+      handle?.material.dispose();
+      handle = null;
+      if (group !== null) state.scene.remove(group);
+      group = null;
+    },
+  };
+}
+
+/**
+ * The engine's one grass renderer: a camera-streamed blade field over a turf mat. Work follows the
+ * camera — nodes near it bake every tuft, far ones a thinning share, and nothing past the distance
+ * where a blade would be under a pixel — so a patch of any size costs what the view shows.
+ */
+export function GrassPatch(props: GrassPatchProps) {
+  const latest = useRef<GrassPatchProps>(props);
+  latest.current = props;
+  const windy = props.wind !== undefined;
+  useEngineDraw(() => grassPatchDraw(() => latest.current), [
+    props.look,
+    props.area,
+    props.seed,
+    props.edgeFeather,
+    props.exclude,
+    props.heightAt,
+    props.heightRevision,
+    props.coverageAt,
+    props.baseHeight,
+    props.groundColor,
+    props.castShadow,
+    props.receiveShadow,
+    props.frustumCulled,
+    windy,
+  ]);
+  return null;
 }

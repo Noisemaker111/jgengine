@@ -282,3 +282,6 @@ html, body, #root { width: 100%; height: 100%; margin: 0; overflow: hidden; }
 /* Over the canvas while the next floor builds (useSceneSwap): the rail or the lift, not a frozen frame. */
 .dw-travel { position: fixed; inset: 0; z-index: 1; display: grid; place-items: center; background: #05090a; pointer-events: none; }
 .dw-travel span { font-family: "Share Tech Mono", monospace; font-size: 15px; letter-spacing: 0.24em; text-transform: uppercase; color: rgba(164,222,210,0.78); }
+
+/* The modal sheets portal to body so they stack above the Rune UI canvas (z 40). */
+.dw-sheet-layer { position: fixed; inset: 0; z-index: 50; pointer-events: none; }

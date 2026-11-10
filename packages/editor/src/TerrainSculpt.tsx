@@ -1,4 +1,6 @@
-import { useThree } from "@react-three/fiber";
+import { activeCameraControls } from "@jgengine/core/camera/activeCameraControls.draw";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
+import { SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
@@ -233,7 +235,8 @@ const SculptMesh = memo(function SculptMesh({
   /** The game's resolved terrain detail; `null` (detail opted out) keeps the flat vertex-colour preview. */
   detail: ResolvedTerrainDetail | null;
 }) {
-  const invalidate = useThree((state) => state.invalidate);
+  const host = useEngineHost();
+  const invalidate = host.frame.invalidate;
   const geometry = useMemo(() => {
     const width = Math.max(1, bounds.maxX - bounds.minX);
     const depth = Math.max(1, bounds.maxZ - bounds.minZ);
@@ -278,14 +281,25 @@ const SculptMesh = memo(function SculptMesh({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [geometry, terrain, revision, paletteAt, heightRange, contourStrength, surface, invalidate]);
 
-  if (surfaceMaterial !== null) {
-    return <mesh geometry={geometry} material={surfaceMaterial.material} receiveShadow />;
-  }
-  return (
-    <mesh geometry={geometry} receiveShadow>
-      <meshStandardMaterial vertexColors roughness={0.95} metalness={0} polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} />
-    </mesh>
+  const fallbackMaterial = useMemo(
+    () =>
+      new THREE.MeshStandardMaterial({
+        vertexColors: true,
+        roughness: 0.95,
+        metalness: 0,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -1,
+      }),
+    [],
   );
+  useEffect(() => () => fallbackMaterial.dispose(), [fallbackMaterial]);
+  const mesh = useMemo(() => {
+    const next = new THREE.Mesh(geometry, surfaceMaterial?.material ?? fallbackMaterial);
+    next.receiveShadow = true;
+    return next;
+  }, [geometry, surfaceMaterial, fallbackMaterial]);
+  return <SceneObjectAttach object={mesh} />;
 });
 
 /** The UI slice the sculpt layer renders from (tool gate + brush cursor), so unrelated UI churn
@@ -338,9 +352,8 @@ export const TerrainSculpt = memo(function TerrainSculpt({
   world?: WorldFeature | undefined;
 }) {
   const ctx = useGameContext();
-  const gl = useThree((state) => state.gl);
-  const camera = useThree((state) => state.camera);
-  const controls = useThree((state) => state.controls) as { enabled?: boolean } | null;
+  const frame = useEngineHost().frame;
+  const { gl, camera } = frame;
   const session: EditorSession = api.getSession();
 
   const terrainDescriptor = useMemo(() => terrainDescriptorOf(world), [world]);
@@ -467,7 +480,8 @@ export const TerrainSculpt = memo(function TerrainSculpt({
     };
 
     const setControls = (enabled: boolean) => {
-      if (controls !== null && "enabled" in controls) controls.enabled = enabled;
+      const controls = activeCameraControls(frame.rootScene ?? frame.scene);
+      if (controls !== null) controls.enabled = enabled;
     };
 
     const stampSpacing = (): number => {
@@ -583,7 +597,7 @@ export const TerrainSculpt = memo(function TerrainSculpt({
       canvas.removeEventListener("pointerleave", onLeave);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toolActive, snapshot, gl, camera, controls, session, ui]);
+  }, [toolActive, snapshot, gl, camera, frame, session, ui]);
 
   if (snapshot === null || editableRef.current === null || boundsRef.current === null) return null;
 

@@ -13,9 +13,9 @@ let browser: Browser, page: Page, server: ReturnType<typeof Bun.serve>;
 beforeAll(async () => {
   const dir = scratch;
   await rm(dir, { recursive: true, force: true });
-  await mkdir(`${dir}/node_modules/@react-three`, { recursive: true });
+  await mkdir(`${dir}/node_modules`, { recursive: true });
   for (const peer of ["react", "react-dom"]) await symlink(resolve(import.meta.dir, "../../react/node_modules", peer), `${dir}/node_modules/${peer}`, "dir");
-  for (const peer of ["@react-three/fiber", "@react-three/drei", "three", "three-stdlib"]) await symlink(resolve(import.meta.dir, "../node_modules", peer), `${dir}/node_modules/${peer}`, "dir");
+  for (const peer of ["three", "three-stdlib"]) await symlink(resolve(import.meta.dir, "../node_modules", peer), `${dir}/node_modules/${peer}`, "dir");
   await Bun.write(`${dir}/fixture.tsx`, `
     import React from 'react';import {createRoot} from 'react-dom/client';
     import {defineGame} from '@jgengine/shell/gameKit';import {ShellHudPresentation} from '@jgengine/core/hud/ShellHudPresentation.draw';

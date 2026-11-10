@@ -19,7 +19,6 @@
     "@jgengine/react": "workspace:*",
     "@jgengine/shell": "workspace:*",
     "@jgengine/ws": "workspace:*",
-    "@react-three/fiber": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "three": "catalog:"

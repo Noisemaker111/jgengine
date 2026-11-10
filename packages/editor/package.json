@@ -1,7 +1,7 @@
 {
   "name": "@jgengine/editor",
   "version": "0.54.0",
-  "description": "Scene/world/asset editor for JGengine — loaded lazily by the runner; never import from game entrypoints.",
+  "description": "Scene/world/asset editor for JGengine \u2014 loaded lazily by the runner; never import from game entrypoints.",
   "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,
@@ -38,15 +38,11 @@
     "@jgengine/shell": "^0.54.0"
   },
   "peerDependencies": {
-    "@react-three/drei": "^10.0.0",
-    "@react-three/fiber": "^9.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "three": ">=0.187.0"
   },
   "devDependencies": {
-    "@react-three/drei": "catalog:",
-    "@react-three/fiber": "catalog:",
     "@types/node": "^24",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",

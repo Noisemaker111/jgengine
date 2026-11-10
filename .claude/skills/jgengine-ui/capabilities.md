@@ -209,7 +209,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `EntityPortrait` (function) · `import { EntityPortrait } from "@jgengine/react"`
 
-## entity-preview — live 3D entity portrait — nested Canvas + context bridge + studio stage, driven by the game's own renderEntity
+## entity-preview — live 3D entity portrait — nested EngineCanvas + context bridge + studio stage, driven by the game's own renderEntity
 
 - `EntityPreview` (function) · `import { EntityPreview } from "@jgengine/core/render/EntityPreview.draw"`
 
@@ -832,6 +832,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## sprite-batch — Draw many atlas sprites in one instanced draw
 
 - `SpriteBatch` (function) · `import { SpriteBatch } from "@jgengine/core/render/SpriteBatch.draw"`
+- `spriteBatchDraw` (function) · `import { spriteBatchDraw } from "@jgengine/core/render/SpriteBatch.draw"`
 
 ## sprite-icon — draw a served one-colour icon (game-icons.net SVG) tinted to the HUD theme
 

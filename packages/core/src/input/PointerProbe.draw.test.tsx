@@ -1,8 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
-import { act, createRoot, extend } from "@react-three/fiber";
 import { createElement } from "react";
-import * as THREE from "three";
 
+import { mountTestDraws, type MountedTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
 import { PointerProbe } from "./PointerProbe.draw";
 import type { PointerService } from "./pointerService.draw";
 
@@ -21,22 +20,13 @@ afterEach(() => {
 });
 
 async function mount(groundHeightAt?: (x: number, z: number) => number): Promise<{ bound: (PointerDeps | null)[]; unmount: () => Promise<void> }> {
-  env.IS_REACT_ACT_ENVIRONMENT = true;
-  env.document ??= new EventTarget();
-  extend(THREE);
   const bound: (PointerDeps | null)[] = [];
   const service = { bind: (deps: PointerDeps | null) => bound.push(deps), setState() {} } as unknown as PointerService;
-  const root = createRoot({} as HTMLCanvasElement);
-  await root.configure({
-    frameloop: "never",
-    size: { width: 800, height: 450, top: 0, left: 0 },
-    dpr: 1,
-    gl: () => ({ render() {}, setSize() {}, setPixelRatio() {}, domElement: new EventTarget() }) as unknown as THREE.WebGLRenderer,
-  });
-  await act(async () => {
-    root.render(createElement(PointerProbe, { service, ...(groundHeightAt === undefined ? {} : { groundHeightAt }) }));
-  });
-  return { bound, unmount: async () => act(async () => root.unmount()) };
+  const mounted: MountedTestDraws = await mountTestDraws(
+    createElement(PointerProbe, { service, ...(groundHeightAt === undefined ? {} : { groundHeightAt }) }),
+    { width: 800, height: 450 },
+  );
+  return { bound, unmount: () => mounted.unmount() };
 }
 
 test("a world with terrain binds its ground height, so clicks can land on the hills", async () => {

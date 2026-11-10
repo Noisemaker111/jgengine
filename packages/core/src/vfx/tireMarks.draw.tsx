@@ -1,9 +1,11 @@
-import { useFrame } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, type ReactElement } from "react";
-import { BufferAttribute, BufferGeometry, DoubleSide, MeshBasicMaterial, type Mesh } from "three";
+import { useRef } from "react";
+import { BufferAttribute, BufferGeometry, DoubleSide, Mesh, MeshBasicMaterial } from "three";
 
 import type { TireMark } from "@jgengine/core/physics/tireMarks";
+import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { useGameContext } from "@jgengine/react/provider";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
 /** Darkest a fresh mark draws at full strength. */
 const MARK_ALPHA = 0.62;
@@ -52,54 +54,77 @@ export function writeTireMarkGeometry(marks: readonly TireMark[], time: number, 
   return quad * 6;
 }
 
-/** Draws `ctx.tireMarks` as one batched, fading mesh on the ground. Mounted by the 3D shell for every game. @internal */
-export function WorldTireMarks(): ReactElement {
-  const ctx = useGameContext();
+/**
+ * Draws `ctx.tireMarks` as one batched, fading mesh on the ground. Mounted by the 3D shell for every game.
+ * @internal
+ */
+export function worldTireMarksDraw(ctx: GameContext): EngineDraw {
   const store = ctx.tireMarks;
-  const mesh = useRef<Mesh>(null);
-  const seen = useRef({ version: -1, rebuiltAt: -Infinity });
-  const { geometry, material, positions, colors } = useMemo(() => {
-    const vertices = store.capacity * 6;
-    const positions = new Float32Array(vertices * 3);
-    const colors = new Float32Array(vertices * 4);
-    const geometry = new BufferGeometry();
-    geometry.setAttribute("position", new BufferAttribute(positions, 3));
-    geometry.setAttribute("color", new BufferAttribute(colors, 4));
-    geometry.setDrawRange(0, 0);
-    const material = new MeshBasicMaterial({
-      // Rubber is the material colour; the vertex colour only carries each mark's fade.
-      color: "#0b0b0c",
-      vertexColors: true,
-      transparent: true,
-      depthWrite: false,
-      side: DoubleSide,
-      polygonOffset: true,
-      polygonOffsetFactor: -2,
-      polygonOffsetUnits: -2,
-    });
-    return { geometry, material, positions, colors };
-  }, [store]);
-
-  useEffect(
-    () => () => {
-      geometry.dispose();
-      material.dispose();
-    },
-    [geometry, material],
-  );
-
-  useFrame(() => {
+  let mesh: Mesh | null = null;
+  let geometry: BufferGeometry | null = null;
+  let material: MeshBasicMaterial | null = null;
+  let positions: Float32Array | null = null;
+  let colors: Float32Array | null = null;
+  const seen = { version: -1, rebuiltAt: -Infinity };
+  const sync = (_state: EngineFrameState) => {
+    if (geometry === null || positions === null || colors === null || mesh === null) return;
     const now = ctx.time.now();
     const version = store.version();
-    if (version === seen.current.version && now - seen.current.rebuiltAt < FADE_REBUILD_SECONDS) return;
-    seen.current = { version, rebuiltAt: now };
+    if (version === seen.version && now - seen.rebuiltAt < FADE_REBUILD_SECONDS) return;
+    seen.version = version;
+    seen.rebuiltAt = now;
     const count = writeTireMarkGeometry(store.marks(now), now, store.lifetime, positions, colors);
     geometry.setDrawRange(0, count);
     geometry.attributes["position"]!.needsUpdate = true;
     geometry.attributes["color"]!.needsUpdate = true;
     geometry.computeBoundingSphere();
-    if (mesh.current !== null) mesh.current.visible = count > 0;
-  });
+    mesh.visible = count > 0;
+  };
+  return {
+    mount(state: EngineFrameState) {
+      const vertices = store.capacity * 6;
+      positions = new Float32Array(vertices * 3);
+      colors = new Float32Array(vertices * 4);
+      geometry = new BufferGeometry();
+      geometry.setAttribute("position", new BufferAttribute(positions, 3));
+      geometry.setAttribute("color", new BufferAttribute(colors, 4));
+      geometry.setDrawRange(0, 0);
+      material = new MeshBasicMaterial({
+        // Rubber is the material colour; the vertex colour only carries each mark's fade.
+        color: "#0b0b0c",
+        vertexColors: true,
+        transparent: true,
+        depthWrite: false,
+        side: DoubleSide,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+        polygonOffsetUnits: -2,
+      });
+      mesh = new Mesh(geometry, material);
+      mesh.frustumCulled = false;
+      mesh.renderOrder = 1;
+      mesh.visible = false;
+      state.scene.add(mesh);
+    },
+    frame: sync,
+    dispose(state: EngineFrameState) {
+      if (mesh !== null) state.scene.remove(mesh);
+      mesh = null;
+      geometry?.dispose();
+      geometry = null;
+      material?.dispose();
+      material = null;
+      positions = null;
+      colors = null;
+    },
+  };
+}
 
-  return <mesh ref={mesh} geometry={geometry} material={material} frustumCulled={false} renderOrder={1} visible={false} />;
+/** Draws `ctx.tireMarks` as one batched, fading mesh on the ground. Mounted by the 3D shell for every game. @internal */
+export function WorldTireMarks() {
+  const ctx = useGameContext();
+  const created = useRef<EngineDraw | null>(null);
+  if (created.current === null) created.current = worldTireMarksDraw(ctx);
+  useEngineDraw(() => created.current as EngineDraw, [ctx]);
+  return null;
 }

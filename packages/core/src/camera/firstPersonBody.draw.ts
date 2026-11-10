@@ -9,6 +9,21 @@ import { detectHumanoidRig } from "@jgengine/core/anim/skeletonStandard";
  */
 export const FirstPersonBodyContext = createContext<string | null>(null);
 
+let drawFirstPersonBody: string | null = null;
+
+/**
+ * The first-person body id for draw code, which has no React context. The shell
+ * writes it next to the provider; `null` outside a first-person rig.
+ */
+export function noteFirstPersonBody(instanceId: string | null): void {
+  drawFirstPersonBody = instanceId;
+}
+
+/** The entity whose body the first-person camera sits in, for draw code. */
+export function firstPersonBodyInstance(): string | null {
+  return drawFirstPersonBody;
+}
+
 /** True when `instanceId` is the body the first-person camera sits in. */
 export function useFirstPersonBody(instanceId: string | undefined): boolean {
   const body = useContext(FirstPersonBodyContext);

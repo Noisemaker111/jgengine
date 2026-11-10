@@ -1,5 +1,8 @@
-import { Html } from "@react-three/drei";
 import { useEffect, useMemo, useState } from "react";
+import * as THREE from "three";
+import { disposeObjectTree, SceneObjectAttach, SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";
+import { AnchoredOverlay } from "@jgengine/core/hud/hudOverlay.draw";
+import { AttachedMeshes } from "./drawHelpers";
 
 import { prepareGenerator, runGenerator } from "@jgengine/core/generator/generator";
 import { trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
@@ -70,33 +73,42 @@ function Tree({ meta, label, position }: { meta: Record<string, number | string>
   }, [params, label]);
   const sources = useMemo(() => (mesh === null ? [] : plantMeshSources(mesh)), [mesh]);
   useEffect(() => () => sources.forEach((source) => source.geometry.dispose()), [sources]);
+  const meshes = useMemo(
+    () => sources.map((source) => new THREE.Mesh(source.geometry, source.material)),
+    [sources],
+  );
+  const labelPosition: [number, number, number] = [position[0], position[1] - 0.5, position[2] + 3];
   return (
-    <group position={position}>
-      {sources.map((source, index) => (
-        <mesh key={index} geometry={source.geometry} material={source.material} castShadow receiveShadow />
-      ))}
-      <Html position={[0, -0.5, 3]} center zIndexRange={[10, 0]} style={{ pointerEvents: "none" }}>
+    <SceneObjectGroup position={position}>
+      <AttachedMeshes meshes={meshes} castShadow receiveShadow />
+      <AnchoredOverlay position={labelPosition} zIndex={10}>
         <div style={{ color: "#fff", font: "600 12px sans-serif", whiteSpace: "nowrap", textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}>{label}</div>
-      </Html>
-    </group>
+      </AnchoredOverlay>
+    </SceneObjectGroup>
   );
 }
 
 const rowZ = (row: number): number => -row * ROW_GAP;
 
 function LifeCycle() {
+  const ground = useMemo(() => {
+    const geo = new THREE.PlaneGeometry(400, 160);
+    geo.rotateX(-Math.PI / 2);
+    const groundMesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: "#6b7a4a", roughness: 1 }));
+    groundMesh.position.set(0, 0, -ROW_GAP / 2);
+    groundMesh.receiveShadow = true;
+    return groundMesh;
+  }, []);
+  useEffect(() => () => disposeObjectTree(ground), [ground]);
   return (
-    <group>
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0, -ROW_GAP / 2]} receiveShadow>
-        <planeGeometry args={[400, 160]} />
-        <meshStandardMaterial color="#6b7a4a" roughness={1} />
-      </mesh>
+    <>
+      <SceneObjectAttach object={ground} />
       {ROWS.map((row, r) =>
         row.map((entry, index) => (
           <Tree key={entry.label} meta={entry.meta} label={entry.label} position={r === SHRUB_ROW ? [SHRUB_X + (index - (row.length - 1) / 2) * SHRUB_SPACING, 0, 0] : r === PALM_ROW ? [PALM_X + (index - (row.length - 1) / 2) * PALM_SPACING, 0, 0] : [(index - (row.length - 1) / 2) * SPACING, 0, rowZ(r)]} />
         )),
       )}
-    </group>
+    </>
   );
 }
 
@@ -105,8 +117,8 @@ export const plantLifeCycleGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "plant-life-cycle" },
   scene: {
-    renderEntity: () => <group />,
-    renderObject: () => <group />,
+    renderEntity: () => null,
+    renderObject: () => null,
     environment: () => <LifeCycle />,
   },
   loop: { ...demoGame.loop, onTick: () => {} },

@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
-import { act, advance, createRoot, extend } from "@react-three/fiber";
 import { createElement, type ReactElement } from "react";
 import * as THREE from "three";
 
+import { mountTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
 import { GrassCover } from "./GrassCover.draw";
 import { bakeGrassNode, resolveGrassBake } from "./grassBake.draw";
 import { readGrassLook } from "./grassKind";
@@ -11,23 +11,19 @@ import { pendingModelLoads } from "@jgengine/core/model/modelLoad.draw";
 import { registerGrassFieldRenderer } from "@jgengine/core/grass/GrassFieldRenderer.draw";
 import { getSceneKindRenderer, type SceneKindRenderContext } from "@jgengine/core/scene/sceneKindRenderers.draw";
 
-async function mounted(camera: THREE.Camera, element: ReactElement, run: (scene: THREE.Scene) => Promise<void> | void, frames = 1) {
-  const environment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
-  const previous = environment.IS_REACT_ACT_ENVIRONMENT;
-  environment.IS_REACT_ACT_ENVIRONMENT = true;
-  extend(THREE);
-  const root = createRoot({} as HTMLCanvasElement);
-  await root.configure({ frameloop: "never", camera, size: { width: 1600, height: 900, top: 0, left: 0 }, dpr: 1,
-    gl: () => ({ render() {}, setSize() {}, setPixelRatio() {} }) as unknown as THREE.WebGLRenderer });
+async function mounted(camera: THREE.PerspectiveCamera, element: ReactElement, run: (scene: THREE.Scene, api: { advance(seconds?: number): Promise<void> }) => Promise<void> | void, frames = 1, drainLoads = false) {
+  const mounted = await mountTestDraws(element, { camera, width: 1600, height: 900 });
   try {
-    let scene!: THREE.Scene;
-    await act(async () => { scene = root.render(element).getState().scene; });
-    for (let frame = 0; frame < frames; frame += 1) await act(async () => { advance(performance.now()); });
-    scene.updateMatrixWorld(true);
-    await run(scene);
+    for (let frame = 0; frame < frames; frame += 1) await mounted.advance();
+    if (drainLoads) {
+      // Draws load asynchronously without Suspense: drain the shared work queue the way the
+      // old act()+suspense retry did, bounded so a stuck load fails instead of hanging.
+      for (let i = 0; i < 2000 && pendingModelLoads().total > 0; i += 1) await mounted.advance(0.001);
+    }
+    mounted.scene.updateMatrixWorld(true);
+    await run(mounted.scene, { advance: (seconds) => mounted.advance(seconds) });
   } finally {
-    await act(async () => root.unmount());
-    environment.IS_REACT_ACT_ENVIRONMENT = previous;
+    await mounted.unmount();
   }
 }
 
@@ -78,7 +74,7 @@ test("translated authored grass roots follow world terrain without adding the vo
       }
     }
     expect(samples).toBeGreaterThan(0);
-  });
+  }, 1, true);
 });
 
 test("authored grass restarts an unfinished leaf when its terrain revision changes", async () => {
@@ -86,11 +82,11 @@ test("authored grass restarts an unfinished leaf when its terrain revision chang
   const object = { id: "changing-meadow", kind: "grass_field", center: { x: 0, y: 0, z: 0 }, halfExtents: { x: 8, y: 0.5, z: 8 }, meta: {} };
   let height = 0, revision = 0;
   const context = { document: { markers: [], paths: [], volumes: [object] }, field: { sampleHeight: () => height, heightRevision: () => revision } } as unknown as SceneKindRenderContext;
-  await mounted(cameraAt(0, 4, 8, [0, 0, 0]), createElement(Renderer, { objects: [object], context }), async (scene) => {
+  await mounted(cameraAt(0, 4, 8, [0, 0, 0]), createElement(Renderer, { objects: [object], context }), async (scene, api) => {
     expect(bladeMeshes(scene).length).toBeGreaterThan(0);
     height = 3;
     revision += 1;
-    await act(async () => { advance(performance.now()); });
+    await api.advance();
     scene.updateMatrixWorld(true);
     const meshes = bladeMeshes(scene);
     expect(meshes.length).toBeGreaterThan(0);
@@ -196,7 +192,7 @@ test("authored grass keeps offset spawn pads and diagonal routes clear without c
     expect(spawnSamples).toBeGreaterThan(0);
     expect(growing).toBeGreaterThan(0);
     // The spawn pad sits in the cell beside the camera's, so the stream needs a few frames to bake it.
-  }, 12);
+  }, 12, true);
 });
 
 test("the turf mat drapes the ground on its own, with a zero-strength mat drawing nothing", async () => {
@@ -233,9 +229,9 @@ test("blades and turf stay off ground below the height a field grows above", () 
 test("a patch counts as loading until its first view has filled, and unmounting releases it", async () => {
   const filling = () => pendingModelLoads().items.some(({ url }) => url.startsWith("scene-work:grass-fill"));
   const look = readGrassLook({});
-  await mounted(cameraAt(0, 1.7, 0, [0, 0.5, -30]), createElement(GrassPatch, { look, area: 120, seed: "fill" }), async () => {
+  await mounted(cameraAt(0, 1.7, 0, [0, 0.5, -30]), createElement(GrassPatch, { look, area: 120, seed: "fill" }), async (_scene, api) => {
     expect(filling()).toBe(true);
-    for (let i = 0; i < 2000 && filling(); i += 1) await act(async () => { advance(performance.now() + i); });
+    for (let i = 0; i < 2000 && filling(); i += 1) await api.advance(0.001);
     expect(filling()).toBe(false);
   });
   await mounted(cameraAt(0, 1.7, 0, [0, 0.5, -30]), createElement(GrassPatch, { look, area: 400, seed: "fill" }), () => {

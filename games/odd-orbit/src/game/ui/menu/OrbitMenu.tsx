@@ -10,6 +10,7 @@ import { useGameContext } from "@jgengine/react/provider";
 import { useSaveSlots } from "@jgengine/core/save/saveSlots.view";
 import { useStore } from "@jgengine/react/store";
 import { EntityPreview } from "@jgengine/core/render/EntityPreview.draw";
+import { SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";
 import { slotText, type SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 import { creditsForSourceIds } from "@jgengine/assets/credits";
 import { mergeCredits } from "@jgengine/core/menu/credits";
@@ -415,7 +416,7 @@ function Handbook({ preferences, onPreference, whileLoading }: Prefs & { whileLo
                   <div className="orbit-family-portrait">
                     <KitPanel material="wood" cut="box" padding="6px" edge="#2b160a">
                       <EntityPreview mood="studio" environment={false} cameraPosition={[0, 0.25, 3.7]} fov={30} dpr={[1, 1.5]} faceCamera className="orbit-portrait-canvas">
-                        <group position={[0, -0.85, 0]}><AlienMesh entity={entity} /></group>
+                        <SceneObjectGroup position={[0, -0.85, 0]}><AlienMesh entity={entity} /></SceneObjectGroup>
                       </EntityPreview>
                     </KitPanel>
                     <span className="orbit-portrait-caption">{working !== null ? `${working.name} is on shift` : "Between shifts"}</span>

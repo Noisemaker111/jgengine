@@ -1,54 +1,106 @@
-import { useMemo, useRef, type CSSProperties, type ReactNode } from "react";
-import { useFrame } from "@react-three/fiber";
-import type { Mesh } from "three";
+import { useMemo, type CSSProperties, type ReactNode } from "react";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import { LightBeam } from "@jgengine/core/map/LightBeam.draw";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 
+import * as THREE from "three";
+
 import { broodView, greenObelisk, lairWall, obeliskView, spitInFlight } from "../broodmother";
 import { PORTAL_RANGE } from "../data/bosses";
 import { ItemIcon } from "./ItemIcon";
+import { EngineDrawMount, SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 
 const same = <T,>(a: T, b: T) => JSON.stringify(a) === JSON.stringify(b);
 const GREEN = "#34ff6a";
 const ACID = "#9dff3a";
 
-/** The lair's wall as mossy rock, and webs hung across its top. */
+/** The lair's wall as mossy rock, and webs hung across its top â€” one draw for every slab. */
+function lairWallDraw(slabs: ReturnType<typeof lairWall>): EngineDraw {
+  const group = new THREE.Group();
+  const unitBox = new THREE.BoxGeometry(1, 1, 1);
+  const rock = [0, 1, 2].map((index) => new THREE.MeshStandardMaterial({ color: index === 0 ? "#4d5040" : index === 1 ? "#55574a" : "#464838", roughness: 0.95 }));
+  const web = new THREE.MeshStandardMaterial({ color: "#3f6b2c", roughness: 1 });
+  return {
+    mount(state: EngineFrameState) {
+      state.scene.add(group);
+      slabs.forEach((slab, index) => {
+        const holder = new THREE.Group();
+        holder.position.set(slab.center[0], slab.center[1], slab.center[2]);
+        holder.rotation.y = slab.rotationY ?? 0;
+        const [hx, hy, hz] = slab.halfExtents;
+        const body = new THREE.Mesh(unitBox, rock[index % 3]!);
+        body.scale.set(hx * 2, hy * 2, hz * 2);
+        body.castShadow = true;
+        body.receiveShadow = true;
+        const cap = new THREE.Mesh(unitBox, web);
+        cap.scale.set(hx * 2 + 0.2, 1.2, hz * 2 + 0.4);
+        cap.position.y = hy - 0.6;
+        holder.add(body, cap);
+        group.add(holder);
+      });
+    },
+    dispose(state: EngineFrameState) {
+      state.scene.remove(group);
+      group.clear();
+      unitBox.dispose();
+      for (const material of [...rock, web]) material.dispose();
+    },
+  };
+}
+
 function LairWall({ ctx }: WorldOverlayProps): ReactNode {
   const slabs = useMemo(() => lairWall(ctx), [ctx]);
-  return (
-    <>
-      {slabs.map((slab, index) => (
-        <group key={index} position={[slab.center[0], slab.center[1], slab.center[2]]} rotation={[0, slab.rotationY ?? 0, 0]}>
-          <mesh castShadow receiveShadow>
-            <boxGeometry args={[slab.halfExtents[0] * 2, slab.halfExtents[1] * 2, slab.halfExtents[2] * 2]} />
-            <meshStandardMaterial color={index % 3 === 0 ? "#4d5040" : index % 3 === 1 ? "#55574a" : "#464838"} roughness={0.95} />
-          </mesh>
-          <mesh position={[0, slab.halfExtents[1] - 0.6, 0]}>
-            <boxGeometry args={[slab.halfExtents[0] * 2 + 0.2, 1.2, slab.halfExtents[2] * 2 + 0.4]} />
-            <meshStandardMaterial color="#3f6b2c" roughness={1} />
-          </mesh>
-        </group>
-      ))}
-    </>
-  );
+  return <EngineDrawMount create={() => lairWallDraw(slabs)} deps={[slabs]} />;
 }
 
 /** The acid in flight: a glowing green glob arcing from her to where you stood. */
+function spitDraw(ctx: WorldOverlayProps["ctx"]): EngineDraw {
+  const group = new THREE.Group();
+  const geometry = new THREE.SphereGeometry(0.7, 12, 8);
+  const material = new THREE.MeshStandardMaterial({ color: ACID, emissive: ACID, emissiveIntensity: 2, toneMapped: false });
+  const glob = new THREE.Mesh(geometry, material);
+  glob.visible = false;
+  group.add(glob);
+  return {
+    mount(state: EngineFrameState) {
+      state.scene.add(group);
+    },
+    frame() {
+      const at = spitInFlight(ctx);
+      glob.visible = at !== null;
+      if (at !== null) glob.position.set(at[0], at[1], at[2]);
+    },
+    dispose(state: EngineFrameState) {
+      state.scene.remove(group);
+      group.clear();
+      geometry.dispose();
+      material.dispose();
+    },
+  };
+}
+
 function Spit({ ctx }: WorldOverlayProps): ReactNode {
-  const glob = useRef<Mesh>(null);
-  useFrame(() => {
-    const at = spitInFlight(ctx);
-    if (glob.current === null) return;
-    glob.current.visible = at !== null;
-    if (at !== null) glob.current.position.set(at[0], at[1], at[2]);
-  });
-  return (
-    <mesh ref={glob} visible={false}>
-      <sphereGeometry args={[0.7, 12, 8]} />
-      <meshStandardMaterial color={ACID} emissive={ACID} emissiveIntensity={2} toneMapped={false} />
-    </mesh>
-  );
+  return <EngineDrawMount create={() => spitDraw(ctx)} deps={[ctx]} />;
+}
+
+/** The portal's reach ring on the obelisk's foot. */
+function portalRingDraw(): EngineDraw {
+  const geometry = new THREE.RingGeometry(PORTAL_RANGE - 0.8, PORTAL_RANGE, 64);
+  const material = new THREE.MeshBasicMaterial({ color: GREEN, transparent: true, opacity: 0.7, toneMapped: false });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.y = 0.3;
+  return {
+    mount(state: EngineFrameState) {
+      state.scene.add(mesh);
+    },
+    dispose(state: EngineFrameState) {
+      state.scene.remove(mesh);
+      geometry.dispose();
+      material.dispose();
+    },
+  };
 }
 
 /** While the portal counts down, the obelisk's foot glows: a green beam and a ring as wide as it reaches. */
@@ -57,13 +109,10 @@ function Portal({ ctx }: WorldOverlayProps): ReactNode {
   const at = useMemo(() => greenObelisk(ctx), [ctx]);
   if (phase !== "portal") return null;
   return (
-    <group position={[at[0], at[1], at[2]]}>
+    <SceneObjectGroup position={[at[0], at[1], at[2]]}>
       <LightBeam height={120} radius={3} color={GREEN} opacity={0.5} />
-      <mesh position={[0, 0.3, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[PORTAL_RANGE - 0.8, PORTAL_RANGE, 64]} />
-        <meshBasicMaterial color={GREEN} transparent opacity={0.7} toneMapped={false} />
-      </mesh>
-    </group>
+      <EngineDrawMount create={portalRingDraw} deps={[]} />
+    </SceneObjectGroup>
   );
 }
 

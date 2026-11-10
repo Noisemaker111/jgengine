@@ -137,9 +137,9 @@ export function diagnoseProject(dir: string): Finding[] {
   }
   if (engineDeps["@jgengine/shell"] !== undefined) {
     findings.push({
-      ok: deps["three"] !== undefined && deps["@react-three/fiber"] !== undefined,
-      label: "three + @react-three/fiber present for @jgengine/shell",
-      fix: "bun add three @react-three/fiber (the shell renders through react-three-fiber)",
+      ok: deps["three"] !== undefined,
+      label: "three present for @jgengine/shell",
+      fix: "bun add three (the shell renders through three.js)",
     });
   }
 

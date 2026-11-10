@@ -1,6 +1,7 @@
-import { Html } from "@react-three/drei";
-import { useLayoutEffect, useMemo, useRef } from "react";
-import { Color, Matrix4, Quaternion, Vector3, type InstancedMesh } from "three";
+import { useEffect, useMemo } from "react";
+import { Color, CylinderGeometry, Group, InstancedMesh, Matrix4, Mesh, MeshStandardMaterial, PlaneGeometry, Quaternion, SphereGeometry, Vector3 } from "three";
+import { disposeObjectTree, SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
+import { AnchoredOverlay } from "@jgengine/core/hud/hudOverlay.draw";
 
 import { ACER_SACCHARUM } from "@jgengine/core/plants/species/data/acerSaccharum";
 import { BETULA_PAPYRIFERA } from "@jgengine/core/plants/species/data/betulaPapyrifera";
@@ -26,9 +27,16 @@ function standsAtAges(): StandTree[][] {
 }
 
 function Plot({ trees, offsetX, label }: { trees: StandTree[]; offsetX: number; label: string }) {
-  const trunks = useRef<InstancedMesh>(null);
-  const crowns = useRef<InstancedMesh>(null);
-  useLayoutEffect(() => {
+  const rig = useMemo(() => {
+    const root = new Group();
+    const count = Math.max(1, trees.length);
+    const trunks = new InstancedMesh(new CylinderGeometry(0.5, 0.5, 1, 6), new MeshStandardMaterial({ color: "#6b5a4a", roughness: 1 }), count);
+    trunks.frustumCulled = false;
+    trunks.castShadow = true;
+    const crowns = new InstancedMesh(new SphereGeometry(1, 10, 8), new MeshStandardMaterial({ roughness: 0.9 }), count);
+    crowns.frustumCulled = false;
+    crowns.castShadow = true;
+    crowns.receiveShadow = true;
     const matrix = new Matrix4();
     const turn = new Quaternion();
     const color = new Color();
@@ -36,47 +44,47 @@ function Plot({ trees, offsetX, label }: { trees: StandTree[]; offsetX: number; 
       const crownLength = Math.max(0.5, tree.heightM * tree.crownRatio);
       const trunkTop = tree.heightM - crownLength * 0.5;
       matrix.compose(new Vector3(offsetX + tree.x - 50, trunkTop / 2, tree.z - 50), turn, new Vector3(tree.dbhCm / 100, trunkTop, tree.dbhCm / 100));
-      trunks.current?.setMatrixAt(index, matrix);
+      trunks.setMatrixAt(index, matrix);
       matrix.compose(new Vector3(offsetX + tree.x - 50, tree.heightM - crownLength / 2, tree.z - 50), turn, new Vector3(tree.crownRadiusM, crownLength / 2, tree.crownRadiusM));
-      crowns.current?.setMatrixAt(index, matrix);
-      crowns.current?.setColorAt(index, color.set(CROWN_COLORS[tree.species] ?? "#557744"));
+      crowns.setMatrixAt(index, matrix);
+      crowns.setColorAt(index, color.set(CROWN_COLORS[tree.species] ?? "#557744"));
     });
-    for (const mesh of [trunks.current, crowns.current]) {
-      if (mesh === null) continue;
-      mesh.count = trees.length;
-      mesh.instanceMatrix.needsUpdate = true;
-      if (mesh.instanceColor !== null) mesh.instanceColor.needsUpdate = true;
-    }
+    trunks.count = trees.length;
+    crowns.count = trees.length;
+    trunks.instanceMatrix.needsUpdate = true;
+    crowns.instanceMatrix.needsUpdate = true;
+    if (crowns.instanceColor !== null) crowns.instanceColor.needsUpdate = true;
+    root.add(trunks, crowns);
+    return root;
   }, [trees, offsetX]);
+  useEffect(() => () => disposeObjectTree(rig), [rig]);
   return (
-    <group>
-      <instancedMesh ref={trunks} args={[undefined, undefined, Math.max(1, trees.length)]} frustumCulled={false} castShadow>
-        <cylinderGeometry args={[0.5, 0.5, 1, 6]} />
-        <meshStandardMaterial color="#6b5a4a" roughness={1} />
-      </instancedMesh>
-      <instancedMesh ref={crowns} args={[undefined, undefined, Math.max(1, trees.length)]} frustumCulled={false} castShadow receiveShadow>
-        <sphereGeometry args={[1, 10, 8]} />
-        <meshStandardMaterial roughness={0.9} />
-      </instancedMesh>
-      <Html position={[offsetX, 0, 56]} center zIndexRange={[10, 0]} style={{ pointerEvents: "none" }}>
+    <>
+      <SceneObjectAttach object={rig} />
+      <AnchoredOverlay position={[offsetX, 0, 56]} zIndex={10}>
         <div style={{ color: "#fff", font: "600 14px sans-serif", whiteSpace: "nowrap", textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}>{label}</div>
-      </Html>
-    </group>
+      </AnchoredOverlay>
+    </>
   );
 }
 
 function ForestStand() {
   const stands = useMemo(standsAtAges, []);
+  const ground = useMemo(() => {
+    const geo = new PlaneGeometry(GAP_M * AGES.length + 60, 160);
+    geo.rotateX(-Math.PI / 2);
+    const groundMesh = new Mesh(geo, new MeshStandardMaterial({ color: "#5d6a3e", roughness: 1 }));
+    groundMesh.receiveShadow = true;
+    return groundMesh;
+  }, []);
+  useEffect(() => () => disposeObjectTree(ground), [ground]);
   return (
-    <group>
-      <mesh rotation-x={-Math.PI / 2} receiveShadow>
-        <planeGeometry args={[GAP_M * AGES.length + 60, 160]} />
-        <meshStandardMaterial color="#5d6a3e" roughness={1} />
-      </mesh>
+    <>
+      <SceneObjectAttach object={ground} />
       {stands.map((trees, index) => (
-        <Plot key={AGES[index]} trees={trees} offsetX={(index - 1) * GAP_M} label={`${AGES[index]} years · ${trees.length} trees`} />
+        <Plot key={AGES[index]} trees={trees} offsetX={(index - 1) * GAP_M} label={`${AGES[index]} years Â· ${trees.length} trees`} />
       ))}
-    </group>
+    </>
   );
 }
 
@@ -85,8 +93,8 @@ export const forestStandGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "forest-stand" },
   scene: {
-    renderEntity: () => <group />,
-    renderObject: () => <group />,
+    renderEntity: () => null,
+    renderObject: () => null,
     environment: () => <ForestStand />,
   },
   loop: { ...demoGame.loop, onTick: () => {} },

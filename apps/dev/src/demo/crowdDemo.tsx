@@ -7,9 +7,10 @@ import { defineStore } from "@jgengine/core/store/defineStore";
 import { useStore } from "@jgengine/react/store";
 import { useGameContext } from "@jgengine/react/provider";
 
-import { useLoader } from "@react-three/fiber";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
+import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
@@ -103,7 +104,13 @@ function CrowdScene({ instanced }: { instanced: boolean }) {
 }
 
 function MixerCrowd({ url, instances }: { url: string; instances: readonly CrowdInstance[] }) {
-  const gltf = useLoader(sharedGltfLoader, url);
+  const [gltf, setGltf] = useState<GLTF | null>(null);
+  useEffect(() => {
+    let live = true;
+    sharedGltfLoader.loadAsync(url).then((loaded) => { if (live) setGltf(loaded); }).catch(() => {});
+    return () => { live = false; };
+  }, [url]);
+  if (gltf === null) return null;
   return (
     <>
       {instances.map((instance, index) => (
@@ -118,7 +125,12 @@ function MixerCrowdMember({ source, clips, instance }: { source: THREE.Object3D;
   const paused = useStore(crowdPaused);
   useModelAnimation(scene, clips, { ...(instance.clip === undefined ? {} : { clip: instance.clip }), time: instance.timeOffset ?? 0, timeScale: instance.speed ?? 1, paused });
   useEffect(() => () => disposeModelScene(scene), [scene]);
-  return <primitive object={scene} position={instance.position} rotation-y={instance.rotationY ?? 0} scale={0.7} dispose={null} />;
+  useEffect(() => {
+    scene.position.set(instance.position[0], instance.position[1], instance.position[2]);
+    scene.rotation.y = instance.rotationY ?? 0;
+    scene.scale.setScalar(0.7);
+  }, [scene, instance]);
+  return <SceneObjectAttach object={scene} />;
 }
 
 function crowdGame(instanced: boolean): PlayableGame {

@@ -64,12 +64,13 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 import { viteIdleExit } from "../shared/viteIdleExit";
+import { viteJgUiWasm } from "../shared/viteJgUiWasm";
 import { viteProvisionAssets } from "../shared/provisionAssets";
 import { engineSource } from "../shared/viteEngineSource";
 
 export default defineConfig({
   resolve: engineSource(new URL(".", import.meta.url)),
-  plugins: [react(), tailwindcss(), viteIdleExit(), viteProvisionAssets()],
+  plugins: [react(), tailwindcss(), viteIdleExit(), viteJgUiWasm(), viteProvisionAssets()],
   clearScreen: false,
   build: { target: "es2022" },
 ${devServerWatch}
@@ -121,8 +122,6 @@ const standalonePackageJson = (id: string, engineVersion: string, cliVersion: st
       ...(editor ? { "@jgengine/editor": `^${engineVersion}` } : {}),
       "@jgengine/react": `^${engineVersion}`,
       "@jgengine/shell": `^${engineVersion}`,
-      "@react-three/drei": "^10.7.9",
-      "@react-three/fiber": "~9.7.0",
       react: "19.2.3",
       "react-dom": "19.2.3",
       three: "^0.187.0",
@@ -166,8 +165,6 @@ const inRepoPackageJson = (id: string) => `${JSON.stringify(
       "@jgengine/editor": "workspace:*",
       "@jgengine/react": "workspace:*",
       "@jgengine/shell": "workspace:*",
-      "@react-three/drei": "^10.7.9",
-      "@react-three/fiber": "~9.7.0",
       react: "19.2.3",
       "react-dom": "19.2.3",
       three: "^0.187.0",

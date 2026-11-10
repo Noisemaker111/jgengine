@@ -1,6 +1,7 @@
-import { Fragment, useMemo } from "react";
-import { BufferAttribute, BufferGeometry, Color, DoubleSide } from "three";
+import { useRef } from "react";
+import { BufferAttribute, BufferGeometry, Color, DoubleSide, Group, MeshStandardMaterial } from "three";
 import { isAsphaltSurface, type RoadEnvironmentDescriptor, type TerrainDetailMaterialConfig } from "@jgengine/core/world/features";
+import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 import {
   buildIntersectionMarkings,
   buildRoadRibbon,
@@ -16,18 +17,23 @@ import {
 import { findRoadJunctions, sidewalkWidthOf, type RoadJunction } from "@jgengine/core/roads/streets";
 import type { TerrainField } from "@jgengine/core/terrain/terrain";
 
-import { useSurfaceScan, type SurfaceScanTextures } from "@jgengine/core/material/surfaceScanTextures.draw";
-import { RoadJunctions } from "./RoadJunctions.draw";
+import type { SurfaceScanTextures } from "@jgengine/core/material/surfaceScanTextures.draw";
+import { roadJunctionsDraw } from "./RoadJunctions.draw";
+import { terrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { childFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import {
   isSoftRibbonSurface,
   resolvePathSurface,
   ribbonEdgeMargin,
   RIBBON_FRAME_ATTRIBUTE,
   ribbonSurfaceFrame,
-  useSurfaceRibbonMaterial,
+  scannedRibbonDraw,
   type RibbonSurfaceScan,
+  type ScannedRibbonSpec,
+  type SurfaceRibbonMaterialOptions,
 } from "./surfaceRibbonMaterial.draw";
-import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 
 /**
  * Decal sub-layers as small lifts above each road's authored base `elevation`, spaced by the
@@ -250,203 +256,256 @@ export function buildAuthoredRoadNetwork(
   return { roadPaths, junctionSurfaces, junctionPaint };
 }
 
+/** Props for {@link RoadRibbons}. */
+export interface RoadRibbonsProps {
+  /** The shared look; its path and elevation are ignored in favour of `pieces`. */
+  road: RoadEnvironmentDescriptor;
+  field: TerrainField;
+  pieces: readonly RoadPiece[];
+}
+
 /**
  * Renders every road that looks like `road` (equal {@link roadLookKey}) from their trimmed centerline
  * sub-paths (cut back at every junction by {@link buildAuthoredRoadNetwork}): an asphalt ribbon, a
  * curb/edge strip along each border, an optional dashed centerline, and optional sidewalks. Each layer
  * is one merged draw however many roads share the look, so a city of streets costs a handful of draws.
- * Because the sub-paths already stop at the junction boundary, every layer naturally ends there — no
+ * Because the sub-paths already stop at the junction boundary, every layer naturally ends there â€” no
  * ribbon ploughs through the crossing and the dashed line no longer needs exclusion circles to skip
  * intersections. The carriageway, curbs and sidewalks shade with the terrain's procedural surfaces
  * (`road.surface`, default asphalt with tyre wear); `surface: false` keeps them flat.
  * @capability road-ribbons draw roads, tracks and trails as surfaced ribbons with curbs, sidewalks, lane markings and trimmed junctions
  */
-export function RoadRibbons({
-  road,
-  field,
-  pieces,
-}: {
-  /** The shared look; its path and elevation are ignored in favour of `pieces`. */
-  road: RoadEnvironmentDescriptor;
-  field: TerrainField;
-  pieces: readonly RoadPiece[];
-}) {
-  const detailed = road.surface !== false;
-  const style = useMemo(
-    () =>
-      detailed
+export function roadRibbonsDraw(getProps: () => RoadRibbonsProps): EngineDraw {
+  const group = new Group();
+  let children: { draw: EngineDraw; state: EngineFrameState }[] = [];
+  let geometries: BufferGeometry[] = [];
+  let added = false;
+
+  function addChild(state: EngineFrameState, draw: EngineDraw): void {
+    const childState = childFrameState(state, group);
+    draw.mount?.(childState);
+    children.push({ draw, state: childState });
+  }
+
+  function ribbonSpec(
+    geometry: BufferGeometry,
+    scanMaps: TerrainDetailMaterialConfig["maps"] | undefined,
+    detailed: boolean,
+    materialOptions: (textures: SurfaceScanTextures | null, quality: GraphicsQuality) => SurfaceRibbonMaterialOptions | null,
+    fallback: () => MeshStandardMaterial,
+    extra?: Partial<ScannedRibbonSpec>,
+  ): ScannedRibbonSpec {
+    return {
+      geometry,
+      scanMaps,
+      scanEnabled: detailed && terrainQuality() !== "low",
+      quality: terrainQuality(),
+      materialOptions: (textures) => materialOptions(textures, terrainQuality()),
+      fallback,
+      receiveShadow: true,
+      ...extra,
+    };
+  }
+
+  return {
+    mount(state: EngineFrameState) {
+      const { road, field, pieces } = getProps();
+      const detailed = road.surface !== false;
+      const style = detailed
         ? resolvePathSurface("road", road.width, {
             surface: road.surface ?? "road",
             ...(road.wear === undefined ? {} : { wear: road.wear }),
             ...(road.edgeSoftness === undefined ? {} : { edgeSoftness: road.edgeSoftness }),
           })
-        : null,
-    [detailed, road.surface, road.width, road.wear, road.edgeSoftness],
-  );
-  // Unpaved ground (dirt, gravel, sand) fades into the terrain instead of meeting it at a gutter.
-  const soft = style !== null && isSoftRibbonSurface(style.surface);
-  // A soft edge needs the ribbon wider than authored so the fade straddles the authored edge.
-  const margin = soft && road.sidewalk === false && style !== null ? ribbonEdgeMargin(style) : 0;
-  const asphalt = useMemo(
-    () =>
-      mergeRibbons(
+        : null;
+      // Unpaved ground (dirt, gravel, sand) fades into the terrain instead of meeting it at a gutter.
+      const soft = style !== null && isSoftRibbonSurface(style.surface);
+      // A soft edge needs the ribbon wider than authored so the fade straddles the authored edge.
+      const margin = soft && road.sidewalk === false && style !== null ? ribbonEdgeMargin(style) : 0;
+      const asphalt = mergeRibbons(
         pieces.flatMap(({ paths, elevation }) =>
           paths.map((path) => buildRoadRibbon(path, road.width + margin, (x, z) => field.sampleHeight(x, z), { elevation, maxSegmentLength: 2 })),
         ),
-      ),
-    [pieces, road.width, margin, field],
-  );
-  const markingWidth = roadMarkingWidth(road.width);
-  const dashes = useMemo(() => {
-    if (!road.markings) return null;
-    const width = markingWidth;
-    const ribbons: RoadRibbon[] = [];
-    for (const { paths, elevation } of pieces) {
-      for (const path of paths) {
-        for (const dash of dashSegments(path, 3.2, 4)) {
-          ribbons.push(buildRoadRibbon(dash, width, (x, z) => field.sampleHeight(x, z), { elevation: elevation + MARKING_LIFT }));
-        }
-      }
-    }
-    return mergeRibbons(ribbons);
-  }, [pieces, road.markings, markingWidth, field]);
-  const sidewalkColor = road.sidewalk === false ? "#a7adb8" : road.sidewalk.color;
-  const curbColor = useMemo(
-    () => gutterColor(road.color, road.sidewalk === false ? null : sidewalkColor),
-    [road.color, road.sidewalk, sidewalkColor],
-  );
-  const curbs = useMemo(() => {
-    if (soft && road.sidewalk === false) return null;
-    // The gutter: a narrow strip inside each asphalt edge, lifted just above the ribbon.
-    const strip = Math.min(0.6, Math.max(0.35, road.width * 0.045));
-    const edge = road.width / 2 - strip / 2;
-    const ribbons: RoadRibbon[] = [];
-    for (const { paths, elevation } of pieces) {
-      for (const path of paths) {
-        for (const off of [edge, -edge]) {
-          ribbons.push(buildRoadRibbon(offsetPath(path, off), strip, (x, z) => field.sampleHeight(x, z), { elevation: elevation + CURB_LIFT }));
-        }
-      }
-    }
-    return mergeRibbons(ribbons);
-  }, [pieces, road.width, road.sidewalk, soft, field]);
-  const sidewalks = useMemo(() => {
-    const width = sidewalkWidthOf(road);
-    if (width <= 0) return null;
-    const offset = road.width / 2 + width / 2;
-    const ribbons: RoadRibbon[] = [];
-    for (const { paths, elevation } of pieces) {
-      for (const path of paths) {
-        for (const off of [offset, -offset]) {
-          ribbons.push(buildRoadRibbon(offsetPath(path, off), width, (x, z) => field.sampleHeight(x, z), { elevation: elevation + sidewalkLiftOf(road) }));
-        }
-      }
-    }
-    return mergeRibbons(ribbons);
-  }, [pieces, road, field]);
-  const sidewalkWidth = sidewalkWidthOf(road);
-  const kerbs = useMemo(
-    () => (sidewalkWidth <= 0 ? null : buildKerbFaces(pieces, road.width, sidewalkWidth, (x, z) => field.sampleHeight(x, z), sidewalkLiftOf(road))),
-    [pieces, road, sidewalkWidth, field],
-  );
+      );
+      if (asphalt === null) return;
+      const markingWidth = roadMarkingWidth(road.width);
+      const dashes = !road.markings
+        ? null
+        : mergeRibbons(
+            pieces.flatMap(({ paths, elevation }) =>
+              paths.flatMap((path) =>
+                dashSegments(path, 3.2, 4).map((dash) =>
+                  buildRoadRibbon(dash, markingWidth, (x, z) => field.sampleHeight(x, z), { elevation: elevation + MARKING_LIFT }),
+                ),
+              ),
+            ),
+          );
+      const sidewalkColor = road.sidewalk === false ? "#a7adb8" : road.sidewalk.color;
+      const curbColor = gutterColor(road.color, road.sidewalk === false ? null : sidewalkColor);
+      const curbs = soft && road.sidewalk === false
+        ? null
+        : mergeRibbons(
+            pieces.flatMap(({ paths, elevation }) => {
+              // The gutter: a narrow strip inside each asphalt edge, lifted just above the ribbon.
+              const strip = Math.min(0.6, Math.max(0.35, road.width * 0.045));
+              const edge = road.width / 2 - strip / 2;
+              return paths.flatMap((path) => [edge, -edge].map((off) =>
+                buildRoadRibbon(offsetPath(path, off), strip, (x, z) => field.sampleHeight(x, z), { elevation: elevation + CURB_LIFT }),
+              ));
+            }),
+          );
+      const sidewalkWidth = sidewalkWidthOf(road);
+      const sidewalks = (() => {
+        if (sidewalkWidth <= 0) return null;
+        const offset = road.width / 2 + sidewalkWidth / 2;
+        return mergeRibbons(
+          pieces.flatMap(({ paths, elevation }) =>
+            paths.flatMap((path) => [offset, -offset].map((off) =>
+              buildRoadRibbon(offsetPath(path, off), sidewalkWidth, (x, z) => field.sampleHeight(x, z), { elevation: elevation + sidewalkLiftOf(road) }),
+            )),
+          ),
+        );
+      })();
+      const kerbs = sidewalkWidth <= 0 ? null : buildKerbFaces(pieces, road.width, sidewalkWidth, (x, z) => field.sampleHeight(x, z), sidewalkLiftOf(road));
+      const slabSize = road.sidewalk === false ? false : road.sidewalk.slabs ?? SLAB_METRES;
+      const slabs = (() => {
+        if (slabSize === false || slabSize <= 0) return undefined;
+        const across = sidewalkWidth / Math.max(1, Math.round(sidewalkWidth / slabSize));
+        return [slabSize, across] as const;
+      })();
+      // Paint takes the asphalt's grain (tint 0 keeps the marking colour) and wears through to it.
+      const kerbColor = mixColor(sidewalkColor, "#000000", 0.12);
+      const roadScanMaps = road.materials?.road?.maps;
+      const sidewalkScanMaps = road.materials?.sidewalk?.maps;
+      const curbScanMaps = road.materials?.curb?.maps;
 
-  const quality = useTerrainQuality();
-  const scanned = detailed && quality !== "low";
-  const roadScanState = useSurfaceScan(road.materials?.road?.maps, scanned);
-  const sidewalkScanState = useSurfaceScan(road.materials?.sidewalk?.maps, scanned);
-  const curbScanState = useSurfaceScan(road.materials?.curb?.maps, scanned);
-  const roadScan = ribbonScan(road.materials?.road, roadScanState.textures, "world");
-  const sidewalkScan = ribbonScan(road.materials?.sidewalk, sidewalkScanState.textures, "frame");
-  const curbScan = ribbonScan(road.materials?.curb, curbScanState.textures, "frame");
-  const scansPending = roadScanState.pending || sidewalkScanState.pending || curbScanState.pending;
-  const asphaltMaterial = useSurfaceRibbonMaterial(
-    style === null
-      ? null
-      : soft
-        ? { ...style, color: road.color, halfWidth: road.width / 2, quality, ...(roadScan === undefined ? {} : { scan: roadScan }) }
-        : { surface: style.surface, wear: style.wear, color: road.color, halfWidth: road.width / 2, quality, ...(roadScan === undefined ? {} : { scan: roadScan }) },
-  );
-  const curbMaterial = useSurfaceRibbonMaterial(
-    detailed
-      ? { surface: "concrete", color: curbColor, halfWidth: road.width / 2, roughness: 0.9, quality, ...(curbScan === undefined ? {} : { scan: curbScan }) }
-      : null,
-  );
-  const slabSize = road.sidewalk === false ? false : road.sidewalk.slabs ?? SLAB_METRES;
-  const slabs = useMemo(() => {
-    if (slabSize === false || slabSize <= 0) return undefined;
-    const across = sidewalkWidth / Math.max(1, Math.round(sidewalkWidth / slabSize));
-    return [slabSize, across] as const;
-  }, [sidewalkWidth, slabSize]);
-  const sidewalkMaterial = useSurfaceRibbonMaterial(
-    detailed && sidewalks !== null
-      ? {
-          surface: "pavement",
-          color: sidewalkColor,
-          halfWidth: Math.max(0.01, sidewalkWidth / 2),
-          roughness: 0.9,
-          scale: 1.6,
-          quality,
-          ...(slabs === undefined ? {} : { slabs }),
-          ...(sidewalkScan === undefined ? {} : { scan: sidewalkScan }),
-        }
-      : null,
-  );
-  const kerbColor = useMemo(() => mixColor(sidewalkColor, "#000000", 0.12), [sidewalkColor]);
-  // Paint takes the asphalt's grain (tint 0 keeps the marking colour) and wears through to it.
-  const dashMaterial = useSurfaceRibbonMaterial(
-    detailed && dashes !== null
-      ? {
-          surface: "road",
-          color: road.markingColor,
-          halfWidth: markingWidth / 2,
-          roughness: 0.6,
-          quality,
-          polygonOffset: true,
-          paint: true,
-          ...(roadScan === undefined ? {} : { scan: { ...roadScan, tint: 0, strength: 0.85 } }),
-        }
-      : null,
-  );
+      geometries = [asphalt, dashes, curbs, sidewalks, kerbs].filter((g): g is BufferGeometry => g !== null);
+      addChild(state, scannedRibbonDraw(() =>
+        ribbonSpec(
+          asphalt,
+          roadScanMaps,
+          detailed,
+          (textures, quality) => {
+            if (style === null) return null;
+            const roadScan = ribbonScan(road.materials?.road, textures, "world");
+            return soft
+              ? { ...style, color: road.color, halfWidth: road.width / 2, quality, ...(roadScan === undefined ? {} : { scan: roadScan }) }
+              : { surface: style.surface, wear: style.wear, color: road.color, halfWidth: road.width / 2, quality, ...(roadScan === undefined ? {} : { scan: roadScan }) };
+          },
+          () => new MeshStandardMaterial({ color: road.color, roughness: 0.95, metalness: 0, side: DoubleSide }),
+        ),
+      ));
+      if (curbs !== null) {
+        addChild(state, scannedRibbonDraw(() =>
+          ribbonSpec(
+            curbs,
+            curbScanMaps,
+            detailed,
+            (textures, quality) => {
+              if (!detailed) return null;
+              const curbScan = ribbonScan(road.materials?.curb, textures, "frame");
+              return { surface: "concrete", color: curbColor, halfWidth: road.width / 2, roughness: 0.9, quality, ...(curbScan === undefined ? {} : { scan: curbScan }) };
+            },
+            () => new MeshStandardMaterial({ color: curbColor, roughness: 0.9, metalness: 0, side: DoubleSide }),
+          ),
+        ));
+      }
+      if (dashes !== null) {
+        addChild(state, scannedRibbonDraw(() =>
+          ribbonSpec(
+            dashes,
+            roadScanMaps,
+            detailed,
+            (textures, quality) => {
+              const roadScan = ribbonScan(road.materials?.road, textures, "world");
+              return detailed
+                ? {
+                    surface: "road",
+                    color: road.markingColor,
+                    halfWidth: markingWidth / 2,
+                    roughness: 0.6,
+                    quality,
+                    polygonOffset: true,
+                    paint: true,
+                    ...(roadScan === undefined ? {} : { scan: { ...roadScan, tint: 0, strength: 0.85 } }),
+                  }
+                : null;
+            },
+            () =>
+              new MeshStandardMaterial({
+                color: road.markingColor,
+                roughness: 0.8,
+                metalness: 0,
+                side: DoubleSide,
+                polygonOffset: true,
+                polygonOffsetFactor: -1,
+                polygonOffsetUnits: -1,
+              }),
+            { renderOrder: 1 },
+          ),
+        ));
+      }
+      if (sidewalks !== null) {
+        addChild(state, scannedRibbonDraw(() =>
+          ribbonSpec(
+            sidewalks,
+            sidewalkScanMaps,
+            detailed,
+            (textures, quality) => {
+              if (!detailed) return null;
+              const sidewalkScan = ribbonScan(road.materials?.sidewalk, textures, "frame");
+              return {
+                surface: "pavement",
+                color: sidewalkColor,
+                halfWidth: Math.max(0.01, sidewalkWidth / 2),
+                roughness: 0.9,
+                scale: 1.6,
+                quality,
+                ...(slabs === undefined ? {} : { slabs }),
+                ...(sidewalkScan === undefined ? {} : { scan: sidewalkScan }),
+              };
+            },
+            () => new MeshStandardMaterial({ color: sidewalkColor, roughness: 0.9, metalness: 0, side: DoubleSide }),
+          ),
+        ));
+      }
+      if (kerbs !== null) {
+        addChild(state, scannedRibbonDraw(() =>
+          ribbonSpec(
+            kerbs,
+            undefined,
+            detailed,
+            () => null,
+            () => new MeshStandardMaterial({ color: kerbColor, roughness: 0.88, metalness: 0, side: DoubleSide }),
+          ),
+        ));
+      }
+      state.scene.add(group);
+      added = true;
+    },
+    frame(_state: EngineFrameState) {
+      for (const child of children) child.draw.frame?.(child.state, child.state.delta);
+    },
+    dispose(state: EngineFrameState) {
+      for (const child of children) child.draw.dispose?.(child.state);
+      children = [];
+      if (added) state.scene.remove(group);
+      added = false;
+      for (const geometry of geometries) geometry.dispose();
+      geometries = [];
+    },
+  };
+}
 
-  if (asphalt === null) return null;
-  return (
-    // Hidden until its scans answer: the cover is up meanwhile, and a visible road would have the
-    // warmup link its procedural programs only for the scanned ones to replace them.
-    <group visible={!scansPending}>
-      <mesh geometry={asphalt} receiveShadow {...(asphaltMaterial === null ? {} : { material: asphaltMaterial })}>
-        {asphaltMaterial === null ? <meshStandardMaterial color={road.color} roughness={0.95} metalness={0} side={DoubleSide} /> : null}
-      </mesh>
-      {curbs !== null ? (
-        <mesh geometry={curbs} receiveShadow {...(curbMaterial === null ? {} : { material: curbMaterial })}>
-          {curbMaterial === null ? <meshStandardMaterial color={curbColor} roughness={0.9} metalness={0} side={DoubleSide} /> : null}
-        </mesh>
-      ) : null}
-      {dashes !== null && dashMaterial !== null ? <mesh geometry={dashes} renderOrder={1} receiveShadow material={dashMaterial} /> : null}
-      {dashes !== null && dashMaterial === null ? (
-        <mesh geometry={dashes} renderOrder={1}>
-          <meshStandardMaterial
-            color={road.markingColor}
-            roughness={0.8}
-            metalness={0}
-            side={DoubleSide}
-            polygonOffset
-            polygonOffsetFactor={-1}
-            polygonOffsetUnits={-1}
-          />
-        </mesh>
-      ) : null}
-      {sidewalks !== null ? (
-        <mesh geometry={sidewalks} receiveShadow {...(sidewalkMaterial === null ? {} : { material: sidewalkMaterial })}>
-          {sidewalkMaterial === null ? <meshStandardMaterial color={sidewalkColor} roughness={0.9} metalness={0} side={DoubleSide} /> : null}
-        </mesh>
-      ) : null}
-      {kerbs !== null ? (
-        <mesh geometry={kerbs} receiveShadow>
-          <meshStandardMaterial color={kerbColor} roughness={0.88} metalness={0} side={DoubleSide} />
-        </mesh>
-      ) : null}
-    </group>
-  );
+/**
+ * Renders every road that looks like `road` (equal {@link roadLookKey}) from their trimmed centerline
+ * sub-paths â€” the React wrapper over {@link roadRibbonsDraw}.
+ */
+export function RoadRibbons(props: RoadRibbonsProps) {
+  const latest = useRef<RoadRibbonsProps>(props);
+  latest.current = props;
+  useEngineDraw(() => roadRibbonsDraw(() => latest.current), [props.road, props.field, props.pieces]);
+  return null;
 }
 
 /** A road's centreline as drawn: a closed loop rejoined at a straight seam, sharp bends filleted. @internal */
@@ -479,68 +538,105 @@ function surfaceGroup(road: RoadEnvironmentDescriptor): string {
   return isAsphaltSurface(road.surface) ? "paved" : road.surface ?? "paved";
 }
 
-function RoadGroup({ roads, field, group }: { roads: readonly RoadEnvironmentDescriptor[]; field: TerrainField; group: string }) {
-  const junctions = useMemo(() => findRoadJunctions(roads), [roads]);
-  const paved = group === "paved";
-  const network = useMemo(
-    () => buildAuthoredRoadNetwork(roads, junctions, (x, z) => field.sampleHeight(x, z), { paint: paved }),
-    [roads, junctions, field, paved],
-  );
-  const looks = useMemo(() => {
-    const byLook = new Map<string, { road: RoadEnvironmentDescriptor; pieces: RoadPiece[] }>();
-    roads.forEach((road, index) => {
-      const piece = { elevation: road.elevation, paths: network.roadPaths[index] ?? [] };
-      const key = roadLookKey(road);
-      const look = byLook.get(key);
-      if (look === undefined) byLook.set(key, { road, pieces: [piece] });
-      else look.pieces.push(piece);
-    });
-    return [...byLook.entries()];
-  }, [roads, network]);
-  return (
-    <>
-      {looks.map(([key, look]) => (
-        <RoadRibbons key={key} road={look.road} field={field} pieces={look.pieces} />
-      ))}
-      <RoadJunctions
-        surfaces={network.junctionSurfaces}
-        paint={network.junctionPaint}
-        surfaceDetail={group !== "flat"}
-        surface={paved || group === "flat" ? "road" : group}
-        scan={roads.find((road) => road.materials?.road !== undefined)?.materials?.road}
-      />
-    </>
-  );
+/** One surface group of roads: junctions welded across them plus a ribbon draw per shared look. */
+function roadGroupDraw(getProps: () => { roads: readonly RoadEnvironmentDescriptor[]; field: TerrainField; group: string }): EngineDraw {
+  const root = new Group();
+  let children: { draw: EngineDraw; state: EngineFrameState }[] = [];
+  let added = false;
+  return {
+    mount(state: EngineFrameState) {
+      const { roads, field, group: groupName } = getProps();
+      const junctions = findRoadJunctions(roads);
+      const paved = groupName === "paved";
+      const network = buildAuthoredRoadNetwork(roads, junctions, (x, z) => field.sampleHeight(x, z), { paint: paved });
+      const byLook = new Map<string, { road: RoadEnvironmentDescriptor; pieces: RoadPiece[] }>();
+      roads.forEach((road, index) => {
+        const piece = { elevation: road.elevation, paths: network.roadPaths[index] ?? [] };
+        const key = roadLookKey(road);
+        const look = byLook.get(key);
+        if (look === undefined) byLook.set(key, { road, pieces: [piece] });
+        else look.pieces.push(piece);
+      });
+      const add = (draw: EngineDraw) => {
+        const childState = childFrameState(state, root);
+        draw.mount?.(childState);
+        children.push({ draw, state: childState });
+      };
+      for (const look of byLook.values()) {
+        add(roadRibbonsDraw(() => ({ road: look.road, field, pieces: look.pieces })));
+      }
+      add(
+        roadJunctionsDraw(() => ({
+          surfaces: network.junctionSurfaces,
+          paint: network.junctionPaint,
+          surfaceDetail: groupName !== "flat",
+          surface: paved || groupName === "flat" ? "road" : groupName,
+          scan: roads.find((road) => road.materials?.road !== undefined)?.materials?.road,
+        })),
+      );
+      state.scene.add(root);
+      added = true;
+    },
+    frame(_state: EngineFrameState) {
+      for (const child of children) child.draw.frame?.(child.state, child.state.delta);
+    },
+    dispose(state: EngineFrameState) {
+      for (const child of children) child.draw.dispose?.(child.state);
+      children = [];
+      if (added) state.scene.remove(root);
+      added = false;
+    },
+  };
 }
 
 /**
  * The engine's one road renderer: `road()` descriptors from an environment and authored editor
- * paths (streets, race tracks, trails, routes) all draw here. Each road is rounded at sharp bends,
- * closed loops rejoin cleanly, crossings of the same surface weld into one junction (paved
- * crossings get stop lines and crosswalks), and each road layers asphalt (scanned by default),
- * gutters, lane paint, kerbs and sidewalks as its descriptor asks; unpaved ground fades into the
- * terrain with soft edges.
+ * paths (streets, race tracks, trails, routes) all draw here â€” the React wrapper over {@link roadsDraw}.
+ */
+export function roadsDraw(getProps: () => { roads: readonly RoadEnvironmentDescriptor[]; field: TerrainField }): EngineDraw {
+  const root = new Group();
+  let children: { draw: EngineDraw; state: EngineFrameState }[] = [];
+  let added = false;
+  return {
+    mount(state: EngineFrameState) {
+      const { roads, field } = getProps();
+      const byGroup = new Map<string, RoadEnvironmentDescriptor[]>();
+      for (const entry of roads) {
+        if (entry.path.length < 2) continue;
+        const drawn = { ...entry, path: drawnRoadPath(entry) };
+        const key = surfaceGroup(entry);
+        const bucket = byGroup.get(key);
+        if (bucket === undefined) byGroup.set(key, [drawn]);
+        else bucket.push(drawn);
+      }
+      for (const [groupName, entries] of byGroup) {
+        const draw = roadGroupDraw(() => ({ roads: entries, field, group: groupName }));
+        const childState = childFrameState(state, root);
+        draw.mount?.(childState);
+        children.push({ draw, state: childState });
+      }
+      state.scene.add(root);
+      added = true;
+    },
+    frame(_state: EngineFrameState) {
+      for (const child of children) child.draw.frame?.(child.state, child.state.delta);
+    },
+    dispose(state: EngineFrameState) {
+      for (const child of children) child.draw.dispose?.(child.state);
+      children = [];
+      if (added) state.scene.remove(root);
+      added = false;
+    },
+  };
+}
+
+/**
+ * The engine's one road renderer: `road()` descriptors from an environment and authored editor
+ * paths (streets, race tracks, trails, routes) all draw here â€” the React wrapper over {@link roadsDraw}.
  */
 export function Roads({ roads, field }: { roads: readonly RoadEnvironmentDescriptor[]; field: TerrainField }) {
-  const groups = useMemo(() => {
-    const byGroup = new Map<string, RoadEnvironmentDescriptor[]>();
-    for (const entry of roads) {
-      if (entry.path.length < 2) continue;
-      const drawn = { ...entry, path: drawnRoadPath(entry) };
-      const key = surfaceGroup(entry);
-      const bucket = byGroup.get(key);
-      if (bucket === undefined) byGroup.set(key, [drawn]);
-      else bucket.push(drawn);
-    }
-    return [...byGroup.entries()];
-  }, [roads]);
-  return (
-    <>
-      {groups.map(([group, entries]) => (
-        <Fragment key={group}>
-          <RoadGroup roads={entries} field={field} group={group} />
-        </Fragment>
-      ))}
-    </>
-  );
+  const latest = useRef<{ roads: readonly RoadEnvironmentDescriptor[]; field: TerrainField }>({ roads, field });
+  latest.current = { roads, field };
+  useEngineDraw(() => roadsDraw(() => latest.current), [roads, field]);
+  return null;
 }

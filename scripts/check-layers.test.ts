@@ -18,7 +18,7 @@ describe("check layers", () => {
     const bad = [
       `import { useState } from "react";`,
       `import * as THREE from "three";`,
-      `import { useFrame } from "@react-three/fiber";`,
+      `import { OrbitControls } from "three-stdlib";`,
       `import { SaveSlots } from "./saveSlots.view";`,
       `import { WorldHud } from "@jgengine/core/hud/WorldHud.draw";`,
       `import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";`,
@@ -39,7 +39,7 @@ describe("check layers", () => {
 
   test("draw code may import every layer below the editor", () => {
     const file = "packages/core/src/hud/WorldHud.draw.tsx";
-    expect(violationsIn(file, `import { Html } from "@react-three/drei";\nimport { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";\nimport { HudFrame } from "./hudFrame.view";`)).toEqual([]);
+    expect(violationsIn(file, `import { Mesh } from "three";\nimport { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";\nimport { HudFrame } from "./hudFrame.view";`)).toEqual([]);
     expect(violationsIn(file, `import { EditorApp } from "@jgengine/editor/EditorApp";`)).toHaveLength(1);
   });
 

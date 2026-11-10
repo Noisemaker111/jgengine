@@ -1,32 +1,19 @@
 import { expect, test } from "bun:test";
-import { act, createRoot, extend } from "@react-three/fiber";
 import { createElement, type ReactElement } from "react";
 import * as THREE from "three";
 import { createAuthoredWeather } from "@jgengine/core/weather/authoredWeather";
+import { mountTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
 import type { WeatherParticleMetrics } from "./weatherUniforms.draw";
 import { WeatherLayer } from "./WeatherLayer.draw";
 
-async function mounted(element: ReactElement, run: (scene: THREE.Scene, frame: () => void, render: (next: ReactElement) => Promise<void>) => Promise<void>) {
-  const environment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
-  const previous = environment.IS_REACT_ACT_ENVIRONMENT;
-  environment.IS_REACT_ACT_ENVIRONMENT = true;
-  extend(THREE);
-  const root = createRoot({} as HTMLCanvasElement);
-  await root.configure({ frameloop: "never", camera: new THREE.PerspectiveCamera(), size: { width: 800, height: 450, top: 0, left: 0 }, dpr: 1,
-    gl: () => ({ render() {}, setSize() {}, setPixelRatio() {} }) as unknown as THREE.WebGLRenderer });
+async function mounted(element: ReactElement, run: (scene: THREE.Scene, frame: () => Promise<void>, render: (next: ReactElement) => Promise<void>) => Promise<void>) {
+  const m = await mountTestDraws(element, { width: 800, height: 450 });
   try {
-    let frame = (): void => {};
-    let scene!: THREE.Scene;
-    const render = async (next: ReactElement) => act(async () => {
-      const store = root.render(next);
-      scene = store.getState().scene;
-      frame = () => store.getState().advance(0, true);
-    });
-    await render(element);
-    await run(scene, () => frame(), render);
+    const frame = async () => m.advance(1 / 60);
+    const render = async (next: ReactElement) => m.render(next);
+    await run(m.scene, frame, render);
   } finally {
-    await act(async () => root.unmount());
-    environment.IS_REACT_ACT_ENVIRONMENT = previous;
+    await m.unmount();
   }
 }
 
@@ -44,7 +31,7 @@ test("mounted weather uses one authoritative source through shifts, pause, disab
   const source = (x: number, z: number) => weather.sample(x, z, time);
   const tree = (enabled = true) => createElement(WeatherLayer, { enabled, metrics, sample: source, rain: { count: 20, density: 1 }, snow: { count: 12, density: 1 }, dust: { count: 10, density: 1 }, impacts: { count: 8, heightAt: () => 2, exposureAt: () => { impactQueries += 1; return 0; } } });
   await mounted(tree(), async (scene, frame, render) => {
-    frame();
+    await frame();
     let meshes = weatherMeshes(scene);
     expect(meshes.map((mesh) => mesh.geometry.instanceCount)).toEqual([20, 0, 0, 8]);
     const sharedTime = meshes[0]!.material.uniforms.uTime;
@@ -54,18 +41,18 @@ test("mounted weather uses one authoritative source through shifts, pause, disab
     expect(impactQueries).toBe(8);
     expect(metrics).toEqual({ rain: { count: 20, capacity: 20 }, snow: { count: 0, capacity: 12 }, dust: { count: 0, capacity: 10 }, impacts: { count: 8, capacity: 8, heightQueries: 8, exposureQueries: 8, queryBudget: 16 } });
     expect(meshes[3]!.geometry.getAttribute("aExposure").getX(0)).toBe(0);
-    frame();
+    await frame();
     expect(sharedTime!.value).toBe(31);
     time = 40;
-    frame();
+    await frame();
     expect(meshes.map((mesh) => mesh.geometry.instanceCount)).toEqual([0, 12, 0, 8]);
     await render(tree(false));
-    frame();
+    await frame();
     expect(weatherMeshes(scene).length).toBe(0);
     expect(metrics.rain.count + metrics.snow.count + metrics.dust.count + metrics.impacts.count).toBe(0);
     time = 31;
     await render(tree());
-    frame();
+    await frame();
     meshes = weatherMeshes(scene);
     expect(meshes[0]!.material.uniforms.uTime!.value).toBe(31);
     expect(meshes.map((mesh) => mesh.geometry.instanceCount)).toEqual([20, 0, 0, 8]);
@@ -84,7 +71,7 @@ test("authored weather probe reports actual shader pools and retires with diagno
   const ctx = createGameContext({ definition: defineGameDefinition({ name: "Weather probe", authoredDocument: document, multiplayer: "off", persist: false }), content: {}, player: { userId: "observer", isNew: true } });
   const tree = (diagnostics: boolean) => createElement(GameProvider, { context: ctx }, createElement(AuthoredWeatherLayer, { document, diagnostics, rain: { count: 20, density: 1 }, snow: false, dust: false, heightAt: () => 0 }));
   await mounted(tree(true), async (_scene, frame, render) => {
-    frame();
+    await frame();
     const probe = devtools.probes.read()["weatherParticles"] as WeatherParticleMetrics & { scope: string };
     expect(probe.scope).toBe("procedural-weather");
     expect(probe.rain).toEqual({ count: 20, capacity: 20 });

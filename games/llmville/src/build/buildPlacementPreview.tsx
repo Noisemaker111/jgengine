@@ -7,9 +7,10 @@ import { computePlacementPreview, type BuildPlacementPreview, type PlacedBuildIt
 import type { BuildDirection, BuildItemId } from "@llmville/game/build/catalog";
 import type { PlacementCellPolicy } from "@llmville/game/datacenter/claims";
 import type { PlacedRack } from "@/infrastructure/infrastructure";
-import { useThree, useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import { Vector3 } from "three";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 
 const placementDirectionVector = new Vector3();
 
@@ -30,7 +31,7 @@ export function BuildPlacementPreviewController({
   placementCellPolicy: PlacementCellPolicy;
   onPlacementPreviewChange: (preview: BuildPlacementPreview | null) => void;
 }) {
-  const { camera } = useThree();
+  const host = useEngineHost();
   const lastPreviewKey = useRef<string>("none");
 
   useEffect(() => {
@@ -39,9 +40,10 @@ export function BuildPlacementPreviewController({
     lastPreviewKey.current = "none";
   }, [enabled, onPlacementPreviewChange]);
 
-  useFrame(function buildPlacementPreview() {
+  useFrameTask(function buildPlacementPreview() {
     if (!enabled || placementDraftItemId === null) return;
 
+    const camera = host.frame.camera;
     camera.getWorldDirection(placementDirectionVector);
     const preview = computePlacementPreview(
       { x: camera.position.x, y: camera.position.y, z: camera.position.z },

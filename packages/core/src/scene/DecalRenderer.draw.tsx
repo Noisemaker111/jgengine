@@ -1,6 +1,9 @@
-import { useEffect, useMemo } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import { resolveDecalObject, type DecalRules, type ResolvedDecal } from "@jgengine/core/world/decalKind";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
@@ -171,18 +174,75 @@ function decalMaterial(map: THREE.Texture): THREE.MeshStandardMaterial {
   });
 }
 
+/** Props {@link decalsDraw} reads each sync. @internal */
+export interface DecalsDrawProps {
+  objects: readonly SceneKindObject[];
+  heightAt: TerrainHeightSampler;
+}
+
+/**
+ * Draw-side form of the decal batch: rebuilds the atlas pages and merged cell draws when the object
+ * list or height sampler changes, and frees the previous bake's textures, geometries and materials.
+ * @internal
+ */
+export function decalsDraw(getProps: () => DecalsDrawProps): EngineDraw {
+  let batches: DecalBatches | null = null;
+  let materials: THREE.MeshStandardMaterial[] = [];
+  let meshes: THREE.Mesh[] = [];
+  let lastObjects: readonly SceneKindObject[] | null = null;
+  let lastHeightAt: TerrainHeightSampler | null = null;
+
+  const clear = (state: EngineFrameState) => {
+    for (const mesh of meshes) state.scene.remove(mesh);
+    meshes = [];
+    if (batches !== null) {
+      for (const draw of batches.draws) draw.geometry.dispose();
+      for (const page of batches.pages) page.dispose();
+      batches = null;
+    }
+    for (const material of materials) material.dispose();
+    materials = [];
+  };
+
+  const sync = (state: EngineFrameState) => {
+    const props = getProps();
+    if (props.objects === lastObjects && props.heightAt === lastHeightAt && batches !== null) return;
+    lastObjects = props.objects;
+    lastHeightAt = props.heightAt;
+    clear(state);
+    batches = buildDecalBatches(props.objects, props.heightAt);
+    materials = batches.pages.map(decalMaterial);
+    meshes = batches.draws.flatMap((draw) => {
+      const material = materials[draw.page];
+      if (material === undefined) return [];
+      const mesh = new THREE.Mesh(draw.geometry, material);
+      mesh.receiveShadow = true;
+      mesh.frustumCulled = true;
+      state.scene.add(mesh);
+      return [mesh];
+    });
+  };
+
+  return {
+    mount(state) {
+      sync(state);
+    },
+    update(state) {
+      sync(state);
+    },
+    dispose(state) {
+      clear(state);
+      lastObjects = null;
+      lastHeightAt = null;
+    },
+  };
+}
+
 function Decals({ objects, heightAt }: { objects: readonly SceneKindObject[]; heightAt: TerrainHeightSampler }) {
-  const batches = useMemo(() => buildDecalBatches(objects, heightAt), [objects, heightAt]);
-  const materials = useMemo(() => batches.pages.map(decalMaterial), [batches]);
-  useEffect(() => () => {
-    for (const page of batches.pages) page.dispose();
-    for (const draw of batches.draws) draw.geometry.dispose();
-  }, [batches]);
-  useEffect(() => () => { for (const material of materials) material.dispose(); }, [materials]);
-  return <>{batches.draws.map((draw) => {
-    const material = materials[draw.page];
-    return material === undefined ? null : <mesh key={draw.key} geometry={draw.geometry} material={material} receiveShadow frustumCulled />;
-  })}</>;
+  const latest = useRef<DecalsDrawProps>({ objects, heightAt });
+  latest.current = { objects, heightAt };
+  useEngineDraw(() => decalsDraw(() => latest.current), []);
+  return null;
 }
 
 /** Registers the `decal` marker renderer. Called by `registerBuiltinSceneKindRenderers`. @internal */

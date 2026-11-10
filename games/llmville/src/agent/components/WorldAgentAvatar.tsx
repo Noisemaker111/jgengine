@@ -1,9 +1,15 @@
-import { useFrame } from "@react-three/fiber";
-import { Html } from "@react-three/drei";
-import { useRef, useState, type MutableRefObject } from "react";
-import { Group, MathUtils } from "three";
+import { useMemo, useRef, useState, type MutableRefObject } from "react";
+import { CapsuleGeometry, Group, MathUtils, MeshStandardMaterial, SphereGeometry } from "three";
 
 import { advanceGaitPhase, gaitBobOffset, gaitSwayAngle } from "@jgengine/core/movement/avatarGait";
+import { AnchoredOverlay } from "@jgengine/core/hud/hudOverlay.draw";
+import {
+  EngineDrawMount,
+  SceneObjectPortal,
+  meshDraw,
+  useSceneObjectAttach,
+} from "@jgengine/core/frame/useEngineDraw.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 import { PlayerCharacterFigure } from "@/user/components/PlayerCharacterFigure";
 import { DEFAULT_CHARACTER_LOOK } from "@/user/playerCharacterFigure";
 import { REMOTE_AVATAR_INTERPOLATION_MS } from "@/world/location";
@@ -23,6 +29,45 @@ function lerpAngle(from: number, to: number, alpha: number): number {
   return from + delta * alpha;
 }
 
+/** A positioned scene group that works on both hosts: portal parents it under r3f, attach adds it under the engine loop. */
+function useAvatarGroup(initial?: { position: readonly [number, number, number]; rotationY: number }): Group {
+  const group = useMemo(() => {
+    const next = new Group();
+    if (initial !== undefined) {
+      next.position.set(initial.position[0], initial.position[1], initial.position[2]);
+      next.rotation.y = initial.rotationY;
+    }
+    return next;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useSceneObjectAttach(group);
+  return group;
+}
+
+function Nameplate({
+  anchor,
+  localY,
+  displayName,
+  badgeClass,
+  badgeSuffix = "",
+}: {
+  anchor: Group;
+  localY: number;
+  displayName: string;
+  badgeClass: string;
+  badgeSuffix?: string;
+}) {
+  return (
+    <AnchoredOverlay anchor={anchor} localPosition={[0, localY, 0]} distanceFactor={12}>
+      <div
+        className={`rounded-md border bg-[#1f2b28]/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${badgeClass}`}
+      >
+        {displayName}
+        {badgeSuffix}
+      </div>
+    </AnchoredOverlay>
+  );
+}
 
 function AvatarMesh({
   label,
@@ -45,50 +90,49 @@ function AvatarMesh({
         : "border-zinc-500/50 text-zinc-400"
       : "border-brand-teal/40 text-brand-cream";
   const badgeSuffix = online ? "" : " · AFK";
+  const anchor = useAvatarGroup();
 
   if (kind === "human") {
     return (
-      <group>
+      <SceneObjectPortal object={anchor}>
         <PlayerCharacterFigure look={DEFAULT_CHARACTER_LOOK} isWalking={isWalking} headLookRef={headLookRef} />
-        <Html position={[0, 1.75, 0]} center distanceFactor={12} pointerEvents="none" style={{ pointerEvents: "none" }}>
-          <div
-            className={`rounded-md border bg-[#1f2b28]/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${badgeClass}`}
-          >
-            {displayName}
-            {badgeSuffix}
-          </div>
-        </Html>
-      </group>
+        <Nameplate anchor={anchor} localY={1.75} displayName={displayName} badgeClass={badgeClass} badgeSuffix={badgeSuffix} />
+      </SceneObjectPortal>
     );
   }
 
-  const bodyColor = "#5fc2a8";
-  const headColor = "#7a9e8e";
-
   return (
-    <>
-      <mesh position={[0, 0.9, 0]} castShadow>
-        <capsuleGeometry args={[0.32, 0.9, 6, 12]} />
-        <meshStandardMaterial
-          color={bodyColor}
-          emissive="#3c8c76"
-          emissiveIntensity={0.12}
-          roughness={0.9}
-          metalness={0}
-        />
-      </mesh>
-      <mesh position={[0, 1.55, 0]} castShadow>
-        <sphereGeometry args={[0.28, 12, 12]} />
-        <meshStandardMaterial color={headColor} roughness={0.9} metalness={0} />
-      </mesh>
-      <Html position={[0, 2.2, 0]} center distanceFactor={12} pointerEvents="none" style={{ pointerEvents: "none" }}>
-        <div
-          className={`rounded-md border bg-[#1f2b28]/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${badgeClass}`}
-        >
-          {displayName}
-        </div>
-      </Html>
-    </>
+    <SceneObjectPortal object={anchor}>
+      <EngineDrawMount
+        create={() =>
+          meshDraw({
+            geometry: new CapsuleGeometry(0.32, 0.9, 6, 12),
+            material: new MeshStandardMaterial({
+              color: "#5fc2a8",
+              emissive: "#3c8c76",
+              emissiveIntensity: 0.12,
+              roughness: 0.9,
+              metalness: 0,
+            }),
+            position: [0, 0.9, 0],
+            castShadow: true,
+          })
+        }
+        deps={[]}
+      />
+      <EngineDrawMount
+        create={() =>
+          meshDraw({
+            geometry: new SphereGeometry(0.28, 12, 12),
+            material: new MeshStandardMaterial({ color: "#7a9e8e", roughness: 0.9, metalness: 0 }),
+            position: [0, 1.55, 0],
+            castShadow: true,
+          })
+        }
+        deps={[]}
+      />
+      <Nameplate anchor={anchor} localY={2.2} displayName={displayName} badgeClass={badgeClass} />
+    </SceneObjectPortal>
   );
 }
 
@@ -97,23 +141,31 @@ function DormantWorldAgentAvatar({
   label,
   kind,
 }: WorldAgentAvatarProps) {
-  const groupRef = useRef<Group>(null);
-  useFrame(function remoteAvatar() {
-    const pose = readLiveRemotePose(presenceId);
-    if (!pose || !groupRef.current) return;
-    groupRef.current.position.set(pose.position.x, pose.position.y, pose.position.z);
-    groupRef.current.rotation.y = pose.rotationY;
-  });
   const live = readLiveRemotePose(presenceId);
-  const position = live?.position ?? { x: 0, y: 0, z: 0 };
-  const rotationY = live?.rotationY ?? 0;
+  const group = useAvatarGroup(
+    live !== undefined && live !== null
+      ? { position: [live.position.x, live.position.y, live.position.z], rotationY: live.rotationY }
+      : undefined,
+  );
+  const inner = useAvatarGroup();
+  useMemo(() => {
+    inner.scale.setScalar(0.92);
+    return undefined;
+  }, [inner]);
+
+  useFrameTask(function remoteAvatar() {
+    const pose = readLiveRemotePose(presenceId);
+    if (!pose) return;
+    group.position.set(pose.position.x, pose.position.y, pose.position.z);
+    group.rotation.y = pose.rotationY;
+  });
 
   return (
-    <group ref={groupRef} position={[position.x, position.y, position.z]} rotation-y={rotationY}>
-      <group scale={0.92}>
+    <SceneObjectPortal object={group}>
+      <SceneObjectPortal object={inner}>
         <AvatarMesh label={label} kind={kind} online={false} isWalking={false} />
-      </group>
-    </group>
+      </SceneObjectPortal>
+    </SceneObjectPortal>
   );
 }
 
@@ -122,17 +174,15 @@ function LiveQueryDrivenWorldAgentAvatar({
   label,
   kind,
 }: WorldAgentAvatarProps) {
-  const groupRef = useRef<Group>(null);
-  const gaitGroupRef = useRef<Group>(null);
+  const group = useAvatarGroup();
+  const gait = useAvatarGroup();
   const headLookRef = useRef<{ pitch: number }>({ pitch: 0 });
   const initializedRef = useRef(false);
   const walkingRef = useRef(false);
   const gaitPhaseRef = useRef(0);
   const [isWalking, setIsWalking] = useState(false);
 
-  useFrame(function remoteAvatar(_, delta) {
-    const group = groupRef.current;
-    if (!group) return;
+  useFrameTask(function remoteAvatar(_, delta) {
     const sample = sampleRemotePose(presenceId, performance.now());
     if (!sample) return;
 
@@ -160,26 +210,23 @@ function LiveQueryDrivenWorldAgentAvatar({
       setIsWalking(walking);
     }
 
-    const gaitGroup = gaitGroupRef.current;
-    if (gaitGroup) {
-      if (walking) {
-        gaitPhaseRef.current = advanceGaitPhase(gaitPhaseRef.current, sample.speedUnitsPerSec, delta);
-        gaitGroup.position.y = gaitBobOffset(gaitPhaseRef.current, sample.speedUnitsPerSec);
-        gaitGroup.rotation.z = gaitSwayAngle(gaitPhaseRef.current, sample.speedUnitsPerSec);
-      } else {
-        gaitPhaseRef.current = 0;
-        gaitGroup.position.y = MathUtils.lerp(gaitGroup.position.y, 0, smoothing);
-        gaitGroup.rotation.z = MathUtils.lerp(gaitGroup.rotation.z, 0, smoothing);
-      }
+    if (walking) {
+      gaitPhaseRef.current = advanceGaitPhase(gaitPhaseRef.current, sample.speedUnitsPerSec, delta);
+      gait.position.y = gaitBobOffset(gaitPhaseRef.current, sample.speedUnitsPerSec);
+      gait.rotation.z = gaitSwayAngle(gaitPhaseRef.current, sample.speedUnitsPerSec);
+    } else {
+      gaitPhaseRef.current = 0;
+      gait.position.y = MathUtils.lerp(gait.position.y, 0, smoothing);
+      gait.rotation.z = MathUtils.lerp(gait.rotation.z, 0, smoothing);
     }
   });
 
   return (
-    <group ref={groupRef}>
-      <group ref={gaitGroupRef}>
+    <SceneObjectPortal object={group}>
+      <SceneObjectPortal object={gait}>
         <AvatarMesh label={label} kind={kind} isWalking={isWalking} headLookRef={headLookRef} />
-      </group>
-    </group>
+      </SceneObjectPortal>
+    </SceneObjectPortal>
   );
 }
 

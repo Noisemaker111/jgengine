@@ -1,5 +1,4 @@
-import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
 
 import { resolveAmbientLife, type AmbientLifeConfig, type ResolvedAmbientLife, type SteamVent } from "@jgengine/core/render/ambientLife";
@@ -8,9 +7,10 @@ import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { findKeyLight, towardLight } from "@jgengine/core/postfx/contactShadowPass.draw";
 import { advanceLivingWorld, livingWorld, resetLivingWorld } from "./livingWorld.draw";
 import { windDirection, windGust } from "@jgengine/core/model/modelWind.draw";
-import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 import { prepareBeforeLink, prepareBeforeWarmup } from "@jgengine/core/render/shaderWarmup.draw";
 import { applyWetness, applyWetnessToScene, takesWetness } from "@jgengine/core/material/wetSurfaces.draw";
+import { childFrameState, type EngineDraw, type EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 
 const LIGHT_RESCAN_SECONDS = 1.5;
 const WET_SCAN_SECONDS = 2;
@@ -36,52 +36,60 @@ export function steamDensity(sunHeight: number | null, rain: number): number {
   return Math.min(1, 0.35 + cold * 0.4 + rain * 0.5);
 }
 
-function LivingWorldDriver() {
-  const scene = useThree((state) => state.scene);
-  const light = useRef<THREE.DirectionalLight | null>(null);
-  const sinceScan = useRef(LIGHT_RESCAN_SECONDS);
-  const sinceWet = useRef(WET_SCAN_SECONDS);
-  useEffect(() => () => {
-    resetLivingWorld();
-    windGust.value = 1;
-  }, []);
-  // Ground that loads while it is already wet is patched before the warmup links it, so it is
-  // compiled once as wet ground instead of once dry and again a scan later.
-  useEffect(
-    () =>
-      prepareBeforeWarmup(scene, () => {
-        if (livingWorld.wetness > 0) applyWetnessToScene(scene);
-      }),
-    [scene],
-  );
-  // A car or prop that streams in while it is wet is patched before its first link, not drawn dry
-  // and recompiled wet at the next scan (Harbor Heat: 0.9 to 1.4 s getting into a car in the rain).
-  useEffect(
-    () =>
-      prepareBeforeLink(scene, (material) => {
+/**
+ * Draw-side form of the old `LivingWorldDriver`: rescans the key light, advances the shared
+ * `livingWorld` record, publishes wind direction/gust, and applies wetness on its scan cadence.
+ * Installs the warmup/link wetness hooks on the real scene and resets the shared record on dispose.
+ */
+export function livingWorldDriverDraw(): EngineDraw {
+  let light: THREE.DirectionalLight | null = null;
+  let sinceScan = LIGHT_RESCAN_SECONDS;
+  let sinceWet = WET_SCAN_SECONDS;
+  let scene: THREE.Scene | null = null;
+  let offWarmup: (() => void) | null = null;
+  let offLink: (() => void) | null = null;
+  return {
+    priority: -1,
+    mount(state: EngineFrameState) {
+      const target = state.rootScene ?? state.scene;
+      scene = target;
+      offWarmup = prepareBeforeWarmup(target, () => {
+        if (livingWorld.wetness > 0) applyWetnessToScene(target);
+      });
+      offLink = prepareBeforeLink(target, (material) => {
         if (livingWorld.wetness > 0 && takesWetness(material)) applyWetness(material as THREE.MeshStandardMaterial);
-      }),
-    [scene],
-  );
-  useFrame((_, delta) => {
-    sinceScan.current += delta;
-    if (sinceScan.current >= LIGHT_RESCAN_SECONDS || light.current?.parent === null) {
-      light.current = findKeyLight(scene);
-      sinceScan.current = 0;
-    }
-    const sunHeight = light.current === null ? null : towardLight(light.current, sunDirection).y;
-    advanceLivingWorld(delta, sunHeight);
-    const wind = livingWorld.wind;
-    const speed = wind.length();
-    if (speed > 0.05) windDirection.copy(wind).divideScalar(speed);
-    windGust.value = gustForWind(speed);
-    sinceWet.current += delta;
-    if (livingWorld.wetness > 0 && sinceWet.current >= WET_SCAN_SECONDS) {
-      applyWetnessToScene(scene);
-      sinceWet.current = 0;
-    }
-  }, -1);
-  return null;
+      });
+    },
+    frame(_state: EngineFrameState, delta: number) {
+      if (scene === null) return;
+      sinceScan += delta;
+      if (sinceScan >= LIGHT_RESCAN_SECONDS || light?.parent === null) {
+        light = findKeyLight(scene);
+        sinceScan = 0;
+      }
+      const sunHeight = light === null ? null : towardLight(light, sunDirection).y;
+      advanceLivingWorld(delta, sunHeight);
+      const wind = livingWorld.wind;
+      const speed = wind.length();
+      if (speed > 0.05) windDirection.copy(wind).divideScalar(speed);
+      windGust.value = gustForWind(speed);
+      sinceWet += delta;
+      if (livingWorld.wetness > 0 && sinceWet >= WET_SCAN_SECONDS) {
+        applyWetnessToScene(scene);
+        sinceWet = 0;
+      }
+    },
+    dispose() {
+      offWarmup?.();
+      offLink?.();
+      offWarmup = null;
+      offLink = null;
+      scene = null;
+      light = null;
+      resetLivingWorld();
+      windGust.value = 1;
+    },
+  };
 }
 
 const BIRD_VERTEX = /* glsl */ `
@@ -143,12 +151,25 @@ export function flockFocus(camera: THREE.Camera, target: THREE.Vector3): THREE.V
   return target;
 }
 
-function Birds({ flock }: { flock: NonNullable<ResolvedAmbientLife["birds"]> }) {
-  const mesh = useRef<THREE.InstancedMesh>(null);
-  const geometry = useDisposable(birdGeometry, []);
-  const material = useDisposable(
-    () =>
-      new THREE.ShaderMaterial({
+/** Props for {@link birdsDraw}: the resolved flock parameters. */
+export interface BirdsDrawProps {
+  flock: NonNullable<ResolvedAmbientLife["birds"]>;
+}
+
+/**
+ * Draw-side form of `Birds`: an instanced gull flock orbiting the camera's look point, fading in
+ * only in fair daylight. Geometry and shader material are owned and disposed here.
+ */
+export function birdsDraw(getProps: () => BirdsDrawProps): EngineDraw {
+  let geometry: THREE.BufferGeometry | null = null;
+  let material: THREE.ShaderMaterial | null = null;
+  let mesh: THREE.InstancedMesh | null = null;
+  let centre: THREE.Vector3 | null = null;
+  let presence: number | null = null;
+  return {
+    mount(state: EngineFrameState) {
+      geometry = birdGeometry();
+      material = new THREE.ShaderMaterial({
         uniforms: { uTime: { value: 0 }, uOpacity: { value: 0 } },
         vertexShader: BIRD_VERTEX,
         fragmentShader: BIRD_FRAGMENT,
@@ -156,48 +177,62 @@ function Birds({ flock }: { flock: NonNullable<ResolvedAmbientLife["birds"]> }) 
         transparent: true,
         depthWrite: false,
         fog: false,
-      }),
-    [],
-  );
-  const centre = useRef<THREE.Vector3 | null>(null);
-  const presence = useRef<number | null>(null);
-  useFrame(({ camera, clock }, delta) => {
-    const target = birdPresence(livingWorld.sunHeight, livingWorld.rain);
-    presence.current = presence.current === null ? target : presence.current + (target - presence.current) * Math.min(1, delta * 0.4);
-    const instanced = mesh.current;
-    if (instanced === null) return;
-    instanced.visible = presence.current > 0.02;
-    if (!instanced.visible) return;
-    // The flock circles over the ground the camera looks at and trails it slowly, so a street-level
-    // view sees it overhead and a top-down view sees it below, without being glued to the view.
-    flockFocus(camera, focus);
-    if (centre.current === null) centre.current = focus.clone();
-    else centre.current.lerp(focus, Math.min(1, delta * 0.05));
-    const time = clock.getElapsedTime();
-    material.uniforms["uTime"]!.value = time;
-    material.uniforms["uOpacity"]!.value = Math.min(1, presence.current * 1.2);
-    const { count, height, radius } = flock;
-    const middle = centre.current;
-    uploadInstances(
-      instanced,
-      {
-        count,
-        at: (index, out) => {
-          const orbit = radius * (0.55 + ((index * 0.618) % 1) * 0.6);
-          const speed = (0.11 + (index % 4) * 0.012) * (index % 2 === 0 ? 1 : 0.92);
-          const angle = time * speed + index * 2.39996;
-          const lift = height + Math.sin(time * 0.31 + index) * 3 + (index % 5) * 1.6;
-          birdPosition.set(middle.x + Math.cos(angle) * orbit, lift, middle.z + Math.sin(angle) * orbit);
-          birdEuler.set(0, -angle, Math.sin(time * 0.5 + index) * 0.25);
-          birdQuaternion.setFromEuler(birdEuler);
-          birdScale.setScalar(0.9 + (index % 3) * 0.15);
-          out.compose(birdPosition, birdQuaternion, birdScale);
+      });
+      mesh = new THREE.InstancedMesh(geometry, material, getProps().flock.count);
+      mesh.frustumCulled = false;
+      mesh.renderOrder = 2;
+      state.scene.add(mesh);
+    },
+    frame(state: EngineFrameState, delta: number) {
+      if (mesh === null || material === null) return;
+      const target = birdPresence(livingWorld.sunHeight, livingWorld.rain);
+      presence = presence === null ? target : presence + (target - presence) * Math.min(1, delta * 0.4);
+      mesh.visible = presence > 0.02;
+      if (!mesh.visible) return;
+      // The flock circles over the ground the camera looks at and trails it slowly, so a street-level
+      // view sees it overhead and a top-down view sees it below, without being glued to the view.
+      const flock = getProps().flock;
+      flockFocus(state.camera, focus);
+      if (centre === null) centre = focus.clone();
+      else centre.lerp(focus, Math.min(1, delta * 0.05));
+      const time = state.elapsed;
+      material.uniforms["uTime"]!.value = time;
+      material.uniforms["uOpacity"]!.value = Math.min(1, presence * 1.2);
+      const { count, height, radius } = flock;
+      const middle = centre;
+      uploadInstances(
+        mesh,
+        {
+          count,
+          at: (index, out) => {
+            const orbit = radius * (0.55 + ((index * 0.618) % 1) * 0.6);
+            const speed = (0.11 + (index % 4) * 0.012) * (index % 2 === 0 ? 1 : 0.92);
+            const angle = time * speed + index * 2.39996;
+            const lift = height + Math.sin(time * 0.31 + index) * 3 + (index % 5) * 1.6;
+            birdPosition.set(middle.x + Math.cos(angle) * orbit, lift, middle.z + Math.sin(angle) * orbit);
+            birdEuler.set(0, -angle, Math.sin(time * 0.5 + index) * 0.25);
+            birdQuaternion.setFromEuler(birdEuler);
+            birdScale.setScalar(0.9 + (index % 3) * 0.15);
+            out.compose(birdPosition, birdQuaternion, birdScale);
+          },
         },
-      },
-      { bounds: "none", dynamic: true },
-    );
-  });
-  return <instancedMesh ref={mesh} args={[geometry, material, flock.count]} frustumCulled={false} renderOrder={2} />;
+        { bounds: "none", dynamic: true },
+      );
+    },
+    dispose(state: EngineFrameState) {
+      if (mesh !== null) {
+        state.scene.remove(mesh);
+        mesh.dispose();
+        mesh = null;
+      }
+      geometry?.dispose();
+      geometry = null;
+      material?.dispose();
+      material = null;
+      centre = null;
+      presence = null;
+    },
+  };
 }
 
 const LITTER_VERTEX = /* glsl */ `
@@ -228,47 +263,94 @@ const LITTER_FRAGMENT = /* glsl */ `
   void main() { gl_FragColor = vec4(vec3(0.82, 0.8, 0.74) * vShade, uOpacity); }
 `;
 
-function Litter({ litter }: { litter: NonNullable<ResolvedAmbientLife["litter"]> }) {
-  const geometry = useDisposable(() => {
-    const quad = new THREE.PlaneGeometry(0.22, 0.16);
-    const instanced = new THREE.InstancedBufferGeometry().copy(quad as unknown as THREE.InstancedBufferGeometry);
-    quad.dispose();
-    const seeds = new Float32Array(litter.count * 3);
-    for (let index = 0; index < seeds.length; index += 1) seeds[index] = (Math.sin(index * 91.7 + 13.1) * 43758.5453) % 1;
-    for (let index = 0; index < seeds.length; index += 1) seeds[index] = Math.abs(seeds[index]!);
-    instanced.setAttribute("aSeed", new THREE.InstancedBufferAttribute(seeds, 3));
-    instanced.instanceCount = litter.count;
-    return instanced;
-  }, [litter.count]);
-  const material = useDisposable(
-    () =>
-      new THREE.ShaderMaterial({
-        uniforms: {
-          uTime: { value: 0 },
-          uAnchor: { value: new THREE.Vector3() },
-          uWind: { value: new THREE.Vector2() },
-          uGround: { value: litter.groundY },
-          uSpan: { value: 36 },
-          uOpacity: { value: 0 },
-        },
-        vertexShader: LITTER_VERTEX,
-        fragmentShader: LITTER_FRAGMENT,
-        side: THREE.DoubleSide,
-        transparent: true,
-      }),
-    [litter.groundY],
-  );
-  const mesh = useRef<THREE.Mesh>(null);
-  useFrame(({ camera, clock }) => {
-    const speed = livingWorld.wind.length();
-    const strength = Math.min(1, Math.max(0, (speed - 1) / 3)) * (1 - livingWorld.wetness * 0.8);
-    if (mesh.current !== null) mesh.current.visible = strength > 0.02;
-    material.uniforms["uOpacity"]!.value = strength;
-    material.uniforms["uTime"]!.value = clock.getElapsedTime();
-    (material.uniforms["uAnchor"]!.value as THREE.Vector3).copy(camera.position);
-    (material.uniforms["uWind"]!.value as THREE.Vector2).copy(livingWorld.wind);
-  });
-  return <mesh ref={mesh} geometry={geometry} material={material} frustumCulled={false} />;
+/** Props for {@link litterDraw}: the resolved drifting-debris field. */
+export interface LitterDrawProps {
+  litter: NonNullable<ResolvedAmbientLife["litter"]>;
+}
+
+function litterGeometry(count: number): THREE.InstancedBufferGeometry {
+  const quad = new THREE.PlaneGeometry(0.22, 0.16);
+  const instanced = new THREE.InstancedBufferGeometry().copy(quad as unknown as THREE.InstancedBufferGeometry);
+  quad.dispose();
+  const seeds = new Float32Array(count * 3);
+  for (let index = 0; index < seeds.length; index += 1) seeds[index] = (Math.sin(index * 91.7 + 13.1) * 43758.5453) % 1;
+  for (let index = 0; index < seeds.length; index += 1) seeds[index] = Math.abs(seeds[index]!);
+  instanced.setAttribute("aSeed", new THREE.InstancedBufferAttribute(seeds, 3));
+  instanced.instanceCount = count;
+  return instanced;
+}
+
+/**
+ * Draw-side form of `Litter`: wind-blown debris on a camera-anchored ground plane, visible only
+ * while the wind is up. Rebuilds geometry on `count` and material on `groundY`, matching the old
+ * `useDisposable` dep boundaries.
+ */
+export function litterDraw(getProps: () => LitterDrawProps): EngineDraw {
+  let geometry: THREE.InstancedBufferGeometry | null = null;
+  let material: THREE.ShaderMaterial | null = null;
+  let mesh: THREE.Mesh | null = null;
+  let builtCount = -1;
+  let builtGround = Number.NaN;
+  const buildAssets = (state: EngineFrameState) => {
+    const { litter } = getProps();
+    if (mesh !== null) {
+      state.scene.remove(mesh);
+      mesh.geometry.dispose();
+      (mesh.material as THREE.Material).dispose();
+      mesh = null;
+    }
+    geometry = litterGeometry(litter.count);
+    material = new THREE.ShaderMaterial({
+      uniforms: {
+        uTime: { value: 0 },
+        uAnchor: { value: new THREE.Vector3() },
+        uWind: { value: new THREE.Vector2() },
+        uGround: { value: litter.groundY },
+        uSpan: { value: 36 },
+        uOpacity: { value: 0 },
+      },
+      vertexShader: LITTER_VERTEX,
+      fragmentShader: LITTER_FRAGMENT,
+      side: THREE.DoubleSide,
+      transparent: true,
+    });
+    mesh = new THREE.Mesh(geometry, material);
+    mesh.frustumCulled = false;
+    state.scene.add(mesh);
+    builtCount = litter.count;
+    builtGround = litter.groundY;
+  };
+  return {
+    mount(state: EngineFrameState) {
+      buildAssets(state);
+    },
+    update(state: EngineFrameState) {
+      const { litter } = getProps();
+      if (litter.count !== builtCount || litter.groundY !== builtGround) buildAssets(state);
+    },
+    frame(state: EngineFrameState) {
+      if (mesh === null || material === null) return;
+      const speed = livingWorld.wind.length();
+      const strength = Math.min(1, Math.max(0, (speed - 1) / 3)) * (1 - livingWorld.wetness * 0.8);
+      mesh.visible = strength > 0.02;
+      material.uniforms["uOpacity"]!.value = strength;
+      material.uniforms["uTime"]!.value = state.elapsed;
+      (material.uniforms["uAnchor"]!.value as THREE.Vector3).copy(state.camera.position);
+      (material.uniforms["uWind"]!.value as THREE.Vector2).copy(livingWorld.wind);
+    },
+    dispose(state: EngineFrameState) {
+      if (mesh !== null) {
+        state.scene.remove(mesh);
+        mesh = null;
+      }
+      geometry?.dispose();
+      geometry = null;
+      material?.dispose();
+      material = null;
+      builtCount = -1;
+      builtGround = Number.NaN;
+    },
+  };
 }
 
 const STEAM_VERTEX = /* glsl */ `
@@ -309,44 +391,186 @@ const STEAM_FRAGMENT = /* glsl */ `
 
 const STEAM_PUFFS = 14;
 
-function Steam({ vents, lowTier }: { vents: readonly Required<SteamVent>[]; lowTier: boolean }) {
-  const puffs = lowTier ? 8 : STEAM_PUFFS;
-  const geometry = useDisposable(() => {
-    const quad = new THREE.PlaneGeometry(1, 1);
-    const instanced = new THREE.InstancedBufferGeometry().copy(quad as unknown as THREE.InstancedBufferGeometry);
-    quad.dispose();
-    const count = vents.length * puffs;
-    const vent = new Float32Array(count * 3);
-    const shape = new Float32Array(count * 3);
-    vents.forEach((source, ventIndex) => {
-      for (let puff = 0; puff < puffs; puff += 1) {
-        const at = (ventIndex * puffs + puff) * 3;
-        vent.set(source.position, at);
-        shape.set([source.size, source.rise, 0], at);
-      }
-    });
-    instanced.setAttribute("aVent", new THREE.InstancedBufferAttribute(vent, 3));
-    instanced.setAttribute("aShape", new THREE.InstancedBufferAttribute(shape, 3));
-    instanced.instanceCount = count;
-    return instanced;
-  }, [vents, puffs]);
-  const material = useDisposable(
-    () =>
-      new THREE.ShaderMaterial({
+/** Props for {@link steamDraw}: the vent list and the quality tier that thins it. */
+export interface SteamDrawProps {
+  vents: readonly Required<SteamVent>[];
+  lowTier: boolean;
+}
+
+function steamGeometry(vents: readonly Required<SteamVent>[], puffs: number): THREE.InstancedBufferGeometry {
+  const quad = new THREE.PlaneGeometry(1, 1);
+  const instanced = new THREE.InstancedBufferGeometry().copy(quad as unknown as THREE.InstancedBufferGeometry);
+  quad.dispose();
+  const count = vents.length * puffs;
+  const vent = new Float32Array(count * 3);
+  const shape = new Float32Array(count * 3);
+  vents.forEach((source, ventIndex) => {
+    for (let puff = 0; puff < puffs; puff += 1) {
+      const at = (ventIndex * puffs + puff) * 3;
+      vent.set(source.position, at);
+      shape.set([source.size, source.rise, 0], at);
+    }
+  });
+  instanced.setAttribute("aVent", new THREE.InstancedBufferAttribute(vent, 3));
+  instanced.setAttribute("aShape", new THREE.InstancedBufferAttribute(shape, 3));
+  instanced.instanceCount = count;
+  return instanced;
+}
+
+/**
+ * Draw-side form of `Steam`: rising vent puffs whose density follows cold and rain. Rebuilds the
+ * instanced geometry when the vent list or puff count changes, matching the old `useDisposable`
+ * deps.
+ */
+export function steamDraw(getProps: () => SteamDrawProps): EngineDraw {
+  let geometry: THREE.InstancedBufferGeometry | null = null;
+  let material: THREE.ShaderMaterial | null = null;
+  let mesh: THREE.Mesh | null = null;
+  let builtVents: readonly Required<SteamVent>[] | null = null;
+  let builtPuffs = -1;
+  const rebuildGeometry = () => {
+    const { vents, lowTier } = getProps();
+    const puffs = lowTier ? 8 : STEAM_PUFFS;
+    geometry?.dispose();
+    geometry = steamGeometry(vents, puffs);
+    if (mesh !== null) mesh.geometry = geometry;
+    builtVents = vents;
+    builtPuffs = puffs;
+  };
+  return {
+    mount(state: EngineFrameState) {
+      const { vents, lowTier } = getProps();
+      const puffs = lowTier ? 8 : STEAM_PUFFS;
+      geometry = steamGeometry(vents, puffs);
+      material = new THREE.ShaderMaterial({
         uniforms: { uTime: { value: 0 }, uWind: { value: new THREE.Vector2() }, uDensity: { value: 0.5 }, uColor: { value: new THREE.Color(0.86, 0.88, 0.9) } },
         vertexShader: STEAM_VERTEX,
         fragmentShader: STEAM_FRAGMENT,
         transparent: true,
         depthWrite: false,
-      }),
-    [],
-  );
-  useFrame(({ clock }) => {
-    material.uniforms["uTime"]!.value = clock.getElapsedTime();
-    (material.uniforms["uWind"]!.value as THREE.Vector2).copy(livingWorld.wind);
-    material.uniforms["uDensity"]!.value = steamDensity(livingWorld.sunHeight, livingWorld.rain);
-  });
-  return <mesh geometry={geometry} material={material} frustumCulled={false} renderOrder={3} />;
+      });
+      mesh = new THREE.Mesh(geometry, material);
+      mesh.frustumCulled = false;
+      mesh.renderOrder = 3;
+      state.scene.add(mesh);
+      builtVents = vents;
+      builtPuffs = puffs;
+    },
+    update() {
+      const { vents, lowTier } = getProps();
+      const puffs = lowTier ? 8 : STEAM_PUFFS;
+      if (vents !== builtVents || puffs !== builtPuffs) rebuildGeometry();
+    },
+    frame(state: EngineFrameState) {
+      if (material === null) return;
+      material.uniforms["uTime"]!.value = state.elapsed;
+      (material.uniforms["uWind"]!.value as THREE.Vector2).copy(livingWorld.wind);
+      material.uniforms["uDensity"]!.value = steamDensity(livingWorld.sunHeight, livingWorld.rain);
+    },
+    dispose(state: EngineFrameState) {
+      if (mesh !== null) {
+        state.scene.remove(mesh);
+        mesh = null;
+      }
+      geometry?.dispose();
+      geometry = null;
+      material?.dispose();
+      material = null;
+      builtVents = null;
+      builtPuffs = -1;
+    },
+  };
+}
+
+/** Props for {@link LivingWorld}: the ambient-life config, quality tier and indoor flag. */
+export interface LivingWorldProps {
+  ambientLife: AmbientLifeConfig | false | undefined;
+  lowTier: boolean;
+  outdoor: boolean;
+}
+
+/**
+ * Draw-side form of `LivingWorld`'s visual half: resolves the ambient-life config and mounts the
+ * bird flock, drifting litter and steam vents that apply. The wetness/wind driver mounts beside
+ * this draw through its own `EngineDrawMount` so its `-1` frame priority survives.
+ */
+export function livingWorldVisualsDraw(getProps: () => LivingWorldProps): EngineDraw {
+  const host = new THREE.Group();
+  interface Slot {
+    key: object | null;
+    draw: EngineDraw | null;
+    state: EngineFrameState | null;
+  }
+  const slots: Record<"birds" | "litter" | "steam", Slot> = {
+    birds: { key: null, draw: null, state: null },
+    litter: { key: null, draw: null, state: null },
+    steam: { key: null, draw: null, state: null },
+  };
+  let life: ResolvedAmbientLife | null = null;
+  let builtLife: { ambientLife: LivingWorldProps["ambientLife"]; lowTier: boolean } | null = null;
+  let mountState: EngineFrameState | null = null;
+
+  const syncLife = () => {
+    const props = getProps();
+    if (builtLife === null || props.ambientLife !== builtLife.ambientLife || props.lowTier !== builtLife.lowTier) {
+      life = resolveAmbientLife(props.ambientLife, props.lowTier);
+      builtLife = { ambientLife: props.ambientLife, lowTier: props.lowTier };
+    }
+  };
+
+  const disposeSlot = (slot: Slot) => {
+    if (slot.draw !== null && slot.state !== null) slot.draw.dispose?.(slot.state);
+    slot.draw = null;
+    slot.state = null;
+    slot.key = null;
+  };
+
+  const setSlot = (slot: Slot, key: object | null, make: (() => EngineDraw) | null) => {
+    if (slot.key === key && (key === null) === (slot.draw === null)) return;
+    disposeSlot(slot);
+    if (key !== null && make !== null && mountState !== null) {
+      slot.state = childFrameState(mountState, host);
+      slot.draw = make();
+      slot.draw.mount?.(slot.state);
+      slot.key = key;
+    }
+  };
+
+  const reconcile = () => {
+    syncLife();
+    const props = getProps();
+    const resolved = life;
+    if (resolved === null) return;
+    const birds = resolved.birds;
+    setSlot(slots.birds, birds !== null && props.outdoor ? birds : null, birds === null ? null : () => birdsDraw(() => ({ flock: birds })));
+    const litter = resolved.litter;
+    setSlot(slots.litter, litter, litter === null ? null : () => litterDraw(() => ({ litter })));
+    const steam = resolved.steam.length === 0 ? null : resolved.steam;
+    setSlot(slots.steam, steam, steam === null ? null : () => steamDraw(() => ({ vents: steam, lowTier: props.lowTier })));
+  };
+
+  return {
+    mount(state: EngineFrameState) {
+      mountState = state;
+      state.scene.add(host);
+      reconcile();
+    },
+    update() {
+      reconcile();
+      for (const slot of Object.values(slots)) if (slot.draw !== null && slot.state !== null) slot.draw.update?.(slot.state);
+    },
+    frame(state: EngineFrameState) {
+      for (const slot of Object.values(slots)) if (slot.draw !== null && slot.state !== null) slot.draw.frame?.(slot.state, state.delta);
+    },
+    dispose(state: EngineFrameState) {
+      for (const slot of Object.values(slots)) disposeSlot(slot);
+      state.scene.remove(host);
+      host.clear();
+      mountState = null;
+      life = null;
+      builtLife = null;
+    },
+  };
 }
 
 /**
@@ -356,14 +580,13 @@ function Steam({ vents, lowTier }: { vents: readonly Required<SteamVent>[]; lowT
  * Mount once per 3D world.
  * @internal
  */
-export function LivingWorld({ ambientLife, lowTier, outdoor }: { ambientLife: AmbientLifeConfig | false | undefined; lowTier: boolean; outdoor: boolean }) {
-  const life = useMemo(() => resolveAmbientLife(ambientLife, lowTier), [ambientLife, lowTier]);
+export function LivingWorld(props: LivingWorldProps) {
+  const latest = useRef<LivingWorldProps>(props);
+  latest.current = props;
   return (
     <>
-      <LivingWorldDriver />
-      {life.birds === null || !outdoor ? null : <Birds flock={life.birds} />}
-      {life.litter === null ? null : <Litter litter={life.litter} />}
-      {life.steam.length === 0 ? null : <Steam vents={life.steam} lowTier={lowTier} />}
+      <EngineDrawMount create={() => livingWorldDriverDraw()} deps={[]} />
+      <EngineDrawMount create={() => livingWorldVisualsDraw(() => latest.current)} deps={[]} />
     </>
   );
 }

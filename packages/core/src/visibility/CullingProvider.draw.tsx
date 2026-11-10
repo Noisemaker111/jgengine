@@ -1,15 +1,18 @@
 // @skill jgengine-world
 import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode, type MutableRefObject } from "react";
-import { useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useGameContext } from "@jgengine/react/provider";
 import type { CameraView } from "@jgengine/core/visibility/frustum";
 import type { VisibilityConfig } from "@jgengine/core/visibility/config";
+import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { buildCullingDriver } from "./cullingDriver";
 import { createVisibilityChanges, type VisibilityChanges } from "./visibilityChanges";
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
 
-type VisiblePredicate = (id: string) => boolean;
+/** Whether an id is inside the visible set this frame. @internal */
+export type VisiblePredicate = (id: string) => boolean;
 
 const ALWAYS_VISIBLE: VisiblePredicate = () => true;
 const alwaysVisibleRef: MutableRefObject<VisiblePredicate> = { current: ALWAYS_VISIBLE };
@@ -38,6 +41,15 @@ const ChangesContext = createContext<VisibilityChanges>(unchanging);
 export function useVisibilityChanges(ids: readonly string[], mark: () => void): void {
   const changes = useContext(ChangesContext);
   useEffect(() => changes.watch(ids, mark), [changes, ids, mark]);
+}
+
+/**
+ * The provider's visibility-changes feed for draw code that cannot read the React context —
+ * the same instance {@link useVisibilityChanges} watches through.
+ * @internal
+ */
+export function useVisibilityChangesSource(): VisibilityChanges {
+  return useContext(ChangesContext);
 }
 
 const tmpDir = new THREE.Vector3();
@@ -90,6 +102,84 @@ function viewFromCamera(camera: THREE.Camera, scratch: ReturnType<typeof createV
   return null;
 }
 
+export interface CullingProviderDrawProps {
+  config: VisibilityConfig | undefined;
+  drawDistance?: number | undefined;
+}
+
+/**
+ * The per-frame half of {@link CullingProvider}: reads the live render camera, updates the
+ * engine VisibilitySystem and publishes the predicate/changes the contexts expose.
+ * @internal
+ */
+export function cullingProviderDraw(
+  ctx: GameContext,
+  getProps: () => CullingProviderDrawProps,
+  predicateRef: MutableRefObject<VisiblePredicate>,
+  changes: VisibilityChanges,
+): EngineDraw {
+  let driver: ReturnType<typeof buildCullingDriver> | null = null;
+  let enabled = false;
+  let configRaw: VisibilityConfig | undefined;
+  let drawDistanceFor: number | undefined;
+  let hasResolved = false;
+  const published = { generation: -1, system: null as object | null };
+  const viewScratch = createViewScratch();
+  const resolve = () => {
+    const props = getProps();
+    const nextEnabled = props.config?.enabled !== false;
+    if (hasResolved && props.config === configRaw && props.drawDistance === drawDistanceFor && nextEnabled === enabled) return;
+    hasResolved = true;
+    configRaw = props.config;
+    drawDistanceFor = props.drawDistance;
+    enabled = nextEnabled;
+    const resolved = props.drawDistance === undefined
+      ? props.config
+      : { ...props.config, culling: { ...props.config?.culling, defaultMaxRenderDistance: props.config?.culling?.defaultMaxRenderDistance ?? props.drawDistance } };
+    driver?.dispose();
+    driver = null;
+    published.generation = -1;
+    published.system = null;
+    if (enabled) driver = buildCullingDriver(ctx, resolved);
+  };
+  const sync = (state: EngineFrameState) => {
+    resolve();
+    const view = driver === null ? null : viewFromCamera(state.camera, viewScratch);
+    if (driver === null || view === null) {
+      if (predicateRef.current !== ALWAYS_VISIBLE) {
+        predicateRef.current = ALWAYS_VISIBLE;
+        changes.notifyAll();
+      }
+      published.generation = -1;
+      published.system = null;
+      return;
+    }
+    driver.setView(view);
+    const system = driver.system;
+    const result = system.update();
+    if (result.generation === published.generation && published.system === system) return;
+    const sameSystem = published.system === system;
+    published.generation = result.generation;
+    published.system = system;
+    // Reads the system's current set, so the same predicate stays right while the set does not change.
+    predicateRef.current = (id) => system.isVisible(id);
+    // Against the same system only the changed ids need telling; a new system (or the always-visible
+    // fallback before it) may answer differently for any id.
+    if (sameSystem) changes.notify(result.changed);
+    else changes.notifyAll();
+  };
+  return {
+    priority: CAMERA_POST_FRAME_PRIORITY,
+    mount: resolve,
+    frame: sync,
+    update: sync,
+    dispose() {
+      driver?.dispose();
+      driver = null;
+    },
+  };
+}
+
 /**
  * Drives automatic frustum + distance culling for every entity and placed object. It reads the
  * live render camera each frame, updates the engine VisibilitySystem, and exposes a predicate the
@@ -99,45 +189,15 @@ function viewFromCamera(camera: THREE.Camera, scratch: ReturnType<typeof createV
  */
 export function CullingProvider({ config, drawDistance, children }: { config: VisibilityConfig | undefined; drawDistance?: number; children: ReactNode }): ReactNode {
   const ctx = useGameContext();
-  const enabled = config?.enabled !== false;
   const predicateRef = useRef<VisiblePredicate>(ALWAYS_VISIBLE);
-  const camera = useThree((state) => state.camera);
-  const resolvedConfig = useMemo(() => {
-    if (drawDistance === undefined) return config;
-    return { ...config, culling: { ...config?.culling, defaultMaxRenderDistance: config?.culling?.defaultMaxRenderDistance ?? drawDistance } };
-  }, [config, drawDistance]);
-  const driver = useMemo(() => (enabled ? buildCullingDriver(ctx, resolvedConfig) : null), [ctx, resolvedConfig, enabled]);
-  useEffect(() => () => driver?.dispose(), [driver]);
-  const published = useRef(-1);
-  const publishedBy = useRef<object | null>(null);
-  const viewScratch = useMemo(createViewScratch, []);
+  const drawRef = useRef<EngineDraw | null>(null);
   const changes = useMemo(createVisibilityChanges, []);
-
-  useFrame(() => {
-    const view = driver === null ? null : viewFromCamera(camera, viewScratch);
-    if (driver === null || view === null) {
-      if (predicateRef.current !== ALWAYS_VISIBLE) {
-        predicateRef.current = ALWAYS_VISIBLE;
-        changes.notifyAll();
-      }
-      published.current = -1;
-      publishedBy.current = null;
-      return;
-    }
-    driver.setView(view);
-    const system = driver.system;
-    const result = system.update();
-    if (result.generation === published.current && publishedBy.current === system) return;
-    const sameSystem = publishedBy.current === system;
-    published.current = result.generation;
-    publishedBy.current = system;
-    // Reads the system's current set, so the same predicate stays right while the set does not change.
-    predicateRef.current = (id) => system.isVisible(id);
-    // Against the same system only the changed ids need telling; a new system (or the always-visible
-    // fallback before it) may answer differently for any id.
-    if (sameSystem) changes.notify(result.changed);
-    else changes.notifyAll();
-  }, CAMERA_POST_FRAME_PRIORITY);
+  const propsRef = useRef<CullingProviderDrawProps>({ config, drawDistance });
+  propsRef.current = { config, drawDistance };
+  if (drawRef.current === null) {
+    drawRef.current = cullingProviderDraw(ctx, () => propsRef.current, predicateRef, changes);
+  }
+  useEngineDraw(() => drawRef.current as EngineDraw, [ctx]);
 
   return (
     <CullingContext.Provider value={predicateRef}>

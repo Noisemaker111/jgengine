@@ -1,6 +1,5 @@
 // @skill jgengine-world
-import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { Quaternion, Vector3 } from "three";
 import { useGameContext } from "@jgengine/react/provider";
 import type { AudioEngine } from "./audioEngine.view";
@@ -11,6 +10,8 @@ import { createListenerVelocityTrack, stepListenerVelocity, type ListenerVelocit
 import { sceneLineBlocked } from "./occlusionRaycast";
 import { enclosurePreset, type EnclosureSample } from "@jgengine/core/audio/reverb";
 import { devtools } from "@jgengine/core/devtools/devtools";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { sampleEnclosure } from "./reverbRack.view";
 
 /** How often the shell listens for walls and a ceiling around the player, seconds. */
@@ -32,48 +33,65 @@ export function hearingPoint(
   return body === null ? fallback : { x: body.position[0], y: body.position[1] + 1.5, z: body.position[2] };
 }
 
-export function AudioListener({ engine, anchor = "camera" }: { engine: AudioEngine; anchor?: ListenerAnchor }) {
-  const camera = useThree((state) => state.camera);
-  const ctx = useGameContext();
-  const trackRef = useRef<ListenerVelocityTrack>(createListenerVelocityTrack());
-  const scratchRef = useRef({ direction: new Vector3(), up: new Vector3(), quaternion: new Quaternion() });
-  const enclosureClock = useRef(ENCLOSURE_INTERVAL_S);
-  const lastEnclosure = useRef<EnclosureSample | null>(null);
-  useEffect(
-    () =>
-      devtools.probes.registerSystem("audio/enclosure", {
+/**
+ * Draw-side form of {@link AudioListener}: feeds the audio engine the camera-derived listener pose,
+ * velocity and half-second enclosure samples. @internal
+ */
+export function audioListenerDraw(
+  ctx: ReturnType<typeof useGameContext>,
+  engine: AudioEngine,
+  anchor: ListenerAnchor,
+): EngineDraw {
+  const track: ListenerVelocityTrack = createListenerVelocityTrack();
+  const scratch = { direction: new Vector3(), up: new Vector3(), quaternion: new Quaternion() };
+  let enclosureClock = ENCLOSURE_INTERVAL_S;
+  let lastEnclosure: EnclosureSample | null = null;
+  let offProbe: (() => void) | null = null;
+  let offAudioProbe: (() => void) | null = null;
+
+  return {
+    mount() {
+      offProbe = devtools.probes.registerSystem("audio/enclosure", {
         counters: () => {
-          const sample = lastEnclosure.current;
+          const sample = lastEnclosure;
           return { ceilingM: sample?.ceiling ?? -1, wallHits: sample?.walls.filter((wall) => wall !== null).length ?? 0 };
         },
-        state: () => `${engine.spatialStats().reverb} · ceiling ${lastEnclosure.current?.ceiling?.toFixed(1) ?? "open"} · walls ${lastEnclosure.current?.walls.map((wall) => (wall === null ? "-" : wall.toFixed(0))).join(" ") ?? "?"}`,
-      }),
-    [engine],
-  );
-  useEffect(() => {
-    engine.setOcclusionSource((from, to) => sceneLineBlocked(ctx.scene, from, to));
-    return () => engine.setOcclusionSource(null);
-  }, [engine, ctx]);
-  useEffect(() => installAudioProbe(engine), [engine]);
-  useFrame((_, dt) => {
-    const { direction, up, quaternion } = scratchRef.current;
-    camera.getWorldDirection(direction);
-    up.copy(camera.up).applyQuaternion(camera.getWorldQuaternion(quaternion));
-    const eye = { x: camera.position.x, y: camera.position.y, z: camera.position.z };
-    const position = anchor === "ground" ? groundFocusListener(eye, direction, ctx.world.groundHeightAt(eye.x, eye.z)) : eye;
-    engine.setListenerPose({
-      position,
-      forward: { x: direction.x, y: direction.y, z: direction.z },
-      up: { x: up.x, y: up.y, z: up.z },
-      velocity: stepListenerVelocity(trackRef.current, position, dt),
-    });
-    enclosureClock.current += dt;
-    if (enclosureClock.current < ENCLOSURE_INTERVAL_S) return;
-    enclosureClock.current = 0;
-    const sample = sampleEnclosure(ctx.scene, hearingPoint(ctx, position));
-    lastEnclosure.current = sample;
-    engine.setReverbEnvironment(enclosurePreset(sample));
-  });
+        state: () => `${engine.spatialStats().reverb} · ceiling ${lastEnclosure?.ceiling?.toFixed(1) ?? "open"} · walls ${lastEnclosure?.walls.map((wall) => (wall === null ? "-" : wall.toFixed(0))).join(" ") ?? "?"}`,
+      });
+      engine.setOcclusionSource((from, to) => sceneLineBlocked(ctx.scene, from, to));
+      offAudioProbe = installAudioProbe(engine);
+    },
+    frame(state: EngineFrameState) {
+      const camera = state.camera;
+      const { direction, up, quaternion } = scratch;
+      camera.getWorldDirection(direction);
+      up.copy(camera.up).applyQuaternion(camera.getWorldQuaternion(quaternion));
+      const eye = { x: camera.position.x, y: camera.position.y, z: camera.position.z };
+      const position = anchor === "ground" ? groundFocusListener(eye, direction, ctx.world.groundHeightAt(eye.x, eye.z)) : eye;
+      engine.setListenerPose({
+        position,
+        forward: { x: direction.x, y: direction.y, z: direction.z },
+        up: { x: up.x, y: up.y, z: up.z },
+        velocity: stepListenerVelocity(track, position, state.delta),
+      });
+      enclosureClock += state.delta;
+      if (enclosureClock < ENCLOSURE_INTERVAL_S) return;
+      enclosureClock = 0;
+      const sample = sampleEnclosure(ctx.scene, hearingPoint(ctx, position));
+      lastEnclosure = sample;
+      engine.setReverbEnvironment(enclosurePreset(sample));
+    },
+    dispose() {
+      engine.setOcclusionSource(null);
+      offProbe?.();
+      offAudioProbe?.();
+    },
+  };
+}
+
+export function AudioListener({ engine, anchor = "camera" }: { engine: AudioEngine; anchor?: ListenerAnchor }) {
+  const ctx = useGameContext();
+  useEngineDraw(() => audioListenerDraw(ctx, engine, anchor), [ctx, engine, anchor]);
   return null;
 }
 
@@ -81,37 +99,24 @@ export function AudioListener({ engine, anchor = "camera" }: { engine: AudioEngi
  * Keep one loop per sounding entity/object. The tracker retains the loops and only reads the
  * emitters it already plays, so a still world stops paying a per-frame rebuild (#2209).
  */
-function useTrackedEmitters(
+function audioEmittersDraw(
   engine: AudioEngine,
-  soundByKey: Record<string, string> | undefined,
   sources: EmitterSources,
-) {
-  const soundsRef = useRef(soundByKey);
-  soundsRef.current = soundByKey;
-  const stateRef = useRef<{ engine: AudioEngine; tracker: EmitterTracker } | null>(null);
-  const current = stateRef.current;
-  if (current === null || current.engine !== engine) {
-    // `sources` closes over the session's game context, which outlives the engine it was built with.
-    current?.tracker.dispose();
-    stateRef.current = {
-      engine,
-      tracker: createEmitterTracker({
-        sources,
-        sounds: () => soundsRef.current,
-        play: (soundId, position) => engine.playLoop(soundId, position),
-      }),
-    };
-  }
-
-  useEffect(
-    () => () => {
-      stateRef.current?.tracker.dispose();
-      stateRef.current = null;
+  getSounds: () => Record<string, string> | undefined,
+): EngineDraw {
+  const tracker: EmitterTracker = createEmitterTracker({
+    sources,
+    sounds: () => getSounds(),
+    play: (soundId, position) => engine.playLoop(soundId, position),
+  });
+  return {
+    frame() {
+      tracker.step();
     },
-    [engine],
-  );
-
-  useFrame(() => stateRef.current?.tracker.step());
+    dispose() {
+      tracker.dispose();
+    },
+  };
 }
 
 function entitySources(ctx: ReturnType<typeof useGameContext>): EmitterSources {
@@ -148,9 +153,11 @@ export function EntityAudioEmitters({
   entitySounds: Record<string, string> | undefined;
 }) {
   const ctx = useGameContext();
+  const latest = useRef(entitySounds);
+  latest.current = entitySounds;
   const sourcesRef = useRef<EmitterSources | null>(null);
   sourcesRef.current ??= entitySources(ctx);
-  useTrackedEmitters(engine, entitySounds, sourcesRef.current);
+  useEngineDraw(() => audioEmittersDraw(engine, sourcesRef.current!, () => latest.current), [engine, ctx]);
   return null;
 }
 
@@ -162,8 +169,10 @@ export function ObjectAudioEmitters({
   objectSounds: Record<string, string> | undefined;
 }) {
   const ctx = useGameContext();
+  const latest = useRef(objectSounds);
+  latest.current = objectSounds;
   const sourcesRef = useRef<EmitterSources | null>(null);
   sourcesRef.current ??= objectSources(ctx);
-  useTrackedEmitters(engine, objectSounds, sourcesRef.current);
+  useEngineDraw(() => audioEmittersDraw(engine, sourcesRef.current!, () => latest.current), [engine, ctx]);
   return null;
 }

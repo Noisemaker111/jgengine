@@ -1,8 +1,7 @@
-import { Suspense, useLayoutEffect, useMemo, useRef } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
 
 import {
-  buildingSurfaceColor,
   resolveBuildingSurface,
   type BuildingPartKind,
   type BuildingPartPlacement,
@@ -12,14 +11,16 @@ import {
 import type { BuildingKit } from "@jgengine/core/buildings/buildingKit";
 
 import type { MaterialOverrideTextures } from "@jgengine/core/material/materialOverride.draw";
-import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
-import { BuildingKitBatch } from "./BuildingKitBatch.draw";
-import { useBuildingChunkBudget } from "./BuildingRenderBudget.draw";
-import { partitionInstances, type InstanceChunk } from "@jgengine/core/instancing/instanceChunks.draw";
+import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
+import { buildingKitBatchDraw } from "./BuildingKitBatch.draw";
+import { buildingChunkBudgetScratch, buildingRenderPolicy, syncBuildingChunkBudget } from "./BuildingRenderBudget.draw";
+import { partitionInstances } from "@jgengine/core/instancing/instanceChunks.draw";
 import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { freezeStaticTransforms } from "@jgengine/core/model/staticTransforms.draw";
-import { bucketBuildingParts, normalFor, outwardOffset } from "./buildingKitFit.draw";
-import { applyBuildingSurface, useBuildingSurfaceTextures } from "./buildingSurface.draw";
+import { bucketBuildingParts } from "./buildingKitFit.draw";
+import { applyBuildingSurface, buildingSurfaceTextures, type BuildingSurfaceTextureLease } from "./buildingSurface.draw";
+import { childFrameState, type EngineDraw, type EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 
 export interface GeneratedBuildingData {
   id: string;
@@ -28,11 +29,6 @@ export interface GeneratedBuildingData {
 
 /** Per part kind: a hex colour, or a colour plus tiled PBR maps (`BuildingSurfaceMaterial`). */
 export type BuildingMaterialPalette = Partial<Record<BuildingPartKind, BuildingSurface>>;
-
-export interface BuildingBlockProps {
-  part: BuildingPartPlacement;
-  palette?: BuildingMaterialPalette | undefined;
-}
 
 export interface InstancedBuildingPlacement {
   building: GeneratedBuildingData;
@@ -74,24 +70,6 @@ const DEFAULT_PALETTE: Record<BuildingPartKind, string> = {
 function surfaceFor(kind: BuildingPartKind, palette: BuildingMaterialPalette | undefined): BuildingSurfaceMaterial {
   const surface = resolveBuildingSurface(palette?.[kind] ?? DEFAULT_PALETTE[kind]);
   return surface.color === undefined ? { ...surface, color: DEFAULT_PALETTE[kind] } : surface;
-}
-
-function colorFor(kind: BuildingPartKind, palette: BuildingMaterialPalette | undefined): string {
-  return buildingSurfaceColor(palette?.[kind], DEFAULT_PALETTE[kind]);
-}
-
-function materialFor(part: BuildingPartPlacement, palette: BuildingMaterialPalette | undefined) {
-  const color = colorFor(part.kind, palette);
-  if (part.kind === "window" || part.kind === "storefront") {
-    return <meshPhysicalMaterial color={color} roughness={0.12} metalness={0} transparent opacity={0.56} />;
-  }
-  if (part.kind === "storeSign") {
-    return <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.6} roughness={0.5} />;
-  }
-  if (part.kind === "roofProp") {
-    return <meshStandardMaterial color={color} roughness={0.65} metalness={0.1} />;
-  }
-  return <meshStandardMaterial color={color} roughness={0.88} metalness={0} />;
 }
 
 function batchMaterialFor(
@@ -175,108 +153,145 @@ export function buildingBoxFamilies(boxes: ReadonlyMap<BuildingPartKind, readonl
   });
 }
 
-function BuildingFamilyBatch({ family, geometry }: { family: BuildingBoxFamily; geometry: THREE.BoxGeometry }) {
-  const textures = useBuildingSurfaceTextures(family.surface);
-  const material = useDisposable(() => batchMaterialFor(family.kind, family.surface, textures), [family, textures]);
-  const chunks = useMemo(() => partitionInstances(geometry, family.matrices), [geometry, family]);
-  return <>{chunks.map((chunk) => <BuildingChunk key={chunk.key} chunk={chunk} colors={family.colors} material={material} geometry={geometry} castShadow={family.castShadow} />)}</>;
+/**
+ * One box family's draw: an owned material (flat first, rebuilt with the surface's maps when they
+ * land, like the `useDisposable` swap did) plus one budget-gated InstancedMesh per chunk.
+ */
+function buildingFamilyBatchDraw(family: BuildingBoxFamily, geometry: THREE.BoxGeometry): EngineDraw {
+  const chunks = partitionInstances(geometry, family.matrices);
+  const entries: { mesh: THREE.InstancedMesh; bounds: THREE.Box3; scratch: ReturnType<typeof buildingChunkBudgetScratch> }[] = [];
+  let material: THREE.Material | null = null;
+  let surfaceLease: BuildingSurfaceTextureLease | null = null;
+  let disposed = false;
+  return {
+    priority: CAMERA_POST_FRAME_PRIORITY,
+    mount(state: EngineFrameState) {
+      material = batchMaterialFor(family.kind, family.surface, undefined);
+      const colors = family.colors;
+      for (const chunk of chunks) {
+        const mesh = new THREE.InstancedMesh(geometry, material, chunk.matrices.length);
+        mesh.castShadow = family.castShadow;
+        mesh.receiveShadow = true;
+        const tint = colors === null ? {} : { colors: (index: number, out: THREE.Color) => { out.copy(colors[chunk.sources[index] ?? 0] ?? out.setRGB(1, 1, 1)); } };
+        uploadInstances(mesh, chunk.matrices, { bounds: chunk.bounds, ...tint });
+        freezeStaticTransforms(mesh);
+        state.scene.add(mesh);
+        entries.push({ mesh, bounds: chunk.bounds, scratch: buildingChunkBudgetScratch() });
+      }
+      void buildingSurfaceTextures(family.surface).then((lease) => {
+        if (disposed) {
+          lease.dispose();
+          return;
+        }
+        surfaceLease = lease;
+        const next = batchMaterialFor(family.kind, family.surface, lease.textures);
+        for (const entry of entries) entry.mesh.material = next;
+        material?.dispose();
+        material = next;
+      }).catch((error: unknown) => {
+        console.error(`[jgengine] building surface ${family.key} failed to load`, error);
+      });
+    },
+    frame(state: EngineFrameState) {
+      for (const entry of entries) syncBuildingChunkBudget(entry.mesh, entry.bounds, state.camera, entry.scratch, buildingRenderPolicy());
+    },
+    dispose(state: EngineFrameState) {
+      disposed = true;
+      for (const entry of entries.splice(0)) {
+        state.scene.remove(entry.mesh);
+        // Release only this chunk's instance buffers; geometry and materials are shared.
+        entry.mesh.dispose();
+      }
+      material?.dispose();
+      material = null;
+      surfaceLease?.dispose();
+      surfaceLease = null;
+    },
+  };
 }
 
-function BuildingChunk({ chunk, colors, material, geometry, castShadow }: {
-  chunk: InstanceChunk;
-  colors: readonly THREE.Color[] | null;
-  material: THREE.Material;
-  geometry: THREE.BoxGeometry;
-  castShadow: boolean;
-}) {
-  const meshRef = useRef<THREE.InstancedMesh>(null);
-  useBuildingChunkBudget(meshRef, chunk.bounds);
-  useLayoutEffect(() => {
-    const mesh = meshRef.current;
-    if (mesh === null) return;
-    const tint = colors === null ? {} : { colors: (index: number, out: THREE.Color) => { out.copy(colors[chunk.sources[index] ?? 0] ?? out.setRGB(1, 1, 1)); } };
-    uploadInstances(mesh, chunk.matrices, { bounds: chunk.bounds, ...tint });
-    freezeStaticTransforms(mesh);
-    // Release only this chunk's instance buffers; geometry and materials are shared.
-    return () => {
-      mesh.dispose();
+/**
+ * The draw-side form of {@link InstancedBuildings}: buckets the placements once per prop-identity
+ * change, then mounts one draw per box family and per kit model URL. Children hang under an owned
+ * identity group so the scoped parent's transform applies exactly like the old `<group>` did.
+ */
+export function instancedBuildingsDraw(getProps: () => InstancedBuildingsProps): EngineDraw {
+  const host = new THREE.Group();
+  const children: EngineDraw[] = [];
+  let geometry: THREE.BoxGeometry | null = null;
+  let built: {
+    buildings: readonly InstancedBuildingPlacement[];
+    palette: BuildingMaterialPalette | undefined;
+    kit: BuildingKit | undefined;
+    resolveModelUrl: ((model: string) => string) | undefined;
+    visibleKinds: readonly BuildingPartKind[] | undefined;
+  } | null = null;
+
+  const clearChildren = (frameState: EngineFrameState) => {
+    for (const draw of children.splice(0)) draw.dispose?.(frameState);
+  };
+
+  const build = (mountState: EngineFrameState) => {
+    const props = getProps();
+    const childState = childFrameState(mountState, host);
+    const visible = props.visibleKinds === undefined ? null : new Set<BuildingPartKind>(props.visibleKinds);
+    const { boxes, models } = bucketBuildingParts(props.buildings, visible, props.kit, props.resolveModelUrl);
+    const families = buildingBoxFamilies(boxes, props.palette);
+    for (const family of families) {
+      const draw = buildingFamilyBatchDraw(family, geometry!);
+      children.push(draw);
+      draw.mount?.(childState);
+    }
+    for (const [url, instances] of models) {
+      const draw = buildingKitBatchDraw(() => ({ url, instances, materialAssets: props.kit?.materialAssets }));
+      children.push(draw);
+      draw.mount?.(childState);
+    }
+    built = {
+      buildings: props.buildings,
+      palette: props.palette,
+      kit: props.kit,
+      resolveModelUrl: props.resolveModelUrl,
+      visibleKinds: props.visibleKinds,
     };
-  }, [chunk, colors, geometry, material]);
-  return (
-    <instancedMesh
-      key={chunk.matrices.length}
-      ref={meshRef}
-      args={[geometry, material, chunk.matrices.length]}
-      castShadow={castShadow}
-      receiveShadow
-      dispose={null}
-    />
-  );
+  };
+
+  return {
+    priority: CAMERA_POST_FRAME_PRIORITY,
+    mount(mountState: EngineFrameState) {
+      geometry = new THREE.BoxGeometry(1, 1, 1);
+      mountState.scene.add(host);
+      build(mountState);
+    },
+    update(mountState: EngineFrameState) {
+      const props = getProps();
+      if (built === null) return;
+      if (
+        props.buildings !== built.buildings ||
+        props.palette !== built.palette ||
+        props.kit !== built.kit ||
+        props.resolveModelUrl !== built.resolveModelUrl ||
+        props.visibleKinds !== built.visibleKinds
+      ) {
+        clearChildren(mountState);
+        build(mountState);
+      }
+    },
+    frame(frameState: EngineFrameState) {
+      for (const draw of children) draw.frame?.(frameState, frameState.delta);
+    },
+    dispose(disposeState: EngineFrameState) {
+      clearChildren(disposeState);
+      disposeState.scene.remove(host);
+      host.clear();
+      geometry?.dispose();
+      geometry = null;
+    },
+  };
 }
 
-export function InstancedBuildings({
-  buildings,
-  palette,
-  kit,
-  resolveModelUrl,
-  visibleKinds,
-}: InstancedBuildingsProps) {
-  const geometry = useDisposable(() => new THREE.BoxGeometry(1, 1, 1), []);
-  const { boxes, models } = useMemo(() => {
-    const visible = visibleKinds === undefined ? null : new Set<BuildingPartKind>(visibleKinds);
-    return bucketBuildingParts(buildings, visible, kit, resolveModelUrl);
-  }, [buildings, visibleKinds, kit, resolveModelUrl]);
-  const families = useMemo(() => buildingBoxFamilies(boxes, palette), [boxes, palette]);
-  if (boxes.size === 0 && models.size === 0) return null;
-  return (
-    <group>
-      {families.map((family) => <BuildingFamilyBatch key={family.key} family={family} geometry={geometry} />)}
-      {[...models.entries()].map(([url, instances]) => (
-        <Suspense key={url} fallback={null}>
-          <BuildingKitBatch url={url} instances={instances} materialAssets={kit?.materialAssets} />
-        </Suspense>
-      ))}
-    </group>
-  );
-}
-
-function BlockMesh({ part, palette }: BuildingBlockProps) {
-  const [nx, nz] = normalFor(part.facade);
-  const offset = outwardOffset(part);
-  const position: [number, number, number] = [
-    part.position[0] + nx * offset,
-    part.position[1],
-    part.position[2] + nz * offset,
-  ];
-  return (
-    <mesh position={position} rotation={[0, part.rotationY, 0]} castShadow receiveShadow>
-      <boxGeometry args={[part.scale[0], part.scale[1], part.scale[2]]} />
-      {materialFor(part, palette)}
-    </mesh>
-  );
-}
-
-export function BuildingBlock({ part, palette }: BuildingBlockProps) {
-  if (part.kind === "clothesline") {
-    const [nx, nz] = normalFor(part.facade);
-    const offset = outwardOffset(part);
-    const position: [number, number, number] = [
-      part.position[0] + nx * offset,
-      part.position[1],
-      part.position[2] + nz * offset,
-    ];
-    return (
-      <group position={position} rotation={[0, part.rotationY, 0]}>
-        <mesh position={[0, 0, -0.09]} castShadow>
-          <boxGeometry args={[part.scale[0], Math.max(part.scale[1], 0.025), 0.025]} />
-          {materialFor(part, palette)}
-        </mesh>
-        <mesh position={[0, 0, 0.09]} castShadow>
-          <boxGeometry args={[part.scale[0], Math.max(part.scale[1], 0.025), 0.025]} />
-          {materialFor(part, palette)}
-        </mesh>
-      </group>
-    );
-  }
-  return <BlockMesh part={part} palette={palette} />;
+export function InstancedBuildings(props: InstancedBuildingsProps) {
+  const latest = useRef<InstancedBuildingsProps>(props);
+  latest.current = props;
+  return <EngineDrawMount create={() => instancedBuildingsDraw(() => latest.current)} deps={[]} />;
 }

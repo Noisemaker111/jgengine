@@ -5,9 +5,8 @@
  * wiring. Uses the generic core primitive `readNamedSockets` to hang wires off a GLB pole's authored
  * crossarm empties (falling back to computed offsets).
  */
-import { Suspense, useEffect, useMemo, useRef } from "react";
-import { useLoader } from "@react-three/fiber";
 import * as THREE from "three";
+import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
 
 import { parseParams } from "@jgengine/core/generator/paramSchema";
@@ -15,32 +14,48 @@ import { readNamedSockets, type ModelNode } from "@jgengine/core/scene/modelSock
 import { POLE_LINE_KIND, POLE_LINE_SCHEMA, resolvePoleLine, type Cable, type Pole, type ResolvedPoleLine } from "@jgengine/core/world/poleLineKind";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { composeInstance, uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
-import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers.draw";
 
-function Cables({ cables }: { cables: readonly Cable[] }) {
-  const geometry = useMemo(() => {
-    const parts: THREE.TubeGeometry[] = [];
-    for (const cable of cables) {
-      if (cable.points.length < 2) continue;
-      const curve = new THREE.CatmullRomCurve3(cable.points.map((point) => new THREE.Vector3(point[0], point[1], point[2])));
-      parts.push(new THREE.TubeGeometry(curve, Math.max(2, (cable.points.length - 1) * 2), cable.radius, 6, false));
-    }
-    if (parts.length === 0) return null;
-    const merged = mergePositionGeometries(parts);
-    for (const part of parts) part.dispose();
-    return merged;
-  }, [cables]);
-  useEffect(() => () => geometry?.dispose(), [geometry]);
-  if (geometry === null) return null;
-  // Dark warm rubber-sheath tone with a hint of sheen — pitch black tubes read as ink scribbles
-  // against the sky, real cable catches a little light along its top.
-  return (
-    <mesh geometry={geometry} castShadow>
-      <meshStandardMaterial color="#31281f" roughness={0.55} metalness={0.15} />
-    </mesh>
-  );
+function buildCableGeometry(cables: readonly Cable[]): THREE.BufferGeometry | null {
+  const parts: THREE.TubeGeometry[] = [];
+  for (const cable of cables) {
+    if (cable.points.length < 2) continue;
+    const curve = new THREE.CatmullRomCurve3(cable.points.map((point) => new THREE.Vector3(point[0], point[1], point[2])));
+    parts.push(new THREE.TubeGeometry(curve, Math.max(2, (cable.points.length - 1) * 2), cable.radius, 6, false));
+  }
+  if (parts.length === 0) return null;
+  const merged = mergePositionGeometries(parts);
+  for (const part of parts) part.dispose();
+  return merged;
+}
+
+function cablesDraw(cables: readonly Cable[]): EngineDraw {
+  let geometry: THREE.BufferGeometry | null = null;
+  let mesh: THREE.Mesh | null = null;
+  return {
+    mount(state: EngineFrameState) {
+      geometry = buildCableGeometry(cables);
+      if (geometry === null) return;
+      const material = new THREE.MeshStandardMaterial({ color: "#31281f", roughness: 0.55, metalness: 0.15 });
+      mesh = new THREE.Mesh(geometry, material);
+      // Dark warm rubber-sheath tone with a hint of sheen — pitch black tubes read as ink scribbles
+      // against the sky, real cable catches a little light along its top.
+      mesh.castShadow = true;
+      state.scene.add(mesh);
+    },
+    dispose(state: EngineFrameState) {
+      if (mesh !== null) {
+        state.scene.remove(mesh);
+        (mesh.material as THREE.Material).dispose();
+        mesh = null;
+      }
+      geometry?.dispose();
+      geometry = null;
+    },
+  };
 }
 
 /**
@@ -145,43 +160,35 @@ function mergePositionGeometries(geometries: readonly THREE.BufferGeometry[]): T
   return merged;
 }
 
+export interface ProxyPolesSpec {
+  poles: readonly Pole[];
+  height: number;
+  wireCount: number;
+  wireSpacing: number;
+}
+
 /**
  * Proxy utility poles built from primitives when no GLB pole asset is named: a tapered trunk, a
  * wood crossarm sized to the wire spread with a small brace, and one ceramic insulator peg under
  * each wire offset — so the cables visibly hang *from* the pole instead of floating beside a stick.
  */
-function ProxyPoles({
-  poles,
-  height,
-  wireCount,
-  wireSpacing,
-}: {
-  poles: readonly Pole[];
-  height: number;
-  wireCount: number;
-  wireSpacing: number;
-}) {
-  const trunkRef = useRef<THREE.InstancedMesh>(null);
-  const armRef = useRef<THREE.InstancedMesh>(null);
-  const braceRef = useRef<THREE.InstancedMesh>(null);
-  const insulatorRef = useRef<THREE.InstancedMesh>(null);
+function proxyPolesDraw(spec: ProxyPolesSpec): EngineDraw {
+  const { poles, height, wireCount, wireSpacing } = spec;
   const armLength = wireCount > 1 ? (wireCount - 1) * wireSpacing + 0.6 : 0.8;
   // Chunkier members than a real-scale pole: stylized worlds read thin cylinders as wire, not wood.
-  const trunkGeometry = useDisposable(() => new THREE.CylinderGeometry(0.13, 0.22, height, 10), [height]);
-  const armGeometry = useDisposable(() => new THREE.BoxGeometry(armLength, 0.17, 0.14), [armLength]);
-  const braceGeometry = useDisposable(() => {
+  const trunkGeometry = new THREE.CylinderGeometry(0.13, 0.22, height, 10);
+  const armGeometry = new THREE.BoxGeometry(armLength, 0.17, 0.14);
+  const braceGeometry = (() => {
     const braceSpan = Math.hypot(armLength * 0.32, 0.7);
     return new THREE.BoxGeometry(0.07, braceSpan, 0.06);
-  }, [armLength]);
-  const insulatorGeometry = useDisposable(() => new THREE.CylinderGeometry(0.06, 0.085, 0.24, 8), []);
-  const trunkMaterial = useDisposable(() => createWeatheredWoodMaterial("#6b533a"), []);
-  const armMaterial = useDisposable(() => createWeatheredWoodMaterial("#59452e", "x"), []);
-  useEffect(() => {
-    const trunk = trunkRef.current;
-    const arm = armRef.current;
-    const brace = braceRef.current;
-    const insulator = insulatorRef.current;
-    if (trunk === null) return;
+  })();
+  const insulatorGeometry = new THREE.CylinderGeometry(0.06, 0.085, 0.24, 8);
+  const trunkMaterial = createWeatheredWoodMaterial("#6b533a");
+  const armMaterial = createWeatheredWoodMaterial("#59452e", "x");
+  const insulatorMaterial = new THREE.MeshStandardMaterial({ color: "#a8a18c", roughness: 0.32, metalness: 0.12 });
+  const meshes: THREE.InstancedMesh[] = [];
+
+  const buildInstances = () => {
     const trunks: THREE.Matrix4[] = [];
     const arms: THREE.Matrix4[] = [];
     const braces: THREE.Matrix4[] = [];
@@ -224,89 +231,151 @@ function ProxyPoles({
         place(insulators);
       }
     }
-    uploadInstances(trunk, trunks);
-    if (arm !== null) uploadInstances(arm, arms);
-    if (brace !== null) uploadInstances(brace, braces);
-    if (insulator !== null) uploadInstances(insulator, insulators);
-  }, [poles, height, wireCount, wireSpacing]);
-  return (
-    <>
-      <instancedMesh ref={trunkRef} args={[trunkGeometry, trunkMaterial, Math.max(1, poles.length)]} castShadow receiveShadow />
-      {wireCount > 0 ? (
-        <>
-          <instancedMesh ref={armRef} args={[armGeometry, armMaterial, Math.max(1, poles.length)]} castShadow receiveShadow />
-          <instancedMesh ref={braceRef} args={[braceGeometry, armMaterial, Math.max(1, poles.length * 2)]} castShadow />
-          <instancedMesh
-            ref={insulatorRef}
-            args={[insulatorGeometry, undefined, Math.max(1, poles.length * wireCount)]}
-            castShadow
-          >
-            <meshStandardMaterial color="#a8a18c" roughness={0.32} metalness={0.12} />
-          </instancedMesh>
-        </>
-      ) : null}
-    </>
-  );
+    return { trunks, arms, braces, insulators };
+  };
+
+  return {
+    mount(state: EngineFrameState) {
+      const batches = buildInstances();
+      const trunk = new THREE.InstancedMesh(trunkGeometry, trunkMaterial, Math.max(1, poles.length));
+      trunk.castShadow = true;
+      trunk.receiveShadow = true;
+      uploadInstances(trunk, batches.trunks);
+      state.scene.add(trunk);
+      meshes.push(trunk);
+      if (wireCount > 0) {
+        const arm = new THREE.InstancedMesh(armGeometry, armMaterial, Math.max(1, poles.length));
+        arm.castShadow = true;
+        arm.receiveShadow = true;
+        uploadInstances(arm, batches.arms);
+        state.scene.add(arm);
+        meshes.push(arm);
+        const brace = new THREE.InstancedMesh(braceGeometry, armMaterial, Math.max(1, poles.length * 2));
+        brace.castShadow = true;
+        uploadInstances(brace, batches.braces);
+        state.scene.add(brace);
+        meshes.push(brace);
+        const insulator = new THREE.InstancedMesh(insulatorGeometry, insulatorMaterial, Math.max(1, poles.length * wireCount));
+        insulator.castShadow = true;
+        uploadInstances(insulator, batches.insulators);
+        state.scene.add(insulator);
+        meshes.push(insulator);
+      }
+    },
+    dispose(state: EngineFrameState) {
+      for (const mesh of meshes.splice(0)) {
+        state.scene.remove(mesh);
+        mesh.dispose();
+      }
+      trunkGeometry.dispose();
+      armGeometry.dispose();
+      braceGeometry.dispose();
+      insulatorGeometry.dispose();
+      trunkMaterial.dispose();
+      armMaterial.dispose();
+      insulatorMaterial.dispose();
+    },
+  };
 }
 
-function ModelPoles({ url, poles }: { url: string; poles: readonly Pole[] }) {
-  const gltf = useLoader(sharedGltfLoader, url);
-  const sources = useMemo(() => {
-    const meshes: { geometry: THREE.BufferGeometry; material: THREE.Material; local: THREE.Matrix4 }[] = [];
-    gltf.scene.updateWorldMatrix(true, true);
-    gltf.scene.traverse((node) => {
-      const mesh = node as THREE.Mesh;
-      if (mesh.isMesh) meshes.push({ geometry: mesh.geometry, material: mesh.material as THREE.Material, local: mesh.matrixWorld.clone() });
-    });
-    // readNamedSockets is available for wire-anchor refinement; the proxy path already honors offsets.
-    void readNamedSockets(gltf.scene as unknown as ModelNode);
-    return meshes;
-  }, [gltf]);
-  return (
-    <>
-      {sources.map((source, index) => (
-        <ModelPoleSource key={index} source={source} poles={poles} />
-      ))}
-    </>
-  );
+const gltfLoads = new Map<string, Promise<GLTF>>();
+function loadPoleGltf(url: string): Promise<GLTF> {
+  let promise = gltfLoads.get(url);
+  if (promise === undefined) {
+    promise = sharedGltfLoader.loadAsync(url);
+    gltfLoads.set(url, promise);
+    promise.catch(() => gltfLoads.delete(url));
+  }
+  return promise;
 }
 
-function ModelPoleSource({ source, poles }: { source: { geometry: THREE.BufferGeometry; material: THREE.Material; local: THREE.Matrix4 }; poles: readonly Pole[] }) {
-  const meshRef = useRef<THREE.InstancedMesh>(null);
-  useEffect(() => {
-    const mesh = meshRef.current;
-    if (mesh === null) return;
-    uploadInstances(
-      mesh,
-      { count: poles.length, at: (index, out) => composeInstance(out, poles[index]!.position, [0, poles[index]!.yaw, 0], 1) },
-      { localMatrix: source.local },
-    );
-  }, [poles, source]);
-  return <instancedMesh ref={meshRef} args={[source.geometry, source.material, Math.max(1, poles.length)]} castShadow receiveShadow />;
+function modelPolesDraw(url: string, poles: readonly Pole[], onReady?: () => void): EngineDraw {
+  const meshes: THREE.InstancedMesh[] = [];
+  let cancelled = false;
+  let mounted = false;
+  return {
+    mount(state: EngineFrameState) {
+      mounted = true;
+      void loadPoleGltf(url).then((gltf) => {
+        if (cancelled || !mounted) return;
+        const sources: { geometry: THREE.BufferGeometry; material: THREE.Material; local: THREE.Matrix4 }[] = [];
+        gltf.scene.updateWorldMatrix(true, true);
+        gltf.scene.traverse((node) => {
+          const mesh = node as THREE.Mesh;
+          if (mesh.isMesh) sources.push({ geometry: mesh.geometry, material: mesh.material as THREE.Material, local: mesh.matrixWorld.clone() });
+        });
+        // readNamedSockets is available for wire-anchor refinement; the proxy path already honors offsets.
+        void readNamedSockets(gltf.scene as unknown as ModelNode);
+        for (const source of sources) {
+          const instanced = new THREE.InstancedMesh(source.geometry, source.material, Math.max(1, poles.length));
+          instanced.castShadow = true;
+          instanced.receiveShadow = true;
+          uploadInstances(
+            instanced,
+            { count: poles.length, at: (index, out) => composeInstance(out, poles[index]!.position, [0, poles[index]!.yaw, 0], 1) },
+            { localMatrix: source.local },
+          );
+          state.scene.add(instanced);
+          meshes.push(instanced);
+        }
+        onReady?.();
+      }).catch(() => {
+        // A failed pole asset keeps the proxy poles showing, like the old Suspense fallback.
+      });
+    },
+    dispose(state: EngineFrameState) {
+      cancelled = true;
+      mounted = false;
+      for (const mesh of meshes.splice(0)) {
+        state.scene.remove(mesh);
+        mesh.dispose();
+      }
+    },
+  };
 }
 
-function OnePoleLine({ object, context }: { object: SceneKindObject; context: SceneKindRenderContext }) {
-  const resolved: ResolvedPoleLine = useMemo(
-    () => resolvePoleLine(object, parseParams(POLE_LINE_SCHEMA, object.meta), { sampleHeight: (x, z) => context.field.sampleHeight(x, z) }),
-    [object, context.field],
-  );
+function poleLineDraw(object: SceneKindObject, context: SceneKindRenderContext): EngineDraw {
+  const resolved: ResolvedPoleLine = resolvePoleLine(object, parseParams(POLE_LINE_SCHEMA, object.meta), { sampleHeight: (x, z) => context.field.sampleHeight(x, z) });
   const modelUrl = resolved.poleAsset.length > 0 ? context.assets?.resolve(resolved.poleAsset)?.url : undefined;
-  return (
-    <>
-      {modelUrl !== undefined ? (
-        <Suspense
-          fallback={
-            <ProxyPoles poles={resolved.poles} height={resolved.poleHeight} wireCount={resolved.wireCount} wireSpacing={resolved.wireSpacing} />
-          }
-        >
-          <ModelPoles url={modelUrl} poles={resolved.poles} />
-        </Suspense>
-      ) : (
-        <ProxyPoles poles={resolved.poles} height={resolved.poleHeight} wireCount={resolved.wireCount} wireSpacing={resolved.wireSpacing} />
-      )}
-      <Cables cables={resolved.cables} />
-    </>
-  );
+  const proxy = proxyPolesDraw({ poles: resolved.poles, height: resolved.poleHeight, wireCount: resolved.wireCount, wireSpacing: resolved.wireSpacing });
+  const cables = cablesDraw(resolved.cables);
+  const live = new Set<EngineDraw>([cables]);
+  let lastState: EngineFrameState | null = null;
+  let model: EngineDraw | null = null;
+  if (modelUrl !== undefined) {
+    model = modelPolesDraw(modelUrl, resolved.poles, () => {
+      // The GLB poles arrived: the proxy fallback is no longer needed.
+      if (live.delete(proxy) && lastState !== null) proxy.dispose?.(lastState);
+    });
+    live.add(proxy);
+    live.add(model);
+  } else {
+    live.add(proxy);
+  }
+  const children = [...live];
+
+  return {
+    mount(state: EngineFrameState) {
+      lastState = state;
+      for (const child of children) child.mount?.(state);
+    },
+    frame(state: EngineFrameState) {
+      for (const child of live) child.frame?.(state, state.delta);
+    },
+    update(state: EngineFrameState) {
+      for (const child of live) child.update?.(state);
+    },
+    dispose(state: EngineFrameState) {
+      for (const child of live) child.dispose?.(state);
+      live.clear();
+      lastState = null;
+    },
+  };
+}
+
+function PoleLineObject({ object, context }: { object: SceneKindObject; context: SceneKindRenderContext }) {
+  useEngineDraw(() => poleLineDraw(object, context), [object, context.field]);
+  return null;
 }
 
 /** Registers the built-in pole-line runtime renderer. Called by `registerBuiltinSceneKindRenderers`. @internal */
@@ -314,7 +383,7 @@ export function registerPoleLineRenderer(): void {
   registerSceneKindRenderer(POLE_LINE_KIND, ({ objects, context }) => (
     <>
       {objects.map((object) => (
-        <OnePoleLine key={object.id} object={object} context={context} />
+        <PoleLineObject key={object.id} object={object} context={context} />
       ))}
     </>
   ));

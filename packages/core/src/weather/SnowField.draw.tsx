@@ -1,12 +1,21 @@
-import { useFrame, useThree } from "@react-three/fiber";
+import { useRef } from "react";
 import * as THREE from "three";
 import { UniformMaterial } from "@jgengine/core/render/uniformMaterial.draw";
 
-import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { createWeatherQuadGeometry } from "./weatherGeometry.draw";
 import { DEFAULT_SNOW_COUNT, DEFAULT_SNOW_DENSITY, resolveWeatherInstanceCount } from "./weatherMath";
 import { WEATHER_SHELTER_SHADER } from "./weatherShelter.draw";
-import { useWeatherUniformSet, type WeatherVector } from "./weatherUniforms.draw";
+import {
+  createWeatherUniformSet,
+  updateWeatherUniformSet,
+  useWeatherUniformSet,
+  type WeatherUniformOptions,
+  type WeatherUniformSet,
+  type WeatherVector,
+} from "./weatherUniforms.draw";
 
 /** Props for {@link SnowField}: flake count, density and budget, area, fall speed, wind and look. */
 export interface SnowFieldProps {
@@ -33,51 +42,65 @@ const DEFAULT_VOLUME: WeatherVector = [52, 38, 52];
 const DEFAULT_ORIGIN: WeatherVector = [0, 0, 0];
 const DEFAULT_SNOW_COLOR = "#ffffff";
 
-/** GPU-animated drifting snowflakes around the camera, sheltered under authored roofs. */
-export function SnowField({
-  count = DEFAULT_SNOW_COUNT,
-  density = DEFAULT_SNOW_DENSITY,
-  budget,
-  volume = DEFAULT_VOLUME,
-  wind,
-  origin = DEFAULT_ORIGIN,
-  followCamera = true,
-  speed = 3.2,
-  size = 0.11,
-  sway = 0.62,
-  opacity = 0.86,
-  color = DEFAULT_SNOW_COLOR,
-  timeScale,
-  timeSeconds,
-  seed = 72931,
-  renderOrder = 11,
-  frustumCulled,
-}: SnowFieldProps) {
-  const { camera } = useThree();
-  const shared = useWeatherUniformSet({ wind, timeScale, timeSeconds });
-  const geometry = useDisposable(() => createWeatherQuadGeometry(count, seed), [count, seed]);
-  const material = useDisposable(() => {
-    const uniforms = {
-      uTime: shared.time,
-      uShelterCenters: shared.shelterCenters,
-      uShelterShapes: shared.shelterShapes,
-      uShelterCount: shared.shelterCount,
-      uWind: shared.wind,
-      uAnchor: { value: new THREE.Vector3() },
-      uVolume: { value: new THREE.Vector3() },
-      uSpeed: { value: speed },
-      uSize: { value: size },
-      uSway: { value: sway },
-      uOpacity: { value: opacity },
-      uColor: { value: new THREE.Color(color) },
-    } satisfies Record<string, THREE.IUniform>;
+function uniformOptions(props: SnowFieldProps): WeatherUniformOptions {
+  return { wind: props.wind, timeScale: props.timeScale, timeSeconds: props.timeSeconds };
+}
 
-    return new UniformMaterial({
-      uniforms,
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.NormalBlending,
-      vertexShader: `
+type SnowMaterialUniforms = {
+  uTime: WeatherUniformSet["time"];
+  uShelterCenters: WeatherUniformSet["shelterCenters"];
+  uShelterShapes: WeatherUniformSet["shelterShapes"];
+  uShelterCount: WeatherUniformSet["shelterCount"];
+  uWind: WeatherUniformSet["wind"];
+  uAnchor: { value: THREE.Vector3 };
+  uVolume: { value: THREE.Vector3 };
+  uSpeed: { value: number };
+  uSize: { value: number };
+  uSway: { value: number };
+  uOpacity: { value: number };
+  uColor: { value: THREE.Color };
+};
+
+/**
+ * GPU-animated drifting snowflakes around the camera, sheltered under authored roofs.
+ * `uniforms` is the resolved shared set (the React path's `useWeatherUniformSet`,
+ * already ticked); without it the draw owns a local set and ticks it on the
+ * board at weather priority, matching the old local-uniforms path.
+ */
+export function snowFieldDraw(getProps: () => SnowFieldProps, uniforms?: WeatherUniformSet): EngineDraw {
+  let mesh: THREE.Mesh | null = null;
+  let geometry: THREE.InstancedBufferGeometry | null = null;
+  let material: UniformMaterial<SnowMaterialUniforms> | null = null;
+  let shared: WeatherUniformSet | null = null;
+  let leaveTicker = () => {};
+
+  return {
+    mount(state: EngineFrameState) {
+      const props = getProps();
+      const count = props.count ?? DEFAULT_SNOW_COUNT;
+      const seed = props.seed ?? 72931;
+      shared = uniforms ?? createWeatherUniformSet(uniformOptions(props));
+      const set = shared;
+      geometry = createWeatherQuadGeometry(count, seed);
+      material = new UniformMaterial({
+        uniforms: {
+          uTime: set.time,
+          uShelterCenters: set.shelterCenters,
+          uShelterShapes: set.shelterShapes,
+          uShelterCount: set.shelterCount,
+          uWind: set.wind,
+          uAnchor: { value: new THREE.Vector3() },
+          uVolume: { value: new THREE.Vector3() },
+          uSpeed: { value: props.speed ?? 3.2 },
+          uSize: { value: props.size ?? 0.11 },
+          uSway: { value: props.sway ?? 0.62 },
+          uOpacity: { value: props.opacity ?? 0.86 },
+          uColor: { value: new THREE.Color(props.color ?? DEFAULT_SNOW_COLOR) },
+        },
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.NormalBlending,
+        vertexShader: `
         ${WEATHER_SHELTER_SHADER}
         uniform float uTime;
         uniform vec3 uWind;
@@ -117,7 +140,7 @@ export function SnowField({
           gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.0);
         }
       `,
-      fragmentShader: `
+        fragmentShader: `
         uniform float uOpacity;
         uniform vec3 uColor;
 
@@ -135,32 +158,75 @@ export function SnowField({
           gl_FragColor = vec4(uColor, alpha);
         }
       `,
-    });
-  }, [color, opacity, shared, size, speed, sway]);
+      });
+      mesh = new THREE.Mesh(geometry, material);
+      mesh.frustumCulled = props.frustumCulled ?? !(props.followCamera ?? true);
+      mesh.renderOrder = props.renderOrder ?? 11;
+      state.scene.add(mesh);
+      if (uniforms === undefined) {
+        leaveTicker = joinFrameTask(-1, (frameState, delta) => {
+          const p = getProps();
+          const position = frameState.camera.position;
+          updateWeatherUniformSet(set, uniformOptions(p), delta, position.x, position.z, position.y);
+        });
+      }
+    },
+    frame(state: EngineFrameState) {
+      const props = getProps();
+      const set = shared;
+      if (set === null || mesh === null || material === null || geometry === null) return;
+      const uniforms = material.uniforms;
+      const followCamera = props.followCamera ?? true;
+      const origin = props.origin ?? DEFAULT_ORIGIN;
+      const target = uniforms.uAnchor.value as THREE.Vector3;
+      if (followCamera) target.copy(state.camera.position);
+      else target.set(origin[0], origin[1], origin[2]);
+      const volume = props.volume ?? DEFAULT_VOLUME;
+      uniforms.uVolume.value.set(volume[0], volume[1], volume[2]);
+      uniforms.uSpeed.value = props.speed ?? 3.2;
+      uniforms.uSize.value = props.size ?? 0.11;
+      uniforms.uSway.value = props.sway ?? 0.62;
+      uniforms.uOpacity.value = props.opacity ?? 0.86;
+      uniforms.uColor.value.set(props.color ?? DEFAULT_SNOW_COLOR);
+      geometry.instanceCount = resolveWeatherInstanceCount(
+        props.count ?? DEFAULT_SNOW_COUNT,
+        (props.density ?? DEFAULT_SNOW_DENSITY) * set.snow.value,
+        props.budget,
+      );
+      const metrics = set.metrics?.snow;
+      if (metrics !== undefined) {
+        metrics.count = geometry.instanceCount;
+        metrics.capacity = geometry.getAttribute("aSpawn").count;
+      }
+      mesh.frustumCulled = props.frustumCulled ?? !followCamera;
+      mesh.renderOrder = props.renderOrder ?? 11;
+    },
+    dispose(state: EngineFrameState) {
+      leaveTicker();
+      leaveTicker = () => {};
+      if (mesh !== null) state.scene.remove(mesh);
+      geometry?.dispose();
+      material?.dispose();
+      mesh = null;
+      geometry = null;
+      material = null;
+      shared = null;
+    },
+  };
+}
 
-  useFrame(() => {
-    const anchor = followCamera ? camera.position : null;
-    const uniforms = material.uniforms;
-    const target = uniforms.uAnchor.value;
-    if (anchor !== null) target.copy(anchor);
-    else target.set(origin[0], origin[1], origin[2]);
-    uniforms.uVolume.value.set(volume[0], volume[1], volume[2]);
-    uniforms.uSpeed.value = speed;
-    uniforms.uSize.value = size;
-    uniforms.uSway.value = sway;
-    uniforms.uOpacity.value = opacity;
-    uniforms.uColor.value.set(color);
-    geometry.instanceCount = resolveWeatherInstanceCount(count, density * shared.snow.value, budget);
-    const metrics = shared.metrics?.snow;
-    if (metrics !== undefined) { metrics.count = geometry.instanceCount; metrics.capacity = geometry.getAttribute("aSpawn").count; }
+/** GPU-animated drifting snowflakes around the camera, sheltered under authored roofs. */
+export function SnowField(props: SnowFieldProps) {
+  const uniforms = useWeatherUniformSet({
+    wind: props.wind,
+    timeScale: props.timeScale,
+    timeSeconds: props.timeSeconds,
   });
-
-  return (
-    <mesh
-      geometry={geometry}
-      material={material}
-      frustumCulled={frustumCulled ?? !followCamera}
-      renderOrder={renderOrder}
-    />
+  const latest = useRef(props);
+  latest.current = props;
+  useEngineDraw(
+    () => snowFieldDraw(() => latest.current, uniforms),
+    [props.count, props.seed, uniforms],
   );
+  return null;
 }

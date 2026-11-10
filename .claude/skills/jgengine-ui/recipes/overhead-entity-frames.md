@@ -15,16 +15,16 @@ The seam is data-first and caller-owned: pass an array of
 
 ```sh
 bun add @jgengine/core @jgengine/react
-# @jgengine/shell only for the R3F projection convenience below
+# @jgengine/shell only for the scene projection convenience below
 bun add @jgengine/shell
 ```
 
-`@jgengine/core/hud/entityFrames.view` imports neither Three.js nor React Three Fiber and
-needs no `GameProvider`. The `@jgengine/shell` piece is a thin R3F convenience.
+`@jgengine/core/hud/entityFrames.view` imports no Three.js and
+needs no `GameProvider`. The `@jgengine/shell` piece is a thin scene convenience.
 
-## R3F game: one component from your own entity array
+## 3D game: one component from your own entity array
 
-`WorldEntityFrames` mounts inside the R3F scene, samples the live camera each
+`WorldEntityFrames` mounts inside the engine scene, samples the live camera each
 frame, and renders the frames through a fullscreen overlay. Pass the entities you
 already have and a `renderFrame` that composes the kit's `KitMeter` plus a
 name. Projection, culling, and stacking come for free.
@@ -79,9 +79,9 @@ colors, radius and track flow to every plate's `KitMeter`.
 The `enemy` payload rides along on each entry, so `renderFrame` reads live values
 without a second lookup.
 
-## Non-R3F game: bring your own projector
+## 2D or custom-renderer game: bring your own projector
 
-Outside R3F (a 2D or custom-renderer game), use the headless
+Outside the engine scene (a 2D or custom-renderer game), use the headless
 `EntityFrames` directly and pass a `project` that maps a world position to a
 screen point — return `null`, or `{ behind: true }`, to cull an entry. `depth`
 (larger = farther) drives stacking.
@@ -118,13 +118,13 @@ overlay is bounded to the viewport.
 
 The game still owns its entities, their positions, health, updates, camera, and
 the render cadence. JGengine owns the projection→offset→cull→stack behavior
-(`layoutEntityFrames`, unit-tested) and, for R3F, the camera→screen projector
+(`layoutEntityFrames`, unit-tested) and, in the engine scene, the camera→screen projector
 (`useWorldProjection` / `projectWorldToScreen`). The frame markup is yours.
 
 ## Common traps
 
 - Pass a fresh `entries` array each frame (or memo it on your live data). The
-  component re-projects on the R3F frame loop; the pure `EntityFrames` re-projects
+  component re-projects on the engine frame loop; the pure `EntityFrames` re-projects
   whenever it re-renders.
 - Lift `worldPosition` by the entity's height for an overhead anchor — the seam
   does not guess a height.

@@ -1,28 +1,35 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
-import { act, createRoot, extend, type ReconcilerRoot, type RootStore } from "@react-three/fiber";
-import { createElement } from "react";
+import { act, createElement, Fragment, useMemo, type ReactNode } from "react";
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { createAnimGraphRuntime, type AnimGraph } from "@jgengine/core/anim/animGraph";
 import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
 import { standardMaterialsOf } from "@jgengine/core/model/modelRender.draw";
 import { createGraphPose } from "@jgengine/core/anim/useModelAnimation.draw";
-import { useModelInstance, type ModelInstance } from "@jgengine/core/model/useModelInstance.draw";
+import {
+  modelInstanceDraw,
+  type ModelInstanceReady,
+} from "@jgengine/core/model/modelInstanceDraw.draw";
+import { mountTestDraws, type MountedTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
+import {
+  EngineSceneProvider,
+  useEngineDraw,
+  useSceneObjectAttach,
+} from "@jgengine/core/frame/useEngineDraw.draw";
 import { ClipPreviewLayer } from "./ClipPreviewLayer";
 import { createEditorUiStore } from "./uiStore";
 import { previewAnimationConfig, type ClipPreviewSession } from "./shell/clipPreview";
 import type { EditorHostApi } from "./session";
 
-const roots: ReconcilerRoot<HTMLCanvasElement>[] = [];
+const mountedDraws: MountedTestDraws[] = [];
 const originalLoad = sharedGltfLoader.load;
 const actEnvironment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
 const previousActEnvironment = actEnvironment.IS_REACT_ACT_ENVIRONMENT;
 let nextUrl = 0;
-extend({ Group: THREE.Group });
 beforeEach(() => { actEnvironment.IS_REACT_ACT_ENVIRONMENT = true; });
 afterEach(async () => {
-  for (const root of roots.splice(0)) await act(async () => root.unmount());
+  for (const mounted of mountedDraws.splice(0)) await mounted.unmount();
   sharedGltfLoader.load = originalLoad;
   actEnvironment.IS_REACT_ACT_ENVIRONMENT = previousActEnvironment;
 });
@@ -41,6 +48,18 @@ async function importedKnight(): Promise<GLTF> {
   }
 }
 
+/** A named THREE.Group attached under the nearest scene parent, parenting its children's draws. */
+function NamedGroup({ name, position, children }: { name: string; position?: readonly [number, number, number]; children?: ReactNode }) {
+  const group = useMemo(() => {
+    const node = new THREE.Group();
+    node.name = name;
+    if (position !== undefined) node.position.set(position[0], position[1], position[2]);
+    return node;
+  }, [name, position]);
+  useSceneObjectAttach(group);
+  return createElement(EngineSceneProvider, { parent: group }, children);
+}
+
 async function harness(gltf: GLTF, clipName: string | null = "Walking_A") {
   const url = `/editor-knight-preview-${nextUrl++}.glb`;
   gltf.scene.name = "ImportedKnightRoot";
@@ -55,26 +74,31 @@ async function harness(gltf: GLTF, clipName: string | null = "Walking_A") {
     duration: 0,
   };
   ui.patch({ clipPreview: session });
-  const root = createRoot({} as HTMLCanvasElement);
-  roots.push(root);
-  await root.configure({
-    frameloop: "never", size: { width: 100, height: 100, top: 0, left: 0 }, dpr: 1,
-    gl: () => ({ render() {}, setSize() {}, setPixelRatio() {} }) as unknown as THREE.WebGLRenderer,
-  });
-  let reference: ModelInstance;
+  let reference: ModelInstanceReady | null = null;
   function Reference() {
-    reference = useModelInstance({ url, targetHeight: 2, animation: previewAnimationConfig(session.driver) });
-    return createElement("group", { name: "referenceFocus", position: [focus.x, focus.y, focus.z] },
-      createElement("primitive", { object: reference.scene, position: reference.position, scale: reference.scale }));
+    useEngineDraw(
+      () =>
+        modelInstanceDraw(
+          { url, targetHeight: 2, animation: previewAnimationConfig(session.driver) },
+          { onReady: (ready) => { reference = ready; } },
+        ),
+      [url],
+    );
+    return null;
   }
-  let store: RootStore;
-  await act(async () => {
-    store = root.render(createElement("group", null,
-      createElement("group", { name: "editorPreview" }, createElement(ClipPreviewLayer, { api, ui })),
-      createElement(Reference)));
-  });
-  const preview = () => store.getState().scene.getObjectByName("editorPreview")!.getObjectByName("ImportedKnightRoot")!;
-  return { root, ui, preview, reference: () => reference, loads: () => loads };
+  const mounted = await mountTestDraws(
+    createElement(
+      Fragment,
+      null,
+      createElement(NamedGroup, { name: "editorPreview" }, createElement(ClipPreviewLayer, { api, ui })),
+      createElement(NamedGroup, { name: "referenceFocus", position: [focus.x, focus.y, focus.z] }, createElement(Reference)),
+    ),
+    { width: 100, height: 100 },
+  );
+  mountedDraws.push(mounted);
+  for (let i = 0; i < 10; i += 1) await mounted.advance(1 / 60);
+  const preview = () => mounted.scene.getObjectByName("editorPreview")!.getObjectByName("ImportedKnightRoot")!;
+  return { mounted, ui, preview, reference: () => reference!, loads: () => loads };
 }
 
 function worldSkinSamples(root: THREE.Object3D): THREE.Vector3[] {
@@ -126,6 +150,7 @@ describe("ClipPreviewLayer imported rig parity", () => {
     mesh!.geometry.addEventListener("dispose", () => borrowedDisposed++);
     standardMaterialsOf(h.reference().content)[0]!.addEventListener("dispose", () => otherDisposed++);
     await act(async () => h.ui.patch({ clipPreview: null }));
+    for (let i = 0; i < 5; i += 1) await h.mounted.advance(1 / 60);
     expect(previewBonesDisposed).toBe(1);
     expect(previewMaterialsDisposed).toBe(1);
     expect(borrowedDisposed).toBe(0);
@@ -149,6 +174,7 @@ describe("ClipPreviewLayer imported rig parity", () => {
       const output = createAnimGraphRuntime(graph).advance(0.2, {}, reference.durations);
       expect(Math.hypot(...output.rootDelta!)).toBeGreaterThan(0.01);
       await act(async () => h.ui.patch({ clipPreview: { ...h.ui.getState().clipPreview!, graphPose: { graph, clips: output.clips, rootMotion: output.rootMotion } } }));
+      for (let i = 0; i < 5; i += 1) await h.mounted.advance(1 / 60);
       reference.apply(output.clips, output.rootMotion);
       const actual = worldSkinSamples(preview);
       const expected = worldSkinSamples(h.reference().content);

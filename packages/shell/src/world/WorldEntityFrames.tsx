@@ -1,7 +1,7 @@
-import { Html } from "@react-three/drei";
-import { useFrame, useThree } from "@react-three/fiber";
 import { useCallback, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
+import { HudOverlay } from "@jgengine/core/hud/hudOverlay.draw";
 import {
   EntityFrames,
   type EntityFrameEntry,
@@ -10,6 +10,7 @@ import {
   type EntityScreenProjection,
   type ProjectEntity,
 } from "@jgengine/core/hud/entityFrames.view";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /**
  * Returns a {@link ProjectEntity} bound to the live R3F camera and canvas size —
@@ -22,15 +23,16 @@ import {
  * @capability entity-frames R3F camera→screen projector for world-anchored frames
  */
 export function useWorldProjection(): ProjectEntity {
-  const camera = useThree((state) => state.camera);
-  const size = useThree((state) => state.size);
+  const host = useEngineHost();
   const scratch = useRef(new THREE.Vector3());
   return useCallback(
     (worldPosition) => {
+      const camera = host.frame.camera;
+      const size = host.frame.size;
       camera.updateMatrixWorld();
       return projectWorldToScreen(scratch.current, camera, worldPosition, size.width, size.height);
     },
-    [camera, size.width, size.height],
+    [host],
   );
 }
 
@@ -73,13 +75,6 @@ export interface WorldEntityFramesProps<E extends EntityFrameEntry> extends Enti
   anchorTransform?: string;
 }
 
-function pinToViewport(
-  _el: THREE.Object3D,
-  _camera: THREE.Camera,
-  size: { width: number; height: number },
-): [number, number] {
-  return [size.width / 2, size.height / 2];
-}
 
 /**
  * R3F convenience that mounts inside the scene, samples the live camera each
@@ -99,18 +94,14 @@ export function WorldEntityFrames<E extends EntityFrameEntry>({
   anchorTransform,
   ...layout
 }: WorldEntityFramesProps<E>) {
-  const size = useThree((state) => state.size);
+  const host = useEngineHost();
+  const size = host.frame.size;
   const project = useWorldProjection();
   // Re-render on a frame cadence so projected screen positions follow the camera.
   const [, setTick] = useState(0);
   useThreeFrameTick(setTick, tickMs);
   return (
-    <Html
-      fullscreen
-      calculatePosition={pinToViewport}
-      zIndexRange={[19, 0]}
-      style={{ pointerEvents: "none" }}
-    >
+    <HudOverlay zIndex={19}>
       <EntityFrames
         entries={entries}
         project={project}
@@ -120,14 +111,14 @@ export function WorldEntityFrames<E extends EntityFrameEntry>({
         anchorTransform={anchorTransform}
         {...layout}
       />
-    </Html>
+    </HudOverlay>
   );
 }
 
 /** Bumps a state setter on a throttled frame cadence to drive re-projection. */
 function useThreeFrameTick(setTick: (updater: (n: number) => number) => void, tickMs: number): void {
   const last = useRef(0);
-  useFrame((state) => {
+  useFrameTask((state) => {
     const elapsedMs = state.clock.elapsedTime * 1000;
     if (elapsedMs - last.current < tickMs) return;
     last.current = elapsedMs;

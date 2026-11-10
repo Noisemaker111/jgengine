@@ -1,8 +1,8 @@
 import { biomeBandsForSky } from "@jgengine/core/sky/skyBands";
-import { CharacterMotionContext } from "@jgengine/core/anim/characterMotion.draw";
+import { CharacterMotionContext, noteGameCharacterMotion } from "@jgengine/core/anim/characterMotion.draw";
 import { lightingHasSoftShadows } from "@jgengine/core/lighting/softShadows";
-import { Canvas } from "@react-three/fiber";
 import { useEngineRendererFactory } from "@jgengine/core/webgpu/engineRenderer.draw";
+import { EngineCanvas } from "@jgengine/core/frame/engineCanvas.draw";
 import {
   useMemo,
   useEffect,
@@ -16,8 +16,7 @@ import {
   type RefObject,
   type SetStateAction,
 } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
-import type { OrthographicCamera } from "three";
+import * as THREE from "three";
 
 import {
   contextVerbInput,
@@ -56,7 +55,7 @@ import { ColorblindFrame, useColorblindMode } from "@jgengine/core/ui/accessibil
 import { SettingsProvider, type SettingsActionView } from "@jgengine/core/settings/settings.view";
 
 import { resolveWorldSky } from "@jgengine/core/sky/worldSky";
-import { FirstPersonBodyContext } from "@jgengine/core/camera/firstPersonBody.draw";
+import { FirstPersonBodyContext, noteFirstPersonBody } from "@jgengine/core/camera/firstPersonBody.draw";
 import { resolveCaptureCameraConfig } from "@jgengine/core/camera/rigResolve";
 import { rtsRotateKeysConflict } from "@jgengine/core/camera/rigMath";
 import { pointerAimFor, pointerContextMenu, resolvePointerAim } from "@jgengine/core/input/shellPointer.draw";
@@ -124,7 +123,7 @@ import { ConfiguredLighting, BackdropFog, ShadowPipeline } from "@jgengine/core/
 import { IrradianceVolumeLighting } from "@jgengine/core/lighting/IrradianceVolumeLighting.draw";
 import { usePresentationLook } from "@jgengine/core/render/presentationLook.draw";
 import type { GameLookInput } from "@jgengine/core/render/lookPreset";
-import { WorldView, RemotePlayers } from "./world/WorldScene";
+import { WorldView, RemotePlayers, dispatchWorldEntityPointerDown } from "./world/WorldScene";
 import { FrameDriver } from "./drivers/FrameDriver";
 import { GamepadSource } from "@jgengine/core/input/gamepadSource.draw";
 import { SplitScreenRenderer, useSeatViewports } from "@jgengine/core/camera/Viewports.draw";
@@ -135,7 +134,7 @@ import { ContextLossScreen } from "./presentationRecovery";
 import { CombatPresentation } from "@jgengine/core/combat/CombatPresentation.draw";
 import { ParticleEmitters } from "@jgengine/core/vfx/ParticleEmitters.draw";
 import { WorldTireMarks } from "@jgengine/core/vfx/tireMarks.draw";
-import { TerrainQualityContext } from "@jgengine/core/terrain/terrainQuality.draw";
+import { TerrainQualityContext, noteTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { detectKtx2Support } from "@jgengine/core/model/modelLoad.draw";
 import { SceneWarmupCoverLive, SceneWarmupGate, createSceneWarmupStore } from "@jgengine/core/scene/SceneWarmupGate.draw";
 import { BootDirector } from "@jgengine/core/boot/BootDirector.draw";
@@ -144,15 +143,20 @@ import {
   resolvePresentationEffects,
   resolveWorldOverlayBars,
 } from "./presentationResolve";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
+import { useEngineDraw, SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 
 const PRIMARY_CLICK_MOVE_THRESHOLD_PX = 6;
 const DEFAULT_BACKGROUND_COLOR = "#14161b";
 
 function PixelPerfectCamera({ pixelsPerUnit, integerScale }: { pixelsPerUnit: number; integerScale?: boolean }) {
-  const camera = useThree((state) => state.camera) as OrthographicCamera;
-  const size = useThree((state) => state.size);
-  useFrame(() => {
-    if (camera.isOrthographicCamera !== true) return;
+  const host = useEngineHost();
+  useFrameTask(() => {
+    const camera = host.frame.camera;
+    const { size } = host.frame;
+    if (!(camera instanceof THREE.OrthographicCamera)) return;
     const frustum = pixelPerfectFrustum(size, pixelsPerUnit, integerScale === true);
     camera.left = frustum.left;
     camera.right = frustum.right;
@@ -163,6 +167,58 @@ function PixelPerfectCamera({ pixelsPerUnit, integerScale }: { pixelsPerUnit: nu
     camera.position.set(snapped.x, snapped.y, snapped.z);
     camera.updateProjectionMatrix();
   }, 1);
+  return null;
+}
+
+/** `<color attach="background">` as a draw: sets scene.background, restores on dispose. */
+function backgroundColorDraw(color: string): EngineDraw {
+  const applied = new THREE.Color(color);
+  let previous: THREE.Scene["background"] = null;
+  return {
+    mount(state: EngineFrameState) {
+      previous = state.scene.background;
+      state.scene.background = applied;
+    },
+    update(state: EngineFrameState) {
+      if (state.scene.background !== applied) state.scene.background = applied;
+    },
+    dispose(state: EngineFrameState) {
+      state.scene.background = previous;
+      previous = null;
+    },
+  };
+}
+
+/** The no-sky lighting fallback (`<ambientLight>` + `<directionalLight>`) as a draw. */
+function fallbackLightsDraw(ambientIntensity: number): EngineDraw {
+  let ambient: THREE.AmbientLight | null = null;
+  let sun: THREE.DirectionalLight | null = null;
+  return {
+    mount(state: EngineFrameState) {
+      ambient = new THREE.AmbientLight(0xffffff, ambientIntensity);
+      sun = new THREE.DirectionalLight(0xffffff, 1.3);
+      sun.position.set(10, 16, 6);
+      state.scene.add(ambient, sun);
+    },
+    update() {
+      if (ambient !== null && ambient.intensity !== ambientIntensity) ambient.intensity = ambientIntensity;
+    },
+    dispose(state: EngineFrameState) {
+      if (ambient !== null) state.scene.remove(ambient);
+      if (sun !== null) state.scene.remove(sun);
+      ambient = null;
+      sun = null;
+    },
+  };
+}
+
+function BackgroundColor({ color }: { color: string }) {
+  useEngineDraw(() => backgroundColorDraw(color), [color]);
+  return null;
+}
+
+function FallbackLights({ ambientIntensity }: { ambientIntensity: number }) {
+  useEngineDraw(() => fallbackLightsDraw(ambientIntensity), [ambientIntensity]);
   return null;
 }
 
@@ -308,6 +364,12 @@ export function Shell3dPresentation({
   const rigKind = resolveRigKind(cameraConfig);
   const firstPerson = rigKind === "first";
   const firstPersonBody = firstPerson && cameraConfig?.rigs?.firstPerson?.body === true ? controlledEntityId : null;
+  // Draw code reads the same values without React context; keep the stores in step with the providers below.
+  useEffect(() => {
+    noteFirstPersonBody(firstPersonBody);
+    noteGameCharacterMotion(playable.scene?.characterMotion);
+    noteTerrainQuality(graphics.quality);
+  }, [firstPersonBody, playable.scene?.characterMotion, graphics.quality]);
   const showReticle =
     (firstPerson && cameraConfig?.rigs?.firstPerson?.reticle !== false) || rigKind === "shoulder";
   const rtsPanKeysEnabled = !rtsPanKeysConflict(playable.game.input);
@@ -465,6 +527,20 @@ export function Shell3dPresentation({
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     pointerInput.down(event, isWorldPointerTarget(event));
+    if (isWorldPointerTarget(event)) {
+      // The world markers' click-to-target used to arrive through r3f's event system; feed the
+      // service this event's exact cursor, then dispatch the hit entity on either render host.
+      const rect = canvasElement?.getBoundingClientRect();
+      if (rect !== undefined && rect.width > 0 && rect.height > 0) {
+        pointerService.setState({
+          x: ((event.clientX - rect.left) / rect.width) * 2 - 1,
+          y: -(((event.clientY - rect.top) / rect.height) * 2 - 1),
+          present: true,
+        });
+      }
+      const hit = pointerService.worldHit();
+      if (hit?.entity != null) dispatchWorldEntityPointerDown(hit.entity);
+    }
     if (!playControlsActive(ctx)) return;
     if (isWorldPointerTarget(event)) wrapperRef.current?.focus();
     trackPointerAxis(event);
@@ -615,8 +691,9 @@ export function Shell3dPresentation({
         run: () => action.run(ctx),
       }));
   const touchScale = compact ? 0.88 : 1;
-  const canvasFrameloop: "always" | "demand" | "never" =
-    poster && posterFrozen ? "demand" : graphics.frameRateLimit > 0 && !poster ? "never" : "always";
+  // The engine loop paces a frame-rate cap inside `setFpsLimit`, so "never"
+  // (r3f's manual-advance mode for the old external pacer) is never authored here.
+  const canvasFrameloop: "always" | "demand" | "never" = poster && posterFrozen ? "demand" : "always";
   // The frame carries the player's colour-vision mode; the HUD and menu text above it stay unfiltered.
   const colorblind = useColorblindMode(settingsStore);
   const dockMounted =
@@ -706,8 +783,8 @@ export function Shell3dPresentation({
             <GameViewportProvider platforms={playable.controls?.platforms}>
               <ColorblindFrame mode={colorblind} style={{ position: "absolute", inset: 0 }}>
                 {rendererFactory === null ? null : (
-                <Canvas
-                  key={rendererFactory.backend}
+                <EngineCanvas
+                  rendererFactory={rendererFactory}
                   onCreated={({ gl, scene }) => {
                     setCanvasElement(gl.domElement);
                     skipCulledMatrices(scene);
@@ -731,9 +808,8 @@ export function Shell3dPresentation({
                           far: playable.camera?.lens?.frustum?.far ?? CAMERA_FRUSTUM_DEFAULTS.far,
                         }
                   }
-                  shadows={graphics.shadows ? "percentage" : false}
+                  shadows={graphics.shadows ? true : false}
                   dpr={[Math.min(1, graphics.dpr), graphics.dpr]}
-                  gl={rendererFactory}
                   style={{ touchAction: "none" }}
                 >
                   <CanvasCoverFrameloop authored={canvasFrameloop} />
@@ -744,7 +820,7 @@ export function Shell3dPresentation({
                   {orthographic && playable.camera?.lens?.pixelPerfect !== undefined ? (
                     <PixelPerfectCamera {...playable.camera.lens?.pixelPerfect} />
                   ) : null}
-                  {backgroundColor !== undefined ? <color attach="background" args={[backgroundColor]} /> : null}
+                  {backgroundColor !== undefined ? <BackgroundColor color={backgroundColor} /> : null}
                   {cinematicLook ? (
                     <BootSuspenseGuard area="the environment lighting">
                     <EnvironmentLighting
@@ -771,10 +847,7 @@ export function Shell3dPresentation({
                       {...(authoredDaylight ? { modulation: daylightModulation } : {})}
                     />
                   ) : effectiveSky === undefined ? (
-                    <>
-                      <ambientLight intensity={cinematicLook ? 0.3 : 0.55} />
-                      <directionalLight position={[10, 16, 6]} intensity={1.3} />
-                    </>
+                    <FallbackLights ambientIntensity={cinematicLook ? 0.3 : 0.55} />
                   ) : null}
                   {effectiveSky !== undefined ? (
                     <BootSuspenseGuard area="the sky">
@@ -844,9 +917,9 @@ export function Shell3dPresentation({
                       // Author decor is presentation dressing, not collision geometry — mark it
                       // camera-transparent so the orbit spring-arm never yanks toward it. A child
                       // that should block the camera opts back in with userData.jgCameraCollide.
-                      <group userData={CAMERA_TRANSPARENT_USERDATA}>
+                      <SceneObjectGroup userData={CAMERA_TRANSPARENT_USERDATA}>
                         <BootSuspenseGuard area="the game's world overlay"><WorldOverlay ctx={ctx} /></BootSuspenseGuard>
-                      </group>
+                      </SceneObjectGroup>
                     ) : null}
                     {GameRemotePlayers !== undefined ? (
                       <BootSuspenseGuard area="the game's remote players"><GameRemotePlayers ctx={ctx} rows={remotePlayers} /></BootSuspenseGuard>
@@ -934,7 +1007,7 @@ export function Shell3dPresentation({
                       sceneDrawsToTarget={!splitScreen && resolvedLook.postProcessing !== undefined && resolvedLook.postProcessing.enabled !== false}
                     />
                   )}
-                </Canvas>
+                </EngineCanvas>
                 )}
               </ColorblindFrame>
               <SceneWarmupCoverLive store={warmup} />

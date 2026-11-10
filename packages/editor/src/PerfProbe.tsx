@@ -1,4 +1,4 @@
-import { useFrame, useThree } from "@react-three/fiber";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { memo, useRef } from "react";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
@@ -7,6 +7,7 @@ import { editorPerfMarks } from "./perfMarks";
 import type { EditorHostApi } from "./session";
 import { getCameraTelemetry } from "./shell/cameraTelemetry";
 import { frameBudgetFromStats } from "./shell/perfHistory";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 const SAMPLE_WINDOW_MS = 500;
 /** Sum-of-abs delta on camera position/orientation above which a frame counts as camera activity. */
@@ -14,8 +15,7 @@ const CAMERA_MOVE_EPSILON = 1e-4;
 
 /** In-canvas frame counter: publishes fps/draw-call samples to the editor host every 500ms. */
 export const PerfProbe = memo(function PerfProbe({ api }: { api: EditorHostApi }) {
-  const gl = useThree((state) => state.gl);
-  const camera = useThree((state) => state.camera);
+  const { gl, camera } = useEngineHost().frame;
   const framesRef = useRef(0);
   const windowStartRef = useRef(0);
   const activeRef = useRef(false);
@@ -23,7 +23,7 @@ export const PerfProbe = memo(function PerfProbe({ api }: { api: EditorHostApi }
   const lastDrawRef = useRef(-1);
   const lastTriRef = useRef(-1);
 
-  useFrame(() => {
+  useFrameTask(() => {
     const now = performance.now();
     if (windowStartRef.current === 0) windowStartRef.current = now;
     framesRef.current += 1;

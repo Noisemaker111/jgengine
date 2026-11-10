@@ -1,11 +1,12 @@
-import { useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
+
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import type { VolumetricCloudsRules } from "@jgengine/core/sky/volumetricClouds";
 import { cloudNoiseVolume, CLOUD_NOISE_SIZE } from "@jgengine/core/sky/volumetricClouds";
 
-import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 import { hashString } from "@jgengine/core/random/rng";
 import { createSkyLight, readSkyLight } from "./skyLight.draw";
 
@@ -173,87 +174,126 @@ function cameraFar(camera: THREE.Camera): number {
  * sky can mount it beside that sky as long as the sky publishes its light.
  * @internal
  */
-export function VolumetricClouds({ rules }: VolumetricCloudsProps) {
-  const meshRef = useRef<THREE.Mesh>(null);
-  const timeRef = useRef(0);
-  const frameRef = useRef(0);
-  const fallback = useRef(createSkyLight());
+export function volumetricCloudsDraw(getProps: () => VolumetricCloudsProps): EngineDraw {
+  const fallback = createSkyLight();
+  let rules = getProps().rules;
+  let mesh: THREE.Mesh | null = null;
+  let material: THREE.ShaderMaterial | null = null;
+  let uniforms: ReturnType<typeof buildUniforms> | null = null;
+  let time = 0;
+  let frame = 0;
+  const albedo = new THREE.Color();
 
-  const uniforms = useMemo(
-    () => ({
+  function buildUniforms(r: VolumetricCloudsRules) {
+    return {
       uNoise: { value: cloudNoiseTexture() },
       uCameraPos: { value: new THREE.Vector3() },
-      uAlbedo: { value: new THREE.Color(rules.color) },
-      uRim: { value: new THREE.Color(rules.sunColor) },
+      uAlbedo: { value: new THREE.Color(r.color) },
+      uRim: { value: new THREE.Color(r.sunColor) },
       uLightDirection: { value: new THREE.Vector3(0, 1, 0) },
       uLight: { value: new THREE.Color() },
       uAmbientTop: { value: new THREE.Color() },
       uAmbientBottom: { value: new THREE.Color() },
       uHorizon: { value: new THREE.Color() },
-      uSunScatter: { value: rules.sunScatter },
-      uCoverage: { value: rules.coverage },
-      uDensity: { value: rules.density },
-      uBaseHeight: { value: rules.height },
-      uThickness: { value: rules.thickness },
-      uScale: { value: rules.scale },
-      uFade: { value: rules.fade },
+      uSunScatter: { value: r.sunScatter },
+      uCoverage: { value: r.coverage },
+      uDensity: { value: r.density },
+      uBaseHeight: { value: r.height },
+      uThickness: { value: r.thickness },
+      uScale: { value: r.scale },
+      uFade: { value: r.fade },
       uWind: { value: new THREE.Vector3() },
       uFrame: { value: 0 },
-      uSeed: { value: (hashString(rules.seed) % 1000) / 1000 },
-    }),
-    [rules],
-  );
-  const material = useDisposable(
-    () =>
-      new THREE.ShaderMaterial({
-        uniforms,
-        vertexShader: CLOUD_VERTEX_SHADER,
-        fragmentShader: CLOUD_FRAGMENT_SHADER,
-        transparent: true,
-        depthWrite: false,
-        side: THREE.BackSide,
-        fog: false,
-      }),
-    [uniforms],
-  );
+      uSeed: { value: (hashString(r.seed) % 1000) / 1000 },
+    };
+  }
 
-  const albedo = useRef(new THREE.Color());
-  useFrame((state, delta) => {
-    timeRef.current += delta;
-    frameRef.current = (frameRef.current + 1) % 64;
-    const mesh = meshRef.current;
+  const build = (state: EngineFrameState) => {
+    uniforms = buildUniforms(rules);
+    material = new THREE.ShaderMaterial({
+      uniforms,
+      vertexShader: CLOUD_VERTEX_SHADER,
+      fragmentShader: CLOUD_FRAGMENT_SHADER,
+      transparent: true,
+      depthWrite: false,
+      side: THREE.BackSide,
+      fog: false,
+    });
+    mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), material);
+    mesh.renderOrder = -0.5;
+    mesh.frustumCulled = false;
+    state.scene.add(mesh);
+  };
+
+  const teardown = (state: EngineFrameState) => {
     if (mesh !== null) {
-      mesh.position.set(state.camera.position.x, state.camera.position.y, state.camera.position.z);
-      const far = cameraFar(state.camera);
-      mesh.scale.setScalar(Number.isFinite(far) && far > 0 ? far * FAR_FRACTION : 1000);
+      state.scene.remove(mesh);
+      mesh.geometry.dispose();
+      mesh = null;
     }
-    const light = readSkyLight(state.scene) ?? fallback.current;
-    const cover = light.cloudCover;
-    const u = uniforms;
-    u.uCameraPos.value.copy(state.camera.position);
-    // The sun lights the clouds by day; once it is well down the moon takes over.
-    const sunUp = THREE.MathUtils.smoothstep(light.sunDirection.y, -0.08, 0.02);
-    const lightDirection = u.uLightDirection.value;
-    if (sunUp > 0) lightDirection.copy(light.sunDirection);
-    else lightDirection.copy(light.moonDirection);
-    if (lightDirection.y < 0.05) lightDirection.setY(0.05).normalize();
-    const lit = u.uLight.value;
-    lit.copy(light.moon).lerp(light.sun, sunUp).multiplyScalar(1 - cover * 0.7);
-    u.uAmbientTop.value.copy(light.zenith).lerp(light.horizon, 0.4).multiplyScalar(1.1);
-    u.uAmbientBottom.value.copy(light.horizon).lerp(light.zenith, 0.3).multiplyScalar(0.55 - cover * 0.15);
-    u.uHorizon.value.copy(light.horizon);
-    // Rain clouds are thicker, fuller and greyer than fair-weather cumulus.
-    albedo.current.set(rules.color).multiplyScalar(1 - cover * 0.45);
-    u.uAlbedo.value.copy(albedo.current);
-    u.uCoverage.value = rules.coverage + (1 - rules.coverage) * cover * 0.85;
-    u.uDensity.value = rules.density * (1 + cover * 1.5);
-    u.uWind.value.set(timeRef.current * rules.speed, timeRef.current * rules.speed * 0.15, timeRef.current * rules.speed * 0.6);
-    u.uFrame.value = frameRef.current;
-  });
+    material?.dispose();
+    material = null;
+    uniforms = null;
+  };
 
-  return (
-    <mesh ref={meshRef} material={material} renderOrder={-0.5} frustumCulled={false}>
-      <sphereGeometry args={[1, 32, 16]} />
-    </mesh>
-  );
+  return {
+    mount(state) {
+      build(state);
+    },
+    update(state) {
+      const next = getProps().rules;
+      if (next === rules) return;
+      rules = next;
+      teardown(state);
+      build(state);
+    },
+    frame(state: EngineFrameState) {
+      const u = uniforms;
+      const m = mesh;
+      if (u === null || m === null) return;
+      time += state.delta;
+      frame = (frame + 1) % 64;
+      m.position.set(state.camera.position.x, state.camera.position.y, state.camera.position.z);
+      const far = cameraFar(state.camera);
+      m.scale.setScalar(Number.isFinite(far) && far > 0 ? far * FAR_FRACTION : 1000);
+      const light = readSkyLight(state.rootScene ?? state.scene) ?? fallback;
+      const cover = light.cloudCover;
+      u.uCameraPos.value.copy(state.camera.position);
+      // The sun lights the clouds by day; once it is well down the moon takes over.
+      const sunUp = THREE.MathUtils.smoothstep(light.sunDirection.y, -0.08, 0.02);
+      const lightDirection = u.uLightDirection.value;
+      if (sunUp > 0) lightDirection.copy(light.sunDirection);
+      else lightDirection.copy(light.moonDirection);
+      if (lightDirection.y < 0.05) lightDirection.setY(0.05).normalize();
+      const lit = u.uLight.value;
+      lit.copy(light.moon).lerp(light.sun, sunUp).multiplyScalar(1 - cover * 0.7);
+      u.uAmbientTop.value.copy(light.zenith).lerp(light.horizon, 0.4).multiplyScalar(1.1);
+      u.uAmbientBottom.value.copy(light.horizon).lerp(light.zenith, 0.3).multiplyScalar(0.55 - cover * 0.15);
+      u.uHorizon.value.copy(light.horizon);
+      // Rain clouds are thicker, fuller and greyer than fair-weather cumulus.
+      albedo.set(rules.color).multiplyScalar(1 - cover * 0.45);
+      u.uAlbedo.value.copy(albedo);
+      u.uCoverage.value = rules.coverage + (1 - rules.coverage) * cover * 0.85;
+      u.uDensity.value = rules.density * (1 + cover * 1.5);
+      u.uWind.value.set(time * rules.speed, time * rules.speed * 0.15, time * rules.speed * 0.6);
+      u.uFrame.value = frame;
+    },
+    dispose(state) {
+      teardown(state);
+    },
+  };
+}
+
+/**
+ * A raymarched cloud slab between `height` and `height + thickness`, drawn on a camera-centred sphere
+ * just inside the far plane. Each frame it reads the scene's {@link readSkyLight}: the sun (or the moon
+ * at night) lights and shadows it, the sky colours its shade, and the weather's cloud cover thickens
+ * and darkens it. Mounted by `Sky` when a sky descriptor carries `volumetricClouds`; a game with its own
+ * sky can mount it beside that sky as long as the sky publishes its light.
+ * @internal
+ */
+export function VolumetricClouds(props: VolumetricCloudsProps) {
+  const latest = useRef(props);
+  latest.current = props;
+  return <EngineDrawMount create={() => volumetricCloudsDraw(() => latest.current)} deps={[]} />;
 }

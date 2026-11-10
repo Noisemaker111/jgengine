@@ -1,8 +1,8 @@
 import * as THREE from "three";
-import { useFrame } from "@react-three/fiber";
 
 import type { ModelWindConfig } from "@jgengine/core/game/playableGame";
 import { batchSafeSignature, markBatchSafe } from "@jgengine/core/material/compileLayers.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** Shared gust clock every foliage material reads; advanced once per frame by `WindClock`. */
 export const windClock = { value: 0 };
@@ -176,7 +176,7 @@ export function applyModelWindToScene(root: THREE.Object3D, wind: ModelWindConfi
 
 /** Advances the shared gust clock once per frame; mount one per 3D world. */
 export function WindClock(): null {
-  useFrame(({ clock }) => {
+  useFrameTask(({ clock }) => {
     windClock.value = clock.getElapsedTime();
   });
   return null;

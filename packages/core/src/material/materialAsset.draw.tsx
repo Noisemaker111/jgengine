@@ -1,6 +1,4 @@
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
-import { useLoader, useThree } from "@react-three/fiber";
-import { useMemo } from "react";
 import * as THREE from "three";
 
 import { MATERIAL_TEXTURE_SEMANTICS, validateMaterialAsset, validateMaterialAssignments, type MaterialAsset, type MaterialAssignment, type MaterialAssignmentValidationOptions, type MaterialSurfaceParameters, type MaterialTextureMetadata, type MaterialTextureRole } from "@jgengine/core/material/materialAsset";
@@ -9,10 +7,10 @@ import { applyMaterialOverrideToMaterial, MATERIAL_TEXTURE_PROPERTIES, requiresP
 import { configureAuthoredSurface, type SurfaceShape } from "./authoredSurfaceMaterial.draw";
 import { ownModelMaterial } from "@jgengine/core/model/modelRender.draw";
 import { meshMatchesName } from "@jgengine/core/model/modelMeshMerge.draw";
-import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 import { ImageTextureLoader } from "./imageTexture.draw";
 import { detectKtx2Support, materialKtx2Loader } from "@jgengine/core/model/modelLoad.draw";
 import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
+import type { EngineDraw } from "@jgengine/core/frame/engineLoop.draw";
 
 /** Shares the model transcoder and loader cache while loading native authored images normally, top row first as glTF maps expect. @internal */
 export class MaterialTextureLoader extends THREE.Loader<THREE.Texture> {
@@ -265,44 +263,73 @@ export function applyMaterialAssignments(root: THREE.Object3D, assets: readonly 
 export interface MaterialAssetSurfaceOptions { shape?: SurfaceShape; repeatMetres?: number; overrides?: MaterialSurfaceParameters }
 
 /**
- * Load map views, own their cleanup and build the same physical shader used by model assignments.
- * @capability material-assets own a serializable material asset's textures and runtime physical shader for a custom renderer
+ * An owned {@link materialAssetMaterial} result: the built surface material plus the map views to
+ * dispose with it.
+ * @internal
  */
-export function useMaterialAssetMaterial(asset: MaterialAsset, options: MaterialAssetSurfaceOptions = {}): THREE.MeshStandardMaterial {
-  const key = JSON.stringify([asset, options]);
-  const entries = useMemo(() => Object.entries(asset.textures ?? {}) as [MaterialTextureRole, MaterialTextureMetadata][], [key]);
-  const renderer = useThree(state => state.gl);
-  if (entries.some(([, metadata]) => /\.ktx2(?:[?#]|$)/i.test(metadata.url))) detectKtx2Support(renderer);
-  const loaded = useLoader(MaterialTextureLoader, entries.map(([, metadata]) => metadata.url));
-  const resources = useDisposable(() => {
-    const textures: MaterialOverrideTextures = {};
-    let material: THREE.MeshStandardMaterial | undefined;
+export interface MaterialAssetLease {
+  readonly material: THREE.MeshStandardMaterial;
+  dispose(): void;
+}
+
+function buildMaterialAssetSurface(
+  asset: MaterialAsset,
+  sources: readonly THREE.Texture[],
+  options: MaterialAssetSurfaceOptions,
+  entries: readonly (readonly [MaterialTextureRole, MaterialTextureMetadata])[],
+): readonly [THREE.MeshStandardMaterial, ...THREE.Texture[]] {
+  const textures: MaterialOverrideTextures = {};
+  const owned: THREE.Texture[] = [];
+  try {
+    entries.forEach(([role, metadata], index) => {
+      const source = sources[index];
+      if (source === undefined) throw new Error("materialAssetMaterial: missing texture source");
+      const view = configureMaterialTexture(role, metadata, source);
+      owned.push(view);
+      textures[role] = view;
+    });
+    const surface = materialAssetSurface(asset, options.overrides);
+    const material = requiresPhysicalMaterial(surface, textures) ? new THREE.MeshPhysicalMaterial() : new THREE.MeshStandardMaterial();
     try {
-      entries.forEach(([role, metadata], index) => { textures[role] = configureMaterialTexture(role, metadata, loaded[index]!); });
-      const surface = materialAssetSurface(asset, options.overrides);
-      material = requiresPhysicalMaterial(surface, textures) ? new THREE.MeshPhysicalMaterial() : new THREE.MeshStandardMaterial();
       configureAuthoredSurface(material, { ...surface, anisotropy: undefined, surfaceAnisotropy: surface.anisotropy, repeatMetres: options.repeatMetres }, textures, options.shape ?? "box");
       applyNormalConventions(material, asset);
       applyFabric(material, asset);
       applyHair(material, asset);
       material.userData["jgMaterialAsset"] = asset.id;
-      return [material, ...Object.values(textures)] as const;
     } catch (error) {
-      material?.dispose();
-      Object.values(textures).forEach(texture => texture.dispose());
+      material.dispose();
       throw error;
     }
-  }, [key, loaded]);
-  return resources[0];
+    return [material, ...owned] as const;
+  } catch (error) {
+    for (const texture of owned) texture.dispose();
+    throw error;
+  }
 }
 
 /**
- * Mount a serializable material asset on an authored primitive, sharing model-slot rendering and owned resource cleanup.
- * @capability material-assets render authored physical surfaces, woven detail and approximate hair-card appearance
+ * The draw-side form of the old `useMaterialAssetMaterial`: loads the asset's map views through the
+ * shared texture cache, builds the same physical shader model assignments use, and returns an owned
+ * lease the caller disposes with the draw. Nothing renders until the load resolves â€” pair with
+ * `loadDraw`/`loadDrawSystem`.
+ * @capability material-assets own a serializable material asset's textures and runtime physical shader for a custom renderer
  */
-export function MaterialAssetSurface({ asset, ...options }: { asset: MaterialAsset } & MaterialAssetSurfaceOptions) {
-  const material = useMaterialAssetMaterial(asset, options);
-  return <primitive object={material} attach="material" />;
+export function materialAssetMaterial(asset: MaterialAsset, options: MaterialAssetSurfaceOptions = {}, renderer?: THREE.WebGLRenderer | null): Promise<MaterialAssetLease> {
+  const entries = Object.entries(asset.textures ?? {}) as [MaterialTextureRole, MaterialTextureMetadata][];
+  if (entries.some(([, metadata]) => /\.ktx2(?:[?#]|$)/i.test(metadata.url)) && renderer !== undefined && renderer !== null) detectKtx2Support(renderer);
+  const urls = entries.map(([, metadata]) => metadata.url);
+  const build = (sources: readonly THREE.Texture[]) => {
+    const [material, ...textures] = buildMaterialAssetSurface(asset, sources, options, entries);
+    return {
+      material,
+      dispose() {
+        material.dispose();
+        for (const texture of textures) texture.dispose();
+      },
+    } satisfies MaterialAssetLease;
+  };
+  if (urls.length === 0) return Promise.resolve(build([]));
+  return Promise.all(urls.map(loadMaterialTexture)).then(build);
 }
 
 /**
@@ -367,81 +394,127 @@ export function inspectModelMaterialSlots(root: THREE.Object3D): ModelMaterialSl
   return result;
 }
 
-/** Loaded, owned map views for one model configuration. Loader sources and imported maps remain borrowed. @internal */
-export function useModelMaterialTextures(model: Pick<ModelConfig, "material" | "materialAssets" | "materialAssignments">): { global: MaterialOverrideTextures; assets: ReadonlyMap<string, MaterialOverrideTextures> } {
-  const ids = new Set(model.materialAssignments?.map(assignment => assignment.materialId));
-  const referenced = (model.materialAssets ?? []).filter(asset => ids.has(asset.id));
-  const key = JSON.stringify([model.material?.maps, referenced]);
-  const entries = useMemo(() => {
-    const result: { assetId?: string; role: MaterialTextureRole; metadata: MaterialTextureMetadata }[] = overrideMapEntries(model.material?.maps);
-    for (const asset of referenced) for (const [role, metadata] of Object.entries(asset.textures ?? {})) result.push({ assetId: asset.id, role: role as MaterialTextureRole, metadata: metadata! });
-    return result;
-  }, [key]);
-  const views = useMaterialTextureViews(entries);
-  return useMemo(() => {
-    const global: MaterialOverrideTextures = {};
-    const assets = new Map<string, MaterialOverrideTextures>();
-    entries.forEach((entry, index) => {
-      if (entry.assetId === undefined) global[entry.role] = views[index]!;
-      else {
-        let textures = assets.get(entry.assetId);
-        if (textures === undefined) { textures = {}; assets.set(entry.assetId, textures); }
-        textures[entry.role] = views[index]!;
-      }
-    });
-    return { global, assets };
-  }, [entries, views]);
+/** An owned {@link loadOverrideMapSets} result plus the texture views to dispose. @internal */
+export interface OverrideMapSetsLease {
+  readonly sets: readonly (MaterialOverrideTextures | undefined)[];
+  dispose(): void;
 }
 
 /**
- * Loaded override maps for each model of a batched placement, in order; `undefined` for a model with
- * none. Every view of one URL shares its loaded image, so batches of different models that use the
- * same maps still merge into one draw.
+ * Draw-side form of {@link useOverrideMapSets}: resolves each model's override maps through the
+ * shared texture cache and returns owned views grouped per model, in order. The caller disposes the
+ * views once the sources built from them are gone.
  * @internal
  */
-export function useOverrideMapSets(models: readonly Pick<ModelConfig, "material">[]): readonly (MaterialOverrideTextures | undefined)[] {
-  const key = JSON.stringify(models.map(model => model.material?.maps ?? null));
-  const entries = useMemo(
-    () => models.flatMap((model, piece) => overrideMapEntries(model.material?.maps).map(entry => ({ ...entry, piece }))),
-    [key],
-  );
-  const views = useMaterialTextureViews(entries);
-  return useMemo(() => {
-    const sets: (MaterialOverrideTextures | undefined)[] = models.map(() => undefined);
-    entries.forEach((entry, index) => {
-      const set = sets[entry.piece] ?? {};
-      set[entry.role] = views[index]!;
-      sets[entry.piece] = set;
+export function loadOverrideMapSets(renderer: THREE.WebGLRenderer | null, models: readonly Pick<ModelConfig, "material">[]): Promise<OverrideMapSetsLease> {
+  const entries = models.flatMap((model, piece) => overrideMapEntries(model.material?.maps).map(entry => ({ ...entry, piece })));
+  if (entries.some(entry => /\.ktx2(?:[?#]|$)/i.test(entry.metadata.url)) && renderer !== null) detectKtx2Support(renderer);
+  if (entries.length === 0) {
+    return Promise.resolve({ sets: models.map(() => undefined), dispose() {} });
+  }
+  return Promise.all(entries.map(entry => loadMaterialTexture(entry.metadata.url))).then(sources => {
+    const owned: THREE.Texture[] = [];
+    try {
+      const sets: (MaterialOverrideTextures | undefined)[] = models.map(() => undefined);
+      entries.forEach((entry, index) => {
+        const view = configureMaterialTexture(entry.role, entry.metadata, sources[index]!);
+        view.flipY = false;
+        owned.push(view);
+        const set = sets[entry.piece] ?? {};
+        set[entry.role] = view;
+        sets[entry.piece] = set;
+      });
+      return {
+        sets,
+        dispose() {
+          for (const texture of owned) texture.dispose();
+        },
+      };
+    } catch (error) {
+      for (const texture of owned) texture.dispose();
+      throw error;
+    }
+  });
+}
+
+/** An owned {@link useModelMaterialTextures} result plus the texture views to dispose. @internal */
+export interface ModelMaterialTexturesLease {
+  readonly global: MaterialOverrideTextures;
+  readonly assets: ReadonlyMap<string, MaterialOverrideTextures>;
+  dispose(): void;
+}
+
+const materialTextureLoader = new MaterialTextureLoader();
+const materialTextureLoads = new Map<string, Promise<THREE.Texture>>();
+
+/** One shared decode per map URL, matching the `useLoader` cache the hook path used. @internal */
+function loadMaterialTexture(url: string): Promise<THREE.Texture> {
+  let pending = materialTextureLoads.get(url);
+  if (pending === undefined) {
+    pending = new Promise((resolve, reject) => {
+      materialTextureLoader.load(url, resolve, undefined, reject);
     });
-    return sets;
-  }, [entries, views, models.length]);
+    materialTextureLoads.set(url, pending);
+    pending.catch(() => materialTextureLoads.delete(url));
+  }
+  return pending;
+}
+
+/**
+ * The draw-side form of {@link useModelMaterialTextures}: resolves the same override and
+ * material-asset map entries through the shared texture cache and returns owned views grouped
+ * exactly like the hook. The caller disposes the views with the built sources.
+ * @internal
+ */
+export function modelMaterialTextures(
+  model: Pick<ModelConfig, "material" | "materialAssets" | "materialAssignments">,
+  renderer?: THREE.WebGLRenderer | null,
+): Promise<ModelMaterialTexturesLease> {
+  const ids = new Set(model.materialAssignments?.map(assignment => assignment.materialId));
+  const referenced = (model.materialAssets ?? []).filter(asset => ids.has(asset.id));
+  const entries: { assetId?: string; role: MaterialTextureRole; metadata: MaterialTextureMetadata }[] = overrideMapEntries(model.material?.maps);
+  for (const asset of referenced) for (const [role, metadata] of Object.entries(asset.textures ?? {})) entries.push({ assetId: asset.id, role: role as MaterialTextureRole, metadata: metadata! });
+  if (entries.some(entry => /\.ktx2(?:[?#]|$)/i.test(entry.metadata.url)) && renderer !== undefined && renderer !== null) detectKtx2Support(renderer);
+  if (entries.length === 0) {
+    return Promise.resolve({ global: {}, assets: new Map(), dispose() {} });
+  }
+  return Promise.all(entries.map(entry => loadMaterialTexture(entry.metadata.url))).then(sources => {
+    const owned: THREE.Texture[] = [];
+    try {
+      const views = entries.map((entry, index) => {
+        const view = configureMaterialTexture(entry.role, entry.metadata, sources[index]!);
+        view.flipY = false;
+        owned.push(view);
+        return view;
+      });
+      const global: MaterialOverrideTextures = {};
+      const assets = new Map<string, MaterialOverrideTextures>();
+      entries.forEach((entry, index) => {
+        if (entry.assetId === undefined) global[entry.role] = views[index]!;
+        else {
+          let textures = assets.get(entry.assetId);
+          if (textures === undefined) { textures = {}; assets.set(entry.assetId, textures); }
+          textures[entry.role] = views[index]!;
+        }
+      });
+      return {
+        global,
+        assets,
+        dispose() {
+          for (const texture of owned) texture.dispose();
+        },
+      };
+    } catch (error) {
+      for (const texture of owned) texture.dispose();
+      throw error;
+    }
+  });
 }
 
 function overrideMapEntries(maps: Partial<Record<MaterialTextureRole, string>> | undefined): { role: MaterialTextureRole; metadata: MaterialTextureMetadata }[] {
   const result: { role: MaterialTextureRole; metadata: MaterialTextureMetadata }[] = [];
   for (const [role, url] of Object.entries(maps ?? {})) if (url !== undefined) result.push({ role: role as MaterialTextureRole, metadata: { url, colorSpace: MATERIAL_TEXTURE_SEMANTICS[role as MaterialTextureRole].colorSpace } });
   return result;
-}
-
-/** Loads each entry's image and returns an owned, configured view of it, disposed with the caller. */
-function useMaterialTextureViews(entries: readonly { role: MaterialTextureRole; metadata: MaterialTextureMetadata }[]): THREE.Texture[] {
-  const renderer = useThree(state => state.gl);
-  if (entries.some(entry => /\.ktx2(?:[?#]|$)/i.test(entry.metadata.url))) detectKtx2Support(renderer);
-  const loaded = useLoader(MaterialTextureLoader, entries.map(entry => entry.metadata.url));
-  return useDisposable(() => {
-    const owned: THREE.Texture[] = [];
-    try {
-      entries.forEach((entry, index) => {
-        const view = configureMaterialTexture(entry.role, entry.metadata, loaded[index]!);
-        view.flipY = false;
-        owned.push(view);
-      });
-      return owned;
-    } catch (error) {
-      owned.forEach(texture => texture.dispose());
-      throw error;
-    }
-  }, [entries, loaded]);
 }
 
 /**
@@ -454,4 +527,88 @@ export function setHairCardLightExposure(material: THREE.Material, exposure: num
   material.userData["jgHairLightExposure"] = value;
   const uniform = material.userData["jgHairBacklightUniform"] as { value: number } | undefined;
   if (uniform !== undefined) uniform.value = (material.userData["jgHairBacklightStrength"] as number) * value;
+}
+
+/**
+ * An {@link EngineDraw} mesh whose material arrives asynchronously: mounts with `fallback` (or a
+ * plain standard material), swaps in the leased material when `load` resolves, and disposes the
+ * lease with the draw. The draw-side replacement for the old suspending material components.
+ * @capability material-assets draw-side async material lease for custom meshes and preview swatches
+ */
+export function leasedMaterialMeshDraw(options: {
+  geometry: THREE.BufferGeometry;
+  load: (renderer: THREE.WebGLRenderer | null) => Promise<MaterialAssetLease>;
+  fallback?: THREE.Material | undefined;
+  castShadow?: boolean | undefined;
+  receiveShadow?: boolean | undefined;
+  renderOrder?: number | undefined;
+  position?: readonly [number, number, number] | undefined;
+  rotation?: readonly [number, number, number] | undefined;
+  scale?: readonly [number, number, number] | undefined;
+  visible?: boolean | undefined;
+  /** Set false when `geometry` is shared across draws; default disposes it with the draw. */
+  disposeGeometry?: boolean | undefined;
+}): EngineDraw {
+  const mesh = new THREE.Mesh(options.geometry, options.fallback ?? new THREE.MeshStandardMaterial({ color: "#4a4a4a", roughness: 1 }));
+  if (options.position !== undefined) mesh.position.set(options.position[0], options.position[1], options.position[2]);
+  if (options.rotation !== undefined) mesh.rotation.set(options.rotation[0], options.rotation[1], options.rotation[2]);
+  if (options.scale !== undefined) mesh.scale.set(options.scale[0], options.scale[1], options.scale[2]);
+  if (options.visible !== undefined) mesh.visible = options.visible;
+  if (options.castShadow !== undefined) mesh.castShadow = options.castShadow;
+  if (options.receiveShadow !== undefined) mesh.receiveShadow = options.receiveShadow;
+  if (options.renderOrder !== undefined) mesh.renderOrder = options.renderOrder;
+  let lease: MaterialAssetLease | null = null;
+  let cancelled = false;
+  let mounted = false;
+  return {
+    mount(state) {
+      mounted = true;
+      state.scene.add(mesh);
+      void options.load(state.gl)
+        .then((loaded) => {
+          if (cancelled || !mounted) {
+            loaded.dispose();
+            return;
+          }
+          lease = loaded;
+          mesh.material = loaded.material;
+        })
+        .catch((error: unknown) => {
+          if (typeof console !== "undefined") console.warn("[jgengine] leased material failed to build.", error);
+        });
+    },
+    dispose(state) {
+      cancelled = true;
+      mounted = false;
+      state.scene.remove(mesh);
+      lease?.dispose();
+      lease = null;
+      if (options.disposeGeometry !== false) options.geometry.dispose();
+      if (options.fallback === undefined) mesh.material.dispose();
+    },
+  };
+}
+
+/**
+ * The draw-side form of the old `MaterialAssetSurface` component: a sphere (or flat card when
+ * `options.flat`) wearing the asset's leased physical material.
+ * @capability material-assets draw a material asset on a sphere or flat swatch mesh
+ */
+export function materialAssetSwatchDraw(
+  asset: MaterialAsset,
+  options: { flat?: boolean | undefined; repeatMetres?: number | undefined; shape?: SurfaceShape | undefined; overrides?: MaterialSurfaceParameters | undefined; fallback?: THREE.Material | undefined } = {},
+): EngineDraw {
+  const geometry = options.flat === true
+    ? new THREE.PlaneGeometry(1.25, 1.5, 12, 12)
+    : new THREE.SphereGeometry(0.65, 48, 32);
+  const surfaceOptions: MaterialAssetSurfaceOptions = {
+    ...(options.shape === undefined ? {} : { shape: options.shape }),
+    ...(options.repeatMetres === undefined ? {} : { repeatMetres: options.repeatMetres }),
+    ...(options.overrides === undefined ? {} : { overrides: options.overrides }),
+  };
+  return leasedMaterialMeshDraw({
+    geometry,
+    load: (renderer) => materialAssetMaterial(asset, surfaceOptions, renderer),
+    ...(options.fallback === undefined ? {} : { fallback: options.fallback }),
+  });
 }
