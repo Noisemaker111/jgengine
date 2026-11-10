@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 
 import type { CameraShakeOffset } from "@jgengine/core/camera/shake/cameraShake";
-import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
+import { useFrameJoin } from "@jgengine/core/frame/engineHost.draw";
 
 import { GAME_SIM_FRAME_PRIORITY } from "@jgengine/core/camera/orbitCameraMath";
 import { applyCameraShake, removeCameraShake, useCameraShake } from "./shakeChannel.draw";
@@ -18,12 +18,13 @@ const SHAKE_REMOVE_PRIORITY = -2;
 export function CameraShakeApplier(): null {
   const shake = useCameraShake();
   const applied = useRef<CameraShakeOffset>({ x: 0, y: 0, z: 0, pitch: 0, yaw: 0, roll: 0 });
+  const joinFrame = useFrameJoin();
   useEffect(
-    () => joinFrameTask(SHAKE_REMOVE_PRIORITY, (state) => removeCameraShake(state.camera, applied.current)),
+    () => joinFrame(SHAKE_REMOVE_PRIORITY, (state) => removeCameraShake(state.camera, applied.current)),
     [],
   );
   useEffect(
-    () => joinFrameTask(GAME_SIM_FRAME_PRIORITY, (state, delta) => applyCameraShake(state.camera, shake, delta, applied.current)),
+    () => joinFrame(GAME_SIM_FRAME_PRIORITY, (state, delta) => applyCameraShake(state.camera, shake, delta, applied.current)),
     [shake],
   );
   return null;

@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 
-import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
+import { useFrameJoin } from "@jgengine/core/frame/engineHost.draw";
 import type { EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 
 /**
@@ -21,8 +21,9 @@ export function useSharedFrame(
   useLayoutEffect(() => {
     ref.current = callback;
   });
+  const joinFrame = useFrameJoin();
   useLayoutEffect(
-    () => (active ? joinFrameTask(priority, (state, delta) => ref.current(state, delta)) : undefined),
+    () => (active ? joinFrame(priority, (state, delta) => ref.current(state, delta)) : undefined),
     [active, priority],
   );
 }

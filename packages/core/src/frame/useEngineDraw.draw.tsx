@@ -3,7 +3,7 @@ import * as THREE from "three";
 
 import { childFrameState, type EngineDraw, type EngineFrameState } from "./engineLoop.draw";
 import { useEngineHost } from "./engineHost.draw";
-import { joinFrameTask } from "./frameBoard.draw";
+import { joinFrameTask, withFrameOwner } from "./frameBoard.draw";
 
 /** A draw mounted by {@link mountChildDraw}: its scoped state, and the leave/dispose pair. @internal */
 export interface MountedChildDraw {
@@ -21,10 +21,11 @@ export interface MountedChildDraw {
  */
 export function mountChildDraw(draw: EngineDraw, parent: THREE.Object3D, root: EngineFrameState): MountedChildDraw {
   const state = childFrameState(root, parent);
-  draw.mount?.(state);
+  const owner = root.frameOwner;
+  withFrameOwner(owner, () => draw.mount?.(state));
   const leave = draw.frame === undefined
     ? () => {}
-    : joinFrameTask(draw.priority ?? 0, (frameState, delta) => draw.frame?.(childFrameState(frameState, parent), delta));
+    : joinFrameTask(draw.priority ?? 0, (frameState, delta) => draw.frame?.(childFrameState(frameState, parent), delta), owner);
   return { draw, state, leave };
 }
 
@@ -249,10 +250,11 @@ export function EngineDrawMount({ create, deps }: { create: () => EngineDraw; de
 
 /** Mount `draw` on the host's frame state itself — the scene-root form of {@link mountChildDraw}. @internal */
 function mountRootDraw(draw: EngineDraw, frame: EngineFrameState): MountedChildDraw {
-  draw.mount?.(frame);
+  const owner = frame.frameOwner;
+  withFrameOwner(owner, () => draw.mount?.(frame));
   const leave = draw.frame === undefined
     ? () => {}
-    : joinFrameTask(draw.priority ?? 0, (frameState, delta) => draw.frame?.(frameState, delta));
+    : joinFrameTask(draw.priority ?? 0, (frameState, delta) => draw.frame?.(frameState, delta), owner);
   return { draw, state: frame, leave };
 }
 

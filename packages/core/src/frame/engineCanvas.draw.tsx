@@ -125,19 +125,15 @@ export function EngineCanvas({
   return (
     <>
       {/* Keyed per backend: a fresh DOM canvas per renderer factory, like r3f's `key={backend}` on Canvas. */}
-      <canvas
-        key={`canvas-${rendererFactory.backend}`}
-        ref={canvasRef}
-        style={{
-          position: "absolute",
-          inset: 0,
-          width: "100%",
-          height: "100%",
-          display: "block",
-          touchAction: "none",
-          ...style,
-        }}
-      />
+      {/* The box is in the page flow and takes the caller's `style` (a height, a background); the
+          canvas fills it. A canvas styled directly would leave the flow and stack over its siblings. */}
+      <div data-engine-canvas="" style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden", ...style }}>
+        <canvas
+          key={`canvas-${rendererFactory.backend}`}
+          ref={canvasRef}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block", touchAction: "none" }}
+        />
+      </div>
       {host !== null ? (
         <EngineHostProvider key={`host-${rendererFactory.backend}`} host={host}>
           {children}

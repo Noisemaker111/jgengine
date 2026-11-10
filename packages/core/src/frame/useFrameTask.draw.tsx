@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 
-import { joinFrameTask } from "./frameBoard.draw";
+import { useFrameJoin } from "./engineHost.draw";
 import type { EngineFrameState } from "./engineLoop.draw";
 
 /**
@@ -17,8 +17,9 @@ export function useFrameTask(
   useLayoutEffect(() => {
     ref.current = callback;
   });
+  const joinFrame = useFrameJoin();
   useLayoutEffect(
-    () => joinFrameTask(priority, (state, delta) => ref.current(state, delta)),
+    () => joinFrame(priority, (state, delta) => ref.current(state, delta)),
     [priority],
   );
 }

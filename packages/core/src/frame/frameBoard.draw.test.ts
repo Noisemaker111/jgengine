@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import { bindFrameSource, joinFrameTask, observeFrameTasks, type FrameTask } from "./frameBoard.draw";
+import { bindFrameOwner, bindFrameSource, isPrimaryFrameOwner, joinFrameTask, observeFrameTasks, withFrameOwner, type FrameTask } from "./frameBoard.draw";
 
 /** A frame source like the engine loop's: one attachment per priority, run in priority order. */
 function fakeSource() {
@@ -78,5 +78,52 @@ describe("the frame board", () => {
     expect(ran).toEqual(["early"]);
     leave();
     expect(late.attached).toHaveLength(0);
+  });
+});
+
+/** One canvas: an owner bound as its own frame source, like `createEngineLoop` does. */
+function fakeCanvas(name: string) {
+  const owner = { name };
+  const attached: FrameTask[] = [];
+  const unbind = bindFrameOwner(owner, (_priority, run) => {
+    attached.push(run);
+    return () => void attached.splice(attached.indexOf(run), 1);
+  });
+  const frame = () => {
+    for (const run of [...attached]) run({ frameOwner: owner } as never, 0.016);
+  };
+  return { owner, frame, unbind };
+}
+
+describe("several canvases on one page", () => {
+  test("a task runs on the canvas it was joined under, and a closing preview stops nothing else", () => {
+    const game = fakeCanvas("game");
+    const preview = fakeCanvas("preview");
+    const leaves: (() => void)[] = [];
+    try {
+      expect(isPrimaryFrameOwner(game.owner)).toBe(true);
+      expect(isPrimaryFrameOwner(preview.owner)).toBe(false);
+      const ran: string[] = [];
+      const seen = (label: string): FrameTask => (state) => void ran.push(`${label}@${(state.frameOwner as { name: string }).name}`);
+      leaves.push(joinFrameTask(0, seen("hud"), game.owner));
+      leaves.push(joinFrameTask(0, seen("model"), preview.owner));
+      // A draw mounting under the preview joins from its own code with no owner in hand.
+      leaves.push(withFrameOwner(preview.owner, () => joinFrameTask(0, seen("spin"))));
+      leaves.push(joinFrameTask(0, seen("ownerless")));
+      game.frame();
+      expect(ran).toEqual(["hud@game", "ownerless@game"]);
+      ran.length = 0;
+      preview.frame();
+      expect(ran).toEqual(["model@preview", "spin@preview"]);
+      ran.length = 0;
+      preview.unbind();
+      preview.frame();
+      game.frame();
+      expect(ran).toEqual(["hud@game", "ownerless@game"]);
+    } finally {
+      for (const leave of leaves) leave();
+      preview.unbind();
+      game.unbind();
+    }
   });
 });
