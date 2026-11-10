@@ -1042,7 +1042,7 @@ pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
     let sized = needs_size(b) || enclosed;
     let size = if sized { size_of(b.id).unwrap_or([0.0, 0.0]) } else { [0.0, 0.0] };
     let radii = b.rad.map(|r| r.map(|v| if v < 0.0 { -v * size[0].min(size[1]) } else { v }));
-    let mut e = if let Some(inp) = &b.inp { input_el(b, inp, s) } else { el() };
+    let mut e = el();
     e = e.layout_style(|st| layout(b, st));
     let rect = RECTS.with(|r| r.borrow().get(&b.id).copied());
     let clip = clip_of(b, rect);
@@ -1190,7 +1190,13 @@ pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
             _ => e.pixels(image.pixels()),
         };
     }
-    if b.inp.is_none() && let Some(t) = &b.t {
+    if let Some(inp) = &b.inp {
+        e = e.child(input_el(b, inp, s).key("field").layout_style(|style| {
+            style.flex_grow = 1.0;
+            style.flex_shrink = 1.0;
+            style.min_size.width = length(0.0);
+        }));
+    } else if let Some(t) = &b.t {
         let grow = |st: &mut Style| {
             st.flex_grow = 1.0;
             st.flex_shrink = 1.0;
@@ -1336,11 +1342,12 @@ mod live_value_tests {
     #[test]
     fn input_columns_preserve_intrinsic_width_inside_a_capped_percentage() {
         let mut state = Ui::default();
-        state.root = crate::spec::parse_spec(r#"{"children":[{"k":"x","id":1,"w":800,"h":600,"d":2,"ji":1,"c":[{"k":"x","id":2,"fd":1,"c":[{"k":"x","id":0,"t":{"s":"Park name","z":14,"c":4294967295}},{"k":"x","id":3,"d":1,"w":"100%","mxw":360,"mnw":0,"inp":{"v":"","cols":20},"t":{"s":"","z":22,"w":700,"c":4294967295}}]}]}]}"#).unwrap().children;
+        state.root = crate::spec::parse_spec(r#"{"children":[{"k":"x","id":1,"w":800,"h":600,"d":2,"ji":1,"c":[{"k":"x","id":2,"d":2,"c":[{"k":"x","id":0,"t":{"s":"Park name","z":14,"c":4294967295}},{"k":"x","id":3,"d":1,"w":"100%","mxw":360,"mnw":0,"pd":[4,6,4,6],"bw":[0,0,2,0],"bc":4294967295,"dash":2,"inp":{"v":"","ph":"Brightway Park","cols":20},"t":{"s":"","z":22,"w":700,"c":4294967295}}]}]}]}"#).unwrap().children;
         let mut runtime = rune::Runtime::new(state, crate::build::view, (800.0, 600.0), rune::Env::new(true, 1.0));
         runtime.frame(0.0);
         let field = runtime.elements().into_iter().find(|element| element.key.as_deref() == Some("x3")).unwrap().target;
         assert!(field[2] > 200.0 && field[2] <= 360.0, "20-character input collapsed to {field:?}");
+        assert!(field[3] > 35.0, "the field lost its editable text leaf: {field:?}");
     }
 
     #[test]

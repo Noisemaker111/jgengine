@@ -1899,7 +1899,7 @@ function __wbg_get_imports() {
         },
         __wbindgen_generic_000000000000000f: function(arg0, arg1) {
             // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [String], shim_idx: 19, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-            const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_1691);
+            const ret = makeMutClosure(arg0, arg1, __wasm_bindgen_func_elem_1692);
             return ret;
         },
         __wbindgen_generic_0000000000000010: function(arg0, arg1) {
@@ -2041,10 +2041,10 @@ function __wasm_bindgen_func_elem_13623_20(arg0, arg1, arg2) {
     }
 }
 
-function __wasm_bindgen_func_elem_1691(arg0, arg1, arg2) {
+function __wasm_bindgen_func_elem_1692(arg0, arg1, arg2) {
     const ptr0 = passStringToWasm0(arg2, wasm.__wbindgen_export, wasm.__wbindgen_export2);
     const len0 = WASM_VECTOR_LEN;
-    wasm.__wasm_bindgen_func_elem_1691(arg0, arg1, ptr0, len0);
+    wasm.__wasm_bindgen_func_elem_1692(arg0, arg1, ptr0, len0);
 }
 
 
