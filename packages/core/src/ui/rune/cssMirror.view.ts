@@ -12,7 +12,7 @@
 import {
   colorAlpha,
   parseAlign,
-  parseColor,
+  parseClipPath, parseColor,
   parseDim,
   parseGradient,
   parsePlacement,
@@ -418,9 +418,10 @@ function boxOf(element: Element, style: CSSStyleDeclaration, report: MirrorRepor
     for (const part of splitTop(image, ",").reverse()) {
       if (part === "none") continue;
       if (part.startsWith("url(")) {
-        box["img"] = part.slice(4, -1).replace(/^["']|["']$/g, "");
-        if (style.backgroundSize === "cover") box["fit"] = 1;
-        else if (style.backgroundSize === "contain") box["fit"] = 2;
+        // A background picture never sizes its box, unlike an `<img>`.
+        box["bgi"] = part.slice(4, -1).replace(/^["']|["']$/g, "");
+        if (style.backgroundSize === "cover") box["bfit"] = 1;
+        else if (style.backgroundSize === "contain") box["bfit"] = 2;
         continue;
       }
       const layer = parseGradient(part);
@@ -458,7 +459,11 @@ function boxOf(element: Element, style: CSSStyleDeclaration, report: MirrorRepor
     if (blur !== null) box["bblur"] = parseFloat(blur[1] ?? "0");
     else report.add(`backdrop-filter: ${backdrop}`, element);
   }
-  if (style.clipPath !== "none" && style.clipPath !== "") report.add(`clip-path: ${style.clipPath.slice(0, 40)}`, element);
+  if (style.clipPath !== "none" && style.clipPath !== "") {
+    const clip = parseClipPath(style.clipPath);
+    if (clip === null) report.add(`clip-path: ${style.clipPath.slice(0, 40)}`, element);
+    else box["cp"] = clip;
+  }
   if (style.maskImage !== "none" && style.maskImage !== "" && style.maskImage !== undefined) report.add(`mask-image: ${style.maskImage.slice(0, 40)}`, element);
   if (style.mixBlendMode !== "normal") report.add(`mix-blend-mode: ${style.mixBlendMode}`, element);
   if (style.pointerEvents !== "none" && style.visibility !== "hidden") box["hit"] = 1;

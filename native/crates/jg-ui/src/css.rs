@@ -305,6 +305,9 @@ pub struct Box_ {
     /// Backdrop blur radius in points.
     #[serde(default)]
     pub bblur: f32,
+    /// `clip-path` as a polygon: each corner `[x points, x fraction, y points, y fraction]` of the box.
+    #[serde(default)]
+    pub cp: Vec<[f32; 4]>,
     /// Transform origin in units of the box.
     #[serde(default)]
     pub to: Option<[f32; 2]>,
@@ -323,6 +326,11 @@ pub struct Box_ {
     /// How the image fills the box: 0 stretched, 1 covering (cropped), 2 contained.
     #[serde(default)]
     pub fit: u8,
+    /// A background picture: drawn over the box's colour and gradients, without sizing the box.
+    #[serde(default)]
+    pub bgi: Option<String>,
+    #[serde(default)]
+    pub bfit: u8,
     /// Pointer interest: bit 0 takes presses, bit 1 reports hover, bit 2 blocks the game underneath.
     #[serde(default)]
     pub hit: u8,
@@ -523,6 +531,147 @@ fn needs_size(b: &Box_) -> bool {
         || b.rad.is_some_and(|r| r.iter().any(|v| *v < 0.0))
         || b.svg.is_some()
         || b.img.is_some()
+        || b.bgi.is_some()
+        || !b.cp.is_empty()
+}
+
+/// The part of `poly` on the inside of the line `n · p = d` (`keep_below`: where `n · p <= d`).
+fn cut(poly: &[[f32; 2]], n: [f32; 2], d: f32, keep_below: bool) -> Vec<[f32; 2]> {
+    let side = |p: [f32; 2]| {
+        let v = n[0] * p[0] + n[1] * p[1] - d;
+        if keep_below { -v } else { v }
+    };
+    let mut out = Vec::with_capacity(poly.len() + 2);
+    for i in 0..poly.len() {
+        let (a, b) = (poly[i], poly[(i + 1) % poly.len()]);
+        let (sa, sb) = (side(a), side(b));
+        if sa >= 0.0 {
+            out.push(a);
+        }
+        if (sa >= 0.0) != (sb >= 0.0) {
+            let t = sa / (sa - sb);
+            out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]);
+        }
+    }
+    out
+}
+
+fn stop_color(stops: &[(f32, Color)], t: f32) -> Color {
+    let Some(first) = stops.first() else { return Color { r: 0.0, g: 0.0, b: 0.0, a: 0.0 } };
+    if t <= first.0 {
+        return first.1;
+    }
+    for pair in stops.windows(2) {
+        let (a, b) = (pair[0], pair[1]);
+        if t <= b.0 {
+            let span = (b.0 - a.0).max(1e-6);
+            return a.1.mix(b.1, ((t - a.0) / span).clamp(0.0, 1.0));
+        }
+    }
+    stops.last().map_or(first.1, |s| s.1)
+}
+
+thread_local! {
+    /// The `clip-path` polygons of the boxes being built around the current one, in window points.
+    static CLIPS: RefCell<Vec<Vec<[f32; 2]>>> = const { RefCell::new(Vec::new()) };
+}
+
+fn area(poly: &[[f32; 2]]) -> f32 {
+    let mut sum = 0.0;
+    for i in 0..poly.len() {
+        let (a, b) = (poly[i], poly[(i + 1) % poly.len()]);
+        sum += a[0] * b[1] - b[0] * a[1];
+    }
+    (sum * 0.5).abs()
+}
+
+/// The polygon this box's background is cut to, in its own points: its own `clip-path`, or the
+/// part of an enclosing box's that crosses it. `None` when nothing cuts it.
+fn clip_of(b: &Box_, rect: Option<[f32; 4]>) -> Option<Vec<[f32; 2]>> {
+    if !b.cp.is_empty() {
+        let [w, h] = rect.map_or([0.0, 0.0], |r| [r[2], r[3]]);
+        return Some(b.cp.iter().map(|p| [p[0] + p[1] * w, p[2] + p[3] * h]).collect());
+    }
+    if b.bg.is_none() && b.ly.is_empty() {
+        return None;
+    }
+    let outer = CLIPS.with(|c| c.borrow().last().cloned())?;
+    let [x, y, w, h] = rect?;
+    let mut piece: Vec<[f32; 2]> = outer.iter().map(|p| [p[0] - x, p[1] - y]).collect();
+    for (n, d, below) in [([1.0, 0.0], 0.0, false), ([1.0, 0.0], w, true), ([0.0, 1.0], 0.0, false), ([0.0, 1.0], h, true)] {
+        if piece.len() >= 3 {
+            piece = cut(&piece, n, d, below);
+        }
+    }
+    if piece.len() < 3 {
+        return Some(Vec::new());
+    }
+    // The enclosing shape covers this box whole: it paints as it is.
+    (area(&piece) < w * h - 0.5).then_some(piece)
+}
+
+/// How many bands a gradient inside a clipped box is painted in.
+const BANDS: usize = 24;
+
+/// A clipped box's background: `clip-path` cuts the box to a polygon, so its colour and gradients
+/// are painted as fills of that polygon (a gradient as bands across it) instead of on the rect.
+fn clipped_paint(b: &Box_, size: [f32; 2], poly: &[[f32; 2]]) -> rune::Shape {
+    let [w, h] = size;
+    let poly = poly.to_vec();
+    let mut shape = rune::Shape::new();
+    if w <= 0.0 || h <= 0.0 {
+        return shape;
+    }
+    if let Some(c) = b.bg {
+        if c.0.a > 0.0 && poly.len() >= 3 {
+            shape = shape.fill(poly.clone(), c.0);
+        }
+    }
+    if poly.len() < 3 {
+        return shape;
+    }
+    for l in &b.ly {
+        if let Some(c) = l.flat {
+            shape = shape.fill(poly.clone(), c.0);
+            continue;
+        }
+        let stops: Vec<(f32, Color)> = l.st.iter().map(|(t, c)| (*t, c.0)).collect();
+        if l.g == 1 {
+            // A radial gradient inside a clipped box paints as its middle colour.
+            let mid = stop_color(&stops, 0.5);
+            if mid.a > 0.0 {
+                shape = shape.fill(poly.clone(), mid);
+            }
+            continue;
+        }
+        let n = [l.a.sin(), -l.a.cos()];
+        let length = (w * n[0]).abs() + (h * n[1]).abs();
+        if length <= 0.0 {
+            continue;
+        }
+        let start = n[0] * w * 0.5 + n[1] * h * 0.5 - length * 0.5;
+        for band in 0..BANDS {
+            let (t0, t1) = (band as f32 / BANDS as f32, (band + 1) as f32 / BANDS as f32);
+            let color = stop_color(&stops, (t0 + t1) * 0.5);
+            if color.a <= 0.0 {
+                continue;
+            }
+            // Bands overlap by a hair so no seam shows between them; the ends run to the polygon's edge.
+            let low = if band == 0 { f32::NEG_INFINITY } else { start + t0 * length - 0.25 };
+            let high = if band + 1 == BANDS { f32::INFINITY } else { start + t1 * length + 0.25 };
+            let mut piece = poly.clone();
+            if low.is_finite() {
+                piece = cut(&piece, n, low, false);
+            }
+            if high.is_finite() && piece.len() >= 3 {
+                piece = cut(&piece, n, high, true);
+            }
+            if piece.len() >= 3 {
+                shape = shape.fill(piece, color);
+            }
+        }
+    }
+    shape
 }
 
 /// A full-size, out-of-flow sheet for one more background layer.
@@ -575,12 +724,18 @@ fn text_el(t: &Txt, color: Color) -> El {
 pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
     let key = if b.id == 0 { format!("t{path}") } else { format!("x{}", b.id) };
     let scrolls = b.ovx == 2 || b.ovy == 2;
-    let sized = needs_size(b);
+    let enclosed = CLIPS.with(|c| !c.borrow().is_empty());
+    let sized = needs_size(b) || enclosed;
     let size = if sized { size_of(b.id).unwrap_or([0.0, 0.0]) } else { [0.0, 0.0] };
     let radii = b.rad.map(|r| r.map(|v| if v < 0.0 { -v * size[0].min(size[1]) } else { v }));
     let mut e = if let Some(inp) = &b.inp { input_el(b, inp, s) } else { el() };
     e = e.layout_style(|st| layout(b, st));
-    if let Some(c) = b.bg {
+    let rect = RECTS.with(|r| r.borrow().get(&b.id).copied());
+    let clip = clip_of(b, rect);
+    let clipped = clip.is_some();
+    if let Some(poly) = &clip {
+        e = e.shape(clipped_paint(b, size, poly));
+    } else if let Some(c) = b.bg {
         e = e.fill(c.0);
     }
     if let Some(r) = radii {
@@ -623,7 +778,7 @@ pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
         e = e.clip_corners(radii.unwrap_or([0.0; 4]));
     }
     // The lowest gradient paints on the box itself; the rest are full-size sheets above it.
-    let mut layers = b.ly.iter();
+    let mut layers = if clipped { [].iter() } else { b.ly.iter() };
     if let Some(first) = layers.next() {
         e = if first.flat.is_some() && b.bg.is_some() {
             e.child(paint_layer(sheet(radii), first, size))
@@ -633,6 +788,15 @@ pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
     }
     for l in layers {
         e = e.child(paint_layer(sheet(radii), l, size));
+    }
+    // A clipped box keeps its shape and loses the picture, which would paint past the cut corners.
+    if let (Some(url), false) = (&b.bgi, clipped) {
+        let image = crate::widgets::image_by_url(url, size[0].max(size[1]).max(32.0));
+        let fit = match b.bfit {
+            2 => rune::SurfaceFit::Fit,
+            _ => rune::SurfaceFit::Fill,
+        };
+        e = e.child(sheet(radii).pixels_fit(image.pixels(), fit).inert());
     }
     if let Some(svg) = &b.svg {
         let image = crate::widgets::image_of_svg(svg, size[0].max(size[1]).max(16.0));
@@ -646,18 +810,26 @@ pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
         };
     }
     if let Some(t) = &b.t {
-        for (x, y, blur, c) in &t.ts {
-            let mut shadow = text_el(t, c.0).pin(Some(*x), Some(*y), None, None).inert();
-            if *blur > 0.0 {
-                shadow = shadow.blur(blur * 0.5);
-            }
-            e = e.child(shadow);
-        }
-        e = e.child(text_el(t, t.c.0).layout_style(|st| {
+        let grow = |st: &mut Style| {
             st.flex_grow = 1.0;
             st.flex_shrink = 1.0;
             st.min_size.width = length(0.0);
-        }));
+        };
+        if t.ts.is_empty() {
+            e = e.child(text_el(t, t.c.0).layout_style(grow));
+        } else {
+            // Each shadow is the same text block moved over, inside one holder with the text, so it
+            // has the text's width, wrapping and alignment wherever the box puts the text.
+            let mut holder = col().layout_style(grow);
+            for (x, y, blur, c) in &t.ts {
+                let mut shadow = text_el(t, c.0).pin(Some(*x), Some(*y), Some(-*x), None).inert();
+                if *blur > 0.0 {
+                    shadow = shadow.blur(blur * 0.5);
+                }
+                holder = holder.child(shadow);
+            }
+            e = e.child(holder.child(text_el(t, t.c.0)));
+        }
     }
     if scrolls {
         let mut inner = col().layout_style(|st| {
@@ -687,8 +859,17 @@ pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
             .hit()
             .child(inner);
     } else {
+        // Children's backgrounds are cut to this box's own shape.
+        let own = (!b.cp.is_empty()).then_some(()).and(rect).zip(clip.as_ref()).map(|(r, poly)| poly.iter().map(|p| [p[0] + r[0], p[1] + r[1]]).collect::<Vec<_>>());
+        let pushed = own.is_some();
+        if let Some(poly) = own {
+            CLIPS.with(|c| c.borrow_mut().push(poly));
+        }
         for (i, ch) in b.c.iter().enumerate() {
             e = e.child(crate::build::build(ch, &format!("{path}.{i}"), s, t));
+        }
+        if pushed {
+            CLIPS.with(|c| c.borrow_mut().pop());
         }
     }
     let id = b.id;
