@@ -553,7 +553,7 @@ async function browserSession(port: number, side: Side): Promise<CdpSession> {
  * kept the renderers of the page it treated as background at low priority, re-lowering them within a
  * window of being raised, and a same-code no-op read -35% (harbor-heat, 2026-11-09).
  */
-async function measurePair(game: string, serve: (side: Side) => Promise<string>, args: AbArgs, ports: Record<Side, number>, buildDirs: Partial<Record<Side, string>>): Promise<Omit<AbGameResult, "lockSeconds">> {
+async function measurePair(game: string, serve: (side: Side) => Promise<string>, args: AbArgs, ports: Record<Side, number>, buildDir: (side: Side) => string | undefined): Promise<Omit<AbGameResult, "lockSeconds">> {
   for (const side of ["base", "branch"] as const) {
     const probe = await openPageSession(ports[side]);
     try {
@@ -596,7 +596,7 @@ async function measurePair(game: string, serve: (side: Side) => Promise<string>,
       const profiled = await profiledWindow(page.session, SCORE_SECONDS);
       const slow = await slowCpuWindow(page.session, SLOW_CPU_RATE, SCORE_SECONDS);
       await pause(page);
-      const sources = await profileSources(profiled.raw.nodes.map((node) => node.callFrame.url), { outDir: buildDirs[side] });
+      const sources = await profileSources(profiled.raw.nodes.map((node) => node.callFrame.url), { outDir: buildDir(side) });
       const card: Scorecard = {
         build: args.build,
         slow: { rate: SLOW_CPU_RATE, frame: frameScore(slow) },
@@ -818,7 +818,7 @@ async function main(): Promise<number> {
         let inner = 0;
         const exit = await withBrowserSession(session, async ({ debugPort: outerPort }) => {
           inner = await withBrowserSession(session, async ({ debugPort: innerPort }) => {
-            measured = await measurePair(game, serve, parsed, { base: outerPort, branch: innerPort }, { ...(prod.base === undefined ? {} : { base: prod.base.build.outDir }), ...(prod.branch === undefined ? {} : { branch: prod.branch.build.outDir }) });
+            measured = await measurePair(game, serve, parsed, { base: outerPort, branch: innerPort }, (side) => prod[side]?.build.outDir);
           });
         });
         if (exit !== 0 || inner !== 0 || measured === null) throw new Error(`the browser sessions exited ${exit} and ${inner}`);

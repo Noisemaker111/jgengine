@@ -258,6 +258,8 @@ export async function profileSources(
     if (options.outDir !== undefined) {
       const file = join(options.outDir, decodeURIComponent(parsed.pathname)) + ".map";
       if (existsSync(file)) text = readFileSync(file, "utf8");
+      // Without its map a chunk's every frame would be counted as some unnamed library.
+      else if (/\/assets\/[^/]+\.js$/.test(parsed.pathname)) throw new Error(`no source map for ${parsed.pathname} in ${options.outDir}, so the profile cannot be split by package`);
     } else if (parsed.pathname.includes("/.vite/deps/")) {
       try {
         const response = await fetch(`${parsed.origin}${parsed.pathname}.map`, { signal: AbortSignal.timeout(10_000) });
