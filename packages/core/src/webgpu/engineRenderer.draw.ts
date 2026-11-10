@@ -15,6 +15,7 @@
 import { useEffect, useState } from "react";
 import { WebGLRenderer, type WebGLRendererParameters } from "three";
 import { guardInstanceCounts } from "../instancing/instanceCountGuard.draw";
+import { installUniformUploads } from "../render/uniformUpload.draw";
 import type { RendererBackend } from "../settings/rendererBackend";
 import { loadGlslTranslator } from "./glslToWgsl.draw";
 import { createWebGpuGl, requestWebGpuDevice, type WebGpuDevice, type WebGpuGl } from "./webgpuGl.draw";
@@ -46,6 +47,7 @@ export interface EngineRendererFactory {
  * factory draws on, and that canvas's context loss destroys it.
  */
 export async function prepareEngineRenderer(backend: RendererBackend): Promise<EngineRendererFactory> {
+  installUniformUploads();
   let gpu: WebGpuDevice | null = null;
   if (backend === "webgpu" && typeof HTMLCanvasElement !== "undefined") {
     try {
