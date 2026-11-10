@@ -1347,6 +1347,19 @@ mod live_value_tests {
     use super::*;
 
     #[test]
+    fn an_auto_scroll_child_without_overflow_does_not_block_its_scrollable_parent() {
+        let mut state = Ui::default();
+        state.root = crate::spec::parse_spec(r#"{"children":[{"k":"x","id":1,"w":200,"h":100,"ovy":2,"c":[{"k":"x","id":2,"d":1,"ovy":2,"c":[{"k":"x","id":3,"w":100,"h":500,"bg":4294967295}]}]}]}"#).unwrap().children;
+        let mut runtime = rune::Runtime::new(state, crate::build::view, (200.0, 100.0), rune::Env::new(true, 1.0));
+        runtime.frame(0.0);
+        let top = |runtime: &rune::Runtime<Ui>| runtime.elements().into_iter().find(|element| element.key.as_deref() == Some("x3")).unwrap().rect[1];
+        let before = top(&runtime);
+        runtime.wheel_event(rune::WheelEvent::new(0.0, -60.0).at(50.0, 50.0).precise(true));
+        runtime.frame(0.1);
+        assert!(top(&runtime) < before - 50.0, "an inactive inner scroll area swallowed its parent's wheel");
+    }
+
+    #[test]
     fn inline_families_shape_wrap_and_cache_as_one_paragraph() {
         let _families = rune::text::with_families("Inter", "IBM Plex Mono");
         let mut fonts = rune::text::TextSystem::new(

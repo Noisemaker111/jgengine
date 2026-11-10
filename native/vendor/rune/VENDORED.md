@@ -11,6 +11,17 @@ requests, so jgengine carries a patched copy here instead of a git pin.
 
 ## jgengine patches
 
+`crates/rune/src/runtime/input/pointer.rs` — a scroll viewport with zero range on
+the requested axis does not capture wheel/touch targeting. Nested CSS
+`overflow:auto` panes let their overflowing parent scroll instead of swallowing
+the gesture in the inactive inner viewport.
+
+`crates/rune/src/platform/web/{bridge.js,input.rs}` — wheel messages carry their
+own viewport coordinates and modifiers. A host can claim pointer movement for
+its semantic UI without leaving Rune's wheel target unset. The bridge handles
+the canvas event in capture and stops Winit's duplicate event; normal canvas
+scrolling, Shift-horizontal scrolling and Ctrl-wheel zoom share Rune's wheel APIs.
+
 `crates/rune/src/text/{span.rs,hash.rs}` and `text.rs` — per-span font families.
 Family overrides participate in span merging, shaping/cache keys, font selection
 and paragraph wrapping. The CSS host uses these for mixed display/body text and

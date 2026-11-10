@@ -206,7 +206,15 @@ export function mount(canvas, callback, embedded, fitHeight, page) {
         queueMicrotask(() => { if (!h.disposed) scrolled(); });
     }
     if (!fitHeight) {
-        listen(canvas, 'wheel', event => event.preventDefault(), { passive: false });
+        listen(canvas, 'wheel', event => {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            const factor = event.deltaMode === 1 ? 40 : event.deltaMode === 2 ? canvas.clientHeight : 1;
+            send({ kind: 'wheel', x: event.clientX, y: event.clientY,
+                dx: -event.deltaX * factor, dy: -event.deltaY * factor,
+                shift: event.shiftKey, alt: event.altKey, ctrl: event.ctrlKey, logo: event.metaKey,
+                precise: event.deltaMode === 0 });
+        }, { capture: true, passive: false });
         listen(document, 'gesturestart', event => event.preventDefault(), { passive: false });
     }
     queueMicrotask(() => {

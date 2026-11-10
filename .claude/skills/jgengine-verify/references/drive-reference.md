@@ -2,6 +2,10 @@
 
 Mechanics behind `jgengine-verify`: headless runs, `drive` steps, flows, `simulate`, `shoot` modes and monorepo-only scripts.
 
+Browser flows use `f.wheel(x, y, deltaY, deltaX = 0)` for real wheel input at a
+viewport point, for scroll panes or map zoom. Positive deltaY turns downward.
+It moves the real pointer before dispatching the wheel, on both DOM and Rune.
+
 A failed browser click lists nearby controls, or a bounded list of visible enabled controls when none is close. This describes the page at the failed lookup; it does not prove an earlier click changed game state.
 
 ## Scene and gameplay proof

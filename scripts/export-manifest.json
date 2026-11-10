@@ -1411,6 +1411,7 @@
     "./ui/rune/cssStates.view",
     "./ui/rune/cssValues",
     "./ui/rune/domMeasure.view",
+    "./ui/rune/patches",
     "./ui/rune/runeInput.view",
     "./ui/rune/runeLayer.view",
     "./ui/rune/runeStage.view",

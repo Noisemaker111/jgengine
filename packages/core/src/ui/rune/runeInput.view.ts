@@ -67,6 +67,18 @@ export class RuneInput {
       });
     }
     on("contextmenu", (event) => this.relay(event, this.target(event.clientX, event.clientY)), false);
+    on("wheel", (event) => {
+      if (this.own(event)) return;
+      const target = this.target(event.clientX, event.clientY);
+      if (target === null) return;
+      const allowed = this.send(target, new WheelEvent("wheel", {
+        ...this.init(event), deltaX: event.deltaX, deltaY: event.deltaY, deltaZ: event.deltaZ, deltaMode: event.deltaMode,
+      }));
+      if (!allowed) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    }, false);
     on("keydown", (event) => this.onKey(event), false);
     on("keyup", (event) => this.onKey(event), false);
     this.patchFocus();

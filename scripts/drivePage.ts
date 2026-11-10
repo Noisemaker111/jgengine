@@ -279,6 +279,12 @@ export function pageFlowDriver(session: CdpSession, options: PageDriverOptions):
       pointer = { x, y };
       await settle();
     },
+    async wheel(x, y, deltaY, deltaX) {
+      await moveDrivePointer(session, { x, y });
+      pointer = { x, y };
+      await session.send("Input.dispatchMouseEvent", { type: "mouseWheel", x, y, deltaY, deltaX });
+      await settle();
+    },
     async look(dx, dy) {
       await acquireDrivePointerLock(session);
       const turned = await lookDrivePointer(session, dx, dy);
