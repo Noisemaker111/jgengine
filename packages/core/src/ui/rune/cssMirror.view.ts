@@ -953,7 +953,12 @@ export function mirrorElement(element: Element, report: MirrorReport, inherited:
   if (before !== null) children.push(before);
 
   const runs: Run[] = [];
-  const onlyInline = element.firstChild !== null && inlineRuns(element, textStyle, runs, true);
+  const allInline = element.firstChild !== null && inlineRuns(element, textStyle, runs, true);
+  // One run of text holds one font family. A short line that changes family (a stencil numeral
+  // beside its unit) is laid out as a row of pieces instead, each in its own family; a longer
+  // passage keeps its line breaking and the first family.
+  const families = allInline && element.childElementCount > 0 && runs.some((run) => run.style.f !== textStyle.f);
+  const onlyInline = allInline && !(families && (textStyle.whiteSpace === "nowrap" || runs.reduce((length, run) => length + run.text.length, 0) <= 64));
   if (onlyInline) {
     const text = textOf(runs, textStyle, report, element);
     const picture = text === null ? null : emojiPicture(String(text["s"]), Number(text["z"]));
@@ -969,13 +974,26 @@ export function mirrorElement(element: Element, report: MirrorReport, inherited:
     }
   } else {
     let inlineRow = false;
+    // In a block, the space between two pieces of a line is kept as a gap before the later one
+    // (each piece's own text is trimmed).
+    const spaces = box["d"] === 1 && !textStyle.whiteSpace.startsWith("pre");
+    const space = textStyle.z * 0.27;
+    let pieces = 0;
+    let spaceBefore = false;
     for (let node = element.firstChild; node !== null; node = node.nextSibling) {
       if (node.nodeType === 3) {
         const raw = node.nodeValue ?? "";
-        if (raw.trim() === "") continue;
+        if (raw.trim() === "") {
+          if (raw !== "") spaceBefore = true;
+          continue;
+        }
         const text = textOf([{ text: raw, style: textStyle }], textStyle, report, element);
         if (text !== null) {
-          children.push({ k: "x", id: 0, t: text, fs: 0 });
+          const piece: WireBox = { k: "x", id: 0, t: text, fs: 0 };
+          if (spaces && pieces > 0 && (spaceBefore || /^\s/.test(raw))) piece["mg"] = [space, 0, 0, 0];
+          children.push(piece);
+          pieces += 1;
+          spaceBefore = /\s$/.test(raw);
           inlineRow = true;
         }
         continue;
@@ -996,8 +1014,16 @@ export function mirrorElement(element: Element, report: MirrorReport, inherited:
         positioned.push(child);
         continue;
       }
-      if (child["inl"] === 1) inlineRow = true;
+      if (child["inl"] === 1) {
+        inlineRow = true;
+        if (spaces && pieces > 0 && spaceBefore) {
+          const margin = (child["mg"] as WireDim[] | undefined) ?? [0, 0, 0, 0];
+          if (typeof margin[0] === "number") child["mg"] = [margin[0] + space, margin[1] ?? 0, margin[2] ?? 0, margin[3] ?? 0];
+        }
+      }
       children.push(child);
+      pieces += 1;
+      spaceBefore = false;
     }
     // A block that holds text or inline-level boxes flows them in lines.
     if (inlineRow && box["d"] === 1) {
