@@ -177,7 +177,8 @@ export async function mountTestDraws(
         await act(async () => root.unmount());
       } finally {
         engine.dispose();
-        environment.IS_REACT_ACT_ENVIRONMENT = previous;
+        if (previous === undefined) delete environment.IS_REACT_ACT_ENVIRONMENT;
+        else environment.IS_REACT_ACT_ENVIRONMENT = previous;
       }
     },
   };

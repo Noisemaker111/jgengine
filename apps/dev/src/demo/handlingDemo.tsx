@@ -2,8 +2,7 @@ import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { disposeObjectTree, SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
-import { box, mesh as addMesh, std } from "./drawHelpers";
-import type * as THREE from "three";
+import { box, std } from "./drawHelpers";
 import type { AxisBinding } from "@jgengine/core/input/axisInput";
 import type { ActionContext, ActiveContextAxes } from "@jgengine/core/input/actionContexts";
 import {
@@ -28,7 +27,6 @@ import {
 import { nextChaseView } from "@jgengine/core/runtime/cameraDirector";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { useGameStore } from "@jgengine/react/hooks";
 import { defineGame } from "@jgengine/shell/defineGame";
 import type { PlayableGame } from "@jgengine/shell/registry";
@@ -238,7 +236,7 @@ function onTick(ctx: GameContext, dt: number): void {
   haptics.set("road", { strong: out.rumbleStrong, weak: out.rumbleWeak });
 }
 
-function CarBody({ entity }: { entity: SceneEntity }) {
+function CarBody() {
   const rig = useMemo(() => {
     const root = new THREE.Group();
     const bodyG = new THREE.Group();
@@ -277,7 +275,7 @@ function CarBody({ entity }: { entity: SceneEntity }) {
   return <SceneObjectAttach object={rig.root} />;
 }
 
-function BikeBody({ entity }: { entity: SceneEntity }) {
+function BikeBody() {
   const rig = useMemo(() => {
     const root = new THREE.Group();
     box(root, [0.34, 0.42, 1.3], [0, 0.62, 0], std("#2563eb", 0.35, { metalness: 0.3 }));
@@ -455,7 +453,7 @@ function makeGame(name: string, choice: DemoVehicle): PlayableGame {
     },
     scene: {
       renderEntity: (entity) =>
-        entity.name !== CAR ? null : choice.kind === "bike" ? <BikeBody entity={entity} /> : <CarBody entity={entity} />,
+        entity.name !== CAR ? null : choice.kind === "bike" ? <BikeBody /> : <CarBody />,
       WorldOverlay: Course,
     },
     GameUI: Telemetry,

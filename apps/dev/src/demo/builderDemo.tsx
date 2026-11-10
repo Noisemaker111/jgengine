@@ -63,7 +63,7 @@ function hutDraw(structure: PlacedStructure, selected: boolean): EngineDraw {
   const group = new THREE.Group();
   group.position.set(structure.position[0], structure.position[1], structure.position[2]);
   group.rotation.y = structure.rotationY;
-  group.userData.structureId = structure.id;
+  group.userData["structureId"] = structure.id;
   const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
   body.position.y = HUT_HEIGHT / 2;
   body.castShadow = true;

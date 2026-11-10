@@ -17,7 +17,6 @@ async function harness(marker: EditorMarker) {
   const render = async (selected = false, hovered = false) => {
     const element = createElement(EditorLayerOverlays, {
       document, visibility: {}, selection: selected ? [marker.id] : [], hoverId: hovered ? marker.id : null,
-      onSelect: () => {},
     });
     if (mounted === undefined) mounted = await mountTestDraws(element, { width: 100, height: 100 });
     else await mounted.render(element);

@@ -16,7 +16,6 @@ import {
 } from "@jgengine/core/flight/aircraftDynamics";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { useGameStore } from "@jgengine/react/hooks";
 import { defineGame } from "@jgengine/shell/defineGame";
 import type { PlayableGame } from "@jgengine/shell/registry";
@@ -212,7 +211,7 @@ const headingInverse = new THREE.Quaternion();
 const attitude = new THREE.Quaternion();
 const up = new THREE.Vector3(0, 1, 0);
 
-function PlaneBody({ entity }: { entity: SceneEntity }) {
+function PlaneBody() {
   const rig = useMemo(() => {
     const root = new THREE.Group();
     const bodyG = new THREE.Group();
@@ -239,7 +238,7 @@ function PlaneBody({ entity }: { entity: SceneEntity }) {
   return <SceneObjectAttach object={rig.root} />;
 }
 
-function HelicopterBody({ entity }: { entity: SceneEntity }) {
+function HelicopterBody() {
   const rig = useMemo(() => {
     const root = new THREE.Group();
     const bodyG = new THREE.Group();
@@ -275,7 +274,7 @@ function HelicopterBody({ entity }: { entity: SceneEntity }) {
   return <SceneObjectAttach object={rig.root} />;
 }
 
-function RocketBody({ entity }: { entity: SceneEntity }) {
+function RocketBody() {
   const rig = useMemo(() => {
     // The cylinder axis is y; rotating by Ï€/2 about x lays it along body forward (+z).
     const along: [number, number, number] = [Math.PI / 2, 0, 0];
@@ -435,7 +434,7 @@ function makeGame(name: string, choice: Craft): PlayableGame {
     },
     scene: {
       renderEntity: (entity) =>
-        entity.name !== PLANE ? null : choice.kind === "helicopter" ? <HelicopterBody entity={entity} /> : choice.kind === "rocket" ? <RocketBody entity={entity} /> : <PlaneBody entity={entity} />,
+        entity.name !== PLANE ? null : choice.kind === "helicopter" ? <HelicopterBody /> : choice.kind === "rocket" ? <RocketBody /> : <PlaneBody />,
       WorldOverlay: Landscape,
     },
     GameUI: Telemetry,

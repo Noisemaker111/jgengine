@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
-import { SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";
+import { disposeObjectTree, SceneObjectAttach, SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";
 import { AnchoredOverlay } from "@jgengine/core/hud/hudOverlay.draw";
 import { AttachedMeshes } from "./drawHelpers";
 
@@ -108,7 +108,7 @@ function LifeCycle() {
           <Tree key={entry.label} meta={entry.meta} label={entry.label} position={r === SHRUB_ROW ? [SHRUB_X + (index - (row.length - 1) / 2) * SHRUB_SPACING, 0, 0] : r === PALM_ROW ? [PALM_X + (index - (row.length - 1) / 2) * PALM_SPACING, 0, 0] : [(index - (row.length - 1) / 2) * SPACING, 0, rowZ(r)]} />
         )),
       )}
-    </group>
+    </>
   );
 }
 

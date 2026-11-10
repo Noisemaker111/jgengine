@@ -123,7 +123,6 @@ const MarkerMesh = memo(function MarkerMesh({
   marker,
   selected,
   hovered,
-  onSelect,
   sharedSphere,
   sharedCone,
   groundHeightAt,
@@ -131,7 +130,6 @@ const MarkerMesh = memo(function MarkerMesh({
   marker: EditorMarker;
   selected: boolean;
   hovered: boolean;
-  onSelect: (id: string) => void;
   sharedSphere: THREE.SphereGeometry;
   sharedCone: THREE.ConeGeometry;
   groundHeightAt?: ((x: number, z: number) => number) | undefined;
@@ -200,12 +198,10 @@ const VolumeShapeLines = memo(function VolumeShapeLines({
   volume,
   selected,
   hovered,
-  onSelect,
 }: {
   volume: EditorVolume;
   selected: boolean;
   hovered: boolean;
-  onSelect: (id: string) => void;
 }) {
   const color = colorFor(volume.kind, volume.color);
   const object = useMemo(() => {
@@ -253,14 +249,12 @@ const PathRibbon = memo(function PathRibbon({
   selected,
   hovered,
   activePointIndex,
-  onSelect,
   groundHeightAt,
 }: {
   path: EditorPath;
   selected: boolean;
   hovered: boolean;
   activePointIndex: number | null;
-  onSelect: (id: string) => void;
   groundHeightAt?: ((x: number, z: number) => number) | undefined;
 }) {
   const color = colorFor(path.kind, path.color);
@@ -335,13 +329,11 @@ const NotePin = memo(function NotePin({
   note,
   selected,
   hovered,
-  onSelect,
   groundHeightAt,
 }: {
   note: EditorNote;
   selected: boolean;
   hovered: boolean;
-  onSelect: (id: string) => void;
   groundHeightAt?: ((x: number, z: number) => number) | undefined;
 }) {
   const color = colorFor("note", note.color);
@@ -459,7 +451,6 @@ export function EditorLayerOverlays({
   visibility,
   selection,
   hoverId = null,
-  onSelect,
   activePathPoint,
   groundHeightAt,
 }: {
@@ -468,7 +459,6 @@ export function EditorLayerOverlays({
   selection: readonly string[];
   /** Pre-selection hover id from viewport pointer pick; ignored when already selected. */
   hoverId?: string | null;
-  onSelect: (id: string) => void;
   activePathPoint?: { pathId: string; index: number } | null;
   groundHeightAt?: (x: number, z: number) => number;
 }) {
@@ -516,7 +506,6 @@ export function EditorLayerOverlays({
           volume={volume}
           selected={selected.has(volume.id)}
           hovered={isHovered(volume.id)}
-          onSelect={onSelect}
         />
       ))}
       {paths.map((path) => (
@@ -528,7 +517,6 @@ export function EditorLayerOverlays({
           activePointIndex={
             activePathPoint != null && activePathPoint.pathId === path.id ? activePathPoint.index : null
           }
-          onSelect={onSelect}
           groundHeightAt={groundHeightAt}
         />
       ))}
@@ -538,7 +526,6 @@ export function EditorLayerOverlays({
           marker={marker}
           selected={selected.has(marker.id)}
           hovered={isHovered(marker.id)}
-          onSelect={onSelect}
           sharedSphere={sharedSphere}
           sharedCone={sharedCone}
           groundHeightAt={groundHeightAt}
@@ -550,7 +537,6 @@ export function EditorLayerOverlays({
           note={note}
           selected={selected.has(note.id)}
           hovered={isHovered(note.id)}
-          onSelect={onSelect}
           groundHeightAt={groundHeightAt}
         />
       ))}

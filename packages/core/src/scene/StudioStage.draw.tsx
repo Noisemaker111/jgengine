@@ -1,9 +1,9 @@
-import { useRef, type ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import * as THREE from "three";
 
 import { DEFAULT_FORWARD, yawToFace } from "@jgengine/core/scene/facing";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
-import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
+import { SceneObjectPortal, useEngineDraw, useSceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 
 /** Lighting mood for a {@link StudioStage} — a named 3-point rig + backdrop palette. */
 export type StudioMood = "studio" | "daylight" | "dusk" | "night";
@@ -163,8 +163,9 @@ export function StudioStage({
   forward = DEFAULT_FORWARD,
   children,
 }: StudioStageProps) {
-  const spin = useRef<THREE.Group>(null);
+  const spin = useMemo(() => new THREE.Group(), []);
   const props: StageDrawProps = { mood, backdrop, turntable, environment, faceCamera, forward };
-  useEngineDraw(() => studioStageDraw(() => props, () => spin.current), [mood, backdrop, turntable, environment, faceCamera, forward]);
-  return <group ref={spin}>{children}</group>;
+  useEngineDraw(() => studioStageDraw(() => props, () => spin), [mood, backdrop, turntable, environment, faceCamera, forward]);
+  useSceneObjectAttach(spin);
+  return <SceneObjectPortal object={spin}>{children}</SceneObjectPortal>;
 }

@@ -3,7 +3,7 @@ import { useRef, type ReactNode } from "react";
 import * as THREE from "three";
 
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
-import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
+import { EngineDrawMount, SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";
 import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { clamp01 } from "../math/scalar";
 
@@ -174,16 +174,16 @@ export function DataObjects<T>(props: DataObjectsProps<T>) {
 
   if (renderItem !== undefined) {
     return (
-      <group>
+      <>
         {data.map((item, i) => {
           const [x, z] = props.position(item, i);
           return (
-            <group key={i} position={[x, 0, z]}>
+            <SceneObjectGroup key={i} position={[x, 0, z]}>
               {renderItem(item, i, { x, z, height: props.height(item, i) })}
-            </group>
+            </SceneObjectGroup>
           );
         })}
-      </group>
+      </>
     );
   }
 

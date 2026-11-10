@@ -1,15 +1,9 @@
 import { memo, useEffect } from "react";
-import type { Vector3 } from "three";
 
+import { activeCameraControls } from "@jgengine/core/camera/activeCameraControls.draw";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { orbitCameraPosition } from "./camera/orbitFraming";
 import type { EditorHostApi } from "./session";
-
-type OrbitLike = {
-  target: Vector3;
-  update: () => void;
-  object?: { position: Vector3 };
-};
 
 /**
  * Drives the editor orbit camera from the host's focus target. When the target carries only a
@@ -17,17 +11,17 @@ type OrbitLike = {
  * placement (`distance`/`pitch`/`yaw`/`height`), the camera is repositioned to that orbit pose —
  * how `camera_goto`/`camera_frame` compose an aerial without the KeyF-buries-in-terrain problem.
  *
- * The inspection rig's `OrbitControls` live inside `GameInspectionCamera`'s draw and never
- * registered on a host `controls` slot (r3f's `state.controls` was always null here too), so the
- * subscription stays a no-op until a host exposes its controls.
+ * The orbit controls belong to `GameInspectionCamera`'s draw, which names them the scene's active
+ * camera controls; they are read when a focus arrives, so the rig may mount after this driver.
  */
 export const EditorCameraDriver = memo(function EditorCameraDriver({ api }: { api: EditorHostApi }) {
-  const camera = useEngineHost().frame.camera;
-  const controls: OrbitLike | null = null;
+  const frame = useEngineHost().frame;
 
   useEffect(() => {
     return api.subscribeFocus((target) => {
-      if (target === null || controls === null || controls.target === undefined) return;
+      const controls = activeCameraControls(frame.rootScene ?? frame.scene);
+      if (target === null || controls === null) return;
+      const camera = frame.camera;
       const hasPlacement =
         target.distance !== undefined ||
         target.pitch !== undefined ||
@@ -53,7 +47,7 @@ export const EditorCameraDriver = memo(function EditorCameraDriver({ api }: { ap
       camera.position.add(controls.target.clone().sub(previous));
       controls.update();
     });
-  }, [api, camera, controls]);
+  }, [api, frame]);
 
   return null;
 });

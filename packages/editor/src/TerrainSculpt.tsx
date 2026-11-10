@@ -1,3 +1,4 @@
+import { activeCameraControls } from "@jgengine/core/camera/activeCameraControls.draw";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
@@ -351,8 +352,8 @@ export const TerrainSculpt = memo(function TerrainSculpt({
   world?: WorldFeature | undefined;
 }) {
   const ctx = useGameContext();
-  const { gl, camera } = useEngineHost().frame;
-  const controls: { enabled?: boolean } | null = null;
+  const frame = useEngineHost().frame;
+  const { gl, camera } = frame;
   const session: EditorSession = api.getSession();
 
   const terrainDescriptor = useMemo(() => terrainDescriptorOf(world), [world]);
@@ -479,7 +480,8 @@ export const TerrainSculpt = memo(function TerrainSculpt({
     };
 
     const setControls = (enabled: boolean) => {
-      if (controls !== null && "enabled" in controls) controls.enabled = enabled;
+      const controls = activeCameraControls(frame.rootScene ?? frame.scene);
+      if (controls !== null) controls.enabled = enabled;
     };
 
     const stampSpacing = (): number => {
@@ -595,7 +597,7 @@ export const TerrainSculpt = memo(function TerrainSculpt({
       canvas.removeEventListener("pointerleave", onLeave);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toolActive, snapshot, gl, camera, controls, session, ui]);
+  }, [toolActive, snapshot, gl, camera, frame, session, ui]);
 
   if (snapshot === null || editableRef.current === null || boundsRef.current === null) return null;
 
