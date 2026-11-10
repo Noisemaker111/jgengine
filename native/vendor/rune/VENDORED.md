@@ -135,3 +135,7 @@ copied with `copyExternalImageToTexture`; CPU atlas uploads cannot overwrite it.
 The CSS host seeds an embedded canvas once, then uses captured frame callbacks,
 so static canvases need no polling or repeated UI frames. Removal releases the
 browser reference, and changing dimensions reallocates only that image.
+`render/upload.rs` and `platform/web/platform.{rs,js}` catch a video's transient
+WebGPU `OperationError` before wgpu unwraps it into a WASM panic. The previous
+texture survives and the next changed frame retries; unexpected errors still
+fail. The browser helper's regression covers failure, recovery and error scope.

@@ -105,6 +105,17 @@ export function nextTask() {
     return globalThis.scheduler?.yield ? globalThis.scheduler.yield() : new Promise((resolve) => setTimeout(resolve, 0));
 }
 
+export function copyBrowserFrame(queue, texture, source, width, height) {
+    try {
+        queue.copyExternalImageToTexture({ source }, { texture, colorSpace: 'srgb', premultipliedAlpha: false }, [width, height]);
+        return true;
+    } catch (error) {
+        if (typeof source.videoWidth !== 'number' || error?.name !== 'OperationError') throw error;
+        console.warn(`degraded: Rune retained the previous video frame: ${error.message}`);
+        return false;
+    }
+}
+
 export async function fetchBytes(url) {
     const response = await fetch(new URL(url, document.baseURI));
     if (!response.ok) throw new Error(`HTTP ${response.status}`);

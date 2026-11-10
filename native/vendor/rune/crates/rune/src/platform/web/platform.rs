@@ -22,5 +22,7 @@ extern "C" {
     /// Resolves in a later task, letting the browser draw and handle input in between.
     #[wasm_bindgen(js_name = nextTask)]
     pub(crate) fn next_task() -> js_sys::Promise;
+    #[wasm_bindgen(catch, js_name = copyBrowserFrame)]
+    pub(crate) fn copy_browser_frame(queue: &JsValue, texture: &JsValue, source: &JsValue, width: u32, height: u32) -> Result<bool, JsValue>;
     pub(super) fn viewport(canvas: &web_sys::HtmlCanvasElement, callback: &js_sys::Function, embedded: bool) -> js_sys::Function;
 }

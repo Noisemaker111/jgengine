@@ -155,6 +155,13 @@ impl Renderer {
                 }
                 if (fresh || page.external_dirty) && let Some(source) = crate::pixels::browser_frame(source) {
                     if source.width() != page.width || source.height() != page.height { continue; }
+                    if let (Some(browser_queue), Some(texture)) = (queue.as_webgpu(), self.images[index].as_ref().and_then(|(texture, _)| texture.as_webgpu())) {
+                        match crate::platform::web::platform::copy_browser_frame(browser_queue.as_ref(), texture.as_ref(), source.as_ref(), page.width, page.height) {
+                            Ok(copied) => page.external_dirty = !copied,
+                            Err(error) => wasm_bindgen::throw_val(error),
+                        }
+                        continue;
+                    }
                     queue.copy_external_image_to_texture(
                         &wgpu::CopyExternalImageSourceInfo { source, origin: wgpu::Origin2d::ZERO, flip_y: false },
                         wgpu::CopyExternalImageDestInfo { texture: &self.images[index].as_ref().unwrap().0,
