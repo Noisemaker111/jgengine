@@ -1426,7 +1426,8 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
         const copy = { ...facts };
         if (decay(copy, stepDt, current)) facts = copy;
       }
-      let next: WorldModelState = { ...current, time: current.time + (stepped ? stepDt : 0), facts };
+      let next: WorldModelState = current;
+      if (stepped) next = { ...current, time: current.time + stepDt, facts };
       if (stepped) decayClock = 0;
       let ripples: WorldEvent[] = [];
       if (stepped) {
@@ -1437,7 +1438,20 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
       let missionEvents: readonly MissionEvent[] = [];
       let jobEvents: WorldJobEvent[] = [];
       if (current.activeJob !== null) {
-        missionEvents = runtime.tick(dt, { ...input, facts: { ...allFacts(next), ...(input.facts ?? {}) } });
+        // One facts table, not two copies of it: allFacts already returns a fresh record when totals
+        // or live facts exist, so the transient input facts merge into that copy directly.
+        const baseFacts = allFacts(next);
+        const overrides = input.facts;
+        let tickFacts: Readonly<Record<string, WorldFactValue>> = baseFacts;
+        if (overrides !== undefined) {
+          const keys = Object.keys(overrides);
+          if (keys.length > 0) {
+            const merged: Record<string, WorldFactValue> = baseFacts === next.facts ? { ...next.facts } : baseFacts as Record<string, WorldFactValue>;
+            for (const key of keys) merged[key] = overrides[key]!;
+            tickFacts = merged;
+          }
+        }
+        missionEvents = runtime.tick(dt, { ...input, facts: tickFacts });
         const settled = settleMission(missionEvents, next);
         next = settled.next;
         jobEvents = settled.jobs;
