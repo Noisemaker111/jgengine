@@ -243,6 +243,19 @@ impl El {
         self.vis.opacity = o;
         self
     }
+    /// Blend the completed subtree with the paint below it. Separable modes use CSS's sRGB
+    /// formulas and require an owned render pass whose target permits backdrop copies.
+    pub fn mix_blend(mut self, blend: crate::render::Blend) -> Self {
+        self.vis.cold_mut().mix_blend = blend;
+        self
+    }
+
+    /// Isolate this subtree's paint and blend backdrops from the rest of the window.
+    pub fn isolate(mut self) -> Self {
+        self.vis.cold_mut().isolate = true;
+        self
+    }
+
     /// Gaussian blur of the completed subtree, in points (standard deviation). Zero has no
     /// filter cost. The renderer caps sigma at 64 device pixels; bounds grow by three sigma.
     pub fn blur(mut self, sigma: f32) -> Self {

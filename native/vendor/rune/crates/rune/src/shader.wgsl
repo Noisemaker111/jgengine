@@ -246,6 +246,25 @@ fn srgb_encode(x: vec3<f32>) -> vec3<f32> {
     return select(1.055 * pow(v, vec3<f32>(1.0 / 2.4)) - 0.055, v * 12.92, v <= vec3<f32>(0.0031308));
 }
 
+fn srgb_decode(x: vec3<f32>) -> vec3<f32> {
+    return select(pow((x + 0.055) / 1.055, vec3<f32>(2.4)), x / 12.92, x <= vec3<f32>(0.04045));
+}
+
+fn blend_layer(source: vec4<f32>, dest: vec4<f32>, mode: f32) -> vec4<f32> {
+    var s = clamp(source.rgb / max(source.a, 0.000001), vec3<f32>(0.0), vec3<f32>(1.0));
+    var d = clamp(dest.rgb / max(dest.a, 0.000001), vec3<f32>(0.0), vec3<f32>(1.0));
+    if (g.flags.x < 0.5) { s = srgb_encode(s); d = srgb_encode(d); }
+    var mixed = s * d;
+    if (mode == 3.0) { mixed = select(1.0 - 2.0 * (1.0 - s) * (1.0 - d), 2.0 * s * d, d <= vec3<f32>(0.5)); }
+    if (mode == 4.0) { mixed = s + d - s * d; }
+    if (mode == 5.0) {
+        let curve = select(sqrt(d), ((16.0 * d - 12.0) * d + 4.0) * d, d <= vec3<f32>(0.25));
+        mixed = select(d + (2.0 * s - 1.0) * (curve - d), d - (1.0 - 2.0 * s) * d * (1.0 - d), s <= vec3<f32>(0.5));
+    }
+    if (g.flags.x < 0.5) { mixed = srgb_decode(mixed); }
+    return vec4<f32>((1.0 - dest.a) * source.rgb + dest.a * source.a * mixed, source.a);
+}
+
 /// One image texel, premultiplied (the atlas holds straight alpha) so filtering doesn't darken edges.
 fn image_texel(t: vec2<i32>, premultiplied: bool) -> vec4<f32> {
     let c = textureLoad(images, t, 0);
@@ -393,8 +412,10 @@ fn fs(i: Out) -> @location(0) vec4<f32> {
         }
         // Float intermediates accumulate One/One without saturation. Clamp before applying
         // this scope's opacity so nesting preserves plus-lighter's bounded coverage.
-        return select(color, clamp(color, vec4(0.0), vec4(1.0)), i.params.x == 1.0) * i.fill.a
+        color = select(color, clamp(color, vec4(0.0), vec4(1.0)), i.params.x == 1.0) * i.fill.a
             * clip_alpha(screen, i.clip, i.fade) * hole_alpha(screen, i.radii);
+        if (i.params.x >= 2.0) { color = blend_layer(color, textureLoad(atlas, vec2<i32>(floor(screen)), 0), i.params.x); }
+        return color;
     }
     let kind = i.params.y;
     if (kind > 11.5) { discard; }

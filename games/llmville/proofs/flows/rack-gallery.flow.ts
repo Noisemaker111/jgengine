@@ -1,6 +1,6 @@
 import { defineFlow } from "@jgengine/core/play/flow";
 
-/** The actual dev gallery: run with --param preview=racks --param ui=rune. */
+/** The actual dev gallery: --param preview=racks --param ui=rune --settle 1000 lets the scene mount. */
 export default defineFlow(null, {
   browser: true,
   async run(f) {

@@ -11,6 +11,21 @@ requests, so jgengine carries a patched copy here instead of a git pin.
 
 ## jgengine patches
 
+`crates/rune/src/el/{visual,visuals}.rs`, `runtime/{commit/memo_reuse,paint/build,paint/cache_layer}.rs`,
+`render{,/layers,/upload}.rs` and `shader.wgsl` — separable subtree blending and
+explicit isolation. Multiply, overlay, screen and soft-light copy the current
+paint target at their composite position, reuse its pooled backdrop texture, and
+apply the CSS sRGB formulas with premultiplied alpha. The existing glyph texture
+binding carries that backdrop only for layer composites; the instance ABI stays
+unchanged. Nested targets keep their own origin. A borrowed/non-copyable pass
+reports `degraded:` and draws source-over. `El::isolate` retains an otherwise
+opaque scope so descendants cannot blend with paint outside it. Backdrop-dependent
+subtrees cannot retain a stale raster cache. GPU pixel tests cover both encodings,
+partial alpha, nested panels, isolation, background polygons and translucent borders.
+The web surface explicitly requests `COPY_SRC` on WebGPU: wgpu 30's web backend
+reports only `RENDER_ATTACHMENT` even though canvas configuration supports copies.
+The real-entry material proof catches this separately from offscreen GPU tests.
+
 `crates/rune/src/runtime/input/pointer.rs` — a scroll viewport with zero range on
 the requested axis does not capture wheel/touch targeting. Nested CSS
 `overflow:auto` panes let their overflowing parent scroll instead of swallowing

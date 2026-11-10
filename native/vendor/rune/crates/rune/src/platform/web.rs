@@ -479,9 +479,11 @@ impl<S: 'static> ApplicationHandler<Wake> for Browser<S> {
                 config.alpha_mode = wgpu::CompositeAlphaMode::PreMultiplied;
             }
             let caps = surface.get_capabilities(&gpu.adapter);
-            config.usage |= caps.usages & wgpu::TextureUsages::COPY_SRC;
-            let wanted = if srgb_blend { config.format.remove_srgb_suffix() } else { config.format.add_srgb_suffix() };
             let is_gl = gpu.adapter.get_info().backend == wgpu::Backend::Gl;
+            // wgpu's WebGPU backend hardcodes its reported usages to RENDER_ATTACHMENT,
+            // while GPUCanvasConfiguration accepts COPY_SRC for backdrop reads.
+            config.usage |= if is_gl { caps.usages & wgpu::TextureUsages::COPY_SRC } else { wgpu::TextureUsages::COPY_SRC };
+            let wanted = if srgb_blend { config.format.remove_srgb_suffix() } else { config.format.add_srgb_suffix() };
             let format = if wanted != config.format && !is_gl {
                 config.view_formats.push(wanted);
                 wanted

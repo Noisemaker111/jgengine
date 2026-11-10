@@ -192,14 +192,14 @@ fn same_visual_cold(a: &crate::el::VisualCold, b: &crate::el::VisualCold) -> boo
         pixels, pixels_fit, effect, backdrop_blur, hover_motion, hover_within,
         group_opacity, group_color, hover_alone, hover_share, hover_focus, icon_turn, cache_key, offset_motion, scale_motion,
         origin, rotate_motion, child_exit, enter_delay, motion_intent, instant_motion, clip_to_content, flight_crop,
-        hold_landing, offset, paint_alpha, layer_opacity, blur, rotate, mark, mirror_rtl,
+        hold_landing, offset, paint_alpha, layer_opacity, blur, mix_blend, isolate, rotate, mark, mirror_rtl,
     } = b;
     (match (&a.surface, surface) {
         (None, None) => true,
         (Some((sa, fa)), Some((sb, fb))) => sa.key() == sb.key() && fa == fb,
         _ => false,
     }) && a.surface_place == *surface_place && a.border_bottom == *border_bottom && a.border_sides == *border_sides && a.border_layout == *border_layout && a.border_dash == *border_dash
-        && a.border_dash_phase == *border_dash_phase && a.shadows == *shadows
+        && a.border_dash_phase == *border_dash_phase && a.shadows == *shadows && a.mix_blend == *mix_blend && a.isolate == *isolate
         && opt_box_eq(&a.blur_motion, blur_motion) && a.clip == *clip
         && a.clip_radius == *clip_radius && a.clip_corners == *clip_corners && a.cutout == *cutout
         && match (&a.icon, icon) {

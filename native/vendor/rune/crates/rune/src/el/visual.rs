@@ -109,6 +109,8 @@ pub struct VisualCold {
     /// `El::layer_opacity`: static alpha its whole subtree composites at, as one layer.
     pub(crate) layer_opacity: f32,
     pub blur: f32,
+    pub mix_blend: crate::render::Blend,
+    pub isolate: bool,
     /// `El::rotate`, in radians clockwise.
     pub(crate) rotate: f32,
     /// App-defined tag a compositor reads per instance (`Runtime::marks`); 0 inherits the parent's.
@@ -167,6 +169,8 @@ impl Empty for VisualCold {
         paint_alpha: 1.0,
         layer_opacity: 1.0,
         blur: 0.0,
+        mix_blend: crate::render::Blend::SourceOver,
+        isolate: false,
         rotate: 0.0,
         mark: 0,
         mirror_rtl: false,

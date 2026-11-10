@@ -71,6 +71,7 @@ interface Inherited {
 }
 
 const TEXT_INPUT_TYPES = new Set(["", "text", "search", "email", "url", "tel", "password", "number"]);
+const BLEND_MODES: Readonly<Record<string, number>> = { multiply: 2, overlay: 3, screen: 4, "soft-light": 5 };
 const ISLAND_TAGS = new Set(["canvas", "video", "iframe", "audio", "object", "embed"]);
 const SKIP_TAGS = new Set(["script", "style", "template", "link", "meta", "noscript", "title", "head"]);
 
@@ -619,24 +620,29 @@ function boxOfStyle(element: Element, style: CSSStyleDeclaration, report: Mirror
   if (background !== null && colorAlpha(background) > 0) box["bg"] = background;
   const image = style.backgroundImage;
   if (image !== "none" && image !== "") {
-    const layers: (WireLayer | { flat: number })[] = [];
+    const layers: ((WireLayer | { flat: number }) & { blend?: number })[] = [];
     const parts = splitTop(image, ",");
     const sizes = splitTop(style.backgroundSize, ",");
     const positions = splitTop(style.backgroundPosition, ",");
     const repeats = splitTop(style.backgroundRepeat, ",");
+    const blends = splitTop(style.backgroundBlendMode, ",");
     for (let index = parts.length - 1; index >= 0; index -= 1) {
       const part = (parts[index] ?? "").trim();
       if (part === "none") continue;
+      const mode = blends[index % blends.length]?.trim() ?? "normal";
+      const blend = mode === "normal" ? 0 : BLEND_MODES[mode];
+      if (blend === undefined) report.add(`background-blend-mode: ${mode}`, element);
       if (part.startsWith("url(")) {
         // A background picture never sizes its box, unlike an `<img>`.
         box["bgi"] = part.slice(4, -1).replace(/^["']|["']$/g, "");
         if (style.backgroundSize === "cover") box["bfit"] = 1;
         else if (style.backgroundSize === "contain") box["bfit"] = 2;
+        if (blend !== undefined && blend !== 0) box["bgblend"] = blend;
         continue;
       }
       const layer = parseGradient(part);
       if (layer === null) report.add(`background-image: ${part.slice(0, 60)}`, element);
-      else layers.push(placeLayer(layer, sizes[index % sizes.length] ?? "auto", positions[index % positions.length] ?? "0% 0%", repeats[index % repeats.length] ?? "repeat"));
+      else layers.push({ ...placeLayer(layer, sizes[index % sizes.length] ?? "auto", positions[index % positions.length] ?? "0% 0%", repeats[index % repeats.length] ?? "repeat"), ...(blend === undefined || blend === 0 ? {} : { blend }) });
     }
     if (layers.length > 0) box["ly"] = layers;
   }
@@ -705,12 +711,16 @@ function boxOfStyle(element: Element, style: CSSStyleDeclaration, report: Mirror
     }
   }
   if (style.mixBlendMode !== "normal") {
-    // A blended layer drawn unblended would cover what it is meant to tint, so it is left out.
-    report.add(`mix-blend-mode: ${style.mixBlendMode}`, element);
-    delete box["bg"];
-    delete box["ly"];
-    delete box["bgi"];
+    const blend = BLEND_MODES[style.mixBlendMode];
+    if (blend !== undefined) box["blend"] = blend;
+    else {
+      report.add(`mix-blend-mode: ${style.mixBlendMode}`, element);
+      delete box["bg"];
+      delete box["ly"];
+      delete box["bgi"];
+    }
   }
+  if (style.isolation === "isolate") box["isolate"] = true;
   if (style.pointerEvents !== "none" && style.visibility !== "hidden") box["hit"] = 1;
   const z = style.zIndex;
   if (z !== "auto") box["z"] = Number.parseInt(z, 10) || 0;

@@ -17,6 +17,8 @@ mod css;
 mod spec;
 mod style;
 mod widgets;
+#[cfg(test)]
+mod blend_tests;
 
 use std::cell::{RefCell, UnsafeCell};
 use std::collections::HashMap;

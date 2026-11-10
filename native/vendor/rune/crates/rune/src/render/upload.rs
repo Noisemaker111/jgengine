@@ -267,6 +267,11 @@ impl Renderer {
             for (at, effect) in &mut self.effects { *effect = instances[*at as usize]; }
         }
         let has_layers = self.uploads.has_layers;
+        if instances.iter().any(|i| i.params[1] == KIND_LAYER && Blend::from_code(i.params[0]).backdrop()) {
+            self.ensure_backdrop(device, self.format, viewport);
+            self.ensure_backdrop(device, layers::FORMAT, viewport);
+            for index in 0..self.extra.len() { self.ensure_backdrop(device, self.extra[index].0, viewport); }
+        }
         self.prepare_layers(device, queue, if has_layers { instances } else { &[] }, viewport);
         self.sync_resident_caches(&mut atlas.resident_caches);
         if self.effects.iter().any(|(_, i)| i.params[0] != 0.0 || i.params[1] == KIND_BACKDROP_BLUR) {

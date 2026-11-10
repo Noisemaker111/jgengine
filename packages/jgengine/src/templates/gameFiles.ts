@@ -127,6 +127,7 @@ const standalonePackageJson = (id: string, engineVersion: string, cliVersion: st
       "@jgengine/node": `^${engineVersion}`,
       "@tailwindcss/vite": "^4.3.3",
       "@types/three": "^0.187.0",
+      "@types/node": "^24",
       tailwindcss: "^4.3.3",
       typescript: "^5",
       vite: "^8.3.5",
@@ -165,6 +166,7 @@ const inRepoPackageJson = (id: string) => `${JSON.stringify(
       "@jgengine/node": "workspace:*",
       "@tailwindcss/vite": "^4.3.3",
       "@types/three": "^0.187.0",
+      "@types/node": "^24",
       tailwindcss: "^4.3.3",
       typescript: "^5",
       vite: "^8.3.5",
@@ -190,7 +192,7 @@ const sharedCompilerOptions = {
   skipLibCheck: true,
   isolatedModules: true,
   verbatimModuleSyntax: true,
-  types: ["vite/client"],
+  types: ["vite/client", "node"],
 };
 
 // An in-repo game takes the engine source paths from the repo's tsconfig.base.json (via games/).

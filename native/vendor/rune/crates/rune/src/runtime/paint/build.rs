@@ -96,7 +96,7 @@ impl<S: 'static> Runtime<S> {
         let tree_order = ((flying || self.has_sticky || self.has_raise) && !self.layer_paint_order.is_empty()) || self.layer_paint_order.windows(2).any(|pair| {
             let n = &self.nodes[pair[0]];
             self.nodes[pair[1]].parent == Some(pair[0]) && ((self.has_dissolve && self.dissolve_scratch[pair[0]]) || n.vis_flags.cache() || n.vis.clip_radius.is_some() || n.vis.group_opacity.is_some() || n.group_fade
-                || n.vis.layer_opacity < 1.0 || fades(n.looping.as_deref().copied())
+                || n.vis.layer_opacity < 1.0 || n.vis.isolate || n.vis.mix_blend != crate::render::Blend::SourceOver || fades(n.looping.as_deref().copied())
                 || self.scene.presented(n.id).is_some_and(|p| (p.opacity > 0.0 && p.opacity < 1.0) || p.blur > 0.0 || p.transform.rotate.abs() > 1e-6))
         });
         let default_ring = self.default_ring_owner();
@@ -294,7 +294,7 @@ impl<S: 'static> Runtime<S> {
             // A fading node with children, or a shape whose pieces overlap, takes its opacity
             // once as a layer rather than each primitive taking it over the ones beneath. So
             // does a layer opacity over two paints of the node's own (a label on its fill).
-            let mut isolate = effective_opacity > 0.001 && (p.blur > 0.0 || dissolve
+            let mut isolate = effective_opacity > 0.001 && (p.blur > 0.0 || dissolve || n.vis.isolate || n.vis.mix_blend != crate::render::Blend::SourceOver
                 || additive_parent || (paint_own > 0.001 && paint_own < 1.0
                     && (next.is_some_and(|j| self.nodes[j].parent == Some(i)) || n.vis.shape.as_ref().is_some_and(|s| s.overlaps())
                         || (n.vis.layer_opacity < 1.0 && own_paints(n) >= 2))));
@@ -729,8 +729,9 @@ impl<S: 'static> Runtime<S> {
                 layers.push((i, start_idx, self.surfaces.len()));
                 let mut marker = Instance::begin_layer([r[0], r[1], w, h], clip,
                     crate::render::LayerSpec { opacity: paint_own * pinh.paint_opacity,
-                        blend: if dissolve { crate::render::Blend::PlusLighter } else { crate::render::Blend::SourceOver },
+                        blend: if dissolve { crate::render::Blend::PlusLighter } else { n.vis.mix_blend },
                         blur: p.blur * sc * s, clip_radius: 0.0 });
+                if n.vis.isolate { marker.params[3] = 2.0; }
                 marker.fade = crate::render::pack_fade(fade, fade_origin, clip);
                 if let Some((_, radii)) = rounded { marker.round_clip_corners(radii); }
                 self.instances.push(marker);
