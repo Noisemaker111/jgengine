@@ -1,7 +1,7 @@
 {
   "name": "@jgengine/core",
-  "version": "0.54.0",
-  "description": "jgengine core \u2014 the engine's feature folders (npm @jgengine/core). Each feature keeps its model, React view (*.view) and three.js draw (*.draw) files together; model files have zero dependencies, so server code imports them alone. Not an ECS. Agent skills ship in the tarball. https://jgengine.com",
+  "version": "0.55.0",
+  "description": "jgengine core — the engine's feature folders (npm @jgengine/core). Each feature keeps its model, React view (*.view) and three.js draw (*.draw) files together; model files have zero dependencies, so server code imports them alone. Not an ECS. Agent skills ship in the tarball. https://jgengine.com",
   "keywords": [
     "jgengine",
     "agent-first",
@@ -65,8 +65,8 @@
     "test": "bun test --preload ../../scripts/three-preload.ts src"
   },
   "peerDependencies": {
-    "@jgengine/react": "^0.54.0",
-    "@jgengine/shell": "^0.54.0",
+    "@jgengine/react": "^0.55.0",
+    "@jgengine/shell": "^0.55.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "three": ">=0.187.0",
