@@ -102,7 +102,7 @@ milestone is never a PR of its own.
 
 Declare the genres in `jgengine.json` (`"suite": { "genres": [...] }`) at create, add
 `src/suite.test.ts` (`suiteTest`), and let each milestone add the `proofs/sim/*.proof.ts` for the
-suite entries it delivers ([games/AGENTS.md](../../../games/AGENTS.md#game-suite)); the README's suite score is the
+suite entries it delivers ([game proofs](../../../games/README.md#design-checklist-and-loop-proofs)); the README's suite score is the
 milestone's honest count.
 
 The proof is `proofs/flows/from-zero.flow.ts`: a new game with no save or prepared state, played

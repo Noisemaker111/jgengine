@@ -27,7 +27,7 @@ Every design pass yields an observed journey, a north star (promise, pillars, an
 
 ## Game suite
 
-A game's genres (`jgengine.json` `suite`) imply the player verbs it must have; `jgengine suite --genres <a,b>` lists them with each core feature's depth: how a player finds it, what improves, two features it feeds, why repeat it at hour 5, how it fails. Use those as the design questions for each system, and plan a headless proof per entry ([games/AGENTS.md](../../../games/AGENTS.md#game-suite)). A cut needs a reason; the score shows it.
+A game's genres (`jgengine.json` `suite`) imply the player verbs it must have; `jgengine suite --genres <a,b>` lists them with each core feature's depth: how a player finds it, what improves, two features it feeds, why repeat it at hour 5, how it fails. Use those as the design questions for each system, and plan a headless proof per entry ([game proofs](../../../games/README.md#design-checklist-and-loop-proofs)). A cut needs a reason; the score shows it.
 
 ## Completion
 
