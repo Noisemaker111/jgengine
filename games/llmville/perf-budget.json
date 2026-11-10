@@ -1,0 +1,3 @@
+{
+  "baseline": "The new dev-runner entry uses the engine's shared 16.7 ms p95 frame target and zero post-warmup program links. No performance measurement, draw reference or download baseline has been recorded; the backend-dependent main flow remains unmeasured."
+}
