@@ -1,4 +1,5 @@
 import { devServerWatch, standaloneOptimizeDeps } from "./gameFiles";
+import { withJsxSource } from "./jsxSource";
 import type { TemplateFile } from "./types";
 
 const editorPackageJson = (engineVersion: string) => `${JSON.stringify(
@@ -124,11 +125,11 @@ createRoot(root).render(<App />);
  * @internal
  */
 export function editorScaffold(engineVersion: string): TemplateFile[] {
-  return [
+  return withJsxSource([
     { path: "index.html", contents: editorIndexHtml },
     { path: "package.json", contents: editorPackageJson(engineVersion) },
     { path: "vite.config.ts", contents: editorViteConfig },
     { path: "src/index.css", contents: editorIndexCss },
     { path: "src/main.tsx", contents: editorMainTsx },
-  ];
+  ]);
 }

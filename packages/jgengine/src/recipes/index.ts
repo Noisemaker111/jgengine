@@ -365,7 +365,8 @@ export const game = defineGame({
 // ctx.scene.entity.distance(me, target) before ctx.scene.entity.effect(...).
 `;
 
-const ABILITY_BAR = `import { useMemo } from "@jgengine/core/ui/jsx";
+const ABILITY_BAR = `/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useMemo } from "@jgengine/core/ui/jsx";
 import { defineGame, defineSystem } from "@jgengine/shell/gameKit";
 import { createAbilityKit } from "@jgengine/core/combat/abilityKit";
 import { ActionBar, actionFromAbilitySlot, useAbilitySlots, useGameContext } from "@jgengine/react";
