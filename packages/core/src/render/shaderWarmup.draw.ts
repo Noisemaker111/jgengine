@@ -182,6 +182,7 @@ export function deferUnlinkedDraws(
   scene: Object3D,
   active: () => boolean,
   now: () => number = () => performance.now(),
+  hooks?: { onHeld?: (objects: readonly Object3D[]) => void },
 ): () => void {
   const owned = Object.prototype.hasOwnProperty.call(renderer, "render");
   const previous = renderer.render;
@@ -198,6 +199,49 @@ export function deferUnlinkedDraws(
   const shadowKinds = new Set<"z" | "d">();
   const shadowStandIns = new Map<string, Material>();
   let shadowTarget: WebGLRenderTarget | undefined;
+  /**
+   * Per material, whether its textures are known on the GPU. A material whose first draw would
+   * upload megabytes of maps holds its drawables back until the play warmup sends them; one held
+   * past {@link TEXTURE_HOLD_FRAMES} draws anyway, so a warmup that never runs cannot hide content.
+   */
+  const textureStates = new WeakMap<Material, "ready" | "queued">();
+  const textureHoldCounts = new WeakMap<Material, number>();
+  /** Drawables this render held for texture upload, reported once the frame ends. */
+  const heldForTextures: Object3D[] = [];
+  const TEXTURE_HOLD_FRAMES = 90;
+
+  /** Whether `material`'s draw may proceed; `"note"` marks its textures uploaded after the draw. */
+  const textureGate = (material: Material | null, object: Object3D): "hold" | "note" | "draw" => {
+    if (material == null || material.visible === false) return "draw";
+    let note = false;
+    let held = false;
+    for (const entry of Array.isArray(material) ? material : [material]) {
+      if (entry.visible === false || textureStates.get(entry) === "ready") continue;
+      let pending = 0;
+      materialTextures(entry, (texture) => {
+        if (textureUploadPending(texture)) pending += 1;
+      });
+      if (pending === 0) {
+        if (textureStates.get(entry) === "queued") note = true;
+        textureStates.set(entry, "ready");
+        continue;
+      }
+      const holds = (textureHoldCounts.get(entry) ?? 0) + 1;
+      textureHoldCounts.set(entry, holds);
+      if (holds > TEXTURE_HOLD_FRAMES) {
+        textureStates.set(entry, "ready");
+        note = true;
+        continue;
+      }
+      textureStates.set(entry, "queued");
+      held = true;
+    }
+    if (held) {
+      heldForTextures.push(object);
+      return "hold";
+    }
+    return note ? "note" : "draw";
+  };
   const link = (material: Material, variant: Variant, object: Drawable, camera: Camera): void => {
     if (isShadowMaterial(material)) {
       const target = renderer.getRenderTarget?.() ?? null;
@@ -261,6 +305,7 @@ export function deferUnlinkedDraws(
     if (undone || (drawn as Object3D) !== scene || !active()) return previous.call(renderer, drawn, camera);
     at = now();
     missing.clear();
+    heldForTextures.length = 0;
     leftOut = false;
     if (linking.length > 0) {
       linking = linking.filter((entry) => {
@@ -281,7 +326,16 @@ export function deferUnlinkedDraws(
       }
       // three's shadow pass draws with no scene.
       if (args[1] === null && isShadowMaterial(args[3])) shadowKinds.add(isShadowMaterial(args[3], "distance") ? "d" : "z");
-      return leaveOut(args[4], args[3]) ? undefined : draw.apply(renderer, args);
+      const object = args[4];
+      const material = args[3];
+      if (leaveOut(object, material)) return undefined;
+      // Passes' own quads and non-drawables draw raw; a scene drawable whose material still owes
+      // the GPU texture uploads waits for the play warmup instead of stalling the frame on them.
+      const gate = object.parent !== null && isDrawable(object) ? textureGate(material, object) : "draw";
+      if (gate === "hold") return undefined;
+      const result = draw.apply(renderer, args);
+      if (gate === "note") noteMaterialTextures(material);
+      return result;
     };
     renderer.renderBufferDirect = checked;
     try {
@@ -309,6 +363,11 @@ export function deferUnlinkedDraws(
         }
       }
       missing.clear();
+      if (heldForTextures.length > 0) {
+        const held = [...heldForTextures];
+        heldForTextures.length = 0;
+        hooks?.onHeld?.(held);
+      }
       // A caster left out of a shadow pass that only redraws on request would stay missing from its map.
       if (leftOut && renderer.shadowMap !== undefined) renderer.shadowMap.needsUpdate = true;
     }
@@ -831,6 +890,23 @@ function materialTextures(material: unknown, found: (texture: UploadableTexture)
   if (uniforms !== undefined) for (const uniform of Object.values(uniforms)) if (uploadable(uniform?.value)) found(uniform.value);
 }
 
+/** The texture version the GPU is known to hold, shared by the warmup and the play deferral. */
+const uploadedTextures = new WeakMap<object, number>();
+
+/**
+ * Whether `texture` still owes the GPU an upload: never sent, or its version moved since. Only
+ * {@link uploadable} textures count — render-target, video and empty textures are not the
+ * first-draw stall this tracks.
+ */
+function textureUploadPending(texture: UploadableTexture): boolean {
+  return uploadedTextures.get(texture) !== texture.version;
+}
+
+/** Record `material`'s uploadable textures as on the GPU at their current versions. @internal */
+export function noteMaterialTextures(material: unknown): void {
+  materialTextures(material, (texture) => uploadedTextures.set(texture, texture.version));
+}
+
 /**
  * The textures a shadow pass samples drawing a caster: the cut-out and displacement maps its depth
  * material copies, nothing it would light with.
@@ -1237,6 +1313,21 @@ export const SHADER_WARMUP_DEFAULTS = {
   watchMs: 6_000,
 } as const;
 
+/**
+ * The per-frame budget {@link ShaderWarmup.tick} spends on content the play deferral held: small
+ * enough that a streamed chunk's uploads land across frames instead of inside one.
+ */
+export const SHADER_WARMUP_PLAY = {
+  /** Held drawables worked per tick. */
+  objectsPerTick: 8,
+  /** Single-texture upload jobs per tick. */
+  uploadsPerTick: 3,
+  /** First-draw warmup runs every this many ticks; each of its draws walks the scene once. */
+  drawEveryTicks: 4,
+  /** Drawables per first-draw warmup. */
+  drawObjectsPerTick: 4,
+} as const;
+
 /** Options for {@link createShaderWarmup}; the clock, sleep and loader signal are injectable for tests. */
 export interface ShaderWarmupOptions {
   renderer: ShaderWarmupRenderer;
@@ -1287,6 +1378,14 @@ export interface ShaderWarmup {
   prepare(): Promise<void>;
   /** Stop after the round in flight and stop waiting; used when the view unmounts. */
   cancel(): void;
+  /** Drawables the frame loop is holding for texture upload; {@link ShaderWarmup.tick} works them off. */
+  noteHeld(objects: readonly Object3D[]): void;
+  /**
+   * Spend one frame's warm budget on {@link noteHeld} content: a few program links, texture
+   * uploads and first draws into the scratch target, so content that streams in mid-game appears
+   * over a few frames instead of stalling one on its uploads. Called once per rendered frame.
+   */
+  tick(): void;
 }
 
 const sceneWarmups = new WeakMap<Object3D, ShaderWarmup>();
@@ -1548,9 +1647,6 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
    * thread never waits on one first draw while the GPU builds another. Run after the links have
    * finished, so the draw's own link check returns at once.
    */
-  /** Textures already sent to the GPU, by the version that was sent. */
-  const uploaded = new WeakMap<object, number>();
-
   /**
    * Jobs that send the drawables' textures to the GPU, `perJob` per flush. The draws link and draw
    * one object per program, which leaves the textures of every other material on that program to
@@ -1568,7 +1664,7 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     const due: UploadableTexture[] = [];
     const queued = new Set<object>();
     const add = (texture: UploadableTexture): void => {
-      if (queued.has(texture) || uploaded.get(texture) === texture.version) return;
+      if (queued.has(texture) || !textureUploadPending(texture)) return;
       queued.add(texture);
       due.push(texture);
     };
@@ -1586,7 +1682,7 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
       jobs.push(() => {
         for (const texture of batch) {
           upload.call(options.renderer, texture as never);
-          uploaded.set(texture, texture.version);
+          uploadedTextures.set(texture, texture.version);
         }
       });
     }
@@ -1616,8 +1712,11 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
   };
   let nextProgramId = 1;
 
-  const drawJobs = (objects: readonly Object3D[], context: SceneContext): LinkJob[] => {
+  const drawJobs = (objects: readonly Object3D[], context: SceneContext, intoScratch = false): LinkJob[] => {
     if (options.renderer.render === undefined) return [];
+    // In play the frame draws to the canvas, so a first-draw warmup renders into the scratch
+    // target instead: the geometry buffers and driver state still build, nothing reaches the screen.
+    const bind = intoScratch ? (work: () => void): void => withTarget(scratch(), work) : withFrameTarget;
     const due: Object3D[] = [];
     for (const object of objects) {
       if (!isDrawable(object)) continue;
@@ -1640,7 +1739,7 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
         // linked and waited for off the frame instead of inside the draw. The preparers ran once
         // before the draws (they walk the whole scene, too much to repeat per batch).
         const known = programSet();
-        withFrameTarget(() => compileObjects(options.renderer, options.scene, options.camera, batch));
+        bind(() => compileObjects(options.renderer, options.scene, options.camera, batch));
         if ((options.renderer.info?.programs?.length ?? 0) > known.size) {
           await gpuFence(options.renderer.getContext?.(), sleep, () => cancelled);
           // A program still building is left to its first real draw: drawing it here would hold
@@ -1648,7 +1747,7 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
           if (!(await settle(known, now() + SHADER_WARMUP_DEFAULTS.stallMs))) return;
         }
         if (cancelled) return;
-        withFrameTarget(() => drawSubset(options.renderer, options.scene, options.camera, keep));
+        bind(() => drawSubset(options.renderer, options.scene, options.camera, keep));
       });
     }
     for (const draw of heldToDraw) jobs.push(() => drawHeldDraw(options.renderer, options.scene, objects, draw, draw.target));
@@ -1834,12 +1933,50 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     return preparing;
   };
 
+  /** Drawables the play deferral keeps holding for texture upload, deduped until worked off. */
+  const playHeld = new Set<Object3D>();
+  let playBusy = false;
+  let playTicks = 0;
+
+  const noteHeld = (objects: readonly Object3D[]): void => {
+    for (const object of objects) playHeld.add(object);
+  };
+
+  /**
+   * One frame's slice of play warmup. Links and uploads run as jobs between frames; the first-draw
+   * pass runs every few ticks because each draw walks the scene once. Everything dedups through
+   * the same stamps the covered rounds use, so an object already warm costs a compare.
+   */
+  const tick = (): void => {
+    if (cancelled || playBusy || playHeld.size === 0) return;
+    const batch = [...playHeld].slice(0, SHADER_WARMUP_PLAY.objectsPerTick);
+    for (const object of batch) playHeld.delete(object);
+    playBusy = true;
+    playTicks += 1;
+    const context = readContext();
+    void (async () => {
+      try {
+        await runJobs([...sceneJobs(batch, context), ...shadowJobs(batch, context)], () => cancelled);
+        const uploads = textureJobs(batch, 1).slice(0, SHADER_WARMUP_PLAY.uploadsPerTick);
+        await runJobs(uploads, () => cancelled, true);
+        if (playTicks % SHADER_WARMUP_PLAY.drawEveryTicks === 0) {
+          await runJobs(drawJobs(batch.slice(0, SHADER_WARMUP_PLAY.drawObjectsPerTick), context, true), () => cancelled, true);
+        }
+      } finally {
+        playBusy = false;
+      }
+    })();
+  };
+
   return {
     done,
     prepare,
     state: () => state,
+    noteHeld,
+    tick,
     cancel: () => {
       cancelled = true;
+      playHeld.clear();
       releaseScratch();
     },
   };

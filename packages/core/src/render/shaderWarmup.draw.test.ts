@@ -15,6 +15,7 @@ import {
   holdDraws,
   linkAhead,
   linkDrawsOffFrame,
+  noteMaterialTextures,
   registerSceneWarmup,
   sceneRevealed,
   warmupDraws,
@@ -1305,7 +1306,7 @@ describe("sceneRevealed", () => {
       revealed = true;
     });
     // Registered after the wait began, as a gate later in the same commit would be.
-    const unregister = registerSceneWarmup(scene, { done, state: () => ({}) as ShaderWarmupState, prepare: async () => {}, cancel: () => {} });
+    const unregister = registerSceneWarmup(scene, { done, state: () => ({}) as ShaderWarmupState, prepare: async () => {}, cancel: () => {}, noteHeld: () => {}, tick: () => {} });
     await new Promise((resolve) => setTimeout(resolve, 5));
     expect(revealed).toBe(false);
     finish({} as ShaderWarmupState);
@@ -1611,5 +1612,31 @@ describe("deferUnlinkedDraws", () => {
     undo();
     renderer.render(scene, camera);
     expect(drawn.at(-1)).toEqual(["part", "late"]);
+  });
+
+  test("a drawable whose material owes texture uploads is held for the play warmup, then drawn", () => {
+    const { renderer, scene, camera, add, drawn } = deferringFixture();
+    const held: string[][] = [];
+    deferUnlinkedDraws(renderer as never, scene, () => true, () => 0, {
+      onHeld: (objects) => held.push(objects.map((object) => object.name)),
+    });
+    const crate = add("crate", true);
+    crate.name = "crate";
+    const map = { isTexture: true, version: 3, image: { complete: true, width: 4, height: 4 } };
+    (crate.material as MeshBasicMaterial).map = map as never;
+    const tent = add("tent", true);
+    tent.name = "tent";
+    (tent.material as MeshBasicMaterial).map = { ...map, version: 4 } as never;
+
+    renderer.render(scene, camera);
+    expect(drawn.at(-1), "both wait for their maps to reach the GPU").toEqual([]);
+    expect(held.at(-1)).toEqual(["crate", "tent"]);
+
+    noteMaterialTextures(crate.material);
+    renderer.render(scene, camera);
+    expect(drawn.at(-1), "the crate draws once its map is uploaded; the tent still waits").toEqual(["crate"]);
+
+    for (let i = 0; i < 95; i++) renderer.render(scene, camera);
+    expect(drawn.at(-1), "a warmup that never runs cannot hide the tent for good").toEqual(["crate", "tent"]);
   });
 });

@@ -114,7 +114,10 @@ export function SceneWarmupGate({ onState, sceneDrawsToTarget }: { onState: (sta
       let inWatchedFrame = false;
       const releaseWatchDraws = holdDraws(gl, { holding: () => inWatchedFrame && preparing });
       // Whatever mounts later in play, or turns visible mid-frame, is left out until it is linked.
-      const undoDefer = deferUnlinkedDraws(gl, scene, () => !preparing);
+      // Drawables held for texture upload go to the warmup, which sends them a few per frame.
+      const undoDefer = deferUnlinkedDraws(gl, scene, () => !preparing, undefined, {
+        onHeld: (objects) => warmup.noteHeld(objects),
+      });
       const enterWatched = addEffect(() => {
         inWatchedFrame = true;
         if (preparing || performance.now() > watchUntil) return;
@@ -122,6 +125,7 @@ export function SceneWarmupGate({ onState, sceneDrawsToTarget }: { onState: (sta
       });
       const leaveWatched = addAfterEffect(() => {
         inWatchedFrame = false;
+        warmup.tick();
       });
       unwatch = () => {
         undoDefer();
