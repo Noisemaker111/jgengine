@@ -21,7 +21,7 @@ export default defineFlow(game, {
       { tap: "Dives & hauls" },
       { shot: "records" },
       { tap: "Settings" },
-      { until: "innerWidth >= 500 || document.querySelector('[aria-label=\"Show later settings categories\"]') !== null" },
+      { until: "(() => { if (innerWidth >= 500) return true; const arrow = document.querySelector('[aria-label=\"Show later settings categories\"]'); const rail = document.querySelector('[role=group][aria-label=\"settings categories\"]'); return arrow !== null && rail !== null && arrow.getBoundingClientRect().width >= 44 && Math.abs(rail.getBoundingClientRect().width - rail.clientWidth) < 1; })()" },
       { tapIf: "Show later settings categories" },
       { until: "(() => { const rail = document.querySelector('[role=group][aria-label=\"settings categories\"]'); return rail !== null && (rail.scrollWidth <= rail.clientWidth || rail.scrollLeft > 0); })()" },
       { tapIf: "Show earlier settings categories" },

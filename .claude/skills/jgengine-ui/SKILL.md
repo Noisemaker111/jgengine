@@ -96,6 +96,13 @@ against saved DOM pixels. Run it with `--param ui=dom` before `--param ui=rune` 
 the same width. Both renderer screenshots must be inspected. Native pixel
 regressions live in `native/crates/jg-ui/src/blend_tests.rs`.
 
+For Linux software captures, Chrome needs `--enable-unsafe-webgpu
+--enable-features=Vulkan --use-vulkan=swiftshader`. Use
+`JG_CAPTURE_SCREENCAST=0` for tours: the screencast path can return a previous
+Rune surface. Native URL decoding finishes after the DOM image's `complete`
+flag; the paint flow settles before checking its saved pixels. Wait for a newly
+inserted control's Rune bounds before clicking it, not just its DOM presence.
+
 `defineGame({ health })` is off unless set: `reporter` receives a scrubbed `CrashReport` (build, game, tier, last N events, no personal data), `telemetry.sink` receives batched events (session start, loads, tier changes, frame percentiles, crash ids), `autoQuality: { targetFrameMs }` moves the tier with hysteresis and cooldowns (the player's tier pick turns it off; their render scale and effect toggles are never overwritten), and `errorScreen` is the game's own recoverable screen for a failed HUD render or tick. No vendor SDK ships in the engine; wire your own reporter and sink. Download size is checked before merge by `bun run check site-bundles` (CI's web-build job): the engine every game loads against `engineKb` in `apps/dev/bundle-budget.json`, and each game's own part against `bundleKb` in its `perf-budget.json`, with the reason in `bundleBaseline`. A heavy optional system loads on demand (see `scene/onDemandSceneKinds.ts`), so a game that never uses it never downloads it.
 
 ## Shared-world interaction rules
