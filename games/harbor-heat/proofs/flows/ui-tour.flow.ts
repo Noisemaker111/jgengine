@@ -12,6 +12,7 @@ export default defineFlow(game, {
       { tap: "Hit the street" },
       { until: "document.querySelector('[data-new-dispatch-name]') !== null" },
       { type: "Jon", field: "[data-new-dispatch-name]", label: "Courier name" },
+      { until: "innerWidth >= 600 || (() => { const card = document.querySelector('.hh-licence'); return card !== null && card.getBoundingClientRect().right <= innerWidth; })()" },
       { tapIf: "Back to the sign" },
       { tap: "Missions & parcels" },
       { until: "innerWidth >= 600 || [...document.querySelectorAll('.hh-bay')].every(el => el.getBoundingClientRect().width > innerWidth * 0.8)" },

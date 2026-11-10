@@ -561,10 +561,13 @@ function boxOfStyle(element: Element, style: CSSStyleDeclaration, report: Mirror
       }
     }
   }
-  // An undisplayed flex item resolves auto minima to 0px in CSSOM; Typed OM keeps the auto keyword.
-  const intrinsic = !pseudo && typeof element.computedStyleMap === "function" ? element.computedStyleMap() : null;
-  setDim(box, "mnw", element, report, "min-width", intrinsic?.get("min-width")?.toString() ?? style.minWidth);
-  setDim(box, "mnh", element, report, "min-height", intrinsic?.get("min-height")?.toString() ?? style.minHeight);
+  // Flex items have a content-based auto minimum on their main axis; hidden CSSOM resolves it to zero.
+  const parentStyle = !pseudo && position !== "absolute" && position !== "fixed" && element.parentElement !== null ? getComputedStyle(element.parentElement) : null;
+  const flexItem = parentStyle?.display.endsWith("flex") === true;
+  const intrinsic = flexItem && typeof element.computedStyleMap === "function" ? element.computedStyleMap() : null;
+  const columnItem = parentStyle?.flexDirection.startsWith("column") === true;
+  setDim(box, "mnw", element, report, "min-width", !columnItem ? intrinsic?.get("min-width")?.toString() ?? style.minWidth : style.minWidth);
+  setDim(box, "mnh", element, report, "min-height", columnItem ? intrinsic?.get("min-height")?.toString() ?? style.minHeight : style.minHeight);
   setDim(box, "mxw", element, report, "max-width", style.maxWidth);
   setDim(box, "mxh", element, report, "max-height", style.maxHeight);
   if (style.boxSizing === "content-box") box["cb"] = 1;
