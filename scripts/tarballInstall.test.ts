@@ -270,7 +270,7 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
     const { consumer } = installTarballs(["core", "assets", "react", "ws", "shell", "editor"]);
     try {
       linkPeer(consumer, "react");
-      for (const peer of ["three", "@react-three/fiber"]) {
+      for (const peer of ["three"]) {
         const target = join(consumer, "node_modules", peer);
         mkdirSync(dirname(target), { recursive: true });
         symlinkSync(join(packageDir("shell"), "node_modules", peer), target, "junction");
