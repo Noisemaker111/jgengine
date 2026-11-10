@@ -134,6 +134,68 @@ export function parseDim(text: string): WireDim | null {
   return null;
 }
 
+/**
+ * A length that mixes points and a share of the box: `[points, fraction]` for `12px`, `40%`,
+ * `calc(100% - 10px)` and sums of those; `null` for anything else.
+ */
+export function parseLengthPercent(text: string): [number, number] | null {
+  let body = text.trim();
+  if (body.startsWith("calc(") && body.endsWith(")")) body = body.slice(5, -1);
+  if (body.includes("(") || body.includes("*") || body.includes("/")) return null;
+  let px = 0;
+  let fraction = 0;
+  let sign = 1;
+  for (const token of body.split(/\s+/)) {
+    if (token === "+") sign = 1;
+    else if (token === "-") sign = -1;
+    else {
+      const value = parseFloat(token);
+      if (Number.isNaN(value)) return null;
+      if (token.endsWith("%")) fraction += (sign * value) / 100;
+      else if (token.endsWith("px") || value === 0) px += sign * value;
+      else return null;
+      sign = 1;
+    }
+  }
+  return [px, fraction];
+}
+
+/**
+ * A `clip-path` polygon or inset as corner points, each `[x points, x fraction, y points, y fraction]`
+ * of the box; `null` for a shape with curves (`circle`, `ellipse`, `path`, a rounded inset).
+ */
+export function parseClipPath(text: string): number[][] | null {
+  const shape = /^(polygon|inset)\((.*)\)(?:\s+[a-z-]+)?$/.exec(text.trim());
+  if (shape === null) return null;
+  const body = shape[2] ?? "";
+  if (shape[1] === "inset") {
+    if (body.includes("round")) return null;
+    const sides = splitTop(body, " ").map(parseLengthPercent);
+    if (sides.length === 0 || sides.some((side) => side === null)) return null;
+    const top = sides[0] as [number, number];
+    const right = (sides[1] ?? top) as [number, number];
+    const bottom = (sides[2] ?? top) as [number, number];
+    const left = (sides[3] ?? right) as [number, number];
+    return [
+      [left[0], left[1], top[0], top[1]],
+      [-right[0], 1 - right[1], top[0], top[1]],
+      [-right[0], 1 - right[1], -bottom[0], 1 - bottom[1]],
+      [left[0], left[1], -bottom[0], 1 - bottom[1]],
+    ];
+  }
+  const points: number[][] = [];
+  for (const part of splitTop(body, ",")) {
+    const trimmed = part.trim();
+    if (trimmed === "nonzero" || trimmed === "evenodd") continue;
+    const pair = splitTop(trimmed, " ");
+    const x = parseLengthPercent(pair[0] ?? "");
+    const y = parseLengthPercent(pair[1] ?? "");
+    if (pair.length !== 2 || x === null || y === null) return null;
+    points.push([x[0], x[1], y[0], y[1]]);
+  }
+  return points.length >= 3 ? points : null;
+}
+
 export function parsePx(text: string): number {
   const v = parseFloat(text);
   return Number.isNaN(v) ? 0 : v;
