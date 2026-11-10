@@ -1,12 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { act, createRoot, extend } from "@react-three/fiber";
-import { createElement, type ReactElement } from "react";
-import * as THREE from "three";
+import { act, createElement, type ReactElement } from "react";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { GameProvider } from "@jgengine/react/provider";
 import { useSceneEntities, useSceneObjects } from "@jgengine/react/hooks";
+import { mountTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
 
 function fixture(): GameContext {
   return createGameContext({
@@ -17,25 +16,11 @@ function fixture(): GameContext {
 }
 
 async function mounted(ctx: GameContext, element: ReactElement, run: () => Promise<void>) {
-  const environment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
-  const previous = environment.IS_REACT_ACT_ENVIRONMENT;
-  environment.IS_REACT_ACT_ENVIRONMENT = true;
-  extend(THREE);
-  const root = createRoot({} as HTMLCanvasElement);
-  await root.configure({
-    frameloop: "never",
-    size: { width: 400, height: 300, top: 0, left: 0 },
-    dpr: 1,
-    gl: () => ({ render() {}, setSize() {}, setPixelRatio() {} }) as unknown as THREE.WebGLRenderer,
-  });
+  const m = await mountTestDraws(createElement(GameProvider, { context: ctx }, element), { width: 400, height: 300 });
   try {
-    await act(async () => {
-      root.render(createElement(GameProvider, { context: ctx }, element));
-    });
     await run();
   } finally {
-    await act(async () => root.unmount());
-    environment.IS_REACT_ACT_ENVIRONMENT = previous;
+    await m.unmount();
   }
 }
 
@@ -49,13 +34,13 @@ let renders = 0;
 function EntityRows() {
   const entities = useSceneEntities();
   renders += 1;
-  return createElement("group", { userData: { rows: entities.length } });
+  return null;
 }
 
 function ObjectRows() {
   const objects = useSceneObjects();
   renders += 1;
-  return createElement("group", { userData: { rows: objects.length } });
+  return null;
 }
 
 describe("scene store hooks", () => {

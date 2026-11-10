@@ -196,7 +196,7 @@ function warnMissingModel(message: string): void {
  * `onLoad` to a {@link createFallbackModel} primitive so the failure is contained
  * at the load seam for **every** consumer — no reliance on a React error boundary
  * catching a rejected Suspense promise, which does not fire reliably for async
- * loader rejections inside the react-three-fiber reconciler. Only a genuine parse
+ * loader rejections inside the React reconciler. Only a genuine parse
  * error over bytes that still look like a valid model (`diagnosis.ok`) is surfaced
  * through `onError`. Split out from the loader so it is unit-testable without a GL
  * context; `overrides` inject the probe and warning sink in tests.
@@ -370,7 +370,7 @@ export function singlePassModelMaterials(root: THREE.Object3D): void {
  * asset (missing / HTML fallback / corrupt / unsupported) — resolves to a
  * {@link createFallbackModel} placeholder primitive instead of rejecting, so the
  * one broken model never bubbles a throw past its mount. Drop-in for the shared
- * loader, so `useLoader(sharedGltfLoader, url)` benefits with no call-site change.
+ * loader, so every loader consumer benefits with no call-site change.
  * @internal
  */
 export class DiagnosticGLTFLoader extends GLTFLoader {

@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client";
 import { EngineHostProvider } from "./engineHost.draw";
 
 import { flushAfterRenderTasks, flushBeforeRenderTasks } from "./afterRenderBoard.draw";
-import type { EngineFrameState } from "./engineLoop.draw";
+import type { EngineFrameState, EngineFrameloop } from "./engineLoop.draw";
 import { bindFrameSource, type FrameSource } from "./frameBoard.draw";
 import type { EngineHost } from "./engineHost.draw";
 
@@ -12,7 +12,7 @@ import type { EngineHost } from "./engineHost.draw";
  * A headless {@link EngineHost} for draw tests: a real scene/camera/clock over a
  * stub renderer, the shared frame board bound to a task list this host steps
  * manually, and `render` counted instead of drawn. This replaces the r3f
- * `createRoot` + `FrameBoardPump` harness — `frameloop` is always "never" and
+ * the old r3f test harness — `frameloop` is always "never" and
  * `step(delta)` is the only way frames advance, so tests stay deterministic.
  * @internal
  */
@@ -23,6 +23,8 @@ export interface TestEngineHost {
   readonly camera: THREE.PerspectiveCamera;
   /** Rendered frame count (the stub renderer's `render` calls). */
   readonly renders: number;
+  /** Every `setFpsLimit` value the host was handed, in order. */
+  readonly fpsLimits: readonly number[];
   /** Run one frame: `delta` seconds (default 1/60), board tasks in priority order, then render. */
   step(delta?: number): void;
   dispose(): void;
@@ -50,6 +52,8 @@ export function createTestEngineHost(options?: {
     getSize: (target: { set: (w: number, h: number) => void }) => target.set(width, height),
   } as unknown as THREE.WebGLRenderer;
   let covered = false;
+  let frameloop: EngineFrameloop = "never";
+  const fpsLimits: number[] = [];
   let elapsed = 0;
   const bound = new Map<number, { priority: number; run: (state: EngineFrameState, delta: number) => void }>();
   let nextId = 0;
@@ -65,7 +69,9 @@ export function createTestEngineHost(options?: {
     delta: 0,
     width,
     height,
-    frameloop: "never",
+    get frameloop() {
+      return frameloop;
+    },
     invalidate() {},
     setCovered(next: boolean) {
       covered = next;
@@ -78,7 +84,21 @@ export function createTestEngineHost(options?: {
   } as EngineFrameState;
 
   const testHost: TestEngineHost = {
-    host: { frame: state },
+    host: {
+      frame: state,
+      advance: (elapsedOverride?: number) => {
+        if (covered) return;
+        const delta = elapsedOverride === undefined ? 1 / 60 : Math.max(0, elapsedOverride - elapsed);
+        testHost.step(delta);
+      },
+      setFrameloop: (mode) => {
+        frameloop = mode;
+      },
+      setFpsLimit: (fps) => {
+        fpsLimits.push(fps);
+      },
+    },
+    fpsLimits,
     state,
     scene,
     camera,
@@ -127,7 +147,7 @@ export interface MountedTestDraws {
 /**
  * Mount `element` under an {@link EngineHostProvider} bound to a fresh
  * {@link createTestEngineHost} through react-dom â€” the engine-side replacement
- * for the r3f `createRoot` + `FrameBoardPump` test harness. `frameloop` is
+ * for the old r3f test harness. `frameloop` is
  * "never"; `advance`/`render` are the only ways frames and trees move.
  * @internal
  */

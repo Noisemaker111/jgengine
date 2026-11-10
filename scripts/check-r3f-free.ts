@@ -1,12 +1,8 @@
-// Runtime react-three-fiber imports in the draw layer and in games. The migration off r3f keeps
-// a shrinking allowlist of files that still legitimately render through it: the r3f host itself,
-// nested preview canvases, dual-host JSX bridges (`<Html>` while r3f owns a canvas), and compat
-// hooks awaiting their last consumers. Every other `.draw` file and every game file must mount
-// draws through `useEngineDraw`/`EngineDrawMount` and read the frame through `useEngineHost`.
-//
-// A file leaves the allowlist when its r3f path is deleted; the check fails on a stale entry, so
-// the list can only shrink. Type-only imports (`import type`, `import { type X }`) are erased at
-// compile time and always allowed — they name JSX intrinsics, not a runtime dependency.
+// Runtime react-three-fiber imports in the draw layer and in games. The migration off r3f is
+// complete: no file may value-import `@react-three/fiber` or `@react-three/drei` anymore. Draws
+// mount through `useEngineDraw`/`EngineDrawMount` and read the frame through `useEngineHost`.
+// Type-only imports (`import type`, `import { type X }`) are erased at compile time and always
+// allowed — they name JSX intrinsics, not a runtime dependency.
 //
 //   bun run check r3f-free
 import { spawnSync } from "node:child_process";
@@ -18,37 +14,9 @@ import { printHelpIfAsked, type Usage } from "./script-help";
 
 /**
  * Files still allowed a *value* import of `@react-three/fiber` or `@react-three/drei`, as
- * repo-relative paths. Delete the entry when the file's r3f path goes away.
+ * repo-relative paths. Empty: the r3f removal is complete and the ban is total.
  */
-export const R3F_FREE_ALLOWLIST: ReadonlySet<string> = new Set([
-  // The r3f host itself and its frame facade — the bridge every dual-host file stands on.
-  "packages/core/src/frame/frameBoardPump.draw.tsx",
-  "packages/core/src/frame/r3fEngineHost.draw.tsx",
-  // Nested preview canvases: their own r3f root, host provided inside.
-  "packages/core/src/render/EntityPreview.draw.tsx",
-  "packages/core/src/generator/GeneratorVariantGrid.draw.tsx",
-  // Dual-host JSX bridges: `<Html>` overlays that render through r3f only while it owns a canvas.
-  "packages/core/src/hud/hudOverlay.draw.tsx",
-  "packages/core/src/item/WorldItems.draw.tsx",
-  "packages/core/src/devtools/CollisionDebugWorld.draw.tsx",
-  "packages/core/src/map/pingBeacons.draw.tsx",
-  // Devtools split: the R3F half of frame telemetry / perf overlay reads r3f's store.
-  "packages/core/src/devtools/FrameTelemetry.draw.tsx",
-  "packages/core/src/devtools/perfOverlay.draw.tsx",
-  // Compat hooks kept for editor/dev-demo consumers until those canvases port.
-  "packages/core/src/material/authoredSurfaceMaterial.draw.tsx",
-  "packages/core/src/material/materialAsset.draw.tsx",
-  "packages/core/src/material/surfaceScanTextures.draw.ts",
-  "packages/core/src/model/useModelInstance.draw.ts",
-  "packages/core/src/scene/useDecalTexture.draw.ts",
-  "packages/core/src/lod/impostor.draw.ts",
-  // Games: dual-host components keeping their r3f branch, and dev/preview routes on their own canvas.
-  "games/llmville/src/scene/components/SceneModel.tsx",
-  "games/llmville/src/user/components/PlayerCharacterFigure.tsx",
-  "games/llmville/src/user/components/CharacterCustomizeViewport.tsx",
-  "games/llmville/src/user/components/CharacterDevPreview.tsx",
-  "games/llmville/src/routes/dev.racks.tsx",
-]);
+export const R3F_FREE_ALLOWLIST: ReadonlySet<string> = new Set([]);
 
 const R3F_SPECIFIER = /^@react-three\/(fiber|drei)(\/|$)/;
 const SOURCE_GLOBS = ["packages/core/src", "packages/shell/src", "games"];

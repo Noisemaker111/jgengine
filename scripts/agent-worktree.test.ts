@@ -180,17 +180,17 @@ describe("readiness for a worktree nobody linked", () => {
   });
 
   // games/scrap-signal on 27-28 Oct: tsgo was there, so every check said ready, and the game's own
-  // @react-three/drei was not. More than ten sessions found it again by hand.
+  // fake-dep was not. More than ten sessions found it again by hand.
   const declareGamePackage = (): void => {
     for (const root of [main, target]) {
       write(join(root, "package.json"), JSON.stringify({ workspaces: ["games/*"] }));
-      write(join(root, "games", "g", "package.json"), JSON.stringify({ dependencies: { "@react-three/drei": "10" } }));
+      write(join(root, "games", "g", "package.json"), JSON.stringify({ dependencies: { "fake-dep": "10" } }));
     }
     mkdirSync(join(main, "games", "g", "node_modules"), { recursive: true });
   };
   const installDrei = (): void => {
     write(tsgoBin(target));
-    write(join(target, "games", "g", "node_modules", "@react-three", "drei", "package.json"), "{}");
+    write(join(target, "games", "g", "node_modules", "fake-dep", "package.json"), "{}");
   };
 
   test("a linked tree that would miss a game's package gets its own install, and the main store is untouched", () => {
@@ -200,7 +200,7 @@ describe("readiness for a worktree nobody linked", () => {
     expect(installed).toBe(1);
     expect(result).toMatchObject({ installed: true, deps: [] });
     expect(lstatSync(join(target, "node_modules")).isSymbolicLink()).toBe(false);
-    expect(existsSync(join(main, "games", "g", "node_modules", "@react-three", "drei"))).toBe(false);
+    expect(existsSync(join(main, "games", "g", "node_modules", "fake-dep"))).toBe(false);
     expect(ensureWorktreeReady(target, { ignored })).toMatchObject({ unchanged: true });
   });
 

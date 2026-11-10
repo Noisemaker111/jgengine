@@ -277,8 +277,7 @@ export interface InstanceSpec {
 }
 
 /**
- * Clone, configure, place and bind the animation driver for one loaded model —
- * the React-free equivalent of `useModelInstance`'s build path.
+ * Clone, configure, place and bind the animation driver for one loaded model.
  */
 /** @internal Shared with modelInstanceDraw. */
 export function buildInstance(spec: InstanceSpec, renderer: THREE.WebGLRenderer | null): BuiltInstance {

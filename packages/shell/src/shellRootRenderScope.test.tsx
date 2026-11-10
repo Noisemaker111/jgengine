@@ -1,13 +1,12 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { act, createRoot } from "@react-three/fiber";
-import { createElement, Fragment, useSyncExternalStore } from "react";
-import * as THREE from "three";
+import { act, createElement, Fragment, useSyncExternalStore } from "react";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { setTouchControlsMode } from "@jgengine/core/input/touchControlsMode";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { useShellRootResubscribe } from "./GamePlayerShell";
+import { mountTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
 
 /**
  * The shell root must re-render for the ctx slices it reads — the possessed entity and the touch
@@ -46,22 +45,6 @@ interface Harness {
 }
 
 async function mount(ctx: GameContext): Promise<Harness> {
-  const renderer = {
-    getPixelRatio: () => 1,
-    getSize: (target: THREE.Vector2) => target.set(800, 450),
-    render() {},
-    setSize() {},
-    setPixelRatio() {},
-    getContext: () => ({}),
-  } as unknown as THREE.WebGLRenderer;
-  const root = createRoot({} as HTMLCanvasElement);
-  await root.configure({
-    frameloop: "never",
-    camera: new THREE.PerspectiveCamera(55, 800 / 450, 0.1, 1000),
-    size: { width: 800, height: 450, top: 0, left: 0 },
-    dpr: 1,
-    gl: () => renderer,
-  });
 
   let shellRenders = 0;
   let rawVersionRenders = 0;
@@ -76,9 +59,7 @@ async function mount(ctx: GameContext): Promise<Harness> {
     return null;
   }
 
-  await act(async () => {
-    root.render(createElement(Fragment, null, createElement(ShellProbe), createElement(RawVersionProbe)));
-  });
+  const mounted = await mountTestDraws(createElement(Fragment, null, createElement(ShellProbe), createElement(RawVersionProbe)), { width: 800, height: 450 });
 
   return {
     shellRenders: () => shellRenders,
@@ -88,9 +69,7 @@ async function mount(ctx: GameContext): Promise<Harness> {
         run();
       });
     },
-    retire: async () => {
-      await act(async () => root.unmount());
-    },
+    retire: () => mounted.unmount(),
   };
 }
 

@@ -59,8 +59,6 @@ export function creatorAppFixture(name: string): CreatorAppFixture {
     if (stdlib === undefined) throw new Error("three-stdlib is unavailable");
     await symlink(`${store}/${stdlib}/node_modules/three-stdlib`, `${scratch}/node_modules/three-stdlib`, "dir");
     await symlink(resolve(editorRoot, "../navbake/node_modules/recast-navigation"), `${scratch}/node_modules/recast-navigation`, "dir");
-    await mkdir(`${scratch}/node_modules/@react-three`, { recursive: true });
-    for (const peer of ["@react-three/fiber", "@react-three/drei"]) await symlink(resolve(editorRoot, "node_modules", peer), `${scratch}/node_modules/${peer}`, "dir");
     await installPublicPackages(scratch, ["core", "react", "ws", "shell", "navbake", "editor"]);
     step("linking the packages");
     await Bun.write(`${scratch}/fixture.tsx`, `

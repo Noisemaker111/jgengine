@@ -21,7 +21,6 @@
     "@jgengine/editor": "workspace:*",
     "@jgengine/react": "workspace:*",
     "@jgengine/shell": "workspace:*",
-    "@react-three/fiber": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "three": "catalog:"

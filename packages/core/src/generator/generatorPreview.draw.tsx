@@ -15,7 +15,7 @@ export interface GeneratorPreviewFrame {
 }
 
 /**
- * How one generator output family draws in a variant tile: a react-three-fiber component for the
+ * How one generator output family draws in a variant tile: an EngineDraw for the
  * variant and the camera frame that fits it. One preview serves every generator of that output.
  */
 export interface GeneratorPreview {
