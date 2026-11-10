@@ -154,7 +154,7 @@
 - `FlockAgent` (interface): interface FlockAgent { position: FlockVec3; velocity: FlockVec3 } — ⚠ undocumented
 - `FlockBuffers` (interface): interface FlockBuffers — Typed-array agents for {@link createFlockStepper}: `position` and `velocity` hold x,y,z per agent.
 - `FlockConfig` (interface): interface FlockConfig { maxSpeed: number; accel?: number; separationRadius: number; separationWeight?: number; neighborRadius: number; cohesionWeight?: number; alignmentWeight?: number; seekWeight?: number; stragglerRadius?: number; stragglerBoost?: number } — ⚠ undocumented
-- `FlockStepAgent` (interface): interface FlockStepAgent { position: FlockVec3; velocity: FlockVec3 } — ⚠ undocumented
+- `FlockStepAgent` (interface): interface FlockStepAgent { position: [number, number, number]; velocity: [number, number, number] } — ⚠ undocumented
 - `FlockStepper` (interface): interface FlockStepper — Allocation-free flock stepping over typed arrays, sized once for `capacity` agents.
 - `FlockStepperState` (interface): interface FlockStepperState — Sizing of a {@link FlockStepper}.
 - `FlockVec3` (type): type FlockVec3 = readonly [number, number, number] — ⚠ undocumented
