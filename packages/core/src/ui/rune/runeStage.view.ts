@@ -185,6 +185,7 @@ export class RuneStage {
             for (const child of box.c ?? []) place(child, matrix);
           };
           for (const layer of this.layers) if (layer.root !== null) place(layer.root, [1, 0, 0, 1, 0, 0]);
+          this.input?.refreshHover();
           const pending = [...this.scrollRequests];
           this.scrollRequests.clear();
           for (const [element, request] of pending) {

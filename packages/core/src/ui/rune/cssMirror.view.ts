@@ -568,6 +568,13 @@ function boxOfStyle(element: Element, style: CSSStyleDeclaration, report: Mirror
   const gridItem = parentStyle?.display.endsWith("grid") === true;
   const intrinsic = (flexItem || gridItem) && typeof element.computedStyleMap === "function" ? element.computedStyleMap() : null;
   const columnItem = parentStyle?.flexDirection.startsWith("column") === true;
+  if (flex && box["w"] === undefined && box["fw"] !== undefined && !style.flexDirection.startsWith("column")) {
+    const autoMargin = style.marginLeft === "auto" || style.marginRight === "auto";
+    const cross = style.alignSelf === "auto" ? parentStyle?.alignItems : style.alignSelf;
+    const inline = style.justifySelf === "auto" ? parentStyle?.justifyItems : style.justifySelf;
+    const nonStretch = (value: string | undefined): boolean => value !== undefined && value !== "normal" && value !== "stretch" && value !== "auto";
+    if (display === "inline-flex" || (gridItem && (autoMargin || nonStretch(inline))) || (flexItem && (!columnItem || autoMargin || nonStretch(cross)))) box["fitw"] = 1;
+  }
   setDim(box, "mnw", element, report, "min-width", gridItem || !columnItem ? intrinsic?.get("min-width")?.toString() ?? style.minWidth : style.minWidth);
   setDim(box, "mnh", element, report, "min-height", gridItem || columnItem ? intrinsic?.get("min-height")?.toString() ?? style.minHeight : style.minHeight);
   setDim(box, "mxw", element, report, "max-width", style.maxWidth);
@@ -876,12 +883,8 @@ export function atomicColumns(box: WireBox, children: WireBox[], count: number, 
   return true;
 }
 
-/** Record `children` as `box`'s list, in paint order. */
-function adopt(box: WireBox, children: WireBox[]): void {
-  if (children.length === 0) {
-    delete box.c;
-    return;
-  }
+/** Positioned zero levels share tree order with auto levels. Flow siblings keep layout order. */
+export function paintOrder(children: WireBox[]): WireBox[] {
   // In-flow boxes keep their layout order. An out-of-flow box paints by its z-index: under the
   // flow when it is negative or lower than an in-flow sibling's, above it otherwise.
   const z = (child: WireBox): number | null => (typeof child["z"] === "number" ? child["z"] : null);
@@ -892,17 +895,25 @@ function adopt(box: WireBox, children: WireBox[]): void {
   const rest: WireBox[] = [];
   for (const child of children) {
     const level = z(child);
-    if (child["pos"] !== 2 || (level === null && flowTop === 0)) rest.push(child);
+    if (child["pos"] !== 2 || ((level === null || level === 0) && flowTop === 0)) rest.push(child);
     else if ((level ?? 0) < 0 || (level ?? 0) < flowTop) under.push(child);
     else if (level === null) rest.push(child);
     else over.push(child);
   }
   if (under.length > 0 || over.length > 0) {
     const byLevel = (a: WireBox, b: WireBox): number => (z(a) ?? 0) - (z(b) ?? 0);
-    box.c = [...under.sort(byLevel), ...rest, ...over.sort(byLevel)];
-  } else {
-    box.c = children;
+    return [...under.sort(byLevel), ...rest, ...over.sort(byLevel)];
   }
+  return children;
+}
+
+/** Record `children` as `box`'s list, in paint order. */
+function adopt(box: WireBox, children: WireBox[]): void {
+  if (children.length === 0) {
+    delete box.c;
+    return;
+  }
+  box.c = paintOrder(children);
   for (const child of box.c) owners.set(child, box);
 }
 

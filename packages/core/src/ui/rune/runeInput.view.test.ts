@@ -1,6 +1,38 @@
 import { expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 
+test("layout changes re-hit a stationary pointer without inventing pointer movement", () => {
+  const source = `
+    import { Window } from "happy-dom";
+    import { RuneInput } from ${JSON.stringify(new URL("./runeInput.view.ts", import.meta.url).href)};
+    import { idOf } from ${JSON.stringify(new URL("./cssMirror.view.ts", import.meta.url).href)};
+    import { setRuneRect } from ${JSON.stringify(new URL("./domMeasure.view.ts", import.meta.url).href)};
+    const win = new Window();
+    Object.assign(globalThis, { window:win, document:win.document, Document:win.Document, Element:win.Element,
+      HTMLElement:win.HTMLElement, HTMLInputElement:win.HTMLInputElement, HTMLTextAreaElement:win.HTMLTextAreaElement,
+      Event:win.Event, FocusEvent:win.FocusEvent, PointerEvent:win.PointerEvent, MouseEvent:win.MouseEvent });
+    const layer=document.createElement("div"), first=document.createElement("button"), next=document.createElement("button");
+    layer.setAttribute("data-jg-rune-layer", ""); layer.append(first, next); document.body.append(layer);
+    const rect=[20,30,100,100], away=[200,30,100,100];
+    setRuneRect(first, rect, rect); setRuneRect(next, away, away);
+    const boxes=[{k:"x",id:idOf(first),hit:1},{k:"x",id:idOf(next),hit:1}];
+    const input=new RuneInput(()=>boxes), events=[];
+    for(const [name,element] of [["first",first],["next",next]]) for(const type of ["pointerenter","pointerleave","pointermove"])
+      element.addEventListener(type, event=>events.push(name+":"+type));
+    document.body.dispatchEvent(new PointerEvent("pointermove", {clientX:50,clientY:50,pointerType:"mouse",bubbles:true}));
+    setRuneRect(first, away, away); setRuneRect(next, rect, rect);
+    input.refreshHover(); input.refreshHover();
+    if(JSON.stringify(events)!=='["first:pointerenter","first:pointermove","first:pointerleave","next:pointerenter"]') throw new Error("stationary hover did not follow layout: "+JSON.stringify(events));
+    document.body.dispatchEvent(new PointerEvent("pointerout", {relatedTarget:null,bubbles:true}));
+    input.refreshHover();
+    if(events.at(-1)!=="next:pointerleave") throw new Error("leaving the window retained hover");
+    input.destroy(); await win.happyDOM.close();
+  `;
+  const result = spawnSync(process.execPath, ["--eval", source], { encoding: "utf8", windowsHide: true, timeout: 10_000 });
+  expect(result.stderr).toBe("");
+  expect(result.status).toBe(0);
+});
+
 test("destroying Rune input restores browser focus before a DOM fallback or remount", () => {
   const source = `
     import { Window } from "happy-dom";

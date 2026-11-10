@@ -2011,6 +2011,7 @@
 - `mirrorRoot` (function): function mirrorRoot(container: Element, report: MirrorReport): WireBox — A layer's root box: the viewport, holding the mirrored children of `container`.
 - `onMaskLoaded` (function): function onMaskLoaded(listener: () => void): void — Called when a mask picture has arrived and the elements that use it can be drawn.
 - `ownerOf` (function): function ownerOf(box: WireBox): WireBox | undefined — ⚠ undocumented
+- `paintOrder` (function): function paintOrder(children: WireBox[]): WireBox[] — Positioned zero levels share tree order with auto levels. Flow siblings keep layout order.
 - `remirrorElement` (function): function remirrorElement(element: Element, report: MirrorReport): WireBox | null — Mirrors `element` again in place after it changed; returns the box to send as a patch, or `null` when the change reaches outside the element (it appeared, vanished, moved to or from a positioned ancestor, or changed how its parent flows) and the parent must be mirrored.
 - `remirrorText` (function): function remirrorText(element: Element, report: MirrorReport): Record<string, unknown> | null | undefined — The text of `element` again from the styles kept at its last mirror, for a change that only touched text nodes: no computed style is read. `undefined` when the element no longer holds only text (it gained a box), which needs a full mirror.
 

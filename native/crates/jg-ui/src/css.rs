@@ -275,6 +275,9 @@ pub struct Box_ {
     /// 0 nowrap, 1 wrap, 2 wrap-reverse.
     #[serde(default)]
     pub fw: u8,
+    /// An auto-width wrapping row whose containing layout shrink-wraps its inline size.
+    #[serde(default)]
+    pub fitw: u8,
     /// Alignment keywords: 1 start, 2 end, 3 centre, 4 stretch, 5 baseline, 6 between, 7 around, 8 evenly.
     #[serde(default)]
     pub ai: u8,
@@ -569,8 +572,7 @@ fn layout(b: &Box_, s: &mut Style) {
         s.inset = rect4(ins, Dim::lpa);
     }
     s.size = Size { width: b.w.map_or(Dimension::auto(), Dim::dimension), height: b.h.map_or(Dimension::auto(), Dim::dimension) };
-    if b.w.is_none() && b.fw != 0 {
-        // Fit an intrinsic row to its available room before resolving the children's percentages.
+    if b.w.is_none() && b.fitw != 0 {
         s.size.width = Dimension::fit_content_percent(1.0);
     }
     s.min_size = Size { width: b.mnw.map_or(auto(), Dim::lpa), height: b.mnh.map_or(auto(), Dim::lpa) };
@@ -1651,9 +1653,21 @@ mod live_value_tests {
     }
 
     #[test]
+    fn wrapping_row_stretches_before_distributing_its_children() {
+        let mut state = Ui::default();
+        state.root = crate::spec::parse_spec(r#"{"children":[{"k":"x","id":1,"w":400,"fd":1,"c":[{"k":"x","id":2,"fw":1,"jc":6,"gap":[8,8],"c":[{"k":"x","id":3,"w":100,"h":30},{"k":"x","id":4,"w":100,"h":30}]}]}]}"#).unwrap().children;
+        let mut runtime = rune::Runtime::new(state, crate::build::view, (400.0, 300.0), rune::Env::new(true, 1.0));
+        runtime.frame(0.0);
+        let elements = runtime.elements();
+        let rect = |key| elements.iter().find(|element| element.key.as_deref() == Some(key)).unwrap().target;
+        assert_eq!(rect("x2")[2], 400.0);
+        assert_eq!(rect("x4")[0], 300.0);
+    }
+
+    #[test]
     fn wrapping_percentage_cards_fill_their_intrinsic_grid_cell() {
         let mut state = Ui::default();
-        state.root = crate::spec::parse_spec(r#"{"children":[{"k":"x","id":1,"w":362,"d":2,"ji":3,"c":[{"k":"x","id":2,"mnw":0,"fw":1,"jc":3,"gap":[22,22],"mxw":[0,1,760,0,1],"c":[{"k":"x","id":3,"d":1,"w":"100%","mnw":0,"c":[{"k":"x","id":4,"w":150,"h":250}]},{"k":"x","id":5,"d":1,"w":"100%","mnw":0,"c":[{"k":"x","id":6,"w":150,"h":250}]},{"k":"x","id":7,"d":1,"w":"100%","mnw":0,"c":[{"k":"x","id":8,"w":150,"h":250}]}]}]}]}"#).unwrap().children;
+        state.root = crate::spec::parse_spec(r#"{"children":[{"k":"x","id":1,"w":362,"d":2,"ji":3,"c":[{"k":"x","id":2,"mnw":0,"fw":1,"fitw":1,"jc":3,"gap":[22,22],"mxw":[0,1,760,0,1],"c":[{"k":"x","id":3,"d":1,"w":"100%","mnw":0,"c":[{"k":"x","id":4,"w":150,"h":250}]},{"k":"x","id":5,"d":1,"w":"100%","mnw":0,"c":[{"k":"x","id":6,"w":150,"h":250}]},{"k":"x","id":7,"d":1,"w":"100%","mnw":0,"c":[{"k":"x","id":8,"w":150,"h":250}]}]}]}]}"#).unwrap().children;
         let mut runtime = rune::Runtime::new(state, crate::build::view, (390.0, 844.0), rune::Env::new(true, 1.0));
         runtime.frame(0.0);
         let elements = runtime.elements();

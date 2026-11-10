@@ -1,5 +1,16 @@
 import { expect, test } from "bun:test";
-import { atomicColumns, groupInlineFlow, type WireBox } from "./cssMirror.view";
+import { atomicColumns, groupInlineFlow, paintOrder, type WireBox } from "./cssMirror.view";
+
+test("positioned zero and auto levels paint in tree order between negative and positive layers", () => {
+  const children: WireBox[] = [
+    { k: "x", id: 1 },
+    { k: "x", id: 2, pos: 2, z: 0 },
+    { k: "x", id: 3, pos: 2 },
+    { k: "x", id: 4, pos: 2, z: 2 },
+    { k: "x", id: 5, pos: 2, z: -1 },
+  ];
+  expect(paintOrder(children).map(child => child.id)).toEqual([5, 1, 2, 3, 4]);
+});
 
 test("unbreakable columns retain their blocks and draw centered separating rules", () => {
   const box: WireBox = { k: "x", id: 1, d: 1 };

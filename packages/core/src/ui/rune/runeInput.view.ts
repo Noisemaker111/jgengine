@@ -39,6 +39,7 @@ function hitBox(box: WireBox, x: number, y: number): WireBox | null {
 export class RuneInput {
   private readonly roots: Roots;
   private hovered: Element | null = null;
+  private pointer: { x: number; y: number; init: PointerEventInit } | null = null;
   private pressed: Element | null = null;
   private focused: HTMLElement | null = null;
   private marked: Record<"hover" | "active" | "focus", Element[]> = { hover: [], active: [], focus: [] };
@@ -56,6 +57,11 @@ export class RuneInput {
       this.cleanups.push(() => window.removeEventListener(type, handler, { capture: true }));
     };
     on("pointermove", (event) => this.onMove(event));
+    on("pointerout", (event) => {
+      if (this.own(event) || event.relatedTarget !== null) return;
+      this.pointer = null;
+      this.hover(null, this.init(event));
+    });
     on("pointerdown", (event) => this.onDown(event));
     on("pointerup", (event) => this.onUp(event));
     on("pointercancel", (event) => this.onUp(event));
@@ -89,6 +95,7 @@ export class RuneInput {
     this.mark("hover", "data-jg-hover", null);
     this.mark("active", "data-jg-active", null);
     this.hovered = null;
+    this.pointer = null;
     this.pressed = null;
     this.lastClick = { at: 0, target: null };
     for (const cleanup of this.cleanups.splice(0)) cleanup();
@@ -102,6 +109,12 @@ export class RuneInput {
       if (box !== null) return elementOf(box.id);
     }
     return null;
+  }
+
+  /** Re-hit after layout: a screen or scroller can move beneath a stationary pointer. */
+  refreshHover(): void {
+    const pointer = this.pointer;
+    if (pointer !== null) this.hover(this.target(pointer.x, pointer.y), pointer.init);
   }
 
   /**
@@ -171,18 +184,30 @@ export class RuneInput {
     const over = this.target(event.clientX, event.clientY);
     const target = this.pressed ?? over;
     if (this.claims(target)) event.stopPropagation();
+    this.rememberPointer(event);
+    this.hover(over, this.init(event));
+    if (target !== null) {
+      this.send(target, new PointerEvent("pointermove", this.init(event)));
+      this.send(target, new MouseEvent("mousemove", this.init(event)));
+    }
+  }
+
+  private rememberPointer(event: PointerEvent): void {
+    if (event.pointerType !== "touch") this.pointer = { x: event.clientX, y: event.clientY, init: this.init(event) };
+  }
+
+  private hover(over: Element | null, init: PointerEventInit): void {
     if (over !== this.hovered) {
       const before = this.chain(this.hovered);
       const after = this.chain(over);
-      const init = this.init(event);
       if (this.hovered !== null) {
         this.send(this.hovered, new PointerEvent("pointerout", { ...init, relatedTarget: over }));
         this.send(this.hovered, new MouseEvent("mouseout", { ...init, relatedTarget: over }));
       }
       for (const e of before) {
         if (after.includes(e)) continue;
-        this.send(e, new PointerEvent("pointerleave", { ...this.init(event, false), relatedTarget: over }));
-        this.send(e, new MouseEvent("mouseleave", { ...this.init(event, false), relatedTarget: over }));
+        this.send(e, new PointerEvent("pointerleave", { ...init, bubbles: false, cancelable: false, relatedTarget: over }));
+        this.send(e, new MouseEvent("mouseleave", { ...init, bubbles: false, cancelable: false, relatedTarget: over }));
       }
       if (over !== null) {
         this.send(over, new PointerEvent("pointerover", { ...init, relatedTarget: this.hovered }));
@@ -190,20 +215,18 @@ export class RuneInput {
       }
       for (const e of after.reverse()) {
         if (before.includes(e)) continue;
-        this.send(e, new PointerEvent("pointerenter", { ...this.init(event, false), relatedTarget: this.hovered }));
-        this.send(e, new MouseEvent("mouseenter", { ...this.init(event, false), relatedTarget: this.hovered }));
+        this.send(e, new PointerEvent("pointerenter", { ...init, bubbles: false, cancelable: false, relatedTarget: this.hovered }));
+        this.send(e, new MouseEvent("mouseenter", { ...init, bubbles: false, cancelable: false, relatedTarget: this.hovered }));
       }
       this.hovered = over;
       this.mark("hover", "data-jg-hover", over);
-    }
-    if (target !== null) {
-      this.send(target, new PointerEvent("pointermove", this.init(event)));
-      this.send(target, new MouseEvent("mousemove", this.init(event)));
     }
   }
 
   private onDown(event: PointerEvent): void {
     if (this.own(event)) return;
+    this.rememberPointer(event);
+    this.refreshHover();
     const target = this.target(event.clientX, event.clientY);
     if (target === null) {
       if (this.focused !== null) this.focus(null);
