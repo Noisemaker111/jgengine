@@ -68,16 +68,19 @@ stash, fabricator and cache keep their game commands and persistence.
 - [x] Update the UI skill with the primitives and a page-sized game example.
 - [x] Inspect desktop/phone headless PNGs of title, settings and HUD; repair phone
   reticle overlap and split action labels. These show native UI, without a 3D scene.
-- [ ] Finish Linux generation, verification, commit and push the final source/wasm.
+- [x] Linux generation, focused types/tests, Rust verification and rebuilt wasm.
+- [x] Final broader Linux gate and record the passing receipt.
 - [ ] PC acceptance: run the real controls and settings, confirm idle draw submissions
   stop, and measure production UI CPU/GPU cost. No cost claim before this step.
-- [ ] Rebase onto beta after #3108 merges, then land once through `bun run lane:close`.
+- [x] Rebase onto beta after #3108 merged (base `9705d9352`).
+- [ ] Land once through `bun run lane:close` after PC acceptance.
 
 ## Evidence
 
 The previous implementation had 728 UI TSX lines (excluding tests); the primitives
 rewrite has 372. Count all `src/game/ui/**/*.tsx` files, including the game theme
-and specialised panels. Pixel parity is not a goal.
+and specialised panels. Source size also falls from 57,323 to 35,882 bytes (37%).
+Pixel parity is not a goal.
 
 Six inspected PNGs live in `proofs/rune-primitives/`: title, settings and dive at
 1280×720 and 390×844. The settings fixture contains deterministic controller rows;
@@ -93,8 +96,8 @@ The actual GPU submission counter still requires the PC.
 
 ## PC acceptance brief
 
-Use branch `agent/rune-native-ui`, PR #3117. Keep the PR open until #3108 has
-landed; then rebase onto beta. Do not bring back CSS, a DOM host or finished widgets.
+Use branch `agent/rune-native-ui`, PR #3117, rebased onto beta after #3108 merged.
+Do not bring back CSS, a DOM host or finished widgets.
 
 Run `bun run drive deepward --flow ui-tour` at desktop and phone widths. The flow
 captures title/settings/HUD and checks that `window.__jgNativeUi.stats().frames`
@@ -103,6 +106,9 @@ start/continue, pause/resume, save/load, credits, stash, cache move/rotate/drag/
 fabrication, reprint and save-failure boundaries. Check mouse, keyboard, pad and
 touch gestures where the game permits them. The host has no Owl/GPU/Chrome.
 
+Use `--device desktop --width 1280 --height 720` and
+`--device mobile --width 390 --height 844` for the two flow runs.
+
 Measure one production round of UI CPU/GPU cost against the React baseline
 `d7fdf21a5f0f62c4f13747e253cf1d59149fdc07` using the existing perf harness. Attribute
 UI work separately; a total frame-time number is insufficient. No pixel matching.
@@ -110,12 +116,24 @@ Record the numbers and method in #3117, then run `lane:close` after acceptance.
 
 ## Linux verification state
 
-Focused TypeScript tests and core/UI/Deepward types pass. The production wasm
-bundle was rebuilt after native changes. Generation and the final broader receipt
-are pending in this edit.
+Focused TypeScript tests and core/UI/Deepward types pass. Rust passes all 31 tests.
+The production wasm was rebuilt from the rebased source. Generation passed all
+12 stages. `verify:fast --landing --jobs 4` passed under task-local Bun 1.4.2,
+matching CI without changing the host install. Receipt:
+`.scratch/verify-fast/runs/0947c4f1-3550-4e99-b94e-aa98eafb559e/receipt.json`.
+It proves source head `735f8b739`: 814 selected test files, 24 type checks,
+15 gates, beacon-bastion/Deepward boot probes and the site build. It took 957.3s;
+373 unchanged units reused prior passing results. This is the landing scope,
+not a claim that every CI-only check ran. Subsequent edits record evidence only.
 
-The earlier `verify:fast` receipt was incomplete, not a passing gate. Its unchanged
-baseline blockers were Bun 1.3.14 caching a dead `HTTP_PROXY` in localhost probe
-tests (CI declares 1.4.2) and a missing LLMville perf budget. Do not weaken those
-checks or invent a perf baseline. Current results must replace this historical
-state before landing.
+The gate exposed old test timing races. Gamepad taps now last one sample, held
+input releases in the observing browser task, and the lock fixture timestamps
+the unlock boundary before releasing. Menu, landing and browser helper tests
+pass eight repeated runs together with four workers.
+
+Removing legacy UI from Deepward reclassified 18 formerly shared chunks
+(138.774 KiB) under the nine DOM games. The bundle budget transfers 139 KiB
+from the engine (1920 to 1781) to each remaining game. Every engine-plus-game
+ceiling is unchanged; Deepward's falls. The bundle check passes without changing
+the check or increasing total download allowances. No frame-performance baseline
+was changed. Earlier incomplete receipts do not override this passing receipt.
