@@ -28,9 +28,9 @@ const KILL_MOTION =
  * `components` rules and Tailwind utilities win without `!important`. It first declares
  * `theme, base, components, utilities` so Tailwind v4's preflight stays below engine controls even
  * when the engine sheet loads first. The shell injects it; games that mount outside the shell import
- * `@jgengine/react/styles.css`, which holds the same text.
+ * `@jgengine/ui/styles.css`, which holds the same text.
  */
-export const ENGINE_STYLESHEET = `/* @jgengine/react engine stylesheet */
+export const ENGINE_STYLESHEET = `/* @jgengine/ui engine stylesheet */
 @layer theme, base, components, utilities;
 @layer components.jgengine {
 :root { --jg-motion-scale: 1; }

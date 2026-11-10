@@ -155,7 +155,7 @@ describe("jgengine sync at a workspace root", () => {
   }
 
   test("moves the root catalog's pins to this engine, keeps each game's catalog: declarations, and --check sees it", async () => {
-    const { root, game } = await workspace({ "@jgengine/core": "^0.1.0", "@jgengine/react": "0.1.0", react: "19.2.3" });
+    const { root, game } = await workspace({ "@jgengine/core": "^0.1.0", "@jgengine/ui": "0.1.0", react: "19.2.3" });
     const before = readFileSync(join(root, "package.json"), "utf8");
     const checked = await quietly(() => runSync([root, "--check"]));
     expect(checked.code).toBe(1);
@@ -166,7 +166,7 @@ describe("jgengine sync at a workspace root", () => {
     expect(synced.code).toBe(0);
     expect(synced.out).toContain(`@jgengine 0.1.0 → ${sdkVersion()}`);
     const catalog = (JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as { workspaces: { catalog: Record<string, string> } }).workspaces.catalog;
-    expect(catalog).toEqual({ "@jgengine/core": `^${sdkVersion()}`, "@jgengine/react": sdkVersion(), react: "19.2.3" });
+    expect(catalog).toEqual({ "@jgengine/core": `^${sdkVersion()}`, "@jgengine/ui": sdkVersion(), react: "19.2.3" });
     const manifest = JSON.parse(readFileSync(join(game, "package.json"), "utf8")) as { dependencies: Record<string, string> };
     expect(manifest.dependencies["@jgengine/core"]).toBe("catalog:");
     expect((await quietly(() => runSync([root, "--check"]))).code).toBe(0);

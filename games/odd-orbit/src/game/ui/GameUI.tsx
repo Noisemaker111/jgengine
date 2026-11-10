@@ -1,14 +1,14 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useState } from "@jgengine/core/ui/jsx";
-import { HudCanvas, HudPanel, useHudLayout, useDisplayProfile, usePanels } from "@jgengine/react";
+import { HudCanvas, HudPanel, useHudLayout, useDisplayProfile, usePanels } from "@jgengine/ui";
 import { useGameFonts } from "@jgengine/core/ui/fonts.view";
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { HudButton } from "@jgengine/core/hud/hudButton.view";
-import { useGame, useSceneObjects } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGame, useSceneObjects } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
 import { LiveText } from "@jgengine/core/ui/liveBind.view";
-import { useStore } from "@jgengine/react/store";
+import { useStore } from "@jgengine/ui/store";
 import { GAME_FONTS } from "../../art/fonts/fonts";
 import { householdStore } from "../session/store";
 import { orbitSession } from "../session/lifecycle";

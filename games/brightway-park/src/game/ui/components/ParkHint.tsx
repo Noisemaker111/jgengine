@@ -1,7 +1,7 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect } from "@jgengine/core/ui/jsx";
-import { useGame, useGameStore } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGame, useGameStore } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 import { currentHint } from "../../onboarding";

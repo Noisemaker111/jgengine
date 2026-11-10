@@ -244,11 +244,11 @@ export const SHARDS: readonly Shard[] = [
   },
   {
     name: "g",
-    label: "react and the editor unit tests",
+    label: "UI and editor unit tests",
     // 41 s of react plus 3 s of editor tests that are not browser scenarios. React cannot fold
     // into another shard here without clearing 60 s, so this is the one job that is nearly a
     // single package.
-    include: ["packages/react", "packages/editor"],
+    include: ["packages/ui", "packages/editor"],
     needs: [],
   },
   {

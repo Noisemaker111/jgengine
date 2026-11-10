@@ -1,8 +1,8 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { HudButton } from "@jgengine/core/hud/hudButton.view";
-import { useGame, useSceneObjects } from "@jgengine/react/hooks";
-import { useStore } from "@jgengine/react/store";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGame, useSceneObjects } from "@jgengine/ui/hooks";
+import { useStore } from "@jgengine/ui/store";
+import { useGameContext } from "@jgengine/ui/provider";
 import { LiveText } from "@jgengine/core/ui/liveBind.view";
 import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { NEED_ICON } from "../fiction/kit";

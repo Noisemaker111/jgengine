@@ -4,7 +4,7 @@ import type { ReactNode } from "@jgengine/core/ui/jsx";
 import { lootDropsOf } from "@jgengine/core/game/events";
 import type { FeedEntry } from "@jgengine/core/feed/feed";
 
-import { useFeed } from "@jgengine/react/hooks";
+import { useFeed } from "@jgengine/ui/hooks";
 import { memoView } from "../ui/memoView.view";
 
 function defaultToast(entry: FeedEntry): ReactNode {

@@ -1,9 +1,9 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { type ReactNode, useEffect, useRef, useState, useSyncExternalStore } from "@jgengine/core/ui/jsx";
-import { useCanvasCover } from "@jgengine/react";
+import { useCanvasCover } from "@jgengine/ui";
 import { CreditsPanel } from "@jgengine/core/menu/creditsPanel.view";
-import { useGame } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGame } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
 import { useSaveSlots } from "@jgengine/core/save/saveSlots.view";
 
 import { gamePhase } from "@jgengine/core/game/gamePhase";

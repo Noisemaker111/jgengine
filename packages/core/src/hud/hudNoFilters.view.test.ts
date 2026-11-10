@@ -45,7 +45,7 @@ const NO_FILTER = [
 ];
 
 /** The engine stylesheet keeps a hover brighten on HUD buttons, but never a backdrop blur. */
-const NO_BACKDROP = ["packages/react/src/engineStyles.ts", "packages/react/src/styles.css"];
+const NO_BACKDROP = ["packages/ui/src/engineStyles.ts", "packages/ui/src/styles.css"];
 
 // A property assignment, CSS (`filter: drop-shadow(…)`) or a style object (`filter: "blur(2px)"`); `none` resets are fine.
 const FILTER = /(?<![\w-])filter\s*:(?!\s*["'`]?none\b)/g;

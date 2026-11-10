@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   transpilePackages: [
     "@jgengine/shell",
     "@jgengine/core",
-    "@jgengine/react",
+    "@jgengine/ui",
     "@jgengine/ws",
     "@jgengine/sql",
   ],

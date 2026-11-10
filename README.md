@@ -10,6 +10,11 @@
 
 `@jgengine/core` has no React, no renderer, and no backend dependency. UI is written against the engine's own JSX runtime (`@jgengine/core/ui/jsx`) and drawn through the DOM or through Rune on the engine canvas; a page built with React, Next or TanStack embeds a game with `mountGamePlayer` (`@jgengine/shell/mountGamePlayer`). Adapters connect the engine to Convex, WebSockets, Node hosting, and Postgres (socket.io, WebRTC P2P, and LAN share the same protocol). Domains are opt-in at runtime via `defineGame({ features })`; the monorepo ships a wide primitive set. Coding agents build whole games on it from that one sentence: skills provide design playbooks, intake, focused API guidance, and verification, and route selectively so agents do not load every domain by default.
 
+`@jgengine/ui` replaces the former `@jgengine/react` package. Run
+`bun scripts/port-react-ui.ts` to update engine and game imports and JSX sources;
+`--check` reports remaining changes without writing them. Framework hosts keep their
+own React runtime and embed the engine through `mountGamePlayer`.
+
 ## Build the framework through games
 
 Every game interaction should compose shared JGengine capabilities. Adopt an existing
@@ -62,13 +67,13 @@ adoption rules live in [AGENTS.md](AGENTS.md#game-changes-improve-the-framework)
 
 ## Packages
 
-**Versions:** the lockstep game SDK set is `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,assets,editor,navbake}` - bump together. Package manifests own the current versions. Separate cadences: CLI package `jgengine` and `@jgengine/github` (may lag; not part of that lockstep set).
+**Versions:** the lockstep game SDK set is `@jgengine/{core,rapier,ui,ws,node,sql,convex,shell,assets,editor,navbake}` - bump together. Package manifests own the current versions. Separate cadences: CLI package `jgengine` and `@jgengine/github` (may lag; not part of that lockstep set).
 
 | Package | What it is |
 | --- | --- |
 | [`@jgengine/core`](packages/core) | The engine's feature folders: `GameContext`, entity/object stores, commands, combat, HUD, save, inventory, multiplayer contracts, world features. Model files have zero dependencies; a feature's `*.view` (UI, on the engine's own runtime in `ui/jsx`) and `*.draw` (three.js) files sit beside them; draw files need the optional three.js peers. Import by deep path. |
 | [`@jgengine/rapier`](packages/rapier) | Rapier physics adapter for `PhysicsBackend`, providing native capsules, shapecasts, rotation, CCD, and joints. |
-| [`@jgengine/react`](packages/react) | Game UI glue on the engine's UI runtime: `GameProvider`, hooks, headless primitives. It holds no React; the name is historical. |
+| [`@jgengine/ui`](packages/ui) | Game UI glue on the engine's JSX runtime: `GameProvider`, hooks and primitives, drawn through the DOM or Rune. |
 | [`@jgengine/ws`](packages/ws) | Browser-safe game backend over a pluggable transport pipe (WebSocket/socket.io/WebRTC/loopback): protocol codec, `createWsBackend`, `createHttpReads`, a browser-safe authoritative host + router, and WebRTC P2P sessions. |
 | [`@jgengine/node`](packages/node) | Node bindings over `@jgengine/ws`'s host: WebSocket server, socket.io server attach, memory/file persistence, save-cadence flush. |
 | [`@jgengine/sql`](packages/sql) | `HostPersistence` on Postgres through a structural pool interface (no hard `pg` dependency). |
@@ -85,7 +90,7 @@ adoption rules live in [AGENTS.md](AGENTS.md#game-changes-improve-the-framework)
 ```sh
 bun add @jgengine/core
 # plus the adapters you need:
-bun add @jgengine/react @jgengine/shell @jgengine/ws
+bun add @jgengine/ui @jgengine/shell @jgengine/ws
 bun add @jgengine/node @jgengine/sql   # server host
 bun add @jgengine/convex               # Convex backend
 ```

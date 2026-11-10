@@ -10,6 +10,7 @@
 
 import {
   Fragment,
+  StrictMode,
   LAZY,
   MEMO,
   PORTAL,
@@ -112,6 +113,8 @@ export class Fiber<N = unknown> {
   pendingState: Record<string, unknown> | null = null;
   dirty = false;
   dead = false;
+  readonly strict: boolean;
+  effectsMounted = false;
   /** Provider: fibers reading this context. */
   readers: Set<Fiber<N>> | null = null;
   /** Consumer: providers this fiber reads. */
@@ -129,6 +132,7 @@ export class Fiber<N = unknown> {
     this.kind = kind;
     this.type = type;
     this.parent = parent;
+    this.strict = type === StrictMode || parent?.strict === true;
     this.slotKey = slotKey;
     this.depth = parent === null ? 0 : parent.depth + 1;
   }
@@ -176,7 +180,7 @@ function isClass(type: unknown): type is ClassType {
 
 function kindOf(type: AnyType): FiberKind {
   if (typeof type === "string") return "host";
-  if (type === Fragment) return "fragment";
+  if (type === Fragment || type === StrictMode) return "fragment";
   if (type === SUSPENSE) return "suspense";
   if (type === PORTAL) return "portal";
   if (typeof type === "function") return isClass(type) ? "class" : "fn";
@@ -799,6 +803,8 @@ export class Root<N = unknown> {
     // Children before parents, as a parent's effect may read what a child registered.
     const effects = this.effects.sort((a, b) => b.fiber.depth - a.fiber.depth);
     this.effects = [];
+    const rehearsal = effects.filter(({ fiber, cell }) => fiber.strict && !fiber.effectsMounted && cell.kind !== "insertion");
+    for (const { fiber } of effects) fiber.effectsMounted = true;
     for (const order of ["insertion", "layout", "passive"] as const) {
       for (const { fiber, cell } of effects) {
         if (cell.kind !== order || !cell.pending) continue;
@@ -821,6 +827,24 @@ export class Root<N = unknown> {
         if (cell.kind !== order || !cell.pending) continue;
         cell.pending = false;
         if (fiber.dead) continue;
+        guard(() => {
+          const cleanup = cell.create();
+          cell.cleanup = typeof cleanup === "function" ? (cleanup as () => void) : null;
+        });
+      }
+    }
+    // Retire every mount's ownership before any setup starts a replacement request.
+    for (const order of ["layout", "passive"] as const) {
+      for (const { cell } of rehearsal) {
+        if (cell.kind !== order) continue;
+        const cleanup = cell.cleanup;
+        cell.cleanup = null;
+        if (cleanup !== null) guard(cleanup);
+      }
+    }
+    for (const order of ["layout", "passive"] as const) {
+      for (const { fiber, cell } of rehearsal) {
+        if (cell.kind !== order || fiber.dead) continue;
         guard(() => {
           const cleanup = cell.create();
           cell.cleanup = typeof cleanup === "function" ? (cleanup as () => void) : null;
@@ -1118,7 +1142,14 @@ export function useSyncExternalStore<T>(subscribe: (onChange: () => void) => () 
     "layout",
     () => {
       const check = () => {
-        if (!fiber.dead && !Object.is(cell.value, cell.getSnapshot())) fiber.root.schedule(fiber);
+        if (fiber.dead) return;
+        let changed = true;
+        try {
+          changed = !Object.is(cell.value, cell.getSnapshot());
+        } catch {
+          // Read again during rendering, where the component's boundary can catch the failure.
+        }
+        if (changed) fiber.root.schedule(fiber);
       };
       cell.subscribe = subscribe;
       cell.unsubscribe = subscribe(check);

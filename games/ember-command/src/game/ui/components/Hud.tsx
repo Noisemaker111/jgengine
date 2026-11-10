@@ -4,7 +4,7 @@ import { type CSSProperties, type ReactNode, type RefObject, useLayoutEffect, us
 import { HudCanvas, HudFade, HudPanel, useHudLayout } from "@jgengine/core/hud/hudLayout.view";
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { memoView } from "@jgengine/core/ui/memoView.view";
-import { useEntityStat, useGame } from "@jgengine/react/hooks";
+import { useEntityStat, useGame } from "@jgengine/ui/hooks";
 
 import { hudStore, type ArmyUnit, type HeroKitEntry, type HudSnapshot } from "../../hudStore";
 import { campaignOrdinal, type CampaignReadout } from "../../campaign";

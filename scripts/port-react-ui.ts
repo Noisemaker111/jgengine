@@ -28,7 +28,7 @@ const SPECIFIERS: Record<string, string> = {
  * Start) and the two examples that show the engine inside a React host app.
  */
 const REACT_HOSTS = ["apps/web/", "examples/next-host/", "examples/tanstack-host/"];
-const SKIP = ["node_modules/", "native/", "packages/core/src/ui/jsx/", "scripts/port-react-ui.ts", "scripts/creator-app-fixture.ts", "games/llmville/packages/backend/"];
+const SKIP = ["node_modules/", "native/", "packages/core/src/ui/jsx/", "packages/core/src/meta/changelog.ts", "scripts/port-react-ui.ts", "scripts/port-react-ui.test.ts", "scripts/check-react-free.test.ts", "scripts/creator-app-fixture.ts", "games/llmville/packages/backend/"];
 
 interface FileResult {
   path: string;
@@ -67,6 +67,12 @@ interface Named {
   name: string;
   alias: string | null;
   typeOnly: boolean;
+}
+
+/** Retarget SDK UI module specifiers, including imports in generated snippets, without changing a host's React imports. */
+export function portSdkImports(text: string): string {
+  return text.replace(/((?:from|import)\s*\(?\s*|(?:mock\.module|vi\.mock|jest\.mock|require)\(\s*)(["'`])@jgengine\/react(\/[^"'`]+)?\2/g,
+    (_whole, lead: string, quote: string, path: string | undefined) => `${lead}${quote}@jgengine/ui${path ?? ""}${quote}`);
 }
 
 function renderImport(names: Named[], from: string, quote: string, allTypes: boolean): string {
@@ -205,7 +211,7 @@ export function portSource(path: string, text: string): { text: string; notes: s
     out = out.replace(borrowed, `import { renderToStaticMarkup } from "${RUNTIME}/markup";\n`);
     if (!/\bjoin\(/.test(out)) out = out.replace(/import \{ join \} from "node:path";\n/, "");
   }
-  return { text: out, notes };
+  return { text: portSdkImports(out), notes };
 }
 
 /** `"jsx": "react-jsx"` gains the engine runtime as its import source. */
@@ -240,7 +246,7 @@ ${text}`;
 
 function run(argv: readonly string[]): number {
   const write = !argv.includes("--check");
-  const results: FileResult[] = [];
+  const resultsByPath = new Map<string, FileResult>();
   const kept: string[] = [];
   const edit = (path: string, port: (text: string) => { text: string; notes: string[] }): void => {
     const full = join(ROOT, path);
@@ -249,12 +255,20 @@ function run(argv: readonly string[]): number {
     const { text, notes } = port(before);
     const changed = text !== before;
     if (changed && write) writeFileSync(full, text);
-    if (changed || notes.length > 0) results.push({ path, changed, notes });
+    if (changed || notes.length > 0) {
+      const previous = resultsByPath.get(path);
+      resultsByPath.set(path, { path, changed: changed || previous?.changed === true, notes: [...new Set([...(previous?.notes ?? []), ...notes])] });
+    }
   };
 
   for (const path of gitFiles(["*.ts", "*.tsx", "*.mts"])) {
     if (skipped(path)) continue;
-    if (REACT_HOSTS.some((prefix) => path.startsWith(prefix))) {
+    const host = REACT_HOSTS.some((prefix) => path.startsWith(prefix));
+    edit(path, (text) => {
+      const next = portSdkImports(text);
+      return { text: next, notes: host && next !== text ? ["framework host: embed engine UI through mountGamePlayer; its components use the engine JSX runtime"] : [] };
+    });
+    if (host) {
       if (/from\s+["']react/.test(readFileSync(join(ROOT, path), "utf8"))) kept.push(path);
       continue;
     }
@@ -267,6 +281,7 @@ function run(argv: readonly string[]): number {
     edit(path, (text) => ({ text: portTsconfig(text), notes: [] }));
   }
 
+  const results = [...resultsByPath.values()];
   const converted = results.filter((r) => r.changed && r.notes.length === 0);
   const hand = results.filter((r) => r.notes.length > 0);
   const byFolder = new Map<string, number>();

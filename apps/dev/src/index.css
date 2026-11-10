@@ -1,7 +1,7 @@
 @import "tailwindcss" source(".");
-@import "../../../packages/react/src/styles.css";
+@import "../../../packages/ui/src/styles.css";
 @source "../../../games/*/src/**/*.{ts,tsx}";
-@source "../../../packages/react/src/**/*.{ts,tsx}";
+@source "../../../packages/ui/src/**/*.{ts,tsx}";
 @source "../../../packages/shell/src/**/*.{ts,tsx}";
 @source "../../../packages/editor/src/**/*.{ts,tsx}";
 @source "../../../registry/jgengine/**/*.{ts,tsx}";

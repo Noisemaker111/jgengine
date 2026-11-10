@@ -38,7 +38,7 @@ beforeAll(async () => {
     import { createSaveSlots } from '../../packages/core/src/save/saveSlots';
     import { GameMenu } from '../../packages/core/src/menu/gameMenu.view';
     import { ContinuePane, SaveSlotsPane } from '../../packages/core/src/menu/gameMenuSaves.view';
-    import { MENU_THEME_STYLE } from '../../packages/react/src/testFixtures';
+    import { MENU_THEME_STYLE } from '../../packages/ui/src/testFixtures';
 
     const now = 1_700_000_000_000;
     const model = createSaveSlots({

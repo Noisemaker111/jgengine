@@ -4,9 +4,10 @@
 // names `react`, `react-dom`, their type packages or the Vite React plugin.
 //
 // Allowed, by name: the website (`apps/web`) and the two example hosts (`examples/next-host`,
-// `examples/tanstack-host`), which are React apps that show the engine inside one; `packages/react`;
-// `packages/convex`, whose transports are built on `convex/react`; and LLMville until its own
-// React libraries are replaced. The root package.json keeps the catalog entries those use.
+// `examples/tanstack-host`), which are React apps that show the engine inside one.
+// `packages/convex` and LLMville may name React in manifests for their hook libraries, but their
+// source uses the engine runtime. The retired @jgengine/react package is forbidden everywhere.
+// The root package.json keeps the catalog entries the framework hosts use.
 //
 //   bun run check react-free
 import { spawnSync } from "node:child_process";
@@ -16,10 +17,11 @@ import { fileURLToPath } from "node:url";
 
 import { printHelpIfAsked, type Usage } from "./script-help";
 
-const REACT_SPECIFIER = /^react(?:-dom)?(?:\/|$)/;
-const REACT_PACKAGE = /^(?:react|react-dom|@types\/react|@types\/react-dom|@vitejs\/plugin-react)$/;
+const REACT_SPECIFIER = /^(?:react(?:-dom)?|@jgengine\/react)(?:\/|$)/;
+const REACT_PACKAGE = /^(?:react|react-dom|@types\/react|@types\/react-dom|@vitejs\/plugin-react|@jgengine\/react)$/;
 /** Folders that may use React, each for the reason in the header. */
-export const REACT_ALLOWED = ["apps/web/", "examples/next-host/", "examples/tanstack-host/", "packages/react/", "packages/convex/", "games/llmville/"];
+export const REACT_ALLOWED = ["apps/web/", "examples/next-host/", "examples/tanstack-host/"];
+const REACT_HOOK_MANIFESTS = new Set(["packages/convex/package.json", "games/llmville/package.json"]);
 /** Source roots. `scripts/` is left out: its tests and the port script hold import lines as strings. */
 const SOURCE_ROOTS = ["packages", "games", "apps", "registry", "examples"];
 const SOURCE_FILE = /\.(tsx?|jsx?|mjs|cjs)$/;
@@ -68,7 +70,7 @@ export function scanReactFree(root: string): { files: number; violations: ReactV
   const violations: ReactViolation[] = [];
   let files = 0;
   for (const file of listed.stdout.split("\n")) {
-    if (file.length === 0 || file === "package.json" || REACT_ALLOWED.some((dir) => file.startsWith(dir))) continue;
+    if (file.length === 0 || file === "package.json") continue;
     const isManifest = /(^|\/)package\.json$/.test(file);
     const isSource = SOURCE_FILE.test(file) && SOURCE_ROOTS.some((dir) => file.startsWith(`${dir}/`));
     if (!isManifest && !isSource) continue;
@@ -79,7 +81,12 @@ export function scanReactFree(root: string): { files: number; violations: ReactV
       continue;
     }
     files += 1;
-    for (const what of isManifest ? reactDependencies(source) : reactImports(source)) violations.push({ file, what });
+    const host = REACT_ALLOWED.some((dir) => file.startsWith(dir));
+    for (const what of isManifest ? reactDependencies(source) : reactImports(source)) {
+      const legacy = what.includes("@jgengine/react");
+      if (!legacy && (host || (isManifest && REACT_HOOK_MANIFESTS.has(file)))) continue;
+      violations.push({ file, what });
+    }
   }
   return { files, violations };
 }

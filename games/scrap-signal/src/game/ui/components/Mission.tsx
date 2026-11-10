@@ -1,8 +1,8 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { GameIcon, type GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
 import { HudFade } from "@jgengine/core/hud/hudLayout.view";
-import { useCurrency, useGame, useQuestJournal } from "@jgengine/react/hooks";
-import { useStore } from "@jgengine/react/store";
+import { useCurrency, useGame, useQuestJournal } from "@jgengine/ui/hooks";
+import { useStore } from "@jgengine/ui/store";
 import { NPCS, objectiveLabel, scrapQuestById } from "../../quests/catalog";
 import { FERRALON } from "../../palette";
 import { mastReadoutStore } from "../../mast";

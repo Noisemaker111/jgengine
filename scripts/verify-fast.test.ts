@@ -326,14 +326,14 @@ describe("attribution fails loudly", () => {
   test("a package file no test names is covered by running its package's suite", () => {
     const plan = verifyPlan({
       changed: ["packages/core/src/world/terrain.ts", "packages/core/src/world/unreachable.ts"],
-      testFiles: ["packages/core/src/world/terrain.test.ts", "packages/core/src/other.test.ts", "packages/react/src/a.test.ts"],
+      testFiles: ["packages/core/src/world/terrain.test.ts", "packages/core/src/other.test.ts", "packages/ui/src/a.test.ts"],
       workspaces: fakeWorkspaces,
       graph: emptyGraph,
     });
     expect(plan.unattributed).toEqual([]);
     expect(plan.suites).toEqual(["packages/core"]);
     expect(plan.tests).toContain("packages/core/src/other.test.ts");
-    expect(plan.tests).not.toContain("packages/react/src/a.test.ts");
+    expect(plan.tests).not.toContain("packages/ui/src/a.test.ts");
   });
 
   test("a root script no test imports runs every scripts test, as CI does", () => {
@@ -498,7 +498,7 @@ describe("static gates", () => {
 
   // A landing that ran a hand-picked subset of what CI runs met each missing check one CI run at a time.
   test("an engine landing runs every quick and types check CI runs, except the ones with a stated reason", () => {
-    const landing = landingGates(["packages/core/src/city/cityKind.ts", "packages/react/src/a.ts", "games/fernwild/src/main.ts", "apps/web/src/a.ts", "registry/x.json"]);
+    const landing = landingGates(["packages/core/src/city/cityKind.ts", "packages/ui/src/a.ts", "games/fernwild/src/main.ts", "apps/web/src/a.ts", "registry/x.json"]);
     for (const check of [...jobChecks("quick"), ...jobChecks("types")]) {
       const reason = CI_ONLY_GATES[check.name];
       if (reason === undefined) expect(landing).toContain(check.name);

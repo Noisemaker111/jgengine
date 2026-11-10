@@ -1,8 +1,8 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { useCurrency, useGame, useGameStore, useGameTimeWindow } from "@jgengine/react/hooks";
+import { useCurrency, useGame, useGameStore, useGameTimeWindow } from "@jgengine/ui/hooks";
 import { HudButton } from "@jgengine/core/hud/hudButton.view";
 import { ScrapPanel } from "./ScrapPanel";
-import { useStore } from "@jgengine/react/store";
+import { useStore } from "@jgengine/ui/store";
 import { BLACK_MARKET_UPGRADES, upgradeCost } from "../../commands";
 import {
   blackMarketOpenStore,

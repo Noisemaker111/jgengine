@@ -82,7 +82,7 @@ function gameEntry(gameDir: string): string {
 /** `@jgengine/<pkg>` and `@jgengine/<pkg>/<sub>` resolved to this checkout's TypeScript source. */
 function enginePaths(): Record<string, string[]> {
   const packagesDir = join(repoRoot, "packages");
-  const packages = ["assets", "convex", "core", "editor", "github", "navbake", "node", "rapier", "react", "shell", "sql", "ws"];
+  const packages = ["assets", "convex", "core", "editor", "github", "navbake", "node", "rapier", "ui", "shell", "sql", "ws"];
   const paths: Record<string, string[]> = {};
   for (const name of packages) {
     const src = join(packagesDir, name, "src");

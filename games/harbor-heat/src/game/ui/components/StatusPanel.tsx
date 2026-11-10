@@ -1,6 +1,6 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { HudFade } from "@jgengine/core/hud/hudLayout.view";
-import { useCurrency, useEntityStat, usePlayer } from "@jgengine/react/hooks";
+import { useCurrency, useEntityStat, usePlayer } from "@jgengine/ui/hooks";
 import { money } from "../fiction/kit";
 
 /** A thin bar cut into ticks, like the charge strip on a phone. */

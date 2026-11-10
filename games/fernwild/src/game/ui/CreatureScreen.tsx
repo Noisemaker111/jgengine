@@ -1,6 +1,6 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
-import { useGame, useGameStore } from "@jgengine/react/hooks";
+import { useGame, useGameStore } from "@jgengine/ui/hooks";
 
 import { viewedBreeding } from "../breeding";
 import { creaturesView, type CreatureCard } from "../creatures";

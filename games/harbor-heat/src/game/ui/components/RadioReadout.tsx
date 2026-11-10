@@ -1,5 +1,5 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { useGame, useGameStore } from "@jgengine/react/hooks";
+import { useGame, useGameStore } from "@jgengine/ui/hooks";
 import { useActionGlyph } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { radioStore } from "../../radio/runtime";
 import { KeyCap, Lcd } from "../fiction/kit";

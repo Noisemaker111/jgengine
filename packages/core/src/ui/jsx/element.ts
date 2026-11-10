@@ -6,6 +6,7 @@
 
 export const ELEMENT = Symbol.for("jg.ui.element");
 const FRAGMENT = Symbol.for("jg.ui.fragment");
+const STRICT_MODE = Symbol.for("jg.ui.strict-mode");
 export const PROVIDER = Symbol.for("jg.ui.provider");
 export const SUSPENSE = Symbol.for("jg.ui.suspense");
 export const PORTAL = Symbol.for("jg.ui.portal");
@@ -202,7 +203,7 @@ export function createContextRecord<T>(defaultValue: T): ContextType<T> {
 
 export const Fragment = FRAGMENT as unknown as FunctionComponent<{ children?: UiNode }>; // type-escape: marker typed as a component
 export const Suspense = SUSPENSE as unknown as FunctionComponent<{ fallback?: UiNode; children?: UiNode; name?: string }>; // type-escape: marker typed as a component
-export const StrictMode = FRAGMENT as unknown as FunctionComponent<{ children?: UiNode }>; // type-escape: marker typed as a component
+export const StrictMode = STRICT_MODE as unknown as FunctionComponent<{ children?: UiNode }>; // type-escape: marker typed as a component
 export const Profiler = FRAGMENT as unknown as FunctionComponent<{ id?: string; onRender?: unknown; children?: UiNode }>; // type-escape: marker typed as a component
 
 export function createPortal(children: UiNode, container: unknown, key?: Key | null): UiElement {

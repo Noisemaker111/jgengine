@@ -134,7 +134,7 @@ function Adopt() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="grid gap-3 py-10 sm:grid-cols-3 sm:py-12">
           {[
-            { n: "1", t: "Install one package", b: "bun add @jgengine/core, plus @jgengine/react for the UI parts." },
+            { n: "1", t: "Install one package", b: "bun add @jgengine/core, plus @jgengine/ui for the UI parts." },
             { n: "2", t: "Write a small adapter", b: "A get/set over your store, or one map from your entity to a marker." },
             { n: "3", t: "Call it from your loop", b: "Apply the result and call tick(dt) yourself. Your renderer stays as it is." },
           ].map((step) => (

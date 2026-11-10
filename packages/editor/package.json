@@ -34,7 +34,7 @@
     "@jgengine/assets": "^0.55.1",
     "@jgengine/core": "^0.55.1",
     "@jgengine/navbake": "^0.55.1",
-    "@jgengine/react": "^0.55.1",
+    "@jgengine/ui": "^0.55.1",
     "@jgengine/shell": "^0.55.1"
   },
   "peerDependencies": {

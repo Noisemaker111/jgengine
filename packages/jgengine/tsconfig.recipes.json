@@ -24,11 +24,11 @@
       "@jgengine/node/*": ["../node/src/*"],
       "@jgengine/rapier": ["../rapier/src/index.ts"],
       "@jgengine/rapier/*": ["../rapier/src/*"],
-      "@jgengine/react": ["../react/src/index.ts"],
-      "@jgengine/react/*": ["../react/src/*"],
       "@jgengine/shell/*": ["../shell/src/*"],
       "@jgengine/sql": ["../sql/src/index.ts"],
       "@jgengine/sql/*": ["../sql/src/*"],
+      "@jgengine/ui": ["../ui/src/index.ts"],
+      "@jgengine/ui/*": ["../ui/src/*"],
       "@jgengine/ws": ["../ws/src/index.ts"],
       "@jgengine/ws/*": ["../ws/src/*"]
     }

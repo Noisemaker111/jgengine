@@ -20,7 +20,7 @@ function sourceFiles(dir: string): string[] {
 }
 
 describe("engine stylesheet", () => {
-  test("src/styles.css is the generated copy of ENGINE_STYLESHEET (run `bun --cwd=packages/react run styles`)", () => {
+  test("src/styles.css is the generated copy of ENGINE_STYLESHEET (run `bun --cwd=packages/ui run styles`)", () => {
     expect(readFileSync(join(import.meta.dir, "styles.css"), "utf8")).toBe(ENGINE_STYLESHEET);
   });
 

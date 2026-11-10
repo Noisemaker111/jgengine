@@ -3,7 +3,7 @@ import { useMemo } from "@jgengine/core/ui/jsx";
 import { useDisplayProfile } from "@jgengine/core/ui/display.view";
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { useViewportScrollLock } from "@jgengine/core/menu/gameMenu.view";
-import { useGameStore } from "@jgengine/react/hooks";
+import { useGameStore } from "@jgengine/ui/hooks";
 import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
 import { clockText, KeyLegend, navItem, useMenuSound, useMoveTick, useScreenTouch } from "./kit";
 import { HH } from "../theme";

@@ -5,7 +5,7 @@ import type { ChatMessage } from "@jgengine/core/chat/chat";
 import { suspendPlayControls } from "@jgengine/core/game/controlGate";
 import { WORLD_CHAT_CHANNEL } from "@llmville/game/multiplayer/presencePolicy";
 import { worldChatTransport } from "../worldChatTransport";
-import { useOptionalGameContext } from "@jgengine/react/provider";
+import { useOptionalGameContext } from "@jgengine/ui/provider";
 import type { ReadyWorldViewModel } from "../../runtime/worldViewModel";
 import { useTabletNavContext } from "../../tablet/components/tabletNav";
 

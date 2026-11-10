@@ -140,7 +140,7 @@ an exhausted search. Stack rules stay in `ItemTraits`: `putItem` fills partial s
 ones up to the max stack, `moveItem` merges with a remainder, and `splitStack(..., limit)` refuses an
 `over-stack` merge instead of breaking the cap.
 
-The rendered side is the engine's: `<InventoryGrid inventoryId="bag" />` (`packages/react`) binds a
+The rendered side is the engine's: `<InventoryGrid inventoryId="bag" />` (`packages/ui`) binds a
 live declared inventory with drag, swap, merge and split through the `inventory.move` /
 `inventory.split` commands, and `<EquipmentSlots items={...} />` paints the worn slots from
 `gear.worn()`. What the grid cannot yet do is drag from one inventory to another (bag to stash), so a

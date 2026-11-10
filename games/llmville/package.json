@@ -24,7 +24,6 @@
     "clsx": "^2.1.1",
     "convex": "catalog:",
     "react": "catalog:",
-    "react-dom": "catalog:",
     "shadcn": "^3.6.2",
     "tailwind-merge": "^3.3.1",
     "three": "catalog:",
@@ -33,7 +32,7 @@
     "zod": "catalog:",
     "@jgengine/core": "workspace:*",
     "@jgengine/convex": "workspace:*",
-    "@jgengine/react": "workspace:*",
+    "@jgengine/ui": "workspace:*",
     "@jgengine/shell": "workspace:*"
   },
   "exports": {
@@ -42,10 +41,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.13.14",
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
     "@types/three": "catalog:",
-    "@vitejs/plugin-react": "catalog:",
     "sharp": "^0.35.3",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",

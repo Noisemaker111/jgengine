@@ -4,7 +4,7 @@ import { WorldMapSurface } from "@jgengine/core/map/map.view";
 import type { MarkerKindStyle, MarkerView } from "@jgengine/core/map/markers";
 import { EntityPreview } from "@jgengine/core/render/EntityPreview.draw";
 import { GameSlider } from "@jgengine/core/ui/slider.view";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 
 import { BODIES, cleanLook, DEFAULT_LOOK, HEIGHT, NAME_LIMIT, START_REGIONS, type SurvivorLook } from "../character";
 import { islandBake } from "../islandMap";

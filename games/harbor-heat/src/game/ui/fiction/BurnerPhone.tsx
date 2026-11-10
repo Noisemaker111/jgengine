@@ -1,7 +1,7 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
-import { useGameStore } from "@jgengine/react/hooks";
+import { useGameStore } from "@jgengine/ui/hooks";
 import { Battery, clockText, Lcd, SignalBars } from "./kit";
 
 /** A physical key's job: the label printed on the screen above it and what pressing it does. */

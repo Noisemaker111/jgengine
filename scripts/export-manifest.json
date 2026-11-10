@@ -1406,6 +1406,7 @@
     "./ui/photoMode.view",
     "./ui/presence.view",
     "./ui/rotateDevice.view",
+    "./ui/rune/boxTransform",
     "./ui/rune/cssMirror.view",
     "./ui/rune/cssStates.view",
     "./ui/rune/cssValues",
@@ -1413,6 +1414,7 @@
     "./ui/rune/runeInput.view",
     "./ui/rune/runeLayer.view",
     "./ui/rune/runeStage.view",
+    "./ui/rune/valueSlots",
     "./ui/runeUi.view",
     "./ui/sceneSwap.view",
     "./ui/screenMarkers",
@@ -1584,7 +1586,7 @@
     ".",
     "./index"
   ],
-  "@jgengine/react": [
+  "@jgengine/ui": [
     ".",
     "./engineStore",
     "./engineStyles",
@@ -2183,6 +2185,7 @@
     "./templates/gameFiles",
     "./templates/gameSurfaceFocus",
     "./templates/harnessScripts",
+    "./templates/jsxSource",
     "./templates/names",
     "./templates/sharedBuilder",
     "./templates/starterGame",

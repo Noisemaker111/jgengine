@@ -17,7 +17,7 @@ import { rowWords, tokenHits } from "./words";
 export const LAYER_ROLES: Readonly<Record<string, string>> = {
   core: "model",
   shell: "draw",
-  react: "view",
+  ui: "view",
   editor: "author",
 };
 

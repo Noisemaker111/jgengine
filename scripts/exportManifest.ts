@@ -12,7 +12,7 @@ export const publishedPackages = [
   "ws",
   "sql",
   "navbake",
-  "react",
+  "ui",
   "convex",
   "node",
   "shell",

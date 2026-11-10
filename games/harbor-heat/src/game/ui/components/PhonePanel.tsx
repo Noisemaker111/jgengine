@@ -1,8 +1,8 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useRef, type ReactNode } from "@jgengine/core/ui/jsx";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { useGame, useGameStore } from "@jgengine/react/hooks";
-import { useStore } from "@jgengine/react/store";
+import { useGame, useGameStore } from "@jgengine/ui/hooks";
+import { useStore } from "@jgengine/ui/store";
 import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { useActionGlyph } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { cityOf, phoneStore } from "../../cityRuntime";

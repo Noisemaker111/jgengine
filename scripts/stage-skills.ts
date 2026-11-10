@@ -13,7 +13,7 @@ const PACKAGE_SKILLS: Record<string, readonly string[]> = {
   sql: ["jgengine", "jgengine-multiplayer", "ce-handoff"],
   convex: ["jgengine", "jgengine-multiplayer", "ce-handoff"],
   node: ["jgengine", "jgengine-multiplayer", "ce-handoff"],
-  react: ["jgengine", "jgengine-ui", "ce-handoff"],
+  ui: ["jgengine", "jgengine-ui", "ce-handoff"],
   shell: ["jgengine", "game-design", "level-design", "jgengine-ui", "jgengine-world", "ce-handoff"],
   assets: ["jgengine", "jgengine-assets", "ce-handoff"],
   github: ["jgengine", "ce-handoff"],

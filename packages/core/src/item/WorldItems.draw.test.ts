@@ -4,8 +4,8 @@ import * as THREE from "three";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
-import { GameProvider } from "@jgengine/react/provider";
-import { useWorldItems } from "@jgengine/react/hooks";
+import { GameProvider } from "@jgengine/ui/provider";
+import { useWorldItems } from "@jgengine/ui/hooks";
 import { mountTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
 
 import { WorldItems } from "./WorldItems.draw";

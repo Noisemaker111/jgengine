@@ -1,14 +1,14 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useState } from "@jgengine/core/ui/jsx";
-import { HudPanel, useBrowserSuspension, useDisplayProfile } from "@jgengine/react";
+import { HudPanel, useBrowserSuspension, useDisplayProfile } from "@jgengine/ui";
 import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { HudFade } from "@jgengine/core/hud/hudLayout.view";
 import { LiveText } from "@jgengine/core/ui/liveBind.view";
-import { useGame, useGamePhase, useGameStore } from "@jgengine/react/hooks";
+import { useGame, useGamePhase, useGameStore } from "@jgengine/ui/hooks";
 import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 import { useSettings } from "@jgengine/core/settings/settings.view";
-import { useStore } from "@jgengine/react/store";
+import { useStore } from "@jgengine/ui/store";
 import { gamePhase, setGamePhase } from "@jgengine/core/game/gamePhase";
 import { RELAY, relayDistance, relayStore } from "../../relay";
 import { riftStore } from "../../rift/rift";

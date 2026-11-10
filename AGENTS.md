@@ -50,7 +50,7 @@ The engine is small general systems that combine into any game; it never ships a
 
 ## Layout
 
-- **One feature, one folder.** A feature's model, view, draw code and tests live together in `packages/core/src/<feature>/`; the file name says the layer: `hudLayout.ts` (model), `kitHud.view.tsx` (UI), `WorldHud.draw.tsx` (three.js). `packages/shell` and `packages/react` hold only package glue; every feature, world and render ones included, lives in its core folder.
+- **One feature, one folder.** A feature's model, view, draw code and tests live together in `packages/core/src/<feature>/`; the file name says the layer: `hudLayout.ts` (model), `kitHud.view.tsx` (UI), `WorldHud.draw.tsx` (three.js). `packages/shell` and `packages/ui` hold only package glue; every feature, world and render ones included, lives in its core folder.
 - **Names say what the thing is**: `notificationCenter.ts`, not `store.ts` or `utils.ts`. One exported name has one definition engine-wide.
 - **The folders are the map.** `bun run find <words>` names the feature folder; `bun run find --text <regex> [--in <dir>]` searches text. Never a hand-kept concept list or a recursive listing. Moving a concept home moves its files, deletes duplicates and fixes every importer and game in the same PR.
 - Code comments default to none. Exported public API keeps tight JSDoc (it generates `api.md` and `capabilities.md`). Inside a function, comment only a non-obvious why.

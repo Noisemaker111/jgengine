@@ -1,6 +1,6 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { useGame, useGameStore } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGame, useGameStore } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
 import { live } from "@jgengine/core/ui/liveValue";
 import { KitButton, KitMeter, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 

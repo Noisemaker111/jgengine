@@ -4,12 +4,12 @@ import { ContinuePane, CreditsPane, SaveSlotsPane } from "@jgengine/core/menu/ga
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { GameMenu } from "@jgengine/core/menu/gameMenu.view";
 import { PauseMenu } from "@jgengine/core/menu/pauseMenu.view";
-import { useGameStore, useOptionalGamePhase } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameStore, useOptionalGamePhase } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
 import { useSaveSlots } from "@jgengine/core/save/saveSlots.view";
 import { useSettings } from "@jgengine/core/settings/settings.view";
 import { SettingsSection, SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view";
-import { useStore } from "@jgengine/react/store";
+import { useStore } from "@jgengine/ui/store";
 import type { SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 
 import { DEEPWARD_CREDITS } from "../../credits";

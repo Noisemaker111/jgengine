@@ -1,7 +1,7 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { useGame, useGameStore } from "@jgengine/react/hooks";
+import { useGame, useGameStore } from "@jgengine/ui/hooks";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 import { LiveText } from "@jgengine/core/ui/liveBind.view";
 import { live } from "@jgengine/core/ui/liveValue";
 import { KitObjective } from "@jgengine/core/ui/kit/kitFlow.view";

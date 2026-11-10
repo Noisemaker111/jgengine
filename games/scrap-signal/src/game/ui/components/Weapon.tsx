@@ -2,8 +2,8 @@
 import type { CSSProperties } from "@jgengine/core/ui/jsx";
 import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { HudFade } from "@jgengine/core/hud/hudLayout.view";
-import { useEntityStat, useGameStore, useGameTimeWindow, useInventory, usePlayer } from "@jgengine/react/hooks";
-import { useStore } from "@jgengine/react/store";
+import { useEntityStat, useGameStore, useGameTimeWindow, useInventory, usePlayer } from "@jgengine/ui/hooks";
+import { useStore } from "@jgengine/ui/store";
 import { AMMO_LABELS, AMMO_STAT_IDS } from "../../ammo";
 import { activePerkBuffs } from "../../combat/gunPerks";
 import { gunById, isReloading, magLoaded, perkLines, type GunDef } from "../../handroll";

@@ -31,7 +31,7 @@ describe("skill docs", () => {
   });
 
   test("every @jgengine/* path a hand-written skill doc names exists", () => {
-    const allowed = new Set(["@jgengine/core/CHANGELOG", "@jgengine/react/dist", "@jgengine/shell/dist"]);
+    const allowed = new Set(["@jgengine/core/CHANGELOG", "@jgengine/ui/dist", "@jgengine/shell/dist"]);
     const resolves = (pkg: string, sub: string): boolean => {
       const base = join(root, "packages", pkg, "src", sub);
       return [`${base}.ts`, `${base}.tsx`, join(base, "index.ts"), base, join(root, "packages", pkg, `${sub}.md`)].some(existsSync);
@@ -39,7 +39,7 @@ describe("skill docs", () => {
     const missing = new Set<string>();
     for (const file of new Glob("**/*.md").scanSync({ cwd: skillsRoot, absolute: true })) {
       if (basename(file) === "api.md" || basename(file) === "capabilities.md") continue;
-      for (const match of readFileSync(file, "utf8").matchAll(/@jgengine\/(core|react|shell|ws|node|sql|convex|assets|github|jgengine)\/[A-Za-z0-9_/]+(?:\.(?:view|draw))?(?:\.css)?/g)) {
+      for (const match of readFileSync(file, "utf8").matchAll(/@jgengine\/(core|ui|shell|ws|node|sql|convex|assets|github|jgengine)\/[A-Za-z0-9_/]+(?:\.(?:view|draw))?(?:\.css)?/g)) {
         const ref = match[0];
         const [, pkg, ...rest] = ref.split("/");
         if (!allowed.has(ref) && pkg !== undefined && !resolves(pkg, rest.join("/"))) missing.add(ref);

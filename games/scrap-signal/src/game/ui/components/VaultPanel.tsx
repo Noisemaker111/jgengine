@@ -1,8 +1,8 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect } from "@jgengine/core/ui/jsx";
 import { HudButton } from "@jgengine/core/hud/hudButton.view";
-import { useGame, useInventory } from "@jgengine/react/hooks";
-import { useStore } from "@jgengine/react/store";
+import { useGame, useInventory } from "@jgengine/ui/hooks";
+import { useStore } from "@jgengine/ui/store";
 import { gunById } from "../../handroll";
 import { VAULT, vaultOpenStore } from "../../items/vault";
 import { RARITY_COLORS } from "../../palette";

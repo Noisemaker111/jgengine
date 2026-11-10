@@ -22,7 +22,7 @@ beforeAll(async () => {
     import {createRoot} from '@jgengine/core/ui/jsx/client.view';
     import {flushSync} from '@jgengine/core/ui/jsx/client.view';
     import {EngineHostProvider} from '@jgengine/core/frame/engineHost.draw';
-    import {GameProvider} from '@jgengine/react/provider';
+    import {GameProvider} from '@jgengine/ui/provider';
     import {useModelAnimation,diagnoseModelAnimation} from '@jgengine/core/anim/useModelAnimation.draw';
     import {FrameDriver} from '@jgengine/shell/drivers/FrameDriver';
     import {createActionStateTracker} from '@jgengine/core/input/actionBindings';

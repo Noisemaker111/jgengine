@@ -109,7 +109,7 @@ describe("test shards", () => {
 describe("games in this repo", () => {
   const workspace = {
     games: [
-      { id: "harbor-heat", engine: ["core", "shell", "react"] },
+      { id: "harbor-heat", engine: ["core", "shell", "ui"] },
       { id: "fernwild", engine: ["core", "shell"] },
       { id: "llmville", engine: ["core", "convex"] },
     ],
@@ -130,9 +130,9 @@ describe("games in this repo", () => {
   });
 
   test("a game without a web entry runs its checks and no frame budget", () => {
-    const verdict = gameScope(["games/llmville/convex/world.ts"], workspace);
+    const verdict = gameScope(["games/headless-only/systems/world.ts"], { games: [{ id: "headless-only", engine: ["core"] }] });
     expect(verdict.scope).toBe("none");
-    expect(verdict.gameChecks).toEqual(["llmville"]);
+    expect(verdict.gameChecks).toEqual(["headless-only"]);
   });
 
   test("an engine package change checks every game that declares it", () => {

@@ -1,8 +1,8 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import type { CSSProperties } from "@jgengine/core/ui/jsx";
 import { HudFade } from "@jgengine/core/hud/hudLayout.view";
-import { useEntityStat, usePlayer } from "@jgengine/react/hooks";
-import { useStore } from "@jgengine/react/store";
+import { useEntityStat, usePlayer } from "@jgengine/ui/hooks";
+import { useStore } from "@jgengine/ui/store";
 import { CHARACTERS } from "../../characters";
 import { characterIdStore } from "../../stores";
 import { Crt, Pips, Plate, SIGNAL, Stamp } from "../fiction/kit";

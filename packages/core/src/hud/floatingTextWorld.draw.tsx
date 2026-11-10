@@ -32,7 +32,7 @@ export interface WorldFloatingTextProps extends FloatingTextLayoutOptions {
  * R3F one-line drop-in for world-anchored floating text: mounts inside the scene,
  * (optionally) advances a core {@link FloatingTextField} each frame, samples the
  * live camera to project every live entry to the screen, and renders
- * `@jgengine/react`'s {@link FloatingText} through a fullscreen `<Html>` overlay.
+ * `@jgengine/ui`'s {@link FloatingText} through a fullscreen `<Html>` overlay.
  * This is the turnkey way an R3F game gets damage numbers / heal pops / XP gains
  * from its own field without wiring projection by hand — the camera binding,
  * viewport culling, and depth stacking come for free. Skin per `kind` with `styleFor`.

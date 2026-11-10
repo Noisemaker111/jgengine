@@ -11,7 +11,7 @@ Keep the React and React DOM versions already used by the project, then add the
 two focused JGengine packages:
 
 ```sh
-bun add @jgengine/core @jgengine/react
+bun add @jgengine/core @jgengine/ui
 ```
 
 The minimap imports neither Three.js nor React Three Fiber and does not require

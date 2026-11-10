@@ -36,8 +36,8 @@ beforeAll(async () => {
     import { createGameContext } from '../../packages/core/src/runtime/gameContext';
     import { defineStore } from '../../packages/core/src/store/defineStore';
     import { LiveText, flushFrameBinds } from '../../packages/core/src/ui/liveBind.view';
-    import { GameProvider, useGameContext } from '../../packages/react/src/provider';
-    import { useStore } from '../../packages/react/src/store';
+    import { GameProvider, useGameContext } from '../../packages/ui/src/provider';
+    import { useStore } from '../../packages/ui/src/store';
 
     const hud = defineStore('leaf.hud', () => ({ air: 100, mode: 'dive', hint: 'Go', elapsed: 0 }));
     const counts = { panel: 0, air: 0, sibling: 0, hint: 0 };

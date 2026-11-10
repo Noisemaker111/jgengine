@@ -73,7 +73,7 @@ export function diagnoseProject(dir: string): Finding[] {
   findings.push({
     ok: Object.keys(engineDeps).length > 0,
     label: "@jgengine/* dependencies declared",
-    fix: "add the engine: bun add @jgengine/core @jgengine/react @jgengine/shell (or npx jgengine create for a fresh game)",
+    fix: "add the engine: bun add @jgengine/core @jgengine/ui @jgengine/shell (or npx jgengine create for a fresh game)",
   });
 
   findings.push({
@@ -139,12 +139,12 @@ export function diagnoseProject(dir: string): Finding[] {
   if (existsSync(cssPath)) {
     const css = readFileSync(cssPath, "utf8");
     const usesTailwind = css.includes("tailwindcss");
-    const coversReact = /@source\s+"[^"]*(@jgengine\/react|packages\/react)/.test(css);
+    const coversReact = /@source\s+"[^"]*(@jgengine\/ui|packages\/react)/.test(css);
     const coversShell = /@source\s+"[^"]*(@jgengine\/shell|packages\/shell)/.test(css);
     findings.push({
       ok: !usesTailwind || (coversReact && coversShell),
-      label: "Tailwind @source covers @jgengine/react and @jgengine/shell",
-      fix: 'without @source entries for the engine UI packages, HUD classes are silently not generated and the UI renders unstyled — add @source "../node_modules/@jgengine/react/dist" and "../node_modules/@jgengine/shell/dist" to src/index.css',
+      label: "Tailwind @source covers @jgengine/ui and @jgengine/shell",
+      fix: 'without @source entries for the engine UI packages, HUD classes are silently not generated and the UI renders unstyled — add @source "../node_modules/@jgengine/ui/dist" and "../node_modules/@jgengine/shell/dist" to src/index.css',
     });
     // The F2+E editor summon mounts @jgengine/editor's chrome into the game page, styled by this same
     // index.css. Wire the editor without scanning its classes and the summoned editor is all-white.

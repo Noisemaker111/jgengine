@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
   Component,
   Fragment,
+  StrictMode,
   Suspense,
   act,
   createContext,
@@ -56,6 +57,33 @@ describe("static markup", () => {
 });
 
 describe("state and effects", () => {
+  test("StrictMode rehearses mount effects together and preserves state on updates", async () => {
+    const log: string[] = [];
+    let bump = () => {};
+    const View = () => {
+      const [value, setValue] = useState(0);
+      bump = () => setValue(value + 1);
+      useLayoutEffect(() => {
+        log.push("layout setup");
+        return () => { log.push("layout cleanup"); };
+      }, []);
+      useEffect(() => {
+        log.push("passive setup");
+        return () => { log.push("passive cleanup"); };
+      }, []);
+      return h("output", null, value);
+    };
+    const { root, html } = mount(h(StrictMode, null, h(StrictMode, null, h(View, null))));
+    expect(log).toEqual([
+      "layout setup", "passive setup", "layout cleanup", "passive cleanup", "layout setup", "passive setup",
+    ]);
+    await act(bump);
+    expect(html()).toBe("<output>1</output>");
+    expect(log).toHaveLength(6);
+    root.unmount();
+    expect(log.slice(6)).toEqual(["layout cleanup", "passive cleanup"]);
+  });
+
   test("a state change re-renders only that component", async () => {
     let parentRuns = 0;
     let childRuns = 0;
@@ -213,6 +241,31 @@ describe("context, stores, memo", () => {
 });
 
 describe("suspense and errors", () => {
+  test("an external store read failure reaches its component's error boundary", async () => {
+    let failed = false;
+    const listeners = new Set<() => void>();
+    const subscribe = (notify: () => void) => {
+      listeners.add(notify);
+      return () => listeners.delete(notify);
+    };
+    const View = () => h("span", null, useSyncExternalStore(subscribe, () => {
+      if (failed) throw new Error("store read failed");
+      return "ready";
+    }));
+    class Boundary extends Component<{ children?: UiNode }, { failed: boolean }> {
+      override state = { failed: false };
+      static getDerivedStateFromError(): { failed: boolean } { return { failed: true }; }
+      override render(): UiNode { return this.state.failed ? h("b", null, "store failed") : this.props.children; }
+    }
+    const { html, root } = mount(h(Boundary, null, h(View, null)));
+    expect(html()).toBe("<span>ready</span>");
+    failed = true;
+    await act(() => listeners.forEach((notify) => notify()));
+    expect(html()).toBe("<b>store failed</b>");
+    expect(listeners.size).toBe(0);
+    root.unmount();
+  });
+
   test("a lazy component shows the fallback, then itself", async () => {
     let load: ((mod: { default: () => UiNode }) => void) | null = null;
     const Late = lazy(() => new Promise<{ default: () => UiNode }>((resolve) => {

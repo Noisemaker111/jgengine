@@ -1054,9 +1054,9 @@
     {
       "id": "auto-scroll",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/ui"
       ],
-      "module": "@jgengine/react/hooks",
+      "module": "@jgengine/ui/hooks",
       "gameFacing": false,
       "probe": null,
       "intent": "pin a log/chat/console panel to its newest line as entries arrive — no hand-rolled scrollTop effects"
@@ -2434,9 +2434,9 @@
     {
       "id": "current-target",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/ui"
       ],
-      "module": "@jgengine/react/hooks",
+      "module": "@jgengine/ui/hooks",
       "gameFacing": false,
       "probe": null,
       "intent": "read the player's selected target (click or tab target) to drive a target frame"
@@ -2978,9 +2978,9 @@
     {
       "id": "dom-event",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/ui"
       ],
-      "module": "@jgengine/react/hooks",
+      "module": "@jgengine/ui/hooks",
       "gameFacing": false,
       "probe": null,
       "intent": "attach a window/document/element event listener with automatic cleanup and a stable handler ref — no hand-rolled addEventListener effects"
@@ -3358,9 +3358,9 @@
     {
       "id": "engine-styles",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/ui"
       ],
-      "module": "@jgengine/react/engineStyles",
+      "module": "@jgengine/ui/engineStyles",
       "gameFacing": false,
       "probe": null,
       "intent": "inject the engine stylesheet (jg-"
@@ -3571,9 +3571,9 @@
     {
       "id": "event-meter-hud",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/ui"
       ],
-      "module": "@jgengine/react/hooks",
+      "module": "@jgengine/ui/hooks",
       "gameFacing": false,
       "probe": null,
       "intent": "render a core event/heat meter's live value, fraction, tier, and ready state in a HUD gauge"
@@ -4421,9 +4421,9 @@
     {
       "id": "game-context-bridge",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/ui"
       ],
-      "module": "@jgengine/react/provider",
+      "module": "@jgengine/ui/provider",
       "gameFacing": false,
       "probe": null,
       "intent": "re-provide the GameContext across a nested Canvas/reconciler boundary"
@@ -5266,9 +5266,9 @@
     {
       "id": "hud-ticker",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/ui"
       ],
-      "module": "@jgengine/react/hooks",
+      "module": "@jgengine/ui/hooks",
       "gameFacing": false,
       "probe": null,
       "intent": "re-render a HUD element at a steady hz for time-derived readouts (cooldowns, cast/swing bars) — no hand-rolled setInterval effects"
@@ -9225,9 +9225,9 @@
     {
       "id": "raf-loop",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/ui"
       ],
-      "module": "@jgengine/react/hooks",
+      "module": "@jgengine/ui/hooks",
       "gameFacing": false,
       "probe": null,
       "intent": "run a cancellable requestAnimationFrame loop for DOM-side animation with delta seconds — no hand-rolled RAF effects"

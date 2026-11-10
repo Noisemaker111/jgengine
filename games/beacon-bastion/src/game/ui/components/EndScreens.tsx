@@ -1,5 +1,5 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { useGame, useGameStore } from "@jgengine/react/hooks";
+import { useGame, useGameStore } from "@jgengine/ui/hooks";
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { GameCursor } from "@jgengine/core/ui/cursor.view";
 import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";

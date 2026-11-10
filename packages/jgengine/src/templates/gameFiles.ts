@@ -118,7 +118,7 @@ const standalonePackageJson = (id: string, engineVersion: string, cliVersion: st
       "@jgengine/assets": `^${engineVersion}`,
       "@jgengine/core": `^${engineVersion}`,
       ...(editor ? { "@jgengine/editor": `^${engineVersion}` } : {}),
-      "@jgengine/react": `^${engineVersion}`,
+      "@jgengine/ui": `^${engineVersion}`,
       "@jgengine/shell": `^${engineVersion}`,
       three: "^0.187.0",
     },
@@ -156,7 +156,7 @@ const inRepoPackageJson = (id: string) => `${JSON.stringify(
       "@jgengine/assets": "workspace:*",
       "@jgengine/core": "workspace:*",
       "@jgengine/editor": "workspace:*",
-      "@jgengine/react": "workspace:*",
+      "@jgengine/ui": "workspace:*",
       "@jgengine/shell": "workspace:*",
       three: "^0.187.0",
     },
@@ -211,13 +211,13 @@ const tsconfigJson = (variant: TemplateVariant) => `${JSON.stringify(
 // — omit the editor @source and the summoned editor renders unstyled (all-white, no theme) from day one.
 // `source(".")` keeps the automatic scan in src/: from the Vite root it reads every model in public/.
 const indexCss = (variant: TemplateVariant, editor: boolean) => `@import "tailwindcss" source(".");
-@import "${variant === "in-repo" ? "../../../packages/react/src/styles.css" : "@jgengine/react/styles.css"}";
+@import "${variant === "in-repo" ? "../../../packages/ui/src/styles.css" : "@jgengine/ui/styles.css"}";
 @import "./style.css";
 ${
   variant === "in-repo"
-    ? `@source "../../../packages/react/src";
+    ? `@source "../../../packages/ui/src";
 @source "../../../packages/shell/src";${editor ? `\n@source "../../../packages/editor/src";` : ""}`
-    : `@source "../node_modules/@jgengine/react/dist";
+    : `@source "../node_modules/@jgengine/ui/dist";
 @source "../node_modules/@jgengine/shell/dist";${editor ? `\n@source "../node_modules/@jgengine/editor/dist";` : ""}`
 }
 `;
@@ -649,7 +649,7 @@ const gameUiTsx = (id: string, name: string, editor: boolean, loop = false) => {
 };`;
   if (!editor) {
     return `import { GameFlowUI, type GameFlowMenuContent } from "@jgengine/core/menu/gameFlowMenus.view";
-import { HudCanvas, useHudLayout } from "@jgengine/react";
+import { HudCanvas, useHudLayout } from "@jgengine/ui";
 
 import { credits } from "../credits";
 
@@ -670,7 +670,7 @@ export function GameUI() {
   }
   return `import { useSyncExternalStore } from "@jgengine/core/ui/jsx";
 import { GameFlowUI, type GameFlowMenuContent } from "@jgengine/core/menu/gameFlowMenus.view";
-import { HudCanvas, useHudLayout } from "@jgengine/react";
+import { HudCanvas, useHudLayout } from "@jgengine/ui";
 
 import { outcome } from "../../loop";
 import { credits } from "../credits";
@@ -772,7 +772,7 @@ Title it \`[BUG] …\` for wrong behavior or \`[FEATURE] …\` for a missing cap
 - Plan: \`PLAN.md\` is the build plan. Milestone 1 (the starter loop) plays from a new game; \`proofs/flows/from-zero.flow.ts\` proves it through real keys and \`src/game/probe.ts\` is what it reads. Write the plan's design brief once milestone 1 plays, and tick each milestone in the commit that makes it play.
 - Entry: \`defineGame({...})\` in \`game.config.ts\`; \`editorLayers\` passed to defineGame auto-mounts the authored scene, and the player spawns at the authored \`player_spawn\` marker.
 - Spawn player with \`id === ctx.player.userId\` in \`onNewPlayer\`; systems (\`defineSystem\`) own the rules tick.
-- Tailwind v4: \`@source\` in \`src/index.css\` must cover \`@jgengine/react\`, \`@jgengine/shell\`, and \`@jgengine/editor\`${
+- Tailwind v4: \`@source\` in \`src/index.css\` must cover \`@jgengine/ui\`, \`@jgengine/shell\`, and \`@jgengine/editor\`${
   variant === "in-repo" ? " (engine source under packages/)" : " (dist under node_modules)"
 }, or the HUD — and the F2+E editor chrome mounted into this same page — is silently unstyled.
 - Visual claims are screenshot-judged, by you, harshly — flat untextured ground and an empty horizon fail. Prove content with \`bun test\`, prove looks with your eyes (\`jgengine-verify\` skill).

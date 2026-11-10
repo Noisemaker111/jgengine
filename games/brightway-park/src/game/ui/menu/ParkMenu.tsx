@@ -3,7 +3,7 @@ import { type ReactNode, useEffect, useState } from "@jgengine/core/ui/jsx";
 import { ContinuePane, CreditsPane, SaveSlotsPane } from "@jgengine/core/menu/gameMenuSaves.view";
 import { GameMenu } from "@jgengine/core/menu/gameMenu.view";
 import { PauseMenu } from "@jgengine/core/menu/pauseMenu.view";
-import { useGame, useGameClock, useGameStore } from "@jgengine/react/hooks";
+import { useGame, useGameClock, useGameStore } from "@jgengine/ui/hooks";
 import { park } from "../../park";
 import { useSaveSlots } from "@jgengine/core/save/saveSlots.view";
 import { useSettings } from "@jgengine/core/settings/settings.view";

@@ -1,9 +1,9 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { HudFade } from "@jgengine/core/hud/hudLayout.view";
-import { useGame } from "@jgengine/react/hooks";
-import { useStore } from "@jgengine/react/store";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGame } from "@jgengine/ui/hooks";
+import { useStore } from "@jgengine/ui/store";
+import { useGameContext } from "@jgengine/ui/provider";
 import { LiveText } from "@jgengine/core/ui/liveBind.view";
 import type { HouseholdState } from "../../session/types";
 import { bodyColor } from "../../creatures/bodyPlan";

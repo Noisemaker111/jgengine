@@ -33,9 +33,9 @@ import {
 } from "@jgengine/core/hud/hudPriority";
 import type { GamePhase } from "@jgengine/core/game/gamePhase";
 import { useDisplayProfile } from "@jgengine/core/ui/display.view";
-import { useEngineState } from "@jgengine/react/engineStore";
+import { useEngineState } from "@jgengine/ui/engineStore";
 import { useGameLayoutMode, useGameViewportShape, useRegisterLayoutRegion } from "@jgengine/core/ui/viewport.view";
-import { useOptionalGamePhase } from "@jgengine/react/hooks";
+import { useOptionalGamePhase } from "@jgengine/ui/hooks";
 import { arrangeHudPanels, type HudPanelClaim, type HudPanelLayout } from "./hudPanelLayout";
 import { useHudLayoutPersist } from "./hudLayoutPersist.view";
 import { useHudViewport } from "./hudViewport.view";

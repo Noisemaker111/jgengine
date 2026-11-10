@@ -52,4 +52,4 @@ To move to a new engine release, run `npx jgengine@latest sync` in a game, or at
 
 ## Packages
 
-The lockstep SDK set is `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}` — versions move together; see `CHANGELOG.md` (also importable as typed data from `@jgengine/core/meta/changelog`).
+The lockstep SDK set is `@jgengine/{core,rapier,ui,ws,node,sql,convex,shell,editor,assets,navbake}` — versions move together; see `CHANGELOG.md` (also importable as typed data from `@jgengine/core/meta/changelog`).

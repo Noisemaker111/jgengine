@@ -1,5 +1,5 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import type { useDialogBehavior } from "@jgengine/react";
+import type { useDialogBehavior } from "@jgengine/ui";
 import { HudButton } from "@jgengine/core/hud/hudButton.view";
 import { HudSurface } from "@jgengine/core/hud/hudSurface.view";
 import type { WorldModel } from "@jgengine/core/worldModel/worldModel";

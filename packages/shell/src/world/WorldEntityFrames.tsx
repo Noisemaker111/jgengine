@@ -19,7 +19,7 @@ import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
  * function with a world position to get a CSS-pixel screen point (or `null`/`behind`
  * when the point is outside the frustum). Reads the camera fresh on every call, so
  * sample it inside a frame loop. Games that already own their entities use this to
- * feed `@jgengine/react`'s `EntityFrames` without mirroring state into a store.
+ * feed `@jgengine/ui`'s `EntityFrames` without mirroring state into a store.
  *
  * @capability entity-frames R3F camera→screen projector for world-anchored frames
  */
@@ -79,7 +79,7 @@ export interface WorldEntityFramesProps<E extends EntityFrameEntry> extends Enti
 
 /**
  * R3F convenience that mounts inside the scene, samples the live camera each
- * frame (throttled by `tickMs`), and renders `@jgengine/react`'s {@link EntityFrames}
+ * frame (throttled by `tickMs`), and renders `@jgengine/ui`'s {@link EntityFrames}
  * through a fullscreen `<Html>` overlay. This is the one-line way an R3F game
  * gets overhead enemy nameplates/health bars from its own entity array without a
  * store: pass `entries` + a `renderFrame` that composes the shipped bars. The

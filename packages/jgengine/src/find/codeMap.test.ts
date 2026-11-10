@@ -44,22 +44,22 @@ test("places repository paths in their layer and leaves tests and fixtures out",
 
 test("a concept folder wins its layer, files named for it elsewhere are listed, and an export that only mentions it is not a home", () => {
   const sources: Record<string, string> = {
-    "packages/react/src/camera/shake/cameraShake.tsx": "/** Meter. */\nexport function CameraShakeMeter() {}\n",
-    "packages/react/src/camera/shake/readout.ts": "export function useCameraShakeReadout() {}\n",
+    "packages/ui/src/camera/shake/cameraShake.tsx": "/** Meter. */\nexport function CameraShakeMeter() {}\n",
+    "packages/ui/src/camera/shake/readout.ts": "export function useCameraShakeReadout() {}\n",
     "packages/core/src/hud/hudFrame.view.tsx": "/** Mentions camera shake in passing. */\nexport function HudFrame() {}\n",
-    "packages/react/src/cameraShakeLabel.tsx": "export function CameraShakeLabel() {}\n",
+    "packages/ui/src/cameraShakeLabel.tsx": "export function CameraShakeLabel() {}\n",
     "packages/shell/src/water/ocean.ts": "export const MAX_CAMERA_SHAKE_WAVES = 4;\n",
     "packages/core/src/world/notes.ts": "/** Shakes nothing about the camera. */\nexport const unrelated = 1;\n",
   };
   const files = Object.keys(sources).map((path) => layerOf(path)!);
   const homes = locate(files, (file: CodeFile) => sources[file.path]!, queryTokens("camera shake"));
-  expect(homes.map((home) => [home.layer, home.home])).toEqual([["react", "packages/react/src/camera/shake/"]]);
+  expect(homes.map((home) => [home.layer, home.home])).toEqual([["react", "packages/ui/src/camera/shake/"]]);
   expect(homes[0]!.role).toBe("view");
-  expect(homes[0]!.files.map((hit) => hit.path)).toEqual(["packages/react/src/camera/shake/cameraShake.tsx", "packages/react/src/camera/shake/readout.ts"]);
-  expect(homes[0]!.elsewhere.map((hit) => hit.path)).toEqual(["packages/react/src/cameraShakeLabel.tsx"]);
+  expect(homes[0]!.files.map((hit) => hit.path)).toEqual(["packages/ui/src/camera/shake/cameraShake.tsx", "packages/ui/src/camera/shake/readout.ts"]);
+  expect(homes[0]!.elsewhere.map((hit) => hit.path)).toEqual(["packages/ui/src/cameraShakeLabel.tsx"]);
   const text = renderLocations(homes).join("\n");
-  expect(text).toContain("react (view)                packages/react/src/camera/shake/");
-  expect(text).toContain("also packages/react/src/cameraShakeLabel.tsx  CameraShakeLabel");
+  expect(text).toContain("react (view)                packages/ui/src/camera/shake/");
+  expect(text).toContain("also packages/ui/src/cameraShakeLabel.tsx  CameraShakeLabel");
 });
 
 describe("this checkout answers where a concept lives in one call", () => {

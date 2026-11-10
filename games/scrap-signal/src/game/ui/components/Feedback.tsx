@@ -1,8 +1,8 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { LevelUpFlash } from "@jgengine/core/ui/components.view";
 import { useRef } from "@jgengine/core/ui/jsx";
-import { useEntityStat, useGameStore, useGameTimeWindow, usePlayer } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
+import { useEntityStat, useGameStore, useGameTimeWindow, usePlayer } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
 import { useFrameBind } from "@jgengine/core/ui/liveBind.view";
 import { live } from "@jgengine/core/ui/liveValue";
 import { usePlayerFov } from "@jgengine/core/camera/PlayerFov.draw";
