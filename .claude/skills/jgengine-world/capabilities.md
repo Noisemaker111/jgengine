@@ -504,7 +504,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `installCaptureCamera` (function) · `import { installCaptureCamera } from "@jgengine/core/world/captureCamera"`
 
-## capture-canvas — read the frame an R3F canvas just rendered to a PNG data URL
+## capture-canvas — Read the frame an engine canvas just rendered to a PNG data URL
 
 - `captureCanvas` (function) · `import { captureCanvas } from "@jgengine/core/scene/sceneCapture.draw"`
 

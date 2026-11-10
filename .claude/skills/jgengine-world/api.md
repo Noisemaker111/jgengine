@@ -1699,13 +1699,13 @@
 
 - `flushAfterRenderTasks` (function): function flushAfterRenderTasks(): void — Run every task joined with {@link joinAfterRenderTask}, in join order.
 - `flushBeforeRenderTasks` (function): function flushBeforeRenderTasks(): void — Run every task joined with {@link joinBeforeRenderTask}, in join order.
-- `joinAfterRenderTask` (function): function joinAfterRenderTask(task: () => void): () => void — Run `task` in the same task right after the next render — r3f's `addAfterEffect`. Returns the leave. Used by canvas readers that need the frame the renderer just drew before the drawing buffer is cleared.
-- `joinBeforeRenderTask` (function): function joinBeforeRenderTask(task: () => void): () => void — Run `task` in the same task right before the next render — r3f's `addEffect`. Returns the leave.
+- `joinAfterRenderTask` (function): function joinAfterRenderTask(task: () => void): () => void — Run `task` in the same task right after the next render. Returns the leave. Used by canvas readers that need the frame the renderer just drew before the drawing buffer is cleared.
+- `joinBeforeRenderTask` (function): function joinBeforeRenderTask(task: () => void): () => void — Run `task` in the same task right before the next render. Returns the leave.
 
 ## @jgengine/core/frame/engineCanvas.draw
 
-- `EngineCanvas` (function): function EngineCanvas({ rendererFactory, orthographic = false, camera, shadows = false, dpr, preserveDrawingBuffer = false, frameloop = "always", style, onCreated, children, }: EngineCanvasProps): JSX.Element — The engine-owned replacement for r3f's `<Canvas>`: one canvas, one {@link createEngineLoop}, and an {@link EngineHostProvider} so every draw wrapper underneath mounts through `useEngineHost`/`useEngineDraw` exactly as it did under `R3FEngineHost`. Children remount when the renderer backend changes (the old `key={backend}` on Canvas), so draws never survive a dead scene.
-- `EngineCanvasProps` (interface): interface EngineCanvasProps { rendererFactory: EngineRendererFactory; orthographic?: boolean | undefined; camera?: {fov?: number; zoom?: number; near?: number; far?: number} | undefined; shadows?: boolean | undefined; dpr?: number | readonly [number, number] | undefin… — ⚠ undocumented · used by `EngineCanvas`: The engine-owned replacement for r3f's `<Canvas>`: one canvas, one {@link createEngineLoop}, and an {@link EngineHostProvider} so every draw…
+- `EngineCanvas` (function): function EngineCanvas({ rendererFactory, orthographic = false, camera, shadows = false, dpr, preserveDrawingBuffer = false, frameloop = "always", style, onCreated, children, }: EngineCanvasProps): JSX.Element — One canvas, one {@link createEngineLoop}, and an {@link EngineHostProvider} for draw wrappers mounted through `useEngineHost`/`useEngineDraw`. Children remount when the renderer backend changes so draws never survive a dead scene.
+- `EngineCanvasProps` (interface): interface EngineCanvasProps { rendererFactory: EngineRendererFactory; orthographic?: boolean | undefined; camera?: {fov?: number; zoom?: number; near?: number; far?: number} | undefined; shadows?: boolean | undefined; dpr?: number | readonly [number, number] | undefin… — ⚠ undocumented · used by `EngineCanvas`: One canvas, one {@link createEngineLoop}, and an {@link EngineHostProvider} for draw wrappers mounted through `useEngineHost`/`useEngineDraw…
 
 ## @jgengine/core/frame/engineHost.draw
 
@@ -1726,7 +1726,7 @@
 ## @jgengine/core/frame/frameBoard.draw
 
 - `FrameOwner` (type): type FrameOwner = object — Identifies one frame loop: `EngineFrameState.frameOwner`.
-- `FrameSource` (type): type FrameSource = ( priority: number, run: (state: EngineFrameState, delta: number) => void, ) => () => void — Attaches one priority level to the driving frame source and returns the detach. `run` is the group's shared callback; the source decides how it is scheduled (an r3f subscriber today, an ordered engine draw after cutover).
+- `FrameSource` (type): type FrameSource = ( priority: number, run: (state: EngineFrameState, delta: number) => void, ) => () => void — Attaches one priority level to the driving frame source and returns the detach. `run` is the group's shared callback; the source decides how it is scheduled (an ordered engine draw).
 - `FrameTask` (type): type FrameTask = (state: EngineFrameState, delta: number) => void — ⚠ undocumented · used by `joinFrameTask`: Run `task(state, delta)` on every rendered frame at `priority`: subscribers ascending by priority, one render after all.
 - `FrameTaskRef` (interface): interface FrameTaskRef — A frame callback held by reference; the board stores these so observers see a stable task object.
 - `bindFrameSource` (function): function bindFrameSource(next: FrameSource | null): void — Drive the shared board from `next` by hand (a test, a headless harness): it becomes the primary whatever was bound before. `null` unbinds it.
@@ -1746,7 +1746,7 @@
 
 ## @jgengine/core/frame/useEngineDraw.draw
 
-- `DrawTransform` (interface): interface DrawTransform — Transform fields shared by {@link meshDraw} and the `SceneObjectGroup` props: position, XYZ euler rotation, scale and visibility, matching what r3f JSX props used to set on `<group>`/`<mesh>`.
+- `DrawTransform` (interface): interface DrawTransform — Transform fields shared by {@link meshDraw} and the `SceneObjectGroup` props: position, XYZ euler rotation, scale and visibility.
 - `disposeObjectTree` (function): function disposeObjectTree(root: THREE.Object3D): void — Dispose every geometry and material under `root` â€” for demo/preview object trees built outside draws.
 
 ## @jgengine/core/generator/GeneratorMeshInstance.draw
@@ -5333,7 +5333,7 @@
 - `SceneCaptureRequestOptions` (interface): interface SceneCaptureRequestOptions — How a capture request waits and retries.
 - `SceneCaptureResult` (type): type SceneCaptureResult = | { ok: true; capture: string } | { ok: false; reason: SceneCaptureFailure } — A captured frame, or the stated reason there is none.
 - `SceneThumbnailResult` (type): type SceneThumbnailResult = | { ok: true; thumbnail: string } | { ok: false; reason: SceneCaptureFailure } — A save-card thumbnail, or the stated reason there is none.
-- `captureCanvas` (function): function captureCanvas(gl: CaptureRenderer): string | null — Read the canvas to a PNG data URL. The game canvas keeps no copy of its last frame, so read in the task that rendered it (an R3F after-effect, as {@link SceneCaptureBinding} does) or right after a `gl.render` call; read any later and the frame is already gone. Returns null when the canvas can't be read.
+- `captureCanvas` (function): function captureCanvas(gl: CaptureRenderer): string | null — Read the canvas to a PNG data URL. The game canvas keeps no copy of its last frame, so read in the task that rendered it (an engine after-render task, as {@link SceneCaptureBinding} does) or right after a `gl.render` call; read any later and the frame is already gone. Returns null when the canvas can't be read.
 - `downloadImage` (function): function downloadImage(dataUrl: string, filename = "screenshot.png"): void — Trigger a browser download of an image data URL (the photo-mode "save" action).
 - `registerSceneCapture` (function): function registerSceneCapture(capture: SceneCapture | null): () => void — Hand the capture path a reader for the live frame, or `null` to retire it. The returned function unbinds only that reader, so a canvas that remounts cannot be unbound by its predecessor.
 - `requestSceneCapture` (function): function requestSceneCapture(options: SceneCaptureRequestOptions = {}): Promise<SceneCaptureResult> — Request the current scene frame. Resolves once a binding exists and the canvas has painted, or with the reason no frame could be read; it never polls and never rejects.
@@ -5629,8 +5629,8 @@
 - `OrbitControlsDraw` (function): function OrbitControlsDraw({ spec }: { spec: OrbitControlsSpec }): UiElement<Props> — Mount reactive {@link OrbitControlsSpec} as one draw.
 - `OrbitControlsSpec` (interface): interface OrbitControlsSpec { target?: readonly [number, number, number] | undefined; enablePan?: boolean; enableZoom?: boolean; enableRotate?: boolean; minPolarAngle?: number; maxPolarAngle?: number; minAzimuthAngle?: number; maxAzimuthAngle?: number; targetOf?: (() … — ⚠ undocumented · used by `OrbitControlsDraw`: Mount reactive {@link OrbitControlsSpec} as one draw.
 - `StageDraw` (function): function StageDraw({ spec }: { spec: StageSpec }): UiElement<Props> — Mount a reactive {@link StageSpec} as one draw.
-- `StageLight` (type): type StageLight = | { kind: "ambient"; intensity?: number; color?: string } | { kind: "hemisphere"; skyColor?: string; groundColor?: string; intensity?: number } | { kind: "directional"; position?: readonly [number, number, number]; intensity?: number; color?: string; castShadow?: boolean; shadowMap… — One authored light for {@link stageDraw}: the r3f light intrinsics as data.
-- `StageSpec` (interface): interface StageSpec — Declarative stage dressing for preview and demo canvases — the r3f `<color>`/`<fog>`/light/ground/grid intrinsics as one draw.
+- `StageLight` (type): type StageLight = | { kind: "ambient"; intensity?: number; color?: string } | { kind: "hemisphere"; skyColor?: string; groundColor?: string; intensity?: number } | { kind: "directional"; position?: readonly [number, number, number]; intensity?: number; color?: string; castShadow?: boolean; shadowMap… — One authored light for {@link stageDraw}: the engine light intrinsics as data.
+- `StageSpec` (interface): interface StageSpec — Declarative stage dressing for preview and demo canvases — the engine `<color>`/`<fog>`/light/ground/grid intrinsics as one draw.
 - `cameraPoseDraw` (function): function cameraPoseDraw(getSpec: () => CameraPoseSpec): EngineDraw — One-shot camera placement — the editor CameraRig / preview `<CameraRig>` pattern as a draw.
 - `orbitControlsDraw` (function): function orbitControlsDraw(getSpec: () => OrbitControlsSpec): EngineDraw — drei `<OrbitControls>` as a draw: owns three-stdlib OrbitControls on the host camera + canvas.
 - `stageDraw` (function): function stageDraw(getSpec: () => StageSpec): EngineDraw — One draw that applies a {@link StageSpec}: scene background/fog on the root scene, lights, an optional shadow-receiving ground plane and an optional grid helper under the mount parent. Reactive through {@link StageDraw}'s spec getter — prop changes rebuild the dressing.
@@ -6456,7 +6456,7 @@
 
 ## @jgengine/core/webgpu/engineRenderer.draw
 
-- `EngineRendererFactory` (interface): interface EngineRendererFactory — React Three Fiber's `gl` factory for one canvas mount; it never awaits.
+- `EngineRendererFactory` (interface): interface EngineRendererFactory — Renderer factory for one engine canvas mount; it never awaits.
 - `prepareEngineRenderer` (function): function prepareEngineRenderer(backend: RendererBackend): Promise<EngineRendererFactory> — Do the asynchronous part of starting `backend` (on WebGPU: the shader translator and one device) and return the synchronous factory for one canvas. The device belongs to the first canvas the factory draws on, and that canvas's context loss destroys it.
 - `rendererBackendOf` (function): function rendererBackendOf(renderer: WebGLRenderer): RendererBackend — Which backend actually draws `renderer` (`webgl` for one this module did not make).
 - `useEngineRendererFactory` (function): function useEngineRendererFactory(backend: RendererBackend): EngineRendererFactory | null — The renderer factory for `backend`, or `null` while it is being prepared. Mount the canvas only once it is non-null and its `backend` matches, keyed by that backend, so each canvas mount gets its own prepared device.
