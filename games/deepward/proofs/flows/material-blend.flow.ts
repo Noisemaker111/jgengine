@@ -69,11 +69,21 @@ export default defineFlow(game, {
         if (!Array.isArray(origin) || typeof origin[0] !== "number" || typeof origin[1] !== "number") throw new Error("image probe has no bounds");
         const scale = png.width / width;
         for (const [x,y,r,g,b] of samples) {
-          const at = (Math.floor((origin[1]+y+0.5)*scale)*png.width+Math.floor((origin[0]+x+0.5)*scale))*4;
+          const at = (Math.floor((origin[1]+y)*scale)*png.width+Math.floor((origin[0]+x)*scale))*4;
           const got = [png.data[at] ?? -1,png.data[at+1] ?? -1,png.data[at+2] ?? -1];
           await f.expectPage(String(got.every((value,index) => Math.abs(value-([r,g,b][index] ?? -255)) <= 2)), `${mode} at ${x},${y} paints ${r},${g},${b}; got ${got.join(",")}`);
         }
       }
+      await f.page("document.querySelector('[data-material-probe=tiles]').setAttribute('data-measure-check','unchanged')");
+      await f.waitForPage("document.querySelector('[data-material-probe=tiles]').offsetWidth === 32");
+      await f.page("document.querySelector('[data-material-probe=tiles]').style.backgroundColor = 'rgb(1,1,1)'");
+      await f.waitForPage("document.querySelector('[data-material-probe=tiles]').offsetWidth === 32", { note: "size remains readable after a paint-only native update" });
+      await f.page(`(() => {
+        const ui=window.__jgRuneStage.ui;
+        const rects=[...ui.rects].map(([id,rect]) => [id,rect[0],rect[1],999,rect[3]]);
+        ui.onFrame(JSON.stringify({revision:(ui.revision-1)>>>0,events:[],regions:ui.hitRegions,modal:ui.modal,rects}));
+      })()`);
+      await f.expectPage("document.querySelector('[data-material-probe=tiles]').offsetWidth === 32", "an older native tree cannot overwrite the current layout");
     } finally {
       await f.page("document.querySelectorAll('[data-material-probe]').forEach(element => element.remove())");
     }

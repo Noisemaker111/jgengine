@@ -2,6 +2,19 @@ use rune::color::{srgb_decode, srgb_encode};
 use rune::render::{Blend, Gpu, Instance, KIND_RECT, LayerSpec, NO_CLIP, OFFSCREEN_FORMAT, Offscreen, Renderer};
 
 #[test]
+fn a_committed_layout_snapshot_does_not_wait_for_next_frames_layout_handler() {
+    let spec = |w,h| crate::spec::parse_spec(&format!(r#"{{"children":[{{"k":"x","id":8181,"w":{w},"h":{h}}}]}}"#)).unwrap().children;
+    let mut state=crate::Ui::default();state.root=spec(200,150);
+    let mut runtime=rune::Runtime::new(state,crate::build::view,(300.0,300.0),rune::Env::new(true,1.0));
+    runtime.frame(0.0);runtime.frame(0.016);
+    runtime.update(move |state,tx| {state.root=spec(104,26);state.revision+=1;tx.instant();});
+    runtime.frame(0.016);
+    let snapshot=crate::layout_snapshot(&runtime);
+    let rect=snapshot.iter().find(|rect|rect[0]==8181.0).unwrap();
+    assert_eq!(&rect[3..],&[104.0,26.0]);
+}
+
+#[test]
 fn image_tiles_repeat_each_axis_at_their_own_size_and_offset() {
     let gpu = Gpu::headless();
     let pixels = rune::Pixels::new();

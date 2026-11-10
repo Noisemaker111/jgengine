@@ -29,6 +29,8 @@ export interface RuneUiEvent {
 export type RuneScrollValues = readonly [number, number, number, number, number, number];
 
 export interface RuneUiFrame {
+  /** Page-side tree revision whose layout this frame describes. */
+  revision: number;
   events: RuneUiEvent[];
   /** Interactive regions as `[x1, y1, x2, y2]` in CSS pixels. */
   regions: [number, number, number, number][];
@@ -55,9 +57,9 @@ export interface RuneUiOptions {
 interface JgUiModule {
   default: (input?: string | URL | Request | Response | BufferSource | WebAssembly.Module) => Promise<{ memory: WebAssembly.Memory }>;
   mount: (canvasId: string, optionsJson: string) => void;
-  set_spec: (json: string) => void;
-  patch: (json: string) => void;
-  patch_text: (id: number, json: string) => void;
+  set_spec: (json: string, revision: number) => void;
+  patch: (json: string, revision: number) => void;
+  patch_text: (id: number, json: string, revision: number) => void;
   scroll_to: (id: number, x: number, y: number, smooth: boolean) => void;
   canvas_frame: (id: number, source: HTMLCanvasElement | HTMLVideoElement) => void;
   remove_canvas: (id: number) => void;
@@ -99,6 +101,7 @@ export class RuneUi {
   private wakeQueued = false;
   private specQueue: (() => void)[] = [];
   private mounted = false;
+  private revision = 0;
   private regions: [number, number, number, number][] = [];
   private modalFlag = false;
   private pointer = { x: -1, y: -1, down: 0 };
@@ -179,20 +182,23 @@ export class RuneUi {
   /** Replace the widget tree. `children` are spec nodes (`{k: "panel", ...}`); `modal` suspends game input. */
   setSpec(children: RuneUiNode[], modal = false): void {
     const json = JSON.stringify({ children, modal });
-    this.send(() => this.api.set_spec(json));
+    const revision = this.revision = (this.revision + 1) >>> 0;
+    this.send(() => this.api.set_spec(json, revision));
   }
 
   /** Replace CSS boxes in place, each by its `id`: a changed subtree without the whole tree. */
   patch(boxes: readonly RuneUiNode[]): void {
     if (boxes.length === 0) return;
     const json = JSON.stringify(boxes);
-    this.send(() => this.api.patch(json));
+    const revision = this.revision = (this.revision + 1) >>> 0;
+    this.send(() => this.api.patch(json, revision));
   }
 
   /** Replace one CSS box's text record (`null`: none): a number or label that moved. */
   patchText(id: number, text: unknown): void {
     const json = JSON.stringify(text ?? null);
-    this.send(() => this.api.patch_text(id, json));
+    const revision = this.revision = (this.revision + 1) >>> 0;
+    this.send(() => this.api.patch_text(id, json, revision));
   }
 
   /** Move a CSS scroll viewport, without rerendering its components. */
@@ -313,7 +319,7 @@ export class RuneUi {
       return;
     }
     this.regions = frame.regions ?? [];
-    if (frame.rects !== undefined && frame.rects.length > 0) {
+    if (frame.revision === this.revision && frame.rects !== undefined && frame.rects.length > 0) {
       this.rects.clear();
       for (const [id, x, y, w, h] of frame.rects) this.rects.set(id, [x, y, w, h]);
       this.onRects?.(frame.rects);

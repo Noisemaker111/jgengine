@@ -41,6 +41,11 @@ events through the usual DOM APIs. Use `scrollTop`, `scrollBy` or
 `scrollIntoView` for keyboard navigation and scroll buttons; smooth movement stays
 inside Rune and does not rerender the component.
 
+After content or style changes, size reads wait for current native layout:
+they return zero while pending, and `ResizeObserver` delivers the confirmed size.
+Painted bounds continue to describe the visible frame. Layout packets carry the
+page tree revision, so an older frame cannot measure a replacement component.
+
 CSS overflow keeps its authored layout and scrolls on either axis. Columns with
 one unbreakable block per column retain their gap and solid separating rule;
 layouts needing text fragmentation are reported as unsupported.

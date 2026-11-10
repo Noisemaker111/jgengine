@@ -50,7 +50,7 @@ A PR that touches a rendered surface embeds the inspected shots. Any change to a
 - Standalone game: `bun run shoot` (`--device desktop|mobile|mobile-landscape`). Shots needing play first use `drive --shot`.
 - Engine monorepo: `bun run shoot <game> --mode play --draft --inspect` while iterating, a final shot without `--draft` as evidence (`--quality low|medium|high|ultra` pins a graphics tier). Draft and `--quick` shots are never PR evidence. The game canvas keeps no copy of its last frame: in-game captures go through `requestSceneCapture`/`requestSceneThumbnail`, which read the next frame as it renders, never `toDataURL` from outside a frame. A failed capture is evidence, not a count: read what it shows (the failing step, its probe, the page text or a shot at that step), fix it, and capture again. Aiming, fixtures, recording and PR media: [references/monorepo-capture.md](references/monorepo-capture.md).
 - Whole-game look claims ("premium", "showcase") use the ten-category [visual scorecard](references/visual-scorecard.md); an ordinary rendered change does not.
-- Use deterministic preview states for HUD and menu shots, live play for scene look. Check desktop and mobile when responsive UI changes.
+- Use deterministic preview states for HUD and menu shots, live play for scene look. Check desktop and mobile when responsive UI changes. Comparisons use the same `--device`, width and height on both sides: a phone-width desktop browser does not emulate touch or the phone's pixel density.
 - A shot on disk is self-describing: a failed run leaves no file, `SAME PICTURE as the shot it replaced` is a no-op or the wrong view, and a blank viewport fails.
 
 ### Reading a shot

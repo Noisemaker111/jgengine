@@ -11,6 +11,12 @@ requests, so jgengine carries a patched copy here instead of a git pin.
 
 ## jgengine patches
 
+`crates/rune/src/runtime/layout_read.rs` — `Runtime::layout_rects` iterates the
+current committed layout without allocating inspection records or waiting for
+queued layout handlers. The page bridge snapshots these bounds with the tree
+revision that built them; otherwise a replacement chip can inherit its previous
+panel's size for one frame and change the HUD fitter's result permanently.
+
 `crates/rune/src/el/{visual,visuals}.rs`, `runtime/{commit/memo_reuse,paint/content}.rs`
 and `shader.wgsl` — image patterns retain their tile size and offset independently
 of the element rectangle. Each axis can repeat or draw once. Bilinear samples

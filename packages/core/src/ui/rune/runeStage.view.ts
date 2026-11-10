@@ -15,7 +15,7 @@ import { isFrameBoundElement } from "../liveBind.view";
 import { MirrorReport, boxOfElement, elementOf, mirrorRoot, onPaintResourceLoaded, ownerOf, remirrorElement, remirrorText, type WireBox } from "./cssMirror.view";
 import { compactPatches } from "./patches";
 import { twinStateRules } from "./cssStates.view";
-import { installRuneMeasure, runeRectOf, setRuneRect, setRuneScroll } from "./domMeasure.view";
+import { installRuneMeasure, invalidateRuneLayout, runeRectOf, setRuneRect, setRuneScroll } from "./domMeasure.view";
 import { RuneInput } from "./runeInput.view";
 import { boxTransform, composeBoxTransform, transformedBoxRect, type BoxTransform } from "./boxTransform";
 import { watchVideoFrames } from "./videoFrames.view";
@@ -68,6 +68,7 @@ export class RuneStage {
   private mountedFonts = "";
   /** The whole tree must be sent again (a layer came or went, Rune remounted). */
   private stale = true;
+  private awaitingRects = false;
   private readonly canvasFeeds = new Map<HTMLCanvasElement, { stop(): void; received: boolean; streamed: boolean }>();
   private input: RuneInput | null = null;
   private readonly scrollRequests = new Map<Element, { x: number; y: number; smooth: boolean }>();
@@ -77,7 +78,10 @@ export class RuneStage {
   readonly errors: string[] = [];
 
   private constructor() {
-    installRuneMeasure({ scroll: (element, x, y, smooth) => this.scrollTo(element, x, y, smooth) });
+    installRuneMeasure({
+      scroll: (element, x, y, smooth) => this.scrollTo(element, x, y, smooth),
+      flushLayoutChanges: () => this.flushLayoutChanges(),
+    });
     onPaintResourceLoaded(() => this.remirror());
     window.addEventListener("resize", () => {
       for (const layer of this.layers) layer.root = null;
@@ -175,16 +179,10 @@ export class RuneStage {
         if (this.input === null) this.input = new RuneInput(() => this.layers.map((layer) => layer.root).filter((root): root is WireBox => root !== null), (control) => this.controlChanged(control));
         ui.on("*", (event) => this.onEvent(event));
         ui.onRects = () => {
-          const place = (box: WireBox, parent: BoxTransform): void => {
-            const raw = box.id === 0 ? undefined : ui.rects.get(box.id);
-            const matrix = raw === undefined ? parent : composeBoxTransform(parent, boxTransform(raw, box["tf"], box["to"]));
-            if (raw !== undefined) {
-              const element = elementOf(box.id);
-              if (element !== null) setRuneRect(element, transformedBoxRect(raw, matrix), raw);
-            }
-            for (const child of box.c ?? []) place(child, matrix);
-          };
-          for (const layer of this.layers) if (layer.root !== null) place(layer.root, [1, 0, 0, 1, 0, 0]);
+          this.flushLayoutChanges();
+          if (this.stale || this.layers.some(layer => layer.root === null || layer.dirty.size > 0 || layer.texts.size > 0)) return;
+          this.awaitingRects = false;
+          this.publishMeasurements(ui);
           this.input?.refreshHover();
           const pending = [...this.scrollRequests];
           this.scrollRequests.clear();
@@ -200,6 +198,26 @@ export class RuneStage {
         this.sync();
       })
       .catch((error: unknown) => this.fail(error));
+  }
+
+  private flushLayoutChanges(): void {
+    for (const layer of this.layers) {
+      const records = layer.observer.takeRecords();
+      if (records.length > 0) this.onMutations(layer, records);
+    }
+  }
+
+  private publishMeasurements(ui: RuneUi): void {
+    const place = (box: WireBox, parent: BoxTransform): void => {
+      const raw = box.id === 0 ? undefined : ui.rects.get(box.id);
+      const matrix = raw === undefined ? parent : composeBoxTransform(parent, boxTransform(raw, box["tf"], box["to"]));
+      if (raw !== undefined) {
+        const element = elementOf(box.id);
+        if (element !== null) setRuneRect(element, transformedBoxRect(raw, matrix), raw);
+      }
+      for (const child of box.c ?? []) place(child, matrix);
+    };
+    for (const layer of this.layers) if (layer.root !== null) place(layer.root, [1, 0, 0, 1, 0, 0]);
   }
 
   private fail(error: unknown): void {
@@ -254,7 +272,11 @@ export class RuneStage {
         }
       }
     }
-    if (layer.dirty.size > 0 || layer.texts.size > 0) this.invalidate();
+    if (layer.dirty.size > 0 || layer.texts.size > 0) {
+      for (const element of layer.dirty) invalidateRuneLayout(element);
+      for (const element of layer.texts) invalidateRuneLayout(element);
+      this.invalidate();
+    }
   }
 
   /** The nearest element at or above `element` that has a box of its own; the container when none below it has. */
@@ -364,6 +386,7 @@ export class RuneStage {
         if (text === null) delete box["t"];
         else box["t"] = text;
         if (needsPatch) {
+          this.awaitingRects = true;
           ui.patchText(box.id, text);
           this.stats.texts += 1;
         }
@@ -408,6 +431,7 @@ export class RuneStage {
     if (full) {
       this.stale = false;
       const roots = this.layers.map((layer) => layer.root).filter((root): root is WireBox => root !== null);
+      this.awaitingRects = true;
       ui.setSpec(roots as unknown as RuneUiNode[], false);
       const present = new Set<number>();
       const visit = (box: WireBox): void => {
@@ -420,10 +444,12 @@ export class RuneStage {
     } else if (patches.length > 0) {
       const roots = new Set(this.layers.map((layer) => layer.root).filter((root): root is WireBox => root !== null));
       const replacements = compactPatches(patches, roots, ownerOf);
+      this.awaitingRects = true;
       ui.patch(replacements as unknown as RuneUiNode[]);
       this.stats.patches += 1;
       this.stats.boxes += replacements.length;
     }
+    if (!this.awaitingRects) this.publishMeasurements(ui);
     const elapsed = performance.now() - started;
     this.stats.ms += elapsed;
     this.stats.lastMs = elapsed;

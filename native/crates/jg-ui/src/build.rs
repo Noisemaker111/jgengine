@@ -12,6 +12,8 @@ use crate::{Ui, color, set_val, val};
 /// The root element: a full-viewport box the spec's top-level nodes position
 /// inside (absolute, pinned or flowed).
 pub fn view(s: &Ui, cx: &mut rune::Cx<Ui>) -> El {
+    s.rendered_revision.set(s.revision);
+    s.rendered_page_revision.set(s.page_revision);
     let structure_changed = s.cache.prepare(&s.root, s.revision);
     if structure_changed { widgets::begin_images(); }
     let t = tok::theme(cx.system_dark());

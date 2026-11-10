@@ -11,6 +11,7 @@ type Rect = readonly [number, number, number, number];
 
 export interface RuneScrollDriver {
   scroll(element: Element, x: number, y: number, smooth: boolean): void;
+  flushLayoutChanges?(): void;
 }
 
 interface ScrollInfo {
@@ -31,6 +32,16 @@ let NativeResizeObserver: typeof ResizeObserver | null = null;
 
 function inRuneLayer(element: Element): boolean {
   return element.closest("[data-jg-rune-layer]") !== null;
+}
+
+/** Defer size reads until Rune lays out changed content; painted bounds still describe the visible frame. */
+export function invalidateRuneLayout(element: Element | null): void {
+  if (element === null) return;
+  const forget = (target: Element): void => {
+    layoutRects.delete(target);
+  };
+  for (const child of element.querySelectorAll("*")) forget(child);
+  for (let current: Element | null = element; current !== null && inRuneLayer(current); current = current.parentElement) forget(current);
 }
 
 /** Record painted bounds for hit testing and layout bounds for size/resize APIs (CSS pixels). */
@@ -142,6 +153,7 @@ class RuneResizeObserver implements ResizeObserver {
       return;
     }
     this.mirrored.add(target);
+    scrollDriver?.flushLayoutChanges?.();
     let set = watchers.get(target);
     if (set === undefined) {
       set = new Set();
@@ -176,10 +188,12 @@ class RuneResizeObserver implements ResizeObserver {
 
   deliver(): void {
     if (this.changed.size === 0) return;
+    scrollDriver?.flushLayoutChanges?.();
     const entries: ResizeObserverEntry[] = [];
     for (const target of this.changed) {
       if (!this.mirrored.has(target)) continue;
-      const rect = layoutRects.get(target) ?? [0, 0, 0, 0];
+      const rect = layoutRects.get(target);
+      if (rect === undefined) continue;
       const size = [{ inlineSize: rect[2], blockSize: rect[3] }];
       entries.push({ target, contentRect: new DOMRect(0, 0, rect[2], rect[3]), borderBoxSize: size, contentBoxSize: size, devicePixelContentBoxSize: size });
     }
@@ -195,6 +209,9 @@ function patchGetter(proto: object, name: string, read: (rect: Rect) => number):
   Object.defineProperty(proto, name, {
     ...descriptor,
     get(this: Element) {
+      if (rects.has(this)) scrollDriver?.flushLayoutChanges?.();
+      const rect = layoutRects.get(this);
+      if (rect === undefined && rects.has(this)) return 0;
       const scroll = scrolls.get(this);
       if (scroll?.known === true) {
         if (name === "scrollWidth") return Math.ceil(scroll.contentWidth);
@@ -202,7 +219,6 @@ function patchGetter(proto: object, name: string, read: (rect: Rect) => number):
         if (name === "clientWidth") return Math.round(scroll.width);
         if (name === "clientHeight") return Math.round(scroll.height);
       }
-      const rect = layoutRects.get(this);
       return rect === undefined ? (original.call(this) as number) : read(rect);
     },
   });

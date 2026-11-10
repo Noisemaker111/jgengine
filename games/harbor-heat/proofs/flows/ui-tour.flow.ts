@@ -39,6 +39,7 @@ export default defineFlow(game, {
       { until: "(() => { const el = document.querySelector('.hh-city'); return el !== null && el.scrollHeight > el.clientHeight; })()" },
       { tap: "down" },
       { until: "document.querySelector('.hh-city').scrollTop > 0" },
+      { until: "innerWidth >= 600 || !matchMedia('(pointer: coarse)').matches || (() => { const objective = document.querySelector('[data-hud-panel=objective]'); const phone = document.querySelector('.hh-city-phone'); return objective?.hasAttribute('data-hud-collapsed') && phone?.offsetWidth === 300; })()" },
       { shot: "city-phone" },
       { tap: "Put away" },
       { tap: "Pause" },

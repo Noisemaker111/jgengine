@@ -20,7 +20,7 @@ mod widgets;
 #[cfg(test)]
 mod blend_tests;
 
-use std::cell::{RefCell, UnsafeCell};
+use std::cell::{Cell, RefCell, UnsafeCell};
 use std::collections::HashMap;
 
 use rune::{AppHandle, Color, Compositor, Cx, El, Frame, TextEdit};
@@ -123,6 +123,9 @@ pub(crate) fn emit_scroll(id: u32, at: rune::ScrollPos) {
 pub struct Ui {
     root: Vec<Node>,
     revision: u64,
+    page_revision: u32,
+    rendered_revision: Cell<u64>,
+    rendered_page_revision: Cell<u32>,
     cache: css::BoxCache,
     /// While true the bridge treats the UI as modal: game input is suspended
     /// and the pointer is shown.
@@ -159,7 +162,15 @@ struct UiCompositor {
     /// Last frame payload shipped to JS; static frames skip the JSON round trip.
     last_regions: Vec<[f32; 4]>,
     last_modal: bool,
+    last_revision: u64,
     shipped: bool,
+}
+
+fn layout_snapshot(runtime: &rune::Runtime<Ui>) -> Vec<[f32; 5]> {
+    runtime.layout_rects().filter_map(|(key, rect)| {
+        let id: u32 = key.strip_prefix('x')?.parse().ok()?;
+        Some([id as f32, rect[0], rect[1], rect[2], rect[3]])
+    }).collect()
 }
 
 impl Compositor<Ui> for UiCompositor {
@@ -176,18 +187,22 @@ impl Compositor<Ui> for UiCompositor {
         let events: Vec<UiEvent> = EVENTS.with(|e| std::mem::take(&mut *e.borrow_mut()));
         let regions: Vec<[f32; 4]> = f.rt.hit_regions().to_vec();
         let modal = f.rt.state.modal;
-        if self.shipped && events.is_empty() && modal == self.last_modal && regions == self.last_regions && !css::RECTS_DIRTY.get() {
+        let revision_changed = !self.shipped || self.last_revision != f.rt.state.rendered_revision.get();
+        if self.shipped && events.is_empty() && modal == self.last_modal && regions == self.last_regions && !css::RECTS_DIRTY.get() && !revision_changed {
             return;
         }
         self.shipped = true;
         self.last_modal = modal;
+        self.last_revision = f.rt.state.rendered_revision.get();
         self.last_regions = regions.clone();
-        let rects: Vec<[f32; 5]> = if css::RECTS_DIRTY.replace(false) {
-            css::RECTS.with(|r| r.borrow().iter().map(|(id, r)| [*id as f32, r[0], r[1], r[2], r[3]]).collect())
+        let rects_changed = css::RECTS_DIRTY.replace(false);
+        let rects: Vec<[f32; 5]> = if rects_changed || revision_changed {
+            layout_snapshot(f.rt)
         } else {
             Vec::new()
         };
         let payload = serde_json::json!({
+            "revision": f.rt.state.rendered_page_revision.get(),
             "events": events,
             "regions": regions,
             "modal": modal,
@@ -269,6 +284,7 @@ pub fn mount(canvas_id: &str, options_json: &str) {
             edit_last: HashMap::new(),
             last_regions: Vec::new(),
             last_modal: false,
+            last_revision: 0,
             shipped: false,
         });
     for url in &opts.fonts {
@@ -283,7 +299,7 @@ pub fn mount(canvas_id: &str, options_json: &str) {
 /// Field edits for ids that survive are kept.
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen::prelude::wasm_bindgen]
-pub fn set_spec(json: &str) {
+pub fn set_spec(json: &str, revision: u32) {
     let parsed = spec::parse_spec(json);
     let (children, modal) = match parsed {
         Ok(p) => (p.children, p.modal),
@@ -299,6 +315,7 @@ pub fn set_spec(json: &str) {
                 // as in the DOM, not faded by Rune's default entrance and exit.
                 tx.instant();
                 s.root = children;
+                s.page_revision = revision;
                 s.modal = modal;
                 sync_fields(s);
             });
@@ -331,7 +348,7 @@ fn sync_fields(s: &mut Ui) {
 /// reaches Rune without the whole tree being sent again.
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen::prelude::wasm_bindgen]
-pub fn patch(json: &str) {
+pub fn patch(json: &str, revision: u32) {
     let boxes: Vec<css::Box_> = match serde_json::from_str(json) {
         Ok(b) => b,
         Err(e) => {
@@ -357,6 +374,7 @@ pub fn patch(json: &str) {
                     }
                 }
                 if fields {
+                    s.page_revision = revision;
                     sync_fields(s);
                 }
             });
@@ -368,7 +386,7 @@ pub fn patch(json: &str) {
 /// path for a number or label that moves: no layout or paint field is parsed again.
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen::prelude::wasm_bindgen]
-pub fn patch_text(id: u32, json: &str) {
+pub fn patch_text(id: u32, json: &str, revision: u32) {
     let text: Option<css::Txt> = match serde_json::from_str(json) {
         Ok(t) => t,
         Err(e) => {
@@ -384,6 +402,7 @@ pub fn patch_text(id: u32, json: &str) {
                 tx.instant();
                 if let Some(slot) = css::find_mut(&mut s.root, id) {
                     slot.t = text;
+                    s.page_revision = revision;
                     s.revision = s.revision.wrapping_add(1);
                 }
             });
