@@ -300,7 +300,16 @@ function setDim(box: WireBox, key: string, element: Element, report: MirrorRepor
 }
 
 /** Layout, paint and interaction of one element's own box. */
-function boxOf(element: Element, style: CSSStyleDeclaration, report: MirrorReport): WireBox {
+/**
+ * The computed `transform` list. `getComputedStyle().transform` is `none` for an element with no
+ * box (which every mirrored element is), so it is read from the typed style map instead.
+ */
+function transformOf(element: Element): string {
+  const typed = (element as Element & { computedStyleMap?: () => { get(name: string): { toString(): string } | undefined } }).computedStyleMap?.();
+  return typed?.get("transform")?.toString() ?? "none";
+}
+
+function boxOf(element: Element, style: CSSStyleDeclaration, report: MirrorReport, pseudo = false): WireBox {
   const box: WireBox = { k: "x", id: idOf(element) };
   const display = style.display;
   const flex = display.endsWith("flex");
@@ -427,7 +436,7 @@ function boxOf(element: Element, style: CSSStyleDeclaration, report: MirrorRepor
   const opacity = parseFloat(style.opacity);
   if (opacity < 1) box["op"] = opacity;
   if (style.visibility === "hidden" || style.visibility === "collapse") box["op"] = 0;
-  const transform = parseTransform(style.translate, style.rotate, style.scale, style.transform);
+  const transform = parseTransform(style.translate, style.rotate, style.scale, pseudo ? style.transform : transformOf(element));
   if (transform !== null) {
     if (transform.lost !== null) report.add(`transform: ${transform.lost}`, element);
     box["tf"] = [transform.x, transform.y, transform.rotate, transform.scale, transform.fx, transform.fy];
@@ -462,7 +471,7 @@ function pseudoBox(element: Element, which: "::before" | "::after", report: Mirr
   const style = getComputedStyle(element, which);
   const content = style.content;
   if (content === "none" || content === "normal" || content === "" || style.display === "none") return null;
-  const box = boxOf(element, style, report);
+  const box = boxOf(element, style, report, true);
   box.id = idOf(element) * 4 + (which === "::before" ? 1 : 2) + 0x40000000;
   delete box["hit"];
   const text = /^"(.*)"$/.exec(content);
