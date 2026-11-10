@@ -34,6 +34,42 @@ export function unmountChildDraw(mounted: MountedChildDraw): void {
   mounted.draw.dispose?.(mounted.state);
 }
 
+/** Rebuilds inside {@link CHURN_WINDOW_MS} that mean a draw's `deps` change identity every render. */
+const CHURN_REBUILDS = 30;
+const CHURN_WINDOW_MS = 1000;
+
+/** One mount's rebuild history for {@link noteDrawRebuild}. @internal */
+export interface DrawChurn {
+  windowStart: number;
+  rebuilds: number;
+  warned: boolean;
+}
+
+/** @internal */
+export function createDrawChurn(): DrawChurn {
+  return { windowStart: 0, rebuilds: -1, warned: false };
+}
+
+/**
+ * Count one build of a mounted draw and warn, once per mount, when it is being rebuilt on every
+ * render: a `deps` entry made fresh each render (an inline array or object) disposes and remounts
+ * the draw, so a model it loads never finishes arriving. Returns true when it warned.
+ * @internal
+ */
+export function noteDrawRebuild(churn: DrawChurn, create: () => EngineDraw, now: number): boolean {
+  if (now - churn.windowStart > CHURN_WINDOW_MS) {
+    churn.windowStart = now;
+    // The first build of a mount is not a rebuild.
+    churn.rebuilds = churn.rebuilds < 0 ? 0 : 1;
+    return false;
+  }
+  churn.rebuilds += 1;
+  if (churn.warned || churn.rebuilds < CHURN_REBUILDS) return false;
+  churn.warned = true;
+  console.warn(`[jgengine:draw] a draw was rebuilt ${churn.rebuilds} times in a second: one of its deps is a new array or object every render, so it never settles. Pass stable values. ${create.toString().replace(/\s+/g, " ").slice(0, 160)}`);
+  return true;
+}
+
 /**
  * The nearest scene parent for draws mounted through React: `null` means the
  * host scene root. Components that own a {@link THREE.Group} for custom
@@ -159,11 +195,10 @@ export function SceneObjectGroup({
   userData?: Record<string, unknown> | undefined;
   children?: ReactNode;
 }) {
-  const group = useMemo(() => {
-    const next = new THREE.Group();
-    if (userData !== undefined) next.userData = { ...next.userData, ...userData };
-    return next;
-  }, [userData]);
+  // One group for the component's life: callers pass `userData` and the transform tuples inline, so
+  // a group keyed on them would be rebuilt every render and remount every draw beneath it.
+  const group = useMemo(() => new THREE.Group(), []);
+  group.userData = userData === undefined ? {} : { ...userData };
   useEffect(() => {
     if (position !== undefined) group.position.set(position[0], position[1], position[2]);
     if (rotation !== undefined) group.rotation.set(rotation[0], rotation[1], rotation[2]);
@@ -189,7 +224,9 @@ export function EngineDrawMount({ create, deps }: { create: () => EngineDraw; de
   // A plain group, not a JSX intrinsic: the draw only needs a stable parent transform.
   const parent = useMemo(() => new THREE.Group(), []);
   const mounted = useRef<MountedChildDraw | null>(null);
+  const churn = useRef<DrawChurn | null>(null);
   useEffect(() => {
+    noteDrawRebuild((churn.current ??= createDrawChurn()), create, performance.now());
     const attachTo = sceneParent ?? host.frame.scene;
     attachTo.add(parent);
     const next = mountChildDraw(create(), parent, host.frame);
@@ -231,7 +268,9 @@ export function useEngineDraw(create: () => EngineDraw, deps: DependencyList): v
   const frame = useEngineHost().frame;
   const sceneParent = useContext(EngineSceneContext);
   const mounted = useRef<MountedChildDraw | null>(null);
+  const churn = useRef<DrawChurn | null>(null);
   useEffect(() => {
+    noteDrawRebuild((churn.current ??= createDrawChurn()), create, performance.now());
     const draw = create();
     const next = sceneParent === null ? mountRootDraw(draw, frame) : mountChildDraw(draw, sceneParent, frame);
     mounted.current = next;

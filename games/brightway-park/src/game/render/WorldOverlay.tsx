@@ -294,7 +294,7 @@ function ghostDraw(kind: string, at: [number, number], y: number, valid: boolean
 }
 function Ghost({ kind, at, y, valid }: { kind: string; at: [number, number]; y: number; valid: boolean }) {
   const rotation = useGameStore(() => session.rotation);
-  return <EngineDrawMount create={() => ghostDraw(kind, at, y, valid, rotation)} deps={[kind, at, y, valid, rotation]} />;
+  return <EngineDrawMount create={() => ghostDraw(kind, at, y, valid, rotation)} deps={[kind, at[0], at[1], y, valid, rotation]} />;
 }
 
 /**
