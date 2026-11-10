@@ -46,7 +46,18 @@ function labelOf(mesh: THREE.Mesh): string {
   if (names.length > 0) return names.reverse().join("/");
   const material = mesh.material as THREE.Material | THREE.Material[] | undefined;
   const first = Array.isArray(material) ? material[0] : material;
-  return first?.name || first?.type || mesh.type;
+  const named = first?.name || "";
+  if (named !== "") return named;
+  const base = first?.type || mesh.type;
+  const geometryType = (mesh.geometry as THREE.BufferGeometry | undefined)?.type ?? "?";
+  // Instanced and batched draws span a field, so one node position says nothing and would split
+  // every chunk into its own line; a lone mesh's position is what names it.
+  const spread = (mesh as THREE.InstancedMesh).isInstancedMesh === true || (mesh as THREE.BatchedMesh).isBatchedMesh === true;
+  if (spread) return `${base}/${geometryType}`;
+  mesh.updateWorldMatrix(true, false);
+  const e = mesh.matrixWorld.elements;
+  const at = `${Math.round(e[12]!)},${Math.round(e[13]!)},${Math.round(e[14]!)}`;
+  return `${base}/${geometryType}@${at}`;
 }
 
 /**

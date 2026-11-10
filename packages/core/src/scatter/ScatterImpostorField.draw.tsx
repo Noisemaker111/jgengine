@@ -97,6 +97,7 @@ export function scatterImpostorFieldDraw(options: ScatterImpostorFieldDrawOption
     dropFar();
     if (entry === null || entry.atlas === null || entry.materials === null || state === null) return;
     const mesh = new THREE.InstancedMesh(impostorCard(entry.atlas), entry.materials.material, Math.ceil(batches.reduce((sum, batch) => sum + batch.matrices.length, 0) / 256) * 256);
+    mesh.name = `impostor-far:${cacheKey}`;
     mesh.customDepthMaterial = entry.materials.depth;
     mesh.castShadow = true;
     mesh.receiveShadow = true;
@@ -152,6 +153,7 @@ export function scatterImpostorFieldDraw(options: ScatterImpostorFieldDrawOption
       batches.forEach((batch, batchIndex) => {
         sources.forEach((source) => {
           const mesh = new THREE.InstancedMesh(source.geometry, source.material, batch.matrices.length);
+          mesh.name = `impostor:${cacheKey}`;
           mesh.castShadow = source.skipShadow !== true && (source.castShadow ?? true);
           mesh.receiveShadow = source.receiveShadow ?? true;
           const composed = new Float32Array(batch.matrices.length * 16);

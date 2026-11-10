@@ -523,7 +523,8 @@ export function buildRouteCourse(spec: RouteCourseSpec): RouteCourse {
     const pz = az + dz * t;
     const h = route.heading[seg]!;
     const lateral = (x - px) * Math.cos(h) - (z - pz) * Math.sin(h);
-    const dist = Math.hypot(x - px, z - pz);
+    const ddx = x - px, ddz = z - pz;
+    const dist = Math.sqrt(ddx * ddx + ddz * ddz);
     const hw = route.hw[seg]! + (route.hw[seg + 1]! - route.hw[seg]!) * t;
     const beforeStart = seg === 0 && raw < 0;
     const pastEnd = seg === route.x.length - 2 && raw > 1;

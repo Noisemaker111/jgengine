@@ -159,9 +159,126 @@ function singleShadowLightDraw(getProps: () => {
   };
 }
 
+/**
+ * Draw-side form of {@link ShadowPipeline}: the small caster cull, the static shadow cache and
+ * their devtools probes, installed once on the root scene for every shadow-casting light.
+ * @internal
+ */
+export function shadowPipelineDraw(getProps: () => { profile?: GraphicsProfile | undefined }): EngineDraw {
+  let cull: ShadowCasterCull | null = null;
+  let casterRadius = -1;
+  let shadowCache: ReturnType<typeof installShadowCache> | null = null;
+  let offCacheProbe: (() => void) | null = null;
+  let offShadowProbe: (() => void) | null = null;
+  // Counts the frames this draw sees, before the render: the shadow cache serves each light's map
+  // once per token, so a post pass that renders the scene again in the frame draws nothing twice.
+  let frameCount = 0;
+
+  const syncCull = (state: EngineFrameState) => {
+    const radius = minShadowCasterRadius(
+      getProps().profile?.shadowMapSize ?? SHADOW_CASTER_RADIUS_REFERENCE_MAP,
+      MIN_SHADOW_CASTER_RADIUS,
+    );
+    if (cull !== null && radius === casterRadius) return;
+    casterRadius = radius;
+    cull?.restore();
+    cull = cullSmallShadowCasters(state.rootScene ?? state.scene, radius);
+    offShadowProbe?.();
+    const casterStats = sceneProbeReading(() => cull?.stats());
+    offShadowProbe = devtools.probes.registerSystem("render/shadows", {
+      counters: () => casterStats() ?? { casters: 0, skipped: 0, minRadius: radius },
+      state: () => {
+        const stats = casterStats();
+        return stats === undefined
+          ? "no shadow-casting directional light"
+          : `${stats.casters} casters · ${stats.skipped} under ${stats.minRadius} m skipped`;
+      },
+    });
+  };
+
+  return {
+    mount(state: EngineFrameState) {
+      syncCull(state);
+      // Every backend: the audit reads back through a fence, which the WebGPU backend answers too, so
+      // `perf shadow-audit --renderer webgpu` proves its cached maps as it does WebGL's.
+      const cache = installShadowCache(state.gl, state.rootScene ?? state.scene, undefined, () => frameCount);
+      shadowCache = cache;
+      if (typeof window !== "undefined") {
+        window.__jgShadowCache = cache.handle;
+        // `bun run perf shadow-audit` loads the page with this flag: every cached map is checked against a full redraw.
+        if (new URLSearchParams(window.location?.search ?? "").get("shadowAudit") === "1") cache.handle.setAudit(true);
+      }
+      offCacheProbe = devtools.probes.registerSystem("render/shadow-cache", {
+        counters: () => {
+          const stats = cache.handle.stats();
+          return {
+            casters: stats.casters,
+            static: stats.staticCasters,
+            dynamic: stats.dynamicCasters,
+            alwaysDynamic: stats.alwaysDynamicCasters,
+            checks: stats.checks,
+            invocations: stats.invocations,
+            renders: stats.renders,
+            checkMs: stats.checkMs,
+            dynamicTris: stats.dynamicTris,
+            dynamicTrisInstanced: stats.dynamicTrisInstanced,
+            dynamicTrisBatched: stats.dynamicTrisBatched,
+            dynamicTrisAlways: stats.dynamicTrisAlways,
+            staticTris: stats.staticTris,
+            cpuMs: stats.cpuMs,
+            ...stats.passes,
+            auditMaps: stats.audit.maps,
+            auditMismatchedMaps: stats.audit.mismatchedMaps,
+            auditMismatchedTexels: stats.audit.mismatchedTexels,
+            auditFailed: stats.audit.failed,
+            auditSkipped: stats.audit.skipped,
+          };
+        },
+        state: () => {
+          const { passes, staticCasters, casters } = cache.handle.stats();
+          return `${staticCasters}/${casters} casters static · passes full ${passes.full} rebuild ${passes.rebuild} reuse ${passes.reuse} hold ${passes.hold}`;
+        },
+      });
+    },
+    update(state: EngineFrameState) {
+      syncCull(state);
+    },
+    frame() {
+      frameCount += 1;
+    },
+    dispose() {
+      cull?.restore();
+      cull = null;
+      casterRadius = -1;
+      if (shadowCache !== null) {
+        const handle = shadowCache.handle;
+        shadowCache.dispose();
+        shadowCache = null;
+        if (typeof window !== "undefined" && window.__jgShadowCache === handle) delete window.__jgShadowCache;
+      }
+      offCacheProbe?.();
+      offCacheProbe = null;
+      offShadowProbe?.();
+      offShadowProbe = null;
+    },
+  };
+}
+
+/**
+ * The shadow pipeline every shadow-casting light shares, whichever feature mounts it: the small
+ * caster cull and the static shadow cache are renderer-level, so they mount once per scene here —
+ * not inside any one lighting feature — and a sky-owned sun or a game-authored light gets the same
+ * treatment as a {@link ConfiguredLighting} directional.
+ * @internal
+ */
+export function ShadowPipeline(props: { profile?: GraphicsProfile | undefined }) {
+  const latest = useRef(props);
+  latest.current = props;
+  return <EngineDrawMount create={() => shadowPipelineDraw(() => latest.current)} deps={[]} />;
+}
+
 /** Draw-side form of {@link ConfiguredLighting}: all authored lights live in one group; the light
- * set rebuilds when the `lighting` config or `profile` identity changes, the shadow-caster cull,
- * shadow cache and devtools probes follow `shadowsCast`/`casterRadius`, and daylight modulation
+ * set rebuilds when the `lighting` config or `profile` identity changes, and daylight modulation
  * retunes ambient, hemisphere and the first directional per frame. */
 export function configuredLightingDraw(getProps: () => {
   lighting: LightingConfig;
@@ -175,16 +292,7 @@ export function configuredLightingDraw(getProps: () => {
   let hemisphere: THREE.HemisphereLight | null = null;
   let baseAmbient = 0.55;
   let baseHemisphere = 0.55;
-  let shadowsCast = false;
-  let casterRadius = MIN_SHADOW_CASTER_RADIUS;
-  let cull: ShadowCasterCull | null = null;
-  let cullRadius = -1;
-  let probeRadius = -1;
-  let shadowCache: ReturnType<typeof installShadowCache> | null = null;
-  let offCacheProbe: (() => void) | null = null;
-  let offShadowProbe: (() => void) | null = null;
   let installedKey: readonly unknown[] | null = null;
-  let gl: THREE.WebGLRenderer | null = null;
 
   // One draw per resolved directional; only the first carries daylight modulation, and the
   // modulation object is read live so a day-cycle swap never rebuilds the lights.
@@ -275,88 +383,10 @@ export function configuredLightingDraw(getProps: () => {
       dynamicLights.push(light);
     }
     for (const child of children) child.mount?.(state);
-    shadowsCast = (lighting.directional ?? []).some((entry) => entry.castShadow === true);
-    casterRadius = minShadowCasterRadius(
-      profile?.shadowMapSize ?? SHADOW_CASTER_RADIUS_REFERENCE_MAP,
-      MIN_SHADOW_CASTER_RADIUS,
-    );
-    syncShadowSystems(state);
-  };
-
-  const syncShadowSystems = (state: EngineFrameState) => {
-    const root = state.rootScene ?? state.scene;
-    if (!shadowsCast) {
-      cull?.restore();
-      cull = null;
-      cullRadius = -1;
-      if (shadowCache !== null) {
-        const handle = shadowCache.handle;
-        shadowCache.dispose();
-        shadowCache = null;
-        if (typeof window !== "undefined" && window.__jgShadowCache === handle) delete window.__jgShadowCache;
-      }
-      offCacheProbe?.();
-      offCacheProbe = null;
-    } else {
-      if (cull === null || cullRadius !== casterRadius) {
-        cull?.restore();
-        cull = cullSmallShadowCasters(root, casterRadius);
-        cullRadius = casterRadius;
-      }
-      if (shadowCache === null && gl !== null) {
-        // Every backend: the audit reads back through a fence, which the WebGPU backend answers too, so
-        // `perf shadow-audit --renderer webgpu` proves its cached maps as it does WebGL's.
-        const cache = installShadowCache(gl, root);
-        shadowCache = cache;
-        if (typeof window !== "undefined") {
-          window.__jgShadowCache = cache.handle;
-          // `bun run perf shadow-audit` loads the page with this flag: every cached map is checked against a full redraw.
-          if (new URLSearchParams(window.location?.search ?? "").get("shadowAudit") === "1") cache.handle.setAudit(true);
-        }
-        offCacheProbe = devtools.probes.registerSystem("render/shadow-cache", {
-          counters: () => {
-            const stats = cache.handle.stats();
-            return {
-              casters: stats.casters,
-              static: stats.staticCasters,
-              checks: stats.checks,
-              cpuMs: stats.cpuMs,
-              ...stats.passes,
-              auditMaps: stats.audit.maps,
-              auditMismatchedMaps: stats.audit.mismatchedMaps,
-              auditMismatchedTexels: stats.audit.mismatchedTexels,
-              auditFailed: stats.audit.failed,
-              auditSkipped: stats.audit.skipped,
-            };
-          },
-          state: () => {
-            const { passes, staticCasters, casters } = cache.handle.stats();
-            return `${staticCasters}/${casters} casters static · passes full ${passes.full} rebuild ${passes.rebuild} reuse ${passes.reuse} hold ${passes.hold}`;
-          },
-        });
-      }
-    }
-    // The caster probe registers whether or not a shadow light exists — it reports the empty state.
-    if (offShadowProbe === null || probeRadius !== casterRadius) {
-      offShadowProbe?.();
-      offShadowProbe = null;
-      probeRadius = casterRadius;
-      const casterStats = sceneProbeReading(() => cull?.stats());
-      offShadowProbe = devtools.probes.registerSystem("render/shadows", {
-        counters: () => casterStats() ?? { casters: 0, skipped: 0, minRadius: casterRadius },
-        state: () => {
-          const stats = casterStats();
-          return stats === undefined
-            ? "no shadow-casting directional light"
-            : `${stats.casters} casters · ${stats.skipped} under ${stats.minRadius} m skipped`;
-        },
-      });
-    }
   };
 
   return {
     mount(state: EngineFrameState) {
-      gl = state.gl;
       state.scene.add(group);
       syncLights(state);
     },
@@ -375,22 +405,7 @@ export function configuredLightingDraw(getProps: () => {
     dispose(state: EngineFrameState) {
       clearLights();
       state.scene.remove(group);
-      cull?.restore();
-      cull = null;
-      cullRadius = -1;
-      if (shadowCache !== null) {
-        const handle = shadowCache.handle;
-        shadowCache.dispose();
-        shadowCache = null;
-        if (typeof window !== "undefined" && window.__jgShadowCache === handle) delete window.__jgShadowCache;
-      }
-      offCacheProbe?.();
-      offCacheProbe = null;
-      offShadowProbe?.();
-      offShadowProbe = null;
-      probeRadius = -1;
       installedKey = null;
-      gl = null;
       lastState = null;
     },
   };

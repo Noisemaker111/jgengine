@@ -445,6 +445,7 @@ function instancedSourceDraw(args: {
       mesh.dispose();
     }
     mesh = new THREE.InstancedMesh(source.geometry, source.material, want);
+    mesh.name = "staticobj";
     mesh.userData[STATIC_BATCH_MESH_KEY] = true;
     mesh.castShadow = source.castShadow ?? false;
     mesh.receiveShadow = source.receiveShadow ?? false;

@@ -128,6 +128,11 @@ interface ObjRecord {
   priorVisibleIn: number;
   /** The last evaluation that put it in the preload set. */
   preloadIn: number;
+  /** The four inputs `resolved` was computed from; identical inputs skip the resolve. */
+  ov: ObjectVisibilityOverrides | undefined;
+  ol: ObjectVisibilityOverrides | undefined;
+  os: ObjectVisibilityOverrides | undefined;
+  og: ObjectVisibilityOverrides | undefined;
 }
 
 /**
@@ -270,12 +275,19 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
       record.lastSeen = updateCounter;
       return record;
     }
-    const resolved = resolveOverrides(r.overrides, r.layer !== undefined ? options.layerOverrides?.(r.layer) : undefined, options.sceneOverrides, options.globalOverrides);
+    const layer = r.layer !== undefined ? options.layerOverrides?.(r.layer) : undefined;
+    // Dynamic objects bump their version every frame while their override inputs usually stand
+    // still: resolving again built a fresh result object per renderable per frame.
+    const resolved = record !== undefined
+      && record.ov === r.overrides && record.ol === layer
+      && record.os === options.sceneOverrides && record.og === options.globalOverrides
+      ? record.resolved
+      : resolveOverrides(r.overrides, layer, options.sceneOverrides, options.globalOverrides);
     const alwaysVisible = resolved.alwaysVisible || r.alwaysVisible === true;
     const dynamic = resolved.classification !== "static";
     if (resolved.customVisibility !== undefined) customRecords += 1;
     if (record === undefined) {
-      record = { version: r.version, resolved, alwaysVisible, dynamic, assets: r.assets, lastSeen: updateCounter, indexed: false, bounds: undefined, considered: -1, visibleIn: -1, priorVisibleIn: -1, preloadIn: -1 };
+      record = { version: r.version, resolved, alwaysVisible, dynamic, assets: r.assets, lastSeen: updateCounter, indexed: false, bounds: undefined, considered: -1, visibleIn: -1, priorVisibleIn: -1, preloadIn: -1, ov: r.overrides, ol: layer, os: options.sceneOverrides, og: options.globalOverrides };
       records.set(r.id, record);
     } else {
       if (record.resolved.customVisibility !== undefined) customRecords -= 1;
@@ -286,6 +298,10 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
       record.assets = r.assets;
       record.lastSeen = updateCounter;
       record.indexed = false;
+      record.ov = r.overrides;
+      record.ol = layer;
+      record.os = options.sceneOverrides;
+      record.og = options.globalOverrides;
     }
     return record;
   }

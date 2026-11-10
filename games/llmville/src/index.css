@@ -1,5 +1,7 @@
 @import "tailwindcss" source(".");
-@source "../node_modules/@jgengine/react/dist";
+@source "../../../packages/react/src";
+@source "../../../packages/shell/src";
+@source "../../../packages/editor/src";
 @import "tw-animate-css";
 
 /*
@@ -934,6 +936,3 @@
     width: 5.25rem;
   }
 }
-
-@source "../node_modules/@jgengine/shell/dist";
-@source "../../../node_modules/@jgengine/shell/dist";

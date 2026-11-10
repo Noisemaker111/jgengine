@@ -124,15 +124,17 @@ function heapMb(): number | null {
   return used === undefined ? null : used / 1048576;
 }
 
-function uploadBytes(method: string, args: readonly unknown[]): number {
+function uploadBytes(method: string, args: Iterable<unknown> & ArrayLike<unknown>): number {
   for (const arg of args) {
     if (ArrayBuffer.isView(arg)) return arg.byteLength;
   }
-  const source = args.at(-1);
+  const source = args[args.length - 1];
   const width = numberField(source, "videoWidth") ?? numberField(source, "width") ?? 0;
   const height = numberField(source, "videoHeight") ?? numberField(source, "height") ?? 0;
   if (width > 0 && height > 0) return width * height * 4;
-  const [, size, , texWidth, texHeight] = args;
+  const size = args[1];
+  const texWidth = args[4];
+  const texHeight = args[5];
   if (method.startsWith("tex") && typeof texWidth === "number" && typeof texHeight === "number") return texWidth * texHeight * 4;
   if (typeof size === "number") return size;
   return 0;
@@ -282,6 +284,8 @@ export function installFrameBreakdown(renderer: WebGLRenderer): FrameBreakdown {
   // Ended queries are reused: draw timing ends hundreds a frame, and a create and delete for each
   // would be driver work of its own inside the very frames it measures.
   const spare: WebGLQuery[] = [];
+  // The timer records themselves are reused too: one object per query start was per-frame garbage.
+  const spareTimers: Timer[] = [];
   const release = (query: WebGLQuery) => {
     if (spare.length < MAX_PENDING_DRAW_QUERIES) spare.push(query);
     else timers?.gl.deleteQuery(query);
@@ -309,7 +313,15 @@ export function installFrameBreakdown(renderer: WebGLRenderer): FrameBreakdown {
     const query = spare.pop() ?? timers.gl.createQuery();
     if (query === null) { current.gpu = null; return; }
     timers.gl.beginQuery(timers.ext.TIME_ELAPSED_EXT, query);
-    running = { query, label, record: current, material };
+    const recycled = spareTimers.pop();
+    if (recycled === undefined) running = { query, label, record: current, material };
+    else {
+      recycled.query = query;
+      recycled.label = label;
+      recycled.record = current;
+      recycled.material = material;
+      running = recycled;
+    }
   };
   const enterPass = (label: string) => {
     if (gpuMode === "draws") { gpuStack.push(label); return; }
@@ -327,19 +339,26 @@ export function installFrameBreakdown(renderer: WebGLRenderer): FrameBreakdown {
   const readTimers = () => {
     if (timers === null || pending.length === 0) return;
     const { gl, ext } = timers;
+    const recycle = (entry: Timer) => {
+      release(entry.query);
+      if (spareTimers.length < MAX_PENDING_QUERIES) spareTimers.push(entry);
+    };
     if (gl.getParameter(ext.GPU_DISJOINT_EXT) === true) {
-      for (const entry of pending.splice(0)) {
-        release(entry.query);
+      for (let index = 0; index < pending.length; index += 1) {
+        const entry = pending[index]!;
+        recycle(entry);
         entry.record.gpu = null;
         unresolved.delete(entry.record);
       }
+      pending.length = 0;
       return;
     }
-    for (let entry = pending[0]; entry !== undefined; entry = pending[0]) {
+    let read = 0;
+    for (; read < pending.length; read += 1) {
+      const entry = pending[read]!;
       if (gl.getQueryParameter(entry.query, gl.QUERY_RESULT_AVAILABLE) !== true) break;
-      pending.shift();
       const ns = Number(gl.getQueryParameter(entry.query, gl.QUERY_RESULT));
-      release(entry.query);
+      recycle(entry);
       if (entry.record.gpu !== null) entry.record.gpu[entry.label] = (entry.record.gpu[entry.label] ?? 0) + ns / 1e6;
       if (entry.material !== null) {
         const cost = materials.get(entry.material);
@@ -348,6 +367,10 @@ export function installFrameBreakdown(renderer: WebGLRenderer): FrameBreakdown {
       const left = (unresolved.get(entry.record) ?? 1) - 1;
       if (left <= 0) unresolved.delete(entry.record);
       else unresolved.set(entry.record, left);
+    }
+    if (read > 0) {
+      pending.copyWithin(0, read);
+      pending.length -= read;
     }
   };
 
@@ -444,10 +467,11 @@ export function installFrameBreakdown(renderer: WebGLRenderer): FrameBreakdown {
     lightsSeen.set(scene, now);
     return before === undefined ? null : lightSetChange(before, now);
   };
-  // Each program's (vertex layout, colour target) pairs drawn so far: ANGLE on Direct3D builds a
-  // shader for each new pair at that draw, in the GPU process, so a frame stalls with nothing on the
-  // page's clock. Null for a pair already drawn; otherwise the target, and the layout when that is new.
-  const pairsDrawn = new WeakMap<object, Set<string>>();
+  // Each program's vertex layouts and, under each, the colour targets drawn with it: ANGLE on
+  // Direct3D builds a shader for each new pair at that draw, in the GPU process, so a frame stalls
+  // with nothing on the page's clock. Null for a pair already drawn; otherwise the target, and the
+  // layout when that is new. Nested maps, not "layout|target" strings: this runs for every draw.
+  const pairsDrawn = new WeakMap<object, Map<string, Set<string>>>();
   const layoutsDrawn = new WeakMap<object, Set<string>>();
   const layoutCache = new WeakMap<object, WeakMap<object, string>>();
   const targetCache = new WeakMap<object, string>();
@@ -478,15 +502,17 @@ export function installFrameBreakdown(renderer: WebGLRenderer): FrameBreakdown {
     let target = bound === null ? "screen" : targetCache.get(bound);
     if (target === undefined) targetCache.set(bound!, (target = targetLayout(bound as Parameters<typeof targetLayout>[0])));
     let pairs = pairsDrawn.get(program);
-    if (pairs === undefined) pairsDrawn.set(program, (pairs = new Set()));
-    const pair = `${layout}|${target}`;
-    if (pairs.has(pair)) return null;
-    pairs.add(pair);
+    if (pairs === undefined) pairsDrawn.set(program, (pairs = new Map()));
+    const firstPair = pairs.size === 0;
+    let targets = pairs.get(layout);
+    if (targets === undefined) pairs.set(layout, (targets = new Set()));
+    if (targets.has(target)) return null;
+    targets.add(target);
     let layouts = layoutsDrawn.get(program);
     if (layouts === undefined) layoutsDrawn.set(program, (layouts = new Set()));
     const newLayout = !layouts.has(layout);
     layouts.add(layout);
-    return pairs.size === 1 ? `first draw, ${target}` : newLayout ? `${target}, new vertex layout ${layout}` : target;
+    return firstPair ? `first draw, ${target}` : newLayout ? `${target}, new vertex layout ${layout}` : target;
   };
   wrap(renderer, "renderBufferDirect", (original) => (camera: unknown, scene: unknown, geometry: unknown, material: unknown, object: unknown, group: unknown) => {
     if (scene !== lastScene) {
@@ -539,13 +565,15 @@ export function installFrameBreakdown(renderer: WebGLRenderer): FrameBreakdown {
 
   // Draw timing brackets the context's own draw, clear and blit calls, not three's state setup around
   // them: a query opened before that setup also counts the GPU idle while the CPU binds uniforms and
-  // textures (Harbor Heat's scene pass read 6.6 ms that way against 2.75 ms of draws).
+  // textures (Harbor Heat's scene pass read 6.6 ms that way against 2.75 ms of draws). The wrappers
+  // forward `arguments` rather than a `...args` rest array: a fresh array per draw call was itself
+  // garbage the breakdown reported, hundreds of times a frame.
   for (const method of ["drawElements", "drawArrays", "drawElementsInstanced", "drawArraysInstanced", "drawRangeElements", "clear", "clearBufferfv", "clearBufferiv", "clearBufferuiv", "clearBufferfi", "blitFramebuffer"]) {
-    wrap(context, method, (original) => (...args) => {
+    wrap(context, method, (original) => function (this: unknown) {
       const timeCall = gpuMode === "draws" && running === null;
       if (timeCall) startTimer(gpuStack[gpuStack.length - 1] ?? "main", drawingMaterial);
       try {
-        return original(...args);
+        return Reflect.apply(original, undefined, arguments);
       } finally {
         if (timeCall) stopTimer();
       }
@@ -553,11 +581,11 @@ export function installFrameBreakdown(renderer: WebGLRenderer): FrameBreakdown {
   }
 
   // Shader compiles and links, and uploads, on the context itself.
-  const timed = (method: string, onCall: (ms: number, args: unknown[], result: unknown) => void) =>
-    wrap(context, method, (original) => (...args) => {
+  const timed = (method: string, onCall: (ms: number, args: Iterable<unknown> & ArrayLike<unknown>, result: unknown) => void) =>
+    wrap(context, method, (original) => function (this: unknown) {
       const start = performance.now();
-      const result = original(...args);
-      onCall(performance.now() - start, args, result);
+      const result = Reflect.apply(original, undefined, arguments);
+      onCall(performance.now() - start, arguments, result);
       return result;
     });
   timed("linkProgram", (ms) => {
@@ -624,6 +652,15 @@ export function installFrameBreakdown(renderer: WebGLRenderer): FrameBreakdown {
   // Frame callbacks: every task on the shared frame board timed under a stable label.
   const labels = new WeakMap<FrameTaskRef, string>();
   const callbacks: Record<string, (...args: never[]) => void> = {};
+  // Phase labels are interned: the sim driver task runs every frame and `sim:${phase}` template
+  // strings were per-frame garbage.
+  const simLabels = new Map<string, string>();
+  const aheadLabels = new Map<string, string>();
+  const phaseLabel = (cache: Map<string, string>, prefix: string, phase: string): string => {
+    let label = cache.get(phase);
+    if (label === undefined) cache.set(phase, (label = `${prefix}:${phase}`));
+    return label;
+  };
   let nextLabel = 0;
   const callbackLabel = (suffix: string): string | null => {
     if (nextLabel >= FRAME_RETENTION_LIMIT) { retention.callbacks += 1; return null; }
@@ -667,14 +704,19 @@ export function installFrameBreakdown(renderer: WebGLRenderer): FrameBreakdown {
       if (sim !== null && sim.serial !== taskSerialBefore) {
         // This task is the sim driver: its phases are systems of their own.
         let named = 0;
-        for (const [phase, ms] of Object.entries(sim.phases)) {
-          addCpu(`sim:${phase}`, ms);
+        for (const phase in sim.phases) {
+          const ms = sim.phases[phase];
+          if (typeof ms !== "number") continue;
+          addCpu(phaseLabel(simLabels, "sim", phase), ms);
           named += ms;
         }
         addCpu("sim:other", sim.simMs - named);
         if (current !== null) current.simMs = sim.simMs;
         // A step the driver ran between frames is not this frame's work; its rows keep it apart.
-        if (sim.ahead !== undefined) for (const [phase, ms] of Object.entries(sim.ahead)) addCpu(`ahead:${phase}`, ms);
+        if (sim.ahead !== undefined) for (const phase in sim.ahead) {
+          const ms = sim.ahead[phase];
+          if (typeof ms === "number") addCpu(phaseLabel(aheadLabels, "ahead", phase), ms);
+        }
         cpuLeave(sim.simMs);
       } else cpuLeave();
     },

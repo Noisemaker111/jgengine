@@ -119,7 +119,7 @@ import { CanvasCoverFrameloop } from "./drivers/CanvasCoverFrameloop";
 import { FpsCounter, FpsProbe, type FrameTally } from "@jgengine/core/devtools/FpsCounter.draw";
 import { createPerfOverlaySample, PerfOverlay, PerfOverlayProbe } from "@jgengine/core/devtools/perfOverlay.draw";
 import { createReplayRecorder } from "@jgengine/core/replay/replayRecording";
-import { ConfiguredLighting, BackdropFog } from "@jgengine/core/lighting/SceneLighting.draw";
+import { ConfiguredLighting, BackdropFog, ShadowPipeline } from "@jgengine/core/lighting/SceneLighting.draw";
 import { IrradianceVolumeLighting } from "@jgengine/core/lighting/IrradianceVolumeLighting.draw";
 import { usePresentationLook } from "@jgengine/core/render/presentationLook.draw";
 import type { GameLookInput } from "@jgengine/core/render/lookPreset";
@@ -751,11 +751,15 @@ export function Shell3dPresentation({
           rebind={rebindAction}
           resetBinding={resetActionBinding}
         >
+          {/* The surface's size is inline: a game stylesheet whose Tailwind scan misses the
+              shell's sources must not collapse it to zero, or the canvas never configures and
+              the warmup cover waits forever (#3097). */}
           <div
             ref={wrapperRef}
             tabIndex={0}
             data-jg-play-surface=""
             {...(poster && posterFrozen ? { "data-poster-ready": "" } : {})}
+            style={{ position: "relative", width: "100%", height: "100%" }}
             className="relative h-full w-full bg-neutral-950 outline-none"
             onKeyDown={keys.onKeyDown}
             onKeyUp={keys.onKeyUp}
@@ -835,6 +839,7 @@ export function Shell3dPresentation({
                   {playable.scene?.ambientLife !== false && playable.scene?.ambientLife?.fauna !== undefined ? (
                     <AmbientFauna config={playable.scene.ambientLife.fauna} zones={faunaZones} assets={playable.game.assets} groundAt={ctx.world.groundHeightAt} groundRevision={ctx.world.ground.heightRevision} lowTier={graphics.quality === "low"} />
                   ) : null}
+                  <ShadowPipeline profile={graphics.profile} />
                   {sceneLighting !== undefined ? (
                     <ConfiguredLighting
                       lighting={sceneLighting}

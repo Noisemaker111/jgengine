@@ -37,7 +37,7 @@ interface CameraLod {
 }
 
 interface Leaf {
-  key: string;
+  key: number;
   level: number;
   ix: number;
   iz: number;
@@ -127,7 +127,7 @@ export class GrassStream {
    * several times larger and the extra uploads cost fernwild 14% of its frame (Nov 2026).
    */
   private readonly templateGeometry: THREE.BufferGeometry;
-  private readonly cache = new Map<string, Leaf>();
+  private readonly cache = new Map<number, Leaf>();
   /** Each node's ground height range, by {@link nodeKey}. */
   private readonly heights = new Map<number, [number, number]>();
   private readonly rect: [number, number, number, number] = [0, 0, 0, 0];
@@ -247,7 +247,7 @@ export class GrassStream {
     this.frustum.setFromProjectionMatrix(this.matrix, camera.coordinateSystem);
     const next = new Set<Leaf>();
     for (const node of desired) {
-      const leaf = this.cache.get(`${node.level}:${node.ix}:${node.iz}`);
+      const leaf = this.cache.get(nodeKey(node.level, node.ix, node.iz));
       if (leaf !== undefined && leaf.tufts.count > 0 && this.frustum.intersectsSphere(this.sphere.copy(leaf.geometry.boundingSphere!).applyMatrix4(this.group.matrixWorld))) next.add(leaf);
     }
     for (const leaf of this.drawn) if (!next.has(leaf)) this.group.remove(leaf.mesh);
@@ -272,7 +272,7 @@ export class GrassStream {
     const local = this.group.worldToLocal(this.cameraPosition.clone());
     const ix = Math.max(0, Math.min(this.bake.columns - 1, Math.floor((local.x + this.bake.width / 2) / GRASS_CELL_SIZE)));
     const iz = Math.max(0, Math.min(this.bake.rows - 1, Math.floor((local.z + this.bake.depth / 2) / GRASS_CELL_SIZE)));
-    const key = `0:${ix}:${iz}`;
+    const key = nodeKey(0, ix, iz);
     const observe = frameWorkObserver();
     if (observe != null && !this.heights.has(nodeKey(0, ix, iz))) observe("grass selection height queries", 9);
     observe?.("grass nodes visited", 1);
@@ -374,7 +374,7 @@ export class GrassStream {
     const next = new Set<Leaf>();
     let pending = 0;
     for (const node of ordered) {
-      const key = `${node.level}:${node.ix}:${node.iz}`;
+      const key = nodeKey(node.level, node.ix, node.iz);
       let leaf = this.cache.get(key);
       let baked = false;
       if (node.share <= 0) continue;
@@ -538,7 +538,7 @@ export class GrassStream {
     return this.box.applyMatrix4(this.group.matrixWorld);
   }
 
-  private bakeLeaf(key: string, level: number, ix: number, iz: number, share: number, tufts: GrassTufts, cache = true): Leaf {
+  private bakeLeaf(key: number, level: number, ix: number, iz: number, share: number, tufts: GrassTufts, cache = true): Leaf {
     const t = this.template;
     const geometry = new THREE.InstancedBufferGeometry();
     // The same attribute objects for every leaf, so the GPU holds one copy of the tuft (see `templateGeometry`).

@@ -215,9 +215,9 @@ export function createAuthoredSimulation(options: { document?: EditorDocument | 
         return { ...previous, routeIndex: previousConfig.routeId !== habitat.routeId ? 0 : previous.routeIndex % (route?.points.length ?? 1) };
       }
       const rng = seededRng(habitat.seed);
-      const agents = Array.from({ length: habitat.count }, () => {
+      const agents: FlockStepAgent[] = Array.from({ length: habitat.count }, () => {
         const angle = rng() * Math.PI * 2, radius = Math.sqrt(rng()) * habitat.radius;
-        return { position: [habitat.position.x + Math.cos(angle) * radius, habitat.position.y, habitat.position.z + Math.sin(angle) * radius] as const, velocity: [0, 0, 0] as const };
+        return { position: [habitat.position.x + Math.cos(angle) * radius, habitat.position.y, habitat.position.z + Math.sin(angle) * radius], velocity: [0, 0, 0] };
       });
       return { id: habitat.id, species: habitat.species, role: habitat.role, agents, routeIndex: 0 };
     });

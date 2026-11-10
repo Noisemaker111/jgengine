@@ -278,7 +278,7 @@ export const game = defineGame({
     ambientLife: { fauna: ambientFauna },
     // Grass, flowers and plants step down to the levels `games:provision build` wrote, chunk by chunk,
     // once they span 6% and then 2% of the screen.
-    visibility: { meshLods: { screenSizes: [0.06, 0.02], hysteresis: 0.15 } },
+    visibility: { meshLods: { screenSizes: [0.045, 0.015], hysteresis: 0.15 }, hlod: { distance: 250, hysteresis: 30, cluster: 1 } },
   },
   sceneScatterModels: scatterModels,
   // The whole Island's forests, rocks and ore plus the dense south beach: about 48k placements, all drawn.
