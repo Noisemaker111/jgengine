@@ -12,7 +12,8 @@
 
 import { RuneUi, type RuneUiEvent, type RuneUiNode } from "../runeUi.view";
 import { isFrameBoundElement } from "../liveBind.view";
-import { MirrorReport, boxOfElement, elementOf, mirrorRoot, onMaskLoaded, remirrorElement, remirrorText, type WireBox } from "./cssMirror.view";
+import { MirrorReport, boxOfElement, elementOf, mirrorRoot, onMaskLoaded, ownerOf, remirrorElement, remirrorText, type WireBox } from "./cssMirror.view";
+import { compactPatches } from "./patches";
 import { twinStateRules } from "./cssStates.view";
 import { installRuneMeasure, runeRectOf, setRuneRect } from "./domMeasure.view";
 import { RuneInput } from "./runeInput.view";
@@ -399,9 +400,11 @@ export class RuneStage {
       for (const id of [...this.liveTexts, ...this.liveStyles.keys()]) if (!present.has(id)) this.releaseLive(ui, id);
       this.stats.full += 1;
     } else if (patches.length > 0) {
-      ui.patch(patches as unknown as RuneUiNode[]);
+      const roots = new Set(this.layers.map((layer) => layer.root).filter((root): root is WireBox => root !== null));
+      const replacements = compactPatches(patches, roots, ownerOf);
+      ui.patch(replacements as unknown as RuneUiNode[]);
       this.stats.patches += 1;
-      this.stats.boxes += patches.length;
+      this.stats.boxes += replacements.length;
     }
     const elapsed = performance.now() - started;
     this.stats.ms += elapsed;

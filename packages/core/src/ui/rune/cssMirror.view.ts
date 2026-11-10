@@ -550,7 +550,7 @@ function boxOfStyle(element: Element, style: CSSStyleDeclaration, report: Mirror
       }
       // Along the flow, 100% of a container with no size of its own is the room it ends up with.
       const along = across === "w" ? "h" : "w";
-      if (box[along] === "100%" && (along === "h" ? around.height : around.width) === "auto") {
+      if (around.flexWrap === "nowrap" && box[along] === "100%" && (along === "h" ? around.height : around.width) === "auto") {
         delete box[along];
         if (typeof box["fg"] !== "number" || box["fg"] < 1) box["fg"] = 1;
         if (box["fb"] === undefined) box["fb"] = 0;
@@ -1120,7 +1120,11 @@ export function mirrorElement(element: Element, report: MirrorReport, inherited:
     const containerAlign = box["ji"];
     for (const child of children) {
       const align = child["jsf"] ?? containerAlign;
-      if ((align === 1 || align === 2 || align === 3) && child["pos"] !== 2 && child["w"] === undefined && child["mxw"] === undefined) child["mxw"] = "100%";
+      if ((align === 1 || align === 2 || align === 3) && child["pos"] !== 2 && child["w"] === undefined) {
+        const cap = child["mxw"];
+        if (typeof cap === "number" && child["fw"] !== undefined) child["mxw"] = [0, 1, cap, 0, 1];
+        else if (cap === undefined) child["mxw"] = "100%";
+      }
     }
   }
   const after = pseudoBox(element, "::after", report);

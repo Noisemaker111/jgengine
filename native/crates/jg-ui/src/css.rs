@@ -556,6 +556,10 @@ fn layout(b: &Box_, s: &mut Style) {
         s.inset = rect4(ins, Dim::lpa);
     }
     s.size = Size { width: b.w.map_or(Dimension::auto(), Dim::dimension), height: b.h.map_or(Dimension::auto(), Dim::dimension) };
+    if b.w.is_none() && b.fw != 0 {
+        // Fit an intrinsic row to its available room before resolving the children's percentages.
+        s.size.width = Dimension::fit_content_percent(1.0);
+    }
     s.min_size = Size { width: b.mnw.map_or(auto(), Dim::lpa), height: b.mnh.map_or(auto(), Dim::lpa) };
     s.max_size = Size { width: b.mxw.map_or(auto(), Dim::lpa), height: b.mxh.map_or(auto(), Dim::lpa) };
     if let Some(mg) = &b.mg {
@@ -1338,6 +1342,20 @@ pub fn fields<'a>(nodes: &'a [crate::Node], out: &mut Vec<(String, &'a Input)>) 
 #[cfg(test)]
 mod live_value_tests {
     use super::*;
+
+    #[test]
+    fn wrapping_percentage_cards_fill_their_intrinsic_grid_cell() {
+        let mut state = Ui::default();
+        state.root = crate::spec::parse_spec(r#"{"children":[{"k":"x","id":1,"w":362,"d":2,"ji":3,"c":[{"k":"x","id":2,"mnw":0,"fw":1,"jc":3,"gap":[22,22],"mxw":[0,1,760,0,1],"c":[{"k":"x","id":3,"d":1,"w":"100%","mnw":0,"c":[{"k":"x","id":4,"w":150,"h":250}]},{"k":"x","id":5,"d":1,"w":"100%","mnw":0,"c":[{"k":"x","id":6,"w":150,"h":250}]},{"k":"x","id":7,"d":1,"w":"100%","mnw":0,"c":[{"k":"x","id":8,"w":150,"h":250}]}]}]}]}"#).unwrap().children;
+        let mut runtime = rune::Runtime::new(state, crate::build::view, (390.0, 844.0), rune::Env::new(true, 1.0));
+        runtime.frame(0.0);
+        let elements = runtime.elements();
+        let rect = |key| elements.iter().find(|element| element.key.as_deref() == Some(key)).unwrap().target;
+        let first = rect("x3");
+        let second = rect("x5");
+        assert!((first[2] - 362.0).abs() < 1.0, "percentage card was {first:?}");
+        assert!(second[1] >= first[1] + first[3] + 21.0, "cards failed to wrap: {first:?}, {second:?}");
+    }
 
     #[test]
     fn input_columns_preserve_intrinsic_width_inside_a_capped_percentage() {
