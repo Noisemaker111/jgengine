@@ -1,5 +1,6 @@
+import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { cpus } from "node:os";
+import { cpus, homedir } from "node:os";
 import { join } from "node:path";
 
 import type { PerfBuild } from "./prodServer";
@@ -463,4 +464,65 @@ export function renderScorecard(columns: readonly ScorecardColumn[], markdown = 
 /** `production` or `dev`: how a scorecard column is headed. */
 export function scorecardLabel(card: Pick<Scorecard, "build">): string {
   return card.build;
+}
+
+/** The scorecard as tally rows: `[metric, value, unit]`, a row left out where the run did not measure it. */
+export function scorecardMetrics(card: Scorecard): Array<[string, number, string]> {
+  const rows: Array<[string, number, string]> = [
+    ["frame.p50", card.frame.p50Ms, "ms"],
+    ["frame.p95", card.frame.p95Ms, "ms"],
+    ["frame.p99", card.frame.p99Ms, "ms"],
+    ["frame.worst", card.frame.worstMs, "ms"],
+    ["hitches.over16", card.frame.over16, "frames"],
+    ["hitches.over33", card.frame.over33, "frames"],
+    ["pc.busy", card.pcBusyPct, "%"],
+  ];
+  if (card.main !== null) {
+    rows.push(
+      ["main.per_frame", card.main.msPerFrame, "ms"],
+      ["react.self", card.main.reactSelfPct, "%"],
+      ["react.inclusive", card.main.reactInclusivePct, "%"],
+      ["r3f.self", card.main.r3fSelfPct, "%"],
+      ["r3f.inclusive", card.main.r3fInclusivePct, "%"],
+      ["gc.per_second", card.main.gcMsPerSecond, "ms"],
+    );
+    if (card.main.allocatedMbPerSecond !== null) rows.push(["alloc.per_second", card.main.allocatedMbPerSecond, "MB"]);
+  }
+  if (card.slow !== null) {
+    rows.push(
+      [`slow${card.slow.rate}x.p50`, card.slow.frame.p50Ms, "ms"],
+      [`slow${card.slow.rate}x.p95`, card.slow.frame.p95Ms, "ms"],
+      [`slow${card.slow.rate}x.over16`, card.slow.frame.over16, "frames"],
+      [`slow${card.slow.rate}x.over33`, card.slow.frame.over33, "frames"],
+    );
+  }
+  if (card.load !== null) {
+    rows.push(
+      ["load.ready", card.load.readyMs, "ms"],
+      ["download.js", Math.round(card.load.jsBytes / 1024), "KB"],
+      ["download.wasm", Math.round(card.load.wasmBytes / 1024), "KB"],
+      ["download.total", Math.round(card.load.totalBytes / 1024), "KB"],
+    );
+  }
+  return rows;
+}
+
+/**
+ * Record a scorecard in Jon's local tally store (`~/Projects/tally`, or `TALLY_CLI`): one row a metric,
+ * the game as the task and the build as the side, so `tally compare dev production group=<group>` is
+ * the before/after table. A machine without tally prints `degraded:` and records nothing.
+ */
+export function recordScorecardInTally(game: string, card: Scorecard, group: string): void {
+  const cli = process.env["TALLY_CLI"] ?? join(homedir(), "Projects", "tally", "src", "cli.mjs");
+  if (!existsSync(cli)) {
+    console.error(`degraded: no tally at ${cli}, so ${game}'s scorecard was not recorded`);
+    return;
+  }
+  for (const [metric, value, unit] of scorecardMetrics(card)) {
+    const run = spawnSync(process.execPath, [cli, "record", "--metric", metric, "--value", String(value), "--unit", unit, "--task", game, "--side", card.build, "--group", group], { encoding: "utf8", windowsHide: true, timeout: 30_000 });
+    if (run.status !== 0) {
+      console.error(`degraded: tally did not record ${game} ${metric}: ${`${run.stderr ?? ""}`.trim().slice(0, 200)}`);
+      return;
+    }
+  }
 }

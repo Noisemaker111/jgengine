@@ -48,7 +48,7 @@ import { markStep } from "./hangReport";
 import { currentPriority, type PriorityLabel } from "./machine-priority";
 import { provisionCapturedGame } from "./provisionCapture";
 import { ensureProdServer, type PerfBuild, type ProdServer } from "./prodServer";
-import { cpuBusyPct, frameScore, LOAD_RESOURCES_SCRIPT, loadScore, mainScore, productionProblem, profileSources, renderScorecard, scorecardLabel, scoreProfile, SLOW_CPU_RATE, type Scorecard } from "./perf-scorecard";
+import { recordScorecardInTally, cpuBusyPct, frameScore, LOAD_RESOURCES_SCRIPT, loadScore, mainScore, productionProblem, profileSources, renderScorecard, scorecardLabel, scoreProfile, SLOW_CPU_RATE, type Scorecard } from "./perf-scorecard";
 import {
   ACCESSIBILITY_SETTING_IDS,
   COLORBLIND_OPTIONS,
@@ -166,6 +166,8 @@ export interface PerfArgs {
   json: boolean;
   /** `production` (default): the minified, bundled build players get. `--dev`: the Vite dev server. */
   build: PerfBuild;
+  /** `--tally <group>`: also record each game's scorecard in the local tally store under this group. */
+  tally?: string;
   /** `--cpu n`: how many times slower the slow-CPU window's CPU runs (default 4; 1 skips the window). */
   cpuRate: number;
 }
@@ -175,7 +177,7 @@ export type ArgResult = { kind: "run"; args: PerfArgs } | { kind: "help" };
 const USAGE = `usage: bun run perf <game> [<game> ...] [--seconds n] [--path walk|still] [--size WxH] [--compare <ref|before.json>] [--out <file.json>] [--json]
                     [--quality low|medium|high|ultra] [--draft] [--profile] [--telemetry on|off]
                     [--state name] [--param k=v ...] [--set key=value ...] [--capped] [--headed] [--cold]
-                    [--dev] [--cpu n]
+                    [--dev] [--cpu n] [--tally group]
 
 Times the build players get: the runner is built for production (minified, bundled, production React,
 as the web deploy builds it; about a minute, reused until the served files change) and served locally.
@@ -208,6 +210,8 @@ before side is measured once: run \`bun run perf <game>\` before editing, then a
   --cpu             how many times slower the CPU runs in the slow-CPU window that follows the
                     measured one (Chrome's CPU throttling; default ${SLOW_CPU_RATE}, a stand-in for a laptop or
                     phone, since the RTX 3070 PC hides main-thread cost; 1 skips the window)
+  --tally           also record the scorecard in the local tally store under this group name (task: the
+                    game, side: production or dev), for \`tally compare dev production group=<name>\`
   --capped          run on the display's vsync clock instead (frame times become 16.7 ms steps)
   --cold            skip the warm daemon and boot Chrome + Vite directly: fresh caches, larger
                     numbers than a warm run, for an evidence run that must prove a clean start.
@@ -403,6 +407,7 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
   let cold = false;
   let build: PerfBuild = "production";
   let cpuRate = SLOW_CPU_RATE;
+  let tally: string | undefined;
   let state: string | undefined;
   const params: [string, string][] = [];
   const settings: PerfSettingOverride[] = [];
@@ -450,6 +455,13 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
     }
     if (arg === "--dev") {
       build = "dev";
+      continue;
+    }
+    if (arg === "--tally") {
+      const value = argv[index + 1];
+      if (value === undefined || value.startsWith("--")) throw new Error("--tally needs a group name");
+      index += 1;
+      tally = value;
       continue;
     }
     if (arg === "--cpu") {
@@ -523,7 +535,7 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
     if (out !== undefined) throw new Error("--out names one record; a run of several games writes .scratch/perf/<game>.json for each");
     if (state !== undefined || params.length > 0) throw new Error("--state and --param pin one game's scene; run that game on its own");
   }
-  return { kind: "run", args: { games, ...(quality === undefined ? {} : { quality }), draft, profile, seconds, telemetry, settings, frameClock, path, size, json, build, cpuRate, ...(out === undefined ? {} : { out }), ...(compare === undefined ? {} : { compare }), ...(headed ? { headed: true } : {}), ...(cold ? { cold: true } : {}), ...(state === undefined ? {} : { state }), params } };
+  return { kind: "run", args: { games, ...(quality === undefined ? {} : { quality }), draft, profile, seconds, telemetry, settings, frameClock, path, size, json, build, cpuRate, ...(tally === undefined ? {} : { tally }), ...(out === undefined ? {} : { out }), ...(compare === undefined ? {} : { compare }), ...(headed ? { headed: true } : {}), ...(cold ? { cold: true } : {}), ...(state === undefined ? {} : { state }), params } };
 }
 
 
@@ -1631,6 +1643,7 @@ async function main(): Promise<void> {
       if (commit !== null && servedSource.status === "matched" && logProblem === null && cacheable) saveBaseline(baselinePath(repoRoot, game, commit, conditions), measured.record);
       if (json) console.log(JSON.stringify(measured.record, null, 2));
       else console.log(perfSummaryText(measured.record, baselines.get(game) ?? null));
+      if (measured.record.scorecard !== undefined && parsed.args.tally !== undefined) recordScorecardInTally(game, measured.record.scorecard, parsed.args.tally);
       if (measured.record.scorecard !== undefined) cards.push({ label: `${game} (${scorecardLabel(measured.record.scorecard)})`, card: measured.record.scorecard });
       console.error(`perf: record written to ${outPath}${commit === null || servedSource.status !== "matched" || logProblem !== null || !cacheable ? "" : ` (kept as the ${commit} baseline)`}`);
       if (profile && measured.profile !== null) {
