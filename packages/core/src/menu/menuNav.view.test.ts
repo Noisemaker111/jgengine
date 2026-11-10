@@ -6,7 +6,7 @@ import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/b
 
 setDefaultTimeout(30_000);
 
-const scratch = resolve(import.meta.dir, "../../../../.scratch/menu-nav-test");
+const scratch = resolve(import.meta.dir, `../../../../.scratch/menu-nav-test-${crypto.randomUUID()}`);
 let browser: Browser;
 let page: Page;
 let server: ReturnType<typeof Bun.serve>;
@@ -24,6 +24,7 @@ beforeAll(async () => {
     import { GameMenu } from '../../packages/core/src/menu/gameMenu.view';
 
     const pad = { buttons: new Set(), axes: [0, 0] };
+    window.addEventListener('fixture-release', () => pad.buttons.clear());
     Object.defineProperty(navigator, 'getGamepads', {
       configurable: true,
       value: () => [{
@@ -182,8 +183,11 @@ describe("menu keyboard navigation", () => {
 describe("menu gamepad navigation", () => {
   test("d-pad moves focus and A confirms", async () => {
     await page.evaluate(() => (window as any).fixture.press([13]));
-    await page.waitForFunction(() => document.activeElement?.getAttribute("data-jg-menu-item") === "new");
-    await page.evaluate(() => (window as any).fixture.press([]));
+    await page.waitForFunction(() => {
+      if (document.activeElement?.getAttribute("data-jg-menu-item") !== "new") return false;
+      window.dispatchEvent(new Event("fixture-release"));
+      return true;
+    });
     await frames(3);
     await page.evaluate(() => (window as any).fixture.press([0]));
     await page.waitForFunction(() => document.getElementById("picked")?.textContent === "new");
@@ -209,7 +213,12 @@ describe("menu gamepad navigation", () => {
     await page.evaluate(() => (window as any).fixture.press([13]));
     await page.waitForFunction(() => document.activeElement?.getAttribute("data-jg-menu-item") === "new");
     await page.waitForFunction(
-      () => document.activeElement?.getAttribute("data-jg-menu-item") === "settings",
+      () => {
+        if (document.activeElement?.getAttribute("data-jg-menu-item") !== "settings") return false;
+        // Release in the observing browser task so a delayed host cannot permit another repeat.
+        window.dispatchEvent(new Event("fixture-release"));
+        return true;
+      },
       undefined,
       { timeout: 3000 },
     );

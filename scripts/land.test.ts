@@ -684,6 +684,7 @@ if (${options.crash === true}) process.exit(9);
 await Bun.sleep(${options.holdMs});
 const releaseOn = ${JSON.stringify(options.releaseOn ?? null)};
 while (releaseOn !== null && !existsSync(releaseOn)) await Bun.sleep(20);
+at("RELEASING");
 release();
 at("RELEASED");
 `;
@@ -749,14 +750,15 @@ test("a landing started while another holds the lock waits for it, then holds it
 
   const labels = (events: string[]) => events.map((line) => line.split(" ")[0]);
   const heldAt = (events: string[]) => Number(events.find((line) => line.startsWith("HELD"))!.split(" ")[1]);
-  const releasedAt = (events: string[]) => Number(events.find((line) => line.startsWith("RELEASED"))!.split(" ")[1]);
+  const releasingAt = (events: string[]) => Number(events.find((line) => line.startsWith("RELEASING"))!.split(" ")[1]);
 
-  expect(labels(first.events())).toEqual(["HELD", "RELEASED"]);
-  expect(labels(second.events())).toEqual(["LOG", "LOG", "HELD", "RELEASED"]);
+  expect(labels(first.events())).toEqual(["HELD", "RELEASING", "RELEASED"]);
+  expect(labels(second.events())).toEqual(["LOG", "LOG", "HELD", "RELEASING", "RELEASED"]);
   expect(second.events()[0]).toContain("waiting on agent/one");
   expect(second.events()[1]).toContain("waited ");
   expect(second.events()[1]).toContain("for the lock (held by agent/one)");
-  expect(heldAt(second.events())).toBeGreaterThanOrEqual(releasedAt(first.events()));
+  // After unlink, the next process may run before the first records RELEASED.
+  expect(heldAt(second.events())).toBeGreaterThanOrEqual(releasingAt(first.events()));
 });
 
 test("a landing killed while holding the lock does not wedge the next one", async () => {
