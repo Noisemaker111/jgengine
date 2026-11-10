@@ -54,8 +54,8 @@ export function frameScore(deltas: readonly number[]): FrameScore {
 }
 
 /** Whose code a profile frame is. `browser` is everything with no script: natives, GC, the compositor. */
-export type CodeOwner = "react" | "r3f" | "drei" | "three" | "engine" | "game" | "library" | "browser";
-export const CODE_OWNERS: readonly CodeOwner[] = ["react", "r3f", "drei", "three", "engine", "game", "library", "browser"];
+export type CodeOwner = "react" | "ui" | "r3f" | "drei" | "three" | "engine" | "game" | "library" | "browser";
+export const CODE_OWNERS: readonly CodeOwner[] = ["react", "ui", "r3f", "drei", "three", "engine", "game", "library", "browser"];
 
 /**
  * Whose code a source path is. react-three-fiber bundles its own reconciler, so `react-reconciler`,
@@ -63,6 +63,7 @@ export const CODE_OWNERS: readonly CodeOwner[] = ["react", "r3f", "drei", "three
  */
 export function codeOwner(source: string): CodeOwner {
   const path = source.replaceAll("\\", "/");
+  if (/(?:^|\/)packages\/(?:ui\/|core\/src\/ui\/(?:jsx\/|rune\/|runeUi\.))/.test(path) || /(?:^|\/)(?:jg-ui\/|jg_ui(?:_bg)?\.(?:js|wasm))/.test(path)) return "ui";
   // Vite's dev server pre-bundles a dependency into one file named for it, when no source map says more.
   const dep = /\/\.vite\/deps\/([^/?]+?)\.js/.exec(path)?.[1];
   if (dep !== undefined) {
@@ -76,6 +77,7 @@ export function codeOwner(source: string): CodeOwner {
   if (modules >= 0) {
     const rest = path.slice(modules + "/node_modules/".length);
     const name = rest.startsWith("@") ? rest.split("/").slice(0, 2).join("/") : rest.split("/")[0] ?? "";
+    if (name === "@jgengine/ui" || /^@jgengine\/core\/(?:dist\/|src\/)?ui\/(?:jsx\/|rune\/|runeUi\.)/.test(rest)) return "ui";
     if (name === "react" || name === "react-dom" || name === "scheduler") return "react";
     if (name === "@react-three/fiber" || name === "react-reconciler" || name === "its-fine" || name === "suspend-react") return "r3f";
     if (name === "@react-three/drei") return "drei";
@@ -167,6 +169,8 @@ export interface ProfileScore {
   selfMs: Record<CodeOwner, number>;
   /** Time with a React frame anywhere on the stack: React's own work and every component it renders. */
   reactInclusiveMs: number;
+  /** Engine UI runtime, Rune bridge and wasm, including component callbacks underneath them. */
+  uiInclusiveMs: number;
   /**
    * Time with a react-three-fiber frame anywhere on the stack. r3f owns the frame loop, so the whole
    * render (three, the engine's per-frame work) runs under it: this is what r3f drives, not what it costs.
@@ -189,27 +193,28 @@ export function scoreProfile(
   const byId = new Map<number, ScoredNode>(profile.nodes.map((node) => [node.id, node]));
   const parent = new Map<number, number>();
   for (const node of profile.nodes) for (const child of node.children ?? []) parent.set(child, node.id);
-  const info = new Map<number, { owner: CodeOwner; dev: boolean; underReact: boolean; underR3f: boolean }>();
-  const resolveNode = (id: number): { owner: CodeOwner; dev: boolean; underReact: boolean; underR3f: boolean } => {
+  const info = new Map<number, { owner: CodeOwner; dev: boolean; underReact: boolean; underUi: boolean; underR3f: boolean }>();
+  const resolveNode = (id: number): { owner: CodeOwner; dev: boolean; underReact: boolean; underUi: boolean; underR3f: boolean } => {
     const known = info.get(id);
     if (known !== undefined) return known;
     const node = byId.get(id);
     const up = parent.get(id);
-    const above = up === undefined ? { underReact: false, underR3f: false } : resolveNode(up);
+    const above = up === undefined ? { underReact: false, underUi: false, underR3f: false } : resolveNode(up);
     const frame = node?.callFrame;
     const url = frame?.url ?? "";
     const source = url === "" || frame === undefined ? "" : sourceOf(url, frame.lineNumber, frame.columnNumber) ?? url.replace(/^https?:\/\/[^/]+/, "").replace(/\?.*$/, "");
     const owner = url === "" ? "browser" : codeOwner(source);
-    const dev = /jsx-dev-runtime|\.development\.js|react-refresh/.test(source) || /^jsxDEV/.test(frame?.functionName ?? "");
-    const resolved = { owner, dev, underReact: above.underReact || owner === "react", underR3f: above.underR3f || owner === "r3f" };
+    const dev = owner === "react" && (/jsx-dev-runtime|\.development\.js|react-refresh/.test(source) || /^jsxDEV/.test(frame?.functionName ?? ""));
+    const resolved = { owner, dev, underReact: above.underReact || owner === "react", underUi: above.underUi || owner === "ui", underR3f: above.underR3f || owner === "r3f" };
     info.set(id, resolved);
     return resolved;
   };
-  const selfUs: Record<CodeOwner, number> = { react: 0, r3f: 0, drei: 0, three: 0, engine: 0, game: 0, library: 0, browser: 0 };
+  const selfUs: Record<CodeOwner, number> = { react: 0, ui: 0, r3f: 0, drei: 0, three: 0, engine: 0, game: 0, library: 0, browser: 0 };
   let totalUs = 0;
   let idleUs = 0;
   let gcUs = 0;
   let reactUs = 0;
+  let uiUs = 0;
   let r3fUs = 0;
   let devUs = 0;
   profile.samples.forEach((id, index) => {
@@ -221,6 +226,7 @@ export function scoreProfile(
     const node = resolveNode(id);
     selfUs[node.owner] += us;
     if (node.underReact) reactUs += us;
+    if (node.underUi) uiUs += us;
     if (node.underR3f) r3fUs += us;
     if (node.dev) devUs += us;
   });
@@ -230,6 +236,7 @@ export function scoreProfile(
     busyMs: ms(totalUs - idleUs),
     selfMs: Object.fromEntries(CODE_OWNERS.map((owner) => [owner, ms(selfUs[owner])])) as Record<CodeOwner, number>,
     reactInclusiveMs: ms(reactUs),
+    uiInclusiveMs: ms(uiUs),
     r3fInclusiveMs: ms(r3fUs),
     gcMs: ms(gcUs),
     devReactMs: ms(devUs),
@@ -358,6 +365,10 @@ export interface Scorecard {
     frames: number;
     reactSelfPct: number;
     reactInclusivePct: number;
+    uiSelfPct: number;
+    uiInclusivePct: number;
+    uiSelfMsPerFrame: number;
+    uiInclusiveMsPerFrame: number;
     r3fSelfPct: number;
     r3fInclusivePct: number;
     reactSelfMsPerFrame: number;
@@ -383,6 +394,10 @@ export function mainScore(profile: ProfileScore, frames: number, seconds: number
     frames,
     reactSelfPct: pct(profile.selfMs.react),
     reactInclusivePct: pct(profile.reactInclusiveMs),
+    uiSelfPct: pct(profile.selfMs.ui),
+    uiInclusivePct: pct(profile.uiInclusiveMs),
+    uiSelfMsPerFrame: perFrame(profile.selfMs.ui),
+    uiInclusiveMsPerFrame: perFrame(profile.uiInclusiveMs),
     r3fSelfPct: pct(profile.selfMs.r3f),
     r3fInclusivePct: pct(profile.r3fInclusiveMs),
     reactSelfMsPerFrame: perFrame(profile.selfMs.react),
@@ -432,6 +447,8 @@ export function scorecardRows(columns: readonly ScorecardColumn[]): string[][] {
     row("main thread ms/frame", main((value) => value.msPerFrame.toFixed(2))),
     row("React self", main((value) => `${value.reactSelfPct.toFixed(1)}% (${value.reactSelfMsPerFrame.toFixed(3)} ms)`)),
     row("React inclusive", main((value) => `${value.reactInclusivePct.toFixed(1)}%`)),
+    row("engine UI self", main((value) => `${value.uiSelfPct.toFixed(1)}% (${value.uiSelfMsPerFrame.toFixed(3)} ms)`)),
+    row("engine UI inclusive", main((value) => `${value.uiInclusivePct.toFixed(1)}% (${value.uiInclusiveMsPerFrame.toFixed(3)} ms)`)),
     row("r3f self", main((value) => `${value.r3fSelfPct.toFixed(1)}% (${value.r3fSelfMsPerFrame.toFixed(3)} ms)`)),
     row("r3f inclusive", main((value) => `${value.r3fInclusivePct.toFixed(1)}%`)),
     row("three / engine / game / browser", main((value) => `${value.selfPct.three.toFixed(0)}% / ${value.selfPct.engine.toFixed(0)}% / ${value.selfPct.game.toFixed(0)}% / ${value.selfPct.browser.toFixed(0)}%`)),
@@ -482,6 +499,10 @@ export function scorecardMetrics(card: Scorecard): Array<[string, number, string
       ["main.per_frame", card.main.msPerFrame, "ms"],
       ["react.self", card.main.reactSelfPct, "%"],
       ["react.inclusive", card.main.reactInclusivePct, "%"],
+      ["ui.self", card.main.uiSelfPct, "%"],
+      ["ui.inclusive", card.main.uiInclusivePct, "%"],
+      ["ui.self_per_frame", card.main.uiSelfMsPerFrame, "ms"],
+      ["ui.inclusive_per_frame", card.main.uiInclusiveMsPerFrame, "ms"],
       ["r3f.self", card.main.r3fSelfPct, "%"],
       ["r3f.inclusive", card.main.r3fInclusivePct, "%"],
       ["gc.per_second", card.main.gcMsPerSecond, "ms"],

@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { abVerdict, affectedGames, awayFromHome, BASE_TREE_KEEP_MS, baseTreeName, expiredBaseTrees, homeRequest, medianMs, pairLogRatio, parseAbArgs, percentileMs, plantScript, renderAbScorecards, renderAbTable, rendererCpuPct, routeSpread, t99, type AbGameResult } from "./perf-ab";
+import { abPageUrl, abVerdict, affectedGames, awayFromHome, BASE_TREE_KEEP_MS, baseTreeName, expiredBaseTrees, homeRequest, medianMs, pairLogRatio, parseAbArgs, percentileMs, plantScript, renderAbScorecards, renderAbTable, rendererCpuPct, routeSpread, t99, type AbGameResult } from "./perf-ab";
 import { frameScore, type Scorecard } from "./perf-scorecard";
 import { treeFingerprint } from "./servedTree";
 
@@ -199,6 +199,20 @@ test("perf ab times the dev servers unless --production asks for the build playe
   const production = parseAbArgs(["--production", "--games", "deepward"]);
   expect(defaults === "help" ? null : defaults.build).toBe("dev");
   expect(production === "help" ? null : production.build).toBe("production");
+});
+
+test("renderer parameters reach only their measured side and preserve values containing equals", () => {
+  const args = parseAbArgs(["--production", "--branch-param", "ui=rune", "--branch-param", "seed=a=b", "--base-param", "ui=dom"]);
+  if (args === "help") throw new Error("parsed as help");
+  const base = abPageUrl("http://localhost:4000", "deepward", "base", args);
+  const branch = abPageUrl("http://localhost:4001", "deepward", "branch", args);
+  expect(base.searchParams.get("ui")).toBe("dom");
+  expect(base.searchParams.has("seed")).toBe(false);
+  expect(branch.searchParams.get("ui")).toBe("rune");
+  expect(branch.searchParams.get("seed")).toBe("a=b");
+  expect(branch.searchParams.get("game")).toBe("deepward");
+  expect(() => parseAbArgs(["--branch-param", "ui"])).toThrow("key=value");
+  expect(() => parseAbArgs(["--base-param", " =dom"])).toThrow("key=value");
 });
 
 test("the table says the verdict, change and interval per game", () => {

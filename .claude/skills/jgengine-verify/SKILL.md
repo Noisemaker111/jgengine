@@ -44,6 +44,11 @@ Steps, headless runners, flows, `simulate`, `shoot` modes and load guards: [refe
 
 ## Screenshots
 
+Compare the UI renderer with `bun run perf ab --production --games deepward,harbor-heat --branch-param ui=rune`.
+Only the branch receives `ui=rune`; the base keeps its existing UI. Repeated
+`--base-param key=value` / `--branch-param key=value` flags pin either side's
+query parameters, which are included in the JSON and printed report.
+
 A PR that touches a rendered surface embeds the inspected shots. Any change to a map, world or scene document counts as rendered.
 
 - Standalone game: `bun run shoot` (`--device desktop|mobile|mobile-landscape`). Shots needing play first use `drive --shot`.
