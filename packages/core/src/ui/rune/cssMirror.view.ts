@@ -142,6 +142,7 @@ function hasBoxPaint(style: CSSStyleDeclaration): boolean {
   const background = parseColor(style.backgroundColor);
   if (background !== null && colorAlpha(background) > 0) return true;
   // Space around an unpainted inline element is dropped rather than breaking the line of text it sits in.
+  if (style.outlineStyle !== "none" && parsePx(style.outlineWidth) > 0) return true;
   return parsePx(style.borderTopWidth) + parsePx(style.borderBottomWidth) + parsePx(style.borderLeftWidth) + parsePx(style.borderRightWidth) > 0;
 }
 
@@ -608,6 +609,14 @@ function boxOfStyle(element: Element, style: CSSStyleDeclaration, report: Mirror
   if (radii.some((radius) => radius !== 0)) box["rad"] = radii;
   const shadows = parseShadows(style.boxShadow);
   if (shadows.length > 0) box["sh"] = shadows;
+  if (style.outlineStyle !== "none" && style.outlineStyle !== "") {
+    const width = parsePx(style.outlineWidth);
+    const color = parseColor(style.outlineColor);
+    if (width > 0 && color !== null && colorAlpha(color) > 0) {
+      box["ol"] = [width, parsePx(style.outlineOffset), style.outlineStyle === "dotted" ? 1 : style.outlineStyle === "dashed" ? 2 : 0];
+      box["olc"] = color;
+    }
+  }
   const opacity = parseFloat(style.opacity);
   if (opacity < 1) box["op"] = opacity;
   if (style.visibility === "hidden" || style.visibility === "collapse") box["op"] = 0;

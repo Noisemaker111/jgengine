@@ -340,6 +340,11 @@ pub struct Box_ {
     /// Border dashes: 1 dotted, 2 dashed.
     #[serde(default)]
     pub dash: u8,
+    /// An outline: `[width, offset, dashes]` (dashes as `dash`), in `olc`.
+    #[serde(default)]
+    pub ol: Option<[f32; 3]>,
+    #[serde(default)]
+    pub olc: Option<Rgba>,
     /// Backdrop blur radius in points.
     #[serde(default)]
     pub bblur: f32,
@@ -1031,6 +1036,21 @@ pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
                 let unit = w.iter().fold(0.0, |a: f32, v| a.max(*v));
                 e = if b.dash == 1 { e.border_dash(unit, unit) } else { e.border_dash(unit * 3.0, unit * 2.0) };
             }
+        }
+    }
+    if let (Some([width, offset, dashes]), Some(c)) = (b.ol, b.olc) {
+        if dashes == 0.0 {
+            e = e.outline(width, offset, c.0);
+        } else {
+            // A dashed ring: a sheet that far outside (or inside) the box, with a dashed border.
+            let out = -(offset + width);
+            let grown = radii.map(|r| r.map(|v| (v + offset + width).max(0.0)));
+            let ring = el().pin(Some(out), Some(out), Some(out), Some(out)).border_sides([width; 4], c.0);
+            let ring = if dashes == 1.0 { ring.border_dash(width, width) } else { ring.border_dash(width * 3.0, width * 2.0) };
+            e = e.child(match grown {
+                Some(r) => ring.corners(r).inert(),
+                None => ring.inert(),
+            });
         }
     }
     if b.bblur > 0.0 {
