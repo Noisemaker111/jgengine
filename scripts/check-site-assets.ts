@@ -21,6 +21,7 @@ const USAGE = {
   example: "bun scripts/check-site-assets.ts --bundles apps/web/dist/client/play",
   flags: [
     { flag: "--bundles", detail: "check download sizes instead of assets: engineKb in apps/dev/bundle-budget.json, bundleKb in each game's perf-budget.json" },
+    { flag: "--before-upload", detail: "on failure, also say that a deploy must go through `bun run deploy:site` (the built site's wrangler.json runs the check this way before every upload)" },
     { flag: "<built play dir>", detail: "the runner build to check (default apps/web/dist/client/play)" },
   ],
 };
@@ -183,10 +184,18 @@ if (import.meta.main) {
   if (printHelpIfAsked("check-site-assets", USAGE)) process.exit(0);
   const args = process.argv.slice(2);
   const bundlesMode = args.includes("--bundles");
+  // Wrangler runs this with `--before-upload` before every upload of the built site, so a bare
+  // `wrangler deploy` is refused too; the refusal names the one command that deploys correctly.
+  const refuse = (): never => {
+    if (args.includes("--before-upload")) {
+      console.error("wrangler deploy REFUSED: this build cannot go live as it is. Deploy jgengine.com with `bun run deploy:site` from the repository root: it provisions the game assets, builds, checks and uploads.");
+    }
+    process.exit(1);
+  };
   const playDir = args.find((arg) => !arg.startsWith("--")) ?? join(repoRoot, "apps", "web", "dist", "client", "play");
   if (!existsSync(join(playDir, "index.html"))) {
     console.error(`check-site-assets FAILED: no runner build at ${playDir}; build the site first (bun --cwd=apps/web run build)`);
-    process.exit(1);
+    refuse();
   }
   if (bundlesMode) {
     const bundle = bundleBudgetReport(runnerBundles(playDir), loadEngineBudgetKb(repoRoot), (game) => {
@@ -220,5 +229,5 @@ if (import.meta.main) {
     if (missing.length > 8) console.error(`  +${missing.length - 8} more`);
   }
   console.error(`check-site-assets FAILED: ${total} assets across ${failures.size} games are not in the build; run bun run games:provision, then rebuild`);
-  process.exit(1);
+  refuse();
 }
