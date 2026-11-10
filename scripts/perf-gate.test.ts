@@ -217,7 +217,8 @@ describe("loadBudget", () => {
 
 describe("parseGateArgs", () => {
   test("defaults to every playable game at high quality, one at a time so no two share the GPU", () => {
-    expect(parseGateArgs([])).toEqual({ games: [...FRAME_GAMES], quality: "high", draft: false, seconds: 6, jobs: 1 });
+    expect(parseGateArgs([])).toEqual({ games: [...FRAME_GAMES], quality: "high", draft: false, seconds: 6, jobs: 1, build: "dev" });
+    expect(parseGateArgs(["--production"]).build).toBe("production");
     expect(parseGateArgs([]).games).toContain("fernwild");
   });
 

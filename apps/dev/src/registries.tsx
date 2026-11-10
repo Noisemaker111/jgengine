@@ -137,8 +137,12 @@ const gameSourceModules = (hasViteGlob ? import.meta.glob<Record<string, unknown
   "../../../games/*/src/**/*.{ts,tsx}",
   // llmville is its own TanStack app with its own `@/` aliases, not a runner game.
   "!../../../games/llmville/**",
-  "!**/main.tsx",
-  "!**/*.test.*",
+  // Each exclusion spells out the same root as the pattern it trims. A bare `!**/main.tsx` held in the
+  // dev server but not in a production build, which then bundled every game's tests and its standalone
+  // `main.tsx`: opening a game ran its tests in the page and mounted a second React root on `#root`
+  // that cleared the first one's nodes (`removeChild ... not a child of this node`).
+  "!../../../games/*/src/**/main.tsx",
+  "!../../../games/*/src/**/*.test.*",
 ]) : {});
 
 export async function loadGameStyle(gameId: string): Promise<void> {

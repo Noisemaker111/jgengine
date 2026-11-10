@@ -13,6 +13,11 @@ if (!pr || !/^\d+$/.test(pr)) {
   console.log("usage: tally-pr.ts <pr-number>");
   process.exit(0);
 }
+// A land that must not run or wait on a timed step (a busy PC, a game open) sets TALLY_PR=off.
+if (process.env["TALLY_PR"] === "off") {
+  console.log("degraded: TALLY_PR=off; benchmark skipped");
+  process.exit(0);
+}
 const cli = process.env["TALLY_CLI"] || join(homedir(), "Projects", "tally", "src", "cli.mjs");
 if (!existsSync(cli)) {
   console.log("degraded: tally cli not found (set TALLY_CLI to tally's src/cli.mjs); benchmark skipped");

@@ -25,6 +25,9 @@ export interface PerfConditions {
   state: string | undefined;
   params: readonly (readonly [string, string])[];
   settings: readonly { id: string; value: unknown }[];
+  /** The build measured (`production` or `dev`) and the CPU slowdown: neither compares with the other. */
+  build: string;
+  cpuRate: number;
 }
 
 /** A short stable name for a set of run conditions. */
@@ -41,6 +44,8 @@ export function conditionsKey(conditions: PerfConditions): string {
     conditions.state ?? null,
     conditions.params,
     conditions.settings.map((setting) => [setting.id, setting.value]),
+    conditions.build,
+    conditions.cpuRate,
   ]);
   return createHash("sha1").update(canonical).digest("hex").slice(0, 10);
 }
