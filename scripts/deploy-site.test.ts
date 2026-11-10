@@ -156,6 +156,23 @@ test("the site's checked build is what the deploy uploads, and the release check
   expect(bump).toBeGreaterThan(check);
 });
 
+test("a bare wrangler deploy runs the asset check: the generated wrangler.json gets the command, and a failing check names deploy:site", () => {
+  // wrangler ignores `build` in wrangler.jsonc once the Vite build has made dist/server/wrangler.json, so the
+  // vite plugin must put the command there. Without it, a bare `wrangler deploy` put the site live with no models (#3114).
+  const vite = readFileSync(join(import.meta.dir, "..", "apps", "web", "vite.config.ts"), "utf8");
+  expect(vite).toContain('config["build"] = { command: "bun scripts/check-site-assets.ts --before-upload", cwd: repoRoot }');
+  expect(vite).toMatch(/plugins: \[[\s\S]*checkAssetsBeforeUploadPlugin\(\)/);
+
+  const empty = mkdtempSync(join(scratch, "no-runner-"));
+  try {
+    const run = spawnSync("bun", [join(import.meta.dir, "check-site-assets.ts"), "--before-upload", empty], { encoding: "utf8" });
+    expect(run.status).toBe(1);
+    expect(run.stderr).toContain("bun run deploy:site");
+  } finally {
+    rmSync(empty, { recursive: true, force: true });
+  }
+});
+
 test("a failed build stops at that step, names it, and still removes its worktree", () => {
   const repo = releaseRepo();
   try {

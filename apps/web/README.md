@@ -43,4 +43,6 @@ The build emits the TanStack Start Worker and static assets under `dist/`. Wrang
 
 Between the build and the upload, `scripts/check-site-assets.ts` checks every file and pack each game names is in the built runner; one missing file stops the deploy (and so the release).
 
+The same check is written into the built `dist/server/wrangler.json` as wrangler's `build.command`, so even a bare `wrangler deploy` in `apps/web` runs it and refuses to upload a build with missing models, LUTs or HDRIs; the refusal says to use `bun run deploy:site`.
+
 Before changing `jgengine.com`, verify `/`, `/capabilities`, `/games`, and `/play` on the `workers.dev` preview.

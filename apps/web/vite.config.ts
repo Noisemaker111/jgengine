@@ -144,7 +144,27 @@ const gamesPlayerPlugin = (): Plugin => ({
   },
 });
 
-const isPlayerPath = (url: string | undefined): url is string =>
+/**
+ * Makes wrangler run the site's asset check before every upload. A built site deploys through the
+ * generated `dist/server/wrangler.json` (reached from `.wrangler/deploy/config.json`), which ignores
+ * `build` in `wrangler.jsonc`, so the command goes into the generated file. A bare `wrangler deploy`
+ * therefore refuses a build whose models, LUTs or HDRIs are missing, as `bun run deploy:site` does.
+ * (2026-11-10: a bare deploy put jgengine.com live with every game model returning 404; issue #3114.)
+ */
+const checkAssetsBeforeUploadPlugin = (): Plugin => ({
+  name: "jgengine-check-assets-before-upload",
+  apply: "build",
+  enforce: "post",
+  generateBundle(_, bundle) {
+    const emitted = bundle["wrangler.json"];
+    if (emitted === undefined || emitted.type !== "asset" || typeof emitted.source !== "string") return;
+    const config = JSON.parse(emitted.source) as Record<string, unknown>;
+    config["build"] = { command: "bun scripts/check-site-assets.ts --before-upload", cwd: repoRoot };
+    emitted.source = JSON.stringify(config);
+  },
+});
+
+const isPlayerPath =(url: string | undefined): url is string =>
   url !== undefined && (url === "/play" || url.startsWith("/play/") || url.startsWith("/play?"));
 
 const playerStatusPage = (title: string, body: string, refresh: boolean) => `<!doctype html>
@@ -283,6 +303,7 @@ export default defineConfig({
   },
   plugins: [
     cloudflare({ viteEnvironment: { name: "ssr" } }),
+    checkAssetsBeforeUploadPlugin(),
     tailwindcss(),
     // Dev only: publish this server (so `bun run perf live <game>` finds it) and accept the
     // in-page perf report a game pushes from the /play runner it serves.
