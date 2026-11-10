@@ -13,11 +13,13 @@ use crate::{Ui, color, set_val, val};
 /// The root element: a full-viewport box the spec's top-level nodes position
 /// inside (absolute, pinned or flowed).
 pub fn view(s: &Ui, cx: &mut rune::Cx<Ui>) -> El {
+    widgets::begin_images();
     let t = tok::theme(cx.system_dark());
     let mut e = el().w_full().h_full().key("root");
     for (i, n) in s.root.iter().enumerate() {
         e = e.child(build(n, &i.to_string(), s, &t));
     }
+    widgets::finish_images();
     e
 }
 

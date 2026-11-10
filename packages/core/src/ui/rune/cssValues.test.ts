@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { parseGradient } from "./cssValues";
+import { parseDim, parseGradient, parseRoundCutout, percentCap, placeLayer } from "./cssValues";
 
 test("Tailwind's computed Oklab gradient keeps its direction, stops and alpha", () => {
   const gradient = parseGradient("linear-gradient(in oklab, rgb(43, 74, 68) 0%, rgb(29, 53, 49) 50%, rgb(12, 22, 20) 100%)");
@@ -21,4 +21,31 @@ test("gradient hard stops remain ordered and unsupported colour spaces report a 
   if (gradient === null || "flat" in gradient) throw new Error("expected a gradient");
   expect(gradient.st).toEqual([[0.5, 0xff0000ff], [0.5, 0x0000ffff]]);
   expect(parseGradient("linear-gradient(in unsupported, rgb(0, 0, 0), rgb(255, 255, 255))")).toBeNull();
+});
+
+test("sized radial masks put independent ticket notches on both edges", () => {
+  expect(parseRoundCutout("radial-gradient(8px at 0px 50%, rgba(0, 0, 0, 0) 97%, rgb(0, 0, 0) 100%)", "51% 100%", "0% 50%")).toEqual([0, 0, 0, 0.5, 7.76, 8]);
+  expect(parseRoundCutout("radial-gradient(circle 8px at 100% 50%, rgba(0, 0, 0, 0) 97%, rgb(0, 0, 0) 100%)", "51% 100%", "100% 50%")).toEqual([0, 1, 0, 0.5, 7.76, 8]);
+  expect(parseRoundCutout("radial-gradient(circle, rgb(0, 0, 0), transparent)", "auto", "0% 0%")).toBeNull();
+});
+
+test("paper dots and grid lines preserve point stops and their repeating tile", () => {
+  for (const value of ["radial-gradient(rgba(255, 255, 255, 0.35) 0.7px, rgba(0, 0, 0, 0) 0px)", "linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, rgba(0, 0, 0, 0) 0px)"]) {
+    const gradient = parseGradient(value);
+    if (gradient === null || "flat" in gradient) throw new Error("expected a gradient");
+    expect(gradient.ps).toBe(true);
+    const tiled = placeLayer(gradient, "8px 8px", "0% 0%", "repeat");
+    expect(tiled).toHaveProperty("bs", [8, 0, 8, 0]);
+    expect(tiled).toHaveProperty("rp", [true, true]);
+    expect(tiled).not.toHaveProperty("flat");
+    expect(gradient.st[0]?.[0]).toBe(gradient.st[1]?.[0]);
+  }
+});
+
+test("capped percentages keep normal intrinsic sizing when the parent has no definite width", () => {
+  expect(percentCap(parseDim("min(360px, 100%)"))).toEqual({ size: "100%", max: 360 });
+  const other = percentCap(parseDim("min(55%, 580px)"));
+  expect(other?.max).toBe(580);
+  expect(parseFloat(other?.size ?? "")).toBeCloseTo(55);
+  expect(percentCap(parseDim("min(360px, calc(100% - 20px))"))).toBeNull();
 });

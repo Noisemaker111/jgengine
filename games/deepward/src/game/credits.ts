@@ -23,7 +23,7 @@ export const DEEPWARD_CREDITS = mergeCredits({
       heading: "Technology",
       entries: [
         { label: "JGengine", detail: "Apache-2.0", href: "https://jgengine.com" },
-        { label: "React", detail: "MIT" },
+        { label: "Rune", detail: "MIT" },
         { label: "Three.js", detail: "MIT" },
       ],
     },

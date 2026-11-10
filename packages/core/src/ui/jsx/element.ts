@@ -82,6 +82,9 @@ export interface ContextType<T> {
 }
 
 export function createElementRecord(type: AnyType, props: Props, key: unknown): UiElement {
+  if (typeof type === "string" && /^(?:group|mesh|primitive|object3D|scene|instancedMesh|lineSegments|points|sprite|[a-z][a-zA-Z]*(?:Geometry|Material|Light|Camera))$/.test(type)) {
+    throw new Error(`UI cannot render the 3D tag <${type}>; useEngineDraw owns 3D objects. EntityPreview takes model and camera props for portraits.`);
+  }
   return { $$typeof: ELEMENT, type, props, key: key === undefined || key === null ? null : String(key) };
 }
 

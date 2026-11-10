@@ -181,6 +181,7 @@ thread_local! {
     static IMAGES: RefCell<Option<rune::ImageCache>> = const { RefCell::new(None) };
     /// Handles kept so a decoded image stays decoded while a tree that shows it is mounted.
     static HELD: RefCell<HashMap<String, rune::Image>> = RefCell::new(HashMap::new());
+    static USED: RefCell<std::collections::HashSet<String>> = RefCell::new(std::collections::HashSet::new());
 }
 
 fn with_images<T>(f: impl FnOnce(&rune::ImageCache) -> T) -> T {
@@ -201,6 +202,7 @@ fn bucket(points: f32) -> f32 {
 pub fn image_by_url(url: &str, points: f32) -> rune::Image {
     let size = bucket(points);
     let key = format!("u{size}|{url}");
+    USED.with(|used| { used.borrow_mut().insert(key.clone()); });
     HELD.with(|held| held.borrow_mut().entry(key).or_insert_with(|| with_images(|cache| cache.url(url, size, 2.0))).clone())
 }
 
@@ -208,15 +210,14 @@ pub fn image_by_url(url: &str, points: f32) -> rune::Image {
 pub fn image_of_svg(svg: &str, points: f32) -> rune::Image {
     let size = bucket(points);
     let key = format!("s{size}|{svg}");
+    USED.with(|used| { used.borrow_mut().insert(key.clone()); });
     HELD.with(|held| held.borrow_mut().entry(key).or_insert_with(|| with_images(|cache| cache.svg(svg.as_bytes().to_vec(), size, 2.0))).clone())
 }
 
-/// Forget every held image (a new tree was mounted; what it shows is requested again).
-pub fn release_images() {
-    HELD.with(|held| {
-        let mut held = held.borrow_mut();
-        if held.len() > 512 {
-            held.clear();
-        }
-    });
+pub fn begin_images() {
+    USED.with(|used| used.borrow_mut().clear());
+}
+
+pub fn finish_images() {
+    USED.with(|used| HELD.with(|held| held.borrow_mut().retain(|key, _| used.borrow().contains(key))));
 }

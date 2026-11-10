@@ -11,6 +11,7 @@
 
 import {
   colorAlpha,
+  percentCap,
   parseAlign,
   parseClipPath, parseColor,
   parseDim,
@@ -19,6 +20,7 @@ import {
   parsePlacement,
   parsePx,
   parseRadius,
+  parseRoundCutout,
   parseShadows,
   parseTextShadows,
   parseTracks,
@@ -523,6 +525,16 @@ function boxOfStyle(element: Element, style: CSSStyleDeclaration, report: Mirror
   }
   setDim(box, "w", element, report, "width", style.width);
   setDim(box, "h", element, report, "height", style.height);
+  const widthCap = style.maxWidth === "none" ? percentCap(box["w"]) : null;
+  if (widthCap !== null) {
+    box["w"] = widthCap.size;
+    box["mxw"] = widthCap.max;
+  }
+  const heightCap = style.maxHeight === "none" ? percentCap(box["h"]) : null;
+  if (heightCap !== null) {
+    box["h"] = heightCap.size;
+    box["mxh"] = heightCap.max;
+  }
   // A flex item that is 100% of its container across the flow fills it by stretching: that holds
   // when the container's own size comes from flexing, where a percentage has nothing to resolve against.
   if (!pseudo && (box["h"] === "100%" || box["w"] === "100%") && element.parentElement !== null) {
@@ -656,7 +668,15 @@ function boxOfStyle(element: Element, style: CSSStyleDeclaration, report: Mirror
     // A picture used as a mask over a flat colour is that picture in that colour (a tinted icon).
     const url = /^url\(["']?(.*?)["']?\)$/.exec(mask);
     const svg = url === null || box["bg"] === undefined ? undefined : maskSvg(url[1] ?? "");
-    if (svg === undefined) report.add(`mask-image: ${mask.slice(0, 40)}`, element);
+    if (svg === undefined) {
+      const images = splitTop(mask, ",");
+      const sizes = splitTop(style.maskSize, ",");
+      const positions = splitTop(style.maskPosition, ",");
+      const repeats = splitTop(style.maskRepeat, ",");
+      const holes = images.map((image, index) => repeats[index % repeats.length] === "no-repeat" ? parseRoundCutout(image, sizes[index % sizes.length] ?? "auto", positions[index % positions.length] ?? "0% 0%") : null);
+      if (holes.length > 0 && holes.every((hole): hole is number[] => hole !== null) && style.maskComposite.split(", ").every((mode) => mode === "add")) box["holes"] = holes;
+      else report.add(`mask-image: ${mask.slice(0, 40)}`, element);
+    }
     else {
       if (svg !== null) box["svg"] = tintedSvg(svg, style.backgroundColor, (style as CSSStyleDeclaration & { maskMode?: string }).maskMode === "luminance");
       delete box["bg"];
@@ -770,6 +790,12 @@ function svgMarkup(svg: SVGSVGElement, style: CSSStyleDeclaration): string {
     for (const [attribute, value] of [["stroke-width", shape.strokeWidth], ["opacity", shape.opacity], ["fill-opacity", shape.fillOpacity], ["stroke-opacity", shape.strokeOpacity], ["stroke-linecap", shape.strokeLinecap], ["stroke-linejoin", shape.strokeLinejoin]] as const) {
       if (value !== "" && value !== undefined && value !== "1" && value !== "1px" && value !== "butt" && value !== "miter") target.setAttribute(attribute, value);
     }
+    if (source.localName === "text" || source.localName === "tspan") {
+      for (const attribute of ["font-family", "font-size", "font-weight", "font-style", "letter-spacing", "text-anchor", "dominant-baseline"]) {
+        const value = shape.getPropertyValue(attribute);
+        if (value !== "") target.setAttribute(attribute, value);
+      }
+    }
     target.removeAttribute("class");
     target.removeAttribute("style");
   }
@@ -792,6 +818,30 @@ export function boxOfElement(element: Element): WireBox | undefined {
 
 export function ownerOf(box: WireBox): WireBox | undefined {
   return owners.get(box);
+}
+
+/** Anonymous block boxes around inline runs interrupted by a block-level child. @internal */
+export function groupInlineFlow(children: readonly WireBox[], align: number): WireBox[] {
+  const grouped: WireBox[] = [];
+  let line: WireBox[] = [];
+  const flush = (): void => {
+    if (line.length === 0) return;
+    const row: WireBox = { k: "x", id: 0, fw: 1, ai: 5, row: 1 };
+    if (align !== 0) row["jc"] = align;
+    adopt(row, line);
+    grouped.push(row);
+    line = [];
+  };
+  for (const child of children) {
+    if (child["pos"] === 2) grouped.push(child);
+    else if (child.id === 0 || child["inl"] === 1) line.push(child);
+    else {
+      flush();
+      grouped.push(child);
+    }
+  }
+  flush();
+  return grouped;
 }
 
 /** Record `children` as `box`'s list, in paint order. */
@@ -877,7 +927,9 @@ export function mirrorElement(element: Element, report: MirrorReport, inherited:
   boxes.set(element, box);
   const tag = element.localName;
   if (tag === "svg") {
-    box["svg"] = svgMarkup(element as SVGSVGElement, style);
+    const markup = svgMarkup(element as SVGSVGElement, style);
+    if (element.querySelector("text") === null) box["svg"] = markup;
+    else box["img"] = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`;
     const svg = element as SVGSVGElement;
     const w = svg.getAttribute("width");
     const h = svg.getAttribute("height");
@@ -916,7 +968,7 @@ export function mirrorElement(element: Element, report: MirrorReport, inherited:
     const field = element as HTMLInputElement;
     const type = tag === "textarea" ? "" : field.type;
     if (TEXT_INPUT_TYPES.has(type)) {
-      box["inp"] = { v: field.value, ph: field.placeholder ?? "", multi: tag === "textarea", secret: type === "password", off: field.disabled, rev: Number(field.dataset["jgRev"] ?? 0) };
+      box["inp"] = { v: field.value, ph: field.placeholder ?? "", cols: element instanceof HTMLTextAreaElement ? element.cols : field.size, multi: tag === "textarea", secret: type === "password", off: field.disabled, rev: Number(field.dataset["jgRev"] ?? 0) };
       box["t"] = { s: "", c: textStyle.color, ...fontOf(textStyle) };
       return box;
     }
@@ -1049,16 +1101,16 @@ export function mirrorElement(element: Element, report: MirrorReport, inherited:
     }
     // A block that holds text or inline-level boxes flows them in lines.
     if (inlineRow && box["d"] === 1) {
-      delete box["d"];
-      box["fw"] = 1;
-      box["ai"] = 5;
-      box["row"] = 1;
       const align = style.textAlign;
-      if (align === "center") box["jc"] = 3;
-      else if (align === "right" || align === "end") box["jc"] = 2;
-      // A block among them takes a line of its own, as wide as the box.
-      for (const child of children) {
-        if (child.id !== 0 && child["inl"] !== 1 && child["pos"] !== 2 && child["w"] === undefined && child["fb"] === undefined) child["fb"] = "100%";
+      const justify = align === "center" ? 3 : align === "right" || align === "end" ? 2 : 0;
+      if (children.some((child) => child.id !== 0 && child["inl"] !== 1 && child["pos"] !== 2)) {
+        children.splice(0, children.length, ...groupInlineFlow(children, justify));
+      } else {
+        delete box["d"];
+        box["fw"] = 1;
+        box["ai"] = 5;
+        box["row"] = 1;
+        if (justify !== 0) box["jc"] = justify;
       }
     }
   }

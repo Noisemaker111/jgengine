@@ -8,6 +8,14 @@
 /** Points, `"40%"`, `"auto"`, or a calc: `[points, fraction]` / `[points, fraction, other points, other fraction, mode]` (mode 1 `min()`, 2 `max()`; mode 3 `clamp()`, where the other two are its low and high ends in points). */
 export type WireDim = number | string | number[];
 
+/** `min(points, percent)` as a percentage size with an independent maximum. @internal */
+export function percentCap(value: unknown): { size: string; max: number } | null {
+  if (!Array.isArray(value) || value.length !== 5 || value[4] !== 1) return null;
+  if (typeof value[0] === "number" && value[0] >= 0 && value[1] === 0 && value[2] === 0 && typeof value[3] === "number") return { size: `${value[3] * 100}%`, max: value[0] };
+  if (value[0] === 0 && typeof value[1] === "number" && typeof value[2] === "number" && value[2] >= 0 && value[3] === 0) return { size: `${value[1] * 100}%`, max: value[2] };
+  return null;
+}
+
 const colorCache = new Map<string, number>();
 
 function clamp01(v: number): number {
@@ -243,6 +251,10 @@ export interface WireLayer {
   rf?: [number, number] | "corner" | "side";
   circle?: boolean;
   st: [number, number][];
+  /** Stop positions are points instead of fractions of the gradient length. */
+  ps?: boolean;
+  /** The sized background repeats horizontally/vertically. */
+  rp?: [boolean, boolean];
   /** A repeating linear gradient: the length of one repeat in points, and where the first starts. */
   per?: number;
   off?: number;
@@ -272,6 +284,33 @@ interface RawStop {
   px: boolean;
 }
 
+/** A round alpha-mask hole positioned within a sized mask layer. @internal */
+export function parseRoundCutout(text: string, size: string, position: string): number[] | null {
+  const match = /^radial-gradient\((.*)\)$/.exec(text);
+  if (match === null) return null;
+  const parts = splitTop(match[1] ?? "", ",");
+  const shape = /^(?:circle\s+)?([\d.]+)px\s+at\s+(.+)$/.exec(parts[0] ?? "");
+  if (shape === null) return null;
+  const radius = Number(shape[1]);
+  const stops = parseStops(parts.slice(1));
+  const first = stops?.[0];
+  const last = stops?.[1];
+  if (stops?.length !== 2 || first === undefined || last === undefined || first.px || last.px || colorAlpha(first.color) !== 0 || colorAlpha(last.color) !== 1 || first.at === null || last.at === null || first.at > last.at) return null;
+  const centre = splitTop(shape[2] ?? "", " ");
+  const sizes = splitTop(size, " ");
+  const offsets = splitTop(position, " ");
+  const coord = (axis: number): [number, number] | null => {
+    const c = parseLengthPercent(centre[axis] ?? "50%");
+    const tile = parseLengthPercent(sizes[axis] === "auto" || sizes[axis] === undefined ? "100%" : sizes[axis]);
+    const offset = parseLengthPercent(offsets[axis] ?? "0%");
+    if (c === null || tile === null || offset === null) return null;
+    return [offset[0] + c[0] + (c[1] - offset[1]) * tile[0], offset[1] + (c[1] - offset[1]) * tile[1]];
+  };
+  const x = coord(0);
+  const y = coord(1);
+  return x === null || y === null ? null : [x[0], x[1], y[0], y[1], radius * first.at, radius * last.at];
+}
+
 function parseStops(parts: string[]): RawStop[] | null {
   const stops: RawStop[] = [];
   for (const part of parts) {
@@ -282,7 +321,7 @@ function parseStops(parts: string[]): RawStop[] | null {
     for (let i = 1; i < tokens.length; i += 1) {
       const token = tokens[i] as string;
       const px = token.endsWith("px");
-      const at = px ? parseFloat(token) : token.endsWith("%") ? parseFloat(token) / 100 : Number.NaN;
+      const at = px ? parseFloat(token) : token.endsWith("%") ? parseFloat(token) / 100 : token === "0" ? 0 : Number.NaN;
       if (Number.isNaN(at)) return null;
       stops.push({ color, at, px });
     }
@@ -422,9 +461,11 @@ export function placeLayer<L extends WireLayer | { flat: number }>(layer: L, siz
   if (w === null || h === null) return layer;
   if (w[0] === 0 && w[1] === 1 && h[0] === 0 && h[1] === 1) return layer;
   if (!repeat.includes("no-repeat")) {
-    // A tile that still spans the box one way is drawn once; a small one reads as its average.
     if ("flat" in layer) return layer;
-    return { flat: averageOfStops(layer.st) };
+    const at = splitTop(position.trim(), " ");
+    const x = parseLengthPercent(at[0] ?? "0%") ?? [0, 0];
+    const y = parseLengthPercent(at[1] ?? "0%") ?? [0, 0];
+    return { ...layer, bs: [w[0], w[1], h[0], h[1]], bp: [x[0], x[1], y[0], y[1]], rp: [repeat !== "repeat-y", repeat !== "repeat-x"] };
   }
   const at = splitTop(position.trim(), " ");
   const x = parseLengthPercent(at[0] ?? "0%") ?? [0, 0];
@@ -473,7 +514,10 @@ export function parseGradient(text: string): WireLayer | { flat: number } | null
       const flat = averageOfRepeat(stops);
       return flat === null ? null : { flat };
     }
-    if (stops.some((s) => s.px)) return null;
+    if (stops.some((s) => s.px)) {
+      if (stops.some((s) => s.at === null || (!s.px && s.at !== 0))) return null;
+      return { g: 0, a: angle, st: spread(stops), ps: true };
+    }
     return { g: 0, a: angle, st: spread(stops) };
   }
   if (kind === "conic-gradient" && !repeating) {
@@ -534,6 +578,7 @@ export function parseGradient(text: string): WireLayer | { flat: number } | null
       return flat === null ? null : { flat };
     }
     if (stops.some((s) => s.px)) {
+      if (!circle && stops.every((s) => s.at !== null && (s.px || s.at === 0))) return { g: 1, cx, cy, rf, circle, st: spread(stops), ps: true };
       // A spot: a circle a few points across that ends in clear (a rivet, a dot, a lamp). It is
       // drawn once on a square just large enough to hold it, placed where the gradient is centred.
       const reach = stops[stops.length - 1];

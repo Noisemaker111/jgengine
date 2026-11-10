@@ -36,7 +36,7 @@ const credits = mergeCredits({
     { heading: "Original game art", entries: [{ label: "Odd Orbit", detail: "Original plan-derived household portraits and habitat interface." }] },
     { heading: "Engine", entries: [
       { label: "JG Engine", detail: "Apache-2.0", href: "https://github.com/Noisemaker111/jgengine" },
-      { label: "React / Three.js", detail: "MIT" },
+      { label: "Rune / Three.js", detail: "MIT" },
     ] },
     { heading: "Fonts", entries: [
       { label: "Comfortaa — Johan Aakerlund", detail: "OFL-1.1", href: "https://fonts.google.com/specimen/Comfortaa" },

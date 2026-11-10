@@ -476,7 +476,7 @@ impl El {
     /// draws in an isolated layer, whose composite cuts the hole; hit testing ignores it.
     pub fn cutout_circle(mut self, center: [f32; 2], inner: f32, outer: f32) -> Self {
         let inner = inner.max(0.0);
-        self.vis.cold_mut().cutout = Some([center[0], center[1], inner, outer.max(inner)]);
+        self.vis.cold_mut().cutout.push([center[0], center[1], inner, outer.max(inner)]);
         self
     }
     /// Soft clip with a fade width per side (left, top, right, bottom).

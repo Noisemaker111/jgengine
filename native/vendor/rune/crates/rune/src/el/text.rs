@@ -359,6 +359,13 @@ impl El {
         }
         self
     }
+    /// Give a text field an intrinsic character width, as HTML input `size` and textarea `cols` do.
+    pub fn input_columns(mut self, columns: usize) -> Self {
+        if let Some(i) = self.cold.get_mut_if_some().and_then(|c| c.input.as_deref_mut()) {
+            i.columns = Some(columns.max(1));
+        }
+        self
+    }
     /// Make a byte range of this text pressable (see [`Link`]). Only the range's shaped glyph
     /// boxes take the pointer, which shows a hand over them; the rest of the text stays
     /// transparent to input. Each link is a Tab stop that Enter or Space presses.

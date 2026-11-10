@@ -694,7 +694,7 @@ impl<S: 'static> Runtime<S> {
             }
             // `El::cutout_circle`: the subtree draws in a layer whose composite cuts the hole,
             // after the clips from above, which it takes.
-            if !skip_paint && let Some(c) = n.vis.cutout {
+            for c in n.vis.cutout.iter().filter(|_| !skip_paint) {
                 let k = sc * s;
                 let mut marker = Instance::begin_layer([r[0], r[1], w, h], clip, Default::default());
                 marker.fade = crate::render::pack_fade(fade, fade_origin, clip);

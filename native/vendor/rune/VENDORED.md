@@ -36,3 +36,17 @@ The engine's CSS host uses it for `calc(100% - 20px)`, `min(100%, 520px)` and `m
 subset (points, one direction, pins). The engine's CSS host needs the rest of what Taffy
 already lays out: grid tracks and placement, block flow, percentages, auto margins, min and
 max sizes. The patch adds one method that edits the element's whole `taffy::Style`.
+
+`crates/rune/src/el/visual.rs`, `el/visuals.rs` and `runtime/paint/build.rs` — multiple
+round cutouts on one element. Repeated `cutout_circle` calls accumulate independent
+holes, each applied to the subtree through its own composite layer. The CSS host
+uses this for the two radial masks on ticket edges.
+
+`crates/rune/src/platform/web/platform.js` — SVG URLs decode through the browser's
+image pipeline before upload. Rune's minimal SVG decoder omits text because it has
+no font database; browser decoding preserves logo lettering and local system fonts.
+
+`crates/rune/src/el.rs`, `el/text.rs` and `runtime/commit/{flatten,text_layout}.rs` —
+`input_columns` gives a text field an intrinsic width measured from its font's zero
+glyph. The CSS host supplies HTML input `size` and textarea `cols`, so percentage
+and `min()` widths in auto-sized parents do not collapse around an empty value.

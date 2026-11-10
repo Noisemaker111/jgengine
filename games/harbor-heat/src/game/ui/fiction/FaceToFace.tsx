@@ -1,11 +1,10 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { createElement, useMemo } from "@jgengine/core/ui/jsx";
+import { useMemo } from "@jgengine/core/ui/jsx";
 import { useDisplayProfile } from "@jgengine/core/ui/display.view";
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { GameCursor } from "@jgengine/core/ui/cursor.view";
 import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
 import { EntityPreview } from "@jgengine/core/render/EntityPreview.draw";
-import { IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";
 import { entityModels } from "../../world/models";
 import { KeyLegend, navItem, useMenuSound, useMoveTick, useScreenTouch } from "./kit";
 import { HH } from "../theme";
@@ -56,9 +55,7 @@ export function FaceToFace({ speaker, lines, replies, onLeave }: { speaker: Spea
         <span className="hh-mug" aria-hidden="true">
           {model === undefined ? <b className="hh-mug-initials">{initials(speaker.name)}</b> : (
             <span className="hh-mug-window">
-              <EntityPreview mood="studio" backdrop="#d9c7a2" environment={false} cameraPosition={[0, 0.02, 1.35]} fov={24} dpr={[1, 1.25]} className="hh-mug-canvas">
-                {createElement("group", { position: [0, -1.56, 0] }, <IsolatedEntityModel model={model} />)}
-              </EntityPreview>
+              <EntityPreview model={model} mood="studio" backdrop="#d9c7a2" environment={false} cameraPosition={[0, 1.58, 1.35]} cameraTarget={[0, 1.56, 0]} fov={24} dpr={[1, 1.25]} className="hh-mug-canvas" />
             </span>
           )}
         </span>

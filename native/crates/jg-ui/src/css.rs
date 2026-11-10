@@ -143,6 +143,10 @@ pub struct Layer {
     pub ry: f32,
     #[serde(default)]
     pub st: Vec<(f32, Rgba)>,
+    #[serde(default)]
+    pub ps: bool,
+    #[serde(default)]
+    pub rp: Option<[bool; 2]>,
     /// A repeating linear gradient: one repeat's length in points (stops are fractions of it) and
     /// where the first repeat starts along the gradient line.
     #[serde(default)]
@@ -227,6 +231,8 @@ fn normal_weight() -> f32 {
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct Input {
+    #[serde(default)]
+    pub cols: usize,
     #[serde(default)]
     pub v: String,
     #[serde(default)]
@@ -354,6 +360,9 @@ pub struct Box_ {
     pub op: Option<f32>,
     #[serde(default)]
     pub opv: Option<usize>,
+    /// Round mask holes: centre x points/fraction, centre y points/fraction, inner/outer radii.
+    #[serde(default)]
+    pub holes: Vec<[f32; 6]>,
     /// Translate x, y in points; rotation in radians; uniform scale; translate x, y as
     /// fractions of the box's own size.
     #[serde(default)]
@@ -708,6 +717,24 @@ fn conic_shape(l: &Layer, radii: Option<[f32; 4]>, size: [f32; 2]) -> rune::Shap
     shape
 }
 
+fn radial_radii(l: &Layer, [w, h]: [f32; 2]) -> [f32; 2] {
+    let (dx, dy) = (l.cx.max(1.0 - l.cx) * w, l.cy.max(1.0 - l.cy) * h);
+    let mut radii = match &l.rf {
+        Some(RadialSize::Fraction([fx, fy])) => [fx * w, fy * h],
+        Some(RadialSize::Keyword(k)) if k == "side" => [l.cx.min(1.0 - l.cx) * w, l.cy.min(1.0 - l.cy) * h],
+        Some(RadialSize::Keyword(_)) => [dx * std::f32::consts::SQRT_2, dy * std::f32::consts::SQRT_2],
+        None => [l.rx, l.ry],
+    };
+    if l.circle && l.rf.is_some() {
+        let r = match &l.rf {
+            Some(RadialSize::Keyword(k)) if k == "side" => radii[0].min(radii[1]),
+            _ => dx.hypot(dy),
+        };
+        radii = [r, r];
+    }
+    radii.map(|v| v.max(0.01))
+}
+
 fn paint_layer(e: El, l: &Layer, radii: Option<[f32; 4]>, size: [f32; 2]) -> El {
     if let Some(c) = l.flat {
         return e.fill(c.0);
@@ -718,27 +745,13 @@ fn paint_layer(e: El, l: &Layer, radii: Option<[f32; 4]>, size: [f32; 2]) -> El 
     if l.g == 0 && l.per > 0.0 {
         return e.shape(stripes_shape(l, size));
     }
-    let stops: Vec<(f32, Color)> = l.st.iter().map(|(t, c)| (*t, c.0)).collect();
+    let radius = radial_radii(l, size);
+    let extent = if l.g == 1 { radius[0] } else { l.a.sin().abs() * size[0] + l.a.cos().abs() * size[1] }.max(0.01);
+    let stops: Vec<(f32, Color)> = l.st.iter().map(|(t, c)| (if l.ps { t / extent } else { *t }, c.0)).collect();
     if l.g != 1 {
         return e.linear_gradient(l.a, stops);
     }
-    let [w, h] = size;
-    let (dx, dy) = (l.cx.max(1.0 - l.cx) * w, l.cy.max(1.0 - l.cy) * h);
-    let mut radii = match &l.rf {
-        Some(RadialSize::Fraction([fx, fy])) => [fx * w, fy * h],
-        Some(RadialSize::Keyword(k)) if k == "side" => [l.cx.min(1.0 - l.cx) * w, l.cy.min(1.0 - l.cy) * h],
-        // Farthest corner: an ellipse through it keeps the box's proportions.
-        Some(RadialSize::Keyword(_)) => [dx * std::f32::consts::SQRT_2, dy * std::f32::consts::SQRT_2],
-        None => [l.rx, l.ry],
-    };
-    if l.circle {
-        let r = match &l.rf {
-            Some(RadialSize::Keyword(k)) if k == "side" => radii[0].min(radii[1]),
-            _ => dx.hypot(dy),
-        };
-        radii = [r, r];
-    }
-    e.radial_gradient([l.cx, l.cy], [radii[0].max(0.01), radii[1].max(0.01)], stops)
+    e.radial_gradient([l.cx, l.cy], radius, stops)
 }
 
 thread_local! {
@@ -763,6 +776,7 @@ fn needs_size(b: &Box_) -> bool {
     b.ly.iter().any(|l| ((l.g != 0 || l.per > 0.0) && l.flat.is_none()) || l.bs.is_some())
         || b.tf.is_some_and(|t| t[4] != 0.0 || t[5] != 0.0)
         || b.tfv.is_some()
+        || !b.holes.is_empty()
         || b.rad.is_some_and(|r| r.iter().any(|v| *v < 0.0))
         || b.svg.is_some()
         || b.img.is_some()
@@ -925,6 +939,28 @@ fn layer_sheet(l: &Layer, radii: Option<[f32; 4]>, size: [f32; 2]) -> El {
     let (w, h) = (bs[0] + bs[1] * size[0], bs[2] + bs[3] * size[1]);
     let bp = l.bp.unwrap_or([0.0; 4]);
     let (x, y) = (bp[0] + bp[1] * (size[0] - w), bp[2] + bp[3] * (size[1] - h));
+    if let Some(repeat) = l.rp {
+        if w <= 0.0 || h <= 0.0 || size[0] <= 0.0 || size[1] <= 0.0 { return sheet(radii); }
+        let radial = radial_radii(l, [w, h]);
+        let extent = if l.g == 1 { radial[0] } else { l.a.sin().abs() * w + l.a.cos().abs() * h }.max(0.01);
+        let stops = l.st.iter().map(|(at, color)| {
+            let hex = color.0.hex();
+            let at = if l.ps { at / extent } else { *at };
+            format!("<stop offset=\"{}\" stop-color=\"{}\" stop-opacity=\"{}\"/>", at.clamp(0.0, 1.0), &hex[..7], color.0.a)
+        }).collect::<String>();
+        let gradient = if l.g == 1 {
+            let (cx, cy) = (l.cx * w, l.cy * h);
+            format!("<radialGradient id=\"g\" gradientUnits=\"userSpaceOnUse\" cx=\"{cx}\" cy=\"{cy}\" r=\"{}\" gradientTransform=\"translate({cx} {cy}) scale(1 {}) translate({} {})\">{stops}</radialGradient>", radial[0], radial[1] / radial[0], -cx, -cy)
+        } else {
+            let (dx, dy) = (l.a.sin() * extent * 0.5, -l.a.cos() * extent * 0.5);
+            format!("<linearGradient id=\"g\" gradientUnits=\"userSpaceOnUse\" x1=\"{}\" y1=\"{}\" x2=\"{}\" y2=\"{}\">{stops}</linearGradient>", w * 0.5 - dx, h * 0.5 - dy, w * 0.5 + dx, h * 0.5 + dy)
+        };
+        let (px, py) = (if repeat[0] { x } else { x.min(0.0) }, if repeat[1] { y } else { y.min(0.0) });
+        let (pw, ph) = (if repeat[0] { w } else { size[0] + w + x.abs() }, if repeat[1] { h } else { size[1] + h + y.abs() });
+        let (tx, ty) = (if repeat[0] { 0.0 } else { x - px }, if repeat[1] { 0.0 } else { y - py });
+        let svg = format!("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{}\" height=\"{}\" viewBox=\"0 0 {} {}\"><defs>{gradient}<pattern id=\"p\" patternUnits=\"userSpaceOnUse\" x=\"{px}\" y=\"{py}\" width=\"{pw}\" height=\"{ph}\"><g transform=\"translate({tx} {ty})\"><rect width=\"{w}\" height=\"{h}\" fill=\"url(#g)\"/></g></pattern></defs><rect width=\"100%\" height=\"100%\" fill=\"url(#p)\"/></svg>", size[0], size[1], size[0], size[1]);
+        return sheet(radii).pixels_fit(crate::widgets::image_of_svg(&svg, size[0].max(size[1])).pixels(), rune::SurfaceFit::Fill).inert();
+    }
     paint_layer(el().pin(Some(x), Some(y), None, None).size(w.max(0.0), h.max(0.0)), l, None, [w, h])
 }
 
@@ -1105,6 +1141,9 @@ pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
     if b.blur > 0.0 {
         e = e.blur(b.blur);
     }
+    for hole in &b.holes {
+        e = e.cutout_circle([hole[0] + hole[1] * size[0], hole[2] + hole[3] * size[1]], hole[4], hole[5]);
+    }
     if b.ovx == 1 || b.ovy == 1 {
         e = e.clip_corners(radii.unwrap_or([0.0; 4]));
     }
@@ -1151,7 +1190,7 @@ pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
             _ => e.pixels(image.pixels()),
         };
     }
-    if let Some(t) = &b.t {
+    if b.inp.is_none() && let Some(t) = &b.t {
         let grow = |st: &mut Style| {
             st.flex_grow = 1.0;
             st.flex_shrink = 1.0;
@@ -1245,6 +1284,9 @@ fn input_el(b: &Box_, inp: &Input, s: &Ui) -> El {
     let style = b.t.as_ref().map_or_else(|| TextStyle::new(14.0, 400.0), text_style);
     let color = b.t.as_ref().map_or(Color::WHITE, |t| t.c.0);
     let mut e = text_input(edit, style).color(color).hit();
+    if inp.cols > 0 {
+        e = e.input_columns(inp.cols);
+    }
     if !inp.ph.is_empty() {
         e = e.placeholder(inp.ph.clone(), inp.phc.map_or(color.alpha(0.5), |c| c.0));
     }
@@ -1290,6 +1332,16 @@ pub fn fields<'a>(nodes: &'a [crate::Node], out: &mut Vec<(String, &'a Input)>) 
 #[cfg(test)]
 mod live_value_tests {
     use super::*;
+
+    #[test]
+    fn input_columns_preserve_intrinsic_width_inside_a_capped_percentage() {
+        let mut state = Ui::default();
+        state.root = crate::spec::parse_spec(r#"{"children":[{"k":"x","id":1,"w":800,"h":600,"d":2,"ji":1,"c":[{"k":"x","id":2,"fd":1,"c":[{"k":"x","id":0,"t":{"s":"Park name","z":14,"c":4294967295}},{"k":"x","id":3,"d":1,"w":"100%","mxw":360,"mnw":0,"inp":{"v":"","cols":20},"t":{"s":"","z":22,"w":700,"c":4294967295}}]}]}]}"#).unwrap().children;
+        let mut runtime = rune::Runtime::new(state, crate::build::view, (800.0, 600.0), rune::Env::new(true, 1.0));
+        runtime.frame(0.0);
+        let field = runtime.elements().into_iter().find(|element| element.key.as_deref() == Some("x3")).unwrap().target;
+        assert!(field[2] > 200.0 && field[2] <= 360.0, "20-character input collapsed to {field:?}");
+    }
 
     #[test]
     fn css_dimensions_and_unicode_text_read_shared_slots() {
