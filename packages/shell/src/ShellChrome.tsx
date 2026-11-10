@@ -6,6 +6,7 @@ import { HudOverlayHost, HudThemeRoot } from "@jgengine/core/hud/hudThemeRoot.vi
 import { HudViewportProvider } from "@jgengine/core/hud/hudViewport.view";
 import { GameProvider } from "@jgengine/react/provider";
 import { kitHudBridge, UiKitRoot } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { RuneLayer, runeUiEnabled } from "@jgengine/core/ui/rune/runeLayer.view";
 
 import {
   DiagnosticOverlay,
@@ -73,8 +74,17 @@ export function ShellGameUiChrome({
             <ShellUiCues ctx={ctx} enabled={playable.audio?.hudCues !== false}>
               <HudThemeRoot theme={playable.hudTheme} accessibility={accessibility}>
                 <ShellUiKit playable={playable}>
-                  <GameUI />
-                  <ShellNotices ctx={ctx} config={playable.chrome?.notices} scale={uiScale} />
+                  {runeUiEnabled() ? (
+                    <RuneLayer>
+                      <GameUI />
+                      <ShellNotices ctx={ctx} config={playable.chrome?.notices} scale={uiScale} />
+                    </RuneLayer>
+                  ) : (
+                    <>
+                      <GameUI />
+                      <ShellNotices ctx={ctx} config={playable.chrome?.notices} scale={uiScale} />
+                    </>
+                  )}
                   <FeedbackHost ctx={ctx} engine={audioEngine} />
                 </ShellUiKit>
               </HudThemeRoot>

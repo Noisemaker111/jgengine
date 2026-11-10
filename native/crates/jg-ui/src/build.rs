@@ -45,8 +45,9 @@ fn text_el(body: String, n_size: Option<f32>, weight: Option<f32>, mono: bool, c
     e.color(c)
 }
 
-fn build(n: &Node, path: &str, s: &Ui, t: &Theme) -> El {
+pub(crate) fn build(n: &Node, path: &str, s: &Ui, t: &Theme) -> El {
     match n {
+        Node::X(b) => crate::css::build(b, path, s, t),
         Node::Panel { children, style } => stack(children, false, style, s, t, path).key(path.to_string()),
         Node::Row { children, style } => stack(children, true, style, s, t, path).key(path.to_string()),
         Node::Scroll { children, style } => {

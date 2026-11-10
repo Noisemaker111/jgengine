@@ -176,3 +176,8 @@ pub fn slot_text(slot: usize, decimals: usize) -> String {
         format!("{:.*}", decimals, v)
     }
 }
+
+/// Inline SVG markup drawn to fill its box. Placeholder until the SVG painter lands.
+pub fn svg_fill(_svg: &str, _id: u32) -> El {
+    el().pin(Some(0.0), Some(0.0), Some(0.0), Some(0.0))
+}

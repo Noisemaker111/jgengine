@@ -21,3 +21,8 @@ opaque canvas. The patch reads `app.window_options.transparent`, sets
 that composites over the game's three.js canvas.
 
 When upstream `dev` gains equivalent support, re-vendor and drop the patch.
+
+`crates/rune/src/el/layout.rs` — `El::layout_style`. Rune's element builders expose a flex
+subset (points, one direction, pins). The engine's CSS host needs the rest of what Taffy
+already lays out: grid tracks and placement, block flow, percentages, auto margins, min and
+max sizes. The patch adds one method that edits the element's whole `taffy::Style`.

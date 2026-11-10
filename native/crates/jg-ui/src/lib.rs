@@ -13,6 +13,7 @@
 #![cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
 
 mod build;
+mod css;
 mod spec;
 mod style;
 mod widgets;
@@ -87,6 +88,11 @@ pub(crate) fn emit(id: &str, kind: &'static str, value: Option<f32>, text: Optio
     });
 }
 
+/// An event from a CSS box, addressed by its numeric id as `x<id>`.
+pub(crate) fn emit_id(id: u32, kind: &'static str, value: Option<f32>, text: Option<String>) {
+    emit(&format!("x{id}"), kind, value, text);
+}
+
 // ---------------------------------------------------------------------------
 // App state
 // ---------------------------------------------------------------------------
@@ -102,6 +108,8 @@ pub struct Ui {
     edits: HashMap<String, TextEdit>,
     /// Borrow fallback for a field whose edit is somehow missing.
     empty_edit: TextEdit,
+    /// Last page-side revision applied per CSS field; a new one replaces the field's text.
+    edit_rev: HashMap<String, u32>,
 }
 
 /// `#rgb`/`#rrggbb`/`#rrggbbaa` to a Rune colour; anything else is opaque black.
@@ -144,16 +152,22 @@ impl Compositor<Ui> for UiCompositor {
         let events: Vec<UiEvent> = EVENTS.with(|e| std::mem::take(&mut *e.borrow_mut()));
         let regions: Vec<[f32; 4]> = f.rt.hit_regions().to_vec();
         let modal = f.rt.state.modal;
-        if self.shipped && events.is_empty() && modal == self.last_modal && regions == self.last_regions {
+        if self.shipped && events.is_empty() && modal == self.last_modal && regions == self.last_regions && !css::RECTS_DIRTY.get() {
             return;
         }
         self.shipped = true;
         self.last_modal = modal;
         self.last_regions = regions.clone();
+        let rects: Vec<[f32; 5]> = if css::RECTS_DIRTY.replace(false) {
+            css::RECTS.with(|r| r.borrow().iter().map(|(id, r)| [*id as f32, r[0], r[1], r[2], r[3]]).collect())
+        } else {
+            Vec::new()
+        };
         let payload = serde_json::json!({
             "events": events,
             "regions": regions,
             "modal": modal,
+            "rects": rects,
         })
         .to_string();
         #[cfg(target_arch = "wasm32")]
@@ -260,6 +274,16 @@ pub fn set_spec(json: &str) {
                 let ids = spec::field_ids(&children);
                 s.edits.retain(|id, _| ids.contains(id));
                 spec::collect_fields(&children, &mut s.edits);
+                let mut fields = Vec::new();
+                css::fields(&children, &mut fields);
+                for (key, inp) in fields {
+                    let known = s.edit_rev.get(&key).copied();
+                    if known != Some(inp.rev) || !s.edits.contains_key(&key) {
+                        s.edit_rev.insert(key.clone(), inp.rev);
+                        s.edits.insert(key, TextEdit::new(inp.v.clone()));
+                    }
+                }
+                s.edit_rev.retain(|id, _| ids.contains(id));
                 s.root = children;
                 s.modal = modal;
             });

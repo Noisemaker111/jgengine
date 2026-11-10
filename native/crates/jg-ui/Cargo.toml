@@ -13,6 +13,7 @@ crate-type = ["cdylib", "rlib"]
 # (upstream dev d751f071) with the jgengine web-transparency patch in
 # crates/rune/src/platform/web.rs. See native/vendor/rune/VENDORED.md.
 rune = { path = "../../vendor/rune/crates/rune", default-features = false, features = ["embedded-fonts"] }
+rune-taffy = { path = "../../vendor/rune/crates/rune-taffy" }
 serde.workspace = true
 serde_json.workspace = true
 wasm-bindgen = "0.2"

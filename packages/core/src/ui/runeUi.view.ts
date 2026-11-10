@@ -27,6 +27,8 @@ export interface RuneUiFrame {
   /** Interactive regions as `[x1, y1, x2, y2]` in CSS pixels. */
   regions: [number, number, number, number][];
   modal: boolean;
+  /** Laid-out CSS boxes as `[id, x, y, w, h]` in CSS pixels; sent whole when any moved. */
+  rects?: [number, number, number, number, number][];
 }
 
 export interface RuneUiOptions {
@@ -72,6 +74,10 @@ const DEFAULT_BASE = "/jg-ui";
 export class RuneUi {
   private readonly canvas: HTMLCanvasElement;
   private readonly api: JgUiModule;
+  /** Where each CSS box was last laid out, by id: `[x, y, w, h]` in CSS pixels. */
+  readonly rects = new Map<number, [number, number, number, number]>();
+  /** Called with every box's rect whenever any of them moved. */
+  onRects: ((rects: [number, number, number, number, number][]) => void) | null = null;
   private readonly slots = new Map<string, number>();
   private readonly bound = new Map<string, BoundValue>();
   private readonly handlers = new Map<string, Set<EventHandler>>();
@@ -255,6 +261,11 @@ export class RuneUi {
       return;
     }
     this.regions = frame.regions ?? [];
+    if (frame.rects !== undefined && frame.rects.length > 0) {
+      this.rects.clear();
+      for (const [id, x, y, w, h] of frame.rects) this.rects.set(id, [x, y, w, h]);
+      this.onRects?.(frame.rects);
+    }
     this.modalFlag = frame.modal === true;
     this.applyPointerEvents();
     if (!this.mounted) {

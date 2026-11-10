@@ -1,0 +1,529 @@
+/**
+ * Parsers for computed CSS values, as a browser serializes them, into the plain
+ * numbers the Rune CSS box takes. Everything here is string in, numbers out,
+ * with no DOM: lengths, colours, gradients, shadows, grid tracks, transforms.
+ */
+
+/** A length for the wire: points, `"N%"`, or `"auto"`. `null` means it could not be expressed. */
+export type WireDim = number | string;
+
+const colorCache = new Map<string, number>();
+
+function clamp01(v: number): number {
+  return v < 0 ? 0 : v > 1 ? 1 : v;
+}
+
+function pack(r: number, g: number, b: number, a: number): number {
+  const byte = (v: number) => Math.round(clamp01(v) * 255);
+  return ((byte(r) << 24) | (byte(g) << 16) | (byte(b) << 8) | byte(a)) >>> 0;
+}
+
+function linearToSrgb(v: number): number {
+  return v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
+}
+
+function oklabToSrgb(l: number, a: number, b: number): [number, number, number] {
+  const l_ = l + 0.3963377774 * a + 0.2158037573 * b;
+  const m_ = l - 0.1055613458 * a - 0.0638541728 * b;
+  const s_ = l - 0.0894841775 * a - 1.291485548 * b;
+  const L = l_ * l_ * l_;
+  const M = m_ * m_ * m_;
+  const S = s_ * s_ * s_;
+  return [
+    linearToSrgb(4.0767416621 * L - 3.3077115913 * M + 0.2309699292 * S),
+    linearToSrgb(-1.2684380046 * L + 2.6097574011 * M - 0.3413193965 * S),
+    linearToSrgb(-0.0041960863 * L - 0.7034186147 * M + 1.707614701 * S),
+  ];
+}
+
+function numberOrPercent(token: string, percentScale: number): number {
+  if (token === "none") return 0;
+  return token.endsWith("%") ? (parseFloat(token) / 100) * percentScale : parseFloat(token);
+}
+
+/** A computed colour as `0xRRGGBBAA`; `null` when the form is not one a browser computes to. */
+export function parseColor(text: string): number | null {
+  const cached = colorCache.get(text);
+  if (cached !== undefined) return cached;
+  const value = parseColorUncached(text.trim());
+  if (value !== null && colorCache.size < 4096) colorCache.set(text, value);
+  return value;
+}
+
+function parseColorUncached(text: string): number | null {
+  if (text === "transparent") return 0;
+  const open = text.indexOf("(");
+  if (open === -1 || !text.endsWith(")")) {
+    if (text.startsWith("#")) {
+      const h = text.slice(1);
+      const full = h.length <= 4 ? [...h].map((c) => c + c).join("") : h;
+      const n = Number.parseInt(full.padEnd(8, "f"), 16);
+      return Number.isNaN(n) ? null : n >>> 0;
+    }
+    return null;
+  }
+  const fn = text.slice(0, open);
+  const parts = text.slice(open + 1, -1).replace(/[,/]/g, " ").split(/\s+/).filter((p) => p !== "");
+  const alpha = (index: number) => (parts[index] === undefined ? 1 : numberOrPercent(parts[index], 1));
+  if (fn === "rgb" || fn === "rgba") {
+    if (parts.length < 3) return null;
+    return pack(numberOrPercent(parts[0] as string, 255) / 255, numberOrPercent(parts[1] as string, 255) / 255, numberOrPercent(parts[2] as string, 255) / 255, alpha(3));
+  }
+  if (fn === "color") {
+    const space = parts[0];
+    if (parts.length < 4) return null;
+    const r = numberOrPercent(parts[1] as string, 1);
+    const g = numberOrPercent(parts[2] as string, 1);
+    const b = numberOrPercent(parts[3] as string, 1);
+    if (space === "srgb") return pack(r, g, b, alpha(4));
+    if (space === "srgb-linear") return pack(linearToSrgb(r), linearToSrgb(g), linearToSrgb(b), alpha(4));
+    return null;
+  }
+  if (fn === "oklab") {
+    if (parts.length < 3) return null;
+    const [r, g, b] = oklabToSrgb(numberOrPercent(parts[0] as string, 1), numberOrPercent(parts[1] as string, 0.4), numberOrPercent(parts[2] as string, 0.4));
+    return pack(r, g, b, alpha(3));
+  }
+  if (fn === "oklch") {
+    if (parts.length < 3) return null;
+    const chroma = numberOrPercent(parts[1] as string, 0.4);
+    const hue = (parseFloat(parts[2] as string) * Math.PI) / 180 || 0;
+    const [r, g, b] = oklabToSrgb(numberOrPercent(parts[0] as string, 1), chroma * Math.cos(hue), chroma * Math.sin(hue));
+    return pack(r, g, b, alpha(3));
+  }
+  return null;
+}
+
+export function colorAlpha(color: number): number {
+  return (color & 0xff) / 255;
+}
+
+/** Splits on top-level commas (or spaces), leaving anything in parentheses whole. */
+export function splitTop(text: string, separator: "," | " "): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    const c = text.charCodeAt(i);
+    if (c === 40) depth += 1;
+    else if (c === 41) depth -= 1;
+    else if (depth === 0 && (separator === "," ? c === 44 : c === 32)) {
+      if (i > start) out.push(text.slice(start, i).trim());
+      start = i + 1;
+    }
+  }
+  if (start < text.length) {
+    const last = text.slice(start).trim();
+    if (last !== "") out.push(last);
+  }
+  return out;
+}
+
+/** A computed length: points, a percentage, or `auto`; `null` for a form with no number (calc of mixed units, content keywords). */
+export function parseDim(text: string): WireDim | null {
+  if (text === "auto" || text === "none" || text === "normal") return "auto";
+  if (text.endsWith("px")) {
+    const v = parseFloat(text);
+    return Number.isNaN(v) ? null : v;
+  }
+  if (text.endsWith("%")) {
+    const v = parseFloat(text);
+    return Number.isNaN(v) || text.includes("(") ? null : `${v}%`;
+  }
+  if (text === "0") return 0;
+  return null;
+}
+
+export function parsePx(text: string): number {
+  const v = parseFloat(text);
+  return Number.isNaN(v) ? 0 : v;
+}
+
+export function parseAngle(text: string): number | null {
+  const v = parseFloat(text);
+  if (Number.isNaN(v)) return null;
+  if (text.endsWith("deg")) return (v * Math.PI) / 180;
+  if (text.endsWith("grad")) return (v * Math.PI) / 200;
+  if (text.endsWith("turn")) return v * Math.PI * 2;
+  if (text.endsWith("rad")) return v;
+  return v === 0 ? 0 : null;
+}
+
+export interface WireLayer {
+  g: 0 | 1;
+  a?: number;
+  cx?: number;
+  cy?: number;
+  /** Radii as fractions of the box (`rf`) until the box size is known. */
+  rx?: number;
+  ry?: number;
+  rf?: [number, number] | "corner" | "side";
+  circle?: boolean;
+  st: [number, number][];
+}
+
+const SIDE_ANGLES: Record<string, number> = {
+  "to top": 0,
+  "to right": Math.PI / 2,
+  "to bottom": Math.PI,
+  "to left": Math.PI * 1.5,
+  "to top right": Math.PI / 4,
+  "to right top": Math.PI / 4,
+  "to bottom right": Math.PI * 0.75,
+  "to right bottom": Math.PI * 0.75,
+  "to bottom left": Math.PI * 1.25,
+  "to left bottom": Math.PI * 1.25,
+  "to top left": Math.PI * 1.75,
+  "to left top": Math.PI * 1.75,
+};
+
+interface RawStop {
+  color: number;
+  at: number | null;
+  px: boolean;
+}
+
+function parseStops(parts: string[]): RawStop[] | null {
+  const stops: RawStop[] = [];
+  for (const part of parts) {
+    const tokens = splitTop(part, " ");
+    const color = parseColor(tokens[0] ?? "");
+    if (color === null) return null;
+    if (tokens.length === 1) stops.push({ color, at: null, px: false });
+    for (let i = 1; i < tokens.length; i += 1) {
+      const token = tokens[i] as string;
+      const px = token.endsWith("px");
+      const at = px ? parseFloat(token) : token.endsWith("%") ? parseFloat(token) / 100 : Number.NaN;
+      if (Number.isNaN(at)) return null;
+      stops.push({ color, at, px });
+    }
+  }
+  return stops;
+}
+
+function spreadStops(stops: RawStop[]): [number, number][] {
+  const n = stops.length;
+  const at = stops.map((s) => s.at);
+  if (at[0] === null || at[0] === undefined) at[0] = 0;
+  if (at[n - 1] === null || at[n - 1] === undefined) at[n - 1] = 1;
+  let i = 0;
+  while (i < n) {
+    if (at[i] !== null) {
+      i += 1;
+      continue;
+    }
+    let j = i;
+    while (j < n && at[j] === null) j += 1;
+    const from = at[i - 1] as number;
+    const to = at[j] as number;
+    for (let k = i; k < j; k += 1) at[k] = from + ((to - from) * (k - i + 1)) / (j - i + 1);
+    i = j;
+  }
+  let floor = 0;
+  return stops.map((s, index) => {
+    floor = Math.max(floor, at[index] as number);
+    return [floor, s.color];
+  });
+}
+
+/** A repeating gradient whose period is a few pixels reads as its average colour. */
+function averageOfRepeat(stops: RawStop[]): number | null {
+  if (stops.length < 2 || stops.some((s) => s.at === null)) return null;
+  const end = stops[stops.length - 1]?.at ?? 0;
+  const start = stops[0]?.at ?? 0;
+  const period = end - start;
+  if (!(period > 0)) return null;
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  let a = 0;
+  for (let i = 1; i < stops.length; i += 1) {
+    const p = stops[i - 1] as RawStop;
+    const q = stops[i] as RawStop;
+    const span = ((q.at as number) - (p.at as number)) / period;
+    if (span <= 0) continue;
+    for (const c of [p.color, q.color]) {
+      const alpha = (c & 0xff) / 255;
+      r += (((c >>> 24) & 0xff) / 255) * alpha * span * 0.5;
+      g += (((c >>> 16) & 0xff) / 255) * alpha * span * 0.5;
+      b += (((c >>> 8) & 0xff) / 255) * alpha * span * 0.5;
+      a += alpha * span * 0.5;
+    }
+  }
+  if (a <= 0) return 0;
+  return pack(r / a, g / a, b / a, a);
+}
+
+/** One computed `background-image` layer; `null` when it is not a gradient this painter draws. */
+export function parseGradient(text: string): WireLayer | { flat: number } | null {
+  const open = text.indexOf("(");
+  if (open === -1) return null;
+  const fn = text.slice(0, open);
+  const args = splitTop(text.slice(open + 1, -1), ",");
+  const repeating = fn.startsWith("repeating-");
+  const kind = repeating ? fn.slice(10) : fn;
+  if (kind === "linear-gradient") {
+    let angle = Math.PI;
+    let first = 0;
+    const head = args[0] ?? "";
+    if (head.startsWith("to ")) {
+      angle = SIDE_ANGLES[head] ?? Math.PI;
+      first = 1;
+    } else {
+      const parsed = /^-?[\d.]+(deg|rad|grad|turn)$/.test(head) ? parseAngle(head) : null;
+      if (parsed !== null) {
+        angle = parsed;
+        first = 1;
+      }
+    }
+    const stops = parseStops(args.slice(first));
+    if (stops === null || stops.length === 0) return null;
+    if (repeating) {
+      const flat = averageOfRepeat(stops);
+      return flat === null ? null : { flat };
+    }
+    if (stops.some((s) => s.px)) return null;
+    return { g: 0, a: angle, st: spreadStops(stops) };
+  }
+  if (kind === "radial-gradient") {
+    let cx = 0.5;
+    let cy = 0.5;
+    let rf: WireLayer["rf"] = "corner";
+    let circle = false;
+    let first = 0;
+    const head = args[0] ?? "";
+    if (parseColor(splitTop(head, " ")[0] ?? "") === null) {
+      first = 1;
+      const [shape = "", position = ""] = head.split(" at ");
+      const sizes = shape.trim().split(/\s+/).filter((p) => p !== "");
+      circle = sizes.includes("circle");
+      const lengths = sizes.filter((p) => p.endsWith("%") || p.endsWith("px"));
+      if (lengths.length === 2 && lengths.every((p) => p.endsWith("%"))) rf = [parseFloat(lengths[0] as string) / 100, parseFloat(lengths[1] as string) / 100];
+      else if (sizes.includes("closest-side") || sizes.includes("farthest-side")) rf = "side";
+      else if (lengths.length > 0) return null;
+      const at = position.trim().split(/\s+/).filter((p) => p !== "");
+      const axis = (token: string | undefined, fallback: number) =>
+        token === undefined ? fallback : token === "center" ? 0.5 : token === "left" || token === "top" ? 0 : token === "right" || token === "bottom" ? 1 : token.endsWith("%") ? parseFloat(token) / 100 : fallback;
+      cx = axis(at[0], 0.5);
+      cy = axis(at[1], 0.5);
+    }
+    const stops = parseStops(args.slice(first));
+    if (stops === null || stops.length === 0) return null;
+    if (repeating) {
+      const flat = averageOfRepeat(stops);
+      return flat === null ? null : { flat };
+    }
+    if (stops.some((s) => s.px)) return null;
+    return { g: 1, cx, cy, rf, circle, st: spreadStops(stops) };
+  }
+  return null;
+}
+
+export type WireShadow = [[number, number, number, number, number], number];
+
+/** Computed `box-shadow`: `rgb(..) x y blur spread [inset], ...`. */
+export function parseShadows(text: string): WireShadow[] {
+  if (text === "none" || text === "") return [];
+  const out: WireShadow[] = [];
+  for (const part of splitTop(text, ",")) {
+    const tokens = splitTop(part, " ");
+    let color: number | null = null;
+    let inset = 0;
+    const lengths: number[] = [];
+    for (const token of tokens) {
+      if (token === "inset") inset = 1;
+      else if (/^-?[\d.]/.test(token)) lengths.push(parseFloat(token));
+      else color = parseColor(token);
+    }
+    if (color === null || colorAlpha(color) === 0) continue;
+    out.push([[lengths[0] ?? 0, lengths[1] ?? 0, lengths[2] ?? 0, lengths[3] ?? 0, inset], color]);
+  }
+  return out;
+}
+
+export type WireTextShadow = [number, number, number, number];
+
+export function parseTextShadows(text: string): WireTextShadow[] {
+  if (text === "none" || text === "") return [];
+  const out: WireTextShadow[] = [];
+  for (const part of splitTop(text, ",")) {
+    let color: number | null = null;
+    const lengths: number[] = [];
+    for (const token of splitTop(part, " ")) {
+      if (/^-?[\d.]/.test(token)) lengths.push(parseFloat(token));
+      else color = parseColor(token);
+    }
+    if (color === null || colorAlpha(color) === 0) continue;
+    out.push([lengths[0] ?? 0, lengths[1] ?? 0, lengths[2] ?? 0, color]);
+  }
+  return out;
+}
+
+export type WireTrack = [number, number, number, number];
+
+function trackSide(token: string): [number, number] | null {
+  if (token === "auto") return [0, 0];
+  if (token === "min-content") return [4, 0];
+  if (token === "max-content") return [5, 0];
+  if (token.endsWith("fr")) return [3, parseFloat(token)];
+  if (token.endsWith("px")) return [1, parseFloat(token)];
+  if (token.endsWith("%")) return [2, parseFloat(token)];
+  if (token === "0") return [1, 0];
+  return null;
+}
+
+function oneTrack(token: string): WireTrack | null {
+  if (token.startsWith("minmax(")) {
+    const [min = "", max = ""] = splitTop(token.slice(7, -1), ",");
+    const a = trackSide(min);
+    const b = trackSide(max);
+    if (a === null || b === null) return null;
+    // A flexible minimum is not a thing; CSS treats `minmax(1fr, x)` as auto.
+    return [a[0] === 3 ? 0 : a[0], a[1], b[0], b[1]];
+  }
+  if (token.startsWith("fit-content(")) return [0, 0, 5, 0];
+  const side = trackSide(token);
+  if (side === null) return null;
+  // `1fr` is `minmax(auto, 1fr)`; a length is both its minimum and its maximum.
+  return side[0] === 3 ? [0, 0, 3, side[1]] : [side[0], side[1], side[0], side[1]];
+}
+
+/** Computed `grid-template-columns`/`rows` or `grid-auto-*`; `null` when a track is not expressible. */
+export function parseTracks(text: string): WireTrack[] | null {
+  if (text === "none" || text === "" || text === "auto") return [];
+  const out: WireTrack[] = [];
+  for (const token of splitTop(text, " ")) {
+    if (token.startsWith("[")) continue;
+    if (token.startsWith("repeat(")) {
+      const [count = "", ...rest] = splitTop(token.slice(7, -1), ",");
+      const n = Number.parseInt(count, 10);
+      if (Number.isNaN(n)) return null;
+      const inner = parseTracks(rest.join(" "));
+      if (inner === null) return null;
+      for (let i = 0; i < n; i += 1) out.push(...inner);
+      continue;
+    }
+    const track = oneTrack(token);
+    if (track === null) return null;
+    out.push(track);
+  }
+  return out;
+}
+
+/** `grid-column-start`/`-end` pair as `[start kind, start, end kind, end]`. */
+export function parsePlacement(start: string, end: string): [number, number, number, number] | null {
+  const one = (text: string): [number, number] => {
+    if (text === "auto") return [0, 0];
+    if (text.startsWith("span")) return [2, Number.parseInt(text.slice(4), 10) || 1];
+    const n = Number.parseInt(text, 10);
+    return Number.isNaN(n) ? [0, 0] : [1, n];
+  };
+  const a = one(start);
+  const b = one(end);
+  return a[0] === 0 && b[0] === 0 ? null : [a[0], a[1], b[0], b[1]];
+}
+
+export interface WireTransform {
+  /** Translate in points. */
+  x: number;
+  y: number;
+  /** Translate as a fraction of the element's own size. */
+  fx: number;
+  fy: number;
+  rotate: number;
+  scale: number;
+  /** A part that could not be expressed (skew, 3D, non-uniform scale). */
+  lost: string | null;
+}
+
+function addTranslate(out: WireTransform, token: string | undefined, axis: "x" | "y"): void {
+  if (token === undefined) return;
+  if (token.endsWith("%")) {
+    if (axis === "x") out.fx += parseFloat(token) / 100;
+    else out.fy += parseFloat(token) / 100;
+  } else if (axis === "x") out.x += parsePx(token);
+  else out.y += parsePx(token);
+}
+
+/** The computed `translate`, `rotate`, `scale` and `transform` of one element, combined. */
+export function parseTransform(translate: string, rotate: string, scale: string, transform: string): WireTransform | null {
+  if ((translate === "none" || translate === "") && (rotate === "none" || rotate === "") && (scale === "none" || scale === "") && (transform === "none" || transform === "")) return null;
+  const out: WireTransform = { x: 0, y: 0, fx: 0, fy: 0, rotate: 0, scale: 1, lost: null };
+  if (translate !== "none" && translate !== "") {
+    const [x, y] = splitTop(translate, " ");
+    addTranslate(out, x, "x");
+    addTranslate(out, y, "y");
+  }
+  if (rotate !== "none" && rotate !== "") out.rotate += parseAngle(rotate) ?? 0;
+  if (scale !== "none" && scale !== "") {
+    const [sx = "1", sy = sx] = splitTop(scale, " ");
+    if (parseFloat(sx) !== parseFloat(sy)) out.lost = `scale: ${scale}`;
+    out.scale *= parseFloat(sx) || 1;
+  }
+  if (transform !== "none" && transform !== "") {
+    for (const part of splitTop(transform, " ")) {
+      const open = part.indexOf("(");
+      const fn = part.slice(0, open);
+      const args = splitTop(part.slice(open + 1, -1), ",");
+      if (fn === "translate") {
+        addTranslate(out, args[0], "x");
+        addTranslate(out, args[1], "y");
+      } else if (fn === "translateX") addTranslate(out, args[0], "x");
+      else if (fn === "translateY") addTranslate(out, args[0], "y");
+      else if (fn === "translate3d") {
+        addTranslate(out, args[0], "x");
+        addTranslate(out, args[1], "y");
+      } else if (fn === "translateZ") continue;
+      else if (fn === "rotate" || fn === "rotateZ") out.rotate += parseAngle(args[0] ?? "") ?? 0;
+      else if (fn === "scale") {
+        const sx = parseFloat(args[0] ?? "1");
+        const sy = parseFloat(args[1] ?? args[0] ?? "1");
+        if (sx !== sy) out.lost = part;
+        out.scale *= sx;
+      } else if (fn === "matrix") {
+        const [a = 1, b = 0, c = 0, d = 1, e = 0, f = 0] = args.map(parseFloat);
+        const sx = Math.hypot(a, b);
+        const sy = Math.hypot(c, d);
+        if (Math.abs(sx - sy) > 0.001 || Math.abs(a * c + b * d) > 0.001) out.lost = part;
+        out.scale *= sx;
+        out.rotate += Math.atan2(b, a);
+        out.x += e;
+        out.y += f;
+      } else out.lost = part;
+    }
+  }
+  return out;
+}
+
+const ALIGN: Record<string, number> = {
+  start: 1,
+  "flex-start": 1,
+  "self-start": 1,
+  left: 1,
+  end: 2,
+  "flex-end": 2,
+  "self-end": 2,
+  right: 2,
+  center: 3,
+  stretch: 4,
+  baseline: 5,
+  "first baseline": 5,
+  "last baseline": 5,
+  "space-between": 6,
+  "space-around": 7,
+  "space-evenly": 8,
+};
+
+/** An alignment keyword as the wire's small integer; 0 is the property's own default. */
+export function parseAlign(text: string): number {
+  return ALIGN[text.replace(/^(safe|unsafe) /, "")] ?? 0;
+}
+
+/** A corner radius: `"12px"`, `"12px 20px"` (elliptical, averaged) or a percentage (as large as fits). */
+export function parseRadius(text: string): number {
+  const [a = "0", b = a] = text.split(" ");
+  const one = (token: string) => (token.endsWith("%") ? (parseFloat(token) >= 50 ? 9999 : -parseFloat(token) / 100) : parsePx(token));
+  const x = one(a);
+  const y = one(b);
+  return x === y ? x : x >= 9999 || y >= 9999 ? Math.min(x, y) : (x + y) / 2;
+}
