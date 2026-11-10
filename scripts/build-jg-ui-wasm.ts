@@ -18,7 +18,7 @@ if (import.meta.main) {
   const root = fileURLToPath(new URL("..", import.meta.url));
   const native = join(root, "native");
   const out = join(native, "wasm", "jg-ui");
-  const build = Bun.spawnSync(["cargo", "build", "--profile", "wasm", "--target", "wasm32-unknown-unknown", "-p", "jg-ui"], { cwd: native, stdout: "inherit", stderr: "inherit" });
+  const build = Bun.spawnSync(["cargo", "build", "--jobs", "4", "--profile", "wasm", "--target", "wasm32-unknown-unknown", "-p", "jg-ui"], { cwd: native, stdout: "inherit", stderr: "inherit" });
   if (build.exitCode !== 0) {
     console.error("build-jg-ui-wasm: cargo failed (needs `rustup target add wasm32-unknown-unknown`)");
     process.exit(build.exitCode ?? 1);

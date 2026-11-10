@@ -11,10 +11,12 @@
  */
 
 import { RuneUi, type RuneUiEvent, type RuneUiNode } from "../runeUi.view";
+import { isFrameBoundElement } from "../liveBind.view";
 import { MirrorReport, boxOfElement, elementOf, mirrorRoot, onMaskLoaded, remirrorElement, remirrorText, type WireBox } from "./cssMirror.view";
 import { twinStateRules } from "./cssStates.view";
 import { installRuneMeasure, runeRectOf, setRuneRect } from "./domMeasure.view";
 import { RuneInput } from "./runeInput.view";
+import { boxTransform, composeBoxTransform, transformedBoxRect, type BoxTransform } from "./boxTransform";
 
 interface Layer {
   container: HTMLElement;
@@ -37,6 +39,13 @@ export function registerRuneFont(url: string): void {
 
 let stage: RuneStage | null = null;
 
+function specShape(box: WireBox): string {
+  return JSON.stringify(box, function (this: Record<string, unknown>, key: string, value: unknown): unknown {
+    if ((key === "s" && this["live"] !== undefined) || (key === "tf" && this["tfv"] !== undefined) || (key === "op" && this["opv"] !== undefined)) return undefined;
+    return value;
+  });
+}
+
 export class RuneStage {
   /** The page's stage, made on first use. */
   static get(): RuneStage {
@@ -46,6 +55,8 @@ export class RuneStage {
 
   readonly report = new MirrorReport();
   private readonly layers: Layer[] = [];
+  private readonly liveTexts = new Set<number>();
+  private readonly liveStyles = new Map<number, Set<string>>();
   private ui: RuneUi | null = null;
   private creating = false;
   /** Rune could not start: layers are drawn by the page. */
@@ -60,7 +71,7 @@ export class RuneStage {
   private islandRaf = 0;
   private input: RuneInput | null = null;
   /** What the mirror has done and what it cost, for perf probes: passes by kind, boxes built, milliseconds. */
-  stats = { full: 0, patches: 0, texts: 0, boxes: 0, ms: 0, lastMs: 0 };
+  stats = { full: 0, patches: 0, texts: 0, slots: 0, boxes: 0, ms: 0, lastMs: 0 };
   /** The last updates Rune refused, newest last. */
   readonly errors: string[] = [];
 
@@ -162,30 +173,16 @@ export class RuneStage {
         if (this.input === null) this.input = new RuneInput(() => this.layers.map((layer) => layer.root).filter((root): root is WireBox => root !== null), (control) => this.controlChanged(control));
         ui.on("*", (event) => this.onEvent(event));
         ui.onRects = () => {
-          // Rune reports where layout put each box. A box under a scaled one (the HUD's
-          // fit-to-screen zoom) is drawn somewhere else, and that is where the page must find it:
-          // each rect is carried through the scales above it, from the layer's root down.
-          const place = (box: WireBox, scale: number, dx: number, dy: number): void => {
+          const place = (box: WireBox, parent: BoxTransform): void => {
             const raw = box.id === 0 ? undefined : ui.rects.get(box.id);
-            let s = scale;
-            let x = dx;
-            let y = dy;
-            const own = (box["tf"] as number[] | undefined)?.[3] ?? 1;
-            if (raw !== undefined && own !== 1) {
-              const origin = (box["to"] as number[] | undefined) ?? [0.5, 0.5];
-              const ox = raw[0] + (origin[0] ?? 0.5) * raw[2];
-              const oy = raw[1] + (origin[1] ?? 0.5) * raw[3];
-              x = scale * ox * (1 - own) + dx;
-              y = scale * oy * (1 - own) + dy;
-              s = scale * own;
-            }
+            const matrix = raw === undefined ? parent : composeBoxTransform(parent, boxTransform(raw, box["tf"], box["to"]));
             if (raw !== undefined) {
               const element = elementOf(box.id);
-              if (element !== null) setRuneRect(element, [s * raw[0] + x, s * raw[1] + y, s * raw[2], s * raw[3]]);
+              if (element !== null) setRuneRect(element, transformedBoxRect(raw, matrix));
             }
-            for (const child of box.c ?? []) place(child, s, x, y);
+            for (const child of box.c ?? []) place(child, matrix);
           };
-          for (const layer of this.layers) if (layer.root !== null) place(layer.root, 1, 0, 0);
+          for (const layer of this.layers) if (layer.root !== null) place(layer.root, [1, 0, 0, 1, 0, 0]);
           this.placeIslands();
         };
         this.stale = true;
@@ -251,6 +248,51 @@ export class RuneStage {
     return layer.container;
   }
 
+  private releaseLive(ui: RuneUi, id: number): void {
+    if (this.liveTexts.delete(id)) ui.releaseText(`text:${id}`);
+    for (const field of this.liveStyles.get(id) ?? []) ui.releaseSlot(`style:${id}:${field}`);
+    this.liveStyles.delete(id);
+  }
+
+  private prepareLive(ui: RuneUi, box: WireBox, previous: WireBox | undefined, inherited = false): void {
+    const element = elementOf(box.id);
+    const dynamic = inherited || (element !== null && isFrameBoundElement(element));
+    const text = box["t"];
+    if (this.liveTexts.has(box.id) && typeof text === "object" && text !== null && "s" in text && typeof text.s === "string") {
+      const binding = ui.writeText(`text:${box.id}`, text.s);
+      Object.assign(text, { live: binding.slots });
+    }
+    if (box.id !== 0 && dynamic) {
+      let fields = this.liveStyles.get(box.id);
+      const bind = (field: string, value: number): number => {
+        if (fields === undefined) {
+          fields = new Set();
+          this.liveStyles.set(box.id, fields);
+        }
+        fields.add(field);
+        const name = `style:${box.id}:${field}`;
+        ui.write(name, value);
+        return ui.slot(name);
+      };
+      for (const field of ["w", "h", "mnw", "mnh", "mxw", "mxh", "fb"]) {
+        const value = box[field];
+        const percent = typeof value === "string" && value.endsWith("%");
+        if ((typeof value === "number" || percent) && (fields?.has(field) === true || (previous !== undefined && JSON.stringify(value) !== JSON.stringify(previous[field])))) {
+          const number = typeof value === "number" ? value : parseFloat(String(value)) / 100;
+          if (Number.isFinite(number)) box[field] = { v: bind(field, number), p: percent };
+        }
+      }
+      const opacity = box["op"];
+      if (typeof opacity === "number" && (fields?.has("op") === true || (previous !== undefined && opacity !== previous["op"]))) box["opv"] = bind("op", opacity);
+      const transform = box["tf"];
+      if (Array.isArray(transform) && transform.every((value): value is number => typeof value === "number" && Number.isFinite(value)) && (fields?.has("tf:0") === true || (previous !== undefined && JSON.stringify(transform) !== JSON.stringify(previous["tf"])))) {
+        box["tfv"] = transform.map((value, index) => bind(`tf:${index}`, value));
+      }
+    }
+    const oldChildren = new Map((previous?.c ?? []).filter((child) => child.id !== 0).map((child) => [child.id, child]));
+    for (const child of box.c ?? []) this.prepareLive(ui, child, oldChildren.get(child.id), dynamic);
+  }
+
   private sync(): void {
     if (this.layers.length === 0 && this.ui === null) return;
     this.ensureUi();
@@ -286,10 +328,26 @@ export class RuneStage {
           continue;
         }
         if (JSON.stringify(text) === JSON.stringify(box["t"] ?? null)) continue;
+        const previous = box["t"];
+        const live = text !== null && typeof text["s"] === "string" && (isFrameBoundElement(element) || this.liveTexts.has(box.id));
+        let needsPatch = true;
+        if (live) {
+          const record = ui.writeText(`text:${box.id}`, String(text["s"]));
+          text["live"] = record.slots;
+          this.liveTexts.add(box.id);
+          if (!record.grew && typeof previous === "object" && previous !== null && "live" in previous && "s" in previous) {
+            const { s: _old, ...oldStyle } = previous;
+            const { s: _next, ...newStyle } = text;
+            needsPatch = JSON.stringify(oldStyle) !== JSON.stringify(newStyle);
+          }
+          this.stats.slots += 1;
+        } else if (this.liveTexts.delete(box.id)) ui.releaseText(`text:${box.id}`);
         if (text === null) delete box["t"];
         else box["t"] = text;
-        ui.patchText(box.id, text);
-        this.stats.texts += 1;
+        if (needsPatch) {
+          ui.patchText(box.id, text);
+          this.stats.texts += 1;
+        }
       }
       layer.dirty.clear();
       layer.texts.clear();
@@ -303,9 +361,24 @@ export class RuneStage {
             full = true;
             break;
           }
+          const previous = boxOfElement(current);
+          const shape = previous === undefined ? null : specShape(previous);
           const box = remirrorElement(current, this.report);
           if (box !== null) {
-            patches.push(box);
+            this.prepareLive(ui, box, previous);
+            if (shape !== specShape(box)) patches.push(box);
+            else this.stats.slots += 1;
+            const present = new Set<number>();
+            const remember = (node: WireBox): void => {
+              present.add(node.id);
+              for (const child of node.c ?? []) remember(child);
+            };
+            remember(box);
+            const releaseRemoved = (node: WireBox): void => {
+              if (!present.has(node.id)) this.releaseLive(ui, node.id);
+              for (const child of node.c ?? []) releaseRemoved(child);
+            };
+            if (previous !== undefined) releaseRemoved(previous);
             break;
           }
           current = this.boxed(layer, current.parentElement ?? layer.container);
@@ -317,6 +390,13 @@ export class RuneStage {
       this.stale = false;
       const roots = this.layers.map((layer) => layer.root).filter((root): root is WireBox => root !== null);
       ui.setSpec(roots as unknown as RuneUiNode[], false);
+      const present = new Set<number>();
+      const visit = (box: WireBox): void => {
+        present.add(box.id);
+        for (const child of box.c ?? []) visit(child);
+      };
+      for (const root of roots) visit(root);
+      for (const id of [...this.liveTexts, ...this.liveStyles.keys()]) if (!present.has(id)) this.releaseLive(ui, id);
       this.stats.full += 1;
     } else if (patches.length > 0) {
       ui.patch(patches as unknown as RuneUiNode[]);

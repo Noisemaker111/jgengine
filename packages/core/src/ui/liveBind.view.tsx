@@ -16,6 +16,12 @@ import { isLive, readLive, type Live } from "./liveValue";
 type FrameSubscriber = () => void;
 
 const subscribers = new Set<FrameSubscriber>();
+const boundElements = new WeakMap<Element, number>();
+
+/** Whether a shared frame binding writes this element. Rune routes its live text through value slots. @internal */
+export function isFrameBoundElement(element: Element): boolean {
+  return boundElements.has(element);
+}
 let sharedRaf = 0;
 
 /** The frame the shared loop is running now, or -1 outside it. */
@@ -127,8 +133,23 @@ export function useFrameBind<T, E extends Element = Element>(
   const isEqualRef = useRef(isEqual);
   isEqualRef.current = isEqual;
   const written = useRef<{ value: T; element: E } | null>(null);
+  const bound = useRef<E | null>(null);
+  const unmark = (): void => {
+    if (bound.current === null) return;
+    const count = boundElements.get(bound.current) ?? 0;
+    if (count <= 1) boundElements.delete(bound.current);
+    else boundElements.set(bound.current, count - 1);
+    bound.current = null;
+  };
   const run = useRef(() => {
     const element = ref.current;
+    if (bound.current !== element) {
+      unmark();
+      if (element !== null) {
+        bound.current = element;
+        boundElements.set(element, (boundElements.get(element) ?? 0) + 1);
+      }
+    }
     if (element === null) return;
     const value = getRef.current();
     const last = written.current;
@@ -141,7 +162,13 @@ export function useFrameBind<T, E extends Element = Element>(
     written.current = null;
     run.current();
   });
-  useLayoutEffect(() => subscribeFrameBind(() => run.current()), []);
+  useLayoutEffect(() => {
+    const stop = subscribeFrameBind(() => run.current());
+    return () => {
+      stop();
+      unmark();
+    };
+  }, []);
 }
 
 /** Inline and block elements a live text can be. */

@@ -10,6 +10,8 @@
  * game canvas underneath, over a widget they land on Rune.
  */
 
+import { RuneValueSlots, type RuneTextSlots } from "./rune/valueSlots";
+
 export interface RuneUiNode {
   k: string;
   [key: string]: unknown;
@@ -47,7 +49,7 @@ export interface RuneUiOptions {
 }
 
 interface JgUiModule {
-  default: (input?: string | URL | Request | Response | BufferSource | WebAssembly.Module) => Promise<unknown>;
+  default: (input?: string | URL | Request | Response | BufferSource | WebAssembly.Module) => Promise<{ memory: WebAssembly.Memory }>;
   mount: (canvasId: string, optionsJson: string) => void;
   set_spec: (json: string) => void;
   patch: (json: string) => void;
@@ -56,7 +58,6 @@ interface JgUiModule {
   unmount: () => void;
   values_ptr: () => number;
   values_len: () => number;
-  memory: WebAssembly.Memory;
 }
 
 type EventHandler = (ev: RuneUiEvent) => void;
@@ -80,7 +81,7 @@ export class RuneUi {
   readonly rects = new Map<number, [number, number, number, number]>();
   /** Called with every box's rect whenever any of them moved. */
   onRects: ((rects: [number, number, number, number, number][]) => void) | null = null;
-  private readonly slots = new Map<string, number>();
+  private readonly valueSlots: RuneValueSlots;
   private readonly bound = new Map<string, BoundValue>();
   private readonly handlers = new Map<string, Set<EventHandler>>();
   private valuesView: Float32Array | null = null;
@@ -88,6 +89,7 @@ export class RuneUi {
   private readonly prevValues = new Map<number, number>();
   private raf = 0;
   private destroyed = false;
+  private wakeQueued = false;
   private specQueue: (() => void)[] = [];
   private mounted = false;
   private regions: [number, number, number, number][] = [];
@@ -96,10 +98,11 @@ export class RuneUi {
   private readonly zIndexCss: string;
   private readonly cleanups: (() => void)[] = [];
 
-  private constructor(canvas: HTMLCanvasElement, api: JgUiModule, zIndexCss: string) {
+  private constructor(canvas: HTMLCanvasElement, api: JgUiModule, zIndexCss: string, private readonly memory: WebAssembly.Memory) {
     this.canvas = canvas;
     this.api = api;
     this.zIndexCss = zIndexCss;
+    this.valueSlots = new RuneValueSlots(() => this.values());
   }
 
   /** Load the wasm bundle and mount it on a full-viewport canvas above the game. */
@@ -115,8 +118,8 @@ export class RuneUi {
       document.body.appendChild(canvas);
     }
     const mod = (await import(/* @vite-ignore */ `${base}/jg_ui.js`)) as JgUiModule;
-    await mod.default();
-    const ui = new RuneUi(canvas, mod, zIndexCss);
+    const initialized = await mod.default();
+    const ui = new RuneUi(canvas, mod, zIndexCss, initialized.memory);
     ui.wirePassThrough();
     window.__jgUiFrame = (payload: string) => ui.onFrame(payload);
     mod.mount(canvasId, JSON.stringify({
@@ -130,12 +133,7 @@ export class RuneUi {
 
   /** A stable slot index for `name`; allocate once, reuse across spec rebuilds. */
   slot(name: string): number {
-    let slot = this.slots.get(name);
-    if (slot === undefined) {
-      slot = this.slots.size;
-      this.slots.set(name, slot);
-    }
-    return slot;
+    return this.valueSlots.slot(name);
   }
 
   /** A stable slot fed by `get` every frame — the per-frame binding games write values through. */
@@ -148,9 +146,27 @@ export class RuneUi {
   /** Write `value` into `name`'s slot immediately (outside the per-frame loop). */
   write(name: string, value: number): void {
     const slot = this.slot(name);
-    this.values()[slot] = value;
-    this.prevValues.set(slot, value);
-    this.wake();
+    const changed = this.valueSlots.write(name, value);
+    this.prevValues.set(slot, Math.fround(value));
+    if (changed) this.wake();
+  }
+
+  /** Release a removed CSS binding's numeric slot. @internal */
+  releaseSlot(name: string): void {
+    this.valueSlots.release(name);
+    this.bound.delete(name);
+  }
+
+  /** Write a live label into shared memory; only its first binding or growth needs a text patch. @internal */
+  writeText(name: string, text: string): { slots: RuneTextSlots; grew: boolean } {
+    const record = this.valueSlots.writeText(name, text);
+    if (record.changed) this.wake();
+    return record;
+  }
+
+  /** Release a removed live label's slots for the next mounted label. @internal */
+  releaseText(name: string): void {
+    this.valueSlots.releaseText(name);
   }
 
   /** Replace the widget tree. `children` are spec nodes (`{k: "panel", ...}`); `modal` suspends game input. */
@@ -224,9 +240,9 @@ export class RuneUi {
   }
 
   private values(): Float32Array {
-    if (this.valuesView === null) {
-      // memory.buffer detaches if wasm memory grows; the rAF loop rebuilds on throw.
-      this.valuesView = new Float32Array(this.api.memory.buffer, this.api.values_ptr(), this.api.values_len());
+    if (this.valuesView === null || this.valuesView.buffer !== this.memory.buffer) {
+      // Memory growth detaches the old view; writes always use the current buffer.
+      this.valuesView = new Float32Array(this.memory.buffer, this.api.values_ptr(), this.api.values_len());
     }
     return this.valuesView;
   }
@@ -235,19 +251,15 @@ export class RuneUi {
     const tick = () => {
       if (this.destroyed) return;
       let changed = false;
-      try {
-        const view = this.values();
-        for (const { slot, get } of this.bound.values()) {
-          const value = get();
-          view[slot] = value;
-          const prev = this.prevValues.get(slot);
-          if (prev === undefined || !(prev === value || (Number.isNaN(prev) && Number.isNaN(value)))) {
-            this.prevValues.set(slot, value);
-            changed = true;
-          }
+      const view = this.values();
+      for (const { slot, get } of this.bound.values()) {
+        const value = Math.fround(get());
+        view[slot] = value;
+        const prev = this.prevValues.get(slot);
+        if (prev === undefined || !Object.is(prev, value)) {
+          this.prevValues.set(slot, value);
+          changed = true;
         }
-      } catch {
-        this.valuesView = null;
       }
       // Rune draws and presents only when state moves; an unchanged HUD costs
       // no GPU frame and no browser recomposite.
@@ -259,11 +271,12 @@ export class RuneUi {
 
   /** Ask wasm for one committed frame (bound values moved or `write` ran). */
   private wake(): void {
-    try {
-      this.api.values_changed();
-    } catch {
-      // Before mount resolves there is nothing to wake; the first frame draws anyway.
-    }
+    if (this.wakeQueued || this.destroyed) return;
+    this.wakeQueued = true;
+    queueMicrotask(() => {
+      this.wakeQueued = false;
+      if (!this.destroyed) this.send(() => this.api.values_changed());
+    });
   }
 
   private onFrame(payload: string): void {

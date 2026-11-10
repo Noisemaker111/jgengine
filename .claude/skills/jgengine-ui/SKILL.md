@@ -50,6 +50,9 @@ Existing games keep their entity store and use the focused
 The Rune bundle in `native/wasm/jg-ui/` ships with the checkout. After changing
 `native/crates/jg-ui` or `native/vendor/rune`, run `bun scripts/build-jg-ui-wasm.ts`
 and commit the generated bundle with its source. Game Vite builds copy it to `/jg-ui/`.
+`LiveText` and `useFrameBind` keep the same API on Rune: live text, dimensions,
+opacity and transforms use shared value slots after their first binding. Slots are
+reused when a label or box is removed. Other style changes patch the affected subtree.
 
 `defineGame({ health })` is off unless set: `reporter` receives a scrubbed `CrashReport` (build, game, tier, last N events, no personal data), `telemetry.sink` receives batched events (session start, loads, tier changes, frame percentiles, crash ids), `autoQuality: { targetFrameMs }` moves the tier with hysteresis and cooldowns (the player's tier pick turns it off; their render scale and effect toggles are never overwritten), and `errorScreen` is the game's own recoverable screen for a failed HUD render or tick. No vendor SDK ships in the engine; wire your own reporter and sink. Download size is checked before merge by `bun run check site-bundles` (CI's web-build job): the engine every game loads against `engineKb` in `apps/dev/bundle-budget.json`, and each game's own part against `bundleKb` in its `perf-budget.json`, with the reason in `bundleBaseline`. A heavy optional system loads on demand (see `scene/onDemandSceneKinds.ts`), so a game that never uses it never downloads it.
 

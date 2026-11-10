@@ -25,6 +25,7 @@ pub enum Dim {
     Auto,
     /// The address of a leaked `rune_taffy::Calc`.
     Calc(usize),
+    Slot { v: usize, p: bool },
 }
 
 thread_local! {
@@ -50,10 +51,12 @@ impl<'de> Deserialize<'de> for Dim {
             N(f32),
             S(String),
             C(Vec<f32>),
+            V { v: usize, #[serde(default)] p: bool },
         }
         Ok(match Raw::deserialize(d)? {
             Raw::N(v) => Dim::Px(v),
             Raw::C(v) => Dim::Calc(calc_of(&v)),
+            Raw::V { v, p } => Dim::Slot { v, p },
             Raw::S(s) => match s.strip_suffix('%').and_then(|p| p.parse::<f32>().ok()) {
                 Some(p) => Dim::Pct(p / 100.0),
                 None => Dim::Auto,
@@ -69,6 +72,7 @@ impl Dim {
             Dim::Pct(p) => Dimension::percent(p),
             Dim::Auto => Dimension::auto(),
             Dim::Calc(p) => Dimension::calc(p as *const ()),
+            Dim::Slot { v, p } => if p { Dimension::percent(crate::val(v)) } else { Dimension::length(crate::val(v)) },
         }
     }
     fn lpa(self) -> LengthPercentageAuto {
@@ -77,6 +81,7 @@ impl Dim {
             Dim::Pct(p) => percent(p),
             Dim::Auto => auto(),
             Dim::Calc(p) => LengthPercentageAuto::calc(p as *const ()),
+            Dim::Slot { v, p } => if p { percent(crate::val(v)) } else { length(crate::val(v)) },
         }
     }
     fn lp(self) -> LengthPercentage {
@@ -85,6 +90,7 @@ impl Dim {
             Dim::Pct(p) => percent(p),
             Dim::Auto => length(0.0),
             Dim::Calc(p) => LengthPercentage::calc(p as *const ()),
+            Dim::Slot { v, p } => if p { percent(crate::val(v)) } else { length(crate::val(v)) },
         }
     }
 }
@@ -170,8 +176,24 @@ pub struct SpanW {
 }
 
 #[derive(Deserialize, Clone, Debug)]
+pub struct LiveText {
+    pub n: usize,
+    pub u: Vec<usize>,
+}
+
+impl LiveText {
+    fn read(&self) -> String {
+        let count = (crate::val(self.n).max(0.0) as usize).min(self.u.len());
+        let units: Vec<u16> = self.u[..count].iter().map(|slot| crate::val(*slot) as u16).collect();
+        String::from_utf16_lossy(&units)
+    }
+}
+
+#[derive(Deserialize, Clone, Debug)]
 pub struct Txt {
     pub s: String,
+    #[serde(default)]
+    pub live: Option<LiveText>,
     #[serde(default)]
     pub sp: Vec<SpanW>,
     /// CSS family list.
@@ -330,10 +352,14 @@ pub struct Box_ {
     pub sh: Vec<([f32; 5], Rgba)>,
     #[serde(default)]
     pub op: Option<f32>,
+    #[serde(default)]
+    pub opv: Option<usize>,
     /// Translate x, y in points; rotation in radians; uniform scale; translate x, y as
     /// fractions of the box's own size.
     #[serde(default)]
     pub tf: Option<[f32; 6]>,
+    #[serde(default)]
+    pub tfv: Option<[usize; 6]>,
     /// 1: `box-sizing: content-box`.
     #[serde(default)]
     pub cb: u8,
@@ -736,6 +762,7 @@ fn needs_size(b: &Box_) -> bool {
     dashed_sides(b) ||
     b.ly.iter().any(|l| ((l.g != 0 || l.per > 0.0) && l.flat.is_none()) || l.bs.is_some())
         || b.tf.is_some_and(|t| t[4] != 0.0 || t[5] != 0.0)
+        || b.tfv.is_some()
         || b.rad.is_some_and(|r| r.iter().any(|v| *v < 0.0))
         || b.svg.is_some()
         || b.img.is_some()
@@ -937,14 +964,15 @@ fn text_style(t: &Txt) -> TextStyle {
 }
 
 fn text_el(t: &Txt, color: Color) -> El {
-    let mut e = text(t.s.clone()).font(text_style(t)).color(color);
+    let body = t.live.as_ref().map_or_else(|| t.s.clone(), LiveText::read);
+    let mut e = text(body.clone()).font(text_style(t)).color(color);
     if !t.sp.is_empty() {
         let spans: Vec<Span> = t
             .sp
             .iter()
             .map(|s| {
                 // The page counts in UTF-16 units; the text layout counts in bytes.
-                let mut span = Span::new(byte_at(&t.s, s.a as usize), byte_at(&t.s, s.b as usize));
+                let mut span = Span::new(byte_at(&body, s.a as usize), byte_at(&body, s.b as usize));
                 span.color = s.c.map(|c| c.0);
                 span.weight = s.w;
                 span.size = s.z;
@@ -1059,10 +1087,10 @@ pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
     for (sh, c) in &b.sh {
         e = e.box_shadow(Shadow { x: sh[0], y: sh[1], blur: sh[2], spread: sh[3], color: c.0, inset: sh[4] > 0.5 });
     }
-    if let Some(o) = b.op {
+    if let Some(o) = b.opv.map(crate::val).or(b.op) {
         e = e.opacity(o);
     }
-    if let Some([tx, ty, rot, sc, fx, fy]) = b.tf {
+    if let Some([tx, ty, rot, sc, fx, fy]) = b.tfv.map(|slots| slots.map(crate::val)).or(b.tf) {
         if let Some([ox, oy]) = b.to {
             e = e.origin(ox, oy);
         }
@@ -1256,5 +1284,30 @@ pub fn fields<'a>(nodes: &'a [crate::Node], out: &mut Vec<(String, &'a Input)>) 
             }
             fields(&b.c, out);
         }
+    }
+}
+
+#[cfg(test)]
+mod live_value_tests {
+    use super::*;
+
+    #[test]
+    fn css_dimensions_and_unicode_text_read_shared_slots() {
+        let dimension: Dim = serde_json::from_str(r#"{"v":8000,"p":true}"#).unwrap();
+        crate::set_val(8000, 0.25);
+        assert_eq!(dimension.dimension(), Dimension::percent(0.25));
+        crate::set_val(8000, 0.75);
+        assert_eq!(dimension.dimension(), Dimension::percent(0.75));
+        let body = "01:23 🦉";
+        let units: Vec<u16> = body.encode_utf16().collect();
+        let slots: Vec<usize> = (8002..8002 + units.len()).collect();
+        crate::set_val(8001, units.len() as f32);
+        for (slot, unit) in slots.iter().zip(&units) {
+            crate::set_val(*slot, *unit as f32);
+        }
+        let text = LiveText { n: 8001, u: slots };
+        assert_eq!(text.read(), body);
+        crate::set_val(8006, '2' as u32 as f32);
+        assert_eq!(text.read(), "01:22 🦉");
     }
 }
