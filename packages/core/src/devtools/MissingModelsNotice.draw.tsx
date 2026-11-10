@@ -1,4 +1,5 @@
-import { useSyncExternalStore } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import { isProductionEnvironment } from "@jgengine/core/devtools/saveEndpoint";
 import { modelLoadFallbacks, subscribeModelLoadFallbacks } from "@jgengine/core/model/modelLoad.draw";

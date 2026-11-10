@@ -1,4 +1,5 @@
-import { useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useState } from "@jgengine/core/ui/jsx";
 import { ScrollRail } from "./scrollRail.view";
 
 /** Deterministic preview of caller-owned controls in the shared scrolling chrome. @internal */

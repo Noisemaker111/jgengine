@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { HudCanvas, HudPanel, useDisplayProfile, useHudLayout } from "@jgengine/react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useState } from "@jgengine/core/ui/jsx";
+import { HudCanvas, HudPanel, useDisplayProfile, useHudLayout } from "@jgengine/ui";
 import { useGameFonts } from "@jgengine/core/ui/fonts.view";
-import { useGamePhase } from "@jgengine/react/hooks";
-import { useStore } from "@jgengine/react/store";
+import { useGamePhase } from "@jgengine/ui/hooks";
+import { useStore } from "@jgengine/ui/store";
 import { lootDropsOf } from "@jgengine/core/game/events";
 import { ToastStack } from "@jgengine/core/notifications/toastStack.view";
 import { OnboardingHud } from "@jgengine/core/onboarding/onboarding.view";

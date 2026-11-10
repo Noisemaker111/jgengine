@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useRef } from "@jgengine/core/ui/jsx";
 import { useInputDevice } from "@jgengine/core/input/inputDevice.view";
 import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";
 

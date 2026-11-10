@@ -1,7 +1,8 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { activeCameraControls } from "@jgengine/core/camera/activeCameraControls.draw";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import type { EditorSession } from "@jgengine/core/editor/index";
@@ -24,7 +25,7 @@ import {
   type TerraformSnapshot,
   type TerraformStroke,
 } from "@jgengine/core/terrain/terraform";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 import { displaceHeightfieldGeometry } from "@jgengine/core/terrain/heightfieldGeometry.draw";
 import { normalizeHeightBlend } from "@jgengine/core/terrain/terrainMath.draw";
 import { ALL_TERRAIN_SURFACE_CLASSES, createTerrainDetailMaterial } from "@jgengine/core/terrain/terrainDetailMaterial.draw";
@@ -49,6 +50,7 @@ import {
   type TerrainMode,
 } from "./uiStore";
 import { useStoreSelector } from "./useStoreSelector";
+import type { MutableRefObject } from "@jgengine/core/ui/jsx";
 
 const GROUND_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const LOW = new THREE.Color("#3f5d34");
@@ -228,7 +230,7 @@ const SculptMesh = memo(function SculptMesh({
   bounds: Aabb;
   segments: number;
   revision: number;
-  pendingRef: React.MutableRefObject<PendingDisplace | null>;
+  pendingRef: MutableRefObject<PendingDisplace | null>;
   paletteAt: PaletteSampler | null;
   heightRange: readonly [number, number];
   contourStrength: number;

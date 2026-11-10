@@ -1,14 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
 import { useActionBindings } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { allActionCodes } from "@jgengine/core/input/actionBindings";
 import { useSceneSwapping } from "@jgengine/core/ui/sceneSwap.view";
-import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
-import { useBrowserSuspension, useDialogBehavior } from "@jgengine/react";
-import { useOptionalGamePhase } from "@jgengine/react/hooks";
+import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/ui";
+import { useBrowserSuspension, useDialogBehavior } from "@jgengine/ui";
+import { useOptionalGamePhase } from "@jgengine/ui/hooks";
 import { useSettings } from "@jgengine/core/settings/settings.view";
-import { useGameContext } from "@jgengine/react/provider";
-import { useStore } from "@jgengine/react/store";
-import { useGameStore } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
+import { useStore } from "@jgengine/ui/store";
+import { useGameStore } from "@jgengine/ui/hooks";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { HudButton } from "@jgengine/core/hud/hudButton.view";
 import { HudSurface } from "@jgengine/core/hud/hudSurface.view";
@@ -25,7 +26,6 @@ import { DeepwardMenu } from "./menu/DeepwardMenu";
 import { RECORD_KEY, SAVE_KEY } from "../save";
 import { ActionPlate, DepthStrip, DiveComputer, Docket, HoldTab, KitCounter, CommsLine, VisorReticle, SearchBar, Visor } from "./VisorHud";
 import { FabricatorSheet } from "./FabricatorSheet";
-import { RuneGameUI } from "./rune/RuneGameUI";
 import { marrowOf, marrowState } from "../marrow";
 import { nextGoal, sealMark } from "../deep";
 import { crushDamage, STRATA } from "../strata";
@@ -109,7 +109,7 @@ function TravelCard() {
   return swapping ? <div className="dw-travel" role="status"><span>{where}</span></div> : null;
 }
 
-function ReactGameUI() {
+export function GameUI() {
   useGameFonts(GAME_FONTS);
   const ctx = useGameContext();
   const screen = useStore(viewStore, v => ({ panel: v.panel, mode: v.mode, paused: v.paused, diving: v.dive !== null, low: v.dive !== null && v.dive.oxygen <= 25 }));
@@ -393,11 +393,3 @@ function SaveSheet({ dialogRef, command }: { dialogRef: DialogRef; command: Comm
     <HudButton onClick={() => window.location.reload()}>Reload saved Marrow</HudButton>
   </HudSurface></div>;
 }
-
-/**
- * `?ui=rune` mounts the Rune port of this HUD in its place, for the port's own work: it does not
- * yet wrap text, draw the paper docket or the key chips. The page is one or the other for its life.
- */
-const RUNE_UI = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("ui") === "rune";
-
-export const GameUI = RUNE_UI ? RuneGameUI : ReactGameUI;

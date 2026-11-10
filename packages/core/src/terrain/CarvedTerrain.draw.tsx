@@ -1,4 +1,5 @@
-import { useRef } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import { nextFrame } from "@jgengine/core/run/nextFrame.draw";

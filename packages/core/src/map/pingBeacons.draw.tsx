@@ -1,4 +1,5 @@
-import { useRef, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useRef, type ReactNode } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import {
   ConeGeometry,
@@ -21,6 +22,7 @@ import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import type { CSSProperties } from "@jgengine/core/ui/jsx";
 
 function pingText(marker: MarkerView): string | undefined {
   const meta = marker.meta as { callout?: string } | undefined;
@@ -83,7 +85,7 @@ function pingDraw(marker: MarkerView, style: MarkerKindStyle, height: number): E
   };
 }
 
-function calloutStyle(style: MarkerKindStyle): React.CSSProperties {
+function calloutStyle(style: MarkerKindStyle): CSSProperties {
   return {
     display: "flex",
     alignItems: "center",

@@ -1,11 +1,12 @@
-import { useMemo, useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useMemo, useState } from "@jgengine/core/ui/jsx";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { SessionListing } from "@jgengine/core/multiplayer/matchmaking";
 import type { WorldInviteTarget } from "@jgengine/core/social/social";
 import { createLocalVoiceTransport } from "@jgengine/core/multiplayer/voiceContract";
 import { ChatPanel } from "@jgengine/core/chat/chat.view";
-import { usePlayer } from "@jgengine/react/hooks";
+import { usePlayer } from "@jgengine/ui/hooks";
 import {
   AddFriendButton,
   EmoteWheel,

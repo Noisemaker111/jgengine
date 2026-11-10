@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import * as THREE from "three";
 
 import type { TilemapWorldConfig } from "@jgengine/core/world/features";
@@ -103,7 +104,7 @@ export function tileLayerRendererDraw({ config, parallax = [1, 1], pixelated = t
   };
 }
 
-/** Thin React bridge: mounts {@link tileLayerRendererDraw} under the JSX parent. */
+/** Thin UI bridge: mounts {@link tileLayerRendererDraw} under the JSX parent. */
 export function TileLayerRenderer(props: TileLayerRendererProps) {
   const { config, parallax, pixelated } = props;
   return (

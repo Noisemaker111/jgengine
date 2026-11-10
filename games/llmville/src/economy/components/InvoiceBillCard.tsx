@@ -1,9 +1,10 @@
-import type { ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
-import { cn } from "@/kit/cn";
+import { cn } from "../../kit/cn";
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { BillCardGlyph } from "@/economy/billCardGlyph";
-import type { BillType } from "@/economy/events";
+import { BillCardGlyph } from "../billCardGlyph";
+import type { BillType } from "../events";
 
 interface InvoiceBillCardProps {
   label: string;

@@ -1,4 +1,5 @@
-import { useRef } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import { resolveAmbientLife, type AmbientLifeConfig, type ResolvedAmbientLife, type SteamVent } from "@jgengine/core/render/ambientLife";

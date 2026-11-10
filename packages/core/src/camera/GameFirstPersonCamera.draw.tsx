@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, type ComponentType, type MutableRefObject } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useMemo, useRef, type ComponentType, type MutableRefObject } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import type { CameraWeaponView, FirstPersonCameraConfig } from "@jgengine/core/game/playableGame";
 import { DEFAULT_EYE_HEIGHT } from "@jgengine/core/combat/shotOrigin";
@@ -9,10 +10,10 @@ import {
   type WeaponPose,
   type WeaponPresentationTuning,
 } from "@jgengine/core/combat/weaponPresentation";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { RenderPose } from "@jgengine/core/runtime/poseInterpolation";
-import { usePlayer } from "@jgengine/react/hooks";
+import { usePlayer } from "@jgengine/ui/hooks";
 import { useEntityRenderCues } from "@jgengine/core/anim/useEntityRenderCues.draw";
 import { clearCameraBoom, sceneCameraQuery } from "./cameraCollision";
 import { usePlayerFov, type PlayerFovState } from "./PlayerFov.draw";

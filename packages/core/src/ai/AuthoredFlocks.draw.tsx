@@ -1,12 +1,13 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-world
-import { useMemo, useRef } from "react";
+import { useMemo, useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import type { FlockStepAgent } from "@jgengine/core/ai/flock";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 
 import { isolatedEntityModelDraw, preloadSceneModel } from "@jgengine/core/model/entityModelDraw.draw";
 import { resolveModel } from "@jgengine/core/model/resolveModel";

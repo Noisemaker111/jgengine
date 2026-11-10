@@ -1,4 +1,5 @@
-import { useLayoutEffect, useMemo, useSyncExternalStore } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useLayoutEffect, useMemo, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import { Box3, type Camera, type Group } from "three";
 import { EngineSceneContext, SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
@@ -7,7 +8,7 @@ import { decodeEditorDocument, requireEditorMarker } from "@jgengine/core/editor
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { playControlsActive } from "@jgengine/core/game/controlGate";
 import { environment, terrain } from "@jgengine/core/world/features";
-import { useGame, useGameContext, useGameStoreValue } from "@jgengine/react";
+import { useGame, useGameContext, useGameStoreValue } from "@jgengine/ui";
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 import { hostedAuthorityDemoGame } from "./hostedAuthorityDemo";

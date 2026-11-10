@@ -1,10 +1,11 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "@jgengine/core/ui/jsx";
 import "../../style.css";
-import { SettingsTrigger, useBrowserSuspension } from "@jgengine/react";
+import { SettingsTrigger, useBrowserSuspension } from "@jgengine/ui";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/core/hud/hudLayout.view";
 import { useSettings } from "@jgengine/core/settings/settings.view";
-import { useGame, useGameStore } from "@jgengine/react/hooks";
-import { useStore } from "@jgengine/react/store";
+import { useGame, useGameStore } from "@jgengine/ui/hooks";
+import { useStore } from "@jgengine/ui/store";
 import { GameIcon, type GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
 import { useGameFonts } from "@jgengine/core/ui/fonts.view";
 import { LiveText, perFrame } from "@jgengine/core/ui/liveBind.view";

@@ -177,6 +177,18 @@ impl<S: 'static> Running<S> {
                 let x = event["x"].as_f64().unwrap_or(0.0) as f32;
                 return self.rt.set_page_scroll_x(path, x);
             }
+            Some("wheel") => {
+                let x = event["x"].as_f64().unwrap_or(0.0) as f32;
+                let y = event["y"].as_f64().unwrap_or(0.0) as f32 + self.rt.page_window().0;
+                let dx = event["dx"].as_f64().unwrap_or(0.0) as f32;
+                let dy = event["dy"].as_f64().unwrap_or(0.0) as f32;
+                let flag = |key: &str| event[key].as_bool().unwrap_or(false);
+                let mods = crate::Mods { shift: flag("shift"), alt: flag("alt"), ctrl: flag("ctrl"), logo: flag("logo"), cmd: flag("ctrl") || flag("logo") };
+                if mods.ctrl { return !self.input.document && self.rt.pinch_wheel(x, y, dy); }
+                let (dx, dy) = if mods.shift && dx == 0.0 { (dy, 0.0) } else { (dx, dy) };
+                self.rt.wheel_event(crate::WheelEvent::new(dx, dy).at(x, y).mods(mods).precise(flag("precise")));
+                return true;
+            }
             // The pointer is over mirrored text or a link, which takes it from the canvas.
             Some("hover") => {
                 if self.rt.touching() { return false; }

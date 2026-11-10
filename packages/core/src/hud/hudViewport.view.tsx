@@ -1,4 +1,5 @@
-import { createContext, useContext, useMemo, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { createContext, useContext, useMemo, type ReactNode } from "@jgengine/core/ui/jsx";
 import type { HudPlatform, HudViewportConfig } from "@jgengine/core/hud/hudScale";
 
 export interface HudViewportContextValue {

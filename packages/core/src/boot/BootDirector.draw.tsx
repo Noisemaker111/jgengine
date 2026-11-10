@@ -1,5 +1,6 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-ui
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import { pagePrefetch } from "@jgengine/core/boot/assetPrefetch";
 import { pageBoot } from "@jgengine/core/boot/bootSequence";

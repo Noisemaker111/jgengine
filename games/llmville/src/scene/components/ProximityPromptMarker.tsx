@@ -1,7 +1,8 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { AnchoredOverlay } from "@jgengine/core/hud/hudOverlay.draw";
 
 import type { PlacedBuildItem } from "@llmville/game/build/build";
-import type { PlacedRack } from "@/infrastructure/infrastructure";
+import type { PlacedRack } from "../../infrastructure/infrastructure";
 import {
   INTERACTION_TARGET_TYPE,
   type InteractionHint,

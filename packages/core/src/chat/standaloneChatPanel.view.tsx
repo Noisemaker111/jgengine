@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 import { DEFAULT_CHAT_BODY_LENGTH, type ChatMessage } from "@jgengine/core/chat/chat";
 import type { ChatSendOutcome } from "@jgengine/core/chat/chatContract";
 

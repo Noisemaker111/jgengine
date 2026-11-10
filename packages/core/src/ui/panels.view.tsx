@@ -1,12 +1,6 @@
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-  type PointerEvent as ReactPointerEvent,
-  type ReactNode,
-} from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
+import type { PointerEvent as ReactPointerEvent } from "@jgengine/core/ui/jsx/dom.view";
 
 import {
   closePanel,

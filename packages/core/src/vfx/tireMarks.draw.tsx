@@ -1,9 +1,10 @@
-import { useRef } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useRef } from "@jgengine/core/ui/jsx";
 import { BufferAttribute, BufferGeometry, DoubleSide, Mesh, MeshBasicMaterial } from "three";
 
 import type { TireMark } from "@jgengine/core/physics/tireMarks";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 

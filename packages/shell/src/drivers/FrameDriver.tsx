@@ -1,5 +1,6 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { ReplayRecorder } from "@jgengine/core/replay/replayRecording";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "@jgengine/core/ui/jsx";
 
 import { RESERVED_INPUT_ACTIONS, dispatchBoundAction, heldActionsFor, shouldFireBoundAction } from "@jgengine/core/input/boundActionDispatch";
 import { executeHotbarSlot, findHotbarSlotActions, hotbarIdFor } from "@jgengine/core/input/hotbarActions";

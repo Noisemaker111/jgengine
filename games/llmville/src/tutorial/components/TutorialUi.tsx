@@ -1,10 +1,11 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { AnchoredOverlay } from "@jgengine/core/hud/hudOverlay.draw";
 
-import { cn } from "@/kit/cn";
-import type { PlacedRack } from "@/infrastructure/infrastructure";
-import type { TutorialHint } from "@/tutorial/tutorialRuntime";
-import { useAnimatedText } from "@/tutorial/tutorialRuntime";
+import { cn } from "../../kit/cn";
+import type { PlacedRack } from "../../infrastructure/infrastructure";
+import type { TutorialHint } from "../tutorialRuntime";
+import { useAnimatedText } from "../tutorialRuntime";
 
 export function TutorialArrow({ className }: { className?: string }) {
   return (

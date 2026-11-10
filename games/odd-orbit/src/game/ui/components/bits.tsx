@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 import { bodyColor, describePlan, type AlienBodyPlan } from "../../creatures/bodyPlan";
 import { NEED_DEFS, type NeedId } from "../../needs/needs";
 import { MOOD_COLORS, NEED_COLORS } from "../../palette";

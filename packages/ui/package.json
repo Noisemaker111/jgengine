@@ -1,0 +1,43 @@
+{
+  "name": "@jgengine/ui",
+  "version": "0.55.1",
+  "description": "Engine UI layer for JGengine: GameProvider, hooks, and primitives over the engine JSX runtime, DOM and Rune.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Noisemaker111/jgengine.git",
+    "directory": "packages/ui"
+  },
+  "files": [
+    "dist",
+    "CHANGELOG.md",
+    "skills"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./styles.css": "./dist/styles.css",
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "scripts": {
+    "build": "bun ../../scripts/build-engine.ts",
+    "check-types": "tsgo --noEmit -p tsconfig.json",
+    "test": "bun test --preload ../../scripts/three-preload.ts src",
+    "styles": "bun scripts/styles.ts"
+  },
+  "dependencies": {
+    "@jgengine/core": "^0.55.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

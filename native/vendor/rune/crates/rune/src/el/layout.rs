@@ -557,6 +557,12 @@ impl El {
         self.style.set_grid_cell(column);
         self
     }
+    /// jgengine patch: edit the element's whole Taffy style (grid, block, percentages, margins,
+    /// min/max sizes), for a host that resolves CSS itself. See `VENDORED.md`.
+    pub fn layout_style(mut self, f: impl FnOnce(&mut rune_taffy::prelude::Style)) -> Self {
+        self.style.modify_cold(f);
+        self
+    }
     /// Out of flow, positioned at `left, top` inside the parent's padding box.
     #[inline]
     pub fn absolute(mut self, left: f32, top: f32) -> Self {

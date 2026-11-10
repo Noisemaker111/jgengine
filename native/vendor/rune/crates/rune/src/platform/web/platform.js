@@ -71,18 +71,33 @@ async function readImage(url, maxSide) {
     const blob = await response.blob();
     const type = (response.headers.get('content-type') || blob.type).split(';')[0].trim().toLowerCase();
     const path = response.url ? new URL(response.url).pathname : '';
-    if (type === 'image/svg+xml' || /\.svgz?$/i.test(path)) return [0, 0, new Uint8Array(await blob.arrayBuffer())];
-    const bitmap = await createImageBitmap(blob, { imageOrientation: 'from-image', colorSpaceConversion: 'default' });
+    const svg = type === 'image/svg+xml' || /\.svgz?$/i.test(path);
+    let address;
+    let bitmap;
+    if (svg) {
+        address = URL.createObjectURL(blob);
+        bitmap = new Image();
+        bitmap.src = address;
+        try { await bitmap.decode(); }
+        catch (error) { URL.revokeObjectURL(address); throw error; }
+    } else {
+        bitmap = await createImageBitmap(blob, { imageOrientation: 'from-image', colorSpaceConversion: 'default' });
+    }
     try {
-        const { width, height } = bitmap;
+        const sourceWidth = svg ? bitmap.naturalWidth : bitmap.width;
+        const sourceHeight = svg ? bitmap.naturalHeight : bitmap.height;
+        const scale = svg ? Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight)) : 1;
+        const width = Math.max(1, Math.round(sourceWidth * scale));
+        const height = Math.max(1, Math.round(sourceHeight * scale));
         if (width > maxSide || height > maxSide) throw new Error(`${width}×${height} is over ${maxSide} pixels a side`);
         const canvas = typeof OffscreenCanvas === 'function' ? new OffscreenCanvas(width, height)
             : Object.assign(document.createElement('canvas'), { width, height });
         const context = canvas.getContext('2d', { willReadFrequently: true });
-        context.drawImage(bitmap, 0, 0);
+        context.drawImage(bitmap, 0, 0, width, height);
         return [width, height, new Uint8Array(context.getImageData(0, 0, width, height).data.buffer)];
     } finally {
-        bitmap.close();
+        if (svg) URL.revokeObjectURL(address);
+        else bitmap.close();
     }
 }
 

@@ -1,16 +1,17 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 /**
  * The tablet frame that slides up from the bottom.
  * It owns the full tablet flow so the home screen, app sheet, and tutorial locks
  * can be traced in one place.
  */
 
-import { useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useRef, useState } from "@jgengine/core/ui/jsx";
+import { createPortal } from "@jgengine/core/ui/jsx/client.view";
 
-import type { BuildViewModel } from "@/build/buildSession";
-import type { ReadyWorldViewModel } from "@/runtime/worldViewModel";
-import { TABLET_APP_ID, TABLET_APPS, useGameTabletFrame, useEscapeToClose } from "@/tablet/tablet";
-import type { TutorialViewModel } from "@/tutorial/tutorialRuntime";
+import type { BuildViewModel } from "../../build/buildSession";
+import type { ReadyWorldViewModel } from "../../runtime/worldViewModel";
+import { TABLET_APP_ID, TABLET_APPS, useGameTabletFrame, useEscapeToClose } from "../tablet";
+import type { TutorialViewModel } from "../../tutorial/tutorialRuntime";
 import {
   GAME_TABLET_APP_ICON_GRADIENT_OVERLAY_CLASS,
   GAME_TABLET_APP_ICON_HIGHLIGHT_CLASS,
@@ -41,27 +42,27 @@ import {
   gameTabletAppTitleClass,
   tabletHomeAppButtonClass,
   gameTabletShellMotionClass,
-} from "@/tablet/gameTabletChrome";
-import { useTabletSheetGestures, TABLET_TOUCH_CLOSED_TRANSLATE_PERCENT, TABLET_TOUCH_OPEN_TRANSLATE_PERCENT } from "@/tablet/tabletSheetGesture";
-import { useTabletNavContext } from "@/tablet/components/tabletNav";
+} from "../gameTabletChrome";
+import { useTabletSheetGestures, TABLET_TOUCH_CLOSED_TRANSLATE_PERCENT, TABLET_TOUCH_OPEN_TRANSLATE_PERCENT } from "../tabletSheetGesture";
+import { useTabletNavContext } from "./tabletNav";
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { UI_LAYER } from "@/runtime/uiLayers";
+import { UI_LAYER } from "../../runtime/uiLayers";
 
 import { useSettings } from "@jgengine/core/settings/settings.view";
-import { LlmvilleSettings } from "@/settings/components/LlmvilleSettings";
-import { AllModelsApp } from "@/models/components/AllModelsApp";
-import { InferenceApp } from "@/inference/components/InferenceApp";
-import { StatsApp } from "@/stats/components/StatsApp";
-import { MapApp } from "@/world/components/MapApp";
-import { BotApp } from "@/tablet/components/BotApp";
-import { BillsApp } from "@/economy/components/BillsApp";
-import ModelRevealOverlay, { type RevealingModelStats } from "@/models/components/ModelRevealOverlay";
-import { StorageScreen } from "@/storage/components/StorageScreen";
-import { StoreScreen } from "@/store/components/StoreScreen";
-import { TabletStoreTabs } from "@/tablet/components/TabletStoreTabs";
-import { TutorialArrow } from "@/tutorial/components/TutorialUi";
-import { LabGuide, type LabGoalSelection } from "@/tutorial/components/LabGuide";
-import { NeighborhoodProject } from "@/community/components/NeighborhoodProject";
+import { LlmvilleSettings } from "../../settings/components/LlmvilleSettings";
+import { AllModelsApp } from "../../models/components/AllModelsApp";
+import { InferenceApp } from "../../inference/components/InferenceApp";
+import { StatsApp } from "../../stats/components/StatsApp";
+import { MapApp } from "../../world/components/MapApp";
+import { BotApp } from "./BotApp";
+import { BillsApp } from "../../economy/components/BillsApp";
+import ModelRevealOverlay, { type RevealingModelStats } from "../../models/components/ModelRevealOverlay";
+import { StorageScreen } from "../../storage/components/StorageScreen";
+import { StoreScreen } from "../../store/components/StoreScreen";
+import { TabletStoreTabs } from "./TabletStoreTabs";
+import { TutorialArrow } from "../../tutorial/components/TutorialUi";
+import { LabGuide, type LabGoalSelection } from "../../tutorial/components/LabGuide";
+import { NeighborhoodProject } from "../../community/components/NeighborhoodProject";
 
 interface GameTabletProps {
   world: ReadyWorldViewModel;

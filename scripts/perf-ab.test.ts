@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { abVerdict, affectedGames, awayFromHome, BASE_TREE_KEEP_MS, baseTreeName, expiredBaseTrees, homeRequest, medianMs, pairLogRatio, parseAbArgs, percentileMs, plantScript, renderAbScorecards, renderAbTable, rendererCpuPct, routeSpread, t99, type AbGameResult } from "./perf-ab";
+import { abPageUrl, abVerdict, affectedGames, awayFromHome, BASE_TREE_KEEP_MS, baseTreeName, expiredBaseTrees, homeRequest, medianMs, pairLogRatio, parseAbArgs, percentileMs, plantScript, renderAbScorecards, renderAbTable, rendererCpuPct, routeSpread, t99, type AbGameResult } from "./perf-ab";
 import { frameScore, type Scorecard } from "./perf-scorecard";
 import { treeFingerprint } from "./servedTree";
 
@@ -134,6 +134,20 @@ test("the fingerprint changes when a served file is edited, not when the edit is
     writeFileSync(join(dir, "notes.md"), "not served\n");
     rmSync(join(dir, "games", "new.ts"));
     expect(treeFingerprint(dir)).toBe(edited);
+    mkdirSync(join(dir, "native", "wasm", "jg-ui"), { recursive: true });
+    const wasm = join(dir, "native", "wasm", "jg-ui", "jg_ui_bg.wasm");
+    writeFileSync(wasm, "first Rune bundle");
+    const bundled = treeFingerprint(dir);
+    expect(bundled).not.toBe(edited);
+    writeFileSync(wasm, "rebuilt Rune bundle");
+    const rebuilt = treeFingerprint(dir);
+    expect(rebuilt).not.toBe(bundled);
+    mkdirSync(join(dir, "native", "wasm", "jg-ui", "snippets"));
+    writeFileSync(join(dir, "native", "wasm", "jg-ui", "snippets", "platform.js"), "rebuilt bridge");
+    const snippets = treeFingerprint(dir);
+    expect(snippets).not.toBe(rebuilt);
+    writeFileSync(join(dir, "bun.lock"), "updated dependencies");
+    expect(treeFingerprint(dir)).not.toBe(snippets);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -199,6 +213,21 @@ test("perf ab times the dev servers unless --production asks for the build playe
   const production = parseAbArgs(["--production", "--games", "deepward"]);
   expect(defaults === "help" ? null : defaults.build).toBe("dev");
   expect(production === "help" ? null : production.build).toBe("production");
+});
+
+test("renderer parameters reach only their measured side and preserve values containing equals", () => {
+  const args = parseAbArgs(["--production", "--branch-param", "ui=rune", "--branch-param", "seed=a=b", "--base-param", "ui=dom", "--tally", "rune-ui"]);
+  if (args === "help") throw new Error("parsed as help");
+  const base = abPageUrl("http://localhost:4000", "deepward", "base", args);
+  const branch = abPageUrl("http://localhost:4001", "deepward", "branch", args);
+  expect(base.searchParams.get("ui")).toBe("dom");
+  expect(base.searchParams.has("seed")).toBe(false);
+  expect(branch.searchParams.get("ui")).toBe("rune");
+  expect(branch.searchParams.get("seed")).toBe("a=b");
+  expect(branch.searchParams.get("game")).toBe("deepward");
+  expect(args.tally).toBe("rune-ui");
+  expect(() => parseAbArgs(["--branch-param", "ui"])).toThrow("key=value");
+  expect(() => parseAbArgs(["--base-param", " =dom"])).toThrow("key=value");
 });
 
 test("the table says the verdict, change and interval per game", () => {

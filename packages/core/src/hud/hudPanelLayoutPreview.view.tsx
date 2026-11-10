@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { HudFrame } from "./hudFrame.view";
 import { HudSurface } from "./hudSurface.view";
 import { HudThemeRoot } from "./hudThemeRoot.view";

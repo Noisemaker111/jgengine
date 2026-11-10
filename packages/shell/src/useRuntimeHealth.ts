@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "@jgengine/core/ui/jsx";
 
 import { createAutoQuality } from "@jgengine/core/health/autoQuality";
 import { installCrashHandlers } from "@jgengine/core/health/crashSeam";

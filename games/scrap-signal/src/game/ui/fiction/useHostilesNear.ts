@@ -1,4 +1,4 @@
-import { useGameStore } from "@jgengine/react/hooks";
+import { useGameStore } from "@jgengine/ui/hooks";
 import { enemyById } from "../../entities/enemies/catalog";
 
 /** The same earshot the music uses to call a skirmish (`audio/drive.ts`). */

@@ -3,13 +3,13 @@ import {
   type PlacedBuildItem,
 } from "@llmville/game/build/build";
 import { normalizeBuildInventory } from "@llmville/game/build/catalog";
-import { useGameEconomyActions } from "@/economy/economy";
-import { useComputeAssignmentActions } from "@/inference/computeAssignmentActions";
-import { useEngineEphemeralTimers } from "@/runtime/engineEphemeralTimers";
-import { useEngineWorldContext, defaultEngineWorldContext } from "@/runtime/engineWorldContext";
-import { engineActions, useGameEngineState, wrapMutation } from "@/runtime/gameEngine";
-import { useGameEngineSession } from "@/runtime/gameEngineSession";
-import { deriveWorldSceneSummary, type PlacedRack } from "@/infrastructure/infrastructure";
+import { useGameEconomyActions } from "../economy/economy";
+import { useComputeAssignmentActions } from "../inference/computeAssignmentActions";
+import { useEngineEphemeralTimers } from "./engineEphemeralTimers";
+import { useEngineWorldContext, defaultEngineWorldContext } from "./engineWorldContext";
+import { engineActions, useGameEngineState, wrapMutation } from "./gameEngine";
+import { useGameEngineSession } from "./gameEngineSession";
+import { deriveWorldSceneSummary, type PlacedRack } from "../infrastructure/infrastructure";
 import {
   worldChunkCenterOfKey,
   worldChunkKeyAt,
@@ -20,22 +20,22 @@ import {
   tutorialBenchPosition,
 } from "@llmville/game/infrastructure/infrastructure";
 import { normalizeRackCoolingInventory } from "@llmville/game/infrastructure/catalog";
-import { useWorldModelsSlice } from "@/models/modelsSlice";
+import { useWorldModelsSlice } from "../models/modelsSlice";
 import { DEFAULT_SERVING_MODE, type ServingModeId } from "@llmville/game/models/servingMode";
 import { EMPTY_COMPUTE_ASSIGNMENTS } from "@llmville/game/infrastructure/infrastructure";
 import { DEFAULT_SCRAPE_TIER, type ScrapeTierId } from "@llmville/game/models/scrapingTiers";
-import { useWorldEntry } from "@/runtime/worldEntry";
+import { useWorldEntry } from "./worldEntry";
 
 import { mapPlacedBuildItems as mapWorldPlacedBuildItems } from "@llmville/game/build/build";
 import { createPlacementCellPolicy } from "@llmville/game/datacenter/claims";
 import type { CellCoord } from "@llmville/game/datacenter/grid";
 import { STARTER_RACK_CATALOG_ID } from "@llmville/game/infrastructure/catalog";
-import { useWorldDataMutations, useWorldDataQueries } from "@/world/worldData";
+import { useWorldDataMutations, useWorldDataQueries } from "../world/worldData";
 import { api } from "@llmville/backend/convex/_generated/api";
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
-import { getAvatarById, normalizeAvatarId, normalizePlayerProfile } from "@/user/user";
+import { getAvatarById, normalizeAvatarId, normalizePlayerProfile } from "../user/user";
 import { useQuery } from "convex/react";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "@jgengine/core/ui/jsx";
 
 import { useCalendarClock } from "@jgengine/core/time/calendarClock.view";
 import { deriveWorldBootLabel, deriveWorldBootProgress } from "./worldBootPhase";

@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useLayoutEffect, useRef, useSyncExternalStore } from "react";
+import { useDeferredValue, useEffect, useLayoutEffect, useRef, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 const listeners = new Set<() => void>();
 let swaps = 0;

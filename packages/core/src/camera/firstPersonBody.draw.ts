@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import { detectHumanoidRig } from "@jgengine/core/anim/skeletonStandard";

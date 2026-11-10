@@ -1,21 +1,11 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { biomeBandsForSky } from "@jgengine/core/sky/skyBands";
 import { CharacterMotionContext, noteGameCharacterMotion } from "@jgengine/core/anim/characterMotion.draw";
 import { lightingHasSoftShadows } from "@jgengine/core/lighting/softShadows";
 import { useEngineRendererFactory } from "@jgengine/core/webgpu/engineRenderer.draw";
 import { EngineCanvas } from "@jgengine/core/frame/engineCanvas.draw";
-import {
-  useMemo,
-  useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type Dispatch,
-  type MutableRefObject,
-  type MouseEvent as ReactMouseEvent,
-  type PointerEvent as ReactPointerEvent,
-  type RefObject,
-  type SetStateAction,
-} from "react";
+import { useMemo, useEffect, useRef, useState, useSyncExternalStore, type Dispatch, type MutableRefObject, type RefObject, type SetStateAction } from "@jgengine/core/ui/jsx";
+import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "@jgengine/core/ui/jsx/dom.view";
 import * as THREE from "three";
 
 import {
@@ -50,7 +40,7 @@ import { skyNoonKeyframes } from "@jgengine/core/sky/skyOwnedLighting";
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { GameViewportProvider } from "@jgengine/core/ui/viewport.view";
-import { GameProvider } from "@jgengine/react/provider";
+import { GameProvider } from "@jgengine/ui/provider";
 import { ColorblindFrame, useColorblindMode } from "@jgengine/core/ui/accessibility.view";
 import { SettingsProvider, type SettingsActionView } from "@jgengine/core/settings/settings.view";
 
@@ -147,6 +137,7 @@ import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { useEngineDraw, SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 const PRIMARY_CLICK_MOVE_THRESHOLD_PX = 6;
 const DEFAULT_BACKGROUND_COLOR = "#14161b";
@@ -306,7 +297,7 @@ export function Shell3dPresentation({
   analogRef: MutableRefObject<Readonly<Record<string, number>> | null>;
   inputBindings: typeof playable.game.input;
   orientationGate: boolean;
-  orientationGateEl: React.ReactNode;
+  orientationGateEl: ReactNode;
   coarsePointer: boolean;
   compact: boolean;
   graphics: AppliedGraphicsSettings;
@@ -528,8 +519,7 @@ export function Shell3dPresentation({
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     pointerInput.down(event, isWorldPointerTarget(event));
     if (isWorldPointerTarget(event)) {
-      // The world markers' click-to-target used to arrive through r3f's event system; feed the
-      // service this event's exact cursor, then dispatch the hit entity on either render host.
+      // Feed the service this event's exact cursor, then dispatch the hit entity.
       const rect = canvasElement?.getBoundingClientRect();
       if (rect !== undefined && rect.width > 0 && rect.height > 0) {
         pointerService.setState({
@@ -691,8 +681,7 @@ export function Shell3dPresentation({
         run: () => action.run(ctx),
       }));
   const touchScale = compact ? 0.88 : 1;
-  // The engine loop paces a frame-rate cap inside `setFpsLimit`, so "never"
-  // (r3f's manual-advance mode for the old external pacer) is never authored here.
+  // The engine loop paces the frame-rate cap inside `setFpsLimit`.
   const canvasFrameloop: "always" | "demand" | "never" = poster && posterFrozen ? "demand" : "always";
   // The frame carries the player's colour-vision mode; the HUD and menu text above it stay unfiltered.
   const colorblind = useColorblindMode(settingsStore);

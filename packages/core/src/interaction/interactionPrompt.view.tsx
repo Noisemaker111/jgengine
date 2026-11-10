@@ -1,4 +1,5 @@
-import { useEffect, useReducer, type CSSProperties, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useReducer, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { PositionedPrompt, PromptPoint } from "@jgengine/core/interaction/proximityPrompt";
 import type { PromptRegistry } from "@jgengine/core/interaction/promptRegistry";

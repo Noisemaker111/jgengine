@@ -1,10 +1,11 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 /**
  * Stats app — read-only site health and income readouts. Split out of the old ratio-based Dashboard;
  * GPU dedication now lives in the Inference app (drag cards onto Training/Scraping/Serving).
  */
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { servingIncomePerHour, servingThroughputPerHour } from "@llmville/game/economy/hourlyRates";
-import type { SiteHealth } from "@/runtime/worldViewModel";
+import type { SiteHealth } from "../../runtime/worldViewModel";
 import { isOverCapacity } from "@llmville/game/infrastructure/infrastructure";
 
 interface StatsAppProps {

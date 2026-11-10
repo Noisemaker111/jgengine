@@ -1,15 +1,6 @@
-import {
-  createElement,
-  useInsertionEffect,
-  type CSSProperties,
-  type ElementType,
-  type FocusEvent,
-  type HTMLAttributes,
-  type MouseEvent,
-  type PointerEvent,
-  type ReactNode,
-  type Ref,
-} from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { createElement, useInsertionEffect, type CSSProperties, type ElementType, type ReactNode, type Ref } from "@jgengine/core/ui/jsx";
+import type { FocusEvent, HTMLAttributes, MouseEvent, PointerEvent } from "@jgengine/core/ui/jsx/dom.view";
 
 import type { HudInteractKind } from "@jgengine/core/hud/hudInteract.view";
 

@@ -1,11 +1,12 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-gameplay
-import { useMemo, useRef } from "react";
+import { useMemo, useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import type { WorldItemRenderConfig } from "@jgengine/core/game/playableGame";
 import { resolveWorldItemPresentation } from "@jgengine/core/loot/groundItem";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { useWorldItems } from "@jgengine/react/hooks";
+import { useWorldItems } from "@jgengine/ui/hooks";
 import { emptyPoseMemo, writePoseIfChanged } from "@jgengine/core/anim/entityPose";
 import { POINTER_ENTITY_KEY } from "@jgengine/core/input/pointerService.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
@@ -136,9 +137,8 @@ export function worldItemMarkerDraw(getProps: () => {
 }
 
 /**
- * The marker's DOM label. Under r3f it is a drei `<Html>` child of the pose group; under the
- * engine loop a plain overlay div projected each frame — same `distanceFactor` scaling drei
- * applies (`distanceFactor / (2·tan(fov/2)·dist)`).
+ * The marker's UI label, projected each frame with distance scaling
+ * `distanceFactor / (2·tan(fov/2)·dist)`.
  */
 function WorldItemLabel({
   instanceId,

@@ -1,4 +1,5 @@
-import { useEffect, useState, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { useAccessibilitySettings } from "@jgengine/core/settings/accessibilitySettings.view";
 

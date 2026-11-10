@@ -1,4 +1,5 @@
-import type { ReactElement } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import type { ReactElement } from "@jgengine/core/ui/jsx";
 
 import type { EditorDocument } from "@jgengine/core/editor/index";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";

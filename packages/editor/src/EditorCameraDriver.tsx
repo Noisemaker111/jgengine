@@ -1,4 +1,5 @@
-import { memo, useEffect } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { memo, useEffect } from "@jgengine/core/ui/jsx";
 
 import { activeCameraControls } from "@jgengine/core/camera/activeCameraControls.draw";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";

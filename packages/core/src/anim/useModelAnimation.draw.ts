@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 
 import type { ModelAnimationConfig } from "@jgengine/core/game/playableGame";
 import { resolveAnimationConfig } from "@jgengine/core/game/clipRoles";
-import { useOptionalGameContext } from "@jgengine/react/provider";
+import { useOptionalGameContext } from "@jgengine/ui/provider";
 
 import { ModelAnimationDriver } from "./modelAnimationDriver.draw";
 import { useFrameWhile } from "@jgengine/core/render/useFrameWhile.draw";

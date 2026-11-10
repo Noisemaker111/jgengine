@@ -1,12 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { join } from "node:path";
-import type { ReactElement } from "react";
+import type { ReactElement } from "@jgengine/core/ui/jsx";
 
 import { SCENE_WARMUP_PENDING, SceneWarmupCover, createSceneWarmupStore, warmupBarShare } from "./SceneWarmupGate.draw";
 
-const { renderToStaticMarkup } = (await import(Bun.resolveSync("react-dom/server", join(import.meta.dir, "../../../react/src")))) as {
-  renderToStaticMarkup: (node: ReactElement) => string;
-};
+import { renderToStaticMarkup } from "@jgengine/core/ui/jsx/markup";
 
 function render(state: Parameters<typeof SceneWarmupCover>[0]["state"], step?: Parameters<typeof SceneWarmupCover>[0]["step"]) {
   const element = SceneWarmupCover({ state, step });

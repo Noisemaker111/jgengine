@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useRef, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { useFrameJoin } from "@jgengine/core/frame/engineHost.draw";
 

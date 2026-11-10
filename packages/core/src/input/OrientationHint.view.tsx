@@ -1,5 +1,6 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-world
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "@jgengine/core/ui/jsx";
 
 const AUTO_HIDE_MS = 6000;
 

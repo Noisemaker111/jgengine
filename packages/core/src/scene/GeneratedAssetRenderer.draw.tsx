@@ -1,4 +1,5 @@
-import { useMemo, useRef } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useMemo, useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import { runGenerator } from "@jgengine/core/generator/generator";

@@ -1,4 +1,4 @@
-// Builds @jgengine/core, @jgengine/react and @jgengine/shell as one program. A feature folder in core
+// Builds @jgengine/core, @jgengine/ui and @jgengine/shell as one program. A feature folder in core
 // holds its React view and three.js draw files, so the three packages import each other and no
 // package-by-package order exists. Each package's tsconfig.build.json still names what it emits; this
 // compiles their union once and moves each package's slice into its own dist/.
@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { printHelpIfAsked } from "./script-help";
 
 /** The packages that compile together, in the order their dist/ folders are written. */
-export const ENGINE_PACKAGES = ["core", "react", "shell"] as const;
+export const ENGINE_PACKAGES = ["core", "ui", "shell"] as const;
 
 interface BuildConfig {
   include?: string[];
@@ -120,14 +120,14 @@ function main(): void {
     run(["bun", join(root, "scripts", "fix-extensions.ts"), dist], root);
     copyAssets(join(root, "packages", pkg, "src"), dist);
   }
-  run(["bun", join(root, "packages", "react", "scripts", "styles.ts")], root);
+  run(["bun", join(root, "packages", "ui", "scripts", "styles.ts")], root);
   rmSync(work, { recursive: true, force: true });
   console.log(`build-engine: built ${ENGINE_PACKAGES.join(", ")}`);
 }
 
 if (import.meta.main) {
   const usage = {
-    summary: "build @jgengine/core, react and shell as one program and write each package's dist/",
+    summary: "build @jgengine/core, ui and shell as one program and write each package's dist/",
     usage: "bun scripts/build-engine.ts",
     flags: [],
     example: "bun --cwd=packages/core run build",

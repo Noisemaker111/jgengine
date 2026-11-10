@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 
-import type { BaseModelLibraryEntry } from "@/models/training";
-import { MODEL_ACTION_KIND } from "@/models/training";
+import type { BaseModelLibraryEntry } from "../training";
+import { MODEL_ACTION_KIND } from "../training";
 import type { TutorialStage } from "@llmville/game/tutorial/tutorialStages";
 import { TUTORIAL_SCRAPE_MODEL_ID, TUTORIAL_TRAIN_BASE_MODEL_ID } from "@llmville/game/tutorial/tutorialProgress";
 import {
@@ -9,11 +10,11 @@ import {
   previewAvailableTrainingPowerFp16,
 } from "@llmville/game/models/trainingTransition";
 import { getFounderMultipliers } from "@llmville/game/user/founder";
-import { usePlayerIdentity } from "@/auth";
+import { usePlayerIdentity } from "../../auth";
 
-import { BaseModelCard } from "@/models/components/ModelCard";
-import { ModelDetailView } from "@/models/components/ModelDetailView";
-import { TrainDataCommitmentModal } from "@/models/components/TrainDataCommitmentModal";
+import { BaseModelCard } from "./ModelCard";
+import { ModelDetailView } from "./ModelDetailView";
+import { TrainDataCommitmentModal } from "./TrainDataCommitmentModal";
 
 function useTrainingCountdownSeconds(isTraining: boolean, trainingEndsAt: number | null): number | null {
   const [now, setNow] = useState(() => Date.now());

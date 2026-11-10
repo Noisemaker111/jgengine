@@ -1,24 +1,25 @@
-import { useMemo, useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useMemo, useState } from "@jgengine/core/ui/jsx";
 
-import { BuildCatalogPanel } from "@/build/components/BuildCatalog";
+import { BuildCatalogPanel } from "../../build/components/BuildCatalog";
 import type { PlacedBuildItem } from "@llmville/game/build/build";
-import type { PlacedRack } from "@/infrastructure/infrastructure";
+import type { PlacedRack } from "../../infrastructure/infrastructure";
 import {
   mergeOwnedBuildQuantitiesForStore,
   mergeOwnedHardwareQuantitiesForStore,
   useStoreCheckoutHandlers,
   type PersonalUpgradeItem,
   type ShopCatalogItem,
-} from "@/store/store";
+} from "../store";
 import type { PersonalUpgradeId } from "@llmville/game/user/personalUpgrades";
-import { TABLET_STORE_TAB_ID, type TutorialBenchOption, type TabletStoreTabId } from "@/tablet/tablet";
+import { TABLET_STORE_TAB_ID, type TutorialBenchOption, type TabletStoreTabId } from "../../tablet/tablet";
 import { TUTORIAL_STAGE, type TutorialStage } from "@llmville/game/tutorial/tutorialStages";
 import type { HardwareModelId } from "@llmville/game/infrastructure/catalog";
 import type { ResearchUnlocks } from "@llmville/game/research/researchUnlocks";
 import { canAffordShopPurchase } from "@llmville/game/economy/storeTransition";
 
-import { HardwareCatalog } from "@/infrastructure/components/HardwareCatalog";
-import { InventoryTrayCard, StorePriceButton } from "@/store/components/StoreListRow";
+import { HardwareCatalog } from "../../infrastructure/components/HardwareCatalog";
+import { InventoryTrayCard, StorePriceButton } from "./StoreListRow";
 
 interface StoreScreenProps {
   activeStoreTab: TabletStoreTabId;

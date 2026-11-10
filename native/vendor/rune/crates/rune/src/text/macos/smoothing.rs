@@ -174,7 +174,11 @@ impl Smoothing {
 
     /// The glyph's coverage and placement (swash's convention: `top` is rows above the baseline).
     pub(crate) fn mask(&mut self, cx: &mut ScaleContext, job: &Job<'_>) -> Option<(Vec<u8>, Placement)> {
-        let pipeline = self.pipeline;
+        let mut pipeline = self.pipeline;
+        // Synthetic font weight grows the outline even when font smoothing is off.
+        if job.radius > 0.0 {
+            pipeline.dilate = true;
+        }
         let path = design_outline(cx, job.font, job.coords, job.glyph, job.ppem as f64)?;
         let path = if job.skew == 0 { path } else {
             let t = (job.skew as f64).to_radians().tan();

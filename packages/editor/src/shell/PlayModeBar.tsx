@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useMemo } from "@jgengine/core/ui/jsx";
 
 import type { RuntimePlayControl } from "@jgengine/core/editor/index";
 

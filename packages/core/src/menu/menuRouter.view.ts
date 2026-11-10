@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useReducer } from "react";
+import { useCallback, useEffect, useMemo, useReducer } from "@jgengine/core/ui/jsx";
 
 /** A screen-stack transition. `reset` without an id collapses to the router's original root. */
 export type MenuStackAction<Id extends string> =

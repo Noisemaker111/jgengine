@@ -1,4 +1,5 @@
-import { useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useState } from "@jgengine/core/ui/jsx";
 import { useSettings } from "@jgengine/core/settings/settings.view";
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { SettingsSection, SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view";

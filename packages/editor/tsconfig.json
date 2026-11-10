@@ -4,6 +4,7 @@
     "lib": ["ES2022", "DOM"],
     "types": ["node"],
     "jsx": "react-jsx",
+    "jsxImportSource": "@jgengine/core/ui/jsx",
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,

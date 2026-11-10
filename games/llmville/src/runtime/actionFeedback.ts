@@ -1,4 +1,14 @@
-import { toast } from "sonner";
+import { createNoticeFeed } from "@jgengine/core/notifications/notices";
+
+/** How long a refused action's reason stays up: long enough to read a two-sentence reason. */
+const ACTION_NOTICE_TTL_MS = 4000;
+
+/** Refused-action notices for every LLMville screen, drawn by the kit's toast wherever a notice stack mounts this feed. */
+export const actionNotices = createNoticeFeed({ denyTtlMs: ACTION_NOTICE_TTL_MS });
+
+function showDenied(text: string): void {
+  actionNotices.push({ text, tone: "deny" });
+}
 
 /**
  * Player-facing labels for rejection reasons returned by backend mutations.
@@ -43,17 +53,17 @@ const REASON_LABELS: Record<string, string> = {
 
 const GENERIC_ERROR = "That didn't work — try again.";
 
-/** Show a toast for a backend rejection reason string. */
+/** Raise a notice for a backend rejection reason string. */
 export function showActionError(reason: string | undefined): void {
   if (!reason) {
-    toast.error(GENERIC_ERROR);
+    showDenied(GENERIC_ERROR);
     return;
   }
-  toast.error(REASON_LABELS[reason] ?? reason);
+  showDenied(REASON_LABELS[reason] ?? reason);
 }
 
 /**
- * Show a toast for a thrown mutation error. Convex mutations reject with an
+ * Raise a notice for a thrown mutation error. Convex mutations reject with an
  * Error whose message embeds the ConvexError text (e.g.
  * "Uncaught ConvexError: <reason>"); unwrap what we can and fall back to a
  * generic label instead of dumping stack traces at the player.
@@ -72,10 +82,10 @@ export function showActionErrorFromException(error: unknown): void {
     showActionError(REASON_LABELS[unwrapped] ? unwrapped : raw);
     return;
   }
-  toast.error(unwrapped.length > 0 && unwrapped.length <= 120 ? unwrapped : GENERIC_ERROR);
+  showDenied(unwrapped.length > 0 && unwrapped.length <= 120 ? unwrapped : GENERIC_ERROR);
 }
 
-/** Throttle key so repeating guards don't spam toasts every frame. */
+/** Throttle key so repeating guards don't spam notices every frame. */
 const lastShownAt = new Map<string, number>();
 const THROTTLE_MS = 2500;
 

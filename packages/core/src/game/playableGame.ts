@@ -956,7 +956,7 @@ export interface GameRenderingConfig {
   backdrop?: BackdropConfig | undefined;
   /** Declarative post-processing chain (AO/bloom/tone-map/grade). When set, the shell mounts an EffectComposer and owns the render; absent leaves the renderer drawing directly (unchanged). */
   postProcessing?: PostProcessingConfig | undefined;
-  /** Cast/receive shadows across the scene (R3F Canvas shadow pass). Default true. */
+  /** Cast/receive shadows across the scene (engine canvas shadow pass). Default true. */
   shadows?: boolean | undefined;
   /** Per-quality renderer budgets; omitted tiers use {@link DEFAULT_GRAPHICS_PROFILES}. */
   graphics?: Partial<Record<"low" | "medium" | "high", Partial<GraphicsProfile>>> | undefined;

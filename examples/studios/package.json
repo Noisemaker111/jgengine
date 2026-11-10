@@ -13,11 +13,9 @@
   "dependencies": {
     "@jgengine/core": "workspace:*",
     "@jgengine/shell": "workspace:*",
-    "react": "catalog:",
     "three": "catalog:"
   },
   "devDependencies": {
-    "@types/react": "catalog:",
     "@types/three": "catalog:",
     "typescript": "catalog:"
   }

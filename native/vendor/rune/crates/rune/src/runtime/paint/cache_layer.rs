@@ -102,6 +102,7 @@ impl<S: 'static> Runtime<S> {
                     || self.subtree_exiting(i)
                     || (!self.flights.is_empty() && self.flights.iter().any(|f| f.departs(&n.path, n.key.as_deref()) || f.lands(&n.path, n.key.as_deref())))
                     || n.vis.effect.is_some()
+                    || n.vis.backdrop_blur > 0.0 || n.vis.mix_blend.backdrop()
                     // A publication can replace texels without moving the atlas slot, so
                     // identical image primitives do not imply identical raster contents.
                     || n.vis.pixels.is_some()

@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useMemo, useRef } from "@jgengine/core/ui/jsx";
 import { AmbientLight, CircleGeometry, Color, Fog, Group, HemisphereLight, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, SphereGeometry, SpotLight } from "three";
-import { useGameStore } from "@jgengine/react/hooks";
+import { useGameStore } from "@jgengine/ui/hooks";
 import { IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";
 import { EngineDrawMount, SceneObjectGroup, SceneObjectPortal, meshDraw, useEngineDraw, useSceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
@@ -16,6 +17,7 @@ import { SuitStand } from "./fixtureArt";
 import type { Dive } from "./state";
 import type { Deep } from "./deep";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 /**
  * What the strata below receiving look like: the seams, shelves, wrecks and lifts the descent is
@@ -228,7 +230,7 @@ export function StratumLife({ creatures, read, thrown }: { creatures: readonly s
     <Lures thrown={thrown} />
   </>;
 }
-const MODULE_LOOK: Record<string, { color: string; build: (ready: boolean) => React.ReactNode }> = {
+const MODULE_LOOK: Record<string, { color: string; build: (ready: boolean) => ReactNode }> = {
   generator: { color: C.cyan, build: ready => <>
     <IndustrialCylinder at={[0, 0.8, 0]} radius={0.6} length={1.6} color={C.steel} surface="steel" />
     <IndustrialCylinder at={[0, 0.8, 0]} radius={0.62} length={0.12} color={C.cyan} emission={ready ? 1.2 : 0} />

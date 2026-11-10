@@ -1,5 +1,5 @@
 // @skill jgengine-world
-import { useEffect } from "react";
+import { useEffect } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import { applyMaterialOverrideToMaterial } from "../../material/materialOverride.draw";

@@ -1,4 +1,5 @@
-import { useId, type CSSProperties } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useId, type CSSProperties } from "@jgengine/core/ui/jsx";
 
 /**
  * The beacon's iron brazier, drawn in code. `strength` (0..1) is how high the fire burns: the

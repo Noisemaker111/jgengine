@@ -1,5 +1,6 @@
-import { createContext, useContext, type ReactNode } from "react";
-import { createPortal } from "react-dom";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { createContext, useContext, type ReactNode } from "@jgengine/core/ui/jsx";
+import { createPortal } from "@jgengine/core/ui/jsx/client.view";
 
 /**
  * The layer above the HUD canvas. The canvas shrinks the whole rig to fit a phone, which is right

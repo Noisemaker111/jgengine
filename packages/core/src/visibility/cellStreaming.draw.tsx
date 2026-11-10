@@ -1,5 +1,6 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-world
-import { useRef } from "react";
+import { useRef } from "@jgengine/core/ui/jsx";
 
 import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
@@ -9,7 +10,7 @@ import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { staticDrawPoolFor, type StaticDrawPool } from "@jgengine/core/instancing/staticDrawPool.draw";
 import { preloadSceneModel } from "@jgengine/core/model/entityModelDraw.draw";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 import { boundCellStreaming, type CellStreaming } from "./cellStreaming";
 
 const fetched = new Map<string, Promise<void>>();

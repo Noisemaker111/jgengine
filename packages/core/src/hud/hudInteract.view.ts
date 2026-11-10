@@ -1,4 +1,4 @@
-import { createContext, createElement, useCallback, useContext, type ReactNode } from "react";
+import { createContext, createElement, useCallback, useContext, type ReactNode } from "@jgengine/core/ui/jsx";
 
 /** What happened to an engine HUD primitive. */
 export type HudInteractKind = "hover" | "press" | "activate" | "focus" | "open" | "close";

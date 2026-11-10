@@ -1,10 +1,11 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createQuestJournal, describeTrackedQuest, type QuestDef, type QuestJournal } from "@jgengine/core/mission/quest";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { QuestTracker } from "@jgengine/core/mission/questTracker.view";
-import { usePlayer, useTicker } from "@jgengine/react/hooks";
+import { usePlayer, useTicker } from "@jgengine/ui/hooks";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";

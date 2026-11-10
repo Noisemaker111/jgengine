@@ -1,4 +1,6 @@
-import { useRef, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useRef, type ReactNode } from "@jgengine/core/ui/jsx";
+import type { PointerEvent as ReactPointerEvent } from "@jgengine/core/ui/jsx/dom.view";
 
 const HUD_TEXT_SHADOW = "0 1px 2px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.55)";
 

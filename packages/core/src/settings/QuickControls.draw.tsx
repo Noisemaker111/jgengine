@@ -1,5 +1,6 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-ui
-import { useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { useDebouncedCommit } from "@jgengine/core/ui/useDebouncedCommit.view";
 

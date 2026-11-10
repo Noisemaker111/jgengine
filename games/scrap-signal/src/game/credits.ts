@@ -22,7 +22,7 @@ export const SCRAP_CREDITS = mergeCredits(
         heading: "Built with",
         entries: [
           { label: "JGengine", detail: "game SDK", href: "https://github.com/Noisemaker111/jgengine" },
-          { label: "React", detail: "MIT" },
+          { label: "Rune", detail: "MIT" },
           { label: "Three.js", detail: "MIT" },
         ],
       },

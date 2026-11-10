@@ -1,11 +1,5 @@
-import {
-  useCallback,
-  useEffect,
-  useReducer,
-  useRef,
-  type CSSProperties,
-  type ReactNode,
-} from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useCallback, useEffect, useReducer, useRef, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import {
   MODAL_CANCEL,
@@ -16,7 +10,7 @@ import {
 
 import { useReducedMotion } from "@jgengine/core/ui/accessibility.view";
 import { useDialogBehavior } from "./dialogBehavior.view";
-import { useEngineStyles } from "@jgengine/react/engineStyles";
+import { useEngineStyles } from "@jgengine/ui/engineStyles";
 import { HudButton } from "@jgengine/core/hud/hudButton.view";
 import { useHudInteract, type HudInteractListener } from "@jgengine/core/hud/hudInteract.view";
 import { HudSurface } from "@jgengine/core/hud/hudSurface.view";

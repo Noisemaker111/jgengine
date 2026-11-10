@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from "react";
+import { useCallback, useRef, useState, type RefObject } from "@jgengine/core/ui/jsx";
+import type { PointerEvent as ReactPointerEvent } from "@jgengine/core/ui/jsx/dom.view";
 
 export const TABLET_OPEN_TRANSLATE_PERCENT = 8;
 export const TABLET_CLOSED_TRANSLATE_PERCENT = 88;

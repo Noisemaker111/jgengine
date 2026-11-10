@@ -1,4 +1,5 @@
-import { useEffect, useRef, type ReactElement } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useRef, type ReactElement } from "@jgengine/core/ui/jsx";
 
 import { useFrameJoin } from "@jgengine/core/frame/engineHost.draw";
 

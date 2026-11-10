@@ -36,6 +36,7 @@ Classify each claim before capturing anything. A screenshot where a deterministi
 - `bun run drive <game> --flow <name>` runs a route from `<game>/proofs/flows/<name>.flow.ts` (`defineFlow` from `@jgengine/core/play/flow`). A flow must check arrival (`expect`, `waitFor`, `hold(..., { until })`); a flow that only presses keys proves nothing. `--flows` lists them, `--step 'f.click("Start")'` tries one call on a warm page.
 - One-off: `bun run drive <game> --click "TEXT" --key KeyW:2500 --probe --shot name`. `--rpc '{"method":"debug_summary"}'` reads fps, frame ms, draw calls and warnings; `player_pose` before and after a key hold proves movement; `sim_advance` and `time_scale` reach timers headless.
 - `drive` starts from clean storage; `--reuse-storage` keeps a save, for a Continue flow.
+- Shared `uiTour` flows with `--param ui=rune` require a frame from Rune before driving controls; a DOM fallback fails that proof. Shot names identify the renderer that actually mounted.
 - `debug_snapshot().probes.fallbacks` and `probes.textureErrors` prove content is authored, not a placeholder or a model with 404 textures.
 - A shooter proof asserts the aim arrived (`aimAt`) before it asserts the hit.
 - Never hand-roll a Playwright, CDP or Vite harness; a browser tool on `bun dev` is the fallback.
@@ -49,7 +50,7 @@ A PR that touches a rendered surface embeds the inspected shots. Any change to a
 - Standalone game: `bun run shoot` (`--device desktop|mobile|mobile-landscape`). Shots needing play first use `drive --shot`.
 - Engine monorepo: `bun run shoot <game> --mode play --draft --inspect` while iterating, a final shot without `--draft` as evidence (`--quality low|medium|high|ultra` pins a graphics tier). Draft and `--quick` shots are never PR evidence. The game canvas keeps no copy of its last frame: in-game captures go through `requestSceneCapture`/`requestSceneThumbnail`, which read the next frame as it renders, never `toDataURL` from outside a frame. A failed capture is evidence, not a count: read what it shows (the failing step, its probe, the page text or a shot at that step), fix it, and capture again. Aiming, fixtures, recording and PR media: [references/monorepo-capture.md](references/monorepo-capture.md).
 - Whole-game look claims ("premium", "showcase") use the ten-category [visual scorecard](references/visual-scorecard.md); an ordinary rendered change does not.
-- Use deterministic preview states for HUD and menu shots, live play for scene look. Check desktop and mobile when responsive UI changes.
+- Use deterministic preview states for HUD and menu shots, live play for scene look. Check desktop and mobile when responsive UI changes. Comparisons use the same `--device`, width and height on both sides: a phone-width desktop browser does not emulate touch or the phone's pixel density.
 - A shot on disk is self-describing: a failed run leaves no file, `SAME PICTURE as the shot it replaced` is a no-op or the wrong view, and a blank viewport fails.
 
 ### Reading a shot

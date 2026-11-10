@@ -31,10 +31,11 @@ function controlNamesExpr(input: boolean): string {
     const controls = [];
     for (const node of document.querySelectorAll(selector)) {
       if (node.matches(':disabled') || node.closest('[aria-disabled="true"], [inert]')) continue;
-      if (!node.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) continue;
+      const runeDrawn = node.closest('[data-jg-rune-layer]') !== null;
       const rect = node.getBoundingClientRect();
+      if (runeDrawn ? !(rect.width > 0 && rect.height > 0) : !node.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) continue;
       const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
-      const covered = !(hit && (hit === node || node.contains(hit)));
+      const covered = !runeDrawn && !(hit && (hit === node || node.contains(hit)));
       const labelled = (node.getAttribute('aria-labelledby') || '').split(/\\s+/)
         .map(id => document.getElementById(id)?.textContent || '').join(' ').trim();
       const accessible = labelled || node.getAttribute('aria-label') ||
@@ -87,6 +88,8 @@ async function findClickPoint(session: CdpSession, text: string, input = false):
 export async function clickText(session: CdpSession, text: string, count = 1, input = false): Promise<void> {
   await session.send("Page.bringToFront");
   const point = await findClickPoint(session, text, input);
+  // The pointer goes there first, as a hand does: hover states, and UI that tracks the pointer itself, see it arrive.
+  await session.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: point.x, y: point.y, button: "none", buttons: 0 });
   for (let clickCount = 1; clickCount <= count; clickCount += 1) {
     for (const type of ["mousePressed", "mouseReleased"] as const) {
       await session.send("Input.dispatchMouseEvent", { type, x: point.x, y: point.y, button: "left", clickCount });
@@ -100,6 +103,8 @@ export async function fillField(session: CdpSession, label: string, value: strin
   if (!await session.evaluate<boolean>(driveInputPointExpr(label, true, true))) {
     throw new Error(`drive: text field "${label}" did not receive focus`);
   }
+  // A Rune-drawn field takes the keys on Rune's next frame, not within the press.
+  if (await session.evaluate<boolean>(`document.activeElement?.closest?.('[data-jg-rune-layer]') != null`)) await new Promise((resolve) => setTimeout(resolve, 400));
   await session.send("Input.dispatchKeyEvent", { type: "keyDown", key: "a", code: "KeyA", modifiers: 2, commands: ["selectAll"] });
   await session.send("Input.dispatchKeyEvent", { type: "keyUp", key: "a", code: "KeyA", modifiers: 2 });
   await session.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Backspace", code: "Backspace", windowsVirtualKeyCode: 8 });
@@ -274,6 +279,12 @@ export function pageFlowDriver(session: CdpSession, options: PageDriverOptions):
       pointer = { x, y };
       await settle();
     },
+    async wheel(x, y, deltaY, deltaX) {
+      await moveDrivePointer(session, { x, y });
+      pointer = { x, y };
+      await session.send("Input.dispatchMouseEvent", { type: "mouseWheel", x, y, deltaY, deltaX });
+      await settle();
+    },
     async look(dx, dy) {
       await acquireDrivePointerLock(session);
       const turned = await lookDrivePointer(session, dx, dy);
@@ -290,6 +301,10 @@ export function pageFlowDriver(session: CdpSession, options: PageDriverOptions):
     },
     async fill(label, value) {
       await fillField(session, label, value);
+      await settle();
+    },
+    async type(text) {
+      await session.send("Input.insertText", { text });
       await settle();
     },
     evaluate: (expression) => session.evaluate(expression, { awaitPromise: true }),

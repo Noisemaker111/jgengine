@@ -32,13 +32,13 @@ beforeAll(async () => {
   await Bun.write(
     entry,
     `
-    import React, { useState } from 'react';
-    import { createRoot } from 'react-dom/client';
-    import { flushSync } from 'react-dom';
+    import React, { useState } from '@jgengine/core/ui/jsx';
+    import { createRoot } from '@jgengine/core/ui/jsx/client.view';
+    import { flushSync } from '@jgengine/core/ui/jsx/client.view';
     import { createSaveSlots } from '../../packages/core/src/save/saveSlots';
     import { GameMenu } from '../../packages/core/src/menu/gameMenu.view';
     import { ContinuePane, SaveSlotsPane } from '../../packages/core/src/menu/gameMenuSaves.view';
-    import { MENU_THEME_STYLE } from '../../packages/react/src/testFixtures';
+    import { MENU_THEME_STYLE } from '../../packages/ui/src/testFixtures';
 
     const now = 1_700_000_000_000;
     const model = createSaveSlots({

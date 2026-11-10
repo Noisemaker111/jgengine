@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useSyncExternalStore, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { createContext, useCallback, useContext, useSyncExternalStore, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import {
   createSettingsStore,

@@ -1,4 +1,5 @@
-import { createContext, useContext, useMemo, useRef, type ReactNode, type RefObject } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { createContext, useContext, useMemo, useRef, type ReactNode, type RefObject } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import type { VisibilityConfig } from "@jgengine/core/visibility/config";

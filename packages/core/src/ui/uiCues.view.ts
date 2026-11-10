@@ -1,10 +1,10 @@
-import { useCallback } from "react";
+import { useCallback } from "@jgengine/core/ui/jsx";
 
 import { UI_CUES, uiCueSoundId, type UiCue } from "@jgengine/core/ui/uiCues";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import type { HudInteractEvent } from "@jgengine/core/hud/hudInteract.view";
-import { useOptionalGameContext } from "@jgengine/react/provider";
+import { useOptionalGameContext } from "@jgengine/ui/provider";
 
 export type { UiCue } from "@jgengine/core/ui/uiCues";
 

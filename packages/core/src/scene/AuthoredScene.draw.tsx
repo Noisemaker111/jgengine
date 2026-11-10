@@ -1,7 +1,8 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-world
 import { AuthoredFlocks } from "@jgengine/core/ai/AuthoredFlocks.draw";
 import { AuthoredWeatherLayer } from "@jgengine/core/weather/AuthoredWeatherLayer.draw";
-import { Fragment, useCallback, useEffect, useMemo, useReducer, useRef, useSyncExternalStore } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useReducer, useRef, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import type { EditorDocument, EditorMarker, EditorPath, EditorVolume } from "@jgengine/core/editor/index";
 import {
@@ -28,7 +29,7 @@ import type { TerrainField } from "@jgengine/core/terrain/terrain";
 import { PARTS_OUTPUT, placedGeneratorFor } from "@jgengine/core/scene/assetGenerator";
 import { GeneratorMeshInstance } from "@jgengine/core/generator/GeneratorMeshInstance.draw";
 import { isScatterGeneratorItem, type ScatterGeneratorItem } from "@jgengine/core/scatter/scatterGenerator";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 
 import { Roads } from "@jgengine/core/roads/RoadRibbons.draw";
 

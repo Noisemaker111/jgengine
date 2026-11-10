@@ -1,13 +1,14 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { seededRng } from "@jgengine/core/random/rng";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, terrain } from "@jgengine/core/world/features";
 import { defineStore } from "@jgengine/core/store/defineStore";
-import { useStore } from "@jgengine/react/store";
-import { useGameContext } from "@jgengine/react/provider";
+import { useStore } from "@jgengine/ui/store";
+import { useGameContext } from "@jgengine/ui/provider";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";

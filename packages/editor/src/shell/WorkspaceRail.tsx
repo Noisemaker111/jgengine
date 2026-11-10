@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { Icon, type IconName } from "./icons";
 import type { EditorWorkspace } from "./layoutStore";
 import { BORDER, FOCUS_RING } from "./theme";

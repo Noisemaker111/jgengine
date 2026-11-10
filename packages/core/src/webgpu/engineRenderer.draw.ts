@@ -4,15 +4,12 @@
  * materials and shaders stay the same; the `webgpu` backend hands it a WebGL-shaped context that
  * submits through WebGPU ({@link WebGpuGl}). Where WebGPU is missing it falls back to WebGL.
  *
- * The factory React Three Fiber calls is synchronous: everything asynchronous (the shader translator,
- * the adapter and device) is done first by {@link prepareEngineRenderer}, and the canvas mounts once
- * it is ready ({@link useEngineRendererFactory}). An async `gl` factory let R3F's `configure` run
- * twice at once (its Canvas calls it on every render), each from a state snapshot taken before the
- * await: the second made a fresh camera at aspect 0 after the size had already been applied, so the
- * game drew through a NaN projection for the whole session, and it made a second scene and renderer
- * (Brightway Park booted on WebGPU, 2026-11-08).
+ * The canvas factory is synchronous: the shader translator, adapter and device are prepared by
+ * {@link prepareEngineRenderer} before the canvas mounts ({@link useEngineRendererFactory}).
+ * Preparing first prevents overlapping initialization from creating duplicate scenes, renderers
+ * or cameras before the canvas size is known.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "@jgengine/core/ui/jsx";
 import { WebGLRenderer, type WebGLRendererParameters } from "three";
 import { guardInstanceCounts } from "../instancing/instanceCountGuard.draw";
 import type { RendererBackend } from "../settings/rendererBackend";
@@ -31,7 +28,7 @@ export function webGpuContextOf(renderer: WebGLRenderer): WebGpuGl | null {
   return backends.get(renderer)?.webgpu ?? null;
 }
 
-/** React Three Fiber's `gl` factory for one canvas mount; it never awaits. */
+/** Renderer factory for one engine canvas mount; it never awaits. */
 export interface EngineRendererFactory {
   (defaults: WebGLRendererParameters): WebGLRenderer;
   /** The backend that was asked for (the renderer may still fall back to WebGL). */
@@ -57,7 +54,7 @@ export async function prepareEngineRenderer(backend: RendererBackend): Promise<E
     }
   }
   let taken = false;
-  // R3F may call the factory again for the same canvas; it gets the same renderer, never a second context.
+  // Repeated requests for the same canvas reuse its renderer and context.
   const made = new WeakMap<object, WebGLRenderer>();
   const create = (defaults: WebGLRendererParameters): WebGLRenderer => {
     const params: WebGLRendererParameters = { ...defaults, powerPreference: "high-performance" };

@@ -1,4 +1,5 @@
-import { useMemo, type ComponentType } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useMemo, type ComponentType } from "@jgengine/core/ui/jsx";
 
 import type { EditorDocument } from "@jgengine/core/editor/types";
 import {

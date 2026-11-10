@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext } from "@jgengine/core/ui/jsx";
 
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 

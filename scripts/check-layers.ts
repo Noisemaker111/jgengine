@@ -2,7 +2,7 @@
 // core holds every layer of its feature, so the file name says the layer:
 //
 //   model  core files with no suffix: plain TypeScript; no React, no three.js, no view or draw file
-//   view   `*.view.ts(x)` in core, and all of @jgengine/react: React UI; no three.js, no draw file
+//   view   `*.view.ts(x)` in core, and all of @jgengine/ui: React UI; no three.js, no draw file
 //   draw   `*.draw.ts(x)` in core, and all of @jgengine/shell: three.js
 //
 // Nothing below the editor imports @jgengine/editor. Tests are exempt: a test may render any layer.
@@ -18,7 +18,7 @@ import { printHelpIfAsked, type Usage } from "./script-help";
 export type Layer = "model" | "view" | "draw";
 
 /** What an import pulls in, as far as the layer rules care. */
-type Reach = Layer | "react" | "three" | "editor" | null;
+type Reach = Layer | "ui" | "three" | "editor" | null;
 
 export interface LayerViolation {
   file: string;
@@ -26,14 +26,16 @@ export interface LayerViolation {
   detail: string;
 }
 
-const ENGINE_SOURCE = /^packages\/(core|react|shell)\/src\/.+\.tsx?$/;
-const EXEMPT = /\.(test|spec)\.tsx?$|(^|\/)testFixtures(\.tsx?$|\/)|\.d\.ts$/;
+const ENGINE_SOURCE = /^packages\/(core|ui|shell)\/src\/.+\.tsx?$/;
+// The two JSX entry files keep the names every compiler asks for (`<jsxImportSource>/jsx-runtime`),
+// so they cannot carry a `.view` suffix; all they take from a view file is the JSX type namespace.
+const EXEMPT = /\.(test|spec)\.tsx?$|(^|\/)testFixtures(\.tsx?$|\/)|\.d\.ts$|^packages\/core\/src\/ui\/jsx\/jsx-(dev-)?runtime\.ts$/;
 
 /** The layer a file belongs to, or null when the rules do not apply to it. */
 export function layerOfFile(path: string): Layer | null {
   const match = ENGINE_SOURCE.exec(path);
   if (match === null || EXEMPT.test(path)) return null;
-  if (match[1] === "react") return "view";
+  if (match[1] === "ui") return "view";
   if (match[1] === "shell") return "draw";
   if (/\.view\.tsx?$/.test(path)) return "view";
   if (/\.draw\.tsx?$/.test(path)) return "draw";
@@ -42,7 +44,7 @@ export function layerOfFile(path: string): Layer | null {
 
 /** The layer a module name names: by package, then by the `.view` / `.draw` suffix of its file. */
 function layerOfModule(packageName: string, subpath: string): Layer {
-  if (packageName === "react") return "view";
+  if (packageName === "ui") return "view";
   if (packageName === "shell") return "draw";
   if (/\.view$/.test(subpath)) return "view";
   if (/\.draw$/.test(subpath)) return "draw";
@@ -51,12 +53,13 @@ function layerOfModule(packageName: string, subpath: string): Layer {
 
 /** What one import specifier reaches, seen from `file`. */
 export function reachOf(file: string, specifier: string): Reach {
-  if (/^(react|react-dom)(\/|$)/.test(specifier)) return "react";
+  // UI code is written against the engine UI runtime; a model file reaches for neither it nor React.
+  if (/^(react|react-dom)(\/|$)/.test(specifier) || /^@jgengine\/core\/ui\/jsx(\/|$)/.test(specifier)) return "ui";
   if (/^(three|three-stdlib)(\/|$)/.test(specifier)) return "three";
   const engine = /^@jgengine\/([^/]+)(?:\/(.+))?$/.exec(specifier);
   if (engine !== null) {
     if (engine[1] === "editor") return "editor";
-    if (engine[1] === "core" || engine[1] === "react" || engine[1] === "shell") return layerOfModule(engine[1], engine[2] ?? "index");
+    if (engine[1] === "core" || engine[1] === "ui" || engine[1] === "shell") return layerOfModule(engine[1], engine[2] ?? "index");
     return null;
   }
   if (!specifier.startsWith(".")) return null;
@@ -67,13 +70,13 @@ export function reachOf(file: string, specifier: string): Reach {
     else if (part !== ".") parts.push(part);
   }
   const resolved = parts.join("/");
-  const inPackage = /^packages\/(core|react|shell)\/src\/(.+)$/.exec(resolved);
+  const inPackage = /^packages\/(core|ui|shell)\/src\/(.+)$/.exec(resolved);
   if (inPackage === null) return null;
   return layerOfModule(inPackage[1] ?? pkg, inPackage[2]!.replace(/\.tsx?$/, ""));
 }
 
 const FORBIDDEN: Record<Layer, ReadonlySet<Exclude<Reach, null>>> = {
-  model: new Set(["react", "three", "view", "draw", "editor"]),
+  model: new Set(["ui", "three", "view", "draw", "editor"]),
   view: new Set(["three", "draw", "editor"]),
   draw: new Set(["editor"]),
 };
@@ -107,7 +110,7 @@ export function violationsIn(file: string, source: string): LayerViolation[] {
 
 /** Every violation in the tracked and untracked engine source under `root`. */
 export function scanLayers(root: string): { files: number; violations: LayerViolation[] } {
-  const listed = spawnSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "--", "packages/core/src", "packages/react/src", "packages/shell/src"], {
+  const listed = spawnSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "--", "packages/core/src", "packages/ui/src", "packages/shell/src"], {
     cwd: root,
     encoding: "utf8",
     maxBuffer: 64 * 1024 * 1024,

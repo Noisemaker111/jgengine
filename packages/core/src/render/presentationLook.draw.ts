@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo } from "@jgengine/core/ui/jsx";
 
 import type { DocumentColorGrade } from "@jgengine/core/editor/environment";
 import { resolveGameLook, type GameLookInput, type ResolvedGameLook } from "@jgengine/core/render/lookPreset";

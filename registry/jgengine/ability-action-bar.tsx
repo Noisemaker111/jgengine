@@ -1,4 +1,5 @@
-import { useAbilitySlots } from "@jgengine/react/hooks";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useAbilitySlots } from "@jgengine/ui/hooks";
 import type { AbilityKit, AbilitySlotSnapshot } from "@jgengine/core/combat/abilityKit";
 
 import { ActionBar, type ActionBarSlot } from "@/components/ui/action-bar";

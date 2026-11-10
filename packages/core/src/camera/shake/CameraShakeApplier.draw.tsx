@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useRef } from "@jgengine/core/ui/jsx";
 
 import type { CameraShakeOffset } from "@jgengine/core/camera/shake/cameraShake";
 import { useFrameJoin } from "@jgengine/core/frame/engineHost.draw";

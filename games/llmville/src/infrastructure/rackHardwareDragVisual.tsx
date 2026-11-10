@@ -1,4 +1,5 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { createContext, useContext, useMemo, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { HardwareModelId } from "@llmville/game/infrastructure/catalog";
 

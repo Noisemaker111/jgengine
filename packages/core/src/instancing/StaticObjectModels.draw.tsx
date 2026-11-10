@@ -1,5 +1,6 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-world
-import { memo, useCallback, useEffect, useRef, useState, Fragment, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useRef, useState, Fragment, type ReactNode } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { objectVisualScale, type SceneObject } from "@jgengine/core/scene/objectStore";
@@ -7,7 +8,7 @@ import { createModelVariantSelector } from "@jgengine/core/lod/modelLod";
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { sceneProbeReading } from "@jgengine/core/devtools/discover";
 import { reportFallbackSeam } from "@jgengine/core/devtools/fallbackSeams";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { preloadSceneModel } from "@jgengine/core/model/entityModelDraw.draw";
 import { loadOverrideMapSets, type OverrideMapSetsLease } from "@jgengine/core/material/materialAsset.draw";

@@ -1,6 +1,7 @@
-import { type CSSProperties, useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { type CSSProperties, useState } from "@jgengine/core/ui/jsx";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/core/hud/hudLayout.view";
-import { useGame, useGameClock, useGameStore } from "@jgengine/react/hooks";
+import { useGame, useGameClock, useGameStore } from "@jgengine/ui/hooks";
 import { useGameFonts } from "@jgengine/core/ui/fonts.view";
 import { usePanels } from "@jgengine/core/ui/panels.view";
 import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";

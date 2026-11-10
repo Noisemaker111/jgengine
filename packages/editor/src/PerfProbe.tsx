@@ -1,5 +1,6 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
-import { memo, useRef } from "react";
+import { memo, useRef } from "@jgengine/core/ui/jsx";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
 

@@ -347,19 +347,21 @@ export function writePngAtomic(outPath, bytes) {
   renameSync(tmp, outPath);
 }
 
-export async function waitForHonestFrame(session, url, timeoutMs) {
-  const deadline = Date.now() + timeoutMs;
+export async function waitForHonestFrame(session, url, timeoutMs, timing = {}) {
+  const now = timing.now || Date.now;
+  const pause = timing.sleep || sleep;
+  const deadline = now() + timeoutMs;
   let last;
   let handshakeSeen = false;
-  while (Date.now() < deadline) {
-    const s = await session.evaluate(HONESTY_EXPR, { timeoutMs: Math.max(1, deadline - Date.now()) });
+  while (now() < deadline) {
+    const s = await session.evaluate(HONESTY_EXPR, { timeoutMs: Math.max(1, deadline - now()) });
     last = s;
     if (s && s.cap !== null && s.cap !== undefined) handshakeSeen = true;
     if (s && s.cap === "error") throw new Error("page reported a capture error: " + (s.err || "unknown"));
     if (s && s.cap === "ready") return s;
     // The shell's "Loading game view…" fallback can sit beside an already-sized canvas; never call that ready.
     if (!handshakeSeen && s && !s.loading && s.hasCanvas && s.cw > 10 && s.ch > 10 && s.bw > 10 && s.bh > 10) return s;
-    await sleep(100);
+    await pause(100);
   }
   throw new Error(
     "timed out after " +

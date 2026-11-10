@@ -1,4 +1,5 @@
-import { useMemo, useRef, useState, type MutableRefObject } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useMemo, useRef, useState, type MutableRefObject } from "@jgengine/core/ui/jsx";
 import { CapsuleGeometry, Group, MathUtils, MeshStandardMaterial, SphereGeometry } from "three";
 
 import { advanceGaitPhase, gaitBobOffset, gaitSwayAngle } from "@jgengine/core/movement/avatarGait";
@@ -10,10 +11,10 @@ import {
   useSceneObjectAttach,
 } from "@jgengine/core/frame/useEngineDraw.draw";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
-import { PlayerCharacterFigure } from "@/user/components/PlayerCharacterFigure";
-import { DEFAULT_CHARACTER_LOOK } from "@/user/playerCharacterFigure";
-import { REMOTE_AVATAR_INTERPOLATION_MS } from "@/world/location";
-import { readLiveRemotePose, sampleRemotePose } from "@/world/remotePresenceRuntime";
+import { PlayerCharacterFigure } from "../../user/components/PlayerCharacterFigure";
+import { DEFAULT_CHARACTER_LOOK } from "../../user/playerCharacterFigure";
+import { REMOTE_AVATAR_INTERPOLATION_MS } from "../../world/location";
+import { readLiveRemotePose, sampleRemotePose } from "../../world/remotePresenceRuntime";
 
 const AIRBORNE_JUMP_Y = 0.04;
 
@@ -29,7 +30,7 @@ function lerpAngle(from: number, to: number, alpha: number): number {
   return from + delta * alpha;
 }
 
-/** A positioned scene group that works on both hosts: portal parents it under r3f, attach adds it under the engine loop. */
+/** A positioned scene group attached to the engine loop. */
 function useAvatarGroup(initial?: { position: readonly [number, number, number]; rotationY: number }): Group {
   const group = useMemo(() => {
     const next = new Group();

@@ -1,20 +1,23 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { api } from "@llmville/backend/convex/_generated/api";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import type { FormEvent } from "react";
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "@jgengine/core/ui/jsx";
+import type { FormEvent } from "@jgengine/core/ui/jsx/dom.view";
 
-import { authClient } from "@/auth/authClient";
-import { deriveUsernameFromEmail } from "@/auth/authCredentials";
-import { destinationAfterAuth, type PlayEntryIntent } from "@/runtime/playEntry";
+
+import { authClient } from "./authClient";
+import { deriveUsernameFromEmail } from "./authCredentials";
+import { destinationAfterAuth, type PlayEntryIntent } from "../runtime/playEntry";
 import {
   CONVEX_TOKEN_REFRESH_LEEWAY_SECONDS,
   convexTokenSecondsRemaining,
   persistConvexToken,
   readConvexTokenSubject,
   readPersistedConvexToken,
-} from "@/auth/sessionToken";
-import { normalizeAvatarId } from "@/user/user";
+} from "./sessionToken";
+import { normalizeAvatarId } from "../user/user";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 type SessionPayload = Awaited<ReturnType<typeof authClient.getSession>>["data"];
 type AuthUser = NonNullable<SessionPayload>["user"];
@@ -70,7 +73,7 @@ export function useAuth() {
   return context;
 }
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   // better-auth's reactive session store is the single source of truth: it
   // updates itself on sign-in / sign-up / sign-out, so there is no manual
   // session state, no getSession polling, and no setUser juggling to drift.

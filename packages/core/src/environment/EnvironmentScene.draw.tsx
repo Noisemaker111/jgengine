@@ -1,12 +1,13 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-world
 import { oceanColor } from "@jgengine/core/water/oceanColor";
 import { waterSurfaceConfigFromDescriptor } from "@jgengine/core/water/waterSurface";
-import { useCallback, useMemo, useRef, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useRef, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 import { PresentationAssetBoundary } from "@jgengine/shell/presentationRecovery";
 import { PresentationRecoveredDraw } from "@jgengine/shell/presentationRecovery3d";
 import { usePresentationRetryScope } from "@jgengine/shell/presentationRecovery";
 import * as THREE from "three";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 
 import { resolveBuildingPalette } from "@jgengine/core/buildings/buildings";
 import { resolveStructureBuildings } from "@jgengine/core/world/environmentSummary";

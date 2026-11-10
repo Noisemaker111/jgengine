@@ -1,11 +1,13 @@
-import { lazy, Suspense, useEffect, useState, type ComponentType, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { lazy, Suspense, useEffect, useState, type ComponentType, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { useAccessibilitySettings } from "@jgengine/core/settings/accessibilitySettings.view";
 import { HudOverlayHost, HudThemeRoot } from "@jgengine/core/hud/hudThemeRoot.view";
 import { HudViewportProvider } from "@jgengine/core/hud/hudViewport.view";
-import { GameProvider } from "@jgengine/react/provider";
+import { GameProvider } from "@jgengine/ui/provider";
 import { kitHudBridge, UiKitRoot } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { RuneLayer, runeUiEnabled } from "@jgengine/core/ui/rune/runeLayer.view";
 
 import {
   DiagnosticOverlay,
@@ -31,11 +33,14 @@ export function ShellUiKit({ playable, children }: { playable: PlayableGame; chi
   const kit = playable.uiKit ?? null;
   // The overlay host lets the shell's settings dialog draw inside the HUD theme and the kit, so it takes
   // the game's `hudTheme` colours, or the kit's colours and type, instead of the engine default.
-  if (kit === null) return <>{children}<HudOverlayHost /></>;
+  // With the UI on Rune the host is a Rune layer of its own, above the game's, so the dialog is
+  // drawn on the same canvas as the HUD it covers.
+  const host = (style?: CSSProperties) => (runeUiEnabled() ? <RuneLayer><HudOverlayHost {...(style === undefined ? {} : { style })} /></RuneLayer> : <HudOverlayHost {...(style === undefined ? {} : { style })} />);
+  if (kit === null) return <>{children}{host()}</>;
   return (
     <UiKitRoot kit={kit}>
       {children}
-      <HudOverlayHost style={kitHudBridge("dialog")} />
+      {host(kitHudBridge("dialog"))}
     </UiKitRoot>
   );
 }
@@ -73,8 +78,17 @@ export function ShellGameUiChrome({
             <ShellUiCues ctx={ctx} enabled={playable.audio?.hudCues !== false}>
               <HudThemeRoot theme={playable.hudTheme} accessibility={accessibility}>
                 <ShellUiKit playable={playable}>
-                  <GameUI />
-                  <ShellNotices ctx={ctx} config={playable.chrome?.notices} scale={uiScale} />
+                  {runeUiEnabled() ? (
+                    <RuneLayer>
+                      <GameUI />
+                      <ShellNotices ctx={ctx} config={playable.chrome?.notices} scale={uiScale} />
+                    </RuneLayer>
+                  ) : (
+                    <>
+                      <GameUI />
+                      <ShellNotices ctx={ctx} config={playable.chrome?.notices} scale={uiScale} />
+                    </>
+                  )}
                   <FeedbackHost ctx={ctx} engine={audioEngine} />
                 </ShellUiKit>
               </HudThemeRoot>

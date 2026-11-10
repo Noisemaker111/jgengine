@@ -3,10 +3,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@jgengine/react": "workspace:*",
-    "react": "catalog:"
-  },
-  "devDependencies": {
-    "@types/react": "catalog:"
+    "@jgengine/ui": "workspace:*"
   }
 }

@@ -1,12 +1,13 @@
-import { useRef, type CSSProperties, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useRef, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { groundSpeed } from "@jgengine/core/scene/entityStore";
 
 import { iconForItemId } from "@jgengine/core/ui/icons/gameIcons.view";
 import { hudFrameStyle } from "./hudFrame.view";
 import { IconTreatment, schoolForItem } from "@jgengine/core/ui/icons/iconTreatment.view";
-import { useCurrency, useGameCalendar, useGameClock, useInventory, localPlayerEntity } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
+import { useCurrency, useGameCalendar, useGameClock, useInventory, localPlayerEntity } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
 import { LiveText, useFrameBind } from "@jgengine/core/ui/liveBind.view";
 import { isLive, readLive, type Live } from "@jgengine/core/ui/liveValue";
 import { hudType } from "./hudTokens";

@@ -1,5 +1,6 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-world
-import { useEffect, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 

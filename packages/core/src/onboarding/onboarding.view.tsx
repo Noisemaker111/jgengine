@@ -1,11 +1,12 @@
-import type { CSSProperties, ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 
 import { ObjectiveBannerHost, type ObjectiveBannerTheme } from "@jgengine/core/mission/objectiveBanner.view";
 import { QuestTracker } from "@jgengine/core/mission/questTracker.view";
 import type { TrackedQuestView } from "@jgengine/core/mission/quest";
 import { onboardingOf, type OnboardingRuntime } from "@jgengine/core/onboarding/onboardingSystem";
-import { useGame, useGameStore } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGame, useGameStore } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
 
 /**
  * The running onboarding, or `null` when the game installed none. Compose its `markers` into the

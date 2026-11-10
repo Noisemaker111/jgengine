@@ -149,8 +149,8 @@
 
 ## @jgengine/core/cards/cards.view
 
-- `CardFace` (function): function CardFace({ rank, suit, faceDown = false, width = 64, height = 90, className, style, children, }: { rank: Rank; suit: Suit; faceDown?: boolean | undefined; width?: number; height?: number; className?: string | undefined; style?: CSSProperties; children?: ReactNode; }): React.JSX.Element — A single playing-card face: rank + suit pips, or a patterned back when `faceDown`.
-- `CardStack` (function): function CardStack({ pile, zone, cardOf, ...rest }: { pile: CardPileState; zone: string; cardOf: (id: string) => PlayingCard; } & Omit<Parameters<typeof StackedPile>[0], "cards">): React.JSX.Element — `StackedPile` bound to a headless `CardPileState` zone: reads the ordered card ids from `pile.zones[zone]` and resolves each to a `PlayingCard` via `cardOf`.
+- `CardFace` (function): function CardFace({ rank, suit, faceDown = false, width = 64, height = 90, className, style, children, }: { rank: Rank; suit: Suit; faceDown?: boolean | undefined; width?: number; height?: number; className?: string | undefined; style?: CSSProperties; children?: ReactNode; }): JSX.Element — A single playing-card face: rank + suit pips, or a patterned back when `faceDown`.
+- `CardStack` (function): function CardStack({ pile, zone, cardOf, ...rest }: { pile: CardPileState; zone: string; cardOf: (id: string) => PlayingCard; } & Omit<Parameters<typeof StackedPile>[0], "cards">): JSX.Element — `StackedPile` bound to a headless `CardPileState` zone: reads the ordered card ids from `pile.zones[zone]` and resolves each to a `PlayingCard` via `cardOf`.
 - `PlayingCard` (interface): interface PlayingCard — A single card in a stack: an id plus its face and orientation.
 - `RANKS` (const): const RANKS: readonly Rank[] — Ranks in ascending order, ace low.
 - `Rank` (type): type Rank = "A" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "J" | "Q" | "K" — A playing-card rank, ace through king.
@@ -187,7 +187,7 @@
 - `ChannelTabs` (function): function ChannelTabs({ channels, active, onSelect, className, tabClassName, activeTabClassName, renderTab, }: { channels?: readonly string[]; active: string; onSelect: (channelId: string) => void; className?: string | undefined; tabClassName?: string | undefined; activeTabClassName?: string | undefi… — ⚠ undocumented
 - `ChatInput` (function): function ChatInput({ channelId, className, inputClassName, buttonClassName, placeholder, sendLabel, onSent, onRejected, }: { channelId: string; className?: string | undefined; inputClassName?: string | undefined; buttonClassName?: string | undefined; placeholder?: string | undefined; sendLabel?: Rea… — ⚠ undocumented
 - `ChatLog` (function): function ChatLog({ channelId, limit, className, messageClassName, ownMessageClassName, renderMessage, }: { channelId: string; limit?: number | undefined; className?: string | undefined; messageClassName?: string | undefined; ownMessageClassName?: string | undefined; renderMessage?: ((message: ChatMe… — ⚠ undocumented
-- `ChatPanel` (function): function ChatPanel<T extends ChatMessage = ChatMessage>(props: Parameters<typeof ContextChatPanel>[0] | StandaloneChatPanelProps<T>): React.JSX.Element — Chat behavior over a game context or externally supplied server messages.
+- `ChatPanel` (function): function ChatPanel<T extends ChatMessage = ChatMessage>(props: Parameters<typeof ContextChatPanel>[0] | StandaloneChatPanelProps<T>): JSX.Element — Chat behavior over a game context or externally supplied server messages.
 - `chatTransportFromSync` (function): function chatTransportFromSync(sync: ChatSync): ChatTransport — Lifts a callback-style ChatSync (e.g. createWsBackend().chatSyncFor(serverId)) into the hook-shaped ChatTransport contract. Create once per sync — outside render or inside useMemo — so subscriptions survive re-renders.
 
 ## @jgengine/core/chat/chatBubbles.view
@@ -292,7 +292,7 @@
 
 ## @jgengine/core/data/DataObjects.draw
 
-- `DataObjects` (function): function DataObjects<T>(props: DataObjectsProps<T>): React.JSX.Element | null — Places one 3D object per data item: instanced boxes sized and colored from the item, or custom content per item.
+- `DataObjects` (function): function DataObjects<T>(props: DataObjectsProps<T>): JSX.Element | null — Places one 3D object per data item: instanced boxes sized and colored from the item, or custom content per item.
 - `DataObjectsProps` (interface): interface DataObjectsProps<T> — Renders one placed 3D object per data item — a 3D bar chart, a heatmap, a city of buildings, a crowd. By default each item is an extruded box (all boxes share one `InstancedMesh`, so hundreds cost one draw call), sized and colored from the item; `renderItem` swaps the box for arbitrary content (a sprite, a GLB, a full entity). Genre-agnostic: the caller owns the data `T`, this owns the placement.
 - `dataObjectsDraw` (function): function dataObjectsDraw<T>(getProps: () => DataObjectsProps<T>, data: readonly T[]): EngineDraw — The instanced-box path as an {@link EngineDraw}; `renderItem` stays on the React wrapper.
 
@@ -577,7 +577,7 @@
 
 ## @jgengine/core/feed/killFeed.view
 
-- `KillFeed` (const): const KillFeed: React.NamedExoticComponent<KillFeedProps> — A vertical event/kill-feed ticker: renders an {@link EventTicker}'s recent entries as a stack of rows, newest on top, each with its `fade` `0..1` mapped to opacity so entries dim and drop as they age out. Each row shows an optional per-kind (or per-entry) {@link GameIcon} and a per-kind accent color from `kindStyles`, styled with HudTheme tokens. Presentation only: all capping/timing lives in the core ticker, and the free-string `kind`/`text`/`icon` are never interpreted here — a game colors and icons each variant via `kindStyles`.
+- `KillFeed` (const): const KillFeed: NamedExoticComponent<KillFeedProps> — A vertical event/kill-feed ticker: renders an {@link EventTicker}'s recent entries as a stack of rows, newest on top, each with its `fade` `0..1` mapped to opacity so entries dim and drop as they age out. Each row shows an optional per-kind (or per-entry) {@link GameIcon} and a per-kind accent color from `kindStyles`, styled with HudTheme tokens. Presentation only: all capping/timing lives in the core ticker, and the free-string `kind`/`text`/`icon` are never interpreted here — a game colors and icons each variant via `kindStyles`.
 - `KillFeedKindStyle` (interface): interface KillFeedKindStyle — Per-`kind` styling for a kill-feed row — accent color and an optional icon.
 - `KillFeedProps` (interface): interface KillFeedProps — Props for {@link KillFeed}.
 - `KillFeedTheme` (interface): interface KillFeedTheme — Reskin tokens for {@link KillFeed}.
@@ -1059,7 +1059,7 @@
 - `Auction` (interface): interface Auction — One live timed auction in an {@link AuctionBook}: an item stack under open bidding until it closes.
 - `AuctionSettlement` (type): type AuctionSettlement = | { status: "sold"; auction: Auction; winnerId: string; price: number; houseCut: number; sellerProceeds: number; } | { status: "returned"; auction: Auction } — How one closed auction resolved during {@link AuctionBook.settleExpired}.
 - `AxisBindingMap` (type): type AxisBindingMap = Record<AxisName, AxisBinding> — ⚠ undocumented · used by `DRIVE_AXIS_BINDINGS` (@jgengine/core/input/axisInput): Car axes bound to raw key codes, for an {@link AxisChannel} sampled with a key-code `isDown`.
-- `AxisChannelConfig` (interface): interface AxisChannelConfig { bindings: AxisBindingMap; smoothing?: number } — ⚠ undocumented · used by `useAxisChannel` (@jgengine/react): Wires useHeldKeys into a fresh AxisChannel, ready for a per-frame `channel.sample(dt, isDown)`.
+- `AxisChannelConfig` (interface): interface AxisChannelConfig { bindings: AxisBindingMap; smoothing?: number } — ⚠ undocumented · used by `useAxisChannel` (@jgengine/ui): Wires useHeldKeys into a fresh AxisChannel, ready for a per-frame `channel.sample(dt, isDown)`.
 - `AxisInput` (interface): interface AxisInput { throttle: number; brake: number; steer: number; handbrake: number } — ⚠ undocumented · used by `tickDrivableVehicle` (@jgengine/core/physics/drivableVehicle): Connects an `AxisInput` sample straight through a `VehicleDynamics` car to a scene entity's pose for one tick — the throttle/steer/handbrake…
 - `BackdropConfig` (interface): interface BackdropConfig — Generic sky/background/fog for ANY world kind, including a custom `environment` component (#207.6).
 - `BehaviorConfig` (type): type BehaviorConfig = Record<string, unknown> — Per-behavior configuration stored on an item as plain data (e.g. charge time, projectile id). Kept opaque here so no game noun leaks into item core.
@@ -1167,7 +1167,7 @@
 - `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig { eyeHeight?: number; sensitivity?: number; maxPitch?: number; reticle?: boolean; body?: boolean; viewmodel?: boolean; collision?: false | FirstPersonCollisionConfig } — ⚠ undocumented
 - `FirstPersonCollisionConfig` (interface): interface FirstPersonCollisionConfig — Clearance tuning for the first-person camera's collision pull-in.
 - `ForbidRule` (interface): interface ForbidRule — A rule that forbids a combination — e.g. "an incendiary barrel cannot pair with a cryo core". A forbid rule can never become satisfiable by adding more parts, so it is the check a backtracking generator runs on each candidate.
-- `FriendEntry` (interface): interface FriendEntry { userId: string; online: boolean } — ⚠ undocumented · used by `useFriends` (@jgengine/react): The local player's friends with their presence: the list keeps one identity until a request is accepted, a friend is removed or a friend's p…
+- `FriendEntry` (interface): interface FriendEntry { userId: string; online: boolean } — ⚠ undocumented · used by `useFriends` (@jgengine/ui): The local player's friends with their presence: the list keeps one identity until a request is accepted, a friend is removed or a friend's p…
 - `FriendRequestEntry` (interface): interface FriendRequestEntry { requestId: string; fromUserId: string } — ⚠ undocumented
 - `Friends` (interface): interface Friends { canRequest(fromUserId: string, toUserId: string): {reason: string} | null; request(fromUserId: string, toUserId: string): {requestId: string} | {reason: string}; accept(userId: string, requestId: string): {reason: string} | null; decline(… — ⚠ undocumented
 - `GAME_SAVE_VERSION` (const): const GAME_SAVE_VERSION: 1 — Current save-format version of {@link GameSaveDocument}. Bump it with {@link GameSaveConfig.migrate} when the shape changes.
@@ -1606,7 +1606,7 @@
 - `WorkQueueState` (interface): interface WorkQueueState<TSpec, TReserve = undefined> — Serializable queue state. Holds only non-terminal jobs, so it stays bounded.
 - `WorldInvite` (interface): interface WorldInvite extends WorldInviteTarget { id: string; fromUserId: string; toUserId: string; createdAt: number } — ⚠ undocumented
 - `WorldInviteTarget` (interface): interface WorldInviteTarget { serverId: string; joinCode?: string } — ⚠ undocumented
-- `WorldItemRecord` (interface): interface WorldItemRecord { instanceId: string; itemId: string; rarity: string; baseType: string; count: number; affixTier?: number; source?: string; droppedAt: number } — ⚠ undocumented · used by `useNearestWorldItem` (@jgengine/react): Nearest ground item within `radius` of the local player — drives a pickup prompt/highlight.
+- `WorldItemRecord` (interface): interface WorldItemRecord { instanceId: string; itemId: string; rarity: string; baseType: string; count: number; affixTier?: number; source?: string; droppedAt: number } — ⚠ undocumented · used by `useNearestWorldItem` (@jgengine/ui): Nearest ground item within `radius` of the local player — drives a pickup prompt/highlight.
 - `WorldItemRenderConfig` (interface): interface WorldItemRenderConfig { rarityStyle?: Record<string, RarityStyle>; filter?: readonly LootFilterRule[]; pickupRadius?: number; beamHeight?: number; autoPickup?: boolean | {radius?: number} } — ⚠ undocumented · used by `WorldItems` (@jgengine/core/item/WorldItems.draw): Rarity→beam/color/label render binding + loot-filter overlay (#32/#33) for every dropped `worldItem`.
 - `WorldOverlayProps` (interface): interface WorldOverlayProps — Props handed to a `WorldOverlay` component (#542): explicit `ctx` access so canvas-layer VFX read live engine state directly, without an extra hook or a module-global workaround.
 - `XpCurve` (interface): interface XpCurve — A resolved, validated {@link XpCurveDef}: thresholds, lifetime totals, a stated rule, and a leveling track bound to the same numbers.
@@ -1934,13 +1934,13 @@
 
 ## @jgengine/core/inventory/dragLayer.view
 
-- `DragGhost` (function): function DragGhost<T>({ layer, className, style, children, }: { layer: DragLayer<T>; className?: string; style?: CSSProperties; children?: (payload: DragPayload<T>) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
+- `DragGhost` (function): function DragGhost<T>({ layer, className, style, children, }: { layer: DragLayer<T>; className?: string; style?: CSSProperties; children?: (payload: DragPayload<T>) => ReactNode; }): JSX.Element | null — ⚠ undocumented
 - `DragLayer` (interface): interface DragLayer<T> { state: DragLayerState<T>; dragging: boolean; pointRef: RefObject<{x: number; y: number}>; beginDrag(payload: {id: string; value: T; rotation?: Rotation}, event: ReactPointerEvent): void; rotate(quarterTurns?: number): void; setTarget(targ… — ⚠ undocumented · used by `useDragLayer`: Pointer-owned drag state shared by cards and inventory grids.
 - `DragLayerState` (interface): interface DragLayerState<T> — What the drag layer is carrying now: the payload, the pointer and where the drag began.
 - `DragPayload` (interface): interface DragPayload<T> { id: string; value: T; rotation: Rotation } — ⚠ undocumented
-- `DraggableCard` (function): function DraggableCard<T>({ id, value, layer, className, children, onRotate, }: { id: string; value: T; layer: DragLayer<T>; className?: string; children?: ReactNode; onRotate?: boolean; }): React.JSX.Element — ⚠ undocumented
+- `DraggableCard` (function): function DraggableCard<T>({ id, value, layer, className, children, onRotate, }: { id: string; value: T; layer: DragLayer<T>; className?: string; children?: ReactNode; onRotate?: boolean; }): JSX.Element — ⚠ undocumented
 - `DropInfo` (interface): interface DropInfo<T> { payload: DragPayload<T>; target: string | null; cell: Cell | null; point: {x: number; y: number} } — ⚠ undocumented · used by `useDragLayer`: Pointer-owned drag state shared by cards and inventory grids.
-- `DropZone` (function): function DropZone<T>({ id, layer, className, activeClassName, cellSize, children, }: { id: string; layer: DragLayer<T>; className?: string; activeClassName?: string; cellSize?: number; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `DropZone` (function): function DropZone<T>({ id, layer, className, activeClassName, cellSize, children, }: { id: string; layer: DragLayer<T>; className?: string; activeClassName?: string; cellSize?: number; children?: ReactNode; }): JSX.Element — ⚠ undocumented
 - `useDragLayer` (function): function useDragLayer<T>(options?: { onDrop?: (info: DropInfo<T>) => void; }): DragLayer<T> — Pointer-owned drag state shared by cards and inventory grids. Registered DropZones are hit-tested through pointer capture; release finishes once, while cancellation, blur and unmount release ownership. Callers own drop policy, rotation and presentation; pointer movement paints the ghost without rerendering it.
 
 ## @jgengine/core/inventory/encumbrance
@@ -1971,7 +1971,7 @@
 
 ## @jgengine/core/inventory/inventoryGrid.view
 
-- `InventoryGrid` (function): function InventoryGrid({ inventoryId, columns, size = 44, gap = 6, itemIcon, onActivate, className, style, }: InventoryGridProps): React.JSX.Element — A drop-in inventory grid with drag/swap/stack-merge/split and full keyboard control, bound to `inventoryId`.
+- `InventoryGrid` (function): function InventoryGrid({ inventoryId, columns, size = 44, gap = 6, itemIcon, onActivate, className, style, }: InventoryGridProps): JSX.Element — A drop-in inventory grid with drag/swap/stack-merge/split and full keyboard control, bound to `inventoryId`.
 - `InventoryGridProps` (interface): interface InventoryGridProps — Props for {@link InventoryGrid}.
 
 ## @jgengine/core/inventory/inventoryModel
@@ -2035,12 +2035,12 @@
 
 ## @jgengine/core/inventory/slots.view
 
-- `ArmorSlots` (function): function ArmorSlots(props: SlotGridProps): React.JSX.Element — Armor piece slots.
-- `EquipmentSlots` (function): function EquipmentSlots(props: SlotGridProps): React.JSX.Element — Worn-gear slots (head/chest/hands/…): one atomic grid, painted icons, themed from tokens.
-- `PotionSlots` (function): function PotionSlots(props: SlotGridProps): React.JSX.Element — Consumable (health/shield potion) slots.
+- `ArmorSlots` (function): function ArmorSlots(props: SlotGridProps): JSX.Element — Armor piece slots.
+- `EquipmentSlots` (function): function EquipmentSlots(props: SlotGridProps): JSX.Element — Worn-gear slots (head/chest/hands/…): one atomic grid, painted icons, themed from tokens.
+- `PotionSlots` (function): function PotionSlots(props: SlotGridProps): JSX.Element — Consumable (health/shield potion) slots.
 - `SlotGridProps` (interface): interface SlotGridProps — Props shared by every atomic slot grid.
 - `SlotItem` (interface): interface SlotItem — Atomic, purpose-named slot grids (#1033): one component per category — `EquipmentSlots`, `WeaponSlots`, `ArmorSlots`, `PotionSlots` — for paperdoll / equip layouts where each grid holds a single gear category. A full multi-category backpack that binds to a live inventory with drag/swap/stack/split is a different, supported shape: reach for `<InventoryGrid>` (`inventoryGrid.tsx`) there, and use these atomic grids for the equip slots around it. Each renders a grid of painted {@link IconTreatment} tiles (glyph + gradient + count badge) for filled slots and a themed placeholder for empty ones, all reading the shared `--jg-slot-*` / `--jg-accent` HudTheme tokens (#1034). Composition stays the game's; the engine ships the grid.
-- `WeaponSlots` (function): function WeaponSlots(props: SlotGridProps): React.JSX.Element — Weapon loadout slots.
+- `WeaponSlots` (function): function WeaponSlots(props: SlotGridProps): JSX.Element — Weapon loadout slots.
 
 ## @jgengine/core/inventory/spoilage
 
@@ -2069,7 +2069,7 @@
 
 ## @jgengine/core/item/WorldItems.draw
 
-- `WorldItems` (function): function WorldItems({ config }: { config?: WorldItemRenderConfig | undefined }): React.JSX.Element — Rarity→beam/color/label render binding + loot-filter overlay (#32/#33) for every dropped `worldItem`.
+- `WorldItems` (function): function WorldItems({ config }: { config?: WorldItemRenderConfig | undefined }): JSX.Element — Rarity→beam/color/label render binding + loot-filter overlay (#32/#33) for every dropped `worldItem`.
 - `worldItemMarkerDraw` (function): function worldItemMarkerDraw(getProps: () => { ctx: GameContext; instanceId: string; color: string; beam: boolean; beamHeight: number; anchor: THREE.Object3D | null; }): EngineDraw — Draw-side form of the marker's meshes: the ground ring and bobbing gem are added under the caller's pose group, which the frame writes the entity pose onto. The beam line and HTML label stay React siblings so they inherit the same pose.
 
 ## @jgengine/core/item/affix
@@ -2250,7 +2250,7 @@
 - `ScatterOptions` (interface): interface ScatterOptions { radius: number; minRadius?: number; height?: number } — ⚠ undocumented
 - `WORLD_ITEM_ENTITY_NAME` (const): const WORLD_ITEM_ENTITY_NAME: "world_item" — Scene-entity catalog name every dropped-item instance spawns under (see the three buckets: worldItem is an entity, never an inventory item or object).
 - `WorldItemPresentation` (interface): interface WorldItemPresentation { hidden: boolean; color?: string; beam: boolean; label?: string } — ⚠ undocumented
-- `WorldItemRecord` (interface): interface WorldItemRecord { instanceId: string; itemId: string; rarity: string; baseType: string; count: number; affixTier?: number; source?: string; droppedAt: number } — ⚠ undocumented · used by `useNearestWorldItem` (@jgengine/react): Nearest ground item within `radius` of the local player — drives a pickup prompt/highlight.
+- `WorldItemRecord` (interface): interface WorldItemRecord { instanceId: string; itemId: string; rarity: string; baseType: string; count: number; affixTier?: number; source?: string; droppedAt: number } — ⚠ undocumented · used by `useNearestWorldItem` (@jgengine/ui): Nearest ground item within `radius` of the local player — drives a pickup prompt/highlight.
 - `WorldItemSpawnInput` (interface): interface WorldItemSpawnInput { itemId: string; position: EntityPosition; rarity?: string; baseType?: string; count?: number; affixTier?: number; source?: string } — ⚠ undocumented
 - `WorldItemStore` (interface): interface WorldItemStore { spawn(input: WorldItemSpawnInput): WorldItemRecord; get(instanceId: string): WorldItemRecord | null; list(): readonly WorldItemRecord[]; nearestInRadius(from: EntityPosition, radius: number, filter?: (record: WorldItemRecord) => boolean):… — ⚠ undocumented
 - `WorldItemStoreDeps` (interface): interface WorldItemStoreDeps { defaultRarity?: string; spawnEntity(position: EntityPosition): string; despawnEntity(instanceId: string): boolean; resolvePosition(instanceId: string): EntityPosition | undefined; now?(): number } — ⚠ undocumented
@@ -2424,7 +2424,7 @@
 
 ## @jgengine/core/mission/objectiveBanner.view
 
-- `ObjectiveBannerHost` (const): const ObjectiveBannerHost: React.NamedExoticComponent<ObjectiveBannerHostProps> — A full-screen overlay (or, with `placement: "inline"`, a block in a HUD slot) that renders an {@link ObjectiveBannerController} as the classic transient centered title stamp — "WAVE 3", "VICTORY", "OBJECTIVE COMPLETE" — flying in, holding, and fading out. It subscribes to the model, drives `advance()` on an animation frame (unless the game ticks it), and maps the current banner's phase + progress to opacity/scale/translate. Reskin the base look with {@link ObjectiveBannerTheme} and color each variant via `kindThemes` keyed on the game-owned `kind`. Presentation only: all timing and queueing live in the core model, and `kind` is never interpreted here.
+- `ObjectiveBannerHost` (const): const ObjectiveBannerHost: NamedExoticComponent<ObjectiveBannerHostProps> — A full-screen overlay (or, with `placement: "inline"`, a block in a HUD slot) that renders an {@link ObjectiveBannerController} as the classic transient centered title stamp — "WAVE 3", "VICTORY", "OBJECTIVE COMPLETE" — flying in, holding, and fading out. It subscribes to the model, drives `advance()` on an animation frame (unless the game ticks it), and maps the current banner's phase + progress to opacity/scale/translate. Reskin the base look with {@link ObjectiveBannerTheme} and color each variant via `kindThemes` keyed on the game-owned `kind`. Presentation only: all timing and queueing live in the core model, and `kind` is never interpreted here.
 - `ObjectiveBannerHostProps` (interface): interface ObjectiveBannerHostProps — Props for {@link ObjectiveBannerHost}.
 - `ObjectiveBannerTheme` (interface): interface ObjectiveBannerTheme { accent?: string; title?: string; subtitle?: string; fontFamily?: string; titleSize?: string; subtitleSize?: string } — ⚠ undocumented · used by `OnboardingBanner` (@jgengine/core/onboarding/onboarding.view): The step-done banner ("Gather stone" / "Next: Craft a Stone Pick") through `ObjectiveBannerHost`.
 - `useObjectiveBanner` (function): function useObjectiveBanner(controller: ObjectiveBannerController, animate = true): ObjectiveBannerView | null — Subscribe to a banner controller, drive its clock on an animation frame (unless the game already ticks it), and return the banner to draw right now — or `null` when idle. Re-renders when a banner or its phase changes; its motion is drawn per frame by the host.
@@ -2557,7 +2557,7 @@
 
 ## @jgengine/core/notifications/toastStack.view
 
-- `ToastStack` (const): const ToastStack: React.NamedExoticComponent<{ action: string; limit?: number | undefined; className?: string | undefined; renderToast?: ((entry: FeedEntry<unknown>, index: number) => React.ReactNode) | undefined; }> — Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack. Reach for this when the message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot log); for ad-hoc player messages push to `ctx.game.notices`, which the shell draws as a {@link NoticeStack}.
+- `ToastStack` (const): const ToastStack: NamedExoticComponent<{ action: string; limit?: number | undefined; className?: string | undefined; renderToast?: ((entry: FeedEntry<unknown>, index: number) => UiNode) | undefined; }> — Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack. Reach for this when the message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot log); for ad-hoc player messages push to `ctx.game.notices`, which the shell draws as a {@link NoticeStack}.
 
 ## @jgengine/core/onboarding/OnboardingPointer.draw
 
@@ -3146,7 +3146,7 @@
 - `EmoteSpatialLookup` (interface): interface EmoteSpatialLookup { inRadius(center: readonly [number, number, number], radius: number, filter?: (id: string) => boolean): readonly string[] } — ⚠ undocumented
 - `Emotes` (interface): interface Emotes { play(fromUserId: string, emoteId: string, radius?: number): EmoteBroadcastResult | {reason: string} } — ⚠ undocumented
 - `EmotesDeps` (interface): interface EmotesDeps { entities: EmoteEntityLookup; spatial: EmoteSpatialLookup } — ⚠ undocumented
-- `FriendEntry` (interface): interface FriendEntry { userId: string; online: boolean } — ⚠ undocumented · used by `useFriends` (@jgengine/react): The local player's friends with their presence: the list keeps one identity until a request is accepted, a friend is removed or a friend's p…
+- `FriendEntry` (interface): interface FriendEntry { userId: string; online: boolean } — ⚠ undocumented · used by `useFriends` (@jgengine/ui): The local player's friends with their presence: the list keeps one identity until a request is accepted, a friend is removed or a friend's p…
 - `FriendRequestEntry` (interface): interface FriendRequestEntry { requestId: string; fromUserId: string } — ⚠ undocumented
 - `Friends` (interface): interface Friends { canRequest(fromUserId: string, toUserId: string): {reason: string} | null; request(fromUserId: string, toUserId: string): {requestId: string} | {reason: string}; accept(userId: string, requestId: string): {reason: string} | null; decline(… — ⚠ undocumented
 - `FriendsSnapshot` (interface): interface FriendsSnapshot { friends: string[]; blocked: string[] } — ⚠ undocumented
@@ -3167,21 +3167,21 @@
 
 ## @jgengine/core/social/social.view
 
-- `AddFriendButton` (function): function AddFriendButton({ toUserId, className, children, onRequested, onRejected, }: { toUserId: string; className?: string; children?: ReactNode; onRequested?: (requestId: string) => void; onRejected?: (reason: string) => void; }): React.JSX.Element | null — ⚠ undocumented
+- `AddFriendButton` (function): function AddFriendButton({ toUserId, className, children, onRequested, onRejected, }: { toUserId: string; className?: string; children?: ReactNode; onRequested?: (requestId: string) => void; onRejected?: (reason: string) => void; }): JSX.Element | null — ⚠ undocumented
 - `EmoteWheel` (function): function EmoteWheel({ emotes, radius, open = true, className, emoteClassName, onPlayed, onRejected, renderEmote, }: { emotes: readonly string[]; radius?: number; open?: boolean; className?: string; emoteClassName?: string; onPlayed?: (emoteId: string) => void; onRejected?: (reason: string) => void; … — ⚠ undocumented
 - `FriendRequestsList` (function): function FriendRequestsList({ className, rowClassName, acceptClassName, declineClassName, emptyState, renderRequest, }: { className?: string; rowClassName?: string; acceptClassName?: string; declineClassName?: string; emptyState?: ReactNode; renderRequest?: (request: FriendRequestEntry) => ReactNode… — ⚠ undocumented
-- `FriendRow` (function): function FriendRow({ friend, className, dotClassName, children, }: { friend: FriendEntry; className?: string | undefined; dotClassName?: string | undefined; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `FriendsList` (function): function FriendsList({ className, rowClassName, dotClassName, emptyState, renderFriend, }: { className?: string; rowClassName?: string; dotClassName?: string; emptyState?: ReactNode; renderFriend?: (friend: FriendEntry) => ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `InviteToWorldButton` (function): function InviteToWorldButton({ toUserId, target, className, children, onInvited, onRejected, }: { toUserId: string; target: WorldInviteTarget; className?: string; children?: ReactNode; onInvited?: (inviteId: string) => void; onRejected?: (reason: string) => void; }): React.JSX.Element | null — ⚠ undocumented
-- `JoinByCode` (function): function JoinByCode({ onJoin, className, inputClassName, buttonClassName, placeholder, children, }: { onJoin: (code: string) => void; className?: string; inputClassName?: string; buttonClassName?: string; placeholder?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `LeavePartyButton` (function): function LeavePartyButton({ className, children, }: { className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
-- `PartyFrame` (function): function PartyFrame({ className, rowClassName, dotClassName, emptyState, renderMember, }: { className?: string; rowClassName?: string; dotClassName?: string; emptyState?: ReactNode; renderMember?: (member: PartyMemberEntry) => ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `PartyInviteToast` (function): function PartyInviteToast({ className, acceptClassName, declineClassName, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; renderInvite?: (invite: PartyInviteEntry) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
-- `PartyMemberRow` (function): function PartyMemberRow({ member, className, dotClassName, children, }: { member: PartyMemberEntry; className?: string | undefined; dotClassName?: string | undefined; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `PresenceDot` (function): function PresenceDot({ userId, className }: { userId: string; className?: string | undefined }): React.JSX.Element — ⚠ undocumented
-- `QuickMatchButton` (function): function QuickMatchButton({ listings, onJoin, onNoMatch, filter, className, children, }: { listings: readonly SessionListing[]; onJoin: (listing: SessionListing) => void; onNoMatch?: () => void; filter?: MatchFilter; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `FriendRow` (function): function FriendRow({ friend, className, dotClassName, children, }: { friend: FriendEntry; className?: string | undefined; dotClassName?: string | undefined; children?: ReactNode; }): JSX.Element — ⚠ undocumented
+- `FriendsList` (function): function FriendsList({ className, rowClassName, dotClassName, emptyState, renderFriend, }: { className?: string; rowClassName?: string; dotClassName?: string; emptyState?: ReactNode; renderFriend?: (friend: FriendEntry) => ReactNode; }): JSX.Element — ⚠ undocumented
+- `InviteToWorldButton` (function): function InviteToWorldButton({ toUserId, target, className, children, onInvited, onRejected, }: { toUserId: string; target: WorldInviteTarget; className?: string; children?: ReactNode; onInvited?: (inviteId: string) => void; onRejected?: (reason: string) => void; }): JSX.Element | null — ⚠ undocumented
+- `JoinByCode` (function): function JoinByCode({ onJoin, className, inputClassName, buttonClassName, placeholder, children, }: { onJoin: (code: string) => void; className?: string; inputClassName?: string; buttonClassName?: string; placeholder?: string; children?: ReactNode; }): JSX.Element — ⚠ undocumented
+- `LeavePartyButton` (function): function LeavePartyButton({ className, children, }: { className?: string; children?: ReactNode; }): JSX.Element | null — ⚠ undocumented
+- `PartyFrame` (function): function PartyFrame({ className, rowClassName, dotClassName, emptyState, renderMember, }: { className?: string; rowClassName?: string; dotClassName?: string; emptyState?: ReactNode; renderMember?: (member: PartyMemberEntry) => ReactNode; }): JSX.Element — ⚠ undocumented
+- `PartyInviteToast` (function): function PartyInviteToast({ className, acceptClassName, declineClassName, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; renderInvite?: (invite: PartyInviteEntry) => ReactNode; }): JSX.Element | null — ⚠ undocumented
+- `PartyMemberRow` (function): function PartyMemberRow({ member, className, dotClassName, children, }: { member: PartyMemberEntry; className?: string | undefined; dotClassName?: string | undefined; children?: ReactNode; }): JSX.Element — ⚠ undocumented
+- `PresenceDot` (function): function PresenceDot({ userId, className }: { userId: string; className?: string | undefined }): JSX.Element — ⚠ undocumented
+- `QuickMatchButton` (function): function QuickMatchButton({ listings, onJoin, onNoMatch, filter, className, children, }: { listings: readonly SessionListing[]; onJoin: (listing: SessionListing) => void; onNoMatch?: () => void; filter?: MatchFilter; className?: string; children?: ReactNode; }): JSX.Element — ⚠ undocumented
 - `WorldBrowser` (function): function WorldBrowser({ listings, onJoin, className, rowClassName, joinClassName, emptyState, renderListing, }: { listings: readonly SessionListing[]; onJoin: (listing: SessionListing) => void; className?: string; rowClassName?: string; joinClassName?: string; emptyState?: ReactNode; renderListing?:… — ⚠ undocumented
-- `WorldInviteToast` (function): function WorldInviteToast({ className, acceptClassName, declineClassName, onAccepted, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; onAccepted: (target: WorldInviteTarget) => void; renderInvite?: (invite: WorldInvite) => ReactNode; }): React.JSX.Element … — ⚠ undocumented
+- `WorldInviteToast` (function): function WorldInviteToast({ className, acceptClassName, declineClassName, onAccepted, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; onAccepted: (target: WorldInviteTarget) => void; renderInvite?: (invite: WorldInvite) => ReactNode; }): JSX.Element | null — ⚠ undocumented
 
 ## @jgengine/core/store/defineKeyedStore
 

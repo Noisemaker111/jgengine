@@ -1,4 +1,5 @@
-import { Component, useState, type ErrorInfo, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { Component, useState, type ErrorInfo, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { VERSION } from "@jgengine/core/meta/changelog";
 

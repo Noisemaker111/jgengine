@@ -276,6 +276,15 @@ pub(crate) fn moved(a: Option<[f32; 4]>, b: Option<[f32; 4]>) -> bool {
 }
 
 impl<S: 'static> Runtime<S> {
+    /// Current committed layout of keyed elements, `[x, y, width, height]` in window points
+    /// after scrolling, before visual transforms. Unlike layout handlers, this has no delivery delay.
+    pub fn layout_rects(&self) -> impl Iterator<Item = (&str, [f32; 4])> + '_ {
+        self.nodes.iter().enumerate().filter_map(move |(i, node)| {
+            if self.subtree_exiting(i) { return None; }
+            Some((node.key.as_deref()?, self.laid_out(&self.nodes, i)))
+        })
+    }
+
     /// Node `i`'s laid-out rect `[x, y, w, h]` in window points, after its viewports' scrolling.
     fn laid_out(&self, nodes: &[Node], i: usize) -> [f32; 4] {
         self.placed(nodes, i, true)

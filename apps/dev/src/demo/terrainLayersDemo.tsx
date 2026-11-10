@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { createEditableTerrain } from "@jgengine/core/terrain/terraform";
 import { environment, terrain, type TerrainMaterialMaps } from "@jgengine/core/world/features";
 import type { TerrainMaterialLayer } from "@jgengine/core/terrain/terraform";

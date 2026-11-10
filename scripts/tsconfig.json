@@ -7,8 +7,9 @@
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
     "noImplicitReturns": true,
-    "lib": ["ES2022", "DOM"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "DOM.AsyncIterable"],
     "jsx": "react-jsx",
+    "jsxImportSource": "@jgengine/core/ui/jsx",
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
     "types": ["bun"]

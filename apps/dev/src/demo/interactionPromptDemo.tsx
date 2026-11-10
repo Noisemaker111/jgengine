@@ -1,4 +1,5 @@
-import { type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createPromptRegistry } from "@jgengine/core/interaction/promptRegistry";
@@ -10,7 +11,7 @@ import type {
 } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { useGameStore, localPlayerEntity } from "@jgengine/react/hooks";
+import { useGameStore, localPlayerEntity } from "@jgengine/ui/hooks";
 import { InteractionPrompt } from "@jgengine/core/interaction/interactionPrompt.view";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";

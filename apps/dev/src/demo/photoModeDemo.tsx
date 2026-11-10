@@ -1,4 +1,5 @@
-import { useRef } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useRef } from "@jgengine/core/ui/jsx";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";

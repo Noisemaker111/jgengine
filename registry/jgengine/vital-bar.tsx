@@ -1,6 +1,7 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // A copy-in current/max vital bar for shadcn projects. Inside a jgengine game use `KitMeter` from
 // `@jgengine/core/ui/kit/uiKitRoot.view`, which the active UI kit themes.
-import type { CSSProperties } from "react";
+import type { CSSProperties } from "@jgengine/core/ui/jsx";
 
 export interface VitalValue {
   current: number;

@@ -20,7 +20,7 @@ const indexHtml = (name: string) => `<!doctype html>
 
 const engineAliases = `[
           { find: /^@jgengine\\/core\\/(.*)$/, replacement: \`\${engineSrc("core")}/$1\` },
-          { find: /^@jgengine\\/react\\/(.*)$/, replacement: \`\${engineSrc("react")}/$1\` },
+          { find: /^@jgengine\\/ui\\/(.*)$/, replacement: \`\${engineSrc("ui")}/$1\` },
           { find: /^@jgengine\\/ws\\/(.*)$/, replacement: \`\${engineSrc("ws")}/$1\` },
           { find: /^@jgengine\\/shell\\/(.*)$/, replacement: \`\${engineSrc("shell")}/$1\` },
           { find: /^@jgengine\\/editor$/, replacement: \`\${engineSrc("editor")}/index.ts\` },
@@ -60,7 +60,6 @@ export const devServerWatch = `  server: { watch: { ignored: ${JSON.stringify(DE
 const viteConfig = (variant: TemplateVariant) =>
   variant === "in-repo"
     ? `import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 import { viteIdleExit } from "../shared/viteIdleExit";
@@ -70,7 +69,7 @@ import { engineSource } from "../shared/viteEngineSource";
 
 export default defineConfig({
   resolve: engineSource(new URL(".", import.meta.url)),
-  plugins: [react(), tailwindcss(), viteIdleExit(), viteJgUiWasm(), viteProvisionAssets()],
+  plugins: [tailwindcss(), viteIdleExit(), viteJgUiWasm(), viteProvisionAssets()],
   clearScreen: false,
   build: { target: "es2022" },
 ${devServerWatch}
@@ -80,13 +79,12 @@ ${devServerWatch}
 import { fileURLToPath } from "node:url";
 import { standaloneSavePlugin } from "@jgengine/node/devSavePlugin";
 import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 const engineSrc = (pkg: string) => fileURLToPath(new URL(\`../../packages/\${pkg}/src\`, import.meta.url));
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), standaloneSavePlugin()],
+  plugins: [tailwindcss(), standaloneSavePlugin()],
   clearScreen: false,
   build: { target: "es2022" },
 ${standaloneOptimizeDeps}
@@ -120,20 +118,16 @@ const standalonePackageJson = (id: string, engineVersion: string, cliVersion: st
       "@jgengine/assets": `^${engineVersion}`,
       "@jgengine/core": `^${engineVersion}`,
       ...(editor ? { "@jgengine/editor": `^${engineVersion}` } : {}),
-      "@jgengine/react": `^${engineVersion}`,
+      "@jgengine/ui": `^${engineVersion}`,
       "@jgengine/shell": `^${engineVersion}`,
-      react: "19.2.3",
-      "react-dom": "19.2.3",
       three: "^0.187.0",
     },
     devDependencies: {
       jgengine: cliVersion,
       "@jgengine/node": `^${engineVersion}`,
       "@tailwindcss/vite": "^4.3.3",
-      "@types/react": "^19",
-      "@types/react-dom": "^19",
       "@types/three": "^0.187.0",
-      "@vitejs/plugin-react": "^6.1.2",
+      "@types/node": "^24",
       tailwindcss: "^4.3.3",
       typescript: "^5",
       vite: "^8.3.5",
@@ -163,20 +157,16 @@ const inRepoPackageJson = (id: string) => `${JSON.stringify(
       "@jgengine/assets": "workspace:*",
       "@jgengine/core": "workspace:*",
       "@jgengine/editor": "workspace:*",
-      "@jgengine/react": "workspace:*",
+      "@jgengine/ui": "workspace:*",
       "@jgengine/shell": "workspace:*",
-      react: "19.2.3",
-      "react-dom": "19.2.3",
       three: "^0.187.0",
     },
     devDependencies: {
       jgengine: "workspace:*",
       "@jgengine/node": "workspace:*",
       "@tailwindcss/vite": "^4.3.3",
-      "@types/react": "^19",
-      "@types/react-dom": "^19",
       "@types/three": "^0.187.0",
-      "@vitejs/plugin-react": "^6.1.2",
+      "@types/node": "^24",
       tailwindcss: "^4.3.3",
       typescript: "^5",
       vite: "^8.3.5",
@@ -197,11 +187,12 @@ const sharedCompilerOptions = {
   module: "ESNext",
   moduleResolution: "bundler",
   jsx: "react-jsx",
+  jsxImportSource: "@jgengine/core/ui/jsx",
   strict: true,
   skipLibCheck: true,
   isolatedModules: true,
   verbatimModuleSyntax: true,
-  types: ["vite/client"],
+  types: ["vite/client", "node"],
 };
 
 // An in-repo game takes the engine source paths from the repo's tsconfig.base.json (via games/).
@@ -222,13 +213,13 @@ const tsconfigJson = (variant: TemplateVariant) => `${JSON.stringify(
 // — omit the editor @source and the summoned editor renders unstyled (all-white, no theme) from day one.
 // `source(".")` keeps the automatic scan in src/: from the Vite root it reads every model in public/.
 const indexCss = (variant: TemplateVariant, editor: boolean) => `@import "tailwindcss" source(".");
-@import "${variant === "in-repo" ? "../../../packages/react/src/styles.css" : "@jgengine/react/styles.css"}";
+@import "${variant === "in-repo" ? "../../../packages/ui/src/styles.css" : "@jgengine/ui/styles.css"}";
 @import "./style.css";
 ${
   variant === "in-repo"
-    ? `@source "../../../packages/react/src";
+    ? `@source "../../../packages/ui/src";
 @source "../../../packages/shell/src";${editor ? `\n@source "../../../packages/editor/src";` : ""}`
-    : `@source "../node_modules/@jgengine/react/dist";
+    : `@source "../node_modules/@jgengine/ui/dist";
 @source "../node_modules/@jgengine/shell/dist";${editor ? `\n@source "../node_modules/@jgengine/editor/dist";` : ""}`
 }
 `;
@@ -260,7 +251,7 @@ const mainTsx = (editor: boolean, variant: TemplateVariant, id: string) => {
     ...(variant === "in-repo" ? [`gameId="${id}"`] : []),
     ...(editor ? ['editor={() => import("@jgengine/editor")}'] : []),
   ].join(" ");
-  return `import { createRoot } from "react-dom/client";
+  return `import { createRoot } from "@jgengine/core/ui/jsx/client.view";
 import { GameHost } from "@jgengine/shell/GameHost";
 import { game } from "./game.config";
 import "./index.css";
@@ -660,7 +651,7 @@ const gameUiTsx = (id: string, name: string, editor: boolean, loop = false) => {
 };`;
   if (!editor) {
     return `import { GameFlowUI, type GameFlowMenuContent } from "@jgengine/core/menu/gameFlowMenus.view";
-import { HudCanvas, useHudLayout } from "@jgengine/react";
+import { HudCanvas, useHudLayout } from "@jgengine/ui";
 
 import { credits } from "../credits";
 
@@ -679,9 +670,9 @@ export function GameUI() {
 }
 `;
   }
-  return `import { useSyncExternalStore } from "react";
+  return `import { useSyncExternalStore } from "@jgengine/core/ui/jsx";
 import { GameFlowUI, type GameFlowMenuContent } from "@jgengine/core/menu/gameFlowMenus.view";
-import { HudCanvas, useHudLayout } from "@jgengine/react";
+import { HudCanvas, useHudLayout } from "@jgengine/ui";
 
 import { outcome } from "../../loop";
 import { credits } from "../credits";
@@ -783,7 +774,7 @@ Title it \`[BUG] …\` for wrong behavior or \`[FEATURE] …\` for a missing cap
 - Plan: \`PLAN.md\` is the build plan. Milestone 1 (the starter loop) plays from a new game; \`proofs/flows/from-zero.flow.ts\` proves it through real keys and \`src/game/probe.ts\` is what it reads. Write the plan's design brief once milestone 1 plays, and tick each milestone in the commit that makes it play.
 - Entry: \`defineGame({...})\` in \`game.config.ts\`; \`editorLayers\` passed to defineGame auto-mounts the authored scene, and the player spawns at the authored \`player_spawn\` marker.
 - Spawn player with \`id === ctx.player.userId\` in \`onNewPlayer\`; systems (\`defineSystem\`) own the rules tick.
-- Tailwind v4: \`@source\` in \`src/index.css\` must cover \`@jgengine/react\`, \`@jgengine/shell\`, and \`@jgengine/editor\`${
+- Tailwind v4: \`@source\` in \`src/index.css\` must cover \`@jgengine/ui\`, \`@jgengine/shell\`, and \`@jgengine/editor\`${
   variant === "in-repo" ? " (engine source under packages/)" : " (dist under node_modules)"
 }, or the HUD — and the F2+E editor chrome mounted into this same page — is silently unstyled.
 - Visual claims are screenshot-judged, by you, harshly — flat untextured ground and an empty horizon fail. Prove content with \`bun test\`, prove looks with your eyes (\`jgengine-verify\` skill).

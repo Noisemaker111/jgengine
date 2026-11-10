@@ -1,4 +1,5 @@
-import { useEffect, useReducer, type CSSProperties, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useReducer, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { balance, type WalletState } from "@jgengine/core/economy/wallet";
 import type { ShopPrice, ShopStock, ShopStockEntry } from "@jgengine/core/economy/shopStock";

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 import {
   createPushToTalk,
   type PushToTalkMode,

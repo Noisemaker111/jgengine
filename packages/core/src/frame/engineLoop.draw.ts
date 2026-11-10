@@ -1,10 +1,8 @@
 // @skill jgengine-world
 /**
  * The engine-owned frame loop: one rAF that steps an ordered list of draw
- * systems and renders a plain three.js scene. This is what r3f's Canvas +
- * useFrame gave the shell, without React: systems are registered with a
- * priority (lower runs first, the render happens once after all of them —
- * r3f's subscriber order), the camera and renderer are owned here, and the
+ * systems and renders a plain three.js scene. Systems are registered with a
+ * priority (lower runs first, then one render). The camera and renderer are owned here, and the
  * frameloop modes the shell used (`always`, `demand`, `never` plus the fps
  * cap and canvas cover) are first-class loop state.
  *
@@ -27,7 +25,7 @@ export type EngineFrameloop = "always" | "demand" | "never";
 /** Everything a system may read on a rendered frame. Mutable, reused per frame. */
 export interface EngineFrameState {
   readonly renderer: THREE.WebGLRenderer;
-  /** r3f's name for the renderer, kept so converted callbacks read drop-in. */
+  /** Renderer used by frame callbacks. */
   readonly gl: THREE.WebGLRenderer;
   readonly scene: THREE.Scene;
   /**
@@ -41,9 +39,9 @@ export interface EngineFrameState {
   readonly frameOwner?: FrameOwner;
   readonly camera: THREE.Camera;
   readonly clock: THREE.Clock;
-  /** r3f's `size`: the canvas's CSS pixel size, live across resizes. */
+  /** The canvas's CSS pixel size, live across resizes. */
   readonly size: { width: number; height: number };
-  /** Seconds since the loop started (r3f's `clock.elapsedTime`). */
+  /** Seconds since the loop started. */
   elapsed: number;
   /** Seconds since the previous rendered frame. */
   delta: number;
@@ -58,14 +56,13 @@ export interface EngineFrameState {
   setCovered(covered: boolean): void;
   readonly covered: boolean;
   /**
-   * r3f's `internal.priority`: nonzero when this canvas renders as one viewport of a
+   * Nonzero when this canvas renders as one viewport of a
    * priority/scissored composition rather than the default target. Systems that
    * draw the scene into their own buffer (the post chain, the warmup gate) read it.
    */
   readonly renderPriority: number;
   /**
-   * True while a positive-priority draw owns rendering — r3f's "a priority
-   * subscriber takes over the frame" rule. The loop renders nothing itself in
+   * True while a positive-priority draw owns rendering. The loop renders nothing itself in
    * that state; post chains and scissored viewports draw through their own passes.
    */
   readonly renderTakenOver: boolean;
@@ -74,9 +71,9 @@ export interface EngineFrameState {
 /** One ordered participant in the frame. Lower `priority` runs first; render happens after all. */
 export interface EngineDraw {
   /**
-   * r3f `useFrame` priority: draws run ascending, then one render. A positive
+   * Draws run in ascending priority, then one render. A positive
    * priority takes rendering into the draw's own hands — the loop renders
-   * nothing itself while one is mounted (r3f's manual-render rule).
+   * nothing itself while one is mounted.
    * Default 0.
    */
   readonly priority?: number;
@@ -85,7 +82,7 @@ export interface EngineDraw {
   /** Every rendered frame, in priority then registration order. `delta` mirrors `state.delta`. */
   frame?(state: EngineFrameState, delta: number): void;
   /**
-   * Inputs changed outside a rendered frame. The React bridge calls this after
+   * Inputs changed outside a rendered frame. The UI bridge calls this after
    * every wrapper commit so prop-driven draws do not wait for the next frame
    * under `frameloop="never"`/`"demand"`; loop hosts may call it the same way
    * when their inputs change between frames.
@@ -157,7 +154,7 @@ export interface EngineLoopOptions {
   /** A camera to use; created from `cameraProps`/`orthographic` when absent. */
   camera?: THREE.Camera;
   orthographic?: boolean;
-  /** r3f `camera` prop values applied to the created camera. */
+  /** Values applied to the created camera. */
   cameraProps?: {
     fov?: number;
     zoom?: number;
@@ -165,11 +162,11 @@ export interface EngineLoopOptions {
     far?: number;
   };
   frameloop?: EngineFrameloop;
-  /** r3f Canvas `priority`: nonzero marks a scissored viewport render, not the default target. */
+  /** Nonzero marks a scissored viewport render, not the default target. */
   renderPriority?: number;
   /** Rendered fps cap; 0 or undefined renders every admitted refresh. */
   fpsLimit?: number;
-  /** r3f `dpr`: a number, or `[min, max]` clamping `devicePixelRatio`. */
+  /** Pixel ratio, or `[min, max]` clamping `devicePixelRatio`. */
   dpr?: number | readonly [number, number];
   /** Called once after renderer/scene/camera exist and size applied, before the first frame. */
   onCreated?: (state: EngineFrameState) => void;
@@ -205,7 +202,7 @@ function applySize(loop: EngineLoop, canvas: HTMLCanvasElement): void {
   state.height = height;
   state.size.width = width;
   state.size.height = height;
-  // r3f's updateCamera: ortho frusta are pixel-sized (pixel-perfect convention),
+  // Orthographic frusta are pixel-sized (pixel-perfect convention),
   // perspective keeps an aspect. `camera.manual` rigs own their projection.
   const manual = (camera as { manual?: boolean }).manual === true;
   if (!manual && camera instanceof THREE.OrthographicCamera) {
@@ -317,7 +314,7 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
     withFrameOwner(frameOwner, () => {
       for (const draw of draws) draw.frame?.(state, state.delta);
     });
-    // r3f's rule: a draw at positive priority takes rendering into its own
+    // A draw at positive priority takes rendering into its own
     // hands — the loop renders nothing itself while one is mounted (the
     // post chain and split-screen viewports render through their own passes).
     if (!state.renderTakenOver) renderer.render(scene, camera);

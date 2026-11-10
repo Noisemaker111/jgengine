@@ -1,4 +1,5 @@
-import { useEffect, useMemo } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import { SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
@@ -16,7 +17,7 @@ import {
 } from "@jgengine/core/flight/aircraftDynamics";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import { useGameStore } from "@jgengine/react/hooks";
+import { useGameStore } from "@jgengine/ui/hooks";
 import { defineGame } from "@jgengine/shell/defineGame";
 import type { PlayableGame } from "@jgengine/shell/registry";
 

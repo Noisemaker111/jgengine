@@ -1,12 +1,13 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { HudOverlay } from "./hudOverlay.draw";
-import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { CombatTelegraphEvent, EntityFloatTextEvent } from "@jgengine/core/game/events";
 import type { TelegraphShape } from "@jgengine/core/combat/telegraph";
 import type { CatalogEntityRole } from "@jgengine/core/runtime/gameContext";
-import { useGameStore } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameStore } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { readFirstPersonMuzzle } from "@jgengine/core/camera/GameFirstPersonCamera.draw";
 import { readEntityMuzzle } from "@jgengine/core/anim/entityMuzzle.draw";

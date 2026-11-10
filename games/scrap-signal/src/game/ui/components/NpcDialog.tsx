@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect } from "@jgengine/core/ui/jsx";
 import { HudButton } from "@jgengine/core/hud/hudButton.view";
-import { useGame } from "@jgengine/react/hooks";
-import { useStore } from "@jgengine/react/store";
+import { useGame } from "@jgengine/ui/hooks";
+import { useStore } from "@jgengine/ui/store";
 import { NPCS, objectiveLabel, scrapQuestById } from "../../quests/catalog";
 import { npcDialogStore } from "../../quests/givers";
 import { FERRALON } from "../../palette";

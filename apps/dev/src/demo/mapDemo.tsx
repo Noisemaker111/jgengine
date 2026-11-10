@@ -1,4 +1,5 @@
-import { useMemo, useState, useSyncExternalStore } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useMemo, useState, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import {
@@ -22,7 +23,7 @@ import { resolveTerrainField, type TerrainField } from "@jgengine/core/terrain/t
 import { createWaypointStore, type WaypointStore } from "@jgengine/core/map/waypoints";
 import { createAnnotationLayer, type AnnotationLayer } from "@jgengine/core/map/mapAnnotations";
 import { Compass, FullscreenMap, MapLegend, Minimap, WaypointArrow } from "@jgengine/core/map/map.view";
-import { usePlayer, useRafLoop, useSceneEntities, useFeed } from "@jgengine/react/hooks";
+import { usePlayer, useRafLoop, useSceneEntities, useFeed } from "@jgengine/ui/hooks";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import { bakeTerrainMap, type BakedMap } from "@jgengine/core/map/terrainMap.draw";

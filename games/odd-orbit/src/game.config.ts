@@ -1,6 +1,6 @@
 import { ambientFauna } from "./game/ambientFauna";
 import { defineGame } from "@jgengine/shell/defineGame";
-import { createElement } from "react";
+import { createElement } from "@jgengine/core/ui/jsx";
 import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
 import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";

@@ -1,27 +1,27 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
 
 import type { TutorialStage } from "@llmville/game/tutorial/tutorialStages";
-import { wrapMutation } from "@/runtime/engineAccess";
-import { engineActions, useGameEngineState } from "@/runtime/gameEngine";
-import type { WorldViewModel } from "@/runtime/worldState";
+import { wrapMutation } from "../runtime/engineAccess";
+import { engineActions, useGameEngineState } from "../runtime/gameEngine";
+import type { WorldViewModel } from "../runtime/worldState";
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
 import { useMutation } from "convex/react";
 import { api } from "@llmville/backend/convex/_generated/api";
-import type { TabletAppId, TabletStoreTabId } from "@/tablet/tablet";
+import type { TabletAppId, TabletStoreTabId } from "../tablet/tablet";
 import {
   getTabletTutorialLock,
   getTutorialEventForTabletAppOpen,
   getTutorialHint,
   type TabletTutorialLock,
   type TutorialHint,
-} from "@/tutorial/tabletTutorial";
-import { resolveTutorialInputMode } from "@/tutorial/tutorialInput";
+} from "./tabletTutorial";
+import { resolveTutorialInputMode } from "./tutorialInput";
 import { normalizeTutorialStage } from "@llmville/game/tutorial/tutorialMachine";
 
 export type {
   TutorialHint,
   TabletTutorialLock,
-} from "@/tutorial/tabletTutorial";
+} from "./tabletTutorial";
 export type { TutorialNode, TutorialMachineState, TutorialEvent } from "@llmville/game/tutorial/tutorialMachine";
 
 

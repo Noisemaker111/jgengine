@@ -1,4 +1,5 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createSequenceDirector, type SequenceCue } from "@jgengine/core/cutscene/sequenceDirector";

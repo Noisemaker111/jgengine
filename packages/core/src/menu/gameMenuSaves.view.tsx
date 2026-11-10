@@ -1,4 +1,5 @@
-import { useState, type CSSProperties, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { CreditsSection } from "@jgengine/core/menu/credits";
 import { formatSavePlaytime } from "@jgengine/core/save/saveSlotIndex";

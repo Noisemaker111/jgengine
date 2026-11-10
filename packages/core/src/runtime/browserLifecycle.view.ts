@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from "@jgengine/core/ui/jsx";
 
 /** Browser events that can interrupt active play. The caller decides whether to pause. */
 export type BrowserSuspensionReason = "blur" | "hidden" | "pointer-lock-lost";

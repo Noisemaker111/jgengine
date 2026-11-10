@@ -1,8 +1,9 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { easeOutCubic } from "@jgengine/core/anim/easing";
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { useReducedMotion } from "../ui/accessibility.view";
-import { useEngineStyles } from "@jgengine/react/engineStyles";
+import { useEngineStyles } from "@jgengine/ui/engineStyles";
 import { memoView } from "../ui/memoView.view";
 
 /** Value at progress `t` (0–1) between `from` and `to` under `ease`. */

@@ -1,10 +1,11 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { HudFade } from "@jgengine/core/hud/hudLayout.view";
-import { useGame, useGameCalendar, useGameClock, useGameStore, useSceneObjects } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGame, useGameCalendar, useGameClock, useGameStore, useSceneObjects } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
 import { LiveText } from "@jgengine/core/ui/liveBind.view";
-import { useStore } from "@jgengine/react/store";
+import { useStore } from "@jgengine/ui/store";
 import { householdStore } from "../../session/store";
 import { nextBill } from "../../sim/economy";
 import { dayGoal } from "../../sim/goal";

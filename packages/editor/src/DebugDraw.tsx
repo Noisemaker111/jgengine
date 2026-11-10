@@ -1,4 +1,5 @@
-import { memo, useEffect, useMemo } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { memo, useEffect, useMemo } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import type {

@@ -1,8 +1,9 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
-import { useCurrency, useEntityStat, useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
+import { useCurrency, useEntityStat, useGame, useGameStore, usePlayer } from "@jgengine/ui/hooks";
 import { HudButton } from "@jgengine/core/hud/hudButton.view";
-import { useStore } from "@jgengine/react/store";
-import { useGameContext } from "@jgengine/react/provider";
+import { useStore } from "@jgengine/ui/store";
+import { useGameContext } from "@jgengine/ui/provider";
 import { LiveText } from "@jgengine/core/ui/liveBind.view";
 
 import { RIFT_REROLL_CORES, riftBoard, riftLeaveSeconds, riftMutatorsFor, riftStore, riftTerminalOpenStore } from "../../rift/rift";

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 
 import { useAccessibilitySettings } from "@jgengine/core/settings/accessibilitySettings.view";
 import { KeybindingMenu } from "@jgengine/core/settings/keybindingMenu.view";
@@ -6,8 +7,8 @@ import type { SettingsCategoryView } from "@jgengine/core/settings/settings.view
 import { SettingsSection, SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view";
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
-import { keybindRebindSession, keybindsFromSession } from "@/settings/keybinds";
-import { updateAppSettings, useAppSettings } from "@/settings/settings";
+import { keybindRebindSession, keybindsFromSession } from "../keybinds";
+import { updateAppSettings, useAppSettings } from "../settings";
 
 /** LLMville's own tabs after the shell's categories. */
 const KEYBINDS_TAB = "keybinds";
@@ -17,7 +18,7 @@ const CREDITS: readonly { role: string; name: string }[] = [
   { role: "Game Design & Development", name: "The LLMville Team" },
   { role: "3D Engine & Rendering", name: "Three.js" },
   { role: "Backend & Sync", name: "Convex" },
-  { role: "UI Framework", name: "React + Vite" },
+  { role: "UI Framework", name: "JGengine + Rune + Vite" },
   { role: "Routing", name: "TanStack Router" },
   { role: "Styling", name: "Tailwind CSS" },
 ];

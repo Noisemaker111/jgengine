@@ -4,7 +4,7 @@
  * scene. It carries an ordered stack of opaque {@link ModalRecord}s (push to open, pop/resolve to
  * close) and nothing about how they look: the model NEVER interprets a record's `kind` or a
  * resolution's `result` string — those are free-form game vocabulary the React chrome in
- * `@jgengine/react` renders. Observable ({@link ModalStack.subscribe}) and round-trips through a save
+ * `@jgengine/ui` renders. Observable ({@link ModalStack.subscribe}) and round-trips through a save
  * ({@link ModalStack.snapshot}/{@link ModalStack.restore}). An injected clock powers optional
  * per-modal auto-dismiss timers; leave those unset and the model is pure and clockless.
  */

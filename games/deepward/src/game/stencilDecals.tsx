@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useMemo } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import { readDecalRules } from "@jgengine/core/world/decalKind";
 import { acquireDecalTexture, type DecalTextureLease } from "@jgengine/core/scene/useDecalTexture.draw";

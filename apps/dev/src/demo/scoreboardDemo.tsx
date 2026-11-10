@@ -1,4 +1,5 @@
-import { type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createLeaderboard } from "@jgengine/core/leaderboard/leaderboard";

@@ -1,4 +1,5 @@
-import { useLayoutEffect } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useLayoutEffect } from "@jgengine/core/ui/jsx";
 
 import { joinAfterRenderTask } from "@jgengine/core/frame/afterRenderBoard.draw";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";

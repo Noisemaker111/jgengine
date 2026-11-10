@@ -1,4 +1,5 @@
-import { useEffect, useMemo, type Ref } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useMemo, type Ref } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import type { Group } from "three";
 import { IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";

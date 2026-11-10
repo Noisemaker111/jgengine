@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import type { BuildingSurfaceMaps, BuildingSurfaceMaterial } from "@jgengine/core/buildings/buildings";

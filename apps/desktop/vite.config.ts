@@ -3,7 +3,6 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 import { projectSurfacePlugin } from "./projectSurfacePlugin";
@@ -22,7 +21,7 @@ const gameAliases = readdirSync(gamesDir, { withFileTypes: true })
   ]);
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), projectSurfacePlugin(), viteJgUiWasm()],
+  plugins: [tailwindcss(), projectSurfacePlugin(), viteJgUiWasm()],
   clearScreen: false,
   server: { port: 1420, strictPort: true },
   build: { target: "es2022" },
@@ -32,8 +31,8 @@ export default defineConfig({
       { find: /^@\/components\/ui\/(.*)$/, replacement: `${registryUi}/$1` },
       { find: /^@jgengine\/core$/, replacement: `${src("core")}/index.ts` },
       { find: /^@jgengine\/core\/(.*)$/, replacement: `${src("core")}/$1` },
-      { find: /^@jgengine\/react$/, replacement: `${src("react")}/index.ts` },
-      { find: /^@jgengine\/react\/(.*)$/, replacement: `${src("react")}/$1` },
+      { find: /^@jgengine\/ui$/, replacement: `${src("react")}/index.ts` },
+      { find: /^@jgengine\/ui\/(.*)$/, replacement: `${src("react")}/$1` },
       { find: /^@jgengine\/ws\/(.*)$/, replacement: `${src("ws")}/$1` },
       { find: /^@jgengine\/convex\/(.*)$/, replacement: `${src("convex")}/$1` },
       { find: /^@jgengine\/shell\/(.*)$/, replacement: `${src("shell")}/$1` },

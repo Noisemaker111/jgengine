@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 

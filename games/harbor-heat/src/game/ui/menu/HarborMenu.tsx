@@ -1,10 +1,11 @@
-import { type CSSProperties, type ReactNode, useCallback, useEffect, useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { type CSSProperties, type ReactNode, useCallback, useEffect, useState } from "@jgengine/core/ui/jsx";
 import { createSaveSlots } from "@jgengine/core/save/saveSlots";
 import { formatSavePlaytime, gameSaveSlotSource, refreshSaveSlots } from "@jgengine/core/save/saveSlotIndex";
-import { useGame } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGame } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
 import { useSaveSlots } from "@jgengine/core/save/saveSlots.view";
-import { useStore } from "@jgengine/react/store";
+import { useStore } from "@jgengine/ui/store";
 
 import { startedStore } from "../../commands";
 import { captureHarborThumb, harborProfile } from "../../menuProfile";

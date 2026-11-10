@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useCallback, useEffect, useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
 
 import type { EditorSession } from "@jgengine/core/editor/index";
 import { markerCatalogId } from "@jgengine/core/world/authoredObjects";

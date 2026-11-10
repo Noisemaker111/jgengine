@@ -150,11 +150,32 @@ function encodePng(width: number, height: number, pixel: (x: number, y: number) 
 describe("standalone capture readiness", () => {
   const sized = { cap: null as string | null, hasCanvas: true, cw: 1600, ch: 900, bw: 1600, bh: 900 };
 
+  test("readiness budgets and expiry use the injected clock", async () => {
+    const dir = materializeHarness("shoot");
+    const lib = await import(join(dir, "browser.mjs"));
+    let now = 0;
+    const budgets: number[] = [];
+    const delays: number[] = [];
+    try {
+      await expect(lib.waitForHonestFrame({ async evaluate(_: string, options: { timeoutMs: number }) {
+        budgets.push(options.timeoutMs);
+        return { ...sized, cap: "loading" };
+      } }, "http://game.test", 250, { now: () => now, sleep: async (ms: number) => { delays.push(ms); now += ms; } }))
+        .rejects.toThrow('data-jg-capture stayed "loading"');
+      expect(budgets).toEqual([250, 150, 50]);
+      expect(delays).toEqual([100, 100, 100]);
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+
   async function withHarness(run: (wait: (session: { evaluate(expression: string): Promise<unknown> }, url: string, timeoutMs: number) => Promise<unknown>) => Promise<void>) {
     const dir = materializeHarness("shoot");
     try {
       const lib = await import(join(dir, "browser.mjs"));
-      await run(lib.waitForHonestFrame);
+      let now = 0;
+      await run((session, url, timeoutMs) => lib.waitForHonestFrame(session, url, timeoutMs, {
+        now: () => now,
+        sleep: async (ms: number) => { now += ms; },
+      }));
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

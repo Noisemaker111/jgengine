@@ -1,4 +1,5 @@
-import { useSyncExternalStore } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import type { EditorColorGrading, EditorDocument, EditorEnvironment, EditorLightProbe, EditorSession, EditorSkyPreset, EnvironmentSource } from "@jgengine/core/editor/index";
 import { bakeLightProbe } from "@jgengine/core/editor/environment";

@@ -1,7 +1,8 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-world
 import { definedOnly } from "../data/definedOnly";
 import { requireUniform } from "../render/uniformMaterial.draw";
-import { useRef } from "react";
+import { useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import { EffectComposer, RenderPass, type Pass, type ShaderPass } from "three-stdlib";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";

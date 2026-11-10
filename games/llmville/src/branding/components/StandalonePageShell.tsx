@@ -1,7 +1,9 @@
-import { cn } from "@/kit/cn";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { cn } from "../../kit/cn";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 interface StandalonePageShellProps {
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
   centered?: boolean;
 }

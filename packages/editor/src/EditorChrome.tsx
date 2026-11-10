@@ -1,4 +1,5 @@
-import { useContext, useCallback, useEffect, useMemo, useRef, useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useContext, useCallback, useEffect, useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
 
 import {
   editorDocumentSize,

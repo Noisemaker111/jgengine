@@ -1,13 +1,11 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { afterEach, describe, expect, test } from "bun:test";
-import { join } from "node:path";
-import type { ReactNode } from "react";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 import { clearModelLoadFallbacks, handleModelLoadFailure } from "@jgengine/core/model/modelLoad.draw";
 import { MissingModelsNotice } from "./MissingModelsNotice.draw";
 
-const { renderToStaticMarkup } = (await import(Bun.resolveSync("react-dom/server", join(import.meta.dir, "../../../react/src")))) as {
-  renderToStaticMarkup: (node: ReactNode) => string;
-};
+import { renderToStaticMarkup } from "@jgengine/core/ui/jsx/markup";
 
 async function fail(url: string): Promise<void> {
   await handleModelLoadFailure(url, new Error("404"), () => undefined, () => undefined, {

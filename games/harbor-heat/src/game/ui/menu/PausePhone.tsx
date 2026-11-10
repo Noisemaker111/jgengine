@@ -1,9 +1,10 @@
-import { useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useState } from "@jgengine/core/ui/jsx";
 import { useDisplayProfile } from "@jgengine/core/ui/display.view";
 import { GameCursor } from "@jgengine/core/ui/cursor.view";
 import { GameIcon, type GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
 import { useViewportScrollLock } from "@jgengine/core/menu/gameMenu.view";
-import { useCurrency, useEntityStat, usePlayer } from "@jgengine/react/hooks";
+import { useCurrency, useEntityStat, usePlayer } from "@jgengine/ui/hooks";
 import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
 import { BurnerPhone, type PhonePad } from "../fiction/BurnerPhone";
 import { KeyLegend, money, navItem, useMenuSound, useMoveTick } from "../fiction/kit";

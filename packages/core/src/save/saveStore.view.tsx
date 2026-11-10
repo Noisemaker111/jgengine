@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useCallback, useEffect, useRef, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import type { SaveStatus, SaveStore } from "@jgengine/core/save/saveStore";
 

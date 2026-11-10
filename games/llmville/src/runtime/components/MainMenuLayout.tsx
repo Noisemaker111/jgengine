@@ -1,24 +1,25 @@
-import { Link, useNavigate } from "@tanstack/react-router";
-import { ChevronLeft, LogIn, User } from "lucide-react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { navigate, ScreenLink } from "../../screens/screenRouter";
+import { Icon } from "../../kit/icons";
 
-import { MAIN_MENU_ACCOUNT_CHIP_KIND, useMainMenuAccountChipVm } from "@/auth";
-import { BrandLogo } from "@/branding/components/BrandLogo";
-import { SITE_TAGLINE } from "@/seo/siteSeo";
-import { MainMenuAtmosphere } from "@/runtime/components/MainMenuAtmosphere";
+import { MAIN_MENU_ACCOUNT_CHIP_KIND, useMainMenuAccountChipVm } from "../../auth";
+import { BrandLogo } from "../../branding/components/BrandLogo";
+import { SITE_TAGLINE } from "../../seo/siteSeo";
+import { MainMenuAtmosphere } from "./MainMenuAtmosphere";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 interface MainMenuLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
   /** Optional hero column shown beside the menu on large screens (home intro, etc.). */
-  intro?: React.ReactNode;
+  intro?: ReactNode;
   backTo?: string;
-  overlay?: React.ReactNode;
+  overlay?: ReactNode;
   /** Hide the top logo / account header row (title-screen style). */
   hideHeader?: boolean;
 }
 
 export function MainMenuLayout({ children, intro, backTo, overlay, hideHeader = false }: MainMenuLayoutProps) {
   const accountChip = useMainMenuAccountChipVm();
-  const navigate = useNavigate();
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-brand-ink font-sans text-brand-cream select-none">
@@ -40,18 +41,18 @@ export function MainMenuLayout({ children, intro, backTo, overlay, hideHeader = 
           {!hideHeader ? (
             <div className="flex min-w-0 flex-col gap-4">
               {backTo ? (
-                <Link
+                <ScreenLink
                   to={backTo}
                   className="flex items-center gap-1.5 text-sm font-semibold text-brand-teal transition-colors animate-in slide-in-from-left duration-300 hover:text-brand-cream"
                 >
-                  <ChevronLeft className="h-5 w-5" aria-hidden />
+                  <Icon name="back" className="h-5 w-5" />
                   Back
-                </Link>
+                </ScreenLink>
               ) : null}
               <div className="animate-in fade-in slide-in-from-left duration-700">
-                <Link to="/" aria-label="LLMville home">
+                <ScreenLink to="/" aria-label="LLMville home">
                   <BrandLogo variant="inline" size="md" showTagline className="max-w-full" />
-                </Link>
+                </ScreenLink>
               </div>
             </div>
           ) : null}
@@ -68,18 +69,18 @@ export function MainMenuLayout({ children, intro, backTo, overlay, hideHeader = 
                   onClick={() => navigate({ to: "/login" })}
                   className="game-button game-button-primary game-button-compact px-4 py-2.5 text-sm"
                 >
-                  <LogIn className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" aria-hidden />
+                  <Icon name="logIn" className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
                   <span>Sign in to save</span>
                 </button>
               </div>
             ) : accountChip.kind === MAIN_MENU_ACCOUNT_CHIP_KIND.profileLink ? (
-              <Link
+              <ScreenLink
                 to="/profile/$username"
                 params={{ username: accountChip.username }}
                 className="game-account-chip group/profile"
               >
                 <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-brand-teal/50">
-                  <User className="h-5 w-5 text-brand-teal/90" aria-hidden />
+                  <Icon name="user" className="h-5 w-5 text-brand-teal/90" />
                 </div>
                 <div className="flex flex-col gap-0.5 text-left">
                   <span className="font-game text-[13px] font-bold tracking-wide text-brand-cream">
@@ -87,11 +88,11 @@ export function MainMenuLayout({ children, intro, backTo, overlay, hideHeader = 
                   </span>
                   <span className="font-sans text-[11px] font-semibold text-brand-teal">@{accountChip.username}</span>
                 </div>
-              </Link>
+              </ScreenLink>
             ) : (
               <div className="game-account-chip">
                 <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-brand-teal/40">
-                  <User className="h-5 w-5 text-brand-teal/70" aria-hidden />
+                  <Icon name="user" className="h-5 w-5 text-brand-teal/70" />
                 </div>
                 <div className="flex flex-col gap-0.5 text-left">
                   <span className="font-game text-[13px] font-bold tracking-wide text-brand-cream">

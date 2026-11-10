@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useMemo } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import type { WorldFeature } from "@jgengine/core/world/features";

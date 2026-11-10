@@ -1,6 +1,7 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { filterLibraryMaterials, libraryMaterialAsset } from "@jgengine/assets/catalogs/materialLibrary";
 import type { MaterialAsset } from "@jgengine/core/material/materialAsset";
-import { useMemo, useState } from "react";
+import { useMemo, useState } from "@jgengine/core/ui/jsx";
 
 import { FOCUS_RING, INPUT_CLS, MICRO_LABEL } from "./shell/theme";
 

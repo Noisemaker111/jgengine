@@ -1,6 +1,6 @@
 /**
  * The shell's focusable canvas wrapper owns play keyboard events. Browser
- * drivers restore its focus before key holds. Helpers remain self-contained
+ * drivers restore its focus before key holds when no UI control owns focus. Helpers remain self-contained
  * for serialization into the page with `.toString()`.
  */
 
@@ -17,8 +17,8 @@ export interface FocusableDocument {
 }
 
 /**
- * Focus the game's key-input surface so CDP-dispatched keys reach the play-mode
- * handler. Prefers the focusable ancestor of the play `canvas` (3D games), then
+ * Keep a focused UI control as the key target, otherwise focus the game's input
+ * surface. Prefers the focusable ancestor of the play `canvas` (3D games), then
  * falls back to the first `[tabindex]` element (HUD-only games share the same
  * wrapper). Returns `true` when a surface is now the active element.
  *
@@ -26,6 +26,8 @@ export interface FocusableDocument {
  * not reference module-scope identifiers from inside this function.
  */
 export function focusGameSurface(doc: FocusableDocument): boolean {
+  const active = doc.activeElement;
+  if (active?.closest?.(":is(input, textarea, select, button, a[href], [contenteditable=true], [role=button], [role=tab], [tabindex]):not(body):not(html)") != null) return true;
   const canvas = doc.querySelector("canvas");
   const viaCanvas =
     canvas !== null && typeof canvas.closest === "function" ? canvas.closest("[tabindex]") : null;

@@ -180,7 +180,7 @@
 - `ChatTransport` (interface): interface ChatTransport — Backend seam for remote text chat, mirroring PresenceTransport: the use* members are called as React hooks by consumers, so a mounted transport must never change identity — remount the subtree to switch backends. useMessages returns undefined while the subscription is loading and the channel's recent history once live.
 - `EnsurePresenceResult` (interface): interface EnsurePresenceResult { presenceId: string; position: PresencePosition; rotationY: number } — ⚠ undocumented
 - `FeedWriteGate` (type): type FeedWriteGate = { allowedActions: readonly string[]; } — ⚠ undocumented
-- `MatchFilter` (interface): interface MatchFilter { mode?: string; tags?: readonly string[]; query?: string; notFull?: boolean; status?: readonly SessionStatus[]; includePrivate?: boolean } — ⚠ undocumented · used by `useWorldBrowser` (@jgengine/react): Polls a host-supplied session fetcher (e.g.
+- `MatchFilter` (interface): interface MatchFilter { mode?: string; tags?: readonly string[]; query?: string; notFull?: boolean; status?: readonly SessionStatus[]; includePrivate?: boolean } — ⚠ undocumented · used by `useWorldBrowser` (@jgengine/ui): Polls a host-supplied session fetcher (e.g.
 - `PlayerIdentity` (interface): interface PlayerIdentity { userId: string; isNew: boolean } — ⚠ undocumented
 - `PlayerPose` (interface): interface PlayerPose { x: number; y: number; z: number; rotationY: number; rotationPitch: number; appearance?: Record<string, string> } — ⚠ undocumented
 - `PoseSyncRules` (interface): interface PoseSyncRules { maxSpeed: number; minIntervalMs?: number; maxVerticalOffset: number; floorY?: number; minElapsedSec: number; maxElapsedSec: number; keepAliveRefreshMs: number } — ⚠ undocumented · used by `DEFAULT_POSE_SYNC_RULES` (@jgengine/core/multiplayer/presenceModel): Canonical client-authoritative pose-sync tuning shared by every host transport (WS, Convex).
@@ -193,7 +193,7 @@
 - `PushToTalkMode` (type): type PushToTalkMode = "hold" | "toggle" | "openMic" — ⚠ undocumented
 - `PushToTalkStatus` (type): type PushToTalkStatus = "idle" | "keyed" | "open" — ⚠ undocumented
 - `ReplicationPolicy` (interface): interface ReplicationPolicy — Host-side interest/privacy policy — how the authoritative world projects to each viewer over the wire. Unset (the default) means every client receives the whole world, exactly as before. Enabling a field changes only what each client *sees*, never how the host simulates: the game plays identically. The core replication modules read this to attach a {@link SnapshotModule.project} without the engine growing a per-feature branch.
-- `SessionListing` (interface): interface SessionListing { serverId: string; gameId: string; status: SessionStatus; visibility: SessionVisibility; memberCount: number; slotsPerServer: number; label?: string | undefined; mode?: string | undefined; joinCode?: string | undefined; tags?: readonly str… — ⚠ undocumented · used by `useWorldBrowser` (@jgengine/react): Polls a host-supplied session fetcher (e.g.
+- `SessionListing` (interface): interface SessionListing { serverId: string; gameId: string; status: SessionStatus; visibility: SessionVisibility; memberCount: number; slotsPerServer: number; label?: string | undefined; mode?: string | undefined; joinCode?: string | undefined; tags?: readonly str… — ⚠ undocumented · used by `useWorldBrowser` (@jgengine/ui): Polls a host-supplied session fetcher (e.g.
 - `SessionVisibility` (type): type SessionVisibility = "public" | "private" — ⚠ undocumented · used by `isAutoJoinCandidate` (@jgengine/core/runtime/hostPolicy): Auto-match candidate when no `serverId` is supplied: already a member, or a public room with free capacity.
 - `VoiceParticipant` (interface): interface VoiceParticipant { userId: string; streamId?: string | undefined } — ⚠ undocumented
 - `VoiceRoute` (interface): interface VoiceRoute { fromUserId: string; channelId: string; gain: number } — ⚠ undocumented
@@ -249,11 +249,11 @@
 - `BetterAuthUserShape` (interface): interface BetterAuthUserShape { id: string; name?: string | null; email?: string | null; image?: string | null } — ⚠ undocumented
 - `ClerkUserShape` (interface): interface ClerkUserShape { id: string; fullName?: string | null; username?: string | null; imageUrl?: string | null; primaryEmailAddress?: {emailAddress: string} | null; createdAt?: Date | null; lastSignInAt?: Date | null } — ⚠ undocumented
 - `ClerkUserState` (interface): interface ClerkUserState { isLoaded: boolean; isSignedIn: boolean | undefined; user: ClerkUserShape | null | undefined } — ⚠ undocumented
-- `GameIdentityProvider` (function): function GameIdentityProvider({ source, children, }: { source: IdentitySource; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `GameIdentityProvider` (function): function GameIdentityProvider({ source, children, }: { source: IdentitySource; children?: ReactNode; }): JSX.Element — ⚠ undocumented
 - `IdentitySource` (interface): interface IdentitySource { session: AuthSession | null; isLoading: boolean; signOut?: () => void } — ⚠ undocumented
-- `RequireSession` (function): function RequireSession({ fallback, loading, children, }: { fallback?: ReactNode; loading?: ReactNode; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `SignOutButton` (function): function SignOutButton({ className, children, }: { className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
-- `UserBadge` (function): function UserBadge({ className, avatarClassName, nameClassName, renderBadge, }: { className?: string; avatarClassName?: string; nameClassName?: string; renderBadge?: (session: AuthSession) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
+- `RequireSession` (function): function RequireSession({ fallback, loading, children, }: { fallback?: ReactNode; loading?: ReactNode; children?: ReactNode; }): JSX.Element — ⚠ undocumented
+- `SignOutButton` (function): function SignOutButton({ className, children, }: { className?: string; children?: ReactNode; }): JSX.Element | null — ⚠ undocumented
+- `UserBadge` (function): function UserBadge({ className, avatarClassName, nameClassName, renderBadge, }: { className?: string; avatarClassName?: string; nameClassName?: string; renderBadge?: (session: AuthSession) => ReactNode; }): JSX.Element | null — ⚠ undocumented
 - `betterAuthIdentity` (function): function betterAuthIdentity(state: BetterAuthSessionState, options?: { signOut?: () => void }): IdentitySource — ⚠ undocumented
 - `clerkIdentity` (function): function clerkIdentity(state: ClerkUserState, options?: { signOut?: () => void }): IdentitySource — ⚠ undocumented
 - `guestIdentity` (function): function guestIdentity(seed?: string): IdentitySource — ⚠ undocumented
@@ -271,8 +271,8 @@
 ## @jgengine/core/multiplayer/matchmaking
 
 - `BrowseOptions` (interface): interface BrowseOptions { limit?: number | undefined } — ⚠ undocumented
-- `MatchFilter` (interface): interface MatchFilter { mode?: string; tags?: readonly string[]; query?: string; notFull?: boolean; status?: readonly SessionStatus[]; includePrivate?: boolean } — ⚠ undocumented · used by `useWorldBrowser` (@jgengine/react): Polls a host-supplied session fetcher (e.g.
-- `SessionListing` (interface): interface SessionListing { serverId: string; gameId: string; status: SessionStatus; visibility: SessionVisibility; memberCount: number; slotsPerServer: number; label?: string | undefined; mode?: string | undefined; joinCode?: string | undefined; tags?: readonly str… — ⚠ undocumented · used by `useWorldBrowser` (@jgengine/react): Polls a host-supplied session fetcher (e.g.
+- `MatchFilter` (interface): interface MatchFilter { mode?: string; tags?: readonly string[]; query?: string; notFull?: boolean; status?: readonly SessionStatus[]; includePrivate?: boolean } — ⚠ undocumented · used by `useWorldBrowser` (@jgengine/ui): Polls a host-supplied session fetcher (e.g.
+- `SessionListing` (interface): interface SessionListing { serverId: string; gameId: string; status: SessionStatus; visibility: SessionVisibility; memberCount: number; slotsPerServer: number; label?: string | undefined; mode?: string | undefined; joinCode?: string | undefined; tags?: readonly str… — ⚠ undocumented · used by `useWorldBrowser` (@jgengine/ui): Polls a host-supplied session fetcher (e.g.
 - `SessionStatus` (type): type SessionStatus = "open" | "running" | "closed" — ⚠ undocumented
 - `SessionVisibility` (type): type SessionVisibility = "public" | "private" — ⚠ undocumented · used by `isAutoJoinCandidate` (@jgengine/core/runtime/hostPolicy): Auto-match candidate when no `serverId` is supplied: already a member, or a public room with free capacity.
 - `browseSessions` (function): function browseSessions(listings: readonly SessionListing[], filter: MatchFilter = {}, options: BrowseOptions = {}): SessionListing[] — ⚠ undocumented
@@ -339,11 +339,11 @@
 
 ## @jgengine/core/multiplayer/voice.view
 
-- `MicToggle` (function): function MicToggle({ voice, className, mutedLabel, unmutedLabel, }: { voice: VoiceState; className?: string; mutedLabel?: ReactNode; unmutedLabel?: ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `PushToTalkButton` (function): function PushToTalkButton({ voice, className, children, }: { voice: VoiceState; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `SpeakingIndicator` (function): function SpeakingIndicator({ voice, userId, className, threshold = 0.01, children, }: { voice: VoiceState; userId: string; className?: string; threshold?: number; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `MicToggle` (function): function MicToggle({ voice, className, mutedLabel, unmutedLabel, }: { voice: VoiceState; className?: string; mutedLabel?: ReactNode; unmutedLabel?: ReactNode; }): JSX.Element — ⚠ undocumented
+- `PushToTalkButton` (function): function PushToTalkButton({ voice, className, children, }: { voice: VoiceState; className?: string; children?: ReactNode; }): JSX.Element — ⚠ undocumented
+- `SpeakingIndicator` (function): function SpeakingIndicator({ voice, userId, className, threshold = 0.01, children, }: { voice: VoiceState; userId: string; className?: string; threshold?: number; children?: ReactNode; }): JSX.Element — ⚠ undocumented
 - `UseVoiceOptions` (interface): interface UseVoiceOptions { transport?: VoiceTransport; channelId?: string; mode?: PushToTalkMode; resolveRoutes?: () => readonly VoiceRoute[]; getUserMedia?: (constraints: MediaStreamConstraints) => Promise<MediaStream> } — ⚠ undocumented · used by `useVoice`: Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam.
-- `VoiceRoster` (function): function VoiceRoster({ voice, className, participantClassName, renderParticipant, }: { voice: VoiceState; className?: string; participantClassName?: string; renderParticipant?: (participant: VoiceParticipant, gain: number) => ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `VoiceRoster` (function): function VoiceRoster({ voice, className, participantClassName, renderParticipant, }: { voice: VoiceState; className?: string; participantClassName?: string; renderParticipant?: (participant: VoiceParticipant, gain: number) => ReactNode; }): JSX.Element — ⚠ undocumented
 - `VoiceState` (interface): interface VoiceState { supported: boolean; micStream: MediaStream | null; micError: string | null; requestMic(): Promise<boolean>; transmitting: boolean; status: PushToTalkStatus; mode: PushToTalkMode; setMode(mode: PushToTalkMode): void; muted: boolean; setMut… — ⚠ undocumented · used by `useVoice`: Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam.
 - `useVoice` (function): function useVoice(options?: UseVoiceOptions): VoiceState — Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam. Transmission gates the captured tracks' `enabled` flag; the media plane that actually moves audio bytes (WebRTC/SFU) stays behind the transport, host-supplied. Call once per voice channel and hand the returned state to the voice components.
 

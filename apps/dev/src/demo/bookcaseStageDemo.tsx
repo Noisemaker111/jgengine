@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useMemo } from "@jgengine/core/ui/jsx";
 
 import { resolveGeneratorAsset } from "@jgengine/core/scene/assetGenerator";
 import { STUDIO_STAGE_POST } from "@jgengine/core/render/postProcessing";

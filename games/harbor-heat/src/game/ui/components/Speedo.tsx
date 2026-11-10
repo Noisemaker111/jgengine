@@ -1,8 +1,9 @@
-import { useMemo, useRef } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useMemo, useRef } from "@jgengine/core/ui/jsx";
 import { formatSpeed } from "@jgengine/core/format/speed";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { useGameStore } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameStore } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
 import { useActionGlyph } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { LiveText, useFrameBind } from "@jgengine/core/ui/liveBind.view";
 import { vehicleById } from "../../entities/vehicles/catalog";

@@ -1,4 +1,5 @@
-import { useMemo, type CSSProperties } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useMemo, type CSSProperties } from "@jgengine/core/ui/jsx";
 import { HudFrame } from "./hudFrame.view";
 import { hudTheme, hudThemeVars } from "./hudTheme.view";
 import { type HudSkin, hudSkinVars } from "./hudSkin.view";

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useCallback, useEffect, useRef, useSyncExternalStore, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type {
   ObjectiveBannerController,

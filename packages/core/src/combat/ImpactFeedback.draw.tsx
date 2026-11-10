@@ -1,4 +1,5 @@
-import { useRef } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
@@ -6,7 +7,7 @@ import { IMPACT_PROFILES, impactClassFor, type ImpactClass, type ImpactProfile }
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 import { useAccessibilitySettings } from "@jgengine/core/settings/accessibilitySettings.view";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";

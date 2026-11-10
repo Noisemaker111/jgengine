@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { createElement } from "@jgengine/core/ui/jsx";
+import { renderToStaticMarkup } from "@jgengine/core/ui/jsx/markup";
 
 import { createPromptRegistry } from "@jgengine/core/interaction/promptRegistry";
 import { keybind, proximityPrompt } from "@jgengine/core/interaction/proximityPrompt";
@@ -45,7 +45,7 @@ const NO_FILTER = [
 ];
 
 /** The engine stylesheet keeps a hover brighten on HUD buttons, but never a backdrop blur. */
-const NO_BACKDROP = ["packages/react/src/engineStyles.ts", "packages/react/src/styles.css"];
+const NO_BACKDROP = ["packages/ui/src/engineStyles.ts", "packages/ui/src/styles.css"];
 
 // A property assignment, CSS (`filter: drop-shadow(…)`) or a style object (`filter: "blur(2px)"`); `none` resets are fine.
 const FILTER = /(?<![\w-])filter\s*:(?!\s*["'`]?none\b)/g;

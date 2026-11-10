@@ -21,7 +21,6 @@ mod upload;
 mod variant;
 #[cfg(target_os = "macos")]
 mod windfoil_metallib;
-pub use backdrop_blur::MAX_BACKDROP_BLURS;
 pub use first_use::precompiled_misses;
 pub use layers::LayerStats;
 
@@ -84,12 +83,16 @@ pub enum Blend {
     SourceOver,
     /// Premultiplied One/One addition, clamped when the isolated scope is composited.
     PlusLighter,
+    Multiply,
+    Overlay,
+    Screen,
+    SoftLight,
 }
 
 impl Blend {
     pub(crate) fn state(self) -> wgpu::BlendState {
         match self {
-            Self::SourceOver => wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING,
+            Self::SourceOver | Self::Multiply | Self::Overlay | Self::Screen | Self::SoftLight => wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING,
             Self::PlusLighter => {
                 let add = wgpu::BlendComponent { src_factor: wgpu::BlendFactor::One,
                     dst_factor: wgpu::BlendFactor::One, operation: wgpu::BlendOperation::Add };
@@ -97,6 +100,18 @@ impl Blend {
             }
         }
     }
+
+    pub(crate) fn code(self) -> f32 {
+        match self { Self::SourceOver => 0.0, Self::PlusLighter => 1.0, Self::Multiply => 2.0,
+            Self::Overlay => 3.0, Self::Screen => 4.0, Self::SoftLight => 5.0 }
+    }
+
+    pub(crate) fn from_code(code: f32) -> Self {
+        match code as u8 { 1 => Self::PlusLighter, 2 => Self::Multiply, 3 => Self::Overlay,
+            4 => Self::Screen, 5 => Self::SoftLight, _ => Self::SourceOver }
+    }
+
+    pub(crate) fn backdrop(self) -> bool { self.code() >= 2.0 }
 }
 
 /// Composition properties of an isolated subtree. Filters can extend this contract without
@@ -303,7 +318,7 @@ impl Instance {
     /// native surfaces. Primitive bounds (including shadow support) expand it during prepare.
     pub fn begin_layer(bounds: [f32; 4], clip: [f32; 4], spec: LayerSpec) -> Self {
         let mut instance = Self { rect: bounds, clip, fill: [0.0, 0.0, 0.0, spec.opacity.clamp(0.0, 1.0)],
-            params: [if spec.blend == Blend::PlusLighter { 1.0 } else { 0.0 }, KIND_LAYER,
+            params: [spec.blend.code(), KIND_LAYER,
                 layer_blur::sigma(spec.blur), 0.0], ..Self::zeroed() };
         instance.round_clip(spec.clip_radius);
         instance
@@ -1182,7 +1197,7 @@ impl Renderer {
             if self.layer_stats().extra_passes > 0 { t.beginning_of_pass_write_index = None; }
             t
         });
-        let blurs = self.has_backdrop_blur();
+        let splits = self.has_backdrop_blur() || self.has_backdrop_layers();
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("frame"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -1196,11 +1211,11 @@ impl Renderer {
             occlusion_query_set: None,
             multiview_mask: None,
         });
-        if !blurs {
+        if !splits {
             self.draw_range(&mut pass, self.format, 0..self.count);
             return;
         }
-        // Backdrop blurs split the frame pass, which needs it owned along with the encoder.
+        // Backdrop reads split the frame pass, which needs it owned along with the encoder.
         let pass = pass.forget_lifetime();
         let mut active = ActivePass::owned(pass, encoder, view).with_timestamps(timestamps);
         self.draw_layer_range(&mut active, self.format, 0..self.count, None, &mut |_, _| {});

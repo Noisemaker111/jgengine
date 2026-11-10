@@ -1,21 +1,7 @@
-import {
-  createContext,
-  Fragment,
-  useCallback,
-  useContext,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type CSSProperties,
-  type MouseEvent as ReactMouseEvent,
-  type PointerEvent as ReactPointerEvent,
-  type ReactNode,
-  type RefObject,
-} from "react";
-import { createPortal } from "react-dom";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { createContext, Fragment, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type RefObject } from "@jgengine/core/ui/jsx";
+import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "@jgengine/core/ui/jsx/dom.view";
+import { createPortal } from "@jgengine/core/ui/jsx/client.view";
 import {
   HUD_ANCHOR_FRACTIONS,
   anchoredPlacement,
@@ -47,9 +33,9 @@ import {
 } from "@jgengine/core/hud/hudPriority";
 import type { GamePhase } from "@jgengine/core/game/gamePhase";
 import { useDisplayProfile } from "@jgengine/core/ui/display.view";
-import { useEngineState } from "@jgengine/react/engineStore";
+import { useEngineState } from "@jgengine/ui/engineStore";
 import { useGameLayoutMode, useGameViewportShape, useRegisterLayoutRegion } from "@jgengine/core/ui/viewport.view";
-import { useOptionalGamePhase } from "@jgengine/react/hooks";
+import { useOptionalGamePhase } from "@jgengine/ui/hooks";
 import { arrangeHudPanels, type HudPanelClaim, type HudPanelLayout } from "./hudPanelLayout";
 import { useHudLayoutPersist } from "./hudLayoutPersist.view";
 import { useHudViewport } from "./hudViewport.view";

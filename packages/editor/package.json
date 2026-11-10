@@ -34,21 +34,15 @@
     "@jgengine/assets": "^0.55.1",
     "@jgengine/core": "^0.55.1",
     "@jgengine/navbake": "^0.55.1",
-    "@jgengine/react": "^0.55.1",
+    "@jgengine/ui": "^0.55.1",
     "@jgengine/shell": "^0.55.1"
   },
   "peerDependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
     "three": ">=0.187.0"
   },
   "devDependencies": {
     "@types/node": "^24",
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
     "@types/three": "catalog:",
-    "react": "catalog:",
-    "react-dom": "catalog:",
     "three": "catalog:"
   },
   "publishConfig": {

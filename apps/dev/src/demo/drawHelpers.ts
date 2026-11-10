@@ -33,7 +33,7 @@ export function mesh(
   return next;
 }
 
-import { createElement, useEffect, type ReactNode } from "react";
+import { createElement, useEffect, type ReactNode } from "@jgengine/core/ui/jsx";
 import { SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 
 /** Attaches pre-built meshes under the scene context; caller owns geometry, materials dispose with the attach. */

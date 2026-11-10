@@ -1,4 +1,5 @@
-import { useEffect, useReducer, useRef, type CSSProperties, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useReducer, useRef, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { ScreenEffect, ScreenEffectsController } from "@jgengine/core/vfx/screenEffects";
 

@@ -1,5 +1,6 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import {

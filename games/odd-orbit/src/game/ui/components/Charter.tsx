@@ -1,10 +1,11 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { GameIcon, type GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { useRef } from "react";
-import { useGame, useGameStore, useSceneObjects } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
+import { useRef } from "@jgengine/core/ui/jsx";
+import { useGame, useGameStore, useSceneObjects } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
 import { useFrameBind } from "@jgengine/core/ui/liveBind.view";
-import { useStore } from "@jgengine/react/store";
+import { useStore } from "@jgengine/ui/store";
 
 import { householdStore } from "../../session/store";
 import type { PendingIncident } from "../../session/types";

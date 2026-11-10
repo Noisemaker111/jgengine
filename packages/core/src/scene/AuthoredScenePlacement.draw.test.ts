@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { createElement } from "react";
+import { createElement, type ComponentType } from "@jgengine/core/ui/jsx";
 
 import { createEmptyEditorDocument } from "@jgengine/core/editor/document";
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
@@ -7,14 +7,14 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { ENTITY_MARKER_KINDS } from "@jgengine/core/world/authoredObjects";
 import { authoredSpawnPosition } from "@jgengine/core/world/authoredSpawn";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
-import { GameProvider } from "@jgengine/react/provider";
+import { GameProvider } from "@jgengine/ui/provider";
 import { mountTestDraws, type MountedTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
 
 import { defineGame } from "@jgengine/shell/defineGame";
 import { AuthoredObjects } from "./AuthoredScene.draw";
 import { resolveObjectModel } from "@jgengine/core/model/resolveModel";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
-import type { ComponentType } from "react";
+
 
 function overlayOf(playable: ReturnType<typeof defineGame>): ComponentType<WorldOverlayProps> {
   const overlay = playable.scene?.WorldOverlay;

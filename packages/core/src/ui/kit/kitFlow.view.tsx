@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { LiveText, useFrameBind, useLiveSelect } from "../liveBind.view";
 import { isLive, live, readLive, type Live } from "../liveValue";

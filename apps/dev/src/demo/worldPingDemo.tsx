@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import {
   createPingSystem,
@@ -15,7 +16,7 @@ import type {
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { createMarkerSet, type MarkerSet } from "@jgengine/core/map/markers";
-import { useFeed } from "@jgengine/react/hooks";
+import { useFeed } from "@jgengine/ui/hooks";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import { WorldPings } from "@jgengine/core/map/pingBeacons.draw";

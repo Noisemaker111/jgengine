@@ -1,4 +1,5 @@
-import { type CSSProperties, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 
 import { EquipmentSlots, type SlotItem } from "@jgengine/core/inventory/slots.view";
 import { HudFrame, type HudFrameVariation } from "@jgengine/core/hud/hudFrame.view";

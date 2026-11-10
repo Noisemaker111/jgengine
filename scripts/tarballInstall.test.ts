@@ -121,13 +121,6 @@ function installTarballs(packages: readonly (typeof publishedPackages)[number][]
   return { consumer: join(work, "consumer"), scope };
 }
 
-function linkPeer(consumer: string, packageName: string): void {
-  const packageRoot = join(packageDir("react"), "node_modules", packageName);
-  const target = join(consumer, "node_modules", packageName);
-  mkdirSync(dirname(target), { recursive: true });
-  symlinkSync(packageRoot, target, "junction");
-}
-
 describe.if(built)("clean-consumer resolution of the real tarball (zero-dep packages, offline)", () => {
   test("@jgengine/core resolves its public entry but not its build-excluded test fixtures", () => {
     const { consumer } = installTarballs(["core"]);
@@ -242,10 +235,9 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
     }
   }, 120_000);
 
-  test("portable marker source and React minimap resolve together from real tarballs", () => {
-    const { consumer } = installTarballs(["core", "react"]);
+  test("portable marker source and engine minimap resolve together from real tarballs", () => {
+    const { consumer } = installTarballs(["core", "ui"]);
     try {
-      linkPeer(consumer, "react");
       const script = [
         "import { createMarkerSource } from '@jgengine/core/map/markers';",
         "import { Minimap } from '@jgengine/core/map/map.view';",
@@ -267,9 +259,8 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
   }, 120_000);
 
   test("material assets, native inventory, slot rendering and authoring resolve from coordinated tarballs", () => {
-    const { consumer } = installTarballs(["core", "assets", "react", "ws", "shell", "editor"]);
+    const { consumer } = installTarballs(["core", "assets", "ui", "ws", "shell", "editor"]);
     try {
-      linkPeer(consumer, "react");
       for (const peer of ["three"]) {
         const target = join(consumer, "node_modules", peer);
         mkdirSync(dirname(target), { recursive: true });

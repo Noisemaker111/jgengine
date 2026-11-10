@@ -1,4 +1,5 @@
-import { useRef, useState, type CSSProperties } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useRef, useState, type CSSProperties } from "@jgengine/core/ui/jsx";
 
 import type { FloatingTextField, FloatingTextView } from "@jgengine/core/hud/floatingText";
 import { FloatingText, type FloatingTextLayoutOptions } from "@jgengine/core/hud/floatingText.view";
@@ -28,15 +29,15 @@ export interface WorldFloatingTextProps extends FloatingTextLayoutOptions {
 
 
 /**
- * R3F one-line drop-in for world-anchored floating text: mounts inside the scene,
+ * One-line drop-in for world-anchored floating text: mounts inside the scene,
  * (optionally) advances a core {@link FloatingTextField} each frame, samples the
  * live camera to project every live entry to the screen, and renders
- * `@jgengine/react`'s {@link FloatingText} through a fullscreen `<Html>` overlay.
- * This is the turnkey way an R3F game gets damage numbers / heal pops / XP gains
+ * `@jgengine/ui`'s {@link FloatingText} through a fullscreen `<Html>` overlay.
+ * This is the turnkey way a game gets damage numbers / heal pops / XP gains
  * from its own field without wiring projection by hand — the camera binding,
  * viewport culling, and depth stacking come for free. Skin per `kind` with `styleFor`.
  *
- * @capability floating-text R3F drop-in that advances a floating-text field and renders it camera-projected over the scene
+ * @capability floating-text Drop-in that advances a floating-text field and renders it camera-projected over the scene
  */
 export function WorldFloatingText({
   field,

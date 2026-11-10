@@ -1,5 +1,6 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { FeedEntry } from "@jgengine/core/feed/feed";
-import { useFeed } from "@jgengine/react/hooks";
+import { useFeed } from "@jgengine/ui/hooks";
 
 import { CombatLogPanel, type CombatLogLine } from "@/components/ui/combat-log-panel";
 

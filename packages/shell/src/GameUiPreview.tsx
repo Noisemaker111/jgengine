@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useState } from "@jgengine/core/ui/jsx";
 
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { useAccessibilitySettings } from "@jgengine/core/settings/accessibilitySettings.view";
-import { GameProvider } from "@jgengine/react/provider";
+import { GameProvider } from "@jgengine/ui/provider";
 import { HudThemeRoot } from "@jgengine/core/hud/hudThemeRoot.view";
 import { HudViewportProvider } from "@jgengine/core/hud/hudViewport.view";
 

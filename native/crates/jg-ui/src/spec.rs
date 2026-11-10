@@ -256,6 +256,8 @@ pub enum Node {
         #[serde(default)]
         color: Option<String>,
     },
+    /// A generic CSS box: resolved layout, paint and text (`css.rs`).
+    X(Box<crate::css::Box_>),
     /// A 1px rule line.
     Line {
         #[serde(default)]
@@ -313,6 +315,12 @@ pub fn field_ids(nodes: &[Node]) -> std::collections::HashSet<String> {
                 | Node::Row { children, .. }
                 | Node::Scroll { children, .. }
                 | Node::Dial { children, .. } => walk(children, out),
+                Node::X(b) => {
+                    if b.inp.is_some() {
+                        out.insert(format!("x{}", b.id));
+                    }
+                    walk(&b.c, out);
+                }
                 _ => {}
             }
         }

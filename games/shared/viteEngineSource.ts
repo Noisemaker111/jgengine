@@ -11,7 +11,7 @@ export interface Alias {
 const packagesDir = fileURLToPath(new URL("../../packages", import.meta.url));
 
 /** The rendering libraries engine packages take as peers; the game's copy is the one copy. */
-export const ENGINE_PEERS = ["react", "react-dom", "three", "three-stdlib"] as const;
+export const ENGINE_PEERS = ["three", "three-stdlib"] as const;
 
 /** `@jgengine/<pkg>` and `@jgengine/<pkg>/<path>` resolved to `packages/<pkg>/src`, so a game runs the engine in this repo with no build. */
 export function engineSourceAliases(dir = packagesDir): Alias[] {
@@ -32,9 +32,26 @@ export function engineSourceAliases(dir = packagesDir): Alias[] {
 }
 
 /**
+ * `react` and `react-dom` resolve to the engine's own UI runtime. No engine or game file imports
+ * React; this is for hook libraries a game depends on that do (`convex/react`, better-auth), so their
+ * hooks run on the one runtime the page has instead of loading React beside it.
+ */
+export function engineUiAliases(): Alias[] {
+  const ui = join(packagesDir, "core", "src", "ui", "jsx").replaceAll("\\", "/");
+  return [
+    { find: /^react\/jsx-runtime$/, replacement: `${ui}/jsx-runtime.ts` },
+    { find: /^react\/jsx-dev-runtime$/, replacement: `${ui}/jsx-dev-runtime.ts` },
+    { find: /^react-dom\/client$/, replacement: `${ui}/client.view.ts` },
+    { find: /^react-dom\/server$/, replacement: `${ui}/markup.ts` },
+    { find: /^react-dom$/, replacement: `${ui}/client.view.ts` },
+    { find: /^react$/, replacement: `${ui}/index.ts` },
+  ];
+}
+
+/**
  * `resolve` for a game's Vite config: engine source aliases, and every engine peer the game
  * declares deduped to the game's own copy, so engine source and game code share one three.js
- * and one React even while the game sits on another in-range version.
+ * even while the game sits on another in-range version.
  */
 export function engineSource(gameDir: URL | string): { alias: Alias[]; dedupe: string[] } {
   const dir = typeof gameDir === "string" ? gameDir : fileURLToPath(gameDir);
@@ -44,7 +61,7 @@ export function engineSource(gameDir: URL | string): { alias: Alias[]; dedupe: s
   };
   const declared = { ...manifest.devDependencies, ...manifest.dependencies };
   return {
-    alias: engineSourceAliases(),
+    alias: [...engineUiAliases(), ...engineSourceAliases()],
     dedupe: ENGINE_PEERS.filter((pkg) => declared[pkg] !== undefined),
   };
 }

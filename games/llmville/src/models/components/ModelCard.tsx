@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 /**
  * ModelCard — matches the mock: dark purple/indigo bg, label-left bar-right layout,
  * three stat bars (money/M, TPS per 1 TFLOP, data tokens per inference token), state-specific action button.
@@ -5,8 +6,8 @@
  */
 
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import type { BaseModelLibraryEntry } from "@/models/training";
-import { getBaseModelBaselineStatsById, MODEL_ACTION_KIND } from "@/models/training";
+import type { BaseModelLibraryEntry } from "../training";
+import { getBaseModelBaselineStatsById, MODEL_ACTION_KIND } from "../training";
 import { getBaseModelDefinition } from "@llmville/game/models/baseModels";
 import {
   benchmarkToBarValue,
@@ -16,10 +17,10 @@ import {
   tpsToBarValue,
   type GameUserModel,
   userModelTrainingVolumeLabel,
-} from "@/models/models";
+} from "../models";
 
-import { MODEL_CARD_ACTION_VARIANT, ModelCardAction } from "@/models/components/ModelCardAction";
-import { getDeltaFillOpacity, ModelStatRow, ModelTrainingDurationEstimate } from "@/models/components/ModelPresentation";
+import { MODEL_CARD_ACTION_VARIANT, ModelCardAction } from "./ModelCardAction";
+import { getDeltaFillOpacity, ModelStatRow, ModelTrainingDurationEstimate } from "./ModelPresentation";
 import { formatTrainingDurationLabel } from "@llmville/game/models/trainingDurationLabel";
 
 const CARD_BASE = "mb-4 flex h-[145px] gap-4 overflow-hidden relative";

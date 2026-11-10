@@ -1,14 +1,14 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from "@jgengine/core/ui/jsx";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { PromptCommand } from "@jgengine/core/interaction/proximityPrompt";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 import {
   decodeRackConfigureInput,
   INTERACTION_COMMAND,
   type RackConfigureInput,
 } from "@llmville/game/simulation/interaction";
-import type { GameMenuRequest } from "@/tablet/tablet";
+import type { GameMenuRequest } from "../tablet/tablet";
 
 export function runPromptCommand(ctx: GameContext, descriptor: PromptCommand): boolean {
   return ctx.game.commands.run(descriptor.name, descriptor.input).status === "applied";

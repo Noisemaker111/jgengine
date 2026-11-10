@@ -1,8 +1,9 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
 import { BoxGeometry, CircleGeometry, CylinderGeometry, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, PointLight, TorusGeometry, Vector3 } from "three";
 import type { BufferGeometry, Material } from "three";
-import { useRef, useState } from "react";
-import { useGameContext } from "@jgengine/react/provider";
+import { useRef, useState } from "@jgengine/core/ui/jsx";
+import { useGameContext } from "@jgengine/ui/provider";
 import { WeatherLayer } from "@jgengine/core/weather/WeatherLayer.draw";
 import { airAt, gust } from "./air";
 import { zoneAt } from "./zones";

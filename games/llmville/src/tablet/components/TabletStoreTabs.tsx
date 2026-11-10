@@ -1,13 +1,14 @@
-import { TutorialArrow } from "@/tutorial/components/TutorialUi";
-import { TABLET_STORE_TABS, type TabletStoreTabId } from "@/tablet/tablet";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { TutorialArrow } from "../../tutorial/components/TutorialUi";
+import { TABLET_STORE_TABS, type TabletStoreTabId } from "../tablet";
 import {
   TABLET_SEGMENTED_TAB_TRAY_CLASS,
   TABLET_STORE_TAB_LABEL_ACTIVE_CLASS,
   TABLET_STORE_TAB_LABEL_CLASS,
   TABLET_STORE_TABS_SHELL_CLASS,
   tabletTabButtonClass,
-} from "@/tablet/tabletTabBar";
-import type { TabletTutorialLock } from "@/tutorial/tutorialRuntime";
+} from "../tabletTabBar";
+import type { TabletTutorialLock } from "../../tutorial/tutorialRuntime";
 
 const STORE_TAB_LABELS: Record<TabletStoreTabId, string> = {
   infrastructure: "Infrastructure",

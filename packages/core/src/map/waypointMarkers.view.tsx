@@ -1,4 +1,5 @@
-import { useReducer, useEffect, type CSSProperties, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useReducer, useEffect, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { layoutScreenMarker, type ScreenMarkerLayout } from "@jgengine/core/ui/screenMarkers";
 import { waypointAnchor, type WaypointEntry, type WaypointStore } from "@jgengine/core/map/waypoints";
@@ -55,7 +56,7 @@ export interface WaypointMarkersProps {
   entries: WaypointStore | readonly WaypointEntry[];
   /**
    * World→screen projector — caller-owned, so this seam never depends on a
-   * specific camera. R3F games get one from `useWorldProjection` in
+   * specific camera. Games get one from `useWorldProjection` in
    * `@jgengine/shell/world/WorldEntityFrames`; return `null` to skip a waypoint.
    */
   project: ProjectEntity;

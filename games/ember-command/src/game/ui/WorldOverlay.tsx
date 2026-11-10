@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { WorldNameplates, type NameplateSample } from "@jgengine/core/hud/WorldHud.draw";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
 

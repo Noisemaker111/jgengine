@@ -3,7 +3,6 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
 import { defineConfig, searchForWorkspaceRoot, type Plugin, type ProxyOptions } from "vite";
 
 import { parseDevProxyTable } from "../../packages/core/src/data/devProxy";
@@ -11,6 +10,7 @@ import { tunableDiscoveryPlugin } from "../../packages/core/src/devtools/transfo
 import { devServerMarkerPlugin } from "../../scripts/devServerMarker";
 import { startTextureCompression } from "../../games/shared/provisionAssets";
 import { viteJgUiWasm } from "../../games/shared/viteJgUiWasm";
+import { engineUiAliases } from "../../games/shared/viteEngineSource";
 import { devReportPlugin } from "./devReportPlugin";
 import { gamePublicPlugin } from "./gamePublicPlugin";
 
@@ -97,8 +97,11 @@ const devProxy: Record<string, string | ProxyOptions> = Object.fromEntries(
 );
 
 export default defineConfig({
-  plugins: [devServerMarkerPlugin({ kind: "runner" }), tunableDiscoveryPlugin(), devSave(servedGameDir), devReportPlugin(), gamePublicPlugin(servedGameDir, gamesDir), textureCompression(), viteJgUiWasm(), react(), tailwindcss()],
+  plugins: [devServerMarkerPlugin({ kind: "runner" }), tunableDiscoveryPlugin(), devSave(servedGameDir), devReportPlugin(), gamePublicPlugin(servedGameDir, gamesDir), textureCompression(), viteJgUiWasm(), tailwindcss()],
   clearScreen: false,
+  // The engine UI runtime these names alias to is source: one module instance, never pre-bundled.
+  optimizeDeps: { exclude: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "react-dom/client", "react-dom/server"] },
+  // The engine UI runtime these names alias to is source: one module instance, never pre-bundled.
   build: {
     target: "es2022",
   },
@@ -113,9 +116,10 @@ export default defineConfig({
     // Games sit outside this workspace package.
     // Resolve their shared runtime dependencies from apps/dev so Bun's workspace
     // links are used even when the importing file lives under ../../games.
-    dedupe: ["react", "react-dom", "three"],
+    dedupe: ["three"],
     extensions: [".ts", ".tsx", ".mjs", ".js", ".jsx", ".json"],
     alias: [
+      ...engineUiAliases(),
       { find: /^@\/components\/ui\/(.*)$/, replacement: `${registryUi}/$1` },
       ...packageAliases,
       { find: /^@jgengine-examples\/studios$/, replacement: `${studios}/index.ts` },

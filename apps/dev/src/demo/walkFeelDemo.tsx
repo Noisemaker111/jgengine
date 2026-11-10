@@ -1,4 +1,5 @@
-import { useEffect, useMemo, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useMemo, type ReactNode } from "@jgengine/core/ui/jsx";
 import { BoxGeometry, Group, GridHelper, Mesh, MeshStandardMaterial, PlaneGeometry } from "three";
 import { disposeObjectTree, SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 

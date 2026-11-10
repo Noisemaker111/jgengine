@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 /**
  * The Highland Vale as a surveyor inked it: contour rings round the two heights, the river, the
  * war-road from the Vanguard keep to the Warcamp in red, little tree marks and a compass rose. Pure

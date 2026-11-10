@@ -1,4 +1,5 @@
-import { cn } from "@/kit/cn";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { cn } from "../../kit/cn";
 
 const PARTICLES = [
   { left: "8%", top: "22%", delay: "0s", size: 4 },

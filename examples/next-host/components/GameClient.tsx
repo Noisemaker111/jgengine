@@ -1,23 +1,25 @@
 "use client";
 
-import { GamePlayer } from "@jgengine/shell/GamePlayer";
+import { useEffect, useRef } from "react";
+
+import { mountGamePlayer } from "@jgengine/shell/mountGamePlayer";
 import type { GameRegistry } from "@jgengine/shell/registry";
 
 // The probe games live in this repo's games/. To host a real game here, copy one
 // into this project and point the registry at it:
 const gameRegistry: GameRegistry = {};
 
+// The engine draws its own UI; a React page gives it an element and mounts the player into it.
 export default function GameClient() {
-  return (
-    <GamePlayer
-      gameId={process.env["NEXT_PUBLIC_GAME_ID"] ?? "deepward"}
-      registry={gameRegistry}
-      fallbackGameId="deepward"
-      loading={
-        <div className="flex h-full items-center justify-center bg-neutral-950 text-sm text-neutral-400">
-          Loading game…
-        </div>
-      }
-    />
-  );
+  const stage = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (stage.current === null) return;
+    return mountGamePlayer(stage.current, {
+      gameId: process.env["NEXT_PUBLIC_GAME_ID"] ?? "deepward",
+      registry: gameRegistry,
+      fallbackGameId: "deepward",
+      loadingText: "Loading game…",
+    });
+  }, []);
+  return <div ref={stage} className="h-full w-full bg-neutral-950" />;
 }

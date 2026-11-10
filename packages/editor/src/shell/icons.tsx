@@ -1,4 +1,5 @@
-import type { SVGProps } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import type { SVGProps } from "@jgengine/core/ui/jsx/dom.view";
 
 /**
  * Internal editor icon set: compact 16px stroke glyphs drawn in-repo so the shell has one

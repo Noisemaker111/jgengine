@@ -1,5 +1,6 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { WORLD_SCENERY_RADIUS } from "@llmville/game/world/viewDistance";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 import {
   NormalBlending,
   BufferGeometry,
@@ -29,8 +30,8 @@ import {
   contiguousCellBlocks,
   type CellEdge,
 } from "@llmville/game/datacenter/claimMap";
-import { readPlayerPosition } from "@/runtime/playerPosition";
-import type { GameEngine } from "@/runtime/gameEngine";
+import { readPlayerPosition } from "../../runtime/playerPosition";
+import type { GameEngine } from "../../runtime/gameEngine";
 import { composeInstance, uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";

@@ -7,7 +7,7 @@
  * changes and are safe to read during SSR (everything false).
  */
 
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 export interface DisplayProfile {
   coarsePointer: boolean;

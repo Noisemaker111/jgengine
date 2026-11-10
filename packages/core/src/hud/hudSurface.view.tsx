@@ -1,9 +1,11 @@
-import { useEffect, useRef, type CSSProperties, type HTMLAttributes, type ReactNode, type Ref } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useRef, type CSSProperties, type ReactNode, type Ref } from "@jgengine/core/ui/jsx";
+import type { HTMLAttributes } from "@jgengine/core/ui/jsx/dom.view";
 
 import { memoView } from "../ui/memoView.view";
 
 import { useReducedMotion } from "@jgengine/core/ui/accessibility.view";
-import { useEngineStyles } from "@jgengine/react/engineStyles";
+import { useEngineStyles } from "@jgengine/ui/engineStyles";
 import { useHudInteract, type HudInteractListener } from "./hudInteract.view";
 import { useMountPresence } from "@jgengine/core/ui/presence.view";
 

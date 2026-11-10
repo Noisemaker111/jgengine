@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { EditorContextAction } from "./viewportContextMenu";
 
 /**

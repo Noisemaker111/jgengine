@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { MaterialAsset } from "@jgengine/core/material/materialAsset";
 import * as THREE from "three";
 

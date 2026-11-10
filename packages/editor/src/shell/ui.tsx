@@ -1,4 +1,6 @@
-import { useCallback, useRef, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useCallback, useRef, type ReactNode } from "@jgengine/core/ui/jsx";
+import type { KeyboardEvent, PointerEvent } from "@jgengine/core/ui/jsx/dom.view";
 
 import { Icon, type IconName } from "./icons";
 import { CONTROL, CONTROL_ACTIVE, FOCUS_RING, MICRO_LABEL } from "./theme";

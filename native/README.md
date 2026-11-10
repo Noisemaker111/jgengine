@@ -185,10 +185,25 @@ a different random value. The evidence:
 - Row A is a real WebView2 window with the game's DOM HUD. Rows B and C are a native window.
   Both are uncapped (`Immediate` present native, `--uncapped` desktop).
 
-## Rune gaps
+## JSX UI host
 
-Rune is pinned at `58eeef5f8974299aa5e471de0010123323e3127e` (it takes no pull requests). Each gap
-below is worked around in `jg-hud`:
+The games' JSX uses `@jgengine/core/ui/jsx`. The browser host in
+`packages/core/src/ui/rune/` maps the undisplayed UI's resolved CSS to `jg-ui`
+boxes; Rune lays out and paints the resulting tree. Its committed browser bundle
+is rebuilt with `bun scripts/build-jg-ui-wasm.ts` after native changes.
+
+Embedded canvases use Rune's image paint order, so controls and labels can overlap
+previews. The host supplies an initial canvas snapshot, then forwards changed
+captured frames to dedicated GPU image textures. It does not read pixels back to
+JavaScript or poll static canvases. A removed source stops its capture tracks and
+releases its native image. `bun run drive harbor-heat --flow canvas-order --param
+ui=rune` checks overlap, an initially static image, idle frames and remounting.
+
+## Native HUD experiment gaps
+
+The HUD experiment used Rune at `58eeef5f8974299aa5e471de0010123323e3127e`.
+Each gap below is worked around in `jg-hud`; the current CSS host's vendored
+patches are recorded in [VENDORED.md](vendor/rune/VENDORED.md):
 
 - Corner radii are circular only. The visor rim's CSS radius is elliptical (9vmin / 12vmin), so it
   is drawn with the mean radius.

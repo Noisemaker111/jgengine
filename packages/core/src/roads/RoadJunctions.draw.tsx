@@ -1,4 +1,5 @@
-import { useRef } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useRef } from "@jgengine/core/ui/jsx";
 import { DoubleSide, Group, MeshStandardMaterial, type BufferGeometry } from "three";
 import type { RoadRibbon } from "@jgengine/core/roads/roads";
 import type { TerrainDetailMaterialConfig } from "@jgengine/core/world/features";

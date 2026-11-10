@@ -1,5 +1,6 @@
-import type { CSSProperties, ReactNode } from "react";
-import { useGame, useGameStore } from "@jgengine/react/hooks";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
+import { useGame, useGameStore } from "@jgengine/ui/hooks";
 
 import { storeView } from "../base";
 import { itemLabel } from "../data/items";

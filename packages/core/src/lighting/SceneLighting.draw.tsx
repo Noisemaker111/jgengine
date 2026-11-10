@@ -1,4 +1,5 @@
-import { useRef } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import type { DirectionalLight } from "three";
 
@@ -63,7 +64,7 @@ function usesCascades(entry: DirectionalLightingConfig): boolean {
 
 /**
  * Refresh a directional light's shadow projection after its frustum bounds change.
- * R3F pierced `shadow-camera-*` props write the bounds but never call
+ * Assigning shadow camera bounds directly does not call
  * `updateProjectionMatrix()`, so depth renders with the stale default ~10×10 box
  * and `shadowCameraSize` is silently inert.
  * @internal
@@ -100,7 +101,7 @@ function singleShadowLightDraw(getProps: () => {
     const filter = lightShadowFilter(entry, props.profile, size * 2, mapSize, entry.shadowNormalBias ?? 0.02);
     light.shadow.normalBias = filter.normalBias;
     light.shadow.radius = filter.radius;
-    // R3F pierced `shadow-camera-*` props write the bounds but never call
+    // Assigning shadow camera bounds directly does not call
     // `updateProjectionMatrix()`, so depth renders with the stale default ~10×10 box
     // and `shadowCameraSize` is silently inert.
     const camera = light.shadow.camera;

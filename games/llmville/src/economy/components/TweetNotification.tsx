@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useMemo, useRef } from "@jgengine/core/ui/jsx";
 
 import type { NotificationEntry } from "@jgengine/core/notifications/notificationCenter";
 import { seededRng } from "@jgengine/core/random/rng";
 import { KitToast } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { TWEET_NOTIFICATION_DURATION_MS } from "@/economy/events";
-import { cn } from "@/kit/cn";
+import { TWEET_NOTIFICATION_DURATION_MS } from "../events";
+import { cn } from "../../kit/cn";
 
 interface TweetNotificationProps {
   tweet: NotificationEntry;

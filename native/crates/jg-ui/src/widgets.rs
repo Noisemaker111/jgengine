@@ -123,9 +123,38 @@ pub fn kbd(t: &tok::Theme, legend: &str) -> El {
 }
 
 thread_local! {
+    #[cfg(target_arch = "wasm32")]
+    static CANVASES: RefCell<HashMap<u32, rune::Pixels>> = RefCell::new(HashMap::new());
     /// Leaked `Icon`s keyed by their SVG body, so a spec can name an icon by its
     /// markup and pay the 'static cost once per unique icon.
     static ICONS: RefCell<HashMap<String, &'static Icon>> = RefCell::new(HashMap::new());
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn canvas_frame(id: u32, source: web_sys::HtmlElement) -> Result<bool, wasm_bindgen::JsValue> {
+    CANVASES.with(|canvases| {
+        let mut canvases = canvases.borrow_mut();
+        let first = !canvases.contains_key(&id);
+        canvases.entry(id).or_default().set_browser_frame(source)?;
+        Ok(first)
+    })
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn remove_canvas(id: u32) {
+    CANVASES.with(|canvases| canvases.borrow_mut().remove(&id));
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn clear_canvases() {
+    CANVASES.with(|canvases| canvases.borrow_mut().clear());
+}
+
+pub fn canvas_image(id: u32) -> Option<rune::Pixels> {
+    #[cfg(target_arch = "wasm32")]
+    { CANVASES.with(|canvases| canvases.borrow().get(&id).cloned()) }
+    #[cfg(not(target_arch = "wasm32"))]
+    { let _ = id; None }
 }
 
 /// An SVG-body icon at `size` points, tinted `color`.
@@ -175,4 +204,49 @@ pub fn slot_text(slot: usize, decimals: usize) -> String {
     } else {
         format!("{:.*}", decimals, v)
     }
+}
+
+thread_local! {
+    static IMAGES: RefCell<Option<rune::ImageCache>> = const { RefCell::new(None) };
+    /// Handles kept so a decoded image stays decoded while a tree that shows it is mounted.
+    static HELD: RefCell<HashMap<String, rune::Image>> = RefCell::new(HashMap::new());
+    static USED: RefCell<std::collections::HashSet<String>> = RefCell::new(std::collections::HashSet::new());
+}
+
+fn with_images<T>(f: impl FnOnce(&rune::ImageCache) -> T) -> T {
+    IMAGES.with(|cell| {
+        let mut cell = cell.borrow_mut();
+        let cache = cell.get_or_insert_with(|| rune::ImageCache::new(std::sync::Arc::new(crate::wake)));
+        f(cache)
+    })
+}
+
+/// The raster size bucket for an image shown `points` wide: the next power of two, so a box
+/// that grows a few points does not decode again.
+fn bucket(points: f32) -> f32 {
+    (points.max(8.0).ceil() as u32).next_power_of_two() as f32
+}
+
+/// An image by URL, decoded by the browser and held by this cache.
+pub fn image_by_url(url: &str, points: f32) -> rune::Image {
+    let size = bucket(points);
+    let key = format!("u{size}|{url}");
+    USED.with(|used| { used.borrow_mut().insert(key.clone()); });
+    HELD.with(|held| held.borrow_mut().entry(key).or_insert_with(|| with_images(|cache| cache.url(url, size, 2.0))).clone())
+}
+
+/// Inline SVG markup rasterized to fit `points` square.
+pub fn image_of_svg(svg: &str, points: f32) -> rune::Image {
+    let size = bucket(points);
+    let key = format!("s{size}|{svg}");
+    USED.with(|used| { used.borrow_mut().insert(key.clone()); });
+    HELD.with(|held| held.borrow_mut().entry(key).or_insert_with(|| with_images(|cache| cache.svg(svg.as_bytes().to_vec(), size, 2.0))).clone())
+}
+
+pub fn begin_images() {
+    USED.with(|used| used.borrow_mut().clear());
+}
+
+pub fn finish_images() {
+    USED.with(|used| HELD.with(|held| held.borrow_mut().retain(|key, _| used.borrow().contains(key))));
 }

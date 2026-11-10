@@ -1,4 +1,5 @@
-import { useEffect, useState, type ComponentType } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useState, type ComponentType } from "@jgengine/core/ui/jsx";
 
 import type { EditorAppProps } from "@jgengine/editor/EditorApp";
 import type { PlayableGame } from "@jgengine/shell/registry";

@@ -1,4 +1,6 @@
-import { useCallback, useInsertionEffect, useRef, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useCallback, useInsertionEffect, useRef, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
+import type { KeyboardEvent, PointerEvent } from "@jgengine/core/ui/jsx/dom.view";
 import { memoView } from "./memoView.view";
 
 /** Props for {@link GameSlider}. */

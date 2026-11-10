@@ -26,7 +26,7 @@ export const PACKAGE_SKILLS: Record<string, string> = {
   sql: "jgengine-multiplayer",
   convex: "jgengine-multiplayer",
   node: "jgengine-multiplayer",
-  react: "jgengine-ui",
+  ui: "jgengine-ui",
   shell: "jgengine-ui",
   assets: "jgengine-assets",
   // github + jgengine CLI are tooling, not game-authoring surface — omit so they

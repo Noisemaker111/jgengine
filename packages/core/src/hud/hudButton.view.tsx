@@ -1,6 +1,8 @@
-import { type ButtonHTMLAttributes, type ReactNode, type Ref } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import type { ReactNode, Ref } from "@jgengine/core/ui/jsx";
+import type { ButtonHTMLAttributes } from "@jgengine/core/ui/jsx/dom.view";
 
-import { useEngineStyles } from "@jgengine/react/engineStyles";
+import { useEngineStyles } from "@jgengine/ui/engineStyles";
 import { memoView } from "../ui/memoView.view";
 import { useHudInteract, type HudInteractListener } from "./hudInteract.view";
 

@@ -29,7 +29,7 @@ export interface ChatTransport {
 /**
  * Callback seam for backends that cannot host React hooks (e.g. the ws
  * client): subscribe delivers the channel's recent history on every change;
- * send resolves with the host's verdict. @jgengine/react's chatTransportFromSync
+ * send resolves with the host's verdict. @jgengine/ui's chatTransportFromSync
  * lifts a ChatSync into a ChatTransport.
  */
 export interface ChatSync {

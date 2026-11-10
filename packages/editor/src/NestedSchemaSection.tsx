@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { ParamSchema } from "@jgengine/core/generator/paramSchema";
 
 import { SchemaInspector } from "./SchemaInspector";

@@ -1,12 +1,13 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-world
-import { useMemo, useRef } from "react";
+import { useMemo, useRef } from "@jgengine/core/ui/jsx";
 import { CapsuleGeometry, ConeGeometry, DoubleSide, Group, Mesh, MeshBasicMaterial, RingGeometry } from "three";
 
 import { createRevealQuery, type RevealHit } from "@jgengine/core/sensor/revealQuery";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
-import { usePlayer, useSceneEntities } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
+import { usePlayer, useSceneEntities } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 

@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { createElement } from "@jgengine/core/ui/jsx";
+import { renderToStaticMarkup } from "@jgengine/core/ui/jsx/markup";
 import { ChatPanel } from "./chat.view";
 
 const messages = Array.from({ length: 5 }, (_, index) => ({ id: String(index), channelId: "world", fromUserId: index === 4 ? "me" : "neighbor", body: `message-${index}`, at: index }));

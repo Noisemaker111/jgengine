@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useCallback, useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
 
 import type { EditorLayersInput } from "@jgengine/core/editor/index";
 import { getSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";

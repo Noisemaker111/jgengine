@@ -1,6 +1,6 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { describe, expect, test } from "bun:test";
-import { join } from "node:path";
-import type { ReactNode } from "react";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 import { findHudOverlayHost, HUD_OVERLAY_HOST_ATTRIBUTE } from "@jgengine/core/hud/hudThemeRoot.view";
 
@@ -12,11 +12,7 @@ import { SettingsChrome } from "./SettingsChrome.draw";
 import { SettingsMenu } from "./SettingsMenu.draw";
 import type { SettingsController } from "./settingsController.draw";
 
-// The shell ships no renderer; borrow the react package's, resolved exactly as its own tests resolve it, so one
-// renderer draws the shared contexts when test files run in one process.
-const { renderToStaticMarkup } = (await import(Bun.resolveSync("react-dom/server", join(import.meta.dir, "../../../react/src")))) as {
-  renderToStaticMarkup: (node: ReactNode) => string;
-};
+import { renderToStaticMarkup } from "@jgengine/core/ui/jsx/markup";
 
 function playable(uiKit?: UiKit): PlayableGame {
   return { game: { name: "settings-host-test", input: {} }, ...(uiKit === undefined ? {} : { uiKit }) } as unknown as PlayableGame;

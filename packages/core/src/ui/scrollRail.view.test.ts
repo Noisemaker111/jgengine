@@ -13,12 +13,12 @@ beforeAll(async () => {
   await rm(scratch, { recursive: true, force: true });
   await mkdir(scratch, { recursive: true });
   await mkdir(`${scratch}/node_modules`, {recursive:true});
-  for (const pkg of ['react','react-dom']) await symlink(resolve(import.meta.dir,'../../../../packages/react/node_modules',pkg),`${scratch}/node_modules/${pkg}`,'dir');
+
   const entry = `${scratch}/fixture.tsx`;
   await Bun.write(entry, `
-    import React, {useState} from 'react';
-    import {createRoot} from 'react-dom/client';
-    import {ScrollRail, ActionBar} from '@jgengine/react';
+    import React, {useState} from '@jgengine/core/ui/jsx';
+    import {createRoot} from '@jgengine/core/ui/jsx/client.view';
+    import {ScrollRail, ActionBar} from '@jgengine/ui';
     function Fixture() {
       const [selected,select] = useState('Game'), [removed,remove] = useState(false);
       return <><div style={{width:300}}><ScrollRail label="categories">{['Game','Graphics','Audio','Accessibility','Controls'].map(label=><button key={label} style={{flexShrink:0,width:110,height:44}} onClick={()=>select(label)}>{label}</button>)}</ScrollRail></div>

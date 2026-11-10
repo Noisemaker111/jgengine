@@ -1,4 +1,5 @@
-import { useState, type CSSProperties, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { useDialogBehavior } from "@jgengine/core/dialog/dialogBehavior.view";
 import { ScrollRail } from "@jgengine/core/ui/scrollRail.view";

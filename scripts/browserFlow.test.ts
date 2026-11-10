@@ -30,6 +30,9 @@ function fakeDriver(options: { probe?: ProbeReadings; page?: Record<string, unkn
     async moveMouse(x, y) {
       calls.push(`moveMouse ${x},${y}`);
     },
+    async wheel(x, y, deltaY, deltaX) {
+      calls.push(`wheel ${x},${y} ${deltaX},${deltaY}`);
+    },
     async look(dx, dy) {
       calls.push(`look ${dx},${dy}`);
       return { x: dx, y: dy };
@@ -40,6 +43,9 @@ function fakeDriver(options: { probe?: ProbeReadings; page?: Record<string, unkn
     },
     async fill(label) {
       calls.push(`fill ${label}`);
+    },
+    async type(text) {
+      calls.push(`type ${text}`);
     },
     evaluate,
     async bridge() {
@@ -121,6 +127,14 @@ describe("browser flow checks", () => {
 });
 
 describe("browser flow pointer steps", () => {
+  test("wheel steps preserve their target and default the horizontal delta to zero", async () => {
+    const { driver, calls } = fakeDriver();
+    const { flow, stepper } = browserFlow(driver);
+    await flow.wheel(200, 600, 400);
+    await flow.wheel(200, 600, -100, 50);
+    expect(calls).toEqual(["wheel 200,600 0,400", "wheel 200,600 50,-100"]);
+    expect(stepper.records.map((step) => step.label)).toEqual(["wheel 0,400 at 200,600", "wheel 50,-100 at 200,600"]);
+  });
   test("moveMouse, look and aimAt reach the driver, with the default aim tolerance", async () => {
     const { driver, calls } = fakeDriver();
     const { flow, stepper } = browserFlow(driver);

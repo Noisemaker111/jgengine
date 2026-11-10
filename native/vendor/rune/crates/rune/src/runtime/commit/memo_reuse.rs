@@ -189,17 +189,17 @@ fn same_visual_cold(a: &crate::el::VisualCold, b: &crate::el::VisualCold) -> boo
     let crate::el::VisualCold {
         surface, surface_place, border_bottom, border_sides, border_layout, border_dash, border_dash_phase, shadows, blur_motion,
         clip, clip_radius, clip_corners, cutout, icon, icon_inked, icon_one_color, gradient, radial, outline, shape,
-        pixels, pixels_fit, effect, backdrop_blur, hover_motion, hover_within,
+        pixels, pixels_fit, pixels_pattern, effect, backdrop_blur, hover_motion, hover_within,
         group_opacity, group_color, hover_alone, hover_share, hover_focus, icon_turn, cache_key, offset_motion, scale_motion,
         origin, rotate_motion, child_exit, enter_delay, motion_intent, instant_motion, clip_to_content, flight_crop,
-        hold_landing, offset, paint_alpha, layer_opacity, blur, rotate, mark, mirror_rtl,
+        hold_landing, offset, paint_alpha, layer_opacity, blur, mix_blend, isolate, rotate, mark, mirror_rtl,
     } = b;
     (match (&a.surface, surface) {
         (None, None) => true,
         (Some((sa, fa)), Some((sb, fb))) => sa.key() == sb.key() && fa == fb,
         _ => false,
     }) && a.surface_place == *surface_place && a.border_bottom == *border_bottom && a.border_sides == *border_sides && a.border_layout == *border_layout && a.border_dash == *border_dash
-        && a.border_dash_phase == *border_dash_phase && a.shadows == *shadows
+        && a.border_dash_phase == *border_dash_phase && a.shadows == *shadows && a.mix_blend == *mix_blend && a.isolate == *isolate
         && opt_box_eq(&a.blur_motion, blur_motion) && a.clip == *clip
         && a.clip_radius == *clip_radius && a.clip_corners == *clip_corners && a.cutout == *cutout
         && match (&a.icon, icon) {
@@ -215,7 +215,7 @@ fn same_visual_cold(a: &crate::el::VisualCold, b: &crate::el::VisualCold) -> boo
             (Some(pa), Some(pb)) => Arc::ptr_eq(&pa.source, &pb.source),
             _ => false,
         }
-        && a.pixels_fit == *pixels_fit && a.effect == *effect && a.backdrop_blur == *backdrop_blur
+        && a.pixels_fit == *pixels_fit && a.pixels_pattern == *pixels_pattern && a.effect == *effect && a.backdrop_blur == *backdrop_blur
         && opt_rc_eq(&a.hover_motion, hover_motion) && opt_rc_eq(&a.hover_within, hover_within)
         && a.group_opacity == *group_opacity && a.group_color == *group_color && a.hover_alone == *hover_alone && a.hover_share == *hover_share && a.hover_focus == *hover_focus
         && a.icon_turn == *icon_turn && a.cache_key == *cache_key
@@ -240,7 +240,7 @@ pub(super) fn same_visual(a: &Visual, b: &Visual) -> bool {
 fn same_el_cold(a: &crate::el::ElCold, b: &crate::el::ElCold) -> bool {
     let crate::el::ElCold {
         focus, looping, trace_name, trace_namespace, role, label, live, above, motion, opacity_motion, lead,
-        transition, matched, scroll, scroll_axes, sticky, scroll_edges, growth, virtual_estimate, virtual_rows,
+        transition, matched, scroll, scroll_axes, scroll_preserve_layout, sticky, scroll_edges, growth, virtual_estimate, virtual_rows,
         virtual_rows_version, glide, input, time_scale, help, help_cut, help_above, material, aspect_fit, a11y,
         #[cfg(debug_assertions)]
         scroll_source: _,
@@ -263,6 +263,7 @@ fn same_el_cold(a: &crate::el::ElCold, b: &crate::el::ElCold) -> bool {
         && a.matched == *matched
         && a.scroll == *scroll
         && a.scroll_axes == *scroll_axes
+        && a.scroll_preserve_layout == *scroll_preserve_layout
         && opt_box_eq(&a.sticky, sticky)
         && a.scroll_edges == *scroll_edges
         && opt_box_eq(&a.growth, growth)

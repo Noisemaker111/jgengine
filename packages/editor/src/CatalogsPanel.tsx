@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useMemo, useState } from "@jgengine/core/ui/jsx";
 
 import type { EditorCatalogDefinition, EditorSession } from "@jgengine/core/editor/index";
 import { findEditorCatalog, findEditorCatalogEntry } from "@jgengine/core/editor/index";

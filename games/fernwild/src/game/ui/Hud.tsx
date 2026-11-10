@@ -1,4 +1,5 @@
-import { useMemo, type CSSProperties, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useMemo, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 import { KillFeed } from "@jgengine/core/feed/killFeed.view";
 import { libraryIconUrl } from "@jgengine/assets/library/libraryIcons";
 import { Hotbar } from "@jgengine/core/hud/hudReadouts.view";
@@ -6,8 +7,8 @@ import { KitVitalIcons, type KitVitalIcon } from "@jgengine/core/hud/kitHud.view
 import { Minimap, useMarkers } from "@jgengine/core/map/map.view";
 import type { MarkerView } from "@jgengine/core/map/markers";
 import { OnboardingBanner, OnboardingHud, useOnboarding } from "@jgengine/core/onboarding/onboarding.view";
-import { useGameStore } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameStore } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
 import { HudSlots } from "@jgengine/shell/gameKit";
 
 import { baseView } from "../base";

@@ -1,6 +1,6 @@
 /**
  * #1573: one `--jg-*` vocabulary. Every theme token a shipped component reads must be emitted by
- * `hudThemeVars`, so authoring a `HudTheme` skins the `packages/react` primitives and the
+ * `hudThemeVars`, so authoring a `HudTheme` skins the `packages/ui` primitives and the
  * `registry/jgengine` blocks together instead of half of each.
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
@@ -32,7 +32,7 @@ const NON_THEME = [
   "--jg-cursor-",
 ];
 
-const ROOTS = ["packages/react/src", "registry/jgengine"];
+const ROOTS = ["packages/ui/src", "registry/jgengine"];
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {

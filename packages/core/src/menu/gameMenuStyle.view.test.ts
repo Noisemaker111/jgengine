@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import type { CSSProperties } from "react";
+import type { CSSProperties } from "@jgengine/core/ui/jsx";
 
 import type { GameMenuProps, GameMenuStyle } from "./gameMenu.view";
 

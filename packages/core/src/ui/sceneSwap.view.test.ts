@@ -24,9 +24,9 @@ beforeAll(async () => {
   await symlink(resolve(import.meta.dir, "../../node_modules"), `${scratch}/node_modules`, "dir");
   const entry = `${scratch}/fixture.tsx`;
   await Bun.write(entry, `
-    import React, { useState } from 'react';
-    import { createRoot } from 'react-dom/client';
-    import { flushSync } from 'react-dom';
+    import React, { useState } from '@jgengine/core/ui/jsx';
+    import { createRoot } from '@jgengine/core/ui/jsx/client.view';
+    import { flushSync } from '@jgengine/core/ui/jsx/client.view';
     import { useDeferredSwap, useSceneSwapping } from '../../packages/core/src/ui/sceneSwap.view';
 
     // The shader warmup stand-in: the test says when the new place has compiled.

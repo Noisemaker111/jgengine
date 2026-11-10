@@ -1,8 +1,9 @@
-import { useMemo } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useMemo } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
-import { PlayerCharacterFigure } from "@/user/components/PlayerCharacterFigure";
-import { LLMVILLE_CHARACTER_PALETTE, type CharacterLook } from "@/user/playerCharacterFigure";
+import { PlayerCharacterFigure } from "./PlayerCharacterFigure";
+import { LLMVILLE_CHARACTER_PALETTE, type CharacterLook } from "../playerCharacterFigure";
 import { useEngineRendererFactory } from "@jgengine/core/webgpu/engineRenderer.draw";
 import { EngineCanvas } from "@jgengine/core/frame/engineCanvas.draw";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";

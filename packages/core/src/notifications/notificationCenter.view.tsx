@@ -1,4 +1,5 @@
-import { useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useSyncExternalStore, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { NotificationEntry, NotificationStore } from "@jgengine/core/notifications/notificationCenter";
 import { hudType } from "@jgengine/core/hud/hudTokens";

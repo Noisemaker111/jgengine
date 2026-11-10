@@ -5,9 +5,9 @@
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
 import { api } from "@llmville/backend/convex/_generated/api";
 import { useMutation } from "convex/react";
-import { useCallback } from "react";
+import { useCallback } from "@jgengine/core/ui/jsx";
 
-import type { PlacedRack } from "@/infrastructure/infrastructure";
+import type { PlacedRack } from "./infrastructure";
 import type { HardwareModelId, RackCoolingUnitId } from "@llmville/game/infrastructure/catalog";
 
 export type RackHardwareMoveSource =
@@ -15,7 +15,7 @@ export type RackHardwareMoveSource =
   | { kind: "slot"; slot: number };
 
 export type RackHardwareMoveTarget = { kind: "stock" } | { kind: "slot"; slot?: number };
-import { withEditAccess, wrapMutation } from "@/runtime/gameEngine";
+import { withEditAccess, wrapMutation } from "../runtime/gameEngine";
 
 export interface RackHardwareViewModel {
   moveHardware: (

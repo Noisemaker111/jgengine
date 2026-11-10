@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from "@jgengine/core/ui/jsx";
 import { GridHelper } from "three";
 
 import { disposeObjectTree, SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
@@ -12,7 +13,7 @@ import type { GuideRegion } from "@jgengine/core/terrain/terrainGuides";
 import type { EditorUiPanelLayout } from "@jgengine/core/hud/hudDocument";
 import { listActiveHudLayouts, subscribeActiveHudLayouts } from "@jgengine/core/hud/hudLayout";
 import { HudLayoutPersistProvider } from "@jgengine/core/hud/hudLayoutPersist.view";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
 import type { PlayableGame } from "@jgengine/shell/registry";
 

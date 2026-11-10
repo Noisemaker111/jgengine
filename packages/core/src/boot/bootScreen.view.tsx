@@ -1,4 +1,5 @@
-import { Suspense, useLayoutEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { Suspense, useLayoutEffect, useRef, useSyncExternalStore, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { pageBoot, type BootStep } from "@jgengine/core/boot/bootSequence";
 

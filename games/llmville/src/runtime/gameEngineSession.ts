@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState } from "@jgengine/core/ui/jsx";
 
 import {
   GameEngine,
   type GameEngineParams,
-} from "@/runtime/gameEngine";
-import { resolveInteractionHint } from "@/runtime/interactionHints";
+} from "./gameEngine";
+import { resolveInteractionHint } from "./interactionHints";
 
 function sessionKey(params: GameEngineParams): string {
   return `${params.activeSlot}:${params.gameId}:${params.playerId}`;

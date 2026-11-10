@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import { useGameContext } from "@jgengine/react/provider";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useCallback, useEffect, useMemo, useRef } from "@jgengine/core/ui/jsx";
+import { useGameContext } from "@jgengine/ui/provider";
 import type { EditorDocument } from "@jgengine/core/editor/types";
 import { devtools } from "@jgengine/core/devtools/devtools";
 import type { WeatherParticleMetrics } from "./weatherUniforms.draw";

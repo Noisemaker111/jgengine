@@ -16,15 +16,13 @@ beforeAll(async () => {
   // A run killed mid-test (a timeout) leaves its links here; the next run must not fail on EEXIST.
   await rm(scratch, { recursive: true, force: true });
   await mkdir(`${scratch}/node_modules/@jgengine`, { recursive: true });
-  for (const peer of ["react", "react-dom"]) {
-    await symlink(resolve(import.meta.dir, "../../../react/node_modules", peer), `${scratch}/node_modules/${peer}`, "dir");
-  }
-  await installPublicPackages(scratch, ["core", "react"]);
+
+  await installPublicPackages(scratch, ["core", "ui"]);
   const entry = `${scratch}/fixture.tsx`;
   await Bun.write(entry, `
-    import React, {useState} from 'react'; import {createRoot} from 'react-dom/client'; import {flushSync} from 'react-dom';
+    import React, {useState} from '@jgengine/core/ui/jsx'; import {createRoot} from '@jgengine/core/ui/jsx/client.view'; import {flushSync} from '@jgengine/core/ui/jsx/client.view';
     import {useDragLayer,DraggableCard,DropZone,DragGhost} from '@jgengine/core/inventory/dragLayer.view';
-    import {InventoryGrid} from '@jgengine/core/inventory/inventoryGrid.view'; import {GameProvider} from '@jgengine/react/provider';
+    import {InventoryGrid} from '@jgengine/core/inventory/inventoryGrid.view'; import {GameProvider} from '@jgengine/ui/provider';
     import {CardFace} from '@jgengine/core/cards/cards.view';
     import {defineGameDefinition} from '@jgengine/core/game/defineGame';
     import {createAssetCatalog} from '@jgengine/core/scene/assetCatalog'; import {createGameContext} from '@jgengine/core/runtime/gameContext';

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useCallback, useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 
 import {
   createNewGame,

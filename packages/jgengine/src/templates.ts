@@ -50,6 +50,7 @@ import {
   walkProbeTs,
   type StarterGameOptions,
 } from "./templates/starterGame";
+import { withJsxSource } from "./templates/jsxSource";
 import type { EditorSceneDoc, TemplateFile, TemplateOptions } from "./templates/types";
 
 export { editorScaffold } from "./templates/editorWorkspace";
@@ -173,5 +174,5 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
       : []),
     { path: "src/game/ui/GameUI.tsx", contents: board ? boardGameUiTsx(name) : gameUiTsx(id, name, editor, loop) },
   ];
-  return options.shape === "shared-world-builder" ? sharedBuilderFiles(files, options) : files;
+  return withJsxSource(options.shape === "shared-world-builder" ? sharedBuilderFiles(files, options) : files);
 }

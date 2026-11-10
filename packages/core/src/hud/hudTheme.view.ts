@@ -1,4 +1,4 @@
-import { type CSSProperties } from "react";
+import type { CSSProperties } from "@jgengine/core/ui/jsx";
 import { hudSkinVars, type HudSkin } from "./hudSkin.view";
 export { hudSkinVars, type HudSkin } from "./hudSkin.view";
 
@@ -7,7 +7,7 @@ export { hudSkinVars, type HudSkin } from "./hudSkin.view";
  * block at once — the atomic bars (#1033), frames, slots, the minimap ring, and the chrome the
  * registry blocks read (surfaces, edges, text, status colors, fonts, rarity). `hudThemeVars(theme)`
  * emits the whole `--jg-*` vocabulary, so setting a **game-authored** theme on any HUD ancestor
- * re-skins `packages/react` primitives and `registry/jgengine` components together. Purely CSS-token
+ * re-skins `packages/ui` primitives and `registry/jgengine` components together. Purely CSS-token
  * driven (no image assets). Tokens are not a finished UI: every game still owns composition, skin,
  * and art direction (see AGENTS.md). Built-in presets are demo/scaffold starting points only.
  *
@@ -776,7 +776,7 @@ export interface HudThemeSeed {
 /**
  * Derives a coherent full theme from an accent/surface pair — shades, edges, dim text, frames,
  * and slots all fall out of the seed, so a game gets one consistent look across the
- * `packages/react` primitives and the `registry/jgengine` blocks without naming 50 tokens.
+ * `packages/ui` primitives and the `registry/jgengine` blocks without naming 50 tokens.
  * Hex seeds only (`#rgb` or `#rrggbb`).
  *
  * @capability hud-theme-derive build a full HudTheme from an accent + surface seed pair

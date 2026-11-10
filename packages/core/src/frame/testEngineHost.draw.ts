@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { act, createElement, type ReactElement } from "react";
-import { createRoot } from "react-dom/client";
+import { act, createElement, type ReactElement } from "@jgengine/core/ui/jsx";
+import { createRoot } from "@jgengine/core/ui/jsx/client.view";
 import { EngineHostProvider } from "./engineHost.draw";
 
 import { flushAfterRenderTasks, flushBeforeRenderTasks } from "./afterRenderBoard.draw";
@@ -11,8 +11,7 @@ import type { EngineHost } from "./engineHost.draw";
 /**
  * A headless {@link EngineHost} for draw tests: a real scene/camera/clock over a
  * stub renderer, the shared frame board bound to a task list this host steps
- * manually, and `render` counted instead of drawn. This replaces the r3f
- * the old r3f test harness — `frameloop` is always "never" and
+ * manually, and `render` counted instead of drawn. `frameloop` is always "never" and
  * `step(delta)` is the only way frames advance, so tests stay deterministic.
  * @internal
  */
@@ -136,7 +135,7 @@ export function createTestEngineHost(options?: {
 let testDomUsers = 0;
 
 /**
- * Give a draw test the DOM react-dom needs, for as long as it holds the returned release: a
+ * Give a draw test the DOM its UI host needs, for as long as it holds the returned release: a
  * happy-dom window on the globals, registered for the first holder and removed with the last. Not
  * a test preload: a global `document`, `fetch` and `Response` in every test file made model tests
  * that assert there is no DOM fail, and broke the tests that serve real pages to a browser.
@@ -169,8 +168,7 @@ export interface MountedTestDraws {
 
 /**
  * Mount `element` under an {@link EngineHostProvider} bound to a fresh
- * {@link createTestEngineHost} through react-dom â€” the engine-side replacement
- * for the old r3f test harness. `frameloop` is
+ * {@link createTestEngineHost} through the engine UI runtime. `frameloop` is
  * "never"; `advance`/`render` are the only ways frames and trees move.
  * @internal
  */

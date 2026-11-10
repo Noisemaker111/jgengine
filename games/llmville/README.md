@@ -8,8 +8,8 @@ A cosy co-op AI-lab tycoon in one shared multiplayer world: buy GPUs, collect da
 models, serve tokens for income and grow your lab next to other players and their LLM bots.
 Live at [llmville.com](https://llmville.com).
 
-LLMville is a three-part app rather than a single Vite game: this folder is the React web
-client (TanStack Router, React Three Fiber), `packages/game` is the shared pure game logic
+LLMville is a three-part app rather than a single Vite game: this folder is the web
+client (the engine UI runtime, its own screen list), `packages/game` is the shared pure game logic
 (`@llmville/game/*`, imported by both sides) and `packages/backend` is the Convex backend
 (accounts through Better Auth, world state, the authoritative gameplay mutations).
 

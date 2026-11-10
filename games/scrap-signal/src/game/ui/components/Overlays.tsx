@@ -1,6 +1,7 @@
-import { useEffect } from "react";
-import { useCurrency, useGame } from "@jgengine/react/hooks";
-import { useStore } from "@jgengine/react/store";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect } from "@jgengine/core/ui/jsx";
+import { useCurrency, useGame } from "@jgengine/ui/hooks";
+import { useStore } from "@jgengine/ui/store";
 import { HudButton } from "@jgengine/core/hud/hudButton.view";
 import { AMMO_LABELS, AMMO_POOLS } from "../../ammo";
 import { gearItems, AMMO_PRICES } from "../../items/gear/catalog";

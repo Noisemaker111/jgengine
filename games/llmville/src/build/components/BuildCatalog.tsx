@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { cn } from "@/kit/cn";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useState } from "@jgengine/core/ui/jsx";
+import { cn } from "../../kit/cn";
 
 import {
   BUILD_CATALOG,
@@ -8,10 +9,10 @@ import {
 import type { BuildTabId } from "@llmville/game/build/catalog";
 import { canAffordShopPurchase } from "@llmville/game/economy/storeTransition";
 import { getRackCatalogDefinition, STARTER_RACK_CATALOG_ID } from "@llmville/game/infrastructure/catalog";
-import type { ShopCatalogItem } from "@/store/store";
-import { QuantityBuyControl, InventoryTrayCard, StorePriceButton } from "@/store/components/StoreListRow";
-import { DecorShopCard } from "@/build/components/DecorShopCard";
-import { TutorialArrow } from "@/tutorial/components/TutorialUi";
+import type { ShopCatalogItem } from "../../store/store";
+import { QuantityBuyControl, InventoryTrayCard, StorePriceButton } from "../../store/components/StoreListRow";
+import { DecorShopCard } from "./DecorShopCard";
+import { TutorialArrow } from "../../tutorial/components/TutorialUi";
 import { getResearchTokenCost, isResearchUnlocked, type ResearchUnlocks } from "@llmville/game/research/researchUnlocks";
 
 interface BuildCatalogProps {

@@ -1,5 +1,6 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { describe, expect, test } from "bun:test";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderToStaticMarkup } from "@jgengine/core/ui/jsx/markup";
 
 import { createCameraShake } from "@jgengine/core/camera/shake/cameraShake";
 

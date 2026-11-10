@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { MenuList, type MenuEntry } from "@/components/ui/menu-list";
 
 const OVERLAY_BACKGROUND = "radial-gradient(circle, transparent 0%, rgba(0,0,0,0.78) 100%), rgba(0,0,0,0.45)";

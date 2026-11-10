@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { Moodle } from "@jgengine/core/survival/moodle";
 
 import { BuffTray, type BuffChip } from "@/components/ui/buff-tray";

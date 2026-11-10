@@ -1,4 +1,5 @@
-import { useEffect, useReducer, type CSSProperties, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useReducer, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { RebindRow, RebindSession } from "@jgengine/core/input/rebindSession";
 

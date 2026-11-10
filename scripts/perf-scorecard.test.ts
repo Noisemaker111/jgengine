@@ -45,6 +45,34 @@ test("a source map names the file a minified position came from", () => {
 
 const frame = (id: number, functionName: string, url: string, columnNumber: number, children?: number[]) => ({ id, callFrame: { functionName, url, lineNumber: 0, columnNumber }, ...(children === undefined ? {} : { children }) });
 
+test("the engine JSX runtime, bridge, wasm and component callbacks have their own measured UI share", () => {
+  for (const source of [
+    "../../../packages/core/src/ui/jsx/reconciler.ts",
+    "/@fs/C:/repo/packages/core/src/ui/rune/runeStage.view.ts",
+    "../../../packages/ui/src/hooks.ts",
+    "../../node_modules/@jgengine/core/dist/ui/jsx/reconciler.js",
+    "../../node_modules/@jgengine/ui/dist/hooks.js",
+    "/jg-ui/jg_ui_bg.wasm",
+  ]) expect(codeOwner(source)).toBe("ui");
+  const score = scoreProfile({
+    nodes: [
+      frame(1, "renderFunction", "/packages/core/src/ui/jsx/reconciler.ts", 0, [2]),
+      frame(2, "HUD", "/games/deepward/src/HUD.tsx", 0),
+      frame(3, "wasm-function[4]", "/jg-ui/jg_ui_bg.wasm", 0),
+      frame(4, "tick", "/games/deepward/src/game.ts", 0),
+      frame(5, "jsxDEV", "/packages/core/src/ui/jsx/element.ts", 0),
+    ],
+    samples: [1, 2, 3, 4, 5], timeDeltas: [1000, 2000, 3000, 4000, 1000],
+  }, () => null);
+  expect(score.selfMs.ui).toBe(5);
+  expect(score.uiInclusiveMs).toBe(7);
+  expect(score.devReactMs).toBe(0);
+  const main = mainScore(score, 10, 1, null);
+  expect(main.uiSelfMsPerFrame).toBe(0.5);
+  expect(main.uiInclusiveMsPerFrame).toBe(0.7);
+  expect(renderScorecard([{ label: "Rune", card: card({ main }) }], true)).toContain("| engine UI self | 45.5% (0.500 ms) |");
+});
+
 test("a production profile is split by package through the chunk's source map", async () => {
   const dir = mkdtempSync(join(tmpdir(), "jg-scorecard-"));
   try {
@@ -109,6 +137,25 @@ test("the scorecard leads with the slow frames, the hitches and the slow-CPU win
   expect(text).toContain("| frame p50 ms | 3.00 | failed |");
   expect(text).toContain("| frames over 33 ms | 1 of 4 | failed |");
   expect(text).toContain("| CPU 4x slower: p50 / p95 ms | 12.00 / 50.00 | failed |");
+});
+
+test("production accepts Rune's generated wasm bindings while still rejecting dev and unexpected scripts", () => {
+  const runtime: Array<[string, number]> = [
+    ["http://x/assets/app-abc123.js", 100],
+    ["http://x/jg-ui/jg_ui.js", 200],
+    ["http://x/jg-ui/snippets/jg-ui-b9455b9e79605d58/inline0.js", 10],
+    ["http://x/jg-ui/snippets/rune-bcdf3621eaa7cec8/src/platform/web/bridge.js", 30],
+    ["http://x/jg-ui/snippets/rune-bcdf3621eaa7cec8/src/platform/web/platform.js", 40],
+    ["http://x/jg-ui/jg_ui_bg.wasm", 500],
+  ];
+  const bundled = loadScore(runtime, 1000);
+  expect(bundled).toMatchObject({ jsBytes: 380, wasmBytes: 500, scripts: 5, sourceModules: 0 });
+  expect(productionProblem(card({ load: bundled }))).toBeNull();
+  for (const path of ["/src/game.js", "/@vite/client", "/jg-ui/src/debug.js", "/jg-ui/snippets/rune-abcdef/src/other.js"]) {
+    const dev = loadScore([...runtime, [`http://x${path}`, 100]], 1000);
+    expect(dev.sourceModules).toBe(1);
+    expect(productionProblem(card({ load: dev }))).toContain("source modules");
+  }
 });
 
 test("the production server serves only the build's own files, never its source maps", () => {

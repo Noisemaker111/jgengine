@@ -1,6 +1,7 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { modelWithAuthoredMaterials } from "@jgengine/core/editor/materialAuthoring";
 import { modelWithAuthoredNodeVisibility } from "@jgengine/core/editor/modelNodeVisibility";
-import { memo, useCallback, useEffect, useMemo, useRef, useSyncExternalStore, type ComponentType, type MutableRefObject, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useSyncExternalStore, type ComponentType, type MutableRefObject, type ReactNode } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import { createEmptyEditorDocument, type EditorDocument } from "@jgengine/core/editor/index";
@@ -22,8 +23,8 @@ import {
   endFallbackPass,
   reportFallbackSeam,
 } from "@jgengine/core/devtools/fallbackSeams";
-import { useGameContext } from "@jgengine/react/provider";
-import { useSceneEntityIds, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
+import { useSceneEntityIds, useGameStore, usePlayer, useTarget } from "@jgengine/ui/hooks";
 
 import { defaultSurfaceMaterial, detailMaps } from "@jgengine/core/material/defaultSurface.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
@@ -714,8 +715,7 @@ function WorldEntities({
     },
     [ctx, player.userId],
   );
-  // The canvas pointer-down used to reach a marker through r3f's event system; the shell dispatches
-  // the hit entity id here instead, on either render host.
+  // The shell dispatches the hit entity id from the canvas pointer-down.
   useEffect(() => {
     registerWorldEntityPointerDown((entityId) => {
       if (entityId === controlledId) return;

@@ -1,13 +1,13 @@
 import { describe, expect, test } from "bun:test";
-import { createElement, type ReactNode } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { createElement, type ReactNode } from "@jgengine/core/ui/jsx";
+import { renderToStaticMarkup } from "@jgengine/core/ui/jsx/markup";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { openTitle, togglePause, playGame, showMenuPane } from "@jgengine/core/game/gameFlow";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { SettingsControllerProvider, type SettingsController } from "@jgengine/core/settings/settings.view";
-import { GameProvider } from "@jgengine/react/provider";
+import { GameProvider } from "@jgengine/ui/provider";
 
 import { GameFlowUI, type GameFlowMenuContent } from "./gameFlowMenus.view";
 

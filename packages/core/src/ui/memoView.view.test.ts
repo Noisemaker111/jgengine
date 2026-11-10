@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, setDefaultTimeout, test } from "bun:test";
 import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
-import { createElement } from "react";
+import { createElement } from "@jgengine/core/ui/jsx";
 import { chromium, type Browser, type Page } from "playwright-core";
 import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
 import { live } from "./liveValue";
@@ -58,9 +58,9 @@ beforeAll(async () => {
   await symlink(resolve(import.meta.dir, "../../node_modules"), `${scratch}/node_modules`, "dir");
   const entry = `${scratch}/fixture.tsx`;
   await Bun.write(entry, `
-    import React, { useState } from 'react';
-    import { createRoot } from 'react-dom/client';
-    import { flushSync } from 'react-dom';
+    import React, { useState } from '@jgengine/core/ui/jsx';
+    import { createRoot } from '@jgengine/core/ui/jsx/client.view';
+    import { flushSync } from '@jgengine/core/ui/jsx/client.view';
     import { KitButton, KitMeter, UiKitRoot } from '../../packages/core/src/ui/kit/uiKitRoot.view';
     import { plainKit } from '../../packages/core/src/ui/kit/uiKitPlain.view';
     import { flushFrameBinds } from '../../packages/core/src/ui/liveBind.view';

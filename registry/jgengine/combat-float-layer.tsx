@@ -1,4 +1,5 @@
-import type { CSSProperties } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import type { CSSProperties } from "@jgengine/core/ui/jsx";
 import { hashString } from "@jgengine/core/random/rng";
 
 export interface CombatFloatEntry {

@@ -1,5 +1,6 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { EventMeter } from "@jgengine/core/stats/eventMeter";
-import { useEventMeter } from "@jgengine/react/hooks";
+import { useEventMeter } from "@jgengine/ui/hooks";
 
 import { ChargeMeter } from "@/components/ui/charge-meter";
 

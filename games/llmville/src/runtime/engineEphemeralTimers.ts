@@ -1,7 +1,7 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 
 import { createTimerSet } from "@jgengine/core/time/timerSet";
-import { engineActions, type GameEngine, type GameEngineState } from "@/runtime/gameEngine";
+import { engineActions, type GameEngine, type GameEngineState } from "./gameEngine";
 
 /** Each timed cue: when it is due, and what clears it. A cue with no deadline is not timing. */
 const CUES: readonly { id: string; until: (state: GameEngineState) => number | null; expire: (engine: GameEngine) => void }[] = [

@@ -1,14 +1,15 @@
-import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { useDisplayProfile } from "@jgengine/react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "@jgengine/core/ui/jsx";
+import { useDisplayProfile } from "@jgengine/ui";
 import { GameCursor } from "@jgengine/core/ui/cursor.view";
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { GameIcon, type GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
 import { useViewportScrollLock } from "@jgengine/core/menu/gameMenu.view";
-import { useGame, useGameCalendar } from "@jgengine/react/hooks";
+import { useGame, useGameCalendar } from "@jgengine/ui/hooks";
 import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 import { useSaveSlots } from "@jgengine/core/save/saveSlots.view";
-import { useStore } from "@jgengine/react/store";
+import { useStore } from "@jgengine/ui/store";
 import { EntityPreview } from "@jgengine/core/render/EntityPreview.draw";
 import { SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";
 import { slotText, type SaveSlotMeta } from "@jgengine/core/save/saveSlots";
@@ -35,7 +36,7 @@ const credits = mergeCredits({
     { heading: "Original game art", entries: [{ label: "Odd Orbit", detail: "Original plan-derived household portraits and habitat interface." }] },
     { heading: "Engine", entries: [
       { label: "JG Engine", detail: "Apache-2.0", href: "https://github.com/Noisemaker111/jgengine" },
-      { label: "React / Three.js", detail: "MIT" },
+      { label: "Rune / Three.js", detail: "MIT" },
     ] },
     { heading: "Fonts", entries: [
       { label: "Comfortaa — Johan Aakerlund", detail: "OFL-1.1", href: "https://fonts.google.com/specimen/Comfortaa" },

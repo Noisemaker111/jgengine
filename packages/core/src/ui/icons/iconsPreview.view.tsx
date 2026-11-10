@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { IconTreatment, type IconSchool } from "./iconTreatment.view";
 import type { GameIconName } from "./gameIcons.view";
 import { hudType } from "@jgengine/core/hud/hudTokens";

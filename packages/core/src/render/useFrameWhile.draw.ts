@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "@jgengine/core/ui/jsx";
 
 import { useFrameJoin } from "@jgengine/core/frame/engineHost.draw";
 import type { EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";

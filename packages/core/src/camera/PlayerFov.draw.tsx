@@ -1,11 +1,5 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { GameCameraConfig } from "@jgengine/core/game/playableGame";
 

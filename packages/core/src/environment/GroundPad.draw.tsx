@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { PadEnvironmentDescriptor } from "@jgengine/core/world/features";
 import type { TerrainField } from "@jgengine/core/terrain/terrain";
 import * as THREE from "three";

@@ -82,6 +82,7 @@ unicode-segmentation = "1.13"
 # Bidi classes for `Direction::Auto` (Parley already builds it, with its data).
 icu_properties = { version = "2.3", default-features = false, features = ["compiled_data"] }
 resvg = { version = "0.45", default-features = false, optional = true }
+wuff = "0.2.10"
 
 [target.'cfg(all(unix, not(target_os = "linux")))'.dependencies]
 # The thread CPU clock for frame profiles and debug builds' stall warnings.
@@ -108,7 +109,7 @@ wasm-bindgen-futures = "0.4"
 js-sys = "0.3"
 console_error_panic_hook = "0.1"
 wgpu = { version = "30", default-features = false, features = ["webgpu"] }
-web-sys = { version = "0.3", features = ["Window", "Document", "Element", "HtmlElement", "HtmlCanvasElement", "CssStyleDeclaration", "MediaQueryList", "console"] }
+web-sys = { version = "0.3", features = ["Window", "Document", "Element", "HtmlElement", "HtmlCanvasElement", "HtmlVideoElement", "CssStyleDeclaration", "MediaQueryList", "console"] }
 
 [target.'cfg(any(target_os = "macos", target_os = "windows"))'.dependencies]
 rfd = { version = "0.17", optional = true, default-features = false }

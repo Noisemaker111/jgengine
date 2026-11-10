@@ -7,7 +7,7 @@ import {
   type BaseModelSourceType,
 } from "@llmville/game/models/baseModels";
 import { isBaseModelUnlockedForGame, isScrapeFocusedBaseModel } from "@llmville/game/models/scraping";
-import { useCallback } from "react";
+import { useCallback } from "@jgengine/core/ui/jsx";
 
 export const MODEL_ACTION_KIND = {
   train: "train",

@@ -1,10 +1,11 @@
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { Notice, NoticeFeed, NoticeTone } from "@jgengine/core/notifications/notices";
 import type { LayoutRect, LayoutRegion } from "@jgengine/core/hud/hudPriority";
 
 import { useGameViewportLayout } from "@jgengine/core/ui/viewport.view";
-import { useOptionalGameContext } from "@jgengine/react/provider";
+import { useOptionalGameContext } from "@jgengine/ui/provider";
 import type { KitTone } from "@jgengine/core/ui/kit/uiKit.view";
 import { KitToast, useHasUiKit, useUiKit } from "@jgengine/core/ui/kit/uiKitRoot.view";
 

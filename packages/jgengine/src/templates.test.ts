@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { JsxEmit, transpileModule } from "typescript";
 
 import { defaultStagingDir } from "./desktop";
 import { browserLibMjs, driveMjs, shootMjs } from "./templates/harnessScripts";
@@ -69,6 +70,19 @@ const worldFiles = (variant: "standalone" | "in-repo") => [
 ];
 
 describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
+  test("scaffolded UI uses the engine runtime even when the host defaults to React", () => {
+    const options = { id: "probe-game", name: "Probe Game", variant: "standalone", engineVersion: "0.8.0" } satisfies TemplateOptions;
+    const sets = [gameTemplate(options), gameTemplate({ ...options, dimension: "2d" }), gameTemplate({ ...options, shape: "shared-world-builder" }), editorScaffold("0.8.0")];
+    for (const files of sets) {
+      for (const file of files) {
+        if (!file.path.endsWith(".tsx")) continue;
+        const compiled = transpileModule(file.contents, { fileName: file.path, compilerOptions: { jsx: JsxEmit.ReactJSX } }).outputText;
+        expect(compiled).not.toContain('from "react/jsx');
+        if (file.path.endsWith("main.tsx") || file.path.endsWith("GameUI.tsx")) expect(compiled).toContain("@jgengine/core/ui/jsx/jsx");
+      }
+    }
+  });
+
   for (const variant of ["standalone", "in-repo"] as const) {
     test(`${variant}: default is the editor-first file set plus the world scaffold`, () => {
       expect(render(variant).map((file) => file.path).sort()).toEqual(worldFiles(variant).sort());
@@ -230,8 +244,8 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
     expect(pkg.name).toBe("@games/probe-game");
     expect(pkg.dependencies["@jgengine/core"]).toBe("workspace:*");
     const css = fileOf(files, "src/index.css");
-    expect(css).toContain('@import "../../../packages/react/src/styles.css"');
-    expect(css).toContain('@source "../../../packages/react/src"');
+    expect(css).toContain('@import "../../../packages/ui/src/styles.css"');
+    expect(css).toContain('@source "../../../packages/ui/src"');
     // The F2+E editor summon mounts into this page — its classes must be scanned or it renders unstyled.
     expect(css).toContain('@source "../../../packages/editor/src"');
   });
@@ -245,8 +259,8 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
     expect(pkg.dependencies["@jgengine/core"]).toBe("^0.8.0");
     expect(fileOf(files, "tsconfig.json")).not.toContain("../../packages");
     const css = fileOf(files, "src/index.css");
-    expect(css).toContain('@import "@jgengine/react/styles.css"');
-    expect(css).toContain('@source "../node_modules/@jgengine/react/dist"');
+    expect(css).toContain('@import "@jgengine/ui/styles.css"');
+    expect(css).toContain('@source "../node_modules/@jgengine/ui/dist"');
     expect(css).toContain('@source "../node_modules/@jgengine/shell/dist"');
     // The F2+E editor summon mounts into this page — its classes must be scanned or it renders unstyled.
     expect(css).toContain('@source "../node_modules/@jgengine/editor/dist"');

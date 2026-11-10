@@ -1,11 +1,12 @@
-import { type ReactNode, useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { type ReactNode, useCallback, useEffect, useRef, useState, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 import { CreditsPane } from "@jgengine/core/menu/gameMenuSaves.view";
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { GameCursor } from "@jgengine/core/ui/cursor.view";
 import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
-import { useGame } from "@jgengine/react/hooks";
+import { useGame } from "@jgengine/ui/hooks";
 import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 import { relativeSavedAt, useSaveSlots } from "@jgengine/core/save/saveSlots.view";
 import { useSettings } from "@jgengine/core/settings/settings.view";
 import { SettingsSection, SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view";

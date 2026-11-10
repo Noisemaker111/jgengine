@@ -1,4 +1,5 @@
-import { cn } from "@/kit/cn";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { cn } from "../../kit/cn";
 
 const ACTION_BASE =
   "game-button game-button-compact min-w-[100px] font-game text-sm font-bold italic uppercase tracking-tight";

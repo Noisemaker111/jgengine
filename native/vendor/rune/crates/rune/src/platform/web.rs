@@ -361,7 +361,21 @@ impl<S: 'static> ApplicationHandler<Wake> for Browser<S> {
             let mut loaded = Vec::new();
             for (url, font) in fonts {
                 match wasm_bindgen_futures::JsFuture::from(font).await {
-                    Ok(bytes) => loaded.push(js_sys::Uint8Array::new(&bytes).to_vec()),
+                    Ok(bytes) => {
+                        // jgengine patch: web fonts ship compressed; the text stack reads sfnt only.
+                        let raw = js_sys::Uint8Array::new(&bytes).to_vec();
+                        let sfnt = if raw.starts_with(b"wOF2") {
+                            wuff::decompress_woff2(&raw).ok()
+                        } else if raw.starts_with(b"wOFF") {
+                            wuff::decompress_woff1(&raw).ok()
+                        } else {
+                            Some(raw)
+                        };
+                        match sfnt {
+                            Some(font) => loaded.push(font),
+                            None => web_sys::console::warn_1(&format!("rune: font {url} could not be decompressed").into()),
+                        }
+                    }
                     Err(e) => web_sys::console::warn_2(&format!("rune: font {url} did not load:").into(), &e),
                 }
             }
@@ -465,9 +479,11 @@ impl<S: 'static> ApplicationHandler<Wake> for Browser<S> {
                 config.alpha_mode = wgpu::CompositeAlphaMode::PreMultiplied;
             }
             let caps = surface.get_capabilities(&gpu.adapter);
-            config.usage |= caps.usages & wgpu::TextureUsages::COPY_SRC;
-            let wanted = if srgb_blend { config.format.remove_srgb_suffix() } else { config.format.add_srgb_suffix() };
             let is_gl = gpu.adapter.get_info().backend == wgpu::Backend::Gl;
+            // wgpu's WebGPU backend hardcodes its reported usages to RENDER_ATTACHMENT,
+            // while GPUCanvasConfiguration accepts COPY_SRC for backdrop reads.
+            config.usage |= if is_gl { caps.usages & wgpu::TextureUsages::COPY_SRC } else { wgpu::TextureUsages::COPY_SRC };
+            let wanted = if srgb_blend { config.format.remove_srgb_suffix() } else { config.format.add_srgb_suffix() };
             let format = if wanted != config.format && !is_gl {
                 config.view_formats.push(wanted);
                 wanted

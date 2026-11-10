@@ -1,4 +1,4 @@
-import { env } from "@/webEnv";
+import { env } from "../webEnv";
 import { convexClient, crossDomainClient } from "@convex-dev/better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 import { anonymousClient } from "better-auth/client/plugins";

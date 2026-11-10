@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { createTipRotation, type TipRotation } from "@jgengine/core/ui/loadingTips";
 import { menuIntentForKey } from "@jgengine/core/menu/menuNav";

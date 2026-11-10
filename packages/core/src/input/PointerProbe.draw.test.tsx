@@ -1,5 +1,6 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { afterEach, expect, test } from "bun:test";
-import { createElement } from "react";
+import { createElement } from "@jgengine/core/ui/jsx";
 
 import { mountTestDraws, type MountedTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
 import { PointerProbe } from "./PointerProbe.draw";
@@ -10,7 +11,7 @@ type PointerDeps = NonNullable<Parameters<PointerService["bind"]>[0]>;
 const env = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean; document?: unknown };
 const savedDocument = Object.getOwnPropertyDescriptor(globalThis, "document");
 
-// R3F's root reaches for `document`; the stand-in must not outlive this file, or a later test in the
+// The UI root reaches for `document`; the stand-in must not outlive this file, or a later test in the
 // same process sees a `document` with no DOM methods (the UI kit's style injection then throws).
 // The exact original is put back, so an earlier file's leftover `document: undefined` cannot keep the stub.
 afterEach(() => {

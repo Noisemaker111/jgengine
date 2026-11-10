@@ -24,6 +24,8 @@ export interface LiveStepOptions {
   fresh: boolean;
   /** The page to run on, built from the dev server's base URL. */
   targetUrl(base: string): URL;
+  /** An explicitly served page: skip starting the managed dev server. */
+  externalBase?: string;
   device: Device;
   size: SizeMode;
   viewport: ViewportOverride;
@@ -148,9 +150,14 @@ export async function runLiveSteps(options: LiveStepOptions): Promise<number> {
   });
 }
 
+/** An explicit target keeps its server; managed game steps start the dev server lazily. */
+export async function liveStepBase(external: string | undefined, managed: () => Promise<{ base: string }>): Promise<string> {
+  return external ?? (await managed()).base;
+}
+
 /** The steps on one warm browser; a function so a browser that dies under them is restarted once. */
 async function liveStepsOn(daemon: ShootDaemonState, options: LiveStepOptions): Promise<number> {
-  const dev = await ensureDaemonTarget(daemon, "dev");
+  const base = await liveStepBase(options.externalBase, () => ensureDaemonTarget(daemon, "dev"));
   return withDaemonWatch(daemon, withBrowserSession(
     {
       keep: false,
@@ -163,7 +170,7 @@ async function liveStepsOn(daemon: ShootDaemonState, options: LiveStepOptions): 
       hardDeadlineMs: options.timeoutMs * (options.steps.length + 1) + 120_000,
     },
     async ({ debugPort }) => {
-      const url = options.targetUrl(dev.base);
+      const url = options.targetUrl(base);
       url.searchParams.set(STEP_PAGE_PARAM, "1");
       const wanted = url.toString();
       const pages = await listPages(debugPort);
@@ -174,7 +181,7 @@ async function liveStepsOn(daemon: ShootDaemonState, options: LiveStepOptions): 
         if (same) reuse = page;
         // One step page per target on this dev server: an older one for another game, state or
         // option set, or one this run is told to boot again, goes.
-        else if (page.url.startsWith(dev.base)) await closePageTarget(debugPort, page.id);
+        else if (new URL(page.url).origin === url.origin) await closePageTarget(debugPort, page.id);
       }
       const started = performance.now();
       let session: CdpSession | null = null;
@@ -203,7 +210,7 @@ async function liveStepsOn(daemon: ShootDaemonState, options: LiveStepOptions): 
         await session.send("Runtime.enable");
         await applyDevice(session, options.device, options.size, options.viewport);
         if (!options.reuseStorage) await clearOriginStorage(session, url.origin);
-        await navigateCapturePageWithRetry(session, wanted, dev.base, options.timeoutMs, 2);
+        await navigateCapturePageWithRetry(session, wanted, base, options.timeoutMs, 2);
         await installFrameCounter(session);
         await session.evaluate(`globalThis.__jgStepPage = true`);
         booted = true;
@@ -218,7 +225,7 @@ async function liveStepsOn(daemon: ShootDaemonState, options: LiveStepOptions): 
         const driver = pageFlowDriver(page, {
           clock: null,
           async reload() {
-            await navigateCapturePageWithRetry(page, wanted, dev.base, options.timeoutMs, 2);
+            await navigateCapturePageWithRetry(page, wanted, base, options.timeoutMs, 2);
             await installFrameCounter(page);
           },
           shot: (name) => options.shot(page, name),

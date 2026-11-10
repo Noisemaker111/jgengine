@@ -1,20 +1,13 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type ReactNode,
-} from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
+import type { KeyboardEvent as ReactKeyboardEvent } from "@jgengine/core/ui/jsx/dom.view";
 
 import { moveGridFocus, type FocusDirection } from "@jgengine/core/ui/actionModel";
 
 import { DragGhost, DraggableCard, DropZone, useDragLayer } from "@jgengine/core/inventory/dragLayer.view";
 import { iconForItemId } from "@jgengine/core/ui/icons/gameIcons.view";
 import { IconTreatment, schoolForItem } from "@jgengine/core/ui/icons/iconTreatment.view";
-import { useInventoryGrid } from "@jgengine/react/hooks";
+import { useInventoryGrid } from "@jgengine/ui/hooks";
 
 /**
  * A drop-in NxN inventory grid bound to a live inventory: `<InventoryGrid inventoryId="bag" columns={4} />`

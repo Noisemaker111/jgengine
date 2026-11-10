@@ -1,6 +1,5 @@
-//! Builds the Rune element tree from the parsed spec, once per frame. Every
-//! slot read here is a plain `f32` load from the shared buffer — the cheap
-//! path that replaces per-widget React renders.
+//! Builds the Rune element tree when the spec or shared values change. CSS
+//! branches reuse Rune's retained subtrees until their own dependencies change.
 
 use rune::tok::{self, Theme};
 use rune::{Color, El, ScrollSpec, TextEdit, TextStyle, Tx, col, el, row, text, text_input};
@@ -13,11 +12,16 @@ use crate::{Ui, color, set_val, val};
 /// The root element: a full-viewport box the spec's top-level nodes position
 /// inside (absolute, pinned or flowed).
 pub fn view(s: &Ui, cx: &mut rune::Cx<Ui>) -> El {
+    s.rendered_revision.set(s.revision);
+    s.rendered_page_revision.set(s.page_revision);
+    let structure_changed = s.cache.prepare(&s.root, s.revision);
+    if structure_changed { widgets::begin_images(); }
     let t = tok::theme(cx.system_dark());
     let mut e = el().w_full().h_full().key("root");
     for (i, n) in s.root.iter().enumerate() {
         e = e.child(build(n, &i.to_string(), s, &t));
     }
+    if structure_changed { widgets::finish_images(); }
     e
 }
 
@@ -45,8 +49,9 @@ fn text_el(body: String, n_size: Option<f32>, weight: Option<f32>, mono: bool, c
     e.color(c)
 }
 
-fn build(n: &Node, path: &str, s: &Ui, t: &Theme) -> El {
+pub(crate) fn build(n: &Node, path: &str, s: &Ui, t: &Theme) -> El {
     match n {
+        Node::X(b) => crate::css::build(b, path, s, t),
         Node::Panel { children, style } => stack(children, false, style, s, t, path).key(path.to_string()),
         Node::Row { children, style } => stack(children, true, style, s, t, path).key(path.to_string()),
         Node::Scroll { children, style } => {

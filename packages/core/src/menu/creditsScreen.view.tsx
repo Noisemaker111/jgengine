@@ -1,4 +1,5 @@
-import { type CSSProperties, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { CreditsDocument, CreditsEntry } from "@jgengine/core/menu/credits";
 import { hudType } from "@jgengine/core/hud/hudTokens";

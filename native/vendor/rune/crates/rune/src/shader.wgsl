@@ -246,6 +246,25 @@ fn srgb_encode(x: vec3<f32>) -> vec3<f32> {
     return select(1.055 * pow(v, vec3<f32>(1.0 / 2.4)) - 0.055, v * 12.92, v <= vec3<f32>(0.0031308));
 }
 
+fn srgb_decode(x: vec3<f32>) -> vec3<f32> {
+    return select(pow((x + 0.055) / 1.055, vec3<f32>(2.4)), x / 12.92, x <= vec3<f32>(0.04045));
+}
+
+fn blend_layer(source: vec4<f32>, dest: vec4<f32>, mode: f32) -> vec4<f32> {
+    var s = clamp(source.rgb / max(source.a, 0.000001), vec3<f32>(0.0), vec3<f32>(1.0));
+    var d = clamp(dest.rgb / max(dest.a, 0.000001), vec3<f32>(0.0), vec3<f32>(1.0));
+    if (g.flags.x < 0.5) { s = srgb_encode(s); d = srgb_encode(d); }
+    var mixed = s * d;
+    if (mode == 3.0) { mixed = select(1.0 - 2.0 * (1.0 - s) * (1.0 - d), 2.0 * s * d, d <= vec3<f32>(0.5)); }
+    if (mode == 4.0) { mixed = s + d - s * d; }
+    if (mode == 5.0) {
+        let curve = select(sqrt(d), ((16.0 * d - 12.0) * d + 4.0) * d, d <= vec3<f32>(0.25));
+        mixed = select(d + (2.0 * s - 1.0) * (curve - d), d - (1.0 - 2.0 * s) * d * (1.0 - d), s <= vec3<f32>(0.5));
+    }
+    if (g.flags.x < 0.5) { mixed = srgb_decode(mixed); }
+    return vec4<f32>((1.0 - dest.a) * source.rgb + dest.a * source.a * mixed, source.a);
+}
+
 /// One image texel, premultiplied (the atlas holds straight alpha) so filtering doesn't darken edges.
 fn image_texel(t: vec2<i32>, premultiplied: bool) -> vec4<f32> {
     let c = textureLoad(images, t, 0);
@@ -256,6 +275,11 @@ fn image_texel(t: vec2<i32>, premultiplied: bool) -> vec4<f32> {
     }
     if premultiplied { return c; }
     return vec4<f32>(c.rgb * c.a, c.a);
+}
+
+fn image_index(t: vec2<i32>, lo: vec2<i32>, span: vec2<i32>, repeat: vec2<bool>) -> vec2<i32> {
+    let wrapped = lo + ((t - lo) % span + span) % span;
+    return select(clamp(t, lo, lo + span - vec2<i32>(1)), wrapped, repeat);
 }
 
 // Arc length to the point nearest `p` (rect-local) on the centre line of a `bw`-wide ring inside
@@ -393,8 +417,10 @@ fn fs(i: Out) -> @location(0) vec4<f32> {
         }
         // Float intermediates accumulate One/One without saturation. Clamp before applying
         // this scope's opacity so nesting preserves plus-lighter's bounded coverage.
-        return select(color, clamp(color, vec4(0.0), vec4(1.0)), i.params.x == 1.0) * i.fill.a
+        color = select(color, clamp(color, vec4(0.0), vec4(1.0)), i.params.x == 1.0) * i.fill.a
             * clip_alpha(screen, i.clip, i.fade) * hole_alpha(screen, i.radii);
+        if (i.params.x >= 2.0) { color = blend_layer(color, textureLoad(atlas, vec2<i32>(floor(screen)), 0), i.params.x); }
+        return color;
     }
     let kind = i.params.y;
     if (kind > 11.5) { discard; }
@@ -472,17 +498,26 @@ fn fs(i: Out) -> @location(0) vec4<f32> {
             col = mix(i.fill, i.border, t) * (ring * dash_cov(arc.x, arc.y, i.uv.xyz));
         } else {
             // Bilinear, clamped to the image's own texels so neighbours in the atlas never bleed.
-            let local = (i.p - i.rect.xy) * i.uv.zw / i.rect.zw - vec2<f32>(0.5);
+            var unit = (i.p - i.rect.xy) / i.rect.zw;
+            var repeat = vec2<bool>(false);
+            var visible = true;
+            if (i.border.z > 0.0 && i.border.w > 0.0) {
+                unit = (i.p - i.rect.xy - i.border.xy) / i.border.zw;
+                let flags = u32(i.fill.r + 0.5);
+                repeat = vec2<bool>((flags & 1u) != 0u, (flags & 2u) != 0u);
+                visible = all(repeat | ((unit >= vec2<f32>(0.0)) & (unit < vec2<f32>(1.0))));
+            }
+            let local = unit * i.uv.zw - vec2<f32>(0.5);
             let lo = vec2<i32>(i.uv.xy);
-            let hi = lo + vec2<i32>(i.uv.zw) - vec2<i32>(1);
+            let span = max(vec2<i32>(i.uv.zw), vec2<i32>(1));
             let base = floor(local);
             let f = local - base;
-            let t0 = clamp(lo + vec2<i32>(base), lo, hi);
-            let t1 = clamp(lo + vec2<i32>(base) + vec2<i32>(1, 1), lo, hi);
+            let t0 = image_index(lo + vec2<i32>(base), lo, span, repeat);
+            let t1 = image_index(lo + vec2<i32>(base) + vec2<i32>(1, 1), lo, span, repeat);
             let premultiplied = i.params.z > 0.5;
             let c = mix(mix(image_texel(t0, premultiplied), image_texel(vec2<i32>(t1.x, t0.y), premultiplied), f.x),
                         mix(image_texel(vec2<i32>(t0.x, t1.y), premultiplied), image_texel(t1, premultiplied), f.x), f.y);
-            col = c * (i.fill.a * clamp(0.5 - d, 0.0, 1.0));
+            col = c * (i.fill.a * clamp(0.5 - d, 0.0, 1.0)) * select(0.0, 1.0, visible);
         }
     } else if (kind > 4.5 && kind < 5.5) {
         col = i.fill * segment(i.pos.xy + projection.xy, i.radii.xy, i.radii.zw, i.params.x, i.params.z > 0.5);

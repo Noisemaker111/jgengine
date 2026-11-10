@@ -1,4 +1,5 @@
-import { Fragment, type CSSProperties, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { Fragment, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 import { actionLabel, type ActionCodesMap } from "@jgengine/core/input/actionBindings";
 import { useDisplayProfile } from "../ui/display.view";
 import { Keycap } from "../input/keyHint.view";

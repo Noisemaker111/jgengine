@@ -1,7 +1,8 @@
-import type { ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { cn } from "@/kit/cn";
+import { cn } from "../../kit/cn";
 
 interface StorePriceButtonProps {
   price: number;

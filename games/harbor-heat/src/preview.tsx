@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 export default function Preview() {
   return (
     <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-gradient-to-b from-[#3fa9e8] via-[#ffd9a0] to-[#e8c37a] font-sans">

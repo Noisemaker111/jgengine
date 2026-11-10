@@ -1,10 +1,11 @@
-import type { CSSProperties, ReactNode } from "react";
-import { useDisplayProfile } from "@jgengine/react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
+import { useDisplayProfile } from "@jgengine/ui";
 import { GameCursor } from "@jgengine/core/ui/cursor.view";
 import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
-import { useCurrency, useEntityStat, usePlayer } from "@jgengine/react/hooks";
+import { useCurrency, useEntityStat, usePlayer } from "@jgengine/ui/hooks";
 import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
-import { useStore } from "@jgengine/react/store";
+import { useStore } from "@jgengine/ui/store";
 import { CHARACTERS } from "../../characters";
 import { characterIdStore } from "../../stores";
 import { ReclaimerPortrait } from "../components/Portrait";

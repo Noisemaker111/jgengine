@@ -1,4 +1,5 @@
-import { useEffect, useMemo, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useMemo, type ReactNode } from "@jgengine/core/ui/jsx";
 import { BoxGeometry, Group, GridHelper, Mesh, MeshStandardMaterial, PlaneGeometry } from "three";
 import { disposeObjectTree, SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 
@@ -7,7 +8,7 @@ import type { ViewportsConfig } from "@jgengine/core/game/viewports";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { localPlayers } from "@jgengine/core/runtime/localPlayers";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 import { ViewportHuds } from "@jgengine/core/hud/ViewportHuds.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 

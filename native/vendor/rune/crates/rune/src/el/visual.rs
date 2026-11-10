@@ -38,7 +38,7 @@ pub struct VisualCold {
     pub(crate) clip_corners: Option<[f32; 4]>,
     /// A round hole through this element and its subtree (`El::cutout_circle`): centre x and y
     /// from the element's top-left, and the radii it's clear within and whole from, in points.
-    pub(crate) cutout: Option<[f32; 4]>,
+    pub(crate) cutout: Vec<[f32; 4]>,
     pub icon: Option<(&'static Icon, Color)>,
     /// The icon's colour came from `El::color`; without it the icon takes the window's
     /// foreground (`Cx::foreground`) when the view sets one.
@@ -56,6 +56,8 @@ pub struct VisualCold {
     pub pixels: Option<crate::pixels::Pixels>,
     /// How `pixels` keeps its aspect ratio; `None` stretches it to the rect.
     pub pixels_fit: Option<crate::SurfaceFit>,
+    /// Image tile offset, tile size in points, and repeat flags, independent of the element rect.
+    pub pixels_pattern: Option<[f32; 6]>,
     /// An effect slot (`El::effect`).
     pub(crate) effect: Option<crate::el::effect::EffectSlot>,
     /// Backdrop blur standard deviation in points (`El::backdrop_blur`); 0 is off.
@@ -109,6 +111,8 @@ pub struct VisualCold {
     /// `El::layer_opacity`: static alpha its whole subtree composites at, as one layer.
     pub(crate) layer_opacity: f32,
     pub blur: f32,
+    pub mix_blend: crate::render::Blend,
+    pub isolate: bool,
     /// `El::rotate`, in radians clockwise.
     pub(crate) rotate: f32,
     /// App-defined tag a compositor reads per instance (`Runtime::marks`); 0 inherits the parent's.
@@ -131,7 +135,7 @@ impl Empty for VisualCold {
         clip: None,
         clip_radius: None,
         clip_corners: None,
-        cutout: None,
+        cutout: Vec::new(),
         icon: None,
         icon_inked: false,
         icon_one_color: false,
@@ -141,6 +145,7 @@ impl Empty for VisualCold {
         shape: None,
         pixels: None,
         pixels_fit: None,
+        pixels_pattern: None,
         effect: None,
         backdrop_blur: 0.0,
         hover_motion: None,
@@ -167,6 +172,8 @@ impl Empty for VisualCold {
         paint_alpha: 1.0,
         layer_opacity: 1.0,
         blur: 0.0,
+        mix_blend: crate::render::Blend::SourceOver,
+        isolate: false,
         rotate: 0.0,
         mark: 0,
         mirror_rtl: false,

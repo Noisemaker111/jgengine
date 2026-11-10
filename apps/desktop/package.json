@@ -12,17 +12,12 @@
   },
   "dependencies": {
     "@jgengine/editor": "workspace:*",
-    "@jgengine/react": "workspace:*",
-    "@jgengine/shell": "workspace:*",
-    "react": "catalog:",
-    "react-dom": "catalog:"
+    "@jgengine/ui": "workspace:*",
+    "@jgengine/shell": "workspace:*"
   },
   "devDependencies": {
     "@tailwindcss/vite": "catalog:",
     "@tauri-apps/cli": "^2",
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
-    "@vitejs/plugin-react": "catalog:",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:"

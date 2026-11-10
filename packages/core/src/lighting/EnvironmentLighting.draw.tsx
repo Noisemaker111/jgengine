@@ -1,6 +1,7 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import { reportTextureLoadError } from "@jgengine/core/devtools/textureErrors";
-import { useRef } from "react";
+import { useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import { EXRLoader } from "three/examples/jsm/loaders/EXRLoader.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";

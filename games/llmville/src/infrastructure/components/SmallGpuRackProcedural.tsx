@@ -1,4 +1,5 @@
-import { useRef, type RefObject } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useRef, type RefObject } from "@jgengine/core/ui/jsx";
 import {
   BoxGeometry,
   type BufferGeometry,
@@ -16,7 +17,7 @@ import {
 } from "three";
 
 import type { HardwareModelId } from "@llmville/game/infrastructure/catalog";
-import { GPU_SPLOT_WORKLOAD, workloadForRackSlot, type GpuSlotWorkload } from "@/infrastructure/computeUnits";
+import { GPU_SPLOT_WORKLOAD, workloadForRackSlot, type GpuSlotWorkload } from "../computeUnits";
 import {
   getRackCoolingUnitDefinition,
   type RackCoolantType,

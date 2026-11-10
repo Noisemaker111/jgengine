@@ -1,15 +1,16 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useConvex } from "convex/react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 
 import { createConvexBackend } from "@jgengine/convex/createConvexBackend";
 import type { ShellMultiplayer } from "@jgengine/core/multiplayer/multiplayer.draw";
 import { GameHost } from "@jgengine/shell/GameHost";
 import { LLMVILLE_GAME_ID } from "@llmville/game/game/runtime/definition";
-import { game } from "@/game.config";
-import { RackHardwareDragVisualProvider } from "@/infrastructure/rackHardwareDragVisual";
-import { LlmvilleSessionProvider, type LlmvilleSessionIdentity } from "@/runtime/llmvilleSession";
-import { TabletNavProvider } from "@/tablet/components/tabletNav";
-import { useTabletNav } from "@/tablet/tablet";
+import { game } from "../../game.config";
+import { RackHardwareDragVisualProvider } from "../../infrastructure/rackHardwareDragVisual";
+import { LlmvilleSessionProvider, type LlmvilleSessionIdentity } from "../llmvilleSession";
+import { TabletNavProvider } from "../../tablet/components/tabletNav";
+import { useTabletNav } from "../../tablet/tablet";
 
 /** The shell joins the shared world (`runtime:*`) and carries poses on its presence lane (`presence:*`). */
 function useWorldMultiplayer(userId: string): ShellMultiplayer {

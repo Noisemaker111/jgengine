@@ -1,10 +1,5 @@
-import {
-  createContext,
-  useContext,
-  useSyncExternalStore,
-  type CSSProperties,
-  type ReactNode,
-} from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { createContext, useContext, useSyncExternalStore, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import {
   COLORBLIND_MATRICES,

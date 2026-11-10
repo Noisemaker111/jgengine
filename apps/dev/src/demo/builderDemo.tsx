@@ -1,9 +1,10 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { StageDraw } from "@jgengine/core/stage/stageDraw.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import * as THREE from "three";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";

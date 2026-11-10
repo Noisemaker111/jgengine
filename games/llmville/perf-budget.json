@@ -1,0 +1,5 @@
+{
+  "bundleKb": 1023,
+  "bundleBaseline": "2026-11-10 host landing runner build at a6a4294e3: the new hosted LLMville entry loads its backend adapters, world and tablet. Its own JS/CSS measured 929.3 KiB beyond the shared engine (1891.3 KiB), for 2820.7 KiB total download. Initial budget adds 10% headroom, matching the other game entries. This is a download-size measurement, not a frame-performance baseline.",
+  "baseline": "The new dev-runner entry uses the engine's shared 16.7 ms p95 frame target and zero post-warmup program links. No frame-performance measurement or draw reference has been recorded; the backend-dependent main flow remains unmeasured."
+}

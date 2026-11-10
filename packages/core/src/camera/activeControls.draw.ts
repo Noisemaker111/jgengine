@@ -1,7 +1,7 @@
 /**
  * Camera control rigs a draw mounts (orbit, inspection, fly) register here so modal interactions —
  * the transform gizmo, a drag handle — can suspend them while they own the pointer. Replaces the
- * r3f `state.controls` slot drei's `makeDefault` used to fill.
+ * active camera-controls slot.
  * @internal
  */
 const active = new Set<{ enabled?: boolean }>();

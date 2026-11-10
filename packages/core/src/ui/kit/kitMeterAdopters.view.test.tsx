@@ -1,5 +1,6 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { describe, expect, test } from "bun:test";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderToStaticMarkup } from "@jgengine/core/ui/jsx/markup";
 
 import { createWaveRunner } from "@jgengine/core/waves/waveRunner";
 import { createComboMeter } from "@jgengine/core/combat/comboMeter";

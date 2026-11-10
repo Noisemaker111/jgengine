@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { IsolatedEntityModel } from '@jgengine/core/model/SceneModels.draw';
 import type { ModelAnimationConfig } from '@jgengine/core/game/playableGame';
 import type { Dive } from './state';

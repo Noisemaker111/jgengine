@@ -10,7 +10,7 @@ import { startPath, type PerfPath } from "./perf-breakdown";
 import { GATE_SIZE } from "./perf-gate";
 import { acquirePerfLock } from "./perf-lock";
 import { cappedClockProblem, PAGE_READY_MS, parseSettingSpec, perfPageUrl, perfSettingsScript, probeFrameClockMs, profiledWindow, SAMPLE_FRAMES_SCRIPT, slowCpuWindow, type PerfSettingOverride } from "./perf-play";
-import { cpuBusyPct, frameScore, LOAD_RESOURCES_SCRIPT, loadScore, mainScore, productionProblem, profileSources, renderScorecard, scoreProfile, SLOW_CPU_RATE, type LoadScore, type Scorecard } from "./perf-scorecard";
+import { cpuBusyPct, frameScore, LOAD_RESOURCES_SCRIPT, loadScore, mainScore, productionProblem, profileSources, recordScorecardInTally, renderScorecard, scoreProfile, SLOW_CPU_RATE, type LoadScore, type Scorecard } from "./perf-scorecard";
 import { ensureProdServer, type PerfBuild, type ProdServer } from "./prodServer";
 import { treeFingerprint } from "./servedTree";
 import { localGet } from "./localhostHttp";
@@ -91,6 +91,8 @@ export interface AbArgs {
   marginPct: number;
   path: PerfPath;
   settings: PerfSettingOverride[];
+  params: Record<Side, Array<[string, string]>>;
+  tally: string | null;
   out: string;
   markdown: boolean;
   /** Self-check: busy-wait this many ms in every frame of the branch page, a known regression the run must find. */
@@ -102,7 +104,8 @@ export interface AbArgs {
 }
 
 const USAGE = `usage: bun run perf ab [--games a,b] [--base <ref|dir>] [--window s] [--blocks min,max] [--margin pct]
-                       [--path walk|still] [--stat pNN] [--set key=value ...] [--out dir] [--markdown] [--plant-ms n] [--production]
+                       [--path walk|still] [--stat pNN] [--set key=value ...] [--base-param key=value] [--branch-param key=value]
+                       [--out dir] [--markdown] [--plant-ms n] [--production]
 
   Both sides are Vite dev servers unless --production is given; with it both are the build players get
   (minified, bundled, production React; built once per side, under a minute, and reused until the served
@@ -129,7 +132,10 @@ const USAGE = `usage: bun run perf ab [--games a,b] [--base <ref|dir>] [--window
   --stat     which frame time of each window is compared: p50 (default, the middle frame) or a tail
              such as p90 or p99, for a change that moves the slow frames and not the typical one
   --set     a setting for both sides, as perf <game> --set
+  --base-param / --branch-param  query parameter on that side only; repeat for more
+             (e.g. --branch-param ui=rune compares Rune with the base's existing UI)
   --out      where each game's windows are written as JSON (default .scratch/perf-ab)
+  --tally    record both scorecards in this Tally group as base/branch with their measured commits
   --production  time both sides' production builds, what players get, instead of their dev servers
   --markdown print the tables as Markdown
   --plant-ms busy-wait this many ms in every frame of the branch page: a known regression, to check
@@ -138,7 +144,7 @@ const USAGE = `usage: bun run perf ab [--games a,b] [--base <ref|dir>] [--window
 export function parseAbArgs(argv: readonly string[]): AbArgs | "help" {
   const args: AbArgs = {
     games: null, base: null, windowSeconds: DEFAULT_WINDOW_SECONDS, minBlocks: DEFAULT_MIN_BLOCKS, maxBlocks: DEFAULT_MAX_BLOCKS,
-    marginPct: DEFAULT_MARGIN_PCT, path: "still", settings: [], out: join(repoRoot, ".scratch", "perf-ab"), markdown: false, plantMs: 0, percentile: 50, build: "dev",
+    marginPct: DEFAULT_MARGIN_PCT, path: "still", settings: [], params: { base: [], branch: [] }, tally: null, out: join(repoRoot, ".scratch", "perf-ab"), markdown: false, plantMs: 0, percentile: 50, build: "dev",
   };
   const number = (flag: string, value: string, min: number): number => {
     const parsed = Number(value);
@@ -175,7 +181,16 @@ export function parseAbArgs(argv: readonly string[]): AbArgs | "help" {
         args.path = value;
         break;
       case "--set": args.settings.push(parseSettingSpec(value)); break;
+      case "--base-param":
+      case "--branch-param": {
+        const at = value.indexOf("=");
+        const key = value.slice(0, at).trim();
+        if (at < 1 || key === "") throw new Error(`${arg} needs key=value`);
+        args.params[arg === "--base-param" ? "base" : "branch"].push([key, value.slice(at + 1)]);
+        break;
+      }
       case "--out": args.out = resolve(value); break;
+      case "--tally": args.tally = value; break;
       case "--plant-ms": args.plantMs = number(arg, value, 0); break;
       case "--stat": {
         const match = /^p(\d{1,2}(?:\.\d+)?)$/.exec(value);
@@ -383,6 +398,11 @@ export function plantScript(ms: number): string {
 
 type Side = "base" | "branch";
 
+/** The measured page, including the renderer/scene parameters recorded for its side. */
+export function abPageUrl(base: string, game: string, side: Side, args: AbArgs): URL {
+  return perfPageUrl({ base, game, quality: "high", params: args.params[side] });
+}
+
 export interface Home {
   x: number;
   y: number;
@@ -451,7 +471,7 @@ async function openSide(side: Side, debugPort: number, browser: CdpSession, serv
   console.error(`perf ab: ${game}: loading the ${side} page`);
   const load = async () => {
     const base = await serve(side);
-    await navigateCapturePageWithRetry(session, perfPageUrl({ base, game, quality: "high" }).toString(), base, PAGE_READY_MS);
+    await navigateCapturePageWithRetry(session, abPageUrl(base, game, side, args).toString(), base, PAGE_READY_MS);
   };
   const pcBusyPct = await cpuBusyPct();
   const loadAt = Date.now();
@@ -467,11 +487,14 @@ async function openSide(side: Side, debugPort: number, browser: CdpSession, serv
   }
   const readyMs = Date.now() - loadAt;
   const resources = (await session.evaluate<Array<[string, number]>>(LOAD_RESOURCES_SCRIPT)) ?? [];
+  const loaded = loadScore(resources, readyMs);
+  const problem = productionProblem({ build: args.build, slow: null, pcBusyPct, frame: frameScore([]), main: null, load: loaded });
+  if (problem !== null) throw new Error(`the ${side} page was asked for as a production build but was not one: ${problem}`);
   await session.evaluate(`new Promise((r) => setTimeout(r, ${WARMUP_MS}))`, { awaitPromise: true });
   const pose = await session.evaluate<{ ok: boolean; position?: number[]; rotationY?: number }>(`window.__jgengineAgent?.handle?.({ method: "player_pose" }) ?? { ok: false }`);
   const [x, y, z] = pose?.position ?? [];
   const home = pose?.ok === true && x !== undefined && y !== undefined && z !== undefined ? { x, y, z, yaw: pose.rotationY ?? 0 } : null;
-  return { side, session, browser, home, homeFailed: false, stopPath: async () => {}, frozen: [], load: loadScore(resources, readyMs), pcBusyPct };
+  return { side, session, browser, home, homeFailed: false, stopPath: async () => {}, frozen: [], load: loaded, pcBusyPct };
 }
 
 /** The bridge request that puts the player back where the window's walk starts. */
@@ -828,7 +851,13 @@ async function main(): Promise<number> {
         }
         const result: AbGameResult = { ...(measured as Omit<AbGameResult, "lockSeconds">), lockSeconds: Math.round((Date.now() - heldAt) / 1000) };
         results.push(result);
-        writeFileSync(join(parsed.out, `${game}.json`), `${JSON.stringify({ base: base.label, branch: branchHead, build: parsed.build, plantMs: parsed.plantMs, ...result }, null, 2)}\n`);
+        writeFileSync(join(parsed.out, `${game}.json`), `${JSON.stringify({ base: base.label, branch: branchHead, build: parsed.build, params: parsed.params, plantMs: parsed.plantMs, ...result }, null, 2)}\n`);
+        if (parsed.tally !== null) {
+          for (const side of ["base", "branch"] as const) recordScorecardInTally(game, result.cards[side], parsed.tally, {
+            side, commit: side === "base" ? base.commit : git(repoRoot, ["rev-parse", "HEAD"]).out,
+            branch: side === "base" ? base.label : git(repoRoot, ["branch", "--show-current"]).out,
+          });
+        }
         console.error(`perf ab: ${game} ${CALL_TEXT[result.verdict.call]} ${result.verdict.changePct}% (${result.verdict.lowPct}..${result.verdict.highPct}) over ${result.verdict.blocks} pairs, ${result.lockSeconds} s holding the lock`);
       } catch (error) {
         failure = `${game}: ${error instanceof Error ? error.message : String(error)}`;
@@ -848,6 +877,9 @@ async function main(): Promise<number> {
     const plant = parsed.plantMs > 0 ? ` A ${parsed.plantMs} ms busy-wait was planted in every branch frame.` : "";
     const what = parsed.build === "production" ? "the production build players get" : "the dev servers' build (development React, unbundled modules), not what players get";
     console.log(`Branch ${branchHead} against base ${base.label}, ${what}. Frames are every measured window pooled; the main thread, garbage and slow-CPU rows are one ${SCORE_SECONDS} s window a side.\n`);
+    for (const side of ["base", "branch"] as const) {
+      if (parsed.params[side].length > 0) console.log(`${side} params: ${parsed.params[side].map(([key, value]) => `${key}=${value}`).join(" ")}\n`);
+    }
     console.log(`${renderAbScorecards(results, parsed.markdown)}\n`);
     console.log(`Verdict: frame time per game, ${parsed.windowSeconds} s windows taken in turns, ${parsed.path === "walk" ? "walking" : "standing still"}, ${GATE_SIZE.width}x${GATE_SIZE.height}, high tier, uncapped. Positive change = the branch's frames take longer.${plant}\n`);
     console.log(renderAbTable(results, { markdown: parsed.markdown, marginPct: parsed.marginPct, percentile: parsed.percentile }));

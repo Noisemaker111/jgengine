@@ -1,4 +1,5 @@
 import { devServerWatch, standaloneOptimizeDeps } from "./gameFiles";
+import { withJsxSource } from "./jsxSource";
 import type { TemplateFile } from "./types";
 
 const editorPackageJson = (engineVersion: string) => `${JSON.stringify(
@@ -12,18 +13,13 @@ const editorPackageJson = (engineVersion: string) => `${JSON.stringify(
       "@jgengine/core": `^${engineVersion}`,
       "@jgengine/editor": `^${engineVersion}`,
       "@jgengine/node": `^${engineVersion}`,
-      "@jgengine/react": `^${engineVersion}`,
+      "@jgengine/ui": `^${engineVersion}`,
       "@jgengine/shell": `^${engineVersion}`,
-      react: "19.2.3",
-      "react-dom": "19.2.3",
       three: "^0.187.0",
     },
     devDependencies: {
       "@tailwindcss/vite": "^4.3.3",
-      "@types/react": "^19",
-      "@types/react-dom": "^19",
       "@types/three": "^0.187.0",
-      "@vitejs/plugin-react": "^6.1.2",
       tailwindcss: "^4.3.3",
       vite: "^8.3.5",
     },
@@ -48,7 +44,7 @@ const editorIndexHtml = `<!doctype html>
 `;
 
 const editorIndexCss = `@import "tailwindcss" source(".");
-@source "../node_modules/@jgengine/react/dist";
+@source "../node_modules/@jgengine/ui/dist";
 @source "../node_modules/@jgengine/shell/dist";
 @source "../node_modules/@jgengine/editor/dist";
 
@@ -63,7 +59,6 @@ body,
 
 const editorViteConfig = `import { editorHostPlugin } from "@jgengine/node/editorHostPlugin";
 import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 // The folder to author scenes for is handed in by \`jgengine editor <dir>\`.
@@ -71,7 +66,7 @@ const dir = process.env.JG_EDITOR_DIR ?? process.cwd();
 const assetsDir = process.env.JG_EDITOR_ASSETS;
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), editorHostPlugin({ dir, assetsDir })],
+  plugins: [tailwindcss(), editorHostPlugin({ dir, assetsDir })],
   clearScreen: false,
 ${standaloneOptimizeDeps}
 ${devServerWatch}
@@ -80,8 +75,8 @@ ${devServerWatch}
 
 const editorMainTsx = `import "./index.css";
 
-import { useEffect, useState } from "react";
-import { createRoot } from "react-dom/client";
+import { useEffect, useState } from "@jgengine/core/ui/jsx";
+import { createRoot } from "@jgengine/core/ui/jsx/client.view";
 
 import type { EditorLayersInput } from "@jgengine/core/editor/index";
 import { installSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
@@ -130,11 +125,11 @@ createRoot(root).render(<App />);
  * @internal
  */
 export function editorScaffold(engineVersion: string): TemplateFile[] {
-  return [
+  return withJsxSource([
     { path: "index.html", contents: editorIndexHtml },
     { path: "package.json", contents: editorPackageJson(engineVersion) },
     { path: "vite.config.ts", contents: editorViteConfig },
     { path: "src/index.css", contents: editorIndexCss },
     { path: "src/main.tsx", contents: editorMainTsx },
-  ];
+  ]);
 }

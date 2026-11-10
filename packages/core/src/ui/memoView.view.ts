@@ -1,4 +1,4 @@
-import { isValidElement, memo, useRef, type ComponentType, type NamedExoticComponent, type ReactNode } from "react";
+import { isValidElement, memo, useRef, type ComponentType, type NamedExoticComponent, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { isLive, live, type LiveValue } from "./liveValue";
 

@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
-import { useGame, useGameStore } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
-import { useStore } from "@jgengine/react/store";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useState } from "@jgengine/core/ui/jsx";
+import { useGame, useGameStore } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
+import { useStore } from "@jgengine/ui/store";
 import { KitActionPrompt, KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 import {

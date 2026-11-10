@@ -1,5 +1,5 @@
 import { describe, expect, mock, test } from "bun:test";
-import { Suspense, type ReactNode } from "react";
+import { Suspense, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";

@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
-import { useActivePrompt } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
+import { useActivePrompt } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
 import { buildSceneObjectPrompts } from "@llmville/game/simulation/interaction";
-import { engineActions, type GameEngine } from "@/runtime/gameEngine";
+import { engineActions, type GameEngine } from "./gameEngine";
 
 export function useInteractionPromptSync(engine: GameEngine): void {
   const ctx = useGameContext();

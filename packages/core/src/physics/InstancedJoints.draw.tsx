@@ -1,9 +1,10 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import * as THREE from "three";
 
 import type { PhysicsWorld } from "@jgengine/core/physics/physicsWorld";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
-import { useRef } from "react";
+import { useRef } from "@jgengine/core/ui/jsx";
 
 /** Props for InstancedJoints: the physics world whose joints are drawn and the line color. */
 export interface InstancedJointsProps {

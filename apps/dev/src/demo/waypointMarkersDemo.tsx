@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useCallback, useRef, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 import { HudOverlay } from "@jgengine/core/hud/hudOverlay.draw";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";

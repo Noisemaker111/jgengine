@@ -3,8 +3,9 @@
  * open the inventory); which physical key that is comes from the input map. Beside it sits the engine's
  * own `KeybindingMenu` over `createRebindSession`: change a key there and the very next press uses it.
  */
-import { createElement } from "react";
-import { createRoot, type Root } from "react-dom/client";
+// Engine components draw through the engine's own UI runtime, mounted into an element the page owns.
+import { createElement } from "@jgengine/core/ui/jsx";
+import { createRoot, type Root } from "@jgengine/core/ui/jsx/client.view";
 
 import type { ActionCodes, ActionCodesMap } from "@jgengine/core/input/actionBindings";
 import { applyBindingOverrides } from "@jgengine/core/input/bindingOverrides";

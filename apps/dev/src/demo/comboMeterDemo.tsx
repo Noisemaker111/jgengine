@@ -1,4 +1,5 @@
-import { useEffect, useMemo, type CSSProperties, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useMemo, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createComboMeter, type ComboTier } from "@jgengine/core/combat/comboMeter";

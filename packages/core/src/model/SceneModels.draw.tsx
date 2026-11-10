@@ -1,9 +1,10 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-assets
-import { Component, Suspense, useMemo, useSyncExternalStore, type ReactNode } from "react";
+import { Component, Suspense, useMemo, useSyncExternalStore, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { EntitySpriteConfig, ModelConfig } from "@jgengine/core/game/playableGame";
 import { reportFallbackSeam, type FallbackSeam } from "@jgengine/core/devtools/fallbackSeams";
-import { useOptionalGameContext } from "@jgengine/react/provider";
+import { useOptionalGameContext } from "@jgengine/ui/provider";
 import { modelForLook } from "./modelLook";
 
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";

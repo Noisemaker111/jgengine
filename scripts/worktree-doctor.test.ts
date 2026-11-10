@@ -92,17 +92,17 @@ describe("dependencyPlan", () => {
           devDependencies: { "ts-morph": "^28.0.0" },
         }),
       );
-      mkdirSync(join(root, "packages", "react"), { recursive: true });
+      mkdirSync(join(root, "packages", "ui"), { recursive: true });
       writeFileSync(
-        join(root, "packages", "react", "package.json"),
-        JSON.stringify({ name: "@jgengine/react", dependencies: { three: "^0.182.0", "@jgengine/core": "workspace:*" } }),
+        join(root, "packages", "ui", "package.json"),
+        JSON.stringify({ name: "@jgengine/ui", dependencies: { three: "^0.182.0", "@jgengine/core": "workspace:*" } }),
       );
       mkdirSync(join(root, "registry"), { recursive: true });
       writeFileSync(join(root, "registry", "package.json"), JSON.stringify({ name: "registry" }));
       expect(dependencyPlan(root)).toEqual({
         root: ["ts-morph"],
-        workspaces: [{ dir: "packages/react", deps: ["three", "@jgengine/core"] }],
-        ranges: { "ts-morph": "^28.0.0", "packages/react/three": "^0.182.0" },
+        workspaces: [{ dir: "packages/ui", deps: ["three", "@jgengine/core"] }],
+        ranges: { "ts-morph": "^28.0.0", "packages/ui/three": "^0.182.0" },
       });
     } finally {
       rmSync(root, { recursive: true, force: true });
@@ -183,7 +183,7 @@ describe("missingPackages", () => {
     try {
       mkdirSync(join(root, "node_modules", "@jgengine", "core"), { recursive: true });
       writeFileSync(join(root, "node_modules", "@jgengine", "core", "package.json"), "{}");
-      expect(missingPackages(root, ["@jgengine/core", "@jgengine/react"])).toEqual(["@jgengine/react"]);
+      expect(missingPackages(root, ["@jgengine/core", "@jgengine/ui"])).toEqual(["@jgengine/ui"]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

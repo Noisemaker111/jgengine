@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo } from "react";
+import { useLayoutEffect, useMemo } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 /** Writes where an entity's shots visibly leave from, in world space; false when it has none right now. */

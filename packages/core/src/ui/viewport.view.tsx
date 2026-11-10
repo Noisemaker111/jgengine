@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 /**
  * Shared mobile-composition runtime. `GameViewportProvider` allocates the live
  * game viewport once — tracking `visualViewport`, safe-area insets, orientation
@@ -7,18 +8,7 @@
  * subsystem independently claiming an edge.
  */
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type CSSProperties,
-  type ReactNode,
-  type RefObject,
-} from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type RefObject } from "@jgengine/core/ui/jsx";
 import {
   computeGameplayRect,
   detectLayoutCollisions,

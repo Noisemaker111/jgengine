@@ -57,7 +57,6 @@ impl<S: 'static> Runtime<S> {
         let now = self.t;
         let vp = [0.0, 0.0, self.viewport.0 * s, self.viewport.1 * s];
         let mut glyph_count = 0usize;
-        let mut backdrop_blurs = 0usize;
         let mut ambient: Option<f32> = None;
         // Retain scope capacity across frames. Records preserve absolute instance indices
         // for images, video insertions, retained springs and compositor list ranges.
@@ -96,7 +95,7 @@ impl<S: 'static> Runtime<S> {
         let tree_order = ((flying || self.has_sticky || self.has_raise) && !self.layer_paint_order.is_empty()) || self.layer_paint_order.windows(2).any(|pair| {
             let n = &self.nodes[pair[0]];
             self.nodes[pair[1]].parent == Some(pair[0]) && ((self.has_dissolve && self.dissolve_scratch[pair[0]]) || n.vis_flags.cache() || n.vis.clip_radius.is_some() || n.vis.group_opacity.is_some() || n.group_fade
-                || n.vis.layer_opacity < 1.0 || fades(n.looping.as_deref().copied())
+                || n.vis.layer_opacity < 1.0 || n.vis.isolate || n.vis.mix_blend != crate::render::Blend::SourceOver || fades(n.looping.as_deref().copied())
                 || self.scene.presented(n.id).is_some_and(|p| (p.opacity > 0.0 && p.opacity < 1.0) || p.blur > 0.0 || p.transform.rotate.abs() > 1e-6))
         });
         let default_ring = self.default_ring_owner();
@@ -294,7 +293,7 @@ impl<S: 'static> Runtime<S> {
             // A fading node with children, or a shape whose pieces overlap, takes its opacity
             // once as a layer rather than each primitive taking it over the ones beneath. So
             // does a layer opacity over two paints of the node's own (a label on its fill).
-            let mut isolate = effective_opacity > 0.001 && (p.blur > 0.0 || dissolve
+            let mut isolate = effective_opacity > 0.001 && (p.blur > 0.0 || dissolve || n.vis.isolate || n.vis.mix_blend != crate::render::Blend::SourceOver
                 || additive_parent || (paint_own > 0.001 && paint_own < 1.0
                     && (next.is_some_and(|j| self.nodes[j].parent == Some(i)) || n.vis.shape.as_ref().is_some_and(|s| s.overlaps())
                         || (n.vis.layer_opacity < 1.0 && own_paints(n) >= 2))));
@@ -662,11 +661,10 @@ impl<S: 'static> Runtime<S> {
             }
             // A backdrop blur samples what is drawn before it, so it goes ahead of any layer this
             // element opens (a fade still blurs the window) and of its shadows, which skip it.
-            let blur_hole = (n.vis.backdrop_blur > 0.0 && !skip_paint && visible && backdrop_blurs < crate::MAX_BACKDROP_BLURS
+            let blur_hole = (n.vis.backdrop_blur > 0.0 && !skip_paint && visible
                 && effective_opacity > 0.001 && paint_own * pinh.paint_opacity * n.vis.paint_alpha > 0.001)
                 .then(|| paint_slots::push_backdrop_blur(&mut self.instances, n.vis.backdrop_blur, ([r[0], r[1], w, h], radii, n.vis_flags.continuous_corners()),
                     (clip, fade, fade_origin), rounded, sc * s, (paint_own * pinh.paint_opacity * n.vis.paint_alpha).clamp(0.0, 1.0)));
-            backdrop_blurs += blur_hole.is_some() as usize;
             // The packed ABI carries one clip rectangle. Preserve a rectangular cut through
             // a rounded corner on a separate outer scope, never recenter the rounded mask.
             if !skip_paint && let Some((mask, _)) = rounded.or(own_round)
@@ -694,7 +692,7 @@ impl<S: 'static> Runtime<S> {
             }
             // `El::cutout_circle`: the subtree draws in a layer whose composite cuts the hole,
             // after the clips from above, which it takes.
-            if !skip_paint && let Some(c) = n.vis.cutout {
+            for c in n.vis.cutout.iter().filter(|_| !skip_paint) {
                 let k = sc * s;
                 let mut marker = Instance::begin_layer([r[0], r[1], w, h], clip, Default::default());
                 marker.fade = crate::render::pack_fade(fade, fade_origin, clip);
@@ -729,8 +727,9 @@ impl<S: 'static> Runtime<S> {
                 layers.push((i, start_idx, self.surfaces.len()));
                 let mut marker = Instance::begin_layer([r[0], r[1], w, h], clip,
                     crate::render::LayerSpec { opacity: paint_own * pinh.paint_opacity,
-                        blend: if dissolve { crate::render::Blend::PlusLighter } else { crate::render::Blend::SourceOver },
+                        blend: if dissolve { crate::render::Blend::PlusLighter } else { n.vis.mix_blend },
                         blur: p.blur * sc * s, clip_radius: 0.0 });
+                if n.vis.isolate { marker.params[3] = 2.0; }
                 marker.fade = crate::render::pack_fade(fade, fade_origin, clip);
                 if let Some((_, radii)) = rounded { marker.round_clip_corners(radii); }
                 self.instances.push(marker);

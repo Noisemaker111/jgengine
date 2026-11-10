@@ -14,11 +14,11 @@ const errors: string[] = [];
 beforeAll(async () => {
   await rm(scratch, { recursive: true, force: true });
   await mkdir(`${scratch}/node_modules/@jgengine`, { recursive: true });
-  for (const peer of ["react", "react-dom"]) await symlink(resolve(import.meta.dir, "../../react/node_modules", peer), `${scratch}/node_modules/${peer}`, "dir");
+
   for (const peer of ["three", "three-stdlib"]) await symlink(resolve(import.meta.dir, "../node_modules", peer), `${scratch}/node_modules/${peer}`, "dir");
-  await installPublicPackages(scratch, ["core", "react", "shell"]);
+  await installPublicPackages(scratch, ["core", "ui", "shell"]);
   await Bun.write(`${scratch}/fixture.tsx`, `
-    import React,{useState} from 'react';import {createRoot} from 'react-dom/client';
+    import React,{useState} from '@jgengine/core/ui/jsx';import {createRoot} from '@jgengine/core/ui/jsx/client.view';
     import {GamePlayerShell} from '@jgengine/shell/GamePlayerShell';import {defineGame} from '@jgengine/shell/defineGame';
     import {createEmptyEditorDocument} from '@jgengine/core/editor/document';import {createAssetCatalog} from '@jgengine/core/scene/assetCatalog';
     const document=createEmptyEditorDocument();document.simulation={

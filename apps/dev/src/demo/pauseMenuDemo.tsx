@@ -1,4 +1,5 @@
-import { type CSSProperties, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createModalStack, MODAL_CONFIRM } from "@jgengine/core/dialog/modalStack";

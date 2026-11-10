@@ -1,4 +1,5 @@
-import { useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useState } from "@jgengine/core/ui/jsx";
 
 import { HudOverlay } from "@jgengine/core/hud/hudThemeRoot.view";
 import { useSettings } from "@jgengine/core/settings/settings.view";

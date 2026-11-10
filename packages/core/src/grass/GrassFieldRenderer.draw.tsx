@@ -1,4 +1,5 @@
-import { useCallback, useMemo } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useCallback, useMemo } from "@jgengine/core/ui/jsx";
 
 import { resolveGrassObject, type ResolvedGrass } from "@jgengine/core/grass/grassKind";
 import type { GrassStyleSettings } from "@jgengine/core/grass/grassStyle";

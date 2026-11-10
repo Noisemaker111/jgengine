@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-world
 /**
  * Runtime renderer for the `city` volume kind: everything `resolveCityObject` emits becomes a
@@ -14,7 +15,7 @@
  * All geometry derives from the document volume, so editor sliders re-render the district live and
  * games consume the same authored volume unchanged.
  */
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import {

@@ -81,6 +81,7 @@ struct Layer {
     fade: [u32; 4],
     opacity: f32,
     blend: Blend,
+    force: bool,
     blur: f32,
     support: f32,
     cache: Option<(u64, u64)>,
@@ -116,7 +117,9 @@ pub(super) struct Target {
     view: wgpu::TextureView,
     projection: wgpu::Buffer,
     quad: wgpu::Buffer,
+    normal_quad: Option<wgpu::Buffer>,
     composite: wgpu::BindGroup,
+    blend_composites: Vec<(wgpu::TextureFormat, wgpu::TextureView, wgpu::BindGroup)>,
     pub base: wgpu::BindGroup,
     pub images: Vec<Option<wgpu::BindGroup>>,
     pub glyphs: Vec<wgpu::BindGroup>,
@@ -144,6 +147,10 @@ fn union(a: &mut [f32; 4], b: [f32; 4]) {
 }
 
 impl Renderer {
+    pub(super) fn has_backdrop_layers(&self) -> bool {
+        self.layers.plan.iter().any(|l| l.blend.backdrop())
+    }
+
     fn target_bytes(t: &Target) -> u64 {
         let mut bytes = u64::from(t.texture.width()) * u64::from(t.texture.height())
             * u64::from(FORMAT.block_copy_size(None).unwrap());
@@ -258,7 +265,8 @@ impl Renderer {
                     limit,
                     fade: i.fade,
                     opacity: if hidden { 0.0 } else { i.fill[3].clamp(0.0, 1.0) },
-                    blend: if i.params[0] == 1.0 { Blend::PlusLighter } else { Blend::SourceOver },
+                    blend: Blend::from_code(i.params[0]),
+                    force: i.params[3] == 2.0,
                     blur,
                     support: parent.map_or(0.0, |p| self.layers.plan[p].support) + (3.0 * blur).ceil(),
                     cache,
@@ -361,6 +369,11 @@ impl Renderer {
                 quad.uv = [0.0, 0.0, t.content_size[0], t.content_size[1]];
             }
             staging.write_buffer(&t.quad, 0, bytemuck::bytes_of(&quad));
+            if l.blend.backdrop() {
+                let normal = t.normal_quad.get_or_insert_with(|| Self::instance_buffer(device, 1));
+                quad.params[0] = 0.0;
+                staging.write_buffer(normal, 0, bytemuck::bytes_of(&quad));
+            }
             self.layers.targets[index] = Some(t);
         }
 
@@ -405,7 +418,7 @@ impl Renderer {
                 }
             }
             let l = &self.layers.plan[index];
-            if cache_target.is_none() && l.opacity == 1.0 && l.blend == Blend::SourceOver && !additive_parent
+            if !l.force && cache_target.is_none() && l.opacity == 1.0 && l.blend == Blend::SourceOver && !additive_parent
                 && l.blur == 0.0 && l.fade[3] == 0 && l.clip == NO_CLIP && l.turn.is_none() && l.hole[3] == 0.0 {
                 self.layers.targets[index] = None;
                 continue;
@@ -433,7 +446,7 @@ impl Renderer {
                 let composite = Self::bind_group(device, &self.bind_layout, &self.globals, self.uber.outlines(), &self.atlas, &texture, None);
                 self.layers.targets[index] = Some(Target { texture, view, projection,
                     identity: self.layers.allocations + 1, composite_parent: None,
-                    quad: Self::instance_buffer(device, 1), base, composite, images: Vec::new(), glyphs: Vec::new(), image_generation: u64::MAX, blur: None,
+                    quad: Self::instance_buffer(device, 1), normal_quad: None, base, composite, blend_composites: Vec::new(), images: Vec::new(), glyphs: Vec::new(), image_generation: u64::MAX, blur: None,
                     cache_node: None, cache_sig: 0, last_used: 0, content_size: [0.0; 2] });
                 self.layers.allocations += 1;
             }
@@ -462,6 +475,14 @@ impl Renderer {
             quad.fade = l.fade;
             quad.radii = l.hole;
             staging.write_buffer(&t.quad, 0, bytemuck::bytes_of(&quad));
+            if l.blend.backdrop() {
+                let normal = t.normal_quad.get_or_insert_with(|| Self::instance_buffer(device, 1));
+                quad.params[0] = 0.0;
+                staging.write_buffer(normal, 0, bytemuck::bytes_of(&quad));
+            } else {
+                t.normal_quad = None;
+                t.blend_composites.clear();
+            }
         }
         if !self.layers.retained.is_empty() {
             let mut retained_bytes: u64 = self.layers.retained.iter().map(Self::target_bytes).sum();
@@ -477,11 +498,16 @@ impl Renderer {
             let parent = self.layer_target(self.layers.plan[index].parent);
             let t = self.layers.targets[index].as_ref().unwrap();
             let parent_identity = parent.map(|p| self.layers.targets[p].as_ref().unwrap().identity);
-            if t.composite_parent == parent_identity { continue; }
-            let composite = Self::bind_group(device, &self.bind_layout, &self.globals, self.uber.outlines(), &self.atlas, &t.texture,
-                parent.map(|p| &self.layers.targets[p].as_ref().unwrap().projection));
+            let changed_parent = t.composite_parent != parent_identity;
+            let projection = parent.map(|p| &self.layers.targets[p].as_ref().unwrap().projection);
+            let composite = changed_parent.then(|| Self::bind_group(device, &self.bind_layout, &self.globals, self.uber.outlines(), &self.atlas, &t.texture, projection));
+            let blend_composites = (self.layers.plan[index].blend.backdrop() && (changed_parent || self.backdrops.len() != t.blend_composites.len()
+                || self.backdrops.iter().any(|b| !t.blend_composites.iter().any(|(format, view, _)| *format == b.format && *view == b.view))))
+                .then(|| self.backdrops.iter().map(|b| (b.format, b.view.clone(), Self::bind_group(device,
+                    &self.bind_layout, &self.globals, self.uber.outlines(), &b.texture, &t.texture, projection))).collect());
             let t = self.layers.targets[index].as_mut().unwrap();
-            t.composite = composite;
+            if let Some(composite) = composite { t.composite = composite; }
+            if let Some(groups) = blend_composites { t.blend_composites = groups; }
             t.composite_parent = parent_identity;
         }
         if self.layers.targets.iter().any(Option::is_some) {
@@ -644,13 +670,27 @@ impl Renderer {
             assert!(l.end < range.end, "draw_range must not split a layer scope");
             self.draw_plain(pass, format, cursor..l.begin, target, true, hook);
             if let Some(t) = &self.layers.targets[index] {
+                let blend_group = if l.blend.backdrop() {
+                    let (origin, size) = self.target_frame(target);
+                    let copied = pass.split(self, format, origin, size, target.is_some(), None, |_, _| {}).is_some();
+                    let group = copied.then(|| t.blend_composites.iter().find(|(f, _, _)| *f == format)).flatten();
+                    if group.is_none() {
+                        let message = "degraded: layer blend requires an owned COPY_SRC render target; using source-over";
+                        #[cfg(target_arch = "wasm32")]
+                        web_sys::console::warn_1(&message.into());
+                        #[cfg(not(target_arch = "wasm32"))]
+                        eprintln!("{message}");
+                    }
+                    group.map(|(_, _, group)| group)
+                } else { None };
                 let pipeline = if self.layer_blend(target) == Blend::PlusLighter {
                     &self.layers.additive.as_ref().expect("prepared dissolve").1
                 } else { &self.layers.pipelines.iter().find(|(f, _)| *f == format).expect("Renderer::add_format first").1 };
                 pass.set_pipeline(pipeline);
                 if let Some(properties) = &self.springs { pass.set_bind_group(1, &properties.group, &[]); }
-                pass.set_bind_group(0, &t.composite, &[]);
-                pass.set_vertex_buffer(0, t.quad.slice(..));
+                pass.set_bind_group(0, blend_group.unwrap_or(&t.composite), &[]);
+                let quad = if l.blend.backdrop() && blend_group.is_none() { t.normal_quad.as_ref().unwrap_or(&t.quad) } else { &t.quad };
+                pass.set_vertex_buffer(0, quad.slice(..));
                 pass.draw(0..4, 0..1);
             } else if l.opacity == 1.0 {
                 if l.clip != NO_CLIP {

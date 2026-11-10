@@ -23,7 +23,7 @@ export const EDITOR_STANDALONE = urlParams.get("editor") === "standalone";
 export const STATE_PARAM = urlParams.get("state");
 export const MODE = STATE_PARAM !== null ? "play" : (urlParams.get("mode") ?? "play");
 export const PREVIEW = urlParams.get("preview");
-/** `?fixture=<name>` mounts an engine preview fixture (real exported @jgengine/react component). */
+/** `?fixture=<name>` mounts an engine preview fixture (real exported @jgengine/ui component). */
 export const FIXTURE = urlParams.get("fixture");
 export const STAGE = urlParams.get("stage") === "1";
 export const RUN = (urlParams.get("run") ?? "")

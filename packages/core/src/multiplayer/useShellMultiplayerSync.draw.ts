@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useState, useCallback, type Dispatch, type SetStateAction } from "@jgengine/core/ui/jsx";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { isServerAuthoritative } from "@jgengine/core/runtime/adapter";

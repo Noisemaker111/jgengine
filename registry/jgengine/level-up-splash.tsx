@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useRef, useState } from "@jgengine/core/ui/jsx";
 import type { StatLevelUpEvent } from "@jgengine/core/game/events";
-import { useGame } from "@jgengine/react/hooks";
+import { useGame } from "@jgengine/ui/hooks";
 
 const HUD_TEXT_SHADOW = "0 1px 2px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.55)";
 

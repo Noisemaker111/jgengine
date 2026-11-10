@@ -1,4 +1,5 @@
-import type { CSSProperties, ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 
 export const GAME_ICON_NAMES = [
   "sword",

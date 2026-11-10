@@ -86,6 +86,8 @@ export interface BrowserFlow<TProbe extends ProbeReadings> extends Flow<TProbe> 
   clickAt(x: number, y: number, options?: { button?: "left" | "right" }): Promise<void>;
   /** Hover the real pointer at CSS viewport pixels, no button. */
   moveMouse(x: number, y: number): Promise<void>;
+  /** Turn the real mouse wheel at viewport pixels; positive deltaY scrolls down. */
+  wheel(x: number, y: number, deltaY: number, deltaX?: number): Promise<void>;
   /**
    * Turn a pointer-locked view by `dx`,`dy` pixels of real mouse movement, locking the pointer to the
    * canvas first the way the game does. Fails when the page never reports the movement. Returns the
@@ -100,6 +102,8 @@ export interface BrowserFlow<TProbe extends ProbeReadings> extends Flow<TProbe> 
   aimAt(expression: string, options?: { tolerancePx?: number }): Promise<{ x: number; y: number }>;
   /** Replace a text field's value by its accessible label, then Tab to commit. */
   fill(label: string, value: string): Promise<void>;
+  /** Type into whatever has focus (a field the flow just clicked, wherever it is drawn). */
+  type(text: string): Promise<void>;
   /** Wait until the page's text shows this. */
   see(text: string | RegExp, options?: FlowWaitOptions): Promise<void>;
   /** Evaluate a page expression and return its value, unchecked: narrow it before use. */

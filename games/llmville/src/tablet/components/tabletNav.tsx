@@ -1,6 +1,7 @@
-import { createContext, useContext, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { createContext, useContext, type ReactNode } from "@jgengine/core/ui/jsx";
 
-import type { TabletNavState } from "@/tablet/tablet";
+import type { TabletNavState } from "../tablet";
 
 const TabletNavContext = createContext<TabletNavState | null>(null);
 

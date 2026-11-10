@@ -1,7 +1,8 @@
-import { useMemo, type CSSProperties, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useMemo, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import { LightBeam } from "@jgengine/core/map/LightBeam.draw";
-import { useGame, useGameStore } from "@jgengine/react/hooks";
+import { useGame, useGameStore } from "@jgengine/ui/hooks";
 
 import * as THREE from "three";
 

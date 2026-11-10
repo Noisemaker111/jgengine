@@ -1,8 +1,8 @@
-import { useGameContext } from "@jgengine/react/provider";
-import { engineActions, type GameEngine } from "@/runtime/gameEngine";
-import { runPromptCommand } from "@/runtime/promptCommands";
-import { matchesKeybind, type AppKeybinds } from "@/settings/keybinds";
-import { useEffect, useRef } from "react";
+import { useGameContext } from "@jgengine/ui/provider";
+import { engineActions, type GameEngine } from "./gameEngine";
+import { runPromptCommand } from "./promptCommands";
+import { matchesKeybind, type AppKeybinds } from "../settings/keybinds";
+import { useEffect, useRef } from "@jgengine/core/ui/jsx";
 
 interface UseGameEngineInputParams {
   engine: GameEngine;

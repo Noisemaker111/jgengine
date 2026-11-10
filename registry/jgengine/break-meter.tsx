@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 const clampFraction = (value: number) =>
   Number.isNaN(value) ? 0 : Math.min(1, Math.max(0, value));
 

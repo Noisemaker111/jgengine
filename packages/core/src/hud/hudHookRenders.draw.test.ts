@@ -1,13 +1,13 @@
 import { describe, expect, test } from "bun:test";
-import { act, createElement, type ReactElement } from "react";
+import { act, createElement, type ReactElement } from "@jgengine/core/ui/jsx";
 
 import { mountTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { QuestDef } from "@jgengine/core/mission/quest";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
-import { GameProvider } from "@jgengine/react/provider";
-import { useFeed, useFriends, useQuestJournal } from "@jgengine/react/hooks";
+import { GameProvider } from "@jgengine/ui/provider";
+import { useFeed, useFriends, useQuestJournal } from "@jgengine/ui/hooks";
 
 const QUESTS: QuestDef[] = [
   { id: "cull", title: "Cull the pack", objectives: [{ id: "kill", kind: "kill", count: 3 }] },

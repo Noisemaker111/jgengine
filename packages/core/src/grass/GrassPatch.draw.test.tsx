@@ -1,5 +1,6 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { expect, test } from "bun:test";
-import { createElement, type ReactElement } from "react";
+import { createElement, type ReactElement } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import { mountTestDraws } from "@jgengine/core/frame/testEngineHost.draw";

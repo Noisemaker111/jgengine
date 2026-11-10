@@ -8,7 +8,7 @@ describe("syncShadowProjection", () => {
     const light = new THREE.DirectionalLight();
     const before = light.shadow.camera.projectionMatrix.clone();
 
-    // What R3F pierced props do: write bounds, never updateProjectionMatrix.
+    // Writing camera bounds alone does not call updateProjectionMatrix.
     light.shadow.camera.left = -120;
     light.shadow.camera.right = 120;
     light.shadow.camera.top = 120;

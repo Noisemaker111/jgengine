@@ -1,10 +1,11 @@
-import { useCallback, useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useCallback, useState } from "@jgengine/core/ui/jsx";
 import { useAction, useMutation, useQuery } from "convex/react";
 
 import { api } from "@llmville/backend/convex/_generated/api";
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { useAuth } from "@/auth";
-import { env } from "@/webEnv";
+import { useAuth } from "../../auth";
+import { env } from "../../webEnv";
 
 const AGENT_API_PATH = "/agent/api/v1";
 

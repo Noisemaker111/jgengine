@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 
 import { POSTFX_OVERLAY_USERDATA } from "@jgengine/core/postfx/postfxOverlay.draw";
 import {
@@ -74,7 +75,7 @@ interface DebugDrawInputs {
 /**
  * All collision-debug wire geometry as one draw: collider shapes, projectile path lines,
  * muzzle markers, the aim laser and its endpoint mark. Reconciles on `update`, which the
- * React bridge calls after every commit — the old per-shape JSX did the same through renders.
+ * UI bridge calls after every commit.
  */
 function collisionDebugDraw(getInputs: () => DebugDrawInputs): EngineDraw {
   const group = new THREE.Group();

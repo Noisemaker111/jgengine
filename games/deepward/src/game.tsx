@@ -1,5 +1,6 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import "./style.css";
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "@jgengine/core/ui/jsx";
 import { useSceneSwap } from "@jgengine/core/render/sceneSwap.draw";
 import { CylinderGeometry, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, PointLight, SpotLight, TorusGeometry, Vector3 } from "three";
 import { SceneObjectGroup, SceneObjectPortal, EngineDrawMount, meshDraw, useSceneObjectAttach, useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
@@ -9,9 +10,9 @@ import { StationModels, hasStationModel } from "./game/stationModels";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { GameContextContent, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { defineGame } from "@jgengine/shell/defineGame";
-import { useGameContext } from "@jgengine/react/provider";
-import { useStore } from "@jgengine/react/store";
-import { useGameStore } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
+import { useStore } from "@jgengine/ui/store";
+import { useGameStore } from "@jgengine/ui/hooks";
 import { groundDistance, GARAGE, EXIT, PROPS, PRINT_ID, PRINTER_ZERO, SALVAGE, STEAM, STASH, walkable, world, physics, editorLayers, ROOMS, RETURN_SPINE, DECOR, decorPoint, type Place, type Point } from "./world";
 import { hazardsAt } from "./game/descent";
 import { marrowOf, marrowSpec } from "./game/marrow";

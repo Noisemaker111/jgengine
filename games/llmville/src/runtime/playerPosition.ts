@@ -1,7 +1,7 @@
 import type { PlayerPosition } from "@llmville/game/movement/playerMovement";
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
-import type { GameEngine } from "@/runtime/gameEngine";
+import type { GameEngine } from "./gameEngine";
 
 export function readPlayerPosition(engine: GameEngine): PlayerPosition {
   return engine.getState().player.position;

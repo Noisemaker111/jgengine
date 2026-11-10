@@ -1,6 +1,7 @@
-import { cn } from "@/kit/cn";
-import { MascotBot } from "@/branding/components/MascotBot";
-import { SITE_TAGLINE } from "@/seo/siteSeo";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { cn } from "../../kit/cn";
+import { MascotBot } from "./MascotBot";
+import { SITE_TAGLINE } from "../../seo/siteSeo";
 
 interface BrandLogoProps {
   className?: string;

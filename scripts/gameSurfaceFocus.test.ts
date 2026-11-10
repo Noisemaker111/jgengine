@@ -25,6 +25,23 @@ function doc(map: Record<string, FocusableElement | null>): FocusableDocument & 
 }
 
 describe("focusGameSurface", () => {
+  test("keeps a focused credits scroller as the keyboard target", () => {
+    const wrapper = el({ focus: () => { throw new Error("stole the scroller's focus"); } });
+    const scroller: FocusableElement = { focus() {}, closest: () => scroller };
+    const d = doc({ canvas: el({ ancestor: wrapper }), "[tabindex]": wrapper });
+    d.active = scroller;
+    expect(focusGameSurface(d)).toBe(true);
+    expect(d.active).toBe(scroller);
+  });
+
+  test("typing on an external page needs no game canvas", () => {
+    const field: FocusableElement = { focus() {}, closest: () => field };
+    const d = doc({ canvas: null, "[tabindex]": null });
+    d.active = field;
+    expect(focusGameSurface(d)).toBe(true);
+    expect(d.active).toBe(field);
+  });
+
   test("focuses the canvas's focusable ancestor (3D game)", () => {
     const wrapper = el();
     const canvas = el({ ancestor: wrapper });

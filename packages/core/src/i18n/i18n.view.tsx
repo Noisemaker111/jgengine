@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { createContext, useContext, useEffect, useState, useSyncExternalStore, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { I18n, Locale, TParams } from "@jgengine/core/i18n/i18n";
 import { readLocale } from "@jgengine/core/i18n/localeSetting";

@@ -1,4 +1,5 @@
-import { useRef } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useRef } from "@jgengine/core/ui/jsx";
 
 import { devtools, LONG_FRAME_MS, type LongFrameEvent, type PhaseStats } from "@jgengine/core/devtools/devtools";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";

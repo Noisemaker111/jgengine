@@ -1,4 +1,5 @@
-import { useRef, type MutableRefObject } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useRef, type MutableRefObject } from "@jgengine/core/ui/jsx";
 import { SkeletonUtils } from "three-stdlib";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { loadDraw } from "@jgengine/core/frame/loadDraw.draw";
@@ -24,7 +25,7 @@ import {
   type CharacterLook,
   DEFAULT_CHARACTER_LOOK,
   VINYL_MATERIAL,
-} from "@/user/playerCharacterFigure";
+} from "../playerCharacterFigure";
 
 interface PlayerCharacterFigureProps {
   look?: CharacterLook;

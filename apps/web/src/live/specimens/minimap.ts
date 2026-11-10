@@ -3,8 +3,9 @@
  * canvas; every frame they are mapped to markers and handed to the real minimap component in the corner.
  * The hero walks on its own until the visitor clicks somewhere to send it there.
  */
-import { createElement } from "react";
-import { createRoot } from "react-dom/client";
+// Engine components draw through the engine's own UI runtime, mounted into an element the page owns.
+import { createElement } from "@jgengine/core/ui/jsx";
+import { createRoot } from "@jgengine/core/ui/jsx/client.view";
 
 import { Minimap } from "@jgengine/core/map/map.view";
 import { DEFAULT_MARKER_KINDS } from "@jgengine/core/map/markers";

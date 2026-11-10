@@ -1,5 +1,6 @@
-import type { ReactNode } from "react";
-import { Clock } from "lucide-react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import type { ReactNode } from "@jgengine/core/ui/jsx";
+import { Icon } from "../../kit/icons";
 
 import { formatTrainingDurationLabel } from "@llmville/game/models/trainingDurationLabel";
 
@@ -10,7 +11,7 @@ export function ModelTrainingDurationEstimate({ estimatedSeconds }: { estimatedS
   return (
     <span className="inline-flex items-center justify-center gap-1.5 font-game text-[0.8125rem] font-extrabold uppercase tracking-[0.08em] text-white">
       <span className="tabular-nums">{Number.isFinite(estimatedSeconds) ? "~" : ""}{formatTrainingDurationLabel(estimatedSeconds)}</span>
-      <Clock className="size-4 shrink-0 opacity-95" strokeWidth={2.5} aria-hidden />
+      <Icon name="clock" className="size-4 shrink-0 opacity-95" strokeWidth={2.5} />
     </span>
   );
 }

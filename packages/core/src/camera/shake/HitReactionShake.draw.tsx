@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect } from "@jgengine/core/ui/jsx";
 
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 
 import { CALIBRATED_TRAUMA_DECAY_PER_SECOND } from "./cameraShake";
 import { useCameraShake } from "./shakeChannel.draw";

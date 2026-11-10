@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { createElement } from "@jgengine/core/ui/jsx";
+import { renderToStaticMarkup } from "@jgengine/core/ui/jsx/markup";
 
 import { I18nProvider, Trans, useLocale, useT } from "./i18n.view";
 import { createI18n, type Catalog } from "@jgengine/core/i18n/i18n";

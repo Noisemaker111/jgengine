@@ -1,9 +1,10 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { HudButton } from "@jgengine/core/hud/hudButton.view";
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { useRef } from "react";
+import { useRef } from "@jgengine/core/ui/jsx";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
-import { useGame, useGameStore, useSceneObjects } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGame, useGameStore, useSceneObjects } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
 import { useFrameBind } from "@jgengine/core/ui/liveBind.view";
 import { NEEDS } from "../../needs/needs";
 import { moodOfNeeds, bondWord, householdBook } from "../../agents";

@@ -1,4 +1,5 @@
-import { Component, useEffect, useMemo, useState, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { Component, useEffect, useMemo, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";

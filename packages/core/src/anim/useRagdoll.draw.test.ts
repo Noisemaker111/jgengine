@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createElement } from "react";
+import { createElement } from "@jgengine/core/ui/jsx";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import * as THREE from "three";

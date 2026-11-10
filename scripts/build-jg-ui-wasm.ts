@@ -1,6 +1,7 @@
 // `bun scripts/build-jg-ui-wasm.ts`: rebuild native/wasm/jg-ui/, the wasm + JS glue the
 // engine's Rune UI layer (native/crates/jg-ui) serves to games. Run it after changing jg-ui or
-// the vendored Rune under native/vendor/rune. Output is gitignored; the vite plugin serves it.
+// the vendored Rune under native/vendor/rune. Commit its output with the source change;
+// the Vite plugin serves this bundle on fresh checkouts without a Rust toolchain.
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -17,7 +18,7 @@ if (import.meta.main) {
   const root = fileURLToPath(new URL("..", import.meta.url));
   const native = join(root, "native");
   const out = join(native, "wasm", "jg-ui");
-  const build = Bun.spawnSync(["cargo", "build", "--profile", "wasm", "--target", "wasm32-unknown-unknown", "-p", "jg-ui"], { cwd: native, stdout: "inherit", stderr: "inherit" });
+  const build = Bun.spawnSync(["cargo", "build", "--jobs", "4", "--profile", "wasm", "--target", "wasm32-unknown-unknown", "-p", "jg-ui"], { cwd: native, stdout: "inherit", stderr: "inherit" });
   if (build.exitCode !== 0) {
     console.error("build-jg-ui-wasm: cargo failed (needs `rustup target add wasm32-unknown-unknown`)");
     process.exit(build.exitCode ?? 1);

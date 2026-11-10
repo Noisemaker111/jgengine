@@ -1,4 +1,5 @@
-import type { CSSProperties, ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 
 import { HUD_CORNER_WIDTH } from "./hudLayout.view";
 import { KitBanner, KitObjective, type KitBannerProps } from "@jgengine/core/ui/kit/kitFlow.view";

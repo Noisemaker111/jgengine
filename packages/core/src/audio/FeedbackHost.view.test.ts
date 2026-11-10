@@ -1,12 +1,12 @@
 import { expect, test } from "bun:test";
-import { createElement } from "react";
+import { createElement } from "@jgengine/core/ui/jsx";
 
 import { acquireTestDom, mountTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import { GameProvider } from "@jgengine/react/provider";
+import { GameProvider } from "@jgengine/ui/provider";
 
 import type { AudioEngine } from "./audioEngine.view";
 import { FeedbackHost } from "./FeedbackHost.view";

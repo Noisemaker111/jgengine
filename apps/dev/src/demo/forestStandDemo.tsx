@@ -1,4 +1,5 @@
-import { useEffect, useMemo } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 import { Color, CylinderGeometry, Group, InstancedMesh, Matrix4, Mesh, MeshStandardMaterial, PlaneGeometry, Quaternion, SphereGeometry, Vector3 } from "three";
 import { disposeObjectTree, SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 import { AnchoredOverlay } from "@jgengine/core/hud/hudOverlay.draw";

@@ -1,10 +1,11 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 /**
  * Runner registries: the `import.meta.glob` discovery that turns every
  * `games/*` folder into lazy game/preview/editor loaders, the built-in demo
  * registry, and the camera-preset overlay. All loaders are lazy — importing
  * this module scans no game code until something is actually requested.
  */
-import type { ComponentType } from "react";
+import type { ComponentType } from "@jgengine/core/ui/jsx";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { resolveTerrainField } from "@jgengine/core/terrain/terrain";
@@ -135,8 +136,6 @@ const gameStyleModules = (hasViteGlob ? import.meta.glob<Record<string, unknown>
 
 const gameSourceModules = (hasViteGlob ? import.meta.glob<Record<string, unknown>>([
   "../../../games/*/src/**/*.{ts,tsx}",
-  // llmville is its own TanStack app with its own `@/` aliases, not a runner game.
-  "!../../../games/llmville/**",
   // Each exclusion spells out the same root as the pattern it trims. A bare `!**/main.tsx` held in the
   // dev server but not in a production build, which then bundled every game's tests and its standalone
   // `main.tsx`: opening a game ran its tests in the page and mounted a second React root on `#root`

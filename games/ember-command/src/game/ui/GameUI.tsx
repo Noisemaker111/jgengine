@@ -1,8 +1,9 @@
-import type { CSSProperties } from "react";
-import { useSyncExternalStore } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { type CSSProperties, useSyncExternalStore } from "@jgengine/core/ui/jsx";
+
 import { useGameFonts } from "@jgengine/core/ui/fonts.view";
 import { KIT_MATERIALS } from "@jgengine/core/ui/kit/kitFrame.view";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 
 import { GAME_FONTS } from "./gameFonts";
 import { hudStore } from "../hudStore";

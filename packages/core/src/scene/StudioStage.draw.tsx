@@ -1,4 +1,5 @@
-import { useMemo, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useMemo, type ReactNode } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import { DEFAULT_FORWARD, yawToFace } from "@jgengine/core/scene/facing";

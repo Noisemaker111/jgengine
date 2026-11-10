@@ -1,12 +1,5 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-  type ReactNode,
-} from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { AbilitySlotSnapshot } from "@jgengine/core/combat/abilityKit";
 import {
@@ -21,7 +14,7 @@ import {
 } from "@jgengine/core/ui/actionModel";
 import { actionTooltip, placePopover, type PopoverSide, type TooltipContent } from "@jgengine/core/ui/tooltipModel";
 
-import { useEngineStyles } from "@jgengine/react/engineStyles";
+import { useEngineStyles } from "@jgengine/ui/engineStyles";
 import { KitButton, KitMeter, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { useHudInteract, type HudInteractListener } from "./hudInteract.view";
 import { HUD_FOCUS_RING, hudElevation, hudFont, hudType } from "./hudTokens";

@@ -20,11 +20,13 @@ export interface BrowserFlowDriver {
   clickAt(x: number, y: number, button: "left" | "right"): Promise<void>;
   /** Hover the real pointer, no button. */
   moveMouse(x: number, y: number): Promise<void>;
+  wheel(x: number, y: number, deltaY: number, deltaX: number): Promise<void>;
   /** Lock the pointer to the canvas and turn by real mouse movement; the movement the page saw. */
   look(dx: number, dy: number): Promise<{ x: number; y: number }>;
   /** Turn until the page's screen point for `expression` sits within `tolerancePx` of the crosshair. */
   aimAt(expression: string, tolerancePx: number): Promise<{ point: { x: number; y: number }; moves: number }>;
   fill(label: string, value: string): Promise<void>;
+  type(text: string): Promise<void>;
   /** Evaluate a page expression (awaited when it is a promise). */
   evaluate(expression: string): Promise<unknown>;
   /** Call `window.__jgengineAgent.handle(request)`. */
@@ -167,10 +169,12 @@ export function createBrowserFlow(driver: BrowserFlowDriver, stepper: FlowSteppe
     click: (text, options = {}) => stepper.run(`click "${text}"`, () => driver.click(text, options.double === true ? 2 : 1)),
     clickAt: (x, y, options = {}) => stepper.run(`click at ${x},${y}`, () => driver.clickAt(x, y, options.button ?? "left")),
     moveMouse: (x, y) => stepper.run(`move mouse ${x},${y}`, () => driver.moveMouse(x, y)),
+    wheel: (x, y, deltaY, deltaX = 0) => stepper.run(`wheel ${deltaX},${deltaY} at ${x},${y}`, () => driver.wheel(x, y, deltaY, deltaX)),
     look: (dx, dy) => stepper.run(`look ${dx},${dy} px`, () => driver.look(dx, dy)),
     aimAt: (expression, options = {}) =>
       stepper.run(`aim at ${expression}`, async () => (await driver.aimAt(expression, options.tolerancePx ?? FLOW_AIM_TOLERANCE_PX)).point),
     fill: (label, value) => stepper.run(`fill "${label}"`, () => driver.fill(label, value)),
+    type: (text) => stepper.run(`type "${text}"`, () => driver.type(text)),
     see: (text, options = {}) =>
       stepper.run(`see ${String(text)}`, async () => {
         const matches = (body: unknown) => typeof body === "string" && (typeof text === "string" ? body.includes(text) : text.test(body));

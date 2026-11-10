@@ -38,11 +38,11 @@
       "@jgengine/node/*": ["../../../../../packages/node/src/*"],
       "@jgengine/rapier": ["../../../../../packages/rapier/src/index.ts"],
       "@jgengine/rapier/*": ["../../../../../packages/rapier/src/*"],
-      "@jgengine/react": ["../../../../../packages/react/src/index.ts"],
-      "@jgengine/react/*": ["../../../../../packages/react/src/*"],
       "@jgengine/shell/*": ["../../../../../packages/shell/src/*"],
       "@jgengine/sql": ["../../../../../packages/sql/src/index.ts"],
       "@jgengine/sql/*": ["../../../../../packages/sql/src/*"],
+      "@jgengine/ui": ["../../../../../packages/ui/src/index.ts"],
+      "@jgengine/ui/*": ["../../../../../packages/ui/src/*"],
       "@jgengine/ws": ["../../../../../packages/ws/src/index.ts"],
       "@jgengine/ws/*": ["../../../../../packages/ws/src/*"]
     }

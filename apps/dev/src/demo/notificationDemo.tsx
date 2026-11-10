@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useRef, useState } from "@jgengine/core/ui/jsx";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createNotificationCenter } from "@jgengine/core/notifications/notificationCenter";

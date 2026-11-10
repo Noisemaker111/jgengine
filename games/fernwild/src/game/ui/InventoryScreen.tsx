@@ -1,10 +1,11 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 import { Paperdoll } from "@jgengine/core/inventory/characterSheet.view";
 import { InventoryGrid } from "@jgengine/core/inventory/inventoryGrid.view";
 import { EntityPreview } from "@jgengine/core/render/EntityPreview.draw";
 import { onboardingLock } from "@jgengine/core/onboarding/onboardingSystem";
-import { useGame, useGameStore } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGame, useGameStore } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
 
 import { itemDef, itemLabel } from "../data/items";
 import type { SurvivorScreen } from "../screens";

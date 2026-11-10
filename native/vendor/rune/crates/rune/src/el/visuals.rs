@@ -216,6 +216,7 @@ impl El {
         let cold = self.vis.cold_mut();
         cold.pixels = Some(pixels.clone());
         cold.pixels_fit = None;
+        cold.pixels_pattern = None;
         self
     }
     /// Shows `pixels` at its own aspect ratio, centred: `Fit` letterboxes the whole image inside
@@ -224,6 +225,16 @@ impl El {
         let cold = self.vis.cold_mut();
         cold.pixels = Some(pixels.clone());
         cold.pixels_fit = Some(fit);
+        cold.pixels_pattern = None;
+        self
+    }
+    /// Paint an image tile at `offset` within the element, repeating on the chosen axes.
+    /// Tile dimensions are points; clipping and corners still belong to the element.
+    pub fn pixels_pattern(mut self, pixels: &crate::pixels::Pixels, tile: [f32; 2], offset: [f32; 2], repeat: [bool; 2]) -> Self {
+        let cold = self.vis.cold_mut();
+        cold.pixels = Some(pixels.clone());
+        cold.pixels_fit = None;
+        cold.pixels_pattern = Some([offset[0], offset[1], tile[0].max(0.001), tile[1].max(0.001), repeat[0] as u8 as f32, repeat[1] as u8 as f32]);
         self
     }
     /// A ring `offset` points outside the border box (CSS `outline` + `outline-offset`). Width
@@ -243,6 +254,19 @@ impl El {
         self.vis.opacity = o;
         self
     }
+    /// Blend the completed subtree with the paint below it. Separable modes use CSS's sRGB
+    /// formulas and require an owned render pass whose target permits backdrop copies.
+    pub fn mix_blend(mut self, blend: crate::render::Blend) -> Self {
+        self.vis.cold_mut().mix_blend = blend;
+        self
+    }
+
+    /// Isolate this subtree's paint and blend backdrops from the rest of the window.
+    pub fn isolate(mut self) -> Self {
+        self.vis.cold_mut().isolate = true;
+        self
+    }
+
     /// Gaussian blur of the completed subtree, in points (standard deviation). Zero has no
     /// filter cost. The renderer caps sigma at 64 device pixels; bounds grow by three sigma.
     pub fn blur(mut self, sigma: f32) -> Self {
@@ -476,7 +500,7 @@ impl El {
     /// draws in an isolated layer, whose composite cuts the hole; hit testing ignores it.
     pub fn cutout_circle(mut self, center: [f32; 2], inner: f32, outer: f32) -> Self {
         let inner = inner.max(0.0);
-        self.vis.cold_mut().cutout = Some([center[0], center[1], inner, outer.max(inner)]);
+        self.vis.cold_mut().cutout.push([center[0], center[1], inner, outer.max(inner)]);
         self
     }
     /// Soft clip with a fade width per side (left, top, right, bottom).

@@ -1,11 +1,12 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 /**
  * Full-screen overlay for the rack hardware menu (E key near rack).
  */
 
-import { createPortal } from "react-dom";
-import type { PlacedRack } from "@/infrastructure/infrastructure";
-import { useEscapeToClose } from "@/tablet/tablet";
-import type { RackHardwareMoveSource, RackHardwareMoveTarget } from "@/infrastructure/rackHardwareSession";
+import { createPortal } from "@jgengine/core/ui/jsx/client.view";
+import type { PlacedRack } from "../infrastructure";
+import { useEscapeToClose } from "../../tablet/tablet";
+import type { RackHardwareMoveSource, RackHardwareMoveTarget } from "../rackHardwareSession";
 
 import RackMenu from "./RackMenu";
 

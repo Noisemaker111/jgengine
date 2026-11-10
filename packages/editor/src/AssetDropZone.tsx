@@ -1,5 +1,6 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
-import { memo, useEffect } from "react";
+import { memo, useEffect } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import { ASSET_DRAG_MIME, decodeAssetDragPayload } from "./AssetBrowser";

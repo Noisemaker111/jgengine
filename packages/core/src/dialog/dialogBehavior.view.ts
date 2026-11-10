@@ -1,5 +1,5 @@
 // @skill jgengine-ui
-import { useEffect, useRef, type RefObject } from "react";
+import { useEffect, useRef, type RefObject } from "@jgengine/core/ui/jsx";
 
 interface FocusOwner {
   root: HTMLElement;

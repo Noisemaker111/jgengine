@@ -1,5 +1,6 @@
-import type { CSSProperties } from "react";
-import type { GamePreviewProps } from "@jgengine/react/preview";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import type { CSSProperties } from "@jgengine/core/ui/jsx";
+import type { GamePreviewProps } from "@jgengine/ui/preview";
 
 const C = {
   bg: "#1c1a17",

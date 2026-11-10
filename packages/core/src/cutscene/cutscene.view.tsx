@@ -1,5 +1,6 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-world
-import { useEffect, useReducer, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useReducer, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { SequenceDirector, SequenceState } from "@jgengine/core/cutscene/sequenceDirector";
 

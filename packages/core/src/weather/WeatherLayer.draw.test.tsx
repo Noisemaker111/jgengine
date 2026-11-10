@@ -1,5 +1,6 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { expect, test } from "bun:test";
-import { createElement, type ReactElement } from "react";
+import { createElement, type ReactElement } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import { createAuthoredWeather } from "@jgengine/core/weather/authoredWeather";
 import { mountTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
@@ -61,7 +62,7 @@ test("mounted weather uses one authoritative source through shifts, pause, disab
 
 test("authored weather probe reports actual shader pools and retires with diagnostics", async () => {
   const { devtools } = await import("@jgengine/core/devtools/devtools");
-  const { GameProvider } = await import("@jgengine/react/provider");
+  const { GameProvider } = await import("@jgengine/ui/provider");
   const { createGameContext } = await import("@jgengine/core/runtime/gameContext");
   const { defineGameDefinition } = await import("@jgengine/core/game/defineGame");
   const { createEmptyEditorDocument } = await import("@jgengine/core/editor/document");

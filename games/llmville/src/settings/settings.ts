@@ -1,4 +1,4 @@
-import { useMemo, useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import { defaultKeyValueStorage } from "@jgengine/core/game/keyValueStore";
 import type { SettingsStore } from "@jgengine/core/settings/settingsModel";

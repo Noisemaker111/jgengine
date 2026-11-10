@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { EditorAssetEntry } from "../AssetBrowser";
 import { Icon, type IconName } from "./icons";
 import { useGlbThumbnail } from "./useGlbThumbnail";

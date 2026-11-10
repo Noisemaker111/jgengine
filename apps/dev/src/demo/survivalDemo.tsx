@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
@@ -27,7 +28,7 @@ import {
   type WeatherModifierTable,
   type WeatherState,
 } from "@jgengine/core/weather/weather";
-import { useEngineState, type ReadableEngineStore } from "@jgengine/react/engineStore";
+import { useEngineState, type ReadableEngineStore } from "@jgengine/ui/engineStore";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import { FireLandscapeView } from "@jgengine/core/fire/FireLandscape.draw";

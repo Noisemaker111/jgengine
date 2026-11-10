@@ -1,4 +1,5 @@
-import { useReducer, useState, type CSSProperties, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useReducer, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createTalentTree, type TalentNodeDef } from "@jgengine/core/talents/talents";

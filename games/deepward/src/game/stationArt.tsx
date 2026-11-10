@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useMemo } from '@jgengine/core/ui/jsx';
 import { CylinderGeometry, BoxGeometry, Group, InstancedMesh, MeshStandardMaterial, type BufferGeometry } from 'three';
 import type { EngineDraw, EngineFrameState } from '@jgengine/core/frame/engineLoop.draw';
 import { EngineDrawMount } from '@jgengine/core/frame/useEngineDraw.draw';

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 interface AuthOAuthSectionProps {
   actionLabel: string;
   loadingLabel?: string;

@@ -15,18 +15,13 @@
     "@jgengine/assets": "workspace:*",
     "@jgengine/core": "workspace:*",
     "@jgengine/editor": "workspace:*",
-    "@jgengine/react": "workspace:*",
+    "@jgengine/ui": "workspace:*",
     "@jgengine/shell": "workspace:*",
-    "react": "catalog:",
-    "react-dom": "catalog:",
     "three": "catalog:"
   },
   "devDependencies": {
     "@tailwindcss/vite": "catalog:",
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
     "@types/three": "catalog:",
-    "@vitejs/plugin-react": "catalog:",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:"

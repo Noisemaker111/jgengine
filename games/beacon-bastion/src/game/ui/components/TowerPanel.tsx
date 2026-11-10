@@ -1,5 +1,6 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useActionBindings } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { useGame, useGameStore } from "@jgengine/react/hooks";
+import { useGame, useGameStore } from "@jgengine/ui/hooks";
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { actionLabel } from "@jgengine/core/input/actionBindings";
 import { GameIcon, type GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";

@@ -17,11 +17,11 @@ import { rowWords, tokenHits } from "./words";
 export const LAYER_ROLES: Readonly<Record<string, string>> = {
   core: "model",
   shell: "draw",
-  react: "view",
+  ui: "view",
   editor: "author",
 };
 
-const LAYER_ORDER = ["core", "shell", "react", "editor"];
+const LAYER_ORDER = ["core", "shell", "ui", "editor"];
 
 /** One source file, placed in its layer. */
 export interface CodeFile {
@@ -272,7 +272,7 @@ function isUnder(dir: string, home: string): boolean {
   return home === "" || dir === home || dir.startsWith(`${home}/`);
 }
 
-/** The home folder per layer for a query, best layers first in core → shell → react → editor order. */
+/** The home folder per layer for a query, best layers first in core → shell → ui → editor order. */
 export function locate(files: readonly CodeFile[], read: (file: CodeFile) => string, tokens: readonly string[]): LayerHome[] {
   return tokens.length === 0 ? [] : locateIn(indexCode(files, read), tokens);
 }

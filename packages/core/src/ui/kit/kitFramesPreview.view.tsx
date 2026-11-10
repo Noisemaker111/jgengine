@@ -1,4 +1,5 @@
-import { useState, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useState, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { GameCursor, type GameCursorStyle } from "../cursor.view";
 import type { KitCut, KitMaterial } from "./kitFrame.view";

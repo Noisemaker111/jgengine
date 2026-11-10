@@ -1,4 +1,5 @@
-import { useSyncExternalStore } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createI18n, type Catalog, type I18n } from "@jgengine/core/i18n/i18n";

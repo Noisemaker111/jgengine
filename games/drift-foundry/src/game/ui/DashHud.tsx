@@ -1,4 +1,5 @@
-import { useRef, type CSSProperties, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useRef, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 import { LiveText, useFrameBind } from "@jgengine/core/ui/liveBind.view";
 import { readLive, type Live } from "@jgengine/core/ui/liveValue";
 import { type KitMaterial } from "@jgengine/core/ui/kit/kitFrame.view";

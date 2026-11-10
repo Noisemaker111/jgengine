@@ -1,8 +1,9 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import * as THREE from "three";
 import type { VfxRef } from "@jgengine/core/game/events";
 import type { VfxInstanceState, CombatVfxInstanceEvent } from "@jgengine/core/vfx/vfxInstance";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 

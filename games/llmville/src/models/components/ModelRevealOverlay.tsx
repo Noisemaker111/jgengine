@@ -1,9 +1,10 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "@jgengine/core/ui/jsx";
 
 import type { KitTone } from "@jgengine/core/ui/kit/uiKit.view";
 import { KitButton, KitMeter, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { cn } from "@/kit/cn";
+import { cn } from "../../kit/cn";
 import {
   dataTokenRateToBarValue,
   formatHourlyIncome,
@@ -11,7 +12,7 @@ import {
   moneyPerTokenToPmt,
   priceToBarValue,
   tpsToBarValue,
-} from "@/models/models";
+} from "../models";
 
 export interface RevealingModelStats {
   modelId: Id<"models">;

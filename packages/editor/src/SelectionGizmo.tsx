@@ -1,5 +1,6 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
-import { memo, useEffect, useMemo } from "react";
+import { memo, useEffect, useMemo } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import type { EditorSession, EditorVec3 } from "@jgengine/core/editor/index";

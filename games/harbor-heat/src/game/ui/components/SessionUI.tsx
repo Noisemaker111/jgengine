@@ -1,8 +1,9 @@
-import { useEffect } from "react";
-import { useGame } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect } from "@jgengine/core/ui/jsx";
+import { useGame } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
 import { useSettings } from "@jgengine/core/settings/settings.view";
-import { useStore } from "@jgengine/react/store";
+import { useStore } from "@jgengine/ui/store";
 import { awayStore } from "../../away";
 import { startedStore } from "../../commands";
 import { courierStore, DELIVERY_ROUTES, RUSH_BOND, type CourierState } from "../../jobs/courier";

@@ -21,12 +21,18 @@ function resolveFile(urlPath: string): string | null {
 }
 
 /**
- * Serves the jg-ui wasm bundle (`bun scripts/build-jg-ui-wasm.ts`) at `/jg-ui/` in dev and copies
- * it into `dist/jg-ui/` on build, so `import("/jg-ui/jg_ui.js")` loads the Rune UI layer.
+ * What a page that draws engine UI needs from Vite. JSX in engine and game source compiles against
+ * the engine's own runtime (`@jgengine/core/ui/jsx`), named here because Vite does not read it from
+ * every package's tsconfig. And the jg-ui wasm bundle (`bun scripts/build-jg-ui-wasm.ts`) is served
+ * at `/jg-ui/` in dev and copied into `dist/jg-ui/` on build, so `import("/jg-ui/jg_ui.js")` loads
+ * the Rune UI layer.
  */
 export function viteJgUiWasm(): Plugin {
   return {
     name: "jgengine:jg-ui-wasm",
+    config() {
+      return { oxc: { jsx: { runtime: "automatic", importSource: "@jgengine/core/ui/jsx" } } };
+    },
     configureServer(server) {
       server.middlewares.use("/jg-ui", (req, res, next) => {
         const file = req.url === undefined ? null : resolveFile(req.url);

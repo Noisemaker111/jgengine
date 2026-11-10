@@ -1,4 +1,5 @@
-import { createElement, useEffect, useRef, useState, type CSSProperties, type ReactNode, type Ref } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type Ref } from "@jgengine/core/ui/jsx";
 import { slotText, type SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 import { GameCursor } from "@jgengine/core/ui/cursor.view";
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
@@ -7,7 +8,6 @@ import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { useViewportScrollLock } from "@jgengine/core/menu/gameMenu.view";
 import { useMenuNav, type MenuNavItemProps } from "@jgengine/core/menu/menuNav.view";
 import { EntityPreview } from "@jgengine/core/render/EntityPreview.draw";
-import { IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";
 import { entityModels } from "../../world/models";
 import { tribuneAds } from "../../credits";
 import { BurnerPhone, type PhonePad } from "../fiction/BurnerPhone";
@@ -248,11 +248,7 @@ export function CourierLicence({ name, onName, bayLabel, active, onBegin }: { na
       <span className="hh-licence-body">
         <span className="hh-licence-photo">
           {model === undefined ? null : (
-            // The preview camera aims at the stage origin, so the runner is lowered until the head and
-            // shoulders sit there: a licence photo, not a full-length shot.
-            <EntityPreview mood="studio" backdrop="#c9d6cf" environment={false} cameraPosition={[0, 0.02, 2.3]} fov={28} dpr={[1, 1.25]} className="hh-licence-canvas">
-              {createElement("group", { position: [0, -1.42, 0] }, <IsolatedEntityModel model={model} />)}
-            </EntityPreview>
+            <EntityPreview model={model} mood="studio" backdrop="#c9d6cf" environment={false} cameraPosition={[0, 1.44, 2.3]} cameraTarget={[0, 1.42, 0]} fov={28} dpr={[1, 1.25]} className="hh-licence-canvas" />
           )}
           <i className="hh-licence-scale" aria-hidden="true" />
         </span>

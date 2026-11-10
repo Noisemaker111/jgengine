@@ -1,10 +1,11 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 /**
  * Scripting workspace: lists every document object with an authored behavior trigger, selects them
  * for framing/inspection, and reuses {@link TriggerInspector} for edits. Writes go only through
  * session `setMarker` / `setVolume` meta patches (same path as the inspector Components tab).
  */
 
-import { memo, useMemo } from "react";
+import { memo, useMemo } from "@jgengine/core/ui/jsx";
 
 import type { EditorSession } from "@jgengine/core/editor/index";
 

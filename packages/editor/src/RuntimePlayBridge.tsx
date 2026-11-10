@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 
 import type { RuntimeEntityState, RuntimePlayControl } from "@jgengine/core/editor/index";
-import { useGameContext } from "@jgengine/react/provider";
+import { useGameContext } from "@jgengine/ui/provider";
 
 import type { EditorHostApi } from "./session";
 import { MICRO } from "./chromeStyles";

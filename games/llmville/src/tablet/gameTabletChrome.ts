@@ -1,4 +1,4 @@
-import { TABLET_APP_ID, type TabletAppId } from "@/tablet/tabletIds";
+import { TABLET_APP_ID, type TabletAppId } from "./tabletIds";
 
 /** Fixed viewport slot for the physical tablet frame (centered toward player-right on desktop). */
 export const GAME_TABLET_VIEWPORT_CLASS =

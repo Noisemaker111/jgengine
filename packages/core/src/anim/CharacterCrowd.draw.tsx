@@ -1,5 +1,6 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-world
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, type MutableRefObject } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
@@ -27,7 +28,7 @@ import {
 } from "./crowdRegistry.draw";
 import { applyMaterialOverrideToMaterial, overrideTargets } from "@jgengine/core/material/materialOverride.draw";
 import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.draw";
-import { useOptionalGameContext } from "@jgengine/react/provider";
+import { useOptionalGameContext } from "@jgengine/ui/provider";
 import { POINTER_ENTITY_INSTANCES_KEY } from "@jgengine/core/input/pointerService.draw";
 import { writeCrowdBatch, type CrowdPlayback } from "./crowdBatch.draw";
 import { preloadSceneModel } from "@jgengine/core/model/entityModelDraw.draw";
@@ -42,7 +43,7 @@ import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
 import { type EngineDraw, type EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
-import type { MutableRefObject } from "react";
+
 import type { VisiblePredicate } from "@jgengine/core/visibility/CullingProvider.draw";
 
 interface CrowdBatchEnv {

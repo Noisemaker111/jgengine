@@ -1,6 +1,7 @@
-import { Fragment, type ReactNode } from "react";
-import { useGame, useGameStore } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { Fragment, type ReactNode } from "@jgengine/core/ui/jsx";
+import { useGame, useGameStore } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { live } from "@jgengine/core/ui/liveValue";
 import { KitButton, KitMeter, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";

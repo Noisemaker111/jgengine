@@ -2280,7 +2280,7 @@ const readinessInstalled = new WeakSet<CdpSession>();
 /**
  * Runs at document start in every capture page: tells the engine's browser-suspension observer that a
  * capture host holds play, so a focus or visibility change on this shared machine never auto-pauses
- * the game mid-drive. Must name `CAPTURE_HOLD_KEY` from `@jgengine/react`'s `browserLifecycle`.
+ * the game mid-drive. Must name `CAPTURE_HOLD_KEY` from `@jgengine/ui`'s `browserLifecycle`.
  */
 export const CAPTURE_HOLD_SOURCE = "globalThis.__jgengineCaptureHold = true;";
 

@@ -1,9 +1,10 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { describe, expect, test } from "bun:test";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderToStaticMarkup } from "@jgengine/core/ui/jsx/markup";
 
 import { createNotificationCenter } from "@jgengine/core/notifications/notificationCenter";
-import TweetNotification from "@/economy/components/TweetNotification";
-import { logTweet } from "@/economy/tweetFeed";
+import TweetNotification from "./components/TweetNotification";
+import { logTweet } from "./tweetFeed";
 
 describe("tweet feed", () => {
   test("logs a world tweet once and never revives one already read", () => {

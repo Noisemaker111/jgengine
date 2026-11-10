@@ -59,7 +59,7 @@ describe("static authored shapes", () => {
 });
 
 test("mounted batches retune matrices, share only compatible draws and dispose owned resources", async () => {
-  const { createElement, Suspense } = await import("react");
+  const { createElement, Suspense } = await import("@jgengine/core/ui/jsx");
   const { mountTestDraws } = await import("@jgengine/core/frame/testEngineHost.draw");
   const { StaticShapeInstances } = await import("./staticShapeInstances.draw");
   let mounted: import("@jgengine/core/frame/testEngineHost.draw").MountedTestDraws | undefined;

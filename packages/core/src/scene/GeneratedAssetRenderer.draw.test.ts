@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { createElement, Suspense } from "react";
+import { createElement, Suspense } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import { mountTestDraws, type MountedTestDraws } from "@jgengine/core/frame/testEngineHost.draw";

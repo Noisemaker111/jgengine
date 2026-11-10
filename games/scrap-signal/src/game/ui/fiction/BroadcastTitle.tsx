@@ -1,5 +1,6 @@
-import type { CSSProperties } from "react";
-import { useDisplayProfile } from "@jgengine/react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import type { CSSProperties } from "@jgengine/core/ui/jsx";
+import { useDisplayProfile } from "@jgengine/ui";
 import { GameCursor } from "@jgengine/core/ui/cursor.view";
 import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
 import { CHARACTERS } from "../../characters";
