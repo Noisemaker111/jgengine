@@ -1,7 +1,7 @@
+import { navigate } from "./screenRouter";
+import type { ScreenProps } from "./screens";
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
-import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { Suspense, lazy, useEffect } from "@jgengine/core/ui/jsx";
-import { z } from "zod";
 
 import { useAuth, usePlayerIdentity } from "../auth";
 import { loadGameSessionModule, preloadGameRoute } from "../runtime/gameRoutePreload";
@@ -16,28 +16,9 @@ const GameSession = lazy(async () =>
   })),
 );
 
-const gameRouteParamsSchema = z.object({
-  gameId: z.custom<Id<"games">>(
-    (value) => typeof value === "string" && value.length > 0,
-    "Invalid game id.",
-  ),
-});
-
-export const Route = createFileRoute("/game/$gameId")({
-  params: {
-    parse: (rawParams) => gameRouteParamsSchema.parse(rawParams),
-    stringify: (params) => ({ gameId: params.gameId }),
-  },
-  // Keep the same loading screen while the route chunk resolves so players see
-  // one continuous "Loading world" state instead of the generic router spinner.
-  pendingComponent: () => <RouteLoadingScreen label="Loading world" />,
-  component: GameRoute,
-});
-
-function GameRoute() {
-  const navigate = useNavigate();
-  const router = useRouter();
-  const { gameId } = Route.useParams();
+export function GameScreen({ params }: ScreenProps) {
+  // type-escape: a path segment becomes a Convex id only here; the world query rejects one that is not a game.
+  const gameId = (params["gameId"] ?? "") as Id<"games">;
   // Identity comes from Convex auth (the optimistic token), so a hard refresh
   // into the game boots without waiting on the better-auth session round-trip.
   const { isConvexAuthenticated, isConvexAuthLoading, convexUser } = useAuth();
@@ -47,14 +28,14 @@ function GameRoute() {
   useWarmGameWorldQueries(gameId);
 
   useEffect(() => {
-    preloadGameRoute(router, gameId);
-  }, [gameId, router]);
+    preloadGameRoute();
+  }, [gameId]);
 
   useEffect(() => {
     // Only bounce to login once Convex auth has settled to genuinely signed-out.
     if (isConvexAuthLoading || isConvexAuthenticated) return;
-    navigate({ to: "/login" });
-  }, [isConvexAuthenticated, isConvexAuthLoading, navigate]);
+    void navigate({ to: "/login" });
+  }, [isConvexAuthenticated, isConvexAuthLoading]);
 
   if (isConvexAuthLoading || routeAccessPhase !== GAME_ROUTE_ACCESS_PHASE.ready || !isConvexAuthenticated) {
     const detail =

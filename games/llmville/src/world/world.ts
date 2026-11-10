@@ -1,7 +1,7 @@
+import { navigate } from "../screens/screenRouter";
 import { api } from "@llmville/backend/convex/_generated/api";
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
 import { useConvexAuth, useQuery } from "convex/react";
-import { useNavigate } from "@tanstack/react-router";
 import { useEffect } from "@jgengine/core/ui/jsx";
 
 import { preloadSceneAssets } from "../scene/sceneAssetPreloadLazy";
@@ -31,7 +31,6 @@ export const GAME_ROUTE_ACCESS_PHASE = {
  * Gated purely on Convex auth (the optimistic token), so an in-game refresh
  * resolves access without waiting on the better-auth `/get-session` round-trip. */
 export function useGameRouteAccess(gameId: Id<"games">): GameRouteAccessPhase {
-  const navigate = useNavigate();
   const { isAuthenticated: convexAuthenticated, isLoading: convexAuthLoading } = useConvexAuth();
   const userWorld = useUserWorld();
   const gameState = useQuery(

@@ -1,28 +1,21 @@
 import tailwindcss from "@tailwindcss/vite";
-import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import path from "node:path";
 import { defineConfig } from "vite";
 
 import { engineSource } from "../shared/viteEngineSource";
+import { viteJgUiWasm } from "../shared/viteJgUiWasm";
 
 const engine = engineSource(new URL(".", import.meta.url));
 
 export default defineConfig({
   plugins: [
     tailwindcss(),
-    tanstackRouter({
-      // Keep route components out of the startup bundle. Without this, the
-      // generated route tree eagerly imports every page (including dev-only 3D
-      // previews), which forces three.js into the first load of /, /login,
-      // and /signup.
-      autoCodeSplitting: true,
-    }),
-    ],
+    viteJgUiWasm(),
+  ],
   resolve: {
     dedupe: engine.dedupe,
     alias: [
       ...engine.alias,
-      { find: /^@\//, replacement: `${path.resolve(import.meta.dirname, "./src")}/` },
       // Resolve the workspace package straight to its source. Bypasses
       // node_modules linking, which breaks on Windows junctions (convex/esbuild)
       // and needs this when packages/game has no "exports" field.
@@ -39,8 +32,6 @@ export default defineConfig({
         codeSplitting: {
           groups: [
             { name: "three-vendor", test: /node_modules[\\/](three|three-stdlib)[\\/]/ },
-            { name: "react-vendor", test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/, priority: 2 },
-            { name: "router-vendor", test: /node_modules[\\/]@tanstack[\\/]/, priority: 2 },
           ],
         },
       },

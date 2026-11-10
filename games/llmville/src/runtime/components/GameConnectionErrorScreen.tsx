@@ -1,5 +1,5 @@
+import { ScreenLink } from "../../screens/screenRouter";
 import { api } from "@llmville/backend/convex/_generated/api";
-import { Link } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
 import { useCallback, useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 
@@ -154,9 +154,9 @@ export function GameConnectionErrorScreen({
             <KitButton type="button" onClick={onRetry ?? (() => window.location.reload())} className="llm-btn--terminal w-full py-3 text-[#f0a097]">
               Retry
             </KitButton>
-            <Link to={homeHref} className="llm-btn w-full py-3 text-center text-sm" data-variant="ghost">
+            <ScreenLink to={homeHref} className="llm-btn w-full py-3 text-center text-sm" data-variant="ghost">
               Back to main menu
-            </Link>
+            </ScreenLink>
           </div>
         </KitPanel>
       </div>

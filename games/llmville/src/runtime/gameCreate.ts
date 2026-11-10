@@ -1,7 +1,8 @@
+import { navigate } from "../screens/screenRouter";
+import { preloadScreen } from "../screens/screens";
 import { api } from "@llmville/backend/convex/_generated/api";
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
 import { useMutation } from "convex/react";
-import { useNavigate, useRouter } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "@jgengine/core/ui/jsx";
 
 import { useAuth } from "../auth";
@@ -15,9 +16,9 @@ import { useUserWorld } from "../world/world";
 export type GameCreatePhase = "auth" | "loading" | "bootstrapping" | "redirecting" | "error";
 
 /** Warm the create route and game-session chunk ahead of a click. */
-export function preloadGameCreateRoute(router: Pick<ReturnType<typeof useRouter>, "preloadRoute">) {
+export function preloadGameCreateRoute() {
   void loadGameSessionModule();
-  void router.preloadRoute({ to: "/game/create" });
+  preloadScreen("/game/create");
 }
 
 /**
@@ -26,8 +27,6 @@ export function preloadGameCreateRoute(router: Pick<ReturnType<typeof useRouter>
  * wait on the better-auth `/get-session` round-trip.
  */
 export function useGameCreateEntry() {
-  const navigate = useNavigate();
-  const router = useRouter();
   const { isConvexAuthenticated, isConvexAuthLoading, isAuthenticated, isLoading, convexUser, user } = useAuth();
   const userWorld = useUserWorld();
   const bootstrapWorld = useMutation(api.world.bootstrapWorld);
@@ -42,11 +41,11 @@ export function useGameCreateEntry() {
 
   const enterGame = useCallback(
     async (gameId: Id<"games">) => {
-      preloadGameRoute(router, gameId);
+      preloadGameRoute();
       await loadGameSessionModule();
       await navigate({ to: "/game/$gameId", params: { gameId }, replace: true });
     },
-    [navigate, router],
+    [],
   );
 
   useEffect(() => {

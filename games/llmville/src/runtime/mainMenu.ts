@@ -1,6 +1,6 @@
+import { navigate } from "../screens/screenRouter";
 import { api } from "@llmville/backend/convex/_generated/api";
 import { useMutation } from "convex/react";
-import { useNavigate, useRouter } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "@jgengine/core/ui/jsx";
 
 import { useAuth, usePlayerIdentity } from "../auth";
@@ -32,8 +32,6 @@ export interface MainMenuState {
 }
 
 export function useMainMenu(): MainMenuState {
-  const navigate = useNavigate();
-  const router = useRouter();
   // Drive the menu off Convex auth (the optimistic token), not the better-auth
   // session: a remembered login is "authenticated" on the first render, so the
   // primary action resolves without waiting on the `/get-session` round-trip.
@@ -77,13 +75,13 @@ export function useMainMenu(): MainMenuState {
       void loadAuthScreenModule();
       return;
     }
-    preloadGameCreateRoute(router);
-  }, [isAuthenticated, router]);
+    preloadGameCreateRoute();
+  }, [isAuthenticated]);
 
   const warmContinueRoute = useCallback(() => {
     if (phase.kind !== MAIN_MENU_KIND.continue) return;
-    preloadGameRoute(router, phase.gameId);
-  }, [phase, router]);
+    preloadGameRoute();
+  }, [phase]);
 
   const startGame = useCallback(() => {
     if (!isAuthenticated) {
@@ -92,21 +90,21 @@ export function useMainMenu(): MainMenuState {
       return;
     }
     setIsEnteringGame(true);
-    preloadGameCreateRoute(router);
+    preloadGameCreateRoute();
     void loadGameSessionModule().finally(() => {
       void navigate(destinationAfterAuth("play"));
     });
-  }, [isAuthenticated, navigate, router]);
+  }, [isAuthenticated]);
 
   const continueGame = useCallback(() => {
     if (phase.kind !== MAIN_MENU_KIND.continue) return;
     const { gameId } = phase;
     setIsEnteringGame(true);
-    preloadGameRoute(router, gameId);
+    preloadGameRoute();
     void loadGameSessionModule().finally(() => {
       void navigate({ to: "/game/$gameId", params: { gameId } });
     });
-  }, [navigate, phase, router]);
+  }, [phase]);
 
   const deleteCurrentWorld = useCallback(async () => {
     if (!isAuthenticated || playerId === "anonymous") return;

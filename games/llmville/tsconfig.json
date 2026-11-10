@@ -24,7 +24,8 @@
       "."
     ],
     "paths": {
-      "@/*": ["./src/*"],
+      "react": ["../../packages/core/src/ui/jsx/index.ts"],
+      "react/jsx-runtime": ["../../packages/core/src/ui/jsx/jsx-runtime.ts"],
       "@llmville/game/*": ["./packages/game/src/*"],
       "@jgengine/assets": ["../../packages/assets/src/index.ts"],
       "@jgengine/assets/*": ["../../packages/assets/src/*"],
@@ -54,7 +55,6 @@
   "include": [
     "src",
     "proofs",
-    "*.ts",
     "scripts/*.ts"
   ],
   "exclude": [

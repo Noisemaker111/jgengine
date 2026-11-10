@@ -134,7 +134,8 @@ export function CharacterDevPreview() {
 
   // Keep URL in sync for copy-paste / script reproducibility
   useEffect(() => {
-    const sp = new URLSearchParams();
+    const sp = new URLSearchParams(window.location.search);
+    sp.delete("phase");
     sp.set("fish", fish);
     sp.set("hoodie", hoodie);
     sp.set("pants", pants);

@@ -1,5 +1,5 @@
 import { useState } from "@jgengine/core/ui/jsx";
-import { ArrowRight, Check, Sparkles } from "lucide-react";
+import { Icon } from "../../kit/icons";
 import { getBaseModelDefinition } from "@llmville/game/models/baseModels";
 import { STARTER_RACK_CATALOG_ID } from "@llmville/game/infrastructure/catalog";
 import { TUTORIAL_TRAIN_BASE_MODEL_ID } from "@llmville/game/tutorial/tutorialProgress";
@@ -109,12 +109,12 @@ export function LabGuide({ world, tutorial, compact = false, selection }: { worl
   }
   return (
     <section aria-label="Lab guide" className={`rounded-2xl border border-brand-teal/25 bg-brand-ink/95 p-4 text-brand-cream shadow-lg ${compact ? "w-full" : "col-span-full"}`}>
-      <div className="mb-2 flex items-center justify-between gap-2 text-xs text-brand-teal"><span className="flex items-center gap-2"><Sparkles size={14} />{tutorial.tutorialCompleted ? "Your next chapter" : "Your first earning model"}</span>{!tutorial.tutorialCompleted && tutorial.tutorialHint && <span>{tutorial.tutorialHint.step} / {tutorial.tutorialHint.total}</span>}</div>
+      <div className="mb-2 flex items-center justify-between gap-2 text-xs text-brand-teal"><span className="flex items-center gap-2"><Icon name="sparkles" size={14} />{tutorial.tutorialCompleted ? "Your next chapter" : "Your first earning model"}</span>{!tutorial.tutorialCompleted && tutorial.tutorialHint && <span>{tutorial.tutorialHint.step} / {tutorial.tutorialHint.total}</span>}</div>
       {!tutorial.tutorialCompleted && tutorial.tutorialHint && <progress aria-label="Tutorial progress" max={tutorial.tutorialHint.total} value={tutorial.tutorialHint.step - 1} className="mb-2 h-1 w-full accent-brand-teal" />}
       <h2 className="text-base font-semibold">{title}</h2>
       <p className="mt-1 text-xs leading-relaxed text-brand-cream-dim">{detail}</p>
-      <button type="button" disabled={!world.canEditGame} onClick={action} className="mt-3 flex min-h-10 w-full items-center justify-between gap-2 rounded-xl bg-brand-coral px-3 py-2 text-sm font-semibold text-brand-ink hover:brightness-110 disabled:opacity-40">{label}<ArrowRight size={16} /></button>
-      {!compact && tutorial.tutorialCompleted && <div className="mt-4 grid grid-cols-2 gap-2">{goals.map((entry) => <button key={entry.id} type="button" onClick={() => setChosenGoal(entry.id)} aria-pressed={goal?.id === entry.id} className={`rounded-xl border p-2 text-left text-xs ${entry.done ? "border-brand-teal/30 text-brand-teal" : goal?.id === entry.id ? "border-brand-coral text-brand-cream" : "border-white/10 text-brand-cream-dim"}`}><span className="flex items-center gap-1">{entry.done && <Check size={12} />}{entry.title}</span></button>)}</div>}
+      <button type="button" disabled={!world.canEditGame} onClick={action} className="mt-3 flex min-h-10 w-full items-center justify-between gap-2 rounded-xl bg-brand-coral px-3 py-2 text-sm font-semibold text-brand-ink hover:brightness-110 disabled:opacity-40">{label}<Icon name="next" size={16} /></button>
+      {!compact && tutorial.tutorialCompleted && <div className="mt-4 grid grid-cols-2 gap-2">{goals.map((entry) => <button key={entry.id} type="button" onClick={() => setChosenGoal(entry.id)} aria-pressed={goal?.id === entry.id} className={`rounded-xl border p-2 text-left text-xs ${entry.done ? "border-brand-teal/30 text-brand-teal" : goal?.id === entry.id ? "border-brand-coral text-brand-cream" : "border-white/10 text-brand-cream-dim"}`}><span className="flex items-center gap-1">{entry.done && <Icon name="check" size={12} />}{entry.title}</span></button>)}</div>}
     </section>
   );
 }

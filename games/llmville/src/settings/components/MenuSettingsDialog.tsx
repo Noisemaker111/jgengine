@@ -1,5 +1,5 @@
-import { useNavigate, useSearch } from "@tanstack/react-router";
-import { X } from "lucide-react";
+import { navigate, useScreenLocation } from "../../screens/screenRouter";
+import { Icon } from "../../kit/icons";
 import { createPortal } from "@jgengine/core/ui/jsx/client.view";
 
 import { useDialogBehavior } from "@jgengine/core/dialog/dialogBehavior.view";
@@ -10,7 +10,7 @@ import { KitButton, KitPanel, UiKitScope } from "@jgengine/core/ui/kit/uiKitRoot
 
 import { LlmvilleSettings, ReducedMotionSync } from "./LlmvilleSettings";
 import { llmvilleHudTheme } from "../../kit/llmvilleKit";
-import { appEngineSettings } from "../settings";
+import { appEngineSettings, parseHomeRouteSearch } from "../settings";
 
 const noop = () => undefined;
 
@@ -24,8 +24,7 @@ function MenuSettingsBody({ tab, onTabChange }: { tab: string | undefined; onTab
 
 /** The main menu's settings dialog, opened by the `settings` search flag, over the same settings the game reads. */
 export function MenuSettingsDialog() {
-  const navigate = useNavigate();
-  const search = useSearch({ from: "/" });
+  const search = parseHomeRouteSearch(useScreenLocation().search);
   const open = search.settings === true;
   const close = () => void navigate({ to: "/", search: { settings: undefined, tab: undefined }, replace: true });
   const dialogRef = useDialogBehavior({ open, onClose: close });
@@ -66,7 +65,7 @@ export function MenuSettingsDialog() {
                 <KitPanel as="div" variant="dialog" data-shell="terminal" className="flex w-full flex-col overflow-hidden">
                   <div className="flex shrink-0 items-center justify-between gap-4 border-b border-white/8 px-5 py-4">
                     <h2 id="settings-modal-title" className="font-game text-lg font-extrabold text-brand-cream">Settings</h2>
-                    <KitButton variant="ghost" size="sm" onClick={close} aria-label="Close settings" icon={<X className="h-3.5 w-3.5" />} />
+                    <KitButton variant="ghost" size="sm" onClick={close} aria-label="Close settings" icon={<Icon name="close" className="h-3.5 w-3.5" />} />
                   </div>
                   <MenuSettingsBody
                     tab={search.tab}

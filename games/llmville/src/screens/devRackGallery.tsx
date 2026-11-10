@@ -1,4 +1,3 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMemo, useState } from "@jgengine/core/ui/jsx";
 import { EngineCanvas } from "@jgengine/core/frame/engineCanvas.draw";
 import { useEngineRendererFactory } from "@jgengine/core/webgpu/engineRenderer.draw";
@@ -168,7 +167,7 @@ const RACK_STAGE: StageSpec = {
 
 const RACK_ORBIT = { target: [1.4, 1.1, 0.3] as const };
 
-function DevRackGallery() {
+export function DevRackGallery() {
   const rendererFactory = useEngineRendererFactory("webgl");
   const [gpuMode, setGpuMode] = useState<GpuPreviewMode>("full");
   const [coolerMode, setCoolerMode] = useState<CoolerPreviewMode>("installed");
@@ -293,12 +292,3 @@ function DevRackGallery() {
     </div>
   );
 }
-
-export const Route = createFileRoute("/dev/racks")({
-  beforeLoad: () => {
-    if (!import.meta.env.DEV) {
-      throw redirect({ to: "/" });
-    }
-  },
-  component: DevRackGallery,
-});

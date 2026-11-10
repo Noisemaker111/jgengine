@@ -1,7 +1,8 @@
-import { useNavigate } from "@tanstack/react-router";
+import { navigate } from "../../screens/screenRouter";
 import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 
 import { suspendPlayControls } from "@jgengine/core/game/controlGate";
+import { NoticeStack } from "@jgengine/core/notifications/notices.view";
 import { useDisplayProfile } from "@jgengine/core/ui/display.view";
 import { useGameContext } from "@jgengine/react/provider";
 import { useBuildSession } from "../../build/buildSession";
@@ -11,6 +12,7 @@ import { useRackHardwareSession } from "../../infrastructure/rackHardwareSession
 import { RouteLoadingScreen } from "../../components/RouteLoadingScreen";
 import GameOverlay from "./GameOverlay";
 import { GameConnectionErrorScreen } from "./GameConnectionErrorScreen";
+import { actionNotices } from "../actionFeedback";
 import { engineActions } from "../gameEngine";
 import { useGameEngineInput } from "../input";
 import { useInteractionPromptSync } from "../interactionPrompts";
@@ -32,7 +34,6 @@ export function LlmvilleGameUI() {
   const ctx = useGameContext();
   const session = useLlmvilleSession();
   const { tabletNav, containerRef, gameId } = session;
-  const navigate = useNavigate();
   const isTouch = useDisplayProfile().coarsePointer;
   const { keybinds } = useAppSettings();
   const world = useWorldState({
@@ -166,6 +167,7 @@ export function LlmvilleGameUI() {
       <ReducedMotionSync />
       <GameOverlay world={world} build={build} rackHardware={rackHardware} tutorial={tutorial} isTouch={isTouch} />
       <BankruptOverlay />
+      <NoticeStack feed={actionNotices} />
     </>
   );
 }

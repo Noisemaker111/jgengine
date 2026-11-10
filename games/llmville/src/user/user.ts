@@ -1,10 +1,10 @@
+import { navigate } from "../screens/screenRouter";
 import { api } from "@llmville/backend/convex/_generated/api";
 import {
   FOUNDER_PERK_DISPLAY_PERCENT,
   normalizeAvatarId,
   type CanonicalAvatarId,
 } from "@llmville/game/user/founder";
-import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useState } from "@jgengine/core/ui/jsx";
 
@@ -132,7 +132,6 @@ export function useUpdateAvatarMutation() {
 
 export function useCreateWorldCustomizeScreen() {
   const { user, isLoading, convexUser } = useAuth();
-  const navigate = useNavigate();
   const updateAvatar = useUpdateAvatarMutation();
   const bootstrapWorld = useMutation(api.world.bootstrapWorld);
   const [selectedAvatarId, setSelectedAvatarId] = useState<AvatarId>(getDefaultAvatarId);
@@ -208,7 +207,6 @@ function normalizeProfileRouteUsername(raw: string): string {
 }
 
 export function useProfileScreen({ usernameParam }: UseProfileScreenParams) {
-  const navigate = useNavigate();
   const { isAuthenticated, convexUser, logout } = useAuth();
   const normalizedUsername = normalizeProfileRouteUsername(usernameParam);
   const publicProfile = useQuery(api.user.getPublicProfileByUsername, { username: normalizedUsername });

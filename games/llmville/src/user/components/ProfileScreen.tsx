@@ -1,5 +1,5 @@
-import { Link } from "@tanstack/react-router";
-import { Check, Coins, Cpu, Loader2, LogOut, Pencil, Sparkles, Users, X } from "lucide-react";
+import { ScreenLink } from "../../screens/screenRouter";
+import { Icon } from "../../kit/icons";
 
 import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { formatCompactNumber, formatMoney } from "../../economy/economy";
@@ -43,7 +43,7 @@ export function ProfileScreen({ username: usernameParam }: ProfileScreenProps) {
     return (
       <MainMenuLayout backTo="/">
         <div className="flex flex-col items-center gap-4 py-10">
-          <Loader2 className="h-8 w-8 animate-spin text-brand-teal" aria-hidden />
+          <Icon name="spinner" className="h-8 w-8 animate-spin text-brand-teal" />
           <p className="text-sm font-medium text-brand-cream/60">Loading profile…</p>
         </div>
       </MainMenuLayout>
@@ -59,9 +59,9 @@ export function ProfileScreen({ username: usernameParam }: ProfileScreenProps) {
             <p className="text-sm text-brand-cream/60">
               That username may have changed or doesn&apos;t exist.
             </p>
-            <Link to="/" className="game-button game-button-primary game-menu-button mt-2 inline-flex">
+            <ScreenLink to="/" className="game-button game-button-primary game-menu-button mt-2 inline-flex">
               Back home
-            </Link>
+            </ScreenLink>
           </div>
         </ProfilePanel>
       </MainMenuLayout>
@@ -118,28 +118,28 @@ export function ProfileScreen({ username: usernameParam }: ProfileScreenProps) {
             </div>
             <div className="llm-stat-grid">
               <div className="llm-stat llm-stat--scoreboard llm-stat--tone-amber">
-                <span className="llm-stat__icon"><Coins className="h-4 w-4" aria-hidden /></span>
+                <span className="llm-stat__icon"><Icon name="coins" className="h-4 w-4" /></span>
                 <div className="llm-stat__content">
                   <span className="llm-stat__label">Cash</span>
                   <span className="llm-stat__value">{`$${formatMoney(publicProfile.lab.cash)}`}</span>
                 </div>
               </div>
               <div className="llm-stat llm-stat--scoreboard llm-stat--tone-teal">
-                <span className="llm-stat__icon"><Sparkles className="h-4 w-4" aria-hidden /></span>
+                <span className="llm-stat__icon"><Icon name="sparkles" className="h-4 w-4" /></span>
                 <div className="llm-stat__content">
                   <span className="llm-stat__label">Data tokens</span>
                   <span className="llm-stat__value">{formatCompactNumber(publicProfile.lab.dataTokens)}</span>
                 </div>
               </div>
               <div className="llm-stat llm-stat--scoreboard llm-stat--tone-cream">
-                <span className="llm-stat__icon"><Cpu className="h-4 w-4" aria-hidden /></span>
+                <span className="llm-stat__icon"><Icon name="cpu" className="h-4 w-4" /></span>
                 <div className="llm-stat__content">
                   <span className="llm-stat__label">Models serving</span>
                   <span className="llm-stat__value">{publicProfile.lab.modelsServing}</span>
                 </div>
               </div>
               <div className="llm-stat llm-stat--scoreboard llm-stat--tone-coral">
-                <span className="llm-stat__icon"><Users className="h-4 w-4" aria-hidden /></span>
+                <span className="llm-stat__icon"><Icon name="users" className="h-4 w-4" /></span>
                 <div className="llm-stat__content">
                   <span className="llm-stat__label">Models trained</span>
                   <span className="llm-stat__value">{publicProfile.lab.modelsTrained}</span>
@@ -170,7 +170,7 @@ export function ProfileScreen({ username: usernameParam }: ProfileScreenProps) {
                   onClick={handleCancel}
                   className="game-menu-button flex-1"
                 >
-                  <X className="h-4 w-4" aria-hidden />
+                  <Icon name="close" className="h-4 w-4" />
                   Cancel
                 </KitButton>
                 <KitButton
@@ -181,9 +181,9 @@ export function ProfileScreen({ username: usernameParam }: ProfileScreenProps) {
                   className="game-menu-button flex-1 disabled:opacity-50"
                 >
                   {saving ? (
-                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                    <Icon name="spinner" className="h-4 w-4 animate-spin" />
                   ) : (
-                    <Check className="h-4 w-4" aria-hidden />
+                    <Icon name="check" className="h-4 w-4" />
                   )}
                   Save
                 </KitButton>
@@ -195,7 +195,7 @@ export function ProfileScreen({ username: usernameParam }: ProfileScreenProps) {
                 onClick={() => setIsEditing(true)}
                 className="game-menu-button w-full"
               >
-                <Pencil className="h-4 w-4" aria-hidden />
+                <Icon name="pencil" className="h-4 w-4" />
                 Edit handle
               </KitButton>
             )}
@@ -209,7 +209,7 @@ export function ProfileScreen({ username: usernameParam }: ProfileScreenProps) {
               onClick={() => void logout()}
               className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-cream/45 transition-colors hover:text-brand-coral"
             >
-              <LogOut className="h-3.5 w-3.5" aria-hidden />
+              <Icon name="logOut" className="h-3.5 w-3.5" />
               Sign out
             </button>
           </div>

@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { ScreenLink } from "../../screens/screenRouter";
 
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { BrandLogo } from "../../branding/components/BrandLogo";
@@ -38,12 +38,12 @@ export function DashboardScreen() {
               {isGuest ? "Sign in to save your progress." : "You are not signed in yet."}
             </p>
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Link to="/login" className="game-button game-button-primary flex-1 px-4 py-3">
+              <ScreenLink to="/login" className="game-button game-button-primary flex-1 px-4 py-3">
                 <span className="text-sm">Sign in</span>
-              </Link>
-              <Link to="/signup" className="game-button game-button-secondary flex-1 px-4 py-3">
+              </ScreenLink>
+              <ScreenLink to="/signup" className="game-button game-button-secondary flex-1 px-4 py-3">
                 <span className="text-sm">Sign up</span>
-              </Link>
+              </ScreenLink>
             </div>
           </KitPanel>
         </div>
@@ -79,9 +79,9 @@ export function DashboardScreen() {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Link to="/" className="llm-btn flex-1 px-4 py-3 text-center" data-variant="primary">
+            <ScreenLink to="/" className="llm-btn flex-1 px-4 py-3 text-center" data-variant="primary">
               <span className="text-sm">Back home</span>
-            </Link>
+            </ScreenLink>
             <KitButton type="button" variant="ghost" onClick={() => void logout()} className="flex-1 px-4 py-3">
               <span className="text-sm">Sign out</span>
             </KitButton>
