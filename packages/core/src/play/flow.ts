@@ -100,6 +100,8 @@ export interface BrowserFlow<TProbe extends ProbeReadings> extends Flow<TProbe> 
   aimAt(expression: string, options?: { tolerancePx?: number }): Promise<{ x: number; y: number }>;
   /** Replace a text field's value by its accessible label, then Tab to commit. */
   fill(label: string, value: string): Promise<void>;
+  /** Type into whatever has focus (a field the flow just clicked, wherever it is drawn). */
+  type(text: string): Promise<void>;
   /** Wait until the page's text shows this. */
   see(text: string | RegExp, options?: FlowWaitOptions): Promise<void>;
   /** Evaluate a page expression and return its value, unchecked: narrow it before use. */

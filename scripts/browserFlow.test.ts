@@ -41,6 +41,9 @@ function fakeDriver(options: { probe?: ProbeReadings; page?: Record<string, unkn
     async fill(label) {
       calls.push(`fill ${label}`);
     },
+    async type(text) {
+      calls.push(`type ${text}`);
+    },
     evaluate,
     async bridge() {
       return { ok: true };

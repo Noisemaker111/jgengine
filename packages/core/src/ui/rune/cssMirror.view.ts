@@ -398,9 +398,30 @@ function styleWith(style: CSSStyleDeclaration, over: Record<string, string>): CS
   });
 }
 
+/**
+ * The box for `element`. An animated element is read with its animations switched off for the
+ * length of the read (the browser holds an undisplayed element at each animation's first frame,
+ * which is often invisible), then given the last frame of those that keep it.
+ */
 function boxOf(element: Element, computed: CSSStyleDeclaration, report: MirrorReport, pseudo = false): WireBox {
-  const ended = pseudo ? null : animationEnd(element, computed);
-  const style = ended === null ? computed : styleWith(computed, ended);
+  const animated = !pseudo && computed.animationName.split(", ").some((name) => name !== "none" && name !== "");
+  if (!animated) return boxOfStyle(element, computed, report, pseudo, null);
+  const ended = animationEnd(element, computed);
+  const inline = (element as HTMLElement).style;
+  const hadStyle = element.hasAttribute("style");
+  const prior = inline.getPropertyValue("animation");
+  const priority = inline.getPropertyPriority("animation");
+  inline.setProperty("animation", "none", "important");
+  try {
+    return boxOfStyle(element, ended === null ? computed : styleWith(computed, ended), report, pseudo, ended);
+  } finally {
+    if (prior === "") inline.removeProperty("animation");
+    else inline.setProperty("animation", prior, priority);
+    if (!hadStyle) element.removeAttribute("style");
+  }
+}
+
+function boxOfStyle(element: Element, style: CSSStyleDeclaration, report: MirrorReport, pseudo: boolean, ended: Record<string, string> | null): WireBox {
   const box: WireBox = { k: "x", id: idOf(element) };
   const display = style.display;
   const flex = display.endsWith("flex");
