@@ -441,6 +441,7 @@ function boxOf(element: Element, style: CSSStyleDeclaration, report: MirrorRepor
   if (transform !== null) {
     if (transform.lost !== null) report.add(`transform: ${transform.lost}`, element);
     box["tf"] = [transform.x, transform.y, transform.rotate, transform.scale, transform.fx, transform.fy];
+    if (transform.skew !== 0) box["sk"] = transform.skew;
     const origin = style.transformOrigin.split(" ");
     const ox = origin[0] ?? "50%";
     const oy = origin[1] ?? "50%";
@@ -464,7 +465,17 @@ function boxOf(element: Element, style: CSSStyleDeclaration, report: MirrorRepor
     if (clip === null) report.add(`clip-path: ${style.clipPath.slice(0, 40)}`, element);
     else box["cp"] = clip;
   }
-  if (style.maskImage !== "none" && style.maskImage !== "" && style.maskImage !== undefined) report.add(`mask-image: ${style.maskImage.slice(0, 40)}`, element);
+  const mask = style.maskImage;
+  if (mask !== "none" && mask !== "" && mask !== undefined) {
+    // A picture used as a mask over a flat colour is that picture in that colour (a tinted icon).
+    const url = /^url\(["']?(.*?)["']?\)$/.exec(mask);
+    const svg = url === null || box["bg"] === undefined ? undefined : maskSvg(url[1] ?? "");
+    if (svg === undefined) report.add(`mask-image: ${mask.slice(0, 40)}`, element);
+    else {
+      if (svg !== null) box["svg"] = tintedSvg(svg, style.backgroundColor, (style as CSSStyleDeclaration & { maskMode?: string }).maskMode === "luminance");
+      delete box["bg"];
+    }
+  }
   if (style.mixBlendMode !== "normal") report.add(`mix-blend-mode: ${style.mixBlendMode}`, element);
   if (style.pointerEvents !== "none" && style.visibility !== "hidden") box["hit"] = 1;
   const z = style.zIndex;
@@ -493,6 +504,41 @@ function pseudoBox(element: Element, which: "::before" | "::after", report: Mirr
 }
 
 /** Inline SVG as standalone markup, with the colours CSS gave it written in. */
+/** SVG pictures used as masks, by URL: the markup, `null` while it loads, `undefined` for one that is not SVG. */
+const maskSvgs = new Map<string, string | null | undefined>();
+let maskLoaded: () => void = () => undefined;
+
+/** Called when a mask picture has arrived and the elements that use it can be drawn. */
+export function onMaskLoaded(listener: () => void): void {
+  maskLoaded = listener;
+}
+
+function maskSvg(url: string): string | null | undefined {
+  if (maskSvgs.has(url)) return maskSvgs.get(url);
+  maskSvgs.set(url, null);
+  void fetch(url)
+    .then((response) => (response.ok ? response.text() : ""))
+    .catch(() => "")
+    .then((text) => {
+      maskSvgs.set(url, text.includes("<svg") ? text : undefined);
+      maskLoaded();
+    });
+  return null;
+}
+
+/** `svg` in one flat colour, keeping its coverage (or, for a luminance mask, its brightness as coverage). */
+function tintedSvg(svg: string, color: string, luminance: boolean): string {
+  const open = svg.indexOf("<svg");
+  const head = svg.indexOf(">", open);
+  const tail = svg.lastIndexOf("</svg>");
+  if (open === -1 || head === -1 || tail === -1) return svg;
+  const parts = /^rgba?\(([^)]*)\)$/.exec(color)?.[1]?.split(/[,\s/]+/).filter((part) => part !== "") ?? [];
+  const flood = parts.length >= 3 ? `rgb(${parts[0]},${parts[1]},${parts[2]})` : color;
+  const opacity = parts[3] ?? "1";
+  const filter = `<defs><filter id="jg-tint" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">${luminance ? '<feColorMatrix in="SourceGraphic" type="luminanceToAlpha" result="cover"/>' : ""}<feFlood flood-color="${flood}" flood-opacity="${opacity}"/><feComposite in2="${luminance ? "cover" : "SourceAlpha"}" operator="in"/></filter></defs><g filter="url(#jg-tint)">`;
+  return `${svg.slice(open, head + 1)}${filter}${svg.slice(head + 1, tail)}</g></svg>`;
+}
+
 function svgMarkup(svg: SVGSVGElement, style: CSSStyleDeclaration): string {
   const copy = svg.cloneNode(true) as SVGSVGElement;
   const sources = [svg, ...svg.querySelectorAll("*")];

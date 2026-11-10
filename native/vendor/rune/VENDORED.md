@@ -27,6 +27,11 @@ hands fetched bytes straight to the text stack, which reads TrueType/OpenType on
 engine's font library ships WOFF2. The patch decompresses WOFF and WOFF2 (the `wuff` crate)
 after the fetch.
 
+`crates/rune-taffy` — `calc()` lengths. Taffy's `calc` feature is switched on and `rune_taffy::Calc`
+is the value behind a calc pointer (`points + fraction of the basis`, optionally the smaller or
+larger of two), which the store's `resolve_calc_value` reads; upstream returns 0 for every calc.
+The engine's CSS host uses it for `calc(100% - 20px)`, `min(100%, 520px)` and `max()`.
+
 `crates/rune/src/el/layout.rs` — `El::layout_style`. Rune's element builders expose a flex
 subset (points, one direction, pins). The engine's CSS host needs the rest of what Taffy
 already lays out: grid tracks and placement, block flow, percentages, auto margins, min and

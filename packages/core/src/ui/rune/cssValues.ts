@@ -5,7 +5,8 @@
  */
 
 /** A length for the wire: points, `"N%"`, or `"auto"`. `null` means it could not be expressed. */
-export type WireDim = number | string;
+/** Points, `"40%"`, `"auto"`, or a calc: `[points, fraction]` / `[points, fraction, other points, other fraction, mode]` (mode 1 `min()`, 2 `max()`). */
+export type WireDim = number | string | number[];
 
 const colorCache = new Map<string, number>();
 
@@ -131,6 +132,15 @@ export function parseDim(text: string): WireDim | null {
     return Number.isNaN(v) || text.includes("(") ? null : `${v}%`;
   }
   if (text === "0") return 0;
+  const pick = /^(min|max)\((.*)\)$/.exec(text);
+  if (pick !== null) {
+    const parts = splitTop(pick[2] ?? "", ",").map((part) => parseLengthPercent(part));
+    const first = parts[0];
+    const other = parts[1];
+    if (parts.length !== 2 || first === null || first === undefined || other === null || other === undefined) return null;
+    return [first[0], first[1], other[0], other[1], pick[1] === "min" ? 1 : 2];
+  }
+  if (text.startsWith("calc(")) return parseLengthPercent(text);
   return null;
 }
 
@@ -494,7 +504,9 @@ export interface WireTransform {
   fy: number;
   rotate: number;
   scale: number;
-  /** A part that could not be expressed (skew, 3D, non-uniform scale). */
+  /** Horizontal skew as the tangent of its angle: the box is drawn as a parallelogram. */
+  skew: number;
+  /** A part that could not be expressed (vertical skew, 3D, non-uniform scale). */
   lost: string | null;
 }
 
@@ -510,7 +522,7 @@ function addTranslate(out: WireTransform, token: string | undefined, axis: "x" |
 /** The computed `translate`, `rotate`, `scale` and `transform` of one element, combined. */
 export function parseTransform(translate: string, rotate: string, scale: string, transform: string): WireTransform | null {
   if ((translate === "none" || translate === "") && (rotate === "none" || rotate === "") && (scale === "none" || scale === "") && (transform === "none" || transform === "")) return null;
-  const out: WireTransform = { x: 0, y: 0, fx: 0, fy: 0, rotate: 0, scale: 1, lost: null };
+  const out: WireTransform = { x: 0, y: 0, fx: 0, fy: 0, rotate: 0, scale: 1, skew: 0, lost: null };
   if (translate !== "none" && translate !== "") {
     const [x, y] = splitTop(translate, " ");
     addTranslate(out, x, "x");
@@ -542,6 +554,12 @@ export function parseTransform(translate: string, rotate: string, scale: string,
         const sy = parseFloat(args[1] ?? args[0] ?? "1");
         if (sx !== sy) out.lost = part;
         out.scale *= sx;
+      } else if (fn === "skewX" || (fn === "skew" && (args.length === 1 || parseAngle(args[1] ?? "") === 0))) {
+        out.skew += Math.tan(parseAngle(args[0] ?? "") ?? 0);
+      } else if (fn === "matrix" && Math.abs(parseFloat(args[0] ?? "1") - 1) < 0.001 && Math.abs(parseFloat(args[1] ?? "0")) < 0.001 && Math.abs(parseFloat(args[3] ?? "1") - 1) < 0.001 && Math.abs(parseFloat(args[2] ?? "0")) > 0.001) {
+        out.skew += parseFloat(args[2] ?? "0");
+        out.x += parseFloat(args[4] ?? "0");
+        out.y += parseFloat(args[5] ?? "0");
       } else if (fn === "matrix") {
         const [a = 1, b = 0, c = 0, d = 1, e = 0, f = 0] = args.map(parseFloat);
         const sx = Math.hypot(a, b);
