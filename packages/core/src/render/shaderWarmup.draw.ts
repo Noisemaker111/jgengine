@@ -1748,6 +1748,12 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
         }
         if (cancelled) return;
         bind(() => drawSubset(options.renderer, options.scene, options.camera, keep));
+        // The draw uploaded the batch's textures implicitly; record them so the play deferral
+        // does not hold every one of these materials again on its first live frame.
+        for (const object of batch) {
+          if (!isDrawable(object)) continue;
+          for (const material of Array.isArray(object.material) ? object.material : [object.material]) noteMaterialTextures(material);
+        }
       });
     }
     for (const draw of heldToDraw) jobs.push(() => drawHeldDraw(options.renderer, options.scene, objects, draw, draw.target));
