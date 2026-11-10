@@ -2,7 +2,7 @@ import type { GameEngine, GameEngineState } from "@llmville/game/simulation/game
 import { useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 export * from "@llmville/game/simulation/gameEngine";
-export { wrapMutation, withEditAccess } from "@/runtime/engineAccess";
+export { wrapMutation, withEditAccess } from "./engineAccess";
 
 export function useGameEngineState<T>(engine: GameEngine, selector: (state: GameEngineState) => T): T {
   return useSyncExternalStore(

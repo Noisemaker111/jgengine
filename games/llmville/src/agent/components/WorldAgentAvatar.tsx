@@ -11,10 +11,10 @@ import {
   useSceneObjectAttach,
 } from "@jgengine/core/frame/useEngineDraw.draw";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
-import { PlayerCharacterFigure } from "@/user/components/PlayerCharacterFigure";
-import { DEFAULT_CHARACTER_LOOK } from "@/user/playerCharacterFigure";
-import { REMOTE_AVATAR_INTERPOLATION_MS } from "@/world/location";
-import { readLiveRemotePose, sampleRemotePose } from "@/world/remotePresenceRuntime";
+import { PlayerCharacterFigure } from "../../user/components/PlayerCharacterFigure";
+import { DEFAULT_CHARACTER_LOOK } from "../../user/playerCharacterFigure";
+import { REMOTE_AVATAR_INTERPOLATION_MS } from "../../world/location";
+import { readLiveRemotePose, sampleRemotePose } from "../../world/remotePresenceRuntime";
 
 const AIRBORNE_JUMP_Y = 0.04;
 

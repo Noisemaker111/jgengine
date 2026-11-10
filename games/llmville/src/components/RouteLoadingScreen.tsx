@@ -1,6 +1,6 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { MascotBot } from "@/branding/components/MascotBot";
-import { StandalonePageShell } from "@/branding/components/StandalonePageShell";
+import { MascotBot } from "../branding/components/MascotBot";
+import { StandalonePageShell } from "../branding/components/StandalonePageShell";
 
 interface RouteLoadingScreenProps {
   label?: string;

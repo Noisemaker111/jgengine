@@ -2,26 +2,26 @@ import type { PlacedBuildItem } from "@llmville/game/build/build";
 import type { BuildInventory } from "@llmville/game/build/catalog";
 import type { HardwareInventory } from "@llmville/game/infrastructure/infrastructure";
 import type { RackCoolingInventory } from "@llmville/game/infrastructure/catalog";
-import type { PlacedRack } from "@/infrastructure/infrastructure";
+import type { PlacedRack } from "../infrastructure/infrastructure";
 import type { ComputePrecision, HardwareModelId } from "@llmville/game/infrastructure/catalog";
 import type {
   GameEngine,
   InteractionHint,
   TweetNotification,
-} from "@/runtime/gameEngine";
+} from "./gameEngine";
 import type { GamePositionedPrompt, InteractionTarget } from "@llmville/game/simulation/interaction";
 import type { GameTime } from "@jgengine/core/time/calendarClock";
-import type { GameUserModel, GeneratedModelSpec } from "@/models/models";
-import type { BaseModelCatalogState, BaseModelLibraryEntry } from "@/models/training";
+import type { GameUserModel, GeneratedModelSpec } from "../models/models";
+import type { BaseModelCatalogState, BaseModelLibraryEntry } from "../models/training";
 import type { ResearchUnlocks } from "@llmville/game/research/researchUnlocks";
-import type { PersonalUpgradeItem, ShopCatalogItem } from "@/store/store";
+import type { PersonalUpgradeItem, ShopCatalogItem } from "../store/store";
 import type { ServingModeId } from "@llmville/game/models/servingMode";
 import type { ComputeAssignmentMap, ComputeLane } from "@llmville/game/infrastructure/infrastructure";
 import type { ScrapeTierId } from "@llmville/game/models/scrapingTiers";
 import type { TutorialStage } from "@llmville/game/tutorial/tutorialStages";
 import type { DatacenterClaim, PlacementCellPolicy } from "@llmville/game/datacenter/claims";
 import type { CellCoord } from "@llmville/game/datacenter/grid";
-import type { GamePlayerProfile } from "@/user/user";
+import type { GamePlayerProfile } from "../user/user";
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
 
 export interface RuntimeGame {

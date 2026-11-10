@@ -1,6 +1,6 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { cn } from "@/kit/cn";
-import { SITE_NAME } from "@/seo/siteSeo";
+import { cn } from "../../kit/cn";
+import { SITE_NAME } from "../../seo/siteSeo";
 
 interface MascotBotProps {
   className?: string;

@@ -1,16 +1,16 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { Play } from "lucide-react";
+import { Icon } from "../../kit/icons";
 
 import {
   ABOUT_LEDE,
   ABOUT_PLAY_STEPS,
   ABOUT_SECTIONS,
-} from "@/branding/aboutContent";
-import { BrandLogo } from "@/branding/components/BrandLogo";
-import { MainMenuLayout } from "@/runtime/components/MainMenuLayout";
-import { PlayEntryAction } from "@/runtime/components/PlayEntryAction";
-import { DEFAULT_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/seo/siteSeo";
+} from "../aboutContent";
+import { BrandLogo } from "./BrandLogo";
+import { MainMenuLayout } from "../../runtime/components/MainMenuLayout";
+import { PlayEntryAction } from "../../runtime/components/PlayEntryAction";
+import { DEFAULT_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "../../seo/siteSeo";
 
 const structuredData = {
   "@context": "https://schema.org",
@@ -65,7 +65,7 @@ export function AboutScreen() {
             ))}
           </ol>
           <PlayEntryAction className="game-button game-button-primary mt-5 inline-flex w-full justify-center gap-2 py-3 text-sm">
-            <Play className="h-4 w-4" aria-hidden />
+            <Icon name="play" className="h-4 w-4" />
             <span>Play LLMville</span>
           </PlayEntryAction>
         </KitPanel>

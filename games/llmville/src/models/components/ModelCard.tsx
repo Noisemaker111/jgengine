@@ -6,8 +6,8 @@
  */
 
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import type { BaseModelLibraryEntry } from "@/models/training";
-import { getBaseModelBaselineStatsById, MODEL_ACTION_KIND } from "@/models/training";
+import type { BaseModelLibraryEntry } from "../training";
+import { getBaseModelBaselineStatsById, MODEL_ACTION_KIND } from "../training";
 import { getBaseModelDefinition } from "@llmville/game/models/baseModels";
 import {
   benchmarkToBarValue,
@@ -17,10 +17,10 @@ import {
   tpsToBarValue,
   type GameUserModel,
   userModelTrainingVolumeLabel,
-} from "@/models/models";
+} from "../models";
 
-import { MODEL_CARD_ACTION_VARIANT, ModelCardAction } from "@/models/components/ModelCardAction";
-import { getDeltaFillOpacity, ModelStatRow, ModelTrainingDurationEstimate } from "@/models/components/ModelPresentation";
+import { MODEL_CARD_ACTION_VARIANT, ModelCardAction } from "./ModelCardAction";
+import { getDeltaFillOpacity, ModelStatRow, ModelTrainingDurationEstimate } from "./ModelPresentation";
 import { formatTrainingDurationLabel } from "@llmville/game/models/trainingDurationLabel";
 
 const CARD_BASE = "mb-4 flex h-[145px] gap-4 overflow-hidden relative";

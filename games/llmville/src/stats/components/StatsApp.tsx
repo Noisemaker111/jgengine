@@ -5,7 +5,7 @@
  */
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { servingIncomePerHour, servingThroughputPerHour } from "@llmville/game/economy/hourlyRates";
-import type { SiteHealth } from "@/runtime/worldViewModel";
+import type { SiteHealth } from "../../runtime/worldViewModel";
 import { isOverCapacity } from "@llmville/game/infrastructure/infrastructure";
 
 interface StatsAppProps {

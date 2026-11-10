@@ -16,10 +16,18 @@ production deployment. Local dev runs against a local anonymous Convex (see READ
 LLMville is a cosy cooperative AI-lab tycoon: build a lab, install hardware, collect data, train
 models, serve them, earn income and expand in a shared world.
 
-- This folder (`src/`): React, Vite, TanStack Router, React Three Fiber and Convex adapters.
-  Domain UI lives in `<domain>/components/` and draws with the engine's kit parts (`KitPanel`,
-  `KitButton`, `KitMeter`, `KitToast`); LLMville's look is its UI kit in `src/kit/` (palette tokens,
-  card shells, stylesheet). `src/runtime` holds browser and React adapters only.
+- This folder (`src/`): the engine's UI runtime (`@jgengine/core/ui/jsx`), Vite and Convex adapters;
+  no React and no third-party React libraries. Domain UI lives in `<domain>/components/` and draws
+  with the engine's kit parts (`KitPanel`, `KitButton`, `KitMeter`, `KitToast`); LLMville's look is
+  its UI kit in `src/kit/` (palette tokens, card shells, icons, stylesheet). `src/runtime` holds
+  browser and UI adapters only.
+- Screens: `src/screens/screens.tsx` lists every screen by path; `screenRouter.tsx` moves between
+  them (`navigate`, `ScreenLink`) over the engine's menu stack. Refused actions raise a notice through
+  `runtime/actionFeedback.ts`; dragging uses the engine's drag layer; fonts ship in `src/art/fonts`.
+- Two hosts mount it. Its own site (`main.tsx`) keeps each screen at its URL. The dev runner lists
+  it as `llmville`: `?game=llmville` boots the world (`src/index.tsx`), `?game=llmville&preview`
+  opens the whole site with the screen in `&screen=`, and `&preview=racks|character|hud|bills` opens
+  one dev screen (`src/preview.tsx`). `?ui=rune` draws either through Rune.
 - `packages/game/src/<domain>`: shared pure TypeScript catalogs, balance, transitions,
   placement and simulation, with no React or Convex imports. `game/runtime` holds authoritative
   gameplay commands.
@@ -44,7 +52,7 @@ players, presence, claims, racks and decorations; claims gate building, not move
 - Preserve saves: idempotent migrations in the owning module, compatibility reads until a
   migration is proven complete. Seeds and hashes that placed saved worlds
   (`packages/game/src/world/cityHash.ts`) must keep their values; its test pins them.
-- Regenerate `convex/_generated/` and `src/routeTree.gen.ts` from source and commit them.
+- Regenerate `convex/_generated/` from source and commit it.
 - Follow `docs/design/DESIGN.md`: warm miniature-lab styling, one palette, one obvious next
   action, blocked actions explained, costs and duration previewed before spending. Players start
   with money and an empty inventory, never a starter kit.

@@ -1,25 +1,25 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { JoinGate } from "@jgengine/core/multiplayer/JoinGate.view";
-import { WorldChat } from "@/chat/components/WorldChat";
+import { WorldChat } from "../../chat/components/WorldChat";
 import PlacementControls from "./PlacementController";
 import { GameConnectionErrorScreen } from "./GameConnectionErrorScreen";
 import { useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 
-import GameOverlay from "@/runtime/components/GameOverlay";
-import { engineActions, useGameEngineState } from "@/runtime/gameEngine";
-import { TabletNavProvider } from "@/tablet/components/tabletNav";
+import GameOverlay from "./GameOverlay";
+import { engineActions, useGameEngineState } from "../gameEngine";
+import { TabletNavProvider } from "../../tablet/components/tabletNav";
 import {
   createTabletPreviewBuild,
   createTabletPreviewRackHardware,
   createTabletPreviewTutorial,
   usePreviewTabletNav,
   usePreviewWorldState,
-} from "@/tablet/tabletPreviewFixtures";
-import type { TabletAppId, TabletNavState } from "@/tablet/tablet";
-import { TABLET_APPS } from "@/tablet/tablet";
-import { cn } from "@/kit/cn";
-import { WORLD_CHAT_PREVIEW_MESSAGES } from "@/chat/worldChatPreviewFixtures";
-import type { ReadyWorldViewModel } from "@/runtime/worldViewModel";
+} from "../../tablet/tabletPreviewFixtures";
+import type { TabletAppId, TabletNavState } from "../../tablet/tablet";
+import { TABLET_APPS } from "../../tablet/tablet";
+import { cn } from "../../kit/cn";
+import { WORLD_CHAT_PREVIEW_MESSAGES } from "../../chat/worldChatPreviewFixtures";
+import type { ReadyWorldViewModel } from "../worldViewModel";
 
 function PreviewControlButton({
   active,

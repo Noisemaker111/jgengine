@@ -1,39 +1,40 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { useNavigate } from "@tanstack/react-router";
+import { navigate } from "../../screens/screenRouter";
 import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 
 import { suspendPlayControls } from "@jgengine/core/game/controlGate";
+import { NoticeStack } from "@jgengine/core/notifications/notices.view";
 import { useDisplayProfile } from "@jgengine/core/ui/display.view";
 import { useGameContext } from "@jgengine/react/provider";
-import { useBuildSession } from "@/build/buildSession";
-import { BankruptOverlay } from "@/economy/components/BankruptOverlay";
-import { buildRackSlotGpuWorkloadMap } from "@/infrastructure/computeUnits";
-import { useRackHardwareSession } from "@/infrastructure/rackHardwareSession";
-import { RouteLoadingScreen } from "@/components/RouteLoadingScreen";
-import GameOverlay from "@/runtime/components/GameOverlay";
-import { GameConnectionErrorScreen } from "@/runtime/components/GameConnectionErrorScreen";
-import { engineActions } from "@/runtime/gameEngine";
-import { useGameEngineInput } from "@/runtime/input";
-import { useInteractionPromptSync } from "@/runtime/interactionPrompts";
-import { useLlmvilleSession } from "@/runtime/llmvilleSession";
-import { spawnLocalPlayer, useLocalPlayerWalkSpeed } from "@/runtime/localPlayerEntity";
-import { readPlayerPosition, usePlayerPosition } from "@/runtime/playerPosition";
-import { useRackConfigureCommand } from "@/runtime/promptCommands";
-import { useSceneObjectSync } from "@/runtime/sceneObjects";
-import { useWorldState } from "@/runtime/worldState";
-import { isReadyWorldViewModel } from "@/runtime/worldViewModel";
-import { ReducedMotionSync } from "@/settings/components/LlmvilleSettings";
-import { useAppSettings } from "@/settings/settings";
-import { isTabletUiBlockingGameplay } from "@/tablet/tablet";
-import { useTutorialState } from "@/tutorial/tutorialRuntime";
-import { localGameState } from "@/user/localGameState";
+import { useBuildSession } from "../../build/buildSession";
+import { BankruptOverlay } from "../../economy/components/BankruptOverlay";
+import { buildRackSlotGpuWorkloadMap } from "../../infrastructure/computeUnits";
+import { useRackHardwareSession } from "../../infrastructure/rackHardwareSession";
+import { RouteLoadingScreen } from "../../components/RouteLoadingScreen";
+import GameOverlay from "./GameOverlay";
+import { GameConnectionErrorScreen } from "./GameConnectionErrorScreen";
+import { actionNotices } from "../actionFeedback";
+import { engineActions } from "../gameEngine";
+import { useGameEngineInput } from "../input";
+import { useInteractionPromptSync } from "../interactionPrompts";
+import { useLlmvilleSession } from "../llmvilleSession";
+import { spawnLocalPlayer, useLocalPlayerWalkSpeed } from "../localPlayerEntity";
+import { readPlayerPosition, usePlayerPosition } from "../playerPosition";
+import { useRackConfigureCommand } from "../promptCommands";
+import { useSceneObjectSync } from "../sceneObjects";
+import { useWorldState } from "../worldState";
+import { isReadyWorldViewModel } from "../worldViewModel";
+import { ReducedMotionSync } from "../../settings/components/LlmvilleSettings";
+import { useAppSettings } from "../../settings/settings";
+import { isTabletUiBlockingGameplay } from "../../tablet/tablet";
+import { useTutorialState } from "../../tutorial/tutorialRuntime";
+import { localGameState } from "../../user/localGameState";
 
 /** The shell's `GameUI`: LLMville's world state, its HUD and tablet, and the scene props the canvas draws. */
 export function LlmvilleGameUI() {
   const ctx = useGameContext();
   const session = useLlmvilleSession();
   const { tabletNav, containerRef, gameId } = session;
-  const navigate = useNavigate();
   const isTouch = useDisplayProfile().coarsePointer;
   const { keybinds } = useAppSettings();
   const world = useWorldState({
@@ -167,6 +168,7 @@ export function LlmvilleGameUI() {
       <ReducedMotionSync />
       <GameOverlay world={world} build={build} rackHardware={rackHardware} tutorial={tutorial} isTouch={isTouch} />
       <BankruptOverlay />
+      <NoticeStack feed={actionNotices} />
     </>
   );
 }

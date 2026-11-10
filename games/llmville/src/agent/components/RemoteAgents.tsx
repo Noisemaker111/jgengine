@@ -7,13 +7,13 @@ import { cameraYawToAvatarBodyYaw } from "@jgengine/core/movement/movementModel"
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 import { api } from "@llmville/backend/convex/_generated/api";
 import { worldChunkKeyAt } from "@llmville/game/datacenter/worldChunks";
-import { InterpolatedWorldAgentAvatar } from "@/agent/components/WorldAgentAvatar";
-import { useGameEngineState, type GameEngine } from "@/runtime/gameEngine";
-import { useWorldSceneProps } from "@/runtime/llmvilleSession";
-import { setNearbyPlayers } from "@/runtime/localPlayerEntity";
-import { readPlayerPosition } from "@/runtime/playerPosition";
-import { REMOTE_AVATAR_RENDER_CAP } from "@/world/location";
-import { publishLiveRemotePoses, type LiveRemotePose } from "@/world/remotePresenceRuntime";
+import { InterpolatedWorldAgentAvatar } from "./WorldAgentAvatar";
+import { useGameEngineState, type GameEngine } from "../../runtime/gameEngine";
+import { useWorldSceneProps } from "../../runtime/llmvilleSession";
+import { setNearbyPlayers } from "../../runtime/localPlayerEntity";
+import { readPlayerPosition } from "../../runtime/playerPosition";
+import { REMOTE_AVATAR_RENDER_CAP } from "../../world/location";
+import { publishLiveRemotePoses, type LiveRemotePose } from "../../world/remotePresenceRuntime";
 
 type Resident = NonNullable<ReturnType<typeof useQuery<typeof api.multiplayer.worldPresence.cityResidents>>>[number];
 

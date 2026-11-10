@@ -6,9 +6,9 @@ import { useQuery } from "convex/react";
 import { api } from "@llmville/backend/convex/_generated/api";
 
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { cn } from "@/kit/cn";
-import type { GameEngine } from "@/runtime/gameEngine";
-import { readPlayerPosition, subscribePlayerPosition } from "@/runtime/playerPosition";
+import { cn } from "../../kit/cn";
+import type { GameEngine } from "../../runtime/gameEngine";
+import { readPlayerPosition, subscribePlayerPosition } from "../../runtime/playerPosition";
 import { claimCost, type ClaimRejection, type DatacenterClaim } from "@llmville/game/datacenter/claims";
 import {
   buildClaimMapIndex,

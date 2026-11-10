@@ -1,7 +1,7 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { Loader2 } from "lucide-react";
+import { Icon } from "../../kit/icons";
 
-import { BrandLogo } from "@/branding/components/BrandLogo";
+import { BrandLogo } from "../../branding/components/BrandLogo";
 import { DEFAULT_STARTING_MONEY } from "@llmville/game/world/worldBootstrap";
 
 interface BankruptScreenProps {
@@ -30,7 +30,7 @@ export function BankruptScreen({ isDismissing, onDismiss }: BankruptScreenProps)
         >
           {isDismissing ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              <Icon name="spinner" className="h-4 w-4 animate-spin" />
               Starting over…
             </>
           ) : (

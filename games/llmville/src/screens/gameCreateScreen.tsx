@@ -1,17 +1,12 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { createFileRoute } from "@tanstack/react-router";
 import { useEffect } from "@jgengine/core/ui/jsx";
 
 import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { RouteLoadingScreen } from "@/components/RouteLoadingScreen";
-import { loadGameSessionModule } from "@/runtime/gameRoutePreload";
-import { useGameCreateEntry } from "@/runtime/gameCreate";
+import { RouteLoadingScreen } from "../components/RouteLoadingScreen";
+import { loadGameSessionModule } from "../runtime/gameRoutePreload";
+import { useGameCreateEntry } from "../runtime/gameCreate";
 
-export const Route = createFileRoute("/game/create")({
-  component: GameCreateRoute,
-});
-
-function GameCreateRoute() {
+export function GameCreateScreen() {
   const { phase, error, retry } = useGameCreateEntry();
 
   useEffect(() => {

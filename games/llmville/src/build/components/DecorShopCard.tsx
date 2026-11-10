@@ -1,8 +1,8 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { cn } from "@/kit/cn";
+import { cn } from "../../kit/cn";
 import type { PlaceableBuildItemId } from "@llmville/game/build/catalog";
 import { getWorldModelAsset } from "@llmville/game/world/worldModelCatalog";
-import { InventoryTrayCard } from "@/store/components/StoreListRow";
+import { InventoryTrayCard } from "../../store/components/StoreListRow";
 
 interface DecorShopCardProps {
   itemId: PlaceableBuildItemId;

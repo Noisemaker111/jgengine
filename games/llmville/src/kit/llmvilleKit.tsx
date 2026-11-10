@@ -15,8 +15,8 @@ import {
 import { ensureUiKitStyles } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { paperKit } from "@jgengine/core/ui/kit/uiKitPaper.view";
 
-import { cn } from "@/kit/cn";
-import { LLMVILLE_KIT_CSS } from "@/kit/llmvilleKitCss";
+import { cn } from "./cn";
+import { LLMVILLE_KIT_CSS } from "./llmvilleKitCss";
 
 /** LLMville's warm-on-ink palette (docs/design/DESIGN.md §2): the one place its colours are written. */
 export const LLMVILLE_PALETTE = {

@@ -1,19 +1,9 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { useCallback, useMemo, useState } from "@jgengine/core/ui/jsx";
-import type { RackHardwareMoveSource, RackHardwareMoveTarget } from "@/infrastructure/rackHardwareSession";
-import {
-  DndContext,
-  DragOverlay,
-  type DragEndEvent,
-  type DragStartEvent,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  useDraggable,
-  useDroppable,
-} from "@dnd-kit/core";
-import type { PlacedRack } from "@/infrastructure/infrastructure";
+import { useCallback, useEffect, useMemo } from "@jgengine/core/ui/jsx";
+import type { RackHardwareMoveSource, RackHardwareMoveTarget } from "../rackHardwareSession";
+import { DragGhost, DraggableCard, DropZone, useDragLayer, type DragLayer } from "@jgengine/core/inventory/dragLayer.view";
+import type { PlacedRack } from "../infrastructure";
 import {
   getRackInstalledHardwareSlots,
   getRackSlotCapacity,
@@ -28,9 +18,9 @@ import {
 } from "@llmville/game/infrastructure/catalog";
 import { computeRackThermalStateV3 } from "@llmville/game/infrastructure/infrastructure";
 import { getRackCatalogDefinition, resolveRackCatalogId } from "@llmville/game/infrastructure/catalog";
-import { useRackHardwareDragVisualOptional } from "@/infrastructure/rackHardwareDragVisual";
+import { useRackHardwareDragVisualOptional } from "../rackHardwareDragVisual";
 
-import { useTabletNavContext } from "@/tablet/components/tabletNav";
+import { useTabletNavContext } from "../../tablet/components/tabletNav";
 
 import RackSlot from "./RackSlot";
 import type { ReactNode } from "@jgengine/core/ui/jsx";
@@ -47,47 +37,27 @@ interface RackMenuProps {
 
 type DragData = { type: "inventory" | "slot"; hardwareModelId: HardwareModelId; slotIndex?: number };
 
-function DraggableCard({
+function HardwareCard({
   id,
   data,
+  layer,
   children,
 }: {
   id: string;
   data: DragData;
+  layer: DragLayer<DragData>;
   children: ReactNode;
 }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id, data });
   return (
-    <div
-      ref={setNodeRef}
-      {...listeners}
-      {...attributes}
-      className={`w-full cursor-grab active:cursor-grabbing transition-opacity duration-100 ${isDragging ? "opacity-30" : ""}`}
+    <DraggableCard
+      id={id}
+      value={data}
+      layer={layer}
+      onRotate={false}
+      className="w-full cursor-grab active:cursor-grabbing transition-opacity duration-100 data-[dragging]:opacity-30"
     >
       {children}
-    </div>
-  );
-}
-
-function DroppableSlot({
-  id,
-  slotIndex,
-  children,
-}: {
-  id: string;
-  slotIndex: number;
-  children: ReactNode;
-}) {
-  const { setNodeRef, isOver } = useDroppable({ id, data: { slotIndex } });
-  return (
-    <div
-      ref={setNodeRef}
-      className={`flex-1 min-w-0 w-full min-h-[96px] transition-colors duration-150 ${
-        isOver ? "ring-2 ring-emerald-400/40 ring-inset rounded-sm" : ""
-      }`}
-    >
-      {children}
-    </div>
+    </DraggableCard>
   );
 }
 
@@ -135,62 +105,31 @@ export default function RackMenu({
 
   const hardwareIdsInInventory = hardwareModelIdsWithPositiveStock(hardwareInventory);
 
-  const [activeData, setActiveData] = useState<DragData | null>(null);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
-    }),
-  );
-
-  const handleDragStart = useCallback(
-    (event: DragStartEvent) => {
-      const raw = event.active.data.current;
-      if (!raw || typeof raw !== "object" || !("hardwareModelId" in raw)) return;
-      const data = raw as DragData;
-      setActiveData(data);
-      if (data.type === "slot" && data.slotIndex !== undefined) {
-        rackDragVisual?.setRackHardwareDrag({
-          rackId: rack.id,
-          slotIndex: data.slotIndex,
-          hardwareModelId: data.hardwareModelId,
-        });
-      }
-    },
-    [rack.id, rackDragVisual],
-  );
-
-  const handleDragEnd = useCallback(
-    (event: DragEndEvent) => {
-      setActiveData(null);
-      rackDragVisual?.setRackHardwareDrag(null);
-      const { active, over } = event;
-      if (!over) return;
-
-      const raw = active.data.current;
-      if (!raw || typeof raw !== "object" || !("hardwareModelId" in raw)) return;
-      const data = raw as DragData;
-
+  const drag = useDragLayer<DragData>({
+    onDrop({ payload, target }) {
+      if (target === null) return;
       const endpoints = rackHardwareDropEndpoints({
-        overId: String(over.id),
-        dragType: data.type,
-        hardwareModelId: data.hardwareModelId,
-        sourceSlotIndex: data.slotIndex,
+        overId: target,
+        dragType: payload.value.type,
+        hardwareModelId: payload.value.hardwareModelId,
+        sourceSlotIndex: payload.value.slotIndex,
       });
       if (endpoints === null) return;
-
       onMoveHardware(rack.id, endpoints.from, endpoints.to);
     },
-    [rack.id, onMoveHardware, rackDragVisual],
-  );
+  });
 
-  const handleDragCancel = useCallback(() => {
-    setActiveData(null);
-    rackDragVisual?.setRackHardwareDrag(null);
-  }, [rackDragVisual]);
+  // The 3D rack hides the card being carried out of one of its slots, for as long as it is carried.
+  const carried = drag.state.payload?.value ?? null;
+  const setRackHardwareDrag = rackDragVisual?.setRackHardwareDrag;
+  useEffect(() => {
+    if (setRackHardwareDrag === undefined || carried?.type !== "slot" || carried.slotIndex === undefined) return undefined;
+    setRackHardwareDrag({ rackId: rack.id, slotIndex: carried.slotIndex, hardwareModelId: carried.hardwareModelId });
+    return () => setRackHardwareDrag(null);
+  }, [carried, rack.id, setRackHardwareDrag]);
 
   return (
-    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
+    <>
       <KitPanel
         as="div"
         data-shell="terminal"
@@ -260,22 +199,28 @@ export default function RackMenu({
                     <span className="w-5 shrink-0 text-center text-xs font-bold text-white/50 tabular-nums">
                       {i + 1}
                     </span>
-                    <DroppableSlot id={`slot-${i}`} slotIndex={i}>
+                    <DropZone
+                      id={`slot-${i}`}
+                      layer={drag}
+                      className="flex-1 min-w-0 w-full min-h-[96px] transition-colors duration-150"
+                      activeClassName="ring-2 ring-emerald-400/40 ring-inset rounded-sm"
+                    >
                       {hardwareId ? (
-                        <DraggableCard
+                        <HardwareCard
                           id={`slot-${i}-drag`}
                           data={{ type: "slot", hardwareModelId: hardwareId, slotIndex: i }}
+                          layer={drag}
                         >
                           <RackSlot
                             hardwareModelId={hardwareId}
                             temperatureC={cardTempBySlot.get(i)}
                             useExternalDrag
                           />
-                        </DraggableCard>
+                        </HardwareCard>
                       ) : (
                         <RackSlot hardwareModelId={undefined} useExternalDrag />
                       )}
-                    </DroppableSlot>
+                    </DropZone>
                     {hardwareId ? (
                       <button type="button" aria-label={`Remove GPU from slot ${i + 1}`} className="shrink-0 rounded-lg border border-white/15 px-2 py-2 text-xs text-brand-cream-dim" onClick={() => onMoveHardware(rack.id, { kind: "slot", slot: i }, { kind: "stock" })}>Remove</button>
                     ) : (
@@ -292,6 +237,7 @@ export default function RackMenu({
 
           {/* Owned hardware — entire section is the uninstall drop zone */}
           <UninstallSection
+            layer={drag}
             hardwareIdsInInventory={hardwareIdsInInventory}
             hardwareInventory={hardwareInventory}
             onVisitHardwareStore={onVisitHardwareStore}
@@ -299,35 +245,33 @@ export default function RackMenu({
         </div>
       </KitPanel>
 
-      {/* Drag overlay — renders above everything in a portal, layout never shifts */}
-      <DragOverlay dropAnimation={null}>
-        {activeData ? (
-          <div className="w-[260px] opacity-95 shadow-2xl shadow-black/60 rotate-1 scale-105 cursor-grabbing">
-            <RackSlot hardwareModelId={activeData.hardwareModelId} useExternalDrag />
-          </div>
-        ) : null}
-      </DragOverlay>
-    </DndContext>
+      {/* The carried card follows the pointer above everything; the layout under it never shifts. */}
+      <DragGhost layer={drag} className="w-[260px] opacity-95 shadow-2xl shadow-black/60 scale-105 cursor-grabbing">
+        {(payload) => <RackSlot hardwareModelId={payload.value.hardwareModelId} useExternalDrag />}
+      </DragGhost>
+    </>
   );
 }
 
 function UninstallSection({
+  layer,
   hardwareIdsInInventory,
   hardwareInventory,
   onVisitHardwareStore,
 }: {
+  layer: DragLayer<DragData>;
   hardwareIdsInInventory: HardwareModelId[];
   hardwareInventory: Record<string, number>;
   onVisitHardwareStore: () => void;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: "uninstall" });
+  const isOver = layer.dragging && layer.state.overTarget === "uninstall";
 
   return (
-    <section
-      ref={setNodeRef}
-      className={`flex-1 min-w-0 flex flex-col border-l border-white/10 px-4 rounded-r-xl transition-colors duration-150 ${
-        isOver ? "bg-red-500/8" : ""
-      }`}
+    <DropZone
+      id="uninstall"
+      layer={layer}
+      className="flex-1 min-w-0 flex flex-col border-l border-white/10 px-4 rounded-r-xl transition-colors duration-150"
+      activeClassName="bg-red-500/8"
     >
       <h2 className={`text-sm font-bold uppercase tracking-widest mb-2 text-center transition-colors duration-150 ${isOver ? "text-red-300" : "text-white"}`}>
         Owned Hardware
@@ -335,16 +279,17 @@ function UninstallSection({
       <ul className="flex-1 min-h-0 overflow-auto space-y-1.5 list-none">
         {hardwareIdsInInventory.map((hardwareId) => (
           <li key={hardwareId}>
-            <DraggableCard
+            <HardwareCard
               id={`inventory-${hardwareId}`}
               data={{ type: "inventory", hardwareModelId: hardwareId }}
+              layer={layer}
             >
               <RackSlot
                 hardwareModelId={hardwareId}
                 count={hardwareInventory[hardwareId]}
                 useExternalDrag
               />
-            </DraggableCard>
+            </HardwareCard>
           </li>
         ))}
         {hardwareIdsInInventory.length === 0 && (
@@ -365,6 +310,6 @@ function UninstallSection({
           Click or drag here to uninstall
         </p>
       </div>
-    </section>
+    </DropZone>
   );
 }

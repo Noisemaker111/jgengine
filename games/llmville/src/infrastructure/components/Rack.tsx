@@ -4,9 +4,9 @@ import { ExtrudeGeometry, Mesh, MeshStandardMaterial, Shape, type Material, type
 import { toCreasedNormals } from "three-stdlib";
 
 import { computeRackThermalStateV3, getRackSlotCapacity } from "@llmville/game/infrastructure/infrastructure";
-import { SmallGpuRackProcedural } from "@/infrastructure/components/SmallGpuRackProcedural";
-import { useRackHardwareDragVisualOptional } from "@/infrastructure/rackHardwareDragVisual";
-import { GPU_SPLOT_WORKLOAD, workloadForRackSlot, type GpuSlotWorkload } from "@/infrastructure/computeUnits";
+import { SmallGpuRackProcedural } from "./SmallGpuRackProcedural";
+import { useRackHardwareDragVisualOptional } from "../rackHardwareDragVisual";
+import { GPU_SPLOT_WORKLOAD, workloadForRackSlot, type GpuSlotWorkload } from "../computeUnits";
 import type { RackInstalledHardwareSlot } from "@llmville/game/infrastructure/infrastructure";
 import { getRackCatalogDefinition, resolveRackCatalogId, STARTER_RACK_CATALOG_ID } from "@llmville/game/infrastructure/catalog";
 import {

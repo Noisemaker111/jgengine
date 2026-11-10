@@ -7,13 +7,13 @@ import { normalizeHardwareInventory } from "@llmville/game/infrastructure/infras
 import { normalizeRackCoolingInventory } from "@llmville/game/infrastructure/catalog";
 import { createPlacementCellPolicy, type DatacenterClaim } from "@llmville/game/datacenter/claims";
 import { cellsInRect } from "@llmville/game/datacenter/claimMap";
-import { GameEngine } from "@/runtime/gameEngine";
-import type { BuildViewModel } from "@/build/buildSession";
-import type { RackHardwareViewModel } from "@/infrastructure/rackHardwareSession";
-import type { ReadyWorldViewModel } from "@/runtime/worldViewModel";
+import { GameEngine } from "../runtime/gameEngine";
+import type { BuildViewModel } from "../build/buildSession";
+import type { RackHardwareViewModel } from "../infrastructure/rackHardwareSession";
+import type { ReadyWorldViewModel } from "../runtime/worldViewModel";
 import { DEFAULT_SERVING_MODE } from "@llmville/game/models/servingMode";
 import { DEFAULT_SCRAPE_TIER } from "@llmville/game/models/scrapingTiers";
-import type { TutorialViewModel } from "@/tutorial/tutorialRuntime";
+import type { TutorialViewModel } from "../tutorial/tutorialRuntime";
 import {
   DEFAULT_TABLET_STORE_TAB,
   type GameMenuRequest,
@@ -21,7 +21,7 @@ import {
   type TabletNavBundle,
   type TabletNavState,
   type TabletStoreTabId,
-} from "@/tablet/tablet";
+} from "./tablet";
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
 
 const noop = () => undefined;

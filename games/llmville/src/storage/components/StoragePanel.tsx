@@ -6,10 +6,10 @@ import {
   type BuildMenuTabId,
   type StorageItem,
 } from "@llmville/game/build/build";
-import { InventoryTrayCard } from "@/store/components/StoreListRow";
-import { useStoragePanelKeybindLabels } from "@/settings/settings";
-import { TutorialArrow } from "@/tutorial/components/TutorialUi";
-import { cn } from "@/kit/cn";
+import { InventoryTrayCard } from "../../store/components/StoreListRow";
+import { useStoragePanelKeybindLabels } from "../../settings/settings";
+import { TutorialArrow } from "../../tutorial/components/TutorialUi";
+import { cn } from "../../kit/cn";
 
 interface StoragePanelProps {
   tabs: readonly BuildMenuTabId[];

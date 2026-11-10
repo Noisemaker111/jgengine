@@ -6,17 +6,17 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import type { FormEvent } from "@jgengine/core/ui/jsx/dom.view";
 
 
-import { authClient } from "@/auth/authClient";
-import { deriveUsernameFromEmail } from "@/auth/authCredentials";
-import { destinationAfterAuth, type PlayEntryIntent } from "@/runtime/playEntry";
+import { authClient } from "./authClient";
+import { deriveUsernameFromEmail } from "./authCredentials";
+import { destinationAfterAuth, type PlayEntryIntent } from "../runtime/playEntry";
 import {
   CONVEX_TOKEN_REFRESH_LEEWAY_SECONDS,
   convexTokenSecondsRemaining,
   persistConvexToken,
   readConvexTokenSubject,
   readPersistedConvexToken,
-} from "@/auth/sessionToken";
-import { normalizeAvatarId } from "@/user/user";
+} from "./sessionToken";
+import { normalizeAvatarId } from "../user/user";
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 type SessionPayload = Awaited<ReturnType<typeof authClient.getSession>>["data"];

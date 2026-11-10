@@ -1,15 +1,15 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import PlacementControls from "@/runtime/components/PlacementController";
-import type { BuildViewModel } from "@/build/buildSession";
-import type { RackHardwareViewModel } from "@/infrastructure/rackHardwareSession";
-import type { ReadyWorldViewModel } from "@/runtime/worldViewModel";
-import { findPlacedRackById } from "@/infrastructure/infrastructure";
-import type { TutorialViewModel } from "@/tutorial/tutorialRuntime";
-import { useTabletNavContext } from "@/tablet/components/tabletNav";
+import PlacementControls from "./PlacementController";
+import type { BuildViewModel } from "../../build/buildSession";
+import type { RackHardwareViewModel } from "../../infrastructure/rackHardwareSession";
+import type { ReadyWorldViewModel } from "../worldViewModel";
+import { findPlacedRackById } from "../../infrastructure/infrastructure";
+import type { TutorialViewModel } from "../../tutorial/tutorialRuntime";
+import { useTabletNavContext } from "../../tablet/components/tabletNav";
 
 import { KitToast } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { RackMenuOverlay } from "@/infrastructure/components/RackMenuOverlay";
-import { LabGuide, type LabGoalSelection } from "@/tutorial/components/LabGuide";
+import { RackMenuOverlay } from "../../infrastructure/components/RackMenuOverlay";
+import { LabGuide, type LabGoalSelection } from "../../tutorial/components/LabGuide";
 
 function LaunchCelebration() {
   return (

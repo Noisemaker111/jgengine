@@ -1,17 +1,16 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { useNavigate } from "@tanstack/react-router";
-import { Loader2, Play, Settings, Trash2 } from "lucide-react";
+import { navigate } from "../../screens/screenRouter";
+import { Icon } from "../../kit/icons";
 
-import { cn } from "@/kit/cn";
-import { BrandLogo } from "@/branding/components/BrandLogo";
-import { RouteLoadingScreen } from "@/components/RouteLoadingScreen";
-import { MainMenuLayout } from "@/runtime/components/MainMenuLayout";
-import { useMainMenu } from "@/runtime/mainMenu";
-import { MAIN_MENU_KIND } from "@/runtime/mainMenuPhase";
-import { MenuSettingsDialog } from "@/settings/components/MenuSettingsDialog";
+import { cn } from "../../kit/cn";
+import { BrandLogo } from "./BrandLogo";
+import { RouteLoadingScreen } from "../../components/RouteLoadingScreen";
+import { MainMenuLayout } from "../../runtime/components/MainMenuLayout";
+import { useMainMenu } from "../../runtime/mainMenu";
+import { MAIN_MENU_KIND } from "../../runtime/mainMenuPhase";
+import { MenuSettingsDialog } from "../../settings/components/MenuSettingsDialog";
 
 function HomeMainMenu() {
-  const navigate = useNavigate();
   const {
     phase,
     confirmDeleteWorld,
@@ -62,12 +61,12 @@ function HomeMainMenu() {
               >
                 {isDeleting ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                    <Icon name="spinner" className="h-4 w-4 animate-spin" />
                     Deleting…
                   </>
                 ) : (
                   <>
-                    <Trash2 className="h-4 w-4" aria-hidden />
+                    <Icon name="trash" className="h-4 w-4" />
                     Yes, delete my lab
                   </>
                 )}
@@ -84,7 +83,7 @@ function HomeMainMenu() {
           </div>
         ) : phase.kind === MAIN_MENU_KIND.loading ? (
           <button type="button" disabled className="game-button game-menu-button">
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            <Icon name="spinner" className="h-4 w-4 animate-spin" />
             Loading…
           </button>
         ) : (
@@ -100,12 +99,12 @@ function HomeMainMenu() {
               >
                 {isEnteringGame ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                    <Icon name="spinner" className="h-4 w-4 animate-spin" />
                     Joining world…
                   </>
                 ) : (
                   <>
-                    <Play className="h-4 w-4" aria-hidden />
+                    <Icon name="play" className="h-4 w-4" />
                     Rejoin world
                   </>
                 )}
@@ -119,7 +118,7 @@ function HomeMainMenu() {
                 onClick={startGame}
                 className="game-button game-button-primary game-menu-button"
               >
-                <Play className="h-4 w-4" aria-hidden />
+                <Icon name="play" className="h-4 w-4" />
                 Join world
               </button>
             )}
@@ -133,13 +132,13 @@ function HomeMainMenu() {
                   "game-button game-menu-button text-brand-coral hover:border-brand-coral/40 hover:bg-brand-coral/10 hover:text-brand-coral",
                 )}
               >
-                <Trash2 className="h-4 w-4" aria-hidden />
+                <Icon name="trash" className="h-4 w-4" />
                 Delete lab
               </button>
             )}
 
             <button type="button" onClick={openSettings} className="game-button game-menu-button">
-              <Settings className="h-4 w-4" aria-hidden />
+              <Icon name="settings" className="h-4 w-4" />
               Settings
             </button>
           </>

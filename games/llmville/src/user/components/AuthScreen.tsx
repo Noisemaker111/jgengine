@@ -1,14 +1,14 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { Link, useNavigate } from "@tanstack/react-router";
-import { ChevronLeft } from "lucide-react";
+import { navigate, ScreenLink } from "../../screens/screenRouter";
+import { Icon } from "../../kit/icons";
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 import type { FormEvent } from "@jgengine/core/ui/jsx/dom.view";
 
 import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { useLoginForm, useSignupForm } from "@/auth";
-import { AuthOAuthSection } from "@/branding/components/AuthOAuthSection";
-import { BrandLogo } from "@/branding/components/BrandLogo";
-import { destinationAfterAuth, type PlayEntryIntent } from "@/runtime/playEntry";
+import { useLoginForm, useSignupForm } from "../../auth";
+import { AuthOAuthSection } from "../../branding/components/AuthOAuthSection";
+import { BrandLogo } from "../../branding/components/BrandLogo";
+import { destinationAfterAuth, type PlayEntryIntent } from "../../runtime/playEntry";
 
 export type AuthScreenMode = "sign-in" | "sign-up";
 
@@ -57,13 +57,13 @@ function AuthScreenShell({
 
       <main className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4">
         <div className="w-full max-w-md animate-in fade-in zoom-in-95 duration-300">
-          <Link
+          <ScreenLink
             to="/"
             className="mb-6 inline-flex items-center gap-2 text-lg font-semibold text-brand-teal transition-colors hover:text-brand-cream"
           >
-            <ChevronLeft className="h-6 w-6" strokeWidth={2.25} />
+            <Icon name="back" className="h-6 w-6" strokeWidth={2.25} />
             Back
-          </Link>
+          </ScreenLink>
 
           <div className="mb-7 flex flex-col items-center text-center">
             <BrandLogo variant="stacked" size="md" />
@@ -131,13 +131,13 @@ function AuthScreenBody({
 
       <p className="text-center text-sm text-brand-cream/60">
         {copy.alternateLead}{" "}
-        <Link
+        <ScreenLink
           to={copy.alternateRoute}
           {...(playIntent ? { search: { intent: playIntent } } : {})}
           className="font-semibold text-brand-teal transition-colors hover:text-brand-cream"
         >
           {copy.alternateLabel}
-        </Link>
+        </ScreenLink>
       </p>
 
       <p className="text-center text-sm font-medium text-brand-cream/45">or</p>
@@ -213,7 +213,6 @@ function AuthCredentialFields({
 }
 
 function SignInAuthScreen({ playIntent }: { playIntent?: PlayEntryIntent | undefined }) {
-  const navigate = useNavigate();
   const form = useLoginForm(() => navigate(destinationAfterAuth(playIntent)), playIntent);
   const copy = AUTH_COPY["sign-in"];
 
@@ -244,7 +243,6 @@ function SignInAuthScreen({ playIntent }: { playIntent?: PlayEntryIntent | undef
 }
 
 function SignUpAuthScreen({ playIntent }: { playIntent?: PlayEntryIntent | undefined }) {
-  const navigate = useNavigate();
   const form = useSignupForm(() => navigate(destinationAfterAuth(playIntent)), playIntent);
   const copy = AUTH_COPY["sign-up"];
 

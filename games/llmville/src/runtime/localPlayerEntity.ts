@@ -7,8 +7,8 @@ import { useGameContext } from "@jgengine/react/provider";
 import { LOCAL_PLAYER_CATALOG_ID, LOCAL_PLAYER_WALK_SPEED } from "@llmville/game/game/content";
 import { standingStep, type PlayerPosition } from "@llmville/game/movement/playerMovement";
 import { resolvePlayerSpeed } from "@llmville/game/user/personalUpgrades";
-import { engineActions, type GameEngine } from "@/runtime/gameEngine";
-import { localGameState } from "@/user/localGameState";
+import { engineActions, type GameEngine } from "./gameEngine";
+import { localGameState } from "../user/localGameState";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 

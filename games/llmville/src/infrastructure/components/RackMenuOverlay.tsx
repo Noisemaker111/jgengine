@@ -4,9 +4,9 @@
  */
 
 import { createPortal } from "@jgengine/core/ui/jsx/client.view";
-import type { PlacedRack } from "@/infrastructure/infrastructure";
-import { useEscapeToClose } from "@/tablet/tablet";
-import type { RackHardwareMoveSource, RackHardwareMoveTarget } from "@/infrastructure/rackHardwareSession";
+import type { PlacedRack } from "../infrastructure";
+import { useEscapeToClose } from "../../tablet/tablet";
+import type { RackHardwareMoveSource, RackHardwareMoveTarget } from "../rackHardwareSession";
 
 import RackMenu from "./RackMenu";
 

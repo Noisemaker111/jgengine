@@ -12,7 +12,8 @@ import { sources } from "../packages/assets/src/sources";
  * fresh `git clone` — otherwise the game hard-crashes on boot for anyone who
  * checks the repo out without a manual asset pull. A pack is available when it is
  * either **committed** (git-tracked bytes under `apps/dev/public/models/<pack>/`,
- * allow-listed in `.gitignore`) or **provisioned** (an `assets pull <pack>` step
+ * allow-listed in `.gitignore`, or under the game's own `games/<id>/public/models/<pack>/`,
+ * which the runner serves for that game) or **provisioned** (an `assets pull <pack>` step
  * wired into the standard bootstrap / cloud-setup path). A pack that is neither is
  * a `dangling` reference and fails the gate, so a game can never silently ship a
  * dependency on a pack that will not be present on a clean checkout.
@@ -40,6 +41,8 @@ export interface AvailabilityInput {
   references: readonly PackReference[];
   /** Packs with git-tracked bytes — present immediately on a clean clone. */
   committed: ReadonlySet<string>;
+  /** Packs with git-tracked bytes in one game's own `public/models/`, by game id: present for that game only. */
+  committedByGame?: ReadonlyMap<string, ReadonlySet<string>>;
   /** Packs a bootstrap / cloud-setup `assets pull <pack>` step provisions on a fresh session. */
   provisioned: ReadonlySet<string>;
 }
@@ -61,6 +64,7 @@ export function checkAssetAvailability(input: AvailabilityInput): AvailabilityRe
   for (const ref of input.references) {
     if (SENTINEL_PACKS.has(ref.pack)) continue;
     if (input.committed.has(ref.pack)) continue;
+    if (input.committedByGame?.get(ref.game)?.has(ref.pack) === true) continue;
     if (input.provisioned.has(ref.pack)) continue;
     errors.push(
       `${ref.game}: model pack "${ref.pack}" (referenced via ${ref.via}) is not available on a clean checkout — ` +
@@ -83,7 +87,8 @@ function sourceFilesUnder(dir: string): string[] {
   return out;
 }
 
-const MODELS_LITERAL = /\/models\/([a-zA-Z0-9_-]+)\//g;
+/** A served path at the start of a string. A relative import through a `models` folder (`"../models/components/Card"`) is not one. */
+const MODELS_LITERAL = /(?<=["'`])\/models\/([a-zA-Z0-9_-]+)\//g;
 
 /** Every declared model source by the name its pack is exported under. */
 const sourceByPackName = new Map(sources.map((source) => [packExportName(source.id), source.id]));
@@ -139,6 +144,24 @@ export function committedPacks(root: string): Set<string> {
   return out;
 }
 
+/** Pack folders with git-tracked bytes under each game's own `games/<id>/public/models/`, by game id. */
+export function gameCommittedPacks(root: string): Map<string, Set<string>> {
+  const out = new Map<string, Set<string>>();
+  const tracked = execFileSync("git", ["ls-files", "games/*/public/models/*"], {
+    cwd: root,
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  for (const line of tracked.split("\n")) {
+    const match = /^games\/([^/]+)\/public\/models\/([^/]+)\//.exec(line.trim());
+    if (match === null) continue;
+    const packs = out.get(match[1]!) ?? new Set<string>();
+    packs.add(match[2]!);
+    out.set(match[1]!, packs);
+  }
+  return out;
+}
+
 /**
  * Pack ids a bootstrap / cloud-setup step provisions, scraped from the shell and
  * bootstrap scripts so the gate stays in sync with however the repo actually
@@ -170,7 +193,7 @@ if (import.meta.main) {
   const references = referencedPacks(gamesDir);
   const committed = committedPacks(root);
   const provisioned = provisionedPacks(root);
-  const result = checkAssetAvailability({ references, committed, provisioned });
+  const result = checkAssetAvailability({ references, committed, committedByGame: gameCommittedPacks(root), provisioned });
 
   if (!result.ok) {
     console.error("check-asset-availability: referenced model packs missing on a clean checkout:\n");

@@ -4,12 +4,12 @@ import { useCallback, useState } from "@jgengine/core/ui/jsx";
 import { parseHardwareModelId } from "@llmville/game/infrastructure/catalog";
 import type { HardwareModelId } from "@llmville/game/infrastructure/catalog";
 import { canAffordShopPurchase } from "@llmville/game/economy/storeTransition";
-import type { PersonalUpgradeItem, ShopCatalogItem } from "@/store/store";
+import type { PersonalUpgradeItem, ShopCatalogItem } from "../../store/store";
 import type { PersonalUpgradeId } from "@llmville/game/user/personalUpgrades";
 
-import { TABLET_STORE_TAB_ID } from "@/tablet/tablet";
-import { BlueprintCard } from "@/store/components/StoreListRow";
-import { HardwareShopCard } from "@/infrastructure/components/HardwareShopCard";
+import { TABLET_STORE_TAB_ID } from "../../tablet/tablet";
+import { BlueprintCard } from "../../store/components/StoreListRow";
+import { HardwareShopCard } from "./HardwareShopCard";
 
 type ShopItemId = string;
 

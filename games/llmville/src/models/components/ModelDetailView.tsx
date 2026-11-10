@@ -2,12 +2,12 @@
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { useEffect, useState } from "@jgengine/core/ui/jsx";
 
-import { cn } from "@/kit/cn";
+import { cn } from "../../kit/cn";
 import { formatBaseModelTrainingVolumeLabel } from "@llmville/game/models/baseModels";
 import { getQuantizationProfile } from "@llmville/game/models/quantization";
 import { computeBenchmarkDemandMultiplier } from "@llmville/game/models/servingStats";
 import { COMPUTE_PRECISION_VALUES, type ComputePrecision } from "@llmville/game/infrastructure/catalog";
-import { getDeltaFillOpacity, ModelStatRow } from "@/models/components/ModelPresentation";
+import { getDeltaFillOpacity, ModelStatRow } from "./ModelPresentation";
 import {
   dataTokenRateToBarValue,
   formatHourlyIncome,
@@ -17,10 +17,10 @@ import {
   tpsToBarValue,
   type GameUserModel,
   userModelTrainingVolumeLabel,
-} from "@/models/models";
+} from "../models";
 import { formatTrainingDurationLabel } from "@llmville/game/models/trainingDurationLabel";
 import { getBaseModelDefinition, type BaseModelDefinition } from "@llmville/game/models/baseModels";
-import { getBaseModelBaselineStatsById } from "@/models/training";
+import { getBaseModelBaselineStatsById } from "../training";
 
 export type ModelDetailViewMode = "base" | "user";
 

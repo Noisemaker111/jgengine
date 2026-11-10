@@ -4,9 +4,9 @@ import {
   type BuildPropMaterialPresentation,
 } from "@llmville/game/build/build";
 import type { BuildDirection, PlaceableBuildItemId } from "@llmville/game/build/catalog";
-import { AssetFrameGizmo, useShowAssetFrames } from "@/scene/components/AssetFrameGizmo";
-import { SceneModel } from "@/scene/components/SceneModel";
-import { resolveWebBuildItemPlacementBounds3d } from "@/scene/buildItemBounds";
+import { AssetFrameGizmo, useShowAssetFrames } from "./AssetFrameGizmo";
+import { SceneModel } from "./SceneModel";
+import { resolveWebBuildItemPlacementBounds3d } from "../buildItemBounds";
 import { getWorldModelAsset } from "@llmville/game/world/worldModelCatalog";
 import { EngineDrawMount, SceneObjectGroup, type DrawTransform } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { EngineDraw } from "@jgengine/core/frame/engineLoop.draw";
