@@ -956,7 +956,9 @@ describe("local boots", () => {
     const changed = ["packages/core/src/model/modelLoad.draw.ts"];
     const reaches = (...files: string[]): Set<string> => new Set([...changed, ...files]);
     expect(bootsFor(changed, reaches(`games/${REPRESENTATIVE_GAME}/src/main.tsx`, "games/odd-orbit/src/main.tsx"))).toEqual([REPRESENTATIVE_GAME]);
-    expect(bootsFor(changed, reaches("games/odd-orbit/src/main.tsx", "games/llmville/src/main.tsx"))).toEqual([FRAME_GAMES.find((game) => game === "odd-orbit" || game === "llmville")]);
+    const firstFrameGame = FRAME_GAMES.find((game) => game === "odd-orbit" || game === "llmville");
+    if (firstFrameGame === undefined) throw new Error("the boot fixture games must be registered");
+    expect(bootsFor(changed, reaches("games/odd-orbit/src/main.tsx", "games/llmville/src/main.tsx"))).toEqual([firstFrameGame]);
     expect(bootsFor(changed, reaches("games/llmville/src/main.tsx"))).toEqual(["llmville"]);
     expect(bootsFor(changed, reaches("packages/shell/src/other.ts", "games/scripts/check.ts"))).toEqual([]);
     // A heavy path no import shows (a lockfile, a workflow) still boots the representative.
