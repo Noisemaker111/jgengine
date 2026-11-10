@@ -119,11 +119,15 @@ test("the draw counter counts the WebGPU context's draws, which no native protot
 test("parsePerfArgs reads one game with its flags", () => {
   expect(parsePerfArgs(["harbor-heat"])).toEqual({
     kind: "run",
-    args: { games: ["harbor-heat"], draft: false, profile: false, seconds: 6, telemetry: "on", settings: [], frameClock: "uncapped", path: "walk", size: { width: 1920, height: 1080 }, json: false, params: [] },
+    args: { games: ["harbor-heat"], draft: false, profile: false, seconds: 6, telemetry: "on", settings: [], frameClock: "uncapped", path: "walk", size: { width: 1920, height: 1080 }, json: false, build: "production", cpuRate: 4, params: [] },
   });
+  // The production build is the default; --dev asks for the dev server and --cpu sets the slow window.
+  const dev = parsePerfArgs(["harbor-heat", "--dev", "--cpu", "6"]);
+  expect(dev.kind === "run" ? [dev.args.build, dev.args.cpuRate] : null).toEqual(["dev", 6]);
+  expect(() => parsePerfArgs(["harbor-heat", "--cpu", "0"])).toThrow("--cpu");
   expect(parsePerfArgs(["deepward", "--quality", "ultra", "--profile", "--seconds", "3"])).toEqual({
     kind: "run",
-    args: { games: ["deepward"], quality: "ultra", draft: false, profile: true, seconds: 3, telemetry: "on", settings: [], frameClock: "uncapped", path: "walk", size: { width: 1920, height: 1080 }, json: false, params: [] },
+    args: { games: ["deepward"], quality: "ultra", draft: false, profile: true, seconds: 3, telemetry: "on", settings: [], frameClock: "uncapped", path: "walk", size: { width: 1920, height: 1080 }, json: false, build: "production", cpuRate: 4, params: [] },
   });
   expect(parsePerfArgs(["deepward", "--path", "still", "--size", "1280x720", "--compare", "before.json", "--out", "after.json", "--json", "--capped"])).toMatchObject({
     args: { path: "still", size: { width: 1280, height: 720 }, compare: "before.json", out: "after.json", json: true, frameClock: "capped" },

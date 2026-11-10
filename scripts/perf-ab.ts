@@ -1,7 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
-import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { basename, dirname, join, resolve } from "node:path";
 
@@ -11,7 +9,10 @@ import { ensureWorktreeReady } from "./agent-worktree";
 import { startPath, type PerfPath } from "./perf-breakdown";
 import { GATE_SIZE } from "./perf-gate";
 import { acquirePerfLock } from "./perf-lock";
-import { cappedClockProblem, PAGE_READY_MS, parseSettingSpec, perfPageUrl, perfSettingsScript, probeFrameClockMs, SAMPLE_FRAMES_SCRIPT, type PerfSettingOverride } from "./perf-play";
+import { cappedClockProblem, PAGE_READY_MS, parseSettingSpec, perfPageUrl, perfSettingsScript, probeFrameClockMs, profiledWindow, SAMPLE_FRAMES_SCRIPT, slowCpuWindow, type PerfSettingOverride } from "./perf-play";
+import { cpuBusyPct, frameScore, LOAD_RESOURCES_SCRIPT, loadScore, mainScore, productionProblem, profileSources, renderScorecard, scoreProfile, SLOW_CPU_RATE, type LoadScore, type Scorecard } from "./perf-scorecard";
+import { ensureProdServer, type PerfBuild, type ProdServer } from "./prodServer";
+import { treeFingerprint } from "./servedTree";
 import { localGet } from "./localhostHttp";
 import { currentPriority, restoreNormalPriority } from "./machine-priority";
 import { resumeProcesses, suspendProcesses } from "./process-suspend";
@@ -21,9 +22,14 @@ import { provisionCapturedGame } from "./provisionCapture";
  * Is the branch faster or slower than its base, per game, and by how much: one answer per game with a
  * confidence interval, in a few minutes of the perf lock.
  *
- *   bun run perf ab [--games a,b] [--base <ref|dir>] [--window s] [--blocks min,max] [--margin pct] [--markdown]
+ *   bun run perf ab [--games a,b] [--base <ref|dir>] [--window s] [--blocks min,max] [--margin pct] [--markdown] [--dev]
  *
- * Both sides load once, each in a Chrome of its own, from their own checkouts and dev servers: the
+ * Both sides are the production build players get (`scripts/prodServer.ts`; `--dev` times the Vite dev
+ * servers instead), and the report leads with each side's scorecard (`scripts/perf-scorecard.ts`): the
+ * slow frames and hitches of every window pooled, then one profiled window and one with the CPU slowed
+ * 4x per side, and the load. The verdict table follows it.
+ *
+ * Both sides load once, each in a Chrome of its own, from their own checkouts and servers: the
  * base from a detached worktree at the base commit, the branch from this checkout. Then they take
  * turns in short windows, base, branch, base, ..., while the other side's renderer processes are
  * suspended (no frames, no CPU, no GPU work). Each branch window against the base windows either side
@@ -91,10 +97,18 @@ export interface AbArgs {
   plantMs: number;
   /** The frame-time percentile of each window the verdict compares: 50 (the middle frame) unless asked. */
   percentile: number;
+  /** `production` (default): both sides are the build players get; `--dev`: both are Vite dev servers. */
+  build: PerfBuild;
 }
 
 const USAGE = `usage: bun run perf ab [--games a,b] [--base <ref|dir>] [--window s] [--blocks min,max] [--margin pct]
-                       [--path walk|still] [--stat pNN] [--set key=value ...] [--out dir] [--markdown] [--plant-ms n]
+                       [--path walk|still] [--stat pNN] [--set key=value ...] [--out dir] [--markdown] [--plant-ms n] [--dev]
+
+  Both sides are the production build players get (minified, bundled, production React; built once per
+  side, about a minute, and reused until the served files change). The report leads with each side's
+  scorecard: frame p50/p95/p99 and the worst frame, frames over 16.7 and 33 ms, main-thread ms per frame
+  and the share inside React and react-three-fiber, MB allocated per second and GC time, the same frames
+  with the CPU slowed ${SLOW_CPU_RATE}x, load time and download size. The verdict table follows.
 
   Is this branch faster or slower than its base, per game: the base and the branch load once each, in
   a Chrome of their own, then take turns running ${DEFAULT_WINDOW_SECONDS} s windows (the other side suspended) at the
@@ -115,14 +129,16 @@ const USAGE = `usage: bun run perf ab [--games a,b] [--base <ref|dir>] [--window
              such as p90 or p99, for a change that moves the slow frames and not the typical one
   --set     a setting for both sides, as perf <game> --set
   --out      where each game's windows are written as JSON (default .scratch/perf-ab)
-  --markdown print the table as Markdown
+  --dev      time both sides' Vite dev servers instead (development React, unbundled modules): not what
+             players get, for an engine change whose cost only readable dev names can explain
+  --markdown print the tables as Markdown
   --plant-ms busy-wait this many ms in every frame of the branch page: a known regression, to check
              the run can see a change of that size on this PC (expected change = ms / frame p50)`;
 
 export function parseAbArgs(argv: readonly string[]): AbArgs | "help" {
   const args: AbArgs = {
     games: null, base: null, windowSeconds: DEFAULT_WINDOW_SECONDS, minBlocks: DEFAULT_MIN_BLOCKS, maxBlocks: DEFAULT_MAX_BLOCKS,
-    marginPct: DEFAULT_MARGIN_PCT, path: "still", settings: [], out: join(repoRoot, ".scratch", "perf-ab"), markdown: false, plantMs: 0, percentile: 50,
+    marginPct: DEFAULT_MARGIN_PCT, path: "still", settings: [], out: join(repoRoot, ".scratch", "perf-ab"), markdown: false, plantMs: 0, percentile: 50, build: "production",
   };
   const number = (flag: string, value: string, min: number): number => {
     const parsed = Number(value);
@@ -133,6 +149,7 @@ export function parseAbArgs(argv: readonly string[]): AbArgs | "help" {
     const arg = argv[index] ?? "";
     if (arg === "--help" || arg === "-h") return "help";
     if (arg === "--markdown") { args.markdown = true; continue; }
+    if (arg === "--dev") { args.build = "dev"; continue; }
     const value = argv[index + 1];
     if (value === undefined || value.startsWith("--")) throw new Error(`${arg.startsWith("--") ? arg : `unknown argument ${arg}:`} needs a value`);
     index += 1;
@@ -252,31 +269,6 @@ export function pairLogRatio(base: number, branch: number): number {
 function git(cwd: string, args: string[]): { ok: boolean; out: string } {
   const result = spawnSync("git", args, { cwd, encoding: "utf8", windowsHide: true, timeout: 180_000, maxBuffer: 256 * 1024 * 1024 });
   return { ok: result.status === 0, out: `${result.stdout ?? ""}`.trim() };
-}
-
-/**
- * What a tree serves, as one hash: the committed content of packages, apps and games, their uncommitted
- * diff and their untracked files. A run that sees it change measured two different programs (the dev
- * server hot-reloads saved edits), so it stops instead of printing a number for neither. A commit that
- * changes no served file (a script, the docs, a commit of edits already served) changes nothing here.
- */
-export function treeFingerprint(dir: string): string {
-  // The working files as git would commit them, through a copy of the index (its stat cache keeps this
-  // to changed files), so the real index is never touched.
-  const gitDir = git(dir, ["rev-parse", "--path-format=absolute", "--git-dir"]).out;
-  const index = join(tmpdir(), `jg-perf-ab-${process.pid}-${createHash("sha1").update(dir).digest("hex").slice(0, 8)}.index`);
-  try {
-    copyFileSync(join(gitDir, "index"), index);
-    const env = { ...process.env, GIT_INDEX_FILE: index };
-    const run = (args: string[]) => spawnSync("git", args, { cwd: dir, env, encoding: "utf8", windowsHide: true, timeout: 180_000, maxBuffer: 64 * 1024 * 1024 });
-    const added = run(["add", "-A", "--", "packages", "apps", "games"]);
-    const tree = run(["write-tree"]);
-    if (added.status !== 0 || tree.status !== 0) throw new Error(`git could not hash ${dir}: ${(added.stderr || tree.stderr || "").trim()}`);
-    const served = git(dir, ["rev-parse", `${tree.stdout.trim()}:packages`, `${tree.stdout.trim()}:apps`, `${tree.stdout.trim()}:games`]).out;
-    return createHash("sha1").update(served).digest("hex").slice(0, 12);
-  } finally {
-    rmSync(index, { force: true });
-  }
 }
 
 /** Paths that differ between `commit` and this tree, committed or not, untracked included. */
@@ -410,6 +402,10 @@ interface SidePage {
   stopPath: () => Promise<void>;
   /** Renderer pids suspended while the other side is timed. */
   frozen: number[];
+  /** What the page downloaded to become ready, and how long that took, from an empty cache. */
+  load: LoadScore;
+  /** Percent of the PC's cores busy just before the page loaded. */
+  pcBusyPct: number;
 }
 
 export interface AbWindow {
@@ -438,11 +434,16 @@ export interface AbGameResult {
   branchMs: number;
   windows: AbWindow[];
   lockSeconds: number;
+  /** Each side's scorecard: every measured window's frames pooled, one profiled window, one slow-CPU window, the load. */
+  cards: Record<Side, Scorecard>;
 }
 
 async function openSide(side: Side, debugPort: number, browser: CdpSession, serve: (side: Side) => Promise<string>, game: string, args: AbArgs): Promise<SidePage> {
   const session = await openPageSession(debugPort);
   await session.send("Page.enable");
+  await session.send("Page.addScriptToEvaluateOnNewDocument", { source: `(() => { try { performance.setResourceTimingBufferSize(4000); } catch {} })();` });
+  await session.send("Network.enable").catch(() => {});
+  await session.send("Network.clearBrowserCache").catch(() => {});
   const settings = [parseSettingSpec("graphics.auto=false"), ...args.settings];
   await session.send("Page.addScriptToEvaluateOnNewDocument", { source: perfSettingsScript(settings) });
   if (side === "branch" && args.plantMs > 0) await session.send("Page.addScriptToEvaluateOnNewDocument", { source: plantScript(args.plantMs) });
@@ -452,6 +453,8 @@ async function openSide(side: Side, debugPort: number, browser: CdpSession, serv
     const base = await serve(side);
     await navigateCapturePageWithRetry(session, perfPageUrl({ base, game, quality: "high" }).toString(), base, PAGE_READY_MS);
   };
+  const pcBusyPct = await cpuBusyPct();
+  const loadAt = Date.now();
   try {
     await load();
   } catch (error) {
@@ -462,11 +465,13 @@ async function openSide(side: Side, debugPort: number, browser: CdpSession, serv
     console.error(`degraded: the ${side} dev server stopped answering (${message}); asked for it again and loading once more`);
     await load();
   }
+  const readyMs = Date.now() - loadAt;
+  const resources = (await session.evaluate<Array<[string, number]>>(LOAD_RESOURCES_SCRIPT)) ?? [];
   await session.evaluate(`new Promise((r) => setTimeout(r, ${WARMUP_MS}))`, { awaitPromise: true });
   const pose = await session.evaluate<{ ok: boolean; position?: number[]; rotationY?: number }>(`window.__jgengineAgent?.handle?.({ method: "player_pose" }) ?? { ok: false }`);
   const [x, y, z] = pose?.position ?? [];
   const home = pose?.ok === true && x !== undefined && y !== undefined && z !== undefined ? { x, y, z, yaw: pose.rotationY ?? 0 } : null;
-  return { side, session, browser, home, homeFailed: false, stopPath: async () => {}, frozen: [] };
+  return { side, session, browser, home, homeFailed: false, stopPath: async () => {}, frozen: [], load: loadScore(resources, readyMs), pcBusyPct };
 }
 
 /** The bridge request that puts the player back where the window's walk starts. */
@@ -548,7 +553,7 @@ async function browserSession(port: number, side: Side): Promise<CdpSession> {
  * kept the renderers of the page it treated as background at low priority, re-lowering them within a
  * window of being raised, and a same-code no-op read -35% (harbor-heat, 2026-11-09).
  */
-async function measurePair(game: string, serve: (side: Side) => Promise<string>, args: AbArgs, ports: Record<Side, number>): Promise<Omit<AbGameResult, "lockSeconds">> {
+async function measurePair(game: string, serve: (side: Side) => Promise<string>, args: AbArgs, ports: Record<Side, number>, buildDirs: Partial<Record<Side, string>>): Promise<Omit<AbGameResult, "lockSeconds">> {
   for (const side of ["base", "branch"] as const) {
     const probe = await openPageSession(ports[side]);
     try {
@@ -582,6 +587,28 @@ async function measurePair(game: string, serve: (side: Side) => Promise<string>,
     }
     console.error(`perf ab: ${game}: both pages loaded and warmed in ${Math.round((measureAt - loadAt) / 1000)} s`);
     const windows: AbWindow[] = [];
+    const pooled: Record<Side, number[]> = { base: [], branch: [] };
+    // After the verdict: one profiled window and one slow-CPU window a side, taken in turns like the rest.
+    const score = async (side: Side): Promise<Scorecard> => {
+      const page = pages[side]!;
+      await resume(page, path);
+      equalizePriorities(await processCpu(page.browser), true);
+      const profiled = await profiledWindow(page.session, SCORE_SECONDS);
+      const slow = await slowCpuWindow(page.session, SLOW_CPU_RATE, SCORE_SECONDS);
+      await pause(page);
+      const sources = await profileSources(profiled.raw.nodes.map((node) => node.callFrame.url), { outDir: buildDirs[side] });
+      const card: Scorecard = {
+        build: args.build,
+        slow: { rate: SLOW_CPU_RATE, frame: frameScore(slow) },
+        pcBusyPct: page.pcBusyPct,
+        frame: frameScore(pooled[side]),
+        main: mainScore(scoreProfile(profiled.raw, sources), profiled.frames, profiled.ms / 1000, profiled.allocatedBytes),
+        load: page.load,
+      };
+      const problem = productionProblem(card);
+      if (problem !== null) throw new Error(`the ${side} page was asked for as a production build but was not one: ${problem}`);
+      return card;
+    };
     const run = async (side: Side, block: number): Promise<number> => {
       const page = pages[side]!;
       const other = pages[side === "base" ? "branch" : "base"]!;
@@ -599,6 +626,7 @@ async function measurePair(game: string, serve: (side: Side) => Promise<string>,
       const median = medianMs(deltas);
       const stat = percentileMs(deltas, args.percentile);
       if (!Number.isFinite(median) || !Number.isFinite(stat)) throw new Error(`the ${side} page drew no frames in pair ${block}`);
+      if (block > 0) pooled[side].push(...deltas);
       windows.push({
         block, side, medianMs: Math.round(median * 1000) / 1000, statMs: Math.round(stat * 1000) / 1000, frames: deltas.length,
         timedCpu: rendererCpuPct(timedBefore, timedAfter, ms), idleCpu: rendererCpuPct(idleBefore, idleAfter, ms), raised, lowAfter,
@@ -628,7 +656,8 @@ async function measurePair(game: string, serve: (side: Side) => Promise<string>,
         const busyIdle = windows.filter((window) => window.idleCpu > IDLE_CPU_MAX_PCT).length;
         if (busyIdle > 0) console.error(`degraded: in ${busyIdle} of ${windows.length} windows the frozen side's renderers still used over ${IDLE_CPU_MAX_PCT}% of a core`);
         const side = (which: Side) => medianMs(windows.filter((window) => window.side === which && window.block > 0).map((window) => window.statMs));
-        return { game, verdict, baseMs: side("base"), branchMs: side("branch"), windows };
+        const cards = { base: await score("base"), branch: await score("branch") };
+        return { game, verdict, baseMs: side("base"), branchMs: side("branch"), windows, cards };
       }
     }
     throw new Error("the block loop ended without a verdict");
@@ -641,6 +670,9 @@ async function measurePair(game: string, serve: (side: Side) => Promise<string>,
     for (const browser of Object.values(browsers)) await browser.close().catch(() => {});
   }
 }
+
+/** Seconds of the profiled window and of the slow-CPU window each side gets after the verdict. */
+const SCORE_SECONDS = 4;
 
 /** Ms between the teleport, the second camera turn and the walk. */
 const TURN_SETTLE_MS = 250;
@@ -717,6 +749,13 @@ export function renderAbTable(results: readonly AbGameResult[], options: { markd
   return [line(head), ...rows.map(line)].join("\n");
 }
 
+/** Each game's two scorecards side by side, base then branch: what the report leads with. */
+export function renderAbScorecards(results: readonly Pick<AbGameResult, "game" | "cards">[], markdown: boolean): string {
+  return results
+    .map((result) => `${markdown ? `**${result.game}**` : result.game}\n${renderScorecard([{ label: "base", card: result.cards.base }, { label: "branch", card: result.cards.branch }], markdown)}`)
+    .join("\n\n");
+}
+
 async function main(): Promise<number> {
   const parsed = parseAbArgs(process.argv.slice(2));
   if (parsed === "help") {
@@ -742,6 +781,12 @@ async function main(): Promise<number> {
   // Each page asks for its side's server when it loads, under the perf lock (scripts/perf-lock.ts):
   // a server asked for before a long wait can be gone after it.
   const started: EnsureDevServerResult[] = [];
+  // A production build bakes in each game's asset list, so every game's packs are linked on both sides
+  // before either is built; a side is built once, at its first page, and serves every game after.
+  const prod: Partial<Record<Side, ProdServer>> = {};
+  if (parsed.build === "production") {
+    for (const game of games) for (const dir of [base.dir, repoRoot]) await provisionCapturedGame(join(dir, "games", game), (line) => console.error(`perf ab: ${line}`));
+  }
 
   const results: AbGameResult[] = [];
   let failure: string | null = null;
@@ -751,6 +796,7 @@ async function main(): Promise<number> {
       const releaseLock = await acquirePerfLock(`perf ab ${game}`);
       const serve = async (side: Side): Promise<string> => {
         const dir = side === "base" ? base.dir : repoRoot;
+        if (parsed.build === "production") return (prod[side] ??= ensureProdServer(dir)).base;
         let server: EnsureDevServerResult;
         try {
           server = await ensureDevServer(dir);
@@ -768,11 +814,11 @@ async function main(): Promise<number> {
       const heldAt = Date.now();
       try {
         let measured: Omit<AbGameResult, "lockSeconds"> | null = null;
-        const session = { keep: false, timeoutMs: 180_000, hardDeadlineMs: 2 * 2 * PAGE_READY_MS + 2 * WARMUP_MS + (parsed.maxBlocks + 2) * 2 * (parsed.windowSeconds * 1000 + SETTLE_MS + 1_000) + 120_000, frameClock: "uncapped", chromePriority: "normal" } as const;
+        const session = { keep: false, timeoutMs: 180_000, hardDeadlineMs: 2 * 2 * PAGE_READY_MS + 2 * WARMUP_MS + (parsed.maxBlocks + 2) * 2 * (parsed.windowSeconds * 1000 + SETTLE_MS + 1_000) + 2 * (2 * SCORE_SECONDS * 1000 + 5_000) + 120_000, frameClock: "uncapped", chromePriority: "normal" } as const;
         let inner = 0;
         const exit = await withBrowserSession(session, async ({ debugPort: outerPort }) => {
           inner = await withBrowserSession(session, async ({ debugPort: innerPort }) => {
-            measured = await measurePair(game, serve, parsed, { base: outerPort, branch: innerPort });
+            measured = await measurePair(game, serve, parsed, { base: outerPort, branch: innerPort }, { ...(prod.base === undefined ? {} : { base: prod.base.build.outDir }), ...(prod.branch === undefined ? {} : { branch: prod.branch.build.outDir }) });
           });
         });
         if (exit !== 0 || inner !== 0 || measured === null) throw new Error(`the browser sessions exited ${exit} and ${inner}`);
@@ -782,7 +828,7 @@ async function main(): Promise<number> {
         }
         const result: AbGameResult = { ...(measured as Omit<AbGameResult, "lockSeconds">), lockSeconds: Math.round((Date.now() - heldAt) / 1000) };
         results.push(result);
-        writeFileSync(join(parsed.out, `${game}.json`), `${JSON.stringify({ base: base.label, branch: branchHead, plantMs: parsed.plantMs, ...result }, null, 2)}\n`);
+        writeFileSync(join(parsed.out, `${game}.json`), `${JSON.stringify({ base: base.label, branch: branchHead, build: parsed.build, plantMs: parsed.plantMs, ...result }, null, 2)}\n`);
         console.error(`perf ab: ${game} ${CALL_TEXT[result.verdict.call]} ${result.verdict.changePct}% (${result.verdict.lowPct}..${result.verdict.highPct}) over ${result.verdict.blocks} pairs, ${result.lockSeconds} s holding the lock`);
       } catch (error) {
         failure = `${game}: ${error instanceof Error ? error.message : String(error)}`;
@@ -792,6 +838,7 @@ async function main(): Promise<number> {
       }
     }
   } finally {
+    for (const server of Object.values(prod)) server.stop();
     for (const server of started) {
       killProcessTree(server.child ?? null);
       killPid(server.pid, true);
@@ -799,7 +846,10 @@ async function main(): Promise<number> {
   }
   if (results.length > 0) {
     const plant = parsed.plantMs > 0 ? ` A ${parsed.plantMs} ms busy-wait was planted in every branch frame.` : "";
-    console.log(`Branch ${branchHead} against base ${base.label}: frame time per game, ${parsed.windowSeconds} s windows taken in turns, ${parsed.path === "walk" ? "walking" : "standing still"}, ${GATE_SIZE.width}x${GATE_SIZE.height}, high tier, uncapped. Positive change = the branch's frames take longer.${plant}\n`);
+    const what = parsed.build === "production" ? "the production build players get" : "the dev servers' build (development React, unbundled modules), not what players get";
+    console.log(`Branch ${branchHead} against base ${base.label}, ${what}. Frames are every measured window pooled; the main thread, garbage and slow-CPU rows are one ${SCORE_SECONDS} s window a side.\n`);
+    console.log(`${renderAbScorecards(results, parsed.markdown)}\n`);
+    console.log(`Verdict: frame time per game, ${parsed.windowSeconds} s windows taken in turns, ${parsed.path === "walk" ? "walking" : "standing still"}, ${GATE_SIZE.width}x${GATE_SIZE.height}, high tier, uncapped. Positive change = the branch's frames take longer.${plant}\n`);
     console.log(renderAbTable(results, { markdown: parsed.markdown, marginPct: parsed.marginPct, percentile: parsed.percentile }));
   }
   console.error(`perf ab: ${Math.round((Date.now() - startedAt) / 1000)} s in all`);

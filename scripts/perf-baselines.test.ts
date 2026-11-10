@@ -8,7 +8,7 @@ import { baselinePath, cleanCommitFor, conditionsKey, readBaselineAt, resolveCom
 
 const base: PerfConditions = {
   size: { width: 1920, height: 1080 }, quality: undefined, draft: false, frameClock: "uncapped", path: "walk",
-  seconds: 6, telemetry: "on", state: undefined, params: [], settings: [],
+  seconds: 6, telemetry: "on", state: undefined, params: [], settings: [], build: "production", cpuRate: 4,
 };
 
 test("a cached run is reused only under the same run conditions", () => {
@@ -20,6 +20,8 @@ test("a cached run is reused only under the same run conditions", () => {
     { ...base, cache: "cold" as const },
     { ...base, path: "still" },
     { ...base, seconds: 3 },
+    { ...base, build: "dev" },
+    { ...base, cpuRate: 1 },
     { ...base, state: "two-towers" },
     { ...base, params: [["seed", "7"] as const] },
     { ...base, settings: [{ id: "accessibility.colorblind", value: "grayscale" }] },

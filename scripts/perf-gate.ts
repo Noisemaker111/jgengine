@@ -11,6 +11,8 @@ import {
 } from "./browser-lib";
 import { FRAME_GAMES } from "./ci-scope";
 import { acquirePerfLock } from "./perf-lock";
+import { ensureProdServer, type PerfBuild, type ProdServer } from "./prodServer";
+import { provisionCapturedGame } from "./provisionCapture";
 import { gameSessionDeadlineMs, machineClause, measureGame, parseSettingSpec, runMachine, writePerfRecord } from "./perf-play";
 import { parseGraphicsTier, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 import {
@@ -30,11 +32,12 @@ import {
 import { runPool } from "./type-shard";
 
 /**
- * Frame-time gate: plays every playable game (`FRAME_GAMES`), waits out the warmup, then fails a game whose p95
+ * Frame-time gate: plays every playable game (`FRAME_GAMES`) on the production build players get (`--dev`
+ * for the dev server's), waits out the warmup, then fails a game whose p95
  * frame time on the reference GPU (RTX 3070 at 1600x900, uncapped clock) is over the
  * 16.7 ms every game shares, or whose frame loop still allocates GL objects after warmup.
  *
- *   bun run perf gate [--games a,b] [--seconds n] [--quality low|medium|high|ultra] [--jobs n]
+ *   bun run perf gate [--games a,b] [--seconds n] [--quality low|medium|high|ultra] [--jobs n] [--dev]
  *
  * On any other GPU the frame time is printed and not judged, and only the GL allocations decide.
  * Draws are printed beside the frame time, as the first number to read when a game is slow; they
@@ -62,6 +65,8 @@ export interface GateArgs {
   draft: boolean;
   seconds: number;
   jobs: number;
+  /** `production` (default): the build players get; `--dev`: the Vite dev server. */
+  build: PerfBuild;
 }
 
 
@@ -71,11 +76,16 @@ export function parseGateArgs(argv: readonly string[]): GateArgs {
   let draft = false;
   let seconds = DEFAULT_SECONDS;
   let jobs = DEFAULT_JOBS;
+  let build: PerfBuild = "production";
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index]!;
     if (arg === "--help" || arg === "-h") throw new Error("usage");
     if (arg === "--draft") {
       draft = true;
+      continue;
+    }
+    if (arg === "--dev") {
+      build = "dev";
       continue;
     }
     if (arg === "--set") {
@@ -106,14 +116,17 @@ export function parseGateArgs(argv: readonly string[]): GateArgs {
   }
   if (games.length === 0) throw new Error("--games needs at least one game id");
   if (draft && quality !== undefined) throw new Error(`--draft measures the low tier at half viewport, so drop it or drop --quality ${quality}`);
-  return { games, ...(draft ? {} : { quality: quality ?? "high" }), draft, seconds, jobs };
+  return { games, ...(draft ? {} : { quality: quality ?? "high" }), draft, seconds, jobs, build };
 }
 
-const USAGE = `usage: bun run perf gate [--games a,b] [--seconds n] [--quality low|medium|high|ultra] [--draft] [--jobs n]
+const USAGE = `usage: bun run perf gate [--games a,b] [--seconds n] [--quality low|medium|high|ultra] [--draft] [--jobs n] [--dev]
 
   Fails a game whose p95 frame time is over ${FRAME_BUDGET_MS} ms on the reference GPU
   (${REFERENCE.label}, uncapped clock), or whose frame loop allocates GL objects after
   warmup. On another GPU the frame time is printed, not judged. Draws are printed, not gated.
+  Games are measured on the production build players get (built once for the run).
+
+  --dev             measure the Vite dev server instead (development React, unbundled modules)
 
   --games           comma-separated game ids (default: every game under games/ with a web entry)
   --seconds         measured window per game (default ${DEFAULT_SECONDS})
@@ -154,7 +167,7 @@ async function main(): Promise<void> {
     console.log(USAGE);
     return;
   }
-  const { games, quality, draft, seconds, jobs } = parseGateArgs(parsed);
+  const { games, quality, draft, seconds, jobs, build } = parseGateArgs(parsed);
 
   // Budgets are read before any browser starts: a missing file must fail fast,
   // not after ten minutes of software-GL rendering.
@@ -175,6 +188,10 @@ async function main(): Promise<void> {
   // obtained before a long wait for it can be gone after it.
   const started: Awaited<ReturnType<typeof ensureDevServer>>[] = [];
   let rasterizerPrinted = false;
+  // The production build bakes in each game's asset list, so every game's packs are linked before it
+  // is made; it is built at the first game, under the lock, and serves every game after.
+  const prod: { server: ProdServer | null } = { server: null };
+  if (build === "production") for (const game of games) await provisionCapturedGame(join(repoRoot, "games", game), (line) => console.log(`perf gate: ${line}`));
 
   const measureOne = async (game: string): Promise<GameOutcome> => {
     const loaded = budgets.get(game)!;
@@ -184,14 +201,14 @@ async function main(): Promise<void> {
     // ends, so the gate and another worktree's run interleave game by game; the frame time is the
     // product, so the browser draws at normal priority (scripts/perf.ts).
     const releaseLock = await acquirePerfLock(`perf gate ${game}`);
-    let server: Awaited<ReturnType<typeof ensureDevServer>>;
+    let server: Awaited<ReturnType<typeof ensureDevServer>> | ProdServer;
     try {
-      server = await ensureDevServer(repoRoot);
+      server = build === "production" ? (prod.server ??= ensureProdServer(repoRoot)) : await ensureDevServer(repoRoot);
     } catch (error) {
       releaseLock();
       throw error;
     }
-    if (server.pid !== undefined) started.push(server);
+    if ("pid" in server && server.pid !== undefined) started.push(server);
     const exitCode = await withBrowserSession(
       { keep: false, timeoutMs: 180_000, hardDeadlineMs: gameSessionDeadlineMs(WARMUP_MS, seconds), frameClock: "uncapped", chromePriority: "normal" },
       async ({ debugPort }) => {
@@ -210,6 +227,8 @@ async function main(): Promise<void> {
             path: "walk",
             settings: [parseSettingSpec("graphics.auto=false")],
             ...(draft ? {} : { size: GATE_SIZE }),
+            build,
+            buildDir: prod.server?.build.outDir,
           });
           writePerfRecord(measured.record, join(repoRoot, ".scratch", "perf-gate", `${game}.json`));
           const budget = loaded.budget;
@@ -263,6 +282,7 @@ async function main(): Promise<void> {
       },
     );
   } finally {
+    prod.server?.stop();
     for (const server of started) {
       killProcessTree(server.child ?? null);
       killPid(server.pid, true);
@@ -285,7 +305,7 @@ async function main(): Promise<void> {
 
   const knownCount = measured.filter((outcome) => outcome.known !== undefined).length;
   console.log(`\nperf gate: ${games.length} games inside budget (${lines.length} measured${knownCount > 0 ? `, ${knownCount} known over it in ${KNOWN_SLOW_PATH}` : ""})`);
-  console.log(`perf gate: machine${machineClause(runMachine())}`);
+  console.log(`perf gate: ${build === "production" ? "the production build players get" : "the dev server's build, not what players get"}; machine${machineClause(runMachine())}`);
 }
 
 if (import.meta.main) {
