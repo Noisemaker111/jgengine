@@ -43,13 +43,11 @@ const named = (label: string): string => `(() => {
 
 export async function uiTour<TProbe extends ProbeReadings>(f: BrowserFlow<TProbe>, steps: readonly TourStep[]): Promise<void> {
   const tag = String(await f.page("(new URLSearchParams(location.search).get('ui') ?? 'dom') + '-' + innerWidth"));
-  const rune = tag.startsWith("rune");
   // `--param still=1` switches CSS animations off, to see the screens behind an entrance animation
   // the Rune mirror holds at its first frame. Without it the run shows what a player gets.
   await f.page("new URLSearchParams(location.search).get('still') === '1' && document.head.append(Object.assign(document.createElement('style'), { textContent: '*, *::before, *::after { animation: none !important; }' }))");
 
-  // Rune-drawn controls have no browser layout for `f.click` to find, so on Rune a press goes to
-  // the middle of the box the page measures for the control.
+  // A press on the first element a selector matches, at the middle of its box.
   const pressAt = async (pick: string, what: string): Promise<void> => {
     const at = await f.waitForPage(`${centre(pick)} ?? false`, { timeoutMs: 15000, note: `a laid-out ${what}` });
     const [x, y] = at as [number, number];
@@ -76,12 +74,10 @@ export async function uiTour<TProbe extends ProbeReadings>(f: BrowserFlow<TProbe
     else if ("until" in step) await f.waitForPage(step.until, { timeoutMs: 40000 });
     else if ("tapIf" in step) {
       if (await f.page(`${named(step.tapIf)} === null`)) return;
-      if (rune) await pressAt(named(step.tapIf), `control named "${step.tapIf}"`);
-      else await f.click(step.tapIf);
+      await f.click(step.tapIf);
       await f.wait(700);
     } else if ("tap" in step) {
-      if (rune) await pressAt(named(step.tap), `control named "${step.tap}"`);
-      else await f.click(step.tap);
+      await f.click(step.tap);
       await arrived(step, `pressing "${step.tap}"`);
     } else if ("tapOn" in step) {
       await pressAt(`document.querySelector(${JSON.stringify(step.tapOn)})`, step.tapOn);
@@ -91,11 +87,7 @@ export async function uiTour<TProbe extends ProbeReadings>(f: BrowserFlow<TProbe
       await arrived(step, `the key`);
     } else {
       const value = `document.querySelector(${JSON.stringify(step.field)}).value.toLowerCase()`;
-      if (rune) {
-        await pressAt(`document.querySelector(${JSON.stringify(step.field)})`, step.field);
-        await f.wait(400);
-        await f.type(step.type);
-      } else await f.fill(step.label, step.type);
+      await f.fill(step.label, step.type);
       await f.wait(500);
       await f.shot(`tour-${tag}-typed`);
       await f.expectPage(value, `arrival: the typed text reached ${step.field}`, step.type.toLowerCase());

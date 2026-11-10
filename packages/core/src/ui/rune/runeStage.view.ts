@@ -75,6 +75,11 @@ export class RuneStage {
   }
 
   /** Start mirroring `container`'s children; returns the detach function. */
+  /** The Rune-drawn element that takes a press at this point of the window, or null: what `elementFromPoint` is for the page. */
+  elementAt(x: number, y: number): Element | null {
+    return this.input?.target(x, y) ?? null;
+  }
+
   /** Whether Rune could not start. A layer then renders into the page instead (`RuneLayer`). */
   get unavailable(): boolean {
     return this.failed;

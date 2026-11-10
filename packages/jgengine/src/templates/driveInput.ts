@@ -30,6 +30,19 @@ export function driveInputPointExpr(text: string, input = false, focused = false
       const node = item.node;
       if (node.matches(':disabled') || node.closest('[aria-disabled="true"], [inert]')) continue;
       if (input && (node.readOnly || !node.matches('textarea, input:not([type]), input[type=text], input[type=search], input[type=email], input[type=url], input[type=tel], input[type=password], input[type=number]'))) continue;
+      if (node.closest('[data-jg-rune-layer]')) {
+        // Drawn by Rune on the engine canvas: the page does not lay it out, so it is found by the
+        // box Rune gave it (what getBoundingClientRect answers there), and Rune takes the press.
+        const drawn = node.getBoundingClientRect();
+        if (!(drawn.width > 0 && drawn.height > 0) || getComputedStyle(node).visibility === 'hidden') continue;
+        if (focused) return document.activeElement === node;
+        const x = Math.min(innerWidth - 1, Math.max(0, drawn.left + drawn.width / 2));
+        const y = Math.min(innerHeight - 1, Math.max(0, drawn.top + drawn.height / 2));
+        // Rune says which element is on top there, as elementFromPoint does for the page.
+        const top = globalThis.__jgRuneStage?.elementAt?.(x, y);
+        if (top && (top === node || node.contains(top))) return { x, y };
+        continue;
+      }
       if (!node.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) continue;
       if (focused) return document.activeElement === node;
       node.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });
