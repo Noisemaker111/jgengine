@@ -3,13 +3,9 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { parseGameReadme, parseGameSeed } from "./gameReadme";
+import { siteGames } from "../../../../scripts/siteGames";
 
 const games = join(import.meta.dir, "../../../../games");
-const siteGames = () =>
-  readdirSync(games, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && existsSync(join(games, entry.name, "src/index.tsx")))
-    .map((entry) => entry.name);
-
 test("every game games/README.md describes is a game in games/", () => {
   const entries = parseGameReadme(readFileSync(join(games, "README.md"), "utf8"));
   const ids = readdirSync(games, { withFileTypes: true })
