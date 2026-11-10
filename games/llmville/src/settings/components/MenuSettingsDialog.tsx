@@ -8,9 +8,9 @@ import { SettingsProvider, useSettings } from "@jgengine/core/settings/settings.
 import { SettingsRuntime } from "@jgengine/core/settings/SettingsRuntime.draw";
 import { KitButton, KitPanel, UiKitScope } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
-import { LlmvilleSettings, ReducedMotionSync } from "@/settings/components/LlmvilleSettings";
-import { llmvilleHudTheme } from "@/kit/llmvilleKit";
-import { appEngineSettings } from "@/settings/settings";
+import { LlmvilleSettings, ReducedMotionSync } from "./LlmvilleSettings";
+import { llmvilleHudTheme } from "../../kit/llmvilleKit";
+import { appEngineSettings } from "../settings";
 
 const noop = () => undefined;
 

@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
-import { HudDevPreview } from "@/runtime/components/HudDevPreview";
+import { HudDevPreview } from "../runtime/components/HudDevPreview";
 
 export const Route = createFileRoute("/dev/hud")({
   beforeLoad: () => {

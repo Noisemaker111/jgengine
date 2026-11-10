@@ -1,4 +1,4 @@
-import { cn } from "@/kit/cn";
+import { cn } from "../../kit/cn";
 
 const PARTICLES = [
   { left: "8%", top: "22%", delay: "0s", size: 4 },

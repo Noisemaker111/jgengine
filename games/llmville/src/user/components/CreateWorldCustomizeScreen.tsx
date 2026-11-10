@@ -4,9 +4,9 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from "@jgeng
 import type { KeyboardEvent } from "@jgengine/core/ui/jsx/dom.view";
 
 import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { cn } from "@/kit/cn";
-import { StandalonePageShell } from "@/branding/components/StandalonePageShell";
-import { CharacterCustomizeViewport } from "@/user/components/CharacterCustomizeViewport";
+import { cn } from "../../kit/cn";
+import { StandalonePageShell } from "../../branding/components/StandalonePageShell";
+import { CharacterCustomizeViewport } from "./CharacterCustomizeViewport";
 import type { CanonicalAvatarId } from "@llmville/game/user/founder";
 import { normalizeAvatarId } from "@llmville/game/user/founder";
 import {
@@ -20,13 +20,13 @@ import {
   type CharacterLook,
   type CharacterPantsColorId,
   type CharacterShoesColorId,
-} from "@/user/playerCharacterFigure";
+} from "../playerCharacterFigure";
 import {
   getMentorPerkSummary,
   useCreateWorldCustomizeScreen,
   type AvatarDefinition,
   type AvatarId,
-} from "@/user/user";
+} from "../user";
 
 const MENTOR_DEFAULT_HOODIE: Record<CanonicalAvatarId, CharacterHoodieColorId> = {
   sam_altman: "charcoal",

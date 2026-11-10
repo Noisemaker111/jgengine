@@ -3,10 +3,10 @@ import { MessageCircle, Send, X } from "lucide-react";
 import type { ChatMessage } from "@jgengine/core/chat/chat";
 import { suspendPlayControls } from "@jgengine/core/game/controlGate";
 import { WORLD_CHAT_CHANNEL } from "@llmville/game/multiplayer/presencePolicy";
-import { worldChatTransport } from "@/chat/worldChatTransport";
+import { worldChatTransport } from "../worldChatTransport";
 import { useOptionalGameContext } from "@jgengine/react/provider";
-import type { ReadyWorldViewModel } from "@/runtime/worldViewModel";
-import { useTabletNavContext } from "@/tablet/components/tabletNav";
+import type { ReadyWorldViewModel } from "../../runtime/worldViewModel";
+import { useTabletNavContext } from "../../tablet/components/tabletNav";
 
 export function WorldChat({ world, placing, open, setOpen, fixtureMessages }: { world: ReadyWorldViewModel; placing: boolean; open: boolean; setOpen: (open: boolean) => void; fixtureMessages?: readonly ChatMessage[] | undefined }) {
   const ctx = useOptionalGameContext();

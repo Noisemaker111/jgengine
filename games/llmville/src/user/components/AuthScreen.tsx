@@ -4,10 +4,10 @@ import type { ReactNode } from "@jgengine/core/ui/jsx";
 import type { FormEvent } from "@jgengine/core/ui/jsx/dom.view";
 
 import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { useLoginForm, useSignupForm } from "@/auth";
-import { AuthOAuthSection } from "@/branding/components/AuthOAuthSection";
-import { BrandLogo } from "@/branding/components/BrandLogo";
-import { destinationAfterAuth, type PlayEntryIntent } from "@/runtime/playEntry";
+import { useLoginForm, useSignupForm } from "../../auth";
+import { AuthOAuthSection } from "../../branding/components/AuthOAuthSection";
+import { BrandLogo } from "../../branding/components/BrandLogo";
+import { destinationAfterAuth, type PlayEntryIntent } from "../../runtime/playEntry";
 
 export type AuthScreenMode = "sign-in" | "sign-up";
 

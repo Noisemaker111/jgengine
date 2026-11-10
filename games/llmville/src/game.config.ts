@@ -8,12 +8,12 @@ import { llmvilleWorld } from "@llmville/game/game/world";
 import { buildSceneObjectPrompts } from "@llmville/game/simulation/interaction";
 import { WORLD_CAMERA_FAR, WORLD_FOG_COLOR, WORLD_FOG_FAR, WORLD_FOG_NEAR } from "@llmville/game/world/viewDistance";
 import { worldModelAssetCatalog } from "@llmville/game/world/worldModelCatalog";
-import { llmvilleHudTheme, llmvilleKit } from "@/kit/llmvilleKit";
-import { LlmvilleRemotePlayers } from "@/agent/components/RemoteAgents";
-import { LlmvilleGameUI } from "@/runtime/components/LlmvilleGameUI";
-import { stepAroundNearbyPlayers } from "@/runtime/localPlayerEntity";
-import { LlmvilleDatacenter, LlmvilleWorld } from "@/scene/components/GameScene";
-import { DEFAULT_APP_KEYBINDS, keybindToCodes } from "@/settings/keybinds";
+import { llmvilleHudTheme, llmvilleKit } from "./kit/llmvilleKit";
+import { LlmvilleRemotePlayers } from "./agent/components/RemoteAgents";
+import { LlmvilleGameUI } from "./runtime/components/LlmvilleGameUI";
+import { stepAroundNearbyPlayers } from "./runtime/localPlayerEntity";
+import { LlmvilleDatacenter, LlmvilleWorld } from "./scene/components/GameScene";
+import { DEFAULT_APP_KEYBINDS, keybindToCodes } from "./settings/keybinds";
 import sceneJson from "./editor.scene.json";
 
 /** The shell drives these from LLMville's keybinds; every other key stays with the game's own input. */

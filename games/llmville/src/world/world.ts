@@ -4,7 +4,7 @@ import { useConvexAuth, useQuery } from "convex/react";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect } from "@jgengine/core/ui/jsx";
 
-import { preloadSceneAssets } from "@/scene/sceneAssetPreloadLazy";
+import { preloadSceneAssets } from "../scene/sceneAssetPreloadLazy";
 
 /** The signed-in player's current world, derived from the Convex auth token.
  *

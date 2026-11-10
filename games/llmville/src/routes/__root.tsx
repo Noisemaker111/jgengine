@@ -5,8 +5,8 @@ import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
 
 import { UiKitRoot } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { llmvilleKit } from "@/kit/llmvilleKit";
-import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, SITE_NAME, SITE_URL } from "@/seo/siteSeo";
+import { llmvilleKit } from "../kit/llmvilleKit";
+import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, SITE_NAME, SITE_URL } from "../seo/siteSeo";
 
 import "../index.css";
 

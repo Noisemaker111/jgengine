@@ -1,10 +1,10 @@
-import { env } from "@/webEnv";
+import { env } from "./webEnv";
 import { createRouter } from "@tanstack/react-router";
 import { ConvexReactClient } from "convex/react";
 
-import { RouteLoadingScreen } from "@/components/RouteLoadingScreen";
-import { readOptimisticConvexToken } from "@/auth/sessionToken";
-import { GameRouteErrorComponent } from "@/runtime/components/GameRouteErrorComponent";
+import { RouteLoadingScreen } from "./components/RouteLoadingScreen";
+import { readOptimisticConvexToken } from "./auth/sessionToken";
+import { GameRouteErrorComponent } from "./runtime/components/GameRouteErrorComponent";
 
 import { routeTree } from "./routeTree.gen";
 

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo } from "@jgengine/core/ui/jsx";
 
 import { createNotificationCenter, type NotificationEntry, type NotificationStore } from "@jgengine/core/notifications/notificationCenter";
 import { useNotifications } from "@jgengine/core/notifications/notificationCenter.view";
-import type { TweetNotification } from "@/runtime/gameEngine";
+import type { TweetNotification } from "../runtime/gameEngine";
 
 /** How many past tweets the feed keeps. */
 const TWEET_LOG_CAP = 20;

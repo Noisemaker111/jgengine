@@ -1,8 +1,8 @@
 import { useState } from "@jgengine/core/ui/jsx";
 
-import { BILL_TYPE_LABELS } from "@/economy/events";
-import { InvoiceBillCard } from "@/economy/components/InvoiceBillCard";
-import type { BillType } from "@/economy/events";
+import { BILL_TYPE_LABELS } from "../events";
+import { InvoiceBillCard } from "./InvoiceBillCard";
+import type { BillType } from "../events";
 
 const PREVIEW_BILLS: ReadonlyArray<{
   billType: BillType;

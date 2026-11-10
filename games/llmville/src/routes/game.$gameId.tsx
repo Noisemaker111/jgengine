@@ -3,12 +3,12 @@ import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router"
 import { Suspense, lazy, useEffect } from "@jgengine/core/ui/jsx";
 import { z } from "zod";
 
-import { useAuth, usePlayerIdentity } from "@/auth";
-import { loadGameSessionModule, preloadGameRoute } from "@/runtime/gameRoutePreload";
-import { GAME_ROUTE_ACCESS_PHASE, useGameRouteAccess, useWarmGameWorldQueries } from "@/world/world";
+import { useAuth, usePlayerIdentity } from "../auth";
+import { loadGameSessionModule, preloadGameRoute } from "../runtime/gameRoutePreload";
+import { GAME_ROUTE_ACCESS_PHASE, useGameRouteAccess, useWarmGameWorldQueries } from "../world/world";
 
-import { GameRouteErrorBoundary } from "@/runtime/components/GameRouteErrorBoundary";
-import { RouteLoadingScreen } from "@/components/RouteLoadingScreen";
+import { GameRouteErrorBoundary } from "../runtime/components/GameRouteErrorBoundary";
+import { RouteLoadingScreen } from "../components/RouteLoadingScreen";
 
 const GameSession = lazy(async () =>
   loadGameSessionModule().then((module) => ({

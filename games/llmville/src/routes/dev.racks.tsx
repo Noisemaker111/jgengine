@@ -7,8 +7,8 @@ import { SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";
 import { CameraPoseDraw, OrbitControlsDraw, StageDraw, type StageSpec } from "@jgengine/core/stage/stageDraw.draw";
 
 import type { InfrastructureBuildItemId } from "@llmville/game/build/catalog";
-import Rack from "@/infrastructure/components/Rack";
-import { GPU_SPLOT_WORKLOAD, type GpuSlotWorkload } from "@/infrastructure/computeUnits";
+import Rack from "../infrastructure/components/Rack";
+import { GPU_SPLOT_WORKLOAD, type GpuSlotWorkload } from "../infrastructure/computeUnits";
 import {
   coolerFitsRack,
   getRackCoolingUnitDefinition,

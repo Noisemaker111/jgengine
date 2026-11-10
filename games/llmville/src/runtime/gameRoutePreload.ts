@@ -1,4 +1,4 @@
-import { preloadSceneAssets } from "@/scene/sceneAssetPreloadLazy";
+import { preloadSceneAssets } from "../scene/sceneAssetPreloadLazy";
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
 import type { useRouter } from "@tanstack/react-router";
 
@@ -10,11 +10,11 @@ type RouterPreload = Pick<ReturnType<typeof useRouter>, "preloadRoute">;
 // the player sees the old screen frozen with no feedback until it loads. Sharing
 // one memoized import lets entry points await it (showing a loading state) and
 // lets the route's lazy() resolve from the same promise instead of re-fetching.
-let gameSessionModulePromise: Promise<typeof import("@/runtime/components/GameSession")> | null =
+let gameSessionModulePromise: Promise<typeof import("./components/GameSession")> | null =
   null;
 
 export function loadGameSessionModule() {
-  gameSessionModulePromise ??= import("@/runtime/components/GameSession");
+  gameSessionModulePromise ??= import("./components/GameSession");
   return gameSessionModulePromise;
 }
 

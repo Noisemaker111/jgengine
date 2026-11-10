@@ -9,7 +9,7 @@ import type { BuildDirection } from "@llmville/game/build/catalog";
 import type { RoomBounds, WorldPoint } from "@llmville/game/world/grid";
 
 import { buildItemTransformInput } from "@llmville/game/scene/buildItemTransform";
-import { getCachedModelBounds } from "@/scene/modelBoundsCache";
+import { getCachedModelBounds } from "./modelBoundsCache";
 import { getWorldModelAsset } from "@llmville/game/world/worldModelCatalog";
 
 function resolveMeasuredExtents(modelKey: string, modelPath?: string): MeasuredAssetExtents | undefined {

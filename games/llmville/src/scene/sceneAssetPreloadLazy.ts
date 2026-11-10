@@ -5,5 +5,5 @@
  * whole three-vendor chunk on the first-paint critical path.
  */
 export function preloadSceneAssets(): void {
-  void import("@/scene/sceneAssetPreload").then((module) => module.preloadSceneAssets());
+  void import("./sceneAssetPreload").then((module) => module.preloadSceneAssets());
 }

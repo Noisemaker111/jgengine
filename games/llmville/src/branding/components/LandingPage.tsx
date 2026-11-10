@@ -1,13 +1,13 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Loader2, Play, Settings, Trash2 } from "lucide-react";
 
-import { cn } from "@/kit/cn";
-import { BrandLogo } from "@/branding/components/BrandLogo";
-import { RouteLoadingScreen } from "@/components/RouteLoadingScreen";
-import { MainMenuLayout } from "@/runtime/components/MainMenuLayout";
-import { useMainMenu } from "@/runtime/mainMenu";
-import { MAIN_MENU_KIND } from "@/runtime/mainMenuPhase";
-import { MenuSettingsDialog } from "@/settings/components/MenuSettingsDialog";
+import { cn } from "../../kit/cn";
+import { BrandLogo } from "./BrandLogo";
+import { RouteLoadingScreen } from "../../components/RouteLoadingScreen";
+import { MainMenuLayout } from "../../runtime/components/MainMenuLayout";
+import { useMainMenu } from "../../runtime/mainMenu";
+import { MAIN_MENU_KIND } from "../../runtime/mainMenuPhase";
+import { MenuSettingsDialog } from "../../settings/components/MenuSettingsDialog";
 
 function HomeMainMenu() {
   const navigate = useNavigate();

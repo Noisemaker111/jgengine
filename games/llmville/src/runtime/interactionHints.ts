@@ -5,10 +5,10 @@ import {
   type InteractionProximity,
   type InteractionSnapshot,
 } from "@llmville/game/simulation/interaction";
-import { formatBindableKeyLabel } from "@/settings/keybinds";
-import { getAppSettingsSnapshot } from "@/settings/settings";
-import { getTutorialInteractionHint } from "@/tutorial/tabletTutorial";
-import { resolveTutorialInputMode } from "@/tutorial/tutorialInput";
+import { formatBindableKeyLabel } from "../settings/keybinds";
+import { getAppSettingsSnapshot } from "../settings/settings";
+import { getTutorialInteractionHint } from "../tutorial/tabletTutorial";
+import { resolveTutorialInputMode } from "../tutorial/tutorialInput";
 
 export const resolveInteractionHint: InteractionHintResolver = (
   snapshot: InteractionSnapshot,

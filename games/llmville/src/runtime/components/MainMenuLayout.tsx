@@ -1,10 +1,10 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft, LogIn, User } from "lucide-react";
 
-import { MAIN_MENU_ACCOUNT_CHIP_KIND, useMainMenuAccountChipVm } from "@/auth";
-import { BrandLogo } from "@/branding/components/BrandLogo";
-import { SITE_TAGLINE } from "@/seo/siteSeo";
-import { MainMenuAtmosphere } from "@/runtime/components/MainMenuAtmosphere";
+import { MAIN_MENU_ACCOUNT_CHIP_KIND, useMainMenuAccountChipVm } from "../../auth";
+import { BrandLogo } from "../../branding/components/BrandLogo";
+import { SITE_TAGLINE } from "../../seo/siteSeo";
+import { MainMenuAtmosphere } from "./MainMenuAtmosphere";
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 interface MainMenuLayoutProps {

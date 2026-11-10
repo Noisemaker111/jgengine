@@ -2,8 +2,8 @@ import type { ReactNode } from "@jgengine/core/ui/jsx";
 import type { ButtonHTMLAttributes } from "@jgengine/core/ui/jsx/dom.view";
 import { Loader2 } from "lucide-react";
 
-import { useMainMenu } from "@/runtime/mainMenu";
-import { MAIN_MENU_KIND } from "@/runtime/mainMenuPhase";
+import { useMainMenu } from "../mainMenu";
+import { MAIN_MENU_KIND } from "../mainMenuPhase";
 
 interface PlayEntryActionProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;

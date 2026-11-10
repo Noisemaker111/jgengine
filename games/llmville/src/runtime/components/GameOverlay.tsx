@@ -7,19 +7,19 @@ import { useState } from "@jgengine/core/ui/jsx";
 
 import { HudSlots } from "@jgengine/core/hud/hudLayout.view";
 import { KitToast } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import type { BuildViewModel } from "@/build/buildSession";
-import TweetNotification from "@/economy/components/TweetNotification";
-import { useTweetFeed } from "@/economy/tweetFeed";
-import type { RackHardwareViewModel } from "@/infrastructure/rackHardwareSession";
-import { cn } from "@/kit/cn";
-import { WorldChat } from "@/chat/components/WorldChat";
+import type { BuildViewModel } from "../../build/buildSession";
+import TweetNotification from "../../economy/components/TweetNotification";
+import { useTweetFeed } from "../../economy/tweetFeed";
+import type { RackHardwareViewModel } from "../../infrastructure/rackHardwareSession";
+import { cn } from "../../kit/cn";
+import { WorldChat } from "../../chat/components/WorldChat";
 import type { ChatMessage } from "@jgengine/core/chat/chat";
-import { GameplayChrome } from "@/runtime/components/GameplayChrome";
-import { ResourceHud } from "@/runtime/components/ResourceHud";
-import type { ReadyWorldViewModel } from "@/runtime/worldViewModel";
-import { useWorldModelDiagnostics } from "@/scene/worldModelDiagnostics";
-import { GameTablet } from "@/tablet/components/GameTablet";
-import type { TutorialViewModel } from "@/tutorial/tutorialRuntime";
+import { GameplayChrome } from "./GameplayChrome";
+import { ResourceHud } from "./ResourceHud";
+import type { ReadyWorldViewModel } from "../worldViewModel";
+import { useWorldModelDiagnostics } from "../../scene/worldModelDiagnostics";
+import { GameTablet } from "../../tablet/components/GameTablet";
+import type { TutorialViewModel } from "../../tutorial/tutorialRuntime";
 
 /** The key the player's moved HUD panels are remembered under. */
 const HUD_LAYOUT_KEY = "llmville";

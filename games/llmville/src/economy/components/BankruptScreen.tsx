@@ -1,6 +1,6 @@
 import { Loader2 } from "lucide-react";
 
-import { BrandLogo } from "@/branding/components/BrandLogo";
+import { BrandLogo } from "../../branding/components/BrandLogo";
 import { DEFAULT_STARTING_MONEY } from "@llmville/game/world/worldBootstrap";
 
 interface BankruptScreenProps {

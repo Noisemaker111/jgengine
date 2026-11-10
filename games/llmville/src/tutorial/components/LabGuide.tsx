@@ -3,11 +3,11 @@ import { ArrowRight, Check, Sparkles } from "lucide-react";
 import { getBaseModelDefinition } from "@llmville/game/models/baseModels";
 import { STARTER_RACK_CATALOG_ID } from "@llmville/game/infrastructure/catalog";
 import { TUTORIAL_TRAIN_BASE_MODEL_ID } from "@llmville/game/tutorial/tutorialProgress";
-import type { ReadyWorldViewModel } from "@/runtime/worldViewModel";
-import type { TutorialViewModel } from "@/tutorial/tutorialRuntime";
-import { useTabletNavContext } from "@/tablet/components/tabletNav";
-import type { TabletAppId, TabletStoreTabId } from "@/tablet/tabletIds";
-import { engineActions } from "@/runtime/gameEngine";
+import type { ReadyWorldViewModel } from "../../runtime/worldViewModel";
+import type { TutorialViewModel } from "../tutorialRuntime";
+import { useTabletNavContext } from "../../tablet/components/tabletNav";
+import type { TabletAppId, TabletStoreTabId } from "../../tablet/tabletIds";
+import { engineActions } from "../../runtime/gameEngine";
 import { DEFAULT_STARTING_MONEY } from "@llmville/game/world/worldBootstrap";
 
 export interface LabGoalSelection {

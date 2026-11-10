@@ -3,7 +3,7 @@ import { TUTORIAL_TRAIN_BASE_MODEL_ID } from "@llmville/game/tutorial/tutorialPr
 import { BUILD_CATALOG } from "@llmville/game/build/catalog";
 import { STARTER_RACK_CATALOG_ID } from "@llmville/game/infrastructure/catalog";
 import { INTERACTION_TARGET_TYPE, type InteractionHint } from "@llmville/game/simulation/interaction";
-import { TABLET_APP_ID, TABLET_STORE_TAB_ID, type TabletAppId, type TabletStoreTabId } from "@/tablet/tabletIds";
+import { TABLET_APP_ID, TABLET_STORE_TAB_ID, type TabletAppId, type TabletStoreTabId } from "../tablet/tabletIds";
 import { TUTORIAL_EVENT_TYPE, TUTORIAL_NODE, type TutorialNode } from "@llmville/game/tutorial/tutorialMachine";
 import {
   TUTORIAL_INPUT_MODE,
@@ -11,7 +11,7 @@ import {
   tutorialRackConfigurePhrase,
   tutorialTabletOpenPhrase,
   type TutorialInputMode,
-} from "@/tutorial/tutorialInput";
+} from "./tutorialInput";
 
 export interface TutorialHint {
   step: number;

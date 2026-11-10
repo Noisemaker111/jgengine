@@ -29,8 +29,8 @@ import {
   contiguousCellBlocks,
   type CellEdge,
 } from "@llmville/game/datacenter/claimMap";
-import { readPlayerPosition } from "@/runtime/playerPosition";
-import type { GameEngine } from "@/runtime/gameEngine";
+import { readPlayerPosition } from "../../runtime/playerPosition";
+import type { GameEngine } from "../../runtime/gameEngine";
 import { composeInstance, uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";

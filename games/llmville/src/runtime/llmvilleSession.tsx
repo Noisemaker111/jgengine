@@ -1,8 +1,8 @@
 import { createContext, useContext, useMemo, useSyncExternalStore, type ReactNode, type RefObject } from "@jgengine/core/ui/jsx";
 
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
-import type { TabletNavState } from "@/tablet/tablet";
-import type { WorldSceneProps } from "@/scene/components/GameScene";
+import type { TabletNavState } from "../tablet/tablet";
+import type { WorldSceneProps } from "../scene/components/GameScene";
 
 /** Who is playing which world: what the route knows before the shell mounts. */
 export interface LlmvilleSessionIdentity {

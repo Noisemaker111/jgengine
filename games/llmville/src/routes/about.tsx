@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense, lazy } from "@jgengine/core/ui/jsx";
 
-import { ABOUT_PAGE_DESCRIPTION, ABOUT_PAGE_TITLE, pageHead } from "@/seo/siteSeo";
+import { ABOUT_PAGE_DESCRIPTION, ABOUT_PAGE_TITLE, pageHead } from "../seo/siteSeo";
 
 const AboutScreen = lazy(async () =>
-  import("@/branding/components/AboutScreen").then((module) => ({
+  import("../branding/components/AboutScreen").then((module) => ({
     default: module.AboutScreen,
   })),
 );

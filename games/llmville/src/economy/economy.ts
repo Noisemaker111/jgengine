@@ -4,8 +4,8 @@ import { useCallback } from "@jgengine/core/ui/jsx";
 import { isBuildItemId, type BuildItemId } from "@llmville/game/build/catalog";
 import type { PersonalUpgradeId } from "@llmville/game/user/personalUpgrades";
 import { TUTORIAL_STAGE } from "@llmville/game/tutorial/tutorialStages";
-import { withEditAccess, wrapMutation } from "@/runtime/gameEngine";
-import { showActionError } from "@/runtime/actionFeedback";
+import { withEditAccess, wrapMutation } from "../runtime/gameEngine";
+import { showActionError } from "../runtime/actionFeedback";
 import type { HardwareModelId } from "@llmville/game/infrastructure/catalog";
 
 export function formatCompactNumber(value: number): string {

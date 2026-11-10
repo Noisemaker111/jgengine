@@ -5,11 +5,11 @@ import {
   ABOUT_LEDE,
   ABOUT_PLAY_STEPS,
   ABOUT_SECTIONS,
-} from "@/branding/aboutContent";
-import { BrandLogo } from "@/branding/components/BrandLogo";
-import { MainMenuLayout } from "@/runtime/components/MainMenuLayout";
-import { PlayEntryAction } from "@/runtime/components/PlayEntryAction";
-import { DEFAULT_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/seo/siteSeo";
+} from "../aboutContent";
+import { BrandLogo } from "./BrandLogo";
+import { MainMenuLayout } from "../../runtime/components/MainMenuLayout";
+import { PlayEntryAction } from "../../runtime/components/PlayEntryAction";
+import { DEFAULT_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "../../seo/siteSeo";
 
 const structuredData = {
   "@context": "https://schema.org",

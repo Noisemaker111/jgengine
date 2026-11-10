@@ -3,15 +3,15 @@ import { useMutation } from "convex/react";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "@jgengine/core/ui/jsx";
 
-import { useAuth, usePlayerIdentity } from "@/auth";
-import { loadGameSessionModule, preloadGameRoute } from "@/runtime/gameRoutePreload";
-import { deriveMainMenuPhase, MAIN_MENU_KIND, type MainMenuPhase } from "@/runtime/mainMenuPhase";
-import { preloadGameCreateRoute } from "@/runtime/gameCreate";
-import { destinationAfterAuth } from "@/runtime/playEntry";
-import { clearAllLocalGamePersistence } from "@/user/localGameState";
-import { showActionErrorFromException } from "@/runtime/actionFeedback";
-import { loadAuthScreenModule } from "@/user/authScreenPreload";
-import { useUserWorld } from "@/world/world";
+import { useAuth, usePlayerIdentity } from "../auth";
+import { loadGameSessionModule, preloadGameRoute } from "./gameRoutePreload";
+import { deriveMainMenuPhase, MAIN_MENU_KIND, type MainMenuPhase } from "./mainMenuPhase";
+import { preloadGameCreateRoute } from "./gameCreate";
+import { destinationAfterAuth } from "./playEntry";
+import { clearAllLocalGamePersistence } from "../user/localGameState";
+import { showActionErrorFromException } from "./actionFeedback";
+import { loadAuthScreenModule } from "../user/authScreenPreload";
+import { useUserWorld } from "../world/world";
 
 export interface MainMenuState {
   phase: MainMenuPhase;

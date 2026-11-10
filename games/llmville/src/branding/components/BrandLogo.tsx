@@ -1,6 +1,6 @@
-import { cn } from "@/kit/cn";
-import { MascotBot } from "@/branding/components/MascotBot";
-import { SITE_TAGLINE } from "@/seo/siteSeo";
+import { cn } from "../../kit/cn";
+import { MascotBot } from "./MascotBot";
+import { SITE_TAGLINE } from "../../seo/siteSeo";
 
 interface BrandLogoProps {
   className?: string;

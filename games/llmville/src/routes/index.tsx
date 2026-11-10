@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { LandingPage } from "@/branding/components/LandingPage";
-import { DEFAULT_TITLE, HOME_PAGE_DESCRIPTION, pageHead } from "@/seo/siteSeo";
-import { parseHomeRouteSearch } from "@/settings/settings";
+import { LandingPage } from "../branding/components/LandingPage";
+import { DEFAULT_TITLE, HOME_PAGE_DESCRIPTION, pageHead } from "../seo/siteSeo";
+import { parseHomeRouteSearch } from "../settings/settings";
 
 export const Route = createFileRoute("/")({
   head: () =>

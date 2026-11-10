@@ -18,8 +18,8 @@ import {
 } from "@dnd-kit/core";
 
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
-import type { PlacedRack } from "@/infrastructure/infrastructure";
-import { placedRackAssignmentInputs } from "@/infrastructure/infrastructure";
+import type { PlacedRack } from "../../infrastructure/infrastructure";
+import { placedRackAssignmentInputs } from "../../infrastructure/infrastructure";
 import {
   assignmentKey,
   computeAssignmentStats,
@@ -39,12 +39,12 @@ import {
 } from "@llmville/game/models/scrapingTiers";
 import type { TutorialStage } from "@llmville/game/tutorial/tutorialStages";
 
-import { cn } from "@/kit/cn";
-import RackSlot from "@/infrastructure/components/RackSlot";
-import { RevealedModelCard, UnknownModelCard } from "@/models/components/ModelCard";
-import { ModelDetailView } from "@/models/components/ModelDetailView";
-import type { RevealingModelStats } from "@/models/components/ModelRevealOverlay";
-import { userModelTrainingVolumeLabel, type GameUserModel } from "@/models/models";
+import { cn } from "../../kit/cn";
+import RackSlot from "../../infrastructure/components/RackSlot";
+import { RevealedModelCard, UnknownModelCard } from "../../models/components/ModelCard";
+import { ModelDetailView } from "../../models/components/ModelDetailView";
+import type { RevealingModelStats } from "../../models/components/ModelRevealOverlay";
+import { userModelTrainingVolumeLabel, type GameUserModel } from "../../models/models";
 
 interface InferenceAppProps {
   racks: readonly PlacedRack[];

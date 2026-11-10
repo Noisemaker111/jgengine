@@ -4,13 +4,13 @@ import { useMutation } from "convex/react";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "@jgengine/core/ui/jsx";
 
-import { useAuth } from "@/auth";
-import { resolveAuthUsername } from "@/auth/authCredentials";
-import { formatChunkLoadError } from "@/runtime/chunkLoadError";
-import { loadGameSessionModule, preloadGameRoute } from "@/runtime/gameRoutePreload";
-import { clearAllLocalGamePersistence } from "@/user/localGameState";
-import { getDefaultAvatarId, normalizeAvatarId } from "@/user/user";
-import { useUserWorld } from "@/world/world";
+import { useAuth } from "../auth";
+import { resolveAuthUsername } from "../auth/authCredentials";
+import { formatChunkLoadError } from "./chunkLoadError";
+import { loadGameSessionModule, preloadGameRoute } from "./gameRoutePreload";
+import { clearAllLocalGamePersistence } from "../user/localGameState";
+import { getDefaultAvatarId, normalizeAvatarId } from "../user/user";
+import { useUserWorld } from "../world/world";
 
 export type GameCreatePhase = "auth" | "loading" | "bootstrapping" | "redirecting" | "error";
 

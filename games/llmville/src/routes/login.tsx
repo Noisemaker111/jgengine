@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense, lazy, useEffect } from "@jgengine/core/ui/jsx";
-import { useAuth } from "@/auth";
-import { RouteLoadingScreen } from "@/components/RouteLoadingScreen";
-import { destinationAfterAuth, parsePlayEntryIntent, type PlayEntryIntent } from "@/runtime/playEntry";
-import { loadAuthScreenModule } from "@/user/authScreenPreload";
+import { useAuth } from "../auth";
+import { RouteLoadingScreen } from "../components/RouteLoadingScreen";
+import { destinationAfterAuth, parsePlayEntryIntent, type PlayEntryIntent } from "../runtime/playEntry";
+import { loadAuthScreenModule } from "../user/authScreenPreload";
 
 const LoginScreen = lazy(async () =>
   loadAuthScreenModule().then((module) => ({ default: module.LoginScreen })),

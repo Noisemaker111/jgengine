@@ -1,8 +1,8 @@
 import type { ErrorComponentProps } from "@tanstack/react-router";
 
-import { GameConnectionErrorScreen } from "@/runtime/components/GameConnectionErrorScreen";
-import { formatChunkLoadError } from "@/runtime/chunkLoadError";
-import { buildGameErrorReportInput, type GameErrorKind } from "@/runtime/gameErrorReport";
+import { GameConnectionErrorScreen } from "./GameConnectionErrorScreen";
+import { formatChunkLoadError } from "../chunkLoadError";
+import { buildGameErrorReportInput, type GameErrorKind } from "../gameErrorReport";
 
 /** TanStack Router error component: replaces the default "Something went wrong" panel
  * with the game-wide error screen, including the "Copy for agent" report button. */

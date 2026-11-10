@@ -1,6 +1,6 @@
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { useCallback, useMemo, useState } from "@jgengine/core/ui/jsx";
-import type { RackHardwareMoveSource, RackHardwareMoveTarget } from "@/infrastructure/rackHardwareSession";
+import type { RackHardwareMoveSource, RackHardwareMoveTarget } from "../rackHardwareSession";
 import {
   DndContext,
   DragOverlay,
@@ -12,7 +12,7 @@ import {
   useDraggable,
   useDroppable,
 } from "@dnd-kit/core";
-import type { PlacedRack } from "@/infrastructure/infrastructure";
+import type { PlacedRack } from "../infrastructure";
 import {
   getRackInstalledHardwareSlots,
   getRackSlotCapacity,
@@ -27,9 +27,9 @@ import {
 } from "@llmville/game/infrastructure/catalog";
 import { computeRackThermalStateV3 } from "@llmville/game/infrastructure/infrastructure";
 import { getRackCatalogDefinition, resolveRackCatalogId } from "@llmville/game/infrastructure/catalog";
-import { useRackHardwareDragVisualOptional } from "@/infrastructure/rackHardwareDragVisual";
+import { useRackHardwareDragVisualOptional } from "../rackHardwareDragVisual";
 
-import { useTabletNavContext } from "@/tablet/components/tabletNav";
+import { useTabletNavContext } from "../../tablet/components/tabletNav";
 
 import RackSlot from "./RackSlot";
 import type { ReactNode } from "@jgengine/core/ui/jsx";

@@ -1,8 +1,8 @@
 import { Component, type ErrorInfo, type ReactNode } from "@jgengine/core/ui/jsx";
 
-import { GameConnectionErrorScreen } from "@/runtime/components/GameConnectionErrorScreen";
-import { formatChunkLoadError } from "@/runtime/chunkLoadError";
-import { buildGameErrorReportInput, type GameErrorReportInput } from "@/runtime/gameErrorReport";
+import { GameConnectionErrorScreen } from "./GameConnectionErrorScreen";
+import { formatChunkLoadError } from "../chunkLoadError";
+import { buildGameErrorReportInput, type GameErrorReportInput } from "../gameErrorReport";
 
 interface GameRouteErrorBoundaryProps {
   children: ReactNode;

@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
-import { CharacterDevPreview } from "@/user/components/CharacterDevPreview";
+import { CharacterDevPreview } from "../user/components/CharacterDevPreview";
 
 export const Route = createFileRoute("/dev/character")({
   beforeLoad: () => {

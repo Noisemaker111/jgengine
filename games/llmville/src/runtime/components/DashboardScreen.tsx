@@ -1,9 +1,9 @@
 import { Link } from "@tanstack/react-router";
 
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { BrandLogo } from "@/branding/components/BrandLogo";
-import { StandalonePageShell } from "@/branding/components/StandalonePageShell";
-import { useDashboardScreenState } from "@/auth";
+import { BrandLogo } from "../../branding/components/BrandLogo";
+import { StandalonePageShell } from "../../branding/components/StandalonePageShell";
+import { useDashboardScreenState } from "../../auth";
 
 export function DashboardScreen() {
   const { phase, logout, displayName, email, username } = useDashboardScreenState();

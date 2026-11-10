@@ -9,15 +9,15 @@ import type {
   CharacterLook,
   CharacterPantsColorId,
   CharacterShoesColorId,
-} from "@/user/playerCharacterFigure";
+} from "../playerCharacterFigure";
 import {
   CHARACTER_FISH_COLORS,
   CHARACTER_HOODIE_COLORS,
   CHARACTER_PANTS_COLORS,
   CHARACTER_SHOES_COLORS,
   DEFAULT_CHARACTER_LOOK,
-} from "@/user/playerCharacterFigure";
-import { PlayerCharacterFigure } from "@/user/components/PlayerCharacterFigure";
+} from "../playerCharacterFigure";
+import { PlayerCharacterFigure } from "./PlayerCharacterFigure";
 
 type CharacterViewAngle = "front" | "back" | "diagonal" | "fixed-front";
 

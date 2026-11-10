@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
-import { BillsDevPreview } from "@/economy/components/BillsDevPreview";
+import { BillsDevPreview } from "../economy/components/BillsDevPreview";
 
 export const Route = createFileRoute("/dev/bills")({
   beforeLoad: () => {

@@ -2,9 +2,9 @@ import { Link } from "@tanstack/react-router";
 import { Check, Coins, Cpu, Loader2, LogOut, Pencil, Sparkles, Users, X } from "lucide-react";
 
 import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { formatCompactNumber, formatMoney } from "@/economy/economy";
-import { MainMenuLayout } from "@/runtime/components/MainMenuLayout";
-import { getAvatarById, getMentorPerkSummary, useProfileScreen, sanitizeProfileUsernameKeystroke } from "@/user/user";
+import { formatCompactNumber, formatMoney } from "../../economy/economy";
+import { MainMenuLayout } from "../../runtime/components/MainMenuLayout";
+import { getAvatarById, getMentorPerkSummary, useProfileScreen, sanitizeProfileUsernameKeystroke } from "../user";
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 interface ProfileScreenProps {

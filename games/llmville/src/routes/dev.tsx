@@ -38,7 +38,7 @@ function getDevPreviewLayout(pathname: string): DevPreviewLayout {
   return best?.layout ?? "document";
 }
 
-import { cn } from "@/kit/cn";
+import { cn } from "../kit/cn";
 
 function DevPreviewNav() {
   const location = useLocation();

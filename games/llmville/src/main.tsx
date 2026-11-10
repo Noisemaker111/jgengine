@@ -2,13 +2,13 @@ import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
 import { RouterProvider } from "@tanstack/react-router";
 import ReactDOM from "@jgengine/core/ui/jsx/client.view";
 
-import { AuthProvider } from "@/auth";
-import { applyLlmvilleKit } from "@/kit/llmvilleKit";
-import { authClient } from "@/auth/authClient";
-import { readOptimisticConvexToken } from "@/auth/sessionToken";
-import { registerServiceWorker } from "@/pwa/serviceWorker";
-import { loadGameSessionModule } from "@/runtime/gameRoutePreload";
-import { loadAuthScreenModule } from "@/user/authScreenPreload";
+import { AuthProvider } from "./auth";
+import { applyLlmvilleKit } from "./kit/llmvilleKit";
+import { authClient } from "./auth/authClient";
+import { readOptimisticConvexToken } from "./auth/sessionToken";
+import { registerServiceWorker } from "./pwa/serviceWorker";
+import { loadGameSessionModule } from "./runtime/gameRoutePreload";
+import { loadAuthScreenModule } from "./user/authScreenPreload";
 import { convexClient, initialConvexToken, router } from "./routerInstance";
 
 const rootElement = document.getElementById("app");
