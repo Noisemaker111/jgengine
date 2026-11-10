@@ -21,11 +21,11 @@ export const PERF: VerbTable = {
   name: "perf",
   summary: "measure performance: one game's frame report, the frame gate, the 360 fps gap, network, test timing, or an open game",
   verbs: {
-    play: { script: "scripts/perf-play.ts", guardSeconds: 420, detail: "<game...>: play each headless in one browser and print its frame report (also `bun run perf <game>`)" },
+    play: { script: "scripts/perf-play.ts", guardSeconds: 420, detail: "<game...> [--dev] [--cpu n]: play each headless in one browser on the production build players get (--dev: the dev server) and print its scorecard and frame report (also `bun run perf <game>`)" },
     // Every game's session has its own hard deadline (gameSessionDeadlineMs), up to about 10 minutes
     // on a busy PC; these guards only back that up over a whole run of games.
-    gate: { script: "scripts/perf-gate.ts", guardSeconds: 5400, detail: "measure every playable game; fail a p95 frame over 16.7 ms on the RTX 3070 at 1600x900, or GL objects allocated after warmup" },
-    ab: { script: "scripts/perf-ab.ts", guardSeconds: 5400, detail: "[--games a,b] [--base <ref|dir>]: is this branch faster or slower than its base, per game: both load once in one Chrome and take turns in short windows until the 99% interval answers; the games default to the ones the diff can change" },
+    gate: { script: "scripts/perf-gate.ts", guardSeconds: 5400, detail: "[--dev]: measure every playable game on the production build; fail a p95 frame over 16.7 ms on the RTX 3070 at 1600x900, or GL objects allocated after warmup" },
+    ab: { script: "scripts/perf-ab.ts", guardSeconds: 5400, detail: "[--games a,b] [--base <ref|dir>] [--dev]: is this branch faster or slower than its base, per game, on the production build, led by each side's scorecard: both load once in one Chrome and take turns in short windows until the 99% interval answers; the games default to the ones the diff can change" },
     "fps-gap": { script: "scripts/perf-fps-gap.ts", guardSeconds: 5400, detail: "[--games a,b] [--markdown]: measure every game at the gate's conditions and print each against 360 fps (2.78 ms), with its costs grouped into ranked engine work and the GPU's work timed draw by draw; a report, not a gate" },
     "shadow-audit": { script: "scripts/perf-shadow-audit.ts", guardSeconds: 2700, detail: "[--games a,b] [--path walk|still]: play each game with the shadow cache's audit on and fail on any shadow-map texel that differs from a full redraw" },
     "post-audit": { script: "scripts/perf-post-audit.ts", guardSeconds: 2700, detail: "[--games a,b] [--path walk|still] [--renderer webgl|webgpu]: play each game with the post chain's audit on and fail on any texel its changed draws make differently from three's passes" },
