@@ -366,6 +366,13 @@ impl El {
         }
         self
     }
+
+    /// Let a percentage-sized field contribute zero min-content width while retaining
+    /// its column-based max-content width for shrink-to-fit layout.
+    pub fn input_columns_shrink(mut self) -> Self {
+        if let Some(input) = self.cold_mut().input.as_mut() { input.columns_shrink = true; }
+        self
+    }
     /// Make a byte range of this text pressable (see [`Link`]). Only the range's shaped glyph
     /// boxes take the pointer, which shows a hand over them; the rest of the text stays
     /// transparent to input. Each link is a Tab stop that Enter or Space presses.

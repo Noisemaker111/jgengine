@@ -1,5 +1,23 @@
 import { expect, test } from "bun:test";
-import { groupInlineFlow, type WireBox } from "./cssMirror.view";
+import { atomicColumns, groupInlineFlow, type WireBox } from "./cssMirror.view";
+
+test("unbreakable columns retain their blocks and draw centered separating rules", () => {
+  const box: WireBox = { k: "x", id: 1, d: 1 };
+  const children: WireBox[] = [{ k: "x", id: 2 }, { k: "x", id: 3 }];
+  expect(atomicColumns(box, children, 2, 22, 1, 0x221a1259)).toBe(true);
+  expect(box["d"]).toBe(2);
+  expect(box["gtc"]).toEqual([[1, 0, 3, 1], [1, 0, 3, 1]]);
+  expect(box["gap"]).toEqual([22, 0]);
+  expect(children[2]).toMatchObject({ pos: 2, ins: ["50%", 0, "auto", 0], w: 1, mg: [-0.5, 0, 0, 0] });
+});
+
+test("columns requiring balancing across multiple blocks stay explicitly unsupported", () => {
+  const box: WireBox = { k: "x", id: 1, d: 1 };
+  const children: WireBox[] = [{ k: "x", id: 2 }, { k: "x", id: 3 }, { k: "x", id: 4 }];
+  expect(atomicColumns(box, children, 2, 22, 1, 0x221a1259)).toBe(false);
+  expect(box["d"]).toBe(1);
+  expect(children).toHaveLength(3);
+});
 
 test("a block-level subtitle interrupts inline content even at an intrinsic width", () => {
   const title: WireBox = { k: "x", id: 1, inl: 1 };

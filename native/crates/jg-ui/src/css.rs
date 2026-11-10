@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
 use rune::tok::{Family, TextStyle};
-use rune::{Align, Color, El, ScrollSpec, Shadow, Span, TextEdit, Tx, col, el, text, text_input};
+use rune::{Align, Color, El, Shadow, Span, TextEdit, Tx, col, el, text, text_input};
 use rune_taffy::prelude::{
     AlignContent, AlignItems, AlignSelf, BoxSizing, Dimension, Display, FlexDirection, FlexWrap, GridAutoFlow, GridPlacement, GridTemplateComponent, RepetitionCount,
     JustifyContent, LengthPercentage, LengthPercentageAuto, Line, MaxTrackSizingFunction, MinTrackSizingFunction, Position, Rect, Size, Style,
@@ -289,6 +289,8 @@ pub struct Box_ {
     /// 0 static, 1 relative, 2 absolute.
     #[serde(default)]
     pub pos: u8,
+    #[serde(default)]
+    pub z: i32,
     /// left, top, right, bottom.
     #[serde(default)]
     pub ins: Option<[Dim; 4]>,
@@ -479,7 +481,7 @@ fn align_content(v: u8) -> Option<AlignContent> {
 fn template(tracks: &[Track]) -> Vec<GridTemplateComponent<String>> {
     let mut out: Vec<GridTemplateComponent<String>> = Vec::new();
     let mut run: (u8, Vec<TrackSizingFunction>) = (0, Vec::new());
-    let mut close = |run: &mut (u8, Vec<TrackSizingFunction>), out: &mut Vec<GridTemplateComponent<String>>| {
+    let close = |run: &mut (u8, Vec<TrackSizingFunction>), out: &mut Vec<GridTemplateComponent<String>>| {
         if run.1.is_empty() {
             return;
         }
@@ -1277,6 +1279,13 @@ fn build_box(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
             _ => e.pixels(image.pixels()),
         };
     }
+    let own = (!b.cp.is_empty()).then_some(()).and(rect).zip(clip.as_ref()).map(|(r, poly)| poly.iter().map(|p| [p[0] + r[0], p[1] + r[1]]).collect::<Vec<_>>());
+    let pushed = own.is_some();
+    if let Some(poly) = own { CLIPS.with(|c| c.borrow_mut().push(poly)); }
+    let under = |child: &crate::Node| matches!(child, crate::Node::X(child) if child.pos == 2 && child.z < 0);
+    for (i, ch) in b.c.iter().enumerate().filter(|(_, child)| under(child)) {
+        e = e.child(crate::build::build(ch, &format!("{path}.{i}"), s, t));
+    }
     if let Some(inp) = &b.inp {
         e = e.child(input_el(b, inp, s).key("field").layout_style(|style| {
             style.flex_grow = 1.0;
@@ -1285,7 +1294,6 @@ fn build_box(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
         }));
     } else if let Some(t) = &b.t {
         let grow = |st: &mut Style| {
-            st.flex_grow = 1.0;
             st.flex_shrink = 1.0;
             st.min_size.width = length(0.0);
         };
@@ -1306,64 +1314,34 @@ fn build_box(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
         }
     }
     if scrolls {
-        let fills_viewport = b.d == 0 && matches!(b.fd, 1 | 3) && b.c.iter().any(|child| matches!(child, crate::Node::X(child) if child.fg > 0.0));
-        let mut inner = col().layout_style(|st| {
-            layout(b, st);
-            st.position = Position::Relative;
-            st.inset = Rect { left: auto(), top: auto(), right: auto(), bottom: auto() };
-            st.size = Size { width: Dimension::percent(1.0), height: if fills_viewport { Dimension::percent(1.0) } else { Dimension::auto() } };
-            st.min_size = Size { width: auto(), height: auto() };
-            st.max_size = Size { width: auto(), height: auto() };
-            st.margin = Rect { left: length(0.0), top: length(0.0), right: length(0.0), bottom: length(0.0) };
-            st.border = Rect { left: length(0.0), top: length(0.0), right: length(0.0), bottom: length(0.0) };
-            // A growing flex pane needs a definite viewport height; ordinary scroll content grows.
-            st.flex_grow = 1.0;
-            st.flex_shrink = 0.0;
-            st.grid_column = Line { start: GridPlacement::Auto, end: GridPlacement::Auto };
-            st.grid_row = Line { start: GridPlacement::Auto, end: GridPlacement::Auto };
-        });
-        for (i, ch) in b.c.iter().enumerate() {
-            inner = inner.child(crate::build::build(ch, &format!("{path}.{i}"), s, t));
-        }
-        e = e
-            .layout_style(|st| {
-                st.display = Display::Flex;
-                st.flex_direction = FlexDirection::Column;
-                st.padding = Rect { left: length(0.0), top: length(0.0), right: length(0.0), bottom: length(0.0) };
-            })
-            .scroll(ScrollSpec { stick_bottom: false })
-            .hit()
-            .child(inner);
+        e = e.scroll_axes(b.ovx == 2, b.ovy == 2).hit();
         if b.id != 0 {
             let id = b.id;
             e = e.on_scroll_offset(move |at| crate::emit_scroll(id, at));
         }
-    } else {
-        // Children's backgrounds are cut to this box's own shape.
-        let own = (!b.cp.is_empty()).then_some(()).and(rect).zip(clip.as_ref()).map(|(r, poly)| poly.iter().map(|p| [p[0] + r[0], p[1] + r[1]]).collect::<Vec<_>>());
-        let pushed = own.is_some();
-        if let Some(poly) = own {
-            CLIPS.with(|c| c.borrow_mut().push(poly));
-        }
-        for (i, ch) in b.c.iter().enumerate() {
-            e = e.child(crate::build::build(ch, &format!("{path}.{i}"), s, t));
-        }
-        if pushed {
-            CLIPS.with(|c| c.borrow_mut().pop());
-        }
+    }
+    for (i, ch) in b.c.iter().enumerate().filter(|(_, child)| !under(child)) {
+        e = e.child(crate::build::build(ch, &format!("{path}.{i}"), s, t));
+    }
+    if pushed {
+        CLIPS.with(|c| c.borrow_mut().pop());
     }
     let id = b.id;
     if id != 0 {
+        let follows_position = enclosed && (b.bg.is_some() || !b.ly.is_empty());
         e = e.on_layout_tx(move |_: &mut Ui, rect: [f32; 4], tx: &mut Tx| {
-            let grew = RECTS.with(|r| {
+            let (grew, moved) = RECTS.with(|r| {
                 let mut r = r.borrow_mut();
                 let old = r.insert(id, rect);
-                old.is_none_or(|o| (o[2] - rect[2]).abs() > 0.25 || (o[3] - rect[3]).abs() > 0.25)
+                (old.is_none_or(|o| (o[2] - rect[2]).abs() > 0.25 || (o[3] - rect[3]).abs() > 0.25),
+                    old.is_none_or(|o| (o[0] - rect[0]).abs() > 0.25 || (o[1] - rect[1]).abs() > 0.25))
             });
             RECTS_DIRTY.set(true);
-            // Only a box whose paint follows its size needs the view built again.
-            if !(sized && grew) {
+            // Recut ancestor polygons when scrolling moves paint through their edges.
+            if !(sized && grew || follows_position && moved) {
                 tx.live_only();
+            } else {
+                tx.instant();
             }
         });
     }
@@ -1383,6 +1361,7 @@ fn input_el(b: &Box_, inp: &Input, s: &Ui) -> El {
     let mut e = text_input(edit, style).color(color).hit();
     if inp.cols > 0 {
         e = e.input_columns(inp.cols);
+        if matches!(b.w, Some(Dim::Pct(_))) { e = e.input_columns_shrink(); }
     }
     if !inp.ph.is_empty() {
         e = e.placeholder(inp.ph.clone(), inp.phc.map_or(color.alpha(0.5), |c| c.0));
@@ -1504,6 +1483,83 @@ mod live_value_tests {
     }
 
     #[test]
+    fn a_percentage_input_does_not_widen_its_automatic_grid_column() {
+        let mut state = Ui::default();
+        state.root = crate::spec::parse_spec(r#"{"children":[{"k":"x","id":1,"w":300,"d":2,"gtc":[[0,0,3,1]],"c":[{"k":"x","id":2,"d":2,"c":[{"k":"x","id":3,"d":1,"w":"100%","inp":{"v":"","cols":20},"t":{"s":"","z":38,"c":4294967295}}]}]}]}"#).unwrap().children;
+        let mut runtime = rune::Runtime::new(state, crate::build::view, (300.0, 300.0), rune::Env::new(true, 1.0));
+        runtime.frame(0.0);
+        let field = runtime.elements().into_iter().find(|element| element.key.as_deref() == Some("x3")).unwrap().rect;
+        assert!(field[0] + field[2] <= 300.5, "percentage input widened its grid: {field:?}");
+        assert!(field[2] > 299.0, "percentage input stopped filling its grid: {field:?}");
+    }
+
+    #[test]
+    fn anonymous_flex_text_obeys_its_parents_center_alignment() {
+        let mut state = Ui::default();
+        state.root = crate::spec::parse_spec(r#"{"children":[{"k":"x","id":1,"w":200,"h":100,"ai":3,"jc":3,"t":{"s":"Empty slot","z":14,"c":4294967295}}]}"#).unwrap().children;
+        let mut runtime = rune::Runtime::new(state, crate::build::view, (200.0, 100.0), rune::Env::new(true, 1.0));
+        runtime.frame(0.0);
+        let glyphs: Vec<_> = runtime.instances.iter().filter(|quad| quad.params[1] == rune::render::KIND_GLYPH).collect();
+        let left = glyphs.iter().map(|quad| quad.rect[0]).reduce(f32::min).unwrap();
+        let right = glyphs.iter().map(|quad| quad.rect[0] + quad.rect[2]).reduce(f32::max).unwrap();
+        assert!(((left + right) * 0.5 - 100.0).abs() < 5.0, "centered flex text stayed at the left: {left}..{right}");
+    }
+
+    #[test]
+    fn scrollable_grid_rows_keep_their_intrinsic_text_height() {
+        let rows: Vec<_> = (0..20).map(|i| serde_json::json!({"k":"x","id":10+i,"d":2,"c":(0..3).map(|_| serde_json::json!({"k":"x","d":1,"t":{"s":"Text line","z":14,"lh":18,"c":4294967295_u32}})).collect::<Vec<_>>()})).collect();
+        let mut state = Ui::default();
+        state.root = crate::spec::parse_spec(&serde_json::json!({"children":[{"k":"x","id":1,"d":2,"w":200,"h":100,"ovy":2,"ac":1,"gtc":[[1,0,3,1],[1,0,3,1]],"c":rows}]}).to_string()).unwrap().children;
+        let mut runtime = rune::Runtime::new(state, crate::build::view, (200.0, 100.0), rune::Env::new(true, 1.0));
+        runtime.frame(0.0);
+        let rect = |key| runtime.elements().into_iter().find(|element| element.key.as_deref() == Some(key)).unwrap().rect;
+        assert!(rect("x10")[3] >= 53.0, "the scroll viewport compressed its text rows: {:?}", rect("x10"));
+        assert!(rect("x29")[1] > 100.0);
+    }
+
+    #[test]
+    fn scrolling_rebuilds_paint_intersecting_an_ancestor_polygon() {
+        RECTS.with(|rects| rects.borrow_mut().clear());
+        let mut state = Ui::default();
+        state.root = crate::spec::parse_spec(r#"{"children":[{"k":"x","id":1,"w":200,"h":100,"cp":[[0,0,0,0],[0,1,0,0],[0,1,0,1],[0,0,0,1]],"c":[{"k":"x","id":2,"w":200,"h":50,"ovx":2,"c":[{"k":"x","id":3,"w":180,"h":30,"fs":0,"bg":4278190335},{"k":"x","id":4,"w":180,"h":30,"fs":0}]}]}]}"#).unwrap().children;
+        let mut runtime = rune::Runtime::new(state, crate::build::view, (200.0, 100.0), rune::Env::new(true, 1.0));
+        runtime.frame(0.0);
+        for _ in 0..3 { runtime.update(|_, tx| tx.instant()); runtime.frame(0.01); }
+        for x in [100.0, 0.0] {
+            BUILDS.with(|builds| builds.borrow_mut().clear());
+            runtime.update(|_, tx| { tx.live_only(); tx.scroll_to_instant("x2", x, 0.0); });
+            for _ in 0..3 { runtime.frame(0.01); }
+            BUILDS.with(|builds| assert!(builds.borrow().contains(&3), "scrolling to {x} left paint cut to its previous position"));
+        }
+        assert!(!runtime.frame(0.1), "settled clipping keeps requesting frames");
+    }
+
+    #[test]
+    fn a_negative_positioned_child_paints_before_its_parents_text() {
+        let mut state = Ui::default();
+        state.root = crate::spec::parse_spec(r#"{"children":[{"k":"x","id":1,"w":200,"h":50,"t":{"s":"Hello","z":20,"c":4294967295},"c":[{"k":"x","id":2,"pos":2,"z":-1,"ins":[0,0,0,0],"bg":4278190335}]}]}"#).unwrap().children;
+        let mut runtime = rune::Runtime::new(state, crate::build::view, (200.0, 50.0), rune::Env::new(true, 1.0));
+        runtime.frame(0.0);
+        let glyph = runtime.instances.iter().position(|quad| quad.params[1] == rune::render::KIND_GLYPH).unwrap();
+        let background = runtime.instances.iter().position(|quad| quad.fill == [1.0, 0.0, 0.0, 1.0]).unwrap();
+        assert!(background < glyph, "negative layer painted over its parent's own text");
+    }
+
+    #[test]
+    fn a_horizontal_css_rail_preserves_its_layout_and_reports_scroll_extent() {
+        let mut state = Ui::default();
+        state.root = crate::spec::parse_spec(r#"{"children":[{"k":"x","id":1,"w":200,"h":40,"ovx":2,"ovy":2,"c":[{"k":"x","id":2,"w":180,"h":30,"fs":0},{"k":"x","id":3,"w":180,"h":30,"fs":0}]}]}"#).unwrap().children;
+        let mut runtime = rune::Runtime::new(state, crate::build::view, (200.0, 40.0), rune::Env::new(true, 1.0));
+        runtime.frame(0.0);
+        let rect = |runtime: &rune::Runtime<Ui>, key| runtime.elements().into_iter().find(|element| element.key.as_deref() == Some(key)).unwrap().rect;
+        assert_eq!(rect(&runtime, "x3")[0], 180.0);
+        runtime.update(|_, tx| { tx.live_only(); tx.scroll_to_instant("x1", 100.0, 0.0); });
+        runtime.frame(0.01);
+        assert_eq!(rect(&runtime, "x2")[0], -100.0, "horizontal overflow did not scroll");
+        assert_eq!(rect(&runtime, "x3")[0], 80.0);
+    }
+
+    #[test]
     fn a_growing_flex_child_keeps_its_inner_scroller_bounded_and_heading_fixed() {
         let mut state = Ui::default();
         state.root = crate::spec::parse_spec(r#"{"children":[{"k":"x","id":1,"w":200,"h":200,"fd":1,"ovy":2,"c":[{"k":"x","id":2,"fd":1,"fg":1,"mnh":0,"c":[{"k":"x","id":3,"h":20,"fs":0},{"k":"x","id":4,"fd":1,"mnh":0,"ovy":2,"c":[{"k":"x","id":5,"h":500,"fs":0}]}]}]}]}"#).unwrap().children;
@@ -1573,7 +1629,6 @@ mod live_value_tests {
             );
             fonts.set_font_smoothing(smoothing);
             let regular = TextStyle::new(48.0, 400.0);
-            let bold = TextStyle::new(48.0, 700.0);
             let mut quads = |style| {
                 let mut glyphs = Vec::new();
                 fonts.glyphs("I", style, 1.0, [0.0, 0.0], &mut glyphs);
@@ -1581,8 +1636,10 @@ mod live_value_tests {
                 glyphs[0].rect
             };
             let plain = quads(regular);
-            let heavy = quads(bold);
-            assert!(heavy[2] > plain[2] + 1.0, "bold stayed regular: {plain:?}, {heavy:?}");
+            for weight in [600.0, 700.0] {
+                let heavy = quads(TextStyle::new(48.0, weight));
+                assert!(heavy[2] > plain[2] + 1.0, "weight {weight} stayed regular: {plain:?}, {heavy:?}");
+            }
             assert_eq!(quads(regular), plain, "bold overwrote the regular glyph's cached mask");
         }
     }

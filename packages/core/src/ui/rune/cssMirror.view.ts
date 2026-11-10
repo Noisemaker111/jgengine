@@ -562,13 +562,14 @@ function boxOfStyle(element: Element, style: CSSStyleDeclaration, report: Mirror
       }
     }
   }
-  // Flex items have a content-based auto minimum on their main axis; hidden CSSOM resolves it to zero.
+  // Hidden CSSOM resolves automatic grid minima and flex main-axis minima to zero.
   const parentStyle = !pseudo && position !== "absolute" && position !== "fixed" && element.parentElement !== null ? getComputedStyle(element.parentElement) : null;
   const flexItem = parentStyle?.display.endsWith("flex") === true;
-  const intrinsic = flexItem && typeof element.computedStyleMap === "function" ? element.computedStyleMap() : null;
+  const gridItem = parentStyle?.display.endsWith("grid") === true;
+  const intrinsic = (flexItem || gridItem) && typeof element.computedStyleMap === "function" ? element.computedStyleMap() : null;
   const columnItem = parentStyle?.flexDirection.startsWith("column") === true;
-  setDim(box, "mnw", element, report, "min-width", !columnItem ? intrinsic?.get("min-width")?.toString() ?? style.minWidth : style.minWidth);
-  setDim(box, "mnh", element, report, "min-height", columnItem ? intrinsic?.get("min-height")?.toString() ?? style.minHeight : style.minHeight);
+  setDim(box, "mnw", element, report, "min-width", gridItem || !columnItem ? intrinsic?.get("min-width")?.toString() ?? style.minWidth : style.minWidth);
+  setDim(box, "mnh", element, report, "min-height", gridItem || columnItem ? intrinsic?.get("min-height")?.toString() ?? style.minHeight : style.minHeight);
   setDim(box, "mxw", element, report, "max-width", style.maxWidth);
   setDim(box, "mxh", element, report, "max-height", style.maxHeight);
   if (style.boxSizing === "content-box") box["cb"] = 1;
@@ -858,6 +859,23 @@ export function groupInlineFlow(children: readonly WireBox[], align: number): Wi
   return grouped;
 }
 
+/** Columns containing one unbreakable block each need no text fragmentation. @internal */
+export function atomicColumns(box: WireBox, children: WireBox[], count: number, gap: number, ruleWidth: number, ruleColor: number): boolean {
+  const flow = children.filter(child => child["pos"] !== 2);
+  if (!Number.isInteger(count) || count < 2 || flow.length !== count) return false;
+  box["d"] = 2;
+  box["gtc"] = Array.from({ length: count }, () => [1, 0, 3, 1]);
+  box["gap"] = [gap, 0];
+  box["ai"] = 1;
+  if (ruleWidth > 0 && colorAlpha(ruleColor) > 0) {
+    for (let i = 1; i < count; i += 1) children.push({
+      k: "x", id: 0, pos: 2, ins: [`${100 * i / count}%`, 0, "auto", 0],
+      w: ruleWidth, mg: [gap * (i / count - 0.5) - ruleWidth / 2, 0, 0, 0], bg: ruleColor,
+    });
+  }
+  return true;
+}
+
 /** Record `children` as `box`'s list, in paint order. */
 function adopt(box: WireBox, children: WireBox[]): void {
   if (children.length === 0) {
@@ -1122,6 +1140,22 @@ export function mirrorElement(element: Element, report: MirrorReport, inherited:
         if (justify !== 0) box["jc"] = justify;
       }
     }
+  }
+  const count = Number.parseInt(style.columnCount, 10);
+  if (style.columnWidth !== "auto" || (Number.isFinite(count) && count > 1)) {
+    const blocks = children.filter(child => child["pos"] !== 2);
+    const unbroken = blocks.every(child => {
+      const source = elementOf(child.id);
+      if (source === null) return false;
+      const childStyle = getComputedStyle(source);
+      return childStyle.columnSpan === "none" && ["avoid", "avoid-column"].includes(childStyle.breakInside);
+    });
+    const ruleStyle = style.columnRuleStyle;
+    const simpleRule = ruleStyle === "none" || ruleStyle === "solid";
+    const gap = style.columnGap === "normal" ? textStyle.z : parsePx(style.columnGap);
+    const mapped = style.columnWidth === "auto" && style.height === "auto" && style.columnFill === "balance" && unbroken && simpleRule
+      && atomicColumns(box, children, count, gap, ruleStyle === "none" ? 0 : parsePx(style.columnRuleWidth), parseColor(style.columnRuleColor) ?? textStyle.color);
+    if (!mapped) report.add(`columns: ${style.columnWidth} ${style.columnCount}; column-rule: ${style.columnRule}`, element);
   }
   // A grid item placed at the start, middle or end of its cell is as wide as its content, but no
   // wider than the cell (CSS `fit-content`); the layout engine would let it run past.

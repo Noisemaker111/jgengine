@@ -336,13 +336,18 @@ impl Face {
         let run = glyph_run.run();
         coords.clear();
         coords.extend(run.normalized_coords().iter().map(|c| c.to_bits()));
+        let semibold = run.font_attrs().weight.value() >= 600.0
+            && FontRef::from_index(run.font().data.as_ref(), run.font().index as usize).is_some_and(|font| {
+                let attrs = font.attributes();
+                !attrs.has_weight_variation() && attrs.weight().0 < 600
+            });
         Face {
             font: run.font().clone(),
             size: run.font_size(),
             coords_key: coords.iter().fold(0u64, |h, &c| h.wrapping_mul(31).wrapping_add(c as u16 as u64)),
             ink: glyph_run.style().brush.0,
             skew: if run.synthesis().skew().is_some() { SYNTHETIC_OBLIQUE } else { 0 },
-            embolden: run.synthesis().embolden(),
+            embolden: run.synthesis().embolden() || semibold,
             baseline: glyph_run.baseline(),
         }
     }

@@ -4,6 +4,22 @@
 use super::*;
 
 impl El {
+    /// Scroll on the selected axes while preserving the supplied child layout.
+    /// Unlike `scroll_x`, this leaves wrapping, widths and flex direction as authored.
+    pub fn scroll_axes(mut self, x: bool, y: bool) -> Self {
+        let axes = match (x, y) {
+            (true, true) => ScrollAxes::Both,
+            (true, false) => ScrollAxes::X,
+            (false, true) => ScrollAxes::Y,
+            (false, false) => return self,
+        };
+        self.viewport(ScrollSpec { stick_bottom: false }, axes,
+            if x { taffy::Overflow::Scroll } else { taffy::Overflow::Hidden },
+            if y { taffy::Overflow::Scroll } else { taffy::Overflow::Hidden });
+        self.cold_mut().scroll_preserve_layout = true;
+        self
+    }
+
     /// A vertical scroll viewport over its children.
     ///
     /// The viewport needs a bounded height to scroll: a fixed `.h(..)`, or a `.grow(1.0)` share
@@ -28,6 +44,7 @@ impl El {
         let cold = self.cold_mut();
         cold.scroll = Some(spec);
         cold.scroll_axes = axes;
+        cold.scroll_preserve_layout = false;
         #[cfg(debug_assertions)]
         { cold.scroll_source = Some(std::panic::Location::caller()); }
         self.style.set_overflow(x, y);

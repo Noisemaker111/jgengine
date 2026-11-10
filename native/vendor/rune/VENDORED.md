@@ -32,6 +32,8 @@ bold for regular-only game fonts. Carry Fontique's embolden flag into glyph
 rasterization and outline drawing; the growth radius participates in the glyph
 cache key. Synthetic weight remains visible with font smoothing off (the web
 default), and DirectWrite delegates synthetic faces to the outline rasterizer.
+Requests for semibold also synthesize when the selected static face is lighter;
+actual semibold faces and variable weight axes retain their own outlines.
 
 `crates/rune/src/platform/web.rs` — web transparency. Upstream's web surface
 path never applies `WindowOptions.transparent`: wgpu reports the WebGPU canvas
@@ -43,6 +45,11 @@ opaque canvas. The patch reads `app.window_options.transparent`, sets
 that composites over the game's three.js canvas.
 
 When upstream `dev` gains equivalent support, re-vendor and drop the patch.
+
+`crates/rune/src/el/{scroll,rare}.rs` and `runtime/commit/{flatten,memo_reuse}.rs` —
+`El::scroll_axes` preserves the supplied CSS child layout while scrolling either or
+both axes. The convenience horizontal builder unwraps its content; CSS overflow
+must instead retain flex shrink, wrapping, grid placement and authored widths.
 
 `crates/rune/src/platform/web.rs` and `crates/rune/Cargo.toml` — WOFF fonts. `App::font_url`
 hands fetched bytes straight to the text stack, which reads TrueType/OpenType only, while the
@@ -72,3 +79,6 @@ no font database; browser decoding preserves logo lettering and local system fon
 `input_columns` gives a text field an intrinsic width measured from its font's zero
 glyph. The CSS host supplies HTML input `size` and textarea `cols`, so percentage
 and `min()` widths in auto-sized parents do not collapse around an empty value.
+`input_columns_shrink` gives percentage-sized fields a zero min-content contribution
+while retaining their character-based max-content width; automatic grid tracks stay
+inside their viewport without losing intrinsic sizing in shrink-to-fit forms.

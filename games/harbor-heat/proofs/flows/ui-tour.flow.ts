@@ -26,6 +26,8 @@ export default defineFlow(game, {
       { shot: "title-settings-next" },
       { tapIf: "Back to the sign" },
       { tap: "Credits" },
+      { until: "(() => { const ad = document.querySelector('.hh-tribune-ad'); return ad !== null && [...ad.children].every(el => el.offsetHeight >= parseFloat(getComputedStyle(el).lineHeight) - 1); })()" },
+      { until: "(() => { const lead = document.querySelector('.hh-tribune-lede'); if (lead === null) return false; if (getComputedStyle(lead).columnCount !== '2') return true; const [first, second] = [...lead.children].map(el => el.getBoundingClientRect()); return first !== undefined && second !== undefined && second.left > first.right + 5 && Math.abs(first.top - second.top) < 20; })()" },
       { shot: "credits" },
       { tapIf: "Back to the sign" },
       { tap: "Hit the street" },

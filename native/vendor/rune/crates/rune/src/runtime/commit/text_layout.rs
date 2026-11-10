@@ -357,7 +357,8 @@ pub(super) fn compute_layout(taffy: &mut LayoutEngine, root: SlotId, room: Size<
             // Spaces hanging past a wrapped line's end take no room, as in CSS.
             let mut lw = ((if w.is_some() { l.width() } else { l.full_width() }) / scale).ceil_to(scale);
             if let Some(columns) = nodes[i].input.as_ref().and_then(|input| input.columns) {
-                lw = (text.layout_live("0", spec.style, scale).full_width() / scale * columns as f32).ceil_to(scale);
+                lw = if matches!(avail.width, AvailableSpace::MinContent) && nodes[i].input.as_ref().is_some_and(|input| input.columns_shrink) { 0.0 }
+                    else { (text.layout_live("0", spec.style, scale).full_width() / scale * columns as f32).ceil_to(scale) };
             }
             if (spec.truncate || spec.truncate_fade || spec.max_lines > 0)
                 && let AvailableSpace::Definite(a) = avail.width

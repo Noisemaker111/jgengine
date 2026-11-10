@@ -273,6 +273,7 @@ pub struct InputSpec {
     pub single_line: bool,
     /// Intrinsic text-field width in zero-glyph advances, independent of its current value.
     pub columns: Option<usize>,
+    pub(crate) columns_shrink: bool,
     /// `placeholder_color`, and `caret` with `selection`, came from [`El::placeholder`] and
     /// [`El::caret`]; the others follow the window's foreground ([`Cx::foreground`](crate::Cx::foreground)).
     pub(crate) placeholder_inked: bool,
@@ -688,6 +689,7 @@ pub fn text_input(edit: &TextEdit, style: TextStyle) -> El {
         selection: DEFAULT_SELECTION,
         single_line: false,
         columns: None,
+        columns_shrink: false,
         placeholder_inked: false,
         caret_inked: false,
         revealed_override: None,
