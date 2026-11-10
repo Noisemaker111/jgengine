@@ -6,8 +6,8 @@ import { pathToFileURL } from "node:url";
 import { engineSource } from "../shared/viteEngineSource";
 
 /**
- * A game's dev server runs the engine source in this repo and loads one copy of three.js, React
- * and React Three Fiber. If a Vite config stops using `engineSource`, `@jgengine/*` falls back to
+ * A game's dev server runs the engine source in this repo, loads one copy of three.js, and points
+ * `react` (asked for only by hook libraries a game depends on) at the engine's UI runtime. If a Vite config stops using `engineSource`, `@jgengine/*` falls back to
  * an unbuilt dist, or engine source loads a second three.js ("The game view couldn't load").
  */
 
@@ -35,7 +35,7 @@ describe("every game Vite config resolves the engine from source", () => {
     const resolved = engineSource(join(repo, "harbor-heat"));
     const shell = resolved.alias.find((alias) => String(alias.find) === String(/^@jgengine\/shell\/(.*)$/));
     expect(shell?.replacement).toBe(`${join(packagesDir, "shell", "src").replaceAll("\\", "/")}/$1`);
-    expect(resolved.dedupe).toEqual(expect.arrayContaining(["react", "three"]));
+    expect(resolved.dedupe).toEqual(["three"]);
   });
 
   for (const file of gameViteConfigs()) {
@@ -51,7 +51,7 @@ describe("every game Vite config resolves the engine from source", () => {
 
 describe("a live dev server runs engine source with one copy of each peer", () => {
   for (const game of LIVE_GAMES) {
-    test(`${game}: engine imports resolve to source and to the game's own three and React`, async () => {
+    test(`${game}: engine imports resolve to source, to the game's own three, and react to the engine UI runtime`, async () => {
       const root = join(repo, game);
       const vite = await loadVite(root);
       const server = await vite.createServer({
@@ -70,7 +70,7 @@ describe("a live dev server runs engine source with one copy of each peer", () =
 
         const importer = join(packagesDir, "shell", "src", "index.ts");
         const escapes: string[] = [];
-        for (const pkg of ["react", "three"]) {
+        for (const pkg of ["three"]) {
           const own = realpathSync(join(root, "node_modules", pkg));
           const resolved = await server.pluginContainer.resolveId(pkg, importer, { ssr: false });
           if (resolved === null) {
@@ -81,6 +81,8 @@ describe("a live dev server runs engine source with one copy of each peer", () =
           if (!file.startsWith(own + sep)) escapes.push(`${pkg}: engine loads ${file}, the game installs ${own}`);
         }
         expect(escapes).toEqual([]);
+        const react = await server.pluginContainer.resolveId("react", importer, { ssr: false });
+        expect(react?.id.replaceAll("\\", "/")).toBe(`${join(packagesDir, "core", "src", "ui", "jsx").replaceAll("\\", "/")}/index.ts`);
       } finally {
         await server.close();
       }
