@@ -729,6 +729,18 @@ fn sheet(radii: Option<[f32; 4]>) -> El {
     }
 }
 
+/// The byte offset of the `units`-th UTF-16 code unit of `text` (its end when `units` runs past it).
+fn byte_at(text: &str, units: usize) -> usize {
+    let mut seen = 0;
+    for (at, ch) in text.char_indices() {
+        if seen >= units {
+            return at;
+        }
+        seen += ch.len_utf16();
+    }
+    text.len()
+}
+
 fn text_style(t: &Txt) -> TextStyle {
     TextStyle { family: family(&t.f), line_height: t.lh, tracking: t.ls, italic: t.i, ..TextStyle::new(t.z, t.w) }
 }
@@ -740,7 +752,8 @@ fn text_el(t: &Txt, color: Color) -> El {
             .sp
             .iter()
             .map(|s| {
-                let mut span = Span::new(s.a as usize, s.b as usize);
+                // The page counts in UTF-16 units; the text layout counts in bytes.
+                let mut span = Span::new(byte_at(&t.s, s.a as usize), byte_at(&t.s, s.b as usize));
                 span.color = s.c.map(|c| c.0);
                 span.weight = s.w;
                 span.size = s.z;

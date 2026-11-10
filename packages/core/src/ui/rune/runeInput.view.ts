@@ -45,8 +45,12 @@ export class RuneInput {
   private lastClick = { at: 0, target: null as Element | null };
   private readonly cleanups: (() => void)[] = [];
 
-  constructor(roots: Roots) {
+  /** Called with a form control whose state a click changed without changing any attribute. */
+  private readonly controlChanged: (element: Element) => void;
+
+  constructor(roots: Roots, controlChanged: (element: Element) => void = () => undefined) {
     this.roots = roots;
+    this.controlChanged = controlChanged;
     const on = <K extends keyof WindowEventMap>(type: K, handler: (event: WindowEventMap[K]) => void, passive = true) => {
       window.addEventListener(type, handler, { capture: true, passive });
       this.cleanups.push(() => window.removeEventListener(type, handler, { capture: true }));
@@ -221,6 +225,14 @@ export class RuneInput {
       const now = performance.now();
       const second = now - this.lastClick.at < 400 && this.lastClick.target === clicked;
       this.send(clicked, new MouseEvent("click", { ...this.init(event), detail: second ? 2 : 1 }));
+      const control = clicked.closest("select, input[type=checkbox], input[type=radio]");
+      if (control instanceof HTMLSelectElement && control.options.length > 0) {
+        // No list can drop down from an undisplayed element: each click moves to the next option.
+        control.selectedIndex = (control.selectedIndex + 1) % control.options.length;
+        control.dispatchEvent(new Event("input", { bubbles: true }));
+        control.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      if (control !== null) this.controlChanged(control);
       if (second) this.send(clicked, new MouseEvent("dblclick", { ...this.init(event), detail: 2 }));
       this.lastClick = { at: second ? 0 : now, target: clicked };
     } else if (event.button === 1) {

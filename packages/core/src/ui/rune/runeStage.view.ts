@@ -58,6 +58,8 @@ export class RuneStage {
   private input: RuneInput | null = null;
   /** What the mirror has done and what it cost, for perf probes: passes by kind, boxes built, milliseconds. */
   stats = { full: 0, patches: 0, texts: 0, boxes: 0, ms: 0, lastMs: 0 };
+  /** The last updates Rune refused, newest last. */
+  readonly errors: string[] = [];
 
   private constructor() {
     installRuneMeasure();
@@ -101,6 +103,14 @@ export class RuneStage {
     });
   }
 
+  /** A tick box or list changed state, which no attribute shows: read it again. */
+  private controlChanged(control: Element): void {
+    const layer = this.layers.find((candidate) => candidate.container.contains(control));
+    if (layer === undefined) return;
+    layer.dirty.add(control);
+    this.invalidate();
+  }
+
   /** Read every layer again from the top (a picture an element is drawn from has arrived). */
   remirror(): void {
     for (const layer of this.layers) layer.root = null;
@@ -130,7 +140,7 @@ export class RuneStage {
           return;
         }
         this.ui = ui;
-        if (this.input === null) this.input = new RuneInput(() => this.layers.map((layer) => layer.root).filter((root): root is WireBox => root !== null));
+        if (this.input === null) this.input = new RuneInput(() => this.layers.map((layer) => layer.root).filter((root): root is WireBox => root !== null), (control) => this.controlChanged(control));
         ui.on("*", (event) => this.onEvent(event));
         ui.onRects = (moved) => {
           for (const [id, x, y, w, h] of moved) {
@@ -337,7 +347,12 @@ export class RuneStage {
 
   private onEvent(event: RuneUiEvent): void {
     if (event.id === "__spec__") {
-      console.error(`degraded: Rune refused the UI tree: ${event.text ?? "unknown error"}`);
+      // Rune kept its old tree: say so, and send every layer again from the top.
+      const cause = `${event.kind}: ${event.text ?? "unknown error"}`;
+      console.error(`degraded: Rune refused a UI update (${cause}); sending the whole tree again`);
+      this.errors.push(cause);
+      if (this.errors.length > 20) this.errors.shift();
+      if (this.errors.filter((seen) => seen === cause).length <= 3) this.remirror();
       return;
     }
     if (!event.id.startsWith("x")) return;

@@ -326,9 +326,13 @@ pub fn patch(json: &str) {
             handle.update(move |s: &mut Ui, _tx: &mut Tx| {
                 let mut fields = false;
                 for b in boxes {
-                    if let Some(slot) = css::find_mut(&mut s.root, b.id) {
+                    let id = b.id;
+                    if let Some(slot) = css::find_mut(&mut s.root, id) {
                         fields = true;
                         *slot = b;
+                    } else {
+                        // The page's tree and this one have parted; it sends the whole tree again.
+                        emit("__spec__", "missing", None, Some(format!("patch for box {id}, which this tree does not hold")));
                     }
                 }
                 if fields {

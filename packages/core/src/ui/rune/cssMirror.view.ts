@@ -687,6 +687,8 @@ function svgMarkup(svg: SVGSVGElement, style: CSSStyleDeclaration): string {
   return copy.outerHTML.replace(/currentcolor/gi, color);
 }
 
+/** Boxes with a positioned descendant that was handed up to an ancestor's list. */
+const handsUp = new WeakSet<WireBox>();
 /** The box last built for each element that has one of its own. */
 const boxes = new WeakMap<Element, WireBox>();
 /** The box whose `c` list holds a given box. */
@@ -812,14 +814,52 @@ export function mirrorElement(element: Element, report: MirrorReport, inherited:
       box["t"] = { s: "", c: textStyle.color, ...fontOf(textStyle) };
       return box;
     }
+    if (type === "checkbox" || type === "radio") {
+      // The browser's own tick box has no CSS to read: a small square (or disc) in the accent colour when on.
+      const accent = parseColor(style.accentColor) ?? parseColor(style.color) ?? 0xffffffff;
+      const side = Math.max(parsePx(style.width), parsePx(style.height), 13);
+      box["w"] = side;
+      box["h"] = side;
+      box["fs"] = 0;
+      box["bw"] = [1, 1, 1, 1];
+      box["bc"] = field.checked ? accent : (parseColor(style.color) ?? 0xffffffff);
+      if (field.checked) box["bg"] = accent;
+      else delete box["bg"];
+      box["rad"] = type === "radio" ? [9999, 9999, 9999, 9999] : [3, 3, 3, 3];
+      return box;
+    }
+    if (type === "range") {
+      // A slider as its track with the filled share in the accent colour.
+      const min = Number(field.min === "" ? 0 : field.min);
+      const max = Number(field.max === "" ? 100 : field.max);
+      const share = max > min ? Math.min(1, Math.max(0, (Number(field.value) - min) / (max - min))) : 0;
+      const accent = parseColor(style.accentColor) ?? parseColor(style.color) ?? 0xffffffff;
+      if (box["h"] === undefined) box["h"] = 6;
+      box["rad"] = [9999, 9999, 9999, 9999];
+      box["bg"] = 0x80808066;
+      box["ovx"] = 1;
+      box["ovy"] = 1;
+      box["d"] = 1;
+      box.c = [{ k: "x", id: 0, d: 1, w: `${share * 100}%`, h: "100%", bg: accent }];
+      return box;
+    }
     report.add(`<input type=${type}>`, element);
     return box;
   }
-  if (tag === "select") report.add("<select>", element);
+  if (tag === "select") {
+    // A closed list shows the option it is on; a click moves to the next one (`runeInput`).
+    const list = element as HTMLSelectElement;
+    const label = list.selectedOptions[0]?.label ?? "";
+    const text = textOf([{ text: label, style: textStyle }], textStyle, report, element);
+    if (text !== null) box["t"] = text;
+    box["txt"] = 1;
+    return box;
+  }
 
   const children: WireBox[] = [];
   const positioned = style.position !== "static" ? children : inherited.positioned;
   const next: Inherited = { positioned };
+  const hoistedBefore = inherited.positioned.length;
   const before = pseudoBox(element, "::before", report);
   if (before !== null) children.push(before);
 
@@ -876,6 +916,8 @@ export function mirrorElement(element: Element, report: MirrorReport, inherited:
   if (after !== null) children.push(after);
   if (isInlineLevel(display)) box["inl"] = 1;
   adopt(box, children);
+  // A box under this one was handed up to a positioned ancestor's list.
+  if (positioned !== children && inherited.positioned.length > hoistedBefore) handsUp.add(box);
   return box;
 }
 
@@ -886,7 +928,9 @@ export function mirrorElement(element: Element, report: MirrorReport, inherited:
  */
 export function remirrorElement(element: Element, report: MirrorReport): WireBox | null {
   const old = boxes.get(element);
-  if (old === undefined || old["up"] === 1) return null;
+  // A box that handed one up cannot be read again alone: the one it handed up lives in an
+  // ancestor's list, and would stay there after its element is gone.
+  if (old === undefined || old["up"] === 1 || handsUp.has(old)) return null;
   const owner = owners.get(old);
   if (owner === undefined || owner.c === undefined) return null;
   const sink: WireBox[] = [];
