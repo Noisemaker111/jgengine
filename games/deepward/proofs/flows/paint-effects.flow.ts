@@ -51,7 +51,7 @@ export default defineFlow(game, {
       await f.page(`(${installPaintProbes.toString()})()`);
       await f.waitForPage("[...document.querySelectorAll('[data-paint-surface]')].every(element => element.getBoundingClientRect().width === 128)");
       await f.waitForPage("[...document.querySelectorAll('[data-paint-proof] img')].every(image => image.complete && image.naturalWidth > 0)");
-      await f.wait(2000);
+      await f.wait(10000);
       const width = Number(await f.page("innerWidth"));
       const name = `paint-effects-${rune === true ? "rune" : "dom"}-${width}`;
       await f.shot(name);
