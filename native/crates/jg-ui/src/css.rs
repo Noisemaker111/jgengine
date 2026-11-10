@@ -1344,6 +1344,29 @@ mod live_value_tests {
     use super::*;
 
     #[test]
+    fn a_regular_only_game_font_synthesizes_bold_and_keeps_distinct_cached_masks() {
+        for smoothing in [rune::text::FontSmoothing::On, rune::text::FontSmoothing::Off] {
+            let mut fonts = rune::text::TextSystem::new(
+                &[include_bytes!("../../../vendor/rune/crates/rune/assets/Inter-Regular.ttf")],
+                ("Inter", "Inter"),
+            );
+            fonts.set_font_smoothing(smoothing);
+            let regular = TextStyle::new(48.0, 400.0);
+            let bold = TextStyle::new(48.0, 700.0);
+            let mut quads = |style| {
+                let mut glyphs = Vec::new();
+                fonts.glyphs("I", style, 1.0, [0.0, 0.0], &mut glyphs);
+                assert_eq!(glyphs.len(), 1);
+                glyphs[0].rect
+            };
+            let plain = quads(regular);
+            let heavy = quads(bold);
+            assert!(heavy[2] > plain[2] + 1.0, "bold stayed regular: {plain:?}, {heavy:?}");
+            assert_eq!(quads(regular), plain, "bold overwrote the regular glyph's cached mask");
+        }
+    }
+
+    #[test]
     fn wrapping_percentage_cards_fill_their_intrinsic_grid_cell() {
         let mut state = Ui::default();
         state.root = crate::spec::parse_spec(r#"{"children":[{"k":"x","id":1,"w":362,"d":2,"ji":3,"c":[{"k":"x","id":2,"mnw":0,"fw":1,"jc":3,"gap":[22,22],"mxw":[0,1,760,0,1],"c":[{"k":"x","id":3,"d":1,"w":"100%","mnw":0,"c":[{"k":"x","id":4,"w":150,"h":250}]},{"k":"x","id":5,"d":1,"w":"100%","mnw":0,"c":[{"k":"x","id":6,"w":150,"h":250}]},{"k":"x","id":7,"d":1,"w":"100%","mnw":0,"c":[{"k":"x","id":8,"w":150,"h":250}]}]}]}]}"#).unwrap().children;

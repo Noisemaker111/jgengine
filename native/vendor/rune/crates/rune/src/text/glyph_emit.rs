@@ -119,8 +119,8 @@ impl TextSystem {
         let [gx, gy] = at;
         let glide = self.glide;
         let (font, font_size, ink, skew) = (&face.font, face.size * k, face.ink, face.skew);
-        let direct_write = self.direct_write();
-        let radius = if direct_write { 0.0 } else { self.apple.radius(ink, font_size) };
+        let direct_write = self.direct_write() && !face.embolden;
+        let radius = (if direct_write { 0.0 } else { self.apple.radius(ink, font_size) }) + if face.embolden { font_size as f64 / 48.0 } else { 0.0 };
         let gamma = self.windows.bucket(ink);
         let ([fx, fy], [subpx, subpy]) = place(at, font_size, self.glide, direct_write);
         let key = GlyphKey {
@@ -224,9 +224,9 @@ impl TextSystem {
             outline::Found::Empty => return Some(Placed::Other),
             outline::Found::Full => return None,
         };
-        let direct_write = self.direct_write();
+        let direct_write = self.direct_write() && !face.embolden;
         let ([fx, fy], [subpx, subpy]) = place(at, font_size, self.glide, direct_write);
-        let radius = if direct_write { 0.0 } else { self.apple.radius(ink, font_size) };
+        let radius = (if direct_write { 0.0 } else { self.apple.radius(ink, font_size) }) + if face.embolden { font_size as f64 / 48.0 } else { 0.0 };
         let hint = if direct_write || skew != 0 { None } else {
             self.apple.hint(&mut self.scale_cx, font_ref, (face_key.0, face_key.1, face.coords_key), coords, font_size as f64, radius)
         };
@@ -326,6 +326,7 @@ pub(super) struct Face {
     pub(super) ink: u16,
     /// A face without italics leans by a fixed angle instead of fontique's 14°.
     pub(super) skew: u8,
+    pub(super) embolden: bool,
     pub(super) baseline: f32,
 }
 
@@ -341,6 +342,7 @@ impl Face {
             coords_key: coords.iter().fold(0u64, |h, &c| h.wrapping_mul(31).wrapping_add(c as u16 as u64)),
             ink: glyph_run.style().brush.0,
             skew: if run.synthesis().skew().is_some() { SYNTHETIC_OBLIQUE } else { 0 },
+            embolden: run.synthesis().embolden(),
             baseline: glyph_run.baseline(),
         }
     }

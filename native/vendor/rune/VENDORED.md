@@ -11,6 +11,12 @@ requests, so jgengine carries a patched copy here instead of a git pin.
 
 ## jgengine patches
 
+`crates/rune/src/text/glyph_emit.rs` and `text/macos/smoothing.rs` — synthetic
+bold for regular-only game fonts. Carry Fontique's embolden flag into glyph
+rasterization and outline drawing; the growth radius participates in the glyph
+cache key. Synthetic weight remains visible with font smoothing off (the web
+default), and DirectWrite delegates synthetic faces to the outline rasterizer.
+
 `crates/rune/src/platform/web.rs` — web transparency. Upstream's web surface
 path never applies `WindowOptions.transparent`: wgpu reports the WebGPU canvas
 as `alpha_modes: [Opaque]` only, so `get_default_config` always configures an
