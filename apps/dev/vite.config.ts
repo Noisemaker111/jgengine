@@ -10,6 +10,7 @@ import { tunableDiscoveryPlugin } from "../../packages/core/src/devtools/transfo
 import { devServerMarkerPlugin } from "../../scripts/devServerMarker";
 import { startTextureCompression } from "../../games/shared/provisionAssets";
 import { viteJgUiWasm } from "../../games/shared/viteJgUiWasm";
+import { REACT_ON_ENGINE_NAMES, reactOnEngineAliases } from "../../games/llmville/viteReactOnEngine";
 import { devReportPlugin } from "./devReportPlugin";
 import { gamePublicPlugin } from "./gamePublicPlugin";
 
@@ -98,7 +99,9 @@ const devProxy: Record<string, string | ProxyOptions> = Object.fromEntries(
 export default defineConfig({
   plugins: [devServerMarkerPlugin({ kind: "runner" }), tunableDiscoveryPlugin(), devSave(servedGameDir), devReportPlugin(), gamePublicPlugin(servedGameDir, gamesDir), textureCompression(), viteJgUiWasm(), tailwindcss()],
   clearScreen: false,
-  // The engine UI runtime these names alias to is source: one module instance, never pre-bundled.
+  // LLMville's backend libraries import React; the runner hands them the engine UI runtime, which is
+  // source: one module instance, never pre-bundled.
+  optimizeDeps: { exclude: REACT_ON_ENGINE_NAMES },
   build: {
     target: "es2022",
   },
@@ -116,6 +119,7 @@ export default defineConfig({
     dedupe: ["three"],
     extensions: [".ts", ".tsx", ".mjs", ".js", ".jsx", ".json"],
     alias: [
+      ...reactOnEngineAliases(),
       { find: /^@\/components\/ui\/(.*)$/, replacement: `${registryUi}/$1` },
       ...packageAliases,
       { find: /^@jgengine-examples\/studios$/, replacement: `${studios}/index.ts` },

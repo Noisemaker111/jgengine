@@ -4,6 +4,7 @@ import { defineConfig } from "vite";
 
 import { engineSource } from "../shared/viteEngineSource";
 import { viteJgUiWasm } from "../shared/viteJgUiWasm";
+import { REACT_ON_ENGINE_NAMES, reactOnEngineAliases } from "./viteReactOnEngine";
 
 const engine = engineSource(new URL(".", import.meta.url));
 
@@ -12,12 +13,11 @@ export default defineConfig({
     tailwindcss(),
     viteJgUiWasm(),
   ],
-  // Convex's and better-auth's hooks import `react`, which resolves to the engine's UI runtime. That
-  // runtime is source and must stay one module instance, so the dependency pre-bundle leaves it out.
-  optimizeDeps: { exclude: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "react-dom/client", "react-dom/server"] },
+  optimizeDeps: { exclude: REACT_ON_ENGINE_NAMES },
   resolve: {
     dedupe: engine.dedupe,
     alias: [
+      ...reactOnEngineAliases(),
       ...engine.alias,
       // Resolve the workspace package straight to its source. Bypasses
       // node_modules linking, which breaks on Windows junctions (convex/esbuild)
