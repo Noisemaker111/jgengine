@@ -16,10 +16,9 @@ import {
   PROVIDER,
   SUSPENSE,
   isValidElement,
+  type AnyType,
   type ClassInstance,
-  type ComponentClass,
   type ContextType,
-  type ElementType,
   type FunctionComponent,
   type LazyType,
   type MemoType,
@@ -88,7 +87,7 @@ interface Slot {
 
 export class Fiber<N = unknown> {
   kind: FiberKind;
-  type: ElementType | null;
+  type: AnyType | null;
   slotKey: string;
   element: UiElement | string | null = null;
   props: Props = EMPTY_PROPS;
@@ -115,7 +114,7 @@ export class Fiber<N = unknown> {
   ref: unknown = null;
   root: Root<N>;
 
-  constructor(root: Root<N>, kind: FiberKind, type: ElementType | null, parent: Fiber<N> | null, slotKey: string) {
+  constructor(root: Root<N>, kind: FiberKind, type: AnyType | null, parent: Fiber<N> | null, slotKey: string) {
     this.root = root;
     this.kind = kind;
     this.type = type;
@@ -123,6 +122,12 @@ export class Fiber<N = unknown> {
     this.slotKey = slotKey;
     this.depth = parent === null ? 0 : parent.depth + 1;
   }
+}
+
+/** A class component as the reconciler builds and reads it. */
+interface ClassType {
+  new (props: Props): ClassInstance;
+  getDerivedStateFromError?(error: unknown): object | null;
 }
 
 const EMPTY_PROPS: Props = Object.freeze({}) as Props;
@@ -155,11 +160,11 @@ function isThenable(value: unknown): value is PromiseLike<unknown> {
   return typeof value === "object" && value !== null && typeof (value as { then?: unknown }).then === "function";
 }
 
-function isClass(type: unknown): type is ComponentClass {
+function isClass(type: unknown): type is ClassType {
   return typeof type === "function" && (type as { isUiClass?: unknown }).isUiClass === true;
 }
 
-function kindOf(type: ElementType): FiberKind {
+function kindOf(type: AnyType): FiberKind {
   if (typeof type === "string") return "host";
   if (type === Fragment) return "fragment";
   if (type === SUSPENSE) return "suspense";
@@ -212,7 +217,7 @@ export class Root<N = unknown> {
   private readonly resync = new Set<Fiber<N>>();
   private effects: { fiber: Fiber<N>; cell: EffectCell }[] = [];
   private readonly mounted: Fiber<N>[] = [];
-  private readonly updated: { fiber: Fiber<N>; prevProps: Props; prevState: Record<string, unknown> }[] = [];
+  private readonly updated: { fiber: Fiber<N>; prevProps: Props; prevState: object }[] = [];
   private scheduled = false;
   private flushing = false;
   private idCounter = 0;
@@ -440,7 +445,7 @@ export class Root<N = unknown> {
 
   private renderFunction(fiber: Fiber<N>, props: Props): void {
     const type = fiber.type;
-    const component = (typeof type === "object" && type !== null ? (type as MemoType).inner : type) as FunctionComponent;
+    const component = (typeof type === "object" && type !== null ? (type as MemoType).inner : type) as FunctionComponent<Props>;
     if (fiber.hooks === null) fiber.hooks = [];
     let result: UiNode = null;
     let rounds = 0;
@@ -473,7 +478,7 @@ export class Root<N = unknown> {
   }
 
   private renderClass(fiber: Fiber<N>, prevProps: Props, props: Props): void {
-    const type = fiber.type as ComponentClass;
+    const type = fiber.type as ClassType;
     let instance = fiber.instance;
     const first = instance === null;
     if (instance === null) {
@@ -522,7 +527,7 @@ export class Root<N = unknown> {
     let boundary: Fiber<N> | null = fiber.parent;
     while (boundary !== null) {
       if (boundary.kind === "class" && boundary.failed === null) {
-        const type = boundary.type as ComponentClass;
+        const type = boundary.type as ClassType;
         if (typeof type.getDerivedStateFromError === "function" || typeof boundary.instance?.componentDidCatch === "function") break;
       }
       boundary = boundary.parent;
@@ -685,7 +690,7 @@ export class Root<N = unknown> {
         }
         for (const { fiber, prevProps, prevState } of this.updated.splice(0)) {
           const instance = fiber.instance;
-          if (!fiber.dead && instance !== null) guard(() => instance.componentDidUpdate?.(prevProps, prevState));
+          if (!fiber.dead && instance !== null) guard(() => instance.componentDidUpdate?.(prevProps as never, prevState as never));
         }
       }
       for (const { fiber, cell } of effects) {
@@ -852,11 +857,20 @@ function stateCell(fiber: Fiber, initial: () => unknown, reducer: StateCell["red
   return cell;
 }
 
+export function useState<S>(initial: S | (() => S)): [S, (next: S | ((prev: S) => S)) => void];
+export function useState<S = undefined>(): [S | undefined, (next: S | undefined | ((prev: S | undefined) => S | undefined)) => void];
 export function useState<T>(initial?: T | (() => T)): [T, (next: T | ((prev: T) => T)) => void] {
   const cell = stateCell(currentFiber(), () => (typeof initial === "function" ? (initial as () => T)() : initial), null);
   return [cell.state as T, cell.dispatch as (next: T | ((prev: T) => T)) => void];
 }
 
+/** A reducer's action: none (`dispatch()`) or one (`dispatch(action)`). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyActionArg = [] | [any];
+export type ActionDispatch<A extends AnyActionArg> = (...args: A) => void;
+
+export function useReducer<S, A extends AnyActionArg>(reducer: (state: S, ...args: A) => S, initialState: S): [S, ActionDispatch<A>];
+export function useReducer<S, I, A extends AnyActionArg>(reducer: (state: S, ...args: A) => S, initialArg: I, init: (arg: I) => S): [S, ActionDispatch<A>];
 export function useReducer<S, A, I = S>(reducer: (state: S, action: A) => S, initialArg: I, init?: (arg: I) => S): [S, (action: A) => void] {
   const cell = stateCell(
     currentFiber(),
@@ -866,7 +880,7 @@ export function useReducer<S, A, I = S>(reducer: (state: S, action: A) => S, ini
   return [cell.state as S, cell.dispatch as (action: A) => void];
 }
 
-export function useMemo<T>(create: () => T, deps?: readonly unknown[]): T {
+export function useMemo<T>(create: () => T, deps: readonly unknown[]): T {
   const cell = nextCell<MemoCell>(() => ({ tag: "memo", value: create(), deps }));
   if (cell.deps !== deps && depsChanged(cell.deps, deps)) {
     cell.value = create();
@@ -875,10 +889,14 @@ export function useMemo<T>(create: () => T, deps?: readonly unknown[]): T {
   return cell.value as T;
 }
 
-export function useCallback<T>(callback: T, deps?: readonly unknown[]): T {
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+export function useCallback<T extends Function>(callback: T, deps: readonly unknown[]): T {
   return useMemo(() => callback, deps);
 }
 
+export function useRef<T>(initial: T): { current: T };
+export function useRef<T>(initial: T | null): { current: T | null };
+export function useRef<T>(initial: T | undefined): { current: T | undefined };
 export function useRef<T>(initial?: T): { current: T } {
   return nextCell<RefCell>(() => ({ tag: "ref", ref: { current: initial } })).ref as { current: T };
 }
@@ -913,19 +931,19 @@ export function useInsertionEffect(create: () => void | (() => void), deps?: rea
   effect("insertion", create, deps);
 }
 
-export function useImperativeHandle<T>(ref: unknown, create: () => T, deps?: readonly unknown[]): void {
+export function useImperativeHandle<T, R extends T = T>(ref: ((instance: T | null) => void) | { current: T | null } | null | undefined, create: () => R, deps?: readonly unknown[]): void {
   effect(
     "layout",
     () => {
       const value = create();
       if (typeof ref === "function") {
-        (ref as (value: T | null) => void)(value);
-        return () => (ref as (value: T | null) => void)(null);
+        ref(value);
+        return () => ref(null);
       }
       if (typeof ref === "object" && ref !== null) {
-        (ref as { current: T | null }).current = value;
+        ref.current = value;
         return () => {
-          (ref as { current: T | null }).current = null;
+          ref.current = null;
         };
       }
       return undefined;
@@ -1018,17 +1036,21 @@ export function use<T>(source: ContextType<T> | PromiseLike<T>): T {
 }
 
 /** Base class for the few class components (error boundaries). */
-export class Component<P = Props, S = Record<string, unknown>> {
+export class Component<P = object, S = object> {
   static readonly isUiClass = true as const;
-  props: P;
-  state: S = {} as S;
+  readonly props: Readonly<P>;
+  state: Readonly<S> = {} as S;
   declare context: unknown;
+  componentDidMount?(): void;
+  componentDidUpdate?(prevProps: Readonly<P>, prevState: Readonly<S>): void;
+  componentWillUnmount?(): void;
+  componentDidCatch?(error: unknown, info: { componentStack?: string | null }): void;
 
   constructor(props: P) {
     this.props = props;
   }
 
-  setState(update: Partial<S> | ((state: S, props: P) => Partial<S> | null) | null, done?: () => void): void {
+  setState(update: Partial<S> | ((state: Readonly<S>, props: Readonly<P>) => Partial<S> | null) | null, done?: () => void): void {
     const fiber = (this as unknown as { fiber?: Fiber }).fiber; // type-escape: set by the reconciler at mount
     if (fiber === undefined || fiber.dead) return;
     const base = (fiber.pendingState ?? this.state) as S;

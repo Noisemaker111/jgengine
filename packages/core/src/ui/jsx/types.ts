@@ -3,27 +3,28 @@
  * needs the DOM, so models and non-view code may import them.
  */
 
-import type { ComponentClass, ContextType, FunctionComponent, UiElement, UiNode } from "./element";
+import type { ComponentClass, ContextType, ElementType, FunctionComponent, UiElement, UiNode } from "./element";
 
 export type ReactNode = UiNode;
 export type ReactElement<P = Record<string, unknown>> = UiElement<P>;
-export type FC<P = object> = (props: P) => UiNode;
+export type FC<P = object> = FunctionComponent<P>;
 export type FunctionalComponent<P = object> = FC<P>;
-export type ComponentType<P = object> = FC<P> | (new (props: P) => { render(): UiNode });
-export type ElementType = string | ComponentType<never>;
-export type NamedExoticComponent<P = object> = FC<P> & { displayName?: string };
+export type ComponentType<P = object> = FunctionComponent<P> | ComponentClass<P>;
+export type NamedExoticComponent<P = object> = FunctionComponent<P>;
+export type ExoticComponent<P = object> = FunctionComponent<P>;
+export type JSXElementConstructor<P> = FunctionComponent<P> | ComponentClass<P>;
 export type LazyExoticComponent<T> = T;
 export type MemoExoticComponent<T> = T;
-export type ComponentProps<T> = T extends (props: infer P) => unknown ? P : T extends new (props: infer P) => unknown ? P : never;
 export type PropsWithChildren<P = object> = P & { children?: UiNode };
 export type Context<T> = ContextType<T>;
-export type { ComponentClass, FunctionComponent };
+export type { ComponentClass, ElementType, FunctionComponent };
 
 export interface RefObject<T> {
   current: T;
 }
 export type MutableRefObject<T> = RefObject<T>;
-export type RefCallback<T> = (instance: T | null) => void | (() => void);
+/** Bivariant, as a ref callback for a narrower element is passed where a wider one is asked for. */
+export type RefCallback<T> = { bivarianceHack(instance: T | null): void | (() => void) }["bivarianceHack"];
 export type Ref<T> = RefCallback<T> | RefObject<T | null> | null;
 export type ForwardedRef<T> = Ref<T>;
 
@@ -68,7 +69,21 @@ export interface CSSProperties {
   insetBlock?: CssValue; insetInline?: CssValue; isolation?: CssValue; justifyContent?: CssValue; justifyItems?: CssValue;
   justifySelf?: CssValue; left?: CssValue; letterSpacing?: CssValue; lineHeight?: CssValue; listStyle?: CssValue; margin?: CssValue;
   marginBlock?: CssValue; marginBottom?: CssValue; marginInline?: CssValue; marginLeft?: CssValue; marginRight?: CssValue;
-  marginTop?: CssValue; mask?: CssValue; maskImage?: CssValue; maskPosition?: CssValue; maskRepeat?: CssValue; maskSize?: CssValue;
+  marginTop?: CssValue; marginBlockEnd?: CssValue; marginBlockStart?: CssValue; marginInlineEnd?: CssValue; marginInlineStart?: CssValue;
+  paddingBlockEnd?: CssValue; paddingBlockStart?: CssValue; paddingInlineEnd?: CssValue; paddingInlineStart?: CssValue;
+  insetBlockEnd?: CssValue; insetBlockStart?: CssValue; insetInlineEnd?: CssValue; insetInlineStart?: CssValue; maxBlockSize?: CssValue;
+  maxInlineSize?: CssValue; minBlockSize?: CssValue; minInlineSize?: CssValue; borderInlineStart?: CssValue; borderInlineEnd?: CssValue;
+  borderBlockStart?: CssValue; borderBlockEnd?: CssValue; maskMode?: CssValue; maskComposite?: CssValue; maskClip?: CssValue;
+  maskOrigin?: CssValue; maskType?: CssValue; textUnderlineOffset?: CssValue; textDecorationThickness?: CssValue; textDecorationLine?: CssValue;
+  textDecorationStyle?: CssValue; textEmphasis?: CssValue; textOrientation?: CssValue; fontSynthesis?: CssValue; fontOpticalSizing?: CssValue;
+  lineBreak?: CssValue; lineClamp?: CssValue; counterReset?: CssValue; counterIncrement?: CssValue; listStyleType?: CssValue;
+  objectViewBox?: CssValue; overflowAnchor?: CssValue; overflowClipMargin?: CssValue; overscrollBehaviorX?: CssValue; overscrollBehaviorY?: CssValue;
+  scrollMargin?: CssValue; scrollMarginTop?: CssValue; scrollPadding?: CssValue; scrollPaddingTop?: CssValue; shapeRendering?: CssValue;
+  containerName?: CssValue; container?: CssValue; contentVisibility?: CssValue; containIntrinsicSize?: CssValue; fieldSizing?: CssValue;
+  backgroundPositionX?: CssValue; backgroundPositionY?: CssValue; borderImageSlice?: CssValue; borderImageSource?: CssValue; borderImageWidth?: CssValue;
+  borderImageRepeat?: CssValue; borderImageOutset?: CssValue; boxDecorationBreak?: CssValue; caretShape?: CssValue; clipRule?: CssValue;
+  dominantBaseline?: CssValue; textAnchor?: CssValue; vectorEffect?: CssValue; stopColor?: CssValue; stopOpacity?: CssValue; floodColor?: CssValue;
+  mask?: CssValue; maskImage?: CssValue; maskPosition?: CssValue; maskRepeat?: CssValue; maskSize?: CssValue;
   maxHeight?: CssValue; maxWidth?: CssValue; minHeight?: CssValue; minWidth?: CssValue; mixBlendMode?: CssValue; objectFit?: CssValue;
   objectPosition?: CssValue; offset?: CssValue; opacity?: CssValue; order?: CssValue; outline?: CssValue; outlineColor?: CssValue;
   outlineOffset?: CssValue; outlineStyle?: CssValue; outlineWidth?: CssValue; overflow?: CssValue; overflowWrap?: CssValue;

@@ -4,7 +4,6 @@
  * read markup; games draw through the Rune host instead.
  */
 
-import type { Props } from "./element";
 import { flushSync, type Host } from "./reconciler";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
