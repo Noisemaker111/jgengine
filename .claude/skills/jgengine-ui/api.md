@@ -2022,7 +2022,7 @@
 ## @jgengine/core/ui/rune/cssValues
 
 - `WireDim` (type): type WireDim = number | string | number[] — Parsers for computed CSS values, as a browser serializes them, into the plain numbers the Rune CSS box takes. Everything here is string in, numbers out, with no DOM: lengths, colours, gradients, shadows, grid tracks, transforms.
-- `WireLayer` (interface): interface WireLayer { g: 0 | 1; a?: number; cx?: number; cy?: number; rx?: number; ry?: number; rf?: [number, number] | "corner" | "side"; circle?: boolean; st: [number, number][]; bs?: number[]; bp?: number[] } — ⚠ undocumented · used by `parseGradient`: One computed `background-image` layer; `null` when it is not a gradient this painter draws.
+- `WireLayer` (interface): interface WireLayer { g: 0 | 1 | 2; a?: number; cx?: number; cy?: number; rx?: number; ry?: number; rf?: [number, number] | "corner" | "side"; circle?: boolean; st: [number, number][]; per?: number; off?: number; bs?: number[]; bp?: number[] } — ⚠ undocumented · used by `parseGradient`: One computed `background-image` layer; `null` when it is not a gradient this painter draws.
 - `WireShadow` (type): type WireShadow = [[number, number, number, number, number], number] — ⚠ undocumented · used by `parseShadows`: Computed `box-shadow`: `rgb(..) x y blur spread [inset], ...`.
 - `WireTextShadow` (type): type WireTextShadow = [number, number, number, number] — ⚠ undocumented
 - `WireTrack` (type): type WireTrack = [number, number, number, number] — ⚠ undocumented · used by `parseTracks`: Computed `grid-template-columns`/`rows` or `grid-auto-*`; `null` when a track is not expressible.
