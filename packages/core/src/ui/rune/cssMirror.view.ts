@@ -16,7 +16,10 @@ import {
   parseClipPath, parseColor,
   parseDim,
   parseGradient,
+  parseGradientMasks,
+  parseFilters,
   parseLinearFade,
+  parseLengthPercent,
   placeLayer,
   parsePlacement,
   parsePx,
@@ -131,6 +134,9 @@ interface TextStyle {
   lh: number;
   ls: number;
   underline: boolean;
+  underlineColor: number;
+  underlineThickness: number | undefined;
+  underlineOffset: number | undefined;
   strike: boolean;
   align: string;
   ellipsis: boolean;
@@ -142,6 +148,8 @@ interface TextStyle {
 const textStyles = new WeakMap<Element, TextStyle>();
 
 function hasBoxPaint(style: CSSStyleDeclaration): boolean {
+  if ([style.filter, style.clipPath, style.maskImage].some(value => value !== undefined && value !== "" && value !== "none")) return true;
+  if (style.mixBlendMode !== "" && style.mixBlendMode !== "normal") return true;
   if (style.backgroundImage !== "none") return true;
   const background = parseColor(style.backgroundColor);
   if (background !== null && colorAlpha(background) > 0) return true;
@@ -166,6 +174,9 @@ function readTextStyle(element: Element, style: CSSStyleDeclaration): TextStyle 
     lh: lineHeight === "normal" ? 0 : parsePx(lineHeight),
     ls: style.letterSpacing === "normal" ? 0 : parsePx(style.letterSpacing),
     underline: decoration.includes("underline"),
+    underlineColor: parseColor(style.textDecorationColor) ?? parseColor(style.color) ?? 0xffffffff,
+    underlineThickness: style.textDecorationThickness === "auto" || style.textDecorationThickness === "from-font" ? undefined : style.textDecorationThickness.endsWith("%") ? parseFloat(style.textDecorationThickness) * parsePx(style.fontSize) / 100 : parsePx(style.textDecorationThickness),
+    underlineOffset: style.textUnderlineOffset === "auto" ? undefined : style.textUnderlineOffset.endsWith("%") ? parseFloat(style.textUnderlineOffset) * parsePx(style.fontSize) / 100 : parsePx(style.textUnderlineOffset),
     strike: decoration.includes("line-through"),
     align: style.textAlign,
     ellipsis: style.textOverflow === "ellipsis",
@@ -285,6 +296,9 @@ function textOf(runs: Run[], style: TextStyle, report: MirrorReport, element: El
     }
     if (run.style.underline) {
       span["u"] = true;
+      span["uc"] = run.style.underlineColor;
+      if (run.style.underlineThickness !== undefined) span["ut"] = run.style.underlineThickness;
+      if (run.style.underlineOffset !== undefined) span["uo"] = run.style.underlineOffset;
       differs = true;
     }
     if (run.style.f !== style.f) {
@@ -297,7 +311,7 @@ function textOf(runs: Run[], style: TextStyle, report: MirrorReport, element: El
   if (content === "") return null;
   const nowrap = style.whiteSpace === "nowrap" || style.whiteSpace === "pre";
   const text: Record<string, unknown> = { s: content, c: baseColor, ...fontOf(style) };
-  if (style.underline) spans.push({ a: 0, b: content.length, u: true });
+  if (style.underline) spans.push({ a: 0, b: content.length, u: true, uc: style.underlineColor, ...(style.underlineThickness === undefined ? {} : { ut: style.underlineThickness }), ...(style.underlineOffset === undefined ? {} : { uo: style.underlineOffset }) });
   if (spans.length > 0) text["sp"] = spans;
   if (style.align === "center") text["al"] = 1;
   else if (style.align === "right" || style.align === "end") text["al"] = 2;
@@ -619,6 +633,7 @@ function boxOfStyle(element: Element, style: CSSStyleDeclaration, report: Mirror
   const background = parseColor(style.backgroundColor);
   if (background !== null && colorAlpha(background) > 0) box["bg"] = background;
   const image = style.backgroundImage;
+  if (style.backgroundClip === "text" || style.getPropertyValue("-webkit-background-clip") === "text") box["bgtext"] = true;
   if (image !== "none" && image !== "") {
     const layers: ((WireLayer | { flat: number }) & { blend?: number })[] = [];
     const parts = splitTop(image, ",");
@@ -633,11 +648,15 @@ function boxOfStyle(element: Element, style: CSSStyleDeclaration, report: Mirror
       const blend = mode === "normal" ? 0 : BLEND_MODES[mode];
       if (blend === undefined) report.add(`background-blend-mode: ${mode}`, element);
       if (part.startsWith("url(")) {
-        // A background picture never sizes its box, unlike an `<img>`.
-        box["bgi"] = part.slice(4, -1).replace(/^["']|["']$/g, "");
-        if (style.backgroundSize === "cover") box["bfit"] = 1;
-        else if (style.backgroundSize === "contain") box["bfit"] = 2;
-        if (blend !== undefined && blend !== 0) box["bgblend"] = blend;
+        const size = sizes[index % sizes.length] ?? "auto";
+        const position = splitTop(positions[index % positions.length] ?? "0% 0%", " ");
+        const x = parseLengthPercent(position[0] ?? "0%") ?? [0,0];
+        const y = parseLengthPercent(position[1] ?? "0%") ?? [0,0];
+        const repeat = repeats[index % repeats.length] ?? "repeat";
+        const layer: WireLayer = { g: 0, st: [], img: part.slice(4, -1).replace(/^["']|["']$/g, ""), fit: size === "cover" ? 1 : size === "contain" ? 2 : 0,
+          bp: [x[0],x[1],y[0],y[1]], rp: [repeat !== "no-repeat" && repeat !== "repeat-y", repeat !== "no-repeat" && repeat !== "repeat-x"] };
+        const placed = placeLayer(layer, size, positions[index % positions.length] ?? "0% 0%", repeats[index % repeats.length] ?? "repeat");
+        layers.push({ ...placed, ...(blend === undefined || blend === 0 ? {} : { blend }) });
         continue;
       }
       const layer = parseGradient(part);
@@ -673,10 +692,9 @@ function boxOfStyle(element: Element, style: CSSStyleDeclaration, report: Mirror
   }
   const filter = style.filter;
   if (filter !== "none" && filter !== "") {
-    const blur = /blur\(([\d.]+)px\)/.exec(filter);
-    if (blur !== null) box["blur"] = parseFloat(blur[1] ?? "0");
-    const rest = filter.replace(/blur\([^)]*\)/, "").trim();
-    if (rest !== "") report.add(`filter: ${rest}`, element);
+    const filters = parseFilters(filter);
+    if (filters === null) report.add(`filter: ${filter}`, element);
+    else box["fx"] = filters;
   }
   const backdrop = style.backdropFilter;
   if (backdrop !== "none" && backdrop !== "" && backdrop !== undefined) {
@@ -703,7 +721,11 @@ function boxOfStyle(element: Element, style: CSSStyleDeclaration, report: Mirror
       const repeats = splitTop(style.maskRepeat, ",");
       const holes = images.map((image, index) => repeats[index % repeats.length] === "no-repeat" ? parseRoundCutout(image, sizes[index % sizes.length] ?? "auto", positions[index % positions.length] ?? "0% 0%") : null);
       if (holes.length > 0 && holes.every((hole): hole is number[] => hole !== null) && style.maskComposite.split(", ").every((mode) => mode === "add")) box["holes"] = holes;
-      else report.add(`mask-image: ${mask.slice(0, 40)}`, element);
+      else {
+        const gradients = parseGradientMasks(mask, style.maskSize, style.maskPosition, style.maskRepeat, style.maskMode, style.maskComposite);
+        if (gradients === null) report.add(`mask-image: ${mask.slice(0, 40)}`, element);
+        else box["mask"] = gradients;
+      }
     }
     else {
       if (svg !== null) box["svg"] = tintedSvg(svg, style.backgroundColor, (style as CSSStyleDeclaration & { maskMode?: string }).maskMode === "luminance");
@@ -717,7 +739,6 @@ function boxOfStyle(element: Element, style: CSSStyleDeclaration, report: Mirror
       report.add(`mix-blend-mode: ${style.mixBlendMode}`, element);
       delete box["bg"];
       delete box["ly"];
-      delete box["bgi"];
     }
   }
   if (style.isolation === "isolate") box["isolate"] = true;

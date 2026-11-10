@@ -33,6 +33,7 @@ pub(super) struct Layers {
     retained: Vec<Target>,
     stack: Vec<usize>,
     pipelines: Vec<(wgpu::TextureFormat, wgpu::RenderPipeline)>,
+    masks: Vec<(wgpu::TextureFormat, Blend, wgpu::RenderPipeline)>,
     pub additive: Option<(wgpu::RenderPipeline, wgpu::RenderPipeline)>,
     blur: Option<layer_blur::Pipeline>,
     viewport: (u32, u32),
@@ -58,6 +59,7 @@ impl Default for Layers {
             retained: Vec::new(),
             stack: Vec::new(),
             pipelines: Vec::new(),
+            masks: Vec::new(),
             additive: None,
             blur: None,
             viewport: (0, 0),
@@ -96,6 +98,8 @@ struct Layer {
     /// The round hole its composite cuts (`El::cutout_circle`): centre, then the radii it's clear
     /// within and whole from, in window device pixels; zeros for none.
     hole: [f32; 4],
+    brightness: f32,
+    shadow: Option<([f32; 2], [f32; 4])>,
 }
 
 /// The upright bounds of edges `r` turned `angle` radians clockwise about `p`.
@@ -125,10 +129,18 @@ pub(super) struct Target {
     pub glyphs: Vec<wgpu::BindGroup>,
     image_generation: u64,
     blur: Option<layer_blur::Scratch>,
+    shadow: Option<ShadowTarget>,
     cache_node: Option<u64>,
     cache_sig: u64,
     last_used: u64,
     content_size: [f32; 2],
+}
+
+struct ShadowTarget {
+    texture: wgpu::Texture,
+    view: wgpu::TextureView,
+    quad: wgpu::Buffer,
+    composite: wgpu::BindGroup,
 }
 
 /// Resource/pass counters for diagnostics. The ordinary path creates no layer resources.
@@ -156,6 +168,10 @@ impl Renderer {
             * u64::from(FORMAT.block_copy_size(None).unwrap());
         if let Some(blur) = &t.blur {
             bytes += blur.bytes();
+        }
+        if let Some(shadow) = &t.shadow {
+            bytes += u64::from(shadow.texture.width()) * u64::from(shadow.texture.height())
+                * u64::from(FORMAT.block_copy_size(None).unwrap());
         }
         bytes
     }
@@ -232,13 +248,14 @@ impl Renderer {
                 // Keep the actual clip separate so rounded corners never move.
                 let limit = parent.map_or(NO_CLIP, |p| {
                     let p = &self.layers.plan[p];
-                    let grow = (3.0 * p.blur).ceil();
+                    let grow = (3.0 * p.blur).ceil() + p.shadow.map_or(0.0, |(offset, _)| offset[0].abs().max(offset[1].abs()));
                     [p.clip[0].max(p.limit[0]) - grow, p.clip[1].max(p.limit[1]) - grow,
                         p.clip[2].min(p.limit[2]) + grow, p.clip[3].min(p.limit[3]) + grow]
                 });
                 let blur = layer_blur::sigma(i.params[2]);
                 let cache = (i.params[3] == 1.0).then(|| (unpack_u64_f32(i.radii), unpack_u64_f32(i.uv)));
-                let turn = (i.border[1] != 0.0).then_some((i.border[1], [i.border[2], i.border[3]]));
+                let shadow = (i.params[3] == 3.0).then_some(([i.border[0], i.border[1]], i.uv));
+                let turn = (shadow.is_none() && i.border[1] != 0.0).then_some((i.border[1], [i.border[2], i.border[3]]));
                 let parent_free = parent.is_some_and(|p| self.layers.plan[p].free);
                 let free = turn.is_some() || parent_free;
                 let frame = if free {
@@ -268,7 +285,8 @@ impl Renderer {
                     blend: Blend::from_code(i.params[0]),
                     force: i.params[3] == 2.0,
                     blur,
-                    support: parent.map_or(0.0, |p| self.layers.plan[p].support) + (3.0 * blur).ceil(),
+                    support: parent.map_or(0.0, |p| self.layers.plan[p].support) + (3.0 * blur).ceil()
+                        + shadow.map_or(0.0, |(offset, _)| offset[0].abs().max(offset[1].abs())),
                     cache,
                     needs_render: true,
                     turn,
@@ -276,12 +294,14 @@ impl Renderer {
                     frame,
                     // A cached scope's `radii` name its node instead.
                     hole: if cache.is_some() { [0.0; 4] } else { i.radii },
+                    brightness: i.fill[0],
+                    shadow,
                 });
             } else if i.params[1] == KIND_LAYER_END {
                 let at = self.layers.stack.pop().expect("unbalanced layer end");
                 let l = &mut self.layers.plan[at];
                 l.end = index as u32;
-                let grow = (3.0 * l.blur).ceil();
+                let grow = (3.0 * l.blur).ceil() + l.shadow.map_or(0.0, |(offset, _)| offset[0].abs().max(offset[1].abs()));
                 // Retain off-viewport sources that can contribute through this or an ancestor's
                 // filter. Clipping to the destination viewport before filtering loses those taps.
                 let vis = if l.free {
@@ -365,6 +385,7 @@ impl Renderer {
             let mut quad = Instance::begin_layer(l.bounds, l.clip, LayerSpec {
                 opacity: l.opacity, blend: l.blend, ..Default::default() });
             quad.fade = l.fade;
+            quad.fill[0] = l.brightness;
             if (t.content_size[0] - l.bounds[2]).abs() > 0.5 || (t.content_size[1] - l.bounds[3]).abs() > 0.5 {
                 quad.uv = [0.0, 0.0, t.content_size[0], t.content_size[1]];
             }
@@ -419,7 +440,7 @@ impl Renderer {
             }
             let l = &self.layers.plan[index];
             if !l.force && cache_target.is_none() && l.opacity == 1.0 && l.blend == Blend::SourceOver && !additive_parent
-                && l.blur == 0.0 && l.fade[3] == 0 && l.clip == NO_CLIP && l.turn.is_none() && l.hole[3] == 0.0 {
+                && l.blur == 0.0 && l.brightness == 0.0 && l.shadow.is_none() && l.fade[3] == 0 && l.clip == NO_CLIP && l.turn.is_none() && l.hole[3] == 0.0 {
                 self.layers.targets[index] = None;
                 continue;
             }
@@ -446,7 +467,7 @@ impl Renderer {
                 let composite = Self::bind_group(device, &self.bind_layout, &self.globals, self.uber.outlines(), &self.atlas, &texture, None);
                 self.layers.targets[index] = Some(Target { texture, view, projection,
                     identity: self.layers.allocations + 1, composite_parent: None,
-                    quad: Self::instance_buffer(device, 1), normal_quad: None, base, composite, blend_composites: Vec::new(), images: Vec::new(), glyphs: Vec::new(), image_generation: u64::MAX, blur: None,
+                    quad: Self::instance_buffer(device, 1), normal_quad: None, base, composite, blend_composites: Vec::new(), images: Vec::new(), glyphs: Vec::new(), image_generation: u64::MAX, blur: None, shadow: None,
                     cache_node: None, cache_sig: 0, last_used: 0, content_size: [0.0; 2] });
                 self.layers.allocations += 1;
             }
@@ -474,6 +495,24 @@ impl Renderer {
             if let Some((angle, pivot)) = l.turn { quad = quad.turned(angle, pivot); }
             quad.fade = l.fade;
             quad.radii = l.hole;
+            quad.fill[0] = l.brightness;
+            if let Some((offset, color)) = l.shadow {
+                if t.shadow.is_none() {
+                    let texture = device.create_texture(&wgpu::TextureDescriptor {
+                        label: Some("alpha shadow"), size: t.texture.size(), mip_level_count: 1, sample_count: 1,
+                        dimension: wgpu::TextureDimension::D2, format: FORMAT,
+                        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING, view_formats: &[],
+                    });
+                    let view = texture.create_view(&Default::default());
+                    let composite = Self::bind_group(device, &self.bind_layout, &self.globals, self.uber.outlines(), &self.atlas, &texture, None);
+                    t.shadow = Some(ShadowTarget { texture, view, composite, quad: Self::instance_buffer(device, 1) });
+                }
+                let shadow = t.shadow.as_ref().unwrap();
+                let mut sq = Instance::begin_layer([bounds[0]+offset[0],bounds[1]+offset[1],bounds[2],bounds[3]], l.clip, LayerSpec::default());
+                sq.fill = color;
+                sq.params[2] = -1.0;
+                staging.write_buffer(&shadow.quad, 0, bytemuck::bytes_of(&sq));
+            } else { t.shadow = None; }
             staging.write_buffer(&t.quad, 0, bytemuck::bytes_of(&quad));
             if l.blend.backdrop() {
                 let normal = t.normal_quad.get_or_insert_with(|| Self::instance_buffer(device, 1));
@@ -505,8 +544,12 @@ impl Renderer {
                 || self.backdrops.iter().any(|b| !t.blend_composites.iter().any(|(format, view, _)| *format == b.format && *view == b.view))))
                 .then(|| self.backdrops.iter().map(|b| (b.format, b.view.clone(), Self::bind_group(device,
                     &self.bind_layout, &self.globals, self.uber.outlines(), &b.texture, &t.texture, projection))).collect());
+            let shadow_composite = t.shadow.as_ref().map(|shadow| Self::bind_group(device, &self.bind_layout, &self.globals, self.uber.outlines(), &self.atlas, &shadow.texture, projection));
             let t = self.layers.targets[index].as_mut().unwrap();
             if let Some(composite) = composite { t.composite = composite; }
+            if let (Some(shadow), Some(composite)) = (&mut t.shadow, shadow_composite) {
+                shadow.composite = composite;
+            }
             if let Some(groups) = blend_composites { t.blend_composites = groups; }
             t.composite_parent = parent_identity;
         }
@@ -529,6 +572,9 @@ impl Renderer {
 
     /// The layer pipelines again from the renderer's shader (a new uber variant).
     pub(super) fn rebuild_layer_pipelines(&mut self, device: &wgpu::Device) {
+        for (format, blend, pipeline) in &mut self.layers.masks {
+            *pipeline = Self::pipeline(device, &self.layout, &self.shader, *format, "vs", *blend);
+        }
         for index in 0..self.layers.pipelines.len() {
             let format = self.layers.pipelines[index].0;
             self.layers.pipelines[index].1 = Self::pipeline(device, &self.layout, &self.shader, format, "vs", Blend::SourceOver);
@@ -543,6 +589,9 @@ impl Renderer {
     pub(super) fn add_layer_format(&mut self, device: &wgpu::Device, format: wgpu::TextureFormat) {
         if !self.layers.pipelines.iter().any(|(f, _)| *f == format) {
             self.layers.pipelines.push((format, Self::pipeline(device, &self.layout, &self.shader, format, "vs", Blend::SourceOver)));
+            for blend in [Blend::DestinationIn, Blend::SourceIn, Blend::SourceOut, Blend::Xor] {
+                self.layers.masks.push((format, blend, Self::pipeline(device, &self.layout, &self.shader, format, "vs", blend)));
+            }
         }
     }
 
@@ -658,7 +707,7 @@ impl Renderer {
             self.draw_layer_range(&mut active, FORMAT, l.begin + 1..l.end, Some(index), hook);
             drop(active);
             if let Some(blur) = &target.blur {
-                self.layers.blur.as_ref().unwrap().encode(encoder, blur, &target.view);
+                self.layers.blur.as_ref().unwrap().encode(encoder, blur, target.shadow.as_ref().map_or(&target.view, |shadow| &shadow.view));
             }
         }
     }
@@ -683,11 +732,18 @@ impl Renderer {
                     }
                     group.map(|(_, _, group)| group)
                 } else { None };
-                let pipeline = if self.layer_blend(target) == Blend::PlusLighter {
+                let pipeline = if matches!(l.blend, Blend::DestinationIn | Blend::SourceIn | Blend::SourceOut | Blend::Xor) {
+                    &self.layers.masks.iter().find(|(f, b, _)| *f == format && *b == l.blend).expect("prepared mask pipelines").2
+                } else if self.layer_blend(target) == Blend::PlusLighter {
                     &self.layers.additive.as_ref().expect("prepared dissolve").1
                 } else { &self.layers.pipelines.iter().find(|(f, _)| *f == format).expect("Renderer::add_format first").1 };
                 pass.set_pipeline(pipeline);
                 if let Some(properties) = &self.springs { pass.set_bind_group(1, &properties.group, &[]); }
+                if let Some(shadow) = &t.shadow {
+                    pass.set_bind_group(0, if l.blur > 0.0 { &shadow.composite } else { &t.composite }, &[]);
+                    pass.set_vertex_buffer(0, shadow.quad.slice(..));
+                    pass.draw(0..4, 0..1);
+                }
                 pass.set_bind_group(0, blend_group.unwrap_or(&t.composite), &[]);
                 let quad = if l.blend.backdrop() && blend_group.is_none() { t.normal_quad.as_ref().unwrap_or(&t.quad) } else { &t.quad };
                 pass.set_vertex_buffer(0, quad.slice(..));

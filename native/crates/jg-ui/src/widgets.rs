@@ -250,3 +250,10 @@ pub fn begin_images() {
 pub fn finish_images() {
     USED.with(|used| HELD.with(|held| held.borrow_mut().retain(|key, _| used.borrow().contains(key))));
 }
+
+#[cfg(test)]
+pub fn wait_images() {
+    HELD.with(|held| {
+        for image in held.borrow().values() { image.wait().expect("fixture image failed to decode"); }
+    });
+}

@@ -410,11 +410,22 @@ fn fs(i: Out) -> @location(0) vec4<f32> {
         } else {
             color = textureLoad(images, vec2<i32>(floor(p)), 0);
         }
+        if (i.params.z == -1.0) {
+            color = i.fill * color.a;
+            return color * clip_alpha(screen, i.clip, i.fade);
+        }
+        if (i.fill.x != 0.0 && color.a > 0.0) {
+            var rgb = color.rgb / color.a;
+            if (g.flags.x < 0.5) { rgb = srgb_encode(rgb); }
+            rgb = clamp(rgb * (1.0 + i.fill.x), vec3<f32>(0.0), vec3<f32>(1.0));
+            if (g.flags.x < 0.5) { rgb = srgb_decode(rgb); }
+            color = vec4<f32>(rgb * color.a, color.a);
+        }
         // Float intermediates accumulate One/One without saturation. Clamp before applying
         // this scope's opacity so nesting preserves plus-lighter's bounded coverage.
         color = select(color, clamp(color, vec4(0.0), vec4(1.0)), i.params.x == 1.0) * i.fill.a
             * clip_alpha(screen, i.clip, i.fade) * hole_alpha(screen, i.radii);
-        if (i.params.x >= 2.0) { color = blend_layer(color, textureLoad(atlas, vec2<i32>(floor(screen)), 0), i.params.x); }
+        if (i.params.x >= 2.0 && i.params.x <= 5.0) { color = blend_layer(color, textureLoad(atlas, vec2<i32>(floor(screen)), 0), i.params.x); }
         return color;
     }
     let kind = i.params.y;
@@ -493,7 +504,10 @@ fn fs(i: Out) -> @location(0) vec4<f32> {
             col = mix(i.fill, i.border, t) * (ring * dash_cov(arc.x, arc.y, i.uv.xyz));
         } else {
             // Bilinear, clamped to the image's own texels so neighbours in the atlas never bleed.
-            let local = (i.p - i.rect.xy) * i.uv.zw / i.rect.zw - vec2<f32>(0.5);
+            var local = (i.p - i.rect.xy) * i.uv.zw / i.rect.zw - vec2<f32>(0.5);
+            if (i.border.x > 0.0 && i.border.y > 0.0) {
+                local = fract((i.p - i.rect.xy - i.border.zw) / i.border.xy) * i.uv.zw - vec2<f32>(0.5);
+            }
             let lo = vec2<i32>(i.uv.xy);
             let hi = lo + vec2<i32>(i.uv.zw) - vec2<i32>(1);
             let base = floor(local);

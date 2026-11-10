@@ -240,6 +240,8 @@ export function parseAngle(text: string): number | null {
 }
 
 export interface WireLayer {
+  img?: string;
+  fit?: number;
   /** 0 linear, 1 radial, 2 conic (`a` is where it starts, stops are fractions of a turn). */
   g: 0 | 1 | 2;
   a?: number;
@@ -557,7 +559,7 @@ export function parseGradient(text: string): WireLayer | { flat: number } | null
     }
     return { g: 0, a: angle, st: spread(stops) };
   }
-  if (kind === "conic-gradient" && !repeating) {
+  if (kind === "conic-gradient") {
     let from = 0;
     let cx = 0.5;
     let cy = 0.5;
@@ -582,7 +584,19 @@ export function parseGradient(text: string): WireLayer | { flat: number } | null
     );
     const stops = parseStops(parts);
     if (stops === null || stops.length === 0 || stops.some((s) => s.px)) return null;
-    return { g: 2, a: from, cx, cy, st: spread(stops) };
+    const resolved = spread(stops);
+    if (repeating) {
+      const start = resolved[0]?.[0] ?? 0;
+      const period = (resolved.at(-1)?.[0] ?? 1) - start;
+      if (period <= 0) return { flat: resolved.at(-1)?.[1] ?? 0 };
+      const expanded: [number, number][] = [];
+      for (let turn = Math.floor(-start / period); turn * period + start <= 1; turn += 1) {
+        if (expanded.length + resolved.length > 4096) return null;
+        for (const [at, color] of resolved) expanded.push([at + turn * period, color]);
+      }
+      return { g: 2, a: from, cx, cy, st: expanded };
+    }
+    return { g: 2, a: from, cx, cy, st: resolved };
   }
   if (kind === "radial-gradient") {
     let cx = 0.5;
@@ -594,7 +608,7 @@ export function parseGradient(text: string): WireLayer | { flat: number } | null
     const head = args[0] ?? "";
     if (parseColor(splitTop(head, " ")[0] ?? "") === null) {
       first = 1;
-      const [shape = "", position = ""] = head.split(" at ");
+      const [shape = "", position = ""] = (` ${head}`).split(" at ");
       spotAt = splitTop(position.trim(), " ");
       const sizes = shape.trim().split(/\s+/).filter((p) => p !== "");
       circle = sizes.includes("circle");
@@ -668,6 +682,56 @@ export function parseShadows(text: string): WireShadow[] {
 }
 
 export type WireTextShadow = [number, number, number, number];
+
+export interface WireFilter {
+  /** 0 brightness, 1 blur, 2 alpha drop shadow. */
+  kind: number;
+  n?: number;
+  sh?: WireTextShadow;
+}
+
+/** Computed filters, retaining their authored order. */
+export function parseFilters(text: string): WireFilter[] | null {
+  if (text === "none" || text === "") return [];
+  const filters: WireFilter[] = [];
+  for (const part of splitTop(text, " ")) {
+    const fn = /^(brightness|blur|drop-shadow)\((.*)\)$/.exec(part);
+    if (fn === null) return null;
+    const value = fn[2] ?? "";
+    if (fn[1] === "drop-shadow") {
+      const shadow = parseTextShadows(value)[0];
+      if (shadow === undefined) return null;
+      filters.push({ kind: 2, sh: shadow });
+    } else {
+      const amount = value === "" ? 1 : parseFloat(value) / (value.endsWith("%") ? 100 : 1);
+      if (!Number.isFinite(amount) || amount < 0) return null;
+      filters.push({ kind: fn[1] === "brightness" ? 0 : 1, n: amount });
+    }
+  }
+  return filters;
+}
+
+/** Gradient masks use alpha coverage; luminance masks also weight the sRGB channels. */
+export function parseGradientMasks(images: string, sizes: string, positions: string, repeats: string, modes: string, composites: string): (WireLayer | { flat: number })[] | null {
+  const parts = splitTop(images, ",");
+  const size = splitTop(sizes, ","), position = splitTop(positions, ","), repeat = splitTop(repeats, ",");
+  const mode = splitTop(modes, ","), composite = splitTop(composites, ",");
+  const layers: (WireLayer | { flat: number })[] = [];
+  for (let index = parts.length - 1; index >= 0; index -= 1) {
+    const gradient = parseGradient(parts[index] ?? "");
+    if (gradient === null) return null;
+    const alpha = (color: number): number => {
+      const luminance = mode[index % mode.length] === "luminance" ? (0.2125 * (color >>> 24) + 0.7154 * ((color >>> 16) & 255) + 0.0721 * ((color >>> 8) & 255)) / 255 : 1;
+      return (0xffffff00 | Math.round((color & 255) * luminance)) >>> 0;
+    };
+    const mask = "flat" in gradient ? { flat: alpha(gradient.flat) } : { ...gradient, st: gradient.st.map(([at, color]): [number, number] => [at, alpha(color)]) };
+    const op = composite[index % composite.length] ?? "add";
+    const blend = op === "add" ? 0 : op === "intersect" ? 7 : op === "subtract" ? 8 : op === "exclude" ? 9 : undefined;
+    if (blend === undefined) return null;
+    layers.push({ ...placeLayer(mask, size[index % size.length] ?? "auto", position[index % position.length] ?? "0% 0%", repeat[index % repeat.length] ?? "repeat"), ...(index === parts.length - 1 ? {} : { blend }) });
+  }
+  return layers;
+}
 
 export function parseTextShadows(text: string): WireTextShadow[] {
   if (text === "none" || text === "") return [];

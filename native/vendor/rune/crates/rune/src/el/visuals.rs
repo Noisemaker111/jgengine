@@ -216,6 +216,7 @@ impl El {
         let cold = self.vis.cold_mut();
         cold.pixels = Some(pixels.clone());
         cold.pixels_fit = None;
+        cold.pixels_tile = None;
         self
     }
     /// Shows `pixels` at its own aspect ratio, centred: `Fit` letterboxes the whole image inside
@@ -224,6 +225,15 @@ impl El {
         let cold = self.vis.cold_mut();
         cold.pixels = Some(pixels.clone());
         cold.pixels_fit = Some(fit);
+        cold.pixels_tile = None;
+        self
+    }
+    /// Tile an image in a fixed sheet, with tile size and origin in points.
+    pub fn pixels_tiled(mut self, pixels: &crate::pixels::Pixels, tile: [f32; 4]) -> Self {
+        let cold = self.vis.cold_mut();
+        cold.pixels = Some(pixels.clone());
+        cold.pixels_fit = None;
+        cold.pixels_tile = Some(tile);
         self
     }
     /// A ring `offset` points outside the border box (CSS `outline` + `outline-offset`). Width
@@ -253,6 +263,24 @@ impl El {
     /// Isolate this subtree's paint and blend backdrops from the rest of the window.
     pub fn isolate(mut self) -> Self {
         self.vis.cold_mut().isolate = true;
+        self
+    }
+
+    /// Multiply the completed subtree's sRGB channels, preserving alpha.
+    pub fn brightness(mut self, amount: f32) -> Self {
+        self.vis.cold_mut().filters.push(crate::render::PaintFilter::Brightness(if amount.is_finite() { amount.max(0.0) } else { 1.0 }));
+        self
+    }
+
+    /// Shadow the completed subtree's alpha, with Gaussian sigma in points.
+    pub fn drop_shadow(mut self, x: f32, y: f32, sigma: f32, color: Color) -> Self {
+        self.vis.cold_mut().filters.push(crate::render::PaintFilter::DropShadow([x, y, sigma.max(0.0)], color));
+        self
+    }
+
+    /// Apply a Gaussian blur in sequence with other paint filters.
+    pub fn filter_blur(mut self, sigma: f32) -> Self {
+        self.vis.cold_mut().filters.push(crate::render::PaintFilter::Blur(sigma.max(0.0)));
         self
     }
 

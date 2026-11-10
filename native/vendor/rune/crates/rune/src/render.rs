@@ -87,6 +87,10 @@ pub enum Blend {
     Overlay,
     Screen,
     SoftLight,
+    DestinationIn,
+    SourceIn,
+    SourceOut,
+    Xor,
 }
 
 impl Blend {
@@ -98,24 +102,41 @@ impl Blend {
                     dst_factor: wgpu::BlendFactor::One, operation: wgpu::BlendOperation::Add };
                 wgpu::BlendState { color: add, alpha: add }
             }
+            Self::DestinationIn | Self::SourceIn | Self::SourceOut | Self::Xor => {
+                let (src_factor, dst_factor) = match self {
+                    Self::DestinationIn => (wgpu::BlendFactor::Zero, wgpu::BlendFactor::SrcAlpha),
+                    Self::SourceIn => (wgpu::BlendFactor::DstAlpha, wgpu::BlendFactor::Zero),
+                    Self::SourceOut => (wgpu::BlendFactor::OneMinusDstAlpha, wgpu::BlendFactor::Zero),
+                    _ => (wgpu::BlendFactor::OneMinusDstAlpha, wgpu::BlendFactor::OneMinusSrcAlpha),
+                };
+                let component = wgpu::BlendComponent { src_factor, dst_factor, operation: wgpu::BlendOperation::Add };
+                wgpu::BlendState { color: component, alpha: component }
+            }
         }
     }
 
     pub(crate) fn code(self) -> f32 {
         match self { Self::SourceOver => 0.0, Self::PlusLighter => 1.0, Self::Multiply => 2.0,
-            Self::Overlay => 3.0, Self::Screen => 4.0, Self::SoftLight => 5.0 }
+            Self::Overlay => 3.0, Self::Screen => 4.0, Self::SoftLight => 5.0, Self::DestinationIn => 6.0, Self::SourceIn => 7.0, Self::SourceOut => 8.0, Self::Xor => 9.0 }
     }
 
     pub(crate) fn from_code(code: f32) -> Self {
         match code as u8 { 1 => Self::PlusLighter, 2 => Self::Multiply, 3 => Self::Overlay,
-            4 => Self::Screen, 5 => Self::SoftLight, _ => Self::SourceOver }
+            4 => Self::Screen, 5 => Self::SoftLight, 6 => Self::DestinationIn, 7 => Self::SourceIn, 8 => Self::SourceOut, 9 => Self::Xor, _ => Self::SourceOver }
     }
 
-    pub(crate) fn backdrop(self) -> bool { self.code() >= 2.0 }
+    pub(crate) fn backdrop(self) -> bool { matches!(self, Self::Multiply | Self::Overlay | Self::Screen | Self::SoftLight) }
 }
 
 /// Composition properties of an isolated subtree. Filters can extend this contract without
 /// changing painter-stream scopes or the target pool.
+#[derive(Clone, Debug, PartialEq)]
+pub enum PaintFilter {
+    Brightness(f32),
+    Blur(f32),
+    DropShadow([f32; 3], crate::Color),
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct LayerSpec {
     pub opacity: f32,
@@ -375,7 +396,7 @@ pub(crate) fn end_layer(instances: &mut Vec<Instance>, surfaces: &mut [crate::na
     // A lone effect slot keeps a faded scope: the compositor's paint can't take the opacity.
     let faded_effect = primitives == 1 && instances[start + 1].params[1] == KIND_EFFECT && scope.fill[3] != 1.0;
     // A layer's `radii` hold its hole (`El::cutout_circle`), which only its composite can cut.
-    if !faded_effect && primitives + videos <= 1 && (primitives + videos == 0 || (scope.border[1] == 0.0 && scope.radii == [0.0; 4])) && scope.params[0] == 0.0 && scope.params[2] == 0.0 && scope.params[3] == 0.0
+    if !faded_effect && scope.fill[0] == 0.0 && primitives + videos <= 1 && (primitives + videos == 0 || (scope.border[1] == 0.0 && scope.radii == [0.0; 4])) && scope.params[0] == 0.0 && scope.params[2] == 0.0 && scope.params[3] == 0.0
         && (transfer_clip || (scope.clip == NO_CLIP && scope.fade == [0; 4])) {
         let opacity = scope.fill[3];
         if primitives == 1 {

@@ -9,6 +9,142 @@ fn line_spread(pixels: &[u8], width: usize, x: usize, y: usize) -> f32 {
     (weights.iter().map(|(at,w)|(at-mean).powi(2)*w).sum::<f32>()/mass).sqrt()
 }
 
+fn css_pixels(spec: serde_json::Value, width: u32, height: u32) -> Vec<u8> {
+    fn load_images(value: &serde_json::Value) {
+        if let Some(svg) = value.get("svg").and_then(|v| v.as_str()) {
+            let image = crate::widgets::image_of_svg(svg, 64.0);
+            image.wait().expect("test SVG did not decode");
+        }
+        if let Some(children) = value.get("c").or_else(|| value.get("children")).and_then(|v| v.as_array()) {
+            for child in children { load_images(child); }
+        }
+    }
+    load_images(&spec);
+    let mut state = crate::Ui::default();
+    state.root = crate::spec::parse_spec(&spec.to_string()).unwrap().children;
+    let mut runtime = rune::Runtime::new(state, crate::build::view, (width as f32, height as f32), rune::Env::new(true, 1.0));
+    runtime.set_srgb_blend(true);
+    for _ in 0..4 {
+        runtime.update(|state, tx| { state.revision += 1; tx.instant(); });
+        runtime.frame(0.0);
+        crate::widgets::wait_images();
+    }
+    let gpu = Gpu::headless();
+    let format = OFFSCREEN_FORMAT.remove_srgb_suffix();
+    let mut renderer = Renderer::new(&gpu.device, format);
+    renderer.set_srgb_blend(true);
+    let target = Offscreen::with_format(&gpu.device, width, height, format);
+    renderer.upload_images(&gpu.device, &gpu.queue, &mut runtime.images);
+    renderer.prepare(&gpu.device, &gpu.queue, &mut runtime.text.atlas, &runtime.instances, (width, height));
+    let mut encoder = gpu.device.create_command_encoder(&Default::default());
+    renderer.draw(&mut encoder, &target.view, [0.0; 4]);
+    target.copy(&mut encoder);
+    renderer.submit(&gpu.queue, encoder);
+    target.read(&gpu.device)
+}
+
+#[test]
+fn polygon_clips_the_whole_subtree_including_images_and_text() {
+    let pixels = css_pixels(serde_json::json!({"children":[{"k":"x","id":501,"w":64,"h":64,
+        "cp":[[0,0.5,0,0],[0,1,0,0.5],[0,0.5,0,1],[0,0,0,0.5]],
+        "c":[{"k":"x","id":502,"w":64,"h":64,"svg":"<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' fill='red'/></svg>"}]}]}), 64, 64);
+    assert_eq!(&pixels[(3 * 64 + 3) * 4..(3 * 64 + 4) * 4], &[0,0,0,0], "image escapes parent polygon");
+    assert_eq!(&pixels[(32 * 64 + 32) * 4..(32 * 64 + 33) * 4], &[255,0,0,255]);
+    let pixels = css_pixels(serde_json::json!({"children":[{"k":"x","id":503,"w":64,"h":64,
+        "cp":[[0,0.5,0,0],[0,1,0,0.5],[0,0.5,0,1],[0,0,0,0.5]],
+        "c":[{"k":"x","id":504,"w":64,"h":64,"t":{"s":"MMMM","f":"sans-serif","z":24,"c":0xffffffff_u32}}]}]}),64,64);
+    assert!(pixels.chunks_exact(4).any(|p| p[3]>240), "text was discarded instead of clipped");
+    for y in 0..64_usize { for x in 0..64_usize {
+        if x.abs_diff(32)+y.abs_diff(32)>34 { assert_eq!(pixels[(y*64+x)*4+3],0,"text escapes polygon at {x},{y}"); }
+    }}
+}
+
+#[test]
+fn arbitrary_gradient_masks_modulate_composited_child_alpha_once() {
+    let pixels = css_pixels(serde_json::json!({"children":[{"k":"x","id":511,"w":64,"h":32,"bg":0xff0000ff_u32,
+        "mask":[{"g":0,"a":std::f32::consts::FRAC_PI_2,"st":[[0,0xffffff00_u32],[1,0xffffffff_u32]]}],
+        "c":[{"k":"x","id":512,"w":64,"h":32,"bg":0x0000ffff_u32}]}]}),64,32);
+    let at = (16 * 64 + 32) * 4;
+    assert!((i32::from(pixels[at+3]) - 129).abs() <= 3, "mask was not applied once: {:?}", &pixels[at..at+4]);
+    assert_eq!(pixels[at], 0, "parent bleeds through masked child");
+}
+
+#[test]
+fn masks_cover_the_border_box() {
+    let pixels = css_pixels(serde_json::json!({"children":[{"k":"x","id":561,"w":40,"h":32,
+        "bg":0xff0000ff_u32,"bw":[4,4,4,4],"bc":0x0000ffff_u32,"mask":[{"flat":0xffffff80_u32}]}]}),40,32);
+    assert_eq!(&pixels[(16*40+1)*4..(16*40+2)*4], &[0,0,128,128], "mask misses border");
+}
+
+#[test]
+fn intersected_masks_clear_pixels_outside_a_positioned_nonrepeating_layer() {
+    let pixels = css_pixels(serde_json::json!({"children":[{"k":"x","id":565,"w":64,"h":32,"bg":0xff0000ff_u32,
+        "mask":[{"flat":0xffffffff_u32},{"flat":0xffffffff_u32,"bs":[32,0,32,0],"bp":[0,0,0,0],"blend":7}]}]}),64,32);
+    assert_eq!(&pixels[(16*64+48)*4..(16*64+49)*4], &[0,0,0,0], "intersect retains paint outside mask bounds");
+    assert_eq!(&pixels[(16*64+16)*4..(16*64+17)*4], &[255,0,0,255]);
+}
+
+#[test]
+fn shadow_sources_can_start_offscreen() {
+    let pixels = css_pixels(serde_json::json!({"children":[{"k":"x","id":571,"pos":2,"ins":[-20,0,"auto","auto"],"w":12,"h":12,
+        "bg":0x0000ffff_u32,"fx":[{"kind":2,"sh":[30,0,0,0xff0000ff_u32]}]}]}),40,32);
+    assert_eq!(&pixels[(5*40+15)*4..(5*40+16)*4], &[255,0,0,255], "offscreen source lost its visible shadow");
+}
+
+#[test]
+fn backdrop_blur_matches_gaussian_coverage_between_repeated_edges() {
+    let children: Vec<_> = (0..16).map(|i| serde_json::json!({"k":"x","id":600+i,"pos":2,"ins":[i*8,0,"auto","auto"],"w":8,"h":64,
+        "bg":if i%2==0 {0x000000ff_u32} else {0xffffffff_u32}})).chain(std::iter::once(
+        serde_json::json!({"k":"x","id":620,"pos":2,"ins":[0,0,0,0],"bblur":4}))).collect();
+    let pixels = css_pixels(serde_json::json!({"children":[{"k":"x","id":599,"w":128,"h":64,"c":children}]}),128,64);
+    for x in 32..96 {
+        let mut sum = 0.0; let mut mass = 0.0;
+        for dx in -12..=12 {
+            let weight = (-0.5 * (dx as f32 / 4.0).powi(2)).exp();
+            sum += weight * if (x as i32 + dx) / 8 % 2 == 0 {0.0} else {1.0};
+            mass += weight;
+        }
+        let got = pixels[(32*128+x)*4] as f32 / 255.0;
+        assert!((got-sum/mass).abs()<0.015,"x={x}, backdrop {got} differs from Gaussian {}",sum/mass);
+    }
+}
+
+#[test]
+fn brightness_filters_preserve_alpha_and_change_the_whole_subtree_in_srgb() {
+    let pixels = css_pixels(serde_json::json!({"children":[{"k":"x","id":521,"w":32,"h":24,"fx":[{"kind":0,"n":0.5}],
+        "c":[{"k":"x","id":522,"w":32,"h":24,"bg":0x80c04080_u32}]}]}),32,24);
+    let at = (12 * 32 + 16) * 4;
+    let got = &pixels[at..at+4];
+    assert!(got.iter().zip([32_u8,48,16,128]).all(|(a,b)| a.abs_diff(b)<=2), "brightness/alpha {got:?}");
+}
+
+#[test]
+fn thick_colored_underlines_use_the_authored_ink_and_width() {
+    let pixels = css_pixels(serde_json::json!({"children":[{"k":"x","id":541,"w":100,"h":50,
+        "t":{"s":"TEST","f":"sans-serif","z":24,"c":0xffffffff_u32,"sp":[{"a":0,"b":4,"u":true,"uc":0x00ff00ff_u32,"ut":5,"uo":3}]}}]}),100,50);
+    let green_rows = pixels.chunks_exact(100*4).filter(|row| row.chunks_exact(4).filter(|p| p[1]>240 && p[0]<10 && p[2]<10).count()>30).count();
+    assert_eq!(green_rows,5,"underline lost its thickness or color");
+}
+
+#[test]
+fn drop_shadow_follows_alpha_and_keeps_the_original_source_sharp() {
+    let pixels = css_pixels(serde_json::json!({"children":[{"k":"x","id":551,"w":80,"h":60,"fx":[{"kind":2,"sh":[12,0,0,0xff0000ff_u32]}],
+        "c":[{"k":"x","id":552,"pos":2,"ins":[10,10,"auto","auto"],"w":12,"h":12,"bg":0x0000ffff_u32}]}]}),80,60);
+    let at = |x: usize,y: usize| &pixels[(y*80+x)*4..(y*80+x+1)*4];
+    assert_eq!(at(15,15),[0,0,255,255],"filter damaged original");
+    assert_eq!(at(27,15),[255,0,0,255],"shadow missing");
+    assert_eq!(at(27,35),[0,0,0,0],"shadow used the box instead of source alpha");
+}
+
+#[test]
+fn gradient_text_uses_glyph_alpha_instead_of_filling_the_box() {
+    let pixels = css_pixels(serde_json::json!({"children":[{"k":"x","id":531,"w":100,"h":40,"bgtext":true,
+        "ly":[{"g":0,"a":std::f32::consts::FRAC_PI_2,"st":[[0,0xff0000ff_u32],[1,0x0000ffff_u32]]}],
+        "t":{"s":"RUNE","f":"sans-serif","z":28,"c":0}}]}),100,40);
+    assert_eq!(pixels[3],0,"gradient paints outside glyphs");
+    assert!(pixels.chunks_exact(4).any(|p| p[3]>240 && p[0]>20 && p[2]>20),"transparent text lost its gradient");
+}
+
 fn primitive(bounds: [f32; 4], color: [f32; 3], alpha: f32, srgb: bool) -> Instance {
     let mut instance = Instance::begin_layer(bounds, NO_CLIP, LayerSpec::default());
     instance.params = [0.0, KIND_RECT, 0.0, 1.0];

@@ -1,15 +1,9 @@
-// Backdrop blur pyramid (dual filter): a 13-tap downsample chain (Jimenez) from the backdrop
-// copy at half resolution, over the region being blurred (`u.map` places level 0 in the copy),
-// then a 9-tap tent upsample chain back to half resolution. The level the up chain starts from
-// sets the blur width; `u.w.x` crossfades it with the next finer level so the width is
-// continuous. Every tap is clamped to the copied region, so texels outside it never leak in and
-// edges repeat instead of darkening.
+// Separable Gaussian over the copied backdrop region. Both axes stay at device resolution.
 @group(0) @binding(0) var src: texture_2d<f32>;
-@group(0) @binding(1) var fine: texture_2d<f32>;
 @group(0) @binding(2) var smp: sampler;
 
 struct Level {
-    // x: share of the coarser level in an up pass.
+    // x: standard deviation in device pixels.
     w: vec4<f32>,
     // The region's bounds in the source's uv: min xy, max xy.
     region: vec4<f32>,
@@ -34,38 +28,33 @@ fn vs(@builtin(vertex_index) vi: u32) -> V {
 }
 
 fn s(uv: vec2<f32>) -> vec4<f32> {
-    return textureSampleLevel(src, smp, clamp(uv, u.region.xy, u.region.zw), 0.0);
+    let half_texel = 0.5 / vec2<f32>(textureDimensions(src));
+    return textureSampleLevel(src, smp, clamp(uv, u.region.xy + half_texel, u.region.zw - half_texel), 0.0);
+}
+
+fn gaussian(uv: vec2<f32>, axis: vec2<f32>) -> vec4<f32> {
+    let step = axis / vec2<f32>(textureDimensions(src));
+    let sigma = max(u.w.x, 0.001);
+    let factor = exp(-0.5 / (sigma * sigma));
+    var weight = 1.0;
+    var ratio = factor;
+    var mass = 1.0;
+    var color = s(uv);
+    for (var tap = 1.0; tap <= ceil(3.0 * sigma); tap += 1.0) {
+        weight *= ratio;
+        ratio *= factor * factor;
+        mass += 2.0 * weight;
+        color += (s(uv + step * tap) + s(uv - step * tap)) * weight;
+    }
+    return color / mass;
 }
 
 @fragment
 fn fs_down(in: V) -> @location(0) vec4<f32> {
-    let t = 1.0 / vec2<f32>(textureDimensions(src, 0));
-    let uv = in.uv * u.map.xy + u.map.zw;
-    let a = s(uv + t * vec2<f32>(-2.0, -2.0));
-    let b = s(uv + t * vec2<f32>(0.0, -2.0));
-    let c = s(uv + t * vec2<f32>(2.0, -2.0));
-    let d = s(uv + t * vec2<f32>(-1.0, -1.0));
-    let e = s(uv + t * vec2<f32>(1.0, -1.0));
-    let f = s(uv + t * vec2<f32>(-2.0, 0.0));
-    let g = s(uv);
-    let h = s(uv + t * vec2<f32>(2.0, 0.0));
-    let i = s(uv + t * vec2<f32>(-1.0, 1.0));
-    let j = s(uv + t * vec2<f32>(1.0, 1.0));
-    let k = s(uv + t * vec2<f32>(-2.0, 2.0));
-    let l = s(uv + t * vec2<f32>(0.0, 2.0));
-    let m = s(uv + t * vec2<f32>(2.0, 2.0));
-    return (d + e + i + j) * 0.125 + (a + b + g + f) * 0.03125 + (b + c + h + g) * 0.03125
-         + (f + g + l + k) * 0.03125 + (g + h + m + l) * 0.03125;
+    return gaussian(in.uv * u.map.xy + u.map.zw, vec2(1.0, 0.0));
 }
 
 @fragment
 fn fs_up(in: V) -> @location(0) vec4<f32> {
-    let t = 1.0 / vec2<f32>(textureDimensions(src, 0));
-    let uv = in.uv * u.map.xy + u.map.zw;
-    var c = s(uv) * 4.0;
-    c += (s(uv + vec2<f32>(t.x, 0.0)) + s(uv - vec2<f32>(t.x, 0.0)) + s(uv + vec2<f32>(0.0, t.y)) + s(uv - vec2<f32>(0.0, t.y))) * 2.0;
-    c += s(uv + t) + s(uv - t) + s(uv + vec2<f32>(t.x, -t.y)) + s(uv + vec2<f32>(-t.x, t.y));
-    c /= 16.0;
-    let f = textureSampleLevel(fine, smp, clamp(uv, u.region.xy, u.region.zw), 0.0);
-    return mix(f, c, u.w.x);
+    return gaussian(in.uv, vec2(0.0, 1.0));
 }

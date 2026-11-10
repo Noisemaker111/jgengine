@@ -76,11 +76,25 @@ and commit the generated bundle with its source. Game Vite builds copy it to `/j
 opacity and transforms use shared value slots after their first binding. Slots are
 reused when a label or box is removed. Other style changes patch the affected subtree.
 
-Rune maps `mix-blend-mode` and gradient `background-blend-mode` for multiply,
+Rune maps `mix-blend-mode` and `background-blend-mode` for multiply,
 overlay, screen and soft-light. Background layers blend in an isolated background
 scope; borders and text paint above it. `isolation: isolate` also isolates a whole
 subtree. These modes sample earlier UI paint on the Rune canvas; a separate world
 canvas underneath is not part of that backdrop.
+
+URL backgrounds share the ordered background layer stack, including sized and
+positioned repeat tiles. Gradient masks composite the complete subtree, including
+borders, using alpha or luminance and the authored mask-composite operation.
+Polygon clips cut descendant text and images. Repeating conic gradients retain
+their angular stops. `background-clip: text` paints gradients through glyph alpha;
+underlines retain their color, thickness and offset. Brightness, Gaussian blur
+and alpha drop shadows run in filter order on the complete subtree. Backdrop blur
+uses a Gaussian at device resolution, with its CSS length as standard deviation.
+
+The Deepward `paint-effects` browser flow compares twelve isolated paint surfaces
+against saved DOM pixels. Run it with `--param ui=dom` before `--param ui=rune` at
+the same width. Both renderer screenshots must be inspected. Native pixel
+regressions live in `native/crates/jg-ui/src/blend_tests.rs`.
 
 `defineGame({ health })` is off unless set: `reporter` receives a scrubbed `CrashReport` (build, game, tier, last N events, no personal data), `telemetry.sink` receives batched events (session start, loads, tier changes, frame percentiles, crash ids), `autoQuality: { targetFrameMs }` moves the tier with hysteresis and cooldowns (the player's tier pick turns it off; their render scale and effect toggles are never overwritten), and `errorScreen` is the game's own recoverable screen for a failed HUD render or tick. No vendor SDK ships in the engine; wire your own reporter and sink. Download size is checked before merge by `bun run check site-bundles` (CI's web-build job): the engine every game loads against `engineKb` in `apps/dev/bundle-budget.json`, and each game's own part against `bundleKb` in its `perf-budget.json`, with the reason in `bundleBaseline`. A heavy optional system loads on demand (see `scene/onDemandSceneKinds.ts`), so a game that never uses it never downloads it.
 

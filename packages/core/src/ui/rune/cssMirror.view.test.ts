@@ -1,5 +1,29 @@
 import { expect, test } from "bun:test";
 import { atomicColumns, groupInlineFlow, paintOrder, type WireBox } from "./cssMirror.view";
+import { spawnSync } from "node:child_process";
+
+test("computed paint effects reach the wire without moving URL layers above gradients", () => {
+  const source = `
+    import { GlobalRegistrator } from "@happy-dom/global-registrator";
+    GlobalRegistrator.register();
+    const { mirrorElement, MirrorReport } = await import(${JSON.stringify(new URL("./cssMirror.view.ts", import.meta.url).href)});
+    const el = document.createElement("div");
+    el.style.cssText = 'display:block;width:128px;height:80px;color:rgb(255,255,255);font:24px monospace;filter:brightness(.5) drop-shadow(rgb(255,0,0) 3px 4px 2px);text-decoration:underline;text-decoration-color:rgb(0,255,0);text-decoration-thickness:5px;text-underline-offset:3px;background-image:linear-gradient(rgb(255,0,0),rgb(0,0,255)),url("texture.png"),linear-gradient(rgb(0,255,0),rgb(0,0,0));background-size:auto,16px 16px,auto;background-position:0% 0%;background-repeat:repeat;background-blend-mode:normal';
+    el.style.mixBlendMode = 'normal';
+    el.style.textDecorationLine = 'underline';
+    el.textContent = 'RUNE'; document.body.append(el);
+    const box = mirrorElement(el,new MirrorReport());
+    console.log(JSON.stringify(box));
+    await GlobalRegistrator.unregister();
+  `;
+  const result = spawnSync(process.execPath, ["--eval", source], { encoding: "utf8", timeout: 10_000 });
+  expect(result.status).toBe(0);
+  const box = JSON.parse(result.stdout.trim());
+  expect(box.fx).toEqual([{ kind: 0, n: .5 }, { kind: 2, sh: [3,4,2,0xff0000ff] }]);
+  expect(box.ly).toHaveLength(3);
+  expect(box.ly[1]).toMatchObject({ img: "texture.png", bs: [16,0,16,0], rp: [true,true] });
+  expect(box.t.sp).toContainEqual({ a: 0, b: 4, u: true, uc: 0x00ff00ff, ut: 5, uo: 3 });
+});
 
 test("positioned zero and auto levels paint in tree order between negative and positive layers", () => {
   const children: WireBox[] = [

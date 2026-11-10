@@ -121,9 +121,10 @@ impl TextSystem {
                     }
                 }
                 if let Some(uc) = s.underline.filter(|c| c.a > 0.0) {
-                    let y = (origin[1] + m.baseline + 2.0 * scale).round();
+                    let thickness = s.underline_width.map_or(scale.max(1.0), |v| (v * scale).round().max(1.0));
+                    let y = (origin[1] + m.baseline + s.underline_offset.unwrap_or(2.0) * scale).round();
                     let (l, r) = underline_edges(&line, origin[0], gr.offset(), gr.offset() + w);
-                    out.push(D::new(Deco { rect: [l, y, r - l, scale.max(1.0)], color: uc, radius: 0.0 }, None, 0));
+                    out.push(D::new(Deco { rect: [l, y, r - l, thickness], color: uc, radius: 0.0 }, None, 0));
                 }
             }
         }

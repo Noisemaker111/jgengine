@@ -20,6 +20,8 @@ pub struct Span {
     pub bg: Option<Color>,
     pub bg_pad: f32,
     pub underline: Option<Color>,
+    pub underline_width: Option<f32>,
+    pub underline_offset: Option<f32>,
     /// The family's italic face, or a synthetic oblique when it has none.
     pub italic: bool,
 }
@@ -183,6 +185,8 @@ pub(crate) fn flatten_spans(spans: &[Span]) -> Vec<Span> {
             }
             if s.underline.is_some() {
                 m.underline = s.underline;
+                m.underline_width = s.underline_width;
+                m.underline_offset = s.underline_offset;
             }
             m.italic |= s.italic;
         }
@@ -197,6 +201,8 @@ pub(crate) fn flatten_spans(spans: &[Span]) -> Vec<Span> {
                 && last.bg == m.bg
                 && last.bg_pad == m.bg_pad
                 && last.underline == m.underline
+                && last.underline_width == m.underline_width
+                && last.underline_offset == m.underline_offset
                 && last.italic == m.italic
             {
                 last.end = m.end;

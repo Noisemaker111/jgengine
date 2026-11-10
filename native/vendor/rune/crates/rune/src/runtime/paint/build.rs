@@ -95,7 +95,7 @@ impl<S: 'static> Runtime<S> {
         let tree_order = ((flying || self.has_sticky || self.has_raise) && !self.layer_paint_order.is_empty()) || self.layer_paint_order.windows(2).any(|pair| {
             let n = &self.nodes[pair[0]];
             self.nodes[pair[1]].parent == Some(pair[0]) && ((self.has_dissolve && self.dissolve_scratch[pair[0]]) || n.vis_flags.cache() || n.vis.clip_radius.is_some() || n.vis.group_opacity.is_some() || n.group_fade
-                || n.vis.layer_opacity < 1.0 || n.vis.isolate || n.vis.mix_blend != crate::render::Blend::SourceOver || fades(n.looping.as_deref().copied())
+                || n.vis.layer_opacity < 1.0 || n.vis.isolate || !n.vis.filters.is_empty() || n.vis.mix_blend != crate::render::Blend::SourceOver || fades(n.looping.as_deref().copied())
                 || self.scene.presented(n.id).is_some_and(|p| (p.opacity > 0.0 && p.opacity < 1.0) || p.blur > 0.0 || p.transform.rotate.abs() > 1e-6))
         });
         let default_ring = self.default_ring_owner();
@@ -293,7 +293,7 @@ impl<S: 'static> Runtime<S> {
             // A fading node with children, or a shape whose pieces overlap, takes its opacity
             // once as a layer rather than each primitive taking it over the ones beneath. So
             // does a layer opacity over two paints of the node's own (a label on its fill).
-            let mut isolate = effective_opacity > 0.001 && (p.blur > 0.0 || dissolve || n.vis.isolate || n.vis.mix_blend != crate::render::Blend::SourceOver
+            let mut isolate = effective_opacity > 0.001 && (p.blur > 0.0 || dissolve || n.vis.isolate || !n.vis.filters.is_empty() || n.vis.mix_blend != crate::render::Blend::SourceOver
                 || additive_parent || (paint_own > 0.001 && paint_own < 1.0
                     && (next.is_some_and(|j| self.nodes[j].parent == Some(i)) || n.vis.shape.as_ref().is_some_and(|s| s.overlaps())
                         || (n.vis.layer_opacity < 1.0 && own_paints(n) >= 2))));
@@ -351,7 +351,12 @@ impl<S: 'static> Runtime<S> {
             let (anchor, anchor_to) = if (own_sc - 1.0).abs() > 1e-5 { (centre, centre_to) } else { (pinh.anchor, pinh.anchor_to) };
             // A pressed element still hits at its resting size, so a press near its edge stays inside.
             let press_anchor = centre_to;
-            let blur = pinh.blur + p.blur * sc;
+            let filter_support: f32 = n.vis.filters.iter().map(|filter| match filter {
+                crate::render::PaintFilter::Brightness(_) => 0.0,
+                crate::render::PaintFilter::Blur(sigma) => sigma * 3.0,
+                crate::render::PaintFilter::DropShadow([x,y,sigma], _) => sigma * 3.0 + x.abs().max(y.abs()),
+            }).sum();
+            let blur = pinh.blur + (p.blur + filter_support / 3.0) * sc;
             // An effect slot's bleed can reach into view from a rect outside it.
             let filter_margin = blur * s * 3.0 + n.vis.effect.map_or(0.0, |e| e.bleed * sc * s);
 
@@ -795,6 +800,22 @@ impl<S: 'static> Runtime<S> {
                         elided,
                     });
                 }
+            }
+            for filter in n.vis.filters.iter().rev().filter(|_| !skip_paint) {
+                let k = sc * s;
+                let mut marker = Instance::begin_layer([r[0], r[1], w, h], NO_CLIP, Default::default());
+                match *filter {
+                    crate::render::PaintFilter::Brightness(amount) => marker.fill[0] = amount - 1.0,
+                    crate::render::PaintFilter::Blur(sigma) => marker.params[2] = sigma * k,
+                    crate::render::PaintFilter::DropShadow([x, y, sigma], color) => {
+                        marker.params[2] = sigma * k;
+                        marker.params[3] = 3.0;
+                        marker.border = [x * k, y * k, 0.0, 0.0];
+                        marker.uv = if self.srgb_blend { color.premul_srgb(1.0) } else { color.premul(1.0) };
+                    }
+                }
+                layers.push((i, self.instances.len(), self.surfaces.len()));
+                self.instances.push(marker);
             }
             let primitive_start = self.instances.len();
             let surface_start = self.surfaces.len();

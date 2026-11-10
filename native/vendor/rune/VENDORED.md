@@ -74,6 +74,23 @@ that composites over the game's three.js canvas.
 
 When upstream `dev` gains equivalent support, re-vendor and drop the patch.
 
+`crates/rune/src/{render,render/layers,shader.wgsl}`, `el/{visual,visuals}.rs`
+and `runtime/{paint/build,paint/content,commit/memo_reuse}.rs` — ordered subtree
+brightness, Gaussian blur and alpha drop shadows; Porter-Duff mask composition;
+and tiled image sampling. Filter support retains offscreen sources that cast
+visible shadows. Layer accounting includes the shadow texture. Single-primitive
+layer folding preserves brightness. Mask operations composite isolated subtrees,
+so overlapping child paint takes coverage once.
+
+`render/backdrop_blur.rs` and `backdrop_blur.wgsl` — two Gaussian axes at device
+resolution replace the dual-filter pyramid. Equal kernel variance alone did not
+match CSS coverage between repeated edges. Scratch textures cover only the copied
+region plus filter support and reuse stable allocation buckets. Native tests
+measure both line spread and the expected periodic Gaussian profile.
+
+`text/{span,decorations}.rs` — underline color, width and baseline offset remain
+independent of glyph color and font metrics.
+
 `crates/rune/src/el/{scroll,rare}.rs` and `runtime/commit/{flatten,memo_reuse}.rs` —
 `El::scroll_axes` preserves the supplied CSS child layout while scrolling either or
 both axes. The convenience horizontal builder unwraps its content; CSS overflow

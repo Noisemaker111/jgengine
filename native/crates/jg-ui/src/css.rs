@@ -121,6 +121,10 @@ pub enum RadialSize {
 #[derive(Deserialize, Clone, Debug)]
 pub struct Layer {
     #[serde(default)]
+    pub img: Option<String>,
+    #[serde(default)]
+    pub fit: u8,
+    #[serde(default)]
     pub blend: u8,
     /// A flat colour sheet instead of a gradient.
     #[serde(default)]
@@ -182,6 +186,12 @@ pub struct SpanW {
     pub bg: Option<Rgba>,
     #[serde(default)]
     pub u: bool,
+    #[serde(default)]
+    pub uc: Option<Rgba>,
+    #[serde(default)]
+    pub ut: Option<f32>,
+    #[serde(default)]
+    pub uo: Option<f32>,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -232,6 +242,15 @@ pub struct Txt {
 
 fn normal_weight() -> f32 {
     400.0
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct Filter {
+    pub kind: u8,
+    #[serde(default)]
+    pub n: f32,
+    #[serde(default)]
+    pub sh: Option<(f32, f32, f32, Rgba)>,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -381,6 +400,10 @@ pub struct Box_ {
     /// Linear mask fades: point/fraction pairs for left, top, right, bottom.
     #[serde(default)]
     pub fade: Option<[f32; 8]>,
+    #[serde(default)]
+    pub mask: Vec<Layer>,
+    #[serde(default)]
+    pub bgtext: bool,
     /// Translate x, y in points; rotation in radians; uniform scale; translate x, y as
     /// fractions of the box's own size.
     #[serde(default)]
@@ -419,6 +442,8 @@ pub struct Box_ {
     #[serde(default)]
     pub blur: f32,
     #[serde(default)]
+    pub fx: Vec<Filter>,
+    #[serde(default)]
     pub t: Option<Txt>,
     #[serde(default)]
     pub inp: Option<Input>,
@@ -431,11 +456,6 @@ pub struct Box_ {
     /// How the image fills the box: 0 stretched, 1 covering (cropped), 2 contained.
     #[serde(default)]
     pub fit: u8,
-    /// A background picture: drawn over the box's colour and gradients, without sizing the box.
-    #[serde(default)]
-    pub bgi: Option<String>,
-    #[serde(default)]
-    pub bfit: u8,
     /// Pointer interest: bit 0 takes presses, bit 1 reports hover, bit 2 blocks the game underneath.
     #[serde(default)]
     pub hit: u8,
@@ -800,15 +820,16 @@ fn dashed_sides(b: &Box_) -> bool {
 
 fn needs_size(b: &Box_) -> bool {
     dashed_sides(b) ||
-    b.ly.iter().any(|l| ((l.g != 0 || l.per > 0.0) && l.flat.is_none()) || l.bs.is_some())
+    b.ly.iter().any(|l| ((l.g != 0 || l.per > 0.0) && l.flat.is_none()) || l.bs.is_some() || l.img.is_some())
         || b.tf.is_some_and(|t| t[4] != 0.0 || t[5] != 0.0)
         || b.tfv.is_some()
         || !b.holes.is_empty()
         || b.fade.is_some()
+        || !b.mask.is_empty()
+        || b.bgtext
         || b.rad.is_some_and(|r| r.iter().any(|v| *v < 0.0))
         || b.svg.is_some()
         || b.img.is_some()
-        || b.bgi.is_some()
         || !b.cp.is_empty()
         || b.sk != 0.0
 }
@@ -941,12 +962,7 @@ fn clip_of(b: &Box_, rect: Option<[f32; 4]>) -> Option<Vec<[f32; 2]>> {
     (area(&piece) < w * h - 0.5).then_some(piece)
 }
 
-/// How many bands a gradient inside a clipped box is painted in.
-const BANDS: usize = 24;
-
-/// A clipped box's background: `clip-path` cuts the box to a polygon, so its colour and gradients
-/// are painted as fills of that polygon (a gradient as bands across it) instead of on the rect.
-fn clipped_paint(bg: Option<Rgba>, layers: &[Layer], size: [f32; 2], poly: &[[f32; 2]]) -> rune::Shape {
+fn clipped_paint(bg: Option<Rgba>, size: [f32; 2], poly: &[[f32; 2]]) -> rune::Shape {
     let [w, h] = size;
     let poly = poly.to_vec();
     let mut shape = rune::Shape::new();
@@ -958,59 +974,29 @@ fn clipped_paint(bg: Option<Rgba>, layers: &[Layer], size: [f32; 2], poly: &[[f3
             shape = shape.fill(poly.clone(), c.0);
         }
     }
-    if poly.len() < 3 {
-        return shape;
-    }
-    for l in layers.iter().filter(|l| l.bs.is_none()) {
-        if let Some(c) = l.flat {
-            shape = shape.fill(poly.clone(), c.0);
-            continue;
-        }
-        let stops: Vec<(f32, Color)> = l.st.iter().map(|(t, c)| (*t, c.0)).collect();
-        if l.g == 0 && l.per > 0.0 {
-            shape = stripes(shape, l, size, &poly);
-            continue;
-        }
-        if l.g != 0 {
-            // A radial or conic gradient inside a clipped box paints as its middle colour.
-            let mid = stop_color(&stops, 0.5);
-            if mid.a > 0.0 {
-                shape = shape.fill(poly.clone(), mid);
-            }
-            continue;
-        }
-        let n = [l.a.sin(), -l.a.cos()];
-        let length = (w * n[0]).abs() + (h * n[1]).abs();
-        if length <= 0.0 {
-            continue;
-        }
-        let start = n[0] * w * 0.5 + n[1] * h * 0.5 - length * 0.5;
-        for band in 0..BANDS {
-            let (t0, t1) = (band as f32 / BANDS as f32, (band + 1) as f32 / BANDS as f32);
-            let color = stop_color(&stops, (t0 + t1) * 0.5);
-            if color.a <= 0.0 {
-                continue;
-            }
-            // Bands overlap by a hair so no seam shows between them; the ends run to the polygon's edge.
-            let low = if band == 0 { f32::NEG_INFINITY } else { start + t0 * length - 0.25 };
-            let high = if band + 1 == BANDS { f32::INFINITY } else { start + t1 * length + 0.25 };
-            let mut piece = poly.clone();
-            if low.is_finite() {
-                piece = cut(&piece, n, low, false);
-            }
-            if high.is_finite() && piece.len() >= 3 {
-                piece = cut(&piece, n, high, true);
-            }
-            if piece.len() >= 3 {
-                shape = shape.fill(piece, color);
-            }
-        }
-    }
     shape
 }
 
 /// The sheet one background layer paints on: the whole box, or the piece its size and position give.
 fn layer_sheet(l: &Layer, radii: Option<[f32; 4]>, size: [f32; 2]) -> El {
+    if let Some(url) = &l.img {
+        let image = crate::widgets::image_by_url(url, size[0].max(size[1]).max(32.0));
+        let intrinsic = image.size().map_or(size, |s| s.map(|v| v as f32));
+        let [iw, ih] = intrinsic.map(|v| v.max(0.01));
+        let [w, h] = if l.fit != 0 {
+            let scale = if l.fit == 1 { (size[0] / iw).max(size[1] / ih) } else { (size[0] / iw).min(size[1] / ih) };
+            [iw * scale, ih * scale]
+        } else { l.bs.map_or(intrinsic, |s| [s[0] + s[1] * size[0], s[2] + s[3] * size[1]]) };
+        let bp = l.bp.unwrap_or([0.0; 4]);
+        let [x,y] = [bp[0] + bp[1] * (size[0] - w), bp[2] + bp[3] * (size[1] - h)];
+        let repeat = l.rp.unwrap_or([l.fit == 0; 2]);
+        if w <= 0.0 || h <= 0.0 { return sheet(radii); }
+        let (left, top) = (if repeat[0] {0.0} else {x}, if repeat[1] {0.0} else {y});
+        let (width, height) = (if repeat[0] {size[0]} else {w}, if repeat[1] {size[1]} else {h});
+        return sheet(radii).clip_corners(radii.unwrap_or([0.0;4])).child(
+            el().pin(Some(left),Some(top),None,None).size(width,height)
+                .pixels_tiled(image.pixels(), [w,h,x-left,y-top]).inert());
+    }
     let Some(bs) = l.bs else { return paint_layer(sheet(radii), l, radii, size) };
     let (w, h) = (bs[0] + bs[1] * size[0], bs[2] + bs[3] * size[1]);
     let bp = l.bp.unwrap_or([0.0; 4]);
@@ -1040,16 +1026,6 @@ fn layer_sheet(l: &Layer, radii: Option<[f32; 4]>, size: [f32; 2]) -> El {
     paint_layer(el().pin(Some(x), Some(y), None, None).size(w.max(0.0), h.max(0.0)), l, None, [w, h])
 }
 
-/// Corner radii that keep a picture inside a polygon cut from a box: none where the polygon reaches
-/// the corner, and elsewhere wide enough that the arc stays inside a straight cut of that size.
-fn cut_corners(poly: &[[f32; 2]], size: [f32; 2]) -> [f32; 4] {
-    let [w, h] = size;
-    [[0.0, 0.0], [w, 0.0], [w, h], [0.0, h]].map(|corner| {
-        let nearest = poly.iter().map(|p| (p[0] - corner[0]).hypot(p[1] - corner[1])).fold(f32::INFINITY, f32::min);
-        if nearest.is_finite() && nearest > 0.5 { (nearest * 1.71).min(w.min(h) * 0.5) } else { 0.0 }
-    })
-}
-
 /// A full-size, out-of-flow sheet for one more background layer.
 fn sheet(radii: Option<[f32; 4]>) -> El {
     let e = el().pin(Some(0.0), Some(0.0), Some(0.0), Some(0.0));
@@ -1065,6 +1041,10 @@ fn blend(e: El, mode: u8) -> El {
         3 => e.mix_blend(rune::render::Blend::Overlay),
         4 => e.mix_blend(rune::render::Blend::Screen),
         5 => e.mix_blend(rune::render::Blend::SoftLight),
+        6 => e.mix_blend(rune::render::Blend::DestinationIn),
+        7 => e.mix_blend(rune::render::Blend::SourceIn),
+        8 => e.mix_blend(rune::render::Blend::SourceOut),
+        9 => e.mix_blend(rune::render::Blend::Xor),
         _ => e,
     }
 }
@@ -1125,7 +1105,9 @@ fn text_el(t: &Txt, color: Color) -> El {
                 span.italic = s.i;
                 span.bg = s.bg.map(|c| c.0);
                 if s.u {
-                    span.underline = Some(s.c.map_or(color, |c| c.0));
+                    span.underline = Some(s.uc.or(s.c).map_or(color, |c| c.0));
+                    span.underline_width = s.ut;
+                    span.underline_offset = s.uo;
                 }
                 span
             })
@@ -1166,10 +1148,10 @@ fn build_box(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
     let rect = RECTS.with(|r| r.borrow().get(&b.id).copied());
     let clip = clip_of(b, rect);
     let clipped = clip.is_some();
-    let background_blends = b.bgblend != 0 || b.ly.iter().any(|l| l.blend != 0);
+    let background_blends = b.bgblend != 0 || b.ly.iter().any(|l| l.blend != 0) || b.bgtext;
     let skewed = b.sk != 0.0 && b.cp.is_empty();
     if let Some(poly) = &clip {
-        let mut shape = clipped_paint(if background_blends { None } else { b.bg }, if background_blends { &[] } else { &b.ly }, size, poly);
+        let mut shape = clipped_paint(if background_blends { None } else { b.bg }, size, poly);
         // A skewed box's border follows its slanted sides.
         if let (true, Some(w), Some(c)) = (skewed && !background_blends, b.bw, b.bc) {
             let width = w.iter().fold(0.0, |a: f32, v| a.max(*v));
@@ -1262,6 +1244,14 @@ fn build_box(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
     if b.blur > 0.0 {
         e = e.blur(b.blur);
     }
+    for filter in &b.fx {
+        e = match filter.kind {
+            0 => e.brightness(filter.n),
+            1 => e.filter_blur(filter.n),
+            2 => if let Some((x,y,sigma,c)) = filter.sh { e.drop_shadow(x,y,sigma,c.0) } else { e },
+            _ => e,
+        };
+    }
     for hole in &b.holes {
         e = e.cutout_circle([hole[0] + hole[1] * size[0], hole[2] + hole[3] * size[1]], hole[4], hole[5]);
     }
@@ -1275,12 +1265,10 @@ fn build_box(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
     let mut background = background_blends.then(|| {
         let widths = b.bw.unwrap_or([0.0; 4]);
         let mut background = sheet(radii).pin(Some(-widths[3]), Some(-widths[0]), Some(-widths[1]), Some(-widths[2])).isolate().inert();
-        if let Some(poly) = &clip { background = background.shape(clipped_paint(b.bg, &[], size, poly)); }
+        if let Some(poly) = &clip { background = background.shape(clipped_paint(b.bg, size, poly)); }
         else if let Some(color) = b.bg { background = background.fill(color.0); }
         for l in &b.ly {
-            let layer = if let Some(poly) = clip.as_ref().filter(|_| l.bs.is_none()) {
-                sheet(radii).shape(clipped_paint(None, std::slice::from_ref(l), size, poly))
-            } else { layer_sheet(l, radii, size) };
+            let layer = layer_sheet(l, radii, size);
             background = background.child(blend(layer, l.blend));
         }
         background
@@ -1289,13 +1277,13 @@ fn build_box(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
     if clipped && !background_blends {
         // The polygon took the colour and the gradients that fill the box; pieces placed inside it
         // (rivets, corner marks) are drawn as they are.
-        for l in b.ly.iter().filter(|l| l.bs.is_some()) {
+        for l in &b.ly {
             e = e.child(layer_sheet(l, radii, size));
         }
     }
     let mut layers = if clipped || background_blends { [].iter() } else { b.ly.iter() };
     if let Some(first) = layers.next() {
-        e = if (first.flat.is_some() && b.bg.is_some()) || first.bs.is_some() {
+        e = if first.img.is_some() || (first.flat.is_some() && b.bg.is_some()) || first.bs.is_some() {
             e.child(layer_sheet(first, radii, size))
         } else {
             paint_layer(e, first, radii, size)
@@ -1304,21 +1292,7 @@ fn build_box(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
     for l in layers {
         e = e.child(layer_sheet(l, radii, size));
     }
-    if let Some(url) = &b.bgi {
-        let image = crate::widgets::image_by_url(url, size[0].max(size[1]).max(32.0));
-        let fit = match b.bfit {
-            2 => rune::SurfaceFit::Fit,
-            _ => rune::SurfaceFit::Fill,
-        };
-        // On a box with cut corners the picture is rounded off just inside each cut.
-        let corners = match &clip {
-            Some(poly) => Some(cut_corners(poly, size)),
-            None => radii,
-        };
-        let image = blend(sheet(corners).pixels_fit(image.pixels(), fit).inert(), b.bgblend);
-        if let Some(background) = background.as_mut() { *background = std::mem::replace(background, el()).child(image); }
-        else { e = e.child(image); }
-    }
+    let text_background = if b.bgtext { background.take() } else { None };
     if let Some(background) = background { e = e.child(background); }
     if let Some(border) = border_paint { e = e.child(border); }
     if let Some(svg) = &b.svg {
@@ -1355,7 +1329,7 @@ fn build_box(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
             st.min_size.width = length(0.0);
         };
         if t.ts.is_empty() {
-            e = e.child(text_el(t, t.c.0).layout_style(grow));
+            e = e.child(text_el(t, if b.bgtext { Color::WHITE } else { t.c.0 }).layout_style(grow));
         } else {
             // Each shadow is the same text block moved over, inside one holder with the text, so it
             // has the text's width, wrapping and alignment wherever the box puts the text.
@@ -1382,6 +1356,22 @@ fn build_box(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
     }
     if pushed {
         CLIPS.with(|c| c.borrow_mut().pop());
+    }
+    if let Some(background) = text_background {
+        e = e.isolate().child(blend(background, 7));
+    }
+    if !b.mask.is_empty() {
+        let widths = b.bw.unwrap_or([0.0; 4]);
+        let mut mask = sheet(None).pin(Some(-widths[3]), Some(-widths[0]), Some(-widths[1]), Some(-widths[2])).isolate();
+        for layer in &b.mask {
+            mask = mask.child(blend(sheet(None).isolate().child(layer_sheet(layer, None, size)), layer.blend));
+        }
+        e = e.isolate().child(blend(mask, 6));
+    }
+    if !b.cp.is_empty() && let Some(poly) = &clip {
+        let widths = b.bw.unwrap_or([0.0; 4]);
+        let mask = sheet(None).pin(Some(-widths[3]), Some(-widths[0]), Some(-widths[1]), Some(-widths[2]));
+        e = e.isolate().child(blend(mask.shape(rune::Shape::new().fill(poly.clone(), Color::WHITE)), 6));
     }
     let id = b.id;
     if id != 0 {

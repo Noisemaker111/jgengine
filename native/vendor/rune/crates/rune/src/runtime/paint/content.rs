@@ -93,7 +93,7 @@ impl<S: 'static> Runtime<S> {
                     rect,
                     radii: if n.vis.pixels_fit.is_some() { radii.map(|v| v.min(half)) } else { radii },
                     fill: [0.0, 0.0, 0.0, o],
-                    border: [0.0; 4],
+                    border: n.vis.pixels_tile.map_or([0.0; 4], |tile| tile.map(|v| v * sc * s)),
                     params: [image.page as f32, KIND_IMAGE, image.premultiplied as u8 as f32, 1.0],
                     // The shader samples from a whole-texel origin; the span may be fractional.
                     uv: [x + (crop[0] * iw).round(), y + (crop[1] * ih).round(), span[0] * iw, span[1] * ih],
