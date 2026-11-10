@@ -11,7 +11,7 @@ import { useGameFonts } from "@jgengine/core/ui/fonts.view";
 import { LiveText, perFrame } from "@jgengine/core/ui/liveBind.view";
 import { live } from "@jgengine/core/ui/liveValue";
 import { useRegisterLayoutRegion } from "@jgengine/core/ui/viewport.view";
-import { useActionBindings } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { useActionBindings } from "@jgengine/core/input/actionBindings.view";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { runSessionStore, type RunSession, type SessionSnapshot } from "../run/session";

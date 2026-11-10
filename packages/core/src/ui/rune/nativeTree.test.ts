@@ -74,7 +74,7 @@ describe("direct native JSX host", () => {
     let runs = 0;
     const Hud = () => {
       runs += 1;
-      return h("rune-box", null, h("rune-text", { text: live(() => `AIR ${value}`) }), h("rune-dial", { value: live(() => value), max: 110 }));
+      return h("rune-box", null, h("rune-text", { text: live(() => `AIR ${value}`) }), h("rune-box", { width: live(() => value) }));
     };
     f.root.render(h(Hud, null));
     const wire = nativeSpec(f.surface, f.sink);
@@ -84,8 +84,8 @@ describe("direct native JSX host", () => {
     for (const [name, read] of f.texts) f.slots.writeText(name, read());
     expect(runs).toBe(1);
     expect(f.commits()).toBe(commits);
-    const dial = wire.children[0]?.children[1];
-    const slot = dial?.props["valueSlot"];
+    const fill = wire.children[0]?.children[1];
+    const slot = fill?.props["widthSlot"];
     expect(typeof slot).toBe("number");
     if (typeof slot === "number") expect(f.values[slot]).toBe(10);
     f.root.unmount();

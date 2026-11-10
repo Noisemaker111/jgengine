@@ -1,7 +1,7 @@
 import type { Props } from "../jsx/element";
 import type { Host } from "../jsx/reconciler";
 import { isLive, readLive } from "../liveValue";
-import type { RuneElement, RuneElementProps, RuneFont } from "./element";
+import type { RuneElement, RuneElementProps, RuneBoundFont } from "./element";
 
 let nextId = 0;
 
@@ -28,6 +28,7 @@ export class RuneNode implements RuneElement {
 
   focus(): void {
     const surface = this.surface();
+    if (surface.focused === this) return;
     surface.focused = this;
     surface.onFocus?.(this);
   }
@@ -41,6 +42,7 @@ export interface RuneTreeSink {
   bindNumber(name: string, get: () => number): number;
   writeNumber(name: string, value: number): number;
   bindText(name: string, get: () => string): { n: number; u: number[] };
+  bindProp?(id: string, field: string, get: () => unknown): unknown;
 }
 
 /** One native element in the wire protocol, using the same typed props as JSX. */
@@ -52,35 +54,33 @@ export interface NativeWireNode {
   children: NativeWireNode[];
 }
 
-const EVENT_PROPS = new Set(["children", "ref", "onPress", "onFocus", "onValue", "onCommit", "onAdjust", "onKey", "onEdit", "onBack", "hidden", "modal"]);
+const EVENT_PROPS = new Set(["children", "ref", "onPress", "onFocus", "onValue", "onCommit", "onAdjust", "onKey", "onEdit", "onBack", "onDrag", "onHover", "onDrop", "holdMs", "dragValue", "modal"]);
+const SLOT_PROPS = new Set(["opacity", "width", "height", "x", "y", "scale"]);
 const FONT_PROPS = ["size", "weight", "family", "mono", "color", "tracking", "align"] as const;
 
 /** Serialize native nodes directly. Live values allocate slots, never component state. */
 export function nativeSpec(root: RuneNode, sink: RuneTreeSink, sampleLive = false): { children: NativeWireNode[]; modal: boolean } {
   let modal = false;
-  function visit(node: RuneNode, inherited: RuneFont): NativeWireNode | null {
-    if (node.props.hidden) return null;
+  function visit(node: RuneNode, inherited: RuneBoundFont): NativeWireNode | null {
+    if (node.props.hidden === true) return null;
     if (node.props.modal) modal = true;
-    const font: RuneFont = { ...inherited };
+    const font: RuneBoundFont = { ...inherited };
     for (const field of FONT_PROPS) if (node.props[field] !== undefined) Object.assign(font, { [field]: node.props[field] });
     const props: Record<string, unknown> = { ...font };
     for (const [field, value] of Object.entries(node.props)) {
       if (EVENT_PROPS.has(field) || value === undefined) continue;
       props[field] = value;
     }
-    props["interactive"] = !node.props.disabled && (node.props.onPress !== undefined || node.props.onValue !== undefined || node.props.onCommit !== undefined);
+    props["interactive"] = node.props.onPress !== undefined || node.props.onValue !== undefined || node.props.onCommit !== undefined || node.props.onDrop !== undefined || node.props.onHover !== undefined;
     props["focused"] = root.focused === node;
-    if (!sampleLive && node.tag === "rune-slider" && typeof node.props.value === "number") {
-      props["valueSlot"] = sink.writeNumber(`${node.id}:value`, node.props.value);
-      delete props["value"];
-    }
+    if (node.props.onDrag !== undefined || node.props.holdMs !== undefined || node.props.dragValue !== undefined) props["drag"] = true;
     for (const [field, value] of Object.entries(props)) {
       if (!isLive(value)) continue;
       const read = () => value.get();
       const current = read();
       if (sampleLive) { props[field] = current; continue; }
       delete props[field];
-      if (typeof current === "number") {
+      if (typeof current === "number" && SLOT_PROPS.has(field)) {
         props[`${field}Slot`] = sink.bindNumber(`${node.id}:${field}`, () => {
           const next = read();
           if (typeof next !== "number" || !Number.isFinite(next)) throw new Error(`Rune ${node.id}.${field} needs a finite number`);
@@ -88,16 +88,15 @@ export function nativeSpec(root: RuneNode, sink: RuneTreeSink, sampleLive = fals
         });
       } else if (field === "text" && typeof current === "string") {
         props["textSlots"] = sink.bindText(`${node.id}:text`, () => String(read()));
-      } else {
-        throw new Error(`Rune live ${field} needs a numeric or text slot`);
-      }
+      } else if (sink.bindProp !== undefined) props[field] = sink.bindProp(node.id, field, read);
+      else throw new Error(`Rune live ${field} needs a native property binding sink`);
     }
     if (node.tag === "#text") props["text"] = node.text;
     if (node.tag === "rune-text" && node.props.text === undefined) props["text"] = node.children.map(nativeLabel).join("");
     return { k: "native", id: node.id, kind: node.tag.replace("rune-", ""), props,
       children: node.tag === "rune-text" ? [] : node.children.map(child => visit(child, font)).filter((child): child is NativeWireNode => child !== null) };
   }
-  const font: RuneFont = {};
+  const font: RuneBoundFont = {};
   for (const field of FONT_PROPS) if (root.props[field] !== undefined) Object.assign(font, { [field]: root.props[field] });
   const children = root.children.map(child => visit(child, font)).filter((child): child is NativeWireNode => child !== null);
   return { children, modal: modal || root.props.modal === true };
@@ -141,11 +140,19 @@ export function nativeLabel(node: RuneNode): string {
   return node.props.label ?? (node.props.text === undefined ? node.text + node.children.map(nativeLabel).join("") : readLive(node.props.text));
 }
 
+/** Disabled containers disable their descendants for every input device. */
+export function nativeEnabled(node: RuneNode): boolean {
+  for (let parent: RuneNode | null = node; parent !== null; parent = parent.parent) {
+    if (readLive(parent.props.disabled ?? false) || readLive(parent.props.hidden ?? false)) return false;
+  }
+  return true;
+}
+
 /** Visible input scope: the last modal owns input, and hidden subtrees never participate. @internal */
 export function visibleNativeNodes(root: RuneNode): RuneNode[] {
   const nodes: RuneNode[] = [];
   const visit = (node: RuneNode) => {
-    if (node.props.hidden) return;
+    if (readLive(node.props.hidden ?? false)) return;
     nodes.push(node);
     for (const child of node.children) visit(child);
   };

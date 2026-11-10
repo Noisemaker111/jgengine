@@ -1,5 +1,5 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { RuneBox, RuneIcon } from "@jgengine/core/ui/rune/elements.view";
+import { RuneView, RuneGlyph } from "@jgengine/core/ui/rune/primitives.view";
 import { ITEMS, type ItemKind } from "../state";
 
 const GLYPHS = {
@@ -11,7 +11,7 @@ const GLYPHS = {
 };
 export function ItemMark({ kind, size = 32 }: { kind: ItemKind; size?: number }) {
   const glyph = kind === "wire" ? GLYPHS.wire : kind === "polymer" ? GLYPHS.polymer : kind === "cells" ? GLYPHS.cells : kind === "ink" ? GLYPHS.ink : GLYPHS.rifle;
-  return <RuneBox width={size} height={size} fill="#122528" border={{ width: 1, color: ITEMS[kind].color }} justify="center" items="center">
-    <RuneIcon size={size - 4} color={ITEMS[kind].color} svg={`<g transform="scale(.375)" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round">${glyph}</g>`} />
-  </RuneBox>;
+  return <RuneView width={size} height={size} fill="#122528" border={{ width: 1, color: ITEMS[kind].color }} justify="center" items="center">
+    <RuneGlyph size={size - 4} color={ITEMS[kind].color} artwork={`<g transform="scale(.375)" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round">${glyph}</g>`} />
+  </RuneView>;
 }

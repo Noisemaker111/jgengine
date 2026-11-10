@@ -68,6 +68,7 @@ interface JgUiModule {
   remove_canvas: (id: number) => void;
   values_changed: () => void;
   frames_drawn: () => number;
+  patch_native: (json: string) => void;
   unmount: () => void;
   values_ptr: () => number;
   values_len: () => number;
@@ -115,6 +116,11 @@ export class RuneUi {
   /** Counts committed native frames and spec submissions for idle/performance evidence. */
   private specCount = 0;
   get stats(): { frames: number; specs: number } { return { frames: this.api.frames_drawn(), specs: this.specCount }; }
+
+  /** Change addressed native visual properties without a JSX render or a whole-tree submission. */
+  patchNative(patches: readonly { id: string; field: string; value: unknown }[]): void {
+    if (patches.length > 0) this.api.patch_native(JSON.stringify(patches));
+  }
 
   private constructor(canvas: HTMLCanvasElement, api: JgUiModule, zIndexCss: string, private readonly memory: WebAssembly.Memory) {
     this.canvas = canvas;

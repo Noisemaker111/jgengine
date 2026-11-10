@@ -16,7 +16,7 @@ import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 import { useDisplayProfile } from "@jgengine/core/ui/display.view";
 import { RotateDeviceScreen } from "@jgengine/core/ui/rotateDevice.view";
 import { canvasCover } from "@jgengine/core/ui/canvasCover.view";
-import { ActionBindingsProvider } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { ActionBindingsProvider } from "@jgengine/core/input/actionBindings.view";
 import { createSettingsStore } from "@jgengine/core/settings/settingsModel";
 import { parseGraphicsQuality, withGraphicsQualityOverride } from "@jgengine/core/settings/graphicsSettings";
 import { parseRendererBackend, withRendererBackendOverride } from "@jgengine/core/settings/rendererBackend";

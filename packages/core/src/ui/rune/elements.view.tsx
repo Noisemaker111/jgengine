@@ -12,14 +12,8 @@ export function RuneText(props: RuneElementProps) { return createElement("rune-t
 export function RuneScroll(props: RuneElementProps) { return createElement("rune-box", { ...props, scroll: true }); }
 /** Native interactive element; children retain their own layout and paint. */
 export function RuneButton(props: RuneElementProps) { return createElement("rune-box", { ...props, role: "button" }); }
-/** Native slider whose edited value is a fraction in 0..1. */
-export function RuneSlider(props: RuneElementProps) { return createElement("rune-slider", props); }
 /** Native SVG icon; SVG body is artwork, never a style declaration. */
 export function RuneIcon(props: RuneElementProps) { return createElement("rune-icon", props); }
-/** Native segmented meter. */
-export function RuneCells(props: RuneElementProps) { return createElement("rune-cells", props); }
-/** Native 270 degree dial with its label children in the centre. */
-export function RuneDial(props: RuneElementProps) { return createElement("rune-dial", props); }
 /** A direct Rune surface. Descendants use the native host and retain their JSX context. */
 export function RuneSurface(props: RuneElementProps) { return createElement("rune-surface", props); }
 

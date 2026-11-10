@@ -1,5 +1,5 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { useActionBindings } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { useActionBindings } from "@jgengine/core/input/actionBindings.view";
 import { useGame, useGameStore } from "@jgengine/ui/hooks";
 import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { useGameContext } from "@jgengine/ui/provider";

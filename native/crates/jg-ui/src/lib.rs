@@ -159,6 +159,7 @@ pub struct Ui {
     page_revision: u32,
     rendered_revision: Cell<u64>,
     rendered_page_revision: Cell<u32>,
+    native_rects_dirty: Cell<bool>,
     cache: css::BoxCache,
     /// While true the bridge treats the UI as modal: game input is suspended
     /// and the pointer is shown.
@@ -222,7 +223,7 @@ impl Compositor<Ui> for UiCompositor {
         let regions: Vec<[f32; 4]> = f.rt.hit_regions().to_vec();
         let modal = f.rt.state.modal;
         let revision_changed = !self.shipped || self.last_revision != f.rt.state.rendered_revision.get();
-        if self.shipped && events.is_empty() && modal == self.last_modal && regions == self.last_regions && !css::RECTS_DIRTY.get() && !revision_changed {
+        if self.shipped && events.is_empty() && modal == self.last_modal && regions == self.last_regions && !css::RECTS_DIRTY.get() && !f.rt.state.native_rects_dirty.get() && !revision_changed {
             return;
         }
         self.shipped = true;
@@ -230,6 +231,7 @@ impl Compositor<Ui> for UiCompositor {
         self.last_revision = f.rt.state.rendered_revision.get();
         self.last_regions = regions.clone();
         let rects_changed = css::RECTS_DIRTY.replace(false);
+        f.rt.state.native_rects_dirty.set(false);
         let rects: Vec<[f32; 5]> = if rects_changed || revision_changed {
             layout_snapshot(f.rt)
         } else {
@@ -353,6 +355,27 @@ pub fn set_spec(json: &str, revision: u32) {
                 s.page_revision = revision;
                 s.modal = modal;
                 sync_fields(s);
+            });
+        }
+    });
+}
+
+/// Patch native leaf properties without replacing the tree or invalidating sibling memo entries.
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen::prelude::wasm_bindgen]
+pub fn patch_native(json: &str) {
+    let patches: Vec<native::PropertyPatch> = match serde_json::from_str(json) {
+        Ok(value) => value,
+        Err(error) => { emit("__native__", "error", None, Some(error.to_string())); return; }
+    };
+    HANDLE.with(|handle| {
+        if let Some(handle) = handle.borrow().as_ref() {
+            handle.update(move |state: &mut Ui, tx: &mut Tx| {
+                tx.instant();
+                match native::patch(&mut state.root, &patches) {
+                    Ok(()) => state.native_rects_dirty.set(true),
+                    Err(error) => emit("__native__", "error", None, Some(error)),
+                }
             });
         }
     });

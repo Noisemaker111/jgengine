@@ -15,9 +15,9 @@ export default defineFlow(game, {
     await f.wait(1000);
     await f.expectPage("window.__jgNativeUi.stats().frames", "static settings submits no frames", frames);
     await f.shot("native-settings");
+    await f.click("Back");
     await f.click("New dive");
-    await f.click("Take the rail");
-    await f.see("Rail departure / 06");
+    await f.see("Another Life.");
     await f.shot("native-hud");
   },
 });

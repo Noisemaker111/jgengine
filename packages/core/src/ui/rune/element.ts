@@ -8,6 +8,10 @@ export type RuneColor = string;
 export type RuneSize = number | { fraction: number };
 /** Direct Rune element methods. Numbers are points; angles are radians. */
 export interface RuneStyle {
+  x?: number;
+  y?: number;
+  scale?: number;
+  columns?: number;
   fill?: RuneColor;
   gradient?: { angle: number; stops: readonly (readonly [number, RuneColor])[] };
   radius?: number;
@@ -15,9 +19,9 @@ export interface RuneStyle {
   shadow?: { y: number; blur: number; color: RuneColor; x?: number; spread?: number; inset?: boolean };
   radial?: { center: readonly [number, number]; radius: readonly [number, number]; stops: readonly (readonly [number, RuneColor])[] };
   blur?: number;
-  opacity?: Live<number>;
-  width?: RuneSize | Live<number>;
-  height?: RuneSize | Live<number>;
+  opacity?: number;
+  width?: RuneSize;
+  height?: RuneSize;
   minWidth?: number;
   maxWidth?: number;
   minHeight?: number;
@@ -48,14 +52,17 @@ export interface RuneFont {
 }
 
 /** Props shared by native elements and their optional DOM tooling host. */
-export interface RuneElementProps extends RuneStyle, RuneFont {
+export type RuneBoundStyle = { [K in keyof RuneStyle]: Live<RuneStyle[K]> };
+export type RuneBoundFont = { [K in keyof RuneFont]: Live<RuneFont[K]> };
+
+export interface RuneElementProps extends RuneBoundStyle, RuneBoundFont {
   children?: UiNode;
   ref?: Ref<RuneElement>;
   id?: string;
   label?: string;
   role?: string;
-  disabled?: boolean;
-  hidden?: boolean;
+  disabled?: Live<boolean>;
+  hidden?: Live<boolean>;
   modal?: boolean;
   text?: Live<string>;
   direction?: "row" | "column";
@@ -63,10 +70,6 @@ export interface RuneElementProps extends RuneStyle, RuneFont {
   svg?: string;
   image?: string;
   fit?: "cover" | "contain";
-  value?: Live<number>;
-  max?: number;
-  count?: number;
-  tone?: { colors: readonly [RuneColor, RuneColor, RuneColor]; warn: number; bad: number };
   onPress?: () => void;
   onFocus?: () => void;
   onValue?: (value: number) => void;
@@ -75,6 +78,27 @@ export interface RuneElementProps extends RuneStyle, RuneFont {
   onKey?: (code: string) => void;
   onEdit?: (text: string) => void;
   onBack?: () => void;
+  tooltip?: string;
+  drag?: boolean;
+  onDrag?: (gesture: RuneGesture) => void;
+  onHover?: (inside: boolean) => void;
+  holdMs?: number;
+  dragValue?: string;
+  onDrop?: (value: string) => void;
+  spans?: Live<readonly RuneSpan[]>;
+}
+
+/** Rich text ranges use UTF-8 byte offsets, like Rune's native Span API. */
+export interface RuneSpan { start: number; end: number; color?: RuneColor; weight?: number; size?: number; mono?: boolean; italic?: boolean; underline?: RuneColor; }
+
+/** Native pointer/touch gesture in element-local layout points. */
+export interface RuneGesture {
+  phase: "down" | "move" | "up";
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  cancelled: boolean;
 }
 
 /** Host handle for native focus and scrolling; no DOM element is allocated. */
