@@ -315,7 +315,13 @@ export const LOAD_RESOURCES_SCRIPT = `(() => {
   return out;
 })()`;
 
-/** Sum a page's downloads by kind. A script outside the build's `assets/` folder is a source module. */
+/** Bundled chunks and the four generated wasm-bindgen modules shipped with Rune. */
+export function productionScript(path: string): boolean {
+  return /\/assets\/[^/]+-[A-Za-z0-9_-]{6,}\.js$/.test(path)
+    || /^\/jg-ui\/(?:jg_ui\.js|snippets\/jg-ui-[a-f0-9]+\/inline0\.js|snippets\/rune-[a-f0-9]+\/src\/platform\/web\/(?:bridge|platform)\.js)$/.test(path);
+}
+
+/** Sum downloads by kind; generated wasm bindings are production assets, while dev modules fail. */
 export function loadScore(resources: ReadonlyArray<readonly [string, number]>, readyMs: number): LoadScore {
   let jsBytes = 0;
   let wasmBytes = 0;
@@ -329,7 +335,7 @@ export function loadScore(resources: ReadonlyArray<readonly [string, number]>, r
     else if (/\.(m?js|tsx?|jsx)$/.test(path) || /^\/@(id|vite|fs|react-refresh)/.test(path)) {
       jsBytes += bytes;
       scripts += 1;
-      if (!/\/assets\/[^/]+-[A-Za-z0-9_-]{6,}\.js$/.test(path)) sourceModules += 1;
+      if (!productionScript(path)) sourceModules += 1;
     }
   }
   return { readyMs: Math.round(readyMs), requests: resources.length, jsBytes, wasmBytes, totalBytes, scripts, sourceModules };
@@ -530,17 +536,20 @@ export function scorecardMetrics(card: Scorecard): Array<[string, number, string
 
 /**
  * Record a scorecard in Jon's local tally store (`~/Projects/tally`, or `TALLY_CLI`): one row a metric,
- * the game as the task and the build as the side, so `tally compare dev production group=<group>` is
- * the before/after table. A machine without tally prints `degraded:` and records nothing.
+ * the game as the task and the build as the side, unless a comparison supplies base/branch and
+ * their commits. A machine without tally prints `degraded:` and records nothing.
  */
-export function recordScorecardInTally(game: string, card: Scorecard, group: string): void {
+export function recordScorecardInTally(game: string, card: Scorecard, group: string, context: { side?: string; commit?: string; branch?: string } = {}): void {
   const cli = process.env["TALLY_CLI"] ?? join(homedir(), "Projects", "tally", "src", "cli.mjs");
   if (!existsSync(cli)) {
     console.error(`degraded: no tally at ${cli}, so ${game}'s scorecard was not recorded`);
     return;
   }
   for (const [metric, value, unit] of scorecardMetrics(card)) {
-    const run = spawnSync(process.execPath, [cli, "record", "--metric", metric, "--value", String(value), "--unit", unit, "--task", game, "--side", card.build, "--group", group], { encoding: "utf8", windowsHide: true, timeout: 30_000 });
+    const run = spawnSync(process.execPath, [cli, "record", "--metric", metric, "--value", String(value), "--unit", unit, "--task", game, "--side", context.side ?? card.build, "--group", group], {
+      encoding: "utf8", windowsHide: true, timeout: 30_000,
+      env: { ...process.env, ...(context.commit === undefined ? {} : { TALLY_COMMIT: context.commit }), ...(context.branch === undefined ? {} : { TALLY_BRANCH: context.branch }) },
+    });
     if (run.status !== 0) {
       console.error(`degraded: tally did not record ${game} ${metric}: ${`${run.stderr ?? ""}`.trim().slice(0, 200)}`);
       return;

@@ -10,7 +10,7 @@ import { startPath, type PerfPath } from "./perf-breakdown";
 import { GATE_SIZE } from "./perf-gate";
 import { acquirePerfLock } from "./perf-lock";
 import { cappedClockProblem, PAGE_READY_MS, parseSettingSpec, perfPageUrl, perfSettingsScript, probeFrameClockMs, profiledWindow, SAMPLE_FRAMES_SCRIPT, slowCpuWindow, type PerfSettingOverride } from "./perf-play";
-import { cpuBusyPct, frameScore, LOAD_RESOURCES_SCRIPT, loadScore, mainScore, productionProblem, profileSources, renderScorecard, scoreProfile, SLOW_CPU_RATE, type LoadScore, type Scorecard } from "./perf-scorecard";
+import { cpuBusyPct, frameScore, LOAD_RESOURCES_SCRIPT, loadScore, mainScore, productionProblem, profileSources, recordScorecardInTally, renderScorecard, scoreProfile, SLOW_CPU_RATE, type LoadScore, type Scorecard } from "./perf-scorecard";
 import { ensureProdServer, type PerfBuild, type ProdServer } from "./prodServer";
 import { treeFingerprint } from "./servedTree";
 import { localGet } from "./localhostHttp";
@@ -92,6 +92,7 @@ export interface AbArgs {
   path: PerfPath;
   settings: PerfSettingOverride[];
   params: Record<Side, Array<[string, string]>>;
+  tally: string | null;
   out: string;
   markdown: boolean;
   /** Self-check: busy-wait this many ms in every frame of the branch page, a known regression the run must find. */
@@ -134,6 +135,7 @@ const USAGE = `usage: bun run perf ab [--games a,b] [--base <ref|dir>] [--window
   --base-param / --branch-param  query parameter on that side only; repeat for more
              (e.g. --branch-param ui=rune compares Rune with the base's existing UI)
   --out      where each game's windows are written as JSON (default .scratch/perf-ab)
+  --tally    record both scorecards in this Tally group as base/branch with their measured commits
   --production  time both sides' production builds, what players get, instead of their dev servers
   --markdown print the tables as Markdown
   --plant-ms busy-wait this many ms in every frame of the branch page: a known regression, to check
@@ -142,7 +144,7 @@ const USAGE = `usage: bun run perf ab [--games a,b] [--base <ref|dir>] [--window
 export function parseAbArgs(argv: readonly string[]): AbArgs | "help" {
   const args: AbArgs = {
     games: null, base: null, windowSeconds: DEFAULT_WINDOW_SECONDS, minBlocks: DEFAULT_MIN_BLOCKS, maxBlocks: DEFAULT_MAX_BLOCKS,
-    marginPct: DEFAULT_MARGIN_PCT, path: "still", settings: [], params: { base: [], branch: [] }, out: join(repoRoot, ".scratch", "perf-ab"), markdown: false, plantMs: 0, percentile: 50, build: "dev",
+    marginPct: DEFAULT_MARGIN_PCT, path: "still", settings: [], params: { base: [], branch: [] }, tally: null, out: join(repoRoot, ".scratch", "perf-ab"), markdown: false, plantMs: 0, percentile: 50, build: "dev",
   };
   const number = (flag: string, value: string, min: number): number => {
     const parsed = Number(value);
@@ -188,6 +190,7 @@ export function parseAbArgs(argv: readonly string[]): AbArgs | "help" {
         break;
       }
       case "--out": args.out = resolve(value); break;
+      case "--tally": args.tally = value; break;
       case "--plant-ms": args.plantMs = number(arg, value, 0); break;
       case "--stat": {
         const match = /^p(\d{1,2}(?:\.\d+)?)$/.exec(value);
@@ -484,11 +487,14 @@ async function openSide(side: Side, debugPort: number, browser: CdpSession, serv
   }
   const readyMs = Date.now() - loadAt;
   const resources = (await session.evaluate<Array<[string, number]>>(LOAD_RESOURCES_SCRIPT)) ?? [];
+  const loaded = loadScore(resources, readyMs);
+  const problem = productionProblem({ build: args.build, slow: null, pcBusyPct, frame: frameScore([]), main: null, load: loaded });
+  if (problem !== null) throw new Error(`the ${side} page was asked for as a production build but was not one: ${problem}`);
   await session.evaluate(`new Promise((r) => setTimeout(r, ${WARMUP_MS}))`, { awaitPromise: true });
   const pose = await session.evaluate<{ ok: boolean; position?: number[]; rotationY?: number }>(`window.__jgengineAgent?.handle?.({ method: "player_pose" }) ?? { ok: false }`);
   const [x, y, z] = pose?.position ?? [];
   const home = pose?.ok === true && x !== undefined && y !== undefined && z !== undefined ? { x, y, z, yaw: pose.rotationY ?? 0 } : null;
-  return { side, session, browser, home, homeFailed: false, stopPath: async () => {}, frozen: [], load: loadScore(resources, readyMs), pcBusyPct };
+  return { side, session, browser, home, homeFailed: false, stopPath: async () => {}, frozen: [], load: loaded, pcBusyPct };
 }
 
 /** The bridge request that puts the player back where the window's walk starts. */
@@ -846,6 +852,12 @@ async function main(): Promise<number> {
         const result: AbGameResult = { ...(measured as Omit<AbGameResult, "lockSeconds">), lockSeconds: Math.round((Date.now() - heldAt) / 1000) };
         results.push(result);
         writeFileSync(join(parsed.out, `${game}.json`), `${JSON.stringify({ base: base.label, branch: branchHead, build: parsed.build, params: parsed.params, plantMs: parsed.plantMs, ...result }, null, 2)}\n`);
+        if (parsed.tally !== null) {
+          for (const side of ["base", "branch"] as const) recordScorecardInTally(game, result.cards[side], parsed.tally, {
+            side, commit: side === "base" ? base.commit : git(repoRoot, ["rev-parse", "HEAD"]).out,
+            branch: side === "base" ? base.label : git(repoRoot, ["branch", "--show-current"]).out,
+          });
+        }
         console.error(`perf ab: ${game} ${CALL_TEXT[result.verdict.call]} ${result.verdict.changePct}% (${result.verdict.lowPct}..${result.verdict.highPct}) over ${result.verdict.blocks} pairs, ${result.lockSeconds} s holding the lock`);
       } catch (error) {
         failure = `${game}: ${error instanceof Error ? error.message : String(error)}`;

@@ -139,6 +139,25 @@ test("the scorecard leads with the slow frames, the hitches and the slow-CPU win
   expect(text).toContain("| CPU 4x slower: p50 / p95 ms | 12.00 / 50.00 | failed |");
 });
 
+test("production accepts Rune's generated wasm bindings while still rejecting dev and unexpected scripts", () => {
+  const runtime: Array<[string, number]> = [
+    ["http://x/assets/app-abc123.js", 100],
+    ["http://x/jg-ui/jg_ui.js", 200],
+    ["http://x/jg-ui/snippets/jg-ui-b9455b9e79605d58/inline0.js", 10],
+    ["http://x/jg-ui/snippets/rune-bcdf3621eaa7cec8/src/platform/web/bridge.js", 30],
+    ["http://x/jg-ui/snippets/rune-bcdf3621eaa7cec8/src/platform/web/platform.js", 40],
+    ["http://x/jg-ui/jg_ui_bg.wasm", 500],
+  ];
+  const bundled = loadScore(runtime, 1000);
+  expect(bundled).toMatchObject({ jsBytes: 380, wasmBytes: 500, scripts: 5, sourceModules: 0 });
+  expect(productionProblem(card({ load: bundled }))).toBeNull();
+  for (const path of ["/src/game.js", "/@vite/client", "/jg-ui/src/debug.js", "/jg-ui/snippets/rune-abcdef/src/other.js"]) {
+    const dev = loadScore([...runtime, [`http://x${path}`, 100]], 1000);
+    expect(dev.sourceModules).toBe(1);
+    expect(productionProblem(card({ load: dev }))).toContain("source modules");
+  }
+});
+
 test("the production server serves only the build's own files, never its source maps", () => {
   const dir = mkdtempSync(join(tmpdir(), "jg-prodfile-"));
   try {

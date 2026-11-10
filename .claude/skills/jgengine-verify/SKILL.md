@@ -44,10 +44,12 @@ Steps, headless runners, flows, `simulate`, `shoot` modes and load guards: [refe
 
 ## Screenshots
 
-Compare the UI renderer with `bun run perf ab --production --games deepward,harbor-heat --branch-param ui=rune`.
+Compare the UI renderer with `bun run perf ab --production --games deepward,harbor-heat --branch-param ui=rune --tally rune-ui`.
 Only the branch receives `ui=rune`; the base keeps its existing UI. Repeated
 `--base-param key=value` / `--branch-param key=value` flags pin either side's
 query parameters, which are included in the JSON and printed report.
+The scorecard separates engine UI self/inclusive CPU time from React and r3f;
+the Tally group records each side with its measured commit.
 
 A PR that touches a rendered surface embeds the inspected shots. Any change to a map, world or scene document counts as rendered.
 
