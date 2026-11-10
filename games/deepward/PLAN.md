@@ -60,7 +60,7 @@ Use the engine JSX reconciler with a direct native host. Games author typed elem
 
 - [x] Typed native element props and direct host, with no hidden DOM or computed style reads.
 - [x] Whole Deepward UI migrated; game CSS and CSS authoring removed.
-- [ ] UI skill and concrete second-game migration instructions; Linux checks and wasm bundle.
+- [x] UI skill, concrete second-game migration instructions in PR #3117, generated docs and rebuilt wasm bundle.
 - [ ] PC evidence: HUD, menu and settings at desktop/phone widths; one production CPU/GPU comparison against beta's React UI; static UI has no draws.
 - [ ] Rebase after #3108 lands, then one PR through `lane:close`.
 
@@ -78,3 +78,11 @@ This Linux host has no GPU, Owl or Jon's Chrome. Real-game screenshots and CPU/G
 - Measure one production round against the pinned React baseline. Attribute UI CPU and GPU cost per frame; total game frame time alone does not establish UI cost. Record both numbers and the method in the PR.
 - The generic CSS-mirror material proof moved to Brightway Park, which still uses that path. It must not inject CSS into Deepward.
 - Once acceptance passes and #3108 is merged, rebase onto beta and run `lane:close` once.
+
+## Linux verification
+
+`bun run gen` passed all 12 stages. Rust passed 29 tests. Focused shell/browser checks passed (79 tests, one platform-specific skip). Six headless native PNGs were regenerated after fixing start alignment; title/settings frames and HUD text fit at 1280×720 and 390×844. They contain no 3D scene and do not prove beta fidelity.
+
+The broader `verify:fast` receipt is `.scratch/verify-fast/runs/c708fa70-406c-492d-8ca4-63d89f3d53d0/receipt.json`. It includes #3108's changes against beta. A stale `scripts/cutlistSurface.test.ts` assertion still required the removed React package; it now requires `ui` and rejects `react`, and its targeted rerun passes.
+
+Remaining gate blocker: `scripts/localhostHttp.test.ts` fails three local-probe assertions under host Bun 1.3.14. A minimal reproduction shows `node:http` requests follow the test's dead `HTTP_PROXY`; the suite continues using that cached proxy after environment restoration. The production probe and test are unchanged from the #3108 base. CI declares Bun 1.4.2. Do not weaken the assertions or claim the broader gate passes; rerun with the intended runtime before landing.
