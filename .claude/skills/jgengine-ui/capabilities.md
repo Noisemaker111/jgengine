@@ -62,7 +62,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## adjust-setting-row — step a settings row value once, for keyboard and gamepad alike
 
-- `adjustSettingRow` (function) · `import { adjustSettingRow } from "@jgengine/core/settings/settingsBlocks.view"`
+- `adjustSettingRow` (function) · `import { adjustSettingRow } from "@jgengine/core/settings/settingAdjustment"`
 
 ## auto-scroll — pin a log/chat/console panel to its newest line as entries arrive — no hand-rolled scrollTop effects
 

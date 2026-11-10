@@ -1,328 +1,96 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { useRef, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
-import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
-import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { HudFade } from "@jgengine/core/hud/hudLayout.view";
-import { LiveText, useFrameBind } from "@jgengine/core/ui/liveBind.view";
+import { live } from "@jgengine/core/ui/liveValue";
+import { RuneHudFade } from "@jgengine/core/hud/runeHud.view";
+import { RuneBox, RuneCells, RuneDial, RuneText, useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
+import { ALL, AMBER, Button, DIM, Frame, FULL, Heading, INK, RED, Row, Tag, TEAL, Text } from "./dock";
 
-/*
- * The diver's helmet. Everything in a dive is read off the visor glass: the dive computer on the
- * left wrist edge, the depth strip on the brow, the kit counter on the right. Each readout dims when
- * it has nothing new to say and holds bright (and red) when the air is going.
- *
- * Values that move every tick (air, suit, the body, the rail distance, ammo, the load) arrive as
- * getters and are written straight to their own text, arc, cell or bar node; a panel re-renders only
- * when what it is showing changes shape (sealed tank, a reload starting, the cache filling up).
- */
+const tone = (warn: number, bad: number) => ({ colors: [TEAL, AMBER, RED] as const, warn, bad });
+const number = (read: () => number, suffix = "") => live(() => `${Math.ceil(read())}${suffix}`);
 
-const TEAL = "#9cddd1";
-const AMBER = "#e2bd6e";
-const RED = "#ff6a52";
-
-/*
- * HUD frames draw their rim as a clipped backing plate (`dw-rimmed` in style.css) instead of the
- * frame's stack of drop-shadow filters: a filter over the moving 3D scene is re-run every frame, and
- * six filtered panels halved the dive's frame rate.
- */
-const plate = (rim: string): { edge: "none"; shadow: false; style: CSSProperties } => ({ edge: "none", shadow: false, style: { "--dw-rim": rim } as CSSProperties });
-
-/** A reading's colour as an index, so a live binding can key on value and colour as one number. */
-type Tone = 0 | 1 | 2;
-const TONES = [TEAL, AMBER, RED] as const;
-/** A meter's tone from its shown value: red at 15 and under, amber to 35, teal above. */
-const meterTone = (value: number): Tone => value <= 15 ? 2 : value <= 35 ? 1 : 0;
-/** The suit's tone from its shown integrity. */
-const suitTone = (value: number): Tone => value <= 35 ? 2 : value <= 60 ? 1 : 0;
-
-/** The helmet rim, glass glare and the low-air alarm wash; nothing in it takes a pointer. */
-export function Visor({ low, hurt }: { low: boolean; hurt: boolean }): ReactNode {
-  return (
-    <div className="dw-visor" data-low={low ? "" : undefined} data-hurt={hurt ? "" : undefined} aria-hidden="true">
-      <div className="dw-visor-rim" />
-      <div className="dw-visor-glare" />
-      <div className="dw-visor-alarm" />
-    </div>
-  );
-}
-
-const DIAL_R = 46, DIAL_C = 2 * Math.PI * DIAL_R, DIAL_SWEEP = 0.75;
-const DIAL_TICKS = Array.from({ length: 11 }, (_, i) => {
-  const a = (135 + i * 27) * (Math.PI / 180);
-  const inner = i % 5 === 0 ? 34 : 37;
-  return <line key={i} x1={60 + Math.cos(a) * inner} y1={60 + Math.sin(a) * inner} x2={60 + Math.cos(a) * 40} y2={60 + Math.sin(a) * 40} />;
-});
-
-/** A 270° dial: the arc is what remains, ticks every tenth. `steps` is the remaining fraction in 200ths. */
-function Dial({ steps, tone, children }: { steps: () => number; tone: () => Tone; children: ReactNode }): ReactNode {
-  const arcs = useRef<SVGGElement>(null);
-  useFrameBind(arcs, () => Math.max(0, Math.min(200, steps())) * 4 + tone(), (key, group) => {
-    const shown = Math.floor(key / 4);
-    const dash = `${DIAL_C * DIAL_SWEEP * (shown / 200)} ${DIAL_C}`, stroke = TONES[key % 4 as Tone];
-    for (const arc of Array.from(group.children)) {
-      arc.setAttribute("stroke-dasharray", dash);
-      arc.setAttribute("stroke", stroke);
-    }
-  });
-  return (
-    <div className="dw-dial">
-      <svg viewBox="0 0 120 120" aria-hidden="true">
-        <circle cx="60" cy="60" r="56" className="dw-dial-bezel" />
-        <circle cx="60" cy="60" r={DIAL_R} className="dw-dial-track" strokeDasharray={`${DIAL_C * DIAL_SWEEP} ${DIAL_C}`} transform="rotate(135 60 60)" />
-        <g ref={arcs}>
-          <circle cx="60" cy="60" r={DIAL_R} className="dw-dial-glow" transform="rotate(135 60 60)" />
-          <circle cx="60" cy="60" r={DIAL_R} className="dw-dial-arc" transform="rotate(135 60 60)" />
-        </g>
-        <g className="dw-dial-ticks">{DIAL_TICKS}</g>
-      </svg>
-      <div className="dw-dial-read">{children}</div>
-    </div>
-  );
-}
-
-const CELL_KEYS = Array.from({ length: 10 }, (_, i) => i);
-
-/** Ten cells of a 0–100 meter, lit to the shown value in the colour that value reads as. */
-function Cells({ value, tone }: { value: () => number; tone: (shown: number) => Tone }): ReactNode {
-  const cells = useRef<HTMLSpanElement>(null);
-  useFrameBind(cells, () => Math.ceil(Math.max(0, value())), (shown, row) => {
-    const lit = Math.ceil(shown / 10), color = TONES[tone(shown)];
-    Array.from(row.children).forEach((cell, i) => {
-      const style = (cell as HTMLElement).style;
-      style.background = i < lit ? color : "";
-      style.boxShadow = i < lit ? `0 0 6px ${color}` : "";
-    });
-  });
-  return <span ref={cells} className="dw-cells" aria-hidden="true">{CELL_KEYS.map(i => <i key={i} />)}</span>;
-}
-
-/** A whole-number reading in the colour its value reads as; `as` is the element it is. */
-function Figure({ value, tone, as: Tag = "b" }: { value: () => number; tone: (shown: number) => Tone; as?: "b" | "strong" }): ReactNode {
-  const figure = useRef<HTMLElement>(null);
-  const shown = (): number => Math.ceil(value());
-  useFrameBind(figure, shown, (current, element) => {
-    element.textContent = String(current);
-    element.style.color = TONES[tone(current)];
-  });
-  return <Tag ref={figure}>{shown()}</Tag>;
+export function Visor({ low, hurt }: { low: boolean; hurt: boolean }) {
+  const { width, height } = useRuneViewport();
+  const radius = Math.min(width, height) * .09;
+  return <RuneBox pin={ALL} clip>
+    <RuneBox pin={[8, 10, 8, 10]} radius={radius} border={{ width: 7, color: "#02070999" }} shadow={{ y: 0, blur: Math.min(width,height) * .16, inset: true, color: "#01090b9e" }} />
+    <RuneBox pin={ALL} gradient={{ angle: 118 * Math.PI / 180, stops: [[0,"#d2faf417"],[.16,"#d2faf405"],[.24,"#d2faf400"]] }} />
+    <RuneBox pin={[8,10,8,10]} radius={radius} opacity={hurt ? 1 : low ? .85 : 0} border={{ width: 2, color: "#ff6a52e6" }} shadow={{ y: 0, blur: Math.min(width,height) * .14, inset: true, color: "#ff3c286b" }} />
+  </RuneBox>;
 }
 
 export interface DiveComputerProps {
-  /** Seconds of air left, read every frame. */
-  oxygen: () => number;
-  /** Suit integrity 0–100, read every frame. */
-  health: () => number;
-  /** Metres back to the rail, read every frame. */
-  rail: () => number;
-  tank: number;
-  sealed: boolean;
-  low: boolean;
-  hurt: boolean;
-  /** The body below receiving: food and water 0–100, read every frame. */
+  oxygen: () => number; health: () => number; rail: () => number; tank: number; sealed: boolean; low: boolean; hurt: boolean;
   body?: { food: () => number; water: () => number };
   seal?: { mark: number; pressure: number; crushing: boolean };
   belt?: { ration: number; water: number; lure: number; lamp: boolean };
 }
-
-/** The wrist dive computer: air dial, suit cells and the bearing back to the rail. */
-export function DiveComputer({ oxygen, health, rail, tank, sealed, low, hurt, body, seal, belt }: DiveComputerProps): ReactNode {
-  // Low air is 25 seconds and under; the whole number shown crosses it at the same moment.
-  const airTone = (shown: number): Tone => shown <= 25 ? 2 : shown / tank < 0.5 ? 1 : 0;
-  return (
-    <HudFade
-      watch={() => [Math.floor(oxygen() / 15), Math.ceil(health() / 10), Math.round(rail() / 8), Math.ceil((body?.food() ?? 0) / 10), Math.ceil((body?.water() ?? 0) / 10), seal?.crushing, belt?.ration, belt?.water, belt?.lure, belt?.lamp]}
-      hold={() => low || hurt || health() <= 35 || seal?.crushing === true || (body !== undefined && Math.min(body.food(), body.water()) <= 15)}
-      idleMs={4000} dimTo={0.6}>
-      <section className="dw-computer" aria-label="Dive computer" data-low={low ? "" : undefined}>
-        <KitPanel material="hull" cut="chamfer" depth={14} tint="#1b2c33" {...plate(low ? RED : "#04090b")} className="dw-rimmed" padding="10px 14px 10px 10px">
-          <div className="dw-computer-face">
-            <Dial steps={() => Math.round((oxygen() / tank) * 200)} tone={() => airTone(Math.ceil(oxygen()))}>
-              <Figure as="strong" value={oxygen} tone={airTone} />
-              <LiveText as="small" get={() => oxygen() === 0 ? "NO AIR" : "SEC AIR"} />
-            </Dial>
-            <div className="dw-computer-side">
-              <span className="dw-tag">{sealed ? "Sealed tank" : "Issue tank"}</span>
-              <LiveText className="dw-computer-alarm" role={low ? "alert" : undefined} get={() => oxygen() === 0 ? "Suit bleeding" : low ? "Turn back" : " "} />
-              <div className="dw-computer-row"><span className="dw-tag">Suit</span><Cells value={health} tone={suitTone} /><Figure value={health} tone={suitTone} /></div>
-              {body !== undefined && <>
-                <div className="dw-computer-row"><span className="dw-tag">Food</span><Cells value={body.food} tone={meterTone} /><Figure value={body.food} tone={meterTone} /></div>
-                <div className="dw-computer-row"><span className="dw-tag">Water</span><Cells value={body.water} tone={meterTone} /><Figure value={body.water} tone={meterTone} /></div>
-              </>}
-              {seal !== undefined && <div className="dw-computer-row"><span className="dw-tag">Seal Mk {seal.mark}</span><b style={{ color: seal.crushing ? RED : TEAL }}>P{seal.pressure}{seal.crushing ? "!" : ""}</b></div>}
-              {belt !== undefined && belt.ration + belt.water + belt.lure > 0 && <div className="dw-computer-row"><span className="dw-tag">Belt</span><b>{belt.ration}<small>F</small> {belt.water}<small>W</small> {belt.lure}<small>L</small></b></div>}
-              <div className="dw-computer-row dw-computer-rail"><GameIcon name="flag" size={15} color={low ? RED : AMBER} /><span className="dw-tag">Rail</span><b><LiveText get={() => Math.round(rail())} /><small>m</small></b></div>
-            </div>
-          </div>
-        </KitPanel>
-      </section>
-    </HudFade>
-  );
+export function DiveComputer({ oxygen, health, rail, tank, sealed, low, hurt, body, seal, belt }: DiveComputerProps) {
+  const { width } = useRuneViewport();
+  const narrow = width < 520;
+  const readings: [string, () => number, ReturnType<typeof tone>][] = [["SUIT", health, tone(60, 35)]];
+  if (body !== undefined) readings.push(["FOOD", body.food, tone(35,15)], ["WATER", body.water, tone(35,15)]);
+  return <RuneHudFade idleMs={4000} dimTo={.6} watch={() => [Math.floor(oxygen()/15),Math.ceil(health()/10),Math.round(rail()/8),Math.ceil((body?.food() ?? 0)/10),Math.ceil((body?.water() ?? 0)/10)]} hold={() => low || hurt || health() <= 35 || seal?.crushing === true}><Frame><Row gap={narrow ? 8 : 12}>
+    <RuneDial size={narrow ? 70 : 104} value={live(oxygen)} max={tank} tone={tone(tank * .5, 25)}><RuneText text={number(oxygen)} size={narrow ? 22 : 34} family="Share Tech Mono" color={low ? RED : INK} /><Tag size={narrow ? 8 : 9}>SEC AIR</Tag></RuneDial>
+    <RuneBox gap={5} minWidth={narrow ? 92 : 150}>
+      {narrow ? null : <Tag>{sealed ? "SEALED TANK" : "ISSUE TANK"}</Tag>}<Text color={RED} size={15}>{low ? "TURN BACK" : " "}</Text>
+      {readings.map(([label, read, colors]) => <Row key={label} gap={6}><Tag size={narrow ? 9 : 11}>{label}</Tag><RuneCells value={live(read)} size={narrow ? 4 : 6} tone={colors} /><RuneText text={number(read)} size={18} mono color={INK} /></Row>)}
+      {seal === undefined ? null : <Row><Tag>SEAL MK {seal.mark}</Tag><Text color={seal.crushing ? RED : TEAL}>P{seal.pressure}{seal.crushing ? "!" : ""}</Text></Row>}
+      {belt === undefined || belt.ration + belt.water + belt.lure === 0 ? null : <Tag>{belt.ration}F {belt.water}W {belt.lure}L</Tag>}
+      <Row><Tag color={AMBER}>RAIL</Tag><RuneText text={number(rail, "m")} size={18} mono color={INK} /></Row>
+    </RuneBox>
+  </Row></Frame></RuneHudFade>;
 }
-
-/** The brow strip: how deep this room sits on the line, ruled like a depth gauge. */
-export function DepthStrip({ room }: { room: string }): ReactNode {
-  const match = /^(\d+)\s*\/\s*(.*)$/.exec(room);
-  const depth = match === null ? "00" : match[1]!.padStart(2, "0");
-  const name = match === null ? room : match[2]!;
-  return (
-    <HudFade watch={() => room} idleMs={4500} dimTo={0.3}>
-      <div className="dw-depth" aria-label={`Depth ${depth}, ${name}`}>
-        <span className="dw-depth-rule" aria-hidden="true" />
-        <span className="dw-depth-mark"><small>DEPTH</small><b>{depth}</b></span>
-        <span className="dw-depth-room">{name}</span>
-        <span className="dw-depth-rule" aria-hidden="true" />
-      </div>
-    </HudFade>
-  );
+export function DepthStrip({ room }: { room: string }) {
+  const split = room.split(" / ");
+  return <RuneHudFade idleMs={4500} dimTo={.3} watch={() => room}><Row gap={12}><Tag color={AMBER}>DEPTH</Tag><Text size={26} family="Share Tech Mono">{split[0]}</Text><Tag size={14}>{split.slice(1).join(" / ")}</Tag></Row></RuneHudFade>;
 }
-
 export interface KitCounterProps {
-  weapon: string;
-  capacity: number | null;
-  /** Whether a reload is running; its seconds left come from `reloadLeft`. */
-  reloading: boolean;
-  /** Whether the cache is at its weight limit. */
-  full: boolean;
-  capacityWeight: number;
-  /** Rounds in the hand (null for none), read every frame. */
-  loaded: () => number | null;
-  reserve: () => number;
-  /** Seconds left on the reload, read every frame. */
-  reloadLeft: () => number;
-  items: () => number;
-  mass: () => number;
-  onCache: () => void;
+  weapon: string; capacity: number | null; reloading: boolean; full: boolean; capacityWeight: number;
+  loaded: () => number | null; reserve: () => number; reloadLeft: () => number; items: () => number; mass: () => number; onCache: () => void;
 }
-
-/** The right edge: what is in the hand and what is on the back. The load half opens the cache. */
-export function KitCounter({ weapon, capacity, reloading, full, capacityWeight, loaded, reserve, reloadLeft, items, mass, onCache }: KitCounterProps): ReactNode {
-  const short = weapon.includes("/") ? weapon.split("/").pop()!.trim() : weapon;
-  const emptyish = (): boolean => { const rounds = loaded(); return rounds !== null && capacity !== null && rounds <= Math.max(1, Math.floor(capacity / 4)); };
-  const ammo = useRef<HTMLDivElement>(null);
-  useFrameBind(ammo, emptyish, (low, element) => element.toggleAttribute("data-low", low));
-  const bar = useRef<HTMLElement>(null);
-  useFrameBind(bar, () => Math.min(100, (mass() / capacityWeight) * 100), (width, element) => { element.style.width = `${width}%`; });
-  return (
-    <HudFade watch={() => [loaded(), reserve(), reloading, items(), mass()]} hold={() => reloading || emptyish()} idleMs={4000} dimTo={0.6}>
-      <section className="dw-kit" aria-label="Hand and cache">
-        <KitPanel material="hull" cut="chamfer" depth={14} tint="#1b2c33" {...plate("#04090b")} className="dw-rimmed" padding="12px 14px 10px 22px">
-          <div className="dw-kit-hand">
-            <span className="dw-tag">{short}</span>
-            <div ref={ammo} className="dw-kit-ammo">
-              {reloading ? <><b className="dw-kit-reload">LOAD</b><LiveText as="small" get={reloadLeft} format={left => `${left.toFixed(1)}s`} /></>
-                : <><LiveText as="b" get={() => loaded() ?? "–"} /><small>/{capacity ?? "–"}</small></>}
-              <span className="dw-kit-reserve"><GameIcon name="gun" size={14} color={TEAL} /><LiveText get={reserve} /></span>
-            </div>
-          </div>
-          <button type="button" className="dw-kit-load dw-hud-btn" aria-label="Open cache / Tab" onClick={onCache} data-full={full ? "" : undefined}>
-            <GameIcon name="backpack" size={18} color={full ? AMBER : TEAL} />
-            <span className="dw-kit-bar" aria-hidden="true"><i ref={bar} /></span>
-            <b><LiveText get={mass} /><small>/{capacityWeight}kg</small></b>
-            <kbd>Tab</kbd>
-          </button>
-          <LiveText className="dw-kit-items" get={items} format={count => count === 0 ? "Cache empty" : `${count} carried · lost if you die`} />
-        </KitPanel>
-      </section>
-    </HudFade>
-  );
+export function KitCounter({ weapon, capacity, reloading, full, capacityWeight, loaded, reserve, reloadLeft, items, mass, onCache }: KitCounterProps) {
+  const { width } = useRuneViewport();
+  const narrow = width < 520;
+  return <RuneHudFade idleMs={4000} dimTo={.6} watch={() => [loaded(),reserve(),reloading,items(),mass()]} hold={() => reloading || (loaded() ?? 10) <= Math.max(1,(capacity ?? 4)/4)}><Frame width={narrow ? 160 : 216}><Tag>{weapon.split("/").pop()?.trim() ?? weapon}</Tag>
+    <Row items="end"><RuneText size={narrow ? 30 : 40} family="Share Tech Mono" color={reloading ? AMBER : INK} text={live(() => reloading ? "LOAD" : String(loaded() ?? "–"))} /><RuneText size={18} color={DIM} text={live(() => reloading ? `${reloadLeft()}s` : `/${capacity ?? "–"}`)} /></Row>
+    <RuneText text={number(reserve, " reserve")} size={16} color={DIM} align="right" />
+    <Button onPress={onCache} fill="#00000000" color={INK} padding={2} border={{ width: 0, color: TEAL }} label="Open carried cache"><RuneText text={live(() => `${Math.ceil(mass())}/${capacityWeight}kg`)} size={16} mono color={full ? AMBER : INK} /></Button>
+    {narrow ? null : <RuneText text={live(() => `${items()} carried · lost if you die`)} size={12} color={DIM} />}
+  </Frame></RuneHudFade>;
 }
-
-/** A small hull tab on the helmet edge that holds the dive. */
-export function HoldTab({ onPause, disabled }: { onPause: () => void; disabled: boolean }): ReactNode {
-  return (
-    <HudFade watch={() => disabled} idleMs={3000} dimTo={0.6}>
-      <KitButton type="button" material="hull" cut="hex" depth={10} tint="#22363f" {...plate("#04090b")} padding="7px 26px" className="dw-hold dw-hud-btn dw-rimmed" aria-label="Pause / Esc" disabled={disabled} onClick={onPause}>
-        <span className="dw-hold-face"><GameIcon name="pause" size={16} color={AMBER} /><kbd>Esc</kbd></span>
-      </KitButton>
-    </HudFade>
-  );
+export function HoldTab({ onPause, disabled }: { onPause: () => void; disabled: boolean }) { return <Button onPress={onPause} disabled={disabled}>Hold / Esc</Button>; }
+export function CommsLine({ hint, error }: { hint: string; error: string | null }) {
+  const { width } = useRuneViewport();
+  return <RuneBox width={Math.min(460, width * .92)} fill="#030c0eb8" padding={[6,14,8,14]} gap={3}><Tag color={AMBER} align="center">HALLOWAY / LINE 06</Tag><Text align="center" color={error ? "#ffb193" : "#e6f3ee"}>{error || hint}</Text></RuneBox>;
 }
-
-/** Marrow's radio: one line of advice on the lower glass, gone when it has been said. */
-export function CommsLine({ hint, error }: { hint: string; error: string | null }): ReactNode {
-  return (
-    <HudFade watch={() => [hint, error]} hold={() => error !== null} idleMs={7000} dimTo={0.22}>
-      <div className="dw-comms">
-        <span className="dw-comms-tag"><i aria-hidden="true" />Marrow radio</span>
-        <p role="status">{hint}</p>
-        {error !== null && <p role="alert" className="dw-comms-error">{error}</p>}
-      </div>
-    </HudFade>
-  );
+export function VisorReticle({ hit }: { hit: boolean }) {
+  const { width, height } = useRuneViewport();
+  const color = hit ? AMBER : "#e8fbf5d9";
+  return <RuneBox pin={[width / 2 - 20, height / 2 - 20, null, null]} width={40} height={40}>
+    <RuneBox pin={[18,18,null,null]} width={4} height={4} radius={2} fill={color} />
+    <RuneBox pin={[0,19,null,null]} width={10} height={2} fill={color} /><RuneBox pin={[null,19,0,null]} width={10} height={2} fill={color} />
+    <RuneBox pin={[19,0,null,null]} width={2} height={10} fill={color} /><RuneBox pin={[19,null,null,0]} width={2} height={10} fill={color} />
+  </RuneBox>;
 }
-
-/** Crosshair etched on the glass; a hit opens it out. */
-export function VisorReticle({ hit }: { hit: boolean }): ReactNode {
-  return (
-    <svg className="dw-sight" data-hit={hit ? "" : undefined} viewBox="0 0 40 40" aria-hidden="true">
-      <g className="dw-sight-under"><circle cx="20" cy="20" r="1.6" /><path d={hit ? "M20 3v8M20 29v8M3 20h8M29 20h8" : "M20 9v6M20 25v6M9 20h6M25 20h6"} /></g>
-      <circle cx="20" cy="20" r="1.6" />
-      <path d={hit ? "M20 3v8M20 29v8M3 20h8M29 20h8" : "M20 9v6M20 25v6M9 20h6M25 20h6"} />
-    </svg>
-  );
-}
-
 export interface DocketProps {
-  life: number;
-  scrip: number;
-  stash: number;
-  returns: number;
-  lost: number;
-  standing: string;
-  next: string;
-  last: { kind: "extracted" | "lost"; reason: string } | null;
-  /** Halloway's current line from Marrow's world, in place of the stock brief. */
-  brief?: string | undefined;
-  /** Marrow's base at a glance: the galley, the power balance and the body. */
+  life: number; scrip: number; stash: number; returns: number; lost: number; standing: string; next: string;
+  brief?: string | undefined; last?: { kind: string; reason: string } | null;
   base?: { food: number; water: number; power: number; meals: number; flasks: number };
 }
-
-/** At Marrow the visor is up: the departure docket torn off the rail printer, and the keys to walk to it. */
-export function Docket({ life, scrip, stash, returns, lost, standing, next, last, brief, base }: DocketProps): ReactNode {
-  return (
-    <aside className="dw-docket" aria-label="Marrow departure">
-        <KitPanel material="paper" cut="torn" depth={9} {...plate("rgba(0,0,0,0.4)")} className="dw-rimmed" padding="14px 18px 22px">
-          <span className="dw-docket-line"><span>Marrow · line 06</span><span>Life {String(life).padStart(2, "0")}</span></span>
-          <h2>Rail departure / 06</h2>
-          <p className="dw-docket-brief">{brief ?? "Ride to Bellwether. Fill the cache. Ride back before the air runs out."}</p>
-          <dl>
-            <div><dt>Scrip</dt><dd>{scrip}</dd></div>
-            <div><dt>Stash</dt><dd>{stash}</dd></div>
-            <div><dt>Returns</dt><dd>{returns}</dd></div>
-            <div><dt>Lost</dt><dd>{lost}</dd></div>
-            {base !== undefined && <>
-              <div><dt>Food</dt><dd>{Math.ceil(base.food)}</dd></div>
-              <div><dt>Water</dt><dd>{Math.ceil(base.water)}</dd></div>
-              <div><dt>Galley</dt><dd>{Math.floor(base.meals)}/{Math.floor(base.flasks)}</dd></div>
-              <div><dt>Power</dt><dd>{base.power}</dd></div>
-            </>}
-          </dl>
-          <p className="dw-docket-next"><b>Next</b> {next}</p>
-          <p className="dw-docket-standing"><b>Standing</b> {standing}</p>
-          {last !== null && <p className="dw-docket-last" data-kind={last.kind}><span className="dw-stamp">{last.kind === "extracted" ? "Returned" : "Reprinted"}</span>{last.reason}</p>}
-          <p className="dw-docket-keys" aria-hidden="true"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk <kbd>E</kbd> use <kbd>F</kbd> lamp <kbd>Q</kbd> eat <kbd>G</kbd> lure <kbd>C</kbd> scan <kbd>Esc</kbd> hold</p>
-      </KitPanel>
-    </aside>
-  );
+export function Docket({ life, scrip, stash, returns, lost, standing, next, last, brief, base }: DocketProps) {
+  const { width, height } = useRuneViewport();
+  const compact = height < 560;
+  const stats = [["SCRIP", scrip], ["STASH", stash], ["RETURNS", returns], ["LOST", lost], ["FOOD", base?.food ?? 0], ["WATER", base?.water ?? 0], ["GALLEY", `${base?.meals ?? 0}/${base?.flasks ?? 0}`], ["POWER", base?.power ?? 0]];
+  return <Frame paper width={width < 700 ? 250 : 292}>
+    <Tag color="#6b5536">MARROW · LINE 06 · LIFE {String(life).padStart(2,"0")}</Tag><Heading color="#20180e" size={width < 700 ? 19 : 23}>Rail departure / 06</Heading>
+    {compact ? null : <Text color="#4a3a26">{brief ?? "Ride to Bellwether. Fill the cache. Ride back before the air runs out."}</Text>}
+    {[stats.slice(0,4), stats.slice(4)].map((row, i) => <Row key={i} justify="between">{row.map(([label, value]) => <RuneBox key={label} gap={2}><Tag color="#6b5536" size={10}>{label}</Tag><Text size={compact ? 18 : 22} family="Share Tech Mono" color="#20180e">{value}</Text></RuneBox>)}</Row>)}
+    <Text color="#3a2d1d" size={13}>NEXT {next}</Text>{compact ? null : <Text color="#3a2d1d" size={13}>STANDING {standing}</Text>}
+    {last == null ? null : <Text color={last.kind === "lost" ? "#a3322a" : "#1f6b4f"} size={12}>{last.kind === "lost" ? "REPRINTED" : "RETURNED"} {last.reason}</Text>}{compact ? null : <Tag color="#5a4630" size={10}>WASD move · E use · Tab cache</Tag>}
+  </Frame>;
 }
-
-/** What the diver can act on, as a brass key plate; a search is a filling bar on the glass. */
-export function ActionPlate({ label, onAct }: { label: string; onAct: () => void }): ReactNode {
-  return (
-    <KitButton type="button" material="brass" cut="slant" depth={12} {...plate("#2a1e08")} padding="8px 22px 8px 12px" className="dw-act dw-hud-btn dw-rimmed" onClick={onAct}>
-      <span className="dw-act-face"><kbd>E</kbd><span>{label}</span></span>
-    </KitButton>
-  );
-}
-
-/** A held search filling up; `done` is the fraction complete, read every frame. */
-export function SearchBar({ done, label = "Searching" }: { done: () => number; label?: string }): ReactNode {
-  const bar = useRef<HTMLElement>(null);
-  useFrameBind(bar, () => Math.round(Math.max(0, Math.min(1, done())) * 1000) / 10, (width, element) => { element.style.width = `${width}%`; });
-  return (
-    <div className="dw-search" role="status">
-      <span className="dw-tag">{label} · hold still</span>
-      <span className="dw-search-bar" aria-hidden="true"><i ref={bar} /></span>
-      <small><kbd>E</kbd> cancel</small>
-    </div>
-  );
+export function ActionPlate({ label, onAct }: { label: string; onAct: () => void }) { return <Button onPress={onAct} padding={[8,22,8,12]}><Text size={17} weight={700} color="#1d1405">E / {label}</Text></Button>; }
+export function SearchBar({ done, label = "Searching" }: { done: () => number; label?: string }) {
+  const { width } = useRuneViewport();
+  const size = Math.min(380, width * .7);
+  return <RuneBox width={size} gap={5} fill="#030c0eb8" padding={8}><Tag>{label} · hold still</Tag><RuneBox height={8} width={FULL} fill="#9cddd124"><RuneBox height={8} width={live(() => size * Math.max(0, Math.min(1, done())))} fill={AMBER} /></RuneBox><Tag size={10}>E cancel</Tag></RuneBox>;
 }

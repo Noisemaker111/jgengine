@@ -177,7 +177,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/settings/settingsBlocks.view",
+      "module": "@jgengine/core/settings/settingAdjustment",
       "gameFacing": false,
       "probe": null,
       "intent": "step a settings row value once, for keyboard and gamepad alike"

@@ -51,6 +51,7 @@ fn text_el(body: String, n_size: Option<f32>, weight: Option<f32>, mono: bool, c
 
 pub(crate) fn build(n: &Node, path: &str, s: &Ui, t: &Theme) -> El {
     match n {
+        Node::Native(element) => crate::native::build(element, s.revision),
         Node::X(b) => crate::css::build(b, path, s, t),
         Node::Panel { children, style } => stack(children, false, style, s, t, path).key(path.to_string()),
         Node::Row { children, style } => stack(children, true, style, s, t, path).key(path.to_string()),

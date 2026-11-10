@@ -1,341 +1,122 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { type ReactNode, useCallback, useEffect, useState } from "@jgengine/core/ui/jsx";
-import { ContinuePane, CreditsPane, SaveSlotsPane } from "@jgengine/core/menu/gameMenuSaves.view";
-import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { GameMenu } from "@jgengine/core/menu/gameMenu.view";
-import { PauseMenu } from "@jgengine/core/menu/pauseMenu.view";
+import { useEffect, useState } from "@jgengine/core/ui/jsx";
+import { RuneBox, RuneButton, RuneScroll, useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
+import { RuneSettingsSection } from "@jgengine/core/settings/runeSettings.view";
 import { useGameStore, useOptionalGamePhase } from "@jgengine/ui/hooks";
 import { useGameContext } from "@jgengine/ui/provider";
 import { useSaveSlots } from "@jgengine/core/save/saveSlots.view";
 import { useSettings } from "@jgengine/core/settings/settings.view";
-import { SettingsSection, SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view";
 import { useStore } from "@jgengine/ui/store";
-import type { SaveSlotMeta } from "@jgengine/core/save/saveSlots";
-
 import { DEEPWARD_CREDITS } from "../../credits";
 import { loadRecordSlot, beginRecordSlot, openMarrowTitle, persistRecord, recordOf, withdrawToTitle, viewStore } from "../../controls";
 import { captureRecordThumb, recordLabel, recordSlots, refreshRecordSlots } from "../../menuRecord";
 import { depthAt } from "../../../world";
 import { CACHE_WEIGHT, loadOf } from "../../haul";
+import { ALL, AMBER, Button, DIM, Frame, FULL, Heading, INK, Row, Section, Tag, TEAL, Text } from "../dock";
 
-/** Capture-only focus request: a shot declares which verb it wants highlighted. */
 export const menuFocus: { id: string | null } = { id: null };
 
-/** Marrow's console palette for the menu chrome the kit does not draw (header, footer, tint). */
-const MENU_TOKENS = {
-  "--jg-accent": "#e2bd6e",
-  "--jg-accent-soft": "rgba(226,189,110,0.24)",
-  "--jg-accent-glow": "rgba(226,189,110,0.3)",
-  "--jg-text": "#ede9d9",
-  "--jg-text-dim": "rgba(214,226,220,0.86)",
-  "--jg-menu-logo-size": "clamp(30px, 4.4vw, 64px)",
-} as const;
-
-/** A stencilled hull nameplate: the console's own name, riveted on. */
-function Nameplate({ word, sub, small = false }: { word: string; sub: ReactNode; small?: boolean }): ReactNode {
-  return (
-    <KitPanel material="hull" cut="notch" depth={small ? 12 : 16} tint="#26404b" edge="#060d10" edgeWidth={2} padding={small ? "10px 22px 11px" : "14px 30px 16px"} className={`dw-nameplate${small ? " dw-nameplate-small" : ""}`}>
-      <span className="dw-nameplate-word">{word}</span>
-      <span className="dw-nameplate-sub">{sub}</span>
-    </KitPanel>
-  );
-}
-
-/** The dive log's heading line. */
-function LogHead({ children, tag }: { children: ReactNode; tag?: ReactNode }): ReactNode {
-  return (
-    <div className="dw-log-head">
-      <span className="dw-log-caret" aria-hidden="true">&gt;</span>
-      <span className="dw-log-title">{children}</span>
-      {tag === undefined ? null : <span className="dw-log-tag">{tag}</span>}
-    </div>
-  );
-}
-
-/** Console key legend: stamped key caps, not a sentence. */
-function KeyLegend({ pause }: { pause: boolean }): ReactNode {
-  return (
-    <span className="dw-keylegend">
-      <kbd>&uarr;&darr;</kbd><span>select</span><kbd>Enter</kbd><span>confirm</span><kbd>Esc</kbd><span>{pause ? "resume" : "back"}</span>
-    </span>
-  );
-}
-
-type Screen = "title" | "pause";
-
-/** The record a new dive would replace, so a full profile says which Life it is asking about. */
-function replaceable(): string | null {
-  const held = recordSlots.list().sort((a, b) => (a.savedAt ?? 0) - (b.savedAt ?? 0));
-  return held[0]?.id ?? null;
-}
-
-/** The words a dive is described in: whose Life it is, what it carries. */
-function DiveLine() {
-  const line = useStore(viewStore, (v) => ({ life: v.home.life, banked: v.home.stash.length, carry: v.dive?.cache.length ?? null }));
-  if (line.carry === null) return <span>Marrow &middot; Life {line.life} &middot; {line.banked} banked</span>;
-  return <span>Bellwether &middot; Life {line.life} &middot; carry {line.carry}</span>;
-}
-
-/** The New dive pane: a fresh Life starts at the home, ready to walk to the garage. */
-function NewDivePane({ slot, onBegin }: { slot: string | null; onBegin: () => void }): ReactNode {
-  const { life, air } = useStore(viewStore, (v) => ({ life: v.home.life, air: v.home.refits.includes("tank") ? 145 : 110 }));
-  const occupancy = recordSlots.get(slot ?? "");
-  const replacing = occupancy !== null && !occupancy.empty;
-  return (
-    <div data-new-dive-pane="" className="dw-log">
-      <LogHead tag={slot === null ? "no record free" : recordLabel(slot)}>New dive</LogHead>
-      <p className="dw-log-line">Full tank. Issue sidearm. Rail to Bellwether and back before the air runs out.</p>
-      <dl className="dw-log-stats">
-        <div><dt>Air</dt><dd>{air}<small>s</small></dd></div>
-        <div><dt>Cache</dt><dd>4&times;3</dd></div>
-        <div><dt>Load</dt><dd>12<small>kg</small></dd></div>
-        <div><dt>Life</dt><dd>{life}</dd></div>
-      </dl>
-      {replacing && slot !== null ? <p className="dw-log-warn">{recordLabel(slot)} is held. A new dive replaces it.</p> : null}
-      <KitButton
-        data-new-dive-start=""
-        material="brass"
-        cut="hex"
-        depth={14}
-        padding="12px 34px"
-        disabled={slot === null}
-        onClick={onBegin}
-        className="dw-log-go"
-      >
-        Take the rail
-      </KitButton>
-    </div>
-  );
-}
-
-/** The frozen dive computer: what the pause is holding, in four numbers. */
-function HeldBoard({ hint }: { hint?: string | undefined }): ReactNode {
-  const board = useGameStore((state) => {
-    const view = viewStore.read(state), dive = view.dive;
-    if (dive === null) return { diving: false, scrip: view.home.bank.banked, stash: view.home.stash.length, returns: view.home.extractions, life: view.home.life, air: 0, depth: 0, carry: 0, suit: 0 };
-    const at = state.scene.entity.get(state.player.userId)?.position ?? ([0, 0, 0] as const);
-    return { diving: true, scrip: 0, stash: 0, returns: 0, life: 0, air: Math.ceil(dive.oxygen), depth: depthAt(at, "vault"), carry: loadOf(dive.cache).mass, suit: Math.ceil(dive.health) };
+function HeldBoard() {
+  const board = useGameStore(ctx => {
+    const view = viewStore.read(ctx), dive = view.dive;
+    if (dive === null) return { diving: false, rows: [["SCRIP", view.home.bank.banked], ["STASH", view.home.stash.length], ["RETURNS", view.home.extractions], ["LIFE", view.home.life]] };
+    const at = ctx.scene.entity.get(ctx.player.userId)?.position ?? [0,0,0];
+    return { diving: true, rows: [["AIR", `${Math.ceil(dive.oxygen)}s`], ["DEPTH", depthAt(at, dive.stratum)], ["CARRY", `${loadOf(dive.cache).mass}/${CACHE_WEIGHT}`], ["SUIT", `${Math.ceil(dive.health)}%`]] };
   });
-  const rows: [string, ReactNode][] = !board.diving
-    ? [["Scrip", board.scrip], ["Stash", board.stash], ["Returns", board.returns], ["Life", board.life]]
-    : [
-        ["Air", <>{board.air}<small>s</small></>],
-        ["Depth", String(board.depth).padStart(2, "0")],
-        ["Carry", <>{board.carry}<small>/{CACHE_WEIGHT}</small></>],
-        ["Suit", <>{board.suit}<small>%</small></>],
-      ];
-  return (
-    <div className="dw-log" data-held-board="">
-      <LogHead tag={board.diving ? "Bellwether" : "Marrow"}>{board.diving ? "Dive held" : "Home held"}</LogHead>
-      <dl className="dw-log-stats dw-log-stats-big">
-        {rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
-      </dl>
-      <p className="dw-log-line">{hint ?? "Tank and prints are stopped while this console is open."}</p>
-    </div>
-  );
+  return <><Heading>{board.diving ? "Dive held" : "Home held"}</Heading><Row justify="between" width={FULL}>{board.rows.map(([label,value]) => <RuneBox key={label} gap={8} padding={8} fill="#9cddd110"><Tag>{label}</Tag><Text family="Share Tech Mono" size={24}>{value}</Text></RuneBox>)}</Row><Text color={DIM}>Tank and prints are stopped while this console is open.</Text></>;
 }
 
-/**
- * Deepward's front end: the record list lives over the station, with its own words for a dive, a
- * haul, the return and the home. Continue re-reads the saved record it names.
- */
-export function DeepwardMenu(): ReactNode {
-  const ctx = useGameContext();
-  const phase = useOptionalGamePhase();
-  const settings = useSettings();
-  const view = useStore(viewStore, (v) => ({ mode: v.mode, diving: v.dive !== null, life: v.home.life, banked: v.home.bank.banked }));
-  const slots = useSaveSlots(recordSlots);
-  const [screen, setScreen] = useState<Screen>(phase === "paused" ? "pause" : "title");
-  const [busy, setBusy] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
-  const recent = recordSlots.mostRecent();
-  const emptySlot = slots.find((slot) => slot.empty)?.id ?? replaceable();
-  const open = recordOf(ctx)?.slot() ?? "marrow";
-
-  useEffect(() => {
-    setScreen(phase === "paused" ? "pause" : "title");
-    setNotice(null);
-    if (phase === "menu") void refreshRecordSlots(ctx);
-  }, [phase, ctx]);
-
-  const back = useCallback(() => {
-    if (phase === "paused") {
-      ctx.game.commands.run(view.mode === "home" || view.mode === "dive" ? "deepward.close" : "deepward.pause", {});
-      return;
-    }
-    openMarrowTitle(ctx);
-  }, [ctx, phase, view.mode]);
-
-  if (phase !== "menu" && phase !== "paused") return null;
-
-  /** Every record read and write is real work; the label holds the surface while it happens. */
-  const whileLoading = async (label: string, work: () => Promise<unknown>) => {
-    setBusy(label);
-    try {
-      await Promise.all([work(), new Promise((resolve) => setTimeout(resolve, 280))]);
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const openRecord = (slot: string) =>
-    whileLoading("Reading the record", async () => {
-      await loadRecordSlot(ctx, slot);
-      await refreshRecordSlots(ctx);
-    });
-
-  const startNew = (slot: string | null) => {
-    if (slot === null) return;
-    void whileLoading("Printing the record", async () => {
-      await beginRecordSlot(ctx, slot, recordSlots.get(slot)?.empty === false);
-      await refreshRecordSlots(ctx);
-    });
-  };
-
-  const saveHere = () =>
-    whileLoading("Writing the record", async () => {
-      await captureRecordThumb();
-      await persistRecord(ctx);
-      await refreshRecordSlots(ctx);
-      setNotice(`Written to ${recordLabel(open)}`);
-    });
-
-  const titleMenu = (
-    <GameMenu
-      open={screen === "title"}
-      label="Deepward"
-      className="dw-console"
-      initialId={menuFocus.id ?? (recent === null ? "new" : "continue")}
-      logo={{ text: <Nameplate word="DEEPWARD" sub={<>Halloway print service &middot; line 06</>} />, title: "Deepward" }}
-      items={[
-        {
-          id: "continue",
-          label: "Continue dive",
-          hint: recent === null ? "No record on this profile" : (recent.name ?? recordLabel(recent.id)),
-          disabled: recent === null,
-        },
-        {
-          id: "new",
-          label: "New dive",
-          hint: emptySlot === null ? "No record available" : `Writes ${recordLabel(emptySlot)}`,
-          disabled: emptySlot === null,
-        },
-        { id: "records", label: "Dives & hauls", hint: `${slots.filter((slot) => !slot.empty).length} of ${slots.length} records held` },
-        { id: "settings", label: "Settings", hint: "Sound, picture, controls" },
-        { id: "credits", label: "Credits" },
-      ]}
-      detail={(id) => {
-        if (id === "continue") {
-          return (
-            <div className="dw-log">
-              <LogHead tag={recent === null ? "empty" : recordLabel(recent.id)}>Continue dive</LogHead>
-              <ContinuePane
-                slot={recent}
-                emptyMessage="No dive kept yet. Take the rail, pack a haul and save it from the pause console."
-                onContinue={(slot) => void openRecord(slot.id)}
-              />
-            </div>
-          );
-        }
-        if (id === "new") return <NewDivePane slot={emptySlot} onBegin={() => startNew(emptySlot)} />;
-        if (id === "records") {
-          return (
-            <SaveSlotsPane
-              model={recordSlots}
-              heading="Dives & hauls"
-              columns="auto"
-              onContinue={(slot: SaveSlotMeta) => void openRecord(slot.id)}
-              onLoad={(slot: SaveSlotMeta) => void openRecord(slot.id)}
-              onNew={(slot: SaveSlotMeta) => startNew(slot.id)}
-              onDelete={(slot: SaveSlotMeta) => {
-                void whileLoading("Burning the record", async () => {
-                  recordSlots.clear(slot.id);
-                  await recordOf(ctx)?.deleteSlot(slot.id);
-                  await refreshRecordSlots(ctx);
-                });
-              }}
-            />
-          );
-        }
-        if (id === "settings") return <RecordSettings />;
-        if (id === "credits") return <CreditsPane sections={DEEPWARD_CREDITS.sections} notice={DEEPWARD_CREDITS.notice} heading="Deepward" />;
-        return null;
-      }}
-      onHighlight={(id) => {
-        if (id === "records") void refreshRecordSlots(ctx);
-      }}
-      onSelect={(id) => {
-        if (id === "continue" && recent !== null) void openRecord(recent.id);
-        else if (id === "records") void refreshRecordSlots(ctx);
-      }}
-      footer={<span className="dw-console-foot">Marrow / {recordLabel(open)} &middot; Life {view.life} &middot; {view.banked} scrip{notice === null ? "" : ` · ${notice}`}</span>}
-      controlHint={<KeyLegend pause={false} />}
-      style={MENU_TOKENS}
-    />
-  );
-
-  const pauseMenu = (
-    <PauseMenu
-      open={screen === "pause"}
-      label={!view.diving ? "The home is held" : "The dive is held"}
-      className="dw-console"
-      onBack={back}
-      onResume={back}
-      logo={{ text: <Nameplate small word={!view.diving ? "HOME HELD" : "DIVE HELD"} sub={<DiveLine />} />, title: "Hold" }}
-      items={[
-        { id: "resume", label: !view.diving ? "Back to Marrow" : "Back to the dive" },
-        { id: "save", label: `Save to ${recordLabel(open)}`, hint: "Life and haul, as they stand" },
-        { id: "settings", label: "Settings" },
-        { id: "credits", label: "Credits" },
-      ]}
-      secondary={[{ id: "title", label: "Save & leave to title" }]}
-      detail={(id) =>
-        id === "settings" ? (
-          <RecordSettings />
-        ) : id === "credits" ? (
-          <CreditsPane sections={DEEPWARD_CREDITS.sections} notice={DEEPWARD_CREDITS.notice} heading="Deepward" />
-        ) : (
-          <HeldBoard hint={id === "save" ? `Writes this Life to ${recordLabel(open)}.` : id === "title" ? "Writes the record, then shuts the console down to the title." : undefined} />
-        )
-      }
-      onSelect={(id) => {
-        if (id === "resume") back();
-        else if (id === "save") void saveHere();
-        else if (id === "title") void whileLoading("Writing the record", () => withdrawToTitle(ctx));
-      }}
-      footer={<span className="dw-console-foot">{notice ?? `${view.banked} scrip banked · Life ${view.life}`}</span>}
-      controlHint={<KeyLegend pause />}
-      style={MENU_TOKENS}
-    />
-  );
-
-  return (
-    <div className="dw-menu">
-      {titleMenu}
-      {pauseMenu}
-      {busy !== null && (
-        <div className="dw-console-busy" role="status" aria-live="polite">
-          <span>{busy}</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** The shell's settings, drawn inside the record pane. */
-function RecordSettings(): ReactNode {
+export function RecordSettings() {
   const settings = useSettings();
   const [chosen, setChosen] = useState<string | null>(null);
-  const categories = settings.categories;
-  const activeId = chosen !== null && categories.some((category) => category.id === chosen) ? chosen : (categories[0]?.id ?? "");
-  const active = categories.find((category) => category.id === activeId) ?? null;
-  return (
-    <div data-deepward-settings="" className="dw-log dw-log-fill">
-      <LogHead tag="console">Settings</LogHead>
-      <SettingsTabs categories={categories} activeId={activeId} onSelect={setChosen} />
-      <div style={{ overflowY: "auto", minHeight: 0, paddingRight: 4 }}>
-        {active === null ? null : <SettingsSection category={active} heading={false} />}
-      </div>
-    </div>
-  );
+  const active = settings.categories.find(category => category.id === chosen) ?? settings.categories[0];
+  return <RuneBox gap={12} width={FULL}>
+    <Heading>Settings</Heading>
+    <RuneBox gap={4}>{settings.categories.map(category => <Button key={category.id} onPress={() => setChosen(category.id)} fill={category === active ? TEAL : "#264047"} color={category === active ? "#142429" : INK}>{category.label}</Button>)}</RuneBox>
+    {active === undefined ? null : <RuneSettingsSection category={active} color={INK} family="Rajdhani" />}
+    {settings.actions.map(action => <Button key={action.id} onPress={action.run}>{action.label}</Button>)}
+  </RuneBox>;
+}
+
+export function DeepwardMenu() {
+  const ctx = useGameContext();
+  const phase = useOptionalGamePhase();
+  const view = useStore(viewStore, v => ({ mode: v.mode, diving: v.dive !== null, life: v.home.life, banked: v.home.bank.banked, air: v.home.refits.includes("tank") ? 145 : 110 }));
+  const slots = useSaveSlots(recordSlots);
+  const recent = recordSlots.mostRecent();
+  const pause = phase === "paused";
+  const [active, setActive] = useState(menuFocus.id ?? (pause ? "resume" : recent === null ? "new" : "continue"));
+  const [busy, setBusy] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const { width, height } = useRuneViewport();
+  const narrow = width < 700;
+  const emptySlot = slots.find(slot => slot.empty)?.id ?? [...slots].sort((a,b) => (a.savedAt ?? 0) - (b.savedAt ?? 0))[0]?.id ?? null;
+  const open = recordOf(ctx)?.slot() ?? "marrow";
+  useEffect(() => { if (phase === "menu") void refreshRecordSlots(ctx); }, [phase, ctx]);
+  useEffect(() => { setActive(menuFocus.id ?? (phase === "paused" ? "resume" : recordSlots.mostRecent() === null ? "new" : "continue")); }, [phase]);
+  const back = () => {
+    if (pause) ctx.game.commands.run(view.mode === "home" || view.mode === "dive" ? "deepward.close" : "deepward.pause", {});
+    else openMarrowTitle(ctx);
+  };
+  const work = async (label: string, run: () => Promise<unknown>) => {
+    if (busy !== null) return;
+    setBusy(label);
+    try { await run(); await refreshRecordSlots(ctx); }
+    catch (error) { setNotice(String(error)); }
+    finally { setBusy(null); }
+  };
+  const start = (slot: string) => void work("Printing the record", () => beginRecordSlot(ctx, slot, recordSlots.get(slot)?.empty === false));
+  const load = (slot: string) => void work("Reading the record", () => loadRecordSlot(ctx, slot));
+  const save = () => void work("Writing the record", async () => { await captureRecordThumb(); await persistRecord(ctx); setNotice(`Written to ${recordLabel(open)}`); });
+  const verbs = pause ? [
+    { id: "resume", label: view.diving ? "Back to the dive" : "Back to Marrow", hint: "" },
+    { id: "save", label: `Save to ${recordLabel(open)}`, hint: "Life and haul, as they stand" },
+    { id: "settings", label: "Settings", hint: "" }, { id: "credits", label: "Credits", hint: "" }, { id: "title", label: "Save & leave to title", hint: "" },
+  ] : [
+    { id: "continue", label: "Continue dive", hint: recent?.name ?? "No record on this profile", disabled: recent === null },
+    { id: "new", label: "New dive", hint: emptySlot === null ? "No record available" : `Writes ${recordLabel(emptySlot)}`, disabled: emptySlot === null },
+    { id: "records", label: "Dives & hauls", hint: `${slots.filter(slot => !slot.empty).length} of ${slots.length} records held` },
+    { id: "settings", label: "Settings", hint: "Sound, picture, controls" }, { id: "credits", label: "Credits", hint: "" },
+  ];
+  const select = (id: string) => {
+    setActive(id);
+    if (id === "resume") back();
+    else if (id === "save") save();
+    else if (id === "title") void work("Writing the record", () => withdrawToTitle(ctx));
+    else if (id === "continue" && recent !== null) load(recent.id);
+  };
+  if (phase !== "menu" && phase !== "paused") return null;
+  return <RuneBox pin={ALL} modal onBack={back} fill={pause ? "#020a0dd9" : "#020a0db3"} padding={narrow ? 20 : 48} gap={narrow ? 16 : 28}>
+    <Frame width={narrow ? width - 40 : Math.min(660,width - 96)}>
+      <Text family="Share Tech Mono" size={narrow ? 38 : pause ? 48 : 72} tracking={narrow ? 3 : 7} color="#ebe5d0">{pause ? view.diving ? "DIVE HELD" : "HOME HELD" : "DEEPWARD"}</Text>
+      <Tag color={AMBER} size={narrow ? 11 : 15}>HALLOWAY PRINT SERVICE · LINE 06</Tag>
+    </Frame>
+    <RuneScroll height={Math.max(120,height - (narrow ? 200 : 300))} width={FULL}>
+      <RuneBox direction={narrow ? "column" : "row"} gap={narrow ? 16 : 38} width={FULL} items="start">
+        <RuneBox gap={8} width={narrow ? width - 40 : Math.min(360,width * .32)}>
+          {verbs.map((verb,index) => <RuneButton key={verb.id} label={verb.label} disabled={"disabled" in verb && verb.disabled === true} onFocus={() => setActive(verb.id)} onPress={() => select(verb.id)}
+            fill={active === verb.id ? "#3d6170" : "#22363f"} border={{ width: active === verb.id ? 2 : 1, color: active === verb.id ? AMBER : "#071014" }} padding={[12,16,12,16]} hover="#ffffff16" press="#00000020" width={FULL}>
+            <Row><RuneBox width={7} height={7} radius={4} fill={active === verb.id ? AMBER : "#496167"} /><Tag color={AMBER}>{String(index + 1).padStart(2,"0")}</Tag><RuneBox gap={3}><Text size={narrow ? 19 : 23}>{verb.label}</Text>{verb.hint ? <Text size={12} color={DIM}>{verb.hint}</Text> : null}</RuneBox></Row>
+          </RuneButton>)}
+        </RuneBox>
+        <Frame width={narrow ? width - 40 : Math.min(660,width - Math.min(360,width * .32) - 150)}>
+          <RuneBox gap={14} padding={12} fill="#071417" minWidth={0}>
+            {active === "settings" ? <RecordSettings /> : active === "credits" ? <>
+              <Heading>Deepward</Heading>{DEEPWARD_CREDITS.sections.map(section => <Section key={section.heading}><Tag color={AMBER}>{section.heading}</Tag>{section.entries.map(entry => <Text key={entry.label}>{entry.label}{entry.detail === undefined ? "" : ` · ${entry.detail}`}{entry.href === undefined ? "" : ` · ${entry.href}`}</Text>)}</Section>)}<Text color={DIM}>{DEEPWARD_CREDITS.notice}</Text>
+            </> : active === "records" ? <>
+              <Heading>Dives & hauls</Heading>{slots.map(slot => <Section key={slot.id}><Tag color={AMBER}>{slot.name ?? recordLabel(slot.id)}</Tag>{typeof slot.meta["thumbnail"] === "string" ? <RuneBox width={FULL} height={110} image={slot.meta["thumbnail"]} fit="cover" /> : null}<Text>{slot.empty ? "Empty record" : Object.entries(slot.meta).filter(([key]) => key !== "thumbnail").map(([key,value]) => `${key}: ${String(value)}`).join(" · ")}</Text><Button onPress={() => slot.empty ? start(slot.id) : load(slot.id)}>{slot.empty ? "New dive" : "Load dive"}</Button>{slot.empty ? null : deleting === slot.id ? <><Text>Burn {recordLabel(slot.id)}? This cannot be undone.</Text><Button onPress={() => void work("Burning the record", async () => { recordSlots.clear(slot.id); await recordOf(ctx)?.deleteSlot(slot.id); setDeleting(null); })}>Confirm delete</Button><Button onPress={() => setDeleting(null)}>Keep record</Button></> : <Button onPress={() => setDeleting(slot.id)}>Delete record</Button>}</Section>)}
+            </> : pause ? <HeldBoard /> : active === "continue" ? <><Heading>Continue dive</Heading><Text>{recent?.name ?? "No dive kept yet. Take the rail, pack a haul and save it from the pause console."}</Text>{recent === null ? null : <Button onPress={() => load(recent.id)}>Continue dive</Button>}</> : <>
+              <Heading>New dive</Heading><Text size={17}>Full tank. Issue sidearm. Rail to Bellwether and back before the air runs out.</Text>
+              <Row justify="between"><Tag>AIR {view.air}s</Tag><Tag>CACHE 4×3</Tag><Tag>LOAD {CACHE_WEIGHT}kg</Tag><Tag>LIFE {view.life}</Tag></Row>
+              {emptySlot !== null && recordSlots.get(emptySlot)?.empty === false ? <Text color={AMBER}>{recordLabel(emptySlot)} is held. A new dive replaces it.</Text> : null}
+              <Button disabled={emptySlot === null} onPress={() => { if (emptySlot !== null) start(emptySlot); }}>Take the rail</Button>
+            </>}
+          </RuneBox>
+        </Frame>
+      </RuneBox>
+    </RuneScroll>
+    <Tag size={11}>{notice ?? `Marrow / ${recordLabel(open)} · Life ${view.life} · ${view.banked} scrip`}</Tag>
+    {busy === null ? null : <RuneBox pin={ALL} modal fill="#020a0dcc" justify="center" items="center"><Text color={AMBER}>{busy}</Text></RuneBox>}
+  </RuneBox>;
 }

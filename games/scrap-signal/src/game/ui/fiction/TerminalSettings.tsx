@@ -5,7 +5,7 @@ import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { GameSlider } from "@jgengine/core/ui/slider.view";
 import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
 import { useSettings, type SettingsKeybindRow, type SettingsRow } from "@jgengine/core/settings/settings.view";
-import { adjustSettingRow } from "@jgengine/core/settings/settingsBlocks.view";
+import { adjustSettingRow } from "@jgengine/core/settings/settingAdjustment";
 import { navItem, SIGNAL } from "./kit";
 
 const TABS = "tabs";

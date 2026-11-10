@@ -455,6 +455,10 @@
 - `KitWaveClock` (const): const KitWaveClock: NamedExoticComponent<KitWaveClockProps> — The wave clock across the top of a defense HUD: how long until the next wave or how many are left, a note on what to do, and the banner when a wave arrives.
 - `KitWaveClockProps` (interface): interface KitWaveClockProps — Props for {@link KitWaveClock}.
 
+## @jgengine/core/hud/runeHud.view
+
+- `RuneHudFade` (function): function RuneHudFade({ watch, hold, idleMs, dimTo, ...props }: RuneElementProps & { watch: () => unknown; hold?: () => boolean; idleMs: number; dimTo: number }): JSX.Element — Native HUD opacity bound to its watched readings, without component renders.
+
 ## @jgengine/core/hud/selectionHud.view
 
 - `EntityPortrait` (function): function EntityPortrait({ entity, selected = false, size = 44, vitalId = "health", tabIndex, onSelect, renderIcon, className, style, }: { entity: EntitySummaryDef; selected?: boolean; size?: number; vitalId?: string; tabIndex?: number; onSelect?: (id: string) => void; renderIcon?: (entity: EntitySum… — A selectable entity portrait tile — icon/initials, an optional thin health strip, and complete selected/hover/focus states as a real `<button>` (`aria-pressed`). The unit-of-a-selection chrome; swap the face via `renderIcon`. Accessible and keyboard-focusable.
@@ -1047,6 +1051,14 @@
 - `readRendererBackend` (function): function readRendererBackend(store: Pick<SettingsStore, "get">): RendererBackend — The player's stored backend, falling back to the default when missing or unknown.
 - `withRendererBackendOverride` (function): function withRendererBackendOverride(store: SettingsStore, backend: RendererBackend): SettingsStore — Wrap a settings store so the backend reads as `backend` for this page only (`?renderer=webgpu` in perf runs and captures); nothing is persisted until the player picks one.
 
+## @jgengine/core/settings/runeSettings.view
+
+- `RuneSettingsSection` (function): function RuneSettingsSection({ category, ...skin }: { category: SettingsCategoryView } & RuneElementProps): JSX.Element — Settings controls drawn directly by Rune, backed by the shared settings controller.
+
+## @jgengine/core/settings/settingAdjustment
+
+- `adjustSettingRow` (function): function adjustSettingRow(row: { kind: SettingKind; value: SettingValue; min?: number | undefined; max?: number | undefined; step?: number | undefined; options?: readonly SettingOption[] | undefined }, delta: -1 | 1): SettingValue | undefined — Step a slider within its bounds, flip a toggle or cycle a selection.
+
 ## @jgengine/core/settings/settings.view
 
 - `SETTINGS_TRIGGER_CLASSNAME` (const): const SETTINGS_TRIGGER_CLASSNAME: "pointer-events-auto flex h-8 w-8 items-center justify-center rounded-md border border-[var(--jg-edge-bright)] bg-[var(--jg-surface)]/80 text-base text-[var(--jg-text-dim)] shadow-[0_1px_2px_rgba(0,0,0,0.6)] transition hover:bg-[var(--jg-surface-deep)] hover:text-[v… — Default HudTheme-token skin for {@link SettingsTrigger} — the 8×8 chrome button games re-authored seven times. Pass your own `className` only to override placement or brand chrome; the gear glyph already scales with `text-base` / `1em`.
@@ -1075,7 +1087,6 @@
 - `SettingsTabs` (function): function SettingsTabs({ categories, activeId, onSelect, leading, tabProps, className, style }: SettingsTabsProps): ReactNode — The category tab rail for a settings screen: a scrollable row of buttons with pressed state. The game owns the surrounding layout; this block keeps every category reachable on narrow screens.
 - `SettingsTabsProps` (interface): interface SettingsTabsProps — The live category tabs for a settings screen: a scrollable rail with pressed state.
 - `SettingsToggle` (function): function SettingsToggle({ row, itemProps }: { row: SettingsRow; itemProps?: MenuNavItemProps | undefined }): ReactNode — One on/off row from a {@link SettingsRow}.
-- `adjustSettingRow` (function): function adjustSettingRow(row: SettingsRow, delta: -1 | 1): SettingValue | undefined — One adjustment of a settings row: a slider moves by its step inside its bounds, a toggle flips, a select moves one option (wrapping at both ends). Returns the value to write, or `undefined` when the kind has nothing to step. Shared by the keyboard and the gamepad so both change a row the same way.
 
 ## @jgengine/core/settings/settingsController.draw
 
@@ -1104,7 +1115,7 @@
 - `SETTING_IDS` (const): const SETTING_IDS: { readonly masterVolume: "sound.master"; readonly graphicsQuality: "graphics.quality"; readonly graphicsAuto: "graphics.auto"; readonly graphicsShadows: "graphics.shadows"; readonly graphicsSoftShadows: "graphics.softShadows"; readonly graphicsUiScale: "graphics.uiScale"; readonly… — ⚠ undocumented
 - `SettingCategory` (type): type SettingCategory = BuiltInSettingCategory | (string & {}) — Built-in category ids keep autocomplete; any other string makes a fresh category.
 - `SettingCategoryDef` (interface): interface SettingCategoryDef — Declares or relabels/reorders a category tab; use it for a custom category or to reshape the built-ins.
-- `SettingKind` (type): type SettingKind = "slider" | "toggle" | "select" — ⚠ undocumented
+- `SettingKind` (type): type SettingKind = "slider" | "toggle" | "select" — ⚠ undocumented · used by `adjustSettingRow` (@jgengine/core/settings/settingAdjustment): Step a slider within its bounds, flip a toggle or cycle a selection.
 - `SettingOption` (interface): interface SettingOption { value: string; label: string } — ⚠ undocumented · used by `COLORBLIND_OPTIONS` (@jgengine/core/settings/accessibilitySettings): Colorblind palette choices.
 - `SettingValue` (type): type SettingValue = number | boolean | string — ⚠ undocumented · used by `asSettingType`: Read a stored value as the type the caller asked for.
 - `SettingsActionDef` (interface): interface SettingsActionDef — A game-state action (Restart, Quit to menu, …) shown as rows in the first "Game" settings tab — never a floating button or a rebindable key.
@@ -1228,9 +1239,9 @@
 - `SelectionWindow` (interface): interface SelectionWindow — A contiguous slice of members for virtualizing a large selection strip.
 - `SettingCategory` (type): type SettingCategory = BuiltInSettingCategory | (string & {}) — Built-in category ids keep autocomplete; any other string makes a fresh category.
 - `SettingCategoryDef` (interface): interface SettingCategoryDef — Declares or relabels/reorders a category tab; use it for a custom category or to reshape the built-ins.
-- `SettingKind` (type): type SettingKind = "slider" | "toggle" | "select" — ⚠ undocumented
+- `SettingKind` (type): type SettingKind = "slider" | "toggle" | "select" — ⚠ undocumented · used by `adjustSettingRow` (@jgengine/core/settings/settingAdjustment): Step a slider within its bounds, flip a toggle or cycle a selection.
 - `SettingOption` (interface): interface SettingOption { value: string; label: string } — ⚠ undocumented · used by `COLORBLIND_OPTIONS` (@jgengine/core/settings/accessibilitySettings): Colorblind palette choices.
-- `SettingValue` (type): type SettingValue = number | boolean | string — ⚠ undocumented · used by `useSetting` (@jgengine/core/settings/settings.view): Read + write one persisted setting; re-renders when the value changes anywhere.
+- `SettingValue` (type): type SettingValue = number | boolean | string — ⚠ undocumented · used by `adjustSettingRow` (@jgengine/core/settings/settingAdjustment): Step a slider within its bounds, flip a toggle or cycle a selection.
 - `SettingsActionDef` (interface): interface SettingsActionDef — A game-state action (Restart, Quit to menu, …) shown as rows in the first "Game" settings tab — never a floating button or a rebindable key.
 - `SettingsStore` (interface): interface SettingsStore { get<T extends SettingValue>(id: string, fallback: T): T; set(id: string, value: SettingValue): void; subscribe(listener: () => void): () => void } — ⚠ undocumented · used by `createSettingsStore`: Reactive, localStorage-backed settings store shared by the shell wiring and React hooks.
 - `SettingsSurface` (type): type SettingsSurface = "quick" — `quick` shows compact on-screen volume/graphics buttons; `false` (default) mounts no engine trigger — open the menu from your own UI with `<SettingsTrigger>` or `useSettings().open()`.
@@ -1715,6 +1726,10 @@
 - `styleText` (function): function styleText(style: Record<string, unknown>): string — ⚠ undocumented
 - `treeToMarkup` (function): function treeToMarkup(nodes: readonly MarkupNode[]): string — ⚠ undocumented
 
+## @jgengine/core/ui/jsx/pageHost.view
+
+- `pageHost` (const): const pageHost: Host<PageNode> — One JSX tree can contain native surfaces and ordinary page tooling, sharing all providers.
+
 ## @jgengine/core/ui/jsx/reconciler
 
 - `ActionDispatch` (type): type ActionDispatch<A extends AnyActionArg> = (...args: A) => void — ⚠ undocumented
@@ -2058,6 +2073,43 @@
 - `setRuneRect` (function): function setRuneRect(element: Element, rect: Rect, layout: Rect): void — Record painted bounds for hit testing and layout bounds for size/resize APIs (CSS pixels).
 - `setRuneScroll` (function): function setRuneScroll(element: Element, values: RuneScrollValues): void — Native scroll position and extents; components read these without state updates.
 
+## @jgengine/core/ui/rune/element
+
+- `RuneColor` (type): type RuneColor = string — Rune colours use hex RGB/RGBA values, never a CSS declaration.
+- `RuneElement` (interface): interface RuneElement — Host handle for native focus and scrolling; no DOM element is allocated.
+- `RuneElementProps` (interface): interface RuneElementProps extends RuneStyle, RuneFont — Props shared by native elements and their optional DOM tooling host.
+- `RuneFont` (interface): interface RuneFont — Text styling maps to Rune's TextStyle; it never inherits a browser font.
+- `RuneSize` (type): type RuneSize = number | { fraction: number } — Native layout sizes are points or a fraction of the parent.
+- `RuneStyle` (interface): interface RuneStyle — Direct Rune element methods. Numbers are points; angles are radians.
+
+## @jgengine/core/ui/rune/elements.view
+
+- `RuneBox` (function): function RuneBox(props: RuneElementProps): UiElement<Props> — Native Rune column. Its typed props map directly to Rune element methods.
+- `RuneButton` (function): function RuneButton(props: RuneElementProps): UiElement<Props> — Native interactive element; children retain their own layout and paint.
+- `RuneCells` (function): function RuneCells(props: RuneElementProps): UiElement<Props> — Native segmented meter.
+- `RuneDial` (function): function RuneDial(props: RuneElementProps): UiElement<Props> — Native 270 degree dial with its label children in the centre.
+- `RuneIcon` (function): function RuneIcon(props: RuneElementProps): UiElement<Props> — Native SVG icon; SVG body is artwork, never a style declaration.
+- `RuneRow` (function): function RuneRow(props: RuneElementProps): UiElement<Props> — Native Rune row.
+- `RuneScroll` (function): function RuneScroll(props: RuneElementProps): UiElement<Props> — Native scroll viewport with a column as its content.
+- `RuneSlider` (function): function RuneSlider(props: RuneElementProps): UiElement<Props> — Native slider whose edited value is a fraction in 0..1.
+- `RuneSurface` (function): function RuneSurface(props: RuneElementProps): UiElement<Props> — A direct Rune surface. Descendants use the native host and retain their JSX context.
+- `RuneText` (function): function RuneText(props: RuneElementProps): UiElement<Props> — Native text, optionally bound directly to a live getter.
+- `RuneViewport` (function): function RuneViewport({ width, height, children }: { width: number; height: number; children?: ReactNode }): JSX.Element — Provide deterministic native viewport dimensions for headless rendering and tooling.
+- `useRuneViewport` (function): function useRuneViewport(): { width: number; height: number } — Viewport size in layout points; only a resize rerenders its consumer.
+
+## @jgengine/core/ui/rune/nativeSurface.view
+
+- `registerNativeRuneFont` (function): function registerNativeRuneFont(url: string): void — Register native font bytes before the first surface mounts.
+
+## @jgengine/core/ui/rune/nativeTree
+
+- `NativeWireNode` (interface): interface NativeWireNode — One native element in the wire protocol, using the same typed props as JSX.
+- `RuneNode` (class): class RuneNode implements RuneElement — A native host node; it has no browser element or computed style.
+- `RuneTreeSink` (interface): interface RuneTreeSink — The small protocol a native host needs; a recorder can implement it without a browser.
+- `nativeLabel` (function): function nativeLabel(node: RuneNode): string — Current readable label for keyboard navigation, accessibility and test drivers.
+- `nativeSpec` (function): function nativeSpec(root: RuneNode, sink: RuneTreeSink, sampleLive = false): { children: NativeWireNode[]; modal: boolean } — Serialize native nodes directly. Live values allocate slots, never component state.
+- `nativeTreeHost` (function): function nativeTreeHost(changed: (root: RuneNode) => void): Host<RuneNode> — Pure reconciler host. `flush` publishes only roots changed by a commit.
+
 ## @jgengine/core/ui/rune/patches
 
 - `compactPatches` (function): function compactPatches<T extends PatchNode<T>>(patches: readonly T[], roots: ReadonlySet<T>, owner: (node: T) => T | undefined): T[] — Keep only attached replacement roots after all changes in one mirror pass.
@@ -2085,7 +2137,7 @@
 - `RuneScrollValues` (type): type RuneScrollValues = readonly [number, number, number, number, number, number] — Scroll offset, viewport and content size in layout pixels.
 - `RuneUi` (class): class RuneUi — One mounted Rune UI layer. Create once per page; games describe their trees with {@link RuneUi.setSpec} and bind live values with {@link RuneUi.bind}.
 - `RuneUiEvent` (interface): interface RuneUiEvent { id: string; kind: string; value?: number; text?: string; scroll?: RuneScrollValues } — ⚠ undocumented
-- `RuneUiFrame` (interface): interface RuneUiFrame { revision: number; events: RuneUiEvent[]; regions: [number, number, number, number][]; modal: boolean; rects?: [number, number, number, number, number][] } — ⚠ undocumented
+- `RuneUiFrame` (interface): interface RuneUiFrame { revision: number; events: RuneUiEvent[]; regions: [number, number, number, number][]; modal: boolean; rects?: [number, number, number, number, number][]; nativeRects?: [string, [number, number, number, number]][] } — ⚠ undocumented
 - `RuneUiNode` (interface): interface RuneUiNode { k: string; [key: string]: unknown } — ⚠ undocumented
 - `RuneUiOptions` (interface): interface RuneUiOptions { canvasId?: string; baseUrl?: string; fonts?: readonly string[]; sans?: string; mono?: string; zIndex?: number } — ⚠ undocumented
 

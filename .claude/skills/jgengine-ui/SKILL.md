@@ -5,6 +5,9 @@ description: Build composable, accessible HUDs, menus, feedback, and responsive 
 
 # JGengine UI
 
+New game UI uses Rune with typed props and no CSS. Use the native path below;
+the DOM/CSS recipes in this skill support existing games during migration.
+
 ## Ownership
 
 This skill owns player-facing presentation: HUDs, menus, overlays, layout, responsive behavior, accessibility, touch/controller presentation, feedback, previews, and UI chrome. World rendering belongs to `jgengine-world`; state ownership stays in gameplay/combat.
@@ -26,6 +29,49 @@ Existing games keep their entity store and use the focused
 `MarkerSet` or 3D renderer adoption is required.
 
 ## Product rules
+
+### Rune UI, no CSS
+
+Recommended for games: set `uiRenderer: "rune"` in `defineGame` and put the UI
+inside `RuneSurface` from `@jgengine/core/ui/rune/elements.view`. Use `RuneBox`,
+`RuneRow`, `RuneScroll`, `RuneText`, `RuneButton`, `RuneSlider`, `RuneIcon`,
+`RuneCells` and `RuneDial`. JSX keeps the normal engine hooks and context.
+These are direct native elements: no hidden DOM, stylesheet or computed style.
+The CSS mirror is temporary support for games that have not converted; do not
+extend it when building native UI.
+
+The single typed style set is `RuneStyle` in `ui/rune/element`: `fill`,
+`gradient: { angle, stops }`, `radius`, `border: { width, color }`,
+`shadow: { y, blur, color, x?, spread?, inset? }`, `radial: { center, radius, stops }`,
+`blur`, `opacity`, `width`/`height` (points or
+`{ fraction }`), min/max sizes, `padding` (points or `[top,right,bottom,left]`),
+`gap`, `pin: [left,top,right,bottom]` (null means free), `grow`, `shrink`,
+`justify`, `items`, `clip`, `hover`, `press`, `motion: { duration, bounce }`
+and polygon `shape: { points, viewBox }`. Text adds `size`, `weight`, `family`,
+`mono`, `color`, `tracking` and `align`. Colors are hex RGB/RGBA. Images use
+`image` (URL) and `fit` (`cover` or `contain`). Live text and numeric props take
+`live(() => value)` and update shared slots without component renders. Use
+`RuneSettingsSection` for controller categories; games own the surrounding tabs
+and skin. `onCommit` persists a slider once on release; `onAdjust` handles keys
+and gamepad. `onKey` captures a keybind inside a modal.
+`RuneHudFade` uses the shared awake clock and binds opacity without rerenders.
+Compose modals inside one surface per page. `drive` clicks native controls using
+Rune's actual bounds, and `f.see` reads native text without a DOM mirror.
+
+Headless PNG check, using the same production component and Rust builder:
+
+```
+bun games/deepward/proofs/rune-computer.tsx /tmp/computer.json
+cd native
+cargo run -p jg-ui --example native-png -- /tmp/computer.json /tmp/computer.png 380 260
+```
+
+Pass the game's font files after the dimensions to check its actual typography.
+Inspect the PNG. This checks native layout/paint; real-game desktop/phone shots
+still prove composition. After Rust changes rebuild and commit the wasm bundle.
+`window.__jgNativeUi.stats().frames` counts actual native render submissions;
+a static surface's count must stop after settling. Tooling may invoke named
+controls through `window.__jgNativeUi.press(label)`; never add hidden controls.
 
 UI components and hooks come from `@jgengine/core/ui/jsx`; package glue and game
 context come from `@jgengine/ui`. `@jgengine/react` is retired with no alias.

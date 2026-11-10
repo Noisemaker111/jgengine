@@ -31,7 +31,7 @@ import {
 /** What a renderer implements. `N` is its node type. */
 export interface Host<N> {
   createElement(tag: string, parent: N | null): N;
-  createText(text: string): N;
+  createText(text: string, parent: N | null): N;
   setText(node: N, text: string): void;
   /** `prev` is null on first application. */
   updateProps(node: N, tag: string, prev: Props | null, next: Props): void;
@@ -408,7 +408,7 @@ export class Root<N = unknown> {
     const node = slot.node;
     if (typeof node === "string") {
       const fiber = new Fiber<N>(this, "text", null, parent, slot.key);
-      fiber.node = this.host.createText(node);
+      fiber.node = this.host.createText(node, this.hostNodeAbove(parent));
       fiber.element = node;
       this.markResync(parent);
       return fiber;

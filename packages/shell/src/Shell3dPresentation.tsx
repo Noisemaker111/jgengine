@@ -748,7 +748,7 @@ export function Shell3dPresentation({
             tabIndex={0}
             data-jg-play-surface=""
             {...(poster && posterFrozen ? { "data-poster-ready": "" } : {})}
-            style={{ position: "relative", width: "100%", height: "100%" }}
+            style={playable.uiRenderer === "rune" ? { position: "fixed", inset: 0, width: "100%", height: "100%", background: "#05090a", outline: "none" } : { position: "relative", width: "100%", height: "100%" }}
             className="relative h-full w-full bg-neutral-950 outline-none"
             onKeyDown={keys.onKeyDown}
             onKeyUp={keys.onKeyUp}
@@ -1064,7 +1064,7 @@ export function Shell3dPresentation({
                 hideDiagnostics={poster}
               />
               {poster || orthographic || settingsHostsFov ? null : <PlayerFovSlider />}
-              {poster ? null : <SettingsChrome />}
+              {poster || playable.uiRenderer === "rune" ? null : <SettingsChrome />}
             </GameViewportProvider>
           </div>
         </SettingsRuntime>

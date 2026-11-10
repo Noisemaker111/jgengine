@@ -3,16 +3,17 @@ import { useEffect, useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
 import { useActionBindings } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { allActionCodes } from "@jgengine/core/input/actionBindings";
 import { useSceneSwapping } from "@jgengine/core/ui/sceneSwap.view";
-import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/ui";
-import { useBrowserSuspension, useDialogBehavior } from "@jgengine/ui";
+import { useBrowserSuspension } from "@jgengine/ui";
+import { RuneBox, RuneSurface, useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
+import { registerNativeRuneFont } from "@jgengine/core/ui/rune/nativeSurface.view";
+import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import { useOptionalGamePhase } from "@jgengine/ui/hooks";
 import { useSettings } from "@jgengine/core/settings/settings.view";
 import { useGameContext } from "@jgengine/ui/provider";
 import { useStore } from "@jgengine/ui/store";
 import { useGameStore } from "@jgengine/ui/hooks";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { HudButton } from "@jgengine/core/hud/hudButton.view";
-import { HudSurface } from "@jgengine/core/hud/hudSurface.view";
+import { ALL, AMBER, Button, Heading, RED, Row, Section, Sheet, Tag, Text } from "./dock";
 import { groundDistance, EXIT, roomAt } from "../../world";
 import { nearby, storageChanged, viewStore, type View } from "../controls";
 import { CACHE, footprint, ITEMS, type Dive } from "../state";
@@ -22,14 +23,13 @@ import { breakdownValue, compareToPrepared, kindOf, statLines, type Item } from 
 import { REFITS, refitMissing, type RefitId } from "../progression";
 import { counterRows, marrowStanding, OPERATOR, SCRIP, scripJournal } from "../counter";
 import { ItemMark } from "./ItemMark";
-import { DeepwardMenu } from "./menu/DeepwardMenu";
+import { DeepwardMenu, RecordSettings } from "./menu/DeepwardMenu";
 import { RECORD_KEY, SAVE_KEY } from "../save";
 import { ActionPlate, DepthStrip, DiveComputer, Docket, HoldTab, KitCounter, CommsLine, VisorReticle, SearchBar, Visor } from "./VisorHud";
 import { FabricatorSheet } from "./FabricatorSheet";
 import { marrowOf, marrowState } from "../marrow";
 import { nextGoal, sealMark } from "../deep";
 import { crushDamage, STRATA } from "../strata";
-import { useGameFonts } from "@jgengine/core/ui/fonts.view";
 import { GAME_FONTS } from "../../art/look";
 
 /*
@@ -40,7 +40,10 @@ import { GAME_FONTS } from "../../art/look";
  */
 
 type Command = (name: string, input?: unknown) => unknown;
-type DialogRef = ReturnType<typeof useDialogBehavior>;
+
+for (const face of [GAME_FONTS.display, GAME_FONTS.body, GAME_FONTS.numeric]) {
+  if (face !== undefined) registerNativeRuneFont(resolveAssetBaseUrl(face.src));
+}
 
 function grab(): void {
   const canvas = document.querySelector("canvas");
@@ -64,11 +67,11 @@ function Compared({ item, equipped }: { item: Item; equipped: Item | null }) {
   if (equipped === null || equipped.id === item.id || kindOf(equipped) !== kindOf(item)) return null;
   const comparison = compareToPrepared(item, equipped);
   const verdict = comparison.better === "candidate" ? "Better than prepared" : comparison.better === "equipped" ? "Worse than prepared" : "Even with prepared";
-  return <p className={`dw-compare ${comparison.better}`}>
-    <strong>{verdict}</strong>{" "}
+  return <Text size={11} color={comparison.better === "candidate" ? "#9ce0a0" : "#eead78"}>
+    {verdict}{" "}
     {comparison.deltas.map(delta => `${STAT_LABEL[delta.stat] ?? delta.stat} ${signed(delta.delta)}`).join(" · ")}
-    <small> scored {signed(comparison.scoreDelta, 1)} of {Math.round(comparison.scoreCandidate)}</small>
-  </p>;
+    {` scored ${signed(comparison.scoreDelta, 1)} of ${Math.round(comparison.scoreCandidate)}`}
+  </Text>;
 }
 
 /** The carried mass of a cache list, worked out once per list: the list keeps its identity until it changes. */
@@ -106,23 +109,17 @@ type Readings = ReturnType<typeof liveReadings>;
 function TravelCard() {
   const swapping = useSceneSwapping();
   const where = useStore(viewStore, v => v.dive === null ? "Marrow" : `${STRATA[v.dive.stratum].numeral} · ${STRATA[v.dive.stratum].name}`);
-  return swapping ? <div className="dw-travel" role="status"><span>{where}</span></div> : null;
+  return swapping ? <RuneBox pin={ALL} fill="#05090a" justify="center" items="center"><Tag>{where}</Tag></RuneBox> : null;
 }
 
 export function GameUI() {
-  useGameFonts(GAME_FONTS);
   const ctx = useGameContext();
   const screen = useStore(viewStore, v => ({ panel: v.panel, mode: v.mode, paused: v.paused, diving: v.dive !== null, low: v.dive !== null && v.dive.oxygen <= 25 }));
-  const hud = useHudLayout({ storageKey: "deepward.hud" });
+  const { width, height } = useRuneViewport();
   const phase = useOptionalGamePhase();
   const settings = useSettings();
   const readings = useMemo(() => liveReadings(ctx), [ctx]);
   const command: Command = (name, input = {}) => ctx.game.commands.run(`deepward.${name}`, input);
-  const shiftDialogRef = useDialogBehavior({
-    open: screen.panel !== null || screen.mode === "reprinting" || screen.mode === "saving" || screen.mode === "blocked",
-    focusKey: screen.panel ?? screen.mode,
-    onClose: screen.mode === "home" || screen.mode === "dive" ? () => command("close") : undefined,
-  });
   useEffect(() => {
     if (screen.panel === null && !screen.paused && (screen.mode === "home" || screen.mode === "dive")) {
       document.querySelector("canvas")?.closest<HTMLElement>("[tabindex]")?.focus({ preventScroll: true });
@@ -162,51 +159,46 @@ export function GameUI() {
   }, [ctx, settings.isOpen]);
   // The title and the pause are one menu system: the live station stays behind both. A save
   // boundary or a pending reprint keeps its own sheet, so the menu steps aside for it.
-  if (phase === "menu") return <DeepwardMenu />;
   // The pause menu covers a HUD that stays mounted, only hidden: tearing the whole HUD down on
   // Escape and building it again on resume froze each of those frames for ~45 ms.
   const pauseMenu = phase === "paused" && screen.panel === null && (screen.mode === "home" || screen.mode === "dive");
   const close = () => { command("close"); grab(); };
-  return <>{pauseMenu ? <DeepwardMenu /> : null}<div className={`dw-ui dw-hud ${screen.low ? "dw-low" : ""} ${screen.paused ? "dw-held" : ""}`} style={pauseMenu ? HIDDEN : undefined} aria-hidden={pauseMenu || undefined} onKeyDown={event => {
-    if (event.code === "Tab") event.stopPropagation();
-    if ((event.code === "Space" || event.code === "Enter") && event.target instanceof HTMLElement && event.target.closest("button, a, input, select, textarea, [contenteditable=true]")) event.stopPropagation();
-  }}>
-    <TravelCard />
+  const phone = width < 520;
+  return <RuneSurface label="Deepward" family="Rajdhani" color="#ede9d9">
+    <RuneBox pin={ALL} hidden={phase === "menu" || pauseMenu}>
     <VisorGlass low={screen.low} />
-    <HudCanvas layout={hud} editChord={false}>
-      <HudPanel id="shift" anchor="top-right" priority="critical" locked>
+      <RuneBox pin={[null, 20, 20, null]}>
         <HoldTab disabled={screen.mode !== "home" && screen.mode !== "dive"} onPause={() => command("pause")} />
-      </HudPanel>
+      </RuneBox>
       {screen.diving && <>
-        <HudPanel id="depth" anchor="top" interactive={false} locked>
+        <RuneBox pin={[20, 20, 130, null]} items="center">
           <DepthReadout />
-        </HudPanel>
-        <HudPanel id="air" anchor="bottom-left" priority="critical" interactive={false} locked>
+        </RuneBox>
+        <RuneBox pin={[12, phone ? 75 : null, null, phone ? null : 20]}>
           <AirReadout readings={readings} />
-        </HudPanel>
-        <HudPanel id="haul" anchor="bottom-right" priority="critical" locked>
+        </RuneBox>
+        <RuneBox pin={[null, phone ? 340 : null, 12, phone ? null : 20]}>
           <HaulReadout readings={readings} onCache={() => command("cache")} />
-        </HudPanel>
+        </RuneBox>
       </>}
-      {screen.mode === "home" && screen.panel === null && <HudPanel id="home" anchor="top-left" interactive={false} locked>
+      {screen.mode === "home" && screen.panel === null && <RuneBox pin={[20, 20, null, null]}>
         <HomeDocket />
-      </HudPanel>}
-      <HudPanel id="radio" anchor="bottom" order={1} interactive={false} locked>
-        <Radio />
-      </HudPanel>
-      <HudPanel id="prompt" anchor="bottom" priority="critical" locked>
+      </RuneBox>}
+      <RuneBox pin={[0, null, 0, height < 560 ? 14 : 20]} items="center" gap={8}>
         <Prompt readings={readings} command={command} />
-      </HudPanel>
-    </HudCanvas>
-    {screen.panel === "stash" && <StashSheet dialogRef={shiftDialogRef} command={command} close={close} />}
-    {screen.panel === "fabricator" && <FabricatorPanel dialogRef={shiftDialogRef} command={command} close={close} />}
-    {screen.panel === "cache" && screen.diving && <CacheSheet dialogRef={shiftDialogRef} command={command} close={close} />}
-    {screen.mode === "reprinting" && <ReprintSheet dialogRef={shiftDialogRef} command={command} />}
-    {(screen.mode === "saving" || screen.mode === "blocked") && <SaveSheet dialogRef={shiftDialogRef} command={command} />}
-  </div></>;
+        <Radio />
+      </RuneBox>
+    {screen.panel === "stash" && <StashSheet command={command} close={close} />}
+    {screen.panel === "fabricator" && <FabricatorPanel command={command} close={close} />}
+    {screen.panel === "cache" && screen.diving && <CacheSheet command={command} close={close} />}
+    {screen.mode === "reprinting" && <ReprintSheet command={command} />}
+    {(screen.mode === "saving" || screen.mode === "blocked") && <SaveSheet command={command} />}
+    <TravelCard />
+    </RuneBox>
+    {phase === "menu" || pauseMenu ? <DeepwardMenu /> : null}
+    {settings.isOpen ? <Sheet title="Settings" close={settings.close}><RecordSettings /></Sheet> : null}
+  </RuneSurface>;
 }
-
-const HIDDEN = { display: "none" } as const;
 
 /** The helmet glass: the low-air wash, the hurt wash and the reticle. */
 function VisorGlass({ low }: { low: boolean }) {
@@ -214,7 +206,6 @@ function VisorGlass({ low }: { low: boolean }) {
   return <>
     <Visor low={low} hurt={glass.hurt} />
     {/* Always mounted, only faded: its first draw links a blur program in the browser, a frame frozen mid-fight. */}
-    <div className="dw-hurtwash" data-on={glass.hurt ? "" : undefined} aria-hidden="true" />
     {glass.diving && <VisorReticle hit={glass.hit} />}
   </>;
 }
@@ -293,103 +284,102 @@ function Prompt({ readings, command }: { readings: Readings; command: Command })
   return <ActionPlate label={prompt.target} onAct={() => { command("interact"); if (isOpen(viewStore.read(ctx))) grab(); }} />;
 }
 
-function StashSheet({ dialogRef, command, close }: { dialogRef: DialogRef; command: Command; close: () => void }) {
+function StashSheet({ command, close }: { command: Command; close: () => void }) {
   const { home, rifleUid, hint, error } = useStore(viewStore, v => ({ home: v.home, rifleUid: v.rifleUid, hint: v.hint, error: v.error }));
   const prepared = home.stash.find(item => item.id === rifleUid) ?? null;
   const counter = counterRows(home);
   const journal = scripJournal(home, 4);
-  return <div className="dw-modal"><HudSurface ref={dialogRef} elevation="modal" data-hud-window className="dw-sheet" aria-label="Marrow stash" role="dialog" aria-modal="true" tabIndex={-1}>
-    <HudButton className="dw-sheet-close" onClick={close}>Close bench ×</HudButton>
-    <span className="dw-eyebrow">Permanent / saved on return</span><h2>Marrow's stash</h2>
-    <p>These exact item instances survived the rail journey. They remain here through deaths and reloads. Each carries the level of the room it came from and whatever its roll turned out to be.</p>
-    {prepared !== null && <p className="dw-prepared"><strong>Prepared: {prepared.name}</strong> · {Math.round(prepared.stats["damage"] ?? 0)} damage · {(1 / (prepared.stats["rate"] ?? 2)).toFixed(2)}s cycle · {prepared.mass} weight. It is the baseline every other rifle is compared against.</p>}
-    <h3>Choose the next shift</h3><p>Travel light with the issue sidearm and twelve free cache squares, or risk a recovered rifle for {Math.round(prepared?.stats["damage"] ?? 30)} damage per shot instead of {weaponReadout(null).damage}. A rifle fills three squares and is lost on death. Returning banks the same rifle again.</p>
-    <HudButton aria-pressed={rifleUid === null} onClick={() => command("prepareRifle", { uid: null })}>Travel light / keep rifles safe</HudButton>
-    {home.stash.length === 0 ? <p className="dw-empty">Empty shelves. Bring something home from Bellwether.</p> : <div className="dw-stash-list">{home.stash.map(item => <article key={item.id}>
-      <ItemMark kind={kindOf(item)} size={38} /><div><strong>{item.name}</strong><p>{RARITY_LABEL[item.rarity] ?? item.rarity} · level {item.level} · {ITEMS[kindOf(item)].maker} · {ITEMS[kindOf(item)].found}</p><small>{ITEMS[kindOf(item)].detail}</small>
-        <small>{statLines(item).map(line => `${line.label} ${line.value.toFixed(line.digits)}${line.unit}`).join(" · ")} · weight {item.mass}</small>
-        {item.affixes.length > 0 && <small className="dw-affix">{affixText(item)}</small>}
-        <small>Found on dive {item.id.split(":")[0]}</small>
+  return <Sheet title="Marrow's stash" close={close}>
+    <Tag color={AMBER}>Permanent / saved on return</Tag>
+    <Text>These exact item instances survived the rail journey. They remain here through deaths and reloads. Each carries the level of the room it came from and whatever its roll turned out to be.</Text>
+    {prepared !== null && <Text>Prepared: {prepared.name} · {Math.round(prepared.stats["damage"] ?? 0)} damage · {(1 / (prepared.stats["rate"] ?? 2)).toFixed(2)}s cycle · {prepared.mass} weight. It is the baseline every other rifle is compared against.</Text>}
+    <Heading>Choose the next shift</Heading><Text>Travel light with the issue sidearm and twelve free cache squares, or risk a recovered rifle for {Math.round(prepared?.stats["damage"] ?? 30)} damage per shot instead of {weaponReadout(null).damage}. A rifle fills three squares and is lost on death. Returning banks the same rifle again.</Text>
+    <Button onPress={() => command("prepareRifle", { uid: null })}>Travel light / keep rifles safe</Button>
+    {home.stash.length === 0 ? <Text>Empty shelves. Bring something home from Bellwether.</Text> : <RuneBox gap={9}>{home.stash.map(item => <Section key={item.id}>
+      <Row><ItemMark kind={kindOf(item)} size={38} /><Text size={17}>{item.name}</Text></Row>
+        <Text size={11}>{RARITY_LABEL[item.rarity] ?? item.rarity} · level {item.level} · {ITEMS[kindOf(item)].maker} · {ITEMS[kindOf(item)].found}</Text><Text size={11}>{ITEMS[kindOf(item)].detail}</Text>
+        <Text size={11}>{statLines(item).map(line => `${line.label} ${line.value.toFixed(line.digits)}${line.unit}`).join(" · ")} · weight {item.mass}</Text>
+        {item.affixes.length > 0 && <Text size={11}>{affixText(item)}</Text>}
+        <Tag>Found on dive {item.id.split(":")[0]}</Tag>
         <Compared item={item} equipped={prepared} />
-        <div className="dw-actions">
-          {kindOf(item) === "service-rifle" && <HudButton aria-pressed={rifleUid === item.id} onClick={() => command("prepareRifle", { uid: item.id })}>{rifleUid === item.id ? "Prepared / three squares at risk" : "Prepare this rifle / risk next shift"}</HudButton>}
-          <HudButton onClick={() => command("dismantle", { id: item.id })}>Dismantle / {breakdownValue(item)} scrip</HudButton>
-        </div></div>
-    </article>)}</div>}
-    <h3>Fitter's counter / {home.bank.banked} scrip banked</h3><p>Marrow clears operators it trusts. Better standing also prices every shelf a little lower.</p>
-    {journal.length > 0 && <ol className="dw-journal" aria-label="Scrip journal">{journal.map(entry => <li key={entry.seq}>
-      <span>{entry.reason}{entry.ref === undefined ? "" : ` / ${entry.ref}`}</span><strong>{entry.amount > 0 ? "+" : ""}{entry.amount}</strong><small>{entry.balanceAfter} banked</small>
-    </li>)}</ol>}
-    <div className="dw-counter">{counter.map(row => <article className="dw-supply" key={row.supply.kind}>
-      <ItemMark kind={row.supply.kind} size={32} /><div><strong>{row.supply.label}</strong><p>{row.supply.blurb}</p>
-        <small>{row.price} {SCRIP.unit} / unit{row.locked ? ` / locked, needs ${row.needs} standing` : ""}</small>
-        <HudButton disabled={row.locked || row.price > home.bank.banked} onClick={() => command("buy", { kind: row.supply.kind })}>{row.locked ? "Locked" : row.price > home.bank.banked ? `Need ${row.price - home.bank.banked} more` : `Buy for ${row.price}`}</HudButton></div>
-    </article>)}</div>
-    <h3>Refit the next departure</h3><p>Both refits need a copper spool. Spending it here means another rail journey for the other refit. Installed refits survive every Life.</p>
-    {(Object.keys(REFITS) as RefitId[]).map(id => { const refit = REFITS[id], installed = home.refits.includes(id), missing = refitMissing(home, id); return <article className="dw-refit" key={id}>
-      <h4>{refit.name} {installed ? " / installed" : ""}</h4><p>{refit.effect}</p>
-      <p>Cost: {refit.recipe.inputs.map(i => `${i.count} ${ITEMS[i.itemId as keyof typeof ITEMS].name}`).join(" + ")}</p>
-      <HudButton disabled={installed || missing.length > 0} onClick={() => command("refit", { id })}>{installed ? `${refit.name} installed` : `Install ${refit.name}`}</HudButton>
-      {missing.length > 0 && !installed && <p>Still needed: {missing.map(i => `${i.count} ${ITEMS[i.itemId as keyof typeof ITEMS].name}`).join(" + ")}</p>}
-    </article>; })}
-    <p role="status">{hint}</p>{error && <p role="alert">{error}</p>}
-    <div className="dw-actions"><HudButton onClick={close}>Back to Marrow</HudButton><HudButton onClick={() => window.location.reload()}>Reload saved stash</HudButton></div>
-  </HudSurface></div>;
+        <RuneBox gap={8}>
+          {kindOf(item) === "service-rifle" && <Button onPress={() => command("prepareRifle", { uid: item.id })}>{rifleUid === item.id ? "Prepared / three squares at risk" : "Prepare this rifle / risk next shift"}</Button>}
+          <Button onPress={() => command("dismantle", { id: item.id })}>{`Dismantle / ${breakdownValue(item)} scrip`}</Button>
+        </RuneBox>
+    </Section>)}</RuneBox>}
+    <Heading>Fitter's counter / {home.bank.banked} scrip banked</Heading><Text>Marrow clears operators it trusts. Better standing also prices every shelf a little lower.</Text>
+    {journal.map(entry => <Text key={entry.seq} size={11}>{entry.reason}{entry.ref === undefined ? "" : ` / ${entry.ref}`} {entry.amount > 0 ? "+" : ""}{entry.amount} · {entry.balanceAfter} banked</Text>)}
+    {counter.map(row => <Section key={row.supply.kind}>
+      <Row><ItemMark kind={row.supply.kind} size={32} /><Text>{row.supply.label}</Text></Row><Text>{row.supply.blurb}</Text>
+      <Text size={11}>{row.price} {SCRIP.unit} / unit{row.locked ? ` / locked, needs ${row.needs} standing` : ""}</Text>
+      <Button disabled={row.locked || row.price > home.bank.banked} onPress={() => command("buy", { kind: row.supply.kind })}>{row.locked ? "Locked" : row.price > home.bank.banked ? `Need ${row.price - home.bank.banked} more` : `Buy for ${row.price}`}</Button>
+    </Section>)}
+    <Heading>Refit the next departure</Heading><Text>Both refits need a copper spool. Spending it here means another rail journey for the other refit. Installed refits survive every Life.</Text>
+    {(Object.keys(REFITS) as RefitId[]).map(id => { const refit = REFITS[id], installed = home.refits.includes(id), missing = refitMissing(home, id); return <Section key={id}>
+      <Text>{refit.name} {installed ? " / installed" : ""}</Text><Text>{refit.effect}</Text>
+      <Text>Cost: {refit.recipe.inputs.map(i => `${i.count} ${ITEMS[i.itemId as keyof typeof ITEMS].name}`).join(" + ")}</Text>
+      <Button disabled={installed || missing.length > 0} onPress={() => command("refit", { id })}>{installed ? `${refit.name} installed` : `Install ${refit.name}`}</Button>
+      {missing.length > 0 && !installed && <Text>Still needed: {missing.map(i => `${i.count} ${ITEMS[i.itemId as keyof typeof ITEMS].name}`).join(" + ")}</Text>}
+    </Section>; })}
+    <Text role="status">{hint}</Text>{error && <Text color={RED} role="alert">{error}</Text>}
+    <Button onPress={close}>Back to Marrow</Button><Button onPress={() => window.location.reload()}>Reload saved stash</Button>
+  </Sheet>;
 }
 
 /** The fabricator: it shows the gear and the codex, never the body, so the body's drain at home does not re-render it. */
-function FabricatorPanel({ dialogRef, command, close }: { dialogRef: DialogRef; command: Command; close: () => void }) {
+function FabricatorPanel({ command, close }: { command: Command; close: () => void }) {
   const ctx = useGameContext();
   const sheet = useGameStore(state => {
     const view = viewStore.read(state);
     return { home: view.home, gear: view.deep.gear, codex: view.deep.codex, lures: view.deep.lures, charted: view.deep.charted, departTo: view.departTo, hint: view.hint, error: view.error, world: marrowState(state) };
   });
   const deep = viewStore.read(ctx).deep;
-  return <FabricatorSheet dialogRef={dialogRef} home={sheet.home} deep={deep} world={marrowOf(ctx)} departTo={sheet.departTo} hint={sheet.hint} error={sheet.error} command={command} close={close} />;
+  return <FabricatorSheet home={sheet.home} deep={deep} world={marrowOf(ctx)} departTo={sheet.departTo} hint={sheet.hint} error={sheet.error} command={command} close={close} />;
 }
 
-function CacheSheet({ dialogRef, command, close }: { dialogRef: DialogRef; command: Command; close: () => void }) {
+function CacheSheet({ command, close }: { command: Command; close: () => void }) {
   const [selected, setSelected] = useState<string | null>(null);
   const { cache, hand } = useStore(viewStore, v => ({ cache: v.dive?.cache ?? NO_CACHE, hand: v.dive?.hand ?? "sidearm" }));
   const load = loadOf(cache);
   const chosen = cache.find(i => i.id === selected);
+  const { width } = useRuneViewport();
+  const cell = Math.min(120, (width - 90) / CACHE.w);
   const cells = Array.from({ length: CACHE.w * CACHE.h }, (_, i) => ({ x: i % CACHE.w, y: i / CACHE.w | 0 }));
-  return <div className="dw-modal dw-cache-modal"><HudSurface ref={dialogRef} elevation="modal" data-hud-window className="dw-sheet" aria-label="Carried cache" role="dialog" aria-modal="true" tabIndex={-1}>
-    <HudButton className="dw-sheet-close" onClick={close}>Close cache ×</HudButton>
-    <span className="dw-eyebrow">Carried cache / 4 × 3 / equipment capacity</span><h2>What fits comes home.</h2><p className="dw-error">The tank and prints keep moving while you pack.</p>
-    <div className="dw-load"><strong>{load.mass} / {CACHE_WEIGHT} weight</strong> <progress max={CACHE_WEIGHT} value={load.mass} /> <small>{load.remaining} free · anything heavier is refused at the source</small></div>
-    <div className="dw-cache-grid">
-      {cells.map(c => <HudButton className="dw-cache-cell" key={`${c.x}:${c.y}`} style={{ gridColumn: c.x + 1, gridRow: c.y + 1 }} aria-label={`Move selected item to column ${c.x + 1}, row ${c.y + 1}`} onClick={() => { if (chosen) command("pack", { uid: chosen.id, x: c.x, y: c.y }); }} />)}
-      {cache.map(i => { const f = footprint(i), item = ITEMS[kindOf(i)]; return <HudButton key={i.id} className={`dw-cache-item ${selected === i.id ? "selected" : ""}`} style={{ gridColumn: `${i.x + 1} / span ${f.w}`, gridRow: `${i.y + 1} / span ${f.h}`, borderColor: item.color }} onClick={() => setSelected(i.id)}><ItemMark kind={kindOf(i)} size={28} /><span style={{ color: item.color }}>{item.name}</span><small>{i.rarity} · Lv {i.level}</small></HudButton>; })}
-    </div>
-    {chosen ? <div className="dw-pack-controls"><strong>{chosen.name}</strong><p>Select an empty square as its upper-left corner. {chosen.mass} weight, level {chosen.level}.</p>
-      <div className="dw-actions">{([[-1, 0, "←"], [0, -1, "↑"], [0, 1, "↓"], [1, 0, "→"]] as const).map(([dx, dy, label]) => <HudButton key={label} aria-label={`Move ${label}`} onClick={() => command("pack", { uid: chosen.id, x: chosen.x + dx, y: chosen.y + dy })}>{label}</HudButton>)}
-        <HudButton onClick={() => command("pack", { uid: chosen.id, rotate: true })}>Rotate</HudButton><HudButton onClick={() => { command("discard", { uid: chosen.id }); setSelected(null); }}>Leave behind</HudButton></div>
-    </div> : <p>Select a carried item to repack, rotate or leave it behind.</p>}
-    {cache.some(i => kindOf(i) === "service-rifle") && <div className="dw-hand-wheel"><span>ONE HAND</span><HudButton aria-pressed={hand === "sidearm"} onClick={() => command("equip", { hand: "sidearm" })}>Issue sidearm</HudButton><HudButton aria-pressed={hand === "service-rifle"} onClick={() => command("equip", { hand: "service-rifle" })}>Found service rifle</HudButton></div>}
-    <HudButton onClick={() => { command("cache"); grab(); }}>Close cache / Tab</HudButton>
-  </HudSurface></div>;
+  return <Sheet title="What fits comes home." label="Carried cache" close={close}>
+    <Tag color={AMBER}>Carried cache / 4 × 3 / equipment capacity</Tag><Text color={RED}>The tank and prints keep moving while you pack.</Text>
+    <Text>{load.mass} / {CACHE_WEIGHT} weight · {load.remaining} free · anything heavier is refused at the source</Text>
+    <RuneBox width={cell * CACHE.w} height={76 * CACHE.h}>
+      {cells.map(c => <Button key={`${c.x}:${c.y}`} pin={[c.x * cell, c.y * 76, null, null]} width={cell - 5} height={71} fill="#112125" label={`Move selected item to column ${c.x + 1}, row ${c.y + 1}`} onPress={() => { if (chosen) command("pack", { uid: chosen.id, x: c.x, y: c.y }); }} />)}
+      {cache.map(i => { const f = footprint(i), item = ITEMS[kindOf(i)]; return <Button key={i.id} pin={[i.x * cell, i.y * 76, null, null]} width={cell * f.w - 5} height={76 * f.h - 5} padding={7} fill="#1c3030" border={{ width: selected === i.id ? 3 : 2, color: selected === i.id ? "#f2e2ba" : item.color }} label={`Select ${item.name}`} onPress={() => setSelected(i.id)}><ItemMark kind={kindOf(i)} size={28} /><Text size={11} color={item.color}>{item.name}</Text><Tag size={9}>{i.rarity} · Lv {i.level}</Tag></Button>; })}
+    </RuneBox>
+    {chosen ? <Section><Text>{chosen.name}</Text><Text>Select an empty square as its upper-left corner. {chosen.mass} weight, level {chosen.level}.</Text>
+      <Row>{([[-1, 0, "←"], [0, -1, "↑"], [0, 1, "↓"], [1, 0, "→"]] as const).map(([dx, dy, label]) => <Button key={label} label={`Move ${label}`} onPress={() => command("pack", { uid: chosen.id, x: chosen.x + dx, y: chosen.y + dy })}>{label}</Button>)}</Row>
+      <Button onPress={() => command("pack", { uid: chosen.id, rotate: true })}>Rotate</Button><Button onPress={() => { command("discard", { uid: chosen.id }); setSelected(null); }}>Leave behind</Button>
+    </Section> : <Text>Select a carried item to repack, rotate or leave it behind.</Text>}
+    {cache.some(i => kindOf(i) === "service-rifle") && <Section><Tag>ONE HAND / {hand}</Tag><Button onPress={() => command("equip", { hand: "sidearm" })}>Issue sidearm</Button><Button onPress={() => command("equip", { hand: "service-rifle" })}>Found service rifle</Button></Section>}
+    <Button onPress={() => { command("cache"); grab(); }}>Close cache / Tab</Button>
+  </Sheet>;
 }
 
-function ReprintSheet({ dialogRef, command }: { dialogRef: DialogRef; command: Command }) {
+function ReprintSheet({ command }: { command: Command }) {
   const ctx = useGameContext();
   const { home, error } = useStore(viewStore, v => ({ home: v.home, error: v.error }));
-  return <div className="dw-modal"><HudSurface ref={dialogRef} elevation="modal" data-hud-window className="dw-sheet dw-pause" aria-label="Life ended" role="alertdialog" aria-modal="true" tabIndex={-1}>
-    <span className="dw-eyebrow">Halloway / reprint docket · Life {home.life - 1} ended</span><h2>Bellwether kept the haul.</h2>
-    <p>{home.last?.reason}</p><p>{home.last?.count === null ? "Carried haul lost." : `${home.last?.count ?? 0} carried items lost.`} {home.stash.length} banked items and {home.refits.length} installed refits remain safe in Marrow.</p>
-    <p>Halloway has printed Life {home.life}. This loss is already saved; accepting the reprint is the only way back to the rail.</p>
-    {error && <p role="alert">{error}</p>}
-    <HudButton onClick={() => { command("acknowledgeReprint"); if (viewStore.read(ctx).mode === "home") grab(); }}>Accept reprint / return to Marrow</HudButton>
-    <HudButton onClick={() => window.location.reload()}>Reload saved Marrow</HudButton>
-  </HudSurface></div>;
+  return <Sheet title="Bellwether kept the haul." label="Life ended">
+    <Tag color={AMBER}>Halloway / reprint docket · Life {home.life - 1} ended</Tag>
+    <Text>{home.last?.reason}</Text><Text>{home.last?.count === null ? "Carried haul lost." : `${home.last?.count ?? 0} carried items lost.`} {home.stash.length} banked items and {home.refits.length} installed refits remain safe in Marrow.</Text>
+    <Text>Halloway has printed Life {home.life}. This loss is already saved; accepting the reprint is the only way back to the rail.</Text>
+    {error && <Text color={RED} role="alert">{error}</Text>}
+    <Button onPress={() => { command("acknowledgeReprint"); if (viewStore.read(ctx).mode === "home") grab(); }}>Accept reprint / return to Marrow</Button>
+    <Button onPress={() => window.location.reload()}>Reload saved Marrow</Button>
+  </Sheet>;
 }
 
-function SaveSheet({ dialogRef, command }: { dialogRef: DialogRef; command: Command }) {
+function SaveSheet({ command }: { command: Command }) {
   const { mode, error } = useStore(viewStore, v => ({ mode: v.mode, error: v.error }));
-  return <div className="dw-modal"><HudSurface ref={dialogRef} elevation="modal" data-hud-window className="dw-sheet dw-pause" role="alertdialog" aria-label="Marrow save boundary" aria-modal="true" tabIndex={-1}>
-    <span className="dw-eyebrow">Marrow / save boundary</span><h2>{mode === "saving" ? "Return pending" : "Marrow is unavailable"}</h2><p>{error}</p>
-    <p>{mode === "saving" ? "The simulation is stopped. This return has not been acknowledged; retry or reload the saved record." : "The saved record has been preserved. No new dive can begin."}</p>
-    {mode === "saving" && <HudButton onClick={() => command("retrySave")}>Retry saving this return</HudButton>}
-    <HudButton onClick={() => window.location.reload()}>Reload saved Marrow</HudButton>
-  </HudSurface></div>;
+  return <Sheet title={mode === "saving" ? "Return pending" : "Marrow is unavailable"} label="Marrow save boundary">
+    <Tag color={AMBER}>Marrow / save boundary</Tag><Text color={RED}>{error}</Text>
+    <Text>{mode === "saving" ? "The simulation is stopped. This return has not been acknowledged; retry or reload the saved record." : "The saved record has been preserved. No new dive can begin."}</Text>
+    {mode === "saving" && <Button onPress={() => command("retrySave")}>Retry saving this return</Button>}
+    <Button onPress={() => window.location.reload()}>Reload saved Marrow</Button>
+  </Sheet>;
 }

@@ -179,11 +179,11 @@ export function createBrowserFlow(driver: BrowserFlowDriver, stepper: FlowSteppe
       stepper.run(`see ${String(text)}`, async () => {
         const matches = (body: unknown) => typeof body === "string" && (typeof text === "string" ? body.includes(text) : text.test(body));
         try {
-          await waitUntil(() => driver.evaluate("document.body.innerText"), matches, options.timeoutMs ?? FLOW_WAIT_MS, options.note ?? `page text shows ${String(text)}`);
+          await waitUntil(() => driver.evaluate("window.__jgNativeUi?.text() ?? document.body.innerText"), matches, options.timeoutMs ?? FLOW_WAIT_MS, options.note ?? `page text shows ${String(text)}`);
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
           // The last value is the whole page text; the closest lines say more than the dump.
-          throw new Error(`${message.replace(/ \(last value [\s\S]*\)$/, "")}${seeHint(text, await driver.evaluate("document.body.innerText"))}`);
+          throw new Error(`${message.replace(/ \(last value [\s\S]*\)$/, "")}${seeHint(text, await driver.evaluate("window.__jgNativeUi?.text() ?? document.body.innerText"))}`);
         }
       }),
     page: (expression) => stepper.run(`page ${expression}`, () => page(expression)),
