@@ -4,7 +4,9 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { abVerdict, affectedGames, awayFromHome, BASE_TREE_KEEP_MS, baseTreeName, expiredBaseTrees, homeRequest, medianMs, pairLogRatio, parseAbArgs, percentileMs, plantScript, renderAbTable, rendererCpuPct, routeSpread, t99, treeFingerprint, type AbGameResult } from "./perf-ab";
+import { abVerdict, affectedGames, awayFromHome, BASE_TREE_KEEP_MS, baseTreeName, expiredBaseTrees, homeRequest, medianMs, pairLogRatio, parseAbArgs, percentileMs, plantScript, renderAbScorecards, renderAbTable, rendererCpuPct, routeSpread, t99, type AbGameResult } from "./perf-ab";
+import { frameScore, type Scorecard } from "./perf-scorecard";
+import { treeFingerprint } from "./servedTree";
 
 const GAMES = ["deepward", "harbor-heat", "scrap-signal"];
 const options = { minBlocks: 4, maxBlocks: 16, marginPct: 3 };
@@ -178,11 +180,32 @@ test("the planted busy-wait runs once a frame, before the page's own callback", 
   expect(source).toContain("now !== frame");
 });
 
+const card = (p50: number): Scorecard => ({
+  build: "production", slow: { rate: 4, frame: frameScore([p50 * 4, p50 * 4, 40]) }, pcBusyPct: 7,
+  frame: frameScore([p50, p50, p50, 20]), main: null, load: null,
+});
+
+test("the report leads with each side's scorecard: slow frames and hitches, not the middle frame alone", () => {
+  const text = renderAbScorecards([{ game: "harbor-heat", cards: { base: card(4), branch: card(5) } }], true);
+  expect(text).toContain("**harbor-heat**");
+  expect(text).toContain("|  | base | branch |");
+  expect(text).toContain("| frame p50 ms | 4.00 | 5.00 |");
+  expect(text).toContain("| frames over 16.7 ms | 1 of 4 | 1 of 4 |");
+  expect(text).toContain("| CPU 4x slower: p50 / p95 ms | 16.00 / 40.00 | 20.00 / 40.00 |");
+});
+
+test("perf ab times the dev servers unless --production asks for the build players get", () => {
+  const defaults = parseAbArgs([]);
+  const production = parseAbArgs(["--production", "--games", "deepward"]);
+  expect(defaults === "help" ? null : defaults.build).toBe("dev");
+  expect(production === "help" ? null : production.build).toBe("production");
+});
+
 test("the table says the verdict, change and interval per game", () => {
   const result: AbGameResult = {
     game: "harbor-heat",
     verdict: { call: "slower", blocks: 5, changePct: 5.1, lowPct: 3.2, highPct: 7 },
-    baseMs: 24.6, branchMs: 25.85, windows: [], lockSeconds: 95,
+    baseMs: 24.6, branchMs: 25.85, windows: [], lockSeconds: 95, cards: { base: card(24.6), branch: card(25.85) },
   };
   const table = renderAbTable([result], { markdown: true, marginPct: 3 });
   expect(table).toContain("| harbor-heat | slower | +5.1% | +3.2% to +7.0% | 24.60 | 25.85 | 5 | 95 |");

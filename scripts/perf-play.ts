@@ -47,6 +47,8 @@ import { acquirePerfLock, perfLockWaitedMs, withPerfLock } from "./perf-lock";
 import { markStep } from "./hangReport";
 import { currentPriority, type PriorityLabel } from "./machine-priority";
 import { provisionCapturedGame } from "./provisionCapture";
+import { ensureProdServer, type PerfBuild, type ProdServer } from "./prodServer";
+import { recordScorecardInTally, cpuBusyPct, frameScore, LOAD_RESOURCES_SCRIPT, loadScore, mainScore, productionProblem, profileSources, renderScorecard, scorecardLabel, scoreProfile, SLOW_CPU_RATE, type Scorecard } from "./perf-scorecard";
 import {
   ACCESSIBILITY_SETTING_IDS,
   COLORBLIND_OPTIONS,
@@ -59,10 +61,10 @@ import {
 } from "../packages/core/src/settings/settingsModel";
 
 /**
- * Frame-time harness for one game: boots the checkout's dev runner, plays the
- * game on a real GPU, and prints one JSON record of frame timings, renderer
- * counts, GL allocations made after warmup, and the hottest self-time
- * functions.
+ * Frame-time harness for one game: boots the checkout's dev runner (`--production` builds and serves
+ * the production runner, the build players get, instead), plays the game on a real GPU, and prints
+ * the scorecard (`scripts/perf-scorecard.ts`) and one JSON record of frame timings, renderer counts,
+ * GL allocations made after warmup, and the hottest self-time functions.
  *
  *   bun run perf <game> [--quality low|medium|high|ultra] [--draft] [--profile] [--seconds n] [--state name] [--param k=v ...] [--set key=value ...]
  *
@@ -162,6 +164,12 @@ export interface PerfArgs {
   compare?: string;
   /** Print the JSON record to stdout instead of the text summary. */
   json: boolean;
+  /** `dev` (default for now): the Vite dev server. `--production`: the minified, bundled build players get. */
+  build: PerfBuild;
+  /** `--tally <group>`: also record each game's scorecard in the local tally store under this group. */
+  tally?: string;
+  /** `--cpu n`: how many times slower the slow-CPU window's CPU runs (default 4; 1 skips the window). */
+  cpuRate: number;
 }
 
 export type ArgResult = { kind: "run"; args: PerfArgs } | { kind: "help" };
@@ -169,6 +177,15 @@ export type ArgResult = { kind: "run"; args: PerfArgs } | { kind: "help" };
 const USAGE = `usage: bun run perf <game> [<game> ...] [--seconds n] [--path walk|still] [--size WxH] [--compare <ref|before.json>] [--out <file.json>] [--json]
                     [--quality low|medium|high|ultra] [--draft] [--profile] [--telemetry on|off]
                     [--state name] [--param k=v ...] [--set key=value ...] [--capped] [--headed] [--cold]
+                    [--production] [--cpu n] [--tally group]
+
+Times the Vite dev server unless --production is given: development React and unbundled source modules,
+good for finding where engine time goes with readable names, and not what players get. --production
+builds the runner as the web deploy builds it (minified, bundled, production React; under a minute,
+reused until the served files change) and serves it locally. A claim about what players experience
+comes from a --production run. Either report leads with the scorecard: frame p50/p95/p99 and the worst
+frame, frames over 16.7 and 33 ms, main-thread ms per frame and the share of it inside React and
+react-three-fiber, MB allocated per second and GC time, load time and download size.
 
 Plays the game at 1920x1080 on an uncapped frame clock, walking, and prints where a frame goes: frame
 p50/p95/p99, main-thread and GPU ms per frame against 60 and 144 Hz, CPU ms per system, GPU ms per
@@ -188,6 +205,13 @@ before side is measured once: run \`bun run perf <game>\` before editing, then a
                     or a record file an earlier run wrote (one game only): print the before/after table
   --out             where to write this run's JSON record (default .scratch/perf/<game>.json; one game only)
   --json            print the JSON record to stdout instead of the text summary
+  --production      time the production build players get instead of the dev server (the default
+                    stays the dev server until the budgets and baselines are re-measured on it)
+  --cpu             how many times slower the CPU runs in the slow-CPU window that follows the
+                    measured one (Chrome's CPU throttling; default ${SLOW_CPU_RATE}, a stand-in for a laptop or
+                    phone, since the RTX 3070 PC hides main-thread cost; 1 skips the window)
+  --tally           also record the scorecard in the local tally store under this group name (task: the
+                    game, side: production or dev), for \`tally compare dev production group=<name>\`
   --capped          run on the display's vsync clock instead (frame times become 16.7 ms steps)
   --cold            skip the warm daemon and boot Chrome + Vite directly: fresh caches, larger
                     numbers than a warm run, for an evidence run that must prove a clean start.
@@ -381,6 +405,9 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
   let json = false;
   let headed = false;
   let cold = false;
+  let build: PerfBuild = "dev";
+  let cpuRate = SLOW_CPU_RATE;
+  let tally: string | undefined;
   let state: string | undefined;
   const params: [string, string][] = [];
   const settings: PerfSettingOverride[] = [];
@@ -424,6 +451,24 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
     }
     if (arg === "--cold") {
       cold = true;
+      continue;
+    }
+    if (arg === "--production") {
+      build = "production";
+      continue;
+    }
+    if (arg === "--tally") {
+      const value = argv[index + 1];
+      if (value === undefined || value.startsWith("--")) throw new Error("--tally needs a group name");
+      index += 1;
+      tally = value;
+      continue;
+    }
+    if (arg === "--cpu") {
+      const value = Number(argv[index + 1]);
+      if (!Number.isFinite(value) || value < 1) throw new Error(`--cpu must be a slowdown of 1 or more, like ${SLOW_CPU_RATE} (got ${argv[index + 1] ?? "nothing"})`);
+      index += 1;
+      cpuRate = value;
       continue;
     }
     if (arg === "--draft") {
@@ -490,7 +535,7 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
     if (out !== undefined) throw new Error("--out names one record; a run of several games writes .scratch/perf/<game>.json for each");
     if (state !== undefined || params.length > 0) throw new Error("--state and --param pin one game's scene; run that game on its own");
   }
-  return { kind: "run", args: { games, ...(quality === undefined ? {} : { quality }), draft, profile, seconds, telemetry, settings, frameClock, path, size, json, ...(out === undefined ? {} : { out }), ...(compare === undefined ? {} : { compare }), ...(headed ? { headed: true } : {}), ...(cold ? { cold: true } : {}), ...(state === undefined ? {} : { state }), params } };
+  return { kind: "run", args: { games, ...(quality === undefined ? {} : { quality }), draft, profile, seconds, telemetry, settings, frameClock, path, size, json, build, cpuRate, ...(tally === undefined ? {} : { tally }), ...(out === undefined ? {} : { out }), ...(compare === undefined ? {} : { compare }), ...(headed ? { headed: true } : {}), ...(cold ? { cold: true } : {}), ...(state === undefined ? {} : { state }), params } };
 }
 
 
@@ -995,6 +1040,8 @@ export interface PerfRecord extends Omit<PerfReport, "quality"> {
    * below normal also measured whatever outranked it; absent in older records.
    */
   machine?: RunMachine;
+  /** What a player feels, on the build the run measured; absent in older records. */
+  scorecard?: Scorecard;
 }
 
 export interface RunMachine {
@@ -1141,6 +1188,55 @@ export interface MeasureOptions {
   breakdownTop?: number;
   /** After the frame window, time every draw for a few seconds more and save it as `gpuWork`. */
   gpuWork?: boolean;
+  /** Which build `base` serves (default `dev`, what a caller's own dev server is); named in the scorecard. */
+  build?: PerfBuild;
+  /** The production build's folder, whose source maps name a profile's minified frames by package. */
+  buildDir?: string | undefined;
+  /** How many times slower the CPU runs in the slow-CPU window after the profile (default 1: no window). */
+  cpuRate?: number;
+}
+
+/** One window with the CPU profiler and the allocation sampler on: what ran, how many frames, what was allocated. */
+export interface ProfiledWindow {
+  raw: RawProfile;
+  ms: number;
+  frames: number;
+  heap: HeapSampleNode | null;
+  /** Bytes allocated over the window (sampled), garbage included; null when the sampler returned nothing. */
+  allocatedBytes: number | null;
+}
+
+/**
+ * Profile the page for `seconds` while counting its frames. Kept apart from the frame window, whose
+ * times are the loop the player gets: the profiler and the allocation sampler both cost a little.
+ */
+export async function profiledWindow(session: CdpSession, seconds: number): Promise<ProfiledWindow> {
+  await session.send("Profiler.enable");
+  await session.send("Profiler.setSamplingInterval", { interval: PROFILE_SAMPLING_US });
+  await session.send("HeapProfiler.enable");
+  // Collected objects are the garbage itself; without these flags only survivors are counted.
+  await session.send("HeapProfiler.startSampling", { samplingInterval: 16_384, includeObjectsCollectedByMajorGC: true, includeObjectsCollectedByMinorGC: true });
+  await session.send("Profiler.start");
+  const startedAt = Date.now();
+  const frames = ((await session.evaluate<number[]>(SAMPLE_FRAMES_SCRIPT(seconds * 1000), { awaitPromise: true })) ?? []).length;
+  const ms = Date.now() - startedAt;
+  const stopped = await session.send("Profiler.stop");
+  const raw = (stopped["profile"] ?? { nodes: [], samples: [], timeDeltas: [] }) as RawProfile;
+  const sampled = await session.send("HeapProfiler.stopSampling");
+  const heap = (sampled["profile"] as { head?: HeapSampleNode } | undefined)?.head ?? null;
+  const sum = (node: HeapSampleNode): number => node.selfSize + (node.children ?? []).reduce((total, child) => total + sum(child), 0);
+  return { raw, ms, frames, heap, allocatedBytes: heap === null ? null : sum(heap) };
+}
+
+/** Frame times of one window with the page's CPU slowed `rate` times (Chrome's CPU throttling), after a second to settle. */
+export async function slowCpuWindow(session: CdpSession, rate: number, seconds: number): Promise<number[]> {
+  await session.send("Emulation.setCPUThrottlingRate", { rate });
+  try {
+    await session.evaluate(`new Promise((r) => setTimeout(r, 1000))`, { awaitPromise: true });
+    return (await session.evaluate<number[]>(SAMPLE_FRAMES_SCRIPT(seconds * 1000), { awaitPromise: true })) ?? [];
+  } finally {
+    await session.send("Emulation.setCPUThrottlingRate", { rate: 1 });
+  }
 }
 
 /** Seconds of draw-timed frames a `gpuWork` window keeps. */
@@ -1192,6 +1288,8 @@ export interface PerfMeasure {
   allocators: AllocationEntry[] | null;
   /** Blank-page rAF median the uncapped run proved its clock with, or null on the capped path. */
   clockProbeMs: number | null;
+  /** Frame times of the measured window, for a caller that pools windows. */
+  deltas: number[];
 }
 
 function readGpu(session: CdpSession): Promise<string | undefined> {
@@ -1290,11 +1388,23 @@ async function measureProvisioned(options: MeasureOptions): Promise<PerfMeasure>
   const throws = watchPageExceptions(session);
   await applyDevice(session, "desktop", draft ? "half" : "full", options.size ?? {});
   const url = perfPageUrl({ base, game, quality, telemetry: options.telemetry, state: options.state, params });
+  const cpuRate = options.cpuRate ?? 1;
+  // A production game loads from an empty cache, so its load time and download are a first visit's.
+  // The dev server's warm browser keeps its cache: its load is not a player's, and clearing it would
+  // have every warm run fetch the unbundled modules again.
+  if (options.build === "production") {
+    await session.send("Network.enable").catch(() => {});
+    await session.send("Network.clearBrowserCache").catch(() => {});
+  }
+  const pcBusyPct = await cpuBusyPct();
+  const navigatedAt = Date.now();
   // Same navigation the capture tools use: it fails on a page exception or a failed document
   // instead of waiting out the readiness timeout. The timeout outlasts the page's own readiness
   // budget (2.5 minutes, past the shader warmup's cap), so a slow load reports its own reason.
   markStep(`perf ${game}: load the page`);
   await navigateCapturePage(session, url.toString(), PAGE_READY_MS);
+  const readyMs = Date.now() - navigatedAt;
+  const resources = (await session.evaluate<Array<[string, number]>>(LOAD_RESOURCES_SCRIPT)) ?? [];
   // The tier the game resolved, not the flag: a record that names a tier it never rendered at is
   // exactly the evidence gap this flag closes.
   const reportedTier = await readReportedQuality(session);
@@ -1361,32 +1471,36 @@ async function measureProvisioned(options: MeasureOptions): Promise<PerfMeasure>
   let raw: RawProfile | null = null;
   let allocators: AllocationEntry[] | null = null;
   let profiledMs = 0;
+  let profiledFrames = 0;
+  let allocatedBytes: number | null = null;
   if (profileRun) {
-    await session.send("Profiler.enable");
-    await session.send("Profiler.setSamplingInterval", { interval: PROFILE_SAMPLING_US });
-    // Only the `--profile` run samples allocations: the sampler itself costs a little per allocation.
-    const sampleHeap = options.allocations === true;
-    if (sampleHeap) {
-      await session.send("HeapProfiler.enable");
-      // Collected objects are the garbage itself; without these flags only survivors are counted.
-      await session.send("HeapProfiler.startSampling", { samplingInterval: 16_384, includeObjectsCollectedByMajorGC: true, includeObjectsCollectedByMinorGC: true });
-    }
     markStep(`perf ${game}: CPU profile window`);
-    await session.send("Profiler.start");
-    const profiledAt = Date.now();
-    await session.evaluate(`new Promise((r) => setTimeout(r, ${seconds * 1000}))`, { awaitPromise: true });
-    profiledMs = Date.now() - profiledAt;
-    const stopped = await session.send("Profiler.stop");
-    raw = (stopped["profile"] ?? { nodes: [], samples: [], timeDeltas: [] }) as RawProfile;
-    if (sampleHeap) {
-      const heap = await session.send("HeapProfiler.stopSampling");
-      const head = (heap["profile"] as { head?: HeapSampleNode } | undefined)?.head;
-      allocators = head === undefined ? null : aggregateAllocations(head, profiledMs);
-    }
+    const profiled = await profiledWindow(session, seconds);
+    raw = profiled.raw;
+    profiledMs = profiled.ms;
+    profiledFrames = profiled.frames;
+    allocatedBytes = profiled.allocatedBytes;
+    allocators = profiled.heap === null || options.allocations !== true ? null : aggregateAllocations(profiled.heap, profiledMs);
   }
 
+  let slowDeltas: number[] | null = null;
+  if (cpuRate > 1) {
+    markStep(`perf ${game}: frame window with the CPU slowed ${cpuRate}x`);
+    slowDeltas = await slowCpuWindow(session, cpuRate, seconds);
+  }
   await releasePath();
   const top = raw === null ? [] : aggregateSelfTime(raw, profiledMs);
+  const build = options.build ?? "dev";
+  const scorecard: Scorecard = {
+    build,
+    slow: slowDeltas === null ? null : { rate: cpuRate, frame: frameScore(slowDeltas) },
+    pcBusyPct,
+    frame: frameScore(deltas),
+    main: raw === null
+      ? null
+      : mainScore(scoreProfile(raw, await profileSources(raw.nodes.map((node) => node.callFrame.url), { outDir: options.buildDir })), profiledFrames, profiledMs / 1000, allocatedBytes),
+    load: loadScore(resources, readyMs),
+  };
   // Read again after the window: a WebGPU error raised while it was measured belongs to this run.
   const drew = await readBackend(session);
   const dropped = gpuErrorLine(drew);
@@ -1443,6 +1557,7 @@ async function measureProvisioned(options: MeasureOptions): Promise<PerfMeasure>
     breakdown,
     ...(gpuWork === undefined ? {} : { gpuWork }),
     machine: runMachine(),
+    scorecard,
   };
 
   const draws = record.render.draws;
@@ -1458,7 +1573,10 @@ async function measureProvisioned(options: MeasureOptions): Promise<PerfMeasure>
     throw new Error(`${game} threw while being measured: ${throws.exceptions.join("; ")}`);
   }
 
-  return { record, profile: raw, profileMs: profiledMs, allocators, clockProbeMs };
+  const notProduction = productionProblem(scorecard);
+  if (notProduction !== null) throw new Error(`${game} was asked for as a production build but was not one: ${notProduction}`);
+
+  return { record, profile: raw, profileMs: profiledMs, allocators, clockProbeMs, deltas };
 }
 
 async function main(): Promise<void> {
@@ -1467,25 +1585,27 @@ async function main(): Promise<void> {
     console.log(USAGE);
     return;
   }
-  const { games, quality, draft, profile, seconds, telemetry, settings, state, params, frameClock, headed, path, size, json } = parsed.args;
+  const { games, quality, draft, profile, seconds, telemetry, settings, state, params, frameClock, headed, path, size, json, build, cpuRate } = parsed.args;
   for (const game of games) {
     if (!existsSync(join(repoRoot, "games", game, "src", "index.tsx"))) throw new Error(`no game "${game}" in games/`);
   }
-  const forceCold = parsed.args.cold === true || frameClock === "uncapped" || headed === true;
-  const conditions = conditionsKey({ size, quality, draft, frameClock, path, seconds, telemetry, cache: forceCold ? "cold" : "auto", state, params, settings });
+  const forceCold = parsed.args.cold === true || frameClock === "uncapped" || headed === true || build === "production";
+  const conditions = conditionsKey({ size, quality, draft, frameClock, path, seconds, telemetry, cache: forceCold ? "cold" : "auto", state, params, settings, build, cpuRate });
   // Find every before side first, so a missing one fails in a second, not after minutes of measuring.
   const baselines = resolveBaselines(parsed.args.compare, games, conditions);
 
   sweepCaptureProfiles();
 
-  // Before any browser: the dev runner serves this checkout's source, so name what it measures.
+  // Before any browser: the runner serves this checkout's source, so name what it measures.
   const identity = resolveEngineIdentity();
   console.error(identity.line);
   const measuredEngine = engineRecord(identity);
 
   // The daemon's Chrome runs the display's frame clock and no window, so a run that pins its own
   // clock or asks for a window must launch its own browser instead of borrowing the daemon's.
-  const ownBrowser = frameClock === "uncapped"
+  const ownBrowser = build === "production"
+    ? "the production build is served by this run"
+    : frameClock === "uncapped"
     ? "--uncapped needs its own browser flags"
     : headed
       ? "--headed needs its own browser window"
@@ -1495,14 +1615,15 @@ async function main(): Promise<void> {
     ...(ownBrowser === undefined ? {} : { because: ownBrowser }),
   });
   const rows: PerfBatchRow[] = [];
+  const cards: Array<{ label: string; card: Scorecard }> = [];
   let pending = [...games];
 
   /** Measure one game in the browser already running on `debugPort`, then write and print its record. */
-  const measureOne = async (game: string, debugPort: number, base: string, cache: NonNullable<PerfRecord["cache"]>, servedSource: { status: "matched" | "mismatch" | "unavailable"; server: ServerIdentityReport | null; error?: string | null }): Promise<void> => {
+  const measureOne = async (game: string, debugPort: number, base: string, cache: NonNullable<PerfRecord["cache"]>, servedSource: { status: "matched" | "mismatch" | "unavailable"; server: ServerIdentityReport | null; error?: string | null }, buildDir: string | undefined): Promise<void> => {
     if (servedSource.status !== "matched") console.error(`perf: served source ${servedSource.status}; timings cannot be attributed to this checkout`);
     const session = await openPageSession(debugPort);
     try {
-      const measured = await measureGame({ session, base, game, quality, draft, seconds, telemetry, settings, state, params, frameClock, path, size, allocations: profile });
+      const measured = await measureGame({ session, base, game, quality, draft, seconds, telemetry, settings, state, params, frameClock, path, size, allocations: profile, build, buildDir, cpuRate });
       if (measuredEngine !== null) measured.record.engine = measuredEngine;
       measured.record.servedSource = servedSource;
       measured.record.cache = cache;
@@ -1526,6 +1647,8 @@ async function main(): Promise<void> {
       if (commit !== null && servedSource.status === "matched" && logProblem === null && cacheable) saveBaseline(baselinePath(repoRoot, game, commit, conditions), measured.record);
       if (json) console.log(JSON.stringify(measured.record, null, 2));
       else console.log(perfSummaryText(measured.record, baselines.get(game) ?? null));
+      if (measured.record.scorecard !== undefined && parsed.args.tally !== undefined) recordScorecardInTally(game, measured.record.scorecard, parsed.args.tally);
+      if (measured.record.scorecard !== undefined) cards.push({ label: `${game} (${scorecardLabel(measured.record.scorecard)})`, card: measured.record.scorecard });
       console.error(`perf: record written to ${outPath}${commit === null || servedSource.status !== "matched" || logProblem !== null || !cacheable ? "" : ` (kept as the ${commit} baseline)`}`);
       if (profile && measured.profile !== null) {
         printInclusive(aggregateInclusiveTime(measured.profile, measured.profileMs));
@@ -1558,7 +1681,10 @@ async function main(): Promise<void> {
     // gone after it (the broker had been restarted; ERR_CONNECTION_REFUSED, 2026-11-08). Taken before
     // the shared browser's turn, so a run queued for the lock never stalls the daemon's other captures.
     const releaseLock = await acquirePerfLock(`perf ${pending.join(" ")}`);
-    const server = daemon === null ? await ensureDevServer(repoRoot) : await ensureDaemonTarget(daemon, "dev");
+    // A production build bakes in each game's asset list, so the packs are linked before it is made.
+    if (build === "production") for (const game of pending) await provisionCapturedGame(join(repoRoot, "games", game), (line) => console.error(`perf: ${line}`));
+    const prod: ProdServer | null = build === "production" ? ensureProdServer(repoRoot) : null;
+    const server = prod ?? (daemon === null ? await ensureDevServer(repoRoot) : await ensureDaemonTarget(daemon, "dev"));
     return withDaemonWatch(daemon, withBrowserSession(
       {
         keep: false,
@@ -1571,7 +1697,7 @@ async function main(): Promise<void> {
         // The frame time is the product, so the browser draws at normal priority (scripts/perf.ts).
         chromePriority: "normal",
         server: server.child,
-        serverPid: server.pid,
+        serverPid: "pid" in server ? server.pid : undefined,
         debugPort: daemon?.chromePort,
         attach: daemon !== null,
         leaveWarm: daemon !== null,
@@ -1585,7 +1711,7 @@ async function main(): Promise<void> {
           try {
             const identity = await readServerIdentityResult(server.base);
             servedSource = { status: compareServedSource(identity.server, checkoutIdentity(repoRoot), measuredEngine?.commit ?? null), ...identity };
-            await measureOne(game, debugPort, server.base, { browser, priorGames }, servedSource);
+            await measureOne(game, debugPort, server.base, { browser, priorGames }, servedSource, prod?.build.outDir);
           } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             console.error(`perf: ${game} failed: ${message}`);
@@ -1607,12 +1733,16 @@ async function main(): Promise<void> {
             for (const game of failed) rows.push({ game, summary: "failed" });
             console.log(`\n${perfBatchTable(rows)}`);
           }
+          if (cards.length > 1 && !json) console.log(`\n${renderScorecard(cards)}`);
           // The last record is written: nothing left in this run is worth waiting for.
           armExitAfterResults(failed.length === 0 ? 0 : 1);
         }
         return failed.length === 0 ? 0 : 1;
       },
-    )).finally(releaseLock);
+    )).finally(() => {
+      prod?.stop();
+      releaseLock();
+    });
   };
 
   const exitCode = await runWithDaemonRecovery(warm, (daemon, mode) =>
@@ -1709,6 +1839,16 @@ export function perfBatchTable(rows: readonly PerfBatchRow[]): string {
 export function perfSummaryText(record: PerfRecord, baseline: PerfRecord | null): string {
   const conditions = `${record.viewport}, ${record.quality} tier, ${record.frameClock} clock, path ${record.path ?? "still"}, ${record.gpu}${machineClause(record.machine)}`;
   const lines: string[] = [];
+  if (record.scorecard !== undefined) {
+    const card = record.scorecard;
+    lines.push(
+      card.build === "production"
+        ? `${record.game}: the production build (what players get)`
+        : `${record.game}: the dev server's build (development React, unbundled modules), not what players get`,
+      renderScorecard([{ label: scorecardLabel(card), card }]),
+      "",
+    );
+  }
   if (record.breakdown === null || record.breakdown === undefined) {
     lines.push(`${record.game}: no frame breakdown (the page has no dev telemetry); frame avg ${record.frame.avgMs} ms, p95 ${record.frame.p95Ms} ms`);
   } else {
