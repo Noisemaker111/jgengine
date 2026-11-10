@@ -1,6 +1,8 @@
 import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
 import { useInsertionEffect, type ReactNode } from "@jgengine/core/ui/jsx";
+import { loadGameFonts } from "@jgengine/core/ui/fonts.view";
 
+import { GAME_FONTS } from "./art/fonts/fonts";
 import { AuthProvider } from "./auth";
 import { authClient } from "./auth/authClient";
 import { convexClient, initialConvexToken } from "./auth/convexClient";
@@ -12,6 +14,7 @@ import "./style.css";
 export function LlmvilleBackend({ children }: { children: ReactNode }) {
   useInsertionEffect(() => {
     applyLlmvilleKit(document);
+    loadGameFonts(GAME_FONTS);
   }, []);
   return (
     <ConvexBetterAuthProvider client={convexClient} authClient={authClient} initialToken={initialConvexToken ?? null}>

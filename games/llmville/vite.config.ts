@@ -12,6 +12,9 @@ export default defineConfig({
     tailwindcss(),
     viteJgUiWasm(),
   ],
+  // Convex's and better-auth's hooks import `react`, which resolves to the engine's UI runtime. That
+  // runtime is source and must stay one module instance, so the dependency pre-bundle leaves it out.
+  optimizeDeps: { exclude: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "react-dom/client", "react-dom/server"] },
   resolve: {
     dedupe: engine.dedupe,
     alias: [
