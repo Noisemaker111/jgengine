@@ -9,9 +9,9 @@ use std::collections::HashMap;
 use rune::tok::{Family, TextStyle};
 use rune::{Align, Color, El, ScrollSpec, Shadow, Span, TextEdit, Tx, col, el, text, text_input};
 use rune_taffy::prelude::{
-    AlignContent, AlignItems, AlignSelf, BoxSizing, Dimension, Display, FlexDirection, FlexWrap, GridAutoFlow, GridPlacement, GridTemplateComponent,
+    AlignContent, AlignItems, AlignSelf, BoxSizing, Dimension, Display, FlexDirection, FlexWrap, GridAutoFlow, GridPlacement, GridTemplateComponent, RepetitionCount,
     JustifyContent, LengthPercentage, LengthPercentageAuto, Line, MaxTrackSizingFunction, MinTrackSizingFunction, Position, Rect, Size, Style,
-    TrackSizingFunction, auto, length, line, percent, span,
+    TrackSizingFunction, auto, length, line, percent, repeat, span,
 };
 use serde::Deserialize;
 
@@ -217,7 +217,8 @@ pub struct Input {
 }
 
 /// A grid track as `[min kind, min value, max kind, max value]`; kinds: 0 auto, 1 points,
-/// 2 percent, 3 fr, 4 min-content, 5 max-content.
+/// 2 percent, 3 fr, 4 min-content, 5 max-content. A min kind with 10 or 20 added is a track of
+/// `repeat(auto-fill, ...)` or `repeat(auto-fit, ...)`.
 pub type Track = [f32; 4];
 
 #[derive(Deserialize, Default)]
@@ -276,6 +277,9 @@ pub struct Box_ {
     pub bw: Option<[f32; 4]>,
     #[serde(default)]
     pub bc: Option<Rgba>,
+    /// Each side's own border colour, `[top, right, bottom, left]`, when they differ.
+    #[serde(default)]
+    pub bcs: Option<[Rgba; 4]>,
     /// column gap, row gap.
     #[serde(default)]
     pub gap: Option<[f32; 2]>,
@@ -415,8 +419,36 @@ fn align_content(v: u8) -> Option<AlignContent> {
     })
 }
 
+/// A track list as Taffy takes it: neighbouring tracks of one `repeat(auto-fill | auto-fit, ...)` become
+/// one repetition, counted by the layout from the room there is.
+fn template(tracks: &[Track]) -> Vec<GridTemplateComponent<String>> {
+    let mut out: Vec<GridTemplateComponent<String>> = Vec::new();
+    let mut run: (u8, Vec<TrackSizingFunction>) = (0, Vec::new());
+    let mut close = |run: &mut (u8, Vec<TrackSizingFunction>), out: &mut Vec<GridTemplateComponent<String>>| {
+        if run.1.is_empty() {
+            return;
+        }
+        let count = if run.0 == 2 { RepetitionCount::AutoFit } else { RepetitionCount::AutoFill };
+        out.push(repeat(count, std::mem::take(&mut run.1)));
+    };
+    for t in tracks {
+        let auto = (t[0] as u8) / 10;
+        if auto != run.0 {
+            close(&mut run, &mut out);
+            run.0 = auto;
+        }
+        if auto == 0 {
+            out.push(GridTemplateComponent::Single(track(t)));
+        } else {
+            run.1.push(track(t));
+        }
+    }
+    close(&mut run, &mut out);
+    out
+}
+
 fn track(t: &Track) -> TrackSizingFunction {
-    let min = match t[0] as u8 {
+    let min = match (t[0] as u8) % 10 {
         1 => MinTrackSizingFunction::length(t[1]),
         2 => MinTrackSizingFunction::percent(t[1] / 100.0),
         4 => MinTrackSizingFunction::min_content(),
@@ -498,8 +530,8 @@ fn layout(b: &Box_, s: &mut Style) {
     s.aspect_ratio = b.ar;
     s.box_sizing = if b.cb == 1 { BoxSizing::ContentBox } else { BoxSizing::BorderBox };
     if b.d == 2 {
-        s.grid_template_columns = b.gtc.iter().map(|t| GridTemplateComponent::Single(track(t))).collect();
-        s.grid_template_rows = b.gtr.iter().map(|t| GridTemplateComponent::Single(track(t))).collect();
+        s.grid_template_columns = template(&b.gtc);
+        s.grid_template_rows = template(&b.gtr);
         s.grid_auto_columns = b.gac.iter().map(track).collect();
         s.grid_auto_rows = b.gar.iter().map(track).collect();
         s.grid_auto_flow = match b.gaf {
@@ -819,7 +851,33 @@ pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
     if let Some(r) = radii {
         e = e.corners(r);
     }
-    if let (Some(w), Some(c), false) = (b.bw, b.bc, skewed) {
+    if let (Some(w), Some(colors), false) = (b.bw, &b.bcs, skewed) {
+        // One border per colour: the first on the box, each other on a sheet over it.
+        let mut drawn = [false; 4];
+        let mut first = true;
+        for side in 0..4 {
+            if drawn[side] || w[side] <= 0.0 {
+                continue;
+            }
+            let color = colors[side].0;
+            let mut widths = [0.0; 4];
+            for other in side..4 {
+                if !drawn[other] && colors[other].0 == color {
+                    widths[other] = w[other];
+                    drawn[other] = true;
+                }
+            }
+            if color.a <= 0.0 {
+                continue;
+            }
+            if first {
+                e = e.border_sides(widths, color);
+                first = false;
+            } else {
+                e = e.child(sheet(radii).border_sides(widths, color).inert());
+            }
+        }
+    } else if let (Some(w), Some(c), false) = (b.bw, b.bc, skewed) {
         if w.iter().any(|v| *v > 0.0) {
             e = e.border_sides(w, c.0);
             if b.dash != 0 {

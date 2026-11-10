@@ -179,6 +179,8 @@ function textStyleOf(element: Element): TextStyle {
 interface Run {
   text: string;
   style: TextStyle;
+  /** A `<br>`: a line break that white-space collapsing leaves alone. */
+  hard?: boolean;
 }
 
 /** Gathers the text of an element whose content is only text and plain inline elements; false when it holds a box. */
@@ -192,7 +194,7 @@ function inlineRuns(element: Element, style: TextStyle, out: Run[], fresh: boole
     if (node.nodeType !== 1) continue;
     const child = node as Element;
     if (child.localName === "br") {
-      out.push({ text: "\n", style });
+      out.push({ text: "\n", style, hard: true });
       continue;
     }
     const childStyle = fresh ? readTextStyle(child, getComputedStyle(child)) : textStyleOf(child);
@@ -214,7 +216,8 @@ function textOf(runs: Run[], style: TextStyle, report: MirrorReport, element: El
   let previousSpace = true;
   for (const run of runs) {
     const pre = run.style.whiteSpace === "pre" || run.style.whiteSpace === "pre-wrap";
-    let text = applyCase(collapse(run.text, run.style.whiteSpace), run.style.transform);
+    let text = run.hard === true ? run.text : applyCase(collapse(run.text, run.style.whiteSpace), run.style.transform);
+    if (run.hard === true && content.endsWith(" ")) content = content.slice(0, -1);
     if (previousSpace && !pre && text.startsWith(" ")) text = text.slice(1);
     if (text === "") continue;
     previousSpace = text.endsWith(" ") || text.endsWith("\n");
@@ -519,7 +522,7 @@ function boxOfStyle(element: Element, style: CSSStyleDeclaration, report: Mirror
     const widest = borderWidths.indexOf(Math.max(...borderWidths));
     const color = parseColor(sides[widest] ?? "");
     if (color !== null && colorAlpha(color) > 0) box["bc"] = color;
-    if (new Set(sides.filter((_side, index) => (borderWidths[index] ?? 0) > 0)).size > 1) report.add("border: a different colour per side", element);
+    if (new Set(sides.filter((_side, index) => (borderWidths[index] ?? 0) > 0)).size > 1) box["bcs"] = sides.map((side) => parseColor(side) ?? 0);
     const borderStyle = [style.borderTopStyle, style.borderRightStyle, style.borderBottomStyle, style.borderLeftStyle][widest];
     if (borderStyle === "dashed" || borderStyle === "dotted") box["dash"] = borderStyle === "dotted" ? 1 : 2;
     else if (borderStyle !== "solid") report.add(`border-style: ${borderStyle}`, element);
@@ -952,6 +955,10 @@ export function mirrorElement(element: Element, report: MirrorReport, inherited:
       const align = style.textAlign;
       if (align === "center") box["jc"] = 3;
       else if (align === "right" || align === "end") box["jc"] = 2;
+      // A block among them takes a line of its own, as wide as the box.
+      for (const child of children) {
+        if (child.id !== 0 && child["inl"] !== 1 && child["pos"] !== 2 && child["w"] === undefined && child["fb"] === undefined) child["fb"] = "100%";
+      }
     }
   }
   const after = pseudoBox(element, "::after", report);

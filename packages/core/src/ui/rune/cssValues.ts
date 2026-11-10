@@ -141,7 +141,7 @@ export function parseDim(text: string): WireDim | null {
     return [first[0], first[1], other[0], other[1], pick[1] === "min" ? 1 : 2];
   }
   // `clamp(low, value, high)` with fixed ends, as written or inside the `calc(0px + ...)` a custom property leaves.
-  const clamp = /^(?:calc\(0px \+ )?clamp\((.*)\)\)?$/.exec(text);
+  const clamp = /^calc\(0px \+ clamp\((.*)\)\)$/.exec(text) ?? /^clamp\((.*)\)$/.exec(text);
   if (clamp !== null) {
     const parts = splitTop(clamp[1] ?? "", ",").map((part) => parseLengthPercent(part));
     const [low, value, high] = parts;
@@ -560,10 +560,13 @@ export function parseTracks(text: string): WireTrack[] | null {
     if (token.startsWith("[")) continue;
     if (token.startsWith("repeat(")) {
       const [count = "", ...rest] = splitTop(token.slice(7, -1), ",");
-      const n = Number.parseInt(count, 10);
+      const auto = count.trim() === "auto-fill" ? 10 : count.trim() === "auto-fit" ? 20 : 0;
+      const n = auto === 0 ? Number.parseInt(count, 10) : 1;
       if (Number.isNaN(n)) return null;
       const inner = parseTracks(rest.join(" "));
       if (inner === null) return null;
+      // As many as fit: the layout engine counts them, told by 10 (`auto-fill`) or 20 (`auto-fit`) added to the kind.
+      if (auto !== 0) for (const track of inner) track[0] += auto;
       for (let i = 0; i < n; i += 1) out.push(...inner);
       continue;
     }
@@ -661,6 +664,8 @@ export function parseTransform(translate: string, rotate: string, scale: string,
         out.rotate += Math.atan2(b, a);
         out.x += e;
         out.y += f;
+      } else if ((/^rotate[XYZ]$|^rotate3d$/.test(fn) && parseFloat(args[args.length - 1] ?? "0") === 0) || (/^scale[XYZ]$/.test(fn) && parseFloat(args[0] ?? "1") === 1)) {
+        // A turn of nothing or a scale of one changes nothing.
       } else out.lost = part;
     }
   }

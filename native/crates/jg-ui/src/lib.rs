@@ -280,7 +280,10 @@ pub fn set_spec(json: &str) {
     };
     HANDLE.with(|h| {
         if let Some(handle) = h.borrow().as_ref() {
-            handle.update(move |s: &mut Ui, _tx: &mut Tx| {
+            handle.update(move |s: &mut Ui, tx: &mut Tx| {
+                // The page decides what moves: a box it adds or removes is there or gone in this frame,
+                // as in the DOM, not faded by Rune's default entrance and exit.
+                tx.instant();
                 s.root = children;
                 s.modal = modal;
                 sync_fields(s);
@@ -323,7 +326,10 @@ pub fn patch(json: &str) {
     };
     HANDLE.with(|h| {
         if let Some(handle) = h.borrow().as_ref() {
-            handle.update(move |s: &mut Ui, _tx: &mut Tx| {
+            handle.update(move |s: &mut Ui, tx: &mut Tx| {
+                // The page decides what moves: a box it adds or removes is there or gone in this frame,
+                // as in the DOM, not faded by Rune's default entrance and exit.
+                tx.instant();
                 let mut fields = false;
                 for b in boxes {
                     let id = b.id;
@@ -357,7 +363,10 @@ pub fn patch_text(id: u32, json: &str) {
     };
     HANDLE.with(|h| {
         if let Some(handle) = h.borrow().as_ref() {
-            handle.update(move |s: &mut Ui, _tx: &mut Tx| {
+            handle.update(move |s: &mut Ui, tx: &mut Tx| {
+                // The page decides what moves: a box it adds or removes is there or gone in this frame,
+                // as in the DOM, not faded by Rune's default entrance and exit.
+                tx.instant();
                 if let Some(slot) = css::find_mut(&mut s.root, id) {
                     slot.t = text;
                 }
