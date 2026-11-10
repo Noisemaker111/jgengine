@@ -236,8 +236,43 @@ export interface PrBody {
   text: string;
   /** True when the text came from `--body-file`, so land may write it over an open PR's body. */
   explicit: boolean;
+  /** True when the text is the generated change note: a reused PR gets it spliced into its managed block, never over a hand-written body. */
+  managed?: boolean;
   /** The "Bends" section read from the diff (`scripts/bends.ts`), "" for none; a reused PR's body gets it too. */
   bends?: string;
+}
+
+const NOTE_BEGIN = "<!-- jgengine:change-note -->";
+const NOTE_END = "<!-- /jgengine:change-note -->";
+const NOTE_BLOCK = /<!-- jgengine:change-note -->[\s\S]*?<!-- \/jgengine:change-note -->/;
+
+/** The generated note inside markers, so a later land splices it without touching the rest of the body. */
+export function noteBlock(text: string): string {
+  return `${NOTE_BEGIN}\n${text.trim()}\n${NOTE_END}`;
+}
+
+/**
+ * `body` with its managed change-note block replaced by `text`: appended when the body has none.
+ * Stray marker lines are dropped first, so an unclosed block cannot swallow what a hand wrote after it.
+ */
+export function withNote(body: string, text: string): string {
+  const normalized = body.replace(/\r\n/g, "\n");
+  if (NOTE_BLOCK.test(normalized)) return `${normalized.replace(NOTE_BLOCK, () => noteBlock(text))}`.trimEnd() + "\n";
+  const stripped = normalized
+    .split("\n")
+    .filter((line) => line.trim() !== NOTE_BEGIN && line.trim() !== NOTE_END)
+    .join("\n")
+    .trimEnd();
+  const head = stripped === "" ? "" : `${stripped}\n\n`;
+  return `${head}${noteBlock(text)}\n`;
+}
+
+/** A reused PR's body for a managed note: the note splices into its block while Bends keeps its own top-level section. */
+function spliceNote(body: PrBody): (current: string) => string {
+  return (current) => {
+    const noted = withNote(current, body.text);
+    return body.bends === undefined ? noted : withBends(noted, body.bends);
+  };
 }
 
 /**
@@ -272,7 +307,10 @@ export function landBody(options: {
     log(`ignoring changes/${basename(file.path)}: this branch's diff against origin/${args.base} does not add it`);
   }
   const fragment = pickFragment(own, branch);
-  if (fragment !== null) return { text: fragment.text.trim(), explicit: (args.messages?.length ?? 0) > 0 };
+  if (fragment !== null) {
+    if ((args.messages?.length ?? 0) > 0) return { text: fragment.text.trim(), explicit: true, managed: true };
+    return { text: fragment.text.trim(), explicit: false };
+  }
 
   const messages = (options.commits ?? (() => branchCommits(args.base)))();
   const commits = commitsBody(messages);
@@ -1012,8 +1050,12 @@ export function ensurePr(options: {
     const existing = { number: found.number, url: found.url };
     log(`reusing PR #${existing.number} ${existing.url}`);
     // A body land was given (`--body-file`, or `-m` lines that rewrote the note) rewrites the title too,
-    // so a re-close never leaves the first run's title over the new description.
-    if (body.explicit && !updatePr(existing.number, { body: body.text, title: args.title ?? summary }, github, log)) return null;
+    // so a re-close never leaves the first run's title over the new description. The generated note
+    // splices into its managed block, so evidence a person or agent added to the body survives.
+    if (body.explicit && !updatePr(existing.number, {
+      body: body.managed === true ? spliceNote(body) : body.text,
+      title: args.title ?? summary,
+    }, github, log)) return null;
     // A reused PR keeps its body, but its Bends section is rewritten from the diff it now carries.
     const bends = body.bends;
     if (!body.explicit && bends !== undefined && !updatePr(existing.number, { body: (current) => withBends(current, bends) }, github, log)) {
@@ -1022,7 +1064,12 @@ export function ensurePr(options: {
     return existing;
   }
 
-  const created = github.createPull({ base: args.base, head: branch, title: args.title ?? summary, body: body.text });
+  const created = github.createPull({
+    base: args.base,
+    head: branch,
+    title: args.title ?? summary,
+    body: body.managed === true ? withBends(noteBlock(body.text), body.bends ?? "") : body.text,
+  });
   if (!created.ok) {
     console.error(`land: opening the PR failed: ${created.error}`);
     return null;
@@ -1091,7 +1138,8 @@ function prepare(args: LandArgs, branch: string, io: LandIo): PrRef | number {
   const diff = io.git(["diff", "--no-color", "-M", "-U0", `origin/${args.base}...HEAD`]);
   const bends = diff.status === 0 ? bendsSection(findBends(diff.stdout)) : undefined;
   if (bends !== undefined) io.log(bends === "" ? "Bends: none in the diff" : "Bends: listed in the PR body");
-  const withSection = bends === undefined ? body : { ...body, text: withBends(body.text, bends), bends };
+  // A managed note keeps Bends out of its block: the splice writes the note, then Bends its own section.
+  const withSection = bends === undefined ? body : body.managed === true ? { ...body, bends } : { ...body, text: withBends(body.text, bends), bends };
   const pr = ensurePr({ args, branch, summary, body: withSection, github: io.github, log: io.log });
   return pr ?? EXIT_COULD_NOT_MERGE;
 }

@@ -29,7 +29,9 @@ import {
   mergeVerified,
   MERGE_ATTEMPTS,
   commitsBody,
+  noteBlock,
   noteLines,
+  withNote,
   syncOntoBase,
   retryServerErrors,
 } from "./land";
@@ -199,8 +201,27 @@ test("a note this run rewrote from -m replaces a reused PR's body; a kept note d
     files: () => [OWN],
     added: () => ["changes/agent-lane-x.md"],
   };
-  expect(landBody({ ...options, args: { base: "beta", messages: ["The fragment."] } }).explicit).toBe(true);
+  expect(landBody({ ...options, args: { base: "beta", messages: ["The fragment."] } })).toEqual({
+    text: "### Changed\n\n- The fragment.",
+    explicit: true,
+    managed: true,
+  });
   expect(landBody({ ...options, args: { base: "beta", messages: [] } }).explicit).toBe(false);
+});
+
+test("withNote splices the managed block, preserves what a hand wrote, and is idempotent", () => {
+  const hand = "## Evidence\n\n- fps halved\n\n<!-- jgengine:change-note -->\nold note\n<!-- /jgengine:change-note -->\n\ntrail kept\n";
+  const spliced = withNote(hand, "new note");
+  expect(spliced).toContain("## Evidence\n\n- fps halved");
+  expect(spliced).toContain("new note");
+  expect(spliced).toContain("trail kept");
+  expect(spliced).not.toContain("old note");
+  expect(withNote(spliced, "new note")).toBe(spliced);
+
+  const appended = withNote("a body someone wrote\n", "the note");
+  expect(appended).toContain("a body someone wrote");
+  expect(appended).toContain("the note");
+  expect(withNote("", "the note")).toBe(`${noteBlock("the note")}\n`);
 });
 
 test("a blank body file falls back to the branch's own fragment and does not claim to be explicit", () => {
@@ -343,6 +364,52 @@ test("opening a PR sends the explicit body rather than the fragment, over REST",
     `POST repos/${LAND_REPO}/pulls`,
   ]);
   expect(api.calls[1]?.fields).toEqual({ base: "beta", head: "agent/lane-x", title: "Menus", body: "the body I wrote" });
+});
+
+test("a re-close with -m splices the note into a reused PR's body instead of replacing it", () => {
+  const api = prApi([{ number: 19, body: "## Evidence\n\n- fps halved\n\n<!-- jgengine:change-note -->\nold note\n<!-- /jgengine:change-note -->\n", title: "old" }]);
+  ensurePr({
+    args: { base: "beta" },
+    branch: "agent/lane-x",
+    summary: "new subject",
+    body: { text: "the note", explicit: true, managed: true },
+    github: api.github,
+    log: noLog,
+  });
+  const patch = edits(api)[0]!.fields;
+  expect(patch["title"]).toBe("new subject");
+  const body = String(patch["body"]);
+  expect(body).toContain("## Evidence\n\n- fps halved");
+  expect(body).toContain("the note");
+  expect(body).not.toContain("old note");
+});
+
+test("a managed note on a body nobody marked is appended, never substituted", () => {
+  const api = prApi([{ number: 20, body: "a body someone wrote\n", title: "t" }]);
+  ensurePr({
+    args: { base: "beta" },
+    branch: "agent/lane-x",
+    summary: "s",
+    body: { text: "the note", explicit: true, managed: true },
+    github: api.github,
+    log: noLog,
+  });
+  const body = String(edits(api)[0]!.fields["body"]);
+  expect(body.startsWith("a body someone wrote")).toBe(true);
+  expect(body).toContain(noteBlock("the note"));
+});
+
+test("opening a PR writes the managed note inside its markers", () => {
+  const api = prApi([]);
+  ensurePr({
+    args: { base: "beta" },
+    branch: "agent/lane-x",
+    summary: "the last commit",
+    body: { text: "the note", explicit: true, managed: true },
+    github: api.github,
+    log: noLog,
+  });
+  expect(api.calls[1]?.fields["body"]).toBe(noteBlock("the note"));
 });
 
 test("refuses main, the base branch and a dirty tree", () => {
