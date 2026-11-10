@@ -34,7 +34,7 @@ The real-entry material proof catches this separately from offscreen GPU tests.
 `el/backdrop.rs` — every visible backdrop surface gets its requested blur.
 Removed the four-surface cutoff and its public constant. Uniform storage grows
 to the visible record count within the device's buffer/dynamic-offset limits;
-existing pyramid textures are rebound and retained when that storage grows.
+existing blur textures are rebound and retained when that storage grows.
 CPU level data is reused across frames. LLMville's eight rack labels and control
 panel exercise this; the GPU regression grows and shrinks the surface count and
 measures each one's line spread. The old fifth surface had zero blur.

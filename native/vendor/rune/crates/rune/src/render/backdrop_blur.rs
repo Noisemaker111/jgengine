@@ -330,7 +330,7 @@ impl Renderer {
         let mut need = [STEP; 2];
         let records = self.effects.iter().filter(|(_, i)| i.params[1] == KIND_BACKDROP_BLUR);
         for (at, i) in records {
-            let sigma = layer_blur::sigma(i.params[0]).max(0.001);
+            let sigma = i.params[0].clamp(0.001, 156.2);
             let reach = sigma * 3.0 + 2.0;
             let region = [
                 (i.rect[0] - reach).max(0.0),

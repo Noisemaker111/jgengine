@@ -279,7 +279,7 @@ fn css_blurs_preserve_the_requested_standard_deviation() {
         target.read(&gpu.device)
     };
     // A step edge's derivative is its line-spread kernel. Measure its variance because Rune's
-    // foreground Gaussian and backdrop pyramid approximate that kernel differently.
+    // foreground reduction and the device-resolution backdrop use different sampling paths.
     for backdrop in [false,true] {
         let pixels=draw(backdrop);
         let sigma=line_spread(&pixels,64,32,32);
