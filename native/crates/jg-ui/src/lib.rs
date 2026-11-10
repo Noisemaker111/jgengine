@@ -120,6 +120,8 @@ pub(crate) fn emit_scroll(id: u32, at: rune::ScrollPos) {
 #[derive(Default)]
 pub struct Ui {
     root: Vec<Node>,
+    revision: u64,
+    cache: css::BoxCache,
     /// While true the bridge treats the UI as modal: game input is suspended
     /// and the pointer is shown.
     modal: bool,
@@ -306,6 +308,7 @@ pub fn set_spec(json: &str) {
 /// one for each new field, and take the page's text where it set a field itself.
 #[cfg(target_arch = "wasm32")]
 fn sync_fields(s: &mut Ui) {
+    s.revision = s.revision.wrapping_add(1);
     let ids = spec::field_ids(&s.root);
     s.edits.retain(|id, _| ids.contains(id));
     spec::collect_fields(&s.root, &mut s.edits);
@@ -379,6 +382,7 @@ pub fn patch_text(id: u32, json: &str) {
                 tx.instant();
                 if let Some(slot) = css::find_mut(&mut s.root, id) {
                     slot.t = text;
+                    s.revision = s.revision.wrapping_add(1);
                 }
             });
         }
@@ -407,7 +411,7 @@ pub fn scroll_to(id: u32, x: f32, y: f32, smooth: bool) {
 pub fn values_changed() {
     HANDLE.with(|h| {
         if let Some(handle) = h.borrow().as_ref() {
-            handle.update(|_s: &mut Ui, _tx: &mut Tx| {});
+            handle.update(|_s: &mut Ui, tx: &mut Tx| tx.instant());
         }
     });
 }

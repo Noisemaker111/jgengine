@@ -3,8 +3,9 @@
 //! record; here it becomes a Taffy style plus Rune paint, with no knowledge of
 //! selectors, classes or units.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
 
 use rune::tok::{Family, TextStyle};
 use rune::{Align, Color, El, ScrollSpec, Shadow, Span, TextEdit, Tx, col, el, text, text_input};
@@ -798,6 +799,54 @@ fn needs_size(b: &Box_) -> bool {
         || b.sk != 0.0
 }
 
+#[derive(Default)]
+pub(crate) struct BoxCache {
+    hashes: RefCell<HashMap<usize, u64>>,
+    revision: Cell<Option<u64>>,
+}
+
+impl BoxCache {
+    pub(crate) fn prepare(&self, nodes: &[crate::Node], revision: u64) -> bool {
+        let mut hashes = self.hashes.borrow_mut();
+        hashes.clear();
+        for node in nodes { Self::fingerprint(node, revision, false, &mut hashes); }
+        self.revision.replace(Some(revision)) != Some(revision)
+    }
+
+    fn fingerprint(node: &crate::Node, revision: u64, enclosed: bool, hashes: &mut HashMap<usize, u64>) {
+        let crate::Node::X(b) = node else { return; };
+        for child in &b.c { Self::fingerprint(child, revision, enclosed || !b.cp.is_empty(), hashes); }
+        // Containers retain mutable layout/scroll state; editors retain selection and composition.
+        if !b.c.is_empty() || b.inp.is_some() { return; }
+        let mut hash = std::collections::hash_map::DefaultHasher::new();
+        revision.hash(&mut hash);
+        for dim in [b.w, b.h, b.mnw, b.mnh, b.mxw, b.mxh, b.fb].into_iter().flatten()
+            .chain(b.ins.into_iter().flatten()).chain(b.mg.into_iter().flatten()).chain(b.pd.into_iter().flatten()) {
+            if let Dim::Slot { v, .. } = dim { crate::val(v).to_bits().hash(&mut hash); }
+        }
+        for slot in b.opv.into_iter().chain(b.tfv.into_iter().flatten()) { crate::val(slot).to_bits().hash(&mut hash); }
+        if let Some(live) = b.t.as_ref().and_then(|text| text.live.as_ref()) {
+            crate::val(live.n).to_bits().hash(&mut hash);
+            for slot in &live.u { crate::val(*slot).to_bits().hash(&mut hash); }
+        }
+        if needs_size(b) || enclosed {
+            RECTS.with(|rects| {
+                if let Some(rect) = rects.borrow().get(&b.id) {
+                    let values = if enclosed || !b.cp.is_empty() { &rect[..] } else { &rect[2..] };
+                    for value in values { value.to_bits().hash(&mut hash); }
+                }
+            });
+        }
+        let version = hash.finish();
+        hashes.insert(b.as_ref() as *const Box_ as usize, version);
+    }
+}
+
+#[cfg(test)]
+thread_local! {
+    static BUILDS: RefCell<Vec<u32>> = const { RefCell::new(Vec::new()) };
+}
+
 /// The part of `poly` on the inside of the line `n · p = d` (`keep_below`: where `n · p <= d`).
 fn cut(poly: &[[f32; 2]], n: [f32; 2], d: f32, keep_below: bool) -> Vec<[f32; 2]> {
     let side = |p: [f32; 2]| {
@@ -1073,6 +1122,15 @@ fn text_el(t: &Txt, color: Color) -> El {
 
 /// Builds the Rune element for one CSS box and its subtree.
 pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
+    let version = s.cache.hashes.borrow().get(&(b as *const Box_ as usize)).copied();
+    let Some(version) = version else { return build_box(b, path, s, t); };
+    let key = if b.id == 0 { format!("t{path}") } else { format!("x{}", b.id) };
+    rune::memo::memo_with_hash(key, version, || build_box(b, path, s, t))
+}
+
+fn build_box(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
+    #[cfg(test)]
+    BUILDS.with(|builds| builds.borrow_mut().push(b.id));
     let key = if b.id == 0 { format!("t{path}") } else { format!("x{}", b.id) };
     let scrolls = b.ovx == 2 || b.ovy == 2;
     let enclosed = CLIPS.with(|c| !c.borrow().is_empty());
@@ -1371,6 +1429,55 @@ pub fn fields<'a>(nodes: &'a [crate::Node], out: &mut Vec<(String, &'a Input)>) 
 #[cfg(test)]
 mod live_value_tests {
     use super::*;
+
+    #[test]
+    fn cached_scroll_rows_keep_painting_across_other_leaf_updates_and_replacements() {
+        RECTS.with(|rects| rects.borrow_mut().clear());
+        crate::set_val(7750, 1.0); crate::set_val(7751, '0' as u32 as f32);
+        let spec = |offset: u32| {
+            let rows: Vec<_> = (0..20).map(|i| serde_json::json!({"k":"x","id":offset+100+i,"h":24,"fs":0,"bg":4294967295_u32,"t":{"s":format!("STATIC ROW {i}"),"z":16,"c":255}})).collect();
+            crate::spec::parse_spec(&serde_json::json!({"children":[{"k":"x","id":1,"w":200,"h":300,"fd":1,"c":[{"k":"x","id":2,"t":{"s":"0","z":20,"c":4294967295_u32,"live":{"n":7750,"u":[7751,7752]}}},{"k":"x","id":offset+3,"fd":1,"fg":1,"mnh":0,"ovy":2,"c":rows}]}]}).to_string()).unwrap().children
+        };
+        let mut state = Ui::default(); state.root = spec(0);
+        let mut runtime = rune::Runtime::new(state, crate::build::view, (200.0, 300.0), rune::Env::new(true, 1.0));
+        runtime.frame(0.0);
+        for i in 0..60 {
+            if i == 25 { let root = spec(1000); runtime.update(move |state, tx| { tx.instant(); state.root = root; state.revision += 1; }); }
+            crate::set_val(7750, 2.0); crate::set_val(7751, ('0' as u32 + i / 10) as f32); crate::set_val(7752, ('0' as u32 + i % 10) as f32);
+            runtime.update(|_, tx| tx.instant()); runtime.frame(0.02);
+            let glyphs = runtime.instances.iter().filter(|quad| quad.params[1] == 2.0 && quad.rect[2] > 0.0 && quad.rect[3] > 0.0).count();
+            assert!(glyphs >= 100, "cached scroll content disappeared on update {i}: {glyphs} glyphs");
+        }
+    }
+
+    #[test]
+    fn a_changing_shared_label_rebuilds_its_branch_and_reflows_without_rebuilding_its_neighbor() {
+        RECTS.with(|rects| rects.borrow_mut().clear());
+        crate::set_val(7700, 1.0); crate::set_val(7701, '9' as u32 as f32);
+        let mut state = Ui::default();
+        state.root = crate::spec::parse_spec(r#"{"children":[{"k":"x","id":1,"w":200,"h":50,"c":[{"k":"x","id":2,"t":{"s":"9","z":20,"c":4294967295,"live":{"n":7700,"u":[7701,7702,7703]}}},{"k":"x","id":3,"w":40,"h":20,"bg":4294967295}]}]}"#).unwrap().children;
+        let mut runtime = rune::Runtime::new(state, crate::build::view, (200.0, 50.0), rune::Env::new(true, 1.0));
+        runtime.frame(0.0);
+        for _ in 0..2 { runtime.update(|_, tx| tx.instant()); runtime.frame(0.01); }
+        let left = |runtime: &rune::Runtime<Ui>| runtime.elements().into_iter().find(|element| element.key.as_deref() == Some("x3")).unwrap().rect[0];
+        let before = left(&runtime);
+        BUILDS.with(|builds| builds.borrow_mut().clear());
+        crate::set_val(7700, 3.0);
+        for (slot, unit) in [7701, 7702, 7703].into_iter().zip("100".encode_utf16()) { crate::set_val(slot, unit as f32); }
+        runtime.update(|_, tx| tx.instant()); runtime.frame(0.01);
+        BUILDS.with(|builds| {
+            let builds = builds.borrow();
+            assert!(builds.contains(&2), "the changing text did not rebuild");
+            assert!(!builds.contains(&3), "an unrelated static branch rebuilt: {builds:?}");
+        });
+        assert!(left(&runtime) > before + 10.0, "the growing label stopped reflowing its neighbor: {before} -> {}", left(&runtime));
+        BUILDS.with(|builds| builds.borrow_mut().clear());
+        assert!(!runtime.frame(0.1), "unchanged UI requested another frame");
+        BUILDS.with(|builds| assert!(builds.borrow().is_empty()));
+        runtime.update(|state, tx| { tx.instant(); state.revision += 1; if let crate::Node::X(root) = &mut state.root[0] { root.gap = Some([10.0, 0.0]); } });
+        runtime.frame(0.01);
+        BUILDS.with(|builds| assert!(builds.borrow().contains(&3), "a spec change reused the old subtree"));
+    }
 
     #[test]
     fn a_double_border_has_two_strokes_and_preserves_its_full_layout_width() {
