@@ -24,7 +24,7 @@ import {
   type CharacterLook,
   DEFAULT_CHARACTER_LOOK,
   VINYL_MATERIAL,
-} from "@/user/playerCharacterFigure";
+} from "../playerCharacterFigure";
 
 interface PlayerCharacterFigureProps {
   look?: CharacterLook;

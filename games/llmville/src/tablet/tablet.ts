@@ -2,16 +2,16 @@ import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } fro
 import { requestRawPointerLock } from "@jgengine/core/input/pointerLock";
 import { flushSync } from "@jgengine/core/ui/jsx/client.view";
 
-import type { WorldViewModel } from "@/runtime/worldState";
-import { localGameState } from "@/user/localGameState";
+import type { WorldViewModel } from "../runtime/worldState";
+import { localGameState } from "../user/localGameState";
 import { TUTORIAL_STAGE } from "@llmville/game/tutorial/tutorialStages";
-import type { TabletTutorialLock, TutorialViewModel } from "@/tutorial/tutorialRuntime";
+import type { TabletTutorialLock, TutorialViewModel } from "../tutorial/tutorialRuntime";
 import {
   TABLET_APP_ID,
   TABLET_STORE_TAB_ID,
   type TabletAppId,
   type TabletStoreTabId,
-} from "@/tablet/tabletIds";
+} from "./tabletIds";
 
 export type { TabletAppId, TabletStoreTabId };
 export { TABLET_APP_ID, TABLET_STORE_TAB_ID };

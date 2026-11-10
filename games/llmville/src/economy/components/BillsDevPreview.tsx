@@ -1,8 +1,8 @@
 import { useState } from "@jgengine/core/ui/jsx";
 
-import { BILL_TYPE_LABELS } from "@/economy/events";
-import { InvoiceBillCard } from "@/economy/components/InvoiceBillCard";
-import type { BillType } from "@/economy/events";
+import { BILL_TYPE_LABELS } from "../events";
+import { InvoiceBillCard } from "./InvoiceBillCard";
+import type { BillType } from "../events";
 
 const PREVIEW_BILLS: ReadonlyArray<{
   billType: BillType;
@@ -55,7 +55,7 @@ export function BillsDevPreview() {
           <p className="mt-2 text-xs leading-relaxed text-white/55">
             Screenshot the grid on the right. Tweak stamps and afford states in{" "}
             <code className="text-white/70">InvoiceBillCard.tsx</code> and{" "}
-            <code className="text-white/70">index.css</code>.
+            <code className="text-white/70">style.css</code>.
           </p>
           <p className="mt-2 text-xs text-white/45">
             URL: <span className="text-white/70">/dev/bills</span> — dev only.

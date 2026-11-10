@@ -1,8 +1,8 @@
 import { createContext, useContext, useMemo, useSyncExternalStore, type ReactNode, type RefObject } from "@jgengine/core/ui/jsx";
 
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
-import type { TabletNavState } from "@/tablet/tablet";
-import type { WorldSceneProps } from "@/scene/components/GameScene";
+import type { TabletNavState } from "../tablet/tablet";
+import type { WorldSceneProps } from "../scene/components/GameScene";
 
 /** Who is playing which world: what the route knows before the shell mounts. */
 export interface LlmvilleSessionIdentity {
@@ -18,7 +18,7 @@ export interface WorldSceneFeed {
   subscribe(listener: () => void): () => void;
 }
 
-function createWorldSceneFeed(): WorldSceneFeed {
+export function createWorldSceneFeed(): WorldSceneFeed {
   let current: WorldSceneProps | null = null;
   const listeners = new Set<() => void>();
   return {
@@ -42,25 +42,42 @@ interface LlmvilleSession extends LlmvilleSessionIdentity {
 }
 
 const LlmvilleSessionContext = createContext<LlmvilleSession | null>(null);
+const WorldSceneFeedContext = createContext<WorldSceneFeed | null>(null);
 
-/** Shares one session with both shell trees: the HUD (`GameUI`) and the scene (`WorldOverlay`). */
+/**
+ * Shares one session with both shell trees: the HUD (`GameUI`) and the scene (`WorldOverlay`).
+ * A host that mounts those trees apart passes the `scene` feed both sides share, and wraps the
+ * scene side in {@link WorldSceneFeedProvider}.
+ */
 export function LlmvilleSessionProvider({
   identity,
   tabletNav,
   containerRef,
+  scene: sharedScene,
   children,
 }: {
   identity: LlmvilleSessionIdentity;
   tabletNav: TabletNavState;
   containerRef: RefObject<HTMLDivElement | null>;
+  scene?: WorldSceneFeed;
   children: ReactNode;
 }) {
-  const scene = useMemo(createWorldSceneFeed, [identity.gameId, identity.user.id]);
+  const ownScene = useMemo(createWorldSceneFeed, [identity.gameId, identity.user.id]);
+  const scene = sharedScene ?? ownScene;
   const value = useMemo(
     () => ({ ...identity, tabletNav, containerRef, scene }),
     [identity, tabletNav, containerRef, scene],
   );
-  return <LlmvilleSessionContext.Provider value={value}>{children}</LlmvilleSessionContext.Provider>;
+  return (
+    <LlmvilleSessionContext.Provider value={value}>
+      <WorldSceneFeedContext.Provider value={scene}>{children}</WorldSceneFeedContext.Provider>
+    </LlmvilleSessionContext.Provider>
+  );
+}
+
+/** The scene side of a session whose HUD is mounted in another tree. */
+export function WorldSceneFeedProvider({ scene, children }: { scene: WorldSceneFeed; children: ReactNode }) {
+  return <WorldSceneFeedContext.Provider value={scene}>{children}</WorldSceneFeedContext.Provider>;
 }
 
 export function useLlmvilleSession(): LlmvilleSession {
@@ -70,6 +87,7 @@ export function useLlmvilleSession(): LlmvilleSession {
 }
 
 export function useWorldSceneProps(): WorldSceneProps | null {
-  const { scene } = useLlmvilleSession();
+  const scene = useContext(WorldSceneFeedContext);
+  if (scene === null) throw new Error("LLMville: the scene mounted outside LlmvilleSessionProvider");
   return useSyncExternalStore(scene.subscribe, scene.read, scene.read);
 }

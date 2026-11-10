@@ -2,9 +2,9 @@ import { useMutation, useQuery } from "convex/react";
 
 import { api } from "@llmville/backend/convex/_generated/api";
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
-import { formatMoney } from "@/economy/economy";
-import { InvoiceBillCard } from "@/economy/components/InvoiceBillCard";
-import { wrapMutation } from "@/runtime/gameEngine";
+import { formatMoney } from "../economy";
+import { InvoiceBillCard } from "./InvoiceBillCard";
+import { wrapMutation } from "../../runtime/gameEngine";
 
 interface BillsAppProps {
   gameId: Id<"games">;

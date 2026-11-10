@@ -1,12 +1,12 @@
-import { ChevronLeft, Play } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { ScreenLink } from "../../screens/screenRouter";
+import { Icon } from "../../kit/icons";
 import { useCallback, useEffect, useRef, useState, type RefObject } from "@jgengine/core/ui/jsx";
 import type { KeyboardEvent } from "@jgengine/core/ui/jsx/dom.view";
 
 import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { cn } from "@/kit/cn";
-import { StandalonePageShell } from "@/branding/components/StandalonePageShell";
-import { CharacterCustomizeViewport } from "@/user/components/CharacterCustomizeViewport";
+import { cn } from "../../kit/cn";
+import { StandalonePageShell } from "../../branding/components/StandalonePageShell";
+import { CharacterCustomizeViewport } from "./CharacterCustomizeViewport";
 import type { CanonicalAvatarId } from "@llmville/game/user/founder";
 import { normalizeAvatarId } from "@llmville/game/user/founder";
 import {
@@ -20,13 +20,13 @@ import {
   type CharacterLook,
   type CharacterPantsColorId,
   type CharacterShoesColorId,
-} from "@/user/playerCharacterFigure";
+} from "../playerCharacterFigure";
 import {
   getMentorPerkSummary,
   useCreateWorldCustomizeScreen,
   type AvatarDefinition,
   type AvatarId,
-} from "@/user/user";
+} from "../user";
 
 const MENTOR_DEFAULT_HOODIE: Record<CanonicalAvatarId, CharacterHoodieColorId> = {
   sam_altman: "charcoal",
@@ -244,13 +244,13 @@ export function CreateWorldCustomizeScreen() {
   return (
     <StandalonePageShell>
       <div className="mx-auto w-full max-w-2xl animate-in fade-in duration-300">
-        <Link
+        <ScreenLink
           to="/"
           className="mb-6 inline-flex items-center gap-2 text-base font-semibold text-brand-teal transition-colors hover:text-brand-cream"
         >
-          <ChevronLeft className="h-5 w-5" strokeWidth={2.25} />
+          <Icon name="back" className="h-5 w-5" strokeWidth={2.25} />
           Back
-        </Link>
+        </ScreenLink>
 
         <header className="mb-8">
           <h1 className="font-game text-2xl font-extrabold tracking-tight text-brand-cream sm:text-3xl">
@@ -340,7 +340,7 @@ export function CreateWorldCustomizeScreen() {
           onClick={() => void handleContinue()}
           className="w-full py-3.5 text-base disabled:opacity-50"
         >
-          <Play className="h-5 w-5" />
+          <Icon name="play" className="h-5 w-5" />
           <span>{isStarting ? "Starting your lab…" : "Start playing"}</span>
         </KitButton>
       </div>

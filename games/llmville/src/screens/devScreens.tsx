@@ -1,4 +1,5 @@
-import { Outlet, createFileRoute, redirect, useLocation } from "@tanstack/react-router";
+import { ScreenLink, useScreenLocation } from "./screenRouter";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 type DevPreviewLayout = "fullscreen" | "document";
 
@@ -38,10 +39,10 @@ function getDevPreviewLayout(pathname: string): DevPreviewLayout {
   return best?.layout ?? "document";
 }
 
-import { cn } from "@/kit/cn";
+import { cn } from "../kit/cn";
 
 function DevPreviewNav() {
-  const location = useLocation();
+  const location = useScreenLocation();
 
   return (
     <header className="shrink-0 border-b border-slate-300 bg-slate-100 px-4 py-2.5 text-slate-950 shadow-sm">
@@ -53,20 +54,20 @@ function DevPreviewNav() {
             </p>
             <h1 className="text-lg font-bold leading-tight">Dev previews</h1>
           </div>
-          <a
-            href="/"
+          <ScreenLink
+            to="/"
             className="rounded border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-800 hover:bg-slate-50"
           >
             Back to app
-          </a>
+          </ScreenLink>
         </div>
         <nav className="flex gap-1.5 overflow-x-auto pb-0.5" aria-label="Dev preview routes">
           {DEV_PREVIEW_LINKS.map((preview) => {
             const active = isDevPreviewActive(location.pathname, preview);
             return (
-              <a
+              <ScreenLink
                 key={preview.href}
-                href={preview.href}
+                to={preview.href}
                 className={cn(
                   "shrink-0 rounded border px-2.5 py-1 text-sm font-medium transition",
                   active
@@ -75,7 +76,7 @@ function DevPreviewNav() {
                 )}
               >
                 {preview.title}
-              </a>
+              </ScreenLink>
             );
           })}
         </nav>
@@ -84,7 +85,7 @@ function DevPreviewNav() {
   );
 }
 
-function DevIndexContent() {
+export function DevIndexScreen() {
   return (
     <div className="mx-auto flex max-w-[1120px] flex-col gap-5 px-5 py-6">
       <section>
@@ -97,24 +98,24 @@ function DevIndexContent() {
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {DEV_PREVIEW_LINKS.filter((preview) => preview.href !== "/dev").map((preview) => (
-          <a
+          <ScreenLink
             key={preview.href}
-            href={preview.href}
+            to={preview.href}
             className="rounded border border-slate-300 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-400 hover:shadow"
           >
             <h3 className="text-lg font-semibold text-slate-950">{preview.title}</h3>
             <p className="mt-1 text-sm text-slate-600">{preview.description}</p>
             <p className="mt-4 text-xs font-medium text-slate-500">{preview.href}</p>
-          </a>
+          </ScreenLink>
         ))}
       </section>
     </div>
   );
 }
 
-function DevLayout() {
-  const location = useLocation();
-  const isIndex = location.pathname === "/dev" || location.pathname === "/dev/";
+/** The workbench around every dev preview: its nav bar, and the preview below it. */
+export function DevWorkbench({ children }: { children: ReactNode }) {
+  const location = useScreenLocation();
   const layout = getDevPreviewLayout(location.pathname);
 
   return (
@@ -126,17 +127,8 @@ function DevLayout() {
           layout === "fullscreen" ? "overflow-hidden" : "overflow-y-auto",
         )}
       >
-        {isIndex ? <DevIndexContent /> : <Outlet />}
+        {children}
       </div>
     </div>
   );
 }
-
-export const Route = createFileRoute("/dev")({
-  beforeLoad: () => {
-    if (!import.meta.env.DEV) {
-      throw redirect({ to: "/" });
-    }
-  },
-  component: DevLayout,
-});

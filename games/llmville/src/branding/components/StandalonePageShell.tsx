@@ -1,4 +1,4 @@
-import { cn } from "@/kit/cn";
+import { cn } from "../../kit/cn";
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 interface StandalonePageShellProps {

@@ -5,21 +5,11 @@
  */
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { useCallback, useMemo, useState } from "@jgengine/core/ui/jsx";
-import {
-  DndContext,
-  DragOverlay,
-  type DragEndEvent,
-  type DragStartEvent,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  useDraggable,
-  useDroppable,
-} from "@dnd-kit/core";
+import { DragGhost, DraggableCard, DropZone, useDragLayer, type DragLayer } from "@jgengine/core/inventory/dragLayer.view";
 
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
-import type { PlacedRack } from "@/infrastructure/infrastructure";
-import { placedRackAssignmentInputs } from "@/infrastructure/infrastructure";
+import type { PlacedRack } from "../../infrastructure/infrastructure";
+import { placedRackAssignmentInputs } from "../../infrastructure/infrastructure";
 import {
   assignmentKey,
   computeAssignmentStats,
@@ -39,12 +29,12 @@ import {
 } from "@llmville/game/models/scrapingTiers";
 import type { TutorialStage } from "@llmville/game/tutorial/tutorialStages";
 
-import { cn } from "@/kit/cn";
-import RackSlot from "@/infrastructure/components/RackSlot";
-import { RevealedModelCard, UnknownModelCard } from "@/models/components/ModelCard";
-import { ModelDetailView } from "@/models/components/ModelDetailView";
-import type { RevealingModelStats } from "@/models/components/ModelRevealOverlay";
-import { userModelTrainingVolumeLabel, type GameUserModel } from "@/models/models";
+import { cn } from "../../kit/cn";
+import RackSlot from "../../infrastructure/components/RackSlot";
+import { RevealedModelCard, UnknownModelCard } from "../../models/components/ModelCard";
+import { ModelDetailView } from "../../models/components/ModelDetailView";
+import type { RevealingModelStats } from "../../models/components/ModelRevealOverlay";
+import { userModelTrainingVolumeLabel, type GameUserModel } from "../../models/models";
 
 interface InferenceAppProps {
   racks: readonly PlacedRack[];
@@ -76,42 +66,34 @@ interface InstalledCard {
 
 type ChipDragData = { rackId: string; slotIndex: number; hardwareModelId: HardwareModelId };
 
-function ComputeChip({ card }: { card: InstalledCard }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: card.key,
-    data: { rackId: card.rackId, slotIndex: card.slotIndex, hardwareModelId: card.hardwareModelId } satisfies ChipDragData,
-  });
+function ComputeChip({ card, layer }: { card: InstalledCard; layer: DragLayer<ChipDragData> }) {
   return (
-    <div
-      ref={setNodeRef}
-      {...listeners}
-      {...attributes}
-      className={cn(
-        "w-[180px] shrink-0 touch-none cursor-grab transition-opacity active:cursor-grabbing",
-        isDragging && "opacity-30",
-      )}
+    <DraggableCard
+      id={card.key}
+      value={{ rackId: card.rackId, slotIndex: card.slotIndex, hardwareModelId: card.hardwareModelId }}
+      layer={layer}
+      onRotate={false}
+      className="w-[180px] shrink-0 cursor-grab transition-opacity active:cursor-grabbing data-[dragging]:opacity-30"
     >
       <RackSlot hardwareModelId={card.hardwareModelId} useExternalDrag />
-    </div>
+    </DraggableCard>
   );
 }
 
-function DropLane({ id, cards, emptyLabel }: { id: string; cards: InstalledCard[]; emptyLabel: string }) {
-  const { setNodeRef, isOver } = useDroppable({ id });
+function DropLane({ id, cards, emptyLabel, layer }: { id: string; cards: InstalledCard[]; emptyLabel: string; layer: DragLayer<ChipDragData> }) {
   return (
-    <div
-      ref={setNodeRef}
-      className={cn(
-        "flex min-h-[76px] flex-wrap items-center gap-2 rounded-[var(--kit-r-field)] border-2 border-dashed border-[var(--kit-line)] p-2 transition-colors",
-        isOver && "border-brand-teal/60 bg-brand-teal/5",
-      )}
+    <DropZone
+      id={id}
+      layer={layer}
+      className="flex min-h-[76px] flex-wrap items-center gap-2 rounded-[var(--kit-r-field)] border-2 border-dashed border-[var(--kit-line)] p-2 transition-colors"
+      activeClassName="border-brand-teal/60 bg-brand-teal/5"
     >
       {cards.length === 0 ? (
         <p className="w-full py-4 text-center text-[11px] text-brand-cream/40">{emptyLabel}</p>
       ) : (
-        cards.map((card) => <ComputeChip key={card.key} card={card} />)
+        cards.map((card) => <ComputeChip key={card.key} card={card} layer={layer} />)
       )}
-    </div>
+    </DropZone>
   );
 }
 
@@ -135,7 +117,6 @@ export function InferenceApp({
 }: InferenceAppProps) {
   const [detailModel, setDetailModel] = useState<GameUserModel | null>(null);
   const [detailBaseModelId, setDetailBaseModelId] = useState<string | null>(null);
-  const [activeDrag, setActiveDrag] = useState<ChipDragData | null>(null);
 
   const installedCards = useMemo<InstalledCard[]>(() => {
     const cards: InstalledCard[] = [];
@@ -180,40 +161,26 @@ export function InferenceApp({
 
   const servingModels = useMemo(() => userModels.filter((model) => model.launchState === "serving"), [userModels]);
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
-
-  const handleDragStart = useCallback((event: DragStartEvent) => {
-    const raw = event.active.data.current as ChipDragData | undefined;
-    if (raw) setActiveDrag(raw);
-  }, []);
-
-  const handleDragEnd = useCallback(
-    (event: DragEndEvent) => {
-      setActiveDrag(null);
-      const { active, over } = event;
-      if (!over) return;
-      const raw = active.data.current as ChipDragData | undefined;
-      if (!raw) return;
-      const overId = String(over.id);
-      if (overId === "undedicated") {
-        onUnassignCard(raw.rackId, raw.slotIndex);
-      } else if (overId === "lane:training") {
-        onAssignCard(raw.rackId, raw.slotIndex, "training");
-      } else if (overId === "lane:scraping") {
-        onAssignCard(raw.rackId, raw.slotIndex, "scraping");
-      } else if (overId.startsWith("serving:")) {
-        onAssignCard(raw.rackId, raw.slotIndex, "serving", overId.slice("serving:".length) as Id<"models">);
+  const drag = useDragLayer<ChipDragData>({
+    onDrop({ payload, target }) {
+      if (target === null) return;
+      const { rackId, slotIndex } = payload.value;
+      if (target === "undedicated") {
+        onUnassignCard(rackId, slotIndex);
+      } else if (target === "lane:training") {
+        onAssignCard(rackId, slotIndex, "training");
+      } else if (target === "lane:scraping") {
+        onAssignCard(rackId, slotIndex, "scraping");
+      } else if (target.startsWith("serving:")) {
+        onAssignCard(rackId, slotIndex, "serving", target.slice("serving:".length) as Id<"models">);
       }
     },
-    [onAssignCard, onUnassignCard],
-  );
-
-  const handleDragCancel = useCallback(() => setActiveDrag(null), []);
+  });
 
   const scrapeTflops = assignmentStats.scraping.tflops;
 
   return (
-    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
+    <>
       <div className="flex animate-in fade-in slide-in-from-bottom-4 flex-col gap-6 pb-24 duration-300">
         <KitPanel data-shell="inset"
           eyebrow="Available GPUs"
@@ -222,7 +189,7 @@ export function InferenceApp({
           <p className="text-[11px] leading-snug text-brand-cream/45">
             Choose a job for each GPU below, or drag its card onto a lane. Each GPU works on one job at a time.
           </p>
-          <DropLane id="undedicated" cards={undedicatedCards} emptyLabel="Every installed GPU is dedicated." />
+          <DropLane layer={drag} id="undedicated" cards={undedicatedCards} emptyLabel="Every installed GPU is dedicated." />
           <div className="space-y-2">
             {installedCards.map((card) => (
               <label key={card.key} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-white/5 p-2 text-xs">
@@ -245,7 +212,7 @@ export function InferenceApp({
 
         <KitPanel data-shell="inset" className="flex flex-col gap-3" eyebrow="Training" aside={<span className="llm-token llm-token--teal">{Math.round(assignmentStats.training.tflops)} TFLOPS</span>}>
           <p className="text-[11px] leading-snug text-brand-cream/45">GPUs here train your base model — more TFLOPs, faster runs.</p>
-          <DropLane id="lane:training" cards={trainingCards} emptyLabel="Drag a GPU here to train." />
+          <DropLane layer={drag} id="lane:training" cards={trainingCards} emptyLabel="Drag a GPU here to train." />
         </KitPanel>
 
         <div
@@ -290,7 +257,7 @@ export function InferenceApp({
               })}
             </div>
             <p className="text-[10px] leading-snug text-brand-cream/45">{getScrapeTierDef(activeScrapeTier).description}</p>
-            <DropLane id="lane:scraping" cards={scrapingCards} emptyLabel="Drag a GPU here to scrape data tokens." />
+            <DropLane layer={drag} id="lane:scraping" cards={scrapingCards} emptyLabel="Drag a GPU here to scrape data tokens." />
           </KitPanel>
         </div>
 
@@ -322,7 +289,7 @@ export function InferenceApp({
                         </span>
                       </div>
                     </div>
-                    <DropLane id={`serving:${model.id}`} cards={bound} emptyLabel="Drag a GPU here to serve this model." />
+                    <DropLane layer={drag} id={`serving:${model.id}`} cards={bound} emptyLabel="Drag a GPU here to serve this model." />
                     {!fits && <p role="status" className="text-xs text-brand-coral">Needs {(model.footprintGb - boundVramGb).toFixed(1)} GB more GPU memory to earn income. Assign another GPU or choose a supported lower precision.</p>}
                   </div>
                 );
@@ -443,13 +410,9 @@ export function InferenceApp({
         )}
       </div>
 
-      <DragOverlay dropAnimation={null}>
-        {activeDrag ? (
-          <div className="w-[180px] rotate-1 scale-105 cursor-grabbing opacity-95 shadow-2xl shadow-black/60">
-            <RackSlot hardwareModelId={activeDrag.hardwareModelId} useExternalDrag />
-          </div>
-        ) : null}
-      </DragOverlay>
-    </DndContext>
+      <DragGhost layer={drag} className="w-[180px] scale-105 cursor-grabbing opacity-95 shadow-2xl shadow-black/60">
+        {(payload) => <RackSlot hardwareModelId={payload.value.hardwareModelId} useExternalDrag />}
+      </DragGhost>
+    </>
   );
 }

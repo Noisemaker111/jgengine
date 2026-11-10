@@ -3,7 +3,7 @@ import {
   type BuildPlacementPreview,
   type PlacedBuildItem,
 } from "@llmville/game/build/build";
-import { BuildPlacementPreviewController } from "@/build/buildPlacementPreview";
+import { BuildPlacementPreviewController } from "../../build/buildPlacementPreview";
 import type { BuildDirection, BuildItemId } from "@llmville/game/build/catalog";
 import {
   INTERACTION_GAUGE,
@@ -14,18 +14,18 @@ import {
 import { useMemo } from "@jgengine/core/ui/jsx";
 
 import type { DatacenterClaim, PlacementCellPolicy } from "@llmville/game/datacenter/claims";
-import type { GameEngine } from "@/runtime/gameEngine";
-import type { PlacedRack } from "@/infrastructure/infrastructure";
-import type { GpuSlotWorkload } from "@/infrastructure/computeUnits";
+import type { GameEngine } from "../../runtime/gameEngine";
+import type { PlacedRack } from "../../infrastructure/infrastructure";
+import type { GpuSlotWorkload } from "../../infrastructure/computeUnits";
 
-import BuildProp from "@/scene/components/BuildProp";
-import { ProximityPromptMarker, type GaugeReading } from "@/scene/components/ProximityPromptMarker";
-import { ClaimedCellOverlay, EndlessDatacenter } from "@/world/components/EndlessDatacenter";
-import Rack from "@/infrastructure/components/Rack";
-import { SceneAxesHelper, useShowSceneAxes } from "@/scene/components/SceneAxesHelper";
-import { TutorialRackArrow } from "@/tutorial/components/TutorialUi";
-import { useWorldSceneProps } from "@/runtime/llmvilleSession";
-import { useLocalPlayerBridge } from "@/runtime/localPlayerEntity";
+import BuildProp from "./BuildProp";
+import { ProximityPromptMarker, type GaugeReading } from "./ProximityPromptMarker";
+import { ClaimedCellOverlay, EndlessDatacenter } from "../../world/components/EndlessDatacenter";
+import Rack from "../../infrastructure/components/Rack";
+import { SceneAxesHelper, useShowSceneAxes } from "./SceneAxesHelper";
+import { TutorialRackArrow } from "../../tutorial/components/TutorialUi";
+import { useWorldSceneProps } from "../../runtime/llmvilleSession";
+import { useLocalPlayerBridge } from "../../runtime/localPlayerEntity";
 
 /** What the scene draws, published by the HUD each time the world view model changes. */
 export interface WorldSceneProps {

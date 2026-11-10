@@ -22,7 +22,7 @@ interface RackSlotProps {
   onDragEnd?: () => void;
   onDragOver?: (e: DragEvent) => void;
   onDrop?: (e: DragEvent) => void;
-  /** When true, drag is handled by parent (e.g. @dnd-kit); disables native draggable */
+  /** When true, drag is handled by the parent's drag layer; disables native draggable */
   useExternalDrag?: boolean;
   /** Card temperature from rack thermal v3 (°C) */
   temperatureC?: number | undefined;

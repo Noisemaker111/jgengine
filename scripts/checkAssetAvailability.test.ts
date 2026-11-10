@@ -40,6 +40,24 @@ describe("checkAssetAvailability", () => {
     expect(result.errors).toHaveLength(0);
   });
 
+  test("a pack committed in a game's own public folder is there for that game only", () => {
+    const committedByGame = new Map([["llmville", new Set(["hardware"])]]);
+    const own = checkAssetAvailability({
+      references: [{ game: "llmville", pack: "hardware", via: "path-literal" }],
+      committed: new Set(),
+      committedByGame,
+      provisioned: new Set(),
+    });
+    expect(own.ok).toBe(true);
+    const other = checkAssetAvailability({
+      references: [{ game: "deepward", pack: "hardware", via: "path-literal" }],
+      committed: new Set(),
+      committedByGame,
+      provisioned: new Set(),
+    });
+    expect(other.ok).toBe(false);
+  });
+
   test("passes when the pack is provisioned by a bootstrap pull step", () => {
     const result = checkAssetAvailability({
       references: [{ game: "starhome", pack: "quaternius-modular-scifi", via: "pack-import" }],
@@ -119,6 +137,15 @@ describe("packReferencesForGame", () => {
     const refs = packReferencesForGame("claudecraft", srcDir);
     expect(refs.map((r) => r.pack)).toContain("claudecraft");
     cleanup();
+  });
+});
+
+describe("path literals", () => {
+  test("a relative import through a models folder is not a served pack path", () => {
+    const dir = mkdtempSync(join(tmpdir(), "jg-asset-avail-import-"));
+    writeFileSync(join(dir, "app.tsx"), 'import { Card } from "../../models/components/ModelCard";\nconst GPU = "/models/hardware/gpu.glb";\n');
+    expect(packReferencesForGame("llmville", dir).map((ref) => ref.pack)).toEqual(["hardware"]);
+    rmSync(dir, { recursive: true, force: true });
   });
 });
 

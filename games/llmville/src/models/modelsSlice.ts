@@ -15,12 +15,12 @@ import {
   mapUserModels,
   useGameModelActions,
   type ModelIncomeEstimateContext,
-} from "@/models/models";
-import { buildBaseModelLibrary, useGameTrainingActions } from "@/models/training";
+} from "./models";
+import { buildBaseModelLibrary, useGameTrainingActions } from "./training";
 import { bestScrapingTokensPerToken } from "@llmville/game/models/scraping";
-import { engineActions, useGameEngineState, type GameEngine } from "@/runtime/gameEngine";
-import type { RuntimeGame, WorldActiveTraining } from "@/runtime/worldViewModel";
-import type { WorldDataMutations } from "@/world/worldData";
+import { engineActions, useGameEngineState, type GameEngine } from "../runtime/gameEngine";
+import type { RuntimeGame, WorldActiveTraining } from "../runtime/worldViewModel";
+import type { WorldDataMutations } from "../world/worldData";
 
 type SceneModels = NonNullable<FunctionReturnType<typeof api.world.scene>>["models"];
 

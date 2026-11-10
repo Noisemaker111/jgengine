@@ -8,7 +8,7 @@ import {
   INTERACTION_COMMAND,
   type RackConfigureInput,
 } from "@llmville/game/simulation/interaction";
-import type { GameMenuRequest } from "@/tablet/tablet";
+import type { GameMenuRequest } from "../tablet/tablet";
 
 export function runPromptCommand(ctx: GameContext, descriptor: PromptCommand): boolean {
   return ctx.game.commands.run(descriptor.name, descriptor.input).status === "applied";

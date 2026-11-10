@@ -1,8 +1,8 @@
 import { Mesh, type Object3D } from "three";
 
 import { resolveAssetTransform, type AssetTransformInput } from "@llmville/game/world/assetFrame";
-import { measureObjectBounds } from "@/scene/meshBounds";
-import { registerModelBounds } from "@/scene/modelBoundsCache";
+import { measureObjectBounds } from "../meshBounds";
+import { registerModelBounds } from "../modelBoundsCache";
 import type { WorldModelAsset } from "@llmville/game/world/worldModelCatalog";
 import type { GridFootprint } from "@llmville/game/world/grid";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";

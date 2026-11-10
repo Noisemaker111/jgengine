@@ -3,7 +3,7 @@ import { KitCount, KitCounts } from "@jgengine/core/hud/kitHud.view";
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { servingIncomePerHour } from "@llmville/game/economy/hourlyRates";
 
-import { formatCompactNumber, formatMoney } from "@/economy/economy";
+import { formatCompactNumber, formatMoney } from "../../economy/economy";
 
 interface ResourceHudProps {
   money: number;

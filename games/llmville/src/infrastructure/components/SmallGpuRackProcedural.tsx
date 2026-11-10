@@ -16,7 +16,7 @@ import {
 } from "three";
 
 import type { HardwareModelId } from "@llmville/game/infrastructure/catalog";
-import { GPU_SPLOT_WORKLOAD, workloadForRackSlot, type GpuSlotWorkload } from "@/infrastructure/computeUnits";
+import { GPU_SPLOT_WORKLOAD, workloadForRackSlot, type GpuSlotWorkload } from "../computeUnits";
 import {
   getRackCoolingUnitDefinition,
   type RackCoolantType,

@@ -1,6 +1,6 @@
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 
-import type { BillType } from "@/economy/events";
+import type { BillType } from "./events";
 
 const GLYPH_STROKE = "#b8a898";
 

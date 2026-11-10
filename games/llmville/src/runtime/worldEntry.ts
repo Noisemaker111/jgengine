@@ -3,7 +3,7 @@ import { useEffect, useState } from "@jgengine/core/ui/jsx";
 
 import { api } from "@llmville/backend/convex/_generated/api";
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
-import { engineActions, type GameEngine } from "@/runtime/gameEngine";
+import { engineActions, type GameEngine } from "./gameEngine";
 
 /**
  * Enters the shared datacenter once per lab: the server stamps the lab and name on the player's

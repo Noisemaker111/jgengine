@@ -1,15 +1,11 @@
-import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
-import { RouterProvider } from "@tanstack/react-router";
 import ReactDOM from "@jgengine/core/ui/jsx/client.view";
 
-import { AuthProvider } from "@/auth";
-import { applyLlmvilleKit } from "@/kit/llmvilleKit";
-import { authClient } from "@/auth/authClient";
-import { readOptimisticConvexToken } from "@/auth/sessionToken";
-import { registerServiceWorker } from "@/pwa/serviceWorker";
-import { loadGameSessionModule } from "@/runtime/gameRoutePreload";
-import { loadAuthScreenModule } from "@/user/authScreenPreload";
-import { convexClient, initialConvexToken, router } from "./routerInstance";
+import { LlmvilleApp } from "./app";
+import { readOptimisticConvexToken } from "./auth/sessionToken";
+import { registerServiceWorker } from "./pwa/serviceWorker";
+import { loadGameSessionModule } from "./runtime/gameRoutePreload";
+import { loadAuthScreenModule } from "./user/authScreenPreload";
+import { pathAddress, screenRouter } from "./screens/screenRouter";
 
 const rootElement = document.getElementById("app");
 
@@ -17,21 +13,11 @@ if (!rootElement) {
   throw new Error("Root element not found");
 }
 
-applyLlmvilleKit(document);
+screenRouter.install(pathAddress());
 
 if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement);
-  root.render(
-    <ConvexBetterAuthProvider
-      client={convexClient}
-      authClient={authClient}
-      initialToken={initialConvexToken ?? null}
-    >
-      <AuthProvider>
-        <RouterProvider router={router} />
-      </AuthProvider>
-    </ConvexBetterAuthProvider>,
-  );
+  root.render(<LlmvilleApp />);
 }
 
 registerServiceWorker();

@@ -2,8 +2,8 @@ import { api } from "@llmville/backend/convex/_generated/api";
 import { useMutation } from "convex/react";
 import { useCallback, useState } from "@jgengine/core/ui/jsx";
 
-import { useAuth } from "@/auth";
-import { BankruptScreen } from "@/economy/components/BankruptScreen";
+import { useAuth } from "../../auth";
+import { BankruptScreen } from "./BankruptScreen";
 
 export function BankruptOverlay() {
   const { convexUser } = useAuth();

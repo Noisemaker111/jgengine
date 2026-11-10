@@ -26,11 +26,11 @@ import { getHardwareDefinition, getRackCoolingUnitDefinition, isRackCoolingUnitI
 import { hardwareResaleValue } from "@llmville/game/store/resale";
 import type { PlacementCellPolicy } from "@llmville/game/datacenter/claims";
 import { cellsForBounds } from "@llmville/game/datacenter/grid";
-import type { PlacedRack } from "@/infrastructure/infrastructure";
-import { engineActions, useGameEngineState, wrapMutation, type GameEngine } from "@/runtime/gameEngine";
-import { readPlayerPosition } from "@/runtime/playerPosition";
-import { showActionError, showActionErrorThrottled } from "@/runtime/actionFeedback";
-import type { ShopCatalogItem } from "@/store/store";
+import type { PlacedRack } from "../infrastructure/infrastructure";
+import { engineActions, useGameEngineState, wrapMutation, type GameEngine } from "../runtime/gameEngine";
+import { readPlayerPosition } from "../runtime/playerPosition";
+import { showActionError, showActionErrorThrottled } from "../runtime/actionFeedback";
+import type { ShopCatalogItem } from "../store/store";
 import { formatFacing } from "@llmville/game/world/cardinal";
 import { api } from "@llmville/backend/convex/_generated/api";
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";

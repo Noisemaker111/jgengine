@@ -6,8 +6,8 @@ import type { SettingsCategoryView } from "@jgengine/core/settings/settings.view
 import { SettingsSection, SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view";
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
-import { keybindRebindSession, keybindsFromSession } from "@/settings/keybinds";
-import { updateAppSettings, useAppSettings } from "@/settings/settings";
+import { keybindRebindSession, keybindsFromSession } from "../keybinds";
+import { updateAppSettings, useAppSettings } from "../settings";
 
 /** LLMville's own tabs after the shell's categories. */
 const KEYBINDS_TAB = "keybinds";
