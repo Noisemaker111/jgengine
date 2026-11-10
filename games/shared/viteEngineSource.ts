@@ -43,8 +43,19 @@ export function engineSource(gameDir: URL | string): { alias: Alias[]; dedupe: s
     devDependencies?: Record<string, string>;
   };
   const declared = { ...manifest.devDependencies, ...manifest.dependencies };
+  const ui = join(packagesDir, "core", "src", "ui", "jsx").replaceAll("\\", "/");
+  const engineUi: Alias[] = process.env["JG_ENGINE_UI"] === "1"
+    ? [
+        { find: /^react\/jsx-runtime$/, replacement: `${ui}/jsx-runtime.ts` },
+        { find: /^react\/jsx-dev-runtime$/, replacement: `${ui}/jsx-dev-runtime.ts` },
+        { find: /^react-dom\/client$/, replacement: `${ui}/client.view.ts` },
+        { find: /^react-dom\/server$/, replacement: `${ui}/markup.ts` },
+        { find: /^react-dom$/, replacement: `${ui}/client.view.ts` },
+        { find: /^react$/, replacement: `${ui}/index.ts` },
+      ]
+    : [];
   return {
-    alias: engineSourceAliases(),
+    alias: [...engineUi, ...engineSourceAliases()],
     dedupe: ENGINE_PEERS.filter((pkg) => declared[pkg] !== undefined),
   };
 }
