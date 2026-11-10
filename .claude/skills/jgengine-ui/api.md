@@ -2023,7 +2023,8 @@
 ## @jgengine/core/ui/rune/cssValues
 
 - `WireDim` (type): type WireDim = number | string | number[] — Parsers for computed CSS values, as a browser serializes them, into the plain numbers the Rune CSS box takes. Everything here is string in, numbers out, with no DOM: lengths, colours, gradients, shadows, grid tracks, transforms.
-- `WireLayer` (interface): interface WireLayer { g: 0 | 1 | 2; a?: number; cx?: number; cy?: number; rx?: number; ry?: number; rf?: [number, number] | "corner" | "side"; circle?: boolean; st: [number, number][]; ps?: boolean; rp?: [boolean, boolean]; per?: number; off?: number; bs?: num… — ⚠ undocumented · used by `parseGradient`: One computed `background-image` layer; `null` when it is not a gradient this painter draws.
+- `WireFilter` (interface): interface WireFilter { kind: number; n?: number; sh?: WireTextShadow } — ⚠ undocumented · used by `parseFilters`: Computed filters, retaining their authored order.
+- `WireLayer` (interface): interface WireLayer { img?: string; fit?: number; g: 0 | 1 | 2; a?: number; cx?: number; cy?: number; rx?: number; ry?: number; rf?: [number, number] | "corner" | "side"; circle?: boolean; st: [number, number][]; ps?: boolean; rp?: [boolean, boolean]; per?: nu… — ⚠ undocumented · used by `parseGradient`: One computed `background-image` layer; `null` when it is not a gradient this painter draws.
 - `WireShadow` (type): type WireShadow = [[number, number, number, number, number], number] — ⚠ undocumented · used by `parseShadows`: Computed `box-shadow`: `rgb(..) x y blur spread [inset], ...`.
 - `WireTextShadow` (type): type WireTextShadow = [number, number, number, number] — ⚠ undocumented
 - `WireTrack` (type): type WireTrack = [number, number, number, number] — ⚠ undocumented · used by `parseTracks`: Computed `grid-template-columns`/`rows` or `grid-auto-*`; `null` when a track is not expressible.
@@ -2035,7 +2036,9 @@
 - `parseClipPath` (function): function parseClipPath(text: string): number[][] | null — A `clip-path` polygon or inset as corner points, each `[x points, x fraction, y points, y fraction]` of the box; `null` for a shape with curves (`circle`, `ellipse`, `path`, a rounded inset).
 - `parseColor` (function): function parseColor(text: string): number | null — A computed colour as `0xRRGGBBAA`; `null` when the form is not one a browser computes to.
 - `parseDim` (function): function parseDim(text: string): WireDim | null — A computed length: points, a percentage, or `auto`; `null` for a form with no number (calc of mixed units, content keywords).
+- `parseFilters` (function): function parseFilters(text: string): WireFilter[] | null — Computed filters, retaining their authored order.
 - `parseGradient` (function): function parseGradient(text: string): WireLayer | { flat: number } | null — One computed `background-image` layer; `null` when it is not a gradient this painter draws.
+- `parseGradientMasks` (function): function parseGradientMasks(images: string, sizes: string, positions: string, repeats: string, modes: string, composites: string): (WireLayer | { flat: number })[] | null — Gradient masks use alpha coverage; luminance masks also weight the sRGB channels.
 - `parseLengthPercent` (function): function parseLengthPercent(text: string): [number, number] | null — A length that mixes points and a share of the box: `[points, fraction]` for `12px`, `40%`, `calc(100% - 10px)` and sums of those; `null` for anything else.
 - `parsePlacement` (function): function parsePlacement(start: string, end: string): [number, number, number, number] | null — `grid-column-start`/`-end` pair as `[start kind, start, end kind, end]`.
 - `parsePx` (function): function parsePx(text: string): number — ⚠ undocumented
