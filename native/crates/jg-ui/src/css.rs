@@ -738,6 +738,21 @@ fn input_el(b: &Box_, inp: &Input, s: &Ui) -> El {
         .on_submit(move |_: &mut Ui, _tx: &mut Tx| crate::emit_id(id, "submit", None, None))
 }
 
+/// The box with `id` anywhere under `nodes`.
+pub fn find_mut(nodes: &mut [crate::Node], id: u32) -> Option<&mut Box_> {
+    for n in nodes {
+        if let crate::Node::X(b) = n {
+            if b.id == id {
+                return Some(b);
+            }
+            if let Some(found) = find_mut(&mut b.c, id) {
+                return Some(found);
+            }
+        }
+    }
+    None
+}
+
 /// Field keys and their initial text across a tree, for the edit store.
 pub fn fields<'a>(nodes: &'a [crate::Node], out: &mut Vec<(String, &'a Input)>) {
     for n in nodes {

@@ -50,6 +50,8 @@ interface JgUiModule {
   default: (input?: string | URL | Request | Response | BufferSource | WebAssembly.Module) => Promise<unknown>;
   mount: (canvasId: string, optionsJson: string) => void;
   set_spec: (json: string) => void;
+  patch: (json: string) => void;
+  patch_text: (id: number, json: string) => void;
   values_changed: () => void;
   unmount: () => void;
   values_ptr: () => number;
@@ -86,7 +88,7 @@ export class RuneUi {
   private readonly prevValues = new Map<number, number>();
   private raf = 0;
   private destroyed = false;
-  private specQueue: string[] = [];
+  private specQueue: (() => void)[] = [];
   private mounted = false;
   private regions: [number, number, number, number][] = [];
   private modalFlag = false;
@@ -154,11 +156,26 @@ export class RuneUi {
   /** Replace the widget tree. `children` are spec nodes (`{k: "panel", ...}`); `modal` suspends game input. */
   setSpec(children: RuneUiNode[], modal = false): void {
     const json = JSON.stringify({ children, modal });
-    if (this.mounted) {
-      this.api.set_spec(json);
-    } else {
-      this.specQueue.push(json);
-    }
+    this.send(() => this.api.set_spec(json));
+  }
+
+  /** Replace CSS boxes in place, each by its `id`: a changed subtree without the whole tree. */
+  patch(boxes: readonly RuneUiNode[]): void {
+    if (boxes.length === 0) return;
+    const json = JSON.stringify(boxes);
+    this.send(() => this.api.patch(json));
+  }
+
+  /** Replace one CSS box's text record (`null`: none): a number or label that moved. */
+  patchText(id: number, text: unknown): void {
+    const json = JSON.stringify(text ?? null);
+    this.send(() => this.api.patch_text(id, json));
+  }
+
+  /** Calls made before Rune's first frame run after it, in order. */
+  private send(call: () => void): void {
+    if (this.mounted) call();
+    else this.specQueue.push(call);
   }
 
   /** Subscribe to a widget's events by its spec `id`; `"*"` gets every event. */
@@ -272,7 +289,7 @@ export class RuneUi {
       this.mounted = true;
       const queued = this.specQueue;
       this.specQueue = [];
-      for (const json of queued) this.api.set_spec(json);
+      for (const call of queued) call();
     }
     for (const ev of frame.events ?? []) {
       this.handlers.get(ev.id)?.forEach((handler) => handler(ev));

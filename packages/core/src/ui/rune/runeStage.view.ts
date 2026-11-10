@@ -4,18 +4,24 @@
  * for changes, mirrors it to Rune CSS boxes and sends events from Rune back to
  * its elements as ordinary DOM events.
  *
- * Nothing here runs per frame. A layer is mirrored again only when its DOM
- * changed (a component re-rendered) or the viewport resized.
+ * Nothing here runs per frame. What a change costs follows what changed: text
+ * that moved replaces one box's text with no style read; an element whose class
+ * or style changed is mirrored again with its subtree; only a resize or a new
+ * layer mirrors a whole layer.
  */
 
 import { RuneUi, type RuneUiEvent, type RuneUiNode } from "../runeUi.view";
-import { MirrorReport, elementOf, idOf, mirrorContents, type WireBox } from "./cssMirror.view";
+import { MirrorReport, boxOfElement, elementOf, mirrorRoot, remirrorElement, remirrorText, type WireBox } from "./cssMirror.view";
 import { installRuneMeasure, runeRectOf, setRuneRect } from "./domMeasure.view";
 
 interface Layer {
   container: HTMLElement;
   observer: MutationObserver;
-  order: number;
+  root: WireBox | null;
+  /** Elements whose own style or children changed. */
+  dirty: Set<Element>;
+  /** Elements under which only text nodes changed. */
+  texts: Set<Element>;
 }
 
 const fontUrls = new Set<string>();
@@ -42,37 +48,46 @@ export class RuneStage {
   private creating = false;
   private queued = false;
   private mountedFonts = "";
-  private lastJson = "";
-  private layerCount = 0;
+  /** The whole tree must be sent again (a layer came or went, Rune remounted). */
+  private stale = true;
   private readonly islands = new Map<HTMLCanvasElement, HTMLCanvasElement>();
   private islandHost: HTMLDivElement | null = null;
   private islandRaf = 0;
-  /** Milliseconds the last mirror pass took, and how many it has run: read by perf probes. */
-  stats = { passes: 0, lastMs: 0, totalMs: 0, boxes: 0 };
+  /** What the mirror has done and what it cost, for perf probes: passes by kind, boxes built, milliseconds. */
+  stats = { full: 0, patches: 0, texts: 0, boxes: 0, ms: 0, lastMs: 0 };
 
   private constructor() {
     installRuneMeasure();
-    window.addEventListener("resize", () => this.invalidate());
+    window.addEventListener("resize", () => {
+      for (const layer of this.layers) layer.root = null;
+      this.invalidate();
+    });
     (window as { __jgRuneStage?: RuneStage }).__jgRuneStage = this;
   }
 
   /** Start mirroring `container`'s children; returns the detach function. */
   attach(container: HTMLElement): () => void {
-    const observer = new MutationObserver(() => this.invalidate());
-    observer.observe(container, { subtree: true, childList: true, attributes: true, characterData: true });
-    this.layerCount += 1;
-    const layer: Layer = { container, observer, order: this.layerCount };
+    const layer: Layer = {
+      container,
+      observer: new MutationObserver((records) => this.onMutations(layer, records)),
+      root: null,
+      dirty: new Set(),
+      texts: new Set(),
+    };
+    layer.observer.observe(container, { subtree: true, childList: true, attributes: true, attributeOldValue: true, characterData: true });
     this.layers.push(layer);
+    this.stale = true;
     this.invalidate();
     return () => {
-      observer.disconnect();
+      layer.observer.disconnect();
       const at = this.layers.indexOf(layer);
       if (at !== -1) this.layers.splice(at, 1);
+      this.stale = true;
       this.invalidate();
     };
   }
 
-  /** Mirror again before the next frame; many calls in one task make one pass. */
+  /** Bring Rune up to date before the next frame; many calls in one task make one pass. */
   invalidate(): void {
     if (this.queued) return;
     this.queued = true;
@@ -87,7 +102,7 @@ export class RuneStage {
     // Rune fetches fonts while it mounts, so a font registered later needs a fresh mount.
     this.ui.destroy();
     this.ui = null;
-    this.lastJson = "";
+    this.stale = true;
     this.invalidate();
   }
 
@@ -113,7 +128,7 @@ export class RuneStage {
           }
           this.placeIslands();
         };
-        this.lastJson = "";
+        this.stale = true;
         this.sync();
       })
       .catch((error: unknown) => {
@@ -122,28 +137,112 @@ export class RuneStage {
       });
   }
 
+  private onMutations(layer: Layer, records: MutationRecord[]): void {
+    for (const record of records) {
+      const target = record.target;
+      if (record.type === "characterData") {
+        if (target.parentElement !== null) layer.texts.add(target.parentElement);
+        continue;
+      }
+      if (record.type === "attributes") {
+        const name = record.attributeName;
+        if (name === null || (target as Element).getAttribute(name) === record.oldValue) continue;
+        layer.dirty.add(target as Element);
+        continue;
+      }
+      let onlyText = true;
+      for (const node of record.addedNodes) if (node.nodeType !== 3) onlyText = false;
+      for (const node of record.removedNodes) if (node.nodeType !== 3) onlyText = false;
+      if (onlyText) layer.texts.add(target as Element);
+      else layer.dirty.add(target as Element);
+    }
+    if (layer.dirty.size > 0 || layer.texts.size > 0) this.invalidate();
+  }
+
+  /** The nearest element at or above `element` that has a box of its own; the container when none below it has. */
+  private boxed(layer: Layer, element: Element): Element {
+    let current: Element | null = element;
+    while (current !== null && current !== layer.container) {
+      if (boxOfElement(current) !== undefined) return current;
+      current = current.parentElement;
+    }
+    return layer.container;
+  }
+
   private sync(): void {
     if (this.layers.length === 0 && this.ui === null) return;
     this.ensureUi();
-    if (this.ui === null) return;
+    const ui = this.ui;
+    if (ui === null) return;
     const started = performance.now();
-    const roots: WireBox[] = [];
-    let boxes = 0;
+    let full = this.stale;
+    const patches: WireBox[] = [];
     for (const layer of this.layers) {
-      const children: WireBox[] = [];
-      children.push(...mirrorContents(layer.container, this.report, { positioned: children }));
-      roots.push({ k: "x", id: idOf(layer.container), pos: 2, ins: [0, 0, 0, 0], d: 1, c: children });
+      if (layer.root === null) {
+        layer.root = mirrorRoot(layer.container, this.report);
+        layer.dirty.clear();
+        layer.texts.clear();
+        full = true;
+        continue;
+      }
+      if (layer.dirty.size === 0 && layer.texts.size === 0) continue;
+      const dirty = new Set<Element>();
+      for (const element of layer.dirty) if (layer.container.contains(element)) dirty.add(this.boxed(layer, element));
+      for (const element of layer.texts) {
+        if (!layer.container.contains(element)) continue;
+        const holder = this.boxed(layer, element);
+        const box = boxOfElement(holder);
+        if (box === undefined || box["txt"] !== 1 || holder === layer.container) {
+          dirty.add(holder);
+          continue;
+        }
+        if (dirty.has(holder)) continue;
+        const text = remirrorText(holder, this.report);
+        if (text === undefined) {
+          dirty.add(holder);
+          continue;
+        }
+        if (JSON.stringify(text) === JSON.stringify(box["t"] ?? null)) continue;
+        if (text === null) delete box["t"];
+        else box["t"] = text;
+        ui.patchText(box.id, text);
+        this.stats.texts += 1;
+      }
+      layer.dirty.clear();
+      layer.texts.clear();
+      // An element inside another dirty one is covered by it.
+      const tops = [...dirty].filter((element) => ![...dirty].some((other) => other !== element && other.contains(element)));
+      for (const top of tops) {
+        let current = top;
+        for (;;) {
+          if (current === layer.container) {
+            layer.root = mirrorRoot(layer.container, this.report);
+            full = true;
+            break;
+          }
+          const box = remirrorElement(current, this.report);
+          if (box !== null) {
+            patches.push(box);
+            break;
+          }
+          current = this.boxed(layer, current.parentElement ?? layer.container);
+        }
+        if (full) break;
+      }
     }
-    const json = JSON.stringify(roots);
-    boxes = (json.match(/"k":"x"/g) ?? []).length;
+    if (full) {
+      this.stale = false;
+      const roots = this.layers.map((layer) => layer.root).filter((root): root is WireBox => root !== null);
+      ui.setSpec(roots as unknown as RuneUiNode[], false);
+      this.stats.full += 1;
+    } else if (patches.length > 0) {
+      ui.patch(patches as unknown as RuneUiNode[]);
+      this.stats.patches += 1;
+      this.stats.boxes += patches.length;
+    }
     const elapsed = performance.now() - started;
-    this.stats.passes += 1;
+    this.stats.ms += elapsed;
     this.stats.lastMs = elapsed;
-    this.stats.totalMs += elapsed;
-    this.stats.boxes = boxes;
-    if (json === this.lastJson) return;
-    this.lastJson = json;
-    this.ui.setSpec(roots as unknown as RuneUiNode[], false);
   }
 
   /**

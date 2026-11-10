@@ -281,21 +281,82 @@ pub fn set_spec(json: &str) {
     HANDLE.with(|h| {
         if let Some(handle) = h.borrow().as_ref() {
             handle.update(move |s: &mut Ui, _tx: &mut Tx| {
-                let ids = spec::field_ids(&children);
-                s.edits.retain(|id, _| ids.contains(id));
-                spec::collect_fields(&children, &mut s.edits);
-                let mut fields = Vec::new();
-                css::fields(&children, &mut fields);
-                for (key, inp) in fields {
-                    let known = s.edit_rev.get(&key).copied();
-                    if known != Some(inp.rev) || !s.edits.contains_key(&key) {
-                        s.edit_rev.insert(key.clone(), inp.rev);
-                        s.edits.insert(key, TextEdit::new(inp.v.clone()));
-                    }
-                }
-                s.edit_rev.retain(|id, _| ids.contains(id));
                 s.root = children;
                 s.modal = modal;
+                sync_fields(s);
+            });
+        }
+    });
+}
+
+/// Bring the edit store in line with the tree's fields: drop edits whose field is gone, make
+/// one for each new field, and take the page's text where it set a field itself.
+#[cfg(target_arch = "wasm32")]
+fn sync_fields(s: &mut Ui) {
+    let ids = spec::field_ids(&s.root);
+    s.edits.retain(|id, _| ids.contains(id));
+    spec::collect_fields(&s.root, &mut s.edits);
+    let mut fields = Vec::new();
+    css::fields(&s.root, &mut fields);
+    for (key, inp) in fields {
+        let known = s.edit_rev.get(&key).copied();
+        if known != Some(inp.rev) || !s.edits.contains_key(&key) {
+            s.edit_rev.insert(key.clone(), inp.rev);
+            s.edits.insert(key, TextEdit::new(inp.v.clone()));
+        }
+    }
+    s.edit_rev.retain(|id, _| ids.contains(id));
+}
+
+/// Replace CSS boxes in place: `[{"k":"x","id":N,...}, ...]`, each taking the place of the box
+/// that has its id. A box that is not in the tree is skipped. This is how a changed subtree
+/// reaches Rune without the whole tree being sent again.
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen::prelude::wasm_bindgen]
+pub fn patch(json: &str) {
+    let boxes: Vec<css::Box_> = match serde_json::from_str(json) {
+        Ok(b) => b,
+        Err(e) => {
+            emit("__spec__", "error", None, Some(e.to_string()));
+            return;
+        }
+    };
+    HANDLE.with(|h| {
+        if let Some(handle) = h.borrow().as_ref() {
+            handle.update(move |s: &mut Ui, _tx: &mut Tx| {
+                let mut fields = false;
+                for b in boxes {
+                    if let Some(slot) = css::find_mut(&mut s.root, b.id) {
+                        fields = true;
+                        *slot = b;
+                    }
+                }
+                if fields {
+                    sync_fields(s);
+                }
+            });
+        }
+    });
+}
+
+/// Replace one CSS box's text: `json` is its text record, or `null` for none. The per-change
+/// path for a number or label that moves: no layout or paint field is parsed again.
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen::prelude::wasm_bindgen]
+pub fn patch_text(id: u32, json: &str) {
+    let text: Option<css::Txt> = match serde_json::from_str(json) {
+        Ok(t) => t,
+        Err(e) => {
+            emit("__spec__", "error", None, Some(e.to_string()));
+            return;
+        }
+    };
+    HANDLE.with(|h| {
+        if let Some(handle) = h.borrow().as_ref() {
+            handle.update(move |s: &mut Ui, _tx: &mut Tx| {
+                if let Some(slot) = css::find_mut(&mut s.root, id) {
+                    slot.t = text;
+                }
             });
         }
     });

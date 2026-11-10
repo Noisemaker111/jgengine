@@ -113,13 +113,75 @@ function applyCase(text: string, transform: string): string {
   return text;
 }
 
-interface Run {
-  text: string;
-  style: CSSStyleDeclaration;
+/** What text needs from an element's computed style, read once and kept until the element is mirrored again. */
+interface TextStyle {
+  display: string;
+  whiteSpace: string;
+  transform: string;
+  color: number;
+  f: string;
+  z: number;
+  w: number;
+  i: boolean;
+  lh: number;
+  ls: number;
+  underline: boolean;
+  strike: boolean;
+  align: string;
+  ellipsis: boolean;
+  shadow: string;
+  /** Whether this element can be a span of its parent's text (no box of its own to draw). */
+  mergeable: boolean;
 }
 
-/** Gathers the text of an element whose content is only text and plain inline elements; `null` when it holds a box. */
-function inlineRuns(element: Element, style: CSSStyleDeclaration, out: Run[]): boolean {
+const textStyles = new WeakMap<Element, TextStyle>();
+
+function hasBoxPaint(style: CSSStyleDeclaration): boolean {
+  if (style.backgroundImage !== "none") return true;
+  const background = parseColor(style.backgroundColor);
+  if (background !== null && colorAlpha(background) > 0) return true;
+  if (parsePx(style.borderTopWidth) + parsePx(style.borderBottomWidth) + parsePx(style.borderLeftWidth) + parsePx(style.borderRightWidth) > 0) return true;
+  return parsePx(style.paddingLeft) + parsePx(style.paddingRight) + parsePx(style.marginLeft) + parsePx(style.marginRight) > 0;
+}
+
+function readTextStyle(element: Element, style: CSSStyleDeclaration): TextStyle {
+  const lineHeight = style.lineHeight;
+  const decoration = style.textDecorationLine;
+  const display = style.display;
+  const snapshot: TextStyle = {
+    display,
+    whiteSpace: style.whiteSpace,
+    transform: style.textTransform,
+    color: parseColor(style.color) ?? 0xffffffff,
+    f: style.fontFamily,
+    z: parsePx(style.fontSize),
+    w: style.fontWeight === "bold" ? 700 : style.fontWeight === "normal" ? 400 : parseFloat(style.fontWeight) || 400,
+    i: style.fontStyle !== "normal",
+    lh: lineHeight === "normal" ? 0 : parsePx(lineHeight),
+    ls: style.letterSpacing === "normal" ? 0 : parsePx(style.letterSpacing),
+    underline: decoration.includes("underline"),
+    strike: decoration.includes("line-through"),
+    align: style.textAlign,
+    ellipsis: style.textOverflow === "ellipsis",
+    shadow: style.textShadow,
+    mergeable: display !== "none" && isInline(display) && element.localName !== "svg" && element.localName !== "img" && !hasBoxPaint(style),
+  };
+  textStyles.set(element, snapshot);
+  return snapshot;
+}
+
+/** The kept text style of `element`, read from the browser only when it was never read or was dropped. */
+function textStyleOf(element: Element): TextStyle {
+  return textStyles.get(element) ?? readTextStyle(element, getComputedStyle(element));
+}
+
+interface Run {
+  text: string;
+  style: TextStyle;
+}
+
+/** Gathers the text of an element whose content is only text and plain inline elements; false when it holds a box. */
+function inlineRuns(element: Element, style: TextStyle, out: Run[], fresh: boolean): boolean {
   for (let node = element.firstChild; node !== null; node = node.nextSibling) {
     if (node.nodeType === 3) {
       const text = node.nodeValue ?? "";
@@ -132,91 +194,83 @@ function inlineRuns(element: Element, style: CSSStyleDeclaration, out: Run[]): b
       out.push({ text: "\n", style });
       continue;
     }
-    const childStyle = getComputedStyle(child);
+    const childStyle = fresh ? readTextStyle(child, getComputedStyle(child)) : textStyleOf(child);
     if (childStyle.display === "none") continue;
-    if (!isInline(childStyle.display) || child.localName === "svg" || child.localName === "img" || hasBoxPaint(childStyle)) return false;
-    if (!inlineRuns(child, childStyle, out)) return false;
+    if (!childStyle.mergeable) return false;
+    if (!inlineRuns(child, childStyle, out, fresh)) return false;
   }
   return true;
 }
 
-function hasBoxPaint(style: CSSStyleDeclaration): boolean {
-  if (style.backgroundImage !== "none") return true;
-  const background = parseColor(style.backgroundColor);
-  if (background !== null && colorAlpha(background) > 0) return true;
-  if (parsePx(style.borderTopWidth) + parsePx(style.borderBottomWidth) + parsePx(style.borderLeftWidth) + parsePx(style.borderRightWidth) > 0) return true;
-  return parsePx(style.paddingLeft) + parsePx(style.paddingRight) + parsePx(style.marginLeft) + parsePx(style.marginRight) > 0;
+function fontOf(style: TextStyle): { f: string; z: number; w: number; i: boolean; lh: number; ls: number } {
+  return { f: style.f, z: style.z, w: style.w, i: style.i, lh: style.lh, ls: style.ls };
 }
 
-function fontOf(style: CSSStyleDeclaration): { f: string; z: number; w: number; i: boolean; lh: number; ls: number } {
-  const size = parsePx(style.fontSize);
-  const lineHeight = style.lineHeight;
-  const weight = style.fontWeight === "bold" ? 700 : style.fontWeight === "normal" ? 400 : parseFloat(style.fontWeight) || 400;
-  return {
-    f: style.fontFamily,
-    z: size,
-    w: weight,
-    i: style.fontStyle !== "normal",
-    lh: lineHeight === "normal" ? 0 : parsePx(lineHeight),
-    ls: style.letterSpacing === "normal" ? 0 : parsePx(style.letterSpacing),
-  };
-}
-
-function textOf(runs: Run[], style: CSSStyleDeclaration, report: MirrorReport, element: Element): Record<string, unknown> | null {
-  const base = fontOf(style);
-  const baseColor = parseColor(style.color) ?? 0xffffffff;
+function textOf(runs: Run[], style: TextStyle, report: MirrorReport, element: Element): Record<string, unknown> | null {
+  const baseColor = style.color;
   let content = "";
   const spans: Record<string, unknown>[] = [];
   let previousSpace = true;
   for (const run of runs) {
-    let text = applyCase(collapse(run.text, run.style.whiteSpace), run.style.textTransform);
-    if (previousSpace && text.startsWith(" ") && run.style.whiteSpace !== "pre" && run.style.whiteSpace !== "pre-wrap") text = text.slice(1);
+    const pre = run.style.whiteSpace === "pre" || run.style.whiteSpace === "pre-wrap";
+    let text = applyCase(collapse(run.text, run.style.whiteSpace), run.style.transform);
+    if (previousSpace && !pre && text.startsWith(" ")) text = text.slice(1);
     if (text === "") continue;
     previousSpace = text.endsWith(" ") || text.endsWith("\n");
     const start = content.length;
     content += text;
     if (run.style === style) continue;
-    const font = fontOf(run.style);
-    const color = parseColor(run.style.color) ?? baseColor;
     const span: Record<string, unknown> = { a: start, b: content.length };
     let differs = false;
-    if (color !== baseColor) {
-      span["c"] = color;
+    if (run.style.color !== baseColor) {
+      span["c"] = run.style.color;
       differs = true;
     }
-    if (font.w !== base.w) {
-      span["w"] = font.w;
+    if (run.style.w !== style.w) {
+      span["w"] = run.style.w;
       differs = true;
     }
-    if (font.z !== base.z) {
-      span["z"] = font.z;
+    if (run.style.z !== style.z) {
+      span["z"] = run.style.z;
       differs = true;
     }
-    if (font.i !== base.i) {
-      span["i"] = font.i;
+    if (run.style.i !== style.i) {
+      span["i"] = run.style.i;
       differs = true;
     }
-    if (run.style.textDecorationLine.includes("underline")) {
+    if (run.style.underline) {
       span["u"] = true;
       differs = true;
     }
-    if (font.f !== base.f) report.add(`inline font-family change: ${font.f.slice(0, 40)}`, element);
+    if (run.style.f !== style.f) report.add(`inline font-family change: ${run.style.f.slice(0, 40)}`, element);
     if (differs) spans.push(span);
   }
   if (previousSpace && content.endsWith(" ")) content = content.slice(0, -1);
   if (content === "") return null;
-  const align = style.textAlign;
   const nowrap = style.whiteSpace === "nowrap" || style.whiteSpace === "pre";
-  const text: Record<string, unknown> = { s: content, c: baseColor, ...base };
+  const text: Record<string, unknown> = { s: content, c: baseColor, ...fontOf(style) };
+  if (style.underline) spans.push({ a: 0, b: content.length, u: true });
   if (spans.length > 0) text["sp"] = spans;
-  if (align === "center") text["al"] = 1;
-  else if (align === "right" || align === "end") text["al"] = 2;
-  if (nowrap) text["wr"] = style.textOverflow === "ellipsis" ? 2 : 1;
-  const shadows = parseTextShadows(style.textShadow);
+  if (style.align === "center") text["al"] = 1;
+  else if (style.align === "right" || style.align === "end") text["al"] = 2;
+  if (nowrap) text["wr"] = style.ellipsis ? 2 : 1;
+  const shadows = parseTextShadows(style.shadow);
   if (shadows.length > 0) text["ts"] = shadows;
-  if (style.textDecorationLine.includes("underline")) spans.push({ a: 0, b: content.length, u: true });
-  if (style.textDecorationLine.includes("line-through")) report.add("text-decoration: line-through", element);
+  if (style.strike) report.add("text-decoration: line-through", element);
   return text;
+}
+
+/**
+ * The text of `element` again from the styles kept at its last mirror, for a change that only
+ * touched text nodes: no computed style is read. `undefined` when the element no longer holds
+ * only text (it gained a box), which needs a full mirror.
+ */
+export function remirrorText(element: Element, report: MirrorReport): Record<string, unknown> | null | undefined {
+  const style = textStyles.get(element);
+  if (style === undefined) return undefined;
+  const runs: Run[] = [];
+  if (!inlineRuns(element, style, runs, false)) return undefined;
+  return textOf(runs, style, report, element);
 }
 
 function dims(element: Element, report: MirrorReport, name: string, values: string[]): WireDim[] | null {
@@ -412,7 +466,10 @@ function pseudoBox(element: Element, which: "::before" | "::after", report: Mirr
   delete box["hit"];
   const text = /^"(.*)"$/.exec(content);
   if (text !== null && text[1] !== undefined && text[1] !== "") {
-    const wire = textOf([{ text: text[1].replace(/\\([0-9a-f]{1,6}) ?/gi, (_m, hex: string) => String.fromCodePoint(Number.parseInt(hex, 16))), style }], style, report, element);
+    // A pseudo-element's text style is its own; nothing keeps it between mirrors.
+    const snapshot = readTextStyle(element, style);
+    textStyles.delete(element);
+    const wire = textOf([{ text: text[1].replace(/\\([0-9a-f]{1,6}) ?/gi, (_m, hex: string) => String.fromCodePoint(Number.parseInt(hex, 16))), style: snapshot }], snapshot, report, element);
     if (wire !== null) box["t"] = wire;
   } else if (text === null) {
     report.add(`content: ${content.slice(0, 40)}`, element);
@@ -446,10 +503,52 @@ function svgMarkup(svg: SVGSVGElement, style: CSSStyleDeclaration): string {
   return copy.outerHTML.replace(/currentcolor/gi, color);
 }
 
+/** The box last built for each element that has one of its own. */
+const boxes = new WeakMap<Element, WireBox>();
+/** The box whose `c` list holds a given box. */
+const owners = new WeakMap<WireBox, WireBox>();
+
+export function boxOfElement(element: Element): WireBox | undefined {
+  return boxes.get(element);
+}
+
+export function ownerOf(box: WireBox): WireBox | undefined {
+  return owners.get(box);
+}
+
+/** Record `children` as `box`'s list, in paint order. */
+function adopt(box: WireBox, children: WireBox[]): void {
+  if (children.length === 0) {
+    delete box.c;
+    return;
+  }
+  // Boxes with a z-index paint in that order; in-flow ones keep their layout order.
+  const floating = children.filter((child) => child["pos"] === 2 && typeof child["z"] === "number");
+  if (floating.length > 0) {
+    const rest = children.filter((child) => !floating.includes(child));
+    floating.sort((a, b) => (a["z"] as number) - (b["z"] as number));
+    box.c = [...floating.filter((child) => (child["z"] as number) < 0), ...rest, ...floating.filter((child) => (child["z"] as number) >= 0)];
+  } else {
+    box.c = children;
+  }
+  for (const child of box.c) owners.set(child, box);
+}
+
+/** A layer's root box: the viewport, holding the mirrored children of `container`. */
+export function mirrorRoot(container: Element, report: MirrorReport): WireBox {
+  const root: WireBox = { k: "x", id: idOf(container), pos: 2, ins: [0, 0, 0, 0], d: 1 };
+  const children: WireBox[] = [];
+  children.push(...mirrorContents(container, report, { positioned: children }));
+  adopt(root, children);
+  boxes.set(container, root);
+  return root;
+}
+
 /** The boxes of a `display: contents` element's children (and of nested such wrappers), in order. */
 export function mirrorContents(element: Element, report: MirrorReport, inherited: Inherited): WireBox[] {
   const out: WireBox[] = [];
-  const style = getComputedStyle(element);
+  const style = readTextStyle(element, getComputedStyle(element));
+  boxes.delete(element);
   for (let node = element.firstChild; node !== null; node = node.nextSibling) {
     if (node.nodeType === 3) {
       const raw = node.nodeValue ?? "";
@@ -476,11 +575,16 @@ export function mirrorContents(element: Element, report: MirrorReport, inherited
  * appended to the nearest positioned ancestor, which is where CSS places them.
  */
 export function mirrorElement(element: Element, report: MirrorReport, inherited: Inherited = { positioned: [] }): WireBox | null {
+  boxes.delete(element);
   if (SKIP_TAGS.has(element.localName)) return null;
   const style = getComputedStyle(element);
   const display = style.display;
-  if (display === "none") return null;
+  if (display === "none") {
+    textStyles.delete(element);
+    return null;
+  }
   const box = boxOf(element, style, report);
+  boxes.set(element, box);
   const tag = element.localName;
   if (tag === "svg") {
     box["svg"] = svgMarkup(element as SVGSVGElement, style);
@@ -503,12 +607,13 @@ export function mirrorElement(element: Element, report: MirrorReport, inherited:
     box["island"] = 1;
     return box;
   }
+  const textStyle = readTextStyle(element, style);
   if (tag === "input" || tag === "textarea") {
     const field = element as HTMLInputElement;
     const type = tag === "textarea" ? "" : field.type;
     if (TEXT_INPUT_TYPES.has(type)) {
       box["inp"] = { v: field.value, ph: field.placeholder ?? "", multi: tag === "textarea", secret: type === "password", off: field.disabled, rev: Number(field.dataset["jgRev"] ?? 0) };
-      box["t"] = { s: "", c: parseColor(style.color) ?? 0xffffffff, ...fontOf(style) };
+      box["t"] = { s: "", c: textStyle.color, ...fontOf(textStyle) };
       return box;
     }
     report.add(`<input type=${type}>`, element);
@@ -523,17 +628,18 @@ export function mirrorElement(element: Element, report: MirrorReport, inherited:
   if (before !== null) children.push(before);
 
   const runs: Run[] = [];
-  const onlyInline = element.firstChild !== null && inlineRuns(element, style, runs);
+  const onlyInline = element.firstChild !== null && inlineRuns(element, textStyle, runs, true);
   if (onlyInline) {
-    const text = textOf(runs, style, report, element);
+    const text = textOf(runs, textStyle, report, element);
     if (text !== null) box["t"] = text;
+    box["txt"] = 1;
   } else {
     let inlineRow = false;
     for (let node = element.firstChild; node !== null; node = node.nextSibling) {
       if (node.nodeType === 3) {
         const raw = node.nodeValue ?? "";
         if (raw.trim() === "") continue;
-        const text = textOf([{ text: raw, style }], style, report, element);
+        const text = textOf([{ text: raw, style: textStyle }], textStyle, report, element);
         if (text !== null) {
           children.push({ k: "x", id: 0, t: text, fs: 0 });
           inlineRow = true;
@@ -552,6 +658,7 @@ export function mirrorElement(element: Element, report: MirrorReport, inherited:
       const child = mirrorElement(node as Element, report, next);
       if (child === null) continue;
       if (child["pos"] === 2 && style.position === "static" && child["ins"] !== undefined && positioned !== children) {
+        child["up"] = 1;
         positioned.push(child);
         continue;
       }
@@ -563,6 +670,7 @@ export function mirrorElement(element: Element, report: MirrorReport, inherited:
       delete box["d"];
       box["fw"] = 1;
       box["ai"] = 5;
+      box["row"] = 1;
       const align = style.textAlign;
       if (align === "center") box["jc"] = 3;
       else if (align === "right" || align === "end") box["jc"] = 2;
@@ -571,16 +679,29 @@ export function mirrorElement(element: Element, report: MirrorReport, inherited:
   const after = pseudoBox(element, "::after", report);
   if (after !== null) children.push(after);
   if (isInlineLevel(display)) box["inl"] = 1;
-  if (children.length > 0) {
-    // Boxes with a z-index paint in that order; in-flow ones keep their layout order.
-    const floating = children.filter((child) => child["pos"] === 2 && typeof child["z"] === "number");
-    if (floating.length > 0) {
-      const rest = children.filter((child) => !floating.includes(child));
-      floating.sort((a, b) => (a["z"] as number) - (b["z"] as number));
-      box.c = [...floating.filter((child) => (child["z"] as number) < 0), ...rest, ...floating.filter((child) => (child["z"] as number) >= 0)];
-    } else {
-      box.c = children;
-    }
+  adopt(box, children);
+  return box;
+}
+
+/**
+ * Mirrors `element` again in place after it changed; returns the box to send as a patch, or
+ * `null` when the change reaches outside the element (it appeared, vanished, moved to or from
+ * a positioned ancestor, or changed how its parent flows) and the parent must be mirrored.
+ */
+export function remirrorElement(element: Element, report: MirrorReport): WireBox | null {
+  const old = boxes.get(element);
+  if (old === undefined || old["up"] === 1) return null;
+  const owner = owners.get(old);
+  if (owner === undefined || owner.c === undefined) return null;
+  const sink: WireBox[] = [];
+  const box = mirrorElement(element, report, { positioned: sink });
+  if (box === null || sink.length > 0 || box["inl"] !== old["inl"] || (box["pos"] === 2) !== (old["pos"] === 2) || box["z"] !== old["z"]) {
+    boxes.set(element, old);
+    return null;
   }
+  const at = owner.c.indexOf(old);
+  if (at === -1) return null;
+  owner.c[at] = box;
+  owners.set(box, owner);
   return box;
 }
