@@ -1,4 +1,6 @@
 import { defineFlow } from "@jgengine/core/play/flow";
+import { decodePng } from "@jgengine/assets/imageCodec";
+import { readFileSync } from "node:fs";
 
 /** The actual dev gallery: --param preview=racks --param ui=rune --settle 1000 lets the scene mount. */
 export default defineFlow(null, {
@@ -7,7 +9,11 @@ export default defineFlow(null, {
     await f.see("Rack visual gallery");
     await f.waitForPage("window.__jgRuneStage?.unavailable === false && [...window.__jgRuneStage.canvasFeeds.values()].some(feed => feed.received && feed.streamed)");
     const width = String(await f.page("innerWidth"));
+    await f.wait(500);
     await f.shot(`racks-full-${width}`);
+    const png = decodePng(readFileSync(new URL(`../../../../shots/llmville/racks-full-${width}.png`, import.meta.url)));
+    const at = (Math.floor(png.height * 0.7) * png.width + Math.floor(png.width * 0.5)) * 4;
+    await f.expectPage(String((png.data[at + 1] ?? 0) > 30 && (png.data[at + 1] ?? 0) > (png.data[at] ?? 255)), "the captured gallery includes its lit ground, not just its canvas background");
     await f.click("Empty");
     await f.see("bare frame");
     await f.click("None");

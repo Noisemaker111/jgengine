@@ -21,7 +21,6 @@ mod upload;
 mod variant;
 #[cfg(target_os = "macos")]
 mod windfoil_metallib;
-pub use backdrop_blur::MAX_BACKDROP_BLURS;
 pub use first_use::precompiled_misses;
 pub use layers::LayerStats;
 

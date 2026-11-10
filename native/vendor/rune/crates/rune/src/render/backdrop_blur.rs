@@ -6,9 +6,6 @@
 //! first record; frames without one never touch it.
 use super::*;
 
-/// Backdrop-blurred elements per frame. Elements past this many draw only their fill.
-pub const MAX_BACKDROP_BLURS: usize = 4;
-
 /// Pyramid levels below the backdrop, the first at half resolution.
 const MIPS: u32 = 7;
 /// Uniform slot stride: the largest `min_uniform_buffer_offset_alignment` WebGPU allows.
@@ -56,6 +53,10 @@ struct Pyramid {
     size: [u32; 2],
     down: Vec<wgpu::TextureView>,
     up: Vec<wgpu::TextureView>,
+    bindings: PyramidBindings,
+}
+
+struct PyramidBindings {
     /// The down pass into level m + 1 reads level m.
     down_binds: Vec<wgpu::BindGroup>,
     /// The up pass into level m reads down level m + 1 (where the chain starts) or up level m + 1.
@@ -75,6 +76,7 @@ pub(super) struct BackdropBlur {
     sampler: wgpu::Sampler,
     dummy: wgpu::TextureView,
     uniforms: wgpu::Buffer,
+    level_data: Vec<u8>,
     pyramid: Option<Pyramid>,
     /// The down pass into level 0, reading the pooled backdrop of each format.
     first: Vec<(wgpu::TextureFormat, wgpu::BindGroup)>,
@@ -179,14 +181,31 @@ impl BackdropBlur {
         }).create_view(&Default::default());
         let uniforms = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("backdrop blur levels"),
-            size: (MAX_BACKDROP_BLURS * SLOTS) as u64 * SLOT,
+            size: SLOTS as u64 * SLOT,
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
         BackdropBlur {
             down, up, level_layout, result_layout, composite_layout, composite_shader,
-            composites: Vec::new(), sampler, dummy, uniforms, pyramid: None, first: Vec::new(), records: Vec::new(),
+            composites: Vec::new(), sampler, dummy, uniforms, level_data: Vec::new(), pyramid: None, first: Vec::new(), records: Vec::new(),
         }
+    }
+
+    fn ensure_uniforms(&mut self, device: &wgpu::Device, count: usize) -> bool {
+        let required=count as u64*SLOTS as u64*SLOT;
+        if required<=self.uniforms.size() { return false; }
+        let limit=device.limits().max_buffer_size.min(u32::MAX as u64+1);
+        assert!(required<=limit,"backdrop blur uniforms exceed the device buffer or dynamic-offset limit");
+        let size=required.checked_next_power_of_two().filter(|size| *size<=limit).unwrap_or(required);
+        self.uniforms=device.create_buffer(&wgpu::BufferDescriptor {
+            label:Some("backdrop blur levels"),size,
+            usage:wgpu::BufferUsages::UNIFORM|wgpu::BufferUsages::COPY_DST,mapped_at_creation:false,
+        });
+        if let Some(mut pyramid)=self.pyramid.take() {
+            pyramid.bindings=self.pyramid_bindings(device,&pyramid.down,&pyramid.up);
+            self.pyramid=Some(pyramid);
+        }
+        true
     }
 
     fn levels_binding(&self) -> wgpu::BindingResource<'_> {
@@ -271,6 +290,11 @@ impl BackdropBlur {
                 .collect::<Vec<_>>()
         };
         let (down, up) = (chain("backdrop blur down"), chain("backdrop blur up"));
+        let bindings=self.pyramid_bindings(device,&down,&up);
+        self.pyramid = Some(Pyramid { size, down, up, bindings });
+    }
+
+    fn pyramid_bindings(&self, device:&wgpu::Device, down:&[wgpu::TextureView], up:&[wgpu::TextureView]) -> PyramidBindings {
         let m = down.len();
         let down_binds = (1..m).map(|k| self.level_bind(device, &down[k - 1], &self.dummy)).collect();
         let up_binds = (0..m.saturating_sub(1))
@@ -285,7 +309,7 @@ impl BackdropBlur {
                 wgpu::BindGroupEntry { binding: 2, resource: self.levels_binding() },
             ],
         });
-        self.pyramid = Some(Pyramid { size, down, up, down_binds, up_binds, result });
+        PyramidBindings { down_binds, up_binds, result }
     }
 
     /// Records the pyramid passes for `record`, reading the backdrop of `format`.
@@ -326,10 +350,10 @@ impl BackdropBlur {
         };
         let n = record.levels;
         for m in 0..=n {
-            if m == 0 { run(&self.down, &pyramid.down[0], first, 0, MIPS as usize) } else { run(&self.down, &pyramid.down[m], &pyramid.down_binds[m - 1], m, m) }
+            if m == 0 { run(&self.down, &pyramid.down[0], first, 0, MIPS as usize) } else { run(&self.down, &pyramid.down[m], &pyramid.bindings.down_binds[m - 1], m, m) }
         }
         for m in (0..n).rev() {
-            let (from_down, from_up) = &pyramid.up_binds[m];
+            let (from_down, from_up) = &pyramid.bindings.up_binds[m];
             run(&self.up, &pyramid.up[m], if m + 1 == n { from_down } else { from_up.as_ref().unwrap() }, m, m);
         }
     }
@@ -358,7 +382,7 @@ impl Renderer {
         let viewport = [vw as f32, vh as f32];
         let mut placed = Vec::new();
         let mut need = [STEP; 2];
-        let records = self.effects.iter().filter(|(_, i)| i.params[1] == KIND_BACKDROP_BLUR).take(MAX_BACKDROP_BLURS);
+        let records = self.effects.iter().filter(|(_, i)| i.params[1] == KIND_BACKDROP_BLUR);
         for (at, i) in records {
             let sigma = i.params[0];
             let (n, share) = levels(sigma, MIPS as usize - 1);
@@ -377,12 +401,15 @@ impl Renderer {
             placed.push((*at, n, share, region, origin));
         }
         if placed.is_empty() { return; }
+        if blur.ensure_uniforms(device,placed.len()) {
+            for backdrop in &self.backdrops { blur.bind_backdrop(device,backdrop.format,&backdrop.view); }
+        }
         // The window plus the most an aligned origin can sit before it.
         let cap = [vw, vh].map(|v| (v.div_ceil(2) + STEP).next_multiple_of(STEP));
         blur.ensure_pyramid(device, need, cap);
         let Some(pyramid) = &blur.pyramid else { return };
         let extent = [pyramid.size[0] as f32 * 2.0, pyramid.size[1] as f32 * 2.0];
-        let mut levels_data = vec![0u8; MAX_BACKDROP_BLURS * SLOTS * SLOT as usize];
+        blur.level_data.resize(placed.len()*SLOTS*SLOT as usize,0);
         for (slot, (at, n, share, region, origin)) in placed.into_iter().enumerate() {
             let inside = [(region[0] - origin[0]) / extent[0], (region[1] - origin[1]) / extent[1],
                 (region[2] - origin[0]) / extent[0], (region[3] - origin[1]) / extent[1]];
@@ -397,12 +424,12 @@ impl Renderer {
                 };
                 let level = Level { w: [if m + 1 == n { share } else { 1.0 }, 0.0, 0.0, 0.0], region, map, place };
                 let at = (slot * SLOTS + m) * SLOT as usize;
-                levels_data[at..at + std::mem::size_of::<Level>()].copy_from_slice(bytemuck::bytes_of(&level));
+                blur.level_data[at..at + std::mem::size_of::<Level>()].copy_from_slice(bytemuck::bytes_of(&level));
             }
             blur.records.push(Record { at, slot, levels: n, region, origin });
         }
         let used = blur.records.last().map_or(0, |r| (r.slot + 1) * SLOTS * SLOT as usize);
-        staging.write_buffer(&blur.uniforms, 0, &levels_data[..used]);
+        staging.write_buffer(&blur.uniforms, 0, &blur.level_data[..used]);
     }
 
     /// Draws the backdrop blur record at `at`: splits the pass to copy and blur what is below,
@@ -434,7 +461,7 @@ impl Renderer {
             pass.set_scissor_rect(x0, y0, x1 - x0, y1 - y0);
             pass.set_pipeline(composite);
             pass.set_bind_group(0, bind, &[]);
-            pass.set_bind_group(1, &pyramid.result, &[(record.slot * SLOTS) as u32 * SLOT as u32]);
+            pass.set_bind_group(1, &pyramid.bindings.result, &[(record.slot * SLOTS) as u32 * SLOT as u32]);
             pass.set_vertex_buffer(0, self.instances.slice(..));
             pass.draw(0..4, at..at + 1);
         }

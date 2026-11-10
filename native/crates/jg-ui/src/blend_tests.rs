@@ -1,6 +1,14 @@
 use rune::color::{srgb_decode, srgb_encode};
 use rune::render::{Blend, Gpu, Instance, KIND_RECT, LayerSpec, NO_CLIP, OFFSCREEN_FORMAT, Offscreen, Renderer};
 
+fn line_spread(pixels: &[u8], width: usize, x: usize, y: usize) -> f32 {
+    let sample=|at: usize| srgb_decode(pixels[(y*width+at)*4] as f32/255.0);
+    let weights: Vec<_>=(x-24..x+23).map(|at| (at as f32,(sample(at+1)-sample(at)).max(0.0))).collect();
+    let mass: f32=weights.iter().map(|(_,w)|w).sum();
+    let mean=weights.iter().map(|(at,w)|at*w).sum::<f32>()/mass;
+    (weights.iter().map(|(at,w)|(at-mean).powi(2)*w).sum::<f32>()/mass).sqrt()
+}
+
 fn primitive(bounds: [f32; 4], color: [f32; 3], alpha: f32, srgb: bool) -> Instance {
     let mut instance = Instance::begin_layer(bounds, NO_CLIP, LayerSpec::default());
     instance.params = [0.0, KIND_RECT, 0.0, 1.0];
@@ -138,11 +146,33 @@ fn css_blurs_preserve_the_requested_standard_deviation() {
     // foreground Gaussian and backdrop pyramid approximate that kernel differently.
     for backdrop in [false,true] {
         let pixels=draw(backdrop);
-        let sample=|x: usize| srgb_decode(pixels[(32*64+x)*4] as f32/255.0);
-        let weights: Vec<_>=(8..55).map(|x| (x as f32,(sample(x+1)-sample(x)).max(0.0))).collect();
-        let mass: f32=weights.iter().map(|(_,w)|w).sum();
-        let mean=weights.iter().map(|(x,w)|x*w).sum::<f32>()/mass;
-        let sigma=(weights.iter().map(|(x,w)|(x-mean).powi(2)*w).sum::<f32>()/mass).sqrt();
+        let sigma=line_spread(&pixels,64,32,32);
         assert!((sigma-4.0).abs()<0.4,"backdrop={backdrop}: requested sigma 4, measured {sigma}");
+    }
+}
+
+#[test]
+fn every_visible_backdrop_blurs_when_the_surface_count_grows_and_shrinks() {
+    let gpu=Gpu::headless();
+    let mut renderer=Renderer::new(&gpu.device,OFFSCREEN_FORMAT);
+    let target=Offscreen::new(&gpu.device,288,96);
+    for count in [1,9,2,9] {
+        let mut children: Vec<_>=(0..3).map(|column| serde_json::json!({"k":"x","id":10+column*3,"w":96,"h":96,"c":[
+            {"k":"x","id":11+column*3,"w":48,"h":96,"bg":0x000000ff_u32},
+            {"k":"x","id":12+column*3,"w":48,"h":96,"bg":0xffffffff_u32}
+        ]})).collect();
+        for index in 0..count { children.push(serde_json::json!({"k":"x","id":100+index,"pos":2,"ins":[index%3*96,index/3*32,"auto","auto"],"w":96,"h":32,"bblur":4})); }
+        let mut state=crate::Ui::default();
+        state.root=crate::spec::parse_spec(&serde_json::json!({"children":[{"k":"x","id":1,"w":288,"h":96,"c":children}]}).to_string()).unwrap().children;
+        let mut runtime=rune::Runtime::new(state,crate::build::view,(288.0,96.0),rune::Env::new(true,1.0));
+        runtime.frame(0.0);
+        renderer.prepare(&gpu.device,&gpu.queue,&mut runtime.text.atlas,&runtime.instances,(288,96));
+        let mut encoder=gpu.device.create_command_encoder(&Default::default());
+        renderer.draw(&mut encoder,&target.view,[0.0;4]); target.copy(&mut encoder); renderer.submit(&gpu.queue,encoder);
+        let pixels=target.read(&gpu.device);
+        for index in 0..count {
+            let sigma=line_spread(&pixels,288,index%3*96+48,index/3*32+16);
+            assert!((sigma-4.0).abs()<0.4,"surface {} of {count}: requested sigma 4, measured {sigma}",index+1);
+        }
     }
 }

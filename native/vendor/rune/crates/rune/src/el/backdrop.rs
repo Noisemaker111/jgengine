@@ -25,8 +25,8 @@ impl El {
     ///
     /// Unlike `El::system_material`, which shows what is behind the window, this blurs Rune's
     /// own content and looks the same on every platform. The element's opacity fades the blur
-    /// with it, and its outer shadows leave the blurred interior clear. The first
-    /// `MAX_BACKDROP_BLURS` blurred elements in a frame blur; any past that, and any drawn into a
+    /// with it, and its outer shadows leave the blurred interior clear. Visible surfaces share a
+    /// pooled pyramid, with uniform storage grown to their count. Elements drawn into a
     /// target that can't be copied (no `COPY_SRC`, or a caller's own `wgpu::RenderPass` via
     /// `Renderer::draw_range`), draw only their fill. Inside an ancestor drawn as one layer
     /// (`El::group_opacity`, `El::blur`, `El::cache`) the backdrop is what that layer has drawn

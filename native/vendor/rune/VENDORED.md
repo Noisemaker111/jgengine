@@ -11,6 +11,10 @@ requests, so jgengine carries a patched copy here instead of a git pin.
 
 ## jgengine patches
 
+Direct Rune tests use this workspace and its `Cargo.lock` for dev dependencies:
+`cargo test --manifest-path native/vendor/rune/Cargo.toml -p rune --no-default-features --features embedded-fonts,svg --jobs 4 --target-dir native/target --test backdrop_blur`.
+The engine's `jg-ui` build uses the separate `native/Cargo.lock`.
+
 `crates/rune/src/el/{visual,visuals}.rs`, `runtime/{commit/memo_reuse,paint/build,paint/cache_layer}.rs`,
 `render{,/layers,/upload}.rs` and `shader.wgsl` — separable subtree blending and
 explicit isolation. Multiply, overlay, screen and soft-light copy the current
@@ -25,6 +29,15 @@ partial alpha, nested panels, isolation, background polygons and translucent bor
 The web surface explicitly requests `COPY_SRC` on WebGPU: wgpu 30's web backend
 reports only `RENDER_ATTACHMENT` even though canvas configuration supports copies.
 The real-entry material proof catches this separately from offscreen GPU tests.
+
+`crates/rune/src/render/backdrop_blur.rs`, `runtime/paint/build.rs` and
+`el/backdrop.rs` — every visible backdrop surface gets its requested blur.
+Removed the four-surface cutoff and its public constant. Uniform storage grows
+to the visible record count within the device's buffer/dynamic-offset limits;
+existing pyramid textures are rebound and retained when that storage grows.
+CPU level data is reused across frames. LLMville's eight rack labels and control
+panel exercise this; the GPU regression grows and shrinks the surface count and
+measures each one's line spread. The old fifth surface had zero blur.
 
 `crates/rune/src/runtime/input/pointer.rs` — a scroll viewport with zero range on
 the requested axis does not capture wheel/touch targeting. Nested CSS
