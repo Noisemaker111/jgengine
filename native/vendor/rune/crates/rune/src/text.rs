@@ -642,10 +642,10 @@ impl TextSystem {
         let span_spacing: Vec<Option<f32>> = spans
             .iter()
             .map(|s| {
-                if !(s.mono || s.italic || s.weight.is_some() || s.size.is_some()) {
+                if !(s.mono || s.family.is_some() || s.italic || s.weight.is_some() || s.size.is_some()) {
                     return None;
                 }
-                let family = if s.mono { Family::Mono } else { style.family };
+                let family = if s.mono { Family::Mono } else { s.family.unwrap_or(style.family) };
                 let trak = self.primary_trak(family, s.weight.unwrap_or(style.weight), s.italic || style.italic);
                 Some(spacing(trak, s.size.unwrap_or(style.size))).filter(|&v| v != base_spacing)
             })
@@ -655,7 +655,7 @@ impl TextSystem {
         let span_axes: Vec<Rc<[parley::FontVariation]>> = spans
             .iter()
             .map(|s| {
-                let family = if s.mono { Family::Mono } else { style.family };
+                let family = if s.mono { Family::Mono } else { s.family.unwrap_or(style.family) };
                 self.primary_axes(family, s.weight.unwrap_or(style.weight), s.italic || style.italic)
             })
             .collect();
@@ -669,6 +669,11 @@ impl TextSystem {
         }
         if let Family::Named(list) = style.family {
             self.load_installed(list);
+        }
+        for span in spans {
+            if let Some(Family::Named(list)) = span.family {
+                self.load_installed(list);
+            }
         }
         let math = self.math.as_deref().unwrap_or(&[]);
         let emoji = self.emoji.as_slice();
@@ -694,6 +699,12 @@ impl TextSystem {
             }
         };
         let mono = with_symbols(self.mono.as_str());
+        let span_families: Vec<_> = spans.iter().map(|span| span.family.map(|family| match family {
+            Family::Sans => with_symbols(self.sans.as_str()),
+            Family::Mono => mono.clone(),
+            Family::Named(list) => named_list(list).into_iter().chain(sans.iter().cloned()).collect(),
+            Family::SystemMono => system.iter().map(|name| FontFamilyName::named(name)).chain(mono.iter().cloned()).collect(),
+        })).collect();
         let language = self.language;
         // Routed clusters try their fallback first, then the run's own stack (mono spans included).
         // Each of the four {math, emoji} × {sans, mono} stacks is built at most once.
@@ -762,6 +773,8 @@ impl TextSystem {
                 if s.mono {
                     b.push(FontFamily::from(mono.as_slice()), r.clone());
                     b.push(StyleProperty::FontFeatures(unligated.as_slice().into()), r.clone());
+                } else if let Some(family) = &span_families[i] {
+                    b.push(FontFamily::from(family.as_slice()), r.clone());
                 }
                 if let Some(w) = s.weight {
                     b.push(StyleProperty::FontWeight(FontWeight::new(w)), r.clone());

@@ -37,7 +37,7 @@ pub fn text_hash(text: &str, spans: &[Span], style: TextStyle, scale: f32, width
     let mut h = KeyHasher::default();
     text.hash(&mut h);
     for s in spans {
-        (s.start, s.end, s.mono, s.weight.map(f32::to_bits), s.size.map(f32::to_bits), s.italic).hash(&mut h);
+        (s.start, s.end, s.mono, s.family, s.weight.map(f32::to_bits), s.size.map(f32::to_bits), s.italic).hash(&mut h);
     }
     (style.size.to_bits(), style.weight.to_bits(), style.family, style.line_height.to_bits(), style.tracking.to_bits())
         .hash(&mut h);

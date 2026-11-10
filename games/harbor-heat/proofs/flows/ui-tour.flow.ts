@@ -28,6 +28,7 @@ export default defineFlow(game, {
       { tap: "Hit the street" },
       { tap: "Take the run" },
       { until: "document.querySelector('[data-new-dispatch-name]') === null" },
+      { until: "innerWidth >= 600 || (() => { const keys = [...document.querySelectorAll('.hh-hudkeys button')]; return keys.length === 2 && keys.every(el => { const rect = el.getBoundingClientRect(); return rect.left >= 0 && rect.right <= innerWidth; }); })()" },
       { shot: "hud" },
       { tap: "Pause" },
       { until: "document.body.textContent.includes('Back to the coast')" },

@@ -8,6 +8,7 @@
 type Rect = readonly [number, number, number, number];
 
 const rects = new WeakMap<Element, Rect>();
+const layoutRects = new WeakMap<Element, Rect>();
 const watchers = new WeakMap<Element, Set<RuneResizeObserver>>();
 let installed = false;
 let NativeResizeObserver: typeof ResizeObserver | null = null;
@@ -16,11 +17,12 @@ function inRuneLayer(element: Element): boolean {
   return element.closest("[data-jg-rune-layer]") !== null;
 }
 
-/** Record where Rune laid `element` out (CSS pixels); observers of it hear a size change. */
-export function setRuneRect(element: Element, rect: Rect): void {
-  const before = rects.get(element);
+/** Record painted bounds for hit testing and layout bounds for size/resize APIs (CSS pixels). */
+export function setRuneRect(element: Element, rect: Rect, layout: Rect): void {
+  const before = layoutRects.get(element);
   rects.set(element, rect);
-  if (before !== undefined && Math.abs(before[2] - rect[2]) < 0.01 && Math.abs(before[3] - rect[3]) < 0.01) return;
+  layoutRects.set(element, layout);
+  if (before !== undefined && Math.abs(before[2] - layout[2]) < 0.01 && Math.abs(before[3] - layout[3]) < 0.01) return;
   const observing = watchers.get(element);
   if (observing !== undefined) for (const observer of observing) observer.queue(element);
 }
@@ -93,7 +95,7 @@ class RuneResizeObserver implements ResizeObserver {
     const entries: ResizeObserverEntry[] = [];
     for (const target of this.changed) {
       if (!this.mirrored.has(target)) continue;
-      const rect = rects.get(target) ?? [0, 0, 0, 0];
+      const rect = layoutRects.get(target) ?? [0, 0, 0, 0];
       const size = [{ inlineSize: rect[2], blockSize: rect[3] }];
       entries.push({ target, contentRect: new DOMRect(0, 0, rect[2], rect[3]), borderBoxSize: size, contentBoxSize: size, devicePixelContentBoxSize: size });
     }
@@ -109,7 +111,7 @@ function patchGetter(proto: object, name: string, read: (rect: Rect) => number):
   Object.defineProperty(proto, name, {
     ...descriptor,
     get(this: Element) {
-      const rect = rects.get(this);
+      const rect = layoutRects.get(this);
       return rect === undefined ? (original.call(this) as number) : read(rect);
     },
   });

@@ -170,6 +170,8 @@ pub struct SpanW {
     #[serde(default)]
     pub w: Option<f32>,
     #[serde(default)]
+    pub f: Option<String>,
+    #[serde(default)]
     pub z: Option<f32>,
     #[serde(default)]
     pub i: bool,
@@ -1015,6 +1017,7 @@ fn text_el(t: &Txt, color: Color) -> El {
                 let mut span = Span::new(byte_at(&body, s.a as usize), byte_at(&body, s.b as usize));
                 span.color = s.c.map(|c| c.0);
                 span.weight = s.w;
+                span.family = s.f.as_ref().map(|name| family(name));
                 span.size = s.z;
                 span.italic = s.i;
                 span.bg = s.bg.map(|c| c.0);
@@ -1344,7 +1347,31 @@ mod live_value_tests {
     use super::*;
 
     #[test]
+    fn inline_families_shape_wrap_and_cache_as_one_paragraph() {
+        let _families = rune::text::with_families("Inter", "IBM Plex Mono");
+        let mut fonts = rune::text::TextSystem::new(
+            &[
+                include_bytes!("../../../vendor/rune/crates/rune/assets/Inter-Regular.ttf"),
+                include_bytes!("../../../vendor/rune/crates/rune/assets/IBMPlexMono-Regular.ttf"),
+            ],
+            ("Inter", "IBM Plex Mono"),
+        );
+        let style = TextStyle::new(24.0, 400.0);
+        let text = "iiii a paragraph with its normal body font after a different-family lead.";
+        let regular = fonts.layout_rich(text, &[], style, 1.0, None).width();
+        let mut lead = Span::new(0, 4);
+        lead.family = Some(Family::Named("IBM Plex Mono"));
+        let mixed = fonts.layout_rich(text, &[lead.clone()], style, 1.0, None).width();
+        assert!(mixed > regular + 15.0, "inline family stayed in the paragraph's font: {regular}, {mixed}");
+        assert_eq!(fonts.layout_rich(text, &[], style, 1.0, None).width(), regular);
+        let wrapped = fonts.layout_rich(text, &[lead], style, 1.0, Some(180.0));
+        assert!(wrapped.len() > 1);
+        assert!(wrapped.width() <= 181.0, "inline font prevented paragraph wrapping");
+    }
+
+    #[test]
     fn a_regular_only_game_font_synthesizes_bold_and_keeps_distinct_cached_masks() {
+        let _families = rune::text::with_families("Inter", "Inter");
         for smoothing in [rune::text::FontSmoothing::On, rune::text::FontSmoothing::Off] {
             let mut fonts = rune::text::TextSystem::new(
                 &[include_bytes!("../../../vendor/rune/crates/rune/assets/Inter-Regular.ttf")],

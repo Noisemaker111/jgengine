@@ -168,7 +168,8 @@ function readTextStyle(element: Element, style: CSSStyleDeclaration): TextStyle 
     align: style.textAlign,
     ellipsis: style.textOverflow === "ellipsis",
     shadow: style.textShadow,
-    mergeable: display !== "none" && isInline(display) && element.localName !== "svg" && element.localName !== "img" && !hasBoxPaint(style),
+    mergeable: display !== "none" && isInline(display) && element.localName !== "svg" && element.localName !== "img"
+      && !element.matches("a[href], [tabindex], [role=button], [contenteditable]") && !hasBoxPaint(style),
   };
   textStyles.set(element, snapshot);
   return snapshot;
@@ -284,7 +285,10 @@ function textOf(runs: Run[], style: TextStyle, report: MirrorReport, element: El
       span["u"] = true;
       differs = true;
     }
-    if (run.style.f !== style.f) report.add(`inline font-family change: ${run.style.f.slice(0, 40)}`, element);
+    if (run.style.f !== style.f) {
+      span["f"] = run.style.f;
+      differs = true;
+    }
     if (differs) spans.push(span);
   }
   if (previousSpace && content.endsWith(" ")) content = content.slice(0, -1);
@@ -557,8 +561,10 @@ function boxOfStyle(element: Element, style: CSSStyleDeclaration, report: Mirror
       }
     }
   }
-  setDim(box, "mnw", element, report, "min-width", style.minWidth);
-  setDim(box, "mnh", element, report, "min-height", style.minHeight);
+  // An undisplayed flex item resolves auto minima to 0px in CSSOM; Typed OM keeps the auto keyword.
+  const intrinsic = !pseudo && typeof element.computedStyleMap === "function" ? element.computedStyleMap() : null;
+  setDim(box, "mnw", element, report, "min-width", intrinsic?.get("min-width")?.toString() ?? style.minWidth);
+  setDim(box, "mnh", element, report, "min-height", intrinsic?.get("min-height")?.toString() ?? style.minHeight);
   setDim(box, "mxw", element, report, "max-width", style.maxWidth);
   setDim(box, "mxh", element, report, "max-height", style.maxHeight);
   if (style.boxSizing === "content-box") box["cb"] = 1;
@@ -1028,12 +1034,7 @@ export function mirrorElement(element: Element, report: MirrorReport, inherited:
 
   const runs: Run[] = [];
   const allInline = element.firstChild !== null && inlineRuns(element, textStyle, runs, true);
-  // One run of text holds one font family. A short line that changes family (a stencil numeral
-  // beside its unit) is laid out as a row of pieces instead, each in its own family; a longer
-  // passage keeps its line breaking and the first family.
-  const families = allInline && element.childElementCount > 0 && runs.some((run) => run.style.f !== textStyle.f);
-  const onlyInline = allInline && !(families && (textStyle.whiteSpace === "nowrap" || runs.reduce((length, run) => length + run.text.length, 0) <= 64));
-  if (onlyInline) {
+  if (allInline) {
     const text = textOf(runs, textStyle, report, element);
     const picture = text === null ? null : emojiPicture(String(text["s"]), Number(text["z"]));
     if (picture !== null) {

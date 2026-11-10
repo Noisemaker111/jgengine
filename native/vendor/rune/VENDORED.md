@@ -11,6 +11,11 @@ requests, so jgengine carries a patched copy here instead of a git pin.
 
 ## jgengine patches
 
+`crates/rune/src/text/{span.rs,hash.rs}` and `text.rs` — per-span font families.
+Family overrides participate in span merging, shaping/cache keys, font selection
+and paragraph wrapping. The CSS host uses these for mixed display/body text and
+monospace values inside long paragraphs, without splitting them into flex rows.
+
 `crates/rune/src/text/glyph_emit.rs` and `text/macos/smoothing.rs` — synthetic
 bold for regular-only game fonts. Carry Fontique's embolden flag into glyph
 rasterization and outline drawing; the growth radius participates in the glyph

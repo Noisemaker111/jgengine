@@ -179,7 +179,7 @@ export class RuneStage {
             const matrix = raw === undefined ? parent : composeBoxTransform(parent, boxTransform(raw, box["tf"], box["to"]));
             if (raw !== undefined) {
               const element = elementOf(box.id);
-              if (element !== null) setRuneRect(element, transformedBoxRect(raw, matrix));
+              if (element !== null) setRuneRect(element, transformedBoxRect(raw, matrix), raw);
             }
             for (const child of box.c ?? []) place(child, matrix);
           };
