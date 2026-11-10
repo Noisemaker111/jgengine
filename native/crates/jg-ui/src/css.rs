@@ -32,7 +32,7 @@ thread_local! {
     static CALCS: RefCell<HashMap<[u32; 5], usize>> = RefCell::new(HashMap::new());
 }
 
-/// `[points, fraction]`, or `[points, fraction, other points, other fraction, mode]` with mode 1 `min()`, 2 `max()`.
+/// `[points, fraction]`, or `[points, fraction, other points, other fraction, mode]` with mode 1 `min()`, 2 `max()`, 3 `clamp()`.
 fn calc_of(v: &[f32]) -> usize {
     let at = |i: usize| v.get(i).copied().unwrap_or(0.0);
     let mode = at(4) as u32;

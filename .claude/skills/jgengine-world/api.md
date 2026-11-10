@@ -315,7 +315,7 @@
 
 ## @jgengine/core/ambientFauna/AmbientFauna.draw
 
-- `AmbientFauna` (function): function AmbientFauna(props: AmbientFaunaProps): React.JSX.Element — Ambient fauna: fish schools, insect swarms, drifting motes and soaring flyers, one instanced draw per species part. Agents within a group's `lod.near` draw the species model, the rest to `lod.far` a sprite; off-screen agents are skipped, each group draws at most its `budget`, all groups at most `config.drawCap`. Groups come from `config.groups` and the `ambient_fauna` zones in the editor scene.
+- `AmbientFauna` (function): function AmbientFauna(props: AmbientFaunaProps): JSX.Element — Ambient fauna: fish schools, insect swarms, drifting motes and soaring flyers, one instanced draw per species part. Agents within a group's `lod.near` draw the species model, the rest to `lod.far` a sprite; off-screen agents are skipped, each group draws at most its `budget`, all groups at most `config.drawCap`. Groups come from `config.groups` and the `ambient_fauna` zones in the editor scene.
 - `AmbientFaunaProps` (interface): interface AmbientFaunaProps — Props of {@link AmbientFauna}.
 
 ## @jgengine/core/ambientFauna/ambientFauna
@@ -353,12 +353,12 @@
 
 ## @jgengine/core/anim/CharacterCrowd.draw
 
-- `CharacterCrowd` (const): const CharacterCrowd: React.NamedExoticComponent<CharacterCrowdProps> — Draws characters through the GPU batch path: one baked rig per character kind, one instanced draw per material, every member's clip, time offset and speed sampled in the vertex shader. The entity markers decide who is batched (their `lod` tiers and the batch capacity) and write poses into `registry`; this layer owns the bakes, the materials and the instance buffers. Mount it in the same canvas as the entity markers; unmount it to fall back to per-entity rigs.
+- `CharacterCrowd` (const): const CharacterCrowd: NamedExoticComponent<CharacterCrowdProps> — Draws characters through the GPU batch path: one baked rig per character kind, one instanced draw per material, every member's clip, time offset and speed sampled in the vertex shader. The entity markers decide who is batched (their `lod` tiers and the batch capacity) and write poses into `registry`; this layer owns the bakes, the materials and the instance buffers. Mount it in the same canvas as the entity markers; unmount it to fall back to per-entity rigs.
 - `CharacterCrowdProps` (interface): interface CharacterCrowdProps — Props for {@link CharacterCrowd}.
 
 ## @jgengine/core/anim/CorpseRagdolls.draw
 
-- `CorpseRagdolls` (function): function CorpseRagdolls({ max = 6, lifeS = 5, sinkS = 1.5 }: { max?: number; lifeS?: number; sinkS?: number }): React.JSX.Element — ⚠ undocumented
+- `CorpseRagdolls` (function): function CorpseRagdolls({ max = 6, lifeS = 5, sinkS = 1.5 }: { max?: number; lifeS?: number; sinkS?: number }): JSX.Element — ⚠ undocumented
 - `CorpseRagdollsDrawProps` (interface): interface CorpseRagdollsDrawProps { max: number; lifeS: number; sinkS: number; quality: GraphicsQuality } — ⚠ undocumented
 
 ## @jgengine/core/anim/SkinnedInstances.draw
@@ -368,7 +368,7 @@
 - `CrowdInstance` (interface): interface CrowdInstance — One crowd member: where it stands and what it plays.
 - `CrowdUniforms` (interface): interface CrowdUniforms — Uniforms shared by every material of one crowd; `crowdTime` advances once per frame.
 - `SkinnedCrowdSource` (interface): interface SkinnedCrowdSource — A rig to bake: a loaded scene with skinned meshes and its clips.
-- `SkinnedInstances` (function): function SkinnedInstances(props: SkinnedInstancesProps): React.JSX.Element — Renders many animated copies of one rigged model in a single instanced draw per material: the rig's clips are baked to a bone-matrix texture once, and each instance samples its own clip, time offset and speed on the GPU. For crowds, spectators and distant NPCs; a character that needs blending, IK or attachments stays an entity model.
+- `SkinnedInstances` (function): function SkinnedInstances(props: SkinnedInstancesProps): JSX.Element — Renders many animated copies of one rigged model in a single instanced draw per material: the rig's clips are baked to a bone-matrix texture once, and each instance samples its own clip, time offset and speed on the GPU. For crowds, spectators and distant NPCs; a character that needs blending, IK or attachments stays an entity model.
 - `SkinnedInstancesProps` (interface): interface SkinnedInstancesProps — Props for {@link SkinnedInstances}.
 - `skinnedInstancesDraw` (function): function skinnedInstancesDraw(getProps: () => SkinnedInstancesProps): EngineDraw — Draw-side form of {@link SkinnedInstances}: loads the rig through the shared per-url GLTF cache, bakes its clips to the bone texture once per (url, clips, once, fps) signature, and rebuilds the instanced mesh when capacity changes or rewrites its buffers when the instance list does — the same boundaries the old memos and layout effect had.
 
@@ -435,7 +435,7 @@
 
 ## @jgengine/core/anim/characterMotion.draw
 
-- `CharacterMotionContext` (const): const CharacterMotionContext: React.Context<false | CharacterMotionConfig | undefined> — The game's own character-motion layer (`scene.characterMotion`); the shell provides it.
+- `CharacterMotionContext` (const): const CharacterMotionContext: ContextType<false | CharacterMotionConfig | undefined> — The game's own character-motion layer (`scene.characterMotion`); the shell provides it.
 - `drawCharacterMotion` (function): function drawCharacterMotion(model: CharacterMotionConfig | false | undefined, ctx: GameContext | null, instanceId: string | undefined): CharacterMotionParts — The resolved parts of the default character motion for draw code.
 - `noteGameCharacterMotion` (function): function noteGameCharacterMotion(layer: CharacterMotionConfig | false | undefined): void — The game-level character-motion layer for draw code, which has no React context.
 - `useCharacterMotion` (function): function useCharacterMotion(model: CharacterMotionConfig | false | undefined, ctx: GameContext | null, instanceId: string | undefined): CharacterMotionParts — The parts of the default character motion this entity runs: the game's layer, then its model's, then the entity's own `characterMotion`, which re-renders the model when it changes.
@@ -580,7 +580,7 @@
 ## @jgengine/core/anim/tweenNumber.view
 
 - `TweenDelta` (type): type TweenDelta = "up" | "down" — Direction of the last change, for the delta flash.
-- `TweenNumber` (const): const TweenNumber: React.NamedExoticComponent<TweenNumberProps> — A counter that rolls to each new value and flashes the `--jg-success` / `--jg-danger` color with a small scale pop on the change (`data-jg-delta="up" | "down"`). Tabular digits keep its width stable.
+- `TweenNumber` (const): const TweenNumber: NamedExoticComponent<TweenNumberProps> — A counter that rolls to each new value and flashes the `--jg-success` / `--jg-danger` color with a small scale pop on the change (`data-jg-delta="up" | "down"`). Tabular digits keep its width stable.
 - `TweenNumberProps` (interface): interface TweenNumberProps extends TweenOptions — Props for {@link TweenNumber}.
 - `TweenOptions` (interface): interface TweenOptions — Options for {@link useTweenedValue}.
 - `tweenAt` (function): function tweenAt(from: number, to: number, t: number, ease: (t: number) => number = easeOutCubic): number — Value at progress `t` (0–1) between `from` and `to` under `ease`.
@@ -924,17 +924,17 @@
 - `BuildingMaterialPalette` (type): type BuildingMaterialPalette = Partial<Record<BuildingPartKind, BuildingSurface>> — Per part kind: a hex colour, or a colour plus tiled PBR maps (`BuildingSurfaceMaterial`).
 - `GeneratedBuildingData` (interface): interface GeneratedBuildingData { id: string; parts: readonly BuildingPartPlacement[] } — ⚠ undocumented
 - `InstancedBuildingPlacement` (interface): interface InstancedBuildingPlacement { building: GeneratedBuildingData; position?: readonly [number, number, number]; rotationY?: number; pivot?: readonly [number, number] } — ⚠ undocumented
-- `InstancedBuildings` (function): function InstancedBuildings(props: InstancedBuildingsProps): React.JSX.Element — ⚠ undocumented
+- `InstancedBuildings` (function): function InstancedBuildings(props: InstancedBuildingsProps): JSX.Element — ⚠ undocumented
 - `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps { buildings: readonly InstancedBuildingPlacement[]; palette?: BuildingMaterialPalette; kit?: BuildingKit; resolveModelUrl?: (model: string) => string; visibleKinds?: readonly BuildingPartKind[] } — ⚠ undocumented · used by `instancedBuildingsDraw`: The draw-side form of {@link InstancedBuildings}: buckets the placements once per prop-identity change, then mounts one draw per box family …
 - `instancedBuildingsDraw` (function): function instancedBuildingsDraw(getProps: () => InstancedBuildingsProps): EngineDraw — The draw-side form of {@link InstancedBuildings}: buckets the placements once per prop-identity change, then mounts one draw per box family and per kit model URL. Children hang under an owned identity group so the scoped parent's transform applies exactly like the old `<group>` did.
 
 ## @jgengine/core/buildings/InteriorDressing.draw
 
 - `DEFAULT_INTERIOR_SURFACES` (const): const DEFAULT_INTERIOR_SURFACES: InteriorDressingSurfaces — Plain defaults: grey paint, dull steel, a warm lens.
-- `InteriorDressing` (function): function InteriorDressing(props: InteriorDressingProps): React.JSX.Element — The drawn side of a planned interior: trims, pipes, fittings and lamp housings as static instance batches, every cable as one merged tube, and every stain style as one instanced decal mesh. A whole floor costs a handful of draws however many pieces it has. Pair it with {@link PracticalLights} for the lamps' light.
+- `InteriorDressing` (function): function InteriorDressing(props: InteriorDressingProps): JSX.Element — The drawn side of a planned interior: trims, pipes, fittings and lamp housings as static instance batches, every cable as one merged tube, and every stain style as one instanced decal mesh. A whole floor costs a handful of draws however many pieces it has. Pair it with {@link PracticalLights} for the lamps' light.
 - `InteriorDressingProps` (interface): interface InteriorDressingProps — Props for {@link InteriorDressing}.
 - `InteriorDressingSurfaces` (interface): interface InteriorDressingSurfaces — The surface each dressing family wears. Any family left out falls back to a plain painted default.
-- `PracticalLights` (function): function PracticalLights(props: PracticalLightsProps): React.JSX.Element — A fixed pool of spot lights that follows the camera through a planned interior, lighting the lamps nearest the eye and aiming each down and out from its wall. The pool size and shadow count never change, so walking a floor of hundreds of lamps costs the same few lights.
+- `PracticalLights` (function): function PracticalLights(props: PracticalLightsProps): JSX.Element — A fixed pool of spot lights that follows the camera through a planned interior, lighting the lamps nearest the eye and aiming each down and out from its wall. The pool size and shadow count never change, so walking a floor of hundreds of lamps costs the same few lights.
 - `PracticalLightsProps` (interface): interface PracticalLightsProps — Props for {@link PracticalLights}.
 - `interiorDressingDraw` (function): function interiorDressingDraw(getProps: () => InteriorDressingProps): EngineDraw — The drawn side of a planned interior as one draw: trims, pipes, fittings and lamp housings as static instance batches, every cable as one merged tube, and every stain style as one instanced decal mesh. A whole floor costs a handful of draws however many pieces it has. Pair it with {@link practicalLightsDraw} for the lamps' light.
 - `practicalLightsDraw` (function): function practicalLightsDraw(getProps: () => PracticalLightsProps): EngineDraw — A fixed pool of spot lights that follows the camera through a planned interior, lighting the lamps nearest the eye and aiming each down and out from its wall. The pool size and shadow count never change, so walking a floor of hundreds of lamps costs the same few lights.
@@ -1033,12 +1033,12 @@
 
 ## @jgengine/core/camera/GameCameraRig.draw
 
-- `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, rotateKeysEnabled, director, viewmodel, }: GameCameraRigProps): React.JSX.Element | null — Mounts the camera rig the game's camera config selects (orbit, first person, top-down, RTS, shoulder, chase, cinematic and the rest).
+- `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, rotateKeysEnabled, director, viewmodel, }: GameCameraRigProps): JSX.Element | null — Mounts the camera rig the game's camera config selects (orbit, first person, top-down, RTS, shoulder, chase, cinematic and the rest).
 - `GameCameraRigProps` (interface): interface GameCameraRigProps — Props for GameCameraRig: shared yaw/pitch refs, the game's camera config and pointer/key control switches.
 
 ## @jgengine/core/camera/GameFirstPersonCamera.draw
 
-- `GameFirstPersonCamera` (function): function GameFirstPersonCamera(props: GameFirstPersonCameraProps): React.JSX.Element | null — First-person camera locked to the followed entity's eyes, with mouse look, head bob and the muzzle-tracked viewmodel.
+- `GameFirstPersonCamera` (function): function GameFirstPersonCamera(props: GameFirstPersonCameraProps): JSX.Element | null — First-person camera locked to the followed entity's eyes, with mouse look, head bob and the muzzle-tracked viewmodel.
 - `GameFirstPersonCameraDrawProps` (interface): interface GameFirstPersonCameraDrawProps extends GameFirstPersonCameraProps — Everything the first-person draw reads, resolved by the React wrapper.
 - `GameFirstPersonCameraProps` (interface): interface GameFirstPersonCameraProps — Props for GameFirstPersonCamera: look refs, first-person config, the followed entity and an optional custom viewmodel.
 - `ViewmodelProps` (interface): interface ViewmodelProps — Props handed to a custom viewmodel component (#542): a live cue ref (velocity/bob/firing/reloading/recoil/hit) for the followed entity, driven from your own `useFrame` — read `cuesRef.current` there rather than storing it as render state.
@@ -1059,8 +1059,8 @@
 
 ## @jgengine/core/camera/PlayerFov.draw
 
-- `PlayerFovProvider` (function): function PlayerFovProvider({ config, orthographic, children, }: { config?: GameCameraConfig | undefined; orthographic: boolean; children: ReactNode; }): React.JSX.Element — Provides the player's saved FOV preference to the camera rigs and settings UI below it.
-- `PlayerFovSlider` (function): function PlayerFovSlider(): React.JSX.Element | null — Settings slider that changes and saves the player's FOV preference; renders nothing when FOV is disabled.
+- `PlayerFovProvider` (function): function PlayerFovProvider({ config, orthographic, children, }: { config?: GameCameraConfig | undefined; orthographic: boolean; children: ReactNode; }): JSX.Element — Provides the player's saved FOV preference to the camera rigs and settings UI below it.
+- `PlayerFovSlider` (function): function PlayerFovSlider(): JSX.Element | null — Settings slider that changes and saves the player's FOV preference; renders nothing when FOV is disabled.
 - `PlayerFovState` (interface): interface PlayerFovState — The player's field-of-view preference: current value, bounds, setter and a composer that applies it to a rig's pose FOV.
 - `usePlayerFov` (function): function usePlayerFov(): PlayerFovState — Reads the player FOV state from the nearest PlayerFovProvider.
 
@@ -1153,7 +1153,7 @@
 
 ## @jgengine/core/camera/firstPersonBody.draw
 
-- `FirstPersonBodyContext` (const): const FirstPersonBodyContext: React.Context<string | null> — The entity whose own body the first-person camera looks out of, or `null` when no body is drawn in first person. The shell provides it; a model instance bound to that entity collapses its head.
+- `FirstPersonBodyContext` (const): const FirstPersonBodyContext: ContextType<string | null> — The entity whose own body the first-person camera looks out of, or `null` when no body is drawn in first person. The shell provides it; a model instance bound to that entity collapses its head.
 - `collapseHead` (function): function collapseHead(head: THREE.Object3D): void — Folds a head bone away for this frame; the animation writes its pose first, so call it after.
 - `firstPersonBodyInstance` (function): function firstPersonBodyInstance(): string | null — The entity whose body the first-person camera sits in, for draw code.
 - `humanoidHead` (function): function humanoidHead(scene: THREE.Object3D): THREE.Object3D | null — The head bone of a humanoid rig the skeleton standard maps, or `null`. Scaling it to nothing folds the head, hair and face into the neck, so a camera at eye height sees the body's arms, hands and held items without looking out through the inside of the skull.
@@ -1224,7 +1224,7 @@
 
 ## @jgengine/core/camera/shake/shakeChannel.draw
 
-- `CameraShakeContext` (const): const CameraShakeContext: React.Context<CameraShakeController> — Override which controller the rigs below apply; defaults to {@link defaultCameraShake}.
+- `CameraShakeContext` (const): const CameraShakeContext: ContextType<CameraShakeController> — Override which controller the rigs below apply; defaults to {@link defaultCameraShake}.
 
 ## @jgengine/core/city/cityBlocks
 
@@ -1317,7 +1317,7 @@
 
 ## @jgengine/core/environment/EnvironmentScene.draw
 
-- `EnvironmentScene` (function): function EnvironmentScene({ feature }: EnvironmentSceneProps): React.JSX.Element — Draw an environment world feature: its sky, ground (terrain, pad or plane), water, weather and lighting.
+- `EnvironmentScene` (function): function EnvironmentScene({ feature }: EnvironmentSceneProps): JSX.Element — Draw an environment world feature: its sky, ground (terrain, pad or plane), water, weather and lighting.
 - `EnvironmentSceneProps` (interface): interface EnvironmentSceneProps — Props for {@link EnvironmentScene}: the environment world feature to draw.
 
 ## @jgengine/core/environment/GroundPad.draw
@@ -1358,7 +1358,7 @@
 
 ## @jgengine/core/fire/FireLandscape.draw
 
-- `FireLandscapeView` (function): function FireLandscapeView(props: FireLandscapeViewProps): React.JSX.Element — Draw a {@link FireLandscape}: a ground overlay of flaming, smouldering, charred and ashen cells, flame billboards as tall as each cell's flame length, and smoke puffs rising from burning cells and drifting downwind. Per-frame work is bounded by the burning cells plus `overlayCellsPerFrame`.
+- `FireLandscapeView` (function): function FireLandscapeView(props: FireLandscapeViewProps): JSX.Element — Draw a {@link FireLandscape}: a ground overlay of flaming, smouldering, charred and ashen cells, flame billboards as tall as each cell's flame length, and smoke puffs rising from burning cells and drifting downwind. Per-frame work is bounded by the burning cells plus `overlayCellsPerFrame`.
 - `FireLandscapeViewProps` (interface): interface FireLandscapeViewProps — Props for {@link FireLandscapeView}.
 - `fireLandscapeDraw` (function): function fireLandscapeDraw(getProps: () => FireLandscapeViewProps): EngineDraw — Draw a {@link FireLandscape}: a ground overlay of flaming, smouldering, charred and ashen cells, flame billboards as tall as each cell's flame length, and smoke puffs rising from burning cells and drifting downwind. Per-frame work is bounded by the burning cells plus `overlayCellsPerFrame`.
 
@@ -1704,7 +1704,7 @@
 
 ## @jgengine/core/frame/engineCanvas.draw
 
-- `EngineCanvas` (function): function EngineCanvas({ rendererFactory, orthographic = false, camera, shadows = false, dpr, preserveDrawingBuffer = false, frameloop = "always", style, onCreated, children, }: EngineCanvasProps): React.JSX.Element — The engine-owned replacement for r3f's `<Canvas>`: one canvas, one {@link createEngineLoop}, and an {@link EngineHostProvider} so every draw wrapper underneath mounts through `useEngineHost`/`useEngineDraw` exactly as it did under `R3FEngineHost`. Children remount when the renderer backend changes (the old `key={backend}` on Canvas), so draws never survive a dead scene.
+- `EngineCanvas` (function): function EngineCanvas({ rendererFactory, orthographic = false, camera, shadows = false, dpr, preserveDrawingBuffer = false, frameloop = "always", style, onCreated, children, }: EngineCanvasProps): JSX.Element — The engine-owned replacement for r3f's `<Canvas>`: one canvas, one {@link createEngineLoop}, and an {@link EngineHostProvider} so every draw wrapper underneath mounts through `useEngineHost`/`useEngineDraw` exactly as it did under `R3FEngineHost`. Children remount when the renderer backend changes (the old `key={backend}` on Canvas), so draws never survive a dead scene.
 - `EngineCanvasProps` (interface): interface EngineCanvasProps { rendererFactory: EngineRendererFactory; orthographic?: boolean | undefined; camera?: {fov?: number; zoom?: number; near?: number; far?: number} | undefined; shadows?: boolean | undefined; dpr?: number | readonly [number, number] | undefin… — ⚠ undocumented · used by `EngineCanvas`: The engine-owned replacement for r3f's `<Canvas>`: one canvas, one {@link createEngineLoop}, and an {@link EngineHostProvider} so every draw…
 
 ## @jgengine/core/frame/engineHost.draw
@@ -1757,7 +1757,7 @@
 
 ## @jgengine/core/generator/GeneratorVariantGrid.draw
 
-- `GeneratorVariantGrid` (function): function GeneratorVariantGrid({ definition, variants, selected, kept, onPick, actions, columns = 4, accent = "#7fbf4d" }: GeneratorVariantGridProps): React.JSX.Element — A grid of seeded generator variants, each drawn live in its own tile. Every tile renders through one shared engine canvas via scissored viewports, so twenty variants cost one WebGL context. Tiles draw through the preview registered for the generator's output family; a family with none shows its seed only.
+- `GeneratorVariantGrid` (function): function GeneratorVariantGrid({ definition, variants, selected, kept, onPick, actions, columns = 4, accent = "#7fbf4d" }: GeneratorVariantGridProps): JSX.Element — A grid of seeded generator variants, each drawn live in its own tile. Every tile renders through one shared engine canvas via scissored viewports, so twenty variants cost one WebGL context. Tiles draw through the preview registered for the generator's output family; a family with none shows its seed only.
 - `GeneratorVariantGridProps` (interface): interface GeneratorVariantGridProps — Props for {@link GeneratorVariantGrid}.
 
 ## @jgengine/core/generator/generator
@@ -2028,12 +2028,12 @@
 
 ## @jgengine/core/input/OrientationHint.view
 
-- `OrientationHint` (function): function OrientationHint({ wanted }: { wanted: "landscape" | "portrait" }): React.JSX.Element | null — ⚠ undocumented
+- `OrientationHint` (function): function OrientationHint({ wanted }: { wanted: "landscape" | "portrait" }): JSX.Element | null — ⚠ undocumented
 
 ## @jgengine/core/input/PointerOverlays.view
 
-- `ContextMenuView` (function): function ContextMenuView({ menu, x, y, onPick, onClose, }: { menu: ContextMenu; x: number; y: number; onPick: (verb: ContextVerb) => void; onClose: () => void; }): React.JSX.Element — ⚠ undocumented
-- `MarqueeBox` (function): function MarqueeBox({ rect }: { rect: ScreenRect }): React.JSX.Element — ⚠ undocumented
+- `ContextMenuView` (function): function ContextMenuView({ menu, x, y, onPick, onClose, }: { menu: ContextMenu; x: number; y: number; onPick: (verb: ContextVerb) => void; onClose: () => void; }): JSX.Element — ⚠ undocumented
+- `MarqueeBox` (function): function MarqueeBox({ rect }: { rect: ScreenRect }): JSX.Element — ⚠ undocumented
 
 ## @jgengine/core/input/PointerProbe.draw
 
@@ -2043,7 +2043,7 @@
 
 - `TouchCodeSink` (interface): interface TouchCodeSink { onCodeDown(code: string): void; onCodeUp(code: string): void; onAnalog?(values: Readonly<Record<string, number>> | null): void } — ⚠ undocumented
 - `TouchControlsDock` (function): function TouchControlsDock({ scheme, sink, style, scale = 1, joystickVariant = "floating", shortSide, }: { scheme: TouchScheme; sink: TouchCodeSink; /** Player-selected skin; falls back to the scheme's game default. */ style?: TouchStyle; /** Multiplies the joystick and side-rail buttons; the thumb … — ⚠ undocumented
-- `TouchPlaySurface` (function): function TouchPlaySurface({ scheme, sink, yawRef, pitchRef, maxPitch, onPrimaryTap, }: { scheme: TouchScheme; sink: TouchCodeSink; yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; maxPitch: number; onPrimaryTap: () => void; }): React.JSX.Element — ⚠ undocumented
+- `TouchPlaySurface` (function): function TouchPlaySurface({ scheme, sink, yawRef, pitchRef, maxPitch, onPrimaryTap, }: { scheme: TouchScheme; sink: TouchCodeSink; yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; maxPitch: number; onPrimaryTap: () => void; }): JSX.Element — ⚠ undocumented
 - `TouchViewport` (interface): interface TouchViewport — Viewport size in CSS px the touch dock lays out against.
 
 ## @jgengine/core/input/actionBindings
@@ -2187,8 +2187,8 @@
 
 ## @jgengine/core/input/keyHint.view
 
-- `KeyHint` (function): function KeyHint({ children, className, style, }: { children: ReactNode; className?: string; style?: CSSProperties; }): React.JSX.Element | null — Wraps a keyboard/mouse control hint (a cap plus what it does). Renders nothing on coarse-pointer devices — a touchscreen has no keyboard, so the hint is noise and only fights the on-screen controls for space. The `data-jg-kbd-hint` marker is also hidden by an engine stylesheet as a hydration-safe backstop, so a hint stays hidden on touch even before this component's effect runs. Put the touch equivalent (a `TouchControls` dock, a tappable button) on the coarse branch instead.
-- `Keycap` (function): function Keycap({ children, className, style, }: { children: ReactNode; className?: string | undefined; style?: CSSProperties; }): React.JSX.Element — A single keyboard/mouse key rendered as a cap. Tagged `data-jg-kbd` so tooling can find it; on its own it stays visible (hiding a lone cap would strand its label). Wrap keys + their meaning in `KeyHint` to make the whole hint vanish on touch.
+- `KeyHint` (function): function KeyHint({ children, className, style, }: { children: ReactNode; className?: string; style?: CSSProperties; }): JSX.Element | null — Wraps a keyboard/mouse control hint (a cap plus what it does). Renders nothing on coarse-pointer devices — a touchscreen has no keyboard, so the hint is noise and only fights the on-screen controls for space. The `data-jg-kbd-hint` marker is also hidden by an engine stylesheet as a hydration-safe backstop, so a hint stays hidden on touch even before this component's effect runs. Put the touch equivalent (a `TouchControls` dock, a tappable button) on the coarse branch instead.
+- `Keycap` (function): function Keycap({ children, className, style, }: { children: ReactNode; className?: string | undefined; style?: CSSProperties; }): JSX.Element — A single keyboard/mouse key rendered as a cap. Tagged `data-jg-kbd` so tooling can find it; on its own it stays visible (hiding a lone cap would strand its label). Wrap keys + their meaning in `KeyHint` to make the whole hint vanish on touch.
 
 ## @jgengine/core/input/lookChannel
 
@@ -2356,7 +2356,7 @@
 ## @jgengine/core/instancing/staticShapeInstances.draw
 
 - `StaticShapeInstance` (interface): interface StaticShapeInstance — One editor-derived static primitive. A box spans one unit; a cylinder has unit radius and height before scale.
-- `StaticShapeInstances` (function): function StaticShapeInstances({ instances }: { instances: readonly StaticShapeInstance[] }): React.JSX.Element — Batch editor-derived boxes/cylinders by shape, PBR metadata and shadows. Uploads and bounds run only when instances change; map loading stays isolated per draw group.
+- `StaticShapeInstances` (function): function StaticShapeInstances({ instances }: { instances: readonly StaticShapeInstance[] }): JSX.Element — Batch editor-derived boxes/cylinders by shape, PBR metadata and shadows. Uploads and bounds run only when instances change; map loading stays isolated per draw group.
 - `staticShapeBatchDraw` (function): function staticShapeBatchDraw(batch: StaticShapeBatch): StaticShapeBatchDraw — One instanced batch as an {@link EngineDraw}. The flat (map-less) material lands first — the old Suspense fallback — then the declared maps swap in; a failed map load keeps the flat material, matching the old ModelFallbackBoundary.
 
 ## @jgengine/core/interaction/contextMenu
@@ -2594,8 +2594,8 @@
 
 ## @jgengine/core/lighting/SceneLighting.draw
 
-- `BackdropFog` (function): function BackdropFog(props: { fog: BackdropConfig["fog"] }): React.JSX.Element — Attaches the backdrop's linear or exponential fog to the scene; renders nothing without fog.
-- `ConfiguredLighting` (function): function ConfiguredLighting(props: { lighting: LightingConfig; profile?: GraphicsProfile; /** Day-cycle scaling for the first directional (the sun) and the ambient fill. */ modulation?: DaylightModulation; }): React.JSX.Element — Mounts the game's authored lights (ambient, hemisphere, directional with shadows, point and spot within the light budget) for the active graphics profile.
+- `BackdropFog` (function): function BackdropFog(props: { fog: BackdropConfig["fog"] }): JSX.Element — Attaches the backdrop's linear or exponential fog to the scene; renders nothing without fog.
+- `ConfiguredLighting` (function): function ConfiguredLighting(props: { lighting: LightingConfig; profile?: GraphicsProfile; /** Day-cycle scaling for the first directional (the sun) and the ambient fill. */ modulation?: DaylightModulation; }): JSX.Element — Mounts the game's authored lights (ambient, hemisphere, directional with shadows, point and spot within the light budget) for the active graphics profile.
 - `POINT_LIGHT_BUDGET` (const): const POINT_LIGHT_BUDGET: 8 — Default cap for combined dynamic point and spot lights.
 - `backdropFogDraw` (function): function backdropFogDraw(getProps: () => { fog: BackdropConfig["fog"] }): EngineDraw — Draw-side form of {@link BackdropFog}: writes the backdrop's linear or exponential fog onto the real scene (a scoped mount group's `scene` is not the scene fog lives on); clears it on dispose.
 - `configuredLightingDraw` (function): function configuredLightingDraw(getProps: () => { lighting: LightingConfig; profile?: GraphicsProfile | undefined; modulation?: DaylightModulation | undefined; }): EngineDraw — Draw-side form of {@link ConfiguredLighting}: all authored lights live in one group; the light set rebuilds when the `lighting` config or `profile` identity changes, and daylight modulation retunes ambient, hemisphere and the first directional per frame.
@@ -4049,7 +4049,7 @@
 ## @jgengine/core/placement/TransformGizmo.draw
 
 - `DEFAULT_ROTATION_SNAP` (const): const DEFAULT_ROTATION_SNAP: number — Default rotation snap increment (radians) when callers don't configure one.
-- `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<(props: TransformGizmoProps) => null> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
+- `TransformGizmo` (const): const TransformGizmo: FunctionComponent<TransformGizmoProps> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
 - `TransformGizmoMode` (type): type TransformGizmoMode = "translate" | "rotate" | "scale" — Active TransformControls mode for the runtime selection gizmo.
 - `TransformGizmoPose` (interface): interface TransformGizmoPose — Pose reported by {@link TransformGizmo} when the user releases a drag.
 - `TransformGizmoProps` (interface): interface TransformGizmoProps — Props for the shared runtime/editor selection gizmo.
@@ -4854,7 +4854,7 @@
 
 ## @jgengine/core/roads/streetGeometryPreview.view
 
-- `StreetGeometryPreview` (function): function StreetGeometryPreview({ className }: { className?: string }): React.JSX.Element — Deterministic close-up gallery of the shared road/junction mesh seam.
+- `StreetGeometryPreview` (function): function StreetGeometryPreview({ className }: { className?: string }): JSX.Element — Deterministic close-up gallery of the shared road/junction mesh seam.
 
 ## @jgengine/core/roads/streets
 
@@ -4890,7 +4890,7 @@
 
 ## @jgengine/core/scatter/InstancedScatter.draw
 
-- `InstancedScatter` (function): function InstancedScatter(props: InstancedScatterProps): React.JSX.Element — Renders resolved {@link ScatterInstance}s grouped into per-chunk, per-species GPU-instanced draws that frustum-cull independently. Species with no `resolveItem` mapping (or a `null` result) render as stylized proxy models (trunked trees, stacked pines, round bushes, faceted rocks, grass tufts); species `resolveItem` resolves to a `ModelConfig` GPU-instance the real catalog GLB instead. The one runtime foliage renderer shared by the editor's scatter preview and games that consume `resolveScatter` — never one node per placement.
+- `InstancedScatter` (function): function InstancedScatter(props: InstancedScatterProps): JSX.Element — Renders resolved {@link ScatterInstance}s grouped into per-chunk, per-species GPU-instanced draws that frustum-cull independently. Species with no `resolveItem` mapping (or a `null` result) render as stylized proxy models (trunked trees, stacked pines, round bushes, faceted rocks, grass tufts); species `resolveItem` resolves to a `ModelConfig` GPU-instance the real catalog GLB instead. The one runtime foliage renderer shared by the editor's scatter preview and games that consume `resolveScatter` — never one node per placement.
 - `InstancedScatterProps` (interface): interface InstancedScatterProps — Props for {@link InstancedScatter}: the resolved instances plus chunking/instance-cap knobs.
 - `instancedScatterDraw` (function): function instancedScatterDraw(getProps: () => InstancedScatterProps): EngineDraw — Renders resolved {@link ScatterInstance}s grouped into per-chunk, per-species GPU-instanced draws that frustum-cull independently. Species with no `resolveItem` mapping (or a `null` result) render as stylized proxy models (trunked trees, stacked pines, round bushes, faceted rocks, grass tufts); species `resolveItem` resolves to a `ModelConfig` GPU-instance the real catalog GLB instead. The one runtime foliage renderer shared by the editor's scatter preview and games that consume `resolveScatter` — never one node per placement.
 
@@ -4992,9 +4992,9 @@
 
 - `AuthoredObjects` (function): function AuthoredObjects({ document, field, verticalOffset = 0, onExisting = "keep", synchronize = false, excludeKinds, }: AuthoredObjectsProps): null — Places every editor marker with a catalog id into `ctx.scene.object`, grounded on `field`. WorldScene renders them through the game's `objectModels` seam — no bespoke place loop. Pure headless twin: `resolveAuthoredObjects` / `placeAuthoredObjects`.
 - `AuthoredObjectsProps` (interface): interface AuthoredObjectsProps extends ResolveAuthoredObjectsOptions — Props for {@link AuthoredObjects}: document, ground field, and optional lift / onExisting.
-- `AuthoredPaths` (function): function AuthoredPaths({ document, field, kinds, surfaceDetail = true }: AuthoredPathsProps): React.JSX.Element — Renders a document's non-scatter paths (roads, routes, corridors) as ground-draped ribbons — the editor authors the polyline, the engine drapes it over the live terrain at runtime. Width comes from `path.width`, color from `path.meta.color`/`path.color`, and the procedural surface from `path.meta.surface` or the kind (see `resolvePathSurface`). A game never hand-rolls path meshes.
+- `AuthoredPaths` (function): function AuthoredPaths({ document, field, kinds, surfaceDetail = true }: AuthoredPathsProps): JSX.Element — Renders a document's non-scatter paths (roads, routes, corridors) as ground-draped ribbons — the editor authors the polyline, the engine drapes it over the live terrain at runtime. Width comes from `path.width`, color from `path.meta.color`/`path.color`, and the procedural surface from `path.meta.surface` or the kind (see `resolvePathSurface`). A game never hand-rolls path meshes.
 - `AuthoredPathsProps` (interface): interface AuthoredPathsProps — Props for {@link AuthoredPaths}: the document, the ground field to drape over, and a kind filter.
-- `AuthoredScene` (function): function AuthoredScene({ document, diagnostics = false, field, pathKinds, pathSurfaceDetail = true, scatterModels, scatterBudget, scatterSolids, flockModels, assets, live = true, placeObjects, groundColorAt, }: AuthoredSceneProps): React.JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. When a live-sync bus is installed (editor host), document patches stream in and re-render automatically — document is authoritative; runtime overrides stay ephemeral unless written back. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the stylized proxy.
+- `AuthoredScene` (function): function AuthoredScene({ document, diagnostics = false, field, pathKinds, pathSurfaceDetail = true, scatterModels, scatterBudget, scatterSolids, flockModels, assets, live = true, placeObjects, groundColorAt, }: AuthoredSceneProps): JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. When a live-sync bus is installed (editor host), document patches stream in and re-render automatically — document is authoritative; runtime overrides stay ephemeral unless written back. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the stylized proxy.
 - `AuthoredSceneProps` (interface): interface AuthoredSceneProps — Props for {@link AuthoredScene}: the document to render and the ground field to drape/ground on.
 - `AuthoredSolids` (function): function AuthoredSolids({ document, field }: { document: EditorDocument; field: TerrainField }): null — Writes the document's studio solids (city buildings and any kind with a `solids` hook) into `ctx.world.solids`, so what the studios draw also blocks the player, NPCs and physics.
 
@@ -5017,7 +5017,7 @@
 ## @jgengine/core/scene/StudioStage.draw
 
 - `StudioMood` (type): type StudioMood = "studio" | "daylight" | "dusk" | "night" — Lighting mood for a {@link StudioStage} — a named 3-point rig + backdrop palette.
-- `StudioStage` (function): function StudioStage({ mood = "studio", backdrop, turntable = 0, environment = true, faceCamera = false, forward = DEFAULT_FORWARD, children, }: StudioStageProps): React.JSX.Element — A reusable cinematic "product-shot" stage — a 3-point lighting rig (key/fill/rim + ambient), a seamless backdrop, and an optional turntable — so any parametric studio renders framed and lit like a hero shot instead of a flat proxy under default light. Pair with `PlayableGame.postProcessing = STUDIO_STAGE_POST` for the full film grade. Set `environment: false` to keep an open-world sky/ground and use it purely as a lighting rig. Set `faceCamera` to auto-orient the declared `forward` toward the camera instead of hand-tuning `rotationY` on the child.
+- `StudioStage` (function): function StudioStage({ mood = "studio", backdrop, turntable = 0, environment = true, faceCamera = false, forward = DEFAULT_FORWARD, children, }: StudioStageProps): JSX.Element — A reusable cinematic "product-shot" stage — a 3-point lighting rig (key/fill/rim + ambient), a seamless backdrop, and an optional turntable — so any parametric studio renders framed and lit like a hero shot instead of a flat proxy under default light. Pair with `PlayableGame.postProcessing = STUDIO_STAGE_POST` for the full film grade. Set `environment: false` to keep an open-world sky/ground and use it purely as a lighting rig. Set `faceCamera` to auto-orient the declared `forward` toward the camera instead of hand-tuning `rotationY` on the child.
 - `StudioStageProps` (interface): interface StudioStageProps — Props for {@link StudioStage}.
 - `studioStageDraw` (function): function studioStageDraw(getProps: () => StageDrawProps, getSpin: () => THREE.Group | null): EngineDraw — The stage's lights, floor and backdrop as an {@link EngineDraw}; `getSpin` resolves the group the React children render under so turntable/faceCamera still spin them. `state.scene` is the JSX parent, so the background is only set when that parent is the real Scene — the same reach the old `attach="background"` had.
 
@@ -5454,7 +5454,7 @@
 
 - `RevealHighlights` (function): function RevealHighlights(props: RevealHighlightsProps): null — Screen-space reveal effect (#115) — highlights tagged entities through occluders (Dark Sight / detective-vision / wallhack style). Renders with `depthTest: false` so the highlight draws over any wall standing between the origin and the revealed entity, rather than the usual depth-sorted scene. Highlights track the origin and their targets every frame while enabled, so a disabled mode costs no renders.
 - `RevealHighlightsProps` (interface): interface RevealHighlightsProps extends RevealVisionOptions — Props for `RevealHighlights`: reveal options, on/off and highlight colour.
-- `RevealScreenTint` (function): function RevealScreenTint({ enabled, color = "rgba(56, 189, 248, 0.16)", className }: RevealScreenTintProps): React.JSX.Element | null — Full-screen desaturating tint that reads as "vision mode is on" (Dark Sight / thermal / detective vision).
+- `RevealScreenTint` (function): function RevealScreenTint({ enabled, color = "rgba(56, 189, 248, 0.16)", className }: RevealScreenTintProps): JSX.Element | null — Full-screen desaturating tint that reads as "vision mode is on" (Dark Sight / thermal / detective vision).
 - `RevealScreenTintProps` (interface): interface RevealScreenTintProps — Props for `RevealScreenTint`: on/off, tint colour and class name.
 - `RevealVisionOptions` (interface): interface RevealVisionOptions — Which entities reveal vision finds: origin, radius, wanted tags and how to read an entity's tags.
 - `useRevealHits` (function): function useRevealHits(options: RevealVisionOptions): readonly RevealHit[] — Occlusion-ignoring tagged-entity radius query (#115), bound to the live scene and refreshed on render.
@@ -5532,7 +5532,7 @@
 
 ## @jgengine/core/sky/Daylight.draw
 
-- `Sky` (function): function Sky(props: SkyProps): React.JSX.Element — The engine's one sky: a dome with sun, moon and stars, volumetric clouds when the descriptor asks, the scene fog, and (unless `lights={false}`) the sun, moon and hemisphere fill. It holds the preset's look, follows the world clock under `sky.timeOfDay`, cross-fades through terrain `biomeBands` by camera z, and can drive a game's authored lights through the day via `modulation`. Every frame it rewrites uniforms and light values in place, never remounting.
+- `Sky` (function): function Sky(props: SkyProps): JSX.Element — The engine's one sky: a dome with sun, moon and stars, volumetric clouds when the descriptor asks, the scene fog, and (unless `lights={false}`) the sun, moon and hemisphere fill. It holds the preset's look, follows the world clock under `sky.timeOfDay`, cross-fades through terrain `biomeBands` by camera z, and can drive a game's authored lights through the day via `modulation`. Every frame it rewrites uniforms and light values in place, never remounting.
 - `SkyDomeProps` (interface): interface SkyDomeProps — Props for the gradient sky dome: top and horizon colours, dome radius, gradient shape and an optional sun disc.
 - `SkyFogDrawProps` (interface): interface SkyFogDrawProps — Props for {@link skyFogDraw}: the fog's display color and range, plus the ref the old JSX exposed.
 - `SkyProps` (interface): interface SkyProps — Props for {@link Sky}: the sky descriptor, the clock that runs it, who owns the lights, and biome bands.
@@ -5624,11 +5624,11 @@
 
 ## @jgengine/core/stage/stageDraw.draw
 
-- `CameraPoseDraw` (function): function CameraPoseDraw({ spec }: { spec: CameraPoseSpec }): React.FunctionComponentElement<{ create: () => EngineDraw; deps: React.DependencyList; }> — Mount a {@link CameraPoseSpec} as one draw.
+- `CameraPoseDraw` (function): function CameraPoseDraw({ spec }: { spec: CameraPoseSpec }): UiElement<Props> — Mount a {@link CameraPoseSpec} as one draw.
 - `CameraPoseSpec` (interface): interface CameraPoseSpec { position: readonly [number, number, number]; target?: readonly [number, number, number] | undefined } — ⚠ undocumented · used by `CameraPoseDraw`: Mount a {@link CameraPoseSpec} as one draw.
-- `OrbitControlsDraw` (function): function OrbitControlsDraw({ spec }: { spec: OrbitControlsSpec }): React.FunctionComponentElement<{ create: () => EngineDraw; deps: React.DependencyList; }> — Mount reactive {@link OrbitControlsSpec} as one draw.
+- `OrbitControlsDraw` (function): function OrbitControlsDraw({ spec }: { spec: OrbitControlsSpec }): UiElement<Props> — Mount reactive {@link OrbitControlsSpec} as one draw.
 - `OrbitControlsSpec` (interface): interface OrbitControlsSpec { target?: readonly [number, number, number] | undefined; enablePan?: boolean; enableZoom?: boolean; enableRotate?: boolean; minPolarAngle?: number; maxPolarAngle?: number; minAzimuthAngle?: number; maxAzimuthAngle?: number; targetOf?: (() … — ⚠ undocumented · used by `OrbitControlsDraw`: Mount reactive {@link OrbitControlsSpec} as one draw.
-- `StageDraw` (function): function StageDraw({ spec }: { spec: StageSpec }): React.FunctionComponentElement<{ create: () => EngineDraw; deps: React.DependencyList; }> — Mount a reactive {@link StageSpec} as one draw.
+- `StageDraw` (function): function StageDraw({ spec }: { spec: StageSpec }): UiElement<Props> — Mount a reactive {@link StageSpec} as one draw.
 - `StageLight` (type): type StageLight = | { kind: "ambient"; intensity?: number; color?: string } | { kind: "hemisphere"; skyColor?: string; groundColor?: string; intensity?: number } | { kind: "directional"; position?: readonly [number, number, number]; intensity?: number; color?: string; castShadow?: boolean; shadowMap… — One authored light for {@link stageDraw}: the r3f light intrinsics as data.
 - `StageSpec` (interface): interface StageSpec — Declarative stage dressing for preview and demo canvases — the r3f `<color>`/`<fog>`/light/ground/grid intrinsics as one draw.
 - `cameraPoseDraw` (function): function cameraPoseDraw(getSpec: () => CameraPoseSpec): EngineDraw — One-shot camera placement — the editor CameraRig / preview `<CameraRig>` pattern as a draw.
@@ -5852,7 +5852,7 @@
 
 ## @jgengine/core/terrain/terrainQuality.draw
 
-- `TerrainQualityContext` (const): const TerrainQualityContext: React.Context<GraphicsQuality> — The player's graphics tier as terrain materials see it; the shell provides it, `high` outside one.
+- `TerrainQualityContext` (const): const TerrainQualityContext: ContextType<GraphicsQuality> — The player's graphics tier as terrain materials see it; the shell provides it, `high` outside one.
 - `noteTerrainQuality` (function): function noteTerrainQuality(quality: GraphicsQuality): void — The graphics tier for draw code, which has no React context.
 - `terrainQuality` (function): function terrainQuality(): GraphicsQuality — The player's graphics tier for draw code (`high` outside a shell).
 - `useTerrainQuality` (function): function useTerrainQuality(): GraphicsQuality — Graphics tier for terrain surface shading (`low` takes the cheap path).
@@ -6345,7 +6345,7 @@
 
 ## @jgengine/core/weather/AuthoredWeatherLayer.draw
 
-- `AuthoredWeatherLayer` (function): function AuthoredWeatherLayer({ document, rain, snow, dust, heightAt, diagnostics = false }: AuthoredWeatherLayerProps): React.JSX.Element | null — Render pooled precipitation from the same authored document and clock as gameplay.
+- `AuthoredWeatherLayer` (function): function AuthoredWeatherLayer({ document, rain, snow, dust, heightAt, diagnostics = false }: AuthoredWeatherLayerProps): JSX.Element | null — Render pooled precipitation from the same authored document and clock as gameplay.
 - `AuthoredWeatherLayerProps` (interface): interface AuthoredWeatherLayerProps — Authored weather document and optional precipitation appearance and ground sampling.
 
 ## @jgengine/core/weather/DustField.draw
@@ -6356,7 +6356,7 @@
 
 ## @jgengine/core/weather/LightningStrike.draw
 
-- `LightningStrike` (function): function LightningStrike(props: LightningStrikeProps): React.JSX.Element — A jagged, briefly flashing lightning bolt from `origin` to `target`.
+- `LightningStrike` (function): function LightningStrike(props: LightningStrikeProps): JSX.Element — A jagged, briefly flashing lightning bolt from `origin` to `target`.
 - `LightningStrikeProps` (interface): interface LightningStrikeProps — Props for {@link LightningStrike}: bolt start and end, a key that restarts it, a seed for its shape and visibility.
 
 ## @jgengine/core/weather/LivingWorldLayer.draw
@@ -6391,7 +6391,7 @@
 
 ## @jgengine/core/weather/WeatherLayer.draw
 
-- `WeatherLayer` (function): function WeatherLayer({ mode = "clear", intensity = 1, wind, lightning, timeScale, timeSeconds, sample, shelters, metrics, rain, snow, dust, dustAlways = false, impacts, enabled = true, children, windField, }: WeatherLayerProps): React.JSX.Element | null — Draw one weather mode (rain, snow, mixed or dust) with shared wind and clock uniforms.
+- `WeatherLayer` (function): function WeatherLayer({ mode = "clear", intensity = 1, wind, lightning, timeScale, timeSeconds, sample, shelters, metrics, rain, snow, dust, dustAlways = false, impacts, enabled = true, children, windField, }: WeatherLayerProps): JSX.Element | null — Draw one weather mode (rain, snow, mixed or dust) with shared wind and clock uniforms.
 - `WeatherLayerMode` (type): type WeatherLayerMode = "clear" | "rain" | "snow" | "mixed" | "dust" — `"mixed"` runs rain and snow together; `"dust"` is airborne particulate and composes with either via `dust`.
 - `WeatherLayerProps` (interface): interface WeatherLayerProps — Props for {@link WeatherLayer}: weather mode, intensity, wind, lightning and clock.
 

@@ -94,7 +94,7 @@ export async function uiTour<TProbe extends ProbeReadings>(f: BrowserFlow<TProbe
       if (rune) {
         await pressAt(`document.querySelector(${JSON.stringify(step.field)})`, step.field);
         await f.wait(400);
-        for (const letter of step.type) await f.press(`Key${letter.toUpperCase()}` as FlowKey);
+        await f.type(step.type);
       } else await f.fill(step.label, step.type);
       await f.wait(500);
       await f.shot(`tour-${tag}-typed`);

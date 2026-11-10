@@ -21,7 +21,7 @@ Search [capabilities.md](capabilities.md) by intent and use [api.md](api.md) for
 6. Add preview fixtures using the real components for fast deterministic capture. Shipped engine HUD primitives are registered in `@jgengine/react`'s `PREVIEW_FIXTURES`; in the monorepo capture one with `bun run shoot --fixture <name>` (`--list` shows the set).
 7. Verify desktop and mobile layouts through `jgengine-verify`, and check [reference.md](reference.md) §14 rejection criteria and the definition of done before claiming UI complete. A HUD that could pass for another game's default chrome fails visual review.
 
-Existing React games keep their entity store and use the focused
+Existing games keep their entity store and use the focused
 [portable minimap recipe](recipes/portable-minimap.md); no `GameProvider`,
 `MarkerSet`, Three.js, or React Three Fiber adoption is required.
 

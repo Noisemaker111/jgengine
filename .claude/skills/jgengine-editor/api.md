@@ -455,17 +455,17 @@
 - `AgentToolResult` (interface): interface AgentToolResult — Result of routing one tool call through the editor host.
 - `AgentTranscriptEntry` (type): type AgentTranscriptEntry = | { kind: "user"; id: string; content: string; at: number } | { kind: "assistant"; id: string; content: string; at: number } | { kind: "tool"; id: string; result: AgentToolResult; at: number } | { kind: "error"; id: string; content: string; at: number } | { kind: "patch";… — One rendered line in the agent panel transcript (user, assistant, tool, error, or patch).
 - `AgentTurnResult` (interface): interface AgentTurnResult — Result of {@link runAgentTurn}: chat history, UI transcript, undoable patches, and packed context.
-- `AssetBrowser` (function): function AssetBrowser({ assets, session, onPlace, }: { assets: readonly EditorAssetEntry[]; session: EditorSession; onPlace: (entry: EditorAssetEntry) => void; }): React.JSX.Element — Searchable panel for placing catalog assets or an empty marker into the scene.
+- `AssetBrowser` (function): function AssetBrowser({ assets, session, onPlace, }: { assets: readonly EditorAssetEntry[]; session: EditorSession; onPlace: (entry: EditorAssetEntry) => void; }): JSX.Element — Searchable panel for placing catalog assets or an empty marker into the scene.
 - `AssetImporter` (type): type AssetImporter = (file: File) => Promise<StandaloneAsset | null> — Persists a dropped model file through the editor host so it survives reload as a durable catalog asset, returning the host-assigned id/url (which the manifest scan re-lists on reload). Resolves `null` when no host is listening — a plain browser mount with no dev server — so the caller can fall back to a blob URL.
 - `BlankPlayableOptions` (interface): interface BlankPlayableOptions — Options for the blank, gameless world the standalone editor authors over.
-- `CreatorApp` (function): function CreatorApp({ gameId, config, onExit }: { gameId: string; config: CreatorConfig<PlayableGame>; onExit: () => void }): React.JSX.Element — Production creator catalog and embedded editor, reached through the game's menu.
+- `CreatorApp` (function): function CreatorApp({ gameId, config, onExit }: { gameId: string; config: CreatorConfig<PlayableGame>; onExit: () => void }): JSX.Element — Production creator catalog and embedded editor, reached through the game's menu.
 - `DEFAULT_PAINT_SETTINGS` (const): const DEFAULT_PAINT_SETTINGS: PaintSettings — The terrain tool's default paint controls.
 - `DEFAULT_SCULPT_SETTINGS` (const): const DEFAULT_SCULPT_SETTINGS: SculptSettings — The terrain tool's default brush controls.
 - `EDITOR_AGENT_KEY_ENV` (const): const EDITOR_AGENT_KEY_ENV: "JGENGINE_EDITOR_AGENT_KEY" — Env var name for the optional Bearer token (`JGENGINE_EDITOR_AGENT_KEY`).
 - `EDITOR_AGENT_KEY_FALLBACK_ENV` (const): const EDITOR_AGENT_KEY_FALLBACK_ENV: "ANTHROPIC_API_KEY" — Fallback API-key env when `JGENGINE_EDITOR_AGENT_KEY` is unset (`ANTHROPIC_API_KEY`).
 - `EDITOR_AGENT_URL_ENV` (const): const EDITOR_AGENT_URL_ENV: "JGENGINE_EDITOR_AGENT_URL" — Env var name for the remote agent HTTP URL (`JGENGINE_EDITOR_AGENT_URL`).
 - `EDITOR_MCP_TOOLS` (const): const EDITOR_MCP_TOOLS: readonly EditorMcpTool[] — Full set of MCP tools an agent can call to drive the live scene editor.
-- `EditorApp` (function): function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, networkPresence, onExitEditor, createPlaytest, validateDocument, playerCreator, allowedAssets, allowedKinds, maxImportBytes, creatorPolicy }: EditorAppProps): React.JSX.Element — Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes.
+- `EditorApp` (function): function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, networkPresence, onExitEditor, createPlaytest, validateDocument, playerCreator, allowedAssets, allowedKinds, maxImportBytes, creatorPolicy }: EditorAppProps): JSX.Element — Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes.
 - `EditorAppProps` (interface): interface EditorAppProps — Props for mounting the scene editor over a playable game.
 - `EditorAssetEntry` (interface): interface EditorAssetEntry — A searchable, placeable asset shown in the editor's asset browser panel.
 - `EditorAssetInfo` (interface): interface EditorAssetInfo — A placeable asset entry offered in the editor's asset browser.
@@ -473,7 +473,7 @@
 - `EditorBridgeResponse` (type): type EditorBridgeResponse = { ok: boolean; result?: unknown; error?: string; } — Result envelope returned by every editor host RPC call.
 - `EditorBridgeServer` (interface): interface EditorBridgeServer — A running editor bridge server: its bound port, URL, and a stop handle.
 - `EditorBridgeServerOptions` (interface): interface EditorBridgeServerOptions — Options for starting the editor's HTTP bridge server: host api, port, hostname.
-- `EditorCameraDriver` (const): const EditorCameraDriver: React.MemoExoticComponent<({ api }: { api: EditorHostApi; }) => null> — Drives the editor orbit camera from the host's focus target. When the target carries only a point, the camera pans to keep it centered (the historical behavior). When it also carries placement (`distance`/`pitch`/`yaw`/`height`), the camera is repositioned to that orbit pose — how `camera_goto`/`camera_frame` compose an aerial without the KeyF-buries-in-terrain problem.
+- `EditorCameraDriver` (const): const EditorCameraDriver: FunctionComponent<{ api: EditorHostApi; }> — Drives the editor orbit camera from the host's focus target. When the target carries only a point, the camera pans to keep it centered (the historical behavior). When it also carries placement (`distance`/`pitch`/`yaw`/`height`), the camera is repositioned to that orbit pose — how `camera_goto`/`camera_frame` compose an aerial without the KeyF-buries-in-terrain problem.
 - `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineDocument, save, networkSnapshot, importAsset = importAssetToHost, onRegisterAsset, onExitEditor, allowedKinds, exitLabel, maxImportBytes, documentSave, draftAutosave = true, creatorPolicy, libraryDropTarget, }: { gameId: string; sessi… — The full editor UI shell — global app bar, contextual scene toolbar, workspace rail, resizable hierarchy/inspector docks, tabbed bottom dock (content browser, console, profiler, AI assistant), viewport overlays, and status bar — wired to the session, UI store, layout store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
 - `EditorHostApi` (interface): interface EditorHostApi — The live editor's global control surface — session, visibility, camera focus, assets, mode, RPC.
 - `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, hoverId = null, activePathPoint, groundHeightAt, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; /** Pre-selection hover id from viewport pointer pick; ignored when already selected. */ hov… — Renders every visible marker, volume, path, and note from a document as in-scene 3D gizmos.
@@ -495,18 +495,18 @@
 - `EditorUiStore` (interface): interface EditorUiStore — Subscribable store for the editor's transient UI state (gizmo, snapping, placement).
 - `GizmoMode` (type): type GizmoMode = "translate" | "rotate" | "scale" — Which transform gizmo is active for the current selection.
 - `PaintSettings` (interface): interface PaintSettings — Live terrain material-paint controls driven by the terrain tool panel.
-- `PathDraftPreview` (function): function PathDraftPreview({ points }: { points: readonly EditorVec3[] }): React.JSX.Element — Live preview of an in-progress path drawing: placed points and the connecting line.
-- `PerfProbe` (const): const PerfProbe: React.MemoExoticComponent<({ api }: { api: EditorHostApi; }) => null> — In-canvas frame counter: publishes fps/draw-call samples to the editor host every 500ms.
+- `PathDraftPreview` (function): function PathDraftPreview({ points }: { points: readonly EditorVec3[] }): JSX.Element — Live preview of an in-progress path drawing: placed points and the connecting line.
+- `PerfProbe` (const): const PerfProbe: FunctionComponent<{ api: EditorHostApi; }> — In-canvas frame counter: publishes fps/draw-call samples to the editor host every 500ms.
 - `PlacementTool` (type): type PlacementTool = | { tool: "marker"; kind: string } | { tool: "volume"; kind: string; shape: EditorVolumeShape } | { tool: "note" } | { tool: "path"; kind: string } — The active creation tool — what a viewport click places next.
 - `SculptSettings` (interface): interface SculptSettings — Live terrain-brush controls driven by the terrain tool panel.
-- `SelectionGizmo` (const): const SelectionGizmo: React.MemoExoticComponent<({ session, ui, groundSnap, }: { session: EditorSession; ui: EditorUiStore; groundSnap?: ((x: number, z: number) => number) | undefined; }) => React.JSX.Element | null> — Drag-to-transform gizmo bound to the current selection, dispatching editor commands on release. Mounts the shared shell `TransformGizmo` and maps release poses onto editor commands (multi-select translate, volume scale, path vertex move).
+- `SelectionGizmo` (const): const SelectionGizmo: FunctionComponent<{ session: EditorSession; ui: EditorUiStore; groundSnap?: ((x: number, z: number) => number) | undefined; }> — Drag-to-transform gizmo bound to the current selection, dispatching editor commands on release. Mounts the shared shell `TransformGizmo` and maps release poses onto editor commands (multi-select translate, volume scale, path vertex move).
 - `StandaloneAsset` (interface): interface StandaloneAsset — One user-supplied model the editor can place: a stable id and a resolvable URL.
-- `StandaloneEditor` (function): function StandaloneEditor({ sceneId = "standalone", scene, assets, world, save, importAsset = importAssetToHost, hidePickers = false, }: StandaloneEditorProps): React.JSX.Element — The scene editor, mounted over a blank gameless world instead of a game — the same `EditorApp` every jgengine game ships, usable standalone on the user's own project (CLI `jgengine editor`, desktop app, or any React host). Ships a slim strip to open a world file and pull in an asset folder; both are also settable up front through props.
+- `StandaloneEditor` (function): function StandaloneEditor({ sceneId = "standalone", scene, assets, world, save, importAsset = importAssetToHost, hidePickers = false, }: StandaloneEditorProps): JSX.Element — The scene editor, mounted over a blank gameless world instead of a game — the same `EditorApp` every jgengine game ships, usable standalone on the user's own project (CLI `jgengine editor`, desktop app, or any React host). Ships a slim strip to open a world file and pull in an asset folder; both are also settable up front through props.
 - `StandaloneEditorProps` (interface): interface StandaloneEditorProps — Props for the gameless scene editor — everything optional so it boots on a blank world with nothing wired.
 - `SubscribableStore` (interface): interface SubscribableStore<S> — The minimal external-store shape both the editor session and UI store satisfy.
 - `TerrainBrushKind` (type): type TerrainBrushKind = "raise" | "lower" | "smooth" | "flatten" | "noise" | "ramp" — A heightfield sculpt brush the terrain tool can apply.
 - `TerrainMode` (type): type TerrainMode = "sculpt" | "paint" — The terrain tool's active sub-mode: reshape the heightfield, or paint material layers onto it.
-- `ViewportSelect` (const): const ViewportSelect: React.MemoExoticComponent<({ api, ui }: { api: EditorHostApi; ui: EditorUiStore; }) => null> — Canvas click-to-select and click-to-place. Document objects pick by screen proximity (registration always matches what you see) with click-cycling through stacked candidates and shift/ctrl additive selection; everything else picks by occlusion-ordered raycast against the tagged scene graph. When a placement tool is armed, clicks author new markers, volumes, notes, or path points at the ground hit instead of selecting.
+- `ViewportSelect` (const): const ViewportSelect: FunctionComponent<{ api: EditorHostApi; ui: EditorUiStore; }> — Canvas click-to-select and click-to-place. Document objects pick by screen proximity (registration always matches what you see) with click-cycling through stacked candidates and shift/ctrl additive selection; everything else picks by occlusion-ordered raycast against the tagged scene graph. When a placement tool is armed, clicks author new markers, volumes, notes, or path points at the ground hit instead of selecting.
 - `VirtualWindow` (interface): interface VirtualWindow — The visible slice of a fixed-row-height list: which rows to mount and the spacer geometry.
 - `assetsFromCatalog` (function): function assetsFromCatalog(ids: readonly string[], resolve?: (id: string) => { url?: string; clips?: readonly string[] } | null): EditorAssetEntry[] — Turns a game's asset catalog ids into editor asset entries for the browser panel.
 - `blankWorld` (function): function blankWorld(_seed = "standalone"): EnvironmentWorldFeature — The default flat-ground authoring canvas the standalone editor opens on when the host supplies none. Deliberately thin — bare sculptable ground under a clear default sky. Dressing (sky look, foliage scatter, props) is what the author adds here, written into the scene document; it is never pre-baked into the canvas. The `seed` parameter is legacy and unused.
@@ -530,29 +530,29 @@
 ## @jgengine/editor/AssetBrowser
 
 - `ASSET_DRAG_MIME` (const): const ASSET_DRAG_MIME: "application/x-jgengine-editor-asset" — Custom drag mime for placeable catalog assets. Payload is JSON `{ id, label, kind }` so the viewport can call `place_asset` without a registry round-trip.
-- `AssetBrowser` (function): function AssetBrowser({ assets, session, onPlace, }: { assets: readonly EditorAssetEntry[]; session: EditorSession; onPlace: (entry: EditorAssetEntry) => void; }): React.JSX.Element — Searchable panel for placing catalog assets or an empty marker into the scene.
+- `AssetBrowser` (function): function AssetBrowser({ assets, session, onPlace, }: { assets: readonly EditorAssetEntry[]; session: EditorSession; onPlace: (entry: EditorAssetEntry) => void; }): JSX.Element — Searchable panel for placing catalog assets or an empty marker into the scene.
 - `EditorAssetEntry` (interface): interface EditorAssetEntry — A searchable, placeable asset shown in the editor's asset browser panel.
 - `MATERIAL_DRAG_MIME` (const): const MATERIAL_DRAG_MIME: "application/x-jgengine-material" — Custom drag mime carrying a material id — read by hierarchy rows and the viewport drop zone.
 - `assetsFromCatalog` (function): function assetsFromCatalog(ids: readonly string[], resolve?: (id: string) => { url?: string; clips?: readonly string[] } | null): EditorAssetEntry[] — Turns a game's asset catalog ids into editor asset entries for the browser panel.
 
 ## @jgengine/editor/CreatorApp
 
-- `CreatorApp` (function): function CreatorApp({ gameId, config, onExit }: { gameId: string; config: CreatorConfig<PlayableGame>; onExit: () => void }): React.JSX.Element — Production creator catalog and embedded editor, reached through the game's menu.
+- `CreatorApp` (function): function CreatorApp({ gameId, config, onExit }: { gameId: string; config: CreatorConfig<PlayableGame>; onExit: () => void }): JSX.Element — Production creator catalog and embedded editor, reached through the game's menu.
 
 ## @jgengine/editor/DebugDraw
 
 - `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, hoverId = null, activePathPoint, groundHeightAt, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; /** Pre-selection hover id from viewport pointer pick; ignored when already selected. */ hov… — Renders every visible marker, volume, path, and note from a document as in-scene 3D gizmos.
-- `PathDraftPreview` (function): function PathDraftPreview({ points }: { points: readonly EditorVec3[] }): React.JSX.Element — Live preview of an in-progress path drawing: placed points and the connecting line.
+- `PathDraftPreview` (function): function PathDraftPreview({ points }: { points: readonly EditorVec3[] }): JSX.Element — Live preview of an in-progress path drawing: placed points and the connecting line.
 
 ## @jgengine/editor/EditorApp
 
-- `EditorApp` (function): function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, networkPresence, onExitEditor, createPlaytest, validateDocument, playerCreator, allowedAssets, allowedKinds, maxImportBytes, creatorPolicy }: EditorAppProps): React.JSX.Element — Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes.
+- `EditorApp` (function): function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, networkPresence, onExitEditor, createPlaytest, validateDocument, playerCreator, allowedAssets, allowedKinds, maxImportBytes, creatorPolicy }: EditorAppProps): JSX.Element — Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes.
 - `EditorAppProps` (interface): interface EditorAppProps — Props for mounting the scene editor over a playable game.
 - `EditorSaveFn` (type): type EditorSaveFn = (json: string) => Promise<{ ok: boolean; path?: string; error?: string }> — Persists an exported document JSON; resolves with where it landed or why it failed.
 
 ## @jgengine/editor/EditorCameraDriver
 
-- `EditorCameraDriver` (const): const EditorCameraDriver: React.MemoExoticComponent<({ api }: { api: EditorHostApi; }) => null> — Drives the editor orbit camera from the host's focus target. When the target carries only a point, the camera pans to keep it centered (the historical behavior). When it also carries placement (`distance`/`pitch`/`yaw`/`height`), the camera is repositioned to that orbit pose — how `camera_goto`/`camera_frame` compose an aerial without the KeyF-buries-in-terrain problem.
+- `EditorCameraDriver` (const): const EditorCameraDriver: FunctionComponent<{ api: EditorHostApi; }> — Drives the editor orbit camera from the host's focus target. When the target carries only a point, the camera pans to keep it centered (the historical behavior). When it also carries placement (`distance`/`pitch`/`yaw`/`height`), the camera is repositioned to that orbit pose — how `camera_goto`/`camera_frame` compose an aerial without the KeyF-buries-in-terrain problem.
 
 ## @jgengine/editor/EditorChrome
 
@@ -572,7 +572,7 @@
 
 ## @jgengine/editor/PerfProbe
 
-- `PerfProbe` (const): const PerfProbe: React.MemoExoticComponent<({ api }: { api: EditorHostApi; }) => null> — In-canvas frame counter: publishes fps/draw-call samples to the editor host every 500ms.
+- `PerfProbe` (const): const PerfProbe: FunctionComponent<{ api: EditorHostApi; }> — In-canvas frame counter: publishes fps/draw-call samples to the editor host every 500ms.
 
 ## @jgengine/editor/SchemaInspector
 
@@ -581,19 +581,19 @@
 ## @jgengine/editor/SelectionGizmo
 
 - `GizmoMode` (type): type GizmoMode = "translate" | "rotate" | "scale" — Which transform gizmo is active for the current selection.
-- `SelectionGizmo` (const): const SelectionGizmo: React.MemoExoticComponent<({ session, ui, groundSnap, }: { session: EditorSession; ui: EditorUiStore; groundSnap?: ((x: number, z: number) => number) | undefined; }) => React.JSX.Element | null> — Drag-to-transform gizmo bound to the current selection, dispatching editor commands on release. Mounts the shared shell `TransformGizmo` and maps release poses onto editor commands (multi-select translate, volume scale, path vertex move).
-- `ViewportSelect` (const): const ViewportSelect: React.MemoExoticComponent<({ api, ui }: { api: EditorHostApi; ui: EditorUiStore; }) => null> — Canvas click-to-select and click-to-place. Document objects pick by screen proximity (registration always matches what you see) with click-cycling through stacked candidates and shift/ctrl additive selection; everything else picks by occlusion-ordered raycast against the tagged scene graph. When a placement tool is armed, clicks author new markers, volumes, notes, or path points at the ground hit instead of selecting.
+- `SelectionGizmo` (const): const SelectionGizmo: FunctionComponent<{ session: EditorSession; ui: EditorUiStore; groundSnap?: ((x: number, z: number) => number) | undefined; }> — Drag-to-transform gizmo bound to the current selection, dispatching editor commands on release. Mounts the shared shell `TransformGizmo` and maps release poses onto editor commands (multi-select translate, volume scale, path vertex move).
+- `ViewportSelect` (const): const ViewportSelect: FunctionComponent<{ api: EditorHostApi; ui: EditorUiStore; }> — Canvas click-to-select and click-to-place. Document objects pick by screen proximity (registration always matches what you see) with click-cycling through stacked candidates and shift/ctrl additive selection; everything else picks by occlusion-ordered raycast against the tagged scene graph. When a placement tool is armed, clicks author new markers, volumes, notes, or path points at the ground hit instead of selecting.
 
 ## @jgengine/editor/SimulationInspector
 
-- `SimulationInspector` (function): function SimulationInspector({ session, creatorPolicy }: { session: EditorSession; creatorPolicy?: CreatorPolicy | undefined }): React.JSX.Element — Production authoring controls share the same validated command and undo history as RPC.
+- `SimulationInspector` (function): function SimulationInspector({ session, creatorPolicy }: { session: EditorSession; creatorPolicy?: CreatorPolicy | undefined }): JSX.Element — Production authoring controls share the same validated command and undo history as RPC.
 
 ## @jgengine/editor/StandaloneEditor
 
 - `AssetImporter` (type): type AssetImporter = (file: File) => Promise<StandaloneAsset | null> — Persists a dropped model file through the editor host so it survives reload as a durable catalog asset, returning the host-assigned id/url (which the manifest scan re-lists on reload). Resolves `null` when no host is listening — a plain browser mount with no dev server — so the caller can fall back to a blob URL.
 - `BlankPlayableOptions` (interface): interface BlankPlayableOptions — Options for the blank, gameless world the standalone editor authors over.
 - `StandaloneAsset` (interface): interface StandaloneAsset — One user-supplied model the editor can place: a stable id and a resolvable URL.
-- `StandaloneEditor` (function): function StandaloneEditor({ sceneId = "standalone", scene, assets, world, save, importAsset = importAssetToHost, hidePickers = false, }: StandaloneEditorProps): React.JSX.Element — The scene editor, mounted over a blank gameless world instead of a game — the same `EditorApp` every jgengine game ships, usable standalone on the user's own project (CLI `jgengine editor`, desktop app, or any React host). Ships a slim strip to open a world file and pull in an asset folder; both are also settable up front through props.
+- `StandaloneEditor` (function): function StandaloneEditor({ sceneId = "standalone", scene, assets, world, save, importAsset = importAssetToHost, hidePickers = false, }: StandaloneEditorProps): JSX.Element — The scene editor, mounted over a blank gameless world instead of a game — the same `EditorApp` every jgengine game ships, usable standalone on the user's own project (CLI `jgengine editor`, desktop app, or any React host). Ships a slim strip to open a world file and pull in an asset folder; both are also settable up front through props.
 - `StandaloneEditorProps` (interface): interface StandaloneEditorProps — Props for the gameless scene editor — everything optional so it boots on a blank world with nothing wired.
 - `blankWorld` (function): function blankWorld(_seed = "standalone"): EnvironmentWorldFeature — The default flat-ground authoring canvas the standalone editor opens on when the host supplies none. Deliberately thin — bare sculptable ground under a clear default sky. Dressing (sky look, foliage scatter, props) is what the author adds here, written into the scene document; it is never pre-baked into the canvas. The `seed` parameter is legacy and unused.
 - `createBlankPlayable` (function): function createBlankPlayable(options: BlankPlayableOptions = {}): PlayableGame — Builds a minimal gameless `PlayableGame` — a flat world plus an asset catalog — for the editor to mount over.
@@ -601,7 +601,7 @@
 
 ## @jgengine/editor/TerrainPanel
 
-- `TerrainPanel` (function): function TerrainPanel({ session, ui, api }: { session: EditorSession; ui: EditorUiStore; api: EditorHostApi }): React.JSX.Element — The terrain-tool panel: create/clear the heightfield and drive the sculpt/paint controls.
+- `TerrainPanel` (function): function TerrainPanel({ session, ui, api }: { session: EditorSession; ui: EditorUiStore; api: EditorHostApi }): JSX.Element — The terrain-tool panel: create/clear the heightfield and drive the sculpt/paint controls.
 
 ## @jgengine/editor/TerrainReadout
 
@@ -609,7 +609,7 @@
 
 ## @jgengine/editor/TerrainReadoutHud
 
-- `TerrainReadoutHud` (function): function TerrainReadoutHud({ readout }: { readout: TerrainReadoutStore }): React.JSX.Element — The measurable terrain-readability legend: cursor elevation and delta from the `y = 0` reference, plus the region's min/max/mean relief and the active contour interval. Reads live measurements from the readout store the {@link TerrainReadout} overlay publishes; renders nothing until shown.
+- `TerrainReadoutHud` (function): function TerrainReadoutHud({ readout }: { readout: TerrainReadoutStore }): JSX.Element — The measurable terrain-readability legend: cursor elevation and delta from the `y = 0` reference, plus the region's min/max/mean relief and the active contour interval. Reads live measurements from the readout store the {@link TerrainReadout} overlay publishes; renders nothing until shown.
 
 ## @jgengine/editor/agent/AgentPanel
 
@@ -666,8 +666,8 @@
 
 ## @jgengine/editor/chromeFields
 
-- `NumberField` (function): function NumberField({ label, value, onCommit, step = 1, }: { label: string; value: number; onCommit: (value: number) => void; step?: number; }): React.JSX.Element — ⚠ undocumented
-- `SliderRow` (function): function SliderRow({ label, value, min, max, step, onChange, format, }: { label: string; value: number; min: number; max: number; step: number; onChange: (value: number) => void; format?: (value: number) => string; }): React.JSX.Element — ⚠ undocumented
+- `NumberField` (function): function NumberField({ label, value, onCommit, step = 1, }: { label: string; value: number; onCommit: (value: number) => void; step?: number; }): JSX.Element — ⚠ undocumented
+- `SliderRow` (function): function SliderRow({ label, value, min, max, step, onChange, format, }: { label: string; value: number; min: number; max: number; step: number; onChange: (value: number) => void; format?: (value: number) => string; }): JSX.Element — ⚠ undocumented
 
 ## @jgengine/editor/chromeStyles
 
@@ -887,11 +887,11 @@
 
 ## @jgengine/editor/shell/CommandPalette
 
-- `CommandPalette` (function): function CommandPalette({ commands, onClose, initialQuery = "", }: { commands: readonly PaletteCommand[]; onClose: () => void; /** Pre-filled filter (e.g. "add " to open straight into placement commands). */ initialQuery?: string; }): React.JSX.Element — Modal command palette (Ctrl/Cmd+K): fuzzy-filters every executable editor command (plus scene object jump rows), surfaces recent commands when the query is empty, and runs the highlighted entry on Enter. Esc or backdrop click cancels without side effects.
+- `CommandPalette` (function): function CommandPalette({ commands, onClose, initialQuery = "", }: { commands: readonly PaletteCommand[]; onClose: () => void; /** Pre-filled filter (e.g. "add " to open straight into placement commands). */ initialQuery?: string; }): JSX.Element — Modal command palette (Ctrl/Cmd+K): fuzzy-filters every executable editor command (plus scene object jump rows), surfaces recent commands when the query is empty, and runs the highlighted entry on Enter. Esc or backdrop click cancels without side effects.
 
 ## @jgengine/editor/shell/ConsolePanel
 
-- `ConsolePanel` (function): function ConsolePanel({ store }: { store: EditorConsoleStore }): React.JSX.Element — Console dock tab over the real editor event log — notifications, save/import results, RPC and agent errors. Severity filters, counts, search, timestamps, and clear; no fabricated entries.
+- `ConsolePanel` (function): function ConsolePanel({ store }: { store: EditorConsoleStore }): JSX.Element — Console dock tab over the real editor event log — notifications, save/import results, RPC and agent errors. Severity filters, counts, search, timestamps, and clear; no fabricated entries.
 
 ## @jgengine/editor/shell/ContentBrowser
 
@@ -899,12 +899,12 @@
 
 ## @jgengine/editor/shell/HierarchyPanel
 
-- `HierarchyPanel` (const): const HierarchyPanel: React.MemoExoticComponent<({ session, api, onAdd, onRowContextMenu, }: { session: EditorSession; api: EditorHostApi; onAdd: () => void; onRowContextMenu?: ((event: { clientX: number; clientY: number; }, id: string) => void) | undefined; }) => React.JSX.Element> — Redesigned world outliner: searchable, virtualized, kind-iconed rows generated from the live document. Group headers carry real per-kind visibility toggles (the editor's layer system); rows expose per-object eye/lock toggles (`setObjectFlags` → document `hidden`/`locked`) and show a lock affordance when a locked collection also owns the id. Tree view supports drag-and-drop reparenting through the existing `set_parent` RPC. Keyboard navigation uses a single tab stop on the list (roving active row via `aria-activedescendant`; arrows / Home / End / Enter / F2), double-click rename, and row context menus (frame / duplicate / delete / prefab / parent to… / unparent) are supported. Selector-subscribed and memoized, so UI-only churn never rerenders it.
+- `HierarchyPanel` (const): const HierarchyPanel: FunctionComponent<{ session: EditorSession; api: EditorHostApi; onAdd: () => void; onRowContextMenu?: ((event: { clientX: number; clientY: number; }, id: string) => void) | undefined; }> — Redesigned world outliner: searchable, virtualized, kind-iconed rows generated from the live document. Group headers carry real per-kind visibility toggles (the editor's layer system); rows expose per-object eye/lock toggles (`setObjectFlags` → document `hidden`/`locked`) and show a lock affordance when a locked collection also owns the id. Tree view supports drag-and-drop reparenting through the existing `set_parent` RPC. Keyboard navigation uses a single tab stop on the list (roving active row via `aria-activedescendant`; arrows / Home / End / Enter / F2), double-click rename, and row context menus (frame / duplicate / delete / prefab / parent to… / unparent) are supported. Selector-subscribed and memoized, so UI-only churn never rerenders it.
 - `OBJECT_DRAG_MIME` (const): const OBJECT_DRAG_MIME: "application/x-jgengine-editor-object" — HTML5 drag payload for hierarchy reparenting via `set_parent`.
 
 ## @jgengine/editor/shell/ProfilerPanel
 
-- `ProfilerPanel` (function): function ProfilerPanel({ history }: { history: PerfHistoryStore }): React.JSX.Element — Profiler dock tab over the real {@link PerfProbe} sample history: frame-time graph, current and average values, authoring-cost series when the probe reports one, sim/outside budget when `devtools.frame` has recorded frames, and JS heap memory when the browser exposes `performance.memory`. Series the host cannot measure are omitted entirely rather than fabricated.
+- `ProfilerPanel` (function): function ProfilerPanel({ history }: { history: PerfHistoryStore }): JSX.Element — Profiler dock tab over the real {@link PerfProbe} sample history: frame-time graph, current and average values, authoring-cost series when the probe reports one, sim/outside budget when `devtools.frame` has recorded frames, and JS heap memory when the browser exposes `performance.memory`. Series the host cannot measure are omitted entirely rather than fabricated.
 
 ## @jgengine/editor/shell/SceneToolbar
 
@@ -913,7 +913,7 @@
 
 ## @jgengine/editor/shell/StatusBar
 
-- `StatusBar` (function): function StatusBar({ api, history, objects, foliage, selectionCount, autosave, }: { api: EditorHostApi; history: PerfHistoryStore; objects: number; foliage: number; selectionCount: number; autosave: boolean; }): React.JSX.Element — Bottom status strip: readiness, scene stats, live perf pill, autosave state, and camera hints. Owns its own perf poll (and the profiler history feed) so the 500ms tick never rerenders the shell.
+- `StatusBar` (function): function StatusBar({ api, history, objects, foliage, selectionCount, autosave, }: { api: EditorHostApi; history: PerfHistoryStore; objects: number; foliage: number; selectionCount: number; autosave: boolean; }): JSX.Element — Bottom status strip: readiness, scene stats, live perf pill, autosave state, and camera hints. Owns its own perf poll (and the profiler history feed) so the 500ms tick never rerenders the shell.
 - `formatTriangles` (function): function formatTriangles(count: number): string — Compact triangle-count formatting (1.2M / 340k).
 - `usePerfSample` (function): function usePerfSample(api: EditorHostApi, history?: PerfHistoryStore): EditorPerfSample | null — Shared editor-host perf poll: samples on an interval and feeds the profiler history.
 
@@ -924,14 +924,14 @@
 
 ## @jgengine/editor/shell/ViewportOverlays
 
-- `OrientationWidget` (const): const OrientationWidget: React.MemoExoticComponent<() => React.JSX.Element> — Bottom-left orientation axis widget. Reads the camera basis published by the in-canvas probe on its own rAF loop and mutates SVG attributes directly, so orbiting never rerenders React.
-- `PerformanceOverlay` (const): const PerformanceOverlay: React.MemoExoticComponent<({ api }: { api: EditorHostApi; }) => React.JSX.Element | null> — Top-left viewport performance readout backed by the real in-canvas {@link PerfProbe} samples. Rows without data (no sample yet) simply don't render — nothing is fabricated.
-- `ViewportUtilityPanel` (function): function ViewportUtilityPanel({ document, api, selectionCount, }: { document: EditorDocument; api: EditorHostApi; selectionCount: number; }): React.JSX.Element — Top-right collapsible viewport utility panel: real minimap from `document.minimap` when baked (via `bake_minimap` RPC — never a fake image), plus per-kind object counts and framing actions.
+- `OrientationWidget` (const): const OrientationWidget: FunctionComponent<unknown> — Bottom-left orientation axis widget. Reads the camera basis published by the in-canvas probe on its own rAF loop and mutates SVG attributes directly, so orbiting never rerenders React.
+- `PerformanceOverlay` (const): const PerformanceOverlay: FunctionComponent<{ api: EditorHostApi; }> — Top-left viewport performance readout backed by the real in-canvas {@link PerfProbe} samples. Rows without data (no sample yet) simply don't render — nothing is fabricated.
+- `ViewportUtilityPanel` (function): function ViewportUtilityPanel({ document, api, selectionCount, }: { document: EditorDocument; api: EditorHostApi; selectionCount: number; }): JSX.Element — Top-right collapsible viewport utility panel: real minimap from `document.minimap` when baked (via `bake_minimap` RPC — never a fake image), plus per-kind object counts and framing actions.
 
 ## @jgengine/editor/shell/WorkspaceRail
 
 - `WORKSPACES` (const): const WORKSPACES: readonly RailEntry[] — Rail order and support map. Unsupported modes are visible but disabled — never fake panels.
-- `WorkspaceRail` (function): function WorkspaceRail({ active, onSelect, }: { active: EditorWorkspace; onSelect: (workspace: EditorWorkspace) => void; }): React.JSX.Element — Narrow left workspace rail. Supported modes activate their home panels; planned modes are disabled with an explanatory tooltip so nothing pretends to work.
+- `WorkspaceRail` (function): function WorkspaceRail({ active, onSelect, }: { active: EditorWorkspace; onSelect: (workspace: EditorWorkspace) => void; }): JSX.Element — Narrow left workspace rail. Supported modes activate their home panels; planned modes are disabled with an explanatory tooltip so nothing pretends to work.
 
 ## @jgengine/editor/shell/animGraphPreview
 
@@ -989,9 +989,9 @@
 ## @jgengine/editor/shell/fields
 
 - `AxisNumberField` (function): function AxisNumberField({ axis, label, value, onCommit, step = 0.1, precision = 3, disabled = false, mixed = false, }: { /** Axis coloring; omit for a neutral field. */ axis?: "x" | "y" | "z"; label: string; value: number; onCommit: (value: number) => void; step?: number; precision?: number; disabl… — Polished numeric field with an axis-colored label chip. The whole field is a drag-scrub surface (not just the chip): horizontal pointer-drag adjusts by `step` per few pixels while Alt/Option or double-click focuses the input for precise typing. The input commits finite values on change and re-normalizes its text on blur. Invalid text never commits.
-- `FieldRow` (function): function FieldRow({ label, children, title }: { label: string; children: React.ReactNode; title?: string }): React.JSX.Element — Labeled row wrapper aligning a caption with one or more fields.
-- `SectionAction` (function): function SectionAction({ label, onClick, active = false, disabled = false, children, }: { label: string; onClick: () => void; active?: boolean; disabled?: boolean; children: React.ReactNode; }): React.JSX.Element — Small ghost action used inside section headers (reset, link).
-- `TextField` (function): function TextField({ label, value, placeholder, onCommit, }: { label: string; value: string; placeholder?: string; onCommit: (value: string) => void; }): React.JSX.Element — Compact text input row used by the inspector header and component cards.
+- `FieldRow` (function): function FieldRow({ label, children, title }: { label: string; children: ReactNode; title?: string }): JSX.Element — Labeled row wrapper aligning a caption with one or more fields.
+- `SectionAction` (function): function SectionAction({ label, onClick, active = false, disabled = false, children, }: { label: string; onClick: () => void; active?: boolean; disabled?: boolean; children: ReactNode; }): JSX.Element — Small ghost action used inside section headers (reset, link).
+- `TextField` (function): function TextField({ label, value, placeholder, onCommit, }: { label: string; value: string; placeholder?: string; onCommit: (value: string) => void; }): JSX.Element — Compact text input row used by the inspector header and component cards.
 
 ## @jgengine/editor/shell/glbThumbnailCache
 
@@ -1000,7 +1000,7 @@
 
 ## @jgengine/editor/shell/icons
 
-- `Icon` (function): function Icon({ name, size = 14, ...rest }: { name: IconName; size?: number } & SVGProps<SVGSVGElement>): React.JSX.Element — One 16px stroke icon from the shell's internal set; sized via the `size` prop.
+- `Icon` (function): function Icon({ name, size = 14, ...rest }: { name: IconName; size?: number } & SVGProps<SVGSVGElement>): JSX.Element — One 16px stroke icon from the shell's internal set; sized via the `size` prop.
 - `IconName` (type): type IconName = | "cursor" | "move" | "rotate" | "scale" | "terrain" | "brush" | "grid" | "magnet" | "frame" | "camera" | "eye" | "eyeOff" | "lock" | "unlock" | "search" | "filter" | "plus" | "folder" | "folderOpen" | "cube" | "pin" | "sphere" | "spline" | "note" | "play" | "pause" | "step" | "stop"… — Internal editor icon set: compact 16px stroke glyphs drawn in-repo so the shell has one consistent icon language without adding a dependency. Every glyph is original geometry.
 - `kindIcon` (function): function kindIcon(kind: string): IconName — Icon assigned to a scene-object kind for hierarchy rows and inspector headers.
 
@@ -1052,16 +1052,16 @@
 
 ## @jgengine/editor/shell/ui
 
-- `CollapsibleSection` (function): function CollapsibleSection({ title, icon, open, onToggle, children, trailing, tone, }: { title: string; icon?: IconName; open: boolean; onToggle: () => void; children: ReactNode; trailing?: ReactNode; /** Optional accent color for the title icon. */ tone?: string; }): React.JSX.Element — Collapsible component card for the inspector and side panels.
-- `EmptyState` (function): function EmptyState({ icon, title, description, badge, children, }: { icon: IconName; title: string; description: string; badge?: string; children?: ReactNode; }): React.JSX.Element — Polished empty state used by unsupported workspaces and empty docks.
-- `IconButton` (function): function IconButton({ icon, label, onClick, active = false, disabled = false, size = 14, className = "", tone = "neutral", }: { icon: IconName; label: string; onClick?: () => void; active?: boolean; disabled?: boolean; size?: number; className?: string; tone?: "neutral" | "ghost"; }): React.JSX.Elem… — Icon-only control with a mandatory accessible name (tooltip + aria-label).
-- `Kbd` (function): function Kbd({ children }: { children: ReactNode }): React.JSX.Element — Keyboard-shortcut chip rendered inside buttons and menus.
-- `PanelHeading` (function): function PanelHeading({ children, trailing }: { children: ReactNode; trailing?: ReactNode }): React.JSX.Element — Micro uppercase heading used inside panels.
-- `PanelResizer` (function): function PanelResizer({ orientation, label, onResize, sign = 1, }: { orientation: "vertical" | "horizontal"; label: string; onResize: (delta: number) => void; sign?: 1 | -1; }): React.JSX.Element — Drag handle between shell regions. Pointer-drag resizes continuously; arrow keys resize in 16px steps for keyboard access. `sign` maps a positive pointer delta to a size increase.
-- `PanelTabs` (function): function PanelTabs<T extends string>({ tabs, active, onSelect, trailing, ariaLabel, }: { tabs: readonly { id: T; label: string; icon?: IconName; badge?: string | number }[]; active: T; onSelect: (id: T) => void; trailing?: ReactNode; ariaLabel: string; }): React.JSX.Element — Horizontal tab strip for dock panels (bottom dock, inspector tabs).
-- `Segmented` (function): function Segmented<T extends string>({ options, value, onChange, ariaLabel, disabled = false, }: { options: readonly SegmentedOption<T>[]; value: T; onChange: (value: T) => void; ariaLabel: string; disabled?: boolean; }): React.JSX.Element — Compact segmented control on the elevated-control surface with a cyan active segment.
+- `CollapsibleSection` (function): function CollapsibleSection({ title, icon, open, onToggle, children, trailing, tone, }: { title: string; icon?: IconName; open: boolean; onToggle: () => void; children: ReactNode; trailing?: ReactNode; /** Optional accent color for the title icon. */ tone?: string; }): JSX.Element — Collapsible component card for the inspector and side panels.
+- `EmptyState` (function): function EmptyState({ icon, title, description, badge, children, }: { icon: IconName; title: string; description: string; badge?: string; children?: ReactNode; }): JSX.Element — Polished empty state used by unsupported workspaces and empty docks.
+- `IconButton` (function): function IconButton({ icon, label, onClick, active = false, disabled = false, size = 14, className = "", tone = "neutral", }: { icon: IconName; label: string; onClick?: () => void; active?: boolean; disabled?: boolean; size?: number; className?: string; tone?: "neutral" | "ghost"; }): JSX.Element — Icon-only control with a mandatory accessible name (tooltip + aria-label).
+- `Kbd` (function): function Kbd({ children }: { children: ReactNode }): JSX.Element — Keyboard-shortcut chip rendered inside buttons and menus.
+- `PanelHeading` (function): function PanelHeading({ children, trailing }: { children: ReactNode; trailing?: ReactNode }): JSX.Element — Micro uppercase heading used inside panels.
+- `PanelResizer` (function): function PanelResizer({ orientation, label, onResize, sign = 1, }: { orientation: "vertical" | "horizontal"; label: string; onResize: (delta: number) => void; sign?: 1 | -1; }): JSX.Element — Drag handle between shell regions. Pointer-drag resizes continuously; arrow keys resize in 16px steps for keyboard access. `sign` maps a positive pointer delta to a size increase.
+- `PanelTabs` (function): function PanelTabs<T extends string>({ tabs, active, onSelect, trailing, ariaLabel, }: { tabs: readonly { id: T; label: string; icon?: IconName; badge?: string | number }[]; active: T; onSelect: (id: T) => void; trailing?: ReactNode; ariaLabel: string; }): JSX.Element — Horizontal tab strip for dock panels (bottom dock, inspector tabs).
+- `Segmented` (function): function Segmented<T extends string>({ options, value, onChange, ariaLabel, disabled = false, }: { options: readonly SegmentedOption<T>[]; value: T; onChange: (value: T) => void; ariaLabel: string; disabled?: boolean; }): JSX.Element — Compact segmented control on the elevated-control surface with a cyan active segment.
 - `SegmentedOption` (interface): interface SegmentedOption<T extends string> — One choice within a {@link Segmented} control.
-- `ToolbarDivider` (function): function ToolbarDivider(): React.JSX.Element — Thin vertical divider between toolbar clusters.
+- `ToolbarDivider` (function): function ToolbarDivider(): JSX.Element — Thin vertical divider between toolbar clusters.
 
 ## @jgengine/editor/terrainReadoutStore
 

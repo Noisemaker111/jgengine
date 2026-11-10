@@ -5,7 +5,7 @@
  */
 
 /** A length for the wire: points, `"N%"`, or `"auto"`. `null` means it could not be expressed. */
-/** Points, `"40%"`, `"auto"`, or a calc: `[points, fraction]` / `[points, fraction, other points, other fraction, mode]` (mode 1 `min()`, 2 `max()`). */
+/** Points, `"40%"`, `"auto"`, or a calc: `[points, fraction]` / `[points, fraction, other points, other fraction, mode]` (mode 1 `min()`, 2 `max()`; mode 3 `clamp()`, where the other two are its low and high ends in points). */
 export type WireDim = number | string | number[];
 
 const colorCache = new Map<string, number>();
@@ -139,6 +139,16 @@ export function parseDim(text: string): WireDim | null {
     const other = parts[1];
     if (parts.length !== 2 || first === null || first === undefined || other === null || other === undefined) return null;
     return [first[0], first[1], other[0], other[1], pick[1] === "min" ? 1 : 2];
+  }
+  // `clamp(low, value, high)` with fixed ends, as written or inside the `calc(0px + ...)` a custom property leaves.
+  const clamp = /^(?:calc\(0px \+ )?clamp\((.*)\)\)?$/.exec(text);
+  if (clamp !== null) {
+    const parts = splitTop(clamp[1] ?? "", ",").map((part) => parseLengthPercent(part));
+    const [low, value, high] = parts;
+    if (parts.length === 3 && low !== null && low !== undefined && value !== null && value !== undefined && high !== null && high !== undefined && low[1] === 0 && high[1] === 0) {
+      return [value[0], value[1], low[0], high[0], 3];
+    }
+    return null;
   }
   if (text.startsWith("calc(")) return parseLengthPercent(text);
   return null;

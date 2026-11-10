@@ -277,6 +277,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `holdToggleActive` (function) · `import { holdToggleActive } from "@jgengine/core/settings/accessibilitySettings"`
 
+## host-mount — run a game inside a page built with any UI library by mounting the player into an element
+
+- `mountGamePlayer` (function) · `import { mountGamePlayer } from "@jgengine/shell/mountGamePlayer"`
+
 ## hud-auto-layout — place HUD panels by anchor and priority so none overlap at any screen size
 
 - `arrangeHudPanels` (function) · `import { arrangeHudPanels } from "@jgengine/react"`
@@ -751,6 +755,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## resolve-game-look — expand a look preset and lighting mood into concrete lighting/backdrop/post knobs
 
 - `resolveGameLook` (function) · `import { resolveGameLook } from "@jgengine/core/ui"`
+
+## rune-layer — draw a UI subtree through the Rune canvas instead of the DOM
+
+- `RuneLayer` (function) · `import { RuneLayer } from "@jgengine/core/ui/rune/runeLayer.view"`
 
 ## save-slot-card — save slot as a card — thumbnail, character, playtime, progress, timestamp, confirmed delete
 

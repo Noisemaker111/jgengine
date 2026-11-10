@@ -23,7 +23,7 @@ Project an existing array directly. Keep the array stable with the same memo or
 selector the project already uses.
 
 ```tsx
-import { useMemo } from "react";
+import { useMemo } from "@jgengine/core/ui/jsx";
 import { Minimap } from "@jgengine/core/map/map.view";
 
 interface Unit {
@@ -71,7 +71,7 @@ until the external store emits, so React snapshot reads do not remap the world
 on every frame.
 
 ```tsx
-import { useMemo } from "react";
+import { useMemo } from "@jgengine/core/ui/jsx";
 import { createMarkerSource } from "@jgengine/core/map/markers";
 import { Minimap } from "@jgengine/core/map/map.view";
 

@@ -121,7 +121,7 @@ A custom `WorldOverlay` rig can keep `camera.firstPerson.viewmodel: false` and
 register its own live muzzle for the shell's tracer presentation:
 
 ```tsx
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 import { Group, Object3D } from "three";
 import { registerFirstPersonMuzzle } from "@jgengine/core/camera/customMuzzle.draw";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";

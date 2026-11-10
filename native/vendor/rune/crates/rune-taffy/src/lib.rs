@@ -16,7 +16,8 @@ mod view;
 
 /// jgengine patch: a CSS `calc()` length, the value behind `Dimension::calc(ptr)`. It resolves to
 /// `px + fraction * basis`, and with `mode` 1 or 2 to the smaller or larger of that and
-/// `other_px + other_fraction * basis` (CSS `min()` and `max()`).
+/// `other_px + other_fraction * basis` (CSS `min()` and `max()`). Mode 3 is `clamp()`: the value held
+/// between `other_px` and `other_fraction`, both in points.
 #[repr(C, align(8))]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Calc {
@@ -44,6 +45,8 @@ impl Calc {
         match c.mode {
             1 => first.min(other),
             2 => first.max(other),
+            // `clamp()`: the other two fields are its low and high ends, in points.
+            3 => first.min(c.other_fraction).max(c.other_px),
             _ => first,
         }
     }

@@ -4993,6 +4993,16 @@
       "intent": "exclude private sessions from public browse results"
     },
     {
+      "id": "host-mount",
+      "packages": [
+        "@jgengine/shell"
+      ],
+      "module": "@jgengine/shell/mountGamePlayer",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "run a game inside a page built with any UI library by mounting the player into an element"
+    },
+    {
       "id": "host-rate-limit",
       "packages": [
         "@jgengine/convex"
@@ -9747,6 +9757,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "a roguelike run built from stacking drafted modifier picks"
+    },
+    {
+      "id": "rune-layer",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/ui/rune/runeLayer.view",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "draw a UI subtree through the Rune canvas instead of the DOM"
     },
     {
       "id": "runtime",

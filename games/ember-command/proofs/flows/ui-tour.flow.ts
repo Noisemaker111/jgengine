@@ -1,6 +1,6 @@
 import { defineFlow } from "@jgengine/core/play/flow";
 import { game } from "../../src/game.config";
-import { uiTour } from "./uiTour";
+import { uiTour } from "@jgengine/core/play/uiTour";
 
 const firstSwitch = ".ec-settings-sheet [role=switch]";
 

@@ -107,11 +107,11 @@
 
 ## @jgengine/core/devtools/ColPanel.view
 
-- `ColPanel` (function): function ColPanel(): React.JSX.Element — ⚠ undocumented
+- `ColPanel` (function): function ColPanel(): JSX.Element — ⚠ undocumented
 
 ## @jgengine/core/devtools/CollisionDebugWorld.draw
 
-- `CollisionDebugWorld` (function): function CollisionDebugWorld(): React.JSX.Element | null — World-space collision debugger. Performs zero scene scans and zero raycasts when every layer is off. Mount only when shell devtools are enabled.
+- `CollisionDebugWorld` (function): function CollisionDebugWorld(): JSX.Element | null — World-space collision debugger. Performs zero scene scans and zero raycasts when every layer is off. Mount only when shell devtools are enabled.
 
 ## @jgengine/core/devtools/FpsCounter.draw
 
@@ -119,23 +119,23 @@
 
 ## @jgengine/core/devtools/KeysPanel.view
 
-- `KeysPanel` (function): function KeysPanel({ input }: { input: ActionCodesMap | undefined }): React.JSX.Element — ⚠ undocumented
+- `KeysPanel` (function): function KeysPanel({ input }: { input: ActionCodesMap | undefined }): JSX.Element — ⚠ undocumented
 
 ## @jgengine/core/devtools/LogsPanel.view
 
-- `LogsPanel` (function): function LogsPanel(): React.JSX.Element — ⚠ undocumented
+- `LogsPanel` (function): function LogsPanel(): JSX.Element — ⚠ undocumented
 
 ## @jgengine/core/devtools/NetPanel.draw
 
-- `NetPanel` (function): function NetPanel({ multiplayer }: { multiplayer: ShellMultiplayer | null }): React.JSX.Element — ⚠ undocumented
+- `NetPanel` (function): function NetPanel({ multiplayer }: { multiplayer: ShellMultiplayer | null }): JSX.Element — ⚠ undocumented
 
 ## @jgengine/core/devtools/PerfPanel.view
 
-- `PerfPanel` (function): function PerfPanel({ ctx }: { ctx: GameContext }): React.JSX.Element — ⚠ undocumented
+- `PerfPanel` (function): function PerfPanel({ ctx }: { ctx: GameContext }): JSX.Element — ⚠ undocumented
 
 ## @jgengine/core/devtools/TunePanel.view
 
-- `TunePanel` (function): function TunePanel({ gameName }: { gameName: string }): React.JSX.Element — ⚠ undocumented
+- `TunePanel` (function): function TunePanel({ gameName }: { gameName: string }): JSX.Element — ⚠ undocumented
 - `tuneControlLabels` (function): function tuneControlLabels(name: string): { range: string; number: string } — Accessible names for one tunable's inputs: the number field answers to the control name itself, so `drive --fill "<name>=<value>"` and a screen reader both find it; the range is `<name> slider`.
 
 ## @jgengine/core/devtools/agentBridge.draw
@@ -247,8 +247,8 @@
 
 ## @jgengine/core/devtools/diagnosticOverlay.view
 
-- `DiagnosticOverlay` (function): function DiagnosticOverlay({ diagnostics, gameName }: { diagnostics: RuntimeDiagnostic[]; gameName: string }): React.JSX.Element | null — ⚠ undocumented
-- `ErrorReportActions` (function): function ErrorReportActions({ report, issueTitle }: { report: string; issueTitle: string }): React.JSX.Element — "Copy error" + "File issue" buttons for any error surface. `report` is the full text to copy / prefill.
+- `DiagnosticOverlay` (function): function DiagnosticOverlay({ diagnostics, gameName }: { diagnostics: RuntimeDiagnostic[]; gameName: string }): JSX.Element | null — ⚠ undocumented
+- `ErrorReportActions` (function): function ErrorReportActions({ report, issueTitle }: { report: string; issueTitle: string }): JSX.Element — "Copy error" + "File issue" buttons for any error surface. `report` is the full text to copy / prefill.
 - `GameUiErrorBoundary` (class): class GameUiErrorBoundary extends Component< { children: ReactNode; onRuntimeError: (error: unknown, phase: string, componentStack?: string) => void }, { failed: boolean } > — ⚠ undocumented
 - `RuntimeDiagnostic` (interface): interface RuntimeDiagnostic { id: number; phase: string; message: string; stack?: string | undefined; componentStack?: string | undefined; capturedAt: string } — ⚠ undocumented
 - `errorReportContext` (function): function errorReportContext(): string — Standalone error footer text (page, browser, engine) shared by every error surface.
@@ -335,7 +335,7 @@
 
 ## @jgengine/core/devtools/panelAtoms.view
 
-- `SectionLabel` (function): function SectionLabel({ children }: { children: string }): React.JSX.Element — ⚠ undocumented
+- `SectionLabel` (function): function SectionLabel({ children }: { children: string }): JSX.Element — ⚠ undocumented
 - `ms` (function): function ms(value: number): string — ⚠ undocumented
 
 ## @jgengine/core/devtools/perfDiagnose.view
@@ -350,11 +350,11 @@
 
 ## @jgengine/core/devtools/renderCounter
 
-- `ComponentRenders` (interface): interface ComponentRenders — Which React components rendered, and how often: the evidence that a changing value re-renders only its own leaf. It stands in for React DevTools' global hook, so it has to be installed before React loads: a page gets it as a script ahead of its own (`bun run drive --renders`), and every `bun test` gets it from the test preload, so a test can count renders of a real game HUD.
+- `ComponentRenders` (interface): interface ComponentRenders — Which components rendered, and how often: the evidence that a changing value re-renders only its own leaf. The engine's UI runtime reports every component render and every commit to the counter installed on the page (`bun run drive --renders`) or by the test preload, so a test can count renders of a real game HUD. It can be installed before or after the runtime loads.
 - `RenderCounter` (interface): interface RenderCounter — The installed counter, at `globalThis.__jgRenders`.
 - `RenderCounts` (interface): interface RenderCounts — Every commit and component render since the counter was installed or reset.
-- `installRenderCounter` (function): function installRenderCounter(scope: { __REACT_DEVTOOLS_GLOBAL_HOOK__?: unknown; __jgRenders?: RenderCounter | undefined }): RenderCounter | null — Install the counter as React's devtools hook on `scope`. A component fiber rendered in a commit when it mounted or carries React's PerformedWork flag; a subtree whose child pointer did not change bailed out whole and is not walked, the same test React DevTools uses. Returns null when another devtools hook was there first. Self-contained, so a harness can ship its source to a page.
-- `renderCounter` (function): function renderCounter(): RenderCounter | null — The counter the test preload or the page script installed, or null when React loaded first.
+- `installRenderCounter` (function): function installRenderCounter(scope: { __jgRenders?: RenderCounter | undefined; __jgRenderSink?: { render(type: unknown): void; commit(): void } | undefined }): RenderCounter — Install the counter on `scope`: the UI runtime calls its sink once per component render (a component that bailed out is never called) and once per commit. Self-contained, so a harness can ship its source to a page.
+- `renderCounter` (function): function renderCounter(): RenderCounter | null — The counter the test preload or the page script installed, or null when there is none.
 
 ## @jgengine/core/devtools/report
 
@@ -851,7 +851,7 @@
 ## @jgengine/shell/GameHost
 
 - `EditorSummonModule` (interface): interface EditorSummonModule — Structural shape of the module `GameHost`'s `editor` loader resolves — `import("@jgengine/editor")` satisfies it.
-- `GameHost` (function): function GameHost({ playable, gameId, wsUrl, multiplayer, resolveMultiplayer, editor, creator, creatorOpen = false, onCreatorOpenChange }: GameHostProps): React.JSX.Element — The one documented mount: resolves multiplayer for the playable and renders the shell. With the `editor` loader prop it also owns the whole editor summon (F2+E, `?mode=editor`, dev save endpoint).
+- `GameHost` (function): function GameHost({ playable, gameId, wsUrl, multiplayer, resolveMultiplayer, editor, creator, creatorOpen = false, onCreatorOpenChange }: GameHostProps): JSX.Element — The one documented mount: resolves multiplayer for the playable and renders the shell. With the `editor` loader prop it also owns the whole editor summon (F2+E, `?mode=editor`, dev save endpoint).
 - `GameHostProps` (interface): interface GameHostProps — Props for {@link GameHost}: the playable, optional multiplayer overrides, and the optional editor loader that enables the engine-owned F2+E summon.
 
 ## @jgengine/shell/defineGame
@@ -861,8 +861,8 @@
 
 ## @jgengine/shell/gameKit
 
-- `Clock` (const): const Clock: React.NamedExoticComponent<{ format?: "24h" | "12h" | undefined; showDay?: boolean | undefined; controls?: boolean | undefined; style?: React.CSSProperties | undefined; className?: string | undefined; }> — A time-of-day clock reading the sim calendar — `Day N · HH:MM`, 24h or 12h. `controls` adds pause + the game's speed multipliers as clickable pills (the "fast-forward" bar), off by default so a game opts into letting the player scrub time.
-- `Coins` (function): function Coins({ currencyId, icon = "🪙", style, className, }: { currencyId: string; icon?: ReactNode; style?: CSSProperties; className?: string; }): React.JSX.Element — A currency counter — an icon (emoji/char, default a coin) plus the live amount for `currencyId`. *
+- `Clock` (const): const Clock: NamedExoticComponent<{ format?: "24h" | "12h" | undefined; showDay?: boolean | undefined; controls?: boolean | undefined; style?: CSSProperties | undefined; className?: string | undefined; }> — A time-of-day clock reading the sim calendar — `Day N · HH:MM`, 24h or 12h. `controls` adds pause + the game's speed multipliers as clickable pills (the "fast-forward" bar), off by default so a game opts into letting the player scrub time.
+- `Coins` (function): function Coins({ currencyId, icon = "🪙", style, className, }: { currencyId: string; icon?: ReactNode; style?: CSSProperties; className?: string; }): JSX.Element — A currency counter — an icon (emoji/char, default a coin) plus the live amount for `currencyId`. *
 - `DEFAULT_DRIVE_CODES` (const): const DEFAULT_DRIVE_CODES: { readonly throttle: readonly ["KeyW", "ArrowUp"]; readonly brake: readonly ["KeyS", "ArrowDown"]; readonly steerLeft: readonly ["KeyA", "ArrowLeft"]; readonly steerRight: readonly ["KeyD", "ArrowRight"]; readonly handbrake: readonly ["Space"]; } — Stock keyboard codes for driving a vehicle: WASD or the arrows for throttle, brake and steering, Space for the handbrake. Spread it as the base of a racing map and override what the game uses differently (`input: { ...DEFAULT_DRIVE_CODES, handbrake: ["KeyX"], hop: ["Space"] }`).
 - `DEFAULT_WALK_CODES` (const): const DEFAULT_WALK_CODES: { readonly moveForward: readonly ["KeyW"]; readonly moveBack: readonly ["KeyS"]; readonly moveLeft: readonly ["KeyA"]; readonly moveRight: readonly ["KeyD"]; readonly jump: readonly ["Space"]; } — Stock keyboard codes for the shell walk controller: WASD to move, Space to jump. Spread it as the base of a game's map (`input: { ...DEFAULT_WALK_CODES, sprint: ["ShiftLeft"], interact: ["KeyE"] }`) instead of re-typing the same five bindings in every game.
 - `EditorCatalogDefinition` (interface): interface EditorCatalogDefinition — Game-exported catalog definition: a `ParamSchema` plus default entries. Schemas stay in code; entry values merge into `document.catalogs` and are what the editor/RPC edits and saves.
@@ -871,13 +871,13 @@
 - `GameCameraConfig` (interface): interface GameCameraConfig — Camera tuning for the shell's rig stack: pick the rig via `rig`, then tune it through its matching config block. All fields optional — the default is the third-person orbit rig.
 - `GameConfig` (type): type GameConfig<TAssetRef extends ModelAssetRef = ModelAssetRef, TProbe extends ProbeReadings = ProbeReadings> = EngineFields<TAssetRef> & PresentationFields<TProbe> — ⚠ undocumented · used by `defineGame`: The one public authoring entry point: compose engine fields (systems, world, physics, input) and presentation fields (camera, HUD, audio, au…
 - `GameContext` (interface): interface GameContext — The live engine handle a game's loop, systems, commands, and UI read and mutate — entities, objects, the reactive store, opted-in `game.*` subsystems, world queries, and the sim clock. One context = one running world.
-- `GameHost` (function): function GameHost({ playable, gameId, wsUrl, multiplayer, resolveMultiplayer, editor, creator, creatorOpen = false, onCreatorOpenChange }: GameHostProps): React.JSX.Element — The one documented mount: resolves multiplayer for the playable and renders the shell. With the `editor` loader prop it also owns the whole editor summon (F2+E, `?mode=editor`, dev save endpoint).
+- `GameHost` (function): function GameHost({ playable, gameId, wsUrl, multiplayer, resolveMultiplayer, editor, creator, creatorOpen = false, onCreatorOpenChange }: GameHostProps): JSX.Element — The one documented mount: resolves multiplayer for the playable and renders the shell. With the `editor` loader prop it also owns the whole editor summon (F2+E, `?mode=editor`, dev save endpoint).
 - `GameHostProps` (interface): interface GameHostProps — Props for {@link GameHost}: the playable, optional multiplayer overrides, and the optional editor loader that enables the engine-owned F2+E summon.
 - `GameLoop` (interface): interface GameLoop<TContext = unknown> — Lifecycle hooks a game implements to drive init, per-tick simulation, and player join/leave.
-- `Hotbar` (const): const Hotbar: React.NamedExoticComponent<{ inventoryId: string; activeSlot?: number | undefined; keys?: readonly string[] | undefined; slotSize?: number | undefined; itemIcon?: ((itemId: string) => React.ReactNode) | undefined; style?: React.CSSProperties | undefined; className?: string | undefined;… — A numbered hotbar bound to an inventory — painted iconed slots (a `GameIcon` glyph over a school-keyed gradient with a count badge, #1035), an active-slot highlight, and a keycap per slot. Place it and pass the `inventoryId`; `activeSlot` highlights the equipped one. Supply `itemIcon` to map your item ids to your own glyphs — the default resolves a `GameIcon` from the item id.
-- `HudCanvas` (const): const HudCanvas: React.NamedExoticComponent<{ layout: HudLayoutStore; editChord?: false | HudEditChord | undefined; showDuring?: readonly GamePhase[] | undefined; className?: string | undefined; style?: React.CSSProperties | undefined; children?: React.ReactNode; }> — Full-viewport HUD surface. Each `HudPanel` names an anchor and a priority; the canvas measures every panel and places them all at once so none lands on another, at any screen size. Panels sharing an anchor stack outward from that edge; a panel that would cover a neighbour slides along its edge to the nearest free spot; when the screen is too small, the lowest-priority panels fold into a toggle, and only then does the whole HUD shrink. Device safe areas and every touch control (any region registered as kind `control` or `system`) are kept clear. Games declare panels, never place them per size.
-- `HudFade` (const): const HudFade: React.NamedExoticComponent<HudFadeProps> — A HUD group that steps back when nothing is happening: it fades after a quiet spell and comes back the moment a watched value changes, so the world fills the screen and the HUD speaks only when it has news. Hovering it also brings it back. It reads `watch` and `hold` every frame and sets its own opacity, so it never re-renders, and neither do its children, for a value it watches.
-- `HudPanel` (const): const HudPanel: React.NamedExoticComponent<{ id: string; anchor?: HudAnchor | undefined; order?: number | undefined; chip?: string | undefined; interactive?: boolean | undefined; inset?: { x: number; y: number; } | undefined; locked?: boolean | undefined; showDuring?: readonly GamePhase[] | undefine… — A HUD block anchored to a corner, edge or the centre. `HudCanvas` places every panel together: panels sharing an anchor stack outward from the screen edge in ascending `order`, and a panel that would cover another slides to the nearest free spot. When the screen is too small, lower-`priority` panels fold into a toggle first. On fine pointers panels stay draggable through the edit chord; a dragged panel leaves the flow and keeps its custom placement.
+- `Hotbar` (const): const Hotbar: NamedExoticComponent<{ inventoryId: string; activeSlot?: number | undefined; keys?: readonly string[] | undefined; slotSize?: number | undefined; itemIcon?: ((itemId: string) => UiNode) | undefined; style?: CSSProperties | undefined; className?: string | undefined; }> — A numbered hotbar bound to an inventory — painted iconed slots (a `GameIcon` glyph over a school-keyed gradient with a count badge, #1035), an active-slot highlight, and a keycap per slot. Place it and pass the `inventoryId`; `activeSlot` highlights the equipped one. Supply `itemIcon` to map your item ids to your own glyphs — the default resolves a `GameIcon` from the item id.
+- `HudCanvas` (const): const HudCanvas: NamedExoticComponent<{ layout: HudLayoutStore; editChord?: false | HudEditChord | undefined; showDuring?: readonly GamePhase[] | undefined; className?: string | undefined; style?: CSSProperties | undefined; children?: UiNode; }> — Full-viewport HUD surface. Each `HudPanel` names an anchor and a priority; the canvas measures every panel and places them all at once so none lands on another, at any screen size. Panels sharing an anchor stack outward from that edge; a panel that would cover a neighbour slides along its edge to the nearest free spot; when the screen is too small, the lowest-priority panels fold into a toggle, and only then does the whole HUD shrink. Device safe areas and every touch control (any region registered as kind `control` or `system`) are kept clear. Games declare panels, never place them per size.
+- `HudFade` (const): const HudFade: NamedExoticComponent<HudFadeProps> — A HUD group that steps back when nothing is happening: it fades after a quiet spell and comes back the moment a watched value changes, so the world fills the screen and the HUD speaks only when it has news. Hovering it also brings it back. It reads `watch` and `hold` every frame and sets its own opacity, so it never re-renders, and neither do its children, for a value it watches.
+- `HudPanel` (const): const HudPanel: NamedExoticComponent<{ id: string; anchor?: HudAnchor | undefined; order?: number | undefined; chip?: string | undefined; interactive?: boolean | undefined; inset?: { x: number; y: number; } | undefined; locked?: boolean | undefined; showDuring?: readonly GamePhase[] | undefined; pri… — A HUD block anchored to a corner, edge or the centre. `HudCanvas` places every panel together: panels sharing an anchor stack outward from the screen edge in ascending `order`, and a panel that would cover another slides to the nearest free spot. When the screen is too small, lower-`priority` panels fold into a toggle first. On fine pointers panels stay draggable through the edit chord; a dragged panel leaves the flow and keeps its custom placement.
 - `HudSlots` (function): function HudSlots({ storageKey, slots = {}, panels = {}, overlay, showDuring = DEFAULT_SLOT_PHASES, className }: HudSlotsProps): ReactNode — The play HUD in one line: a few small panels pinned to the screen's edges, scaled from a 1600x900 design to any window and movable by the player (the layout is remembered per `storageKey`). Keep it to a handful of slots; the world is the picture.
 - `PlayableGame` (type): type PlayableGame<TProbe extends ProbeReadings = ProbeReadings> = PlayableGameContract< ComponentType, ComponentType, RenderEntity, RenderObject, ComponentType<ViewmodelProps>, ComponentType<WorldOverlayProps>, TProbe, ComponentType<RemotePlayersProps> > & { /** HUD theme the shell applies at the `G… — The concrete React-bound playable a shell `defineGame` returns and `GameHost` mounts — the one PlayableGame games handle. `TProbe` is what the game's `capture.probe` returns, so a proof flow over `typeof game` names only real probes.
 - `StoreHandle` (interface): interface StoreHandle<T> — A typed, cast-free handle onto one slot of the reactive game store (`ctx.game.store`). The single type parameter is fixed at definition; `read`/`write`/`update` never widen to `unknown`, so no call site repeats `store.get(key) as T`. Writes flow through the engine store, so they bump `ctx.version()`, serialize into a {@link WorldSnapshot}, and replay under host authority — the same guarantees a hand-rolled `store.get`/`store.set` pair gives up the moment it forks run state into a module-level singleton.

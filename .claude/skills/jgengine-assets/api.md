@@ -1149,9 +1149,9 @@
 
 ## @jgengine/core/model/SceneModels.draw
 
-- `EntityModel` (function): function EntityModel({ model, instanceId, measure, lodLevel = 0, }: { model: ModelConfig; instanceId?: string | undefined; measure?: MeasureTarget | undefined; /** The variant level being drawn. Past the source level, a simplified asset may have dropped a selected slot. */ lodLevel?: number; }): Rea… — Draws an entity's model at the given LOD level, with animation, paint layer and bounds measurement.
-- `EntitySprite` (function): function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }): React.JSX.Element — Draws an entity as a camera-facing sprite, playing its atlas clip when it has one.
-- `IsolatedEntityModel` (function): function IsolatedEntityModel(props: IsolatedEntityModelProps): React.JSX.Element — Draws one entity model from its own loaded copy, for models that cannot share a batched instance; a live `instanceId` draws its `look`.
+- `EntityModel` (function): function EntityModel({ model, instanceId, measure, lodLevel = 0, }: { model: ModelConfig; instanceId?: string | undefined; measure?: MeasureTarget | undefined; /** The variant level being drawn. Past the source level, a simplified asset may have dropped a selected slot. */ lodLevel?: number; }): JSX… — Draws an entity's model at the given LOD level, with animation, paint layer and bounds measurement.
+- `EntitySprite` (function): function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }): JSX.Element — Draws an entity as a camera-facing sprite, playing its atlas clip when it has one.
+- `IsolatedEntityModel` (function): function IsolatedEntityModel(props: IsolatedEntityModelProps): JSX.Element — Draws one entity model from its own loaded copy, for models that cannot share a batched instance; a live `instanceId` draws its `look`.
 - `useEntityLookModel` (function): function useEntityLookModel(model: ModelConfig | undefined, instanceId: string | undefined): ModelConfig | undefined — `model` as the live entity `instanceId` draws it: its current `look` laid over the model ({@link modelForLook}), re-rendering only when the look changes. Without an entity, the model itself.
 
 ## @jgengine/core/model/entityModelDraw.draw
@@ -1169,7 +1169,7 @@
 ## @jgengine/core/model/measureBounds.draw
 
 - `MEASURE_EXCLUDE_KEY` (const): const MEASURE_EXCLUDE_KEY: "jgMeasureExclude" — Subtrees flagged with this userData key are excluded from bounds measurement — debug gizmos, selection quads, effect billboards that should not inflate the hitbox. Sprites and invisible subtrees are always excluded.
-- `MeasuredBoundsGroup` (function): function MeasuredBoundsGroup({ target, measureKey, children, }: { target: "entity" | "object"; measureKey: string; children: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `MeasuredBoundsGroup` (function): function MeasuredBoundsGroup({ target, measureKey, children, }: { target: "entity" | "object"; measureKey: string; children: ReactNode; }): JSX.Element — ⚠ undocumented
 - `MeasuredLocalBounds` (interface): interface MeasuredLocalBounds — Entity-local AABB of the meshes under a measured root, plus how many meshes contributed — the count lets callers detect async subtree fill-in without diffing bounds.
 - `measureLocalBounds` (function): function measureLocalBounds(root: THREE.Object3D): MeasuredLocalBounds | null — Measure the meshes under `root` in `root`'s own frame (root's transform is the measuring frame, children compose their local matrices below it). Returns `null` when nothing measurable is mounted. Skinned meshes measure at bind pose — the standard engine approximation.
 - `measuredBoundsDraw` (function): function measuredBoundsDraw(getProps: () => { ctx: GameContext; target: "entity" | "object"; measureKey: string; anchor: THREE.Object3D | null; }): EngineDraw — Wraps custom-rendered actor content (`renderEntity` / `renderObject`) and reports its measured entity-local bounds into collider resolution, so the hitbox wraps what is actually on screen instead of the fixed-size fallback box. A successful measure re-reports only when the subtree gained or lost meshes (async fill-in), not when idle animation nudges the same meshes. The draw-side form measures the caller's group on the same bounded retry schedule.
