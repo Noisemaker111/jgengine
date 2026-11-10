@@ -82,3 +82,11 @@ and `min()` widths in auto-sized parents do not collapse around an empty value.
 `input_columns_shrink` gives percentage-sized fields a zero min-content contribution
 while retaining their character-based max-content width; automatic grid tracks stay
 inside their viewport without losing intrinsic sizing in shrink-to-fit forms.
+
+`crates/rune/src/pixels.rs`, `render/upload.rs` and `Cargo.toml` — browser image
+frames. `Pixels::set_browser_frame` retains a canvas snapshot or a changed video
+frame and wakes its consumer. Each external image has a dedicated GPU texture,
+copied with `copyExternalImageToTexture`; CPU atlas uploads cannot overwrite it.
+The CSS host seeds an embedded canvas once, then uses captured frame callbacks,
+so static canvases need no polling or repeated UI frames. Removal releases the
+browser reference, and changing dimensions reallocates only that image.

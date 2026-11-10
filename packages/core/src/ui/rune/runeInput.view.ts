@@ -85,6 +85,12 @@ export class RuneInput {
   }
 
   destroy(): void {
+    this.focus(null);
+    this.mark("hover", "data-jg-hover", null);
+    this.mark("active", "data-jg-active", null);
+    this.hovered = null;
+    this.pressed = null;
+    this.lastClick = { at: 0, target: null };
     for (const cleanup of this.cleanups.splice(0)) cleanup();
   }
 
@@ -313,28 +319,39 @@ export class RuneInput {
   /** `element.focus()`, `blur()` and `document.activeElement` answer for elements the browser cannot focus. */
   private patchFocus(): void {
     const input = this;
-    const flag = HTMLElement.prototype as { jgRuneFocus?: boolean };
-    if (flag.jgRuneFocus === true) return;
-    flag.jgRuneFocus = true;
+    const flag = HTMLElement.prototype;
+    if ("jgRuneFocus" in flag && flag.jgRuneFocus === true) return;
+    Object.defineProperty(flag, "jgRuneFocus", { value: true, configurable: true });
     const focus = HTMLElement.prototype.focus;
     const blur = HTMLElement.prototype.blur;
-    HTMLElement.prototype.focus = function patchedFocus(this: HTMLElement, options?: FocusOptions): void {
+    const patchedFocus = function patchedFocus(this: HTMLElement, options?: FocusOptions): void {
       if (this.closest("[data-jg-rune-layer]") !== null) input.focus(this);
       else focus.call(this, options);
     };
-    HTMLElement.prototype.blur = function patchedBlur(this: HTMLElement): void {
+    const patchedBlur = function patchedBlur(this: HTMLElement): void {
       if (input.focusedElement === this) input.focus(null);
       else blur.call(this);
     };
+    flag.focus = patchedFocus;
+    flag.blur = patchedBlur;
     const active = Object.getOwnPropertyDescriptor(Document.prototype, "activeElement");
     const read = active?.get;
     if (active !== undefined && read !== undefined) {
+      const readActive = function(this: Document): Element | null {
+        return input.focusedElement ?? (read.call(this) as Element | null); // type-escape: reflection erases the native Document getter's return type.
+      };
       Object.defineProperty(Document.prototype, "activeElement", {
         ...active,
-        get(this: Document) {
-          return input.focusedElement ?? (read.call(this) as Element | null);
-        },
+        get: readActive,
+      });
+      this.cleanups.push(() => {
+        if (Object.getOwnPropertyDescriptor(Document.prototype, "activeElement")?.get === readActive) Object.defineProperty(Document.prototype, "activeElement", active);
       });
     }
+    this.cleanups.push(() => {
+      if (flag.focus === patchedFocus) flag.focus = focus;
+      if (flag.blur === patchedBlur) flag.blur = blur;
+      Reflect.deleteProperty(flag, "jgRuneFocus");
+    });
   }
 }

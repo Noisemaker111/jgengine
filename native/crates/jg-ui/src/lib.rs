@@ -404,6 +404,30 @@ pub fn scroll_to(id: u32, x: f32, y: f32, smooth: bool) {
     });
 }
 
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen::prelude::wasm_bindgen]
+pub fn canvas_frame(id: u32, source: web_sys::HtmlElement) -> Result<(), wasm_bindgen::JsValue> {
+    if widgets::canvas_frame(id, source)? {
+        HANDLE.with(|handle| {
+            if let Some(handle) = handle.borrow().as_ref() {
+                handle.update(|state: &mut Ui, tx: &mut Tx| { state.revision = state.revision.wrapping_add(1); tx.instant(); });
+            }
+        });
+    }
+    Ok(())
+}
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen::prelude::wasm_bindgen]
+pub fn remove_canvas(id: u32) {
+    widgets::remove_canvas(id);
+    HANDLE.with(|handle| {
+        if let Some(handle) = handle.borrow().as_ref() {
+            handle.update(|state: &mut Ui, tx: &mut Tx| { state.revision = state.revision.wrapping_add(1); tx.instant(); });
+        }
+    });
+}
+
 /// JS wrote bound values that may have changed pixels: commit one frame.
 /// Called only when the JS-side diff saw a value move, never per frame.
 #[cfg(target_arch = "wasm32")]
@@ -419,6 +443,7 @@ pub fn values_changed() {
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen::prelude::wasm_bindgen]
 pub fn unmount() {
+    widgets::clear_canvases();
     HANDLE.with(|h| {
         if let Some(handle) = h.borrow().as_ref() {
             handle.quit();

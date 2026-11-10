@@ -136,6 +136,35 @@ impl Renderer {
         let mut changed = self.images.len() != images.pages.len();
         self.images.resize_with(images.pages.len(), || None);
         for (index, page) in images.pages.iter_mut().enumerate() {
+            #[cfg(target_arch = "wasm32")]
+            if let Some(source) = page.external {
+                let fresh = self.images[index].as_ref().is_none_or(|(texture, _)| texture.width() != page.width || texture.height() != page.height
+                    || !texture.usage().contains(wgpu::TextureUsages::RENDER_ATTACHMENT));
+                if fresh {
+                    let texture = device.create_texture(&wgpu::TextureDescriptor {
+                        label: Some("browser image frame"),
+                        size: wgpu::Extent3d { width: page.width, height: page.height, depth_or_array_layers: 1 },
+                        mip_level_count: 1, sample_count: 1, dimension: wgpu::TextureDimension::D2,
+                        format: wgpu::TextureFormat::Rgba8UnormSrgb,
+                        usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::RENDER_ATTACHMENT,
+                        view_formats: &[],
+                    });
+                    let bind = Self::bind_group(device, &self.bind_layout, &self.globals, self.uber.outlines(), &self.atlas, &texture, None);
+                    self.images[index] = Some((texture, bind));
+                    changed = true;
+                }
+                if (fresh || page.external_dirty) && let Some(source) = crate::pixels::browser_frame(source) {
+                    if source.width() != page.width || source.height() != page.height { continue; }
+                    queue.copy_external_image_to_texture(
+                        &wgpu::CopyExternalImageSourceInfo { source, origin: wgpu::Origin2d::ZERO, flip_y: false },
+                        wgpu::CopyExternalImageDestInfo { texture: &self.images[index].as_ref().unwrap().0,
+                            mip_level: 0, origin: wgpu::Origin3d::ZERO, aspect: wgpu::TextureAspect::All,
+                            color_space: wgpu::PredefinedColorSpace::Srgb, premultiplied_alpha: false },
+                        wgpu::Extent3d { width: page.width, height: page.height, depth_or_array_layers: 1 });
+                    page.external_dirty = false;
+                }
+                continue;
+            }
             if page.data.is_empty() { changed |= self.images[index].is_some(); self.images[index] = None; continue; }
             if self.images[index].as_ref().is_none_or(|(t, _)| t.width() != page.width || t.height() != page.height) {
                 let texture = Self::image_texture(device, page.width, page.height);

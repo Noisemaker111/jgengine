@@ -1416,6 +1416,7 @@
     "./ui/rune/runeLayer.view",
     "./ui/rune/runeStage.view",
     "./ui/rune/valueSlots",
+    "./ui/rune/videoFrames.view",
     "./ui/runeUi.view",
     "./ui/sceneSwap.view",
     "./ui/screenMarkers",

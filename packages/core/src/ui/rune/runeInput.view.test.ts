@@ -1,6 +1,33 @@
 import { expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 
+test("destroying Rune input restores browser focus before a DOM fallback or remount", () => {
+  const source = `
+    import { Window } from "happy-dom";
+    import { RuneInput } from ${JSON.stringify(new URL("./runeInput.view.ts", import.meta.url).href)};
+    const win = new Window();
+    Object.assign(globalThis, { window:win, document:win.document, Document:win.Document, Element:win.Element,
+      HTMLElement:win.HTMLElement, Event:win.Event, FocusEvent:win.FocusEvent });
+    const focus = HTMLElement.prototype.focus, blur = HTMLElement.prototype.blur;
+    const active = Object.getOwnPropertyDescriptor(Document.prototype, "activeElement");
+    const layer=document.createElement("div"), field=document.createElement("input");
+    layer.setAttribute("data-jg-rune-layer", ""); layer.append(field); document.body.append(layer);
+    const input=new RuneInput(()=>[]);
+    input.focus(field);
+    if(input.focusedElement!==field) throw new Error("Rune focus was not established");
+    input.destroy();
+    if(input.focusedElement!==null) throw new Error("destroy left simulated focus on the old field");
+    if(HTMLElement.prototype.focus!==focus || HTMLElement.prototype.blur!==blur || Object.getOwnPropertyDescriptor(Document.prototype,"activeElement")?.get!==active?.get) throw new Error("destroy did not restore browser focus methods");
+    const next=new RuneInput(()=>[]);
+    if(HTMLElement.prototype.focus===focus) throw new Error("remounted input still uses the destroyed owner");
+    next.focus(field);
+    next.destroy(); await win.happyDOM.close();
+  `;
+  const result = spawnSync(process.execPath, ["--eval", source], { encoding: "utf8", windowsHide: true, timeout: 10_000 });
+  expect(result.stderr).toBe("");
+  expect(result.status).toBe(0);
+});
+
 test("wheel handlers receive Rune hit-tested input and can cancel native scrolling", () => {
   const source = `
     import { Window } from "happy-dom";

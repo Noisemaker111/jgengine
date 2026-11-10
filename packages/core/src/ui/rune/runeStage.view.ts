@@ -4,7 +4,7 @@
  * for changes, mirrors it to Rune CSS boxes and sends events from Rune back to
  * its elements as ordinary DOM events.
  *
- * Nothing here runs per frame. What a change costs follows what changed: text
+ * Mirroring follows changes. What a change costs follows what changed: text
  * that moved replaces one box's text with no style read; an element whose class
  * or style changed is mirrored again with its subtree; only a resize or a new
  * layer mirrors a whole layer.
@@ -18,6 +18,7 @@ import { twinStateRules } from "./cssStates.view";
 import { installRuneMeasure, runeRectOf, setRuneRect, setRuneScroll } from "./domMeasure.view";
 import { RuneInput } from "./runeInput.view";
 import { boxTransform, composeBoxTransform, transformedBoxRect, type BoxTransform } from "./boxTransform";
+import { watchVideoFrames } from "./videoFrames.view";
 
 interface Layer {
   container: HTMLElement;
@@ -67,9 +68,7 @@ export class RuneStage {
   private mountedFonts = "";
   /** The whole tree must be sent again (a layer came or went, Rune remounted). */
   private stale = true;
-  private readonly islands = new Map<HTMLCanvasElement, HTMLCanvasElement>();
-  private islandHost: HTMLDivElement | null = null;
-  private islandRaf = 0;
+  private readonly canvasFeeds = new Map<HTMLCanvasElement, { stop(): void; received: boolean; streamed: boolean }>();
   private input: RuneInput | null = null;
   private readonly scrollRequests = new Map<Element, { x: number; y: number; smooth: boolean }>();
   /** What the mirror has done and what it cost, for perf probes: passes by kind, boxes built, milliseconds. */
@@ -151,6 +150,7 @@ export class RuneStage {
 
   fontsChanged(): void {
     if (this.ui === null) return;
+    this.stopCanvases();
     // Rune fetches fonts while it mounts, so a font registered later needs a fresh mount.
     this.ui.destroy();
     this.ui = null;
@@ -193,18 +193,26 @@ export class RuneStage {
             if (box !== undefined) ui.scrollTo(box.id, request.x, request.y, request.smooth);
             else this.report.add("scroll request on an element without a Rune box", element);
           }
-          this.placeIslands();
+          this.syncCanvases();
         };
         this.stale = true;
         this.sync();
       })
-      .catch((error: unknown) => {
-        // Left as creating, so nothing tries again; the UI is shown by the page instead.
-        this.failed = true;
-        this.errors.push(String(error));
-        console.error("degraded: the Rune UI layer failed to mount, so the page draws the UI itself (a missing bundle is built by `bun scripts/build-jg-ui-wasm.ts`)", error);
-        for (const listener of [...this.failedListeners]) listener();
-      });
+      .catch((error: unknown) => this.fail(error));
+  }
+
+  private fail(error: unknown): void {
+    if (this.failed) return;
+    this.failed = true;
+    this.creating = true;
+    this.stopCanvases();
+    this.input?.destroy();
+    this.input = null;
+    this.ui?.destroy();
+    this.ui = null;
+    this.errors.push(String(error));
+    console.error("degraded: the Rune UI layer failed, so the page draws the UI itself", error);
+    for (const listener of [...this.failedListeners]) listener();
   }
 
   private onMutations(layer: Layer, records: MutationRecord[]): void {
@@ -418,66 +426,76 @@ export class RuneStage {
     const elapsed = performance.now() - started;
     this.stats.ms += elapsed;
     this.stats.lastMs = elapsed;
+    this.syncCanvases();
   }
 
-  /**
-   * A `<canvas>` inside a layer is never displayed, so each gets a visible copy placed where Rune
-   * laid it out, redrawn from the original every frame while any exist. The copies sit above the
-   * Rune canvas: Rune content meant to overlap a canvas draws under it (a known gap).
-   */
-  private placeIslands(): void {
-    const sources: HTMLCanvasElement[] = [];
-    for (const layer of this.layers) sources.push(...layer.container.querySelectorAll("canvas"));
-    for (const [source, copy] of this.islands) {
-      if (!sources.includes(source)) {
-        copy.remove();
-        this.islands.delete(source);
+  /** Embedded canvases enter Rune's image paint order only when their captured frame changes. */
+  private syncCanvases(): void {
+    const sources = new Map<HTMLCanvasElement, number>();
+    const visit = (box: WireBox): void => {
+      if (box["island"] === 1) {
+        const source = elementOf(box.id);
+        const rect = source === null ? undefined : runeRectOf(source);
+        if (source instanceof HTMLCanvasElement && source.width > 0 && source.height > 0 && rect !== undefined && rect[2] > 0 && rect[3] > 0) sources.set(source, box.id);
+      }
+      for (const child of box.c ?? []) visit(child);
+    };
+    for (const layer of this.layers) if (layer.root !== null) visit(layer.root);
+    for (const [source, feed] of this.canvasFeeds) if (!sources.has(source)) {
+      feed.stop();
+      this.canvasFeeds.delete(source);
+    }
+    for (const [source, id] of sources) if (!this.canvasFeeds.has(source)) {
+      try {
+        const stream = source.captureStream();
+        const video = document.createElement("video");
+        video.muted = true;
+        video.playsInline = true;
+        video.srcObject = stream;
+        let stopped = false;
+        let stopFrames = (): void => {};
+        const stop = (): void => {
+          if (stopped) return;
+          stopped = true;
+          stopFrames();
+          for (const track of stream.getTracks()) track.stop();
+          video.onerror = null;
+          video.srcObject = null;
+          this.ui?.removeCanvas(id);
+        };
+        video.onerror = () => {
+          const error = video.error ?? new Error("embedded canvas playback failed");
+          stop();
+          this.fail(error);
+        };
+        const feed = { stop, received: false, streamed: false };
+        stopFrames = watchVideoFrames(video, frame => {
+          this.ui?.canvasFrame(id, frame);
+          feed.received = true;
+          feed.streamed = true;
+        }, error => {
+          stop();
+          this.fail(error);
+        });
+        if (!stopped) {
+          this.canvasFeeds.set(source, feed);
+          this.ui?.canvasFrame(id, source);
+          feed.received = true;
+          const track = stream.getVideoTracks()[0];
+          if (track === undefined || !("requestFrame" in track) || typeof track.requestFrame !== "function") throw new Error("canvas stream cannot request its initial frame");
+          track.requestFrame();
+        }
+      } catch (error) {
+        this.fail(error);
+        return;
       }
     }
-    if (sources.length === 0) return;
-    if (this.islandHost === null) {
-      this.islandHost = document.createElement("div");
-      this.islandHost.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:41;overflow:hidden";
-      this.islandHost.dataset["jgRuneIslands"] = "";
-      document.body.appendChild(this.islandHost);
-    }
-    for (const source of sources) {
-      const rect = runeRectOf(source);
-      let copy = this.islands.get(source);
-      if (rect === undefined || rect[2] <= 0 || rect[3] <= 0) {
-        if (copy !== undefined) copy.style.display = "none";
-        continue;
-      }
-      if (copy === undefined) {
-        copy = document.createElement("canvas");
-        copy.style.position = "absolute";
-        this.islandHost.appendChild(copy);
-        this.islands.set(source, copy);
-      }
-      copy.style.display = "block";
-      copy.style.left = `${rect[0]}px`;
-      copy.style.top = `${rect[1]}px`;
-      copy.style.width = `${rect[2]}px`;
-      copy.style.height = `${rect[3]}px`;
-      copy.style.borderRadius = getComputedStyle(source).borderRadius;
-    }
-    if (this.islandRaf === 0) this.islandRaf = requestAnimationFrame(this.copyIslands);
   }
 
-  private readonly copyIslands = (): void => {
-    this.islandRaf = 0;
-    if (this.islands.size === 0) return;
-    for (const [source, copy] of this.islands) {
-      if (copy.style.display === "none" || source.width === 0 || source.height === 0) continue;
-      if (copy.width !== source.width) copy.width = source.width;
-      if (copy.height !== source.height) copy.height = source.height;
-      const context = copy.getContext("2d");
-      if (context === null) continue;
-      context.clearRect(0, 0, copy.width, copy.height);
-      context.drawImage(source, 0, 0);
-    }
-    this.islandRaf = requestAnimationFrame(this.copyIslands);
-  };
+  private stopCanvases(): void {
+    for (const feed of this.canvasFeeds.values()) feed.stop();
+    this.canvasFeeds.clear();
+  }
 
   private scrollTo(element: Element, x: number, y: number, smooth: boolean): void {
     const box = boxOfElement(element);

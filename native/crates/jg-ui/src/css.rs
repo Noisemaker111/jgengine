@@ -263,6 +263,8 @@ pub struct Box_ {
     #[serde(default)]
     pub id: u32,
     #[serde(default)]
+    pub island: u8,
+    #[serde(default)]
     pub c: Vec<crate::Node>,
     /// 0 flex, 1 block, 2 grid, 3 none.
     #[serde(default)]
@@ -1278,6 +1280,10 @@ fn build_box(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
             2 => e.pixels_fit(image.pixels(), rune::SurfaceFit::Fit),
             _ => e.pixels(image.pixels()),
         };
+    }
+    if b.island != 0 && let Some(pixels) = crate::widgets::canvas_image(b.id) {
+        e = e.pixels(&pixels);
+        if let Some(radii) = radii { e = e.clip_corners(radii); }
     }
     let own = (!b.cp.is_empty()).then_some(()).and(rect).zip(clip.as_ref()).map(|(r, poly)| poly.iter().map(|p| [p[0] + r[0], p[1] + r[1]]).collect::<Vec<_>>());
     let pushed = own.is_some();

@@ -14,6 +14,25 @@ struct Frame {
     rgba: Vec<u8>,
     generation: u64,
     mips: Option<Arc<crate::image::Decoded>>,
+    #[cfg(target_arch = "wasm32")]
+    external: Option<u64>,
+}
+
+#[cfg(target_arch = "wasm32")]
+thread_local! {
+    static BROWSER_FRAMES: std::cell::RefCell<HashMap<u64, wgpu::ExternalImageSource>> = std::cell::RefCell::new(HashMap::new());
+}
+
+#[cfg(target_arch = "wasm32")]
+impl Drop for Frame {
+    fn drop(&mut self) {
+        if let Some(id) = self.external { BROWSER_FRAMES.with(|frames| frames.borrow_mut().remove(&id)); }
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+pub(crate) fn browser_frame(id: u64) -> Option<wgpu::ExternalImageSource> {
+    BROWSER_FRAMES.with(|frames| frames.borrow().get(&id).cloned())
 }
 
 /// A replaceable RGBA image, shared between the producer and the view. Clone it freely.
@@ -51,7 +70,9 @@ impl Pixels {
         static NEXT: AtomicU64 = AtomicU64::new(1);
         Pixels {
             id: NEXT.fetch_add(1, Ordering::Relaxed),
-            frame: Arc::new(Mutex::new(Frame { width: 0, height: 0, rgba: Vec::new(), generation: 0, mips: None })),
+            frame: Arc::new(Mutex::new(Frame { width: 0, height: 0, rgba: Vec::new(), generation: 0, mips: None,
+                #[cfg(target_arch = "wasm32")] external: None,
+            })),
             source: crate::live::Source::new(0),
             url: None,
             srcset: None,
@@ -91,6 +112,8 @@ impl Pixels {
         assert_eq!(Some(rgba.len()), (width as usize).checked_mul(height as usize).and_then(|n| n.checked_mul(4)), "rgba must hold width * height pixels");
         {
             let mut frame = self.frame.lock().unwrap();
+            #[cfg(target_arch = "wasm32")]
+            if let Some(id) = frame.external.take() { BROWSER_FRAMES.with(|frames| frames.borrow_mut().remove(&id)); }
             frame.width = width;
             frame.height = height;
             frame.rgba = rgba;
@@ -100,9 +123,37 @@ impl Pixels {
         self.source.notify();
     }
 
+    /// Present a canvas snapshot or changed video frame through a dedicated GPU image
+    /// texture. The browser retains its pixels; no readback or CPU atlas copy is needed.
+    #[cfg(target_arch = "wasm32")]
+    pub fn set_browser_frame(&self, source: web_sys::HtmlElement) -> Result<(), wasm_bindgen::JsValue> {
+        use wasm_bindgen::JsCast;
+        let source = if let Some(video) = source.dyn_ref::<web_sys::HtmlVideoElement>() {
+            wgpu::ExternalImageSource::HTMLVideoElement(video.clone())
+        } else if let Some(canvas) = source.dyn_ref::<web_sys::HtmlCanvasElement>() {
+            wgpu::ExternalImageSource::HTMLCanvasElement(canvas.clone())
+        } else { return Err(wasm_bindgen::JsValue::from_str("a browser frame must be a canvas or video")); };
+        let (width, height) = (source.width(), source.height());
+        if width == 0 || height == 0 { return Ok(()); }
+        BROWSER_FRAMES.with(|frames| frames.borrow_mut().insert(self.id, source));
+        {
+            let mut frame = self.frame.lock().unwrap();
+            frame.width = width;
+            frame.height = height;
+            frame.external = Some(self.id);
+            frame.rgba.clear();
+            frame.mips = None;
+            frame.generation += 1;
+        }
+        self.source.notify();
+        Ok(())
+    }
+
     pub(crate) fn set_mips(&self, mips: Arc<crate::image::Decoded>) {
         {
             let mut frame = self.frame.lock().unwrap();
+            #[cfg(target_arch = "wasm32")]
+            if let Some(id) = frame.external.take() { BROWSER_FRAMES.with(|frames| frames.borrow_mut().remove(&id)); }
             frame.width = mips.mips[0].width;
             frame.height = mips.mips[0].height;
             frame.rgba.clear();
@@ -217,6 +268,10 @@ pub struct ImagePage {
     pub data: Vec<u8>,
     /// Rows `[y0, y1)` changed since the last upload.
     pub dirty: Option<(u32, u32)>,
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) external: Option<u64>,
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) external_dirty: bool,
     shelf_x: u32,
     shelf_y: u32,
     shelf_h: u32,
@@ -252,6 +307,8 @@ impl ImageAtlas {
         if w == 0 || h == 0 || w > 8192 || h > 8192 {
             return None;
         }
+        #[cfg(target_arch = "wasm32")]
+        if let Some(source) = frame.external { return Some(self.place_external(pixels.id, &frame, source)); }
         let mut level = 0;
         let bytes = if let Some(decoded) = &frame.mips {
             // Choose the smallest prefiltered level that still covers both device-pixel axes.
@@ -266,7 +323,7 @@ impl ImageAtlas {
             &mip.pixels
         } else { &frame.rgba };
         let key = (pixels.id, level);
-        if self.slots.get(&key).is_some_and(|s| s.w != w || s.h != h) {
+        if self.slots.get(&key).is_some_and(|s| s.w != w || s.h != h || self.pages[s.page].is_external()) {
             self.slots.remove(&key);
         }
         if !self.slots.contains_key(&key) {
@@ -292,6 +349,32 @@ impl ImageAtlas {
         Some(Placed { rect: [slot.x, slot.y, w, h], page: slot.page, premultiplied: frame.mips.is_some() })
     }
 
+    #[cfg(target_arch = "wasm32")]
+    fn place_external(&mut self, id: u64, frame: &Frame, source: u64) -> Placed {
+        let (w, h) = (frame.width, frame.height);
+        let key = (id, 0);
+        if self.slots.get(&key).is_some_and(|slot| slot.w != w || slot.h != h || self.pages[slot.page].external != Some(source)) {
+            self.slots.remove(&key);
+        }
+        if !self.slots.contains_key(&key) {
+            let page = self.pages.iter().position(|page| page.data.is_empty() && page.external.is_none() && !page.shown && !page.touched).unwrap_or(self.pages.len());
+            self.slots.retain(|_, slot| slot.page != page);
+            let image = ImagePage { width: w, height: h, data: Vec::new(), dirty: None,
+                external: Some(source), external_dirty: true, shelf_x: w, shelf_y: 0, shelf_h: h, shown: false, touched: false };
+            if page == self.pages.len() { self.pages.push(image); } else { self.pages[page] = image; }
+            self.slots.insert(key, Slot { page, x: 0, y: 0, w, h, generation: 0 });
+        }
+        let slot = self.slots.get_mut(&key).unwrap();
+        let page = &mut self.pages[slot.page];
+        page.touched = true;
+        if slot.generation != frame.generation {
+            slot.generation = frame.generation;
+            page.external_dirty = true;
+            #[cfg(debug_assertions)] { self.copies += 1; }
+        }
+        Placed { rect: [0, 0, w, h], page: slot.page, premultiplied: false }
+    }
+
     /// Forgets images no element showed since the last call, except on pages that still show
     /// one and on the first page: shelves never reuse a slot's space until their page starts
     /// over, so an image shown again there (a view come back to) needs no copy or upload. A
@@ -299,11 +382,13 @@ impl ImageAtlas {
     /// starts over a page that showed nothing last frame or yet this one before it adds one.
     pub fn end_frame(&mut self) {
         let pages = &self.pages;
-        let first_kept = pages.first().is_some_and(|p| p.width <= IMAGE_ATLAS_SIZE && p.height <= IMAGE_ATLAS_SIZE);
+        let first_kept = pages.first().is_some_and(ImagePage::is_shelf);
         self.slots.retain(|_, s| pages[s.page].touched || (s.page == 0 && first_kept));
         for (i, page) in self.pages.iter_mut().enumerate() {
             page.shown = std::mem::take(&mut page.touched);
             if !self.slots.values().any(|slot| slot.page == i) {
+                #[cfg(target_arch = "wasm32")]
+                { page.external = None; page.external_dirty = false; }
                 (page.shelf_x, page.shelf_y, page.shelf_h) = (0, 0, 0);
                 page.dirty = None;
                 if page.width > IMAGE_ATLAS_SIZE || page.height > IMAGE_ATLAS_SIZE {
@@ -317,17 +402,23 @@ impl ImageAtlas {
 
     /// Marks every row for upload (a new texture).
     pub fn invalidate(&mut self) {
-        for page in &mut self.pages { page.dirty = Some((0, page.height)); }
+        for page in &mut self.pages {
+            #[cfg(target_arch = "wasm32")]
+            if page.external.is_some() { page.external_dirty = true; continue; }
+            page.dirty = Some((0, page.height));
+        }
     }
 
     fn allocate(&mut self, w: u32, h: u32) -> (usize, u32, u32) {
         for (i, page) in self.pages.iter_mut().enumerate() {
+            #[cfg(target_arch = "wasm32")]
+            if page.external.is_some() { continue; }
             if page.data.is_empty() { *page = ImagePage::new(w, h); }
             if let Some((x, y)) = page.allocate(w, h) { return (i, x, y); }
         }
         // Full: start over a shelf page that showed nothing last frame or yet this one. A page
         // not drawn from yet this frame may still be, later in the tree.
-        let idle = |p: &ImagePage| !p.shown && !p.touched && p.width <= IMAGE_ATLAS_SIZE && p.height <= IMAGE_ATLAS_SIZE
+        let idle = |p: &ImagePage| !p.shown && !p.touched && p.is_shelf()
             && p.shelf_y + p.shelf_h > 0;
         if w <= IMAGE_ATLAS_SIZE && h <= IMAGE_ATLAS_SIZE && let Some(i) = self.pages.iter().position(idle) {
             self.slots.retain(|_, s| s.page != i);
@@ -344,10 +435,23 @@ impl ImageAtlas {
 }
 
 impl ImagePage {
+    fn is_external(&self) -> bool {
+        #[cfg(target_arch = "wasm32")]
+        { self.external.is_some() }
+        #[cfg(not(target_arch = "wasm32"))]
+        { false }
+    }
+
+    fn is_shelf(&self) -> bool {
+        !self.is_external() && self.width <= IMAGE_ATLAS_SIZE && self.height <= IMAGE_ATLAS_SIZE
+    }
+
     fn new(w: u32, h: u32) -> Self {
         let (width, height) = if w > IMAGE_ATLAS_SIZE || h > IMAGE_ATLAS_SIZE { (w, h) }
             else { (IMAGE_ATLAS_SIZE, IMAGE_ATLAS_SIZE) };
         Self { width, height, data: vec![0; width as usize * height as usize * 4],
+            #[cfg(target_arch = "wasm32")] external: None,
+            #[cfg(target_arch = "wasm32")] external_dirty: false,
             dirty: None, shelf_x: 0, shelf_y: 0, shelf_h: 0, shown: false, touched: false }
     }
 

@@ -979,6 +979,10 @@ export function mirrorElement(element: Element, report: MirrorReport, inherited:
   }
   if (ISLAND_TAGS.has(tag)) {
     box["island"] = 1;
+    if (element instanceof HTMLCanvasElement) {
+      if (box["w"] === undefined && box["h"] === undefined) box["w"] = element.width;
+      if ((box["w"] === undefined || box["h"] === undefined) && box["ar"] === undefined && element.height > 0) box["ar"] = element.width / element.height;
+    }
     return box;
   }
   const textStyle = readTextStyle(element, style);

@@ -59,6 +59,8 @@ interface JgUiModule {
   patch: (json: string) => void;
   patch_text: (id: number, json: string) => void;
   scroll_to: (id: number, x: number, y: number, smooth: boolean) => void;
+  canvas_frame: (id: number, source: HTMLCanvasElement | HTMLVideoElement) => void;
+  remove_canvas: (id: number) => void;
   values_changed: () => void;
   unmount: () => void;
   values_ptr: () => number;
@@ -196,6 +198,16 @@ export class RuneUi {
   /** Move a CSS scroll viewport, without rerendering its components. */
   scrollTo(id: number, x: number, y: number, smooth: boolean): void {
     this.send(() => this.api.scroll_to(id, x, y, smooth));
+  }
+
+  /** Present a changed canvas frame in Rune's ordinary image paint order. */
+  canvasFrame(id: number, source: HTMLCanvasElement | HTMLVideoElement): void {
+    this.send(() => this.api.canvas_frame(id, source));
+  }
+
+  /** Release a removed canvas's native image. */
+  removeCanvas(id: number): void {
+    this.send(() => this.api.remove_canvas(id));
   }
 
   /** Calls made before Rune's first frame run after it, in order. */

@@ -1,6 +1,8 @@
 /* tslint:disable */
 /* eslint-disable */
 
+export function canvas_frame(id: number, source: HTMLElement): void;
+
 /**
  * Mount options: `{"fonts": ["/fonts/x.ttf", ...], "sans": "Family", "mono": "Family"}`.
  * Font files must be TrueType/OpenType (not WOFF); they are fetched relative to
@@ -21,6 +23,8 @@ export function patch(json: string): void;
  * path for a number or label that moves: no layout or paint field is parsed again.
  */
 export function patch_text(id: number, json: string): void;
+
+export function remove_canvas(id: number): void;
 
 /**
  * Move a keyed CSS scroller without rebuilding its view.
@@ -49,31 +53,33 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
+    readonly canvas_frame: (a: number, b: number, c: any) => void;
     readonly mount: (a: number, b: number, c: number, d: number) => void;
     readonly patch: (a: number, b: number) => void;
     readonly patch_text: (a: number, b: number, c: number) => void;
+    readonly remove_canvas: (a: number) => void;
     readonly scroll_to: (a: number, b: number, c: number, d: number) => void;
     readonly set_spec: (a: number, b: number) => void;
     readonly unmount: () => void;
     readonly values_changed: () => void;
     readonly values_len: () => number;
     readonly values_ptr: () => number;
-    readonly __wasm_bindgen_func_elem_13710: (a: number, b: number, c: number, d: any) => void;
-    readonly __wasm_bindgen_func_elem_13710_20: (a: number, b: number, c: number, d: any) => void;
-    readonly __wasm_bindgen_func_elem_13710_21: (a: number, b: number, c: number, d: any) => void;
-    readonly __wasm_bindgen_func_elem_15166: (a: number, b: number, c: any, d: any) => void;
-    readonly __wasm_bindgen_func_elem_16350: (a: number, b: number, c: number, d: any) => void;
-    readonly __wasm_bindgen_func_elem_1708: (a: number, b: number, c: number, d: number) => void;
-    readonly __wasm_bindgen_func_elem_15163: (a: number, b: number, c: number) => void;
-    readonly __wasm_bindgen_func_elem_15164: (a: number, b: number, c: any) => void;
-    readonly __wasm_bindgen_func_elem_15164_12: (a: number, b: number, c: any) => void;
-    readonly __wasm_bindgen_func_elem_15164_13: (a: number, b: number, c: any) => void;
-    readonly __wasm_bindgen_func_elem_15164_14: (a: number, b: number, c: any) => void;
-    readonly __wasm_bindgen_func_elem_15164_16: (a: number, b: number, c: any) => void;
-    readonly __wasm_bindgen_func_elem_15164_17: (a: number, b: number, c: any) => void;
-    readonly __wasm_bindgen_func_elem_15164_18: (a: number, b: number, c: any) => void;
-    readonly __wasm_bindgen_func_elem_15164_19: (a: number, b: number, c: any) => void;
-    readonly __wasm_bindgen_func_elem_15162: (a: number, b: number) => void;
+    readonly __wasm_bindgen_func_elem_13794: (a: number, b: number, c: number, d: any) => void;
+    readonly __wasm_bindgen_func_elem_13794_22: (a: number, b: number, c: number, d: any) => void;
+    readonly __wasm_bindgen_func_elem_13794_23: (a: number, b: number, c: number, d: any) => void;
+    readonly __wasm_bindgen_func_elem_15254: (a: number, b: number, c: any, d: any) => void;
+    readonly __wasm_bindgen_func_elem_16453: (a: number, b: number, c: number, d: any) => void;
+    readonly __wasm_bindgen_func_elem_1763: (a: number, b: number, c: number, d: number) => void;
+    readonly __wasm_bindgen_func_elem_15251: (a: number, b: number, c: number) => void;
+    readonly __wasm_bindgen_func_elem_15252: (a: number, b: number, c: any) => void;
+    readonly __wasm_bindgen_func_elem_15252_14: (a: number, b: number, c: any) => void;
+    readonly __wasm_bindgen_func_elem_15252_15: (a: number, b: number, c: any) => void;
+    readonly __wasm_bindgen_func_elem_15252_16: (a: number, b: number, c: any) => void;
+    readonly __wasm_bindgen_func_elem_15252_18: (a: number, b: number, c: any) => void;
+    readonly __wasm_bindgen_func_elem_15252_19: (a: number, b: number, c: any) => void;
+    readonly __wasm_bindgen_func_elem_15252_20: (a: number, b: number, c: any) => void;
+    readonly __wasm_bindgen_func_elem_15252_21: (a: number, b: number, c: any) => void;
+    readonly __wasm_bindgen_func_elem_15250: (a: number, b: number) => void;
     readonly __wbindgen_export: (a: number, b: number) => number;
     readonly __wbindgen_export2: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_export3: (a: number, b: number, c: number) => void;

@@ -2072,6 +2072,10 @@
 - `RuneStage` (class): class RuneStage — ⚠ undocumented
 - `registerRuneFont` (function): function registerRuneFont(url: string): void — A font file (TrueType, OpenType, WOFF or WOFF2) Rune should load for text.
 
+## @jgengine/core/ui/rune/videoFrames.view
+
+- `VideoFrameSource` (interface): interface VideoFrameSource — The browser video methods used by a frame feed.
+
 ## @jgengine/core/ui/runeUi.view
 
 - `RuneScrollValues` (type): type RuneScrollValues = readonly [number, number, number, number, number, number] — Scroll offset, viewport and content size in layout pixels.

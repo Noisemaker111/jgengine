@@ -123,9 +123,38 @@ pub fn kbd(t: &tok::Theme, legend: &str) -> El {
 }
 
 thread_local! {
+    #[cfg(target_arch = "wasm32")]
+    static CANVASES: RefCell<HashMap<u32, rune::Pixels>> = RefCell::new(HashMap::new());
     /// Leaked `Icon`s keyed by their SVG body, so a spec can name an icon by its
     /// markup and pay the 'static cost once per unique icon.
     static ICONS: RefCell<HashMap<String, &'static Icon>> = RefCell::new(HashMap::new());
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn canvas_frame(id: u32, source: web_sys::HtmlElement) -> Result<bool, wasm_bindgen::JsValue> {
+    CANVASES.with(|canvases| {
+        let mut canvases = canvases.borrow_mut();
+        let first = !canvases.contains_key(&id);
+        canvases.entry(id).or_default().set_browser_frame(source)?;
+        Ok(first)
+    })
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn remove_canvas(id: u32) {
+    CANVASES.with(|canvases| canvases.borrow_mut().remove(&id));
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn clear_canvases() {
+    CANVASES.with(|canvases| canvases.borrow_mut().clear());
+}
+
+pub fn canvas_image(id: u32) -> Option<rune::Pixels> {
+    #[cfg(target_arch = "wasm32")]
+    { CANVASES.with(|canvases| canvases.borrow().get(&id).cloned()) }
+    #[cfg(not(target_arch = "wasm32"))]
+    { let _ = id; None }
 }
 
 /// An SVG-body icon at `size` points, tinted `color`.
