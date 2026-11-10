@@ -529,7 +529,8 @@ function boxOfStyle(element: Element, style: CSSStyleDeclaration, report: Mirror
     const around = getComputedStyle(element.parentElement);
     if (around.display.endsWith("flex")) {
       const across = around.flexDirection.startsWith("column") ? "w" : "h";
-      if (box[across] === "100%") {
+      const autoMargin = across === "w" ? style.marginLeft === "auto" || style.marginRight === "auto" : style.marginTop === "auto" || style.marginBottom === "auto";
+      if (box[across] === "100%" && !autoMargin) {
         delete box[across];
         box["asf"] = 4;
       }
@@ -895,6 +896,20 @@ export function mirrorElement(element: Element, report: MirrorReport, inherited:
     return box;
   }
   const textStyle = readTextStyle(element, style);
+  if (element instanceof HTMLProgressElement || element instanceof HTMLMeterElement) {
+    const field = element;
+    const min = field instanceof HTMLMeterElement ? field.min : 0;
+    const share = field.max > min ? Math.min(1, Math.max(0, (field.value - min) / (field.max - min))) : 0;
+    const accent = parseColor(style.accentColor) ?? parseColor(style.color) ?? 0xffffffff;
+    if (box["h"] === undefined) box["h"] = 6;
+    if (box["w"] === undefined) box["w"] = 160;
+    box["bg"] ??= 0x808080ff;
+    box["ovx"] = 1;
+    box["ovy"] = 1;
+    box["d"] = 1;
+    box.c = [{ k: "x", id: 0, d: 1, w: `${share * 100}%`, h: "100%", bg: accent }];
+    return box;
+  }
   if (tag === "input" || tag === "textarea") {
     const field = element as HTMLInputElement;
     const type = tag === "textarea" ? "" : field.type;
@@ -915,6 +930,11 @@ export function mirrorElement(element: Element, report: MirrorReport, inherited:
       if (field.checked) box["bg"] = accent;
       else delete box["bg"];
       box["rad"] = type === "radio" ? [9999, 9999, 9999, 9999] : [3, 3, 3, 3];
+      if (field.checked) {
+        box["svg"] = type === "radio"
+          ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3" fill="white"/></svg>'
+          : '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M3 8l3 3 7-7" fill="none" stroke="white" stroke-width="2"/></svg>';
+      }
       return box;
     }
     if (type === "range") {

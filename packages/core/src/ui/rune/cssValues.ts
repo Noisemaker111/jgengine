@@ -315,6 +315,42 @@ function spreadStops(stops: RawStop[]): [number, number][] {
   });
 }
 
+function oklabOf(color: number): [number, number, number, number] {
+  const linear = (byte: number): number => {
+    const value = byte / 255;
+    return value <= 0.04045 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+  };
+  const r = linear((color >>> 24) & 255);
+  const g = linear((color >>> 16) & 255);
+  const b = linear((color >>> 8) & 255);
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  return [0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s, 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s, 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s, (color & 255) / 255];
+}
+
+function oklabStops(stops: [number, number][]): [number, number][] {
+  const result: [number, number][] = [];
+  for (let index = 0; index < stops.length; index += 1) {
+    const current = stops[index];
+    if (current === undefined) continue;
+    const previous = stops[index - 1];
+    if (previous !== undefined && current[0] > previous[0]) {
+      const from = oklabOf(previous[1]);
+      const to = oklabOf(current[1]);
+      for (let step = 1; step < 16; step += 1) {
+        const fraction = step / 16;
+        const alpha = from[3] + (to[3] - from[3]) * fraction;
+        const mix = (a: number, b: number): number => alpha === 0 ? 0 : (a * from[3] * (1 - fraction) + b * to[3] * fraction) / alpha;
+        const [r, g, b] = oklabToSrgb(mix(from[0], to[0]), mix(from[1], to[1]), mix(from[2], to[2]));
+        result.push([previous[0] + (current[0] - previous[0]) * fraction, pack(r, g, b, alpha)]);
+      }
+    }
+    result.push(current);
+  }
+  return result;
+}
+
 /** A repeating gradient whose period is a few pixels reads as its average colour. */
 function averageOfRepeat(stops: RawStop[]): number | null {
   if (stops.length < 2 || stops.some((s) => s.at === null)) return null;
@@ -402,13 +438,18 @@ export function parseGradient(text: string): WireLayer | { flat: number } | null
   if (open === -1) return null;
   const fn = text.slice(0, open);
   const args = splitTop(text.slice(open + 1, -1), ",");
+  const interpolation = /\bin\s+(\S+)/.exec(args[0] ?? "");
+  if (interpolation !== null && interpolation[1] !== "oklab" && interpolation[1] !== "srgb") return null;
+  if (interpolation !== null) args[0] = (args[0] ?? "").replace(interpolation[0], "").trim();
+  const spread = (stops: RawStop[]): [number, number][] => interpolation?.[1] === "oklab" ? oklabStops(spreadStops(stops)) : spreadStops(stops);
   const repeating = fn.startsWith("repeating-");
   const kind = repeating ? fn.slice(10) : fn;
   if (kind === "linear-gradient") {
     let angle = Math.PI;
     let first = 0;
     const head = args[0] ?? "";
-    if (head.startsWith("to ")) {
+    if (head === "" && interpolation !== null) first = 1;
+    else if (head.startsWith("to ")) {
       angle = SIDE_ANGLES[head] ?? Math.PI;
       first = 1;
     } else {
@@ -427,13 +468,13 @@ export function parseGradient(text: string): WireLayer | { flat: number } | null
       if (from !== null && to !== null && to - from >= 3 && stops.every((s) => s.at === null || s.px)) {
         const period = to - from;
         const scaled = stops.map((s) => ({ ...s, at: s.at === null ? null : (s.at - from) / period, px: false }));
-        return { g: 0, a: angle, st: spreadStops(scaled), per: period, off: from };
+        return { g: 0, a: angle, st: spread(scaled), per: period, off: from };
       }
       const flat = averageOfRepeat(stops);
       return flat === null ? null : { flat };
     }
     if (stops.some((s) => s.px)) return null;
-    return { g: 0, a: angle, st: spreadStops(stops) };
+    return { g: 0, a: angle, st: spread(stops) };
   }
   if (kind === "conic-gradient" && !repeating) {
     let from = 0;
@@ -460,7 +501,7 @@ export function parseGradient(text: string): WireLayer | { flat: number } | null
     );
     const stops = parseStops(parts);
     if (stops === null || stops.length === 0 || stops.some((s) => s.px)) return null;
-    return { g: 2, a: from, cx, cy, st: spreadStops(stops) };
+    return { g: 2, a: from, cx, cy, st: spread(stops) };
   }
   if (kind === "radial-gradient") {
     let cx = 0.5;
@@ -512,12 +553,12 @@ export function parseGradient(text: string): WireLayer | { flat: number } | null
         circle: true,
         rx: radius,
         ry: radius,
-        st: spreadStops(scaled),
+        st: spread(scaled),
         bs: [side, 0, side, 0],
         bp: [x[0] - radius + x[1] * side, x[1], y[0] - radius + y[1] * side, y[1]],
       };
     }
-    return { g: 1, cx, cy, rf, circle, st: spreadStops(stops) };
+    return { g: 1, cx, cy, rf, circle, st: spread(stops) };
   }
   return null;
 }
