@@ -68,7 +68,8 @@ describe("CUTLIST surface diet", () => {
     expect(block).not.toMatch(/github\s*:/);
     expect(block).not.toMatch(/jgengine\s*:/);
     expect(block).toMatch(/shell\s*:/);
-    expect(block).toMatch(/react\s*:/);
+    expect(block).toMatch(/ui\s*:/);
+    expect(block).not.toMatch(/react\s*:/);
   });
 
   test("curated core barrels route to domain skills", async () => {
