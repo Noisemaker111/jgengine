@@ -113,16 +113,6 @@
       "intent": "headless action-collection model with focus, hover, keyboard, and hotkey routing"
     },
     {
-      "id": "action-bindings-hook",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/ui/kit/uiKitRoot.view",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "the game's live key bindings, rebinds included, for HUD key labels"
-    },
-    {
       "id": "action-button",
       "packages": [
         "@jgengine/core"

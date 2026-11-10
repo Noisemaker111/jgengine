@@ -1,6 +1,9 @@
-# Deepward Rune UI
+# Deepward Rune primitives
 
-Brief: Rune for all UI, no CSS, no React or Solid. Keep beta's visor and Marrow console appearance.
+Jon's latest direction: Rune-native game UI with a high-level composition API.
+No finished widgets or screens in the new engine API; no game DOM, CSS, React or
+Solid. Deepward owns its screens and look. Old-UI pixel parity and the UI-kit plan
+are superseded. All work stays in PR #3117, landing after #3108.
 
 <!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
 ## Suite score
@@ -45,46 +48,74 @@ Genres: extraction. 0/16 proven · 16 missing.
 </details>
 <!-- /suite-score -->
 
-## Direction
+## Shared owners
 
-Use the engine JSX reconciler with a direct native host. Games author typed element props; Rune owns layout, paint and interaction. The existing CSS mirror remains for other games and is never used by Deepward. The DOM host is optional tooling only.
-
-## Features
-
-- JSX, state, context and effects: `packages/core/src/ui/jsx/`.
-- Native layout, paint, live slots and events: `packages/core/src/ui/rune/`, `native/crates/jg-ui/src/spec.rs`, `style.rs` and Rune element API.
-- Settings data and persistence: `packages/core/src/settings/`.
-- Menu navigation and save slots: `packages/core/src/menu/`, `packages/core/src/save/`.
+Native JSX, layout, bindings and input: `packages/core/src/ui/rune/` and
+`native/crates/jg-ui/src/native.rs`. Flow uses `dialog/modalStack.ts`; pause and
+capture use `game/controlGate.ts` and the simulation clock. Transient records
+reuse the existing notice feed. Settings use the existing controller; records,
+stash, fabricator and cache keep their game commands and persistence.
 
 ## Milestones
 
-- [x] Typed native element props and direct host, with no hidden DOM or computed style reads.
-- [x] Whole Deepward UI migrated; game CSS and CSS authoring removed.
-- [x] UI skill, concrete second-game migration instructions in PR #3117, generated docs and rebuilt wasm bundle.
-- [ ] PC evidence: HUD, menu and settings at desktop/phone widths; one production CPU/GPU comparison against beta's React UI; static UI has no draws.
-- [ ] Rebase after #3108 lands, then one PR through `lane:close`.
+- [x] Publish the design, types and examples at the top of #3117 before implementation.
+- [x] Native layout, anchors, responsive overrides, all visual property bindings,
+  keyed sources, formatting, command actions, focus/navigation, holds, drag/drop,
+  hover/tooltips, flow leases/transitions, transient/world presentation and themes.
+- [x] Replace Deepward's old HUD and menu composition. Keep only game presentation
+  and game-specific panels. Delete new engine meters, dial, slider, settings screen
+  and HUD wrappers introduced by the earlier plan.
+- [x] Update the UI skill with the primitives and a page-sized game example.
+- [x] Inspect desktop/phone headless PNGs of title, settings and HUD; repair phone
+  reticle overlap and split action labels. These show native UI, without a 3D scene.
+- [ ] Finish Linux generation, verification, commit and push the final source/wasm.
+- [ ] PC acceptance: run the real controls and settings, confirm idle draw submissions
+  stop, and measure production UI CPU/GPU cost. No cost claim before this step.
+- [ ] Rebase onto beta after #3108 merges, then land once through `bun run lane:close`.
 
-## Verification still required
+## Evidence
 
-Headless native PNGs run on Linux through the production Rust builder. They check UI layout and paint without a browser; they do not establish parity with beta.
+The previous implementation had 728 UI TSX lines (excluding tests); the primitives
+rewrite has 372. Count all `src/game/ui/**/*.tsx` files, including the game theme
+and specialised panels. Pixel parity is not a goal.
 
-This Linux host has no GPU, Owl or Jon's Chrome. Real-game screenshots and CPU/GPU measurements require a PC thread. Do not claim visual parity, static zero draws or lower cost until those artifacts exist. Baseline React revision: `d7fdf21a5f0f62c4f13747e253cf1d59149fdc07` (beta at task start). PR #3108 is still open at task start.
+Six inspected PNGs live in `proofs/rune-primitives/`: title, settings and dive at
+1280×720 and 390×844. The settings fixture contains deterministic controller rows;
+it does not prove the real controller's complete categories or persistence.
 
-## PC acceptance work
+Focused tests cover live colors/fractional sizes/text without component renders,
+keyed identity, responsive safe bounds, projection visibility, command invocation,
+rich/localised text, native gestures, holds, navigation and nested flow ownership.
+The hold regression was deliberately introduced: its early-release test failed,
+then passed after restoration. Rust proves atomic addressed patches, sibling
+revision isolation and no further commits, motion or wakes after a native UI settles.
+The actual GPU submission counter still requires the PC.
 
-- Run `bun run drive deepward --flow ui-tour` at desktop and phone widths. It checks a settled settings screen submits no native frames and captures title, settings and HUD. Use distinct output names for both widths.
-- Compare those six shots with the same states and dimensions at the pinned React baseline. Fix any differences, including material texture/scanlines, HUD fade, low-air pulse and phone haul placement. The native settings fixture uses a stub controller; check the real categories in game.
-- The game declares landscape/web and no touch; confirm phone-width evidence reaches the UI rather than an orientation gate.
-- Measure one production round against the pinned React baseline. Attribute UI CPU and GPU cost per frame; total game frame time alone does not establish UI cost. Record both numbers and the method in the PR.
-- The generic CSS-mirror material proof moved to Brightway Park, which still uses that path. It must not inject CSS into Deepward.
-- Once acceptance passes and #3108 is merged, rebase onto beta and run `lane:close` once.
+## PC acceptance brief
 
-## Linux verification
+Use branch `agent/rune-native-ui`, PR #3117. Keep the PR open until #3108 has
+landed; then rebase onto beta. Do not bring back CSS, a DOM host or finished widgets.
 
-`bun run gen` passed all 12 stages. Rust passed 29 tests. Focused shell/browser checks passed (79 tests, one platform-specific skip). Six headless native PNGs were regenerated after fixing start alignment; title/settings frames and HUD text fit at 1280×720 and 390×844. They contain no 3D scene and do not prove beta fidelity.
+Run `bun run drive deepward --flow ui-tour` at desktop and phone widths. The flow
+captures title/settings/HUD and checks that `window.__jgNativeUi.stats().frames`
+stops after settings settles. Exercise a real setting, category and key rebind;
+start/continue, pause/resume, save/load, credits, stash, cache move/rotate/drag/drop,
+fabrication, reprint and save-failure boundaries. Check mouse, keyboard, pad and
+touch gestures where the game permits them. The host has no Owl/GPU/Chrome.
 
-The broader `verify:fast` receipt is `.scratch/verify-fast/runs/c708fa70-406c-492d-8ca4-63d89f3d53d0/receipt.json`. It includes #3108's changes against beta. A stale `scripts/cutlistSurface.test.ts` assertion still required the removed React package; it now requires `ui` and rejects `react`, and its targeted rerun passes.
+Measure one production round of UI CPU/GPU cost against the React baseline
+`d7fdf21a5f0f62c4f13747e253cf1d59149fdc07` using the existing perf harness. Attribute
+UI work separately; a total frame-time number is insufficient. No pixel matching.
+Record the numbers and method in #3117, then run `lane:close` after acceptance.
 
-Remaining gate blocker: `scripts/localhostHttp.test.ts` fails three local-probe assertions under host Bun 1.3.14. A minimal reproduction shows `node:http` requests follow the test's dead `HTTP_PROXY`; the suite continues using that cached proxy after environment restoration. The production probe and test are unchanged from the #3108 base. CI declares Bun 1.4.2. Do not weaken the assertions or claim the broader gate passes; rerun with the intended runtime before landing.
+## Linux verification state
 
-The broader run finished nonzero: 32 steps passed, three failed, 12 did not run. The own-file test step passed after its two timeout-only failures passed the automatic rerun. Besides the proxy tests and the subsequently fixed CUTLIST assertion, `scripts/perf-gate.test.ts` reports a missing LLMville budget in unchanged baseline data. Its shard was terminated after ten minutes without exiting, so that shard is incomplete. Resolve these baseline/runtime blockers and rerun the gate before landing; do not invent performance baselines. The test-started broker/Vite server was stopped after the run.
+Focused TypeScript tests and core/UI/Deepward types pass. The production wasm
+bundle was rebuilt after native changes. Generation and the final broader receipt
+are pending in this edit.
+
+The earlier `verify:fast` receipt was incomplete, not a passing gate. Its unchanged
+baseline blockers were Bun 1.3.14 caching a dead `HTTP_PROXY` in localhost probe
+tests (CI declares 1.4.2) and a missing LLMville perf budget. Do not weaken those
+checks or invent a perf baseline. Current results must replace this historical
+state before landing.

@@ -2063,6 +2063,11 @@
 - `hotbarSlotBindings` (function): function hotbarSlotBindings(count: number, options?: { action?: (slot: number) => string }): ActionCodesMap — Number-row bindings for `count` numbered actions: slot 1 on Digit1 through slot 10 on Digit0. Name the actions with `action` (`hotbarSlotBindings(4, { action: (slot) => `buildTower${slot}` })`); the default names are `hotbarSlot1`…, which the shell routes to the hotbar on its own.
 - `isActionLocked` (function): function isActionLocked(codes: ActionCodes | undefined): boolean — Whether an action's authored codes mark it as not rebindable (`locked: true`).
 
+## @jgengine/core/input/actionBindings.view
+
+- `ActionBindingsProvider` (function): function ActionBindingsProvider({ bindings,children }: { bindings: ActionCodesMap; children?: ReactNode }): ReactNode — Provide the game's live bindings, including player rebinds, without a presentation kit.
+- `useActionBindings` (function): function useActionBindings(): ActionCodesMap — Live action bindings from the nearest provider; empty outside a game host.
+
 ## @jgengine/core/input/actionContexts
 
 - `ActionContext` (interface): interface ActionContext — Named action-binding layer that may optionally expose lower layers.

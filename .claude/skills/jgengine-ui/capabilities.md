@@ -40,10 +40,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useActionBar` (function) · `import { useActionBar } from "@jgengine/ui"`
 
-## action-bindings-hook — the game's live key bindings, rebinds included, for HUD key labels
-
-- `useActionBindings` (function) · `import { useActionBindings } from "@jgengine/ui"`
-
 ## action-button — cooldown/cost/hotkey action button with complete interaction states
 
 - `ActionButton` (function) · `import { ActionButton } from "@jgengine/ui"`
