@@ -1589,7 +1589,7 @@
       "module": "@jgengine/core/scene/sceneCapture.draw",
       "gameFacing": false,
       "probe": null,
-      "intent": "read the frame an R3F canvas just rendered to a PNG data URL"
+      "intent": "Read the frame an engine canvas just rendered to a PNG data URL"
     },
     {
       "id": "capture-effectiveness-tame",

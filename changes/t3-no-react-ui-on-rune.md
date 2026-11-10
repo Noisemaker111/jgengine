@@ -2,7 +2,7 @@ engine and game UI uses @jgengine/core/ui/jsx and @jgengine/ui; the website and 
 
 Closes #3019
 
-Engine seam: packages/convex/src/convexChatTransport.ts, packages/convex/src/convexPresenceTransport.ts, packages/core/src/achievements/achievements.view.tsx, packages/core/src/ai/AuthoredFlocks.draw.tsx, packages/core/src/ambientFauna/AmbientFauna.draw.tsx, packages/core/src/anim/CharacterCrowd.draw.tsx, packages/core/src/anim/CorpseRagdolls.draw.tsx, packages/core/src/anim/SkinnedInstances.draw.tsx and 448 more
+Engine seam: packages/convex/src/convexChatTransport.ts, packages/convex/src/convexPresenceTransport.ts, packages/core/src/achievements/achievements.view.tsx, packages/core/src/ai/AuthoredFlocks.draw.tsx, packages/core/src/ambientFauna/AmbientFauna.draw.tsx, packages/core/src/anim/CharacterCrowd.draw.tsx, packages/core/src/anim/CorpseRagdolls.draw.tsx, packages/core/src/anim/SkinnedInstances.draw.tsx and 449 more
 
 ### Migrate
 
