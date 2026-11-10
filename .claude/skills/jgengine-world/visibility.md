@@ -5,7 +5,7 @@ for every game — no per-game setup. A normal object with a position and a vers
 culled automatically; you only touch this system to *override* the defaults.
 
 This package (`@jgengine/core/visibility/*`) is headless and zero-dependency. The shell wires it
-into the R3F render path (`packages/core/src/visibility/CullingProvider.draw.tsx`), which reads the
+into the render path (`packages/core/src/visibility/CullingProvider.draw.tsx`), which reads the
 live camera each frame and toggles `group.visible` so off-screen objects are never submitted to
 the renderer.
 
@@ -165,6 +165,6 @@ spatial partitions, culled ids, and streaming state for a debug overlay to draw.
 - **Instanced batches** in the shell (`world/Instanced*`, `SpriteBatch`) set `frustumCulled={false}`
   and are not yet per-instance culled by this system — a documented future extension.
 - **Asset-streaming shell wiring**: the engine `AssetStreamingSystem` is complete and tested, but the
-  shell's R3F loaders still load on mount; wiring streaming into R3F suspension is the next seam.
+  shell's loaders still load on mount; wiring streaming into them is the next seam.
 - The spatial index partitions on all three axes; extremely oversized objects fall back to an
   always-considered bucket by design.
