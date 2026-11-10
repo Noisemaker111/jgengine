@@ -55,7 +55,7 @@ export function BillsDevPreview() {
           <p className="mt-2 text-xs leading-relaxed text-white/55">
             Screenshot the grid on the right. Tweak stamps and afford states in{" "}
             <code className="text-white/70">InvoiceBillCard.tsx</code> and{" "}
-            <code className="text-white/70">index.css</code>.
+            <code className="text-white/70">style.css</code>.
           </p>
           <p className="mt-2 text-xs text-white/45">
             URL: <span className="text-white/70">/dev/bills</span> — dev only.

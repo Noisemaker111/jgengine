@@ -6,7 +6,7 @@ doubt, favor warmth and clarity over flash.
 Companion files:
 - **Tokens and parts** in `src/kit/llmvilleKit.tsx`: the palette as UI-kit tokens (`--kit-*`), LLMville's
   panel, card, button, meter and toast parts, and the HUD theme. The parts' stylesheet is `src/kit/llmvilleKitCss.ts`.
-- **Game skin** in `src/index.css`: Tailwind's `@theme` mapped onto the kit tokens, menus, auth and the store cards.
+- **Game skin** in `src/style.css`: Tailwind's `@theme` mapped onto the kit tokens, menus, auth and the store cards.
 - **Domain UI** in `<domain>/components/`, drawn with `KitPanel` (`data-shell` picks the card or surface), `KitButton`, `KitMeter` and `KitToast`.
 - Brand mark components in `src/branding/`.
 
@@ -66,7 +66,7 @@ Use:
 
 ## 4. Components
 
-Use the kit parts (`KitPanel`, `KitButton`, `KitMeter`, `KitToast`) — their styles live in the kit stylesheet, not in `index.css`. Status chips are `llm-token` spans. Do not add new global `.game-*` classes.
+Use the kit parts (`KitPanel`, `KitButton`, `KitMeter`, `KitToast`) — their styles live in the kit stylesheet, not in `style.css`. Status chips are `llm-token` spans. Do not add new global `.game-*` classes.
 
 - `Button` — flat rounded control. Title/sentence case, never uppercase. No underborder or glass.
   - `primary` — solid coral fill. The one primary action.

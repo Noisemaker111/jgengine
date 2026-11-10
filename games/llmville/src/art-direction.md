@@ -5,7 +5,7 @@
 The look today:
 
 - `docs/design/DESIGN.md` holds the rules.
-- `src/index.css` holds the `:root` tokens.
+- `src/style.css` holds the `:root` tokens.
 - The landing page and `/dev/hud`, `/dev/racks` and `/dev/city-3d` show them rendered.
 
 Outside references, by direction:
