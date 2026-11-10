@@ -1,9 +1,7 @@
 /**
- * Tasks that must run immediately before or after `renderer.render` in the
- * same task — r3f's `addEffect`/`addAfterEffect` globals, minus the fiber
- * dependency. The driving loop flushes each set around its render: the r3f
- * pump registers one `addEffect`/`addAfterEffect` pair while the Canvas owns
- * frames, and `createEngineLoop` flushes the same sets inside `advance`.
+ * Tasks that run at the two ends of a frame, in the same task as its render:
+ * the before set first, ahead of every draw's `frame`, and the after set once
+ * the render is done. `createEngineLoop` flushes both inside `advance`.
  * Callbacks may join or leave while flushing.
  */
 const beforeTasks = new Set<() => void>();

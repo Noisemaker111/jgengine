@@ -150,8 +150,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `animalTopSpeed` (function) · `import { animalTopSpeed } from "@jgengine/core/movement/reference/quadrupedGait"`
 
-## animation — build a masked one-shot overlay layer for upper-body actions and hit reactions
+## animation — turn a killed rigged character into a physics ragdoll on death
 
+- `CorpseRagdolls` (function) · `import { CorpseRagdolls } from "@jgengine/core/anim/CorpseRagdolls.draw"`
 - `actionLayer` (function) · `import { actionLayer } from "@jgengine/core/anim/actionLayer"`
 - `inferLegChains` (function) · `import { inferLegChains } from "@jgengine/core/anim/footPlacement"`
 - `lookAt` (function) · `import { lookAt } from "@jgengine/core/anim/ikSolver"`
@@ -615,6 +616,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## day-night-sky — one sky for a fixed look, a day-night cycle, biome bands and authored lights
 
 - `Sky` (function) · `import { Sky } from "@jgengine/core/sky/Daylight.draw"`
+- `skyDraw` (function) · `import { skyDraw } from "@jgengine/core/sky/Daylight.draw"`
 - `skyNoonKeyframes` (function) · `import { skyNoonKeyframes } from "@jgengine/core/sky/skyOwnedLighting"`
 - `splitSkyOwnedLighting` (function) · `import { splitSkyOwnedLighting } from "@jgengine/core/sky/skyOwnedLighting"`
 
@@ -1221,6 +1223,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## interior-dressing — render a planned interior's trims, pipes, cables, lamps and stains in a few instanced draws
 
 - `InteriorDressing` (function) · `import { InteriorDressing } from "@jgengine/core/buildings/InteriorDressing.draw"`
+- `interiorDressingDraw` (function) · `import { interiorDressingDraw } from "@jgengine/core/buildings/InteriorDressing.draw"`
 
 ## joint-torque-limits — torque-angle-velocity strength of the human hip, knee and ankle from published dynamometry
 
@@ -1534,7 +1537,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## particle-field — render a core particle pool as soft points, velocity streaks, connected ribbons, flakes, flames, smoke sprites, or ground ripples
 
-- `ParticleField` (const) · `import { ParticleField } from "@jgengine/core/vfx/ParticleField.draw"`
+- `particleFieldDraw` (function) · `import { particleFieldDraw } from "@jgengine/core/vfx/ParticleField.draw"`
 
 ## particle-system — deterministic pooled particle emitter with spawn volumes, force fields, bounded collision/death events, live tuning, SoA render buffers, and serializable state
 
@@ -1600,6 +1603,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## physics-joint-lines — Draw a physics world's joints as lines
 
 - `InstancedJoints` (function) · `import { InstancedJoints } from "@jgengine/core/physics/InstancedJoints.draw"`
+- `instancedJointsDraw` (function) · `import { instancedJointsDraw } from "@jgengine/core/physics/InstancedJoints.draw"`
 
 ## physics-world-backend — the zero-dependency PhysicsWorld solver exposed through the PhysicsBackend seam
 
@@ -1776,6 +1780,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## practical-lights — light the planned lamps nearest the camera with a fixed, shadow-capped spot-light pool
 
 - `PracticalLights` (function) · `import { PracticalLights } from "@jgengine/core/buildings/InteriorDressing.draw"`
+- `practicalLightsDraw` (function) · `import { practicalLightsDraw } from "@jgengine/core/buildings/InteriorDressing.draw"`
 
 ## procedural-ground — seeded noise-height ground mesh with low/high/waterline vertex colours for quick natural scenes
 
@@ -1831,7 +1836,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## rain-ground-ripples — Render bounded rain impacts on exposed terrain using the shared precipitation clock.
 
-- `RainImpactField` (function) · `import { RainImpactField } from "@jgengine/core/weather/RainImpactField.draw"`
+- `rainImpactFieldDraw` (function) · `import { rainImpactFieldDraw } from "@jgengine/core/weather/RainImpactField.draw"`
 
 ## rapier-physics-backend — native capsules, shapecasts, rotation, CCD, joints, collision queries, character and ray-cast vehicle controllers
 
@@ -1899,7 +1904,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## road-ribbons — draw roads, tracks and trails as surfaced ribbons with curbs, sidewalks, lane markings and trimmed junctions
 
-- `RoadRibbons` (function) · `import { RoadRibbons } from "@jgengine/core/roads/RoadRibbons.draw"`
+- `roadRibbonsDraw` (function) · `import { roadRibbonsDraw } from "@jgengine/core/roads/RoadRibbons.draw"`
 
 ## rock-fracture — rock that breaks by impact into fragments sized by measured comminution laws
 
@@ -1982,6 +1987,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## scene-capture-binding — expose the live scene to outside-Canvas HUD (photo mode, save thumbnails)
 
 - `SceneCaptureBinding` (function) · `import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw"`
+- `sceneCaptureBindingDraw` (function) · `import { sceneCaptureBindingDraw } from "@jgengine/core/scene/sceneCapture.draw"`
 
 ## screen-effects — serializable, pooled screen-feedback controller — transient flash/vignette and sustained low-health-style pulses with eased opacities, free-string kinds the game styles, and snapshot/restore
 
@@ -2447,7 +2453,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## weather-dust — airborne particulate that turns still air into visible wind
 
-- `DustField` (function) · `import { DustField } from "@jgengine/core/weather/DustField.draw"`
+- `dustFieldDraw` (function) · `import { dustFieldDraw } from "@jgengine/core/weather/DustField.draw"`
 
 ## weather-environment-field — Connect authored precipitation and temperature changes to spatial environment queries.
 

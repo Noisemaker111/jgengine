@@ -1,3 +1,4 @@
+// @skill jgengine-world
 import { createElement, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three-stdlib";

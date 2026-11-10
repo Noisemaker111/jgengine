@@ -1,4 +1,4 @@
-// @skill jgengine-ui
+// @skill jgengine-world
 /**
  * The engine-owned frame loop: one rAF that steps an ordered list of draw
  * systems and renders a plain three.js scene. This is what r3f's Canvas +
@@ -412,8 +412,8 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
   options.onCreated?.(state);
   invalidated = true;
   if (frameloop !== "never") raf = requestAnimationFrame(frame);
-  // The shared board's tasks become ordered draws on this loop; files that
-  // joined while the r3f pump drove re-attach here without re-subscribing.
+  // The shared board's tasks become ordered draws on this loop; tasks that
+  // joined before it existed attach here without re-joining.
   const source: FrameSource = (priority, run) => loop.add({
     priority,
     frame: (frameState) => run(frameState, frameState.delta),

@@ -338,14 +338,20 @@
 
 ## @jgengine/core/combat/ImpactFeedback.draw
 
-- `ImpactFeedback` (function): function ImpactFeedback({ classes, marks = true, hitstop = true }: ImpactFeedbackOptions): React.JSX.Element | null — The engine's default impact layer, mounted with the combat presentation: every `combat.damage` with a position throws sparks and dust sized by its {@link ImpactClass}, a direct-fire shot that misses leaves a scorch mark on the surface it hit, an explosion or crash near the local player kicks the camera and rumbles the pad (no kick with reduced motion), and the local player's heavy hits, hits taken and kills stop the game clock for a few dozen milliseconds. Damage over time (status ticks) is quiet. Marks are off on the `low` graphics tier.
+- `ImpactFeedback` (function): function ImpactFeedback(props: ImpactFeedbackOptions): React.JSX.Element — The engine's default impact layer, mounted with the combat presentation: every `combat.damage` with a position throws sparks and dust sized by its {@link ImpactClass}, a direct-fire shot that misses leaves a scorch mark on the surface it hit, an explosion or crash near the local player kicks the camera and rumbles the pad (no kick with reduced motion), and the local player's heavy hits, hits taken and kills stop the game clock for a few dozen milliseconds. Damage over time (status ticks) is quiet. Marks are off on the `low` graphics tier.
+- `ImpactFeedbackDrawProps` (interface): interface ImpactFeedbackDrawProps extends ImpactFeedbackOptions — Props the impact draw reads; resolved by the React wrapper each commit.
 - `ImpactFeedbackOptions` (interface): interface ImpactFeedbackOptions — What {@link ImpactFeedback} reacts with; every field defaults on.
 
 ## @jgengine/core/combat/ProjectileModels.draw
 
-- `ProjectileModels` (function): function ProjectileModels({ model, fallback, forward = [0, 1, 0], maxInstances = 256, source }: ProjectileModelsProps): ReactElement — Mount caller-owned models at authoritative projectile positions. Flight ids determine lifetime; each frame only updates transforms, and settlement removes the model. Optional shaft/head geometry is enabled only by the caller.
+- `ProjectileModels` (function): function ProjectileModels(props: ProjectileModelsProps): null — Mount caller-owned models at authoritative projectile positions. Flight ids determine lifetime; each frame only updates transforms, and settlement removes the model. Optional shaft/head geometry is enabled only by the caller.
 - `ProjectileModelsProps` (interface): interface ProjectileModelsProps — Render simulated flights without owning their travel or settlement.
 - `ProjectileShaft` (interface): interface ProjectileShaft — Explicit opt-in shaft/head geometry when a game has no projectile model.
+
+## @jgengine/core/combat/ShotFeedback.draw
+
+- `HitMarkersDrawProps` (interface): interface HitMarkersDrawProps { ctx: GameContext; lifeMs?: number } — ⚠ undocumented
+- `MuzzleFlashesDrawProps` (interface): interface MuzzleFlashesDrawProps { ctx: GameContext; reducedMotion: boolean; lifeMs?: number } — ⚠ undocumented
 
 ## @jgengine/core/combat/abilityKit
 

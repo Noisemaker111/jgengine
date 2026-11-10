@@ -1,13 +1,11 @@
 /**
- * The frame-task board every converted `useFrame`/`useSharedFrame`/
- * `useFrameWhile` call joins. One board, one frame source: while the shell
- * still renders through r3f, `R3fFramePump` binds the source to r3f's
- * subscriber list; once `createEngineLoop` owns the canvas it binds the same
- * board to the engine loop's ordered draws. Converted files never care which
- * side is driving — they join a priority and leave.
+ * The frame-task board every per-frame callback joins (`joinFrameTask`, and
+ * the `useFrameTask`/`useSharedFrame`/`useFrameWhile` hooks over it). One
+ * board, one frame source: `createEngineLoop` binds it to the engine loop's
+ * ordered draws, and a test binds its own. Callers join a priority and leave.
  *
- * Tasks at one priority share a single subscription (the useSharedFrame
- * shape): N callers pay one frame slot, not N, and run in join order.
+ * Tasks at one priority share a single attachment: N callers pay one frame
+ * slot, not N, and run in join order.
  */
 import type { EngineFrameState } from "./engineLoop.draw";
 
@@ -65,8 +63,8 @@ function attach(group: PriorityGroup, priority: number): void {
 
 /**
  * Bind the board to a frame source. Groups already joined re-attach under the
- * new source, so the r3f pump and the engine loop can take over from each
- * other without converted callers re-subscribing. `null` detaches everything
+ * new source, so a remounted canvas's loop takes over without callers
+ * re-joining. `null` detaches everything
  * (used while no canvas drives frames, e.g. between shells).
  */
 export function bindFrameSource(next: FrameSource | null): void {

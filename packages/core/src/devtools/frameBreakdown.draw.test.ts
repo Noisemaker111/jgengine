@@ -1,19 +1,56 @@
-import { expect, test } from "bun:test";
+import { afterEach, beforeEach, expect, test } from "bun:test";
 
-import { joinFrameGroup } from "../render/useSharedFrame.draw";
+import { flushAfterRenderTasks, flushBeforeRenderTasks } from "../frame/afterRenderBoard.draw";
+import { bindFrameSource, joinFrameTask } from "../frame/frameBoard.draw";
 import { createAmbientFauna } from "../ambientFauna/ambientFauna";
 import { createEditableTerrain } from "../terrain/terraform";
 import { readBreakdown } from "../../../../scripts/perf-breakdown";
 import { FRAME_RETENTION_LIMIT, installFrameBreakdown, measureComposerPasses } from "./frameBreakdown.draw";
 
+/**
+ * The frame board driven by hand, the way the engine loop drives it: before-render tasks, each
+ * priority's shared callback in order, then after-render tasks.
+ */
+function boardLoop() {
+  const attached = new Map<number, { priority: number; run: (state: never, delta: number) => void }>();
+  let nextId = 0;
+  bindFrameSource((priority, run) => {
+    const id = nextId;
+    nextId += 1;
+    attached.set(id, { priority, run });
+    return () => { attached.delete(id); };
+  });
+  const leaves: (() => void)[] = [];
+  return {
+    /** Join a frame task; it leaves with the loop, or earlier through the returned leave. */
+    join(priority: number, task: () => void): () => void {
+      const leave = joinFrameTask(priority, task);
+      leaves.push(leave);
+      return leave;
+    },
+    frame(delta = 1 / 60): void {
+      flushBeforeRenderTasks();
+      for (const { run } of [...attached.values()].sort((a, b) => a.priority - b.priority)) run({} as never, delta);
+      flushAfterRenderTasks();
+    },
+    close(): void {
+      for (const leave of leaves.splice(0)) leave();
+      bindFrameSource(null);
+    },
+  };
+}
+
+let loop = boardLoop();
+beforeEach(() => { loop = boardLoop(); });
+afterEach(() => { loop.close(); });
+
 test("bounds retained post passes and restores the ones it wraps", () => {
   const prior = Reflect.get(globalThis, "window");
   Reflect.set(globalThis, "window", { location: { search: "" } });
-  const internal = { subscribers: [], subscribe: () => () => {} };
   const renderer = { getContext: () => ({ getExtension: () => null }), shadowMap: {}, info: { programs: [] }, render() {} };
   const original = () => {};
   const passes = Array.from({ length: FRAME_RETENTION_LIMIT + 2 }, () => ({ render: original }));
-  const breakdown = installFrameBreakdown(renderer as never, { getState: () => ({ internal }) } as never);
+  const breakdown = installFrameBreakdown(renderer as never);
   try {
     measureComposerPasses({ passes });
     expect(passes[0]?.render).not.toBe(original);
@@ -29,19 +66,13 @@ test("bounds retained post passes and restores the ones it wraps", () => {
 test("bounds retained callbacks and draw identities under churn", () => {
   const prior = Reflect.get(globalThis, "window");
   Reflect.set(globalThis, "window", { location: { search: "?frameMembers=1" } });
-  const subscribers: { ref: { current: (state: unknown, delta: number) => void }; priority: number }[] = [];
-  const internal = { subscribers, subscribe(ref: { current: (state: unknown, delta: number) => void }, priority: number) {
-    const entry = { ref, priority }; subscribers.push(entry); subscribers.sort((a, b) => a.priority - b.priority);
-    return () => { const index = subscribers.indexOf(entry); if (index >= 0) subscribers.splice(index, 1); };
-  } };
-  const store = { getState: () => ({ internal }) };
   const renderer = { getContext: () => ({ getExtension: () => null }), shadowMap: {}, info: { programs: [] }, render() {}, renderBufferDirect(_a: unknown, _b: unknown, _c: unknown, _d: unknown, _e: unknown, _f: unknown) {} };
-  const breakdown = installFrameBreakdown(renderer as never, store as never);
-  const frame = () => { for (const { ref } of subscribers) ref.current({}, 1 / 60); };
+  const breakdown = installFrameBreakdown(renderer as never);
+  const frame = () => { loop.frame(); };
   try {
     frame();
     for (let i = 0; i < FRAME_RETENTION_LIMIT + 10; i += 1) {
-      const leave = joinFrameGroup(store, internal.subscribe, 0, { current: () => {} });
+      const leave = loop.join(0, () => {});
       frame();
       leave();
       renderer.renderBufferDirect(null, null, {}, { id: i }, { id: i }, null);
@@ -62,11 +93,6 @@ test("bounds retained callbacks and draw identities under churn", () => {
 test("a frame names each draw that fed a program a vertex layout or colour target it had not drawn with", () => {
   const prior = Reflect.get(globalThis, "window");
   Reflect.set(globalThis, "window", { location: { search: "" } });
-  const subscribers: { ref: { current: (state: unknown, delta: number) => void }; priority: number }[] = [];
-  const internal = { subscribers, subscribe(ref: { current: (state: unknown, delta: number) => void }, priority: number) {
-    const entry = { ref, priority }; subscribers.push(entry);
-    return () => { const index = subscribers.indexOf(entry); if (index >= 0) subscribers.splice(index, 1); };
-  } };
   // One program shared by two materials, as three links one program for every material alike.
   const program = { getAttributes: () => ({ position: {}, color: {} }) };
   const programs = new Map<object, { currentProgram: object }>();
@@ -83,12 +109,12 @@ test("a frame names each draw that fed a program a vertex layout or colour targe
   const float3 = { itemSize: 3, array: new Float32Array(3) };
   const plain = { attributes: { position: float3 } };
   const tinted = { attributes: { position: float3, color: { itemSize: 4, normalized: true, array: new Uint8Array(4) } } };
-  const breakdown = installFrameBreakdown(renderer as never, { getState: () => ({ internal }) } as never);
+  const breakdown = installFrameBreakdown(renderer as never);
   const draws: [object, object, object | null][] = [];
-  internal.subscribe({ current: () => { for (const [geometry, material, bound] of draws) { target = bound; renderer.renderBufferDirect(null, null, geometry, material, { name: "Mesh" }, null); } target = null; } }, 0);
+  loop.join(0, () => { for (const [geometry, material, bound] of draws) { target = bound; renderer.renderBufferDirect(null, null, geometry, material, { name: "Mesh" }, null); } target = null; });
   // A frame's record is filed when the next frame starts: draw, then run an empty frame to file it.
   const frame = (next: [object, object, object | null][]) => {
-    for (const batch of [next, []]) { draws.splice(0, draws.length, ...batch); for (const { ref } of subscribers) ref.current({}, 1 / 60); }
+    for (const batch of [next, []]) { draws.splice(0, draws.length, ...batch); loop.frame(); }
     // Material name and what was new; the labels' ids and object kind are the recorder's usual naming.
     return breakdown.records().at(-1)?.firstDraws?.map((draw) => `${draw.split("#")[0]} → ${draw.split(" → ")[1]}`);
   };
@@ -106,7 +132,7 @@ test("a frame names each draw that fed a program a vertex layout or colour targe
     const msaa = { textures: [{ type: 1016 }], samples: 4 };
     frame([[plain, hull, msaa]]);
     let stall = true;
-    internal.subscribe({ current: () => { if (!stall) return; stall = false; const until = performance.now() + 45; while (performance.now() < until); } }, 1);
+    loop.join(1, () => { if (!stall) return; stall = false; const until = performance.now() + 45; while (performance.now() < until); });
     frame([]);
     const [hitch] = breakdown.session().hitches;
     expect(hitch?.detail).toContain("first draws of 1 program and layout pair(s): Hull");
@@ -120,23 +146,15 @@ test("a frame names each draw that fed a program a vertex layout or colour targe
 test("disposing and reinstalling the recorder restores live callbacks", () => {
   const prior = Reflect.get(globalThis, "window");
   Reflect.set(globalThis, "window", { location: { search: "" } });
-  const subscribers: { ref: { current: (state: unknown, delta: number) => void }; priority: number }[] = [];
-  const internal = { subscribers, subscribe(ref: { current: (state: unknown, delta: number) => void }, priority: number) {
-    const entry = { ref, priority }; subscribers.push(entry); subscribers.sort((a, b) => a.priority - b.priority);
-    return () => { const index = subscribers.indexOf(entry); if (index >= 0) subscribers.splice(index, 1); };
-  } };
-  const store = { getState: () => ({ internal }) };
   const renderer = { getContext: () => ({ getExtension: () => null }), shadowMap: {}, info: { programs: [] }, render() {} };
   const callback = () => renderer.render();
-  const ref = { current: callback };
-  internal.subscribe(ref, 0);
-  const frame = () => { for (const { ref: task } of subscribers) task.current({}, 1 / 60); };
-  const first = installFrameBreakdown(renderer as never, store as never);
+  const leave = loop.join(0, callback);
+  const frame = () => { loop.frame(); };
+  const first = installFrameBreakdown(renderer as never);
   try {
     frame(); frame();
     first.dispose();
-    expect(ref.current).toBe(callback);
-    const second = installFrameBreakdown(renderer as never, store as never);
+    const second = installFrameBreakdown(renderer as never);
     try {
       frame(); frame();
       expect(second.records()[0]?.calls?.["render:main"]).toBe(1);
@@ -152,11 +170,9 @@ test("a remount's late cleanup leaves the next recorder published", () => {
   const prior = Reflect.get(globalThis, "window");
   const page: { location: { search: string }; __jgFrameBreakdown?: unknown } = { location: { search: "" } };
   Reflect.set(globalThis, "window", page);
-  const internal = { subscribe: () => () => undefined };
-  const store = { getState: () => ({ internal }) };
   const renderer = { getContext: () => ({ getExtension: () => null }), shadowMap: {}, info: { programs: [] }, render() {} };
-  const first = installFrameBreakdown(renderer as never, store as never);
-  const second = installFrameBreakdown(renderer as never, store as never);
+  const first = installFrameBreakdown(renderer as never);
+  const second = installFrameBreakdown(renderer as never);
   try {
     // React mounts the new canvas's recorder, then runs the old one's cleanup.
     first.dispose();
@@ -171,29 +187,18 @@ test("a remount's late cleanup leaves the next recorder published", () => {
 test("records real shared members and repeated render calls through the frame loop", () => {
   const prior = Reflect.get(globalThis, "window");
   Reflect.set(globalThis, "window", { location: { search: "?frameMembers=1" } });
-  const subscribers: { ref: { current: (state: unknown, delta: number) => void }; priority: number }[] = [];
-  const internal = {
-    subscribers,
-    subscribe(ref: { current: (state: unknown, delta: number) => void }, priority: number) {
-      const entry = { ref, priority };
-      subscribers.push(entry);
-      subscribers.sort((a, b) => a.priority - b.priority);
-      return () => { const index = subscribers.indexOf(entry); if (index >= 0) subscribers.splice(index, 1); };
-    },
-  };
-  const store = { getState: () => ({ internal }) };
   const renderer = { getContext: () => ({ getExtension: () => null }), shadowMap: {}, info: { programs: [] }, render() {} };
   const renderTwice = () => { renderer.render(); renderer.render(); };
   let groundReads = 0;
   const ground = () => { groundReads += 1; };
-  const leaveA = joinFrameGroup(store, internal.subscribe, 0, { current: renderTwice });
-  const leaveB = joinFrameGroup(store, internal.subscribe, 0, { current: ground });
-  const breakdown = installFrameBreakdown(renderer as never, store as never);
+  const leaveA = loop.join(0, renderTwice);
+  const leaveB = loop.join(0, ground);
+  const breakdown = installFrameBreakdown(renderer as never);
   try {
-    for (let i = 0; i < 2; i += 1) for (const { ref } of subscribers) ref.current({}, 0.016);
+    for (let i = 0; i < 2; i += 1) loop.frame(0.016);
     const record = breakdown.records()[0];
     expect(record?.calls?.["render:main"]).toBe(2);
-    const labels = Object.entries(breakdown.callbacks()).filter(([name]) => name.includes("sharedMember"));
+    const labels = Object.entries(breakdown.callbacks()).filter(([, callback]) => callback === renderTwice || callback === ground);
     expect(labels.map(([, callback]) => callback)).toEqual([renderTwice, ground]);
     for (const [label] of labels) expect(record?.calls?.[label]).toBe(1);
     expect(groundReads).toBe(2);
@@ -210,11 +215,6 @@ test("records real shared members and repeated render calls through the frame lo
 test("unresolved and disjoint GPU queries remain unavailable until complete", () => {
   const prior = Reflect.get(globalThis, "window");
   Reflect.set(globalThis, "window", { location: { search: "" } });
-  const subscribers: { ref: { current: (state: unknown, delta: number) => void }; priority: number }[] = [];
-  const internal = { subscribers, subscribe(ref: { current: (state: unknown, delta: number) => void }, priority: number) {
-    const entry = { ref, priority }; subscribers.push(entry); subscribers.sort((a, b) => a.priority - b.priority);
-    return () => { const index = subscribers.indexOf(entry); if (index >= 0) subscribers.splice(index, 1); };
-  } };
   let ready = false;
   let disjoint = false;
   const gl = {
@@ -225,10 +225,9 @@ test("unresolved and disjoint GPU queries remain unavailable until complete", ()
     getQueryParameter: (_query: unknown, name: number) => name === 1 ? ready : 1_000_000,
   };
   const renderer = { getContext: () => gl, shadowMap: {}, info: { programs: [] }, render() {} };
-  const store = { getState: () => ({ internal }) };
-  const breakdown = installFrameBreakdown(renderer as never, store as never);
-  internal.subscribe({ current: () => renderer.render() }, 0);
-  const frame = () => { for (const { ref } of subscribers) ref.current({}, 1 / 60); };
+  const breakdown = installFrameBreakdown(renderer as never);
+  loop.join(0, () => renderer.render());
+  const frame = () => { loop.frame(); };
   try {
     frame(); frame();
     expect(breakdown.records()[0]?.gpu).toBeNull();
@@ -245,11 +244,6 @@ test("unresolved and disjoint GPU queries remain unavailable until complete", ()
 test("draw timing credits each draw's GPU time to its pass and material, never the CPU wait between them", () => {
   const prior = Reflect.get(globalThis, "window");
   Reflect.set(globalThis, "window", { location: { search: "" } });
-  const subscribers: { ref: { current: (state: unknown, delta: number) => void }; priority: number }[] = [];
-  const internal = { subscribers, subscribe(ref: { current: (state: unknown, delta: number) => void }, priority: number) {
-    const entry = { ref, priority }; subscribers.push(entry); subscribers.sort((a, b) => a.priority - b.priority);
-    return () => { const index = subscribers.indexOf(entry); if (index >= 0) subscribers.splice(index, 1); };
-  } };
   // A fake GPU clock: each draw costs 1 ms of GPU work, and the CPU's submission between draws
   // leaves the GPU idle for 3 ms, which an open timer counts the way TIME_ELAPSED does.
   let clock = 0;
@@ -286,10 +280,9 @@ test("draw timing credits each draw's GPU time to its pass and material, never t
       }
     },
   };
-  const store = { getState: () => ({ internal }) };
-  const breakdown = installFrameBreakdown(renderer as never, store as never);
-  internal.subscribe({ current: () => renderer.render() }, 0);
-  const frame = () => { for (const { ref } of subscribers) ref.current({}, 1 / 60); };
+  const breakdown = installFrameBreakdown(renderer as never);
+  loop.join(0, () => renderer.render());
+  const frame = () => { loop.frame(); };
   try {
     frame(); frame(); frame();
     expect(breakdown.records()[0]?.gpu?.["main"]).toBe(18.5);
@@ -310,20 +303,14 @@ test("draw timing credits each draw's GPU time to its pass and material, never t
 test("shared member identities survive the recorder and source-map report", async () => {
   const prior = Reflect.get(globalThis, "window");
   Reflect.set(globalThis, "window", { location: { search: "?frameMembers=1" } });
-  const subscribers: { ref: { current: (state: unknown, delta: number) => void }; priority: number }[] = [];
-  const internal = { subscribers, subscribe(ref: { current: (state: unknown, delta: number) => void }, priority: number) {
-    const entry = { ref, priority }; subscribers.push(entry); subscribers.sort((a, b) => a.priority - b.priority);
-    return () => { const index = subscribers.indexOf(entry); if (index >= 0) subscribers.splice(index, 1); };
-  } };
-  const store = { getState: () => ({ internal }) };
   const renderer = { getContext: () => ({ getExtension: () => null }), shadowMap: {}, info: { programs: [] }, render() {} };
   const first = () => {};
   const second = () => {};
-  const leaveFirst = joinFrameGroup(store, internal.subscribe, 0, { current: first });
-  const leaveSecond = joinFrameGroup(store, internal.subscribe, 0, { current: second });
-  const breakdown = installFrameBreakdown(renderer as never, store as never);
+  const leaveFirst = loop.join(0, first);
+  const leaveSecond = loop.join(0, second);
+  const breakdown = installFrameBreakdown(renderer as never);
   try {
-    for (let i = 0; i < 2; i += 1) for (const { ref } of subscribers) ref.current({}, 1 / 60);
+    for (let i = 0; i < 2; i += 1) loop.frame();
     const callbacks = Object.entries(breakdown.callbacks());
     const firstLabel = callbacks.find(([, callback]) => callback === first)?.[0];
     const secondLabel = callbacks.find(([, callback]) => callback === second)?.[0];
@@ -358,15 +345,6 @@ test("shared member identities survive the recorder and source-map report", asyn
 test("attributes real fauna terrain queries and terrain edits to a shared callback", () => {
   const prior = Reflect.get(globalThis, "window");
   Reflect.set(globalThis, "window", { location: { search: "?frameMembers=1" } });
-  const subscribers: { ref: { current: (state: unknown, delta: number) => void }; priority: number }[] = [];
-  const internal = {
-    subscribers,
-    subscribe(ref: { current: (state: unknown, delta: number) => void }, priority: number) {
-      const entry = { ref, priority }; subscribers.push(entry); subscribers.sort((a, b) => a.priority - b.priority);
-      return () => { const index = subscribers.indexOf(entry); if (index >= 0) subscribers.splice(index, 1); };
-    },
-  };
-  const store = { getState: () => ({ internal }) };
   const renderer = { getContext: () => ({ getExtension: () => null }), shadowMap: {}, info: { programs: [] }, render() {} };
   const terrain = createEditableTerrain({ bounds: { minX: -50, minZ: -50, maxX: 50, maxZ: 50 }, cellSize: 2 });
   const fauna = createAmbientFauna([{ id: "motes", species: "motes", motion: "drift", area: { shape: "disc", x: 0, z: 0, radius: 20 }, count: 20, seed: 1 }], { groundAt: terrain.sampleHeight, groundRevision: terrain.heightRevision });
@@ -374,10 +352,10 @@ test("attributes real fauna terrain queries and terrain edits to a shared callba
   let time = 0;
   const advanceFauna = () => { fauna.update({ dt: 1 / 30, time: time += 1 / 30, sunHeight: 1, focusX: 0, focusZ: 0 }); };
   const repeatQueries = () => { repeated.update({ dt: 1 / 30, time, sunHeight: 1, focusX: 0, focusZ: 0 }); };
-  const leave = joinFrameGroup(store, internal.subscribe, 0, { current: advanceFauna });
-  const leaveRepeated = joinFrameGroup(store, internal.subscribe, 0, { current: repeatQueries });
-  const breakdown = installFrameBreakdown(renderer as never, store as never);
-  const runFrame = () => { for (const { ref } of subscribers) ref.current({}, 1 / 30); };
+  const leave = loop.join(0, advanceFauna);
+  const leaveRepeated = loop.join(0, repeatQueries);
+  const breakdown = installFrameBreakdown(renderer as never);
+  const runFrame = () => { loop.frame(1 / 30); };
   try {
     for (let i = 0; i < 60; i += 1) runFrame();
     const repeatedOwner = Object.entries(breakdown.callbacks()).find(([, callback]) => callback === repeatQueries)?.[0];
@@ -406,24 +384,18 @@ test("deep observation preserves the same fauna workload and query count", () =>
   const prior = Reflect.get(globalThis, "window");
   const run = (deep: boolean) => {
     Reflect.set(globalThis, "window", { location: { search: deep ? "?frameMembers=1" : "" } });
-    const subscribers: { ref: { current: (state: unknown, delta: number) => void }; priority: number }[] = [];
-    const internal = { subscribers, subscribe(ref: { current: (state: unknown, delta: number) => void }, priority: number) {
-      const entry = { ref, priority }; subscribers.push(entry); subscribers.sort((a, b) => a.priority - b.priority);
-      return () => { const index = subscribers.indexOf(entry); if (index >= 0) subscribers.splice(index, 1); };
-    } };
-    const store = { getState: () => ({ internal }) };
     const renderer = { getContext: () => ({ getExtension: () => null }), shadowMap: {}, info: { programs: [] }, render() {} };
     let queries = 0;
     const fauna = createAmbientFauna([{ id: "motes", species: "motes", motion: "drift", area: { shape: "disc", x: 0, z: 0, radius: 20 }, count: 20, seed: 1 }], { groundAt: () => { queries += 1; return 0; }, groundRevision: () => 0 });
     let time = 0;
     const update = () => fauna.update({ dt: 1 / 30, time: time += 1 / 30, sunHeight: 1, focusX: 0, focusZ: 0 });
-    const leave = joinFrameGroup(store, internal.subscribe, 0, { current: update });
-    const breakdown = installFrameBreakdown(renderer as never, store as never);
+    const leave = loop.join(0, update);
+    const breakdown = installFrameBreakdown(renderer as never);
     try {
       queries = 0;
-      for (let i = 0; i < 60; i += 1) for (const { ref } of subscribers) ref.current({}, 1 / 30);
+      for (let i = 0; i < 60; i += 1) loop.frame(1 / 30);
       const completedQueries = queries;
-      for (const { ref } of subscribers) ref.current({}, 1 / 30);
+      loop.frame(1 / 30);
       const owner = Object.entries(breakdown.callbacks()).find(([, callback]) => callback === update)?.[0];
       const counted = breakdown.records().reduce((sum, record) => sum + (record.calls?.[`${owner} | fauna ground queries`] ?? 0), 0);
       return { snapshot: fauna.snapshot(), queries, completedQueries, counted, owner };
