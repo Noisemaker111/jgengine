@@ -4,8 +4,8 @@
  * can be traced in one place.
  */
 
-import { useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useRef, useState } from "@jgengine/core/ui/jsx";
+import { createPortal } from "@jgengine/core/ui/jsx/client.view";
 
 import type { BuildViewModel } from "@/build/buildSession";
 import type { ReadyWorldViewModel } from "@/runtime/worldViewModel";

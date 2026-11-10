@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from "@jgengine/core/ui/jsx";
 import { RuneUi } from "@jgengine/core/ui/runeUi.view";
 import type { RuneUiEvent } from "@jgengine/core/ui/runeUi.view";
 import { useSettingsStore, type SettingsController } from "@jgengine/core/settings/settings.view";

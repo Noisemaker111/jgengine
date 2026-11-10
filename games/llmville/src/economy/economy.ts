@@ -1,5 +1,5 @@
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
-import { useCallback } from "react";
+import { useCallback } from "@jgengine/core/ui/jsx";
 
 import { isBuildItemId, type BuildItemId } from "@llmville/game/build/catalog";
 import type { PersonalUpgradeId } from "@llmville/game/user/personalUpgrades";

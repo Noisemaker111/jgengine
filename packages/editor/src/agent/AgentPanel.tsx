@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
 
 import type { EditorHostApi } from "../session";
 import { useStoreVersion } from "../useStoreSelector";

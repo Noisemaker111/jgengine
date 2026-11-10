@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "@jgengine/core/ui/jsx";
 
 import { computeClientServerOffset, computeGameTime, type GameTime } from "@jgengine/core/time/calendarClock";
 import { getCurrentGameTimestamp, sanitizeGameTimeScale } from "@jgengine/core/time/gameClock";

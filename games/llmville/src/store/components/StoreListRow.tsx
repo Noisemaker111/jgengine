@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { cn } from "@/kit/cn";

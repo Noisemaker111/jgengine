@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect } from "@jgengine/core/ui/jsx";
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { fallbackSeamsSnapshot } from "@jgengine/core/devtools/fallbackSeams";
 import { textureErrorsSnapshot } from "@jgengine/core/devtools/textureErrors";

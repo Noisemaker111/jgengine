@@ -80,8 +80,8 @@ ${devServerWatch}
 
 const editorMainTsx = `import "./index.css";
 
-import { useEffect, useState } from "react";
-import { createRoot } from "react-dom/client";
+import { useEffect, useState } from "@jgengine/core/ui/jsx";
+import { createRoot } from "@jgengine/core/ui/jsx/client.view";
 
 import type { EditorLayersInput } from "@jgengine/core/editor/index";
 import { installSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";

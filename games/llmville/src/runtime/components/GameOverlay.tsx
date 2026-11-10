@@ -3,7 +3,7 @@
  * Walk/look input lives in the shell, not here.
  */
 
-import { useState } from "react";
+import { useState } from "@jgengine/core/ui/jsx";
 
 import { HudSlots } from "@jgengine/core/hud/hudLayout.view";
 import { KitToast } from "@jgengine/core/ui/kit/uiKitRoot.view";

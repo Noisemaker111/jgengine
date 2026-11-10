@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 import type { EmitterConfig } from "@jgengine/core/vfx/particles";
 import { useGameContext } from "@jgengine/react/provider";
 import { editorLayers, type Place } from "../world";

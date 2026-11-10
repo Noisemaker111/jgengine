@@ -1,5 +1,5 @@
 import { LevelUpFlash } from "@jgengine/core/ui/components.view";
-import { useRef } from "react";
+import { useRef } from "@jgengine/core/ui/jsx";
 import { useEntityStat, useGameStore, useGameTimeWindow, usePlayer } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { useFrameBind } from "@jgengine/core/ui/liveBind.view";

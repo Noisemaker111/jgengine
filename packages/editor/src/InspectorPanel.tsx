@@ -1,7 +1,7 @@
 import type { CreatorPolicy } from "@jgengine/core/editor/creatorStorage";
 import type { EditorEnvironment } from "@jgengine/core/editor/types";
 import { SimulationInspector } from "./SimulationInspector";
-import { useState } from "react";
+import { useState } from "@jgengine/core/ui/jsx";
 
 import {
   editorParentOf,
@@ -61,6 +61,7 @@ import { CoverageSection } from "./shell/scatterCoverage";
 import type { InspectorTab } from "./shell/layoutStore";
 import { FOCUS_RING, INPUT_CLS, NUMERIC } from "./shell/theme";
 import { CollapsibleSection, EmptyState, IconButton, PanelTabs } from "./shell/ui";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 /** Builds the resolver-facing view of a document object for a registered scene kind's inspector. */
 function markerObject(marker: { id: string; kind: string; position: { x: number; y: number; z: number }; rotationY?: number; meta?: Record<string, unknown> }): SceneKindObject {
@@ -574,8 +575,8 @@ function Section({
   title: string;
   icon?: Parameters<typeof CollapsibleSection>[0]["icon"];
   sections: SectionState;
-  children: React.ReactNode;
-  trailing?: React.ReactNode;
+  children: ReactNode;
+  trailing?: ReactNode;
 }) {
   return (
     <CollapsibleSection
@@ -719,7 +720,7 @@ export function InspectorPanel({
 
   const selectedMeta = selectedMarker?.meta ?? selectedVolume?.meta ?? selectedPath?.meta;
 
-  let body: React.ReactNode = null;
+  let body: ReactNode = null;
 
   if (activeTab === "materials") {
     body = <MaterialsTab api={api} selection={selection} meta={selectedMeta} />;

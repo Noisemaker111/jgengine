@@ -1,4 +1,4 @@
-import { useEffect, useState, type ComponentType } from "react";
+import { useEffect, useState, type ComponentType } from "@jgengine/core/ui/jsx";
 
 import type { EditorAppProps } from "@jgengine/editor/EditorApp";
 import type { PlayableGame } from "@jgengine/shell/registry";

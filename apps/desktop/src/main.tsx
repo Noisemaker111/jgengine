@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect, useState } from "react";
-import { createRoot } from "react-dom/client";
+import { lazy, Suspense, useEffect, useState } from "@jgengine/core/ui/jsx";
+import { createRoot } from "@jgengine/core/ui/jsx/client.view";
 
 import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
 import { GameUiPreview } from "@jgengine/shell/GameUiPreview";

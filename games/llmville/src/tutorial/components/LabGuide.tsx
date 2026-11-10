@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from "@jgengine/core/ui/jsx";
 import { ArrowRight, Check, Sparkles } from "lucide-react";
 import { getBaseModelDefinition } from "@llmville/game/models/baseModels";
 import { STARTER_RACK_CATALOG_ID } from "@llmville/game/infrastructure/catalog";

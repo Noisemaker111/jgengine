@@ -22,7 +22,7 @@ beforeAll(async () => {
   for (const peer of ["react", "react-dom"]) await symlink(`${root}/packages/react/node_modules/${peer}`, `${scratch}/node_modules/${peer}`, "dir");
   await installPublicPackages(scratch, ["core", "react"]);
   await Bun.write(`${scratch}/fixture.tsx`, `
-    import React from 'react';import {createRoot} from 'react-dom/client';
+    import React from '@jgengine/core/ui/jsx';import {createRoot} from '@jgengine/core/ui/jsx/client.view';
     import {HudCanvas,HudPanel,useHudLayout} from '@jgengine/core/hud/hudLayout.view';
     import {GameViewportProvider} from '@jgengine/core/ui/viewport.view';
     function Fixture(){const layout=useHudLayout();const [playing,setPlaying]=React.useState(false);

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";

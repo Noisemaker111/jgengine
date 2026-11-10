@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderToStaticMarkup } from "@jgengine/core/ui/jsx/markup";
 
 import { HUD_CORNER_WIDTH, HudSlots } from "./hudLayout.view";
 import { KitCount, KitCounts, KitHint, KitVitalIcons, KitVitals, KitWaveClock } from "./kitHud.view";

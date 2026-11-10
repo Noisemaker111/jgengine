@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { createElement } from "@jgengine/core/ui/jsx";
+import { renderToStaticMarkup } from "@jgengine/core/ui/jsx/markup";
 
 import { AccessibilityProvider, ColorblindFilters, ColorblindFrame, useAccessibility, useColorblindMode } from "./accessibility.view";
 import { createAccessibilityStore } from "@jgengine/core/ui/accessibility";

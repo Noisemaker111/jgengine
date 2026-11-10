@@ -36,7 +36,7 @@ import { api } from "@llmville/backend/convex/_generated/api";
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
 import { useMutation } from "convex/react";
 import { INTERACTION_TARGET_TYPE } from "@llmville/game/simulation/interaction";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo } from "@jgengine/core/ui/jsx";
 
 export interface BuildSessionWorldInput {
   engine: GameEngine;

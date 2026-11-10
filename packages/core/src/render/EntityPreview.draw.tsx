@@ -1,5 +1,5 @@
 // @skill jgengine-ui
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { GameContextBridge, useOptionalGameContext } from "@jgengine/react/provider";

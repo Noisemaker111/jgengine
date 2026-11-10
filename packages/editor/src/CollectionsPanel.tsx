@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from "@jgengine/core/ui/jsx";
 
 import type { EditorCollection, EditorSession } from "@jgengine/core/editor/index";
 

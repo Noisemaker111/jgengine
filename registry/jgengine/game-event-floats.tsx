@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "@jgengine/core/ui/jsx";
 import type { EntityFloatTextEvent } from "@jgengine/core/game/events";
 import { useGame } from "@jgengine/react/hooks";
 

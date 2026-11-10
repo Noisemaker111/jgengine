@@ -1,5 +1,5 @@
 // @skill jgengine-world
-import { useRef, type MutableRefObject, type RefObject } from "react";
+import { useRef, type MutableRefObject, type RefObject } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import type { BiomeBand, SkyEnvironmentDescriptor } from "@jgengine/core/world/features";

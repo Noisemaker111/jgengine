@@ -1,5 +1,5 @@
-import { useMemo, type CSSProperties, type ReactNode } from "react";
-import { createPortal } from "react-dom";
+import { useMemo, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
+import { createPortal } from "@jgengine/core/ui/jsx/client.view";
 
 import type { AccessibilityState } from "@jgengine/core/ui/accessibility";
 

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef } from "@jgengine/core/ui/jsx";
 
 import { joinAfterRenderTask } from "@jgengine/core/frame/afterRenderBoard.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";

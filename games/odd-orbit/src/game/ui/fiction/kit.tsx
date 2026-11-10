@@ -1,4 +1,4 @@
-import { forwardRef, useRef, type CSSProperties, type ReactNode, type Ref } from "react";
+import { forwardRef, useRef, type CSSProperties, type ReactNode, type Ref } from "@jgengine/core/ui/jsx";
 import type { GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
 import { useFrameBind } from "@jgengine/core/ui/liveBind.view";
 import { KitButton, KitPanel, type KitMaterialButtonProps, type KitMaterialPanelProps } from "@jgengine/core/ui/kit/uiKitRoot.view";

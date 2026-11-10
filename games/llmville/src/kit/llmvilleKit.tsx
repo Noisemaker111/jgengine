@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 import { deriveHudTheme } from "@jgengine/core/hud/hudTheme.view";
 import {

@@ -1,5 +1,5 @@
 // @skill jgengine-multiplayer
-import type { ReactNode } from "react";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 /**
  * Blocking join feedback; callers may supply their own copy and classes.

@@ -1,4 +1,4 @@
-import { useState, type CSSProperties, type ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { HudPanel } from "@/components/ui/hud-panel";
 

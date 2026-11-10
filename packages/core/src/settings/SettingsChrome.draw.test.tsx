@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
-import type { ReactNode } from "react";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 import { findHudOverlayHost, HUD_OVERLAY_HOST_ATTRIBUTE } from "@jgengine/core/hud/hudThemeRoot.view";
 

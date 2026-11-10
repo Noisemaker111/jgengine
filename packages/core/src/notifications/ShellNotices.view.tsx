@@ -1,5 +1,5 @@
 // @skill jgengine-gameplay
-import { useCallback, useEffect, type ReactNode } from "react";
+import { useCallback, useEffect, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { NOTICE_TONE_CUES, uiCueSoundId } from "@jgengine/core/ui/uiCues";
 import type { NoticePresentationConfig } from "@jgengine/core/game/playableGame";

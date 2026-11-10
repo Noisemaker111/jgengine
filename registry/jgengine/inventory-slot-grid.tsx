@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 import { useInventory } from "@jgengine/react/hooks";
 import type { InventorySlot } from "@jgengine/core/inventory/inventoryModel";
 

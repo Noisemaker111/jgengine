@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState, useSyncExternalStore, type CSSProperties } from "react";
+import { useLayoutEffect, useState, useSyncExternalStore, type CSSProperties } from "@jgengine/core/ui/jsx";
 import { actionContextStack, playControlsActive, suspendPlayControls } from "@jgengine/core/game/controlGate";
 import { useGame, useGameContext, useGameStoreValue } from "@jgengine/react";
 import type { PlayableGame } from "@jgengine/shell/registry";

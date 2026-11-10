@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 
 const SURFACE_TEXTURE =
   "repeating-linear-gradient(135deg, rgba(255,255,255,0.016) 0px, rgba(255,255,255,0.016) 1px, transparent 1px, transparent 7px), linear-gradient(180deg, var(--jg-surface) 0%, var(--jg-surface-deep) 100%)";

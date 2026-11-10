@@ -1,4 +1,4 @@
-import { useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
+import { useSyncExternalStore, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { AchievementTracker, AchievementView } from "@jgengine/core/achievements/achievements";
 import { hudType } from "@jgengine/core/hud/hudTokens";

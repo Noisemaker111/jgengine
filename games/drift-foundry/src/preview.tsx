@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties } from "@jgengine/core/ui/jsx";
 import type { GamePreviewProps } from "@jgengine/react/preview";
 
 const C = {

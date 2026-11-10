@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 import { GameFlowUI } from "@jgengine/core/menu/gameFlowMenus.view";
 
 import { useGameFonts } from "@jgengine/core/ui/fonts.view";

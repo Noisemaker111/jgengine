@@ -1,4 +1,5 @@
-import { useEffect, useRef, type CSSProperties, type HTMLAttributes, type ReactNode, type Ref } from "react";
+import { useEffect, useRef, type CSSProperties, type ReactNode, type Ref } from "@jgengine/core/ui/jsx";
+import type { HTMLAttributes } from "@jgengine/core/ui/jsx/dom.view";
 
 import { memoView } from "../ui/memoView.view";
 

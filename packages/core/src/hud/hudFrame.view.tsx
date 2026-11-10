@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 
 import { hudElevation, hudFont, hudType } from "./hudTokens";
 

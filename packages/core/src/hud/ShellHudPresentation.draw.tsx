@@ -1,4 +1,4 @@
-import { useEffect, type Dispatch, type MutableRefObject, type RefObject, type SetStateAction } from "react";
+import { useEffect, type Dispatch, type MutableRefObject, type RefObject, type SetStateAction } from "@jgengine/core/ui/jsx";
 
 import { suppressBrowserContextMenu } from "@jgengine/core/input/secondaryPointer";
 import type { PointerAxisState } from "@jgengine/core/input/pointerAxis";
@@ -24,6 +24,7 @@ import { withLocaleSetting } from "@jgengine/core/i18n/localeSetting";
 import { SettingsRuntime } from "@jgengine/core/settings/SettingsRuntime.draw";
 import { SettingsChrome } from "@jgengine/core/settings/SettingsChrome.draw";
 import { TouchPlaySurface } from "@jgengine/core/input/TouchControlsOverlay.view";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 /**
  * Marks a HUD-only page ready for capture (`data-jg-capture="ready"`) unless a capture host already
@@ -82,7 +83,7 @@ export function ShellHudPresentation({
   touchScheme: TouchScheme | null;
   touchSink: { onCodeDown: (code: string) => void; onCodeUp: (code: string) => void };
   orientationGate: boolean;
-  orientationGateEl: React.ReactNode;
+  orientationGateEl: ReactNode;
   coarsePointer: boolean;
   uiScale: number;
   diagnostics: RuntimeDiagnostic[];

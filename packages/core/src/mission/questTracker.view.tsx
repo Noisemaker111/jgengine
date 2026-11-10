@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { TrackedQuestView } from "@jgengine/core/mission/quest";
 import { hudType } from "@jgengine/core/hud/hudTokens";

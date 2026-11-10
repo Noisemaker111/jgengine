@@ -1,10 +1,4 @@
-import {
-  useCallback,
-  useMemo,
-  useState,
-  type CSSProperties,
-  type ReactNode,
-} from "react";
+import { useCallback, useMemo, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import {
   moveSelectionFocus,

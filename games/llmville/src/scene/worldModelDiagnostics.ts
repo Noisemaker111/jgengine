@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import { createObservableKeyedStore } from "@jgengine/core/store/observableKeyedStore";
 

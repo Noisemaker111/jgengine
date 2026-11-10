@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from "@jgengine/core/ui/jsx";
 
 /** Deterministic canvas-backed tile-layer fixture for textured tile presentation evidence. */
 export function TileLayerPreview({ className }: { className?: string }) {

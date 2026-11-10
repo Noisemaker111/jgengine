@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect } from "@jgengine/core/ui/jsx";
 import { useCurrency, useGame } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 import { HudButton } from "@jgengine/core/hud/hudButton.view";

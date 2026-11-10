@@ -104,5 +104,9 @@ export interface CSSProperties {
   WebkitAppearance?: CssValue; WebkitBackdropFilter?: CssValue; WebkitBackgroundClip?: CssValue; WebkitBoxOrient?: CssValue;
   WebkitFontSmoothing?: CssValue; WebkitLineClamp?: CssValue; WebkitMaskImage?: CssValue; WebkitOverflowScrolling?: CssValue;
   WebkitTapHighlightColor?: CssValue; WebkitTextFillColor?: CssValue; WebkitTextStroke?: CssValue; WebkitTextStrokeColor?: CssValue;
-  WebkitTextStrokeWidth?: CssValue; WebkitUserSelect?: CssValue; MozOsxFontSmoothing?: CssValue;
+  WebkitTextStrokeWidth?: CssValue; WebkitUserSelect?: CssValue; MozOsxFontSmoothing?: CssValue; WebkitMaskSize?: CssValue;
+  WebkitMaskPosition?: CssValue; WebkitMaskRepeat?: CssValue; WebkitMask?: CssValue; WebkitMaskComposite?: CssValue; WebkitMaskClip?: CssValue;
+  WebkitMaskOrigin?: CssValue; WebkitTransform?: CssValue; WebkitTransition?: CssValue; WebkitAnimation?: CssValue; WebkitFilter?: CssValue;
+  WebkitBoxShadow?: CssValue; WebkitTouchCallout?: CssValue; WebkitUserDrag?: CssValue; WebkitPrintColorAdjust?: CssValue;
+  WebkitBoxReflect?: CssValue; WebkitClipPath?: CssValue; WebkitTextSizeAdjust?: CssValue; MozUserSelect?: CssValue; msUserSelect?: CssValue;
 }

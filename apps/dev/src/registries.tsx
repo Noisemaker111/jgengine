@@ -4,7 +4,7 @@
  * registry, and the camera-preset overlay. All loaders are lazy — importing
  * this module scans no game code until something is actually requested.
  */
-import type { ComponentType } from "react";
+import type { ComponentType } from "@jgengine/core/ui/jsx";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { resolveTerrainField } from "@jgengine/core/terrain/terrain";

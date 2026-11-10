@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 import type { ChatMessage } from "@jgengine/core/chat/chat";
 import { useGameStore } from "@jgengine/react/hooks";
 

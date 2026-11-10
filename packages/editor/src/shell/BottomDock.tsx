@@ -1,4 +1,4 @@
-import { useSyncExternalStore, type ReactNode } from "react";
+import { useSyncExternalStore, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { LibraryEntry } from "@jgengine/assets/library/assetLibrary";
 import type { EditorSession } from "@jgengine/core/editor/index";

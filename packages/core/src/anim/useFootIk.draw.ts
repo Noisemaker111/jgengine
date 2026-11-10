@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import { inferLegChains, placeFeet, type FootGroundSample, type FootPlacement } from "@jgengine/core/anim/footPlacement";

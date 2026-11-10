@@ -1,4 +1,4 @@
-import { useRef, useSyncExternalStore } from "react";
+import { useRef, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import type { BootStep } from "@jgengine/core/boot/bootSequence";
 import { BootLoadingScreen, useBootStep } from "@jgengine/core/boot/bootScreen.view";

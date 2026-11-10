@@ -1,5 +1,5 @@
 import { useQuery } from "convex/react";
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 
 import type { RemotePlayersProps } from "@jgengine/core/game/playableGame";
 import { cameraYawToAvatarBodyYaw } from "@jgengine/core/movement/movementModel";

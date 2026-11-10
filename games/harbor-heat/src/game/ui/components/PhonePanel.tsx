@@ -1,4 +1,4 @@
-import { useRef, type ReactNode } from "react";
+import { useRef, type ReactNode } from "@jgengine/core/ui/jsx";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";

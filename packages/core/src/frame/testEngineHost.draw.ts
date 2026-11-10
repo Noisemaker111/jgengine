@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { act, createElement, type ReactElement } from "react";
-import { createRoot } from "react-dom/client";
+import { act, createElement, type ReactElement } from "@jgengine/core/ui/jsx";
+import { createRoot } from "@jgengine/core/ui/jsx/client.view";
 import { EngineHostProvider } from "./engineHost.draw";
 
 import { flushAfterRenderTasks, flushBeforeRenderTasks } from "./afterRenderBoard.draw";

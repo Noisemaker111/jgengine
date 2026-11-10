@@ -1,5 +1,5 @@
 // @skill jgengine-assets
-import { Component, Suspense, useMemo, useSyncExternalStore, type ReactNode } from "react";
+import { Component, Suspense, useMemo, useSyncExternalStore, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { EntitySpriteConfig, ModelConfig } from "@jgengine/core/game/playableGame";
 import { reportFallbackSeam, type FallbackSeam } from "@jgengine/core/devtools/fallbackSeams";

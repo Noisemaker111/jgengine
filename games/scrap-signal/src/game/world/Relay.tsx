@@ -4,7 +4,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { useGameContext } from "@jgengine/react/provider";
-import { useRef } from "react";
+import { useRef } from "@jgengine/core/ui/jsx";
 
 import { RELAY, relayStore, type RelayState } from "../relay";
 

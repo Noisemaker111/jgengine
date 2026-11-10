@@ -1,4 +1,4 @@
-import { createElement, useEffect, useRef, useState, type CSSProperties, type ReactNode, type Ref } from "react";
+import { createElement, useEffect, useRef, useState, type CSSProperties, type ReactNode, type Ref } from "@jgengine/core/ui/jsx";
 import { slotText, type SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 import { GameCursor } from "@jgengine/core/ui/cursor.view";
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";

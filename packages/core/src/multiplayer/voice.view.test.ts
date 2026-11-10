@@ -16,7 +16,7 @@ beforeAll(async () => {
   for (const peer of ["react", "react-dom"]) await symlink(`${root}/packages/react/node_modules/${peer}`, `${scratch}/node_modules/${peer}`, "dir");
   await installPublicPackages(scratch, ["core", "react"]);
   await Bun.write(`${scratch}/fixture.tsx`, `
-    import React,{useState} from 'react';import {createRoot} from 'react-dom/client';import {flushSync} from 'react-dom';
+    import React,{useState} from '@jgengine/core/ui/jsx';import {createRoot} from '@jgengine/core/ui/jsx/client.view';import {flushSync} from '@jgengine/core/ui/jsx/client.view';
     import {useVoice} from '@jgengine/core/multiplayer/voice.view';import {createLocalVoiceTransport} from '@jgengine/core/multiplayer/voiceContract';
     const audio=new AudioContext(),tracks=[audio.createMediaStreamDestination().stream.getAudioTracks()[0],audio.createMediaStreamDestination().stream.getAudioTracks()[0]],stream=new MediaStream(tracks);
     const local=createLocalVoiceTransport({userId:'crew-member'}),published=[],transport={...local.transport,publish(channelId,id){published.push(tracks.map(track=>track.enabled));return local.transport.publish(channelId,id)}},routes=[],resolveRoutes=()=>routes;let grant,requestCount=0,constraints=null;

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, type DependencyList } from "react";
+import { useEffect, useMemo, type DependencyList } from "@jgengine/core/ui/jsx";
 
 /** Anything exposing dispose() — three.js geometries, materials, textures, render targets. */
 export interface Disposable {

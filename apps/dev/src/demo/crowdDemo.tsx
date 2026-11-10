@@ -7,7 +7,7 @@ import { defineStore } from "@jgengine/core/store/defineStore";
 import { useStore } from "@jgengine/react/store";
 import { useGameContext } from "@jgengine/react/provider";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";

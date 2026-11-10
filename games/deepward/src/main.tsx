@@ -1,5 +1,5 @@
 import "./style.css";
-import { createRoot } from "react-dom/client";
+import { createRoot } from "@jgengine/core/ui/jsx/client.view";
 import { GameHost } from "@jgengine/shell/GameHost";
 import { game } from "./game";
 

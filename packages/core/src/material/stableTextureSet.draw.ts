@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef } from "@jgengine/core/ui/jsx";
 
 /** Whether two texture sets hold the same roles and texture instances. @internal */
 export function sameTextureSet(a: unknown, b: unknown): boolean {

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import type { PlaceWorldFeature } from "@jgengine/core/placement/place";

@@ -1,4 +1,4 @@
-import { createRoot } from "react-dom/client";
+import { createRoot } from "@jgengine/core/ui/jsx/client.view";
 
 import { GameHost } from "@jgengine/shell/GameHost";
 import type { PlayableGame } from "@jgengine/shell/registry";

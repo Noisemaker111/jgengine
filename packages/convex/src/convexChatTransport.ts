@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo } from "@jgengine/core/ui/jsx";
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReference } from "convex/server";
 

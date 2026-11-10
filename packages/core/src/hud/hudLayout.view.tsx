@@ -1,21 +1,6 @@
-import {
-  createContext,
-  Fragment,
-  useCallback,
-  useContext,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type CSSProperties,
-  type MouseEvent as ReactMouseEvent,
-  type PointerEvent as ReactPointerEvent,
-  type ReactNode,
-  type RefObject,
-} from "react";
-import { createPortal } from "react-dom";
+import { createContext, Fragment, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type RefObject } from "@jgengine/core/ui/jsx";
+import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "@jgengine/core/ui/jsx/dom.view";
+import { createPortal } from "@jgengine/core/ui/jsx/client.view";
 import {
   HUD_ANCHOR_FRACTIONS,
   anchoredPlacement,

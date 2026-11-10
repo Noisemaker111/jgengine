@@ -3,19 +3,8 @@ import { CharacterMotionContext, noteGameCharacterMotion } from "@jgengine/core/
 import { lightingHasSoftShadows } from "@jgengine/core/lighting/softShadows";
 import { useEngineRendererFactory } from "@jgengine/core/webgpu/engineRenderer.draw";
 import { EngineCanvas } from "@jgengine/core/frame/engineCanvas.draw";
-import {
-  useMemo,
-  useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type Dispatch,
-  type MutableRefObject,
-  type MouseEvent as ReactMouseEvent,
-  type PointerEvent as ReactPointerEvent,
-  type RefObject,
-  type SetStateAction,
-} from "react";
+import { useMemo, useEffect, useRef, useState, useSyncExternalStore, type Dispatch, type MutableRefObject, type RefObject, type SetStateAction } from "@jgengine/core/ui/jsx";
+import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "@jgengine/core/ui/jsx/dom.view";
 import * as THREE from "three";
 
 import {
@@ -147,6 +136,7 @@ import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { useEngineDraw, SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 const PRIMARY_CLICK_MOVE_THRESHOLD_PX = 6;
 const DEFAULT_BACKGROUND_COLOR = "#14161b";
@@ -306,7 +296,7 @@ export function Shell3dPresentation({
   analogRef: MutableRefObject<Readonly<Record<string, number>> | null>;
   inputBindings: typeof playable.game.input;
   orientationGate: boolean;
-  orientationGateEl: React.ReactNode;
+  orientationGateEl: ReactNode;
   coarsePointer: boolean;
   compact: boolean;
   graphics: AppliedGraphicsSettings;

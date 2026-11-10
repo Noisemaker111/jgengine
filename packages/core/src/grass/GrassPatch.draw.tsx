@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef } from "@jgengine/core/ui/jsx";
 import { Euler, Group, Vector3 } from "three";
 import type * as THREE from "three";
 

@@ -1,7 +1,7 @@
 // @skill jgengine-world
 import { AuthoredFlocks } from "@jgengine/core/ai/AuthoredFlocks.draw";
 import { AuthoredWeatherLayer } from "@jgengine/core/weather/AuthoredWeatherLayer.draw";
-import { Fragment, useCallback, useEffect, useMemo, useReducer, useRef, useSyncExternalStore } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useReducer, useRef, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import type { EditorDocument, EditorMarker, EditorPath, EditorVolume } from "@jgengine/core/editor/index";
 import {

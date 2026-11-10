@@ -1,5 +1,5 @@
 // @skill jgengine-world
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, type MutableRefObject } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
@@ -42,7 +42,7 @@ import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
 import { type EngineDraw, type EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
-import type { MutableRefObject } from "react";
+
 import type { VisiblePredicate } from "@jgengine/core/visibility/CullingProvider.draw";
 
 interface CrowdBatchEnv {

@@ -1,6 +1,6 @@
 import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
 import { RouterProvider } from "@tanstack/react-router";
-import ReactDOM from "react-dom/client";
+import ReactDOM from "@jgengine/core/ui/jsx/client.view";
 
 import { AuthProvider } from "@/auth";
 import { applyLlmvilleKit } from "@/kit/llmvilleKit";

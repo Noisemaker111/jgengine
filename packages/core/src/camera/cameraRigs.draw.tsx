@@ -1,4 +1,4 @@
-import { useRef, type MutableRefObject } from "react";
+import { useRef, type MutableRefObject } from "@jgengine/core/ui/jsx";
 import { PerspectiveCamera, Quaternion, Vector3, type Camera } from "three";
 
 import type {

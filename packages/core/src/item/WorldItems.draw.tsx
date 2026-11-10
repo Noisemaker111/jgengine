@@ -1,5 +1,5 @@
 // @skill jgengine-gameplay
-import { useMemo, useRef } from "react";
+import { useMemo, useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import type { WorldItemRenderConfig } from "@jgengine/core/game/playableGame";
 import { resolveWorldItemPresentation } from "@jgengine/core/loot/groundItem";

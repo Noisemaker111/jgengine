@@ -11,7 +11,7 @@ import { prompts } from "./game/prompts";
 import { entityModels, flockModels, objectModels } from "./game/world/models";
 import { GameUI } from "./game/ui/GameUI";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
-import { createElement } from "react";
+import { createElement } from "@jgengine/core/ui/jsx";
 import { harborKit, harborTheme } from "./game/ui/theme";
 import { loop } from "./loop";
 import { residentBoardStore } from "./game/world/residents";

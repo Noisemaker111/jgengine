@@ -1,5 +1,5 @@
 import { HudOverlay } from "./hudOverlay.draw";
-import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { CombatTelegraphEvent, EntityFloatTextEvent } from "@jgengine/core/game/events";

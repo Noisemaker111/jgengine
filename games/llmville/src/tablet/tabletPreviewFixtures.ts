@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
 
 import { BUILD_MENU_TAB_SEQUENCE } from "@llmville/game/build/build";
 import { normalizeBuildInventory } from "@llmville/game/build/catalog";

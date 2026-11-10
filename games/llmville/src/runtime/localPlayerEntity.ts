@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "@jgengine/core/ui/jsx";
 import { Euler } from "three";
 
 import type { MovementCommitFrame } from "@jgengine/core/game/playableGame";

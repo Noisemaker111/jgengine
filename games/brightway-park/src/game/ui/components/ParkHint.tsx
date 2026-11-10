@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect } from "@jgengine/core/ui/jsx";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";

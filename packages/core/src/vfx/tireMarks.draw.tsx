@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef } from "@jgengine/core/ui/jsx";
 import { BufferAttribute, BufferGeometry, DoubleSide, Mesh, MeshBasicMaterial } from "three";
 
 import type { TireMark } from "@jgengine/core/physics/tireMarks";

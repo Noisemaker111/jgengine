@@ -1,4 +1,4 @@
-import type { ComponentType } from "react";
+import type { ComponentType } from "@jgengine/core/ui/jsx";
 
 import type { GeneratorDefinition, GeneratorVariant } from "@jgengine/core/generator/generator";
 

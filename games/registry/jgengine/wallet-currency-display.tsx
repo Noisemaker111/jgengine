@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 import { useCurrency } from "@jgengine/react/hooks";
 
 import { CurrencyDisplay } from "@/components/ui/currency-display";

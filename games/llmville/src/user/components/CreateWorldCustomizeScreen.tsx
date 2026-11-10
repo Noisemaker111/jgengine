@@ -1,6 +1,7 @@
 import { ChevronLeft, Play } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type RefObject } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "@jgengine/core/ui/jsx";
+import type { KeyboardEvent } from "@jgengine/core/ui/jsx/dom.view";
 
 import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { cn } from "@/kit/cn";

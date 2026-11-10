@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from "@jgengine/core/ui/jsx";
 
 import { editorDocumentBounds } from "@jgengine/core/editor/index";
 import type { Aabb } from "@jgengine/core/world/geometry";

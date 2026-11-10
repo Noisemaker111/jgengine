@@ -9,6 +9,7 @@
     "noImplicitReturns": true,
     "lib": ["ES2022", "DOM"],
     "jsx": "react-jsx",
+    "jsxImportSource": "@jgengine/core/ui/jsx",
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
     "types": ["bun"]

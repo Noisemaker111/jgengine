@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, type ReactNode } from "@jgengine/core/ui/jsx";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 const GameReactContext = createContext<GameContext | null>(null);

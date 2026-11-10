@@ -4,6 +4,7 @@
     "noEmit": true,
     "lib": ["ES2022", "DOM"],
     "jsx": "react-jsx",
+    "jsxImportSource": "@jgengine/core/ui/jsx",
     "paths": {
       "react": ["../react/node_modules/@types/react/index.d.ts"],
       "react/jsx-runtime": ["../react/node_modules/@types/react/jsx-runtime.d.ts"],

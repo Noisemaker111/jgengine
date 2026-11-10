@@ -1,4 +1,4 @@
-import { type CSSProperties, useState } from "react";
+import { type CSSProperties, useState } from "@jgengine/core/ui/jsx";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/core/hud/hudLayout.view";
 import { useGame, useGameClock, useGameStore } from "@jgengine/react/hooks";
 import { useGameFonts } from "@jgengine/core/ui/fonts.view";

@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import { COLLISION_DEBUG_LAYERS, collisionDebug, type CollisionDebugLayer } from "./collisionDebug";
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "@jgengine/core/ui/jsx";
 import type { StatLevelUpEvent } from "@jgengine/core/game/events";
 import { useGame } from "@jgengine/react/hooks";
 

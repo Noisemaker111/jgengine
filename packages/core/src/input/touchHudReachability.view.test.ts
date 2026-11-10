@@ -14,7 +14,7 @@ beforeAll(async()=>{
   await mkdir(`${scratch}/node_modules`,{recursive:true});
   for (const pkg of ['react','react-dom']) await symlink(resolve(import.meta.dir,'../../../../packages/react/node_modules',pkg),`${scratch}/node_modules/${pkg}`,'dir');
   await Bun.write(`${scratch}/fixture.tsx`, `
-    import React, {useState} from 'react'; import {createRoot} from 'react-dom/client';
+    import React, {useState} from '@jgengine/core/ui/jsx'; import {createRoot} from '@jgengine/core/ui/jsx/client.view';
     import {TouchControlsDock} from '@jgengine/core/input/TouchControlsOverlay.view';
     import {SettingsMenu} from '@jgengine/core/settings/SettingsMenu.draw';
     window.trace={selected:0,codes:[],analog:null};

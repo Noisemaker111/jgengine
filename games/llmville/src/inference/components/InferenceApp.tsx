@@ -4,7 +4,7 @@
  * a card's full stats belong to exactly one job (see `computeAssignments.ts`).
  */
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "@jgengine/core/ui/jsx";
 import {
   DndContext,
   DragOverlay,

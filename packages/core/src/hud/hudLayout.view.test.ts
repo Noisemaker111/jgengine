@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { createElement, type ReactNode } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { createElement, type ReactNode } from "@jgengine/core/ui/jsx";
+import { renderToStaticMarkup } from "@jgengine/core/ui/jsx/markup";
 
 import { anchoredPlacement, type HudLayoutStore } from "@jgengine/core/hud/hudLayout";
 import type { EditorUiPanelLayout } from "@jgengine/core/hud/hudDocument";

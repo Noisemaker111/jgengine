@@ -3,7 +3,7 @@ import * as THREE from "three";
 import type { TerraformMode } from "@jgengine/core/terrain/terraform";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
-import { useRef } from "react";
+import { useRef } from "@jgengine/core/ui/jsx";
 
 /** Props for {@link TerraformBrushCursor}: brush centre (or null to hide), height, radius and terraform mode. */
 export interface TerraformBrushCursorProps {

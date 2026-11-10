@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState } from "@jgengine/core/ui/jsx";
 
 import { parseHardwareModelId } from "@llmville/game/infrastructure/catalog";
 import type { HardwareModelId } from "@llmville/game/infrastructure/catalog";

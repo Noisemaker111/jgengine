@@ -1,5 +1,5 @@
 import { useFrameJoin } from "@jgengine/core/frame/engineHost.draw";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 
 import { createRecordingBuffer, type RecordingBuffer, type RecordingBufferOptions } from "@jgengine/core/replay/recordingBuffer";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";

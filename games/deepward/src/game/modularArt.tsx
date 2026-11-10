@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo } from "@jgengine/core/ui/jsx";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { ScatterInstance } from "@jgengine/core/scatter/scatterRegion";
 import { InstancedScatter } from "@jgengine/core/scatter/InstancedScatter.draw";

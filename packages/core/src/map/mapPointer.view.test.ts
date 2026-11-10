@@ -15,7 +15,7 @@ beforeAll(async () => {
   for (const peer of ["react", "react-dom"]) await symlink(`${root}/packages/react/node_modules/${peer}`, `${scratch}/node_modules/${peer}`, "dir");
   await installPublicPackages(scratch, ["core", "react"]);
   await Bun.write(`${scratch}/fixture.tsx`, `
-    import React,{useState} from 'react';import {createRoot} from 'react-dom/client';import {flushSync} from 'react-dom';
+    import React,{useState} from '@jgengine/core/ui/jsx';import {createRoot} from '@jgengine/core/ui/jsx/client.view';import {flushSync} from '@jgengine/core/ui/jsx/client.view';
     import {FullscreenMap,MapLegend} from '@jgengine/core/map/map.view';import {createAnnotationLayer} from '@jgengine/core/map/mapAnnotations';
     const owned=new Map(),types=['pointermove','mouseup','pointercancel'],add=window.addEventListener.bind(window),remove=window.removeEventListener.bind(window);
     window.addEventListener=(type,listener,options)=>{if(types.includes(type)){const set=owned.get(type)??new Set();set.add(listener);owned.set(type,set)}add(type,listener,options)};

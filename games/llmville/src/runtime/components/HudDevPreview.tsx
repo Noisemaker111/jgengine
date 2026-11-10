@@ -2,7 +2,7 @@ import { JoinGate } from "@jgengine/core/multiplayer/JoinGate.view";
 import { WorldChat } from "@/chat/components/WorldChat";
 import PlacementControls from "./PlacementController";
 import { GameConnectionErrorScreen } from "./GameConnectionErrorScreen";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 
 import GameOverlay from "@/runtime/components/GameOverlay";
 import { engineActions, useGameEngineState } from "@/runtime/gameEngine";

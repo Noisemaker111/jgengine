@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 
 import { createWaveRunner } from "@jgengine/core/waves/waveRunner";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";

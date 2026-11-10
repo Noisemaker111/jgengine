@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 
 import { libraryLicenseLabel, libraryTagCounts, searchLibrary, type LibraryEntry } from "@jgengine/assets/library/assetLibrary";
 import { licenseRequiresCredit } from "@jgengine/assets/library/libraryLicense";

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
 
 import { createGraphPose } from "@jgengine/core/anim/useModelAnimation.draw";
 import { EngineDrawMount, SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";

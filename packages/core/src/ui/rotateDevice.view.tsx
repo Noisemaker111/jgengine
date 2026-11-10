@@ -6,7 +6,7 @@
  * tokens. Reduced-motion respected. This is game UI, not a website toast.
  */
 
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 import type { LayoutOrientation } from "@jgengine/core/ui/orientation";
 
 const STYLE_ID = "jg-rotate-device-style";

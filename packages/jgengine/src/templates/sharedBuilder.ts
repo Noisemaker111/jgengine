@@ -106,7 +106,7 @@ for (const spec of jgengineCronSpecs({ runtimes: [runtime], chat: true })) crons
 crons.interval("online income", { seconds: 10 }, makeFunctionReference<"mutation">("online:start"), {});
 export default crons;
 ` },
-    { path: "src/main.tsx", contents: `import { createRoot } from "react-dom/client";
+    { path: "src/main.tsx", contents: `import { createRoot } from "@jgengine/core/ui/jsx/client.view";
 import { ConvexProvider, ConvexReactClient } from "convex/react";
 import { resolveConvexMultiplayer } from "@jgengine/convex/resolveConvexMultiplayer";
 import { GameHost } from "@jgengine/shell/GameHost";

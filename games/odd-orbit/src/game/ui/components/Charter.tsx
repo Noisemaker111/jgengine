@@ -1,6 +1,6 @@
 import { GameIcon, type GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { useRef } from "react";
+import { useRef } from "@jgengine/core/ui/jsx";
 import { useGame, useGameStore, useSceneObjects } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { useFrameBind } from "@jgengine/core/ui/liveBind.view";

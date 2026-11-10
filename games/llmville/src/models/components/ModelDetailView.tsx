@@ -1,5 +1,5 @@
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "@jgengine/core/ui/jsx";
 
 import { cn } from "@/kit/cn";
 import { formatBaseModelTrainingVolumeLabel } from "@llmville/game/models/baseModels";

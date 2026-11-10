@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { continueGame, menuPane, newGame, openTitle, playGame, runPlayed, saveNow, showMenuPane, togglePause, type MenuPane } from "@jgengine/core/game/gameFlow";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "@jgengine/core/ui/jsx";
 import { useGameContext } from "@jgengine/react/provider";
 import type { EditorDocument } from "@jgengine/core/editor/types";
 import { devtools } from "@jgengine/core/devtools/devtools";

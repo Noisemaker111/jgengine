@@ -19,8 +19,8 @@ beforeAll(async () => {
   }
   await installPublicPackages(scratch, ["core", "react"]);
   await Bun.write(`${scratch}/fixture.tsx`, `
-    import React,{StrictMode,useEffect,useLayoutEffect,useState} from 'react';
-    import {createRoot} from 'react-dom/client';import {flushSync} from 'react-dom';
+    import React,{StrictMode,useEffect,useLayoutEffect,useState} from '@jgengine/core/ui/jsx';
+    import {createRoot} from '@jgengine/core/ui/jsx/client.view';import {flushSync} from '@jgengine/core/ui/jsx/client.view';
     import {useVoice} from '@jgengine/core/multiplayer/voice.view';
     import {createLocalVoiceTransport} from '@jgengine/core/multiplayer/voiceContract';
     const audio=new AudioContext(),requests=[],results=[],publishes=[],joins=[],publicationRequests=[],unhandled=[];

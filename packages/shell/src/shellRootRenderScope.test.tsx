@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { act, createElement, Fragment, useSyncExternalStore } from "react";
+import { act, createElement, Fragment, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { setTouchControlsMode } from "@jgengine/core/input/touchControlsMode";

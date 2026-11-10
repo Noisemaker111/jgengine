@@ -1,5 +1,5 @@
 // @skill jgengine-world
-import { memo, useCallback, useEffect, useRef, useState, Fragment, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useRef, useState, Fragment, type ReactNode } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { objectVisualScale, type SceneObject } from "@jgengine/core/scene/objectStore";

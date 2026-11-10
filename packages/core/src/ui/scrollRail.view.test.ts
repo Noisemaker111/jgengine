@@ -16,8 +16,8 @@ beforeAll(async () => {
   for (const pkg of ['react','react-dom']) await symlink(resolve(import.meta.dir,'../../../../packages/react/node_modules',pkg),`${scratch}/node_modules/${pkg}`,'dir');
   const entry = `${scratch}/fixture.tsx`;
   await Bun.write(entry, `
-    import React, {useState} from 'react';
-    import {createRoot} from 'react-dom/client';
+    import React, {useState} from '@jgengine/core/ui/jsx';
+    import {createRoot} from '@jgengine/core/ui/jsx/client.view';
     import {ScrollRail, ActionBar} from '@jgengine/react';
     function Fixture() {
       const [selected,select] = useState('Game'), [removed,remove] = useState(false);

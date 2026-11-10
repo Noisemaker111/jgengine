@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useMemo, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import {
   radialIndexFromVector,

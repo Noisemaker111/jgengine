@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState } from "@jgengine/core/ui/jsx";
 
 import { generatorVariants, type GeneratorDefinition, type GeneratorVariant } from "@jgengine/core/generator/generator";
 import { GeneratorVariantGrid } from "@jgengine/core/generator/GeneratorVariantGrid.draw";

@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo } from "@jgengine/core/ui/jsx";
 
 import type { EditorSession } from "@jgengine/core/editor/index";
 import { CITY_KIND } from "@jgengine/core/city/cityKind";

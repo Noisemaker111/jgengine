@@ -1,4 +1,5 @@
-import { lazy, Suspense, useLayoutEffect, useState, type ComponentProps, type LazyExoticComponent } from "react";
+import { lazy, Suspense, useLayoutEffect, useState, type LazyExoticComponent } from "@jgengine/core/ui/jsx";
+import type { ComponentProps } from "@jgengine/core/ui/jsx/dom.view";
 
 import { BootLoading } from "@jgengine/core/boot/bootScreen.view";
 import { suspendPlayControls } from "@jgengine/core/game/controlGate";

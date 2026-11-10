@@ -1,5 +1,5 @@
 // @skill jgengine-world
-import { createElement, useRef } from "react";
+import { createElement, useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import { OrbitControls } from "three-stdlib";
 

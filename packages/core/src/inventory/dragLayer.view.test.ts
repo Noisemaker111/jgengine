@@ -22,7 +22,7 @@ beforeAll(async () => {
   await installPublicPackages(scratch, ["core", "react"]);
   const entry = `${scratch}/fixture.tsx`;
   await Bun.write(entry, `
-    import React, {useState} from 'react'; import {createRoot} from 'react-dom/client'; import {flushSync} from 'react-dom';
+    import React, {useState} from '@jgengine/core/ui/jsx'; import {createRoot} from '@jgengine/core/ui/jsx/client.view'; import {flushSync} from '@jgengine/core/ui/jsx/client.view';
     import {useDragLayer,DraggableCard,DropZone,DragGhost} from '@jgengine/core/inventory/dragLayer.view';
     import {InventoryGrid} from '@jgengine/core/inventory/inventoryGrid.view'; import {GameProvider} from '@jgengine/react/provider';
     import {CardFace} from '@jgengine/core/cards/cards.view';

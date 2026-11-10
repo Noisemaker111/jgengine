@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 export type ReticleVariant = "dot" | "cross" | "circle" | "chevron" | "shotgun";
 

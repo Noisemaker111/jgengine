@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";

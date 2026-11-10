@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo } from "@jgengine/core/ui/jsx";
 
 import { resolveWaterObject, type ResolvedWater } from "@jgengine/core/water/waterKind";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
 import { useActionBindings } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { allActionCodes } from "@jgengine/core/input/actionBindings";
 import { useSceneSwapping } from "@jgengine/core/ui/sceneSwap.view";

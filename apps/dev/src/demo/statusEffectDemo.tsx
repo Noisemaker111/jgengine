@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useReducer, useRef, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { resolveStatusApplication, type StatusInstance } from "@jgengine/core/combat/statusApplication";

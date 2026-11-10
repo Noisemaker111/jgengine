@@ -1,4 +1,4 @@
-import type { ComponentType, ReactNode } from "react";
+import type { ComponentType, ReactNode } from "@jgengine/core/ui/jsx";
 import type { PlayableGameContract, ProbeReadings, RemotePlayersProps, WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";

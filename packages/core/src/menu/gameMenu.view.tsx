@@ -1,10 +1,4 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  type CSSProperties,
-  type ReactNode,
-} from "react";
+import { useEffect, useMemo, useRef, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { useReducedMotion } from "@jgengine/core/ui/accessibility.view";
 import { createGameMenuSound, type GameMenuSound } from "./gameMenuSound.view";

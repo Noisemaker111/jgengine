@@ -5,7 +5,7 @@ import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { childFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
-import { useRef } from "react";
+import { useRef } from "@jgengine/core/ui/jsx";
 
 import { artifactHere, cavesOf, type IslandCave } from "../caves";
 

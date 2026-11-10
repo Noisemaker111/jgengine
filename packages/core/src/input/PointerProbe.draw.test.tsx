@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import { createElement } from "react";
+import { createElement } from "@jgengine/core/ui/jsx";
 
 import { mountTestDraws, type MountedTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
 import { PointerProbe } from "./PointerProbe.draw";

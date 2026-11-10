@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 /** Props for caller-composed horizontally scrolling controls. */
 export interface ScrollRailProps {

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, type ReactNode } from "react";
+import { createContext, useCallback, useContext, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { EngineFrameState, EngineFrameloop } from "./engineLoop.draw";
 import { joinFrameTask, type FrameTask } from "./frameBoard.draw";

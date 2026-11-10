@@ -1,6 +1,6 @@
 import { HudButton } from "@jgengine/core/hud/hudButton.view";
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { useRef } from "react";
+import { useRef } from "@jgengine/core/ui/jsx";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
 import { useGame, useGameStore, useSceneObjects } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";

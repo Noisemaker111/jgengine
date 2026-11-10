@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { WELL_KNOWN_MARKER_KINDS } from "@jgengine/core/editor/index";
 import { listSceneKinds } from "@jgengine/core/scene/sceneKinds";

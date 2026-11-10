@@ -4,8 +4,8 @@
  * or the standalone editor. `./appEnv` runs the boot-time installs on import, so it must come
  * first.
  */
-import { lazy, Suspense } from "react";
-import { createRoot } from "react-dom/client";
+import { lazy, Suspense } from "@jgengine/core/ui/jsx";
+import { createRoot } from "@jgengine/core/ui/jsx/client.view";
 
 import { EDITOR_STANDALONE, FIXTURE, GAME_ID, PREVIEW } from "./appEnv";
 import "./index.css";

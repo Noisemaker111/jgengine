@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from "@jgengine/core/ui/jsx";
 import { useDisplayProfile } from "@jgengine/core/ui/display.view";
 import { GameCursor } from "@jgengine/core/ui/cursor.view";
 import { GameIcon, type GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";

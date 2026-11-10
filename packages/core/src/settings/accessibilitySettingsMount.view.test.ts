@@ -17,9 +17,9 @@ beforeAll(async () => {
   await symlink(resolve(import.meta.dir, "../../node_modules"), `${scratch}/node_modules`, "dir");
   const entry = `${scratch}/fixture.tsx`;
   await Bun.write(entry, `
-    import React from 'react';
-    import { createRoot } from 'react-dom/client';
-    import { flushSync } from 'react-dom';
+    import React from '@jgengine/core/ui/jsx';
+    import { createRoot } from '@jgengine/core/ui/jsx/client.view';
+    import { flushSync } from '@jgengine/core/ui/jsx/client.view';
     import { createSettingsStore } from '../../packages/core/src/settings/settingsModel';
     import { SettingsProvider } from '../../packages/core/src/settings/settings.view';
     import { useAccessibilitySettings } from '../../packages/core/src/settings/accessibilitySettings.view';

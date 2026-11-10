@@ -1,4 +1,4 @@
-import { useEffect, useState, type DependencyList } from "react";
+import { useEffect, useState, type DependencyList } from "@jgengine/core/ui/jsx";
 
 import { runSliced, SlicedWorkCancelled, type SlicedJob } from "@jgengine/core/run/slicedWork";
 

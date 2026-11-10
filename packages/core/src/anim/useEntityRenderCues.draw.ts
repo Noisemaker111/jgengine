@@ -1,5 +1,5 @@
 import { useFrameJoin } from "@jgengine/core/frame/engineHost.draw";
-import { useEffect, useRef, type MutableRefObject } from "react";
+import { useEffect, useRef, type MutableRefObject } from "@jgengine/core/ui/jsx";
 import {
   advanceMotionCues,
   applyRenderAnimationEvent,

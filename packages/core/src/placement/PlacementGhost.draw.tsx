@@ -4,7 +4,7 @@ import type { PlacementPreview } from "@jgengine/core/placement/placementControl
 import { quarterTurnsToRotationY } from "@jgengine/core/placement/placementController";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
-import { useRef } from "react";
+import { useRef } from "@jgengine/core/ui/jsx";
 
 /** Props for {@link PlacementGhost}: the placement preview to draw and its valid/invalid tint. */
 export interface PlacementGhostProps {

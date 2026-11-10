@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 const HEART_PATH =
   "M12 21.2C8.2 18.4 2.6 14 2.6 8.9 2.6 5.6 5 3.4 7.7 3.4c1.8 0 3.3 1 4.3 2.5 1-1.5 2.5-2.5 4.3-2.5 2.7 0 5.1 2.2 5.1 5.5 0 5.1-5.6 9.5-9.4 12.3z";

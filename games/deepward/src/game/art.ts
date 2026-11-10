@@ -1,5 +1,5 @@
 import { BoxGeometry, CanvasTexture, CylinderGeometry, ExtrudeGeometry, Group, Mesh, MeshStandardMaterial, Shape, SRGBColorSpace } from "three";
-import { createElement, useMemo } from "react";
+import { createElement, useMemo } from "@jgengine/core/ui/jsx";
 import { EngineDrawMount, meshDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { EngineDraw } from "@jgengine/core/frame/engineLoop.draw";
 import { PALETTE, surfaceMaterialParams, type IndustrialSurface } from "./industrialMaterials";

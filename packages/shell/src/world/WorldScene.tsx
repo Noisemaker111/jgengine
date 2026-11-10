@@ -1,6 +1,6 @@
 import { modelWithAuthoredMaterials } from "@jgengine/core/editor/materialAuthoring";
 import { modelWithAuthoredNodeVisibility } from "@jgengine/core/editor/modelNodeVisibility";
-import { memo, useCallback, useEffect, useMemo, useRef, useSyncExternalStore, type ComponentType, type MutableRefObject, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useSyncExternalStore, type ComponentType, type MutableRefObject, type ReactNode } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import { createEmptyEditorDocument, type EditorDocument } from "@jgengine/core/editor/index";

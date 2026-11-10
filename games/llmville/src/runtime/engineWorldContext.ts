@@ -3,7 +3,7 @@ import {
   engineWorldContextEquals,
   type EngineWorldContext,
 } from "@llmville/game/simulation/worldContext";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from "@jgengine/core/ui/jsx";
 
 export {
   defaultEngineWorldContext,

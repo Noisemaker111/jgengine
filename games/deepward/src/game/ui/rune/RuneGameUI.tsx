@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useRef, useState } from "@jgengine/core/ui/jsx";
+import { createPortal } from "@jgengine/core/ui/jsx/client.view";
 import { useActionBindings } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { allActionCodes } from "@jgengine/core/input/actionBindings";
 import { useSceneSwapping } from "@jgengine/core/ui/sceneSwap.view";

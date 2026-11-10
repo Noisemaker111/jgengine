@@ -1,5 +1,5 @@
 import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
-import { useEffect } from "react";
+import { useEffect } from "@jgengine/core/ui/jsx";
 import { registerRuneFont } from "./rune/runeStage.view";
 
 

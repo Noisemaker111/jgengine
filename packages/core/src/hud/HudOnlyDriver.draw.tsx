@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "@jgengine/core/ui/jsx";
 
 import { dispatchBoundAction, heldActionsFor, shouldFireBoundAction } from "@jgengine/core/input/boundActionDispatch";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";

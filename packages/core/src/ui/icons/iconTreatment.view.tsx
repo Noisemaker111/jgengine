@@ -1,4 +1,4 @@
-import { type CSSProperties, type ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 
 import { GameIcon, iconForAction, iconForItemId, type GameIconName } from "./gameIcons.view";
 import { hudType } from "@jgengine/core/hud/hudTokens";

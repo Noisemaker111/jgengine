@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
-import { act, createElement, Fragment, useMemo, type ReactNode } from "react";
+import { act, createElement, Fragment, useMemo, type ReactNode } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { createAnimGraphRuntime, type AnimGraph } from "@jgengine/core/anim/animGraph";

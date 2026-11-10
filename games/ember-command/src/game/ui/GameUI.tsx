@@ -1,5 +1,5 @@
-import type { CSSProperties } from "react";
-import { useSyncExternalStore } from "react";
+import { type CSSProperties, useSyncExternalStore } from "@jgengine/core/ui/jsx";
+
 import { useGameFonts } from "@jgengine/core/ui/fonts.view";
 import { KIT_MATERIALS } from "@jgengine/core/ui/kit/kitFrame.view";
 import { useGameContext } from "@jgengine/react/provider";

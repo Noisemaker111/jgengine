@@ -1,4 +1,4 @@
-import { useCallback, useRef, useSyncExternalStore } from "react";
+import { useCallback, useRef, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 /** The minimal external-store shape both the editor session and UI store satisfy. */
 export interface SubscribableStore<S> {

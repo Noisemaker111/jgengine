@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 import type { CardPileState } from "@jgengine/core/cards/cardPile";
 import { DraggableCard, DropZone, type DragLayer } from "../inventory/dragLayer.view";
 

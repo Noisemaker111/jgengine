@@ -1,6 +1,6 @@
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
-import { Suspense, lazy, useEffect } from "react";
+import { Suspense, lazy, useEffect } from "@jgengine/core/ui/jsx";
 import { z } from "zod";
 
 import { useAuth, usePlayerIdentity } from "@/auth";

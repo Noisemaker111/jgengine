@@ -16,7 +16,7 @@ describe("check layers", () => {
   test("model code imports no React, three.js, view or draw file", () => {
     const file = "packages/core/src/save/saveStore.ts";
     const bad = [
-      `import { useState } from "react";`,
+      `import { useState } from "@jgengine/core/ui/jsx";`,
       `import * as THREE from "three";`,
       `import { OrbitControls } from "three-stdlib";`,
       `import { SaveSlots } from "./saveSlots.view";`,
@@ -31,7 +31,7 @@ describe("check layers", () => {
 
   test("view code imports React and model, never three.js or a draw file", () => {
     const file = "packages/core/src/hud/kitHud.view.tsx";
-    expect(violationsIn(file, `import { useState } from "react";\nimport { HUD_CORNER_WIDTH } from "./hudLayout.view";\nimport { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";`)).toEqual([]);
+    expect(violationsIn(file, `import { useState } from "@jgengine/core/ui/jsx";\nimport { HUD_CORNER_WIDTH } from "./hudLayout.view";\nimport { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";`)).toEqual([]);
     expect(violationsIn(file, `import { Vector3 } from "three";`)).toHaveLength(1);
     expect(violationsIn(file, `import { WorldHud } from "./WorldHud.draw";`)).toHaveLength(1);
     expect(violationsIn("packages/core/src/ui/panels.view.tsx", `import { WorldHud } from "@jgengine/core/hud/WorldHud.draw";`)).toHaveLength(1);
@@ -44,7 +44,7 @@ describe("check layers", () => {
   });
 
   test("comments and tests do not count", () => {
-    expect(violationsIn("packages/core/src/save/saveStore.ts", `/** Pass \`() => import("@jgengine/editor")\`. */\n// import React from "react";`)).toEqual([]);
-    expect(violationsIn("packages/core/src/save/saveStore.test.ts", `import { useState } from "react";`)).toEqual([]);
+    expect(violationsIn("packages/core/src/save/saveStore.ts", `/** Pass \`() => import("@jgengine/editor")\`. */\n// import React from "@jgengine/core/ui/jsx";`)).toEqual([]);
+    expect(violationsIn("packages/core/src/save/saveStore.test.ts", `import { useState } from "@jgengine/core/ui/jsx";`)).toEqual([]);
   });
 });

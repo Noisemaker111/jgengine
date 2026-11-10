@@ -9,6 +9,7 @@
     "noFallthroughCasesInSwitch": true,
     "esModuleInterop": true,
     "jsx": "react-jsx",
+    "jsxImportSource": "@jgengine/core/ui/jsx",
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "Bundler",

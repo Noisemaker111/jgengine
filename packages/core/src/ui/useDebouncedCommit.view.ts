@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
 
 /**
  * Live-mirrored, trailing-debounced commit binding for a single control value.

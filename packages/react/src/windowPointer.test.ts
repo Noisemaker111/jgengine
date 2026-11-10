@@ -16,7 +16,7 @@ beforeAll(async () => {
   for (const peer of ["react", "react-dom"]) await symlink(resolve(import.meta.dir, "../node_modules", peer), `${scratch}/node_modules/${peer}`, "dir");
   await installPublicPackages(scratch, ["core", "react"]);
   await Bun.write(`${scratch}/fixture.tsx`, `
-    import React,{useState} from 'react';import {createRoot} from 'react-dom/client';import {flushSync} from 'react-dom';
+    import React,{useState} from '@jgengine/core/ui/jsx';import {createRoot} from '@jgengine/core/ui/jsx/client.view';import {flushSync} from '@jgengine/core/ui/jsx/client.view';
     import {Window,PanelHost,usePanels} from '@jgengine/core/ui/panels.view';
     const listeners=new Map();const add=window.addEventListener.bind(window),remove=window.removeEventListener.bind(window);
     // Exclude browser automation observers from SDK listener ownership.

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, type ReactNode } from "@jgengine/core/ui/jsx";
 import { reportWind } from "./livingWorld.draw";
 import * as THREE from "three";
 import type { EditorVolume } from "@jgengine/core/editor/types";

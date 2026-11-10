@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import { disposeObjectTree, SceneObjectAttach, SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";
 import { AnchoredOverlay } from "@jgengine/core/hud/hudOverlay.draw";

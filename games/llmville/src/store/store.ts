@@ -1,7 +1,7 @@
 import { parseHardwareModelId } from "@llmville/game/infrastructure/catalog";
 import type { HardwareModelId } from "@llmville/game/infrastructure/catalog";
 import type { PersonalUpgradeId } from "@llmville/game/user/personalUpgrades";
-import { useCallback } from "react";
+import { useCallback } from "@jgengine/core/ui/jsx";
 
 import type { PlacedBuildItem } from "@llmville/game/build/build";
 import type { PlacedRack } from "@/infrastructure/infrastructure";

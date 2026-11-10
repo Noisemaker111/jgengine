@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 
 import { ObjectiveBannerHost, type ObjectiveBannerTheme } from "@jgengine/core/mission/objectiveBanner.view";
 import { QuestTracker } from "@jgengine/core/mission/questTracker.view";

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { Notice, NoticeFeed, NoticeTone } from "@jgengine/core/notifications/notices";
 import type { LayoutRect, LayoutRegion } from "@jgengine/core/hud/hudPriority";

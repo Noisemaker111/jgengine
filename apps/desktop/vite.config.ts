@@ -3,7 +3,6 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 import { projectSurfacePlugin } from "./projectSurfacePlugin";
@@ -22,7 +21,7 @@ const gameAliases = readdirSync(gamesDir, { withFileTypes: true })
   ]);
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), projectSurfacePlugin(), viteJgUiWasm()],
+  plugins: [tailwindcss(), projectSurfacePlugin(), viteJgUiWasm()],
   clearScreen: false,
   server: { port: 1420, strictPort: true },
   build: { target: "es2022" },

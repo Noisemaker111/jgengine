@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "@jgengine/core/ui/jsx";
 import { parkedRunMetres } from "../../run/progress";
 import { ContinuePane, CreditsPane } from "@jgengine/core/menu/gameMenuSaves.view";
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";

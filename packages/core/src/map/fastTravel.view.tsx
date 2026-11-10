@@ -1,4 +1,4 @@
-import { useEffect, useReducer, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useReducer, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { FastTravelNetwork, TravelPointView } from "@jgengine/core/map/fastTravel";
 import type { WorldXZ } from "@jgengine/core/map/minimap";

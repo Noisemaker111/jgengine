@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from "@jgengine/core/ui/jsx";
 
 import { validateNewGameId } from "../project/gameMeta";
 

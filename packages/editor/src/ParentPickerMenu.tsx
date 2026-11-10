@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState } from "@jgengine/core/ui/jsx";
 
 import type { ParentCandidate } from "./parentCandidates";
 import { FOCUS_RING, INPUT_CLS, NUMERIC } from "./shell/theme";

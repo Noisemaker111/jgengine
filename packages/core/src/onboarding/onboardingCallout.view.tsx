@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useLayoutEffect, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { hudType } from "@jgengine/core/hud/hudTokens";
 import { onboardingOf } from "@jgengine/core/onboarding/onboardingSystem";

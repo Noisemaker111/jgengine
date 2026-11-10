@@ -1,4 +1,4 @@
-import { useRef, type MutableRefObject } from "react";
+import { useRef, type MutableRefObject } from "@jgengine/core/ui/jsx";
 import { SkeletonUtils } from "three-stdlib";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { loadDraw } from "@jgengine/core/frame/loadDraw.draw";

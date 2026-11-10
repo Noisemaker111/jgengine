@@ -10,7 +10,7 @@ import { childFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { loadDraw } from "@jgengine/core/frame/loadDraw.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { useGameContext } from "@jgengine/react/provider";
-import { useRef } from "react";
+import { useRef } from "@jgengine/core/ui/jsx";
 
 const FOOD = "quaternius-low-poly-food-pack";
 

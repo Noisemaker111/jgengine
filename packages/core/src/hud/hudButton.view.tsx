@@ -1,4 +1,5 @@
-import { type ButtonHTMLAttributes, type ReactNode, type Ref } from "react";
+import type { ReactNode, Ref } from "@jgengine/core/ui/jsx";
+import type { ButtonHTMLAttributes } from "@jgengine/core/ui/jsx/dom.view";
 
 import { useEngineStyles } from "@jgengine/react/engineStyles";
 import { memoView } from "../ui/memoView.view";

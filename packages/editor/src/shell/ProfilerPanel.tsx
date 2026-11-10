@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import { formatTriangles } from "./StatusBar";
 import type { PerfHistoryStore } from "./perfHistory";

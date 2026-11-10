@@ -1,4 +1,4 @@
-import { useMemo, useRef, type ReactNode } from "react";
+import { useMemo, useRef, type ReactNode } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";

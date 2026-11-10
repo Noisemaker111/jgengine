@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactElement } from "react";
+import { useEffect, useRef, type ReactElement } from "@jgengine/core/ui/jsx";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";

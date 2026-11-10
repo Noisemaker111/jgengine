@@ -1,4 +1,4 @@
-import { createContext, useCallback, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { createContext, useCallback, useMemo, useRef, useState, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 import type { EditorSession } from "@jgengine/core/editor/commands";
 import type { EditorDocument } from "@jgengine/core/editor/types";
 

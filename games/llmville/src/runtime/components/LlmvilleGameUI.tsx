@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 
 import { suspendPlayControls } from "@jgengine/core/game/controlGate";
 import { useDisplayProfile } from "@jgengine/core/ui/display.view";

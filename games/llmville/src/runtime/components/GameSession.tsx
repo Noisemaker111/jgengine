@@ -1,5 +1,5 @@
 import { useConvex } from "convex/react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 
 import { createConvexBackend } from "@jgengine/convex/createConvexBackend";
 import type { ShellMultiplayer } from "@jgengine/core/multiplayer/multiplayer.draw";

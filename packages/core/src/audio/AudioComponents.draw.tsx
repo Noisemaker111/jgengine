@@ -1,5 +1,5 @@
 // @skill jgengine-world
-import { useRef } from "react";
+import { useRef } from "@jgengine/core/ui/jsx";
 import { Quaternion, Vector3 } from "three";
 import { useGameContext } from "@jgengine/react/provider";
 import type { AudioEngine } from "./audioEngine.view";

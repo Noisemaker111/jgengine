@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import { markerKindStyle, type MarkerCollection, type MarkerKindStyle } from "@jgengine/core/map/markers";

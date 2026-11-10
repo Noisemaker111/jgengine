@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from "react";
+import { useState, type CSSProperties } from "@jgengine/core/ui/jsx";
 
 import { KeybindBadge } from "@/components/ui/keybind-badge";
 

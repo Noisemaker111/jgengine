@@ -1,4 +1,4 @@
-import { Component, type ErrorInfo, type ReactNode } from "react";
+import { Component, type ErrorInfo, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { GameConnectionErrorScreen } from "@/runtime/components/GameConnectionErrorScreen";
 import { formatChunkLoadError } from "@/runtime/chunkLoadError";

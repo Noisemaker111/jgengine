@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useSyncExternalStore } from "react";
+import { useLayoutEffect, useMemo, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import { Box3, type Camera, type Group } from "three";
 import { EngineSceneContext, SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";

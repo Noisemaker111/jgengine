@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo } from "@jgengine/core/ui/jsx";
 import { defineGame, defineSystem } from "@jgengine/shell/gameKit";
 import { createAbilityKit } from "@jgengine/core/combat/abilityKit";
 import { ActionBar, actionFromAbilitySlot, useAbilitySlots, useGameContext } from "@jgengine/react";

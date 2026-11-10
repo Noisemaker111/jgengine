@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import { act, createElement } from "react";
+import { act, createElement } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import { mountTestDraws } from "@jgengine/core/frame/testEngineHost.draw";

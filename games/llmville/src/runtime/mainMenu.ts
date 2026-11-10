@@ -1,7 +1,7 @@
 import { api } from "@llmville/backend/convex/_generated/api";
 import { useMutation } from "convex/react";
 import { useNavigate, useRouter } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "@jgengine/core/ui/jsx";
 
 import { useAuth, usePlayerIdentity } from "@/auth";
 import { loadGameSessionModule, preloadGameRoute } from "@/runtime/gameRoutePreload";

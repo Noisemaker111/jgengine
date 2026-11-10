@@ -1,4 +1,4 @@
-import { type CSSProperties } from "react";
+import type { CSSProperties } from "@jgengine/core/ui/jsx";
 
 import { HudFrame } from "./hudFrame.view";
 import { HUD_THEME_PRESETS, defaultHudTheme, hudThemeVars, type HudTheme } from "./hudTheme.view";

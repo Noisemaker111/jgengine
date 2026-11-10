@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 
 /** A placement footprint cell and its authoritative preview status. */
 export type TerritoryPreviewCell = { key: string; x: number; z: number; status: "owned" | "claimable" | "blocked" };

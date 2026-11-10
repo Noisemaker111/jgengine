@@ -1,4 +1,4 @@
-import { useMemo, type CSSProperties, type ReactNode } from "react";
+import { useMemo, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 import { KillFeed } from "@jgengine/core/feed/killFeed.view";
 import { libraryIconUrl } from "@jgengine/assets/library/libraryIcons";
 import { Hotbar } from "@jgengine/core/hud/hudReadouts.view";

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import { UniformMaterial } from "@jgengine/core/render/uniformMaterial.draw";
 

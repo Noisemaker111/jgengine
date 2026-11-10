@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 import { lootDropsOf } from "@jgengine/core/game/events";
 import type { FeedEntry } from "@jgengine/core/feed/feed";

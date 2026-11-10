@@ -1,4 +1,4 @@
-import { useEffect, useRef, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useSyncExternalStore, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 import { useDisplayProfile } from "@jgengine/core/ui/display.view";
 import { createGameMenuSound, type GameMenuSound } from "@jgengine/core/menu/gameMenuSound.view";
 import { useGameContext } from "@jgengine/react/provider";

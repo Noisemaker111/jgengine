@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect } from "@jgengine/core/ui/jsx";
 
 import { useGamePhase } from "@jgengine/react/hooks";
 

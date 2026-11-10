@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import { useActivePrompt } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";

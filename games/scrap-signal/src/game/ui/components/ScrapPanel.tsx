@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 import { HudButton } from "@jgengine/core/hud/hudButton.view";
 import { HudSurface } from "@jgengine/core/hud/hudSurface.view";
 

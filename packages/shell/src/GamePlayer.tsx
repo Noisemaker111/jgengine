@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { GamePlayerShell } from "./GamePlayerShell";
 import type { ShellMultiplayer } from "@jgengine/core/multiplayer/multiplayer.draw";

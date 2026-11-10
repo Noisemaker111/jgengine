@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef } from "@jgengine/core/ui/jsx";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { KitBanner, KitResultScreen } from "@jgengine/core/ui/kit/kitFlow.view";

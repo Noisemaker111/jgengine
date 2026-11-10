@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { ViewportDef, ViewportsConfig } from "@jgengine/core/game/viewports";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";

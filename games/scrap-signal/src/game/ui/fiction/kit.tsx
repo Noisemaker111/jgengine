@@ -1,4 +1,5 @@
-import { forwardRef, type CSSProperties, type HTMLAttributes, type ReactNode, type Ref } from "react";
+import { forwardRef, type CSSProperties, type ReactNode, type Ref } from "@jgengine/core/ui/jsx";
+import type { HTMLAttributes } from "@jgengine/core/ui/jsx/dom.view";
 import { kitCutPath, type KitCut } from "@jgengine/core/ui/kit/kitFrame.view";
 import { KitButton, KitPanel, type KitMaterialButtonProps, type KitMaterialPanelProps } from "@jgengine/core/ui/kit/uiKitRoot.view";
 

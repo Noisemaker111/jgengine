@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties } from "@jgengine/core/ui/jsx";
 
 import { resolveAssetBaseUrl } from "../../assets/assetBase";
 import { memoView } from "../memoView.view";

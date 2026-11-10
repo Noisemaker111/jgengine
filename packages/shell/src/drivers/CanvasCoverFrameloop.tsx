@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from "@jgengine/core/ui/jsx";
 
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { useCanvasCovered } from "@jgengine/core/ui/canvasCover.view";

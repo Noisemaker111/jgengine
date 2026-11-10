@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect } from "@jgengine/core/ui/jsx";
 
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { paceFrame } from "@jgengine/core/settings/frameRateLimit";

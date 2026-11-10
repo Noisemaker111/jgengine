@@ -1,4 +1,4 @@
-import { useRef, useState, type CSSProperties } from "react";
+import { useRef, useState, type CSSProperties } from "@jgengine/core/ui/jsx";
 
 import type { FloatingTextField, FloatingTextView } from "@jgengine/core/hud/floatingText";
 import { FloatingText, type FloatingTextLayoutOptions } from "@jgengine/core/hud/floatingText.view";

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useSyncExternalStore } from "react";
+import { createContext, useCallback, useContext, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { characterMotionFromKey, characterMotionKey, resolveCharacterMotion, type CharacterMotionParts, type CharacterMotionConfig } from "./characterMotion";

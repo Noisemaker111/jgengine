@@ -1,5 +1,5 @@
 import { easeOutCubic } from "@jgengine/core/anim/easing";
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { useReducedMotion } from "../ui/accessibility.view";
 import { useEngineStyles } from "@jgengine/react/engineStyles";

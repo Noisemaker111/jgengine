@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 import { GameCursor } from "@jgengine/core/ui/cursor.view";
 import { gameFontStacks } from "@jgengine/core/ui/fonts.view";
 import { customizeKit, type KitMenuProps, type KitPanelProps } from "@jgengine/core/ui/kit/uiKit.view";

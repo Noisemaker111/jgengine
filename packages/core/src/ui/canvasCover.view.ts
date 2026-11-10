@@ -1,4 +1,4 @@
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 /** A page-wide declaration that some surface paints over the whole game canvas. */
 export interface CanvasCover {

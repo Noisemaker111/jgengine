@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type MutableRefObject } from "react";
+import { useMemo, useRef, useState, type MutableRefObject } from "@jgengine/core/ui/jsx";
 import { CapsuleGeometry, Group, MathUtils, MeshStandardMaterial, SphereGeometry } from "three";
 
 import { advanceGaitPhase, gaitBobOffset, gaitSwayAngle } from "@jgengine/core/movement/avatarGait";

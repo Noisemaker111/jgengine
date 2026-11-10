@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "@jgengine/core/ui/jsx";
 import { HudCanvas, HudPanel, useHudLayout, useDisplayProfile, usePanels } from "@jgengine/react";
 import { useGameFonts } from "@jgengine/core/ui/fonts.view";
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";

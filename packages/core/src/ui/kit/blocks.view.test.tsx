@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderToStaticMarkup } from "@jgengine/core/ui/jsx/markup";
 
 import { GameCursor } from "../cursor.view";
 import { gameFontStacks } from "../fonts.view";

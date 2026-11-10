@@ -1,4 +1,4 @@
-import { useMemo, useRef, type RefObject } from "react";
+import { useMemo, useRef, type RefObject } from "@jgengine/core/ui/jsx";
 import { ExtrudeGeometry, Mesh, MeshStandardMaterial, Shape, type Material, type MeshStandardMaterial as MeshStandardMaterialType, type Object3D } from "three";
 import { toCreasedNormals } from "three-stdlib";
 

@@ -81,8 +81,10 @@ export function portSource(path: string, text: string): { text: string; notes: s
   const edits: { start: number; end: number; text: string }[] = [];
   let namespace: string | null = null;
   let reactImport: { start: number; end: number; quote: string; names: Named[]; typeOnly: boolean } | null = null;
+  let lastImportEnd = 0;
 
   for (const statement of source.statements) {
+    if (ts.isImportDeclaration(statement)) lastImportEnd = statement.getEnd();
     if (!ts.isImportDeclaration(statement) && !ts.isExportDeclaration(statement)) continue;
     const specifier = statement.moduleSpecifier;
     if (specifier === undefined || !ts.isStringLiteral(specifier)) continue;
@@ -125,6 +127,16 @@ export function portSource(path: string, text: string): { text: string; notes: s
       reactImport.names.push(...names);
       reactImport.typeOnly = reactImport.typeOnly && clause?.isTypeOnly === true;
       edits.push({ start: statement.getStart(source), end: statement.getEnd(), text: "" });
+    }
+  }
+
+  // `React.ReactNode` with no import reads the UMD global's types; it gets an import of its own.
+  let added = false;
+  if (namespace === null && /\bReact\.[A-Za-z]/.test(text) && !/\b(?:const|let|var|function|class|namespace|import)\s+React\b/.test(text)) {
+    namespace = "React";
+    if (reactImport === null) {
+      reactImport = { start: lastImportEnd, end: lastImportEnd, quote: '"', names: [], typeOnly: true };
+      added = true;
     }
   }
 
@@ -173,7 +185,7 @@ export function portSource(path: string, text: string): { text: string; notes: s
     const lines: string[] = [];
     if (core.length > 0) lines.push(renderImport(core, RUNTIME, reactImport.quote, core.every((n) => n.typeOnly)));
     if (dom.length > 0) lines.push(renderImport(dom, DOM_TYPES, reactImport.quote, true));
-    edits.push({ start: reactImport.start, end: reactImport.end, text: lines.join("\n") });
+    if (lines.length > 0 || !added) edits.push({ start: reactImport.start, end: reactImport.end, text: `${added && reactImport.start > 0 ? "\n" : ""}${lines.join("\n")}${added && reactImport.start === 0 ? "\n" : ""}` });
   }
 
   let out = text;
@@ -228,7 +240,7 @@ function run(argv: readonly string[]): number {
       continue;
     }
     if (/vite\.config\.m?ts$/.test(path)) edit(path, (text) => ({ text: portViteConfig(text), notes: [] }));
-    edit(path, (text) => (/react/.test(text) ? portSource(path, text) : { text, notes: [] }));
+    edit(path, (text) => (/react/i.test(text) ? portSource(path, text) : { text, notes: [] }));
   }
   for (const path of gitFiles(["*tsconfig*.json"])) {
     if (skipped(path) || REACT_HOSTS.some((prefix) => path.startsWith(prefix))) continue;

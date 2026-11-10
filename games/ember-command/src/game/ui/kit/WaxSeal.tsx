@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useId } from "@jgengine/core/ui/jsx";
 
 /** A ragged disc of poured wax: a ring of 28 points pushed in and out by a fixed jitter, so every seal
  * keeps the same drip and nothing is random between renders. */

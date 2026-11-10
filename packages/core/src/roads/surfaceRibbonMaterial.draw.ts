@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import { clamp } from "@jgengine/core/math/scalar";

@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useReducer, useRef, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { ComboMeter, ComboMeterView } from "@jgengine/core/combat/comboMeter";
 

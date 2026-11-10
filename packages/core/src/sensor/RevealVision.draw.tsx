@@ -1,5 +1,5 @@
 // @skill jgengine-world
-import { useMemo, useRef } from "react";
+import { useMemo, useRef } from "@jgengine/core/ui/jsx";
 import { CapsuleGeometry, ConeGeometry, DoubleSide, Group, Mesh, MeshBasicMaterial, RingGeometry } from "three";
 
 import { createRevealQuery, type RevealHit } from "@jgengine/core/sensor/revealQuery";

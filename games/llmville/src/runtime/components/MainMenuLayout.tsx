@@ -5,13 +5,14 @@ import { MAIN_MENU_ACCOUNT_CHIP_KIND, useMainMenuAccountChipVm } from "@/auth";
 import { BrandLogo } from "@/branding/components/BrandLogo";
 import { SITE_TAGLINE } from "@/seo/siteSeo";
 import { MainMenuAtmosphere } from "@/runtime/components/MainMenuAtmosphere";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 interface MainMenuLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
   /** Optional hero column shown beside the menu on large screens (home intro, etc.). */
-  intro?: React.ReactNode;
+  intro?: ReactNode;
   backTo?: string;
-  overlay?: React.ReactNode;
+  overlay?: ReactNode;
   /** Hide the top logo / account header row (title-screen style). */
   hideHeader?: boolean;
 }

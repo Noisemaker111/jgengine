@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState } from "@jgengine/core/ui/jsx";
 
 import { rolesFromClips } from "@jgengine/core/game/clipRoles";
 import type { EditorSession } from "@jgengine/core/editor/index";

@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createPromptRegistry } from "@jgengine/core/interaction/promptRegistry";

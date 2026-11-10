@@ -1,5 +1,5 @@
 import { useFrameJoin } from "@jgengine/core/frame/engineHost.draw";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from "@jgengine/core/ui/jsx";
 import type { BehaviourWorld } from "@jgengine/core/behaviour/behaviour";
 import { createBehaviourWorldDriver } from "./behaviourDriver";
 

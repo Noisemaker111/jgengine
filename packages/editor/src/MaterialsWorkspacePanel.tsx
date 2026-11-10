@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { EditorDocument, EditorSession } from "@jgengine/core/editor/index";
 import { createMaterialTemplate, parseMaterialAssignments, type MaterialAsset, type MaterialAssignment, type MaterialSelector, type MaterialTemplate } from "@jgengine/core/material/materialAsset";

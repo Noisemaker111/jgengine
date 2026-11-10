@@ -12,7 +12,7 @@
  * game drew through a NaN projection for the whole session, and it made a second scene and renderer
  * (Brightway Park booted on WebGPU, 2026-11-08).
  */
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "@jgengine/core/ui/jsx";
 import { WebGLRenderer, type WebGLRendererParameters } from "three";
 import { guardInstanceCounts } from "../instancing/instanceCountGuard.draw";
 import type { RendererBackend } from "../settings/rendererBackend";

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
 
 import type { TutorialStage } from "@llmville/game/tutorial/tutorialStages";
 import { wrapMutation } from "@/runtime/engineAccess";

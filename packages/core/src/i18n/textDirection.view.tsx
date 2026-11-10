@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { TextDirection } from "./textDirection";
 

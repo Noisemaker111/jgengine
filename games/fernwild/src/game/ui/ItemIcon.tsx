@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 import { libraryIconUrl } from "@jgengine/assets/library/libraryIcons";
 import { SpriteIcon } from "@jgengine/core/ui/icons/spriteIcon.view";
 

@@ -1,5 +1,5 @@
 // @skill jgengine-world
-import { useRef } from "react";
+import { useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import { CSM } from "three/examples/jsm/csm/CSM.js";
 

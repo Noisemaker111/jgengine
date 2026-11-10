@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "@jgengine/core/ui/jsx";
 import { requestRawPointerLock } from "@jgengine/core/input/pointerLock";
-import { flushSync } from "react-dom";
+import { flushSync } from "@jgengine/core/ui/jsx/client.view";
 
 import type { WorldViewModel } from "@/runtime/worldState";
 import { localGameState } from "@/user/localGameState";

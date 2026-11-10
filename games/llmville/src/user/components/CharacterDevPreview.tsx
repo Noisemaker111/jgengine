@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 import { EngineCanvas } from "@jgengine/core/frame/engineCanvas.draw";
 import { useEngineRendererFactory } from "@jgengine/core/webgpu/engineRenderer.draw";
 import { SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";

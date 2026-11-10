@@ -1,4 +1,4 @@
-import { type CSSProperties, type ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { FloatingTextView } from "@jgengine/core/hud/floatingText";
 

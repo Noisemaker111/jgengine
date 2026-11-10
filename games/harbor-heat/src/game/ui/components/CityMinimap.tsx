@@ -1,7 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { headingToBearing, projectToMinimap, type MinimapView } from "@jgengine/core/map/minimap";
 import type { WorldBlip } from "@jgengine/core/worldModel/worldModel";
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "@jgengine/core/ui/jsx";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { useFrameBind } from "@jgengine/core/ui/liveBind.view";

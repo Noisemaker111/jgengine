@@ -1,4 +1,4 @@
-import { useEffect, useState, type ComponentType } from "react";
+import { useEffect, useState, type ComponentType } from "@jgengine/core/ui/jsx";
 
 import { ErrorPanel, LoadingPanel, formatLoadError } from "./appShared";
 import { armCaptureReady, captureArmed, setCaptureStatus } from "./captureReady";

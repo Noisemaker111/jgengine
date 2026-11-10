@@ -1,5 +1,5 @@
 import { expect, spyOn, test } from "bun:test";
-import { createElement } from "react";
+import { createElement } from "@jgengine/core/ui/jsx";
 
 import { mountTestDraws } from "./testEngineHost.draw";
 import { createDrawChurn, noteDrawRebuild, SceneObjectGroup } from "./useEngineDraw.draw";

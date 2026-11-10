@@ -1,7 +1,7 @@
 import { api } from "@llmville/backend/convex/_generated/api";
 import { Link } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { StandalonePageShell } from "@/branding/components/StandalonePageShell";

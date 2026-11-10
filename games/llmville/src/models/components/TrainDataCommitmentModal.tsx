@@ -1,5 +1,5 @@
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 
 import type { BaseModelLibraryEntry } from "@/models/training";
 import { ModelTrainingDurationEstimate } from "@/models/components/ModelPresentation";

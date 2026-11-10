@@ -1,15 +1,5 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-  type MutableRefObject,
-  type PointerEvent as ReactPointerEvent,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type MutableRefObject, type ReactNode } from "@jgengine/core/ui/jsx";
+import type { PointerEvent as ReactPointerEvent } from "@jgengine/core/ui/jsx/dom.view";
 
 import { createGestureSurfaceTracker } from "@jgengine/core/input/gestureSurface";
 import { createTouchGestureTracker } from "@jgengine/core/input/touchGestures";

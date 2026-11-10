@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "@jgengine/core/ui/jsx";
 
 import { ErrorPanel, LoadingPanel, formatLoadError } from "./appShared";
 import { captureArmed, readCaptureQuery, setCaptureStatus } from "./captureReady";

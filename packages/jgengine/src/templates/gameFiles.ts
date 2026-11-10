@@ -260,7 +260,7 @@ const mainTsx = (editor: boolean, variant: TemplateVariant, id: string) => {
     ...(variant === "in-repo" ? [`gameId="${id}"`] : []),
     ...(editor ? ['editor={() => import("@jgengine/editor")}'] : []),
   ].join(" ");
-  return `import { createRoot } from "react-dom/client";
+  return `import { createRoot } from "@jgengine/core/ui/jsx/client.view";
 import { GameHost } from "@jgengine/shell/GameHost";
 import { game } from "./game.config";
 import "./index.css";
@@ -679,7 +679,7 @@ export function GameUI() {
 }
 `;
   }
-  return `import { useSyncExternalStore } from "react";
+  return `import { useSyncExternalStore } from "@jgengine/core/ui/jsx";
 import { GameFlowUI, type GameFlowMenuContent } from "@jgengine/core/menu/gameFlowMenus.view";
 import { HudCanvas, useHudLayout } from "@jgengine/react";
 

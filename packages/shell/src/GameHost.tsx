@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState, type ComponentType } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState, type ComponentType } from "@jgengine/core/ui/jsx";
 
 import type { EditorCatalogDefinition } from "@jgengine/core/editor/types";
 import type { CreatorConfig } from "@jgengine/core/editor/creatorStorage";

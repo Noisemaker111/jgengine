@@ -35,7 +35,7 @@ import { api } from "@llmville/backend/convex/_generated/api";
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
 import { getAvatarById, normalizeAvatarId, normalizePlayerProfile } from "@/user/user";
 import { useQuery } from "convex/react";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "@jgengine/core/ui/jsx";
 
 import { useCalendarClock } from "@jgengine/core/time/calendarClock.view";
 import { deriveWorldBootLabel, deriveWorldBootProgress } from "./worldBootPhase";

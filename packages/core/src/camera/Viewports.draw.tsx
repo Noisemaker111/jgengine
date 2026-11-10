@@ -1,4 +1,4 @@
-import { useMemo, useRef, useSyncExternalStore } from "react";
+import { useMemo, useRef, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import type { GameCameraConfig } from "@jgengine/core/game/playableGame";

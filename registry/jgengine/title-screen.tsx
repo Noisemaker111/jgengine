@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 import { MenuList, type MenuEntry } from "@/components/ui/menu-list";
 

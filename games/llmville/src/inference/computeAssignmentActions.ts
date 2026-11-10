@@ -2,7 +2,7 @@
  * Compute-assignment slice of the WorldViewModel — per-card lane assignment,
  * scrape tier, and serving mode, gated on edit access.
  */
-import { useMemo } from "react";
+import { useMemo } from "@jgengine/core/ui/jsx";
 
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
 import type { ComputeLane } from "@llmville/game/infrastructure/infrastructure";

@@ -1,5 +1,5 @@
 import type { GameEngine, GameEngineState } from "@llmville/game/simulation/gameEngine";
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 export * from "@llmville/game/simulation/gameEngine";
 export { wrapMutation, withEditAccess } from "@/runtime/engineAccess";

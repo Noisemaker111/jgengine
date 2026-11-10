@@ -5,7 +5,7 @@
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
 import { api } from "@llmville/backend/convex/_generated/api";
 import { useMutation } from "convex/react";
-import { useCallback } from "react";
+import { useCallback } from "@jgengine/core/ui/jsx";
 
 import type { PlacedRack } from "@/infrastructure/infrastructure";
 import type { HardwareModelId, RackCoolingUnitId } from "@llmville/game/infrastructure/catalog";

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect } from "@jgengine/core/ui/jsx";
 
 import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { RouteLoadingScreen } from "@/components/RouteLoadingScreen";

@@ -2,6 +2,7 @@ import { getHardwareDefinition } from "@llmville/game/infrastructure/catalog";
 import type { HardwareModelId } from "@llmville/game/infrastructure/catalog";
 import { rackHeatBand, type RackHeatBand } from "@llmville/game/infrastructure/infrastructure";
 import { getHardwareImagePath } from "@llmville/game/world/worldModelCatalog";
+import type { DragEvent } from "@jgengine/core/ui/jsx/dom.view";
 
 const HEAT_BADGE_CLASS: Record<RackHeatBand, string> = {
   cool: "bg-brand-teal/80 text-[#0e231e]",
@@ -17,10 +18,10 @@ interface RackSlotProps {
   /** Whether this slot is being dragged */
   isDragging?: boolean;
   /** Drag start handler */
-  onDragStart?: (e: React.DragEvent) => void;
+  onDragStart?: (e: DragEvent) => void;
   onDragEnd?: () => void;
-  onDragOver?: (e: React.DragEvent) => void;
-  onDrop?: (e: React.DragEvent) => void;
+  onDragOver?: (e: DragEvent) => void;
+  onDrop?: (e: DragEvent) => void;
   /** When true, drag is handled by parent (e.g. @dnd-kit); disables native draggable */
   useExternalDrag?: boolean;
   /** Card temperature from rack thermal v3 (°C) */

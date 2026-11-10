@@ -1,4 +1,4 @@
-import { useReducer, useEffect, type CSSProperties, type ReactNode } from "react";
+import { useReducer, useEffect, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { layoutScreenMarker, type ScreenMarkerLayout } from "@jgengine/core/ui/screenMarkers";
 import { waypointAnchor, type WaypointEntry, type WaypointStore } from "@jgengine/core/map/waypoints";

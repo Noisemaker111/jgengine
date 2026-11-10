@@ -2,7 +2,7 @@ import { api } from "@llmville/backend/convex/_generated/api";
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
 import { useConvexAuth, useQuery } from "convex/react";
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect } from "@jgengine/core/ui/jsx";
 
 import { preloadSceneAssets } from "@/scene/sceneAssetPreloadLazy";
 

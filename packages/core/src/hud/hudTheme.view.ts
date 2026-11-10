@@ -1,4 +1,4 @@
-import { type CSSProperties } from "react";
+import type { CSSProperties } from "@jgengine/core/ui/jsx";
 import { hudSkinVars, type HudSkin } from "./hudSkin.view";
 export { hudSkinVars, type HudSkin } from "./hudSkin.view";
 

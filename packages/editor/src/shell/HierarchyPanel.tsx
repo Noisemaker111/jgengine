@@ -1,4 +1,5 @@
-import { memo, useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
+import type { DragEvent, KeyboardEvent, MouseEvent } from "@jgengine/core/ui/jsx/dom.view";
 
 import {
   isEditorObjectCollectionLocked,

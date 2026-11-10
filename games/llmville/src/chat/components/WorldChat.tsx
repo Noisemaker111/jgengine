@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "@jgengine/core/ui/jsx";
 import { MessageCircle, Send, X } from "lucide-react";
 import type { ChatMessage } from "@jgengine/core/chat/chat";
 import { suspendPlayControls } from "@jgengine/core/game/controlGate";

@@ -1,4 +1,4 @@
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import type { ConsoleSeverity, EditorConsoleStore } from "./consoleStore";
 import { Icon, type IconName } from "./icons";

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from "@jgengine/core/ui/jsx";
 
 import { BILL_TYPE_LABELS } from "@/economy/events";
 import { InvoiceBillCard } from "@/economy/components/InvoiceBillCard";

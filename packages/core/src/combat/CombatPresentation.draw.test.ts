@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { ReactElement } from "react";
+import type { ReactElement } from "@jgengine/core/ui/jsx";
 
 import { CombatPresentation } from "./CombatPresentation.draw";
 import { resolvePresentationEffects } from "@jgengine/shell/presentationResolve";

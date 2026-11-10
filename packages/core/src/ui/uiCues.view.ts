@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback } from "@jgengine/core/ui/jsx";
 
 import { UI_CUES, uiCueSoundId, type UiCue } from "@jgengine/core/ui/uiCues";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";

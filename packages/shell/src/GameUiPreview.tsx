@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "@jgengine/core/ui/jsx";
 
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { useAccessibilitySettings } from "@jgengine/core/settings/accessibilitySettings.view";

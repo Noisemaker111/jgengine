@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { act, createElement, type ReactElement } from "react";
+import { act, createElement, type ReactElement } from "@jgengine/core/ui/jsx";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";

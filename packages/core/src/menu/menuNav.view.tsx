@@ -1,13 +1,5 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type ReactNode,
-  type RefCallback,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefCallback } from "@jgengine/core/ui/jsx";
+import type { KeyboardEvent as ReactKeyboardEvent } from "@jgengine/core/ui/jsx/dom.view";
 
 import {
   menuIntentForPadAxis,

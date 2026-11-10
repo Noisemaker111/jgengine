@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 
 import type { BaseModelLibraryEntry } from "@/models/training";
 import { MODEL_ACTION_KIND } from "@/models/training";

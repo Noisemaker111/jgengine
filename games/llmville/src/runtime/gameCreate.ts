@@ -2,7 +2,7 @@ import { api } from "@llmville/backend/convex/_generated/api";
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
 import { useMutation } from "convex/react";
 import { useNavigate, useRouter } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "@jgengine/core/ui/jsx";
 
 import { useAuth } from "@/auth";
 import { resolveAuthUsername } from "@/auth/authCredentials";

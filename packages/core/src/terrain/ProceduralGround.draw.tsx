@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 import { useEngineDraw, type DrawAttachProps } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
-import { useRef } from "react";
+import { useRef } from "@jgengine/core/ui/jsx";
 
 import { createProceduralGroundGeometry, type ProceduralTerrainConfig, type TerrainVertexColorOptions } from "./terrainMath.draw";
 

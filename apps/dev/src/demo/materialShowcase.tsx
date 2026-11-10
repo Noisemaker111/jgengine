@@ -1,5 +1,5 @@
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import { meshDraw, SceneObjectAttach, SceneObjectGroup, useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { EditorMarker } from "@jgengine/core/editor/types";

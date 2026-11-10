@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 import { AxisChannel, type AxisChannelConfig } from "@jgengine/core/input/axisInput";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { dispatchCommand, type DispatchedCommandResult } from "@jgengine/core/commands/commandDispatch";

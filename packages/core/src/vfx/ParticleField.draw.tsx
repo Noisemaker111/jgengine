@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import type { ReactElement } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import type { ParticleBuffers, ParticleSystem } from "@jgengine/core/vfx/particles";

@@ -192,7 +192,7 @@ describe("import resolution", () => {
   const graph = buildImportGraph(root, ["packages/shell/src/x.ts", "scripts/x.ts", "packages/core/src/world.ts", "packages/core/src/index.ts", "packages/core/src/world/terrain.ts", "packages/core/src/world/terrain.test.ts"], {
     readText: (path) =>
       ({
-        "packages/shell/src/x.ts": 'import { world } from "@jgengine/core/world";\nimport React from "react";',
+        "packages/shell/src/x.ts": 'import { world } from "@jgengine/core/world";\nimport React from "@jgengine/core/ui/jsx";',
         "scripts/x.ts": 'import * as core from "@jgengine/core";',
         "packages/core/src/world/terrain.test.ts": 'import { sample } from "./terrain";',
       })[path] ?? "",

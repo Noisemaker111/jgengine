@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import type { AudioBusDef } from "@jgengine/core/audio/audioFalloff";
 import {

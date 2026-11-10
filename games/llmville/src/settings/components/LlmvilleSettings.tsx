@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 
 import { useAccessibilitySettings } from "@jgengine/core/settings/accessibilitySettings.view";
 import { KeybindingMenu } from "@jgengine/core/settings/keybindingMenu.view";

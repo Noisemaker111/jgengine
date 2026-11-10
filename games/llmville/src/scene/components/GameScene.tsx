@@ -11,7 +11,7 @@ import {
   type InteractionHint,
   type InteractionTarget,
 } from "@llmville/game/simulation/interaction";
-import { useMemo } from "react";
+import { useMemo } from "@jgengine/core/ui/jsx";
 
 import type { DatacenterClaim, PlacementCellPolicy } from "@llmville/game/datacenter/claims";
 import type { GameEngine } from "@/runtime/gameEngine";

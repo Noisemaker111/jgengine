@@ -4,7 +4,7 @@
  * session `setMarker` / `setVolume` meta patches (same path as the inspector Components tab).
  */
 
-import { memo, useMemo } from "react";
+import { memo, useMemo } from "@jgengine/core/ui/jsx";
 
 import type { EditorSession } from "@jgengine/core/editor/index";
 

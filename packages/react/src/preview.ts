@@ -1,4 +1,4 @@
-import type { ComponentType } from "react";
+import type { ComponentType } from "@jgengine/core/ui/jsx";
 
 export type GamePreviewProps = {
   className?: string;

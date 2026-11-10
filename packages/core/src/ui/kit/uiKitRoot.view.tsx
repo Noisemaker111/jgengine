@@ -1,17 +1,5 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useInsertionEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ButtonHTMLAttributes,
-  type CSSProperties,
-  type HTMLAttributes,
-  type ReactNode,
-  type Ref,
-} from "react";
+import { createContext, useContext, useEffect, useInsertionEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type Ref } from "@jgengine/core/ui/jsx";
+import type { ButtonHTMLAttributes, HTMLAttributes } from "@jgengine/core/ui/jsx/dom.view";
 
 import type { ActionCodesMap } from "@jgengine/core/input/actionBindings";
 import type { GamepadGlyphName } from "@jgengine/core/input/gamepadModel";

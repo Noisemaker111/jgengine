@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { act, createElement, Fragment, useEffect } from "react";
+import { act, createElement, Fragment, useEffect } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import { canvasCover } from "@jgengine/core/ui/canvasCover.view";

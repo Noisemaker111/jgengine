@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "@jgengine/core/ui/jsx";
 
 import type { NotificationEntry } from "@jgengine/core/notifications/notificationCenter";
 import { seededRng } from "@jgengine/core/random/rng";

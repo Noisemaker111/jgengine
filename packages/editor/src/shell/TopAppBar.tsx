@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "@jgengine/core/ui/jsx";
 
 import { formatSavedRelative } from "./formatSavedRelative";
 import { Icon } from "./icons";

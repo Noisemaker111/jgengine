@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 import { BaseStructures } from "../../engine-local/basebuilding/BaseStructures.draw";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import { OnboardingPointer } from "@jgengine/core/onboarding/OnboardingPointer.draw";

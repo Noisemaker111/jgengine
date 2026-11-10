@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 import { CreditsPane } from "@jgengine/core/menu/gameMenuSaves.view";
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { GameCursor } from "@jgengine/core/ui/cursor.view";

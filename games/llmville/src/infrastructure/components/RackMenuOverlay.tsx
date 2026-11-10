@@ -2,7 +2,7 @@
  * Full-screen overlay for the rack hardware menu (E key near rack).
  */
 
-import { createPortal } from "react-dom";
+import { createPortal } from "@jgengine/core/ui/jsx/client.view";
 import type { PlacedRack } from "@/infrastructure/infrastructure";
 import { useEscapeToClose } from "@/tablet/tablet";
 import type { RackHardwareMoveSource, RackHardwareMoveTarget } from "@/infrastructure/rackHardwareSession";

@@ -6,7 +6,7 @@ import {
   useSceneObjectAttach,
 } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { EngineDraw } from "@jgengine/core/frame/engineLoop.draw";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 import { ArrowHelper, BoxGeometry, EdgesGeometry, Group, LineBasicMaterial, LineSegments } from "three";
 
 import type { GridFootprint } from "@llmville/game/world/grid";

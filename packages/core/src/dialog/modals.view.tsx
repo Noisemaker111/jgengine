@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useReducer,
-  useRef,
-  type CSSProperties,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useReducer, useRef, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import {
   MODAL_CANCEL,

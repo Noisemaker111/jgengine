@@ -1,4 +1,4 @@
-import { type CSSProperties, type ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 
 import { IconTreatment, type IconSchool } from "@jgengine/core/ui/icons/iconTreatment.view";
 import type { GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";

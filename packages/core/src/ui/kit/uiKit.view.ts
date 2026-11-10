@@ -1,4 +1,5 @@
-import type { ButtonHTMLAttributes, ComponentType, CSSProperties, HTMLAttributes, ReactNode } from "react";
+import type { ComponentType, CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
+import type { ButtonHTMLAttributes, HTMLAttributes } from "@jgengine/core/ui/jsx/dom.view";
 
 import type { SoundDef } from "@jgengine/core/audio/audioFalloff";
 import { UI_CUE_BUS, uiCueSoundId, type UiCue } from "@jgengine/core/ui/uiCues";

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import { PlayerCharacterFigure } from "@/user/components/PlayerCharacterFigure";

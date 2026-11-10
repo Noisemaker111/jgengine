@@ -1,4 +1,5 @@
-import { useMemo, useRef, useState, type DragEvent } from "react";
+import { useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
+import type { DragEvent } from "@jgengine/core/ui/jsx/dom.view";
 
 import type { EditorSession } from "@jgengine/core/editor/index";
 

@@ -16,7 +16,7 @@ beforeAll(async () => {
   for (const peer of ["react", "react-dom"]) await symlink(`${root}/packages/react/node_modules/${peer}`, `${scratch}/node_modules/${peer}`, "dir");
   await installPublicPackages(scratch, ["core", "react"]);
   await Bun.write(`${scratch}/fixture.tsx`, `
-    import React,{useEffect,useState} from 'react';import {createRoot} from 'react-dom/client';import {flushSync} from 'react-dom';
+    import React,{useEffect,useState} from '@jgengine/core/ui/jsx';import {createRoot} from '@jgengine/core/ui/jsx/client.view';import {flushSync} from '@jgengine/core/ui/jsx/client.view';
     import {useVoice,PushToTalkButton} from '@jgengine/core/multiplayer/voice.view';
     const listeners=new Map();for(const [source,types]of [[window,['mouseup','pointercancel','blur']],[document,['visibilitychange','pointerlockchange']]]){const add=source.addEventListener.bind(source),remove=source.removeEventListener.bind(source);source.addEventListener=(type,listener,options)=>{if(types.includes(type)&&new Error().stack.split('\\n')[2]?.includes('/fixture.js')){const set=listeners.get(type)??new Set();set.add(listener);listeners.set(type,set)}add(type,listener,options)};source.removeEventListener=(type,listener,options)=>{listeners.get(type)?.delete(listener);remove(type,listener,options)}}
     const audio=new AudioContext(),stream=audio.createMediaStreamDestination().stream,track=stream.getAudioTracks()[0],capture=async()=>stream,counts={down:0,up:0};

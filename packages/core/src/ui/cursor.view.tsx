@@ -1,4 +1,4 @@
-import { useEffect, useInsertionEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useInsertionEffect, useRef, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 /**
  * How the cursor marks the selected item.

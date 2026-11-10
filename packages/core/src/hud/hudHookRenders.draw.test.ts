@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { act, createElement, type ReactElement } from "react";
+import { act, createElement, type ReactElement } from "@jgengine/core/ui/jsx";
 
 import { mountTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";

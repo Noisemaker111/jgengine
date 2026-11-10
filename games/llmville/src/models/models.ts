@@ -5,7 +5,7 @@ import { BENCHMARK_DEMAND_REFERENCE } from "@llmville/game/models/servingStats";
 import type { ComputePrecision } from "@llmville/game/infrastructure/catalog";
 import type { ModelLaunchState } from "@llmville/game/models/servingMode";
 import type { ModelQualityTierId } from "@llmville/game/models/modelQuality";
-import { useCallback } from "react";
+import { useCallback } from "@jgengine/core/ui/jsx";
 
 import { withEditAccess, wrapMutation } from "@/runtime/gameEngine";
 import { estimateModelIncomePerSecond } from "@llmville/game/economy/servingEconomy";

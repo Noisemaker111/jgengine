@@ -1,5 +1,5 @@
 // @skill jgengine-world
-import { useMemo, useRef } from "react";
+import { useMemo, useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import type { FlockStepAgent } from "@jgengine/core/ai/flock";

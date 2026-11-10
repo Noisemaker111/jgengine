@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "@jgengine/core/ui/jsx";
 
 /** Optional raster-backed materials for shared HUD chrome. */
 export interface HudSkinMaterial {

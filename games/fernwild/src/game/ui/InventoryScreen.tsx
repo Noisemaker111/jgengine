@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 import { Paperdoll } from "@jgengine/core/inventory/characterSheet.view";
 import { InventoryGrid } from "@jgengine/core/inventory/inventoryGrid.view";
 import { EntityPreview } from "@jgengine/core/render/EntityPreview.draw";

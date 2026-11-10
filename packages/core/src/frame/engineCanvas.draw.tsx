@@ -1,5 +1,5 @@
 // @skill jgengine-world
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import {

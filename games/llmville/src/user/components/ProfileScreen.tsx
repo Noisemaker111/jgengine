@@ -5,12 +5,13 @@ import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { formatCompactNumber, formatMoney } from "@/economy/economy";
 import { MainMenuLayout } from "@/runtime/components/MainMenuLayout";
 import { getAvatarById, getMentorPerkSummary, useProfileScreen, sanitizeProfileUsernameKeystroke } from "@/user/user";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 interface ProfileScreenProps {
   username: string;
 }
 
-function ProfilePanel({ children }: { children: React.ReactNode }) {
+function ProfilePanel({ children }: { children: ReactNode }) {
   return (
     <div className="main-menu-panel w-full max-w-md space-y-6 p-6 sm:p-8">
       {children}

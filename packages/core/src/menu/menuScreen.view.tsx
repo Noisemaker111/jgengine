@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useSyncExternalStore, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { createMenuTransition, menuTransitionDurations } from "@jgengine/core/menu/menuTransition";
 

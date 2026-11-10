@@ -1,4 +1,4 @@
-import { useInsertionEffect } from "react";
+import { useInsertionEffect } from "@jgengine/core/ui/jsx";
 
 import { HUD_FONT_STACK } from "@jgengine/core/hud/hudTokens";
 

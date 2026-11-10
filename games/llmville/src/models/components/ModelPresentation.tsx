@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 import { Clock } from "lucide-react";
 
 import { formatTrainingDurationLabel } from "@llmville/game/models/trainingDurationLabel";

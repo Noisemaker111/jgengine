@@ -1,7 +1,7 @@
 import { api } from "@llmville/backend/convex/_generated/api";
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
-import { useState } from "react";
+import { useState } from "@jgengine/core/ui/jsx";
 import { MAX_WORLD_CHUNK_QUERY_RADIUS } from "@llmville/game/datacenter/worldChunks";
 
 export interface UseWorldDataQueriesOptions {

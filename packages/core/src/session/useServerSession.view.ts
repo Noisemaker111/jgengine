@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "@jgengine/core/ui/jsx";
 import { createTransportSessionId, type GameRuntimeTransport } from "@jgengine/core/runtime/transport";
 
 /**

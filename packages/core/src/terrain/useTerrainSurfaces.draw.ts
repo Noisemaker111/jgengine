@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 import { trackSceneWork } from "@jgengine/core/model/modelLoad.draw";

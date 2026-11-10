@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState } from "@jgengine/core/ui/jsx";
 import { useAction, useMutation, useQuery } from "convex/react";
 
 import { api } from "@llmville/backend/convex/_generated/api";

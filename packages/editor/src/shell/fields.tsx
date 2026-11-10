@@ -1,6 +1,8 @@
-import { useRef, useState, type PointerEvent } from "react";
+import { useRef, useState } from "@jgengine/core/ui/jsx";
+import type { PointerEvent } from "@jgengine/core/ui/jsx/dom.view";
 
 import { AXIS_COLORS, FOCUS_RING, INPUT_CLS, NUMERIC } from "./theme";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 /** Pixels of pointer drag per `step` of value change when scrubbing an axis chip. */
 const DRAG_PX_PER_STEP = 4;
@@ -145,7 +147,7 @@ export function AxisNumberField({
 }
 
 /** Labeled row wrapper aligning a caption with one or more fields. */
-export function FieldRow({ label, children, title }: { label: string; children: React.ReactNode; title?: string }) {
+export function FieldRow({ label, children, title }: { label: string; children: ReactNode; title?: string }) {
   return (
     <div className="flex items-center gap-2" title={title}>
       <span className="w-16 shrink-0 text-[10px] text-neutral-500">{label}</span>
@@ -191,7 +193,7 @@ export function SectionAction({
   onClick: () => void;
   active?: boolean;
   disabled?: boolean;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <button

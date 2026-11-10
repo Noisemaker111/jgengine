@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "@jgengine/core/ui/jsx";
 import { ContinuePane, CreditsPane, SaveSlotsPane } from "@jgengine/core/menu/gameMenuSaves.view";
 import { GameMenu } from "@jgengine/core/menu/gameMenu.view";
 import { PauseMenu } from "@jgengine/core/menu/pauseMenu.view";

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useRef, type DependencyList, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, type DependencyList, type ReactNode } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 
 import { childFrameState, type EngineDraw, type EngineFrameState } from "./engineLoop.draw";

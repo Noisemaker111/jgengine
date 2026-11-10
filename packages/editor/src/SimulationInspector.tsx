@@ -1,5 +1,5 @@
 import type { CreatorPolicy } from "@jgengine/core/editor/creatorStorage";
-import { useState } from "react";
+import { useState } from "@jgengine/core/ui/jsx";
 import type { EditorSession } from "@jgengine/core/editor/commands";
 import type { EditorSimulation } from "@jgengine/core/editor/simulation";
 import { effectNames } from "@jgengine/core/vfx/effectLibrary";

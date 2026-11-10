@@ -1,4 +1,4 @@
-import { createElement } from "react";
+import { createElement } from "@jgengine/core/ui/jsx";
 
 import type { GamePreviewComponent } from "./preview";
 import { HudChromePreview } from "@jgengine/core/hud/hudChromePreview.view";

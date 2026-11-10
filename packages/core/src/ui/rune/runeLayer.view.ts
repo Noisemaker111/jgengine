@@ -1,4 +1,4 @@
-import { createElement, useLayoutEffect, useRef, type ReactNode } from "react";
+import { createElement, useLayoutEffect, useRef, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { RuneStage } from "./runeStage.view";
 

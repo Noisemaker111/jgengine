@@ -1,4 +1,4 @@
-import { type CSSProperties, type ReactNode, useCallback, useEffect, useState } from "react";
+import { type CSSProperties, type ReactNode, useCallback, useEffect, useState } from "@jgengine/core/ui/jsx";
 import { createSaveSlots } from "@jgengine/core/save/saveSlots";
 import { formatSavePlaytime, gameSaveSlotSource, refreshSaveSlots } from "@jgengine/core/save/saveSlotIndex";
 import { useGame } from "@jgengine/react/hooks";

@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { gamePhase } from "@jgengine/core/game/gamePhase";
 import { WaypointMarkers } from "@jgengine/core/map/waypointMarkers.view";

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 import { UnitFrame, type UnitVital } from "@/components/ui/unit-frame";
 

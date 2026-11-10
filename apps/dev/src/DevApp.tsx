@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "@jgengine/core/ui/jsx";
 
 import { parseEffectsPreview, PREVIEW_EFFECTS, withEffectsPreview } from "./effectsPreview";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";

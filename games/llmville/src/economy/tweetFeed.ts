@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "@jgengine/core/ui/jsx";
 
 import { createNotificationCenter, type NotificationEntry, type NotificationStore } from "@jgengine/core/notifications/notificationCenter";
 import { useNotifications } from "@jgengine/core/notifications/notificationCenter.view";

@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
-import type { FormEvent, ReactNode } from "react";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
+import type { FormEvent } from "@jgengine/core/ui/jsx/dom.view";
 
 import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { useLoginForm, useSignupForm } from "@/auth";

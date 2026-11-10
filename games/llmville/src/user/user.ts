@@ -6,7 +6,7 @@ import {
 } from "@llmville/game/user/founder";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "@jgengine/core/ui/jsx";
 
 import { BASE_POWER_CAPACITY_KW } from "@llmville/game/infrastructure/infrastructure";
 import { useAuth } from "@/auth";

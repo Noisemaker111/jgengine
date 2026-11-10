@@ -1,5 +1,5 @@
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "@jgengine/core/ui/jsx";
 import type { RackHardwareMoveSource, RackHardwareMoveTarget } from "@/infrastructure/rackHardwareSession";
 import {
   DndContext,
@@ -32,6 +32,7 @@ import { useRackHardwareDragVisualOptional } from "@/infrastructure/rackHardware
 import { useTabletNavContext } from "@/tablet/components/tabletNav";
 
 import RackSlot from "./RackSlot";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 interface RackMenuProps {
   rack: PlacedRack;
@@ -52,7 +53,7 @@ function DraggableCard({
 }: {
   id: string;
   data: DragData;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id, data });
   return (
@@ -74,7 +75,7 @@ function DroppableSlot({
 }: {
   id: string;
   slotIndex: number;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id, data: { slotIndex } });
   return (

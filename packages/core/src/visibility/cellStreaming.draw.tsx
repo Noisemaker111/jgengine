@@ -1,5 +1,5 @@
 // @skill jgengine-world
-import { useRef } from "react";
+import { useRef } from "@jgengine/core/ui/jsx";
 
 import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
