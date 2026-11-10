@@ -32,6 +32,23 @@ export function engineSourceAliases(dir = packagesDir): Alias[] {
 }
 
 /**
+ * `react` and `react-dom` resolve to the engine's own UI runtime. No engine or game file imports
+ * React; this is for hook libraries a game depends on that do (`convex/react`, better-auth), so their
+ * hooks run on the one runtime the page has instead of loading React beside it.
+ */
+export function engineUiAliases(): Alias[] {
+  const ui = join(packagesDir, "core", "src", "ui", "jsx").replaceAll("\\", "/");
+  return [
+    { find: /^react\/jsx-runtime$/, replacement: `${ui}/jsx-runtime.ts` },
+    { find: /^react\/jsx-dev-runtime$/, replacement: `${ui}/jsx-dev-runtime.ts` },
+    { find: /^react-dom\/client$/, replacement: `${ui}/client.view.ts` },
+    { find: /^react-dom\/server$/, replacement: `${ui}/markup.ts` },
+    { find: /^react-dom$/, replacement: `${ui}/client.view.ts` },
+    { find: /^react$/, replacement: `${ui}/index.ts` },
+  ];
+}
+
+/**
  * `resolve` for a game's Vite config: engine source aliases, and every engine peer the game
  * declares deduped to the game's own copy, so engine source and game code share one three.js
  * even while the game sits on another in-range version.
@@ -44,7 +61,7 @@ export function engineSource(gameDir: URL | string): { alias: Alias[]; dedupe: s
   };
   const declared = { ...manifest.devDependencies, ...manifest.dependencies };
   return {
-    alias: engineSourceAliases(),
+    alias: [...engineUiAliases(), ...engineSourceAliases()],
     dedupe: ENGINE_PEERS.filter((pkg) => declared[pkg] !== undefined),
   };
 }
