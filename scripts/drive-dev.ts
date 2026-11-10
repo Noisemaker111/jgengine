@@ -227,8 +227,8 @@ if (live.steps.length > 0) {
     console.error("drive: --step runs flow calls on the live page; drop --flow, --record, --playtest and the step flags");
     process.exit(1);
   }
-  if (args.url !== undefined || args.site !== undefined || args.connect !== undefined || args.cold || args.headed) {
-    console.error("drive: --step runs on a game in the warm browser; drop --url, --site, --connect, --cold and --headed");
+  if (args.site !== undefined || args.connect !== undefined || args.cold || args.headed) {
+    console.error("drive: --step uses the warm browser; drop --site, --connect, --cold and --headed");
     process.exit(1);
   }
   const stepViewport: ViewportOverride = { width: args.width, height: args.height };
@@ -236,6 +236,7 @@ if (live.steps.length > 0) {
     steps: live.steps,
     fresh: live.fresh,
     targetUrl,
+    ...(args.url === undefined ? {} : { externalBase: new URL(args.url).origin }),
     device: args.device,
     size: args.size,
     viewport: stepViewport,

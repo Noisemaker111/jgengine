@@ -41,7 +41,7 @@ export default defineFlow(game, {
     const overflow = await f.page("(() => { const el = document.querySelector('[data-credits-scroller]'); el.focus(); return el.scrollHeight > el.clientHeight; })()");
     if (overflow === true) {
       await f.press("End");
-      await f.waitForPage("(() => { const el = document.querySelector('[data-credits-scroller]'); return Math.abs(el.scrollTop + el.clientHeight - el.scrollHeight) <= 1; })()");
+      await f.waitForPage("(() => { const el = document.querySelector('[data-credits-scroller]'); return el !== null && el.clientHeight > 0 && document.activeElement === el && Math.abs(el.scrollTop + el.clientHeight - el.scrollHeight) <= 1; })()");
       await f.shot("pause-credits-end");
       await f.press("Home");
       await f.waitForPage("document.querySelector('[data-credits-scroller]').scrollTop === 0");

@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { closestHint, closestMatches } from "./closestMatch";
 import { probeKeyHint } from "./browserFlow";
 import { controlHint } from "./drivePage";
-import { compileStep, guardFlowCalls, splitStepFlags } from "./driveStep";
+import { compileStep, guardFlowCalls, liveStepBase, splitStepFlags } from "./driveStep";
 
 describe("closestMatches", () => {
   test("a guessed button label names the real one first", () => {
@@ -64,6 +64,16 @@ describe("probeKeyHint", () => {
 });
 
 describe("drive --step", () => {
+  test("external pages keep their server without starting the managed runner", async () => {
+    let starts = 0;
+    const managed = async (): Promise<{ base: string }> => { starts++; return { base: "http://127.0.0.1:4100" }; };
+    expect(await liveStepBase("http://127.0.0.1:5100", managed)).toBe("http://127.0.0.1:5100");
+    expect(starts).toBe(0);
+    expect(await liveStepBase(undefined, managed)).toBe("http://127.0.0.1:4100");
+    expect(starts).toBe(1);
+    await expect(liveStepBase(undefined, async () => { throw new Error("runner failed"); })).rejects.toThrow("runner failed");
+  });
+
   test("takes repeated --step calls and --fresh out of the command line", () => {
     expect(splitStepFlags(["ember-command", "--step", 'f.click("A")', "--fresh", "--step=f.probe()", "--size", "half"])).toEqual({
       argv: ["ember-command", "--size", "half"],

@@ -121,13 +121,15 @@ Live steps (try a flow call before writing it into the flow):
   bun run drive ember-command --step 'f.click("Pause battle")'
   bun run drive ember-command --step 'f.see("Paused")' --step 'f.probe()'
   bun run drive ember-command --fresh --step 'f.waitFor((p) => p.wave >= 1)'
+  bun run drive --url http://127.0.0.1:5100/ --step 'f.click("Start")'
 
   --step runs one browser-flow call (or statements using f) on a page of the game that stays
   running in the warm browser, so the next --step carries on from where this one left it and
   answers in seconds. Repeat --step to run several in order on one page; the first failure stops
   them. --fresh boots the page again (also --state, --param and the other page options start a
   new page). A failed click, probe check or page-text check names the closest controls, probe
-  keys or text; a misspelt f.call names the closest calls.
+  keys or text; a misspelt f.call names the closest calls. --url keeps the page's existing server
+  and runs the same calls there, including on a production build or another checkout.
 
 Notes:
   Output is the result, its warnings and any failure in full; --verbose adds the progress,
