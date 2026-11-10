@@ -56,7 +56,7 @@ export interface WaypointMarkersProps {
   entries: WaypointStore | readonly WaypointEntry[];
   /**
    * World→screen projector — caller-owned, so this seam never depends on a
-   * specific camera. R3F games get one from `useWorldProjection` in
+   * specific camera. Games get one from `useWorldProjection` in
    * `@jgengine/shell/world/WorldEntityFrames`; return `null` to skip a waypoint.
    */
   project: ProjectEntity;

@@ -18,8 +18,7 @@ export function flushAfterRenderTasks(): void {
 }
 
 /**
- * Run `task` in the same task right before the next render — r3f's
- * `addEffect`. Returns the leave.
+ * Run `task` in the same task right before the next render. Returns the leave.
  */
 export function joinBeforeRenderTask(task: () => void): () => void {
   beforeTasks.add(task);
@@ -29,8 +28,8 @@ export function joinBeforeRenderTask(task: () => void): () => void {
 }
 
 /**
- * Run `task` in the same task right after the next render — r3f's
- * `addAfterEffect`. Returns the leave. Used by canvas readers that need the
+ * Run `task` in the same task right after the next render. Returns the leave.
+ * Used by canvas readers that need the
  * frame the renderer just drew before the drawing buffer is cleared.
  */
 export function joinAfterRenderTask(task: () => void): () => void {

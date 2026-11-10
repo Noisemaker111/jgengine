@@ -27,10 +27,10 @@ import {
 } from "./frameBreakdown";
 
 /**
- * The live half of the frame breakdown: hooks one three.js renderer, its WebGL context and the r3f
+ * The live half of the frame breakdown: hooks one three.js renderer, its WebGL context and the engine
  * frame loop, and fills one {@link FrameBreakdownRecord} per frame.
  *
- * - CPU per system: the sim's named phases and stages (`devtools.profile`), every r3f frame callback
+ * - CPU per system: the sim's named phases and stages (`devtools.profile`), every engine frame callback
  *   (`frame#<n>`, named in `callbacks()` by its source), render submission and each post pass.
  * - GPU per pass: `EXT_disjoint_timer_query_webgl2` around the shadow pass, the main render and each
  *   post pass. Only one timer runs at a time in WebGL, so a nested pass pauses its parent's timer.
@@ -207,7 +207,7 @@ export function installFrameBreakdown(renderer: WebGLRenderer): FrameBreakdown {
   let sessionStart = performance.now();
   let sessionFrames = 0;
   let sessionGcMb = 0;
-  // What the browser ran in each long frame, for the frames the r3f loop cannot see into.
+  // What the browser ran in each long frame, for the frames the engine loop cannot see into.
   const longFrames: LongFrameTiming[] = [];
   let observer: PerformanceObserver | null = null;
   if (typeof PerformanceObserver !== "undefined" && PerformanceObserver.supportedEntryTypes.includes("long-animation-frame")) {

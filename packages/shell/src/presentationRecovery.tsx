@@ -220,8 +220,8 @@ export class PresentationRecovery extends Component<RecoveryProps, RecoveryState
 /**
  * Report a canvas's WebGL context as lost or back; asks the browser to restore it. Returns the
  * unsubscribe. A canvas already taken out of the page is being retired, not reset by the driver:
- * React Three Fiber force-loses an unmounted canvas's context 500 ms later (a renderer switch, a
- * scene change), and that is not reported. @internal
+ * renderer teardown may force a detached canvas's context to be lost, and that is not
+ * reported as a driver failure. @internal
  */
 export function watchContextLoss(canvas: EventTarget, onChange: (lost: boolean) => void): () => void {
   const onLost = (event: Event) => {

@@ -15,28 +15,25 @@ export interface EngineCanvasProps {
   /** From `useEngineRendererFactory`; the canvas remounts per `factory.backend`. */
   rendererFactory: EngineRendererFactory;
   orthographic?: boolean | undefined;
-  /** r3f `camera` prop: fov/zoom plus near/far. */
+  /** Camera fov/zoom and near/far planes. */
   camera?: { fov?: number; zoom?: number; near?: number; far?: number } | undefined;
-  /** r3f `shadows`: true maps to PCFShadowMap ("percentage"). */
+  /** Enable PCFShadowMap ("percentage") shadows. */
   shadows?: boolean | undefined;
-  /** r3f `dpr`: number or [min, max] clamped against devicePixelRatio. */
+  /** Pixel ratio, or [min, max] clamped against devicePixelRatio. */
   dpr?: number | readonly [number, number] | undefined;
-  /** r3f `gl={{ preserveDrawingBuffer }}`: keep the drawing buffer for capture/snapshot reads. */
+  /** Keep the drawing buffer for capture/snapshot reads. */
   preserveDrawingBuffer?: boolean | undefined;
   frameloop?: EngineFrameloop | undefined;
   style?: CSSProperties | undefined;
-  /** r3f `onCreated`: runs once after renderer/scene/camera exist, before the first frame. */
+  /** Runs once after renderer/scene/camera exist, before the first frame. */
   onCreated?: ((state: EngineFrameState) => void) | undefined;
   children?: ReactNode;
 }
 
 /**
- * The engine-owned replacement for r3f's `<Canvas>`: one canvas, one
- * {@link createEngineLoop}, and an {@link EngineHostProvider} so every draw
- * wrapper underneath mounts through `useEngineHost`/`useEngineDraw` exactly
- * as it did under `R3FEngineHost`. Children remount when the renderer backend
- * changes (the old `key={backend}` on Canvas), so draws never survive a dead
- * scene.
+ * One canvas, one {@link createEngineLoop}, and an {@link EngineHostProvider}
+ * for draw wrappers mounted through `useEngineHost`/`useEngineDraw`. Children
+ * remount when the renderer backend changes so draws never survive a dead scene.
  */
 export function EngineCanvas({
   rendererFactory,
@@ -59,8 +56,7 @@ export function EngineCanvas({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (canvas === null) return;
-    // r3f's defaultProps for the gl factory — keep them identical so materials
-    // and the WebGPU path see the same context attributes.
+    // Materials and both renderer backends share these context attributes.
     const created = rendererFactory({
       canvas,
       powerPreference: "high-performance",
@@ -68,8 +64,7 @@ export function EngineCanvas({
       alpha: true,
       preserveDrawingBuffer,
     });
-    // r3f's `flat={false}` + sRGB defaults: without these the same scene draws
-    // noticeably different (no tone curve) the moment the Canvas is swapped.
+    // Both renderer backends use the same tone curve and output color space.
     created.toneMapping = THREE.ACESFilmicToneMapping;
     created.outputColorSpace = THREE.SRGBColorSpace;
     const engine = createEngineLoop({
@@ -125,7 +120,7 @@ export function EngineCanvas({
 
   return (
     <>
-      {/* Keyed per backend: a fresh DOM canvas per renderer factory, like r3f's `key={backend}` on Canvas. */}
+      {/* A fresh DOM canvas per renderer backend. */}
       {/* The box is in the page flow and takes the caller's `style` (a height, a background); the
           canvas fills it. A canvas styled directly would leave the flow and stack over its siblings. */}
       <div data-engine-canvas="" style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden", ...style }}>

@@ -27,11 +27,11 @@ export interface CaptureRenderer {
 
 /**
  * Read the canvas to a PNG data URL. The game canvas keeps no copy of its last frame, so read in the
- * task that rendered it (an R3F after-effect, as {@link SceneCaptureBinding} does) or right after a
+ * task that rendered it (an engine after-render task, as {@link SceneCaptureBinding} does) or right after a
  * `gl.render` call; read any later and the frame is already gone. Returns null when the canvas can't
  * be read.
  *
- * @capability capture-canvas read the frame an R3F canvas just rendered to a PNG data URL
+ * @capability capture-canvas Read the frame an engine canvas just rendered to a PNG data URL
  */
 export function captureCanvas(gl: CaptureRenderer): string | null {
   try {

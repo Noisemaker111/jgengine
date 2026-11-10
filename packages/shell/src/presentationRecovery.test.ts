@@ -199,8 +199,7 @@ describe("context loss", () => {
   });
 
   test("a canvas already removed from the page losing its context is a retirement, not a driver reset", () => {
-    // R3F force-loses an unmounted canvas's context 500 ms later; switching the renderer showed
-    // "The display was lost" over the new, working canvas.
+    // Late context loss from renderer teardown must not cover the next working canvas.
     const canvas = Object.assign(new EventTarget(), { isConnected: true });
     const seen: boolean[] = [];
     const stop = watchContextLoss(canvas, (lost) => seen.push(lost));

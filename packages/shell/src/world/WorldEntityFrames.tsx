@@ -14,14 +14,14 @@ import {
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /**
- * Returns a {@link ProjectEntity} bound to the live R3F camera and canvas size —
+ * Returns a {@link ProjectEntity} bound to the live engine camera and canvas size —
  * the world→screen half of the data-first entity-frame seam. Call the returned
  * function with a world position to get a CSS-pixel screen point (or `null`/`behind`
  * when the point is outside the frustum). Reads the camera fresh on every call, so
  * sample it inside a frame loop. Games that already own their entities use this to
  * feed `@jgengine/ui`'s `EntityFrames` without mirroring state into a store.
  *
- * @capability entity-frames R3F camera→screen projector for world-anchored frames
+ * @capability entity-frames Camera-to-screen projector for world-anchored frames
  */
 export function useWorldProjection(): ProjectEntity {
   const host = useEngineHost();
@@ -78,14 +78,14 @@ export interface WorldEntityFramesProps<E extends EntityFrameEntry> extends Enti
 
 
 /**
- * R3F convenience that mounts inside the scene, samples the live camera each
+ * Mounts inside the scene, samples the live camera each
  * frame (throttled by `tickMs`), and renders `@jgengine/ui`'s {@link EntityFrames}
- * through a fullscreen `<Html>` overlay. This is the one-line way an R3F game
+ * through a fullscreen UI overlay. This is the one-line way a game
  * gets overhead enemy nameplates/health bars from its own entity array without a
  * store: pass `entries` + a `renderFrame` that composes the shipped bars. The
  * projection, viewport culling, and stacking come for free.
  *
- * @capability entity-frames R3F overhead entity frames from a caller-owned entity array
+ * @capability entity-frames Overhead entity frames from a caller-owned entity array
  */
 export function WorldEntityFrames<E extends EntityFrameEntry>({
   entries,

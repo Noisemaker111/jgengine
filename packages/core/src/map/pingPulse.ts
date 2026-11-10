@@ -17,7 +17,7 @@ export interface PingOpacityInput {
 /**
  * Alpha for a world ping in `[0, 1]`: ramps up over `fadeInMs` after it appears
  * and ramps back down over `fadeOutMs` before it expires. Pure math so the
- * lifecycle can be unit-tested without an R3F canvas.
+ * lifecycle can be unit-tested without a rendering canvas.
  * @internal
  */
 export function pingOpacity(input: PingOpacityInput): number {

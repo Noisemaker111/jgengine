@@ -187,7 +187,7 @@ export function SceneObjectGroup({
   children,
 }: {
   position?: readonly [number, number, number] | undefined;
-  /** Euler XYZ rotation in radians (the r3f `rotation={[x,y,z]}` form). */
+  /** Euler XYZ rotation in radians. */
   rotation?: readonly [number, number, number] | undefined;
   /** Y-rotation in radians — the common `<group rotation-y>` case. */
   rotationY?: number | undefined;
@@ -293,26 +293,24 @@ export function useEngineDraw(create: () => EngineDraw, deps: DependencyList): v
 
 /**
  * Transform fields shared by {@link meshDraw} and the `SceneObjectGroup` props:
- * position, XYZ euler rotation, scale and visibility, matching what r3f JSX
- * props used to set on `<group>`/`<mesh>`.
+ * position, XYZ euler rotation, scale and visibility.
  */
 export interface DrawTransform {
   position?: readonly [number, number, number] | undefined;
-  /** Euler XYZ rotation in radians (the r3f `rotation={[x,y,z]}` form). */
+  /** Euler XYZ rotation in radians. */
   rotation?: readonly [number, number, number] | undefined;
   scale?: readonly [number, number, number] | undefined;
   visible?: boolean | undefined;
 }
 
 /**
- * Object3D transform and common mesh flags shared by draw component prop types â€” the engine-side
- * form of the r3f `<group>`/`<mesh>` intrinsic props these components used to extend. Vector/Euler
- * instances are accepted wherever the r3f prop did.
+ * Object3D transforms and common mesh flags shared by draw component prop types.
+ * Positions, rotations and scales accept tuples or their Three.js value objects.
  * @internal
  */
 export interface DrawAttachProps {
   position?: readonly [number, number, number] | THREE.Vector3 | undefined;
-  /** Euler XYZ rotation in radians (the r3f `rotation={[x,y,z]}` form). */
+  /** Euler XYZ rotation in radians. */
   rotation?: readonly [number, number, number] | THREE.Euler | undefined;
   /** XYZW quaternion â€” array form only, matching the apply helpers. */
   quaternion?: readonly [number, number, number, number] | undefined;

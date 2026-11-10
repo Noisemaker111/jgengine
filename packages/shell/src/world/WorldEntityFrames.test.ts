@@ -3,7 +3,7 @@ import * as THREE from "three";
 
 import { projectWorldToScreen } from "./WorldEntityFrames";
 
-/** A camera at +Z looking down -Z (the R3F default orientation). */
+/** A camera at +Z looking down -Z (the default perspective-camera orientation). */
 function frontCamera(): THREE.PerspectiveCamera {
   const camera = new THREE.PerspectiveCamera(60, 16 / 9, 0.1, 1000);
   camera.position.set(0, 0, 10);

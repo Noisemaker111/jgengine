@@ -30,7 +30,7 @@ function lerpAngle(from: number, to: number, alpha: number): number {
   return from + delta * alpha;
 }
 
-/** A positioned scene group that works on both hosts: portal parents it under r3f, attach adds it under the engine loop. */
+/** A positioned scene group attached to the engine loop. */
 function useAvatarGroup(initial?: { position: readonly [number, number, number]; rotationY: number }): Group {
   const group = useMemo(() => {
     const next = new Group();

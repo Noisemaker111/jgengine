@@ -53,7 +53,7 @@ export interface EntityPreviewProps {
 /**
  * Drop-in live 3D preview of a single entity — the character-screen portrait, unit inspector, or loadout
  * viewer. It owns all the plumbing a game would otherwise re-derive by hand: a nested {@link EngineCanvas}
- * (WebGL, matching the old r3f preview), the {@link GameContextBridge} that carries the running
+ * (WebGL), the {@link GameContextBridge} that carries the running
  * `GameContext` to the subject's `useEntityRenderCues` / `useGameContext` hooks, a {@link StudioStage}
  * 3-point lighting rig with optional turntable / face-camera, and a capture-friendly GL surface
  * (`preserveDrawingBuffer`). The game keeps ownership of its `renderEntity`: pass it as `children`, or

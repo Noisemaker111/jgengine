@@ -13,7 +13,7 @@ beforeAll(async () => {
   await rm(scratch, { recursive: true, force: true });
   await mkdir(scratch, { recursive: true });
   await mkdir(`${scratch}/node_modules`, {recursive:true});
-  for (const pkg of ['react','react-dom']) await symlink(resolve(import.meta.dir,'../../../../packages/ui/node_modules',pkg),`${scratch}/node_modules/${pkg}`,'dir');
+
   const entry = `${scratch}/fixture.tsx`;
   await Bun.write(entry, `
     import React, {useState} from '@jgengine/core/ui/jsx';

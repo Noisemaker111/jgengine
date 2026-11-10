@@ -6,17 +6,14 @@ import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/b
 
 setDefaultTimeout(30_000);
 
-// Exercises the real React hook and Fiber frame subscription without claiming rendered appearance.
+// Exercises the engine hook and frame subscription without claiming rendered appearance.
 // The fixture imports the packages' public subpaths (source, via tsconfig paths) and poses the repository's actual animated Knight.
 const scratch = resolve(import.meta.dir, "../../../../.scratch/model-animation-hook-test");
 let browser: Browser, server: ReturnType<typeof Bun.serve>;
 beforeAll(async () => {
   await rm(scratch, { recursive: true, force: true });
   await mkdir(`${scratch}/node_modules`, { recursive: true });
-  for (const pkg of ["react", "react-dom", "three"]) {
-    const owner = pkg === "react-dom" ? "react" : "shell";
-    await symlink(resolve(import.meta.dir, "../../../../packages", owner, "node_modules", pkg), `${scratch}/node_modules/${pkg}`, "dir");
-  }
+  await symlink(resolve(import.meta.dir, "../../../../packages/shell/node_modules/three"), `${scratch}/node_modules/three`, "dir");
   await Bun.write(`${scratch}/fixture.tsx`, `
     import React from '@jgengine/core/ui/jsx';
     import {createRoot} from '@jgengine/core/ui/jsx/client.view';

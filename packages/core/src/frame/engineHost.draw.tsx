@@ -11,7 +11,7 @@ import { joinFrameTask, type FrameTask } from "./frameBoard.draw";
  */
 export interface EngineHost {
   readonly frame: EngineFrameState;
-  /** r3f's `advance(elapsed, true)`: render one frame now under `frameloop="never"`. */
+  /** Render one frame now under `frameloop="never"`. */
   advance?(elapsed?: number): void;
   setFrameloop?(mode: EngineFrameloop): void;
   /** Cap rendered fps (0 uncaps). */

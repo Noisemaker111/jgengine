@@ -11,9 +11,9 @@ import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
  * projecting, offsetting, culling entries that are off-screen or behind the
  * camera, and stacking nearer entities above farther ones.
  *
- * No `GameProvider`, entity store, Three.js, or React Three Fiber is required or
+ * No `GameProvider`, entity store, or Three.js is required or
  * imported here — the same way {@link ./map!Minimap} takes display markers. An
- * R3F game can get `project` for free from `useWorldProjection`/`WorldEntityFrames`
+ * game can get `project` for free from `useWorldProjection`/`WorldEntityFrames`
  * in `@jgengine/shell/world/WorldEntityFrames`, which samples the live camera and
  * composes this component.
  *

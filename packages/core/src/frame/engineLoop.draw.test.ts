@@ -6,8 +6,8 @@ import { bindFrameSource } from "./frameBoard.draw";
 
 /**
  * The engine loop is the shell's renderer now: these pin the two behaviors the
- * Canvas swap depends on — a positive-priority draw owns rendering (r3f's
- * manual-render rule, which the post chain and split-screen rely on), and
+ * canvas depends on — a positive-priority draw owns rendering (which the
+ * post chain and split-screen rely on), and
  * `setFrameloop` can stop and restart the rAF chain (the canvas cover does
  * exactly that on every menu open).
  */

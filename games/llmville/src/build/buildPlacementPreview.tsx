@@ -1,6 +1,6 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 /**
- * R3F placement preview — runs each frame while a build draft is active.
+ * Engine placement preview — runs each frame while a build draft is active.
  * Rules live in build.ts (`computePlacementPreview`).
  */
 

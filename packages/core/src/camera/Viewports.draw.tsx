@@ -150,7 +150,7 @@ export function splitScreenRendererDraw(getProps: () => SplitScreenRendererProps
 /**
  * Draws one scissored render per viewport. The primary seat keeps the main camera and its rig; every
  * other seat gets a follow camera (chase or top-down) on its possessed entity. Mounted only while more
- * than one viewport is drawn, since a render-priority frame callback takes over R3F's own render.
+ * than one viewport is drawn, since a render-priority frame callback takes over the engine's default render.
  * @internal
  */
 export function SplitScreenRenderer(props: SplitScreenRendererProps) {

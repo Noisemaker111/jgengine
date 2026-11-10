@@ -7,10 +7,8 @@ import type { Camera, Object3D } from "three";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /**
- * Fullscreen DOM overlay over the 3D canvas. drei's `<Html fullscreen>` while r3f still owns the
- * canvas (it portals out of the reconciler); a plain absolutely-positioned div once the engine
- * loop renders children into the shell's positioned wrapper. Samples are CSS px relative to the
- * canvas top-left either way.
+ * Fullscreen UI overlay over the 3D canvas, positioned inside the shell's canvas wrapper.
+ * Samples are CSS pixels relative to the canvas top-left.
  */
 export function HudOverlay({ zIndex, children }: { zIndex: number; children: ReactNode }) {
   return (
@@ -19,9 +17,8 @@ export function HudOverlay({ zIndex, children }: { zIndex: number; children: Rea
 }
 
 /**
- * A world-anchored DOM overlay: drei's `<Html position center>` while r3f owns the canvas; under
- * the engine loop a div projected to the anchor every frame, with `distanceFactor` scaling matched
- * to drei's `distanceFactor / (2·tan(fov/2)·distance)`. Hidden when the anchor leaves the frustum.
+ * A world-anchored UI overlay projected to its anchor every frame. `distanceFactor` scales by
+ * `distanceFactor / (2·tan(fov/2)·distance)`. Hidden when the anchor leaves the frustum.
  */
 export function AnchoredOverlay({
   position,
@@ -36,7 +33,7 @@ export function AnchoredOverlay({
   /** Scene object the overlay follows; `localPosition` is its local offset. */
   anchor?: Object3D | undefined;
   localPosition?: readonly [number, number, number] | undefined;
-  /** drei `distanceFactor`: scales the overlay with distance. Omit for constant screen size. */
+  /** Scales the overlay with distance. Omit for constant screen size. */
   distanceFactor?: number | undefined;
   zIndex?: number | undefined;
   children: ReactNode;

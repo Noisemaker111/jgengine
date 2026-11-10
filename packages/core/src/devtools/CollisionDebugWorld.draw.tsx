@@ -75,7 +75,7 @@ interface DebugDrawInputs {
 /**
  * All collision-debug wire geometry as one draw: collider shapes, projectile path lines,
  * muzzle markers, the aim laser and its endpoint mark. Reconciles on `update`, which the
- * React bridge calls after every commit — the old per-shape JSX did the same through renders.
+ * UI bridge calls after every commit.
  */
 function collisionDebugDraw(getInputs: () => DebugDrawInputs): EngineDraw {
   const group = new THREE.Group();

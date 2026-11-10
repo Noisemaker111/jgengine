@@ -9,14 +9,14 @@ import type { EntityScreenProjection, ProjectEntity } from "./entityFrames.view"
  * World-anchored floating text — the presentation half of the data-first
  * `@jgengine/core/hud/floatingText` seam. The game keeps owning the simulation: it
  * passes the field's `active()` views plus a `project` function (world → screen),
- * exactly the transport {@link ./entityFrames!EntityFrames} uses, so an R3F game
+ * exactly the transport {@link ./entityFrames!EntityFrames} uses, so a game
  * gets it for free from `useWorldProjection`. This component owns only the
  * reusable presentation: projecting each entry, culling ones behind the camera or
  * off-screen, and rendering absolutely-positioned text with the entry's color,
  * current alpha, and pop-in scale — reskinnable per `kind` through `styleFor`.
  *
- * No `GameProvider`, Three.js, or React Three Fiber is imported here — the same
- * way `EntityFrames` stays renderer-agnostic. An R3F game gets the one-line drop-in
+ * No `GameProvider` or Three.js is imported here — the same
+ * way `EntityFrames` stays renderer-agnostic. A game gets the one-line drop-in
  * from `@jgengine/core/hud/floatingTextWorld.draw`, which binds the live camera and
  * advances the field.
  *

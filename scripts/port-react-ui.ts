@@ -75,6 +75,16 @@ export function portSdkImports(text: string): string {
     (_whole, lead: string, quote: string, path: string | undefined) => `${lead}${quote}@jgengine/ui${path ?? ""}${quote}`);
 }
 
+/** Remove borrowed React peers from browser fixtures and pack the replacement UI package. */
+export function portBrowserFixture(text: string): string {
+  return text
+    .replace(/(installPublicPackages\([^\n]*\[)([^\]]*)(\])/g, (_all, lead: string, packages: string, end: string) =>
+      lead + packages.replace(/(["'])react\1/g, '$1ui$1') + end)
+    .replace(/^\s*for \(const (?:peer|pkg) of \[["']react["'],\s*["']react-dom["']\]\) await symlink\([^\n]*\n/gm, "\n")
+    .replace(/^\s*for \(const peer of \[["']react["'],\s*["']react-dom["']\]\) \{\r?\n\s*await symlink\([^\n]*\r?\n\s*\}\r?\n/gm, "\n")
+    .replace(/^\s*\.\.\.\[["']react["'],\s*["']react-dom["']\]\.map\(peer => symlink\([^\n]*\n/gm, "\n");
+}
+
 function renderImport(names: Named[], from: string, quote: string, allTypes: boolean): string {
   const parts = names.map((n) => `${!allTypes && n.typeOnly ? "type " : ""}${n.name}${n.alias === null ? "" : ` as ${n.alias}`}`);
   return `import ${allTypes ? "type " : ""}{ ${parts.join(", ")} } from ${quote}${from}${quote};`;
@@ -211,7 +221,7 @@ export function portSource(path: string, text: string): { text: string; notes: s
     out = out.replace(borrowed, `import { renderToStaticMarkup } from "${RUNTIME}/markup";\n`);
     if (!/\bjoin\(/.test(out)) out = out.replace(/import \{ join \} from "node:path";\n/, "");
   }
-  return { text: portSdkImports(out), notes };
+  return { text: portBrowserFixture(portSdkImports(out)), notes };
 }
 
 /** `"jsx": "react-jsx"` gains the engine runtime as its import source. */

@@ -25,7 +25,7 @@ export interface FrameTaskRef {
 /**
  * Attaches one priority level to the driving frame source and returns the
  * detach. `run` is the group's shared callback; the source decides how it is
- * scheduled (an r3f subscriber today, an ordered engine draw after cutover).
+ * scheduled (an ordered engine draw).
  */
 export type FrameSource = (
   priority: number,

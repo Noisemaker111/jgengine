@@ -6,7 +6,7 @@ import { OrbitControls } from "three-stdlib";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 
-/** One authored light for {@link stageDraw}: the r3f light intrinsics as data. */
+/** One authored light for {@link stageDraw}: the engine light intrinsics as data. */
 export type StageLight =
   | { kind: "ambient"; intensity?: number; color?: string }
   | { kind: "hemisphere"; skyColor?: string; groundColor?: string; intensity?: number }
@@ -33,7 +33,7 @@ export type StageLight =
     }
   | { kind: "point"; position?: readonly [number, number, number]; intensity?: number; color?: string; distance?: number };
 
-/** Declarative stage dressing for preview and demo canvases — the r3f `<color>`/`<fog>`/light/ground/grid intrinsics as one draw. */
+/** Declarative stage dressing for preview and demo canvases — the engine `<color>`/`<fog>`/light/ground/grid intrinsics as one draw. */
 export interface StageSpec {
   background?: string | undefined;
   fog?: { color: string; near: number; far: number } | { color: string; density: number } | undefined;

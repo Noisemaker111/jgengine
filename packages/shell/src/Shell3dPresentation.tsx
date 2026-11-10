@@ -519,8 +519,7 @@ export function Shell3dPresentation({
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     pointerInput.down(event, isWorldPointerTarget(event));
     if (isWorldPointerTarget(event)) {
-      // The world markers' click-to-target used to arrive through r3f's event system; feed the
-      // service this event's exact cursor, then dispatch the hit entity on either render host.
+      // Feed the service this event's exact cursor, then dispatch the hit entity.
       const rect = canvasElement?.getBoundingClientRect();
       if (rect !== undefined && rect.width > 0 && rect.height > 0) {
         pointerService.setState({
@@ -682,8 +681,7 @@ export function Shell3dPresentation({
         run: () => action.run(ctx),
       }));
   const touchScale = compact ? 0.88 : 1;
-  // The engine loop paces a frame-rate cap inside `setFpsLimit`, so "never"
-  // (r3f's manual-advance mode for the old external pacer) is never authored here.
+  // The engine loop paces the frame-rate cap inside `setFpsLimit`.
   const canvasFrameloop: "always" | "demand" | "never" = poster && posterFrozen ? "demand" : "always";
   // The frame carries the player's colour-vision mode; the HUD and menu text above it stay unfiltered.
   const colorblind = useColorblindMode(settingsStore);

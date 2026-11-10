@@ -137,9 +137,8 @@ export function worldItemMarkerDraw(getProps: () => {
 }
 
 /**
- * The marker's DOM label. Under r3f it is a drei `<Html>` child of the pose group; under the
- * engine loop a plain overlay div projected each frame — same `distanceFactor` scaling drei
- * applies (`distanceFactor / (2·tan(fov/2)·dist)`).
+ * The marker's UI label, projected each frame with distance scaling
+ * `distanceFactor / (2·tan(fov/2)·dist)`.
  */
 function WorldItemLabel({
   instanceId,

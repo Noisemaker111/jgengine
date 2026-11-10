@@ -15,6 +15,10 @@
 `--check` reports remaining changes without writing them. Framework hosts keep their
 own React runtime and embed the engine through `mountGamePlayer`.
 
+The DOM host is the default; `?ui=rune` opts into Rune rendering. The CSS styling
+path, including its CSS-to-Rune mirror, is temporary. Typed Rune-native style props
+will replace it as UI moves to Rune-native composition.
+
 ## Build the framework through games
 
 Every game interaction should compose shared JGengine capabilities. Adopt an existing
@@ -128,7 +132,7 @@ The games in [`games/`](games) are also playable on jgengine.com at `/games/<id>
 
 ## Layering
 
-Each engine feature is one folder in `core` holding all its layers, named by file: a plain `name.ts` is **model** (no UI runtime, no three.js, no view or draw file), `name.view.tsx` is **view** (UI on the engine runtime; no three.js, no draw file), `name.draw.tsx` is **draw** (three.js). `react` is all view and `shell` all draw. `bun run check layers` enforces this from the imports in under a second, so a server or worker importing model files never loads the UI runtime or three.js. `core`, `react` and `shell` import each other through these files, so `scripts/build-engine.ts` compiles them as one program and writes each package's `dist/`. `ws` and `sql` import only `core` model files. `react` adds the game UI hooks, `convex` adds Convex (whose `convex/react` hooks run on the engine runtime through a Vite alias), `node` adds Node builtins + `ws`, `shell` adds three.js (the only package that renders). `editor` sits on top of `shell`/`react`/`core`; `assets` and `github` are standalone data packages games opt into.
+Each engine feature is one folder in `core` holding all its layers, named by file: a plain `name.ts` is **model** (no UI runtime, no three.js, no view or draw file), `name.view.tsx` is **view** (UI on the engine runtime; no three.js, no draw file), `name.draw.tsx` is **draw** (three.js). `ui` is all view and `shell` all draw. `bun run check layers` enforces this from the imports in under a second, so a server or worker importing model files never loads the UI runtime or three.js. `core`, `ui` and `shell` import each other through these files, so `scripts/build-engine.ts` compiles them as one program and writes each package's `dist/`. `ws` and `sql` import only `core` model files. `ui` adds the game UI hooks, `convex` adds Convex (whose `convex/react` hooks run on the engine runtime through a Vite alias), `node` adds Node builtins + `ws`, `shell` adds three.js (the only package that renders). `editor` sits on top of `shell`/`ui`/`core`; `assets` and `github` are standalone data packages games opt into.
 
 ## Development
 

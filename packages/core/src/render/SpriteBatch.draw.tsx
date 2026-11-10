@@ -212,7 +212,7 @@ uniform vec2 spriteUvScale;`,
 
 /**
  * Renders a sprite sheet / tile atlas as a single InstancedMesh — one draw call for the whole
- * batch. Thin React bridge over {@link spriteBatchDraw}.
+ * batch. Thin UI bridge over {@link spriteBatchDraw}.
  * @capability sprite-batch Draw many atlas sprites in one instanced draw
  */
 export function SpriteBatch(props: SpriteBatchProps) {

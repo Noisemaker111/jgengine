@@ -24,7 +24,7 @@ if (!rootElement.innerHTML) {
 registerServiceWorker();
 
 // A remembered login almost always lands in the 3D world, whose chunk (three.js
-// + R3F) is the single biggest download. Warm it on idle after first paint so it
+// + the engine draw runtime) is the single biggest download. Warm it on idle after first paint so it
 // arrives in parallel with auth — by the time "Continue" is clicked it is cached,
 // not a 5-second wait. New visitors land on /login instead, so warm the small
 // auth-screen chunk and keep the giant game download off their critical path.

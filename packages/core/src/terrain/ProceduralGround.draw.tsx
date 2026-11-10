@@ -17,7 +17,7 @@ export interface ProceduralGroundProps extends DrawAttachProps {
 
 const TRANSFORMS = new Set(["position", "rotation", "scale", "quaternion"]);
 
-/** Apply the r3f-style mesh props a plain THREE.Mesh understands; event props have no three-side home. */
+/** Apply the engine-style mesh props a plain THREE.Mesh understands; event props have no three-side home. */
 function applyMeshProps(mesh: THREE.Mesh, props: object): void {
   for (const [key, value] of Object.entries(props)) {
     if (value === undefined || typeof value === "function") continue;

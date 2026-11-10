@@ -715,8 +715,7 @@ function WorldEntities({
     },
     [ctx, player.userId],
   );
-  // The canvas pointer-down used to reach a marker through r3f's event system; the shell dispatches
-  // the hit entity id here instead, on either render host.
+  // The shell dispatches the hit entity id from the canvas pointer-down.
   useEffect(() => {
     registerWorldEntityPointerDown((entityId) => {
       if (entityId === controlledId) return;

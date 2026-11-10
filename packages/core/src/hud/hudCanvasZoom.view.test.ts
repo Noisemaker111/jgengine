@@ -18,8 +18,8 @@ let browser: Browser, page: Page, server: ReturnType<typeof Bun.serve>;
 beforeAll(async () => {
   await rm(scratch, { recursive: true, force: true });
   await mkdir(`${scratch}/node_modules/@jgengine`, { recursive: true });
-  for (const peer of ["react", "react-dom"]) await symlink(`${root}/packages/ui/node_modules/${peer}`, `${scratch}/node_modules/${peer}`, "dir");
-  await installPublicPackages(scratch, ["core", "react"]);
+
+  await installPublicPackages(scratch, ["core", "ui"]);
   await Bun.write(`${scratch}/fixture.tsx`, `
     import React from '@jgengine/core/ui/jsx';import {createRoot} from '@jgengine/core/ui/jsx/client.view';
     import {HudCanvas,HudPanel,useHudLayout} from '@jgengine/core/hud/hudLayout.view';

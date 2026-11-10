@@ -802,11 +802,11 @@ export class WebGpuGl extends GlConstants {
   // ---------------------------------------------------------------- context queries
 
   getContextAttributes(): WebGpuGlAttributes { return { ...this.attributes }; }
-  /** Set once three (or React Three Fiber on unmount) forces a context loss: the device is gone. */
+  /** Set once renderer teardown forces a context loss: the device is gone. */
   private contextLost = false;
   isContextLost(): boolean { return this.contextLost; }
   /**
-   * `WEBGL_lose_context.loseContext`: React Three Fiber calls it through three's `forceContextLoss`
+   * `WEBGL_lose_context.loseContext`: canvas teardown calls three's `forceContextLoss`
    * when a canvas unmounts. Destroying the device frees its memory and stops any work it still has
    * queued, which otherwise keeps running beside the next canvas's device.
    */
