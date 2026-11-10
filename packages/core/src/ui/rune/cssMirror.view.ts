@@ -484,6 +484,25 @@ function boxOfStyle(element: Element, style: CSSStyleDeclaration, report: Mirror
   }
   setDim(box, "w", element, report, "width", style.width);
   setDim(box, "h", element, report, "height", style.height);
+  // A flex item that is 100% of its container across the flow fills it by stretching: that holds
+  // when the container's own size comes from flexing, where a percentage has nothing to resolve against.
+  if (!pseudo && (box["h"] === "100%" || box["w"] === "100%") && element.parentElement !== null) {
+    const around = getComputedStyle(element.parentElement);
+    if (around.display.endsWith("flex")) {
+      const across = around.flexDirection.startsWith("column") ? "w" : "h";
+      if (box[across] === "100%") {
+        delete box[across];
+        box["asf"] = 4;
+      }
+      // Along the flow, 100% of a container with no size of its own is the room it ends up with.
+      const along = across === "w" ? "h" : "w";
+      if (box[along] === "100%" && (along === "h" ? around.height : around.width) === "auto") {
+        delete box[along];
+        if (typeof box["fg"] !== "number" || box["fg"] < 1) box["fg"] = 1;
+        if (box["fb"] === undefined) box["fb"] = 0;
+      }
+    }
+  }
   setDim(box, "mnw", element, report, "min-width", style.minWidth);
   setDim(box, "mnh", element, report, "min-height", style.minHeight);
   setDim(box, "mxw", element, report, "max-width", style.maxWidth);

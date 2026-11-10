@@ -930,7 +930,9 @@ pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
             st.max_size = Size { width: auto(), height: auto() };
             st.margin = Rect { left: length(0.0), top: length(0.0), right: length(0.0), bottom: length(0.0) };
             st.border = Rect { left: length(0.0), top: length(0.0), right: length(0.0), bottom: length(0.0) };
-            st.flex_grow = 0.0;
+            // At least as tall as the box that scrolls it (so its children can fill that room), and
+            // as tall as its content when that is more.
+            st.flex_grow = 1.0;
             st.flex_shrink = 0.0;
             st.grid_column = Line { start: GridPlacement::Auto, end: GridPlacement::Auto };
             st.grid_row = Line { start: GridPlacement::Auto, end: GridPlacement::Auto };
