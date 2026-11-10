@@ -53,7 +53,8 @@ function layerOfModule(packageName: string, subpath: string): Layer {
 
 /** What one import specifier reaches, seen from `file`. */
 export function reachOf(file: string, specifier: string): Reach {
-  if (/^(react|react-dom)(\/|$)/.test(specifier)) return "react";
+  // UI code is written against the engine UI runtime; a model file reaches for neither it nor React.
+  if (/^(react|react-dom)(\/|$)/.test(specifier) || /^@jgengine\/core\/ui\/jsx(\/|$)/.test(specifier)) return "react";
   if (/^(three|three-stdlib)(\/|$)/.test(specifier)) return "three";
   const engine = /^@jgengine\/([^/]+)(?:\/(.+))?$/.exec(specifier);
   if (engine !== null) {
