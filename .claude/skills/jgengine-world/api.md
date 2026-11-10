@@ -1725,11 +1725,12 @@
 
 ## @jgengine/core/frame/frameBoard.draw
 
+- `FrameOwner` (type): type FrameOwner = object — Identifies one frame loop: `EngineFrameState.frameOwner`.
 - `FrameSource` (type): type FrameSource = ( priority: number, run: (state: EngineFrameState, delta: number) => void, ) => () => void — Attaches one priority level to the driving frame source and returns the detach. `run` is the group's shared callback; the source decides how it is scheduled (an r3f subscriber today, an ordered engine draw after cutover).
-- `FrameTask` (type): type FrameTask = (state: EngineFrameState, delta: number) => void — ⚠ undocumented · used by `joinFrameTask`: Run `task(state, delta)` on every rendered frame at `priority` — r3f's `useFrame` order: subscribers ascending by priority, one render after…
+- `FrameTask` (type): type FrameTask = (state: EngineFrameState, delta: number) => void — ⚠ undocumented · used by `joinFrameTask`: Run `task(state, delta)` on every rendered frame at `priority`: subscribers ascending by priority, one render after all.
 - `FrameTaskRef` (interface): interface FrameTaskRef — A frame callback held by reference; the board stores these so observers see a stable task object.
-- `bindFrameSource` (function): function bindFrameSource(next: FrameSource | null): void — Bind the board to a frame source. Groups already joined re-attach under the new source, so a remounted canvas's loop takes over without callers re-joining. `null` detaches everything (used while no canvas drives frames, e.g. between shells).
-- `joinFrameTask` (function): function joinFrameTask(priority: number, task: FrameTask): () => void — Run `task(state, delta)` on every rendered frame at `priority` — r3f's `useFrame` order: subscribers ascending by priority, one render after all. Returns the leave; the group's subscription ends when its last task leaves.
+- `bindFrameSource` (function): function bindFrameSource(next: FrameSource | null): void — Drive the shared board from `next` by hand (a test, a headless harness): it becomes the primary whatever was bound before. `null` unbinds it.
+- `joinFrameTask` (function): function joinFrameTask(priority: number, task: FrameTask, owner?: FrameOwner | null): () => void — Run `task(state, delta)` on every rendered frame at `priority`: subscribers ascending by priority, one render after all. `owner` is the loop it runs on (default: the one mounting right now, else the primary). Returns the leave; the group's subscription ends when its last task leaves.
 
 ## @jgengine/core/frame/loadDraw.draw
 
