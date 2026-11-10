@@ -603,6 +603,29 @@ function boxOfStyle(element: Element, style: CSSStyleDeclaration, report: Mirror
   if (style.pointerEvents !== "none" && style.visibility !== "hidden") box["hit"] = 1;
   const z = style.zIndex;
   if (z !== "auto") box["z"] = Number.parseInt(z, 10) || 0;
+  // `zoom` (the HUD's fit-to-screen scale): the box lays out in `1 / zoom` of its space and is
+  // drawn scaled from its top-left corner, so its content fills the same room at the new size.
+  const zoom = parseFloat((style as CSSStyleDeclaration & { zoom?: string }).zoom ?? "1");
+  if (Number.isFinite(zoom) && zoom > 0 && zoom !== 1) {
+    const moved = (box["tf"] as number[] | undefined) ?? [0, 0, 0, 1, 0, 0];
+    moved[3] = (moved[3] ?? 1) * zoom;
+    box["tf"] = moved;
+    if (box["to"] === undefined) box["to"] = [0, 0];
+    const insets = box["ins"] as WireDim[] | undefined;
+    const fit = (size: "w" | "h", near: number, far: number): void => {
+      const from = insets?.[near];
+      const to = insets?.[far];
+      const own = box[size];
+      if (own === undefined && insets !== undefined && typeof from === "number" && typeof to === "number") {
+        box[size] = [-(from + to) / zoom, 1 / zoom];
+        insets[far] = "auto";
+      } else if (typeof own === "string" && own.endsWith("%")) {
+        box[size] = [0, parseFloat(own) / 100 / zoom];
+      }
+    };
+    fit("w", 0, 2);
+    fit("h", 1, 3);
+  }
   return box;
 }
 

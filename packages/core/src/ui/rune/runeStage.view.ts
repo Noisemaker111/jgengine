@@ -142,11 +142,31 @@ export class RuneStage {
         this.ui = ui;
         if (this.input === null) this.input = new RuneInput(() => this.layers.map((layer) => layer.root).filter((root): root is WireBox => root !== null), (control) => this.controlChanged(control));
         ui.on("*", (event) => this.onEvent(event));
-        ui.onRects = (moved) => {
-          for (const [id, x, y, w, h] of moved) {
-            const element = elementOf(id);
-            if (element !== null) setRuneRect(element, [x, y, w, h]);
-          }
+        ui.onRects = () => {
+          // Rune reports where layout put each box. A box under a scaled one (the HUD's
+          // fit-to-screen zoom) is drawn somewhere else, and that is where the page must find it:
+          // each rect is carried through the scales above it, from the layer's root down.
+          const place = (box: WireBox, scale: number, dx: number, dy: number): void => {
+            const raw = box.id === 0 ? undefined : ui.rects.get(box.id);
+            let s = scale;
+            let x = dx;
+            let y = dy;
+            const own = (box["tf"] as number[] | undefined)?.[3] ?? 1;
+            if (raw !== undefined && own !== 1) {
+              const origin = (box["to"] as number[] | undefined) ?? [0.5, 0.5];
+              const ox = raw[0] + (origin[0] ?? 0.5) * raw[2];
+              const oy = raw[1] + (origin[1] ?? 0.5) * raw[3];
+              x = scale * ox * (1 - own) + dx;
+              y = scale * oy * (1 - own) + dy;
+              s = scale * own;
+            }
+            if (raw !== undefined) {
+              const element = elementOf(box.id);
+              if (element !== null) setRuneRect(element, [s * raw[0] + x, s * raw[1] + y, s * raw[2], s * raw[3]]);
+            }
+            for (const child of box.c ?? []) place(child, s, x, y);
+          };
+          for (const layer of this.layers) if (layer.root !== null) place(layer.root, 1, 0, 0);
           this.placeIslands();
         };
         this.stale = true;

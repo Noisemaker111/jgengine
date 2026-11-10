@@ -232,6 +232,9 @@ export interface WireLayer {
   rf?: [number, number] | "corner" | "side";
   circle?: boolean;
   st: [number, number][];
+  /** A layer drawn once: its size and where it sits (`placeLayer`). */
+  bs?: number[];
+  bp?: number[];
 }
 
 const SIDE_ANGLES: Record<string, number> = {
@@ -416,10 +419,12 @@ export function parseGradient(text: string): WireLayer | { flat: number } | null
     let rf: WireLayer["rf"] = "corner";
     let circle = false;
     let first = 0;
+    let spotAt: string[] = [];
     const head = args[0] ?? "";
     if (parseColor(splitTop(head, " ")[0] ?? "") === null) {
       first = 1;
       const [shape = "", position = ""] = head.split(" at ");
+      spotAt = splitTop(position.trim(), " ");
       const sizes = shape.trim().split(/\s+/).filter((p) => p !== "");
       circle = sizes.includes("circle");
       const lengths = sizes.filter((p) => p.endsWith("%") || p.endsWith("px"));
@@ -438,7 +443,31 @@ export function parseGradient(text: string): WireLayer | { flat: number } | null
       const flat = averageOfRepeat(stops);
       return flat === null ? null : { flat };
     }
-    if (stops.some((s) => s.px)) return null;
+    if (stops.some((s) => s.px)) {
+      // A spot: a circle a few points across that ends in clear (a rivet, a dot, a lamp). It is
+      // drawn once on a square just large enough to hold it, placed where the gradient is centred.
+      const reach = stops[stops.length - 1];
+      const radius = reach?.at ?? 0;
+      if (!circle || reach === undefined || !reach.px || !(radius > 0) || colorAlpha(reach.color) !== 0) return null;
+      if (stops.some((s) => s.at !== null && !s.px && s.at !== 0)) return null;
+      const keyword = (token: string): string => (token === "left" || token === "top" ? "0%" : token === "right" || token === "bottom" ? "100%" : token === "center" ? "50%" : token);
+      const x = parseLengthPercent(keyword(spotAt[0] ?? "50%"));
+      const y = parseLengthPercent(keyword(spotAt[1] ?? "50%"));
+      if (x === null || y === null) return null;
+      const scaled = stops.map((s) => ({ ...s, at: s.at === null ? null : s.at / radius, px: false }));
+      const side = radius * 2;
+      return {
+        g: 1,
+        cx: 0.5,
+        cy: 0.5,
+        circle: true,
+        rx: radius,
+        ry: radius,
+        st: spreadStops(scaled),
+        bs: [side, 0, side, 0],
+        bp: [x[0] - radius + x[1] * side, x[1], y[0] - radius + y[1] * side, y[1]],
+      };
+    }
     return { g: 1, cx, cy, rf, circle, st: spreadStops(stops) };
   }
   return null;

@@ -720,6 +720,16 @@ fn layer_sheet(l: &Layer, radii: Option<[f32; 4]>, size: [f32; 2]) -> El {
     paint_layer(el().pin(Some(x), Some(y), None, None).size(w.max(0.0), h.max(0.0)), l, [w, h])
 }
 
+/// Corner radii that keep a picture inside a polygon cut from a box: none where the polygon reaches
+/// the corner, and elsewhere wide enough that the arc stays inside a straight cut of that size.
+fn cut_corners(poly: &[[f32; 2]], size: [f32; 2]) -> [f32; 4] {
+    let [w, h] = size;
+    [[0.0, 0.0], [w, 0.0], [w, h], [0.0, h]].map(|corner| {
+        let nearest = poly.iter().map(|p| (p[0] - corner[0]).hypot(p[1] - corner[1])).fold(f32::INFINITY, f32::min);
+        if nearest.is_finite() && nearest > 0.5 { (nearest * 1.71).min(w.min(h) * 0.5) } else { 0.0 }
+    })
+}
+
 /// A full-size, out-of-flow sheet for one more background layer.
 fn sheet(radii: Option<[f32; 4]>) -> El {
     let e = el().pin(Some(0.0), Some(0.0), Some(0.0), Some(0.0));
@@ -846,6 +856,13 @@ pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
         e = e.clip_corners(radii.unwrap_or([0.0; 4]));
     }
     // The lowest gradient paints on the box itself; the rest are full-size sheets above it.
+    if clipped {
+        // The polygon took the colour and the gradients that fill the box; pieces placed inside it
+        // (rivets, corner marks) are drawn as they are.
+        for l in b.ly.iter().filter(|l| l.bs.is_some()) {
+            e = e.child(layer_sheet(l, radii, size));
+        }
+    }
     let mut layers = if clipped { [].iter() } else { b.ly.iter() };
     if let Some(first) = layers.next() {
         e = if (first.flat.is_some() && b.bg.is_some()) || first.bs.is_some() {
@@ -857,14 +874,18 @@ pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
     for l in layers {
         e = e.child(layer_sheet(l, radii, size));
     }
-    // A clipped box keeps its shape and loses the picture, which would paint past the cut corners.
-    if let (Some(url), false) = (&b.bgi, clipped) {
+    if let Some(url) = &b.bgi {
         let image = crate::widgets::image_by_url(url, size[0].max(size[1]).max(32.0));
         let fit = match b.bfit {
             2 => rune::SurfaceFit::Fit,
             _ => rune::SurfaceFit::Fill,
         };
-        e = e.child(sheet(radii).pixels_fit(image.pixels(), fit).inert());
+        // On a box with cut corners the picture is rounded off just inside each cut.
+        let corners = match &clip {
+            Some(poly) => Some(cut_corners(poly, size)),
+            None => radii,
+        };
+        e = e.child(sheet(corners).pixels_fit(image.pixels(), fit).inert());
     }
     if let Some(svg) = &b.svg {
         let image = crate::widgets::image_of_svg(svg, size[0].max(size[1]).max(16.0));
