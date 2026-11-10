@@ -1,6 +1,7 @@
-import { useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useEffect, useMemo } from "react";
 import * as THREE from "three";
+import { SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 import type { AxisBinding } from "@jgengine/core/input/axisInput";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import {
@@ -183,203 +184,189 @@ function onTick(ctx: GameContext, dt: number): void {
   ctx.scene.entity.setPose(id, { position: [...step.position], rotationY: step.heading, dt });
 }
 
+function disposeTree(root: THREE.Object3D): void {
+  root.traverse((node) => {
+    if (node instanceof THREE.Mesh) {
+      node.geometry.dispose();
+      const material = node.material;
+      if (Array.isArray(material)) material.forEach((entry) => entry.dispose());
+      else material.dispose();
+    }
+  });
+}
+
+function std(color: string, roughness = 0.5, extra: THREE.MeshStandardMaterialParameters = {}): THREE.MeshStandardMaterial {
+  return new THREE.MeshStandardMaterial({ color, roughness, ...extra });
+}
+
+function box(parent: THREE.Object3D, size: readonly [number, number, number], position: readonly [number, number, number], material: THREE.Material, rotation?: readonly [number, number, number]): THREE.Mesh {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(size[0], size[1], size[2]), material);
+  mesh.position.set(position[0], position[1], position[2]);
+  if (rotation !== undefined) mesh.rotation.set(rotation[0], rotation[1], rotation[2]);
+  mesh.castShadow = true;
+  parent.add(mesh);
+  return mesh;
+}
+
 const headingInverse = new THREE.Quaternion();
 const attitude = new THREE.Quaternion();
 const up = new THREE.Vector3(0, 1, 0);
 
 function PlaneBody({ entity }: { entity: SceneEntity }) {
-  const body = useRef<THREE.Group>(null);
-  const prop = useRef<THREE.Mesh>(null);
-  useFrame((_, delta) => {
+  const rig = useMemo(() => {
+    const root = new THREE.Group();
+    const bodyG = new THREE.Group();
+    root.add(bodyG);
+    box(bodyG, [0.9, 0.9, 6], [0, 0, 0], std("#e11d48", 0.4, { metalness: 0.2 }));
+    box(bodyG, [8, 0.14, 1.4], [0, 0, 0.3], std("#f8fafc"));
+    box(bodyG, [3, 0.1, 0.8], [0, 0.1, -2.8], std("#f8fafc"));
+    box(bodyG, [0.1, 1.1, 0.9], [0, 0.65, -2.8], std("#1d4ed8"));
+    box(bodyG, [0.7, 0.4, 1.2], [0, 0.55, 0.9], std("#0f172a", 0.1, { metalness: 0.6 }));
+    const prop = box(bodyG, [2.1, 0.16, 0.05], [0, 0, 3.05], std("#111827", 0.9));
+    prop.castShadow = false;
+    return { root, body: bodyG, prop };
+  }, []);
+  useEffect(() => () => disposeTree(rig.root), [rig]);
+  useFrameTask((_, delta) => {
     const step = run?.last;
-    if (step === null || step === undefined || body.current === null) return;
+    if (step === null || step === undefined) return;
     // The entity group already carries the heading; the body adds pitch and bank on top of it.
     headingInverse.setFromAxisAngle(up, -step.heading);
     attitude.set(...step.orientation);
-    body.current.quaternion.copy(headingInverse.multiply(attitude));
-    if (prop.current !== null) prop.current.rotation.z += delta * (10 + 60 * (run?.lever ?? 0));
+    rig.body.quaternion.copy(headingInverse.multiply(attitude));
+    rig.prop.rotation.z += delta * (10 + 60 * (run?.lever ?? 0));
   });
-  return (
-    <group key={entity.id}>
-      <group ref={body}>
-        <mesh castShadow>
-          <boxGeometry args={[0.9, 0.9, 6]} />
-          <meshStandardMaterial color="#e11d48" roughness={0.4} metalness={0.2} />
-        </mesh>
-        <mesh position={[0, 0, 0.3]} castShadow>
-          <boxGeometry args={[8, 0.14, 1.4]} />
-          <meshStandardMaterial color="#f8fafc" roughness={0.5} />
-        </mesh>
-        <mesh position={[0, 0.1, -2.8]} castShadow>
-          <boxGeometry args={[3, 0.1, 0.8]} />
-          <meshStandardMaterial color="#f8fafc" roughness={0.5} />
-        </mesh>
-        <mesh position={[0, 0.65, -2.8]} castShadow>
-          <boxGeometry args={[0.1, 1.1, 0.9]} />
-          <meshStandardMaterial color="#1d4ed8" roughness={0.5} />
-        </mesh>
-        <mesh position={[0, 0.55, 0.9]}>
-          <boxGeometry args={[0.7, 0.4, 1.2]} />
-          <meshStandardMaterial color="#0f172a" roughness={0.1} metalness={0.6} />
-        </mesh>
-        <mesh ref={prop} position={[0, 0, 3.05]}>
-          <boxGeometry args={[2.1, 0.16, 0.05]} />
-          <meshStandardMaterial color="#111827" />
-        </mesh>
-      </group>
-    </group>
-  );
+  return <SceneObjectAttach object={rig.root} />;
 }
 
 function HelicopterBody({ entity }: { entity: SceneEntity }) {
-  const body = useRef<THREE.Group>(null);
-  const rotor = useRef<THREE.Group>(null);
-  const tail = useRef<THREE.Mesh>(null);
-  useFrame((_, delta) => {
+  const rig = useMemo(() => {
+    const root = new THREE.Group();
+    const bodyG = new THREE.Group();
+    root.add(bodyG);
+    box(bodyG, [1.5, 1.6, 3], [0, 0.2, 0.4], std("#f59e0b", 0.4, { metalness: 0.2 }));
+    box(bodyG, [1.3, 0.9, 0.8], [0, 0.45, 1.6], std("#0f172a", 0.1, { metalness: 0.6 }));
+    box(bodyG, [0.3, 0.3, 5.2], [0, 0.5, -3.6], std("#f59e0b", 0.4));
+    box(bodyG, [0.1, 1, 0.8], [0, 0.9, -6.4], std("#1d4ed8"));
+    const tail = box(bodyG, [0.05, 1.4, 0.12], [0.25, 0.6, -7.3], std("#111827", 0.9));
+    tail.castShadow = false;
+    box(bodyG, [1.8, 0.08, 2.6], [0, -0.85, 0.3], std("#374151", 0.9));
+    const rotor = new THREE.Group();
+    rotor.position.set(0, 1.2, 0.3);
+    const bladeMat = std("#111827", 0.9);
+    const bladeA = new THREE.Mesh(new THREE.BoxGeometry(10.2, 0.06, 0.3), bladeMat);
+    const bladeB = new THREE.Mesh(new THREE.BoxGeometry(10.2, 0.06, 0.3), bladeMat);
+    bladeB.rotation.y = Math.PI / 2;
+    rotor.add(bladeA, bladeB);
+    bodyG.add(rotor);
+    return { root, body: bodyG, rotor, tail };
+  }, []);
+  useEffect(() => () => disposeTree(rig.root), [rig]);
+  useFrameTask((_, delta) => {
     const step = run?.last;
-    if (step === null || step === undefined || body.current === null) return;
+    if (step === null || step === undefined) return;
     headingInverse.setFromAxisAngle(up, -step.heading);
     attitude.set(...step.orientation);
-    body.current.quaternion.copy(headingInverse.multiply(attitude));
+    rig.body.quaternion.copy(headingInverse.multiply(attitude));
     const spin = (step.rotor?.speed ?? 0) * 40 * delta;
-    if (rotor.current !== null) rotor.current.rotation.y += spin;
-    if (tail.current !== null) tail.current.rotation.x += spin * 4;
+    rig.rotor.rotation.y += spin;
+    rig.tail.rotation.x += spin * 4;
   });
-  return (
-    <group key={entity.id}>
-      <group ref={body}>
-        <mesh position={[0, 0.2, 0.4]} castShadow>
-          <boxGeometry args={[1.5, 1.6, 3]} />
-          <meshStandardMaterial color="#f59e0b" roughness={0.4} metalness={0.2} />
-        </mesh>
-        <mesh position={[0, 0.45, 1.6]}>
-          <boxGeometry args={[1.3, 0.9, 0.8]} />
-          <meshStandardMaterial color="#0f172a" roughness={0.1} metalness={0.6} />
-        </mesh>
-        <mesh position={[0, 0.5, -3.6]} castShadow>
-          <boxGeometry args={[0.3, 0.3, 5.2]} />
-          <meshStandardMaterial color="#f59e0b" roughness={0.4} />
-        </mesh>
-        <mesh position={[0, 0.9, -6.4]} castShadow>
-          <boxGeometry args={[0.1, 1, 0.8]} />
-          <meshStandardMaterial color="#1d4ed8" roughness={0.5} />
-        </mesh>
-        <mesh ref={tail} position={[0.25, 0.6, -7.3]}>
-          <boxGeometry args={[0.05, 1.4, 0.12]} />
-          <meshStandardMaterial color="#111827" />
-        </mesh>
-        <mesh position={[0, -0.85, 0.3]}>
-          <boxGeometry args={[1.8, 0.08, 2.6]} />
-          <meshStandardMaterial color="#374151" />
-        </mesh>
-        <group ref={rotor} position={[0, 1.2, 0.3]}>
-          <mesh>
-            <boxGeometry args={[10.2, 0.06, 0.3]} />
-            <meshStandardMaterial color="#111827" />
-          </mesh>
-          <mesh rotation={[0, Math.PI / 2, 0]}>
-            <boxGeometry args={[10.2, 0.06, 0.3]} />
-            <meshStandardMaterial color="#111827" />
-          </mesh>
-        </group>
-      </group>
-    </group>
-  );
+  return <SceneObjectAttach object={rig.root} />;
 }
 
 function RocketBody({ entity }: { entity: SceneEntity }) {
-  const body = useRef<THREE.Group>(null);
-  const booster = useRef<THREE.Group>(null);
-  const upper = useRef<THREE.Group>(null);
-  const flame = useRef<THREE.Mesh>(null);
-  useFrame(() => {
+  const rig = useMemo(() => {
+    // The cylinder axis is y; rotating by Ï€/2 about x lays it along body forward (+z).
+    const along: [number, number, number] = [Math.PI / 2, 0, 0];
+    const root = new THREE.Group();
+    const bodyG = new THREE.Group();
+    root.add(bodyG);
+    const booster = new THREE.Group();
+    bodyG.add(booster);
+    const boosterBody = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 8, 20), std("#e5e7eb", 0.4, { metalness: 0.3 }));
+    boosterBody.rotation.set(along[0], along[1], along[2]);
+    boosterBody.castShadow = true;
+    booster.add(boosterBody);
+    for (let i = 0; i < 4; i += 1) {
+      const fin = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.06, 1.2), std("#dc2626", 0.9));
+      fin.position.set(Math.cos((i * Math.PI) / 2) * 0.8, Math.sin((i * Math.PI) / 2) * 0.8, -3.5);
+      fin.rotation.z = (i * Math.PI) / 2;
+      fin.castShadow = true;
+      booster.add(fin);
+    }
+    const upper = new THREE.Group();
+    upper.position.z = UPPER_STAGE_OFFSET;
+    bodyG.add(upper);
+    const upperBody = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 3, 16), std("#f8fafc", 0.4));
+    upperBody.rotation.set(along[0], along[1], along[2]);
+    upperBody.castShadow = true;
+    upper.add(upperBody);
+    const nose = new THREE.Mesh(new THREE.ConeGeometry(0.3, 1, 16), std("#1d4ed8", 0.9));
+    nose.position.set(0, 0, 2);
+    nose.rotation.set(along[0], along[1], along[2]);
+    upper.add(nose);
+    const flame = new THREE.Mesh(
+      new THREE.ConeGeometry(0.4, 2.4, 12),
+      new THREE.MeshStandardMaterial({ color: "#fb923c", emissive: new THREE.Color("#f97316"), emissiveIntensity: 2, transparent: true, opacity: 0.85 }),
+    );
+    flame.position.set(0, 0, -5.2);
+    flame.rotation.x = -Math.PI / 2;
+    bodyG.add(flame);
+    return { root, body: bodyG, booster, upper, flame };
+  }, []);
+  useEffect(() => () => disposeTree(rig.root), [rig]);
+  useFrameTask(() => {
     const step = run?.last;
-    if (step === null || step === undefined || body.current === null) return;
+    if (step === null || step === undefined) return;
     headingInverse.setFromAxisAngle(up, -step.heading);
     attitude.set(...step.orientation);
-    body.current.quaternion.copy(headingInverse.multiply(attitude));
+    rig.body.quaternion.copy(headingInverse.multiply(attitude));
     const staged = (run?.stage ?? 1) === 2;
-    if (booster.current !== null) booster.current.visible = !staged;
-    if (upper.current !== null) upper.current.position.z = staged ? 0 : UPPER_STAGE_OFFSET;
-    if (flame.current !== null) {
-      const thrust = step.motor?.thrust ?? 0;
-      flame.current.visible = thrust > 0;
-      flame.current.position.z = staged ? -2.4 : -5.2;
-      flame.current.scale.setScalar(staged ? 0.5 : 1);
-    }
+    rig.booster.visible = !staged;
+    rig.upper.position.z = staged ? 0 : UPPER_STAGE_OFFSET;
+    const thrust = step.motor?.thrust ?? 0;
+    rig.flame.visible = thrust > 0;
+    rig.flame.position.z = staged ? -2.4 : -5.2;
+    rig.flame.scale.setScalar(staged ? 0.5 : 1);
   });
-  // The cylinder axis is y; rotating by π/2 about x lays it along body forward (+z).
-  const along: [number, number, number] = [Math.PI / 2, 0, 0];
-  return (
-    <group key={entity.id}>
-      <group ref={body}>
-        <group ref={booster}>
-          <mesh rotation={along} castShadow>
-            <cylinderGeometry args={[0.45, 0.45, 8, 20]} />
-            <meshStandardMaterial color="#e5e7eb" roughness={0.4} metalness={0.3} />
-          </mesh>
-          {[0, 1, 2, 3].map((i) => (
-            <mesh key={i} position={[Math.cos((i * Math.PI) / 2) * 0.8, Math.sin((i * Math.PI) / 2) * 0.8, -3.5]} rotation={[0, 0, (i * Math.PI) / 2]} castShadow>
-              <boxGeometry args={[0.8, 0.06, 1.2]} />
-              <meshStandardMaterial color="#dc2626" />
-            </mesh>
-          ))}
-        </group>
-        <group ref={upper} position={[0, 0, UPPER_STAGE_OFFSET]}>
-          <mesh rotation={along} castShadow>
-            <cylinderGeometry args={[0.3, 0.3, 3, 16]} />
-            <meshStandardMaterial color="#f8fafc" roughness={0.4} />
-          </mesh>
-          <mesh position={[0, 0, 2]} rotation={along}>
-            <coneGeometry args={[0.3, 1, 16]} />
-            <meshStandardMaterial color="#1d4ed8" />
-          </mesh>
-        </group>
-        <mesh ref={flame} position={[0, 0, -5.2]} rotation={[-Math.PI / 2, 0, 0]}>
-          <coneGeometry args={[0.4, 2.4, 12]} />
-          <meshStandardMaterial color="#fb923c" emissive="#f97316" emissiveIntensity={2} transparent opacity={0.85} />
-        </mesh>
-      </group>
-    </group>
-  );
+  return <SceneObjectAttach object={rig.root} />;
 }
 
 // Ground tiles and pylons follow the plane in whole tiles, so the world looks endless at any speed.
 function Landscape(_props: WorldOverlayProps) {
-  const group = useRef<THREE.Group>(null);
-  const tiles = useMemo(() => {
-    const list: { x: number; z: number; color: string; pylon: boolean }[] = [];
+  const rig = useMemo(() => {
+    const root = new THREE.Group();
+    const tileGeo = new THREE.PlaneGeometry(TILE, TILE);
+    tileGeo.rotateX(-Math.PI / 2);
+    const pylonGeo = new THREE.BoxGeometry(8, 60, 8);
     for (let i = -8; i <= 8; i += 1) {
       for (let j = -8; j <= 8; j += 1) {
         const hash = Math.abs((i * 73856093) ^ (j * 19349663)) % 7;
-        list.push({ x: i * TILE, z: j * TILE, color: (i + j) % 2 === 0 ? "#4d7c3a" : "#5b8c42", pylon: hash === 0 && (Math.abs(i) > 1 || Math.abs(j) > 1) });
+        const pylon = hash === 0 && (Math.abs(i) > 1 || Math.abs(j) > 1);
+        const tile = new THREE.Group();
+        tile.position.set(i * TILE, 0, j * TILE);
+        const ground = new THREE.Mesh(tileGeo, std((i + j) % 2 === 0 ? "#4d7c3a" : "#5b8c42", 1));
+        ground.position.y = 0.03;
+        ground.receiveShadow = true;
+        tile.add(ground);
+        if (pylon) {
+          const post = new THREE.Mesh(pylonGeo, std("#e5e7eb", 0.8));
+          post.position.y = 30;
+          tile.add(post);
+        }
+        root.add(tile);
       }
     }
-    return list;
+    return root;
   }, []);
-  useFrame(() => {
+  useEffect(() => () => disposeTree(rig), [rig]);
+  useFrameTask(() => {
     const step = run?.last;
-    if (step === null || step === undefined || group.current === null) return;
-    group.current.position.set(Math.round(step.position[0] / (TILE * 2)) * TILE * 2, 0, Math.round(step.position[2] / (TILE * 2)) * TILE * 2);
+    if (step === null || step === undefined) return;
+    rig.position.set(Math.round(step.position[0] / (TILE * 2)) * TILE * 2, 0, Math.round(step.position[2] / (TILE * 2)) * TILE * 2);
   });
-  return (
-    <group ref={group}>
-      {tiles.map((tile) => (
-        <group key={`${tile.x}:${tile.z}`} position={[tile.x, 0, tile.z]}>
-          <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-            <planeGeometry args={[TILE, TILE]} />
-            <meshStandardMaterial color={tile.color} roughness={1} />
-          </mesh>
-          {tile.pylon ? (
-            <mesh position={[0, 30, 0]}>
-              <boxGeometry args={[8, 60, 8]} />
-              <meshStandardMaterial color="#e5e7eb" roughness={0.8} />
-            </mesh>
-          ) : null}
-        </group>
-      ))}
-    </group>
-  );
+  return <SceneObjectAttach object={rig} />;
 }
 
 function Telemetry() {

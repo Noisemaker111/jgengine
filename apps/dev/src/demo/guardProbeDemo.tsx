@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { useFrame } from "@react-three/fiber";
-import type * as THREE from "three";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import * as THREE from "three";
+import { disposeObjectTree, SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
@@ -27,55 +28,65 @@ const HERO = "hero";
 const GUARD = "guard";
 
 function Yard(): ReactNode {
-  return (
-    <>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[40, 40]} />
-        <meshStandardMaterial color="#5b6b4a" roughness={0.95} />
-      </mesh>
-      <gridHelper args={[40, 40, "#3f4c33", "#4d5c3f"]} position={[0, 0.01, 0]} />
-      <mesh position={[(WALL.minX + WALL.maxX) / 2, WALL.height / 2, (WALL.minZ + WALL.maxZ) / 2]} castShadow receiveShadow>
-        <boxGeometry args={[WALL.maxX - WALL.minX, WALL.height, WALL.maxZ - WALL.minZ]} />
-        <meshStandardMaterial color="#9a8f80" roughness={0.9} />
-      </mesh>
-      {GUARD_POSTS.map(([x, z]) => (
-        <mesh key={`${x}:${z}`} position={[x, 0.03, z]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.35, 0.55, 24]} />
-          <meshBasicMaterial color="#60a5fa" />
-        </mesh>
-      ))}
-    </>
-  );
+  const rig = useMemo(() => {
+    const root = new THREE.Group();
+    const groundGeo = new THREE.PlaneGeometry(40, 40);
+    groundGeo.rotateX(-Math.PI / 2);
+    const ground = new THREE.Mesh(groundGeo, new THREE.MeshStandardMaterial({ color: "#5b6b4a", roughness: 0.95 }));
+    ground.receiveShadow = true;
+    root.add(ground);
+    const grid = new THREE.GridHelper(40, 40, "#3f4c33", "#4d5c3f");
+    grid.position.y = 0.01;
+    root.add(grid);
+    const wall = new THREE.Mesh(
+      new THREE.BoxGeometry(WALL.maxX - WALL.minX, WALL.height, WALL.maxZ - WALL.minZ),
+      new THREE.MeshStandardMaterial({ color: "#9a8f80", roughness: 0.9 }),
+    );
+    wall.position.set((WALL.minX + WALL.maxX) / 2, WALL.height / 2, (WALL.minZ + WALL.maxZ) / 2);
+    wall.castShadow = true;
+    wall.receiveShadow = true;
+    root.add(wall);
+    const ringGeo = new THREE.RingGeometry(0.35, 0.55, 24);
+    const ringMat = new THREE.MeshBasicMaterial({ color: "#60a5fa" });
+    for (const [x, z] of GUARD_POSTS) {
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.set(x, 0.03, z);
+      root.add(ring);
+    }
+    return root;
+  }, []);
+  useEffect(() => () => disposeObjectTree(rig), [rig]);
+  return <SceneObjectAttach object={rig} />;
 }
 
 function GuardOverlay({ ctx }: WorldOverlayProps): ReactNode {
-  const cone = useRef<THREE.Mesh>(null);
-  const marker = useRef<THREE.Mesh>(null);
-  useFrame(() => {
+  const rig = useMemo(() => {
+    const root = new THREE.Group();
+    const cone = new THREE.Mesh(
+      new THREE.CircleGeometry(GUARD_SENSES.sightRange, 32, 0, (GUARD_SENSES.sightConeDeg * Math.PI) / 180),
+      new THREE.MeshBasicMaterial({ color: "#fde047", transparent: true, opacity: 0.18, depthWrite: false }),
+    );
+    cone.rotation.x = -Math.PI / 2;
+    const marker = new THREE.Mesh(
+      new THREE.RingGeometry(0.4, 0.7, 24),
+      new THREE.MeshBasicMaterial({ color: "#f87171" }),
+    );
+    marker.rotation.x = -Math.PI / 2;
+    root.add(cone, marker);
+    return { root, cone, marker };
+  }, []);
+  useEffect(() => () => disposeObjectTree(rig.root), [rig]);
+  useFrameTask(() => {
     const guard = ctx.scene.entity.get(GUARD_ID);
     const board = behaviorControl(ctx).blackboard(GUARD_ID);
     if (guard === null || board === null) return;
-    if (cone.current !== null) {
-      cone.current.position.set(guard.position[0], 0.04, guard.position[2]);
-      cone.current.rotation.set(-Math.PI / 2, 0, guard.rotationY - Math.PI / 2 - (GUARD_SENSES.sightConeDeg * Math.PI) / 360);
-    }
-    if (marker.current !== null) {
-      marker.current.visible = board["alerted"] === true;
-      marker.current.position.set(Number(board["lastKnownX"] ?? 0), 0.05, Number(board["lastKnownZ"] ?? 0));
-    }
+    rig.cone.position.set(guard.position[0], 0.04, guard.position[2]);
+    rig.cone.rotation.z = guard.rotationY - Math.PI / 2 - (GUARD_SENSES.sightConeDeg * Math.PI) / 360;
+    rig.marker.visible = board["alerted"] === true;
+    rig.marker.position.set(Number(board["lastKnownX"] ?? 0), 0.05, Number(board["lastKnownZ"] ?? 0));
   });
-  return (
-    <>
-      <mesh ref={cone}>
-        <circleGeometry args={[GUARD_SENSES.sightRange, 32, 0, (GUARD_SENSES.sightConeDeg * Math.PI) / 180]} />
-        <meshBasicMaterial color="#fde047" transparent opacity={0.18} depthWrite={false} />
-      </mesh>
-      <mesh ref={marker} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.4, 0.7, 24]} />
-        <meshBasicMaterial color="#f87171" />
-      </mesh>
-    </>
-  );
+  return <SceneObjectAttach object={rig.root} />;
 }
 
 function guardState(ctx: GameContext | null): { label: string; confidence: number } {

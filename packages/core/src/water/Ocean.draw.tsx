@@ -1,5 +1,4 @@
 // @skill jgengine-world
-import { type ThreeElements } from "@react-three/fiber";
 import { useRef } from "react";
 import * as THREE from "three";
 import { useOptionalGameContext } from "@jgengine/react/provider";
@@ -16,7 +15,7 @@ import { createOceanMaterial, deepBedTexture, syncOceanMaterial, type OceanShade
 import type { OceanBedBounds } from "./oceanBed";
 
 /** Props for {@link Ocean}: the ocean config, the ground under it, and mesh props. */
-export interface OceanProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> {
+export interface OceanProps extends Omit<OceanDrawProps, "ctx"> {
   config?: OceanConfig;
   /**
    * World height of the ground under a point given in the sheet's local XZ. When provided, it is baked
@@ -232,8 +231,8 @@ export function Ocean(props: OceanProps) {
     config: props.config,
     bedAt: props.bedAt,
     bedBounds: props.bedBounds,
-    position: props.position as OceanDrawProps["position"],
-    frustumCulled: props.frustumCulled as boolean | undefined,
+    position: props.position,
+    frustumCulled: props.frustumCulled,
     ctx,
   };
   useEngineDraw(() => oceanDraw(() => latest.current), [props.config, props.bedAt, props.bedBounds, ctx]);

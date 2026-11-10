@@ -1,4 +1,3 @@
-import { Html } from "@react-three/drei";
 import { useRef, type ReactNode } from "react";
 import * as THREE from "three";
 import {
@@ -36,8 +35,6 @@ interface WorldPingProps {
   marker: MarkerView;
   style: MarkerKindStyle;
   height: number;
-  showCallout: boolean;
-  renderCallout?: ((marker: MarkerView, style: MarkerKindStyle) => ReactNode) | undefined;
 }
 
 /** Ring + bobbing arrowhead as one draw: per-frame bob and lifetime fade without React. */
@@ -167,54 +164,8 @@ function EnginePingCallouts({ pings, showCallout, renderCallout }: {
   );
 }
 
-function WorldPing({ marker, style, height, showCallout, renderCallout }: WorldPingProps): ReactNode {
-  const host = useEngineHost();
-  const floatRef = useRef<THREE.Group>(null);
-  const arrowMat = useRef<THREE.MeshBasicMaterial>(null);
-  const ringMat = useRef<THREE.MeshBasicMaterial>(null);
-  const bornRef = useRef<number | null>(null);
-  const baseY = marker.position[1];
-  const text = pingText(marker);
-
-  useFrameTask((state) => {
-    if (!host.r3f) return;
-    const now = performance.now();
-    if (bornRef.current === null) bornRef.current = now;
-    // `expiresAt` is a MarkerSet lifecycle field (MapMarker), absent on plain display views.
-    const expiresAt = (marker as { expiresAt?: number }).expiresAt;
-    const remainingMs = expiresAt !== undefined ? expiresAt - Date.now() : undefined;
-    const opacity = pingOpacity({ bornMs: bornRef.current, nowMs: now, remainingMs });
-    const bob = pingBobOffset(state.clock.elapsedTime);
-    if (floatRef.current !== null) floatRef.current.position.y = baseY + height + bob;
-    if (arrowMat.current !== null) arrowMat.current.opacity = opacity;
-    if (ringMat.current !== null) ringMat.current.opacity = opacity * 0.7;
-  });
-
-  if (!host.r3f) {
-    return <EngineDrawMount create={() => pingDraw(marker, style, height)} deps={[marker.id, style.color, height]} />;
-  }
-
-  return (
-    <group data-world-ping={marker.id}>
-      {/* Ground ring at the pinged spot. */}
-      <mesh position={[marker.position[0], baseY + 0.06, marker.position[2]]} rotation-x={-Math.PI / 2} renderOrder={997}>
-        <ringGeometry args={[0.55, 0.85, 28]} />
-        <meshBasicMaterial ref={ringMat} color={style.color} transparent opacity={0.7} side={THREE.DoubleSide} depthWrite={false} toneMapped={false} />
-      </mesh>
-      {/* Floating downward arrowhead pointing at the spot, plus an optional callout. */}
-      <group ref={floatRef} position={[marker.position[0], baseY + height, marker.position[2]]}>
-        <mesh rotation={[Math.PI, Math.PI / 4, 0]} renderOrder={998}>
-          <coneGeometry args={[0.34, 0.62, 4]} />
-          <meshBasicMaterial ref={arrowMat} color={style.color} transparent depthWrite={false} toneMapped={false} />
-        </mesh>
-        {showCallout && text !== undefined ? (
-          <Html center position={[0, 0.85, 0]} distanceFactor={11} zIndexRange={[28, 0]} style={{ pointerEvents: "none" }}>
-            {calloutContent(marker, style, renderCallout)}
-          </Html>
-        ) : null}
-      </group>
-    </group>
-  );
+function WorldPing({ marker, style, height }: WorldPingProps): ReactNode {
+  return <EngineDrawMount create={() => pingDraw(marker, style, height)} deps={[marker.id, style.color, height]} />;
 }
 
 /** Props for {@link WorldPings}. */
@@ -249,25 +200,15 @@ export function WorldPings({
   showCallout = true,
   renderCallout,
 }: WorldPingsProps): ReactNode {
-  const host = useEngineHost();
   const list = useMarkers(markers);
   const pings = pingsOnly ? list.filter(isPingMarker) : list;
   const styled = pings.map((marker) => ({ marker, style: markerKindStyle(marker.kind, kindStyles), height }));
   return (
     <>
       {styled.map(({ marker, style }) => (
-        <WorldPing
-          key={marker.id}
-          marker={marker}
-          style={style}
-          height={height}
-          showCallout={showCallout}
-          renderCallout={renderCallout}
-        />
+        <WorldPing key={marker.id} marker={marker} style={style} height={height} />
       ))}
-      {!host.r3f ? (
-        <EnginePingCallouts pings={styled} showCallout={showCallout} renderCallout={renderCallout} />
-      ) : null}
+      <EnginePingCallouts pings={styled} showCallout={showCallout} renderCallout={renderCallout} />
     </>
   );
 }

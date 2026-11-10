@@ -327,49 +327,38 @@ describe("material assets render fidelity", () => {
   });
 });
 
-test("material asset mounts dispose their owned map views and preserve loader sources", async () => {
-  const { act, createRoot } = await import("@react-three/fiber");
-  const { createElement, Suspense } = await import("react");
-  const { useMaterialAssetMaterial } = await import("./materialAsset.draw");
+test("material asset leases dispose their owned map views and preserve loader sources", async () => {
+  const { materialAssetMaterial } = await import("./materialAsset.draw");
   const source = new THREE.Texture();
   let sourceDisposals = 0;
   source.addEventListener("dispose", () => sourceDisposals++);
-  const originalLoad = THREE.TextureLoader.prototype.load;
-  THREE.TextureLoader.prototype.load = (_url, onLoad) => { onLoad?.(source); return source as THREE.Texture<HTMLImageElement>; };
-  const environment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
-  const previous = environment.IS_REACT_ACT_ENVIRONMENT; environment.IS_REACT_ACT_ENVIRONMENT = true;
-  const root = createRoot({} as HTMLCanvasElement);
-  await root.configure({ frameloop: "never", size: { width: 100, height: 100, top: 0, left: 0 }, dpr: 1, gl: () => ({ render() {}, setSize() {}, setPixelRatio() {} }) as unknown as THREE.WebGLRenderer });
-  let material!: THREE.MeshStandardMaterial;
-  function Surface({ color }: { color: string }) {
-    material = useMaterialAssetMaterial({ ...asset("mounted"), surface: { color, clearcoat: 0.4 }, textures: { color: { url: "owned-asset-color.png", colorSpace: "srgb" }, roughness: { url: "owned-asset-roughness.png", colorSpace: "linear" } } });
-    return createElement("primitive", { object: material });
-  }
-  const render = async (color: string) => act(async () => root.render(createElement(Suspense, { fallback: null }, createElement(Surface, { color }))));
+  const { MaterialTextureLoader } = await import("./materialAsset.draw");
+  const originalLoad = MaterialTextureLoader.prototype.load;
+  MaterialTextureLoader.prototype.load = function stubbed(this: InstanceType<typeof MaterialTextureLoader>, _url: string, onLoad?: (texture: THREE.Texture) => void) { onLoad?.(source); };
   try {
-    await render("#ffffff");
-    const first = material;
-    expect(first.map).not.toBe(source);
-    expect(first.map!.colorSpace).toBe(THREE.SRGBColorSpace);
-    expect(first.roughnessMap!.colorSpace).toBe(THREE.NoColorSpace);
-    expect((first as THREE.MeshPhysicalMaterial).clearcoat).toBe(0.4);
+    const first = await materialAssetMaterial({ ...asset("mounted"), surface: { color: "#ffffff", clearcoat: 0.4 }, textures: { color: { url: "owned-asset-color.png", colorSpace: "srgb" }, roughness: { url: "owned-asset-roughness.png", colorSpace: "linear" } } });
+    const material = first.material as THREE.MeshStandardMaterial;
+    expect(material.map).not.toBe(source);
+    expect(material.map!.colorSpace).toBe(THREE.SRGBColorSpace);
+    expect(material.roughnessMap!.colorSpace).toBe(THREE.NoColorSpace);
+    expect((material as THREE.MeshPhysicalMaterial).clearcoat).toBe(0.4);
     let released = 0;
-    first.addEventListener("dispose", () => released++);
-    first.map!.addEventListener("dispose", () => released++);
-    first.roughnessMap!.addEventListener("dispose", () => released++);
-    await render("#ffffff"); expect(material).toBe(first);
-    await render("#123456"); expect(material).not.toBe(first); expect(released).toBe(3);
+    material.addEventListener("dispose", () => released++);
+    material.map!.addEventListener("dispose", () => released++);
+    material.roughnessMap!.addEventListener("dispose", () => released++);
+    first.dispose();
+    expect(released).toBe(3);
+    const second = await materialAssetMaterial({ ...asset("mounted"), surface: { color: "#123456", clearcoat: 0.4 }, textures: { color: { url: "owned-asset-color.png", colorSpace: "srgb" }, roughness: { url: "owned-asset-roughness.png", colorSpace: "linear" } } });
     let lastReleased = 0;
-    material.addEventListener("dispose", () => lastReleased++);
-    material.map!.addEventListener("dispose", () => lastReleased++);
-    material.roughnessMap!.addEventListener("dispose", () => lastReleased++);
-    await act(async () => root.render(null));
+    second.material.addEventListener("dispose", () => lastReleased++);
+    second.material.map!.addEventListener("dispose", () => lastReleased++);
+    second.material.roughnessMap!.addEventListener("dispose", () => lastReleased++);
+    second.dispose();
     expect(lastReleased).toBe(3);
     expect(sourceDisposals).toBe(0);
     expect(source.colorSpace).toBe(THREE.NoColorSpace);
     expect(source.flipY).toBe(true);
   } finally {
-    await act(async () => root.unmount());
-    THREE.TextureLoader.prototype.load = originalLoad; environment.IS_REACT_ACT_ENVIRONMENT = previous;
+    MaterialTextureLoader.prototype.load = originalLoad;
   }
 });

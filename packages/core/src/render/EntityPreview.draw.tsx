@@ -1,5 +1,4 @@
 // @skill jgengine-ui
-import { Canvas, events as pointerEvents, type RootState } from "@react-three/fiber";
 import type { CSSProperties, ReactNode } from "react";
 
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
@@ -7,7 +6,8 @@ import { GameContextBridge, useOptionalGameContext } from "@jgengine/react/provi
 
 import { StudioStage, type StudioMood } from "@jgengine/core/scene/StudioStage.draw";
 import { IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";
-import { R3FEngineHost } from "@jgengine/core/frame/r3fEngineHost.draw";
+import { EngineCanvas } from "@jgengine/core/frame/engineCanvas.draw";
+import { useEngineRendererFactory } from "@jgengine/core/webgpu/engineRenderer.draw";
 
 /** Props for {@link EntityPreview}. */
 export interface EntityPreviewProps {
@@ -50,26 +50,16 @@ export interface EntityPreviewProps {
 }
 
 /**
- * R3F pointer events, minus the crash when a preview unmounts while R3F is still creating it: R3F
- * configures the root asynchronously, then connects events to the wrapper div, which is null by then.
- * A dialogue or menu that opens and re-mounts a portrait in one beat hit this.
- */
-function previewEvents(store: Parameters<typeof pointerEvents>[0]): ReturnType<typeof pointerEvents> {
-  const handlers = pointerEvents(store);
-  return { ...handlers, connect: (target: HTMLElement | null) => (target === null ? undefined : handlers.connect?.(target)) };
-}
-
-/**
  * Drop-in live 3D preview of a single entity — the character-screen portrait, unit inspector, or loadout
- * viewer. It owns all the plumbing a game would otherwise re-derive by hand: a nested `<Canvas>`, the
- * {@link GameContextBridge} that carries the running `GameContext` across the R3F reconciler boundary (so
- * the subject's `useEntityRenderCues` / `useGameContext` hooks resolve and it mirrors the live game), a
- * {@link StudioStage} 3-point lighting rig with optional turntable / face-camera, and a capture-friendly
- * GL surface. The game keeps ownership of its `renderEntity`: pass it as `children`, or hand a native
- * `model` (+ `instanceId`) for an engine-composed body. Bound to a live `instanceId`, the portrait walks,
- * flinches, and topples in lockstep with the world instead of a canned spin.
+ * viewer. It owns all the plumbing a game would otherwise re-derive by hand: a nested {@link EngineCanvas}
+ * (WebGL, matching the old r3f preview), the {@link GameContextBridge} that carries the running
+ * `GameContext` to the subject's `useEntityRenderCues` / `useGameContext` hooks, a {@link StudioStage}
+ * 3-point lighting rig with optional turntable / face-camera, and a capture-friendly GL surface
+ * (`preserveDrawingBuffer`). The game keeps ownership of its `renderEntity`: pass it as `children`, or
+ * hand a native `model` (+ `instanceId`) for an engine-composed body. Bound to a live `instanceId`, the
+ * portrait walks, flinches, and topples in lockstep with the world instead of a canned spin.
  *
- * @capability entity-preview live 3D entity portrait — nested Canvas + context bridge + studio stage, driven by the game's own renderEntity
+ * @capability entity-preview live 3D entity portrait — nested EngineCanvas + context bridge + studio stage, driven by the game's own renderEntity
  */
 export function EntityPreview({
   children,
@@ -89,6 +79,7 @@ export function EntityPreview({
   style,
 }: EntityPreviewProps) {
   const ctx = useOptionalGameContext();
+  const rendererFactory = useEngineRendererFactory("webgl");
   const subject =
     children ??
     (model !== undefined ? <IsolatedEntityModel model={model} instanceId={instanceId} /> : null);
@@ -98,30 +89,32 @@ export function EntityPreview({
       className={className}
       style={{ position: "relative", width: "100%", height: "100%", ...style }}
     >
-      <Canvas
-        shadows="percentage"
-        dpr={dpr}
-        camera={{ position: cameraPosition, fov }}
-        gl={{ preserveDrawingBuffer: true }}
-        events={previewEvents}
-        {...(cameraTarget === undefined ? {} : { onCreated: (state: RootState) => state.camera.lookAt(cameraTarget[0], cameraTarget[1], cameraTarget[2]) })}
-        style={{ touchAction: "none" }}
-      >
-        <R3FEngineHost>
-        <GameContextBridge context={ctx}>
-          <StudioStage
-            mood={mood}
-            {...(backdrop === undefined ? {} : { backdrop })}
-            turntable={turntable}
-            faceCamera={faceCamera}
-            {...(forward === undefined ? {} : { forward })}
-            environment={environment}
-          >
-            {subject}
-          </StudioStage>
-        </GameContextBridge>
-        </R3FEngineHost>
-      </Canvas>
+      {rendererFactory === null ? null : (
+        <EngineCanvas
+          rendererFactory={rendererFactory}
+          shadows
+          dpr={dpr}
+          preserveDrawingBuffer
+          camera={{ fov }}
+          onCreated={({ camera }) => {
+            camera.position.set(cameraPosition[0], cameraPosition[1], cameraPosition[2]);
+            if (cameraTarget !== undefined) camera.lookAt(cameraTarget[0], cameraTarget[1], cameraTarget[2]);
+          }}
+        >
+          <GameContextBridge context={ctx}>
+            <StudioStage
+              mood={mood}
+              {...(backdrop === undefined ? {} : { backdrop })}
+              turntable={turntable}
+              faceCamera={faceCamera}
+              {...(forward === undefined ? {} : { forward })}
+              environment={environment}
+            >
+              {subject}
+            </StudioStage>
+          </GameContextBridge>
+        </EngineCanvas>
+      )}
     </div>
   );
 }

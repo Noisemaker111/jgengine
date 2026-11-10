@@ -62,6 +62,8 @@ import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "@jgengine/core/scene/sceneKindRenderers.draw";
 import { junctionSurface } from "./cityJunctionSurface";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
+import { EngineDrawMount, SceneObjectList } from "@jgengine/core/frame/useEngineDraw.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 
 const ASPHALT_COLOR = "#3a3b3d";
 const GRAVEL_COLOR = "#93815f";
@@ -465,6 +467,94 @@ function DetailBuildings({
   const kit = getBuildingKit(kitName);
   if (placements.length === 0) return null;
   return <InstancedBuildings buildings={placements} palette={detailPalette} {...(kit === undefined ? {} : { kit })} />;
+}
+
+/** The district pieces the merged ground/bridge/tunnel draw assembles; identities trigger rebuilds. */
+interface CityDistrictSnapshot {
+  ground: Record<GroundLayer, THREE.BufferGeometry | null> | null;
+  groundMaterials: Record<GroundLayer, THREE.MeshStandardMaterial>;
+  bridges: { deck: THREE.BufferGeometry | null; concrete: readonly THREE.Matrix4[]; steel: readonly THREE.Matrix4[] } | null;
+  tunnels: { roof: THREE.BufferGeometry | null; stone: readonly THREE.Matrix4[] } | null;
+}
+
+/**
+ * The city's merged ground layers, bridge decks and tunnel roofs as one draw. Geometries and
+ * ground materials stay caller-owned (their useMemo effects dispose them); the deck/roof
+ * materials and instanced-box materials are created here and disposed on rebuild.
+ */
+function cityDistrictDraw(getSnapshot: () => CityDistrictSnapshot): EngineDraw {
+  const host = new THREE.Group();
+  const ownedMaterials: THREE.Material[] = [];
+  let built: CityDistrictSnapshot | null = null;
+
+  const clear = () => {
+    for (const material of ownedMaterials.splice(0)) material.dispose();
+    host.clear();
+  };
+
+  const instancedBoxes = (matrices: readonly THREE.Matrix4[], color: string) => {
+    if (matrices.length === 0) return;
+    const material = new THREE.MeshStandardMaterial({ color, roughness: 0.8, metalness: 0.15 });
+    ownedMaterials.push(material);
+    const mesh = new THREE.InstancedMesh(unitGeometries().box, material, matrices.length);
+    uploadInstances(mesh, matrices, { bounds: "none" });
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    mesh.frustumCulled = false;
+    host.add(mesh);
+  };
+
+  const surfaceMesh = (geometry: THREE.BufferGeometry, color: string, roughness: number, metalness: number) => {
+    const material = new THREE.MeshStandardMaterial({ color, roughness, metalness, side: THREE.DoubleSide });
+    ownedMaterials.push(material);
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    host.add(mesh);
+  };
+
+  const build = () => {
+    const snapshot = getSnapshot();
+    if (snapshot.ground !== null) {
+      GROUND_LAYERS.forEach((layer, order) => {
+        const geometry = snapshot.ground?.[layer];
+        if (geometry == null) return;
+        const mesh = new THREE.Mesh(geometry, snapshot.groundMaterials[layer]);
+        mesh.renderOrder = order;
+        mesh.receiveShadow = layer !== "markings";
+        mesh.castShadow = layer === "curbs";
+        host.add(mesh);
+      });
+    }
+    if (snapshot.bridges !== null) {
+      if (snapshot.bridges.deck !== null) surfaceMesh(snapshot.bridges.deck, CONCRETE_COLOR, 0.85, 0.05);
+      instancedBoxes(snapshot.bridges.concrete, CONCRETE_COLOR);
+      instancedBoxes(snapshot.bridges.steel, STEEL_COLOR);
+    }
+    if (snapshot.tunnels !== null) {
+      if (snapshot.tunnels.roof !== null) surfaceMesh(snapshot.tunnels.roof, TUNNEL_COLOR, 0.95, 0);
+      instancedBoxes(snapshot.tunnels.stone, TUNNEL_COLOR);
+    }
+    built = snapshot;
+  };
+
+  return {
+    mount(state: EngineFrameState) {
+      state.scene.add(host);
+      build();
+    },
+    update() {
+      const snapshot = getSnapshot();
+      if (snapshot !== built) {
+        clear();
+        build();
+      }
+    },
+    dispose(state: EngineFrameState) {
+      clear();
+      state.scene.remove(host);
+    },
+  };
 }
 
 /** One authored city volume → the full merged/instanced district. */
@@ -1751,65 +1841,23 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
     [groundMaterials],
   );
 
+  const district = useMemo<CityDistrictSnapshot>(
+    () => ({ ground, groundMaterials, bridges, tunnels }),
+    [ground, groundMaterials, bridges, tunnels],
+  );
+  const districtRef = useRef(district);
+  districtRef.current = district;
+
   if (resolved === null) return null;
   return (
-    <group>
-      {GROUND_LAYERS.map((layer, order) => {
-        const geometry = ground?.[layer];
-        if (geometry == null) return null;
-        return (
-          <mesh
-            key={layer}
-            geometry={geometry}
-            material={groundMaterials[layer]}
-            renderOrder={order}
-            receiveShadow={layer !== "markings"}
-            castShadow={layer === "curbs"}
-          />
-        );
-      })}
-      {bridges?.deck != null ? (
-        <mesh geometry={bridges.deck} castShadow receiveShadow>
-          <meshStandardMaterial color={CONCRETE_COLOR} roughness={0.85} metalness={0.05} side={THREE.DoubleSide} />
-        </mesh>
-      ) : null}
-      {bridges !== null && bridges.concrete.length > 0 ? (
-        <InstancedBoxes matrices={bridges.concrete} color={CONCRETE_COLOR} />
-      ) : null}
-      {bridges !== null && bridges.steel.length > 0 ? <InstancedBoxes matrices={bridges.steel} color={STEEL_COLOR} /> : null}
-      {tunnels?.roof != null ? (
-        <mesh geometry={tunnels.roof} castShadow receiveShadow>
-          <meshStandardMaterial color={TUNNEL_COLOR} roughness={0.95} metalness={0} side={THREE.DoubleSide} />
-        </mesh>
-      ) : null}
-      {tunnels !== null && tunnels.stone.length > 0 ? <InstancedBoxes matrices={tunnels.stone} color={TUNNEL_COLOR} /> : null}
-      {massing !== null ? massing.meshes.map((mesh, i) => <primitive key={`massing:${i}`} object={mesh} />) : null}
-      {furniture !== null ? furniture.meshes.map((mesh, i) => <primitive key={`furniture:${i}`} object={mesh} />) : null}
-      {race !== null ? race.meshes.map((mesh, i) => <primitive key={`race:${i}`} object={mesh} />) : null}
-      <DetailBuildings buildings={detail.buildings} palette={palette} kitName={resolved?.rules.buildingKit ?? ""} />
-    </group>
+    <>
+      <EngineDrawMount create={() => cityDistrictDraw(() => districtRef.current)} deps={[]} />
+      {massing !== null ? <SceneObjectList objects={massing.meshes} /> : null}
+      {furniture !== null ? <SceneObjectList objects={furniture.meshes} /> : null}
+      {race !== null ? <SceneObjectList objects={race.meshes} /> : null}
+      <DetailBuildings buildings={detail.buildings} palette={palette} kitName={resolved.rules.buildingKit ?? ""} />
+    </>
   );
-}
-
-/** One instanced unit-box mesh from precomposed matrices (bridge parts). */
-function InstancedBoxes({ matrices, color }: { matrices: THREE.Matrix4[]; color: string }) {
-  const mesh = useMemo(() => {
-    const units = unitGeometries();
-    const material = new THREE.MeshStandardMaterial({ color, roughness: 0.8, metalness: 0.15 });
-    const instanced = new THREE.InstancedMesh(units.box, material, matrices.length);
-    uploadInstances(instanced, matrices, { bounds: "none" });
-    instanced.castShadow = true;
-    instanced.receiveShadow = true;
-    instanced.frustumCulled = false;
-    return instanced;
-  }, [matrices, color]);
-  useEffect(
-    () => () => {
-      (mesh.material as THREE.Material).dispose();
-    },
-    [mesh],
-  );
-  return <primitive object={mesh} />;
 }
 
 /** Registers the `city` volume runtime renderer. Called by `registerBuiltinSceneKindRenderers`. @internal */

@@ -133,7 +133,8 @@ class ModelChildren implements EngineDraw {
 const gltfLoads = new Map<string, Promise<GLTF>>();
 const textureLoads = new Map<string, Promise<THREE.Texture>>();
 
-function loadGltf(url: string): Promise<GLTF> {
+/** @internal Shared with modelInstanceDraw. */
+export function loadGltf(url: string): Promise<GLTF> {
   let promise = gltfLoads.get(url);
   if (promise === undefined) {
     promise = sharedGltfLoader.loadAsync(url);
@@ -231,7 +232,8 @@ export async function loadModelMaterialTextures(model: Pick<ModelConfig, "materi
 // ---------------------------------------------------------------------------
 // The placed instance: clone, configure, animate, pose
 
-interface BuiltInstance {
+/** @internal Shared with modelInstanceDraw. */
+export interface BuiltInstance {
   /** The placed group (position + uniform scale) added under the composition root. */
   group: THREE.Group;
   /** The unscaled content group the animation/IK drivers pose. */
@@ -261,7 +263,8 @@ function countRig(root: THREE.Object3D): [parts: number, bones: number] {
   return [parts, bones];
 }
 
-interface InstanceSpec {
+/** @internal Shared with modelInstanceDraw. */
+export interface InstanceSpec {
   model: ModelConfig;
   gltf: GLTF;
   instanceId?: string | undefined;
@@ -277,7 +280,8 @@ interface InstanceSpec {
  * Clone, configure, place and bind the animation driver for one loaded model —
  * the React-free equivalent of `useModelInstance`'s build path.
  */
-function buildInstance(spec: InstanceSpec, renderer: THREE.WebGLRenderer | null): BuiltInstance {
+/** @internal Shared with modelInstanceDraw. */
+export function buildInstance(spec: InstanceSpec, renderer: THREE.WebGLRenderer | null): BuiltInstance {
   const { model, gltf, instanceId, ctx } = spec;
   if (renderer !== null && (renderer as THREE.WebGLRenderer & { isWebGLRenderer?: boolean }).isWebGLRenderer) {
     detectKtx2Support(renderer);
@@ -345,7 +349,8 @@ function buildInstance(spec: InstanceSpec, renderer: THREE.WebGLRenderer | null)
   }
 }
 
-function disposeInstance(built: BuiltInstance): void {
+/** @internal Shared with modelInstanceDraw. */
+export function disposeInstance(built: BuiltInstance): void {
   for (const off of built.offs.splice(0)) off();
   built.unregisterRig?.();
   built.unregisterRig = null;

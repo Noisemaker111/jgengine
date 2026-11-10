@@ -59,23 +59,20 @@ describe("static authored shapes", () => {
 });
 
 test("mounted batches retune matrices, share only compatible draws and dispose owned resources", async () => {
-  const { act, createRoot, extend } = await import("@react-three/fiber");
-  const { createElement, Fragment, Suspense } = await import("react");
-  const { FrameBoardPump } = await import("@jgengine/core/frame/frameBoardPump.draw");
+  const { createElement, Suspense } = await import("react");
+  const { mountTestDraws } = await import("@jgengine/core/frame/testEngineHost.draw");
   const { StaticShapeInstances } = await import("./staticShapeInstances.draw");
-  const environment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
-  const previous = environment.IS_REACT_ACT_ENVIRONMENT;
-  environment.IS_REACT_ACT_ENVIRONMENT = true;
-  extend(THREE);
-  const root = createRoot({} as HTMLCanvasElement);
-  await root.configure({ frameloop: "never", size: { width: 100, height: 100, top: 0, left: 0 }, dpr: 1,
-    gl: () => ({ render() {}, setSize() {}, setPixelRatio() {} }) as unknown as THREE.WebGLRenderer });
+  let mounted: import("@jgengine/core/frame/testEngineHost.draw").MountedTestDraws | undefined;
+  const Empty = () => null;
   try {
-    let scene: THREE.Scene;
-    const render = async (instances: StaticShapeInstance[]) => act(async () => {
-      scene = root.render(createElement(Suspense, { fallback: null }, createElement(Fragment, null, createElement(FrameBoardPump), createElement(StaticShapeInstances, { instances })))).getState().scene;
-    });
+    const render = async (instances: StaticShapeInstance[]) => {
+      const element = createElement(Suspense, { fallback: null }, createElement(StaticShapeInstances, { instances }));
+      if (mounted === undefined) mounted = await mountTestDraws(element, { width: 100, height: 100 });
+      else await mounted.render(element);
+      for (let i = 0; i < 5; i += 1) await mounted.advance(1 / 60);
+    };
     await render([box, { ...box, position: [10, 0, 0] }]);
+    const scene = mounted!.scene;
     const meshes = () => {
       const found: THREE.InstancedMesh[] = [];
       scene.traverse((node) => { if ((node as THREE.InstancedMesh).isInstancedMesh === true) found.push(node as THREE.InstancedMesh); });
@@ -98,13 +95,13 @@ test("mounted batches retune matrices, share only compatible draws and dispose o
     mesh.getMatrixAt(0, matrix);
     expect(matrix.elements[12]).toBe(50);
     expect(geometryDisposals + materialDisposals).toBe(0);
-    await act(async () => root.render(null));
+    await mounted.render(createElement(Empty));
+    for (let i = 0; i < 5; i += 1) await mounted.advance(1 / 60);
     expect(geometryDisposals).toBe(1);
     expect(materialDisposals).toBe(1);
     await new Promise(resolve => setTimeout(resolve, 30));
     expect(meshDisposals).toBe(1);
   } finally {
-    await act(async () => root.unmount());
-    environment.IS_REACT_ACT_ENVIRONMENT = previous;
+    await mounted?.unmount();
   }
 });

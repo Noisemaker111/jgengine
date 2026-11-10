@@ -1,4 +1,6 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { Mesh, MeshStandardMaterial, PlaneGeometry } from "three";
+import { disposeObjectTree, SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import { readGrassLook } from "@jgengine/core/grass/grassKind";
 import type { PlayableGame } from "@jgengine/shell/registry";
@@ -13,18 +15,22 @@ function GrassReferences() {
   // The page's `?realism=` (the board's `--realism`) reaches these looks through readGrassLook.
   const patches = useMemo(() => GRASS_REFERENCE_PHOTOS.map((photo, index) => ({ photo, centre: grassReferenceCentre(index), look: readGrassLook({ species: photo.species, seed: photo.id }) })), []);
   const area = useMemo(() => [GRASS_REFERENCE_PATCH, GRASS_REFERENCE_PATCH] as const, []);
+  const grounds = useMemo(() => patches.map(({ centre }) => {
+    const geo = new PlaneGeometry(GRASS_REFERENCE_PATCH + 60, GRASS_REFERENCE_PATCH + 60);
+    geo.rotateX(-Math.PI / 2);
+    const ground = new Mesh(geo, new MeshStandardMaterial({ color: GROUND, roughness: 1 }));
+    ground.position.set(centre[0], -0.002, centre[1]);
+    ground.receiveShadow = true;
+    return ground;
+  }), [patches]);
+  useEffect(() => () => grounds.forEach((ground) => disposeObjectTree(ground)), [grounds]);
   return (
-    <group>
+    <>
+      {grounds.map((ground, index) => <SceneObjectAttach key={index} object={ground} />)}
       {patches.map(({ photo, centre, look }) => (
-        <group key={photo.id}>
-          <mesh rotation-x={-Math.PI / 2} position={[centre[0], -0.002, centre[1]]} receiveShadow>
-            <planeGeometry args={[GRASS_REFERENCE_PATCH + 60, GRASS_REFERENCE_PATCH + 60]} />
-            <meshStandardMaterial color={GROUND} roughness={1} />
-          </mesh>
-          <GrassPatch position={[centre[0], 0, centre[1]]} look={look} area={area} groundColor={GROUND} />
-        </group>
+        <GrassPatch key={photo.id} position={[centre[0], 0, centre[1]]} look={look} area={area} groundColor={GROUND} />
       ))}
-    </group>
+    </>
   );
 }
 
@@ -33,8 +39,8 @@ export const grassReferenceGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "grass-reference" },
   scene: {
-    renderEntity: () => <group />,
-    renderObject: () => <group />,
+    renderEntity: () => null,
+    renderObject: () => null,
     environment: () => <GrassReferences />,
   },
   loop: { ...demoGame.loop, onTick: () => {} },

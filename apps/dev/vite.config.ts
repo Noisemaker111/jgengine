@@ -113,7 +113,7 @@ export default defineConfig({
     // Games sit outside this workspace package.
     // Resolve their shared runtime dependencies from apps/dev so Bun's workspace
     // links are used even when the importing file lives under ../../games.
-    dedupe: ["react", "react-dom", "three", "@react-three/fiber", "@react-three/drei"],
+    dedupe: ["react", "react-dom", "three"],
     extensions: [".ts", ".tsx", ".mjs", ".js", ".jsx", ".json"],
     alias: [
       { find: /^@\/components\/ui\/(.*)$/, replacement: `${registryUi}/$1` },

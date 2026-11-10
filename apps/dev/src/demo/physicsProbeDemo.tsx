@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
-import { useFrame } from "@react-three/fiber";
-import type * as THREE from "three";
+import { useEffect, useMemo, useRef, useState } from "react";
+import * as THREE from "three";
+import { disposeObjectTree, SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { createRapierBackend } from "@jgengine/rapier";
@@ -21,6 +22,28 @@ function PhysicsProbeOverlay(_props: WorldOverlayProps) {
   const backend = useRef<PhysicsBackend | null>(null);
   const bodies = useRef<ProbeBody[]>([]);
   const meshes = useRef(new Map<number, THREE.Mesh>());
+  const container = useMemo(() => new THREE.Group(), []);
+  useEffect(() => () => disposeObjectTree(container), [container]);
+  const floorMesh = useMemo(() => {
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(36, 0.8, 16),
+      new THREE.MeshStandardMaterial({ color: "#334155", roughness: 0.85 }),
+    );
+    mesh.position.set(0, -0.4, 0);
+    mesh.receiveShadow = true;
+    return mesh;
+  }, []);
+  const slopeMesh = useMemo(() => {
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(16, 0.7, 6),
+      new THREE.MeshStandardMaterial({ color: "#64748b", roughness: 0.8 }),
+    );
+    mesh.position.set(-5, 2.7, 0);
+    mesh.rotation.set(0, 0, 0.18);
+    mesh.receiveShadow = true;
+    return mesh;
+  }, []);
+  useEffect(() => () => { floorMesh.geometry.dispose(); (floorMesh.material as THREE.Material).dispose(); slopeMesh.geometry.dispose(); (slopeMesh.material as THREE.Material).dispose(); }, [floorMesh, slopeMesh]);
 
   useEffect(() => {
     let alive = true;
@@ -62,14 +85,23 @@ function PhysicsProbeOverlay(_props: WorldOverlayProps) {
     };
   }, []);
 
-  useFrame((_frame, dt) => {
+  useFrameTask((_frame, dt) => {
     const world = backend.current;
     if (world === null) return;
     world.step(Math.min(dt, 1 / 30));
     for (const body of bodies.current) {
-      const mesh = meshes.current.get(body.handle);
+      let mesh = meshes.current.get(body.handle);
+      if (mesh === undefined) {
+        mesh = new THREE.Mesh(
+          new THREE.BoxGeometry(body.halfExtents[0] * 2, body.halfExtents[1] * 2, body.halfExtents[2] * 2),
+          new THREE.MeshStandardMaterial({ color: body.color, roughness: 0.5, metalness: 0.1 }),
+        );
+        mesh.castShadow = true;
+        meshes.current.set(body.handle, mesh);
+        container.add(mesh);
+      }
       const state = world.body(body.handle);
-      if (mesh === undefined || state === null) continue;
+      if (state === null) continue;
       mesh.position.set(state.position[0], state.position[1], state.position[2]);
       mesh.quaternion.set(state.rotation[0], state.rotation[1], state.rotation[2], state.rotation[3]);
     }
@@ -77,20 +109,9 @@ function PhysicsProbeOverlay(_props: WorldOverlayProps) {
 
   return (
     <>
-      <mesh position={[0, -0.4, 0]} receiveShadow>
-        <boxGeometry args={[36, 0.8, 16]} />
-        <meshStandardMaterial color="#334155" roughness={0.85} />
-      </mesh>
-      <mesh position={[-5, 2.7, 0]} rotation={[0, 0, 0.18]} receiveShadow>
-        <boxGeometry args={[16, 0.7, 6]} />
-        <meshStandardMaterial color="#64748b" roughness={0.8} />
-      </mesh>
-      {bodies.current.map((body) => (
-        <mesh key={body.handle} ref={(mesh) => { if (mesh) meshes.current.set(body.handle, mesh); }} castShadow>
-          <boxGeometry args={[body.halfExtents[0] * 2, body.halfExtents[1] * 2, body.halfExtents[2] * 2]} />
-          <meshStandardMaterial color={body.color} roughness={0.5} metalness={0.1} />
-        </mesh>
-      ))}
+      <SceneObjectAttach object={floorMesh} />
+      <SceneObjectAttach object={slopeMesh} />
+      <SceneObjectAttach object={container} />
     </>
   );
 }

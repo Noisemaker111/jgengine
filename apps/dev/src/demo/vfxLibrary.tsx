@@ -6,7 +6,9 @@ import { DEFAULT_GRAPHICS_QUALITY, type GraphicsQuality } from "@jgengine/core/s
 import { EFFECT_LIBRARY, effectNames } from "@jgengine/core/vfx/effectLibrary";
 import { planParticleBudget } from "@jgengine/core/vfx/particleBudget";
 import type { PlayableGame } from "@jgengine/shell/registry";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import * as THREE from "three";
+import { meshDraw, useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import { demoGame } from "./demoGame";
 
@@ -88,18 +90,23 @@ function Legend() {
 }
 
 /** Contact sheet for the shared VFX library; `?quality=low|medium|high` pins the applied tier. */
+function VfxGround() {
+  const draw = useMemo(() => {
+    const geometry = new THREE.PlaneGeometry(34, 30);
+    geometry.rotateX(-Math.PI / 2);
+    return meshDraw({ geometry, material: new THREE.MeshStandardMaterial({ color: "#1b1f24", roughness: 0.95 }), receiveShadow: true });
+  }, []);
+  useEngineDraw(() => draw, [draw]);
+  return null;
+}
+
 export const vfxLibraryGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "vfx-library" },
   scene: {
-    renderEntity: () => <group />,
-    renderObject: () => <group />,
-    environment: () => <>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-        <planeGeometry args={[34, 30]} />
-        <meshStandardMaterial color="#1b1f24" roughness={0.95} />
-      </mesh>
-    </>,
+    renderEntity: () => null,
+    renderObject: () => null,
+    environment: () => <VfxGround />,
   },
   loop: { ...demoGame.loop, onInit, onTick: () => {}, onReset },
   rendering: {

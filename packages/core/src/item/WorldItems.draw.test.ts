@@ -1,13 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { act, createRoot, extend } from "@react-three/fiber";
-import { createElement, Fragment, type ReactElement } from "react";
+import { act, createElement, type ReactElement } from "react";
 import * as THREE from "three";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { GameProvider } from "@jgengine/react/provider";
 import { useWorldItems } from "@jgengine/react/hooks";
-import { FrameBoardPump } from "@jgengine/core/frame/frameBoardPump.draw";
+import { mountTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
 
 import { WorldItems } from "./WorldItems.draw";
 import { POINTER_ENTITY_KEY } from "@jgengine/core/input/pointerService.draw";
@@ -29,30 +28,13 @@ function fixture(): GameContext {
 }
 
 async function mounted(ctx: GameContext, element: ReactElement, run: (stage: Stage) => Promise<void>) {
-  const environment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
-  const previous = environment.IS_REACT_ACT_ENVIRONMENT;
-  environment.IS_REACT_ACT_ENVIRONMENT = true;
-  extend(THREE);
-  const root = createRoot({} as HTMLCanvasElement);
-  await root.configure({
-    frameloop: "never",
-    size: { width: 400, height: 300, top: 0, left: 0 },
-    dpr: 1,
-    gl: () => ({ render() {}, setSize() {}, setPixelRatio() {} }) as unknown as THREE.WebGLRenderer,
-  });
+  const m = await mountTestDraws(createElement(GameProvider, { context: ctx }, element), { width: 400, height: 300 });
   try {
-    let scene!: THREE.Scene;
-    let store!: ReturnType<typeof root.render>;
-    await act(async () => {
-      store = root.render(createElement(GameProvider, { context: ctx }, element));
-      scene = store.getState().scene;
-    });
-    const advance = async (ms: number) => act(async () => { store.getState().advance(ms); });
+    const advance = async (ms: number) => m.advance(ms / 1000);
     const mutate = async (write: () => void) => act(async () => { write(); });
-    await run({ scene, advance, mutate });
+    await run({ scene: m.scene, advance, mutate });
   } finally {
-    await act(async () => root.unmount());
-    environment.IS_REACT_ACT_ENVIRONMENT = previous;
+    await m.unmount();
   }
 }
 
@@ -62,7 +44,7 @@ let renders = 0;
 function MarkerList() {
   const items = useWorldItems();
   renders += 1;
-  return createElement("group", { userData: { rows: items.length } });
+  return null;
 }
 
 function markerGroup(scene: THREE.Scene, instanceId: string): THREE.Group | null {
@@ -99,7 +81,7 @@ describe("world item marker list", () => {
     const ctx = fixture();
     const first = ctx.scene.worldItem.spawn({ itemId: "crate", position: [2, 0, -3] });
     const config = { rarityStyle: { common: { color: "#cfd6de" } } };
-    await mounted(ctx, createElement(Fragment, null, createElement(FrameBoardPump), createElement(WorldItems, { config })), async ({ scene, advance, mutate }) => {
+    await mounted(ctx, createElement(WorldItems, { config }), async ({ scene, advance, mutate }) => {
       const group = markerGroup(scene, first.instanceId);
       expect(group).not.toBeNull();
       await advance(16);

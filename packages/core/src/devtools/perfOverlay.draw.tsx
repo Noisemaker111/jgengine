@@ -1,9 +1,7 @@
-import { useStore, type RootStore } from "@react-three/fiber";
 import { useEffect, useRef, type ReactElement } from "react";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
-import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import type { NamedCost } from "./frameBreakdown";
@@ -47,22 +45,19 @@ export function overlayFps(sample: PerfOverlaySample): number {
 
 /**
  * Draw-side form of {@link PerfOverlayProbe}: samples frame times, draws, triangles, nodes, linked
- * programs and the costliest subsystems into `sample`. `getStore` supplies the r3f root store the
- * frame breakdown hooks while the shell still renders through fiber; it may return null once the
- * engine loop owns frames, in which case no breakdown is installed.
+ * programs and the costliest subsystems into `sample`, and installs the frame breakdown on this
+ * renderer while no breakdown is already live.
  * @internal
  */
-export function perfOverlayProbeDraw(sample: PerfOverlaySample, getStore: () => RootStore | null): EngineDraw {
+export function perfOverlayProbeDraw(sample: PerfOverlaySample): EngineDraw {
   let last: number | null = null;
   let counted = 0;
   let owned: ReturnType<typeof installFrameBreakdown> | null = null;
   return {
     mount(state: EngineFrameState) {
       if (typeof window === "undefined" || window.__jgFrameBreakdown !== undefined) return;
-      const store = getStore();
-      if (store === null) return;
       try {
-        owned = installFrameBreakdown(state.gl, store);
+        owned = installFrameBreakdown(state.gl);
       } catch {
         owned = null;
       }
@@ -100,18 +95,7 @@ export function perfOverlayProbeDraw(sample: PerfOverlaySample, getStore: () => 
  * and removes what it installed on close. Mount inside the Canvas. @internal
  */
 export function PerfOverlayProbe({ sample }: { sample: PerfOverlaySample }): ReactElement | null {
-  const host = useEngineHost();
-  return host.r3f ? <PerfOverlayProbeR3F sample={sample} /> : <PerfOverlayProbeEngine sample={sample} />;
-}
-
-function PerfOverlayProbeEngine({ sample }: { sample: PerfOverlaySample }): null {
-  useEngineDraw(() => perfOverlayProbeDraw(sample, () => null), [sample]);
-  return null;
-}
-
-function PerfOverlayProbeR3F({ sample }: { sample: PerfOverlaySample }): null {
-  const store = useStore();
-  useEngineDraw(() => perfOverlayProbeDraw(sample, () => store), [sample, store]);
+  useEngineDraw(() => perfOverlayProbeDraw(sample), [sample]);
   return null;
 }
 

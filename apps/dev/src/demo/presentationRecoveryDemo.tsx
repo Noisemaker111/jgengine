@@ -1,6 +1,8 @@
-import { useLayoutEffect, useRef, useSyncExternalStore } from "react";
-import { useThree } from "@react-three/fiber";
+import { useLayoutEffect, useMemo, useSyncExternalStore } from "react";
+import * as THREE from "three";
 import { Box3, type Camera, type Group } from "three";
+import { EngineSceneContext, SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { decodeEditorDocument, requireEditorMarker } from "@jgengine/core/editor/document";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { playControlsActive } from "@jgengine/core/game/controlGate";
@@ -43,18 +45,25 @@ const maps = {
 function RecoveryEnvironment() {
   const ctx = useGameContext();
   const textured = useTexturedGround(ctx);
-  const camera = useThree((state) => state.camera);
-  const ground = useRef<Group>(null);
+  const host = useEngineHost();
+  const camera = host.frame.camera;
+  const ground = useMemo(() => new THREE.Group(), []);
   useLayoutEffect(() => {
-    const group = ground.current;
-    if (group === null) return;
+    ground.name = "recovery-authored-terrain";
     const preview = previewFor(ctx);
-    const rendered = { camera, ground: group };
+    const rendered = { camera, ground };
     preview.rendered = rendered;
     return () => { if (preview.rendered === rendered) delete preview.rendered; };
-  }, [ctx, camera]);
+  }, [ctx, camera, ground]);
   const feature = environment({ sculpt: authoredTerrain, terrain: terrain({ bounds: { w: previewWidth, d: previewDepth }, height: 0, frequency: 0.035, seed: "relay-recovery", ...(textured ? { detail: { material: { maps, repeat: previewWidth / 9, missing: "fail" } } } : {}) }) });
-  return <group ref={ground} name="recovery-authored-terrain"><EnvironmentScene feature={feature} /></group>;
+  return (
+    <>
+      <SceneObjectAttach object={ground} />
+      <EngineSceneContext.Provider value={ground}>
+        <EnvironmentScene feature={feature} />
+      </EngineSceneContext.Provider>
+    </>
+  );
 }
 function RecoveryUI() {
   const ctx = useGameContext();

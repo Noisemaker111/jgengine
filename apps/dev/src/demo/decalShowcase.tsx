@@ -1,3 +1,7 @@
+import { useEffect, useMemo } from "react";
+import { BoxGeometry, Group, Mesh, MeshStandardMaterial, PlaneGeometry } from "three";
+import { disposeObjectTree, SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
+import { StageDraw } from "@jgengine/core/stage/stageDraw.draw";
 import { normalizeEditorLayers, type EditorLayersInput } from "@jgengine/core/editor/index";
 import { FLAT_FIELD } from "@jgengine/core/terrain/terrain";
 import { AuthoredScene } from "@jgengine/core/scene/AuthoredScene.draw";
@@ -14,20 +18,28 @@ const decalDocument = normalizeEditorLayers(sceneJson as unknown as EditorLayers
  * renderer with no game code. The wall and floor are the demo's environment, not decal geometry.
  */
 function DecalStage() {
+  const stage = useMemo(() => {
+    const root = new Group();
+    const floorGeo = new PlaneGeometry(26, 26);
+    floorGeo.rotateX(-Math.PI / 2);
+    const floor = new Mesh(floorGeo, new MeshStandardMaterial({ color: "#6b6f6a", roughness: 0.95 }));
+    floor.receiveShadow = true;
+    const wall = new Mesh(new BoxGeometry(16, 6, 0.2), new MeshStandardMaterial({ color: "#8b8578", roughness: 0.9 }));
+    wall.position.set(0, 3, -4);
+    wall.receiveShadow = true;
+    root.add(floor, wall);
+    return root;
+  }, []);
+  useEffect(() => () => disposeObjectTree(stage), [stage]);
   return (
-    <group>
-      <ambientLight intensity={0.55} />
-      <directionalLight position={[5, 9, 7]} intensity={2.2} />
-      <mesh rotation-x={-Math.PI / 2} receiveShadow>
-        <planeGeometry args={[26, 26]} />
-        <meshStandardMaterial color="#6b6f6a" roughness={0.95} />
-      </mesh>
-      <mesh position={[0, 3, -4]} receiveShadow>
-        <boxGeometry args={[16, 6, 0.2]} />
-        <meshStandardMaterial color="#8b8578" roughness={0.9} />
-      </mesh>
+    <>
+      <StageDraw spec={{ lights: [
+        { kind: "ambient", intensity: 0.55 },
+        { kind: "directional", position: [5, 9, 7], intensity: 2.2 },
+      ] }} />
+      <SceneObjectAttach object={stage} />
       <AuthoredScene document={decalDocument} field={FLAT_FIELD} pathSurfaceDetail={false} />
-    </group>
+    </>
   );
 }
 
@@ -35,8 +47,8 @@ export const decalShowcaseGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "decals" },
   scene: {
-    renderEntity: () => <group />,
-    renderObject: () => <group />,
+    renderEntity: () => null,
+    renderObject: () => null,
     editorLayers: decalDocument,
     environment: DecalStage,
   },

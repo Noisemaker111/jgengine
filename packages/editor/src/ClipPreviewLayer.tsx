@@ -1,9 +1,12 @@
-import { Suspense, useEffect, useMemo } from "react";
-import { useLoader } from "@react-three/fiber";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
 import { createGraphPose } from "@jgengine/core/anim/useModelAnimation.draw";
-import { useModelInstance } from "@jgengine/core/model/useModelInstance.draw";
+import { EngineDrawMount, SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";
+import {
+  modelInstanceDraw,
+  type ModelInstanceConfig,
+  type ModelInstanceReady,
+} from "@jgengine/core/model/modelInstanceDraw.draw";
 
 import { previewAnimationConfig, type ClipPreviewSession } from "./shell/clipPreview";
 import type { EditorHostApi } from "./session";
@@ -15,7 +18,7 @@ const PREVIEW_TARGET_HEIGHT = 2;
 
 /**
  * Viewport layer that renders the active clip-preview asset playing the selected clip, mounted by
- * `EditorApp` inside the editor's R3F scene + GameContext. Reuses the shell's model instance,
+ * `EditorApp` inside the editor's engine scene + GameContext. Reuses the shared model instance,
  * bind placement and animation lifecycle. Reads the live session from the editor UI store and publishes
  * the selected clip's measured duration back so the dock scrubber can normalize.
  *
@@ -24,11 +27,7 @@ const PREVIEW_TARGET_HEIGHT = 2;
 export function ClipPreviewLayer({ api, ui }: { api: EditorHostApi; ui: EditorUiStore }) {
   const session = useStoreSelector(ui, (state) => state.clipPreview);
   if (session === null) return null;
-  return (
-    <Suspense fallback={null}>
-      <ClipPreviewModel key={session.source.assetId} session={session} api={api} ui={ui} />
-    </Suspense>
-  );
+  return <ClipPreviewModel key={session.source.assetId} session={session} api={api} ui={ui} />;
 }
 
 function ClipPreviewModel({
@@ -41,41 +40,69 @@ function ClipPreviewModel({
   ui: EditorUiStore;
 }) {
   const { source, driver } = session;
-  const gltf = useLoader(sharedGltfLoader, source.url);
   const graphPose = session.graphPose;
   const posedByGraph = graphPose !== undefined;
   const config = useMemo(() => (posedByGraph ? undefined : previewAnimationConfig(driver)), [driver, posedByGraph]);
-  const { content, scene, scale, position } = useModelInstance({ url: source.url, targetHeight: PREVIEW_TARGET_HEIGHT, animation: config });
+  const model = useMemo<ModelInstanceConfig>(
+    () => ({ url: source.url, targetHeight: PREVIEW_TARGET_HEIGHT, animation: config }),
+    [source.url, config],
+  );
+  const readyRef = useRef<ModelInstanceReady | null>(null);
+  const [readyTick, setReadyTick] = useState(0);
+  const draw = useMemo(
+    () =>
+      modelInstanceDraw(model, {
+        onReady: (ready) => {
+          readyRef.current = ready;
+          setReadyTick((tick) => tick + 1);
+          return () => {
+            readyRef.current = null;
+          };
+        },
+      }),
+    [model],
+  );
 
   const graph = graphPose?.graph;
-  const pose = useMemo(() => (graph === undefined ? null : createGraphPose(content, graph, gltf.animations)), [content, graph, gltf]);
-  useEffect(() => () => pose?.dispose(), [pose]);
-  const graphClips = graphPose?.clips;
+  const poseClips = graphPose?.clips;
   const rootMotion = graphPose?.rootMotion;
   useEffect(() => {
-    if (pose !== null && graphClips !== undefined) pose.apply(graphClips, rootMotion === true);
-  }, [pose, graphClips, rootMotion]);
+    const ready = readyRef.current;
+    if (ready === null || graph === undefined) return;
+    const pose = createGraphPose(ready.content, graph, ready.gltf.animations);
+    if (poseClips !== undefined) pose.apply(poseClips, rootMotion === true);
+    return () => pose.dispose();
+  }, [readyTick, graph, poseClips, rootMotion]);
 
   useEffect(() => {
+    const ready = readyRef.current;
+    if (ready === null) return;
     const current = ui.getState().clipPreview;
     if (current === null || current.source.assetId !== source.assetId || current.clipDurations !== undefined) return;
-    ui.patch({ clipPreview: { ...current, clipDurations: Object.fromEntries(gltf.animations.map((clip) => [clip.name, clip.duration])) } });
-  }, [gltf, ui, source.assetId]);
+    ui.patch({
+      clipPreview: {
+        ...current,
+        clipDurations: Object.fromEntries(ready.gltf.animations.map((clip) => [clip.name, clip.duration])),
+      },
+    });
+  }, [readyTick, ui, source.assetId]);
 
   const clipName = driver.clipName;
   useEffect(() => {
-    const clip = clipName === null ? undefined : gltf.animations.find((entry) => entry.name === clipName);
+    const ready = readyRef.current;
+    if (ready === null) return;
+    const clip = clipName === null ? undefined : ready.gltf.animations.find((entry) => entry.name === clipName);
     const duration = clip?.duration ?? 0;
     const current = ui.getState().clipPreview;
     if (current !== null && current.source.assetId === source.assetId && current.duration !== duration) {
       ui.patch({ clipPreview: { ...current, duration } });
     }
-  }, [gltf, clipName, ui, source.assetId]);
+  }, [readyTick, clipName, ui, source.assetId]);
 
   const focus = api.getFocusTarget() ?? { x: 0, y: 0, z: 0 };
   return (
-    <group position={[focus.x, focus.y, focus.z]}>
-      <primitive object={scene} scale={scale} position={position} />
-    </group>
+    <SceneObjectGroup position={[focus.x, focus.y, focus.z]}>
+      <EngineDrawMount create={() => draw} deps={[draw]} />
+    </SceneObjectGroup>
   );
 }

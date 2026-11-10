@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "check-types": "tsgo --noEmit -p tsconfig.json",
-    "test": "bun test --preload ../../scripts/three-preload.ts src project",
+    "test": "bun test --preload ../../scripts/test-preload.ts src project",
     "tauri": "tauri"
   },
   "dependencies": {

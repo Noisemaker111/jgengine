@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, type DependencyList, type ReactNode } from "react";
 import * as THREE from "three";
-import type {} from "@react-three/fiber";
 
 import { childFrameState, type EngineDraw, type EngineFrameState } from "./engineLoop.draw";
 import { useEngineHost } from "./engineHost.draw";
@@ -36,10 +35,10 @@ export function unmountChildDraw(mounted: MountedChildDraw): void {
 }
 
 /**
- * The nearest scene parent for draws mounted through React under the engine
- * loop (no r3f reconciler). `null` means the host scene root. Components that
- * own a {@link THREE.Group} for custom children provide it so nested
- * {@link EngineDrawMount}s inherit the transform, like JSX nesting did.
+ * The nearest scene parent for draws mounted through React: `null` means the
+ * host scene root. Components that own a {@link THREE.Group} for custom
+ * children provide it so nested {@link EngineDrawMount}s inherit the transform,
+ * like JSX nesting did.
  * @internal
  */
 export const EngineSceneContext = createContext<THREE.Object3D | null>(null);
@@ -50,20 +49,16 @@ export function EngineSceneProvider({ parent, children }: { parent: THREE.Object
 }
 
 /**
- * Parents `children`'s scene objects under `object` on either host: under r3f a
- * `<primitive>` (so raw intrinsics and draw mounts alike inherit the transform through the
- * reconciler); under the engine loop an {@link EngineSceneContext} provider (so descendant
- * draw mounts attach to `object` themselves). This is how a draw that owns a {@link THREE.Group}
- * gives React-rendered custom content that group's transform.
+ * Parents `children`'s draw mounts under `object` through {@link EngineSceneContext} —
+ * how a draw that owns a {@link THREE.Group} gives React-rendered custom content
+ * that group's transform.
  * @internal
  */
 export function SceneObjectPortal({ object, children }: { object: THREE.Object3D; children?: ReactNode }) {
-  const host = useEngineHost();
-  if (host.r3f) return <primitive object={object}>{children}</primitive>;
   return <EngineSceneContext.Provider value={object}>{children}</EngineSceneContext.Provider>;
 }
 
-/** Attach `object` to the host scene under the engine loop; a no-op under r3f, where the portal's primitive parents it. @internal */
+/** Attach `object` to the scene under the engine loop; kept for callers that bracket mounts with it. @internal */
 export function sceneObjectAttachDraw(object: THREE.Object3D, attach: boolean): EngineDraw {
   return {
     mount(state: EngineFrameState) {
@@ -76,55 +71,72 @@ export function sceneObjectAttachDraw(object: THREE.Object3D, attach: boolean): 
 }
 
 /**
- * Mount a caller-owned {@link THREE.Object3D} on either host: under r3f a
- * `<primitive>` so the reconciler parents it; under the engine loop an attach
- * draw adding it to the nearest {@link EngineSceneContext} (or scene root).
- * The object keeps whatever transform the caller writes onto it.
+ * Mount a caller-owned {@link THREE.Object3D} under the nearest
+ * {@link EngineSceneContext} (or the scene root). The object keeps whatever
+ * transform the caller writes onto it.
  * @internal
  */
 export function SceneObjectAttach({ object }: { object: THREE.Object3D }) {
-  const host = useEngineHost();
   const sceneParent = useContext(EngineSceneContext);
   useEngineDraw(
     () => ({
       mount(state: EngineFrameState) {
-        if (!host.r3f) (sceneParent ?? state.scene).add(object);
+        (sceneParent ?? state.scene).add(object);
       },
       dispose(state: EngineFrameState) {
-        if (!host.r3f) (sceneParent ?? state.scene).remove(object);
+        (sceneParent ?? state.scene).remove(object);
       },
     }),
-    [object, host.r3f, sceneParent],
+    [object, sceneParent],
   );
-  if (host.r3f) return <primitive object={object} />;
+  return null;
+}
+
+/**
+ * Attach caller-owned {@link THREE.Object3D}s under the nearest
+ * {@link EngineSceneContext} (or the scene root) — one attach draw for a whole
+ * list. For merged-geometry sets a draw already built, like a district's
+ * massing/furniture/race mesh lists.
+ * @internal
+ */
+export function SceneObjectList({ objects }: { objects: readonly THREE.Object3D[] }) {
+  const sceneParent = useContext(EngineSceneContext);
+  useEngineDraw(
+    () => ({
+      mount(state: EngineFrameState) {
+        for (const object of objects) (sceneParent ?? state.scene).add(object);
+      },
+      dispose(state: EngineFrameState) {
+        for (const object of objects) (sceneParent ?? state.scene).remove(object);
+      },
+    }),
+    [objects, sceneParent],
+  );
   return null;
 }
 
 /**
  * Attach a caller-owned {@link THREE.Object3D} under the nearest
- * {@link EngineSceneContext} parent (or the scene root) on the engine loop —
- * the context-aware form of {@link sceneObjectAttachDraw} for objects a
+ * {@link EngineSceneContext} parent (or the scene root) — for objects a
  * component moves per-frame and cannot hand to {@link EngineDrawMount}.
- * Under r3f this is a no-op: the matching {@link SceneObjectPortal} primitive
- * parents the object through the reconciler instead. @internal
+ * @internal
  */
 export function useSceneObjectAttach(object: THREE.Object3D): void {
-  const host = useEngineHost();
   const sceneParent = useContext(EngineSceneContext);
   useEngineDraw(() => ({
     mount(state: EngineFrameState) {
-      if (!host.r3f) (sceneParent ?? state.scene).add(object);
+      (sceneParent ?? state.scene).add(object);
     },
     dispose(state: EngineFrameState) {
-      if (!host.r3f) (sceneParent ?? state.scene).remove(object);
+      (sceneParent ?? state.scene).remove(object);
     },
-  }), [object, host.r3f, sceneParent]);
+  }), [object, sceneParent]);
 }
 
 /**
- * A positioned {@link THREE.Group} parenting `children`'s scene objects on either host — the
- * draw-side form of `<group position={...}>`: under r3f a primitive at the JSX position, under
- * the engine loop a scene attachment plus an {@link EngineSceneContext} for descendants.
+ * A positioned {@link THREE.Group} parenting `children`'s draw mounts — the
+ * draw-side form of `<group position={...}>`: a scene attachment plus an
+ * {@link EngineSceneContext} for descendants.
  * @internal
  */
 export function SceneObjectGroup({
@@ -147,7 +159,6 @@ export function SceneObjectGroup({
   userData?: Record<string, unknown> | undefined;
   children?: ReactNode;
 }) {
-  const host = useEngineHost();
   const group = useMemo(() => {
     const next = new THREE.Group();
     if (userData !== undefined) next.userData = { ...next.userData, ...userData };
@@ -160,78 +171,77 @@ export function SceneObjectGroup({
     if (scale !== undefined) group.scale.set(scale[0], scale[1], scale[2]);
     if (visible !== undefined) group.visible = visible;
   }, [group, position, rotation, rotationY, scale, visible]);
-  useEngineDraw(() => sceneObjectAttachDraw(group, !host.r3f), [group, host.r3f]);
+  useEngineDraw(() => sceneObjectAttachDraw(group, true), [group]);
   return <SceneObjectPortal object={group}>{children}</SceneObjectPortal>;
 }
 
 /**
  * Mount an {@link EngineDraw} as a child of an identity {@link THREE.Group}.
- * Under r3f the group is a `<primitive>` and inherits the JSX parent's
- * transform; under the engine loop it attaches to the nearest
- * {@link EngineSceneContext} parent (or the scene root) itself. `create` runs
- * once per `deps` change; `dispose` runs on unmount or before a recreate.
+ * The group attaches to the nearest {@link EngineSceneContext} parent (or the
+ * scene root), so descendant mounts inherit transforms like JSX nesting did.
+ * `create` runs once per `deps` change; `dispose` runs on unmount or before a
+ * recreate.
  * @internal
  */
 export function EngineDrawMount({ create, deps }: { create: () => EngineDraw; deps: DependencyList }) {
   const host = useEngineHost();
   const sceneParent = useContext(EngineSceneContext);
-  // A primitive object, not a `<group>` intrinsic: bare test roots have no THREE
-  // catalogue extension, and the draw only needs a stable parent transform.
+  // A plain group, not a JSX intrinsic: the draw only needs a stable parent transform.
   const parent = useMemo(() => new THREE.Group(), []);
   const mounted = useRef<MountedChildDraw | null>(null);
   useEffect(() => {
-    if (!host.r3f) {
-      const attachTo = sceneParent ?? host.frame.scene;
-      attachTo.add(parent);
-    }
+    const attachTo = sceneParent ?? host.frame.scene;
+    attachTo.add(parent);
     const next = mountChildDraw(create(), parent, host.frame);
     mounted.current = next;
     return () => {
       unmountChildDraw(next);
       mounted.current = null;
-      if (!host.r3f) {
-        const attachTo = sceneParent ?? host.frame.scene;
-        attachTo.remove(parent);
-      }
+      attachTo.remove(parent);
     };
-    // `create` and `host`/`sceneParent` are intentionally excluded beyond `deps`:
-    // callers pass fresh closures through `deps`, the host is stable per tree,
-    // and a scene-parent change remounts through the deps the caller owns.
+    // `create` and `sceneParent` are intentionally excluded beyond `deps`:
+    // callers pass fresh closures through `deps`, and a scene-parent change
+    // remounts through the deps the caller owns.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [parent, ...deps]);
   useEffect(() => {
     mounted.current?.draw.update?.(mounted.current.state);
   });
-  if (host.r3f) return <primitive object={parent} />;
   return null;
 }
 
+/** Mount `draw` on the host's frame state itself — the scene-root form of {@link mountChildDraw}. @internal */
+function mountRootDraw(draw: EngineDraw, frame: EngineFrameState): MountedChildDraw {
+  draw.mount?.(frame);
+  const leave = draw.frame === undefined
+    ? () => {}
+    : joinFrameTask(draw.priority ?? 0, (frameState, delta) => draw.frame?.(frameState, delta));
+  return { draw, state: frame, leave };
+}
+
 /**
- * Mount an {@link EngineDraw} at the scene root: `create` runs once per `deps`
- * change, `mount` gets the host's frame facade, `frame` joins the shared board
- * at the draw's priority, and `dispose` runs on unmount or before a recreate.
- * For draws whose objects position themselves in world space; draws that must
- * inherit a parent transform use {@link EngineDrawMount} instead.
+ * Mount an {@link EngineDraw} at the nearest {@link EngineSceneContext} parent — the scene root
+ * when no provider is above. `create` runs once per `deps` change, `mount` gets a frame state
+ * scoped to that parent (so `state.scene` is the parent, like JSX nesting), `frame` joins the
+ * shared board at the draw's priority, and `dispose` runs on unmount or before a recreate. For
+ * draws whose objects position themselves in world space under their provider's transform.
  * @internal
  */
 export function useEngineDraw(create: () => EngineDraw, deps: DependencyList): void {
   const frame = useEngineHost().frame;
+  const sceneParent = useContext(EngineSceneContext);
   const mounted = useRef<MountedChildDraw | null>(null);
   useEffect(() => {
     const draw = create();
-    const state = frame;
-    draw.mount?.(state);
-    const leave = draw.frame === undefined
-      ? () => {}
-      : joinFrameTask(draw.priority ?? 0, (frameState, delta) => draw.frame?.(frameState, delta));
-    const next = { draw, state, leave };
+    const next = sceneParent === null ? mountRootDraw(draw, frame) : mountChildDraw(draw, sceneParent, frame);
     mounted.current = next;
     return () => {
       unmountChildDraw(next);
       mounted.current = null;
     };
-    // `create` and `frame` are intentionally excluded: callers pass fresh
-    // closures through `deps`, and the host frame reference is stable.
+    // `create`, `frame` and `sceneParent` are intentionally excluded: callers pass fresh
+    // closures through `deps`, the host frame reference is stable, and a scene-parent change
+    // remounts through the deps the caller owns.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
   useEffect(() => {
@@ -250,6 +260,26 @@ export interface DrawTransform {
   rotation?: readonly [number, number, number] | undefined;
   scale?: readonly [number, number, number] | undefined;
   visible?: boolean | undefined;
+}
+
+/**
+ * Object3D transform and common mesh flags shared by draw component prop types â€” the engine-side
+ * form of the r3f `<group>`/`<mesh>` intrinsic props these components used to extend. Vector/Euler
+ * instances are accepted wherever the r3f prop did.
+ * @internal
+ */
+export interface DrawAttachProps {
+  position?: readonly [number, number, number] | THREE.Vector3 | undefined;
+  /** Euler XYZ rotation in radians (the r3f `rotation={[x,y,z]}` form). */
+  rotation?: readonly [number, number, number] | THREE.Euler | undefined;
+  /** XYZW quaternion â€” array form only, matching the apply helpers. */
+  quaternion?: readonly [number, number, number, number] | undefined;
+  scale?: readonly [number, number, number] | THREE.Vector3 | undefined;
+  visible?: boolean | undefined;
+  castShadow?: boolean | undefined;
+  receiveShadow?: boolean | undefined;
+  frustumCulled?: boolean | undefined;
+  renderOrder?: number | undefined;
 }
 
 /**
@@ -285,4 +315,16 @@ export function meshDraw(options: {
       for (const material of materials) material.dispose();
     },
   };
+}
+
+/** Dispose every geometry and material under `root` â€” for demo/preview object trees built outside draws. */
+export function disposeObjectTree(root: THREE.Object3D): void {
+  root.traverse((node) => {
+    if (node instanceof THREE.Mesh || node instanceof THREE.Line || node instanceof THREE.Points) {
+      node.geometry.dispose();
+      const material = node.material;
+      if (Array.isArray(material)) material.forEach((entry) => entry.dispose());
+      else material.dispose();
+    }
+  });
 }

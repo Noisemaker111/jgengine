@@ -1,15 +1,15 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { act, createRoot, type ReconcilerRoot } from "@react-three/fiber";
-import { createElement, Fragment } from "react";
+import { act, createElement } from "react";
 import * as THREE from "three";
-import { FrameBoardPump } from "@jgengine/core/frame/frameBoardPump.draw";
+
+import { mountTestDraws, type MountedTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import { EXRLoader } from "three/examples/jsm/loaders/EXRLoader.js";
 import { armTextureErrors, textureErrorsSnapshot } from "@jgengine/core/devtools/textureErrors";
 import type { EnvironmentSource } from "@jgengine/core/lighting/environmentLighting";
 import { DEFAULT_PROBE_SUN, EnvironmentLighting, buildSkyProbeScene } from "./EnvironmentLighting.draw";
 
-const roots: ReconcilerRoot<HTMLCanvasElement>[] = [];
+const mountedDraws: MountedTestDraws[] = [];
 const originals = {
   hdr: RGBELoader.prototype.loadAsync,
   exr: EXRLoader.prototype.loadAsync,
@@ -36,7 +36,7 @@ beforeEach(() => {
 });
 
 afterEach(async () => {
-  for (const root of roots.splice(0)) await act(async () => root.unmount());
+  for (const mounted of mountedDraws.splice(0)) await mounted.unmount();
   RGBELoader.prototype.loadAsync = originals.hdr;
   EXRLoader.prototype.loadAsync = originals.exr;
   THREE.CubeTextureLoader.prototype.loadAsync = originals.cube;
@@ -55,19 +55,18 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
+const Empty = () => null;
+
 async function harness(source: EnvironmentSource) {
-  const root = createRoot({} as HTMLCanvasElement);
-  roots.push(root);
   const scene = new THREE.Scene();
   const originalTexture = new THREE.Texture();
   const originalRotation = new THREE.Euler(0.1, 0.2, 0.3);
   scene.environment = originalTexture;
   scene.environmentRotation = originalRotation;
   scene.environmentIntensity = 0.6;
-  await root.configure({ scene, frameloop: "never", size: { width: 100, height: 100, top: 0, left: 0 }, dpr: 1,
-    gl: () => ({ render() {}, setSize() {}, setPixelRatio() {} }) as unknown as THREE.WebGLRenderer });
-  await act(async () => root.render(createElement(Fragment, null, createElement(FrameBoardPump), createElement(EnvironmentLighting, { source }))));
-  return { root, scene, originalTexture, originalRotation, remove: () => act(async () => root.render(null)) };
+  const mounted = await mountTestDraws(createElement(EnvironmentLighting, { source }), { width: 100, height: 100, scene });
+  mountedDraws.push(mounted);
+  return { scene, originalTexture, originalRotation, remove: () => mounted.render(createElement(Empty)) };
 }
 
 describe("environment lighting ownership", () => {

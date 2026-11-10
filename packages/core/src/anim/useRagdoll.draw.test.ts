@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { act, createRoot, type RootStore } from "@react-three/fiber";
-import { createElement, Fragment } from "react";
+import { createElement } from "react";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import * as THREE from "three";
@@ -10,7 +9,7 @@ import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.j
 import { KAYKIT_SCHEME, mapRigToStandard } from "@jgengine/core/anim/skeletonStandard";
 import { PhysicsWorld } from "@jgengine/core/physics/physicsWorld";
 import { useRagdoll } from "./useRagdoll.draw";
-import { FrameBoardPump } from "@jgengine/core/frame/frameBoardPump.draw";
+import { mountTestDraws, type MountedTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
 
 const BOUNDS = { min: [-20, 0, -20] as const, max: [20, 20, 20] as const };
 
@@ -38,34 +37,26 @@ function rigMap(scene: THREE.Object3D) {
 }
 
 async function ragdollHarness(scene: THREE.Object3D, world: PhysicsWorld, map: ReturnType<typeof rigMap>) {
-  const actEnvironment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
-  const previous = actEnvironment.IS_REACT_ACT_ENVIRONMENT;
-  actEnvironment.IS_REACT_ACT_ENVIRONMENT = true;
-  const root = createRoot({} as HTMLCanvasElement);
-  await root.configure({
-    frameloop: "never", size: { width: 100, height: 100, top: 0, left: 0 }, dpr: 1,
-    gl: () => ({ render() {}, setSize() {}, setPixelRatio() {} }) as unknown as THREE.WebGLRenderer,
-  });
-  let store: RootStore;
+  let mounted: MountedTestDraws | undefined;
   function Model({ active }: { active: boolean }) {
     useRagdoll(scene, { map, world, active });
-    return createElement("primitive", { object: scene });
+    return null;
   }
   const render = async (active: boolean) => {
-    await act(async () => { store = root.render(createElement(Fragment, null, createElement(FrameBoardPump), createElement(Model, { active }))); });
-  };
-  const frames = (count: number) => {
-    for (let frame = 0; frame < count; frame++) {
-      const state = store.getState();
-      state.advance(state.clock.elapsedTime + 1 / 60, false);
+    if (mounted === undefined) {
+      mounted = await mountTestDraws(createElement(Model, { active }), { width: 100, height: 100 });
+    } else {
+      await mounted.render(createElement(Model, { active }));
     }
+  };
+  const frames = async (count: number) => {
+    for (let frame = 0; frame < count; frame++) await mounted!.advance(1 / 60);
   };
   return {
     render,
     frames,
     unmount: async () => {
-      await act(async () => root.unmount());
-      actEnvironment.IS_REACT_ACT_ENVIRONMENT = previous;
+      await mounted?.unmount();
     },
   };
 }
@@ -85,7 +76,7 @@ describe("useRagdoll", () => {
     try {
       await h.render(true);
       expect(world.jointCount).toBeGreaterThan(10);
-      h.frames(240);
+      await h.frames(240);
       const headAfter = worldOf("head", scene);
       expect(headAfter.y).toBeLessThan(headBefore.y - 0.4);
       // The skeleton stays one piece: every mapped bone is still within a body-length of the hips.
@@ -108,7 +99,7 @@ describe("useRagdoll", () => {
     const h = await ragdollHarness(scene, world, rigMap(scene));
     try {
       await h.render(true);
-      h.frames(60);
+      await h.frames(60);
       expect(world.jointCount).toBeGreaterThan(0);
       const fallen = worldOf("head", scene);
       await h.render(false);
@@ -128,7 +119,7 @@ describe("useRagdoll", () => {
     const h = await ragdollHarness(scene, world, empty);
     try {
       await h.render(true);
-      h.frames(30);
+      await h.frames(30);
       expect(world.jointCount).toBe(0);
     } finally {
       await h.unmount();

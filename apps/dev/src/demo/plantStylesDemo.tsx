@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import * as THREE from "three";
+import { SceneObjectAttach, SceneObjectGroup, disposeObjectTree } from "@jgengine/core/frame/useEngineDraw.draw";
+import { AttachedMeshes } from "./drawHelpers";
 
 import { prepareGenerator, runGenerator } from "@jgengine/core/generator/generator";
 import { trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
@@ -48,12 +51,14 @@ function GrownPlant({ meta, detail, position }: { meta: Record<string, unknown>;
   }, [meta, detail]);
   const sources = useMemo(() => (mesh === null ? [] : plantMeshSources(mesh)), [mesh]);
   useEffect(() => () => sources.forEach((source) => source.geometry.dispose()), [sources]);
+  const meshes = useMemo(
+    () => sources.map((source) => new THREE.Mesh(source.geometry, source.material)),
+    [sources],
+  );
   return (
-    <group position={position}>
-      {sources.map((source, index) => (
-        <mesh key={index} geometry={source.geometry} material={source.material} castShadow receiveShadow />
-      ))}
-    </group>
+    <SceneObjectGroup position={position}>
+      <AttachedMeshes meshes={meshes} castShadow receiveShadow />
+    </SceneObjectGroup>
   );
 }
 
@@ -83,16 +88,21 @@ function PlantStyles() {
       ),
     [],
   );
+  const ground = useMemo(() => {
+    const geo = new THREE.PlaneGeometry(900, 400);
+    geo.rotateX(-Math.PI / 2);
+    const groundMesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: "#6b7a4a", roughness: 1 }));
+    groundMesh.receiveShadow = true;
+    return groundMesh;
+  }, []);
+  useEffect(() => () => disposeObjectTree(ground), [ground]);
   return (
-    <group>
-      <mesh rotation-x={-Math.PI / 2} receiveShadow>
-        <planeGeometry args={[900, 400]} />
-        <meshStandardMaterial color="#6b7a4a" roughness={1} />
-      </mesh>
+    <>
+      <SceneObjectAttach object={ground} />
       {placements.map((entry) => (
         <GrownPlant key={entry.key} meta={entry.meta} detail={entry.detail} position={entry.position} />
       ))}
-    </group>
+    </>
   );
 }
 
@@ -101,8 +111,8 @@ export const plantStylesGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "plant-styles" },
   scene: {
-    renderEntity: () => <group />,
-    renderObject: () => <group />,
+    renderEntity: () => null,
+    renderObject: () => null,
     environment: () => <PlantStyles />,
   },
   loop: { ...demoGame.loop, onTick: () => {} },

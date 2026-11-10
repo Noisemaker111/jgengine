@@ -1,11 +1,16 @@
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import { Suspense, useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import * as THREE from "three";
+import { meshDraw, SceneObjectAttach, SceneObjectGroup, useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
+import type { EditorMarker } from "@jgengine/core/editor/types";
+import type { MaterialAsset } from "@jgengine/core/material/materialAsset";
+import { StageDraw } from "@jgengine/core/stage/stageDraw.draw";
 import type { HairCardAuthoring } from "@jgengine/core/material/hairCards";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { importEditorDocumentJson } from "@jgengine/core/editor/document";
 import { modelWithAuthoredMaterials } from "@jgengine/core/editor/materialAuthoring";
 import { EnvironmentLighting } from "@jgengine/core/lighting/EnvironmentLighting.draw";
-import { MaterialAssetSurface } from "@jgengine/core/material/materialAsset.draw";
+import { materialAssetSwatchDraw } from "@jgengine/core/material/materialAsset.draw";
 import { HairCards } from "@jgengine/core/material/hairCards.draw";
 import { IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";
 import { useLiveEditorDocument } from "@jgengine/core/scene/AuthoredScene.draw";
@@ -21,33 +26,107 @@ const baseline = parameters.get("materialView") === "baseline";
 const light = parameters.get("materialLight") ?? "front";
 const angle = Number(parameters.get("materialAngle") ?? 0) * Math.PI / 180;
 
+function AssetSwatch({ asset, flat }: { asset: MaterialAsset; flat: boolean }) {
+  const draw = useMemo(() => materialAssetSwatchDraw(asset, { flat }), [asset, flat]);
+  useEngineDraw(() => draw, [draw]);
+  return null;
+}
+
+function BaselineSwatch({ flat, color, roughness, metalness }: { flat: boolean; color: string; roughness: number; metalness: number }) {
+  const draw = useMemo(() => {
+    const geometry = flat
+      ? new THREE.PlaneGeometry(1.25, 1.5, 12, 12)
+      : new THREE.SphereGeometry(0.65, 48, 32);
+    const material = new THREE.MeshStandardMaterial({ color, roughness, metalness, side: THREE.DoubleSide });
+    return meshDraw({ geometry, material, castShadow: true, receiveShadow: true });
+  }, [flat, color, roughness, metalness]);
+  useEngineDraw(() => draw, [draw]);
+  return null;
+}
+
+function MarkerSample({ marker, asset, baseline, angle, authored }: {
+  marker: EditorMarker;
+  asset: MaterialAsset | undefined;
+  baseline: boolean;
+  angle: number;
+  authored: ReturnType<typeof useLiveEditorDocument>;
+}) {
+  const meta = marker.meta ?? {};
+  const glassBox = useMemo(() => {
+    if (marker.id !== "glass") return null;
+    const box = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.9, 0.2), new THREE.MeshStandardMaterial({ color: "#ed7754", roughness: 0.7 }));
+    box.position.set(0, 0, -0.85);
+    return box;
+  }, [marker.id]);
+  useEffect(() => () => {
+    if (glassBox === null) return;
+    glassBox.geometry.dispose();
+    const material = glassBox.material;
+    if (Array.isArray(material)) material.forEach((entry) => entry.dispose());
+    else material.dispose();
+  }, [glassBox]);
+  if (meta["shape"] === "model") {
+    const imported: ModelConfig = { url: String(meta["url"]), targetHeight: 1.65, animation: "none" };
+    const model = baseline ? imported : modelWithAuthoredMaterials(imported, authored, marker.id)!;
+    return (
+      <SceneObjectGroup position={[marker.position.x, marker.position.y, marker.position.z]} rotationY={angle}>
+        <IsolatedEntityModel model={model} />
+      </SceneObjectGroup>
+    );
+  }
+  if (asset === undefined) return null;
+  const flat = meta["shape"] === "cloth" || meta["shape"] === "hair";
+  const rotationY = marker.id === "metal" ? 0 : angle;
+  const rotationZ = marker.id === "metal" ? angle : 0;
+  return (
+    <SceneObjectGroup position={[marker.position.x, marker.position.y, marker.position.z]} rotation={[0, rotationY, rotationZ]}>
+      {meta["shape"] === "hair" && !baseline ? (
+        <HairCards cards={meta["cards"] as unknown as HairCardAuthoring} material={asset} />
+      ) : baseline ? (
+        <BaselineSwatch flat={flat} color={asset.surface.color ?? "#b7b6b2"} roughness={asset.surface.roughness ?? 0.5} metalness={asset.surface.metalness ?? 0} />
+      ) : (
+        <AssetSwatch asset={asset} flat={flat} />
+      )}
+      {glassBox === null ? null : <SceneObjectAttach object={glassBox} />}
+    </SceneObjectGroup>
+  );
+}
+
 function Samples() {
   const authored = useLiveEditorDocument(document);
   const materials = useMemo(() => new Map(authored.materialAssets?.map((asset) => [asset.id, asset])), [authored]);
   const direction: [number, number, number] = light === "back" ? [0, 3, -6] : light === "grazing" ? [7, 3, 0.5] : [2, 5, 7];
+  const ground = useMemo(() => {
+    const geo = new THREE.PlaneGeometry(16, 8);
+    geo.rotateX(-Math.PI / 2);
+    const groundMesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: "#45484a", roughness: 0.9 }));
+    groundMesh.position.y = -0.05;
+    groundMesh.receiveShadow = true;
+    return groundMesh;
+  }, []);
+  useEffect(() => () => { ground.geometry.dispose(); (ground.material as THREE.Material).dispose(); }, [ground]);
   return <>
     <EnvironmentLighting intensity={0.8} skyColor="#e8ecf1" groundColor="#636568" sunDirection={direction} />
-    <directionalLight position={direction} intensity={4} castShadow shadow-bias={-0.0004} shadow-normalBias={0.02} shadow-mapSize={[1024, 1024]} />
-    <mesh rotation-x={-Math.PI / 2} position-y={-0.05} receiveShadow><planeGeometry args={[16, 8]} /><meshStandardMaterial color="#45484a" roughness={0.9} /></mesh>
-    <Suspense fallback={null}>
-      {authored.markers.map((marker) => {
-        const meta = marker.meta ?? {};
-        const asset = materials.get(String(meta["materialId"]));
-        if (meta["shape"] === "model") {
-          const imported: ModelConfig = { url: String(meta["url"]), targetHeight: 1.65, animation: "none" };
-          const model = baseline ? imported : modelWithAuthoredMaterials(imported, authored, marker.id)!;
-          return <group key={marker.id} position={[marker.position.x, marker.position.y, marker.position.z]} rotation-y={angle}><IsolatedEntityModel model={model} /></group>;
-        }
-        if (!asset) return null;
-        return <group key={marker.id} position={[marker.position.x, marker.position.y, marker.position.z]} rotation-y={marker.id === "metal" ? 0 : angle} rotation-z={marker.id === "metal" ? angle : 0}>
-          {meta["shape"] === "hair" && !baseline ? <HairCards cards={meta["cards"] as unknown as HairCardAuthoring} material={asset} /> : <mesh castShadow receiveShadow>
-            {meta["shape"] === "cloth" || meta["shape"] === "hair" ? <planeGeometry args={[1.25, 1.5, 12, 12]} /> : <sphereGeometry args={[0.65, 48, 32]} />}
-            {baseline ? <meshStandardMaterial color={asset.surface.color ?? "#b7b6b2"} roughness={asset.surface.roughness ?? 0.5} metalness={asset.surface.metalness ?? 0} side={2} /> : <MaterialAssetSurface asset={asset} />}
-          </mesh>}
-          {marker.id === "glass" ? <mesh position={[0, 0, -0.85]}><boxGeometry args={[0.55, 0.9, 0.2]} /><meshStandardMaterial color="#ed7754" roughness={0.7} /></mesh> : null}
-        </group>;
-      })}
-    </Suspense>
+    <StageDraw spec={{ lights: [{
+      kind: "directional",
+      position: direction,
+      intensity: 4,
+      castShadow: true,
+      shadowMapSize: [1024, 1024],
+      shadowBias: -0.0004,
+      shadowNormalBias: 0.02,
+    }] }} />
+    <SceneObjectAttach object={ground} />
+    {authored.markers.map((marker) => (
+      <MarkerSample
+        key={marker.id}
+        marker={marker}
+        asset={materials.get(String(marker.meta?.["materialId"]))}
+        baseline={baseline}
+        angle={angle}
+        authored={authored}
+      />
+    ))}
   </>;
 }
 
@@ -63,8 +142,8 @@ export const materialShowcaseGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, assets: catalog },
   scene: {
-    renderObject: () => <group />,
-    renderEntity: () => <group />,
+    renderObject: () => null,
+    renderEntity: () => null,
     editorLayers: document,
     environment: Samples,
   },

@@ -1,4 +1,6 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { Mesh, MeshStandardMaterial, PlaneGeometry } from "three";
+import { disposeObjectTree, SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import { GRASS_PRESETS, readGrassLook } from "@jgengine/core/grass/grassKind";
 import type { PlayableGame } from "@jgengine/shell/registry";
@@ -28,17 +30,22 @@ const patchCenter = (index: number): [number, number] => {
 function GrassLooks() {
   const looks = useMemo(() => LOOKS.map((entry) => ({ ...entry, look: readGrassLook(entry.meta) })), []);
   const area = useMemo(() => [PATCH, PATCH] as const, []);
+  const ground = useMemo(() => {
+    const geo = new PlaneGeometry(COLUMNS * (PATCH + GAP) + 20, ROWS * (PATCH + GAP) + 20);
+    geo.rotateX(-Math.PI / 2);
+    const groundMesh = new Mesh(geo, new MeshStandardMaterial({ color: "#4a3f30", roughness: 1 }));
+    groundMesh.receiveShadow = true;
+    return groundMesh;
+  }, []);
+  useEffect(() => () => disposeObjectTree(ground), [ground]);
   return (
-    <group>
-      <mesh rotation-x={-Math.PI / 2} receiveShadow>
-        <planeGeometry args={[COLUMNS * (PATCH + GAP) + 20, ROWS * (PATCH + GAP) + 20]} />
-        <meshStandardMaterial color="#4a3f30" roughness={1} />
-      </mesh>
+    <>
+      <SceneObjectAttach object={ground} />
       {looks.map((entry, index) => {
         const [x, z] = patchCenter(index);
         return <GrassPatch key={entry.label} position={[x, 0, z]} look={entry.look} area={area} groundColor="#4a3f30" />;
       })}
-    </group>
+    </>
   );
 }
 
@@ -46,8 +53,8 @@ export const grassLooksGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "grass-looks" },
   scene: {
-    renderEntity: () => <group />,
-    renderObject: () => <group />,
+    renderEntity: () => null,
+    renderObject: () => null,
     environment: () => <GrassLooks />,
   },
   loop: { ...demoGame.loop, onTick: () => {} },

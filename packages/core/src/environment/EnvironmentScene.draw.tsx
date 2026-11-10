@@ -36,7 +36,6 @@ import { InstancedBuildings, type InstancedBuildingPlacement } from "@jgengine/c
 import { GrassPatch } from "@jgengine/core/grass/GrassPatch.draw";
 import { terrainGroundDraw, type TerrainGroundDrawProps } from "./terrainGround.draw";
 import { EngineDrawMount, SceneObjectGroup, SceneObjectPortal, sceneObjectAttachDraw, useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
-import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { Ocean } from "@jgengine/core/water/Ocean.draw";
 import { oceanBedBounds } from "@jgengine/core/water/oceanBed";
 import { RainField } from "@jgengine/core/weather/RainField.draw";
@@ -203,7 +202,6 @@ function useOceanBed(ocean: OceanEnvironmentDescriptor, terrain: WorldBounds | u
 
 function DynamicWater({ ocean, terrain }: { ocean: OceanEnvironmentDescriptor & { levelAt: (time: number) => number }; terrain: WorldBounds | undefined }) {
   const ctx = useGameContext();
-  const host = useEngineHost();
   const [x, z] = ocean.position ?? [0, 0];
   const config = useOceanConfig(ocean);
   const { bedAt, bounds } = useOceanBed(ocean, terrain);
@@ -212,7 +210,7 @@ function DynamicWater({ ocean, terrain }: { ocean: OceanEnvironmentDescriptor & 
     next.position.set(0, ocean.level, 0);
     return next;
   }, [ocean.level]);
-  useEngineDraw(() => sceneObjectAttachDraw(group, !host.r3f), [group, host.r3f]);
+  useEngineDraw(() => sceneObjectAttachDraw(group, true), [group]);
   useFrameTask(() => {
     group.position.y = ocean.levelAt(ctx.time.now());
   });

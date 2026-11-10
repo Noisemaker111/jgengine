@@ -1,5 +1,7 @@
-import { useFrame } from "@react-three/fiber";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { disposeObjectTree, SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
+import { StageDraw } from "@jgengine/core/stage/stageDraw.draw";
 import * as THREE from "three";
 
 import type { PlayableGame } from "@jgengine/shell/registry";
@@ -18,7 +20,7 @@ const pinnedTime = params.get("t");
  */
 function Foliage({ time }: { time: number }) {
   // Runs after the world's own `WindClock` (default priority 0), so the pinned clock wins per frame.
-  useFrame(() => {
+  useFrameTask(() => {
     windClock.value = time;
   }, 1);
   const materials = useMemo(() => {
@@ -36,21 +38,33 @@ function Foliage({ time }: { time: number }) {
   }, []);
   const trunks = useMemo(() => new THREE.CylinderGeometry(0.09, 0.14, 3.4, 8), []);
   const fronds = useMemo(() => new THREE.ConeGeometry(1.15, 1.6, 7, 1), []);
+  const rig = useMemo(() => {
+    const root = new THREE.Group();
+    const groundGeo = new THREE.PlaneGeometry(24, 24);
+    groundGeo.rotateX(-Math.PI / 2);
+    const ground = new THREE.Mesh(groundGeo, new THREE.MeshStandardMaterial({ color: "#39423a", roughness: 1 }));
+    ground.receiveShadow = true;
+    root.add(ground);
+    materials.forEach((entry, index) => {
+      const holder = new THREE.Group();
+      holder.position.set((index - 1) * 2.6, 0, 0);
+      const trunk = new THREE.Mesh(trunks, entry.material);
+      trunk.position.set(0, 1.7, 0);
+      trunk.castShadow = true;
+      const crown = new THREE.Mesh(fronds, entry.material);
+      crown.position.set(0, 3.6, 0);
+      crown.castShadow = true;
+      holder.add(trunk, crown);
+      root.add(holder);
+    });
+    return root;
+  }, [materials, trunks, fronds]);
+  useEffect(() => () => disposeObjectTree(rig), [rig]);
   return (
-    <group position={[0, 0, 0]}>
-      <ambientLight intensity={0.7} />
-      <directionalLight position={[4, 8, 6]} intensity={2.2} />
-      <mesh rotation-x={-Math.PI / 2} receiveShadow>
-        <planeGeometry args={[24, 24]} />
-        <meshStandardMaterial color="#39423a" roughness={1} />
-      </mesh>
-      {materials.map((entry, index) => (
-        <group key={entry.label} position={[(index - 1) * 2.6, 0, 0]}>
-          <mesh geometry={trunks} material={entry.material} position={[0, 1.7, 0]} castShadow />
-          <mesh geometry={fronds} material={entry.material} position={[0, 3.6, 0]} castShadow />
-        </group>
-      ))}
-    </group>
+    <>
+      <StageDraw spec={{ lights: [{ kind: "ambient", intensity: 0.7 }, { kind: "directional", position: [4, 8, 6], intensity: 2.2 }] }} />
+      <SceneObjectAttach object={rig} />
+    </>
   );
 }
 
@@ -60,8 +74,8 @@ export const foliageWindGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "foliage-wind" },
   scene: {
-    renderEntity: () => <group />,
-    renderObject: () => <group />,
+    renderEntity: () => null,
+    renderObject: () => null,
     environment: () => <Foliage time={time} />,
   },
   loop: { ...demoGame.loop, onTick: () => {} },

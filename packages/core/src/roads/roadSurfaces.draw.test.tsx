@@ -1,9 +1,8 @@
 import { afterEach, expect, test } from "bun:test";
-import { act, createRoot, extend } from "@react-three/fiber";
-import { createElement, Fragment } from "react";
+import { act, createElement } from "react";
 import * as THREE from "three";
 
-import { FrameBoardPump } from "@jgengine/core/frame/frameBoardPump.draw";
+import { mountTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
 import { environment, road } from "@jgengine/core/world/features";
 
 import { setSurfaceScanLoader } from "@jgengine/core/material/surfaceScanTextures.draw";
@@ -14,25 +13,12 @@ import { mixColor } from "./RoadRibbons.draw";
 afterEach(() => setSurfaceScanLoader(null));
 
 async function mountScene(feature: ReturnType<typeof environment>): Promise<{ scene: THREE.Scene; unmount: () => Promise<void> }> {
-  const env = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
-  env.IS_REACT_ACT_ENVIRONMENT = true;
-  extend(THREE);
-  const root = createRoot({} as HTMLCanvasElement);
-  await root.configure({
-    frameloop: "never",
-    size: { width: 800, height: 450, top: 0, left: 0 },
-    dpr: 1,
-    gl: () => ({ render() {}, setSize() {}, setPixelRatio() {} }) as unknown as THREE.WebGLRenderer,
-  });
-  let scene!: THREE.Scene;
-  await act(async () => {
-    scene = root.render(createElement(Fragment, null, createElement(FrameBoardPump), createElement(EnvironmentScene, { feature }))).getState().scene;
-  });
+  const mounted = await mountTestDraws(createElement(EnvironmentScene, { feature }), { width: 800, height: 450 });
   // Let the scan loads resolve and the materials rebuild around them.
   await act(async () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
   });
-  return { scene, unmount: async () => act(async () => root.unmount()) };
+  return { scene: mounted.scene, unmount: () => mounted.unmount() };
 }
 
 function materials(scene: THREE.Scene): THREE.MeshStandardMaterial[] {

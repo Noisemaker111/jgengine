@@ -20,6 +20,8 @@ export interface EngineCanvasProps {
   shadows?: boolean | undefined;
   /** r3f `dpr`: number or [min, max] clamped against devicePixelRatio. */
   dpr?: number | readonly [number, number] | undefined;
+  /** r3f `gl={{ preserveDrawingBuffer }}`: keep the drawing buffer for capture/snapshot reads. */
+  preserveDrawingBuffer?: boolean | undefined;
   frameloop?: EngineFrameloop | undefined;
   style?: CSSProperties | undefined;
   /** r3f `onCreated`: runs once after renderer/scene/camera exist, before the first frame. */
@@ -41,6 +43,7 @@ export function EngineCanvas({
   camera,
   shadows = false,
   dpr,
+  preserveDrawingBuffer = false,
   frameloop = "always",
   style,
   onCreated,
@@ -62,6 +65,7 @@ export function EngineCanvas({
       powerPreference: "high-performance",
       antialias: true,
       alpha: true,
+      preserveDrawingBuffer,
     });
     // r3f's `flat={false}` + sRGB defaults: without these the same scene draws
     // noticeably different (no tone curve) the moment the Canvas is swapped.
@@ -112,7 +116,6 @@ export function EngineCanvas({
     if (loop === null) return null;
     return {
       frame: loop.state,
-      r3f: false,
       advance: (elapsed?: number) => loop.advance(elapsed),
       setFrameloop: (mode: EngineFrameloop) => loop.setFrameloop(mode),
       setFpsLimit: (fps: number) => loop.setFpsLimit(fps),

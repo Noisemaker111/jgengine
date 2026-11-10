@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { act, createRoot, extend } from "@react-three/fiber";
-import { createElement, type ReactElement } from "react";
-import * as THREE from "three";
+import { act, createElement, type ReactElement } from "react";
+
+import { mountTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { QuestDef } from "@jgengine/core/mission/quest";
@@ -28,25 +28,11 @@ function fixture(): GameContext {
 }
 
 async function mounted(ctx: GameContext, element: ReactElement, run: () => Promise<void>) {
-  const environment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
-  const previous = environment.IS_REACT_ACT_ENVIRONMENT;
-  environment.IS_REACT_ACT_ENVIRONMENT = true;
-  extend(THREE);
-  const root = createRoot({} as HTMLCanvasElement);
-  await root.configure({
-    frameloop: "never",
-    size: { width: 400, height: 300, top: 0, left: 0 },
-    dpr: 1,
-    gl: () => ({ render() {}, setSize() {}, setPixelRatio() {} }) as unknown as THREE.WebGLRenderer,
-  });
+  const m = await mountTestDraws(createElement(GameProvider, { context: ctx }, element), { width: 400, height: 300 });
   try {
-    await act(async () => {
-      root.render(createElement(GameProvider, { context: ctx }, element));
-    });
     await run();
   } finally {
-    await act(async () => root.unmount());
-    environment.IS_REACT_ACT_ENVIRONMENT = previous;
+    await m.unmount();
   }
 }
 
@@ -61,21 +47,21 @@ let renders = 0;
 function ToastRows() {
   const entries = useFeed({ action: "entity.died", limit: 5 });
   renders += 1;
-  return createElement("group", { userData: { rows: entries.length } });
+  return null;
 }
 
 /** Stands where `JournalQuestTracker` (`registry/jgengine/journal-quest-tracker.tsx`) reads the journal. */
 function JournalRows() {
   const journal = useQuestJournal();
   renders += 1;
-  return createElement("group", { userData: { rows: journal.length, progress: journal[0]?.objectives[0]?.progress ?? 0 } });
+  return null;
 }
 
 /** Stands where `FriendsList` (`packages/core/src/social/social.view.tsx`) reads friends. */
 function FriendRows() {
   const friends = useFriends();
   renders += 1;
-  return createElement("group", { userData: { rows: friends.length } });
+  return null;
 }
 
 describe("HUD list hooks", () => {

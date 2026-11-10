@@ -8,7 +8,7 @@
     "build": "vite build",
     "desktop": "jgengine desktop",
     "check-types": "tsgo --noEmit -p tsconfig.json",
-    "test": "bun test --preload ../../scripts/three-preload.ts src",
+    "test": "bun test --preload ../../scripts/test-preload.ts src",
     "drive": "jgengine drive",
     "shoot": "jgengine shoot"
   },

@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
+import { BoxGeometry, CircleGeometry, Group, Mesh, MeshStandardMaterial, PlaneGeometry } from "three";
+import { disposeObjectTree, SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { CameraWeaponView } from "@jgengine/core/game/playableGame";
@@ -147,41 +149,50 @@ function onTick(ctx: GameContext, dt: number): void {
 }
 
 function Range(): ReactNode {
-  const targets = [-6, -2, 2, 6];
-  return (
-    <>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 10]} receiveShadow>
-        <planeGeometry args={[80, 80]} />
-        <meshStandardMaterial color="#56606b" roughness={0.95} />
-      </mesh>
-      <mesh position={[0, 3, 22]} receiveShadow>
-        <boxGeometry args={[30, 6, 0.6]} />
-        <meshStandardMaterial color="#9a8a73" roughness={0.9} />
-      </mesh>
-      {targets.map((x) => (
-        <group key={x} position={[x, 0, 16]} rotation={[0, Math.PI, 0]}>
-          <mesh position={[0, 0.6, 0]} castShadow>
-            <boxGeometry args={[0.12, 1.2, 0.12]} />
-            <meshStandardMaterial color="#3f3f46" />
-          </mesh>
-          <mesh position={[0, 1.7, 0]} castShadow>
-            <boxGeometry args={[1.1, 1.1, 0.08]} />
-            <meshStandardMaterial color="#f5f5f4" />
-          </mesh>
-          <mesh position={[0, 1.7, 0.05]}>
-            <circleGeometry args={[0.28, 24]} />
-            <meshStandardMaterial color="#dc2626" />
-          </mesh>
-        </group>
-      ))}
-      {[-9, -3, 3, 9].map((z) => (
-        <mesh key={z} position={[5, 0.5, z + 4]} castShadow>
-          <boxGeometry args={[1, 1, 1]} />
-          <meshStandardMaterial color="#b45309" roughness={0.8} />
-        </mesh>
-      ))}
-    </>
-  );
+  const rig = useMemo(() => {
+    const root = new Group();
+    const groundGeo = new PlaneGeometry(80, 80);
+    groundGeo.rotateX(-Math.PI / 2);
+    const ground = new Mesh(groundGeo, new MeshStandardMaterial({ color: "#56606b", roughness: 0.95 }));
+    ground.position.set(0, 0, 10);
+    ground.receiveShadow = true;
+    const wall = new Mesh(new BoxGeometry(30, 6, 0.6), new MeshStandardMaterial({ color: "#9a8a73", roughness: 0.9 }));
+    wall.position.set(0, 3, 22);
+    wall.receiveShadow = true;
+    root.add(ground, wall);
+    const postGeo = new BoxGeometry(0.12, 1.2, 0.12);
+    const postMat = new MeshStandardMaterial({ color: "#3f3f46" });
+    const boardGeo = new BoxGeometry(1.1, 1.1, 0.08);
+    const boardMat = new MeshStandardMaterial({ color: "#f5f5f4" });
+    const bullGeo = new CircleGeometry(0.28, 24);
+    const bullMat = new MeshStandardMaterial({ color: "#dc2626" });
+    for (const x of [-6, -2, 2, 6]) {
+      const target = new Group();
+      target.position.set(x, 0, 16);
+      target.rotation.y = Math.PI;
+      const post = new Mesh(postGeo, postMat);
+      post.position.set(0, 0.6, 0);
+      post.castShadow = true;
+      const board = new Mesh(boardGeo, boardMat);
+      board.position.set(0, 1.7, 0);
+      board.castShadow = true;
+      const bull = new Mesh(bullGeo, bullMat);
+      bull.position.set(0, 1.7, 0.05);
+      target.add(post, board, bull);
+      root.add(target);
+    }
+    const crateGeo = new BoxGeometry(1, 1, 1);
+    const crateMat = new MeshStandardMaterial({ color: "#b45309", roughness: 0.8 });
+    for (const z of [-9, -3, 3, 9]) {
+      const crate = new Mesh(crateGeo, crateMat);
+      crate.position.set(5, 0.5, z + 4);
+      crate.castShadow = true;
+      root.add(crate);
+    }
+    return root;
+  }, []);
+  useEffect(() => () => disposeObjectTree(rig), [rig]);
+  return <SceneObjectAttach object={rig} />;
 }
 
 function WeaponHud(): ReactNode {

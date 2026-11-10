@@ -1,4 +1,3 @@
-import type { ThreeElements } from "@react-three/fiber";
 import type { MeshStandardMaterialParameters } from "three";
 
 export const PALETTE = {
@@ -7,7 +6,7 @@ export const PALETTE = {
 };
 
 /** Public renderer props keep every surface compatible with the same material element. */
-type StandardMaterialProps = ThreeElements["meshStandardMaterial"];
+type StandardMaterialProps = MeshStandardMaterialParameters;
 export type IndustrialMaterialProps = Required<Pick<StandardMaterialProps, "color" | "roughness" | "metalness">>
   & Pick<StandardMaterialProps, "emissive" | "emissiveIntensity" | "transparent" | "opacity" | "depthWrite">;
 

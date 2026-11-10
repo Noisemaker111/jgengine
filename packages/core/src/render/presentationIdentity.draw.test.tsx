@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { act, createRoot, extend } from "@react-three/fiber";
-import { createElement, Fragment } from "react";
+import { createElement } from "react";
 import * as THREE from "three";
-import { FrameBoardPump } from "@jgengine/core/frame/frameBoardPump.draw";
+
+import { mountTestDraws, type MountedTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
 import { EffectComposer } from "three-stdlib";
 
 import { createSettingsStore } from "@jgengine/core/settings/settingsModel";
@@ -70,7 +70,6 @@ beforeAll(() => {
     environment.Image = HeadlessImage;
     installedImage = true;
   }
-  extend(THREE);
 });
 
 afterAll(() => {
@@ -89,26 +88,7 @@ async function mount(textureSource: readonly [THREE.Texture, THREE.Texture]): Pr
   };
 
   let pixelRatioReads = 0;
-  const renderer = {
-    getPixelRatio: () => {
-      pixelRatioReads += 1;
-      return 1;
-    },
-    getSize: (target: THREE.Vector2) => target.set(800, 450),
-    render() {},
-    setSize() {},
-    setPixelRatio() {},
-    getContext: () => ({}),
-  } as unknown as THREE.WebGLRenderer;
-
-  const root = createRoot({} as HTMLCanvasElement);
-  await root.configure({
-    frameloop: "never",
-    camera: new THREE.PerspectiveCamera(55, 800 / 450, 0.1, 1000),
-    size: { width: 800, height: 450, top: 0, left: 0 },
-    dpr: 1,
-    gl: () => renderer,
-  });
+  let mounted: MountedTestDraws | undefined;
 
   const store: SettingsStore = createSettingsStore(null);
   const captures: Captured[] = [];
@@ -131,32 +111,36 @@ async function mount(textureSource: readonly [THREE.Texture, THREE.Texture]): Pr
       textures: maps,
       material,
     });
-    return createElement(
-      "group",
-      null,
-      createElement("mesh", { material }),
-      look.postProcessing === undefined
-        ? null
-        : createElement(PostProcessing, {
-            config: look.postProcessing,
-            quality: graphics.quality,
-            stages: graphics.profile.postStages,
-          }),
-    );
+    return look.postProcessing === undefined
+      ? null
+      : createElement(PostProcessing, {
+          config: look.postProcessing,
+          quality: graphics.quality,
+          stages: graphics.profile.postStages,
+        });
   }
 
   return {
     render: async (input) => {
-      await act(async () => {
-        root.render(createElement(Fragment, null, createElement(FrameBoardPump), createElement(Scene, { input })));
-      });
+      const element = createElement(Scene, { input });
+      if (mounted === undefined) {
+        mounted = await mountTestDraws(element, { width: 800, height: 450 });
+        const gl = mounted.engine.state.gl as THREE.WebGLRenderer;
+        const getPixelRatio = gl.getPixelRatio.bind(gl);
+        gl.getPixelRatio = () => {
+          pixelRatioReads += 1;
+          return getPixelRatio();
+        };
+      } else {
+        await mounted.render(element);
+      }
     },
     capture: (index) => captures[index]!,
     count: () => captures.length,
     pixelRatioReads: () => pixelRatioReads,
     composerDisposals: () => composerDisposals,
     retire: async () => {
-      await act(async () => root.unmount());
+      await mounted?.unmount();
       EffectComposer.prototype.dispose = dispose;
     },
   };

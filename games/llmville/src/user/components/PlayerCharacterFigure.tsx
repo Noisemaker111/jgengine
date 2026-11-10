@@ -1,7 +1,5 @@
-import { useAnimations, useGLTF } from "@react-three/drei";
-import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
+import { useRef, type MutableRefObject } from "react";
 import { SkeletonUtils } from "three-stdlib";
-import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 import { loadDraw } from "@jgengine/core/frame/loadDraw.draw";
 import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
@@ -27,7 +25,6 @@ import {
   DEFAULT_CHARACTER_LOOK,
   VINYL_MATERIAL,
 } from "@/user/playerCharacterFigure";
-import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 interface PlayerCharacterFigureProps {
   look?: CharacterLook;
@@ -49,7 +46,6 @@ const WALK_RATE = 5.5;
 const IDLE_TIME = 0;
 const RIG_SCALE_FIX = 1;
 
-useGLTF.preload(MODEL_URL);
 
 const REGION = {
   neutral: 0,
@@ -236,110 +232,9 @@ const lookAtEuler = new Euler();
 const lookAtQuat = new Quaternion();
 
 export function PlayerCharacterFigure(props: PlayerCharacterFigureProps) {
-  const host = useEngineHost();
   const latest = useRef<PlayerCharacterFigureProps>(props);
   latest.current = props;
-  if (host.r3f) {
-    return <PlayerCharacterFigureR3F {...props} />;
-  }
   return <EngineDrawMount create={() => playerCharacterDraw(() => latest.current)} deps={[]} />;
-}
-
-function PlayerCharacterFigureR3F({
-  look = DEFAULT_CHARACTER_LOOK,
-  scale = 1,
-  isWalking = false,
-  walkPhase,
-  headYaw = 0,
-  headPitch = 0,
-  headLookRef,
-}: PlayerCharacterFigureProps) {
-  const gltf = useGLTF(MODEL_URL);
-  const groupRef = useRef<Group>(null);
-
-  const cloned = useMemo(() => SkeletonUtils.clone(gltf.scene) as Object3D, [gltf.scene]);
-  const { actions } = useAnimations(gltf.animations, groupRef);
-  const clip = gltf.animations[0];
-  const walkAction = clip ? actions[clip.name] : undefined;
-
-  const skinnedMesh = useMemo(() => findSkinnedMesh(cloned), [cloned]);
-  const headBone = useMemo<Bone | null>(
-    () => (cloned.getObjectByName("Head") as Bone | undefined) ?? null,
-    [cloned],
-  );
-  const headBindQuat = useMemo(() => headBone?.quaternion.clone() ?? null, [headBone]);
-
-  useEffect(() => {
-    if (!walkAction) return;
-    walkAction.play();
-    walkAction.paused = false;
-  }, [walkAction]);
-
-  useEffect(() => {
-    if (!skinnedMesh) return;
-
-    const applyTint = () => {
-      const sourceMaterial = skinnedMesh.material;
-      const standardMaterial = Array.isArray(sourceMaterial)
-        ? sourceMaterial.find((entry): entry is MeshStandardMaterial => entry instanceof MeshStandardMaterial)
-        : sourceMaterial instanceof MeshStandardMaterial
-          ? sourceMaterial
-          : null;
-
-      const textureSampler =
-        standardMaterial?.map !== null && standardMaterial?.map !== undefined
-          ? createTextureSampler(standardMaterial.map)
-          : null;
-      const regions = computeVertexRegions(skinnedMesh, textureSampler ?? undefined);
-
-      skinnedMesh.geometry = buildTintedGeometry(skinnedMesh, regions, look);
-      if (textureSampler !== null && standardMaterial) {
-        const tintedMaterial = standardMaterial.clone();
-        tintedMaterial.vertexColors = true;
-        skinnedMesh.material = tintedMaterial;
-      } else {
-        skinnedMesh.material = SOLID_TINT_MATERIAL;
-      }
-      skinnedMesh.castShadow = true;
-      skinnedMesh.receiveShadow = true;
-    };
-
-    const map = (Array.isArray(skinnedMesh.material) ? skinnedMesh.material[0] : skinnedMesh.material) as MeshStandardMaterial;
-    const textureSource = map?.map?.image;
-    if (textureSource instanceof HTMLImageElement && !textureSource.complete) {
-      textureSource.addEventListener("load", applyTint, { once: true });
-      return () => textureSource.removeEventListener("load", applyTint);
-    }
-
-    applyTint();
-    return undefined;
-  }, [skinnedMesh, look]);
-
-  useFrameTask(function playerCharacter(state) {
-    if (walkAction && clip) {
-      const phase = walkPhase !== undefined ? walkPhase : state.clock.elapsedTime * WALK_RATE;
-      if (isWalking) {
-        const cycle = ((phase % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-        walkAction.time = (cycle / (Math.PI * 2)) * clip.duration;
-      } else {
-        walkAction.time = IDLE_TIME;
-      }
-      walkAction.getMixer().update(0);
-    }
-
-    if (headBone && headBindQuat) {
-      const pitch = headLookRef?.current?.pitch ?? headPitch;
-      lookAtEuler.set(pitch, headYaw, 0, "XYZ");
-      lookAtQuat.setFromEuler(lookAtEuler);
-      headBone.quaternion.copy(headBindQuat).multiply(lookAtQuat);
-    }
-  });
-
-  return (
-    <group ref={groupRef} scale={scale * RIG_SCALE_FIX}>
-      <primitive object={cloned} />
-    </group>
-  );
 }
 
 function playerCharacterDraw(getProps: () => PlayerCharacterFigureProps): EngineDraw {

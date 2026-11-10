@@ -1,6 +1,8 @@
-import { useFrame } from "@react-three/fiber";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
+import { SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
+import { StageDraw } from "@jgengine/core/stage/stageDraw.draw";
 
 import type { PlayableGame } from "@jgengine/shell/registry";
 import { FireLandscapeView } from "@jgengine/core/fire/FireLandscape.draw";
@@ -117,11 +119,13 @@ function Ground({ fuelColor }: { fuelColor: Float32Array }) {
     g.computeVertexNormals();
     return g;
   }, [fuelColor]);
-  return (
-    <mesh geometry={geometry} receiveShadow>
-      <meshStandardMaterial vertexColors roughness={1} />
-    </mesh>
-  );
+  const meshObj = useMemo(() => {
+    const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 }));
+    mesh.receiveShadow = true;
+    return mesh;
+  }, [geometry]);
+  useEffect(() => () => { geometry.dispose(); (meshObj.material as THREE.Material).dispose(); }, [geometry, meshObj]);
+  return <SceneObjectAttach object={meshObj} />;
 }
 
 function Trees({ scene }: { scene: Scene }) {
@@ -140,7 +144,7 @@ function Trees({ scene }: { scene: Scene }) {
     });
     return { mesh: instanced, colors: new THREE.Color() };
   }, [scene]);
-  useFrame(() => {
+  useFrameTask(() => {
     const { fire } = scene;
     let changed = false;
     scene.trees.forEach((t, i) => {
@@ -156,7 +160,8 @@ function Trees({ scene }: { scene: Scene }) {
     });
     if (changed && mesh.instanceColor !== null) mesh.instanceColor.needsUpdate = true;
   });
-  return <primitive object={mesh} />;
+  useEffect(() => () => { mesh.geometry.dispose(); (mesh.material as THREE.Material).dispose(); }, [mesh]);
+  return <SceneObjectAttach object={mesh} />;
 }
 
 function FireScene() {
@@ -167,18 +172,20 @@ function FireScene() {
     while (scene.fire.time < target) scene.fire.step(Math.min(30, target - scene.fire.time), WIND);
     return true;
   });
-  useFrame((_, delta) => {
+  useFrameTask((_, delta) => {
     if (pinnedDone) return;
     scene.fire.step(Math.min(0.1, delta) * speed, WIND);
   });
   return (
-    <group>
-      <hemisphereLight args={["#dfe8ff", "#4a3f2c", 0.6]} />
-      <directionalLight position={[-200, 300, 120]} intensity={2.2} color="#fff0d8" />
+    <>
+      <StageDraw spec={{ lights: [
+        { kind: "hemisphere", skyColor: "#dfe8ff", groundColor: "#4a3f2c", intensity: 0.6 },
+        { kind: "directional", position: [-200, 300, 120], intensity: 2.2, color: "#fff0d8" },
+      ] }} />
       <Ground fuelColor={scene.fuelColor} />
       <Trees scene={scene} />
       <FireLandscapeView fire={scene.fire} heightAt={heightAt} wind={[WIND_SPEED * 0.6, 0]} />
-    </group>
+    </>
   );
 }
 
@@ -186,8 +193,8 @@ export const fireDemoGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "fire" },
   scene: {
-    renderEntity: () => <group />,
-    renderObject: () => <group />,
+    renderEntity: () => null,
+    renderObject: () => null,
     environment: () => <FireScene />,
   },
   loop: { ...demoGame.loop, onTick: () => {} },

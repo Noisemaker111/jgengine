@@ -1,4 +1,3 @@
-import { type ThreeElements } from "@react-three/fiber";
 import { useRef } from "react";
 import * as THREE from "three";
 
@@ -9,12 +8,12 @@ import type { TerrainField } from "@jgengine/core/terrain/terrain";
 
 import { trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
-import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
+import { useEngineDraw, type DrawAttachProps } from "@jgengine/core/frame/useEngineDraw.draw";
 import { CHUNKED_GROUND_MIN_VERTICES, GroundChunks } from "./terrainChunks.draw";
 import { fieldGroundGeometryJob, resolveFieldGroundGrid, type FieldGroundOptions } from "./terrainMath.draw";
 
 /** Props for `CarvedTerrain`: the terrain field to mesh, its size, resolution, colouring and material settings. */
-export interface CarvedTerrainProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> {
+export interface CarvedTerrainProps extends DrawAttachProps {
   /** The terrain field to mesh — a `CarvableField` renders its craters and mounds. */
   field: TerrainField;
   size?: FieldGroundOptions["size"];
@@ -74,7 +73,7 @@ function applyMeshProps(object: THREE.Object3D, props: CarvedTerrainProps, flags
   if (rotation !== undefined) applyVec3(object.rotation, rotation);
   const scale = props.scale;
   if (scale !== undefined) applyVec3(object.scale, scale);
-  if (props.visible !== undefined) object.visible = props.visible as boolean;
+  if (props.visible !== undefined) object.visible = props.visible;
   // Traversing a chunked ground's tiles every frame is wasteful; only re-apply on change.
   if (props.castShadow !== flags.castShadow || props.frustumCulled !== flags.frustumCulled) {
     flags.castShadow = props.castShadow;

@@ -1,19 +1,9 @@
 // @skill jgengine-ui
-import { Html } from "@react-three/drei";
 import { useRef, type ReactNode } from "react";
 import * as THREE from "three";
 import type { Camera, Object3D } from "three";
 
-import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
-
-function pinOverlayToViewport(
-  _el: THREE.Object3D,
-  _camera: THREE.Camera,
-  size: { width: number; height: number },
-): [number, number] {
-  return [size.width / 2, size.height / 2];
-}
 
 /**
  * Fullscreen DOM overlay over the 3D canvas. drei's `<Html fullscreen>` while r3f still owns the
@@ -22,14 +12,6 @@ function pinOverlayToViewport(
  * canvas top-left either way.
  */
 export function HudOverlay({ zIndex, children }: { zIndex: number; children: ReactNode }) {
-  const host = useEngineHost();
-  if (host.r3f) {
-    return (
-      <Html fullscreen calculatePosition={pinOverlayToViewport} zIndexRange={[zIndex, 0]} style={{ pointerEvents: "none" }}>
-        {children}
-      </Html>
-    );
-  }
   return (
     <div style={{ position: "absolute", inset: 0, zIndex, pointerEvents: "none" }}>{children}</div>
   );
@@ -58,13 +40,11 @@ export function AnchoredOverlay({
   zIndex?: number | undefined;
   children: ReactNode;
 }) {
-  const host = useEngineHost();
   const node = useRef<HTMLDivElement | null>(null);
   const scratch = useRef(new THREE.Vector3());
   const local = useRef(new THREE.Vector3());
   const ndc = useRef(new THREE.Vector3());
   useFrameTask((state) => {
-    if (host.r3f) return;
     const el = node.current;
     if (el === null) return;
     const camera = state.camera as Camera;
@@ -94,21 +74,6 @@ export function AnchoredOverlay({
     }
     el.style.transform = transform;
   });
-  const htmlPosition = localPosition ?? position;
-  if (host.r3f) {
-    if (htmlPosition === undefined) return null;
-    return (
-      <Html
-        position={[htmlPosition[0], htmlPosition[1], htmlPosition[2]]}
-        center
-        {...(distanceFactor === undefined ? {} : { distanceFactor })}
-        zIndexRange={[zIndex, 0]}
-        style={{ pointerEvents: "none" }}
-      >
-        {children}
-      </Html>
-    );
-  }
   return (
     <div
       ref={node}

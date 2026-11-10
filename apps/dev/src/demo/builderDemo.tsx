@@ -1,4 +1,8 @@
-import { useThree } from "@react-three/fiber";
+import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
+import { StageDraw } from "@jgengine/core/stage/stageDraw.draw";
+import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
+import * as THREE from "three";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
@@ -51,19 +55,39 @@ function seedScene(): void {
 }
 seedScene();
 
+function hutDraw(structure: PlacedStructure, selected: boolean): EngineDraw {
+  const bodyGeometry = new THREE.BoxGeometry(FOOTPRINT.w, HUT_HEIGHT, FOOTPRINT.d);
+  const bodyMaterial = new THREE.MeshStandardMaterial({ color: selected ? "#d4a574" : "#b08968", roughness: 0.85 });
+  const roofGeometry = new THREE.ConeGeometry(FOOTPRINT.w * 0.82, 1.3, 4);
+  const roofMaterial = new THREE.MeshStandardMaterial({ color: "#6d4c3d", roughness: 0.9 });
+  const group = new THREE.Group();
+  group.position.set(structure.position[0], structure.position[1], structure.position[2]);
+  group.rotation.y = structure.rotationY;
+  group.userData.structureId = structure.id;
+  const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+  body.position.y = HUT_HEIGHT / 2;
+  body.castShadow = true;
+  const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+  roof.position.y = HUT_HEIGHT + 0.55;
+  roof.rotation.y = Math.PI / 4;
+  group.add(body, roof);
+  return {
+    mount(state: EngineFrameState) {
+      state.scene.add(group);
+    },
+    dispose(state: EngineFrameState) {
+      state.scene.remove(group);
+      bodyGeometry.dispose();
+      bodyMaterial.dispose();
+      roofGeometry.dispose();
+      roofMaterial.dispose();
+    },
+  };
+}
+
 function Hut({ structure, selected }: { structure: PlacedStructure; selected: boolean }) {
-  return (
-    <group position={[structure.position[0], structure.position[1], structure.position[2]]} rotation-y={structure.rotationY}>
-      <mesh position-y={HUT_HEIGHT / 2} castShadow userData={{ structureId: structure.id }}>
-        <boxGeometry args={[FOOTPRINT.w, HUT_HEIGHT, FOOTPRINT.d]} />
-        <meshStandardMaterial color={selected ? "#d4a574" : "#b08968"} roughness={0.85} />
-      </mesh>
-      <mesh position-y={HUT_HEIGHT + 0.55} rotation-y={Math.PI / 4}>
-        <coneGeometry args={[FOOTPRINT.w * 0.82, 1.3, 4]} />
-        <meshStandardMaterial color="#6d4c3d" roughness={0.9} />
-      </mesh>
-    </group>
-  );
+  useEngineDraw(() => hutDraw(structure, selected), [structure, selected]);
+  return null;
 }
 
 interface BuilderState {
@@ -103,7 +127,7 @@ function pickStructureId(hit: { point: readonly [number, number, number] } | nul
 }
 
 function BuilderScene() {
-  const three = useThree();
+  const three = useEngineHost().frame;
   const pointer = useMemo(() => createPointerService(), []);
   const controller = useRef<PlacementController>(
     createPlacementController({ footprint: FOOTPRINT, snapMode: "grid", grid: 1, rules: { bounds: BOUNDS } }),
@@ -216,7 +240,7 @@ function BuilderScene() {
 
   return (
     <>
-      <hemisphereLight args={["#cfe8ff", "#3a3320", 0.8]} />
+      <StageDraw spec={{ lights: [{ kind: "hemisphere", skyColor: "#cfe8ff", groundColor: "#3a3320", intensity: 0.8 }] }} />
       <EditableGround terrain={terrain} bounds={BOUNDS} version={version} baseColor="#4b7f3f" />
       {placed.map((structure) => (
         <Hut key={structure.id} structure={structure} selected={structure.id === selectedId} />

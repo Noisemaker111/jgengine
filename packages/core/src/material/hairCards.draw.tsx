@@ -1,10 +1,10 @@
-import { useRef } from "react";
 import * as THREE from "three";
 import { buildHairCards, type HairCardAuthoring } from "@jgengine/core/material/hairCards";
 import type { MaterialAsset } from "@jgengine/core/material/materialAsset";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
-import { useMaterialAssetMaterial } from "./materialAsset.draw";
+import { loadDrawSystem } from "@jgengine/core/frame/loadDraw.draw";
+import { materialAssetMaterial } from "./materialAsset.draw";
 
 export function hairCardsDraw(cards: HairCardAuthoring, material: THREE.Material): EngineDraw {
   const mesh = buildHairCards(cards);
@@ -34,10 +34,24 @@ export function hairCardsDraw(cards: HairCardAuthoring, material: THREE.Material
 
 /** Render authored guide ribbons with explicit UVs and strand tangents; motion and collision remain caller-owned. */
 export function HairCards({ cards, material: asset }: { cards: HairCardAuthoring; material: MaterialAsset }) {
-  const key = JSON.stringify(cards);
-  const material = useMaterialAssetMaterial(asset);
-  const latest = useRef({ cards, material });
-  latest.current = { cards, material };
-  useEngineDraw(() => hairCardsDraw(latest.current.cards, latest.current.material), [key, material]);
+  const key = JSON.stringify([cards, asset]);
+  useEngineDraw(
+    () =>
+      loadDrawSystem({
+        key: `hair-cards:${key}`,
+        load: () => materialAssetMaterial(asset),
+        build: (lease) => {
+          const inner = hairCardsDraw(cards, lease.material);
+          return {
+            mount: (state) => inner.mount?.(state),
+            dispose: (state) => {
+              inner.dispose?.(state);
+              lease.dispose();
+            },
+          };
+        },
+      }),
+    [key],
+  );
   return null;
 }

@@ -118,9 +118,8 @@ function entityMarkerDraw(options: {
   crowd: CharacterCrowdRegistry | undefined;
   markerRoot: THREE.Group;
   contentGroup: THREE.Group;
-  attachToScene: boolean;
 }): EngineDraw {
-  const { entityId, measureKey, ctx, visible, latest, crowd, markerRoot, contentGroup, attachToScene } = options;
+  const { entityId, measureKey, ctx, visible, latest, crowd, markerRoot, contentGroup } = options;
   markerRoot.userData[POINTER_ENTITY_KEY] = entityId;
   markerRoot.matrixAutoUpdate = false;
   markerRoot.add(contentGroup);
@@ -246,7 +245,7 @@ function entityMarkerDraw(options: {
 
   return {
     mount(state: EngineFrameState) {
-      if (attachToScene) state.scene.add(markerRoot);
+      state.scene.add(markerRoot);
       syncVisual(state);
     },
     update(state: EngineFrameState) {
@@ -295,7 +294,7 @@ function entityMarkerDraw(options: {
       (selectedRing.material as THREE.Material).dispose();
       targetRing.geometry.dispose();
       (targetRing.material as THREE.Material).dispose();
-      if (attachToScene) state.scene.remove(markerRoot);
+      state.scene.remove(markerRoot);
     },
   };
 }
@@ -322,7 +321,6 @@ const EntityMarker = memo(function EntityMarker({
   crowd: CharacterCrowdRegistry | undefined;
 }) {
   const ctx = useGameContext();
-  const host = useEngineHost();
   const visibleRef = useRenderVisibility();
   const model = useEntityLookModel(baseModel, entity.id);
   const markerRoot = useMemo(() => new THREE.Group(), []);
@@ -361,9 +359,8 @@ const EntityMarker = memo(function EntityMarker({
         crowd,
         markerRoot,
         contentGroup,
-        attachToScene: !host.r3f,
       }),
-    [entity.id, entity.name, entity.role, ctx, visibleRef, latest, crowd, markerRoot, contentGroup, host.r3f],
+    [entity.id, entity.name, entity.role, ctx, visibleRef, latest, crowd, markerRoot, contentGroup],
   );
   return (
     <SceneObjectPortal object={markerRoot}>
@@ -407,9 +404,8 @@ function objectMarkerDraw(options: {
   visible: MutableRefObject<VisiblePredicate>;
   latest: { current: ObjectMarkerSnapshot };
   markerRoot: THREE.Group;
-  attachToScene: boolean;
 }): EngineDraw {
-  const { instanceId, catalogId, ctx, visible, latest, markerRoot, attachToScene } = options;
+  const { instanceId, catalogId, ctx, visible, latest, markerRoot } = options;
   markerRoot.userData[POINTER_OBJECT_KEY] = instanceId;
   markerRoot.matrixAutoUpdate = false;
 
@@ -492,7 +488,7 @@ function objectMarkerDraw(options: {
 
   return {
     mount(state: EngineFrameState) {
-      if (attachToScene) state.scene.add(markerRoot);
+      state.scene.add(markerRoot);
       syncVisual(state);
     },
     update(state: EngineFrameState) {
@@ -511,7 +507,7 @@ function objectMarkerDraw(options: {
     },
     dispose(state: EngineFrameState) {
       teardownVisual();
-      if (attachToScene) state.scene.remove(markerRoot);
+      state.scene.remove(markerRoot);
     },
   };
 }
@@ -528,7 +524,6 @@ const ObjectMarker = memo(function ObjectMarker({
   style: ObjectStyle | undefined;
 }) {
   const ctx = useGameContext();
-  const host = useEngineHost();
   const visibleRef = useRenderVisibility();
   const markerRoot = useMemo(() => new THREE.Group(), []);
   const [scaleX, scaleY, scaleZ] = objectVisualScale(object.visual);
@@ -559,9 +554,8 @@ const ObjectMarker = memo(function ObjectMarker({
         visible: visibleRef,
         latest,
         markerRoot,
-        attachToScene: !host.r3f,
       }),
-    [object.instanceId, object.catalogId, ctx, visibleRef, latest, markerRoot, host.r3f],
+    [object.instanceId, object.catalogId, ctx, visibleRef, latest, markerRoot],
   );
   return (
     <SceneObjectPortal object={markerRoot}>

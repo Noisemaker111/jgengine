@@ -1,5 +1,4 @@
 // @skill jgengine-gameplay
-import { Html } from "@react-three/drei";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { WorldItemRenderConfig } from "@jgengine/core/game/playableGame";
@@ -212,7 +211,6 @@ function WorldItemMarker({
   beamHeight: number;
 }) {
   const ctx = useGameContext();
-  const host = useEngineHost();
   // matrixAutoUpdate=false: the marker draw writes the pose matrix itself via updateMatrix().
   const group = useMemo(() => {
     const next = new THREE.Group();
@@ -222,7 +220,7 @@ function WorldItemMarker({
   }, [instanceId]);
   const latest = useRef({ ctx, instanceId, color, beam, beamHeight });
   latest.current = { ctx, instanceId, color, beam, beamHeight };
-  useEngineDraw(() => sceneObjectAttachDraw(group, !host.r3f), [group, host.r3f]);
+  useEngineDraw(() => sceneObjectAttachDraw(group, true), [group]);
   const showLabel = label !== undefined && label.length > 0;
   return (
     <SceneObjectPortal object={group}>
@@ -230,17 +228,7 @@ function WorldItemMarker({
         create={() => worldItemMarkerDraw(() => ({ ...latest.current, anchor: group }))}
         deps={[instanceId]}
       />
-      {showLabel && host.r3f ? (
-        <Html position={[0, beamHeight + 0.2, 0]} center distanceFactor={12} zIndexRange={[15, 0]}>
-          <div
-            className="whitespace-nowrap rounded-sm border px-1.5 py-0.5 text-[11px] font-bold shadow"
-            style={{ borderColor: color, color, backgroundColor: "rgba(10,10,14,0.75)" }}
-          >
-            {label}
-          </div>
-        </Html>
-      ) : null}
-      {showLabel && !host.r3f ? (
+      {showLabel ? (
         <WorldItemLabel instanceId={instanceId} label={label ?? ""} color={color} y={beamHeight + 0.2} />
       ) : null}
     </SceneObjectPortal>

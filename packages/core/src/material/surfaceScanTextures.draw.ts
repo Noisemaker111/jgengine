@@ -1,5 +1,3 @@
-import { useThree } from "@react-three/fiber";
-import { useEffect, useState } from "react";
 import * as THREE from "three";
 
 import type { TerrainMaterialMaps } from "@jgengine/core/world/features";
@@ -197,28 +195,4 @@ export interface SurfaceScanState {
   textures: SurfaceScanTextures | null;
   /** True until the maps load or fail. A surface waiting on them stays hidden, so no program is linked for the look they replace. */
   pending: boolean;
-}
-
-/**
- * React handle on a scan's maps. `maps` undefined or `enabled` false (the `low` tier) asks for
- * none and is never pending. Every component naming the same URLs shares one decode. The scene's
- * shader warmup waits for the maps, and a caller hides its surface while `pending`, so the warmup
- * links only the scanned programs the first frame draws, not the procedural ones they replace.
- */
-export function useSurfaceScan(maps: TerrainMaterialMaps | undefined, enabled = true): SurfaceScanState {
-  const key = maps === undefined || !enabled ? null : surfaceScanKey(maps);
-  const scene = useThree((three) => three.scene);
-  const [state, setState] = useState<{ key: string | null; textures: SurfaceScanTextures | null; settled: boolean }>({ key: null, textures: null, settled: false });
-  useEffect(() => {
-    if (key === null || maps === undefined) return undefined;
-    const handle = acquireSurfaceScan(maps, () => setState({ key, textures: handle.current(), settled: true }));
-    const textures = handle.current();
-    if (textures === null) warmupWaitsFor(scene, handle.settled);
-    setState({ key, textures, settled: textures !== null || handle.failed() });
-    return () => handle.release();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
-  if (key === null) return { textures: null, pending: false };
-  if (state.key !== key) return { textures: null, pending: true };
-  return { textures: state.textures, pending: !state.settled };
 }

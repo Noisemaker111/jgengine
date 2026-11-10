@@ -1,8 +1,8 @@
-import type { RenderCallback, RootStore } from "@react-three/fiber";
 import type { WebGLRenderer } from "three";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
-import { observeSharedFrames } from "@jgengine/core/render/useSharedFrame.draw";
+import { joinBeforeRenderTask } from "@jgengine/core/frame/afterRenderBoard.draw";
+import { observeFrameTasks, type FrameTaskRef } from "@jgengine/core/frame/frameBoard.draw";
 import { canvasCover } from "@jgengine/core/ui/canvasCover.view";
 import { sceneSwapping } from "@jgengine/core/ui/sceneSwap.view";
 
@@ -180,8 +180,8 @@ function gpuTimers(context: WebGLRenderingContext | WebGL2RenderingContext): { g
   return elapsed === undefined || disjoint === undefined ? null : { gl: context, ext: { TIME_ELAPSED_EXT: elapsed, GPU_DISJOINT_EXT: disjoint } };
 }
 
-/** Install the breakdown on a renderer and the r3f loop driving it. @internal */
-export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore): FrameBreakdown {
+/** Install the breakdown on a renderer; the engine loop's frame board supplies the callbacks. @internal */
+export function installFrameBreakdown(renderer: WebGLRenderer): FrameBreakdown {
   active?.dispose();
   const wrapped = new WeakSet<object>();
   const context = renderer.getContext();
@@ -621,11 +621,9 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     }
   };
 
-  // Frame callbacks: each r3f subscriber timed under a stable label.
-  const labels = new WeakMap<object, string>();
-  const callbacks: Record<string, RenderCallback> = {};
-  const subscriberWrappers = new Map<object, { ref: { current: RenderCallback }; original: RenderCallback; wrapper: RenderCallback }>();
-  const liveSubscribers = new Set<object>();
+  // Frame callbacks: every task on the shared frame board timed under a stable label.
+  const labels = new WeakMap<FrameTaskRef, string>();
+  const callbacks: Record<string, (...args: never[]) => void> = {};
   let nextLabel = 0;
   const callbackLabel = (suffix: string): string | null => {
     if (nextLabel >= FRAME_RETENTION_LIMIT) { retention.callbacks += 1; return null; }
@@ -633,7 +631,6 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     nextLabel += 1;
     return label;
   };
-  const memberLabels = new WeakMap<object, string>();
   const detailedWork = new URLSearchParams(window.location.search).get("frameMembers") === "1";
   if (detailedWork) {
     observeFrameWork((name, count) => {
@@ -647,71 +644,47 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
       current.calls[label] = (current.calls[label] ?? 0) + count;
     });
     restore.push(() => observeFrameWork(null));
-    observeSharedFrames(store, {
-      enter(task) {
-        let label = memberLabels.get(task);
-        if (label === undefined) {
-          label = callbackLabel(":sharedMember") ?? "frame#overflow:sharedMember";
-          memberLabels.set(task, label);
-        }
-        if (label !== "frame#overflow:sharedMember") callbacks[label] = task.current;
-        cpuEnter(label);
-      },
-      leave: () => { cpuLeave(); },
-    });
-    restore.push(() => observeSharedFrames(store, null));
   }
-  const wrapSubscribers = () => {
-    liveSubscribers.clear();
-    for (const subscription of store.getState().internal.subscribers) liveSubscribers.add(subscription.ref);
-    for (const ref of subscriberWrappers.keys()) if (!liveSubscribers.has(ref)) subscriberWrappers.delete(ref);
-    for (const subscription of store.getState().internal.subscribers) {
-      const fn = subscription.ref.current;
-      if (typeof fn !== "function" || wrapped.has(fn) || fn === tick) continue;
-      if (!subscriberWrappers.has(subscription.ref) && subscriberWrappers.size >= FRAME_RETENTION_LIMIT) { retention.subscribers += 1; continue; }
-      let label = labels.get(subscription.ref);
-      if (label === undefined) {
-        label = callbackLabel(fn.name !== "" && fn.name !== "anonymous" ? `:${fn.name}` : "") ?? "frame#overflow";
-        labels.set(subscription.ref, label);
-      }
-      if (label !== "frame#overflow") callbacks[label] = fn;
-      const named = label;
-      const timedCallback: RenderCallback = (state, delta, frame) => {
-        const before = devtools.frame.last()?.serial ?? 0;
-        cpuEnter(named);
-        try {
-          fn(state, delta, frame);
-        } finally {
-          const sim = devtools.frame.last();
-          if (sim !== null && sim.serial !== before) {
-            // This callback is the sim driver: its phases are systems of their own.
-            let named = 0;
-            for (const [phase, ms] of Object.entries(sim.phases)) {
-              addCpu(`sim:${phase}`, ms);
-              named += ms;
-            }
-            addCpu("sim:other", sim.simMs - named);
-            if (current !== null) current.simMs = sim.simMs;
-            // A step the driver ran between frames is not this frame's work; its rows keep it apart.
-            if (sim.ahead !== undefined) for (const [phase, ms] of Object.entries(sim.ahead)) addCpu(`ahead:${phase}`, ms);
-            cpuLeave(sim.simMs);
-          } else cpuLeave();
-        }
-      };
-      wrapped.add(timedCallback);
-      subscription.ref.current = timedCallback;
-      subscriberWrappers.set(subscription.ref, { ref: subscription.ref, original: fn, wrapper: timedCallback });
+  const taskLabel = (task: FrameTaskRef): string => {
+    let label = labels.get(task);
+    if (label === undefined) {
+      const named = task.current.name;
+      label = callbackLabel(named !== "" && named !== "anonymous" ? `:${named}` : "") ?? "frame#overflow";
+      labels.set(task, label);
+      if (label !== "frame#overflow") callbacks[label] = task.current as (...args: never[]) => void;
     }
+    return label;
   };
-  restore.push(() => {
-    for (const { ref, original, wrapper } of subscriberWrappers.values()) if (ref.current === wrapper) ref.current = original;
-    subscriberWrappers.clear();
+  // The sim serial at task entry; leave() diffs it so the driver's phases attribute to `sim:*`.
+  let taskSerialBefore = 0;
+  observeFrameTasks({
+    enter(task) {
+      taskSerialBefore = devtools.frame.last()?.serial ?? 0;
+      cpuEnter(taskLabel(task));
+    },
+    leave() {
+      const sim = devtools.frame.last();
+      if (sim !== null && sim.serial !== taskSerialBefore) {
+        // This task is the sim driver: its phases are systems of their own.
+        let named = 0;
+        for (const [phase, ms] of Object.entries(sim.phases)) {
+          addCpu(`sim:${phase}`, ms);
+          named += ms;
+        }
+        addCpu("sim:other", sim.simMs - named);
+        if (current !== null) current.simMs = sim.simMs;
+        // A step the driver ran between frames is not this frame's work; its rows keep it apart.
+        if (sim.ahead !== undefined) for (const [phase, ms] of Object.entries(sim.ahead)) addCpu(`ahead:${phase}`, ms);
+        cpuLeave(sim.simMs);
+      } else cpuLeave();
+    },
   });
+  restore.push(() => observeFrameTasks(null));
 
   // The first draws of the last few smooth frames, for the stall they may land in.
   const recentFirstDraws: string[][] = [];
-  // The first callback of every frame closes the previous frame and opens the next.
-  const tick: RenderCallback = () => {
+  // The first before-render task of every frame closes the previous frame and opens the next.
+  const tick = () => {
     const now = performance.now();
     readTimers();
     if (current !== null) {
@@ -741,11 +714,8 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     frameStart = now;
     frameCovered = coverNow();
     lastWorkEnd = now;
-    wrapSubscribers();
   };
-  const tickRef = { current: tick };
-  const unsubscribe = store.getState().internal.subscribe(tickRef, -Number.MAX_SAFE_INTEGER, store);
-  restore.push(unsubscribe);
+  restore.push(joinBeforeRenderTask(tick));
 
   const breakdown: FrameBreakdown = {
     summary(options = {}) {

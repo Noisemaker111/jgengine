@@ -2,7 +2,6 @@ import { useRef } from "react";
 import * as THREE from "three";
 
 import {
-  buildingSurfaceColor,
   resolveBuildingSurface,
   type BuildingPartKind,
   type BuildingPartPlacement,
@@ -18,7 +17,7 @@ import { buildingChunkBudgetScratch, buildingRenderPolicy, syncBuildingChunkBudg
 import { partitionInstances } from "@jgengine/core/instancing/instanceChunks.draw";
 import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { freezeStaticTransforms } from "@jgengine/core/model/staticTransforms.draw";
-import { bucketBuildingParts, normalFor, outwardOffset } from "./buildingKitFit.draw";
+import { bucketBuildingParts } from "./buildingKitFit.draw";
 import { applyBuildingSurface, buildingSurfaceTextures, type BuildingSurfaceTextureLease } from "./buildingSurface.draw";
 import { childFrameState, type EngineDraw, type EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
@@ -30,11 +29,6 @@ export interface GeneratedBuildingData {
 
 /** Per part kind: a hex colour, or a colour plus tiled PBR maps (`BuildingSurfaceMaterial`). */
 export type BuildingMaterialPalette = Partial<Record<BuildingPartKind, BuildingSurface>>;
-
-export interface BuildingBlockProps {
-  part: BuildingPartPlacement;
-  palette?: BuildingMaterialPalette | undefined;
-}
 
 export interface InstancedBuildingPlacement {
   building: GeneratedBuildingData;
@@ -76,24 +70,6 @@ const DEFAULT_PALETTE: Record<BuildingPartKind, string> = {
 function surfaceFor(kind: BuildingPartKind, palette: BuildingMaterialPalette | undefined): BuildingSurfaceMaterial {
   const surface = resolveBuildingSurface(palette?.[kind] ?? DEFAULT_PALETTE[kind]);
   return surface.color === undefined ? { ...surface, color: DEFAULT_PALETTE[kind] } : surface;
-}
-
-function colorFor(kind: BuildingPartKind, palette: BuildingMaterialPalette | undefined): string {
-  return buildingSurfaceColor(palette?.[kind], DEFAULT_PALETTE[kind]);
-}
-
-function materialFor(part: BuildingPartPlacement, palette: BuildingMaterialPalette | undefined) {
-  const color = colorFor(part.kind, palette);
-  if (part.kind === "window" || part.kind === "storefront") {
-    return <meshPhysicalMaterial color={color} roughness={0.12} metalness={0} transparent opacity={0.56} />;
-  }
-  if (part.kind === "storeSign") {
-    return <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.6} roughness={0.5} />;
-  }
-  if (part.kind === "roofProp") {
-    return <meshStandardMaterial color={color} roughness={0.65} metalness={0.1} />;
-  }
-  return <meshStandardMaterial color={color} roughness={0.88} metalness={0} />;
 }
 
 function batchMaterialFor(
@@ -318,45 +294,4 @@ export function InstancedBuildings(props: InstancedBuildingsProps) {
   const latest = useRef<InstancedBuildingsProps>(props);
   latest.current = props;
   return <EngineDrawMount create={() => instancedBuildingsDraw(() => latest.current)} deps={[]} />;
-}
-
-function BlockMesh({ part, palette }: BuildingBlockProps) {
-  const [nx, nz] = normalFor(part.facade);
-  const offset = outwardOffset(part);
-  const position: [number, number, number] = [
-    part.position[0] + nx * offset,
-    part.position[1],
-    part.position[2] + nz * offset,
-  ];
-  return (
-    <mesh position={position} rotation={[0, part.rotationY, 0]} castShadow receiveShadow>
-      <boxGeometry args={[part.scale[0], part.scale[1], part.scale[2]]} />
-      {materialFor(part, palette)}
-    </mesh>
-  );
-}
-
-export function BuildingBlock({ part, palette }: BuildingBlockProps) {
-  if (part.kind === "clothesline") {
-    const [nx, nz] = normalFor(part.facade);
-    const offset = outwardOffset(part);
-    const position: [number, number, number] = [
-      part.position[0] + nx * offset,
-      part.position[1],
-      part.position[2] + nz * offset,
-    ];
-    return (
-      <group position={position} rotation={[0, part.rotationY, 0]}>
-        <mesh position={[0, 0, -0.09]} castShadow>
-          <boxGeometry args={[part.scale[0], Math.max(part.scale[1], 0.025), 0.025]} />
-          {materialFor(part, palette)}
-        </mesh>
-        <mesh position={[0, 0, 0.09]} castShadow>
-          <boxGeometry args={[part.scale[0], Math.max(part.scale[1], 0.025), 0.025]} />
-          {materialFor(part, palette)}
-        </mesh>
-      </group>
-    );
-  }
-  return <BlockMesh part={part} palette={palette} />;
 }

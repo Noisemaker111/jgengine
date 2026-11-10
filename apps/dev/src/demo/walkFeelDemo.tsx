@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
+import { BoxGeometry, Group, GridHelper, Mesh, MeshStandardMaterial, PlaneGeometry } from "three";
+import { disposeObjectTree, SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { measureMovement } from "@jgengine/core/movement/movementProbe";
@@ -11,27 +13,30 @@ import { FLOATY_FEEL, WEIGHTY_FEEL, type WalkFeel } from "./walkFeelTuning";
 const HERO = "hero";
 
 function Stage({ color }: { color: string }): ReactNode {
-  return (
-    <>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[80, 80]} />
-        <meshStandardMaterial color="#4b6b3f" roughness={0.95} />
-      </mesh>
-      <gridHelper args={[80, 80, "#2c4428", "#3b5a33"]} position={[0, 0.01, 0]} />
-      {Array.from({ length: 12 }, (_, i) => (
-        <mesh key={i} position={[-1.2, 1, i * 2]} castShadow>
-          <boxGeometry args={[0.15, 2, 0.15]} />
-          <meshStandardMaterial color={color} roughness={0.6} />
-        </mesh>
-      ))}
-      {[0.5, 1, 1.5, 2].map((height) => (
-        <mesh key={height} position={[-1.2, height, 11]}>
-          <boxGeometry args={[0.1, 0.03, 22]} />
-          <meshStandardMaterial color="#f8fafc" transparent opacity={0.5} />
-        </mesh>
-      ))}
-    </>
-  );
+  const rig = useMemo(() => {
+    const root = new Group();
+    const groundGeo = new PlaneGeometry(80, 80);
+    groundGeo.rotateX(-Math.PI / 2);
+    const ground = new Mesh(groundGeo, new MeshStandardMaterial({ color: "#4b6b3f", roughness: 0.95 }));
+    ground.receiveShadow = true;
+    const grid = new GridHelper(80, 80, "#2c4428", "#3b5a33");
+    grid.position.y = 0.01;
+    root.add(ground, grid);
+    for (let i = 0; i < 12; i += 1) {
+      const post = new Mesh(new BoxGeometry(0.15, 2, 0.15), new MeshStandardMaterial({ color, roughness: 0.6 }));
+      post.position.set(-1.2, 1, i * 2);
+      post.castShadow = true;
+      root.add(post);
+    }
+    for (const height of [0.5, 1, 1.5, 2]) {
+      const rung = new Mesh(new BoxGeometry(0.1, 0.03, 22), new MeshStandardMaterial({ color: "#f8fafc", transparent: true, opacity: 0.5 }));
+      rung.position.set(-1.2, height, 11);
+      root.add(rung);
+    }
+    return root;
+  }, [color]);
+  useEffect(() => () => disposeObjectTree(rig), [rig]);
+  return <SceneObjectAttach object={rig} />;
 }
 
 function FeelPanel({ feel }: { feel: WalkFeel }): ReactNode {

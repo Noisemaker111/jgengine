@@ -1,8 +1,7 @@
 import type { MaterialAsset } from "@jgengine/core/material/materialAsset";
-import { useMemo } from "react";
 import * as THREE from "three";
 
-import { useMaterialAssetMaterial } from "./materialAsset.draw";
+import { materialAssetMaterial, type MaterialAssetLease } from "./materialAsset.draw";
 import { batchSafeSignature, markBatchSafe } from "./compileLayers.draw";
 
 /** Inputs for {@link applyTriplanarProjection}. */
@@ -200,27 +199,25 @@ export function applyTriplanarProjection(
 }
 
 /**
- * Render a serializable material asset — one built by `libraryMaterialAsset`, or authored in the
- * editor — with world-space triplanar projection, so world geometry needs no UVs. Tile size
- * defaults to the asset's own `physicalSize`, which the shared library sets per surface.
+ * The draw-side form of the old `useTriplanarAssetMaterial`: resolves the asset's maps, applies
+ * world-space triplanar projection and returns an owned lease. Tile size defaults to the asset's
+ * own `physicalSize`, which the shared library sets per surface.
  * @capability material-triplanar render a material asset on world geometry without UVs
  */
-export function useTriplanarAssetMaterial(
+export function triplanarAssetMaterial(
   asset: MaterialAsset,
   options: { tileMetres?: number; sharpness?: number; normalScale?: number } = {},
-): THREE.MeshStandardMaterial {
-  const material = useMaterialAssetMaterial(asset);
+): Promise<MaterialAssetLease> {
   const tile = options.tileMetres ?? asset.textures?.color?.physicalSize?.[0] ?? asset.textures?.normal?.physicalSize?.[0] ?? 1;
   const sharpness = options.sharpness ?? 8;
   const normalScale = options.normalScale ?? 1;
-  return useMemo(
-    () => applyTriplanarProjection(material, { tileMetres: tile, sharpness, normalScale }),
-    [material, tile, sharpness, normalScale],
-  );
-}
-
-/** Mounts {@link useTriplanarAssetMaterial} on a mesh; the R3F renderer owns disposal. */
-export function TriplanarAssetMaterial({ asset, ...options }: { asset: MaterialAsset } & { tileMetres?: number; sharpness?: number; normalScale?: number }) {
-  const material = useTriplanarAssetMaterial(asset, options);
-  return <primitive object={material} attach="material" />;
+  return materialAssetMaterial(asset).then((lease) => {
+    try {
+      applyTriplanarProjection(lease.material, { tileMetres: tile, sharpness, normalScale });
+    } catch (error) {
+      lease.dispose();
+      throw error;
+    }
+    return lease;
+  });
 }

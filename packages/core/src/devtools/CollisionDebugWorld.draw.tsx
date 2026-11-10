@@ -1,4 +1,3 @@
-import { Html } from "@react-three/drei";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import * as THREE from "three";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
@@ -288,7 +287,6 @@ function DebugLabelOverlay({ latest }: { latest: { current: DebugDrawInputs } })
   const cameraRef = useRef(new THREE.Vector3());
   const entries = latest.current.shapes;
   useFrameTask(() => {
-    if (host.r3f) return;
     const { camera, size } = host.frame;
     camera.updateMatrixWorld();
     for (const entry of entries) {
@@ -309,30 +307,6 @@ function DebugLabelOverlay({ latest }: { latest: { current: DebugDrawInputs } })
       node.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%) scale(${scale})`;
     }
   }, CAMERA_POST_FRAME_PRIORITY + 0.02);
-  if (host.r3f) {
-    // The SceneObjectGroup sits at the origin, so world anchors are local Html positions.
-    return (
-      <>
-        {entries.map((entry) => {
-          const [ax, ay, az] = shapeLabelAnchor(entry);
-          return (
-            <Html
-              key={entry.key}
-              position={[ax, ay, az]}
-              center
-              distanceFactor={14}
-              zIndexRange={[25, 0]}
-              style={{ pointerEvents: "none" }}
-            >
-              <span className="rounded bg-black/70 px-1 text-[9px] font-medium text-white/90">
-                {entry.label}
-              </span>
-            </Html>
-          );
-        })}
-      </>
-    );
-  }
   return (
     <div style={{ position: "absolute", inset: 0, zIndex: 25, pointerEvents: "none" }}>
       {entries.map((entry) => (

@@ -1,11 +1,8 @@
 import { useRef } from "react";
-import { useStore } from "@react-three/fiber";
-import type { RootStore } from "@react-three/fiber";
 import type * as THREE from "three";
 
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
-import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { devtools, type PerfQuality } from "@jgengine/core/devtools/devtools";
 import { readUrlParam } from "@jgengine/core/devtools/urlFlags";
 import {
@@ -31,7 +28,7 @@ import { installFrameBreakdown } from "./frameBreakdown.draw";
  * old effect deps.
  * @internal
  */
-export function frameTelemetryDraw(getProps: () => { game: string; quality: PerfQuality }, store: RootStore | null): EngineDraw {
+export function frameTelemetryDraw(getProps: () => { game: string; quality: PerfQuality }): EngineDraw {
   let gl: THREE.WebGLRenderer | null = null;
   let scene: THREE.Scene | null = null;
   let generation = 0;
@@ -65,7 +62,7 @@ export function frameTelemetryDraw(getProps: () => { game: string; quality: Perf
         counters.attached = false;
       }
       try {
-        breakdown = store === null ? null : installFrameBreakdown(renderer, store);
+        breakdown = installFrameBreakdown(renderer);
       } catch (error) {
         console.warn(`[jgengine:perf] frame breakdown did not install: ${String(error)}`);
       }
@@ -125,22 +122,7 @@ export function frameTelemetryDraw(getProps: () => { game: string; quality: Perf
 export function FrameTelemetry(props: { game: string; quality: PerfQuality }) {
   const latest = useRef(props);
   latest.current = props;
-  const host = useEngineHost();
-  return host.r3f ? <FrameTelemetryR3F {...latest.current} /> : <FrameTelemetryEngine {...latest.current} />;
-}
-
-function FrameTelemetryEngine(props: { game: string; quality: PerfQuality }) {
-  const latest = useRef(props);
-  latest.current = props;
-  useEngineDraw(() => frameTelemetryDraw(() => latest.current, null), []);
-  return null;
-}
-
-function FrameTelemetryR3F(props: { game: string; quality: PerfQuality }) {
-  const latest = useRef(props);
-  latest.current = props;
-  const store = useStore();
-  useEngineDraw(() => frameTelemetryDraw(() => latest.current, store), [store]);
+  useEngineDraw(() => frameTelemetryDraw(() => latest.current), []);
   return null;
 }
 

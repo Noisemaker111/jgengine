@@ -51,9 +51,9 @@ export const materialVariantsGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "material-variants" },
   scene: {
-    renderEntity: () => <group />,
-    renderObject: () => <group />,
-    environment: () => <group />,
+    renderEntity: () => null,
+    renderObject: () => null,
+    environment: () => null,
   },
   loop: { ...demoGame.loop, onTick: () => {} },
   GameUI: () => <VariantPanel />,

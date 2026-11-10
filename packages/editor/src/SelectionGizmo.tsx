@@ -1,4 +1,4 @@
-import { useThree } from "@react-three/fiber";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { memo, useEffect, useMemo } from "react";
 import * as THREE from "three";
 
@@ -142,9 +142,7 @@ function isEditorOverlayNode(node: THREE.Object3D): boolean {
  * markers, volumes, notes, or path points at the ground hit instead of selecting.
  */
 export const ViewportSelect = memo(function ViewportSelect({ api, ui }: { api: EditorHostApi; ui: EditorUiStore }) {
-  const gl = useThree((state) => state.gl);
-  const camera = useThree((state) => state.camera);
-  const scene = useThree((state) => state.scene);
+  const { gl, camera, scene } = useEngineHost().frame;
 
   useEffect(() => {
     const canvas = gl.domElement;

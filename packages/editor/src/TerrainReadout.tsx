@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
-import { useThree } from "@react-three/fiber";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import * as THREE from "three";
 
 import {
@@ -150,7 +150,21 @@ export function TerrainReadout({
     [ring],
   );
 
-  const { camera, pointer, raycaster } = useThree();
+  const { camera, gl } = useEngineHost().frame;
+  const raycaster = useMemo(() => new THREE.Raycaster(), []);
+  const pointer = useRef(new THREE.Vector2());
+  useEffect(() => {
+    const canvas = gl.domElement;
+    const onMove = (event: PointerEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      pointer.current.set(
+        ((event.clientX - rect.left) / rect.width) * 2 - 1,
+        -((event.clientY - rect.top) / rect.height) * 2 + 1,
+      );
+    };
+    canvas.addEventListener("pointermove", onMove);
+    return () => canvas.removeEventListener("pointermove", onMove);
+  }, [gl]);
   const planeRef = useRef(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0));
   const hitRef = useRef(new THREE.Vector3());
   const accum = useRef(0);
@@ -160,7 +174,7 @@ export function TerrainReadout({
     accum.current += delta;
     if (accum.current < CURSOR_SAMPLE_INTERVAL) return;
     accum.current = 0;
-    raycaster.setFromCamera(pointer, camera);
+    raycaster.setFromCamera(pointer.current, camera);
     const hit = raycaster.ray.intersectPlane(planeRef.current, hitRef.current);
     if (
       hit === null ||

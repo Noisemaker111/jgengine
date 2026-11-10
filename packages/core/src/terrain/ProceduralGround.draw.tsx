@@ -1,14 +1,13 @@
-import { type ThreeElements } from "@react-three/fiber";
 import * as THREE from "three";
 
-import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
+import { useEngineDraw, type DrawAttachProps } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useRef } from "react";
 
 import { createProceduralGroundGeometry, type ProceduralTerrainConfig, type TerrainVertexColorOptions } from "./terrainMath.draw";
 
 /** Props for {@link ProceduralGround}: noise terrain settings, height colours and material settings. */
-export interface ProceduralGroundProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> {
+export interface ProceduralGroundProps extends DrawAttachProps {
   terrain?: ProceduralTerrainConfig;
   colors?: TerrainVertexColorOptions;
   roughness?: number;

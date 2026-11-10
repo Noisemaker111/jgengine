@@ -3,6 +3,7 @@ import { environment, terrain, type TerrainMaterialMaps } from "@jgengine/core/w
 import type { TerrainMaterialLayer } from "@jgengine/core/terrain/terraform";
 import type { PlayableGame } from "@jgengine/shell/registry";
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+import { StageDraw } from "@jgengine/core/stage/stageDraw.draw";
 import { librarySurfaceScan } from "@jgengine/assets/catalogs/materialLibrary";
 
 import { demoGame } from "./demoGame";
@@ -47,11 +48,13 @@ const feature = environment({
 /** Terrain painted as two authored layers, each carrying its own scanned ambientCG map. */
 function TerrainLayers() {
   return (
-    <group>
-      <ambientLight intensity={0.35} />
-      <directionalLight position={[16, 24, 12]} intensity={2.4} />
+    <>
+      <StageDraw spec={{ lights: [
+        { kind: "ambient", intensity: 0.35 },
+        { kind: "directional", position: [16, 24, 12], intensity: 2.4 },
+      ] }} />
       <EnvironmentScene feature={feature} />
-    </group>
+    </>
   );
 }
 
@@ -59,8 +62,8 @@ export const terrainLayersGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "terrain-layers" },
   scene: {
-    renderEntity: () => <group />,
-    renderObject: () => <group />,
+    renderEntity: () => null,
+    renderObject: () => null,
     environment: TerrainLayers,
   },
   loop: { ...demoGame.loop, onTick: () => {} },

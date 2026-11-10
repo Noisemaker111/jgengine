@@ -1,4 +1,7 @@
-import { type ReactNode } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
+import { BoxGeometry, Group, Mesh, MeshStandardMaterial, SphereGeometry } from "three";
+import { disposeObjectTree, SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
+import { StageDraw } from "@jgengine/core/stage/stageDraw.draw";
 
 import { importEditorDocumentJson } from "@jgengine/core/editor/document";
 import type { EditorDocument } from "@jgengine/core/editor/index";
@@ -57,54 +60,45 @@ const ROOM = { x: 6, z: -26, halfX: 6, halfZ: 5, base: 0.9, height: 3.2, wall: 0
 function Room() {
   const { halfX, halfZ, base, height, wall } = ROOM;
   const mid = base + height / 2;
-  return (
-    <group position={[ROOM.x, 0, ROOM.z]}>
-      <mesh receiveShadow castShadow position={[0, base / 2, 0]}>
-        <boxGeometry args={[halfX * 2, base, halfZ * 2]} />
-        <meshStandardMaterial color="#4a423a" roughness={0.85} />
-      </mesh>
-      {([-halfZ, halfZ] as const).map((z) => (
-        <mesh key={`z${z}`} castShadow receiveShadow position={[0, mid, z]}>
-          <boxGeometry args={[halfX * 2, height, wall]} />
-          <meshStandardMaterial color="#6b6255" roughness={0.9} />
-        </mesh>
-      ))}
-      {([-halfX, halfX] as const).map((x) => (
-        <mesh key={`x${x}`} castShadow receiveShadow position={[x, mid, 0]}>
-          <boxGeometry args={[wall, height, halfZ * 2]} />
-          <meshStandardMaterial color="#5d554a" roughness={0.9} />
-        </mesh>
-      ))}
-      <mesh receiveShadow position={[0, base + height, 0]}>
-        <boxGeometry args={[halfX * 2, wall, halfZ * 2]} />
-        <meshStandardMaterial color="#3c3630" roughness={0.95} />
-      </mesh>
-      <mesh position={[0, base + 0.55, halfZ - 1.6]} castShadow>
-        <boxGeometry args={[1.6, 1.1, 1.6]} />
-        <meshStandardMaterial color="#c9c2b4" roughness={0.6} />
-      </mesh>
-    </group>
-  );
+  const rig = useMemo(() => {
+    const root = new Group();
+    root.position.set(ROOM.x, 0, ROOM.z);
+    const add = (size: readonly [number, number, number], color: string, pos: readonly [number, number, number], roughness: number, receiveShadow = true, castShadow = true) => {
+      const block = new Mesh(new BoxGeometry(size[0], size[1], size[2]), new MeshStandardMaterial({ color, roughness }));
+      block.position.set(pos[0], pos[1], pos[2]);
+      block.receiveShadow = receiveShadow;
+      block.castShadow = castShadow;
+      root.add(block);
+    };
+    add([halfX * 2, base, halfZ * 2], "#4a423a", [0, base / 2, 0], 0.85);
+    for (const z of [-halfZ, halfZ]) add([halfX * 2, height, wall], "#6b6255", [0, mid, z], 0.9);
+    for (const x of [-halfX, halfX]) add([wall, height, halfZ * 2], "#5d554a", [x, mid, 0], 0.9);
+    add([halfX * 2, wall, halfZ * 2], "#3c3630", [0, base + height, 0], 0.95, true, false);
+    add([1.6, 1.1, 1.6], "#c9c2b4", [0, base + 0.55, halfZ - 1.6], 0.6);
+    return root;
+  }, [halfX, halfZ, base, height, wall, mid]);
+  useEffect(() => () => disposeObjectTree(rig), [rig]);
+  return <SceneObjectAttach object={rig} />;
 }
 
 /** Props that give the eye a white and a saturated reference to judge exposure against. */
 function Props() {
-  return (
-    <group>
-      <mesh castShadow receiveShadow position={[-6, 0.9, -6]}>
-        <boxGeometry args={[1.8, 1.8, 1.8]} />
-        <meshStandardMaterial color="#e6e3dc" roughness={0.55} />
-      </mesh>
-      <mesh castShadow receiveShadow position={[-2, 0.6, -10]}>
-        <sphereGeometry args={[0.6, 24, 16]} />
-        <meshStandardMaterial color="#b4462f" roughness={0.5} />
-      </mesh>
-      <mesh castShadow receiveShadow position={[3, 1.4, -12]}>
-        <boxGeometry args={[0.6, 2.8, 0.6]} />
-        <meshStandardMaterial color="#8d99a6" roughness={0.4} metalness={0.6} />
-      </mesh>
-    </group>
-  );
+  const rig = useMemo(() => {
+    const root = new Group();
+    const add = (geometry: import("three").BufferGeometry, color: string, position: readonly [number, number, number], params: ConstructorParameters<typeof MeshStandardMaterial>[0]) => {
+      const prop = new Mesh(geometry, new MeshStandardMaterial({ color, ...params }));
+      prop.position.set(position[0], position[1], position[2]);
+      prop.castShadow = true;
+      prop.receiveShadow = true;
+      root.add(prop);
+    };
+    add(new BoxGeometry(1.8, 1.8, 1.8), "#e6e3dc", [-6, 0.9, -6], { roughness: 0.55 });
+    add(new SphereGeometry(0.6, 24, 16), "#b4462f", [-2, 0.6, -10], { roughness: 0.5 });
+    add(new BoxGeometry(0.6, 2.8, 0.6), "#8d99a6", [3, 1.4, -12], { roughness: 0.4, metalness: 0.6 });
+    return root;
+  }, []);
+  useEffect(() => () => disposeObjectTree(rig), [rig]);
+  return <SceneObjectAttach object={rig} />;
 }
 
 function Scene(): ReactNode {
@@ -113,7 +107,7 @@ function Scene(): ReactNode {
       <EnvironmentScene feature={world} />
       <Props />
       <Room />
-      <pointLight position={[ROOM.x, ROOM.base + 2.6, ROOM.z]} intensity={0.6} distance={10} decay={2} color="#ffd2a0" />
+      <StageDraw spec={{ lights: [{ kind: "point", position: [ROOM.x, ROOM.base + 2.6, ROOM.z], intensity: 0.6, distance: 10, color: "#ffd2a0" }] }} />
     </>
   );
 }
@@ -139,8 +133,8 @@ export const colorPipelineDemoGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "color-pipeline", world },
   scene: {
-    renderEntity: () => <group />,
-    renderObject: () => <group />,
+    renderEntity: () => null,
+    renderObject: () => null,
     editorLayers: authored,
     environment: Scene,
   },

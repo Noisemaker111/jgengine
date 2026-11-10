@@ -73,53 +73,37 @@ describe("authored PBR surface", () => {
   });
 });
 
-test("mounted textured surfaces dispose clones on retune/unmount and retain loader-cached maps", async () => {
-  const { act, createRoot } = await import("@react-three/fiber");
-  const { createElement, Suspense } = await import("react");
-  const { useAuthoredSurfaceMaterial } = await import("./authoredSurfaceMaterial.draw");
+test("authored surface leases dispose clones and retain loader-cached maps", async () => {
+  const { authoredSurfaceMaterial } = await import("./authoredSurfaceMaterial.draw");
   const source = new THREE.Texture();
   let sourceDisposals = 0;
   source.addEventListener("dispose", () => sourceDisposals++);
-  const originalLoad = THREE.TextureLoader.prototype.load;
-  THREE.TextureLoader.prototype.load = (_url, onLoad) => { onLoad?.(source); return source; };
-  const environment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
-  const previous = environment.IS_REACT_ACT_ENVIRONMENT;
-  environment.IS_REACT_ACT_ENVIRONMENT = true;
-  const root = createRoot({} as HTMLCanvasElement);
-  await root.configure({ frameloop: "never", size: { width: 100, height: 100, top: 0, left: 0 }, dpr: 1,
-    gl: () => ({ render() {}, setSize() {}, setPixelRatio() {} }) as unknown as THREE.WebGLRenderer });
-  let material!: THREE.MeshStandardMaterial;
-  function Surface({ color }: { color: string }) {
-    material = useAuthoredSurfaceMaterial({ color, maps: { color: "test-owned-surface-color.png", normal: "test-owned-surface-normal.png" } });
-    return createElement("primitive", { object: material });
-  }
-  const render = async (color: string) => act(async () => root.render(createElement(Suspense, { fallback: null }, createElement(Surface, { color }))));
+  const { ImageTextureLoader } = await import("./imageTexture.draw");
+  const originalLoad = ImageTextureLoader.prototype.load;
+  ImageTextureLoader.prototype.load = function stubbed(this: InstanceType<typeof ImageTextureLoader>, _url: string, onLoad?: (texture: THREE.Texture) => void) { onLoad?.(source); return source; };
   try {
-    await render("#ffffff");
-    const first = material;
-    expect(first.map).not.toBe(source);
-    expect(first.normalMap).not.toBe(source);
+    const first = await authoredSurfaceMaterial({ color: "#ffffff", maps: { color: "test-owned-surface-color.png", normal: "test-owned-surface-normal.png" } });
+    const material = first.material;
+    expect(material.map).not.toBe(source);
+    expect(material.normalMap).not.toBe(source);
     let released = 0;
-    first.addEventListener("dispose", () => released++);
-    first.map!.addEventListener("dispose", () => released++);
-    first.normalMap!.addEventListener("dispose", () => released++);
-    await render("#ffffff");
-    expect(material).toBe(first);
-    await render("#123456");
-    expect(material).not.toBe(first);
+    material.addEventListener("dispose", () => released++);
+    material.map!.addEventListener("dispose", () => released++);
+    material.normalMap!.addEventListener("dispose", () => released++);
+    first.dispose();
     expect(released).toBe(3);
+    const second = await authoredSurfaceMaterial({ color: "#123456", maps: { color: "test-owned-surface-color.png", normal: "test-owned-surface-normal.png" } });
+    expect(second.material).not.toBe(material);
     let lastReleased = 0;
-    material.addEventListener("dispose", () => lastReleased++);
-    material.map!.addEventListener("dispose", () => lastReleased++);
-    material.normalMap!.addEventListener("dispose", () => lastReleased++);
-    await act(async () => root.render(null));
+    second.material.addEventListener("dispose", () => lastReleased++);
+    second.material.map!.addEventListener("dispose", () => lastReleased++);
+    second.material.normalMap!.addEventListener("dispose", () => lastReleased++);
+    second.dispose();
     expect(lastReleased).toBe(3);
     expect(sourceDisposals).toBe(0);
     expect(source.colorSpace).toBe(THREE.NoColorSpace);
     expect(source.wrapS).toBe(THREE.ClampToEdgeWrapping);
   } finally {
-    await act(async () => root.unmount());
-    THREE.TextureLoader.prototype.load = originalLoad;
-    environment.IS_REACT_ACT_ENVIRONMENT = previous;
+    ImageTextureLoader.prototype.load = originalLoad;
   }
 });

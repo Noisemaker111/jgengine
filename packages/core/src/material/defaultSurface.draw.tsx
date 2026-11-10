@@ -1,6 +1,5 @@
-import { type ThreeElements } from "@react-three/fiber";
-import { useMemo } from "react";
 import * as THREE from "three";
+import type { MeshStandardMaterialParameters } from "three";
 
 const DETAIL_SIZE = 64;
 const DETAIL_REPEAT = 3;
@@ -102,7 +101,7 @@ export function detailMaps(): { normal: THREE.DataTexture; roughness: THREE.Data
  * @internal shell-internal default render surface; games never import it.
  */
 export interface DefaultSurfaceProps
-  extends Omit<ThreeElements["meshStandardMaterial"], "args" | "normalMap" | "roughnessMap"> {
+  extends Omit<MeshStandardMaterialParameters, "normalMap" | "roughnessMap"> {
   color: THREE.ColorRepresentation;
   roughness?: number;
   metalness?: number;
@@ -130,32 +129,4 @@ export function defaultSurfaceMaterial({
   }
   Object.assign(material, rest);
   return material;
-}
-
-/**
- * The upgraded default material for un-modeled entities/objects: tuned PBR roughness/metalness plus
- * the shared procedural detail maps, so primitive fallbacks catch light and image-based reflections
- * instead of reading as flat plastic. Drop-in replacement for a bare `<meshStandardMaterial color>`.
- * @internal shell-internal default render surface; games never import it.
- */
-export function DefaultSurface({
-  color,
-  roughness = 0.72,
-  metalness = 0.04,
-  detail = true,
-  ...rest
-}: DefaultSurfaceProps) {
-  const maps = useMemo(() => (detail ? detailMaps() : null), [detail]);
-  return (
-    <meshStandardMaterial
-      color={color}
-      roughness={roughness}
-      metalness={metalness}
-      envMapIntensity={0.6}
-      normalMap={maps?.normal ?? null}
-      {...(maps === null ? {} : { normalScale: new THREE.Vector2(0.6, 0.6) })}
-      roughnessMap={maps?.roughness ?? null}
-      {...rest}
-    />
-  );
 }

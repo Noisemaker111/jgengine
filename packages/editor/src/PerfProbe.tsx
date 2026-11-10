@@ -1,4 +1,4 @@
-import { useThree } from "@react-three/fiber";
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { memo, useRef } from "react";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
@@ -15,8 +15,7 @@ const CAMERA_MOVE_EPSILON = 1e-4;
 
 /** In-canvas frame counter: publishes fps/draw-call samples to the editor host every 500ms. */
 export const PerfProbe = memo(function PerfProbe({ api }: { api: EditorHostApi }) {
-  const gl = useThree((state) => state.gl);
-  const camera = useThree((state) => state.camera);
+  const { gl, camera } = useEngineHost().frame;
   const framesRef = useRef(0);
   const windowStartRef = useRef(0);
   const activeRef = useRef(false);

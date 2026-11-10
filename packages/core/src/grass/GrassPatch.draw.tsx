@@ -1,4 +1,3 @@
-import { type ThreeElements } from "@react-three/fiber";
 import { useRef } from "react";
 import { Euler, Group, Vector3 } from "three";
 import type * as THREE from "three";
@@ -17,7 +16,7 @@ import { GrassStream } from "./grassStream.draw";
 import { GrassFrameShare } from "./grassFrameShare";
 import { trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
 import { childFrameState, type EngineDraw, type EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
-import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
+import { useEngineDraw, type DrawAttachProps } from "@jgengine/core/frame/useEngineDraw.draw";
 
 /** Milliseconds of grass work one frame may spend, across every patch, once the view has filled. */
 const BAKE_SLICE_MS = 3;
@@ -36,7 +35,7 @@ function grassCoverLift(look: GrassLook): number {
 }
 
 /** Props for {@link GrassPatch}. */
-export interface GrassPatchProps extends Omit<ThreeElements["group"], "children"> {
+export interface GrassPatchProps extends Pick<DrawAttachProps, "position" | "rotation" | "scale" | "visible"> {
   /** The patch's look (`readGrassLook` from a `grass_field` volume, or a `grass()` descriptor's `look`). */
   look: GrassLook;
   /** Footprint size in metres, centred on the group origin. */
@@ -79,7 +78,7 @@ function applyGroupProps(group: Group, props: GrassPatchProps): void {
     if (Array.isArray(scale)) group.scale.set(scale[0], scale[1], scale[2]);
     else if (scale instanceof Vector3) group.scale.copy(scale);
   }
-  if (props.visible !== undefined) group.visible = props.visible as boolean;
+  if (props.visible !== undefined) group.visible = props.visible;
 }
 
 /**

@@ -1,7 +1,7 @@
-import { useThree } from "@react-three/fiber";
 import { memo, useEffect } from "react";
 import type { Vector3 } from "three";
 
+import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { orbitCameraPosition } from "./camera/orbitFraming";
 import type { EditorHostApi } from "./session";
 
@@ -16,10 +16,14 @@ type OrbitLike = {
  * point, the camera pans to keep it centered (the historical behavior). When it also carries
  * placement (`distance`/`pitch`/`yaw`/`height`), the camera is repositioned to that orbit pose —
  * how `camera_goto`/`camera_frame` compose an aerial without the KeyF-buries-in-terrain problem.
+ *
+ * The inspection rig's `OrbitControls` live inside `GameInspectionCamera`'s draw and never
+ * registered on a host `controls` slot (r3f's `state.controls` was always null here too), so the
+ * subscription stays a no-op until a host exposes its controls.
  */
 export const EditorCameraDriver = memo(function EditorCameraDriver({ api }: { api: EditorHostApi }) {
-  const controls = useThree((state) => state.controls) as OrbitLike | null;
-  const camera = useThree((state) => state.camera);
+  const camera = useEngineHost().frame.camera;
+  const controls: OrbitLike | null = null;
 
   useEffect(() => {
     return api.subscribeFocus((target) => {

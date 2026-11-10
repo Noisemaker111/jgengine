@@ -1,5 +1,7 @@
-import { Html } from "@react-three/drei";
-import { useMemo } from "react";
+import { Fragment, useEffect, useMemo } from "react";
+import { Mesh, MeshStandardMaterial, PlaneGeometry } from "three";
+import { disposeObjectTree, SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
+import { AnchoredOverlay } from "@jgengine/core/hud/hudOverlay.draw";
 
 import { GRASS_DEFAULTS, type GrassLook } from "@jgengine/core/grass/grassKind";
 import { GrassPatch } from "@jgengine/core/grass/GrassPatch.draw";
@@ -50,21 +52,26 @@ const patchX = (index: number): number => (index - (SCENES.length - 1) / 2) * (P
 function GrassFields() {
   const looks = useMemo(() => SCENES.map(grownLook), []);
   const area = useMemo(() => [PATCH, PATCH] as const, []);
+  const ground = useMemo(() => {
+    const geo = new PlaneGeometry(60, 30);
+    geo.rotateX(-Math.PI / 2);
+    const groundMesh = new Mesh(geo, new MeshStandardMaterial({ color: "#4a3f30", roughness: 1 }));
+    groundMesh.receiveShadow = true;
+    return groundMesh;
+  }, []);
+  useEffect(() => () => disposeObjectTree(ground), [ground]);
   return (
-    <group>
-      <mesh rotation-x={-Math.PI / 2} receiveShadow>
-        <planeGeometry args={[60, 30]} />
-        <meshStandardMaterial color="#4a3f30" roughness={1} />
-      </mesh>
+    <>
+      <SceneObjectAttach object={ground} />
       {SCENES.map((scene, index) => (
-        <group key={scene.label}>
+        <Fragment key={scene.label}>
           <GrassPatch position={[patchX(index), 0, 0]} look={looks[index] ?? GRASS_DEFAULTS} area={area} groundColor="#4a3f30" />
-          <Html position={[patchX(index), 0, PATCH / 2 + 0.8]} center zIndexRange={[10, 0]} style={{ pointerEvents: "none" }}>
+          <AnchoredOverlay position={[patchX(index), 0, PATCH / 2 + 0.8]} zIndex={10}>
             <div style={{ color: "#fff", font: "600 13px sans-serif", whiteSpace: "nowrap", textShadow: "0 1px 3px rgba(0,0,0,0.9)" }}>{scene.label}</div>
-          </Html>
-        </group>
+          </AnchoredOverlay>
+        </Fragment>
       ))}
-    </group>
+    </>
   );
 }
 
@@ -73,8 +80,8 @@ export const grassFieldGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "grass-field" },
   scene: {
-    renderEntity: () => <group />,
-    renderObject: () => <group />,
+    renderEntity: () => null,
+    renderObject: () => null,
     environment: () => <GrassFields />,
   },
   loop: { ...demoGame.loop, onTick: () => {} },

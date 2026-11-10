@@ -1,8 +1,6 @@
-import { useThree } from "@react-three/fiber";
-import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
-import { linkAhead, warmupWaitsFor } from "@jgengine/core/render/shaderWarmup.draw";
+import { linkAhead } from "@jgengine/core/render/shaderWarmup.draw";
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
 /** How sharp an impostor atlas is: `frames`×`frames` views over the upper hemisphere, `cell` pixels each. @internal */
@@ -516,49 +514,6 @@ export function releaseImpostor(key: string, renderer: THREE.WebGLRenderer, sett
   if (entry === undefined) return;
   entry.users = Math.max(0, entry.users - 1);
   if (entry.users === 0 && entry.modelGone) freeImpostor(id, entry);
-}
-
-/**
- * A component's share of the impostor for `key`: null until its bake has landed. The bake links its
- * programs off the frame first, so the far placements draw as models a few frames longer; the
- * scene's covered warmup (the loading cover, a travel card) waits until the component has drawn its
- * cards with it, so a place is revealed with the impostor's own materials already linked rather than
- * linking them in the first frames of play.
- * @internal
- */
-export function useImpostorEntry(key: string, sources: readonly ImpostorSource[], settings: ImpostorSettings): ImpostorEntry | null {
-  const gl = useThree((state) => state.gl);
-  const scene = useThree((state) => state.scene);
-  const [entry, setEntry] = useState<ImpostorEntry | null>(null);
-  const landed = useRef<(() => void) | null>(null);
-  useEffect(() => {
-    let live = true;
-    const acquired = acquireImpostor(key, gl, sources, settings);
-    if (acquired.baked) setEntry(acquired);
-    else {
-      setEntry(null);
-      warmupWaitsFor(scene, new Promise<void>((resolve) => { landed.current = resolve; }));
-      void acquired.ready.then(() => {
-        if (!live) return;
-        setEntry(acquired);
-        // Nothing to draw: there are no cards to wait for.
-        if (acquired.atlas === null) landed.current?.();
-      });
-    }
-    return () => {
-      live = false;
-      landed.current?.();
-      landed.current = null;
-      releaseImpostor(key, gl, settings);
-    };
-  }, [key, gl, scene, sources, settings]);
-  // Runs after the children's effects, so the cards built from this entry are in the scene by now.
-  useEffect(() => {
-    if (entry?.baked !== true) return;
-    landed.current?.();
-    landed.current = null;
-  }, [entry]);
-  return entry;
 }
 
 /** The unit card every instance of `atlas` draws, bounded by the model it stands in for so culling stays honest. @internal */
