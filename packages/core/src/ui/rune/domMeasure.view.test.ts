@@ -1,14 +1,14 @@
 import { expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 
-test("layout measurements and resize notifications exclude painted transforms", () => {
+test("native layout, resize and scroll APIs preserve their browser contracts", () => {
   const source = `
     import { Window } from "happy-dom";
-    import { installRuneMeasure, setRuneRect } from ${JSON.stringify(new URL("./domMeasure.view.ts", import.meta.url).href)};
+    import { installRuneMeasure, setRuneRect, setRuneScroll } from ${JSON.stringify(new URL("./domMeasure.view.ts", import.meta.url).href)};
     const win = new Window();
     let frame;
     Object.assign(globalThis, {
-      Element: win.Element, HTMLElement: win.HTMLElement, DOMRect: win.DOMRect,
+      Element: win.Element, HTMLElement: win.HTMLElement, DOMRect: win.DOMRect, Event: win.Event,
       ResizeObserver: win.ResizeObserver,
       requestAnimationFrame: callback => { frame = callback; return 1; },
     });
@@ -16,7 +16,8 @@ test("layout measurements and resize notifications exclude painted transforms", 
     layer.setAttribute("data-jg-rune-layer", "");
     const panel = win.document.createElement("div");
     layer.append(panel); win.document.body.append(layer);
-    installRuneMeasure();
+    const requests = [];
+    installRuneMeasure({ scroll: (element, x, y, smooth) => requests.push([x, y, smooth]) });
     const widths = [];
     const observer = new ResizeObserver(entries => widths.push(entries[0].borderBoxSize[0].inlineSize));
     observer.observe(panel);
@@ -30,6 +31,19 @@ test("layout measurements and resize notifications exclude painted transforms", 
     flush(); check(widths.length, 1);
     setRuneRect(panel, [15, 30, 120, 60], [5, 10, 240, 120]);
     flush(); check(widths.length, 2); check(widths[1], 240); check(panel.offsetWidth, 240);
+    setRuneScroll(panel, [0, 0, 200, 100, 400, 400]);
+    check(panel.scrollWidth, 400); check(panel.scrollHeight, 400); check(panel.clientHeight, 100);
+    panel.scrollTop = 999;
+    check(panel.scrollTop, 300); check(JSON.stringify(requests.at(-1)), "[0,300,false]");
+    panel.scrollBy({ top: -50, left: 30, behavior: "instant" });
+    check(panel.scrollTop, 250); check(panel.scrollLeft, 30);
+    setRuneScroll(panel, [0, 0, 200, 100, 400, 400]);
+    setRuneRect(panel, [0, 0, 200, 100], [0, 0, 200, 100]);
+    const child = win.document.createElement("button"); panel.append(child);
+    setRuneRect(child, [250, 250, 20, 20], [250, 250, 20, 20]);
+    child.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+    await Promise.resolve();
+    check(JSON.stringify(requests.at(-1)), "[160,170,true]");
     observer.disconnect(); await win.happyDOM.close();
   `;
   const result = spawnSync(process.execPath, ["--eval", source], { encoding: "utf8", windowsHide: true, timeout: 10_000 });

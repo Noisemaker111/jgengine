@@ -1226,17 +1226,17 @@ pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
         }
     }
     if scrolls {
+        let fills_viewport = b.d == 0 && matches!(b.fd, 1 | 3) && b.c.iter().any(|child| matches!(child, crate::Node::X(child) if child.fg > 0.0));
         let mut inner = col().layout_style(|st| {
             layout(b, st);
             st.position = Position::Relative;
             st.inset = Rect { left: auto(), top: auto(), right: auto(), bottom: auto() };
-            st.size = Size { width: Dimension::percent(1.0), height: Dimension::auto() };
+            st.size = Size { width: Dimension::percent(1.0), height: if fills_viewport { Dimension::percent(1.0) } else { Dimension::auto() } };
             st.min_size = Size { width: auto(), height: auto() };
             st.max_size = Size { width: auto(), height: auto() };
             st.margin = Rect { left: length(0.0), top: length(0.0), right: length(0.0), bottom: length(0.0) };
             st.border = Rect { left: length(0.0), top: length(0.0), right: length(0.0), bottom: length(0.0) };
-            // At least as tall as the box that scrolls it (so its children can fill that room), and
-            // as tall as its content when that is more.
+            // A growing flex pane needs a definite viewport height; ordinary scroll content grows.
             st.flex_grow = 1.0;
             st.flex_shrink = 0.0;
             st.grid_column = Line { start: GridPlacement::Auto, end: GridPlacement::Auto };
@@ -1254,6 +1254,10 @@ pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
             .scroll(ScrollSpec { stick_bottom: false })
             .hit()
             .child(inner);
+        if b.id != 0 {
+            let id = b.id;
+            e = e.on_scroll_offset(move |at| crate::emit_scroll(id, at));
+        }
     } else {
         // Children's backgrounds are cut to this box's own shape.
         let own = (!b.cp.is_empty()).then_some(()).and(rect).zip(clip.as_ref()).map(|(r, poly)| poly.iter().map(|p| [p[0] + r[0], p[1] + r[1]]).collect::<Vec<_>>());
@@ -1345,6 +1349,30 @@ pub fn fields<'a>(nodes: &'a [crate::Node], out: &mut Vec<(String, &'a Input)>) 
 #[cfg(test)]
 mod live_value_tests {
     use super::*;
+
+    #[test]
+    fn a_growing_flex_child_keeps_its_inner_scroller_bounded_and_heading_fixed() {
+        let mut state = Ui::default();
+        state.root = crate::spec::parse_spec(r#"{"children":[{"k":"x","id":1,"w":200,"h":200,"fd":1,"ovy":2,"c":[{"k":"x","id":2,"fd":1,"fg":1,"mnh":0,"c":[{"k":"x","id":3,"h":20,"fs":0},{"k":"x","id":4,"fd":1,"mnh":0,"ovy":2,"c":[{"k":"x","id":5,"h":500,"fs":0}]}]}]}]}"#).unwrap().children;
+        let mut runtime = rune::Runtime::new(state, crate::build::view, (200.0, 200.0), rune::Env::new(true, 1.0));
+        runtime.frame(0.0);
+        let rect = |runtime: &rune::Runtime<Ui>, key| runtime.elements().into_iter().find(|element| element.key.as_deref() == Some(key)).unwrap().rect;
+        let pane = rect(&runtime, "x4");
+        assert!(pane[3] <= 180.0, "the inner scroller grew to its whole content instead of its viewport: {pane:?}");
+        let heading = rect(&runtime, "x3");
+        let body = rect(&runtime, "x5");
+        runtime.wheel_event(rune::WheelEvent::new(0.0, -60.0).at(50.0, 100.0).precise(true));
+        runtime.frame(0.1);
+        assert_eq!(rect(&runtime, "x3"), heading, "scrolling moved the fixed heading");
+        assert!(rect(&runtime, "x5")[1] < body[1] - 50.0);
+        crate::EVENTS.with(|events| events.borrow_mut().clear());
+        runtime.update(|_, tx| { tx.live_only(); tx.scroll_to_y("x4", 100.0); });
+        runtime.frame(0.2);
+        let metrics = crate::EVENTS.with(|events| events.borrow().iter().rev().find(|event| event.id == "x4" && event.kind == "scroll").and_then(|event| event.scroll)).unwrap();
+        assert_eq!(metrics[1], 100.0);
+        assert_eq!(metrics[3], 180.0);
+        assert_eq!(metrics[5], 500.0);
+    }
 
     #[test]
     fn an_auto_scroll_child_without_overflow_does_not_block_its_scrollable_parent() {

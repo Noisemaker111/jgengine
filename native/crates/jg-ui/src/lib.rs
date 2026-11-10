@@ -71,6 +71,8 @@ struct UiEvent {
     value: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     text: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    scroll: Option<[f32; 6]>,
 }
 
 thread_local! {
@@ -84,6 +86,7 @@ pub(crate) fn emit(id: &str, kind: &'static str, value: Option<f32>, text: Optio
             kind,
             value,
             text,
+            scroll: None,
         })
     });
 }
@@ -101,6 +104,13 @@ pub(crate) fn wake() {
 /// An event from a CSS box, addressed by its numeric id as `x<id>`.
 pub(crate) fn emit_id(id: u32, kind: &'static str, value: Option<f32>, text: Option<String>) {
     emit(&format!("x{id}"), kind, value, text);
+}
+
+pub(crate) fn emit_scroll(id: u32, at: rune::ScrollPos) {
+    EVENTS.with(|events| events.borrow_mut().push(UiEvent {
+        id: format!("x{id}"), kind: "scroll", value: None, text: None,
+        scroll: Some([at.offset[0], at.offset[1], at.viewport[0], at.viewport[1], at.viewport[0] + at.max[0], at.viewport[1] + at.max[1]]),
+    }));
 }
 
 // ---------------------------------------------------------------------------
@@ -370,6 +380,21 @@ pub fn patch_text(id: u32, json: &str) {
                 if let Some(slot) = css::find_mut(&mut s.root, id) {
                     slot.t = text;
                 }
+            });
+        }
+    });
+}
+
+/// Move a keyed CSS scroller without rebuilding its view.
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen::prelude::wasm_bindgen]
+pub fn scroll_to(id: u32, x: f32, y: f32, smooth: bool) {
+    HANDLE.with(|handle| {
+        if let Some(handle) = handle.borrow().as_ref() {
+            handle.update(move |_: &mut Ui, tx: &mut Tx| {
+                tx.live_only();
+                if smooth { tx.scroll_to(format!("x{id}"), x, y); }
+                else { tx.scroll_to_instant(format!("x{id}"), x, y); }
             });
         }
     });

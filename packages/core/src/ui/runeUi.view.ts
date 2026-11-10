@@ -22,7 +22,11 @@ export interface RuneUiEvent {
   kind: string;
   value?: number;
   text?: string;
+  scroll?: RuneScrollValues;
 }
+
+/** Scroll offset, viewport and content size in layout pixels. */
+export type RuneScrollValues = readonly [number, number, number, number, number, number];
 
 export interface RuneUiFrame {
   events: RuneUiEvent[];
@@ -54,6 +58,7 @@ interface JgUiModule {
   set_spec: (json: string) => void;
   patch: (json: string) => void;
   patch_text: (id: number, json: string) => void;
+  scroll_to: (id: number, x: number, y: number, smooth: boolean) => void;
   values_changed: () => void;
   unmount: () => void;
   values_ptr: () => number;
@@ -186,6 +191,11 @@ export class RuneUi {
   patchText(id: number, text: unknown): void {
     const json = JSON.stringify(text ?? null);
     this.send(() => this.api.patch_text(id, json));
+  }
+
+  /** Move a CSS scroll viewport, without rerendering its components. */
+  scrollTo(id: number, x: number, y: number, smooth: boolean): void {
+    this.send(() => this.api.scroll_to(id, x, y, smooth));
   }
 
   /** Calls made before Rune's first frame run after it, in order. */

@@ -2048,9 +2048,15 @@
 
 ## @jgengine/core/ui/rune/domMeasure.view
 
-- `installRuneMeasure` (function): function installRuneMeasure(): void — Make measurement of Rune-drawn elements answer from Rune's layout. Safe to call again.
+- `RuneScrollDriver` (interface): interface RuneScrollDriver { scroll(element: Element, x: number, y: number, smooth: boolean): void } — ⚠ undocumented · used by `installRuneMeasure`: Make measurement of Rune-drawn elements answer from Rune's layout.
+- `installRuneMeasure` (function): function installRuneMeasure(driver: RuneScrollDriver): void — Make measurement of Rune-drawn elements answer from Rune's layout. Safe to call again.
 - `runeRectOf` (function): function runeRectOf(element: Element): Rect | undefined — ⚠ undocumented
-- `setRuneRect` (function): function setRuneRect(element: Element, rect: Rect): void — Record where Rune laid `element` out (CSS pixels); observers of it hear a size change.
+- `setRuneRect` (function): function setRuneRect(element: Element, rect: Rect, layout: Rect): void — Record painted bounds for hit testing and layout bounds for size/resize APIs (CSS pixels).
+- `setRuneScroll` (function): function setRuneScroll(element: Element, values: RuneScrollValues): void — Native scroll position and extents; components read these without state updates.
+
+## @jgengine/core/ui/rune/patches
+
+- `compactPatches` (function): function compactPatches<T extends PatchNode<T>>(patches: readonly T[], roots: ReadonlySet<T>, owner: (node: T) => T | undefined): T[] — Keep only attached replacement roots after all changes in one mirror pass.
 
 ## @jgengine/core/ui/rune/runeInput.view
 
@@ -2068,8 +2074,9 @@
 
 ## @jgengine/core/ui/runeUi.view
 
+- `RuneScrollValues` (type): type RuneScrollValues = readonly [number, number, number, number, number, number] — Scroll offset, viewport and content size in layout pixels.
 - `RuneUi` (class): class RuneUi — One mounted Rune UI layer. Create once per page; games describe their trees with {@link RuneUi.setSpec} and bind live values with {@link RuneUi.bind}.
-- `RuneUiEvent` (interface): interface RuneUiEvent { id: string; kind: string; value?: number; text?: string } — ⚠ undocumented
+- `RuneUiEvent` (interface): interface RuneUiEvent { id: string; kind: string; value?: number; text?: string; scroll?: RuneScrollValues } — ⚠ undocumented
 - `RuneUiFrame` (interface): interface RuneUiFrame { events: RuneUiEvent[]; regions: [number, number, number, number][]; modal: boolean; rects?: [number, number, number, number, number][] } — ⚠ undocumented
 - `RuneUiNode` (interface): interface RuneUiNode { k: string; [key: string]: unknown } — ⚠ undocumented
 - `RuneUiOptions` (interface): interface RuneUiOptions { canvasId?: string; baseUrl?: string; fonts?: readonly string[]; sans?: string; mono?: string; zIndex?: number } — ⚠ undocumented

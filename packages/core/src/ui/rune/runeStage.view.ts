@@ -15,7 +15,7 @@ import { isFrameBoundElement } from "../liveBind.view";
 import { MirrorReport, boxOfElement, elementOf, mirrorRoot, onMaskLoaded, ownerOf, remirrorElement, remirrorText, type WireBox } from "./cssMirror.view";
 import { compactPatches } from "./patches";
 import { twinStateRules } from "./cssStates.view";
-import { installRuneMeasure, runeRectOf, setRuneRect } from "./domMeasure.view";
+import { installRuneMeasure, runeRectOf, setRuneRect, setRuneScroll } from "./domMeasure.view";
 import { RuneInput } from "./runeInput.view";
 import { boxTransform, composeBoxTransform, transformedBoxRect, type BoxTransform } from "./boxTransform";
 
@@ -71,13 +71,14 @@ export class RuneStage {
   private islandHost: HTMLDivElement | null = null;
   private islandRaf = 0;
   private input: RuneInput | null = null;
+  private readonly scrollRequests = new Map<Element, { x: number; y: number; smooth: boolean }>();
   /** What the mirror has done and what it cost, for perf probes: passes by kind, boxes built, milliseconds. */
   stats = { full: 0, patches: 0, texts: 0, slots: 0, boxes: 0, ms: 0, lastMs: 0 };
   /** The last updates Rune refused, newest last. */
   readonly errors: string[] = [];
 
   private constructor() {
-    installRuneMeasure();
+    installRuneMeasure({ scroll: (element, x, y, smooth) => this.scrollTo(element, x, y, smooth) });
     onMaskLoaded(() => this.remirror());
     window.addEventListener("resize", () => {
       for (const layer of this.layers) layer.root = null;
@@ -184,6 +185,14 @@ export class RuneStage {
             for (const child of box.c ?? []) place(child, matrix);
           };
           for (const layer of this.layers) if (layer.root !== null) place(layer.root, [1, 0, 0, 1, 0, 0]);
+          const pending = [...this.scrollRequests];
+          this.scrollRequests.clear();
+          for (const [element, request] of pending) {
+            if (!element.isConnected) continue;
+            const box = boxOfElement(element);
+            if (box !== undefined) ui.scrollTo(box.id, request.x, request.y, request.smooth);
+            else this.report.add("scroll request on an element without a Rune box", element);
+          }
           this.placeIslands();
         };
         this.stale = true;
@@ -470,6 +479,12 @@ export class RuneStage {
     this.islandRaf = requestAnimationFrame(this.copyIslands);
   };
 
+  private scrollTo(element: Element, x: number, y: number, smooth: boolean): void {
+    const box = boxOfElement(element);
+    if (this.ui !== null && box !== undefined) this.ui.scrollTo(box.id, x, y, smooth);
+    else this.scrollRequests.set(element, { x, y, smooth });
+  }
+
   private onEvent(event: RuneUiEvent): void {
     if (event.id === "__spec__") {
       // Rune kept its old tree: say so, and send every layer again from the top.
@@ -483,6 +498,10 @@ export class RuneStage {
     if (!event.id.startsWith("x")) return;
     const element = elementOf(Number(event.id.slice(1)));
     if (element === null) return;
+    if (event.kind === "scroll" && event.scroll !== undefined) {
+      setRuneScroll(element, event.scroll);
+      return;
+    }
     if (event.kind === "edit" && typeof event.text === "string") {
       const field = element as HTMLInputElement;
       if (field.value === event.text) return;

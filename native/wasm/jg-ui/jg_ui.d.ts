@@ -23,6 +23,11 @@ export function patch(json: string): void;
 export function patch_text(id: number, json: string): void;
 
 /**
+ * Move a keyed CSS scroller without rebuilding its view.
+ */
+export function scroll_to(id: number, x: number, y: number, smooth: boolean): void;
+
+/**
  * Replace the whole widget tree. Rare: structure changes, not per-frame values.
  * Field edits for ids that survive are kept.
  */
@@ -47,27 +52,28 @@ export interface InitOutput {
     readonly mount: (a: number, b: number, c: number, d: number) => void;
     readonly patch: (a: number, b: number) => void;
     readonly patch_text: (a: number, b: number, c: number) => void;
+    readonly scroll_to: (a: number, b: number, c: number, d: number) => void;
     readonly set_spec: (a: number, b: number) => void;
     readonly unmount: () => void;
     readonly values_changed: () => void;
     readonly values_len: () => number;
     readonly values_ptr: () => number;
-    readonly __wasm_bindgen_func_elem_13636: (a: number, b: number, c: number, d: any) => void;
-    readonly __wasm_bindgen_func_elem_13636_19: (a: number, b: number, c: number, d: any) => void;
-    readonly __wasm_bindgen_func_elem_13636_20: (a: number, b: number, c: number, d: any) => void;
-    readonly __wasm_bindgen_func_elem_15092: (a: number, b: number, c: any, d: any) => void;
-    readonly __wasm_bindgen_func_elem_16276: (a: number, b: number, c: number, d: any) => void;
-    readonly __wasm_bindgen_func_elem_1693: (a: number, b: number, c: number, d: number) => void;
-    readonly __wasm_bindgen_func_elem_15089: (a: number, b: number, c: number) => void;
-    readonly __wasm_bindgen_func_elem_15090: (a: number, b: number, c: any) => void;
-    readonly __wasm_bindgen_func_elem_15090_11: (a: number, b: number, c: any) => void;
-    readonly __wasm_bindgen_func_elem_15090_12: (a: number, b: number, c: any) => void;
-    readonly __wasm_bindgen_func_elem_15090_13: (a: number, b: number, c: any) => void;
-    readonly __wasm_bindgen_func_elem_15090_15: (a: number, b: number, c: any) => void;
-    readonly __wasm_bindgen_func_elem_15090_16: (a: number, b: number, c: any) => void;
-    readonly __wasm_bindgen_func_elem_15090_17: (a: number, b: number, c: any) => void;
-    readonly __wasm_bindgen_func_elem_15090_18: (a: number, b: number, c: any) => void;
-    readonly __wasm_bindgen_func_elem_15088: (a: number, b: number) => void;
+    readonly __wasm_bindgen_func_elem_13650: (a: number, b: number, c: number, d: any) => void;
+    readonly __wasm_bindgen_func_elem_13650_20: (a: number, b: number, c: number, d: any) => void;
+    readonly __wasm_bindgen_func_elem_13650_21: (a: number, b: number, c: number, d: any) => void;
+    readonly __wasm_bindgen_func_elem_15106: (a: number, b: number, c: any, d: any) => void;
+    readonly __wasm_bindgen_func_elem_16290: (a: number, b: number, c: number, d: any) => void;
+    readonly __wasm_bindgen_func_elem_1700: (a: number, b: number, c: number, d: number) => void;
+    readonly __wasm_bindgen_func_elem_15103: (a: number, b: number, c: number) => void;
+    readonly __wasm_bindgen_func_elem_15104: (a: number, b: number, c: any) => void;
+    readonly __wasm_bindgen_func_elem_15104_12: (a: number, b: number, c: any) => void;
+    readonly __wasm_bindgen_func_elem_15104_13: (a: number, b: number, c: any) => void;
+    readonly __wasm_bindgen_func_elem_15104_14: (a: number, b: number, c: any) => void;
+    readonly __wasm_bindgen_func_elem_15104_16: (a: number, b: number, c: any) => void;
+    readonly __wasm_bindgen_func_elem_15104_17: (a: number, b: number, c: any) => void;
+    readonly __wasm_bindgen_func_elem_15104_18: (a: number, b: number, c: any) => void;
+    readonly __wasm_bindgen_func_elem_15104_19: (a: number, b: number, c: any) => void;
+    readonly __wasm_bindgen_func_elem_15102: (a: number, b: number) => void;
     readonly __wbindgen_export: (a: number, b: number) => number;
     readonly __wbindgen_export2: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_export3: (a: number, b: number, c: number) => void;
