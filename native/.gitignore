@@ -4,5 +4,6 @@ testdata/
 
 # wasm-bindgen output for row D's web harness; build steps in README.md.
 web/pkg/
-# The jg-ui wasm bundle games serve for Rune UI; rebuild with `bun scripts/build-jg-ui-wasm.ts`.
-wasm/
+# Keep experimental wasm builds local; jg-ui is the bundle every checkout serves.
+wasm/*
+!wasm/jg-ui/

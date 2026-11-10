@@ -1,6 +1,7 @@
 // `bun scripts/build-jg-ui-wasm.ts`: rebuild native/wasm/jg-ui/, the wasm + JS glue the
 // engine's Rune UI layer (native/crates/jg-ui) serves to games. Run it after changing jg-ui or
-// the vendored Rune under native/vendor/rune. Output is gitignored; the vite plugin serves it.
+// the vendored Rune under native/vendor/rune. Commit its output with the source change;
+// the Vite plugin serves this bundle on fresh checkouts without a Rust toolchain.
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
