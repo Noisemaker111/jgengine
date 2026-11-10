@@ -17,12 +17,29 @@ use serde::Deserialize;
 
 use crate::Ui;
 
-/// A CSS length: points, a percentage, or `auto`.
+/// A CSS length: points, a percentage, `auto`, or a `calc()` / `min()` / `max()` of points and percentages.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Dim {
     Px(f32),
     Pct(f32),
     Auto,
+    /// The address of a leaked `rune_taffy::Calc`.
+    Calc(usize),
+}
+
+thread_local! {
+    /// One leaked value per distinct calc, so a style that is rebuilt every pass adds nothing.
+    static CALCS: RefCell<HashMap<[u32; 5], usize>> = RefCell::new(HashMap::new());
+}
+
+/// `[points, fraction]`, or `[points, fraction, other points, other fraction, mode]` with mode 1 `min()`, 2 `max()`.
+fn calc_of(v: &[f32]) -> usize {
+    let at = |i: usize| v.get(i).copied().unwrap_or(0.0);
+    let mode = at(4) as u32;
+    let key = [at(0).to_bits(), at(1).to_bits(), at(2).to_bits(), at(3).to_bits(), mode];
+    CALCS.with(|c| {
+        *c.borrow_mut().entry(key).or_insert_with(|| rune_taffy::Calc { px: at(0), fraction: at(1), other_px: at(2), other_fraction: at(3), mode }.leak() as usize)
+    })
 }
 
 impl<'de> Deserialize<'de> for Dim {
@@ -32,9 +49,11 @@ impl<'de> Deserialize<'de> for Dim {
         enum Raw {
             N(f32),
             S(String),
+            C(Vec<f32>),
         }
         Ok(match Raw::deserialize(d)? {
             Raw::N(v) => Dim::Px(v),
+            Raw::C(v) => Dim::Calc(calc_of(&v)),
             Raw::S(s) => match s.strip_suffix('%').and_then(|p| p.parse::<f32>().ok()) {
                 Some(p) => Dim::Pct(p / 100.0),
                 None => Dim::Auto,
@@ -49,6 +68,7 @@ impl Dim {
             Dim::Px(v) => Dimension::length(v),
             Dim::Pct(p) => Dimension::percent(p),
             Dim::Auto => Dimension::auto(),
+            Dim::Calc(p) => Dimension::calc(p as *const ()),
         }
     }
     fn lpa(self) -> LengthPercentageAuto {
@@ -56,6 +76,7 @@ impl Dim {
             Dim::Px(v) => length(v),
             Dim::Pct(p) => percent(p),
             Dim::Auto => auto(),
+            Dim::Calc(p) => LengthPercentageAuto::calc(p as *const ()),
         }
     }
     fn lp(self) -> LengthPercentage {
@@ -63,6 +84,7 @@ impl Dim {
             Dim::Px(v) => length(v),
             Dim::Pct(p) => percent(p),
             Dim::Auto => length(0.0),
+            Dim::Calc(p) => LengthPercentage::calc(p as *const ()),
         }
     }
 }
@@ -115,6 +137,12 @@ pub struct Layer {
     pub ry: f32,
     #[serde(default)]
     pub st: Vec<(f32, Rgba)>,
+    /// `background-size` of a layer drawn once: `[w points, w fraction, h points, h fraction]` of the box.
+    #[serde(default)]
+    pub bs: Option<[f32; 4]>,
+    /// Its `background-position`: `[x points, x fraction, y points, y fraction]` of the room left over.
+    #[serde(default)]
+    pub bp: Option<[f32; 4]>,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -305,6 +333,9 @@ pub struct Box_ {
     /// Backdrop blur radius in points.
     #[serde(default)]
     pub bblur: f32,
+    /// Horizontal skew (the tangent of its angle): the box paints as a parallelogram.
+    #[serde(default)]
+    pub sk: f32,
     /// `clip-path` as a polygon: each corner `[x points, x fraction, y points, y fraction]` of the box.
     #[serde(default)]
     pub cp: Vec<[f32; 4]>,
@@ -526,13 +557,14 @@ fn size_of(id: u32) -> Option<[f32; 2]> {
 
 /// Whether this box's paint depends on its own laid-out size.
 fn needs_size(b: &Box_) -> bool {
-    b.ly.iter().any(|l| l.g == 1 && l.flat.is_none())
+    b.ly.iter().any(|l| (l.g == 1 && l.flat.is_none()) || l.bs.is_some())
         || b.tf.is_some_and(|t| t[4] != 0.0 || t[5] != 0.0)
         || b.rad.is_some_and(|r| r.iter().any(|v| *v < 0.0))
         || b.svg.is_some()
         || b.img.is_some()
         || b.bgi.is_some()
         || !b.cp.is_empty()
+        || b.sk != 0.0
 }
 
 /// The part of `poly` on the inside of the line `n · p = d` (`keep_below`: where `n · p <= d`).
@@ -592,6 +624,11 @@ fn clip_of(b: &Box_, rect: Option<[f32; 4]>) -> Option<Vec<[f32; 2]>> {
         let [w, h] = rect.map_or([0.0, 0.0], |r| [r[2], r[3]]);
         return Some(b.cp.iter().map(|p| [p[0] + p[1] * w, p[2] + p[3] * h]).collect());
     }
+    if b.sk != 0.0 {
+        let [w, h] = rect.map_or([0.0, 0.0], |r| [r[2], r[3]]);
+        let k = b.sk * h * 0.5;
+        return Some(vec![[-k, 0.0], [w - k, 0.0], [w + k, h], [k, h]]);
+    }
     if b.bg.is_none() && b.ly.is_empty() {
         return None;
     }
@@ -630,7 +667,7 @@ fn clipped_paint(b: &Box_, size: [f32; 2], poly: &[[f32; 2]]) -> rune::Shape {
     if poly.len() < 3 {
         return shape;
     }
-    for l in &b.ly {
+    for l in b.ly.iter().filter(|l| l.bs.is_none()) {
         if let Some(c) = l.flat {
             shape = shape.fill(poly.clone(), c.0);
             continue;
@@ -672,6 +709,15 @@ fn clipped_paint(b: &Box_, size: [f32; 2], poly: &[[f32; 2]]) -> rune::Shape {
         }
     }
     shape
+}
+
+/// The sheet one background layer paints on: the whole box, or the piece its size and position give.
+fn layer_sheet(l: &Layer, radii: Option<[f32; 4]>, size: [f32; 2]) -> El {
+    let Some(bs) = l.bs else { return paint_layer(sheet(radii), l, size) };
+    let (w, h) = (bs[0] + bs[1] * size[0], bs[2] + bs[3] * size[1]);
+    let bp = l.bp.unwrap_or([0.0; 4]);
+    let (x, y) = (bp[0] + bp[1] * (size[0] - w), bp[2] + bp[3] * (size[1] - h));
+    paint_layer(el().pin(Some(x), Some(y), None, None).size(w.max(0.0), h.max(0.0)), l, [w, h])
 }
 
 /// A full-size, out-of-flow sheet for one more background layer.
@@ -733,15 +779,24 @@ pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
     let rect = RECTS.with(|r| r.borrow().get(&b.id).copied());
     let clip = clip_of(b, rect);
     let clipped = clip.is_some();
+    let skewed = b.sk != 0.0 && b.cp.is_empty();
     if let Some(poly) = &clip {
-        e = e.shape(clipped_paint(b, size, poly));
+        let mut shape = clipped_paint(b, size, poly);
+        // A skewed box's border follows its slanted sides.
+        if let (true, Some(w), Some(c)) = (skewed, b.bw, b.bc) {
+            let width = w.iter().fold(0.0, |a: f32, v| a.max(*v));
+            if width > 0.0 && poly.len() >= 3 {
+                shape = shape.stroke_with(poly.clone(), true, width, rune::LineCap::Butt, c.0);
+            }
+        }
+        e = e.shape(shape);
     } else if let Some(c) = b.bg {
         e = e.fill(c.0);
     }
     if let Some(r) = radii {
         e = e.corners(r);
     }
-    if let (Some(w), Some(c)) = (b.bw, b.bc) {
+    if let (Some(w), Some(c), false) = (b.bw, b.bc, skewed) {
         if w.iter().any(|v| *v > 0.0) {
             e = e.border_sides(w, c.0);
             if b.dash != 0 {
@@ -780,14 +835,14 @@ pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
     // The lowest gradient paints on the box itself; the rest are full-size sheets above it.
     let mut layers = if clipped { [].iter() } else { b.ly.iter() };
     if let Some(first) = layers.next() {
-        e = if first.flat.is_some() && b.bg.is_some() {
-            e.child(paint_layer(sheet(radii), first, size))
+        e = if (first.flat.is_some() && b.bg.is_some()) || first.bs.is_some() {
+            e.child(layer_sheet(first, radii, size))
         } else {
             paint_layer(e, first, size)
         };
     }
     for l in layers {
-        e = e.child(paint_layer(sheet(radii), l, size));
+        e = e.child(layer_sheet(l, radii, size));
     }
     // A clipped box keeps its shape and loses the picture, which would paint past the cut corners.
     if let (Some(url), false) = (&b.bgi, clipped) {

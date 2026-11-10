@@ -292,6 +292,10 @@ export function pageFlowDriver(session: CdpSession, options: PageDriverOptions):
       await fillField(session, label, value);
       await settle();
     },
+    async type(text) {
+      await session.send("Input.insertText", { text });
+      await settle();
+    },
     evaluate: (expression) => session.evaluate(expression, { awaitPromise: true }),
     bridge: (request) => bridge(session, request),
     readProbe: () => readProbe(session),

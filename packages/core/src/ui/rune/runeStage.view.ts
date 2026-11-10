@@ -11,7 +11,7 @@
  */
 
 import { RuneUi, type RuneUiEvent, type RuneUiNode } from "../runeUi.view";
-import { MirrorReport, boxOfElement, elementOf, mirrorRoot, remirrorElement, remirrorText, type WireBox } from "./cssMirror.view";
+import { MirrorReport, boxOfElement, elementOf, mirrorRoot, onMaskLoaded, remirrorElement, remirrorText, type WireBox } from "./cssMirror.view";
 import { twinStateRules } from "./cssStates.view";
 import { installRuneMeasure, runeRectOf, setRuneRect } from "./domMeasure.view";
 import { RuneInput } from "./runeInput.view";
@@ -61,6 +61,7 @@ export class RuneStage {
 
   private constructor() {
     installRuneMeasure();
+    onMaskLoaded(() => this.remirror());
     window.addEventListener("resize", () => {
       for (const layer of this.layers) layer.root = null;
       this.invalidate();
@@ -98,6 +99,12 @@ export class RuneStage {
       this.queued = false;
       this.sync();
     });
+  }
+
+  /** Read every layer again from the top (a picture an element is drawn from has arrived). */
+  remirror(): void {
+    for (const layer of this.layers) layer.root = null;
+    this.invalidate();
   }
 
   fontsChanged(): void {

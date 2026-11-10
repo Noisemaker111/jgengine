@@ -25,6 +25,7 @@ export interface BrowserFlowDriver {
   /** Turn until the page's screen point for `expression` sits within `tolerancePx` of the crosshair. */
   aimAt(expression: string, tolerancePx: number): Promise<{ point: { x: number; y: number }; moves: number }>;
   fill(label: string, value: string): Promise<void>;
+  type(text: string): Promise<void>;
   /** Evaluate a page expression (awaited when it is a promise). */
   evaluate(expression: string): Promise<unknown>;
   /** Call `window.__jgengineAgent.handle(request)`. */
@@ -171,6 +172,7 @@ export function createBrowserFlow(driver: BrowserFlowDriver, stepper: FlowSteppe
     aimAt: (expression, options = {}) =>
       stepper.run(`aim at ${expression}`, async () => (await driver.aimAt(expression, options.tolerancePx ?? FLOW_AIM_TOLERANCE_PX)).point),
     fill: (label, value) => stepper.run(`fill "${label}"`, () => driver.fill(label, value)),
+    type: (text) => stepper.run(`type "${text}"`, () => driver.type(text)),
     see: (text, options = {}) =>
       stepper.run(`see ${String(text)}`, async () => {
         const matches = (body: unknown) => typeof body === "string" && (typeof text === "string" ? body.includes(text) : text.test(body));

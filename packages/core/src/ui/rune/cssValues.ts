@@ -5,7 +5,8 @@
  */
 
 /** A length for the wire: points, `"N%"`, or `"auto"`. `null` means it could not be expressed. */
-export type WireDim = number | string;
+/** Points, `"40%"`, `"auto"`, or a calc: `[points, fraction]` / `[points, fraction, other points, other fraction, mode]` (mode 1 `min()`, 2 `max()`). */
+export type WireDim = number | string | number[];
 
 const colorCache = new Map<string, number>();
 
@@ -131,6 +132,15 @@ export function parseDim(text: string): WireDim | null {
     return Number.isNaN(v) || text.includes("(") ? null : `${v}%`;
   }
   if (text === "0") return 0;
+  const pick = /^(min|max)\((.*)\)$/.exec(text);
+  if (pick !== null) {
+    const parts = splitTop(pick[2] ?? "", ",").map((part) => parseLengthPercent(part));
+    const first = parts[0];
+    const other = parts[1];
+    if (parts.length !== 2 || first === null || first === undefined || other === null || other === undefined) return null;
+    return [first[0], first[1], other[0], other[1], pick[1] === "min" ? 1 : 2];
+  }
+  if (text.startsWith("calc(")) return parseLengthPercent(text);
   return null;
 }
 
@@ -316,6 +326,59 @@ function averageOfRepeat(stops: RawStop[]): number | null {
   return pack(r / a, g / a, b / a, a);
 }
 
+/** The colour a gradient averages to: what a small repeated tile of it reads as. */
+export function averageOfStops(stops: [number, number][]): number {
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  let a = 0;
+  const add = (color: number, share: number): void => {
+    const alpha = (color & 0xff) / 255;
+    r += (((color >>> 24) & 0xff) / 255) * alpha * share;
+    g += (((color >>> 16) & 0xff) / 255) * alpha * share;
+    b += (((color >>> 8) & 0xff) / 255) * alpha * share;
+    a += alpha * share;
+  };
+  const first = stops[0];
+  const last = stops[stops.length - 1];
+  if (first === undefined || last === undefined) return 0;
+  add(first[1], Math.max(0, first[0]));
+  for (let i = 1; i < stops.length; i += 1) {
+    const p = stops[i - 1] as [number, number];
+    const q = stops[i] as [number, number];
+    const span = Math.min(1, q[0]) - Math.max(0, p[0]);
+    if (span <= 0) continue;
+    add(p[1], span * 0.5);
+    add(q[1], span * 0.5);
+  }
+  add(last[1], Math.max(0, 1 - last[0]));
+  if (a <= 0) return 0;
+  return pack(r / a, g / a, b / a, a);
+}
+
+/**
+ * A background layer with its `background-size`, `background-position` and `background-repeat`
+ * applied: unchanged when it covers the box, placed (`bs`, `bp`) when it is one sized piece, and
+ * its average colour when it is a small tile repeated across the box.
+ */
+export function placeLayer<L extends WireLayer | { flat: number }>(layer: L, size: string, position: string, repeat: string): L | { flat: number } | (L & { bs: number[]; bp: number[] }) {
+  const sizes = splitTop(size.trim(), " ");
+  if (sizes.length === 0 || sizes[0] === "auto" || sizes[0] === "cover" || sizes[0] === "contain" || sizes[0] === "") return layer;
+  const w = parseLengthPercent(sizes[0] ?? "");
+  const h = sizes[1] === undefined || sizes[1] === "auto" ? ([0, 1] as [number, number]) : parseLengthPercent(sizes[1]);
+  if (w === null || h === null) return layer;
+  if (w[0] === 0 && w[1] === 1 && h[0] === 0 && h[1] === 1) return layer;
+  if (!repeat.includes("no-repeat")) {
+    // A tile that still spans the box one way is drawn once; a small one reads as its average.
+    if ("flat" in layer) return layer;
+    return { flat: averageOfStops(layer.st) };
+  }
+  const at = splitTop(position.trim(), " ");
+  const x = parseLengthPercent(at[0] ?? "0%") ?? [0, 0];
+  const y = parseLengthPercent(at[1] ?? "0%") ?? [0, 0];
+  return { ...layer, bs: [w[0], w[1], h[0], h[1]], bp: [x[0], x[1], y[0], y[1]] };
+}
+
 /** One computed `background-image` layer; `null` when it is not a gradient this painter draws. */
 export function parseGradient(text: string): WireLayer | { flat: number } | null {
   const open = text.indexOf("(");
@@ -494,7 +557,9 @@ export interface WireTransform {
   fy: number;
   rotate: number;
   scale: number;
-  /** A part that could not be expressed (skew, 3D, non-uniform scale). */
+  /** Horizontal skew as the tangent of its angle: the box is drawn as a parallelogram. */
+  skew: number;
+  /** A part that could not be expressed (vertical skew, 3D, non-uniform scale). */
   lost: string | null;
 }
 
@@ -510,7 +575,7 @@ function addTranslate(out: WireTransform, token: string | undefined, axis: "x" |
 /** The computed `translate`, `rotate`, `scale` and `transform` of one element, combined. */
 export function parseTransform(translate: string, rotate: string, scale: string, transform: string): WireTransform | null {
   if ((translate === "none" || translate === "") && (rotate === "none" || rotate === "") && (scale === "none" || scale === "") && (transform === "none" || transform === "")) return null;
-  const out: WireTransform = { x: 0, y: 0, fx: 0, fy: 0, rotate: 0, scale: 1, lost: null };
+  const out: WireTransform = { x: 0, y: 0, fx: 0, fy: 0, rotate: 0, scale: 1, skew: 0, lost: null };
   if (translate !== "none" && translate !== "") {
     const [x, y] = splitTop(translate, " ");
     addTranslate(out, x, "x");
@@ -542,6 +607,12 @@ export function parseTransform(translate: string, rotate: string, scale: string,
         const sy = parseFloat(args[1] ?? args[0] ?? "1");
         if (sx !== sy) out.lost = part;
         out.scale *= sx;
+      } else if (fn === "skewX" || (fn === "skew" && (args.length === 1 || parseAngle(args[1] ?? "") === 0))) {
+        out.skew += Math.tan(parseAngle(args[0] ?? "") ?? 0);
+      } else if (fn === "matrix" && Math.abs(parseFloat(args[0] ?? "1") - 1) < 0.001 && Math.abs(parseFloat(args[1] ?? "0")) < 0.001 && Math.abs(parseFloat(args[3] ?? "1") - 1) < 0.001 && Math.abs(parseFloat(args[2] ?? "0")) > 0.001) {
+        out.skew += parseFloat(args[2] ?? "0");
+        out.x += parseFloat(args[4] ?? "0");
+        out.y += parseFloat(args[5] ?? "0");
       } else if (fn === "matrix") {
         const [a = 1, b = 0, c = 0, d = 1, e = 0, f = 0] = args.map(parseFloat);
         const sx = Math.hypot(a, b);
