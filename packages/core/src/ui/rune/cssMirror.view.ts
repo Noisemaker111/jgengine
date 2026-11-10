@@ -407,6 +407,7 @@ function boxOf(element: Element, style: CSSStyleDeclaration, report: MirrorRepor
   if (image !== "none" && image !== "") {
     const layers: (WireLayer | { flat: number })[] = [];
     for (const part of splitTop(image, ",").reverse()) {
+      if (part === "none") continue;
       if (part.startsWith("url(")) {
         box["img"] = part.slice(4, -1).replace(/^["']|["']$/g, "");
         if (style.backgroundSize === "cover") box["fit"] = 1;

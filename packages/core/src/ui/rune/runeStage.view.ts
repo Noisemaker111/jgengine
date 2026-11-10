@@ -12,7 +12,9 @@
 
 import { RuneUi, type RuneUiEvent, type RuneUiNode } from "../runeUi.view";
 import { MirrorReport, boxOfElement, elementOf, mirrorRoot, remirrorElement, remirrorText, type WireBox } from "./cssMirror.view";
+import { twinStateRules } from "./cssStates.view";
 import { installRuneMeasure, runeRectOf, setRuneRect } from "./domMeasure.view";
+import { RuneInput } from "./runeInput.view";
 
 interface Layer {
   container: HTMLElement;
@@ -53,6 +55,7 @@ export class RuneStage {
   private readonly islands = new Map<HTMLCanvasElement, HTMLCanvasElement>();
   private islandHost: HTMLDivElement | null = null;
   private islandRaf = 0;
+  private input: RuneInput | null = null;
   /** What the mirror has done and what it cost, for perf probes: passes by kind, boxes built, milliseconds. */
   stats = { full: 0, patches: 0, texts: 0, boxes: 0, ms: 0, lastMs: 0 };
 
@@ -120,6 +123,7 @@ export class RuneStage {
           return;
         }
         this.ui = ui;
+        if (this.input === null) this.input = new RuneInput(() => this.layers.map((layer) => layer.root).filter((root): root is WireBox => root !== null));
         ui.on("*", (event) => this.onEvent(event));
         ui.onRects = (moved) => {
           for (const [id, x, y, w, h] of moved) {
@@ -138,6 +142,9 @@ export class RuneStage {
   }
 
   private onMutations(layer: Layer, records: MutationRecord[]): void {
+    // An attribute counts as changed by what it was before this batch against what it is now:
+    // set-then-unset (a state probe, a re-applied inline style) changes nothing.
+    let before: Map<Element, Map<string, string | null>> | null = null;
     for (const record of records) {
       const target = record.target;
       if (record.type === "characterData") {
@@ -146,8 +153,14 @@ export class RuneStage {
       }
       if (record.type === "attributes") {
         const name = record.attributeName;
-        if (name === null || (target as Element).getAttribute(name) === record.oldValue) continue;
-        layer.dirty.add(target as Element);
+        if (name === null) continue;
+        if (before === null) before = new Map();
+        let names = before.get(target as Element);
+        if (names === undefined) {
+          names = new Map();
+          before.set(target as Element, names);
+        }
+        if (!names.has(name)) names.set(name, record.oldValue);
         continue;
       }
       let onlyText = true;
@@ -155,6 +168,16 @@ export class RuneStage {
       for (const node of record.removedNodes) if (node.nodeType !== 3) onlyText = false;
       if (onlyText) layer.texts.add(target as Element);
       else layer.dirty.add(target as Element);
+    }
+    if (before !== null) {
+      for (const [element, names] of before) {
+        for (const [name, old] of names) {
+          if (element.getAttribute(name) !== old) {
+            layer.dirty.add(element);
+            break;
+          }
+        }
+      }
     }
     if (layer.dirty.size > 0 || layer.texts.size > 0) this.invalidate();
   }
@@ -179,6 +202,7 @@ export class RuneStage {
     const patches: WireBox[] = [];
     for (const layer of this.layers) {
       if (layer.root === null) {
+        twinStateRules();
         layer.root = mirrorRoot(layer.container, this.report);
         layer.dirty.clear();
         layer.texts.clear();
@@ -312,19 +336,6 @@ export class RuneStage {
     if (!event.id.startsWith("x")) return;
     const element = elementOf(Number(event.id.slice(1)));
     if (element === null) return;
-    if (event.kind === "click") {
-      if ((element as HTMLButtonElement).disabled === true) return;
-      const rect = this.ui?.rects.get(Number(event.id.slice(1)));
-      const x = rect === undefined ? 0 : rect[0] + rect[2] / 2;
-      const y = rect === undefined ? 0 : rect[1] + rect[3] / 2;
-      const init: PointerEventInit = { bubbles: true, cancelable: true, composed: true, clientX: x, clientY: y, button: 0, pointerId: 1, pointerType: "mouse", isPrimary: true };
-      element.dispatchEvent(new PointerEvent("pointerdown", { ...init, buttons: 1 }));
-      element.dispatchEvent(new MouseEvent("mousedown", { ...init, buttons: 1 }));
-      element.dispatchEvent(new PointerEvent("pointerup", init));
-      element.dispatchEvent(new MouseEvent("mouseup", init));
-      element.dispatchEvent(new MouseEvent("click", init));
-      return;
-    }
     if (event.kind === "edit" && typeof event.text === "string") {
       const field = element as HTMLInputElement;
       if (field.value === event.text) return;

@@ -706,13 +706,10 @@ pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
             }
         });
     }
-    if b.hit & 1 != 0 {
-        e = e.hit().on_press(move |_: &mut Ui| crate::emit_id(id, "click", None, None));
-    } else if b.hit & 4 != 0 {
+    // The page hit-tests pointer input itself from the reported rects; here a hit box only
+    // marks where the UI is, so input over it does not reach the game underneath.
+    if b.hit != 0 {
         e = e.hit();
-    }
-    if b.hit & 2 != 0 {
-        e = e.hit().on_hover_change_any(move |over: bool, _tx: &mut Tx| crate::emit_id(id, if over { "enter" } else { "leave" }, None, None));
     }
     e.key(key)
 }
