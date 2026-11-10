@@ -609,7 +609,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
     const { target, span, far } = initialCamera;
     // Free-orbit inspection camera shared by edit and HUD-layout modes: no pointer lock, so the HUD
     // panels stay draggable while the authored world renders behind them. Orthographic projection
-    // remounts the R3F canvas (Canvas.orthographic is mount-time); zoom scales with scene span so
+    // remounts the engine canvas (orthographic mode is chosen at mount); zoom scales with scene span so
     // large worlds stay framed without a hand-tuned default.
     const orthoZoom = Math.max(4, Math.min(80, 420 / Math.max(span, 1)));
     const inspectionCamera = {

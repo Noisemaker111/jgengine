@@ -1,6 +1,7 @@
 // @skill jgengine-world
 /**
- * The engine's renderer for a game canvas. three's WebGLRenderer draws every backend, so scenes,
+ * Plain JavaScript three.js, driven by the engine's own frame loop, renders each game canvas.
+ * Three.js is not compiled to wasm. Its WebGLRenderer draws every backend, so scenes,
  * materials and shaders stay the same; the `webgpu` backend hands it a WebGL-shaped context that
  * submits through WebGPU ({@link WebGpuGl}). Where WebGPU is missing it falls back to WebGL.
  *

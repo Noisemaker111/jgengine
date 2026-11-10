@@ -1,21 +1,20 @@
-# Add the minimap to an existing React game
+# Add the minimap to an existing game
 
-Use this recipe when a React game already owns its entities in an array, ECS
+Use this recipe when a game already owns its entities in an array, ECS
 query, Zustand/Redux-style store, or another observable collection. JGengine
 only needs a display view of those records; do not copy them into a
 `MarkerSet`.
 
 ## Install
 
-Keep the React and React DOM versions already used by the project, then add the
-two focused JGengine packages:
+Use the engine's JSX runtime for the map component, then add the two focused
+JGengine packages:
 
 ```sh
 bun add @jgengine/core @jgengine/ui
 ```
 
-The minimap imports neither Three.js nor React Three Fiber and does not require
-`GameProvider`.
+The minimap needs no Three.js renderer or `GameProvider`.
 
 ## Static entity arrays
 
@@ -23,6 +22,7 @@ Project an existing array directly. Keep the array stable with the same memo or
 selector the project already uses.
 
 ```tsx
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useMemo } from "@jgengine/core/ui/jsx";
 import { Minimap } from "@jgengine/core/map/map.view";
 
@@ -67,10 +67,11 @@ are optional display data; lifecycle timestamps are not part of this view.
 ## Observable external store
 
 Create the adapter once per store. The source caches its projected marker array
-until the external store emits, so React snapshot reads do not remap the world
+until the external store emits, so UI snapshot reads do not remap the world
 on every frame.
 
 ```tsx
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useMemo } from "@jgengine/core/ui/jsx";
 import { createMarkerSource } from "@jgengine/core/map/markers";
 import { Minimap } from "@jgengine/core/map/map.view";
@@ -129,7 +130,7 @@ read the same serialized initial units used to hydrate the external store.
 The existing project still owns entities, updates, persistence, simulation,
 camera, renderer, input, scheduling, and the subscription. JGengine owns only
 the cached entity-to-marker projection, core world-to-map projection math, and
-the React SVG presentation. Save and restore the project's unit state as usual;
+the UI's SVG presentation. Save and restore the project's unit state as usual;
 markers are derived data and need no parallel save format.
 
 Use `kindStyles`, `className`, and `style` to skin the production `Minimap`.
@@ -139,7 +140,7 @@ own SVG instead of adopting the framed default.
 ## Common traps
 
 - Keep `getSnapshot()` array identity stable until `subscribe()` emits. This is
-  the React external-store contract.
+  the useSyncExternalStore contract.
 - Create `createMarkerSource` outside render or in `useMemo`; recreating it each
   render discards its projection cache.
 - Pass world coordinates, not Three.js screen coordinates. Marker positions are

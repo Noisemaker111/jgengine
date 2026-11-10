@@ -594,7 +594,7 @@ function isNativeCall(node: ProfileNode): boolean {
   return node.callFrame.url === "" && !node.callFrame.functionName.startsWith("(") && node.callFrame.functionName !== "";
 }
 
-/** A frame from a dependency (three.js, React, r3f) rather than the engine or a game. */
+/** A frame from a dependency, including legacy UI libraries, rather than engine or game code. */
 function isLibraryFrame(node: ProfileNode): boolean {
   return /\/node_modules\/|\/\.vite\/deps\//.test(node.callFrame.url);
 }

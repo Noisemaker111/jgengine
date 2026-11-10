@@ -1,6 +1,6 @@
 # @jgengine/shell
 
-Game player shell for [JGengine](https://github.com/Noisemaker111/jgengine): a React Three Fiber canvas with orbit camera + follow feel, input tracking, hotbar/primary-click plumbing, HUD mounting, an error overlay, `GameUiPreview` for staged HUD screenshots, and a demo game. You supply a `GameRegistry` mapping game ids to lazy `PlayableGame` loaders:
+Game player shell for [JGengine](https://github.com/Noisemaker111/jgengine): plain three.js on the engine's frame loop, with orbit camera + follow feel, input tracking, hotbar/primary-click plumbing, HUD mounting, an error overlay, `GameUiPreview` for staged HUD screenshots, and a demo game. You supply a `GameRegistry` mapping game ids to lazy `PlayableGame` loaders:
 
 ```tsx
 import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
@@ -13,7 +13,7 @@ const games: GameRegistry = {
 <GamePlayerShell playable={await games["my-game"]()} />;
 ```
 
-Peer deps: `react`, `three`, `@react-three/fiber`, `@react-three/drei`, `three-stdlib`. The shell's HUD classes are Tailwind — add an `@source` entry for `node_modules/@jgengine/shell` in your CSS. Apache-2.0.
+Peer deps: `three`, `three-stdlib`. UI uses the engine's JSX runtime. The shell's HUD classes are Tailwind — add an `@source` entry for `node_modules/@jgengine/shell` in your CSS. Apache-2.0.
 
 Weather primitives live in `@jgengine/core/weather` for game scene overlays:
 
@@ -66,7 +66,7 @@ The component vocabulary (windows, awnings, AC units, clotheslines, storefronts,
 
 ## Terrain primitives
 
-The `.draw` files in `@jgengine/core/terrain` are R3F helpers for natural scenes:
+The `.draw` files in `@jgengine/core/terrain` are engine draw helpers for natural scenes:
 
 ```tsx
 import { readGrassLook } from "@jgengine/core/grass/grassKind";

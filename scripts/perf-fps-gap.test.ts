@@ -87,8 +87,8 @@ test("a step run between frames is its own group, taken out of the time between 
   const { cpu } = groupCosts(breakdown({ cpu: [...base.cpu, { name: "ahead:onTick", avgMs: 0.4, p95Ms: 0 }, { name: "ahead:pose", avgMs: 0.1, p95Ms: 0 }] }));
   expect(cpuGroupOf("ahead:onTick")).toBe("60 Hz sim tick, run between frames");
   expect(cpu.get("60 Hz sim tick, run between frames")).toBeCloseTo(0.5, 6);
-  expect(cpu.get("untimed work inside the frame (r3f loop, React effects)")).toBeCloseTo(0.5, 6);
-  expect(cpu.get("between frames (GPU wait, compositing, React commits, GC)")).toBeCloseTo(2.5, 6);
+  expect(cpu.get("untimed work inside the frame (engine loop, UI effects)")).toBeCloseTo(0.5, 6);
+  expect(cpu.get("between frames (GPU wait, compositing, UI commits, GC)")).toBeCloseTo(2.5, 6);
   expect([...cpu.values()].reduce((sum, ms) => sum + ms, 0)).toBeCloseTo(12, 6);
 });
 
@@ -96,8 +96,8 @@ test("a game's groups add up to its frame: named rows, untimed work, and the tim
   const { cpu, gpu } = groupCosts(breakdown());
   const total = [...cpu.values()].reduce((sum, ms) => sum + ms, 0);
   expect(total).toBeCloseTo(12, 6);
-  expect(cpu.get("untimed work inside the frame (r3f loop, React effects)")).toBeCloseTo(0.5, 6);
-  expect(cpu.get("between frames (GPU wait, compositing, React commits, GC)")).toBeCloseTo(3, 6);
+  expect(cpu.get("untimed work inside the frame (engine loop, UI effects)")).toBeCloseTo(0.5, 6);
+  expect(cpu.get("between frames (GPU wait, compositing, UI commits, GC)")).toBeCloseTo(3, 6);
   expect(gpu.get("scene raster (GPU)")).toBe(4);
   expect(gpu.get("post-processing GPU")).toBe(0.6);
 });

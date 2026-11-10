@@ -10,7 +10,7 @@ type StandardMaterialProps = MeshStandardMaterialParameters;
 export type IndustrialMaterialProps = Required<Pick<StandardMaterialProps, "color" | "roughness" | "metalness">>
   & Pick<StandardMaterialProps, "emissive" | "emissiveIntensity" | "transparent" | "opacity" | "depthWrite">;
 
-/** Surface recipes, not shared GPU objects: R3F owns each mounted material's disposal. */
+/** Surface recipes, not shared GPU objects: Each mounted draw owns its material's disposal. */
 export const INDUSTRIAL = {
   // Worn coatings retain a diffuse response under the vault's local fixtures.
   // Pure reflective metal disappears between fixtures without a reflection map.

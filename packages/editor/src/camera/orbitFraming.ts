@@ -8,7 +8,7 @@ import type { Xyz } from "@jgengine/core/math/xyz";
  * distance from document bounds so one call frames a whole district from above.
  *
  * Dependency-free and side-effect-free so it is trivially unit-testable and safe to import into the
- * R3F camera driver.
+ * engine camera driver.
  */
 
 const DEG_TO_RAD = Math.PI / 180;

@@ -179,8 +179,8 @@ export function gpuGroupOf(pass: string): string {
   return "post-processing GPU";
 }
 
-const UNATTRIBUTED = "untimed work inside the frame (r3f loop, React effects)";
-const BETWEEN = "between frames (GPU wait, compositing, React commits, GC)";
+const UNATTRIBUTED = "untimed work inside the frame (engine loop, UI effects)";
+const BETWEEN = "between frames (GPU wait, compositing, UI commits, GC)";
 /** Fixed steps the driver ran between frames (`ctx.sim.stepAhead`): main-thread time inside the gap, not the frame. */
 const AHEAD = "60 Hz sim tick, run between frames";
 

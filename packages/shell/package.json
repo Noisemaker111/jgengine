@@ -1,7 +1,7 @@
 {
   "name": "@jgengine/shell",
   "version": "0.55.1",
-  "description": "Game player shell for JGengine: React Three Fiber canvas, orbit camera, input tracking, HUD mounting, GameUiPreview, and a demo game. Consumers supply a GameRegistry.",
+  "description": "Game player shell for JGengine: plain three.js on the engine frame loop, orbit camera, input tracking, HUD mounting, GameUiPreview, and a demo game. Consumers supply a GameRegistry.",
   "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,

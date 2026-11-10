@@ -4,9 +4,13 @@
 
 # jgengine
 
-**pure-TypeScript game framework SDK** — npm `jgengine` / `@jgengine/*` · site [jgengine.com](https://jgengine.com). The whole product surface for people is one sentence said to a coding agent: *Make a game that … with jgengine*. Agent skills ship inside every package tarball (`node_modules/@jgengine/<pkg>/skills/`).
+JGengine is a TypeScript game framework running plain three.js as JavaScript on the engine's own frame loop, without React Three Fiber. Three.js is not compiled to wasm.
+UI uses the engine's JSX runtime and draws through the DOM or Rune, whose Rust code is compiled to wasm.
+The native Rust 3D renderer is an experiment and does not ship.
 
-> Not related to automotive “JG Engines” / “JG Engine Dynamics”. This is software — a pure-TypeScript **framework** (entity stores, commands, catalogs, multiplayer seams, three.js shell), not an ECS and not a general-purpose 3D engine.
+**TypeScript game framework SDK** — npm `jgengine` / `@jgengine/*` · site [jgengine.com](https://jgengine.com). The whole product surface for people is one sentence said to a coding agent: *Make a game that … with jgengine*. Agent skills ship inside every package tarball (`node_modules/@jgengine/<pkg>/skills/`).
+
+> Not related to automotive “JG Engines” / “JG Engine Dynamics”. This is software — a TypeScript **framework** (entity stores, commands, catalogs, multiplayer seams, three.js shell), not an ECS and not a general-purpose 3D engine.
 
 `@jgengine/core` has no React, no renderer, and no backend dependency. UI is written against the engine's own JSX runtime (`@jgengine/core/ui/jsx`) and drawn through the DOM or through Rune on the engine canvas; a page built with React, Next or TanStack embeds a game with `mountGamePlayer` (`@jgengine/shell/mountGamePlayer`). Adapters connect the engine to Convex, WebSockets, Node hosting, and Postgres (socket.io, WebRTC P2P, and LAN share the same protocol). Domains are opt-in at runtime via `defineGame({ features })`; the monorepo ships a wide primitive set. Coding agents build whole games on it from that one sentence: skills provide design playbooks, intake, focused API guidance, and verification, and route selectively so agents do not load every domain by default.
 

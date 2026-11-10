@@ -757,7 +757,7 @@ export function useDomEvent<E>(
 /**
  * Run a requestAnimationFrame loop while `active`, calling `onFrame(deltaSeconds)` each frame.
  * The callback is kept in a ref so re-renders never restart the loop; cleanup cancels the
- * pending frame. For scene-graph work inside a canvas prefer R3F's useFrame — this is for
+ * pending frame. For scene-graph work inside a canvas prefer the engine's useFrameTask — this is for
  * DOM-side animation outside the renderer.
  *
  * @capability raf-loop run a cancellable requestAnimationFrame loop for DOM-side animation with delta seconds — no hand-rolled RAF effects

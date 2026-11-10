@@ -3,7 +3,7 @@ import { classifyClip, type ClipRole } from "@jgengine/core/game/clipRoles";
 import type { ModelAnimationConfig } from "@jgengine/core/game/playableGame";
 
 /**
- * Editor viewport clip-preview model — pure logic, no JSX / R3F. Mirrors how `pathFlythrough.ts`
+ * Editor viewport clip-preview model — pure logic, no JSX or renderer. Mirrors how `pathFlythrough.ts`
  * splits the flythrough math out of {@link AnimationPanel}: derives a rigged asset's playable clip
  * list and models a scrub/loop/speed playback driver that the viewport layer and the dock panel
  * both consume. The actual mixer is the shell's `useModelAnimation`; this module only shapes the

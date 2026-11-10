@@ -514,7 +514,7 @@ export function shutdown(chrome, server) {
 
 export const shootMjs = `#!/usr/bin/env node
 /**
- * shoot.mjs — dependency-free WebGL/R3F screenshot for this JGengine game.
+ * shoot.mjs — dependency-free engine-canvas screenshot for this JGengine game.
  *
  * Why this exists: generic "screenshot this tab" tools routinely fail on a
  * WebGL canvas. They grab a frame before the GPU has drawn, and
@@ -592,7 +592,7 @@ async function main() {
     try {
       await session.send("Page.enable");
       await session.send("Runtime.enable");
-      // The fix for R3F's 300x150 default: give the page a real viewport BEFORE it lays out.
+      // Give the page its viewport before layout to avoid the canvas's 300x150 default.
       await emulateDevice(session, profile, width, height);
       await session.send("Page.navigate", { url });
       const frame = await waitForHonestFrame(session, url, timeoutMs);

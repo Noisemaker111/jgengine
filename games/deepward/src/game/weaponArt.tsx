@@ -78,7 +78,7 @@ export function ServiceWeapon({kind,flash=false,kick=0,magazineOffset=0,shadows=
 }) {
  const asset=stationAssets.resolve(kind==='sidearm'?'deepward/service-sidearm':'deepward/service-rifle');
  if(!asset)throw Error(`Missing original weapon catalog asset: ${kind}`);
- // A real Group the caller can move per-frame; attached under the engine loop, a primitive under r3f.
+ // A real Group the caller can move per-frame; attached to the engine scene.
  const group = useMemo(() => new THREE.Group(), []);
  useEffect(() => {
   group.position.set(0, -magazineOffset * 0.2, kick * 0.012);

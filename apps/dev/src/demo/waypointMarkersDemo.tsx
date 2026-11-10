@@ -57,7 +57,7 @@ function onNewPlayer(ctx: GameContext): void {
 }
 
 /**
- * In-scene overlay: samples the live R3F camera each frame, projects every
+ * In-scene overlay: samples the live engine camera each frame, projects every
  * waypoint through the shell world projection, and renders the screen-space
  * {@link WaypointMarkers}. Distance is the 3D camera→waypoint distance.
  */

@@ -36,7 +36,7 @@ export const ASSETS_PACKAGE_NAME = "@jgengine/assets";
 export const PACKAGES: { name: string; blurb: string }[] = [
   { name: "@jgengine/core", blurb: "The engine SDK: runtime, state store, scene, combat, HUD, save, loot, quests, economy; model files have zero deps." },
   { name: "@jgengine/ui", blurb: "React UI layer: GameProvider, hooks, headless primitives." },
-  { name: "@jgengine/shell", blurb: "R3F canvas, orbit + first-person camera, input, HUD mounting, GameUiPreview." },
+  { name: "@jgengine/shell", blurb: "Engine canvas, orbit + first-person camera, input, HUD mounting, GameUiPreview." },
   { name: "@jgengine/ws", blurb: "Browser-safe WebSocket client backend: protocol codec, createWsBackend." },
   { name: "@jgengine/node", blurb: "Standalone authoritative host: tick loop, snapshots, save cadence, WS server." },
   { name: "@jgengine/sql", blurb: "HostPersistence on Postgres through a structural pool interface." },

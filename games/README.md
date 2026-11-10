@@ -118,7 +118,7 @@ The games are workspaces of this repo. Each one depends on `@jgengine/*` as `wor
 type-check all read the engine source in the same commit. An engine change that breaks a game
 fixes that game in the same PR. npm releases are for users outside this repo; no game waits on one.
 
-Third-party versions shared with the engine (three, React, React Three Fiber, Vite, Convex) come
+Third-party versions shared with the engine (three, Vite, Convex) come
 from the root `catalog`. The engine packages take three and React as peer dependencies, and
 `engineSource` dedupes the ones a game declares, so each game loads one copy of each.
 

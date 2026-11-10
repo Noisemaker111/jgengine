@@ -59,7 +59,7 @@ export const CODE_OWNERS: readonly CodeOwner[] = ["react", "ui", "r3f", "drei", 
 
 /**
  * Whose code a source path is. react-three-fiber bundles its own reconciler, so `react-reconciler`,
- * `its-fine` and `suspend-react` count as r3f: they leave with it.
+ * Legacy dependencies `its-fine` and `suspend-react` are attributed to r3f in old profiles.
  */
 export function codeOwner(source: string): CodeOwner {
   const path = source.replaceAll("\\", "/");
@@ -172,8 +172,8 @@ export interface ProfileScore {
   /** Engine UI runtime, Rune bridge and wasm, including component callbacks underneath them. */
   uiInclusiveMs: number;
   /**
-   * Time with a react-three-fiber frame anywhere on the stack. r3f owns the frame loop, so the whole
-   * render (three, the engine's per-frame work) runs under it: this is what r3f drives, not what it costs.
+   * Time under a legacy react-three-fiber frame. That driver owned the frame loop, so the whole
+   * render ran under it: this measures what the former driver drove, not its own cost.
    */
   r3fInclusiveMs: number;
   /** Time in the garbage collector. */

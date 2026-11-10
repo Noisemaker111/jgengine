@@ -14,7 +14,7 @@ function Probe() {
 
 describe("GameContextBridge", () => {
   test("re-provides a captured context so descendants resolve it", () => {
-    // A bridge stands in for the R3F Canvas boundary: the child sees the context only via the bridge.
+    // A bridge stands in for a nested renderer boundary: the child sees the context only via the bridge.
     const fakeCtx = {} as GameContext;
     const html = renderToStaticMarkup(
       createElement(GameContextBridge, { context: fakeCtx }, createElement(Probe)),
