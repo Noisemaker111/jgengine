@@ -61,8 +61,8 @@ import {
 } from "../packages/core/src/settings/settingsModel";
 
 /**
- * Frame-time harness for one game: builds and serves the checkout's production runner (the build
- * players get; `--dev` boots the Vite dev runner instead), plays the game on a real GPU, and prints
+ * Frame-time harness for one game: boots the checkout's dev runner (`--production` builds and serves
+ * the production runner, the build players get, instead), plays the game on a real GPU, and prints
  * the scorecard (`scripts/perf-scorecard.ts`) and one JSON record of frame timings, renderer counts,
  * GL allocations made after warmup, and the hottest self-time functions.
  *
@@ -164,7 +164,7 @@ export interface PerfArgs {
   compare?: string;
   /** Print the JSON record to stdout instead of the text summary. */
   json: boolean;
-  /** `production` (default): the minified, bundled build players get. `--dev`: the Vite dev server. */
+  /** `dev` (default for now): the Vite dev server. `--production`: the minified, bundled build players get. */
   build: PerfBuild;
   /** `--tally <group>`: also record each game's scorecard in the local tally store under this group. */
   tally?: string;
@@ -177,15 +177,15 @@ export type ArgResult = { kind: "run"; args: PerfArgs } | { kind: "help" };
 const USAGE = `usage: bun run perf <game> [<game> ...] [--seconds n] [--path walk|still] [--size WxH] [--compare <ref|before.json>] [--out <file.json>] [--json]
                     [--quality low|medium|high|ultra] [--draft] [--profile] [--telemetry on|off]
                     [--state name] [--param k=v ...] [--set key=value ...] [--capped] [--headed] [--cold]
-                    [--dev] [--cpu n] [--tally group]
+                    [--production] [--cpu n] [--tally group]
 
-Times the build players get: the runner is built for production (minified, bundled, production React,
-as the web deploy builds it; about a minute, reused until the served files change) and served locally.
-The report leads with the scorecard: frame p50/p95/p99 and the worst frame, frames over 16.7 and 33 ms,
-main-thread ms per frame and the share of it inside React and react-three-fiber, MB allocated per
-second and GC time, load time and download size. A claim about what players experience comes from
-this build; --dev times the Vite dev server instead (development React, unbundled source modules),
-for finding where engine time goes with readable names.
+Times the Vite dev server unless --production is given: development React and unbundled source modules,
+good for finding where engine time goes with readable names, and not what players get. --production
+builds the runner as the web deploy builds it (minified, bundled, production React; under a minute,
+reused until the served files change) and serves it locally. A claim about what players experience
+comes from a --production run. Either report leads with the scorecard: frame p50/p95/p99 and the worst
+frame, frames over 16.7 and 33 ms, main-thread ms per frame and the share of it inside React and
+react-three-fiber, MB allocated per second and GC time, load time and download size.
 
 Plays the game at 1920x1080 on an uncapped frame clock, walking, and prints where a frame goes: frame
 p50/p95/p99, main-thread and GPU ms per frame against 60 and 144 Hz, CPU ms per system, GPU ms per
@@ -205,8 +205,8 @@ before side is measured once: run \`bun run perf <game>\` before editing, then a
                     or a record file an earlier run wrote (one game only): print the before/after table
   --out             where to write this run's JSON record (default .scratch/perf/<game>.json; one game only)
   --json            print the JSON record to stdout instead of the text summary
-  --dev             time the Vite dev server instead of the production build: development React and
-                    unbundled modules, so its numbers are not what players get
+  --production      time the production build players get instead of the dev server (the default
+                    stays the dev server until the budgets and baselines are re-measured on it)
   --cpu             how many times slower the CPU runs in the slow-CPU window that follows the
                     measured one (Chrome's CPU throttling; default ${SLOW_CPU_RATE}, a stand-in for a laptop or
                     phone, since the RTX 3070 PC hides main-thread cost; 1 skips the window)
@@ -405,7 +405,7 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
   let json = false;
   let headed = false;
   let cold = false;
-  let build: PerfBuild = "production";
+  let build: PerfBuild = "dev";
   let cpuRate = SLOW_CPU_RATE;
   let tally: string | undefined;
   let state: string | undefined;
@@ -453,8 +453,8 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
       cold = true;
       continue;
     }
-    if (arg === "--dev") {
-      build = "dev";
+    if (arg === "--production") {
+      build = "production";
       continue;
     }
     if (arg === "--tally") {
@@ -1389,9 +1389,13 @@ async function measureProvisioned(options: MeasureOptions): Promise<PerfMeasure>
   await applyDevice(session, "desktop", draft ? "half" : "full", options.size ?? {});
   const url = perfPageUrl({ base, game, quality, telemetry: options.telemetry, state: options.state, params });
   const cpuRate = options.cpuRate ?? 1;
-  // Every game loads from an empty cache, so its load time and download are a first visit's.
-  await session.send("Network.enable").catch(() => {});
-  await session.send("Network.clearBrowserCache").catch(() => {});
+  // A production game loads from an empty cache, so its load time and download are a first visit's.
+  // The dev server's warm browser keeps its cache: its load is not a player's, and clearing it would
+  // have every warm run fetch the unbundled modules again.
+  if (options.build === "production") {
+    await session.send("Network.enable").catch(() => {});
+    await session.send("Network.clearBrowserCache").catch(() => {});
+  }
   const pcBusyPct = await cpuBusyPct();
   const navigatedAt = Date.now();
   // Same navigation the capture tools use: it fails on a page exception or a failed document

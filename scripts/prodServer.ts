@@ -95,7 +95,7 @@ export function buildProdRunner(cwd: string): ProdBuild {
   const root = resolve(cwd);
   const registries = join(root, "apps", "dev", "src", "registries.tsx");
   if (existsSync(registries) && readFileSync(registries, "utf8").includes('"!**/main.tsx"')) {
-    throw new Error(`the production build of ${root} mounts every game twice and never becomes playable: its apps/dev/src/registries.tsx is from before the game-source glob was fixed. Measure that commit with --dev, or a checkout of it with the fix (the exclusions spelled "!../../../games/*/src/**/main.tsx")`);
+    throw new Error(`the production build of ${root} mounts every game twice and never becomes playable: its apps/dev/src/registries.tsx is from before the game-source glob was fixed. Measure that commit without --production, or a checkout of it with the fix (the exclusions spelled "!../../../games/*/src/**/main.tsx")`);
   }
   const fingerprint = `${treeFingerprint(root)}-${publicFilesHash(root)}`;
   const buildRoot = join(root, BUILD_ROOT);

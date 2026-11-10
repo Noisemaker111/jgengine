@@ -194,11 +194,11 @@ test("the report leads with each side's scorecard: slow frames and hitches, not 
   expect(text).toContain("| CPU 4x slower: p50 / p95 ms | 16.00 / 40.00 | 20.00 / 40.00 |");
 });
 
-test("perf ab times the production build unless --dev asks for the dev servers", () => {
+test("perf ab times the dev servers unless --production asks for the build players get", () => {
   const defaults = parseAbArgs([]);
-  const dev = parseAbArgs(["--dev", "--games", "deepward"]);
-  expect(defaults === "help" ? null : defaults.build).toBe("production");
-  expect(dev === "help" ? null : dev.build).toBe("dev");
+  const production = parseAbArgs(["--production", "--games", "deepward"]);
+  expect(defaults === "help" ? null : defaults.build).toBe("dev");
+  expect(production === "help" ? null : production.build).toBe("production");
 });
 
 test("the table says the verdict, change and interval per game", () => {

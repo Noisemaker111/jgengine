@@ -32,12 +32,12 @@ import {
 import { runPool } from "./type-shard";
 
 /**
- * Frame-time gate: plays every playable game (`FRAME_GAMES`) on the production build players get (`--dev`
- * for the dev server's), waits out the warmup, then fails a game whose p95
+ * Frame-time gate: plays every playable game (`FRAME_GAMES`) on the dev server (`--production` for the
+ * build players get), waits out the warmup, then fails a game whose p95
  * frame time on the reference GPU (RTX 3070 at 1600x900, uncapped clock) is over the
  * 16.7 ms every game shares, or whose frame loop still allocates GL objects after warmup.
  *
- *   bun run perf gate [--games a,b] [--seconds n] [--quality low|medium|high|ultra] [--jobs n] [--dev]
+ *   bun run perf gate [--games a,b] [--seconds n] [--quality low|medium|high|ultra] [--jobs n] [--production]
  *
  * On any other GPU the frame time is printed and not judged, and only the GL allocations decide.
  * Draws are printed beside the frame time, as the first number to read when a game is slow; they
@@ -65,7 +65,7 @@ export interface GateArgs {
   draft: boolean;
   seconds: number;
   jobs: number;
-  /** `production` (default): the build players get; `--dev`: the Vite dev server. */
+  /** `dev` (default for now): the Vite dev server; `--production`: the build players get. */
   build: PerfBuild;
 }
 
@@ -76,7 +76,7 @@ export function parseGateArgs(argv: readonly string[]): GateArgs {
   let draft = false;
   let seconds = DEFAULT_SECONDS;
   let jobs = DEFAULT_JOBS;
-  let build: PerfBuild = "production";
+  let build: PerfBuild = "dev";
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index]!;
     if (arg === "--help" || arg === "-h") throw new Error("usage");
@@ -84,8 +84,8 @@ export function parseGateArgs(argv: readonly string[]): GateArgs {
       draft = true;
       continue;
     }
-    if (arg === "--dev") {
-      build = "dev";
+    if (arg === "--production") {
+      build = "production";
       continue;
     }
     if (arg === "--set") {
@@ -119,14 +119,14 @@ export function parseGateArgs(argv: readonly string[]): GateArgs {
   return { games, ...(draft ? {} : { quality: quality ?? "high" }), draft, seconds, jobs, build };
 }
 
-const USAGE = `usage: bun run perf gate [--games a,b] [--seconds n] [--quality low|medium|high|ultra] [--draft] [--jobs n] [--dev]
+const USAGE = `usage: bun run perf gate [--games a,b] [--seconds n] [--quality low|medium|high|ultra] [--draft] [--jobs n] [--production]
 
   Fails a game whose p95 frame time is over ${FRAME_BUDGET_MS} ms on the reference GPU
   (${REFERENCE.label}, uncapped clock), or whose frame loop allocates GL objects after
   warmup. On another GPU the frame time is printed, not judged. Draws are printed, not gated.
-  Games are measured on the production build players get (built once for the run).
+  Games are measured on the dev server, as the budgets and known-slow list were.
 
-  --dev             measure the Vite dev server instead (development React, unbundled modules)
+  --production      measure the production build players get instead (built once for the run)
 
   --games           comma-separated game ids (default: every game under games/ with a web entry)
   --seconds         measured window per game (default ${DEFAULT_SECONDS})

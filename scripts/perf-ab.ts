@@ -22,10 +22,10 @@ import { provisionCapturedGame } from "./provisionCapture";
  * Is the branch faster or slower than its base, per game, and by how much: one answer per game with a
  * confidence interval, in a few minutes of the perf lock.
  *
- *   bun run perf ab [--games a,b] [--base <ref|dir>] [--window s] [--blocks min,max] [--margin pct] [--markdown] [--dev]
+ *   bun run perf ab [--games a,b] [--base <ref|dir>] [--window s] [--blocks min,max] [--margin pct] [--markdown] [--production]
  *
- * Both sides are the production build players get (`scripts/prodServer.ts`; `--dev` times the Vite dev
- * servers instead), and the report leads with each side's scorecard (`scripts/perf-scorecard.ts`): the
+ * Both sides are Vite dev servers unless `--production` asks for the build players get
+ * (`scripts/prodServer.ts`), and the report leads with each side's scorecard (`scripts/perf-scorecard.ts`): the
  * slow frames and hitches of every window pooled, then one profiled window and one with the CPU slowed
  * 4x per side, and the load. The verdict table follows it.
  *
@@ -97,15 +97,16 @@ export interface AbArgs {
   plantMs: number;
   /** The frame-time percentile of each window the verdict compares: 50 (the middle frame) unless asked. */
   percentile: number;
-  /** `production` (default): both sides are the build players get; `--dev`: both are Vite dev servers. */
+  /** `dev` (default for now): both sides are Vite dev servers; `--production`: both are the build players get. */
   build: PerfBuild;
 }
 
 const USAGE = `usage: bun run perf ab [--games a,b] [--base <ref|dir>] [--window s] [--blocks min,max] [--margin pct]
-                       [--path walk|still] [--stat pNN] [--set key=value ...] [--out dir] [--markdown] [--plant-ms n] [--dev]
+                       [--path walk|still] [--stat pNN] [--set key=value ...] [--out dir] [--markdown] [--plant-ms n] [--production]
 
-  Both sides are the production build players get (minified, bundled, production React; built once per
-  side, about a minute, and reused until the served files change). The report leads with each side's
+  Both sides are Vite dev servers unless --production is given; with it both are the build players get
+  (minified, bundled, production React; built once per side, under a minute, and reused until the served
+  files change), which is where a claim about what players experience comes from. The report leads with each side's
   scorecard: frame p50/p95/p99 and the worst frame, frames over 16.7 and 33 ms, main-thread ms per frame
   and the share inside React and react-three-fiber, MB allocated per second and GC time, the same frames
   with the CPU slowed ${SLOW_CPU_RATE}x, load time and download size. The verdict table follows.
@@ -129,8 +130,7 @@ const USAGE = `usage: bun run perf ab [--games a,b] [--base <ref|dir>] [--window
              such as p90 or p99, for a change that moves the slow frames and not the typical one
   --set     a setting for both sides, as perf <game> --set
   --out      where each game's windows are written as JSON (default .scratch/perf-ab)
-  --dev      time both sides' Vite dev servers instead (development React, unbundled modules): not what
-             players get, for an engine change whose cost only readable dev names can explain
+  --production  time both sides' production builds, what players get, instead of their dev servers
   --markdown print the tables as Markdown
   --plant-ms busy-wait this many ms in every frame of the branch page: a known regression, to check
              the run can see a change of that size on this PC (expected change = ms / frame p50)`;
@@ -138,7 +138,7 @@ const USAGE = `usage: bun run perf ab [--games a,b] [--base <ref|dir>] [--window
 export function parseAbArgs(argv: readonly string[]): AbArgs | "help" {
   const args: AbArgs = {
     games: null, base: null, windowSeconds: DEFAULT_WINDOW_SECONDS, minBlocks: DEFAULT_MIN_BLOCKS, maxBlocks: DEFAULT_MAX_BLOCKS,
-    marginPct: DEFAULT_MARGIN_PCT, path: "still", settings: [], out: join(repoRoot, ".scratch", "perf-ab"), markdown: false, plantMs: 0, percentile: 50, build: "production",
+    marginPct: DEFAULT_MARGIN_PCT, path: "still", settings: [], out: join(repoRoot, ".scratch", "perf-ab"), markdown: false, plantMs: 0, percentile: 50, build: "dev",
   };
   const number = (flag: string, value: string, min: number): number => {
     const parsed = Number(value);
@@ -149,7 +149,7 @@ export function parseAbArgs(argv: readonly string[]): AbArgs | "help" {
     const arg = argv[index] ?? "";
     if (arg === "--help" || arg === "-h") return "help";
     if (arg === "--markdown") { args.markdown = true; continue; }
-    if (arg === "--dev") { args.build = "dev"; continue; }
+    if (arg === "--production") { args.build = "production"; continue; }
     const value = argv[index + 1];
     if (value === undefined || value.startsWith("--")) throw new Error(`${arg.startsWith("--") ? arg : `unknown argument ${arg}:`} needs a value`);
     index += 1;

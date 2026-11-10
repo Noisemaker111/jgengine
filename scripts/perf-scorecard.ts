@@ -9,8 +9,8 @@ import type { PerfBuild } from "./prodServer";
  * What a player feels, from one measured game: the slow frames and not only the middle one, the
  * hitches, where the main thread goes by package (React, react-three-fiber, three, the engine, the
  * game), garbage, the same frames on a CPU four times slower, and the load. `bun run perf <game>` and
- * `bun run perf ab` both lead with it, for the production build unless `--dev` asks for the dev
- * server's (`scripts/prodServer.ts`).
+ * `bun run perf ab` both lead with it, for the dev server's build unless `--production` asks for the
+ * one players get (`scripts/prodServer.ts`).
  */
 
 /** Frame budgets a hitch is counted against: one 60 Hz frame, and two. */
