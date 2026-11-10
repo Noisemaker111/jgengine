@@ -26,6 +26,17 @@ pub struct VertexInput {
     pub kind: char,
 }
 
+/// Which uniform block a slot lives in. `Shared` is the program-wide block (camera, lights,
+/// material): its bytes persist across frames and only changed spans upload. `Object` is the
+/// per-object block (model matrices, morph weights): it restages whenever an object draws.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum UniformBlock {
+    #[default]
+    Shared,
+    Object,
+}
+
 /// Where one of three's uniform names lives in the block.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UniformSlot {
@@ -44,6 +55,9 @@ pub struct UniformSlot {
     /// Declared as an array (GL names it `name[0]`), even with one element.
     #[serde(default)]
     pub array: bool,
+    /// Which block `offset` is relative to. Offsets restart at 0 inside each block.
+    #[serde(default)]
+    pub block: UniformBlock,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -64,7 +78,15 @@ pub struct SamplerSlot {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProgramLayout {
     pub vertex_inputs: Vec<VertexInput>,
+    /// Total uniform bytes. With a split layout this is `shared_size + object_size`; without one
+    /// it is the single block's size.
     pub uniform_size: u32,
+    /// Split layouts only: bytes of the binding-0 shared block and the binding-1 object block.
+    /// Both are 0 when the program was translated unsplit.
+    #[serde(default)]
+    pub shared_size: u32,
+    #[serde(default)]
+    pub object_size: u32,
     pub uniforms: Vec<UniformSlot>,
     pub samplers: Vec<SamplerSlot>,
     pub fragment_outputs: u32,
@@ -114,6 +136,17 @@ pub fn translate(vert: &str, frag: &str) -> Result<Translated, String> {
 /// [`translate`], choosing whether the emitted WGSL is parsed and validated again (a third of the
 /// time). The browser build skips it: the browser validates every shader module it creates.
 pub fn translate_with(vert: &str, frag: &str, reparse: bool) -> Result<Translated, String> {
+    translate_impl(vert, frag, reparse, false)
+}
+
+/// [`translate_with`] with the uniform block split into a shared block (binding 0) and a
+/// per-object block (binding 1), so the WebGPU backend can keep the shared bytes resident and
+/// restage only what an object draw changes.
+pub fn translate_split_with(vert: &str, frag: &str, reparse: bool) -> Result<Translated, String> {
+    translate_impl(vert, frag, reparse, true)
+}
+
+fn translate_impl(vert: &str, frag: &str, reparse: bool, split: bool) -> Result<Translated, String> {
     // A GLSL ES 1.00 RawShaderMaterial: WebGL 2 compiles it as is; here it gets the prefix three
     // gives its GLSL 3 shaders, which is the same program in GLSL ES 3.00.
     let (vert, frag) = if vert.contains("#version 300 es") {
@@ -126,22 +159,27 @@ pub fn translate_with(vert: &str, frag: &str, reparse: bool) -> Result<Translate
     };
     let v = preprocess::Preprocessor::new().run(&vert).map_err(|e| format!("vertex preprocess: {e}"))?;
     let f = preprocess::Preprocessor::new().run(&frag).map_err(|e| format!("fragment preprocess: {e}"))?;
-    let out = rewrite::rewrite(&v, &f)?;
+    let out = rewrite::rewrite(&v, &f, split)?;
     let (vmod, vertex_wgsl) = to_wgsl(&out.vertex, naga::ShaderStage::Vertex, reparse).map_err(|e| format!("{e}\n--- rewritten vertex ---\n{}", numbered(&out.vertex, &e)))?;
     let (fmod, fragment_wgsl) = to_wgsl(&out.fragment, naga::ShaderStage::Fragment, reparse).map_err(|e| format!("{e}\n--- rewritten fragment ---\n{}", numbered(&out.fragment, &e)))?;
     check_interface(&vmod, &fmod)?;
     let mut uniforms = Vec::new();
-    let mut size = 16;
+    let mut shared_size = 0;
+    let mut object_size = 0;
     for module in [&vmod, &fmod] {
-        let (slots, s) = rewrite::uniform_slots(module, &out.renames);
-        size = size.max(s);
+        let (slots, ss, os) = rewrite::uniform_slots(module, &out.renames);
+        shared_size = shared_size.max(ss);
+        object_size = object_size.max(os);
         for slot in slots {
             if !uniforms.iter().any(|u: &UniformSlot| u.name == slot.name) {
                 uniforms.push(slot);
             }
         }
     }
-    Ok(Translated { vertex_wgsl, fragment_wgsl, layout: ProgramLayout { vertex_inputs: out.inputs, uniform_size: size.max(out.block_size_hint), uniforms, samplers: out.samplers, fragment_outputs: out.fragment_outputs } })
+    shared_size = shared_size.max(out.shared_size_hint);
+    object_size = object_size.max(out.object_size_hint);
+    let (uniform_size, shared_size, object_size) = if split { (shared_size + object_size, shared_size, object_size) } else { (shared_size.max(16), 0, 0) };
+    Ok(Translated { vertex_wgsl, fragment_wgsl, layout: ProgramLayout { vertex_inputs: out.inputs, uniform_size, shared_size, object_size, uniforms, samplers: out.samplers, fragment_outputs: out.fragment_outputs } })
 }
 
 /// Locations an entry point's argument or result binds, through structs.

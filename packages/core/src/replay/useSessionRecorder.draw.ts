@@ -1,4 +1,4 @@
-import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
+import { useFrameJoin } from "@jgengine/core/frame/engineHost.draw";
 import { useEffect, useMemo } from "react";
 
 import { createRecordingBuffer, type RecordingBuffer, type RecordingBufferOptions } from "@jgengine/core/replay/recordingBuffer";
@@ -21,7 +21,8 @@ export function useSessionRecorder(entityId: string, options?: RecordingBufferOp
   const ctx = useGameContext();
   const buffer = useMemo(() => createRecordingBuffer<RecordedPose>(options), []);
 
-  useEffect(() => joinFrameTask(0, () => {
+  const joinFrame = useFrameJoin();
+  useEffect(() => joinFrame(0, () => {
     const entity = ctx.scene.entity.get(entityId);
     if (entity === null) return;
     buffer.append(ctx.time.now(), { position: entity.position, rotationY: entity.rotationY });

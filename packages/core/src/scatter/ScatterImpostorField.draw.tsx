@@ -3,9 +3,9 @@ import * as THREE from "three";
 
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
 import { impostorCard, impostorDistance, impostorSettingsForQuality, impostorSwitch, acquireImpostor, releaseImpostor, type ImpostorEntry } from "@jgengine/core/lod/impostor.draw";
+import { warmupWaitsFor } from "@jgengine/core/render/shaderWarmup.draw";
 import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { terrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
-import { warmupWaitsFor } from "@jgengine/core/render/shaderWarmup.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { ScatterBatch } from "./InstancedScatter.draw";
@@ -82,7 +82,9 @@ export function scatterImpostorFieldDraw(options: ScatterImpostorFieldDrawOption
   let entry: ImpostorEntry | null = null;
   let entryLive = false;
   let far: THREE.InstancedMesh | null = null;
-  let landedResolve: (() => void) | null = null;
+  /** The far mesh the last split wrote: a card mesh that lands or drops re-splits without a camera move. */
+  let splitFar: THREE.InstancedMesh | null = null;
+  let releaseLanded = (): void => {};
   let state: EngineFrameState | null = null;
 
   const dropFar = () => {
@@ -97,6 +99,7 @@ export function scatterImpostorFieldDraw(options: ScatterImpostorFieldDrawOption
     dropFar();
     if (entry === null || entry.atlas === null || entry.materials === null || state === null) return;
     const mesh = new THREE.InstancedMesh(impostorCard(entry.atlas), entry.materials.material, Math.ceil(batches.reduce((sum, batch) => sum + batch.matrices.length, 0) / 256) * 256);
+    mesh.name = `impostor-far:${cacheKey}`;
     mesh.customDepthMaterial = entry.materials.depth;
     mesh.castShadow = true;
     mesh.receiveShadow = true;
@@ -109,23 +112,17 @@ export function scatterImpostorFieldDraw(options: ScatterImpostorFieldDrawOption
   const acquire = (mountState: EngineFrameState) => {
     entry = acquireImpostor(cacheKey, mountState.gl, bakeSources, settings);
     entryLive = true;
-    if (entry.baked) {
-      buildFar();
-      landedResolve?.();
-      landedResolve = null;
-    } else {
-      const scene = mountState.rootScene ?? mountState.scene;
-      // A quality change re-acquires while a bake is still out: settle the old wait first.
-      landedResolve?.();
-      warmupWaitsFor(scene, new Promise<void>((resolve) => { landedResolve = resolve; }));
-      void entry.ready.then(() => {
-        if (!entryLive || entry === null) return;
-        buildFar();
-        // Nothing to draw: there are no cards to wait for.
-        if (entry.atlas === null) {
-          landedResolve?.();
-          landedResolve = null;
-        }
+    if (entry.baked) buildFar();
+    else {
+      const acquired = entry;
+      // The covered warmup waits for the bake and for the cards built from it to be in the scene,
+      // so a reveal never links the card program mid-frame. Released on every path out.
+      let release = (): void => {};
+      warmupWaitsFor(mountState.rootScene ?? mountState.scene, new Promise<void>((resolve) => { release = resolve; }), `scatter impostor ${cacheKey}`);
+      releaseLanded = release;
+      void acquired.ready.then(() => {
+        if (entryLive && entry === acquired) buildFar();
+        release();
       });
     }
   };
@@ -137,6 +134,7 @@ export function scatterImpostorFieldDraw(options: ScatterImpostorFieldDrawOption
     const previous = settings;
     settings = impostorSettingsForQuality(quality);
     thresholds = batches.map((batch) => batch.instances.map((instance) => impostorDistance(radius * instance.scale, quality)));
+    releaseLanded();
     if (entryLive && entry !== null) releaseImpostor(cacheKey, mountState.gl, previous);
     entryLive = false;
     dropFar();
@@ -152,6 +150,7 @@ export function scatterImpostorFieldDraw(options: ScatterImpostorFieldDrawOption
       batches.forEach((batch, batchIndex) => {
         sources.forEach((source) => {
           const mesh = new THREE.InstancedMesh(source.geometry, source.material, batch.matrices.length);
+          mesh.name = `impostor:${cacheKey}`;
           mesh.castShadow = source.skipShadow !== true && (source.castShadow ?? true);
           mesh.receiveShadow = source.receiveShadow ?? true;
           const composed = new Float32Array(batch.matrices.length * 16);
@@ -171,8 +170,9 @@ export function scatterImpostorFieldDraw(options: ScatterImpostorFieldDrawOption
     frame(frameState: EngineFrameState) {
       syncQuality(frameState);
       frameState.camera.getWorldPosition(camera);
-      const fresh = lastSplit.distanceToSquared(camera) >= SPLIT_MOVE * SPLIT_MOVE;
-      if (!fresh) return;
+      const fresh = splitFar !== far;
+      if (!fresh && lastSplit.distanceToSquared(camera) < SPLIT_MOVE * SPLIT_MOVE) return;
+      splitFar = far;
       lastSplit.copy(camera);
       let anyDirty = false;
       for (let batchIndex = 0; batchIndex < batches.length; batchIndex += 1) {
@@ -207,8 +207,7 @@ export function scatterImpostorFieldDraw(options: ScatterImpostorFieldDrawOption
       if (far !== null) uploadInstances(far, farMatrices);
     },
     dispose(disposeState: EngineFrameState) {
-      landedResolve?.();
-      landedResolve = null;
+      releaseLanded();
       if (entryLive && entry !== null) releaseImpostor(cacheKey, disposeState.gl, settings);
       entryLive = false;
       entry = null;

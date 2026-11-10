@@ -197,6 +197,7 @@ function scatterBatchMeshDraw(batch: ScatterBatch, geometry: THREE.BufferGeometr
   return {
     mount(state) {
       mesh = new THREE.InstancedMesh(geometry, material, batch.matrices.length);
+      mesh.name = `scatter:${batch.item}`;
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       uploadInstances(mesh, batch.matrices);
@@ -353,8 +354,9 @@ function acquireDetailSlot(pool: StaticDrawPool, batch: ScatterBatch, source: Sc
   return slot;
 }
 
-function addDetailMesh(field: THREE.Object3D, source: ScatterModelSource, count: number): THREE.InstancedMesh {
+function addDetailMesh(field: THREE.Object3D, source: ScatterModelSource, count: number, name: string): THREE.InstancedMesh {
   const mesh = new THREE.InstancedMesh(source.geometry, source.material, count);
+  mesh.name = name;
   mesh.castShadow = source.skipShadow !== true;
   mesh.receiveShadow = true;
   field.add(mesh);
@@ -414,7 +416,7 @@ export function syncDetailDraws(
       return;
     }
     if (draw === undefined) {
-      draw = (pool === null ? null : acquireDetailSlot(pool, batch, source)) ?? addDetailMesh(field, source, count);
+      draw = (pool === null ? null : acquireDetailSlot(pool, batch, source)) ?? addDetailMesh(field, source, count, `scatter:${batch.item}`);
       row[sourceIndex] = draw;
     }
     if (draw instanceof StaticDrawSlot) showPicked(draw, batch, picks, levelIndex, source.localMatrix);
@@ -463,6 +465,7 @@ function scatterVariantSourceDraw({ source, batch, level, selector }: {
     priority: CAMERA_POST_FRAME_PRIORITY + 0.1,
     mount(state) {
       mesh = new THREE.InstancedMesh(source.geometry, source.material, batch.matrices.length);
+      mesh.name = `scatter:${batch.item}`;
       mesh.castShadow = source.skipShadow !== true && (source.castShadow ?? true);
       mesh.receiveShadow = source.receiveShadow ?? true;
       state.camera.getWorldPosition(cameraPosition);
@@ -538,6 +541,23 @@ export function scatterBatchFootprint(batch: ScatterBatch): { x: number; z: numb
 interface ScatterChunkLevel {
   sources: ScatterModelSource[];
   maxDistance: number;
+}
+
+/** Metres from the camera past which a scatter placement's shadow cannot resolve in the map. */
+const SCATTER_SHADOW_DISTANCE = 250;
+
+/**
+ * The coarsest detail band of a species draws far enough out that its shadow is under a shadow-map
+ * texel, so its sources stop paying the depth pass; every nearer band keeps casting.
+ * @internal
+ */
+export function withoutFarShadows(levels: readonly ScatterChunkLevel[]): ScatterChunkLevel[] {
+  if (levels.length < 2) return [...levels];
+  const last = levels.length - 1;
+  const bandStart = levels[last - 1]?.maxDistance ?? 0;
+  if (!Number.isFinite(bandStart) || bandStart < SCATTER_SHADOW_DISTANCE) return [...levels];
+  const top = levels[last]!;
+  return [...levels.slice(0, last), { ...top, sources: top.sources.map((source) => ({ ...source, skipShadow: true })) }];
 }
 
 /**
@@ -665,10 +685,10 @@ function scatterBuiltSpeciesDraw({ model, levels, hysteresis, batches, cacheKey 
       if (built !== null && source !== undefined) reskinBuiltLevel(gltf.scene, source);
       return buildScatterModelSources(gltf.scene, { ...model, url }, built?.bounds);
     });
-    const chunkLevels: ScatterChunkLevel[] = harvested.map(({ sources }, index) => ({
+    const chunkLevels: ScatterChunkLevel[] = withoutFarShadows(harvested.map(({ sources }, index) => ({
       sources,
       maxDistance: levels?.[index]?.maxDistance ?? Infinity,
-    }));
+    })));
     const field = scatterSourcesFieldDraw({ cacheKey, levels: chunkLevels, batches, hysteresis });
     return {
       mount: (state: EngineFrameState) => field.mount?.(state),
@@ -821,11 +841,11 @@ function scatterGeneratorSpeciesDraw({ item, species }: { item: string; species:
     const levels = near.map((nearLevels, variant): ScatterChunkLevel[] => {
       const own = nearLevels[0] ?? [];
       const farLevels = far[variant];
-      if (farLevels === undefined) return [{ sources: own, maxDistance: Infinity }];
-      return [
+      if (farLevels === undefined) return withoutFarShadows([{ sources: own, maxDistance: Infinity }]);
+      return withoutFarShadows([
         { sources: own, maxDistance: coarser[0]?.from ?? Infinity },
         ...coarser.map((_, index) => ({ sources: farLevels[index] ?? [], maxDistance: coarser[index + 1]?.from ?? Infinity })),
-      ];
+      ]);
     });
     const variantsSources = near.map((nearLevels) => nearLevels[0] ?? []);
     const hysteresis = settings?.hysteresis ?? DEFAULT_MESH_LOD_HYSTERESIS;

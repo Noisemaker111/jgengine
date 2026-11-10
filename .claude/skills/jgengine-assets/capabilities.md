@@ -27,11 +27,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `validateAssetReferences` (function) · `import { validateAssetReferences } from "@jgengine/assets"`
 
-## authored-surface-material — mount an owned PBR surface material on a mesh
-
-- `AuthoredSurfaceMaterial` (function) · `import { AuthoredSurfaceMaterial } from "@jgengine/core/material/authoredSurfaceMaterial.draw"`
-- `useAuthoredSurfaceMaterial` (function) · `import { useAuthoredSurfaceMaterial } from "@jgengine/core/material/authoredSurfaceMaterial.draw"`
-
 ## clip-metadata — read a GLB's animation clip names for the asset index at reindex
 
 - `readGlbClips` (function) · `import { readGlbClips } from "@jgengine/assets/dims"`
@@ -172,13 +167,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `restoreMaterialAppearanceBaseline` (function) · `import { restoreMaterialAppearanceBaseline } from "@jgengine/core/material/appearanceSignals.draw"`
 - `setHairCardLightExposure` (function) · `import { setHairCardLightExposure } from "@jgengine/core/material/materialAsset.draw"`
 
-## material-assets — render authored physical surfaces, woven detail and approximate hair-card appearance
+## material-assets — clone and configure an imported PBR slot while retaining its omitted physical features and maps
 
-- `MaterialAssetSurface` (function) · `import { MaterialAssetSurface } from "@jgengine/core/material/materialAsset.draw"`
 - `applyMaterialAsset` (function) · `import { applyMaterialAsset } from "@jgengine/core/material/materialAsset.draw"`
 - `applyMaterialAssignments` (function) · `import { applyMaterialAssignments } from "@jgengine/core/material/materialAsset.draw"`
+- `leasedMaterialMeshDraw` (function) · `import { leasedMaterialMeshDraw } from "@jgengine/core/material/materialAsset.draw"`
+- `materialAssetMaterial` (function) · `import { materialAssetMaterial } from "@jgengine/core/material/materialAsset.draw"`
 - `materialAssetSurface` (function) · `import { materialAssetSurface } from "@jgengine/core/material/materialAsset.draw"`
-- `useMaterialAssetMaterial` (function) · `import { useMaterialAssetMaterial } from "@jgengine/core/material/materialAsset.draw"`
+- `materialAssetSwatchDraw` (function) · `import { materialAssetSwatchDraw } from "@jgengine/core/material/materialAsset.draw"`
 
 ## material-feature-requirements — Declare material shader requirements when authors add maps or appearance adapters.
 
@@ -208,7 +204,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## material-triplanar — render a material asset on world geometry without UVs
 
-- `useTriplanarAssetMaterial` (function) · `import { useTriplanarAssetMaterial } from "@jgengine/core/material/triplanarMaterial.draw"`
+- `triplanarAssetMaterial` (function) · `import { triplanarAssetMaterial } from "@jgengine/core/material/triplanarMaterial.draw"`
 
 ## model-fallbacks — models the loader replaced with a placeholder, for capture and smoke assertions
 
@@ -218,7 +214,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `cloneModelScene` (function) · `import { cloneModelScene } from "@jgengine/core/model/modelRender.draw"`
 - `disposeModelScene` (function) · `import { disposeModelScene } from "@jgengine/core/model/modelRender.draw"`
-- `useModelInstance` (function) · `import { useModelInstance } from "@jgengine/core/model/useModelInstance.draw"`
 
 ## model-library — ask for a realistic licensed model by what it is ("street lamp", "office desk")
 

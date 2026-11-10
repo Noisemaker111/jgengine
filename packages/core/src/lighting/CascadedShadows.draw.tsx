@@ -41,8 +41,15 @@ export function resolveShadowDistance(profile?: GraphicsProfile, authored?: numb
   return Math.min(profile.drawDistance, reach);
 }
 
-/** Depth-axis steps worth of a texel the snapped light may drift before it re-anchors. */
-export const CASCADE_DEPTH_STEP_TEXELS = 8;
+/**
+ * Texels of drift a cascade's centre holds still on every axis. The static shadow cache only
+ * reuses a map while its projection repeats, so the centre re-anchors once per this many texels
+ * of camera travel instead of once per texel: near cascades hold ~1-2 m, far ones several
+ * metres. The re-anchor still lands on the texel grid, so each jump shifts the depth image by
+ * whole texels and only the coverage edge moves.
+ * @internal
+ */
+export const CASCADE_STEP_TEXELS = 48;
 
 const UP = new THREE.Vector3(0, 1, 0);
 const orientMatrix = new THREE.Matrix4();
@@ -57,24 +64,25 @@ export function cascadeTexelSize(light: THREE.DirectionalLight): number {
 }
 
 /**
- * The cascade centre rounded to whole texels of its own shadow map, in the light's orientation.
- * Lateral texels are what the eye sees move; the depth axis is coarser because it only shifts the
- * ortho depth window. @internal
+ * The cascade centre rounded to {@link CASCADE_STEP_TEXELS} texels of its own shadow map, in the
+ * light's orientation, on every axis: the depth axis only shifts the ortho depth window, which is
+ * hundreds of metres deep, so it holds as still as the image plane.
+ * @internal
  */
 export function snapCascadeCenter(
   center: THREE.Vector3,
   lightDirection: THREE.Vector3,
   texelSize: number,
-  depthTexels = CASCADE_DEPTH_STEP_TEXELS,
+  stepTexels = CASCADE_STEP_TEXELS,
 ): THREE.Vector3 {
   const texel = texelSize > 0 ? texelSize : 1;
+  const step = texel * Math.max(1, Math.floor(stepTexels));
   orientMatrix.lookAt(new THREE.Vector3(), lightDirection, UP);
   inverseOrient.copy(orientMatrix).invert();
   localCentre.copy(center).applyMatrix4(inverseOrient);
-  localCentre.x = Math.round(localCentre.x / texel) * texel;
-  localCentre.y = Math.round(localCentre.y / texel) * texel;
-  const depth = texel * Math.max(1, Math.floor(depthTexels));
-  localCentre.z = Math.round(localCentre.z / depth) * depth;
+  localCentre.x = Math.round(localCentre.x / step) * step;
+  localCentre.y = Math.round(localCentre.y / step) * step;
+  localCentre.z = Math.round(localCentre.z / step) * step;
   return localCentre.applyMatrix4(orientMatrix);
 }
 
@@ -97,14 +105,13 @@ export function createCascadeRefreshState(floor = 1): CascadeRefreshState {
 const snappedScratch: THREE.Vector3[] = [];
 
 /**
- * Pin each cascade's light to its texel grid and request a depth pass where that grid step moved
- * the light, plus every frame for the `floor` nearest cascades. `floor: 1` keeps the cascade holding
- * the player live so a walking actor's shadow follows it while the camera stands still; the far
- * cascades skip until the camera crosses a texel. When the camera pans, the far cascades cross
- * their texels on the same frames, so at most one far cascade redraws per frame, the longest
- * waiting first; the others hold their last centre for that frame or two. A light that does not
- * redraw keeps `autoUpdate` off at the centre it was drawn from, so the map and the sampling matrix
- * always stay the pair they were rendered as.
+ * Hold each cascade's light at the centre its map was drawn from until CSM's ideal centre drifts
+ * {@link CASCADE_STEP_TEXELS} texels away, then re-anchor it on the texel grid, and request a
+ * depth pass for the `floor` nearest cascades every frame plus one far cascade per frame, the
+ * longest waiting first. `floor: 1` keeps the cascade holding the player live so a walking
+ * actor's shadow follows it while the camera stands still; the far cascades skip until the
+ * camera drifts a step. A light that does not redraw keeps `autoUpdate` off at the centre it was
+ * drawn from, so the map and the sampling matrix always stay the pair they were rendered as.
  * @internal
  */
 export function refreshCascadesOnTexelStep(
@@ -112,15 +119,13 @@ export function refreshCascadesOnTexelStep(
   lightDirection: THREE.Vector3,
   state: CascadeRefreshState,
 ): number {
-  // The far cascade whose moved light has waited longest gets this frame's one far redraw.
+  // The far cascade whose centre has drifted longest gets this frame's one far redraw.
   let farPick = -1;
   for (let index = 0; index < lights.length; index += 1) {
     const light = lights[index]!;
-    const snapped = (snappedScratch[index] ??= new THREE.Vector3());
-    snapped.copy(snapCascadeCenter(light.position, lightDirection, cascadeTexelSize(light)));
     const known = state.centres[index];
-    const moved = hasMoved(known, snapped);
-    if (!moved || index < state.floor || mustRedraw(light, known)) continue;
+    if (!driftedFromDrawn(light, known)) continue;
+    if (index < state.floor || mustRedraw(light, known)) continue;
     state.waiting[index] = (state.waiting[index] ?? 0) + 1;
     if (farPick < 0 || state.waiting[index]! > state.waiting[farPick]!) farPick = index;
   }
@@ -128,8 +133,10 @@ export function refreshCascadesOnTexelStep(
   let refreshed = 0;
   for (let index = 0; index < lights.length; index += 1) {
     const light = lights[index]!;
-    const snapped = snappedScratch[index]!;
     const known = state.centres[index];
+    const texel = cascadeTexelSize(light);
+    const snapped = (snappedScratch[index] ??= new THREE.Vector3());
+    snapped.copy(snapCascadeCenter(light.position, lightDirection, texel));
     // A camera with no valid projection yet (a canvas measured at zero size: aspect 0) puts CSM's
     // lights at NaN. Nothing is drawn from such a centre and none is kept, so the first valid frame
     // redraws every cascade; a NaN once stored never compared as moved, and froze the far cascades
@@ -143,23 +150,36 @@ export function refreshCascadesOnTexelStep(
       light.shadow.needsUpdate = false;
       continue;
     }
-    const moved = hasMoved(known, snapped);
-    const refresh = index < state.floor || mustRedraw(light, known) || (moved && index === farPick);
-    // A held light stays at the centre its map was drawn from.
-    const centre = refresh || known === undefined ? snapped : known;
+    const drifted = driftedFromDrawn(light, known);
+    const refresh = index < state.floor || mustRedraw(light, known) || (drifted && index === farPick);
+    // A held light stays at the centre its map was drawn from; the light only moves on a frame
+    // that also redraws, so the map and the sampling matrix stay the pair they were rendered as.
+    const centre = (refresh && drifted) || known === undefined ? snapped : known;
     light.position.copy(centre);
     light.target.position.copy(centre).add(lightDirection);
     light.shadow.autoUpdate = refresh;
     light.shadow.needsUpdate = false;
     if (refresh) {
-      if (known === undefined) state.centres[index] = snapped.clone();
-      else known.copy(snapped);
+      if (known === undefined) state.centres[index] = centre.clone();
+      else known.copy(centre);
       state.waiting[index] = 0;
       refreshed += 1;
       state.refreshes += 1;
     }
   }
   return refreshed;
+}
+
+/**
+ * Whether CSM's ideal centre (`light.position`, set by `csm.update()` this frame) sits more than
+ * {@link CASCADE_STEP_TEXELS} texels from the centre the cascade's map was drawn from. Hysteresis,
+ * not a re-snap every frame: an ideal centre hovering on a grid line would otherwise flip the
+ * light — and the shadow cache's pass key — back and forth each frame.
+ */
+function driftedFromDrawn(light: THREE.DirectionalLight, known: THREE.Vector3 | undefined): boolean {
+  if (known === undefined || !isFiniteVector(known) || !isFiniteVector(light.position)) return false;
+  const hold = cascadeTexelSize(light) * CASCADE_STEP_TEXELS;
+  return light.position.distanceTo(known) > hold;
 }
 
 /**
@@ -175,11 +195,6 @@ function mustRedraw(light: THREE.DirectionalLight, known: THREE.Vector3 | undefi
 
 function isFiniteVector(v: THREE.Vector3): boolean {
   return Number.isFinite(v.x) && Number.isFinite(v.y) && Number.isFinite(v.z);
-}
-
-/** Whether the snapped centre left the one the map was drawn from; a non-finite side always counts as moved. */
-function hasMoved(known: THREE.Vector3 | undefined, snapped: THREE.Vector3): boolean {
-  return known === undefined || !(known.distanceToSquared(snapped) <= 1e-12);
 }
 
 function isStandardMaterial(mat: THREE.Material): mat is THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial {

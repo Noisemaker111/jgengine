@@ -96,7 +96,7 @@ export const CHECKS: readonly CheckDef[] = [
   { name: "path-portability", script: "scripts/check-path-portability.ts", jobs: ["types", "quick"] },
   { name: "types", script: "scripts/check-types-all.ts", jobs: ["types"] },
   { name: "layers", script: "scripts/check-layers.ts", jobs: ["quick"], reads: ["packages/core/src/", "packages/react/src/", "packages/shell/src/"] },
-  { name: "r3f-free", script: "scripts/check-r3f-free.ts", jobs: ["quick"], reads: ["packages/", "games/"] },
+  { name: "r3f-free", script: "scripts/check-r3f-free.ts", jobs: ["quick"], reads: ["packages/", "games/", "apps/", "registry/", "examples/", "package.json"] },
   { name: "export-manifest", script: "scripts/gen-export-manifest.ts", args: ["--check"], jobs: ["quick"], needsBuild: true, generated: true, reads: ["packages/"], skipsTests: true },
   { name: "games-save-states", script: "games/scripts/check-save-states.ts", jobs: ["games"], games: true, reads: ["games/"] },
   { name: "games-ledger", script: "games/scripts/capabilities-sync.ts", args: ["--check"], jobs: ["games"], games: true, generated: true, reads: ["packages/"], skipsTests: true },

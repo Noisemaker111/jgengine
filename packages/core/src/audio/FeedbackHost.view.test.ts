@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { createElement } from "react";
 
-import { mountTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
+import { acquireTestDom, mountTestDraws } from "@jgengine/core/frame/testEngineHost.draw";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
@@ -12,6 +12,8 @@ import type { AudioEngine } from "./audioEngine.view";
 import { FeedbackHost } from "./FeedbackHost.view";
 
 test("a local pickup reaches a connected pad through the shared haptics route", async () => {
+  // The DOM first: it brings its own `navigator`, which the pad stub below has to land on.
+  const releaseDom = await acquireTestDom();
   const pads = navigator as Navigator & { getGamepads?: () => unknown[] };
   const realPads = pads.getGamepads;
   pads.getGamepads = () => [{ connected: true, vibrationActuator: {} }];
@@ -29,5 +31,6 @@ test("a local pickup reaches a connected pad through the shared haptics route", 
   } finally {
     await mounted.unmount();
     pads.getGamepads = realPads;
+    await releaseDom();
   }
 });

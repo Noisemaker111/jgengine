@@ -67,8 +67,9 @@ describe("cascade cadence and shadow reach", () => {
     const drawnAt = lights.map(() => new THREE.Vector3());
     const lastDrawn = lights.map(() => 0);
     for (let frame = 0; frame < 24; frame++) {
-      // What CSM.update does each frame: every light follows the camera, a whole unit a frame.
-      for (const light of lights) light.position.set(frame, 20, frame * 0.5);
+      // What CSM.update does each frame: every light follows the camera, far enough to cross the
+      // snapped grid step every frame.
+      for (const light of lights) light.position.set(frame * 4, 20, frame * 2);
       const redrawn = refreshCascadesOnTexelStep(lights, direction, state);
       if (frame > 0) expect(redrawn).toBe(2);
       lights.forEach((light, index) => {

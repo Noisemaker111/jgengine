@@ -32,7 +32,7 @@
     "build": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist && bun scripts/postbuild.ts",
     "check-types": "tsgo --noEmit -p tsconfig.json",
     "gen:registry-catalog": "bun scripts/gen-registry-catalog.ts",
-    "test": "bun test --preload ../../scripts/test-preload.ts src"
+    "test": "bun test --preload ../../scripts/three-preload.ts src"
   },
   "dependencies": {
     "@gltf-transform/core": "4.2.1",

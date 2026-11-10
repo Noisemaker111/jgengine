@@ -5,6 +5,8 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
+import { setActiveCameraControls } from "./activeCameraControls.draw";
+
 import {
   resolveInspectionCameraConfig,
   resolveInspectionZoomToCursor,
@@ -64,13 +66,15 @@ export function gameInspectionCameraDraw(getConfig: () => InspectionCameraConfig
   return {
     mount(state: EngineFrameState) {
       controls = new OrbitControls(state.camera, state.gl.domElement);
+      setActiveCameraControls(state.rootScene ?? state.scene, controls);
       sync(state);
     },
     frame() {
       controls?.update();
     },
     update: sync,
-    dispose() {
+    dispose(state: EngineFrameState) {
+      setActiveCameraControls(state.rootScene ?? state.scene, null);
       controls?.dispose();
       controls = null;
       seeded = false;

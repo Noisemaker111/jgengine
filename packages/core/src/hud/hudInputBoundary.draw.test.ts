@@ -37,6 +37,7 @@ beforeAll(async () => {
   try {
     const directory = scratch = await mkdtemp(join(tmpdir(), "jgengine-hud-input-"));
     await setupStep("link browser peers", async () => {
+      await mkdir(`${directory}/node_modules`, { recursive: true });
       await Promise.all([
         ...["react", "react-dom"].map(peer => symlink(resolve(import.meta.dir, "../../../react/node_modules", peer), `${directory}/node_modules/${peer}`, "dir")),
         ...["three", "three-stdlib"].map(peer => symlink(resolve(import.meta.dir, "../../node_modules", peer), `${directory}/node_modules/${peer}`, "dir")),

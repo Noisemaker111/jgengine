@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { BoxGeometry, DataTexture, DirectionalLight, Group, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, MeshDepthMaterial, MeshNormalMaterial, MeshStandardMaterial, Object3D, OrthographicCamera, PerspectiveCamera, PointLight, Scene, ShaderMaterial, SkinnedMesh, WebGLRenderTarget, type Material } from "three";
 import { installFrameBreakdown, measureComposerPasses } from "../devtools/frameBreakdown.draw";
+import { flushBeforeRenderTasks } from "../frame/afterRenderBoard.draw";
+import { bindFrameSource, joinFrameTask } from "../frame/frameBoard.draw";
 
 import {
   batchByProgram,
@@ -890,7 +892,7 @@ describe("createShaderWarmup links what the first frame draws outside the scene'
     scene.add(meshAt(0, 0, -5));
     const { renderer, compiled } = linkingRenderer();
     let finishBake: () => void = () => {};
-    warmupWaitsFor(scene, new Promise<void>((resolve) => (finishBake = resolve)));
+    warmupWaitsFor(scene, new Promise<void>((resolve) => (finishBake = resolve)), "test bake");
     const warmup = createShaderWarmup({ renderer, scene, camera: new PerspectiveCamera(), quietMs: 0, backgroundMs: 0, loaderQuiet: () => true });
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(compiled).toHaveLength(0);
@@ -1546,13 +1548,12 @@ describe("deferUnlinkedDraws", () => {
     renderer.render = (s, c) => { shadow.render(); originalRender(s, c); };
     Object.assign(renderer, { getContext: () => ({ getExtension: () => null }), info: { programs: [] } });
     const undo = deferUnlinkedDraws(renderer as never, scene, () => true, () => 0);
-    const subscribers: { ref: { current: (state: unknown, delta: number) => void }; priority: number }[] = [];
-    const internal = { subscribers, subscribe(ref: { current: (state: unknown, delta: number) => void }, priority: number) {
-      const entry = { ref, priority }; subscribers.push(entry); subscribers.sort((a, b) => a.priority - b.priority);
-      return () => { const index = subscribers.indexOf(entry); if (index >= 0) subscribers.splice(index, 1); };
-    } };
-    const store = { getState: () => ({ internal }) };
-    const breakdown = installFrameBreakdown(renderer as never, store as never);
+    const attached: ((state: never, delta: number) => void)[] = [];
+    bindFrameSource((_priority, run) => {
+      attached.push(run);
+      return () => void attached.splice(attached.indexOf(run), 1);
+    });
+    const breakdown = installFrameBreakdown(renderer as never);
     class RenderPass { render() { renderer.render(scene, camera); } }
     class BloomPass { render() { renderer.render(scene, camera); } }
     const composer = { passes: [new RenderPass(), new BloomPass()] };
@@ -1564,8 +1565,8 @@ describe("deferUnlinkedDraws", () => {
         pass.render();
       }
     };
-    internal.subscribe({ current: runPasses }, 0);
-    const runFrame = () => { for (const { ref } of subscribers) ref.current({}, 1 / 60); };
+    const leavePasses = joinFrameTask(0, runPasses);
+    const runFrame = () => { flushBeforeRenderTasks(); for (const run of [...attached]) run({} as never, 1 / 60); };
     try {
       runFrame(); runFrame();
       const owner = Object.entries(breakdown.callbacks()).find(([, callback]) => callback === runPasses)?.[0];
@@ -1581,7 +1582,7 @@ describe("deferUnlinkedDraws", () => {
       expect(bad?.calls?.[`${owner} | shader readiness scene visits`]).toBeGreaterThan(200);
       expect(breakdown.summary({ top: 100 }).calls?.some((entry) => entry.name === `${owner} | shader readiness scene visits`)).toBe(true);
     } finally {
-      breakdown.dispose(); undo();
+      breakdown.dispose(); undo(); leavePasses(); bindFrameSource(null);
       if (previousWindow === undefined) Reflect.deleteProperty(globalThis, "window"); else Reflect.set(globalThis, "window", previousWindow);
     }
   });

@@ -292,8 +292,9 @@
 
 ## @jgengine/core/data/DataObjects.draw
 
-- `DataObjects` (function): function DataObjects<T>({ data, position, height, color, cellSize = 0.28, hovered = null, hoverColor = "#ffffff", onHover, grow, castShadow = true, receiveShadow = true, renderItem, }: DataObjectsProps<T>): React.JSX.Element | null — Places one 3D object per data item: instanced boxes sized and colored from the item, or custom content per item.
+- `DataObjects` (function): function DataObjects<T>(props: DataObjectsProps<T>): React.JSX.Element | null — Places one 3D object per data item: instanced boxes sized and colored from the item, or custom content per item.
 - `DataObjectsProps` (interface): interface DataObjectsProps<T> — Renders one placed 3D object per data item — a 3D bar chart, a heatmap, a city of buildings, a crowd. By default each item is an extruded box (all boxes share one `InstancedMesh`, so hundreds cost one draw call), sized and colored from the item; `renderItem` swaps the box for arbitrary content (a sprite, a GLB, a full entity). Genre-agnostic: the caller owns the data `T`, this owns the placement.
+- `dataObjectsDraw` (function): function dataObjectsDraw<T>(getProps: () => DataObjectsProps<T>, data: readonly T[]): EngineDraw — The instanced-box path as an {@link EngineDraw}; `renderItem` stays on the React wrapper.
 
 ## @jgengine/core/data/dataSource
 
@@ -856,7 +857,7 @@
 - `ModelAnimationConfig` (interface): interface ModelAnimationConfig — Rig playback for a `ModelConfig`'s GLTF animation clips — looping idles, one-shots, and held poses.
 - `ModelAnimationStates` (interface): interface ModelAnimationStates — Movement-state clip set for `ModelAnimationConfig.states`: the shell reads the entity's live speed each frame and crossfades between these clips, so a walking mob animates without any game-side driver.
 - `ModelAttachment` (interface): interface ModelAttachment — Parents a prop/weapon model to a named bone or node on the host model's rig — a sword on `handslot.r`, a spellbook offhand — following the bone's animated transform each frame.
-- `ModelConfig` (interface): interface ModelConfig { url: string; scale?: number; targetHeight?: number; y?: number; anchor?: "center" | "origin"; dims?: ModelDims | undefined; collisionMesh?: CollisionMeshData; material?: ModelMaterialOverride; surfaceDetail?: boolean | undefined; wind?: M… — ⚠ undocumented · used by `PartMotionRig` (@jgengine/core/anim/PartMotion.draw): Procedural motion rig for a rig-less part-composed character (`ModelPart.role` — see `@jgengine/core/game/partAnimation`).
+- `ModelConfig` (interface): interface ModelConfig { url: string; scale?: number; targetHeight?: number; y?: number; anchor?: "center" | "origin"; dims?: ModelDims | undefined; collisionMesh?: CollisionMeshData; material?: ModelMaterialOverride; surfaceDetail?: boolean | undefined; wind?: M… — ⚠ undocumented · used by `crowdEligible` (@jgengine/core/anim/crowdRegistry.draw): Whether a model can leave its own rig for the GPU crowd path: one whose drawn result a batch can reproduce.
 - `ModelIkConfig` (interface): interface ModelIkConfig — Bone names and limits for {@link ModelConfig.ik}.
 - `ModelLodConfig` (interface): interface ModelLodConfig — Distance tiers for one character model. Distances are metres from the camera; every field is data so a game can set its own thresholds per model and retune them without touching the engine.
 - `ModelLookAtConfig` (interface): interface ModelLookAtConfig — {@link ModelIkConfig.lookAt}: the bone that turns, and what it turns toward.
@@ -1328,7 +1329,7 @@
 - `MissionView` (interface): interface MissionView — Pooled per-frame readout a HUD tracker renders.
 - `MissionWorldEvent` (interface): interface MissionWorldEvent — One thing that happened in the world this tick, reported by the game. A constrained objective counts matching events and an `event` fail condition reacts to them, so the machine judges the world instead of the game polling its own counters.
 - `MissionWorldEventKind` (type): type MissionWorldEventKind = "kill" | "collect" | "deliver" — What a reported world event is.
-- `ModelConfig` (interface): interface ModelConfig { url: string; scale?: number; targetHeight?: number; y?: number; anchor?: "center" | "origin"; dims?: ModelDims | undefined; collisionMesh?: CollisionMeshData; material?: ModelMaterialOverride; surfaceDetail?: boolean | undefined; wind?: M… — ⚠ undocumented · used by `PartMotionRig` (@jgengine/core/anim/PartMotion.draw): Procedural motion rig for a rig-less part-composed character (`ModelPart.role` — see `@jgengine/core/game/partAnimation`).
+- `ModelConfig` (interface): interface ModelConfig { url: string; scale?: number; targetHeight?: number; y?: number; anchor?: "center" | "origin"; dims?: ModelDims | undefined; collisionMesh?: CollisionMeshData; material?: ModelMaterialOverride; surfaceDetail?: boolean | undefined; wind?: M… — ⚠ undocumented · used by `crowdEligible` (@jgengine/core/anim/crowdRegistry.draw): Whether a model can leave its own rig for the GPU crowd path: one whose drawn result a batch can reproduce.
 - `ModelMaterialMaps` (interface): interface ModelMaterialMaps extends Partial<Record<MaterialTextureRole, string>> — Real PBR map URLs (e.g. `buildMaterialCatalog(...).resolve(id)!.maps` from `@jgengine/assets`) layered onto a model's material — the seam for texturing an otherwise-flat/untextured GLB. Any supported MaterialTextureRole may be omitted to keep the model's own map. Physical roles use the renderer's physical material; map URLs and response parameters remain caller-owned.
 - `ModelMaterialOverride` (interface): interface ModelMaterialOverride extends MaterialSurfaceParameters — Per-entity PBR material override (#151.3) applied to every standard or physical material in the model's cloned scene graph.
 - `ModularItemDef` (interface): interface ModularItemDef { id: string; baseStats: Record<string, number>; slots: readonly MountSlotDef[] } — ⚠ undocumented
@@ -2069,6 +2070,7 @@
 ## @jgengine/core/item/WorldItems.draw
 
 - `WorldItems` (function): function WorldItems({ config }: { config?: WorldItemRenderConfig | undefined }): React.JSX.Element — Rarity→beam/color/label render binding + loot-filter overlay (#32/#33) for every dropped `worldItem`.
+- `worldItemMarkerDraw` (function): function worldItemMarkerDraw(getProps: () => { ctx: GameContext; instanceId: string; color: string; beam: boolean; beamHeight: number; anchor: THREE.Object3D | null; }): EngineDraw — Draw-side form of the marker's meshes: the ground ring and bobbing gem are added under the caller's pose group, which the frame writes the entity pose onto. The beam line and HTML label stay React siblings so they inherit the same pose.
 
 ## @jgengine/core/item/affix
 

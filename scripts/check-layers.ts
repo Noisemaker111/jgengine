@@ -3,7 +3,7 @@
 //
 //   model  core files with no suffix: plain TypeScript; no React, no three.js, no view or draw file
 //   view   `*.view.ts(x)` in core, and all of @jgengine/react: React UI; no three.js, no draw file
-//   draw   `*.draw.ts(x)` in core, and all of @jgengine/shell: three.js / react-three-fiber
+//   draw   `*.draw.ts(x)` in core, and all of @jgengine/shell: three.js
 //
 // Nothing below the editor imports @jgengine/editor. Tests are exempt: a test may render any layer.
 //
@@ -52,7 +52,7 @@ function layerOfModule(packageName: string, subpath: string): Layer {
 /** What one import specifier reaches, seen from `file`. */
 export function reachOf(file: string, specifier: string): Reach {
   if (/^(react|react-dom)(\/|$)/.test(specifier)) return "react";
-  if (/^(three|three-stdlib)(\/|$)|^@react-three\//.test(specifier)) return "three";
+  if (/^(three|three-stdlib)(\/|$)/.test(specifier)) return "three";
   const engine = /^@jgengine\/([^/]+)(?:\/(.+))?$/.exec(specifier);
   if (engine !== null) {
     if (engine[1] === "editor") return "editor";

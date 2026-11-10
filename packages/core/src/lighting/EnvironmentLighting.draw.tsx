@@ -143,7 +143,7 @@ export function environmentLightingDraw(getProps: () => EnvironmentLightingProps
           if (cancelled) return;
           reportTextureLoadError(source.url);
           console.warn(`[jgengine] environment illumination failed: ${source.url}`, error);
-        }));
+        }), `environment map ${source.url}`);
       } else if (source?.kind === "cube") {
         warmupWaitsFor(target, new THREE.CubeTextureLoader().loadAsync(source.urls.map(resolveAssetBaseUrl)).then((texture) => {
           if (cancelled) { texture.dispose(); return; }
@@ -157,7 +157,7 @@ export function environmentLightingDraw(getProps: () => EnvironmentLightingProps
           if (cancelled) return;
           for (const url of source.urls) reportTextureLoadError(url);
           console.warn(`[jgengine] cube environment illumination failed: ${source.urls.join(", ")}`, error);
-        }));
+        }), "cube environment map");
       } else {
         const probeScene = buildSkyProbeScene({ skyColor: effective?.sky ?? skyColor, groundColor: effective?.ground ?? groundColor, horizonTint, sunDirection, sunColor: effective?.sun ?? sunColor });
         // With a world probe, the sky bake matches its size: a lit program is built for its
@@ -170,7 +170,7 @@ export function environmentLightingDraw(getProps: () => EnvironmentLightingProps
           .finally(() => disposeScene(probeScene));
         // Every lit material links a different program with an environment map, so the scene's
         // warmup waits for this one rather than linking programs the first frame never draws.
-        warmupWaitsFor(target, bakedPromise);
+        warmupWaitsFor(target, bakedPromise, "sky environment bake");
         bakedPromise.catch((error: unknown) => {
           if (!cancelled) console.warn("[jgengine] environment probe bake failed", error);
         });

@@ -12,6 +12,7 @@ const scratch = resolve(import.meta.dir, "../../../../.scratch/model-animation-h
 let browser: Browser, server: ReturnType<typeof Bun.serve>;
 beforeAll(async () => {
   await rm(scratch, { recursive: true, force: true });
+  await mkdir(`${scratch}/node_modules`, { recursive: true });
   for (const pkg of ["react", "react-dom", "three"]) {
     const owner = pkg === "react-dom" ? "react" : "shell";
     await symlink(resolve(import.meta.dir, "../../../../packages", owner, "node_modules", pkg), `${scratch}/node_modules/${pkg}`, "dir");

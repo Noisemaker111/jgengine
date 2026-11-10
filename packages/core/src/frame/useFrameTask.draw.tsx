@@ -1,15 +1,12 @@
 import { useLayoutEffect, useRef } from "react";
 
-import { joinFrameTask } from "./frameBoard.draw";
+import { useFrameJoin } from "./engineHost.draw";
 import type { EngineFrameState } from "./engineLoop.draw";
 
 /**
- * `useFrame` on the shared frame board: the callback always sees the latest
- * render's closure (a ref swaps it in place, like r3f's subscriber), and the
- * board subscription is made once per priority. This is the drop-in form of
- * `useFrame` for files still mounted inside the Canvas — the r3f pump drives
- * the board until `createEngineLoop` takes over, so priority order against
- * unconverted subscribers is preserved.
+ * A per-frame callback on the shared frame board, for a React component: the
+ * callback always sees the latest render's closure (a ref swaps it in place),
+ * and the board is joined once per priority.
  * @internal
  */
 export function useFrameTask(
@@ -20,8 +17,9 @@ export function useFrameTask(
   useLayoutEffect(() => {
     ref.current = callback;
   });
+  const joinFrame = useFrameJoin();
   useLayoutEffect(
-    () => joinFrameTask(priority, (state, delta) => ref.current(state, delta)),
+    () => joinFrame(priority, (state, delta) => ref.current(state, delta)),
     [priority],
   );
 }

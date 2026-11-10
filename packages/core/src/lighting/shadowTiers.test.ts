@@ -4,7 +4,7 @@ import { CSM } from "three/examples/jsm/csm/CSM.js";
 
 import { resolveGraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
 
-import { cascadeTexelSize, createCascadeRefreshState, refreshCascadesOnTexelStep } from "./CascadedShadows.draw";
+import { CASCADE_STEP_TEXELS, cascadeTexelSize, createCascadeRefreshState, refreshCascadesOnTexelStep } from "./CascadedShadows.draw";
 import {
   minShadowCasterRadius,
   resolveCascadeCount,
@@ -75,18 +75,19 @@ describe("cascade light texel snapping", () => {
     expect(light.shadow.autoUpdate).toBe(false);
   });
 
-  test("a move inside one texel refreshes zero times, a crossing refreshes once", () => {
+  test("a move inside one step refreshes zero times, a crossing refreshes once", () => {
     const light = cascadeLight();
     light.position.set(0, 30, 0);
     const state = createCascadeRefreshState(0);
-    const texel = cascadeTexelSize(light);
-    expect(texel).toBeCloseTo(20 / 2048, 6);
+    const step = cascadeTexelSize(light) * CASCADE_STEP_TEXELS;
     refreshCascadesOnTexelStep([light], direction, state);
     const base = state.refreshes;
-    light.position.x += texel * 0.4;
+    // The snapped centre sits exactly on the grid, so a nudge under half a step rounds back to it.
+    const onGrid = light.position.clone();
+    light.position.copy(onGrid).x += step * 0.2;
     expect(refreshCascadesOnTexelStep([light], direction, state)).toBe(0);
     expect(state.refreshes).toBe(base);
-    light.position.x += texel * 1.2;
+    light.position.copy(onGrid).x += step * 1.5;
     expect(refreshCascadesOnTexelStep([light], direction, state)).toBe(1);
     expect(state.refreshes).toBe(base + 1);
   });
@@ -94,11 +95,11 @@ describe("cascade light texel snapping", () => {
   test("the depth pass never outruns the quantised step", () => {
     const light = cascadeLight();
     const state = createCascadeRefreshState(0);
-    const texel = cascadeTexelSize(light);
+    const step = cascadeTexelSize(light) * CASCADE_STEP_TEXELS;
     let steps = 0;
     let previous: number | undefined;
     for (let frame = 0; frame < 40; frame++) {
-      light.position.set(frame * texel * 0.5, 30, 0);
+      light.position.set(frame * step * 0.5, 30, 0);
       refreshCascadesOnTexelStep([light], direction, state);
       const snapped = light.position.x;
       if (previous !== undefined && snapped !== previous) steps += 1;

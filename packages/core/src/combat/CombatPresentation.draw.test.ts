@@ -5,11 +5,12 @@ import { CombatPresentation } from "./CombatPresentation.draw";
 import { resolvePresentationEffects } from "@jgengine/shell/presentationResolve";
 import { HitMarkers, MuzzleFlashes } from "@jgengine/core/combat/ShotFeedback.draw";
 import { CorpseRagdolls } from "@jgengine/core/anim/CorpseRagdolls.draw";
+import { SceneObjectGroup } from "@jgengine/core/frame/useEngineDraw.draw";
 
 function mounted(config: Parameters<typeof resolvePresentationEffects>[0]): unknown[] {
   const fragment = CombatPresentation({ effects: resolvePresentationEffects(config) }) as ReactElement<{ children: unknown[] }>;
   const children = fragment.props.children.flat().filter(Boolean) as ReactElement<{ children?: unknown }>[];
-  const group = children.find((child) => child.type === "group") as ReactElement<{ children: unknown[] }>;
+  const group = children.find((child) => child.type === SceneObjectGroup) as ReactElement<{ children: unknown[] }>;
   return [...group.props.children.flat().filter(Boolean), ...children.filter((child) => child !== group)].map((child) => (child as ReactElement).type);
 }
 

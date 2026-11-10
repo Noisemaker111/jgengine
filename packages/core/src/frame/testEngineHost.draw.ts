@@ -133,6 +133,29 @@ export function createTestEngineHost(options?: {
   return testHost;
 }
 
+let testDomUsers = 0;
+
+/**
+ * Give a draw test the DOM react-dom needs, for as long as it holds the returned release: a
+ * happy-dom window on the globals, registered for the first holder and removed with the last. Not
+ * a test preload: a global `document`, `fetch` and `Response` in every test file made model tests
+ * that assert there is no DOM fail, and broke the tests that serve real pages to a browser.
+ * @internal
+ */
+export async function acquireTestDom(): Promise<() => Promise<void>> {
+  if (testDomUsers === 0 && typeof document !== "undefined") return async () => {};
+  const { GlobalRegistrator } = await import("@happy-dom/global-registrator");
+  if (testDomUsers === 0) GlobalRegistrator.register();
+  testDomUsers += 1;
+  let released = false;
+  return async () => {
+    if (released) return;
+    released = true;
+    testDomUsers -= 1;
+    if (testDomUsers === 0) await GlobalRegistrator.unregister();
+  };
+}
+
 export interface MountedTestDraws {
   readonly engine: TestEngineHost;
   readonly scene: THREE.Scene;
@@ -155,6 +178,7 @@ export async function mountTestDraws(
   element: ReactElement,
   options?: { camera?: THREE.PerspectiveCamera; width?: number; height?: number; scene?: THREE.Scene },
 ): Promise<MountedTestDraws> {
+  const releaseDom = await acquireTestDom();
   const environment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
   const previous = environment.IS_REACT_ACT_ENVIRONMENT;
   environment.IS_REACT_ACT_ENVIRONMENT = true;
@@ -177,7 +201,9 @@ export async function mountTestDraws(
         await act(async () => root.unmount());
       } finally {
         engine.dispose();
-        environment.IS_REACT_ACT_ENVIRONMENT = previous;
+        if (previous === undefined) delete environment.IS_REACT_ACT_ENVIRONMENT;
+        else environment.IS_REACT_ACT_ENVIRONMENT = previous;
+        await releaseDom();
       }
     },
   };

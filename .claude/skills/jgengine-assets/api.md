@@ -1024,9 +1024,7 @@
 ## @jgengine/core/material/authoredSurfaceMaterial.draw
 
 - `AuthoredSurfaceConfig` (interface): interface AuthoredSurfaceConfig extends Omit<ModelMaterialOverride, "anisotropy" | "normalScale"> — Serializable PBR settings for an authored primitive surface. Map roles use the model-material contract.
-- `AuthoredSurfaceMaterial` (function): function AuthoredSurfaceMaterial({ surface, shape = "box" }: { surface: AuthoredSurfaceConfig; shape?: SurfaceShape }): React.JSX.Element — Mount an owned PBR surface material on a mesh.
 - `SurfaceShape` (type): type SurfaceShape = "box" | "cylinder" — Primitive UV layout whose physical dimensions drive `repeatMetres`.
-- `useAuthoredSurfaceMaterial` (function): function useAuthoredSurfaceMaterial(config: AuthoredSurfaceConfig, shape: SurfaceShape = "box"): THREE.MeshStandardMaterial — Load declared surface-map roles and own the material/map clones (cached textures remain untouched). Colour, emissive, sheen-colour and specular-colour maps are sRGB; numeric maps are linear. Cylinder side metres use the RMS ellipse circumference approximation. Static batches and custom meshes share this lifecycle.
 
 ## @jgengine/core/material/hairCards
 
@@ -1073,7 +1071,6 @@
 
 ## @jgengine/core/material/materialAsset.draw
 
-- `MaterialAssetSurface` (function): function MaterialAssetSurface({ asset, ...options }: { asset: MaterialAsset } & MaterialAssetSurfaceOptions): React.JSX.Element — Mount a serializable material asset on an authored primitive, sharing model-slot rendering and owned resource cleanup.
 - `MaterialAssetSurfaceOptions` (interface): interface MaterialAssetSurfaceOptions — Reusable primitive surface options; physical metre UVs reuse the instanced surface renderer.
 - `MaterialAssignmentTargetOptions` (interface): interface MaterialAssignmentTargetOptions extends MaterialAssignmentValidationOptions — Read-only target validation policy; source coverage can reflect an earlier all-slot override.
 - `ModelMaterialSlotInfo` (interface): interface ModelMaterialSlotInfo — Runtime imported-slot inventory for precise authoring selectors; indices address the mesh material array.
@@ -1081,10 +1078,12 @@
 - `applyMaterialAssignments` (function): function applyMaterialAssignments(root: THREE.Object3D, assets: readonly MaterialAsset[], assignments: readonly MaterialAssignment[], textures: ReadonlyMap<string, MaterialOverrideTextures> = new Map(), options: Pick<MaterialAssignmentTargetOptions, "unmatched"> = {}): THREE.Material[] — Apply intersecting mesh/slot selectors without changing omitted imported slots. Returns caller-owned replacements; model clones register them only after success.
 - `configureMaterialTexture` (function): function configureMaterialTexture(role: MaterialTextureRole, metadata: MaterialTextureMetadata, source: THREE.Texture): THREE.Texture — Validate and configure an owned texture view while retaining the loader's immutable source.
 - `inspectModelMaterialSlots` (function): function inspectModelMaterialSlots(root: THREE.Object3D): ModelMaterialSlotInfo[] — Inspect imported names, local slot indices and directional/map prerequisites without mutating the source.
+- `leasedMaterialMeshDraw` (function): function leasedMaterialMeshDraw(options: { geometry: THREE.BufferGeometry; load: (renderer: THREE.WebGLRenderer | null) => Promise<MaterialAssetLease>; fallback?: THREE.Material | undefined; castShadow?: boolean | undefined; receiveShadow?: boolean | undefined; renderOrder?: number | undefined; posi… — An {@link EngineDraw} mesh whose material arrives asynchronously: mounts with `fallback` (or a plain standard material), swaps in the leased material when `load` resolves, and disposes the lease with the draw. The draw-side replacement for the old suspending material components.
+- `materialAssetMaterial` (function): function materialAssetMaterial(asset: MaterialAsset, options: MaterialAssetSurfaceOptions = {}, renderer?: THREE.WebGLRenderer | null): Promise<MaterialAssetLease> — The draw-side form of the old `useMaterialAssetMaterial`: loads the asset's map views through the shared texture cache, builds the same physical shader model assignments use, and returns an owned lease the caller disposes with the draw. Nothing renders until the load resolves â€” pair with `loadDraw`/`loadDrawSystem`.
 - `materialAssetSurface` (function): function materialAssetSurface(asset: MaterialAsset, overrides: MaterialSurfaceParameters = {}): MaterialSurfaceParameters — Physical defaults adapt a declared construction; explicit authored parameters remain authoritative.
+- `materialAssetSwatchDraw` (function): function materialAssetSwatchDraw(asset: MaterialAsset, options: { flat?: boolean | undefined; repeatMetres?: number | undefined; shape?: SurfaceShape | undefined; overrides?: MaterialSurfaceParameters | undefined; fallback?: THREE.Material | undefined } = {}): EngineDraw — The draw-side form of the old `MaterialAssetSurface` component: a sphere (or flat card when `options.flat`) wearing the asset's leased physical material.
 - `materialResourceMetrics` (function): function materialResourceMetrics(materials: readonly THREE.Material[]): { materials: number; textures: number; textureBytes: number; unknownTextureSizes: number; blendedMaterials: number; maskedMaterials: number; transmissionMaterials: number; doubleSidedMaterials: number; physicalMaterials: number … — Estimate texture allocation from loaded dimensions/mips and report pass/coverage risks. Compressed maps count actual mip bytes; uncompressed bytes bound texture views that may share uploads. This does not measure pixel overdraw.
 - `setHairCardLightExposure` (function): function setHairCardLightExposure(material: THREE.Material, exposure: number): void — Gate the existing thin-sheet hair-card scatter by sampled local light exposure, without changing scene exposure.
-- `useMaterialAssetMaterial` (function): function useMaterialAssetMaterial(asset: MaterialAsset, options: MaterialAssetSurfaceOptions = {}): THREE.MeshStandardMaterial — Load map views, own their cleanup and build the same physical shader used by model assignments.
 - `validateMaterialAssignmentTargets` (function): function validateMaterialAssignmentTargets(root: THREE.Object3D, assets: readonly MaterialAsset[], assignments: readonly MaterialAssignment[], options: MaterialAssignmentTargetOptions = {}): void — Check selectors, PBR slots, UVs and construction prerequisites before allocating material or texture views. Optional role restrictions apply only to referenced assets; imported maps remain untouched.
 
 ## @jgengine/core/material/materialOverride.draw
@@ -1131,7 +1130,8 @@
 - `SurfaceScanLoader` (type): type SurfaceScanLoader = (url: string, onLoad: (texture: THREE.Texture) => void, onError: () => void) => void — Loads one map; the default goes through {@link ImageTextureLoader}.
 - `SurfaceScanState` (interface): interface SurfaceScanState — A scan's maps as a component sees them.
 - `SurfaceScanTextures` (interface): interface SurfaceScanTextures — Decoded maps of one scanned surface, shared by every material that tiles it.
-- `useSurfaceScan` (function): function useSurfaceScan(maps: TerrainMaterialMaps | undefined, enabled = true): SurfaceScanState — React handle on a scan's maps. `maps` undefined or `enabled` false (the `low` tier) asks for none and is never pending. Every component naming the same URLs shares one decode. The scene's shader warmup waits for the maps, and a caller hides its surface while `pending`, so the warmup links only the scanned programs the first frame draws, not the procedural ones they replace.
+- `SurfaceScanTrack` (interface): interface SurfaceScanTrack — A scan tracked outside React: `useSurfaceScan`'s draw-side twin for EngineDraw factories.
+- `trackSurfaceScan` (function): function trackSurfaceScan(maps: TerrainMaterialMaps | undefined, enabled: boolean, scene: THREE.Scene, onChange: () => void): SurfaceScanTrack — Acquire a scan for draw code: the first holder starts the decode, `onChange` fires once the maps are ready or have failed, and the last release frees the GPU textures. `sync` follows prop changes the way the hook's effect deps did.
 
 ## @jgengine/core/material/toonRamp
 
@@ -1144,9 +1144,8 @@
 
 ## @jgengine/core/material/triplanarMaterial.draw
 
-- `TriplanarAssetMaterial` (function): function TriplanarAssetMaterial({ asset, ...options }: { asset: MaterialAsset } & { tileMetres?: number; sharpness?: number; normalScale?: number }): React.JSX.Element — Mounts {@link useTriplanarAssetMaterial} on a mesh; the R3F renderer owns disposal.
 - `TriplanarProjectionOptions` (interface): interface TriplanarProjectionOptions — Inputs for {@link applyTriplanarProjection}.
-- `useTriplanarAssetMaterial` (function): function useTriplanarAssetMaterial(asset: MaterialAsset, options: { tileMetres?: number; sharpness?: number; normalScale?: number } = {}): THREE.MeshStandardMaterial — Render a serializable material asset — one built by `libraryMaterialAsset`, or authored in the editor — with world-space triplanar projection, so world geometry needs no UVs. Tile size defaults to the asset's own `physicalSize`, which the shared library sets per surface.
+- `triplanarAssetMaterial` (function): function triplanarAssetMaterial(asset: MaterialAsset, options: { tileMetres?: number; sharpness?: number; normalScale?: number } = {}): Promise<MaterialAssetLease> — The draw-side form of the old `useTriplanarAssetMaterial`: resolves the asset's maps, applies world-space triplanar projection and returns an owned lease. Tile size defaults to the asset's own `physicalSize`, which the shared library sets per surface.
 
 ## @jgengine/core/model/SceneModels.draw
 
@@ -1170,9 +1169,10 @@
 ## @jgengine/core/model/measureBounds.draw
 
 - `MEASURE_EXCLUDE_KEY` (const): const MEASURE_EXCLUDE_KEY: "jgMeasureExclude" — Subtrees flagged with this userData key are excluded from bounds measurement — debug gizmos, selection quads, effect billboards that should not inflate the hitbox. Sprites and invisible subtrees are always excluded.
-- `MeasuredBoundsGroup` (function): function MeasuredBoundsGroup({ target, measureKey, children, }: { target: "entity" | "object"; measureKey: string; children: ReactNode; }): React.JSX.Element — Wraps custom-rendered actor content (`renderEntity` / `renderObject`) and reports its measured entity-local bounds into collider resolution, so the hitbox wraps what is actually on screen instead of the fixed-size fallback box. A successful measure re-reports only when the subtree gained or lost meshes (async fill-in), not when idle animation nudges the same meshes.
+- `MeasuredBoundsGroup` (function): function MeasuredBoundsGroup({ target, measureKey, children, }: { target: "entity" | "object"; measureKey: string; children: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `MeasuredLocalBounds` (interface): interface MeasuredLocalBounds — Entity-local AABB of the meshes under a measured root, plus how many meshes contributed — the count lets callers detect async subtree fill-in without diffing bounds.
 - `measureLocalBounds` (function): function measureLocalBounds(root: THREE.Object3D): MeasuredLocalBounds | null — Measure the meshes under `root` in `root`'s own frame (root's transform is the measuring frame, children compose their local matrices below it). Returns `null` when nothing measurable is mounted. Skinned meshes measure at bind pose — the standard engine approximation.
+- `measuredBoundsDraw` (function): function measuredBoundsDraw(getProps: () => { ctx: GameContext; target: "entity" | "object"; measureKey: string; anchor: THREE.Object3D | null; }): EngineDraw — Wraps custom-rendered actor content (`renderEntity` / `renderObject`) and reports its measured entity-local bounds into collider resolution, so the hitbox wraps what is actually on screen instead of the fixed-size fallback box. A successful measure re-reports only when the subtree gained or lost meshes (async fill-in), not when idle animation nudges the same meshes. The draw-side form measures the caller's group on the same bounded retry schedule.
 - `reportMeasuredBounds` (function): function reportMeasuredBounds(ctx: GameContext, target: "entity" | "object", key: string, bounds: MeasuredLocalBounds): void — Forward a measured result into the context (entity kind or object catalog id), deduping repeat reports of the same shape so remounts and multi-instance kinds don't churn collider resolution.
 
 ## @jgengine/core/model/measureCollisionMesh.draw
@@ -1180,6 +1180,14 @@
 - `MeasuredCollisionTriangles` (interface): interface MeasuredCollisionTriangles extends CollisionMeshSource — Entity-local triangle soup of the meshes under a measured root, plus the contributing mesh count (same async fill-in detection as measured bounds). Satisfies {@link CollisionMeshSource}.
 - `measureLocalCollisionTriangles` (function): function measureLocalCollisionTriangles(root: THREE.Object3D, transform?: { scale: number; offset: readonly [number, number, number] }): MeasuredCollisionTriangles | null — Collect the triangle soup of the meshes under `root` in `root`'s own frame — the mesh-accurate counterpart to `measureLocalBounds`, with the same visibility/sprite/{@link MEASURE_EXCLUDE_KEY} exclusions (skinned meshes contribute their bind pose). An optional uniform `scale` + `offset` maps the result into entity-local space when the caller mounts the root scaled/translated (the model-primitive path). Returns `null` when nothing is measurable or the soup exceeds the triangle budget — callers keep their box fallback.
 - `reportMeasuredCollisionMesh` (function): function reportMeasuredCollisionMesh(ctx: GameContext, target: "entity" | "object", key: string, triangles: MeasuredCollisionTriangles): void — Forward measured triangles into the context (entity kind or object catalog id), deduping repeat reports of the same soup so remounts and multi-instance kinds don't rebuild the BVH.
+
+## @jgengine/core/model/modelInstanceDraw.draw
+
+- `ModelInstanceConfig` (type): type ModelInstanceConfig = Pick< ModelConfig, | "url" | "scale" | "targetHeight" | "y" | "anchor" | "dims" | "shadows" | "animation" | "hiddenNodes" | "surfaceDetail" | "wind" | "lod" > — Model loading, placement, shadows and animation for a custom renderer.
+- `ModelInstanceDrawOptions` (interface): interface ModelInstanceDrawOptions extends ModelInstanceOptions { onReady?: (ready: ModelInstanceReady) => (() => void) | void } — ⚠ undocumented · used by `modelInstanceDraw`: The draw-side {@link ModelInstanceConfig} renderer: loads the shared GLTF, clones and places the model through the same build path entity dr…
+- `ModelInstanceOptions` (interface): interface ModelInstanceOptions — Caller-owned styling runs on the isolated clone, never the loader cache.
+- `ModelInstanceReady` (interface): interface ModelInstanceReady — The built instance handed to `onReady` once the model has loaded and placed.
+- `modelInstanceDraw` (function): function modelInstanceDraw(model: ModelInstanceConfig, options: ModelInstanceDrawOptions = {}): EngineDraw — The draw-side {@link ModelInstanceConfig} renderer: loads the shared GLTF, clones and places the model through the same build path entity draws use, then poses it every frame. Mount under an {@link EngineSceneContext} parent (or the scene root) for the world transform.
 
 ## @jgengine/core/model/modelLoad.draw
 
@@ -1233,10 +1241,3 @@
 - `freezeStaticTransforms` (function): function freezeStaticTransforms(root: THREE.Object3D): void — Bake a subtree's world matrices from its current pose and take it out of three's per-frame `updateMatrixWorld` pass. Three recomposes every node that keeps `matrixAutoUpdate` and then forces its whole subtree to rebuild the world matrix, so authored scenery — terrain, batched props, scatter, instanced ground — pays that cost every frame for a pose it never changes (#2038).
 - `refreshStaticTransforms` (function): function refreshStaticTransforms(root: THREE.Object3D): void — Re-bake a frozen subtree's world matrices from its current position, rotation and scale, and its parent's world matrix: the one-off update for static content something moved (a door swung, a placement edited). Nodes added under it since it froze freeze with it.
 - `thawStaticTransforms` (function): function thawStaticTransforms(root: THREE.Object3D): void — Put a subtree back on the per-frame matrix pass after {@link freezeStaticTransforms} — for the authored seam that moves on an event rather than every frame.
-
-## @jgengine/core/model/useModelInstance.draw
-
-- `ModelInstance` (interface): interface ModelInstance — Render `scene` with `position` and uniform `scale`; animate or deform `content` inside that placement frame.
-- `ModelInstanceConfig` (type): type ModelInstanceConfig = Pick<ModelConfig, "url" | "scale" | "targetHeight" | "y" | "anchor" | "dims" | "shadows" | "animation" | "hiddenNodes" | "surfaceDetail" | "wind" | "lod" > — Model loading, placement, shadows and animation for a custom renderer.
-- `ModelInstanceOptions` (interface): interface ModelInstanceOptions — Caller-owned styling runs on the isolated clone, never the loader cache.
-- `useModelInstance` (function): function useModelInstance(model: ModelInstanceConfig, options: ModelInstanceOptions = {}): ModelInstance — Load and own an isolated model instance, preserving imported transforms and measuring placement at bind pose. Apply hiddenNodes to the configured clone before measurement; equivalent name lists retain the instance. Mount `scene` with the returned position/scale. Custom materials, deformation and surrounding geometry stay caller-owned. Must run inside an R3F canvas and Suspense boundary; a game provider is optional.

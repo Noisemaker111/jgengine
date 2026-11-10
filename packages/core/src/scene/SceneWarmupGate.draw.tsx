@@ -7,7 +7,7 @@ import { joinAfterRenderTask, joinBeforeRenderTask } from "@jgengine/core/frame/
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 
-import { createShaderWarmup, deferUnlinkedDraws, firstUnlinkedDrawable, holdDraws, registerSceneWarmup, SHADER_WARMUP_DEFAULTS, type HeldDraw, type ShaderWarmupState } from "@jgengine/core/render/shaderWarmup.draw";
+import { createShaderWarmup, deferUnlinkedDraws, firstUnlinkedDrawable, holdDraws, registerSceneWarmup, SHADER_WARMUP_DEFAULTS, warmupHoldLabels, type HeldDraw, type ShaderWarmupState } from "@jgengine/core/render/shaderWarmup.draw";
 
 /** Warmup state before the gate has run, so the loading screen covers the very first frame. @internal */
 export const SCENE_WARMUP_PENDING: ShaderWarmupState = { phase: "waiting", rounds: 0, programs: 0, planned: 0, deferred: 0, progress: 0, elapsedMs: 0 };
@@ -143,7 +143,9 @@ export function sceneWarmupGateDraw(getProps: () => SceneWarmupGateProps): Engin
       unregisterWarmup = registerSceneWarmup(scene, { ...active, prepare: () => prepare(false) });
       unregisterProbe = devtools.probes.register("sceneWarmup", () => {
         const warmupState = active.state();
-        return `${warmupState.phase}, ${warmupState.rounds} rounds, ${warmupState.programs} programs, ${warmupState.planned} planned, ${warmupState.deferred} deferred, ${warmupState.elapsedMs}ms`;
+        const holds = warmupHoldLabels(scene);
+        const waiting = holds.length === 0 ? "" : `, waiting on ${holds.join("; ")}`;
+        return `${warmupState.phase}, ${warmupState.rounds} rounds, ${warmupState.programs} programs, ${warmupState.planned} planned, ${warmupState.deferred} deferred, ${warmupState.elapsedMs}ms${waiting}`;
       });
     },
     dispose() {

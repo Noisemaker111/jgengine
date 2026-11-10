@@ -13,6 +13,7 @@ import {
 } from "@jgengine/core/terrain/terrainGuides";
 
 import type { TerrainReadoutStore } from "./terrainReadoutStore";
+import { SceneObjectAttach, SceneObjectList } from "@jgengine/core/frame/useEngineDraw.draw";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
 
 /** How often (seconds) the cursor readout re-samples — a bounded per-frame cost, not every frame. */
@@ -212,11 +213,9 @@ export function TerrainReadout({
   });
 
   return (
-    <group>
-      {guides.objects.map((object, index) => (
-        <primitive key={index} object={object} />
-      ))}
-      <primitive object={ring} />
-    </group>
+    <>
+      <SceneObjectList objects={guides.objects} />
+      <SceneObjectAttach object={ring} />
+    </>
   );
 }

@@ -1,4 +1,4 @@
-// @skill jgengine-ui
+// @skill jgengine-world
 /**
  * The engine-owned frame loop: one rAF that steps an ordered list of draw
  * systems and renders a plain three.js scene. This is what r3f's Canvas +
@@ -19,7 +19,7 @@ import * as THREE from "three";
 
 import { paceFrame } from "../settings/frameRateLimit";
 import { flushAfterRenderTasks, flushBeforeRenderTasks } from "./afterRenderBoard.draw";
-import { bindFrameSource, joinFrameTask, type FrameSource } from "./frameBoard.draw";
+import { bindFrameOwner, isPrimaryFrameOwner, joinFrameTask, withFrameOwner, type FrameOwner, type FrameSource } from "./frameBoard.draw";
 
 /** Frameloop modes the shell's Canvas accepted. */
 export type EngineFrameloop = "always" | "demand" | "never";
@@ -37,6 +37,8 @@ export interface EngineFrameState {
    * Absent on states built directly over a renderer root.
    */
   readonly rootScene?: THREE.Scene;
+  /** The loop this state belongs to on the frame board; child states carry their root's. */
+  readonly frameOwner?: FrameOwner;
   readonly camera: THREE.Camera;
   readonly clock: THREE.Clock;
   /** r3f's `size`: the canvas's CSS pixel size, live across resizes. */
@@ -248,6 +250,7 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
   }
 
   const draws: EngineDraw[] = [];
+  const frameOwner: FrameOwner = {};
   /** Mounted draws at positive priority — they own rendering while > 0. */
   let positiveDraws = 0;
   let raf = 0;
@@ -268,6 +271,7 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
     renderer,
     gl: renderer,
     scene,
+    frameOwner,
     camera,
     clock,
     size,
@@ -307,13 +311,17 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
       state.elapsed = clock.elapsedTime;
       pacedElapsed = null;
     }
-    flushBeforeRenderTasks();
-    for (const draw of draws) draw.frame?.(state, state.delta);
+    // Before/after-render tasks are page-wide (a capture, the frame breakdown): one canvas runs them.
+    const leads = isPrimaryFrameOwner(frameOwner);
+    if (leads) flushBeforeRenderTasks();
+    withFrameOwner(frameOwner, () => {
+      for (const draw of draws) draw.frame?.(state, state.delta);
+    });
     // r3f's rule: a draw at positive priority takes rendering into its own
     // hands — the loop renders nothing itself while one is mounted (the
     // post chain and split-screen viewports render through their own passes).
     if (!state.renderTakenOver) renderer.render(scene, camera);
-    flushAfterRenderTasks();
+    if (leads) flushAfterRenderTasks();
     invalidated = false;
   }
 
@@ -365,7 +373,7 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
     tasks: { join: joinFrameTask },
     add(draw) {
       insertDraw(draw);
-      draw.mount?.(state);
+      withFrameOwner(frameOwner, () => draw.mount?.(state));
       invalidated = true;
       return () => {
         removeDraw(draw);
@@ -412,16 +420,16 @@ export function createEngineLoop(options: EngineLoopOptions): EngineLoop {
   options.onCreated?.(state);
   invalidated = true;
   if (frameloop !== "never") raf = requestAnimationFrame(frame);
-  // The shared board's tasks become ordered draws on this loop; files that
-  // joined while the r3f pump drove re-attach here without re-subscribing.
+  // The shared board's tasks become ordered draws on this loop; tasks that
+  // joined before it existed attach here without re-joining.
   const source: FrameSource = (priority, run) => loop.add({
     priority,
     frame: (frameState) => run(frameState, frameState.delta),
   });
-  bindFrameSource(source);
+  const unbindFrames = bindFrameOwner(frameOwner, source);
   const priorDispose = loop.dispose;
   loop.dispose = () => {
-    bindFrameSource(null);
+    unbindFrames();
     priorDispose();
   };
   return loop;

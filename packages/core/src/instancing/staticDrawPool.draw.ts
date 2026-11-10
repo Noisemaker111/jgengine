@@ -563,6 +563,7 @@ export class StaticDrawPool {
     shared.refs += 1;
     const owned = shared.material;
     const mesh = new THREE.BatchedMesh(Math.max(16, capacity), vertexCapacity, indexCapacity, owned);
+    mesh.name = `pool:${key.split("#")[0]}`;
     mesh.castShadow = source.castShadow === true;
     mesh.receiveShadow = source.receiveShadow === true;
     // Culled whole, by the bounds of its cell, not instance by instance: three's per-instance cull

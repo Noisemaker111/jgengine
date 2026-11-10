@@ -1,4 +1,4 @@
-import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
+import { useFrameJoin } from "@jgengine/core/frame/engineHost.draw";
 import { useEffect, useRef } from "react";
 import type { BehaviourWorld } from "@jgengine/core/behaviour/behaviour";
 import { createBehaviourWorldDriver } from "./behaviourDriver";
@@ -25,7 +25,8 @@ export function useBehaviourWorld(world: BehaviourWorld, scaleDt?: (rawDt: numbe
       driver.stop();
     };
   }, [world]);
-  useEffect(() => joinFrameTask(0, (_state, rawDt) => {
+  const joinFrame = useFrameJoin();
+  useEffect(() => joinFrame(0, (_state, rawDt) => {
     driverRef.current.step(scaleDt === undefined ? rawDt : scaleDt(rawDt));
   }), [scaleDt]);
 }

@@ -1,4 +1,4 @@
-import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
+import { useFrameJoin } from "@jgengine/core/frame/engineHost.draw";
 import { useEffect, useRef, type MutableRefObject } from "react";
 import {
   advanceMotionCues,
@@ -59,9 +59,10 @@ export function useEntityRenderCues(
     };
   }, [ctx, instanceId, tuning?.firePulseSeconds, tuning?.hitPulseSeconds]);
 
+  const joinFrame = useFrameJoin();
   useEffect(() => {
     if (instanceId === undefined) return;
-    return joinFrameTask(0, (_state, delta) => {
+    return joinFrame(0, (_state, delta) => {
       if (delta <= 0) return;
       const entity = ctx.scene.entity.get(instanceId);
       if (entity === null) return;

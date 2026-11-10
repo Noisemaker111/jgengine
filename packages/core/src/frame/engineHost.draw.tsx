@@ -1,6 +1,7 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useCallback, useContext, type ReactNode } from "react";
 
 import type { EngineFrameState, EngineFrameloop } from "./engineLoop.draw";
+import { joinFrameTask, type FrameTask } from "./frameBoard.draw";
 
 /**
  * The render host a React subtree draws through: the engine loop's provider.
@@ -35,4 +36,15 @@ export function useEngineHost(): EngineHost {
     throw new Error("useEngineHost: no EngineHostProvider above this component");
   }
   return host;
+}
+
+/**
+ * `joinFrameTask` for a component's effects, bound to the canvas the component renders under: a
+ * task joined through it runs on that canvas's loop, with its camera and scene, even when other
+ * canvases share the page. Outside a host it joins the primary loop.
+ * @internal
+ */
+export function useFrameJoin(): (priority: number, task: FrameTask) => () => void {
+  const owner = useContext(EngineHostContext)?.frame.frameOwner ?? null;
+  return useCallback((priority: number, task: FrameTask) => joinFrameTask(priority, task, owner), [owner]);
 }

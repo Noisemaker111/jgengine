@@ -195,13 +195,17 @@ describe("WebGpuGl as three sees it", () => {
 // what the cache decides is which of bindGroupFor / pipelineFor a draw had to run again.
 const drawSetup = (features: string[] = []) => {
   const { gl, passes, calls } = stubContext(64, 64, features);
+  const uniformGroup = {};
   const program = {
     kind: "program", id: 900, shaders: [], linked: true, log: "", pending: null, compiled: true,
     translated: { layout: { samplers: [{ kind: "Float", dim: "D2", texture_binding: 0, sampler_binding: 1 }], fragment_outputs: 1 } },
     vertex: {}, fragment: {}, uniforms: new Map(), samplerIndex: new Map(), active: [], attribs: [],
-    bytes: new Uint8Array(256), blockSize: 16, dirty: true, slotBatch: -1, slotOffset: 0,
+    objectSide: gl.uniformSide(16), sharedSide: gl.uniformSide(16),
+    sharedBuf: {}, uniformGroup, usedBatch: 0, sharedLo: 0, sharedHi: 0,
     units: new Int32Array(1), layouts: new Map(), vertexCache: new WeakMap(), textureSets: new Map(), lastTextures: null, pipelineSets: new Map(),
   };
+  gl.ringGroupSizes.set(uniformGroup, 16);
+  gl.uniformGroupPrograms.set(uniformGroup, program);
   gl.program = program;
   const plan = { id: 901, key: "none", slots: [], constants: [], instanceCapacity: (n: number) => n };
   gl.vertexPlan = () => plan;
@@ -221,11 +225,16 @@ const drawSetup = (features: string[] = []) => {
 };
 
 describe("WebGpuGl uniforms", () => {
+  const side = (size: number) => {
+    const block = new ArrayBuffer(size);
+    return { block, f32: new Float32Array(block), i32: new Int32Array(block), u32: new Uint32Array(block), bytes: new Uint8Array(block), size, dirty: false, slotBatch: 0, slotOffset: 0 };
+  };
+
   test("scalar uniform calls land in the block, and an unchanged value leaves it clean", () => {
     const { gl } = drawSetup();
     const p = gl.program;
-    const block = new ArrayBuffer(64);
-    Object.assign(p, { block, f32: new Float32Array(block), i32: new Int32Array(block), u32: new Uint32Array(block), bytes: new Uint8Array(block), blockSize: 64 });
+    p.sharedSide = side(64);
+    p.objectSide = side(64);
     p.uniforms = new Map([
       ["tint", { name: "tint", offset: 16, kind: "f", columns: 1, rows: 3, column_stride: 0, count: 2, stride: 16, array: true }],
       ["mode", { name: "mode", offset: 48, kind: "i", columns: 1, rows: 1, column_stride: 0, count: 1, stride: 0, array: false }],
@@ -233,15 +242,45 @@ describe("WebGpuGl uniforms", () => {
     gl.uniform3f(gl.getUniformLocation(p, "tint"), 1, 2, 0.1);
     gl.uniform3f(gl.getUniformLocation(p, "tint[1]"), 4, 5, 6);
     gl.uniform1i(gl.getUniformLocation(p, "mode"), 2.7);
-    expect([...p.f32.subarray(4, 7)]).toEqual([1, 2, Math.fround(0.1)]);
-    expect([...p.f32.subarray(8, 11)]).toEqual([4, 5, 6]);
-    expect(p.i32[12]).toBe(2);
-    expect(p.dirty).toBe(true);
-    p.dirty = false;
+    expect([...p.sharedSide.f32.subarray(4, 7)]).toEqual([1, 2, Math.fround(0.1)]);
+    expect([...p.sharedSide.f32.subarray(8, 11)]).toEqual([4, 5, 6]);
+    expect(p.sharedSide.i32[12]).toBe(2);
+    expect(p.sharedSide.dirty).toBe(true);
+    p.sharedSide.dirty = false;
     gl.uniform3f(gl.getUniformLocation(p, "tint"), 1, 2, 0.1);
-    expect(p.dirty).toBe(false);
+    expect(p.sharedSide.dirty).toBe(false);
     gl.uniform3f(gl.getUniformLocation(p, "tint"), 1, 2, 0.2);
-    expect(p.dirty).toBe(true);
+    expect(p.sharedSide.dirty).toBe(true);
+  });
+
+  test("an object-block uniform lands in the object side, and a shared write after a draw flushes first", () => {
+    const s = drawSetup();
+    const { gl } = s;
+    const p = gl.program;
+    p.sharedSide = side(64);
+    p.objectSide = side(64);
+    p.uniforms = new Map([
+      ["modelViewMatrix", { name: "modelViewMatrix", offset: 0, kind: "f", columns: 4, rows: 4, column_stride: 16, count: 1, stride: 0, array: false, block: "object" }],
+      ["viewMatrix", { name: "viewMatrix", offset: 0, kind: "f", columns: 4, rows: 4, column_stride: 16, count: 1, stride: 0, array: false, block: "shared" }],
+    ]);
+    const m = new Float32Array(16).fill(1);
+    gl.uniformMatrix4fv(gl.getUniformLocation(p, "modelViewMatrix"), false, m);
+    expect(p.objectSide.f32[0]).toBe(1);
+    expect(p.objectSide.dirty).toBe(true);
+    expect(p.sharedSide.dirty).toBe(false);
+    // A real draw marks the program used this batch; a changed shared write must submit before it lands.
+    s.draw();
+    expect(p.usedBatch).toBe(gl.batch);
+    const flushes = gl.stats.orderFlushes;
+    gl.uniformMatrix4fv(gl.getUniformLocation(p, "viewMatrix"), false, m);
+    expect(gl.stats.orderFlushes).toBe(flushes + 1);
+    expect(gl.stats.submits).toBe(1);
+    expect(p.sharedSide.dirty).toBe(true);
+    // An unchanged shared write after a draw does not flush.
+    p.usedBatch = gl.batch;
+    const again = gl.stats.orderFlushes;
+    gl.uniformMatrix4fv(gl.getUniformLocation(p, "viewMatrix"), false, m);
+    expect(gl.stats.orderFlushes).toBe(again);
   });
 });
 
@@ -293,9 +332,9 @@ describe("WebGpuGl pass replay", () => {
     const twoPasses = (first: number) => {
       s.gl.bindFramebuffer(0x8d40, null);
       // Each draw with new uniforms (a moving object), so the first pass's share of the ring changes.
-      for (let i = 0; i < first; i += 1) { s.gl.program.dirty = true; s.draw(); }
+      for (let i = 0; i < first; i += 1) { s.gl.program.objectSide.dirty = true; s.draw(); }
       s.gl.bindFramebuffer(0x8d40, fb);
-      s.gl.program.dirty = true;
+      s.gl.program.objectSide.dirty = true;
       s.draw();
       s.gl.present();
     };

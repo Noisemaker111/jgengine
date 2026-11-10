@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-import { joinFrameTask } from "@jgengine/core/frame/frameBoard.draw";
+import { useFrameJoin } from "@jgengine/core/frame/engineHost.draw";
 
 import { WaypointMarkers, type WaypointMarkerTheme } from "@jgengine/core/map/waypointMarkers.view";
 import { waypointAnchor } from "@jgengine/core/map/waypoints";
@@ -30,7 +30,8 @@ export function OnboardingPointer({ ctx, theme }: { ctx: GameContext; theme?: Wa
   };
   // Re-render only when the pin moves a pixel or its distance changes, so a still camera (and the
   // shader warmup behind the loading cover) costs no React work.
-  useEffect(() => joinFrameTask(0, () => {
+  const joinFrame = useFrameJoin();
+  useEffect(() => joinFrame(0, () => {
     if (runtime === null) return;
     const now = runtime.waypoints
       .list()

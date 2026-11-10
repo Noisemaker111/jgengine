@@ -14,7 +14,12 @@ export interface WgslVertexInput {
   kind: "f" | "i" | "u";
 }
 
-/** Where one of three's uniform names lives in the program's std140 block. */
+/** Where one of three's uniform names lives: `shared` is the program-wide block (binding 0,
+ * persistent across frames), `object` the per-object block (binding 1, restaged per draw batch).
+ * Absent on layouts translated before the split: treat as `shared`. */
+export type WgslUniformBlock = "shared" | "object";
+
+/** Where one of three's uniform names lives in its block. */
 export interface WgslUniformSlot {
   name: string;
   offset: number;
@@ -26,6 +31,7 @@ export interface WgslUniformSlot {
   stride: number;
   /** Declared as an array (GL names it `name[0]`), even with one element. */
   array: boolean;
+  block?: WgslUniformBlock;
 }
 
 /** A sampler uniform split into a texture and a sampler binding in group 1. */
@@ -47,6 +53,9 @@ export interface WgslProgram {
   layout: {
     vertex_inputs: WgslVertexInput[];
     uniform_size: number;
+    /** Split layouts: bytes of the shared (binding 0) and object (binding 1) blocks. 0 when unsplit. */
+    shared_size?: number;
+    object_size?: number;
     uniforms: WgslUniformSlot[];
     samplers: WgslSamplerSlot[];
     fragment_outputs: number;

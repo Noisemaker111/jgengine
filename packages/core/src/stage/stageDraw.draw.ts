@@ -1,4 +1,5 @@
-import { useRef } from "react";
+// @skill jgengine-world
+import { createElement, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three-stdlib";
 
@@ -192,7 +193,7 @@ export function stageDraw(getSpec: () => StageSpec): EngineDraw {
 export function StageDraw({ spec }: { spec: StageSpec }) {
   const ref = useRef(spec);
   ref.current = spec;
-  return <EngineDrawMount create={() => stageDraw(() => ref.current)} deps={[]} />;
+  return createElement(EngineDrawMount, { create: () => stageDraw(() => ref.current), deps: [] });
 }
 
 export interface OrbitControlsSpec {
@@ -213,7 +214,9 @@ export function orbitControlsDraw(getSpec: () => OrbitControlsSpec): EngineDraw 
   let controls: OrbitControls | null = null;
   return {
     mount(state) {
-      controls = new OrbitControls(state.camera, state.gl.domElement);
+      const camera = state.camera;
+      if (!(camera instanceof THREE.PerspectiveCamera || camera instanceof THREE.OrthographicCamera)) return;
+      controls = new OrbitControls(camera, state.gl.domElement);
       const target = getSpec().target;
       if (target !== undefined) controls.target.set(target[0], target[1], target[2]);
       const spec = getSpec();
@@ -226,7 +229,7 @@ export function orbitControlsDraw(getSpec: () => OrbitControlsSpec): EngineDraw 
       if (spec.maxAzimuthAngle !== undefined) controls.maxAzimuthAngle = spec.maxAzimuthAngle;
       controls.update();
     },
-    frame(state) {
+    frame() {
       if (controls === null) return;
       const live = getSpec().targetOf?.();
       if (live != null) {
@@ -245,7 +248,7 @@ export function orbitControlsDraw(getSpec: () => OrbitControlsSpec): EngineDraw 
 export function OrbitControlsDraw({ spec }: { spec: OrbitControlsSpec }) {
   const ref = useRef(spec);
   ref.current = spec;
-  return <EngineDrawMount create={() => orbitControlsDraw(() => ref.current)} deps={[]} />;
+  return createElement(EngineDrawMount, { create: () => orbitControlsDraw(() => ref.current), deps: [] });
 }
 
 export interface CameraPoseSpec {
@@ -264,7 +267,7 @@ export function cameraPoseDraw(getSpec: () => CameraPoseSpec): EngineDraw {
       const camera = state.camera;
       camera.position.set(spec.position[0], spec.position[1], spec.position[2]);
       if (spec.target !== undefined) camera.lookAt(spec.target[0], spec.target[1], spec.target[2]);
-      camera.updateProjectionMatrix();
+      if (camera instanceof THREE.PerspectiveCamera || camera instanceof THREE.OrthographicCamera) camera.updateProjectionMatrix();
     },
   };
 }
@@ -273,5 +276,5 @@ export function cameraPoseDraw(getSpec: () => CameraPoseSpec): EngineDraw {
 export function CameraPoseDraw({ spec }: { spec: CameraPoseSpec }) {
   const ref = useRef(spec);
   ref.current = spec;
-  return <EngineDrawMount create={() => cameraPoseDraw(() => ref.current)} deps={[]} />;
+  return createElement(EngineDrawMount, { create: () => cameraPoseDraw(() => ref.current), deps: [] });
 }

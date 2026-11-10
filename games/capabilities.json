@@ -1002,16 +1002,6 @@
       "intent": "read spawn points and markers from the editor document"
     },
     {
-      "id": "authored-surface-material",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/material/authoredSurfaceMaterial.draw",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "render declared PBR maps with colour-space handling and metre-scale box/cylinder UVs"
-    },
-    {
       "id": "authored-triggers",
       "packages": [
         "@jgengine/core"
@@ -3474,7 +3464,7 @@
       "module": "@jgengine/core/render/EntityPreview.draw",
       "gameFacing": false,
       "probe": null,
-      "intent": "live 3D entity portrait — nested Canvas + context bridge + studio stage, driven by the game's own renderEntity"
+      "intent": "live 3D entity portrait — nested EngineCanvas + context bridge + studio stage, driven by the game's own renderEntity"
     },
     {
       "id": "entity-render-cues",
@@ -9940,7 +9930,7 @@
       "module": "@jgengine/core/scene/sceneCapture.draw",
       "gameFacing": false,
       "probe": null,
-      "intent": "expose the live scene to outside-Canvas HUD (photo mode, save thumbnails)"
+      "intent": "expose the live renderer to outside-canvas HUD (photo mode, save thumbnails)"
     },
     {
       "id": "scene-ownership",
