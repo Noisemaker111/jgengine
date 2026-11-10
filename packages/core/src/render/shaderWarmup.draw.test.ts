@@ -890,7 +890,7 @@ describe("createShaderWarmup links what the first frame draws outside the scene'
     scene.add(meshAt(0, 0, -5));
     const { renderer, compiled } = linkingRenderer();
     let finishBake: () => void = () => {};
-    warmupWaitsFor(scene, new Promise<void>((resolve) => (finishBake = resolve)));
+    warmupWaitsFor(scene, new Promise<void>((resolve) => (finishBake = resolve)), "test bake");
     const warmup = createShaderWarmup({ renderer, scene, camera: new PerspectiveCamera(), quietMs: 0, backgroundMs: 0, loaderQuiet: () => true });
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(compiled).toHaveLength(0);

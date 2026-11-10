@@ -677,7 +677,7 @@ class ImpostorEntryDriver {
     const acquired = acquireImpostor(this.key, this.gl, this.sources, this.settings);
     if (acquired.baked) this.entry = acquired;
     else {
-      warmupWaitsFor(this.scene, new Promise<void>((resolve) => { this.resolveLanded = resolve; }));
+      warmupWaitsFor(this.scene, new Promise<void>((resolve) => { this.resolveLanded = resolve; }), `impostor cards ${this.key}`);
       void acquired.ready.then(() => {
         this.entry = acquired;
         // Nothing to draw: there are no cards to wait for.

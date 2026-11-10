@@ -37,7 +37,7 @@ export function acquireDecalTexture(
     texture.image.data = baked.data;
     texture.needsUpdate = true;
   });
-  warmupWaitsFor(scene, work);
+  warmupWaitsFor(scene, work, `decal ${style}`);
   return {
     texture,
     dispose() {

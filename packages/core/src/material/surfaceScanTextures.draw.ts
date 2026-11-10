@@ -33,7 +33,7 @@ export function trackSurfaceScan(maps: TerrainMaterialMaps | undefined, enabled:
       settled = true;
       onChange();
     });
-    if (handle.current() === null) warmupWaitsFor(scene, handle.settled);
+    if (handle.current() === null) warmupWaitsFor(scene, handle.settled, "surface scan textures");
     settled = handle.current() !== null || handle.failed();
   }
   return {
@@ -52,7 +52,7 @@ export function trackSurfaceScan(maps: TerrainMaterialMaps | undefined, enabled:
           settled = true;
           onChange();
         });
-        if (handle.current() === null) warmupWaitsFor(nextScene, handle.settled);
+        if (handle.current() === null) warmupWaitsFor(nextScene, handle.settled, "surface scan textures");
         settled = handle.current() !== null || handle.failed();
       }
       onChange();

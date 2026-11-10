@@ -1077,25 +1077,31 @@ function spawnablesOf(scene: Object3D): Object3D[] {
   return found;
 }
 
-const warmupHolds = new WeakMap<Object3D, Set<Promise<unknown>>>();
+const warmupHolds = new WeakMap<Object3D, Map<Promise<unknown>, string>>();
 
 /**
  * Hold the scene's covered warmup until `work` settles. For work that changes every program the
  * scene links, such as the environment map (its presence is part of every lit material's
- * program): a warmup that ran first would link programs the first frame never draws. @internal
+ * program): a warmup that ran first would link programs the first frame never draws. `label`
+ * names the work in the warmup's probe, so a cover that never lifts says what it waits on. @internal
  */
-export function warmupWaitsFor(scene: Object3D, work: Promise<unknown>): void {
+export function warmupWaitsFor(scene: Object3D, work: Promise<unknown>, label: string): void {
   let holds = warmupHolds.get(scene);
   if (holds === undefined) {
-    holds = new Set();
+    holds = new Map();
     warmupHolds.set(scene, holds);
   }
   const tracked = work.then(
     () => undefined,
     () => undefined,
   );
-  holds.add(tracked);
+  holds.set(tracked, label);
   void tracked.then(() => holds.delete(tracked));
+}
+
+/** The labels of the work still holding `scene`'s warmup, one per hold. @internal */
+export function warmupHoldLabels(scene: Object3D): string[] {
+  return [...(warmupHolds.get(scene)?.values() ?? [])];
 }
 
 /**
@@ -1758,7 +1764,7 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     for (;;) {
       const holds = warmupHolds.get(options.scene);
       if (cancelled || holds === undefined || holds.size === 0 || now() >= deadline) return;
-      await Promise.race([Promise.all([...holds]), sleep(Math.max(0, deadline - now()))]);
+      await Promise.race([Promise.all([...holds.keys()]), sleep(Math.max(0, deadline - now()))]);
     }
   };
 
