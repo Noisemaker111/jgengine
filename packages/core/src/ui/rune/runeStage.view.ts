@@ -10,7 +10,7 @@
 
 import { RuneUi, type RuneUiEvent, type RuneUiNode } from "../runeUi.view";
 import { MirrorReport, elementOf, idOf, mirrorContents, type WireBox } from "./cssMirror.view";
-import { installRuneMeasure, setRuneRect } from "./domMeasure.view";
+import { installRuneMeasure, runeRectOf, setRuneRect } from "./domMeasure.view";
 
 interface Layer {
   container: HTMLElement;
@@ -20,12 +20,8 @@ interface Layer {
 
 const fontUrls = new Set<string>();
 
-/** A TrueType/OpenType file Rune should load for text (WOFF files are not readable by Rune). */
+/** A font file (TrueType, OpenType, WOFF or WOFF2) Rune should load for text. */
 export function registerRuneFont(url: string): void {
-  if (/\.woff2?(\?|$)/i.test(url)) {
-    console.warn(`degraded: Rune cannot read ${url}; ship the font as .ttf or .otf`);
-    return;
-  }
   if (fontUrls.has(url)) return;
   fontUrls.add(url);
   stage?.fontsChanged();
@@ -48,6 +44,9 @@ export class RuneStage {
   private mountedFonts = "";
   private lastJson = "";
   private layerCount = 0;
+  private readonly islands = new Map<HTMLCanvasElement, HTMLCanvasElement>();
+  private islandHost: HTMLDivElement | null = null;
+  private islandRaf = 0;
   /** Milliseconds the last mirror pass took, and how many it has run: read by perf probes. */
   stats = { passes: 0, lastMs: 0, totalMs: 0, boxes: 0 };
 
@@ -112,6 +111,7 @@ export class RuneStage {
             const element = elementOf(id);
             if (element !== null) setRuneRect(element, [x, y, w, h]);
           }
+          this.placeIslands();
         };
         this.lastJson = "";
         this.sync();
@@ -145,6 +145,65 @@ export class RuneStage {
     this.lastJson = json;
     this.ui.setSpec(roots as unknown as RuneUiNode[], false);
   }
+
+  /**
+   * A `<canvas>` inside a layer is never displayed, so each gets a visible copy placed where Rune
+   * laid it out, redrawn from the original every frame while any exist. The copies sit above the
+   * Rune canvas: Rune content meant to overlap a canvas draws under it (a known gap).
+   */
+  private placeIslands(): void {
+    const sources: HTMLCanvasElement[] = [];
+    for (const layer of this.layers) sources.push(...layer.container.querySelectorAll("canvas"));
+    for (const [source, copy] of this.islands) {
+      if (!sources.includes(source)) {
+        copy.remove();
+        this.islands.delete(source);
+      }
+    }
+    if (sources.length === 0) return;
+    if (this.islandHost === null) {
+      this.islandHost = document.createElement("div");
+      this.islandHost.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:41;overflow:hidden";
+      this.islandHost.dataset["jgRuneIslands"] = "";
+      document.body.appendChild(this.islandHost);
+    }
+    for (const source of sources) {
+      const rect = runeRectOf(source);
+      let copy = this.islands.get(source);
+      if (rect === undefined || rect[2] <= 0 || rect[3] <= 0) {
+        if (copy !== undefined) copy.style.display = "none";
+        continue;
+      }
+      if (copy === undefined) {
+        copy = document.createElement("canvas");
+        copy.style.position = "absolute";
+        this.islandHost.appendChild(copy);
+        this.islands.set(source, copy);
+      }
+      copy.style.display = "block";
+      copy.style.left = `${rect[0]}px`;
+      copy.style.top = `${rect[1]}px`;
+      copy.style.width = `${rect[2]}px`;
+      copy.style.height = `${rect[3]}px`;
+      copy.style.borderRadius = getComputedStyle(source).borderRadius;
+    }
+    if (this.islandRaf === 0) this.islandRaf = requestAnimationFrame(this.copyIslands);
+  }
+
+  private readonly copyIslands = (): void => {
+    this.islandRaf = 0;
+    if (this.islands.size === 0) return;
+    for (const [source, copy] of this.islands) {
+      if (copy.style.display === "none" || source.width === 0 || source.height === 0) continue;
+      if (copy.width !== source.width) copy.width = source.width;
+      if (copy.height !== source.height) copy.height = source.height;
+      const context = copy.getContext("2d");
+      if (context === null) continue;
+      context.clearRect(0, 0, copy.width, copy.height);
+      context.drawImage(source, 0, 0);
+    }
+    this.islandRaf = requestAnimationFrame(this.copyIslands);
+  };
 
   private onEvent(event: RuneUiEvent): void {
     if (event.id === "__spec__") {

@@ -177,7 +177,46 @@ pub fn slot_text(slot: usize, decimals: usize) -> String {
     }
 }
 
-/// Inline SVG markup drawn to fill its box. Placeholder until the SVG painter lands.
-pub fn svg_fill(_svg: &str, _id: u32) -> El {
-    el().pin(Some(0.0), Some(0.0), Some(0.0), Some(0.0))
+thread_local! {
+    static IMAGES: RefCell<Option<rune::ImageCache>> = const { RefCell::new(None) };
+    /// Handles kept so a decoded image stays decoded while a tree that shows it is mounted.
+    static HELD: RefCell<HashMap<String, rune::Image>> = RefCell::new(HashMap::new());
+}
+
+fn with_images<T>(f: impl FnOnce(&rune::ImageCache) -> T) -> T {
+    IMAGES.with(|cell| {
+        let mut cell = cell.borrow_mut();
+        let cache = cell.get_or_insert_with(|| rune::ImageCache::new(std::sync::Arc::new(crate::wake)));
+        f(cache)
+    })
+}
+
+/// The raster size bucket for an image shown `points` wide: the next power of two, so a box
+/// that grows a few points does not decode again.
+fn bucket(points: f32) -> f32 {
+    (points.max(8.0).ceil() as u32).next_power_of_two() as f32
+}
+
+/// An image by URL, decoded by the browser and held by this cache.
+pub fn image_by_url(url: &str, points: f32) -> rune::Image {
+    let size = bucket(points);
+    let key = format!("u{size}|{url}");
+    HELD.with(|held| held.borrow_mut().entry(key).or_insert_with(|| with_images(|cache| cache.url(url, size, 2.0))).clone())
+}
+
+/// Inline SVG markup rasterized to fit `points` square.
+pub fn image_of_svg(svg: &str, points: f32) -> rune::Image {
+    let size = bucket(points);
+    let key = format!("s{size}|{svg}");
+    HELD.with(|held| held.borrow_mut().entry(key).or_insert_with(|| with_images(|cache| cache.svg(svg.as_bytes().to_vec(), size, 2.0))).clone())
+}
+
+/// Forget every held image (a new tree was mounted; what it shows is requested again).
+pub fn release_images() {
+    HELD.with(|held| {
+        let mut held = held.borrow_mut();
+        if held.len() > 512 {
+            held.clear();
+        }
+    });
 }

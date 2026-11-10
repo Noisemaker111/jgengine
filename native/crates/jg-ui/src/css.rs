@@ -320,6 +320,9 @@ pub struct Box_ {
     /// An image URL drawn to fill the box.
     #[serde(default)]
     pub img: Option<String>,
+    /// How the image fills the box: 0 stretched, 1 covering (cropped), 2 contained.
+    #[serde(default)]
+    pub fit: u8,
     /// Pointer interest: bit 0 takes presses, bit 1 reports hover, bit 2 blocks the game underneath.
     #[serde(default)]
     pub hit: u8,
@@ -518,6 +521,8 @@ fn needs_size(b: &Box_) -> bool {
     b.ly.iter().any(|l| l.g == 1 && l.flat.is_none())
         || b.tf.is_some_and(|t| t[4] != 0.0 || t[5] != 0.0)
         || b.rad.is_some_and(|r| r.iter().any(|v| *v < 0.0))
+        || b.svg.is_some()
+        || b.img.is_some()
 }
 
 /// A full-size, out-of-flow sheet for one more background layer.
@@ -630,7 +635,15 @@ pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
         e = e.child(paint_layer(sheet(radii), l, size));
     }
     if let Some(svg) = &b.svg {
-        e = e.child(crate::widgets::svg_fill(svg, b.id));
+        let image = crate::widgets::image_of_svg(svg, size[0].max(size[1]).max(16.0));
+        e = e.pixels_fit(image.pixels(), rune::SurfaceFit::Fit);
+    } else if let Some(url) = &b.img {
+        let image = crate::widgets::image_by_url(url, size[0].max(size[1]).max(32.0));
+        e = match b.fit {
+            1 => e.pixels_fit(image.pixels(), rune::SurfaceFit::Fill),
+            2 => e.pixels_fit(image.pixels(), rune::SurfaceFit::Fit),
+            _ => e.pixels(image.pixels()),
+        };
     }
     if let Some(t) = &b.t {
         for (x, y, blur, c) in &t.ts {

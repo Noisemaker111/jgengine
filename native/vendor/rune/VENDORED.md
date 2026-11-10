@@ -22,6 +22,11 @@ that composites over the game's three.js canvas.
 
 When upstream `dev` gains equivalent support, re-vendor and drop the patch.
 
+`crates/rune/src/platform/web.rs` and `crates/rune/Cargo.toml` — WOFF fonts. `App::font_url`
+hands fetched bytes straight to the text stack, which reads TrueType/OpenType only, while the
+engine's font library ships WOFF2. The patch decompresses WOFF and WOFF2 (the `wuff` crate)
+after the fetch.
+
 `crates/rune/src/el/layout.rs` — `El::layout_style`. Rune's element builders expose a flex
 subset (points, one direction, pins). The engine's CSS host needs the rest of what Taffy
 already lays out: grid tracks and placement, block flow, percentages, auto margins, min and

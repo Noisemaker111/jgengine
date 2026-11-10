@@ -88,6 +88,16 @@ pub(crate) fn emit(id: &str, kind: &'static str, value: Option<f32>, text: Optio
     });
 }
 
+/// Ask for one more frame from outside a handler (an image finished decoding).
+pub(crate) fn wake() {
+    #[cfg(target_arch = "wasm32")]
+    HANDLE.with(|h| {
+        if let Some(handle) = h.borrow().as_ref() {
+            handle.update(|_s: &mut Ui, _tx: &mut Tx| {});
+        }
+    });
+}
+
 /// An event from a CSS box, addressed by its numeric id as `x<id>`.
 pub(crate) fn emit_id(id: u32, kind: &'static str, value: Option<f32>, text: Option<String>) {
     emit(&format!("x{id}"), kind, value, text);
