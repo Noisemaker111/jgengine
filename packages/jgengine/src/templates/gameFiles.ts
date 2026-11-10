@@ -60,7 +60,6 @@ export const devServerWatch = `  server: { watch: { ignored: ${JSON.stringify(DE
 const viteConfig = (variant: TemplateVariant) =>
   variant === "in-repo"
     ? `import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 import { viteIdleExit } from "../shared/viteIdleExit";
@@ -70,7 +69,7 @@ import { engineSource } from "../shared/viteEngineSource";
 
 export default defineConfig({
   resolve: engineSource(new URL(".", import.meta.url)),
-  plugins: [react(), tailwindcss(), viteIdleExit(), viteJgUiWasm(), viteProvisionAssets()],
+  plugins: [tailwindcss(), viteIdleExit(), viteJgUiWasm(), viteProvisionAssets()],
   clearScreen: false,
   build: { target: "es2022" },
 ${devServerWatch}
@@ -80,13 +79,12 @@ ${devServerWatch}
 import { fileURLToPath } from "node:url";
 import { standaloneSavePlugin } from "@jgengine/node/devSavePlugin";
 import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 const engineSrc = (pkg: string) => fileURLToPath(new URL(\`../../packages/\${pkg}/src\`, import.meta.url));
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), standaloneSavePlugin()],
+  plugins: [tailwindcss(), standaloneSavePlugin()],
   clearScreen: false,
   build: { target: "es2022" },
 ${standaloneOptimizeDeps}
@@ -122,18 +120,13 @@ const standalonePackageJson = (id: string, engineVersion: string, cliVersion: st
       ...(editor ? { "@jgengine/editor": `^${engineVersion}` } : {}),
       "@jgengine/react": `^${engineVersion}`,
       "@jgengine/shell": `^${engineVersion}`,
-      react: "19.2.3",
-      "react-dom": "19.2.3",
       three: "^0.187.0",
     },
     devDependencies: {
       jgengine: cliVersion,
       "@jgengine/node": `^${engineVersion}`,
       "@tailwindcss/vite": "^4.3.3",
-      "@types/react": "^19",
-      "@types/react-dom": "^19",
       "@types/three": "^0.187.0",
-      "@vitejs/plugin-react": "^6.1.2",
       tailwindcss: "^4.3.3",
       typescript: "^5",
       vite: "^8.3.5",
@@ -165,18 +158,13 @@ const inRepoPackageJson = (id: string) => `${JSON.stringify(
       "@jgengine/editor": "workspace:*",
       "@jgengine/react": "workspace:*",
       "@jgengine/shell": "workspace:*",
-      react: "19.2.3",
-      "react-dom": "19.2.3",
       three: "^0.187.0",
     },
     devDependencies: {
       jgengine: "workspace:*",
       "@jgengine/node": "workspace:*",
       "@tailwindcss/vite": "^4.3.3",
-      "@types/react": "^19",
-      "@types/react-dom": "^19",
       "@types/three": "^0.187.0",
-      "@vitejs/plugin-react": "^6.1.2",
       tailwindcss: "^4.3.3",
       typescript: "^5",
       vite: "^8.3.5",
@@ -197,6 +185,7 @@ const sharedCompilerOptions = {
   module: "ESNext",
   moduleResolution: "bundler",
   jsx: "react-jsx",
+  jsxImportSource: "@jgengine/core/ui/jsx",
   strict: true,
   skipLibCheck: true,
   isolatedModules: true,

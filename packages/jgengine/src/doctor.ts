@@ -127,14 +127,6 @@ export function diagnoseProject(dir: string): Finding[] {
   });
 
   const deps = { ...pkg.dependencies, ...pkg.devDependencies, ...pkg.peerDependencies };
-  const usesReactPkg = engineDeps["@jgengine/react"] !== undefined || engineDeps["@jgengine/shell"] !== undefined;
-  if (usesReactPkg) {
-    findings.push({
-      ok: deps["react"] !== undefined && deps["react-dom"] !== undefined,
-      label: "react + react-dom present for @jgengine/react|shell",
-      fix: "bun add react react-dom (@jgengine/react peers on react ^19)",
-    });
-  }
   if (engineDeps["@jgengine/shell"] !== undefined) {
     findings.push({
       ok: deps["three"] !== undefined,
@@ -184,7 +176,7 @@ export function diagnoseProject(dir: string): Finding[] {
   findings.push({
     ok: existsSync(join(dir, "vite.config.ts")),
     label: "vite.config.ts present",
-    fix: "the standalone harness runs on vite with @vitejs/plugin-react + @tailwindcss/vite",
+    fix: "the standalone harness runs on vite with @tailwindcss/vite",
   });
   const artDirectionPath = join(dir, "src", "art-direction.md");
   const artDirection = existsSync(artDirectionPath) ? readFileSync(artDirectionPath, "utf8") : "";

@@ -32,14 +32,11 @@
     "@jgengine/ws": "^0.55.0"
   },
   "peerDependencies": {
-    "react": "^19.0.0",
     "three": ">=0.187.0",
     "three-stdlib": "^2.0.0"
   },
   "devDependencies": {
-    "@types/react": "catalog:",
     "@types/three": "catalog:",
-    "react": "catalog:",
     "three": "catalog:",
     "three-stdlib": "catalog:"
   },

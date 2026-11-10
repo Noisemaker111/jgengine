@@ -14,16 +14,11 @@ const editorPackageJson = (engineVersion: string) => `${JSON.stringify(
       "@jgengine/node": `^${engineVersion}`,
       "@jgengine/react": `^${engineVersion}`,
       "@jgengine/shell": `^${engineVersion}`,
-      react: "19.2.3",
-      "react-dom": "19.2.3",
       three: "^0.187.0",
     },
     devDependencies: {
       "@tailwindcss/vite": "^4.3.3",
-      "@types/react": "^19",
-      "@types/react-dom": "^19",
       "@types/three": "^0.187.0",
-      "@vitejs/plugin-react": "^6.1.2",
       tailwindcss: "^4.3.3",
       vite: "^8.3.5",
     },
@@ -63,7 +58,6 @@ body,
 
 const editorViteConfig = `import { editorHostPlugin } from "@jgengine/node/editorHostPlugin";
 import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 // The folder to author scenes for is handed in by \`jgengine editor <dir>\`.
@@ -71,7 +65,7 @@ const dir = process.env.JG_EDITOR_DIR ?? process.cwd();
 const assetsDir = process.env.JG_EDITOR_ASSETS;
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), editorHostPlugin({ dir, assetsDir })],
+  plugins: [tailwindcss(), editorHostPlugin({ dir, assetsDir })],
   clearScreen: false,
 ${standaloneOptimizeDeps}
 ${devServerWatch}

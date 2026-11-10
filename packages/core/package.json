@@ -67,8 +67,6 @@
   "peerDependencies": {
     "@jgengine/react": "^0.55.0",
     "@jgengine/shell": "^0.55.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
     "three": ">=0.187.0",
     "three-stdlib": "^2.0.0"
   },
@@ -79,12 +77,6 @@
     "@jgengine/shell": {
       "optional": true
     },
-    "react": {
-      "optional": true
-    },
-    "react-dom": {
-      "optional": true
-    },
     "three": {
       "optional": true
     },
@@ -93,11 +85,7 @@
     }
   },
   "devDependencies": {
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
     "@types/three": "catalog:",
-    "react": "catalog:",
-    "react-dom": "catalog:",
     "three": "catalog:",
     "three-stdlib": "catalog:"
   },
