@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
 import { useCallback, useEffect, useState } from "@jgengine/core/ui/jsx";
 

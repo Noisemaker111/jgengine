@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { TerrainReadoutStore } from "./terrainReadoutStore";
 import { useStoreSelector } from "./useStoreSelector";
 

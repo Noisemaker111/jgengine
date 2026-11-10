@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 import type { EditorVolume } from "@jgengine/core/editor/types";
 import type { AuthoredWeatherSample } from "@jgengine/core/weather/authoredWeather";

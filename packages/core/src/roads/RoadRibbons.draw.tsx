@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useRef } from "@jgengine/core/ui/jsx";
 import { BufferAttribute, BufferGeometry, Color, DoubleSide, Group, MeshStandardMaterial } from "three";
 import { isAsphaltSurface, type RoadEnvironmentDescriptor, type TerrainDetailMaterialConfig } from "@jgengine/core/world/features";

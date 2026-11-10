@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useQuery } from "convex/react";
 import { api } from "@llmville/backend/convex/_generated/api";
 import { communityMilestone } from "@llmville/game/tutorial/communityMilestone";

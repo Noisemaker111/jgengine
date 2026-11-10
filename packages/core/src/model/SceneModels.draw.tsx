@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-assets
 import { Component, Suspense, useMemo, useSyncExternalStore, type ReactNode } from "@jgengine/core/ui/jsx";
 

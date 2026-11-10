@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 const HUD_TEXT_SHADOW = "0 1px 2px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.55)";
 
 const slantBar = (lean: number) => `polygon(${lean}px 0, 100% 0, calc(100% - ${lean}px) 100%, 0 100%)`;

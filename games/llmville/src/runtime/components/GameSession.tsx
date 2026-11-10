@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useConvex } from "convex/react";
 import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 

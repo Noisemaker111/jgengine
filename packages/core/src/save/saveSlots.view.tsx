@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useReducer, useEffect } from "@jgengine/core/ui/jsx";
 
 import type { SaveSlotMeta, SaveSlots } from "@jgengine/core/save/saveSlots";

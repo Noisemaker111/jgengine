@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from "@jgengine/core/ui/jsx";
 import { GridHelper } from "three";
 

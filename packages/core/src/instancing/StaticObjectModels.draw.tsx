@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-world
 import { memo, useCallback, useEffect, useRef, useState, Fragment, type ReactNode } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";

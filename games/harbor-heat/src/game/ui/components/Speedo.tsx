@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useMemo, useRef } from "@jgengine/core/ui/jsx";
 import { formatSpeed } from "@jgengine/core/format/speed";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";

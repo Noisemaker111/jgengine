@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { cn } from "@/kit/cn";
 import { MascotBot } from "@/branding/components/MascotBot";
 import { SITE_TAGLINE } from "@/seo/siteSeo";

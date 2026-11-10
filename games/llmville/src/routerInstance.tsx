@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { env } from "@/webEnv";
 import { createRouter } from "@tanstack/react-router";
 import { ConvexReactClient } from "convex/react";

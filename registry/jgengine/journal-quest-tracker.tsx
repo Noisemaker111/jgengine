@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { QuestInstance } from "@jgengine/core/mission/quest";
 import { useQuestJournal } from "@jgengine/react/hooks";
 

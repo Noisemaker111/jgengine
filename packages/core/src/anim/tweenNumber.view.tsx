@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { easeOutCubic } from "@jgengine/core/anim/easing";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 

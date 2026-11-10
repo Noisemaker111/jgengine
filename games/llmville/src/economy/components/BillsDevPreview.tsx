@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useState } from "@jgengine/core/ui/jsx";
 
 import { BILL_TYPE_LABELS } from "@/economy/events";

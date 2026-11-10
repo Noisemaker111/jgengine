@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { useGameContext } from "@jgengine/react/provider";

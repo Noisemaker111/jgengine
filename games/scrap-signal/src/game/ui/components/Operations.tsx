@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useState } from "@jgengine/core/ui/jsx";
 import { HudPanel, useBrowserSuspension, useDisplayProfile } from "@jgengine/react";
 import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";

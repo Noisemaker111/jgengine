@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { TutorialArrow } from "@/tutorial/components/TutorialUi";
 import { TABLET_STORE_TABS, type TabletStoreTabId } from "@/tablet/tablet";
 import {

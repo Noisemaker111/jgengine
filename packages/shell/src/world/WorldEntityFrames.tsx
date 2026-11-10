@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useCallback, useRef, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";

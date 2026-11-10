@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 /** Props for caller-composed horizontally scrolling controls. */

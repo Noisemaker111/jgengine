@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { IconTreatment } from '@jgengine/core/ui/icons/iconTreatment.view';
 import { hudTheme } from '@jgengine/core/hud/hudTheme.view';
 import { gameFontStacks } from '@jgengine/core/ui/fonts.view';

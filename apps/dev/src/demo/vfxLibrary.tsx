@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { devtools } from "@jgengine/core/devtools/devtools";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { DEFAULT_GRAPHICS_PROFILES } from "@jgengine/core/settings/graphicsProfile";

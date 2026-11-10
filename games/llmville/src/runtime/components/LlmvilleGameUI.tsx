@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 

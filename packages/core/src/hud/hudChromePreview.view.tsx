@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { actionCooldownFromFraction, actionCost, resolveAction } from "@jgengine/core/ui/actionModel";
 
 import { ActionButton } from "./actionHud.view";

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useCallback, useEffect, useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
 
 import type { EditorSession } from "@jgengine/core/editor/index";

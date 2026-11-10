@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { seededRng } from "@jgengine/core/random/rng";

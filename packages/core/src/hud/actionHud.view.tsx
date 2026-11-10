@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { AbilitySlotSnapshot } from "@jgengine/core/combat/abilityKit";

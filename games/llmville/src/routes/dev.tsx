@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { Outlet, createFileRoute, redirect, useLocation } from "@tanstack/react-router";
 
 type DevPreviewLayout = "fullscreen" | "document";

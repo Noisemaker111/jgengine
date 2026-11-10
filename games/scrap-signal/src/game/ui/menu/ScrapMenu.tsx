@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { type ReactNode, useEffect, useRef, useState, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 import { useCanvasCover } from "@jgengine/react";
 import { CreditsPanel } from "@jgengine/core/menu/creditsPanel.view";

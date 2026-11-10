@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { lazy, Suspense, useEffect, useState, type ComponentType, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";

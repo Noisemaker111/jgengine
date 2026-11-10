@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-gameplay
 import { useMemo, useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";

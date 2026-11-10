@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-ui
 import { useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
 import { PerspectiveCamera, Vector3, type Camera } from "three";

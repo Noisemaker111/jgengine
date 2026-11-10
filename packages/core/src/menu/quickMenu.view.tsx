@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useMemo, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { RadialArc } from "@jgengine/core/menu/radialMenu";

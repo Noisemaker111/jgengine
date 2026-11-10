@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { ContextMenu, ContextVerb } from "@jgengine/core/interaction/contextMenu";
 import type { ScreenRect } from "@jgengine/core/scene/selection";
 

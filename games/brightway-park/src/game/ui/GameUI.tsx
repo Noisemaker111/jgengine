@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { type CSSProperties, useState } from "@jgengine/core/ui/jsx";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/core/hud/hudLayout.view";
 import { useGame, useGameClock, useGameStore } from "@jgengine/react/hooks";

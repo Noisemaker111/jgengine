@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { GamePlayerShell } from "./GamePlayerShell";

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from "@jgengine/core/ui/jsx";
 import { reportWind } from "./livingWorld.draw";
 import * as THREE from "three";

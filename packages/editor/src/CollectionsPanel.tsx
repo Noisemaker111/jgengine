@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useState } from "@jgengine/core/ui/jsx";
 
 import type { EditorCollection, EditorSession } from "@jgengine/core/editor/index";

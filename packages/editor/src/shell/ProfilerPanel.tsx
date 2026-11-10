@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import { formatTriangles } from "./StatusBar";

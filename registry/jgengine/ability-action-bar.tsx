@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useAbilitySlots } from "@jgengine/react/hooks";
 import type { AbilityKit, AbilitySlotSnapshot } from "@jgengine/core/combat/abilityKit";
 

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useRef } from "@jgengine/core/ui/jsx";
 
 import { createSpriteClipPlayer } from "@jgengine/core/render/sprite2d";

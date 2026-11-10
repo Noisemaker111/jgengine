@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
 import type { DragEvent } from "@jgengine/core/ui/jsx/dom.view";
 

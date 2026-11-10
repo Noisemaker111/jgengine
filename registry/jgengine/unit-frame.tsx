@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // A copy-in portrait + vitals frame for shadcn projects. Inside a jgengine game compose `KitVitals`
 // from `@jgengine/core/hud/kitHud.view`.
 import type { ReactNode } from "@jgengine/core/ui/jsx";

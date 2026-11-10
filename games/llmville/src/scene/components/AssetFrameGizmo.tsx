@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { AnchoredOverlay } from "@jgengine/core/hud/hudOverlay.draw";
 import {
   EngineDrawMount,

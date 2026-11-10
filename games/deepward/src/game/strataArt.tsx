@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useMemo, useRef } from "@jgengine/core/ui/jsx";
 import { AmbientLight, CircleGeometry, Color, Fog, Group, HemisphereLight, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, SphereGeometry, SpotLight } from "three";
 import { useGameStore } from "@jgengine/react/hooks";

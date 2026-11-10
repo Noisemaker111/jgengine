@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 /** Tablet preview merged into /dev/hud — keep redirect for old bookmarks. */

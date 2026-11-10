@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { Minimap } from "@jgengine/core/map/map.view";
 import { cam, units } from "./myWorld";
 

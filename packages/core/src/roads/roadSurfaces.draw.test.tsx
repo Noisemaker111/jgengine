@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { afterEach, expect, test } from "bun:test";
 import { act, createElement } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";

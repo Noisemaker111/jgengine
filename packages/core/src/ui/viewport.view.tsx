@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 /**
  * Shared mobile-composition runtime. `GameViewportProvider` allocates the live
  * game viewport once — tracking `visualViewport`, safe-area insets, orientation

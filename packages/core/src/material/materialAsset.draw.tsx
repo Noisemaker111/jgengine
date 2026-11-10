@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import * as THREE from "three";
 

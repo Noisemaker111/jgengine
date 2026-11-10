@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-gameplay
 import { useCallback, useEffect, type ReactNode } from "@jgengine/core/ui/jsx";
 

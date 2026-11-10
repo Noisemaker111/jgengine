@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useMemo, useState } from "@jgengine/core/ui/jsx";
 
 import { rolesFromClips } from "@jgengine/core/game/clipRoles";

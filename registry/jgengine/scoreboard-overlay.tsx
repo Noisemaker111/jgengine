@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { HudLabel } from "@/components/ui/hud-label";
 import { HudPanel } from "@/components/ui/hud-panel";
 

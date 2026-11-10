@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { createFileRoute } from "@tanstack/react-router";
 
 import { ProfileScreen } from "@/user/components/ProfileScreen";

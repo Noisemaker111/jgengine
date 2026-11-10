@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createQuestJournal, describeTrackedQuest, type QuestDef, type QuestJournal } from "@jgengine/core/mission/quest";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";

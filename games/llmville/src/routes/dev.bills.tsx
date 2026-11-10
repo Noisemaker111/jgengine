@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { BillsDevPreview } from "@/economy/components/BillsDevPreview";

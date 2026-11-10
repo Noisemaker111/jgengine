@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useId, type CSSProperties } from "@jgengine/core/ui/jsx";
 
 /**

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useNavigate } from "@tanstack/react-router";
 import { Loader2, Play, Settings, Trash2 } from "lucide-react";
 

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useCallback, useEffect, useRef, useState } from "@jgengine/core/ui/jsx";
 import { MessageCircle, Send, X } from "lucide-react";
 import type { ChatMessage } from "@jgengine/core/chat/chat";

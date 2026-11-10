@@ -27,7 +27,9 @@ export interface LayerViolation {
 }
 
 const ENGINE_SOURCE = /^packages\/(core|react|shell)\/src\/.+\.tsx?$/;
-const EXEMPT = /\.(test|spec)\.tsx?$|(^|\/)testFixtures(\.tsx?$|\/)|\.d\.ts$/;
+// The two JSX entry files keep the names every compiler asks for (`<jsxImportSource>/jsx-runtime`),
+// so they cannot carry a `.view` suffix; all they take from a view file is the JSX type namespace.
+const EXEMPT = /\.(test|spec)\.tsx?$|(^|\/)testFixtures(\.tsx?$|\/)|\.d\.ts$|^packages\/core\/src\/ui\/jsx\/jsx-(dev-)?runtime\.ts$/;
 
 /** The layer a file belongs to, or null when the rules do not apply to it. */
 export function layerOfFile(path: string): Layer | null {

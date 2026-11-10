@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import type { EditorColorGrading, EditorDocument, EditorEnvironment, EditorLightProbe, EditorSession, EditorSkyPreset, EnvironmentSource } from "@jgengine/core/editor/index";

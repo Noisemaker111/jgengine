@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { forwardRef, type CSSProperties, type ReactNode, type Ref } from "@jgengine/core/ui/jsx";
 import type { HTMLAttributes } from "@jgengine/core/ui/jsx/dom.view";
 import { kitCutPath, type KitCut } from "@jgengine/core/ui/kit/kitFrame.view";

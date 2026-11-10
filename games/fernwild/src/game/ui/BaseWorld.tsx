@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 import { BaseStructures } from "../../engine-local/basebuilding/BaseStructures.draw";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";

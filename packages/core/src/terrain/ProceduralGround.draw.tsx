@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import * as THREE from "three";
 
 import { useEngineDraw, type DrawAttachProps } from "@jgengine/core/frame/useEngineDraw.draw";

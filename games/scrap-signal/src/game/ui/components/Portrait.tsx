@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 /** Authored vector portraits of reclaimed machines; silhouettes mirror each build's role. */
 export function ReclaimerPortrait({ id, color }: { id: string; color: string }) {
   const heavy = id === "gunk";

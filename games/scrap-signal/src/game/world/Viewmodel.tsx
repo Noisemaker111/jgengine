@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
 import { BoxGeometry, CircleGeometry, CylinderGeometry, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, PointLight, TorusGeometry, Vector3 } from "three";
 import type { BufferGeometry, Material } from "three";

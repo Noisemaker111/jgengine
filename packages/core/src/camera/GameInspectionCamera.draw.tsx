@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useRef } from "@jgengine/core/ui/jsx";
 import { MOUSE } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";

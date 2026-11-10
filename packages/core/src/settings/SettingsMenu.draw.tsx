@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { useDialogBehavior } from "@jgengine/core/dialog/dialogBehavior.view";

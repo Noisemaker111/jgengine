@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { createContext, useContext, useMemo, useSyncExternalStore, type ReactNode, type RefObject } from "@jgengine/core/ui/jsx";
 
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
 import { RouterProvider } from "@tanstack/react-router";
 import ReactDOM from "@jgengine/core/ui/jsx/client.view";

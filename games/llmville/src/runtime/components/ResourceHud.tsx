@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { TweenNumber } from "@jgengine/core/anim/tweenNumber.view";
 import { KitCount, KitCounts } from "@jgengine/core/hud/kitHud.view";
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";

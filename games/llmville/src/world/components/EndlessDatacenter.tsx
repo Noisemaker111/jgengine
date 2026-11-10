@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { WORLD_SCENERY_RADIUS } from "@llmville/game/world/viewDistance";
 import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 import {

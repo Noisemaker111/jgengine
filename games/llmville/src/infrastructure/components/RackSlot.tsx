@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { getHardwareDefinition } from "@llmville/game/infrastructure/catalog";
 import type { HardwareModelId } from "@llmville/game/infrastructure/catalog";
 import { rackHeatBand, type RackHeatBand } from "@llmville/game/infrastructure/infrastructure";

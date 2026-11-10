@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-world
 import { oceanColor } from "@jgengine/core/water/oceanColor";
 import { waterSurfaceConfigFromDescriptor } from "@jgengine/core/water/waterSurface";

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 import { Paperdoll } from "@jgengine/core/inventory/characterSheet.view";
 import { InventoryGrid } from "@jgengine/core/inventory/inventoryGrid.view";

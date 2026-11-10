@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 import type { ButtonHTMLAttributes } from "@jgengine/core/ui/jsx/dom.view";
 import { Loader2 } from "lucide-react";

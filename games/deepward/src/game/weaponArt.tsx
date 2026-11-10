@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useMemo, type Ref } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import type { Group } from "three";

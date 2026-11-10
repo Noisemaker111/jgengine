@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useMemo, type CSSProperties } from "@jgengine/core/ui/jsx";
 import { HudFrame } from "./hudFrame.view";
 import { hudTheme, hudThemeVars } from "./hudTheme.view";

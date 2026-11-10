@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useRef, type MutableRefObject } from "@jgengine/core/ui/jsx";
 import { MOUSE, PerspectiveCamera, Raycaster, type Camera, Vector3 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";

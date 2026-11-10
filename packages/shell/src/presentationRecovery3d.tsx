@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useLayoutEffect } from "@jgengine/core/ui/jsx";
 
 import { joinAfterRenderTask } from "@jgengine/core/frame/afterRenderBoard.draw";

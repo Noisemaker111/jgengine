@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useReducer, useEffect, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { layoutScreenMarker, type ScreenMarkerLayout } from "@jgengine/core/ui/screenMarkers";

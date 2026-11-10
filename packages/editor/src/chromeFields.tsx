@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useDebouncedCommit } from "@jgengine/core/ui/useDebouncedCommit.view";
 
 import { INPUT } from "./chromeStyles";

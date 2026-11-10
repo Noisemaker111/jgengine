@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { createContext, useContext, type ReactNode } from "@jgengine/core/ui/jsx";
 import type { EditorUiPanelLayout } from "@jgengine/core/hud/hudDocument";
 

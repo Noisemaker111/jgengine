@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { ChevronLeft, Play } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState, type RefObject } from "@jgengine/core/ui/jsx";

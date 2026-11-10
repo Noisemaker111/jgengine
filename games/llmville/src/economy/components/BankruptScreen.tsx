@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { Loader2 } from "lucide-react";
 
 import { BrandLogo } from "@/branding/components/BrandLogo";

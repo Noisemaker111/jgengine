@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { lazy, Suspense, useEffect, useState } from "@jgengine/core/ui/jsx";
 import { createRoot } from "@jgengine/core/ui/jsx/client.view";
 

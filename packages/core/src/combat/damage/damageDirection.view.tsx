@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useReducer, useRef, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { DamageDirectionTracker, DamageIndicator } from "@jgengine/core/combat/damage/damageDirection";

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useMemo, useState, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import type { ConsoleSeverity, EditorConsoleStore } from "./consoleStore";

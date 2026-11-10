@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 /**
  * The tablet frame that slides up from the bottom.
  * It owns the full tablet flow so the home screen, app sheet, and tutorial locks

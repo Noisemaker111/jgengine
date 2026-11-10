@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 /**
  * Inference app — drag installed GPU cards onto Training, Scraping, or a specific serving model to
  * dedicate them. Replaces the old ratio-based Dashboard: each physical card is a draggable chip, and

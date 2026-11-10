@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import PlacementControls from "@/runtime/components/PlacementController";
 import type { BuildViewModel } from "@/build/buildSession";
 import type { RackHardwareViewModel } from "@/infrastructure/rackHardwareSession";

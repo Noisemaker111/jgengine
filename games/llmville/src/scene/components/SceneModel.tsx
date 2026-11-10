@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { Mesh, type Object3D } from "three";
 
 import { resolveAssetTransform, type AssetTransformInput } from "@llmville/game/world/assetFrame";

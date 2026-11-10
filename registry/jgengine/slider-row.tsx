@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useRef, type ReactNode } from "@jgengine/core/ui/jsx";
 import type { PointerEvent as ReactPointerEvent } from "@jgengine/core/ui/jsx/dom.view";
 

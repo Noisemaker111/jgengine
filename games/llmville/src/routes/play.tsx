@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { parseHomeRouteSearch } from "@/settings/settings";

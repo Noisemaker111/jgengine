@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-world
 import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode, type MutableRefObject } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";

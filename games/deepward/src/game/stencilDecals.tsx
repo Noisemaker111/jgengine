@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useMemo } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import { readDecalRules } from "@jgengine/core/world/decalKind";

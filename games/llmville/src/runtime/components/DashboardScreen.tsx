@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { Link } from "@tanstack/react-router";
 
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";

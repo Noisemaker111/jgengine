@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { activeCameraControls } from "@jgengine/core/camera/activeCameraControls.draw";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";

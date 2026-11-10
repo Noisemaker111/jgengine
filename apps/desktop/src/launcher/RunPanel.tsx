@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { GameMount, ProcessSnapshot } from "../project/client";
 
 const MOUNTS: { id: GameMount; label: string; hint: string }[] = [

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 /**
  * ModelCard — matches the mock: dark purple/indigo bg, label-left bar-right layout,
  * three stat bars (money/M, TPS per 1 TFLOP, data tokens per inference token), state-specific action button.

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense, lazy, useEffect } from "@jgengine/core/ui/jsx";
 import { useAuth } from "@/auth";

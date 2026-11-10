@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { forwardRef, useRef, type CSSProperties, type ReactNode, type Ref } from "@jgengine/core/ui/jsx";
 import type { GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
 import { useFrameBind } from "@jgengine/core/ui/liveBind.view";

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useRef } from "@jgengine/core/ui/jsx";
 
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";

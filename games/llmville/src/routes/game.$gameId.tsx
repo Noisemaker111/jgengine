@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { Suspense, lazy, useEffect } from "@jgengine/core/ui/jsx";

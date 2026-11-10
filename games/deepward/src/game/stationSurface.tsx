@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { RepeatWrapping, SRGBColorSpace, TextureLoader, type MeshStandardMaterial, type Texture } from 'three';
 import type { IndustrialSurface } from './industrialMaterials';
 

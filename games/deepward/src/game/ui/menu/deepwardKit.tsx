@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 import { kitFrameVars } from "@jgengine/core/ui/kit/kitFrame.view";
 import { GameCursor } from "@jgengine/core/ui/cursor.view";

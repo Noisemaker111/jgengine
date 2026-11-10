@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useQuery } from "convex/react";
 import { useEffect, useLayoutEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 

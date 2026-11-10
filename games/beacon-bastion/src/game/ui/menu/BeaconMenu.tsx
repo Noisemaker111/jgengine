@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { type ReactNode, useCallback, useEffect, useState } from "@jgengine/core/ui/jsx";
 import { GameCursor } from "@jgengine/core/ui/cursor.view";
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useRef, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { gamePhase } from "@jgengine/core/game/gamePhase";

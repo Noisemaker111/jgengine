@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useLayoutEffect, useMemo, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import { Box3, type Camera, type Group } from "three";

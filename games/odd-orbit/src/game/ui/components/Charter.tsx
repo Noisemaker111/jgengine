@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { GameIcon, type GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { useRef } from "@jgengine/core/ui/jsx";

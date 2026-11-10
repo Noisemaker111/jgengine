@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 import { AbilitySlotButton, type AbilitySlotState } from "@/components/ui/ability-slot";

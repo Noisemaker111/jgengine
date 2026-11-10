@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { GameErrorScreenProps } from "@jgengine/shell/registry";
 
 import { GAME_FONTS } from "../../art/fonts/fonts";

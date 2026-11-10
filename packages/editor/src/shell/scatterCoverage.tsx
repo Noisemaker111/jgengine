@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { scatterFootprintArea } from "@jgengine/core/scatter/scatterCoverage";
 import type { SceneKindCoverage, SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 import type { ParamField, ParamSchema, ParsedParams, WeightedParamEntry } from "@jgengine/core/generator/paramSchema";

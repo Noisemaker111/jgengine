@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { X } from "lucide-react";
 import { createPortal } from "@jgengine/core/ui/jsx/client.view";

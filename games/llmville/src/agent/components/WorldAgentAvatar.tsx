@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useMemo, useRef, useState, type MutableRefObject } from "@jgengine/core/ui/jsx";
 import { CapsuleGeometry, Group, MathUtils, MeshStandardMaterial, SphereGeometry } from "three";
 

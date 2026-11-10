@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { probeHiddenState, type HiddenStateSource, type SensorProbeOptions } from "@jgengine/core/sensor/hiddenStateProbe";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 

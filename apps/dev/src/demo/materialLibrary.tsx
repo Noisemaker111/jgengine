@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { hdriEnvironment, HDRI_LIBRARY, type HdriId } from "@jgengine/assets/catalogs/hdriLibrary";
 import { lutGrade, LUT_GRADES, type LutGradeId } from "@jgengine/assets/catalogs/lutGrades";
 import { filterLibraryMaterials, libraryMaterialAsset, type LibraryGroup, type LibraryMaterial } from "@jgengine/assets/catalogs/materialLibrary";

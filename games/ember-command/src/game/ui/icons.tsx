@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { memoView } from "@jgengine/core/ui/memoView.view";
 import { ICON_SVG } from "./iconData";
 

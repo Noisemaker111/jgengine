@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 export interface TrackedObjective {
   id: string;
   label: string;

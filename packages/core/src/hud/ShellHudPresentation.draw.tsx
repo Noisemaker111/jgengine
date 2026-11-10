@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, type Dispatch, type MutableRefObject, type RefObject, type SetStateAction } from "@jgengine/core/ui/jsx";
 
 import { suppressBrowserContextMenu } from "@jgengine/core/input/secondaryPointer";

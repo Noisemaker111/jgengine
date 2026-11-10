@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useCallback, useEffect, useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
 import type { PointerEvent as ReactPointerEvent } from "@jgengine/core/ui/jsx/dom.view";
 import { cva } from "class-variance-authority";

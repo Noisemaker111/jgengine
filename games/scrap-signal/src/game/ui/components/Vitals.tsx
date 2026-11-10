@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { CSSProperties } from "@jgengine/core/ui/jsx";
 import { HudFade } from "@jgengine/core/hud/hudLayout.view";
 import { useEntityStat, usePlayer } from "@jgengine/react/hooks";

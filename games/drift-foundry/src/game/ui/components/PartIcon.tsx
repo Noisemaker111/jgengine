@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { PartIconId } from "../../parts/catalog";
 
 const RUST = "#b7410e";

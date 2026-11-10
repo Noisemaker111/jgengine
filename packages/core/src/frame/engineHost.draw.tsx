@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { createContext, useCallback, useContext, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { EngineFrameState, EngineFrameloop } from "./engineLoop.draw";

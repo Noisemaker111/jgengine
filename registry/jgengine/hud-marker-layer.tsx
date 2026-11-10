@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { WaypointMarker, type WaypointMarkerKind } from "@/components/ui/waypoint-marker";
 
 export interface HudMarker {

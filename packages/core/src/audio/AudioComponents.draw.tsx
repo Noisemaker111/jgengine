@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-world
 import { useRef } from "@jgengine/core/ui/jsx";
 import { Quaternion, Vector3 } from "three";

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useRef } from "@jgengine/core/ui/jsx";
 import { useFrameBind } from "@jgengine/core/ui/liveBind.view";
 import { useActionBindings } from "@jgengine/core/ui/kit/uiKitRoot.view";

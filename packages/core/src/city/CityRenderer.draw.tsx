@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-world
 /**
  * Runtime renderer for the `city` volume kind: everything `resolveCityObject` emits becomes a

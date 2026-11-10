@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { Link } from "@tanstack/react-router";
 import { Check, Coins, Cpu, Loader2, LogOut, Pencil, Sparkles, Users, X } from "lucide-react";
 

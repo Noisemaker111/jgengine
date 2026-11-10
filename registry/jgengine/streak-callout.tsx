@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 export function StreakCallout({
   text,
   tier = 1,

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { filterLibraryMaterials, libraryMaterialAsset } from "@jgengine/assets/catalogs/materialLibrary";
 import type { MaterialAsset } from "@jgengine/core/material/materialAsset";
 import { useMemo, useState } from "@jgengine/core/ui/jsx";

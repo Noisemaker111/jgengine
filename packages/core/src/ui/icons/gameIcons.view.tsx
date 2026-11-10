@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 import { memoView } from "../memoView.view";
 

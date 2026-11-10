@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import * as THREE from "three";
 
 import type { TilemapWorldConfig } from "@jgengine/core/world/features";

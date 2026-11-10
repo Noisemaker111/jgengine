@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useCallback, useMemo } from "@jgengine/core/ui/jsx";
 
 import { resolveGrassObject, type ResolvedGrass } from "@jgengine/core/grass/grassKind";

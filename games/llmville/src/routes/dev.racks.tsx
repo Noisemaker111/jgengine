@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMemo, useState } from "@jgengine/core/ui/jsx";
 import { EngineCanvas } from "@jgengine/core/frame/engineCanvas.draw";

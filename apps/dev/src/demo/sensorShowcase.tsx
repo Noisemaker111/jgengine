@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import { SceneObjectList } from "@jgengine/core/frame/useEngineDraw.draw";

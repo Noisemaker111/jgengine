@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect } from "@jgengine/core/ui/jsx";
 import { useCurrency, useGame } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";

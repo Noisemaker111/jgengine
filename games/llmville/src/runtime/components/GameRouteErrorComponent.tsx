@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { ErrorComponentProps } from "@tanstack/react-router";
 
 import { GameConnectionErrorScreen } from "@/runtime/components/GameConnectionErrorScreen";

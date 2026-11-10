@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { describe, expect, test } from "bun:test";
 import { createElement } from "@jgengine/core/ui/jsx";
 import { renderToStaticMarkup } from "@jgengine/core/ui/jsx/markup";

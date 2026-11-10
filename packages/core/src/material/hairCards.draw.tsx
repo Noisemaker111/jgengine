@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import * as THREE from "three";
 import { buildHairCards, type HairCardAuthoring } from "@jgengine/core/material/hairCards";
 import type { MaterialAsset } from "@jgengine/core/material/materialAsset";

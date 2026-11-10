@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useCurrency, useGame, useGameStore, useGameTimeWindow } from "@jgengine/react/hooks";
 import { HudButton } from "@jgengine/core/hud/hudButton.view";
 import { ScrapPanel } from "./ScrapPanel";

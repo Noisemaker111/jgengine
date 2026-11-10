@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { api } from "@llmville/backend/convex/_generated/api";
 import { useMutation } from "convex/react";
 import { useCallback, useState } from "@jgengine/core/ui/jsx";

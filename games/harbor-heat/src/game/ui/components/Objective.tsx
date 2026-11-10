@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useLayoutEffect, useRef } from "@jgengine/core/ui/jsx";
 import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-multiplayer
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 

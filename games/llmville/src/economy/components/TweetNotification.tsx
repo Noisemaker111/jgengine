@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useMemo, useRef } from "@jgengine/core/ui/jsx";
 
 import type { NotificationEntry } from "@jgengine/core/notifications/notificationCenter";

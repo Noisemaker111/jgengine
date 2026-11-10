@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft, LogIn, User } from "lucide-react";
 

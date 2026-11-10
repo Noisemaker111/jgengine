@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useRef, useState, type CSSProperties } from "@jgengine/core/ui/jsx";
 
 import type { FloatingTextField, FloatingTextView } from "@jgengine/core/hud/floatingText";

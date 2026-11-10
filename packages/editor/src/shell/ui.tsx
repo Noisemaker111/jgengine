@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useCallback, useRef, type ReactNode } from "@jgengine/core/ui/jsx";
 import type { KeyboardEvent, PointerEvent } from "@jgengine/core/ui/jsx/dom.view";
 

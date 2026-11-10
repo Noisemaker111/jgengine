@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-world
 import { useCallback, useEffect, useRef, useSyncExternalStore, type ComponentType, type MutableRefObject } from "@jgengine/core/ui/jsx";
 

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 
 import { createSaveSlots, type SaveSlotMeta } from "@jgengine/core/save/saveSlots";

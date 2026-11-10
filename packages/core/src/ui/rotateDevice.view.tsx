@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 /**
  * Engine-owned rotate-device screen. A polished, non-dismissible full-viewport
  * gate shown when a game requires an orientation the device isn't in. It owns

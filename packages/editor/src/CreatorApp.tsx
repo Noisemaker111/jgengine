@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useCallback, useEffect, useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
 import { importCreatorDocument, validateCreatorDocument, type CreatorDocument, type CreatorConfig } from "@jgengine/core/editor/creatorStorage";
 import type { EditorDocument } from "@jgengine/core/editor/types";

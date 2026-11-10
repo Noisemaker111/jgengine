@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { KeybindBadge } from "@/components/ui/keybind-badge";
 
 export type AnnouncementTone = "neutral" | "victory" | "defeat" | "warning";

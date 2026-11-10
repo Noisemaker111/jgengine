@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
