@@ -49,7 +49,7 @@ export default defineFlow(game, {
       const width = Number(await f.page("innerWidth"));
       const name = `material-blend-${width}`;
       await f.shot(name);
-      const png = decodePng(readFileSync(new URL(`../../../../shots/deepward/${name}.png`, import.meta.url)));
+      const png = decodePng(readFileSync(new URL(`../../../../shots/brightway-park/${name}.png`, import.meta.url)));
       const bounds = await f.page("[...document.querySelectorAll('[data-material-probe=mix],[data-material-probe=background]')].map(element => { const rect=element.getBoundingClientRect(); return [rect.x+rect.width/2,rect.y+rect.height/2]; })");
       if (!Array.isArray(bounds) || bounds.length !== 2) throw new Error("material probes have no bounds");
       for (let i = 0; i < bounds.length; i++) {

@@ -203,7 +203,7 @@ fn apply(mut e: El, p: &Props) -> El {
     if let Some(v) = p.grow { e = e.grow(v); }
     if p.shrink == Some(true) { e = e.shrink(); }
     match p.justify.as_deref() { Some("center") => e = e.justify_center(), Some("end") => e = e.justify_end(), Some("between") => e = e.justify_between(), Some("evenly") => e = e.justify_evenly(), _ => {} }
-    match p.items.as_deref() { Some("center") => e = e.items_center(), Some("end") => e = e.items_end(), Some("stretch") => e = e.items_stretch(), _ => {} }
+    match p.items.as_deref() { Some("start") => e = e.items_start(), Some("center") => e = e.items_center(), Some("end") => e = e.items_end(), Some("stretch") => e = e.items_stretch(), _ => {} }
     if p.clip { e = e.clip_rounded(p.radius.unwrap_or(0.0)); }
     if let Some(c) = &p.hover { e = e.hover(color(c)); }
     if let Some(c) = &p.press { e = e.press(color(c)); }
@@ -237,6 +237,17 @@ fn native_family(name: &str) -> rune::tok::Family {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn start_alignment_preserves_the_heights_of_siblings() {
+        let element: Element = serde_json::from_str(r#"{"id":"row","kind":"box","props":{"direction":"row","items":"start"},"children":[{"k":"native","id":"short","kind":"box","props":{"width":50},"children":[{"k":"native","id":"content","kind":"box","props":{"height":20}}]},{"k":"native","id":"tall","kind":"box","props":{"width":50,"height":100}}]}"#).unwrap();
+        let mut state = Ui::default();
+        state.root = vec![crate::spec::Node::Native(element)];
+        let mut rt = rune::Runtime::new(state, crate::build::view, (200.0,200.0), rune::Env::new(true,1.0));
+        rt.frame(0.0);
+        let short = rt.layout_rects().find(|(key,_)| *key == "short").unwrap().1;
+        assert_eq!(short[3],20.0);
+    }
+
     #[test]
     fn slider_updates_during_drag_and_commits_once_on_release() {
         crate::EVENTS.with(|events| events.borrow_mut().clear());

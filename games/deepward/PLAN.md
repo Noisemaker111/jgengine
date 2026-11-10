@@ -58,12 +58,23 @@ Use the engine JSX reconciler with a direct native host. Games author typed elem
 
 ## Milestones
 
-- [ ] Typed native element props and direct host, with no hidden DOM or computed style reads.
-- [ ] Whole Deepward UI migrated; game CSS and CSS authoring removed.
+- [x] Typed native element props and direct host, with no hidden DOM or computed style reads.
+- [x] Whole Deepward UI migrated; game CSS and CSS authoring removed.
 - [ ] UI skill and concrete second-game migration instructions; Linux checks and wasm bundle.
 - [ ] PC evidence: HUD, menu and settings at desktop/phone widths; one production CPU/GPU comparison against beta's React UI; static UI has no draws.
 - [ ] Rebase after #3108 lands, then one PR through `lane:close`.
 
 ## Verification still required
 
-This Linux host has no GPU, Owl or Jon's Chrome. PNG review, game screenshots and CPU/GPU measurements require a PC thread. Do not claim visual parity or lower cost until those artifacts exist. Baseline React revision: `d7fdf21a5f0f62c4f13747e253cf1d59149fdc07` (beta at task start). PR #3108 is still open at task start.
+Headless native PNGs run on Linux through the production Rust builder. They check UI layout and paint without a browser; they do not establish parity with beta.
+
+This Linux host has no GPU, Owl or Jon's Chrome. Real-game screenshots and CPU/GPU measurements require a PC thread. Do not claim visual parity, static zero draws or lower cost until those artifacts exist. Baseline React revision: `d7fdf21a5f0f62c4f13747e253cf1d59149fdc07` (beta at task start). PR #3108 is still open at task start.
+
+## PC acceptance work
+
+- Run `bun run drive deepward --flow ui-tour` at desktop and phone widths. It checks a settled settings screen submits no native frames and captures title, settings and HUD. Use distinct output names for both widths.
+- Compare those six shots with the same states and dimensions at the pinned React baseline. Fix any differences, including material texture/scanlines, HUD fade, low-air pulse and phone haul placement. The native settings fixture uses a stub controller; check the real categories in game.
+- The game declares landscape/web and no touch; confirm phone-width evidence reaches the UI rather than an orientation gate.
+- Measure one production round against the pinned React baseline. Attribute UI CPU and GPU cost per frame; total game frame time alone does not establish UI cost. Record both numbers and the method in the PR.
+- The generic CSS-mirror material proof moved to Brightway Park, which still uses that path. It must not inject CSS into Deepward.
+- Once acceptance passes and #3108 is merged, rebase onto beta and run `lane:close` once.
