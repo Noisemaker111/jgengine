@@ -1,4 +1,4 @@
-import { createElement, useLayoutEffect, useRef, type ReactNode } from "@jgengine/core/ui/jsx";
+import { createElement, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { RuneStage } from "./runeStage.view";
 
@@ -17,9 +17,14 @@ export function runeUiEnabled(): boolean {
  */
 export function RuneLayer({ children }: { children?: ReactNode }): ReactNode {
   const ref = useRef<HTMLDivElement | null>(null);
+  const [onPage, setOnPage] = useState(() => RuneStage.get().unavailable);
+  useEffect(() => RuneStage.get().onUnavailable(() => setOnPage(true)), []);
   useLayoutEffect(() => {
     const container = ref.current;
-    return container === null ? undefined : RuneStage.get().attach(container);
-  }, []);
-  return createElement("div", { ref, "data-jg-rune-layer": "", style: { display: "none" } }, children);
+    return container === null || onPage ? undefined : RuneStage.get().attach(container);
+  }, [onPage]);
+  // Rune could not start (no WebGPU adapter, no bundle): the same children, mounted afresh in the
+  // page so everything that measured itself while undisplayed measures again.
+  if (onPage) return createElement("div", { key: "page", style: { display: "contents" } }, children);
+  return createElement("div", { key: "rune", ref, "data-jg-rune-layer": "", style: { display: "none" } }, children);
 }

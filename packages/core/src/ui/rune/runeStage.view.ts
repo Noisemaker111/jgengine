@@ -48,6 +48,9 @@ export class RuneStage {
   private readonly layers: Layer[] = [];
   private ui: RuneUi | null = null;
   private creating = false;
+  /** Rune could not start: layers are drawn by the page. */
+  private failed = false;
+  private readonly failedListeners = new Set<() => void>();
   private queued = false;
   private mountedFonts = "";
   /** The whole tree must be sent again (a layer came or went, Rune remounted). */
@@ -72,6 +75,17 @@ export class RuneStage {
   }
 
   /** Start mirroring `container`'s children; returns the detach function. */
+  /** Whether Rune could not start. A layer then renders into the page instead (`RuneLayer`). */
+  get unavailable(): boolean {
+    return this.failed;
+  }
+
+  /** Hear when Rune turns out to be unavailable. Returns the call that stops listening. */
+  onUnavailable(listener: () => void): () => void {
+    this.failedListeners.add(listener);
+    return () => this.failedListeners.delete(listener);
+  }
+
   attach(container: HTMLElement): () => void {
     const layer: Layer = {
       container,
@@ -173,8 +187,11 @@ export class RuneStage {
         this.sync();
       })
       .catch((error: unknown) => {
-        this.creating = false;
-        console.error("degraded: the Rune UI layer failed to mount", error);
+        // Left as creating, so nothing tries again; the UI is shown by the page instead.
+        this.failed = true;
+        this.errors.push(String(error));
+        console.error("degraded: the Rune UI layer failed to mount, so the page draws the UI itself (a missing bundle is built by `bun scripts/build-jg-ui-wasm.ts`)", error);
+        for (const listener of [...this.failedListeners]) listener();
       });
   }
 
