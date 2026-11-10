@@ -57,8 +57,8 @@ World content is editor-first: anything that adds, moves or restyles something v
 2. `npx jgengine recipe <name>` prints a typechecked snippet; `npx jgengine recipe` lists them. [recipes/minimal-game.md](recipes/minimal-game.md) is the whole-game walkthrough; each domain has `recipes/`.
 3. Open `api.md` or a `.d.ts` only for exact signatures, with grep.
 
-If nothing fits, name the shared owner first (AGENTS.md, "Reusable capability goes upstream first"); report SDK gaps upstream outside this repo.
+If nothing fits, name the shared owner first ([AGENTS.md](../../../AGENTS.md#game-changes-improve-the-framework)); report SDK gaps upstream outside this repo.
 
 ## Finish
 
-Declare the game's genres in `jgengine.json` (`suite`) and prove each required player verb with a headless proof; `jgengine suite <game>` is the score ([games/AGENTS.md](../../../games/AGENTS.md#game-suite)). Keep scene coordinates in the editor document, state serializable, randomness injected. A game is not done while its entities and props are box markers: run the asset pass in `jgengine-assets`. Prove it with `jgengine-verify`.
+Declare the game's genres in `jgengine.json` (`suite`) and prove each required player verb with a headless proof; `jgengine suite <game>` is the score ([game proofs](../../../games/README.md#design-checklist-and-loop-proofs)). Keep scene coordinates in the editor document, state serializable, randomness injected. A game is not done while its entities and props are box markers: run the asset pass in `jgengine-assets`. Prove it with `jgengine-verify`.

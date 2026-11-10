@@ -14,7 +14,7 @@ items, assets, editor-authored worlds and presentation.
 
 An engine change reaches every game in the same commit, and a change that breaks one fixes it in the same PR.
 Shared behavior must support different designs and art directions,
-not impose identical assets or layouts. [AGENTS.md](AGENTS.md#framework-first-development)
+not impose identical assets or layouts. [AGENTS.md](../AGENTS.md#game-changes-improve-the-framework)
 owns the discovery, upstream implementation, adoption and verification workflow.
 
 ## Games
@@ -72,7 +72,7 @@ to target there, in its `## Gaps` section, instead of in the README. Each game's
 Every game declares its genres in `jgengine.json` (`"suite": { "genres": [...] }`) and proves what
 they require with headless proofs in `proofs/sim/` and a content check in `proofs/content.ts`, run by
 `src/suite.test.ts` in the game's own `bun test`. The score heads the README and `PLAN.md`;
-`jgengine suite <game>` prints it by area ([workflow](AGENTS.md#game-suite)). Flows and screenshots are for
+`jgengine suite <game>` prints it by area. Flows and screenshots are for
 look and feel; they never count toward it.
 
 A flow is TypeScript against the game's own probe; it names the capture state it boots, and runs
