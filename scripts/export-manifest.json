@@ -1057,6 +1057,7 @@
     "./render/tileLayerPreview.view",
     "./render/triangleAttribution.draw",
     "./render/uniformMaterial.draw",
+    "./render/uniformUpload.draw",
     "./render/useDisposable.draw",
     "./render/useFrameWhile.draw",
     "./render/useSharedFrame.draw",

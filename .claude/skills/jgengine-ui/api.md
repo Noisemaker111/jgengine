@@ -855,6 +855,7 @@
 - `HeldDraw` (interface): interface HeldDraw — A draw the hold swallowed: what it would have drawn, from where, into what, with what override.
 - `HoldDrawsOptions` (interface): interface HoldDrawsOptions — Options for {@link holdDraws}.
 - `SHADER_WARMUP_DEFAULTS` (const): const SHADER_WARMUP_DEFAULTS: { readonly quietMs: 250; readonly planBudgetMs: 120000; readonly stallMs: 30000; readonly planFloorMs: 1500; readonly pollMs: 100; readonly backgroundMs: 2000; readonly backgroundEveryMs: 250; readonly programsPerBatch: 12; readonly texturesPerBatch: 4; readonly prepare… — Defaults sized to cover one load: the covered wait is the driver's link time, not a guess.
+- `SHADER_WARMUP_PLAY` (const): const SHADER_WARMUP_PLAY: { readonly objectsPerTick: 8; readonly uploadsPerTick: 3; readonly drawEveryTicks: 4; readonly drawObjectsPerTick: 4; } — The per-frame budget {@link ShaderWarmup.tick} spends on content the play deferral held: small enough that a streamed chunk's uploads land across frames instead of inside one.
 - `ShaderWarmup` (interface): interface ShaderWarmup — A warmup in flight: its promise, its latest state, and a way to stop it.
 - `ShaderWarmupOptions` (interface): interface ShaderWarmupOptions — Options for {@link createShaderWarmup}; the clock, sleep and loader signal are injectable for tests.
 - `ShaderWarmupRenderer` (interface): interface ShaderWarmupRenderer — The renderer surface the warmup needs; a real `WebGLRenderer` satisfies it.
@@ -880,6 +881,12 @@
 - `TriangleAttribution` (interface): interface TriangleAttribution — Where one scene's triangles are, biggest line first.
 - `TriangleLine` (interface): interface TriangleLine — One line of the triangle table: the draws sharing one geometry inside one named model.
 - `attributeTriangles` (function): function attributeTriangles(root: THREE.Object3D, limit = 12): TriangleAttribution — Sum a scene's triangles by model and geometry, which is the attribution a triangle budget needs: a total says a frame is heavy, a table says which authored object made it heavy. Walks the graph once; call it on demand, never per frame.
+
+## @jgengine/core/render/uniformUpload.draw
+
+- `installUniformUploads` (function): function installUniformUploads(): void — Install the pooled uploads on the real WebGL2 prototype; a no-op outside a browser.
+- `patchUniformUploads` (function): function patchUniformUploads(proto: object): void — Route every vector/matrix uniform upload on `proto` through {@link pooledUniformData}. Idempotent per prototype object.
+- `pooledUniformData` (function): function pooledUniformData(data: unknown, ctor: BufferCtor): PooledBuffer | undefined — The pooled typed array `data` should upload as, or `undefined` when `data` already is one (or is not array-like at all, so the native binding keeps its own error path). Anything else — a plain array, a `Float64Array`, an arguments object — is copied element-wise, which is the same conversion the sequence binding performed, minus the allocation.
 
 ## @jgengine/core/render/useDisposable.draw
 
