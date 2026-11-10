@@ -284,6 +284,43 @@ interface RawStop {
   px: boolean;
 }
 
+/** Axis-aligned alpha masks with linear edge fades, as point/fraction pairs per side. @internal */
+export function parseLinearFade(text: string): number[] | null {
+  const match = /^linear-gradient\((.*)\)$/.exec(text);
+  if (match === null) return null;
+  const parts = splitTop(match[1] ?? "", ",");
+  const directions: Record<string, number> = { "to top": 0, "to right": 1, "to bottom": 2, "to left": 3 };
+  const first = parts[0] ?? "";
+  let direction = directions[first];
+  if (direction !== undefined) parts.shift();
+  else if (/^-?[\d.]+deg$/.test(first)) {
+    const angle = ((parseFloat(first) % 360) + 360) % 360;
+    if (angle % 90 !== 0) return null;
+    direction = angle / 90;
+    parts.shift();
+  } else direction = 2;
+  if (parts.length < 2 || parts.length > 4) return null;
+  const stops = parts.map((part, index) => {
+    const tokens = splitTop(part, " ");
+    const color = parseColor(tokens[0] ?? "");
+    const position = tokens.slice(1).join(" ") || (index === 0 ? "0%" : index === parts.length - 1 ? "100%" : "");
+    const at = position === "" ? null : parseLengthPercent(position);
+    return color === null || at === null ? null : { alpha: colorAlpha(color), at };
+  });
+  const start = stops[0], end = stops.at(-1);
+  if (start === undefined || start === null || end === undefined || end === null || start.at[0] !== 0 || start.at[1] !== 0 || end.at[0] !== 0 || end.at[1] !== 1) return null;
+  if (stops.some((stop, index) => stop === null || (index > 0 && index < stops.length - 1 ? stop.alpha !== 1 : stop.alpha !== 0 && stop.alpha !== 1))) return null;
+  const after = stops[1], before = stops.at(-2);
+  if (after === undefined || after === null || before === undefined || before === null || (start.alpha === 0 && after.alpha !== 1) || (end.alpha === 0 && before.alpha !== 1)) return null;
+  const leading = start.alpha === 0 ? after.at : [0, 0];
+  const trailing = end.alpha === 0 ? [0 - before.at[0], 1 - before.at[1]] : [0, 0];
+  const sides = Array<number>(8).fill(0);
+  const leadingSide = (direction + 3) % 4, trailingSide = (direction + 1) % 4;
+  sides[leadingSide * 2] = leading[0] ?? 0; sides[leadingSide * 2 + 1] = leading[1] ?? 0;
+  sides[trailingSide * 2] = trailing[0] ?? 0; sides[trailingSide * 2 + 1] = trailing[1] ?? 0;
+  return sides;
+}
+
 /** A round alpha-mask hole positioned within a sized mask layer. @internal */
 export function parseRoundCutout(text: string, size: string, position: string): number[] | null {
   const match = /^radial-gradient\((.*)\)$/.exec(text);

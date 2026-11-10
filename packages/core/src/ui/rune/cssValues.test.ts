@@ -1,5 +1,13 @@
 import { expect, test } from "bun:test";
-import { parseDim, parseGradient, parseRoundCutout, percentCap, placeLayer } from "./cssValues";
+import { parseDim, parseGradient, parseLinearFade, parseRoundCutout, percentCap, placeLayer } from "./cssValues";
+
+test("credits masks preserve point, percentage and reversed linear edge fades", () => {
+  expect(parseLinearFade("linear-gradient(180deg, transparent 0, #000 16px, #000 calc(100% - 22px), transparent 100%)")).toEqual([0, 0, 16, 0, 0, 0, 22, 0]);
+  expect(parseLinearFade("linear-gradient(transparent 0%, rgb(0, 0, 0) 9%, rgb(0, 0, 0) 91%, transparent 100%)")).toEqual([0, 0, 0, 0.09, 0, 0, 0, 1 - 0.91]);
+  expect(parseLinearFade("linear-gradient(to left, transparent, #000)")).toEqual([0, 0, 0, 0, 0, 1, 0, 0]);
+  expect(parseLinearFade("linear-gradient(180deg, #000 0, #000 calc(100% - 26px), transparent 100%)")).toEqual([0, 0, 0, 0, 0, 0, 26, 0]);
+  for (const unsupported of ["linear-gradient(105deg, #000, transparent)", "linear-gradient(#000 0%, #000 36%, rgba(0, 0, 0, 0.22) 52%, rgba(0, 0, 0, 0.22) 100%)", "radial-gradient(black, transparent)"]) expect(parseLinearFade(unsupported)).toBeNull();
+});
 
 test("Tailwind's computed Oklab gradient keeps its direction, stops and alpha", () => {
   const gradient = parseGradient("linear-gradient(in oklab, rgb(43, 74, 68) 0%, rgb(29, 53, 49) 50%, rgb(12, 22, 20) 100%)");

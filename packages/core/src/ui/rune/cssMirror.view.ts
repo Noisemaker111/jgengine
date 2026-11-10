@@ -16,6 +16,7 @@ import {
   parseClipPath, parseColor,
   parseDim,
   parseGradient,
+  parseLinearFade,
   placeLayer,
   parsePlacement,
   parsePx,
@@ -677,7 +678,9 @@ function boxOfStyle(element: Element, style: CSSStyleDeclaration, report: Mirror
     // A picture used as a mask over a flat colour is that picture in that colour (a tinted icon).
     const url = /^url\(["']?(.*?)["']?\)$/.exec(mask);
     const svg = url === null || box["bg"] === undefined ? undefined : maskSvg(url[1] ?? "");
-    if (svg === undefined) {
+    const fade = /^(?:auto(?: auto)?|100% 100%)$/.test(style.maskSize) && style.maskPosition === "0% 0%" && style.maskComposite === "add" && style.maskMode !== "luminance" ? parseLinearFade(mask) : null;
+    if (fade !== null) box["fade"] = fade;
+    else if (svg === undefined) {
       const images = splitTop(mask, ",");
       const sizes = splitTop(style.maskSize, ",");
       const positions = splitTop(style.maskPosition, ",");

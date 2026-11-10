@@ -365,6 +365,9 @@ pub struct Box_ {
     /// Round mask holes: centre x points/fraction, centre y points/fraction, inner/outer radii.
     #[serde(default)]
     pub holes: Vec<[f32; 6]>,
+    /// Linear mask fades: point/fraction pairs for left, top, right, bottom.
+    #[serde(default)]
+    pub fade: Option<[f32; 8]>,
     /// Translate x, y in points; rotation in radians; uniform scale; translate x, y as
     /// fractions of the box's own size.
     #[serde(default)]
@@ -783,6 +786,7 @@ fn needs_size(b: &Box_) -> bool {
         || b.tf.is_some_and(|t| t[4] != 0.0 || t[5] != 0.0)
         || b.tfv.is_some()
         || !b.holes.is_empty()
+        || b.fade.is_some()
         || b.rad.is_some_and(|r| r.iter().any(|v| *v < 0.0))
         || b.svg.is_some()
         || b.img.is_some()
@@ -1153,6 +1157,10 @@ pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
     }
     if b.ovx == 1 || b.ovy == 1 {
         e = e.clip_corners(radii.unwrap_or([0.0; 4]));
+    }
+    if let Some(fade) = b.fade {
+        let widths: [f32; 4] = std::array::from_fn(|side| fade[side * 2] + fade[side * 2 + 1] * size[side % 2]);
+        e = e.clip_fade_linear(widths[0], widths[1], widths[2], widths[3]);
     }
     // The lowest gradient paints on the box itself; the rest are full-size sheets above it.
     if clipped {
