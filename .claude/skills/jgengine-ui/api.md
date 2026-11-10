@@ -2009,7 +2009,7 @@
 - `mirrorContents` (function): function mirrorContents(element: Element, report: MirrorReport, inherited: Inherited): WireBox[] — The boxes of a `display: contents` element's children (and of nested such wrappers), in order.
 - `mirrorElement` (function): function mirrorElement(element: Element, report: MirrorReport, inherited: Inherited = { positioned: [] }): WireBox | null — Builds the wire box for `element` and its subtree; `null` when it draws nothing (`display: none`, a script). Out-of-flow boxes whose parent is not positioned are appended to the nearest positioned ancestor, which is where CSS places them.
 - `mirrorRoot` (function): function mirrorRoot(container: Element, report: MirrorReport): WireBox — A layer's root box: the viewport, holding the mirrored children of `container`.
-- `onMaskLoaded` (function): function onMaskLoaded(listener: () => void): void — Called when a mask picture has arrived and the elements that use it can be drawn.
+- `onPaintResourceLoaded` (function): function onPaintResourceLoaded(listener: () => void): void — Remirror paint when an image's intrinsic dimensions or a mask SVG arrives.
 - `ownerOf` (function): function ownerOf(box: WireBox): WireBox | undefined — ⚠ undocumented
 - `paintOrder` (function): function paintOrder(children: WireBox[]): WireBox[] — Positioned zero levels share tree order with auto levels. Flow siblings keep layout order.
 - `remirrorElement` (function): function remirrorElement(element: Element, report: MirrorReport): WireBox | null — Mirrors `element` again in place after it changed; returns the box to send as a patch, or `null` when the change reaches outside the element (it appeared, vanished, moved to or from a positioned ancestor, or changed how its parent flows) and the parent must be mirrored.
@@ -2023,6 +2023,7 @@
 ## @jgengine/core/ui/rune/cssValues
 
 - `WireDim` (type): type WireDim = number | string | number[] — Parsers for computed CSS values, as a browser serializes them, into the plain numbers the Rune CSS box takes. Everything here is string in, numbers out, with no DOM: lengths, colours, gradients, shadows, grid tracks, transforms.
+- `WireImageLayer` (interface): interface WireImageLayer — A picture in the same ordered background stack as gradients.
 - `WireLayer` (interface): interface WireLayer { g: 0 | 1 | 2; a?: number; cx?: number; cy?: number; rx?: number; ry?: number; rf?: [number, number] | "corner" | "side"; circle?: boolean; st: [number, number][]; ps?: boolean; rp?: [boolean, boolean]; per?: number; off?: number; bs?: num… — ⚠ undocumented · used by `parseGradient`: One computed `background-image` layer; `null` when it is not a gradient this painter draws.
 - `WireShadow` (type): type WireShadow = [[number, number, number, number, number], number] — ⚠ undocumented · used by `parseShadows`: Computed `box-shadow`: `rgb(..) x y blur spread [inset], ...`.
 - `WireTextShadow` (type): type WireTextShadow = [number, number, number, number] — ⚠ undocumented
@@ -2044,6 +2045,7 @@
 - `parseTextShadows` (function): function parseTextShadows(text: string): WireTextShadow[] — ⚠ undocumented
 - `parseTracks` (function): function parseTracks(text: string): WireTrack[] | null — Computed `grid-template-columns`/`rows` or `grid-auto-*`; `null` when a track is not expressible.
 - `parseTransform` (function): function parseTransform(translate: string, rotate: string, scale: string, transform: string): WireTransform | null — The computed `translate`, `rotate`, `scale` and `transform` of one element, combined.
+- `placeImageLayer` (function): function placeImageLayer(url: string, size: string, position: string, repeat: string): WireImageLayer | null — Resolve the authored tile geometry; natural dimensions arrive separately when the image loads.
 - `placeLayer` (function): function placeLayer<L extends WireLayer | { flat: number }>(layer: L, size: string, position: string, repeat: string): L | { flat: number } | (L & { bs: number[]; bp: number[] }) — A background layer with its `background-size`, `background-position` and `background-repeat` applied: unchanged when it covers the box, placed (`bs`, `bp`) when it is one sized piece, and its average colour when it is a small tile repeated across the box.
 - `splitTop` (function): function splitTop(text: string, separator: "," | " "): string[] — Splits on top-level commas (or spaces), leaving anything in parentheses whole.
 
