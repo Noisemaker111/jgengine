@@ -18,6 +18,7 @@ import {
   parseGradient,
   parseLinearFade,
   placeLayer,
+  placeImageLayer,
   parsePlacement,
   parsePx,
   parseRadius,
@@ -29,6 +30,7 @@ import {
   splitTop,
   type WireDim,
   type WireLayer,
+  type WireImageLayer,
 } from "./cssValues";
 
 /** One CSS box on the wire (`native/crates/jg-ui/src/css.rs`). */
@@ -620,7 +622,7 @@ function boxOfStyle(element: Element, style: CSSStyleDeclaration, report: Mirror
   if (background !== null && colorAlpha(background) > 0) box["bg"] = background;
   const image = style.backgroundImage;
   if (image !== "none" && image !== "") {
-    const layers: ((WireLayer | { flat: number }) & { blend?: number })[] = [];
+    const layers: ((WireLayer | WireImageLayer | { flat: number }) & { blend?: number })[] = [];
     const parts = splitTop(image, ",");
     const sizes = splitTop(style.backgroundSize, ",");
     const positions = splitTop(style.backgroundPosition, ",");
@@ -633,11 +635,14 @@ function boxOfStyle(element: Element, style: CSSStyleDeclaration, report: Mirror
       const blend = mode === "normal" ? 0 : BLEND_MODES[mode];
       if (blend === undefined) report.add(`background-blend-mode: ${mode}`, element);
       if (part.startsWith("url(")) {
-        // A background picture never sizes its box, unlike an `<img>`.
-        box["bgi"] = part.slice(4, -1).replace(/^["']|["']$/g, "");
-        if (style.backgroundSize === "cover") box["bfit"] = 1;
-        else if (style.backgroundSize === "contain") box["bfit"] = 2;
-        if (blend !== undefined && blend !== 0) box["bgblend"] = blend;
+        const url = part.slice(4, -1).replace(/^["']|["']$/g, "");
+        const layer = placeImageLayer(url, sizes[index % sizes.length] ?? "auto", positions[index % positions.length] ?? "0% 0%", repeats[index % repeats.length] ?? "repeat");
+        if (layer === null) report.add(`background image placement: ${style.backgroundSize}; ${style.backgroundPosition}; ${style.backgroundRepeat}`, element);
+        else {
+          const natural = imageDimensions(url);
+          if (natural !== undefined) layer.natural = natural;
+          layers.push({ ...layer, ...(blend === undefined || blend === 0 ? {} : { blend }) });
+        }
         continue;
       }
       const layer = parseGradient(part);
@@ -717,7 +722,6 @@ function boxOfStyle(element: Element, style: CSSStyleDeclaration, report: Mirror
       report.add(`mix-blend-mode: ${style.mixBlendMode}`, element);
       delete box["bg"];
       delete box["ly"];
-      delete box["bgi"];
     }
   }
   if (style.isolation === "isolate") box["isolate"] = true;
@@ -773,11 +777,25 @@ function pseudoBox(element: Element, which: "::before" | "::after", report: Mirr
 /** Inline SVG as standalone markup, with the colours CSS gave it written in. */
 /** SVG pictures used as masks, by URL: the markup, `null` while it loads, `undefined` for one that is not SVG. */
 const maskSvgs = new Map<string, string | null | undefined>();
-let maskLoaded: () => void = () => undefined;
+let paintResourceLoaded: () => void = () => undefined;
+const imageSizes = new Map<string, [number, number] | null>();
 
-/** Called when a mask picture has arrived and the elements that use it can be drawn. */
-export function onMaskLoaded(listener: () => void): void {
-  maskLoaded = listener;
+function imageDimensions(url: string): [number, number] | undefined {
+  if (imageSizes.has(url)) return imageSizes.get(url) ?? undefined;
+  imageSizes.set(url, null);
+  const image = new Image();
+  image.onload = () => {
+    imageSizes.set(url, [image.naturalWidth, image.naturalHeight]);
+    paintResourceLoaded();
+  };
+  image.onerror = () => console.warn(`degraded: Rune background image failed to load: ${url.slice(0, 120)}`);
+  image.src = url;
+  return undefined;
+}
+
+/** Remirror paint when an image's intrinsic dimensions or a mask SVG arrives. */
+export function onPaintResourceLoaded(listener: () => void): void {
+  paintResourceLoaded = listener;
 }
 
 function maskSvg(url: string): string | null | undefined {
@@ -788,7 +806,7 @@ function maskSvg(url: string): string | null | undefined {
     .catch(() => "")
     .then((text) => {
       maskSvgs.set(url, text.includes("<svg") ? text : undefined);
-      maskLoaded();
+      paintResourceLoaded();
     });
   return null;
 }

@@ -216,6 +216,7 @@ impl El {
         let cold = self.vis.cold_mut();
         cold.pixels = Some(pixels.clone());
         cold.pixels_fit = None;
+        cold.pixels_pattern = None;
         self
     }
     /// Shows `pixels` at its own aspect ratio, centred: `Fit` letterboxes the whole image inside
@@ -224,6 +225,16 @@ impl El {
         let cold = self.vis.cold_mut();
         cold.pixels = Some(pixels.clone());
         cold.pixels_fit = Some(fit);
+        cold.pixels_pattern = None;
+        self
+    }
+    /// Paint an image tile at `offset` within the element, repeating on the chosen axes.
+    /// Tile dimensions are points; clipping and corners still belong to the element.
+    pub fn pixels_pattern(mut self, pixels: &crate::pixels::Pixels, tile: [f32; 2], offset: [f32; 2], repeat: [bool; 2]) -> Self {
+        let cold = self.vis.cold_mut();
+        cold.pixels = Some(pixels.clone());
+        cold.pixels_fit = None;
+        cold.pixels_pattern = Some([offset[0], offset[1], tile[0].max(0.001), tile[1].max(0.001), repeat[0] as u8 as f32, repeat[1] as u8 as f32]);
         self
     }
     /// A ring `offset` points outside the border box (CSS `outline` + `outline-offset`). Width

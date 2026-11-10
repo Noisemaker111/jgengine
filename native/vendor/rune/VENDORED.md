@@ -11,6 +11,14 @@ requests, so jgengine carries a patched copy here instead of a git pin.
 
 ## jgengine patches
 
+`crates/rune/src/el/{visual,visuals}.rs`, `runtime/{commit/memo_reuse,paint/content}.rs`
+and `shader.wgsl` — image patterns retain their tile size and offset independently
+of the element rectangle. Each axis can repeat or draw once. Bilinear samples
+wrap within the image's own atlas allocation on repeated axes and clamp on the
+others, so neighbouring allocations cannot bleed. The normal image path and
+instance ABI stay unchanged. CSS background images use this alongside gradients
+in one ordered stack, rather than stretching one URL above every gradient.
+
 Direct Rune tests use this workspace and its `Cargo.lock` for dev dependencies:
 `cargo test --manifest-path native/vendor/rune/Cargo.toml -p rune --no-default-features --features embedded-fonts,svg --jobs 4 --target-dir native/target --test backdrop_blur`.
 The engine's `jg-ui` build uses the separate `native/Cargo.lock`.

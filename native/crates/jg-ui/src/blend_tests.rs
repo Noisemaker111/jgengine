@@ -1,6 +1,30 @@
 use rune::color::{srgb_decode, srgb_encode};
 use rune::render::{Blend, Gpu, Instance, KIND_RECT, LayerSpec, NO_CLIP, OFFSCREEN_FORMAT, Offscreen, Renderer};
 
+#[test]
+fn image_tiles_repeat_each_axis_at_their_own_size_and_offset() {
+    let gpu = Gpu::headless();
+    let pixels = rune::Pixels::new();
+    let colors = [[255,0,0,255],[0,255,0,255],[0,0,255,255],[255,255,255,255]];
+    pixels.set(4,4,(0..4).flat_map(|y| (0..4).flat_map(move |x| colors[(y/2)*2+x/2])).collect());
+    for repeat in [[false,false],[true,false],[false,true],[true,true]] {
+        let mut runtime = rune::Runtime::new((pixels.clone(),repeat), |state, _| rune::el().size(24.0,16.0).pixels_pattern(&state.0,[4.0,4.0],[1.0,-1.0],state.1), (24.0,16.0), rune::Env::new(true,1.0));
+        runtime.frame(0.0);
+        let mut renderer = Renderer::new(&gpu.device,OFFSCREEN_FORMAT);
+        let target = Offscreen::new(&gpu.device,24,16);
+        renderer.upload_images(&gpu.device,&gpu.queue,&mut runtime.images);
+        renderer.prepare(&gpu.device,&gpu.queue,&mut runtime.text.atlas,&runtime.instances,(24,16));
+        let mut encoder = gpu.device.create_command_encoder(&Default::default());
+        renderer.draw(&mut encoder,&target.view,[0.0;4]);
+        target.copy(&mut encoder); renderer.submit(&gpu.queue,encoder);
+        let result = target.read(&gpu.device);
+        for (x,y,expected) in [(2,0,colors[0]),(4,0,colors[1]),(2,2,colors[2]),(0,0,if repeat[0] {colors[1]} else {[0;4]}),(6,0,if repeat[0] {colors[0]} else {[0;4]}),(2,6,if repeat[1] {colors[2]} else {[0;4]})] {
+            let at=(y*24+x)*4;
+            assert_eq!(&result[at..at+4],&expected,"tile {repeat:?} at {x},{y}");
+        }
+    }
+}
+
 fn line_spread(pixels: &[u8], width: usize, x: usize, y: usize) -> f32 {
     let sample=|at: usize| srgb_decode(pixels[(y*width+at)*4] as f32/255.0);
     let weights: Vec<_>=(x-24..x+23).map(|at| (at as f32,(sample(at+1)-sample(at)).max(0.0))).collect();

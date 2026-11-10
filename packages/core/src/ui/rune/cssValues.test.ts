@@ -1,5 +1,13 @@
 import { expect, test } from "bun:test";
-import { parseDim, parseGradient, parseLinearFade, parseRoundCutout, percentCap, placeLayer } from "./cssValues";
+import { parseDim, parseGradient, parseLinearFade, parseRoundCutout, percentCap, placeLayer, placeImageLayer } from "./cssValues";
+
+test("background pictures keep auto axes, placement and separate repeat directions", () => {
+  expect(placeImageLayer("grain.svg", "auto", "0% 0%", "repeat")).toEqual({ url: "grain.svg", au: [true,true], bs: [0,0,0,0], bp: [0,0,0,0], rp: [true,true] });
+  expect(placeImageLayer("grain.svg", "50% auto", "50% 100%", "repeat no-repeat")).toMatchObject({ au: [false,true], bs: [0,0.5,0,0], bp: [0,0.5,0,1], rp: [true,false] });
+  expect(placeImageLayer("grain.svg", "contain", "0% 0%", "no-repeat")).toHaveProperty("fit", 2);
+  expect(placeImageLayer("grain.svg", "16px 8px", "-3px 2px", "repeat-y")).toMatchObject({ bs: [16,0,8,0], bp: [-3,0,2,0], rp: [false,true] });
+  expect(placeImageLayer("grain.svg", "auto", "0% 0%", "round")).toBeNull();
+});
 
 test("credits masks preserve point, percentage and reversed linear edge fades", () => {
   expect(parseLinearFade("linear-gradient(180deg, transparent 0, #000 16px, #000 calc(100% - 22px), transparent 100%)")).toEqual([0, 0, 16, 0, 0, 0, 22, 0]);

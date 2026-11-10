@@ -121,6 +121,14 @@ pub enum RadialSize {
 #[derive(Deserialize, Clone, Debug)]
 pub struct Layer {
     #[serde(default)]
+    pub url: Option<String>,
+    #[serde(default)]
+    pub natural: Option<[f32; 2]>,
+    #[serde(default)]
+    pub fit: u8,
+    #[serde(default)]
+    pub au: Option<[bool; 2]>,
+    #[serde(default)]
     pub blend: u8,
     /// A flat colour sheet instead of a gradient.
     #[serde(default)]
@@ -402,8 +410,6 @@ pub struct Box_ {
     #[serde(default)]
     pub bblur: f32,
     #[serde(default)]
-    pub bgblend: u8,
-    #[serde(default)]
     pub blend: u8,
     #[serde(default)]
     pub isolate: bool,
@@ -431,11 +437,6 @@ pub struct Box_ {
     /// How the image fills the box: 0 stretched, 1 covering (cropped), 2 contained.
     #[serde(default)]
     pub fit: u8,
-    /// A background picture: drawn over the box's colour and gradients, without sizing the box.
-    #[serde(default)]
-    pub bgi: Option<String>,
-    #[serde(default)]
-    pub bfit: u8,
     /// Pointer interest: bit 0 takes presses, bit 1 reports hover, bit 2 blocks the game underneath.
     #[serde(default)]
     pub hit: u8,
@@ -800,7 +801,7 @@ fn dashed_sides(b: &Box_) -> bool {
 
 fn needs_size(b: &Box_) -> bool {
     dashed_sides(b) ||
-    b.ly.iter().any(|l| ((l.g != 0 || l.per > 0.0) && l.flat.is_none()) || l.bs.is_some())
+    b.ly.iter().any(|l| l.url.is_some() || ((l.g != 0 || l.per > 0.0) && l.flat.is_none()) || l.bs.is_some())
         || b.tf.is_some_and(|t| t[4] != 0.0 || t[5] != 0.0)
         || b.tfv.is_some()
         || !b.holes.is_empty()
@@ -808,7 +809,6 @@ fn needs_size(b: &Box_) -> bool {
         || b.rad.is_some_and(|r| r.iter().any(|v| *v < 0.0))
         || b.svg.is_some()
         || b.img.is_some()
-        || b.bgi.is_some()
         || !b.cp.is_empty()
         || b.sk != 0.0
 }
@@ -1011,6 +1011,12 @@ fn clipped_paint(bg: Option<Rgba>, layers: &[Layer], size: [f32; 2], poly: &[[f3
 
 /// The sheet one background layer paints on: the whole box, or the piece its size and position give.
 fn layer_sheet(l: &Layer, radii: Option<[f32; 4]>, size: [f32; 2]) -> El {
+    if let Some(url) = &l.url {
+        let (tile, offset) = image_tile(l, size);
+        if tile.iter().any(|v| *v <= 0.0) { return sheet(radii); }
+        let image = crate::widgets::image_by_url(url, tile[0].max(tile[1]).max(1.0));
+        return sheet(radii).pixels_pattern(image.pixels(), tile, offset, l.rp.unwrap_or([true; 2])).inert();
+    }
     let Some(bs) = l.bs else { return paint_layer(sheet(radii), l, radii, size) };
     let (w, h) = (bs[0] + bs[1] * size[0], bs[2] + bs[3] * size[1]);
     let bp = l.bp.unwrap_or([0.0; 4]);
@@ -1038,6 +1044,22 @@ fn layer_sheet(l: &Layer, radii: Option<[f32; 4]>, size: [f32; 2]) -> El {
         return sheet(radii).pixels_fit(crate::widgets::image_of_svg(&svg, size[0].max(size[1])).pixels(), rune::SurfaceFit::Fill).inert();
     }
     paint_layer(el().pin(Some(x), Some(y), None, None).size(w.max(0.0), h.max(0.0)), l, None, [w, h])
+}
+
+fn image_tile(l: &Layer, size: [f32; 2]) -> ([f32; 2], [f32; 2]) {
+    let natural = l.natural.unwrap_or([0.0; 2]);
+    let auto = l.au.unwrap_or([true; 2]);
+    let bs = l.bs.unwrap_or([0.0; 4]);
+    let mut tile = [bs[0] + bs[1] * size[0], bs[2] + bs[3] * size[1]];
+    if l.fit != 0 && natural.iter().all(|v| *v > 0.0) {
+        let factors = [size[0] / natural[0], size[1] / natural[1]];
+        let k = if l.fit == 1 { factors[0].max(factors[1]) } else { factors[0].min(factors[1]) };
+        tile = natural.map(|v| v * k);
+    } else if auto == [true; 2] { tile = natural; }
+    else if auto[0] { tile[0] = if natural[1] > 0.0 { tile[1] * natural[0] / natural[1] } else { 0.0 }; }
+    else if auto[1] { tile[1] = if natural[0] > 0.0 { tile[0] * natural[1] / natural[0] } else { 0.0 }; }
+    let bp = l.bp.unwrap_or([0.0; 4]);
+    (tile, [bp[0] + bp[1] * (size[0] - tile[0]), bp[2] + bp[3] * (size[1] - tile[1])])
 }
 
 /// Corner radii that keep a picture inside a polygon cut from a box: none where the polygon reaches
@@ -1166,7 +1188,7 @@ fn build_box(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
     let rect = RECTS.with(|r| r.borrow().get(&b.id).copied());
     let clip = clip_of(b, rect);
     let clipped = clip.is_some();
-    let background_blends = b.bgblend != 0 || b.ly.iter().any(|l| l.blend != 0);
+    let background_blends = b.ly.iter().any(|l| l.blend != 0 || l.url.is_some());
     let skewed = b.sk != 0.0 && b.cp.is_empty();
     if let Some(poly) = &clip {
         let mut shape = clipped_paint(if background_blends { None } else { b.bg }, if background_blends { &[] } else { &b.ly }, size, poly);
@@ -1272,15 +1294,18 @@ fn build_box(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
         let widths: [f32; 4] = std::array::from_fn(|side| fade[side * 2] + fade[side * 2 + 1] * size[side % 2]);
         e = e.clip_fade_linear(widths[0], widths[1], widths[2], widths[3]);
     }
-    let mut background = background_blends.then(|| {
+    let background = background_blends.then(|| {
         let widths = b.bw.unwrap_or([0.0; 4]);
         let mut background = sheet(radii).pin(Some(-widths[3]), Some(-widths[0]), Some(-widths[1]), Some(-widths[2])).isolate().inert();
         if let Some(poly) = &clip { background = background.shape(clipped_paint(b.bg, &[], size, poly)); }
         else if let Some(color) = b.bg { background = background.fill(color.0); }
         for l in &b.ly {
-            let layer = if let Some(poly) = clip.as_ref().filter(|_| l.bs.is_none()) {
+            let layer = if let Some(poly) = clip.as_ref().filter(|_| l.bs.is_none() && l.url.is_none()) {
                 sheet(radii).shape(clipped_paint(None, std::slice::from_ref(l), size, poly))
-            } else { layer_sheet(l, radii, size) };
+            } else {
+                let corners = if l.url.is_some() { clip.as_ref().map(|poly| cut_corners(poly, size)).or(radii) } else { radii };
+                layer_sheet(l, corners, size)
+            };
             background = background.child(blend(layer, l.blend));
         }
         background
@@ -1303,21 +1328,6 @@ fn build_box(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
     }
     for l in layers {
         e = e.child(layer_sheet(l, radii, size));
-    }
-    if let Some(url) = &b.bgi {
-        let image = crate::widgets::image_by_url(url, size[0].max(size[1]).max(32.0));
-        let fit = match b.bfit {
-            2 => rune::SurfaceFit::Fit,
-            _ => rune::SurfaceFit::Fill,
-        };
-        // On a box with cut corners the picture is rounded off just inside each cut.
-        let corners = match &clip {
-            Some(poly) => Some(cut_corners(poly, size)),
-            None => radii,
-        };
-        let image = blend(sheet(corners).pixels_fit(image.pixels(), fit).inert(), b.bgblend);
-        if let Some(background) = background.as_mut() { *background = std::mem::replace(background, el()).child(image); }
-        else { e = e.child(image); }
     }
     if let Some(background) = background { e = e.child(background); }
     if let Some(border) = border_paint { e = e.child(border); }
@@ -1465,6 +1475,19 @@ pub fn fields<'a>(nodes: &'a [crate::Node], out: &mut Vec<(String, &'a Input)>) 
 #[cfg(test)]
 mod live_value_tests {
     use super::*;
+
+    #[test]
+    fn background_images_keep_intrinsic_ratio_cover_contain_and_percentage_position() {
+        let image = |more: serde_json::Value| {
+            let mut value = serde_json::json!({"url":"texture.svg", "natural":[80,40], "au":[true,true], "bp":[0,0.5,0,1]});
+            value.as_object_mut().unwrap().extend(more.as_object().unwrap().clone());
+            serde_json::from_value::<Layer>(value).unwrap()
+        };
+        assert_eq!(image_tile(&image(serde_json::json!({})), [200.0,100.0]), ([80.0,40.0],[60.0,60.0]));
+        assert_eq!(image_tile(&image(serde_json::json!({"au":[false,true],"bs":[0,0.5,0,0]})), [200.0,100.0]), ([100.0,50.0],[50.0,50.0]));
+        assert_eq!(image_tile(&image(serde_json::json!({"fit":1})), [100.0,100.0]), ([200.0,100.0],[-50.0,0.0]));
+        assert_eq!(image_tile(&image(serde_json::json!({"fit":2})), [100.0,100.0]), ([100.0,50.0],[0.0,50.0]));
+    }
 
     #[test]
     fn cached_scroll_rows_keep_painting_across_other_leaf_updates_and_replacements() {

@@ -277,6 +277,11 @@ fn image_texel(t: vec2<i32>, premultiplied: bool) -> vec4<f32> {
     return vec4<f32>(c.rgb * c.a, c.a);
 }
 
+fn image_index(t: vec2<i32>, lo: vec2<i32>, span: vec2<i32>, repeat: vec2<bool>) -> vec2<i32> {
+    let wrapped = lo + ((t - lo) % span + span) % span;
+    return select(clamp(t, lo, lo + span - vec2<i32>(1)), wrapped, repeat);
+}
+
 // Arc length to the point nearest `p` (rect-local) on the centre line of a `bw`-wide ring inside
 // the rounded rect, and the line's full length. It runs clockwise from where the top edge leaves
 // the top-left corner; corners count along their arcs.
@@ -493,17 +498,26 @@ fn fs(i: Out) -> @location(0) vec4<f32> {
             col = mix(i.fill, i.border, t) * (ring * dash_cov(arc.x, arc.y, i.uv.xyz));
         } else {
             // Bilinear, clamped to the image's own texels so neighbours in the atlas never bleed.
-            let local = (i.p - i.rect.xy) * i.uv.zw / i.rect.zw - vec2<f32>(0.5);
+            var unit = (i.p - i.rect.xy) / i.rect.zw;
+            var repeat = vec2<bool>(false);
+            var visible = true;
+            if (i.border.z > 0.0 && i.border.w > 0.0) {
+                unit = (i.p - i.rect.xy - i.border.xy) / i.border.zw;
+                let flags = u32(i.fill.r + 0.5);
+                repeat = vec2<bool>((flags & 1u) != 0u, (flags & 2u) != 0u);
+                visible = all(repeat | ((unit >= vec2<f32>(0.0)) & (unit < vec2<f32>(1.0))));
+            }
+            let local = unit * i.uv.zw - vec2<f32>(0.5);
             let lo = vec2<i32>(i.uv.xy);
-            let hi = lo + vec2<i32>(i.uv.zw) - vec2<i32>(1);
+            let span = max(vec2<i32>(i.uv.zw), vec2<i32>(1));
             let base = floor(local);
             let f = local - base;
-            let t0 = clamp(lo + vec2<i32>(base), lo, hi);
-            let t1 = clamp(lo + vec2<i32>(base) + vec2<i32>(1, 1), lo, hi);
+            let t0 = image_index(lo + vec2<i32>(base), lo, span, repeat);
+            let t1 = image_index(lo + vec2<i32>(base) + vec2<i32>(1, 1), lo, span, repeat);
             let premultiplied = i.params.z > 0.5;
             let c = mix(mix(image_texel(t0, premultiplied), image_texel(vec2<i32>(t1.x, t0.y), premultiplied), f.x),
                         mix(image_texel(vec2<i32>(t0.x, t1.y), premultiplied), image_texel(t1, premultiplied), f.x), f.y);
-            col = c * (i.fill.a * clamp(0.5 - d, 0.0, 1.0));
+            col = c * (i.fill.a * clamp(0.5 - d, 0.0, 1.0)) * select(0.0, 1.0, visible);
         }
     } else if (kind > 4.5 && kind < 5.5) {
         col = i.fill * segment(i.pos.xy + projection.xy, i.radii.xy, i.radii.zw, i.params.x, i.params.z > 0.5);
