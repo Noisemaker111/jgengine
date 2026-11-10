@@ -108,18 +108,31 @@ function attributeName(name: string, svg: boolean): string {
   return name;
 }
 
-function write(node: MarkupNode, svg: boolean, out: string[]): void {
+function selectedOptions(value: unknown): ReadonlySet<string> | null {
+  if (typeof value === "string" || typeof value === "number") return new Set([String(value)]);
+  if (Array.isArray(value)) return new Set(value.map(String));
+  return null;
+}
+
+function optionText(node: MarkupNode): string {
+  return node.tag === null ? node.text : node.children.map(optionText).join("");
+}
+
+function write(node: MarkupNode, svg: boolean, out: string[], selection: ReadonlySet<string> | null = null): void {
   if (node.tag === null) {
     out.push(escapeText(node.text));
     return;
   }
   const tag = node.tag;
   const inSvg = svg || tag === "svg";
+  const selected = tag === "select" ? selectedOptions(node.props["value"] ?? node.props["defaultValue"]) : selection;
   out.push("<", tag);
   let inner: string | null = null;
   for (const name in node.props) {
     const value = node.props[name];
     if (name === "children" || name === "key" || name === "ref" || name === "suppressHydrationWarning") continue;
+    if (tag === "select" && (name === "value" || name === "defaultValue")) continue;
+    if (tag === "option" && name === "selected" && selected !== null) continue;
     if (name === "dangerouslySetInnerHTML") {
       const html = (value as { __html?: unknown } | null | undefined)?.__html;
       inner = html === null || html === undefined ? "" : String(html);
@@ -133,7 +146,8 @@ function write(node: MarkupNode, svg: boolean, out: string[]): void {
       }
       continue;
     }
-    if (name === "value" && tag === "textarea") {
+    if ((name === "value" || name === "defaultValue") && tag === "textarea") {
+      if (name === "defaultValue" && node.props["value"] !== null && node.props["value"] !== undefined) continue;
       inner = escapeText(String(value));
       continue;
     }
@@ -145,13 +159,14 @@ function write(node: MarkupNode, svg: boolean, out: string[]): void {
     }
     out.push(" ", attribute, '="', escapeAttribute(String(value)), '"');
   }
+  if (tag === "option" && selected?.has(String(node.props["value"] ?? optionText(node)))) out.push(' selected=""');
   if (VOID.has(tag)) {
     out.push("/>");
     return;
   }
   out.push(">");
   if (inner !== null) out.push(inner);
-  else for (const child of node.children) write(child, inSvg && tag !== "foreignObject", out);
+  else for (const child of node.children) write(child, inSvg && tag !== "foreignObject", out, selected);
   out.push("</", tag, ">");
 }
 

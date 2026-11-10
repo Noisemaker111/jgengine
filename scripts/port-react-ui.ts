@@ -85,6 +85,12 @@ export function portBrowserFixture(text: string): string {
     .replace(/^\s*\.\.\.\[["']react["'],\s*["']react-dom["']\]\.map\(peer => symlink\([^\n]*\n/gm, "\n");
 }
 
+/** Rename the retired SDK package in game declarations without changing game-owned values. */
+export function portProjectConfig(text: string): string {
+  return text.replace(/("engine"\s*:\s*\[)([^\]]*)(\])/g,
+    (_all, lead: string, packages: string, end: string) => lead + packages.replace(/"react"/g, '"ui"') + end);
+}
+
 function renderImport(names: Named[], from: string, quote: string, allTypes: boolean): string {
   const parts = names.map((n) => `${!allTypes && n.typeOnly ? "type " : ""}${n.name}${n.alias === null ? "" : ` as ${n.alias}`}`);
   return `import ${allTypes ? "type " : ""}{ ${parts.join(", ")} } from ${quote}${from}${quote};`;
@@ -289,6 +295,9 @@ function run(argv: readonly string[]): number {
   for (const path of gitFiles(["*tsconfig*.json"])) {
     if (skipped(path) || REACT_HOSTS.some((prefix) => path.startsWith(prefix))) continue;
     edit(path, (text) => ({ text: portTsconfig(text), notes: [] }));
+  }
+  for (const path of gitFiles(["jgengine.json", "**/jgengine.json"])) {
+    edit(path, (text) => ({ text: portProjectConfig(text), notes: [] }));
   }
 
   const results = [...resultsByPath.values()];

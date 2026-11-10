@@ -59,7 +59,7 @@ export interface ProjectConfig {
   template?: GameTemplate;
   /** The scene editor wiring (`F2+E`); templates 3d and builder. Default true. */
   editor?: boolean;
-  /** `@jgengine/*` packages the game runs on, without the scope: `["core", "react", "shell"]`. */
+  /** `@jgengine/*` packages the game runs on, without the scope: `["core", "ui", "shell"]`. */
   engine: string[];
   /** Template files this game rewrote and owns; sync leaves them alone. */
   owns?: string[];
@@ -95,8 +95,9 @@ export function readProjectConfig(dir: string): ProjectConfig {
     throw new Error(`${path}: "template" must be one of ${GAME_TEMPLATES.join(", ")}`);
   }
   if (!Array.isArray(config.engine) || config.engine.some((name) => typeof name !== "string" || name.startsWith("@"))) {
-    throw new Error(`${path}: "engine" lists @jgengine packages without the scope, e.g. ["core", "react", "shell"]`);
+    throw new Error(`${path}: "engine" lists @jgengine packages without the scope, e.g. ["core", "ui", "shell"]`);
   }
+  if (config.engine.includes("react")) throw new Error(`${path}: "engine" names the retired React package; use "ui"`);
   if (config.editor !== undefined && typeof config.editor !== "boolean") throw new Error(`${path}: "editor" must be true or false`);
   if (config.editor === true && config.template === "2d") throw new Error(`${path}: the 2d template has no scene editor`);
   if (config.owns !== undefined && (!Array.isArray(config.owns) || config.owns.some((file) => typeof file !== "string"))) {

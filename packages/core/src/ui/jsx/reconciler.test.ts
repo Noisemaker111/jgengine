@@ -31,6 +31,26 @@ function mount(node: UiNode): { root: Root<MarkupNode>; html: () => string } {
 }
 
 describe("static markup", () => {
+  test("select values mark options through optgroups without leaking into siblings", () => {
+    const html = renderToStaticMarkup(h(Fragment, null,
+      h("select", { value: "silk" }, h("optgroup", { label: "Fabrics" },
+        h("option", { value: "cotton", selected: true }, "Cotton"),
+        h("option", { value: "silk" }, "Silk"))),
+      h("select", null, h("option", { selected: true }, "Independent"))));
+    expect(html).toBe('<select><optgroup label="Fabrics"><option value="cotton">Cotton</option><option value="silk" selected="">Silk</option></optgroup></select><select><option selected="">Independent</option></select>');
+  });
+
+  test("default selections support multiple values, numeric values and option text", () => {
+    const html = renderToStaticMarkup(h("select", { multiple: true, defaultValue: [2, "Named"] },
+      h("option", { value: 1 }, "One"), h("option", { value: 2 }, "Two"),
+      h("option", null, "Named")));
+    expect(html).toBe('<select multiple=""><option value="1">One</option><option value="2" selected="">Two</option><option selected="">Named</option></select>');
+  });
+
+  test("textarea default values are escaped content", () => {
+    expect(renderToStaticMarkup(h("textarea", { defaultValue: "a < b" }))).toBe('<textarea>a &lt; b</textarea>');
+  });
+
   test("writes tags, attributes, styles and escaped text", () => {
     const html = renderToStaticMarkup(
       h("div", { className: "a b", style: { fontSize: 12, opacity: 0.5, "--x": 3 }, "data-on": true, hidden: false, tabIndex: 0 },

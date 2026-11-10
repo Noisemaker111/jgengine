@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { createElement } from "@jgengine/core/ui/jsx";
-import { renderToStaticMarkup } from "@jgengine/core/ui/jsx/markup";
+import { renderToStaticMarkup, renderToTree, type MarkupNode } from "@jgengine/core/ui/jsx/markup";
 
 import { createMaterialTemplate } from "@jgengine/core/material/materialAsset";
 
@@ -14,12 +14,14 @@ test("selected model initializes the controls and selector from its assignment i
   } });
   try {
     expect(host.api.handle({ method: "select", ids: ["chair"] }).ok).toBe(true);
-    const html = renderToStaticMarkup(createElement(MaterialsWorkspacePanel, { session: host.session, api: host.api }));
-    expect(html).toContain('<option value="silk" selected="">Custom silk</option>');
-    expect(html).toContain('aria-label="Assignment mesh name" placeholder="Mesh name (optional)" class=');
-    expect(html).toContain('value="Cushion"');
-    expect(html).toContain('value="Upholstery"');
-    expect(html).toContain('aria-label="Thread cycles per UV"');
+    const descendants = (nodes: readonly MarkupNode[]): MarkupNode[] => nodes.flatMap((node) => [node, ...descendants(node.children)]);
+    const nodes = descendants(renderToTree(createElement(MaterialsWorkspacePanel, { session: host.session, api: host.api })));
+    expect(nodes.find((node) => node.tag === "select" && node.props["value"] === "silk")).toBeDefined();
+    const mesh = nodes.find((node) => node.props["aria-label"] === "Assignment mesh name");
+    expect(mesh?.props).toMatchObject({ placeholder: "Mesh name (optional)", value: "Cushion" });
+    expect(typeof mesh?.props["className"]).toBe("string");
+    expect(nodes.some((node) => node.tag === "input" && node.props["value"] === "Upholstery")).toBe(true);
+    expect(nodes.some((node) => node.props["aria-label"] === "Thread cycles per UV")).toBe(true);
   } finally { host.dispose(); }
 });
 

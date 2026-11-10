@@ -34,7 +34,7 @@ describe("import graph", () => {
 
   test("a workspace package name resolves to its source; an npm package is neither an edge nor opaque", () => {
     const graph = buildImportGraph("/repo", ["games/llmville/packages/game/src/models.ts", "games/llmville/src/app.tsx"], {
-      readText: (path) => (path === "games/llmville/src/app.tsx" ? 'import { models } from "@llmville/game/models";\nimport React from "@jgengine/core/ui/jsx";' : ""),
+      readText: (path) => (path === "games/llmville/src/app.tsx" ? 'import { models } from "@llmville/game/models";\nimport view from "external-view-library";' : ""),
       tsconfigs: paths({ "": {} }),
       packages: [{ name: "@llmville/game", dir: "games/llmville/packages/game" }],
     });

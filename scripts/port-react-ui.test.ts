@@ -1,5 +1,12 @@
 import { expect, test } from "bun:test";
-import { portBrowserFixture, portSdkImports, portSource, stampJsxSource } from "./port-react-ui";
+import { portBrowserFixture, portProjectConfig, portSdkImports, portSource, stampJsxSource } from "./port-react-ui";
+
+test("game declarations select the renamed UI package and remain stable on rerun", () => {
+  const before = '{"id":"react","engine":["assets","core","react","shell"]}';
+  const after = '{"id":"react","engine":["assets","core","ui","shell"]}';
+  expect(portProjectConfig(before)).toBe(after);
+  expect(portProjectConfig(after)).toBe(after);
+});
 
 test("browser fixtures pack UI and stop borrowing React peers", () => {
   const source = '  for (const peer of ["react", "react-dom"]) await symlink(resolve("../react/node_modules", peer), `${scratch}/node_modules/${peer}`, "dir");\n  await installPublicPackages(scratch, ["core", "react", "shell"]);\n';

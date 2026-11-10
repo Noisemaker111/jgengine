@@ -53,12 +53,12 @@ test("a concept folder wins its layer, files named for it elsewhere are listed, 
   };
   const files = Object.keys(sources).map((path) => layerOf(path)!);
   const homes = locate(files, (file: CodeFile) => sources[file.path]!, queryTokens("camera shake"));
-  expect(homes.map((home) => [home.layer, home.home])).toEqual([["react", "packages/ui/src/camera/shake/"]]);
+  expect(homes.map((home) => [home.layer, home.home])).toEqual([["ui", "packages/ui/src/camera/shake/"]]);
   expect(homes[0]!.role).toBe("view");
   expect(homes[0]!.files.map((hit) => hit.path)).toEqual(["packages/ui/src/camera/shake/cameraShake.tsx", "packages/ui/src/camera/shake/readout.ts"]);
   expect(homes[0]!.elsewhere.map((hit) => hit.path)).toEqual(["packages/ui/src/cameraShakeLabel.tsx"]);
   const text = renderLocations(homes).join("\n");
-  expect(text).toContain("react (view)                packages/ui/src/camera/shake/");
+  expect(text).toContain("ui (view)                   packages/ui/src/camera/shake/");
   expect(text).toContain("also packages/ui/src/cameraShakeLabel.tsx  CameraShakeLabel");
 });
 
@@ -111,7 +111,7 @@ describe("this checkout answers where a concept lives in one call", () => {
       const homes = homeOf(query);
       expect(homes.get("core")).toBe(`packages/core/src/${folder}/`);
       expect(homes.get("shell") ?? "").not.toEndWith(`/${folder}/`);
-      expect(homes.get("react") ?? "").not.toEndWith(`/${folder}/`);
+      expect(homes.get("ui") ?? "").not.toEndWith(`/${folder}/`);
     }
   });
 

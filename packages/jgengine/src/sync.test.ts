@@ -92,6 +92,12 @@ describe("jgengine sync", () => {
     expect(() => planSync(dir, standalone)).toThrow('"editor": true needs "editor" in "engine"');
   });
 
+  test("rejects the retired UI package before sync can recreate its dependency", async () => {
+    const dir = await createdGame();
+    editConfig(dir, (config) => { config.engine = config.engine.map((name) => name === "ui" ? "react" : name); });
+    expect(() => planSync(dir, standalone)).toThrow('"engine" names the retired React package; use "ui"');
+  });
+
   test("a game from an older scaffold loses its harness copies and runs the CLI's shoot and drive", async () => {
     const dir = await createdGame();
     mkdirSync(join(dir, "scripts"), { recursive: true });

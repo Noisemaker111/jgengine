@@ -20,7 +20,7 @@ const indexHtml = (name: string) => `<!doctype html>
 
 const engineAliases = `[
           { find: /^@jgengine\\/core\\/(.*)$/, replacement: \`\${engineSrc("core")}/$1\` },
-          { find: /^@jgengine\\/react\\/(.*)$/, replacement: \`\${engineSrc("react")}/$1\` },
+          { find: /^@jgengine\\/ui\\/(.*)$/, replacement: \`\${engineSrc("ui")}/$1\` },
           { find: /^@jgengine\\/ws\\/(.*)$/, replacement: \`\${engineSrc("ws")}/$1\` },
           { find: /^@jgengine\\/shell\\/(.*)$/, replacement: \`\${engineSrc("shell")}/$1\` },
           { find: /^@jgengine\\/editor$/, replacement: \`\${engineSrc("editor")}/index.ts\` },

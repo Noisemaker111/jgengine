@@ -38,7 +38,7 @@ import {
 import { runSteps, type StepResult } from "./stepScheduler";
 import { buildImportGraph, specifiers, type ImportGraph } from "./import-graph";
 import { matchingShard, walkTestFiles } from "./test-shard";
-import { REPRESENTATIVE_GAME } from "./ci-scope";
+import { FRAME_GAMES, REPRESENTATIVE_GAME } from "./ci-scope";
 import { findCheck, jobChecks } from "./run-stages";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -192,7 +192,7 @@ describe("import resolution", () => {
   const graph = buildImportGraph(root, ["packages/shell/src/x.ts", "scripts/x.ts", "packages/core/src/world.ts", "packages/core/src/index.ts", "packages/core/src/world/terrain.ts", "packages/core/src/world/terrain.test.ts"], {
     readText: (path) =>
       ({
-        "packages/shell/src/x.ts": 'import { world } from "@jgengine/core/world";\nimport React from "@jgengine/core/ui/jsx";',
+        "packages/shell/src/x.ts": 'import { world } from "@jgengine/core/world";\nimport view from "external-view-library";',
         "scripts/x.ts": 'import * as core from "@jgengine/core";',
         "packages/core/src/world/terrain.test.ts": 'import { sample } from "./terrain";',
       })[path] ?? "",
@@ -956,7 +956,7 @@ describe("local boots", () => {
     const changed = ["packages/core/src/model/modelLoad.draw.ts"];
     const reaches = (...files: string[]): Set<string> => new Set([...changed, ...files]);
     expect(bootsFor(changed, reaches(`games/${REPRESENTATIVE_GAME}/src/main.tsx`, "games/odd-orbit/src/main.tsx"))).toEqual([REPRESENTATIVE_GAME]);
-    expect(bootsFor(changed, reaches("games/odd-orbit/src/main.tsx", "games/llmville/src/main.tsx"))).toEqual(["odd-orbit"]);
+    expect(bootsFor(changed, reaches("games/odd-orbit/src/main.tsx", "games/llmville/src/main.tsx"))).toEqual([FRAME_GAMES.find((game) => game === "odd-orbit" || game === "llmville")]);
     expect(bootsFor(changed, reaches("games/llmville/src/main.tsx"))).toEqual(["llmville"]);
     expect(bootsFor(changed, reaches("packages/shell/src/other.ts", "games/scripts/check.ts"))).toEqual([]);
     // A heavy path no import shows (a lockfile, a workflow) still boots the representative.
