@@ -232,7 +232,8 @@ export function parseAngle(text: string): number | null {
 }
 
 export interface WireLayer {
-  g: 0 | 1;
+  /** 0 linear, 1 radial, 2 conic (`a` is where it starts, stops are fractions of a turn). */
+  g: 0 | 1 | 2;
   a?: number;
   cx?: number;
   cy?: number;
@@ -422,6 +423,33 @@ export function parseGradient(text: string): WireLayer | { flat: number } | null
     }
     if (stops.some((s) => s.px)) return null;
     return { g: 0, a: angle, st: spreadStops(stops) };
+  }
+  if (kind === "conic-gradient" && !repeating) {
+    let from = 0;
+    let cx = 0.5;
+    let cy = 0.5;
+    let first = 0;
+    const head = args[0] ?? "";
+    if (parseColor(splitTop(head, " ")[0] ?? "") === null) {
+      first = 1;
+      const [turn = "", position = ""] = head.split("at ");
+      if (turn.startsWith("from ")) from = parseAngle(turn.slice(5).trim()) ?? 0;
+      const [x, y] = splitTop(position.trim(), " ");
+      const fraction = (token: string | undefined, fallback: number): number =>
+        token === undefined || token === "" ? fallback : token === "left" || token === "top" ? 0 : token === "right" || token === "bottom" ? 1 : token === "center" ? 0.5 : token.endsWith("%") ? parseFloat(token) / 100 : Number.NaN;
+      cx = fraction(x, 0.5);
+      cy = fraction(y, x === undefined || x === "" ? 0.5 : cx);
+      if (Number.isNaN(cx) || Number.isNaN(cy)) return null;
+    }
+    // Stops sit at angles; as fractions of the turn they read like any other stop list.
+    const parts = args.slice(first).map((part) =>
+      splitTop(part, " ")
+        .map((token) => (/^-?[\d.]+(deg|rad|grad|turn)$/.test(token) ? `${((parseAngle(token) ?? 0) / (Math.PI * 2)) * 100}%` : token))
+        .join(" "),
+    );
+    const stops = parseStops(parts);
+    if (stops === null || stops.length === 0 || stops.some((s) => s.px)) return null;
+    return { g: 2, a: from, cx, cy, st: spreadStops(stops) };
   }
   if (kind === "radial-gradient") {
     let cx = 0.5;

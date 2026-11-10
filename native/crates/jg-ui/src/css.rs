@@ -120,10 +120,10 @@ pub struct Layer {
     pub rf: Option<RadialSize>,
     #[serde(default)]
     pub circle: bool,
-    /// 0 linear, 1 radial.
+    /// 0 linear, 1 radial, 2 conic.
     #[serde(default)]
     pub g: u8,
-    /// Linear: CSS angle in radians.
+    /// Linear: CSS angle in radians. Conic: where the turn starts, in radians from the top.
     #[serde(default)]
     pub a: f32,
     /// Radial: centre in 0..1 of the box, radii in points.
@@ -549,9 +549,56 @@ fn layout(b: &Box_, s: &mut Style) {
     }
 }
 
-fn paint_layer(e: El, l: &Layer, size: [f32; 2]) -> El {
+/// A conic gradient as wedges round its centre, each in the colour at its middle: a ring that
+/// fills with a value, a pie, a dial. On a round box the wedges end on the circle; otherwise at
+/// the box's edges.
+fn conic_shape(l: &Layer, radii: Option<[f32; 4]>, size: [f32; 2]) -> rune::Shape {
+    let [w, h] = size;
+    let mut shape = rune::Shape::new();
+    if w <= 0.0 || h <= 0.0 || l.st.is_empty() {
+        return shape;
+    }
+    let stops: Vec<(f32, Color)> = l.st.iter().map(|(t, c)| (*t, c.0)).collect();
+    let centred = (l.cx - 0.5).abs() < 0.01 && (l.cy - 0.5).abs() < 0.01;
+    let round = centred && radii.is_some_and(|r| r.iter().all(|v| *v >= w.min(h) * 0.5 - 0.5));
+    let (cx, cy) = (l.cx * w, l.cy * h);
+    let (rx, ry) = if round { (w * 0.5, h * 0.5) } else { (w + h, w + h) };
+    // Wedge edges: every six degrees, and exactly where a stop sits so a hard edge stays hard.
+    let mut edges: Vec<f32> = (0..=60).map(|i| i as f32 / 60.0).collect();
+    edges.extend(stops.iter().map(|s| s.0.clamp(0.0, 1.0)));
+    edges.sort_by(|a, b| a.total_cmp(b));
+    edges.dedup_by(|a, b| (*a - *b).abs() < 1e-4);
+    let at = |t: f32| {
+        let angle = l.a + t * std::f32::consts::TAU;
+        [cx + rx * angle.sin(), cy - ry * angle.cos()]
+    };
+    for pair in edges.windows(2) {
+        let color = stop_color(&stops, (pair[0] + pair[1]) * 0.5);
+        if color.a <= 0.0 {
+            continue;
+        }
+        // Opaque wedges overlap by a hair so no seam shows between them.
+        let lap = if color.a >= 1.0 { 0.002 } else { 0.0 };
+        let mut wedge = vec![[cx, cy], at(pair[0] - lap), at(pair[1] + lap)];
+        if !round {
+            wedge = cut(&wedge, [1.0, 0.0], 0.0, false);
+            wedge = cut(&wedge, [1.0, 0.0], w, true);
+            wedge = cut(&wedge, [0.0, 1.0], 0.0, false);
+            wedge = cut(&wedge, [0.0, 1.0], h, true);
+        }
+        if wedge.len() >= 3 {
+            shape = shape.fill(wedge, color);
+        }
+    }
+    shape
+}
+
+fn paint_layer(e: El, l: &Layer, radii: Option<[f32; 4]>, size: [f32; 2]) -> El {
     if let Some(c) = l.flat {
         return e.fill(c.0);
+    }
+    if l.g == 2 {
+        return e.shape(conic_shape(l, radii, size));
     }
     let stops: Vec<(f32, Color)> = l.st.iter().map(|(t, c)| (*t, c.0)).collect();
     if l.g != 1 {
@@ -589,7 +636,7 @@ fn size_of(id: u32) -> Option<[f32; 2]> {
 
 /// Whether this box's paint depends on its own laid-out size.
 fn needs_size(b: &Box_) -> bool {
-    b.ly.iter().any(|l| (l.g == 1 && l.flat.is_none()) || l.bs.is_some())
+    b.ly.iter().any(|l| (l.g != 0 && l.flat.is_none()) || l.bs.is_some())
         || b.tf.is_some_and(|t| t[4] != 0.0 || t[5] != 0.0)
         || b.rad.is_some_and(|r| r.iter().any(|v| *v < 0.0))
         || b.svg.is_some()
@@ -705,8 +752,8 @@ fn clipped_paint(b: &Box_, size: [f32; 2], poly: &[[f32; 2]]) -> rune::Shape {
             continue;
         }
         let stops: Vec<(f32, Color)> = l.st.iter().map(|(t, c)| (*t, c.0)).collect();
-        if l.g == 1 {
-            // A radial gradient inside a clipped box paints as its middle colour.
+        if l.g != 0 {
+            // A radial or conic gradient inside a clipped box paints as its middle colour.
             let mid = stop_color(&stops, 0.5);
             if mid.a > 0.0 {
                 shape = shape.fill(poly.clone(), mid);
@@ -745,11 +792,11 @@ fn clipped_paint(b: &Box_, size: [f32; 2], poly: &[[f32; 2]]) -> rune::Shape {
 
 /// The sheet one background layer paints on: the whole box, or the piece its size and position give.
 fn layer_sheet(l: &Layer, radii: Option<[f32; 4]>, size: [f32; 2]) -> El {
-    let Some(bs) = l.bs else { return paint_layer(sheet(radii), l, size) };
+    let Some(bs) = l.bs else { return paint_layer(sheet(radii), l, radii, size) };
     let (w, h) = (bs[0] + bs[1] * size[0], bs[2] + bs[3] * size[1]);
     let bp = l.bp.unwrap_or([0.0; 4]);
     let (x, y) = (bp[0] + bp[1] * (size[0] - w), bp[2] + bp[3] * (size[1] - h));
-    paint_layer(el().pin(Some(x), Some(y), None, None).size(w.max(0.0), h.max(0.0)), l, [w, h])
+    paint_layer(el().pin(Some(x), Some(y), None, None).size(w.max(0.0), h.max(0.0)), l, None, [w, h])
 }
 
 /// Corner radii that keep a picture inside a polygon cut from a box: none where the polygon reaches
@@ -926,7 +973,7 @@ pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
         e = if (first.flat.is_some() && b.bg.is_some()) || first.bs.is_some() {
             e.child(layer_sheet(first, radii, size))
         } else {
-            paint_layer(e, first, size)
+            paint_layer(e, first, radii, size)
         };
     }
     for l in layers {
