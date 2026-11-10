@@ -5,7 +5,7 @@
  */
 
 import type { Props } from "./element";
-import type { Host } from "./reconciler";
+import { flushSync, type Host } from "./reconciler";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -171,7 +171,7 @@ function setListener(node: Element, name: string, handler: unknown): void {
         wrapped.isDefaultPrevented = () => event.defaultPrevented;
         wrapped.isPropagationStopped = () => event.cancelBubble;
       }
-      listener.handler(event);
+      flushSync(() => listener.handler(event));
       if (state.controlled) queueMicrotask(() => restoreControlled(node, state));
     },
   };

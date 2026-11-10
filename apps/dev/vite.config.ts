@@ -3,13 +3,13 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
 import { defineConfig, searchForWorkspaceRoot, type Plugin, type ProxyOptions } from "vite";
 
 import { parseDevProxyTable } from "../../packages/core/src/data/devProxy";
 import { tunableDiscoveryPlugin } from "../../packages/core/src/devtools/transformTunables";
 import { devServerMarkerPlugin } from "../../scripts/devServerMarker";
 import { startTextureCompression } from "../../games/shared/provisionAssets";
+import { engineUiAliases } from "../../games/shared/viteEngineSource";
 import { viteJgUiWasm } from "../../games/shared/viteJgUiWasm";
 import { devReportPlugin } from "./devReportPlugin";
 import { gamePublicPlugin } from "./gamePublicPlugin";
@@ -97,8 +97,10 @@ const devProxy: Record<string, string | ProxyOptions> = Object.fromEntries(
 );
 
 export default defineConfig({
-  plugins: [devServerMarkerPlugin({ kind: "runner" }), tunableDiscoveryPlugin(), devSave(servedGameDir), devReportPlugin(), gamePublicPlugin(servedGameDir, gamesDir), textureCompression(), viteJgUiWasm(), react(), tailwindcss()],
+  plugins: [devServerMarkerPlugin({ kind: "runner" }), tunableDiscoveryPlugin(), devSave(servedGameDir), devReportPlugin(), gamePublicPlugin(servedGameDir, gamesDir), textureCompression(), viteJgUiWasm(), tailwindcss()],
   clearScreen: false,
+  // The engine UI runtime these names alias to is source: one module instance, never pre-bundled.
+  optimizeDeps: { exclude: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "react-dom/client", "react-dom/server"] },
   build: {
     target: "es2022",
   },
@@ -116,6 +118,7 @@ export default defineConfig({
     dedupe: ["react", "react-dom", "three"],
     extensions: [".ts", ".tsx", ".mjs", ".js", ".jsx", ".json"],
     alias: [
+      ...engineUiAliases(),
       { find: /^@\/components\/ui\/(.*)$/, replacement: `${registryUi}/$1` },
       ...packageAliases,
       { find: /^@jgengine-examples\/studios$/, replacement: `${studios}/index.ts` },

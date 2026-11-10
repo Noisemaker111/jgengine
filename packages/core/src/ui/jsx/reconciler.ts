@@ -227,6 +227,7 @@ export class Root<N = unknown> {
     this.live = live;
     this.fiber = new Fiber<N>(this, "root", null, null, "");
     this.fiber.node = container;
+    if (live) liveRoots.add(this as Root<unknown>);
   }
 
   nextId(): string {
@@ -246,6 +247,7 @@ export class Root<N = unknown> {
     this.fiber.dirty = true;
     this.dirty.add(this.fiber);
     this.flush();
+    liveRoots.delete(this as Root<unknown>);
   }
 
   schedule(fiber: Fiber<N>): void {
@@ -258,7 +260,7 @@ export class Root<N = unknown> {
       batchedRoots.add(this as Root<unknown>);
       return;
     }
-    queueMicrotask(() => {
+    afterTask(() => {
       if (this.scheduled) this.flush();
     });
   }
@@ -721,6 +723,35 @@ function reportError(error: unknown): void {
 
 // ------------------------------------------------------------------ batching
 
+/**
+ * State set outside an input handler applies in its own task, after the browser has finished
+ * what it was delivering (a resize or intersection observer, a timer, a network reply), so a
+ * render never runs inside that delivery. Input handlers apply theirs at once (`flushSync`).
+ */
+const taskQueue: (() => void)[] = [];
+let taskChannel: { post: () => void } | null = null;
+
+function runTasks(): void {
+  const tasks = taskQueue.splice(0);
+  for (const task of tasks) guard(task);
+}
+
+function afterTask(task: () => void): void {
+  taskQueue.push(task);
+  if (taskQueue.length > 1) return;
+  if (taskChannel === null) {
+    const Channel = (globalThis as { MessageChannel?: new () => { port1: { onmessage: (() => void) | null }; port2: { postMessage: (value: null) => void } } }).MessageChannel;
+    if (Channel === undefined) {
+      taskChannel = { post: () => void setTimeout(runTasks, 0) };
+    } else {
+      const channel = new Channel();
+      channel.port1.onmessage = runTasks;
+      taskChannel = { post: () => channel.port2.postMessage(null) };
+    }
+  }
+  taskChannel.post();
+}
+
 let batchDepth = 0;
 const batchedRoots = new Set<Root<unknown>>();
 
@@ -742,11 +773,6 @@ export function flushSync<T>(fn?: () => T): T | undefined {
 }
 
 const liveRoots = new Set<Root<unknown>>();
-
-export function trackRoot(root: Root<unknown>, live: boolean): void {
-  if (live) liveRoots.add(root);
-  else liveRoots.delete(root);
-}
 
 /** Test helper: run `fn` (sync or async) and settle every mounted root before resolving. */
 export function act<T>(fn: () => T | Promise<T>): Promise<T> & { then: Promise<T>["then"] } {
