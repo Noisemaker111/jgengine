@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-ui
 import { useState, type ReactNode } from "@jgengine/core/ui/jsx";
 

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 export function ms(value: number): string {
   return `${value.toFixed(1)}ms`;
 }

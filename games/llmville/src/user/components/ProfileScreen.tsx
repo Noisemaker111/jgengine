@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { ScreenLink } from "../../screens/screenRouter";
 import { Icon } from "../../kit/icons";
 

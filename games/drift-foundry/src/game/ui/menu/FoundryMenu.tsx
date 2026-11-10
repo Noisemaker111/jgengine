@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { type ReactNode, useEffect, useState } from "@jgengine/core/ui/jsx";
 import { parkedRunMetres } from "../../run/progress";
 import { ContinuePane, CreditsPane } from "@jgengine/core/menu/gameMenuSaves.view";

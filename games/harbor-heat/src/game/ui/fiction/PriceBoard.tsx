@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useMemo, type ReactNode } from "@jgengine/core/ui/jsx";
 import { useDisplayProfile } from "@jgengine/core/ui/display.view";
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";

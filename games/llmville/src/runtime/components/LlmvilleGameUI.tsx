@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { navigate } from "../../screens/screenRouter";
 import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { Component, createContext, useContext, useEffect, useId, useLayoutEffect, useState, type ErrorInfo, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";

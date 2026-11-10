@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useRef, useState } from "@jgengine/core/ui/jsx";
 import type { PointerEvent } from "@jgengine/core/ui/jsx/dom.view";
 

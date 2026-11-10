@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";

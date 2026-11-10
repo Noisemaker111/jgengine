@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useRef, type ReactElement } from "@jgengine/core/ui/jsx";
 
 import { devtools } from "@jgengine/core/devtools/devtools";

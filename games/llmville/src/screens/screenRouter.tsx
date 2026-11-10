@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useSyncExternalStore } from "@jgengine/core/ui/jsx";
 import type { AnchorHTMLAttributes } from "@jgengine/core/ui/jsx/dom.view";
 import { menuStackReducer } from "@jgengine/core/menu/menuRouter.view";

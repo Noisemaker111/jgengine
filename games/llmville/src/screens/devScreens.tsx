@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { ScreenLink, useScreenLocation } from "./screenRouter";
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 

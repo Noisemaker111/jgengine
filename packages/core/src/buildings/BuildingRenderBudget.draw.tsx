@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { createContext, useContext, useMemo, useRef, type ReactNode, type RefObject } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 

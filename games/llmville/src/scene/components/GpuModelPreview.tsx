@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { HardwareModelId } from "@llmville/game/infrastructure/catalog";
 import { getHardwareImagePath } from "@llmville/game/world/worldModelCatalog";
 

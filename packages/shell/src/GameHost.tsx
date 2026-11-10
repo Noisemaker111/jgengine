@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { lazy, Suspense, useEffect, useMemo, useState, type ComponentType } from "@jgengine/core/ui/jsx";
 
 import type { EditorCatalogDefinition } from "@jgengine/core/editor/types";

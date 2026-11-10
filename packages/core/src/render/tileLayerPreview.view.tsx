@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useRef } from "@jgengine/core/ui/jsx";
 
 /** Deterministic canvas-backed tile-layer fixture for textured tile presentation evidence. */

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useSyncExternalStore, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { AchievementTracker, AchievementView } from "@jgengine/core/achievements/achievements";

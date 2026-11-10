@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useDisplayProfile } from "@jgengine/react";
 
 const chamfer = (cut: number) =>

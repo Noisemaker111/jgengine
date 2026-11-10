@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 export type RarityTierName = "common" | "uncommon" | "rare" | "epic" | "legendary";

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { AssetCatalog } from '@jgengine/core/scene/assetCatalog';
 import { IsolatedEntityModel } from '@jgengine/core/model/SceneModels.draw';
 import { SceneObjectGroup } from '@jgengine/core/frame/useEngineDraw.draw';

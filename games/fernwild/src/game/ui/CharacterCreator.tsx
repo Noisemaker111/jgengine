@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 import { WorldMapSurface } from "@jgengine/core/map/map.view";
 import type { MarkerKindStyle, MarkerView } from "@jgengine/core/map/markers";

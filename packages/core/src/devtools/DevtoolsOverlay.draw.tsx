@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useState, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";

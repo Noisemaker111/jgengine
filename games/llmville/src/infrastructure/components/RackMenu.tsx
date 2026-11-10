@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { useCallback, useEffect, useMemo } from "@jgengine/core/ui/jsx";
 import type { RackHardwareMoveSource, RackHardwareMoveTarget } from "../rackHardwareSession";

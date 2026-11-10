@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { TerritoryOverlay } from "@jgengine/core/placement/TerritoryOverlay.view";
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 

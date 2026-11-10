@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { Notice, NoticeFeed, NoticeTone } from "@jgengine/core/notifications/notices";

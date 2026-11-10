@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 /**
  * Runner registries: the `import.meta.glob` discovery that turns every
  * `games/*` folder into lazy game/preview/editor loaders, the built-in demo

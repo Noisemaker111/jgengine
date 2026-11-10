@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { CreatorPolicy } from "@jgengine/core/editor/creatorStorage";
 import { useState } from "@jgengine/core/ui/jsx";
 import type { EditorSession } from "@jgengine/core/editor/commands";

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { StoragePanel } from "./StoragePanel";
 import type { BuildMenuTabId, BuildPlacementPreview, StorageItem } from "@llmville/game/build/build";
 import { STARTER_RACK_CATALOG_ID } from "@llmville/game/infrastructure/catalog";

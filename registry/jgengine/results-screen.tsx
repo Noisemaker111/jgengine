@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { Fragment } from "@jgengine/core/ui/jsx";
 
 import { MenuList, type MenuEntry } from "@/components/ui/menu-list";

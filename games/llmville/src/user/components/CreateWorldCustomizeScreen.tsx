@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { ScreenLink } from "../../screens/screenRouter";
 import { Icon } from "../../kit/icons";
 import { useCallback, useEffect, useRef, useState, type RefObject } from "@jgengine/core/ui/jsx";

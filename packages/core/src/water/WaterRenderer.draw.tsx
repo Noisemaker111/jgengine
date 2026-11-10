@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useCallback, useMemo } from "@jgengine/core/ui/jsx";
 
 import { resolveWaterObject, type ResolvedWater } from "@jgengine/core/water/waterKind";

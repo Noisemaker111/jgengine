@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-ui
 import { useRef, type ReactNode } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";

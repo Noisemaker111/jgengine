@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import { reportTextureLoadError } from "@jgengine/core/devtools/textureErrors";
 import { useRef } from "@jgengine/core/ui/jsx";

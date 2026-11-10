@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
 import { useInsertionEffect, type ReactNode } from "@jgengine/core/ui/jsx";
 import { loadGameFonts } from "@jgengine/core/ui/fonts.view";

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 /**
  * Scripting workspace: lists every document object with an authored behavior trigger, selects them
  * for framing/inspection, and reuses {@link TriggerInspector} for edits. Writes go only through

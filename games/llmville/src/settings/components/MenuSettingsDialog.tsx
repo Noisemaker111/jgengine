@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { navigate, useScreenLocation } from "../../screens/screenRouter";
 import { Icon } from "../../kit/icons";
 import { createPortal } from "@jgengine/core/ui/jsx/client.view";

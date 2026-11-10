@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { afterEach, describe, expect, test } from "bun:test";
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 

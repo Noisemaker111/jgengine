@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { ReactNode, Ref } from "@jgengine/core/ui/jsx";
 import type { ButtonHTMLAttributes } from "@jgengine/core/ui/jsx/dom.view";
 

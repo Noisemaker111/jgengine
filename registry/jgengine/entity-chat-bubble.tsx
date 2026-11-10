@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEntityChatBubble } from "@jgengine/core/chat/chatBubbles.view";
 
 import { ChatBubble } from "@/components/ui/chat-bubble";

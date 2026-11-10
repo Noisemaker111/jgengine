@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-world
 import * as THREE from "three";
 import { AdditiveBlending } from "three";

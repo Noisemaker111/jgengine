@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useCallback, useInsertionEffect, useRef, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 import type { KeyboardEvent, PointerEvent } from "@jgengine/core/ui/jsx/dom.view";
 import { memoView } from "./memoView.view";

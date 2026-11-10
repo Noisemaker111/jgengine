@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { AnimCondition, AnimParamValue, AnimState, AnimTransition } from "@jgengine/core/anim/animGraph";

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import ReactDOM from "@jgengine/core/ui/jsx/client.view";
 
 import { LlmvilleApp } from "./app";

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import { SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";

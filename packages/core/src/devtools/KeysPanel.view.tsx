@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { bindingLabel, type ActionCodes, type ActionCodesMap } from "@jgengine/core/input/actionBindings";
 
 interface KeybindRow {

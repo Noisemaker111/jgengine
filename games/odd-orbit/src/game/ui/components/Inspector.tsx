@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { HudButton } from "@jgengine/core/hud/hudButton.view";
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { useRef } from "@jgengine/core/ui/jsx";

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import "./style.css";
 import { createRoot } from "@jgengine/core/ui/jsx/client.view";
 import { GameHost } from "@jgengine/shell/GameHost";

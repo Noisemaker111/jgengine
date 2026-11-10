@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import * as THREE from "three";
 import type { CombatVfxEvent, VfxKind } from "@jgengine/core/game/events";
 import { useGameContext } from "@jgengine/react/provider";

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 import { MinimapChrome, type MinimapChromeMarker } from "@jgengine/core/map/map.view";
 import { useGameContext } from "@jgengine/react/provider";

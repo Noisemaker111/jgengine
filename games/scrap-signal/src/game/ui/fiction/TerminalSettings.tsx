@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 import { GameCursor } from "@jgengine/core/ui/cursor.view";
 import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";

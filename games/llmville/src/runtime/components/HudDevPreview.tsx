@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { JoinGate } from "@jgengine/core/multiplayer/JoinGate.view";
 import { WorldChat } from "../../chat/components/WorldChat";
 import PlacementControls from "./PlacementController";

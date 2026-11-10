@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import * as THREE from "three";
 import type { VfxRef } from "@jgengine/core/game/events";
 import type { VfxInstanceState, CombatVfxInstanceEvent } from "@jgengine/core/vfx/vfxInstance";

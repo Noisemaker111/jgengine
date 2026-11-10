@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useReducer, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { CameraShakeController } from "@jgengine/core/camera/shake/cameraShake";

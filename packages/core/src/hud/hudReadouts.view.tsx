@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useRef, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { groundSpeed } from "@jgengine/core/scene/entityStore";

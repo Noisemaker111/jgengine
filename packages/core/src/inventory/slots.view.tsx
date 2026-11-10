@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 
 import { IconTreatment, type IconSchool } from "@jgengine/core/ui/icons/iconTreatment.view";

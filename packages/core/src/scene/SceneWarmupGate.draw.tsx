@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useRef, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import type { BootStep } from "@jgengine/core/boot/bootSequence";

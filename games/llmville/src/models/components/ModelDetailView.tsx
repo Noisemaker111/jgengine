@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { useEffect, useState } from "@jgengine/core/ui/jsx";
 

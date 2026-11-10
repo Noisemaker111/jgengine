@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { LeaderboardScope } from "@jgengine/core/leaderboard/leaderboard";
 import { useLeaderboard } from "@jgengine/react/hooks";
 

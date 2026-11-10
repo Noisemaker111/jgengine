@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import * as THREE from "three";
 
 import { caveDraw } from "../../engine-local/cave/Cave.draw";

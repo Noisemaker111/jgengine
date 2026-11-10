@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useMemo, useRef } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 

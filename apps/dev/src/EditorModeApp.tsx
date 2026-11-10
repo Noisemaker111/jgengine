@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useState, type ComponentType } from "@jgengine/core/ui/jsx";
 
 import type { EditorAppProps } from "@jgengine/editor/EditorApp";

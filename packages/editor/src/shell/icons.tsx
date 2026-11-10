@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { SVGProps } from "@jgengine/core/ui/jsx/dom.view";
 
 /**

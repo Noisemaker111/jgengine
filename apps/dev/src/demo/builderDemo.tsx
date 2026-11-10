@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import { useEngineHost } from "@jgengine/core/frame/engineHost.draw";
 import { StageDraw } from "@jgengine/core/stage/stageDraw.draw";

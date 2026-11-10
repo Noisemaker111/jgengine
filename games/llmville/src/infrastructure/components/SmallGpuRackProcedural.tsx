@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useRef, type RefObject } from "@jgengine/core/ui/jsx";
 import {
   BoxGeometry,

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useState } from "@jgengine/core/ui/jsx";
 import { HudCanvas, HudPanel, useDisplayProfile, useHudLayout } from "@jgengine/react";
 import { useGameFonts } from "@jgengine/core/ui/fonts.view";

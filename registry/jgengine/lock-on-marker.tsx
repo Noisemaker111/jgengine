@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { CSSProperties } from "@jgengine/core/ui/jsx";
 
 const SHADOW_FILTER = "drop-shadow(0 1px 1px rgba(0,0,0,0.9))";

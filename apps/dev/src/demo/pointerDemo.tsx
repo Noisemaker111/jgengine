@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { contextVerb } from "@jgengine/core/interaction/contextMenu";
 import {

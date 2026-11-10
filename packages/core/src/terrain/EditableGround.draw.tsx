@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import * as THREE from "three";
 import type { Aabb } from "@jgengine/core/world/geometry";
 import type { EditableTerrain } from "@jgengine/core/terrain/terraform";

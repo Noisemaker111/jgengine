@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useRef, type MutableRefObject } from "@jgengine/core/ui/jsx";
 import { SkeletonUtils } from "three-stdlib";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";

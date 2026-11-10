@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { AxesHelper } from "three";
 
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";

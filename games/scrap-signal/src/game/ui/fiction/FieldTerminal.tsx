@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 import { useDisplayProfile } from "@jgengine/react";
 import { GameCursor } from "@jgengine/core/ui/cursor.view";

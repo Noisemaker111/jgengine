@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 
 import { useAccessibilitySettings } from "@jgengine/core/settings/accessibilitySettings.view";

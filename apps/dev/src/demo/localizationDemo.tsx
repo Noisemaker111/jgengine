@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";

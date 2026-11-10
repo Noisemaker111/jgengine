@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect } from "@jgengine/core/ui/jsx";
 
 import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";

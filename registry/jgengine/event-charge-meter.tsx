@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { EventMeter } from "@jgengine/core/stats/eventMeter";
 import { useEventMeter } from "@jgengine/react/hooks";
 

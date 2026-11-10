@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect } from "@jgengine/core/ui/jsx";
 import { HudButton } from "@jgengine/core/hud/hudButton.view";
 import { useGame, useInventory } from "@jgengine/react/hooks";

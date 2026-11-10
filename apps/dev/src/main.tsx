@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 /**
  * Runner entry: pick one of the app roots from the URL and mount it. Each root is its own chunk,
  * so a game page downloads and parses the game runner only, not the picker, fixtures, previews

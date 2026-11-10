@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { cn } from "../../kit/cn";
 import { GpuModelPreview } from "../../scene/components/GpuModelPreview";
 import { getHardwareDefinition } from "@llmville/game/infrastructure/catalog";

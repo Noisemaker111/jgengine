@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { memo, useMemo } from "@jgengine/core/ui/jsx";
 
 import type { EditorSession } from "@jgengine/core/editor/index";

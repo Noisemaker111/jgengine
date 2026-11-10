@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { gameRegistry } from "./registries";
 
 const FEATURED_GAMES = ["scrap-signal", "brightway-park", "harbor-heat", "ember-command"] as const;

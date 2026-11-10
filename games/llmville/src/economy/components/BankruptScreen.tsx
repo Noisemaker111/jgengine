@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { Icon } from "../../kit/icons";
 
 import { BrandLogo } from "../../branding/components/BrandLogo";

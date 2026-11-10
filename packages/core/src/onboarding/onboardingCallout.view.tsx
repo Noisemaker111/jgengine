@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useLayoutEffect, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { hudType } from "@jgengine/core/hud/hudTokens";

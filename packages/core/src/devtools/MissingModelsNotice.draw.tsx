@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import { isProductionEnvironment } from "@jgengine/core/devtools/saveEndpoint";

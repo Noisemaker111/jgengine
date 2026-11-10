@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { StandaloneChatPanel, type StandaloneChatPanelProps } from "./standaloneChatPanel.view";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 import type { FormEvent } from "@jgengine/core/ui/jsx/dom.view";

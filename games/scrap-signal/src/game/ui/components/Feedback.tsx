@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { LevelUpFlash } from "@jgengine/core/ui/components.view";
 import { useRef } from "@jgengine/core/ui/jsx";
 import { useEntityStat, useGameStore, useGameTimeWindow, usePlayer } from "@jgengine/react/hooks";

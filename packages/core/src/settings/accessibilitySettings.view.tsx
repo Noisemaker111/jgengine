@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
 
 import {

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { Component, type ErrorInfo, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { GameConnectionErrorScreen } from "./GameConnectionErrorScreen";

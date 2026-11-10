@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 import { disposeObjectTree, SceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";

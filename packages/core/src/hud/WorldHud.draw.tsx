@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { HudOverlay } from "./hudOverlay.draw";
 import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useCallback, useEffect, useRef, useState } from "@jgengine/core/ui/jsx";
 import { Icon } from "../../kit/icons";
 import type { ChatMessage } from "@jgengine/core/chat/chat";

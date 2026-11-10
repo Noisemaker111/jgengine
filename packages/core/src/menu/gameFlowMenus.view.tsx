@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { continueGame, menuPane, newGame, openTitle, playGame, runPlayed, saveNow, showMenuPane, togglePause, type MenuPane } from "@jgengine/core/game/gameFlow";

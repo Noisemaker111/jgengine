@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useCallback, useState } from "@jgengine/core/ui/jsx";
 
 import { parseHardwareModelId } from "@llmville/game/infrastructure/catalog";

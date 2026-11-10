@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { MenuButton } from "@/components/ui/menu-button";
 
 const DEATH_OVERLAY_BACKGROUND = "radial-gradient(circle, transparent 30%, rgba(90,8,8,0.55) 80%), rgba(0,0,0,0.45)";

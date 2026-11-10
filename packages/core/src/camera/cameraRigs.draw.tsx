@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useRef, type MutableRefObject } from "@jgengine/core/ui/jsx";
 import { PerspectiveCamera, Quaternion, Vector3, type Camera } from "three";
 

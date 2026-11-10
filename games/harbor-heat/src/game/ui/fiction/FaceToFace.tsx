@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { createElement, useMemo } from "@jgengine/core/ui/jsx";
 import { useDisplayProfile } from "@jgengine/core/ui/display.view";
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";

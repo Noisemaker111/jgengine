@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { createContext, useContext, useEffect, useInsertionEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type Ref } from "@jgengine/core/ui/jsx";
 import type { ButtonHTMLAttributes, HTMLAttributes } from "@jgengine/core/ui/jsx/dom.view";
 

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { LlmvilleRemotePlayers } from "./agent/components/RemoteAgents";
 import { game as llmville } from "./game.config";
 import { HostedGameUI, hostedScenePart } from "./runtime/components/HostedWorld";

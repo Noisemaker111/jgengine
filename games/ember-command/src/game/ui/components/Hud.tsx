@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { type CSSProperties, type ReactNode, type RefObject, useLayoutEffect, useRef, useState, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import { HudCanvas, HudFade, HudPanel, useHudLayout } from "@jgengine/core/hud/hudLayout.view";

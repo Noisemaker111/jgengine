@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useMemo } from "@jgengine/core/ui/jsx";
 
 import { resolveGeneratorAsset } from "@jgengine/core/scene/assetGenerator";

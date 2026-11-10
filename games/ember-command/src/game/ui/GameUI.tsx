@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { type CSSProperties, useSyncExternalStore } from "@jgengine/core/ui/jsx";
 
 import { useGameFonts } from "@jgengine/core/ui/fonts.view";

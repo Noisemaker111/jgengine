@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/shell/gameKit";
 import type { TouchControlsConfig } from "@jgengine/core/input/touchScheme";
 

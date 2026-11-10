@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect } from "@jgengine/core/ui/jsx";
 import { HudSlots } from "@jgengine/core/hud/hudLayout.view";
 import { useGameFonts } from "@jgengine/core/ui/fonts.view";

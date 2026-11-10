@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { navigate, ScreenLink } from "../../screens/screenRouter";
 import { Icon } from "../../kit/icons";
 import type { ReactNode } from "@jgengine/core/ui/jsx";

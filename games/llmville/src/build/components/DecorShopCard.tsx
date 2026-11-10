@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { cn } from "../../kit/cn";
 import type { PlaceableBuildItemId } from "@llmville/game/build/catalog";
 import { getWorldModelAsset } from "@llmville/game/world/worldModelCatalog";

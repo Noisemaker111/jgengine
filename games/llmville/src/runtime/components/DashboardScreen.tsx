@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { ScreenLink } from "../../screens/screenRouter";
 
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";

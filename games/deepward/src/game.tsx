@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import "./style.css";
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "@jgengine/core/ui/jsx";
 import { useSceneSwap } from "@jgengine/core/render/sceneSwap.draw";

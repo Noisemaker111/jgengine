@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 // @skill jgengine-world
 import { useRef, type MutableRefObject, type RefObject } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";

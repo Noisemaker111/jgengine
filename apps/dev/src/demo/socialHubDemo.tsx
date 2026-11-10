@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useMemo, useState } from "@jgengine/core/ui/jsx";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";

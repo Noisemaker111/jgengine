@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { navigate } from "./screenRouter";
 import type { ScreenProps } from "./screens";
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";

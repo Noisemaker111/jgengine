@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 /**
  * Runtime renderer for the built-in `pole_line` scene kind: instanced poles (proxy cylinders, or a
  * GLB pole asset when one is named) plus merged tube geometry for the sagging cables. Registered by

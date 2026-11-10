@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 import type { EmitterConfig } from "@jgengine/core/vfx/particles";
 import { useGameContext } from "@jgengine/react/provider";

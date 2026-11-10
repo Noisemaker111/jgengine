@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useMemo } from "@jgengine/core/ui/jsx";
 import { defineGame, defineSystem } from "@jgengine/shell/gameKit";
 import { createAbilityKit } from "@jgengine/core/combat/abilityKit";

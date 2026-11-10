@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useLayoutEffect, useRef } from "@jgengine/core/ui/jsx";
 
 import { useFrameJoin } from "./engineHost.draw";

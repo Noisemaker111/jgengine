@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useId } from "@jgengine/core/ui/jsx";
 
 /** A ragged disc of poured wax: a ring of 28 points pushed in and out by a fixed jitter, so every seal

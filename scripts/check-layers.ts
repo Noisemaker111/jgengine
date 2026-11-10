@@ -27,7 +27,9 @@ export interface LayerViolation {
 }
 
 const ENGINE_SOURCE = /^packages\/(core|react|shell)\/src\/.+\.tsx?$/;
-const EXEMPT = /\.(test|spec)\.tsx?$|(^|\/)testFixtures(\.tsx?$|\/)|\.d\.ts$/;
+// The two JSX entry files keep the names every compiler asks for (`<jsxImportSource>/jsx-runtime`),
+// so they cannot carry a `.view` suffix; all they take from a view file is the JSX type namespace.
+const EXEMPT = /\.(test|spec)\.tsx?$|(^|\/)testFixtures(\.tsx?$|\/)|\.d\.ts$|^packages\/core\/src\/ui\/jsx\/jsx-(dev-)?runtime\.ts$/;
 
 /** The layer a file belongs to, or null when the rules do not apply to it. */
 export function layerOfFile(path: string): Layer | null {
@@ -51,7 +53,8 @@ function layerOfModule(packageName: string, subpath: string): Layer {
 
 /** What one import specifier reaches, seen from `file`. */
 export function reachOf(file: string, specifier: string): Reach {
-  if (/^(react|react-dom)(\/|$)/.test(specifier)) return "react";
+  // UI code is written against the engine UI runtime; a model file reaches for neither it nor React.
+  if (/^(react|react-dom)(\/|$)/.test(specifier) || /^@jgengine\/core\/ui\/jsx(\/|$)/.test(specifier)) return "react";
   if (/^(three|three-stdlib)(\/|$)/.test(specifier)) return "three";
   const engine = /^@jgengine\/([^/]+)(?:\/(.+))?$/.exec(specifier);
   if (engine !== null) {

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useRef, type CSSProperties, type ReactNode, type Ref } from "@jgengine/core/ui/jsx";
 import type { HTMLAttributes } from "@jgengine/core/ui/jsx/dom.view";
 

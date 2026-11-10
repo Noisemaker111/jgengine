@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { runDialogueChoice, useOpenDialogueId, type DialogueDef } from "@jgengine/core/ui/components.view";
 import { useCurrency, useEntityStat, useGame, useGameStore, useInventory, usePlayer } from "@jgengine/react/hooks";

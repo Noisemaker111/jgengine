@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useSyncExternalStore, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { LibraryEntry } from "@jgengine/assets/library/assetLibrary";

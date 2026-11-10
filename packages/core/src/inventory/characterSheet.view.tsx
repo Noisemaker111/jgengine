@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { CSSProperties, ReactNode } from "@jgengine/core/ui/jsx";
 
 import { EquipmentSlots, type SlotItem } from "@jgengine/core/inventory/slots.view";

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useMemo, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 import { createPortal } from "@jgengine/core/ui/jsx/client.view";
 

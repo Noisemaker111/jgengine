@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "@jgengine/core/ui/jsx";
 import "../../style.css";
 import { SettingsTrigger, useBrowserSuspension } from "@jgengine/react";

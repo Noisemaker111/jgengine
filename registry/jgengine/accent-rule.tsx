@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 export function AccentRule({ width = 120, className }: { width?: number | string; className?: string }) {
   return (
     <span

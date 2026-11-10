@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { ReplayRecorder } from "@jgengine/core/replay/replayRecording";
 import { useEffect, useMemo, useRef } from "@jgengine/core/ui/jsx";
 

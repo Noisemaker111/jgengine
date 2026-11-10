@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { CSSProperties } from "@jgengine/core/ui/jsx";
 
 import { HudFrame } from "./hudFrame.view";

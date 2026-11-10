@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useState } from "@jgengine/core/ui/jsx";
 
 import { previewFixtureNames, resolvePreviewFixture } from "@jgengine/react";

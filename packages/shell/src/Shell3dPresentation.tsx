@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { biomeBandsForSky } from "@jgengine/core/sky/skyBands";
 import { CharacterMotionContext, noteGameCharacterMotion } from "@jgengine/core/anim/characterMotion.draw";
 import { lightingHasSoftShadows } from "@jgengine/core/lighting/softShadows";

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { headingToBearing, projectToMinimap, type MinimapView } from "@jgengine/core/map/minimap";
 import type { WorldBlip } from "@jgengine/core/worldModel/worldModel";

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { createElement, useCallback, useLayoutEffect, useRef, useSyncExternalStore, type ReactElement, type ReactNode } from "@jgengine/core/ui/jsx";
 import type { HTMLAttributes } from "@jgengine/core/ui/jsx/dom.view";
 import { memoView } from "./memoView.view";

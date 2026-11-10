@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { PerkLine } from "../../handroll";
 import { Plate, Stamp } from "../fiction/kit";
 

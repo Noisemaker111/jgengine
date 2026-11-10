@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useCurrency, useEntityStat, useGame, usePlayer } from "@jgengine/react/hooks";
 import { respecCost } from "../../commands";
 import { useStore } from "@jgengine/react/store";

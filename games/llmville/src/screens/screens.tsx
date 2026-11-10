@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { Suspense, lazy, useEffect, type ComponentType, type ReactNode } from "@jgengine/core/ui/jsx";
 import { NoticeStack } from "@jgengine/core/notifications/notices.view";
 import { UiKitRoot } from "@jgengine/core/ui/kit/uiKitRoot.view";

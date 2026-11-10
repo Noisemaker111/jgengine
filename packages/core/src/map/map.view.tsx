@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useImperativeHandle, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type RefObject } from "@jgengine/core/ui/jsx";
 import { useFrameBind, useLiveSelect } from "@jgengine/core/ui/liveBind.view";
 import { isLive, readLive, type Live } from "@jgengine/core/ui/liveValue";

@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { AnchoredOverlay } from "@jgengine/core/hud/hudOverlay.draw";
 

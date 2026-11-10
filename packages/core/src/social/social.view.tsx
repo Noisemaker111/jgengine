@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useState, type ReactNode } from "@jgengine/core/ui/jsx";
 import type { FormEvent } from "@jgengine/core/ui/jsx/dom.view";
 import type {

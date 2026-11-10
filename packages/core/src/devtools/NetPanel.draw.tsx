@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { devtools } from "@jgengine/core/devtools/devtools";
 
 import type { ShellMultiplayer } from "../multiplayer/multiplayer.draw";

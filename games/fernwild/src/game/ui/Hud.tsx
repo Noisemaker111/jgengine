@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useMemo, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 import { KillFeed } from "@jgengine/core/feed/killFeed.view";
 import { libraryIconUrl } from "@jgengine/assets/library/libraryIcons";

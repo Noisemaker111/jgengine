@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { HudPanel } from "@/components/ui/hud-panel";
 
 export interface RankEntry {

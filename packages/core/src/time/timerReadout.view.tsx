@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useReducer, useRef, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { TimerRead, TimerSet } from "@jgengine/core/time/timerSet";

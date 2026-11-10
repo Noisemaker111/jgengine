@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useMemo, useRef, type ComponentType, type MutableRefObject } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
 import type { CameraWeaponView, FirstPersonCameraConfig } from "@jgengine/core/game/playableGame";

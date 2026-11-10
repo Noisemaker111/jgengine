@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 /**
  * Full-screen overlay for the rack hardware menu (E key near rack).
  */

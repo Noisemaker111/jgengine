@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { createElement, useEffect, useRef, useState, type CSSProperties, type ReactNode, type Ref } from "@jgengine/core/ui/jsx";
 import { slotText, type SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 import { GameCursor } from "@jgengine/core/ui/cursor.view";

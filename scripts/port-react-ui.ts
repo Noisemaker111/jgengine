@@ -225,6 +225,19 @@ export function portViteConfig(text: string): string {
     .replace(/\breact\(\)/g, "");
 }
 
+const JSX_PRAGMA = `/** @jsxImportSource ${RUNTIME} */`;
+
+/**
+ * Every `.tsx` file names its JSX source itself, so it compiles against the engine runtime under any
+ * bundler or tsconfig: a React, Next or TanStack host that bundles engine source keeps its own
+ * `jsxImportSource` for its own files.
+ */
+export function stampJsxSource(text: string): string {
+  if (text.includes("@jsxImportSource")) return text;
+  return `${JSX_PRAGMA}
+${text}`;
+}
+
 function run(argv: readonly string[]): number {
   const write = !argv.includes("--check");
   const results: FileResult[] = [];
@@ -247,6 +260,7 @@ function run(argv: readonly string[]): number {
     }
     if (/vite\.config\.m?ts$/.test(path)) edit(path, (text) => ({ text: portViteConfig(text), notes: [] }));
     edit(path, (text) => (/react/i.test(text) ? portSource(path, text) : { text, notes: [] }));
+    if (path.endsWith(".tsx")) edit(path, (text) => ({ text: stampJsxSource(text), notes: [] }));
   }
   for (const path of gitFiles(["*tsconfig*.json"])) {
     if (skipped(path) || REACT_HOSTS.some((prefix) => path.startsWith(prefix))) continue;

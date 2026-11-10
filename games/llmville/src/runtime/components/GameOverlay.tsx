@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 /**
  * In-world HUD: the kit's edge slots (resources, model warnings, news tweets), the tablet, hints and chat.
  * Walk/look input lives in the shell, not here.

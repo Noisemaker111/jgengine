@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useGameFonts } from "@jgengine/core/ui/fonts.view";
 import { useGameContext } from "@jgengine/react/provider";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/shell/gameKit";

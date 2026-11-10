@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import type { ReactNode } from "@jgengine/core/ui/jsx";
 import { RuneLayer, runeUiEnabled } from "@jgengine/core/ui/rune/runeLayer.view";
 

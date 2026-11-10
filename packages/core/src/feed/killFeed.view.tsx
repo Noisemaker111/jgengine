@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useCallback, useRef, useSyncExternalStore, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import type { EventTicker, EventTickerView } from "@jgengine/core/feed/eventTicker";
