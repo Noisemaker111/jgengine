@@ -27,7 +27,7 @@ const centre = (pick: string): string => `(() => {
   return box.width > 0 && box.height > 0 ? [box.x + box.width / 2, box.y + box.height / 2] : null;
 })()`;
 
-const named = (label: string): string => `(() => {
+const named = (label: string): string => String.raw`(() => {
   const want = ${JSON.stringify(label.toLowerCase())};
   // A menu row's number is not part of its name, and of two controls with one name the later in
   // the page wins: a menu mounts after the HUD it covers.
@@ -42,7 +42,10 @@ const named = (label: string): string => `(() => {
 })()`;
 
 export async function uiTour<TProbe extends ProbeReadings>(f: BrowserFlow<TProbe>, steps: readonly TourStep[]): Promise<void> {
-  const tag = String(await f.page("(new URLSearchParams(location.search).get('ui') ?? 'dom') + '-' + innerWidth"));
+  if (await f.page("new URLSearchParams(location.search).get('ui') === 'rune'")) {
+    await f.waitForPage("window.__jgRuneStage?.unavailable === false && window.__jgRuneStage.ui?.rects.size > 0", { timeoutMs: 40000, note: "Rune produced a frame, without falling back to DOM" });
+  }
+  const tag = String(await f.page("(window.__jgRuneStage?.ui != null && !window.__jgRuneStage.unavailable ? 'rune' : 'dom') + '-' + innerWidth"));
   // `--param still=1` switches CSS animations off, to see the screens behind an entrance animation
   // the Rune mirror holds at its first frame. Without it the run shows what a player gets.
   await f.page("new URLSearchParams(location.search).get('still') === '1' && document.head.append(Object.assign(document.createElement('style'), { textContent: '*, *::before, *::after { animation: none !important; }' }))");
