@@ -26,6 +26,16 @@ At publish, rename this heading to the new version and mirror the entries into
 `packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
 -->
 
+## 0.55.1
+
+### Migrate
+
+- **Bump lockstep SDK packages to `^0.55.1`:** `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.52.1`; `@jgengine/github` is `0.42.1`.
+
+### Fixed
+
+- a save whose stored environment (wet surfaces, fires, flocks) no longer fits the game's authored world loads the rest of the save and starts the environment fresh, with a degraded: console line. On 0.55.0 it threw, so Harbor Heat showed a runtime error instead of its menu for anyone holding a save from 0.54.0.
+
 ## 0.55.0
 
 ### Migrate
