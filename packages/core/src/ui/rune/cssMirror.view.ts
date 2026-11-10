@@ -585,8 +585,10 @@ function boxOfStyle(element: Element, style: CSSStyleDeclaration, report: Mirror
     if (color !== null && colorAlpha(color) > 0) box["bc"] = color;
     if (new Set(sides.filter((_side, index) => (borderWidths[index] ?? 0) > 0)).size > 1) box["bcs"] = sides.map((side) => parseColor(side) ?? 0);
     const borderStyle = [style.borderTopStyle, style.borderRightStyle, style.borderBottomStyle, style.borderLeftStyle][widest];
+    const double = [style.borderTopStyle, style.borderRightStyle, style.borderBottomStyle, style.borderLeftStyle].reduce((mask, value, index) => value === "double" && (borderWidths[index] ?? 0) > 0 ? mask | (1 << index) : mask, 0);
+    if (double !== 0) box["dbl"] = double;
     if (borderStyle === "dashed" || borderStyle === "dotted") box["dash"] = borderStyle === "dotted" ? 1 : 2;
-    else if (borderStyle !== "solid") report.add(`border-style: ${borderStyle}`, element);
+    else if (borderStyle !== "solid" && borderStyle !== "double") report.add(`border-style: ${borderStyle}`, element);
   }
   const grow = parseFloat(style.flexGrow);
   if (grow > 0) box["fg"] = grow;

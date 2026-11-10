@@ -311,6 +311,9 @@ pub struct Box_ {
     /// Border widths: top, right, bottom, left.
     #[serde(default)]
     pub bw: Option<[f32; 4]>,
+    /// Bit per top/right/bottom/left side whose border has two strokes.
+    #[serde(default)]
+    pub dbl: u8,
     #[serde(default)]
     pub bc: Option<Rgba>,
     /// Each side's own border colour, `[top, right, bottom, left]`, when they differ.
@@ -993,6 +996,29 @@ fn sheet(radii: Option<[f32; 4]>) -> El {
     }
 }
 
+fn colored_border(mut e: El, widths: [f32; 4], colors: [Color; 4], radii: Option<[f32; 4]>, layout_border: [f32; 4]) -> El {
+    let mut drawn = [false; 4];
+    let mut first = true;
+    for side in 0..4 {
+        if drawn[side] || widths[side] <= 0.0 { continue; }
+        let color = colors[side];
+        let mut group = [0.0; 4];
+        for other in side..4 {
+            if !drawn[other] && colors[other] == color {
+                group[other] = widths[other];
+                drawn[other] = true;
+            }
+        }
+        if color.a <= 0.0 { continue; }
+        if first { e = e.border_sides(group, color); first = false; }
+        else {
+            let overlay = sheet(radii).pin(Some(-layout_border[3]), Some(-layout_border[0]), Some(-layout_border[1]), Some(-layout_border[2]));
+            e = e.child(overlay.border_sides(group, color).inert());
+        }
+    }
+    e
+}
+
 /// The byte offset of the `units`-th UTF-16 code unit of `text` (its end when `units` runs past it).
 fn byte_at(text: &str, units: usize) -> usize {
     let mut seen = 0;
@@ -1075,32 +1101,20 @@ pub fn build(b: &Box_, path: &str, s: &Ui, t: &rune::tok::Theme) -> El {
     if let Some(r) = radii {
         e = e.corners(r);
     }
-    if let (Some(w), Some(colors), false) = (b.bw, &b.bcs, skewed) {
-        // One border per colour: the first on the box, each other on a sheet over it.
-        let mut drawn = [false; 4];
-        let mut first = true;
-        for side in 0..4 {
-            if drawn[side] || w[side] <= 0.0 {
-                continue;
-            }
-            let color = colors[side].0;
-            let mut widths = [0.0; 4];
-            for other in side..4 {
-                if !drawn[other] && colors[other].0 == color {
-                    widths[other] = w[other];
-                    drawn[other] = true;
-                }
-            }
-            if color.a <= 0.0 {
-                continue;
-            }
-            if first {
-                e = e.border_sides(widths, color);
-                first = false;
-            } else {
-                e = e.child(sheet(radii).border_sides(widths, color).inert());
-            }
-        }
+    if let (Some(w), Some(c), false) = (b.bw, b.bc, skewed) && b.dbl != 0 {
+        let colors = b.bcs.map_or([c.0; 4], |colors| colors.map(|color| color.0));
+        let double = |side: usize| b.dbl & (1u8 << side) != 0 && w[side] >= 3.0;
+        let outer = std::array::from_fn(|side| if double(side) { (w[side] / 3.0).round().max(1.0) } else { w[side] });
+        let inner = std::array::from_fn(|side| if double(side) { outer[side] } else { 0.0 });
+        let inset = std::array::from_fn::<_, 4, _>(|side| if double(side) { w[side] - inner[side] } else { 0.0 });
+        e = colored_border(e, outer, colors, radii, w);
+        let inner_radii = radii.map(|radii| std::array::from_fn(|corner| (radii[corner] - inset[corner].max(inset[(corner + 3) % 4])).max(0.0)));
+        // Absolute children start at the padding box; these strokes belong in the border box.
+        let mut ring = el().pin(Some(inset[3] - w[3]), Some(inset[0] - w[0]), Some(inset[1] - w[1]), Some(inset[2] - w[2]));
+        if let Some(radii) = inner_radii { ring = ring.corners(radii); }
+        e = e.child(colored_border(ring, inner, colors, inner_radii, [0.0; 4]).inert());
+    } else if let (Some(w), Some(colors), false) = (b.bw, b.bcs, skewed) {
+        e = colored_border(e, w, colors.map(|color| color.0), radii, w);
     } else if let (Some(w), Some(c), true, false) = (b.bw, b.bc, dashed_sides(b), skewed) {
         // Rune dashes a border all the way round; a rule dashed on some sides only is drawn side by side.
         e = e.child(sheet(None).shape(dashes_shape(w, c.0, b.dash, size)).inert());
@@ -1357,6 +1371,30 @@ pub fn fields<'a>(nodes: &'a [crate::Node], out: &mut Vec<(String, &'a Input)>) 
 #[cfg(test)]
 mod live_value_tests {
     use super::*;
+
+    #[test]
+    fn a_double_border_has_two_strokes_and_preserves_its_full_layout_width() {
+        let mut state = Ui::default();
+        state.root = crate::spec::parse_spec(r#"{"children":[{"k":"x","id":1,"w":100,"h":50,"bw":[0,0,3,0],"bc":4294967295,"dbl":4}]}"#).unwrap().children;
+        let mut runtime = rune::Runtime::new(state, crate::build::view, (100.0, 50.0), rune::Env::new(true, 1.0));
+        runtime.frame(0.0);
+        let strokes: Vec<_> = runtime.instances.iter().filter(|quad| quad.border[3] > 0.0 && quad.params[0] > 0.0).collect();
+        assert_eq!(strokes.len(), 2, "double border stayed one thick stroke");
+        assert!(strokes.iter().all(|quad| quad.params[0] == 1.0));
+        assert!(strokes.iter().any(|quad| quad.rect == [0.0, 0.0, 100.0, 50.0]));
+        assert!(strokes.iter().any(|quad| quad.rect == [0.0, 0.0, 100.0, 48.0]), "inner stroke did not leave a one-point gap: {strokes:?}");
+    }
+
+    #[test]
+    fn differently_colored_border_sides_share_the_same_outer_box() {
+        let mut state = Ui::default();
+        state.root = crate::spec::parse_spec(r#"{"children":[{"k":"x","id":1,"w":100,"h":50,"bw":[2,3,4,5],"bc":4294967295,"bcs":[4278190335,16711935,65535,4294967295]}]}"#).unwrap().children;
+        let mut runtime = rune::Runtime::new(state, crate::build::view, (100.0, 50.0), rune::Env::new(true, 1.0));
+        runtime.frame(0.0);
+        let strokes: Vec<_> = runtime.instances.iter().filter(|quad| quad.border[3] > 0.0 && quad.params[0] > 0.0).collect();
+        assert_eq!(strokes.len(), 4);
+        assert!(strokes.iter().all(|quad| quad.rect == [0.0, 0.0, 100.0, 50.0]), "a differently colored side slipped inside the layout border: {strokes:?}");
+    }
 
     #[test]
     fn a_growing_flex_child_keeps_its_inner_scroller_bounded_and_heading_fixed() {
