@@ -240,8 +240,6 @@ export function parseAngle(text: string): number | null {
 }
 
 export interface WireLayer {
-  img?: string;
-  fit?: number;
   /** 0 linear, 1 radial, 2 conic (`a` is where it starts, stops are fractions of a turn). */
   g: 0 | 1 | 2;
   a?: number;
@@ -263,6 +261,40 @@ export interface WireLayer {
   /** A layer drawn once: its size and where it sits (`placeLayer`). */
   bs?: number[];
   bp?: number[];
+}
+
+/** A picture in the same ordered background stack as gradients. */
+export interface WireImageLayer {
+  url: string;
+  natural?: [number, number];
+  fit?: 1 | 2;
+  au: [boolean, boolean];
+  bs: number[];
+  bp: number[];
+  rp: [boolean, boolean];
+}
+
+/** Resolve the authored tile geometry; natural dimensions arrive separately when the image loads. */
+export function placeImageLayer(url: string, size: string, position: string, repeat: string): WireImageLayer | null {
+  const repeats = repeat.trim().split(/\s+/);
+  let rp: [boolean, boolean];
+  if (repeat === "repeat-x") rp = [true, false];
+  else if (repeat === "repeat-y") rp = [false, true];
+  else {
+    if (repeats.some(value => value !== "repeat" && value !== "no-repeat")) return null;
+    rp = [repeats[0] === "repeat", (repeats[1] ?? repeats[0]) === "repeat"];
+  }
+  const at = splitTop(position.trim(), " ");
+  const x = parseLengthPercent(at[0] ?? "0%");
+  const y = parseLengthPercent(at[1] ?? "50%");
+  if (x === null || y === null) return null;
+  const parts = splitTop(size.trim(), " ");
+  const au: [boolean, boolean] = [(parts[0] ?? "auto") === "auto", (parts[1] ?? "auto") === "auto"];
+  const fit = size === "cover" ? 1 : size === "contain" ? 2 : undefined;
+  const w = au[0] || fit !== undefined ? [0, 0] : parseLengthPercent(parts[0] ?? "auto");
+  const h = au[1] || fit !== undefined ? [0, 0] : parseLengthPercent(parts[1] ?? "auto");
+  if (w === null || h === null) return null;
+  return { url, au, bs: [...w, ...h], bp: [...x, ...y], rp, ...(fit === undefined ? {} : { fit }) };
 }
 
 const SIDE_ANGLES: Record<string, number> = {
@@ -683,6 +715,7 @@ export function parseShadows(text: string): WireShadow[] {
 
 export type WireTextShadow = [number, number, number, number];
 
+/** One ordered CSS subtree filter. */
 export interface WireFilter {
   /** 0 brightness, 1 blur, 2 alpha drop shadow. */
   kind: number;

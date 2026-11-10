@@ -12,7 +12,7 @@
 
 import { RuneUi, type RuneUiEvent, type RuneUiNode } from "../runeUi.view";
 import { isFrameBoundElement } from "../liveBind.view";
-import { MirrorReport, boxOfElement, elementOf, mirrorRoot, onMaskLoaded, ownerOf, remirrorElement, remirrorText, type WireBox } from "./cssMirror.view";
+import { MirrorReport, boxOfElement, elementOf, mirrorRoot, onPaintResourceLoaded, ownerOf, remirrorElement, remirrorText, type WireBox } from "./cssMirror.view";
 import { compactPatches } from "./patches";
 import { twinStateRules } from "./cssStates.view";
 import { installRuneMeasure, runeRectOf, setRuneRect, setRuneScroll } from "./domMeasure.view";
@@ -78,7 +78,7 @@ export class RuneStage {
 
   private constructor() {
     installRuneMeasure({ scroll: (element, x, y, smooth) => this.scrollTo(element, x, y, smooth) });
-    onMaskLoaded(() => this.remirror());
+    onPaintResourceLoaded(() => this.remirror());
     window.addEventListener("resize", () => {
       for (const layer of this.layers) layer.root = null;
       this.invalidate();

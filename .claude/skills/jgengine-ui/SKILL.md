@@ -82,8 +82,12 @@ scope; borders and text paint above it. `isolation: isolate` also isolates a who
 subtree. These modes sample earlier UI paint on the Rune canvas; a separate world
 canvas underneath is not part of that backdrop.
 
-URL backgrounds share the ordered background layer stack, including sized and
-positioned repeat tiles. Gradient masks composite the complete subtree, including
+Background URLs and gradients share CSS layer order. URL images retain their
+intrinsic aspect, `auto`, cover/contain, sizes, positions and per-axis repeat.
+Loading an image's dimensions wakes its mirror once; no frame polling is needed.
+Unsupported image placement (including round/space repeats) reports the element.
+
+Gradient masks composite the complete subtree, including
 borders, using alpha or luminance and the authored mask-composite operation.
 Polygon clips cut descendant text and images. Repeating conic gradients retain
 their angular stops. `background-clip: text` paints gradients through glyph alpha;

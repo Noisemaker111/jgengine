@@ -21,7 +21,7 @@ test("computed paint effects reach the wire without moving URL layers above grad
   const box = JSON.parse(result.stdout.trim());
   expect(box.fx).toEqual([{ kind: 0, n: .5 }, { kind: 2, sh: [3,4,2,0xff0000ff] }]);
   expect(box.ly).toHaveLength(3);
-  expect(box.ly[1]).toMatchObject({ img: "texture.png", bs: [16,0,16,0], rp: [true,true] });
+  expect(box.ly[1]).toMatchObject({ url: "texture.png", bs: [16,0,16,0], rp: [true,true] });
   expect(box.t.sp).toContainEqual({ a: 0, b: 4, u: true, uc: 0x00ff00ff, ut: 5, uo: 3 });
 });
 

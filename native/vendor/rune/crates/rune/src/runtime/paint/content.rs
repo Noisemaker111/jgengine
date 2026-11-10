@@ -82,18 +82,21 @@ impl<S: 'static> Runtime<S> {
         }
         if let Some(pixels) = &n.vis.pixels {
             let snap_u = if cover.is_none() { (1.0 - (sc - 1.0).abs() * 32.0).clamp(0.0, 1.0) } else { 0.0 };
-            let (rect, crop) = crate::pixels::fit_in(n.vis.pixels_fit, n.vis.surface_place, [r[0], r[1], w, h], pixels.size(), snap_u);
+            let pattern = n.vis.pixels_pattern;
+            let (rect, crop) = if pattern.is_some() { ([r[0], r[1], w, h], [0.0, 0.0, 1.0, 1.0]) }
+                else { crate::pixels::fit_in(n.vis.pixels_fit, n.vis.surface_place, [r[0], r[1], w, h], pixels.size(), snap_u) };
             let span = [crop[2] - crop[0], crop[3] - crop[1]];
             // The mip covers the whole image's drawn size, not just its visible window.
-            if let Some(image) = self.images.place(pixels, [rect[2] / span[0], rect[3] / span[1]]) {
+            let drawn = pattern.map_or([rect[2] / span[0], rect[3] / span[1]], |p| [p[2] * k_px, p[3] * k_px]);
+            if let Some(image) = self.images.place(pixels, drawn) {
                 let [x, y, iw, ih] = image.rect.map(|v| v as f32);
                 // A letterboxed image rounds its own, smaller corners.
                 let half = rect[2].min(rect[3]) * 0.5;
                 self.instances.push(Instance {
                     rect,
                     radii: if n.vis.pixels_fit.is_some() { radii.map(|v| v.min(half)) } else { radii },
-                    fill: [0.0, 0.0, 0.0, o],
-                    border: n.vis.pixels_tile.map_or([0.0; 4], |tile| tile.map(|v| v * sc * s)),
+                    fill: [pattern.map_or(0.0, |p| p[4] + p[5] * 2.0), 0.0, 0.0, o],
+                    border: pattern.map_or([0.0; 4], |p| [p[0] * k_px, p[1] * k_px, p[2] * k_px, p[3] * k_px]),
                     params: [image.page as f32, KIND_IMAGE, image.premultiplied as u8 as f32, 1.0],
                     // The shader samples from a whole-texel origin; the span may be fractional.
                     uv: [x + (crop[0] * iw).round(), y + (crop[1] * ih).round(), span[0] * iw, span[1] * ih],
