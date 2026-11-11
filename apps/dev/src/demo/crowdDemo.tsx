@@ -5,8 +5,8 @@ import { seededRng } from "@jgengine/core/random/rng";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, terrain } from "@jgengine/core/world/features";
 import { defineStore } from "@jgengine/core/store/defineStore";
-import { useStore } from "@jgengine/ui/store";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useStore } from "@jgengine/react/store";
+import { useGameContext } from "@jgengine/react/provider";
 
 import { useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";

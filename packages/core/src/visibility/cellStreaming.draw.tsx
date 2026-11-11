@@ -10,7 +10,7 @@ import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { staticDrawPoolFor, type StaticDrawPool } from "@jgengine/core/instancing/staticDrawPool.draw";
 import { preloadSceneModel } from "@jgengine/core/model/entityModelDraw.draw";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/react/provider";
 import { boundCellStreaming, type CellStreaming } from "./cellStreaming";
 
 const fetched = new Map<string, Promise<void>>();

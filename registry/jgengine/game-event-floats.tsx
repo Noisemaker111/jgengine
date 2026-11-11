@@ -1,7 +1,7 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useState } from "@jgengine/core/ui/jsx";
 import type { EntityFloatTextEvent } from "@jgengine/core/game/events";
-import { useGame } from "@jgengine/ui/hooks";
+import { useGame } from "@jgengine/react/hooks";
 
 import { CombatFloatLayer, type CombatFloatEntry } from "@/components/ui/combat-float-layer";
 

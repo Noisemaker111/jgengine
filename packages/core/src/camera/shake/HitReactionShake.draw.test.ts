@@ -6,7 +6,7 @@ import { createCameraShake } from "@jgengine/core/camera/shake/cameraShake";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import { GameProvider } from "@jgengine/ui/provider";
+import { GameProvider } from "@jgengine/react/provider";
 
 import { HitReactionShake } from "./HitReactionShake.draw";
 import { CALIBRATED_TRAUMA_DECAY_PER_SECOND } from "./cameraShake";

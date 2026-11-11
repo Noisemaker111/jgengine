@@ -336,7 +336,7 @@ const CLICK_TARGET = `import { defineGame, defineSystem } from "@jgengine/shell/
 // The joint: \`pointer.moveCommand\` runs on every left-click with the clicked \`entity\`
 // (or null on open ground), so one command turns clicks into ctx.scene.entity.setTarget.
 // Tab cycles hostiles with cycleTarget. The HUD reads the same target:
-//   const target = useTarget(userId)   (@jgengine/ui)
+//   const target = useTarget(userId)   (@jgengine/react)
 //   const hp = useEntityStat(target ?? "", "health")   then <KitMeter value={hp.current} max={hp.max} />
 const targeting = defineSystem({
   id: "targeting",
@@ -369,7 +369,7 @@ const ABILITY_BAR = `/** @jsxImportSource @jgengine/core/ui/jsx */
 import { useMemo } from "@jgengine/core/ui/jsx";
 import { defineGame, defineSystem } from "@jgengine/shell/gameKit";
 import { createAbilityKit } from "@jgengine/core/combat/abilityKit";
-import { ActionBar, actionFromAbilitySlot, useAbilitySlots, useGameContext } from "@jgengine/ui";
+import { ActionBar, actionFromAbilitySlot, useAbilitySlots, useGameContext } from "@jgengine/react";
 
 // The joint: one ability kit is the source of truth for cooldowns. A cooldown group
 // every slot joins is the global cooldown. Keys go through \`input\` actions that run

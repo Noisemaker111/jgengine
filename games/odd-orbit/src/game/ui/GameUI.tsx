@@ -5,9 +5,9 @@ import { registerNativeRuneFont } from "@jgengine/core/ui/rune/nativeSurface.vie
 import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
 import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import { useSettings } from "@jgengine/core/settings/settings.view";
-import { useGame } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
-import { useStore } from "@jgengine/ui/store";
+import { useGame } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/react/provider";
+import { useStore } from "@jgengine/react/store";
 
 import { GAME_FONTS } from "../../art/fonts/fonts";
 import { householdStore } from "../session/store";

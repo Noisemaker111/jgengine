@@ -122,12 +122,12 @@ describe("published means present", () => {
 
   test("a dependency this checkout has not installed is a note, not a failure", async () => {
     const verdict = await checkPackage({
-      name: "@jgengine/ui",
+      name: "@jgengine/react",
       version: "0.35.0",
       declared: ["."],
-      registry: registryOf(metadataWith("@jgengine/ui", "0.35.0")),
+      registry: registryOf(metadataWith("@jgengine/react", "0.35.0")),
       unpack: unpackOf(["dist/index.js", "dist/index.d.ts"], {
-        name: "@jgengine/ui",
+        name: "@jgengine/react",
         version: "0.35.0",
         exports: CORE_EXPORTS,
         peerDependencies: { react: "^19.0.0" },

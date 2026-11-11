@@ -6,7 +6,7 @@ import { CITY_KIND } from "@jgengine/core/city/cityKind";
 import { editableTerrainFromSnapshot } from "@jgengine/core/terrain/terraform";
 import type { TerrainField } from "@jgengine/core/terrain/terrain";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/react/provider";
 import { registerAllSceneKindRenderers } from "@jgengine/core/scene/allSceneKindRenderers.draw";
 import { getSceneKindRenderer } from "@jgengine/core/scene/sceneKindRenderers.draw";
 

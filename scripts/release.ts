@@ -332,6 +332,14 @@ function main(): void {
   const read = (rel: string) => readFileSync(`${root}${rel}`, "utf8");
   const version = (pkg: string) => JSON.parse(read(`packages/${pkg}/package.json`)).version as string;
 
+  // Every package must already take trusted publishing, or Publish stops part-way and `latest` points at
+  // a set that cannot install (0.56.0 published five packages, then npm had never heard of @jgengine/ui).
+  const trusted = spawnSync("bun", ["scripts/check-npm-trusted.ts"], { cwd: root, stdio: "inherit" });
+  if (trusted.status !== 0) {
+    console.error("release: stopped before cutting; nothing was published.");
+    process.exit(1);
+  }
+
   // A release cut from a stale branch is how a published version ended up missing merged work.
   if (!args.includes("--no-fetch")) spawnSync("git", ["fetch", "--quiet", "origin", "beta"], { cwd: root, stdio: "ignore", timeout: 20_000 });
   let cutFrom: string | null = null;

@@ -29,7 +29,7 @@ export interface PreviewFixture {
 
 /**
  * Registry of deterministic, engine-level preview fixtures — the *real* exported
- * `@jgengine/ui` components (`HudThemePreview`, `IconsPreview`, …) that render
+ * `@jgengine/react` components (`HudThemePreview`, `IconsPreview`, …) that render
  * identically every time from static values, so they can be screenshotted as regression evidence
  * without booting a game.
  *

@@ -4,8 +4,8 @@ import { RuneAction, RuneRoot, RuneTransient, RuneView } from "@jgengine/core/ui
 import { registerNativeRuneFont } from "@jgengine/core/ui/rune/nativeSurface.view";
 import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import { gamePhase } from "@jgengine/core/game/gamePhase";
-import { useOptionalGamePhase } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useOptionalGamePhase } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/react/provider";
 
 import { GAME_FONTS } from "../../art/fonts/fonts";
 import { pauseRun } from "../menu";

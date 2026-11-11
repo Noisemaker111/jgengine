@@ -7,8 +7,8 @@ import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import { useInputDevice } from "@jgengine/core/input/inputDevice.view";
 import { useSettings } from "@jgengine/core/settings/settings.view";
 import { usePanels } from "@jgengine/core/ui/panels.view";
-import { useGame, useGameClock, useGameStore } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGame, useGameClock, useGameStore } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/react/provider";
 
 import { GAME_FONTS } from "../../art/fonts/fonts";
 import { currentHint } from "../onboarding";

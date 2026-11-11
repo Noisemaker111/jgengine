@@ -63,7 +63,7 @@ describe("build-registry", () => {
   test("pilot components carry their engine hookup", () => {
     const entityVitalBar = items.find((item) => item.name === "entity-vital-bar");
     expect(entityVitalBar?.files[0]?.content).toContain(
-      'import { useEntityStat } from "@jgengine/ui/hooks"',
+      'import { useEntityStat } from "@jgengine/react/hooks"',
     );
     const gameIcon = items.find((item) => item.name === "game-icon");
     expect(gameIcon?.files[0]?.content).toContain("export function iconForItemId");

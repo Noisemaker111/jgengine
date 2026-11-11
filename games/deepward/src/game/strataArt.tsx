@@ -1,7 +1,7 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useMemo, useRef } from "@jgengine/core/ui/jsx";
 import { AmbientLight, CircleGeometry, Color, Fog, Group, HemisphereLight, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, SphereGeometry, SpotLight } from "three";
-import { useGameStore } from "@jgengine/ui/hooks";
+import { useGameStore } from "@jgengine/react/hooks";
 import { IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";
 import { EngineDrawMount, SceneObjectGroup, SceneObjectPortal, meshDraw, useEngineDraw, useSceneObjectAttach } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";

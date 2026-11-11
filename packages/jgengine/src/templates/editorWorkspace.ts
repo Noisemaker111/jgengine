@@ -13,7 +13,7 @@ const editorPackageJson = (engineVersion: string) => `${JSON.stringify(
       "@jgengine/core": `^${engineVersion}`,
       "@jgengine/editor": `^${engineVersion}`,
       "@jgengine/node": `^${engineVersion}`,
-      "@jgengine/ui": `^${engineVersion}`,
+      "@jgengine/react": `^${engineVersion}`,
       "@jgengine/shell": `^${engineVersion}`,
       three: "^0.187.0",
     },
@@ -44,7 +44,7 @@ const editorIndexHtml = `<!doctype html>
 `;
 
 const editorIndexCss = `@import "tailwindcss" source(".");
-@source "../node_modules/@jgengine/ui/dist";
+@source "../node_modules/@jgengine/react/dist";
 @source "../node_modules/@jgengine/shell/dist";
 @source "../node_modules/@jgengine/editor/dist";
 

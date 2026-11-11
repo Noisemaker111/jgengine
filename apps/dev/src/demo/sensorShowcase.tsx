@@ -8,8 +8,8 @@ import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { HiddenStateSource } from "@jgengine/core/sensor/hiddenStateProbe";
-import { localPlayerEntity, useGameStore } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
+import { localPlayerEntity, useGameStore } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/react/provider";
 
 import { useSessionRecorder } from "@jgengine/core/replay/useSessionRecorder.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";

@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@jgengine/core": "^0.56.0",
-    "@jgengine/ui": "^0.56.0",
+    "@jgengine/react": "^0.56.0",
     "@jgengine/ws": "^0.56.0"
   },
   "peerDependencies": {

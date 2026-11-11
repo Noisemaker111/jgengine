@@ -1,6 +1,6 @@
 import { useEffect } from "@jgengine/core/ui/jsx";
 
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/react/provider";
 import type { PlacedBuildItem } from "@llmville/game/build/build";
 import { cardinalToRotationY } from "@llmville/game/world/cardinal";
 import type { PlacedRack } from "../infrastructure/infrastructure";

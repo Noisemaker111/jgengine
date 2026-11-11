@@ -5,7 +5,7 @@ import * as THREE from "three";
 import type { LiveProjectile } from "@jgengine/core/combat/projectiles";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/react/provider";
 import { childFrameState, type EngineDraw, type EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 

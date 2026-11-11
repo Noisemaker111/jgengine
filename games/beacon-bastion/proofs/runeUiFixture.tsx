@@ -4,7 +4,7 @@ import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { Root } from "@jgengine/core/ui/jsx/reconciler";
 import { RuneViewport } from "@jgengine/core/ui/rune/elements.view";
 import { RuneNode, nativeSpec, nativeTreeHost, type RuneTreeSink } from "@jgengine/core/ui/rune/nativeTree";
-import { GameProvider } from "@jgengine/ui/provider";
+import { GameProvider } from "@jgengine/react/provider";
 import { SettingsControllerProvider, type SettingsController } from "@jgengine/core/settings/settings.view";
 import { stageRun } from "../src/game/capture";
 import { session } from "../src/game/session";

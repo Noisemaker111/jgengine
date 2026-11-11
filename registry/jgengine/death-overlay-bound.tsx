@@ -1,5 +1,5 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { useLocalPlayerDead } from "@jgengine/ui/hooks";
+import { useLocalPlayerDead } from "@jgengine/react/hooks";
 
 import { DeathScreenView } from "@/components/ui/death-screen-view";
 

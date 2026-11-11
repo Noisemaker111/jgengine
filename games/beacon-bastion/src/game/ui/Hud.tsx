@@ -4,8 +4,8 @@ import { bind } from "@jgengine/core/ui/rune/primitives";
 import { useActionBindings } from "@jgengine/core/input/actionBindings.view";
 import { actionLabel } from "@jgengine/core/input/actionBindings";
 import { summarizeWave } from "@jgengine/core/waves/wavePreview";
-import { useGameStore } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameStore } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/react/provider";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { abilityDef } from "../combat/abilities";

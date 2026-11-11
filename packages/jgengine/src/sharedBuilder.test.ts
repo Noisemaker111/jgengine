@@ -18,7 +18,7 @@ test("shared builder emits unique connected host files, bounded ticks and compon
   expect(contents("src/main.tsx")).toContain("ConvexProvider");
   expect(contents("src/game.config.ts")).toContain('servers({ topology: "shared"');
   expect(contents("src/game/ui/GameUI.tsx")).toContain("ChatPanel");
-  expect(contents("src/index.css")).toContain('@source "../node_modules/@jgengine/ui/dist"');
+  expect(contents("src/index.css")).toContain('@source "../node_modules/@jgengine/react/dist"');
   expect(contents("src/index.css")).toContain('@source "../node_modules/@jgengine/shell/dist"');
   expect(contents("convex/online.ts")).toContain("batchSize: 25");
   expect(contents("convex/online.ts")).toContain("continuation: scanRef");

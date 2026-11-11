@@ -1,5 +1,5 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { Clock, Coins, Crosshair, HudCanvas, HudPanel, Hotbar, Speedometer, useEntityStat, useHudLayout, usePlayer } from "@jgengine/ui";
+import { Clock, Coins, Crosshair, HudCanvas, HudPanel, Hotbar, Speedometer, useEntityStat, useHudLayout, usePlayer } from "@jgengine/react";
 import { KitWaveClock } from "@jgengine/core/hud/kitHud.view";
 import { KitMeter } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import type { KitTone } from "@jgengine/core/ui/kit/uiKit.view";
@@ -8,7 +8,7 @@ import type { PlayableGame } from "@jgengine/shell/registry";
 import { demoGame } from "./demoGame";
 
 /**
- * Dev showcase of optional HUD building blocks (`@jgengine/ui`) — not a template for shipped
+ * Dev showcase of optional HUD building blocks (`@jgengine/react`) — not a template for shipped
  * game UI. Every real game owns custom chrome and art direction; this page only exercises the
  * stock widgets against demo gameplay data so layout/hooks stay testable in isolation.
  */

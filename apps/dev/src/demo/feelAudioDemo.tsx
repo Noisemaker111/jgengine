@@ -9,8 +9,8 @@ import { ACCESSIBILITY_SETTING_IDS } from "@jgengine/core/settings/accessibility
 import { busMuteSettingId, MASTER_MUTE_SETTING_ID } from "@jgengine/core/audio/busMix";
 import { attachWaveFeedback } from "@jgengine/core/audio/eventFeedback";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { useGame } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGame } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/react/provider";
 import { useSettingsStore } from "@jgengine/core/settings/settings.view";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";

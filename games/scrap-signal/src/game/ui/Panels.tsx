@@ -2,9 +2,9 @@
 import { useEffect } from "@jgengine/core/ui/jsx";
 import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { bind } from "@jgengine/core/ui/rune/primitives";
-import { useCurrency, useEntityStat, useGame, useGameStore, useInventory, usePlayer } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
-import { useStore } from "@jgengine/ui/store";
+import { useCurrency, useEntityStat, useGame, useGameStore, useInventory, usePlayer } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/react/provider";
+import { useStore } from "@jgengine/react/store";
 import { AMMO_LABELS, AMMO_POOLS } from "../ammo";
 import { activeCharacter, characterNodes, talentTree, type CharacterNode } from "../characters";
 import { BLACK_MARKET_UPGRADES, respecCost, upgradeCost } from "../commands";

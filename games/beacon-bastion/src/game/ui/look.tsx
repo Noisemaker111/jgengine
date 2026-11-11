@@ -7,7 +7,7 @@ import type { RuneElementProps } from "@jgengine/core/ui/rune/element";
 import { readLive, type Live } from "@jgengine/core/ui/liveValue";
 import { bind } from "@jgengine/core/ui/rune/primitives";
 import { uiCueSoundId } from "@jgengine/core/ui/uiCues";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/react/provider";
 
 import { GLYPHS, type GlyphName } from "./glyphs";
 
