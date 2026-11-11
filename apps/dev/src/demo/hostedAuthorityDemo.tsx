@@ -1,7 +1,7 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useLayoutEffect, useState, useSyncExternalStore, type CSSProperties } from "@jgengine/core/ui/jsx";
 import { actionContextStack, playControlsActive, suspendPlayControls } from "@jgengine/core/game/controlGate";
-import { useGame, useGameContext, useGameStoreValue } from "@jgengine/ui";
+import { useGame, useGameContext, useGameStoreValue } from "@jgengine/react";
 import type { PlayableGame } from "@jgengine/shell/registry";
 import type { GameSettingDef } from "@jgengine/core/settings/settingsModel";
 import { SettingsTrigger, useSetting } from "@jgengine/core/settings/settings.view";

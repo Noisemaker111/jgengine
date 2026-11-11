@@ -28,7 +28,7 @@ import {
   type WeatherModifierTable,
   type WeatherState,
 } from "@jgengine/core/weather/weather";
-import { useEngineState, type ReadableEngineStore } from "@jgengine/ui/engineStore";
+import { useEngineState, type ReadableEngineStore } from "@jgengine/react/engineStore";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import { FireLandscapeView } from "@jgengine/core/fire/FireLandscape.draw";

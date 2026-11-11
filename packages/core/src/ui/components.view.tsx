@@ -9,9 +9,9 @@ import { pendingQteStep, type QteStep } from "@jgengine/core/interaction/qte";
 import type { StatLevelUpEvent } from "@jgengine/core/game/events";
 import { rollCheck, type CheckAdvantage, type CheckResult } from "@jgengine/core/stats/rollCheck";
 import { dialogueSlot } from "@jgengine/core/dialogue/dialogue";
-import { useGameContext } from "@jgengine/ui/provider";
-import { useLocalPlayerDead } from "@jgengine/ui/hooks";
-import { useStore } from "@jgengine/ui/store";
+import { useGameContext } from "@jgengine/react/provider";
+import { useLocalPlayerDead } from "@jgengine/react/hooks";
+import { useStore } from "@jgengine/react/store";
 import { paintQteStepDom, paintSkillCheckDom } from "../interaction/skillCheckPaint.view";
 
 export { paintQteStepDom, paintSkillCheckDom } from "../interaction/skillCheckPaint.view";

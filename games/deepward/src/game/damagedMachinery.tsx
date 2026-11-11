@@ -1,7 +1,7 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 import type { EmitterConfig } from "@jgengine/core/vfx/particles";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/react/provider";
 import { editorLayers, type Place } from "../world";
 
 /** The vents the editor scene places, by effect name; each recipe is plain emitter data. */

@@ -2,12 +2,12 @@
 import { useCallback, useEffect, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 import { RuneAction, RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
-import { useGame, useGameCalendar } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGame, useGameCalendar } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/react/provider";
 import { useSaveSlots } from "@jgengine/core/save/saveSlots.view";
 import { useSettings, type SettingsRow } from "@jgengine/core/settings/settings.view";
 import { adjustSettingRow } from "@jgengine/core/settings/settingAdjustment";
-import { useStore } from "@jgengine/ui/store";
+import { useStore } from "@jgengine/react/store";
 import { slotText, type SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 import { creditsForSourceIds } from "@jgengine/assets/credits";
 import { creditsForLooks } from "@jgengine/assets/catalogs/looksCredits";

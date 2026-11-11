@@ -69,12 +69,6 @@ interface Named {
   typeOnly: boolean;
 }
 
-/** Retarget SDK UI module specifiers, including imports in generated snippets, without changing a host's React imports. */
-export function portSdkImports(text: string): string {
-  return text.replace(/((?:from|import)\s*\(?\s*|(?:mock\.module|vi\.mock|jest\.mock|require)\(\s*)(["'`])@jgengine\/react(\/[^"'`]+)?\2/g,
-    (_whole, lead: string, quote: string, path: string | undefined) => `${lead}${quote}@jgengine/ui${path ?? ""}${quote}`);
-}
-
 /** Remove borrowed React peers from browser fixtures and pack the replacement UI package. */
 export function portBrowserFixture(text: string): string {
   return text
@@ -227,7 +221,7 @@ export function portSource(path: string, text: string): { text: string; notes: s
     out = out.replace(borrowed, `import { renderToStaticMarkup } from "${RUNTIME}/markup";\n`);
     if (!/\bjoin\(/.test(out)) out = out.replace(/import \{ join \} from "node:path";\n/, "");
   }
-  return { text: portBrowserFixture(portSdkImports(out)), notes };
+  return { text: portBrowserFixture(out), notes };
 }
 
 /** `"jsx": "react-jsx"` gains the engine runtime as its import source. */
@@ -280,10 +274,6 @@ function run(argv: readonly string[]): number {
   for (const path of gitFiles(["*.ts", "*.tsx", "*.mts"])) {
     if (skipped(path)) continue;
     const host = REACT_HOSTS.some((prefix) => path.startsWith(prefix));
-    edit(path, (text) => {
-      const next = portSdkImports(text);
-      return { text: next, notes: host && next !== text ? ["framework host: embed engine UI through mountGamePlayer; its components use the engine JSX runtime"] : [] };
-    });
     if (host) {
       if (/from\s+["']react/.test(readFileSync(join(ROOT, path), "utf8"))) kept.push(path);
       continue;

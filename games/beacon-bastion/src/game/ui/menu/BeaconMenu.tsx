@@ -5,8 +5,8 @@ import { createRuneFlow, type RuneFlow } from "@jgengine/core/ui/rune/primitives
 import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
 import { useSaveSlots, relativeSavedAt } from "@jgengine/core/save/saveSlots.view";
 import { slotNumber, slotText, type SaveSlotMeta } from "@jgengine/core/save/saveSlots";
-import { useOptionalGamePhase } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useOptionalGamePhase } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/react/provider";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { DIFFICULTIES, DIFFICULTY_IDS, setDifficulty, type DifficultyId } from "../../campaign";

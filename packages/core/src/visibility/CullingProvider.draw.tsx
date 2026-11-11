@@ -2,7 +2,7 @@
 // @skill jgengine-world
 import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode, type MutableRefObject } from "@jgengine/core/ui/jsx";
 import * as THREE from "three";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/react/provider";
 import type { CameraView } from "@jgengine/core/visibility/frustum";
 import type { VisibilityConfig } from "@jgengine/core/visibility/config";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";

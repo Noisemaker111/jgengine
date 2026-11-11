@@ -18,7 +18,7 @@ beforeAll(async () => {
   await Bun.write(entry, `
     import React, {useState} from '@jgengine/core/ui/jsx';
     import {createRoot} from '@jgengine/core/ui/jsx/client.view';
-    import {ScrollRail, ActionBar} from '@jgengine/ui';
+    import {ScrollRail, ActionBar} from '@jgengine/react';
     function Fixture() {
       const [selected,select] = useState('Game'), [removed,remove] = useState(false);
       return <><div style={{width:300}}><ScrollRail label="categories">{['Game','Graphics','Audio','Accessibility','Controls'].map(label=><button key={label} style={{flexShrink:0,width:110,height:44}} onClick={()=>select(label)}>{label}</button>)}</ScrollRail></div>

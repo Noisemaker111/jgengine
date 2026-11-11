@@ -6,7 +6,7 @@ import { devtools } from "@jgengine/core/devtools/devtools";
 import type { DamageAppliedEvent } from "@jgengine/core/game/events";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { useAccessibilitySettings } from "@jgengine/core/settings/accessibilitySettings.view";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/react/provider";
 
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";

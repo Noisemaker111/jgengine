@@ -5,7 +5,7 @@ import type { Notice, NoticeFeed, NoticeTone } from "@jgengine/core/notification
 import type { LayoutRect, LayoutRegion } from "@jgengine/core/hud/hudPriority";
 
 import { useGameViewportLayout } from "@jgengine/core/ui/viewport.view";
-import { useOptionalGameContext } from "@jgengine/ui/provider";
+import { useOptionalGameContext } from "@jgengine/react/provider";
 import type { KitTone } from "@jgengine/core/ui/kit/uiKit.view";
 import { KitToast, useHasUiKit, useUiKit } from "@jgengine/core/ui/kit/uiKitRoot.view";
 

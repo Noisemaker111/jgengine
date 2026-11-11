@@ -1042,16 +1042,6 @@
       "intent": "run authoritative game servers with sessions, ticking and persistence behind any transport"
     },
     {
-      "id": "auto-scroll",
-      "packages": [
-        "@jgengine/ui"
-      ],
-      "module": "@jgengine/ui/hooks",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "pin a log/chat/console panel to its newest line as entries arrive — no hand-rolled scrollTop effects"
-    },
-    {
       "id": "auto-target-cycle",
       "packages": [
         "@jgengine/core"
@@ -2422,16 +2412,6 @@
       "intent": "display a currency using its declared decimal precision"
     },
     {
-      "id": "current-target",
-      "packages": [
-        "@jgengine/ui"
-      ],
-      "module": "@jgengine/ui/hooks",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "read the player's selected target (click or tab target) to drive a target frame"
-    },
-    {
       "id": "curve-running",
       "packages": [
         "@jgengine/core"
@@ -2966,16 +2946,6 @@
       "intent": "render meters as m or km for HUD stats, telemetry, and range readouts"
     },
     {
-      "id": "dom-event",
-      "packages": [
-        "@jgengine/ui"
-      ],
-      "module": "@jgengine/ui/hooks",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "attach a window/document/element event listener with automatic cleanup and a stable handler ref — no hand-rolled addEventListener effects"
-    },
-    {
       "id": "domestic-level-spend",
       "packages": [
         "@jgengine/core"
@@ -3346,16 +3316,6 @@
       "intent": "layered engine audio: rpm-keyed samples crossfaded, with on-load and off-load sets picked by engine load"
     },
     {
-      "id": "engine-styles",
-      "packages": [
-        "@jgengine/ui"
-      ],
-      "module": "@jgengine/ui/engineStyles",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "inject the engine stylesheet (jg-"
-    },
-    {
       "id": "engine-torque-curve",
       "packages": [
         "@jgengine/core"
@@ -3557,16 +3517,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "a heat/streak/alert gauge (wanted level, rage, combo) that builds from repeated events and cools down over time"
-    },
-    {
-      "id": "event-meter-hud",
-      "packages": [
-        "@jgengine/ui"
-      ],
-      "module": "@jgengine/ui/hooks",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "render a core event/heat meter's live value, fraction, tier, and ready state in a HUD gauge"
     },
     {
       "id": "event-ticker",
@@ -4409,16 +4359,6 @@
       "intent": "measure the reference human's steady gait — stride, duty factor, ground-force humps, cost of transport"
     },
     {
-      "id": "game-context-bridge",
-      "packages": [
-        "@jgengine/ui"
-      ],
-      "module": "@jgengine/ui/provider",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "re-provide the GameContext across a nested Canvas/reconciler boundary"
-    },
-    {
       "id": "game-context-rng",
       "packages": [
         "@jgengine/core"
@@ -5252,16 +5192,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "apply the default (or a game) HudTheme, the player's accessibility preferences and the engine stylesheet at the HUD root"
-    },
-    {
-      "id": "hud-ticker",
-      "packages": [
-        "@jgengine/ui"
-      ],
-      "module": "@jgengine/ui/hooks",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "re-render a HUD element at a steady hz for time-derived readouts (cooldowns, cast/swing bars) — no hand-rolled setInterval effects"
     },
     {
       "id": "hud-tokens",
@@ -9211,16 +9141,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "in-vehicle radio: stations that keep broadcasting while untuned, a dial with next/previous/off, a now-playing readout, and news/DJ bulletins fed by game events with priority, cooldown and break-in"
-    },
-    {
-      "id": "raf-loop",
-      "packages": [
-        "@jgengine/ui"
-      ],
-      "module": "@jgengine/ui/hooks",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "run a cancellable requestAnimationFrame loop for DOM-side animation with delta seconds — no hand-rolled RAF effects"
     },
     {
       "id": "ragdoll-fall-compare",

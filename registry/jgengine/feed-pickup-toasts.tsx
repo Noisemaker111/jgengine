@@ -1,6 +1,6 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import type { FeedEntry } from "@jgengine/core/feed/feed";
-import { useFeed } from "@jgengine/ui/hooks";
+import { useFeed } from "@jgengine/react/hooks";
 
 import { PickupToastStack, type PickupEntry } from "@/components/ui/pickup-toast-stack";
 

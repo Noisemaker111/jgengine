@@ -2,7 +2,7 @@
 // core holds every layer of its feature, so the file name says the layer:
 //
 //   model  core files with no suffix: plain TypeScript; no React, no three.js, no view or draw file
-//   view   `*.view.ts(x)` in core, and all of @jgengine/ui: React UI; no three.js, no draw file
+//   view   `*.view.ts(x)` in core, and all of @jgengine/react: React UI; no three.js, no draw file
 //   draw   `*.draw.ts(x)` in core, and all of @jgengine/shell: three.js
 //
 // Nothing below the editor imports @jgengine/editor. Tests are exempt: a test may render any layer.

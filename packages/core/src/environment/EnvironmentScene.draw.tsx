@@ -7,7 +7,7 @@ import { PresentationAssetBoundary } from "@jgengine/shell/presentationRecovery"
 import { PresentationRecoveredDraw } from "@jgengine/shell/presentationRecovery3d";
 import { usePresentationRetryScope } from "@jgengine/shell/presentationRecovery";
 import * as THREE from "three";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/react/provider";
 
 import { resolveBuildingPalette } from "@jgengine/core/buildings/buildings";
 import { resolveStructureBuildings } from "@jgengine/core/world/environmentSummary";

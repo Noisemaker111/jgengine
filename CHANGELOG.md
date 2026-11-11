@@ -35,7 +35,7 @@ At publish, rename this heading to the new version and mirror the entries into
 - `ActionBindingsProvider` and `useActionBindings` move from `ui/kit/uiKitRoot.view` to `input/actionBindings.view`, so native UI reads rebinds without importing a CSS kit. All in-repo imports move with them.
 - `adjustSettingRow` now lives in `@jgengine/core/settings/settingAdjustment`; its arguments and result are unchanged. In-repo settings adopters use the new home.
 - `createHudAwakeClock` and `sameWatched` now live in `@jgengine/core/hud/hudAwakeClock`, shared by the DOM and native HUD renderers.
-- engine and game UI uses @jgengine/core/ui/jsx and @jgengine/ui; the website and two framework examples retain their own React host and embed games with mountGamePlayer
+- engine and game UI uses @jgengine/core/ui/jsx and @jgengine/react; the website and two framework examples retain their own React host and embed games with mountGamePlayer
 
 ### Added
 
@@ -82,16 +82,16 @@ At publish, rename this heading to the new version and mirror the entries into
 - `VideoFrameSource` (`@jgengine/core/ui/rune/videoFrames.view`): The browser video methods used by a frame feed.
 - `RuneScrollValues` (`@jgengine/core/ui/runeUi.view`): Scroll offset, viewport and content size in layout pixels.
 - `mountGamePlayer` (`@jgengine/shell/mountGamePlayer`): Run a game inside any page: mounts the registry-driven player into `container` and returns the function that takes it down. Also `MountGamePlayerOptions`.
-- `AccessibilityProvider` (`@jgengine/ui`): Apply accessibility preferences to a subtree: exposes `--jg-text-scale` for text to scale off, and sets `data-reduced-motion` / `data-high-contrast` / `data-colorblind` / `data-captions` for CSS to respond to. Also `AbilitySlotBindingOptions`, `AchievementGallery`, `AchievementGalleryProps`, `AchievementToast`, `AchievementToastProps`, `ActionBar`, `ActionBarChrome`, `ActionBarKeyResult` and 626 more.
-- `EventfulEngineStore` (`@jgengine/ui/engineStore`): ⚠ undocumented Also `ReadableEngineStore`.
-- `ENGINE_STYLESHEET` (`@jgengine/ui/engineStyles`): The engine stylesheet: every `jg-*` keyframe the shared blocks and registry components animate with, the `[data-jg-*]` interaction-state rules behind {@link HudButton} / {@link HudSurface}, the quiet hover/press/focus defaults for plain buttons inside the HUD root, and reduced-motion handling (`prefers-reduced-motion` or `[data-reduced-motion="true"]` zero `--jg-motion-scale`). Also `ensureEngineStyles`, `useEngineStyles`.
-- `PerFrameRenderError` (`@jgengine/ui/hooks`): The error a component that re-renders every frame or tick from the store fails with in a dev build or test. Also `AbilitySlotBindingOptions`, `DomEventTarget`, `EventMeterView`, `GameClockControls`, `InventoryGridBinding`, `UseAxisChannelResult`, `WorldBrowserState`, `abilityKitNeedsHeartbeat` and 46 more.
-- `GamePreviewComponent` (`@jgengine/ui/preview`): ⚠ undocumented Also `GamePreviewProps`, `GamePreviewStates`.
-- `PREVIEW_FIXTURES` (`@jgengine/ui/previewFixtures`): Registry of deterministic, engine-level preview fixtures — the *real* exported `@jgengine/ui` components (`HudThemePreview`, `IconsPreview`, …) that render identically every time from static values, so they can be screenshotted as regression evidence without booting a game. Also `PreviewFixture`, `previewFixtureNames`, `resolvePreviewFixture`.
-- `GameContextBridge` (`@jgengine/ui/provider`): Re-provide a captured {@link GameContext} across a nested React reconciler boundary. Also `GameProvider`, `useGameContext`, `useOptionalGameContext`.
-- `selectionEqual` (`@jgengine/ui/selectSnapshot`): Whether two selections show the same thing: the same value, or arrays and plain objects whose entries are the same all the way down (a record or class instance compares by identity). Also `HotSelectionPace`, `SelectCache`.
-- `useKeyedStore` (`@jgengine/ui/store`): Subscribe a component to one owner's slot of a typed keyed-family store defined with `defineKeyedStore`. Also `useStore`.
-- `MENU_THEME_STYLE` (`@jgengine/ui/testFixtures`): Menu theme tokens passed through the `style` prop with no cast.
+- `AccessibilityProvider` (`@jgengine/react`): Apply accessibility preferences to a subtree: exposes `--jg-text-scale` for text to scale off, and sets `data-reduced-motion` / `data-high-contrast` / `data-colorblind` / `data-captions` for CSS to respond to. Also `AbilitySlotBindingOptions`, `AchievementGallery`, `AchievementGalleryProps`, `AchievementToast`, `AchievementToastProps`, `ActionBar`, `ActionBarChrome`, `ActionBarKeyResult` and 626 more.
+- `EventfulEngineStore` (`@jgengine/react/engineStore`): ⚠ undocumented Also `ReadableEngineStore`.
+- `ENGINE_STYLESHEET` (`@jgengine/react/engineStyles`): The engine stylesheet: every `jg-*` keyframe the shared blocks and registry components animate with, the `[data-jg-*]` interaction-state rules behind {@link HudButton} / {@link HudSurface}, the quiet hover/press/focus defaults for plain buttons inside the HUD root, and reduced-motion handling (`prefers-reduced-motion` or `[data-reduced-motion="true"]` zero `--jg-motion-scale`). Also `ensureEngineStyles`, `useEngineStyles`.
+- `PerFrameRenderError` (`@jgengine/react/hooks`): The error a component that re-renders every frame or tick from the store fails with in a dev build or test. Also `AbilitySlotBindingOptions`, `DomEventTarget`, `EventMeterView`, `GameClockControls`, `InventoryGridBinding`, `UseAxisChannelResult`, `WorldBrowserState`, `abilityKitNeedsHeartbeat` and 46 more.
+- `GamePreviewComponent` (`@jgengine/react/preview`): ⚠ undocumented Also `GamePreviewProps`, `GamePreviewStates`.
+- `PREVIEW_FIXTURES` (`@jgengine/react/previewFixtures`): Registry of deterministic, engine-level preview fixtures — the *real* exported `@jgengine/react` components (`HudThemePreview`, `IconsPreview`, …) that render identically every time from static values, so they can be screenshotted as regression evidence without booting a game. Also `PreviewFixture`, `previewFixtureNames`, `resolvePreviewFixture`.
+- `GameContextBridge` (`@jgengine/react/provider`): Re-provide a captured {@link GameContext} across a nested React reconciler boundary. Also `GameProvider`, `useGameContext`, `useOptionalGameContext`.
+- `selectionEqual` (`@jgengine/react/selectSnapshot`): Whether two selections show the same thing: the same value, or arrays and plain objects whose entries are the same all the way down (a record or class instance compares by identity). Also `HotSelectionPace`, `SelectCache`.
+- `useKeyedStore` (`@jgengine/react/store`): Subscribe a component to one owner's slot of a typed keyed-family store defined with `defineKeyedStore`. Also `useStore`.
+- `MENU_THEME_STYLE` (`@jgengine/react/testFixtures`): Menu theme tokens passed through the `style` prop with no cast.
 
 ### Changed
 
@@ -141,7 +141,7 @@ At publish, rename this heading to the new version and mirror the entries into
 
 - `@jgengine/core/settings/settingsBlocks.view` no longer exports `adjustSettingRow`.
 - `@jgengine/core/ui/kit/uiKitRoot.view` no longer exports `ActionBindingsProvider`, `useActionBindings`.
-- `@jgengine/ui` no longer exports `ActionBindingsProvider`, `useActionBindings`.
+- `@jgengine/react` no longer exports `ActionBindingsProvider`, `useActionBindings`.
 - verify:fast's rerun of timed-out test files; a timeout stays red and names the file. The bg-tasks exit-event test that timed out under load is quarantined with #3118
 - jg-ui's CSS box host (css.rs, style.rs), its canvas-frame and box patch/scroll exports, and the old widget spec; the Rune wasm takes only native nodes and RuneUi drops patch, patchText, scrollTo, canvasFrame, removeCanvas and rects.
 - the CSS-to-Rune mirror (RuneLayer, ?ui=rune, cssMirror, cssStates, domMeasure, runeInput, patches, boxTransform, videoFrames, cssValues) and the uiTour flow built on it. Every game draws its UI on native Rune surfaces; loadGameFonts now registers fonts with the native surface.

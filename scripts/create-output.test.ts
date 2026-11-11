@@ -36,6 +36,17 @@ function fileOf(files: TemplateFile[], path: string): string {
   return file.contents;
 }
 
+/** Each repo folder under packages/ by its npm name without the scope: packages/ui publishes as @jgengine/react. */
+const FOLDER_OF: Record<string, string> = Object.fromEntries(
+  [...new Bun.Glob("packages/*/package.json").scanSync({ cwd: ROOT })].map((path) => {
+    const folder = path.replace(/\\/g, "/").split("/")[1]!;
+    const name = (JSON.parse(readFileSync(join(ROOT, path), "utf8")) as { name: string }).name;
+    return [name.replace(/^@jgengine\//, ""), folder];
+  }),
+);
+const folderOf = (pkg: string): string => FOLDER_OF[pkg] ?? pkg;
+const npmNameOf = (folder: string): string => Object.entries(FOLDER_OF).find(([, dir]) => dir === folder)?.[0] ?? folder;
+
 /** The `@jgengine/*` packages a standalone scaffold installs from npm, read from its package.json. */
 function enginePackages(files: TemplateFile[]): string[] {
   const manifest = JSON.parse(fileOf(files, "package.json")) as { dependencies?: Record<string, string>; devDependencies?: Record<string, string> };
@@ -47,7 +58,7 @@ function enginePackages(files: TemplateFile[]): string[] {
 function engineSourceFile(specifier: string): string | null {
   const [, pkg, sub] = /^@jgengine\/([^/]+)(?:\/(.+))?$/.exec(specifier) ?? [];
   if (pkg === undefined) return null;
-  const base = join(ROOT, "packages", pkg, "src", sub ?? "index");
+  const base = join(ROOT, "packages", folderOf(pkg), "src", sub ?? "index");
   for (const candidate of [`${base}.ts`, `${base}.tsx`, join(base, "index.ts")]) {
     if (existsSync(candidate)) return candidate;
   }
@@ -113,12 +124,12 @@ describe("a game on the npm packages can start Vite's dev server", () => {
     const packages = [...new Set(GAME_TEMPLATES.flatMap((template) => enginePackages(scaffold(template))))];
     const offenders: string[] = [];
     const relativeImporters: string[] = [];
-    const glob = new Bun.Glob(`packages/{${packages.join(",")}}/src/**/*.{ts,tsx}`);
+    const glob = new Bun.Glob(`packages/{${packages.map(folderOf).join(",")}}/src/**/*.{ts,tsx}`);
     const sources: { id: string; text: string }[] = [];
     for await (const path of glob.scan({ cwd: ROOT })) {
       if (/\.test\.tsx?$/.test(path)) continue;
       const [, pkg, sub] = /^packages\/([^/]+)\/src\/(.+)\.tsx?$/.exec(path.replace(/\\/g, "/"))!;
-      sources.push({ id: `@jgengine/${pkg}/${sub}`, text: readFileSync(join(ROOT, path), "utf8") });
+      sources.push({ id: `@jgengine/${npmNameOf(pkg!)}/${sub}`, text: readFileSync(join(ROOT, path), "utf8") });
     }
     for (const { id, text } of sources) {
       if (/from\s+["'][^"']+\.(?:m?js|cjs|jsx?|tsx?|json)\?[^"']*["']/.test(text)) offenders.push(id);

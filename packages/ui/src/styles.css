@@ -1,4 +1,4 @@
-/* @jgengine/ui engine stylesheet */
+/* @jgengine/react engine stylesheet */
 @layer theme, base, components, utilities;
 @layer components.jgengine {
 :root { --jg-motion-scale: 1; }

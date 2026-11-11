@@ -17,7 +17,7 @@ import { parseParams } from "@jgengine/core/generator/paramSchema";
 import type { TriggerSourceKind } from "@jgengine/core/scene/authoredTriggers";
 import type { AuthoredAnimationDiagnostic } from "@jgengine/core/world/authoredAnimation";
 import { markerCatalogId } from "@jgengine/core/world/authoredObjects";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/react/provider";
 
 import {
   canAuthorTrigger,

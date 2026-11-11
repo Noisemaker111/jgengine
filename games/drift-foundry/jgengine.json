@@ -6,7 +6,7 @@
     "assets",
     "core",
     "editor",
-    "ui",
+    "react",
     "shell",
     "ws"
   ],

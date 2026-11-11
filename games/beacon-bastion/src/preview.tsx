@@ -1,6 +1,6 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import type { CSSProperties } from "@jgengine/core/ui/jsx";
-import type { GamePreviewProps } from "@jgengine/ui/preview";
+import type { GamePreviewProps } from "@jgengine/react/preview";
 
 import { BEACON_FONTS } from "./art/look";
 

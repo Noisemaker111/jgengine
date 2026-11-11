@@ -1,7 +1,7 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect } from "@jgengine/core/ui/jsx";
 
-import { useGamePhase } from "@jgengine/ui/hooks";
+import { useGamePhase } from "@jgengine/react/hooks";
 
 export function GamePhaseStamp() {
   const { phase } = useGamePhase();

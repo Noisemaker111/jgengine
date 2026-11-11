@@ -65,7 +65,7 @@ export function creatorAppFixture(name: string): CreatorAppFixture {
     step("linking the packages");
     await Bun.write(`${scratch}/fixture.tsx`, `
     import React,{useState,useEffect} from '@jgengine/core/ui/jsx';import {createRoot} from '@jgengine/core/ui/jsx/client.view';
-    import {useGameContext} from '@jgengine/ui/provider';
+    import {useGameContext} from '@jgengine/react/provider';
     import {GameHost} from '@jgengine/shell/GameHost';
     import {defineGame} from '@jgengine/shell/defineGame';import {createAssetCatalog} from '@jgengine/core/scene/assetCatalog';
     import {normalizeEditorLayers} from '@jgengine/core/editor/document';import {createCreatorDocumentStorage} from '@jgengine/core/editor/creatorStorage';

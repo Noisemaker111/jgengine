@@ -1,4 +1,4 @@
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/react/provider";
 import { engineActions, type GameEngine } from "./gameEngine";
 import { runPromptCommand } from "./promptCommands";
 import { matchesKeybind, type AppKeybinds } from "../settings/keybinds";

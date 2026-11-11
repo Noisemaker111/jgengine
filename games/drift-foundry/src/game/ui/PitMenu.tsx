@@ -4,7 +4,7 @@ import { RuneAction, RuneGlyph, RuneView } from "@jgengine/core/ui/rune/primitiv
 import { bind } from "@jgengine/core/ui/rune/primitives";
 import type { RuneElement } from "@jgengine/core/ui/rune/element";
 import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/react/provider";
 import { useSaveSlots } from "@jgengine/core/save/saveSlots.view";
 import { useSettings, type SettingsRow } from "@jgengine/core/settings/settings.view";
 import { adjustSettingRow } from "@jgengine/core/settings/settingAdjustment";

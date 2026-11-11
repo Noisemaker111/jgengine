@@ -1,5 +1,5 @@
 {
-  "name": "@jgengine/ui",
+  "name": "@jgengine/react",
   "version": "0.56.0",
   "description": "Engine UI layer for JGengine: GameProvider, hooks, and primitives over the engine JSX runtime, DOM and Rune.",
   "license": "Apache-2.0",

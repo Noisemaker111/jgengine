@@ -51,7 +51,7 @@ test("the engine JSX runtime, bridge, wasm and component callbacks have their ow
     "/@fs/C:/repo/packages/core/src/ui/rune/nativeSurface.view.ts",
     "../../../packages/ui/src/hooks.ts",
     "../../node_modules/@jgengine/core/dist/ui/jsx/reconciler.js",
-    "../../node_modules/@jgengine/ui/dist/hooks.js",
+    "../../node_modules/@jgengine/react/dist/hooks.js",
     "/jg-ui/jg_ui_bg.wasm",
   ]) expect(codeOwner(source)).toBe("ui");
   const score = scoreProfile({

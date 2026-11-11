@@ -10,10 +10,10 @@ import {
   type WeaponPose,
   type WeaponPresentationTuning,
 } from "@jgengine/core/combat/weaponPresentation";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/react/provider";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { RenderPose } from "@jgengine/core/runtime/poseInterpolation";
-import { usePlayer } from "@jgengine/ui/hooks";
+import { usePlayer } from "@jgengine/react/hooks";
 import { useEntityRenderCues } from "@jgengine/core/anim/useEntityRenderCues.draw";
 import { clearCameraBoom, sceneCameraQuery } from "./cameraCollision";
 import { usePlayerFov, type PlayerFovState } from "./PlayerFov.draw";

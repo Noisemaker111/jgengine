@@ -25,7 +25,7 @@ import {
   type TerraformSnapshot,
   type TerraformStroke,
 } from "@jgengine/core/terrain/terraform";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/react/provider";
 import { displaceHeightfieldGeometry } from "@jgengine/core/terrain/heightfieldGeometry.draw";
 import { normalizeHeightBlend } from "@jgengine/core/terrain/terrainMath.draw";
 import { ALL_TERRAIN_SURFACE_CLASSES, createTerrainDetailMaterial } from "@jgengine/core/terrain/terrainDetailMaterial.draw";

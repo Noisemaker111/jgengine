@@ -7,7 +7,7 @@ import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
 import { hashString } from "@jgengine/core/random/rng";
 import { cloneModelScene, disposeClonedMaterials, modelPlacementTransform, standardMaterialsOf } from "@jgengine/core/model/modelRender.draw";
 import { ModelAnimationDriver } from "@jgengine/core/anim/modelAnimationDriver.draw";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/react/provider";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { EngineDrawMount } from "@jgengine/core/frame/useEngineDraw.draw";
 

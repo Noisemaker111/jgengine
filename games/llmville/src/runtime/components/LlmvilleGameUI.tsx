@@ -5,7 +5,7 @@ import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 import { suspendPlayControls } from "@jgengine/core/game/controlGate";
 import type { RuneProjection } from "@jgengine/core/ui/rune/primitives.view";
 import { useDisplayProfile } from "@jgengine/core/ui/display.view";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/react/provider";
 import { useBuildSession } from "../../build/buildSession";
 import { BankruptOverlay } from "../../economy/components/BankruptOverlay";
 import { buildRackSlotGpuWorkloadMap } from "../../infrastructure/computeUnits";

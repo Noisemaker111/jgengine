@@ -4,7 +4,7 @@ import { BufferAttribute, BufferGeometry, DoubleSide, Mesh, MeshBasicMaterial } 
 
 import type { TireMark } from "@jgengine/core/physics/tireMarks";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/react/provider";
 import type { EngineDraw, EngineFrameState } from "@jgengine/core/frame/engineLoop.draw";
 import { useEngineDraw } from "@jgengine/core/frame/useEngineDraw.draw";
 

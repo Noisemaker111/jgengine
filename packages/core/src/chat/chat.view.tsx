@@ -4,8 +4,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "@jgengine/
 import type { FormEvent } from "@jgengine/core/ui/jsx/dom.view";
 import type { ChatMessage, ChatSendResult } from "@jgengine/core/chat/chat";
 import type { ChatSync, ChatTransport } from "@jgengine/core/chat/chatContract";
-import { useGameContext } from "@jgengine/ui/provider";
-import { useChat } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/react/provider";
+import { useChat } from "@jgengine/react/hooks";
 
 /**
  * Lifts a callback-style ChatSync (e.g. createWsBackend().chatSyncFor(serverId))

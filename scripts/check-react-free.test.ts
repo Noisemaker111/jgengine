@@ -5,12 +5,12 @@ import { dirname, join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { reactImports, scanReactFree } from "./check-react-free";
 
-test("legacy SDK UI imports and React subpaths are detected", () => {
-  expect(reactImports('import type { ReactNode } from "react"; export { Provider } from "@jgengine/react/provider";')).toEqual(["import of react", "import of @jgengine/react/provider"]);
-  expect(reactImports('import { useState } from "@jgengine/core/ui/jsx"; import { GameProvider } from "@jgengine/ui";')).toEqual([]);
+test("React imports are detected and the engine's @jgengine/react UI package is not", () => {
+  expect(reactImports('import type { ReactNode } from "react"; export { Provider } from "@jgengine/react/provider";')).toEqual(["import of react"]);
+  expect(reactImports('import { useState } from "@jgengine/core/ui/jsx"; import { GameProvider } from "@jgengine/react";')).toEqual([]);
 });
 
-test("hook manifests grant no source exemption, and hosts cannot import the retired SDK package", () => {
+test("hook manifests grant no source exemption, and hosts may use React and the engine UI package", () => {
   const root = mkdtempSync(join(tmpdir(), "jg-react-free-"));
   try {
     const init = spawnSync("git", ["init", "--quiet", root], { encoding: "utf8" });
@@ -31,9 +31,9 @@ test("hook manifests grant no source exemption, and hosts cannot import the reti
       writeFileSync(path, contents);
     }
     const report = scanReactFree(root);
-    expect(report.violations).toHaveLength(6);
+    expect(report.violations).toHaveLength(4);
     expect(report.violations.map((violation) => violation.file).sort()).toEqual([
-      "apps/web/package.json", "apps/web/src/app.tsx", "games/llmville/src/app.tsx",
+      "games/llmville/src/app.tsx",
       "packages/convex/src/adapter.ts", "packages/ui/package.json", "packages/ui/src/provider.ts",
     ]);
   } finally {

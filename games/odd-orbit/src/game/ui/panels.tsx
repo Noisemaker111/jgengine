@@ -4,9 +4,9 @@ import type { Live } from "@jgengine/core/ui/liveValue";
 import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { bind } from "@jgengine/core/ui/rune/primitives";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
-import { useGame, useGameStore, useSceneObjects } from "@jgengine/ui/hooks";
-import { useGameContext } from "@jgengine/ui/provider";
-import { useStore } from "@jgengine/ui/store";
+import { useGame, useGameStore, useSceneObjects } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/react/provider";
+import { useStore } from "@jgengine/react/store";
 
 import { NEEDS, NEED_DEFS } from "../needs/needs";
 import { moodOfNeeds, bondWord, householdBook } from "../agents";

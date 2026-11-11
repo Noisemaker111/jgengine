@@ -67,6 +67,10 @@ jobs:
       - run: bun run check release-set
       # Builds first, then runs the SDK checks against the fresh dist.
       - run: bun run check --sdk
+      # Trusted publishing cannot create a package: a name npm has never seen fails mid-loop and leaves
+      # `latest` half-published (0.56.0). Refuse before the first publish instead.
+      - name: Every package exists on npm and takes trusted publishing
+        run: bun scripts/check-npm-trusted.ts
       - name: Publish packages that are not installable from the registry
         run: |
           # `npm view` reported success for a version whose tarball returned 404 (#2280), and a

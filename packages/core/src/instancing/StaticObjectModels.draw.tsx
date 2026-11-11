@@ -8,7 +8,7 @@ import { createModelVariantSelector } from "@jgengine/core/lod/modelLod";
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { sceneProbeReading } from "@jgengine/core/devtools/discover";
 import { reportFallbackSeam } from "@jgengine/core/devtools/fallbackSeams";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/react/provider";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { preloadSceneModel } from "@jgengine/core/model/entityModelDraw.draw";
 import { loadOverrideMapSets, type OverrideMapSetsLease } from "@jgengine/core/material/materialAsset.draw";

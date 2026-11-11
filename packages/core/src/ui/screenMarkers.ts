@@ -1,7 +1,7 @@
 /**
  * A world position projected to screen space by the caller's camera. This is the
  * minimal shape {@link layoutScreenMarker} consumes — deliberately a structural
- * subset of `@jgengine/ui`'s `EntityScreenProjection` (and what its
+ * subset of `@jgengine/react`'s `EntityScreenProjection` (and what its
  * `ProjectEntity`/`useWorldProjection` produce), mirrored here because `core`
  * imports nothing higher. Feed it straight from a world→screen projector.
  */

@@ -5,7 +5,7 @@ import type { HTMLAttributes } from "@jgengine/core/ui/jsx/dom.view";
 import { memoView } from "../ui/memoView.view";
 
 import { useReducedMotion } from "@jgengine/core/ui/accessibility.view";
-import { useEngineStyles } from "@jgengine/ui/engineStyles";
+import { useEngineStyles } from "@jgengine/react/engineStyles";
 import { useHudInteract, type HudInteractListener } from "./hudInteract.view";
 import { useMountPresence } from "@jgengine/core/ui/presence.view";
 

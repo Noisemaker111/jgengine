@@ -65,13 +65,13 @@
     "test": "bun test --preload ../../scripts/three-preload.ts src"
   },
   "peerDependencies": {
-    "@jgengine/ui": "^0.56.0",
+    "@jgengine/react": "^0.56.0",
     "@jgengine/shell": "^0.56.0",
     "three": ">=0.187.0",
     "three-stdlib": "^2.0.0"
   },
   "peerDependenciesMeta": {
-    "@jgengine/ui": {
+    "@jgengine/react": {
       "optional": true
     },
     "@jgengine/shell": {

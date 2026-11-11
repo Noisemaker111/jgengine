@@ -29,7 +29,7 @@ import type { TerrainField } from "@jgengine/core/terrain/terrain";
 import { PARTS_OUTPUT, placedGeneratorFor } from "@jgengine/core/scene/assetGenerator";
 import { GeneratorMeshInstance } from "@jgengine/core/generator/GeneratorMeshInstance.draw";
 import { isScatterGeneratorItem, type ScatterGeneratorItem } from "@jgengine/core/scatter/scatterGenerator";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/react/provider";
 
 import { Roads } from "@jgengine/core/roads/RoadRibbons.draw";
 

@@ -6,7 +6,7 @@
     "outDir": "dist",
     "rootDir": "src",
     "paths": {
-      "@jgengine/ui/*": ["./src/*"]
+      "@jgengine/react/*": ["./src/*"]
     }
   },
   "include": ["src"],

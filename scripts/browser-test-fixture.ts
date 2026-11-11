@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -44,11 +44,12 @@ export function packPublicPackage(pkg: string): Promise<string> {
   return tarball;
 }
 
-/** Install the published file set of each `@jgengine/<pkg>` into `<root>/node_modules/@jgengine/<pkg>`. */
+/** Install the published file set of each `packages/<pkg>` into `<root>/node_modules/<its npm name>` (packages/ui is @jgengine/react). */
 export async function installPublicPackages(root: string, packages: readonly string[]): Promise<void> {
   await Promise.all(packages.map(async pkg => {
     const tarball = await packPublicPackage(pkg);
-    const destination = join(root, "node_modules", "@jgengine", pkg);
+    const name = (JSON.parse(readFileSync(join(import.meta.dir, "..", "packages", pkg, "package.json"), "utf8")) as { name: string }).name;
+    const destination = join(root, "node_modules", ...name.split("/"));
     mkdirSync(destination, { recursive: true });
     await run([tarExecutable(), ...extractArgs(tarball, destination, ["--strip-components=1"])], root);
   }));

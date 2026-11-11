@@ -28,7 +28,7 @@ import {
 import { nextChaseView } from "@jgengine/core/runtime/cameraDirector";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import { useGameStore } from "@jgengine/ui/hooks";
+import { useGameStore } from "@jgengine/react/hooks";
 import { defineGame } from "@jgengine/shell/defineGame";
 import type { PlayableGame } from "@jgengine/shell/registry";
 

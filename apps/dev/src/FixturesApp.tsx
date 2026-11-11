@@ -1,14 +1,14 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useEffect, useState } from "@jgengine/core/ui/jsx";
 
-import { previewFixtureNames, resolvePreviewFixture } from "@jgengine/ui";
+import { previewFixtureNames, resolvePreviewFixture } from "@jgengine/react";
 
 import { ErrorPanel, LoadingPanel } from "./appShared";
 import { captureArmed, setCaptureStatus } from "./captureReady";
 
 /**
  * Fixtures capture route: mounts a deterministic engine preview fixture (the real exported
- * `@jgengine/ui` component) by name from `PREVIEW_FIXTURES`, driven by the `?fixture=<name>`
+ * `@jgengine/react` component) by name from `PREVIEW_FIXTURES`, driven by the `?fixture=<name>`
  * URL param. Screenshots the primitive with no game boot and no hand-rolled `--url` page. An
  * empty or unknown name renders the discoverable list of registered fixtures. Mirrors
  * {@link PreviewApp}'s capture handshake: arm `preparing`, mark `ready` two frames after mount,

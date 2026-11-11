@@ -4,7 +4,7 @@ import { RuneField, RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
 import type { ChatMessage } from "@jgengine/core/chat/chat";
 import { suspendPlayControls } from "@jgengine/core/game/controlGate";
-import { useOptionalGameContext } from "@jgengine/ui/provider";
+import { useOptionalGameContext } from "@jgengine/react/provider";
 import { WORLD_CHAT_CHANNEL } from "@llmville/game/multiplayer/presencePolicy";
 
 import { worldChatTransport } from "../worldChatTransport";

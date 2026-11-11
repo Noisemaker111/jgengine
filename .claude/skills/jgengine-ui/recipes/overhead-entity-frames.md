@@ -14,7 +14,7 @@ The seam is data-first and caller-owned: pass an array of
 ## Install
 
 ```sh
-bun add @jgengine/core @jgengine/ui
+bun add @jgengine/core @jgengine/react
 # @jgengine/shell only for the scene projection convenience below
 bun add @jgengine/shell
 ```

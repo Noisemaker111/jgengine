@@ -5,7 +5,7 @@ import { findWorkspaceRoot, readPackageJson, resolveDependencyRange } from "./pk
 
 /** @internal */
 export const LOCKSTEP_SDK_PACKAGES: readonly string[] = [
-  "@jgengine/core", "@jgengine/rapier", "@jgengine/ui", "@jgengine/ws", "@jgengine/node",
+  "@jgengine/core", "@jgengine/rapier", "@jgengine/react", "@jgengine/ws", "@jgengine/node",
   "@jgengine/sql", "@jgengine/convex", "@jgengine/shell", "@jgengine/editor", "@jgengine/assets", "@jgengine/navbake",
 ];
 

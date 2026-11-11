@@ -15,7 +15,7 @@ import {
   type MatchFilter,
   type SessionListing,
 } from "@jgengine/core/multiplayer/matchmaking";
-import { useGameContext } from "@jgengine/ui/provider";
+import { useGameContext } from "@jgengine/react/provider";
 import {
   useFriendRequests,
   useFriends,
@@ -23,7 +23,7 @@ import {
   usePartyInvites,
   usePresence,
   useWorldInvites,
-} from "@jgengine/ui/hooks";
+} from "@jgengine/react/hooks";
 
 export function PresenceDot({ userId, className }: { userId: string; className?: string | undefined }) {
   const presence = usePresence(userId);
