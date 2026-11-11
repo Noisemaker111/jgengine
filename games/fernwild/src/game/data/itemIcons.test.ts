@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { libraryIconUrl } from "@jgengine/assets/library/libraryIcons";
 
-import { ITEMS } from "../data/items";
+import { ITEMS } from "./items";
 import { itemIconCredits, itemIconKey } from "./itemIcons";
 
 describe("item icons", () => {

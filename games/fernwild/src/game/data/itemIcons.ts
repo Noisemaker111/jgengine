@@ -1,7 +1,7 @@
 import { libraryIconCredits } from "@jgengine/assets/library/libraryIcons";
 
-import { itemDef } from "../data/items";
-import { structureDef } from "../data/structures";
+import { itemDef } from "./items";
+import { structureDef } from "./structures";
 
 /** game-icons.net icon per item id. */
 const BY_ITEM: Readonly<Record<string, string>> = {

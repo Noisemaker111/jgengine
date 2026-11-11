@@ -8,7 +8,7 @@ import { lookCredits } from "../art/look";
 import { CREATURE_MODEL_SOURCES, type CreatureModelSource } from "./data/creatureModels";
 import { BODY_SOURCE_IDS } from "./assets";
 import { TOOL_MODELS } from "./models";
-import { itemIconCredits } from "./ui/itemIcons";
+import { itemIconCredits } from "./data/itemIcons";
 
 /** One credit line per author and licence of the creature models, naming each model. */
 function creatureCredits(): string[] {

@@ -6,7 +6,7 @@ import { OnboardingPointer } from "@jgengine/core/onboarding/OnboardingPointer.d
 
 import { baseBuilding, baseGhost, structureColor } from "../base";
 import { Bodies } from "./Bodies";
-import { BroodLair } from "./Broodmother";
+import { BroodLair } from "./BroodLair";
 import { Caves } from "./Caves";
 import { Eggs } from "./Eggs";
 import { Obelisks } from "./Obelisks";
