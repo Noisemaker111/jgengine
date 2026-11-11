@@ -3,18 +3,13 @@
  * the Worker answers the GitHub API proxy, the agent text files (`/llms.txt`, `/llms-full.txt`,
  * `/agents.md`, `/sitemap.xml`), and anything else with the prerendered not-found page and a 404.
  */
-import { githubContributionsHandler, githubProxyHandler } from "@jgengine/github/server";
-
+import { githubContributions, githubProxy } from "./api/github";
 import { buildLlmsFullTxt, buildLlmsTxt } from "./lib/agentDocs";
 import { buildSitemap } from "./lib/sitemap";
 
 interface Env {
   ASSETS: { fetch(request: Request): Promise<Response> };
 }
-
-const token = process.env["GITHUB_TOKEN"] || undefined;
-const proxy = githubProxyHandler({ token });
-const contributions = githubContributionsHandler({ token });
 
 const text = (build: () => string, type: string) => (): Response =>
   new Response(build(), { headers: { "Content-Type": `${type}; charset=utf-8` } });
@@ -23,8 +18,8 @@ type Handler = (request: Request) => Response | Promise<Response>;
 
 /** Path → method → handler. */
 const ROUTES: Record<string, Partial<Record<string, Handler>>> = {
-  "/api/github-proxy": { GET: proxy, POST: proxy },
-  "/api/github-contributions": { GET: contributions },
+  "/api/github-proxy": { GET: githubProxy, POST: githubProxy },
+  "/api/github-contributions": { GET: githubContributions },
   "/llms.txt": { GET: text(buildLlmsTxt, "text/plain") },
   "/llms-full.txt": { GET: text(buildLlmsFullTxt, "text/plain") },
   // The agent brief as markdown (the AGENTS.md convention), from the same source as llms-full.txt.
