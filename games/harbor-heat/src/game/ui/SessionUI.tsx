@@ -4,12 +4,12 @@ import { useGame } from "@jgengine/ui/hooks";
 import { useGameContext } from "@jgengine/ui/provider";
 import { useSettings } from "@jgengine/core/settings/settings.view";
 import { useStore } from "@jgengine/ui/store";
-import { awayStore } from "../../away";
-import { startedStore } from "../../commands";
-import { courierStore, DELIVERY_ROUTES, RUSH_BOND, type CourierState } from "../../jobs/courier";
-import { saveHarborState } from "../../save";
-import { sessionStore } from "../../session";
-import { ReceiptScreen, type Slip } from "../fiction/Receipt";
+import { awayStore } from "../away";
+import { startedStore } from "../commands";
+import { courierStore, DELIVERY_ROUTES, RUSH_BOND, type CourierState } from "../jobs/courier";
+import { saveHarborState } from "../save";
+import { sessionStore } from "../session";
+import { ReceiptScreen, type Slip } from "./Receipt";
 
 /** What the slip says: a delivery's receipt, paid or missed, or the paper's front page for a bust or a clinic stay. */
 export function resultOf(notice: string, courier: CourierState): Slip {

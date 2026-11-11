@@ -2,7 +2,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { vehicleById } from "./entities/vehicles/catalog";
 import { harborProfile } from "./menuProfile";
-import { focusHarborVerb } from "./ui/menu/menuFocus";
+import { focusHarborVerb } from "./ui/menuFocus";
 import { harborSave, saveHarborState } from "./save";
 import { startedStore } from "./commands";
 import { sessionStore } from "./session";

@@ -12,7 +12,9 @@
   ],
   "owns": [
     "index.html",
-    "src/index.tsx"
+    "src/index.css",
+    "src/index.tsx",
+    "src/main.tsx"
   ],
   "capabilities": {
     "probes": {
