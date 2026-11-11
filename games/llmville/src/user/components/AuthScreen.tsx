@@ -1,21 +1,14 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { navigate, ScreenLink } from "../../screens/screenRouter";
-import { Icon } from "../../kit/icons";
-import type { ReactNode } from "@jgengine/core/ui/jsx";
 import type { FormEvent } from "@jgengine/core/ui/jsx/dom.view";
+import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
 
-import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { navigate } from "../../screens/screenRouter";
 import { useLoginForm, useSignupForm } from "../../auth";
 import { AuthOAuthSection } from "../../branding/components/AuthOAuthSection";
-import { BrandLogo } from "../../branding/components/BrandLogo";
 import { destinationAfterAuth, type PlayEntryIntent } from "../../runtime/playEntry";
+import { Button, C, ErrorText, Field, FULL, Logo, Muted, Page, Row, Text } from "../../ui/kit";
 
 export type AuthScreenMode = "sign-in" | "sign-up";
-
-interface AuthScreenProps {
-  mode: AuthScreenMode;
-  playIntent?: PlayEntryIntent | undefined;
-}
 
 const AUTH_COPY = {
   "sign-in": {
@@ -38,246 +31,75 @@ const AUTH_COPY = {
   },
 } as const;
 
-function AuthScreenShell({
-  tagline,
-  children,
-}: {
-  tagline: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="fixed inset-0 overflow-hidden game-bg-grid text-brand-cream">
-      <div className="absolute inset-0">
-        <div className="absolute left-1/4 top-1/4 h-[400px] w-[400px] rounded-full bg-[#e0a95c]/8 blur-[120px] animate-pulse" />
-        <div
-          className="absolute bottom-1/4 right-1/4 h-[400px] w-[400px] rounded-full bg-[#5fc2a8]/8 blur-[120px] animate-pulse"
-          style={{ animationDelay: "1s" }}
-        />
-      </div>
-
-      <main className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4">
-        <div className="w-full max-w-md animate-in fade-in zoom-in-95 duration-300">
-          <ScreenLink
-            to="/"
-            className="mb-6 inline-flex items-center gap-2 text-lg font-semibold text-brand-teal transition-colors hover:text-brand-cream"
-          >
-            <Icon name="back" className="h-6 w-6" strokeWidth={2.25} />
-            Back
-          </ScreenLink>
-
-          <div className="mb-7 flex flex-col items-center text-center">
-            <BrandLogo variant="stacked" size="md" />
-            <p className="mt-4 text-sm font-medium text-brand-cream/65">{tagline}</p>
-          </div>
-
-          <div className="flex w-full flex-col gap-3">{children}</div>
-        </div>
-      </main>
-    </div>
-  );
-}
-
-interface AuthScreenBodyProps {
-  mode: AuthScreenMode;
-  playIntent?: PlayEntryIntent | undefined;
-  error: string | null;
-  isLoading: boolean;
-  isGoogleLoading: boolean;
-  isGuestLoading: boolean;
-  onSubmit: (event: FormEvent) => void;
-  onGoogle: () => void;
-  onGuest: () => void;
-  formFields: ReactNode;
-}
-
-function AuthScreenBody({
-  mode,
-  playIntent,
-  error,
-  isLoading,
-  isGoogleLoading,
-  isGuestLoading,
-  onSubmit,
-  onGoogle,
-  onGuest,
-  formFields,
-}: AuthScreenBodyProps) {
-  const copy = AUTH_COPY[mode];
-  const guestHref = `${mode === "sign-up" ? "/signup" : "/login"}${
-    playIntent ? `?intent=${encodeURIComponent(playIntent)}` : ""
-  }`;
-
-  return (
-    <>
-      <form onSubmit={onSubmit} className="game-auth-form">
-        {formFields}
-        {error ? <p className="text-sm text-[#f0a097]">{error}</p> : null}
-        <KitButton
-          type="submit"
-          variant="primary"
-          disabled={isLoading}
-          className="w-full py-3.5 text-base disabled:opacity-50"
-        >
-          {isLoading ? (
-            <span className="flex items-center justify-center gap-2">
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current/30 border-t-current" />
-              {copy.submitLoading}
-            </span>
-          ) : (
-            copy.submitLabel
-          )}
-        </KitButton>
-      </form>
-
-      <p className="text-center text-sm text-brand-cream/60">
-        {copy.alternateLead}{" "}
-        <ScreenLink
-          to={copy.alternateRoute}
-          {...(playIntent ? { search: { intent: playIntent } } : {})}
-          className="font-semibold text-brand-teal transition-colors hover:text-brand-cream"
-        >
-          {copy.alternateLabel}
-        </ScreenLink>
-      </p>
-
-      <p className="text-center text-sm font-medium text-brand-cream/45">or</p>
-
-      <AuthOAuthSection actionLabel={copy.googleActionLabel} loading={isGoogleLoading} onClick={onGoogle} />
-
-      <p className="text-center text-sm text-brand-cream/60">
-        <a
-          href={guestHref}
-          onClick={(event) => {
-            event.preventDefault();
-            if (!isGuestLoading) onGuest();
-          }}
-          aria-disabled={isGuestLoading}
-          className="font-semibold text-brand-teal underline decoration-brand-teal/40 underline-offset-4 transition-colors hover:text-brand-cream hover:decoration-brand-cream aria-disabled:pointer-events-none aria-disabled:opacity-50"
-        >
-          {isGuestLoading ? "Joining…" : "Play as guest"}
-        </a>{" "}
-        — progress won't be saved.
-      </p>
-    </>
-  );
-}
-
-function AuthCredentialFields({
-  mode,
-  email,
-  setEmail,
-  password,
-  setPassword,
-}: {
-  mode: AuthScreenMode;
+/** What the auth form shows and does, from `useLoginForm` / `useSignupForm`. */
+export interface AuthFormVm {
   email: string;
   setEmail: (value: string) => void;
   password: string;
   setPassword: (value: string) => void;
-}) {
-  return (
-    <>
-      <div className="game-form-field">
-        <label htmlFor={`${mode}-email`} className="game-field-label">
-          Email
-        </label>
-        <input
-          id={`${mode}-email`}
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          required
-          autoComplete="email"
-          className="game-input game-input--spacious"
-          placeholder="you@example.com"
-        />
-      </div>
-      <div className="game-form-field">
-        <label htmlFor={`${mode}-password`} className="game-field-label">
-          Password
-        </label>
-        <input
-          id={`${mode}-password`}
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          required
-          minLength={mode === "sign-up" ? 8 : undefined}
-          autoComplete={mode === "sign-up" ? "new-password" : "current-password"}
-          className="game-input game-input--spacious"
-          placeholder="••••••••"
-        />
-      </div>
-    </>
-  );
+  error: string | null;
+  isLoading: boolean;
+  isGoogleLoading: boolean;
+  isGuestLoading: boolean;
+  submit: () => void;
+  google: () => void;
+  guest: () => void;
+}
+
+/** The browser's form checks the page used to make: an address with an @, and a long enough new password. */
+export function authFormProblem(mode: AuthScreenMode, email: string, password: string): string | null {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return "Enter your email address.";
+  if (password.length === 0) return "Enter your password.";
+  if (mode === "sign-up" && password.length < 8) return "Use at least 8 characters for your password.";
+  return null;
+}
+
+/** The form's own events go to the auth hooks, which only cancel the default; native has none. */
+const NATIVE_SUBMIT = { preventDefault: () => undefined } as unknown as FormEvent; // type-escape: the hooks read only preventDefault from the event
+
+export function AuthScreenView({ mode, playIntent, form }: { mode: AuthScreenMode; playIntent?: PlayEntryIntent | undefined; form: AuthFormVm }) {
+  const copy = AUTH_COPY[mode];
+  const submit = () => { if (!form.isLoading && authFormProblem(mode, form.email, form.password) === null) form.submit(); };
+  const problem = authFormProblem(mode, form.email, form.password);
+  const typed = form.email.length > 0 || form.password.length > 0;
+  return <Page maxWidth={448}>
+    <Button tone="link" icon="back" onPress={() => void navigate({ to: "/" })}>Back</Button>
+    <RuneView items="center" gap={12}>
+      <Logo stacked size="md" />
+      <Muted size={14} weight={600}>{copy.tagline}</Muted>
+    </RuneView>
+    <RuneView gap={12} width={FULL} label={copy.submitLabel}>
+      <Field label="Email" value={form.email} onChange={form.setEmail} onSubmit={submit} placeholder="you@example.com" maxLength={254} />
+      <Field label="Password" secret value={form.password} onChange={form.setPassword} onSubmit={submit} placeholder="••••••••" maxLength={128} />
+      {form.error !== null ? <ErrorText>{form.error}</ErrorText> : typed && problem !== null ? <Muted size={13}>{problem}</Muted> : null}
+      <Button tone="primary" width={FULL} busy={form.isLoading} busyLabel={copy.submitLoading}
+        disabled={problem !== null} onPress={submit}>{copy.submitLabel}</Button>
+    </RuneView>
+    <Row justify="center" gap={4}>
+      <Muted size={14}>{copy.alternateLead}</Muted>
+      <Button tone="link" onPress={() => void navigate({ to: copy.alternateRoute, ...(playIntent ? { search: { intent: playIntent } } : {}) })}>{copy.alternateLabel}</Button>
+    </Row>
+    <Muted size={14} align="center" color={C.faint}>or</Muted>
+    <AuthOAuthSection actionLabel={copy.googleActionLabel} loading={form.isGoogleLoading} onClick={form.google} />
+    <Row justify="center" gap={4}>
+      <Button tone="link" busy={form.isGuestLoading} busyLabel="Joining…" onPress={form.guest}>Play as guest</Button>
+      <Text size={14} color={C.muted}>— progress won't be saved.</Text>
+    </Row>
+  </Page>;
 }
 
 function SignInAuthScreen({ playIntent }: { playIntent?: PlayEntryIntent | undefined }) {
   const form = useLoginForm(() => navigate(destinationAfterAuth(playIntent)), playIntent);
-  const copy = AUTH_COPY["sign-in"];
-
-  return (
-    <AuthScreenShell tagline={copy.tagline}>
-      <AuthScreenBody
-        mode="sign-in"
-        playIntent={playIntent}
-        error={form.error}
-        isLoading={form.isLoading}
-        isGoogleLoading={form.isGoogleLoading}
-        isGuestLoading={form.isGuestLoading}
-        onSubmit={form.handleSubmit}
-        onGoogle={form.handleGoogleSignIn}
-        onGuest={form.handleGuest}
-        formFields={
-          <AuthCredentialFields
-            mode="sign-in"
-            email={form.email}
-            setEmail={form.setEmail}
-            password={form.password}
-            setPassword={form.setPassword}
-          />
-        }
-      />
-    </AuthScreenShell>
-  );
+  return <AuthScreenView mode="sign-in" playIntent={playIntent} form={{ ...form, submit: () => void form.handleSubmit(NATIVE_SUBMIT), google: form.handleGoogleSignIn, guest: form.handleGuest }} />;
 }
 
 function SignUpAuthScreen({ playIntent }: { playIntent?: PlayEntryIntent | undefined }) {
   const form = useSignupForm(() => navigate(destinationAfterAuth(playIntent)), playIntent);
-  const copy = AUTH_COPY["sign-up"];
-
-  return (
-    <AuthScreenShell tagline={copy.tagline}>
-      <AuthScreenBody
-        mode="sign-up"
-        playIntent={playIntent}
-        error={form.error}
-        isLoading={form.isLoading}
-        isGoogleLoading={form.isGoogleLoading}
-        isGuestLoading={form.isGuestLoading}
-        onSubmit={form.handleSubmit}
-        onGoogle={form.handleGoogleSignUp}
-        onGuest={form.handleGuest}
-        formFields={
-          <AuthCredentialFields
-            mode="sign-up"
-            email={form.email}
-            setEmail={form.setEmail}
-            password={form.password}
-            setPassword={form.setPassword}
-          />
-        }
-      />
-    </AuthScreenShell>
-  );
+  return <AuthScreenView mode="sign-up" playIntent={playIntent} form={{ ...form, submit: () => void form.handleSubmit(NATIVE_SUBMIT), google: form.handleGoogleSignUp, guest: form.handleGuest }} />;
 }
 
-export function AuthScreen({ mode, playIntent }: AuthScreenProps) {
-  return mode === "sign-in" ? (
-    <SignInAuthScreen playIntent={playIntent} />
-  ) : (
-    <SignUpAuthScreen playIntent={playIntent} />
-  );
+export function AuthScreen({ mode, playIntent }: { mode: AuthScreenMode; playIntent?: PlayEntryIntent | undefined }) {
+  return mode === "sign-in" ? <SignInAuthScreen playIntent={playIntent} /> : <SignUpAuthScreen playIntent={playIntent} />;
 }
 
 export function LoginScreen({ playIntent }: { playIntent?: PlayEntryIntent | undefined }) {

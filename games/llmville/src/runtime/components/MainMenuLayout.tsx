@@ -1,12 +1,13 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { navigate, ScreenLink } from "../../screens/screenRouter";
-import { Icon } from "../../kit/icons";
-
-import { MAIN_MENU_ACCOUNT_CHIP_KIND, useMainMenuAccountChipVm } from "../../auth";
-import { BrandLogo } from "../../branding/components/BrandLogo";
-import { SITE_TAGLINE } from "../../seo/siteSeo";
-import { MainMenuAtmosphere } from "./MainMenuAtmosphere";
 import type { ReactNode } from "@jgengine/core/ui/jsx";
+import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
+import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
+
+import { navigate } from "../../screens/screenRouter";
+import { MAIN_MENU_ACCOUNT_CHIP_KIND, useMainMenuAccountChipVm, type MainMenuAccountChipVm } from "../../auth";
+import { SITE_TAGLINE } from "../../seo/siteSeo";
+import { Backdrop, Button, C, FULL, Icon, Logo, Muted, Row, Text, useCompact } from "../../ui/kit";
+import { DISPLAY } from "../../ui/theme";
 
 interface MainMenuLayoutProps {
   children: ReactNode;
@@ -18,145 +19,76 @@ interface MainMenuLayoutProps {
   hideHeader?: boolean;
 }
 
-export function MainMenuLayout({ children, intro, backTo, overlay, hideHeader = false }: MainMenuLayoutProps) {
-  const accountChip = useMainMenuAccountChipVm();
+const TICKER = ["TFLOP pool online", "inference queue idle", "garage tier unlocked", "co-op sync ready", "tokenizer warm", "cooling nominal"] as const;
+const PARTICLES = [[0.08, 0.22, 4], [0.18, 0.68, 3], [0.72, 0.18, 5], [0.84, 0.55, 3], [0.46, 0.78, 4], [0.58, 0.32, 3]] as const;
 
-  return (
-    <div className="relative h-screen w-screen overflow-hidden bg-brand-ink font-sans text-brand-cream select-none">
-      <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_-10%,rgba(224,169,92,0.14)_0%,transparent_45%),radial-gradient(circle_at_50%_120%,#22332f_0%,#16201e_70%)]" />
-        <div className="game-perspective-grid absolute inset-0" />
-        <div className="absolute left-[10%] top-[12%] h-[42%] w-[42%] rounded-full bg-[#e0a95c]/10 blur-[130px] animate-pulse" />
-        <div
-          className="absolute bottom-[8%] right-[12%] h-[42%] w-[42%] rounded-full bg-[#5fc2a8]/10 blur-[130px] animate-pulse"
-          style={{ animationDelay: "1.4s" }}
-        />
-        <MainMenuAtmosphere />
-      </div>
+/** Ambient lab-floor dressing behind the menu: drifting teal motes and a status ticker. */
+function Atmosphere() {
+  const { width, height } = useRuneViewport();
+  return <RuneView anchor="fill">
+    {PARTICLES.map(([x, y, size], index) => <RuneView key={index} pin={[x * width, y * height, null, null]} width={size} height={size} radius={size} fill="#5fc2a880" />)}
+    {useCompact() ? null : <RuneView anchor="bottom" inset={72}>
+      <Row gap={32}>{TICKER.map((item) => <Text key={item} size={10} weight={700} tracking={2.6} color="#5fc2a859">{item.toUpperCase()}</Text>)}</Row>
+    </RuneView>}
+  </RuneView>;
+}
 
-      <div className="relative z-10 flex h-full w-full flex-col p-4 pt-[max(1rem,env(safe-area-inset-top))] sm:p-8 md:p-12">
-        <header
-          className={`flex w-full gap-4 ${hideHeader ? "justify-end" : "items-start justify-between"}`}
-        >
-          {!hideHeader ? (
-            <div className="flex min-w-0 flex-col gap-4">
-              {backTo ? (
-                <ScreenLink
-                  to={backTo}
-                  className="flex items-center gap-1.5 text-sm font-semibold text-brand-teal transition-colors animate-in slide-in-from-left duration-300 hover:text-brand-cream"
-                >
-                  <Icon name="back" className="h-5 w-5" />
-                  Back
-                </ScreenLink>
-              ) : null}
-              <div className="animate-in fade-in slide-in-from-left duration-700">
-                <ScreenLink to="/" aria-label="LLMville home">
-                  <BrandLogo variant="inline" size="md" showTagline className="max-w-full" />
-                </ScreenLink>
-              </div>
-            </div>
-          ) : null}
+function AccountChip({ account }: { account: MainMenuAccountChipVm }) {
+  if (account.kind === MAIN_MENU_ACCOUNT_CHIP_KIND.signedOut) return null;
+  if (account.kind === MAIN_MENU_ACCOUNT_CHIP_KIND.guest) return <RuneView items="end" gap={6}>
+    <Muted size={11} weight={700}>Playing as guest — progress won't be saved</Muted>
+    <Button tone="primary" icon="logIn" onPress={() => void navigate({ to: "/login" })}>Sign in to save</Button>
+  </RuneView>;
+  const body = <>
+    <RuneView width={40} height={40} radius={20} border={{ width: 2, color: "#5fc2a880" }} justify="center" items="center"><Icon name="user" size={20} color={C.teal} /></RuneView>
+    <RuneView gap={2}>
+      <Text family={DISPLAY} size={13} weight={800} color={C.cream}>{account.displayLine}</Text>
+      <Text size={11} weight={700} color={C.teal}>{account.kind === MAIN_MENU_ACCOUNT_CHIP_KIND.profileLink ? `@${account.username}` : "Loading…"}</Text>
+    </RuneView>
+  </>;
+  return account.kind === MAIN_MENU_ACCOUNT_CHIP_KIND.profileLink
+    ? <Button tone="chip" label={`Profile @${account.username}`} padding={[6, 14, 6, 6]} onPress={() => void navigate({ to: "/profile/$username", params: { username: account.username } })}>{body}</Button>
+    : <Row padding={[6, 14, 6, 6]} radius={999} fill="#ffffff0d">{body}</Row>;
+}
 
-          <div className="animate-in fade-in slide-in-from-right duration-700">
-            {accountChip.kind === MAIN_MENU_ACCOUNT_CHIP_KIND.signedOut ? null : accountChip.kind ===
-              MAIN_MENU_ACCOUNT_CHIP_KIND.guest ? (
-              <div className="flex flex-col items-end gap-1.5">
-                <span className="font-sans text-[11px] font-semibold text-brand-cream/55">
-                  Playing as guest — progress won't be saved
-                </span>
-                <button
-                  type="button"
-                  onClick={() => navigate({ to: "/login" })}
-                  className="game-button game-button-primary game-button-compact px-4 py-2.5 text-sm"
-                >
-                  <Icon name="logIn" className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
-                  <span>Sign in to save</span>
-                </button>
-              </div>
-            ) : accountChip.kind === MAIN_MENU_ACCOUNT_CHIP_KIND.profileLink ? (
-              <ScreenLink
-                to="/profile/$username"
-                params={{ username: accountChip.username }}
-                className="game-account-chip group/profile"
-              >
-                <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-brand-teal/50">
-                  <Icon name="user" className="h-5 w-5 text-brand-teal/90" />
-                </div>
-                <div className="flex flex-col gap-0.5 text-left">
-                  <span className="font-game text-[13px] font-bold tracking-wide text-brand-cream">
-                    {accountChip.displayLine}
-                  </span>
-                  <span className="font-sans text-[11px] font-semibold text-brand-teal">@{accountChip.username}</span>
-                </div>
-              </ScreenLink>
-            ) : (
-              <div className="game-account-chip">
-                <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-brand-teal/40">
-                  <Icon name="user" className="h-5 w-5 text-brand-teal/70" />
-                </div>
-                <div className="flex flex-col gap-0.5 text-left">
-                  <span className="font-game text-[13px] font-bold tracking-wide text-brand-cream">
-                    {accountChip.displayLine}
-                  </span>
-                  <span className="animate-pulse font-sans text-[11px] text-brand-teal/60">Loading…</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </header>
+/** The menu pages' frame (home, about, profile), drawn with the account it is handed. */
+export function MainMenuLayoutView({ account, children, intro, backTo, overlay, hideHeader = false }: MainMenuLayoutProps & { account: MainMenuAccountChipVm }) {
+  const { width, height } = useRuneViewport();
+  const compact = useCompact();
+  const pad = compact ? 16 : 40;
+  const wide = intro !== undefined && width >= 1024;
+  const middle = height - pad * 2 - (hideHeader ? 70 : compact ? 140 : 170);
+  return <RuneView anchor="fill">
+    <Backdrop />
+    <Atmosphere />
+    <RuneView anchor="fill" safe padding={pad} gap={compact ? 12 : 20}>
+      <Row justify={hideHeader ? "end" : "between"} items="start" width={FULL}>
+        {hideHeader ? null : <RuneView gap={12}>
+          {backTo === undefined ? null : <Button tone="link" icon="back" onPress={() => void navigate({ to: backTo })}>Back</Button>}
+          <Button tone="link" label="LLMville home" padding={0} onPress={() => void navigate({ to: "/" })}><Logo size={compact ? "sm" : "md"} tagline={!compact} /></Button>
+        </RuneView>}
+        <AccountChip account={account} />
+      </Row>
+      <RuneView grow={1} width={FULL} scroll maxHeight={middle}>
+        {/* A scrolling view stacks its children in a plain column; this row centres the menu inside it. */}
+        <RuneView width={FULL} minHeight={middle} items="center" justify={intro === undefined ? "center" : "start"}>
+          <RuneView layout={wide ? "row" : "stack"} gap={wide ? 40 : 24} items={wide ? "start" : "center"} width={intro === undefined ? Math.min(384, width - pad * 2) : Math.min(1152, width - pad * 2)}>
+            {intro === undefined ? null : <RuneView grow={1} shrink>{intro}</RuneView>}
+            <RuneView width={intro === undefined ? FULL : Math.min(340, width - pad * 2)}>{children}</RuneView>
+          </RuneView>
+        </RuneView>
+      </RuneView>
+      <Row justify={hideHeader ? "center" : "between"} width={FULL}>
+        {hideHeader ? <Muted size={11} weight={700} color={C.faint}>© 2026 LLMville</Muted> : <>
+          <Row gap={8}><RuneView width={8} height={8} radius={4} fill={C.teal} shadow={{ y: 0, blur: 8, color: "#5fc2a8b3" }} /><Muted size={11} weight={700} color={C.faint}>{SITE_TAGLINE}</Muted></Row>
+          <Muted size={11} weight={700} color={C.faint}>llmville.com</Muted>
+        </>}
+      </Row>
+    </RuneView>
+    {overlay}
+  </RuneView>;
+}
 
-        <main
-          className={`flex flex-1 flex-col ${
-            intro ? "items-start overflow-y-auto py-4 sm:py-6" : "items-center justify-center"
-          }`}
-        >
-          <div
-            className={
-              intro
-                ? "grid w-full max-w-6xl items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)] lg:gap-10"
-                : "w-full max-w-sm animate-in fade-in slide-in-from-bottom duration-700"
-            }
-          >
-            {intro ? (
-              <div className="animate-in fade-in slide-in-from-left duration-700 max-lg:max-w-lg">{intro}</div>
-            ) : null}
-            <div
-              className={
-                intro
-                  ? "main-menu-panel animate-in fade-in slide-in-from-bottom duration-700 w-full max-w-sm justify-self-start lg:justify-self-end"
-                  : undefined
-              }
-            >
-              {children}
-            </div>
-          </div>
-        </main>
-
-        <footer
-          className={`flex w-full flex-wrap items-center justify-between gap-3 text-[11px] font-semibold text-brand-cream/45 ${hideHeader ? "justify-center" : ""}`}
-        >
-          {!hideHeader ? (
-            <span className="inline-flex items-center gap-2">
-              <span
-                className="h-2 w-2 rounded-full bg-brand-teal shadow-[0_0_8px_rgba(95,194,168,0.7)]"
-                aria-hidden
-              />
-              {SITE_TAGLINE}
-            </span>
-          ) : (
-            <span>&copy; 2026 LLMville</span>
-          )}
-          {!hideHeader ? (
-            <nav aria-label="Site links" className="flex items-center gap-4">
-              <a href="https://llmville.com" className="tracking-wide transition-colors hover:text-brand-teal">
-                llmville.com
-              </a>
-            </nav>
-          ) : null}
-        </footer>
-      </div>
-
-      {overlay}
-    </div>
-  );
+export function MainMenuLayout(props: MainMenuLayoutProps) {
+  return <MainMenuLayoutView {...props} account={useMainMenuAccountChipVm()} />;
 }

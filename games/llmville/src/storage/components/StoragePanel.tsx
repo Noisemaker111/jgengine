@@ -1,4 +1,5 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
+import { RuneAction, RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import {
   estimateBuildResalePrice,
   getBuildTabLabel,
@@ -6,10 +7,10 @@ import {
   type BuildMenuTabId,
   type StorageItem,
 } from "@llmville/game/build/build";
-import { InventoryTrayCard } from "../../store/components/StoreListRow";
+
 import { useStoragePanelKeybindLabels } from "../../settings/settings";
-import { TutorialArrow } from "../../tutorial/components/TutorialUi";
-import { cn } from "../../kit/cn";
+import { Button, C, FULL, Label, Row, Stack, Text } from "../../ui/kit";
+import { TutorialArrow } from "../../ui/shop";
 
 interface StoragePanelProps {
   tabs: readonly BuildMenuTabId[];
@@ -18,7 +19,6 @@ interface StoragePanelProps {
   buildInventory: Record<string, number>;
   selectedItem: StorageItem | null;
   selectedIndex: number;
-  priceLabel: string;
   primaryActionLabel: string;
   primaryActionDisabled: boolean;
   trashDisabled: boolean;
@@ -28,12 +28,12 @@ interface StoragePanelProps {
   showPlaceItemTutorialArrow?: boolean;
   onTabChange: (direction: -1 | 1) => void;
   onTabSelect: (tab: BuildMenuTabId) => void;
-  onItemChange: (direction: -1 | 1) => void;
   onItemSelect: (index: number) => void;
   onPrimaryAction: () => void;
   onTrashAction: () => void;
 }
 
+/** Storage: build tabs, the stored items, and Place/Trash on the selected one. */
 export function StoragePanel({
   tabs,
   activeTab,
@@ -41,178 +41,67 @@ export function StoragePanel({
   buildInventory,
   selectedItem,
   selectedIndex,
-  priceLabel: _priceLabel,
   primaryActionLabel,
   primaryActionDisabled,
   trashDisabled,
   placementModeActive,
   canPlaceItem = false,
   onConfirmPlacement,
-  showPlaceItemTutorialArrow,
+  showPlaceItemTutorialArrow = false,
   onTabChange,
   onTabSelect,
-  onItemChange: _onItemChange,
   onItemSelect,
   onPrimaryAction,
   onTrashAction,
 }: StoragePanelProps) {
-  const {
-    previousTab: previousTabKeyLabel,
-    nextTab: nextTabKeyLabel,
-    interact: interactKeyLabel,
-    confirm: confirmKeyLabel,
-    rotatePlacement: rotateKeyLabel,
-    cancel: cancelKeyLabel,
-  } = useStoragePanelKeybindLabels();
+  const keys = useStoragePanelKeybindLabels();
+  const pointAtPlace = showPlaceItemTutorialArrow && primaryActionLabel === "Place Item" && !primaryActionDisabled;
+  return <Stack gap={14} width={FULL}>
+    <Row gap={4} width={FULL} padding={4} radius={14} fill="#00000066">
+      <Button tone="chip" minWidth={32} label="Previous storage tab" onPress={() => onTabChange(-1)}><Text size={12}>{keys.previousTab}</Text></Button>
+      <Row grow={1} gap={4}>{tabs.map((tab) => <Button key={tab} tone="chip" grow={1} fill={tab === activeTab ? C.teal : "#00000000"} label={`${getBuildTabLabel(tab)} storage`} onPress={() => onTabSelect(tab)}>
+        <Text size={10} weight={800} color={tab === activeTab ? C.ink : C.cream}>{getBuildTabLabel(tab)}</Text>
+      </Button>)}</Row>
+      <Button tone="chip" minWidth={32} label="Next storage tab" onPress={() => onTabChange(1)}><Text size={12}>{keys.nextTab}</Text></Button>
+    </Row>
 
-  return (
-    <div className="flex flex-col gap-4 pb-20">
-      <div className="game-control-group">
-        <button
-          type="button"
-          onClick={() => onTabChange(-1)}
-          className="game-control-segment w-8 shrink-0 px-0 text-xs"
-        >
-          {previousTabKeyLabel}
-        </button>
-        <div className="flex flex-1 gap-1">
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => onTabSelect(tab)}
-              className={`game-control-segment text-[10px] ${tab === activeTab ? "game-control-segment-active" : ""}`}
-            >
-              {getBuildTabLabel(tab)}
-            </button>
-          ))}
-        </div>
-        <button
-          type="button"
-          onClick={() => onTabChange(1)}
-          className="game-control-segment w-8 shrink-0 px-0 text-xs"
-        >
-          {nextTabKeyLabel}
-        </button>
-      </div>
+    <RuneView scroll maxHeight={320} gap={8} width={FULL}>
+      {activeBuildItems.length === 0 ? <RuneView padding={32} items="center" width={FULL}>
+        <Label>{(activeTab === "hardware" ? "No GPUs in storage. Buy from Store → Hardware." : "No items in storage").toUpperCase()}</Label>
+      </RuneView> : activeBuildItems.map((item, index) => {
+        const selected = index === selectedIndex;
+        if (isHardwareStorageItem(item)) {
+          return <RuneAction key={item.id} variant="inset" width={FULL} gap={6} label={`Select ${item.name}`} run={() => onItemSelect(index)} border={{ width: 1, color: selected ? "#e8836b66" : C.line }}>
+            <Row justify="between" width={FULL}>
+              <RuneView><Text size={12} weight={800} color={selected ? C.coral : C.cream}>{item.name}</Text><Text size={9} color={C.faint}>{`In stock: ${item.count}`}</Text></RuneView>
+              <Text size={10} color={C.coral}>GPU</Text>
+            </Row>
+            {selected ? <Text size={9} color={C.faint}>{`Configure at rack — press ${keys.interact} near a rack`}</Text> : null}
+          </RuneAction>;
+        }
+        const owned = buildInventory[item.id] || 0;
+        return <RuneView key={item.id} width={FULL} gap={8}>
+          <RuneAction variant="inset" width={FULL} gap={6} label={`Select ${item.name}`} run={() => onItemSelect(index)} border={{ width: 1, color: selected ? "#5fc2a866" : C.line }}>
+            <Row justify="between" width={FULL}>
+              <RuneView><Text size={12} weight={800} color={selected ? C.teal : C.cream}>{item.name}</Text>{owned > 0 ? <Text size={9} color={C.faint}>{`In stock: ${owned}`}</Text> : null}</RuneView>
+              <Text size={10} color={C.muted}>{owned > 0 ? `EST $${estimateBuildResalePrice(item.price).toLocaleString()}` : `$${item.price.toLocaleString()}`}</Text>
+            </Row>
+          </RuneAction>
+          {selected && selectedItem?.id === item.id ? <Row gap={8} width={FULL}>
+            {pointAtPlace ? <TutorialArrow /> : null}
+            <Button tone="primary" grow={1} minHeight={36} disabled={primaryActionDisabled} label={`${primaryActionLabel} ${item.name}`}
+              {...(pointAtPlace ? { border: { width: 2, color: C.teal } } : {})} onPress={onPrimaryAction}>
+              <Text size={11} weight={800} color={C.ink}>{primaryActionLabel}</Text>
+            </Button>
+            <Button tone="danger" minHeight={36} disabled={trashDisabled} label={`Trash ${item.name}`} onPress={onTrashAction}><Text size={11} weight={800} color={C.error}>Trash</Text></Button>
+          </Row> : null}
+        </RuneView>;
+      })}
+    </RuneView>
 
-      <div className="flex max-h-[320px] flex-col gap-2 overflow-y-auto scrollbar-none">
-        {activeBuildItems.length === 0 ? (
-          <div className="py-8 text-center text-[11px] uppercase tracking-wider text-brand-cream/30">
-            {activeTab === "hardware" ? "No GPUs in storage. Buy from Store → Hardware." : "No items in storage"}
-          </div>
-        ) : (
-          activeBuildItems.map((item, index) => {
-            const isSelected = index === selectedIndex;
-            const isHardware = isHardwareStorageItem(item);
-
-            if (isHardware) {
-              return (
-                <InventoryTrayCard
-                  key={item.id}
-                  className={cn(
-                    "w-full cursor-pointer text-left",
-                    isSelected && "ring-1 ring-brand-coral/40",
-                  )}
-                >
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => onItemSelect(index)}
-                    onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onItemSelect(index); } }}
-                  >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className={`text-xs font-bold ${isSelected ? "text-brand-coral" : "text-brand-cream"}`}>{item.name}</p>
-                      <p className="text-[9px] text-brand-cream/40">In stock: {item.count}</p>
-                    </div>
-                    <span className="text-[10px] text-brand-coral/80">GPU</span>
-                  </div>
-                  {isSelected && (
-                    <p className="mt-2 text-[9px] text-brand-cream/45">Configure at rack — press {interactKeyLabel} near a rack</p>
-                  )}
-                  </div>
-                </InventoryTrayCard>
-              );
-            }
-
-            const itemOwnedCount = buildInventory[item.id] || 0;
-            const rowPriceLabel = itemOwnedCount > 0 ? `EST $${estimateBuildResalePrice(item.price).toLocaleString()}` : `$${item.price.toLocaleString()}`;
-
-            return (
-              <InventoryTrayCard
-                key={item.id}
-                className={cn(
-                  "w-full cursor-pointer text-left",
-                  isSelected && "ring-1 ring-brand-teal/40",
-                )}
-              >
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => onItemSelect(index)}
-                  onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onItemSelect(index); } }}
-                >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className={`text-xs font-bold ${isSelected ? "text-brand-teal" : "text-brand-cream"}`}>{item.name}</p>
-                    {itemOwnedCount > 0 && <p className="text-[9px] text-brand-cream/40">In stock: {itemOwnedCount}</p>}
-                  </div>
-                  <span className="text-[10px] text-brand-cream/55">{rowPriceLabel}</span>
-                </div>
-                {isSelected && selectedItem?.id === item.id && (
-                  <div className="game-divider mt-3 flex gap-2 pt-3" onClick={(event) => event.stopPropagation()}>
-                    <div className="flex-1 relative">
-                      {showPlaceItemTutorialArrow && primaryActionLabel === "Place Item" && !primaryActionDisabled && (
-                        <TutorialArrow className="!-top-6 scale-75" />
-                      )}
-                      <button
-                        type="button"
-                        onClick={(event) => { event.stopPropagation(); onPrimaryAction(); }}
-                        disabled={primaryActionDisabled}
-                        className={`game-button game-button-compact w-full text-[10px] ${
-                          primaryActionDisabled ? "opacity-40" : "game-button-primary"
-                        } ${showPlaceItemTutorialArrow && primaryActionLabel === "Place Item" ? "ring-2 ring-brand-teal/70" : ""}`}
-                      >
-                        {primaryActionLabel}
-                      </button>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={(event) => { event.stopPropagation(); onTrashAction(); }}
-                      disabled={trashDisabled}
-                      className={`game-button game-button-compact px-3 text-[10px] ${
-                        trashDisabled ? "opacity-40" : "game-button-secondary border-[#d9544a]/30 text-[#f0a097]"
-                      }`}
-                    >
-                      Trash
-                    </button>
-                  </div>
-                )}
-                </div>
-              </InventoryTrayCard>
-            );
-          })
-        )}
-      </div>
-
-      {placementModeActive && (
-        <div className="flex flex-col gap-2">
-          {onConfirmPlacement && (
-            <button
-              type="button"
-              onClick={onConfirmPlacement}
-              disabled={!canPlaceItem}
-              className={`game-button game-button-compact w-full text-[10px] ${
-                canPlaceItem ? "game-button-primary" : "opacity-40"
-              }`}
-            >
-              Place here
-            </button>
-          )}
-          <p className="text-[9px] uppercase tracking-widest text-brand-teal/80">{confirmKeyLabel} or Click to place, {rotateKeyLabel} rotate, {cancelKeyLabel} cancel</p>
-        </div>
-      )}
-    </div>
-  );
+    {placementModeActive ? <Stack gap={8} width={FULL}>
+      {onConfirmPlacement ? <Button tone="primary" width={FULL} disabled={!canPlaceItem} onPress={onConfirmPlacement}>Place here</Button> : null}
+      <Label color={C.teal}>{`${keys.confirm} or Click to place, ${keys.rotatePlacement} rotate, ${keys.cancel} cancel`.toUpperCase()}</Label>
+    </Stack> : null}
+  </Stack>;
 }

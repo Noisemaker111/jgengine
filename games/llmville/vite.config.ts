@@ -1,4 +1,3 @@
-import tailwindcss from "@tailwindcss/vite";
 import path from "node:path";
 import { defineConfig } from "vite";
 
@@ -9,7 +8,6 @@ const engine = engineSource(new URL(".", import.meta.url));
 
 export default defineConfig({
   plugins: [
-    tailwindcss(),
     viteJgUiWasm(),
   ],
   // Convex's and better-auth's hooks import `@jgengine/core/ui/jsx`, which resolves to the engine's UI runtime. That

@@ -22,9 +22,5 @@ export function BankruptOverlay() {
 
   if (convexUser?.bankruptAt === undefined) return null;
 
-  return (
-    <div className="pointer-events-auto absolute inset-0 z-[200] flex items-center justify-center bg-black/80 p-6">
-      <BankruptScreen isDismissing={isDismissing} onDismiss={() => void dismiss()} />
-    </div>
-  );
+  return <BankruptScreen isDismissing={isDismissing} onDismiss={() => void dismiss()} />;
 }

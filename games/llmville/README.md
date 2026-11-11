@@ -67,9 +67,9 @@ Sign up with any test email on the local backend, or play as a guest. `bun run g
 `bun run games:check-types` at the root cover the web client, `@llmville/game` and the Convex
 functions.
 
-`/dev/*` routes are visual workbenches (`/dev/tablet`, `/dev/build`, `/dev/city`,
-`/dev/city-3d`, `/dev/garage`, `/dev/floorplan`, `/dev/hud`, `/dev/racks`, `/dev/bills`,
-`/dev/character`); they render the same components and catalogs as the game.
+All UI draws on Rune-native primitives (`src/ui/`, see `docs/rune-port.md`). The headless play
+test `src/ui/play.test.tsx` mounts the real screens and tablet with a stubbed backend and walks
+the game by pressing actions; `proofs/runeUiFixture.tsx` samples any screen's native spec.
 
 ## Where the code lives
 

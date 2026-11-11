@@ -1,98 +1,46 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
+import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
+import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
+
 import PlacementControls from "./PlacementController";
 import type { BuildViewModel } from "../../build/buildSession";
-import type { RackHardwareViewModel } from "../../infrastructure/rackHardwareSession";
 import type { ReadyWorldViewModel } from "../worldViewModel";
 import { findPlacedRackById } from "../../infrastructure/infrastructure";
 import type { TutorialViewModel } from "../../tutorial/tutorialRuntime";
 import { useTabletNavContext } from "../../tablet/components/tabletNav";
-
-import { KitToast } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { RackMenuOverlay } from "../../infrastructure/components/RackMenuOverlay";
-import { LabGuide, type LabGoalSelection } from "../../tutorial/components/LabGuide";
+import { labGuideState, type LabGoalSelection } from "../../tutorial/labGuide";
+import { LabGuideCard } from "../../tutorial/components/LabGuideCard";
+import { C, Icon, Muted, Panel, Text } from "../../ui/kit";
 
 function LaunchCelebration() {
-  return (
-    <div className="pointer-events-none absolute left-1/2 top-1/4 z-30 -translate-x-1/2">
-      <KitToast tone="good" title="Model ready to serve" className="llm-toast--achievement animate-in zoom-in p-4">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-brand-teal to-brand-teal-deep shadow-[var(--kit-glow-teal)]">
-            <svg className="h-10 w-10 text-[#0e231e]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
-              />
-            </svg>
-          </div>
-          <p className="text-sm font-medium text-[#4a3f32]">Assign its GPUs in GPU jobs to start earning.</p>
-        </div>
-      </KitToast>
-    </div>
-  );
+  return <RuneView anchor="top" inset={0} padding={[180, 0, 0, 0]}>
+    <Panel shell="sticky" items="center" gap={12} padding={16} width={280} label="Model ready to serve">
+      <Text size={15} weight={800} color={C.paperInk}>Model ready to serve</Text>
+      <RuneView width={64} height={64} radius={32} justify="center" items="center" gradient={{ angle: 2.4, stops: [[0, C.teal], [1, C.tealDeep]] }} shadow={{ y: 0, blur: 18, color: "#5fc2a880" }}>
+        <Icon name="sparkles" size={40} color="#0e231e" />
+      </RuneView>
+      <Muted size={14} align="center" color={C.paperMuted}>Assign its GPUs in GPU jobs to start earning.</Muted>
+    </Panel>
+  </RuneView>;
 }
 
-interface GameplayChromeProps {
-  world: ReadyWorldViewModel;
-  build: BuildViewModel;
-  rackHardware: RackHardwareViewModel;
-  tutorial: TutorialViewModel;
-  isTouch: boolean;
-  chatOpen?: boolean;
-  goalSelection?: LabGoalSelection;
-}
-
-/** Shared in-world overlays: hints, rack menu, placement and the launch celebration. */
-export function GameplayChrome({ world, build, rackHardware, tutorial, isTouch, chatOpen = false, goalSelection }: GameplayChromeProps) {
-  const { rackMenuOverlayRackId, closeMenu, tabletOpen } = useTabletNavContext();
-  const rackMenuRack = findPlacedRackById(world.racks, rackMenuOverlayRackId);
-
-  return (
-    <>
-      <div className="game-crosshair" />
-
-
-      {!chatOpen && !tabletOpen && !rackMenuRack && !build.buildPlacementModeActive && (
-        <div className="pointer-events-auto absolute right-3 top-28 z-20 max-h-[calc(100dvh-15rem)] w-[min(19rem,calc(100vw-1.5rem))] overflow-y-auto max-sm:max-h-[32dvh]" data-no-pointer-lock="true">
-          <LabGuide world={world} tutorial={tutorial} compact selection={goalSelection} />
-        </div>
-      )}
-
-      {rackMenuRack && (
-        <RackMenuOverlay
-          rack={rackMenuRack}
-          hardwareInventory={world.hardwareInventory}
-          coolingInventory={world.coolingInventory}
-          onMoveHardware={rackHardware.moveHardware}
-          onInstallCooler={rackHardware.onInstallCoolerToRack}
-          onUninstallCooler={rackHardware.onUninstallCoolerFromRack}
-          onClose={closeMenu}
-        />
-      )}
-
-
-      {world.launchCelebrationActive && <LaunchCelebration />}
-
-      {build.buildPlacementModeActive && (
-        <div
-          data-ui-layer="placement-controls"
-          className={
-            isTouch
-              ? "game-ui-interactive absolute bottom-[calc(env(safe-area-inset-bottom)+11rem)] left-4 z-20 max-sm:right-4 max-sm:w-auto"
-              : "game-ui-interactive absolute right-12 top-24 z-20"
-          }
-        >
-          <PlacementControls
-            facingLabel={build.placementFacingLabel}
-            onRotate={build.onRotatePlacement}
-            onPlace={build.onConfirmPlacement}
-            canPlace={build.placementPreview?.isValid ?? false}
-            claimHint={build.placementClaimHint}
-            isTouch={isTouch}
-          />
-        </div>
-      )}
-    </>
-  );
+/** Shared in-world overlays: the crosshair, the lab guide, placement and the launch celebration. */
+export function GameplayChrome({ world, build, tutorial, isTouch, chatOpen = false, goalSelection }: {
+  world: ReadyWorldViewModel; build: BuildViewModel; tutorial: TutorialViewModel; isTouch: boolean; chatOpen?: boolean; goalSelection: LabGoalSelection;
+}) {
+  const nav = useTabletNavContext();
+  const { width } = useRuneViewport();
+  const rackMenuOpen = findPlacedRackById(world.racks, nav.rackMenuOverlayRackId) !== undefined;
+  const showGuide = !chatOpen && !nav.tabletOpen && !rackMenuOpen && !build.buildPlacementModeActive;
+  return <>
+    <RuneView anchor="center"><RuneView width={4} height={4} radius={2} fill="#ffffffcc" /></RuneView>
+    {showGuide ? <RuneView anchor="top-right" safe inset={12} padding={[100, 0, 0, 0]} responsive={{ phone: { padding: [146, 0, 0, 0] } }} width={Math.min(304, width - 24)}>
+      <LabGuideCard guide={labGuideState(world, tutorial, nav, goalSelection.id)} canEdit={world.canEditGame} />
+    </RuneView> : null}
+    {world.launchCelebrationActive ? <LaunchCelebration /> : null}
+    {build.buildPlacementModeActive ? <RuneView anchor={isTouch ? "bottom-left" : "top-right"} safe inset={isTouch ? 16 : 48} padding={isTouch ? [0, 0, 176, 0] : [48, 0, 0, 0]}>
+      <PlacementControls facingLabel={build.placementFacingLabel} onRotate={build.onRotatePlacement} onPlace={build.onConfirmPlacement}
+        canPlace={build.placementPreview?.isValid ?? false} claimHint={build.placementClaimHint} isTouch={isTouch} />
+    </RuneView> : null}
+  </>;
 }

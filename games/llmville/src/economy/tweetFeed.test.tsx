@@ -1,9 +1,9 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { describe, expect, test } from "bun:test";
-import { renderToStaticMarkup } from "@jgengine/core/ui/jsx/markup";
+import { seededRng } from "@jgengine/core/random/rng";
 
 import { createNotificationCenter } from "@jgengine/core/notifications/notificationCenter";
-import TweetNotification from "./components/TweetNotification";
+import { tweetStats } from "./components/TweetNotification";
 import { logTweet } from "./tweetFeed";
 
 describe("tweet feed", () => {
@@ -19,13 +19,7 @@ describe("tweet feed", () => {
   });
 
   test("a tweet keeps its reply and like counts, drawn from the injected rng", () => {
-    const center = createNotificationCenter();
-    const entry = center.push({ id: "event-2", kind: "tweet", title: "News", body: "A new model ships" });
-    const render = (rng?: () => number) => renderToStaticMarkup(<TweetNotification tweet={entry} onDismiss={() => undefined} {...(rng === undefined ? {} : { rng })} />);
-    expect(render()).toBe(render());
-    const fixed = render(() => 0.5);
-    expect(fixed).toContain(">110<");
-    expect(fixed).toContain(">550<");
-    expect(fixed).toContain("A new model ships");
+    expect(tweetStats(seededRng("event-2"))).toEqual(tweetStats(seededRng("event-2")));
+    expect(tweetStats(() => 0.5)).toEqual({ replies: 55, reposts: 110, likes: 550 });
   });
 });

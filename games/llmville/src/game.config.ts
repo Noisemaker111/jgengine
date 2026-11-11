@@ -8,7 +8,6 @@ import { llmvilleWorld } from "@llmville/game/game/world";
 import { buildSceneObjectPrompts } from "@llmville/game/simulation/interaction";
 import { WORLD_CAMERA_FAR, WORLD_FOG_COLOR, WORLD_FOG_FAR, WORLD_FOG_NEAR } from "@llmville/game/world/viewDistance";
 import { worldModelAssetCatalog } from "@llmville/game/world/worldModelCatalog";
-import { llmvilleHudTheme, llmvilleKit } from "./kit/llmvilleKit";
 import { LlmvilleRemotePlayers } from "./agent/components/RemoteAgents";
 import { LlmvilleGameUI } from "./runtime/components/LlmvilleGameUI";
 import { stepAroundNearbyPlayers } from "./runtime/localPlayerEntity";
@@ -38,8 +37,8 @@ export const game = defineGame({
     interact: [],
   },
   GameUI: LlmvilleGameUI,
-  uiKit: llmvilleKit,
-  hudTheme: llmvilleHudTheme,
+  hudTheme: false,
+  uiRenderer: "rune",
   scene: { WorldOverlay: LlmvilleWorld, RemotePlayers: LlmvilleRemotePlayers, environment: LlmvilleDatacenter, editorLayers: normalizeEditorLayers(sceneJson) },
   scenePlacement: false,
   camera: {
@@ -53,8 +52,6 @@ export const game = defineGame({
       buildSceneObjectPrompts(ctx.scene.object.list(), (instanceId) => ctx.scene.object.catalog(instanceId)?.proximityPrompt ?? null),
     // The tablet peek bar docks at the bottom edge on phones.
     touch: { hidden: ["sprint", "crouch"], gestures: { tap: "interact" }, reserve: { bottom: 80 } },
-    // Desktop draws at authored size from 1280x800; the phone HUD is laid out for its own screen, not shrunk.
-    hudFit: { designSize: { width: 1280, height: 800 }, minScale: 0.75, mobile: { designSize: { width: 390, height: 844 }, minScale: 1, maxScale: 1 } },
   },
   rendering: {
     lighting: {

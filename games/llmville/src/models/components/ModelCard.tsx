@@ -1,11 +1,11 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 /**
- * ModelCard — matches the mock: dark purple/indigo bg, label-left bar-right layout,
- * three stat bars (money/M, TPS per 1 TFLOP, data tokens per inference token), state-specific action button.
- * Uses real model stats when available.
+ * The model report cards: name and source on top, three stat bars (quality, serving speed, data
+ * yield) and a state-specific action on the right. Uses real model stats when available.
  */
+import type { ReactNode } from "@jgengine/core/ui/jsx";
+import { RuneAction, RuneView } from "@jgengine/core/ui/rune/primitives.view";
 
-import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import type { BaseModelLibraryEntry } from "../training";
 import { getBaseModelBaselineStatsById, MODEL_ACTION_KIND } from "../training";
 import { getBaseModelDefinition } from "@llmville/game/models/baseModels";
@@ -18,24 +18,37 @@ import {
   type GameUserModel,
   userModelTrainingVolumeLabel,
 } from "../models";
-
-import { MODEL_CARD_ACTION_VARIANT, ModelCardAction } from "./ModelCardAction";
-import { getDeltaFillOpacity, ModelStatRow, ModelTrainingDurationEstimate } from "./ModelPresentation";
 import { formatTrainingDurationLabel } from "@llmville/game/models/trainingDurationLabel";
 
-const CARD_BASE = "mb-4 flex h-[145px] gap-4 overflow-hidden relative";
+import { DISPLAY } from "../../ui/theme";
+import { C, FULL, Label, Row, Text } from "../../ui/kit";
+import { MODEL_CARD_ACTION_VARIANT, ModelCardAction } from "./ModelCardAction";
+import { getDeltaFillOpacity, ModelStatRow, ModelTrainingDurationEstimate } from "./ModelPresentation";
 
-/** State A: base model — card shows catalog hint seconds; live duration uses data drain or distill pool vs TPS×TFLOPs */
-export function BaseModelCard({
-  model,
-  justUnlocked,
-  onPrimaryAction,
-  onViewDetail,
-  trainingSecondsRemaining,
-  estimatedTrainingDurationSeconds,
-}: {
+/** The card's frame: a report sheet with the name, the stats and the action column. */
+function ReportCard({ title, subtitle, onTitle, titleColor = C.cream, highlight = false, glow = false, stats, action }: {
+  title: string; subtitle: ReactNode; onTitle?: (() => void) | undefined; titleColor?: string; highlight?: boolean; glow?: boolean; stats: ReactNode; action: ReactNode;
+}) {
+  const name = <Text family={DISPLAY} size={24} weight={800} color={titleColor}>{title}</Text>;
+  return <RuneView variant="panel" padding={16} gap={10} width={FULL} radius={16} minHeight={145}
+    border={{ width: highlight || glow ? 2 : 1, color: highlight ? C.teal : glow ? C.amber : "#f4ecdd26" }}>
+    <RuneView gap={4}>
+      {onTitle === undefined ? name : <RuneAction label={`Details for ${title}`} run={onTitle} variant="link">{name}</RuneAction>}
+      {subtitle}
+    </RuneView>
+    <Row justify="between" items="end" gap={16} width={FULL}>
+      <RuneView grow={1} shrink gap={4}>{stats}</RuneView>
+      <RuneView items="end" gap={4}>{action}</RuneView>
+    </Row>
+  </RuneView>;
+}
+
+/** State A: base model — train, license, scrape progress, serve the base or locked. */
+export function BaseModelCard({ model, justUnlocked, highlight = false, onPrimaryAction, onViewDetail, trainingSecondsRemaining, estimatedTrainingDurationSeconds }: {
   model: BaseModelLibraryEntry;
   justUnlocked?: boolean;
+  /** The tutorial points at this card. */
+  highlight?: boolean;
   onPrimaryAction: () => void;
   onViewDetail?: (baseModelId: string) => void;
   /** When this base model is currently being trained, seconds until completion */
@@ -43,221 +56,75 @@ export function BaseModelCard({
   /** Live preview from installed GPUs and site throttle (replaces static catalog hint). */
   estimatedTrainingDurationSeconds?: number | undefined;
 }) {
-  const isTrainingThisModel = trainingSecondsRemaining != null;
-  return (
-    <KitPanel as="div"
-      variant="card" data-shell="model-report"
-      title="Lab Report"
-      className={`${CARD_BASE} ${justUnlocked ? "animate-unlock-success" : ""}`}
-      data-just-unlocked={justUnlocked ? "true" : undefined}
-    >
-      <div className="flex-1 min-w-0 flex flex-col justify-between py-0">
-        <div>
-          <h3
-            className={`font-game text-2xl font-bold text-brand-cream italic tracking-tight leading-none ${onViewDetail ? "cursor-pointer underline hover:text-brand-teal transition-colors" : ""}`}
-            onClick={() => onViewDetail?.(model.id)}
-            role={onViewDetail ? "button" : undefined}
-          >
-            {model.name}
-          </h3>
-          <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-brand-cream/45 leading-none">
-            {model.sourceType === "closed_source" ? "Closed Source" : "Open Source"}
-          </p>
-        </div>
-        <div className="flex items-center justify-between gap-4 mt-2">
-          <div className="space-y-0">
-            <ModelStatRow
-              color="green"
-              value={benchmarkToBarValue(model.benchmarkScore ?? 50)}
-              label={`${model.benchmarkScore ?? 50} quality`}
-              title="Benchmark score"
-            />
-            <ModelStatRow
-              color="yellow"
-              value={tpsToBarValue(model.tokensPerSecond)}
-              label={`${model.tokensPerSecond} tok/s`}
-              title="Serving speed"
-            />
-            <ModelStatRow
-              color="blue"
-              value={dataTokenRateToBarValue(model.tokensPerToken)}
-              label={`${model.tokensPerToken} data/token`}
-              title="Data yield per inference token"
-            />
-          </div>
-          <div className="flex flex-col items-end gap-1 shrink-0">
-            {model.actionKind === "train" && !isTrainingThisModel && (
-              <>
-                {estimatedTrainingDurationSeconds !== undefined && (
-                  <ModelTrainingDurationEstimate estimatedSeconds={estimatedTrainingDurationSeconds} />
-                )}
-                <ModelCardAction
-                  variant={MODEL_CARD_ACTION_VARIANT.train}
-                  label={model.actionLabel}
-                  disabled={!model.canTrain}
-                  onClick={onPrimaryAction}
-                />
-              </>
-            )}
-            {model.actionKind === "unlock" && (
-              <ModelCardAction
-                variant={MODEL_CARD_ACTION_VARIANT.unlock}
-                label={model.actionLabel}
-                disabled={!model.canUnlock}
-                onClick={onPrimaryAction}
-              />
-            )}
-            {model.actionKind === "scrape" && !isTrainingThisModel && (
-              <ModelCardAction variant={MODEL_CARD_ACTION_VARIANT.progress} label={model.actionLabel} />
-            )}
-            {model.actionKind === MODEL_ACTION_KIND.serve_base && !isTrainingThisModel && (
-              <ModelCardAction
-                variant={MODEL_CARD_ACTION_VARIANT.serve}
-                label={model.actionLabel}
-                onServe={onPrimaryAction}
-              />
-            )}
-            {model.actionKind === "locked" && !isTrainingThisModel && (
-              <ModelCardAction variant={MODEL_CARD_ACTION_VARIANT.locked} label={model.actionLabel} />
-            )}
-            {isTrainingThisModel && (
-              <div className="flex flex-col items-end">
-                <span className="text-[10px] font-bold uppercase tracking-wide text-brand-coral/90">Training</span>
-                <span className="inline-flex items-center gap-1.5 font-game text-lg font-bold tabular-nums text-brand-coral">
-                  {formatTrainingDurationLabel(trainingSecondsRemaining ?? 0)}
-                </span>
-              </div>
-            )}
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-cream/45">
-              {isTrainingThisModel ? "In progress" : model.requirementText}
-            </span>
-          </div>
-        </div>
-      </div>
-    </KitPanel>
-  );
+  const training = trainingSecondsRemaining != null;
+  return <ReportCard title={model.name} highlight={highlight} glow={justUnlocked === true}
+    onTitle={onViewDetail === undefined ? undefined : () => onViewDetail(model.id)}
+    subtitle={<Label size={11}>{model.sourceType === "closed_source" ? "CLOSED SOURCE" : "OPEN SOURCE"}</Label>}
+    stats={<>
+      <ModelStatRow color="green" value={benchmarkToBarValue(model.benchmarkScore ?? 50)} label={`${model.benchmarkScore ?? 50} quality`} title="Benchmark score" />
+      <ModelStatRow color="yellow" value={tpsToBarValue(model.tokensPerSecond)} label={`${model.tokensPerSecond} tok/s`} title="Serving speed" />
+      <ModelStatRow color="blue" value={dataTokenRateToBarValue(model.tokensPerToken)} label={`${model.tokensPerToken} data/token`} title="Data yield per inference token" />
+    </>}
+    action={<>
+      {model.actionKind === "train" && !training ? <>
+        {estimatedTrainingDurationSeconds === undefined ? null : <ModelTrainingDurationEstimate estimatedSeconds={estimatedTrainingDurationSeconds} />}
+        <ModelCardAction model={model.name} variant={MODEL_CARD_ACTION_VARIANT.train} label={model.actionLabel} disabled={!model.canTrain} onClick={onPrimaryAction} />
+      </> : null}
+      {model.actionKind === "unlock" ? <ModelCardAction model={model.name} variant={MODEL_CARD_ACTION_VARIANT.unlock} label={model.actionLabel} disabled={!model.canUnlock} onClick={onPrimaryAction} /> : null}
+      {model.actionKind === "scrape" && !training ? <ModelCardAction model={model.name} variant={MODEL_CARD_ACTION_VARIANT.progress} label={model.actionLabel} /> : null}
+      {model.actionKind === MODEL_ACTION_KIND.serve_base && !training ? <ModelCardAction model={model.name} variant={MODEL_CARD_ACTION_VARIANT.serve} label={model.actionLabel} onServe={onPrimaryAction} /> : null}
+      {model.actionKind === "locked" && !training ? <ModelCardAction model={model.name} variant={MODEL_CARD_ACTION_VARIANT.locked} label={model.actionLabel} /> : null}
+      {training ? <RuneView items="end">
+        <Label size={10} color={C.coral}>TRAINING</Label>
+        <Text family={DISPLAY} size={18} weight={800} color={C.coral}>{formatTrainingDurationLabel(trainingSecondsRemaining ?? 0)}</Text>
+      </RuneView> : null}
+      <Label size={11}>{(training ? "In progress" : model.requirementText).toUpperCase()}</Label>
+    </>} />;
 }
 
 /** State B: Unknown model — Reveal (trained, stats hidden) */
-export function UnknownModelCard({
-  qualityTier,
-  onReveal,
-}: {
-  qualityTier?: GameUserModel["qualityTier"];
-  onReveal: () => void;
-}) {
-  return (
-    <KitPanel as="div" variant="card" data-shell="redacted" className={CARD_BASE}>
-      <div className="flex-1 min-w-0 flex flex-col justify-between py-0 relative z-[1]">
-        <div>
-          <h3 className="font-game text-2xl font-bold text-brand-cream/40 italic tracking-tight leading-none">Unknown Model</h3>
-          <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-brand-cream/45 leading-none">
-            {qualityTier ? `${formatModelQualityTierLabel(qualityTier)} · Hidden stats` : "Hidden stats"}
-          </p>
-        </div>
-        <div className="flex items-center justify-between gap-4 mt-2">
-          <div className="space-y-0">
-            <ModelStatRow color="green" value={0} label="???" hidden />
-            <ModelStatRow color="yellow" value={0} label="???" hidden />
-            <ModelStatRow color="blue" value={0} label="???" hidden />
-          </div>
-          <ModelCardAction variant={MODEL_CARD_ACTION_VARIANT.reveal} onReveal={onReveal} />
-        </div>
-      </div>
-    </KitPanel>
-  );
+export function UnknownModelCard({ name = "Unknown Model", qualityTier, onReveal }: { name?: string; qualityTier?: GameUserModel["qualityTier"]; onReveal: () => void }) {
+  return <ReportCard title="Unknown Model" titleColor="#f4ecdd66"
+    subtitle={<Label size={11}>{(qualityTier ? `${formatModelQualityTierLabel(qualityTier)} · Hidden stats` : "Hidden stats").toUpperCase()}</Label>}
+    stats={<>
+      <ModelStatRow color="green" value={0} label="???" hidden />
+      <ModelStatRow color="yellow" value={0} label="???" hidden />
+      <ModelStatRow color="blue" value={0} label="???" hidden />
+    </>}
+    action={<ModelCardAction model={name} variant={MODEL_CARD_ACTION_VARIANT.reveal} onReveal={onReveal} />} />;
 }
 
 /** State C & D: Revealed model — Serve or • serving */
-export function RevealedModelCard({
-  model,
-  onServe,
-  onViewBaseModel,
-  onViewUserModel,
-}: {
+export function RevealedModelCard({ model, onServe, onViewBaseModel, onViewUserModel }: {
   model: GameUserModel;
   onServe: () => void;
-  /** Called when base model link (e.g. Alpaca 1) is clicked — opens that model's page */
+  /** Opens the base model's page. */
   onViewBaseModel?: (baseModelId: string) => void;
-  /** Called when model name is clicked — opens your model's detail page */
+  /** Opens your model's detail page. */
   onViewUserModel?: () => void;
 }) {
   const isServing = model.launchState === "serving";
   const tps = model.tokensPerSecond;
-  const tpt = model.tokensPerToken;
-  const hourlyIncome = formatHourlyIncome(model.estimatedIncomePerSecond);
-  const [incomeValue, incomeUnit] = hourlyIncome.split('/');
+  const [incomeValue, incomeUnit] = formatHourlyIncome(model.estimatedIncomePerSecond).split("/");
   const baseModel = model.baseModelId ? getBaseModelDefinition(model.baseModelId) : undefined;
   const baseStats = getBaseModelBaselineStatsById(model.baseModelId);
   const baseTpsRef = baseModel?.tokensPerSecond ?? baseStats?.tokensPerSecond ?? 5;
   const tpsFillOpacity = baseStats == null ? 1 : getDeltaFillOpacity(tps - baseTpsRef, baseTpsRef);
   const baseLabel = baseModel?.name ?? model.baseModelId ?? "custom";
-  const canViewBase = model.baseModelId !== undefined && onViewBaseModel !== undefined;
-  const trainingVolumeLabel = userModelTrainingVolumeLabel(model);
-
-  return (
-    <KitPanel as="div" variant="card" data-shell="model-report" title="Deployed Model" className={CARD_BASE}>
-      <div className="flex-1 min-w-0 flex flex-col justify-between py-0">
-        <div>
-          <h3
-            className={`truncate font-game text-2xl font-bold text-brand-cream italic tracking-tight leading-none ${
-              onViewUserModel ? "cursor-pointer underline hover:text-brand-teal transition-colors" : ""
-            }`}
-            onClick={onViewUserModel}
-            role={onViewUserModel ? "button" : undefined}
-          >
-            {model.name}
-          </h3>
-          <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-brand-cream/45 leading-none">
-            {formatModelQualityTierLabel(model.qualityTier)} ·{" "}
-            {canViewBase ? (
-              <button
-                onClick={() => onViewBaseModel(model.baseModelId!)}
-                className="cursor-pointer underline transition-colors hover:text-brand-teal"
-              >
-                {baseLabel}
-              </button>
-            ) : (
-              baseLabel
-            )}{" "}
-            · {trainingVolumeLabel}
-          </p>
-        </div>
-        <div className="flex items-center justify-between gap-4 mt-2">
-          <div className="space-y-0">
-            <ModelStatRow
-              color="green"
-              value={benchmarkToBarValue(model.benchmarkScore)}
-              label={`${model.benchmarkScore} quality`}
-              title="Benchmark score"
-            />
-            <ModelStatRow
-              color="yellow"
-              value={tpsToBarValue(tps)}
-              label={`${tps} tok/s`}
-              fillOpacity={tpsFillOpacity}
-              title="Serving speed"
-            />
-            <ModelStatRow
-              color="blue"
-              value={dataTokenRateToBarValue(tpt)}
-              label={`${tpt} data/token`}
-              title="Data yield per inference token"
-            />
-          </div>
-          <div className="flex flex-col items-center justify-center gap-1 shrink-0">
-            {isServing ? (
-              <ModelCardAction variant={MODEL_CARD_ACTION_VARIANT.serving} />
-            ) : (
-              <ModelCardAction variant={MODEL_CARD_ACTION_VARIANT.serve} onServe={onServe} />
-            )}
-            <span className="font-game text-xl font-bold italic leading-none tracking-tight">
-              <span className="text-brand-teal">{incomeValue}</span>
-              <span className="text-brand-amber">/{incomeUnit}</span>
-            </span>
-          </div>
-        </div>
-      </div>
-    </KitPanel>
-  );
+  const baseId = model.baseModelId;
+  const tier = formatModelQualityTierLabel(model.qualityTier).toUpperCase();
+  const volume = userModelTrainingVolumeLabel(model).toUpperCase();
+  return <ReportCard title={model.name} onTitle={onViewUserModel}
+    subtitle={baseId !== undefined && onViewBaseModel !== undefined
+      ? <Row gap={4}><Label size={11}>{`${tier} ·`}</Label><RuneAction variant="link" label={`Base model ${baseLabel}`} run={() => onViewBaseModel(baseId)}><Label size={11} color={C.teal}>{baseLabel.toUpperCase()}</Label></RuneAction><Label size={11}>{`· ${volume}`}</Label></Row>
+      : <Label size={11}>{`${tier} · ${baseLabel.toUpperCase()} · ${volume}`}</Label>}
+    stats={<>
+      <ModelStatRow color="green" value={benchmarkToBarValue(model.benchmarkScore)} label={`${model.benchmarkScore} quality`} title="Benchmark score" />
+      <ModelStatRow color="yellow" value={tpsToBarValue(tps)} label={`${tps} tok/s`} fillOpacity={tpsFillOpacity} title="Serving speed" />
+      <ModelStatRow color="blue" value={dataTokenRateToBarValue(model.tokensPerToken)} label={`${model.tokensPerToken} data/token`} title="Data yield per inference token" />
+    </>}
+    action={<>
+      {isServing ? <ModelCardAction model={model.name} variant={MODEL_CARD_ACTION_VARIANT.serving} /> : <ModelCardAction model={model.name} variant={MODEL_CARD_ACTION_VARIANT.serve} onServe={onServe} />}
+      <Row gap={0}><Text family={DISPLAY} size={20} weight={800} color={C.teal}>{incomeValue ?? ""}</Text><Text family={DISPLAY} size={20} weight={800} color={C.amber}>{`/${incomeUnit ?? ""}`}</Text></Row>
+    </>} />;
 }

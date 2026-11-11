@@ -1,13 +1,12 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { useEffect, useState } from "@jgengine/core/ui/jsx";
+import { useState } from "@jgengine/core/ui/jsx";
+import { RuneAction, RuneView } from "@jgengine/core/ui/rune/primitives.view";
 
-import { cn } from "../../kit/cn";
-import { formatBaseModelTrainingVolumeLabel } from "@llmville/game/models/baseModels";
+import { formatBaseModelTrainingVolumeLabel, getBaseModelDefinition, type BaseModelDefinition } from "@llmville/game/models/baseModels";
 import { getQuantizationProfile } from "@llmville/game/models/quantization";
 import { computeBenchmarkDemandMultiplier } from "@llmville/game/models/servingStats";
 import { COMPUTE_PRECISION_VALUES, type ComputePrecision } from "@llmville/game/infrastructure/catalog";
-import { getDeltaFillOpacity, ModelStatRow } from "./ModelPresentation";
+import { formatTrainingDurationLabel } from "@llmville/game/models/trainingDurationLabel";
 import {
   dataTokenRateToBarValue,
   formatHourlyIncome,
@@ -18,9 +17,10 @@ import {
   type GameUserModel,
   userModelTrainingVolumeLabel,
 } from "../models";
-import { formatTrainingDurationLabel } from "@llmville/game/models/trainingDurationLabel";
-import { getBaseModelDefinition, type BaseModelDefinition } from "@llmville/game/models/baseModels";
 import { getBaseModelBaselineStatsById } from "../training";
+import { DISPLAY } from "../../ui/theme";
+import { Button, C, FULL, Label, Muted, Panel, Row, Sheet, Stack, Text } from "../../ui/kit";
+import { getDeltaFillOpacity, ModelStatRow } from "./ModelPresentation";
 
 export type ModelDetailViewMode = "base" | "user";
 
@@ -34,81 +34,48 @@ export interface ModelDetailViewProps {
   onQuantizeModel?: (modelId: GameUserModel["id"], precision: ComputePrecision) => void | Promise<unknown> | undefined;
 }
 
-const modalInsetClassName = "game-panel-surface game-panel-surface--inset p-4";
-
 function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="game-divider flex items-center justify-between py-2 first:border-0">
-      <span className="text-xs font-semibold uppercase tracking-wide text-brand-cream/45">{label}</span>
-      <span className="text-sm font-bold text-brand-cream">{value}</span>
-    </div>
-  );
+  return <Row justify="between" width={FULL} padding={[8, 0, 8, 0]}>
+    <Label size={11}>{label.toUpperCase()}</Label>
+    <Text size={13} weight={800}>{value}</Text>
+  </Row>;
 }
 
-function BaseModelSection({
-  baseModel,
-  estimatedTrainingDurationSeconds,
-}: {
-  baseModel: BaseModelDefinition;
-  estimatedTrainingDurationSeconds?: number | undefined;
-}) {
-  const durationLabel =
-    estimatedTrainingDurationSeconds !== undefined
-      ? `~${formatTrainingDurationLabel(estimatedTrainingDurationSeconds)} (your GPUs)`
-      : `${Math.round(baseModel.trainingDurationMs / 1000)}s catalog hint`;
-
-  return (
-    <>
-      <div className={modalInsetClassName}>
-        <div>
-          <h2 className="font-game text-2xl font-bold uppercase italic leading-none tracking-tight text-brand-cream">
-            {baseModel.name}
-          </h2>
-          <p className="mt-1 text-xs font-semibold uppercase tracking-wide leading-none text-brand-cream/45">
-            {baseModel.tier === "community" ? "Community" : formatModelQualityTierLabel(baseModel.tier)} ·{" "}
-            {formatBaseModelTrainingVolumeLabel(baseModel)}
-          </p>
-        </div>
-        <div className="mt-4 flex items-center justify-between gap-4">
-          <div className="space-y-0">
-            <ModelStatRow color="green" value={priceToBarValue(moneyPerTokenToPmt(baseModel.moneyPerToken))} label={`$${moneyPerTokenToPmt(baseModel.moneyPerToken)}/M`} />
-            <ModelStatRow color="yellow" value={tpsToBarValue(baseModel.tokensPerSecond)} label={`${baseModel.tokensPerSecond} TPS`} title="Throughput per 1 TFLOP of inference" />
-            <ModelStatRow color="blue" value={dataTokenRateToBarValue(baseModel.tokensPerToken)} label={`${baseModel.tokensPerToken} data/token`} />
-          </div>
-        </div>
-      </div>
-
-      <KitPanel data-shell="inset" className="flex flex-col gap-3 !gap-0 divide-y divide-[var(--kit-line)]">
-        <InfoRow label="Creator" value={baseModel.creator} />
-        <InfoRow label="Training time" value={durationLabel} />
-        <InfoRow label="Source" value={baseModel.sourceType === "closed_source" ? "Closed Source" : "Open Source"} />
-        <InfoRow label="Method" value={baseModel.trainingMethod === "distill" ? "Distillation" : "Fine-tuning"} />
-        <InfoRow label="Data tokens required" value={baseModel.requiredDataTokens.toLocaleString()} />
-        {baseModel.licenseCost > 0 && <InfoRow label="License" value={`$${baseModel.licenseCost.toLocaleString()} (one-time)`} />}
-        {baseModel.distillPoolTokens != null && (
-          <InfoRow label="Distill pool" value={`${baseModel.distillPoolTokens.toLocaleString()} inference tokens`} />
-        )}
-        {baseModel.vendorHourlyUsd != null && (
-          <InfoRow label="Vendor access" value={`$${baseModel.vendorHourlyUsd}/hr while distilling`} />
-        )}
-        {baseModel.availability === "research_locked" && <InfoRow label="Status" value="Research locked" />}
-        {baseModel.description && (
-          <div className="game-divider pt-3">
-            <p className="text-xs leading-relaxed text-brand-cream/45">{baseModel.description}</p>
-          </div>
-        )}
-      </KitPanel>
-    </>
-  );
+function Heading({ name, subtitle }: { name: string; subtitle: string }) {
+  return <RuneView gap={4}>
+    <Text family={DISPLAY} size={24} weight={800}>{name.toUpperCase()}</Text>
+    <Label size={11}>{subtitle.toUpperCase()}</Label>
+  </RuneView>;
 }
 
-function UserModelSection({
-  model,
-  baseModel,
-  baseModelId,
-  onViewBaseModel,
-  onQuantizeModel,
-}: {
+function BaseModelSection({ baseModel, estimatedTrainingDurationSeconds }: { baseModel: BaseModelDefinition; estimatedTrainingDurationSeconds?: number | undefined }) {
+  const durationLabel = estimatedTrainingDurationSeconds !== undefined
+    ? `~${formatTrainingDurationLabel(estimatedTrainingDurationSeconds)} (your GPUs)`
+    : `${Math.round(baseModel.trainingDurationMs / 1000)}s catalog hint`;
+  const pmt = moneyPerTokenToPmt(baseModel.moneyPerToken);
+  return <>
+    <Panel shell="inset">
+      <Heading name={baseModel.name} subtitle={`${baseModel.tier === "community" ? "Community" : formatModelQualityTierLabel(baseModel.tier)} · ${formatBaseModelTrainingVolumeLabel(baseModel)}`} />
+      <ModelStatRow color="green" value={priceToBarValue(pmt)} label={`$${pmt}/M`} />
+      <ModelStatRow color="yellow" value={tpsToBarValue(baseModel.tokensPerSecond)} label={`${baseModel.tokensPerSecond} TPS`} title="Throughput per 1 TFLOP of inference" />
+      <ModelStatRow color="blue" value={dataTokenRateToBarValue(baseModel.tokensPerToken)} label={`${baseModel.tokensPerToken} data/token`} />
+    </Panel>
+    <Panel shell="inset" gap={0}>
+      <InfoRow label="Creator" value={baseModel.creator} />
+      <InfoRow label="Training time" value={durationLabel} />
+      <InfoRow label="Source" value={baseModel.sourceType === "closed_source" ? "Closed Source" : "Open Source"} />
+      <InfoRow label="Method" value={baseModel.trainingMethod === "distill" ? "Distillation" : "Fine-tuning"} />
+      <InfoRow label="Data tokens required" value={baseModel.requiredDataTokens.toLocaleString()} />
+      {baseModel.licenseCost > 0 ? <InfoRow label="License" value={`$${baseModel.licenseCost.toLocaleString()} (one-time)`} /> : null}
+      {baseModel.distillPoolTokens != null ? <InfoRow label="Distill pool" value={`${baseModel.distillPoolTokens.toLocaleString()} inference tokens`} /> : null}
+      {baseModel.vendorHourlyUsd != null ? <InfoRow label="Vendor access" value={`$${baseModel.vendorHourlyUsd}/hr while distilling`} /> : null}
+      {baseModel.availability === "research_locked" ? <InfoRow label="Status" value="Research locked" /> : null}
+      {baseModel.description ? <Muted size={12} padding={[10, 0, 0, 0]}>{baseModel.description}</Muted> : null}
+    </Panel>
+  </>;
+}
+
+function UserModelSection({ model, baseModel, baseModelId, onViewBaseModel, onQuantizeModel }: {
   model: GameUserModel;
   baseModel?: BaseModelDefinition | undefined;
   baseModelId?: string | null | undefined;
@@ -117,176 +84,67 @@ function UserModelSection({
 }) {
   const pmt = moneyPerTokenToPmt(model.moneyPerToken);
   const tps = model.tokensPerSecond;
-  const tpt = model.tokensPerToken;
-  const hourlyIncome = formatHourlyIncome(model.estimatedIncomePerSecond);
-  const [incomeValue, incomeUnit] = hourlyIncome.split("/");
+  const [incomeValue, incomeUnit] = formatHourlyIncome(model.estimatedIncomePerSecond).split("/");
   const baseStats = getBaseModelBaselineStatsById(baseModelId ?? model.baseModelId);
   const baseTpsRef = baseModel?.tokensPerSecond ?? baseStats?.tokensPerSecond ?? 5;
   const tpsFillOpacity = baseStats == null ? 1 : getDeltaFillOpacity(tps - baseTpsRef, baseTpsRef);
-  const trainingVolumeLabel = userModelTrainingVolumeLabel(model);
-
-  return (
-    <>
-      <div className={modalInsetClassName}>
-        <div>
-          <h2 className="truncate font-game text-2xl font-bold uppercase italic leading-none tracking-tight text-brand-cream">
-            {model.name}
-          </h2>
-          <p className="mt-1 text-xs font-semibold uppercase tracking-wide leading-none text-brand-cream/45">
-            {formatModelQualityTierLabel(model.qualityTier)} ·{" "}
-            {baseModel && baseModelId && onViewBaseModel ? (
-              <button
-                type="button"
-                onClick={() => onViewBaseModel(baseModelId)}
-                className="cursor-pointer underline transition-colors hover:text-brand-teal"
-              >
-                {baseModel.name}
-              </button>
-            ) : (
-              baseModel?.name ?? model.baseModelId ?? "custom"
-            )}{" "}
-            · {trainingVolumeLabel}
-          </p>
-        </div>
-        <div className="mt-4 flex items-center justify-between gap-4">
-          <div className="space-y-0">
-            <ModelStatRow color="green" value={priceToBarValue(pmt)} label={`$${pmt}/M`} />
-            <ModelStatRow color="yellow" value={tpsToBarValue(tps)} label={`${tps} TPS`} fillOpacity={tpsFillOpacity} title="Per 1 TFLOP of inference" />
-            <ModelStatRow color="blue" value={dataTokenRateToBarValue(tpt)} label={`${tpt} data/token`} />
-          </div>
-          <div className="flex shrink-0 flex-col items-center gap-1">
-            <span className={`llm-token llm-token--${model.launchState === "serving" ? "teal" : "amber"}`}>
-              {model.launchState === "serving" ? "Serving" : "Owned"}
-            </span>
-            <span className="font-game text-xl font-bold italic leading-none tracking-tight">
-              <span className="text-brand-teal">{incomeValue}</span>
-              <span className="text-brand-amber">/{incomeUnit}</span>
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <KitPanel data-shell="inset" className="flex flex-col gap-3 !gap-0">
-        {baseModel && <InfoRow label="Based on" value={baseModel.name} />}
-        {baseModel && <InfoRow label="Creator" value={baseModel.creator} />}
-        <InfoRow label="Rarity" value={formatModelQualityTierLabel(model.qualityTier)} />
-        <InfoRow label="Hours served" value="—" />
-        {model.trainingDataTokens != null && <InfoRow label="Tokens used" value={model.trainingDataTokens.toLocaleString()} />}
-        {model.tflopsUsed != null && <InfoRow label="TFLOPs used" value={String(model.tflopsUsed)} />}
-        <InfoRow label="Size" value={`${model.paramsB}B params`} />
-        <InfoRow label="Benchmark" value={`${model.benchmarkScore} (${computeBenchmarkDemandMultiplier(model.benchmarkScore).toFixed(2)}× demand)`} />
-        <InfoRow label="Precision" value={model.precisionLabel} />
-        <InfoRow label="VRAM footprint" value={`${model.footprintGb.toFixed(1)} GB`} />
-      </KitPanel>
-
-      {onQuantizeModel && (
-        <KitPanel data-shell="inset" className="flex flex-col gap-3" eyebrow="Quantize">
-          <div className="game-control-group">
-            {COMPUTE_PRECISION_VALUES.map((precision) => {
-              const active = model.precision === precision;
-              return (
-                <button
-                  key={precision}
-                  type="button"
-                  onClick={() => {
-                    if (!active) onQuantizeModel(model.id, precision);
-                  }}
-                  disabled={active}
-                  className={cn("game-control-segment", active && "game-control-segment-active")}
-                >
-                  {getQuantizationProfile(precision).label.split(" ")[0]}
-                </button>
-              );
-            })}
-          </div>
-          <p className="text-[10px] leading-snug text-brand-cream/45">
-            Lower precision shrinks VRAM and speeds throughput for a small quality hit. FP8/FP4 need capable hardware.
-          </p>
-        </KitPanel>
-      )}
-    </>
-  );
+  const serving = model.launchState === "serving";
+  const baseName = baseModel?.name ?? model.baseModelId ?? "custom";
+  return <>
+    <Panel shell="inset">
+      <Heading name={model.name} subtitle={`${formatModelQualityTierLabel(model.qualityTier)} · ${baseName} · ${userModelTrainingVolumeLabel(model)}`} />
+      {baseModel && baseModelId && onViewBaseModel ? <RuneAction variant="link" label={`Base model ${baseModel.name}`} run={() => onViewBaseModel(baseModelId)}>
+        <Text size={12} weight={800} color={C.teal}>{`Open ${baseModel.name} ›`}</Text>
+      </RuneAction> : null}
+      <Row justify="between" items="end" width={FULL} gap={16}>
+        <RuneView grow={1} shrink gap={4}>
+          <ModelStatRow color="green" value={priceToBarValue(pmt)} label={`$${pmt}/M`} />
+          <ModelStatRow color="yellow" value={tpsToBarValue(tps)} label={`${tps} TPS`} fillOpacity={tpsFillOpacity} title="Per 1 TFLOP of inference" />
+          <ModelStatRow color="blue" value={dataTokenRateToBarValue(model.tokensPerToken)} label={`${model.tokensPerToken} data/token`} />
+        </RuneView>
+        <RuneView items="center" gap={4}>
+          <Label color={serving ? C.teal : C.amber}>{serving ? "SERVING" : "OWNED"}</Label>
+          <Row gap={0}><Text family={DISPLAY} size={20} weight={800} color={C.teal}>{incomeValue ?? ""}</Text><Text family={DISPLAY} size={20} weight={800} color={C.amber}>{`/${incomeUnit ?? ""}`}</Text></Row>
+        </RuneView>
+      </Row>
+    </Panel>
+    <Panel shell="inset" gap={0}>
+      {baseModel ? <InfoRow label="Based on" value={baseModel.name} /> : null}
+      {baseModel ? <InfoRow label="Creator" value={baseModel.creator} /> : null}
+      <InfoRow label="Rarity" value={formatModelQualityTierLabel(model.qualityTier)} />
+      <InfoRow label="Hours served" value="—" />
+      {model.trainingDataTokens != null ? <InfoRow label="Tokens used" value={model.trainingDataTokens.toLocaleString()} /> : null}
+      {model.tflopsUsed != null ? <InfoRow label="TFLOPs used" value={String(model.tflopsUsed)} /> : null}
+      <InfoRow label="Size" value={`${model.paramsB}B params`} />
+      <InfoRow label="Benchmark" value={`${model.benchmarkScore} (${computeBenchmarkDemandMultiplier(model.benchmarkScore).toFixed(2)}× demand)`} />
+      <InfoRow label="Precision" value={model.precisionLabel} />
+      <InfoRow label="VRAM footprint" value={`${model.footprintGb.toFixed(1)} GB`} />
+    </Panel>
+    {onQuantizeModel ? <Panel shell="inset">
+      <Label>QUANTIZE</Label>
+      <Row gap={4} width={FULL}>{COMPUTE_PRECISION_VALUES.map((precision) => {
+        const active = model.precision === precision;
+        const name = getQuantizationProfile(precision).label.split(" ")[0] ?? precision;
+        return <Button key={precision} tone="chip" grow={1} disabled={active} fill={active ? C.teal : "#ffffff0d"} label={`Quantize to ${name}`}
+          onPress={() => { if (!active) void onQuantizeModel(model.id, precision); }}>
+          <Text size={12} weight={800} color={active ? C.ink : C.cream}>{name}</Text>
+        </Button>;
+      })}</Row>
+      <Muted size={11}>Lower precision shrinks VRAM and speeds throughput for a small quality hit. FP8/FP4 need capable hardware.</Muted>
+    </Panel> : null}
+  </>;
 }
 
-export function ModelDetailView({
-  baseModelId,
-  userModel,
-  initialMode,
-  estimatedTrainingDurationSeconds,
-  onClose,
-  onViewBaseModel,
-  onQuantizeModel,
-}: ModelDetailViewProps) {
+/** The lab terminal's model page: a base model's catalog entry, or one of your trained models. */
+export function ModelDetailView({ baseModelId, userModel, initialMode, estimatedTrainingDurationSeconds, onClose, onViewBaseModel, onQuantizeModel }: ModelDetailViewProps) {
   const [mode, setMode] = useState<ModelDetailViewMode>(initialMode);
-
   const baseModel = baseModelId ? getBaseModelDefinition(baseModelId) : undefined;
-
-  useEffect(() => {
-    const handleKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [onClose]);
-
-  const handleViewBase = (id: string) => {
-    if (onViewBaseModel) {
-      onViewBaseModel(id);
-      return;
-    }
-    setMode("base");
-  };
-
-  return (
-    <div
-      className="fixed inset-0 z-[180] flex items-center justify-center bg-black/70 p-4 backdrop-blur-md"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Model details"
-      onClick={onClose}
-    >
-      <KitPanel
-        data-shell="terminal"
-        eyebrow={mode === "base" ? "Base model" : "Model details"}
-        className="max-h-[90dvh] w-full max-w-[420px] overflow-y-auto scrollbar-none overscroll-contain"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="sticky top-0 z-10 -mx-4 -mt-2 mb-2 flex items-center justify-between border-b border-[#243430] bg-[#0a1210] px-4 py-2">
-          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#5fc2a8]/70">Lab terminal</span>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 text-[#5fc2a8]/50 transition-colors hover:text-[#5fc2a8]"
-            aria-label="Close"
-          >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <div className="flex flex-col gap-5">
-          {mode === "base" && baseModel ? (
-            <BaseModelSection
-              baseModel={baseModel}
-              estimatedTrainingDurationSeconds={estimatedTrainingDurationSeconds}
-            />
-          ) : userModel ? (
-            <UserModelSection
-              model={userModel}
-              baseModel={baseModel}
-              baseModelId={baseModelId ?? userModel.baseModelId}
-              onViewBaseModel={baseModelId ? handleViewBase : undefined}
-              onQuantizeModel={onQuantizeModel}
-            />
-          ) : baseModel ? (
-            <BaseModelSection
-              baseModel={baseModel}
-              estimatedTrainingDurationSeconds={estimatedTrainingDurationSeconds}
-            />
-          ) : null}
-        </div>
-      </KitPanel>
-    </div>
-  );
+  const viewBase = (id: string) => { if (onViewBaseModel) onViewBaseModel(id); else setMode("base"); };
+  return <Sheet title={mode === "base" ? "Base model" : "Model details"} close={onClose} width={440}>
+    <Stack gap={14} width={FULL}>
+      {mode === "base" && baseModel ? <BaseModelSection baseModel={baseModel} estimatedTrainingDurationSeconds={estimatedTrainingDurationSeconds} />
+        : userModel ? <UserModelSection model={userModel} baseModel={baseModel} baseModelId={baseModelId ?? userModel.baseModelId} onViewBaseModel={baseModelId ? viewBase : undefined} onQuantizeModel={onQuantizeModel} />
+          : baseModel ? <BaseModelSection baseModel={baseModel} estimatedTrainingDurationSeconds={estimatedTrainingDurationSeconds} /> : null}
+    </Stack>
+  </Sheet>;
 }

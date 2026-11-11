@@ -1,145 +1,36 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { cn } from "../../kit/cn";
+import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import type { PlaceableBuildItemId } from "@llmville/game/build/catalog";
 import { getWorldModelAsset } from "@llmville/game/world/worldModelCatalog";
-import { InventoryTrayCard } from "../../store/components/StoreListRow";
 
-interface DecorShopCardProps {
-  itemId: PlaceableBuildItemId;
-  label: string;
-  description: string;
-  price: number;
-  quantity: number;
-  owned: number;
-  affordable: boolean;
-  researched?: boolean;
-  researchTokenCost?: number;
-  pending: boolean;
-  researchPending?: boolean;
-  onQtyChange: (next: number) => void;
-  onBuy: () => void;
-  onUnlockResearch?: () => void;
+import { C } from "../../ui/kit";
+
+type DecorKind = "plant" | "seating" | "utility" | "workspace" | "neon" | "display";
+
+/** Which family a decor item belongs to, for its tile colour. */
+export function decorKind(itemId: PlaceableBuildItemId): DecorKind {
+  if (itemId.includes("plant") || itemId.includes("tree") || itemId === "cable_tidy_bin") return "plant";
+  if (itemId.includes("chair") || itemId.includes("beanbag") || itemId.includes("rug") || itemId.includes("yoga") || itemId === "server_plushie") return "seating";
+  if (itemId.includes("coffee") || itemId.includes("fridge") || itemId.includes("drink") || itemId.includes("table")) return "utility";
+  if (itemId.includes("board") || itemId.includes("shelf") || itemId.includes("monitor")) return "workspace";
+  if (itemId.includes("neon") || itemId.includes("banner") || itemId.includes("clock")) return "neon";
+  return "display";
 }
 
-function decorThumbClass(itemId: PlaceableBuildItemId): string {
-  if (itemId.includes("plant") || itemId.includes("tree") || itemId === "cable_tidy_bin") {
-    return "decor-shop-card__thumb--plant";
-  }
-  if (itemId.includes("chair") || itemId.includes("beanbag") || itemId.includes("rug") || itemId.includes("yoga") || itemId === "server_plushie") {
-    return "decor-shop-card__thumb--seating";
-  }
-  if (itemId.includes("coffee") || itemId.includes("fridge") || itemId.includes("drink") || itemId.includes("table")) {
-    return "decor-shop-card__thumb--utility";
-  }
-  if (itemId.includes("board") || itemId.includes("shelf") || itemId.includes("monitor")) {
-    return "decor-shop-card__thumb--workspace";
-  }
-  if (itemId.includes("neon") || itemId.includes("banner") || itemId.includes("clock")) {
-    return "decor-shop-card__thumb--neon";
-  }
-  return "decor-shop-card__thumb--display";
-}
+const TILE: Record<DecorKind, [string, string]> = {
+  plant: ["#2f6b4f", "#7bd389"],
+  seating: ["#6b3f5a", "#f0a3c8"],
+  utility: ["#5a4a2f", C.amber],
+  workspace: ["#2f4a6b", "#8ec5ff"],
+  neon: ["#4b2f6b", "#d79bff"],
+  display: ["#3a4a48", C.teal],
+};
 
-export function DecorShopCard({
-  itemId,
-  label,
-  description,
-  price,
-  quantity,
-  owned,
-  affordable,
-  researched = true,
-  researchTokenCost = 0,
-  pending,
-  researchPending = false,
-  onQtyChange,
-  onBuy,
-  onUnlockResearch,
-}: DecorShopCardProps) {
-  const dec = () => onQtyChange(Math.max(1, quantity - 1));
-  const inc = () => onQtyChange(Math.min(99, quantity + 1));
-  const disabled = !affordable || pending || researchPending;
-  const hasModel = getWorldModelAsset(itemId)?.modelPath != null;
-
-  return (
-    <InventoryTrayCard
-      interactive={affordable}
-      className={cn("decor-shop-card", !affordable && owned === 0 && "opacity-45 grayscale")}
-    >
-      <div className="decor-shop-card__layout">
-        <div
-          className={cn("decor-shop-card__thumb", decorThumbClass(itemId), hasModel && "decor-shop-card__thumb--modeled")}
-          aria-hidden
-        />
-
-        <div className="decor-shop-card__body">
-          <div className="decor-shop-card__header">
-            <h3 className="decor-shop-card__title">{label}</h3>
-            <div className="decor-shop-card__price-block">
-              {researched ? (
-                <>
-                  <span className="decor-shop-card__price">${price.toLocaleString()}</span>
-                  <span className="decor-shop-card__stock">IN STOCK</span>
-                </>
-              ) : (
-                <>
-                  <span className="decor-shop-card__price">{researchTokenCost.toLocaleString()} tokens</span>
-                  <span className="decor-shop-card__stock">RESEARCH</span>
-                </>
-              )}
-            </div>
-          </div>
-          <p className="decor-shop-card__description">{description}</p>
-          {owned > 0 && (
-            <span className="decor-shop-card__owned">Owned ×{owned}</span>
-          )}
-        </div>
-
-        <div className="decor-shop-card__controls">
-          {researched ? (
-            <>
-              <div className="decor-shop-card__qty">
-                <button
-                  type="button"
-                  onClick={dec}
-                  disabled={disabled || quantity <= 1}
-                  className="decor-shop-card__qty-btn"
-                  aria-label="Decrease quantity"
-                >
-                  −
-                </button>
-                <span className="decor-shop-card__qty-value">{quantity}</span>
-                <button
-                  type="button"
-                  onClick={inc}
-                  disabled={disabled}
-                  className="decor-shop-card__qty-btn"
-                  aria-label="Increase quantity"
-                >
-                  +
-                </button>
-              </div>
-              <button
-                type="button"
-                onClick={onBuy}
-                disabled={disabled}
-                className="decor-shop-card__buy"
-              >
-                {pending ? "…" : `Buy ×${quantity}`}
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              onClick={onUnlockResearch}
-              disabled={!affordable || researchPending}
-              className="decor-shop-card__buy"
-            >
-              {researchPending ? "…" : `Research — ${researchTokenCost.toLocaleString()} tokens`}
-            </button>
-          )}
-        </div>
-      </div>
-    </InventoryTrayCard>
-  );
+/** A decor listing's tile: its family's colour, with a ring when it has a 3D model. */
+export function DecorThumb({ itemId }: { itemId: PlaceableBuildItemId }) {
+  const [base, light] = TILE[decorKind(itemId)];
+  const modeled = getWorldModelAsset(itemId)?.modelPath != null;
+  return <RuneView width={56} height={56} radius={10} fill={base}
+    radial={{ center: [0.35, 0.3], radius: [0.8, 0.8], stops: [[0, `${light}aa`], [1, `${light}00`]] }}
+    border={{ width: modeled ? 2 : 1, color: modeled ? light : "#ffffff22" }} />;
 }

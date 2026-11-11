@@ -1,15 +1,17 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useCallback, useState } from "@jgengine/core/ui/jsx";
+import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
 
-import { parseHardwareModelId } from "@llmville/game/infrastructure/catalog";
+import { getHardwareDefinition, parseHardwareModelId } from "@llmville/game/infrastructure/catalog";
 import type { HardwareModelId } from "@llmville/game/infrastructure/catalog";
 import { canAffordShopPurchase } from "@llmville/game/economy/storeTransition";
 import type { PersonalUpgradeItem, ShopCatalogItem } from "../../store/store";
 import type { PersonalUpgradeId } from "@llmville/game/user/personalUpgrades";
 
 import { TABLET_STORE_TAB_ID } from "../../tablet/tablet";
-import { BlueprintCard } from "../../store/components/StoreListRow";
-import { HardwareShopCard } from "./HardwareShopCard";
+import { GpuModelPreview } from "../../scene/components/GpuModelPreview";
+import { Button, C, FULL, Label, Muted, Row, Stack, Text } from "../../ui/kit";
+import { Card, money as cash, Pill, QuantityBuy, ResearchButton } from "../../ui/shop";
 
 type ShopItemId = string;
 
@@ -26,13 +28,43 @@ interface HardwareCatalogProps {
   forceSingleQuantity?: boolean;
 }
 
-interface RecentPurchase {
-  amount: number;
-  quantity: number;
-  token: number;
-}
+interface RecentPurchase { amount: number; quantity: number; token: number }
 
 type HardwareShopItem = ShopCatalogItem & { hardwareModelId: HardwareModelId };
+
+/** One GPU listing: shot, name, price, speed/memory/power, then quantity and buy (or research). */
+function HardwareShopCard({ item, quantity, interactive, researched, dataTokens, pending, researchPending, recentPurchase, onQtyChange, onBuy, onUnlockResearch }: {
+  item: HardwareShopItem; quantity: number; interactive: boolean; researched: boolean; dataTokens: number; pending: boolean; researchPending: boolean;
+  recentPurchase: RecentPurchase | undefined; onQtyChange: (next: number) => void; onBuy: () => void; onUnlockResearch: () => void;
+}) {
+  const hw = getHardwareDefinition(item.hardwareModelId);
+  const tokens = item.researchTokenCost ?? 0;
+  return <Card dim={!interactive && researched} gap={10}>
+    <Row gap={12} items="start" width={FULL}>
+      <GpuModelPreview hardwareModelId={item.hardwareModelId} />
+      <RuneView grow={1} shrink gap={6}>
+        <Row justify="between" width={FULL} items="start">
+          <Text size={14} weight={800} grow={1} shrink>{item.label}</Text>
+          <RuneView items="end" gap={2}>
+            <Text size={14} weight={800} color={C.teal}>{researched ? cash(item.cost) : `${tokens.toLocaleString()} tokens`}</Text>
+            <Label size={9}>{researched ? "IN STOCK" : "RESEARCH"}</Label>
+          </RuneView>
+        </Row>
+        <Row gap={6}>
+          <Pill label="SPEED" value={`${hw.trainingPowerFp16} TF`} accent={C.teal} />
+          <Pill label="MEMORY" value={`${hw.vramGb} GB`} />
+          <Pill label="POWER" value={`${hw.tdpWatts}W`} />
+        </Row>
+      </RuneView>
+    </Row>
+    <Row justify="end" gap={8} width={FULL}>
+      {recentPurchase === undefined ? null : <Text size={11} weight={800} color={C.teal}>{`Bought ×${recentPurchase.quantity}`}</Text>}
+      {researched
+        ? <QuantityBuy quantity={quantity} onQuantity={onQtyChange} onBuy={onBuy} disabled={!interactive || pending || researchPending} pending={pending} name={item.label} />
+        : <ResearchButton tokens={tokens} affordable={dataTokens >= tokens} pending={researchPending} name={item.label} onPress={onUnlockResearch} />}
+    </Row>
+  </Card>;
+}
 
 export function HardwareCatalog({
   money,
@@ -63,118 +95,53 @@ export function HardwareCatalog({
   const registerPurchase = useCallback((itemId: string, amount: number, quantity: number) => {
     const token = Date.now();
     setRecentPurchases((prev) => ({ ...prev, [itemId]: { amount, quantity, token } }));
-    window.setTimeout(() => {
-      setRecentPurchases((prev) => (prev[itemId]?.token === token
-        ? Object.fromEntries(Object.entries(prev).filter(([id]) => id !== itemId))
-        : prev));
+    setTimeout(() => {
+      setRecentPurchases((prev) => (prev[itemId]?.token === token ? Object.fromEntries(Object.entries(prev).filter(([id]) => id !== itemId)) : prev));
     }, 1600);
   }, []);
 
-  return (
-    <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {(initialCategory === TABLET_STORE_TAB_ID.hardware || !initialCategory) && (
-        <div className="grid grid-cols-1 gap-3">
-          {hardwareItems.map((item) => {
-            const researched = item.unlocked !== false;
-            const quantity = forceSingleQuantity ? 1 : getQty(item.id);
-            const totalCost = item.cost * quantity;
-            const canInteract =
-              researched &&
-              canAffordShopPurchase({
-                researched,
-                cost: totalCost,
-                researchTokenCost: item.researchTokenCost ?? 0,
-                money,
-                dataTokens,
-              });
-            const recentPurchase = recentPurchases[item.id];
-
-            return (
-              <HardwareShopCard
-                key={item.id}
-                hardwareModelId={item.hardwareModelId}
-                label={item.label}
-                cost={item.cost}
-                quantity={quantity}
-                interactive={canInteract}
-                researched={researched}
-                researchTokenCost={item.researchTokenCost ?? 0}
-                dataTokens={dataTokens}
-                pending={pendingItemId === item.id}
-                researchPending={pendingResearchId === item.id}
-                recentPurchase={recentPurchase}
-                onQtyChange={(q) => setQty(item.id, q)}
-                onBuy={() => {
-                  void (async () => {
-                    const selectedQuantity = forceSingleQuantity ? 1 : getQty(item.id);
-                    setPendingItemId(item.id);
-                    try {
-                      const purchased = await onBuy(item.id, selectedQuantity);
-                      if (purchased) {
-                        registerPurchase(item.id, item.cost * selectedQuantity, selectedQuantity);
-                      }
-                    } finally {
-                      setPendingItemId((current) => (current === item.id ? null : current));
-                    }
-                  })();
-                }}
-                onUnlockResearch={() => {
-                  setPendingResearchId(item.id);
-                  void onUnlockResearch(item.id).finally(() => {
-                    setPendingResearchId((current) => (current === item.id ? null : current));
-                  });
-                }}
-              />
-            );
-          })}
-
-          {hardwareItems.length === 0 && (
-            <div className="rounded-xl border border-white/10 bg-black/20 p-6 text-center">
-              <p className="text-[10px] font-game tracking-[0.2em] text-white/50 uppercase">No hardware listings available.</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {(initialCategory === TABLET_STORE_TAB_ID.operator || !initialCategory) && (
-        <div className="grid grid-cols-1 gap-3">
-          {personalUpgrades.map((upgrade) => {
-            const canInteract =
-              !upgrade.owned &&
-              canAffordShopPurchase({
-                researched: true,
-                cost: upgrade.cost,
-                researchTokenCost: 0,
-                money,
-                dataTokens,
-              });
-            const disabled = upgrade.owned || !canInteract;
-            return (
-              <BlueprintCard key={upgrade.id} owned={upgrade.owned} className={!canInteract && !upgrade.owned ? "opacity-40 grayscale" : undefined}>
-                <div className="group relative flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <h3 className="m-0 text-base font-game font-bold text-brand-cream transition-colors group-hover:text-brand-teal">{upgrade.label}</h3>
-                    <p className="text-sm text-white/50 leading-snug mt-1">{upgrade.description}</p>
-                  </div>
-                  <div className="flex flex-col items-end gap-2 shrink-0">
-                    <div className={`text-base font-game tabular-nums ${canInteract ? "text-brand-teal" : "text-red-400"}`}>
-                      <span className="text-[10px] opacity-50 mr-0.5">$</span>
-                      {upgrade.cost.toLocaleString()}
-                    </div>
-                    <button
-                      onClick={() => onBuyPersonalUpgrade(upgrade.id)}
-                      disabled={disabled}
-                      className={`w-auto px-4 py-1.5 game-button text-[10px] tracking-[0.2em] transition-all duration-300 ${disabled ? "opacity-20 pointer-events-none" : "game-button-primary"}`}
-                    >
-                      {upgrade.owned ? "Owned" : canInteract ? "Upgrade" : "Locked"}
-                    </button>
-                  </div>
-                </div>
-              </BlueprintCard>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
+  return <Stack width={FULL} gap={10}>
+    {initialCategory === TABLET_STORE_TAB_ID.hardware || initialCategory === undefined ? <>
+      {hardwareItems.map((item) => {
+        const researched = item.unlocked !== false;
+        const quantity = forceSingleQuantity ? 1 : getQty(item.id);
+        const canInteract = researched && canAffordShopPurchase({ researched, cost: item.cost * quantity, researchTokenCost: item.researchTokenCost ?? 0, money, dataTokens });
+        return <HardwareShopCard key={item.id} item={item} quantity={quantity} interactive={canInteract} researched={researched} dataTokens={dataTokens}
+          pending={pendingItemId === item.id} researchPending={pendingResearchId === item.id} recentPurchase={recentPurchases[item.id]}
+          onQtyChange={(q) => setQty(item.id, q)}
+          onBuy={() => {
+            void (async () => {
+              const selectedQuantity = forceSingleQuantity ? 1 : getQty(item.id);
+              setPendingItemId(item.id);
+              try {
+                if (await onBuy(item.id, selectedQuantity)) registerPurchase(item.id, item.cost * selectedQuantity, selectedQuantity);
+              } finally {
+                setPendingItemId((current) => (current === item.id ? null : current));
+              }
+            })();
+          }}
+          onUnlockResearch={() => {
+            setPendingResearchId(item.id);
+            void onUnlockResearch(item.id).finally(() => setPendingResearchId((current) => (current === item.id ? null : current)));
+          }} />;
+      })}
+      {hardwareItems.length === 0 ? <Card items="center" padding={20}><Label>NO HARDWARE LISTINGS AVAILABLE.</Label></Card> : null}
+    </> : null}
+    {initialCategory === TABLET_STORE_TAB_ID.operator || initialCategory === undefined ? personalUpgrades.map((upgrade) => {
+      const canInteract = !upgrade.owned && canAffordShopPurchase({ researched: true, cost: upgrade.cost, researchTokenCost: 0, money, dataTokens });
+      return <Card key={upgrade.id} owned={upgrade.owned} dim={!canInteract && !upgrade.owned} layout="row" items="start" justify="between" gap={12}>
+        <RuneView grow={1} shrink gap={4}>
+          <Text size={15} weight={800}>{upgrade.label}</Text>
+          <Muted size={13}>{upgrade.description}</Muted>
+        </RuneView>
+        <RuneView items="end" gap={8}>
+          <Text size={15} weight={800} color={canInteract ? C.teal : C.error}>{cash(upgrade.cost)}</Text>
+          <Button tone={canInteract ? "primary" : "secondary"} minHeight={32} padding={[6, 14, 6, 14]} disabled={upgrade.owned || !canInteract}
+            label={`${upgrade.owned ? "Owned" : canInteract ? "Upgrade" : "Locked"} ${upgrade.label}`} onPress={() => onBuyPersonalUpgrade(upgrade.id)}>
+            <Text size={11} weight={800} color={canInteract ? C.ink : C.cream}>{upgrade.owned ? "OWNED" : canInteract ? "UPGRADE" : "LOCKED"}</Text>
+          </Button>
+        </RuneView>
+      </Card>;
+    }) : null}
+  </Stack>;
 }

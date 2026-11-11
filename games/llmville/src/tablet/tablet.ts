@@ -19,6 +19,7 @@ export { TABLET_APP_ID, TABLET_STORE_TAB_ID };
 export interface TabletAppShortcut {
   id: TabletAppId;
   label: string;
+  /** Tile colour (hex). */
   color: string;
   icon: string;
 }
@@ -40,15 +41,15 @@ export type PersistedGameMenuState =
   | { type: "tablet-app"; appId: TabletAppId; storeTab: TabletStoreTabId };
 
 export const TABLET_APPS: readonly TabletAppShortcut[] = [
-  { id: TABLET_APP_ID.models, label: "Train models", color: "bg-indigo-600", icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" },
-  { id: TABLET_APP_ID.inference, label: "GPU jobs", color: "bg-fuchsia-600", icon: "M4 13h6v7H4v-7zm10-9h6v16h-6V4zM4 4h6v5H4V4zm10 4h6v4h-6V8z" },
-  { id: TABLET_APP_ID.stats, label: "Stats", color: "bg-cyan-600", icon: "M3 3v18h18M7 15l4-4 3 3 5-6" },
-  { id: TABLET_APP_ID.store, label: "Store", color: "bg-emerald-600", icon: "M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" },
-  { id: TABLET_APP_ID.storage, label: "Storage", color: "bg-amber-600", icon: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" },
-  { id: TABLET_APP_ID.map, label: "Map", color: "bg-teal-600", icon: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z" },
-  { id: TABLET_APP_ID.bills, label: "Bills", color: "bg-rose-600", icon: "M6 2h12v20l-3-2-3 2-3-2-3 2V2zm3 6h6M9 12h6" },
-  { id: TABLET_APP_ID.bot, label: "LLM Bot", color: "bg-violet-600", icon: "M9 3v2m6-2v2M12 7a5 5 0 015 5v3a2 2 0 01-2 2H9a2 2 0 01-2-2v-3a5 5 0 015-5zM9.5 13h.01M14.5 13h.01M4 15h1m14 0h1" },
-  { id: TABLET_APP_ID.settings, label: "Settings", color: "bg-zinc-600", icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" },
+  { id: TABLET_APP_ID.models, label: "Train models", color: "#4f46e5", icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" },
+  { id: TABLET_APP_ID.inference, label: "GPU jobs", color: "#c026d3", icon: "M4 13h6v7H4v-7zm10-9h6v16h-6V4zM4 4h6v5H4V4zm10 4h6v4h-6V8z" },
+  { id: TABLET_APP_ID.stats, label: "Stats", color: "#0891b2", icon: "M3 3v18h18M7 15l4-4 3 3 5-6" },
+  { id: TABLET_APP_ID.store, label: "Store", color: "#059669", icon: "M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" },
+  { id: TABLET_APP_ID.storage, label: "Storage", color: "#d97706", icon: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" },
+  { id: TABLET_APP_ID.map, label: "Map", color: "#0d9488", icon: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z" },
+  { id: TABLET_APP_ID.bills, label: "Bills", color: "#e11d48", icon: "M6 2h12v20l-3-2-3 2-3-2-3 2V2zm3 6h6M9 12h6" },
+  { id: TABLET_APP_ID.bot, label: "LLM Bot", color: "#7c3aed", icon: "M9 3v2m6-2v2M12 7a5 5 0 015 5v3a2 2 0 01-2 2H9a2 2 0 01-2-2v-3a5 5 0 015-5zM9.5 13h.01M14.5 13h.01M4 15h1m14 0h1" },
+  { id: TABLET_APP_ID.settings, label: "Settings", color: "#52525b", icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" },
 ];
 
 export const TABLET_STORE_TABS: readonly TabletStoreTabId[] = [
@@ -451,16 +452,4 @@ export function useGameTabletFrame({ world, tutorial, nav, isTouch }: UseGameTab
     openTabletHome,
     toggleTablet,
   };
-}
-
-export function useEscapeToClose(onClose: () => void, enabled = true) {
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (!enabled || event.defaultPrevented || event.key !== "Escape" || document.querySelector('[role="dialog"]')) return;
-      event.preventDefault();
-      onClose();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose, enabled]);
 }

@@ -1,5 +1,4 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { AnchoredOverlay } from "@jgengine/core/hud/hudOverlay.draw";
 import {
   EngineDrawMount,
   SceneObjectAttach,
@@ -8,11 +7,15 @@ import {
 } from "@jgengine/core/frame/useEngineDraw.draw";
 import type { EngineDraw } from "@jgengine/core/frame/engineLoop.draw";
 import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
-import { ArrowHelper, BoxGeometry, EdgesGeometry, Group, LineBasicMaterial, LineSegments } from "three";
+import { useFrameTask } from "@jgengine/core/frame/useFrameTask.draw";
+import { ArrowHelper, BoxGeometry, EdgesGeometry, Group, LineBasicMaterial, LineSegments, Vector3 } from "three";
 
 import type { GridFootprint } from "@llmville/game/world/grid";
 import { TILE_SIZE } from "@llmville/game/world/grid";
 import { cardinalLabel, cardinalToRotationY } from "@llmville/game/world/cardinal";
+import { worldLabels } from "../worldLabels";
+
+const scratch = new Vector3();
 
 /**
  * Dev overlay: footprint tile outline + forward arrow (+Z).
@@ -74,27 +77,22 @@ export function AssetFrameGizmo({
     return arrow;
   }, [depth]);
 
+  const labelId = useMemo(() => `gizmo:${Math.random().toString(36).slice(2)}`, []);
+  useEffect(() => {
+    if (!label) { worldLabels.remove(labelId); return; }
+    worldLabels.set({ id: labelId, text: displayLabel, color: "#e2e8f0", border: "#0f172ad9", mono: true, position: [gizmo.position.x, gizmo.position.y + 0.35, gizmo.position.z] });
+  }, [labelId, label, displayLabel, gizmo]);
+  useEffect(() => () => worldLabels.remove(labelId), [labelId]);
+  useFrameTask(function gizmoLabel() {
+    if (!label) return;
+    gizmo.getWorldPosition(scratch);
+    worldLabels.move(labelId, scratch.x, scratch.y + 0.35, scratch.z);
+  });
+
   return (
     <SceneObjectPortal object={gizmo}>
       <EngineDrawMount create={() => footprintEdgesDraw(width, depth)} deps={[width, depth]} />
       {showForwardArrow && <SceneObjectAttach object={forwardArrow} />}
-      {label && (
-        <AnchoredOverlay anchor={gizmo} localPosition={[0, 0.35, 0]} distanceFactor={12}>
-          <div
-            style={{
-              background: "rgba(15, 23, 42, 0.85)",
-              color: "#e2e8f0",
-              fontSize: "10px",
-              padding: "2px 6px",
-              borderRadius: "4px",
-              whiteSpace: "nowrap",
-              fontFamily: "monospace",
-            }}
-          >
-            {displayLabel}
-          </div>
-        </AnchoredOverlay>
-      )}
     </SceneObjectPortal>
   );
 }
