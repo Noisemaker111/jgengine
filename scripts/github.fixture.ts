@@ -73,6 +73,7 @@ export function fakeGitHub(seed: {
   // A list answer carries no merge state; only a single-PR read does.
   const rest = (pull: FakePull, listed = false): unknown => ({
     number: pull.number,
+    node_id: `PR_${pull.number}`,
     html_url: `https://github.com/${repo}/pull/${pull.number}`,
     title: pull.title ?? `PR ${pull.number}`,
     body: pull.body ?? "",
@@ -104,6 +105,13 @@ export function fakeGitHub(seed: {
 
     const [route = "", query = ""] = call.path.split("?");
     const params = new URLSearchParams(query);
+    if (route === "graphql") {
+      const ready = /markPullRequestReadyForReview\(input: \{pullRequestId: "PR_(\d+)"\}\)/.exec(call.fields["query"] ?? "");
+      const target = ready === null ? undefined : pulls.get(Number(ready[1]));
+      if (target === undefined) return refuse("the fake gh serves only markPullRequestReadyForReview over graphql");
+      target.draft = false;
+      return ok({ data: { markPullRequestReadyForReview: { pullRequest: { isDraft: false } } } });
+    }
     const prefix = `repos/${repo}/`;
     if (!route.startsWith(prefix)) return refuse(`HTTP 404: no repository at ${call.path}`);
     const parts = route.slice(prefix.length).split("/");

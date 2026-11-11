@@ -90,6 +90,8 @@ export interface GitHub {
   mergePull(number: number, headSha: string): GhResult<{ sha: string }>;
   /** Leave a comment on the PR, then close it. */
   closePull(number: number, comment: string): GhResult<null>;
+  /** Take a draft PR out of draft (GraphQL only: REST cannot), so GitHub will merge it. */
+  markReady(number: number): GhResult<null>;
   branchRuns(branch: string, limit: number): GhResult<WorkflowRun[]>;
 }
 
@@ -220,6 +222,13 @@ export function gitHub(gh: GhRunner, repo: string, pause: (ms: number) => void =
       if (!merged.ok) return merged;
       const sha = text(record(merged.value)["sha"]);
       return sha.length > 0 ? { ok: true, value: { sha } } : { ok: false, error: "GitHub answered the merge without a commit sha" };
+    },
+    markReady(number) {
+      const viewed = call([`repos/${repo}/pulls/${number}`]);
+      if (!viewed.ok) return viewed;
+      const id = text(record(viewed.value)["node_id"]);
+      if (id === "") return { ok: false, error: `PR #${number} has no node id to mark ready` };
+      return done(call(["graphql", "-f", `query=mutation { markPullRequestReadyForReview(input: {pullRequestId: "${id}"}) { pullRequest { isDraft } } }`]));
     },
     closePull(number, comment) {
       const commented = call(["-X", "POST", `repos/${repo}/issues/${number}/comments`, "-f", `body=${comment}`]);
