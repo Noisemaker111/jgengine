@@ -9,9 +9,9 @@ export default defineFlow(game, {
     // release wave 1 with the keep's own release button
     await f.click("Begin first assault");
     await f.see(/\d+ raiders? left/i, { timeoutMs: 20000 });
-    await f.expectPage("__jgProbe().creeps > 0 && /wave 1/i.test(document.body.innerText)", "arrival: the director put wave 1's raiders on the authored path, so the wave mustered rather than only the click landing");
+    await f.expectPage("__jgProbe().creeps > 0 && /wave 1/i.test(window.__jgNativeUi.text())", "arrival: the director put wave 1's raiders on the authored path, so the wave mustered rather than only the click landing");
     await f.see(/send wave 2/i, { timeoutMs: 60000 });
-    await f.expectPage("/send wave 2/i.test(document.body.innerText) && /\\+\\d+ gold/i.test(document.body.innerText)", "arrival: wave 1 has fully mustered, the horn offers wave 2 early for gold while the clock runs down");
+    await f.expectPage("/send wave 2/i.test(window.__jgNativeUi.text()) && /\\+\\d+ gold/i.test(window.__jgNativeUi.text())", "arrival: wave 1 has fully mustered, the horn offers wave 2 early for gold while the clock runs down");
     // the loop turns: the next wave releases off the same director
     await f.click("Send wave 2");
     await f.see(/wave 2[^]*\d+ raiders? left/i, { timeoutMs: 20000 });

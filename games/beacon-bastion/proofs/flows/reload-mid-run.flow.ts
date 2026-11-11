@@ -12,17 +12,16 @@ export default defineFlow(game, {
   async run(f) {
     await f.see(/new defense/i, { timeoutMs: 40000, note: "arrival: the title menu over the keep, not a run already playing" });
     await f.click("New Defense");
-    // "Raise The Keep" is also the New Defense plank's hint, so press the commission's own button where it stands
-    const raise = await f.page("(() => { const r = document.querySelector('[data-new-keep-start]')?.getBoundingClientRect(); return r ? [r.x + r.width / 2, r.y + r.height / 2] : null; })()");
-    if (!Array.isArray(raise) || typeof raise[0] !== "number" || typeof raise[1] !== "number") throw new Error("the commission's Raise button is not on screen");
-    await f.clickAt(raise[0], raise[1]);
+    // The commission screen covers the title, so its Raise is the only one on screen.
+    await f.see(/commission/i, { timeoutMs: 10000 });
+    await f.click("Raise The Keep");
     await f.see(/begin first assault/i, { timeoutMs: 20000, note: "arrival: the raised keep is playing and the director offers wave 1" });
     await f.command("buildTower1");
     await f.command("tower.build", { point: [-12, 0, -3.2] });
     const built = await f.waitFor((p) => p.towers >= 1, { timeoutMs: 20000, note: "the archer tower rises on the plot" });
     await f.click("Begin first assault");
     await f.see(/\d+ raiders? left/i, { timeoutMs: 20000 });
-    await f.waitForPage("localStorage.getItem('game-save:beacon-bastion:keep') !== null && !/unsaved defense/i.test(document.body.innerText)", { timeoutMs: 10000, note: "the playing checkpoint wrote The Keep and the HUD dropped its unsaved sign" });
+    await f.waitForPage("localStorage.getItem('game-save:beacon-bastion:keep') !== null && !/unsaved defense/i.test(window.__jgNativeUi.text())", { timeoutMs: 10000, note: "the playing checkpoint wrote The Keep and the HUD dropped its unsaved sign" });
     // two more checkpoint beats so the save holds the wave already under way
     await f.wait(2500);
     const before = await f.probe();
@@ -38,7 +37,7 @@ export default defineFlow(game, {
     await f.shot("reload-after");
     await f.expect((p) => p.towers === before.towers && p.towers === built.towers, "the reloaded keep has the same towers it had before the reload");
     await f.expect((p) => p.wave === before.wave && p.wave >= 1, "the reloaded keep is on the wave it was fighting, not a fresh wave-1 offer");
-    await f.expectPage("!/begin first assault/i.test(document.body.innerText)", "the horn does not offer the first assault again, so the started wave survived");
+    await f.expectPage("!/begin first assault/i.test(window.__jgNativeUi.text())", "the horn does not offer the first assault again, so the started wave survived");
     if (after.gold <= 0) throw new Error("the reloaded purse is empty");
   },
 });
