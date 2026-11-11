@@ -41,7 +41,8 @@ const positionOf = (ctx: GameContext) => ctx.scene.entity.get(ctx.player.userId)
 export function GameUI() {
   const ctx = useGameContext(), phase = useOptionalGamePhase(), settings = useSettings(), bindings = useActionBindings();
   const screen = useStore(viewStore,v => ({panel:v.panel,mode:v.mode,paused:v.paused,diving:v.dive !== null}));
-  const swapping = useSceneSwapping(), menu = phase === "menu" || (phase === "paused" && screen.panel === null);
+  // A save boundary or reprint also freezes the game; only a held home or dive shows the pause menu over it.
+  const swapping = useSceneSwapping(), menu = phase === "menu" || (phase === "paused" && screen.panel === null && (screen.mode === "home" || screen.mode === "dive"));
   const command: Command = (name,input = {}) => ctx.game.commands.run(`deepward.${name}`,input);
   const close = () => { command("close"); };
   const notices = useMemo(() => ({read:ctx.game.notices.list,subscribe:ctx.game.notices.subscribe}),[ctx]);
@@ -126,7 +127,7 @@ function StashSheet({ command,close }: { command: Command; close: () => void }) 
     <Tag color={AMBER}>PERMANENT / SAVED ON RETURN</Tag><Text>Travel light, or risk a recovered rifle. Prepared gear is lost on death.</Text>
     <Button onPress={() => command("prepareRifle",{uid:null})}>Travel light / keep rifles safe</Button>
     {home.stash.length === 0 ? <Text>Empty shelves. Bring something home from Bellwether.</Text> : home.stash.map(item => <Section key={item.id}>
-      <Row><ItemMark kind={kindOf(item)} /><Heading size={22}>{item.name}</Heading></Row><Text>{item.rarity} · level {item.level} · {item.mass}kg · {ITEMS[kindOf(item)].detail}</Text>
+      <Row><ItemMark kind={kindOf(item)} /><Heading size={22} grow={1} shrink>{item.name}</Heading></Row><Text>{item.rarity} · level {item.level} · {item.mass}kg · {ITEMS[kindOf(item)].detail}</Text>
       <Text>{statLines(item).map(s => `${s.label} ${s.value.toFixed(s.digits)}${s.unit}`).join(" · ")}</Text><Text>{item.affixes.map(a => `${a.id} ${a.value.toFixed(2)} ${a.stat}`).join(" · ")}</Text>
       {prepared === undefined || kindOf(prepared) !== kindOf(item) ? null : <Text color={AMBER}>Prepared comparison: {compareToPrepared(item,prepared).better}</Text>}
       {kindOf(item) !== "service-rifle" ? null : <Button onPress={() => command("prepareRifle",{uid:item.id})}>{rifleUid === item.id ? "Prepared / at risk" : "Prepare rifle"}</Button>}
