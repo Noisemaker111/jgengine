@@ -1,11 +1,13 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { Link } from "../site/link";
+import { definePage } from "../site/routes";
 
 import { Page, PageHero, SectionHeading } from "../components/Layout";
 import type { DemoKey } from "../live/demoParts";
 import { TracedDemo } from "../live/TracedDemo";
 import { seo } from "../lib/seo";
 
-export const Route = createFileRoute("/adopt")({
+export const Route = definePage({
   head: () =>
     seo({
       title: "Use one jgengine system in the game you already have",

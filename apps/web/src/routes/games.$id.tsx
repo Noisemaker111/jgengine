@@ -1,5 +1,7 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { Link, useParams } from "../site/link";
+import { definePage } from "../site/routes";
+import { useEffect, useRef, useState } from "@jgengine/core/ui/jsx";
 
 import { Page } from "../components/Layout";
 import { GameCard } from "../components/GameCard";
@@ -7,18 +9,20 @@ import { GAME_IDS, gameBlurb, gameCredit, gameParts, gameSeed, gameTitle, isGame
 import { EngineTour } from "../live/EngineTour";
 import { seo } from "../lib/seo";
 
-export const Route = createFileRoute("/games/$id")({
-  head: ({ params }) =>
-    seo({
-      title: `${gameTitle(params.id)} — play in your browser · jgengine`,
-      description: `Play ${gameTitle(params.id)}${gameBlurb(params.id) ? `, ${gameBlurb(params.id)!.toLowerCase()},` : ""} in your browser. Built on jgengine, an open-source TypeScript game engine.`,
-      path: `/games/${params.id}`,
-    }),
+export const Route = definePage({
+  head: ({ params }) => {
+    const id = params["id"] ?? "";
+    return seo({
+      title: `${gameTitle(id)} — play in your browser · jgengine`,
+      description: `Play ${gameTitle(id)}${gameBlurb(id) ? `, ${gameBlurb(id)!.toLowerCase()},` : ""} in your browser. Built on jgengine, an open-source TypeScript game engine.`,
+      path: `/games/${id}`,
+    });
+  },
   component: GamePage,
 });
 
 function GamePage() {
-  const { id } = Route.useParams();
+  const { id = "" } = useParams<{ id?: string }>();
   const frameWrapRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [supportsFullscreen, setSupportsFullscreen] = useState(false);

@@ -20,7 +20,6 @@
     "@t3-oss/env-core": "^0.13.1",
     "better-auth": "catalog:",
     "convex": "catalog:",
-    "react": "catalog:",
     "three": "catalog:",
     "three-stdlib": "catalog:",
     "zod": "catalog:",

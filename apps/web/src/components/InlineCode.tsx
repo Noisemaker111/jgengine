@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 /** Renders `backtick` spans in generated capability summaries as inline code. */
 export function InlineCode({ text }: { text: string }) {
   return (

@@ -1,10 +1,17 @@
 # @jgengine-apps/web — jgengine.com
 
-The landing page for JGengine and the front door for agents. It runs TanStack Start SSR on Cloudflare Workers through the official Cloudflare Vite plugin.
+The landing page for JGengine and the front door for agents. It is drawn with the engine's own JSX runtime (`@jgengine/core/ui/jsx`), not React, and served from Cloudflare through the official Cloudflare Vite plugin.
 
 - `/` presents real game captures, engine systems, and an editable starting prompt. `/games` opens the playable projects; `/capabilities` indexes the SDK; `/editor` runs the scene editor.
 - Agents get `/llms.txt` and `/llms-full.txt` from the same site constants as the human pages.
 - The games catalog and static runner live on `/games` and `/play`.
+
+## How a page is made
+
+- [`src/site/routes.ts`](src/site/routes.ts) is the page table: each path, the module in `src/routes/` that draws it, and that module's `Route = definePage({ head, component })`. Links are `Link` from [`src/site/link.tsx`](src/site/link.tsx), plain `<a>` tags; every visit is a full page load.
+- [`src/site/render.tsx`](src/site/render.tsx) renders a page to a whole HTML document with the engine's static renderer. The dev server calls it per request; `bun run build` calls it for every page after `vite build` ([`scripts/prerender.ts`](scripts/prerender.ts)) and writes `dist/client/<page>.html` plus `404.html`.
+- [`src/client.tsx`](src/client.tsx) runs in the browser and draws the same page into `<body>`, which starts its buttons, menus and live demos.
+- [`src/worker.ts`](src/worker.ts) is the Worker. Static files are served before it runs; it answers `/api/*`, `/llms.txt`, `/llms-full.txt`, `/agents.md`, `/sitemap.xml`, and any other path with `404.html` and status 404.
 
 ## Games on the site
 
@@ -39,7 +46,7 @@ The Worker configuration is [`wrangler.jsonc`](wrangler.jsonc). Build and deploy
 bun --cwd=apps/web run deploy:cloudflare
 ```
 
-The build emits the TanStack Start Worker and static assets under `dist/`. Wrangler follows the generated deployment configuration automatically.
+The build emits the prerendered pages and static files under `dist/client` and the Worker under `dist/server`. Wrangler follows the generated deployment configuration automatically.
 
 Between the build and the upload, `scripts/check-site-assets.ts` checks every file and pack each game names is in the built runner; one missing file stops the deploy (and so the release).
 

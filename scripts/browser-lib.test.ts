@@ -1189,7 +1189,7 @@ describe("stray browser sweep", () => {
         { pid: 5001, parentPid: DEAD_PID, startedAt: now - 5 * 60 * 1000, commandLine: command(young) },
         { pid: 5002, parentPid: DEAD_PID, startedAt: now - 21 * 60 * 1000, commandLine: command(old) },
       ];
-      const result = sweepStrayBrowsers(root, { now, processes });
+      const result = sweepStrayBrowsers(root, { now, processes, kill: () => true, isAlive: () => false });
       console.error(`proof (3): no run record — killed ${result.killed} of 2 (21-minute window gone, 5-minute kept)`);
       expect(result.killed).toBe(1);
       expect(result.profilesRemoved).toBe(1);
@@ -1295,6 +1295,8 @@ describe("stray browser sweep", () => {
       const removed = sweepCaptureProfiles(root, {
         freeBytes: 200 * 1024 ** 3,
         processes: [{ pid: 7001, parentPid: 1, startedAt: Date.now(), commandLine: `chrome.exe --user-data-dir=${dir}` }],
+        kill: () => true,
+        isAlive: () => false,
         log: (line) => reported.push(line),
       });
       console.error(`proof (4): one line — ${reported[0]}`);

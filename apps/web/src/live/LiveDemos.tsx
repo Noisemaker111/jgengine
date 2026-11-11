@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { SectionHeading } from "../components/Layout";
 import type { DemoKey } from "./demoParts";
 import { TracedDemo } from "./TracedDemo";

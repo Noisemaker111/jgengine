@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useCallback, useMemo, useState } from "@jgengine/core/ui/jsx";
 
 import { LiveSpecimen } from "../components/LiveSpecimen";
 import { CodeBlock } from "../components/marketing";

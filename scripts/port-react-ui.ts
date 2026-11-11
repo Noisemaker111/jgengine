@@ -24,10 +24,10 @@ const SPECIFIERS: Record<string, string> = {
 };
 
 /**
- * Folders that stay on React because the framework they run on is React: the website (TanStack
- * Start) and the two examples that show the engine inside a React host app.
+ * Folders that stay on React because the framework they run on is React: the two examples that show
+ * the engine inside a React host app.
  */
-const REACT_HOSTS = ["apps/web/", "examples/next-host/", "examples/tanstack-host/"];
+const REACT_HOSTS = ["examples/next-host/", "examples/tanstack-host/"];
 const SKIP = ["node_modules/", "native/", "packages/core/src/ui/jsx/", "packages/core/src/meta/changelog.ts", "scripts/port-react-ui.ts", "scripts/port-react-ui.test.ts", "scripts/check-react-free.test.ts", "scripts/creator-app-fixture.ts", "games/llmville/packages/backend/"];
 
 interface FileResult {
@@ -77,12 +77,6 @@ export function portBrowserFixture(text: string): string {
     .replace(/^\s*for \(const (?:peer|pkg) of \[["']react["'],\s*["']react-dom["']\]\) await symlink\([^\n]*\n/gm, "\n")
     .replace(/^\s*for \(const peer of \[["']react["'],\s*["']react-dom["']\]\) \{\r?\n\s*await symlink\([^\n]*\r?\n\s*\}\r?\n/gm, "\n")
     .replace(/^\s*\.\.\.\[["']react["'],\s*["']react-dom["']\]\.map\(peer => symlink\([^\n]*\n/gm, "\n");
-}
-
-/** Rename the retired SDK package in game declarations without changing game-owned values. */
-export function portProjectConfig(text: string): string {
-  return text.replace(/("engine"\s*:\s*\[)([^\]]*)(\])/g,
-    (_all, lead: string, packages: string, end: string) => lead + packages.replace(/"react"/g, '"ui"') + end);
 }
 
 function renderImport(names: Named[], from: string, quote: string, allTypes: boolean): string {
@@ -285,9 +279,6 @@ function run(argv: readonly string[]): number {
   for (const path of gitFiles(["*tsconfig*.json"])) {
     if (skipped(path) || REACT_HOSTS.some((prefix) => path.startsWith(prefix))) continue;
     edit(path, (text) => ({ text: portTsconfig(text), notes: [] }));
-  }
-  for (const path of gitFiles(["jgengine.json", "**/jgengine.json"])) {
-    edit(path, (text) => ({ text: portProjectConfig(text), notes: [] }));
   }
 
   const results = [...resultsByPath.values()];

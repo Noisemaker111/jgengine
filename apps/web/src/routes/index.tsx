@@ -1,5 +1,7 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { Link } from "../site/link";
+import { definePage } from "../site/routes";
+import type { ReactNode } from "@jgengine/core/ui/jsx";
 
 import { HeroShowcase } from "../components/HeroShowcase";
 import { GitHubIcon, Page } from "../components/Layout";
@@ -14,7 +16,7 @@ import { BASELINE_GPU, MEASURED_GAME_COUNT, SCENE_READY_RANGE_MS, WORST_MENU_CLI
 import { snippet } from "../snippets";
 import { SYSTEMS } from "../lib/systems";
 
-export const Route = createFileRoute("/")({
+export const Route = definePage({
   head: () => seo({ title: SITE_TITLE, description: SITE_DESCRIPTION, path: "/" }),
   component: Home,
 });

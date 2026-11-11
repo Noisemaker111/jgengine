@@ -1,11 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { definePage } from "../site/routes";
 
 import { CopyButton } from "../components/Copy";
 import { Page, PageHero } from "../components/Layout";
 import { COOKBOOK } from "../lib/cookbook";
 import { seo } from "../lib/seo";
 
-export const Route = createFileRoute("/cookbook")({
+export const Route = definePage({
   head: () =>
     seo({
       title: "Cookbook — thirty common game features in a few lines",

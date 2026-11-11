@@ -1,3 +1,4 @@
+/** @jsxImportSource @jgengine/core/ui/jsx */
 import { currentTheme, setTheme } from "../lib/theme";
 
 export function ThemeToggle() {

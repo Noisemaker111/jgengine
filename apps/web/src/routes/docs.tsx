@@ -1,4 +1,6 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { Link } from "../site/link";
+import { definePage } from "../site/routes";
 
 import { Blueprints } from "../components/Blueprints";
 import { CapabilityBrowser } from "../components/CapabilityBrowser";
@@ -7,7 +9,7 @@ import { CAPABILITIES } from "../lib/capabilities";
 import { seo } from "../lib/seo";
 import { REPO_URL } from "../lib/site";
 
-export const Route = createFileRoute("/docs")({
+export const Route = definePage({
   head: () =>
     seo({
       title: "Docs — every jgengine capability with its import line",

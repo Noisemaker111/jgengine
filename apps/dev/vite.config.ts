@@ -8,6 +8,7 @@ import { defineConfig, searchForWorkspaceRoot, type Plugin, type ProxyOptions } 
 import { parseDevProxyTable } from "../../packages/core/src/data/devProxy";
 import { tunableDiscoveryPlugin } from "../../packages/core/src/devtools/transformTunables";
 import { devServerMarkerPlugin } from "../../scripts/devServerMarker";
+import { npmNameOfFolder } from "../../scripts/packageNames";
 import { startTextureCompression } from "../../games/shared/provisionAssets";
 import { viteJgUiWasm } from "../../games/shared/viteJgUiWasm";
 import { engineUiAliases } from "../../games/shared/viteEngineSource";
@@ -49,21 +50,19 @@ function textureCompression(): Plugin {
   };
 }
 
-// Every workspace package resolves to its source, so the runner never needs a build.
+// Every workspace package resolves to its source, so the runner never needs a build. Keyed on the
+// package's npm name, not its folder: packages/ui is published as @jgengine/react.
 const packagesDir = fileURLToPath(new URL("../../packages", import.meta.url));
-const packageAliases = readdirSync(packagesDir, { withFileTypes: true })
-  .filter((entry) => {
-    const manifest = join(packagesDir, entry.name, "package.json");
-    return existsSync(manifest) && JSON.parse(readFileSync(manifest, "utf8")).name === `@jgengine/${entry.name}`;
-  })
-  .flatMap((entry) => {
-    const name = entry.name;
-    const index = join(src(name), "index.ts");
-    return [
-      ...(existsSync(index) ? [{ find: new RegExp(`^@jgengine/${name}$`), replacement: index }] : []),
-      { find: new RegExp(`^@jgengine/${name}/(.*)$`), replacement: `${src(name)}/$1` },
-    ];
-  });
+const packageAliases = readdirSync(packagesDir, { withFileTypes: true }).flatMap((entry) => {
+  if (!existsSync(join(packagesDir, entry.name, "package.json"))) return [];
+  const pkg = npmNameOfFolder(entry.name);
+  if (!pkg.startsWith("@jgengine/")) return [];
+  const index = join(src(entry.name), "index.ts");
+  return [
+    ...(existsSync(index) ? [{ find: new RegExp(`^${pkg}$`), replacement: index }] : []),
+    { find: new RegExp(`^${pkg}/(.*)$`), replacement: `${src(entry.name)}/$1` },
+  ];
+});
 
 const gameAliases = existsSync(gamesDir)
   ? readdirSync(gamesDir, { withFileTypes: true })

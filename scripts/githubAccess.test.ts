@@ -60,7 +60,7 @@ describe("tooling reaches GitHub only through gh", () => {
       scan({
         "packages/github/src/source.ts": "await fetch(`https://api.github.com/repos/${repo}`);\n",
         "packages/assets/src/rocketboxPull.ts": 'const ROCKETBOX_API = "https://api.github.com/repos/microsoft/Microsoft-Rocketbox/contents";\n',
-        "apps/web/src/routes/api/github-proxy.ts": 'const token = process.env["GITHUB_TOKEN"] || undefined;\n',
+        "apps/web/src/api/github.ts": 'const token = process.env["GITHUB_TOKEN"] || undefined;\n',
         "scripts/pr-video.ts": 'import { uploadPoliciesAssets } from "user-attachments";\n',
         "scripts/land.test.ts": 'gh(["pr", "merge"]);\n',
         "apps/web/.output/server/index.ts": "fetch(`https://api.github.com/x`);\n",

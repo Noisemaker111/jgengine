@@ -1,5 +1,6 @@
-import { Link } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { Link } from "../site/link";
+import { useState, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { demoPart, type DemoKey } from "./demoParts";
 import { TracedDemo } from "./TracedDemo";

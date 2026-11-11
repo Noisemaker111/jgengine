@@ -10,7 +10,7 @@ test("React imports are detected and the engine's @jgengine/react UI package is 
   expect(reactImports('import { useState } from "@jgengine/core/ui/jsx"; import { GameProvider } from "@jgengine/react";')).toEqual([]);
 });
 
-test("hook manifests grant no source exemption, and hosts may use React and the engine UI package", () => {
+test("only the example hosts may use React; convex's manifest may name it for convex/react", () => {
   const root = mkdtempSync(join(tmpdir(), "jg-react-free-"));
   try {
     const init = spawnSync("git", ["init", "--quiet", root], { encoding: "utf8" });
@@ -31,11 +31,15 @@ test("hook manifests grant no source exemption, and hosts may use React and the 
       writeFileSync(path, contents);
     }
     const report = scanReactFree(root);
-    expect(report.violations).toHaveLength(4);
     expect(report.violations.map((violation) => violation.file).sort()).toEqual([
-      "games/llmville/src/app.tsx",
+      "apps/web/package.json", "apps/web/src/app.tsx",
+      "games/llmville/package.json", "games/llmville/src/app.tsx",
       "packages/convex/src/adapter.ts", "packages/ui/package.json", "packages/ui/src/provider.ts",
     ]);
+    const host = join(root, "examples/next-host/src/page.tsx");
+    mkdirSync(dirname(host), { recursive: true });
+    writeFileSync(host, 'import React from "react";');
+    expect(scanReactFree(root).violations.some((violation) => violation.file.startsWith("examples/"))).toBe(false);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

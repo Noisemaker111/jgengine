@@ -1,4 +1,5 @@
-import { Link } from "@tanstack/react-router";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { Link } from "../site/link";
 
 import { CommandBlock } from "./Copy";
 import { SectionHeading } from "./Layout";

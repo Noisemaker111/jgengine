@@ -1,4 +1,5 @@
-import { useDeferredValue, useMemo, useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useDeferredValue, useMemo, useState } from "@jgengine/core/ui/jsx";
 
 import type { Capability } from "../lib/capabilityIndex";
 import { CAPABILITIES, SKILL_DOMAINS, domainLabel } from "../lib/capabilities";
