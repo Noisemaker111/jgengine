@@ -1,6 +1,6 @@
 {
   "name": "@jgengine/shell",
-  "version": "0.55.1",
+  "version": "0.56.0",
   "description": "Game player shell for JGengine: plain three.js on the engine frame loop, orbit camera, input tracking, HUD mounting, GameUiPreview, and a demo game. Consumers supply a GameRegistry.",
   "license": "Apache-2.0",
   "type": "module",
@@ -27,9 +27,9 @@
     "test": "bun test --preload ../../scripts/three-preload.ts src"
   },
   "dependencies": {
-    "@jgengine/core": "^0.55.1",
-    "@jgengine/ui": "^0.55.1",
-    "@jgengine/ws": "^0.55.1"
+    "@jgengine/core": "^0.56.0",
+    "@jgengine/ui": "^0.56.0",
+    "@jgengine/ws": "^0.56.0"
   },
   "peerDependencies": {
     "three": ">=0.187.0",

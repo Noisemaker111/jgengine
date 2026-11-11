@@ -1,5 +1,0 @@
-vendored Rune updated from dev d751f07 to c92e462 (250 commits). Re-applied 8 jgengine patches upstream still lacks (layout rects, layout_style, web transparency, WOFF fonts, zero-range scroll, canvas wheel, synthetic bold for regular-only game fonts, SVG via the browser) and dropped 10 that served only the removed CSS host. Added a web touch build fix upstream dev needs. Text takes upstream's new WindfoilChromium default on Windows and Linux. jg-ui wasm grows from 7.7 to 10.3 MB (2.9 to 4.9 MB gzipped).
-
-### Changed
-
-- vendored Rune updated from dev d751f07 to c92e462 (250 commits). Re-applied 8 jgengine patches upstream still lacks (layout rects, layout_style, web transparency, WOFF fonts, zero-range scroll, canvas wheel, synthetic bold for regular-only game fonts, SVG via the browser) and dropped 10 that served only the removed CSS host. Added a web touch build fix upstream dev needs. Text takes upstream's new WindfoilChromium default on Windows and Linux. jg-ui wasm grows from 7.7 to 10.3 MB (2.9 to 4.9 MB gzipped).
