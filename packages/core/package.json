@@ -1,6 +1,6 @@
 {
   "name": "@jgengine/core",
-  "version": "0.55.1",
+  "version": "0.56.0",
   "description": "jgengine core — the engine's feature folders (npm @jgengine/core). Each feature keeps its model, UI view (*.view) and three.js draw (*.draw) files together; model files have zero dependencies, so server code imports them alone. Not an ECS. Agent skills ship in the tarball. https://jgengine.com",
   "keywords": [
     "jgengine",
@@ -65,8 +65,8 @@
     "test": "bun test --preload ../../scripts/three-preload.ts src"
   },
   "peerDependencies": {
-    "@jgengine/ui": "^0.55.1",
-    "@jgengine/shell": "^0.55.1",
+    "@jgengine/ui": "^0.56.0",
+    "@jgengine/shell": "^0.56.0",
     "three": ">=0.187.0",
     "three-stdlib": "^2.0.0"
   },
