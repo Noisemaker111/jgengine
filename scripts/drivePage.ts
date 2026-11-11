@@ -31,11 +31,10 @@ function controlNamesExpr(input: boolean): string {
     const controls = [];
     for (const node of document.querySelectorAll(selector)) {
       if (node.matches(':disabled') || node.closest('[aria-disabled="true"], [inert]')) continue;
-      const runeDrawn = node.closest('[data-jg-rune-layer]') !== null;
       const rect = node.getBoundingClientRect();
-      if (runeDrawn ? !(rect.width > 0 && rect.height > 0) : !node.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) continue;
+      if (!node.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) continue;
       const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
-      const covered = !runeDrawn && !(hit && (hit === node || node.contains(hit)));
+      const covered = !(hit && (hit === node || node.contains(hit)));
       const labelled = (node.getAttribute('aria-labelledby') || '').split(/\\s+/)
         .map(id => document.getElementById(id)?.textContent || '').join(' ').trim();
       const accessible = labelled || node.getAttribute('aria-label') ||
@@ -103,8 +102,6 @@ export async function fillField(session: CdpSession, label: string, value: strin
   if (!await session.evaluate<boolean>(driveInputPointExpr(label, true, true))) {
     throw new Error(`drive: text field "${label}" did not receive focus`);
   }
-  // A Rune-drawn field takes the keys on Rune's next frame, not within the press.
-  if (await session.evaluate<boolean>(`document.activeElement?.closest?.('[data-jg-rune-layer]') != null`)) await new Promise((resolve) => setTimeout(resolve, 400));
   await session.send("Input.dispatchKeyEvent", { type: "keyDown", key: "a", code: "KeyA", modifiers: 2, commands: ["selectAll"] });
   await session.send("Input.dispatchKeyEvent", { type: "keyUp", key: "a", code: "KeyA", modifiers: 2 });
   await session.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Backspace", code: "Backspace", windowsVirtualKeyCode: 8 });

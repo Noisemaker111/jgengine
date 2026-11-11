@@ -758,11 +758,6 @@
 - `formatPlayTimelineEntry` (function): function formatPlayTimelineEntry(entry: PlayTimelineEntry): string — One compact timeline line: `t=120 event combat.damage to=bruiser amount=12 remaining=54`.
 - `playTimelineDigest` (function): function playTimelineDigest(timeline: readonly PlayTimelineEntry[]): string — FNV-1a over the timeline's canonical JSON. Cheap, dependency-free and stable across runs and machines, which is all a replay comparison needs.
 
-## @jgengine/core/play/uiTour
-
-- `TourStep` (type): type TourStep = | { shot: string } /** Press the control whose text or accessible name contains this. */ | { tap: string; arrive?: string } /** Press that control when the layout has it (a phone layout's back button), and go on when it does not. */ | { tapIf: string } /** Press the first element mat… — One step of a UI tour: every screen of the game's UI visited and shot once. The same steps run on the DOM and on Rune (`--param ui=rune`) and at any width (`--device mobile`); shots are named `tour-<ui>-<width>-<screen>` so the two runs sit side by side.
-- `uiTour` (function): function uiTour<TProbe extends ProbeReadings>(f: BrowserFlow<TProbe>, steps: readonly TourStep[]): Promise<void> — ⚠ undocumented
-
 ## @jgengine/core/render/EntityPreview.draw
 
 - `EntityPreview` (function): function EntityPreview({ children, model, instanceId, mood = "studio", backdrop, turntable = 0, faceCamera = false, forward, environment = true, cameraPosition = [0, 1, 3], cameraTarget, fov = 35, dpr = [1, 2], className, style, }: EntityPreviewProps): JSX.Element — Drop-in live 3D preview of a single entity — the character-screen portrait, unit inspector, or loadout viewer. It owns all the plumbing a game would otherwise re-derive by hand: a nested {@link EngineCanvas} (WebGL), the {@link GameContextBridge} that carries the running `GameContext` to the subject's `useEntityRenderCues` / `useGameContext` hooks, a {@link StudioStage} 3-point lighting rig with optional turntable / face-camera, and a capture-friendly GL surface (`preserveDrawingBuffer`). The game keeps ownership of its `renderEntity`: pass it as `children`, or hand a native `model` (+ `instanceId`) for an engine-composed body. Bound to a live `instanceId`, the portrait walks, flinches, and topples in lockstep with the world instead of a canned spin.
@@ -2009,65 +2004,6 @@
 - `RuneActivation` (class): class RuneActivation — Hold activation shared by pointer, touch, keyboard and pad, using an injected clock.
 - `runeNextFocus` (function): function runeNextFocus<T>(current: T, controls: readonly T[], rect: (item: T) => readonly [number,number,number,number] | undefined, direction: "up" | "down" | "left" | "right"): T | undefined — Choose the closest control in the requested direction using native painted rectangles.
 
-## @jgengine/core/ui/rune/cssMirror.view
-
-- `MirrorReport` (class): class MirrorReport — What the mirror could not express, counted by `property: value` and by where it was asked.
-- `WireBox` (interface): interface WireBox — One CSS box on the wire (`native/crates/jg-ui/src/css.rs`).
-- `boxOfElement` (function): function boxOfElement(element: Element): WireBox | undefined — ⚠ undocumented
-- `elementOf` (function): function elementOf(id: number): Element | null — ⚠ undocumented
-- `idOf` (function): function idOf(element: Element): number — A stable numeric id per mirrored element, for events and rects coming back from Rune.
-- `mirrorContents` (function): function mirrorContents(element: Element, report: MirrorReport, inherited: Inherited): WireBox[] — The boxes of a `display: contents` element's children (and of nested such wrappers), in order.
-- `mirrorElement` (function): function mirrorElement(element: Element, report: MirrorReport, inherited: Inherited = { positioned: [] }): WireBox | null — Builds the wire box for `element` and its subtree; `null` when it draws nothing (`display: none`, a script). Out-of-flow boxes whose parent is not positioned are appended to the nearest positioned ancestor, which is where CSS places them.
-- `mirrorRoot` (function): function mirrorRoot(container: Element, report: MirrorReport): WireBox — A layer's root box: the viewport, holding the mirrored children of `container`.
-- `onPaintResourceLoaded` (function): function onPaintResourceLoaded(listener: () => void): void — Remirror paint when an image's intrinsic dimensions or a mask SVG arrives.
-- `ownerOf` (function): function ownerOf(box: WireBox): WireBox | undefined — ⚠ undocumented
-- `paintOrder` (function): function paintOrder(children: WireBox[]): WireBox[] — Positioned zero levels share tree order with auto levels. Flow siblings keep layout order.
-- `remirrorElement` (function): function remirrorElement(element: Element, report: MirrorReport): WireBox | null — Mirrors `element` again in place after it changed; returns the box to send as a patch, or `null` when the change reaches outside the element (it appeared, vanished, moved to or from a positioned ancestor, or changed how its parent flows) and the parent must be mirrored.
-- `remirrorText` (function): function remirrorText(element: Element, report: MirrorReport): Record<string, unknown> | null | undefined — The text of `element` again from the styles kept at its last mirror, for a change that only touched text nodes: no computed style is read. `undefined` when the element no longer holds only text (it gained a box), which needs a full mirror.
-
-## @jgengine/core/ui/rune/cssStates.view
-
-- `stateMatters` (function): function stateMatters(element: Element, state: "hover" | "active" | "focus", attribute: string): boolean — Whether marking `element` with the state's attribute would change how it or anything under it is styled. Marking every ancestor of a hovered element would re-mirror the whole layer; this keeps the mark to the elements a rule actually reads it on.
-- `twinStateRules` (function): function twinStateRules(): void — Give every state rule in the document its attribute twin. Sheets already done are skipped.
-
-## @jgengine/core/ui/rune/cssValues
-
-- `WireDim` (type): type WireDim = number | string | number[] — Parsers for computed CSS values, as a browser serializes them, into the plain numbers the Rune CSS box takes. Everything here is string in, numbers out, with no DOM: lengths, colours, gradients, shadows, grid tracks, transforms.
-- `WireImageLayer` (interface): interface WireImageLayer — A picture in the same ordered background stack as gradients.
-- `WireLayer` (interface): interface WireLayer { g: 0 | 1 | 2; a?: number; cx?: number; cy?: number; rx?: number; ry?: number; rf?: [number, number] | "corner" | "side"; circle?: boolean; st: [number, number][]; ps?: boolean; rp?: [boolean, boolean]; per?: number; off?: number; bs?: num… — ⚠ undocumented · used by `parseGradient`: One computed `background-image` layer; `null` when it is not a gradient this painter draws.
-- `WireShadow` (type): type WireShadow = [[number, number, number, number, number], number] — ⚠ undocumented · used by `parseShadows`: Computed `box-shadow`: `rgb(..) x y blur spread [inset], ...`.
-- `WireTextShadow` (type): type WireTextShadow = [number, number, number, number] — ⚠ undocumented
-- `WireTrack` (type): type WireTrack = [number, number, number, number] — ⚠ undocumented · used by `parseTracks`: Computed `grid-template-columns`/`rows` or `grid-auto-*`; `null` when a track is not expressible.
-- `WireTransform` (interface): interface WireTransform { x: number; y: number; fx: number; fy: number; rotate: number; scale: number; skew: number; lost: string | null } — ⚠ undocumented · used by `parseTransform`: The computed `translate`, `rotate`, `scale` and `transform` of one element, combined.
-- `averageOfStops` (function): function averageOfStops(stops: [number, number][]): number — The colour a gradient averages to: what a small repeated tile of it reads as.
-- `colorAlpha` (function): function colorAlpha(color: number): number — ⚠ undocumented
-- `parseAlign` (function): function parseAlign(text: string): number — An alignment keyword as the wire's small integer; 0 is the property's own default.
-- `parseAngle` (function): function parseAngle(text: string): number | null — ⚠ undocumented
-- `parseClipPath` (function): function parseClipPath(text: string): number[][] | null — A `clip-path` polygon or inset as corner points, each `[x points, x fraction, y points, y fraction]` of the box; `null` for a shape with curves (`circle`, `ellipse`, `path`, a rounded inset).
-- `parseColor` (function): function parseColor(text: string): number | null — A computed colour as `0xRRGGBBAA`; `null` when the form is not one a browser computes to.
-- `parseDim` (function): function parseDim(text: string): WireDim | null — A computed length: points, a percentage, or `auto`; `null` for a form with no number (calc of mixed units, content keywords).
-- `parseGradient` (function): function parseGradient(text: string): WireLayer | { flat: number } | null — One computed `background-image` layer; `null` when it is not a gradient this painter draws.
-- `parseLengthPercent` (function): function parseLengthPercent(text: string): [number, number] | null — A length that mixes points and a share of the box: `[points, fraction]` for `12px`, `40%`, `calc(100% - 10px)` and sums of those; `null` for anything else.
-- `parsePlacement` (function): function parsePlacement(start: string, end: string): [number, number, number, number] | null — `grid-column-start`/`-end` pair as `[start kind, start, end kind, end]`.
-- `parsePx` (function): function parsePx(text: string): number — ⚠ undocumented
-- `parseRadius` (function): function parseRadius(text: string): number — A corner radius: `"12px"`, `"12px 20px"` (elliptical, averaged) or a percentage (as large as fits).
-- `parseShadows` (function): function parseShadows(text: string): WireShadow[] — Computed `box-shadow`: `rgb(..) x y blur spread [inset], ...`.
-- `parseTextShadows` (function): function parseTextShadows(text: string): WireTextShadow[] — ⚠ undocumented
-- `parseTracks` (function): function parseTracks(text: string): WireTrack[] | null — Computed `grid-template-columns`/`rows` or `grid-auto-*`; `null` when a track is not expressible.
-- `parseTransform` (function): function parseTransform(translate: string, rotate: string, scale: string, transform: string): WireTransform | null — The computed `translate`, `rotate`, `scale` and `transform` of one element, combined.
-- `placeImageLayer` (function): function placeImageLayer(url: string, size: string, position: string, repeat: string): WireImageLayer | null — Resolve the authored tile geometry; natural dimensions arrive separately when the image loads.
-- `placeLayer` (function): function placeLayer<L extends WireLayer | { flat: number }>(layer: L, size: string, position: string, repeat: string): L | { flat: number } | (L & { bs: number[]; bp: number[] }) — A background layer with its `background-size`, `background-position` and `background-repeat` applied: unchanged when it covers the box, placed (`bs`, `bp`) when it is one sized piece, and its average colour when it is a small tile repeated across the box.
-- `splitTop` (function): function splitTop(text: string, separator: "," | " "): string[] — Splits on top-level commas (or spaces), leaving anything in parentheses whole.
-
-## @jgengine/core/ui/rune/domMeasure.view
-
-- `RuneScrollDriver` (interface): interface RuneScrollDriver { scroll(element: Element, x: number, y: number, smooth: boolean): void; flushLayoutChanges?(): void } — ⚠ undocumented · used by `installRuneMeasure`: Make measurement of Rune-drawn elements answer from Rune's layout.
-- `installRuneMeasure` (function): function installRuneMeasure(driver: RuneScrollDriver): void — Make measurement of Rune-drawn elements answer from Rune's layout. Safe to call again.
-- `invalidateRuneLayout` (function): function invalidateRuneLayout(element: Element | null): void — Defer size reads until Rune lays out changed content; painted bounds still describe the visible frame.
-- `runeRectOf` (function): function runeRectOf(element: Element): Rect | undefined — ⚠ undocumented
-- `setRuneRect` (function): function setRuneRect(element: Element, rect: Rect, layout: Rect): void — Record painted bounds for hit testing and layout bounds for size/resize APIs (CSS pixels).
-- `setRuneScroll` (function): function setRuneScroll(element: Element, values: RuneScrollValues): void — Native scroll position and extents; components read these without state updates.
-
 ## @jgengine/core/ui/rune/element
 
 - `RuneBoundFont` (type): type RuneBoundFont = { [K in keyof RuneFont]: Live<RuneFont[K]> } — ⚠ undocumented
@@ -2109,10 +2045,6 @@
 - `nativeSpec` (function): function nativeSpec(root: RuneNode, sink: RuneTreeSink, sampleLive = false): { children: NativeWireNode[]; modal: boolean } — Serialize native nodes directly. Live values allocate slots, never component state.
 - `nativeTreeHost` (function): function nativeTreeHost(changed: (root: RuneNode) => void): Host<RuneNode> — Pure reconciler host. `flush` publishes only roots changed by a commit.
 
-## @jgengine/core/ui/rune/patches
-
-- `compactPatches` (function): function compactPatches<T extends PatchNode<T>>(patches: readonly T[], roots: ReadonlySet<T>, owner: (node: T) => T | undefined): T[] — Keep only attached replacement roots after all changes in one mirror pass.
-
 ## @jgengine/core/ui/rune/primitives
 
 - `RuneFlow` (interface): interface RuneFlow — Observable flow over the shared modal-stack model, including save/restore.
@@ -2147,24 +2079,6 @@
 - `RuneView` (function): function RuneView({ layout, anchor, safe, inset = 0, variant, responsive, ...props }: RuneViewProps): JSX.Element — Native layout, paint and responsive overrides. Anchors refer to the nearest positioned parent.
 - `RuneViewProps` (interface): interface RuneViewProps extends RuneElementProps { layout?: "stack" | "row" | "grid"; anchor?: RuneAnchor; safe?: boolean; inset?: number; variant?: string; responsive?: Partial<Record<RuneViewportClass, RuneBoundStyle & RuneBoundFont & {layout?: "stack" | "row" | "grid"}>> } — ⚠ undocumented · used by `RuneView`: Native layout, paint and responsive overrides.
 - `RuneWorldAnchor` (function): function RuneWorldAnchor({ entity, position, offset, children, ...props }: Parameters<RuneProjection>[0] & RuneViewProps): JSX.Element — A projected entity or point. Only the requested target is read; no world-wide scan.
-
-## @jgengine/core/ui/rune/runeInput.view
-
-- `RuneInput` (class): class RuneInput — ⚠ undocumented
-
-## @jgengine/core/ui/rune/runeLayer.view
-
-- `RuneLayer` (function): function RuneLayer({ children }: { children?: ReactNode }): ReactNode — Draws its children through Rune instead of the page: the elements exist (so styles, refs and events work as written) but the browser never lays them out or paints them; the Rune stage mirrors them onto its canvas over the game.
-- `runeUiEnabled` (function): function runeUiEnabled(): boolean — Whether this page draws game UI through Rune (`?ui=dom` keeps the DOM, for side-by-side checks).
-
-## @jgengine/core/ui/rune/runeStage.view
-
-- `RuneStage` (class): class RuneStage — ⚠ undocumented
-- `registerRuneFont` (function): function registerRuneFont(url: string): void — A font file (TrueType, OpenType, WOFF or WOFF2) Rune should load for text.
-
-## @jgengine/core/ui/rune/videoFrames.view
-
-- `VideoFrameSource` (interface): interface VideoFrameSource — The browser video methods used by a frame feed.
 
 ## @jgengine/core/ui/runePassThrough
 

@@ -133,7 +133,7 @@ const USAGE = `usage: bun run perf ab [--games a,b] [--base <ref|dir>] [--window
              such as p90 or p99, for a change that moves the slow frames and not the typical one
   --set     a setting for both sides, as perf <game> --set
   --base-param / --branch-param  query parameter on that side only; repeat for more
-             (e.g. --branch-param ui=rune compares Rune with the base's existing UI)
+             (e.g. --branch-param seed=2 compares the branch at another seed)
   --out      where each game's windows are written as JSON (default .scratch/perf-ab)
   --tally    record both scorecards in this Tally group as base/branch with their measured commits
   --production  time both sides' production builds, what players get, instead of their dev servers

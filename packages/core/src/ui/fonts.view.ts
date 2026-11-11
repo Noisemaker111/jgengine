@@ -1,6 +1,6 @@
 import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import { useEffect } from "@jgengine/core/ui/jsx";
-import { registerRuneFont } from "./rune/runeStage.view";
+import { registerNativeRuneFont } from "./rune/nativeSurface.view";
 
 
 /** One font file a game ships (an OFL or other licensed TTF/WOFF2 bundled with the game). */
@@ -53,7 +53,7 @@ export function loadGameFonts(faces: readonly GameFontFace[]): void {
     const key = `${face.family}|${face.src}`;
     if (loaded.has(key)) continue;
     loaded.add(key);
-    registerRuneFont(resolveAssetBaseUrl(face.src));
+    registerNativeRuneFont(resolveAssetBaseUrl(face.src));
     const font = new FontFace(face.family, `url(${JSON.stringify(resolveAssetBaseUrl(face.src))})`, {
       weight: String(face.weight ?? "100 900"),
       style: face.style ?? "normal",

@@ -12,7 +12,6 @@ engine JSX runtime. No React, Solid, game CSS, class names, style strings or DOM
 elements. Start a TSX file with `/** @jsxImportSource @jgengine/core/ui/jsx */`.
 The engine supplies primitives, not finished screens, HUDs, bars or inventories.
 Games own their composition, words, visual identity and game-specific panels.
-The temporary CSS mirror serves unmigrated games; do not extend it.
 
 Import rendered primitives from `@jgengine/core/ui/rune/primitives.view` and
 models/bindings from `@jgengine/core/ui/rune/primitives`.

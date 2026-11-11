@@ -36,7 +36,6 @@ Classify each claim before capturing anything. A screenshot where a deterministi
 - `bun run drive <game> --flow <name>` runs a route from `<game>/proofs/flows/<name>.flow.ts` (`defineFlow` from `@jgengine/core/play/flow`). A flow must check arrival (`expect`, `waitFor`, `hold(..., { until })`); a flow that only presses keys proves nothing. `--flows` lists them, `--step 'f.click("Start")'` tries one call on a warm page.
 - One-off: `bun run drive <game> --click "TEXT" --key KeyW:2500 --probe --shot name`. `--rpc '{"method":"debug_summary"}'` reads fps, frame ms, draw calls and warnings; `player_pose` before and after a key hold proves movement; `sim_advance` and `time_scale` reach timers headless.
 - `drive` starts from clean storage; `--reuse-storage` keeps a save, for a Continue flow.
-- Shared `uiTour` flows with `--param ui=rune` require a frame from Rune before driving controls; a DOM fallback fails that proof. Shot names identify the renderer that actually mounted.
 - `debug_snapshot().probes.fallbacks` and `probes.textureErrors` prove content is authored, not a placeholder or a model with 404 textures.
 - A shooter proof asserts the aim arrived (`aimAt`) before it asserts the hit.
 - Never hand-roll a Playwright, CDP or Vite harness; a browser tool on `bun dev` is the fallback.
