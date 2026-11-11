@@ -78,6 +78,8 @@ const GAME_DIR = /^games\/[^/]+$/;
 const ROOT_CONFIG = /^(package\.json|bun\.lock|bunfig\.toml|tsconfig(\.[^/]+)?\.json)$/;
 /** A workspace's own manifest and compiler settings, relative to the workspace. */
 const WORKSPACE_CONFIG = /^(package\.json|bunfig\.toml|tsconfig(\.[^/]+)?\.json)$/;
+/** Prose: read by people and by the gates that plan by path, never compiled or imported by a test. */
+const DOC_FILE = /\.(md|mdx|txt)$/i;
 /** Demo scenes exist to be looked at; a test of one would be filler, so they never need one. */
 const DEMO = /(^|\/)demos?\//;
 
@@ -465,7 +467,8 @@ export function verifyPlan(input: {
   for (const path of touchedPaths) credit([path], [path]);
   for (const [file, unresolved] of input.graph.opaque) {
     const scopes = opaqueScopes(file, unresolved, input.workspaces);
-    const matched = touchedPaths.filter((path) => scopes.some((scope) => path.startsWith(scope)));
+    // An import the graph cannot follow may name any code in its scope, never prose.
+    const matched = touchedPaths.filter((path) => !DOC_FILE.test(path) && scopes.some((scope) => path.startsWith(scope)));
     if (matched.length > 0) credit([file], matched);
   }
   const testedBy = new Map<string, string[]>();
@@ -477,8 +480,12 @@ export function verifyPlan(input: {
   for (const file of changed) for (const test of ownTests(file, input.testFiles)) tests.add(test);
   for (const test of input.testFiles) if (reachedBy.has(test)) tests.add(test);
 
+  // Prose no compiler or test reads: a game's README or PLAN edit used to type-check the game and run
+  // its whole suite plus every cross-game suite. A test that imports one (`?raw`) still reaches it
+  // through the graph above, and each gate still plans by what it reads.
+  const codePaths = touchedPaths.filter((path) => !DOC_FILE.test(path));
   const typechecks: string[] = [];
-  for (const file of touchedPaths) {
+  for (const file of codePaths) {
     const workspace = workspaceOf(file, input.workspaces);
     if (workspace?.checkTypes === true && !typechecks.includes(workspace.dir)) typechecks.push(workspace.dir);
   }
@@ -495,8 +502,8 @@ export function verifyPlan(input: {
   // since its tests read its scene and data files from disk.
   for (const workspace of input.workspaces) {
     const prefix = `${workspace.dir}/`;
-    const touched = touchedPaths.some((path) => path.startsWith(prefix));
-    const imports = !touched && [...reachedBy.keys()].some((file) => file.startsWith(prefix) && !isTestFile(file));
+    const touched = codePaths.some((path) => path.startsWith(prefix));
+    const imports = !touched && [...reachedBy.keys()].some((file) => file.startsWith(prefix) && !isTestFile(file) && !DOC_FILE.test(file));
     if (!touched && !imports) continue;
     if (workspace.checkTypes && !typechecks.includes(workspace.dir)) typechecks.push(workspace.dir);
     if (touched && GAME_DIR.test(workspace.dir)) for (const test of input.testFiles) if (test.startsWith(prefix)) tests.add(test);
@@ -524,7 +531,7 @@ export function verifyPlan(input: {
     if (workspace === null || !CONTAINED.test(workspace.dir) || GAME_DIR.test(workspace.dir)) continue;
     if ((!SOURCE_FILE.test(path) || DECLARATION.test(path)) && !path.endsWith(".md")) addSuite(workspace.dir);
   }
-  if (touchedPaths.some((path) => /^games\/[^/]+\//.test(path))) {
+  if (codePaths.some((path) => /^games\/[^/]+\//.test(path))) {
     for (const dir of ["games/scripts", "games/shared"]) addSuite(dir);
     addSuite("*.games.test", (test) => /\.games\.test\.[cm]?[jt]sx?$/.test(test));
   }
