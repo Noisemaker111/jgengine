@@ -23,7 +23,7 @@
 // file under no tested root) runs every test file and type-check; `--plan` names it.
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
 import { availableParallelism } from "node:os";
 import { basename, dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -33,7 +33,7 @@ import { assertCheckoutReady } from "./checkout-ready";
 import { digestLines, failureDigest, writeStepLog } from "./failure-digest";
 import { FRAME_GAMES, REPRESENTATIVE_GAME, scopePattern } from "./ci-scope";
 import { buildImportGraph, closure, repoFiles, reverseReach, type ImportGraph } from "./import-graph";
-import { openPassCache, treeDigests, WHOLE_TREE } from "./verify-cache";
+import { openPassCache, saveTestCosts, sharedVerifyDir, treeDigests, WHOLE_TREE } from "./verify-cache";
 import { checkCommand, findCheck, GEN_TARGETS, jobChecks, readsPath, reachedBy, type CheckDef } from "./run-stages";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose, takeVerboseFlag } from "./verbosity";
@@ -1234,16 +1234,18 @@ async function main(argv: readonly string[]): Promise<number> {
   // Every CI gate the change reaches, not the iteration subset: a passing hand run is then all a landing
   // needs, and lane:close reuses it instead of running it again.
   const plan = { ...planned, gates: landingGates(planned.changed) };
+  // Shared by every worktree of this clone: a unit another lane proved on the same bytes is proven.
+  const shared = sharedVerifyDir(root);
   const cache = argv.includes("--no-cache")
     ? null
     : openPassCache({
-        file: join(root, ".scratch", "verify-fast", "passed.json"),
+        file: join(shared, "passed.json"),
         // Unstaged and untracked files are hashed; everything else is the index's own blob id.
         digest: treeDigests(root, [...names(git(root, ["diff", "--name-only"])), ...names(git(root, ["ls-files", "--others", "--exclude-standard"]))]),
         tree: () => tree,
       });
   const skipped: string[] = [];
-  const costFile = join(root, ".scratch", "verify-fast", "test-costs.json");
+  const costFile = join(shared, "test-costs.json");
   // The plan uses a placeholder and never creates or clears evidence.
   const reportDir = `${runDir}/junit`;
   let testCosts: Record<string, number> = {};
@@ -1273,8 +1275,7 @@ async function main(argv: readonly string[]): Promise<number> {
       Object.assign(testCosts, junitCosts(xml));
       for (const file of junitPassedFiles(xml)) passedFiles.add(file);
     }
-    writeFileSync(costFile, `${JSON.stringify(testCosts)}
-`, "utf8");
+    saveTestCosts(costFile, testCosts);
     if (cache === null) return;
     for (const result of results) {
       for (const settled of steps.find((step) => step.name === result.name)?.units ?? []) {
