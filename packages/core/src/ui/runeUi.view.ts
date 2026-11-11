@@ -118,9 +118,12 @@ export class RuneUi {
   private specCount = 0;
   get stats(): { frames: number; specs: number } { return { frames: this.api.frames_drawn(), specs: this.specCount }; }
 
-  /** Change addressed native visual properties without a JSX render or a whole-tree submission. */
+  /** Change addressed native visual properties without a JSX render or a whole-tree submission.
+   * Queued like the spec before Rune's first frame, so a patch never reaches an empty tree. */
   patchNative(patches: readonly { id: string; field: string; value: unknown }[]): void {
-    if (patches.length > 0) this.api.patch_native(JSON.stringify(patches));
+    if (patches.length === 0) return;
+    const json = JSON.stringify(patches);
+    this.send(() => this.api.patch_native(json));
   }
 
   private constructor(canvas: HTMLCanvasElement, api: JgUiModule, zIndexCss: string, private readonly memory: WebAssembly.Memory) {
