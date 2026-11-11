@@ -17,7 +17,7 @@
  */
 import { spawn } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
-import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { createServer as createNetServer } from "node:net";
 import { tmpdir } from "node:os";
@@ -59,6 +59,22 @@ export function brokerIdleMs(env: NodeJS.ProcessEnv = process.env): number {
 
 export function brokerStatePath(port = brokerPort(), dir = tmpdir()): string {
   return join(dir, `jgengine-broker-${port}.json`);
+}
+
+/** Every broker whose state file names a running process, whatever port it took. */
+export function liveBrokers(dir = tmpdir()): { pid: number; port: number }[] {
+  const found: { pid: number; port: number }[] = [];
+  for (const name of readdirSync(dir).filter((entry) => /^jgengine-broker-\d+\.json$/.test(entry))) {
+    try {
+      const state = JSON.parse(readFileSync(join(dir, name), "utf8")) as { pid?: number; port?: number };
+      if (typeof state.pid !== "number" || typeof state.port !== "number") continue;
+      process.kill(state.pid, 0);
+      found.push({ pid: state.pid, port: state.port });
+    } catch {
+      /* gone, or not ours to read */
+    }
+  }
+  return found;
 }
 
 export function brokerLogPath(dir = tmpdir()): string {
@@ -916,7 +932,12 @@ if (import.meta.main) {
       console.log((await stopBroker()) ? "broker: stopped" : "broker: not running");
     } else {
       const status = await brokerStatusOrNull();
-      console.log(status === null ? "broker: not running" : JSON.stringify(status, null, 2));
+      console.log(status === null ? `broker: not answering on :${brokerPort()}` : JSON.stringify(status, null, 2));
+      // Every broker on the machine and the render slots, so "not running" is never said while one runs.
+      const { renderSlotCount, renderSlotHolders } = await import("./renderSlots");
+      for (const broker of liveBrokers()) console.log(`broker: pid ${broker.pid} on :${broker.port}${broker.port === brokerPort() ? "" : " (another port)"}`);
+      const holders = renderSlotHolders();
+      console.log(`render slots: ${holders.length} of ${renderSlotCount()} held${holders.map((holder) => `\n  ${holder.label} (pid ${holder.pid}${holder.browserPid === undefined ? "" : `, browser ${holder.browserPid}`})`).join("")}`);
     }
   } else {
     console.log(`usage: bun scripts/devBroker.ts <status|stop|serve>

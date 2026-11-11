@@ -8,6 +8,7 @@ import { buildBrowserFixture, chromeGraphicsArgs, findChromeExecutable, killPid 
 import { cleanupBrowserFixture, ownBrowserProcess, type OwnedBrowserProcess } from "./browser-fixture-cleanup";
 import { installPublicPackages } from "./browser-test-fixture";
 import { removeDir } from "./removeDir";
+import { takeRenderSlot, type RenderSlot } from "./renderSlots";
 
 const repoRoot = resolve(import.meta.dir, "..");
 const editorRoot = resolve(repoRoot, "packages/editor");
@@ -35,6 +36,7 @@ export function creatorAppFixture(name: string): CreatorAppFixture {
   const evidence = resolve(repoRoot, ".scratch/creator-evidence", name);
   let browser: Browser | undefined;
   let ownedBrowserProcess: OwnedBrowserProcess | undefined;
+  let slot: RenderSlot | undefined;
   let server: ReturnType<typeof Bun.serve> | undefined;
   let holdNextSave = false;
   let releaseFailedSave: (() => void) | null = null;
@@ -109,6 +111,8 @@ export function creatorAppFixture(name: string): CreatorAppFixture {
       if (path === "/fixture.css") return new Response(css, { headers: { "content-type": "text/css" } });
       return new Response('<link rel="stylesheet" href="/fixture.css"><div id="root"></div><script type="module" src="/fixture.js"></script>', { headers: { "content-type": "text/html" } });
     } });
+    // The machine's limit on rendering browsers (scripts/renderSlots.ts), like every capture.
+    slot = takeRenderSlot({ label: `creator-app fixture in ${process.cwd()}` });
     const launchedBrowser = await chromium.launch({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox", ...chromeGraphicsArgs()] });
     browser = launchedBrowser;
     const inspection = await launchedBrowser.newBrowserCDPSession();
@@ -139,6 +143,7 @@ export function creatorAppFixture(name: string): CreatorAppFixture {
       // The killed browser can still hold a served file here for a moment on Windows.
       removeScratch: () => removeDir(scratch),
     });
+    slot?.release();
   }
 
   return { start, stop };

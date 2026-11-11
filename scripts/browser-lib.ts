@@ -28,6 +28,7 @@ import { removeDirSync } from "./removeDir";
 import { decodePng } from "../packages/assets/src/imageCodec";
 import type { GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 import { detail } from "./verbosity";
+import { takeRenderSlot } from "./renderSlots";
 
 export { checkoutIdentity, devServerIdentity, isUp };
 
@@ -1501,7 +1502,11 @@ export function launchChrome(
   const display = headed || backend !== "llvmpipe" ? null : ensureXvfbDisplay();
   if (backend === "llvmpipe" && display === null) backend = "swiftshader";
   if (!options.persistent) writeFileSync(join(userDataDir, PROFILE_RUN_FILE), String(process.pid));
-  const child = spawn(
+  // The machine's limit on rendering browsers, taken by every launch, held while this Chrome lives.
+  const slot = takeRenderSlot({ label: renderLabel(prefix) });
+  let child: ReturnType<typeof spawn>;
+  try {
+    child = spawn(
     chrome,
     [
       `--remote-debugging-port=${debugPort}`,
@@ -1537,6 +1542,13 @@ export function launchChrome(
       detached: options.persistent === true || process.platform !== "win32",
     },
   );
+  } catch (error) {
+    slot.release();
+    throw error;
+  }
+  slot.attach(child.pid);
+  child.once("exit", () => slot.release());
+  child.once("error", () => slot.release());
   if (child.pid !== undefined) writeFileSync(join(userDataDir, PROFILE_OWNER_FILE), String(child.pid));
   trackProfileBrowser(userDataDir, child.pid);
   // Set before Chrome forks its GPU and renderer processes, which inherit the browser's class.
@@ -1544,6 +1556,12 @@ export function launchChrome(
   if (child.pid !== undefined) launchedPriorities.set(child.pid, priority);
   if (!options.persistent && child.pid !== undefined) startChromeWatchdog(child.pid, userDataDir);
   return Object.assign(child, { userDataDir });
+}
+
+/** Who a render slot is for, as a waiting run reads it: the script, its profile prefix and checkout. */
+function renderLabel(prefix: string): string {
+  const script = process.argv[1]?.replace(/^.*[\\/]/, "") ?? "bun";
+  return `${script} ${prefix.replace(/-$/, "")} in ${process.cwd()}`;
 }
 
 /** The priority a Chrome this process launched runs at, by browser pid. */
@@ -1608,10 +1626,14 @@ export function launchPersistentChrome(
     "about:blank",
   ];
   let pid: number;
+  const slot = takeRenderSlot({ label: renderLabel(prefix) });
   try {
     // Outside this run's tree and Windows job, so the job ending does not end the daemon.
     pid = startOutsideCaller(chrome, args, { cwd: userDataDir });
+    // The slot lives with this browser, not with the run that started it.
+    slot.attach(pid);
   } catch (error) {
+    slot.release();
     removeProfileDir(userDataDir);
     throw new Error(`Persistent Chrome launch failed: ${error instanceof Error ? error.message : String(error)}`);
   }
