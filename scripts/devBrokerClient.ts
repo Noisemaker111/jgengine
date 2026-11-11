@@ -1,11 +1,12 @@
-import { readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { headRevision } from "./captureRevision";
 import { checkoutIdentity } from "./devServerMarker";
-import { BROKER_PROTOCOL, brokerEnabled, brokerPort, type BrokerStatus, type CaptureGrant, type ServerGrant, type ServerKind } from "./devBroker";
+import { BROKER_PROTOCOL, brokerEnabled, brokerPort, brokerStatePath, type BrokerStatus, type CaptureGrant, type ServerGrant, type ServerKind } from "./devBroker";
 import { localPostJson, localRequest } from "./localhostHttp";
+import { pidAlive } from "./renderSlots";
 import { startOutsideCaller } from "./outsideCaller";
 import { servedGameDir } from "./servedGame";
 import { detail } from "./verbosity";
@@ -54,11 +55,38 @@ function launchBroker(script: string): void {
 
 let unavailable: string | null = null;
 
+/** Forget that the broker could not be had, as a new run would; for tests. */
+export function forgetBrokerUnavailable(): void {
+  unavailable = null;
+}
+
 /**
  * The running broker, started when none answers. Returns null (and says why, once) when the broker
  * is off or cannot be had; callers then launch their own server as before.
  */
-export async function ensureBroker(options: { log?: (line: string) => void; waitMs?: number } = {}): Promise<BrokerStatus | null> {
+/** The broker's pid from its state file while that process runs, else null. */
+export function runningBrokerPid(port: number, alive: (pid: number) => boolean = pidAlive): number | null {
+  try {
+    const state = JSON.parse(readFileSync(brokerStatePath(port), "utf8")) as { pid?: number };
+    return typeof state.pid === "number" && alive(state.pid) ? state.pid : null;
+  } catch {
+    return null;
+  }
+}
+
+async function waitForBroker(waitMs: number, askMs: number): Promise<BrokerStatus | null> {
+  const deadline = Date.now() + waitMs;
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    const status = await brokerStatusOrNull(askMs);
+    if (status !== null) return status;
+  }
+  return null;
+}
+
+export async function ensureBroker(
+  options: { log?: (line: string) => void; waitMs?: number; joinMs?: number; alive?: (pid: number) => boolean } = {},
+): Promise<BrokerStatus | null> {
   if (!brokerEnabled()) return null;
   if (unavailable !== null) return null;
   const log = options.log ?? ((line: string) => console.error(line));
@@ -74,6 +102,17 @@ export async function ensureBroker(options: { log?: (line: string) => void; wait
     status = null;
   }
   if (status !== null) return status;
+  // A broker that is running but slow to answer (a loaded machine) is joined, never passed by: a
+  // second broker or a run's own servers and browser only add to the load that made it slow.
+  const running = runningBrokerPid(brokerPort(), options.alive ?? pidAlive);
+  if (running !== null) {
+    log(`broker: pid ${running} on :${brokerPort()} is slow to answer; waiting for it`);
+    const joined = await waitForBroker(options.joinMs ?? 120_000, 5_000);
+    if (joined !== null) return joined;
+    unavailable = `broker pid ${running} on :${brokerPort()} did not answer within ${Math.round((options.joinMs ?? 120_000) / 1000)}s`;
+    log(`daemon failure: ${unavailable} — this run starts its own servers, inside the machine's render slots`);
+    return null;
+  }
   try {
     launchBroker(join(import.meta.dir, "devBroker.ts"));
   } catch (error) {
@@ -81,12 +120,8 @@ export async function ensureBroker(options: { log?: (line: string) => void; wait
     log(`daemon failure: ${unavailable} — this run starts its own servers`);
     return null;
   }
-  const deadline = Date.now() + (options.waitMs ?? 20_000);
-  while (Date.now() < deadline) {
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    status = await brokerStatusOrNull(1_000);
-    if (status !== null) return status;
-  }
+  status = await waitForBroker(options.waitMs ?? 20_000, 1_000);
+  if (status !== null) return status;
   unavailable = `broker did not answer on :${brokerPort()} within ${Math.round((options.waitMs ?? 20_000) / 1000)}s (log: ${join(tmpdir(), "jgengine-broker.log")})`;
   log(`daemon failure: ${unavailable} — this run starts its own servers`);
   return null;

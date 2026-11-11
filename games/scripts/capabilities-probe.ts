@@ -23,6 +23,7 @@ import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { publishedDebugPort } from "../../scripts/browser-lib";
+import { takeRenderSlot, type RenderSlot } from "../../scripts/renderSlots";
 import {
   gameAdoption,
   gameDirs,
@@ -314,9 +315,12 @@ async function bootAndRead(game: string, port: number, expectations: Expectation
   let chrome: ReturnType<typeof spawn> | undefined;
   let profile: string | undefined;
   let cdp: Cdp | undefined;
+  let slot: RenderSlot | undefined;
   try {
     await waitForHttp(url, 120000);
     profile = mkdtempSync(join(tmpdir(), "jg-capability-"));
+    // The machine's limit on rendering browsers (scripts/renderSlots.ts), like every capture.
+    slot = takeRenderSlot({ label: `capabilities-probe ${game} in ${process.cwd()}` });
     chrome = spawn(
       findChrome(),
       [
@@ -336,6 +340,7 @@ async function bootAndRead(game: string, port: number, expectations: Expectation
       ],
       { stdio: "ignore", detached: process.platform !== "win32" },
     );
+    slot.attach(chrome.pid);
 
     const launched = chrome;
     const debugPort = await publishedDebugPort({ userDataDir: profile, get exitCode() { return launched.exitCode; } }, 30000);
@@ -378,6 +383,7 @@ async function bootAndRead(game: string, port: number, expectations: Expectation
       killTree(chrome);
       await Bun.sleep(500);
     }
+    slot?.release();
     if (profile !== undefined) {
       try {
         rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });

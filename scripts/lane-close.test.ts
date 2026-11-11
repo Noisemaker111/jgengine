@@ -39,6 +39,10 @@ function memoryLock(files: Map<string, { text: string; mtimeMs: number }>, now: 
 }
 
 interface Script {
+  /** The open PR is a draft. */
+  draft?: boolean;
+  /** The open PR's base branch (default beta). */
+  base?: string;
   preflight?: number;
   /** verify:fast's exit, per run in order; the last one repeats. */
   verify?: number[];
@@ -99,7 +103,7 @@ function io(script: Script = {}): Fake {
   const pr = script.pr === undefined ? 2278 : script.pr;
   const api = fakeGitHub({
     repo: REPO,
-    pulls: pr === null ? [] : [{ number: pr, head: script.branch ?? "agent/x", sha: script.remoteHead ?? "head1" }],
+    pulls: pr === null ? [] : [{ number: pr, head: script.branch ?? "agent/x", sha: script.remoteHead ?? "head1", draft: script.draft === true, base: script.base ?? "beta" }],
   });
   let mergeAttempt = 0;
   const merge = api.github.mergePull.bind(api.github);
@@ -310,6 +314,24 @@ describe("lane:close end to end", () => {
     expect(closeLane({}, fake)).toBe(EXIT_VERIFY_FAILED);
     expect(fake.api.pulls.get(2278)?.merged).not.toBe(true);
     expect(fake.lines.err.join("\n")).toContain("GitHub refused to merge #2278: HTTP 409: Head branch was modified");
+  });
+
+  test("a draft PR this lane owns is marked ready before the gate, so the merge after it is not refused", () => {
+    const fake = io({ draft: true });
+    expect(closeLane({}, fake)).toBe(EXIT_CLOSED);
+    const ready = fake.api.calls.findIndex((call) => call.path === "graphql");
+    expect(ready).toBeGreaterThan(-1);
+    expect(fake.calls.indexOf("run verify:fast --landing")).toBeGreaterThan(fake.calls.findIndex((call) => call.startsWith("gh api graphql")));
+    expect(fake.api.pulls.get(2278)?.draft).toBe(false);
+    expect(fake.lines.out.join("\n")).toContain("#2278 was a draft; marked it ready");
+  });
+
+  test("a PR into another base is refused before the gate, not after it", () => {
+    const fake = io({ base: "main" });
+    expect(closeLane({}, fake)).toBe(EXIT_CANNOT_ANSWER);
+    expect(fake.calls).not.toContain("run verify:fast --landing");
+    expect(fake.calls).not.toContain("run preflight --no-verify");
+    expect(fake.lines.err.join("\n")).toContain("#2278 merges into main, and lane:close merges into beta");
   });
 
   test("a landing with no PR to name cannot answer", () => {

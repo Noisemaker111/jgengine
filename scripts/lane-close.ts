@@ -262,6 +262,13 @@ function closeHeldLane(args: LaneCloseArgs, branch: string, io: LaneIo): number 
     io.err(`lane:close: ${behind}; nothing ran and nothing landed. Merge beta into this branch (git merge origin/beta) and close again.`);
     return EXIT_VERIFY_FAILED;
   }
+  // What GitHub would refuse the merge for, settled before minutes of gate: a draft PR (#3117 passed
+  // its whole gate, was refused as a draft, and paid the gate again) or a PR into another base.
+  const refusal = readyThisPull(branch, args.pr, io);
+  if (refusal !== null) {
+    io.err(`lane:close: ${refusal}; nothing ran and nothing landed.`);
+    return EXIT_CANNOT_ANSWER;
+  }
   // A `verify:fast --landing` that passed on these exact bytes (run by hand just before) already
   // proved what preflight and verify would: its gates fail on a stale generated file, so gen has
   // nothing to rewrite. Both are skipped, in one line, instead of spending minutes on the same answer.
@@ -407,6 +414,29 @@ export function proveHead(verifiedTree: string, scoredPaths: ReadonlySet<string>
     if (!verify(io)) return "verify:fast failed on the pushed head";
     if (io.passedOn(headTree) === null) return "the files changed while verify:fast ran on the pushed head";
   }
+  return null;
+}
+
+/**
+ * Why GitHub would refuse to merge this lane's open PR whatever the gate says, or null. A draft this
+ * lane owns (its head is this branch, in this repository) is marked ready here; a PR into another
+ * base, or a draft from a fork, is named instead. No open PR yet is fine: land opens it ready.
+ */
+export function readyThisPull(branch: string, pr: number | undefined, io: LaneIo): string | null {
+  const remote = io.sh(["git", "remote", "get-url", "origin"], false);
+  const repo = remote.status === 0 ? repoFromRemote(remote.stdout) : null;
+  if (repo === null) return null;
+  const github = io.github?.(repo) ?? gitHub((ghArgs) => io.sh(["gh", ...ghArgs], false), repo);
+  const found = pr === undefined ? github.listPulls({ head: branch, state: "open", limit: 1 }) : github.pull(pr);
+  if (!found.ok) return null;
+  const pull = Array.isArray(found.value) ? found.value[0] : found.value;
+  if (pull === undefined || pull.state !== "OPEN") return null;
+  if (pull.baseRefName !== "beta") return `#${pull.number} merges into ${pull.baseRefName}, and lane:close merges into beta: retarget it (gh pr edit ${pull.number} --base beta)`;
+  if (!pull.isDraft) return null;
+  if (pull.isCrossRepository || pull.headRefName !== branch) return `#${pull.number} is a draft this lane does not own; mark it ready (gh pr ready ${pull.number})`;
+  const ready = github.markReady(pull.number);
+  if (!ready.ok) return `#${pull.number} is a draft and marking it ready failed: ${ready.error}`;
+  io.out(`lane:close: #${pull.number} was a draft; marked it ready, so GitHub will merge it after the gate`);
   return null;
 }
 

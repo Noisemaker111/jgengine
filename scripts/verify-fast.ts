@@ -23,7 +23,7 @@
 // file under no tested root) runs every test file and type-check; `--plan` names it.
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
 import { availableParallelism } from "node:os";
 import { basename, dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -33,7 +33,7 @@ import { assertCheckoutReady } from "./checkout-ready";
 import { digestLines, failureDigest, writeStepLog } from "./failure-digest";
 import { FRAME_GAMES, REPRESENTATIVE_GAME, scopePattern } from "./ci-scope";
 import { buildImportGraph, closure, repoFiles, reverseReach, type ImportGraph } from "./import-graph";
-import { openPassCache, treeDigests, WHOLE_TREE } from "./verify-cache";
+import { openPassCache, saveTestCosts, sharedVerifyDir, treeDigests, WHOLE_TREE } from "./verify-cache";
 import { checkCommand, findCheck, GEN_TARGETS, jobChecks, readsPath, reachedBy, type CheckDef } from "./run-stages";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose, takeVerboseFlag } from "./verbosity";
@@ -78,6 +78,8 @@ const GAME_DIR = /^games\/[^/]+$/;
 const ROOT_CONFIG = /^(package\.json|bun\.lock|bunfig\.toml|tsconfig(\.[^/]+)?\.json)$/;
 /** A workspace's own manifest and compiler settings, relative to the workspace. */
 const WORKSPACE_CONFIG = /^(package\.json|bunfig\.toml|tsconfig(\.[^/]+)?\.json)$/;
+/** Prose: read by people and by the gates that plan by path, never compiled or imported by a test. */
+const DOC_FILE = /\.(md|mdx|txt)$/i;
 /** Demo scenes exist to be looked at; a test of one would be filler, so they never need one. */
 const DEMO = /(^|\/)demos?\//;
 
@@ -465,7 +467,8 @@ export function verifyPlan(input: {
   for (const path of touchedPaths) credit([path], [path]);
   for (const [file, unresolved] of input.graph.opaque) {
     const scopes = opaqueScopes(file, unresolved, input.workspaces);
-    const matched = touchedPaths.filter((path) => scopes.some((scope) => path.startsWith(scope)));
+    // An import the graph cannot follow may name any code in its scope, never prose.
+    const matched = touchedPaths.filter((path) => !DOC_FILE.test(path) && scopes.some((scope) => path.startsWith(scope)));
     if (matched.length > 0) credit([file], matched);
   }
   const testedBy = new Map<string, string[]>();
@@ -477,8 +480,12 @@ export function verifyPlan(input: {
   for (const file of changed) for (const test of ownTests(file, input.testFiles)) tests.add(test);
   for (const test of input.testFiles) if (reachedBy.has(test)) tests.add(test);
 
+  // Prose no compiler or test reads: a game's README or PLAN edit used to type-check the game and run
+  // its whole suite plus every cross-game suite. A test that imports one (`?raw`) still reaches it
+  // through the graph above, and each gate still plans by what it reads.
+  const codePaths = touchedPaths.filter((path) => !DOC_FILE.test(path));
   const typechecks: string[] = [];
-  for (const file of touchedPaths) {
+  for (const file of codePaths) {
     const workspace = workspaceOf(file, input.workspaces);
     if (workspace?.checkTypes === true && !typechecks.includes(workspace.dir)) typechecks.push(workspace.dir);
   }
@@ -495,8 +502,8 @@ export function verifyPlan(input: {
   // since its tests read its scene and data files from disk.
   for (const workspace of input.workspaces) {
     const prefix = `${workspace.dir}/`;
-    const touched = touchedPaths.some((path) => path.startsWith(prefix));
-    const imports = !touched && [...reachedBy.keys()].some((file) => file.startsWith(prefix) && !isTestFile(file));
+    const touched = codePaths.some((path) => path.startsWith(prefix));
+    const imports = !touched && [...reachedBy.keys()].some((file) => file.startsWith(prefix) && !isTestFile(file) && !DOC_FILE.test(file));
     if (!touched && !imports) continue;
     if (workspace.checkTypes && !typechecks.includes(workspace.dir)) typechecks.push(workspace.dir);
     if (touched && GAME_DIR.test(workspace.dir)) for (const test of input.testFiles) if (test.startsWith(prefix)) tests.add(test);
@@ -524,7 +531,7 @@ export function verifyPlan(input: {
     if (workspace === null || !CONTAINED.test(workspace.dir) || GAME_DIR.test(workspace.dir)) continue;
     if ((!SOURCE_FILE.test(path) || DECLARATION.test(path)) && !path.endsWith(".md")) addSuite(workspace.dir);
   }
-  if (touchedPaths.some((path) => /^games\/[^/]+\//.test(path))) {
+  if (codePaths.some((path) => /^games\/[^/]+\//.test(path))) {
     for (const dir of ["games/scripts", "games/shared"]) addSuite(dir);
     addSuite("*.games.test", (test) => /\.games\.test\.[cm]?[jt]sx?$/.test(test));
   }
@@ -962,10 +969,10 @@ async function spawnStep(command: readonly string[], root: string): Promise<{ ok
 }
 
 /**
- * The files to rerun when every failure in a `bun test` output is a timeout (a test's or a hook's),
- * or null when any failure is something else. On a PC held at 100% by other threads' work a test can
- * wait seconds for each slice: land-commit.test.ts failed 9 of 20 tests that way and passed on the
- * next run (2026-11-09), and a whole landing went red for it.
+ * The files whose failures in a `bun test` output are all timeouts (a test's or a hook's), or null
+ * when any failure is something else. A timeout is not rerun into a pass: a test that only passes on
+ * a second try is a flake, and a rerun hides it until it fails a landing again. The step stays red and
+ * names the files, so the test is fixed at its cause or quarantined with an issue.
  */
 export function timedOutFiles(output: string): string[] | null {
   const lines = output.split(/\r?\n/);
@@ -988,16 +995,13 @@ async function run(step: Step, root: string): Promise<StepResult> {
   const started = Date.now();
   const first = await spawnStep(step.command, root);
   const timedOut = !first.ok && step.command[1] === "test" ? timedOutFiles(first.output) : null;
-  if (timedOut === null) return { name: step.name, ok: first.ok, ms: Date.now() - started, output: first.output };
-  // Only the files that timed out, once, with the step's own flags but no report file: a real hang
-  // times out again and the step stays red with its first output.
-  const flags = step.command.slice(2).filter((word) => word.startsWith("--") && !word.startsWith("--reporter") && !TEST_FILE.test(word));
-  const timeoutFlag = step.command.indexOf("--timeout");
-  const rerun = ["bun", "test", ...flags, ...(timeoutFlag >= 0 ? [step.command[timeoutFlag + 1]!] : []), ...timedOut];
-  const again = await spawnStep(rerun, root);
-  const line = `degraded: ${step.name}: ${timedOut.join(", ")} timed out (a starved run on a busy PC); ${again.ok ? "passed" : "failed again"} when rerun once`;
-  console.log(line);
-  return { name: step.name, ok: again.ok, ms: Date.now() - started, output: again.ok ? line : `${first.output}\n${line}\n${again.output}` };
+  const output = timedOut === null ? first.output : `${first.output}\n${timedOutNote(step.name, timedOut)}`;
+  return { name: step.name, ok: first.ok, ms: Date.now() - started, output };
+}
+
+/** What a step whose only failures are timeouts says: which files, and that a rerun is not the fix. */
+export function timedOutNote(stepName: string, files: readonly string[]): string {
+  return `${stepName}: ${files.join(", ")} timed out. Not rerun: a test that passes only on a second try is a flake. Fix its cause (a wait on a fixed delay, a race, work too big for its budget) or quarantine it with an issue.`;
 }
 
 /**
@@ -1234,16 +1238,18 @@ async function main(argv: readonly string[]): Promise<number> {
   // Every CI gate the change reaches, not the iteration subset: a passing hand run is then all a landing
   // needs, and lane:close reuses it instead of running it again.
   const plan = { ...planned, gates: landingGates(planned.changed) };
+  // Shared by every worktree of this clone: a unit another lane proved on the same bytes is proven.
+  const shared = sharedVerifyDir(root);
   const cache = argv.includes("--no-cache")
     ? null
     : openPassCache({
-        file: join(root, ".scratch", "verify-fast", "passed.json"),
+        file: join(shared, "passed.json"),
         // Unstaged and untracked files are hashed; everything else is the index's own blob id.
         digest: treeDigests(root, [...names(git(root, ["diff", "--name-only"])), ...names(git(root, ["ls-files", "--others", "--exclude-standard"]))]),
         tree: () => tree,
       });
   const skipped: string[] = [];
-  const costFile = join(root, ".scratch", "verify-fast", "test-costs.json");
+  const costFile = join(shared, "test-costs.json");
   // The plan uses a placeholder and never creates or clears evidence.
   const reportDir = `${runDir}/junit`;
   let testCosts: Record<string, number> = {};
@@ -1273,8 +1279,7 @@ async function main(argv: readonly string[]): Promise<number> {
       Object.assign(testCosts, junitCosts(xml));
       for (const file of junitPassedFiles(xml)) passedFiles.add(file);
     }
-    writeFileSync(costFile, `${JSON.stringify(testCosts)}
-`, "utf8");
+    saveTestCosts(costFile, testCosts);
     if (cache === null) return;
     for (const result of results) {
       for (const settled of steps.find((step) => step.name === result.name)?.units ?? []) {

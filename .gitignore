@@ -66,6 +66,9 @@ apps/web/.wrangler/
 
 # One checkout home and one scratch folder (JonsOCsetup docs/worktrees.md)
 .scratch/
+# tally's before/after reports (scripts/tally-pr.ts), written into the checkout mid-landing: tracked
+# as untracked files they made the re-verified head's tree differ from its commit, and no merge passed.
+.tally/
 
 # The shared asset store every checkout links pulled packs from (packages/assets/src/assetStore.ts).
 /.asset-store/

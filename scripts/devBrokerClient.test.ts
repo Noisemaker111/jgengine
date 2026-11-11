@@ -5,7 +5,9 @@ import { createServer } from "node:net";
 import { join } from "node:path";
 
 import { BROKER_PROTOCOL } from "./devBroker";
-import { brokerStatusOrNull, captureQueueLine, captureWaitMs, ensureBroker, stopBroker, treeFingerprint } from "./devBrokerClient";
+import { brokerStatusOrNull, captureQueueLine, captureWaitMs, ensureBroker, forgetBrokerUnavailable, stopBroker, treeFingerprint } from "./devBrokerClient";
+import { brokerStatePath } from "./devBroker";
+import { tmpdir } from "node:os";
 
 async function freePort(): Promise<number> {
   return new Promise((resolve) => {
@@ -112,3 +114,29 @@ test("a run queued for the shared browser names who holds it, so a wait never re
   );
   expect(captureQueueLine({ capture: { holders: [], queued: [] } })).toContain("nobody holds it yet");
 });
+
+test("a running broker that is slow to answer is joined: no second broker, no run of its own", async () => {
+  // The state file names a live process on a port nobody answers on: a broker too loaded to reply.
+  const port = await freePort();
+  const state = brokerStatePath(port, tmpdir());
+  writeFileSync(state, JSON.stringify({ pid: process.pid, port, protocol: BROKER_PROTOCOL }));
+  const before = { port: process.env["JG_BROKER_PORT"], on: process.env["JG_BROKER"] };
+  process.env["JG_BROKER_PORT"] = String(port);
+  process.env["JG_BROKER"] = "1";
+  forgetBrokerUnavailable();
+  const lines: string[] = [];
+  try {
+    expect(await ensureBroker({ log: (line) => lines.push(line), joinMs: 1_500 })).toBeNull();
+    expect(lines[0]).toContain(`broker: pid ${process.pid} on :${port} is slow to answer; waiting for it`);
+    expect(lines.join("\n")).toContain("inside the machine's render slots");
+    // Nothing was launched on the port while it waited.
+    expect(await brokerStatusOrNull(500)).toBeNull();
+  } finally {
+    rmSync(state, { force: true });
+    forgetBrokerUnavailable();
+    for (const [key, value] of [["JG_BROKER_PORT", before.port], ["JG_BROKER", before.on]] as const) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+}, 20_000);
