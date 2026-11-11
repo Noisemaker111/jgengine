@@ -38,8 +38,8 @@ A sun-baked coastal city at golden hour sliding into neon night: pastel stucco, 
 - Pickups and mission markers are vertical light pillars, not floor circles.
 
 ## UI typography
-- Display: Bangers (Google Fonts, OFL). Body: Barlow (Google Fonts, OFL). Both already ship; the Cascadia Mono / Consolas stack in `screens.css` becomes Barlow tabular figures.
-- HUD kit: `ink`, accent `#ffb020` sodium amber.
+- Display: Bangers (Google Fonts, OFL). Body: Barlow (Google Fonts, OFL). Both already ship and register with the native Rune surface; LCD readouts use Rune's mono face.
+- Rune theme: `harborTheme` in `src/game/ui/theme.ts`, accent `#ffb020` sodium amber.
 
 ## Chosen look
 - `look: "cinematic"`, `mood: { preset: "golden", sun: { azimuth: 260, elevation: 12, color: "#ffb27a" }, horizonColor: "#f0b8a0", fog: { near: 150, far: 700 } }`, with the day cycle reaching `night`.

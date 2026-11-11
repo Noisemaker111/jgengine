@@ -1,20 +1,20 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { runDialogueChoice, useOpenDialogueId, type DialogueDef } from "@jgengine/core/ui/components.view";
+import type { DialogueChoice, DialogueDef } from "@jgengine/core/ui/components.view";
+import { dialogueSlot } from "@jgengine/core/dialogue/dialogue";
 import { useCurrency, useEntityStat, useGame, useGameStore, useInventory, usePlayer } from "@jgengine/ui/hooks";
 import { useStore } from "@jgengine/ui/store";
-import { cityOf } from "../../cityRuntime";
-import { bestRaceStore, garageStore, houseStore, shopStore } from "../../commands";
-import { UPGRADES, upgradesStore, type UpgradeShop } from "../../progression/upgrades";
-import type { BoardRow } from "../fiction/PriceBoard";
-import { ITEM_LABELS } from "../../content";
-import { VEHICLES, type VehicleDef } from "../../entities/vehicles/catalog";
-import { wantedStore } from "../../streetPlay";
-import { marketStore } from "../../items/nightMarket";
-import { GEAR, WEAPONS, type GearDef, type WeaponDef } from "../../items/weapons/catalog";
-import { CRED_GATES } from "../../progression/cred";
-import { FaceToFace, type Reply, type Speaker } from "../fiction/FaceToFace";
-import { PriceBoard, type BoardSection } from "../fiction/PriceBoard";
+import { cityOf } from "../cityRuntime";
+import { bestRaceStore, garageStore, houseStore, shopStore } from "../commands";
+import { UPGRADES, upgradesStore, type UpgradeShop } from "../progression/upgrades";
+import { ITEM_LABELS } from "../content";
+import { VEHICLES, type VehicleDef } from "../entities/vehicles/catalog";
+import { wantedStore } from "../streetPlay";
+import { marketStore } from "../items/nightMarket";
+import { GEAR, WEAPONS, type GearDef, type WeaponDef } from "../items/weapons/catalog";
+import { CRED_GATES } from "../progression/cred";
+import { FaceToFace, type Reply, type Speaker } from "./FaceToFace";
+import { PriceBoard, type BoardRow, type BoardSection } from "./PriceBoard";
 
 const GUNS = WEAPONS.filter((item) => item.trade?.buy !== undefined && item.trade.shops?.includes("shop_ammunation"));
 const KIT = GEAR.filter((item) => item.trade?.buy !== undefined && item.trade.shops?.includes("shop_ammunation"));
@@ -205,12 +205,18 @@ function Talk({ dialogue, dialogueId }: { dialogue: DialogueDef; dialogueId: str
   if (speaker === null) return null;
   const lines = dialogue.lines.flatMap((line) => ("text" in line ? [line.text] : []));
   const choices = dialogue.lines.flatMap((line) => ("choices" in line ? line.choices : []));
-  const replies: Reply[] = choices.map((choice) => ({ label: choice.label, job: choice.invoke?.command === "city.job.start", run: () => runDialogueChoice(commands, choice, null) }));
+  const replies: Reply[] = choices.map((choice) => ({ label: choice.label, job: choice.invoke?.command === "city.job.start", run: () => runChoice(commands, choice) }));
   return <FaceToFace key={dialogue.id} speaker={speaker} lines={lines} replies={replies} onLeave={() => commands.run("dialogue.close", {})} />;
 }
 
+/** A reply runs its command, or closes the talk when it has none. */
+function runChoice(commands: { run(name: string, input?: unknown): unknown }, choice: DialogueChoice): void {
+  if (choice.invoke == null) commands.run("dialogue.close", {});
+  else commands.run(choice.invoke.command, choice.invoke.args ?? {});
+}
+
 export function Counters() {
-  const dialogueId = useOpenDialogueId();
+  const dialogueId = useStore(dialogueSlot, (value) => value ?? null);
   const shop = useStore(shopStore, (v) => v ?? null);
   const garage = useStore(garageStore, (v) => v === true);
   const house = useStore(houseStore, (v) => v === true);

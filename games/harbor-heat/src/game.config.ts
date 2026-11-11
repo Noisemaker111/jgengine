@@ -12,7 +12,6 @@ import { entityModels, flockModels, objectModels } from "./game/world/models";
 import { GameUI } from "./game/ui/GameUI";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
 import { createElement } from "@jgengine/core/ui/jsx";
-import { harborKit, harborTheme } from "./game/ui/theme";
 import { loop } from "./loop";
 import { residentBoardStore } from "./game/world/residents";
 import { physics, world } from "./world";
@@ -21,6 +20,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { wantedStore } from "./game/streetPlay";
 import { convoySnapshot } from "./game/runState";
 import { vehicleById } from "./game/entities/vehicles/catalog";
+import { sessionStore } from "./game/session";
 
 /** The HUD's wanted mirror, read without creating the pursuit slice. */
 function wantedSnapshotOf(ctx: GameContext): { heat: number; stars: number } | null {
@@ -127,10 +127,6 @@ export const game = defineGame({
         },
       },
     },
-    // The phone HUD is drawn at its own compact size (pager, scanner, chart and belt each have a
-  // phone cut in hud.css), so on a phone it scales against a square 480 px design instead of
-  // shrinking the 1600 px desktop layout to the 0.4 floor, upright or sideways alike.
-    hudFit: { mobile: { designSize: { width: 480, height: 480 }, minScale: 0.6 } },
     prompts,
     pointer: { grabWorldItems: true },
     // turnSpeed rate-limits body facing so the chase camera arcs behind the runner
@@ -144,8 +140,8 @@ export const game = defineGame({
   content,
   loop,
   GameUI,
-  hudTheme: harborTheme,
-  uiKit: harborKit,
+  hudTheme: false,
+  uiRenderer: "rune",
   capture: {
     play: ["game.start"],
     // The dispatch poster is the first thing a player sees; a capture state keeps it reproducible.
@@ -236,6 +232,8 @@ export const game = defineGame({
         heat: wanted?.heat ?? 0,
         stars: wanted?.stars ?? 0,
         wave: convoySnapshot(ctx)?.wave ?? 0,
+        // The run is stopped behind the pause phone: a flow tells "never paused" from "paused then resumed".
+        paused: sessionStore.read(ctx).paused ? 1 : 0,
       };
     },
   },
