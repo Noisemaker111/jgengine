@@ -64,6 +64,16 @@ export function ShellGameUiChrome({
   audioEngine: AudioEngine;
 }) {
   const accessibility = useAccessibilitySettings();
+  if (playable.uiRenderer === "rune") return (
+    <GameUiErrorBoundary onRuntimeError={onRuntimeError}>
+      <GameProvider context={ctx}>
+        <SettingsPlayControlGate ctx={ctx} />
+        <GamePhaseStamp />
+        {orientationGate ? null : <GameUI />}
+        <FeedbackHost ctx={ctx} engine={audioEngine} />
+      </GameProvider>
+    </GameUiErrorBoundary>
+  );
   return (
     <GameUiErrorBoundary onRuntimeError={onRuntimeError}>
       <GameProvider context={ctx}>

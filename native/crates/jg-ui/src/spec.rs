@@ -86,6 +86,7 @@ pub struct Style {
 #[derive(Deserialize)]
 #[serde(tag = "k", rename_all = "lowercase")]
 pub enum Node {
+    Native(crate::native::Element),
     /// Vertical stack.
     Panel {
         #[serde(default)]

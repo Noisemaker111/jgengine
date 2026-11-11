@@ -43,6 +43,8 @@ export type PlayableGame<TProbe extends ProbeReadings = ProbeReadings> = Playabl
    * the game imports is bundled. Its cue sounds replace the default UI sounds.
    */
   uiKit?: UiKit | undefined;
+  /** A direct Rune GameUI authors typed native props and bypasses the CSS mirror and DOM chrome. */
+  uiRenderer?: "rune" | undefined;
   /** Runtime health: injected crash reporter and telemetry sink, auto quality thresholds, the game's error screen. Every part is off unless set. */
   health?: GameHealth | undefined;
 };

@@ -1,5 +1,4 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import "./style.css";
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "@jgengine/core/ui/jsx";
 import { useSceneSwap } from "@jgengine/core/render/sceneSwap.draw";
 import { CylinderGeometry, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, PointLight, SpotLight, TorusGeometry, Vector3 } from "three";
@@ -34,8 +33,6 @@ import { DamagedMachinery } from "./game/damagedMachinery";
 import { FloorPracticals, InteriorArt } from "./game/interiorArt";
 import { ShiftLocker } from "./game/fixtureArt";
 import { GameUI } from "./game/ui/GameUI";
-import { shiftTheme } from "./game/ui/ItemMark";
-import { deepwardKit } from "./game/ui/menu/deepwardKit";
 import { audio } from "./game/audio";
 import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
 import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
@@ -543,9 +540,8 @@ export const game = defineGame({
   systems: [marrowSpec.system],
   loop: { onInit: (ctx) => { initialize(ctx); registerCaptureCommands(ctx); }, onNewPlayer: seatPlayer, onTick: tickControls },
   GameUI,
-  hudTheme: shiftTheme,
-  // Marrow's console draws the menu verbs as hull switch plates and every pane as the dive-log screen.
-  uiKit: deepwardKit,
+  hudTheme: false,
+  uiRenderer: "rune",
   camera: {
     perspective: "first",
     rigs: {

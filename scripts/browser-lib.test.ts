@@ -1210,6 +1210,7 @@ describe("stray browser sweep", () => {
       const killed: number[] = [];
       const result = sweepStrayBrowsers(root, {
         kill: (pid) => killed.push(pid),
+        isAlive: (pid) => pid !== undefined && pid !== DEAD_PID && !killed.includes(pid),
         processes: [
           { pid: 6001, parentPid: DEAD_PID, startedAt: fourHours, commandLine: `chrome.exe --user-data-dir=${warm} --headless=new` },
           { pid: 6002, parentPid: DEAD_PID, startedAt: fourHours, commandLine: `chrome.exe --user-data-dir=${orphan} --headless=new` },

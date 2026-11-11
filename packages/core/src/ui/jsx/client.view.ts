@@ -4,7 +4,7 @@
 
 import { createPortal } from "./element";
 import type { UiNode } from "./element";
-import { domHost } from "./domHost.view";
+import { pageHost } from "./pageHost.view";
 import { Root as TreeRoot, flushSync } from "./reconciler";
 
 export interface Root {
@@ -17,7 +17,7 @@ let rootCount = 0;
 /** A root drawing `container`'s children as DOM elements. */
 export function createRoot(container: Element | DocumentFragment): Root {
   rootCount += 1;
-  const tree = new TreeRoot<Node>(domHost, container, rootCount === 1 ? "r" : `r${rootCount}`);
+  const tree = new TreeRoot(pageHost, container, rootCount === 1 ? "r" : `r${rootCount}`);
   return {
     render(node) {
       tree.render(node);

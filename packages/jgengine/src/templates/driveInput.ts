@@ -11,6 +11,7 @@ export function parseDriveFill(spec: string | undefined): { label: string; value
 export function driveInputPointExpr(text: string, input = false, focused = false): string {
   return `((needle, input, focused) => {
     if (!needle) return null;
+    if (!input && !focused && globalThis.__jgNativeUi) return globalThis.__jgNativeUi.point(needle);
     const selector = input ? 'input:not([type=hidden]), textarea' : 'button, [role=button], [role=switch], a';
     const nodes = Array.from(document.querySelectorAll(input ? selector : selector + ', span, div, h1, h2, h3'));
     const candidates = nodes.flatMap(node => {

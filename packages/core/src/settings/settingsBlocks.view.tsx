@@ -1,7 +1,7 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "@jgengine/core/ui/jsx";
 
-import type { SettingValue } from "@jgengine/core/settings/settingsModel";
+import { adjustSettingRow } from "./settingAdjustment";
 
 import { hudSpace, hudType, hudTransition } from "@jgengine/core/hud/hudTokens";
 import { useMenuNav, type MenuNavItemProps } from "../menu/menuNav.view";
@@ -45,31 +45,6 @@ function RowShell({ label, children, itemProps }: { label: string; children: Rea
       <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: hudSpace("sm"), minWidth: 0, flexShrink: 1 }}>{children}</div>
     </div>
   );
-}
-
-/**
- * One adjustment of a settings row: a slider moves by its step inside its bounds, a toggle flips, a
- * select moves one option (wrapping at both ends). Returns the value to write, or `undefined` when the
- * kind has nothing to step. Shared by the keyboard and the gamepad so both change a row the same way.
- *
- * @capability adjust-setting-row step a settings row value once, for keyboard and gamepad alike
- */
-export function adjustSettingRow(row: SettingsRow, delta: -1 | 1): SettingValue | undefined {
-  if (row.kind === "toggle") return !Boolean(row.value);
-  if (row.kind === "select") {
-    const options = row.options ?? [];
-    if (options.length === 0) return undefined;
-    const current = options.findIndex((option) => option.value === String(row.value));
-    const base = current < 0 ? (delta > 0 ? -1 : 0) : current;
-    return options[(base + delta + options.length) % options.length]?.value;
-  }
-  if (row.kind !== "slider") return undefined;
-  const step = row.step ?? 1;
-  const min = row.min ?? Number.NEGATIVE_INFINITY;
-  const max = row.max ?? Number.POSITIVE_INFINITY;
-  const next = Math.min(max, Math.max(min, Number(row.value) + step * delta));
-  // Settings persist as plain numbers, so keep float noise out of values like 0.30000000000000004.
-  return Math.round(next * 1e6) / 1e6;
 }
 
 /**

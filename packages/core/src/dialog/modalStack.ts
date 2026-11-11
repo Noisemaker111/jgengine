@@ -90,6 +90,8 @@ export interface ModalStack {
    * Fires `onOpen`.
    */
   push(modal: ModalInput): ModalRecord;
+  /** Replace the top entry and notify once; an empty stack behaves like push. */
+  replace(modal: ModalInput): ModalRecord;
   /**
    * Pop the topmost modal without a caller result — it resolves with {@link MODAL_CANCEL} (the ESC /
    * backdrop-click behavior). Returns the removed record, or `null` when the stack is empty.
@@ -198,6 +200,10 @@ export function createModalStack(options: ModalStackOptions = {}): ModalStack {
 
   return {
     push,
+    replace(input) {
+      if (entries.length > 0) resolveAt(entries.length - 1, MODAL_CANCEL);
+      return push(input);
+    },
     pop() {
       if (entries.length === 0) return null;
       const record = entries[entries.length - 1]!.record;

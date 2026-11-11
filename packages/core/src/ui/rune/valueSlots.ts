@@ -48,11 +48,12 @@ export class RuneValueSlots {
     return true;
   }
 
-  release(name: string): void {
+  release(name: string): number | undefined {
     const slot = this.numbers.get(name);
     if (slot === undefined) return;
     this.numbers.delete(name);
     this.free.push(slot);
+    return slot;
   }
 
   writeText(name: string, value: string): TextBinding {

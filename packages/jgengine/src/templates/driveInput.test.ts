@@ -4,9 +4,21 @@ import { rmSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { materializeHarness } from "../harness";
-import { parseDriveFill } from "./driveInput";
+import { driveInputPointExpr, parseDriveFill } from "./driveInput";
 
 describe("drive form arguments", () => {
+  test("native control clicks use Rune bounds without querying DOM or computed styles", () => {
+    const original = Object.getOwnPropertyDescriptor(globalThis, "__jgNativeUi");
+    Object.defineProperty(globalThis, "__jgNativeUi", { configurable: true, value: { point: (label: string) => label === "settings" ? { x: 25, y: 50 } : null } });
+    try {
+      expect((0, eval)(driveInputPointExpr("Settings"))).toEqual({ x: 25, y: 50 });
+      expect((0, eval)(driveInputPointExpr("Missing"))).toBeNull();
+    } finally {
+      if (original === undefined) Reflect.deleteProperty(globalThis, "__jgNativeUi");
+      else Object.defineProperty(globalThis, "__jgNativeUi", original);
+    }
+  });
+
   test("splits at the first equals sign and preserves empty values and whitespace", () => {
     expect(parseDriveFill("Scene name=Course = dusk")).toEqual({ label: "Scene name", value: "Course = dusk" });
     expect(parseDriveFill("Description=")).toEqual({ label: "Description", value: "" });

@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useInsertionEffect, useMemo, useR
 import type { ButtonHTMLAttributes, HTMLAttributes } from "@jgengine/core/ui/jsx/dom.view";
 
 import type { ActionCodesMap } from "@jgengine/core/input/actionBindings";
+import { ActionBindingsProvider, useActionBindings } from "../../input/actionBindings.view";
 import type { GamepadGlyphName } from "@jgengine/core/input/gamepadModel";
 
 import { useHudInteract } from "@jgengine/core/hud/hudInteract.view";
@@ -28,35 +29,11 @@ import { plainKit } from "./uiKitPlain.view";
 
 interface UiKitContextValue {
   kit: UiKit;
-  bindings: ActionCodesMap | undefined;
+  bindings: ActionCodesMap;
   glyphSet: GamepadGlyphName;
 }
 
 const UiKitContext = createContext<UiKitContextValue | null>(null);
-
-const ActionBindingsContext = createContext<ActionCodesMap | undefined>(undefined);
-
-/**
- * Hands the game's live input bindings (its `input` map with the player's rebinds applied) to every key
- * hint below. The shell mounts it around each game, so HUD labels follow a rebind with no game code.
- */
-export function ActionBindingsProvider({ bindings, children }: { bindings: ActionCodesMap; children?: ReactNode }): ReactNode {
-  return <ActionBindingsContext.Provider value={bindings}>{children}</ActionBindingsContext.Provider>;
-}
-
-/**
- * The game's live input bindings, rebinds included: feed it to `actionLabel(bindings, action)` for a key
- * hint in a list, or use {@link useActionGlyph} for one action. Empty outside a shell.
- *
- * @capability action-bindings-hook the game's live key bindings, rebinds included, for HUD key labels
- */
-export function useActionBindings(): ActionCodesMap {
-  const kitBindings = useContext(UiKitContext)?.bindings;
-  const shellBindings = useContext(ActionBindingsContext);
-  return kitBindings ?? shellBindings ?? EMPTY_BINDINGS;
-}
-
-const EMPTY_BINDINGS: ActionCodesMap = {};
 
 const injected = new Map<Document, Set<string>>();
 
@@ -104,7 +81,7 @@ export function UiKitRoot({ kit, bindings, glyphSet = "xbox", children, classNam
     ensureUiKitStyles(kit);
   }, [kit]);
   const parent = useContext(UiKitContext);
-  const shellBindings = useContext(ActionBindingsContext);
+  const shellBindings = useActionBindings();
   const value = useMemo<UiKitContextValue>(
     () => ({ kit, bindings: bindings ?? parent?.bindings ?? shellBindings, glyphSet }),
     [kit, bindings, parent?.bindings, shellBindings, glyphSet],
@@ -115,9 +92,9 @@ export function UiKitRoot({ kit, bindings, glyphSet = "xbox", children, classNam
   );
   return (
     <UiKitContext.Provider value={value}>
-      <div data-jg-kit={kit.id} className={className} style={rootStyle}>
+      <ActionBindingsProvider bindings={value.bindings}><div data-jg-kit={kit.id} className={className} style={rootStyle}>
         {children}
-      </div>
+      </div></ActionBindingsProvider>
     </UiKitContext.Provider>
   );
 }

@@ -1047,6 +1047,10 @@
 - `readRendererBackend` (function): function readRendererBackend(store: Pick<SettingsStore, "get">): RendererBackend — The player's stored backend, falling back to the default when missing or unknown.
 - `withRendererBackendOverride` (function): function withRendererBackendOverride(store: SettingsStore, backend: RendererBackend): SettingsStore — Wrap a settings store so the backend reads as `backend` for this page only (`?renderer=webgpu` in perf runs and captures); nothing is persisted until the player picks one.
 
+## @jgengine/core/settings/settingAdjustment
+
+- `adjustSettingRow` (function): function adjustSettingRow(row: { kind: SettingKind; value: SettingValue; min?: number | undefined; max?: number | undefined; step?: number | undefined; options?: readonly SettingOption[] | undefined }, delta: -1 | 1): SettingValue | undefined — Step a slider within its bounds, flip a toggle or cycle a selection.
+
 ## @jgengine/core/settings/settings.view
 
 - `SETTINGS_TRIGGER_CLASSNAME` (const): const SETTINGS_TRIGGER_CLASSNAME: "pointer-events-auto flex h-8 w-8 items-center justify-center rounded-md border border-[var(--jg-edge-bright)] bg-[var(--jg-surface)]/80 text-base text-[var(--jg-text-dim)] shadow-[0_1px_2px_rgba(0,0,0,0.6)] transition hover:bg-[var(--jg-surface-deep)] hover:text-[v… — Default HudTheme-token skin for {@link SettingsTrigger} — the 8×8 chrome button games re-authored seven times. Pass your own `className` only to override placement or brand chrome; the gear glyph already scales with `text-base` / `1em`.
@@ -1075,7 +1079,6 @@
 - `SettingsTabs` (function): function SettingsTabs({ categories, activeId, onSelect, leading, tabProps, className, style }: SettingsTabsProps): ReactNode — The category tab rail for a settings screen: a scrollable row of buttons with pressed state. The game owns the surrounding layout; this block keeps every category reachable on narrow screens.
 - `SettingsTabsProps` (interface): interface SettingsTabsProps — The live category tabs for a settings screen: a scrollable rail with pressed state.
 - `SettingsToggle` (function): function SettingsToggle({ row, itemProps }: { row: SettingsRow; itemProps?: MenuNavItemProps | undefined }): ReactNode — One on/off row from a {@link SettingsRow}.
-- `adjustSettingRow` (function): function adjustSettingRow(row: SettingsRow, delta: -1 | 1): SettingValue | undefined — One adjustment of a settings row: a slider moves by its step inside its bounds, a toggle flips, a select moves one option (wrapping at both ends). Returns the value to write, or `undefined` when the kind has nothing to step. Shared by the keyboard and the gamepad so both change a row the same way.
 
 ## @jgengine/core/settings/settingsController.draw
 
@@ -1104,7 +1107,7 @@
 - `SETTING_IDS` (const): const SETTING_IDS: { readonly masterVolume: "sound.master"; readonly graphicsQuality: "graphics.quality"; readonly graphicsAuto: "graphics.auto"; readonly graphicsShadows: "graphics.shadows"; readonly graphicsSoftShadows: "graphics.softShadows"; readonly graphicsUiScale: "graphics.uiScale"; readonly… — ⚠ undocumented
 - `SettingCategory` (type): type SettingCategory = BuiltInSettingCategory | (string & {}) — Built-in category ids keep autocomplete; any other string makes a fresh category.
 - `SettingCategoryDef` (interface): interface SettingCategoryDef — Declares or relabels/reorders a category tab; use it for a custom category or to reshape the built-ins.
-- `SettingKind` (type): type SettingKind = "slider" | "toggle" | "select" — ⚠ undocumented
+- `SettingKind` (type): type SettingKind = "slider" | "toggle" | "select" — ⚠ undocumented · used by `adjustSettingRow` (@jgengine/core/settings/settingAdjustment): Step a slider within its bounds, flip a toggle or cycle a selection.
 - `SettingOption` (interface): interface SettingOption { value: string; label: string } — ⚠ undocumented · used by `COLORBLIND_OPTIONS` (@jgengine/core/settings/accessibilitySettings): Colorblind palette choices.
 - `SettingValue` (type): type SettingValue = number | boolean | string — ⚠ undocumented · used by `asSettingType`: Read a stored value as the type the caller asked for.
 - `SettingsActionDef` (interface): interface SettingsActionDef — A game-state action (Restart, Quit to menu, …) shown as rows in the first "Game" settings tab — never a floating button or a rebindable key.
@@ -1228,9 +1231,9 @@
 - `SelectionWindow` (interface): interface SelectionWindow — A contiguous slice of members for virtualizing a large selection strip.
 - `SettingCategory` (type): type SettingCategory = BuiltInSettingCategory | (string & {}) — Built-in category ids keep autocomplete; any other string makes a fresh category.
 - `SettingCategoryDef` (interface): interface SettingCategoryDef — Declares or relabels/reorders a category tab; use it for a custom category or to reshape the built-ins.
-- `SettingKind` (type): type SettingKind = "slider" | "toggle" | "select" — ⚠ undocumented
+- `SettingKind` (type): type SettingKind = "slider" | "toggle" | "select" — ⚠ undocumented · used by `adjustSettingRow` (@jgengine/core/settings/settingAdjustment): Step a slider within its bounds, flip a toggle or cycle a selection.
 - `SettingOption` (interface): interface SettingOption { value: string; label: string } — ⚠ undocumented · used by `COLORBLIND_OPTIONS` (@jgengine/core/settings/accessibilitySettings): Colorblind palette choices.
-- `SettingValue` (type): type SettingValue = number | boolean | string — ⚠ undocumented · used by `useSetting` (@jgengine/core/settings/settings.view): Read + write one persisted setting; re-renders when the value changes anywhere.
+- `SettingValue` (type): type SettingValue = number | boolean | string — ⚠ undocumented · used by `adjustSettingRow` (@jgengine/core/settings/settingAdjustment): Step a slider within its bounds, flip a toggle or cycle a selection.
 - `SettingsActionDef` (interface): interface SettingsActionDef — A game-state action (Restart, Quit to menu, …) shown as rows in the first "Game" settings tab — never a floating button or a rebindable key.
 - `SettingsStore` (interface): interface SettingsStore { get<T extends SettingValue>(id: string, fallback: T): T; set(id: string, value: SettingValue): void; subscribe(listener: () => void): () => void } — ⚠ undocumented · used by `createSettingsStore`: Reactive, localStorage-backed settings store shared by the shell wiring and React hooks.
 - `SettingsSurface` (type): type SettingsSurface = "quick" — `quick` shows compact on-screen volume/graphics buttons; `false` (default) mounts no engine trigger — open the menu from your own UI with `<SettingsTrigger>` or `useSettings().open()`.
@@ -1715,6 +1718,10 @@
 - `styleText` (function): function styleText(style: Record<string, unknown>): string — ⚠ undocumented
 - `treeToMarkup` (function): function treeToMarkup(nodes: readonly MarkupNode[]): string — ⚠ undocumented
 
+## @jgengine/core/ui/jsx/pageHost.view
+
+- `pageHost` (const): const pageHost: Host<PageNode> — One JSX tree can contain native surfaces and ordinary page tooling, sharing all providers.
+
 ## @jgengine/core/ui/jsx/reconciler
 
 - `ActionDispatch` (type): type ActionDispatch<A extends AnyActionArg> = (...args: A) => void — ⚠ undocumented
@@ -1861,7 +1868,6 @@
 
 ## @jgengine/core/ui/kit/uiKitRoot.view
 
-- `ActionBindingsProvider` (function): function ActionBindingsProvider({ bindings, children }: { bindings: ActionCodesMap; children?: ReactNode }): ReactNode — Hands the game's live input bindings (its `input` map with the player's rebinds applied) to every key hint below. The shell mounts it around each game, so HUD labels follow a rebind with no game code.
 - `KitActionPrompt` (const): const KitActionPrompt: NamedExoticComponent<KitActionPromptProps> — "Press E to take the parcel", drawn by the active kit with the right glyph for the device the player is using: the bound key, the bound pad button, or a tap target on touch. Renders nothing when the action is not bound on that device and no `fallbackGlyph` is given.
 - `KitActionPromptProps` (interface): interface KitActionPromptProps — Props for {@link KitActionPrompt}.
 - `KitButton` (const): const KitButton: NamedExoticComponent<KitButtonHostProps> — The active kit's button. Hover, press and activate report to the nearest `HudInteractProvider`, so the shell's UI cues sound without wiring. Give `material` (and optionally `cut`, `tint`, `edge`, …) and it is a game button made of that material instead, lifting on hover and sinking on press:
@@ -1880,7 +1886,6 @@
 - `UiKitRootProps` (interface): interface UiKitRootProps — Props for {@link UiKitRoot}.
 - `UiKitScope` (function): function UiKitScope({ children }: { children?: ReactNode }): ReactNode — Re-applies the nearest kit's root (tokens and `data-jg-kit`) — wrap content you portal outside the kit root so it keeps the kit's look.
 - `ensureUiKitStyles` (function): function ensureUiKitStyles(kit: UiKit, doc: Document | undefined = typeof document === "undefined" ? undefined : document): void — Inserts a kit's stylesheet into the document once. Safe to call repeatedly and during SSR (no-op).
-- `useActionBindings` (function): function useActionBindings(): ActionCodesMap — The game's live input bindings, rebinds included: feed it to `actionLabel(bindings, action)` for a key hint in a list, or use {@link useActionGlyph} for one action. Empty outside a shell.
 - `useActionGlyph` (function): function useActionGlyph(action: string, fallback?: string): string | undefined — The key hint for `action` on the device the player is using, from the kit root's live bindings — the bound key on keyboard, the pad button on gamepad, or `fallback` when unbound. On touch it is `undefined`: the button itself is the tap target. Put it on a button (`<KitButton glyph={useActionGlyph("pause", "P")}>`) so key hints never go stale after a rebind.
 - `useHasUiKit` (function): function useHasUiKit(): boolean — True when a {@link UiKitRoot} is above: engine screens switch to kit parts only then.
 - `useKitPresence` (function): function useKitPresence(open: boolean, exitMs: number): { mounted: boolean; leaving: boolean } — Keeps something mounted through its exit motion: `leaving` turns true when `open` goes false, and `mounted` turns false `exitMs` later.
@@ -1999,6 +2004,11 @@
 
 - `RotateDeviceScreen` (function): function RotateDeviceScreen({ title = "Turn your device", description, requiredOrientation = "landscape", accent = "var(--jg-accent, #8ea2ff)", icon, className, style, }: { /** Short headline. */ title?: string; /** One concise explanatory line. Defaults from `requiredOrientation`. */ description?: … — Full-viewport, non-dismissible rotate-device gate shown when a game requires an orientation the device isn't in.
 
+## @jgengine/core/ui/rune/activation
+
+- `RuneActivation` (class): class RuneActivation — Hold activation shared by pointer, touch, keyboard and pad, using an injected clock.
+- `runeNextFocus` (function): function runeNextFocus<T>(current: T, controls: readonly T[], rect: (item: T) => readonly [number,number,number,number] | undefined, direction: "up" | "down" | "left" | "right"): T | undefined — Choose the closest control in the requested direction using native painted rectangles.
+
 ## @jgengine/core/ui/rune/cssMirror.view
 
 - `MirrorReport` (class): class MirrorReport — What the mirror could not express, counted by `property: value` and by where it was asked.
@@ -2058,9 +2068,81 @@
 - `setRuneRect` (function): function setRuneRect(element: Element, rect: Rect, layout: Rect): void — Record painted bounds for hit testing and layout bounds for size/resize APIs (CSS pixels).
 - `setRuneScroll` (function): function setRuneScroll(element: Element, values: RuneScrollValues): void — Native scroll position and extents; components read these without state updates.
 
+## @jgengine/core/ui/rune/element
+
+- `RuneBoundFont` (type): type RuneBoundFont = { [K in keyof RuneFont]: Live<RuneFont[K]> } — ⚠ undocumented
+- `RuneBoundStyle` (type): type RuneBoundStyle = { [K in keyof RuneStyle]: Live<RuneStyle[K]> } — Props shared by native elements and their optional DOM tooling host.
+- `RuneColor` (type): type RuneColor = string — Rune colours use hex RGB/RGBA values, never a CSS declaration.
+- `RuneElement` (interface): interface RuneElement — Host handle for native focus and scrolling; no DOM element is allocated.
+- `RuneElementProps` (interface): interface RuneElementProps extends RuneBoundStyle, RuneBoundFont { children?: UiNode; ref?: Ref<RuneElement>; id?: string; label?: string; role?: string; disabled?: Live<boolean>; hidden?: Live<boolean>; modal?: boolean; text?: Live<string>; direction?: "row" | "column"; scroll?: boolean; svg?: string; i… — ⚠ undocumented · used by `RuneBox` (@jgengine/core/ui/rune/elements.view): Native Rune column.
+- `RuneFont` (interface): interface RuneFont — Text styling maps to Rune's TextStyle; it never inherits a browser font.
+- `RuneGesture` (interface): interface RuneGesture — Native pointer/touch gesture in element-local layout points.
+- `RuneSize` (type): type RuneSize = number | { fraction: number } — Native layout sizes are points or a fraction of the parent.
+- `RuneSpan` (interface): interface RuneSpan — Rich text ranges use UTF-8 byte offsets, like Rune's native Span API.
+- `RuneStyle` (interface): interface RuneStyle — Direct Rune element methods. Numbers are points; angles are radians.
+
+## @jgengine/core/ui/rune/elements.view
+
+- `RuneBox` (function): function RuneBox(props: RuneElementProps): UiElement<Props> — Native Rune column. Its typed props map directly to Rune element methods.
+- `RuneButton` (function): function RuneButton(props: RuneElementProps): UiElement<Props> — Native interactive element; children retain their own layout and paint.
+- `RuneIcon` (function): function RuneIcon(props: RuneElementProps): UiElement<Props> — Native SVG icon; SVG body is artwork, never a style declaration.
+- `RuneRow` (function): function RuneRow(props: RuneElementProps): UiElement<Props> — Native Rune row.
+- `RuneScroll` (function): function RuneScroll(props: RuneElementProps): UiElement<Props> — Native scroll viewport with a column as its content.
+- `RuneSurface` (function): function RuneSurface(props: RuneElementProps): UiElement<Props> — A direct Rune surface. Descendants use the native host and retain their JSX context.
+- `RuneText` (function): function RuneText(props: RuneElementProps): UiElement<Props> — Native text, optionally bound directly to a live getter.
+- `RuneViewport` (function): function RuneViewport({ width, height, children }: { width: number; height: number; children?: ReactNode }): JSX.Element — Provide deterministic native viewport dimensions for headless rendering and tooling.
+- `useRuneViewport` (function): function useRuneViewport(): { width: number; height: number } — Viewport size in layout points; only a resize rerenders its consumer.
+
+## @jgengine/core/ui/rune/nativeSurface.view
+
+- `registerNativeRuneFont` (function): function registerNativeRuneFont(url: string): void — Register native font bytes before the first surface mounts.
+
+## @jgengine/core/ui/rune/nativeTree
+
+- `NativeWireNode` (interface): interface NativeWireNode — One native element in the wire protocol, using the same typed props as JSX.
+- `RuneNode` (class): class RuneNode implements RuneElement — A native host node; it has no browser element or computed style.
+- `RuneTreeSink` (interface): interface RuneTreeSink — The small protocol a native host needs; a recorder can implement it without a browser.
+- `nativeEnabled` (function): function nativeEnabled(node: RuneNode): boolean — Disabled containers disable their descendants for every input device.
+- `nativeLabel` (function): function nativeLabel(node: RuneNode): string — Current readable label for keyboard navigation, accessibility and test drivers.
+- `nativeSpec` (function): function nativeSpec(root: RuneNode, sink: RuneTreeSink, sampleLive = false): { children: NativeWireNode[]; modal: boolean } — Serialize native nodes directly. Live values allocate slots, never component state.
+- `nativeTreeHost` (function): function nativeTreeHost(changed: (root: RuneNode) => void): Host<RuneNode> — Pure reconciler host. `flush` publishes only roots changed by a commit.
+
 ## @jgengine/core/ui/rune/patches
 
 - `compactPatches` (function): function compactPatches<T extends PatchNode<T>>(patches: readonly T[], roots: ReadonlySet<T>, owner: (node: T) => T | undefined): T[] — Keep only attached replacement roots after all changes in one mirror pass.
+
+## @jgengine/core/ui/rune/primitives
+
+- `RuneFlow` (interface): interface RuneFlow — Observable flow over the shared modal-stack model, including save/restore.
+- `RuneRoute` (interface): interface RuneRoute — What a route owns while present; appearance is always the game's composition.
+- `RuneSource` (interface): interface RuneSource<T> — A subscribed collection; expose a bounded slice for large worlds or lists.
+- `RuneTheme` (interface): interface RuneTheme — Game-owned tokens and variants. No widget or game vocabulary lives here.
+- `RuneViewportClass` (type): type RuneViewportClass = "phone" | "tablet" | "desktop" — Named viewport classes for responsive native layout.
+- `bind` (function): function bind<T>(read: () => T): LiveValue<T> — Bind any native visual property without scheduling a component render.
+- `createRuneFlow` (function): function createRuneFlow(routes: RuneFlow["routes"]): RuneFlow — Compose screen/modal/overlay policy on the existing serializable stack primitive.
+- `ownRuneFlow` (function): function ownRuneFlow(flow: RuneFlow, ctx: GameContext): () => void — Lease pause and control capture from a flow. Nested owners release only their own claims.
+- `runeFormat` (function): function runeFormat<T>(value: Live<T>, format: (value: T) => string): LiveValue<string> — Format a bound value at its leaf, including locale-aware game formatters.
+- `runePulse` (function): function runePulse(read: () => unknown, duration: number, now: () => number = () => performance.now()): LiveValue<number> — A value-change pulse that returns to zero; compose it into scale, opacity or offset.
+- `runeTween` (function): function runeTween(read: () => number, duration: number, now: () => number = () => performance.now()): LiveValue<number> — A finite display tween. Reading changes the display value, never the source.
+- `runeViewportClass` (function): function runeViewportClass(width: number, phone = 600, tablet = 1000): RuneViewportClass — Deterministic viewport classification; callers can retune both breakpoints.
+
+## @jgengine/core/ui/rune/primitives.view
+
+- `RuneAction` (function): function RuneAction({ command, run, acceptDrop, children, ...props }: RuneActionProps): JSX.Element — Command interaction with native focus, pointer/touch, keyboard, pad, hold and drag/drop.
+- `RuneActionProps` (interface): interface RuneActionProps extends RuneViewProps { command?: {name: string; input?: unknown}; run?: () => void; acceptDrop?: (value: string) => void } — ⚠ undocumented · used by `RuneAction`: Command interaction with native focus, pointer/touch, keyboard, pad, hold and drag/drop.
+- `RuneAnchor` (type): type RuneAnchor = "fill" | "center" | "top" | "bottom" | "left" | "right" | "top-left" | "top-right" | "bottom-left" | "bottom-right" — ⚠ undocumented
+- `RuneFor` (function): function RuneFor<T>({ source, keyBy, children }: { source: RuneSource<T>; keyBy: (item: T) => string | number; children: (item: T) => ReactNode }): JSX.Element — Subscribed keyed composition. Per-frame fields belong in the item's bound leaves.
+- `RuneGlyph` (function): function RuneGlyph({ artwork, ...props }: Omit<RuneElementProps, "svg"> & { artwork: string }): JSX.Element — SVG artwork as a native icon. Tokens remain game-owned.
+- `RuneLabel` (function): function RuneLabel<T = string>({ value, format, textStyle, message, params, rich, children, ...props }: RuneLabelProps<T>): JSX.Element — Text, formatting, rich spans and translated messages bound directly to a native leaf.
+- `RuneLabelProps` (interface): interface RuneLabelProps<T> extends Omit<RuneElementProps, "text"> { value?: Live<T>; format?: (value: T) => string; textStyle?: string; message?: string; params?: Readonly<Record<string, string | number>>; rich?: Live<readonly RuneSpan[]> } — ⚠ undocumented · used by `RuneLabel`: Text, formatting, rich spans and translated messages bound directly to a native leaf.
+- `RuneLayers` (function): function RuneLayers({ flow, children, transition }: { flow: RuneFlow; children: (entry: FlowEntry) => ReactNode; transition?: { duration: number; distance: number } }): JSX.Element — Present a flow stack; route policy owns input/pause until the route leaves, including nested layers.
+- `RuneProjection` (type): type RuneProjection = (target: { entity?: string; position?: readonly [number, number, number]; offset?: readonly [number, number, number] }) => { x: number; y: number; visible: boolean } — ⚠ undocumented · used by `RuneWorldAnchor`: A projected entity or point.
+- `RuneRoot` (function): function RuneRoot(props: RuneRootProps): JSX.Element — One native game surface, with injected game state, look, projection and translation.
+- `RuneRootProps` (interface): interface RuneRootProps { theme: RuneTheme; context?: GameContext; safeArea?: readonly [number, number, number, number]; project?: RuneProjection; localise?: (key: string, params?: Readonly<Record<string, string | number>>) => string; children?: ReactNode } — ⚠ undocumented · used by `RuneRoot`: One native game surface, with injected game state, look, projection and translation.
+- `RuneTransient` (function): function RuneTransient<T extends { id: string; expiresAt: number }>({ source, expire, now = Date.now, children }: { source: RuneSource<T>; expire: () => void; now?: () => number; children: (item: T) => ReactNode; }): JSX.Element — Expiring collection presentation, with one deadline timer and game-authored message/popup contents.
+- `RuneView` (function): function RuneView({ layout, anchor, safe, inset = 0, variant, responsive, ...props }: RuneViewProps): JSX.Element — Native layout, paint and responsive overrides. Anchors refer to the nearest positioned parent.
+- `RuneViewProps` (interface): interface RuneViewProps extends RuneElementProps { layout?: "stack" | "row" | "grid"; anchor?: RuneAnchor; safe?: boolean; inset?: number; variant?: string; responsive?: Partial<Record<RuneViewportClass, RuneBoundStyle & RuneBoundFont & {layout?: "stack" | "row" | "grid"}>> } — ⚠ undocumented · used by `RuneView`: Native layout, paint and responsive overrides.
+- `RuneWorldAnchor` (function): function RuneWorldAnchor({ entity, position, offset, children, ...props }: Parameters<RuneProjection>[0] & RuneViewProps): JSX.Element — A projected entity or point. Only the requested target is read; no world-wide scan.
 
 ## @jgengine/core/ui/rune/runeInput.view
 
@@ -2085,7 +2167,7 @@
 - `RuneScrollValues` (type): type RuneScrollValues = readonly [number, number, number, number, number, number] — Scroll offset, viewport and content size in layout pixels.
 - `RuneUi` (class): class RuneUi — One mounted Rune UI layer. Create once per page; games describe their trees with {@link RuneUi.setSpec} and bind live values with {@link RuneUi.bind}.
 - `RuneUiEvent` (interface): interface RuneUiEvent { id: string; kind: string; value?: number; text?: string; scroll?: RuneScrollValues } — ⚠ undocumented
-- `RuneUiFrame` (interface): interface RuneUiFrame { revision: number; events: RuneUiEvent[]; regions: [number, number, number, number][]; modal: boolean; rects?: [number, number, number, number, number][] } — ⚠ undocumented
+- `RuneUiFrame` (interface): interface RuneUiFrame { revision: number; events: RuneUiEvent[]; regions: [number, number, number, number][]; modal: boolean; rects?: [number, number, number, number, number][]; nativeRects?: [string, [number, number, number, number]][] } — ⚠ undocumented
 - `RuneUiNode` (interface): interface RuneUiNode { k: string; [key: string]: unknown } — ⚠ undocumented
 - `RuneUiOptions` (interface): interface RuneUiOptions { canvasId?: string; baseUrl?: string; fonts?: readonly string[]; sans?: string; mono?: string; zIndex?: number } — ⚠ undocumented
 
@@ -2264,7 +2346,6 @@
 - `ActionBarKeyResult` (interface): interface ActionBarKeyResult — The intent a key press resolves to over an action bar: move focus, activate, or ignore.
 - `ActionBarModel` (interface): interface ActionBarModel — The live action-bar model returned by {@link useActionBar}.
 - `ActionBarProps` (interface): interface ActionBarProps — Props for {@link ActionBar}.
-- `ActionBindingsProvider` (function): function ActionBindingsProvider({ bindings, children }: { bindings: ActionCodesMap; children?: ReactNode }): ReactNode — Hands the game's live input bindings (its `input` map with the player's rebinds applied) to every key hint below. The shell mounts it around each game, so HUD labels follow a rebind with no game code.
 - `ActionButton` (function): function ActionButton({ action, focused = false, hovered = false, size = 52, showHotkey = true, tabIndex, buttonRef, onActivate, onFocus, onHover, renderIcon, cue, onInteract, className, style, }: { action: ResolvedAction; /** Feedback cue name (default the action id), rendered as `data-jg-cue`. */ … — The default per-item chrome — a cooldown-aware action button with hotkey cap, cost line, radial cooldown wipe, and full rest/hover/focus/pressed/active/disabled states. Accessible: it is a real `<button>` with `aria-disabled`, `aria-pressed` for toggles, `aria-keyshortcuts`, and a native `title` describing why it is blocked. Swap it via `ActionBarChrome`'s `renderItem`, or drop it into a radial layout yourself.
 - `ActionItemContext` (interface): interface ActionItemContext — Render context passed to a custom {@link ActionBarChrome} item renderer.
 - `ActionKeyEvent` (interface): interface ActionKeyEvent — A minimal keyboard-event shape — a real `KeyboardEvent`/React synthetic satisfies it.
@@ -2774,7 +2855,6 @@
 - `useAccessibility` (function): function useAccessibility(): AccessibilityContextValue — Read the live accessibility state + its store; throws without an {@link AccessibilityProvider} above.
 - `useAchievements` (function): function useAchievements(tracker: AchievementTracker): readonly AchievementView[] — Subscribe a component to an achievement tracker's live view list. The list keeps a stable identity between changes, so this re-renders only on unlock or progress — not every frame.
 - `useActionBar` (function): function useActionBar(defs: readonly ActionDef[], options?: UseActionBarOptions): ActionBarModel — The DATA/HOOK layer: resolve `defs` into a live view model with focus, hover, keyboard grid navigation, and hotkey activation. Rendering-agnostic — feed the returned model to {@link ActionBarChrome}, or read it directly to lay out a radial or a bespoke card.
-- `useActionBindings` (function): function useActionBindings(): ActionCodesMap — The game's live input bindings, rebinds included: feed it to `actionLabel(bindings, action)` for a key hint in a list, or use {@link useActionGlyph} for one action. Empty outside a shell.
 - `useActionGlyph` (function): function useActionGlyph(action: string, fallback?: string): string | undefined — The key hint for `action` on the device the player is using, from the kit root's live bindings — the bound key on keyboard, the pad button on gamepad, or `fallback` when unbound. On touch it is `undefined`: the button itself is the tap target. Put it on a button (`<KitButton glyph={useActionGlyph("pause", "P")}>`) so key hints never go stale after a rebind.
 - `useActivePrompt` (function): function useActivePrompt<T extends PositionedPrompt>(prompts?: readonly T[]): T | null — ⚠ undocumented
 - `useAuthedPlayer` (function): function useAuthedPlayer(options?: { guestSeed?: string }): PlayerIdentity | null — ⚠ undocumented

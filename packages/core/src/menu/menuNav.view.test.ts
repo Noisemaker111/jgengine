@@ -6,7 +6,7 @@ import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/b
 
 setDefaultTimeout(30_000);
 
-const scratch = resolve(import.meta.dir, "../../../../.scratch/menu-nav-test");
+const scratch = resolve(import.meta.dir, `../../../../.scratch/menu-nav-test-${crypto.randomUUID()}`);
 let browser: Browser;
 let page: Page;
 let server: ReturnType<typeof Bun.serve>;
@@ -24,13 +24,19 @@ beforeAll(async () => {
     import { GameMenu } from '../../packages/core/src/menu/gameMenu.view';
 
     const pad = { buttons: new Set(), axes: [0, 0] };
+    let tapped = null;
+    window.addEventListener('fixture-tap', event => { tapped = new Set(event.detail); });
+    window.addEventListener('fixture-release', () => pad.buttons.clear());
     Object.defineProperty(navigator, 'getGamepads', {
       configurable: true,
-      value: () => [{
+      value: () => {
+        const pressed = tapped ?? pad.buttons;
+        tapped = null;
+        return [{
         id: 'fake', index: 0, connected: true, mapping: 'standard', timestamp: 0,
         axes: pad.axes,
-        buttons: Array.from({ length: 16 }, (_, index) => ({ pressed: pad.buttons.has(index), value: pad.buttons.has(index) ? 1 : 0, touched: pad.buttons.has(index) })),
-      }],
+        buttons: Array.from({ length: 16 }, (_, index) => ({ pressed: pressed.has(index), value: pressed.has(index) ? 1 : 0, touched: pressed.has(index) })),
+      }]; },
     });
 
     function Fixture() {
@@ -181,12 +187,13 @@ describe("menu keyboard navigation", () => {
 
 describe("menu gamepad navigation", () => {
   test("d-pad moves focus and A confirms", async () => {
-    await page.evaluate(() => (window as any).fixture.press([13]));
+    // A tap lasts one gamepad sample regardless of time spent waiting in the host.
+    await page.evaluate(() => window.dispatchEvent(new CustomEvent("fixture-tap", {detail:[13]})));
     await page.waitForFunction(() => document.activeElement?.getAttribute("data-jg-menu-item") === "new");
-    await page.evaluate(() => (window as any).fixture.press([]));
     await frames(3);
-    await page.evaluate(() => (window as any).fixture.press([0]));
-    await page.waitForFunction(() => document.getElementById("picked")?.textContent === "new");
+    expect(await focused()).toBe("new");
+    await page.evaluate(() => window.dispatchEvent(new CustomEvent("fixture-tap", {detail:[0]})));
+    await page.waitForFunction(() => (document.getElementById("picked")?.textContent?.length ?? 0) > 0);
     expect(await picked()).toBe("new");
   });
 
@@ -209,7 +216,12 @@ describe("menu gamepad navigation", () => {
     await page.evaluate(() => (window as any).fixture.press([13]));
     await page.waitForFunction(() => document.activeElement?.getAttribute("data-jg-menu-item") === "new");
     await page.waitForFunction(
-      () => document.activeElement?.getAttribute("data-jg-menu-item") === "settings",
+      () => {
+        if (document.activeElement?.getAttribute("data-jg-menu-item") !== "settings") return false;
+        // Release in the observing browser task so a delayed host cannot permit another repeat.
+        window.dispatchEvent(new Event("fixture-release"));
+        return true;
+      },
       undefined,
       { timeout: 3000 },
     );

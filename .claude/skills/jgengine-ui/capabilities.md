@@ -40,10 +40,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useActionBar` (function) · `import { useActionBar } from "@jgengine/ui"`
 
-## action-bindings-hook — the game's live key bindings, rebinds included, for HUD key labels
-
-- `useActionBindings` (function) · `import { useActionBindings } from "@jgengine/ui"`
-
 ## action-button — cooldown/cost/hotkey action button with complete interaction states
 
 - `ActionButton` (function) · `import { ActionButton } from "@jgengine/ui"`
@@ -62,7 +58,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## adjust-setting-row — step a settings row value once, for keyboard and gamepad alike
 
-- `adjustSettingRow` (function) · `import { adjustSettingRow } from "@jgengine/core/settings/settingsBlocks.view"`
+- `adjustSettingRow` (function) · `import { adjustSettingRow } from "@jgengine/core/settings/settingAdjustment"`
 
 ## auto-scroll — pin a log/chat/console panel to its newest line as entries arrive — no hand-rolled scrollTop effects
 

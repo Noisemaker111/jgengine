@@ -1,113 +1,143 @@
 ---
 name: jgengine-ui
-description: Build composable, accessible HUDs, menus, feedback, and responsive presentation.
+description: Build game-owned Rune UI from native layout, live bindings, interactions, flow and theme primitives.
 ---
 
 # JGengine UI
 
-## Ownership
+## Rune UI, no CSS
 
-This skill owns player-facing presentation: HUDs, menus, overlays, layout, responsive behavior, accessibility, touch/controller presentation, feedback, previews, and UI chrome. World rendering belongs to `jgengine-world`; state ownership stays in gameplay/combat.
+Game UI draws through Rune. Set `uiRenderer: "rune"` in `defineGame` and use the
+engine JSX runtime. No React, Solid, game CSS, class names, style strings or DOM
+elements. Start a TSX file with `/** @jsxImportSource @jgengine/core/ui/jsx */`.
+The engine supplies primitives, not finished screens, HUDs, bars or inventories.
+Games own their composition, words, visual identity and game-specific panels.
+The temporary CSS mirror serves unmigrated games; do not extend it.
 
-Search [capabilities.md](capabilities.md) by intent and use [api.md](api.md) for signatures. [reference.md](reference.md) is the presentation quality guide (screen inventory, layout modes, main menu, settings, motion, mobile controls, rejection criteria, definition of done); [reference-primitives.md](reference-primitives.md) covers how the shipped blocks compose, rendering/post-processing (reflections, volumetric fog, motion blur and soft shadows each have their own config field, tier gate and Graphics row), and the first-person viewmodel. Visual review uses the scorecard in [jgengine-verify](../jgengine-verify/references/visual-scorecard.md).
+Import rendered primitives from `@jgengine/core/ui/rune/primitives.view` and
+models/bindings from `@jgengine/core/ui/rune/primitives`.
 
-## Canonical workflow
+- `RuneRoot`: one native surface, typed `theme`, optional game `context`,
+  `safeArea: [top,right,bottom,left]`, `project` and `localise` injections.
+- `RuneView`: `layout="stack|row|grid"`, `columns`, `gap`, `scroll`, `anchor`,
+  `safe`, `inset`, `variant`, and `responsive={{phone: {...}, tablet: {...}}}`.
+  Anchors position within the nearest parent; a root child anchors to the screen.
+- `RuneLabel`: `value={bind(read)}`, `format`, `textStyle`, translated `message`
+  with `params`, and `rich` spans (UTF-8 byte ranges, native colors/fonts).
+  `RuneGlyph` takes SVG `artwork`; SVG is artwork, never a CSS declaration.
+- `RuneAction`: `command={{name,input}}` or `run`, automatic native focus and
+  navigation, `disabled`, `holdMs`, `tooltip`, `onHover`, `onDrag`, `dragValue`
+  and `acceptDrop`. A hold activates once on a sufficiently long release.
+  Direction keys navigate native bounds; `onAdjust` consumes left/right on a value.
+  Mouse, touch, keyboard and pad share activation and the top capture scope.
+- `RuneFor`: subscribed `source: {read,subscribe}`, stable `keyBy`, render function.
+  `read` returns the same bounded collection until a structural change; per-frame
+  item fields bind to their leaves. Do not subscribe the whole UI to a frame store.
+- `createRuneFlow`: screen/modal/overlay routes with `pause` and `capture` policy;
+  `push/pop/replace/clear`, `read/subscribe`, `snapshot/restore`. `RuneLayers`
+  presents the stack, owns pause/input leases and finite enter/exit transitions.
+  Screen layers cover earlier screens; modal/overlay layers compose above them.
+- `RuneTransient`: source records with `id`/`expiresAt`, `expire` and optional
+  injected `now`. One deadline timer, no idle polling. Use the existing bounded
+  `ctx.game.notices` feed for messages and author their contents yourself.
+  `RuneWorldAnchor` projects an `entity` or `position` with an optional world
+  `offset`; inject the camera projection at the root. Compose it with transient
+  records for damage numbers or world messages. It queries only its target.
 
-1. Write the game's UI art direction before any screen: player fantasy, emotional tone, shape language, material language, typography roles (display / body / numerical / labels), motion, icon, and sound language, information hierarchy, and forbidden patterns (for example generic rounded dashboard cards, pill buttons, long centered paragraphs during play, persistent keyboard-instruction grids, equally weighted bordered panels, website-style modals). A theme is not done when only colors and fonts change; it must also shape composition, geometry, spacing, borders, icons, motion, density, terminology, and touch controls. Stock glass widgets are not a stand-in for this step.
-2. Define the real UI states: attract, main menu, character create/select where relevant, live play, pause, settings, credits, results, empty/error, relevant overlays, and a death/downed screen when the player can die (see product rules).
-3. Read state through selectors/hooks; keep simulation mutation behind commands.
-4. Compose this game's UI from the shipped building blocks, then reskin: `InventoryGrid`, `usePanels`/`PanelHost`/`Window` (hotkeys, ESC, and z-stacking above the HUD are handled, so never hand-roll a `z-*` or keydown listener for a window), `CharacterSheet`/`Paperdoll`, the play HUD — `HudSlots` (`@jgengine/core/hud/hudLayout.view`, the eight edge slots) filled with `KitVitals` (or `KitVitalIcons` for a survival-style column of glyphs that fill from the bottom), `KitWaveClock`, `KitHint` and `KitCount` (`@jgengine/core/hud/kitHud.view`), the one `ActionBar` (`@jgengine/core/hud/actionHud.view`; `look="kit"` for a build strip, `slots` for abilities), every meter a `KitMeter` — selection bars, and `EntityPreview` (`@jgengine/core/render/EntityPreview.draw`) for a live 3D character portrait. Hand-roll markup only where no block fits. When a second presentation is plausible, split data / renderer / chrome (see [reference-primitives.md](reference-primitives.md)).
-5. Make keyboard, pointer, touch, controller, focus, and screen-reader behavior explicit. For dialogs whose open state already belongs to the game, use `useDialogBehavior({ open, onClose })` (`@jgengine/core/dialog/dialogBehavior.view`) and attach its ref to the caller-owned dialog root; keep the skin, accessible name, `role="dialog"`, `aria-modal`, and `tabIndex={-1}` in the game. `ModalHost` shares this behavior when a `ModalStack` owns the state.
-6. Add preview fixtures using the real components for fast deterministic capture. Shipped engine HUD primitives are registered in `@jgengine/ui`'s `PREVIEW_FIXTURES`; in the monorepo capture one with `bun run shoot --fixture <name>` (`--list` shows the set).
-7. Verify desktop and mobile layouts through `jgengine-verify`, and check [reference.md](reference.md) §14 rejection criteria and the definition of done before claiming UI complete. A HUD that could pass for another game's default chrome fails visual review.
+`RuneTheme` contains game-owned `colors`, named `text` styles, native `variants`
+and `motion: {duration,distance,bounce}`. No theme preset or widget vocabulary.
+The one `RuneStyle` set maps directly to Rune: points or `{fraction}` sizes,
+min/max sizes, padding, gap, pin, grow/shrink, justify/items, columns, fill,
+gradient, radial, radius, border, shadow, blur, clip, opacity, x/y/scale,
+hover/press, motion and polygon shape. Text adds family, size, weight, color,
+tracking, mono and align. Every native visual prop accepts `bind(() => value)`.
+Numeric/text slots and addressed property patches never render components.
+Use `runeFormat`, `runeTween` and `runePulse` for formatting, finite value motion
+and a change pulse. Native `motion` handles changed geometry/paint.
 
-Existing games keep their entity store and use the focused
-[portable minimap recipe](recipes/portable-minimap.md); no `GameProvider`,
-`MarkerSet` or 3D renderer adoption is required.
+## A game UI in a page
 
-## Product rules
+These are game components: the health fill and bag composition are not engine widgets.
+`ctx` supplies the game's registered commands; the game passes its existing stat getter
+and subscribed collection. `theme` supplies its own look.
 
-UI components and hooks come from `@jgengine/core/ui/jsx`; package glue and game
-context come from `@jgengine/ui`. `@jgengine/react` is retired with no alias.
-New TSX files select `/** @jsxImportSource @jgengine/core/ui/jsx */`.
-`bun scripts/port-react-ui.ts` converts imports and adds the directive; `--check`
-reports remaining conversions. `?ui=rune` draws through Rune; the default draws
-through the DOM. Rune's shared value slots carry live text, dimensions, opacity
-and transforms without component renders. `StrictMode` rehearses layout and
-passive effect cleanup/setup once at mount to expose ownership leaks.
+```tsx
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useMemo } from "@jgengine/core/ui/jsx";
+import { bind, createRuneFlow, type RuneSource, type RuneTheme } from "@jgengine/core/ui/rune/primitives";
+import { RuneRoot, RuneView, RuneLabel, RuneAction, RuneFor, RuneLayers } from "@jgengine/core/ui/rune/primitives.view";
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
+type Item = { id: string; name: string };
+export function GameUI({ ctx, theme, health, bag }: {
+  ctx: GameContext; theme: RuneTheme; health: () => number; bag: RuneSource<Item>;
+}) {
+  const flow = useMemo(() => {
+    const f = createRuneFlow({
+      title: {layer: "screen", pause: true, capture: true},
+      pause: {layer: "modal", pause: true, capture: true},
+      bag: {layer: "modal", pause: false, capture: true},
+    });
+    f.push("title"); return f;
+  }, []);
+  return <RuneRoot context={ctx} theme={theme}>
+    <RuneView anchor="bottom-left" safe inset={20} width={220} gap={8}>
+      <RuneLabel value={bind(health)} format={n => `Health ${Math.ceil(n)}`} />
+      <RuneView height={6} fill={theme.colors["track"]}>
+        <RuneView height={6} width={bind(() => ({fraction: health()/100}))}
+          fill={theme.colors["accent"]} />
+      </RuneView>
+      <RuneAction run={() => flow.push("bag")}>Bag</RuneAction>
+      <RuneAction run={() => flow.push("pause")}>Pause</RuneAction>
+    </RuneView>
+    <RuneLayers flow={flow}>{entry =>
+      <RuneView anchor="center" variant="surface" gap={12}>
+        <RuneLabel value={entry.kind} textStyle="heading" />
+        {entry.kind === "bag" ?
+          <RuneFor source={bag} keyBy={item => item.id}>{item =>
+            <RuneAction command={{name: "equip", input: {id: item.id}}}>
+              {item.name}
+            </RuneAction>}
+          </RuneFor> : <RuneAction run={() => flow.clear()}>Play</RuneAction>}
+        <RuneAction run={() => flow.pop()}>Back</RuneAction>
+      </RuneView>}
+    </RuneLayers>
+  </RuneRoot>;
+}
+```
 
-Rune-backed elements expose their native layout sizes, scroll extents and scroll
-events through the usual DOM APIs. Use `scrollTop`, `scrollBy` or
-`scrollIntoView` for keyboard navigation and scroll buttons; smooth movement stays
-inside Rune and does not rerender the component.
+## Adoption and proof
 
-After content or style changes, size reads wait for current native layout:
-they return zero while pending, and `ResizeObserver` delivers the confirmed size.
-Painted bounds continue to describe the visible frame. Layout packets carry the
-page tree revision, so an older frame cannot measure a replacement component.
+Delete the game's old UI folder and CSS after preserving its commands and data
+adapters. Set `uiRenderer: "rune"`, mount `RuneRoot` with its theme, compose screens
+from the primitives, and rebuild game-only panels. Deepward's UI is a real adopter;
+its settings controls compose the existing `useSettings` controller. Save/load
+continues using the game's existing persistence model. Fonts register with
+`registerNativeRuneFont` before mounting.
 
-CSS overflow keeps its authored layout and scrolls on either axis. Columns with
-one unbreakable block per column retain their gap and solid separating rule;
-layouts needing text fragmentation are reported as unsupported.
+Headless PNG check uses the real game component and production Rune builder:
 
-Embedded canvas content stays inside Rune's paint order. Use an ordinary canvas
-and keep its producer's mount/unmount cleanup; the host supplies its initial
-image and transfers later changed frames without component state.
+```
+bun games/deepward/proofs/runeUiFixture.tsx title /tmp/ui.json 1280 720
+cd native
+cargo run -p jg-ui --example native-png -- /tmp/ui.json /tmp/ui.png 1280 720 crates/jg-hud/assets/sharetechmono_ShareTechMono-Regular.ttf crates/jg-hud/assets/rajdhani_Rajdhani-SemiBold.ttf
+```
 
-- **Every game owns its UI end-to-end.** Custom composition, skin, placement, terminology, motion, and one main menu. The website/runner is a bare loader. Composing and reskinning the shipped blocks is correct use, and so is starting from a UI kit and reshaping it; a theme preset or an unarranged default stack dropped in unchanged as the game's identity is not.
-- **The main menu is a game front-end, not marketing.** The runner loads straight into the game's own menu; it offers the real front-end verbs the game supports — New Game, Continue/Load (save slots), Create/Choose character or class, Settings, Credits — each an authored screen in the game's art direction, not a landing page or raw scaffold. See [reference.md](reference.md#main-menu).
-- **Menus come from the shipped blocks, navigated by `useMenuNav`.** `GameMenu` (`@jgengine/core/menu/gameMenu.view`) is the front-end surface: full-bleed over a live scene or key art, a logo sized by `--jg-menu-logo-size`, animated primary verbs with a generated selection tick, and a detail pane that follows the highlight — with `ContinuePane`, `NewCharacterPane`, `SaveSlotsPane` (cards with thumbnails), `CreditsPane` and the game's own settings surface as its panes, and `PauseMenu` (`@jgengine/core/menu/pauseMenu.view`) the same system sized down for pause. A game with the usual title → play → pause loop takes both whole: `createGameFlowSystem()` (`@jgengine/core/game/gameFlow`) in its systems and `GameFlowUI` (`@jgengine/core/menu/gameFlowMenus.view`) as its `GameUI`, given its HUD and menu words. It locks the document scroll, so the surface is exactly the viewport at any size. `MenuScreen` (`@jgengine/ui`) remains for a plainer animated screen over the live scene (transform/opacity only, reduced-motion aware, unmounted after exit), `SettingsSection`/`SettingsTabs` the settings surface, `SaveSlotMenu` a bare slot list, `CreditsPanel` the credits screen, `LoadingScreen` the boot screen with rotating tips. `useMenuNav` (`@jgengine/core/menu/menuNav.view`) is the one keyboard + gamepad focus model for any menu: roving focus, confirm/back, disabled rows skipped, no focus trap. Games keep wording, layout, art and terminology.
-- **Settings is game-owned and reachable from a sensible place.** Every game ships settings as *its* settings — skinned and placed inline with its UI (main menu and pause), never the engine's stock face floated into a corner. Credits are a reachable in-game screen, not attribution buried in a build artifact.
-- **Route the front-end with `useMenuRouter`, and generate the credits.** `useMenuRouter(root)` is the screen stack behind title → save select → settings → credits: `open`/`back`/`replace`/`reset`, `path` for depth, and Escape-to-back bound by default (`escapeToBack: false` when the game owns Escape). `menuStackReducer` is the same transition as a pure function. For credits, `creditsForSourceIds(ids)` (`@jgengine/assets/credits`) turns the pack ids a game declares to `buildCatalog` into licensed, attributed sections, `mergeCredits` folds them into hand-authored lines, and `CreditsScreen` renders the result HudTheme-skinned.
-- **Pick a UI kit in one line, then reshape it.** `defineGame({ uiKit: inkKit })` (each kit is imported from its own module, `inkKit` from `@jgengine/core/ui/kit/uiKitInk.view`, so a game bundles only its kit) makes a complete visual language — shapes, framing, type, motion and cue sounds, never a recoloured rounded box — draw every kit part and engine screen: `KitButton`, `KitPanel` (hud/card/dialog/pane/strip, `open` plays the kit's enter/exit), `KitMeter` (bar/segments/ring), `KitPrompt`/`KitActionPrompt` (the bound key, pad button or tap target for the device in use, from `useInputDevice`), `KitToast` (the shell's notice stack, capped at 3), `KitMenu` (`GameMenu`/`PauseMenu` rows and pane) and `KitMinimapFrame` (`@jgengine/core/ui/kit/uiKitRoot.view`). The eight kits, all listed in `UI_KITS` (`@jgengine/core/ui/kit/uiKits.view`, for galleries and tools): `ink` comic, `paper` cardboard and stickers, `parchment` fantasy, `terminal` phosphor console, `holo` angular sci-fi, `broadcast` sports TV, `arcade` 8-bit, `signal` road signs and departure boards; `bun run shoot --fixture UiKitsPreview` shows them all, `--fixture UiKit-<name>` one. A game's identity is the reshape: `customizeKit(inkKit, { tokens, components, css, sounds })` swaps tokens (`--kit-*`) or single parts and every other part stays. Flow comes with it: `KitObjective` is the one "what now" card (goal, distance with a direction arrow, checklist, countdown that warns at half and near the end, an idle hint, the next-action prompt), `KitResultScreen` ends a run or a day with a tally and keyboard/gamepad/touch choices, `KitBanner` marks a phase change (`@jgengine/core/ui/kit/kitFlow.view`).
-- **Skin the shared chrome with one `HudTheme` token object.** `hudThemeVars(theme)` emits the whole `--jg-*` vocabulary — `HudFrame variation="themed"`, painted slots, the minimap ring, plus surfaces, edges, text, status colors, fonts, and rarity — so one theme spread on any HUD ancestor reskins the `@jgengine/ui` primitives and the `registry/jgengine` blocks together. Author your own with `deriveHudTheme({ accent, surface })` or `hudTheme({ ... })`; `HUD_THEME_PRESETS` / `resolveHudTheme("<preset>")` are demo/scaffold starting points, never a game's identity. A component that needs a token no theme emits fails `check hud-tokens` — add it to `HudTheme` rather than inventing a second vocabulary. Caller `style`/`renderItem` overrides still win.
-- **The shell applies `defaultHudTheme` at the GameUI root.** `HudThemeRoot` wraps every `GameUI` in a `display: contents` `[data-jg-hud]` element carrying the theme vars and injects the engine stylesheet (`jg-*` keyframes, `[data-jg-*]` interaction states, reduced motion). Set `defineGame({ hudTheme })` to swap the root theme, `hudTheme: false` to opt out; a theme spread inside `GameUI` still wins. Games outside the shell add `@import "@jgengine/ui/styles.css";` to `src/index.css` (the `jgengine create` template does). Every engine rule sits in the `components.jgengine` cascade layer, so plain game CSS and Tailwind utilities override engine buttons and panels without `!important`. The theme also carries a type scale with a 12px floor, spacing, motion, elevation, and hover/press/focus/disabled tokens; read them in inline styles through `hudType`, `hudSpace`, `hudTransition`, `hudElevation`, and `HUD_FOCUS_RING` (`@jgengine/core/hud/hudTokens`) — never hardcode text under 12px.
-- **Build interactive chrome from `HudButton`, `HudSurface`, and `TweenNumber`.** `HudButton` gives hover lift, press scale, focus ring, and disabled from tokens, and wraps long labels; `HudSurface` (`@jgengine/core/hud/hudSurface.view`) gives elevation, header slots, an `as` landmark element, padding from `--jg-panel-padding`, and an `open` enter/exit transition; `TweenNumber` / `useTweenedValue` roll counters with an up/down delta flash. Each takes `cue` (`data-jg-cue`) and `onInteract`; `HudInteractProvider` routes every primitive's hover/press/activate/open/close to one listener; the shell mounts one that plays the matching UI cue, so engine primitives sound with no wiring (`cue="confirm"` picks the activate sound). `audio.hudCues: false` silences those control sounds; notice sounds are separate (`notices.cues`).
-- **Paint slot icons with `IconTreatment`, never render raw `itemId` strings.** It draws a `GameIcon` glyph over a school/element-keyed gradient with gloss, vignette, and optional count/keycap badges, reading the `--jg-slot-*` / `--jg-accent` tokens. `treatedItemIcon(itemId)` / `treatedActionIcon(action)` are ready adapters for hotbars and ability bars.
-- **Player death gets a visible screen and respawn feedback — never a silent teleport.** Build the moment `game-design` requires: an authored death/downed overlay that reads the lethal event, communicates the consequence, and surfaces the way back (respawn/revive/restart). Drive it from `createDownedState` (`@jgengine/core/combat`) rather than a hand-rolled flag, and mount it inside `HudCanvas`.
-- **Browser interruption listeners are shared.** Use `useBrowserSuspension` from `@jgengine/core/runtime/browserLifecycle.view` for blur, hidden-page and pointer-lock loss. Keep the decision to pause, release controls or preserve multiplayer simulation in the callback; use options to disable unwanted triggers.
-- **Translate with `createI18n`; set it as `defineGame({ i18n })`.** A catalog is data per locale: a string with `{param}` slots, or a plural message `{ zero?, one?, two?, few?, many?, other, ordinal? }` that `t(key, { count })` / `plural(key, count)` pick by `Intl.PluralRules` (`zero` also matches an exact 0; `ordinal: true` for 1st/2nd). `baseLocale` answers a missing key, reported once through `onMissing` (default `console.warn`). Numbers print in the locale. Set `i18n` and the shell adds a Language row (default from `navigator.languages`, saved as `language.locale` in the settings store), follows it, and sets `lang` and `dir` through `LocaleRoot`; `useTextDirection()` reads the direction and `HudSlots` mirrors its corners for `rtl`. Format with `formatLocaleNumber`, `formatLocaleCurrency`, `formatPercent`, `formatCompact`, `formatUnit`, `formatDate`, `formatLocaleDuration`, `formatRelative` / `formatRelativeTo` (`@jgengine/core/i18n/localeFormat`) instead of `toFixed` or string joins. Write kit layout with logical properties (`marginInlineStart`, `textAlign: "end"`), never left/right.
-- Layout and skin remain caller-controlled; shared primitives own reusable behavior, not product look.
-- Use `ScrollRail` for horizontal controls that can overflow: visible navigation and focus reveal keep every item reachable while the caller owns markup and selection. Keep item widths from shrinking when labels must stay readable.
-- SSR-visible output is hydration-stable; round computed SVG values at the boundary.
-- **A changing value updates only its own leaf, never the whole component.** `useGameStore` / `useStore` select only what a component shows (equal arrays and plain objects count as no change, compared deeply), so a panel re-renders when what it prints changes, not on every tick. Select plain values out of records the sim mutates in place: a selection that returns the same mutated object counts as unchanged. A value that moves every frame or tick (a timer, a meter, a position, a cooldown fill) never goes through component state: bind it to its own node with `LiveText` or `useFrameBind(ref, get, apply)` from `@jgengine/core/ui/liveBind.view`, or pass `live(() => value)` (`@jgengine/core/ui/liveValue`) to a part that takes `Live<T>` (`KitMeter` value, `KitObjective` distance/bearing/deadline, `Crosshair` gap/size, `MinimapChrome` markers). `useLiveSelect(value, select, isEqual)` re-renders a part only when the drawn shape of a live value changes; `perFrame(read)` shares one read between several bindings in a frame; `useGameTimeWindow(atMs, windowMs)` and `useGameCalendar(select)` replace selecting `time.now()`. `HudFade`'s `watch`/`hold` and `useHudAwake` take getters for the same reason. Engine parts are `memoView` parts: they skip a parent's re-render, treat inline `on*` handlers and live values as unchanged while calling the newest, and compare JSX children by structure; wrap a game's own reusable part in `memoView(name, Part)` (`@jgengine/core/ui/memoView.view`) to get the same. In a dev build and in tests, a component whose selection changes on about every frame or tick throws `PerFrameRenderError` naming it: fix the selection, never catch it. `bun run drive <game> --renders --renders-settle 6000` names what still re-renders in steady play.
+Repeat at `390 844`, inspect the PNGs, and cover the HUD, a menu and settings.
+`RuneViewport` injects deterministic dimensions. These are UI-only captures,
+not whole-game screenshots. After Rust changes run `bun scripts/build-jg-ui-wasm.ts`.
+On PC, `drive deepward --flow ui-tour` checks real settings and confirms
+`window.__jgNativeUi.stats().frames` stops on a settled page. GPU/CPU timings
+come from the PC acceptance step, using the production perf harness.
 
-## Runtime health
+Next-game gaps: inject each camera's world projection and safe-area insets;
+provide subscribed slices for existing collections; compose game-specific settings
+editors (text entry, rebinding), networking/chat input and minimap content. The
+API provides anchors and a frame, not a camera adapter, text editor or map renderer.
+LLMville's chat/editor surfaces need an explicit native editing design when it moves.
+Do not retain DOM panels inside a native subtree to cover those gaps.
 
-The Rune bundle in `native/wasm/jg-ui/` ships with the checkout. After changing
-`native/crates/jg-ui` or `native/vendor/rune`, run `bun scripts/build-jg-ui-wasm.ts`
-and commit the generated bundle with its source. Game Vite builds copy it to `/jg-ui/`.
-`LiveText` and `useFrameBind` keep the same API on Rune: live text, dimensions,
-opacity and transforms use shared value slots after their first binding. Slots are
-reused when a label or box is removed. Other style changes patch the affected subtree.
-
-Rune maps `mix-blend-mode` and `background-blend-mode` for multiply,
-overlay, screen and soft-light. Background layers blend in an isolated background
-scope; borders and text paint above it. `isolation: isolate` also isolates a whole
-subtree. These modes sample earlier UI paint on the Rune canvas; a separate world
-canvas underneath is not part of that backdrop.
-
-Background URLs and gradients share CSS layer order. URL images retain their
-intrinsic aspect, `auto`, cover/contain, sizes, positions and per-axis repeat.
-Loading an image's dimensions wakes its mirror once; no frame polling is needed.
-Unsupported image placement (including round/space repeats) reports the element.
-
-`defineGame({ health })` is off unless set: `reporter` receives a scrubbed `CrashReport` (build, game, tier, last N events, no personal data), `telemetry.sink` receives batched events (session start, loads, tier changes, frame percentiles, crash ids), `autoQuality: { targetFrameMs }` moves the tier with hysteresis and cooldowns (the player's tier pick turns it off; their render scale and effect toggles are never overwritten), and `errorScreen` is the game's own recoverable screen for a failed HUD render or tick. No vendor SDK ships in the engine; wire your own reporter and sink. Download size is checked before merge by `bun run check site-bundles` (CI's web-build job): the engine every game loads against `engineKb` in `apps/dev/bundle-budget.json`, and each game's own part against `bundleKb` in its `perf-budget.json`, with the reason in `bundleBaseline`. A heavy optional system loads on demand (see `scene/onDemandSceneKinds.ts`), so a game that never uses it never downloads it.
-
-## Shared-world interaction rules
-
-- **Refusals and notices are engine feedback, not per-game toasts.** Return `{ reason: "insufficient-gold", message: "Needs 40 more gold" }` from a command's `validate`: the shell shows `message` in the shared notice feed with the deny cue and stacks repeats. Push other player messages with `ctx.game.notices.push({ text, tone })` (info/success/warn/deny) from game logic instead of a hand-built toast list. The stack renders inside the HUD theme root, so it takes the game's `hudTheme` colours and font; a top or bottom stack moves clear of `HudCanvas` panels and touch controls in its column and sits above `ModalHost` (z 85). Tune or hide it with `notices: { placement, offset, avoidHud, zIndex, cues, hidden }` (`hidden` keeps cues and lets the game render `useNoticeList(ctx.game.notices)` itself); `push({ text, silent: true })` skips one notice's sound.
-- **UI sounds come from `useUiCue()`.** Engine primitives already sound through the shell; for game-owned markup call `cue("click" | "hover" | "open" | "close" | "confirm" | "deny" | "notify")` from buttons and panels; replace a default by declaring `audio.sounds["ui.click"]`, or silence with `audio.uiCues: { hover: false }` / `false`.
-- **A hit, kill, pickup, objective, wave and refusal react without any sound authored.** The shell maps the events the engine already announces (`combat.damage`, `entity.died`, `worldItem.picked_up`, `quest.completed`, `stat.levelUp`, `command.refused`) to a `feel.<cue>` reaction - sound, gamepad pulse, camera kick and caption - and merges procedural defaults on an `sfx` bus. Replace a sound by declaring `audio.sounds["feel.hit"]`, tune or silence with `audio.feedbackCues`, and announce a wave through `attachWaveFeedback(runner, ctx.game.feedback)` or any custom moment with `ctx.game.feedback.cue("wave", "WAVE 3")`. Captions follow the accessibility setting; sound follows the `sfx` bus volume and mute rows in Settings.
-- Every rejected verb displays its reason on the triggering surface. Use `useServerSession(transport, gameId)` for join lifecycle. Join failure blocks play with `JoinGate` and retry; returning `{ ok: false }` without feedback is incomplete.
-- Placement previews display claim cost and affordability inline with `TerritoryOverlay`.
-- `ChatPanel` owns collapsed/expanded state, own-message styling, Enter focus and Escape blur; standalone hosts pass `messages`, `userId`, and `onSend` (typed `{ ok, reason }`), while context-backed games use channel props. Use native inputs so shell typing-target suspension applies.
-- Register Tailwind `@source` for consumed package files and inspect `bun run shoot <gameId> --mode ui` captures of join, chat, and placement feedback.
-
-## Traps
-
-- Do not put environment beautification, authored-scene rendering, or world placement here.
-- Do not duplicate inventory, combat, quest, or selection state inside components.
-- A static facsimile preview does not test the real UI; compose production components with fixtures.
-- Visual quality is judged from rendered evidence, not component counts or prose.
-- Shown HUD UI must fit the player viewport. `HudCanvas` checks every registered `HudPanel`, any element tagged `data-hud-window`, and its own direct children: a *visible* surface crossing a viewport edge gets a red dev overlay, a `console.warn`, and `data-hud-overflow` (which fails `bun run shoot`). Hidden or parked surfaces never trip it; deliberate bleed opts out with `data-hud-allow-overflow`. Mount custom windows inside `HudCanvas` (tag deeper ones `data-hud-window`) so the check can see them.
+For visual direction use [reference.md](reference.md); gameplay state remains with
+the owning systems. Existing DOM games retain the migration-era recipes in
+[reference-primitives.md](reference-primitives.md) until their own conversion.
+Search [api.md](api.md) and [capabilities.md](capabilities.md) for other shared parts.
+Use [jgengine-verify](../jgengine-verify/SKILL.md) for real-game behavior and captures.

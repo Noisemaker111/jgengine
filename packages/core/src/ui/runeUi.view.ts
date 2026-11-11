@@ -37,6 +37,8 @@ export interface RuneUiFrame {
   modal: boolean;
   /** Laid-out CSS boxes as `[id, x, y, w, h]` in CSS pixels; sent whole when any moved. */
   rects?: [number, number, number, number, number][];
+  /** Native keyed bounds, independent of the DOM/CSS host. */
+  nativeRects?: [string, [number, number, number, number]][];
 }
 
 export interface RuneUiOptions {
@@ -61,9 +63,12 @@ interface JgUiModule {
   patch: (json: string, revision: number) => void;
   patch_text: (id: number, json: string, revision: number) => void;
   scroll_to: (id: number, x: number, y: number, smooth: boolean) => void;
+  scroll_native_into_view: (id: string) => void;
   canvas_frame: (id: number, source: HTMLCanvasElement | HTMLVideoElement) => void;
   remove_canvas: (id: number) => void;
   values_changed: () => void;
+  frames_drawn: () => number;
+  patch_native: (json: string) => void;
   unmount: () => void;
   values_ptr: () => number;
   values_len: () => number;
@@ -88,6 +93,7 @@ export class RuneUi {
   private readonly api: JgUiModule;
   /** Where each CSS box was last laid out, by id: `[x, y, w, h]` in CSS pixels. */
   readonly rects = new Map<number, [number, number, number, number]>();
+  readonly nativeRects = new Map<string, [number, number, number, number]>();
   /** Called with every box's rect whenever any of them moved. */
   onRects: ((rects: [number, number, number, number, number][]) => void) | null = null;
   private readonly valueSlots: RuneValueSlots;
@@ -107,6 +113,14 @@ export class RuneUi {
   private pointer = { x: -1, y: -1, down: 0 };
   private readonly zIndexCss: string;
   private readonly cleanups: (() => void)[] = [];
+  /** Counts committed native frames and spec submissions for idle/performance evidence. */
+  private specCount = 0;
+  get stats(): { frames: number; specs: number } { return { frames: this.api.frames_drawn(), specs: this.specCount }; }
+
+  /** Change addressed native visual properties without a JSX render or a whole-tree submission. */
+  patchNative(patches: readonly { id: string; field: string; value: unknown }[]): void {
+    if (patches.length > 0) this.api.patch_native(JSON.stringify(patches));
+  }
 
   private constructor(canvas: HTMLCanvasElement, api: JgUiModule, zIndexCss: string, private readonly memory: WebAssembly.Memory) {
     this.canvas = canvas;
@@ -150,6 +164,7 @@ export class RuneUi {
   bind(name: string, get: () => number): number {
     const slot = this.slot(name);
     this.bound.set(name, { slot, get });
+    this.startValueLoop();
     return slot;
   }
 
@@ -163,7 +178,8 @@ export class RuneUi {
 
   /** Release a removed CSS binding's numeric slot. @internal */
   releaseSlot(name: string): void {
-    this.valueSlots.release(name);
+    const released = this.valueSlots.release(name);
+    if (released !== undefined) this.prevValues.delete(released);
     this.bound.delete(name);
   }
 
@@ -181,6 +197,7 @@ export class RuneUi {
 
   /** Replace the widget tree. `children` are spec nodes (`{k: "panel", ...}`); `modal` suspends game input. */
   setSpec(children: RuneUiNode[], modal = false): void {
+    this.specCount += 1;
     const json = JSON.stringify({ children, modal });
     const revision = this.revision = (this.revision + 1) >>> 0;
     this.send(() => this.api.set_spec(json, revision));
@@ -205,6 +222,9 @@ export class RuneUi {
   scrollTo(id: number, x: number, y: number, smooth: boolean): void {
     this.send(() => this.api.scroll_to(id, x, y, smooth));
   }
+
+  /** Reveal a native keyed control inside its scroll viewport. */
+  scrollNativeIntoView(id: string): void { this.send(() => this.api.scroll_native_into_view(id)); }
 
   /** Present a changed canvas frame in Rune's ordinary image paint order. */
   canvasFrame(id: number, source: HTMLCanvasElement | HTMLVideoElement): void {
@@ -282,9 +302,9 @@ export class RuneUi {
       const view = this.values();
       for (const { slot, get } of this.bound.values()) {
         const value = Math.fround(get());
-        view[slot] = value;
         const prev = this.prevValues.get(slot);
         if (prev === undefined || !Object.is(prev, value)) {
+          view[slot] = value;
           this.prevValues.set(slot, value);
           changed = true;
         }
@@ -292,9 +312,9 @@ export class RuneUi {
       // Rune draws and presents only when state moves; an unchanged HUD costs
       // no GPU frame and no browser recomposite.
       if (changed) this.wake();
-      this.raf = requestAnimationFrame(tick);
+      this.raf = this.bound.size > 0 ? requestAnimationFrame(tick) : 0;
     };
-    this.raf = requestAnimationFrame(tick);
+    if (this.raf === 0 && this.bound.size > 0) this.raf = requestAnimationFrame(tick);
   }
 
   /** Ask wasm for one committed frame (bound values moved or `write` ran). */
@@ -319,6 +339,10 @@ export class RuneUi {
       return;
     }
     this.regions = frame.regions ?? [];
+    if (frame.revision === this.revision && frame.nativeRects !== undefined) {
+      this.nativeRects.clear();
+      for (const [id, rect] of frame.nativeRects) this.nativeRects.set(id, rect);
+    }
     if (frame.revision === this.revision && frame.rects !== undefined && frame.rects.length > 0) {
       this.rects.clear();
       for (const [id, x, y, w, h] of frame.rects) this.rects.set(id, [x, y, w, h]);

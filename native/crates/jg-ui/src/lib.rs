@@ -15,6 +15,7 @@
 mod build;
 mod css;
 mod spec;
+mod native;
 mod style;
 mod widgets;
 #[cfg(test)]
@@ -29,6 +30,31 @@ use rune::{App, AppSpec, Tx, WindowOptions};
 
 pub(crate) use spec::Node;
 
+/// Render native JSX wire data through the production builder to a headless PNG.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn native_png(json: &str, path: &std::path::Path, width: u32, height: u32, fonts: &[&'static [u8]]) -> Result<(), String> {
+    if width == 0 || height == 0 || width > 8192 || height > 8192 { return Err("PNG dimensions must be in 1..8192".into()); }
+    let spec = spec::parse_spec(json)?;
+    if !spec.children.iter().all(|node| matches!(node, Node::Native(_))) { return Err("native PNG accepts only native JSX elements".into()); }
+    let mut state = Ui::default();
+    state.root = spec.children;
+    let mut runtime = rune::Runtime::with_text(state, build::view, (width as f32,height as f32), rune::Env::new(true,1.0), rune::text::TextSystem::new(fonts,("Inter","IBM Plex Mono")));
+    runtime.set_srgb_blend(true);
+    runtime.frame(0.0);
+    let gpu = rune::render::Gpu::headless();
+    let format = rune::render::OFFSCREEN_FORMAT.remove_srgb_suffix();
+    let mut renderer = rune::render::Renderer::new(&gpu.device,format);
+    renderer.set_srgb_blend(true);
+    let target = rune::render::Offscreen::with_format(&gpu.device,width,height,format);
+    renderer.upload_images(&gpu.device,&gpu.queue,&mut runtime.images);
+    renderer.prepare(&gpu.device,&gpu.queue,&mut runtime.text.atlas,&runtime.instances,(width,height));
+    let mut encoder = gpu.device.create_command_encoder(&Default::default());
+    renderer.draw(&mut encoder,&target.view,[0.0;4]);
+    target.copy(&mut encoder);
+    renderer.submit(&gpu.queue,encoder);
+    rune::render::write_png(path,width,height,&target.read(&gpu.device)).map_err(|error|error.to_string())
+}
+
 // ---------------------------------------------------------------------------
 // Shared per-frame value buffer: plain f32 slots in wasm linear memory. JS gets
 // a Float32Array over `values_ptr()`/`values_len()` and writes once per frame.
@@ -37,6 +63,13 @@ pub(crate) use spec::Node;
 // ---------------------------------------------------------------------------
 
 const VALUES_LEN: usize = 8192;
+
+thread_local! { static DRAW_COUNT: Cell<u32> = const { Cell::new(0) }; }
+
+/// Actual native render submissions, including frames with no JS event payload.
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen::prelude::wasm_bindgen]
+pub fn frames_drawn() -> u32 { DRAW_COUNT.get() }
 
 /// The shared buffer lives in wasm linear memory: JS writes it through a
 /// Float32Array view and the view code reads it on the same single thread.
@@ -126,6 +159,7 @@ pub struct Ui {
     page_revision: u32,
     rendered_revision: Cell<u64>,
     rendered_page_revision: Cell<u32>,
+    native_rects_dirty: Cell<bool>,
     cache: css::BoxCache,
     /// While true the bridge treats the UI as modal: game input is suspended
     /// and the pointer is shown.
@@ -175,6 +209,7 @@ fn layout_snapshot(runtime: &rune::Runtime<Ui>) -> Vec<[f32; 5]> {
 
 impl Compositor<Ui> for UiCompositor {
     fn render(&mut self, f: &mut Frame<'_, Ui>) {
+        DRAW_COUNT.set(DRAW_COUNT.get().wrapping_add(1));
         f.draw_ui();
         for (id, edit) in &f.rt.state.edits {
             let cur = edit.text.clone();
@@ -188,7 +223,7 @@ impl Compositor<Ui> for UiCompositor {
         let regions: Vec<[f32; 4]> = f.rt.hit_regions().to_vec();
         let modal = f.rt.state.modal;
         let revision_changed = !self.shipped || self.last_revision != f.rt.state.rendered_revision.get();
-        if self.shipped && events.is_empty() && modal == self.last_modal && regions == self.last_regions && !css::RECTS_DIRTY.get() && !revision_changed {
+        if self.shipped && events.is_empty() && modal == self.last_modal && regions == self.last_regions && !css::RECTS_DIRTY.get() && !f.rt.state.native_rects_dirty.get() && !revision_changed {
             return;
         }
         self.shipped = true;
@@ -196,6 +231,7 @@ impl Compositor<Ui> for UiCompositor {
         self.last_revision = f.rt.state.rendered_revision.get();
         self.last_regions = regions.clone();
         let rects_changed = css::RECTS_DIRTY.replace(false);
+        f.rt.state.native_rects_dirty.set(false);
         let rects: Vec<[f32; 5]> = if rects_changed || revision_changed {
             layout_snapshot(f.rt)
         } else {
@@ -207,6 +243,7 @@ impl Compositor<Ui> for UiCompositor {
             "regions": regions,
             "modal": modal,
             "rects": rects,
+            "nativeRects": f.rt.layout_rects().filter(|(key, _)| key.starts_with('n')).collect::<Vec<_>>(),
         })
         .to_string();
         #[cfg(target_arch = "wasm32")]
@@ -323,6 +360,27 @@ pub fn set_spec(json: &str, revision: u32) {
     });
 }
 
+/// Patch native leaf properties without replacing the tree or invalidating sibling memo entries.
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen::prelude::wasm_bindgen]
+pub fn patch_native(json: &str) {
+    let patches: Vec<native::PropertyPatch> = match serde_json::from_str(json) {
+        Ok(value) => value,
+        Err(error) => { emit("__native__", "error", None, Some(error.to_string())); return; }
+    };
+    HANDLE.with(|handle| {
+        if let Some(handle) = handle.borrow().as_ref() {
+            handle.update(move |state: &mut Ui, tx: &mut Tx| {
+                tx.instant();
+                match native::patch(&mut state.root, &patches) {
+                    Ok(()) => state.native_rects_dirty.set(true),
+                    Err(error) => emit("__native__", "error", None, Some(error)),
+                }
+            });
+        }
+    });
+}
+
 /// Bring the edit store in line with the tree's fields: drop edits whose field is gone, make
 /// one for each new field, and take the page's text where it set a field itself.
 #[cfg(target_arch = "wasm32")]
@@ -406,6 +464,18 @@ pub fn patch_text(id: u32, json: &str, revision: u32) {
                     s.revision = s.revision.wrapping_add(1);
                 }
             });
+        }
+    });
+}
+
+/// Move a keyed CSS scroller without rebuilding its view.
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen::prelude::wasm_bindgen]
+pub fn scroll_native_into_view(id: &str) {
+    HANDLE.with(|handle| {
+        if let Some(handle) = handle.borrow().as_ref() {
+            let id = id.to_owned();
+            handle.update(move |_: &mut Ui, tx: &mut Tx| { tx.live_only(); tx.scroll_into_view(id); });
         }
     });
 }

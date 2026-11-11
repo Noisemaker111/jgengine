@@ -1,4 +1,4 @@
 {
-  "bundleKb": 1153,
-  "bundleBaseline": "2026-11-03 check-site-assets --bundles: own part 1047.3 KiB beyond the shared engine (2795 KiB download), plus 10%."
+  "bundleKb": 1292,
+  "bundleBaseline": "2026-11-03 check-site-assets --bundles: own part 1047.3 KiB beyond the shared engine (2795 KiB download), plus 10%. 2026-11-10 native Rune: transfer 139 KiB from engineKb for 138.774 KiB of legacy UI no longer loaded by Deepward. The total engine-plus-game ceiling stays 3073 KiB; measured download 3016.4 KiB."
 }
