@@ -5,6 +5,9 @@ use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 use crate::{Ui, color, val, widgets};
 
+/// Points of fade at a native scroll view's edge while content is hidden past it.
+const SCROLL_FADE: f32 = 24.0;
+
 #[derive(Deserialize, Serialize, Clone)]
 #[serde(untagged)]
 pub enum Size { Points(f32), Fraction { fraction: f32 } }
@@ -166,7 +169,9 @@ fn build_element(node: &Element, revision: u64) -> El {
         if p.scroll {
             let mut inner = col().w_full().gap(p.gap.unwrap_or(0.0));
             for ElementNode::Native(child) in &node.children { inner = inner.child(build(child, revision)); }
-            e = e.scroll(ScrollSpec { stick_bottom: false }).hit().child(inner);
+            // The fade marks an edge with more content past it; at rest the web's overlay scroll
+            // bar is hidden, so without it a clipped list reads as complete.
+            e = e.scroll(ScrollSpec { stick_bottom: false }).scroll_edge_fade(SCROLL_FADE).scroll_margin(SCROLL_FADE).hit().child(inner);
         } else {
             for ElementNode::Native(child) in &node.children { e = e.child(build(child, revision)); }
         }

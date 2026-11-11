@@ -26,7 +26,7 @@ export function Sheet({ children, title, close, label }: { children: ReactNode; 
   const { width, height } = useRuneViewport();
   return <RuneView anchor="fill" fill="#030d12dc" modal {...(close === undefined ? {} : { onBack: close })}>
     <RuneView anchor="center" variant="surface" width={Math.min(680,width - 32)} maxHeight={height - 32} label={label ?? title} role="dialog">
-      <Row justify="between"><Heading>{title}</Heading>{close === undefined ? null : <Button onPress={close}>Close ×</Button>}</Row>
+      <Row justify="between" items="start"><Heading grow={1} shrink>{title}</Heading>{close === undefined ? null : <Button onPress={close}>Close ×</Button>}</Row>
       <RuneView scroll maxHeight={height - 140} gap={10}>{children}</RuneView>
     </RuneView>
   </RuneView>;

@@ -111,6 +111,8 @@ export class RuneUi {
   private regions: [number, number, number, number][] = [];
   private modalFlag = false;
   private pointer = { x: -1, y: -1, down: 0 };
+  /** A touch the browser aimed below the UI canvas that is being re-sent to it (see `wirePassThrough`). */
+  private forwarded: number | null = null;
   private readonly zIndexCss: string;
   private readonly cleanups: (() => void)[] = [];
   /** Counts committed native frames and spec submissions for idle/performance evidence. */
@@ -379,8 +381,27 @@ export class RuneUi {
     if (this.canvas.style.pointerEvents !== next) this.canvas.style.pointerEvents = next;
   }
 
+  /**
+   * A mouse hovers before it presses, so `pointer-events` is already on when the press arrives. A
+   * finger has no hover: the browser picks the touch's target (the game below) before this sees it,
+   * and keeps sending that pointer there. So a touch that starts over a hit region is stopped and
+   * re-sent to the UI canvas until it lifts.
+   */
+  private forward(event: PointerEvent): boolean {
+    if (!event.isTrusted) return false;
+    if (event.type === "pointerdown") {
+      if (event.pointerType !== "touch" || event.target === this.canvas || this.modalFlag || !this.overUi(event.clientX, event.clientY)) return false;
+      this.forwarded = event.pointerId;
+    } else if (event.pointerId !== this.forwarded) return false;
+    if (event.type === "pointerup" || event.type === "pointercancel") this.forwarded = null;
+    event.stopImmediatePropagation();
+    this.canvas.dispatchEvent(new PointerEvent(event.type, event));
+    return true;
+  }
+
   private wirePassThrough(): void {
     const move = (event: PointerEvent) => {
+      if (this.forward(event)) return;
       this.pointer.x = event.clientX;
       this.pointer.y = event.clientY;
       // A move with no buttons held ends a drag whose pointerup was missed.
@@ -390,14 +411,16 @@ export class RuneUi {
     const down = (event: PointerEvent) => {
       this.pointer.x = event.clientX;
       this.pointer.y = event.clientY;
-      this.pointer.down += 1;
+      if (event.isTrusted) this.pointer.down += 1;
       this.applyPointerEvents();
+      this.forward(event);
     };
     const up = (event: PointerEvent) => {
       this.pointer.x = event.clientX;
       this.pointer.y = event.clientY;
-      this.pointer.down = Math.max(0, this.pointer.down - 1);
+      if (event.isTrusted) this.pointer.down = Math.max(0, this.pointer.down - 1);
       this.applyPointerEvents();
+      this.forward(event);
     };
     window.addEventListener("pointermove", move, { capture: true, passive: true });
     window.addEventListener("pointerdown", down, { capture: true, passive: true });

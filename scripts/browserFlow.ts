@@ -20,6 +20,10 @@ export interface BrowserFlowDriver {
   clickAt(x: number, y: number, button: "left" | "right"): Promise<void>;
   /** Hover the real pointer, no button. */
   moveMouse(x: number, y: number): Promise<void>;
+  /** Press, move in steps and release, by mouse or finger. */
+  drag(from: { x: number; y: number }, to: { x: number; y: number }, pointer: "mouse" | "touch"): Promise<void>;
+  /** A finger tap. */
+  touch(x: number, y: number): Promise<void>;
   wheel(x: number, y: number, deltaY: number, deltaX: number): Promise<void>;
   /** Lock the pointer to the canvas and turn by real mouse movement; the movement the page saw. */
   look(dx: number, dy: number): Promise<{ x: number; y: number }>;
@@ -169,6 +173,8 @@ export function createBrowserFlow(driver: BrowserFlowDriver, stepper: FlowSteppe
     click: (text, options = {}) => stepper.run(`click "${text}"`, () => driver.click(text, options.double === true ? 2 : 1)),
     clickAt: (x, y, options = {}) => stepper.run(`click at ${x},${y}`, () => driver.clickAt(x, y, options.button ?? "left")),
     moveMouse: (x, y) => stepper.run(`move mouse ${x},${y}`, () => driver.moveMouse(x, y)),
+    drag: (from, to, options = {}) => stepper.run(`${options.pointer ?? "mouse"} drag ${from.x},${from.y} to ${to.x},${to.y}`, () => driver.drag(from, to, options.pointer ?? "mouse")),
+    touch: (x, y) => stepper.run(`touch ${x},${y}`, () => driver.touch(x, y)),
     wheel: (x, y, deltaY, deltaX = 0) => stepper.run(`wheel ${deltaX},${deltaY} at ${x},${y}`, () => driver.wheel(x, y, deltaY, deltaX)),
     look: (dx, dy) => stepper.run(`look ${dx},${dy} px`, () => driver.look(dx, dy)),
     aimAt: (expression, options = {}) =>

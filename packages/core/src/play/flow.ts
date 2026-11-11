@@ -86,6 +86,13 @@ export interface BrowserFlow<TProbe extends ProbeReadings> extends Flow<TProbe> 
   clickAt(x: number, y: number, options?: { button?: "left" | "right" }): Promise<void>;
   /** Hover the real pointer at CSS viewport pixels, no button. */
   moveMouse(x: number, y: number): Promise<void>;
+  /**
+   * Press at `from`, move through intermediate points to `to`, and release: a real mouse drag, or a
+   * finger drag with `pointer: "touch"` (needs a touch device such as `--device mobile`).
+   */
+  drag(from: { x: number; y: number }, to: { x: number; y: number }, options?: { pointer?: "mouse" | "touch" }): Promise<void>;
+  /** A real finger tap at CSS viewport pixels (needs a touch device such as `--device mobile`). */
+  touch(x: number, y: number): Promise<void>;
   /** Turn the real mouse wheel at viewport pixels; positive deltaY scrolls down. */
   wheel(x: number, y: number, deltaY: number, deltaX?: number): Promise<void>;
   /**

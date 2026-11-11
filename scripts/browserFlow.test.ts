@@ -30,6 +30,12 @@ function fakeDriver(options: { probe?: ProbeReadings; page?: Record<string, unkn
     async moveMouse(x, y) {
       calls.push(`moveMouse ${x},${y}`);
     },
+    async drag(from, to, pointer) {
+      calls.push(`drag ${pointer} ${from.x},${from.y} ${to.x},${to.y}`);
+    },
+    async touch(x, y) {
+      calls.push(`touch ${x},${y}`);
+    },
     async wheel(x, y, deltaY, deltaX) {
       calls.push(`wheel ${x},${y} ${deltaX},${deltaY}`);
     },

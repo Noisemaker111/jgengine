@@ -176,13 +176,13 @@ function SalvagePlacard({ id, kind }: { id: string; kind: keyof typeof ITEMS }) 
 function renderEntity(entity: SceneEntity): ReactNode {
   return entity.id === PRINT_ID ? <PrintPresentation /> : null;
 }
-/** The Fitter's model, re-rendered when its clip changes, not as it walks: the entity moves it. */
+/** The Fitter's model, re-rendered when its clip changes, not as it walks or winds up: the entity moves it and the clip runs the windup. */
 function PrintPresentation() {
-  const pose = useStore(viewStore, view => {
+  const mode = useStore(viewStore, view => {
     const print = view.dive?.print;
-    return print === undefined || print.health <= 0 ? null : { mode: print.mode, attack: print.mode === "winding" ? print.attack : 0 };
+    return print === undefined || print.health <= 0 ? null : print.mode;
   });
-  return pose === null ? null : <FitterModel print={pose} />;
+  return mode === null ? null : <FitterModel print={{ mode }} />;
 }
 /**
  * Every local light the station can show besides the room lamps and the headlamp, mounted in every
