@@ -3,7 +3,8 @@ import { describe, expect, test } from "bun:test";
 import { SUITE_WORKERS_ENV, suiteWorkers } from "./suiteTest";
 
 describe("suite workers", () => {
-  test("half the machine's threads by default, never more than there are proofs, never none", () => {
+  test("half the machine's threads by default, at most four, never more than there are proofs, never none", () => {
+    expect(suiteWorkers(62, {}, 24)).toBe(4);
     expect(suiteWorkers(62, {}, 8)).toBe(4);
     expect(suiteWorkers(3, {}, 16)).toBe(3);
     expect(suiteWorkers(62, {}, 1)).toBe(1);

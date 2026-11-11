@@ -12,15 +12,19 @@ import type { SuiteProofAnswer, SuiteProofJob } from "./suiteProofWorker";
 /** Overrides how many proofs play at once (`suiteWorkers`). */
 export const SUITE_WORKERS_ENV = "JG_SUITE_WORKERS";
 
+/** The most workers one job takes on a shared machine unless JG_SUITE_WORKERS asks for more. */
+export const MAX_SUITE_WORKERS = 4;
+
 /**
- * Proofs played at once: half the machine's threads, at least one, or `JG_SUITE_WORKERS`. Each proof
+ * Proofs played at once: half the machine's threads, at least one and at most four (the shared
+ * machine's limit on workers for one job), or `JG_SUITE_WORKERS`. Each proof
  * is its own headless game, independent of the others, so they need not wait on each other: fernwild's
  * 62 proofs played one after another took 400-760 s, the longest step of every landing that reached
  * the engine. Half the threads leaves the rest to the gate's other steps running beside it.
  */
 export function suiteWorkers(proofs: number, env: Record<string, string | undefined> = process.env, threads = availableParallelism()): number {
   const asked = Number(env[SUITE_WORKERS_ENV]);
-  const wanted = Number.isInteger(asked) && asked > 0 ? asked : Math.max(1, Math.floor(threads / 2));
+  const wanted = Number.isInteger(asked) && asked > 0 ? asked : Math.max(1, Math.min(MAX_SUITE_WORKERS, Math.floor(threads / 2)));
   return Math.max(1, Math.min(proofs, wanted));
 }
 
