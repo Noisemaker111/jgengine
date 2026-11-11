@@ -179,13 +179,13 @@ const USAGE = `usage: bun run perf <game> [<game> ...] [--seconds n] [--path wal
                     [--state name] [--param k=v ...] [--set key=value ...] [--capped] [--headed] [--cold]
                     [--production] [--cpu n] [--tally group]
 
-Times the Vite dev server unless --production is given: development React and unbundled source modules,
+Times the Vite dev server unless --production is given: unbundled source modules,
 good for finding where engine time goes with readable names, and not what players get. --production
-builds the runner as the web deploy builds it (minified, bundled, production React; under a minute,
+builds the runner as the web deploy builds it (minified and bundled; under a minute,
 reused until the served files change) and serves it locally. A claim about what players experience
 comes from a --production run. Either report leads with the scorecard: frame p50/p95/p99 and the worst
-frame, frames over 16.7 and 33 ms, main-thread ms per frame and the share of it inside React and
-react-three-fiber, MB allocated per second and GC time, load time and download size.
+frame, frames over 16.7 and 33 ms, main-thread ms per frame and the share of it inside the engine UI
+runtime, MB allocated per second and GC time, load time and download size.
 
 Plays the game at 1920x1080 on an uncapped frame clock, walking, and prints where a frame goes: frame
 p50/p95/p99, main-thread and GPU ms per frame against 60 and 144 Hz, CPU ms per system, GPU ms per
@@ -567,7 +567,7 @@ export function aggregateSelfTime(
     const us = profile.timeDeltas[index] ?? 0;
     self.set(key, (self.get(key) ?? 0) + us);
     if (!isLibraryFrame(node) && !isNativeCall(node)) return;
-    // A three.js, React or browser function is only actionable through the project code that called it.
+    // A three.js, UI runtime or browser function is only actionable through the project code that called it.
     for (let up = parent.get(id); up !== undefined; up = parent.get(up)) {
       const caller = byId.get(up);
       // The breakdown's own timing wrappers sit between three and the code that called it; look past them.
@@ -1844,7 +1844,7 @@ export function perfSummaryText(record: PerfRecord, baseline: PerfRecord | null)
     lines.push(
       card.build === "production"
         ? `${record.game}: the production build (what players get)`
-        : `${record.game}: the dev server's build (development React, unbundled modules), not what players get`,
+        : `${record.game}: the dev server's build (unbundled source modules), not what players get`,
       renderScorecard([{ label: scorecardLabel(card), card }]),
       "",
     );

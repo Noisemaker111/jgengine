@@ -355,7 +355,7 @@ export function Shell3dPresentation({
   const rigKind = resolveRigKind(cameraConfig);
   const firstPerson = rigKind === "first";
   const firstPersonBody = firstPerson && cameraConfig?.rigs?.firstPerson?.body === true ? controlledEntityId : null;
-  // Draw code reads the same values without React context; keep the stores in step with the providers below.
+  // Draw code reads the same values without UI context; keep the stores in step with the providers below.
   useEffect(() => {
     noteFirstPersonBody(firstPersonBody);
     noteGameCharacterMotion(playable.scene?.characterMotion);

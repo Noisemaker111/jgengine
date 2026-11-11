@@ -79,7 +79,7 @@ export interface AchievementTrackerOptions {
  * Tracks achievement/trophy unlocks over caller-driven events — counter goals
  * (`progress`/`setProgress`) and boolean flags (`unlock`) — with score,
  * completion, an `onUnlock` seam, and serializable `snapshot`/`restore`. State
- * is plain data; the view list keeps a stable identity between changes so React
+ * is plain data; the view list keeps a stable identity between changes so the UI
  * can read it through `useSyncExternalStore` without re-projecting every frame.
  *
  * @capability achievements track achievement/trophy unlocks over counter goals and boolean flags, with score, completion, an onUnlock seam, and serializable snapshot/restore

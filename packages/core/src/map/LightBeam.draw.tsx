@@ -53,7 +53,7 @@ export function lightBeamDraw({ height = 80, radius = 0.25, color = "#cfe8ff", o
   };
 }
 
-/** React mount for {@link lightBeamDraw} while parents still render through the Canvas. */
+/** UI mount for {@link lightBeamDraw} while parents still render through the Canvas. */
 export function LightBeam(props: LightBeamProps): null {
   useEngineDraw(() => lightBeamDraw(props), [props.height, props.radius, props.color, props.opacity]);
   return null;

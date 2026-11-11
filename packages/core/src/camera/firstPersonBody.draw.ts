@@ -12,7 +12,7 @@ export const FirstPersonBodyContext = createContext<string | null>(null);
 let drawFirstPersonBody: string | null = null;
 
 /**
- * The first-person body id for draw code, which has no React context. The shell
+ * The first-person body id for draw code, which has no UI context. The shell
  * writes it next to the provider; `null` outside a first-person rig.
  */
 export function noteFirstPersonBody(instanceId: string | null): void {

@@ -56,7 +56,7 @@ export interface PresenceActions<TGameId extends string = string> {
  * identity whenever any player's pose updates; actions MUST be identity-stable
  * for the lifetime of a mounted session so join/leave lifecycle effects can
  * depend on them without re-running per pose tick. The use* members are called
- * as React hooks by consumers, so a mounted transport must never change
+ * as UI hooks by consumers, so a mounted transport must never change
  * identity — remount the subtree to switch backends.
  */
 export interface PresenceTransport<TRow, TLocation, TGameId extends string = string> {

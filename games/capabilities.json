@@ -1329,7 +1329,7 @@
       "module": "@jgengine/core/runtime/browserLifecycle.view",
       "gameFacing": false,
       "probe": null,
-      "intent": "observe browser interruptions outside React with caller-owned pause policy and event sources"
+      "intent": "observe browser interruptions outside the UI runtime with caller-owned pause policy and event sources"
     },
     {
       "id": "build",
@@ -6441,7 +6441,7 @@
       "module": "@jgengine/core/ui/liveBind.view",
       "gameFacing": false,
       "probe": null,
-      "intent": "write a per-frame HUD value (text, bar, dial, colour) straight to its DOM node, never through React state"
+      "intent": "write a per-frame HUD value (text, bar, dial, colour) straight to its DOM node, never through UI state"
     },
     {
       "id": "loading-screen",
@@ -11153,7 +11153,7 @@
       "module": "@jgengine/core/roads/surfaceRibbonMaterial.draw",
       "gameFacing": false,
       "probe": null,
-      "intent": "React-owned procedural ribbon material (asphalt, dirt, gravel) for a custom road or trail mesh"
+      "intent": "UI-owned procedural ribbon material (asphalt, dirt, gravel) for a custom road or trail mesh"
     },
     {
       "id": "surface-ring",
@@ -11977,7 +11977,7 @@
       "module": "@jgengine/core/camera/shake/cameraShake.view",
       "gameFacing": false,
       "probe": null,
-      "intent": "React hook reading a camera-shake controller's live trauma and kind"
+      "intent": "UI hook reading a camera-shake controller's live trauma and kind"
     },
     {
       "id": "use-combo-meter",
@@ -11987,7 +11987,7 @@
       "module": "@jgengine/core/hud/comboMeter.view",
       "gameFacing": false,
       "probe": null,
-      "intent": "React hook binding a combo meter — re-renders per frame so the decay-window bar drains live and returns the current combo view"
+      "intent": "UI hook binding a combo meter — re-renders per frame so the decay-window bar drains live and returns the current combo view"
     },
     {
       "id": "use-damage-direction",
@@ -11997,7 +11997,7 @@
       "module": "@jgengine/core/combat/damage/damageDirection.view",
       "gameFacing": false,
       "probe": null,
-      "intent": "React hook that animates a damage-direction tracker's fade with requestAnimationFrame and re-renders its live indicators"
+      "intent": "UI hook that animates a damage-direction tracker's fade with requestAnimationFrame and re-renders its live indicators"
     },
     {
       "id": "use-dialogue-run",
@@ -12007,7 +12007,7 @@
       "module": "@jgengine/core/dialogue/dialogueView.view",
       "gameFacing": false,
       "probe": null,
-      "intent": "React hook binding a branching dialogue run to a component — re-renders as the player advances the conversation"
+      "intent": "UI hook binding a branching dialogue run to a component — re-renders as the player advances the conversation"
     },
     {
       "id": "use-event-ticker",
@@ -12017,7 +12017,7 @@
       "module": "@jgengine/core/feed/killFeed.view",
       "gameFacing": false,
       "probe": null,
-      "intent": "React hook binding an event-ticker — re-renders when entries arrive or expire, returning the current newest-first views"
+      "intent": "UI hook binding an event-ticker — re-renders when entries arrive or expire, returning the current newest-first views"
     },
     {
       "id": "use-fast-travel",
@@ -12037,7 +12037,7 @@
       "module": "@jgengine/core/map/map.view",
       "gameFacing": false,
       "probe": null,
-      "intent": "React binding that returns a fog-of-war field's live cells"
+      "intent": "UI binding that returns a fog-of-war field's live cells"
     },
     {
       "id": "use-hold-vs-toggle",
@@ -12057,7 +12057,7 @@
       "module": "@jgengine/core/interaction/interactionPrompt.view",
       "gameFacing": false,
       "probe": null,
-      "intent": "React hook binding a prompt registry to a moving player — resolves the nearest interactable prompt and returns the active one"
+      "intent": "UI hook binding a prompt registry to a moving player — resolves the nearest interactable prompt and returns the active one"
     },
     {
       "id": "use-menu-nav",
@@ -12077,7 +12077,7 @@
       "module": "@jgengine/core/dialog/modals.view",
       "gameFacing": false,
       "probe": null,
-      "intent": "React hook binding a modal stack to a component — re-renders on push/pop/resolve"
+      "intent": "UI hook binding a modal stack to a component — re-renders on push/pop/resolve"
     },
     {
       "id": "use-notice-list",
@@ -12107,7 +12107,7 @@
       "module": "@jgengine/core/mission/objectiveBanner.view",
       "gameFacing": false,
       "probe": null,
-      "intent": "React hook binding an objective-banner controller — advances its clock per frame and returns the current banner view"
+      "intent": "UI hook binding an objective-banner controller — advances its clock per frame and returns the current banner view"
     },
     {
       "id": "use-panels",
@@ -12127,7 +12127,7 @@
       "module": "@jgengine/core/settings/keybindingMenu.view",
       "gameFacing": false,
       "probe": null,
-      "intent": "React hook that re-renders a component whenever a rebind session changes"
+      "intent": "UI hook that re-renders a component whenever a rebind session changes"
     },
     {
       "id": "use-save-slots",
@@ -12137,7 +12137,7 @@
       "module": "@jgengine/core/save/saveSlots.view",
       "gameFacing": false,
       "probe": null,
-      "intent": "React hook binding a save-slots metadata index — re-renders on change and returns the ordered slot list"
+      "intent": "UI hook binding a save-slots metadata index — re-renders on change and returns the ordered slot list"
     },
     {
       "id": "use-sequence-director",
@@ -12147,7 +12147,7 @@
       "module": "@jgengine/core/cutscene/cutscene.view",
       "gameFacing": false,
       "probe": null,
-      "intent": "React hook that drives a cutscene director's per-frame tick loop and exposes playhead/progress + play/pause/skip controls"
+      "intent": "UI hook that drives a cutscene director's per-frame tick loop and exposes playhead/progress + play/pause/skip controls"
     },
     {
       "id": "use-shop-stock",
@@ -12157,7 +12157,7 @@
       "module": "@jgengine/core/inventory/shopGrid.view",
       "gameFacing": false,
       "probe": null,
-      "intent": "React hook binding a shop-stock model — re-renders on any stock change and returns the entry list"
+      "intent": "UI hook binding a shop-stock model — re-renders on any stock change and returns the entry list"
     },
     {
       "id": "use-timer",
@@ -12167,7 +12167,7 @@
       "module": "@jgengine/core/time/timerReadout.view",
       "gameFacing": false,
       "probe": null,
-      "intent": "React hook binding one timer to a component with a per-frame re-read"
+      "intent": "UI hook binding one timer to a component with a per-frame re-read"
     },
     {
       "id": "use-translate",
@@ -12197,7 +12197,7 @@
       "module": "@jgengine/core/hud/waveHud.view",
       "gameFacing": false,
       "probe": null,
-      "intent": "React hook that subscribes to a wave runner and returns its pooled current-wave view"
+      "intent": "UI hook that subscribes to a wave runner and returns its pooled current-wave view"
     },
     {
       "id": "use-waypoints",
@@ -12207,7 +12207,7 @@
       "module": "@jgengine/core/map/waypointMarkers.view",
       "gameFacing": false,
       "probe": null,
-      "intent": "React binding that returns a waypoint store's live list (or a passthrough array)"
+      "intent": "UI binding that returns a waypoint store's live list (or a passthrough array)"
     },
     {
       "id": "utility-brain",

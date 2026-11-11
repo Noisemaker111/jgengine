@@ -8,7 +8,7 @@ export const CharacterMotionContext = createContext<CharacterMotionConfig | fals
 
 let drawGameMotion: CharacterMotionConfig | false | undefined;
 
-/** The game-level character-motion layer for draw code, which has no React context. */
+/** The game-level character-motion layer for draw code, which has no UI context. */
 export function noteGameCharacterMotion(layer: CharacterMotionConfig | false | undefined): void {
   drawGameMotion = layer;
 }

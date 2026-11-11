@@ -3,7 +3,7 @@
  * "quit to menu?" confirmation, a level-up popup, or any blocking overlay a game raises over its
  * scene. It carries an ordered stack of opaque {@link ModalRecord}s (push to open, pop/resolve to
  * close) and nothing about how they look: the model NEVER interprets a record's `kind` or a
- * resolution's `result` string — those are free-form game vocabulary the React chrome in
+ * resolution's `result` string — those are free-form game vocabulary the UI chrome in
  * `@jgengine/react` renders. Observable ({@link ModalStack.subscribe}) and round-trips through a save
  * ({@link ModalStack.snapshot}/{@link ModalStack.restore}). An injected clock powers optional
  * per-modal auto-dismiss timers; leave those unset and the model is pure and clockless.
@@ -141,7 +141,7 @@ export interface ModalStack {
  * prompt, a reward popup), pop or resolve them with a free-form result to close, and query the top /
  * open / depth to gate game input. The model is deliberately vocabulary-free — it never reads a
  * record's `kind` or a resolution's `result`, so a game owns every dialog style — and fully
- * serializable, with an optional injected clock driving per-modal auto-dismiss. A React host renders
+ * serializable, with an optional injected clock driving per-modal auto-dismiss. A UI host renders
  * `top()`; `subscribe` re-renders it, `snapshot`/`restore` round-trip it through a save.
  *
  * @capability modal-stack serializable, observable stack of opaque modal/dialog records — push/pop/resolve blocking overlays (pause menu, confirm dialog) with optional auto-dismiss; never interprets kind or result

@@ -7,7 +7,7 @@ export const TerrainQualityContext = createContext<GraphicsQuality>("high");
 
 let drawQuality: GraphicsQuality = "high";
 
-/** The graphics tier for draw code, which has no React context. */
+/** The graphics tier for draw code, which has no UI context. */
 export function noteTerrainQuality(quality: GraphicsQuality): void {
   drawQuality = quality;
 }

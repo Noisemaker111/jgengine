@@ -12,7 +12,7 @@ import { hudType } from "@jgengine/core/hud/hudTokens";
  * Subscribe to a shop's stock and re-render whenever it changes (buy, sell, restock, price, add,
  * remove, restore). Returns the current entry list — a detached snapshot safe to map over.
  *
- * @capability use-shop-stock React hook binding a shop-stock model — re-renders on any stock change and returns the entry list
+ * @capability use-shop-stock UI hook binding a shop-stock model — re-renders on any stock change and returns the entry list
  */
 export function useShopStock(shop: ShopStock): ShopStockEntry[] {
   const [, bump] = useReducer((n: number) => n + 1, 0);

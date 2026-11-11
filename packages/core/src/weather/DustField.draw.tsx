@@ -79,7 +79,7 @@ type DustMaterialUniforms = {
  * should read as weather — a desert gale, ash off a volcano, pollen in a meadow, grain dust in a
  * silo. Compose it through {@link WeatherLayer}'s `"dust"` mode (or `dustAlways` alongside rain and
  * snow) rather than mounting it directly, so it shares one wind and time source with the other layers.
- * `uniforms` is the resolved shared set (the React path's `useWeatherUniformSet`, already ticked);
+ * `uniforms` is the resolved shared set (the UI path's `useWeatherUniformSet`, already ticked);
  * without it the draw owns a local set and ticks it on the board at weather priority.
  *
  * @capability weather-dust airborne particulate that turns still air into visible wind

@@ -40,7 +40,7 @@ const IDLE_STATE: ThumbnailState = { status: "idle", dataUrl: null };
  * Last snapshot handed out per URL. `getGlbThumbnailState` is the `getSnapshot`
  * for `useSyncExternalStore`, which requires a referentially stable result while
  * the underlying state is unchanged: returning a fresh object literal every call
- * makes React's post-commit consistency check ("Maximum update depth exceeded")
+ * makes the UI runtime's post-commit consistency check ("Maximum update depth exceeded")
  * fire forever. We reuse the prior object until status/dataUrl actually changes.
  */
 const snapshots = new Map<string, ThumbnailState>();
@@ -244,7 +244,7 @@ function pump(): void {
 
 /**
  * Snapshot of cache state for a model URL. Does not start a render — call
- * {@link requestGlbThumbnail} first (the React hook does both).
+ * {@link requestGlbThumbnail} first (the UI hook does both).
  * @internal
  */
 export function getGlbThumbnailState(url: string | undefined): ThumbnailState {

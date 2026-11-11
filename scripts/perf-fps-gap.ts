@@ -123,6 +123,8 @@ export function profileLayerOf(node: Pick<ProfileNode, "callFrame">): string {
   if (/three\.module|\/three\/|three-stdlib|postprocessing/.test(url)) return "three.js";
   if (/react-three|@react-three/.test(url)) return "react-three-fiber";
   if (/react-dom|react_dom|scheduler|\/react\b|react\.js|react_jsx/.test(url)) return "React";
+  // The engine's own UI runtime (JSX reconciler and Rune), apart from the rest of the engine.
+  if (/\/packages\/core\/(?:src|dist)\/ui\/(?:jsx|rune)\/|\/ui\/runeUi\./.test(url)) return "UI runtime";
   if (/\/games\/[^/]+\/src\//.test(url)) return "game code";
   // The engine's WebGL-shaped WebGPU context, apart: its JS is what the WebGPU backend adds over WebGL.
   if (/\/packages\/core\/src\/webgpu\//.test(url)) return "WebGPU context";
@@ -303,7 +305,7 @@ export function renderFpsGapReport(entries: readonly FpsGapEntry[], options: { m
   if (first !== undefined) out.push(`Conditions: ${first.viewport}, ${first.quality} tier, ${first.frameClock} clock, path ${first.path ?? "still"}, ${first.gpu}${engines.length === 0 ? "" : `, engine ${engines.join(" and ")}`}${machineClause(first.machine)}.`);
   out.push("CPU is main-thread work per frame and GPU the timer-query sum of the passes; cost is the larger p50, so 'x budget' and 'ceiling fps' assume the two overlap fully.");
   out.push("GPU is the GPU's work: a second window on the same path times every draw and clear on its own ('GPU span' is the frame window's pass timers, which also count the GPU idle while the CPU submits; a record without the draw-timed window shows its span in both).");
-  out.push("These are the dev server's build (development React, unminified modules) in headless Chrome; a production desktop build spends less CPU (`bun run perf desktop --launch <app.exe> --uncapped`).", "");
+  out.push("These are the dev server's build (unminified source modules) in headless Chrome; a production desktop build spends less CPU (`bun run perf desktop --launch <app.exe> --uncapped`).", "");
 
   const summary: Table = { head: ["game", "frame p50", "p95", "p99", "long %", "sim p99", "sim max", "CPU p50", "GPU p50", "GPU span p50", "bound", "x budget", "ceiling fps", "draws", "triangles", "nodes", "GC MB/8s", "hitches"], rows: [] };
   for (const { record } of entries) {

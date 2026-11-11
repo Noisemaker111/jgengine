@@ -26,7 +26,7 @@ export interface SequenceDirectorBinding extends SequenceState {
  * bound `play`/`pause`/`skip`/`seek`/`stop`. Cue side effects belong on
  * `director.onCue`, not here — the hook never interprets a cue.
  *
- * @capability use-sequence-director React hook that drives a cutscene director's per-frame tick loop and exposes playhead/progress + play/pause/skip controls
+ * @capability use-sequence-director UI hook that drives a cutscene director's per-frame tick loop and exposes playhead/progress + play/pause/skip controls
  */
 export function useSequenceDirector(director: SequenceDirector): SequenceDirectorBinding {
   const [, bump] = useReducer((n: number) => n + 1, 0);

@@ -106,7 +106,7 @@ export interface ScatterHeroesProps {
  * Draw-side form of {@link ScatterHeroes}: the near placements of a unique scatter species, each
  * grown from its own seed into its own mesh drawn through the shared static batches
  * ({@link placeHero}), picked by {@link createScatterHeroSet} and shown only once grown, all driven
- * by the frame instead of React refs and state. @internal
+ * by the frame instead of UI refs and state. @internal
  */
 export function scatterHeroesDraw(
   getProps: () => ScatterHeroesProps,

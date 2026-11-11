@@ -32,7 +32,7 @@ function boxMesh(box: StructureWorldBox, material: THREE.Material, solid = true)
 /**
  * The whole base-building model as one draw: placed pieces as their solid boxes, darkened as they
  * lose health, plus the build ghost tinted valid or invalid. Version and ghost polling run inside
- * `frame`, so neither ever costs a React render.
+ * `frame`, so neither ever costs a UI render.
  *
  * @capability base-structures-draw render placed base pieces and the snap build ghost
  */

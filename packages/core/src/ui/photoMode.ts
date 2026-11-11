@@ -28,7 +28,7 @@ export interface PhotoModeStore {
  * Serializable, observable photo-mode state (active + hide-HUD). Genre-agnostic
  * plumbing — a game engages it to free its camera and hide gameplay chrome for a
  * clean capture, and reads `hideHud` to conditionally render its HUD. Pair with
- * React `PhotoModeControls` and shell `captureCanvas`.
+ * UI `PhotoModeControls` and shell `captureCanvas`.
  *
  * @capability photo-mode observable photo-mode state (active + hide-HUD) a game binds its screenshot/camera flow to
  */

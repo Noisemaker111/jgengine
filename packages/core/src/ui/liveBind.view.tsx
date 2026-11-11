@@ -6,7 +6,7 @@ import { isLive, readLive, type Live } from "./liveValue";
 
 /*
  * Live values. A HUD number, bar or dial that moves every frame or tick updates its own DOM node
- * from one shared animation-frame loop and never goes through React state: the component showing it
+ * from one shared animation-frame loop and never goes through UI state: the component showing it
  * renders once, and each frame its binding reads the value and writes the node only when it changed.
  * A value that changes at a discrete moment (an item picked up, a panel opened) re-renders only the
  * smallest component showing it, through `useStore` / `useGameStore` with a selector. Nothing
@@ -118,7 +118,7 @@ export function flushFrameBinds(): void {
  * useFrameBind(bar, () => Math.round(air(ctx) * 200) / 200, (fraction, el) => el.style.setProperty("--fill", `${fraction * 100}%`));
  * ```
  *
- * @capability live-value write a per-frame HUD value (text, bar, dial, colour) straight to its DOM node, never through React state
+ * @capability live-value write a per-frame HUD value (text, bar, dial, colour) straight to its DOM node, never through UI state
  */
 export function useFrameBind<T, E extends Element = Element>(
   ref: { current: E | null },

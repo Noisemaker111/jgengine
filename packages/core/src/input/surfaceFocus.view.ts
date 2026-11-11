@@ -41,7 +41,7 @@ export function installPlayFocusReclaim(doc: Document, surface: () => HTMLElemen
     if (clicked === null) return;
     const pointer = event.detail > 0;
     clearTimeout(timer);
-    // React commits a click's update synchronously at the end of the event; a macrotask is enough and,
+    // the UI runtime commits a click's update synchronously at the end of the event; a macrotask is enough and,
     // unlike a frame callback, does not stall when the page renders slowly.
     timer = setTimeout(() => {
       const target = surface();

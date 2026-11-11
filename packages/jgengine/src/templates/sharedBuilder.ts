@@ -144,7 +144,7 @@ The runtime declares shared topology, scoped claim/accrue commands, fractional c
 
 Before content, write the first-hour balance sheet and prove the first tutorial verb works from spawn. The demo starts with 100 cash and income of 0.005 per second; replace those game-owned values deliberately. Keep costs visible at the placement cursor and display rejected commands.
 
-The standard CSS scans engine React and shell packages, including ChatPanel and JoinGate. Verify their rendered styling after changing Tailwind sources. Production budgets need a crowd test of command and presence read sets.
+The standard CSS scans engine UI and shell packages, including ChatPanel and JoinGate. Verify their rendered styling after changing Tailwind sources. Production budgets need a crowd test of command and presence read sets.
 ` },
   ];
   const paths = new Set(additions.map(file => file.path));

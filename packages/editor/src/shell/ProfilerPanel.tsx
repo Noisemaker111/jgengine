@@ -45,7 +45,7 @@ function BudgetBar({ simMs, outsideMs }: { simMs: number; outsideMs: number }) {
         <span className="text-amber-300">outside {outsideMs.toFixed(2)} ms</span>
       </div>
       <div className="text-[9px] leading-snug text-neutral-600">
-        Outside = frame − sim (render / React / GPU / GC). Same numbers as F2+D / debug_snapshot.
+        Outside = frame − sim (render / UI / GPU / GC). Same numbers as F2+D / debug_snapshot.
       </div>
     </div>
   );

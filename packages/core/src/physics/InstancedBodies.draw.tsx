@@ -27,7 +27,7 @@ const DEFAULT_BASE = new THREE.Color(0.62, 0.64, 0.68);
 /**
  * Renders a PhysicsWorld's box bodies as a single InstancedMesh — one draw call per batch.
  * Transforms are written directly into `instanceMatrix.array` each frame (bodies never touch
- * the per-entity React path). Reusable by any game: hand it a physics world and go.
+ * the per-entity UI path). Reusable by any game: hand it a physics world and go.
  * @capability physics-body-instances Draw every physics body as one instanced mesh
  * @internal
  */
@@ -130,7 +130,7 @@ export function instancedBodiesDraw(getProps: () => InstancedBodiesProps): Engin
 /**
  * Renders a PhysicsWorld's box bodies as a single InstancedMesh — one draw call per batch.
  * Transforms are written directly into `instanceMatrix.array` each frame (bodies never touch
- * the per-entity React path). Reusable by any game: hand it a physics world and go.
+ * the per-entity UI path). Reusable by any game: hand it a physics world and go.
  * @capability physics-body-instances Draw every physics body as one instanced mesh
  */
 export function InstancedBodies(props: InstancedBodiesProps) {

@@ -244,7 +244,7 @@ export function selectDialogueView(graph: DialogueGraph, nodeId: string): Dialog
  * Walk a branching {@link DialogueGraph}: hold the current node, expose its render-ready
  * view, and advance by choosing one of the current node's responses (each choice names the
  * node it leads to; a choice with no `to` ends the conversation). Purely a serializable
- * model — a React host renders `current()` and calls `choose(index)` — so no game
+ * model — a UI host renders `current()` and calls `choose(index)` — so no game
  * re-implements node lookup, choice-to-node traversal, or "am I at the end" bookkeeping.
  * `snapshot`/`restore` round-trip the run through a save.
  *

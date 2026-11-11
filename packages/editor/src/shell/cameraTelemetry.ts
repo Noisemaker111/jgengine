@@ -1,6 +1,6 @@
 /**
  * Per-frame camera orientation channel between the in-canvas probe and the DOM orientation
- * widget. Deliberately a mutable record, not React state: the probe writes every frame and the
+ * widget. Deliberately a mutable record, not UI state: the probe writes every frame and the
  * widget reads on its own rAF loop, applying styles directly — zero shell rerenders.
  */
 export interface CameraTelemetry {
@@ -42,7 +42,7 @@ export function createCameraTelemetry(): CameraTelemetry {
 
 const globalKey = "__jgengineEditorCameraTelemetry";
 
-/** Shared telemetry singleton — probe and widget may mount in different React trees. */
+/** Shared telemetry singleton — probe and widget may mount in different UI trees. */
 export function getCameraTelemetry(): CameraTelemetry {
   const root = globalThis as typeof globalThis & { [globalKey]?: CameraTelemetry };
   root[globalKey] ??= createCameraTelemetry();

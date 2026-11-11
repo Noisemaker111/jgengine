@@ -46,7 +46,7 @@ export function groundPadDraw({ pad, field }: GroundPadProps): EngineDraw {
   };
 }
 
-/** React mount for {@link groundPadDraw} while parents still render through the Canvas. */
+/** UI mount for {@link groundPadDraw} while parents still render through the Canvas. */
 export function GroundPad({ pad, field }: GroundPadProps) {
   useEngineDraw(() => groundPadDraw({ pad, field }), [pad, field]);
   return null;

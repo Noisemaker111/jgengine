@@ -200,7 +200,7 @@ export function useMarkers(markers: MarkerCollection): readonly MarkerView[] {
 
 /**
  * Re-render a component when a fog field reveals cells; returns its current cells.
- * @capability use-fog React binding that returns a fog-of-war field's live cells
+ * @capability use-fog UI binding that returns a fog-of-war field's live cells
  */
 export function useFog(fog: FogField): ReturnType<FogField["cells"]> {
   return useSyncExternalStore(fog.subscribe, fog.cells, fog.cells);
@@ -484,7 +484,7 @@ export interface MinimapChromeProps {
   markerRadius?: number;
   className?: string;
   /**
-   * Receives a handle that moves the drawn markers to a new view and positions without a React render
+   * Receives a handle that moves the drawn markers to a new view and positions without a UI render
    * (see {@link MinimapChromeHandle}); a map that follows the player each frame re-renders only when
    * its markers change.
    */

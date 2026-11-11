@@ -13,7 +13,7 @@ import { createShaderWarmup, deferUnlinkedDraws, firstUnlinkedDrawable, holdDraw
 /** Warmup state before the gate has run, so the loading screen covers the very first frame. @internal */
 export const SCENE_WARMUP_PENDING: ShaderWarmupState = { phase: "waiting", rounds: 0, programs: 0, planned: 0, deferred: 0, progress: 0, elapsedMs: 0 };
 
-/** Warmup progress held outside React state: see {@link createSceneWarmupStore}. @internal */
+/** Warmup progress held outside UI state: see {@link createSceneWarmupStore}. @internal */
 export interface SceneWarmupStore {
   get: () => ShaderWarmupState;
   set: (state: ShaderWarmupState) => void;

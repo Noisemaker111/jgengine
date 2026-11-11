@@ -17,7 +17,7 @@ import type { KitTone } from "@jgengine/core/ui/kit/uiKit.view";
 import { KitMeter } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 /**
- * Composable React renderers over the headless selection view model
+ * Composable UI renderers over the headless selection view model
  * (`@jgengine/core/ui/selectionModel`) — the data/renderer/chrome split for an RTS selection panel, a
  * party frame, or a squad summary. `useSelectionView` is the DATA/HOOK layer (summary + focus +
  * virtualization), `EntityPortrait`/`SelectionCollectionChrome` are composable
@@ -35,7 +35,7 @@ const SELECTION_KEYS: Record<string, SelectionFocusDirection> = {
   End: "last",
 };
 
-/** A minimal keyboard-event shape — a real `KeyboardEvent`/React synthetic satisfies it. */
+/** A minimal keyboard-event shape — a real `KeyboardEvent`/UI synthetic event satisfies it. */
 export interface SelectionKeyEvent {
   key: string;
   preventDefault(): void;

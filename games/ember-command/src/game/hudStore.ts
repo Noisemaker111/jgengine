@@ -1,6 +1,6 @@
 /** A tiny external store the HUD subscribes to via `useSyncExternalStore`. Systems snapshot live
  * counts into it a few times a second; the death handler stamps the final outcome. Kept separate
- * from `session` so React reads an immutable snapshot and only re-renders when a field changes. */
+ * from `session` so the UI reads an immutable snapshot and only re-renders when a field changes. */
 
 import type { CampaignReadout } from "./campaign";
 import type { FormationKind } from "./formations";

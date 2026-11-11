@@ -188,7 +188,7 @@ export function talentTreeViewFrom<TStat extends string = string>(
  * Project the existing talent model (`createTalentTree`) into a flat, serializable render view: every
  * node placed by branch + prerequisite-depth tier, tagged learned/available/locked/maxed, with its
  * inbound prerequisite edges (and whether each is met) and whether a point can be spent right now. It is
- * a pure read over the node defs plus a live {@link TalentTree}, so a React/canvas widget can lay out
+ * a pure read over the node defs plus a live {@link TalentTree}, so a UI/canvas widget can lay out
  * nodes, draw edges, and gate clicks without re-deriving topology or re-interpreting eligibility. The
  * model still owns allocation, requirements, and point rules — this only reshapes them for drawing, and
  * never interprets what a node *means* (ids, branches, and ranks stay opaque game data). This is the

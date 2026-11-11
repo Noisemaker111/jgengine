@@ -46,7 +46,7 @@ export type ProjectEntity = (
 
 /** The minimum an entry must carry; games extend it with their own display data. */
 export interface EntityFrameEntry {
-  /** Stable key across frames — used for React keys and deterministic stacking. */
+  /** Stable key across frames — used for UI keys and deterministic stacking. */
   id: string;
   /** World-space anchor, typically the entity's head (`[x, y + height, z]`). */
   worldPosition: readonly [number, number, number];
@@ -84,7 +84,7 @@ export interface EntityFrameLayoutOptions {
  * Pure layout core: projects each entry, drops the ones behind the camera,
  * off-screen (when `viewport` is set), or beyond `maxCount`, and returns the
  * survivors sorted farthest-first so nearer frames render last (on top). Stable
- * for equal depths via `id`. No React, no DOM — unit-testable in isolation.
+ * for equal depths via `id`. No UI runtime, no DOM — unit-testable in isolation.
  */
 export function layoutEntityFrames<E extends EntityFrameEntry>(
   entries: readonly E[],

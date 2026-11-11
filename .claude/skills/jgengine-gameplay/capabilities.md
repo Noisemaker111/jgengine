@@ -1041,11 +1041,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createUpgradeTree` (function) · `import { createUpgradeTree } from "@jgengine/core/progression/upgrades"`
 
-## use-dialogue-run — React hook binding a branching dialogue run to a component — re-renders as the player advances the conversation
+## use-dialogue-run — UI hook binding a branching dialogue run to a component — re-renders as the player advances the conversation
 
 - `useDialogueRun` (function) · `import { useDialogueRun } from "@jgengine/core/dialogue/dialogueView.view"`
 
-## use-event-ticker — React hook binding an event-ticker — re-renders when entries arrive or expire, returning the current newest-first views
+## use-event-ticker — UI hook binding an event-ticker — re-renders when entries arrive or expire, returning the current newest-first views
 
 - `useEventTicker` (function) · `import { useEventTicker } from "@jgengine/core/feed/killFeed.view"`
 
@@ -1057,15 +1057,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useNotifications` (function) · `import { useNotifications } from "@jgengine/core/notifications/notificationCenter.view"`
 
-## use-objective-banner — React hook binding an objective-banner controller — advances its clock per frame and returns the current banner view
+## use-objective-banner — UI hook binding an objective-banner controller — advances its clock per frame and returns the current banner view
 
 - `useObjectiveBanner` (function) · `import { useObjectiveBanner } from "@jgengine/core/mission/objectiveBanner.view"`
 
-## use-save-slots — React hook binding a save-slots metadata index — re-renders on change and returns the ordered slot list
+## use-save-slots — UI hook binding a save-slots metadata index — re-renders on change and returns the ordered slot list
 
 - `useSaveSlots` (function) · `import { useSaveSlots } from "@jgengine/core/save/saveSlots.view"`
 
-## use-shop-stock — React hook binding a shop-stock model — re-renders on any stock change and returns the entry list
+## use-shop-stock — UI hook binding a shop-stock model — re-renders on any stock change and returns the entry list
 
 - `useShopStock` (function) · `import { useShopStock } from "@jgengine/core/inventory/shopGrid.view"`
 

@@ -500,7 +500,7 @@ export function roadRibbonsDraw(getProps: () => RoadRibbonsProps): EngineDraw {
 
 /**
  * Renders every road that looks like `road` (equal {@link roadLookKey}) from their trimmed centerline
- * sub-paths â€” the React wrapper over {@link roadRibbonsDraw}.
+ * sub-paths â€” the UI wrapper over {@link roadRibbonsDraw}.
  */
 export function RoadRibbons(props: RoadRibbonsProps) {
   const latest = useRef<RoadRibbonsProps>(props);
@@ -592,7 +592,7 @@ function roadGroupDraw(getProps: () => { roads: readonly RoadEnvironmentDescript
 
 /**
  * The engine's one road renderer: `road()` descriptors from an environment and authored editor
- * paths (streets, race tracks, trails, routes) all draw here â€” the React wrapper over {@link roadsDraw}.
+ * paths (streets, race tracks, trails, routes) all draw here â€” the UI wrapper over {@link roadsDraw}.
  */
 export function roadsDraw(getProps: () => { roads: readonly RoadEnvironmentDescriptor[]; field: TerrainField }): EngineDraw {
   const root = new Group();
@@ -633,7 +633,7 @@ export function roadsDraw(getProps: () => { roads: readonly RoadEnvironmentDescr
 
 /**
  * The engine's one road renderer: `road()` descriptors from an environment and authored editor
- * paths (streets, race tracks, trails, routes) all draw here â€” the React wrapper over {@link roadsDraw}.
+ * paths (streets, race tracks, trails, routes) all draw here â€” the UI wrapper over {@link roadsDraw}.
  */
 export function Roads({ roads, field }: { roads: readonly RoadEnvironmentDescriptor[]; field: TerrainField }) {
   const latest = useRef<{ roads: readonly RoadEnvironmentDescriptor[]; field: TerrainField }>({ roads, field });

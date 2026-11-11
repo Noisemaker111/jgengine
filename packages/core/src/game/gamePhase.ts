@@ -14,7 +14,7 @@ export type GamePhase = "menu" | "playing" | "paused" | "ended";
 export const GAME_PHASE_STORE_KEY = "jg.phase";
 
 /**
- * Set the current phase. Publishes it to `ctx.game.store` (React reads it via
+ * Set the current phase. Publishes it to `ctx.game.store` (the UI reads it via
  * `useGamePhase`) and gates the shell's on-screen touch controls in one call —
  * `playing` shows them, every other phase hides them. This is the whole
  * "main menu shouldn't show touch controls" wiring: call it once per phase

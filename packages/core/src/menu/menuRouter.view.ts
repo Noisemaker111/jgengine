@@ -9,7 +9,7 @@ export type MenuStackAction<Id extends string> =
 
 /**
  * The pure screen-stack transition behind {@link useMenuRouter}. Exported so a game can drive the
- * same navigation from its own store or a replayable command log instead of React state.
+ * same navigation from its own store or a replayable command log instead of UI state.
  *
  * @capability menu-stack-reducer pure push/back/replace/reset transitions for a menu screen stack
  */

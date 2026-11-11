@@ -19,7 +19,7 @@ export interface SaveStoreView<T> {
 }
 
 /**
- * Bind a {@link SaveStore} to React: returns the live `value` and `status` and
+ * Bind a {@link SaveStore} to the UI: returns the live `value` and `status` and
  * re-renders whenever either changes. By default it calls `load()` once on
  * mount (pass `{ load: false }` to hydrate yourself). The same hook works for
  * offline (localStorage) and cloud (Convex/DB) saves — only the store's backend

@@ -194,9 +194,9 @@ function warnMissingModel(message: string): void {
  * failed on and decide what the loader should hand back. A diagnosed broken asset
  * (missing / HTML dev-server fallback / corrupt / unsupported) resolves via
  * `onLoad` to a {@link createFallbackModel} primitive so the failure is contained
- * at the load seam for **every** consumer — no reliance on a React error boundary
+ * at the load seam for **every** consumer — no reliance on a UI error boundary
  * catching a rejected Suspense promise, which does not fire reliably for async
- * loader rejections inside the React reconciler. Only a genuine parse
+ * loader rejections inside the UI reconciler. Only a genuine parse
  * error over bytes that still look like a valid model (`diagnosis.ok`) is surfaced
  * through `onError`. Split out from the loader so it is unit-testable without a GL
  * context; `overrides` inject the probe and warning sink in tests.

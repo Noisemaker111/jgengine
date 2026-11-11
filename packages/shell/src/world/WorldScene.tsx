@@ -88,7 +88,7 @@ function trackedVisual(parent: THREE.Object3D, root: THREE.Object3D): { dispose(
 }
 
 interface EntityMarkerSnapshot {
-  /** Custom React content claimed this entity (never `null`/`undefined`). */
+  /** Custom UI content claimed this entity (never `null`/`undefined`). */
   hasCustom: boolean;
   /** `renderEntity` was absent entirely (`undefined`), which alone gates crowd batching. */
   customMissing: boolean;
@@ -107,7 +107,7 @@ type EntityVisualKind = "custom" | "model" | "sprite" | "prop" | "capsule";
  * One entity's marker as an {@link EngineDraw}: pose writes, render visibility, culling, crowd
  * batching and LOD tiers in `frame`; selection/target rings and the visual branch (custom portal,
  * model, sprite, or primitive fallback) reconciled in `update`. `markerRoot` and `contentGroup`
- * are React-created so {@link SceneObjectPortal} can parent custom content under them on either
+ * are UI-created so {@link SceneObjectPortal} can parent custom content under them on either
  * host; the draw adds `contentGroup` under `markerRoot` itself.
  */
 function entityMarkerDraw(options: {

@@ -52,7 +52,7 @@ export interface FloatingTextFieldConfig {
 
 /** A live entry resolved for rendering: current world position and fade/scale over life. */
 export interface FloatingTextView {
-  /** Stable, monotonically increasing id assigned at emit — usable as a React key. */
+  /** Stable, monotonically increasing id assigned at emit — usable as a UI key. */
   id: number;
   /** Current world position with rise (Y) and drift (X) applied. */
   position: FloatingTextPosition;

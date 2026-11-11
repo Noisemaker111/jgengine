@@ -234,7 +234,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   });
 
   // Built-in inventory mutation commands so a HUD grid drives moves/splits through the notifying
-  // command path (a raw InventorySet mutation would not re-render React). Each resolves the acting
+  // command path (a raw InventorySet mutation would not re-render the UI). Each resolves the acting
   // user's own inventory, so it respects `privatePerUser` replication.
   const knownInventory = (inventoryId: string): boolean => layouts[inventoryId] !== undefined;
   const slotInRange = (inventoryId: string, slot: unknown): slot is number =>

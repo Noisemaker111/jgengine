@@ -140,7 +140,7 @@ editor/preset-written scene data (`environmentContentFromDocument`), not a world
 `parentSpace` positions are local to that space — convert at seams only.
 
 Display-only map consumers use the portable `MarkerView` / `MarkerSource`
-contracts in `@jgengine/core/map/markers`; the React integration and complete
+contracts in `@jgengine/core/map/markers`; the UI integration and complete
 external-store walkthrough are owned by the
 [portable minimap recipe](../jgengine-ui/recipes/portable-minimap.md).
 

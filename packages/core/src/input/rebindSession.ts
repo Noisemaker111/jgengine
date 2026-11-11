@@ -100,7 +100,7 @@ export interface RebindSession {
   row(actionId: string): RebindRow | null;
   /**
    * Arm capture for an action: the next {@link RebindSession.capture} assigns to
-   * it. A React host shows "Press a key…" for the armed action. No-op for an
+   * it. A UI host shows "Press a key…" for the armed action. No-op for an
    * unknown or locked id.
    */
   beginCapture(actionId: string): void;

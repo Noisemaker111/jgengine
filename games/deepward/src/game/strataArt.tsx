@@ -146,7 +146,7 @@ const hunting = (creature: Creature): boolean => creature.mode === "winding" || 
 export type CreatureRead = (id: string) => Creature | undefined;
 /**
  * A creature's body: a rigged hand, courier or tank-crawler from the same pipeline as the Fitter. It
- * walks on the render frame; React re-renders it only when its clip or its health bar changes.
+ * walks on the render frame; UI re-renders it only when its clip or its health bar changes.
  */
 function CreatureModel({ id, read }: { id: string; read: CreatureRead }) {
   const group = useMemo(() => new Group(), []);

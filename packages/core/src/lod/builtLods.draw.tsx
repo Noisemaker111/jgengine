@@ -20,7 +20,7 @@ import type { ImpostorAtlas } from "@jgengine/core/lod/impostor.draw";
 import { scatterModelBaseTransform } from "@jgengine/core/scatter/scatterModels.draw";
 import { trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
 
-// Draws cannot read the React context, so MeshLodSettings also pushes its config on a module stack;
+// Draws cannot read the UI context, so MeshLodSettings also pushes its config on a module stack;
 // the world canvas is the only tree that sets it, and nested preview canvases never do.
 const meshLodStack: (MeshLodConfig | undefined)[] = [];
 

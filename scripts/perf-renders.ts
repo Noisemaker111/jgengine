@@ -1,9 +1,9 @@
 // The harness half of the render counter (`packages/core/src/devtools/renderCounter.ts`): ship it to
-// a page ahead of React, then read which components rendered while the game played.
+// a page ahead of its scripts, then read which components rendered while the game played.
 import type { CdpSession } from "./browser-lib";
 import { installRenderCounter, type RenderCounts } from "../packages/core/src/devtools/renderCounter";
 
-/** The counter as a page script; it must run before the page's own scripts load React. */
+/** The counter as a page script; it must run before the page's own scripts load the UI runtime. */
 export const RENDER_COUNTER_SCRIPT = `(${installRenderCounter.toString()})(globalThis);`;
 
 /** Install the counter for every document this session opens from now on. */
@@ -38,7 +38,7 @@ export function renderRenderCounts(counts: RunRenderCounts, title: string, top =
   const frames = Math.max(counts.frames, 1);
   const perTick = counts.ticks === null || counts.ticks <= 0 ? "" : `, ${counts.ticks} ticks: ${(counts.commits / counts.ticks).toFixed(2)} commits/tick, ${(counts.renders / counts.ticks).toFixed(1)} renders/tick`;
   return [
-    `${title}: ${counts.commits} React commits and ${counts.renders} component renders over ${counts.seconds} s and ${counts.frames} frames (${Math.round((counts.commits / Math.max(counts.seconds, 0.001)) * 10) / 10} commits/s, ${(counts.commits / frames).toFixed(2)} commits/frame, ${(counts.renders / frames).toFixed(1)} renders/frame${perTick})`,
+    `${title}: ${counts.commits} UI commits and ${counts.renders} component renders over ${counts.seconds} s and ${counts.frames} frames (${Math.round((counts.commits / Math.max(counts.seconds, 0.001)) * 10) / 10} commits/s, ${(counts.commits / frames).toFixed(2)} commits/frame, ${(counts.renders / frames).toFixed(1)} renders/frame${perTick})`,
     ...counts.components.slice(0, top).map((entry) => `  ${entry.name.padEnd(36)} ${String(entry.renders).padStart(7)}  ${entry.perSecond.toFixed(1).padStart(7)}/s  ${entry.perFrame.toFixed(2).padStart(6)}/frame`),
   ].join("\n");
 }

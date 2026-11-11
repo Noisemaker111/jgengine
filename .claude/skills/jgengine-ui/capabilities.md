@@ -68,7 +68,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useBrowserSuspension` (function) · `import { useBrowserSuspension } from "@jgengine/react"`
 
-## browser-suspension-observer — observe browser interruptions outside React with caller-owned pause policy and event sources
+## browser-suspension-observer — observe browser interruptions outside the UI runtime with caller-owned pause policy and event sources
 
 - `observeBrowserSuspension` (function) · `import { observeBrowserSuspension } from "@jgengine/react"`
 
@@ -499,7 +499,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `LiveText` (const) · `import { LiveText } from "@jgengine/core/ui/liveBind.view"`
 
-## live-value — write a per-frame HUD value (text, bar, dial, colour) straight to its DOM node, never through React state
+## live-value — write a per-frame HUD value (text, bar, dial, colour) straight to its DOM node, never through UI state
 
 - `useFrameBind` (function) · `import { useFrameBind } from "@jgengine/core/ui/liveBind.view"`
 
@@ -935,23 +935,23 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useAccessibilitySettings` (function) · `import { useAccessibilitySettings } from "@jgengine/core/settings/accessibilitySettings.view"`
 
-## use-camera-shake — React hook reading a camera-shake controller's live trauma and kind
+## use-camera-shake — UI hook reading a camera-shake controller's live trauma and kind
 
 - `useCameraShakeReadout` (function) · `import { useCameraShakeReadout } from "@jgengine/react"`
 
-## use-combo-meter — React hook binding a combo meter — re-renders per frame so the decay-window bar drains live and returns the current combo view
+## use-combo-meter — UI hook binding a combo meter — re-renders per frame so the decay-window bar drains live and returns the current combo view
 
 - `useComboMeter` (function) · `import { useComboMeter } from "@jgengine/react"`
 
-## use-damage-direction — React hook that animates a damage-direction tracker's fade with requestAnimationFrame and re-renders its live indicators
+## use-damage-direction — UI hook that animates a damage-direction tracker's fade with requestAnimationFrame and re-renders its live indicators
 
 - `useDamageDirection` (function) · `import { useDamageDirection } from "@jgengine/react"`
 
-## use-dialogue-run — React hook binding a branching dialogue run to a component — re-renders as the player advances the conversation
+## use-dialogue-run — UI hook binding a branching dialogue run to a component — re-renders as the player advances the conversation
 
 - `useDialogueRun` (function) · `import { useDialogueRun } from "@jgengine/react"`
 
-## use-event-ticker — React hook binding an event-ticker — re-renders when entries arrive or expire, returning the current newest-first views
+## use-event-ticker — UI hook binding an event-ticker — re-renders when entries arrive or expire, returning the current newest-first views
 
 - `useEventTicker` (function) · `import { useEventTicker } from "@jgengine/react"`
 
@@ -959,7 +959,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useFastTravel` (function) · `import { useFastTravel } from "@jgengine/react"`
 
-## use-fog — React binding that returns a fog-of-war field's live cells
+## use-fog — UI binding that returns a fog-of-war field's live cells
 
 - `useFog` (function) · `import { useFog } from "@jgengine/react"`
 
@@ -967,7 +967,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useHoldVsToggle` (function) · `import { useHoldVsToggle } from "@jgengine/core/settings/accessibilitySettings.view"`
 
-## use-interaction-prompt — React hook binding a prompt registry to a moving player — resolves the nearest interactable prompt and returns the active one
+## use-interaction-prompt — UI hook binding a prompt registry to a moving player — resolves the nearest interactable prompt and returns the active one
 
 - `useInteractionPrompt` (function) · `import { useInteractionPrompt } from "@jgengine/react"`
 
@@ -975,7 +975,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useMenuNav` (function) · `import { useMenuNav } from "@jgengine/react"`
 
-## use-modal-stack — React hook binding a modal stack to a component — re-renders on push/pop/resolve
+## use-modal-stack — UI hook binding a modal stack to a component — re-renders on push/pop/resolve
 
 - `useModalStack` (function) · `import { useModalStack } from "@jgengine/react"`
 
@@ -983,7 +983,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useNotifications` (function) · `import { useNotifications } from "@jgengine/react"`
 
-## use-objective-banner — React hook binding an objective-banner controller — advances its clock per frame and returns the current banner view
+## use-objective-banner — UI hook binding an objective-banner controller — advances its clock per frame and returns the current banner view
 
 - `useObjectiveBanner` (function) · `import { useObjectiveBanner } from "@jgengine/react"`
 
@@ -991,23 +991,23 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `usePanels` (function) · `import { usePanels } from "@jgengine/react"`
 
-## use-rebind-session — React hook that re-renders a component whenever a rebind session changes
+## use-rebind-session — UI hook that re-renders a component whenever a rebind session changes
 
 - `useRebindSession` (function) · `import { useRebindSession } from "@jgengine/react"`
 
-## use-save-slots — React hook binding a save-slots metadata index — re-renders on change and returns the ordered slot list
+## use-save-slots — UI hook binding a save-slots metadata index — re-renders on change and returns the ordered slot list
 
 - `useSaveSlots` (function) · `import { useSaveSlots } from "@jgengine/react"`
 
-## use-sequence-director — React hook that drives a cutscene director's per-frame tick loop and exposes playhead/progress + play/pause/skip controls
+## use-sequence-director — UI hook that drives a cutscene director's per-frame tick loop and exposes playhead/progress + play/pause/skip controls
 
 - `useSequenceDirector` (function) · `import { useSequenceDirector } from "@jgengine/react"`
 
-## use-shop-stock — React hook binding a shop-stock model — re-renders on any stock change and returns the entry list
+## use-shop-stock — UI hook binding a shop-stock model — re-renders on any stock change and returns the entry list
 
 - `useShopStock` (function) · `import { useShopStock } from "@jgengine/react"`
 
-## use-timer — React hook binding one timer to a component with a per-frame re-read
+## use-timer — UI hook binding one timer to a component with a per-frame re-read
 
 - `useTimerRead` (function) · `import { useTimerRead } from "@jgengine/react"`
 
@@ -1019,11 +1019,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useViewportScrollLock` (function) · `import { useViewportScrollLock } from "@jgengine/react"`
 
-## use-wave-runner — React hook that subscribes to a wave runner and returns its pooled current-wave view
+## use-wave-runner — UI hook that subscribes to a wave runner and returns its pooled current-wave view
 
 - `useWaveRunner` (function) · `import { useWaveRunner } from "@jgengine/react"`
 
-## use-waypoints — React binding that returns a waypoint store's live list (or a passthrough array)
+## use-waypoints — UI binding that returns a waypoint store's live list (or a passthrough array)
 
 - `useWaypoints` (function) · `import { useWaypoints } from "@jgengine/react"`
 

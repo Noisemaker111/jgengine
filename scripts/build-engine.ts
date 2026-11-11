@@ -1,5 +1,5 @@
 // Builds @jgengine/core, @jgengine/react and @jgengine/shell as one program. A feature folder in core
-// holds its React view and three.js draw files, so the three packages import each other and no
+// holds its view (engine JSX runtime) and three.js draw files, so the three packages import each other and no
 // package-by-package order exists. Each package's tsconfig.build.json still names what it emits; this
 // compiles their union once and moves each package's slice into its own dist/.
 import { spawnSync } from "node:child_process";

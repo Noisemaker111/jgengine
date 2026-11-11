@@ -12,7 +12,7 @@ import { subscribeFrameBind, useFrameBind } from "../ui/liveBind.view";
  * re-renders only when an entry arrives or ages out (checked each frame while `animate`); the fade
  * itself is drawn per frame by {@link KillFeed} without a render.
  *
- * @capability use-event-ticker React hook binding an event-ticker — re-renders when entries arrive or expire, returning the current newest-first views
+ * @capability use-event-ticker UI hook binding an event-ticker — re-renders when entries arrive or expire, returning the current newest-first views
  */
 export function useEventTicker(ticker: EventTicker, animate = true): EventTickerView[] {
   const subscribe = useCallback(

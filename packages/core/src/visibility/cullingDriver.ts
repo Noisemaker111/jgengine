@@ -157,7 +157,7 @@ export function buildCullingDriver(ctx: GameContext, config: VisibilityConfig | 
     return objectRows;
   }
 
-  // Store listeners attach on the first update, not at build, so a driver React builds and drops never
+  // Store listeners attach on the first update, not at build, so a driver the UI builds and drops never
   // holds one, and one disposed and then updated again re-attaches. Attaching counts as a change, so the
   // first walk after it reads everything the store did while nobody listened.
   let entityChanges = 0;

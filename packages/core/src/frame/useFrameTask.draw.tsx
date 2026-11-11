@@ -5,7 +5,7 @@ import { useFrameJoin } from "./engineHost.draw";
 import type { EngineFrameState } from "./engineLoop.draw";
 
 /**
- * A per-frame callback on the shared frame board, for a React component: the
+ * A per-frame callback on the shared frame board, for a UI component: the
  * callback always sees the latest render's closure (a ref swaps it in place),
  * and the board is joined once per priority.
  * @internal

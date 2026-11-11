@@ -1,6 +1,6 @@
 /**
  * The phase timing behind an animated menu screen: closed → entering → open → exiting → closed. Pure
- * timing over an injected clock, so a React block can animate with CSS and still know exactly when an
+ * timing over an injected clock, so a UI block can animate with CSS and still know exactly when an
  * exit finished and the screen may unmount. Reduced motion collapses every duration to zero instead
  * of skipping the state machine, so callers never branch on it.
  */

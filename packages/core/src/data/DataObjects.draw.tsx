@@ -67,7 +67,7 @@ function boxLayout<T>(data: readonly T[], props: DataObjectsProps<T>): BoxLayout
   return { positions, targets, delays, colors };
 }
 
-/** The instanced-box path as an {@link EngineDraw}; `renderItem` stays on the React wrapper. */
+/** The instanced-box path as an {@link EngineDraw}; `renderItem` stays on the UI wrapper. */
 export function dataObjectsDraw<T>(getProps: () => DataObjectsProps<T>, data: readonly T[]): EngineDraw {
   const group = new THREE.Group();
   const layout = boxLayout(data, getProps());

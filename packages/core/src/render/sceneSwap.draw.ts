@@ -6,7 +6,7 @@ import { prepareSceneView } from "./shaderWarmup.draw";
 
 /**
  * Change place (a dive, a lift, a district, a level) without a frozen frame. Returns the place to
- * draw, which trails `wanted` while React builds the new place in the background a few milliseconds
+ * draw, which trails `wanted` while the UI builds the new place in the background a few milliseconds
  * at a time, instead of mounting it in one long blocking pass; once it is in, the shader warmup
  * compiles what it gained and waits for its models, so its first frame on screen links nothing. The
  * frame loop keeps running throughout (models load and upload on it) and the old place still draws

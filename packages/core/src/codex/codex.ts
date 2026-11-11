@@ -71,7 +71,7 @@ export interface CodexOptions<TMeta = unknown> {
  * A codex / bestiary / lorebook: a fixed set of defined entries plus per-player
  * discovery tracking, fragment scanning (learn an entry after N scans), with categories, secret masking, completion, an
  * `onDiscover` seam, and serializable `snapshot`/`restore`. The view `list()`
- * keeps a stable identity between changes so React reads it through
+ * keeps a stable identity between changes so the UI reads it through
  * `useSyncExternalStore` without re-projecting each frame.
  *
  * @capability codex codex/bestiary/lorebook of defined entries with discovery tracking, fragment scans, categories, secret masking, completion, an onDiscover seam, and serializable state

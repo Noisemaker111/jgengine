@@ -85,7 +85,7 @@ export function useGameStore<T>(
   const cacheRef = useRef(createSelectCache<number, T>());
   const heatRef = useRef<ReturnType<typeof createSelectionHeat> | null>(null);
   const hotRef = useRef<PerFrameRenderError | null>(null);
-  // Named on the first render, while the component is on the stack: the store reads the snapshot later, from React's own code.
+  // Named on the first render, while the component is on the stack: the store reads the snapshot later, from the UI runtime's own code.
   const nameRef = useRef("a component");
   if (WATCH_PACE && heatRef.current === null) {
     heatRef.current = createSelectionHeat();
@@ -256,7 +256,7 @@ export function useInventory(inventoryId: string): readonly InventorySlot[] {
   return useGameStore((ctx) => ctx.player.inventory.state(inventoryId).slots);
 }
 
-/** Live slots plus `move`/`split` actions bound to `inventoryId`, routed through the notifying `inventory.move`/`inventory.split` commands so React re-renders. */
+/** Live slots plus `move`/`split` actions bound to `inventoryId`, routed through the notifying `inventory.move`/`inventory.split` commands so UI re-renders. */
 export interface InventoryGridBinding {
   slots: readonly InventorySlot[];
   move(from: number, to: number): void;

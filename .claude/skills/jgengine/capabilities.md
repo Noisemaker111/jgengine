@@ -16,7 +16,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useBrowserSuspension` (function) · `import { useBrowserSuspension } from "@jgengine/core/runtime/browserLifecycle.view"`
 
-## browser-suspension-observer — observe browser interruptions outside React with caller-owned pause policy and event sources
+## browser-suspension-observer — observe browser interruptions outside the UI runtime with caller-owned pause policy and event sources
 
 - `observeBrowserSuspension` (function) · `import { observeBrowserSuspension } from "@jgengine/core/runtime/browserLifecycle.view"`
 

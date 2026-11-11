@@ -71,7 +71,7 @@ export interface ObjectStore {
   setSlots(instanceId: string, slots: InventoryState | undefined): boolean;
   get(instanceId: string): SceneObject | null;
   list(filter?: ObjectListFilter): readonly SceneObject[];
-  /** Stable-identity list of all placed object ids; identity changes only on place/remove, not on move/rotate/setVisual. Pair with {@link subscribeMembership} for membership-only React subscriptions (#625). */
+  /** Stable-identity list of all placed object ids; identity changes only on place/remove, not on move/rotate/setVisual. Pair with {@link subscribeMembership} for membership-only UI subscriptions (#625). */
   ids(): readonly string[];
   /**
    * Counts placements (`place` and `hydrate`). A membership change that leaves it alone only removed

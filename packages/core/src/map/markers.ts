@@ -98,7 +98,7 @@ export interface MarkerSet<TMeta = unknown> {
 /**
  * Observable marker snapshots owned by an external project. `getSnapshot`
  * must return the same array identity until the source changes and calls its
- * subscribers, matching React's external-store contract.
+ * subscribers, matching the external-store contract (`useSyncExternalStore`).
  */
 export interface MarkerSource<TMarker extends MarkerView = MarkerView> {
   subscribe(listener: () => void): () => void;
@@ -155,7 +155,7 @@ function projectedSnapshot<TEntity, TMarker extends MarkerView>(
 
 /**
  * Adapt a caller-owned array/store to an observable marker source. Projection
- * is cached between source changes, so React reads do not copy the collection
+ * is cached between source changes, so the UI reads do not copy the collection
  * per frame. The caller retains ownership of entities, updates, persistence,
  * and subscription scheduling.
  *

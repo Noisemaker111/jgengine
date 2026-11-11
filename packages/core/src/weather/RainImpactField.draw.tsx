@@ -39,7 +39,7 @@ type RainImpactMaterialUniforms = {
 
 /**
  * Bounded ground ripples sharing precipitation intensity and authoritative animation time.
- * `uniforms` is the resolved shared set (the React path's `useWeatherUniformSet`, already
+ * `uniforms` is the resolved shared set (the UI path's `useWeatherUniformSet`, already
  * ticked); without it the draw owns a local set and ticks it on the board at weather priority.
  * @capability rain-ground-ripples Render bounded rain impacts on exposed terrain using the shared precipitation clock.
  */

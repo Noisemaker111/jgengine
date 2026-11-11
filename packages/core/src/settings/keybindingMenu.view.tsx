@@ -10,7 +10,7 @@ import { hudType } from "@jgengine/core/hud/hudTokens";
  * Subscribe to a rebind session and re-render on every change (capture, reset,
  * arm/disarm, restore). Returns the session unchanged for convenient inline use.
  *
- * @capability use-rebind-session React hook that re-renders a component whenever a rebind session changes
+ * @capability use-rebind-session UI hook that re-renders a component whenever a rebind session changes
  */
 export function useRebindSession(session: RebindSession): RebindSession {
   const [, bump] = useReducer((n: number) => n + 1, 0);

@@ -5,7 +5,7 @@ import type { EngineFrameState, EngineFrameloop } from "./engineLoop.draw";
 import { joinFrameTask, type FrameTask } from "./frameBoard.draw";
 
 /**
- * The render host a React subtree draws through: the engine loop's provider.
+ * The render host a UI subtree draws through: the engine loop's provider.
  * Draw wrappers read `frame` for the {@link EngineFrameState} facade; the
  * optional controls cover the frameloop APIs drivers use.
  */
@@ -20,7 +20,7 @@ export interface EngineHost {
 
 const EngineHostContext = createContext<EngineHost | null>(null);
 
-/** Provide the render host to a React subtree. @internal */
+/** Provide the render host to a UI subtree. @internal */
 export function EngineHostProvider({ host, children }: { host: EngineHost; children?: ReactNode }) {
   return <EngineHostContext.Provider value={host}>{children}</EngineHostContext.Provider>;
 }

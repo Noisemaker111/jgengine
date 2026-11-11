@@ -296,7 +296,7 @@ class BatchMembership {
 
 /**
  * The objects one batch still draws through the individual renderer, aggregated across its levels
- * and its fallbacks. Contributors key their entries; the batch flushes the union to React.
+ * and its fallbacks. Contributors key their entries; the batch flushes the union to the UI.
  */
 class StaticSingles {
   private readonly entries = new Map<string, SceneObject>();
@@ -1263,7 +1263,7 @@ function loadedStaticDraw(env: StaticBatchEnv, args: {
 /**
  * Render compatible authored or `scenery` props as shared model draws, preserving unsupported models â€”
  * the draw-side `StaticObjectModels`. Objects that cannot batch (excluded at runtime, uninstanceable
- * levels, failed harvests) are reported through `singles` for the React `single` renderer.
+ * levels, failed harvests) are reported through `singles` for the UI `single` renderer.
  * @internal
  */
 export function staticObjectBatchDraw(getEnv: () => {

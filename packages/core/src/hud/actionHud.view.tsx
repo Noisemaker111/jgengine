@@ -21,7 +21,7 @@ import { HUD_FOCUS_RING, hudElevation, hudFont, hudType } from "./hudTokens";
 import { Keycap } from "@jgengine/core/input/keyHint.view";
 
 /**
- * Composable React renderers over the headless action view model (`@jgengine/core/ui/actionModel`) —
+ * Composable UI renderers over the headless action view model (`@jgengine/core/ui/actionModel`) —
  * the data/renderer/chrome split for an RTS command card, an ability action bar, a build menu, or a
  * radial. `useActionBar` is the DATA/HOOK layer (resolution + focus/hover/keyboard/hotkey), `ActionBarChrome`
  * is the composable RENDERER (swap `renderItem` for custom chrome, or ignore it and consume the model
@@ -103,7 +103,7 @@ export function actionBarKeyAction(
   return hotkeyId === null ? { handled: false } : { handled: true, focusId: hotkeyId, activateId: hotkeyId };
 }
 
-/** A minimal keyboard-event shape — a real `KeyboardEvent`/React synthetic satisfies it. */
+/** A minimal keyboard-event shape — a real `KeyboardEvent`/UI synthetic event satisfies it. */
 export interface ActionKeyEvent {
   key: string;
   preventDefault(): void;

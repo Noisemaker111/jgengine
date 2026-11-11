@@ -69,7 +69,7 @@ function loadAtlasTexture(url: string): Promise<THREE.Texture> {
  * batch. Each instance picks its atlas frame via a per-instance UV offset attribute patched into
  * the material's vertex shader, so platformer/puzzle-grid presentation never needs one draw call
  * per sprite. Transforms and UV offsets are written directly into the mesh's typed arrays each
- * frame from a plain instance list (bodies never touch the per-entity React path).
+ * frame from a plain instance list (bodies never touch the per-entity UI path).
  * @capability sprite-batch Draw many atlas sprites in one instanced draw
  */
 export function spriteBatchDraw(getProps: () => SpriteBatchProps): EngineDraw {

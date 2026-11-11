@@ -33,7 +33,7 @@ function LoadingPresentation({ ctx }: { ctx: GameContext }) {
 }
 
 function PresentationReveal({ onReveal }: { onReveal?: (() => void) | undefined }) {
-  // React repeats layout effects when a suspended tree becomes visible again.
+  // The UI runtime repeats layout effects when a suspended tree becomes visible again.
   useLayoutEffect(() => { onReveal?.(); });
   return null;
 }

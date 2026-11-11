@@ -417,12 +417,12 @@
 ## @jgengine/core/anim/characterGlance.draw
 
 - `DEFAULT_GLANCE` (const): const DEFAULT_GLANCE: GlanceTuning — Default glance: starts at 7 m, lets go at 8.5 m, head turns up to 65° sideways and 30° up or down.
-- `GlanceDriver` (class): class GlanceDriver — The default head glance without React: resolves the rig once, then {@link pose} turns the head toward the local player each frame. `dispose` restores the animated pose. Shared by the hook and the model draw.
+- `GlanceDriver` (class): class GlanceDriver — The default head glance without the UI runtime: resolves the rig once, then {@link pose} turns the head toward the local player each frame. `dispose` restores the animated pose. Shared by the hook and the model draw.
 - `GlanceDriverOptions` (interface): interface GlanceDriverOptions { scene: THREE.Object3D; enabled: boolean; ctx: GameContext | null; instanceId?: string | undefined; maxCameraDistance: number } — ⚠ undocumented
 - `GlanceRig` (interface): interface GlanceRig — Head and neck bones the glance turns, found by name on the loaded rig.
 - `GlanceState` (interface): interface GlanceState — Carried between frames: the smoothed aim and the faded weight.
 - `GlanceTuning` (interface): interface GlanceTuning — Tuning for the default head turn a rigged character makes toward the local player. Angles are radians, distances metres.
-- `useCharacterGlance` (function): function useCharacterGlance(scene: THREE.Object3D, enabled: boolean, ctx: GameContext | null, instanceId: string | undefined, maxCameraDistance: number): void — Default glance for a rigged character: its head turns toward the local player when they come close, from any angle in front of it, and turns back when they leave. The local player's own model never glances. `maxCameraDistance` skips the work for characters too far away to read. A thin React shell over {@link GlanceDriver}.
+- `useCharacterGlance` (function): function useCharacterGlance(scene: THREE.Object3D, enabled: boolean, ctx: GameContext | null, instanceId: string | undefined, maxCameraDistance: number): void — Default glance for a rigged character: its head turns toward the local player when they come close, from any angle in front of it, and turns back when they leave. The local player's own model never glances. `maxCameraDistance` skips the work for characters too far away to read. A thin UI shell over {@link GlanceDriver}.
 
 ## @jgengine/core/anim/characterMotion
 
@@ -437,12 +437,12 @@
 
 - `CharacterMotionContext` (const): const CharacterMotionContext: ContextType<false | CharacterMotionConfig | undefined> — The game's own character-motion layer (`scene.characterMotion`); the shell provides it.
 - `drawCharacterMotion` (function): function drawCharacterMotion(model: CharacterMotionConfig | false | undefined, ctx: GameContext | null, instanceId: string | undefined): CharacterMotionParts — The resolved parts of the default character motion for draw code.
-- `noteGameCharacterMotion` (function): function noteGameCharacterMotion(layer: CharacterMotionConfig | false | undefined): void — The game-level character-motion layer for draw code, which has no React context.
+- `noteGameCharacterMotion` (function): function noteGameCharacterMotion(layer: CharacterMotionConfig | false | undefined): void — The game-level character-motion layer for draw code, which has no UI context.
 - `useCharacterMotion` (function): function useCharacterMotion(model: CharacterMotionConfig | false | undefined, ctx: GameContext | null, instanceId: string | undefined): CharacterMotionParts — The parts of the default character motion this entity runs: the game's layer, then its model's, then the entity's own `characterMotion`, which re-renders the model when it changes.
 
 ## @jgengine/core/anim/crowdRegistry.draw
 
-- `CharacterCrowdRegistry` (class): class CharacterCrowdRegistry — The characters the crowd layer is currently drawing, written by their entity markers each frame. It holds poses rather than React state: 71 pedestrians writing matrices must not re-render the world, and the crowd batch reads the same entries back to fill its instance buffers.
+- `CharacterCrowdRegistry` (class): class CharacterCrowdRegistry — The characters the crowd layer is currently drawing, written by their entity markers each frame. It holds poses rather than UI state: 71 pedestrians writing matrices must not re-render the world, and the crowd batch reads the same entries back to fill its instance buffers.
 - `crowdEligible` (function): function crowdEligible(model: ModelConfig | undefined): model is ModelConfig — Whether a model can leave its own rig for the GPU crowd path: one whose drawn result a batch can reproduce. A rigged, clip-played, plain model qualifies, and so does a model with no animation at all (a static crowd character) — it has no playback to lose. A model that needs per-entity materials, wind, hidden nodes, IK, attachments or a part composition keeps its own rig.
 - `crowdKindOf` (function): function crowdKindOf(model: ModelConfig): string — The identity a character model shares with every other model the GPU crowd can draw: rig url, height normalization and material override. The override's colour is left out: the batch draws it per instance ({@link crowdTintOf}), so traffic resprayed four ways is one draw per material, not four. Whether there is a colour stays in the key, since a tinted batch draws its paint white.
 
@@ -533,7 +533,7 @@
 
 - `GraphPose` (interface): interface GraphPose — A mixer set up to show {@link AnimGraph} output on a rig; see {@link createGraphPose}.
 - `ModelAnimationDiagnostic` (interface): interface ModelAnimationDiagnostic — A repairable mismatch between a model animation config and its imported rig.
-- `ModelAnimationDriver` (class): class ModelAnimationDriver — The engine's model animation driver without React: the same mixer `useModelAnimation` runs — `"auto"` derivation, speed-driven crossfades, one-shots from game events, held poses, death clamp, graph playback with root motion, and character-LOD pose pacing. `frame(state, delta)` poses the rig once per rendered frame; `dispose()` releases the mixer and events.
+- `ModelAnimationDriver` (class): class ModelAnimationDriver — The engine's model animation driver without the UI runtime: the same mixer `useModelAnimation` runs — `"auto"` derivation, speed-driven crossfades, one-shots from game events, held poses, death clamp, graph playback with root motion, and character-LOD pose pacing. `frame(state, delta)` poses the rig once per rendered frame; `dispose()` releases the mixer and events.
 - `ModelAnimationDriverOptions` (interface): interface ModelAnimationDriverOptions { scene: THREE.Object3D; clips: THREE.AnimationClip[]; animationInput: ModelAnimationConfig | "auto" | "none" | undefined; instanceId?: string | undefined; ctx: GameContext | null; invalidate?: (() => void) | undefined } — ⚠ undocumented
 - `ModelMotionStep` (interface): interface ModelMotionStep — One visual sample's measured motion, used to derive the directional locomotion parameters. `dx`/`dz` are world horizontal displacement since the previous sample, `dyaw` the yaw change in radians and `seconds` the time the sample covers.
 - `createGraphPose` (function): function createGraphPose(scene: THREE.Object3D, graph: AnimGraph, clips: THREE.AnimationClip[]): GraphPose — Binds a graph's clips to a rig exactly as `useModelAnimation` does (masked layers get filtered clips, additive layers additive ones) so a host that runs its own `createAnimGraphRuntime`, such as the editor's graph preview, poses the rig from the runtime's output.
@@ -592,11 +592,11 @@
 
 ## @jgengine/core/anim/useFootIk.draw
 
-- `FootIkDriver` (class): class FootIkDriver — Foot IK without React: resolves the rig once, then {@link pose} applies one frame of correction after the animation mixer. `dispose` restores the animated pose. The hook and the model draw share this driver.
+- `FootIkDriver` (class): class FootIkDriver — Foot IK without the UI runtime: resolves the rig once, then {@link pose} applies one frame of correction after the animation mixer. `dispose` restores the animated pose. The hook and the model draw share this driver.
 - `FootIkDriverOptions` (interface): interface FootIkDriverOptions { scene: THREE.Object3D; config: FootIkConfig | undefined; ctx: GameContext | null; instanceId?: string | undefined; groundOffset?: number | undefined; quiet?: boolean | undefined; maxCameraDistance?: number | undefined } — ⚠ undocumented
 - `FootIkRig` (interface): interface FootIkRig — Bones resolved once per loaded scene for {@link applyFootIk}.
 - `FootIkState` (interface): interface FootIkState — Per-model state carried between frames: the faded weight and the smoothed pelvis drop.
-- `useFootIk` (function): function useFootIk(scene: THREE.Object3D, config: FootIkConfig | undefined, ctx: GameContext | null, instanceId?: string, groundOffset = 0, options: { quiet?: boolean; maxCameraDistance?: number } = {}): void — Runs foot IK after the model's animation mixer for `ModelConfig.ik` — a thin React shell over {@link FootIkDriver}; draw code uses the driver directly.
+- `useFootIk` (function): function useFootIk(scene: THREE.Object3D, config: FootIkConfig | undefined, ctx: GameContext | null, instanceId?: string, groundOffset = 0, options: { quiet?: boolean; maxCameraDistance?: number } = {}): void — Runs foot IK after the model's animation mixer for `ModelConfig.ik` — a thin UI shell over {@link FootIkDriver}; draw code uses the driver directly.
 
 ## @jgengine/core/anim/useModelAnimation.draw
 
@@ -1039,7 +1039,7 @@
 ## @jgengine/core/camera/GameFirstPersonCamera.draw
 
 - `GameFirstPersonCamera` (function): function GameFirstPersonCamera(props: GameFirstPersonCameraProps): JSX.Element | null — First-person camera locked to the followed entity's eyes, with mouse look, head bob and the muzzle-tracked viewmodel.
-- `GameFirstPersonCameraDrawProps` (interface): interface GameFirstPersonCameraDrawProps extends GameFirstPersonCameraProps — Everything the first-person draw reads, resolved by the React wrapper.
+- `GameFirstPersonCameraDrawProps` (interface): interface GameFirstPersonCameraDrawProps extends GameFirstPersonCameraProps — Everything the first-person draw reads, resolved by the UI wrapper.
 - `GameFirstPersonCameraProps` (interface): interface GameFirstPersonCameraProps — Props for GameFirstPersonCamera: look refs, first-person config, the followed entity and an optional custom viewmodel.
 - `ViewmodelProps` (interface): interface ViewmodelProps — Props handed to a custom viewmodel component (#542): a live cue ref (velocity/bob/firing/reloading/recoil/hit) for the followed entity, driven from your own `useFrame` — read `cuesRef.current` there rather than storing it as render state.
 - `readFirstPersonMuzzle` (function): function readFirstPersonMuzzle(target: THREE.Vector3, camera?: THREE.Camera): boolean — Presentation muzzle in world space; camera-scoped when supplied, false leaves target unchanged.
@@ -1053,7 +1053,7 @@
 
 - `CameraFollowListener` (type): type CameraFollowListener = (state: CameraFollowState) => void — Callback that receives the orbit camera's follow state every frame.
 - `GameOrbitCamera` (function): function GameOrbitCamera(props: GameOrbitCameraProps): null — Third-person orbit camera that follows an entity, with drag-to-orbit, zoom limits and optional collision pull-in.
-- `GameOrbitCameraDrawProps` (interface): interface GameOrbitCameraDrawProps extends GameOrbitCameraProps — Everything the orbit draw reads each frame, resolved by the React wrapper.
+- `GameOrbitCameraDrawProps` (interface): interface GameOrbitCameraDrawProps extends GameOrbitCameraProps — Everything the orbit draw reads each frame, resolved by the UI wrapper.
 - `GameOrbitCameraProps` (interface): interface GameOrbitCameraProps — Props for GameOrbitCamera: yaw/pitch refs, orbit config patch, followed entity and follow-target overrides.
 - `seedOrbitCameraTarget` (function): function seedOrbitCameraTarget(camera: Camera, target: Vector3, distance: number, height: number): void — Seed orbit target before controls mount (demo spawn at origin).
 
@@ -1123,7 +1123,7 @@
 
 - `CAMERA_POST_FRAME_PRIORITY` (const): const CAMERA_POST_FRAME_PRIORITY: number — useFrame priority for work that must read the camera after the rig moved it this frame (culling, HUD anchors, LOD).
 - `CAMERA_RIG_FRAME_PRIORITY` (const): const CAMERA_RIG_FRAME_PRIORITY: -1 — useFrame priority every camera rig commits its pose at, after the game simulation.
-- `CameraRigEnv` (interface): interface CameraRigEnv — Everything a rig draw reads live: latest props plus the React-side singletons its wrapper resolved.
+- `CameraRigEnv` (interface): interface CameraRigEnv — Everything a rig draw reads live: latest props plus the UI-side singletons its wrapper resolved.
 - `ChaseRig` (function): function ChaseRig(props: RigProps): null — Vehicle chase rig that trails behind the followed entity's heading.
 - `CinematicRig` (function): function CinematicRig(props: RigProps & { onComplete?: () => void }): null — Plays a cinematic keyframe path and calls onComplete when it ends.
 - `LockOnRig` (function): function LockOnRig(props: RigProps): null — Rig that frames the player and a locked-on target together.
@@ -1158,7 +1158,7 @@
 - `firstPersonBodyInstance` (function): function firstPersonBodyInstance(): string | null — The entity whose body the first-person camera sits in, for draw code.
 - `humanoidHead` (function): function humanoidHead(scene: THREE.Object3D): THREE.Object3D | null — The head bone of a humanoid rig the skeleton standard maps, or `null`. Scaling it to nothing folds the head, hair and face into the neck, so a camera at eye height sees the body's arms, hands and held items without looking out through the inside of the skull.
 - `keepHeadUnderEye` (function): function keepHeadUnderEye(body: THREE.Object3D, head: THREE.Object3D, eye: THREE.Object3D, rest: THREE.Vector3): void — Slides `body` across the ground so its folded head sits straight under the `eye` camera, from `rest` (the body's own position before any slide). A walk or run clip leans the torso forward; without this the neck, nape hair and collar swing out in front of an eye-height camera. Call after `collapseHead`.
-- `noteFirstPersonBody` (function): function noteFirstPersonBody(instanceId: string | null): void — The first-person body id for draw code, which has no React context. The shell writes it next to the provider; `null` outside a first-person rig.
+- `noteFirstPersonBody` (function): function noteFirstPersonBody(instanceId: string | null): void — The first-person body id for draw code, which has no UI context. The shell writes it next to the provider; `null` outside a first-person rig.
 - `useFirstPersonBody` (function): function useFirstPersonBody(instanceId: string | undefined): boolean — True when `instanceId` is the body the first-person camera sits in.
 
 ## @jgengine/core/camera/fovPreference.view
@@ -1213,7 +1213,7 @@
 - `CameraShakeSnapshot` (interface): interface CameraShakeSnapshot — Serializable state for save/restore and deterministic replay.
 - `cameraShake` (function): function cameraShake(amplitude: number, decayPerSecond?: number): void — Add camera trauma from anywhere. `decayPerSecond`, when given, retunes how fast it bleeds off.
 - `createCameraShake` (function): function createCameraShake(config: CameraShakeConfig = {}): CameraShakeController — A seeded, serializable, trauma-based camera shake / impulse controller. A game calls `add(amount, kind?)` on impacts (a hit, an explosion, a landing) to raise trauma in `[0, 1]`; `update(dt)` bleeds it off over time; and `offset()` returns a pooled `{ x, y, z, pitch, yaw, roll }` kick equal to `trauma^exponent` times per-axis maxima times deterministic seeded value-noise sampled along an internal time cursor. A shell consumer applies that offset to the active camera each frame so the view visibly shakes. Nothing here is genre-specific: `kind` is a free label the game styles, all amplitudes/decay are parameters, and `snapshot`/ `restore` round-trips the shake through a save. Deterministic from `seed`: the same seed and dt sequence reproduce the same offsets.
-- `defaultCameraShake` (const): const defaultCameraShake: CameraShakeController — The one camera-shake controller the rigs apply. Game systems with no React context (a `loop.onTick` reacting to `entity.died`) feed it through {@link cameraShake}; a rig reads it through {@link useCameraShake}. It is the core `createCameraShake` model, so a demo or test can drive the same controller directly.
+- `defaultCameraShake` (const): const defaultCameraShake: CameraShakeController — The one camera-shake controller the rigs apply. Game systems with no UI context (a `loop.onTick` reacting to `entity.died`) feed it through {@link cameraShake}; a rig reads it through {@link useCameraShake}. It is the core `createCameraShake` model, so a demo or test can drive the same controller directly.
 
 ## @jgengine/core/camera/shake/cameraShake.view
 
@@ -1322,7 +1322,7 @@
 
 ## @jgengine/core/environment/GroundPad.draw
 
-- `GroundPad` (function): function GroundPad({ pad, field }: GroundPadProps): null — React mount for {@link groundPadDraw} while parents still render through the Canvas.
+- `GroundPad` (function): function GroundPad({ pad, field }: GroundPadProps): null — UI mount for {@link groundPadDraw} while parents still render through the Canvas.
 - `GroundPadProps` (interface): interface GroundPadProps — Props for {@link GroundPad}: the pad descriptor and the terrain field it sits on.
 - `groundPadDraw` (function): function groundPadDraw({ pad, field }: GroundPadProps): EngineDraw — A flat circular or rectangular pad resting on a terrain field.
 
@@ -1709,7 +1709,7 @@
 
 ## @jgengine/core/frame/engineHost.draw
 
-- `EngineHost` (interface): interface EngineHost — The render host a React subtree draws through: the engine loop's provider. Draw wrappers read `frame` for the {@link EngineFrameState} facade; the optional controls cover the frameloop APIs drivers use.
+- `EngineHost` (interface): interface EngineHost — The render host a UI subtree draws through: the engine loop's provider. Draw wrappers read `frame` for the {@link EngineFrameState} facade; the optional controls cover the frameloop APIs drivers use.
 
 ## @jgengine/core/frame/engineLoop.draw
 
@@ -2691,7 +2691,7 @@
 
 ## @jgengine/core/map/LightBeam.draw
 
-- `LightBeam` (function): function LightBeam(props: LightBeamProps): null — React mount for {@link lightBeamDraw} while parents still render through the Canvas.
+- `LightBeam` (function): function LightBeam(props: LightBeamProps): null — UI mount for {@link lightBeamDraw} while parents still render through the Canvas.
 - `LightBeamProps` (interface): interface LightBeamProps — {@link LightBeam} look.
 - `lightBeamDraw` (function): function lightBeamDraw({ height = 80, radius = 0.25, color = "#cfe8ff", opacity = 0.35 }: LightBeamProps): EngineDraw — A glowing column of light rising from where it is placed, for finding something from afar: a fallen body, a supply crate, an objective. Additive and unlit, so it reads by day and glows at night.
 
@@ -2794,11 +2794,11 @@
 - `MarkerPosition` (type): type MarkerPosition = readonly [number, number, number] — A marker's world `[x, y, z]` position.
 - `MarkerQuery` (interface): interface MarkerQuery — Filter for {@link MarkerSet} queries: kind, owner, and a radius around a point.
 - `MarkerSet` (interface): interface MarkerSet<TMeta = unknown> — A live, subscribable set of map markers: add, remove, query and prune expired ones.
-- `MarkerSource` (interface): interface MarkerSource<TMarker extends MarkerView = MarkerView> — Observable marker snapshots owned by an external project. `getSnapshot` must return the same array identity until the source changes and calls its subscribers, matching React's external-store contract.
+- `MarkerSource` (interface): interface MarkerSource<TMarker extends MarkerView = MarkerView> — Observable marker snapshots owned by an external project. `getSnapshot` must return the same array identity until the source changes and calls its subscribers, matching the external-store contract (`useSyncExternalStore`).
 - `MarkerSourceOptions` (interface): interface MarkerSourceOptions<TEntity, TMarker extends MarkerView = MarkerView> — Configuration for projecting a caller-owned collection into display-only markers.
 - `MarkerView` (interface): interface MarkerView<TMeta = unknown> — Small, display-only marker shape consumed by map renderers. Existing games can project their own entities to this view without adopting marker lifecycle storage or duplicating them into a {@link MarkerSet}.
 - `createMarkerSet` (function): function createMarkerSet<TMeta = unknown>(now: () => number = Date.now): MarkerSet<TMeta> — Create an empty {@link MarkerSet}; `now` drives marker expiry.
-- `createMarkerSource` (function): function createMarkerSource<TEntity, TMarker extends MarkerView = MarkerView>(options: MarkerSourceOptions<TEntity, TMarker>): MarkerSource<TMarker> — Adapt a caller-owned array/store to an observable marker source. Projection is cached between source changes, so React reads do not copy the collection per frame. The caller retains ownership of entities, updates, persistence, and subscription scheduling.
+- `createMarkerSource` (function): function createMarkerSource<TEntity, TMarker extends MarkerView = MarkerView>(options: MarkerSourceOptions<TEntity, TMarker>): MarkerSource<TMarker> — Adapt a caller-owned array/store to an observable marker source. Projection is cached between source changes, so the UI reads do not copy the collection per frame. The caller retains ownership of entities, updates, persistence, and subscription scheduling.
 - `markerKindStyle` (function): function markerKindStyle(kind: string | undefined, styles: Record<string, MarkerKindStyle> = DEFAULT_MARKER_KINDS): MarkerKindStyle — The style for a marker kind, falling back to a plain dot for unknown kinds.
 
 ## @jgengine/core/map/minimap
@@ -3577,7 +3577,7 @@
 
 ## @jgengine/core/physics/InstancedBodies.draw
 
-- `InstancedBodies` (function): function InstancedBodies(props: InstancedBodiesProps): null — Renders a PhysicsWorld's box bodies as a single InstancedMesh — one draw call per batch. Transforms are written directly into `instanceMatrix.array` each frame (bodies never touch the per-entity React path). Reusable by any game: hand it a physics world and go.
+- `InstancedBodies` (function): function InstancedBodies(props: InstancedBodiesProps): null — Renders a PhysicsWorld's box bodies as a single InstancedMesh — one draw call per batch. Transforms are written directly into `instanceMatrix.array` each frame (bodies never touch the per-entity UI path). Reusable by any game: hand it a physics world and go.
 - `InstancedBodiesProps` (interface): interface InstancedBodiesProps — Props for InstancedBodies: the physics world to draw and optional state tinting.
 
 ## @jgengine/core/physics/InstancedJoints.draw
@@ -4757,11 +4757,11 @@
 - `AuthoredRoadNetwork` (interface): interface AuthoredRoadNetwork — Trimmed ribbons for every road plus the welded surfaces that fill the crossings between them.
 - `JunctionSurface` (interface): interface JunctionSurface — One welded asphalt junction surface plus the color it should render in.
 - `RoadPiece` (interface): interface RoadPiece — One road's share of a merged draw: its trimmed centreline sub-paths and the base height they drape at.
-- `RoadRibbons` (function): function RoadRibbons(props: RoadRibbonsProps): null — Renders every road that looks like `road` (equal {@link roadLookKey}) from their trimmed centerline sub-paths â€” the React wrapper over {@link roadRibbonsDraw}.
+- `RoadRibbons` (function): function RoadRibbons(props: RoadRibbonsProps): null — Renders every road that looks like `road` (equal {@link roadLookKey}) from their trimmed centerline sub-paths â€” the UI wrapper over {@link roadRibbonsDraw}.
 - `RoadRibbonsProps` (interface): interface RoadRibbonsProps — Props for {@link RoadRibbons}.
-- `Roads` (function): function Roads({ roads, field }: { roads: readonly RoadEnvironmentDescriptor[]; field: TerrainField }): null — The engine's one road renderer: `road()` descriptors from an environment and authored editor paths (streets, race tracks, trails, routes) all draw here â€” the React wrapper over {@link roadsDraw}.
+- `Roads` (function): function Roads({ roads, field }: { roads: readonly RoadEnvironmentDescriptor[]; field: TerrainField }): null — The engine's one road renderer: `road()` descriptors from an environment and authored editor paths (streets, race tracks, trails, routes) all draw here â€” the UI wrapper over {@link roadsDraw}.
 - `roadRibbonsDraw` (function): function roadRibbonsDraw(getProps: () => RoadRibbonsProps): EngineDraw — Renders every road that looks like `road` (equal {@link roadLookKey}) from their trimmed centerline sub-paths (cut back at every junction by {@link buildAuthoredRoadNetwork}): an asphalt ribbon, a curb/edge strip along each border, an optional dashed centerline, and optional sidewalks. Each layer is one merged draw however many roads share the look, so a city of streets costs a handful of draws. Because the sub-paths already stop at the junction boundary, every layer naturally ends there â€” no ribbon ploughs through the crossing and the dashed line no longer needs exclusion circles to skip intersections. The carriageway, curbs and sidewalks shade with the terrain's procedural surfaces (`road.surface`, default asphalt with tyre wear); `surface: false` keeps them flat.
-- `roadsDraw` (function): function roadsDraw(getProps: () => { roads: readonly RoadEnvironmentDescriptor[]; field: TerrainField }): EngineDraw — The engine's one road renderer: `road()` descriptors from an environment and authored editor paths (streets, race tracks, trails, routes) all draw here â€” the React wrapper over {@link roadsDraw}.
+- `roadsDraw` (function): function roadsDraw(getProps: () => { roads: readonly RoadEnvironmentDescriptor[]; field: TerrainField }): EngineDraw — The engine's one road renderer: `road()` descriptors from an environment and authored editor paths (streets, race tracks, trails, routes) all draw here â€” the UI wrapper over {@link roadsDraw}.
 
 ## @jgengine/core/roads/liveRoadSurface
 
@@ -4891,7 +4891,7 @@
 - `resolvePathSurface` (function): function resolvePathSurface(kind: string, width: number, meta: Readonly<Record<string, unknown>> | undefined): RibbonSurfaceStyle | null — Default ribbon look for an authored path: the surface comes from `meta.surface`, else the path kind (`"road"` paves, `"gravel-track"` gravels), else dirt. Soft ground gets a noise-warped edge that fades into the terrain and wheel ruts; pavement keeps a near-hard edge and faint tyre lanes. `meta.surfaceDetail: false` (or `meta.surface: false`) returns `null` for the old flat ribbon; `meta.edgeSoftness` scales the fade (0 = hard) and `meta.wear` sets wear 0..1.
 - `ribbonSurfaceFrame` (function): function ribbonSurfaceFrame(ribbons: readonly Float32Array[]): Float32Array — Per-vertex `(along, across, toEnd)` for a ribbon in `buildRoadRibbon`'s layout (left/right vertex pairs down the centreline). Pass several ribbons' position arrays to get one concatenated frame for a merged mesh; each ribbon's distances restart at its own start.
 - `scannedRibbonDraw` (function): function scannedRibbonDraw(getProps: () => ScannedRibbonSpec): EngineDraw — One ribbon mesh whose material follows a scanned surface: hidden while the scan decodes (so the shader warmup links only the programs the first frame draws), rebuilt when the maps land or the spec changes, and swapped for the flat fallback whenever the ribbon material is absent. The EngineDraw twin of `useSurfaceScan` + `useSurfaceRibbonMaterial` + a `<mesh>`.
-- `useSurfaceRibbonMaterial` (function): function useSurfaceRibbonMaterial(options: SurfaceRibbonMaterialOptions | null): THREE.MeshStandardMaterial | null — {@link createSurfaceRibbonMaterial} for a React mesh: rebuilt only when an option changes and disposed on unmount. Pass `null` to get `null` (the caller falls back to a flat material).
+- `useSurfaceRibbonMaterial` (function): function useSurfaceRibbonMaterial(options: SurfaceRibbonMaterialOptions | null): THREE.MeshStandardMaterial | null — {@link createSurfaceRibbonMaterial} for a UI-owned mesh: rebuilt only when an option changes and disposed on unmount. Pass `null` to get `null` (the caller falls back to a flat material).
 
 ## @jgengine/core/scatter/InstancedScatter.draw
 
@@ -5024,7 +5024,7 @@
 - `StudioMood` (type): type StudioMood = "studio" | "daylight" | "dusk" | "night" — Lighting mood for a {@link StudioStage} — a named 3-point rig + backdrop palette.
 - `StudioStage` (function): function StudioStage({ mood = "studio", backdrop, turntable = 0, environment = true, faceCamera = false, forward = DEFAULT_FORWARD, children, }: StudioStageProps): JSX.Element — A reusable cinematic "product-shot" stage — a 3-point lighting rig (key/fill/rim + ambient), a seamless backdrop, and an optional turntable — so any parametric studio renders framed and lit like a hero shot instead of a flat proxy under default light. Pair with `PlayableGame.postProcessing = STUDIO_STAGE_POST` for the full film grade. Set `environment: false` to keep an open-world sky/ground and use it purely as a lighting rig. Set `faceCamera` to auto-orient the declared `forward` toward the camera instead of hand-tuning `rotationY` on the child.
 - `StudioStageProps` (interface): interface StudioStageProps — Props for {@link StudioStage}.
-- `studioStageDraw` (function): function studioStageDraw(getProps: () => StageDrawProps, getSpin: () => THREE.Group | null): EngineDraw — The stage's lights, floor and backdrop as an {@link EngineDraw}; `getSpin` resolves the group the React children render under so turntable/faceCamera still spin them. `state.scene` is the JSX parent, so the background is only set when that parent is the real Scene — the same reach the old `attach="background"` had.
+- `studioStageDraw` (function): function studioStageDraw(getProps: () => StageDrawProps, getSpin: () => THREE.Group | null): EngineDraw — The stage's lights, floor and backdrop as an {@link EngineDraw}; `getSpin` resolves the group the UI children render under so turntable/faceCamera still spin them. `state.scene` is the JSX parent, so the background is only set when that parent is the real Scene — the same reach the old `attach="background"` had.
 
 ## @jgengine/core/scene/assetCatalog
 
@@ -5793,7 +5793,7 @@
 - `ALL_TERRAIN_SURFACE_CLASSES` (const): const ALL_TERRAIN_SURFACE_CLASSES: 511 — Compile every surface response, for an editor viewport whose paint can change to any surface.
 - `TerrainDetailMaterialHandle` (interface): interface TerrainDetailMaterialHandle — The built procedural detail terrain material, ready to mount on the ground mesh.
 - `TerrainDetailMaterialOptions` (interface): interface TerrainDetailMaterialOptions — Surface-pass inputs beyond the resolved detail config.
-- `TerrainDetailMaterialTextures` (interface): interface TerrainDetailMaterialTextures — Loaded PBR textures matching a resolved `ResolvedTerrainDetailMaterial.maps`' roles. The caller (a React component, via `useTexture`/`useLoader`) owns loading and disposal; `core` never touches `THREE.Texture` and this shell function never fetches a URL itself. Omitted AO/roughness skip sampling.
+- `TerrainDetailMaterialTextures` (interface): interface TerrainDetailMaterialTextures — Loaded PBR textures matching a resolved `ResolvedTerrainDetailMaterial.maps`' roles. The caller (a UI component, via `useTexture`/`useLoader`) owns loading and disposal; `core` never touches `THREE.Texture` and this shell function never fetches a URL itself. Omitted AO/roughness skip sampling.
 - `TerrainScanLibrary` (type): type TerrainScanLibrary = ReadonlyMap<string, SurfaceMaterialMaps> — Scans already decoded and packed, by {@link terrainScanKey}.
 - `TerrainSurfaceSlot` (interface): interface TerrainSurfaceSlot — One terrain role's generated surface: its array layer, tile metres and tint.
 - `TerrainSurfaceTextures` (interface): interface TerrainSurfaceTextures — Generated terrain surfaces baked into array textures, ready for {@link createTerrainDetailMaterial}.
@@ -5858,7 +5858,7 @@
 ## @jgengine/core/terrain/terrainQuality.draw
 
 - `TerrainQualityContext` (const): const TerrainQualityContext: ContextType<GraphicsQuality> — The player's graphics tier as terrain materials see it; the shell provides it, `high` outside one.
-- `noteTerrainQuality` (function): function noteTerrainQuality(quality: GraphicsQuality): void — The graphics tier for draw code, which has no React context.
+- `noteTerrainQuality` (function): function noteTerrainQuality(quality: GraphicsQuality): void — The graphics tier for draw code, which has no UI context.
 - `terrainQuality` (function): function terrainQuality(): GraphicsQuality — The player's graphics tier for draw code (`high` outside a shell).
 - `useTerrainQuality` (function): function useTerrainQuality(): GraphicsQuality — Graphics tier for terrain surface shading (`low` takes the cheap path).
 
@@ -6033,8 +6033,8 @@
 ## @jgengine/core/vfx/ParticleField.draw
 
 - `ParticleBlending` (type): type ParticleBlending = "additive" | "normal" — How particle fragments composite on screen.
-- `ParticleField` (function): function ParticleField(props: ParticleFieldDrawOptions & { system: ParticleSystem }): ReactElement — React mount for {@link particleFieldDraw}; props changes that affect the program remount it.
-- `ParticleFieldDrawOptions` (interface): interface ParticleFieldDrawOptions { advance?: boolean | (() => boolean); blending?: ParticleBlending; scale?: number; depthWrite?: boolean; render?: ParticleRenderHint | undefined; metrics?: ParticleFieldMetrics | undefined } — ⚠ undocumented · used by `ParticleField`: React mount for {@link particleFieldDraw}; props changes that affect the program remount it.
+- `ParticleField` (function): function ParticleField(props: ParticleFieldDrawOptions & { system: ParticleSystem }): ReactElement — UI mount for {@link particleFieldDraw}; props changes that affect the program remount it.
+- `ParticleFieldDrawOptions` (interface): interface ParticleFieldDrawOptions { advance?: boolean | (() => boolean); blending?: ParticleBlending; scale?: number; depthWrite?: boolean; render?: ParticleRenderHint | undefined; metrics?: ParticleFieldMetrics | undefined } — ⚠ undocumented · used by `ParticleField`: UI mount for {@link particleFieldDraw}; props changes that affect the program remount it.
 - `ParticleFieldProps` (type): type ParticleFieldProps = ParticleFieldDrawOptions & { system: ParticleSystem } — Props for the existing pooled particle renderer.
 - `particleFieldDraw` (function): function particleFieldDraw(system: ParticleSystem, options: ParticleFieldDrawOptions = {}): EngineDraw — One pooled simulation drawn as a point cloud or instanced quads, as an {@link EngineDraw}. Output selection does not replace spawn, forces, collisions, or deterministic state.
 
@@ -6357,7 +6357,7 @@
 
 - `DustField` (function): function DustField(props: DustFieldProps): null — ⚠ undocumented
 - `DustFieldProps` (interface): interface DustFieldProps — Wind-borne particulate: dust, sand, ash, pollen, spores. Unlike rain and snow this is not falling — motion is dominated by horizontal wind with a slow vertical bob, and density thins with height so the air near the ground carries the most grit. Any arid, volcanic, or blown-out world needs it.
-- `dustFieldDraw` (function): function dustFieldDraw(getProps: () => DustFieldProps, uniforms?: WeatherUniformSet): EngineDraw — Renders wind-borne particulate as camera-facing motes. Reach for it whenever the air itself should read as weather — a desert gale, ash off a volcano, pollen in a meadow, grain dust in a silo. Compose it through {@link WeatherLayer}'s `"dust"` mode (or `dustAlways` alongside rain and snow) rather than mounting it directly, so it shares one wind and time source with the other layers. `uniforms` is the resolved shared set (the React path's `useWeatherUniformSet`, already ticked); without it the draw owns a local set and ticks it on the board at weather priority.
+- `dustFieldDraw` (function): function dustFieldDraw(getProps: () => DustFieldProps, uniforms?: WeatherUniformSet): EngineDraw — Renders wind-borne particulate as camera-facing motes. Reach for it whenever the air itself should read as weather — a desert gale, ash off a volcano, pollen in a meadow, grain dust in a silo. Compose it through {@link WeatherLayer}'s `"dust"` mode (or `dustAlways` alongside rain and snow) rather than mounting it directly, so it shares one wind and time source with the other layers. `uniforms` is the resolved shared set (the UI path's `useWeatherUniformSet`, already ticked); without it the draw owns a local set and ticks it on the board at weather priority.
 
 ## @jgengine/core/weather/LightningStrike.draw
 
@@ -6380,19 +6380,19 @@
 
 - `RainField` (function): function RainField(props: RainFieldProps): null — GPU-animated rain streaks around the camera, sheltered under authored roofs.
 - `RainFieldProps` (interface): interface RainFieldProps — Props for {@link RainField}: drop count, density and budget, area, fall speed, wind and look.
-- `rainFieldDraw` (function): function rainFieldDraw(getProps: () => RainFieldProps, uniforms?: WeatherUniformSet): EngineDraw — GPU-animated rain streaks around the camera, sheltered under authored roofs. `uniforms` is the resolved shared set (the React path's `useWeatherUniformSet`, already ticked); without it the draw owns a local set and ticks it on the board at weather priority, matching the old local-uniforms path.
+- `rainFieldDraw` (function): function rainFieldDraw(getProps: () => RainFieldProps, uniforms?: WeatherUniformSet): EngineDraw — GPU-animated rain streaks around the camera, sheltered under authored roofs. `uniforms` is the resolved shared set (the UI path's `useWeatherUniformSet`, already ticked); without it the draw owns a local set and ticks it on the board at weather priority, matching the old local-uniforms path.
 
 ## @jgengine/core/weather/RainImpactField.draw
 
 - `RainImpactField` (function): function RainImpactField(props: RainImpactFieldProps): null — ⚠ undocumented
 - `RainImpactFieldProps` (interface): interface RainImpactFieldProps — Bounded ripple pool with terrain height and sky exposure query adapters.
-- `rainImpactFieldDraw` (function): function rainImpactFieldDraw(getProps: () => RainImpactFieldProps, uniforms?: WeatherUniformSet): EngineDraw — Bounded ground ripples sharing precipitation intensity and authoritative animation time. `uniforms` is the resolved shared set (the React path's `useWeatherUniformSet`, already ticked); without it the draw owns a local set and ticks it on the board at weather priority.
+- `rainImpactFieldDraw` (function): function rainImpactFieldDraw(getProps: () => RainImpactFieldProps, uniforms?: WeatherUniformSet): EngineDraw — Bounded ground ripples sharing precipitation intensity and authoritative animation time. `uniforms` is the resolved shared set (the UI path's `useWeatherUniformSet`, already ticked); without it the draw owns a local set and ticks it on the board at weather priority.
 
 ## @jgengine/core/weather/SnowField.draw
 
 - `SnowField` (function): function SnowField(props: SnowFieldProps): null — GPU-animated drifting snowflakes around the camera, sheltered under authored roofs.
 - `SnowFieldProps` (interface): interface SnowFieldProps — Props for {@link SnowField}: flake count, density and budget, area, fall speed, wind and look.
-- `snowFieldDraw` (function): function snowFieldDraw(getProps: () => SnowFieldProps, uniforms?: WeatherUniformSet): EngineDraw — GPU-animated drifting snowflakes around the camera, sheltered under authored roofs. `uniforms` is the resolved shared set (the React path's `useWeatherUniformSet`, already ticked); without it the draw owns a local set and ticks it on the board at weather priority, matching the old local-uniforms path.
+- `snowFieldDraw` (function): function snowFieldDraw(getProps: () => SnowFieldProps, uniforms?: WeatherUniformSet): EngineDraw — GPU-animated drifting snowflakes around the camera, sheltered under authored roofs. `uniforms` is the resolved shared set (the UI path's `useWeatherUniformSet`, already ticked); without it the draw owns a local set and ticks it on the board at weather priority, matching the old local-uniforms path.
 
 ## @jgengine/core/weather/WeatherLayer.draw
 
@@ -6776,7 +6776,7 @@
 - `MarkerCollection` (type): type MarkerCollection<TMarker extends MarkerView = MarkerView> = | readonly TMarker[] | MarkerSource<TMarker> | MarkerSet — Marker data accepted by portable consumers: static views, an external source, or a native set.
 - `MarkerKindStyle` (interface): interface MarkerKindStyle — Visual descriptor for a marker kind. Games supply their own palette; the engine ships `DEFAULT_MARKER_KINDS` as a content-agnostic starting set that the react minimap/compass read for colors and glyphs.
 - `MarkerSet` (interface): interface MarkerSet<TMeta = unknown> — A live, subscribable set of map markers: add, remove, query and prune expired ones.
-- `MarkerSource` (interface): interface MarkerSource<TMarker extends MarkerView = MarkerView> — Observable marker snapshots owned by an external project. `getSnapshot` must return the same array identity until the source changes and calls its subscribers, matching React's external-store contract.
+- `MarkerSource` (interface): interface MarkerSource<TMarker extends MarkerView = MarkerView> — Observable marker snapshots owned by an external project. `getSnapshot` must return the same array identity until the source changes and calls its subscribers, matching the external-store contract (`useSyncExternalStore`).
 - `MarkerSourceOptions` (interface): interface MarkerSourceOptions<TEntity, TMarker extends MarkerView = MarkerView> — Configuration for projecting a caller-owned collection into display-only markers.
 - `MarkerView` (interface): interface MarkerView<TMeta = unknown> — Small, display-only marker shape consumed by map renderers. Existing games can project their own entities to this view without adopting marker lifecycle storage or duplicating them into a {@link MarkerSet}.
 - `MergedRegion` (interface): interface MergedRegion extends RegionFootprint — Plain JSON pooled region. Contributions partition its cells and sum to its capacity.
@@ -7254,7 +7254,7 @@
 - `createLeaderTrail` (function): function createLeaderTrail(config: LeaderTrailConfig): LeaderTrail — A trailing follower formation that chases a leader along its past path — snake/convoy trails.
 - `createLodScheduler` (function): function createLodScheduler(config: LodSchedulerConfig): LodScheduler — ⚠ undocumented
 - `createMarkerSet` (function): function createMarkerSet<TMeta = unknown>(now: () => number = Date.now): MarkerSet<TMeta> — Create an empty {@link MarkerSet}; `now` drives marker expiry.
-- `createMarkerSource` (function): function createMarkerSource<TEntity, TMarker extends MarkerView = MarkerView>(options: MarkerSourceOptions<TEntity, TMarker>): MarkerSource<TMarker> — Adapt a caller-owned array/store to an observable marker source. Projection is cached between source changes, so React reads do not copy the collection per frame. The caller retains ownership of entities, updates, persistence, and subscription scheduling.
+- `createMarkerSource` (function): function createMarkerSource<TEntity, TMarker extends MarkerView = MarkerView>(options: MarkerSourceOptions<TEntity, TMarker>): MarkerSource<TMarker> — Adapt a caller-owned array/store to an observable marker source. Projection is cached between source changes, so the UI reads do not copy the collection per frame. The caller retains ownership of entities, updates, persistence, and subscription scheduling.
 - `createModelVariantSelector` (function): function createModelVariantSelector(config: ModelVariantLodConfig): ModelVariantSelector — Builds the per-instance distance switch for a model's variant levels.
 - `createMountController` (function): function createMountController(): MountController — ⚠ undocumented
 - `createNavCrowd` (function): function createNavCrowd(options: NavCrowdOptions & { nav: NavRuntime }): NavCrowd — Compose {@link createNavRuntime} and {@link createRvoCrowd} into a moving crowd: plan on the mesh, follow the smoothed corridor, avoid each other. Deterministic — agents advance in insertion order and the avoidance solve breaks ties by slot, not chance.

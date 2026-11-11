@@ -1,6 +1,6 @@
 /**
  * Shared model-import helpers used by the standalone editor strip and the in-game Content Browser.
- * Host-agnostic and free of React/shell so unit tests can exercise the importer without a DOM or three.
+ * Host-agnostic and free of UI/shell so unit tests can exercise the importer without a DOM or three.
  */
 
 import { addGameAssetFiles } from "@jgengine/core/assets/assetBase";

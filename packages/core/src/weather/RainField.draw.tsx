@@ -73,7 +73,7 @@ type RainMaterialUniforms = {
 
 /**
  * GPU-animated rain streaks around the camera, sheltered under authored roofs.
- * `uniforms` is the resolved shared set (the React path's `useWeatherUniformSet`,
+ * `uniforms` is the resolved shared set (the UI path's `useWeatherUniformSet`,
  * already ticked); without it the draw owns a local set and ticks it on the
  * board at weather priority, matching the old local-uniforms path.
  */

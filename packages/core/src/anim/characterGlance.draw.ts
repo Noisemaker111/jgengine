@@ -203,7 +203,7 @@ export interface GlanceDriverOptions {
 }
 
 /**
- * The default head glance without React: resolves the rig once, then
+ * The default head glance without the UI runtime: resolves the rig once, then
  * {@link pose} turns the head toward the local player each frame. `dispose`
  * restores the animated pose. Shared by the hook and the model draw.
  */
@@ -267,7 +267,7 @@ export class GlanceDriver {
  * Default glance for a rigged character: its head turns toward the local player when they come
  * close, from any angle in front of it, and turns back when they leave. The local player's own
  * model never glances. `maxCameraDistance` skips the work for characters too far away to read.
- * A thin React shell over {@link GlanceDriver}.
+ * A thin UI shell over {@link GlanceDriver}.
  */
 export function useCharacterGlance(
   scene: THREE.Object3D,

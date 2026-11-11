@@ -4,7 +4,7 @@ import { ms } from "./panelAtoms.view";
 
 const CULPRIT_HINTS: Record<string, string> = {
   "outside-sim":
-    "Cost is outside the sim driver — three.js render, React commit, GPU, GC, or tab throttle. Check the render sample: high draw calls/triangles mean scene cost (instancing, culling, terrain density); moderate counts with slow frames mean fill cost (dpr, AO/DOF passes, bloom) — try Quality low/medium.",
+    "Cost is outside the sim driver — three.js render, UI commit, GPU, GC, or tab throttle. Check the render sample: high draw calls/triangles mean scene cost (instancing, culling, terrain density); moderate counts with slow frames mean fill cost (dpr, AO/DOF passes, bloom) — try Quality low/medium.",
   sim: "Sim is slow but no named phase stands out — wrap hot onTick work with measure(\"name\", fn).",
   onTick: "Game loop.onTick is the hotspot — profile inside it with measure(\"physics\"|\"ai\"|…, fn).",
   pose: "Shell movement / collision / voxel step is expensive.",

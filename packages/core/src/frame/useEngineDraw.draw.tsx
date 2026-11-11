@@ -73,7 +73,7 @@ export function noteDrawRebuild(churn: DrawChurn, create: () => EngineDraw, now:
 }
 
 /**
- * The nearest scene parent for draws mounted through React: `null` means the
+ * The nearest scene parent for draws mounted through the UI runtime: `null` means the
  * host scene root. Components that own a {@link THREE.Group} for custom
  * children provide it so nested {@link EngineDrawMount}s inherit the transform,
  * like JSX nesting did.
@@ -88,7 +88,7 @@ export function EngineSceneProvider({ parent, children }: { parent: THREE.Object
 
 /**
  * Parents `children`'s draw mounts under `object` through {@link EngineSceneContext} —
- * how a draw that owns a {@link THREE.Group} gives React-rendered custom content
+ * how a draw that owns a {@link THREE.Group} gives UI-rendered custom content
  * that group's transform.
  * @internal
  */

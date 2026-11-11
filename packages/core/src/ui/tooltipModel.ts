@@ -2,7 +2,7 @@
  * Headless model for HUD tooltips and popovers — the shared description seam games have been
  * hand-rolling with a bare DOM `title=` attribute. {@link actionTooltip} turns a
  * {@link ResolvedAction} into structured {@link TooltipContent} (title, cost, cooldown, blocking
- * notes), and {@link placePopover} is the pure, SSR-safe positioning math the React tooltip uses to
+ * notes), and {@link placePopover} is the pure, SSR-safe positioning math the UI tooltip uses to
  * flip and clamp against the viewport. Both are rendering-agnostic.
  */
 
@@ -106,7 +106,7 @@ function topLeftFor(side: PopoverSide, anchor: UiRect, content: UiSize, gap: num
  * Position a popover/tooltip of `content` size against its `anchor` rectangle inside `viewport`:
  * open on the `preferred` side, flip to the opposite when that side lacks room and the opposite has
  * more, then clamp the top-left so the box stays fully on screen (respecting `margin`). Pure and
- * deterministic — no DOM reads — so it is SSR-safe and unit-testable, and the React tooltip is a thin
+ * deterministic — no DOM reads — so it is SSR-safe and unit-testable, and the UI tooltip is a thin
  * shell over it.
  */
 export function placePopover(

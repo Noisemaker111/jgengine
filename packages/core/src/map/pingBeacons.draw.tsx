@@ -39,7 +39,7 @@ interface WorldPingProps {
   height: number;
 }
 
-/** Ring + bobbing arrowhead as one draw: per-frame bob and lifetime fade without React. */
+/** Ring + bobbing arrowhead as one draw: per-frame bob and lifetime fade without the UI runtime. */
 function pingDraw(marker: MarkerView, style: MarkerKindStyle, height: number): EngineDraw {
   const [x, , z] = marker.position;
   const baseY = marker.position[1];

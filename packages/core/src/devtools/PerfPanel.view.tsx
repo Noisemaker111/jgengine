@@ -83,7 +83,7 @@ function BudgetSplit({ simMs, outsideMs }: { simMs: number; outsideMs: number })
         <span className={outsideHot ? "text-red-400" : "text-violet-300"}>outside {ms(outsideMs)}</span>
       </div>
       <div className="text-[10px] text-neutral-500">
-        outside = render / React / GPU / GC / missed vsync — not measured inside the sim driver
+        outside = render / UI / GPU / GC / missed vsync — not measured inside the sim driver
       </div>
     </div>
   );

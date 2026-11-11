@@ -14,10 +14,11 @@ The native Rust 3D renderer is an experiment and does not ship.
 
 `@jgengine/core` has no React, no renderer, and no backend dependency. UI is written against the engine's own JSX runtime (`@jgengine/core/ui/jsx`) and drawn through the DOM or through Rune on the engine canvas; a page built with React, Next or TanStack embeds a game with `mountGamePlayer` (`@jgengine/shell/mountGamePlayer`). Adapters connect the engine to Convex, WebSockets, Node hosting, and Postgres (socket.io, WebRTC P2P, and LAN share the same protocol). Domains are opt-in at runtime via `defineGame({ features })`; the monorepo ships a wide primitive set. Coding agents build whole games on it from that one sentence: skills provide design playbooks, intake, focused API guidance, and verification, and route selectively so agents do not load every domain by default.
 
-`@jgengine/react` replaces the former `@jgengine/react` package. Run
-`bun scripts/port-react-ui.ts` to update engine and game imports and JSX sources;
-`--check` reports remaining changes without writing them. Framework hosts keep their
-own React runtime and embed the engine through `mountGamePlayer`.
+`@jgengine/react` (the `packages/ui` folder) is the engine's game UI package; despite its npm
+name it runs on the engine's JSX runtime, not React. Code still written against React moves with
+`bun scripts/port-react-ui.ts` (`--check` reports remaining changes without writing them).
+A host app built with React keeps its own React and embeds the engine through `mountGamePlayer`;
+`examples/next-host` and `examples/tanstack-host` show how.
 
 The DOM host is the default; `?ui=rune` opts into Rune rendering. The CSS styling
 path, including its CSS-to-Rune mirror, is temporary. Typed Rune-native style props

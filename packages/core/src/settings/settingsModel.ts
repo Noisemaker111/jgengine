@@ -246,7 +246,7 @@ export interface SettingsStore {
   subscribe(listener: () => void): () => void;
 }
 
-/** Reactive, localStorage-backed settings store shared by the shell wiring and React hooks. */
+/** Reactive, localStorage-backed settings store shared by the shell wiring and UI hooks. */
 export function createSettingsStore(
   storage: Pick<WebStorageLike, "getItem" | "setItem"> | null | undefined = defaultStorage(),
 ): SettingsStore {

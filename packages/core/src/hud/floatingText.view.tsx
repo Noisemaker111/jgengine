@@ -49,7 +49,7 @@ export interface FloatingTextLayoutOptions {
 /**
  * Pure layout core: projects each view, drops the ones behind the camera or
  * (when `viewport` is set) off-screen, and returns the survivors sorted
- * farthest-first so nearer text paints on top. No React, no DOM — unit-testable.
+ * farthest-first so nearer text paints on top. No UI runtime, no DOM — unit-testable.
  *
  * @capability floating-text pure world→screen layout for floating-text views (project, cull, depth-sort)
  */

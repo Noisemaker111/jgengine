@@ -10,7 +10,7 @@ import type { SaveSlotMeta, SaveSlots } from "@jgengine/core/save/saveSlots";
  * into a save-select screen and mutate the model in event handlers — the menu
  * re-renders itself.
  *
- * @capability use-save-slots React hook binding a save-slots metadata index — re-renders on change and returns the ordered slot list
+ * @capability use-save-slots UI hook binding a save-slots metadata index — re-renders on change and returns the ordered slot list
  */
 export function useSaveSlots(model: SaveSlots): SaveSlotMeta[] {
   const [, bump] = useReducer((n: number) => n + 1, 0);

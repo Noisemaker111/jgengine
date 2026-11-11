@@ -57,7 +57,7 @@ export type LibraryDropHandler = (payload: LibraryDragPayload, point: LibraryDro
 
 /**
  * Hands viewport library drops to the editor chrome: the viewport and the chrome mount in separate
- * React trees, so the chrome sets `handler` and the viewport's drop zone calls it.
+ * UI trees, so the chrome sets `handler` and the viewport's drop zone calls it.
  * @internal
  */
 export interface LibraryDropTarget {

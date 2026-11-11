@@ -181,7 +181,7 @@ function overrideMapEntries(maps: ModelMaterialMaps | undefined): { role: Materi
 
 /**
  * Load and own every map view one model configuration references — the
- * React-free equivalent of `useModelMaterialTextures`. Resolves once all
+ * UI-free equivalent of `useModelMaterialTextures`. Resolves once all
  * images arrive; `dispose` releases the owned views while the loaded sources
  * stay cached.
  */
@@ -555,7 +555,7 @@ function motionSignature(plan: CharacterMotionPlan, locomotion: boolean, lowTier
 }
 
 /**
- * Draws an entity's model without React: loading, cloning, materials, paint,
+ * Draws an entity's model without the UI runtime: loading, cloning, materials, paint,
  * attachments, parts, animation, foot IK, glance, bounds and collision
  * measurement — the `EntityModel` contract on the engine frame loop. A live
  * `instanceId` follows `look`, `held`, `worn`, `characterMotion` and death
@@ -1053,7 +1053,7 @@ export function singleVariantModelDraw(options: EntityModelDrawOptions): EngineD
       state.scene.add(host);
       if (!warmed) {
         warmed = true;
-        // Warm every level so the switch swaps a cached clone, like the React preload.
+        // Warm every level so the switch swaps a cached clone, like the UI preload.
         for (const candidate of variants.levels) void loadGltf(candidate.url).catch(() => {});
       }
       swapLevel(state, 0);

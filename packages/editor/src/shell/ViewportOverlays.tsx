@@ -65,7 +65,7 @@ const WIDGET_RADIUS = 30;
 
 /**
  * Bottom-left orientation axis widget. Reads the camera basis published by the in-canvas probe on
- * its own rAF loop and mutates SVG attributes directly, so orbiting never rerenders React.
+ * its own rAF loop and mutates SVG attributes directly, so orbiting never rerenders the UI.
  */
 export const OrientationWidget = memo(function OrientationWidget() {
   const svgRef = useRef<SVGSVGElement>(null);
