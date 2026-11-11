@@ -1,7 +1,7 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { Children, createContext, useContext, useEffect, useState, useSyncExternalStore, type ReactNode } from "../jsx";
+import { Children, createContext, useContext, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "../jsx";
 import { isLive, live, type Live } from "../liveValue";
-import { RuneBox, RuneIcon, RuneSurface, RuneText, useRuneViewport } from "./elements.view";
+import { RuneBox, RuneIcon, RuneSurface, RuneText, RuneTextField, useRuneViewport } from "./elements.view";
 import type { RuneElementProps, RuneBoundStyle, RuneBoundFont, RuneSpan } from "./element";
 import { bind, runeFormat, runeViewportClass, ownRuneFlow, type RuneFlow, type RuneSource, type RuneTheme, type RuneViewportClass } from "./primitives";
 import type { GameContext } from "../../runtime/gameContext";
@@ -97,6 +97,53 @@ export function RuneAction({ command, run, acceptDrop, children, ...props }: Run
   return <RuneView {...props} role="button" onPress={activate} {...(acceptDrop === undefined ? {} : { onDrop: acceptDrop })}>
     {textOnly ? <RuneLabel value={parts.join("")} /> : children}
   </RuneView>;
+}
+
+/** Props for {@link RuneField}: the controlled text, its callbacks and native field options. */
+export interface RuneFieldProps extends Omit<RuneElementProps, "text" | "value" | "rev" | "onEdit" | "onSubmit" | "onReplace" | "children"> {
+  /** The game's text. Typing reports through `onChange`; a different `value` replaces the field's text. */
+  value: string;
+  onChange: (text: string) => void;
+  /** Enter in a single-line field (the phone keyboard's send key too). */
+  onSubmit?: (text: string) => void;
+  placeholder?: string;
+  multiline?: boolean;
+  secret?: boolean;
+  /** Longest text in characters; longer input is cut and the field shows the cut text. */
+  maxLength?: number;
+  variant?: string;
+  textStyle?: string;
+}
+
+/**
+ * Native text entry: Rune owns caret, selection and IME; the game owns the text. While it has
+ * focus, keys go to the field rather than menu navigation, captures or game hotkeys; Escape leaves it.
+ * Keyboard and pad users reach it with navigation and Enter. On touch devices the surface raises the
+ * phone keyboard through one offscreen proxy at the loader boundary.
+ */
+export function RuneField({ value, onChange, onSubmit, maxLength, variant, textStyle, ...props }: RuneFieldProps) {
+  const env = useEnvironment();
+  const skin = variant === undefined ? undefined : env.theme.variants[variant];
+  if (variant !== undefined && skin === undefined) throw new Error(`Unknown Rune variant: ${variant}`);
+  if (textStyle !== undefined && env.theme.text[textStyle] === undefined) throw new Error(`Unknown Rune text style: ${textStyle}`);
+  // `shown` is the text Rune holds. A `value` that differs from it is the game replacing the text,
+  // which a new `rev` tells Rune to take; a value that only echoes typing changes nothing.
+  const state = useRef({ shown: value, rev: 0 });
+  const [, redraw] = useState(0);
+  if (value !== state.current.shown) state.current = { shown: value, rev: state.current.rev + 1 };
+  const cut = (text: string) => maxLength === undefined ? text : Array.from(text).slice(0, Math.max(0, maxLength)).join("");
+  // `replaced`: the text came from outside Rune (the phone keyboard proxy), so Rune must take it too.
+  const take = (text: string, replaced: boolean) => {
+    const next = cut(text), trimmed = next !== text;
+    if (!replaced && !trimmed && next === state.current.shown) return;
+    state.current = { shown: next, rev: replaced || trimmed ? state.current.rev + 1 : state.current.rev };
+    if (next !== value) onChange(next);
+    if (replaced || trimmed) redraw(n => n + 1);
+  };
+  return <RuneTextField {...(textStyle === undefined ? {} : env.theme.text[textStyle])} {...skin} {...props}
+    value={state.current.shown} rev={state.current.rev} role="textbox"
+    onEdit={text => take(text, false)} onReplace={text => take(text, true)}
+    {...(onSubmit === undefined ? {} : { onSubmit: (text: string) => onSubmit(cut(text)) })} />;
 }
 
 /** Subscribed keyed composition. Per-frame fields belong in the item's bound leaves. */

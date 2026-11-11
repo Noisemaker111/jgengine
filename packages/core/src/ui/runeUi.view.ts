@@ -65,6 +65,8 @@ interface JgUiModule {
   patch_text: (id: number, json: string, revision: number) => void;
   scroll_to: (id: number, x: number, y: number, smooth: boolean) => void;
   scroll_native_into_view: (id: string) => void;
+  focus_native: (id: string) => void;
+  blur_native: () => void;
   canvas_frame: (id: number, source: HTMLCanvasElement | HTMLVideoElement) => void;
   remove_canvas: (id: number) => void;
   values_changed: () => void;
@@ -226,6 +228,10 @@ export class RuneUi {
 
   /** Reveal a native keyed control inside its scroll viewport. */
   scrollNativeIntoView(id: string): void { this.send(() => this.api.scroll_native_into_view(id)); }
+  /** Give a native field keyboard focus, or drop it with `null`. */
+  focusNative(id: string | null): void { this.send(() => id === null ? this.api.blur_native() : this.api.focus_native(id)); }
+  /** The canvas Rune draws on and winit reads keys from. */
+  get surfaceCanvas(): HTMLCanvasElement { return this.canvas; }
 
   /** Present a changed canvas frame in Rune's ordinary image paint order. */
   canvasFrame(id: number, source: HTMLCanvasElement | HTMLVideoElement): void {

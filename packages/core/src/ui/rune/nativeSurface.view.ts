@@ -22,6 +22,19 @@ export function syncNativeSurface(root: RuneNode): void {
   surface.sync();
 }
 
+/**
+ * Where a key goes while a native field may own the keyboard: the field itself (Rune reads it from
+ * its canvas or the phone proxy), out of the field (Escape), or out and on to navigation (Tab).
+ * `null` when no field is being edited. It is checked before captures, back and menu navigation.
+ * @internal
+ */
+export function nativeFieldKey(code: string, editing: boolean): "field" | "leave" | "leave-navigate" | null {
+  if (!editing) return null;
+  if (code === "Escape") return "leave";
+  if (code === "Tab") return "leave-navigate";
+  return "field";
+}
+
 /** Release a detached native tree and all its listeners/slots. @internal */
 export function removeNativeSurface(root: RuneNode): void {
   surfaces.get(root)?.destroy();
@@ -44,6 +57,10 @@ class NativeSurface {
   private padLastFiredAt: number | null = null;
   private readonly activation = new RuneActivation(() => performance.now());
   private keyHeld: RuneNode | undefined;
+  /** The native field that owns the keyboard, if any. */
+  private editing: RuneNode | null = null;
+  /** Offscreen input that raises the phone keyboard for {@link editing} on touch devices. */
+  private proxy: HTMLInputElement | HTMLTextAreaElement | null = null;
 
   constructor(private readonly root: RuneNode) {
     mounting = mounting.then(async () => {
@@ -52,6 +69,11 @@ class NativeSurface {
       if (this.dead) { ui.destroy(); return; }
       this.ui = ui;
       ui.on("*", event => this.event(event));
+      // Rune reads a field's keys on its canvas; stop them there so window hotkeys stay quiet.
+      const contain = (event: KeyboardEvent) => { if (this.editing !== null) event.stopPropagation(); };
+      ui.surfaceCanvas.addEventListener("keydown", contain);
+      ui.surfaceCanvas.addEventListener("keyup", contain);
+      this.cleanups.push(() => { ui.surfaceCanvas.removeEventListener("keydown", contain); ui.surfaceCanvas.removeEventListener("keyup", contain); });
       root.onFocus = node => {
         node.props.onFocus?.();
         document.getElementById("jg-ui")?.setAttribute("aria-label", nativeLabel(node));
@@ -208,7 +230,14 @@ class NativeSurface {
       return;
     }
     const node = this.visibleNodes().find(node => node.id === event.id);
+    if (event.kind === "blur" && this.editing !== null && this.editing.id === event.id) {
+      // The phone proxy taking DOM focus blurs Rune's canvas; the proxy still owns the field.
+      if (this.proxy === null || document.activeElement !== this.proxy) this.leaveField(false);
+      return;
+    }
     if (node === undefined || !nativeEnabled(node)) return;
+    if (event.kind === "focus" && node.tag === "rune-field") { this.enterField(node, false); return; }
+    if (event.kind === "submit") { node.props.onSubmit?.(event.text ?? ""); return; }
     if (event.kind === "press") { node.focus(); node.props.onPress?.(); }
     if (event.kind === "hover") node.focus();
     if (event.kind === "hover" || event.kind === "leave") node.props.onHover?.(event.kind === "hover");
@@ -247,7 +276,62 @@ class NativeSurface {
     if (node !== undefined && this.activation.end(node.id) && this.visibleNodes().includes(node) && nativeEnabled(node)) node.props.onPress?.();
   }
 
+  /** Give `node` the keyboard. `ask`: the page chose it (keyboard or pad), so Rune focuses it too. */
+  private enterField(node: RuneNode, ask: boolean): void {
+    this.editing = node;
+    if (this.root.focused !== node) node.focus();
+    const coarse = typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
+    if (coarse) { this.raiseKeyboard(node); if (ask) this.ui?.focusNative(node.id); return; }
+    this.ui?.surfaceCanvas.focus({ preventScroll: true });
+    if (ask) this.ui?.focusNative(node.id);
+  }
+
+  /** Leave the edited field. `tell`: Rune still thinks it has focus (Escape, Tab, the proxy closing). */
+  private leaveField(tell = true): void {
+    if (this.editing === null) return;
+    this.editing = null;
+    const proxy = this.proxy;
+    this.proxy = null;
+    proxy?.remove();
+    if (tell) this.ui?.focusNative(null);
+    this.restorePlayFocus();
+  }
+
+  /**
+   * Phones show their keyboard only for a focused DOM text input, so a touch device edits through one
+   * offscreen proxy: its text replaces the field's and its send key submits. Loader boundary only.
+   */
+  private raiseKeyboard(node: RuneNode): void {
+    const multi = node.props.multiline === true;
+    this.proxy?.remove();
+    const proxy = document.createElement(multi ? "textarea" : "input");
+    if (proxy instanceof HTMLInputElement) proxy.type = node.props.secret === true ? "password" : "text";
+    proxy.setAttribute("aria-label", nativeLabel(node) || node.props.placeholder || "Text");
+    proxy.setAttribute("autocapitalize", "off");
+    proxy.setAttribute("autocomplete", "off");
+    proxy.setAttribute("enterkeyhint", multi ? "enter" : "send");
+    proxy.inputMode = "text";
+    proxy.spellcheck = false;
+    proxy.value = node.props.value ?? "";
+    Object.assign(proxy.style, { position: "fixed", left: "0", bottom: "0", width: "1px", height: "1px", opacity: "0", pointerEvents: "none", fontSize: "16px" });
+    proxy.addEventListener("input", () => { if (this.proxy === proxy) this.editing?.props.onReplace?.(proxy.value); });
+    proxy.addEventListener("keydown", event => {
+      event.stopPropagation();
+      if (event.key === "Enter" && !multi) { event.preventDefault(); this.editing?.props.onSubmit?.(proxy.value); }
+    });
+    proxy.addEventListener("blur", () => { if (this.proxy === proxy) this.leaveField(); });
+    document.body.append(proxy);
+    this.proxy = proxy;
+    proxy.focus({ preventScroll: true });
+  }
+
   private key(event: KeyboardEvent): void {
+    const route = nativeFieldKey(event.code, this.editing !== null);
+    if (route === "field") return;
+    if (route !== null) {
+      this.leaveField();
+      if (route === "leave") { event.preventDefault(); event.stopImmediatePropagation(); return; }
+    }
     const nodes = this.visibleNodes();
     const capture = [...nodes].reverse().find(node => nativeEnabled(node) && node.props.onKey !== undefined);
     if (capture !== undefined) { event.preventDefault(); event.stopImmediatePropagation(); capture.props.onKey?.(event.code); return; }
@@ -257,7 +341,7 @@ class NativeSurface {
       event.preventDefault(); event.stopImmediatePropagation(); close.props.onBack?.(); return;
     }
     if (!this.modal) return;
-    const controls = nodes.filter(node => nativeEnabled(node) && (node.props.onPress !== undefined || node.props.onValue !== undefined || node.props.onCommit !== undefined));
+    const controls = nodes.filter(node => nativeEnabled(node) && (node.props.onPress !== undefined || node.props.onValue !== undefined || node.props.onCommit !== undefined || node.tag === "rune-field"));
     if (controls.length === 0) return;
     let index = controls.findIndex(node => node === this.root.focused);
     const intent = menuIntentForKey(event.code);
@@ -277,7 +361,8 @@ class NativeSurface {
       if (index < 0) index = 0;
       const node = controls[index];
       if (node !== undefined && !event.repeat) {
-        if ((node.props.holdMs ?? 0) > 0) { this.keyHeld = node; this.activation.begin(node.id,node.props.holdMs); }
+        if (node.tag === "rune-field") this.enterField(node, true);
+        else if ((node.props.holdMs ?? 0) > 0) { this.keyHeld = node; this.activation.begin(node.id,node.props.holdMs); }
         else node.props.onPress?.();
       }
     } else {
@@ -287,6 +372,8 @@ class NativeSurface {
 
   destroy(): void {
     this.dead = true;
+    this.proxy?.remove();
+    this.proxy = null;
     cancelAnimationFrame(this.raf);
     cancelAnimationFrame(this.padFrame);
     for (const cleanup of this.cleanups) cleanup();

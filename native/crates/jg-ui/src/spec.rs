@@ -328,6 +328,9 @@ pub fn field_ids(nodes: &[Node]) -> std::collections::HashSet<String> {
     }
     let mut out = std::collections::HashSet::new();
     walk(nodes, &mut out);
+    let mut natives = Vec::new();
+    crate::native::fields(nodes, &mut natives);
+    out.extend(natives.into_iter().map(|(id, _)| id.to_owned()));
     out
 }
 
