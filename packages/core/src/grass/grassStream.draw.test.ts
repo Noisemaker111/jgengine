@@ -381,7 +381,7 @@ test("bake time is sliced after the first frame and holds a coarser node until t
 });
 
 test("leaves free their buffers when evicted and on dispose", () => {
-  const { stream: field, scene } = stream({ area: 2000 });
+  const { stream: field, scene } = stream({ area: 600 });
   let disposed = 0;
   const watch = () => scene.traverse((node) => {
     const mesh = node as THREE.Mesh;
@@ -390,8 +390,8 @@ test("leaves free their buffers when evicted and on dispose", () => {
       mesh.geometry.addEventListener("dispose", () => { disposed += 1; });
     }
   });
-  for (let step = 0; step < 12; step += 1) {
-    field.update(camera([step * 80 - 480, 1.7, 0], [step * 80 - 480, 0.5, -30]), VIEW_HEIGHT, Infinity);
+  for (let step = 0; step < 6; step += 1) {
+    field.update(camera([step * 100 - 250, 1.7, 0], [step * 100 - 250, 0.5, -30]), VIEW_HEIGHT, Infinity);
     watch();
   }
   expect(disposed).toBeGreaterThan(0);
@@ -399,7 +399,7 @@ test("leaves free their buffers when evicted and on dispose", () => {
   field.dispose();
   expect(field.stats().cached).toBe(0);
   expect(held).toBeGreaterThan(0);
-  // Twelve full settles over a 2 km field: about 2 s alone, past bun's 5 s default on a busy PC.
+  // Six settles walking a 600 m field still evict leaves; the old 2 km, twelve-settle walk took 27-32 s on CI runners.
 }, 30_000);
 
 test("every preset and random knob mix stays full: blade cover never drops below the lush floor", () => {
