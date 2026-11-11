@@ -7,6 +7,8 @@ import { savePark } from "./persistence";
 import { captureParkThumb } from "./parkProfile";
 import { refreshParkSlot } from "./parkSlot";
 import { parkFocus } from "./ui/menu/ParkMenu";
+import { hintRing } from "./ui/hintRing";
+import { currentHint } from "./onboarding";
 import { session } from "./session";
 import { syncAmbience } from "./audio";
 import { tickRating } from "./sim/economy";
@@ -123,6 +125,9 @@ export function parkReadout(ctx: GameContext): Record<string, unknown> {
     phases: [...session.guests.values()].reduce<Record<string, number>>((acc, guest) => ({ ...acc, [guest.phase]: (acc[guest.phase] ?? 0) + 1 }), {}),
     heading: [...session.guests.values()].reduce<Record<string, number>>((acc, guest) => (guest.targetId === null ? acc : { ...acc, [guest.targetId]: (acc[guest.targetId] ?? 0) + 1 }), {}),
     shut: rides.filter((entry) => w.fact(`${entry.id}.closed`) === true).map((entry) => entry.id),
+    // The first scenario's step and the control its ring is on (`ui/hintRing.ts`), as the HUD shows them.
+    hint: currentHint(ctx)?.id ?? null,
+    pointed: hintRing.pointed,
   };
 }
 

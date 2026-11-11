@@ -30,7 +30,7 @@ Genres: tycoon. 14/18 proven · 1 not simulatable · 3 missing.
 | `failure.lose-and-recover` | proven | The player can fail (die, lose the run, go broke) and the game puts them back into play at a stated cost. | proofs/sim/bankrupt-replay.proof.ts |
 | `save.continue` | missing | Progress made by playing survives saving and continuing. |  |
 | `settings.controls` | missing | The player opens settings and a change (a binding, volume, sensitivity) takes effect. |  |
-| `menu.start-and-credits` | not simulatable | The main menu starts a game and shows the credits. | src/game/ui/menu/ParkMenu.tsx: the Credits pane is picked inside the engine GameMenu's own React state (@jgengine/core/menu); no command opens it, so a headless run cannot reach it |
+| `menu.start-and-credits` | not simulatable | The main menu starts a game and shows the credits. | src/game/ui/menu/ParkMenu.tsx: the Credits pane is a screen on the title board's own Rune flow; no command opens it, so a headless run cannot reach it (proofs/runeUiFixture.tsx renders it) |
 | `progression.runway` | proven | Something new unlocks steadily across the first five hours, up to the progression cap. | content check |
 | `content.item-source` | proven | Every item can be obtained by playing. | content check |
 | `content.item-use` | proven | Every item does something: crafts, equips, eats, places, feeds, sells or summons. | content check |

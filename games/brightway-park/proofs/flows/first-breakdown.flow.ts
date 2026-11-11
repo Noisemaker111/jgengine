@@ -17,13 +17,13 @@ export default defineFlow(game, {
     await f.click("Lab");
     await f.click("Ice Cream Cart");
     await f.click("Lab");
-    await f.waitForPage("document.querySelector('[data-onboarding-step]')?.getAttribute('data-onboarding-step') === 'mechanic'", { timeoutMs: 3000, note: "hint: with research running, the next step is a mechanic" });
+    await f.waitForPage("globalThis.__brightway.read().hint === 'mechanic'", { timeoutMs: 3000, note: "hint: with research running, the next step is a mechanic" });
     await f.timeScale(8);
     await f.waitFor((p) => p.breakdowns > 0, { timeoutMs: 120000, note: "breakdown: the carousel wears out and breaks on its own" });
     await f.timeScale(1);
     await f.see(/hire a mechanic/i, { timeoutMs: 5000, note: "breakdown: the park says the ride needs a mechanic" });
-    await f.waitForPage("document.querySelector('[data-onboarding-step]')?.getAttribute('data-onboarding-step') === 'mechanic'", { timeoutMs: 3000, note: "hint: the next step is hiring a mechanic" });
-    await f.expectPage("document.querySelector('[data-bw-pointed]')?.matches('[data-build-category=staff], [data-build-item=staff_mechanic], [data-hint=build]') === true", "hint: the hint rings the way to the Staff palette");
+    await f.waitForPage("globalThis.__brightway.read().hint === 'mechanic'", { timeoutMs: 3000, note: "hint: the next step is hiring a mechanic" });
+    await f.expectPage("['category:staff', 'item:staff_mechanic', 'hud:build'].includes(globalThis.__brightway.read().pointed)", "hint: the hint rings the way to the Staff palette");
     await f.shot("brightway-first-breakdown");
     // With no mechanic, nothing fixes it: still down after a while.
     await f.timeScale(4);
@@ -37,7 +37,7 @@ export default defineFlow(game, {
     const grass = await lotScreen(f, -12, 36);
     await f.clickAt(grass.x, grass.y);
     await f.see("Mechanic built", { timeoutMs: 5000, note: "fix: a mechanic is hired by clicking the palette and the lot" });
-    await f.waitForPage("document.querySelector('[data-onboarding-step]') === null", { timeoutMs: 3000, note: "hint: the mechanic step is done" });
+    await f.waitForPage("globalThis.__brightway.read().hint === null", { timeoutMs: 3000, note: "hint: the mechanic step is done" });
     await f.timeScale(4);
     await f.see(/running again/i, { timeoutMs: 60000, note: "fix: the new mechanic goes straight to the broken ride and it runs again" });
     await f.timeScale(1);

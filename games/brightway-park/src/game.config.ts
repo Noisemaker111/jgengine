@@ -13,8 +13,6 @@ import { parkHints, parkHintsWhilePaused } from "./game/onboarding";
 import { park } from "./game/park";
 import { parkProbe } from "./game/parkProbe";
 import { GameUI } from "./game/ui/GameUI";
-import { parkKit } from "./game/ui/kit";
-import { parkTheme } from "./game/ui/theme";
 import { loop } from "./loop";
 import { physics, world } from "./world";
 
@@ -59,8 +57,8 @@ export const game = defineGame({
     touch: { buttons: [] },
     pointer: { moveCommand: "park.pointer", secondaryCommand: "build.clear" },
   },
-  uiKit: parkKit,
-  hudTheme: parkTheme,
+  hudTheme: false,
+  uiRenderer: "rune",
   rendering: {
     look: "cinematic",
     mood: { preset: "bright", sun: { azimuth: 135, elevation: 52, color: "#fff1d6" }, horizonColor: "#bfe0e6", fog: { near: 260, far: 900 } },
