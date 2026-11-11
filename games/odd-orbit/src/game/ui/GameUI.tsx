@@ -1,110 +1,51 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { useEffect, useState } from "@jgengine/core/ui/jsx";
-import { HudCanvas, HudPanel, useHudLayout, useDisplayProfile, usePanels } from "@jgengine/ui";
-import { useGameFonts } from "@jgengine/core/ui/fonts.view";
-import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
-import { HudButton } from "@jgengine/core/hud/hudButton.view";
-import { useGame, useSceneObjects } from "@jgengine/ui/hooks";
+import { useEffect, useMemo, useState, type ReactNode } from "@jgengine/core/ui/jsx";
+import { RuneRoot, RuneTransient, RuneView } from "@jgengine/core/ui/rune/primitives.view";
+import { registerNativeRuneFont } from "@jgengine/core/ui/rune/nativeSurface.view";
+import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
+import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
+import { useSettings } from "@jgengine/core/settings/settings.view";
+import { useGame } from "@jgengine/ui/hooks";
 import { useGameContext } from "@jgengine/ui/provider";
-import { LiveText } from "@jgengine/core/ui/liveBind.view";
 import { useStore } from "@jgengine/ui/store";
+
 import { GAME_FONTS } from "../../art/fonts/fonts";
 import { householdStore } from "../session/store";
 import { orbitSession } from "../session/lifecycle";
-import { nextBill, RATION_BUNDLE, RELIEF, PANTRY_CAP } from "../sim/economy";
-import { BuildPalette } from "./components/BuildPalette";
-import { Inspector } from "./components/Inspector";
-import { RosterPanel } from "./components/RosterPanel";
-import { CharterNote, TermLetter, TransmissionSlip } from "./components/Charter";
-import { FURNITURE_BY_ID } from "../objects/catalog";
-import { HULL_PATCH_COST, repairCost } from "../sim/events";
-import { FridgeMagnets, HouseClock } from "./components/TopBar";
-import { creditsText } from "./components/bits";
-import { Enamel } from "./fiction/kit";
-import { OrbitMenu, type OrbitPreferences } from "./menu/OrbitMenu";
+import { CharterNote, FridgeMagnets, HouseClock, RosterPanel, TermLetter, TransmissionSlip } from "./hud";
+import { BuildPalette, Inspector, PantryLedger } from "./panels";
+import { HouseSettings, OrbitMenu, type OrbitPreferences } from "./menu";
+import { ENAMEL, Heading, Icon, INK, Paper, Plate, RIM, Row, Text, Veil, orbitThemeFor } from "./kit";
+
+for (const face of [GAME_FONTS.display, GAME_FONTS.body]) if (face !== undefined) registerNativeRuneFont(resolveAssetBaseUrl(face.src));
 
 const PREF_KEY = "odd-orbit.preferences.v2";
-
 function readPreferences(): OrbitPreferences {
   try { const p = JSON.parse(localStorage.getItem(PREF_KEY) ?? "{}"); return { calm: p?.calm === true, contrast: p?.contrast === true }; }
   catch { return { calm: false, contrast: false }; }
 }
 
-/** The pantry and bills drawer: today's books, rations and repairs, with the ticking credits written live. */
-function PantryLedger({ command }: { command: (name: string, data?: Record<string, unknown>) => unknown }) {
-  const ctx = useGameContext();
-  const objects = useSceneObjects();
-  const ledger = useStore(householdStore, (state) => ({
-    dayHarvest: state.dayHarvest,
-    bill: Math.round(nextBill(state, objects)),
-    credits: Math.floor(state.credits),
-    debt: state.debt,
-    lastDay: state.lastDay === null ? null : { ...state.lastDay },
-    pantry: state.pantry,
-    reliefDay: state.reliefDay,
-    day: state.day,
-    canBuy: state.credits >= RATION_BUNDLE.cost && state.pantry + RATION_BUNDLE.quantity <= PANTRY_CAP,
-    canRelief: state.reliefDay !== state.day && state.pantry < 4 && state.credits < RATION_BUNDLE.cost,
-    broken: (state.hazards?.broken ?? []).flatMap((id) => {
-      const obj = objects.find((o) => o.instanceId === id);
-      return obj === undefined ? [] : [{ id, catalogId: obj.catalogId, affordable: state.credits >= repairCost(obj.catalogId) }];
-    }),
-    hullLeak: state.hazards?.hullLeak === true,
-    canPatch: state.credits >= HULL_PATCH_COST,
-  }));
-  const { canBuy, canRelief } = ledger;
-  return <>
-    <div className="orbit-balance">
-      <span>Earned today<LiveText as="b" get={() => creditsText(householdStore.read(ctx).dayIncome)} /></span>
-      <span>Grown today<b>{ledger.dayHarvest} rations</b></span>
-      <span>Due at midnight<b>{ledger.bill}</b></span>
-      <span>In the jar<b>{creditsText(ledger.credits)}</b></span>
-      {ledger.debt > 0 && <span className="warning">Debt carried<b>{creditsText(ledger.debt)}</b></span>}
-    </div>
-    {ledger.lastDay && <p className="orbit-day-report">Yesterday: {creditsText(ledger.lastDay.income)} earned, {ledger.lastDay.harvest} rations grown, {ledger.lastDay.bill} billed, {ledger.lastDay.missed} shifts missed.</p>}
-    <HudButton disabled={!canBuy} onClick={() => command("household.rations")}>Buy {RATION_BUNDLE.quantity} rations · {RATION_BUNDLE.cost} credits</HudButton>
-    <p className="orbit-fine">{canBuy ? "Each meal uses one ration." : ledger.pantry + RATION_BUNDLE.quantity > PANTRY_CAP ? "The pantry has no room for six more." : <LiveText get={() => `Need ${creditsText(RATION_BUNDLE.cost - householdStore.read(ctx).credits)} more credits.`} />}</p>
-    <HudButton disabled={!canRelief} onClick={() => command("household.relief")}>Emergency {RELIEF.quantity} rations · +{RELIEF.debt} debt</HudButton>
-    <p className="orbit-fine">{canRelief ? "Once a day. The next bill repays up to 40." : ledger.reliefDay === ledger.day ? "Relief already taken today." : "Only when under 4 rations and 36 credits."}</p>
-    {(ledger.broken.length > 0 || ledger.hullLeak) && <>
-      <h3 className="orbit-repairs-head">Repairs</h3>
-      {ledger.broken.map(({ id, catalogId, affordable }) => (
-        <HudButton key={id} disabled={!affordable} onClick={() => command("household.repair", { id })}>Mend the {FURNITURE_BY_ID[catalogId]?.name ?? "furnishing"} · {repairCost(catalogId)} credits</HudButton>
-      ))}
-      {ledger.hullLeak && <HudButton disabled={!ledger.canPatch} onClick={() => command("household.patchHull")}>Patch the torpor wing · {HULL_PATCH_COST} credits</HudButton>}
-      <p className="orbit-fine">Broken furnishings stand idle and an inspector fines a habitat in disrepair.</p>
-    </>}
-  </>;
-}
+type Drawer = "build" | "ledger" | null;
+/** Capture-only request: a shot declares which habitat drawer it wants open. */
+export const drawerFocus: { id: Drawer } = { id: null };
 
 /**
- * The habitat HUD as the household's own kitchen: a wall clock and calendar top-left, the fridge
- * door top-right, the beings as magnets down the left, and a tray of three tools at the foot.
- * Everything steps back when nothing is changing and comes forward when the household needs you.
+ * The habitat HUD as the household's own kitchen: the wall clock top-left, the fridge door
+ * top-right, the beings as magnets down the left and a tray of three tools at the foot.
  */
 export function GameUI() {
-  useGameFonts(GAME_FONTS);
-  const layout = useHudLayout({ storageKey: "odd-orbit" });
-  const profile = useDisplayProfile();
-  // The habitat writes the household every tick; the frame needs only which panels are up.
-  const household = useStore(householdStore, (state) => ({
-    selectedMemberId: state.selectedMemberId,
-    buildTool: state.buildTool,
-    transmission: state.incident != null && state.charter?.review == null,
-    pantryLow: state.pantry < 4,
-  }));
-  const session = useStore(orbitSession, (state) => ({ screen: state.screen }));
+  const ctx = useGameContext();
   const { commands } = useGame();
-  const panels = usePanels([{ id: "build", group: "habitat" }, { id: "ledger", group: "habitat" }]);
-  const drawer = panels.isOpen("build") ? "build" : panels.isOpen("ledger") ? "ledger" : null;
-  const setDrawer = (id: "build" | "ledger" | null) => { if (id) panels.open(id); else { panels.close("build"); panels.close("ledger"); } };
+  const settings = useSettings();
+  const { width, height } = useRuneViewport(), phone = width < 600;
+  const household = useStore(householdStore, (s) => ({ selectedMemberId: s.selectedMemberId, buildTool: s.buildTool, transmission: s.incident != null && s.charter?.review == null, pantryLow: s.pantry < 4 }));
+  const session = useStore(orbitSession, (s) => ({ screen: s.screen }));
+  const [drawer, setDrawer] = useState<Drawer>(drawerFocus.id);
   const [preferences, setPreferences] = useState(readPreferences);
+  const theme = useMemo(() => orbitThemeFor(preferences), [preferences]);
+  const notices = useMemo(() => ({ read: ctx.game.notices.list, subscribe: ctx.game.notices.subscribe }), [ctx]);
   const command = (name: string, data: Record<string, unknown> = {}) => commands.run(name, data);
   const modal = session.screen !== null;
-  const compact = profile.compact;
-  const landscape = compact && !profile.portrait;
-  const phone = compact && !landscape;
   const setPreference = (key: keyof OrbitPreferences, value: boolean) => {
     const next = { ...preferences, [key]: value };
     setPreferences(next);
@@ -112,58 +53,70 @@ export function GameUI() {
   };
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key !== "Escape" || event.repeat || event.defaultPrevented) return;
-      if (session.screen !== null) return;
+      if (event.key !== "Escape" || event.repeat || event.defaultPrevented || orbitSession.read(ctx).screen !== null || householdStore.read(ctx).buildTool) return;
       event.preventDefault();
-      command("orbit.pause");
+      commands.run("orbit.pause", {});
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [session.screen, commands]);
-  const sheetOpen = drawer !== null || household.selectedMemberId !== null;
-  return <>
-    <HudCanvas layout={layout} className={`orbit-ui ${compact ? "orbit-compact" : ""} ${landscape ? "orbit-landscape" : ""} ${preferences.calm ? "orbit-calm" : ""} ${preferences.contrast ? "orbit-contrast" : ""}`}>
-      {!modal && <>
-        <HudPanel id="clock" anchor="top-left" priority="critical"><HouseClock compact={compact} /></HudPanel>
-        <HudPanel id="fridge" anchor="top-right" priority="critical"><FridgeMagnets compact={phone} /></HudPanel>
-        {!sheetOpen && <HudPanel id="charter" anchor="top-right" order={1} chip="charter"><CharterNote compact={phone} /></HudPanel>}
-        {household.transmission && <HudPanel id="transmission" anchor="top" priority="critical"><TransmissionSlip /></HudPanel>}
-        <HudPanel id="roster" anchor="left" priority="critical"><RosterPanel compact={compact} /></HudPanel>
-        {household.selectedMemberId && !drawer && <HudPanel id="inspector" anchor="right" priority="critical"><Inspector /></HudPanel>}
-        {drawer && <HudPanel id="drawer" anchor="right" priority="critical">
-          <KitPanel material="paper" cut="box" padding="0" edgeWidth={0} shadow={false} className="orbit-drawer" as="section" aria-label={drawer === "build" ? "Habitat furnishings" : "Daily balance"}>
-            <header>
-              <span className="orbit-drawer-icon"><GameIcon name={drawer === "build" ? "hammer" : "bread"} size={22} /></span>
-              <h2>{drawer === "build" ? "Furnishings catalogue" : "Pantry & bills"}</h2>
-              <Enamel as="button" tone="cream" radius={99} padding="0" className="orbit-close" aria-label="Close habitat panel" onClick={() => setDrawer(null)}><GameIcon name="cross" size={14} /></Enamel>
-            </header>
-            <div className="orbit-drawer-body">
-              {drawer === "build" ? <BuildPalette onChoose={() => setDrawer(null)} /> : <PantryLedger command={command} />}
-            </div>
-          </KitPanel>
-        </HudPanel>}
-        <HudPanel id="actions" anchor="bottom" priority="critical">
-          <nav className="orbit-tray" aria-label="Habitat tools">
-            <Enamel as="button" tone="butter" radius={20} padding="0" className="orbit-tool" aria-expanded={drawer === "build"} onClick={() => setDrawer(drawer === "build" ? null : "build")}>
-              <GameIcon name="hammer" size={22} /><span>Furnish</span>
-            </Enamel>
-            <Enamel as="button" tone={household.pantryLow ? "coral" : "mint"} radius={20} padding="0" className="orbit-tool" aria-expanded={drawer === "ledger"} onClick={() => setDrawer(drawer === "ledger" ? null : "ledger")}>
-              <GameIcon name="bread" size={22} /><span>Pantry</span>{household.pantryLow && <i className="orbit-badge" aria-label="Pantry is low">!</i>}
-            </Enamel>
-            <Enamel as="button" tone="lilac" radius={20} padding="0" className="orbit-tool" onClick={() => command("orbit.pause")}>
-              <GameIcon name="tome" size={22} /><span>Handbook</span>
-            </Enamel>
-          </nav>
-        </HudPanel>
-        {household.buildTool && <HudPanel id="placement" anchor="bottom" order={1} priority="critical">
-          <KitPanel material="paper" cut="ticket" depth={10} padding="8px 18px" edgeWidth={0} className="orbit-placement">
-            <span>Tap open floor to place it.</span>
-            <Enamel as="button" tone="coral" radius={12} padding="4px 12px" onClick={() => command("build.cancel")}>Cancel</Enamel>
-          </KitPanel>
-        </HudPanel>}
-      </>}
-    </HudCanvas>
-    {!modal && <TermLetter />}
-    {modal && <OrbitMenu preferences={preferences} onPreference={setPreference} />}
-  </>;
+  }, [ctx, commands]);
+  // A selected being takes the side panel; a drawer opened afterwards replaces it, as the DOM habitat did.
+  useEffect(() => { if (household.selectedMemberId !== null) setDrawer(null); }, [household.selectedMemberId]);
+  const sheet: "build" | "ledger" | "member" | null = drawer ?? (household.selectedMemberId !== null ? "member" : null);
+  const sheetW = phone ? width - 16 : 380;
+  const sheetH = phone ? Math.round(height * 0.56) : height - 300;
+  const sheetTitle = sheet === "build" ? "Furnishings catalogue" : sheet === "ledger" ? "Pantry & bills" : null;
+
+  return <RuneRoot context={ctx} theme={theme}>
+    {modal ? null : <RuneView anchor="fill">
+      <RuneView anchor="top-left" safe inset={phone ? 10 : 16} gap={phone ? 8 : 12}>
+        <HouseClock compact={phone} />
+        {phone && sheet !== null ? null : <RosterPanel compact={phone} />}
+      </RuneView>
+      <RuneView anchor="top-right" safe inset={phone ? 10 : 16} gap={8} items="end">
+        <FridgeMagnets compact={phone} />
+        {sheet === null ? <CharterNote compact={phone} /> : null}
+        {sheet !== null && !phone ? <SidePanel title={sheetTitle} width={sheetW} height={sheetH} close={() => { setDrawer(null); if (sheet === "member") command("member.select", { id: null }); }}>
+          {sheet === "build" ? <BuildPalette onChoose={() => setDrawer(null)} /> : sheet === "ledger" ? <PantryLedger command={command} /> : <Inspector />}
+        </SidePanel> : null}
+      </RuneView>
+      {household.transmission ? <RuneView anchor="top" safe inset={phone ? 150 : 16}><TransmissionSlip width={phone ? width - 20 : 460} /></RuneView> : null}
+      {sheet !== null && phone ? <RuneView anchor="bottom" safe inset={84}><SidePanel title={sheetTitle} width={sheetW} height={sheetH} close={() => { setDrawer(null); if (sheet === "member") command("member.select", { id: null }); }}>
+        {sheet === "build" ? <BuildPalette onChoose={() => setDrawer(null)} /> : sheet === "ledger" ? <PantryLedger command={command} /> : <Inspector />}
+      </SidePanel></RuneView> : null}
+      <RuneView anchor="bottom" safe inset={phone ? 12 : 18} gap={8} items="center">
+        <RuneView gap={6} items="center" maxWidth={phone ? width - 20 : 560} hidden={phone && sheet !== null}>
+          <RuneTransient source={notices} expire={ctx.game.notices.prune}>{(notice) => <Paper tint={notice.tone === "deny" ? "#ffd6cf" : "#fff3b8"} padding={[6, 12, 6, 12]}><Text size={14}>{notice.text}</Text></Paper>}</RuneTransient>
+        </RuneView>
+        {household.buildTool ? <Row fill="#fff6e4" radius={12} border={{ width: 2, color: RIM }} padding={[6, 8, 6, 14]} gap={10}>
+          <Text size={14}>Tap open floor to place it.</Text>
+          <Plate tone="coral" minHeight={32} padding={[4, 12, 4, 12]} onPress={() => command("build.cancel")}>Cancel</Plate>
+        </Row> : null}
+        <Row gap={phone ? 8 : 12} label="Habitat tools">
+          <Tool tone="butter" icon="hammer" label="Furnish" on={drawer === "build"} onPress={() => setDrawer(drawer === "build" ? null : "build")} />
+          <Tool tone={household.pantryLow ? "coral" : "mint"} icon="bread" label={household.pantryLow ? "Pantry !" : "Pantry"} on={drawer === "ledger"} onPress={() => setDrawer(drawer === "ledger" ? null : "ledger")} />
+          <Tool tone="lilac" icon="tome" label="Handbook" on={false} onPress={() => command("orbit.pause")} />
+        </Row>
+      </RuneView>
+    </RuneView>}
+    {modal ? null : <TermLetter />}
+    {modal ? <OrbitMenu preferences={preferences} onPreference={setPreference} /> : null}
+    {settings.isOpen ? <Veil label="Settings" close={settings.close}><Row justify="between"><Heading>Settings</Heading><Plate onPress={settings.close} label="Close settings"><Icon name="cross" size={14} /></Plate></Row><HouseSettings preferences={preferences} onPreference={setPreference} /></Veil> : null}
+  </RuneRoot>;
+}
+
+function Tool({ tone, icon, label, on, onPress }: { tone: keyof typeof ENAMEL; icon: Parameters<typeof Icon>[0]["name"]; label: string; on: boolean; onPress: () => void }) {
+  return <Plate tone={tone} on={on} radius={20} minHeight={56} minWidth={96} padding={[6, 14, 6, 14]} gap={2} layout="stack" items="center" justify="center" label={label} onPress={onPress}>
+    <Icon name={icon} size={22} /><Text size={13} weight={700} color={INK}>{label}</Text>
+  </Plate>;
+}
+
+function SidePanel({ title, width, height, close, children }: { title: string | null; width: number; height: number; close: () => void; children: ReactNode }) {
+  return <Paper width={width} maxHeight={height} padding={0} gap={0} onBack={close} label={title ?? "Member care"}>
+    {title === null ? null : <Row padding={[10, 10, 8, 14]} gap={8} fill={ENAMEL.butter} radius={12} border={{ width: 0, color: RIM }}>
+      <Icon name={title.startsWith("Furnish") ? "hammer" : "bread"} size={20} /><Heading size={17} grow={1}>{title}</Heading>
+      <Plate tone="cream" radius={99} minHeight={32} padding={[4, 9, 4, 9]} label="Close habitat panel" onPress={close}><Icon name="cross" size={13} /></Plate>
+    </Row>}
+    <RuneView scroll maxHeight={height - (title === null ? 0 : 52)} padding={14} gap={8}>{children}</RuneView>
+  </Paper>;
 }

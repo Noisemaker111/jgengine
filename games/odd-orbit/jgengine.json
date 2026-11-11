@@ -10,7 +10,10 @@
     "shell"
   ],
   "owns": [
-    "index.html"
+    "index.html",
+    "src/index.css",
+    "src/index.tsx",
+    "src/main.tsx"
   ],
   "capabilities": {
     "probes": {
