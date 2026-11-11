@@ -1449,8 +1449,9 @@ export interface SweepOptions {
   now?: number;
   /** Replace the live process list the stray-browser sweep reads (tests). */
   processes?: readonly BrowserProcess[];
-  /** Replace the kill the stray-browser sweep sends (tests: a listed pid may be a real process on the host). */
+  /** Replace the kill and the liveness check the stray-browser sweep uses (tests: a listed pid may be a real process on the host). */
   kill?: (pid: number) => unknown;
+  isAlive?: (pid: number | undefined) => boolean;
 }
 
 function minutes(ms: number): string {
@@ -1471,6 +1472,7 @@ export function sweepCaptureProfiles(root = tmpdir(), options: SweepOptions = {}
     now,
     ...(options.processes === undefined ? {} : { processes: options.processes }),
     ...(options.kill === undefined ? {} : { kill: options.kill }),
+    ...(options.isAlive === undefined ? {} : { isAlive: options.isAlive }),
   });
   const removed = sweepStaleProfiles(root, now, ageMs);
   if (pressure || removed > 0 || strays.killed > 0 || strays.profilesRemoved > 0) {
