@@ -81,6 +81,7 @@ export interface RuneElementProps extends RuneBoundStyle, RuneBoundFont {
   onSubmit?: (text: string) => void;
   /** Native field: the page replaced its text from outside Rune (the phone keyboard proxy). */
   onReplace?: (text: string) => void;
+  autoFocus?: boolean;
   /** Native field text, taken by Rune whenever `rev` changes. */
   value?: string;
   rev?: number;

@@ -125,6 +125,9 @@ pub(crate) fn emit(id: &str, kind: &'static str, value: Option<f32>, text: Optio
             scroll: None,
         })
     });
+    // Events ship with the next frame; a settled surface draws none, so a press on a still
+    // HUD would wait for the following input. Ask for that frame now.
+    wake();
 }
 
 /// Ask for one more frame from outside a handler (an image finished decoding).

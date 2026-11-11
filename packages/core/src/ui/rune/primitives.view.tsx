@@ -57,7 +57,7 @@ export function RuneView({ layout, anchor, safe, inset = 0, variant, responsive,
   </RuneBox>;
 }
 
-export interface RuneLabelProps<T> extends Omit<RuneElementProps, "text"> {
+export interface RuneLabelProps<T> extends Omit<RuneElementProps, "text" | "value"> {
   value?: Live<T>;
   format?: (value: T) => string;
   textStyle?: string;
@@ -111,6 +111,8 @@ export interface RuneFieldProps extends Omit<RuneElementProps, "text" | "value" 
   secret?: boolean;
   /** Longest text in characters; longer input is cut and the field shows the cut text. */
   maxLength?: number;
+  /** Take the keyboard the first time the field appears. */
+  autoFocus?: boolean;
   variant?: string;
   textStyle?: string;
 }

@@ -54,7 +54,7 @@ export interface NativeWireNode {
   children: NativeWireNode[];
 }
 
-const EVENT_PROPS = new Set(["children", "ref", "onPress", "onFocus", "onValue", "onCommit", "onAdjust", "onKey", "onEdit", "onSubmit", "onReplace", "onBack", "onDrag", "onHover", "onDrop", "holdMs", "dragValue", "modal"]);
+const EVENT_PROPS = new Set(["children", "ref", "onPress", "onFocus", "onValue", "onCommit", "onAdjust", "onKey", "onEdit", "onSubmit", "onReplace", "onBack", "onDrag", "onHover", "onDrop", "holdMs", "dragValue", "modal", "autoFocus"]);
 const SLOT_PROPS = new Set(["opacity", "width", "height", "x", "y", "scale"]);
 const FONT_PROPS = ["size", "weight", "family", "mono", "color", "tracking", "align"] as const;
 

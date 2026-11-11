@@ -28,6 +28,14 @@ export function syncNativeSurface(root: RuneNode): void {
  * `null` when no field is being edited. It is checked before captures, back and menu navigation.
  * @internal
  */
+/** The first visible, enabled `autoFocus` field not focused this way before; marks it seen. @internal */
+export function nextAutoFocusField(nodes: readonly RuneNode[], seen: WeakSet<RuneNode>): RuneNode | null {
+  const field = nodes.find(node => node.tag === "rune-field" && node.props.autoFocus === true && nativeEnabled(node) && !seen.has(node));
+  if (field === undefined) return null;
+  seen.add(field);
+  return field;
+}
+
 export function nativeFieldKey(code: string, editing: boolean): "field" | "leave" | "leave-navigate" | null {
   if (!editing) return null;
   if (code === "Escape") return "leave";
@@ -59,6 +67,7 @@ class NativeSurface {
   private keyHeld: RuneNode | undefined;
   /** The native field that owns the keyboard, if any. */
   private editing: RuneNode | null = null;
+  private readonly autoFocused = new WeakSet<RuneNode>();
   /** Offscreen input that raises the phone keyboard for {@link editing} on touch devices. */
   private proxy: HTMLInputElement | HTMLTextAreaElement | null = null;
 
@@ -186,6 +195,13 @@ class NativeSurface {
     this.startTexts();
     this.pollPad();
     if (released) this.restorePlayFocus();
+    this.autoFocusFields();
+  }
+
+  /** A field marked `autoFocus` takes the keyboard the first time it appears (chat opened by Enter). */
+  private autoFocusFields(): void {
+    const field = nextAutoFocusField(this.visibleNodes(), this.autoFocused);
+    if (field !== null && this.editing !== field) this.enterField(field, true);
   }
 
   private restorePlayFocus(): void {
@@ -317,6 +333,7 @@ class NativeSurface {
     proxy.addEventListener("input", () => { if (this.proxy === proxy) this.editing?.props.onReplace?.(proxy.value); });
     proxy.addEventListener("keydown", event => {
       event.stopPropagation();
+      if (!(event instanceof KeyboardEvent)) return;
       if (event.key === "Enter" && !multi) { event.preventDefault(); this.editing?.props.onSubmit?.(proxy.value); }
     });
     proxy.addEventListener("blur", () => { if (this.proxy === proxy) this.leaveField(); });

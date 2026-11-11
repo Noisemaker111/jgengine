@@ -33,7 +33,8 @@ models/bindings from `@jgengine/core/ui/rune/primitives`.
 - `RuneField`: controlled native text entry: `value`, `onChange`, `onSubmit`,
   `placeholder`, `multiline`, `secret`, `maxLength`, `variant`, `textStyle`. Rune owns
   caret/selection/IME; a focused field takes every key until Escape or Tab, and touch
-  devices raise the phone keyboard. Clear a chat line by setting `value` to `""`.
+  devices raise the phone keyboard. Clear a chat line by setting `value` to `""`;
+  `autoFocus` takes the keyboard when the field first appears.
 - `RuneFor`: subscribed `source: {read,subscribe}`, stable `keyBy`, render function.
   `read` returns the same bounded collection until a structural change; per-frame
   item fields bind to their leaves. Do not subscribe the whole UI to a frame store.
