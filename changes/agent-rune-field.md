@@ -11,6 +11,7 @@ RuneField native text field (controlled value, submit, autoFocus, focused-key ca
 
 - Verified: cargo test -p jg-ui 33 pass; rune UI TS tests 44 pass (new tests broken once and restored); core, Deepward and Scrap Signal type-checks.
 - Unverified: real typing, IME and the phone keyboard proxy in a browser; the press fix is confirmed by the Harbor Heat tour after this lands.
+- Unverified: real typing, IME and the phone keyboard proxy in a browser.
 
 ### Fixed
 
