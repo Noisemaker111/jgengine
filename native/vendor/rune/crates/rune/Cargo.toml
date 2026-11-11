@@ -30,6 +30,11 @@ ogg-audio = ["dep:symphonia", "dep:opuscule"]
 # SVG and SVGZ images (`ImageCache::svg`, `file`, `load_mime`, and `load` on sniffed SVG bytes), and
 # scalable Linux app icons, rasterized by resvg. Off, those images resolve to `Image::error`.
 svg = ["dep:resvg"]
+# AVIF images (`ImageCache::load` on AVIF bytes), decoded natively by rav1d, a Rust port of
+# dav1d; an animated AVIF shows its first frame. Building it for x86 needs NASM on the PATH for
+# rav1d's assembly. Off, AVIF bytes resolve to `Image::error`. No effect on web, where the
+# browser decodes AVIF.
+avif = ["dep:avif-decode"]
 # Linux desktop services over D-Bus (zbus, with a tokio runtime on each service's thread): the
 # desktop's light or dark preference (the Settings portal), the system tray (`Tray`), global
 # shortcuts on Wayland (the GlobalShortcuts portal) and, with `native-file-dialog`, the
@@ -66,14 +71,18 @@ wgpu = { version = "~30.0.1", default-features = false, features = ["std", "park
 # Keep Wayland client-side frames/buttons without the title font's ab_glyph/ttf-parser.
 winit = { version = "0.30.13", default-features = false, features = ["rwh_06", "x11", "wayland", "wayland-dlopen", "wayland-csd-adwaita-notitle"] }
 taffy = { version = "0.15", default-features = false, features = ["std", "taffy_tree", "flexbox", "grid", "block_layout", "content_size"] }
-parley = { version = "0.12", default-features = false, features = ["std"] }
+# `complex-scripts`: ICU4X's word and line dictionaries, as a browser's ICU has them. Chinese and
+# Japanese words (2.0 MB) and Thai, Lao, Khmer and Burmese words and line breaks (1.8 MB); without
+# them a Thai phrase never wraps and every CJK line logs a missing segmentation model.
+parley = { version = "0.12", default-features = false, features = ["std", "complex-scripts"] }
 swash = "0.2.10"
+skrifa = "0.44"
 bytemuck = { version = "1.25", features = ["derive"] }
 png = "0.18"
 serde = "1"
 serde_json = "1"
 portable-atomic = "1"
-image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+image = { version = "0.25", default-features = false, features = ["png"] }
 blake3 = "1"
 rustc-hash = "2"
 zeroize = "1.8"
@@ -81,6 +90,8 @@ half = "2"
 unicode-segmentation = "1.13"
 # Bidi classes for `Direction::Auto` (Parley already builds it, with its data).
 icu_properties = { version = "2.3", default-features = false, features = ["compiled_data"] }
+# Words for a double-click, with the dictionaries Parley's `complex-scripts` links.
+icu_segmenter = { version = "2.3", default-features = false, features = ["compiled_data"] }
 resvg = { version = "0.45", default-features = false, optional = true }
 wuff = "0.2.10"
 
@@ -90,6 +101,9 @@ libc = "0.2"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 pollster = "1"
+# JPEG, GIF, WebP, BMP and ICO decoding; a web build hands them to the browser's codecs instead.
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "webp", "bmp", "ico"] }
+avif-decode = { version = "3", optional = true }
 # Installed fonts by family name (`text::system_fonts::installed_family_files`): fontique's
 # DirectWrite, CoreText and fontconfig backends, in a collection apart from the app's, which
 # keeps system fonts off. Fontconfig opens at run time, so a build needs no headers for it.
@@ -109,7 +123,7 @@ wasm-bindgen-futures = "0.4"
 js-sys = "0.3"
 console_error_panic_hook = "0.1"
 wgpu = { version = "30", default-features = false, features = ["webgpu"] }
-web-sys = { version = "0.3", features = ["Window", "Document", "Element", "HtmlElement", "HtmlCanvasElement", "HtmlVideoElement", "CssStyleDeclaration", "MediaQueryList", "console"] }
+web-sys = { version = "0.3", features = ["Window", "Document", "Element", "HtmlElement", "HtmlCanvasElement", "CssStyleDeclaration", "MediaQueryList", "console"] }
 
 [target.'cfg(any(target_os = "macos", target_os = "windows"))'.dependencies]
 rfd = { version = "0.17", optional = true, default-features = false }
@@ -163,7 +177,7 @@ xkbcommon = "0.9"
 # D3D12 shared textures for `NativeSurface` (`native_surface::windows`), on wgpu-hal's version.
 windows = { version = "0.62", features = ["Win32_Foundation", "Win32_Globalization", "Win32_Graphics_Direct3D12", "Win32_Graphics_DirectWrite", "Win32_Graphics_Dxgi_Common", "Win32_Security", "Win32_System_Com"] }
 accesskit_windows = { version = "0.35.2", optional = true }
-windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging", "Win32_UI_Accessibility", "Win32_UI_HiDpi", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_Shell", "Win32_Graphics_Dwm", "Win32_Graphics_Gdi", "Win32_Security", "Win32_Storage_FileSystem", "Win32_System_IO", "Win32_System_LibraryLoader", "Win32_System_Performance", "Win32_System_Pipes", "Win32_System_RemoteDesktop", "Win32_System_Threading", "Win32_System_WindowsProgramming", "Win32_System_DataExchange", "Win32_System_Memory", "Win32_System_Time"] }
+windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging", "Win32_UI_Accessibility", "Win32_UI_HiDpi", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_Shell", "Win32_Graphics_Dwm", "Win32_Graphics_Gdi", "Win32_Security", "Win32_Storage_FileSystem", "Win32_System_IO", "Win32_System_LibraryLoader", "Win32_System_Performance", "Win32_System_Pipes", "Win32_System_RemoteDesktop", "Win32_System_StationsAndDesktops", "Win32_System_Threading", "Win32_System_WindowsProgramming", "Win32_System_DataExchange", "Win32_System_Memory", "Win32_System_Time"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 # AT-SPI over D-Bus on its own async-io thread, started only when the desktop's accessibility bus is on.

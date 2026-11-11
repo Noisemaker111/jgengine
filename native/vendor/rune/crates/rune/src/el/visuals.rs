@@ -216,7 +216,6 @@ impl El {
         let cold = self.vis.cold_mut();
         cold.pixels = Some(pixels.clone());
         cold.pixels_fit = None;
-        cold.pixels_pattern = None;
         self
     }
     /// Shows `pixels` at its own aspect ratio, centred: `Fit` letterboxes the whole image inside
@@ -225,16 +224,6 @@ impl El {
         let cold = self.vis.cold_mut();
         cold.pixels = Some(pixels.clone());
         cold.pixels_fit = Some(fit);
-        cold.pixels_pattern = None;
-        self
-    }
-    /// Paint an image tile at `offset` within the element, repeating on the chosen axes.
-    /// Tile dimensions are points; clipping and corners still belong to the element.
-    pub fn pixels_pattern(mut self, pixels: &crate::pixels::Pixels, tile: [f32; 2], offset: [f32; 2], repeat: [bool; 2]) -> Self {
-        let cold = self.vis.cold_mut();
-        cold.pixels = Some(pixels.clone());
-        cold.pixels_fit = None;
-        cold.pixels_pattern = Some([offset[0], offset[1], tile[0].max(0.001), tile[1].max(0.001), repeat[0] as u8 as f32, repeat[1] as u8 as f32]);
         self
     }
     /// A ring `offset` points outside the border box (CSS `outline` + `outline-offset`). Width
@@ -254,19 +243,6 @@ impl El {
         self.vis.opacity = o;
         self
     }
-    /// Blend the completed subtree with the paint below it. Separable modes use CSS's sRGB
-    /// formulas and require an owned render pass whose target permits backdrop copies.
-    pub fn mix_blend(mut self, blend: crate::render::Blend) -> Self {
-        self.vis.cold_mut().mix_blend = blend;
-        self
-    }
-
-    /// Isolate this subtree's paint and blend backdrops from the rest of the window.
-    pub fn isolate(mut self) -> Self {
-        self.vis.cold_mut().isolate = true;
-        self
-    }
-
     /// Gaussian blur of the completed subtree, in points (standard deviation). Zero has no
     /// filter cost. The renderer caps sigma at 64 device pixels; bounds grow by three sigma.
     pub fn blur(mut self, sigma: f32) -> Self {
@@ -500,7 +476,7 @@ impl El {
     /// draws in an isolated layer, whose composite cuts the hole; hit testing ignores it.
     pub fn cutout_circle(mut self, center: [f32; 2], inner: f32, outer: f32) -> Self {
         let inner = inner.max(0.0);
-        self.vis.cold_mut().cutout.push([center[0], center[1], inner, outer.max(inner)]);
+        self.vis.cold_mut().cutout = Some([center[0], center[1], inner, outer.max(inner)]);
         self
     }
     /// Soft clip with a fade width per side (left, top, right, bottom).
@@ -579,5 +555,160 @@ impl El {
     /// Wall-clock opacity loop, using the shared loop engine and host wake deadline.
     pub fn cycle(self, c: Cycle) -> Self {
         self.looping(rune_motion::LoopSpec::cycle(c))
+    }
+}
+
+/// A CSS-style box shadow. Outer shadows draw behind the element; `inset` ones draw inside its
+/// shape, over the fill. A zero-blur, zero-offset outer shadow with a spread is a ring outside
+/// the border box (drawn as a ring, so translucent fills don't show it through).
+///
+/// `blur` is the CSS `box-shadow` blur radius (`blur = 2σ`, so Gaussian standard deviation
+/// `σ = blur * 0.5`). `CALayer.shadowRadius` and Sketch / Figma shadow blur specify `r ≈ σ`,
+/// so pass `blur = 2.0 * r` to match a `CALayer` shadow radius (whereas [`El::blur`] takes `σ` directly).
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
+pub struct Shadow {
+    pub x: f32,
+    pub y: f32,
+    /// Twice the Gaussian's standard deviation, in points (CSS blur radius).
+    pub blur: f32,
+    pub spread: f32,
+    pub color: Color,
+    pub inset: bool,
+}
+
+/// Radius of [`El::radial_gradient`], in points: a circle (`f32`) or an `[rx, ry]` ellipse.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct RadialRadius(pub [f32; 2]);
+
+impl From<f32> for RadialRadius {
+    fn from(r: f32) -> Self {
+        Self([r, r])
+    }
+}
+
+impl From<[f32; 2]> for RadialRadius {
+    fn from(r: [f32; 2]) -> Self {
+        Self(r)
+    }
+}
+
+impl From<(f32, f32)> for RadialRadius {
+    fn from((rx, ry): (f32, f32)) -> Self {
+        Self([rx, ry])
+    }
+}
+
+/// CSS writes an eased fade as a list of stops: 16 holds the eased gradients Desktop draws.
+pub(crate) const MAX_GRADIENT_STOPS: usize = 16;
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) enum GradientGeometry {
+    Radial { center: [f32; 2], radius: [f32; 2] },
+    Linear { angle: f32 },
+}
+
+/// A radial or angled linear gradient painted over an element's fill.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct RadialGradient {
+    pub(crate) geometry: GradientGeometry,
+    /// Sorted `(t, color)` stops in `0.0..=1.0`, capped at [`MAX_GRADIENT_STOPS`].
+    pub(crate) stops: Vec<(f32, Color)>,
+}
+
+fn normalize_gradient_stops(geometry: GradientGeometry, raw: &[(f32, Color)]) -> Option<RadialGradient> {
+    let mut stops: Vec<(f32, Color)> = raw
+        .iter()
+        .copied()
+        .filter(|(t, _)| t.is_finite())
+        .map(|(t, c)| (t.clamp(0.0, 1.0), c))
+        .collect();
+    if stops.is_empty() {
+        return None;
+    }
+    stops.sort_by(|a, b| a.0.total_cmp(&b.0));
+    stops.truncate(MAX_GRADIENT_STOPS);
+    if stops.len() == 1 {
+        let c = stops[0].1;
+        stops = vec![(0.0, c), (1.0, c)];
+    }
+    Some(RadialGradient { geometry, stops })
+}
+
+impl Shadow {
+    /// A CALayer shadow: `shadowRadius` `radius`, `shadowOffset` (`x`, `y`) with y down as in a
+    /// flipped view, and `shadowColor` at `shadowOpacity` folded into `color`. Core Animation's
+    /// blur has a standard deviation of about `shadowRadius` (0.97 to 1.02 times it, measured
+    /// from 1.5 to 32 pt), so `blur` is twice the radius. Corners stay circular, as with a
+    /// `CGPath(roundedRect:)` shadow path. With `srgb_blend(true)` it also composites as one.
+    pub fn core_animation(x: f32, y: f32, radius: f32, color: Color) -> Shadow {
+        Shadow { x, y, blur: 2.0 * radius, color, ..Shadow::default() }
+    }
+}
+
+/// A ring drawn `offset` points outside the border box, `width` points wide (CSS `outline`).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Outline {
+    pub width: f32,
+    pub offset: f32,
+    pub color: Color,
+}
+
+impl El {
+    /// Paint the newest video frame inside this node. Node dimensions are in points.
+    pub fn native_surface(mut self, surface: &crate::NativeSurface, fit: crate::SurfaceFit) -> Self {
+        self.vis.cold_mut().surface = Some((surface.clone(), fit));
+        self
+    }
+    /// Which edges a surface or [`pixels_fit`](Self::pixels_fit) image sticks to inside this
+    /// node, as (horizontal, vertical): `Start` is left and top, `End` is right and bottom. It
+    /// positions the spare space `Fit` leaves and the overflow `Fill` crops; the default is
+    /// `Center` on both axes. Applies to [`native_surface`](Self::native_surface),
+    /// [`video`](Self::video) and `pixels_fit`.
+    ///
+    /// ```
+    /// # use rune::{Align, SurfaceFit, el};
+    /// # let stream = rune::NativeSurface::new();
+    /// // A streamed page that keeps its top-left corner while the panel is resized.
+    /// let view = el().native_surface(&stream, SurfaceFit::Fill).surface_anchor(Align::Start, Align::Start);
+    /// ```
+    pub fn surface_anchor(mut self, horizontal: Align, vertical: Align) -> Self {
+        self.vis.cold_mut().surface_place.anchor = [horizontal, vertical];
+        self
+    }
+    /// Draw a surface or `pixels_fit` image at one texel per device pixel instead of scaling it
+    /// to the node, so `SurfaceFit` no longer applies. A node bigger than the image leaves the
+    /// rest empty; a smaller one crops it. Combine with
+    /// [`surface_anchor`](Self::surface_anchor) to choose which edges stay put. It suits a
+    /// stream rendered at the window's scale, whose last frame should hold still, not stretch,
+    /// until the next one arrives at the node's new size.
+    ///
+    /// ```
+    /// # use rune::{Align, SurfaceFit, el};
+    /// # let stream = rune::NativeSurface::new();
+    /// let view = el()
+    ///     .native_surface(&stream, SurfaceFit::Fill)
+    ///     .surface_anchor(Align::Start, Align::Start)
+    ///     .surface_unscaled(true);
+    /// ```
+    pub fn surface_unscaled(mut self, unscaled: bool) -> Self {
+        self.vis.cold_mut().surface_place.unscaled = unscaled;
+        self
+    }
+    /// Play `video` inside this node: `Fit` letterboxes, `Fill` crops. Frames come from the
+    /// display link while it plays; a paused video draws no frames of its own. Audio players
+    /// need no element.
+    pub fn video(self, video: &crate::Player, fit: crate::SurfaceFit) -> Self {
+        self.native_surface(video.surface(), fit)
+    }
+    /// Turn this element's icon by `radians`, clockwise about its centre: a disclosure chevron
+    /// pointing right when closed and down when open. A change springs on the element's
+    /// [`motion`](Self::motion) and jumps under reduced motion. Only the glyph turns; layout and
+    /// hit testing keep the upright box.
+    pub fn icon_rotation(mut self, radians: f32) -> Self {
+        let r = if radians.is_finite() { radians } else { 0.0 };
+        if r != 0.0 || !self.vis.cold.is_empty() {
+            self.vis.cold_mut().icon_turn = r;
+        }
+        self
     }
 }

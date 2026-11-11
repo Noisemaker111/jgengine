@@ -9,7 +9,7 @@
     ),
     Para(
         Inline {
-            text: "The server sends a heartbeat every 10 seconds, but \u{202f}\u{202f}stream.ts\u{202f}\u{202f} only reconnects on an \u{202f}\u{202f}error\u{202f}\u{202f} event. When the machine sleeps, the TCP connection goes half-open: the client never sees an error, so it waits forever. See the retry notes for the long version, which is deliberately wordy so that this paragraph has to wrap onto several lines at every width.",
+            text: "The server sends a heartbeat every 10 seconds, but \u{202f}\u{202f}\u{2066}stream.ts\u{2069}\u{202f}\u{202f} only reconnects on an \u{202f}\u{202f}\u{2066}error\u{2069}\u{202f}\u{202f} event. When the machine sleeps, the TCP connection goes half-open: the client never sees an error, so it waits forever. See the retry notes for the long version, which is deliberately wordy so that this paragraph has to wrap onto several lines at every width.",
             spans: [
                 (
                     35,
@@ -18,49 +18,49 @@
                 ),
                 (
                     51,
-                    57,
+                    60,
                     CodePad,
                 ),
                 (
-                    57,
-                    66,
+                    60,
+                    69,
                     Code,
                 ),
                 (
-                    66,
-                    72,
-                    CodePad,
-                ),
-                (
-                    95,
-                    101,
+                    69,
+                    78,
                     CodePad,
                 ),
                 (
                     101,
-                    106,
-                    Code,
-                ),
-                (
-                    106,
-                    112,
+                    110,
                     CodePad,
                 ),
                 (
-                    184,
-                    190,
+                    110,
+                    115,
+                    Code,
+                ),
+                (
+                    115,
+                    124,
+                    CodePad,
+                ),
+                (
+                    196,
+                    202,
                     Em,
                 ),
                 (
-                    237,
-                    252,
+                    249,
+                    264,
                     Link,
                 ),
             ],
             links: [
                 (
-                    237,
-                    252,
+                    249,
+                    264,
                     "https://example.com/retry",
                 ),
             ],
@@ -68,7 +68,7 @@
     ),
     Para(
         Inline {
-            text: "Two smaller problems make it worse:",
+            text: "Two smaller issues make it worse:",
             spans: [],
             links: [],
         },
@@ -79,26 +79,26 @@
             [
                 Para(
                     Inline {
-                        text: "\u{202f}\u{202f}backoff.ts\u{202f}\u{202f} resets its delay on every message, so a flapping server is retried at full speed.",
+                        text: "\u{202f}\u{202f}\u{2066}backoff.ts\u{2069}\u{202f}\u{202f} resets its delay on every message, so a flapping server is retried at full speed.",
                         spans: [
                             (
                                 0,
-                                6,
+                                9,
                                 CodePad,
                             ),
                             (
-                                6,
-                                16,
+                                9,
+                                19,
                                 Code,
                             ),
                             (
-                                16,
-                                22,
+                                19,
+                                28,
                                 CodePad,
                             ),
                             (
-                                43,
-                                48,
+                                49,
+                                54,
                                 Em,
                             ),
                         ],
@@ -109,21 +109,21 @@
             [
                 Para(
                     Inline {
-                        text: "The sidebar store ignores \u{202f}\u{202f}session.updated\u{202f}\u{202f} events that arrive before the first list fetch.",
+                        text: "The sidebar store ignores \u{202f}\u{202f}\u{2066}session.updated\u{2069}\u{202f}\u{202f} events that arrive before the first list fetch.",
                         spans: [
                             (
                                 26,
-                                32,
+                                35,
                                 CodePad,
                             ),
                             (
-                                32,
-                                47,
+                                35,
+                                50,
                                 Code,
                             ),
                             (
-                                47,
-                                53,
+                                50,
+                                59,
                                 CodePad,
                             ),
                         ],
@@ -136,21 +136,21 @@
                         [
                             Para(
                                 Inline {
-                                    text: "A nested point with \u{202f}\u{202f}code\u{202f}\u{202f} in it.",
+                                    text: "A nested point with \u{202f}\u{202f}\u{2066}code\u{2069}\u{202f}\u{202f} in it.",
                                     spans: [
                                         (
                                             20,
-                                            26,
+                                            29,
                                             CodePad,
                                         ),
                                         (
-                                            26,
-                                            30,
+                                            29,
+                                            33,
                                             Code,
                                         ),
                                         (
-                                            30,
-                                            36,
+                                            33,
+                                            42,
                                             CodePad,
                                         ),
                                     ],
@@ -371,21 +371,21 @@
     ),
     Para(
         Inline {
-            text: "Done. All 14 tests in \u{202f}\u{202f}src/net\u{202f}\u{202f} pass.",
+            text: "Done. All 14 tests in \u{202f}\u{202f}\u{2066}src/net\u{2069}\u{202f}\u{202f} pass.",
             spans: [
                 (
                     22,
-                    28,
+                    31,
                     CodePad,
                 ),
                 (
-                    28,
-                    35,
+                    31,
+                    38,
                     Code,
                 ),
                 (
-                    35,
-                    41,
+                    38,
+                    47,
                     CodePad,
                 ),
             ],
@@ -394,56 +394,68 @@
     ),
 ]
 -- highlights (ts)
-0..5 "const" Kind(Keyword)
-6..14 "QUIET_MS" Kind(Number)
-15..16 "=" Kind(Punctuation)
+0..6 "const " Kind(Keyword)
+6..15 "QUIET_MS " Kind(Number)
+15..17 "= " Kind(Operator)
 17..23 "25_000" Kind(Number)
-25..33 "function" Kind(Keyword)
+25..34 "function " Kind(Keyword)
 34..42 "watchdog" Kind(Function)
 42..43 "(" Kind(Punctuation)
-49..50 ":" Kind(Punctuation)
+43..49 "stream" Kind(Parameter)
+49..51 ": " Kind(Keyword)
 51..62 "EventStream" Kind(Type)
-62..63 "," Kind(Punctuation)
-73..74 ":" Kind(Punctuation)
-75..77 "()" Kind(Punctuation)
-78..80 "=>" Kind(Punctuation)
+62..64 ", " Kind(Punctuation)
+64..73 "reconnect" Kind(Parameter)
+73..78 ": () " Kind(Punctuation)
+78..81 "=> " Kind(Operator)
 81..85 "void" Kind(Keyword)
-85..86 ")" Kind(Punctuation)
-87..88 "{" Kind(Punctuation)
-91..94 "let" Kind(Keyword)
-101..102 "=" Kind(Punctuation)
+85..88 ") {" Kind(Punctuation)
+89..91 "  " Kind(Punctuation)
+91..95 "let " Kind(Keyword)
+95..101 "timer " Kind(Variable)
+101..103 "= " Kind(Operator)
 103..113 "setTimeout" Kind(Function)
 113..114 "(" Kind(Punctuation)
-118..119 "," Kind(Punctuation)
+114..118 "fire" Kind(Variable)
+118..120 ", " Kind(Punctuation)
 120..128 "QUIET_MS" Kind(Number)
-128..129 ")" Kind(Punctuation)
+128..130 ") " Kind(Punctuation)
 130..159 "// restarted on every message" Kind(Comment)
-162..170 "function" Kind(Keyword)
+160..162 "  " Kind(Comment)
+162..171 "function " Kind(Keyword)
 171..175 "fire" Kind(Function)
-175..177 "()" Kind(Punctuation)
-178..179 "{" Kind(Punctuation)
+175..179 "() {" Kind(Punctuation)
+180..184 "    " Kind(Punctuation)
+184..190 "stream" Kind(Variable)
 190..191 "." Kind(Punctuation)
 191..196 "close" Kind(Function)
 196..198 "()" Kind(Punctuation)
+199..203 "    " Kind(Punctuation)
 203..212 "reconnect" Kind(Function)
 212..214 "()" Kind(Punctuation)
-217..218 "}" Kind(Punctuation)
+215..218 "  }" Kind(Punctuation)
+219..221 "  " Kind(Punctuation)
+221..227 "stream" Kind(Variable)
 227..228 "." Kind(Punctuation)
 228..230 "on" Kind(Function)
 230..231 "(" Kind(Punctuation)
 231..240 "\"message\"" Kind(String)
-240..241 "," Kind(Punctuation)
-242..244 "()" Kind(Punctuation)
-245..247 "=>" Kind(Punctuation)
+240..245 ", () " Kind(Punctuation)
+245..248 "=> " Kind(Operator)
 248..249 "{" Kind(Punctuation)
+250..254 "    " Kind(Punctuation)
 254..266 "clearTimeout" Kind(Function)
 266..267 "(" Kind(Punctuation)
+267..272 "timer" Kind(Variable)
 272..273 ")" Kind(Punctuation)
-284..285 "=" Kind(Punctuation)
+274..278 "    " Kind(Punctuation)
+278..284 "timer " Kind(Variable)
+284..286 "= " Kind(Operator)
 286..296 "setTimeout" Kind(Function)
 296..297 "(" Kind(Punctuation)
-301..302 "," Kind(Punctuation)
+297..301 "fire" Kind(Variable)
+301..303 ", " Kind(Punctuation)
 303..311 "QUIET_MS" Kind(Number)
 311..312 ")" Kind(Punctuation)
-315..317 "})" Kind(Punctuation)
+313..317 "  })" Kind(Punctuation)
 318..319 "}" Kind(Punctuation)

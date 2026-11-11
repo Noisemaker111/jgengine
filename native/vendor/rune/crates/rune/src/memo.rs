@@ -116,7 +116,7 @@ fn el_flatten_reusable(e: &El) -> bool {
         && c.input.is_none()
         && e.handlers.get().is_none_or(|h| h.modal.is_none())
         && !(c.scroll.is_some() && c.scroll_axes.x())
-        && e.text.as_ref().is_none_or(|t| !t.redacted && t.live.is_none())
+        && e.text.as_ref().is_none_or(|t| !t.redacted && t.cold.live.is_none())
         && e.vis.pixels.as_ref().is_none_or(|_| {
             let sz = e.style.size();
             e.style.aspect_ratio().is_some() || (sz.width.is_auto() == sz.height.is_auto())
@@ -132,7 +132,7 @@ fn prekey_text_shapes(el: &mut El, scale: f32) {
         && let Some(t) = &el.text
         && !t.redacted
         && t.case.is_none()
-        && t.rings.is_empty()
+        && t.cold.rings.is_empty()
         && t.shape.is_none_or(|s| s.0 != scale.to_bits())
         && let Some(t) = &mut el.text
     {
@@ -577,6 +577,20 @@ fn keyed(el: El, key: String) -> El {
         crate::tooling::perf_warn::memo_key_replaced(&key, existing, std::panic::Location::caller());
     }
     el.key(key)
+}
+
+/// Runs `f` inside the view build in progress as if it were the next build, and the rest of the
+/// build carries on as that one: memos used so far may be used once more, as the following frame
+/// would use them. For tooling that measures what a rebuild costs a frame: a surface rebuilt
+/// many times in one build to time it, its unchanged inner memos reused each time. Outside a
+/// view build it just runs `f`.
+pub fn as_next_build<R>(f: impl FnOnce() -> R) -> R {
+    SCOPES.with_borrow_mut(|s| {
+        if let Some(s) = s.last_mut() {
+            s.cache.pass += 1;
+        }
+    });
+    f()
 }
 
 /// The subtree `build` returns, keyed `id`, built again only when `version` (or the window's

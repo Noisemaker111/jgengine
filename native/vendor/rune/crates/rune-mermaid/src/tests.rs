@@ -24,6 +24,23 @@ fn other_diagram_types_and_garbage_are_unsupported() {
 }
 
 #[test]
+fn directive_end_keeps_a_diagram_on_the_same_line() {
+    for directive in ["%%{init: {}}%%", "%%{\ninit: {}\n}%%"] {
+        let src = format!("{directive} mindmap\n  root\n    child");
+        let (_, lines) = cleaned(&src);
+        assert_eq!(lines.collect::<Vec<_>>(), [(0, "mindmap"), (2, "root"), (4, "child")]);
+        assert!(may_draw(&src));
+    }
+}
+
+#[test]
+fn node_stroke_width_reads_mermaid_px() {
+    assert_eq!(parse_style_props("stroke:#333,stroke-width:2px").width, Some(2.0));
+    assert_eq!(parse_style_props("stroke-width:4").width, Some(4.0));
+    assert_eq!(parse_style_props("stroke-width:wide").width, None);
+}
+
+#[test]
 fn node_style_keeps_contrast_in_dark_and_light_themes() {
     let pastel = parse_style_props("fill:#dcf5dc,stroke:#333");
     for dark in [true, false] {
@@ -180,4 +197,31 @@ fn min_scale_zero_fits_any_width() {
     assert!(fits.scale < 0.6 && (fits.full[1] * fits.scale - fits.size[1]).abs() < 0.01, "it shrinks evenly: {}", fits.scale);
     let roomy = DiagramStyle { max_width: 4000.0, ..narrow }.min_scale(0.0);
     assert_eq!(scene(WIDE_SEQUENCE, &roomy, None).expect("draws").scale, 1.0, "never grows past full size");
+}
+
+/// The bare drawing is the card's drawing without the card: the same size, plus its title.
+#[test]
+fn a_drawing_is_the_card_without_its_padding() {
+    let roomy = DiagramStyle { max_width: 4000.0, ..DiagramStyle::neutral(true) };
+    let full = scene(WIDE_SEQUENCE, &roomy, None).expect("draws");
+    let d = render_drawing(WIDE_SEQUENCE, &roomy, Hover::Off, roomy.text).expect("draws");
+    assert_eq!(d.size, full.size);
+    let titled = format!("---\ntitle: Checkout\n---\n{WIDE_SEQUENCE}");
+    let t = render_drawing(&titled, &roomy, Hover::Off, roomy.text).expect("draws");
+    assert!(t.size[1] > d.size[1] + 20.0 && t.size[0] >= d.size[0], "the title adds a line: {:?} {:?}", t.size, d.size);
+}
+
+/// Lines shrink with the drawing, as an SVG's do: a shrunk diagram's full-size pieces are the
+/// same as an unshrunk one's, so magnifying it never shows fat lines.
+#[test]
+fn lines_shrink_with_the_drawing() {
+    let narrow = DiagramStyle { max_width: 420.0, ..DiagramStyle::neutral(true) }.min_scale(0.0);
+    let roomy = DiagramStyle { max_width: 4000.0, ..narrow };
+    let (small, full) = (scene(WIDE_SEQUENCE, &narrow, None).expect("draws"), scene(WIDE_SEQUENCE, &roomy, None).expect("draws"));
+    assert!(small.scale < 0.5, "shrinks: {}", small.scale);
+    for (a, b) in small.pieces.iter().zip(&full.pieces) {
+        assert_eq!(a.key, b.key);
+        let close = (a.size[0] - b.size[0]).abs() < 0.01 && (a.size[1] - b.size[1]).abs() < 0.01;
+        assert!(close, "{} is {:?} shrunk, {:?} full", a.key, a.size, b.size);
+    }
 }

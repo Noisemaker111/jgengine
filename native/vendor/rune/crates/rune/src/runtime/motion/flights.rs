@@ -1,52 +1,206 @@
 //! Elements that fly to their place on one screen path: `El::matched` pairs and `Tx::launch`.
+use crate::machine::{Attempt, Effects, Seq};
 use super::*;
 
-/// `Tx::launch` flights: destinations waiting for the next commit, each with the screen point
-/// its source's text started at, and the ones in the air.
+/// `Tx::launch` and `El::matched` flights: each one from the frame it is asked for until it
+/// lands, and the launches still waiting for their destination to mount.
 #[derive(Default)]
 pub(super) struct Launches {
-    pending: Vec<(String, [f32; 2])>,
-    flying: Vec<Launched>,
-    /// `El::matched` flights started under `Tx::unclipped_flights`, until they land.
-    unclipped: Vec<NodeId>,
+    seq: Seq,
+    launches: Vec<Launch>,
+}
+
+/// One launch or matched flight, with the attempt that names it while it has no node to fly to
+/// yet.
+struct Launch {
+    attempt: Attempt,
+    phase: LaunchPhase,
+}
+
+/// Where a launch is between being asked for and landing.
+enum LaunchPhase {
+    /// `Tx::launch`: its source's text was at `from` on screen, and it waits for the commit
+    /// that mounts `target`. Its answer carries the attempt back.
+    Waiting { target: String, from: [f32; 2] },
+    /// In the air, at the node it flies to.
+    Airborne(Airborne),
+}
+
+/// A flight in the air: a `Tx::launch`, which flies a path of its own, or an `El::matched`
+/// flight started under `Tx::unclipped_flights`, which flies the scene's and draws outside
+/// every clip until it lands.
+enum Airborne {
+    Launched(Launched),
+    Unclipped { id: NodeId },
+}
+
+/// What moves a launch on, from being asked for to landing.
+enum LaunchEvent<'a> {
+    /// `Tx::launch` asked for `target` this frame, whose source's text was at `from` on screen.
+    Ask { target: String, from: [f32; 2] },
+    /// A commit builds: hand out the launches waiting for a destination to mount.
+    Commit,
+    /// The destination the launch `attempt` waited for mounted, and its flight starts there.
+    TakeOff { attempt: Attempt, flight: Launched },
+    /// It didn't mount, so the launch is over.
+    Missed { attempt: Attempt },
+    /// An `El::matched` flight on `id` starts (`on`) or stops drawing outside every clip.
+    Unclip { id: NodeId, on: bool },
+    /// The window's flights are `flying`: the ones in the air that left them landed.
+    Flights { flying: &'a [(NodeId, MRect)] },
+}
+
+/// What a transition asks its caller to do: find `target`'s node in the commit's tree and start
+/// its path from `from`, then feed the flight back as `TakeOff`, or `Missed` when it didn't
+/// mount. A launch keeps its attempt while it waits, so a late answer changes nothing.
+enum LaunchEffect {
+    Mount { attempt: Attempt, target: String, from: [f32; 2] },
+}
+
+impl Launch {
+    /// The node it flies to, once it has one.
+    fn airborne_id(&self) -> Option<NodeId> {
+        match &self.phase {
+            LaunchPhase::Waiting { .. } => None,
+            LaunchPhase::Airborne(Airborne::Launched(flight)) => Some(flight.id),
+            LaunchPhase::Airborne(Airborne::Unclipped { id }) => Some(*id),
+        }
+    }
 }
 
 /// A launch in the air, the offsets outside the scene it was started against, the ones its
-/// last frame drew it under, and how fast they last moved between frames with no commit. Its
-/// re-aims folded `folded` of what its flight added to them into its path, when `1 - travel`
-/// was `folded_at`.
+/// last frame drew it under (none before its first frame), and how fast they last moved
+/// between frames with no commit. Its re-aims folded `folded` of what its flight added to them
+/// into its path, when `1 - travel` was `folded_at`.
 struct Launched {
     id: NodeId,
     shift: [f32; 2],
-    last: Option<[f32; 2]>,
-    seen: (f64, u64),
+    drawn: Option<Drawn>,
     drift: [f32; 2],
     folded: [f32; 2],
     folded_at: [f32; 2],
 }
 
+/// The offsets outside the scene a launch's frame drew it under, at scene time `at`, after
+/// commit `commit`.
+#[derive(Clone, Copy)]
+struct Drawn {
+    offset: [f32; 2],
+    at: f64,
+    commit: u64,
+}
+
 impl Launches {
-    pub(super) fn pending(&self) -> bool { !self.pending.is_empty() }
+    pub(super) fn pending(&self) -> bool { self.launches.iter().any(|l| matches!(l.phase, LaunchPhase::Waiting { .. })) }
+
+    /// `Tx::launch` asked for `target` this frame, whose source's text was at `from` on screen.
+    pub(super) fn wait(&mut self, target: String, from: [f32; 2]) {
+        self.step(LaunchEvent::Ask { target, from });
+    }
+
+    /// What this commit mounts, in the order they were asked for. Each launch waits for its
+    /// answer (`take_off` or `miss`) before it is over.
+    pub(super) fn commit(&mut self) -> Vec<LaunchEffect> { self.step(LaunchEvent::Commit).into_iter().collect() }
+
+    /// The destination `attempt` waited for mounted, and `flight` starts at its node.
+    pub(super) fn take_off(&mut self, attempt: Attempt, flight: Launched) {
+        self.step(LaunchEvent::TakeOff { attempt, flight });
+    }
+
+    /// The destination `attempt` waited for didn't mount, so its launch is over.
+    pub(super) fn miss(&mut self, attempt: Attempt) { self.step(LaunchEvent::Missed { attempt }); }
+
+    /// Starts (`on`) or drops the entry for `id`'s `El::matched` flight, which draws it outside
+    /// every clip until it lands. A `Tx::launch` on the same node draws it so already.
+    pub(super) fn unclip(&mut self, id: NodeId, on: bool) { self.step(LaunchEvent::Unclip { id, on }); }
+
+    /// Drops the flights in the air that landed (left `flying`). Launches still waiting for
+    /// their destination stay for the commit that mounts it.
+    pub(super) fn keep(&mut self, flying: &[(NodeId, MRect)]) { self.step(LaunchEvent::Flights { flying }); }
+
+    /// One transition: the phase each event leaves a launch in, and the mount attempts a commit
+    /// hands out. The caller finds the node and starts its path, then feeds the answer back.
+    fn step(&mut self, event: LaunchEvent) -> Effects<LaunchEffect> {
+        match event {
+            LaunchEvent::Ask { target, from } => {
+                let attempt = self.seq.next();
+                self.launches.push(Launch { attempt, phase: LaunchPhase::Waiting { target, from } });
+                Effects::none()
+            }
+            LaunchEvent::Commit => {
+                let mut mounts = Effects::none();
+                for launch in &self.launches {
+                    if let LaunchPhase::Waiting { target, from } = &launch.phase {
+                        mounts.push(LaunchEffect::Mount { attempt: launch.attempt, target: target.clone(), from: *from });
+                    }
+                }
+                mounts
+            }
+            LaunchEvent::TakeOff { attempt, flight } => {
+                let waiting = self.launches.iter().position(|l| l.attempt == attempt && matches!(l.phase, LaunchPhase::Waiting { .. }));
+                // An answer whose launch is no longer waiting changes nothing.
+                if let Some(at) = waiting {
+                    let to = flight.id;
+                    self.launches.remove(at);
+                    // It takes over the flight its node already had: a matched one, unclipped.
+                    self.launches.retain(|l| l.airborne_id() != Some(to));
+                    self.launches.push(Launch { attempt, phase: LaunchPhase::Airborne(Airborne::Launched(flight)) });
+                }
+                Effects::none()
+            }
+            LaunchEvent::Missed { attempt } => {
+                self.launches.retain(|l| !(l.attempt == attempt && matches!(l.phase, LaunchPhase::Waiting { .. })));
+                Effects::none()
+            }
+            LaunchEvent::Unclip { id, on } => {
+                self.launches.retain(|l| !matches!(&l.phase, LaunchPhase::Airborne(Airborne::Unclipped { id: other }) if *other == id));
+                if on && !self.flying(id) {
+                    let attempt = self.seq.next();
+                    self.launches.push(Launch { attempt, phase: LaunchPhase::Airborne(Airborne::Unclipped { id }) });
+                }
+                Effects::none()
+            }
+            LaunchEvent::Flights { flying } => {
+                self.launches.retain(|l| l.airborne_id().is_none_or(|id| flying.iter().any(|f| f.0 == id)));
+                Effects::none()
+            }
+        }
+    }
 
     /// Draws outside every clip until it lands: a launch, at its own size, or an unclipped
     /// matched flight.
-    pub(super) fn flying(&self, id: NodeId) -> bool { self.launched(id) || self.unclipped.contains(&id) }
+    pub(super) fn flying(&self, id: NodeId) -> bool { self.launches.iter().any(|l| l.airborne_id() == Some(id)) }
 
     /// A launch in the air, which flies at its own size.
-    pub(super) fn launched(&self, id: NodeId) -> bool { self.flying.iter().any(|l| l.id == id) }
+    pub(super) fn launched(&self, id: NodeId) -> bool { self.flight(id).is_some() }
+
+    /// The launch in the air at `id`, whose own path is what makes it a launch.
+    fn flight(&self, id: NodeId) -> Option<&Launched> {
+        self.launches.iter().find_map(|l| match &l.phase {
+            LaunchPhase::Airborne(Airborne::Launched(f)) if f.id == id => Some(f),
+            _ => None,
+        })
+    }
+
+    fn flight_mut(&mut self, id: NodeId) -> Option<&mut Launched> {
+        self.launches.iter_mut().find_map(|l| match &mut l.phase {
+            LaunchPhase::Airborne(Airborne::Launched(f)) if f.id == id => Some(f),
+            _ => None,
+        })
+    }
 
     /// Before its destination's layout moves mid-flight and its path restarts from where it is
     /// drawn: the offset and velocity outside the scene its last frame drew it with, which the
     /// new path takes over, so the restart keeps its place and speed. It then flies on under
     /// the offsets it was last drawn under.
     pub(super) fn restart(&mut self, scene: &Scene, id: NodeId) -> [rune_motion::Vec2; 2] {
-        let Some(l) = self.flying.iter_mut().find(|l| l.id == id) else { return [rune_motion::Vec2::ZERO; 2] };
+        let Some(l) = self.flight_mut(id) else { return [rune_motion::Vec2::ZERO; 2] };
         let ([ox, oy], [vx, vy]) = l.blend(scene);
-        if let Some(last) = l.last {
+        if let Some(drawn) = l.drawn {
             let carried = l.carried(scene);
             let travel = scene.get(id, prop::TRAVEL).unwrap_or(rune_motion::Vec2::new(1.0, 1.0));
             (l.folded, l.folded_at) = (carried, [1.0 - travel.x, 1.0 - travel.y]);
-            l.shift = last;
+            l.shift = drawn.offset;
         }
         [rune_motion::Vec2::new(ox, oy), rune_motion::Vec2::new(vx, vy)]
     }
@@ -55,21 +209,15 @@ impl Launches {
     /// offsets outside the scene, and what its re-aims folded into its path, let go as it
     /// travels. Without a launch, nothing.
     pub(super) fn carried(&self, scene: &Scene, id: NodeId) -> [f32; 2] {
-        self.flying.iter().find(|l| l.id == id).map_or([0.0; 2], |l| l.carried(scene))
+        self.flight(id).map_or([0.0; 2], |l| l.carried(scene))
     }
 
     /// What launch `id`'s flight adds to the offsets outside the scene it is drawn under, and
     /// how much faster that moves it than they do.
     pub(super) fn lead(&self, scene: &Scene, id: NodeId) -> [rune_motion::Vec2; 2] {
-        let Some(l) = self.flying.iter().find(|l| l.id == id) else { return [rune_motion::Vec2::ZERO; 2] };
+        let Some(l) = self.flight(id) else { return [rune_motion::Vec2::ZERO; 2] };
         let ([ox, oy], [vx, vy]) = l.blend(scene);
         [rune_motion::Vec2::new(ox, oy), rune_motion::Vec2::new(vx - l.drift[0], vy - l.drift[1])]
-    }
-
-    /// Drops launches that landed (left `flying`).
-    pub(super) fn keep(&mut self, flying: &[(NodeId, MRect)]) {
-        self.flying.retain(|l| flying.iter().any(|f| f.0 == l.id));
-        self.unclipped.retain(|id| flying.iter().any(|f| f.0 == *id));
     }
 
     /// A launch leaves from where its source was seen and flies to where its destination is
@@ -80,14 +228,13 @@ impl Launches {
     /// A commit's offset step comes with a layout move that hides it, so only frames with
     /// no commit between them measure the offsets' drift.
     pub(super) fn offset_fix(&mut self, scene: &Scene, id: NodeId, offset: [f32; 2], commit: u64) -> [f32; 2] {
-        let Some(l) = self.flying.iter_mut().find(|l| l.id == id) else { return [0.0; 2] };
+        let Some(l) = self.flight_mut(id) else { return [0.0; 2] };
         let now = scene.now();
-        if let Some(last) = l.last && l.seen.1 == commit && now > l.seen.0 {
-            let dt = (now - l.seen.0) as f32;
-            l.drift = [(offset[0] - last[0]) / dt, (offset[1] - last[1]) / dt];
+        if let Some(last) = l.drawn && last.commit == commit && now > last.at {
+            let dt = (now - last.at) as f32;
+            l.drift = [(offset[0] - last.offset[0]) / dt, (offset[1] - last.offset[1]) / dt];
         }
-        l.last = Some(offset);
-        l.seen = (now, commit);
+        l.drawn = Some(Drawn { offset, at: now, commit });
         let travel = scene.get(id, prop::TRAVEL).unwrap_or(rune_motion::Vec2::new(1.0, 1.0));
         [(l.shift[0] - offset[0]) * (1.0 - travel.x), (l.shift[1] - offset[1]) * (1.0 - travel.y)]
     }
@@ -105,7 +252,7 @@ impl Launched {
     /// that moves it. Drawn under `offset + (shift - offset) * (1 - travel)`: its rate is the
     /// offset's drift times travel plus `(offset - shift) * rate`.
     fn blend(&self, scene: &Scene) -> ([f32; 2], [f32; 2]) {
-        let Some(last) = self.last else { return ([0.0; 2], [0.0; 2]) };
+        let Some(Drawn { offset: last, .. }) = self.drawn else { return ([0.0; 2], [0.0; 2]) };
         let travel = scene.get(self.id, prop::TRAVEL).unwrap_or(rune_motion::Vec2::new(1.0, 1.0));
         let rate = scene.store().sample_velocity(self.id, prop::TRAVEL).unwrap_or(rune_motion::Vec2::ZERO);
         let (t, r) = ([travel.x, travel.y], [rate.x, rate.y]);
@@ -165,6 +312,7 @@ impl<S: 'static> Runtime<S> {
         // transition (a crossfade in place) and with the parents it leaves or enters with.
         if instant || tx.settle || self.reduced_motion { return; }
         let mut old_index: Option<HashMap<NodeId, usize>> = None;
+        let mut built_index: Option<HashMap<NodeId, usize>> = None;
         // Descendants first: matching an element unmounts its old subtree, matched ones included.
         for (key, from) in old.into_iter().rev() {
             let Some(&(i, true)) = by_id.get(&key) else { continue };
@@ -172,17 +320,17 @@ impl<S: 'static> Runtime<S> {
             if from == to || self.node_index.contains_key(&from) || !self.scene.contains(from) || self.is_exiting(from) { continue; }
             let index = old_index.get_or_insert_with(|| self.nodes.iter().enumerate().map(|(k, n)| (n.id, k)).collect());
             let Some(&from_i) = index.get(&from) else { continue };
-            // Scroll offsets live outside the scene: start where `from` was seen on screen.
-            let mut offset = rune_motion::Vec2::ZERO;
-            if self.built {
-                // Flights drop the cover offsets of flights around them.
-                let shift = |k: usize| self.inh_scratch.get(k).map_or([0.0; 2], |h| [h.dx - h.cover[0], h.dy - h.cover[1]]);
-                let source = self.nodes[from_i].parent.map_or([0.0; 2], shift);
-                let row = self.row_dy.get(from_i).copied().unwrap_or(0.0);
-                let dest = std::iter::successors(nodes[i].parent, |&p| nodes[p].parent)
-                    .find_map(|p| index.get(&nodes[p].id).copied()).map_or([0.0; 2], shift);
-                offset = rune_motion::Vec2::new(source[0] - dest[0], source[1] + row - dest[1]);
-            }
+            // Scroll offsets live outside the scene: start where `from` was seen on screen. They
+            // come from the last build, which a commit earlier in the same frame (a glide's poll
+            // before the key that closes it) leaves in place, so look nodes up by id.
+            let built = &*built_index.get_or_insert_with(|| self.built_ids.iter().enumerate().map(|(k, &id)| (id, k)).collect());
+            // Flights drop the cover offsets of flights around them.
+            let shift = |id: NodeId| built.get(&id).and_then(|&k| self.inh_scratch.get(k)).map_or([0.0; 2], |h| [h.dx - h.cover[0], h.dy - h.cover[1]]);
+            let source = self.nodes[from_i].parent.map_or([0.0; 2], |p| shift(self.nodes[p].id));
+            let row = built.get(&from).and_then(|&k| self.row_dy.get(k)).copied().unwrap_or(0.0);
+            let dest = std::iter::successors(nodes[i].parent, |&p| nodes[p].parent)
+                .map(|p| nodes[p].id).find(|id| built.contains_key(id)).map_or([0.0; 2], shift);
+            let offset = rune_motion::Vec2::new(source[0] - dest[0], source[1] + row - dest[1]);
             let spring = tx.motion.or(nodes[i].matched.as_ref().and_then(|m| m.1)).unwrap_or(motion::REFLOW);
             let fill = self.color(from, P_FILL, self.nodes[from_i].vis.fill);
             let opacity = self.scene.get(from, prop::OPACITY);
@@ -204,10 +352,7 @@ impl<S: 'static> Runtime<S> {
             }
             self.flying.retain(|f| f.0 != to);
             self.flying.push((to, nodes[i].local));
-            self.launches.unclipped.retain(|&id| id != to);
-            if tx.unclipped_flights {
-                self.launches.unclipped.push(to);
-            }
+            self.launches.unclip(to, tx.unclipped_flights);
         }
     }
 
@@ -240,21 +385,31 @@ impl<S: 'static> Runtime<S> {
         let Some((i, n)) = self.nodes.iter().enumerate().find(|(_, n)| crate::flight::selects(&source, &n.path, n.key.as_deref())) else { return };
         let (Some(spec), Some(layout), Some(r)) = (&n.text, &n.text_layout, self.drawn.get(i)) else { return };
         let (_, origin) = text_extent(n, spec, layout, *r, self.env.scale);
-        self.launches.pending.push((target, origin));
+        self.launches.wait(target, origin);
     }
 
     /// `Tx::launch`, in the commit: each destination that just mounted starts with its first
     /// text where its source's text was seen, at its own size, and flies to its place unclipped.
     pub(super) fn launch_elements(&mut self, nodes: &[Node], tx: &Tx, instant: bool) {
-        let launches = std::mem::take(&mut self.launches.pending);
-        if instant || tx.settle || self.reduced_motion { return; }
+        let mounts = self.launches.commit();
+        if instant || tx.settle || self.reduced_motion {
+            for LaunchEffect::Mount { attempt, .. } in mounts { self.launches.miss(attempt); }
+            return;
+        }
         let index: HashMap<NodeId, usize> = self.nodes.iter().enumerate().map(|(k, n)| (n.id, k)).collect();
         let built: HashMap<NodeId, usize> = self.built_ids.iter().enumerate().map(|(k, &id)| (id, k)).collect();
         let scale = self.env.scale;
-        for (target, from) in launches {
-            let Some(i) = nodes.iter().position(|n| crate::flight::selects(&target, &n.path, n.key.as_deref())) else { continue };
+        for mount in mounts {
+            let LaunchEffect::Mount { attempt, target, from } = mount;
+            let Some(i) = nodes.iter().position(|n| crate::flight::selects(&target, &n.path, n.key.as_deref())) else {
+                self.launches.miss(attempt);
+                continue;
+            };
             let to = nodes[i].id;
-            if index.contains_key(&to) && !self.is_exiting(to) { continue; }
+            if index.contains_key(&to) && !self.is_exiting(to) {
+                self.launches.miss(attempt);
+                continue;
+            }
             let within = |mut j: usize| loop {
                 match nodes[j].parent {
                     Some(p) if p == i => break true,
@@ -289,8 +444,7 @@ impl<S: 'static> Runtime<S> {
             self.scene.launch(to, start, LayoutAnim::new(spring).screen());
             self.flying.retain(|f| f.0 != to);
             self.flying.push((to, nodes[i].local));
-            self.launches.flying.retain(|l| l.id != to);
-            self.launches.flying.push(Launched { id: to, shift, last: None, seen: (0.0, 0), drift: [0.0; 2], folded: [0.0; 2], folded_at: [0.0; 2] });
+            self.launches.take_off(attempt, Launched { id: to, shift, drawn: None, drift: [0.0; 2], folded: [0.0; 2], folded_at: [0.0; 2] });
         }
     }
 
@@ -301,3 +455,7 @@ impl<S: 'static> Runtime<S> {
         if self.matched_warned.insert(key.clone()) { eprintln!("rune: {}", message()); }
     }
 }
+
+#[cfg(test)]
+#[path = "flights_tests.rs"]
+mod tests;

@@ -136,35 +136,6 @@ impl Renderer {
         let mut changed = self.images.len() != images.pages.len();
         self.images.resize_with(images.pages.len(), || None);
         for (index, page) in images.pages.iter_mut().enumerate() {
-            #[cfg(target_arch = "wasm32")]
-            if let Some(source) = page.external {
-                let fresh = self.images[index].as_ref().is_none_or(|(texture, _)| texture.width() != page.width || texture.height() != page.height
-                    || !texture.usage().contains(wgpu::TextureUsages::RENDER_ATTACHMENT));
-                if fresh {
-                    let texture = device.create_texture(&wgpu::TextureDescriptor {
-                        label: Some("browser image frame"),
-                        size: wgpu::Extent3d { width: page.width, height: page.height, depth_or_array_layers: 1 },
-                        mip_level_count: 1, sample_count: 1, dimension: wgpu::TextureDimension::D2,
-                        format: wgpu::TextureFormat::Rgba8UnormSrgb,
-                        usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::RENDER_ATTACHMENT,
-                        view_formats: &[],
-                    });
-                    let bind = Self::bind_group(device, &self.bind_layout, &self.globals, self.uber.outlines(), &self.atlas, &texture, None);
-                    self.images[index] = Some((texture, bind));
-                    changed = true;
-                }
-                if (fresh || page.external_dirty) && let Some(source) = crate::pixels::browser_frame(source) {
-                    if source.width() != page.width || source.height() != page.height { continue; }
-                    queue.copy_external_image_to_texture(
-                        &wgpu::CopyExternalImageSourceInfo { source, origin: wgpu::Origin2d::ZERO, flip_y: false },
-                        wgpu::CopyExternalImageDestInfo { texture: &self.images[index].as_ref().unwrap().0,
-                            mip_level: 0, origin: wgpu::Origin3d::ZERO, aspect: wgpu::TextureAspect::All,
-                            color_space: wgpu::PredefinedColorSpace::Srgb, premultiplied_alpha: false },
-                        wgpu::Extent3d { width: page.width, height: page.height, depth_or_array_layers: 1 });
-                    page.external_dirty = false;
-                }
-                continue;
-            }
             if page.data.is_empty() { changed |= self.images[index].is_some(); self.images[index] = None; continue; }
             if self.images[index].as_ref().is_none_or(|(t, _)| t.width() != page.width || t.height() != page.height) {
                 let texture = Self::image_texture(device, page.width, page.height);
@@ -227,22 +198,38 @@ impl Renderer {
             self.uploads.lost.0 = staging.lost();
             self.resend_uploads(atlas);
         }
-        if let Some(rows) = atlas.dirty.take() { Self::write_rows(&staging, &self.atlas, &atlas.data, rows); }
+        // The Windfoil shader, built the first time text draws from outlines (render/variant.rs),
+        // fills atlas pages on the GPU, so the pages are made again as ones it can draw into.
+        if atlas.outlines.has_records() && self.select(device, variant::Event::OutlinesWanted) {
+            self.atlas = Self::atlas_texture(device, true);
+            for page in &mut self.atlas_pages { page.0 = Self::atlas_texture(device, true); }
+            self.rebind_all(device);
+            atlas.invalidate();
+        }
+        atlas.outlines.set_support(self.uber.support());
+        self.lcd_frame = atlas.lcd && self.lcd_ready(device);
+        if let Some(rows) = atlas.dirty.take() {
+            atlas.rows_uploaded(0, rows);
+            Self::write_rows(&staging, &self.atlas, &atlas.data, rows);
+        }
         let mut atlas_changed = self.atlas_pages.len() > atlas.pages.len();
         self.atlas_pages.truncate(atlas.pages.len());
-        for (index, page) in atlas.pages.iter_mut().enumerate() {
+        let filled = self.uber.outlines().is_some();
+        for index in 0..atlas.pages.len() {
             if index >= self.atlas_pages.len() {
-                let texture = Self::texture(device, "glyph atlas", wgpu::TextureFormat::R8Unorm, ATLAS_SIZE, ATLAS_SIZE);
+                let texture = Self::atlas_texture(device, filled);
                 let bind = Self::bind_group(device, &self.bind_layout, &self.globals, self.uber.outlines(), &texture, &texture, None);
                 self.atlas_pages.push((texture, bind));
                 atlas_changed = true;
             }
-            if let Some(rows) = page.dirty.take() {
-                Self::write_rows(&staging, &self.atlas_pages[index].0, &page.data, rows);
+            if let Some(rows) = atlas.pages[index].dirty.take() {
+                atlas.rows_uploaded(index + 1, rows);
+                Self::write_rows(&staging, &self.atlas_pages[index].0, &atlas.pages[index].data, rows);
             }
         }
         if atlas_changed { self.images_changed(); }
         self.upload_outlines(device, &staging, atlas);
+        self.fill_atlas(device, queue, &staging, atlas);
         if instances.len() > self.capacity {
             self.capacity = instances.len().next_power_of_two();
             self.instances = Self::instance_buffer(device, self.capacity);
@@ -267,11 +254,6 @@ impl Renderer {
             for (at, effect) in &mut self.effects { *effect = instances[*at as usize]; }
         }
         let has_layers = self.uploads.has_layers;
-        if instances.iter().any(|i| i.params[1] == KIND_LAYER && Blend::from_code(i.params[0]).backdrop()) {
-            self.ensure_backdrop(device, self.format, viewport);
-            self.ensure_backdrop(device, layers::FORMAT, viewport);
-            for index in 0..self.extra.len() { self.ensure_backdrop(device, self.extra[index].0, viewport); }
-        }
         self.prepare_layers(device, queue, if has_layers { instances } else { &[] }, viewport);
         self.sync_resident_caches(&mut atlas.resident_caches);
         if self.effects.iter().any(|(_, i)| i.params[0] != 0.0 || i.params[1] == KIND_BACKDROP_BLUR) {

@@ -253,7 +253,7 @@ impl<S: 'static> Runtime<S> {
     fn a11y_focus_now(&self) -> AkId {
         let Some(i) = self.focused_index() else { return ROOT };
         let n = &self.nodes[i];
-        let id = self.link_focus().filter(|&k| n.text.as_ref().is_some_and(|t| k < t.links.len()))
+        let id = self.link_focus().filter(|&k| n.text.as_ref().is_some_and(|t| k < t.cold.links.len()))
             .map_or(element_id(n.id), |k| link_id(n.id, k));
         let sent = self.a11y.as_ref().is_some_and(|t| t.sent.contains_key(&id.0));
         if sent { id } else { ROOT }
@@ -281,9 +281,9 @@ impl<S: 'static> Runtime<S> {
     fn a11y_stamp(&self) -> Stamp {
         let mut scrolls = 0u64;
         for (id, s) in &self.scrolls {
-            scrolls = scrolls.wrapping_add(id.0.wrapping_mul(0x9E37_79B9_7F4A_7C15) ^ (s.drawn[0].to_bits() as u64) << 32 ^ s.drawn[1].to_bits() as u64);
+            scrolls = scrolls.wrapping_add(id.0.wrapping_mul(0x9E37_79B9_7F4A_7C15) ^ (s.drawn_x.to_bits() as u64) << 32 ^ s.drawn.y().to_bits() as u64);
         }
-        let focus = self.focused.as_deref().map_or(0, hash_str) ^ self.link_focus().map_or(0, |k| k as u64 + 1) << 48;
+        let focus = self.focus.path().map_or(0, hash_str) ^ self.link_focus().map_or(0, |k| k as u64 + 1) << 48;
         Stamp {
             commits: self.commits,
             scrolls,
@@ -324,7 +324,7 @@ impl<S: 'static> Runtime<S> {
             let up = n.parent.map(|p| walk[p]).unwrap_or_default();
             let mut w = Walk { slot: up.slot, gone: up.gone, shift: up.shift, scrolled: up.scrolled };
             if let Some(p) = n.parent && let Some(st) = self.scrolls.get(&self.nodes[p].id) {
-                let [x, y] = self.content_to_window(p, st.drawn);
+                let [x, y] = self.content_to_window(p, [st.drawn_x, st.drawn.y()]);
                 w.shift = [w.shift[0] + x, w.shift[1] + y];
                 w.scrolled = true;
             }
@@ -340,7 +340,7 @@ impl<S: 'static> Runtime<S> {
                 if let Some((_, size)) = n.a11y.more.as_ref().and_then(|m| m.set) { slots[w.slot].set_size = Some(size); }
                 kids.push((w.slot, id));
                 if focused == Some(i) {
-                    focus = self.link_focus().filter(|&k| n.text.as_ref().is_some_and(|t| k < t.links.len()))
+                    focus = self.link_focus().filter(|&k| n.text.as_ref().is_some_and(|t| k < t.cold.links.len()))
                         .map_or(id, |k| link_id(n.id, k));
                 }
                 slots.push(Slot { id, element: Some(i), walk: w, role, print, set_size: None });

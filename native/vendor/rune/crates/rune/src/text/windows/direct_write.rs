@@ -1,7 +1,10 @@
 //! DirectWrite rasterising glyphs as Chromium's Skia asks it to (`SkScalerContext_DW`): the
 //! rendering mode its `gasp` rules pick, grid fitting on (Chromium's hinting is "medium"),
-//! grayscale antialiasing, and the pen's x phase in the glyph's transform. The faces load from
-//! the same bytes Parley shapes with, at the run's variation coordinates.
+//! and the pen's x phase in the glyph's transform. Coverage is ClearType's three subpixels
+//! averaged, Skia's A8 from LCD (`kGenA8FromLCD_Flag`): what Chromium draws with ClearType on
+//! wherever it can't draw subpixel text. DirectWrite's own grayscale has 17 levels, and Skia's
+//! gamma lifts its faintest into dots above and below round letters. The faces load from the
+//! same bytes Parley shapes with, at the run's variation coordinates.
 
 use std::collections::HashMap;
 
@@ -10,7 +13,7 @@ use windows::Win32::Graphics::DirectWrite::*;
 use windows::core::Interface;
 
 use super::{owner, skia_gamma};
-use crate::text::{Atlas, Rasterized};
+use crate::text::{Atlas, AtlasGlyph, Rasterized};
 
 /// Faces (a font at one set of variation coordinates) kept before the cache starts over.
 const MAX_FACES: usize = 256;
@@ -32,12 +35,14 @@ pub(crate) struct Job<'a> {
     pub skew: u8,
     /// The text's luminance bucket ([`skia_gamma::bucket`]).
     pub lum: u8,
+    /// A subpixel mask (`FontSmoothing::ClearType`): ClearType's three coverages a pixel, each
+    /// through Skia's gamma, rather than their average.
+    pub lcd: bool,
 }
 
 pub(crate) struct DirectWrite {
     factory: IDWriteFactory6,
-    /// The same factory as IDWriteFactory2, whose glyph analysis takes a grid-fit mode and
-    /// grayscale antialiasing.
+    /// The same factory as IDWriteFactory2, whose glyph analysis takes a grid-fit mode.
     factory2: IDWriteFactory2,
     loader: IDWriteInMemoryFontFileLoader,
     /// Per font blob and index: its resource and the `gasp` facts the rendering mode needs.
@@ -91,9 +96,9 @@ impl DirectWrite {
         // SAFETY: `run` borrows locals that outlive the analysis; the face is released below.
         let made = unsafe {
             let analysis = self.factory2.CreateGlyphRunAnalysis(&run, Some(&transform), mode, DWRITE_MEASURING_MODE_NATURAL,
-                DWRITE_GRID_FIT_MODE_ENABLED, DWRITE_TEXT_ANTIALIAS_MODE_GRAYSCALE, 0.0, 0.0);
+                DWRITE_GRID_FIT_MODE_ENABLED, DWRITE_TEXT_ANTIALIAS_MODE_CLEARTYPE, 0.0, 0.0);
             analysis.and_then(|a| {
-                let mut bounds = a.GetAlphaTextureBounds(DWRITE_TEXTURE_ALIASED_1x1)?;
+                let mut bounds = a.GetAlphaTextureBounds(DWRITE_TEXTURE_CLEARTYPE_3x1)?;
                 // Smoothed vertically, a glyph shifted down part of a pixel inks one more row.
                 // Its unshifted mask keeps that row, empty, so a gliding glyph's quad keeps one
                 // size across its y phases and moves rather than growing and shrinking.
@@ -102,9 +107,17 @@ impl DirectWrite {
                 }
                 let (w, h) = ((bounds.right - bounds.left).max(0) as u32, (bounds.bottom - bounds.top).max(0) as u32);
                 self.scratch.clear();
-                self.scratch.resize((w * h) as usize, 0);
+                self.scratch.resize((w * h * 3) as usize, 0);
                 if w > 0 && h > 0 {
-                    a.CreateAlphaTexture(DWRITE_TEXTURE_ALIASED_1x1, &bounds, &mut self.scratch)?;
+                    a.CreateAlphaTexture(DWRITE_TEXTURE_CLEARTYPE_3x1, &bounds, &mut self.scratch)?;
+                }
+                // Skia's A8 from LCD (`RGBToA8`): each pixel's three subpixel coverages, averaged.
+                if !job.lcd {
+                    for i in 0..(w * h) as usize {
+                        let rgb = &self.scratch[i * 3..i * 3 + 3];
+                        self.scratch[i] = ((rgb[0] as u32 + rgb[1] as u32 + rgb[2] as u32) / 3) as u8;
+                    }
+                    self.scratch.truncate((w * h) as usize);
                 }
                 Ok((bounds, w, h))
             })
@@ -118,8 +131,9 @@ impl DirectWrite {
         for c in &mut self.scratch {
             *c = table[*c as usize];
         }
-        Some(match atlas.put(w, h, &self.scratch, bounds.left, -bounds.top) {
-            Some(g) => Rasterized::Placed(g),
+        let texels = if job.lcd { 3 } else { 1 };
+        Some(match atlas.put(w * texels, h, &self.scratch, bounds.left, -bounds.top) {
+            Some(g) => Rasterized::Placed(AtlasGlyph { lcd: job.lcd, ..g }),
             None => Rasterized::Unplaced,
         })
     }

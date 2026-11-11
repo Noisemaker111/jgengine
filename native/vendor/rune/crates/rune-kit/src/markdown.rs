@@ -72,7 +72,7 @@ pub use style::MarkdownStyle;
 use crate::budget::Budget;
 use crate::syntax::{Highlighter, SyntaxTheme};
 pub use crate::syntax::Syntax;
-use links::{LinkHelp, LinkLook, LinkRing, LinkWire};
+use links::{CodeLink, LinkHelp, LinkLook, LinkRing, LinkWire};
 pub use cache::parse_cached;
 pub use highlight::{Highlight, HighlightItem};
 pub use parser::parse;
@@ -81,7 +81,7 @@ use autolink::autolink_inline;
 use cache::{doc_cached, stream_cached};
 #[cfg(test)]
 use cache::{CACHE, PARSES};
-use parser::{BlockMap, Cut, PAD, ParsedDoc, Source, SpanMap, parse_doc};
+use parser::{BlockMap, CLOSE, Cut, PAD, ParsedDoc, Source, SpanMap, parse_doc, unpadded};
 use render::{Renderer, hash_of, rendered_keys, source_copy};
 use stream::parse_streaming;
 
@@ -197,6 +197,7 @@ pub struct Markdown {
     on_task: Option<TaskWire>,
     tasks_read_only: bool,
     link_ring: Option<LinkRing>,
+    code_link: Option<CodeLink>,
     selectable: bool,
     copy_source: bool,
     scroll_wide: bool,
@@ -217,7 +218,7 @@ thread_local! {
 
 impl Markdown {
     pub fn new(src: impl Into<String>) -> Markdown {
-        Markdown { src: src.into(), style: None, block_keys: Vec::new(), highlights: Vec::new(), autolink: true, reveal: -1.0, streaming: false, on_link: None, on_link_secondary: None, link_look: None, link_help: None, link_ring: None,
+        Markdown { src: src.into(), style: None, block_keys: Vec::new(), highlights: Vec::new(), autolink: true, reveal: -1.0, streaming: false, on_link: None, on_link_secondary: None, link_look: None, link_help: None, link_ring: None, code_link: None,
             on_task: None, tasks_read_only: false, selectable: false, copy_source: false, scroll_wide: false, highlighter: Highlighter::builtin(),
             #[cfg(feature = "mermaid")]
             diagram_frame: None, code_frame: None, quote_frame: None, link_favicon: None, images: None, on_image: None }
@@ -384,7 +385,7 @@ impl Markdown {
         self
     }
 
-    /// Colours code blocks with `f` instead of the built-in scanners: it gets a fence's language
+    /// Colours code blocks with `f` instead of the built-in highlighter: it gets a fence's language
     /// as written (its info string's first word; `None` for an indented block or a bare fence)
     /// and the code, and returns byte ranges of the code with a token kind, which the style's
     /// [`SyntaxTheme`] colours, or a colour of its own. See [`Highlighter`] for caching, and
@@ -392,7 +393,7 @@ impl Markdown {
     ///
     /// ```ignore
     /// Markdown::new(src).highlight(|lang, code| match lang {
-    ///     Some("kotlin") => my_kotlin(code),
+    ///     Some("cobol") => my_cobol(code),
     ///     _ => rune_kit::syntax::builtin(lang, code),
     /// })
     /// ```
@@ -419,6 +420,7 @@ impl Markdown {
             && self.link_look.is_none()
             && self.link_help.is_none()
             && self.link_ring.is_none()
+            && self.code_link.is_none()
             && self.on_task.is_none()
             && !(self.selectable && self.copy_source)
             && self.highlighter.is_builtin()
@@ -460,7 +462,7 @@ impl Markdown {
             starts.iter().map(|at| self.block_keys.iter().find(|(offset, _)| offset == at)
                 .map_or_else(String::new, |(_, key)| key.clone())).collect::<Vec<_>>()
         };
-        let r = Renderer { s: style.clone(), highlights: self.highlights, reveal: self.reveal, streaming: self.streaming, on_link: self.on_link, on_link_secondary: self.on_link_secondary, link_look: self.link_look, link_help: self.link_help, link_ring: self.link_ring,
+        let r = Renderer { s: style.clone(), highlights: self.highlights, reveal: self.reveal, streaming: self.streaming, on_link: self.on_link, on_link_secondary: self.on_link_secondary, link_look: self.link_look, link_help: self.link_help, link_ring: self.link_ring, code_link: self.code_link,
             on_task: self.on_task, tasks_read_only: self.tasks_read_only, selectable: self.selectable, scroll_wide: self.scroll_wide,
             highlighter: self.highlighter, sources, next_source: Cell::new(0), tasks, next_task: Cell::new(0),
             current_block_key: RefCell::new("b0".into()),

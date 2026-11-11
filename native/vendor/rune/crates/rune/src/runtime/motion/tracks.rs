@@ -100,11 +100,18 @@ impl<S: 'static> Runtime<S> {
                 for substep in 0..if in_run { 0 } else { steps.min(240) } {
                     if !stack.pending_heights.is_empty() {
                         let at = now - f64::from(self.grow_acc) - f64::from((steps.min(240) - substep) as f32 * SUBSTEP);
-                        if at >= stack.width_hold_until && let Some(height) = stack.pending_heights.remove(id) {
+                        if !stack.width_hold.defers(at) && let Some(height) = stack.pending_heights.remove(id) {
                             g.retarget(height);
                         }
                     }
                     g.step(spec.spring, &spec.edge, carrying);
+                }
+                // A row nobody saw last frame draws no feather: it has none to ease, and grows one
+                // again as it comes into view.
+                if g.mask > 0.0 && self.built
+                    && self.node_index.get(id).is_some_and(|&i| !self.seen.get(i).copied().unwrap_or(true))
+                {
+                    g.mask = 0.0;
                 }
                 let r = std::mem::take(&mut g.restore);
                 if r > 0.0 { restored.push((ci, *id, r)); }
@@ -204,7 +211,7 @@ impl<S: 'static> Runtime<S> {
             // of it, not while they're still short of it. A glide that reaches the end hands it
             // to the pin.
             let shrinking = laid.is_some_and(|end| end < st.max - 0.5 && st.offset < st.max - 1e-3);
-            if sp.stick_bottom && !held && !shrinking && st.offset >= st.max - 0.5 && st.coast().abs() <= 1.0 {
+            if sp.stick_bottom && !held && !shrinking && st.glide().is_none() && st.offset >= st.max - 0.5 && st.coast().abs() <= 1.0 {
                 st.pin();
             }
             st.laid = laid;

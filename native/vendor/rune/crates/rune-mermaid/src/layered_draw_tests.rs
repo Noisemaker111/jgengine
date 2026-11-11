@@ -56,6 +56,100 @@ fn no_edge_crosses_a_subgraph_title() {
     }
 }
 
+/// Each subgraph's title has the top of its box to itself, as in mermaid.js: one line, centred,
+/// and no node or edge inside its band.
+#[test]
+fn subgraph_titles_keep_a_band_of_their_own() {
+    let plan = include_str!("../fixtures/plan.mmd");
+    let titles = ["Prep, done", "Stage 2: first pass on the new parser (the pilot)", "AST track: the new parser reads the old tool's syntax trees", "Stage 3: formatter on the new parser", "Key"];
+    for dir in ["LR", "TD"] {
+        let src = plan.replacen("flowchart LR", &format!("flowchart {dir}"), 1);
+        for width in [680.0, 4000.0] {
+            let c = canvas(&src, &paint_at(true, width));
+            let boxes: Vec<[f32; 4]> = c.ops.iter().filter_map(|op| match op {
+                Op::Fill(pts, _) if pts.len() > 8 => Some(pts.iter().fold([f32::MAX, f32::MAX, f32::MIN, f32::MIN], |b, p| [b[0].min(p[0]), b[1].min(p[1]), b[2].max(p[0]), b[3].max(p[1])])),
+                _ => None,
+            }).collect();
+            for t in titles {
+                let l = label(&c, t);
+                let r = rect(l);
+                let what = format!("{t:?} {dir} at width {width}: {r:?}");
+                assert!(!l.wrap, "one line: {what}");
+                let b = boxes.iter().filter(|b| b[0] <= r[0] && b[2] >= r[2] && b[1] <= r[1] && b[3] >= r[3]).min_by(|a, b| (a[2] - a[0]).total_cmp(&(b[2] - b[0]))).unwrap_or_else(|| panic!("in a box: {what}"));
+                assert!(((b[0] + b[2]) / 2.0 - (r[0] + r[2]) / 2.0).abs() < 0.5, "centred in {b:?}: {what}");
+                let band = [b[0], b[1], b[2], r[3]];
+                for n in c.labels.iter().filter(|n| !titles.contains(&n.text.as_str())) {
+                    let o = rect(n);
+                    assert!(o[0] >= band[2] || o[2] <= band[0] || o[1] >= band[3] || o[3] <= band[1], "{:?} is in the band of {what}", n.text);
+                }
+                for l in lines(&c) {
+                    assert!(!l.windows(2).any(|w| hits(w, r)), "an edge crosses {what}: {l:?}");
+                }
+            }
+        }
+    }
+}
+
+/// Edges that share a node meet it side by side, in the order they come from, never on one point.
+#[test]
+fn edges_sharing_an_end_fan_out() {
+    let plan = include_str!("../fixtures/plan.mmd");
+    for dir in ["LR", "TD"] {
+        let fan = format!("flowchart {dir}\n  A[one source] --> C[where they meet]\n  B[another source] --> C\n  X[far] --> C\n  C --> D[next]\n  C --> E[and next]");
+        let srcs = [plan.replacen("flowchart LR", &format!("flowchart {dir}"), 1), fan];
+        for (src, width) in srcs.iter().flat_map(|s| [(s, 680.0), (s, 4000.0)]) {
+            let paint = paint_at(true, width);
+            let c = canvas(src, &paint);
+            let tips: Vec<[f32; 2]> = c.ops.iter().filter_map(|op| match op {
+                Op::Fill(p, col) if *col == paint.line && p.len() == 3 => Some(p[0]),
+                _ => None,
+            }).collect();
+            let starts: Vec<[f32; 2]> = lines(&c).map(|l| l[0]).collect();
+            for (what, pts, gap) in [("arrowheads", &tips, 11.5), ("edges leaving", &starts, 6.0)] {
+                for (a, p) in pts.iter().enumerate() {
+                    for q in &pts[a + 1..] {
+                        let d = crate::canvas::dist(*p, *q);
+                        assert!(d >= gap, "{what} {p:?} and {q:?} are {d} apart in {dir} at width {width}: {}", src.lines().next().unwrap_or(""));
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Edges whose ends both lie outside a subgraph go around its box, as dagre routes them, never
+/// through it.
+#[test]
+fn edges_route_around_subgraphs_they_do_not_belong_to() {
+    let plan = include_str!("../fixtures/plan.mmd");
+    let past = "flowchart TD\n  A[start] --> B[finish]\n  subgraph S[In between]\n    M1[one] --> M2[two] --> M3[three]\n  end\n  A --> M1\n  M3 --> B\n  A --> C[aside] --> B";
+    for dir in ["LR", "TD"] {
+        let srcs = [plan.replacen("flowchart LR", &format!("flowchart {dir}"), 1), past.replacen("flowchart TD", &format!("flowchart {dir}"), 1)];
+        for (src, width) in srcs.iter().flat_map(|s| [(s, 680.0), (s, 4000.0)]) {
+            let Some(crate::Parsed { diagram: crate::Diagram::Flowchart(f), .. }) = crate::parse(src) else { panic!() };
+            let c = canvas(src, &paint_at(true, width));
+            let bounds = |pts: &[[f32; 2]]| pts.iter().fold([f32::MAX, f32::MAX, f32::MIN, f32::MIN], |b, p| [b[0].min(p[0]), b[1].min(p[1]), b[2].max(p[0]), b[3].max(p[1])]);
+            let within = |v: usize, k: usize| std::iter::successors(f.nodes[v].cluster, |&s| f.subgraphs[s].parent).any(|s| s == k);
+            let boxes: Vec<[f32; 4]> = c.ops.iter().filter_map(|op| match op {
+                Op::Fill(pts, _) if pts.len() > 8 => Some(bounds(pts)),
+                _ => None,
+            }).collect();
+            for k in 0..f.subgraphs.len() {
+                let members: Vec<[f32; 4]> = (0..f.nodes.len()).filter(|&v| within(v, k)).map(|v| bounds(&c.regions[v])).collect();
+                let Some(b) = boxes.iter().filter(|b| members.iter().all(|m| b[0] < m[0] - 4.0 && b[1] < m[1] - 4.0 && b[2] > m[2] + 4.0 && b[3] > m[3] + 4.0)).min_by(|a, b| ((a[2] - a[0]) * (a[3] - a[1])).total_cmp(&((b[2] - b[0]) * (b[3] - b[1])))) else { continue };
+                let inner = [b[0] + 1.5, b[1] + 1.5, b[2] - 1.5, b[3] - 1.5];
+                for t in &c.traces {
+                    if within(t.ends.0, k) || within(t.ends.1, k) {
+                        continue;
+                    }
+                    let into = t.line.iter().find(|p| p[0] > inner[0] && p[0] < inner[2] && p[1] > inner[1] && p[1] < inner[3]);
+                    assert!(into.is_none(), "{} → {} runs through {:?} at {into:?}, {dir} at width {width}", f.nodes[t.ends.0].id, f.nodes[t.ends.1].id, f.subgraphs[k].title);
+                }
+            }
+        }
+    }
+}
+
 #[test]
 fn an_edge_to_a_subgraph_stops_on_its_border() {
     let paint = DiagramStyle::neutral(false);

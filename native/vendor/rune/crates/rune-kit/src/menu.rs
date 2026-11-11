@@ -1,11 +1,17 @@
 //! Menu, context menu and their items (`@opencode/ui` navigation/menu, components/context-menu).
 //! Compact (default) and standard appearances.
+//!
+//! Whether a menu is open is the app's (`open`, `on_close`); how it opens and closes is Rune's
+//! modal stack (`runtime/input/modal_focus.rs`), which follows Desktop's menu machine
+//! (`ui/src/navigation/menu/machine.ts`): focus returns to the trigger as the menu closes,
+//! without a ring when the pointer opened it.
 
 use std::rc::Rc;
 
 use rune::{El, Icon, PointerPress, TextStyle, Tx, col, el, icon, row, text};
 
-use crate::overlay::{Placement, fit_scroll_bar, menu_anchor, scrim};
+use crate::overlay::{Placement, scrim};
+use crate::popover::{anchored, fit_scroll_bar};
 use crate::{Acts, Kit, State, shadows};
 
 /// A menu at a secondary-press position. Store the point from `El::on_secondary_press`
@@ -226,7 +232,7 @@ impl MenuItem {
                 let sub = Menu { key: format!("{key}-sub"), entries, standard, min_width: 160.0, ..Menu::new("") };
                 let mut deeper = Vec::new();
                 let surface = sub.surface(k, &mut deeper);
-                layer.push(menu_anchor(k, surface, &key, Placement::RightStart, 0.0));
+                layer.push(anchored(k, surface, &key, Placement::RightStart, 0.0));
                 layer.extend(deeper);
             }
         }
@@ -392,7 +398,7 @@ impl Menu {
         if let Some(modal) = modal {
             surface = modal(surface);
         }
-        layer.push(menu_anchor(k, surface, &key, placement, gutter));
+        layer.push(anchored(k, surface, &key, placement, gutter));
         layer.extend(subs);
         trigger
     }

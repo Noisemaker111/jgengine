@@ -79,7 +79,7 @@ impl Reference {
     pub fn for_mode(mode: FontSmoothing) -> Reference {
         match mode {
             FontSmoothing::On | FontSmoothing::Windfoil => Reference::Smoothed,
-            FontSmoothing::Off | FontSmoothing::DirectWrite => Reference::Unsmoothed,
+            _ => Reference::Unsmoothed,
         }
     }
     fn prefix(self) -> &'static str {
@@ -411,7 +411,9 @@ impl Harness {
             self.text.glyphs_for_layout(&layout, scale, case.origin.map(|v| v * scale), false, &mut quads);
         }
         let fill = crate::runtime::premul(fg, 1.0, srgb_blend);
-        let instances: Vec<_> = quads.iter().map(|q| crate::runtime::glyph(q, fill, NO_CLIP, [0.0; 4])).collect();
+        // The coverage exponent a window's paint applies, so the sheets are what an app draws.
+        let exponent = self.text.coverage_exponent(fill);
+        let instances: Vec<_> = quads.iter().map(|q| { let mut g = crate::runtime::glyph(q, fill, NO_CLIP, [0.0; 4]); g.params[3] = exponent; g }).collect();
         let format = if srgb_blend { OFFSCREEN_FORMAT.remove_srgb_suffix() } else { OFFSCREEN_FORMAT };
         let renderer = self.renderer.get_or_insert_with(|| Renderer::new(&self.gpu.device, format));
         renderer.set_format(&self.gpu.device, format);

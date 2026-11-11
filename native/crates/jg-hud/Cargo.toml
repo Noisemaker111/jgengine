@@ -7,7 +7,7 @@ description = "Deepward's HUD drawn with Rune in the native window, from the gam
 
 [dependencies]
 # Rune is pre-release and takes no pull requests: vendored at native/vendor/rune
-# (upstream dev d751f071) with the jgengine web-transparency patch. See
+# (upstream dev c92e462e) with the jgengine web-transparency patch. See
 # native/vendor/rune/VENDORED.md.
 rune = { path = "../../vendor/rune/crates/rune", default-features = false }
 wgpu.workspace = true

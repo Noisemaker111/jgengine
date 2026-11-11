@@ -69,6 +69,7 @@ pub struct App<S: 'static> {
     pub(crate) turn_scope: Option<TurnScope<S>>,
     pub(crate) on_focus: Option<fn(&mut S, bool, &mut Tx)>,
     pub(crate) on_mods: Option<fn(&mut S, crate::Mods, &mut Tx)>,
+    pub(crate) on_visibility: Option<fn(&mut S, bool, &mut Tx)>,
     pub(crate) on_ime: Option<fn(&mut S, &crate::Ime, &mut Tx) -> bool>,
     pub(crate) on_reopen: Option<fn(&mut S, bool, &mut Tx) -> bool>,
     pub(crate) on_open_url: Option<crate::open_url::incoming::OnOpenUrl<S>>,
@@ -124,6 +125,7 @@ impl<S: 'static> App<S> {
             turn_scope: None,
             on_focus: None,
             on_mods: None,
+            on_visibility: None,
             on_ime: None,
             on_reopen: None,
             on_open_url: None,
@@ -166,8 +168,8 @@ impl<S: 'static> App<S> {
     }
 
     /// How this app's windows rasterise and place glyphs (see [`crate::FontSmoothing`]):
-    /// `On` by default on macOS, `Off` elsewhere (CoreGraphics' pipeline without font
-    /// smoothing's dilation, as `-webkit-font-smoothing: antialiased` draws).
+    /// `On` by default on macOS and in a Mac's browser, `Off` elsewhere (CoreGraphics' pipeline
+    /// without font smoothing's dilation, as `-webkit-font-smoothing: antialiased` draws).
     /// `Tx::set_font_smoothing` switches it while running.
     pub fn font_smoothing(mut self, mode: crate::FontSmoothing) -> Self {
         self.font_smoothing = mode;
@@ -277,6 +279,16 @@ impl<S: 'static> App<S> {
     /// ```
     pub fn on_modifiers(mut self, f: fn(&mut S, crate::Mods, &mut Tx)) -> Self {
         self.on_mods = Some(f);
+        self
+    }
+
+    /// Hears the window go off screen (minimised, hidden, or covered whole by other windows
+    /// where the system says so) and come back, with whether it shows now, as a web page's
+    /// `visibilitychange` hears `document.hidden` change: for work that should wait while no
+    /// one can see it, such as a notification's timer. Called once per change after the first
+    /// frame. Native windows only.
+    pub fn on_visibility(mut self, f: fn(&mut S, bool, &mut Tx)) -> Self {
+        self.on_visibility = Some(f);
         self
     }
 
@@ -705,7 +717,14 @@ impl<S: 'static> AppHandle<S> {
     /// app quit before it mounts never does.
     pub fn quit(&self) {
         self.shared.quitting.store(true, Ordering::Release);
-        self.request(|q| q.quit = true);
+        self.request(|q| q.quit = q.quit.max(Some(crate::quit::After::Exit)));
+    }
+
+    /// Quit the app as [`AppHandle::quit`] does, then start it again with the same arguments
+    /// once this process has exited ([`Tx::relaunch`]). Web: as `quit`.
+    pub fn relaunch(&self) {
+        self.shared.quitting.store(true, Ordering::Release);
+        self.request(|q| q.quit = Some(crate::quit::After::Relaunch));
     }
 
     /// macOS: show or hide the app's Dock icon (and app menu) while it runs, switching between
@@ -767,16 +786,23 @@ pub(crate) struct Requests<S> {
     pub minimize: bool,
     pub position: Option<(i32, i32)>,
     pub place: Option<crate::windows::PlaceRequest>,
-    pub quit: bool,
+    /// `AppHandle::quit` or `AppHandle::relaunch`, and what follows the exit.
+    pub quit: Option<crate::quit::After>,
     /// `AppHandle::wake` asked for `poll`.
     pub woken: bool,
     pub updates: Vec<Update<S>>,
 }
 
 impl<S> Requests<S> {
+    /// Asks something of the window itself: show, hide or close it, focus or minimize it, or
+    /// move it. A request added here reaches both `only_updates` and `Shared::window_pending`.
+    fn asks_window(&self) -> bool {
+        self.window.is_some() || self.focus || self.minimize || self.position.is_some() || self.place.is_some()
+    }
+
     /// Nothing but updates: no wake for `poll`, no window, focus or geometry request.
     pub(crate) fn only_updates(&self) -> bool {
-        !self.woken && self.window.is_none() && !self.focus && !self.minimize && self.position.is_none() && self.place.is_none()
+        !self.woken && !self.asks_window()
     }
 }
 
@@ -789,7 +815,7 @@ impl<S> Default for Requests<S> {
             minimize: false,
             position: None,
             place: None,
-            quit: false,
+            quit: None,
             woken: false,
             updates: Vec::new(),
         }
@@ -863,7 +889,7 @@ impl<S> Shared<S> {
     /// A request a `--desktop` run applies to the window (dock and quit aside) waits for `take`.
     pub(crate) fn window_pending(&self) -> bool {
         let r = self.requests.lock().unwrap();
-        r.window.is_some() || r.focus || r.minimize || r.position.is_some() || r.place.is_some() || !r.updates.is_empty()
+        r.asks_window() || !r.updates.is_empty()
     }
 
     pub fn take_place(&self) -> Option<crate::windows::PlaceRequest> {
@@ -990,7 +1016,7 @@ mod tests {
             Some(WindowRequest::Close),
             "window requests collapse to the latest"
         );
-        assert!(!requests.quit);
+        assert!(requests.quit.is_none());
         let mut n = 0;
         for f in requests.updates {
             f(&mut n, &mut Tx::default());

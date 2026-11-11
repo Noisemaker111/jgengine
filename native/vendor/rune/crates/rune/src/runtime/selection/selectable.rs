@@ -17,6 +17,10 @@
 use super::*;
 use std::ops::Range;
 
+/// A secondary press outside the selection selects the word under it first: AppKit text does,
+/// Chromium on Windows and Linux doesn't.
+const SECONDARY_SELECTS_WORD: bool = cfg!(target_os = "macos");
+
 #[path = "copy_join.rs"]
 mod copy_join;
 #[path = "toolbar.rs"]
@@ -79,8 +83,8 @@ pub(super) struct Held {
     pub(super) origin: (usize, usize),
     /// The held press is extending this selection.
     pub(super) dragging: bool,
-    /// The last press on selectable text: its path, time, point and click count.
-    pub(super) last: Option<(String, f64, f32, f32, u8)>,
+    /// The run of presses on selectable text.
+    pub(super) presses: press_run::PressRun,
     /// Shift is held (from the host's modifier events), so a press extends the selection.
     pub(super) shift: bool,
     pub(super) pick: super::select_all::Pick, // where Select All goes with no selection
@@ -95,10 +99,12 @@ pub(super) fn floor_boundary(text: &str, i: usize) -> usize {
 fn prev_boundary(text: &str, i: usize) -> usize { floor_boundary(text, i.saturating_sub(1)) }
 
 /// The range of `unit` at byte `i` of `text`: a word (or run of spaces or punctuation) by
-/// Unicode word boundaries, or a paragraph with its line break. Past the end of a line (on its
-/// break, or past the end of the text) it takes the line's last word or paragraph, as AppKit does.
+/// Unicode word boundaries, Chinese, Japanese, Thai, Lao, Khmer and Burmese words by ICU's
+/// dictionaries as a browser finds them, or a paragraph with its line break. Past the end of a
+/// line (on its break, or past the end of the text) it takes the line's last word or paragraph,
+/// as AppKit does.
 pub(crate) fn unit_at(text: &str, i: usize, unit: Unit) -> (usize, usize) {
-    use unicode_segmentation::UnicodeSegmentation;
+    use icu_segmenter::{WordSegmenter, options::WordBreakInvariantOptions};
     let mut i = floor_boundary(text, i);
     if i > 0 && i == text.len() && unit != Unit::Char { i = prev_boundary(text, i); }
     match unit {
@@ -109,10 +115,11 @@ pub(crate) fn unit_at(text: &str, i: usize, unit: Unit) -> (usize, usize) {
                 if text[i..].starts_with('\r') && i > 0 && !text[..i].ends_with('\n') { i = prev_boundary(text, i); }
             }
             let mut last = (i, i);
-            for (start, word) in text.split_word_bound_indices() {
-                let end = start + word.len();
+            let mut start = 0;
+            for end in WordSegmenter::new_dictionary(WordBreakInvariantOptions::default()).segment_str(text).filter(|&b| b > 0) {
                 last = (start, end);
                 if i < end { return last; }
+                start = end;
             }
             last
         }
@@ -263,7 +270,7 @@ impl<S: 'static> Runtime<S> {
     pub(super) fn unit_in(&self, i: usize, at: usize, unit: Unit) -> (usize, usize) {
         let r = unit_at(self.content_of(i), at, unit);
         match (unit, &self.nodes[i].text) {
-            (Unit::Word, Some(t)) if !t.uncopied.is_empty() => trim_uncopied(&t.uncopied, r),
+            (Unit::Word, Some(t)) if !t.cold.uncopied.is_empty() => trim_uncopied(&t.cold.uncopied, r),
             _ => r,
         }
     }
@@ -475,11 +482,12 @@ impl<S: 'static> Runtime<S> {
             None => n.path.clone(),
         };
         let len = self.content_of(i).len();
-        let (full_a, full_b) = n.text.as_ref().filter(|t| !t.uncopied.is_empty())
-            .map_or((0, len), |t| trim_uncopied(&t.uncopied, (0, len)));
+        let (full_a, full_b) = n.text.as_ref().filter(|t| !t.cold.uncopied.is_empty())
+            .map_or((0, len), |t| trim_uncopied(&t.cold.uncopied, (0, len)));
         let whole = !range.is_empty() && len > 0 && range.start <= full_a && range.end >= full_b;
         let text = n.text.as_ref().and_then(|t| t.copy_slice(range.start as u32, range.end as u32)).unwrap_or_default();
-        SelectedText { path, key: n.key.clone(), range, len, whole, text }
+        let content = self.content_of(i).get(range.clone()).unwrap_or_default().to_owned();
+        SelectedText { path, key: n.key.clone(), range, len, whole, text, content }
     }
 
     /// What copying the selection puts on the clipboard: the nearest [`El::selection_copy`]
@@ -535,7 +543,7 @@ impl<S: 'static> Runtime<S> {
 
     /// The held press is selecting text by dragging, and has selected some.
     pub(super) fn selected_by_drag(&self) -> bool {
-        self.text_sel.dragging && self.press_moved && (!self.selection_ranges().is_empty() || self.has_nonempty_selection())
+        self.text_sel.dragging && self.press.held().is_some_and(|h| h.moved) && (!self.selection_ranges().is_empty() || self.has_nonempty_selection())
     }
 
     pub(super) fn clear_text_selection(&mut self) {
@@ -611,19 +619,14 @@ impl<S: 'static> Runtime<S> {
         use virtual_selection::EndRef;
         let Some(i) = target.filter(|&i| self.is_selectable(i) && self.link_at(i, x, y).is_none()) else {
             self.clear_text_selection();
-            self.text_sel.last = None;
+            self.text_sel.presses.clear();
             return;
         };
         let Some(at) = self.text_index_at(i, x, y) else { return };
         let path = self.nodes[i].path.clone();
         let content = self.content_of(i).to_owned();
         let now = self.now_clock();
-        let clicks = match &self.text_sel.last {
-            Some((p, t, px, py, n)) if *p == path && now - t <= self.double_click_interval
-                && (x - px).abs() <= CLICK_SLOP && (y - py).abs() <= CLICK_SLOP => (n + 1).min(3),
-            _ => 1,
-        };
-        self.text_sel.last = Some((path.clone(), now, x, y, clicks));
+        let clicks = self.text_sel.presses.press(&path, now, (x, y), self.double_click_interval).min(3);
         let i_end = EndRef::Mounted(i);
         let holder = self.selection_holder_end().filter(|&h| h == i_end || self.end_same_group(h, i_end));
         match holder {
@@ -718,19 +721,21 @@ impl<S: 'static> Runtime<S> {
     }
 
     /// A secondary click on selectable text `path` without its own `on_secondary_press` opens the
-    /// Copy menu, selecting the word under the pointer first when the click is outside the
-    /// selection, as AppKit text does. False when the app's handler should run instead.
+    /// Copy menu. On macOS it selects the word under the pointer first when the click is outside
+    /// the selection, as AppKit text does; elsewhere the selection stays as it is, as Chromium's
+    /// does on Windows and Linux. False when the app's handler should run instead.
     pub(super) fn selection_menu(&mut self, path: &str, x: f32, y: f32) -> bool {
         let Some(i) = self.live(path) else { return false };
         if !self.is_selectable(i) || self.nodes[i].handlers.on_secondary_press.is_some() { return false; }
-        if let Some(at) = self.text_index_at(i, x, y)
+        if SECONDARY_SELECTS_WORD
+            && let Some(at) = self.text_index_at(i, x, y)
             && range_in(&self.selection_ranges(), i).is_none_or(|(a, b)| at < a || at >= b)
         {
             let content = self.content_of(i).to_owned();
             let (a, b) = self.unit_in(i, at, Unit::Word);
             self.text_sel = Held { path: Some(path.to_owned()), content, anchor: a, focus: b, far: None,
                 anchor_end: None, focus_end: None, mounted_between: HashMap::default(), between: 0,
-                unit: Unit::Word, origin: (a, b), dragging: false, last: None, shift: self.text_sel.shift,
+                unit: Unit::Word, origin: (a, b), dragging: false, presses: Default::default(), shift: self.text_sel.shift,
                 pick: std::mem::take(&mut self.text_sel.pick) };
             self.seal_between();
         }

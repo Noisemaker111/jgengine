@@ -37,7 +37,7 @@ pub(super) fn emit_block_decorations(
             let pad_y = if tk == 1.0 { (2.0 * s).round() } else { 2.0 * s * tk };
             instances.push(rect_inst(
                 [x0 + glide[0], top - pad_y + glide[1], box_w, (bot - top) + 2.0 * pad_y],
-                premul(spec.rich_style.code_block_bg, o, srgb),
+                premul(spec.rich_style().code_block_bg, o, srgb),
                 6.0 * s * tk,
                 clip,
                 fade,
@@ -51,7 +51,7 @@ pub(super) fn emit_block_decorations(
             let inset_y = if tk == 1.0 { (2.0 * s).round() } else { 2.0 * s * tk };
             instances.push(rect_inst(
                 [bar_x, top + inset_y + glide[1], bar_w, (bot - top - 2.0 * inset_y).max(4.0 * s * tk)],
-                premul(spec.rich_style.quote_bar, o, srgb),
+                premul(spec.rich_style().quote_bar, o, srgb),
                 bar_w * 0.5,
                 clip,
                 fade,
@@ -63,8 +63,8 @@ pub(super) fn emit_block_decorations(
     for line in layout.lines() {
         had_lines = true;
         let m = line.metrics();
-        let blk = spec.blocks.get(para_idx).copied().unwrap_or(Block::Paragraph);
-        let is_soft = spec.soft_breaks.binary_search(&(para_idx as u32)).is_ok();
+        let blk = spec.cold.blocks.get(para_idx).copied().unwrap_or(Block::Paragraph);
+        let is_soft = spec.cold.soft_breaks.binary_search(&(para_idx as u32)).is_ok();
         let top = origin[1] + m.block_min_coord * tk;
         let bot = if m.block_max_coord > m.block_min_coord {
             origin[1] + m.block_max_coord * tk
@@ -131,7 +131,7 @@ pub(super) fn emit_block_decorations(
     }
 
     if !had_lines
-        && let Some(&blk) = spec.blocks.first()
+        && let Some(&blk) = spec.cold.blocks.first()
     {
         let top = origin[1];
         let bot = top + line_h_default;
@@ -155,7 +155,7 @@ pub(super) fn emit_block_decorations(
     flush_quote(instances, &mut quote_run);
 
     if !markers.is_empty() {
-        let marker_color = spec.rich_style.marker.unwrap_or_else(|| text_color.alpha(0.68));
+        let marker_color = spec.rich_style().marker.unwrap_or_else(|| text_color.alpha(0.68));
         let mc = premul(marker_color, o, srgb);
         for (indent_px, baseline_y, blk, num) in markers {
             match blk {
@@ -269,7 +269,10 @@ pub(super) fn zoom_glyph(mut g: Instance, origin: [f32; 2], r_origin: [f32; 2], 
     if g.params[1] == KIND_GLYPH && g.radii[3] > 0.0 {
         // An outline glyph (`text::Outline`) magnifies its pen and pixel instead of its mask.
         g.radii = [origin[0] + (g.radii[0] - r_origin[0]) * k, origin[1] + (g.radii[1] - r_origin[1]) * k, g.radii[2], g.radii[3] * k];
-    } else if g.params[1] == KIND_GLYPH && g.uv[2] == 0.0 { (g.uv[2], g.uv[3]) = (g.rect[2], g.rect[3]); }
+    } else if g.params[1] == KIND_GLYPH && g.uv[2] == 0.0 {
+        // A subpixel mask's footprint is three texels a pixel wide.
+        (g.uv[2], g.uv[3]) = (g.rect[2] * if g.radii[0] > 0.5 { 3.0 } else { 1.0 }, g.rect[3]);
+    }
     g.rect = [
         origin[0] + (g.rect[0] - r_origin[0]) * k,
         origin[1] + (g.rect[1] - r_origin[1]) * k,

@@ -28,7 +28,6 @@ pub(crate) struct ElCold {
     pub(crate) matched: Option<Rc<str>>,
     pub(crate) scroll: Option<ScrollSpec>,
     pub(crate) scroll_axes: ScrollAxes,
-    pub(crate) scroll_preserve_layout: bool,
     pub(crate) sticky: Option<Box<Sticky>>,
     pub(crate) scroll_edges: ScrollEdges,
     pub(crate) growth: Option<Box<GrowthSpec>>,
@@ -43,8 +42,8 @@ pub(crate) struct ElCold {
     pub(crate) help: Option<String>,
     /// `El::help_when_truncated`: the tooltip shows only while the text is cut short.
     pub(crate) help_cut: bool,
-    /// `El::help_above`: the tooltip shows above the element.
-    pub(crate) help_above: bool,
+    /// `El::help_side`: the side the tooltip shows on; None for under the element.
+    pub(crate) help_side: Option<crate::Side>,
     pub(crate) material: Option<crate::SystemMaterial>,
     /// `El::aspect_fit`'s width over height; 0 when unset.
     pub(crate) aspect_fit: f32,
@@ -73,7 +72,6 @@ impl Empty for ElCold {
         matched: None,
         scroll: None,
         scroll_axes: ScrollAxes::Y,
-        scroll_preserve_layout: false,
         sticky: None,
         scroll_edges: ScrollEdges { fade: 0.0, fade_style: crate::el::FadeStyle::SMOOTH, margin: 0.0, anchor: false },
         growth: None,
@@ -85,7 +83,7 @@ impl Empty for ElCold {
         time_scale: 1.0,
         help: None,
         help_cut: false,
-        help_above: false,
+        help_side: None,
         material: None,
         aspect_fit: 0.0,
         a11y: A11y::EMPTY,

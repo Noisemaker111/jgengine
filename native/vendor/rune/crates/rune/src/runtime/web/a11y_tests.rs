@@ -84,8 +84,58 @@ fn a_page_mirrors_landmarks_ids_links_and_images_in_document_coordinates() {
     let font = items[3].font.as_ref().expect("text in a page carries its font");
     assert_eq!((font.family.as_str(), font.align), ("sans", "left"));
     assert!(items[3].selectable);
-    assert!(!items[2].selectable);
+    assert!(items[2].selectable, "a page's plain text selects without asking");
     assert_eq!(items[3].rect[0], 4.0, "selectable text sits at its text box, inside the padding");
+}
+
+/// Plain text beside text inside things that take the pointer: a pressable card (holding a button,
+/// so its text mirrors on its own), a draggable row, a tab, and an opted-out header.
+fn controls(_: &(), _: &mut Cx<()>) -> El {
+    let body = crate::tok::type_::BODY;
+    crate::col().w_full().role("main")
+        .child(crate::text("Plain words").key("plain").font(body))
+        .child(crate::col().key("card").on_press(|_: &mut ()| {})
+            .child(crate::text("Card words").key("card-words").font(body))
+            .child(crate::text("Pinned words").key("pinned").font(body).selectable(true))
+            .child(crate::row().key("go").on_press(|_: &mut ()| {}).child(crate::text("Go"))))
+        .child(crate::row().key("drag").on_drag(|_: &mut (), _, _| {}).child(crate::text("Drag words").font(body)))
+        .child(crate::row().key("tab").role("tab").child(crate::text("Tab words").font(body)))
+        .child(crate::col().key("brand").unselectable()
+            .child(crate::text("Brand words").font(body))
+            .child(crate::text("Kept words").font(body).selectable(true)))
+}
+
+fn selectable_texts<S: 'static>(rt: &Runtime<S>) -> Vec<(String, bool)> {
+    rt.web_a11y_items().into_iter().filter(|i| i.kind == "text").map(|i| (i.text, i.selectable)).collect()
+}
+
+#[test]
+fn a_page_selects_its_text_but_not_text_inside_controls() {
+    let mut rt = Runtime::new((), controls, (480.0, 400.0), Env::default());
+    rt.page_mode();
+    rt.frame(0.0);
+    let texts = selectable_texts(&rt);
+    let want = |s: &str, on: bool| (s.to_owned(), on);
+    assert_eq!(texts, [
+        want("Plain words", true),
+        want("Card words", false),
+        want("Pinned words", true),
+        want("Drag words", false),
+        want("Tab words", false),
+        want("Brand words", false),
+        want("Kept words", true),
+    ]);
+    let items = rt.web_a11y_items();
+    assert!(items.iter().any(|i| i.kind == "button" && i.text == "Go"), "the card's button still mirrors");
+    let plain = items.iter().find(|i| i.text == "Plain words").expect("plain text mirrors");
+    assert_eq!(plain.to_json()["e"], json!(true), "the bridge makes it selectable");
+}
+
+#[test]
+fn outside_a_page_only_selectable_text_is_marked() {
+    let mut rt = Runtime::new((), controls, (480.0, 400.0), Env::default());
+    rt.frame(0.0);
+    assert!(selectable_texts(&rt).iter().all(|(_, on)| !on), "a full-window app's canvas selects text itself");
 }
 
 #[test]
@@ -158,6 +208,45 @@ fn a_page_mirrors_a_horizontal_viewport_as_a_scroller_the_browser_scrolls() {
     let code = after.iter().find(|i| i.text.contains("println")).expect("the code still mirrors");
     assert_eq!(code.rect[0], placed, "the text keeps its place inside the scroller");
     assert!(!rt.set_page_scroll_x(&path, 120.0), "the same offset is no change");
+}
+
+/// Code drawn one text per token, as an editor that animates tokens does, beside a gutter
+/// number; then words a small gap apart, and a label and value set far apart.
+fn code(_: &(), _: &mut Cx<()>) -> El {
+    let mono = crate::tok::type_::BODY.mono();
+    let line = |n: usize, toks: &[&str]| {
+        let mut row = crate::row().key("toks");
+        for (k, t) in toks.iter().enumerate() {
+            row = row.child(crate::text(*t).key(format!("t{k}")).font(mono).w(t.chars().count() as f32 * 8.0).h(20.0));
+        }
+        crate::row().key(format!("ln{n}")).h(20.0)
+            .child(crate::row().key("num").w(32.0).child(crate::text(n.to_string()).font(mono)))
+            .child(row)
+    };
+    crate::col().w_full()
+        .child(line(1, &["type", " ", "Port", " = ", "Int"]))
+        .child(line(2, &["listen", "(", "port", ")"]))
+        .child(crate::row().key("words").gap(4.0).child(crate::text("Hello")).child(crate::text("world")))
+        .child(crate::row().key("pair").w(300.0).justify_between().child(crate::text("Name")).child(crate::text("Kit")))
+}
+
+#[test]
+fn a_row_of_token_texts_mirrors_as_one_line() {
+    let mut rt = Runtime::new((), code, (480.0, 300.0), Env::default());
+    rt.frame(0.0);
+    let items = rt.web_a11y_items();
+    let texts: Vec<_> = items.iter().map(|i| (i.kind, i.text.as_str(), i.runs.len())).collect();
+    assert_eq!(texts, [
+        ("text", "1", 0),
+        ("text", "type Port = Int", 0),
+        ("text", "2", 0),
+        ("text", "listen(port)", 0),
+        ("text", "Hello world", 0),
+        ("text", "Name", 0),
+        ("text", "Kit", 0),
+    ]);
+    let line = &items[1];
+    assert_eq!((line.rect[0], line.rect[2]), (32.0, 15.0 * 8.0), "the line's box spans its tokens");
 }
 
 #[test]

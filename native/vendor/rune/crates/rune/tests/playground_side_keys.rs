@@ -1,6 +1,6 @@
 //! A story's side controls that take keys (`Story::side_keys`, `Playground::side_keys`): the
 //! keyboard goes onto them from the list, their hook gets keys first, and Esc or Tab leave.
-use rune::{App, AppSpec, Cx, El, Env, Key, KeyEvent, Mods, Playground, Runtime, Story, Tx, text};
+use rune::{App, AppSpec, Cx, El, Env, Key, KeyEvent, Link, Mods, Playground, Runtime, Story, Tx, rich, text};
 
 #[derive(Default)]
 struct Real {
@@ -17,10 +17,16 @@ static SCENES: &[(&str, fn(&mut Real))] = &[("Meter/High", |s| s.level = 50)];
 struct Dial {
     value: i32,
     failed: bool,
+    opened: bool,
 }
 
 fn dial(d: &Dial, _: &mut Cx<Dial>) -> El {
     text(format!("dial {}", d.value)).key("dial")
+}
+
+/// A stage whose link, like any link, leaves focus where it is when clicked.
+fn linked(_: &Dial, _: &mut Cx<Dial>) -> El {
+    rich("open the docs", Vec::new()).key("stage-link").w(200.0).link(Link::new(0..13, "docs")).on_link(|d: &mut Dial, _, _| d.opened = true)
 }
 
 /// ↑ and ↓ turn the dial; everything else it leaves.
@@ -41,6 +47,7 @@ fn runtime() -> Runtime<Real> {
                 .trigger('f', "Fail", |d, _| d.failed = true),
         )
         .story(Story::new("Dials/Plain", Dial::default, dial).side(|d, _| text(format!("plain {}", d.value)).key("plain-side")))
+        .story(Story::new("Dials/Linked", Dial::default, linked).side_keys(|d, active, _| text(format!("{} {}", if active { "active" } else { "idle" }, d.value)).key("linked-side"), dial_key).trigger('e', "Press Esc", |_, play| play.press(Key::Escape)))
         .side_keys(
             "Meter/High",
             |s, active, _| text(format!("{} {}", if active { "active" } else { "idle" }, s.level)).key("meter-side"),
@@ -96,6 +103,80 @@ fn its_hook_gets_keys_first_and_left_no_longer_leaves() {
     // The step it queued runs on the frame after.
     rt.frame(1.0 / 60.0);
     assert_eq!(dial_state(&rt), (1, true), "a key it leaves runs the trigger it's on");
+}
+
+/// Clicks the stage's link, which leaves focus where it is; false when it isn't showing.
+fn click_link(rt: &mut Runtime<Real>) -> bool {
+    let Some(link) = rt.elements().into_iter().find(|e| e.key.as_deref() == Some("docs")) else { return false };
+    let (x, y) = (link.rect[0] + link.rect[2] / 2.0, link.rect[1] + link.rect[3] / 2.0);
+    rt.pointer_move(x, y);
+    rt.frame(1.0 / 60.0);
+    rt.pointer_down(x, y);
+    rt.pointer_up(x, y);
+    rt.frame(1.0 / 60.0);
+    true
+}
+
+fn on_slot(rt: &Runtime<Real>) -> bool {
+    rt.elements().into_iter().find(|e| e.focused).and_then(|e| e.key).is_some_and(|k| k.starts_with("playground-slot-"))
+}
+
+#[test]
+fn a_stage_link_that_keeps_the_slots_focus_leaves_it_the_keys_and_the_mark() {
+    let mut rt = runtime();
+    rt.open_playground("Dials/Linked", None);
+    press(&mut rt, Key::Right);
+    assert_eq!(says(&rt, "linked-side"), "active 0", "→ puts the keyboard on the dial");
+    assert!(click_link(&mut rt));
+    assert!(rt.playground_state::<Dial>().is_some_and(|d| d.opened), "the click lands on the link");
+    assert!(on_slot(&rt), "and focus stays on the slot");
+    assert_eq!(says(&rt, "linked-side"), "active 0", "so the dial still looks active");
+    press(&mut rt, Key::Up);
+    assert_eq!(dial_state(&rt).0, 1, "and ↑ turns it");
+    assert_eq!(says(&rt, "linked-side"), "active 1");
+}
+
+#[test]
+fn a_steps_key_that_blurs_the_slot_it_puts_back_keeps_the_mark() {
+    let mut rt = runtime();
+    rt.open_playground("Dials/Linked", None);
+    press(&mut rt, Key::Right);
+    press(&mut rt, Key::Text("e".into()));
+    // The step it queued runs on the frame after, and its key on the one after that.
+    rt.frame(1.0 / 60.0);
+    rt.frame(1.0 / 60.0);
+    assert!(on_slot(&rt), "focus came back to the slot");
+    assert_eq!(says(&rt, "linked-side"), "active 0", "and so did its mark");
+}
+
+/// Every sequence of real input up to `LENGTH`, through the real dispatch: ↑ turns the dial
+/// exactly when focus is on its slot, and the dial looks active exactly then, judged apart and
+/// whichever column has the keyboard.
+#[test]
+fn what_receives_keys_and_what_looks_active_follow_the_slots_focus() {
+    const LENGTH: u32 = 4;
+    const STEPS: [&str; 5] = ["right", "link", "up", "escape", "tab"];
+    for n in 0..STEPS.len().pow(LENGTH) {
+        let mut rt = runtime();
+        rt.open_playground("Dials/Linked", None);
+        let mut trail = Vec::new();
+        for at in 0..LENGTH {
+            let step = STEPS[n / STEPS.len().pow(at) % STEPS.len()];
+            trail.push(step);
+            let (before, had_slot) = (dial_state(&rt).0, on_slot(&rt));
+            match step {
+                "right" => press(&mut rt, Key::Right),
+                "up" => press(&mut rt, Key::Up),
+                "escape" => press(&mut rt, Key::Escape),
+                "tab" => press(&mut rt, Key::Tab),
+                _ => { click_link(&mut rt); }
+            }
+            // A key in the list can leave this story, or the playground: the sequence ends.
+            if rt.playground_state::<Dial>().is_none() || says(&rt, "linked-side").is_empty() { break; }
+            if step == "up" { assert_eq!(dial_state(&rt).0 - before, i32::from(had_slot), "{trail:?}: what receives keys"); }
+            assert_eq!(says(&rt, "linked-side").starts_with("active"), on_slot(&rt), "{trail:?}: what looks active");
+        }
+    }
 }
 
 #[test]

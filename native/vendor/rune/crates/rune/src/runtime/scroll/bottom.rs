@@ -20,19 +20,34 @@ const SLACK_WAIT: f64 = 0.12;
 pub(super) struct Slack {
     /// `h` is the slack in points, stepped toward 0 once closing.
     track: GrowTrack,
-    closing: bool,
+    phase: SlackPhase,
+    /// The last step moved `h`, so the frame after it still counts as moving.
     stepped: bool,
-    acc: f32,
     /// The viewport's presented top and bottom last frame.
     edges: Option<[f32; 2]>,
-    /// When a row of the stack last grew.
-    grew_at: f64,
     /// The window size at the last commit: a resize lands the slack.
     pub(super) window: (f32, f32),
     /// `Tx::follow_edge`: until the viewport's edges reach their layout, the rows ride them
     /// and the room they free adds no slack.
     pub(super) follow: bool,
 }
+
+/// Whether the slack waits under the rows or closes on the growth spring.
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum SlackPhase {
+    /// Held while the stack grows, and for `SLACK_WAIT` after a row last grew (`grew_at`).
+    Held { grew_at: f64 },
+    /// Closing, with `acc` seconds of frame time not yet stepped in `SUBSTEP`s.
+    Closing { acc: f32 },
+}
+
+impl Default for SlackPhase {
+    fn default() -> Self { SlackPhase::Held { grew_at: 0.0 } }
+}
+
+/// Done closing without the stack growing again: the wait is already over, so slack that opens
+/// next closes at once.
+const WAITED: SlackPhase = SlackPhase::Held { grew_at: f64::NEG_INFINITY };
 
 impl Slack {
     pub(super) fn height(&self) -> f32 { self.track.h }
@@ -41,6 +56,35 @@ impl Slack {
 
     /// No slack, in a window of this size.
     pub(super) fn landed(window: (f32, f32)) -> Slack { Slack { window, ..Slack::default() } }
+
+    /// Moves the phase on at `now` with `dt` of frame time, once `h` has this frame's growth
+    /// and edges: a growing stack holds the slack, one quiet for `SLACK_WAIT` starts it closing,
+    /// and closing steps `h` toward 0 on the stack's spring.
+    fn settle(&mut self, growing: bool, now: f64, dt: f32, spec: &crate::GrowthSpec) {
+        if growing {
+            self.phase = SlackPhase::Held { grew_at: now };
+            self.track.v = 0.0;
+        }
+        if self.track.h <= 1.0 / 128.0 {
+            self.track = GrowTrack::default();
+            if matches!(self.phase, SlackPhase::Closing { .. }) { self.phase = WAITED; }
+        } else if let SlackPhase::Held { grew_at } = self.phase && now - grew_at >= SLACK_WAIT {
+            self.phase = SlackPhase::Closing { acc: 0.0 };
+            self.track.age = 0.0;
+            self.track.v = 0.0;
+        }
+        if let SlackPhase::Closing { mut acc } = self.phase {
+            acc += dt;
+            while acc >= SUBSTEP {
+                self.track.step(spec.spring, &spec.edge, false);
+                acc -= SUBSTEP;
+            }
+            self.phase = if self.track.moving() { SlackPhase::Closing { acc } } else {
+                self.track = GrowTrack::default();
+                WAITED
+            };
+        }
+    }
 }
 
 /// Steps a glide toward the current bottom, or the offset `Tx::scroll_to` asked for while the
@@ -234,11 +278,6 @@ impl<S: 'static> Runtime<S> {
         let s = &mut st.slack;
         let h0 = s.track.h;
         let [top, bottom] = [view[1], view[3]];
-        if growing {
-            s.grew_at = now;
-            s.closing = false;
-            s.track.v = 0.0;
-        }
         if pinned {
             // Growth fills the slack first. Room the bottom edge gains while the rows sit on it
             // joins it, unless the whole viewport moved down with it.
@@ -251,23 +290,7 @@ impl<S: 'static> Runtime<S> {
         }
         s.edges = Some([top, bottom]);
         if s.follow && (top - target[1]).abs() < 0.01 && (bottom - target[3]).abs() < 0.01 { s.follow = false; }
-        if s.track.h <= 1.0 / 128.0 {
-            s.track = GrowTrack::default();
-            s.closing = false;
-        } else if !s.closing && !growing && now - s.grew_at >= SLACK_WAIT {
-            s.closing = true;
-            s.acc = 0.0;
-            s.track.age = 0.0;
-            s.track.v = 0.0;
-        }
-        if s.closing {
-            s.acc += dt;
-            while s.acc >= SUBSTEP {
-                s.track.step(spec.spring, &spec.edge, false);
-                s.acc -= SUBSTEP;
-            }
-            if !s.track.moving() { s.track = GrowTrack::default(); s.closing = false; }
-        }
+        s.settle(growing, now, dt, &spec);
         s.stepped = (s.track.h - h0).abs() > 1e-5;
         s.moving()
     }
@@ -287,10 +310,15 @@ impl<S: 'static> Runtime<S> {
                     self.queue.push(Action::AtBottom(n.path.clone(), at));
                 }
             }
-            if let Some((min, _)) = &h.on_far_from_bottom {
+            if let Some((min, under, _)) = &h.on_far_from_bottom {
+                // Under a frame, its height counts: the nearest ancestor with that key.
+                let tall = under.as_deref().and_then(|k| {
+                    self.nodes.iter().filter(|m| m.key.as_deref() == Some(k) && n.path.starts_with(&m.path) && n.path[m.path.len()..].starts_with('/'))
+                        .max_by_key(|m| m.path.len()).map(|m| m.local.h)
+                }).unwrap_or(n.local.h);
                 // Rows collapsing measure from the end they head for, glide or not.
                 let end = st.laid.map_or(st.max, |end| end.min(st.max));
-                let far = end - st.offset > f64::from(min.max(n.local.h));
+                let far = end - st.offset > f64::from(min.max(tall));
                 if st.far_from_bottom != Some(far) {
                     st.far_from_bottom = Some(far);
                     self.queue.push(Action::FarFromBottom(n.path.clone(), far));
@@ -312,9 +340,36 @@ mod tests {
     use super::*;
     use crate::el::{col, el};
 
+    #[test]
+    fn slack_waits_out_growth_then_closes_and_slack_after_that_closes_at_once() {
+        let (spec, dt) = (GrowthSpec::default(), 1.0 / 120.0);
+        let mut s = Slack::default();
+        s.track.h = 40.0;
+        s.settle(true, 1.0, dt, &spec);
+        assert_eq!(s.phase, SlackPhase::Held { grew_at: 1.0 });
+        s.settle(false, 1.0 + SLACK_WAIT * 0.9, dt, &spec);
+        assert_eq!((s.phase, s.track.h), (SlackPhase::Held { grew_at: 1.0 }, 40.0), "held through the wait");
+        s.settle(false, 1.0 + SLACK_WAIT, dt, &spec);
+        assert!(matches!(s.phase, SlackPhase::Closing { .. }) && s.track.h < 40.0);
+        let h = s.track.h;
+        s.settle(true, 1.2, dt, &spec);
+        assert_eq!((s.phase, s.track.h), (SlackPhase::Held { grew_at: 1.2 }, h), "growth holds it again");
+
+        let mut now = 1.2;
+        while s.phase != WAITED {
+            now += f64::from(dt);
+            s.settle(false, now, dt, &spec);
+            assert!(now < 3.0, "closes: {s:?}");
+        }
+        assert_eq!(s.track.h, 0.0);
+        s.track.h = 10.0;
+        s.settle(false, now + f64::from(dt), dt, &spec);
+        assert!(matches!(s.phase, SlackPhase::Closing { .. }), "the wait was already over");
+    }
+
     // One state type for every test here: each type monomorphises a whole `Runtime<S>`.
     #[derive(Default)]
-    struct Chat { rows: usize, reports: Vec<bool>, instant: bool, reduced: bool, virtualized: bool, loose: bool, tall_tail: bool, composer: Option<crate::TextEdit>, sends: bool, track_drawn: bool, drawn: Vec<f32>, far: Vec<bool>, dock: Option<f32> }
+    struct Chat { rows: usize, reports: Vec<bool>, instant: bool, reduced: bool, virtualized: bool, loose: bool, tall_tail: bool, composer: Option<crate::TextEdit>, sends: bool, track_drawn: bool, drawn: Vec<f32>, far: Vec<bool>, dock: Option<f32>, under: bool }
 
     fn view(s: &Chat, cx: &mut Cx<Chat>) -> El {
         cx.reduced_motion(s.reduced);
@@ -328,11 +383,14 @@ mod tests {
             }
             stack = stack.child(row);
         }
-        let root = col().w_full().h_full()
-            .child(col().key("scroll").w_full().grow(1.0).shrink().scroll(ScrollSpec { stick_bottom: !s.loose })
-                .on_at_bottom(|s: &mut Chat, at| s.reports.push(at))
-                .on_far_from_bottom(400.0, |s: &mut Chat, far| s.far.push(far))
-                .child(stack))
+        let scroll = col().key("scroll").w_full().grow(1.0).shrink().scroll(ScrollSpec { stick_bottom: !s.loose })
+            .on_at_bottom(|s: &mut Chat, at| s.reports.push(at));
+        let scroll = if s.under {
+            scroll.on_far_from_bottom_under(400.0, "pane", |s: &mut Chat, far| s.far.push(far))
+        } else {
+            scroll.on_far_from_bottom(400.0, |s: &mut Chat, far| s.far.push(far))
+        };
+        let root = col().key("pane").w_full().h_full().child(scroll.child(stack))
             .child(el().key("jump").w_full().h(40.0).on_press_tx(|s: &mut Chat, tx| {
                 if s.instant { tx.scroll_to_bottom_instant("stack") } else { tx.scroll_to_bottom("scroll") }
             }));
@@ -438,6 +496,25 @@ mod tests {
         let (_, gap) = near_at.expect("the glide reports near");
         assert!((-400.0..0.0).contains(&gap), "near once within 400 of the end, before landing: {gap}");
         assert_eq!(rt.state.far, [false, true, false]);
+    }
+
+    /// Under its pane, a viewport counts the pane's height (640) rather than its own (600, the
+    /// jump row under it), read as it scrolls: 620 up is near, 660 far, and a resize runs no view.
+    #[test]
+    fn far_under_a_frame_counts_the_frames_height() {
+        let far_at = |under: bool, up: f32| {
+            let mut rt = Runtime::new(Chat { rows: 60, under, ..Default::default() }, view, (200.0, 640.0), Env::new(true, 2.0));
+            rt.frame(0.0);
+            rt.frame(1.0 / 120.0);
+            rt.update(|_, tx| tx.scroll_to_y("scroll", 1e6));
+            let max = rt.elements().into_iter().find(|e| e.key.as_deref() == Some("stack")).unwrap().rect[3] - 600.0;
+            rt.update(|_, tx| tx.scroll_to_y("scroll", max - up));
+            for _ in 0..3 { rt.frame(1.0 / 120.0); }
+            rt.state.far.last().copied()
+        };
+        assert_eq!(far_at(false, 620.0), Some(true), "past its own 600");
+        assert_eq!(far_at(true, 620.0), Some(false), "within the pane's 640");
+        assert_eq!(far_at(true, 660.0), Some(true), "past the pane's 640");
     }
 
     /// A scroll to the bottom asked for while the window is covered (or hidden) waits for the

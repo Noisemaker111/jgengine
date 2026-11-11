@@ -27,6 +27,7 @@ impl<S: 'static> Runtime<S> {
         i: usize,
         b: LeafBox,
         sel_ranges: &[(usize, usize, usize)],
+        mark_ranges: &[(usize, usize, usize)],
         glyph_count: &mut usize,
     ) {
         let s = self.env.scale;
@@ -59,10 +60,7 @@ impl<S: 'static> Runtime<S> {
             .or_else(|| self.nodes[i].text.as_ref().map(|sp| sp.color))
             .map(|c| self.color(node_id, P_TEXT, c));
         let n = &self.nodes[i];
-        let text_tint = |c: Color| match n.vis.group_color {
-            Some(g) if group > 0.0 => c.mix(g, group),
-            _ => c,
-        };
+        let text_tint = |c: Color| paint_tracks::group_tint(n, c, group);
         if let Some(shape) = &n.vis.shape {
             // When pixel snapping adjusts `r`'s width or height from `r_exact`, keep a point-sized
             // shape centred in `r` so it shares `r`'s centre with fills, borders and icons.
@@ -82,21 +80,25 @@ impl<S: 'static> Runtime<S> {
         }
         if let Some(pixels) = &n.vis.pixels {
             let snap_u = if cover.is_none() { (1.0 - (sc - 1.0).abs() * 32.0).clamp(0.0, 1.0) } else { 0.0 };
-            let pattern = n.vis.pixels_pattern;
-            let (rect, crop) = if pattern.is_some() { ([r[0], r[1], w, h], [0.0, 0.0, 1.0, 1.0]) }
-                else { crate::pixels::fit_in(n.vis.pixels_fit, n.vis.surface_place, [r[0], r[1], w, h], pixels.size(), snap_u) };
+            let (rect, crop) = crate::pixels::fit_in(n.vis.pixels_fit, n.vis.surface_place, [r[0], r[1], w, h], pixels.size(), snap_u);
             let span = [crop[2] - crop[0], crop[3] - crop[1]];
             // The mip covers the whole image's drawn size, not just its visible window.
-            let drawn = pattern.map_or([rect[2] / span[0], rect[3] / span[1]], |p| [p[2] * k_px, p[3] * k_px]);
-            if let Some(image) = self.images.place(pixels, drawn) {
+            let placed = self.images.place_at(pixels, [rect[2] / span[0], rect[3] / span[1]], Some(now));
+            // An animated image wakes the window for its next frame only while drawn in a shown
+            // window: off screen it isn't painted, so it asks for nothing.
+            if let Some((_, Some(at))) = placed && self.surface_visible && self.time_scale > 0.0 {
+                let wake = self.clock + (at - now).max(0.0) / self.time_scale as f64;
+                if self.loop_wake.is_none_or(|w| wake < w.0) { self.loop_wake = Some((wake, at)); }
+            }
+            if let Some((image, _)) = placed {
                 let [x, y, iw, ih] = image.rect.map(|v| v as f32);
                 // A letterboxed image rounds its own, smaller corners.
                 let half = rect[2].min(rect[3]) * 0.5;
                 self.instances.push(Instance {
                     rect,
                     radii: if n.vis.pixels_fit.is_some() { radii.map(|v| v.min(half)) } else { radii },
-                    fill: [pattern.map_or(0.0, |p| p[4] + p[5] * 2.0), 0.0, 0.0, o],
-                    border: pattern.map_or([0.0; 4], |p| [p[0] * k_px, p[1] * k_px, p[2] * k_px, p[3] * k_px]),
+                    fill: [0.0, 0.0, 0.0, o],
+                    border: [0.0; 4],
                     params: [image.page as f32, KIND_IMAGE, image.premultiplied as u8 as f32, 1.0],
                     // The shader samples from a whole-texel origin; the span may be fractional.
                     uv: [x + (crop[0] * iw).round(), y + (crop[1] * ih).round(), span[0] * iw, span[1] * ih],
@@ -198,7 +200,7 @@ impl<S: 'static> Runtime<S> {
             }
             let rest_origin = [origin[0] - off[0], origin[1] - off[1]];
             // Paragraph block backgrounds, quote bars and list markers.
-            if spec.blocks.iter().any(|&b| b != crate::edit::Block::Paragraph) {
+            if spec.cold.blocks.iter().any(|&b| b != crate::edit::Block::Paragraph) {
                 emit_block_decorations(
                     &mut self.instances,
                     &mut self.text,
@@ -222,21 +224,21 @@ impl<S: 'static> Runtime<S> {
             }
             // Text fields: selection under the text, placeholder, caret over it.
             let mut caret = None;
-            // A field's selected display bytes and the ink its `El::selection_style` gives them.
-            let mut field_ink: Option<(usize, usize, [f32; 4])> = None;
+            // The selected display bytes and the ink their `El::selection_style` gives them.
+            let mut selected_ink: Option<(usize, usize, [f32; 4])> = None;
             if let Some(inp) = &n.input {
                 let e = &inp.edit;
                 let departing = self.flights.iter().any(|f| f.departs(&n.path, n.key.as_deref())
                     && f.alphas(f.destination, now, self.reduced_motion).0 > 0.0);
                 if e.text.is_empty() && e.preedit().is_none() && !inp.placeholder.is_empty() && !departing {
-                    let pl_indent = spec.blocks.first().map_or(0.0, |b| (b.indent_pt(spec.style.size) * s).round() * tk);
+                    let pl_indent = spec.cold.blocks.first().map_or(0.0, |b| (b.indent_pt(spec.style.size) * s).round() * tk);
                     // A one-line field's placeholder stays on its line, cut by the field's clip, as its
                     // text does; a multi-line field's wraps at its width.
                     let wrap = (!inp.single_line).then(|| (w - pl_indent).max(1.0) / tk.max(1e-4));
                     let options = crate::text::RichLayoutOptions::new().flow(spec.flow);
                     let pl = self.text.layout_rich_with(&inp.placeholder, &[], spec.style, s, wrap, options);
                     // Right to left it ends at the field's start edge, its right.
-                    let pl_x = match (spec.flow, wrap) {
+                    let pl_x = match (crate::el::Flow::of_layout(&pl), wrap) {
                         (crate::el::Flow::Ltr, _) => rest_origin[0] + pl_indent,
                         (crate::el::Flow::Rtl, Some(_)) => rest_origin[0],
                         (crate::el::Flow::Rtl, None) => rest_origin[0] - pl_indent - (pl.full_width() * tk).ceil(),
@@ -262,7 +264,7 @@ impl<S: 'static> Runtime<S> {
                         let (highlight, ink) = inp.selection_style.map_or((inp.selection, None), |st| st.pick(self.window_focused != Some(false)));
                         selectable::push_field_selection(&mut self.instances, layout, da, db,
                             origin, tk, premul(highlight, o, srgb), s, clip, fade);
-                        field_ink = ink.map(|c| (da, db, premul(c, o, srgb)));
+                        selected_ink = ink.map(|c| (da, db, premul(c, o, srgb)));
                     }
                     // A range selection hides the caret, as a browser's field and a native one do.
                     if a == b || e.is_composing() {
@@ -285,7 +287,8 @@ impl<S: 'static> Runtime<S> {
                 // Misspelled words (`El::spellcheck`), but the one the caret is typing.
                 if inp.spellcheck && !e.is_secure() && e.preedit().is_none() && !departing {
                     let found = crate::spell::misspelled(&e.text);
-                    let caret = e.focused.then(|| e.range()).filter(|(a, b)| a == b).map(|(a, _)| a);
+                    // The word typing left the caret in waits unmarked until the pause ends (`spell::pause`).
+                    let caret = if e.focused { crate::spell::pause::observe(&mut self.spell_watch, &n.path, &e.text, e.range(), self.clock) } else { None };
                     let color = premul(SPELLING, o, srgb);
                     for &(a, b) in found.iter().filter(|&&(a, b)| caret.is_none_or(|c| c < a || c > b)) {
                         let (da, db) = e.display_selection_range(a, b);
@@ -300,28 +303,28 @@ impl<S: 'static> Runtime<S> {
                 }
             }
             // Span backgrounds (inline code), strikethroughs, a selection over them, then glyphs.
-            let reveal = self.reveals.get(&n.id).filter(|st| !st.words.is_empty() && spec.advance_in.is_none());
+            let reveal = self.reveals.get(&n.id).filter(|st| !st.words.is_empty() && spec.cold.advance_in.is_none());
             self.deco_scratch.clear();
             let mut pill_icons = Vec::new();
-            let pill_bg = spec.pill_colors.map_or(spec.rich_style.link.alpha(0.2), |(bg, _)| bg);
+            let pill_bg = spec.cold.pill_colors.map_or(spec.rich_style().link.alpha(0.2), |(bg, _)| bg);
             let d_origin = if scale_motion == ScaleMotion::Still && tk == 1.0 { rest_origin } else { [0.0, 0.0] };
-            crate::text::pill_chips(layout, &spec.pills, spec.style.size, s, d_origin, pill_bg, &mut self.deco_scratch, &mut pill_icons);
+            crate::text::pill_chips(layout, &spec.cold.pills, spec.style.size, s, d_origin, pill_bg, &mut self.deco_scratch, &mut pill_icons);
             // Elided text draws its decorations over the drawn string's offsets.
             let drawn_spans = n.elided.map(|e| e.spans(&spec.spans));
             let spans = drawn_spans.as_deref().unwrap_or(&spec.spans);
-            let drawn_rings = n.elided.map(|e| e.rings(&spec.rings));
-            self.text.decorations_with_rings(layout, spans, drawn_rings.as_deref().unwrap_or(&spec.rings), s, d_origin, &mut self.deco_scratch);
+            let drawn_rings = n.elided.map(|e| e.rings(&spec.cold.rings));
+            self.text.decorations_with_rings(layout, spans, drawn_rings.as_deref().unwrap_or(&spec.cold.rings), spec.cold.span_radius, s, d_origin, &mut self.deco_scratch);
             let drawn_len = n.elided.map_or(spec.content.len(), |e| e.drawn_len(spec.content.len()));
-            if !spec.highlights.is_empty() {
-                let drawn = n.elided.map(|e| e.highlights(&spec.highlights));
-                self.text.highlight_decorations(layout, drawn.as_deref().unwrap_or(&spec.highlights), drawn_len, s, d_origin, &mut self.deco_scratch);
+            if !spec.cold.highlights.is_empty() {
+                let drawn = n.elided.map(|e| e.highlights(&spec.cold.highlights));
+                self.text.highlight_decorations(layout, drawn.as_deref().unwrap_or(&spec.cold.highlights), drawn_len, s, d_origin, &mut self.deco_scratch);
             }
-            if !spec.strikes.is_empty() {
-                let drawn = n.elided.map(|e| e.strikes(&spec.strikes));
-                self.text.strike_decorations(layout, spans, drawn.as_deref().unwrap_or(&spec.strikes), color, s, d_origin, &mut self.deco_scratch);
+            if !spec.cold.strikes.is_empty() {
+                let drawn = n.elided.map(|e| e.strikes(&spec.cold.strikes));
+                self.text.strike_decorations(layout, spans, drawn.as_deref().unwrap_or(&spec.cold.strikes), color, s, d_origin, &mut self.deco_scratch);
             }
             link_fx.decos(layout, drawn_len, s, d_origin, &mut self.deco_scratch);
-            if !spec.rings.is_empty() || spec.highlights.iter().any(|h| h.ring.is_some()) {
+            if !spec.cold.rings.is_empty() || spec.cold.highlights.iter().any(|h| h.ring.is_some()) {
                 // Adjacent backgrounds overlap by bg_pad. Paint ringed chips after
                 // plain fills so a neighboring fill cannot erase an inset edge;
                 // keep underlines above both. No sorting on the ringless path.
@@ -356,7 +359,7 @@ impl<S: 'static> Runtime<S> {
                 }
                 self.instances.push(inst);
             }
-            let pill_fg = spec.pill_colors.and_then(|(_, fg)| fg).unwrap_or(color);
+            let pill_fg = spec.cold.pill_colors.and_then(|(_, fg)| fg).unwrap_or(color);
             for (icon, px, at, fg) in pill_icons {
                 let pill_fg = fg.unwrap_or(pill_fg);
                 let at = [
@@ -372,9 +375,9 @@ impl<S: 'static> Runtime<S> {
                 }
             }
             let mut bare = Vec::new();
-            crate::text::bare_icons(layout, &spec.pills, s, d_origin, &mut bare);
+            crate::text::bare_icons(layout, &spec.cold.pills, s, d_origin, &mut bare);
             for (k, at, px) in bare {
-                let pill = &spec.pills[k];
+                let pill = &spec.cold.pills[k];
                 let Some(b) = pill.bare.as_deref() else { continue };
                 let at = [
                     rest_origin[0] + (at[0] - d_origin[0]) * tk + glide[0],
@@ -412,18 +415,33 @@ impl<S: 'static> Runtime<S> {
                     self.instances.push(inst);
                 }
             }
+            if spec.selectable {
+                // A mark keeps the active selection's highlight, whatever the window's focus, and
+                // the glyphs their own ink, as a custom highlight's background does.
+                let highlight = spec.cold.selection_style.map_or(spec.cold.selection, |st| st.pick(true).0);
+                let fill = premul(highlight, o, srgb);
+                for &(_, a, b) in mark_ranges.iter().filter(|m| m.0 == i) {
+                    let laid = |a, b| n.elided.map_or((a, b), |e| e.range(a, b));
+                    text_marks::push_mark(&mut self.instances, layout, &spec.content, (a, b), laid, origin, tk, fill, clip, fade);
+                }
+            }
             if spec.selectable && let Some((a, b)) = selectable::range_in(sel_ranges, i) {
                 let (a, b) = n.elided.map_or((a, b), |e| e.range(a, b));
-                selectable::push_selection(&mut self.instances, layout, a, b, origin, tk, premul(spec.selection, o, srgb), s, clip, fade);
+                // `::selection` with a colour recolours the selected glyphs, as a field's does.
+                let (highlight, ink) = spec.cold.selection_style.map_or((spec.cold.selection, None), |st| st.pick(self.window_focused != Some(false)));
+                selectable::push_selection(&mut self.instances, layout, a, b, origin, tk, premul(highlight, o, srgb), s, clip, fade);
+                if let Some(c) = ink {
+                    selected_ink = Some((a, b, premul(c, o, srgb)));
+                }
             }
             self.glyph_scratch.clear();
             self.text.set_glyph_inks(color, &spec.spans);
             let origin = rest_origin;
             self.text.set_glide(glide);
             let r_origin = if scale_motion == ScaleMotion::Still { origin } else { [0.0, 0.0] };
-            let has_hl_fg = spec.highlights.iter().any(|h| h.fg.is_some());
+            let has_hl_fg = spec.cold.highlights.iter().any(|h| h.fg.is_some());
             // A cell of a longer run draws its slice of the run's glyphs, shaped in context.
-            let zoom = if let (Some(r), Some((_, at))) = (&n.run_layout, &spec.advance_in)
+            let zoom = if let (Some(r), Some((_, at))) = (&n.run_layout, &spec.cold.advance_in)
                 && let Some(x) = r.x(*at)
             {
                 self.text.glyphs_in(r, *at, s, [r_origin[0] - x, r_origin[1]], &mut self.glyph_scratch);
@@ -438,7 +456,7 @@ impl<S: 'static> Runtime<S> {
                 } else {
                     f32::NEG_INFINITY..f32::INFINITY
                 };
-                let bytes = reveal.is_some() || !link_fx.is_empty() || has_hl_fg || field_ink.is_some();
+                let bytes = reveal.is_some() || !link_fx.is_empty() || has_hl_fg || selected_ink.is_some();
                 // A secret's glyphs aren't kept past the frame that draws them.
                 let secret = spec.redacted || n.input.as_ref().is_some_and(|i| i.edit.is_secure());
                 if direct || secret {
@@ -474,13 +492,13 @@ impl<S: 'static> Runtime<S> {
                 {
                     f = premul(c, o, srgb);
                 }
-                if let Some((a, b, c)) = field_ink
+                if let Some((a, b, c)) = selected_ink
                     && (a..b).contains(&(q.byte as usize))
                 {
                     f = c;
                 }
                 if has_hl_fg
-                    && let Some(c) = spec.highlights.iter().rev().find_map(|h| {
+                    && let Some(c) = spec.cold.highlights.iter().rev().find_map(|h| {
                         let (a, b) = n.elided.map_or((h.start as usize, h.end as usize), |e| e.mark(h.start as usize, h.end as usize, false));
                         ((q.byte as usize) >= a && (q.byte as usize) < b).then_some(h.fg).flatten()
                     })
@@ -519,7 +537,7 @@ impl<S: 'static> Runtime<S> {
         let s = self.env.scale;
         let n = &self.nodes[i];
         let (Some(spec), Some(layout)) = (&n.text, &n.text_layout) else { return None };
-        if !(spec.truncate_fade || spec.live.is_some()) { return None; }
+        if !(spec.truncate_fade || spec.cold.live.is_some()) { return None; }
         let ins = n.inset.map(|v| v * sc * s);
         let mut bounds = [r[0] + ins[0], r[1] + ins[1], r[2] - ins[2], r[3] - ins[3]];
         // Layout width already includes display scale `s`; bounds also include the

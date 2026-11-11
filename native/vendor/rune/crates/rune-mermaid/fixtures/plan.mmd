@@ -1,0 +1,65 @@
+flowchart LR
+  classDef done fill:#1f3d2a,stroke:#3fb950,color:#e6edf3
+  classDef doing fill:#3d3416,stroke:#d29922,color:#e6edf3
+  classDef waiting fill:#162a3d,stroke:#58a6ff,color:#e6edf3
+  classDef blocked fill:#21262d,stroke:#6e7681,color:#c9d1d9
+
+  subgraph PREP["Prep, done"]
+    t12["t12 tokens carry byte spans"]:::done
+    t07["t07 grammar table in groups"]:::done
+  end
+
+  subgraph S2["Stage 2: first pass on the new parser (the pilot)"]
+    t31["t31 cache sees grammar edits"]:::waiting
+    t35["t35 baseline = pinned release, built from source"]:::doing
+    t44["t44 lint_unused, the pass rewritten"]:::doing
+    t11["t11 old-vs-new compare hook"]:::doing
+    t36["t36 link the new parser into the old tool"]:::blocked
+    t37["t37 PILOT: the pass runs in the new build"]:::blocked
+  end
+
+  subgraph IR["AST track: the new parser reads the old tool's syntax trees"]
+    t84["t84 formatter stops using the old evaluator"]:::doing
+    t33["t33 AST binary format + reader"]:::blocked
+    t34["t34 generate both sides from the grammar table"]:::blocked
+    t38["t38 AST verifier, rewritten"]:::blocked
+  end
+
+  subgraph S3["Stage 3: formatter on the new parser"]
+    t39["t39 layout, spacing, names"]:::blocked
+    t40["t40 comments, literals, source maps"]:::blocked
+    t41["t41 functions and core forms"]:::blocked
+    t42["t42 imports and exports"]:::blocked
+    t43["t43 macros, attribute glue"]:::blocked
+    t45["t45 byte-exact match with the old one, at most 2x slower"]:::blocked
+    t46["t46 the tool formats itself identically"]:::blocked
+    t47["t47 delete the old formatter"]:::blocked
+  end
+
+  t31 --> t35 --> t36
+  t84 --> t33 --> t34
+  t33 --> t36
+  t36 --> t37
+  t11 --> t37
+  t44 --> t37
+
+  t34 --> t38
+  t36 --> t38
+  t34 --> t39
+  t34 --> t40
+  t39 --> t41
+  t40 --> t41
+  t41 --> t42
+  t41 --> t43
+  t42 --> t45
+  t43 --> t45
+  t36 --> t45
+  t11 --> t45
+  t45 --> t46 --> t47
+
+  subgraph KEY["Key"]
+    k1["done"]:::done
+    k2["building now"]:::doing
+    k3["built, waiting to land"]:::waiting
+    k4["not started"]:::blocked
+  end

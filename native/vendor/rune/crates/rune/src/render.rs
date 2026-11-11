@@ -1,26 +1,33 @@
 //! The instanced wgpu renderer, with lazy bounded group layers and offscreen readback.
 
+use std::sync::{Arc, atomic::AtomicBool};
+
 use bytemuck::{Pod, Zeroable};
 
 use crate::pixels::ImageAtlas;
 use crate::text::{ATLAS_SIZE, Atlas};
 
 mod backdrop_blur;
+mod breaker;
 mod dxbc;
+mod fill;
 mod first_use;
 pub(crate) mod gpu_events;
+mod gpu_loss;
 pub(crate) mod layer_blur;
 mod layers;
 mod metallib;
 mod outlines;
 mod pass;
 use pass::{ActivePass, Backdrop};
+mod pipelines;
 pub(crate) mod surface_alpha;
 pub(crate) mod translucency;
 mod upload;
 mod variant;
 #[cfg(target_os = "macos")]
 mod windfoil_metallib;
+pub use backdrop_blur::MAX_BACKDROP_BLURS;
 pub use first_use::precompiled_misses;
 pub use layers::LayerStats;
 
@@ -83,16 +90,12 @@ pub enum Blend {
     SourceOver,
     /// Premultiplied One/One addition, clamped when the isolated scope is composited.
     PlusLighter,
-    Multiply,
-    Overlay,
-    Screen,
-    SoftLight,
 }
 
 impl Blend {
     pub(crate) fn state(self) -> wgpu::BlendState {
         match self {
-            Self::SourceOver | Self::Multiply | Self::Overlay | Self::Screen | Self::SoftLight => wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING,
+            Self::SourceOver => wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING,
             Self::PlusLighter => {
                 let add = wgpu::BlendComponent { src_factor: wgpu::BlendFactor::One,
                     dst_factor: wgpu::BlendFactor::One, operation: wgpu::BlendOperation::Add };
@@ -100,18 +103,6 @@ impl Blend {
             }
         }
     }
-
-    pub(crate) fn code(self) -> f32 {
-        match self { Self::SourceOver => 0.0, Self::PlusLighter => 1.0, Self::Multiply => 2.0,
-            Self::Overlay => 3.0, Self::Screen => 4.0, Self::SoftLight => 5.0 }
-    }
-
-    pub(crate) fn from_code(code: f32) -> Self {
-        match code as u8 { 1 => Self::PlusLighter, 2 => Self::Multiply, 3 => Self::Overlay,
-            4 => Self::Screen, 5 => Self::SoftLight, _ => Self::SourceOver }
-    }
-
-    pub(crate) fn backdrop(self) -> bool { self.code() >= 2.0 }
 }
 
 /// Composition properties of an isolated subtree. Filters can extend this contract without
@@ -318,7 +309,7 @@ impl Instance {
     /// native surfaces. Primitive bounds (including shadow support) expand it during prepare.
     pub fn begin_layer(bounds: [f32; 4], clip: [f32; 4], spec: LayerSpec) -> Self {
         let mut instance = Self { rect: bounds, clip, fill: [0.0, 0.0, 0.0, spec.opacity.clamp(0.0, 1.0)],
-            params: [spec.blend.code(), KIND_LAYER,
+            params: [if spec.blend == Blend::PlusLighter { 1.0 } else { 0.0 }, KIND_LAYER,
                 layer_blur::sigma(spec.blur), 0.0], ..Self::zeroed() };
         instance.round_clip(spec.clip_radius);
         instance
@@ -406,6 +397,10 @@ pub struct Gpu {
     pub adapter: wgpu::Adapter,
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
+    /// Set by the device's lost callback: a device that went away (a driver reset, a GPU removed,
+    /// Windows' Modern Standby) can't configure a surface, and wgpu drops that error, so nothing
+    /// else would report it. See `is_lost`.
+    lost: Arc<AtomicBool>,
 }
 
 /// Vulkan loaders crash when two threads create instances or devices at once (seen with
@@ -444,14 +439,17 @@ impl Gpu {
     fn try_picked(instance: wgpu::Instance, surface: Option<&wgpu::Surface<'_>>, wanted: wgpu::Features, translucent: bool, presented: bool) -> Result<Gpu, String> {
         let _serial = GPU_INIT.lock().unwrap_or_else(|e| e.into_inner());
         let pick = crate::gpu::pick::pick(&instance, surface, presented)?;
+        crate::marks::mark("gpu.adapter");
+        if !crate::marks::noted("adapter") { crate::marks::note("adapter", Box::leak(pick.adapter.get_info().name.into_boxed_str())); }
         let adapter = match surface {
             Some(s) if translucent && !pick.from_env() => crate::render::translucency::prefer(&instance, s, &pick),
             _ => pick.adapter,
         };
         match Self::device_on(&adapter, wanted) {
             Ok((device, queue)) => {
+                crate::marks::mark("gpu.device");
                 crate::native_surface::note_device(&device, surface.is_some() || presented);
-                Ok(Gpu { instance, adapter, device, queue })
+                Ok(Gpu::made(instance, adapter, device, queue, surface.is_some() || presented))
             }
             // A driver that can't make a device (a broken integrated GPU on a hybrid laptop)
             // leaves the window to the next adapter that presents to its surface.
@@ -469,7 +467,7 @@ impl Gpu {
                     if let Ok((device, queue)) = Self::device_on(&other, wanted) {
                         eprintln!("rune: {} ({:?}) made no device ({error}); using {}", first.name, first.backend, other.get_info().name);
                         crate::native_surface::note_device(&device, surface.is_some() || presented);
-                        return Ok(Gpu { instance, adapter: other, device, queue });
+                        return Ok(Gpu::made(instance, other, device, queue, surface.is_some() || presented));
                     }
                 }
                 Err(error)
@@ -479,7 +477,8 @@ impl Gpu {
 
     #[cfg(not(target_arch = "wasm32"))]
     fn device_on(adapter: &wgpu::Adapter, wanted: wgpu::Features) -> Result<(wgpu::Device, wgpu::Queue), String> {
-        let optional_features = wgpu::Features::TIMESTAMP_QUERY | wanted | crate::gpu::backend::free_features(adapter);
+        // Dual-source blending is for subpixel text (`FontSmoothing::WindfoilRgb`, `ClearType`).
+        let optional_features = wgpu::Features::TIMESTAMP_QUERY | wgpu::Features::DUAL_SOURCE_BLENDING | wanted | crate::gpu::backend::free_features(adapter);
         // Precompiled uber shaders: a metallib on macOS, DXBC on Windows.
         #[cfg(any(target_os = "macos", target_os = "windows"))]
         let optional_features = optional_features | wgpu::Features::PASSTHROUGH_SHADERS;
@@ -568,9 +567,12 @@ impl Gpu {
         let dx12 = *DX12.get_or_init(|| {
             let found = !pollster::block_on(Self::wgpu_instance_on(wgpu::Backends::DX12).enumerate_adapters(wgpu::Backends::DX12)).is_empty();
             if !found { eprintln!("rune: no DX12 adapter; drawing with Vulkan"); }
+            crate::marks::mark("gpu.dx12_probe");
             found
         });
-        Self::wgpu_instance_on(if dx12 { wgpu::Backends::DX12 } else { wgpu::Backends::VULKAN })
+        let instance = Self::wgpu_instance_on(if dx12 { wgpu::Backends::DX12 } else { wgpu::Backends::VULKAN });
+        crate::marks::mark("gpu.instance");
+        instance
     }
 
     /// wgpu's own backends, whatever `RUNE_GPU_BACKEND` says.
@@ -628,8 +630,9 @@ impl Gpu {
     #[cfg_attr(target_arch = "wasm32", allow(dead_code))]
     fn surface_gpu_from<'w>(early: Option<(Gpu, Renderer)>, wanted: wgpu::Features, translucent: bool,
         surface: impl FnOnce(&wgpu::Instance) -> Result<wgpu::Surface<'w>, String>) -> Result<(Gpu, wgpu::Surface<'w>, Option<Renderer>), String> {
-        // A prewarmed native Metal GPU lacking a wanted feature is dropped before it makes a surface.
-        let Some((early, renderer)) = early.filter(|(gpu, _)| crate::gpu::backend::serves(&gpu.device, wanted)) else {
+        // A prewarmed native Metal GPU lacking a wanted feature, or one that died since it was
+        // made, is dropped before it makes a surface.
+        let Some((early, renderer)) = early.filter(|(gpu, _)| !gpu.is_lost() && crate::gpu::backend::serves(&gpu.device, wanted)) else {
             let instance = Self::instance_for(wanted);
             let surface = surface(&instance)?;
             gpu_events::starting();
@@ -732,6 +735,10 @@ pub struct Renderer {
     atlas: wgpu::Texture,
     /// Which uber shader draws (`variant::Uber`), with the outline store's texture under Windfoil.
     uber: variant::Uber,
+    /// Windfoil's subpixel pipeline for the window (`variant::Lcd`), and whether this frame's
+    /// text draws subpixel masks.
+    lcd: variant::Lcd,
+    lcd_frame: bool,
     /// The 1×1 image the base bind group holds until the first image page.
     stand_in: wgpu::Texture,
     /// Secondary glyph atlas pages (`1..`).
@@ -753,6 +760,8 @@ pub struct Renderer {
     backdrops: Vec<Backdrop>,
     /// Pipelines and pyramid for backdrop blur records, built on the first one.
     backdrop_blur: Option<backdrop_blur::BackdropBlur>,
+    /// Which lazily built pipelines the device took (`breaker`).
+    breakers: breaker::Breakers,
     uploads: upload::Uploads,
     /// Unique to this renderer, so to the device it was made on (`Frame::device_key`).
     device_key: crate::compose::DeviceKey,
@@ -786,208 +795,6 @@ impl Renderer {
     #[doc(hidden)]
     pub fn new_classic(device: &wgpu::Device, format: wgpu::TextureFormat) -> Renderer {
         Self::create(device, format, None, true)
-    }
-
-    fn create(device: &wgpu::Device, format: wgpu::TextureFormat, properties: Option<(&[crate::gpu::springs::Node], &[u32])>, classic: bool) -> Renderer {
-        let spring_shader = if properties.is_some() {
-            let source = format!("{CLIP_WGSL}\n{}\n{}", include_str!("shader.wgsl"), crate::gpu::springs::SHADER);
-            Some(device.create_shader_module(wgpu::ShaderModuleDescriptor {
-                label: Some("uber"),
-                source: wgpu::ShaderSource::Wgsl(source.into()),
-            }))
-        } else {
-            None
-        };
-        let globals = device.create_buffer(&wgpu::BufferDescriptor {
-            label: None,
-            size: u64::from(device.limits().min_uniform_buffer_offset_alignment).max(32) + 16,
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-        let atlas = Self::texture(device, "glyph atlas", wgpu::TextureFormat::R8Unorm, ATLAS_SIZE, ATLAS_SIZE);
-        let stand_in = Self::image_texture(device, 1, 1);
-        let spring_layout = properties.map(|_| crate::gpu::springs::Bindings::layout(device));
-        let vertex_entry = if properties.is_some() { "vs_springs" } else { "vs" };
-        // The shader machine starts Classic; everywhere but macOS (whose default text keeps the
-        // Classic shader it always drew) and GPU springs, it asks for Windfoil at once.
-        let (uber, windfoil) = if classic {
-            (variant::Uber::Classic, None)
-        } else {
-            Self::start_windfoil(device, format, vertex_entry)
-        };
-        let (bgl, layout, shader, pipeline) = match windfoil {
-            Some(built) => (built.bind_layout, built.layout, built.shader, built.pipeline),
-            None => {
-                let bgl = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                    label: None,
-                    entries: &metallib::uber_bind_entries(),
-                });
-                let layouts = [Some(&bgl), spring_layout.as_ref()];
-                let layout = device.create_pipeline_layout(&metallib::uber_pipeline_layout(
-                    &layouts, properties.is_some(),
-                ));
-                let make_pipeline = |shader: &dxbc::Shaders| Self::pipeline(device, &layout, shader, format, vertex_entry, Blend::SourceOver);
-                let (shader, pipeline) = match spring_shader {
-                    Some(shader) => { let shader = dxbc::Shaders::one(shader); let pipeline = make_pipeline(&shader); (shader, pipeline) }
-                    None => metallib::uber_shader_and_pipeline(device, make_pipeline),
-                };
-                (bgl, layout, shader, pipeline)
-            }
-        };
-        let bind_group = Self::bind_group(device, &bgl, &globals, uber.outlines(), &atlas, &stand_in, None);
-        let capacity = 256;
-        let instances = Self::instance_buffer(device, capacity);
-        let spring_instances = properties.map_or(0, |(_, ids)| ids.len());
-        let springs = properties.map(|(nodes, ids)| crate::gpu::springs::Bindings::new(device, spring_layout.as_ref().unwrap(), nodes, ids));
-        Renderer {
-            surfaces: None,
-            pipeline,
-            format,
-            shader,
-            layout,
-            vertex_entry,
-            extra: Vec::new(),
-            bind_group,
-            bind_layout: bgl,
-            globals,
-            atlas,
-            uber,
-            stand_in,
-            atlas_pages: Vec::new(),
-            images: Vec::new(),
-            image_batches: Vec::new(),
-            instances,
-            capacity,
-            count: 0,
-            springs,
-            spring_instances,
-            layers: Default::default(),
-            srgb_blend: false,
-            effects: Vec::new(),
-            backdrops: Vec::new(),
-            backdrop_blur: None,
-            uploads: Default::default(),
-            device_key: crate::compose::DeviceKey::next(),
-        }
-    }
-
-    fn pipeline(
-        device: &wgpu::Device,
-        layout: &wgpu::PipelineLayout,
-        shader: &dxbc::Shaders,
-        format: wgpu::TextureFormat,
-        vertex_entry: &str,
-        blend: Blend,
-    ) -> wgpu::RenderPipeline {
-        device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("uber"),
-            layout: Some(layout),
-            vertex: wgpu::VertexState {
-                module: &shader.vertex,
-                entry_point: Some(vertex_entry),
-                compilation_options: Default::default(),
-                buffers: &[Some(metallib::uber_vertex_layout())],
-            },
-            primitive: metallib::uber_primitive(),
-            depth_stencil: None,
-            multisample: Default::default(),
-            fragment: Some(wgpu::FragmentState {
-                module: &shader.fragment,
-                entry_point: Some("fs"),
-                compilation_options: Default::default(),
-                targets: &[Some(wgpu::ColorTargetState {
-                    format,
-                    blend: Some(blend.state()),
-                    write_mask: wgpu::ColorWrites::ALL,
-                })],
-            }),
-            multiview_mask: None,
-            cache: None,
-        })
-    }
-
-    fn image_texture(device: &wgpu::Device, width: u32, height: u32) -> wgpu::Texture {
-        Self::texture(device, "image atlas", wgpu::TextureFormat::Rgba8UnormSrgb, width, height)
-    }
-
-    /// A sampled texture the CPU fills with `write_rows`.
-    fn texture(device: &wgpu::Device, label: &str, format: wgpu::TextureFormat, width: u32, height: u32) -> wgpu::Texture {
-        device.create_texture(&wgpu::TextureDescriptor {
-            label: Some(label),
-            size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format,
-            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-            view_formats: &[],
-        })
-    }
-
-    fn bind_group(
-        device: &wgpu::Device,
-        layout: &wgpu::BindGroupLayout,
-        globals: &wgpu::Buffer,
-        outlines: Option<&wgpu::Texture>,
-        atlas: &wgpu::Texture,
-        images: &wgpu::Texture,
-        target: Option<&wgpu::Buffer>,
-    ) -> wgpu::BindGroup {
-        let atlas_view = atlas.create_view(&Default::default());
-        let image_view = images.create_view(&Default::default());
-        let outline_view = outlines.map(|t| t.create_view(&Default::default()));
-        let mut entries = vec![
-            wgpu::BindGroupEntry { binding: 0, resource: globals.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 1, resource: wgpu::BindingResource::TextureView(&atlas_view) },
-            wgpu::BindGroupEntry { binding: 2, resource: wgpu::BindingResource::TextureView(&image_view) },
-            wgpu::BindGroupEntry { binding: 3, resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
-                buffer: target.unwrap_or(globals),
-                offset: if target.is_some() { 0 } else { u64::from(device.limits().min_uniform_buffer_offset_alignment).max(32) },
-                size: std::num::NonZeroU64::new(16),
-            }) },
-        ];
-        // The Windfoil shader's outline store (render/variant.rs); Classic has no binding 4.
-        if let Some(view) = &outline_view {
-            entries.push(wgpu::BindGroupEntry { binding: 4, resource: wgpu::BindingResource::TextureView(view) });
-        }
-        device.create_bind_group(&wgpu::BindGroupDescriptor { label: None, layout, entries: &entries })
-    }
-
-    /// Builds the pipeline for another target format (e.g. an `Rgba16Float` layer), once.
-    pub fn add_format(&mut self, device: &wgpu::Device, format: wgpu::TextureFormat) {
-        if format != self.format && !self.extra.iter().any(|(f, _)| *f == format) {
-            let p = Self::pipeline(device, &self.layout, &self.shader, format, self.vertex_entry, Blend::SourceOver);
-            self.extra.push((format, p));
-        }
-        if self.layer_stats().targets > 0 { self.add_layer_format(device, format); }
-        let [vw, vh] = self.target_frame(None).1;
-        if !self.backdrops.is_empty() && vw > 0 && vh > 0 {
-            self.ensure_backdrop(device, format, (vw, vh));
-        }
-        if let Some(s) = &mut self.surfaces { s.add_format(device, format); }
-    }
-
-    /// Switches the frame pass's target format (`!format.is_srgb()` turns `srgb_blend` on),
-    /// keeping the glyph and image atlases, offscreen layer targets and `extra` pipelines.
-    pub fn set_format(&mut self, device: &wgpu::Device, format: wgpu::TextureFormat) {
-        if self.format == format { return; }
-        let next = match self.extra.iter().position(|(f, _)| *f == format) {
-            Some(i) => self.extra.swap_remove(i).1,
-            None => Self::pipeline(device, &self.layout, &self.shader, format, self.vertex_entry, Blend::SourceOver),
-        };
-        let old = std::mem::replace(&mut self.pipeline, next);
-        self.extra.push((self.format, old));
-        self.format = format;
-        self.srgb_blend = !format.is_srgb();
-        if self.layer_stats().targets > 0 { self.add_layer_format(device, format); }
-        let [vw, vh] = self.target_frame(None).1;
-        if !self.backdrops.is_empty() && vw > 0 && vh > 0 {
-            self.ensure_backdrop(device, format, (vw, vh));
-        }
-        if let Some(s) = &mut self.surfaces {
-            s.set_srgb_blend(self.srgb_blend);
-            s.add_format(device, format);
-        }
     }
 
     /// Draws uploaded instances `range` into a pass whose target has `format` (the renderer's
@@ -1117,14 +924,7 @@ impl Renderer {
         if range.is_empty() {
             return;
         }
-        let pipeline = if self.layer_blend(target) == Blend::PlusLighter {
-            &self.layers.additive.as_ref().expect("prepared dissolve").0
-        } else if format == self.format {
-            &self.pipeline
-        } else {
-            &self.extra.iter().find(|(f, _)| *f == format).expect("Renderer::add_format first").1
-        };
-        pass.set_pipeline(pipeline);
+        pass.set_pipeline(self.draw_pipeline(format, target));
         if let Some(properties) = &self.springs { pass.set_bind_group(1, &properties.group, &[]); }
         pass.set_vertex_buffer(0, self.instances.slice(..));
         let start = self.image_batches.partition_point(|(batch, _)| batch.end <= range.start);
@@ -1197,7 +997,7 @@ impl Renderer {
             if self.layer_stats().extra_passes > 0 { t.beginning_of_pass_write_index = None; }
             t
         });
-        let splits = self.has_backdrop_blur() || self.has_backdrop_layers();
+        let blurs = self.has_backdrop_blur();
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("frame"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -1211,13 +1011,13 @@ impl Renderer {
             occlusion_query_set: None,
             multiview_mask: None,
         });
-        if !splits {
+        if !blurs {
             self.draw_range(&mut pass, self.format, 0..self.count);
             return;
         }
-        // Backdrop reads split the frame pass, which needs it owned along with the encoder.
+        // Backdrop blurs split the frame pass, which needs it owned along with the encoder.
         let pass = pass.forget_lifetime();
-        let mut active = ActivePass::owned(pass, encoder, view).with_timestamps(timestamps);
+        let mut active = ActivePass::owned_timed(pass, encoder, view, timestamps);
         self.draw_layer_range(&mut active, self.format, 0..self.count, None, &mut |_, _| {});
     }
 }
@@ -1335,6 +1135,9 @@ pub fn write_png(path: &std::path::Path, width: u32, height: u32, rgba: &[u8]) -
 #[cfg(test)]
 mod backdrop_tests;
 
+#[cfg(test)]
+#[path = "render/warm_tests.rs"]
+mod warm_tests;
 
 #[cfg(test)]
 mod prewarm_order_tests {

@@ -5,9 +5,12 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use rune::{Key, KeyEvent, Modifier, Tx};
+use rune::{Key, KeyEvent, Tx};
 
+use super::copy::CopySide;
 use super::model::{FileDiff, LineKind, Side};
+use super::pairs::SplitRow;
+use crate::line_selection::{Column, LineEvent, LinePoint, LineSelection, Lines};
 use crate::syntax::{Highlight, Highlighter};
 
 /// How a diff lays out its two sides.
@@ -48,6 +51,31 @@ impl LineRange {
     /// One line.
     pub fn line(file: usize, at: LineRef) -> LineRange {
         LineRange { file, start: at, end: at }
+    }
+
+    /// The range as the line-selection gesture keeps it.
+    pub fn lines(self) -> Lines<DiffLine> {
+        Lines { start: DiffLine { file: self.file, at: self.start }, end: DiffLine { file: self.file, at: self.end } }
+    }
+}
+
+impl From<Lines<DiffLine>> for LineRange {
+    fn from(l: Lines<DiffLine>) -> LineRange {
+        LineRange { file: l.start.file, start: l.start.at, end: l.end.at }
+    }
+}
+
+/// A line of one file of a diff: what the line-selection gesture runs between. A selection
+/// stays in one file and may cross from one side to the other.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct DiffLine {
+    pub file: usize,
+    pub at: LineRef,
+}
+
+impl LinePoint for DiffLine {
+    fn joins(&self, other: &DiffLine) -> bool {
+        self.file == other.file
     }
 }
 
@@ -147,15 +175,10 @@ pub struct DiffState {
     wrap: bool,
     annotations: Vec<Annotation>,
     by_line: HashMap<(u32, Side, u32), Vec<u32>>,
-    selection: Option<LineRange>,
-    selecting: bool,
-    selection_at_press: Option<LineRange>,
-    /// The press was on the one selected line: it clears the selection unless it drags.
-    unselect: bool,
-    shift: bool,
+    /// The selected lines and the gesture on the line numbers making them.
+    lines: LineSelection<DiffLine>,
     /// The side text selection copies, which follows the pointer.
-    copy_side: Side,
-    hovered: Vec<(Side, String)>,
+    copy: CopySide,
     highlighter: Highlighter,
     chunks: RefCell<HashMap<(u32, Side, u32), Rc<Chunk>>>,
     /// Per file, per hunk, per side: the index in the hunk of each of its lines on that side.
@@ -203,13 +226,8 @@ impl DiffState {
             wrap: false,
             annotations: Vec::new(),
             by_line: HashMap::new(),
-            selection: None,
-            selecting: false,
-            selection_at_press: None,
-            unselect: false,
-            shift: false,
-            copy_side: Side::New,
-            hovered: Vec::new(),
+            lines: LineSelection::default(),
+            copy: CopySide::default(),
             highlighter: Highlighter::builtin(),
             chunks: RefCell::new(HashMap::new()),
             side_lines: Vec::new(),
@@ -253,7 +271,7 @@ impl DiffState {
         self.digits = files.iter().map(|f| f.last_line().max(1).ilog10() + 1).map(|d| d.max(3)).collect();
         self.columns = files.iter().map(FileDiff::columns).max().unwrap_or(0);
         self.files = files;
-        self.selection = None;
+        self.set_selection(None);
         self.chunks.borrow_mut().clear();
         self.visible = 0;
         self.reported = None;
@@ -313,7 +331,7 @@ impl DiffState {
         }
     }
 
-    /// Highlight code with `h` instead of the built-in scanners.
+    /// Highlight code with `h` instead of the built-in highlighter.
     pub fn set_highlighter(&mut self, h: Highlighter) {
         self.highlighter = h;
         self.chunks.borrow_mut().clear();
@@ -385,17 +403,18 @@ impl DiffState {
     }
 
     pub fn selection(&self) -> Option<LineRange> {
-        self.selection
+        self.lines.selected().map(LineRange::from)
     }
 
+    /// Select `sel`, ending any press on the line numbers.
     pub fn set_selection(&mut self, sel: Option<LineRange>) {
-        self.selection = sel;
+        let _ = self.lines.step(LineEvent::Set(sel.map(LineRange::lines)), |_| None);
     }
 
     /// The selected lines' text on the side the selection started on, one per line, without
     /// numbers or markers: what copying the selection gives.
     pub fn selected_text(&self) -> Option<String> {
-        let sel = self.selection?;
+        let sel = self.selection()?;
         let side = sel.start.side;
         let (a, b) = self.selected_rows(&sel)?;
         let mut out = Vec::new();
@@ -422,7 +441,7 @@ impl DiffState {
 
     /// Whether row `r`'s line on `side` is selected.
     pub(crate) fn row_selected(&self, r: usize, side: Option<Side>) -> bool {
-        let Some(sel) = self.selection else { return false };
+        let Some(sel) = self.selection() else { return false };
         let Some((a, b)) = self.selected_rows(&sel) else { return false };
         if self.rows[r].file() != sel.file || !(a as usize..=b as usize).contains(&r) {
             return false;
@@ -430,47 +449,31 @@ impl DiffState {
         side.is_none_or(|s| s == sel.start.side || s == sel.end.side)
     }
 
-    /// A press on line `at`'s number: a new selection, or with Shift held one extended to it.
+    /// A press on line `at`'s number: a new selection, or with `shift` one extended to it.
     /// Pressing the one selected line clears it on release, unless the press drags.
-    pub(crate) fn press_line(&mut self, file: usize, at: LineRef) {
-        self.selection_at_press = self.selection;
-        let sel = match self.selection {
-            Some(s) if self.shift && s.file == file => LineRange { end: at, ..s },
-            _ => LineRange::line(file, at),
-        };
-        self.unselect = !self.shift && self.selection == Some(sel);
-        self.selecting = true;
-        self.set_selection(Some(sel));
+    pub(crate) fn press_line(&mut self, file: usize, at: LineRef, shift: bool) {
+        let event = LineEvent::Press { at: DiffLine { file, at }, column: Column::Numbers, shift };
+        let row_of = &self.row_of;
+        let _ = self.lines.step(event, |p| row_of.get(&(p.file as u32, p.at.side, p.at.line)).copied());
     }
 
     /// The pointer, dragging from a line number, reached line `at`.
     pub(crate) fn drag_to(&mut self, file: usize, at: LineRef) {
-        if let Some(s) = self.selection.filter(|s| self.selecting && s.file == file && s.end != at) {
-            self.unselect = false;
-            self.set_selection(Some(LineRange { end: at, ..s }));
-        }
+        let _ = self.lines.step(LineEvent::Move { at: DiffLine { file, at } }, |_| None);
     }
 
     /// The press on the line numbers ended: the selection it leaves.
     pub(crate) fn release_line(&mut self) -> Option<LineRange> {
-        self.selection_at_press = None;
-        if std::mem::take(&mut self.unselect) {
-            self.selection = None;
-        }
-        self.selecting = false;
-        self.selection
+        let _ = self.lines.step(LineEvent::Release, |_| None);
+        self.selection()
     }
 
     pub(crate) fn cancel_line(&mut self) {
-        if self.selecting {
-            self.selection = self.selection_at_press.take();
-        }
-        self.selecting = false;
-        self.unselect = false;
+        let _ = self.lines.step(LineEvent::Cancel, |_| None);
     }
 
     pub(crate) fn copy_side(&self) -> Side {
-        self.copy_side
+        self.copy.side()
     }
 
     /// The pointer entered or left a line's text on `side`: text selection then copies that
@@ -479,18 +482,7 @@ impl DiffState {
     /// Notes the pointer entering or leaving a line's code; returns whether that changed the
     /// side a selection copies, the only part the view reads.
     pub(crate) fn hover_text(&mut self, side: Side, cell: &str, inside: bool) -> bool {
-        let was = self.copy_side;
-        if inside {
-            if !self.hovered.iter().any(|(_, c)| c == cell) {
-                self.hovered.push((side, cell.to_owned()));
-            }
-            if self.hovered.iter().all(|(s, _)| *s == side) {
-                self.copy_side = side;
-            }
-        } else {
-            self.hovered.retain(|(_, c)| c != cell);
-        }
-        self.copy_side != was
+        self.copy.step(side, cell, inside)
     }
 
     pub fn visible_file(&self) -> usize {
@@ -581,15 +573,10 @@ impl DiffState {
     }
 
     /// Handle a key for the diff: `j`/`k` next and previous hunk, `]`/`[` next and previous
-    /// file, Escape clears the line selection, Cmd-C copies it, and Shift (with
-    /// `App::modifier_keys`) makes a click on a line number extend the selection. Call it
-    /// from the app's `on_key`; it returns whether it took the key.
+    /// file, Escape clears the line selection, and Cmd-C copies it. Call it from the app's
+    /// `on_key`; it returns whether it took the key.
     pub fn key(&mut self, ev: &KeyEvent, tx: &mut Tx) -> bool {
         match &ev.key {
-            Key::Modifier { modifier: Modifier::ShiftLeft | Modifier::ShiftRight, .. } => {
-                self.shift = ev.mods.shift;
-                false
-            }
             _ if tx.focused().is_some() && !ev.is_command('c') => false,
             Key::Text(t) if !ev.mods.cmd && !ev.mods.ctrl && !ev.mods.alt => match t.as_str() {
                 "j" => self.next_hunk(true, tx),
@@ -598,7 +585,7 @@ impl DiffState {
                 "[" => self.next_file(false, tx),
                 _ => false,
             },
-            Key::Escape if self.selection.is_some() => {
+            Key::Escape if self.selection().is_some() => {
                 self.set_selection(None);
                 true
             }
@@ -796,30 +783,12 @@ impl DiffState {
                 let Some(h) = file.hunks.get(gap) else { break };
                 self.hunk_rows.push(first_row);
                 let hu = gap as u32;
-                let lines = &h.lines;
-                let mut i = 0;
-                while i < lines.len() {
-                    if self.mode == DiffMode::Split && lines[i].kind == LineKind::Removed {
-                        let del = i;
-                        while i < lines.len() && lines[i].kind == LineKind::Removed {
-                            i += 1;
-                        }
-                        let add = i;
-                        while i < lines.len() && lines[i].kind == LineKind::Added {
-                            i += 1;
-                        }
-                        let (nd, na) = (add - del, i - add);
-                        for k in 0..nd.max(na) {
-                            rows.push(match (k < nd, k < na) {
-                                (true, true) => Row::Pair { f: fu, h: hu, del: (del + k) as u32, add: (add + k) as u32 },
-                                (true, false) => Row::Line { f: fu, h: hu, i: (del + k) as u32 },
-                                _ => Row::Line { f: fu, h: hu, i: (add + k) as u32 },
-                            });
-                        }
-                        continue;
-                    }
-                    rows.push(Row::Line { f: fu, h: hu, i: i as u32 });
-                    i += 1;
+                match self.mode {
+                    DiffMode::Split => rows.extend(h.split_rows().map(|r| match r {
+                        SplitRow::Pair { del, add } => Row::Pair { f: fu, h: hu, del: del as u32, add: add as u32 },
+                        SplitRow::Line(i) => Row::Line { f: fu, h: hu, i: i as u32 },
+                    })),
+                    DiffMode::Unified => rows.extend((0..h.lines.len() as u32).map(|i| Row::Line { f: fu, h: hu, i })),
                 }
             }
         }
@@ -965,24 +934,22 @@ mod tests {
         let old = "keep\nold one\nold two\nend\n";
         let new = "keep\nnew one\nnew two\nend\n";
         let mut s = DiffState::new(vec![FileDiff::from_texts("x", old, new)]);
-        s.press_line(0, LineRef::new(Side::New, 1));
+        s.press_line(0, LineRef::new(Side::New, 1), false);
         s.release_line();
-        s.shift = true;
-        s.press_line(0, LineRef::new(Side::New, 4));
+        s.press_line(0, LineRef::new(Side::New, 4), true);
         s.release_line();
         assert_eq!(s.selected_text().as_deref(), Some("keep\nnew one\nnew two\nend"));
         s.set_selection(Some(LineRange { file: 0, start: LineRef::new(Side::Old, 3), end: LineRef::new(Side::Old, 2) }));
         assert_eq!(s.selected_text().as_deref(), Some("old one\nold two"));
         // Pressing the one selected line clears it, unless the press drags.
-        s.shift = false;
         let one = LineRange::line(0, LineRef::new(Side::New, 1));
-        s.press_line(0, one.start);
+        s.press_line(0, one.start, false);
         s.release_line();
-        s.press_line(0, one.start);
+        s.press_line(0, one.start, false);
         assert_eq!(s.release_line(), None);
-        s.press_line(0, one.start);
+        s.press_line(0, one.start, false);
         s.release_line();
-        s.press_line(0, one.start);
+        s.press_line(0, one.start, false);
         s.drag_to(0, LineRef::new(Side::New, 2));
         assert_eq!(s.release_line(), Some(LineRange { end: LineRef::new(Side::New, 2), ..one }));
     }
@@ -992,12 +959,24 @@ mod tests {
         let mut s = sample();
         for original in [None, Some(LineRange::line(0, LineRef::new(Side::Old, 2)))] {
             s.set_selection(original);
-            s.press_line(0, LineRef::new(Side::New, 1));
+            s.press_line(0, LineRef::new(Side::New, 1), false);
             s.drag_to(0, LineRef::new(Side::New, 3));
             s.cancel_line();
             assert_eq!(s.selection(), original);
-            assert!(!s.selecting && !s.unselect);
+            assert!(!s.lines.tracking());
         }
+    }
+
+    #[test]
+    fn new_files_end_a_gutter_press_so_its_cancel_restores_nothing_from_the_old_ones() {
+        let mut s = sample();
+        s.set_selection(Some(LineRange::line(0, LineRef::new(Side::Old, 2))));
+        s.press_line(0, LineRef::new(Side::New, 1), false);
+        s.set_files(vec![FileDiff::from_texts("y", "a\n", "b\n")]);
+        s.cancel_line();
+        assert_eq!(s.selection(), None, "the old files' range doesn't come back");
+        s.drag_to(0, LineRef::new(Side::New, 1));
+        assert_eq!(s.selection(), None, "nor does a drag the new files never saw pressed");
     }
 
     #[test]

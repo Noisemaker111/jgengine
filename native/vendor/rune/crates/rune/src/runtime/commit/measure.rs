@@ -55,14 +55,16 @@ impl<S: 'static> Runtime<S> {
             viewport: self.viewport,
             fit_height: self.fit_height,
             system_reduced_motion: self.system_reduced_motion,
-            titlebar_inset: self.titlebar_inset,
-            chrome: self.titlebar.insets,
+            // The window's controls are in its points; the view's are over the zoom.
+            titlebar_inset: self.titlebar_inset / self.zoom.k,
+            chrome: self.titlebar.insets.zoomed(self.zoom.k),
             caption: self.titlebar.caption,
             system_accent: self.system_accent,
             system_scroll_bars: self.scroll_bars.state,
             reduced_motion: self.reduced_motion,
             time_scale: self.time_scale,
-            defaults: self.defaults,
+            zoom: self.zoom.k,
+            defaults: self.defaults.clone(),
             titlebar: self.titlebar_set(),
             caret: self.caret.clone(),
             caret_read: false,
@@ -84,9 +86,9 @@ impl<S: 'static> Runtime<S> {
             virtual_inputs: &mut self.virtual_inputs,
             stats: &mut self.stats,
             key_warnings: &mut self.key_warnings,
-            focused: self.focused.as_deref(),
+            focused: self.focus.path(),
             state_unchanged: std::mem::take(&mut self.state_unchanged),
-            retry: false,
+            pass: Pass::First,
             hold_windows,
         }
     }
@@ -174,7 +176,7 @@ impl<S: 'static> Measurement<'_, S> {
         // The Windows caption buttons go over everything the view drew, in a frame around it.
         let Some(caption) = &self.caption else { return root };
         let symbol = cx.caption_color.unwrap_or(if self.env.system_dark { Color::WHITE } else { Color::BLACK });
-        crate::titlebar::frame(root, caption, symbol, self.env.scale, self.fit_height)
+        crate::titlebar::frame(root, caption, symbol, (self.env.scale, self.zoom), self.fit_height)
     }
 
     /// What a memo scope hashes of the window's controls (`Cx::titlebar_inset`,
@@ -191,12 +193,12 @@ impl<S: 'static> Measurement<'_, S> {
     pub(super) fn finish_from(mut self, tx: &Tx, mut passes: usize) -> Measured {
         let (layout, nodes, memo_pending, memo_reused, taken_paths) = loop {
             passes += 1;
-            self.retry = passes > 1;
+            self.pass = Pass::of(passes);
             self.virtual_culled.clear();
             self.virtual_inputs.clear();
             // Degenerate zero-height runs fall back to a full measurement instead of
             // an unbounded retry loop. Normal transcripts need one pass.
-            let (layout, mut nodes, pending, mut reused, mut taken) = self.measure_view(tx, passes > 8);
+            let (layout, mut nodes, pending, mut reused, mut taken) = self.measure_view(tx, self.pass.forced());
             if !self.measure_virtuals(&nodes, tx.settle) { break (layout, nodes, pending, reused, taken); }
             memo_reuse::restore_moved_nodes(self.nodes, &mut nodes, &reused, &taken);
             nodes.clear();
@@ -215,7 +217,8 @@ impl<S: 'static> Measurement<'_, S> {
             nodes,
             reduced_motion: self.reduced_motion,
             time_scale: self.time_scale,
-            defaults: self.defaults,
+            zoom: self.zoom,
+            defaults: self.defaults.clone(),
             titlebar: self.titlebar,
             caret_read: self.caret_read,
             layout_reads: self.layout_reads,
@@ -247,13 +250,18 @@ impl<S: 'static> Measurement<'_, S> {
         let path = node_path(parent, el.key.as_deref(), index);
         if let Some(estimate) = el.cold.virtual_estimate {
             assert!(el.cold.growth.is_some(), "`.virtualize(..)` at {path:?} needs `.growth(GrowthSpec)` on the same element");
-            let (scroll_path, sticky, scroll_bound) = scroll.expect("virtual stack must be the direct child of a scroll viewport");
+            let (scroll_path, sticky, scroll_bound) = scroll.expect("virtual stack must be inside a scroll viewport");
             let old_scroll = self.path_ids.get(scroll_path).and_then(|id| self.scrolls.get(id));
             let pinned = (tx.settle && sticky) || old_scroll.map_or(sticky, |s| s.pinned());
             let mut offset = old_scroll.map_or(0.0, |s| s.offset as f32);
             // A new viewport has no height yet: its bound from the tree, else the window's.
             let first = if scroll_bound.is_finite() { scroll_bound } else { self.viewport.1 };
-            let height = self.committed_node(scroll_path).map_or(first, |i| self.nodes[i].local.h);
+            let height = self.committed_node(scroll_path).map_or(first, |i| {
+                let old = self.nodes[i].local.h;
+                // A viewport filling the old window follows its new bound on resize. Picking
+                // rows for the old height first can require running the entire view twice.
+                if tx.relayout && old == self.nodes[0].local.h { first } else { old }
+            });
             let padding = |p: LengthPercentage| match p.expand() {
                 taffy::style::ExpandedLengthPercentage::Length(x) => x,
                 _ => panic!("virtual stack padding must be in points"),
@@ -263,7 +271,7 @@ impl<S: 'static> Measurement<'_, S> {
             v.set_estimate(estimate);
             v.scroll_path = scroll_path.to_owned();
             // A retry keeps the viewport the last pass measured; `self.nodes` is the last commit's.
-            if !self.retry { v.viewport = height; }
+            if self.pass.trusts_estimates() { v.viewport = height; }
             offset = (offset - v.top).max(0.0);
             let el_pad = el.style.padding();
             v.pad_top = padding(el_pad.top);
@@ -325,12 +333,12 @@ impl<S: 'static> Measurement<'_, S> {
             // Rows new since the last commit spread over frames, unless this pass is a retry to
             // fill the viewport or a settle. A list's first showing is all new rows: it mounts
             // its viewport and a budget of overscan, and the rest fills over the next frames.
-            let budget = v.indexed && !self.retry && !tx.settle;
+            let budget = v.indexed && self.pass.spreads_rows() && !tx.settle;
             let shown = std::mem::take(&mut v.shown);
             // A live-only check's commit keeps the rows mounted now while they still cover the
             // viewport, as skipping the commit would: re-picking the overscan for a viewport that
             // changed since would build rows the handler had nothing to do with.
-            if self.hold_windows && same && !self.retry && !force_all && !v.needs_window(offset, pinned) {
+            if self.hold_windows && same && self.pass.spreads_rows() && !force_all && !v.needs_window(offset, pinned) {
                 v.hold(offset, pinned);
             } else {
                 v.select(offset, pinned, budget.then_some(&shown));
@@ -346,7 +354,13 @@ impl<S: 'static> Measurement<'_, S> {
             self.populate_virtual_children(el, &path, source, inert, group);
         }
         let bounds = crate::el::virtual_list::child_bounds(&el.style, el.cold.scroll.is_some(), bound, &el.children);
-        let scroll = el.cold.scroll.map(|s| (path.as_str(), s.stick_bottom, bound));
+        // A virtual stack windows against the nearest scroll viewport around it, under or among
+        // other content; a virtual list's rows only against viewports inside them.
+        let scroll = match el.cold.scroll {
+            Some(s) => Some((path.as_str(), s.stick_bottom, bound)),
+            None if el.cold.virtual_estimate.is_some() => None,
+            None => scroll,
+        };
         let child_group = if el.flags.has(ElFlags::SELECTION_GROUP) { Some(path.as_str()) } else { group };
         for (i, child) in el.children.iter_mut().enumerate() {
             if !child.flags.has(ElFlags::HAS_VIRTUAL) { continue; }
@@ -368,6 +382,7 @@ impl<S: 'static> Measurement<'_, S> {
             system_reduced_motion: this.system_reduced_motion,
             reduced_motion: this.system_reduced_motion,
             time_scale: this.time_scale,
+            zoom: 1.0,
             defaults: Default::default(),
             caret: this.caret.clone(),
             caret_read: std::cell::Cell::new(false),
@@ -411,6 +426,7 @@ impl<S: 'static> Measurement<'_, S> {
         *self.memo = memo;
         self.reduced_motion = cx.reduced_motion;
         self.time_scale = cx.time_scale;
+        self.zoom = cx.zoom;
         self.defaults = cx.defaults;
         self.titlebar = cx.titlebar;
         // Reads made by memos this build reused count as made again.
@@ -528,7 +544,7 @@ impl<S: 'static> Measurement<'_, S> {
             v.selection.source = Some(rows);
         } else {
             v.selection.source = None;
-            if !self.retry && el.cold.focus.reveal_selected {
+            if self.pass.reveals() && el.cold.focus.reveal_selected {
                 let selected = el.children.iter().find(|c| c.cold.focus.selected).and_then(|c| c.key.clone());
                 if selected != v.selected_row {
                     v.reveal_selected = selected.clone();
@@ -565,9 +581,9 @@ impl<S: 'static> Runtime<S> {
     /// after it scrolls out. Walks the node tree, since a key may itself contain `/`.
     pub(super) fn track_focused_rows(&mut self) {
         if self.virtuals.is_empty() { return; }
-        let focused = self.focused.as_deref().and_then(|f| self.nodes.iter().position(|n| n.path == f));
+        let focused = self.focus.path().and_then(|f| self.nodes.iter().position(|n| n.path == f));
         for (path, v) in self.virtuals.iter_mut() {
-            let Some(rest) = self.focused.as_deref().and_then(|f| f.strip_prefix(path.as_str())).and_then(|r| r.strip_prefix('/')) else {
+            let Some(rest) = self.focus.path().and_then(|f| f.strip_prefix(path.as_str())).and_then(|r| r.strip_prefix('/')) else {
                 v.focused_row = None;
                 continue;
             };

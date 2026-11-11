@@ -1,10 +1,16 @@
 //! Select (`@opencode/ui` forms/select): an inline trigger and a listbox of menu items with a
 //! check on the selected option, optionally grouped.
+//!
+//! Whether it's open is the app's (`open`, `on_close`); how it opens and closes is Rune's
+//! modal stack (`runtime/input/modal_focus.rs`): it takes focus, Escape and a press outside
+//! close it, and focus goes back to the trigger, without a ring when the pointer opened it, as
+//! Desktop's menu machine has it (`ui/src/navigation/menu/machine.ts`).
 
 use rune::{El, Icon, TextStyle, Tx, col, el, icon, row, text};
 
 use crate::menu::{Modal, dismissal, mount_dismiss};
-use crate::overlay::{Placement, fit_scroll_bar, menu_anchor};
+use crate::overlay::Placement;
+use crate::popover::{anchored, fit_scroll_bar};
 
 /// The listbox's tallest: its 4-point padding, six 30-point rows (28 tall, 2 apart), and most
 /// of the seventh, whose label shows fading under the edge.
@@ -231,7 +237,7 @@ impl Select {
         if let Some(modal) = modal {
             content = modal(content);
         }
-        layer.push(menu_anchor(k, content, &anchor_key, self.placement, 2.0));
+        layer.push(anchored(k, content, &anchor_key, self.placement, 2.0));
         trigger
     }
 

@@ -29,14 +29,23 @@
 mod foreign;
 #[cfg(target_os = "macos")]
 mod macos;
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+mod phases;
 #[cfg(target_os = "macos")]
 use macos as backend;
 #[cfg(all(test, target_os = "macos"))]
 pub(crate) use macos::test_frames;
+#[cfg(any(target_os = "macos", test))]
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+mod turn;
 #[cfg(not(target_os = "macos"))]
 mod unsupported;
 #[cfg(not(target_os = "macos"))]
 use unsupported as backend;
+mod waker;
+
+use phases::{Effect, Event, Run, Stage, step};
+pub(crate) use waker::WakerSlot;
 
 use crate::native_surface::{ByteFrame, ColorInfo, Format, NativeSurface};
 use std::path::{Path, PathBuf};
@@ -248,14 +257,14 @@ impl Player {
     }
 
     fn create(source: MediaSource, kind: Kind, headers: Vec<(String, String)>) -> Self {
-        let ctl = Control { muted: kind == Kind::Video, ..Control::default() };
+        let ctl = Control { muted: kind == Kind::Video, kind, ..Control::default() };
         let shared = Arc::new(Shared {
             source,
             headers,
             kind,
             ctl: Mutex::new(ctl),
             wakes: Mutex::new(Vec::new()),
-            waker: Mutex::new(None),
+            waker: WakerSlot::default(),
             notified: AtomicU64::new(0),
             native: Mutex::new(backend::Native::default()),
         });
@@ -285,43 +294,19 @@ impl Player {
 
     /// Start or resume playback. After [`PlayerState::Ended`] it starts from the beginning.
     pub fn play(&self) {
-        self.edit(|c| {
-            if c.failed.is_some() {
-                return;
-            }
-            if c.ended {
-                c.ended = false;
-                c.seek = Some(0.0);
-                c.time = 0.0;
-            }
-            c.playing = true;
-            c.anchor = None;
-        });
+        self.send(Event::Play);
     }
     pub fn pause(&self) {
-        self.edit(|c| {
-            c.playing = false;
-            c.anchor = None;
-        });
+        self.send(Event::Pause);
     }
     /// Jump to `seconds` (clamped to the clip). Keeps playing if it was playing.
     pub fn seek(&self, seconds: f64) {
-        let seconds = if seconds.is_finite() { seconds.max(0.0) } else { 0.0 };
-        self.edit(|c| {
-            let seconds = c.duration.map_or(seconds, |d| seconds.min(d));
-            c.seek = Some(seconds);
-            c.time = seconds;
-            c.ended = false;
-            c.anchor = None;
-        });
+        self.send(Event::Seek(seconds));
     }
     /// Playback speed while playing; 1 is normal. Negative and non-finite rates are ignored.
     pub fn set_rate(&self, rate: f32) {
         if rate.is_finite() && rate > 0.0 {
-            self.edit(|c| {
-                c.rate = rate;
-                c.anchor = None;
-            });
+            self.send(Event::Rate(rate));
         }
     }
     pub fn set_looping(&self, looping: bool) {
@@ -336,7 +321,7 @@ impl Player {
     /// without ticking. Nothing calls it for progress. If the state already changed (loaded, or
     /// failed at once on an unsupported format), it's called once right away.
     pub fn set_waker(&self, waker: crate::Waker) {
-        *self.shared.waker.lock().unwrap() = Some((waker, 0));
+        self.shared.waker.set(waker);
         self.shared.settle(false);
     }
 
@@ -345,13 +330,16 @@ impl Player {
     }
     /// Whether `play` is in effect (also true while loading after `play`).
     pub fn is_playing(&self) -> bool {
-        self.shared.ctl.lock().unwrap().playing
+        self.shared.ctl.lock().unwrap().playing()
     }
     /// Playback position in seconds. Video: as of the last drawn frame (or the last `seek`).
     /// Audio: read from the player when called on the main thread while it plays.
     pub fn time(&self) -> f64 {
-        let time = self.read().time;
-        backend::live_time(&self.shared).unwrap_or(time)
+        let (time, live) = {
+            let c = self.read();
+            (c.time, c.live())
+        };
+        if live { backend::live_time(&self.shared).unwrap_or(time) } else { time }
     }
     /// Length in seconds, once loaded.
     pub fn duration(&self) -> Option<f64> {
@@ -381,6 +369,13 @@ impl Player {
             self.shared.follow_clock();
         }
         self.shared.ctl.lock().unwrap()
+    }
+
+    /// A handle edit that changes the clip's phase. Handle edits ask for no effects.
+    fn send(&self, event: Event) {
+        self.edit(|c| {
+            step(c, event);
+        });
     }
 
     fn edit(&self, f: impl FnOnce(&mut Control)) {
@@ -469,8 +464,7 @@ pub(crate) struct Shared {
     kind: Kind,
     ctl: Mutex<Control>,
     wakes: Mutex<Vec<Weak<crate::live::Wake>>>,
-    /// The app's waker and the generation it last heard about.
-    waker: Mutex<Option<(crate::Waker, u64)>>,
+    waker: WakerSlot,
     /// The generation windows last heard about.
     notified: AtomicU64,
     native: Mutex<backend::Native>,
@@ -503,16 +497,7 @@ impl Shared {
     /// Call with no locks held.
     fn settle(&self, windows: bool) {
         let generation = self.ctl.lock().unwrap().generation;
-        let waker = match &mut *self.waker.lock().unwrap() {
-            Some((waker, heard)) if *heard != generation => {
-                *heard = generation;
-                Some(waker.clone())
-            }
-            _ => None,
-        };
-        if let Some(waker) = waker {
-            waker();
-        }
+        self.waker.tell(generation);
         if self.notified.swap(generation, Ordering::AcqRel) != generation && windows {
             self.wake_windows();
         }
@@ -543,7 +528,7 @@ impl Shared {
             return;
         }
         let Some(now) = headless_clock() else { return };
-        if self.ctl.lock().unwrap().playing {
+        if self.ctl.lock().unwrap().playing() {
             self.open_now();
         }
         self.ctl.lock().unwrap().advance_virtual(now);
@@ -567,11 +552,12 @@ impl Shared {
         };
         let pulled = {
             let mut c = self.ctl.lock().unwrap();
-            if c.failed.is_some() && !c.placeholder {
-                c.placeholder = true;
-                push_placeholder(surface);
+            for effect in step(&mut c, Event::Drawn) {
+                if effect == Effect::Placeholder {
+                    push_placeholder(surface);
+                }
             }
-            Pulled { active: active && c.failed.is_none(), generation: c.generation }
+            Pulled { active: active && !c.failed(), generation: c.generation }
         };
         self.settle(false);
         pulled
@@ -583,7 +569,7 @@ impl Shared {
         let mut native = self.native.lock().unwrap();
         let (meta, frame, shown) = {
             let mut c = self.ctl.lock().unwrap();
-            let Some(meta) = c.meta.filter(|_| c.failed.is_none()) else { return false };
+            let Some(meta) = c.meta.filter(|_| !c.failed()) else { return false };
             c.advance_virtual(now);
             (meta, meta.frame_index(c.time), c.shown)
         };
@@ -596,7 +582,7 @@ impl Shared {
                 c.fail(e);
             }
         }
-        self.ctl.lock().unwrap().playing
+        self.ctl.lock().unwrap().playing()
     }
 }
 
@@ -613,26 +599,25 @@ impl Meta {
     }
 }
 
-#[derive(Debug)]
+/// A clip's state, stepped by [`phases::step`].
+#[derive(Clone, Debug)]
 pub(crate) struct Control {
+    kind: Kind,
     // Intent, from the handle.
-    pub playing: bool,
     pub rate: f32,
     pub looping: bool,
     pub muted: bool,
-    pub seek: Option<f64>,
+    /// A seek not yet carried out, by a player, a poster or the headless clock.
+    seek: Option<f64>,
     // Reported by pulls and ticks.
     pub time: f64,
     pub duration: Option<f64>,
     pub size: Option<(u32, u32)>,
     pub meta: Option<Meta>,
-    pub ended: bool,
-    pub failed: Option<String>,
-    placeholder: bool,
+    run: Run,
+    stage: Stage,
     generation: u64,
     frame_id: u64,
-    /// Headless: (runtime clock, playback time) when playback last (re)started.
-    anchor: Option<(f64, f64)>,
     /// Headless: the frame index on the surface.
     shown: Option<i64>,
 }
@@ -640,7 +625,7 @@ pub(crate) struct Control {
 impl Default for Control {
     fn default() -> Self {
         Self {
-            playing: false,
+            kind: Kind::Video,
             rate: 1.0,
             looping: false,
             muted: true,
@@ -649,105 +634,12 @@ impl Default for Control {
             duration: None,
             size: None,
             meta: None,
-            ended: false,
-            failed: None,
-            placeholder: false,
+            run: Run::default(),
+            stage: Stage::default(),
             generation: 0,
             frame_id: 0,
-            anchor: None,
             shown: None,
         }
-    }
-}
-
-impl Control {
-    pub(crate) fn state(&self) -> PlayerState {
-        if let Some(e) = &self.failed {
-            PlayerState::Failed(e.clone())
-        } else if self.meta.is_none() {
-            PlayerState::Loading
-        } else if self.playing {
-            PlayerState::Playing
-        } else if self.ended {
-            PlayerState::Ended
-        } else {
-            PlayerState::Ready
-        }
-    }
-    pub(crate) fn opened(&self) -> bool {
-        self.meta.is_some() || self.failed.is_some()
-    }
-    pub(crate) fn open(&mut self, meta: Result<Meta, String>) {
-        match meta {
-            Ok(meta) => {
-                self.meta = Some(meta);
-                self.duration = Some(meta.duration);
-                self.size = meta.size;
-                self.time = self.time.min(meta.duration);
-                self.seek = self.seek.map(|t| t.min(meta.duration));
-                self.generation += 1;
-            }
-            Err(e) => self.fail(e),
-        }
-    }
-    pub(crate) fn fail(&mut self, error: String) {
-        if self.failed.is_none() {
-            self.failed = Some(error);
-            self.playing = false;
-            self.generation += 1;
-        }
-    }
-    pub(crate) fn next_frame_id(&mut self) -> u64 {
-        self.frame_id += 1;
-        self.frame_id
-    }
-
-    /// Headless clock: playback time follows the runtime clock from the first pull after
-    /// `play`, `seek` or a rate change.
-    pub(crate) fn advance_virtual(&mut self, now: f64) {
-        let Some(meta) = self.meta else { return };
-        if let Some(t) = self.seek.take() {
-            self.time = t.min(meta.duration);
-            self.anchor = None;
-        }
-        if !self.playing {
-            return;
-        }
-        // A clock behind the anchor (another runtime on this thread) restarts from here.
-        let (start_clock, start_time) = match self.anchor {
-            Some((clock, time)) if clock <= now => (clock, time),
-            _ => *self.anchor.insert((now, self.time)),
-        };
-        let t = start_time + (now - start_clock).max(0.0) * self.rate as f64;
-        if t < meta.duration {
-            self.time = t;
-        } else if self.looping && meta.duration > 0.0 {
-            self.time = t % meta.duration;
-        } else {
-            self.time = meta.duration;
-            self.playing = false;
-            self.ended = true;
-            self.anchor = None;
-            self.generation += 1;
-        }
-    }
-
-    /// Display clock: fold a player position into the state, looping or ending at the end.
-    /// Returns true when the player should restart from zero.
-    #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
-    pub(crate) fn observe(&mut self, time: f64, at_end: bool) -> bool {
-        self.time = self.duration.map_or(time, |d| time.clamp(0.0, d));
-        if !(self.playing && at_end) {
-            return false;
-        }
-        if self.looping {
-            self.time = 0.0;
-            return true;
-        }
-        self.playing = false;
-        self.ended = true;
-        self.generation += 1;
-        false
     }
 }
 

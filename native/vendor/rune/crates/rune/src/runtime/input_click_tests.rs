@@ -139,7 +139,7 @@ fn double_and_triple_click_select_word_and_line_in_single_line_input() {
     rt.pointer_up(x, y);
     rt.frame(1.0 / 60.0);
     assert!(rt.state.single.focused);
-    assert!(!rt.keyboard_focus, "pointer focus does not turn on keyboard focus ring");
+    assert!(!rt.focus.keyboard(), "pointer focus does not turn on keyboard focus ring");
     assert_eq!(rt.state.single.anchor, rt.state.single.focus);
     assert!(rt.state.single.focus > 0 && rt.state.single.focus < 4);
 
@@ -512,4 +512,16 @@ fn presses_land_on_targets_inside_a_scrolled_viewport() {
     rt.pointer_up(100.0, 25.0);
     rt.frame(1.0 / 120.0);
     assert_eq!(rt.state, [4]);
+}
+
+#[test]
+fn a_field_that_stops_following_its_press_keeps_the_press_until_release() {
+    let mut c = InputClick::default();
+    c.capture = Capture::Held { dragging: Some("field".into()) };
+    c.steps.push_back(("field".into(), Step::Drag));
+    c.on_focus_change(Some("other"));
+    assert!(c.captured() && c.dragging_path().is_none(), "focus left: the drag stops, the press stays the field's");
+    assert!(matches!(c.steps.front(), Some((_, Step::Cancelled))), "its queued drag step does nothing");
+    assert!(c.end_press());
+    assert!(!c.captured() && !c.end_press(), "the release ends it once");
 }

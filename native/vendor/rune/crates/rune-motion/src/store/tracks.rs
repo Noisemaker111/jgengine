@@ -2,6 +2,57 @@
 use super::{AnimationStore, TrackId};
 use crate::props::{NodeId, PropId};
 
+/// What a track is doing at this frame's time. The one place a hold is decided, so the tick,
+/// [`running`](AnimationStore::running) and
+/// [`waiting_until`](AnimationStore::waiting_until) can't disagree about whether frames are
+/// needed.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(super) enum Mode {
+    /// It moves now: sample it.
+    Moving,
+    /// Its delayed start is due, but the tick that applies it hasn't run: it moves now, and
+    /// still wants frames this instant.
+    Due,
+    /// It holds until a delayed start comes due at `due`, on its own clock's time.
+    Waiting { due: f64 },
+    /// It holds with nothing due: settled, and the tick retires it.
+    Settled,
+    /// It holds because its clock is stopped. It moves again when the clock does.
+    Frozen,
+}
+
+impl Mode {
+    /// Nothing on screen changes until something moves it, so no sample is needed.
+    pub(super) fn holds(self) -> bool {
+        matches!(self, Mode::Waiting { .. } | Mode::Settled | Mode::Frozen)
+    }
+}
+
+impl AnimationStore {
+    /// What track `t` is doing at this frame's time: the one derivation of its hold.
+    #[inline]
+    pub(super) fn mode(&self, t: usize) -> Mode {
+        if self.frozen(t) {
+            return Mode::Frozen;
+        }
+        let now = self.time_of(t);
+        let due = self.t_next_due[t];
+        if self.t_settle_at[t] > now {
+            return Mode::Moving;
+        }
+        if due > now {
+            return if due.is_finite() { Mode::Waiting { due } } else { Mode::Settled };
+        }
+        Mode::Due
+    }
+
+    /// The track's timing or pose just changed, so the next tick samples it again even though
+    /// it holds.
+    pub(super) fn resample(&mut self, t: usize) {
+        self.t_held[t] = false;
+    }
+}
+
 impl AnimationStore {
     /// Tracks sampled (or `set`) in the last tick: what changed on screen.
     pub fn touched(&self) -> impl Iterator<Item = (NodeId, PropId)> + '_ {
@@ -24,16 +75,19 @@ impl AnimationStore {
         let mut first = f64::INFINITY;
         for &t in &self.active {
             let t = t as usize;
-            if self.frozen(t) {
-                continue;
+            match self.mode(t) {
+                Mode::Waiting { due } => {
+                    let now = self.time_of(t);
+                    let k = self.clock_scale(self.t_clock[t]) as f64;
+                    first = first.min(self.now + (due - now).max(0.0) / k);
+                }
+                // Due but not yet applied: wake now, as a delayed start that came due.
+                Mode::Due => first = first.min(self.now),
+                // A stopped clock never comes due on its own.
+                Mode::Frozen => {}
+                // Moving, or settled and about to be retired: frames are needed now.
+                Mode::Moving | Mode::Settled => return None,
             }
-            let now = self.time_of(t);
-            let due = self.t_next_due[t];
-            if self.t_settle_at[t] > now || !due.is_finite() {
-                return None;
-            }
-            let k = self.clock_scale(self.t_clock[t]) as f64;
-            first = first.min(self.now + (due - now).max(0.0) / k);
         }
         first.is_finite().then_some(first)
     }

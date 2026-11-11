@@ -62,8 +62,8 @@ impl<S: 'static> Runtime<S> {
         secure.hash(&mut h);
         if let Some(t) = n.text.as_deref() {
             if !secure { t.content.hash(&mut h); }
-            (t.redacted, t.selectable, t.on_link.is_some(), t.on_link_secondary.is_some(), t.links.len()).hash(&mut h);
-            for l in &t.links { (l.start, l.end, &l.id, l.role, &l.label).hash(&mut h); }
+            (t.redacted, t.selectable, t.cold.on_link.is_some(), t.cold.on_link_secondary.is_some(), t.cold.links.len()).hash(&mut h);
+            for l in &t.cold.links { (l.start, l.end, &l.id, l.role, &l.label).hash(&mut h); }
         }
         // A text's lines come from its layout and where it scrolled.
         n.text_layout.as_ref().map(|l| std::rc::Rc::as_ptr(l) as usize).hash(&mut h);
@@ -81,7 +81,7 @@ impl<S: 'static> Runtime<S> {
         (self.allowed(i), self.can_focus(i), n.inert).hash(&mut h);
         if let Some(st) = self.scrolls.get(&n.id).filter(|_| n.scroll.is_some()) {
             [st.offset.to_bits(), st.max.to_bits(), st.x.offset.to_bits(), st.x.max.to_bits()].hash(&mut h);
-            st.drawn.map(f32::to_bits).hash(&mut h);
+            [st.drawn_x, st.drawn.y()].map(f32::to_bits).hash(&mut h);
         }
         // Its box in its viewport's content space, which scrolling leaves alone.
         let r = rect(self.drawn[i], w.shift);
@@ -189,7 +189,7 @@ impl<S: 'static> Runtime<S> {
         // Bounds: a scroll viewport's own box sits in the space its offset moves.
         let mut shift = w.shift;
         if let Some(st) = scroll {
-            let [x, y] = self.content_to_window(i, st.drawn);
+            let [x, y] = self.content_to_window(i, [st.drawn_x, st.drawn.y()]);
             shift = [shift[0] + x, shift[1] + y];
             node.set_transform(Affine::translate((-f64::from(x), -f64::from(y))));
             node.set_clips_children();
@@ -244,9 +244,6 @@ impl<S: 'static> Runtime<S> {
         let own = (i + 1..self.nodes.len()).take_while(inside).find(|&j| self.nodes[j].named(key));
         own.or_else(|| self.nodes.iter().position(|n| n.named(key))).filter(|&j| !self.subtree_exiting(j))
     }
-
-    /// Whether node `i` is inside the open modal, or a portal it anchors.
-    pub(super) fn modal_member(&self, i: usize) -> bool { self.modal_members.get(i).copied().unwrap_or(false) }
 
     /// Whether node `i` is an item of a focus group: a list, tabs, a radio group.
     fn in_focus_group(&self, i: usize) -> bool {

@@ -268,7 +268,7 @@ impl<S: 'static> Runtime<S> {
                         None => at.map_or(v, |at| self.content_to_window(at, v)),
                     };
                     if j != i && let Some(st) = self.scrolls.get(&self.nodes[j].id) {
-                        let [x, y] = to_window(Some(j), st.drawn);
+                        let [x, y] = to_window(Some(j), [st.drawn_x, st.drawn.y()]);
                         scrolled = [scrolled[0] + x, scrolled[1] + y];
                     }
                     // A launch, and what it carries, leaves under the offsets it launched against
@@ -302,8 +302,8 @@ impl<S: 'static> Runtime<S> {
                         else { l.phase(self.scene.store().node_time(n.id)) }
                     }),
                     focusable: self.can_focus(i),
-                    focused: self.focused.as_deref() == Some(&n.path),
-                    focus_visible: self.keyboard_focus && self.focused.as_deref() == Some(&n.path),
+                    focused: self.focus.path() == Some(&n.path),
+                    focus_visible: self.focus.keyboard() && self.focus.path() == Some(&n.path),
                     inert: !self.allowed(i) || exiting,
                     exiting,
                     path: n.path.clone(),
@@ -322,7 +322,8 @@ impl<S: 'static> Runtime<S> {
                     blur: if flight.is_some() { 0.0 } else { self.inh_scratch.get(i).map_or(p.blur, |h| h.blur) },
                     radius: p.radius.0[0],
                     fill: self.color(n.id, P_FILL, n.vis.fill),
-                    text_color: n.text.as_ref().map(|t| t.color).or(n.vis.icon.map(|(_, c)| c)).map(|c| self.color(n.id, P_TEXT, c)),
+                    text_color: paint_tracks::text_color(n)
+                        .map(|c| paint_tracks::group_tint(n, self.color(n.id, P_TEXT, c), self.inh_scratch.get(i).map_or(0.0, |h| h.group))),
                     hover: if (n.focus.highlight.is_some() && self.highlight_visible(i)) || (n.focus.fill.is_some() && self.focus_ring_visible(i)) { 1.0 }
                         else { self.scene.get(n.id, P_HOVER).unwrap_or(0.0) },
                     press: self.scene.get(n.id, P_PRESS).unwrap_or(0.0),

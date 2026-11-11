@@ -2,7 +2,7 @@
 //! and what a new stage leaves behind.
 
 use super::*;
-use crate::playground::{FILTER, Nav, Region, Request};
+use crate::playground::{FILTER, Moved, Nav, Region, Request};
 
 pub(crate) fn handler_states<'a, S: 'static>(state: &'a mut S, playground: &'a mut Option<Box<crate::playground::Live<S>>>) -> crate::states::States<'a> {
     match playground {
@@ -62,7 +62,7 @@ impl<S: 'static> Runtime<S> {
         let swaps = playground.pending_swaps_stage();
         let keep = playground.pending_replays_only() && self.focused_index().is_some_and(|i| self.under(i, |k| k == "playground-side"));
         let was_open = playground.is_open();
-        if swaps && !keep && self.focused.is_some() { self.set_focus(None, false); }
+        if swaps && !keep && self.focus.path().is_some() { self.set_focus(None, false); }
         let clock = self.clock;
         if !self.playground.as_mut().is_some_and(|p| p.apply(clock, &mut self.state)) { return; }
         self.memo.clear();
@@ -77,23 +77,17 @@ impl<S: 'static> Runtime<S> {
     fn leave_stage(&mut self, was_open: bool) {
         let exiting: Vec<_> = self.nodes.iter().map(|n| n.id).filter(|&id| self.is_exiting(id)).collect();
         for id in exiting { self.scene.unmount(id); }
-        self.capture = None;
-        self.secondary_capture = None;
-        self.capture_inside = false;
-        self.left_in_capture = false;
-        self.drag_out_armed = false;
+        self.press = capture::Press::default();
+        self.secondary = capture::Secondary::Up;
         self.drop_drag_out_request();
         self.text_sel.dragging = false;
         self.input_click.clear();
         self.hovered = None;
         self.hover_gone.clear();
         self.hover_within.clear();
-        self.hover_shown.clear();
-        self.hover_pending.clear();
+        self.hover_delays.clear();
         self.forget_drop_targets();
-        self.last_press = None;
         self.titlebar.clear();
-        self.double_armed = false;
         self.press_clicks.clear();
         let Some(playground) = &mut self.playground else { return };
         if was_open { self.time_scale = playground.app_time_scale; } else { playground.app_time_scale = self.time_scale; }
@@ -137,7 +131,7 @@ impl<S: 'static> Runtime<S> {
         }
         let Some(playground) = &self.playground else { return false };
         let side = self.playground_side();
-        let at = self.focused.as_deref().filter(|_| !self.hover_focus).and_then(|f| side.iter().position(|p| p == f));
+        let at = self.focus.path().filter(|_| !self.focus.hovered()).and_then(|f| side.iter().position(|p| p == f));
         match playground.nav(ev, playground.region()) {
             Nav::Pass => false,
             Nav::Stay => true,
@@ -213,10 +207,9 @@ impl<S: 'static> Runtime<S> {
 
     /// Gives `region` the keyboard, redrawing the columns' focus.
     fn give_region(&mut self, region: Region) {
-        let focused = self.focused.clone();
+        let focus = self.focus.owned();
         let Some(playground) = &mut self.playground else { return };
-        playground.see_focus(focused.as_deref());
-        if playground.set_region(region) { self.dirty = true; }
+        if playground.moved(Moved::Give { region, seen: focus }) { self.dirty = true; }
     }
 
     /// A press in the open playground gives its column the keyboard.
@@ -230,18 +223,20 @@ impl<S: 'static> Runtime<S> {
     /// field focused in the stage, Tab into the side column. Focus a hover moved (a menu-like
     /// row under the pointer) is passed over, and so is focus leaving: the column keeps it.
     fn sync_region(&mut self) {
-        let (focused, hover) = (self.focused.clone(), self.hover_focus);
+        if self.playground.as_ref().is_none_or(|p| p.saw_focus(self.focus.path())) { return; }
+        let at = if self.focus.hovered() { None } else { self.focused_index() };
+        let region = at.map(|i| {
+            if self.under(i, |k| k == "playground-side") {
+                Region::Side
+            } else if self.under(i, crate::playground::is_stage) {
+                Region::Stage
+            } else {
+                Region::List
+            }
+        });
+        let focus = self.focus.owned();
         let Some(playground) = &mut self.playground else { return };
-        if !playground.see_focus(focused.as_deref()) || hover { return; }
-        let Some(i) = self.focused_index() else { return };
-        let region = if self.under(i, |k| k == "playground-side") {
-            Region::Side
-        } else if self.under(i, crate::playground::is_stage) {
-            Region::Stage
-        } else {
-            Region::List
-        };
-        if self.playground.as_mut().is_some_and(|p| p.set_region(region)) { self.dirty = true; }
+        if playground.moved(Moved::Focus { focus, region }) { self.dirty = true; }
     }
 
     /// Polls the open stage, then queues the keys its steps pressed ([`Play::press`]) behind
@@ -268,19 +263,26 @@ impl<S: 'static> Runtime<S> {
     /// aside for it, and the keyboard goes back where the person left it.
     pub(super) fn route_stage_key(&mut self, ev: &KeyEvent, one: &mut Tx) -> bool {
         let Some(region) = self.playground.as_ref().filter(|p| p.is_open()).map(|p| p.region()) else { return self.route_key(ev, false, one) };
-        let aside = self.focused_index().filter(|&i| !self.under(i, crate::playground::is_stage)).and_then(|_| self.focused.take());
+        let aside = self.focused_index().filter(|&i| !self.under(i, crate::playground::is_stage)).and_then(|_| self.focus.set_aside());
         if let Some(p) = &mut self.playground {
-            p.set_region(Region::Stage);
+            p.moved(Moved::Hold(Region::Stage));
             p.pressing = true;
         }
         let took = self.route_key(ev, false, one);
         if let Some(p) = &mut self.playground { p.pressing = false; }
-        let back = aside.filter(|_| self.focused.is_none());
+        // Focus goes back only if the key left it where it was: otherwise what it focused stays,
+        // and the next look at focus gives that column the keyboard.
+        let back = aside.filter(|_| self.focus.path().is_none());
+        let path = back.as_ref().and_then(|aside| match aside {
+            focus_machine::Focus::On { path, .. } => Some(path.clone()),
+            _ => None,
+        });
         let Some(p) = &mut self.playground else { return took };
-        p.set_region(region);
-        if let Some(path) = back {
-            p.see_focus(Some(&path));
-            self.focused = Some(path);
+        p.moved(Moved::Resume { region, back: path });
+        if let Some(aside) = back {
+            self.focus.put_back(aside);
+            // A key that blurred it reported the slot off; it's back.
+            self.sync_side_focus();
         }
         took
     }
@@ -298,14 +300,14 @@ impl<S: 'static> Runtime<S> {
     /// The keyboard is on the open story's side controls that take keys (`Story::side_keys`),
     /// whose slot is focusable only then.
     fn on_side_keys(&self) -> bool {
-        !self.hover_focus && self.focused_index().is_some_and(|i| self.nodes[i].key.as_deref().is_some_and(|k| k.starts_with("playground-slot-")))
+        !self.focus.hovered() && self.focused_index().is_some_and(|i| self.nodes[i].key.as_deref().is_some_and(|k| k.starts_with("playground-slot-")))
     }
 
-    /// Tells the playground whether the keyboard is on its side controls that take keys, so
-    /// their view can mark what the keys move; a change rebuilds the view.
+    /// Tells the keyboard whether the side controls that take keys have focus, so their view
+    /// can mark what the keys move; a change rebuilds the view.
     pub(super) fn sync_side_focus(&mut self) {
-        let active = self.on_side_keys();
-        if self.playground.as_mut().is_some_and(|p| p.set_side_active(active)) { self.dirty = true; }
+        let slot = self.on_side_keys();
+        if self.playground.as_mut().is_some_and(|p| p.moved(Moved::Slot(slot))) { self.dirty = true; }
     }
 
     /// The paths of the focusable controls in the playground's side column, in order.

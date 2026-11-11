@@ -51,8 +51,8 @@ enum Tip {
     Idle,
     /// A tooltip hid as the pointer left its element: until `until`, the next one opens at once.
     Warm { until: f64 },
-    /// The pointer rests on `target`; its tooltip opens at `due`.
-    Waiting { target: Target, due: f64 },
+    /// The pointer has rested on `target` since this clock time.
+    Waiting { target: Target, since: f64 },
     /// `target`'s tooltip shows, fading in from `since`.
     Open { target: Target, since: f64 },
     /// A press elsewhere, a scroll or key, or a popup over `target` hid its tooltip until the
@@ -119,7 +119,7 @@ fn step(tip: &mut Tip, event: Event, delays: Delays) -> Effects<Effect> {
     match std::mem::take(tip) {
         Tip::Warm { until } if now > until => {}
         // The wait is over (or there was none: a zero delay opens in the frame it starts).
-        Tip::Waiting { target, due } if now + 1e-6 >= due => *tip = Tip::Open { target, since: now },
+        Tip::Waiting { target, since } if now + 1e-6 >= since + delays.open => *tip = Tip::Open { target, since: now },
         other => *tip = other,
     }
     effects
@@ -136,7 +136,7 @@ fn leave(tip: &mut Tip, at: Option<Target>, now: f64, delays: Delays) -> Effects
         Some(target) => {
             let due = now + delays.open;
             effects.push(Effect::WakeAt(due));
-            Tip::Waiting { target, due }
+            Tip::Waiting { target, since: now }
         }
         None if open && delays.skip > 0.0 => Tip::Warm { until: now + delays.skip },
         None if warm => std::mem::take(tip),
@@ -163,15 +163,27 @@ fn suppress(tip: &mut Tip) -> Effects<Effect> {
     }
 }
 
-/// A tooltip as drawn: its text, the box it hangs from (window points, x0 y0 x1 y1), whether
-/// it sits above that box, and its opacity.
+/// A tooltip as drawn: its text, the box it hangs from (window points, x0 y0 x1 y1), the side
+/// of that box it asks for (None: under it), and its opacity.
 #[derive(Clone, Debug)]
 struct Drawn {
     text: String,
     anchor: [f32; 4],
-    above: bool,
+    side: Option<crate::Side>,
     alpha: f32,
     scale: f32,
+}
+
+/// One row of a tooltip as laid out: its words (when it has any) `tw` by `th` points, its
+/// keycaps and their width with the lead before them, and the row's height.
+struct TipRow {
+    words: bool,
+    layout: std::rc::Rc<parley::Layout<crate::text::Ink>>,
+    tw: f32,
+    th: f32,
+    ch: f32,
+    caps: Vec<(std::rc::Rc<parley::Layout<crate::text::Ink>>, f32)>,
+    keys_w: f32,
 }
 
 fn overlaps(a: [f32; 4], b: [f32; 4]) -> bool {
@@ -211,7 +223,7 @@ impl<S: 'static> Runtime<S> {
 
     /// A tooltip waits for a frame at or after its delay to draw, or fades in or out.
     pub(super) fn tooltip_waiting(&self) -> bool {
-        matches!(self.help.state, Tip::Waiting { due, .. } if self.clock + 1e-6 < due) || self.tooltip_fading()
+        matches!(self.help.state, Tip::Waiting { since, .. } if self.clock + 1e-6 < since + self.help_delays().open) || self.tooltip_fading()
     }
 
     /// The open tooltip fades in, or a closed one fades out, so frames keep coming.
@@ -254,10 +266,10 @@ impl<S: 'static> Runtime<S> {
     /// `rect` and clipped to `clip` (points, x0 y0 x1 y1), after the first `seq` hits.
     pub(super) fn push_link_help_hits(&mut self, i: usize, rect: [f32; 4], clip: [f32; 4], seq: usize) {
         let Some(t) = self.nodes[i].text.as_ref() else { return };
-        if !t.links.iter().any(|l| l.help.is_some()) { return; }
+        if !t.cold.links.iter().any(|l| l.help.is_some()) { return; }
         let id = self.nodes[i].id;
         for (k, r) in self.link_boxes(i, rect) {
-            if self.nodes[i].text.as_ref().and_then(|t| t.links.get(k)).is_none_or(|l| l.help.is_none()) { continue; }
+            if self.nodes[i].text.as_ref().and_then(|t| t.cold.links.get(k)).is_none_or(|l| l.help.is_none()) { continue; }
             let c = [r[0].max(clip[0]), r[1].max(clip[1]), r[2].min(clip[2]), r[3].min(clip[3])];
             if c[2] > c[0] && c[3] > c[1] { self.help.hits.push((id, c, seq, Some(k))); }
         }
@@ -266,7 +278,7 @@ impl<S: 'static> Runtime<S> {
     /// The help text of node `i`, or of its link `link`.
     fn help_text(&self, i: usize, link: Option<usize>) -> Option<&String> {
         match link {
-            Some(k) => self.nodes[i].text.as_ref()?.links.get(k)?.help.as_ref(),
+            Some(k) => self.nodes[i].text.as_ref()?.cold.links.get(k)?.help.as_ref(),
             None => self.nodes[i].help.as_ref(),
         }
     }
@@ -285,7 +297,7 @@ impl<S: 'static> Runtime<S> {
             Tip::Open { target, .. } => self.help_at(x, y).is_some_and(|(i, k)| self.nodes[i].path == target.path && k == target.link),
             _ => false,
         };
-        if !on_open { self.dismiss_help(); }
+        if !on_open || self.defaults.help.is_none() { self.dismiss_help(); }
     }
 
     /// The help element under (x, y): the topmost one, unless something interactive drawn over
@@ -333,7 +345,7 @@ impl<S: 'static> Runtime<S> {
         let at = target(i, link);
         // A press holds the pointer: it keeps its own element's tooltip, and a drag across
         // other elements starts none.
-        if (self.capture.is_some() || self.secondary_capture.is_some()) && self.help.state.target() != Some(&at) {
+        if self.pointer_captured() && self.help.state.target() != Some(&at) {
             return (Over::Nothing, None);
         }
         if reaches { (Over::Help(at), Some(i)) } else { (Over::Covered(at), None) }
@@ -396,10 +408,10 @@ impl<S: 'static> Runtime<S> {
                 let e = self.drawn_box(i);
                 let anchor = link.and_then(|k| self.link_boxes(i, e).into_iter().filter(|(j, _)| *j == k).map(|(_, r)| r)
                     .reduce(|u, r| [u[0].min(r[0]), u[1].min(r[1]), u[2].max(r[2]), u[3].max(r[3])]));
-                let above = link.is_none() && self.nodes[i].cold.get().is_some_and(|c| c.help_above);
+                let side = link.is_none().then(|| self.nodes[i].cold.get().and_then(|c| c.help_side)).flatten();
                 let t = if motion && look.fade[0] > 0.0 { ((self.clock - since) / look.fade[0]) as f32 } else { 1.0 };
                 let e_in = rune_motion::Easing::EASE_OUT.eval(t.clamp(0.0, 1.0));
-                let d = Drawn { text, anchor: anchor.unwrap_or(e), above, alpha: e_in, scale: look.fade_scale + (1.0 - look.fade_scale) * e_in };
+                let d = Drawn { text, anchor: anchor.unwrap_or(e), side, alpha: e_in, scale: look.fade_scale + (1.0 - look.fade_scale) * e_in };
                 let [x, y, w, h] = self.draw_tooltip(&d);
                 self.help.tip = Some((crate::el::help_words(&d.text).into_owned(), [x, y, w, h]));
                 self.help.drawn = Some(d);
@@ -409,47 +421,74 @@ impl<S: 'static> Runtime<S> {
     }
 
     /// Draws `d`'s text (and its keycaps) in a tooltip in the current look under its box
-    /// (above it when there's no room below), or above it (under it when there's no room
-    /// above) when it says so, kept inside the window. Returns the tooltip's box at full size
+    /// (above it when there's no room below), or on the side it asks for (the opposite one when
+    /// there's no room there), kept inside the window. Returns the tooltip's box at full size
     /// (window points, x y w h); it draws at `d.alpha`, scaled by `d.scale` about the middle
     /// of the edge that faces its box.
     fn draw_tooltip(&mut self, d: &Drawn) -> [f32; 4] {
-        let (e, text, above) = (d.anchor, d.text.as_str(), d.above);
+        let e = d.anchor;
         let s = self.env.scale;
         let look = self.help_look();
         let key = look.key;
-        let mut parts = text.split(crate::el::HELP_KEY);
-        let words = parts.next().unwrap_or_default();
-        let keys: Vec<String> = parts.map(|k| if key.upper { k.to_uppercase() } else { k.to_owned() }).collect();
-        let caps: Vec<_> = keys.iter().map(|k| {
-            let l = self.text.layout_rich(k, &[], key.font, s, None);
-            let w = ((l.full_width() / s).ceil() + 2.0 * key.pad_x).max(key.height);
-            (l, w)
-        }).collect();
-        let keys_w = if caps.is_empty() { 0.0 } else {
-            caps.iter().map(|(_, w)| w).sum::<f32>() + key.gap * (caps.len() - 1) as f32 + if words.is_empty() { 0.0 } else { key.lead }
-        };
         let [pad_x, pad_y] = look.padding;
         let (vw, vh) = self.viewport;
         let margin = look.margin;
-        let max_w = look.max_w.unwrap_or(vw - 2.0 * margin - 2.0 * pad_x).max(1.0) - keys_w;
-        let layout = self.text.layout_rich(words, &[], look.font, s, Some(max_w.max(1.0) * s));
-        let (tw, th) = if words.is_empty() { (0.0, 0.0) } else { ((layout.full_width() / s).ceil(), (layout.height() / s).ceil()) };
-        let ch = if caps.is_empty() { th } else { th.max(key.height) };
-        let (w, h) = (tw + keys_w + 2.0 * pad_x, ch + 2.0 * pad_y);
-        let [below, over] = look.gap;
-        let mut y = e[3] + below;
-        if above && e[1] - over - h >= margin {
-            y = e[1] - over - h;
-        } else if y + h > vh - margin && e[1] - below - h >= margin {
-            y = e[1] - below - h;
+        let wrap = look.max_w.unwrap_or(vw - 2.0 * margin - 2.0 * pad_x).max(1.0);
+        // Each row (`El::help_row`) is its words, then its keycaps.
+        let mut rows = Vec::new();
+        for row in d.text.split(crate::el::HELP_ROW) {
+            let mut parts = row.split(crate::el::HELP_KEY);
+            let words = parts.next().unwrap_or_default();
+            let caps: Vec<_> = parts.map(|k| {
+                let k = if key.upper { k.to_uppercase() } else { k.to_owned() };
+                let l = self.text.layout_rich(&k, &[], key.font, s, None);
+                let w = ((l.full_width() / s).ceil() + 2.0 * key.pad_x).max(key.height);
+                (l, w)
+            }).collect();
+            let keys_w = if caps.is_empty() { 0.0 } else {
+                caps.iter().map(|(_, w)| w).sum::<f32>() + key.gap * (caps.len() - 1) as f32 + if words.is_empty() { 0.0 } else { key.lead }
+            };
+            let layout = self.text.layout_rich(words, &[], look.font, s, Some((wrap - keys_w).max(1.0) * s));
+            let (tw, th) = if words.is_empty() { (0.0, 0.0) } else { ((layout.full_width() / s).ceil(), (layout.height() / s).ceil()) };
+            let ch = if caps.is_empty() { th } else { th.max(key.height) };
+            rows.push(TipRow { words: !words.is_empty(), layout, tw, th, ch, caps, keys_w });
         }
-        let x = ((e[0] + e[2] - w) * 0.5).clamp(margin, (vw - w - margin).max(margin));
+        let gaps = look.row_gap * rows.len().saturating_sub(1) as f32;
+        let w = rows.iter().map(|r| r.tw + r.keys_w).fold(0.0, f32::max) + 2.0 * pad_x;
+        let h = rows.iter().map(|r| r.ch).sum::<f32>() + gaps + 2.0 * pad_y;
+        let [below, over] = look.gap;
+        let (x, y) = match d.side {
+            // Beside it, centred down it: right of it unless only the left has room, and the
+            // other way round (`placement="right"` / `"left"`).
+            Some(side @ (crate::Side::Left | crate::Side::Right)) => {
+                let (left, right) = (e[0] - over - w, e[2] + over);
+                let (fits_left, fits_right) = (left >= margin, right + w <= vw - margin);
+                let on_left = if side == crate::Side::Left { fits_left || !fits_right } else { fits_left && !fits_right };
+                let x = if on_left { left } else { right };
+                (x, (e[1] + e[3] - h) * 0.5)
+            }
+            side => {
+                let mut y = e[3] + below;
+                if side == Some(crate::Side::Top) && e[1] - over - h >= margin {
+                    y = e[1] - over - h;
+                } else if y + h > vh - margin && e[1] - below - h >= margin {
+                    y = e[1] - below - h;
+                }
+                ((e[0] + e[2] - w) * 0.5, y)
+            }
+        };
+        let x = x.clamp(margin, (vw - w - margin).max(margin));
         let y = y.clamp(margin, (vh - h - margin).max(margin));
         let full = [x * s, y * s, w * s, h * s].map(|v| v.round());
         // Scales about the middle of the edge facing the element (Kobalte's transform origin).
         let (k, alpha) = (d.scale, d.alpha);
-        let pivot = [((e[0] + e[2]) * 0.5 * s).clamp(full[0], full[0] + full[2]), if y >= e[3] { full[1] } else { full[1] + full[3] }];
+        let pivot = if x >= e[2] {
+            [full[0], ((e[1] + e[3]) * 0.5 * s).clamp(full[1], full[1] + full[3])]
+        } else if x + w <= e[0] {
+            [full[0] + full[2], ((e[1] + e[3]) * 0.5 * s).clamp(full[1], full[1] + full[3])]
+        } else {
+            [((e[0] + e[2]) * 0.5 * s).clamp(full[0], full[0] + full[2]), if y >= e[3] { full[1] } else { full[1] + full[3] }]
+        };
         let at_k = |p: [f32; 2]| [pivot[0] + (p[0] - pivot[0]) * k, pivot[1] + (p[1] - pivot[1]) * k];
         let rect_k = |r: [f32; 4]| { let [x, y] = at_k([r[0], r[1]]); [x, y, r[2] * k, r[3] * k] };
         let r = rect_k(full);
@@ -473,28 +512,31 @@ impl<S: 'static> Runtime<S> {
             clip: NO_CLIP,
             fade: crate::render::pack_fade([0.0; 4], NO_CLIP, NO_CLIP),
         });
-        let top = full[1] + pad_y * s;
-        let mut at = full[0] + pad_x * s;
-        if !words.is_empty() {
-            self.draw_tip_text(&layout, at_k([at, top + ((ch - th) * 0.5 * s).round()]), k, look.ink, alpha);
-            at += (tw + key.lead) * s;
-        }
-        for (l, cw) in &caps {
-            let cap = [at, top + ((ch - key.height) * 0.5 * s).round(), cw * s, key.height * s].map(|v| v.round());
-            self.instances.push(Instance {
-                rect: rect_k(cap),
-                radii: [key.radius * s * k; 4],
-                fill: premul(key.fill, alpha, srgb),
-                border: [0.0; 4],
-                params: [0.0, KIND_RECT, 0.0, 1.0],
-                uv: [0.0; 4],
-                clip: NO_CLIP,
-                fade: crate::render::pack_fade([0.0; 4], NO_CLIP, NO_CLIP),
-            });
-            let lw = l.full_width();
-            let origin = [cap[0] + ((cap[2] - lw) * 0.5).round(), cap[1] + ((cap[3] - l.height()) * 0.5).round()];
-            self.draw_tip_text(l, at_k(origin), k, key.ink, alpha);
-            at += (cw + key.gap) * s;
+        let mut top = full[1] + pad_y * s;
+        for row in &rows {
+            let mut at = full[0] + pad_x * s;
+            if row.words {
+                self.draw_tip_text(&row.layout, at_k([at, top + ((row.ch - row.th) * 0.5 * s).round()]), k, look.ink, alpha);
+                at += (row.tw + key.lead) * s;
+            }
+            for (l, cw) in &row.caps {
+                let cap = [at, top + ((row.ch - key.height) * 0.5 * s).round(), cw * s, key.height * s].map(|v| v.round());
+                self.instances.push(Instance {
+                    rect: rect_k(cap),
+                    radii: [key.radius * s * k; 4],
+                    fill: premul(key.fill, alpha, srgb),
+                    border: [0.0; 4],
+                    params: [0.0, KIND_RECT, 0.0, 1.0],
+                    uv: [0.0; 4],
+                    clip: NO_CLIP,
+                    fade: crate::render::pack_fade([0.0; 4], NO_CLIP, NO_CLIP),
+                });
+                let lw = l.full_width();
+                let origin = [cap[0] + ((cap[2] - lw) * 0.5).round(), cap[1] + ((cap[3] - l.height()) * 0.5).round()];
+                self.draw_tip_text(l, at_k(origin), k, key.ink, alpha);
+                at += (cw + key.gap) * s;
+            }
+            top += (row.ch + look.row_gap) * s;
         }
         [x, y, w, h]
     }

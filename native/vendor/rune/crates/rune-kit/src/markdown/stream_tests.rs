@@ -17,7 +17,8 @@ fn shown(blocks: &[Block]) -> String {
                     }
                 }
                 Block::Code(c) | Block::Diff(c) | Block::Mermaid(c) => out.push(c.clone()),
-                Block::Rule | Block::Image { .. } => {}
+                Block::Image { alt, .. } => out.push(alt.clone()),
+                Block::Rule => {}
             }
         }
     }
@@ -55,9 +56,12 @@ fn an_open_span_never_shows_its_markers() {
         "See [the **docs**](https://example.com/a_b \"t\") and ![a chart](x.png), then *[more](y)*.",
         "- [ ] todo\n- [x] done",
     ] {
-        let whole = shown(&parse(doc));
+        // An image becomes its own block when its URL arrives; compare the characters,
+        // not the whitespace around that block.
+        let visible = |s: String| if doc.contains("![") { s.split_whitespace().collect::<String>() } else { s };
+        let whole = visible(shown(&parse(doc)));
         for src in prefixes(doc) {
-            let text = shown(&stream(src));
+            let text = visible(shown(&stream(src)));
             assert!(whole.starts_with(&text), "{src:?} shows {text:?}, not the start of {whole:?}");
         }
     }
@@ -73,7 +77,7 @@ fn an_open_span_draws_as_it_will_end() {
     assert_eq!(styled(&stream("**bold _and em"), Style::Strong), ["bold and em"]);
     let blocks = stream("Run `cargo te");
     assert_eq!(styled(&blocks, Style::Code), ["cargo te"]);
-    assert_eq!(shown(&blocks), format!("Run {PAD}cargo te"), "no padding after a span still arriving");
+    assert_eq!(shown(&blocks), format!("Run {}cargo te", super::super::parser::OPEN), "no padding after a span still arriving");
     let Block::Table(t) = &stream("| a | b |\n|---|---|\n| c | **d")[0] else { panic!() };
     assert_eq!(t.rows[0][1].spans.iter().map(|s| s.2).collect::<Vec<_>>(), [Style::Strong], "in a cell still arriving");
 }

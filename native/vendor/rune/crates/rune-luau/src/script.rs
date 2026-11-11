@@ -471,6 +471,7 @@ impl Inner {
         Rc::new(Env {
             script: self.weak.clone(),
             vm: vm.id,
+            render: crate::ui::next_render(),
             salt: self.salt.get(),
             version: self.version.get(),
             dark,
@@ -480,6 +481,8 @@ impl Inner {
             text: self.options.text,
             weights: self.options.weights,
             garbage: Rc::downgrade(&vm.garbage),
+            templates: vm.templates.clone(),
+            recording: RefCell::new(None),
             prefix: self.prefix.clone(),
             nodes: self.nodes.clone(),
             warned: self.warned.clone(),

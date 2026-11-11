@@ -63,6 +63,63 @@ fn overlay_input_switch_waits_for_owned_drag_release() {
     assert!(!overlay.rt.pointer_captured());
 }
 
+#[cfg(target_os = "macos")]
+fn lost_release_overlay() -> Overlay<Vec<(crate::Phase, bool)>> {
+    type State = Vec<(crate::Phase, bool)>;
+    fn view(_: &State, _: &mut Cx<State>) -> El {
+        crate::el().w_full().h_full().hit().on_drag(|s: &mut State, drag, _| s.push((drag.phase, drag.cancelled())))
+    }
+    let app = AppSpec {
+        title: "lost release", size: (100.0, 100.0), min_size: None, init: Vec::new, view,
+        scenes: &[], fonts: &[], families: ("sans-serif", "monospace"), setup: None, poll: None, on_key: None,
+    };
+    let spec = OverlaySpec::new("lost release", app.size, view).options(OverlayOptions { input: OverlayInput::All, ..Default::default() });
+    let (mut overlay, _) = Overlay::new(spec, Vec::new(), &app);
+    overlay.rt.frame(0.0);
+    overlay
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn overlay_late_up_after_a_lost_release_is_no_drop() {
+    let mut overlay = lost_release_overlay();
+    overlay.left_edge(None, true, Some((10.0, 10.0)));
+    overlay.left_edge(Some((30.0, 10.0)), false, None);
+    overlay.rt.frame(0.0);
+    let ups: Vec<_> = overlay.rt.state.iter().filter(|d| d.0 == crate::Phase::Up).map(|d| d.1).collect();
+    assert_eq!(ups, [true], "the recovery lands before the late Up");
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn overlay_press_that_beats_a_lost_release_ends_the_old_drag_first() {
+    let mut overlay = lost_release_overlay();
+    overlay.left_edge(None, true, Some((10.0, 10.0)));
+    overlay.left_edge(Some((30.0, 10.0)), true, Some((50.0, 10.0)));
+    overlay.left_edge(None, false, Some((50.0, 10.0)));
+    overlay.rt.frame(0.0);
+    let ups: Vec<_> = overlay.rt.state.iter().filter(|d| d.0 == crate::Phase::Up).map(|d| d.1).collect();
+    assert_eq!(ups, [true, false], "the old drag is cancelled, the new one ends normally");
+    assert!(!overlay.rt.state.iter().any(|d| d.0 == crate::Phase::Move), "the old drag never hears the new press's point");
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn overlay_cursor_move_for_the_next_press_cancels_the_old_drag_first() {
+    let mut overlay = lost_release_overlay();
+    let pointer = crate::platform::macos::PointerState::new(OverlayInput::All, false);
+    pointer.record_click(true, 10.0, 10.0);
+    overlay.native_left(&pointer, true);
+    pointer.read(0, Instant::now(), (12.0, 10.0), true, false);
+    pointer.record_click(true, 50.0, 10.0);
+    overlay.before_position(&pointer); // winit reports the click's position just before the click
+    overlay.cursor_moved(50.0, 10.0);
+    overlay.native_left(&pointer, true);
+    overlay.rt.frame(0.0);
+    assert_eq!(overlay.rt.state.iter().filter(|d| d.0 == crate::Phase::Up).map(|d| d.1).collect::<Vec<_>>(), [true]);
+    assert!(!overlay.rt.state.iter().any(|d| d.0 == crate::Phase::Move), "the old drag never hears the new press's point");
+}
+
 #[test]
 fn handle_requests_collapse_and_updates_keep_their_order() {
     let shared = Arc::new(Shared::<u32> { native: Mutex::default(), requests: Mutex::default(), availability: AtomicU8::new(0), failure: Mutex::default(), surface: Mutex::default(), wake: Mutex::new(None), stats: Arc::default() });
@@ -76,7 +133,7 @@ fn handle_requests_collapse_and_updates_keep_their_order() {
     handle.update(|n, _| *n *= 3);
     handle.hide();
     let q = std::mem::take(&mut *shared.requests.lock().unwrap());
-    assert_eq!(q.visible, Some(false), "the latest show/hide wins");
+    assert_eq!(q.visible(), Some(false), "the latest show/hide wins");
     assert_eq!((q.edge, q.margin), (Some(ScreenEdge::Bottom), Some(24.0)));
     assert_eq!((q.align, q.size), (Some((Align::End, 12.0)), Some((300.0, 80.0))));
     let mut n = 0;
@@ -158,7 +215,7 @@ fn a_hidden_overlay_builds_nothing_until_it_shows() {
     assert_eq!(overlay.wake_deadline(), None, "and nothing left to wake it");
 
     // Shown: `show_fading` settles an unretained overlay and asks for a frame.
-    overlay.visible = true;
+    overlay.presence = Presence::Shown { occluded: false };
     overlay.rt.set_live_visible(true);
     overlay.settle_before_reveal();
     overlay.dirty = true;
@@ -181,7 +238,7 @@ fn updates_that_change_nothing_leave_an_overlay_alone() {
         overlay.apply_wake(requests.woken, requests.updates);
     };
     for visible in [false, true] {
-        overlay.visible = visible;
+        overlay.presence = if visible { Presence::Shown { occluded: false } } else { Presence::default() };
         for _ in 0..100 {
             overlay.dirty = false;
             handle.update_if(|_, tx| { tx.wake_after(Duration::from_millis(500)); false });
@@ -196,7 +253,7 @@ fn updates_that_change_nothing_leave_an_overlay_alone() {
     apply(&mut overlay);
     assert!(overlay.dirty, "a change in the batch draws");
     // A hidden overlay answers a pop-up menu at once; its callback's change draws.
-    overlay.visible = false;
+    overlay.presence = Presence::default();
     overlay.dirty = false;
     overlay.rt.frame(1.0);
     handle.update_if(|_, tx| {
@@ -262,7 +319,7 @@ fn overlay_poll_inherits_overrides_and_wakes_visible_state_once() {
     }
     let app = AppSpec { poll: Some(poll), ..AppSpec::new("poll", (30.0, 20.0), State::default, view) };
     let (mut overlay, _) = Overlay::new(OverlaySpec::new("poll", app.size, view), State::default(), &app);
-    overlay.visible = true;
+    overlay.presence = Presence::Shown { occluded: false };
     overlay.rt.wall_start = None;
     assert!(!overlay.rt.frame(0.0));
     assert_eq!(overlay.rt.state.polls, 1);
@@ -314,7 +371,7 @@ fn overlay_occluded_runs_due_timers_without_frames() {
     let app = AppSpec { poll: Some(poll), ..AppSpec::new("occluded", (30.0, 20.0), State::default, view) };
     let (mut overlay, handle) = Overlay::new(OverlaySpec::new("occluded", app.size, view), State::default(), &app);
     overlay.rt.state.handle = Some(handle.clone());
-    overlay.visible = true;
+    overlay.presence = Presence::Shown { occluded: false };
     overlay.rt.wall_start = None;
     // Shown onto sleeping displays: the first frame misses, and still polls.
     overlay.occluded(true);
@@ -329,7 +386,7 @@ fn overlay_occluded_runs_due_timers_without_frames() {
     overlay.dirty = false;
     overlay.wake_due(Instant::now());
     assert_eq!(overlay.rt.state.polls, 2, "the due timer runs without waiting for a drawable");
-    assert_eq!(handle.shared.requests.lock().unwrap().visible, Some(false), "and its hide() goes through");
+    assert_eq!(handle.shared.requests.lock().unwrap().visible(), Some(false), "and its hide() goes through");
     assert_eq!(overlay.wake_deadline(), None);
 
     // Each missed frame waits, longer while it stays occluded; a timeout waits for the
@@ -372,7 +429,7 @@ fn overlay_misses_back_off_until_their_retry() {
     }
     let app = AppSpec { poll: Some(poll), ..AppSpec::new("backoff", (30.0, 20.0), State::default, view) };
     let (mut overlay, _handle) = Overlay::new(OverlaySpec::new("backoff", app.size, view), State::default(), &app);
-    overlay.visible = true;
+    overlay.presence = Presence::Shown { occluded: false };
     overlay.rt.wall_start = None;
 
     let now = Instant::now();
@@ -394,11 +451,10 @@ fn overlay_misses_back_off_until_their_retry() {
     assert!(overlay.wake_deadline().is_some_and(|at| at > due), "and doesn't leave the loop spinning on it");
 
     // Fading out, an occluded miss can't mark it occluded, yet it still waits.
-    overlay.visible = false;
-    overlay.fading_out = Some(Instant::now() + Duration::from_secs(1));
+    overlay.presence = Presence::FadingOut { until: Instant::now() + Duration::from_secs(1), length: Duration::from_secs(1), occluded: false };
     overlay.retry = None;
     overlay.missed(Missed::Occluded, false, false);
-    assert!(overlay.drawing() && overlay.backing_off(Instant::now()));
+    assert!(overlay.presence.drawing() && overlay.backing_off(Instant::now()));
     overlay.retry = Some(Instant::now());
     assert!(!overlay.backing_off(Instant::now() + Duration::from_millis(1)), "a due retry draws");
 }
@@ -432,7 +488,7 @@ fn a_live_edit_patch_wakes_a_hidden_overlay_and_its_next_frame_rebuilds_the_view
     assert!(requests.woken);
     overlay.apply_wake(requests.woken, requests.updates);
     assert!(overlay.dirty && overlay.rt.needs_commit(), "hidden, the patch waits for the frame that shows it");
-    overlay.visible = true;
+    overlay.presence = Presence::Shown { occluded: false };
     overlay.advance();
     assert_eq!(BUILDS.get(), built + 1, "that frame rebuilds the memo with the patched code");
 }
@@ -478,7 +534,7 @@ fn overlay_setup_runs_once_with_a_waker_that_redraws_the_overlay() {
     assert!(!overlay.rt.state.saw_icon.get(), "a hidden overlay's view doesn't run");
     assert!(overlay.dirty && overlay.rt.needs_commit());
     let polls = overlay.rt.state.polls;
-    overlay.visible = true;
+    overlay.presence = Presence::Shown { occluded: false };
     overlay.advance(); // the frame that shows it
     assert!(overlay.rt.state.saw_icon.get(), "shown, the view saw the decoded image");
 
@@ -542,7 +598,7 @@ fn overlay_compositor_observes_prewarm_and_each_rendered_frame() {
     overlay.rt.frame(0.0);
     overlay.warm_offscreen((32, 16));
     assert_eq!(*trace.borrow(), [8.0], "offscreen prewarm must use the compositor too");
-    assert!(!overlay.visible);
+    assert!(!overlay.presence.shown());
 
     let target = Offscreen::new(&gpu.device, 32, 16);
     for (width, more) in [(12.0, true), (20.0, false)] {
@@ -596,7 +652,7 @@ fn a_release_past_the_threshold_does_not_start_a_drag_out() {
 #[test]
 fn a_hidden_overlay_still_runs_on_drag_end() {
     let mut overlay = drag_overlay("hidden drag end");
-    assert!(!overlay.visible);
+    assert!(!overlay.presence.shown());
     overlay.rt.drag_end_sink().borrow_mut().push(("#0/tile".into(), crate::DragOutcome::Copied));
     overlay.drag_ends_due();
     assert_eq!(overlay.rt.state.ended, [crate::DragOutcome::Copied]);
@@ -619,7 +675,7 @@ fn an_animated_reveal_lets_the_first_card_enter() {
         let start = Instant::now();
         present(&mut overlay, start);
         overlay.rt.update(|card, _| *card = true);
-        overlay.visible = true;
+        overlay.presence = Presence::Shown { occluded: false };
         overlay.settle_before_reveal();
         present(&mut overlay, start + Duration::from_secs(5));
         let y = overlay.rt.presented("card").unwrap().0[1];
@@ -684,14 +740,15 @@ fn a_runtime_at_rest_builds_nothing_while_its_compositor_animates() {
 #[test]
 fn an_overlay_reads_its_occlusion_once_a_turn() {
     let mut overlay = width_overlay("occlusion once");
+    overlay.presence = Presence::Shown { occluded: false };
     overlay.sync_occlusion();
-    assert!(overlay.occlusion_read && !overlay.occluded);
-    overlay.occluded = true;
+    assert!(overlay.occlusion_read && !overlay.presence.occluded());
+    overlay.presence = Presence::Shown { occluded: true };
     overlay.sync_occlusion();
-    assert!(overlay.occluded, "the turn's reading isn't taken again");
+    assert!(overlay.presence.occluded(), "the turn's reading isn't taken again");
     overlay.occlusion_read = false;
     overlay.sync_occlusion();
-    assert!(!overlay.occluded, "the next turn reads it again");
+    assert!(!overlay.presence.occluded(), "the next turn reads it again");
 }
 
 /// A hidden overlay with `release_gpu_after` gives its GPU surface back that long after the hide
@@ -703,22 +760,22 @@ fn release_gpu_after_counts_from_the_hide() {
     let app = AppSpec::new("release after", (20.0, 20.0), || (), view);
     let spec = OverlaySpec::new("release after", app.size, view).options(Default::default()).release_gpu_after(Duration::from_secs(5));
     let (mut overlay, _) = Overlay::new(spec, (), &app);
-    overlay.visible = true;
+    overlay.presence = Presence::Shown { occluded: false };
     let before = Instant::now();
     overlay.hide();
     if cfg!(target_os = "macos") {
-        assert_eq!(overlay.release_at, None);
+        assert_eq!(overlay.presence.release_at(), None);
         return;
     }
-    let at = overlay.release_at.expect("the release waits for its time");
+    let at = overlay.presence.release_at().expect("the release waits for its time");
     assert!(at >= before + Duration::from_secs(5));
     assert_eq!(overlay.wake_deadline(), Some(at), "the loop wakes for it");
     overlay.hide();
-    assert_eq!(overlay.release_at, Some(at), "hiding a hidden overlay keeps the time");
-    overlay.release_due(at - Duration::from_millis(1));
-    assert_eq!(overlay.release_at, Some(at), "not before its time");
-    overlay.release_due(at);
-    assert_eq!(overlay.release_at, None);
+    assert_eq!(overlay.presence.release_at(), Some(at), "hiding a hidden overlay keeps the time");
+    overlay.presence_due(at - Duration::from_millis(1));
+    assert_eq!(overlay.presence.release_at(), Some(at), "not before its time");
+    overlay.presence_due(at);
+    assert_eq!(overlay.presence.release_at(), None);
 }
 
 #[test]
@@ -743,25 +800,24 @@ fn a_fade_out_releases_the_gpu_after_the_fade() {
     let spec = OverlaySpec::new("fade release", app.size, view).options(Default::default()).release_gpu_after(Duration::from_secs(5));
     let (mut overlay, _) = Overlay::new(spec, (), &app);
     if cfg!(target_os = "macos") { return; } // A prewarmed macOS panel keeps its pixels instead.
-    overlay.fading_out = Some(Instant::now() + Duration::from_millis(200));
-    overlay.hidden_release(Instant::now());
-    assert_eq!(overlay.release_at, None, "a fading overlay keeps its surface");
-    overlay.fading_out = None;
-    overlay.visible = true;
+    overlay.presence = Presence::FadingOut { until: Instant::now() + Duration::from_millis(200), length: Duration::from_millis(200), occluded: false };
+    overlay.presence_due(Instant::now());
+    assert_eq!(overlay.presence.release_at(), None, "a fading overlay keeps its surface");
+    overlay.presence = Presence::Shown { occluded: false };
     let before = Instant::now();
     overlay.hide_fading(Duration::from_millis(200));
     if !cfg!(target_os = "windows") {
-        assert!(overlay.fading_out.is_none() && overlay.release_at.is_some(), "no fade here: released at the hide");
+        assert!(!overlay.presence.fading() && overlay.presence.release_at().is_some(), "no fade here: released at the hide");
         return;
     }
-    let end = overlay.fading_out.expect("fading");
-    assert!(overlay.drawing(), "frames keep drawing through the fade");
-    assert_eq!(overlay.release_at, None, "nothing is released mid-fade");
-    overlay.end_fade_out(end - Duration::from_millis(1));
-    assert_eq!(overlay.release_at, None, "not before the fade ends");
-    overlay.end_fade_out(end);
-    assert!(!overlay.drawing());
-    let at = overlay.release_at.expect("released once the fade ends");
+    let end = overlay.presence.fade_end().expect("fading");
+    assert!(overlay.presence.drawing(), "frames keep drawing through the fade");
+    assert_eq!(overlay.presence.release_at(), None, "nothing is released mid-fade");
+    overlay.presence_due(end - Duration::from_millis(1));
+    assert_eq!(overlay.presence.release_at(), None, "not before the fade ends");
+    overlay.presence_due(end);
+    assert!(!overlay.presence.drawing());
+    let at = overlay.presence.release_at().expect("released once the fade ends");
     assert!(at >= before + Duration::from_secs(5), "counted from the hide that ended the fade");
 }
 

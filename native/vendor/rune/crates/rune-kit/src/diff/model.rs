@@ -5,6 +5,7 @@ use std::ops::Range;
 use std::rc::Rc;
 
 use super::myers::{self, Op};
+use super::pairs;
 
 /// The two sides of a diff: the text before the change and after it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -36,15 +37,21 @@ pub struct Line {
     /// The line without its line break.
     pub text: String,
     /// Byte ranges of `text` that differ from the line it replaced or was replaced by (word
-    /// changes), when it pairs with one and they share enough to say.
+    /// changes), when it pairs with one: as OpenCode Desktop marks them, one range from the first
+    /// changed word to the last.
     pub changes: Vec<Range<usize>>,
+    /// The index in its hunk's `lines` of the line this changed line pairs with: the added line
+    /// a removed one sits beside in split view, or the removed line an added one does. Its word
+    /// changes are against that line. Lines pair as OpenCode Desktop's do: in order within a
+    /// run of changes, unless a run with more lines on one side matches better shifted.
+    pub pair: Option<usize>,
     /// The file ends here without a line break (`\ No newline at end of file`).
     pub no_newline: bool,
 }
 
 impl Line {
     fn new(kind: LineKind, old: Option<u32>, new: Option<u32>, text: &str) -> Line {
-        Line { kind, old, new, text: text.to_owned(), changes: Vec::new(), no_newline: false }
+        Line { kind, old, new, text: text.to_owned(), changes: Vec::new(), pair: None, no_newline: false }
     }
 
     /// Its number on `side`.
@@ -225,7 +232,7 @@ impl FileDiff {
         f.hunks = hunks(&a, &b, context);
         f.old_text = Some(a);
         f.new_text = Some(b);
-        f.pair_words();
+        pairs::pair_lines(&mut f.hunks);
         f
     }
 
@@ -244,14 +251,10 @@ impl FileDiff {
         self.hunks.iter().flat_map(|h| &h.lines).filter(|l| l.kind == LineKind::Removed).count()
     }
 
-    /// The highlighter language for the path's extension (or name, for a `Makefile`), as
-    /// written: `"rs"`, `"tsx"`.
+    /// The highlighter language for the path, as Desktop names it from the file name
+    /// ([`lang_for_path`](crate::syntax::lang_for_path)): `"rust"`, `"tsx"`, `"makefile"`.
     pub fn language(&self) -> Option<&str> {
-        let name = self.path().rsplit('/').next()?;
-        match name.rsplit_once('.') {
-            Some((stem, ext)) if !stem.is_empty() => Some(ext),
-            _ => Some(name).filter(|n| matches!(*n, "Makefile" | "Dockerfile")),
-        }
+        crate::syntax::lang_for_path(self.path())
     }
 
     /// Whether the unchanged lines between hunks can be shown.
@@ -291,7 +294,7 @@ impl FileDiff {
     /// A diff whose one hunk holds the whole file, as a patch made with full context does,
     /// folded as a diff of the two texts is: the hunk splits around its changes with `context`
     /// unchanged lines each side, and the texts it holds stay with the diff, so every folded
-    /// range can be expanded. The patch's own line pairing stays. A diff of any other shape
+    /// range can be expanded. The lines pair as they did in the patch. A diff of any other shape
     /// (more than one hunk, or one that starts past the first line) comes back as it was.
     pub fn fold(mut self, context: u32) -> FileDiff {
         let [h] = self.hunks.as_slice() else { return self };
@@ -335,6 +338,9 @@ impl FileDiff {
                 }
             })
             .collect();
+        // A run of changes never splits across hunks, so pairing again pairs the same lines;
+        // it only renumbers each line's partner within its new hunk.
+        pairs::pair_lines(&mut self.hunks);
         self.old_text = Some(old);
         self.new_text = Some(new);
         self
@@ -371,34 +377,6 @@ impl FileDiff {
         hunks.max(texts)
     }
 
-    /// Word changes for each removed line followed by an added one, pairing them in order.
-    fn pair_words(&mut self) {
-        for h in &mut self.hunks {
-            let mut i = 0;
-            while i < h.lines.len() {
-                let del = i;
-                while i < h.lines.len() && h.lines[i].kind == LineKind::Removed {
-                    i += 1;
-                }
-                let add = i;
-                while i < h.lines.len() && h.lines[i].kind == LineKind::Added {
-                    i += 1;
-                }
-                if add == del || i == add {
-                    i = i.max(del + 1);
-                    continue;
-                }
-                let pairs = (add - del).min(i - add);
-                if pairs <= 128 {
-                    for k in 0..pairs {
-                        let (a, b) = myers::words(&h.lines[del + k].text, &h.lines[add + k].text);
-                        h.lines[del + k].changes = a;
-                        h.lines[add + k].changes = b;
-                    }
-                }
-            }
-        }
-    }
 }
 
 /// Columns `line` takes with tabs stopping every four.
@@ -585,7 +563,7 @@ pub fn parse(patch: &str) -> Vec<FileDiff> {
                 _ => FileStatus::Modified,
             };
         }
-        f.pair_words();
+        pairs::pair_lines(&mut f.hunks);
     }
     files
 }
@@ -901,9 +879,9 @@ mod tests {
     #[test]
     fn languages_come_from_the_extension() {
         let f = |p: &str| FileDiff::from_texts(p, "", "x").language().map(str::to_owned);
-        assert_eq!(f("src/lib.rs").as_deref(), Some("rs"));
+        assert_eq!(f("src/lib.rs").as_deref(), Some("rust"));
         assert_eq!(f("web/App.tsx").as_deref(), Some("tsx"));
         assert_eq!(f(".gitignore"), None);
-        assert_eq!(f("Makefile").as_deref(), Some("Makefile"));
+        assert_eq!(f("Makefile").as_deref(), Some("makefile"));
     }
 }
