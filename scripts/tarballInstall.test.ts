@@ -4,6 +4,7 @@ import { basename, dirname, join } from "node:path";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, renameSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { distStalenessForPackageDir } from "./distStaleness";
+import { npmNameOfFolder } from "./packageNames";
 import {
   computeExposedSubpaths,
   isForbiddenSubpath,
@@ -104,6 +105,7 @@ function installTarballs(packages: readonly (typeof publishedPackages)[number][]
   const work = mkdtempSync(join(tmpdir(), "jgengine-tarballs-"));
   const scope = join(work, "consumer", "node_modules", "@jgengine");
   mkdirSync(scope, { recursive: true });
+  const modules = join(work, "consumer", "node_modules");
   for (const pkg of packages) {
     // Reuse the tarball packed once in beforeAll instead of re-packing per case.
     const { tgz } = packOnce(pkg);
@@ -116,7 +118,10 @@ function installTarballs(packages: readonly (typeof publishedPackages)[number][]
     // bare basename plus a relative `-C` dir extracts identically on GNU tar,
     // bsdtar, and Linux.
     execFileSync("tar", ["-xzf", basename(tgz), "-C", extractName], { cwd: packCacheDir, timeout: 60_000 });
-    renameSync(join(extractDir, "package"), join(scope, pkg));
+    // Each package lands under its npm name, which can differ from its folder (packages/ui is @jgengine/react).
+    const name = npmNameOfFolder(pkg);
+    const destination = name.startsWith("@jgengine/") ? join(modules, ...name.split("/")) : join(scope, pkg);
+    renameSync(join(extractDir, "package"), destination);
   }
   return { consumer: join(work, "consumer"), scope };
 }

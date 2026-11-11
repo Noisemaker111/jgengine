@@ -1,8 +1,9 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { extractArgs, tarExecutable } from "./tar";
+import { npmNameOfFolder } from "./packageNames";
 
 const packagesRoot = resolve(import.meta.dir, "../packages");
 const packed = new Map<string, Promise<string>>();
@@ -48,8 +49,7 @@ export function packPublicPackage(pkg: string): Promise<string> {
 export async function installPublicPackages(root: string, packages: readonly string[]): Promise<void> {
   await Promise.all(packages.map(async pkg => {
     const tarball = await packPublicPackage(pkg);
-    const name = (JSON.parse(readFileSync(join(import.meta.dir, "..", "packages", pkg, "package.json"), "utf8")) as { name: string }).name;
-    const destination = join(root, "node_modules", ...name.split("/"));
+    const destination = join(root, "node_modules", ...npmNameOfFolder(pkg).split("/"));
     mkdirSync(destination, { recursive: true });
     await run([tarExecutable(), ...extractArgs(tarball, destination, ["--strip-components=1"])], root);
   }));
