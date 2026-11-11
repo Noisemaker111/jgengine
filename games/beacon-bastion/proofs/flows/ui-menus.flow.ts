@@ -45,6 +45,12 @@ export default defineFlow(game, {
     await f.click("New Defense");
     await f.see(/commission/i);
     await settle();
+    // The commander signs by keyboard: real key presses into the native field, sealed with Enter.
+    await f.click("Commander name");
+    await f.see(/type your name/i, { note: "the name field opens for typing" });
+    for (const key of ["KeyA", "KeyD", "KeyA", "Space", "KeyR", "KeyO", "KeyO", "KeyK"] as const) await f.press(key);
+    await f.press("Enter");
+    await f.see(/ada rook/i, { timeoutMs: 20000, note: "the typed name is sealed into the commission" });
     await f.click("Next name");
     await f.click("Squire");
     await f.see(/mara vell/i);

@@ -26,6 +26,7 @@ export function GameUI() {
   const ctx = useGameContext(), phase = useOptionalGamePhase();
   const notices = useMemo(() => ({ read: ctx.game.notices.list, subscribe: ctx.game.notices.subscribe }), [ctx]);
   useEffect(() => {
+    if (typeof window === "undefined") return;
     const key = (event: KeyboardEvent) => {
       if (event.code !== "Escape" || event.repeat || gamePhase(ctx) !== "playing") return;
       event.preventDefault(); event.stopImmediatePropagation();

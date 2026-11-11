@@ -17,6 +17,15 @@ export type NativeFixture = (typeof NATIVE_STATES)[number];
 
 /** The real GameUI over a real headless defense, with deterministic viewport and settings inputs. */
 export async function runeUiFixture(state: NativeFixture, width = 1280, height = 720) {
+  const ui = mountRuneUi(state, width, height, false);
+  try { return ui.spec(); } finally { ui.dispose(); }
+}
+
+/**
+ * The same GameUI kept mounted (a live root by default, so presses re-render), for a test that presses its nodes and reads the next spec. Call `dispose`
+ * to unmount and restore the real `localStorage`.
+ */
+export function mountRuneUi(state: NativeFixture, width = 1280, height = 720, live = true) {
   const originalStorage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
   const memory = new Map<string, string>();
   Object.defineProperty(globalThis, "localStorage", { configurable: true, value: {
@@ -24,15 +33,18 @@ export async function runeUiFixture(state: NativeFixture, width = 1280, height =
     removeItem: (key: string) => { memory.delete(key); },
     setItem: (key: string, value: string) => { memory.set(key, value); },
   } });
-  try { return renderFixture(state, width, height); }
-  finally {
+  const restore = () => {
     focusMenu(null);
     if (originalStorage === undefined) Reflect.deleteProperty(globalThis, "localStorage");
     else Object.defineProperty(globalThis, "localStorage", originalStorage);
-  }
+  };
+  try {
+    const ui = renderFixture(state, width, height, live);
+    return { ...ui, dispose: () => { ui.unmount(); restore(); } };
+  } catch (error) { restore(); throw error; }
 }
 
-function renderFixture(state: NativeFixture, width: number, height: number) {
+function renderFixture(state: NativeFixture, width: number, height: number, live: boolean) {
   const runner = beaconRunner("Beacon native UI proof"), ctx = runner.ctx;
   const run = (name: string, input: unknown = {}) => ctx.game.commands.run(name, input);
   setGamePhase(ctx, "playing");
@@ -55,15 +67,13 @@ function renderFixture(state: NativeFixture, width: number, height: number) {
     ] }], actions: [], variant: "panel", surface: false, isOpen: false, open: () => {}, close: () => {}, setOpen: () => {},
   };
   const container = new RuneNode("container");
-  const tree = new Root(nativeTreeHost(() => {}), container, "fixture", false);
+  const tree = new Root(nativeTreeHost(() => {}), container, "fixture", live);
   tree.render(<GameProvider context={ctx}><SettingsControllerProvider controller={settings}><RuneViewport width={width} height={height}><GameUI /></RuneViewport></SettingsControllerProvider></GameProvider>);
   const surface = container.children[0];
   if (surface?.tag !== "rune-surface") throw new Error("Beacon Bastion did not mount a direct native surface");
   const unused = () => { throw new Error("headless sampling must not bind slots"); };
   const sink: RuneTreeSink = { setSpec: unused, bindNumber: unused, writeNumber: unused, bindText: unused };
-  const spec = nativeSpec(surface, sink, true);
-  tree.unmount();
-  return spec;
+  return { ctx, surface, spec: () => nativeSpec(surface, sink, true), unmount: () => tree.unmount() };
 }
 
 if (import.meta.main) {
