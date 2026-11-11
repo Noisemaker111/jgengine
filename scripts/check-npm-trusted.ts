@@ -33,7 +33,7 @@ export function trustedPublishProblem(name: string, status: number, body: unknow
   if (status === 404) return `${name} is not on npm; trusted publishing cannot create a package, so publish it under a name npm already has`;
   if (status !== 200) return `${name}: the registry answered ${status}, so its publishing cannot be checked`;
   const packument = body as Packument;
-  const latest = packument["dist-tags"]?.latest;
+  const latest = packument["dist-tags"]?.["latest"];
   if (latest === undefined) return `${name} has no latest version on npm`;
   const publisher = packument.versions?.[latest]?._npmUser?.trustedPublisher?.id;
   if (publisher !== "github") return `${name}@${latest} was not published by trusted publishing from GitHub Actions; set up its trusted publisher on npmjs.com first`;

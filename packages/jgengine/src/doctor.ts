@@ -139,7 +139,7 @@ export function diagnoseProject(dir: string): Finding[] {
   if (existsSync(cssPath)) {
     const css = readFileSync(cssPath, "utf8");
     const usesTailwind = css.includes("tailwindcss");
-    const coversReact = /@source\s+"[^"]*(@jgengine\/ui|packages\/react)/.test(css);
+    const coversReact = /@source\s+"[^"]*(@jgengine\/react|packages\/ui)/.test(css);
     const coversShell = /@source\s+"[^"]*(@jgengine\/shell|packages\/shell)/.test(css);
     findings.push({
       ok: !usesTailwind || (coversReact && coversShell),
