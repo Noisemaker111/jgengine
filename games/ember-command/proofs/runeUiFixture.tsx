@@ -53,7 +53,9 @@ export async function mountEmberUi(state: NativeFixture, width = 1280, height = 
     key: () => null, length: 0,
   } });
   // A live tree runs effects: the window listeners they add go to an inert stand-in, as no page is here.
-  const hadWindow = "window" in globalThis;
+  // Another test file in the same worker may have left a partial stand-in, so check for the listener API itself.
+  const originalWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
+  const hadWindow = typeof (globalThis as { window?: { addEventListener?: unknown } }).window?.addEventListener === "function";
   if (!hadWindow) Object.defineProperty(globalThis, "window", { configurable: true, value: { addEventListener() {}, removeEventListener() {}, dispatchEvent: () => true } });
   resetSession();
   hudStore.reset();
@@ -110,7 +112,10 @@ export async function mountEmberUi(state: NativeFixture, width = 1280, height = 
     settle,
     unmount() {
       tree.unmount();
-      if (!hadWindow) Reflect.deleteProperty(globalThis, "window");
+      if (!hadWindow) {
+        if (originalWindow === undefined) Reflect.deleteProperty(globalThis, "window");
+        else Object.defineProperty(globalThis, "window", originalWindow);
+      }
       menuFocus.id = null;
       hudStore.reset();
       if (originalStorage === undefined) Reflect.deleteProperty(globalThis, "localStorage");

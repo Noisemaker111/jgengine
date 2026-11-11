@@ -30,11 +30,16 @@ export async function runeUiFixture(state: NativeFixture, width = 1280, height =
     get length() { return memory.size; },
   } });
   // Dev staging reads the page's `?stage=`; headless there is no page, so it reads an empty query.
-  const hadWindow = "window" in globalThis;
+  // Another test file in the same worker may have left a partial stand-in, so check for what is read.
+  const originalWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
+  const hadWindow = typeof (globalThis as { window?: { location?: { search?: unknown } } }).window?.location?.search === "string";
   if (!hadWindow) Object.defineProperty(globalThis, "window", { configurable: true, value: { location: { search: "" } } });
   try { return await renderFixture(state, width, height); }
   finally {
-    if (!hadWindow) Reflect.deleteProperty(globalThis, "window");
+    if (!hadWindow) {
+      if (originalWindow === undefined) Reflect.deleteProperty(globalThis, "window");
+      else Object.defineProperty(globalThis, "window", originalWindow);
+    }
     if (originalStorage === undefined) Reflect.deleteProperty(globalThis, "localStorage");
     else Object.defineProperty(globalThis, "localStorage", originalStorage);
   }
