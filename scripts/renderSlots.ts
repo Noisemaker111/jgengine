@@ -18,7 +18,7 @@
  */
 import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { existsSync, linkSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, linkSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { availableParallelism, tmpdir, totalmem } from "node:os";
 import { join } from "node:path";
 
@@ -138,7 +138,7 @@ function reclaim(path: string, stale: SlotRecord | null, pid: number): void {
     return;
   }
   const moved = readSlot(tomb);
-  if (moved !== null && stale !== null && moved.token !== stale.token) {
+  if (moved !== null && (stale === null || moved.token !== stale.token)) {
     try {
       linkSync(tomb, path);
     } catch {
@@ -148,13 +148,35 @@ function reclaim(path: string, stale: SlotRecord | null, pid: number): void {
   rmSync(tomb, { force: true });
 }
 
+/**
+ * Create the slot with its record already in it: written to a file of its own, then linked into
+ * place, which fails when the slot exists. Created empty and written after, another run could read
+ * the empty file in between, call it stale and take the same slot (four browsers on two slots under
+ * a loaded gate).
+ */
 function tryTake(path: string, record: SlotRecord): boolean {
+  const temporary = `${path}.${record.token}.new`;
+  writeFileSync(temporary, JSON.stringify(record));
   try {
-    writeFileSync(path, JSON.stringify(record), { flag: "wx" });
+    linkSync(temporary, path);
     return true;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "EEXIST") return false;
     throw error;
+  } finally {
+    rmSync(temporary, { force: true });
+  }
+}
+
+/** A slot file nobody can read is a run mid-write, or wreckage once it is this old. */
+const UNREADABLE_STALE_MS = 10_000;
+
+function stale(path: string, record: SlotRecord | null, alive: (pid: number) => boolean, now: number): boolean {
+  if (record !== null) return !holderAlive(record, alive);
+  try {
+    return now - statSync(path).mtimeMs > UNREADABLE_STALE_MS;
+  } catch {
+    return false;
   }
 }
 
@@ -199,12 +221,14 @@ export function takeRenderSlot(options: RenderSlotOptions): RenderSlot {
     let held = 0;
     for (let index = 0; index < count; index += 1) {
       const path = join(dir, `slot-${index}.json`);
-      const current = existsSync(path) ? readSlot(path) : null;
-      if (existsSync(path) && holderAlive(current, alive)) {
-        held += 1;
-        continue;
+      if (existsSync(path)) {
+        const current = readSlot(path);
+        if (!stale(path, current, alive, now())) {
+          held += 1;
+          continue;
+        }
+        reclaim(path, current, pid);
       }
-      if (existsSync(path)) reclaim(path, current, pid);
       // A second browser at once only when the machine has room for it, where something can tell.
       if (held > 0 && room() === false) break;
       const record: SlotRecord = { token: randomUUID(), label: options.label, pid, takenAt: new Date(now()).toISOString() };
@@ -220,9 +244,11 @@ export function takeRenderSlot(options: RenderSlotOptions): RenderSlot {
     if (held >= count && mine > 0) {
       for (let index = count; index < count + mine + 1; index += 1) {
         const path = join(dir, `slot-${index}.json`);
-        const current = existsSync(path) ? readSlot(path) : null;
-        if (existsSync(path) && holderAlive(current, alive)) continue;
-        if (existsSync(path)) reclaim(path, current, pid);
+        if (existsSync(path)) {
+          const current = readSlot(path);
+          if (!stale(path, current, alive, now())) continue;
+          reclaim(path, current, pid);
+        }
         const record: SlotRecord = { token: randomUUID(), label: options.label, pid, takenAt: new Date(now()).toISOString() };
         if (tryTake(path, record)) return slotHandle(index, path, record);
       }

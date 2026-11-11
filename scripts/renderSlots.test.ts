@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { spawn } from "node:child_process";
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { launchChrome } from "./browser-lib";
@@ -39,7 +39,7 @@ describe("render slots", () => {
     expect(renderSlotCount({ JG_RENDER_SLOTS: "3" }, 8, 16 * 2 ** 30)).toBe(3);
   });
 
-  test("six runs started at once never render more than the machine's slots", async () => {
+  test("twelve runs started at once never render more than the machine's slots", async () => {
     const env = slotEnv(2);
     const log = join(env["JG_RENDER_DIR"]!, "events.log");
     // Each child takes a slot the way a launch does, logs while it holds it, then lets it go.
@@ -48,15 +48,15 @@ describe("render slots", () => {
       import { takeRenderSlot } from ${JSON.stringify(join(import.meta.dir, "renderSlots.ts"))};
       const slot = takeRenderSlot({ label: "child " + process.pid, log: () => {} });
       appendFileSync(${JSON.stringify(log)}, "+\\n");
-      await Bun.sleep(700);
+      await Bun.sleep(300);
       appendFileSync(${JSON.stringify(log)}, "-\\n");
       slot.release();
     `;
     const script = join(env["JG_RENDER_DIR"]!, "child.ts");
     writeFileSync(script, child);
-    const runs = Array.from({ length: 6 }, () => spawn(process.execPath, [script], { env: { ...process.env, ...env }, stdio: "ignore" }));
+    const runs = Array.from({ length: 12 }, () => spawn(process.execPath, [script], { env: { ...process.env, ...env }, stdio: "ignore" }));
     const codes = await Promise.all(runs.map((run) => new Promise<number | null>((resolve) => run.once("exit", resolve))));
-    expect(codes).toEqual([0, 0, 0, 0, 0, 0]);
+    expect(codes.every((code) => code === 0)).toBe(true);
     let open = 0;
     let most = 0;
     for (const event of readFileSync(log, "utf8").split("\n").filter(Boolean)) {
@@ -79,6 +79,16 @@ describe("render slots", () => {
     expect(lines[0]).toContain("waiting for one of 1 (held by next");
     taken.release();
     expect(takeRenderSlot({ label: "after", env, alive, pid: 999_999, log: () => {} }).index).toBe(0);
+  });
+
+  test("a slot another run is creating right now (empty, just made) is held, never taken; an old unreadable one is wreckage", () => {
+    const env = slotEnv(1, { JG_RENDER_WAIT_MINUTES: "0.001" });
+    const slot = join(env["JG_RENDER_DIR"]!, "slot-0.json");
+    writeFileSync(slot, "");
+    expect(() => takeRenderSlot({ label: "late", env, log: () => {} })).toThrow(/all 1 held/);
+    const old = new Date(Date.now() - 60_000);
+    utimesSync(slot, old, old);
+    expect(takeRenderSlot({ label: "late", env, log: () => {} }).index).toBe(0);
   });
 
   test("a slot outlives its launcher while the browser it names still runs", () => {
