@@ -11,6 +11,8 @@
   ],
   "owns": [
     "index.html",
+    "src/index.css",
+    "src/main.tsx",
     "vite.config.ts"
   ],
   "capabilities": {
