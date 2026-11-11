@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import {
   createTriggeredRuleEngine,
   type RuleFiring,
@@ -263,6 +263,8 @@ describe("serialization", () => {
 });
 
 describe("rule effect registry seam", () => {
+  // Game modules register effects on import; another file in the same worker may have run first.
+  beforeEach(() => clearRuleEffects());
   afterEach(() => clearRuleEffects());
 
   test("declared effects are retrievable and listable", () => {
