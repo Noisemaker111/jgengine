@@ -39,7 +39,7 @@ A sun-blasted desert planet drawn like a comic: ink outlines, hard cel shadows, 
 
 ## UI typography
 - Display: Russo One (Google Fonts, OFL). Body: Chakra Petch (Google Fonts, OFL). Both already ship; Arial Black and Segoe UI leave the fallbacks.
-- HUD kit: `broadcast` (a jammed broadcast, matching the title), accent `#ff5a2e` signal red-orange.
+- HUD: native Rune primitives with one game theme (`src/game/ui/kit.tsx`): carbon plates on welded rims, phosphor tubes, pip gauges and stamped labels; hazard amber `#ffb400` over phosphor `#9ff5d6`. No CSS.
 
 ## Chosen look
 - `look: "comic"` with `mood: { preset: "day", sun: { elevation: 62, color: "#ffe0b0" }, skyColor: "#0f4c86", horizonColor: "#dcc39c", fog: { near: 300, far: 2400 } }`.
@@ -53,5 +53,5 @@ A sun-blasted desert planet drawn like a comic: ink outlines, hard cel shadows, 
 4. Rebuild the relay and the viewmodel gun as models.
 5. Dress the ground: Ground031 cracked desert, desert-pack rocks, cacti and ruins; no flat sand.
 6. Set the noon mood, the HDRI and the sun-bleached comic LUT.
-7. Set the broadcast kit with the red-orange accent as `uiKit`.
+7. Draw the rig on Rune with the game's own theme (done: `uiRenderer: "rune"`).
 8. Ambient life: dust devils, scavenger birds, sparking wrecks, loot beams on the horizon.

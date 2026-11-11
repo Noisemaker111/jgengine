@@ -5,7 +5,6 @@ import type { PositionedPrompt } from "@jgengine/core/interaction/proximityPromp
 import type { RarityStyle } from "@jgengine/core/loot/groundItem";
 import { defineGame } from "@jgengine/shell/defineGame";
 import { findEditorMarker } from "@jgengine/core/editor/document";
-import { scrapKit } from "./art/look";
 import { buildScrapSignalEditorLayers } from "./editorLayers";
 import { MAST_BOARD } from "./game/mast";
 
@@ -27,7 +26,6 @@ import { session } from "./game/session";
 import { RELAY } from "./game/relay";
 import { FRONT_SITE } from "./game/encounters/front";
 import { GameUI } from "./game/ui/GameUI";
-import { scrapTheme } from "./game/ui/theme";
 import { entityModels, objectModels } from "./game/world/models";
 import { FerralonWorldOverlay } from "./game/world/Viewmodel";
 import { NPCS } from "./game/quests/catalog";
@@ -319,8 +317,8 @@ export const game = defineGame({
   loop,
   systems: [crashSite],
   GameUI,
-  hudTheme: scrapTheme,
-  uiKit: scrapKit,
+  hudTheme: false,
+  uiRenderer: "rune",
   rendering: {
     // Ink outlines and cel bands over hard desert noon: short graphic shadows under a deep blue sky.
     look: "comic",
