@@ -26,6 +26,21 @@ At publish, rename this heading to the new version and mirror the entries into
 `packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
 -->
 
+## 0.56.1
+
+### Migrate
+
+- **Bump lockstep SDK packages to `^0.56.1`:** `@jgengine/{core,rapier,ui,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.53.1`; `@jgengine/github` is `0.43.1`.
+
+### Added
+
+- scripts/check-npm-trusted.ts refuses a release unless every package it publishes exists on npm and its latest version came through trusted publishing; bun run release runs it before cutting and the Publish workflow before its first npm publish, so a half-published release cannot happen.
+
+### Fixed
+
+- the grass eviction test walks a 600 m field in six settles instead of 2 km in twelve; it took 27-32 s on CI runners against a 30 s limit and blocked the 0.56.0 publish.
+- the engine UI package (packages/ui) publishes as @jgengine/react again. 0.56.0 renamed it @jgengine/ui, a name npm had never seen, so trusted publishing refused it part-way and @jgengine/core@0.56.0 on latest depended on a package that did not exist. Imports, dependencies, jgengine.json engine keys ("react"), scaffold aliases and doctor's @source check all name @jgengine/react; bun run check react-free treats it as the engine's own UI package.
+
 ## 0.56.0
 
 ### Migrate
