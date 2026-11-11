@@ -11,6 +11,7 @@ import { GAME_TEMPLATES, type GameTemplate } from "../packages/jgengine/src/proj
 import { editorScaffold, gameTemplate } from "../packages/jgengine/src/templates";
 import { standaloneOptimizeDeps, UNBUNDLED_ENGINE_MODULES } from "../packages/jgengine/src/templates/gameFiles";
 import type { TemplateFile } from "../packages/jgengine/src/templates/types";
+import { folderOfNpmName, npmNameOfFolder } from "./packageNames";
 
 /**
  * What a new developer gets from `jgengine create`, without booting it: every template opens to
@@ -36,16 +37,8 @@ function fileOf(files: TemplateFile[], path: string): string {
   return file.contents;
 }
 
-/** Each repo folder under packages/ by its npm name without the scope: packages/ui publishes as @jgengine/react. */
-const FOLDER_OF: Record<string, string> = Object.fromEntries(
-  [...new Bun.Glob("packages/*/package.json").scanSync({ cwd: ROOT })].map((path) => {
-    const folder = path.replace(/\\/g, "/").split("/")[1]!;
-    const name = (JSON.parse(readFileSync(join(ROOT, path), "utf8")) as { name: string }).name;
-    return [name.replace(/^@jgengine\//, ""), folder];
-  }),
-);
-const folderOf = (pkg: string): string => FOLDER_OF[pkg] ?? pkg;
-const npmNameOf = (folder: string): string => Object.entries(FOLDER_OF).find(([, dir]) => dir === folder)?.[0] ?? folder;
+const folderOf = (pkg: string): string => folderOfNpmName(`@jgengine/${pkg}`);
+const npmNameOf = (folder: string): string => npmNameOfFolder(folder).replace(/^@jgengine\//, "");
 
 /** The `@jgengine/*` packages a standalone scaffold installs from npm, read from its package.json. */
 function enginePackages(files: TemplateFile[]): string[] {

@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 
 import { extractPackageSurface } from "./apiSurface";
 import { PACKAGE_SKILLS, SKILL_DIRS, skillForModule } from "./skillRouting";
+import { npmNameOfFolder } from "./packageNames";
 
 const OUT_NAME = "capabilities.md";
 const GENERATED_HEADER =
@@ -29,7 +30,7 @@ function collect(root: string): SkillCapabilities {
     for (const module of surface.modules) {
       const skill = skillForModule(pkg, module.path);
       if (skill === null) continue;
-      const importPath = `@jgengine/${pkg}/${module.path}`.replace(/\/index$/, "");
+      const importPath = `${npmNameOfFolder(pkg)}/${module.path}`.replace(/\/index$/, "");
       for (const e of module.exports) {
         if (e.capabilities === undefined) continue;
         for (const cap of e.capabilities) {

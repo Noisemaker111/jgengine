@@ -2082,7 +2082,7 @@
 - `AXIS_RANGE` (const): const AXIS_RANGE: Record<AxisName, AxisRange> — ⚠ undocumented
 - `AxisBinding` (interface): interface AxisBinding { positive: readonly string[]; negative?: readonly string[]; pointer?: PointerAxisBinding } — ⚠ undocumented · used by `analogAxes` (@jgengine/core/input/axisShaper): Which axes an analog source is driving this frame: an axis counts as analog when any action bound to it has a published analog magnitude (`c…
 - `AxisBindingMap` (type): type AxisBindingMap = Record<AxisName, AxisBinding> — ⚠ undocumented · used by `DRIVE_AXIS_BINDINGS`: Car axes bound to raw key codes, for an {@link AxisChannel} sampled with a key-code `isDown`.
-- `AxisChannelConfig` (interface): interface AxisChannelConfig { bindings: AxisBindingMap; smoothing?: number } — ⚠ undocumented · used by `useAxisChannel` (@jgengine/ui): Wires useHeldKeys into a fresh AxisChannel, ready for a per-frame `channel.sample(dt, isDown)`.
+- `AxisChannelConfig` (interface): interface AxisChannelConfig { bindings: AxisBindingMap; smoothing?: number } — ⚠ undocumented · used by `useAxisChannel` (@jgengine/react): Wires useHeldKeys into a fresh AxisChannel, ready for a per-frame `channel.sample(dt, isDown)`.
 - `AxisInput` (interface): interface AxisInput { throttle: number; brake: number; steer: number; handbrake: number } — ⚠ undocumented · used by `tickDrivableVehicle` (@jgengine/core/physics/drivableVehicle): Connects an `AxisInput` sample straight through a `VehicleDynamics` car to a scene entity's pose for one tick — the throttle/steer/handbrake…
 - `AxisName` (type): type AxisName = keyof AxisInput — ⚠ undocumented
 - `AxisRange` (interface): interface AxisRange { min: number; max: number } — ⚠ undocumented
@@ -5983,7 +5983,7 @@
 
 ## @jgengine/core/time/simClock
 
-- `CalendarTime` (interface): interface CalendarTime { totalSeconds: number; day: number; hour: number; minute: number; second: number; dayFraction: number; year: number; dayOfYear: number; yearFraction: number; season?: string | undefined } — ⚠ undocumented · used by `useGameCalendar` (@jgengine/ui): A slow part of the sim calendar (the day, the season, the hour), re-rendering only when it changes: `useGameCalendar((c) => c.day)`.
+- `CalendarTime` (interface): interface CalendarTime { totalSeconds: number; day: number; hour: number; minute: number; second: number; dayFraction: number; year: number; dayOfYear: number; yearFraction: number; season?: string | undefined } — ⚠ undocumented · used by `useGameCalendar` (@jgengine/react): A slow part of the sim calendar (the day, the season, the hour), re-rendering only when it changes: `useGameCalendar((c) => c.day)`.
 - `ClockSnapshot` (interface): interface ClockSnapshot { now: number; paused: boolean; speed: number; playSpeed: number; timescale: number; scale: number; speeds: readonly number[]; calendar: CalendarTime } — ⚠ undocumented
 - `SimClock` (interface): interface SimClock { advance(realDt: number): number; now(): number; advancedSeconds?(): number; snapshot(): ClockSnapshot; hydrate(snapshot: ClockSnapshot): void; calendar(): CalendarTime; isPaused(): boolean; speed(): number; pause(): void; play(): void; st… — ⚠ undocumented · used by `createSimContext` (@jgengine/core/runtime/simContext): Build `ctx.sim` for a context; `createGameContext` calls this from `definition.simulation`.
 - `SimClockOptions` (interface): interface SimClockOptions { config?: TimeConfig | undefined; onChange?: () => void } — ⚠ undocumented

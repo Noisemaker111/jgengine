@@ -8,6 +8,7 @@ import type { PlayScriptSpec } from "@jgengine/core/play/script";
 import { runPlayScript } from "@jgengine/core/play/playRunner.draw";
 import { formatPlayTimelineEntry } from "@jgengine/core/play/timeline";
 import type { PlayableGame } from "@jgengine/shell/registry";
+import { npmNameOfFolder } from "./packageNames";
 
 /**
  * Play a game headlessly from a committed script instead of playing it in a browser.
@@ -87,7 +88,7 @@ function enginePaths(): Record<string, string[]> {
   for (const name of packages) {
     const src = join(packagesDir, name, "src");
     // A folder's npm name can differ from it: packages/ui publishes as @jgengine/react.
-    const npmName = (JSON.parse(readFileSync(join(packagesDir, name, "package.json"), "utf8")) as { name: string }).name;
+    const npmName = npmNameOfFolder(name);
     paths[npmName] = [join(src, "index.ts")];
     paths[`${npmName}/*`] = [join(src, "*")];
   }
