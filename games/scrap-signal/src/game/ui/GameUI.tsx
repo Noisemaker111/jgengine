@@ -1,133 +1,96 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { useState } from "@jgengine/core/ui/jsx";
-import { HudCanvas, HudPanel, useDisplayProfile, useHudLayout } from "@jgengine/ui";
-import { useGameFonts } from "@jgengine/core/ui/fonts.view";
+import { useMemo, type ReactNode } from "@jgengine/core/ui/jsx";
+import { bind } from "@jgengine/core/ui/rune/primitives";
+import { scrapHudPanels, type HudPanelId } from "./hudPanels";
+import { RuneRoot, RuneTransient, RuneView } from "@jgengine/core/ui/rune/primitives.view";
+import { registerNativeRuneFont } from "@jgengine/core/ui/rune/nativeSurface.view";
+import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
+import { useSettings } from "@jgengine/core/settings/settings.view";
 import { useGamePhase } from "@jgengine/ui/hooks";
+import { useGameContext } from "@jgengine/ui/provider";
 import { useStore } from "@jgengine/ui/store";
-import { lootDropsOf } from "@jgengine/core/game/events";
-import { ToastStack } from "@jgengine/core/notifications/toastStack.view";
-import { OnboardingHud } from "@jgengine/core/onboarding/onboarding.view";
-import { FERRALON } from "../palette";
-import { itemNameById } from "../content";
-import { DamageVignette, HitMarker, LevelUpBurst, SpreadReticle } from "./components/Feedback";
-import { CashPlate, MissionTracker } from "./components/Mission";
-import { ReserveOverlay, VendorPanel } from "./components/Overlays";
-import { NpcDialog } from "./components/NpcDialog";
-import { TalentsPanel } from "./components/Talents";
-import { ScrapMenu } from "./menu/ScrapMenu";
-import { VitalsPlate } from "./components/Vitals";
-import { AmmoPlate, WeaponHotbar, ItemCard } from "./components/Weapon";
-import { BlackMarketPanel, EchoBox, CoresPlate, TravelPanel, ReactorEnding, ZoneBanner } from "./components/World";
-import { Operations } from "./components/Operations";
-import { VaultPanel } from "./components/VaultPanel";
-import { OverdriveCard, OverdriveTerminal } from "./components/Overdrive";
-import { riftStore } from "../rift/rift";
 import { GAME_FONTS } from "../../art/fonts/fonts";
-import { useHostilesNear } from "./fiction/useHostilesNear";
-import { OverlayHostContext } from "./fiction/OverlayHost";
+import { riftStore } from "../rift/rift";
+import { relayStore } from "../relay";
+import { speechStore } from "../stores";
+import { hostilesNear } from "./hostiles";
+import { AmmoPlate, cashOf, coresOf, Counter, DamageVignette, EchoBox, FieldNotes, HitMarker, ItemCard, LevelUpBurst, LootToasts, MissionTracker, ReactorEnding, ReserveOverlay, SpreadReticle, VitalsPlate, WeaponHotbar, ZoneBanner } from "./Hud";
+import { C, Plate, Sheet, Text, scrapTheme, useCompact } from "./kit";
+import { ScrapMenu } from "./Menu";
+import { BlackMarketPanel, NpcDialog, OverdriveCard, OverdriveTerminal, TalentsPanel, TravelPanel, VaultPanel, VendorPanel } from "./Panels";
+import { ContractCard, Operations, TerminalSettings } from "./Terminal";
+
+for (const face of [GAME_FONTS.display, GAME_FONTS.body]) if (face !== undefined) registerNativeRuneFont(resolveAssetBaseUrl(face.src));
 
 /**
- * The reclaimer’s rig: everything the HUD shows is a piece of salvaged kit at the edge of the view.
+ * The reclaimer's rig: everything the HUD shows is a piece of salvaged kit at the edge of the view.
  * The wrist unit, the magazine counter and the weapon cartridges sit along the foot; the contract
  * and mission log hang top-left; the wallet counters and the pause key top-right. Each piece dims
  * when nothing on it is changing and comes back the moment it does.
  */
 export function GameUI() {
-  useGameFonts(GAME_FONTS);
-  const layout = useHudLayout({ storageKey: "scrap-signal" });
-  const profile = useDisplayProfile();
-  const combat = useHostilesNear();
-  const [overlay, setOverlay] = useState<HTMLElement | null>(null);
+  const ctx = useGameContext();
   const { phase } = useGamePhase();
-  const inRun = useStore(riftStore, (state) => state.run !== null && (state.run.phase === "running" || state.run.phase === "intermission"));
-  // The front end replaces the field: the menu is the only surface a boot shows, and no run overlay
-  // paints through it. A run's HUD mounts when the player leaves the menu.
-  if (phase === "menu") return <ScrapMenu />;
-  return (
-    <OverlayHostContext.Provider value={overlay}>
-    <HudCanvas layout={layout} className={`ss-hud ${profile.compact ? "compact" : ""}`}>
-      <Operations />
-      <HudPanel id="overdrive" anchor="left" order={-1} chip="overdrive" interactive={true}>
-        <OverdriveCard />
-      </HudPanel>
+  const settings = useSettings();
+  const notices = useMemo(() => ({ read: ctx.game.notices.list, subscribe: ctx.game.notices.subscribe }), [ctx]);
+  return <RuneRoot context={ctx} theme={scrapTheme}>
+    {phase === "menu" ? <ScrapMenu /> : <Field />}
+    {settings.isOpen ? <Sheet title="Settings" close={settings.close}><TerminalSettings /></Sheet> : null}
+    <RuneView anchor="top" safe inset={64} gap={6}><RuneTransient source={notices} expire={ctx.game.notices.prune}>{notice =>
+      <Plate padding={[6, 12, 6, 12]} border={{ width: 2, color: notice.tone === "deny" ? C.red : C.amber }}><Text size={14} color={notice.tone === "deny" ? C.red : notice.tone === "success" ? C.xp : C.ink}>{notice.count > 1 ? `${notice.text} ×${notice.count}` : notice.text}</Text></Plate>}
+    </RuneTransient></RuneView>
+  </RuneRoot>;
+}
 
-      {/* A live Overdrive run takes the mission log's place: the clock is the only objective. */}
-      {inRun ? null : (
-        <HudPanel id="missions" anchor="left" chip="missions" interactive={false}>
-          <MissionTracker />
-        </HudPanel>
-      )}
+/** A rig panel the player can hide from the terminal's HUD chips; hiding is a bound native patch. */
+function Hideable({ id, end = false, start = false, when = true, children }: { id: HudPanelId; end?: boolean; start?: boolean; when?: boolean; children: ReactNode }) {
+  const panels = scrapHudPanels();
+  // An empty panel mounts no wrapper, so it leaves no gap in its column.
+  if (!when) return null;
+  return <RuneView hidden={bind(() => !panels.visible(id))} items={end ? "end" : start ? "start" : "center"}>{children}</RuneView>;
+}
 
-      {/* Bolt's field notes: one hint at a time about whatever the crash site is teaching now. */}
-      <HudPanel id="field-notes" anchor="left" order={1} chip="notes" interactive={true}>
-        <OnboardingHud accent={FERRALON.hudAmber} skipLabel="Hide notes" />
-      </HudPanel>
-
-      <HudPanel id="cash" anchor="top-right" order={0} priority="critical" interactive={false}>
-        <CashPlate />
-      </HudPanel>
-
-      <HudPanel id="cores" anchor="top-right" order={2} priority="critical" interactive={false}>
-        <CoresPlate />
-      </HudPanel>
-
-      <HudPanel id="zone-banner" anchor="top" order={1} interactive={false}>
-        <ZoneBanner />
-      </HudPanel>
-
-      <HudPanel id="echo" anchor="bottom" order={1} priority="tertiary" chip="echo" interactive={false}>
-        <EchoBox />
-      </HudPanel>
-
-      <HudPanel id="loot-toasts" anchor="top-right" order={3} priority="tertiary" chip="loot" interactive={false}>
-        <ToastStack
-          action="loot.granted"
-          className="ss-toasts"
-          renderToast={(entry) => {
-            const text = lootDropsOf(entry.data)
-              .map((drop) => `+${drop.count} ${drop.item !== undefined ? itemNameById(drop.item) : "$"}`)
-              .join("   ");
-            if (text === "") return null;
-            return (
-              <div className="ss-toast">
-                {text}
-              </div>
-            );
-          }}
-        />
-      </HudPanel>
-
-      <HudPanel id="item-card" anchor="right" priority="tertiary" chip="item" interactive={false}>
-        <ItemCard />
-      </HudPanel>
-
-      <HudPanel id="vitals" anchor="bottom-left" priority="critical" interactive={false}>
-        <VitalsPlate combat={combat} />
-      </HudPanel>
-
-      <HudPanel id="hotbar" anchor="bottom" order={0} priority="critical" interactive={false}>
-        <WeaponHotbar combat={combat} />
-      </HudPanel>
-
-      <HudPanel id="ammo" anchor="bottom-right" priority="critical" interactive={false}>
-        <AmmoPlate combat={combat} />
-      </HudPanel>
-
-      <SpreadReticle />
-      <HitMarker />
-      <DamageVignette />
-      <ReserveOverlay />
-      <VendorPanel />
-      <NpcDialog />
-      <VaultPanel />
-      <TalentsPanel />
-      <TravelPanel />
-      <BlackMarketPanel />
-      <OverdriveTerminal />
-      <ReactorEnding />
-      <LevelUpBurst />
-    </HudCanvas>
-    <div ref={setOverlay} className="ss-overlay-host" />
-    </OverlayHostContext.Provider>
-  );
+function Field() {
+  const ctx = useGameContext();
+  const combat = useMemo(() => () => hostilesNear(ctx), [ctx]);
+  const { compact, portrait } = useCompact();
+  const inRun = useStore(riftStore, s => s.run !== null && (s.run.phase === "running" || s.run.phase === "intermission"));
+  const runShown = useStore(riftStore, s => s.run !== null);
+  const contractLive = useStore(relayStore, s => s.phase === "defend" || s.phase === "upload");
+  const speaking = useStore(speechStore, s => s !== null);
+  // A short landscape phone folds the field notes under the wallet; a portrait phone stacks the foot.
+  const notesRight = compact && !portrait;
+  return <>
+    <DamageVignette />
+    <SpreadReticle />
+    <HitMarker />
+    <RuneView anchor="top-left" safe inset={compact ? 8 : 12} gap={compact ? 6 : 8} maxWidth={compact ? 210 : 270}>
+      <Hideable id="dead-air" start when={!(inRun && !contractLive)}><ContractCard /></Hideable>
+      <Hideable id="overdrive" start when={runShown}><OverdriveCard /></Hideable>
+      {inRun ? null : <Hideable id="missions" start><MissionTracker /></Hideable>}
+      {notesRight ? null : <Hideable id="field-notes" start><FieldNotes /></Hideable>}
+    </RuneView>
+    <RuneView anchor="top-right" safe inset={compact ? 8 : 12} gap={compact ? 4 : 6} items="end" padding={[compact ? 38 : 44, 0, 0, 0]} maxWidth={210}>
+      <Counter icon="coin" color={C.xp} label="Cash" read={cashOf} />
+      <Counter icon="gem" color={C.cores} label="Cores" read={coresOf} />
+      {notesRight ? <Hideable id="field-notes" end><FieldNotes /></Hideable> : null}
+      <Hideable id="loot-toasts" end><LootToasts /></Hideable>
+    </RuneView>
+    <RuneView anchor={portrait ? "center" : "top"} safe inset={16}><ZoneBanner /></RuneView>
+    {compact ? null : <RuneView anchor="right" safe inset={12}><Hideable id="item-card"><ItemCard /></Hideable></RuneView>}
+    <RuneView anchor="bottom" safe inset={compact ? 8 : 12} gap={compact ? 4 : 8} items="center" padding={[0, 0, portrait ? 220 : 0, 0]}><Hideable id="echo" when={speaking}><EchoBox /></Hideable><WeaponHotbar combat={combat} /></RuneView>
+    <RuneView anchor="bottom-left" safe inset={compact ? 8 : 12}><VitalsPlate combat={combat} /></RuneView>
+    <RuneView anchor="bottom-right" safe inset={compact ? 8 : 12} padding={[0, 0, portrait ? 112 : 0, 0]}><AmmoPlate combat={combat} /></RuneView>
+    <Operations />
+    <ReserveOverlay />
+    <LevelUpBurst />
+    <ReactorEnding />
+    <VendorPanel />
+    <NpcDialog />
+    <VaultPanel />
+    <TalentsPanel />
+    <TravelPanel />
+    <BlackMarketPanel />
+    <OverdriveTerminal />
+  </>;
 }
