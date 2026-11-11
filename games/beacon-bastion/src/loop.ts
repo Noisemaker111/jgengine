@@ -2,7 +2,7 @@ import type { GameContext, GameLoop } from "@jgengine/shell/gameKit";
 
 import { openKeepTitle } from "./game/menu";
 import { beaconSave, saveToSlot } from "./game/save";
-import { menuFocus } from "./game/ui/menu/BeaconMenu";
+import { focusMenu } from "./game/ui/menu/BeaconMenu";
 import { keepProfile } from "./game/thumbs";
 import { setupWorld } from "./game/world/setup";
 
@@ -27,22 +27,22 @@ export const loop: GameLoop<GameContext> = {
     });
     ctx.game.commands.define("menu.title", {
       apply: (state) => {
-        menuFocus.id = null;
         openKeepTitle(state);
+        focusMenu(null);
         return state;
       },
     });
     ctx.game.commands.define("menu.keeps", {
       apply: (state) => {
-        menuFocus.id = "keeps";
         openKeepTitle(state);
+        focusMenu("keeps");
         return state;
       },
     });
     ctx.game.commands.define("menu.new", {
       apply: (state) => {
-        menuFocus.id = "new";
         openKeepTitle(state);
+        focusMenu("new");
         return state;
       },
     });

@@ -1,46 +1,55 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { useState } from "@jgengine/core/ui/jsx";
-import { useSettings } from "@jgengine/core/settings/settings.view";
-import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { SettingsSection, SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view";
+import { useRef, useState } from "@jgengine/core/ui/jsx";
+import { RuneAction, RuneView } from "@jgengine/core/ui/rune/primitives.view";
+import { bind } from "@jgengine/core/ui/rune/primitives";
+import { useSettings, type SettingsRow } from "@jgengine/core/settings/settings.view";
+import { adjustSettingRow } from "@jgengine/core/settings/settingAdjustment";
+
+import { FIRE, FULL, Plank, Row, Text } from "../look";
 
 /**
- * The keep's settings, cut into a stone tablet: category tabs are chiselled notches, every row is a
- * channel cut into the slab, and the engine's own rows and drawn sliders sit inside the channels.
- * Every row still writes straight to the shell's settings store.
+ * The keep's settings cut into the stone tablet: category notches, one channel per row, sliders a
+ * fire-lit groove, keybinds armed by a press and set by the next key. Every row writes straight to
+ * the shell's settings store.
  */
-export function StoneSettings({ onCaptureChange }: { onCaptureChange: (armed: boolean) => void }) {
+export function StoneSettings() {
   const settings = useSettings();
-  const categories = settings.categories;
-  const [chosen, setChosen] = useState<string | null>(null);
-  const activeId = chosen !== null && categories.some((category) => category.id === chosen) ? chosen : (categories[0]?.id ?? "");
-  const active = categories.find((category) => category.id === activeId);
+  const [chosen, setChosen] = useState<string | null>(null), [armed, setArmed] = useState<string | null>(null);
+  const active = settings.categories.find((category) => category.id === chosen) ?? settings.categories[0];
+  return <RuneView gap={10} {...(armed === null ? {} : { onKey: (code: string) => {
+    if (code !== "Escape") active?.keybinds.find((k) => k.action === armed)?.rebind(code);
+    setArmed(null);
+  } })}>
+    <RuneView layout="grid" columns={4} responsive={{ phone: { columns: 2 } }} gap={6}>
+      {settings.categories.map((category) => <Plank key={category.id} tone={category === active ? "enamel" : "plank"} minHeight={36} padding={[6, 8, 6, 8]} run={() => setChosen(category.id)}>{category.label}</Plank>)}
+    </RuneView>
+    {settings.actions.length === 0 ? null : <Row gap={6}>{settings.actions.map((action) => <Plank key={action.id} tone={action.kind === "danger" ? "enamel" : "plank"} run={action.run}>{action.label}</Plank>)}</Row>}
+    {active?.rows.map((row) => <Setting key={row.id} row={row} />)}
+    {active?.keybinds.map((k) => <Row key={k.action} justify="between" gap={6}>
+      <Text grow={1} size={14}>{k.label}</Text>
+      <Plank minHeight={32} padding={[4, 10, 4, 10]} disabled={k.locked === true} run={() => setArmed(k.action)}>{armed === k.action ? "Press a key / Esc" : k.bindingLabel}</Plank>
+      <Plank minHeight={32} padding={[4, 10, 4, 10]} disabled={k.locked === true || k.isDefault} run={k.reset}>Reset</Plank>
+    </Row>)}
+  </RuneView>;
+}
 
-  return (
-    <KitPanel material="stone" tint="#57524a" cut="chamfer" depth={18} padding="20px 22px 18px" className="bb-tablet" data-menu-settings="">
-      <h2 className="bb-carved">Prepare the Keep</h2>
-      <SettingsTabs className="bb-tabs" categories={categories} activeId={activeId} onSelect={setChosen} />
-      <div className="bb-tablet-body">
-        {settings.actions.length > 0 && (
-          <div className="bb-tablet-actions">
-            {settings.actions.map((action) => (
-              <KitButton
-                key={action.id}
-                material={action.kind === "danger" ? "enamel" : "wood"}
-                tint={action.kind === "danger" ? "#7d2416" : undefined}
-                cut="notch"
-                depth={8}
-                padding="7px 16px"
-                className="bb-small-plank"
-                onClick={action.run}
-              >
-                {action.label}
-              </KitButton>
-            ))}
-          </div>
-        )}
-        {active !== undefined && <SettingsSection category={active} heading={false} onCaptureChange={(action) => onCaptureChange(action !== null)} />}
-      </div>
-    </KitPanel>
-  );
+function Setting({ row }: { row: SettingsRow }) {
+  const min = row.min ?? 0, max = row.max ?? 1;
+  const fraction = useRef(0);
+  fraction.current = (Number(row.value) - min) / Math.max(1e-6, max - min);
+  const shown = row.kind === "toggle" ? (row.value ? "On" : "Off") : row.options?.find((option) => option.value === row.value)?.label ?? String(row.value);
+  const adjust = (delta: -1 | 1) => { const next = adjustSettingRow(row, delta); if (next !== undefined) row.set(next); };
+  const value = () => min + fraction.current * (max - min);
+  return <RuneView gap={4} padding={[6, 10, 6, 10]} fill="#00000030" radius={3}>
+    <Row justify="between"><Text grow={1} size={14}>{row.label}</Text>
+      <Text size={14} color={FIRE} text={row.kind === "slider" ? bind(() => row.format?.(value()) ?? value().toFixed(2)) : shown} /></Row>
+    {row.kind !== "slider"
+      ? <Plank minHeight={32} padding={[4, 10, 4, 10]} label={row.label} run={() => adjust(1)}>{`${shown} ›`}</Plank>
+      : <RuneAction label={row.label} height={30} width={FULL} fill="#2a2622" radius={3} padding={[11, 0, 11, 0]} onAdjust={adjust} onDrag={(d) => {
+        if (d.cancelled) { fraction.current = (Number(row.value) - min) / Math.max(1e-6, max - min); return; }
+        fraction.current = Math.max(0, Math.min(1, d.x / Math.max(1, d.width)));
+        const step = row.step ?? 0.01;
+        if (d.phase === "up") row.set(Math.min(max, Math.max(min, min + Math.round((value() - min) / step) * step)));
+      }}><RuneView height={8} radius={2} fill={FIRE} width={bind(() => ({ fraction: fraction.current }))} /></RuneAction>}
+  </RuneView>;
 }

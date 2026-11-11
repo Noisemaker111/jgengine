@@ -2,7 +2,6 @@ import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
 import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
 import { defineGame } from "@jgengine/shell/gameKit";
 
-import { beaconKit } from "./art/look";
 import { editorLayers } from "./editorLayers";
 import { assets } from "./game/assets";
 import { BEACON_SOUNDS } from "./game/audio";
@@ -13,7 +12,6 @@ import { hotbarSlotBindings } from "@jgengine/core/input/actionBindings";
 import { entityModels, scatterModels } from "./game/models";
 import { systems } from "./game/systems";
 import { GameUI } from "./game/ui/GameUI";
-import { beaconTheme } from "./game/ui/theme";
 import { BeaconBastionWorldOverlay } from "./game/world/WorldOverlay";
 import { loop } from "./loop";
 import { physics, world } from "./world";
@@ -42,13 +40,10 @@ export const game = defineGame({
       variant: "panel",
     },
   },
-  // The keep's own theme: beacon-fire accent, soot timber surfaces, Cinzel and Alegreya Sans.
-  hudTheme: beaconTheme,
-  uiKit: beaconKit,
+  // The keep's signage, menus and memorial draw natively through Rune from the game's own theme.
+  hudTheme: false,
+  uiRenderer: "rune",
   controls: {
-    // The phone HUD is laid out for 390x844 in style.css, so it draws at its own size instead of the
-  // desktop layout shrunk to 0.4.
-    hudFit: { mobile: { designSize: { width: 390, height: 844 }, minScale: 1, maxScale: 1 } },
     // Every action already has a control on the HUD itself (the rack's plaques, the mason's tablet), so
   // the derived touch buttons would only repeat them over the field.
     touch: { hidden: ["buildTower1", "buildTower2", "buildTower3", "buildTower4", "upgradeTower", "sellTower", "cycleAim", "abilityFire", "abilityBell", "mendWalls"] },
