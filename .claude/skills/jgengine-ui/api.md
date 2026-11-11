@@ -2090,7 +2090,7 @@
 - `RuneScrollValues` (type): type RuneScrollValues = readonly [number, number, number, number, number, number] — Scroll offset, viewport and content size in layout pixels.
 - `RuneUi` (class): class RuneUi — One mounted Rune UI layer. Create once per page; games describe their trees with {@link RuneUi.setSpec} and bind live values with {@link RuneUi.bind}.
 - `RuneUiEvent` (interface): interface RuneUiEvent { id: string; kind: string; value?: number; text?: string; scroll?: RuneScrollValues } — ⚠ undocumented
-- `RuneUiFrame` (interface): interface RuneUiFrame { revision: number; events: RuneUiEvent[]; regions: [number, number, number, number][]; modal: boolean; rects?: [number, number, number, number, number][]; nativeRects?: [string, [number, number, number, number]][] } — ⚠ undocumented
+- `RuneUiFrame` (interface): interface RuneUiFrame { revision: number; events: RuneUiEvent[]; regions: [number, number, number, number][]; modal: boolean; nativeRects?: [string, [number, number, number, number]][] } — ⚠ undocumented
 - `RuneUiNode` (interface): interface RuneUiNode { k: string; [key: string]: unknown } — ⚠ undocumented
 - `RuneUiOptions` (interface): interface RuneUiOptions { canvasId?: string; baseUrl?: string; fonts?: readonly string[]; sans?: string; mono?: string; zIndex?: number } — ⚠ undocumented
 

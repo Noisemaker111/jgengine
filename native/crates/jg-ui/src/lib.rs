@@ -1,6 +1,6 @@
 //! jg-ui: the engine's Rune UI layer.
 //!
-//! TypeScript describes the UI as a declarative tree of kit widgets (`set_spec`),
+//! TypeScript describes the UI as a tree of native Rune nodes (`set_spec`, `native.rs`),
 //! per-frame values arrive through one shared typed-array buffer in wasm linear
 //! memory (`values_ptr`/`values_len`, written by JS once per frame, never one call
 //! per value), and events plus interactive hit regions go back to JS once per
@@ -13,13 +13,9 @@
 #![cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
 
 mod build;
-mod css;
 mod spec;
 mod native;
-mod style;
 mod widgets;
-#[cfg(test)]
-mod blend_tests;
 
 use std::cell::{Cell, RefCell, UnsafeCell};
 use std::collections::HashMap;
@@ -84,15 +80,6 @@ pub(crate) fn val(slot: usize) -> f32 {
     unsafe { *(*VALUES.0.get()).get_unchecked(slot.min(VALUES_LEN - 1)) }
 }
 
-#[inline]
-pub(crate) fn set_val(slot: usize, v: f32) {
-    unsafe {
-        let s = &mut *VALUES.0.get();
-        if slot < VALUES_LEN {
-            s[slot] = v;
-        }
-    }
-}
 
 // ---------------------------------------------------------------------------
 // Events: pushed by widget handlers, drained once per frame by the compositor
@@ -140,18 +127,6 @@ pub(crate) fn wake() {
     });
 }
 
-/// An event from a CSS box, addressed by its numeric id as `x<id>`.
-pub(crate) fn emit_id(id: u32, kind: &'static str, value: Option<f32>, text: Option<String>) {
-    emit(&format!("x{id}"), kind, value, text);
-}
-
-pub(crate) fn emit_scroll(id: u32, at: rune::ScrollPos) {
-    EVENTS.with(|events| events.borrow_mut().push(UiEvent {
-        id: format!("x{id}"), kind: "scroll", value: None, text: None,
-        scroll: Some([at.offset[0], at.offset[1], at.viewport[0], at.viewport[1], at.viewport[0] + at.max[0], at.viewport[1] + at.max[1]]),
-    }));
-}
-
 // ---------------------------------------------------------------------------
 // App state
 // ---------------------------------------------------------------------------
@@ -164,7 +139,8 @@ pub struct Ui {
     rendered_revision: Cell<u64>,
     rendered_page_revision: Cell<u32>,
     native_rects_dirty: Cell<bool>,
-    cache: css::BoxCache,
+    /// Whether the view has built once, so the first build sweeps the image cache.
+    built: Cell<bool>,
     /// While true the bridge treats the UI as modal: game input is suspended
     /// and the pointer is shown.
     modal: bool,
@@ -173,7 +149,7 @@ pub struct Ui {
     edits: HashMap<String, TextEdit>,
     /// Borrow fallback for a field whose edit is somehow missing.
     empty_edit: TextEdit,
-    /// Last page-side revision applied per CSS field; a new one replaces the field's text.
+    /// Last page-side revision applied per native field; a new one replaces the field's text.
     edit_rev: HashMap<String, u32>,
 }
 
@@ -206,13 +182,6 @@ struct UiCompositor {
     shipped: bool,
 }
 
-fn layout_snapshot(runtime: &rune::Runtime<Ui>) -> Vec<[f32; 5]> {
-    runtime.layout_rects().filter_map(|(key, rect)| {
-        let id: u32 = key.strip_prefix('x')?.parse().ok()?;
-        Some([id as f32, rect[0], rect[1], rect[2], rect[3]])
-    }).collect()
-}
-
 impl Compositor<Ui> for UiCompositor {
     fn render(&mut self, f: &mut Frame<'_, Ui>) {
         DRAW_COUNT.set(DRAW_COUNT.get().wrapping_add(1));
@@ -237,26 +206,19 @@ impl Compositor<Ui> for UiCompositor {
         let regions: Vec<[f32; 4]> = f.rt.hit_regions().to_vec();
         let modal = f.rt.state.modal;
         let revision_changed = !self.shipped || self.last_revision != f.rt.state.rendered_revision.get();
-        if self.shipped && events.is_empty() && modal == self.last_modal && regions == self.last_regions && !css::RECTS_DIRTY.get() && !f.rt.state.native_rects_dirty.get() && !revision_changed {
+        if self.shipped && events.is_empty() && modal == self.last_modal && regions == self.last_regions && !f.rt.state.native_rects_dirty.get() && !revision_changed {
             return;
         }
         self.shipped = true;
         self.last_modal = modal;
         self.last_revision = f.rt.state.rendered_revision.get();
         self.last_regions = regions.clone();
-        let rects_changed = css::RECTS_DIRTY.replace(false);
         f.rt.state.native_rects_dirty.set(false);
-        let rects: Vec<[f32; 5]> = if rects_changed || revision_changed {
-            layout_snapshot(f.rt)
-        } else {
-            Vec::new()
-        };
         let payload = serde_json::json!({
             "revision": f.rt.state.rendered_page_revision.get(),
             "events": events,
             "regions": regions,
             "modal": modal,
-            "rects": rects,
             "nativeRects": f.rt.layout_rects().filter(|(key, _)| key.starts_with('n')).collect::<Vec<_>>(),
         })
         .to_string();
@@ -402,10 +364,7 @@ fn sync_fields(s: &mut Ui) {
     s.revision = s.revision.wrapping_add(1);
     let ids = spec::field_ids(&s.root);
     s.edits.retain(|id, _| ids.contains(id));
-    spec::collect_fields(&s.root, &mut s.edits);
-    let mut fields = Vec::new();
-    css::fields(&s.root, &mut fields);
-    let mut taken: Vec<(String, u32, String)> = fields.into_iter().map(|(key, inp)| (key, inp.rev, inp.v.clone())).collect();
+    let mut taken: Vec<(String, u32, String)> = Vec::new();
     let mut natives = Vec::new();
     native::fields(&s.root, &mut natives);
     taken.extend(natives.into_iter().map(|(id, p)| (id.to_owned(), p.rev, p.value.clone().unwrap_or_default())));
@@ -423,74 +382,7 @@ fn sync_fields(s: &mut Ui) {
     s.edit_rev.retain(|id, _| ids.contains(id));
 }
 
-/// Replace CSS boxes in place: `[{"k":"x","id":N,...}, ...]`, each taking the place of the box
-/// that has its id. A box that is not in the tree is skipped. This is how a changed subtree
-/// reaches Rune without the whole tree being sent again.
-#[cfg(target_arch = "wasm32")]
-#[wasm_bindgen::prelude::wasm_bindgen]
-pub fn patch(json: &str, revision: u32) {
-    let boxes: Vec<css::Box_> = match serde_json::from_str(json) {
-        Ok(b) => b,
-        Err(e) => {
-            emit("__spec__", "error", None, Some(e.to_string()));
-            return;
-        }
-    };
-    HANDLE.with(|h| {
-        if let Some(handle) = h.borrow().as_ref() {
-            handle.update(move |s: &mut Ui, tx: &mut Tx| {
-                // The page decides what moves: a box it adds or removes is there or gone in this frame,
-                // as in the DOM, not faded by Rune's default entrance and exit.
-                tx.instant();
-                let mut fields = false;
-                for b in boxes {
-                    let id = b.id;
-                    if let Some(slot) = css::find_mut(&mut s.root, id) {
-                        fields = true;
-                        *slot = b;
-                    } else {
-                        // The page's tree and this one have parted; it sends the whole tree again.
-                        emit("__spec__", "missing", None, Some(format!("patch for box {id}, which this tree does not hold")));
-                    }
-                }
-                if fields {
-                    s.page_revision = revision;
-                    sync_fields(s);
-                }
-            });
-        }
-    });
-}
-
-/// Replace one CSS box's text: `json` is its text record, or `null` for none. The per-change
-/// path for a number or label that moves: no layout or paint field is parsed again.
-#[cfg(target_arch = "wasm32")]
-#[wasm_bindgen::prelude::wasm_bindgen]
-pub fn patch_text(id: u32, json: &str, revision: u32) {
-    let text: Option<css::Txt> = match serde_json::from_str(json) {
-        Ok(t) => t,
-        Err(e) => {
-            emit("__spec__", "error", None, Some(e.to_string()));
-            return;
-        }
-    };
-    HANDLE.with(|h| {
-        if let Some(handle) = h.borrow().as_ref() {
-            handle.update(move |s: &mut Ui, tx: &mut Tx| {
-                // The page decides what moves: a box it adds or removes is there or gone in this frame,
-                // as in the DOM, not faded by Rune's default entrance and exit.
-                tx.instant();
-                if let Some(slot) = css::find_mut(&mut s.root, id) {
-                    slot.t = text;
-                    s.page_revision = revision;
-                    s.revision = s.revision.wrapping_add(1);
-                }
-            });
-        }
-    });
-}
-
-/// Move a keyed CSS scroller without rebuilding its view.
+/// Scroll a keyed native node into view without rebuilding the tree.
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen::prelude::wasm_bindgen]
 pub fn scroll_native_into_view(id: &str) {
@@ -525,45 +417,6 @@ pub fn blur_native() {
     });
 }
 
-/// Move a keyed CSS scroller without rebuilding its view.
-#[cfg(target_arch = "wasm32")]
-#[wasm_bindgen::prelude::wasm_bindgen]
-pub fn scroll_to(id: u32, x: f32, y: f32, smooth: bool) {
-    HANDLE.with(|handle| {
-        if let Some(handle) = handle.borrow().as_ref() {
-            handle.update(move |_: &mut Ui, tx: &mut Tx| {
-                tx.live_only();
-                if smooth { tx.scroll_to(format!("x{id}"), x, y); }
-                else { tx.scroll_to_instant(format!("x{id}"), x, y); }
-            });
-        }
-    });
-}
-
-#[cfg(target_arch = "wasm32")]
-#[wasm_bindgen::prelude::wasm_bindgen]
-pub fn canvas_frame(id: u32, source: web_sys::HtmlElement) -> Result<(), wasm_bindgen::JsValue> {
-    if widgets::canvas_frame(id, source)? {
-        HANDLE.with(|handle| {
-            if let Some(handle) = handle.borrow().as_ref() {
-                handle.update(|state: &mut Ui, tx: &mut Tx| { state.revision = state.revision.wrapping_add(1); tx.instant(); });
-            }
-        });
-    }
-    Ok(())
-}
-
-#[cfg(target_arch = "wasm32")]
-#[wasm_bindgen::prelude::wasm_bindgen]
-pub fn remove_canvas(id: u32) {
-    widgets::remove_canvas(id);
-    HANDLE.with(|handle| {
-        if let Some(handle) = handle.borrow().as_ref() {
-            handle.update(|state: &mut Ui, tx: &mut Tx| { state.revision = state.revision.wrapping_add(1); tx.instant(); });
-        }
-    });
-}
-
 /// JS wrote bound values that may have changed pixels: commit one frame.
 /// Called only when the JS-side diff saw a value move, never per frame.
 #[cfg(target_arch = "wasm32")]
@@ -579,7 +432,6 @@ pub fn values_changed() {
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen::prelude::wasm_bindgen]
 pub fn unmount() {
-    widgets::clear_canvases();
     HANDLE.with(|h| {
         if let Some(handle) = h.borrow().as_ref() {
             handle.quit();

@@ -239,7 +239,7 @@ pub fn fields<'a>(nodes: &'a [crate::spec::Node], out: &mut Vec<(&'a str, &'a Pr
         if node.kind == "field" { out.push((node.id.as_str(), &node.props)); }
         for ElementNode::Native(child) in &node.children { walk(child, out); }
     }
-    for node in nodes { if let crate::spec::Node::Native(element) = node { walk(element, out); } }
+    for crate::spec::Node::Native(element) in nodes { walk(element, out); }
 }
 
 fn apply(mut e: El, p: &Props) -> El {
@@ -316,9 +316,9 @@ pub fn patch(nodes: &mut [crate::spec::Node], patches: &[PropertyPatch]) -> Resu
         for ElementNode::Native(child) in &mut node.children { apply(child, prepared); }
     }
     let mut prepared = std::collections::HashMap::new();
-    for node in nodes.iter() { if let crate::spec::Node::Native(element) = node { prepare(element, patches, &mut prepared)?; } }
+    for crate::spec::Node::Native(element) in nodes.iter() { prepare(element, patches, &mut prepared)?; }
     for edit in patches { if !prepared.contains_key(&edit.id) { return Err(format!("Native patch target missing: {}",edit.id)); } }
-    for node in nodes { if let crate::spec::Node::Native(element) = node { apply(element, &mut prepared); } }
+    for crate::spec::Node::Native(element) in nodes { apply(element, &mut prepared); }
     Ok(())
 }
 
@@ -332,11 +332,11 @@ mod tests {
         let mut nodes = tree(r##"{"id":"parent","kind":"box","props":{},"children":[{"k":"native","id":"fill","kind":"box","props":{"fill":"#123456"}},{"k":"native","id":"sibling","kind":"box","props":{}}]}"##);
         let edits = serde_json::from_str::<Vec<PropertyPatch>>(r##"[{"id":"fill","field":"fill","value":"#abcdef"},{"id":"sibling","field":"className","value":"invalid"}]"##).unwrap();
         assert!(patch(&mut nodes,&edits).is_err());
-        let crate::spec::Node::Native(parent) = &nodes[0] else { panic!() };
+        let crate::spec::Node::Native(parent) = &nodes[0];
         let ElementNode::Native(fill) = &parent.children[0];
         assert_eq!(fill.revision,0); assert_eq!(fill.props.fill.as_deref(),Some("#123456"));
         patch(&mut nodes,&edits[..1]).unwrap();
-        let crate::spec::Node::Native(parent) = &nodes[0] else { panic!() };
+        let crate::spec::Node::Native(parent) = &nodes[0];
         let ElementNode::Native(fill) = &parent.children[0];
         let ElementNode::Native(sibling) = &parent.children[1];
         assert_eq!(fill.revision,1); assert_eq!(fill.props.fill.as_deref(),Some("#abcdef"));
