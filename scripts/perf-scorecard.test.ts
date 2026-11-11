@@ -48,7 +48,7 @@ const frame = (id: number, functionName: string, url: string, columnNumber: numb
 test("the engine JSX runtime, bridge, wasm and component callbacks have their own measured UI share", () => {
   for (const source of [
     "../../../packages/core/src/ui/jsx/reconciler.ts",
-    "/@fs/C:/repo/packages/core/src/ui/rune/runeStage.view.ts",
+    "/@fs/C:/repo/packages/core/src/ui/rune/nativeSurface.view.ts",
     "../../../packages/ui/src/hooks.ts",
     "../../node_modules/@jgengine/core/dist/ui/jsx/reconciler.js",
     "../../node_modules/@jgengine/ui/dist/hooks.js",

@@ -752,10 +752,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `resolveGameLook` (function) · `import { resolveGameLook } from "@jgengine/core/ui"`
 
-## rune-layer — draw a UI subtree through the Rune canvas instead of the DOM
-
-- `RuneLayer` (function) · `import { RuneLayer } from "@jgengine/core/ui/rune/runeLayer.view"`
-
 ## save-slot-card — save slot as a card — thumbnail, character, playtime, progress, timestamp, confirmed delete
 
 - `SaveSlotCard` (function) · `import { SaveSlotCard } from "@jgengine/ui"`
