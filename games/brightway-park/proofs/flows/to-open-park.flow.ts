@@ -8,7 +8,11 @@ import { lotScreen } from "./lotScreen";
  * and the first guests walk in, ride and pay.
  */
 /** A page check: the onboarding card shows this step. */
-const step = (id: string) => `document.querySelector('[data-onboarding-step]')?.getAttribute('data-onboarding-step') === '${id}'`;
+const step = (id: string) => `globalThis.__brightway.read().hint === '${id}'`;
+/** A page check: the hint's ring is on one of these controls (`ui/hintRing.ts` keys). */
+const pointed = (...keys: string[]) => `${JSON.stringify(keys)}.includes(globalThis.__brightway.read().pointed)`;
+/** The native page's visible text. */
+const shown = "window.__jgNativeUi.text()";
 
 export default defineFlow(game, {
   browser: true,
@@ -17,9 +21,9 @@ export default defineFlow(game, {
     await f.see(/Brightway Beginnings/i, { timeoutMs: 5000, note: "arrival: a new game is the first scenario, its goal and deadline on the HUD" });
     await f.see(/by the end of May, Year 1/, { timeoutMs: 5000 });
     await f.expectPage(step("path"), "hint: the first step says to lay a path in from the gate");
-    await f.expectPage("document.querySelector('[data-bw-pointed]') !== null", "hint: the control that does it is ringed");
+    await f.expectPage("globalThis.__brightway.read().pointed !== null", "hint: the control that does it is ringed");
     await f.expect((p) => p.guests === 0, "arrival: nobody is inside before the player builds and opens the gate");
-    await f.expectPage("document.querySelector('[data-hint=gate]')?.disabled === true", "arrival: the gate will not open with no ride running");
+    await f.expectPage("window.__jgNativeUi.point('Open the gate') === null && window.__jgNativeUi.text().includes('Open the gate')", "arrival: the gate will not open with no ride running");
 
     // The path tool, then four cells north from the gate plaza.
     await f.press("Digit6");
@@ -29,7 +33,7 @@ export default defineFlow(game, {
     }
     await f.see("Path built", { timeoutMs: 5000, note: "arrival: a path runs in from the gate, the park's own notice confirming it" });
     await f.waitForPage(step("ride"), { timeoutMs: 3000 });
-    await f.expectPage("document.querySelector('[data-bw-pointed]')?.matches('[data-build-item=ride_carousel], [data-build-category=ride]') === true", "hint: with the path down, the hint rings the carousel ticket");
+    await f.expectPage(pointed("item:ride_carousel", "category:ride"), "hint: with the path down, the hint rings the carousel ticket");
 
     // The carousel, beside the new path.
     await f.press("Digit1");
@@ -44,15 +48,15 @@ export default defineFlow(game, {
     // The ride's model streams in after the build; click again until it is there to be clicked.
     for (let tries = 0; tries < 8; tries += 1) {
       await f.clickAt(ride.x, ride.y);
-      if ((await f.page("document.querySelector('.bw-side')?.innerText.includes('Connect it') === true")) === true) break;
+      if ((await f.page(`${shown}.includes('Connect it')`)) === true) break;
       await f.wait(1000);
     }
-    await f.waitForPage("document.querySelector('.bw-side')?.innerText.includes('Connect it') === true", { timeoutMs: 5000 });
-    await f.expectPage("document.querySelector('.bw-side')?.innerText.includes('Needs an entrance') === true", "arrival: a new ride is shut until it has an entrance and an exit, and says so");
+    await f.waitForPage(`${shown}.includes('Connect it')`, { timeoutMs: 5000 });
+    await f.expectPage(`${shown}.includes('Needs an entrance')`, "arrival: a new ride is shut until it has an entrance and an exit, and says so");
     await f.click("Connect it");
     await f.see("Connected", { timeoutMs: 5000, note: "arrival: Connect it laid the entrance and the exit, so the ride opens" });
     await f.waitForPage(step("gate"), { timeoutMs: 3000 });
-    await f.expectPage("document.querySelector('[data-bw-pointed]')?.matches('[data-hint=gate]') === true", "hint: with the ride running, the hint rings the gate button");
+    await f.expectPage(pointed("hud:gate"), "hint: with the ride running, the hint rings the gate button");
     await f.shot("brightway-first-ride");
 
     await f.click("Open the gate");
@@ -66,11 +70,11 @@ export default defineFlow(game, {
     // Put the ride window away, then open the park books.
     await f.press("KeyX");
     await f.press("KeyL");
-    await f.expectPage("(() => { const m = /Today.{0,2}s sales\\s*\\$([\\d,]+)/.exec(document.body.innerText); return m === null ? -1 : Number(m[1].replace(/,/g, '')); })() > 0", "economy: guests paid at the gate, the same ledger the books read");
-    await f.expectPage("(() => { const m = /Gate tickets\\s*\\$([\\d,]+)/.exec(document.querySelector('.bw-side')?.innerText ?? ''); return m === null ? -1 : Number(m[1].replace(/,/g, '')); })() > 0", "books: the month's report counts gate tickets on their own line");
+    await f.expectPage("(() => { const m = /Today.{0,2}s sales\\s*\\$([\\d,]+)/.exec(window.__jgNativeUi.text()); return m === null ? -1 : Number(m[1].replace(/,/g, '')); })() > 0", "economy: guests paid at the gate, the same ledger the books read");
+    await f.expectPage("(() => { const m = /Gate tickets\\s*\\$([\\d,]+)/.exec(window.__jgNativeUi.text()); return m === null ? -1 : Number(m[1].replace(/,/g, '')); })() > 0", "books: the month's report counts gate tickets on their own line");
     await f.click("Leaflets in town");
-    await f.waitForPage("document.querySelector('.bw-side')?.innerText.includes('left') === true", { timeoutMs: 5000 });
-    await f.expectPage("(() => { const m = /Marketing\\s*−\\$([\\d,]+)/.exec(document.querySelector('.bw-side')?.innerText ?? ''); return m === null ? -1 : Number(m[1].replace(/,/g, '')); })() > 0", "marketing: a campaign is paid up front, shows on the books and counts down its days");
+    await f.waitForPage(`${shown}.includes('Leaflets in town ·') && ${shown}.includes('left')`, { timeoutMs: 5000 });
+    await f.expectPage("(() => { const m = /Marketing\\s*−\\$([\\d,]+)/.exec(window.__jgNativeUi.text()); return m === null ? -1 : Number(m[1].replace(/,/g, '')); })() > 0", "marketing: a campaign is paid up front, shows on the books and counts down its days");
     await f.shot("brightway-books");
   },
 });

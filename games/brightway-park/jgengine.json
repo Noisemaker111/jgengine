@@ -11,6 +11,8 @@
   ],
   "owns": [
     "index.html",
+    "src/index.css",
+    "src/main.tsx",
     "vite.config.ts"
   ],
   "capabilities": {
@@ -25,7 +27,7 @@
       "tycoon"
     ],
     "notSimulatable": {
-      "menu.start-and-credits": "src/game/ui/menu/ParkMenu.tsx: the Credits pane is picked inside the engine GameMenu's own React state (@jgengine/core/menu); no command opens it, so a headless run cannot reach it"
+      "menu.start-and-credits": "src/game/ui/menu/ParkMenu.tsx: the Credits pane is a screen on the title board's own Rune flow; no command opens it, so a headless run cannot reach it (proofs/runeUiFixture.tsx renders it)"
     }
   }
 }

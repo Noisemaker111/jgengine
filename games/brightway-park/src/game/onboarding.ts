@@ -11,11 +11,11 @@ import { FIRST_SCENARIO } from "./scenarios";
 /**
  * The first scenario's hints on the engine's onboarding: blended steps (no banners, no locks), each
  * done when the park's world says so, run in order by `createOnboardingSystem`. The park adds where
- * each step points: the HUD controls to ring (first one on screen wins) and a spot on the lot for
+ * each step points: the HUD controls to ring by hint key (first one on screen wins; `ui/hintRing.ts`) and a spot on the lot for
  * the world arrow, since a park has no walking player for the engine's own pointer.
  */
 
-const BUILD = "[data-hint=build]";
+const BUILD = "hud:build";
 const RESEARCH_IDS = Object.values(BUILDABLES).filter((def) => def.research !== undefined).map((def) => def.id);
 /** The plaza inside the gate has two path cells; anything past that is the player's. */
 const PLAZA_PATHS = 2;
@@ -31,37 +31,37 @@ export const PARK_HINTS: OnboardingConfig<GameContext> = {
     {
       id: "path",
       text: "Lay a path in from the gate: pick Path, then click the ground just past the gate plaza.",
-      anchor: "[data-build-item=path_walk]",
+      anchor: "item:path_walk",
       done: when((w) => w.num("n.path_walk") > PLAZA_PATHS || w.num("park.rides") > 0),
     },
     {
       id: "ride",
       text: "Build your first ride beside the path: pick the Carousel and click a green spot next to the path.",
-      anchor: "[data-build-item=ride_carousel]",
+      anchor: "item:ride_carousel",
       done: when((w) => w.num("park.rides") > 0),
     },
     {
       id: "connect",
       text: "Click the new ride, then Connect it: a ride needs an entrance and an exit on the path.",
-      anchor: "[data-hint=connect]",
+      anchor: "inspector:connect",
       done: when((w) => w.num("park.rides_open") > 0 || w.fact("park.gate") === true),
     },
     {
       id: "gate",
       text: "The ride is running. Open the gate and the first guests will come in.",
-      anchor: "[data-hint=gate]",
+      anchor: "hud:gate",
       done: when((w) => w.fact("park.gate") === true),
     },
     {
       id: "research",
       text: "The lab opens new rides, shops and scenery. Open the Lab and start the Ice Cream Cart: it takes about a minute.",
-      anchor: "[data-research=stall_icecream]",
+      anchor: "research:stall_icecream",
       done: when((w) => w.orders("lab").length > 0 || RESEARCH_IDS.some((id) => w.fact(researched(id)) === true)),
     },
     {
       id: "mechanic",
       text: "Rides wear out and break down, and only a mechanic mends them. Hire one from Staff before the first breakdown.",
-      anchor: "[data-build-item=staff_mechanic]",
+      anchor: "item:staff_mechanic",
       done: when((w) => w.num("n.staff_mechanic") > 0),
     },
   ],
@@ -69,12 +69,12 @@ export const PARK_HINTS: OnboardingConfig<GameContext> = {
 
 /** Where each step points beyond its anchor: the controls that lead to it, and a spot on the lot. */
 const POINTS: Readonly<Record<string, { ui: readonly string[]; world?: (w: WorldModel) => readonly [number, number] | null }>> = {
-  path: { ui: ["[data-build-category=path]", BUILD], world: () => [0, 46] },
-  ride: { ui: ["[data-build-category=ride]", BUILD] },
+  path: { ui: ["category:path", BUILD], world: () => [0, 46] },
+  ride: { ui: ["category:ride", BUILD] },
   connect: { ui: [], world: firstRide },
   gate: { ui: [] },
-  research: { ui: ["[data-hint=lab]"] },
-  mechanic: { ui: ["[data-build-category=staff]", BUILD] },
+  research: { ui: ["hud:lab"] },
+  mechanic: { ui: ["category:staff", BUILD] },
 };
 
 /** The hints as a game system: installed with the park's. */
