@@ -4,7 +4,7 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { launchChrome } from "./browser-lib";
-import { renderSlotCount, renderSlotHolders, takeRenderSlot } from "./renderSlots";
+import { renderSlotCount, renderSlotHolders, slotsSkipped, takeRenderSlot } from "./renderSlots";
 
 const root = join(import.meta.dir, "..", ".scratch");
 const dirs: string[] = [];
@@ -18,10 +18,19 @@ function slotEnv(slots: number, extra: Record<string, string> = {}): NodeJS.Proc
   mkdirSync(dir, { recursive: true });
   dirs.push(dir);
   // FAIRSHARE_EXE empty: the count alone decides, wherever the test runs.
-  return { JG_RENDER_DIR: dir, JG_RENDER_SLOTS: String(slots), FAIRSHARE_EXE: "", ...extra };
+  return { JG_RENDER_DIR: dir, JG_RENDER_SLOTS: String(slots), FAIRSHARE_EXE: "", JG_RENDER_SLOTS_IN_TESTS: "1", ...extra };
 }
 
 describe("render slots", () => {
+  test("a test's browser and what a test spawns take no slot unless the test asks; a drive does", () => {
+    const inTest: NodeJS.ProcessEnv = {};
+    expect(slotsSkipped(inTest, "/w/packages/core/src/hud/hudFade.view.test.ts")).toBe(true);
+    expect(inTest["JG_RENDER_UNDER_TEST"]).toBe("1");
+    expect(slotsSkipped({ JG_RENDER_UNDER_TEST: "1" }, "/w/scripts/drive-dev.ts")).toBe(true);
+    expect(slotsSkipped({}, "/w/scripts/drive-dev.ts")).toBe(false);
+    expect(slotsSkipped({ JG_RENDER_SLOTS_IN_TESTS: "1" }, "/w/scripts/renderSlots.test.ts")).toBe(false);
+  });
+
   test("sized to the machine: one per four threads and four GB, at least one; JG_RENDER_SLOTS wins", () => {
     expect(renderSlotCount({}, 8, 16 * 2 ** 30)).toBe(2);
     expect(renderSlotCount({}, 24, 32 * 2 ** 30)).toBe(6);

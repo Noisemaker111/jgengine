@@ -158,12 +158,32 @@ function tryTake(path: string, record: SlotRecord): boolean {
   }
 }
 
+export const RENDER_UNDER_TEST_ENV = "JG_RENDER_UNDER_TEST";
+export const RENDER_SLOTS_IN_TESTS_ENV = "JG_RENDER_SLOTS_IN_TESTS";
+
+/**
+ * A browser a test starts (in `bun test`, or in a process a test spawned) takes no slot: its runner's
+ * lanes already bound it (`verify:fast --jobs`), and a slot wait inside a test's 20 s budget would turn
+ * the machine's load into a red test. `JG_RENDER_SLOTS_IN_TESTS=1` puts a test back under the slots.
+ */
+export function slotsSkipped(env: NodeJS.ProcessEnv, main: string = Bun.main): boolean {
+  if (env[RENDER_SLOTS_IN_TESTS_ENV] === "1") return false;
+  if (env[RENDER_UNDER_TEST_ENV] === "1") return true;
+  if (!/\.(test|spec)\.[cm]?[jt]sx?$/.test(main)) return false;
+  // What the test spawns inherits this, so a drive a test starts is a test's browser too.
+  env[RENDER_UNDER_TEST_ENV] = "1";
+  return true;
+}
+
+const UNCOUNTED: RenderSlot = { index: -1, attach: () => {}, release: () => {} };
+
 /**
  * Take a render slot, waiting while every slot is held, and throw once the wait (`JG_RENDER_WAIT_MINUTES`,
  * 10) runs out. Synchronous, so the one browser launch every path calls can take it.
  */
 export function takeRenderSlot(options: RenderSlotOptions): RenderSlot {
   const env = options.env ?? process.env;
+  if (slotsSkipped(env)) return UNCOUNTED;
   const alive = options.alive ?? pidAlive;
   const room = options.room ?? (() => fairshareRoom(env));
   const sleep = options.sleep ?? ((ms: number) => Bun.sleepSync(ms));
