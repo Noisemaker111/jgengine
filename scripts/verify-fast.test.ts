@@ -27,6 +27,7 @@ import {
   rerunCommand,
   rerunFailing,
   timedOutFiles,
+  timedOutNote,
   splitByCost,
   TESTS_PER_LANE,
   workspaceOf,
@@ -381,7 +382,7 @@ describe("attribution fails loudly", () => {
     expect(rerunFailing(chunk, "bun crashed")).toBe("bun test --timeout 20000 a.test.ts b.test.ts c.test.ts");
   });
 
-  test("a step whose every failure is a timeout names its files for one rerun; any other failure names none", () => {
+  test("a step whose every failure is a timeout names its files and stays red, never rerun; any other failure names none", () => {
     // The shapes bun printed on 2026-11-09, a test timeout and a hook timeout in two files.
     const timeouts = [
       "scripts\\land-commit.test.ts:",
@@ -402,6 +403,9 @@ describe("attribution fails loudly", () => {
     expect(timedOutFiles(mixed)).toBeNull();
     // A crash with no (fail) line is not a timeout either.
     expect(timedOutFiles("bun crashed")).toBeNull();
+    const note = timedOutNote("test 3 file(s)", ["scripts/land-commit.test.ts"]);
+    expect(note).toContain("scripts/land-commit.test.ts timed out");
+    expect(note).toContain("quarantine it with an issue");
   });
 
   test("the tests named after the changed files run first, in their own step, so the root cause is never left not run", () => {

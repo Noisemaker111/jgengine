@@ -962,10 +962,10 @@ async function spawnStep(command: readonly string[], root: string): Promise<{ ok
 }
 
 /**
- * The files to rerun when every failure in a `bun test` output is a timeout (a test's or a hook's),
- * or null when any failure is something else. On a PC held at 100% by other threads' work a test can
- * wait seconds for each slice: land-commit.test.ts failed 9 of 20 tests that way and passed on the
- * next run (2026-11-09), and a whole landing went red for it.
+ * The files whose failures in a `bun test` output are all timeouts (a test's or a hook's), or null
+ * when any failure is something else. A timeout is not rerun into a pass: a test that only passes on
+ * a second try is a flake, and a rerun hides it until it fails a landing again. The step stays red and
+ * names the files, so the test is fixed at its cause or quarantined with an issue.
  */
 export function timedOutFiles(output: string): string[] | null {
   const lines = output.split(/\r?\n/);
@@ -988,16 +988,13 @@ async function run(step: Step, root: string): Promise<StepResult> {
   const started = Date.now();
   const first = await spawnStep(step.command, root);
   const timedOut = !first.ok && step.command[1] === "test" ? timedOutFiles(first.output) : null;
-  if (timedOut === null) return { name: step.name, ok: first.ok, ms: Date.now() - started, output: first.output };
-  // Only the files that timed out, once, with the step's own flags but no report file: a real hang
-  // times out again and the step stays red with its first output.
-  const flags = step.command.slice(2).filter((word) => word.startsWith("--") && !word.startsWith("--reporter") && !TEST_FILE.test(word));
-  const timeoutFlag = step.command.indexOf("--timeout");
-  const rerun = ["bun", "test", ...flags, ...(timeoutFlag >= 0 ? [step.command[timeoutFlag + 1]!] : []), ...timedOut];
-  const again = await spawnStep(rerun, root);
-  const line = `degraded: ${step.name}: ${timedOut.join(", ")} timed out (a starved run on a busy PC); ${again.ok ? "passed" : "failed again"} when rerun once`;
-  console.log(line);
-  return { name: step.name, ok: again.ok, ms: Date.now() - started, output: again.ok ? line : `${first.output}\n${line}\n${again.output}` };
+  const output = timedOut === null ? first.output : `${first.output}\n${timedOutNote(step.name, timedOut)}`;
+  return { name: step.name, ok: first.ok, ms: Date.now() - started, output };
+}
+
+/** What a step whose only failures are timeouts says: which files, and that a rerun is not the fix. */
+export function timedOutNote(stepName: string, files: readonly string[]): string {
+  return `${stepName}: ${files.join(", ")} timed out. Not rerun: a test that passes only on a second try is a flake. Fix its cause (a wait on a fixed delay, a race, work too big for its budget) or quarantine it with an issue.`;
 }
 
 /**
