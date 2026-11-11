@@ -113,7 +113,7 @@ Flows:
   Headless is the default: the real game ticks at 60 Hz with keys mapped to its own bindings, so
   a key it binds nowhere fails the step. Shots are skipped headless. A flow that needs the page
   (menus, DOM text, clicks, real mouse look) sets browser: true and gets click, clickAt,
-  moveMouse, look, aimAt, fill, type, see, page, waitForPage, expectPage, reload and rpc. state: "<name>" boots a capture.states entry.
+  moveMouse, drag, touch, look, aimAt, fill, type, see, page, waitForPage, expectPage, reload and rpc. state: "<name>" boots a capture.states entry.
   A passing run prints one line; a failing one prints the step, what it expected, the probe
   readings at that moment and the steps before it.
 

@@ -279,6 +279,31 @@ export function pageFlowDriver(session: CdpSession, options: PageDriverOptions):
       pointer = { x, y };
       await settle();
     },
+    async drag(from, to, kind) {
+      await session.send("Page.bringToFront");
+      const steps = 8;
+      const at = (i: number) => ({ x: from.x + (to.x - from.x) * i / steps, y: from.y + (to.y - from.y) * i / steps });
+      const pause = () => new Promise<void>((r) => setTimeout(r, 16));
+      if (kind === "touch") {
+        await session.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [at(0)] });
+        for (let i = 1; i <= steps; i += 1) { await pause(); await session.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [at(i)] }); }
+        await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      } else {
+        await session.send("Input.dispatchMouseEvent", { type: "mouseMoved", ...at(0), button: "none", buttons: 0 });
+        await session.send("Input.dispatchMouseEvent", { type: "mousePressed", ...at(0), button: "left", buttons: 1, clickCount: 1 });
+        for (let i = 1; i <= steps; i += 1) { await pause(); await session.send("Input.dispatchMouseEvent", { type: "mouseMoved", ...at(i), button: "left", buttons: 1 }); }
+        await session.send("Input.dispatchMouseEvent", { type: "mouseReleased", ...to, button: "left", buttons: 0, clickCount: 1 });
+        pointer = to;
+      }
+      await settle();
+    },
+    async touch(x, y) {
+      await session.send("Page.bringToFront");
+      await session.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
+      await new Promise<void>((r) => setTimeout(r, 40));
+      await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      await settle();
+    },
     async wheel(x, y, deltaY, deltaX) {
       await moveDrivePointer(session, { x, y });
       pointer = { x, y };
