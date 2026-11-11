@@ -11,9 +11,6 @@ import { content } from "./game/content";
 import { DEFAULT_DRIVE_CODES } from "@jgengine/core/input/actionBindings";
 import { entityModels, flockModels, objectModels } from "./game/models";
 import { GameUI } from "./game/ui/GameUI";
-import { ErrorScreen } from "./game/ui/ErrorScreen";
-import { driftTheme } from "./game/ui/theme";
-import { foundryKit } from "./game/ui/menu/foundryKit";
 import { lifecycle, onInit, onNewPlayer, onTick } from "./loop";
 import { physics, world } from "./world";
 
@@ -49,15 +46,13 @@ export const game = defineGame({
   content,
   loop: { onInit, onNewPlayer, onTick },
   lifecycle,
+  // The pit wall is drawn natively by Rune: plates, the pit sheet, the dash and the notices are the game's own.
   GameUI,
-  hudTheme: driftTheme,
+  uiRenderer: "rune",
+  hudTheme: false,
   // Auto quality holds 60 fps; the reporter and telemetry sink stay unset until the host wires them.
-  health: { autoQuality: { targetFrameMs: 1000 / 60 }, errorScreen: ErrorScreen },
-  // The pit wall: stencilled steel menu plates and the pit sheet on a clipboard for every pane.
-  uiKit: foundryKit,
+  health: { autoQuality: { targetFrameMs: 1000 / 60 } },
   chrome: {
-    // One salvage call at a time, above the speed/route plates, like the old pit-radio toast.
-    notices: { placement: "bottom", cap: 1 },
     settings: {
       variant: "sheet",
       hideBindings: ["restart", "startRun"],
