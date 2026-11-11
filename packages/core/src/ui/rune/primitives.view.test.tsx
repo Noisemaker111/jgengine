@@ -1,8 +1,8 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { expect, test } from "bun:test";
-import { act } from "../jsx";
+import { act, useState } from "../jsx";
 import { Root } from "../jsx/reconciler";
-import { RuneAction, RuneFor, RuneLabel, RuneLayers, RuneRoot, RuneView, RuneWorldAnchor, type RuneRootProps } from "./primitives.view";
+import { RuneAction, RuneField, RuneFor, RuneLabel, RuneLayers, RuneRoot, RuneView, RuneWorldAnchor, type RuneRootProps } from "./primitives.view";
 import { bind, createRuneFlow, type RuneSource, type RuneTheme } from "./primitives";
 import { RuneViewport } from "./elements.view";
 import { nativeEnabled, nativeLabel, nativeSpec, nativeTreeHost, RuneNode, visibleNativeNodes, type RuneTreeSink } from "./nativeTree";
@@ -107,4 +107,48 @@ test("subscribed collection edits preserve keyed nodes and leave unrelated compo
   expect(visibleNativeNodes(f.surface).find(n => n.tag === "rune-text" && nativeLabel(n) === "A")).toBe(first);
   expect(runs).toBe(1);
   f.root.unmount();expect(listeners.size).toBe(0);
+});
+
+test("a native field is controlled: typing echoes without a rev, game replacements and cuts take a new rev",async () => {
+  const changes: string[] = [], submits: string[] = [];
+  let set: (text: string) => void = () => {};
+  function Chat() {
+    const [text,setText] = useState("");
+    set = setText;
+    return <RuneField value={text} maxLength={5} placeholder="Say" label="Chat" onChange={next => {changes.push(next);setText(next);}} onSubmit={line => submits.push(line)} />;
+  }
+  const f = fixture(<Chat />);
+  const field = () => {
+    const node = visibleNativeNodes(f.surface).find(n => n.tag === "rune-field");
+    if (node === undefined) throw new Error("Missing native field");
+    return node;
+  };
+  const wire = () => JSON.stringify(f.spec());
+  const props = () => { const spec = f.spec(); const find = (nodes: typeof spec.children): Record<string, unknown> | undefined => { for (const n of nodes) { if (n.kind === "field") return n.props; const hit = find(n.children); if (hit) return hit; } return undefined; }; return find(spec.children) ?? {}; };
+  expect(props()["rev"]).toBe(0);
+  expect(props()["placeholder"]).toBe("Say");
+  // Only wire props Rune accepts: no callbacks, no maxLength.
+  for (const leaked of ["onChange","onSubmit","onReplace","onEdit","maxLength"]) expect(wire()).not.toContain(leaked);
+  // Rune's first edit event echoes the seeded text; nothing changes.
+  await act(() => field().props.onEdit?.(""));
+  expect(changes).toEqual([]);
+  await act(() => field().props.onEdit?.("hey"));
+  expect(changes).toEqual(["hey"]);
+  expect(props()["rev"]).toBe(0);
+  expect(props()["value"]).toBe("hey");
+  // The game clears the line after a send: Rune must take the empty text.
+  await act(() => set(""));
+  expect(props()["rev"]).toBe(1);
+  expect(props()["value"]).toBe("");
+  // Longer than maxLength: the game gets the cut text and Rune is told to show it.
+  await act(() => field().props.onEdit?.("abcdefg"));
+  expect(changes.at(-1)).toBe("abcde");
+  expect(props()["rev"]).toBe(2);
+  // The phone proxy's text replaces Rune's.
+  await act(() => field().props.onReplace?.("yo"));
+  expect(changes.at(-1)).toBe("yo");
+  expect(props()["rev"]).toBe(3);
+  field().props.onSubmit?.("hello world");
+  expect(submits).toEqual(["hello"]);
+  f.root.unmount();
 });

@@ -1,6 +1,6 @@
 //! Direct JSX elements. No CSS parser, browser style, or mirrored DOM participates.
 
-use rune::{El, ScrollSpec, Shape, Spring, col, el, row};
+use rune::{El, ScrollSpec, Shape, Spring, TextEdit, Tx, col, el, row, text_input};
 use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 use crate::{Ui, color, val, widgets};
@@ -104,6 +104,12 @@ pub struct Props {
     svg: Option<String>,
     image: Option<String>,
     fit: Option<String>,
+    /// `field`: the page's text, taken whenever `rev` changes (and when the field first appears).
+    pub value: Option<String>,
+    pub placeholder: Option<String>,
+    pub multiline: bool,
+    pub secret: bool,
+    pub rev: u32,
 }
 
 #[derive(Deserialize)]
@@ -131,8 +137,11 @@ fn body(p: &Props) -> String {
     }
 }
 
-pub fn build(node: &Element, revision: u64) -> El {
-    if !node.children.is_empty() { return build_element(node, revision); }
+pub fn build(node: &Element, s: &Ui) -> El {
+    let revision = s.revision;
+    // A field paints its live edit, which the memo hash cannot see.
+    if node.kind == "field" { return field(node, s); }
+    if !node.children.is_empty() { return build_element(node, s); }
     let p = &node.props;
     let mut hash = std::collections::hash_map::DefaultHasher::new();
     revision.hash(&mut hash);
@@ -142,10 +151,10 @@ pub fn build(node: &Element, revision: u64) -> El {
         val(text.n).to_bits().hash(&mut hash);
         for slot in &text.u { val(*slot).to_bits().hash(&mut hash); }
     }
-    rune::memo::memo_with_hash(node.id.clone(), hash.finish(), || build_element(node, revision))
+    rune::memo::memo_with_hash(node.id.clone(), hash.finish(), || build_element(node, s))
 }
 
-fn build_element(node: &Element, revision: u64) -> El {
+fn build_element(node: &Element, s: &Ui) -> El {
     let p = &node.props;
     if p.hidden { return el().key(node.id.clone()).layout_style(|s| s.display = rune_taffy::prelude::Display::None); }
     let ink = p.color.as_deref().map(color).unwrap_or_else(|| color("#ede9d9"));
@@ -168,12 +177,12 @@ fn build_element(node: &Element, revision: u64) -> El {
     };
         if p.scroll {
             let mut inner = col().w_full().gap(p.gap.unwrap_or(0.0));
-            for ElementNode::Native(child) in &node.children { inner = inner.child(build(child, revision)); }
+            for ElementNode::Native(child) in &node.children { inner = inner.child(build(child, s)); }
             // The fade marks an edge with more content past it; at rest the web's overlay scroll
             // bar is hidden, so without it a clipped list reads as complete.
             e = e.scroll(ScrollSpec { stick_bottom: false }).scroll_edge_fade(SCROLL_FADE).scroll_margin(SCROLL_FADE).hit().child(inner);
         } else {
-            for ElementNode::Native(child) in &node.children { e = e.child(build(child, revision)); }
+            for ElementNode::Native(child) in &node.children { e = e.child(build(child, s)); }
         }
     e = apply(e, p);
     if p.interactive && !p.disabled {
@@ -194,6 +203,43 @@ fn build_element(node: &Element, revision: u64) -> El {
     if p.disabled { e = e.opacity(0.5); }
     if p.focused { e = e.border(2.0, color("#9cddd1")); }
     e.key(node.id.clone())
+}
+
+/// A Rune-owned text field. Its text lives in `Ui::edits` under the element id; edits, focus
+/// changes and submits go back to the page as events (see the compositor).
+fn field(node: &Element, s: &Ui) -> El {
+    let p = &node.props;
+    if p.hidden { return el().key(node.id.clone()).layout_style(|s| s.display = rune_taffy::prelude::Display::None); }
+    let ink = p.color.as_deref().map(color).unwrap_or_else(|| color("#ede9d9"));
+    let mut font = widgets::text_style(p.size.unwrap_or(16.0), p.weight.unwrap_or(400.0), p.mono);
+    font.tracking = p.tracking.unwrap_or(0.0);
+    if !p.mono { if let Some(family) = &p.family { font.family = native_family(family); } }
+    let edit = s.edits.get(node.id.as_str()).unwrap_or(&s.empty_edit);
+    let mut e = text_input(edit, font).color(ink).hit();
+    if let Some(placeholder) = &p.placeholder { e = e.placeholder(placeholder.clone(), ink.alpha(0.5)); }
+    if !p.multiline { e = e.single_line(); }
+    if p.secret { e = e.secure(); }
+    e = apply(e, p);
+    if p.focused { e = e.border(2.0, color("#9cddd1")); }
+    if p.disabled { return e.opacity(0.5).key(node.id.clone()); }
+    let edit_id = node.id.clone();
+    let submit_id = node.id.clone();
+    e.on_edit(move |s: &mut Ui| -> &mut TextEdit { s.edits.get_mut(edit_id.as_str()).unwrap_or(&mut s.empty_edit) })
+        .on_submit(move |s: &mut Ui, _: &mut Tx| {
+            let text = s.edits.get(submit_id.as_str()).map(|edit| edit.text.clone());
+            crate::emit(&submit_id, "submit", None, text);
+        })
+        .key(node.id.clone())
+}
+
+/// Every shown native `field` under `nodes`, by element id.
+pub fn fields<'a>(nodes: &'a [crate::spec::Node], out: &mut Vec<(&'a str, &'a Props)>) {
+    fn walk<'a>(node: &'a Element, out: &mut Vec<(&'a str, &'a Props)>) {
+        if node.props.hidden { return; }
+        if node.kind == "field" { out.push((node.id.as_str(), &node.props)); }
+        for ElementNode::Native(child) in &node.children { walk(child, out); }
+    }
+    for node in nodes { if let crate::spec::Node::Native(element) = node { walk(element, out); } }
 }
 
 fn apply(mut e: El, p: &Props) -> El {
@@ -351,6 +397,56 @@ mod tests {
         rt.pointer_up(160.0,14.0);
         rt.frame(0.0);
         assert_eq!(crate::EVENTS.with(|events| events.borrow().iter().filter(|event| event.kind == "drag" && event.text.as_ref().is_some_and(|text| text.contains("up"))).count()),1);
+        crate::EVENTS.with(|events| events.borrow_mut().clear());
+    }
+
+    fn field_tree(value: &str, rev: u32) -> Vec<crate::spec::Node> {
+        tree(&format!(r#"{{"id":"box","kind":"box","props":{{}},"children":[{{"k":"native","id":"chat","kind":"field","props":{{"value":"{value}","rev":{rev},"placeholder":"Say something","width":200,"height":36}}}}]}}"#))
+    }
+
+    #[test]
+    fn native_field_seeds_keeps_live_text_across_rebuilds_and_takes_a_new_rev() {
+        let mut state = Ui::default();
+        state.root = field_tree("hi", 0);
+        crate::sync_fields(&mut state);
+        assert_eq!(state.edits.get("chat").map(|e| e.text.as_str()), Some("hi"));
+        state.edits.get_mut("chat").unwrap().text = "hi there".into();
+        // A rebuild with the same rev (the page re-rendered for some other reason) keeps what was typed.
+        state.root = field_tree("hi", 0);
+        crate::sync_fields(&mut state);
+        assert_eq!(state.edits.get("chat").map(|e| e.text.as_str()), Some("hi there"));
+        // A new rev is the page replacing the text: clearing chat after a send.
+        state.edits.get_mut("chat").unwrap().focused = true;
+        state.root = field_tree("", 1);
+        crate::sync_fields(&mut state);
+        let edit = state.edits.get("chat").unwrap();
+        assert_eq!(edit.text, "");
+        assert!(edit.focused, "a page-side replacement keeps focus");
+        // A removed field drops its edit.
+        state.root = tree(r#"{"id":"box","kind":"box","props":{}}"#);
+        crate::sync_fields(&mut state);
+        assert!(state.edits.get("chat").is_none());
+    }
+
+    #[test]
+    fn native_field_types_and_submits_its_text() {
+        crate::EVENTS.with(|events| events.borrow_mut().clear());
+        let mut state = Ui::default();
+        state.root = field_tree("", 0);
+        crate::sync_fields(&mut state);
+        let mut rt = rune::Runtime::new(state, crate::build::view, (300.0,100.0), rune::Env::new(true,1.0));
+        rt.frame(0.0);
+        let rect = rt.layout_rects().find(|(key,_)| *key == "chat").unwrap().1;
+        rt.pointer_down(rect[0] + 10.0, rect[1] + rect[3] / 2.0);
+        rt.pointer_up(rect[0] + 10.0, rect[1] + rect[3] / 2.0);
+        rt.frame(0.0);
+        rt.key(rune::KeyEvent { key: rune::Key::Text("ok".into()), mods: Default::default() });
+        rt.frame(0.0);
+        assert_eq!(rt.state.edits.get("chat").map(|e| e.text.as_str()), Some("ok"));
+        assert!(rt.state.edits.get("chat").unwrap().focused);
+        rt.key(rune::KeyEvent { key: rune::Key::Enter, mods: Default::default() });
+        rt.frame(0.0);
+        assert!(crate::EVENTS.with(|events| events.borrow().iter().any(|event| event.id == "chat" && event.kind == "submit" && event.text.as_deref() == Some("ok"))));
         crate::EVENTS.with(|events| events.borrow_mut().clear());
     }
 

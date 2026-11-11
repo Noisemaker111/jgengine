@@ -30,6 +30,11 @@ models/bindings from `@jgengine/core/ui/rune/primitives`.
   and `acceptDrop`. A hold activates once on a sufficiently long release.
   Direction keys navigate native bounds; `onAdjust` consumes left/right on a value.
   Mouse, touch, keyboard and pad share activation and the top capture scope.
+- `RuneField`: controlled native text entry: `value`, `onChange`, `onSubmit`,
+  `placeholder`, `multiline`, `secret`, `maxLength`, `variant`, `textStyle`. Rune owns
+  caret/selection/IME; a focused field takes every key until Escape or Tab, and touch
+  devices raise the phone keyboard. Clear a chat line by setting `value` to `""`;
+  `autoFocus` takes the keyboard when the field first appears.
 - `RuneFor`: subscribed `source: {read,subscribe}`, stable `keyBy`, render function.
   `read` returns the same bounded collection until a structural change; per-frame
   item fields bind to their leaves. Do not subscribe the whole UI to a frame store.
@@ -131,9 +136,9 @@ come from the PC acceptance step, using the production perf harness.
 
 Next-game gaps: inject each camera's world projection and safe-area insets;
 provide subscribed slices for existing collections; compose game-specific settings
-editors (text entry, rebinding), networking/chat input and minimap content. The
-API provides anchors and a frame, not a camera adapter, text editor or map renderer.
-LLMville's chat/editor surfaces need an explicit native editing design when it moves.
+editors (rebinding), chat transcripts and minimap content from these pieces, with
+`RuneField` for any typed text. The API provides anchors, a frame and a text field,
+not a camera adapter or map renderer.
 Do not retain DOM panels inside a native subtree to cover those gaps.
 
 For visual direction use [reference.md](reference.md); gameplay state remains with

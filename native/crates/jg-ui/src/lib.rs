@@ -38,6 +38,7 @@ pub fn native_png(json: &str, path: &std::path::Path, width: u32, height: u32, f
     if !spec.children.iter().all(|node| matches!(node, Node::Native(_))) { return Err("native PNG accepts only native JSX elements".into()); }
     let mut state = Ui::default();
     state.root = spec.children;
+    sync_fields(&mut state);
     let mut runtime = rune::Runtime::with_text(state, build::view, (width as f32,height as f32), rune::Env::new(true,1.0), rune::text::TextSystem::new(fonts,("Inter","IBM Plex Mono")));
     runtime.set_srgb_blend(true);
     runtime.frame(0.0);
@@ -124,6 +125,9 @@ pub(crate) fn emit(id: &str, kind: &'static str, value: Option<f32>, text: Optio
             scroll: None,
         })
     });
+    // Events ship with the next frame; a settled surface draws none, so a press on a still
+    // HUD would wait for the following input. Ask for that frame now.
+    wake();
 }
 
 /// Ask for one more frame from outside a handler (an image finished decoding).
@@ -193,6 +197,8 @@ struct UiCompositor {
     /// Last text shipped per field id; `on_edit` is an accessor Rune calls for
     /// layout and paint too, so changes are diffed here once per frame instead.
     edit_last: HashMap<String, String>,
+    /// Last focus shipped per field id.
+    focus_last: HashMap<String, bool>,
     /// Last frame payload shipped to JS; static frames skip the JSON round trip.
     last_regions: Vec<[f32; 4]>,
     last_modal: bool,
@@ -219,6 +225,14 @@ impl Compositor<Ui> for UiCompositor {
             }
         }
         self.edit_last.retain(|id, _| f.rt.state.edits.contains_key(id));
+        // The page routes keys to a focused field and raises the phone keyboard for it.
+        for (id, edit) in &f.rt.state.edits {
+            if self.focus_last.get(id).copied().unwrap_or(false) != edit.focused {
+                self.focus_last.insert(id.clone(), edit.focused);
+                emit(id, if edit.focused { "focus" } else { "blur" }, None, None);
+            }
+        }
+        self.focus_last.retain(|id, _| f.rt.state.edits.contains_key(id));
         let events: Vec<UiEvent> = EVENTS.with(|e| std::mem::take(&mut *e.borrow_mut()));
         let regions: Vec<[f32; 4]> = f.rt.hit_regions().to_vec();
         let modal = f.rt.state.modal;
@@ -319,6 +333,7 @@ pub fn mount(canvas_id: &str, options_json: &str) {
         })
         .compositor(UiCompositor {
             edit_last: HashMap::new(),
+            focus_last: HashMap::new(),
             last_regions: Vec::new(),
             last_modal: false,
             last_revision: 0,
@@ -383,7 +398,6 @@ pub fn patch_native(json: &str) {
 
 /// Bring the edit store in line with the tree's fields: drop edits whose field is gone, make
 /// one for each new field, and take the page's text where it set a field itself.
-#[cfg(target_arch = "wasm32")]
 fn sync_fields(s: &mut Ui) {
     s.revision = s.revision.wrapping_add(1);
     let ids = spec::field_ids(&s.root);
@@ -391,11 +405,19 @@ fn sync_fields(s: &mut Ui) {
     spec::collect_fields(&s.root, &mut s.edits);
     let mut fields = Vec::new();
     css::fields(&s.root, &mut fields);
-    for (key, inp) in fields {
+    let mut taken: Vec<(String, u32, String)> = fields.into_iter().map(|(key, inp)| (key, inp.rev, inp.v.clone())).collect();
+    let mut natives = Vec::new();
+    native::fields(&s.root, &mut natives);
+    taken.extend(natives.into_iter().map(|(id, p)| (id.to_owned(), p.rev, p.value.clone().unwrap_or_default())));
+    for (key, rev, text) in taken {
         let known = s.edit_rev.get(&key).copied();
-        if known != Some(inp.rev) || !s.edits.contains_key(&key) {
-            s.edit_rev.insert(key.clone(), inp.rev);
-            s.edits.insert(key, TextEdit::new(inp.v.clone()));
+        if known != Some(rev) || !s.edits.contains_key(&key) {
+            s.edit_rev.insert(key.clone(), rev);
+            // A page-side replacement keeps the field's focus and puts the caret at the end.
+            let focused = s.edits.get(&key).is_some_and(|edit| edit.focused);
+            let mut edit = TextEdit::new(text);
+            edit.focused = focused;
+            s.edits.insert(key, edit);
         }
     }
     s.edit_rev.retain(|id, _| ids.contains(id));
@@ -476,6 +498,29 @@ pub fn scroll_native_into_view(id: &str) {
         if let Some(handle) = handle.borrow().as_ref() {
             let id = id.to_owned();
             handle.update(move |_: &mut Ui, tx: &mut Tx| { tx.live_only(); tx.scroll_into_view(id); });
+        }
+    });
+}
+
+/// Give a native field keyboard focus (the page's keyboard or pad chose it).
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen::prelude::wasm_bindgen]
+pub fn focus_native(id: &str) {
+    HANDLE.with(|handle| {
+        if let Some(handle) = handle.borrow().as_ref() {
+            let id = id.to_owned();
+            handle.update(move |_: &mut Ui, tx: &mut Tx| tx.focus(id, true));
+        }
+    });
+}
+
+/// Drop native keyboard focus: Escape leaving a field.
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen::prelude::wasm_bindgen]
+pub fn blur_native() {
+    HANDLE.with(|handle| {
+        if let Some(handle) = handle.borrow().as_ref() {
+            handle.update(move |_: &mut Ui, tx: &mut Tx| tx.blur());
         }
     });
 }

@@ -2090,11 +2090,13 @@
 - `RuneScroll` (function): function RuneScroll(props: RuneElementProps): UiElement<Props> — Native scroll viewport with a column as its content.
 - `RuneSurface` (function): function RuneSurface(props: RuneElementProps): UiElement<Props> — A direct Rune surface. Descendants use the native host and retain their JSX context.
 - `RuneText` (function): function RuneText(props: RuneElementProps): UiElement<Props> — Native text, optionally bound directly to a live getter.
+- `RuneTextField` (function): function RuneTextField(props: RuneElementProps): UiElement<Props> — Native Rune-owned text field; edits and submits come back as events.
 - `RuneViewport` (function): function RuneViewport({ width, height, children }: { width: number; height: number; children?: ReactNode }): JSX.Element — Provide deterministic native viewport dimensions for headless rendering and tooling.
 - `useRuneViewport` (function): function useRuneViewport(): { width: number; height: number } — Viewport size in layout points; only a resize rerenders its consumer.
 
 ## @jgengine/core/ui/rune/nativeSurface.view
 
+- `nativeFieldKey` (function): function nativeFieldKey(code: string, editing: boolean): "field" | "leave" | "leave-navigate" | null — ⚠ undocumented
 - `registerNativeRuneFont` (function): function registerNativeRuneFont(url: string): void — Register native font bytes before the first surface mounts.
 
 ## @jgengine/core/ui/rune/nativeTree
@@ -2131,10 +2133,12 @@
 - `RuneAction` (function): function RuneAction({ command, run, acceptDrop, children, ...props }: RuneActionProps): JSX.Element — Command interaction with native focus, pointer/touch, keyboard, pad, hold and drag/drop.
 - `RuneActionProps` (interface): interface RuneActionProps extends RuneViewProps { command?: {name: string; input?: unknown}; run?: () => void; acceptDrop?: (value: string) => void } — ⚠ undocumented · used by `RuneAction`: Command interaction with native focus, pointer/touch, keyboard, pad, hold and drag/drop.
 - `RuneAnchor` (type): type RuneAnchor = "fill" | "center" | "top" | "bottom" | "left" | "right" | "top-left" | "top-right" | "bottom-left" | "bottom-right" — ⚠ undocumented
+- `RuneField` (function): function RuneField({ value, onChange, onSubmit, maxLength, variant, textStyle, ...props }: RuneFieldProps): JSX.Element — Native text entry: Rune owns caret, selection and IME; the game owns the text. While it has focus, keys go to the field rather than menu navigation, captures or game hotkeys; Escape leaves it. Keyboard and pad users reach it with navigation and Enter. On touch devices the surface raises the phone keyboard through one offscreen proxy at the loader boundary.
+- `RuneFieldProps` (interface): interface RuneFieldProps extends Omit<RuneElementProps, "text" | "value" | "rev" | "onEdit" | "onSubmit" | "onReplace" | "children"> — Props for {@link RuneField}: the controlled text, its callbacks and native field options.
 - `RuneFor` (function): function RuneFor<T>({ source, keyBy, children }: { source: RuneSource<T>; keyBy: (item: T) => string | number; children: (item: T) => ReactNode }): JSX.Element — Subscribed keyed composition. Per-frame fields belong in the item's bound leaves.
 - `RuneGlyph` (function): function RuneGlyph({ artwork, ...props }: Omit<RuneElementProps, "svg"> & { artwork: string }): JSX.Element — SVG artwork as a native icon. Tokens remain game-owned.
 - `RuneLabel` (function): function RuneLabel<T = string>({ value, format, textStyle, message, params, rich, children, ...props }: RuneLabelProps<T>): JSX.Element — Text, formatting, rich spans and translated messages bound directly to a native leaf.
-- `RuneLabelProps` (interface): interface RuneLabelProps<T> extends Omit<RuneElementProps, "text"> { value?: Live<T>; format?: (value: T) => string; textStyle?: string; message?: string; params?: Readonly<Record<string, string | number>>; rich?: Live<readonly RuneSpan[]> } — ⚠ undocumented · used by `RuneLabel`: Text, formatting, rich spans and translated messages bound directly to a native leaf.
+- `RuneLabelProps` (interface): interface RuneLabelProps<T> extends Omit<RuneElementProps, "text" | "value"> { value?: Live<T>; format?: (value: T) => string; textStyle?: string; message?: string; params?: Readonly<Record<string, string | number>>; rich?: Live<readonly RuneSpan[]> } — ⚠ undocumented · used by `RuneLabel`: Text, formatting, rich spans and translated messages bound directly to a native leaf.
 - `RuneLayers` (function): function RuneLayers({ flow, children, transition }: { flow: RuneFlow; children: (entry: FlowEntry) => ReactNode; transition?: { duration: number; distance: number } }): JSX.Element — Present a flow stack; route policy owns input/pause until the route leaves, including nested layers.
 - `RuneProjection` (type): type RuneProjection = (target: { entity?: string; position?: readonly [number, number, number]; offset?: readonly [number, number, number] }) => { x: number; y: number; visible: boolean } — ⚠ undocumented · used by `RuneWorldAnchor`: A projected entity or point.
 - `RuneRoot` (function): function RuneRoot(props: RuneRootProps): JSX.Element — One native game surface, with injected game state, look, projection and translation.

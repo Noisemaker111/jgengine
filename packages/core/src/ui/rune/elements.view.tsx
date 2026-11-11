@@ -14,6 +14,8 @@ export function RuneScroll(props: RuneElementProps) { return createElement("rune
 export function RuneButton(props: RuneElementProps) { return createElement("rune-box", { ...props, role: "button" }); }
 /** Native SVG icon; SVG body is artwork, never a style declaration. */
 export function RuneIcon(props: RuneElementProps) { return createElement("rune-icon", props); }
+/** Native Rune-owned text field; edits and submits come back as events. */
+export function RuneTextField(props: RuneElementProps) { return createElement("rune-field", props); }
 /** A direct Rune surface. Descendants use the native host and retain their JSX context. */
 export function RuneSurface(props: RuneElementProps) { return createElement("rune-surface", props); }
 
