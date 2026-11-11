@@ -52,6 +52,8 @@ fn run_configured(_: Factory, _: Args, _: bool) -> Result<(), String> {
 #[cfg(not(target_arch = "wasm32"))]
 fn run_configured(factory: Factory, args: Args, accessory: bool) -> Result<(), String> {
     let _ = accessory;
+    // A relaunch goes on once the app it restarts has exited.
+    crate::relaunch::wait_for_previous();
     crate::tooling::perf_warn::launch::run_starts();
     crate::platform::ready_signal::run_starts();
     #[cfg(target_os = "macos")]
@@ -80,7 +82,9 @@ fn run_configured(factory: Factory, args: Args, accessory: bool) -> Result<(), S
     crate::popup_menu::start(std::sync::Arc::new(move || { let _ = turn.send_event(WakeEvent::Turn); }));
     let mut windows = Windows { factory: Some(factory), args, proxy, hosts: Vec::new(), gpu: Rc::default() };
     crate::open_url::incoming::prepare();
+    crate::marks::mark("loop.run");
     let result = event_loop.run_app(&mut windows);
+    crate::marks::mark("loop.exited");
     // The windows' interaction timing queued its last rollups as they closed.
     crate::tooling::interaction::flush();
     crate::render::discard_prewarm();

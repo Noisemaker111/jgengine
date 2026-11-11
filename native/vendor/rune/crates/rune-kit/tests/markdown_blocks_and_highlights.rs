@@ -311,14 +311,14 @@ fn strikethrough_parses_and_paints_in_light_and_dark_themes() {
     let src = "Keep ~~struck~~ and ~~**bold** `code`~~ in\n\n- ~~item~~\n\n| Col |\n|---|\n| ~~cell~~ |\n";
     let b = parse(src);
     let Block::Para(p) = &b[0] else { panic!("{b:?}") };
-    assert_eq!(p.text, "Keep struck and bold \u{202f}\u{202f}code\u{202f}\u{202f} in");
+    assert_eq!(p.text, "Keep struck and bold \u{202f}\u{202f}\u{2066}code\u{2069}\u{202f}\u{202f} in");
     let struck: Vec<&str> = p
         .spans
         .iter()
         .filter(|s| matches!(s.2, Style::Strike))
         .map(|&(a, z, _)| &p.text[a..z])
         .collect();
-    assert_eq!(struck, ["struck", "bold \u{202f}\u{202f}code\u{202f}\u{202f}"]);
+    assert_eq!(struck, ["struck", "bold \u{202f}\u{202f}\u{2066}code\u{2069}\u{202f}\u{202f}"]);
 
     fn view(&(dark, strike): &(bool, bool), _: &mut Cx<(bool, bool)>) -> El {
         let k = Kit::neutral(dark);
@@ -668,8 +668,8 @@ fn review_marks_do_not_wrap_large_offsets_or_intercept_links() {
 fn review_autolinks_skip_images_emails_and_unsafe_schemes() {
     let src = "HTTP://example.org/a, ![https://image.example/alt](image.png) [https://label.example](https://dest.example) <https://angle.example> `https://code.example` foo@bar.com javascript:alert(1) data:text/plain,test";
     let blocks = parse(src);
-    let Block::Para(p) = &blocks[0] else { panic!("{blocks:?}") };
-    assert_eq!(p.links.iter().map(|(_, _, u)| u.as_str()).collect::<Vec<_>>(),
+    let links = blocks.iter().filter_map(|b| match b { Block::Para(p) => Some(&p.links), _ => None });
+    assert_eq!(links.flatten().map(|(_, _, u)| u.as_str()).collect::<Vec<_>>(),
         ["HTTP://example.org/a", "https://dest.example", "https://angle.example"]);
 }
 

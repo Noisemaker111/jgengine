@@ -7,7 +7,7 @@ impl<S: 'static> Live<S> {
     pub(crate) fn view(&self, app: &S, view: fn(&S, &mut Cx<S>) -> El, cx: &mut Cx<S>, viewport: (f32, f32)) -> El {
         let dark = self.app_dark.map_or_else(|| cx.system_dark(), |dark| dark(app));
         let t = tok::theme(dark);
-        if !self.open {
+        if !self.is_open() {
             if !self.bar { return call(view, app, cx); }
             let root = call(view, app, cx);
             // Laid out as the root of a window BAR shorter, as the runtime sizes a root. The
@@ -19,7 +19,7 @@ impl<S: 'static> Live<S> {
         let (sidebar_w, side_w) = self.widths(viewport.0);
         let stage_w = (viewport.0 - sidebar_w - side_w - 2.0).max(0.0);
         let stage = self.stage(app, view, cx, (stage_w, viewport.1), t, dark);
-        let stage = match self.region {
+        let stage = match self.region() {
             // The stage has no selection to colour, so a ring inside its edge shows it has the
             // keyboard. It takes no input, so presses reach the story under it.
             Region::Stage => stage.child(el().key("playground-stage-ring").pin(Some(0.0), Some(0.0), Some(0.0), Some(0.0)).border(2.0, cx.focus_color())),
@@ -156,7 +156,7 @@ impl<S: 'static> Live<S> {
     /// The keys of the column that has the keyboard, under the side column.
     fn hint(&self, variants: usize, controls: bool) -> String {
         let variants = match variants.min(9) { 0 => None, 1 => Some("1\u{a0}variant".into()), n => Some(format!("1–{n}\u{a0}variants")) };
-        let parts: Vec<Option<String>> = match self.region {
+        let parts: Vec<Option<String>> = match self.region() {
             Region::List => vec![
                 Some("↑↓\u{a0}stories".into()),
                 Some("←→\u{a0}groups".into()),
@@ -174,20 +174,20 @@ impl<S: 'static> Live<S> {
     /// The app's controls for the open story, from `Playground::side` or `Story::side` (or
     /// their `side_keys`), acting on its stage state.
     fn side_slot(&self, app: &S, cx: &mut Cx<S>) -> Option<El> {
-        if let Some(scene) = &self.scene {
+        if let Some(scene) = self.scene() {
             let (_, view) = self.sides.iter().find(|(s, _)| *s == self.selected)?;
             let mut stage = cx.retype::<S>();
             let root = match view {
                 Side::Stage(view) => view(&scene.state, &mut stage),
                 Side::Real(view) => view(&scene.state, app, &mut stage),
-                Side::Keys(view, _) => view(&scene.state, self.side_active, &mut stage),
+                Side::Keys(view, _) => view(&scene.state, self.side_active(), &mut stage),
             };
             cx.absorb(stage);
             return Some(root);
         }
         let (own, stage) = self.own()?;
         let mut unit = cx.retype::<()>();
-        let root = own.side(stage, self.side_active, &mut unit);
+        let root = own.side(stage, self.side_active(), &mut unit);
         cx.absorb(unit);
         root
     }
@@ -200,7 +200,7 @@ impl<S: 'static> Live<S> {
         let preset = self.size.checked_sub(1).and_then(|i| self.sizes.get(i)).map(|(_, size)| *size);
         let layout = self.layout();
         let (w, h) = if layout == Stage::Fill { area } else { frame.or(preset).unwrap_or(area) };
-        let content = match (&self.scene, page) {
+        let content = match (self.scene(), page) {
             (Some(scene), _) => Some(self.nested(cx, env, |c| call(view, &scene.state, c))),
             (None, Some((_, Page { kind: Kind::Live(page), .. }))) => Some(self.nested(cx, env, |c| page(app, c))),
             (None, Some(_)) => self.own().map(|(own, stage)| {

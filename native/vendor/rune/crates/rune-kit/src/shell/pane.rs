@@ -6,6 +6,7 @@ use std::time::Duration;
 use rune::{Anim, Curve, Easing, KeyEvent, Spring, Velocity};
 
 use crate::Kit;
+use crate::grip::Grip;
 
 /// A side pane's width and whether it shows: a sidebar's or an inspector's. The app owns it
 /// (a field of its state), so it can save the width and restore it with [`PaneState::new`].
@@ -13,14 +14,23 @@ use crate::Kit;
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct PaneState {
     width: f32,
-    open: bool,
+    /// Open or closed, and where a peek stands: one state, so an open pane can't be peeking.
+    dock: Dock,
     min: f32,
     max: f32,
-    resizing: bool,
-    peek: Peek,
+    /// A drag on its edge, from the width and openness it started at; a drag that collapses the
+    /// pane goes on holding it.
+    grip: Grip<GripStart>,
     /// The width and the width it was made with (the default), as asked, before clamping, so a
     /// later `range` can widen to them.
     asked: [f32; 2],
+}
+
+/// Where a drag on a pane's edge started, which a cancel puts it back to.
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct GripStart {
+    width: f32,
+    open: bool,
 }
 
 /// Where a closed sidebar's peek stands. Kept after it ends, so the view knows which way the
@@ -37,6 +47,21 @@ pub(super) enum Peek {
     Docked,
 }
 
+/// Open (`from_peek` when it docked from a peek, and so still floats over the content until it
+/// closes), or closed with its peek resting, shown, or sliding away.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Dock {
+    Open { from_peek: bool },
+    Closed(ClosedPeek),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ClosedPeek {
+    Rest,
+    Shown,
+    Left,
+}
+
 impl PaneState {
     /// Range of a sidebar unless set: 160 to 480 points.
     pub const MIN: f32 = 160.0;
@@ -44,7 +69,7 @@ impl PaneState {
 
     /// An open pane `width` points wide, which double-clicking its edge also returns to.
     pub fn new(width: f32) -> PaneState {
-        let mut p = PaneState { width, open: true, min: Self::MIN, max: Self::MAX, resizing: false, peek: Peek::None, asked: [width; 2] };
+        let mut p = PaneState { width, dock: Dock::Open { from_peek: false }, min: Self::MIN, max: Self::MAX, grip: Grip::Idle, asked: [width; 2] };
         p.clamp();
         p
     }
@@ -59,7 +84,7 @@ impl PaneState {
     }
     /// Starts collapsed (a saved state, or an inspector that opens on demand).
     pub fn collapsed(mut self) -> Self {
-        self.open = false;
+        self.dock = Dock::Closed(ClosedPeek::Rest);
         self
     }
     /// A saved width, clamped and rounded (the width it starts with; the default stays).
@@ -75,7 +100,7 @@ impl PaneState {
         self.width
     }
     pub fn is_open(&self) -> bool {
-        self.open
+        matches!(self.dock, Dock::Open { .. })
     }
     pub fn min_width(&self) -> f32 {
         self.min
@@ -88,11 +113,11 @@ impl PaneState {
     }
     /// Whether its edge is being dragged.
     pub fn is_resizing(&self) -> bool {
-        self.resizing
+        self.grip.is_held()
     }
     /// Points it takes in the layout: its width when open, else 0.
     pub fn shown_width(&self) -> f32 {
-        if self.open { self.width } else { 0.0 }
+        if self.is_open() { self.width } else { 0.0 }
     }
 
     /// Clamps to the range and rounds to a whole point. Doesn't open the pane.
@@ -103,37 +128,41 @@ impl PaneState {
     }
     /// Opening a peeking sidebar docks it where it floats; closing ends any peek.
     pub fn set_open(&mut self, open: bool) {
-        if open && !self.open {
-            self.peek = if self.peek == Peek::Shown { Peek::Docked } else { Peek::None };
-        } else if !open && self.open {
-            self.peek = Peek::None;
-        }
-        self.open = open;
+        self.dock = match (self.dock, open) {
+            (Dock::Closed(peek), true) => Dock::Open { from_peek: peek == ClosedPeek::Shown },
+            (Dock::Open { .. }, false) => Dock::Closed(ClosedPeek::Rest),
+            (dock, _) => dock,
+        };
     }
     pub fn toggle(&mut self) {
-        self.set_open(!self.open);
+        self.set_open(!self.is_open());
     }
 
     /// Whether the closed sidebar floats over the content (a `SplitView` with
     /// [`SidebarPeek`]).
     pub fn is_peeking(&self) -> bool {
-        !self.open && self.peek == Peek::Shown
+        self.dock == Dock::Closed(ClosedPeek::Shown)
     }
     /// Slides a peeking sidebar away (Escape, say). Leaving it with the pointer, or the window
     /// losing focus, ends a peek too.
     pub fn end_peek(&mut self) {
         if self.is_peeking() {
-            self.peek = Peek::Left;
+            self.dock = Dock::Closed(ClosedPeek::Left);
         }
     }
     /// Shows the closed sidebar as a peek, over the content.
     pub fn peek(&mut self) {
-        if !self.open {
-            self.peek = Peek::Shown;
+        if !self.is_open() {
+            self.dock = Dock::Closed(ClosedPeek::Shown);
         }
     }
     pub(super) fn peek_phase(&self) -> Peek {
-        self.peek
+        match self.dock {
+            Dock::Open { from_peek: true } => Peek::Docked,
+            Dock::Open { from_peek: false } | Dock::Closed(ClosedPeek::Rest) => Peek::None,
+            Dock::Closed(ClosedPeek::Shown) => Peek::Shown,
+            Dock::Closed(ClosedPeek::Left) => Peek::Left,
+        }
     }
     /// Back to the width it was made with (double-clicking its edge).
     pub fn reset_width(&mut self) {
@@ -151,10 +180,32 @@ impl PaneState {
         }
     }
 
-    /// A drag on its edge began or ended. The grip stays while a drag that collapsed the pane
-    /// goes on, so the drag can open it again.
-    pub(super) fn set_resizing(&mut self, on: bool) {
-        self.resizing = on;
+    /// A press on its edge at `at` (window points) starts a drag. The grip stays while a drag
+    /// that collapsed the pane goes on, so the drag can open it again.
+    pub(super) fn press_grip(&mut self, at: [f32; 2]) {
+        self.grip.press(GripStart { width: self.width, open: self.is_open() }, Some(at));
+    }
+    /// The drag on its edge moved to `at`, `travel` points wider than where it started.
+    pub(super) fn drag_grip(&mut self, at: [f32; 2], travel: f32) {
+        if let Some(start) = self.grip.moved(at).copied() {
+            self.drag_to(start.width + travel);
+        }
+    }
+    /// The drag on its edge ended; a cancelled one puts the pane back as it was.
+    pub(super) fn release_grip(&mut self, cancelled: bool) {
+        if let Some(start) = self.grip.release().filter(|_| cancelled) {
+            self.set_width(start.width);
+            self.set_open(start.open);
+        }
+    }
+    /// The pointer moved to `at`: a drag that never hears it lost its release, and the pane
+    /// stays where the drag left it.
+    pub(super) fn pointer_grip(&mut self, at: [f32; 2]) {
+        self.grip.pointer(at);
+    }
+    /// The window lost focus: a drag whose release didn't come ends where it is.
+    pub(super) fn lose_grip(&mut self) {
+        self.grip.lose();
     }
 
     fn clamp(&mut self) {

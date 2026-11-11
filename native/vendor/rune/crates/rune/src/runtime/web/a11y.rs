@@ -39,7 +39,8 @@ pub(crate) struct A11yItem {
     /// In a page, text's font, so the browser's selection and find highlights land on the
     /// drawn glyphs.
     pub font: Option<A11yFont>,
-    /// `El::selectable` text in a page: the browser selects and copies it.
+    /// Text the browser selects and copies, in a page: `El::selectable` text, and text outside
+    /// anything that takes the pointer (`Runtime::page_text_selects`).
     pub selectable: bool,
 }
 
@@ -143,17 +144,33 @@ pub(crate) fn align_name(align: crate::el::Align) -> &'static str {
     }
 }
 
+/// Roles of controls a press works, which keep the pointer even without their own handler.
+const CONTROL_ROLES: [&str; 16] = ["button", "link", "tab", "checkbox", "switch", "radio", "combobox", "option",
+    "menuitem", "menuitemcheckbox", "menuitemradio", "slider", "spinbutton", "scrollbar", "textbox", "searchbox"];
+
+/// Node `n` takes the pointer: a press, drag, gesture or pointer handler, a control, or a field.
+/// Hover alone doesn't count; the page's mirror forwards hover to the canvas.
+pub(crate) fn takes_pointer(n: &Node) -> bool {
+    let h = &n.handlers;
+    h.on_press.is_some() || h.on_double_press.is_some() || h.on_secondary_press.is_some()
+        || h.on_pointer_move.is_some() || h.on_drag.is_some() || h.drag_out.is_some() || h.on_drag_start.is_some()
+        || h.gestures.as_ref().is_some_and(|g| g.takes_gestures())
+        || n.input.is_some() || n.window_drag == crate::el::WindowDrag::Drag
+        || n.a11y.more.as_ref().is_some_and(|m| m.href.is_some())
+        || CONTROL_ROLES.contains(&n.role)
+}
+
 fn round1(v: f32) -> f32 { (v * 10.0).round() / 10.0 }
 
 pub(crate) fn clean_slice(spec: &crate::el::TextSpec, a: usize, b: usize) -> String {
     let a = a.min(spec.content.len());
     let b = b.min(spec.content.len()).max(a);
-    if spec.uncopied.is_empty() {
+    if spec.cold.uncopied.is_empty() {
         return spec.content[a..b].to_owned();
     }
     let mut out = String::with_capacity(b - a);
     let mut cur = a;
-    for &(ua, ub) in &spec.uncopied {
+    for &(ua, ub) in &spec.cold.uncopied {
         let (ua, ub) = (ua as usize, ub as usize);
         if ub <= cur || ua >= b { continue; }
         let stop = ua.max(cur).min(b);
@@ -165,13 +182,13 @@ pub(crate) fn clean_slice(spec: &crate::el::TextSpec, a: usize, b: usize) -> Str
 }
 
 fn text_runs(path: &str, spec: &crate::el::TextSpec) -> Vec<A11yRun> {
-    if spec.links.is_empty() {
+    if spec.cold.links.is_empty() {
         let t = clean_slice(spec, 0, spec.content.len());
         return if t.is_empty() { Vec::new() } else { vec![A11yRun { text: t, href: None, path: None, link: None }] };
     }
     let mut out = Vec::new();
     let mut at = 0usize;
-    for (idx, link) in spec.links.iter().enumerate() {
+    for (idx, link) in spec.cold.links.iter().enumerate() {
         let (la, lb) = ((link.start as usize).min(spec.content.len()), (link.end as usize).min(spec.content.len()));
         if la > at {
             let before = clean_slice(spec, at, la);
@@ -208,7 +225,7 @@ impl<S: 'static> Runtime<S> {
         // its offset changes nothing in the mirror, and hashing it would rewrite the whole page's
         // items on every frame of a horizontal flick.
         let mut entries: Vec<_> = self.scrolls.iter()
-            .map(|(id, s)| (id.0, s.offset.to_bits(), if self.page.on { 0 } else { s.x.offset.to_bits() }))
+            .map(|(id, s)| (id.0, s.offset.to_bits(), if self.page.is_some() { 0 } else { s.x.offset.to_bits() }))
             .collect();
         entries.sort_unstable_by_key(|e| e.0);
         entries.hash(&mut h);
@@ -236,6 +253,20 @@ impl<S: 'static> Runtime<S> {
             if let Some(p) = self.nodes[i].parent { ends[p] = ends[p].max(ends[i]); }
         }
         ends
+    }
+
+    /// In a page, which nodes' text the browser selects without `El::selectable`, as a web page's
+    /// text selects: all of it but text inside something that takes the pointer (mirrored text
+    /// takes the pointer from the canvas, so it would swallow that control's press) or inside
+    /// `El::unselectable`. Empty outside a page. A parent always comes before its children.
+    pub(crate) fn page_text_selects(&self) -> Vec<bool> {
+        if self.page.is_none() { return Vec::new(); }
+        let mut out = vec![false; self.nodes.len()];
+        for (i, n) in self.nodes.iter().enumerate() {
+            let inherited = n.parent.is_none_or(|p| out[p]);
+            out[i] = inherited && !n.a11y.unselectable && !takes_pointer(n);
+        }
+        out
     }
 
     pub(crate) fn descendant_label(&self, root: usize, end: usize) -> String {
@@ -275,7 +306,9 @@ impl<S: 'static> Runtime<S> {
     pub(crate) fn web_a11y_items(&self) -> Vec<A11yItem> {
         let mut out: Vec<A11yItem> = Vec::new();
         let mut last_flow_parent: Option<usize> = None;
+        let mut inline: Option<Inline> = None;
         let ends = self.subtree_ends();
+        let selects = self.page_text_selects();
         // Open containers: (end of their node subtree, their item index).
         let mut open: Vec<(usize, usize)> = Vec::new();
         // Open horizontal scrollers and how far the browser has scrolled each, so their content
@@ -302,7 +335,7 @@ impl<S: 'static> Runtime<S> {
             }
             // A page hands every horizontal viewport to the DOM: iOS scrolls it natively, at the
             // compositor's rate, with axis locking, momentum and text selection.
-            if self.page.on && n.scroll_axes == crate::el::ScrollAxes::X {
+            if self.page.is_some() && n.scroll_axes == crate::el::ScrollAxes::X {
                 let rect = self.mirror_rect(i, 0.0);
                 let offset = self.scrolls.get(&n.id).map_or(0.0, |st| st.x.offset);
                 let mut item = A11yItem::new("scroll_x", &n.path, rect);
@@ -372,6 +405,7 @@ impl<S: 'static> Runtime<S> {
             }
             if let Some(spec) = n.text.as_deref().filter(|t| !t.redacted && rect[2] > 0.0 && rect[3] > 0.0) {
                 let runs = text_runs(&n.path, spec);
+                let selectable = spec.selectable || selects.get(i).copied().unwrap_or(false);
                 if !runs.is_empty() {
                     let is_heading = n.role == "heading";
                     // Flowed word-by-word paragraphs (`pr_chips::flow`) put sibling words (or 1-word
@@ -395,6 +429,17 @@ impl<S: 'static> Runtime<S> {
                         i += 1;
                         continue;
                     }
+                    let text_rect = if self.page.is_some() { inset_rect(rect, n.inset) } else { rect };
+                    if !is_heading && flow_group.is_none()
+                        && let Some(prev) = inline.filter(|l| l.item + 1 == out.len() && l.parent == n.parent)
+                        && let Some(gap) = prev.gap(n.target, spec.style, selectable)
+                        && let Some(item) = out.last_mut().filter(|it| it.kind == "text")
+                    {
+                        join_inline(item, text_rect, runs, gap > spec.style.size * 0.15);
+                        inline = Some(Inline { right: n.target[2], ..prev });
+                        i += 1;
+                        continue;
+                    }
                     let (plain, rich_runs) = if runs.len() == 1 && runs[0].href.is_none() && flow_group.is_none() {
                         (runs.into_iter().next().unwrap().text, Vec::new())
                     } else {
@@ -406,10 +451,8 @@ impl<S: 'static> Runtime<S> {
                     item.text = plain;
                     item.runs = rich_runs;
                     item.id = if is_heading { anchor_id(n.key.as_deref()) } else { None };
-                    if self.page.on {
-                        let inset = n.inset;
-                        item.rect = [round1(rect[0] + inset[0]), round1(rect[1] + inset[1]),
-                            round1((rect[2] - inset[0] - inset[2]).max(0.0)), round1((rect[3] - inset[1] - inset[3]).max(0.0))];
+                    if self.page.is_some() {
+                        item.rect = text_rect;
                         let style = spec.style;
                         item.font = Some(A11yFont {
                             family: family_name(style.family),
@@ -419,10 +462,19 @@ impl<S: 'static> Runtime<S> {
                             italic: style.italic,
                             align: align_name(spec.align),
                         });
-                        item.selectable = spec.selectable;
+                        item.selectable = selectable;
                     }
                     push(&mut out, item);
                     last_flow_parent = if is_heading { None } else { flow_group };
+                    inline = (!is_heading && flow_group.is_none()).then(|| Inline {
+                        parent: n.parent,
+                        item: out.len() - 1,
+                        right: n.target[2],
+                        top: n.target[1],
+                        bottom: n.target[3],
+                        style: spec.style,
+                        selectable,
+                    });
                 }
             } else if n.role == "heading" && let Some(lbl) = n.label.clone().filter(|s| !s.trim().is_empty()) {
                 let mut item = A11yItem::new("heading", &n.path, rect);
@@ -441,7 +493,7 @@ impl<S: 'static> Runtime<S> {
     /// The page's horizontal scroll viewports: their paths and how far each is scrolled right.
     /// The browser's mirror holds the containers, so the DOM keeps an offset Rune scrolls too.
     pub(crate) fn page_scroll_x(&self) -> Vec<(String, f32)> {
-        if !self.page.on { return Vec::new(); }
+        if self.page.is_none() { return Vec::new(); }
         self.nodes.iter()
             .filter(|n| n.scroll_axes == crate::el::ScrollAxes::X)
             .filter_map(|n| self.scrolls.get(&n.id).map(|st| (n.path.clone(), st.x.offset as f32)))
@@ -450,7 +502,7 @@ impl<S: 'static> Runtime<S> {
 
     /// Returns updated JSON only when layout commits, viewport or scroll positions changed.
     pub(crate) fn web_a11y<'a>(&self, mirror: &'a mut A11yMirror) -> Option<&'a str> {
-        let vp = (self.viewport.0.to_bits(), if self.page.on { 0 } else { self.viewport.1.to_bits() });
+        let vp = (self.viewport.0.to_bits(), if self.page.is_some() { 0 } else { self.viewport.1.to_bits() });
         let sd = self.scroll_digest();
         if mirror.commits == self.commits && mirror.viewport == vp && mirror.scroll_digest == sd && !mirror.json.is_empty() {
             return None;
@@ -480,7 +532,7 @@ impl<S: 'static> Runtime<S> {
             Some("a11y_link") => {
                 let Some(k) = event["link"].as_u64().and_then(|n| usize::try_from(n).ok()) else { return false };
                 let Some(i) = self.live(path) else { return false };
-                if self.nodes[i].text.as_ref().is_none_or(|t| k >= t.links.len()) { return false; }
+                if self.nodes[i].text.as_ref().is_none_or(|t| k >= t.cold.links.len()) { return false; }
                 self.queue.push(Action::Link(path.to_owned(), k));
                 true
             }
@@ -491,13 +543,7 @@ impl<S: 'static> Runtime<S> {
 
 /// Joins one more flowed word run into the paragraph item before it.
 fn merge_flow(prev: &mut A11yItem, rect: [f32; 4], runs: Vec<A11yRun>) {
-    let px1 = prev.rect[0] + prev.rect[2];
-    let py1 = prev.rect[1] + prev.rect[3];
-    let nx0 = prev.rect[0].min(rect[0]);
-    let ny0 = prev.rect[1].min(rect[1]);
-    let nx1 = px1.max(rect[0] + rect[2]);
-    let ny1 = py1.max(rect[1] + rect[3]);
-    prev.rect = [nx0, ny0, round1(nx1 - nx0), round1(ny1 - ny0)];
+    prev.rect = union(prev.rect, rect);
     let needs_space = prev.runs.last().is_some_and(|r| !r.text.ends_with(char::is_whitespace))
         && runs.first().is_some_and(|r| !r.text.starts_with(char::is_whitespace) && !r.text.starts_with([')', ']', '.', ',', ';', ':']));
     if needs_space {
@@ -513,6 +559,68 @@ fn merge_flow(prev: &mut A11yItem, rect: [f32; 4], runs: Vec<A11yRun>) {
         last.text.push_str(&runs[0].text);
     } else {
         prev.runs.extend(runs);
+    }
+}
+
+fn union(a: [f32; 4], b: [f32; 4]) -> [f32; 4] {
+    let (x0, y0) = (a[0].min(b[0]), a[1].min(b[1]));
+    let (x1, y1) = ((a[0] + a[2]).max(b[0] + b[2]), (a[1] + a[3]).max(b[1] + b[3]));
+    [x0, y0, round1(x1 - x0), round1(y1 - y0)]
+}
+
+fn inset_rect(rect: [f32; 4], inset: [f32; 4]) -> [f32; 4] {
+    [round1(rect[0] + inset[0]), round1(rect[1] + inset[1]),
+        round1((rect[2] - inset[0] - inset[2]).max(0.0)), round1((rect[3] - inset[1] - inset[3]).max(0.0))]
+}
+
+/// The last text item and where its node's laid-out box ends, so a sibling text that carries on
+/// the same line joins it: a code line drawn one text per token mirrors as one line, which reads,
+/// finds and copies as the line rather than token by token.
+#[derive(Clone, Copy)]
+struct Inline {
+    parent: Option<usize>,
+    item: usize,
+    right: f32,
+    top: f32,
+    bottom: f32,
+    style: crate::tok::TextStyle,
+    selectable: bool,
+}
+
+impl Inline {
+    /// The gap in points from the last text to `target`, when `target` carries on its line in the
+    /// same face; a larger gap is a separate column, not the same run of text.
+    fn gap(&self, target: [f32; 4], style: crate::tok::TextStyle, selectable: bool) -> Option<f32> {
+        let a = self.style;
+        let same_face = (a.family, a.size, a.weight, a.tracking) == (style.family, style.size, style.weight, style.tracking)
+            && self.selectable == selectable;
+        let height = (self.bottom - self.top).min(target[3] - target[1]);
+        let overlap = self.bottom.min(target[3]) - self.top.max(target[1]);
+        let gap = target[0] - self.right;
+        (same_face && height > 0.0 && overlap >= height * 0.5 && (-0.5..=style.size * 0.6).contains(&gap)).then_some(gap)
+    }
+}
+
+/// Appends a sibling's text to the line item before it, with a space when a visible gap stands
+/// for one.
+fn join_inline(prev: &mut A11yItem, rect: [f32; 4], mut runs: Vec<A11yRun>, gap: bool) {
+    prev.rect = union(prev.rect, rect);
+    let ends_blank = if prev.runs.is_empty() { prev.text.ends_with(char::is_whitespace) } else { prev.runs.last().is_some_and(|r| r.text.ends_with(char::is_whitespace)) };
+    if gap && !ends_blank && runs.first().is_some_and(|r| !r.text.starts_with(char::is_whitespace)) {
+        runs.insert(0, A11yRun { text: " ".into(), href: None, path: None, link: None });
+    }
+    if prev.runs.is_empty() && runs.iter().all(|r| r.href.is_none()) {
+        for r in runs { prev.text.push_str(&r.text); }
+        return;
+    }
+    if prev.runs.is_empty() {
+        prev.runs.push(A11yRun { text: std::mem::take(&mut prev.text), href: None, path: None, link: None });
+    }
+    for r in runs {
+        match prev.runs.last_mut() {
+            Some(last) if last.href.is_none() && r.href.is_none() => last.text.push_str(&r.text),
+            _ => prev.runs.push(r),
+        }
     }
 }
 

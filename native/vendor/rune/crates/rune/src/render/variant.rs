@@ -14,12 +14,63 @@ use crate::machine::Effects;
 const OUTLINE_WGSL: &str = include_str!("../outline.wgsl");
 /// shader.wgsl's atlas glyph branch, which Windfoil puts the outline branch before.
 const GLYPH_BRANCH: &str = "        if i.uv.z > 0.0 || rotated {";
-const OUTLINE_BRANCH: &str = "        if i.radii.w > 0.0 {\n            cov = outline_glyph(i, screen);\n        } else if i.uv.z > 0.0 || rotated {";
+const OUTLINE_BRANCH: &str = "        if i.radii.w > 0.0 {\n            cov = outline_glyph(i, screen);\n        } else if i.radii.x > 0.5 && !(i.uv.z > 0.0 || rotated) {\n            cov = lcd_mask(i, screen);\n        } else if i.uv.z > 0.0 || rotated {";
 
 /// Windfoil's WGSL, or None if shader.wgsl's glyph branch no longer reads as `GLYPH_BRANCH`.
 pub(crate) fn windfoil_wgsl() -> Option<String> {
     let classic = metallib::uber_wgsl();
     (classic.matches(GLYPH_BRANCH).count() == 1).then(|| format!("{}\n{OUTLINE_WGSL}", classic.replacen(GLYPH_BRANCH, OUTLINE_BRANCH, 1)))
+}
+
+/// Windfoil's fragment entry, which the subpixel variant renames for its own entry to call.
+const FS_ENTRY: &str = "@fragment\nfn fs(i: Out) -> @location(0) vec4<f32> {";
+const DUAL_ENTRY: &str = r#"
+struct DualOut {
+    @location(0) @blend_src(0) color: vec4<f32>,
+    @location(0) @blend_src(1) blend: vec4<f32>,
+}
+
+// Windfoil's fragment, with each colour channel blended by its own coverage where the glyph
+// drawn set one (`lcd_cov`): subpixel text. Everything else blends as premultiplied alpha.
+@fragment
+fn fs(i: Out) -> DualOut {
+    let c = fs_premul(i);
+    if (lcd_cov.w == 0.0) {
+        return DualOut(c, vec4<f32>(c.a));
+    }
+    let e = i.params.w;
+    let mean = pow((lcd_cov.x + lcd_cov.y + lcd_cov.z) / 3.0, e);
+    if (mean < 1.0e-5) {
+        return DualOut(vec4<f32>(0.0), vec4<f32>(0.0));
+    }
+    let k = pow(lcd_cov.xyz, vec3<f32>(e)) / mean;
+    return DualOut(vec4<f32>(c.rgb * k, c.a), vec4<f32>(c.a * k, c.a));
+}
+"#;
+
+/// outline.wgsl's switch for subpixel outline glyphs, off but in the subpixel variant.
+const SUBPIXEL_OFF: &str = "const OUTLINE_SUBPIXEL: bool = false;";
+
+/// The subpixel variant's WGSL: Windfoil's, with subpixel outline coverage and its fragment
+/// entry blending by a second output. Only this variant pays for the three coverages.
+fn dual_wgsl() -> Option<String> {
+    let windfoil = windfoil_wgsl()?;
+    let marked = windfoil.matches(FS_ENTRY).count() == 1 && windfoil.matches(SUBPIXEL_OFF).count() == 1;
+    marked.then(|| {
+        let body = windfoil.replacen(FS_ENTRY, "fn fs_premul(i: Out) -> vec4<f32> {", 1)
+            .replacen(SUBPIXEL_OFF, "const OUTLINE_SUBPIXEL: bool = true;", 1);
+        format!("enable dual_source_blending;\n{body}\n{DUAL_ENTRY}")
+    })
+}
+
+/// Windfoil's subpixel pipeline for the window, built the first frame text draws subpixel masks
+/// (`FontSmoothing::WindfoilRgb`, `ClearType`) on a Windfoil renderer whose device blends by a
+/// second output. Layers keep the plain pipeline, so text in them draws grayscale.
+pub(super) enum Lcd {
+    Unbuilt,
+    Built(wgpu::RenderPipeline),
+    /// It can't be built here: subpixel text draws grayscale from now on.
+    Refused,
 }
 
 /// Classic's bindings and the outline store's.
@@ -52,8 +103,8 @@ pub(crate) enum Source {
 pub(super) enum Uber {
     /// shader.wgsl alone, and no outline store.
     Classic,
-    /// shader.wgsl and outline.wgsl, with the outline store's texture.
-    Windfoil { source: Source, outlines: wgpu::Texture },
+    /// shader.wgsl and outline.wgsl, with the outline store's texture and the atlas fill pass.
+    Windfoil { source: Source, outlines: wgpu::Texture, fill: fill::FillPass },
     /// Windfoil was asked for and couldn't be built: Classic from now on.
     Unavailable,
 }
@@ -62,7 +113,7 @@ pub(super) enum Event {
     /// Text drew glyphs from outlines.
     OutlinesWanted,
     /// Windfoil's pipeline was built.
-    Built { source: Source, outlines: wgpu::Texture },
+    Built { source: Source, outlines: wgpu::Texture, fill: fill::FillPass },
     /// Windfoil's pipeline couldn't be built, and why.
     Refused(String),
 }
@@ -79,8 +130,8 @@ impl Uber {
     pub(super) fn step(&mut self, event: Event) -> Effects<Effect> {
         match (&*self, event) {
             (Uber::Classic, Event::OutlinesWanted) => Effects::one(Effect::Build),
-            (Uber::Classic, Event::Built { source, outlines }) => {
-                *self = Uber::Windfoil { source, outlines };
+            (Uber::Classic, Event::Built { source, outlines, fill }) => {
+                *self = Uber::Windfoil { source, outlines, fill };
                 Effects::none()
             }
             (Uber::Classic, Event::Refused(why)) => {
@@ -109,6 +160,14 @@ impl Uber {
     }
 }
 
+/// What building Windfoil needs from its renderer.
+pub(super) struct BuildContext<'a> {
+    pub format: wgpu::TextureFormat,
+    pub vertex_entry: &'static str,
+    pub globals: &'a wgpu::Buffer,
+    pub stand_in: &'a wgpu::Texture,
+}
+
 /// A built Windfoil: its layouts, shader and frame pipeline.
 pub(super) struct Built {
     pub bind_layout: wgpu::BindGroupLayout,
@@ -131,18 +190,28 @@ impl Renderer {
         }
     }
 
+    /// Tells `atlas` what this renderer does with outlines (`text::outline::Support`) before it
+    /// first draws, so the first frame's glyph masks are queued for the GPU fill rather than
+    /// filled on the CPU. `prepare` tells it again every frame.
+    pub fn attach_text(&self, atlas: &mut Atlas) {
+        atlas.outlines.set_support(self.uber.support());
+    }
+
     /// Steps the shader machine `state` on `event`, carrying out each effect (building Windfoil
     /// feeds `Built` or `Refused` back in) until none is left; with the Windfoil pipeline it
     /// built on the way, if it built one.
-    fn run(device: &wgpu::Device, format: wgpu::TextureFormat, vertex_entry: &'static str, state: &mut Uber, event: Event) -> Option<Built> {
+    fn run(device: &wgpu::Device, cx: &BuildContext<'_>, state: &mut Uber, event: Event) -> Option<Built> {
         let mut built = None;
         let mut queue: Vec<Effect> = state.step(event).into_iter().collect();
         while let Some(effect) = queue.pop() {
             match effect {
                 Effect::Build => {
-                    let next = match Self::build_windfoil(device, format, vertex_entry) {
+                    let next = match Self::build_windfoil(device, cx.format, cx.vertex_entry) {
                         Ok(b) => {
-                            let event = Event::Built { source: b.source, outlines: Self::outline_texture(device, outlines::MIN_ROWS) };
+                            let outlines = Self::outline_texture(device, outlines::MIN_ROWS);
+                            let fill = fill::FillPass::new(device, &b.layout, &b.shader, fill::FillBindings {
+                                layout: &b.bind_layout, globals: cx.globals, outlines: &outlines, stand_in: cx.stand_in });
+                            let event = Event::Built { source: b.source, outlines, fill };
                             built = Some(b);
                             event
                         }
@@ -156,18 +225,22 @@ impl Renderer {
         built
     }
     /// A new renderer's shader machine, asked for Windfoil at once.
-    pub(super) fn start_windfoil(device: &wgpu::Device, format: wgpu::TextureFormat, vertex_entry: &'static str) -> (Uber, Option<Built>) {
+    pub(super) fn start_windfoil(device: &wgpu::Device, cx: &BuildContext<'_>) -> (Uber, Option<Built>) {
         let mut state = Uber::Classic;
-        let built = Self::run(device, format, vertex_entry, &mut state, Event::OutlinesWanted);
+        let built = Self::run(device, cx, &mut state, Event::OutlinesWanted);
         (state, built)
     }
 
-    /// Steps this renderer's shader machine on `event`, taking any Windfoil pipeline it builds.
-    pub(super) fn select(&mut self, device: &wgpu::Device, event: Event) {
-        if let Some(built) = Self::run(device, self.format, self.vertex_entry, &mut self.uber, event) {
+    /// Steps this renderer's shader machine on `event`, taking any Windfoil pipeline it builds;
+    /// whether it took one (the caller then makes its atlas pages ones the GPU can fill).
+    pub(super) fn select(&mut self, device: &wgpu::Device, event: Event) -> bool {
+        let cx = BuildContext { format: self.format, vertex_entry: self.vertex_entry, globals: &self.globals, stand_in: &self.stand_in };
+        if let Some(built) = Self::run(device, &cx, &mut self.uber, event) {
             self.adopt(device, built);
             self.rebind_all(device);
+            return true;
         }
+        false
     }
 
     /// Windfoil's layouts, shader and pipeline for `format`, from the shipped bytecode where it
@@ -192,6 +265,55 @@ impl Renderer {
         Ok(Built { bind_layout, layout, shader, pipeline, source: Source::Compiled })
     }
 
+    /// Whether this frame's subpixel text can blend by channel, building the pipeline the first
+    /// time it's asked.
+    pub(super) fn lcd_ready(&mut self, device: &wgpu::Device) -> bool {
+        if matches!(self.lcd, Lcd::Unbuilt) && self.uber.outlines().is_some() {
+            self.lcd = match self.build_lcd(device) {
+                Ok(pipeline) => Lcd::Built(pipeline),
+                Err(why) => {
+                    eprintln!("rune: subpixel text can't blend by channel here ({why}); it draws grayscale");
+                    crate::text::note_dual_source(false);
+                    Lcd::Refused
+                }
+            };
+        }
+        matches!(self.lcd, Lcd::Built(_))
+    }
+
+    fn build_lcd(&self, device: &wgpu::Device) -> Result<wgpu::RenderPipeline, String> {
+        if !device.features().contains(wgpu::Features::DUAL_SOURCE_BLENDING) {
+            return Err("the device has no dual-source blending".into());
+        }
+        let wgsl = dual_wgsl().ok_or("shader.wgsl's fragment entry moved")?;
+        let blend = wgpu::BlendState {
+            color: wgpu::BlendComponent { src_factor: wgpu::BlendFactor::One, dst_factor: wgpu::BlendFactor::OneMinusSrc1, operation: wgpu::BlendOperation::Add },
+            alpha: wgpu::BlendComponent { src_factor: wgpu::BlendFactor::One, dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha, operation: wgpu::BlendOperation::Add },
+        };
+        let make_pipeline = |shader: &dxbc::Shaders| device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("uber subpixel"),
+            layout: Some(&self.layout),
+            vertex: wgpu::VertexState {
+                module: &shader.vertex,
+                entry_point: Some(self.vertex_entry),
+                compilation_options: Default::default(),
+                buffers: &[Some(metallib::uber_vertex_layout())],
+            },
+            primitive: metallib::uber_primitive(),
+            depth_stencil: None,
+            multisample: Default::default(),
+            fragment: Some(wgpu::FragmentState {
+                module: &shader.fragment,
+                entry_point: Some("fs"),
+                compilation_options: Default::default(),
+                targets: &[Some(wgpu::ColorTargetState { format: self.format, blend: Some(blend), write_mask: wgpu::ColorWrites::ALL })],
+            }),
+            multiview_mask: None,
+            cache: None,
+        });
+        compile(device, &wgsl, make_pipeline).map(|(_, pipeline)| pipeline)
+    }
+
     /// Takes `built` as the renderer's shader: every pipeline again from it. Bind groups follow
     /// once the outline texture exists (`rebind_all`).
     fn adopt(&mut self, device: &wgpu::Device, built: Built) {
@@ -203,9 +325,10 @@ impl Renderer {
             let format = self.extra[index].0;
             self.extra[index].1 = Self::pipeline(device, &self.layout, &self.shader, format, self.vertex_entry, Blend::SourceOver);
         }
-        self.rebuild_layer_pipelines(device);
-        // Built on the old bind layout; made again at the next backdrop blur.
+        self.shader_changed(device);
+        // Built on the old bind layout; made again at the next backdrop blur and subpixel frame.
         self.backdrop_blur = None;
+        self.lcd = Lcd::Unbuilt;
     }
 }
 

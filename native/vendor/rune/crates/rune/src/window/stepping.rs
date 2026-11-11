@@ -3,6 +3,16 @@
 
 use super::*;
 
+/// The window's frame moving to where a handler asked (`Tx::resize_window`), top-down screen
+/// points on the host's frame clock, and the origin it last set, to notice a drag mid-flight.
+/// macOS only; elsewhere frames change at once.
+#[derive(Clone, Copy)]
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+pub(super) struct FrameMove {
+    pub(super) anim: crate::window::frame::FrameAnim,
+    pub(super) origin: [f32; 2],
+}
+
 impl<S: 'static> Host<S> {
     pub(super) fn launcher(&self) -> bool { cfg!(target_os = "macos") && self.macos_window.launcher }
 
@@ -10,27 +20,16 @@ impl<S: 'static> Host<S> {
         self.apply_placement(event_loop);
         if self.win.is_none() { self.create(event_loop, None, false); }
         let stale = self.rt.needs_commit();
+        let visible = self.life.shown();
         let Some(w) = &mut self.win else { return };
         w.hidden_pace.reset();
-        let visible = w.visible;
-        if !w.first_frame.request_reveal(stale, visible) {
+        if !w.first_frame.request_reveal(stale, visible, Instant::now()) {
             w.request_redraw();
             return;
         }
         // Already showing: its next frame draws the new state, or a covered one's retry does.
         if visible && stale { w.request_redraw(); }
-        self.show_cached();
-    }
-
-    pub(super) fn show_cached(&mut self) {
-        let Some(w) = &mut self.win else { return };
-        w.show(true);
-        w.visible = true;
-        w.occluded = false;
-        self.rt.set_live_visible(true);
-        // No settle, frame, surface configure or acquisition on a cached reveal, unless
-        // the refreshed frame left motion running.
-        if !self.idle { w.request_redraw(); }
+        self.reveal(event_loop, Reveal::Cached, None);
     }
 
     pub(super) fn first_frame_ready(&mut self, event_loop: &ActiveEventLoop) {
@@ -43,11 +42,11 @@ impl<S: 'static> Host<S> {
         }
         let reveal = w.first_frame.complete();
         #[cfg(all(unix, not(target_os = "macos"), not(target_os = "ios"), not(target_os = "android")))]
-        if self.float_on_open && !w.first_frame.notified { float_on_open::release(&w.window, &self.options, self.spec.min_size); }
+        if self.float_on_open && !w.first_frame.notified() { float_on_open::release(&w.window, &self.options, self.spec.min_size); }
         self.native_handle.native.ready.store(true, Ordering::Release);
         *self.shared.window_error.lock().unwrap() = None;
         crate::tooling::perf_warn::launch::first_frame();
-        w.first_frame.notified = true;
+        w.first_frame.notify();
         if w.first_frame.take_ready() { self.run_on_ready(); }
         if reveal {
             self.reveal_launcher(event_loop);
@@ -76,13 +75,13 @@ impl<S: 'static> Host<S> {
         #[cfg(target_os = "macos")]
         {
             let _ = request.pointer;
-            crate::platform::macos::place_window(&w.window, self.rt.viewport, request);
+            crate::platform::macos::place_window(&w.window, self.rt.window_viewport(), request);
         }
         #[cfg(not(target_os = "macos"))]
         if let Some(monitor) = crate::overlay::monitor_at(event_loop, &request.display, request.pointer) {
             let scale = monitor.scale_factor();
             let area = monitor.size();
-            let rect = crate::overlay::options::local_rect(crate::windows::PlaceRequest::at(self.rt.viewport), Some(request.placement),
+            let rect = crate::overlay::options::local_rect(crate::windows::PlaceRequest::at(self.rt.window_viewport()), Some(request.placement),
                 (area.width as f32 / scale as f32, area.height as f32 / scale as f32));
             let origin = monitor.position();
             chrome::request_inner_size(&w.window, (rect[2], rect[3]));
@@ -102,7 +101,7 @@ impl<S: 'static> Host<S> {
     /// inside the window's minimum and maximum. A size outlives the window: one created later
     /// opens at it.
     pub(super) fn take_frame_request(&mut self, start: f64, painting: bool) {
-        self.rt.fit_held = false;
+        self.rt.fit.take_held();
         let Some(mut request) = self.rt.window_frame.take() else { return };
         let (min, max) = self.options.size_limits(self.spec.min_size);
         request.size = request.size.map(|size| crate::window::frame::clamp_size(size, min, max));
@@ -116,16 +115,16 @@ impl<S: 'static> Host<S> {
             use crate::window::frame::{FrameAnim, snap, target};
             let Some((frame, visible, scale)) = crate::platform::macos::window_geometry(&w.window) else { return };
             // Resizing again mid-flight keeps the edge the first resize keeps.
-            let base = self.frame_anim.map_or(frame, |a| a.to);
+            let base = self.frame_move.map_or(frame, |m| m.anim.to);
             let outer = request.size.and_then(|size| crate::platform::macos::outer_size(&w.window, size));
             let to = snap(target(base, outer, request.center, visible), scale);
             // Centring alone carries on with a resize already moving.
-            let spring = request.spring.or(self.frame_anim.and_then(|a| a.spring).filter(|_| request.size.is_none()));
+            let spring = request.spring.or(self.frame_move.and_then(|m| m.anim.spring).filter(|_| request.size.is_none()));
             if painting {
-                self.frame_anim = Some(FrameAnim::retarget(self.frame_anim.as_ref(), spring, start, frame, to));
-                self.frame_origin = Some([frame[0], frame[1]]);
+                let anim = FrameAnim::retarget(self.frame_move.as_ref().map(|m| &m.anim), spring, start, frame, to);
+                self.frame_move = Some(FrameMove { anim, origin: [frame[0], frame[1]] });
             } else {
-                self.frame_anim = None;
+                self.frame_move = None;
                 crate::platform::macos::set_window_frame(&w.window, to);
                 self.sync_origin();
             }
@@ -172,24 +171,25 @@ impl<S: 'static> Host<S> {
             // frame drawn for it, leaving a stale strip. A request taken then starts here and
             // moves from the next frame.
             let resting = self.idle;
-            let moving = self.frame_anim.is_some();
+            let moving = self.frame_move.is_some();
             let (Some(w), Some((gpu, ..))) = (self.win.as_mut(), self.gpu.as_ref()) else { return };
             w.present_with_transaction(moving);
             if resting { return; }
-            let Some(anim) = self.frame_anim.as_mut() else { return };
+            let Some(m) = self.frame_move.as_mut() else { return };
             let Some((frame, _, scale)) = crate::platform::macos::window_geometry(&w.window) else { return };
             // Someone dragged the window mid-flight: the drag wins. The window stays where they
             // put it and the size carries on from there.
-            if let Some([x, y]) = self.frame_origin && ((frame[0] - x).abs() > 0.5 || (frame[1] - y).abs() > 0.5) {
-                anim.shift(frame[0] - x, frame[1] - y);
+            let [x, y] = m.origin;
+            if (frame[0] - x).abs() > 0.5 || (frame[1] - y).abs() > 0.5 {
+                m.anim.shift(frame[0] - x, frame[1] - y);
             }
-            let rect = snap(anim.sample(now).0, scale);
+            let rect = snap(m.anim.sample(now).0, scale);
             crate::platform::macos::set_window_frame(&w.window, rect);
-            self.frame_origin = Some([rect[0], rect[1]]);
-            if anim.done(now) { self.frame_anim = None; }
+            m.origin = [rect[0], rect[1]];
+            if m.anim.done(now) { self.frame_move = None; }
             sync_chrome(&mut self.rt, w, self.chrome, self.titlebar);
             let size = w.window.inner_size();
-            w.resize_surface(&gpu.device, size);
+            w.resize_surface(gpu, size);
             let scale = w.window.scale_factor() as f32;
             self.rt.step_viewport((size.width as f32 / scale, size.height as f32 / scale), scale);
             // In this frame's layout, not the next one when `Moved` arrives.
@@ -199,16 +199,16 @@ impl<S: 'static> Host<S> {
 
     /// A window that stops painting mid-move lands where it was going.
     pub(super) fn land_frame(&mut self) {
-        let anim = self.frame_anim.take();
+        let moving = self.frame_move.take();
         #[cfg(target_os = "macos")]
         if let Some(w) = &mut self.win {
             w.present_with_transaction(false);
             w.set_live_resize(false);
-            if let Some(anim) = anim { crate::platform::macos::set_window_frame(&w.window, anim.to); }
+            if let Some(m) = moving { crate::platform::macos::set_window_frame(&w.window, m.anim.to); }
         }
         #[cfg(target_os = "macos")]
         self.sync_origin();
         #[cfg(not(target_os = "macos"))]
-        let _ = anim;
+        let _ = moving;
     }
 }

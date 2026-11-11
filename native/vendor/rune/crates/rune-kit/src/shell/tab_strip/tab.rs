@@ -119,7 +119,7 @@ pub(super) fn build<S: 'static>(item: TabItem<'_, S>, at: Place, st: &Strip<S>, 
         false => (0.0, 0.0),
     };
     let shift = st.drag.shift(at.index, vertical);
-    let reordering = st.drag.gap_open() || matches!(st.drag.phase, super::TabDragPhase::Pressed { .. } | super::TabDragPhase::Dragging(super::TabDragMode::Reorder { .. }));
+    let reordering = st.drag.gap_open() || matches!(st.drag.phase(), super::TabDragPhase::Pressed { .. } | super::TabDragPhase::Dragging(super::TabDragMode::Reorder { .. }));
     let mut slot = el()
         .key(format!("t-{id}"))
         .label(item.title.into_owned())
@@ -147,7 +147,7 @@ pub(super) fn build<S: 'static>(item: TabItem<'_, S>, at: Place, st: &Strip<S>, 
     // Lifted off the strip: a touch larger, floating. The one bounce in the strip.
     let lift = |e: El| k.elevate(e.radius(RADIUS).scale(1.03).scale_motion(rune_motion::motion::MORPH).motion_intent(MotionIntent::OVERSHOOT), &k.elevation.floating);
     let ghost = (torn && st.layered && !st.drag.handed_off()).then(|| {
-        let w = at.width.or(st.drag.lifted_rect().map(|r| r[2] / st.zoom)).unwrap_or(224.0);
+        let w = at.width.or(st.drag.lifted_rect().map(|r| r[2])).unwrap_or(224.0);
         let float = el().key(format!("{}-ghost", st.list_key)).size(w, h).child(pill.clone()).a11y_hidden();
         // Over the tab's own place, then wherever the pointer takes it.
         let float = float.anchored(format!("{}-anchor", st.list_key), rune::Side::Bottom, rune::Align::Start, -h);
@@ -325,7 +325,7 @@ fn status_slot<S: 'static>(look: SlotLook, st: &Strip<S>, id: &str, k: &Kit) -> 
 
 fn handlers<S: 'static>(mut slot: El, id: &str, at: &Place, closable: bool, st: &Strip<S>) -> El {
     let h = &st.handlers;
-    let (access, zoom, lane, vertical) = (st.access, st.zoom, at.lane, at.width.is_none());
+    let (access, lane, vertical) = (st.access, at.lane, at.width.is_none());
     let lock = at.width.filter(|_| st.horizontal_lock).unwrap_or(0.0);
     let select_early = st.select_on_drag_start;
     let reveal = (st.scroll_key.clone(), format!("t-{id}"));
@@ -336,7 +336,7 @@ fn handlers<S: 'static>(mut slot: El, id: &str, at: &Place, closable: bool, st: 
         let (id, select, close, reveal) = (id.to_owned(), h.select.clone(), h.close.clone().filter(|_| closable), reveal.clone());
         slot = slot.on_press_tx(move |s: &mut S, tx: &mut Tx| {
             if let Some(a) = access
-                && std::mem::take(&mut a(s).suppress_click)
+                && a(s).take_swallowed_click()
             {
                 return;
             }
@@ -390,7 +390,7 @@ fn handlers<S: 'static>(mut slot: El, id: &str, at: &Place, closable: bool, st: 
                     super::auto_scroll::step(&auto, &scroll, vertical, d, tx);
                 }
                 let scrolled = access(s).scrolled_since(super::auto_scroll::offset(&auto, vertical));
-                let (dx, dy) = (d.dx / zoom, d.dy / zoom);
+                let (dx, dy) = (d.dx, d.dy);
                 let (along, across) = if vertical { (dy + scrolled, dx) } else { (dx + scrolled, dy) };
                 let was_torn = access(s).torn_out();
                 if access(s).follow(&lane, along, across, [dx, dy]) {
@@ -406,14 +406,14 @@ fn handlers<S: 'static>(mut slot: El, id: &str, at: &Place, closable: bool, st: 
             Phase::Up => {
                 tx.animated();
                 let on_tab = (0.0..=d.w).contains(&d.x) && (0.0..=d.h).contains(&d.y);
-                match access(s).release(d.cancelled(), on_tab) {
-                    // A press already selected the tab; its click needn't again.
-                    Release::Click => access(s).suppress_click = select_early && on_tab,
+                // A press already selected the tab; its click needn't again.
+                match access(s).release(d.cancelled(), on_tab, select_early && on_tab) {
+                    Release::Click => {}
                     Release::Reorder { from, to } => {
                         if let Some(f) = &reorder {
                             f(s, TabReorder { id: id.clone(), from, to }, tx);
                         }
-                        access(s).phase = super::TabDragPhase::Idle;
+                        access(s).dropped();
                     }
                     Release::TearOut { from, offset } => {
                         if let Some(f) = &tear {

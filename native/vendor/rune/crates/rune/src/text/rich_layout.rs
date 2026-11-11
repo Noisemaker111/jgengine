@@ -13,7 +13,7 @@ pub struct RichLayoutOptions {
 
 impl Default for RichLayoutOptions {
     fn default() -> Self {
-        RichLayoutOptions { align: Alignment::Start, wrap_anywhere: false, direction: parley::BaseDirection::Ltr }
+        RichLayoutOptions { align: Alignment::Start, wrap_anywhere: false, direction: parley::BaseDirection::Auto }
     }
 }
 
@@ -50,8 +50,8 @@ impl RichLayoutOptions {
     }
 
     /// [`Self::direction`] of a resolved flow.
-    pub(crate) fn flow(mut self, flow: crate::el::Flow) -> Self {
-        self.direction = flow.base();
+    pub(crate) fn flow(mut self, flow: Option<crate::el::Flow>) -> Self {
+        self.direction = flow.map_or(parley::BaseDirection::Auto, crate::el::Flow::base);
         self
     }
 }
@@ -131,7 +131,7 @@ impl TextSystem {
         wrap_anywhere: bool,
         cache: bool,
     ) -> Rc<Layout<Ink>> {
-        self.layout_keyed(None, text, spans, blocks, pills, style, scale, max_width, align, wrap_anywhere, cache, parley::BaseDirection::Ltr)
+        self.layout_keyed(None, text, spans, blocks, pills, style, scale, max_width, align, wrap_anywhere, cache, parley::BaseDirection::Auto)
     }
 
     /// Secure display runs must not enter the shared layout cache or leave character
@@ -145,7 +145,7 @@ impl TextSystem {
         align: Alignment,
     ) -> Rc<Layout<Ink>> {
         let shape = spec.shape_key(scale);
-        self.layout_keyed(shape, &spec.content, &spec.spans, &spec.blocks, &spec.pills, spec.style, scale, max_width, align, spec.wrap_anywhere, !spec.redacted, spec.base())
+        self.layout_keyed(shape, &spec.content, &spec.spans, &spec.cold.blocks, &spec.cold.pills, spec.style, scale, max_width, align, spec.wrap_anywhere, !spec.redacted, spec.base())
     }
 
     /// [`Self::layout_blocks_inner`] of a cut of `spec`'s content, in its direction.
@@ -160,7 +160,7 @@ impl TextSystem {
         align: Alignment,
         cache: bool,
     ) -> Rc<Layout<Ink>> {
-        self.layout_keyed(None, text, spans, &spec.blocks, &[], spec.style, scale, max_width, align, spec.wrap_anywhere, cache, spec.base())
+        self.layout_keyed(None, text, spans, &spec.cold.blocks, &[], spec.style, scale, max_width, align, spec.wrap_anywhere, cache, spec.base())
     }
 }
 

@@ -42,7 +42,7 @@ fn plain_field_leaves_format_chords_to_the_app() {
     // A field with no formatting lays out as plain text: no spans, blocks or soft breaks.
     let n = rt.nodes.iter().find(|n| n.key.as_deref() == Some("f")).unwrap();
     let t = n.text.as_ref().unwrap();
-    assert!(t.spans.is_empty() && t.blocks.is_empty() && t.soft_breaks.is_empty() && t.strikes.is_empty());
+    assert!(t.spans.is_empty() && t.cold.blocks.is_empty() && t.cold.soft_breaks.is_empty() && t.cold.strikes.is_empty());
 }
 
 #[test]
@@ -733,7 +733,7 @@ fn undo_group_is_unwind_safe_and_interacts_with_clear_history_paste_and_soft_bre
             panic!("boom");
         });
     }));
-    assert!(e.group.0.is_none(), "unwinding clears the active group");
+    assert!(!e.group.is_open(), "unwinding clears the active group");
     e.insert("?");
     assert_eq!(e.history.undo.len(), 1, "edits after a caught panic record again");
     e.undo();
@@ -1046,7 +1046,7 @@ fn pill_edge_cases_words_lines_bidi_and_direct_text_mutation() {
     m.set_caret(0);
     m.toggle_mark(Mark::Pill("x".into()));
     m.set_mark(Mark::Pill("x".into()));
-    assert!(m.pending.is_none());
+    assert_eq!(m.typing, Typing::Inherited);
     m.set_selection(2, 10);
     m.set_mark(Mark::Pill("agent:y".into()));
     assert_eq!(pills_of(&m), [(2..10, "agent:y".to_owned())]);

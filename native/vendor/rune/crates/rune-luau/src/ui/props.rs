@@ -93,6 +93,7 @@ atoms! {
     Version = "version",
     RenderRow = "renderRow",
     RowKey = "rowKey",
+    RowVersions = "rowVersions",
     OnVisibleRows = "onVisibleRows",
     OnHover = "onHover",
     HoverTransition = "hoverTransition",
@@ -107,6 +108,7 @@ atoms! {
     Disabled = "disabled",
     HelpSide = "helpSide",
     FadeOut = "fadeOut",
+    Dir = "dir",
 }
 
 /// Every prop name the built-in nodes read.
@@ -193,6 +195,7 @@ const LEFT: u8 = 8;
 /// it: the press handler needs the key, `pad` yields to the sides set beside it, a text node's
 /// style and colour land together, and `center`, `corners`, `selected` and `disabled` overrule
 /// the props they overlap.
+#[derive(Clone)]
 pub(crate) struct Props {
     pub(crate) key: Option<String>,
     pub(crate) on_hover: Option<Rc<Callback>>,
@@ -214,6 +217,9 @@ pub(crate) struct Props {
     border: (Option<f32>, Option<Color>),
     pub(crate) scroll: Option<(bool, bool)>,
     stick_bottom: bool,
+    /// A prop whose effect depends on more than its value and the colours (`shadow`): the node
+    /// can't be a template.
+    pub(crate) uncacheable: bool,
 }
 
 impl Props {
@@ -240,6 +246,7 @@ impl Props {
             border: (None, None),
             scroll: None,
             stick_bottom: false,
+            uncacheable: false,
         }
     }
 
@@ -507,6 +514,7 @@ impl Props {
             }
             Atom::Shadow => match v {
                 Value::Str(s) => {
+                    self.uncacheable = true;
                     if let Some(shadows) = env.shadows.as_ref().and_then(|f| f(s, env.dark)) {
                         // In CSS order, the first on top.
                         with(e, |e| shadows.into_iter().rev().fold(e, El::box_shadow));
@@ -523,11 +531,28 @@ impl Props {
             }
             Atom::Disabled => self.disabled = flag(v)?,
             Atom::HelpSide => {
-                if matches!(v, Value::Str("top")) {
-                    with(e, El::help_above);
+                let side = match v {
+                    Value::Str("top") => Some(rune::Side::Top),
+                    Value::Str("left") => Some(rune::Side::Left),
+                    Value::Str("right") => Some(rune::Side::Right),
+                    _ => None,
+                };
+                if let Some(side) = side {
+                    with(e, |e| e.help_side(side));
                 }
             }
             Atom::FadeOut => self.fade_out = flag(v)?,
+            // HTML's `dir`: `ltr` or `rtl` lays the subtree out that way whatever the window's
+            // direction, `auto` takes a text's first strong direction.
+            Atom::Dir => {
+                let dir = match string(v)? {
+                    "ltr" => rune::Direction::Ltr,
+                    "rtl" => rune::Direction::Rtl,
+                    "auto" => rune::Direction::Auto,
+                    s => return Err(format!("unknown dir {s}")),
+                };
+                with(e, |e| e.dir(dir));
+            }
             // Tables, read off the stack by `decode_at`.
             Atom::Corners | Atom::Pin => return Err(format!("{name} must be a table, got {}", self::name(v))),
             Atom::LineHeight => self.text = self.text.lh(num(v)?),
@@ -559,7 +584,7 @@ impl Props {
                 })
             }
             // Read by the node that takes them; elsewhere they mean nothing.
-            Atom::OnPress | Atom::OnHover | Atom::Count | Atom::EstimatedRowHeight | Atom::Version | Atom::RenderRow | Atom::RowKey | Atom::OnVisibleRows => {
+            Atom::OnPress | Atom::OnHover | Atom::Count | Atom::EstimatedRowHeight | Atom::Version | Atom::RenderRow | Atom::RowKey | Atom::RowVersions | Atom::OnVisibleRows => {
                 env.warn_once(format!("{name} has no effect on this node"));
             }
         }
@@ -643,6 +668,7 @@ fn role(s: &str) -> Option<&'static str> {
         "heading" => "heading",
         "img" => "img",
         "status" => "status",
+        "alert" => "alert",
         _ => return None,
     })
 }
@@ -660,5 +686,13 @@ pub(crate) fn name(v: Value<'_>) -> &'static str {
 
 /// A number as Luau prints it: `3`, not `3.0`.
 pub(crate) fn format_num(n: f64) -> String {
-    if n.fract() == 0.0 && n.abs() < 1e15 { format!("{}", n as i64) } else { n.to_string() }
+    let mut s = String::new();
+    push_num(&mut s, n);
+    s
+}
+
+/// [`format_num`] onto the end of `out`.
+pub(crate) fn push_num(out: &mut String, n: f64) {
+    use std::fmt::Write;
+    let _ = if n.fract() == 0.0 && n.abs() < 1e15 { write!(out, "{}", n as i64) } else { write!(out, "{n}") };
 }

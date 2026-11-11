@@ -10,8 +10,8 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 # Rune is pre-release and takes no pull requests: vendored at native/vendor/rune
-# (upstream dev d751f071) with the jgengine web-transparency patch in
-# crates/rune/src/platform/web.rs. See native/vendor/rune/VENDORED.md.
+# (upstream dev c92e462e) with the jgengine patches listed in
+# native/vendor/rune/VENDORED.md.
 rune = { path = "../../vendor/rune/crates/rune", default-features = false, features = ["embedded-fonts", "svg"] }
 rune-taffy = { path = "../../vendor/rune/crates/rune-taffy" }
 serde.workspace = true

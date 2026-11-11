@@ -10,13 +10,44 @@ use super::*;
 /// held.
 #[derive(Default)]
 pub(super) struct HoverHold {
-    /// The pointer moved, pressed or a hand scrolled while layout moved: hover follows the
-    /// pointer until the motion settles.
-    pub(super) released: bool,
-    /// The last pass held hover: moving layout carried an element whose hover would change.
-    pub(super) held: bool,
+    hold: Hold,
     /// Scratch for the hover tracks `update_interaction` would change.
     flips: Vec<Flip>,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+enum Hold {
+    /// Hover follows the pointer, and moving layout may hold it.
+    #[default]
+    Free,
+    /// The last pass held hover: moving layout carried an element whose hover would change.
+    Held,
+    /// The pointer moved, pressed or a hand scrolled while layout moved: hover follows the
+    /// pointer until the motion settles.
+    Released,
+}
+
+impl HoverHold {
+    /// The last pass held hover.
+    pub(super) fn held(&self) -> bool { self.hold == Hold::Held }
+
+    /// Hover follows the pointer until layout settles.
+    pub(super) fn released(&self) -> bool { self.hold == Hold::Released }
+
+    /// Notes whether this pass held hover. Released, nothing holds it.
+    fn set_held(&mut self, held: bool) {
+        if self.hold != Hold::Released { self.hold = if held { Hold::Held } else { Hold::Free }; }
+    }
+
+    /// The hand moved: with layout `moving`, hover follows the pointer until it settles.
+    fn release(&mut self, moving: bool) {
+        if self.hold != Hold::Released { self.hold = if moving { Hold::Released } else { Hold::Free }; }
+    }
+
+    /// Layout settled: a released hold may hold again.
+    fn settled(&mut self) {
+        if self.hold == Hold::Released { self.hold = Hold::Free; }
+    }
 }
 
 /// Node `i`'s hover track: where it would go, how, whether that changes it, and whether it
@@ -43,11 +74,11 @@ impl<S: 'static> Runtime<S> {
     /// Hover under the pointer at (x, y): what's hovered and what it's inside. Returns whether
     /// moving layout holds hover this pass, for the `update_interaction` that follows.
     pub(super) fn refresh_hover(&mut self, x: f32, y: f32) -> bool {
-        if self.hover_hold.released && !self.layout_moving() { self.hover_hold.released = false; }
+        if self.hover_hold.released() && !self.layout_moving() { self.hover_hold.settled(); }
         let hovered = self.primary_target(x, y);
         let within = self.within_next();
         let held = self.decide_hold(hovered, within.as_ref(), None);
-        self.hover_hold.held = held;
+        self.hover_hold.set_held(held);
         if let Some((inside, _)) = within { self.apply_within(inside, held); }
         self.apply_hovered(hovered, held);
         held
@@ -58,7 +89,7 @@ impl<S: 'static> Runtime<S> {
         let Some(within) = self.within_next() else { return };
         let hovered = self.pointer.filter(|_| self.hover_may_hold()).and_then(|(x, y)| self.primary_target(x, y));
         let held = self.decide_hold(hovered, Some(&within), None);
-        self.hover_hold.held = held;
+        self.hover_hold.set_held(held);
         self.apply_within(within.0, held);
     }
 
@@ -71,16 +102,16 @@ impl<S: 'static> Runtime<S> {
         // A row never takes focus from a text field (a search field above its results).
         let row = hovered.and_then(|i| self.highlight_row(i)).filter(|_| self.focused_input().is_none());
         match row {
-            Some(i) if self.focused.as_deref() != Some(&self.nodes[i].path) || !self.hover_focus =>
+            Some(i) if self.focus.path() != Some(&self.nodes[i].path) || !self.focus.hovered() =>
                 self.queue.push(Action::HoverFocus(Some(self.nodes[i].path.clone()))),
-            None if self.hover_focus => self.queue.push(Action::HoverFocus(None)),
+            None if self.focus.hovered() => self.queue.push(Action::HoverFocus(None)),
             _ => {}
         }
     }
 
     /// None when no element tracks `on_hover_change` and none is waiting on a delay.
     fn within_next(&self) -> Option<Within> {
-        if self.hover_within.is_empty() && self.hover_shown.is_empty() && self.hover_pending.is_empty()
+        if self.hover_within.is_empty() && self.hover_delays.is_empty()
             && !self.hits.iter().any(|(id, _)| self.node_index.get(id).is_some_and(|&i| self.nodes[i].handlers.get().is_some_and(|h| h.on_hover_change.is_some())))
         {
             return None;
@@ -98,7 +129,7 @@ impl<S: 'static> Runtime<S> {
             }
         }
         // A held press stays inside what holds it until it releases.
-        if let Some((captured, _)) = &self.capture {
+        if let Some(captured) = self.press.path() {
             for path in &self.hover_within {
                 if !inside.contains(path) && holds(path, captured)
                     && self.nodes.iter().enumerate().any(|(i, n)| n.path == *path && self.allowed(i))
@@ -158,78 +189,24 @@ impl<S: 'static> Runtime<S> {
     pub(super) fn hover_pruned(&mut self, n: &Node) {
         let take = |list: &mut Vec<String>| list.iter().position(|p| *p == n.path).map(|at| list.remove(at)).is_some();
         let inside = take(&mut self.hover_within);
-        let shown = take(&mut self.hover_shown);
-        self.hover_pending.retain(|p| p.0 != n.path);
+        let shown = self.hover_delays.forget(&n.path);
         let heard = if n.handlers.hover_delay == [0.0; 2] { inside } else { shown };
         let Some(f) = n.handlers.on_hover_change.clone().filter(|_| heard) else { return };
         self.hover_gone.push((n.path.clone(), f));
         self.queue.push(Action::HoverChange(n.path.clone(), false));
     }
 
-    /// Starts or drops the waits of `hover_delays` elements whose inside changed.
-    pub(super) fn settle_hover_delays(&mut self) {
-        let mut paths: Vec<String> = self.hover_shown.clone();
-        paths.extend(self.hover_pending.iter().map(|p| p.0.clone()));
-        paths.extend(self.hover_within.iter().filter(|p| self.node(p).is_some_and(|n| n.handlers.hover_delay != [0.0; 2])).cloned());
-        paths.sort();
-        paths.dedup();
-        let now = self.now_clock();
-        for path in paths {
-            let Some(delay) = self.node(&path).map(|n| n.handlers.hover_delay) else {
-                // Gone or on its way out: a shown hover hears its leave now, a pending enter
-                // just stops waiting.
-                self.hover_pending.retain(|p| p.0 != path);
-                if self.hover_shown.contains(&path) { self.report_hover(path, false); }
-                continue;
-            };
-            let shown = self.hover_shown.contains(&path);
-            // A held button, or a press or blur until the pointer next moves, never starts the
-            // wait to report an enter.
-            let want = self.hover_within.contains(&path)
-                && (shown || self.capture.is_none() && !self.hover_paused);
-            let pending = self.hover_pending.iter().position(|p| p.0 == path);
-            if want == shown {
-                if let Some(i) = pending { self.hover_pending.remove(i); }
-                continue;
-            }
-            if pending.is_some_and(|i| self.hover_pending[i].1 == want) { continue; }
-            if let Some(i) = pending { self.hover_pending.remove(i); }
-            let d = delay[if want { 0 } else { 1 }] as f64;
-            if d <= 0.0 {
-                self.report_hover(path, want);
-            } else {
-                self.hover_pending.push((path, want, now + d));
-                self.schedule_wakes_from(now, [std::time::Duration::from_secs_f64(d)]);
-            }
-        }
-    }
-
-    pub(super) fn report_hover(&mut self, path: String, inside: bool) {
-        self.hover_shown.retain(|p| *p != path);
-        if inside { self.hover_shown.push(path.clone()); }
-        self.queue.push(Action::HoverChange(path, inside));
-    }
-
-    /// Reports the delayed hover changes due by this frame.
-    pub(super) fn fire_hover_delays(&mut self) {
-        if self.hover_pending.is_empty() { return; }
-        let clock = self.clock + 1e-6;
-        let (due, rest): (Vec<_>, Vec<_>) = std::mem::take(&mut self.hover_pending).into_iter().partition(|p| p.2 <= clock);
-        self.hover_pending = rest;
-        for (path, inside, _) in due { self.report_hover(path, inside); }
-    }
-
     /// The pointer moved or pressed, or a hand scrolled: hover follows the pointer through the
     /// layout moving now, until it settles.
     pub(super) fn release_hover_hold(&mut self) {
-        if !self.hover_hold.released && self.layout_moving() { self.hover_hold.released = true; }
-        self.hover_hold.held = false;
+        let moving = !self.hover_hold.released() && self.layout_moving();
+        self.hover_hold.release(moving);
     }
 
     /// Hover may wait on moving layout: the pointer is in the window, holds no press, and
     /// hasn't moved since the motion started.
     fn hover_may_hold(&self) -> bool {
-        self.pointer.is_some() && self.capture.is_none() && !self.hover_hold.released
+        self.pointer.is_some() && !self.press.is_held() && !self.hover_hold.released()
     }
 
     /// Element `i` is carried by moving layout: a frame, offset or flight spring on it or an
@@ -268,7 +245,7 @@ impl<S: 'static> Runtime<S> {
     /// While moving layout holds hover, the hovered element, as the cursor and tooltips see
     /// it: what the pointer was over, not what slid under it.
     pub(crate) fn held_hover(&self) -> Option<Option<usize>> {
-        (self.hover_hold.held && self.capture.is_none() && self.secondary_capture.is_none())
+        (self.hover_hold.held() && !self.pointer_captured())
             .then(|| self.hovered.as_deref().and_then(|p| self.hover_live(p)))
     }
 
@@ -280,7 +257,7 @@ impl<S: 'static> Runtime<S> {
     }
 
     fn captured(&self) -> Option<&str> {
-        self.capture.as_ref().map(|(p, _)| p.as_str()).or(self.secondary_capture.as_deref())
+        self.press.path().or(self.secondary.path())
     }
 
     /// The innermost `hover_alone` element under the pointer: the elements around it show no
@@ -311,8 +288,8 @@ impl<S: 'static> Runtime<S> {
         if !(n.vis.hover().a > 0.0 || n.vis_flags.hover_group()) || self.is_exiting(n.id) { return None; }
         let inside = self.pointer.is_some_and(|(x, y)| self.node_contains(i, x, y))
             || n.vis.hover_share.as_ref().is_some_and(|k| shared.contains(k))
-            || (n.vis.hover_focus && self.keyboard_focus && self.focus_within(i));
-        let capture_inside = if self.secondary_capture.is_some() { inside } else { self.capture_inside };
+            || (n.vis.hover_focus && self.focus.keyboard() && self.focus_within(i));
+        let capture_inside = if self.secondary.is_held() { inside } else { self.press.inside() };
         let held = captured == Some(n.path.as_str()) && capture_inside;
         let allowed = self.allowed(i);
         // A held press stays hovered while it's inside, though a press scale shrank the drawn
@@ -341,7 +318,7 @@ impl<S: 'static> Runtime<S> {
         }
         let mut changed = false;
         let mut flips = std::mem::take(&mut self.hover_hold.flips);
-        let captured = self.capture.as_ref().map(|(p, _)| p.as_str()).or(self.secondary_capture.as_deref());
+        let captured = self.press.path().or(self.secondary.path());
         let alone = self.hovered_alone();
         let shared = self.shared_hovered();
         for i in 0..self.nodes.len() {
@@ -363,10 +340,10 @@ impl<S: 'static> Runtime<S> {
                 None => {}
             }
             if n.vis.press().a <= 0.0 && press_scale.is_none() { continue; }
-            let capture_inside = if self.secondary_capture.is_some() {
+            let capture_inside = if self.secondary.is_held() {
                 self.pointer.is_some_and(|(x, y)| self.node_contains(i, x, y))
             } else {
-                self.capture_inside
+                self.press.inside()
             };
             let down = self.allowed(i) && captured == Some(n.path.as_str()) && capture_inside;
             let pressed = down && n.vis.press().a > 0.0;
@@ -404,7 +381,7 @@ impl<S: 'static> Runtime<S> {
             changed = true;
         }
         self.hover_hold.flips = flips;
-        self.hover_hold.held = held;
+        self.hover_hold.set_held(held);
         changed
     }
 }

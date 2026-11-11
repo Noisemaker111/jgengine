@@ -4,22 +4,6 @@
 use super::*;
 
 impl El {
-    /// Scroll on the selected axes while preserving the supplied child layout.
-    /// Unlike `scroll_x`, this leaves wrapping, widths and flex direction as authored.
-    pub fn scroll_axes(mut self, x: bool, y: bool) -> Self {
-        let axes = match (x, y) {
-            (true, true) => ScrollAxes::Both,
-            (true, false) => ScrollAxes::X,
-            (false, true) => ScrollAxes::Y,
-            (false, false) => return self,
-        };
-        self.viewport(ScrollSpec { stick_bottom: false }, axes,
-            if x { taffy::Overflow::Scroll } else { taffy::Overflow::Hidden },
-            if y { taffy::Overflow::Scroll } else { taffy::Overflow::Hidden });
-        self.cold_mut().scroll_preserve_layout = true;
-        self
-    }
-
     /// A vertical scroll viewport over its children.
     ///
     /// The viewport needs a bounded height to scroll: a fixed `.h(..)`, or a `.grow(1.0)` share
@@ -44,7 +28,6 @@ impl El {
         let cold = self.cold_mut();
         cold.scroll = Some(spec);
         cold.scroll_axes = axes;
-        cold.scroll_preserve_layout = false;
         #[cfg(debug_assertions)]
         { cold.scroll_source = Some(std::panic::Location::caller()); }
         self.style.set_overflow(x, y);
@@ -108,7 +91,15 @@ impl El {
     /// least `min` points, above its bottom: where a chat shows its "jump to latest" button and
     /// hides it again near the end. Once after its first layout, then only when that changes.
     pub fn on_far_from_bottom<S: 'static>(mut self, min: f32, f: impl Fn(&mut S, bool) + 'static) -> Self {
-        self.handlers.on_far_from_bottom = Some((min, Rc::new(move |s, far| f(downcast::<S>(s), far))));
+        self.handlers.on_far_from_bottom = Some((min, None, Rc::new(move |s, far| f(downcast::<S>(s), far))));
+        self
+    }
+    /// [`El::on_far_from_bottom`] for a viewport that runs under a frame, the nearest ancestor
+    /// keyed `frame` (a chat's pane, with a header and a dock over its scroll): far is more than
+    /// the frame's height above the bottom, and at least `min`. The height is measured as it
+    /// scrolls, so the view never reads it and a resize re-runs no view.
+    pub fn on_far_from_bottom_under<S: 'static>(mut self, min: f32, frame: &str, f: impl Fn(&mut S, bool) + 'static) -> Self {
+        self.handlers.on_far_from_bottom = Some((min, Some(Rc::from(frame)), Rc::new(move |s, far| f(downcast::<S>(s), far))));
         self
     }
     /// On a scroll viewport, fade its top and bottom edges over `width` points (16–32 reads well),
@@ -252,3 +243,47 @@ impl ScrollFade {
         self
     }
 }
+
+/// A vertical scroll viewport.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ScrollSpec {
+    /// Follow the end: while scrolled to the bottom, growth keeps the bottom in view, and a new
+    /// viewport opens at the bottom on its first frame. When the content is a growth stack, room
+    /// the viewport gains at its bottom (a composer shrinking under it) is held under the last
+    /// row and closes on the stack's spring once its rows stop growing, so a send only moves
+    /// the rows up.
+    pub stick_bottom: bool,
+}
+
+/// A scroll viewport's content-aware edges: `El::scroll_edge_fade`, `El::scroll_margin` and
+/// `El::scroll_anchor`.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub(crate) struct ScrollEdges {
+    /// Fade width (points) for the top and bottom edges; 0 for none.
+    pub(crate) fade: f32,
+    /// How the fade follows the content hidden under each edge (`El::scroll_fade`).
+    pub(crate) fade_style: FadeStyle,
+    /// Space `Tx::scroll_into_view` leaves between a revealed row and the viewport's edge.
+    pub(crate) margin: f32,
+    /// The viewport keeps its top row where it is when content above it changes.
+    pub(crate) anchor: bool,
+}
+
+/// The axes a scroll viewport moves on: `El::scroll` (vertical), `El::scroll_x`, `El::scroll_xy`.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(crate) enum ScrollAxes {
+    #[default]
+    Y,
+    X,
+    Both,
+}
+
+impl ScrollAxes {
+    pub(crate) fn x(self) -> bool { self != ScrollAxes::Y }
+    pub(crate) fn y(self) -> bool { self != ScrollAxes::X }
+    /// Whether it moves on the horizontal axis (`true`) or the vertical one.
+    pub(crate) fn has(self, horizontal: bool) -> bool { if horizontal { self.x() } else { self.y() } }
+}
+
+pub(crate) type AtBottomFn = Rc<dyn Fn(crate::states::States<'_>, bool)>;
+pub(crate) type VisibleRowsFn = Rc<dyn Fn(crate::states::States<'_>, std::ops::Range<usize>) -> bool>;

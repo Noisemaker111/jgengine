@@ -56,8 +56,8 @@ impl<S: 'static> Runtime<S> {
         // line count through a height spring, displaced siblings, or a lingering scroll glide.
         let revealed: HashSet<_> = self.nodes.iter()
             .filter(|n| {
-                n.input.as_ref().is_some_and(|input| input.edit.is_secure() && input.edit.is_revealed())
-                    || (n.input.is_none() && n.text.as_ref().is_some_and(|t| t.redacted && t.secure_revealed))
+                n.input.as_ref().is_some_and(|input| input.edit.masking() == crate::edit::Masking::Shown)
+                    || (n.input.is_none() && n.text.as_ref().is_some_and(|t| t.redacted && t.cold.secure_revealed))
             })
             .map(|n| n.id).collect();
         let mut concealed = std::mem::take(&mut scratch.concealed);
@@ -66,7 +66,7 @@ impl<S: 'static> Runtime<S> {
             concealed.resize(nodes.len(), false);
             for (i, n) in nodes.iter().enumerate() {
                 let hidden_now = n.input.as_ref().is_some_and(|input| input.edit.is_hidden_multiline())
-                    || (n.input.is_none() && n.text.as_ref().is_some_and(|t| t.redacted && !t.secure_revealed));
+                    || (n.input.is_none() && n.text.as_ref().is_some_and(|t| t.redacted && !t.cold.secure_revealed));
                 if hidden_now && revealed.contains(&n.id) {
                     concealed[i] = true;
                 }
@@ -79,7 +79,8 @@ impl<S: 'static> Runtime<S> {
         let instant = tx.instant || first || concealing;
         if tx.instant && !first { self.commit_why |= crate::runtime::CommitWhy::INSTANT; }
         // An instant change lands what it changes; motion an earlier change set going keeps on.
-        self.scene.keep_flights(tx.instant && !tx.settle && !first && !concealing);
+        let keeps_flights = tx.instant && !tx.settle && !first && !concealing;
+        self.scene.keep_flights(keeps_flights);
         let now = self.t;
         if self.fit_height && let Some(root) = nodes.first() { self.fit_window(root.local.h, tx, first); }
         let mut held = std::mem::take(&mut scratch.held);
@@ -188,12 +189,10 @@ impl<S: 'static> Runtime<S> {
             let resized = existed && (stack.window != self.viewport || held.get(c).copied().unwrap_or(false));
             stack.window = self.viewport;
             if first || !existed || tx.settle || self.reduced_motion || (reading && !revealing_moving) {
-                stack.width_hold_until = 0.0;
-                stack.width_shrink_until = 0.0;
+                stack.width_hold = WidthHold::Off;
                 stack.pending_heights.clear();
             } else if (width - stack.width).abs() > 0.25 {
-                stack.width_hold_until = now + 0.12;
-                stack.width_shrink_until = now + 0.4;
+                stack.width_hold = WidthHold::rewrap(now);
             }
             stack.width = width;
             stack.pending_heights.retain(|id, _| new_set.contains(id));
@@ -240,8 +239,8 @@ impl<S: 'static> Runtime<S> {
                 } else {
                     // Only a width/scale rewrap may shrink an active streaming row, including
                     // when fresh text arrives in the same frame as the resize.
-                    let t = if streaming && !self.relayout && now >= stack.width_shrink_until { h.max(g.h.min(g.target)) } else { h };
-                    if now < stack.width_hold_until {
+                    let t = if streaming && !self.relayout && stack.width_hold.may_shrink(now) { h.max(g.h.min(g.target)) } else { h };
+                    if stack.width_hold.defers(now) {
                         stack.pending_heights.insert(id, t);
                     } else {
                         stack.pending_heights.remove(&id);
@@ -312,7 +311,7 @@ impl<S: 'static> Runtime<S> {
         let mut top_moved = std::mem::take(&mut scratch.top_moved);
         top_moved.clear();
         let has_virtuals = !self.virtuals.is_empty();
-        let mut last = paint_tracks::LastBuild::default();
+        let mut last = paint_tracks::Finder::default();
         let mut skip_cursor = 0usize;
         let mut i = 0usize;
         while i < nodes.len() {
@@ -454,7 +453,11 @@ impl<S: 'static> Runtime<S> {
                     }
                     la
                 };
-                let flying = if self.flying.is_empty() || lands { None }
+                // An instant change that leaves a flying node's own layout as it was (a click
+                // placing a caret elsewhere, say) keeps its flight on its path, as it keeps
+                // other motion an earlier change set going.
+                let flying = if self.flying.is_empty() { None }
+                    else if lands { self.flying.iter().position(|f| f.0 == id && f.1 == nodes[i].local).filter(|_| keeps_flights && !nodes[i].instant_changes) }
                     else { self.flying.iter().position(|f| f.0 == id) };
                 // A growth row lays out its contents at once. When the top of a parent's contents
                 // moves in it (a padding, gap or margin above its first child changed), they all
@@ -764,7 +767,7 @@ impl<S: 'static> Runtime<S> {
                 // Exit visuals outlive their model. Never call an accessor captured by
                 // a deleted row while normalizing a later focus change.
                 if let Some(input) = &mut old.input {
-                    let was_revealed = input.edit.is_secure() && input.edit.is_revealed();
+                    let was_revealed = input.edit.masking() == crate::edit::Masking::Shown;
                     input.access = None;
                     input.key = None;
                     input.change = None;
@@ -782,7 +785,7 @@ impl<S: 'static> Runtime<S> {
                     }
                 } else if let Some(spec) = &mut old.text
                     && spec.redacted
-                    && spec.secure_revealed
+                    && spec.cold.secure_revealed
                 {
                     spec.conceal();
                     let scale = self.env.scale;
@@ -827,6 +830,7 @@ impl<S: 'static> Runtime<S> {
         self.commit_gen = self.commit_gen.wrapping_add(1);
         let (mut dissolve, mut cache, mut pix, mut drawn_ly, mut key_up, mut sticky, mut raise, mut any_loop) =
             (false, false, false, false, false, false, false, false);
+        let mut ordered = false;
         for n in &self.nodes {
             dissolve |= n.vis_flags.blend() == crate::render::Blend::PlusLighter;
             cache |= n.vis_flags.cache();
@@ -838,6 +842,7 @@ impl<S: 'static> Runtime<S> {
             drawn_ly |= n.handlers.get().is_some_and(|h| h.on_drawn_layout.is_some() || h.on_visible.is_some() || h.drawn_rect.is_some());
             key_up |= n.focus.get().is_some_and(|f| f.key_up.is_some());
             raise |= n.vis_flags.raise();
+            ordered |= n.vis.paint_order != 0;
         }
         self.has_dissolve = dissolve;
         self.has_cache = cache;
@@ -853,10 +858,11 @@ impl<S: 'static> Runtime<S> {
         self.has_key_up = key_up;
         self.has_sticky = self.holding() || sticky;
         self.has_raise = raise;
+        self.has_paint_order = ordered;
         // A flight that left the tree stays lifted and covered while it exits, so it doesn't pop.
         self.flying.retain(|(id, _)| self.node_index.contains_key(id));
         self.launches.keep(&self.flying);
-        if self.nodes.len() > present_len || !self.flying.is_empty() || landed || self.has_sticky || self.has_raise { self.update_layer_paint_order(); }
+        if self.nodes.len() > present_len || !self.flying.is_empty() || landed || self.has_sticky || self.has_raise || self.has_paint_order { self.update_layer_paint_order(); }
         else { self.layer_paint_order.clear(); }
         self.built = false;
         if !self.virtuals.is_empty() {

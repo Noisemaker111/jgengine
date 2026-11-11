@@ -53,10 +53,12 @@ impl<S: 'static> Runtime<S> {
             self.sticky_frame.resize(n_nodes, sticky::UNBOUNDED);
         }
         let sel_ranges = self.selection_ranges();
+        let mark_ranges = self.mark_ranges();
         self.ime_area = None;
         let now = self.t;
         let vp = [0.0, 0.0, self.viewport.0 * s, self.viewport.1 * s];
         let mut glyph_count = 0usize;
+        let mut backdrop_blurs = 0usize;
         let mut ambient: Option<f32> = None;
         // Retain scope capacity across frames. Records preserve absolute instance indices
         // for images, video insertions, retained springs and compositor list ranges.
@@ -84,7 +86,7 @@ impl<S: 'static> Runtime<S> {
             self.dissolve_scratch[parent] |= opacity > 0.001 && opacity < 1.0;
         }
 
-        let paint_state_hash = self.prepare_cache_layers(&sel_ranges);
+        let paint_state_hash = self.prepare_cache_layers(&sel_ranges, &mark_ranges);
 
         self.place_growth_rows();
 
@@ -92,10 +94,10 @@ impl<S: 'static> Runtime<S> {
         // only when isolation requires it; the ordinary painter stream stays byte-identical.
         // Matched flights paint last (see `update_layer_paint_order`).
         let flying = !self.flying.is_empty();
-        let tree_order = ((flying || self.has_sticky || self.has_raise) && !self.layer_paint_order.is_empty()) || self.layer_paint_order.windows(2).any(|pair| {
+        let tree_order = ((flying || self.has_sticky || self.has_raise || self.has_paint_order) && !self.layer_paint_order.is_empty()) || self.layer_paint_order.windows(2).any(|pair| {
             let n = &self.nodes[pair[0]];
             self.nodes[pair[1]].parent == Some(pair[0]) && ((self.has_dissolve && self.dissolve_scratch[pair[0]]) || n.vis_flags.cache() || n.vis.clip_radius.is_some() || n.vis.group_opacity.is_some() || n.group_fade
-                || n.vis.layer_opacity < 1.0 || n.vis.isolate || n.vis.mix_blend != crate::render::Blend::SourceOver || fades(n.looping.as_deref().copied())
+                || n.vis.layer_opacity < 1.0 || fades(n.looping.as_deref().copied())
                 || self.scene.presented(n.id).is_some_and(|p| (p.opacity > 0.0 && p.opacity < 1.0) || p.blur > 0.0 || p.transform.rotate.abs() > 1e-6))
         });
         let default_ring = self.default_ring_owner();
@@ -293,7 +295,7 @@ impl<S: 'static> Runtime<S> {
             // A fading node with children, or a shape whose pieces overlap, takes its opacity
             // once as a layer rather than each primitive taking it over the ones beneath. So
             // does a layer opacity over two paints of the node's own (a label on its fill).
-            let mut isolate = effective_opacity > 0.001 && (p.blur > 0.0 || dissolve || n.vis.isolate || n.vis.mix_blend != crate::render::Blend::SourceOver
+            let mut isolate = effective_opacity > 0.001 && (p.blur > 0.0 || dissolve
                 || additive_parent || (paint_own > 0.001 && paint_own < 1.0
                     && (next.is_some_and(|j| self.nodes[j].parent == Some(i)) || n.vis.shape.as_ref().is_some_and(|s| s.overlaps())
                         || (n.vis.layer_opacity < 1.0 && own_paints(n) >= 2))));
@@ -313,11 +315,11 @@ impl<S: 'static> Runtime<S> {
             let tracked_scale = if has_live_scale { static_k * p.transform.scale.x } else { static_k };
             let scale_settling = if tracked_scale != 1.0 || has_live_scale || self.static_scales.contains_key(&n.id) {
                 let t = self.t;
-                let seen = self.static_scales.entry(n.id).or_insert((tracked_scale, f64::NEG_INFINITY, false));
+                let seen = self.static_scales.entry(n.id).or_insert((tracked_scale, f64::NEG_INFINITY));
                 if self.settled {
-                    *seen = (tracked_scale, f64::NEG_INFINITY, seen.2);
+                    *seen = (tracked_scale, f64::NEG_INFINITY);
                 } else if (seen.0 - tracked_scale).abs() > 1e-5 {
-                    *seen = (tracked_scale, t, true);
+                    *seen = (tracked_scale, t);
                 }
                 let moving = t - seen.1 < STATIC_SCALE_SETTLE;
                 if !has_live_scale {
@@ -661,10 +663,11 @@ impl<S: 'static> Runtime<S> {
             }
             // A backdrop blur samples what is drawn before it, so it goes ahead of any layer this
             // element opens (a fade still blurs the window) and of its shadows, which skip it.
-            let blur_hole = (n.vis.backdrop_blur > 0.0 && !skip_paint && visible
+            let blur_hole = (n.vis.backdrop_blur > 0.0 && !skip_paint && visible && backdrop_blurs < crate::MAX_BACKDROP_BLURS
                 && effective_opacity > 0.001 && paint_own * pinh.paint_opacity * n.vis.paint_alpha > 0.001)
                 .then(|| paint_slots::push_backdrop_blur(&mut self.instances, n.vis.backdrop_blur, ([r[0], r[1], w, h], radii, n.vis_flags.continuous_corners()),
                     (clip, fade, fade_origin), rounded, sc * s, (paint_own * pinh.paint_opacity * n.vis.paint_alpha).clamp(0.0, 1.0)));
+            backdrop_blurs += blur_hole.is_some() as usize;
             // The packed ABI carries one clip rectangle. Preserve a rectangular cut through
             // a rounded corner on a separate outer scope, never recenter the rounded mask.
             if !skip_paint && let Some((mask, _)) = rounded.or(own_round)
@@ -692,7 +695,7 @@ impl<S: 'static> Runtime<S> {
             }
             // `El::cutout_circle`: the subtree draws in a layer whose composite cuts the hole,
             // after the clips from above, which it takes.
-            for c in n.vis.cutout.iter().filter(|_| !skip_paint) {
+            if !skip_paint && let Some(c) = n.vis.cutout {
                 let k = sc * s;
                 let mut marker = Instance::begin_layer([r[0], r[1], w, h], clip, Default::default());
                 marker.fade = crate::render::pack_fade(fade, fade_origin, clip);
@@ -708,7 +711,7 @@ impl<S: 'static> Runtime<S> {
             let glyphs_clear = rounded.is_some_and(|(mask, radii)| {
                 self.text_clip(i, (r, r_exact), sc, clip).is_some_and(|(text, ..)| inside_rounded(text, mask, radii))
             });
-            isolate |= open_cache || (rounded.is_some() && (n.text.as_ref().is_some_and(|t| (t.truncate_fade || t.live.is_some()) && !glyphs_clear)
+            isolate |= open_cache || (rounded.is_some() && (n.text.as_ref().is_some_and(|t| (t.truncate_fade || t.cold.live.is_some()) && !glyphs_clear)
                 || n.input.as_ref().is_some_and(|i| i.single_line)));
             // A soft clip fades each primitive on its own, so where one paints over another (an
             // image over its placeholder fill, a label over its bubble) the one beneath shows
@@ -727,9 +730,8 @@ impl<S: 'static> Runtime<S> {
                 layers.push((i, start_idx, self.surfaces.len()));
                 let mut marker = Instance::begin_layer([r[0], r[1], w, h], clip,
                     crate::render::LayerSpec { opacity: paint_own * pinh.paint_opacity,
-                        blend: if dissolve { crate::render::Blend::PlusLighter } else { n.vis.mix_blend },
+                        blend: if dissolve { crate::render::Blend::PlusLighter } else { crate::render::Blend::SourceOver },
                         blur: p.blur * sc * s, clip_radius: 0.0 });
-                if n.vis.isolate { marker.params[3] = 2.0; }
                 marker.fade = crate::render::pack_fade(fade, fade_origin, clip);
                 if let Some((_, radii)) = rounded { marker.round_clip_corners(radii); }
                 self.instances.push(marker);
@@ -1101,7 +1103,7 @@ impl<S: 'static> Runtime<S> {
                     let fade = crate::render::pack_fade(fade, clip, clip);
                     faded_slot = paint_slots::push_effect(&mut self.instances, (effect, mark), ([r[0], r[1], w, h], radii, clip, fade), k_px, o);
                 }
-                let focus_ring = if default_ring == Some(i) { Some(self.default_focus_ring()) }
+                let focus_ring = if default_ring == Some(i) || self.forced_default_ring(i) { Some(self.default_focus_ring()) }
                     else if n.focus.within { n.focus.ring.filter(|_| self.focus_within(i)) }
                     else { self.focus_ring_visible(i).then_some(n.focus.ring).flatten() };
                 if let Some(ol) = focus_ring.or(n.vis.outline) {
@@ -1142,6 +1144,7 @@ impl<S: 'static> Runtime<S> {
                         caret: input_caret.map(|(caret, _)| caret),
                     },
                     &sel_ranges,
+                    &mark_ranges,
                     &mut glyph_count,
                 );
             }
@@ -1188,22 +1191,16 @@ impl<S: 'static> Runtime<S> {
                 let offset = self.stuck_offset(i, p.rect.edges()[3]).unwrap_or(st.offset);
                 let held = self.bottom_offset(i, p.rect.edges()[3]).is_some_and(|b| (offset - b).abs() < 0.5);
                 let exact = offset as f32 + st.slack.height();
-                // Hold a reversal across a rounding boundary, not a full pixel of real travel:
-                // `grid` rounds to 1/64 of a device pixel. Always land at the layout offset.
-                let rounded = grid(exact, s);
-                let step = (rounded - st.drawn[1]).signum() as i8;
-                let back = st.pinned() && rounded != grid(st.offset as f32, s) && step == -st.drawn_step && ((exact - st.drawn[1]) * s).abs() < 1.0 / 64.0;
-                let drawn = if back { st.drawn[1] } else { rounded };
-                let moved = if drawn == st.drawn[1] { st.drawn_step } else { step };
+                let (drawn, hold) = st.drawn.draw(exact, st.offset as f32, st.pinned(), s);
                 dy -= drawn;
                 snap_rigid[1] -= drawn;
-                if let Some(st) = self.scrolls.get_mut(&self.nodes[i].id) { (st.held, st.drawn[1], st.drawn_step) = (held, drawn, moved); }
+                if let Some(st) = self.scrolls.get_mut(&self.nodes[i].id) { (st.held, st.drawn) = (held, hold); }
             }
             let (mut scale, mut anchor, mut anchor_to, mut dx) = (sc, anchor, anchor_to, pinh.dx);
             if n.scroll_axes.x() && let Some(st) = self.scrolls.get_mut(&self.nodes[i].id) {
-                st.drawn[0] = grid(st.x.shift() as f32, s);
-                dx -= st.drawn[0];
-                snap_rigid[0] -= st.drawn[0];
+                st.drawn_x = grid(st.x.shift() as f32, s);
+                dx -= st.drawn_x;
+                snap_rigid[0] -= st.drawn_x;
             }
             if open_cache && sc > 1e-4 {
                 dx += (r_exact[0] / s - rect_pt[0]) / sc;
@@ -1280,7 +1277,7 @@ impl<S: 'static> Runtime<S> {
         // Retarget from the new geometry and schedule the frame that samples that paint. A
         // commit that moved the indices left keyboard focus hover (`El::hover_group_focus`) to
         // this pass too.
-        let interaction = (self.pointer.is_some() || self.keyboard_focus) && self.update_interaction(held);
+        let interaction = (self.pointer.is_some() || self.focus.keyboard()) && self.update_interaction(held);
         self.queue.len() > queued || interaction
     }
 }

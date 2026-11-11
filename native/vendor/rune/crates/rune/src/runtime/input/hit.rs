@@ -173,6 +173,25 @@ impl<S: 'static> Runtime<S> {
         Some(i)
     }
 
+    /// A focusable scroll region, which a press on plain content inside it focuses, as a web
+    /// page focuses a `tabIndex` scroller.
+    pub(super) fn focuses_on_click(&self, i: usize) -> bool {
+        self.nodes[i].scroll.is_some() && self.nodes[i].focus.enabled
+    }
+
+    /// The focusable scroll region a press at (x, y) lands in beneath `layer`
+    /// (`El::press_focuses_below`): the topmost element there outside the layer, or the nearest
+    /// region holding it.
+    pub(super) fn scroll_region_below(&self, layer: usize, x: f32, y: f32) -> Option<usize> {
+        let in_layer = |i: usize| std::iter::successors(Some(i), |&p| self.nodes[p].parent).any(|p| p == layer);
+        let under = self.hits.iter().rev().find_map(|&(id, r)| {
+            if !self.hit_contains(id, r, x, y) { return None; }
+            let i = *self.node_index.get(&id)?;
+            (!in_layer(i) && !self.subtree_exiting(i) && self.allowed(i)).then_some(i)
+        })?;
+        std::iter::successors(Some(under), |&p| self.nodes[p].parent).find(|&p| self.focuses_on_click(p) && self.can_focus(p))
+    }
+
     /// The selectable text under (x, y), if it's the topmost thing there that takes input.
     pub(super) fn selectable_at(&self, x: f32, y: f32) -> Option<usize> {
         self.top_target(x, y).filter(|&i| self.is_selectable(i))
@@ -227,7 +246,7 @@ impl<S: 'static> Runtime<S> {
             let r = [rect_pt[0].max(c[0] / s), rect_pt[1].max(c[1] / s), rect_pt[2].min(c[2] / s), rect_pt[3].min(c[3] / s)];
             self.push_help_hit(i, r, hits_before);
         }
-        if self.nodes[i].text.as_ref().is_some_and(|t| t.links.iter().any(|l| l.help.is_some())) && !self.subtree_exiting(i) && self.allowed(i) && effective_opacity > 0.001 && visible {
+        if self.nodes[i].text.as_ref().is_some_and(|t| t.cold.links.iter().any(|l| l.help.is_some())) && !self.subtree_exiting(i) && self.allowed(i) && effective_opacity > 0.001 && visible {
             let c = if self.nodes[i].parent.is_some() { pinh_clip } else { NO_CLIP };
             self.push_link_help_hits(i, rect_pt, [c[0] / s, c[1] / s, c[2] / s, c[3] / s], hits_before);
         }

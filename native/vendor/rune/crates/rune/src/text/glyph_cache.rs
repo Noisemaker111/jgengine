@@ -25,7 +25,7 @@ const UNFLAT: u32 = u32::MAX;
 const UNKNOWN: u8 = 0;
 const PLACED: u8 = 1;
 const EMPTY: u8 = 2;
-const NO_MASK: AtlasGlyph = AtlasGlyph { page: 0, x: 0, y: 0, w: 0, h: 0, left: 0, top: 0 };
+const NO_MASK: AtlasGlyph = AtlasGlyph { page: 0, x: 0, y: 0, w: 0, h: 0, left: 0, top: 0, lcd: false };
 
 #[derive(Default)]
 pub(crate) struct GlyphCache {
@@ -212,7 +212,9 @@ impl TextSystem {
     ) {
         let mut cache = std::mem::take(&mut self.glyph_cache);
         let skia = self.direct_write();
-        let (inks, apple) = if skia { (self.windows.inks(), DIRECT_WRITE_KEY) } else { (self.apple.inks(), self.apple.key()) };
+        let tag = self.smoothing.outline_key().unwrap_or_else(|| self.apple.key());
+        let dw_tag = DIRECT_WRITE_KEY | (self.smoothing == FontSmoothing::ClearType) as u8;
+        let (inks, apple) = if skia { (self.windows.inks(), dw_tag) } else { (self.apple.inks(), tag) };
         let key = Key {
             layout: Rc::as_ptr(layout) as usize,
             inks: inks.iter().fold(0xcbf2_9ce4_8422_2325, |h, &b| (h ^ b as u64).wrapping_mul(0x100_0000_01b3)),
@@ -274,7 +276,7 @@ impl TextSystem {
     fn replay(&mut self, entry: &mut Entry, i: usize, origin: [f32; 2], k: f32, out: &mut Vec<GlyphQuad>) {
         let (start, end) = entry.lines[i];
         let (mut face, mut baseline, mut size) = (u16::MAX, 0.0, 0.0);
-        let skia = self.direct_write();
+        let quarters = self.quarter_pens();
         for gi in start as usize..end as usize {
             if entry.clock != self.atlas.clock {
                 // A page went: every mask is looked up again.
@@ -288,7 +290,7 @@ impl TextSystem {
             }
             let at = if k == 1.0 { [origin[0] + g.rel + g.x, baseline + g.y] }
                 else { [origin[0] + (g.rel + g.x) * k, baseline + g.y * k] };
-            let ([fx, fy], sub) = place(at, size, self.glide, skia);
+            let ([fx, fy], sub) = place(at, size, self.glide, quarters);
             if g.sub == sub && g.state == PLACED {
                 self.atlas.touch(g.mask.page, g.mask.w * g.mask.h);
                 out.push(atlas_quad(g.mask, fx, fy, f.0.ink, g.byte));

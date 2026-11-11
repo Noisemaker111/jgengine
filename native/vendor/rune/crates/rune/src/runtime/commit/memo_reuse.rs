@@ -12,6 +12,7 @@ pub(crate) struct InheritedFlatten {
     pub(super) inert: bool,
     /// The parent's flow (`El::dir`).
     pub(super) flow: crate::el::Flow,
+    pub(super) directed: bool,
     pub(super) trace_namespace: Option<(&'static str, &'static str)>,
     pub(super) scale_bits: u32,
     /// The window's foreground (`Cx::foreground`), which a memo's uncoloured text took.
@@ -189,17 +190,17 @@ fn same_visual_cold(a: &crate::el::VisualCold, b: &crate::el::VisualCold) -> boo
     let crate::el::VisualCold {
         surface, surface_place, border_bottom, border_sides, border_layout, border_dash, border_dash_phase, shadows, blur_motion,
         clip, clip_radius, clip_corners, cutout, icon, icon_inked, icon_one_color, gradient, radial, outline, shape,
-        pixels, pixels_fit, pixels_pattern, effect, backdrop_blur, hover_motion, hover_within,
+        pixels, pixels_fit, effect, backdrop_blur, hover_motion, hover_within,
         group_opacity, group_color, hover_alone, hover_share, hover_focus, icon_turn, cache_key, offset_motion, scale_motion,
         origin, rotate_motion, child_exit, enter_delay, motion_intent, instant_motion, clip_to_content, flight_crop,
-        hold_landing, offset, paint_alpha, layer_opacity, blur, mix_blend, isolate, rotate, mark, mirror_rtl,
+        hold_landing, offset, paint_alpha, layer_opacity, blur, rotate, mark, mirror_rtl, paint_order,
     } = b;
     (match (&a.surface, surface) {
         (None, None) => true,
         (Some((sa, fa)), Some((sb, fb))) => sa.key() == sb.key() && fa == fb,
         _ => false,
     }) && a.surface_place == *surface_place && a.border_bottom == *border_bottom && a.border_sides == *border_sides && a.border_layout == *border_layout && a.border_dash == *border_dash
-        && a.border_dash_phase == *border_dash_phase && a.shadows == *shadows && a.mix_blend == *mix_blend && a.isolate == *isolate
+        && a.border_dash_phase == *border_dash_phase && a.shadows == *shadows
         && opt_box_eq(&a.blur_motion, blur_motion) && a.clip == *clip
         && a.clip_radius == *clip_radius && a.clip_corners == *clip_corners && a.cutout == *cutout
         && match (&a.icon, icon) {
@@ -215,7 +216,7 @@ fn same_visual_cold(a: &crate::el::VisualCold, b: &crate::el::VisualCold) -> boo
             (Some(pa), Some(pb)) => Arc::ptr_eq(&pa.source, &pb.source),
             _ => false,
         }
-        && a.pixels_fit == *pixels_fit && a.pixels_pattern == *pixels_pattern && a.effect == *effect && a.backdrop_blur == *backdrop_blur
+        && a.pixels_fit == *pixels_fit && a.effect == *effect && a.backdrop_blur == *backdrop_blur
         && opt_rc_eq(&a.hover_motion, hover_motion) && opt_rc_eq(&a.hover_within, hover_within)
         && a.group_opacity == *group_opacity && a.group_color == *group_color && a.hover_alone == *hover_alone && a.hover_share == *hover_share && a.hover_focus == *hover_focus
         && a.icon_turn == *icon_turn && a.cache_key == *cache_key
@@ -227,7 +228,7 @@ fn same_visual_cold(a: &crate::el::VisualCold, b: &crate::el::VisualCold) -> boo
         && a.flight_crop == *flight_crop
         && a.hold_landing == *hold_landing
         && a.offset == *offset && a.paint_alpha == *paint_alpha && a.layer_opacity == *layer_opacity
-        && a.blur == *blur && a.rotate == *rotate && a.mark == *mark && a.mirror_rtl == *mirror_rtl
+        && a.blur == *blur && a.rotate == *rotate && a.mark == *mark && a.mirror_rtl == *mirror_rtl && a.paint_order == *paint_order
 }
 
 pub(super) fn same_visual(a: &Visual, b: &Visual) -> bool {
@@ -240,8 +241,8 @@ pub(super) fn same_visual(a: &Visual, b: &Visual) -> bool {
 fn same_el_cold(a: &crate::el::ElCold, b: &crate::el::ElCold) -> bool {
     let crate::el::ElCold {
         focus, looping, trace_name, trace_namespace, role, label, live, above, motion, opacity_motion, lead,
-        transition, matched, scroll, scroll_axes, scroll_preserve_layout, sticky, scroll_edges, growth, virtual_estimate, virtual_rows,
-        virtual_rows_version, glide, input, time_scale, help, help_cut, help_above, material, aspect_fit, a11y,
+        transition, matched, scroll, scroll_axes, sticky, scroll_edges, growth, virtual_estimate, virtual_rows,
+        virtual_rows_version, glide, input, time_scale, help, help_cut, help_side, material, aspect_fit, a11y,
         #[cfg(debug_assertions)]
         scroll_source: _,
         #[cfg(debug_assertions)]
@@ -263,7 +264,6 @@ fn same_el_cold(a: &crate::el::ElCold, b: &crate::el::ElCold) -> bool {
         && a.matched == *matched
         && a.scroll == *scroll
         && a.scroll_axes == *scroll_axes
-        && a.scroll_preserve_layout == *scroll_preserve_layout
         && opt_box_eq(&a.sticky, sticky)
         && a.scroll_edges == *scroll_edges
         && opt_box_eq(&a.growth, growth)
@@ -276,7 +276,7 @@ fn same_el_cold(a: &crate::el::ElCold, b: &crate::el::ElCold) -> bool {
         && a.time_scale == *time_scale
         && a.help == *help
         && a.help_cut == *help_cut
-        && a.help_above == *help_above
+        && a.help_side == *help_side
         && a.material == *material
         && a.aspect_fit == *aspect_fit
         && a.a11y == *a11y
@@ -391,7 +391,7 @@ fn same_handlers(
         && opt_rc_eq(&a.on_at_bottom, on_at_bottom)
         && match (&a.on_far_from_bottom, on_far_from_bottom) {
             (None, None) => true,
-            (Some((da, fa)), Some((db, fb))) => da == db && Rc::ptr_eq(fa, fb),
+            (Some((da, ua, fa)), Some((db, ub, fb))) => da == db && ua == ub && Rc::ptr_eq(fa, fb),
             _ => false,
         }
         && opt_rc_eq(&a.on_visible_rows, on_visible_rows)
@@ -478,6 +478,7 @@ pub(super) fn inherited_for(
             instant_changes,
             inert,
             flow: parent.map_or(crate::el::Flow::Ltr, |p| nodes[p].flow),
+            directed: parent.is_some_and(|p| nodes[p].directed),
             trace_namespace,
             scale_bits: scale.to_bits(),
             foreground,

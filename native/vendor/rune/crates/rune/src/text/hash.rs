@@ -37,7 +37,7 @@ pub fn text_hash(text: &str, spans: &[Span], style: TextStyle, scale: f32, width
     let mut h = KeyHasher::default();
     text.hash(&mut h);
     for s in spans {
-        (s.start, s.end, s.mono, s.family, s.weight.map(f32::to_bits), s.size.map(f32::to_bits), s.italic).hash(&mut h);
+        (s.start, s.end, s.mono, s.weight.map(f32::to_bits), s.size.map(f32::to_bits), s.italic).hash(&mut h);
     }
     (style.size.to_bits(), style.weight.to_bits(), style.family, style.line_height.to_bits(), style.tracking.to_bits())
         .hash(&mut h);
@@ -67,9 +67,9 @@ pub(crate) fn shape_key(text: &str, spans: &[Span], style: TextStyle, scale: f32
 /// salt it, as their bidi levels shape the same text differently.
 pub(crate) fn directed(key: u64, base: parley::BaseDirection) -> u64 {
     match base {
-        parley::BaseDirection::Ltr => key,
+        parley::BaseDirection::Auto => key,
         parley::BaseDirection::Rtl => key ^ 0x6a09_e667_f3bc_c909,
-        parley::BaseDirection::Auto => key ^ 0xbb67_ae85_84ca_a73b,
+        parley::BaseDirection::Ltr => key ^ 0xbb67_ae85_84ca_a73b,
     }
 }
 

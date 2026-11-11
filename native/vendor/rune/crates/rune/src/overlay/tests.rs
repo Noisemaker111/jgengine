@@ -20,6 +20,8 @@ fn present<T: 'static>(overlay: &mut Overlay<T>, at: Instant) {
 }
 
 fn present_paced<T: 'static>(overlay: &mut Overlay<T>, at: Instant, paced: bool) {
+    // These synthetic frames exercise animation, independent of the host's Reduce Motion setting.
+    overlay.rt.set_system_reduced_motion(false);
     let (animating, _) = step(&mut overlay.rt, &mut overlay.clock, &overlay.compositor, at, false);
     overlay.dirty = false;
     overlay.idle = idle_after(&overlay.rt, animating, paced.then_some(at + FRAME));
@@ -96,23 +98,23 @@ fn a_retained_overlay_moved_while_hidden_reports_its_screen_rect_on_show() {
 fn a_poll_asking_for_every_frame_runs_at_the_frame_rate_without_a_display_link() {
     // Shown with no display link (one couldn't be made, or not macOS).
     let mut overlay = frame_hungry("unpaced");
-    overlay.visible = true;
+    overlay.presence = Presence::Shown { occluded: false };
     overlay.rt.set_live_visible(true);
     assert_frame_rate(polls_in_a_second(&mut overlay), "unpaced");
 
     // Faded out, or hidden.
     let mut overlay = frame_hungry("faded out");
-    overlay.visible = true;
+    overlay.presence = Presence::Shown { occluded: false };
     overlay.hide_fading(Duration::from_millis(150));
-    if let Some(end) = overlay.fading_out { overlay.wake_due(end); }
-    assert!(!overlay.drawing());
+    if let Some(end) = overlay.presence.fade_end() { overlay.wake_due(end); }
+    assert!(!overlay.presence.drawing());
     assert_frame_rate(polls_in_a_second(&mut overlay), "faded out");
 
     // Covered, or the displays asleep.
     #[cfg(target_os = "macos")]
     {
         let mut overlay = frame_hungry("occluded");
-        overlay.visible = true;
+        overlay.presence = Presence::Shown { occluded: false };
         overlay.occluded(true);
         assert_frame_rate(polls_in_a_second(&mut overlay), "occluded");
     }
@@ -159,7 +161,7 @@ fn assert_late_frame_keeps_time(before: fn(&mut Overlay<f32>), what: &str) {
 #[test]
 fn a_fading_out_overlay_draws_its_exit_until_the_fade_ends() {
     let mut overlay = width_overlay("fade out");
-    overlay.visible = true;
+    overlay.presence = Presence::Shown { occluded: false };
     overlay.rt.set_live_visible(true);
     let start = Instant::now();
     present(&mut overlay, start);
@@ -167,12 +169,12 @@ fn a_fading_out_overlay_draws_its_exit_until_the_fade_ends() {
     overlay.rt.update(|width, _| *width = 212.0);
     overlay.dirty = true;
     overlay.hide_fading(Duration::from_millis(150));
-    assert!(!overlay.visible, "input stops at once");
-    assert!(overlay.drawing() && !overlay.frameless(), "frames keep coming during the fade");
+    assert!(!overlay.presence.shown(), "input stops at once");
+    assert!(overlay.presence.drawing() && !overlay.frameless(), "frames keep coming during the fade");
     assert!(overlay.rt.live_visible());
     overlay.set_occluded(true);
-    assert!(!overlay.occluded, "a panel fading toward alpha zero isn't occluded");
-    let end = overlay.fading_out.expect("fading out");
+    assert!(!overlay.presence.occluded(), "a panel fading toward alpha zero isn't occluded");
+    let end = overlay.presence.fade_end().expect("fading out");
     assert!(overlay.wake_deadline().is_some_and(|due| due <= end), "the loop wakes to end the fade");
     let mut last = width(&overlay, "box");
     for k in 1..=6 {
@@ -185,7 +187,7 @@ fn a_fading_out_overlay_draws_its_exit_until_the_fade_ends() {
     overlay.apply_wake(true, Vec::new());
     assert!(overlay.dirty && !overlay.idle, "a wake mid-fade waits for the next drawn frame");
     overlay.wake_due(end);
-    assert!(!overlay.drawing() && overlay.frameless(), "drawing stops when the fade ends");
+    assert!(!overlay.presence.drawing() && overlay.frameless(), "drawing stops when the fade ends");
     assert!(!overlay.rt.live_visible());
     assert_eq!(overlay.wake_deadline(), None);
 }
@@ -193,12 +195,12 @@ fn a_fading_out_overlay_draws_its_exit_until_the_fade_ends() {
 #[test]
 fn hiding_without_a_fade_stops_drawing_at_once() {
     let mut overlay = width_overlay("hide");
-    overlay.visible = true;
+    overlay.presence = Presence::Shown { occluded: false };
     overlay.rt.set_live_visible(true);
     overlay.hide_fading(Duration::ZERO);
-    assert!(!overlay.drawing() && overlay.frameless() && !overlay.rt.live_visible());
+    assert!(!overlay.presence.drawing() && overlay.frameless() && !overlay.rt.live_visible());
     overlay.hide_fading(Duration::from_millis(150));
-    assert!(!overlay.drawing(), "fading out an overlay that's already hidden draws nothing");
+    assert!(!overlay.presence.drawing(), "fading out an overlay that's already hidden draws nothing");
 }
 
 #[test]
@@ -212,7 +214,7 @@ fn a_poll_asking_for_the_next_frame_keeps_a_shown_overlay_stepping() {
     }
     let app = AppSpec { poll: Some(poll), ..AppSpec::new("frame poll", (100.0, 50.0), || 0, view) };
     let (mut overlay, _) = Overlay::new(OverlaySpec::new("frame poll", app.size, view).options(Default::default()), 0, &app);
-    overlay.visible = true;
+    overlay.presence = Presence::Shown { occluded: false };
     let start = Instant::now();
     let idle: Vec<_> = (1..=5).map(|k| {
         present(&mut overlay, start + k * FRAME);
@@ -226,7 +228,7 @@ fn a_poll_asking_for_the_next_frame_keeps_a_shown_overlay_stepping() {
 fn a_hidden_overlay_takes_a_new_accent_and_redraws_before_reveal() {
     let mut overlay = width_overlay("accent");
     present(&mut overlay, Instant::now());
-    assert!(!overlay.visible && !overlay.dirty);
+    assert!(!overlay.presence.shown() && !overlay.dirty);
     overlay.accent_changed(overlay.rt.system_accent());
     assert!(!overlay.dirty, "the same accent redraws nothing");
     let pink = crate::Color { r: 1.0, g: 0.05, b: 0.4, a: 1.0 };
@@ -240,7 +242,7 @@ fn a_hidden_overlay_takes_a_new_accent_and_redraws_before_reveal() {
 fn a_hidden_overlay_takes_a_scroll_bar_change_and_redraws_before_reveal() {
     let mut overlay = width_overlay("scroll-bars");
     present(&mut overlay, Instant::now());
-    assert!(!overlay.visible && !overlay.dirty);
+    assert!(!overlay.presence.shown() && !overlay.dirty);
     overlay.scroll_bars_changed(overlay.rt.system_scroll_bars_state());
     assert!(!overlay.dirty, "the same scroll-bar preference redraws nothing");
     let always = crate::platform::scroll_bars::SystemScrollBars {
@@ -257,7 +259,7 @@ fn a_hidden_overlay_takes_a_scroll_bar_change_and_redraws_before_reveal() {
 fn a_hidden_overlay_takes_a_theme_change_and_redraws_before_reveal() {
     let mut overlay = width_overlay("theme");
     present(&mut overlay, Instant::now());
-    assert!(!overlay.visible && !overlay.dirty);
+    assert!(!overlay.presence.shown() && !overlay.dirty);
     let dark = !overlay.rt.env.system_dark;
     overlay.theme_changed(dark);
     assert_eq!(overlay.rt.env.system_dark, dark);
@@ -332,7 +334,7 @@ fn overlay_resume_keeps_running_motion_and_starts_new_motion_fresh() {
     // Running motion keeps real time up to the resume cap.
     let (capped, _) = run(|_| {}, |_| {}, Duration::from_secs_f64(crate::frame::clock::MAX_GAP));
     type Case = (&'static str, fn(&mut Overlay<Pair>), fn(&mut Overlay<Pair>));
-    let hidden: Case = ("hidden", |o| o.hide(), |o| o.visible = true);
+    let hidden: Case = ("hidden", |o| o.hide(), |o| o.presence = Presence::Shown { occluded: false });
     #[cfg(target_os = "macos")]
     let cases: [Case; 2] = [hidden, ("occluded", |o| o.occluded(true), |o| o.occluded(false))];
     #[cfg(not(target_os = "macos"))]
@@ -348,7 +350,7 @@ fn overlay_resume_keeps_running_motion_and_starts_new_motion_fresh() {
     #[cfg(target_os = "macos")]
     for prewarm in [false, true] {
         let options = OverlayOptions { prewarm, ..Default::default() };
-        let (a, b) = run_with(options, |o| { o.visible = true; o.occluded(true); },
+        let (a, b) = run_with(options, |o| { o.presence = Presence::Shown { occluded: false }; o.occluded(true); },
             |o| { o.missed(crate::window::Missed::Occluded, false, false); o.occluded(false); }, Duration::from_secs(3));
         assert!((b - fresh).abs() < 0.02, "missed while occluded (prewarm: {prewarm}): b={b}, fresh={fresh}");
         assert!((a - capped).abs() < 0.01, "missed while occluded (prewarm: {prewarm}): a={a}, expected={capped}");
@@ -378,13 +380,14 @@ fn overlay_hidden_commit_keeps_elapsed_motion_on_later_reveal() {
         let spec = OverlaySpec::new("delayed entry", app.size, view)
             .options(OverlayOptions { prewarm: true, ..Default::default() });
         let (mut overlay, handle) = Overlay::new(spec, init(), &app);
+        overlay.rt.set_system_reduced_motion(false);
         overlay.rt.wall_start = None;
         overlay.warm();
         overlay.dirty = false; // Successful submission of A, without a native window.
         let commit = overlay.clock.last() + Duration::from_secs(10);
         overlay.rt.state.enter = true;
         overlay.advance_at(commit); // Hidden turn 1 commits B; no show request yet.
-        assert_eq!(handle.shared.requests.lock().unwrap().visible, None);
+        assert_eq!(handle.shared.requests.lock().unwrap().visible(), None);
         assert_eq!(overlay.rt.presented("box").unwrap().0[2], 12.0, "idle before B must not age B");
         assert!(!overlay.draw(), "hidden motion must not drive frames");
         assert_eq!(overlay.wake_deadline(), None);
@@ -420,6 +423,7 @@ fn overlay_hidden_retarget_samples_old_motion_before_committing_new_target() {
         let spec = OverlaySpec::new("retarget", app.size, view)
             .options(OverlayOptions { prewarm: true, ..Default::default() });
         let (mut overlay, _) = Overlay::new(spec, 12.0, &app);
+        overlay.rt.set_system_reduced_motion(false);
         overlay.rt.wall_start = None;
         overlay.rt.time_scale = scale;
         overlay.warm();
@@ -476,6 +480,7 @@ fn overlay_hidden_poll_can_show_and_animate_from_the_cached_pose() {
         let spec = OverlaySpec::new("entry", app.size, view)
             .options(OverlayOptions { prewarm, ..Default::default() });
         let (mut overlay, handle) = Overlay::new(spec, State { width: 12.0, instant, ..Default::default() }, &app);
+        overlay.rt.set_system_reduced_motion(false);
         overlay.rt.state.handle = Some(handle.clone());
         overlay.warm();
         // No native window in this test: model successful submission of the warmed pose.
@@ -495,7 +500,7 @@ fn overlay_hidden_poll_can_show_and_animate_from_the_cached_pose() {
         } else {
             overlay.advance();
         }
-        assert_eq!(handle.shared.requests.lock().unwrap().visible, Some(true));
+        assert_eq!(handle.shared.requests.lock().unwrap().visible(), Some(true));
         overlay.settle_before_reveal();
         overlay.refresh_for_reveal_at(Instant::now());
         if queued {
@@ -526,6 +531,7 @@ fn overlay_cached_reveal_does_not_settle_a_same_tick_update() {
         let spec = OverlaySpec::new("reveal", app.size, view)
             .options(OverlayOptions { prewarm, ..Default::default() });
         let (mut overlay, _) = Overlay::new(spec, 8.0, &app);
+        overlay.rt.set_system_reduced_motion(false);
         overlay.rt.frame(0.0);
         overlay.rt.update(|width, _| *width = 12.0);
         overlay.warm();
@@ -567,7 +573,7 @@ fn hiding_a_key_overlay_releases_the_modifiers_it_held() {
     overlay.rt.set_modifier_keys(true);
     overlay.rt.frame(0.0);
     let press = |overlay: &mut Overlay<_>, key| {
-        overlay.visible = true;
+        overlay.presence = Presence::Shown { occluded: false };
         overlay.rt.window_focus(true);
         overlay.rt.physical_with_fallback(PhysicalInput::Key { key, mods: Mods::default(), pressed: true, repeat: false }, None);
         overlay.advance();

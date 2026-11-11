@@ -12,7 +12,6 @@ pub struct Span {
     pub start: u32,
     pub end: u32,
     pub weight: Option<f32>,
-    pub family: Option<Family>,
     pub mono: bool,
     pub size: Option<f32>,
     pub color: Option<Color>,
@@ -168,9 +167,6 @@ pub(crate) fn flatten_spans(spans: &[Span]) -> Vec<Span> {
                 m.weight = s.weight;
             }
             m.mono |= s.mono;
-            if s.family.is_some() {
-                m.family = s.family;
-            }
             if s.size.is_some() {
                 m.size = s.size;
             }
@@ -191,7 +187,6 @@ pub(crate) fn flatten_spans(spans: &[Span]) -> Vec<Span> {
                 && last.end == m.start
                 && last.weight == m.weight
                 && last.mono == m.mono
-                && last.family == m.family
                 && last.size == m.size
                 && last.color == m.color
                 && last.bg == m.bg

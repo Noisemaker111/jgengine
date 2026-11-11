@@ -6,17 +6,17 @@ impl<S: 'static> AnyHost for Host<S> {
     fn owns(&self, id: WindowId) -> bool {
         self.win.as_ref().is_some_and(|w| w.window.id() == id)
     }
-    fn finished(&self) -> bool { self.finished }
+    fn finished(&self) -> bool { self.life.finished() }
     fn keeps_loop(&self) -> bool { self.keeps_loop }
     fn key(&self) -> Option<&str> { Some(self.native_handle.key()) }
     fn reopen_candidate(&self) -> crate::platform::reopen::Candidate {
-        let shown = self.win.as_ref().filter(|w| w.visible);
+        let shown = self.shown_win();
         let minimized = shown.is_some_and(|w| w.window.is_minimized() == Some(true));
         crate::platform::reopen::Candidate {
-            reopenable: !self.finished && !self.macos_window.nonactivating_panel,
+            reopenable: !self.life.finished() && !self.macos_window.nonactivating_panel,
             visible: shown.is_some() && !minimized,
             minimized,
-            hidden_at: self.hidden_at,
+            hidden_at: self.life.hidden_at(),
             main: self.keeps_loop,
         }
     }
@@ -31,15 +31,16 @@ impl<S: 'static> AnyHost for Host<S> {
         // A due timer whose frame is still on its way takes the frame's bound instead
         // (`TimerFrame`), so the loop sleeps rather than waking at once for a frame that can't
         // come.
-        let runtime = win.filter(|w| w.visible).map_or(runtime, |w| w.timer_frame.wait(runtime, now));
+        let shown = self.shown_win();
+        let runtime = shown.map_or(runtime, |w| w.timer_frame.wait(runtime, now));
         runtime.into_iter()
-            .chain(win.and_then(|w| w.first_frame.deadline.map(|(retry, _)| retry)))
+            .chain(win.and_then(|w| w.first_frame.deadline().map(|(retry, _)| retry)))
             .chain(win.and_then(|w| w.first_frame.ready_deadline()))
             .chain(win.and_then(Win::cloak_deadline))
-            .chain(win.and_then(|w| w.retry))
-            .chain(win.filter(|w| !w.visible).and_then(|w| w.hidden_pace.deadline()))
-            .chain(self.files.pointer.as_ref().filter(|_| win.is_some_and(|w| w.visible)).map(|_| now + DROP_SAMPLE))
-            .chain(win.filter(|w| w.visible).and_then(|w| w.cursor.reassert_at(now)))
+            .chain(win.and_then(|w| w.backoff.deadline()))
+            .chain(win.filter(|_| shown.is_none()).and_then(|w| w.hidden_pace.deadline()))
+            .chain(self.files.pointer.as_ref().filter(|_| shown.is_some()).map(|_| now + DROP_SAMPLE))
+            .chain(shown.and_then(|w| w.cursor.reassert_at(now)))
             .min()
     }
 
@@ -75,7 +76,7 @@ impl<S: 'static> Host<S> {
     /// window whose paint the system keeps putting off behind another's paints now (`Redraw`).
     fn turn_ends_in_turn(&mut self, event_loop: &ActiveEventLoop, now: Instant) {
         let Some(w) = &self.win else { return };
-        let paints = cfg!(target_os = "windows") && w.visible && !w.occluded && !w.minimized();
+        let paints = cfg!(target_os = "windows") && self.life.uncovered() && !w.minimized();
         let (next, effect) = w.redraw.get().step(RedrawEvent::TurnEnds { now, paints });
         w.redraw.set(next);
         match effect {
@@ -102,19 +103,19 @@ impl<S: 'static> Host<S> {
 
     fn terminate_in_turn(&mut self) {
         // Once: a window that already closed ran its hook then.
-        if self.finished || !self.closes() { return; }
-        self.finished = true;
+        if !self.closes() { return; }
+        self.life.finish();
         self.close_hook();
         self.popup.cancel(&mut self.rt);
         self.file_dialog.cancel(&mut self.rt);
     }
 
     fn quit_hook_in_turn(&mut self) {
-        let Some(f) = self.on_quit.filter(|_| !self.finished) else { return };
+        let Some(f) = self.on_quit.filter(|_| !self.life.finished()) else { return };
         self.rt.update(f);
         // Before the loop ends or the session does: a lock or clear must reach the worker.
         self.clipboard.flush(&mut self.rt);
-        if let Some(w) = self.win.as_ref().filter(|w| w.visible) { w.request_redraw(); }
+        if let Some(w) = self.shown_win() { w.request_redraw(); }
     }
 
     fn cancel_menus_in_turn(&mut self) {
@@ -123,7 +124,7 @@ impl<S: 'static> Host<S> {
     }
 
     fn reopen_hook_in_turn(&mut self, event_loop: &ActiveEventLoop, has_visible_windows: bool) -> bool {
-        let Some(f) = self.on_reopen.filter(|_| self.started && !self.finished) else { return false };
+        let Some(f) = self.on_reopen.filter(|_| self.started && !self.life.finished()) else { return false };
         // As an update, so its frame, wakes, window requests and quit go as an update's do.
         let handled = Arc::new(AtomicBool::new(false));
         let answer = handled.clone();
@@ -134,18 +135,18 @@ impl<S: 'static> Host<S> {
     }
 
     fn apply_pending_in_turn(&mut self, event_loop: &ActiveEventLoop) {
-        if !self.started || self.finished || !self.shared.window_pending() { return; }
+        if !self.started || self.life.finished() || !self.shared.window_pending() { return; }
         self.drain(event_loop, false);
         self.publish();
     }
 
     fn reopen_in_turn(&mut self, event_loop: &ActiveEventLoop) {
-        if !self.started || self.finished { return; }
+        if !self.started || self.life.finished() { return; }
         self.open(event_loop, None);
         self.shell(event_loop);
         // winit's focus does nothing while the window is still deminiaturizing.
         #[cfg(target_os = "macos")]
-        if let Some(w) = self.win.as_ref().filter(|w| w.visible) { crate::platform::reopen::front(&w.window); }
+        if let Some(w) = self.shown_win() { crate::platform::reopen::front(&w.window); }
         self.publish();
     }
 
@@ -156,11 +157,11 @@ impl<S: 'static> Host<S> {
         if matches!(cause, StartCause::ResumeTimeReached { .. }) && let Some(w) = &self.win { w.cursor.reassert(); }
         #[cfg(target_os = "windows")]
         if let Some(w) = &self.win { w.native.cloak.lift_if_due(&w.window, Instant::now()); }
-        if let Some(w) = &mut self.win && let Some((retry, until)) = w.first_frame.deadline && retry <= Instant::now() {
+        if let Some(w) = &mut self.win && let Some((retry, until)) = w.first_frame.deadline() && retry <= Instant::now() {
             if until <= Instant::now() {
-                let notified = w.first_frame.notified;
+                let notified = w.first_frame.notified();
                 if w.first_frame.expire() {
-                    self.show_cached();
+                    self.reveal(event_loop, Reveal::Cached, None);
                     self.shell(event_loop);
                     if let Some(w) = &self.win { w.request_redraw(); }
                     self.publish();
@@ -170,24 +171,24 @@ impl<S: 'static> Host<S> {
             } else {
                 // Bounded retries while the frame prepares, whatever stops each one (occlusion,
                 // no drawable). A retry left due would turn the loop at once until it gives up.
-                w.first_frame.deadline = Some((Instant::now() + Duration::from_millis(16), until));
+                w.first_frame.retry_at(Instant::now() + Duration::from_millis(16));
                 w.request_redraw();
             }
         }
         let launcher = self.launcher();
-        if let Some(w) = &mut self.win && w.retry.is_some_and(|retry| retry <= Instant::now()) {
-            w.retry = None;
+        if let Some(w) = &mut self.win && w.backoff.deadline().is_some_and(|at| at <= Instant::now()) {
+            w.backoff_step(BackoffEvent::Lapsed);
             // A missed frame marked it occluded; look at the surface again.
-            w.occluded = false;
-            if launcher || w.visible { w.request_redraw(); }
+            self.life.cover(Cover::Surface, false);
+            if launcher || self.life.shown() { w.request_redraw(); }
         }
-        if let Some(w) = &mut self.win && !w.visible && w.hidden_pace.take_due(Instant::now()) {
+        if let Some(w) = &mut self.win && !self.life.shown() && w.hidden_pace.take_due(Instant::now()) {
             w.request_redraw();
         }
         if matches!(cause, StartCause::ResumeTimeReached { .. } | StartCause::Poll)
             && timer_deadline(&self.rt).is_some_and(|deadline| deadline <= Instant::now())
         {
-            let hidden = self.win.as_ref().is_none_or(|w| !w.visible);
+            let hidden = self.shown_win().is_none();
             if hidden && !(launcher && self.hidden_launcher_renders()) {
                 // Hidden or windowless: poll and due timers run, and the view waits for the
                 // frame that shows the window. A launcher's cached frame follows, paced.
@@ -196,7 +197,7 @@ impl<S: 'static> Host<S> {
                 self.shell(event_loop);
                 if changed && launcher { self.refresh_hidden(); }
             // A redraw while the window backs off would draw nothing and leave the timer due.
-            } else if self.win.as_ref().is_some_and(|w| (launcher || (w.visible && !w.occluded)) && !w.minimized()
+            } else if self.win.as_ref().is_some_and(|w| (launcher || self.life.uncovered()) && !w.minimized()
                 && !w.backing_off(Instant::now())) {
                 let now = Instant::now();
                 // A frame the due timer asked for that the window never drew (a Wayland surface
@@ -205,8 +206,7 @@ impl<S: 'static> Host<S> {
                 // the next frame it asks for the stall bound afresh.
                 if self.win.as_ref().is_some_and(|w| w.timer_frame.stalled(now)) {
                     if let Some(w) = &mut self.win {
-                        w.timer_frame.drawn();
-                        w.timer_frame.asked(now);
+                        w.timer_frame.stalled_again(now);
                     }
                     covered_step(&mut self.rt);
                     self.clipboard.flush(&mut self.rt);
@@ -219,15 +219,14 @@ impl<S: 'static> Host<S> {
                             self.clipboard.flush(&mut self.rt);
                             self.shell(event_loop);
                             // A close the poll asked for may have hidden the window.
-                            let frame = (stale || self.rt.stale()) && self.win.as_ref().is_some_and(|w| w.visible);
+                            let frame = (stale || self.rt.stale()) && self.shown_win().is_some();
                             self.rt.resting_wake_frame(frame);
                             frame
                         }
                         None => true,
                     };
                     if frame && let Some(w) = &mut self.win {
-                        w.quiet = true;
-                        w.timer_frame.asked(now);
+                        w.timer_frame.asked_quiet(now);
                         w.request_redraw();
                     }
                 }
@@ -247,7 +246,7 @@ impl<S: 'static> Host<S> {
         if self.rt.follow_font_families() && let Some(w) = &self.win { w.request_redraw(); }
         // Process queued hide/close requests before completing a pending first reveal.
         self.first_frame_ready(event_loop);
-        if !self.win.as_ref().is_some_and(|w| w.visible || w.first_frame.reveal) {
+        if !self.win.as_ref().is_some_and(|w| self.life.shown() || w.first_frame.revealing()) {
             self.rt.refuse_file_dialog("cannot open a file dialog while the window is hidden");
         }
         self.hidden_input(event_loop);

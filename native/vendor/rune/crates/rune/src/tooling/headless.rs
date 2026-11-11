@@ -72,7 +72,9 @@ pub(crate) fn headless_configured<S: 'static>(mut app: crate::app::App<S>, args:
     let mut comp = app.compositor.take();
     let (srgb_blend, font_smoothing) = (app.srgb_blend, app.font_smoothing);
     let (on_focus, on_ime, on_mods) = (app.on_focus, app.on_ime, app.on_mods);
-    let on_reopen = app.on_reopen;
+    let (on_reopen, on_open_url) = (app.on_reopen, app.on_open_url);
+    // A `--realtime` run stands in for a window, so it starts the app's live work as one does.
+    let mut on_ready = app.on_ready.take().filter(|_| args.realtime);
     let mut reports = crate::frame::encoded::FrameReports::<S>::new(app.on_frame_encoded.take(), Some("main"));
     let source = read_script(&args);
     let script = source.as_ref().map(load_script).unwrap_or_default();
@@ -140,6 +142,7 @@ pub(crate) fn headless_configured<S: 'static>(mut app: crate::app::App<S>, args:
     let mut target_format = if srgb_blend { OFFSCREEN_FORMAT.remove_srgb_suffix() } else { OFFSCREEN_FORMAT };
     let mut renderer = Renderer::new(&gpu.device, target_format);
     renderer.set_srgb_blend(srgb_blend);
+    renderer.attach_text(&mut rt.text.atlas);
     let (wp, hp) = ((size.0 * scale).round() as u32, (size.1 * scale).round() as u32);
     let mut target = Offscreen::with_format(&gpu.device, wp, hp, target_format);
     let mut readback = crate::tooling::record::Readback::new(&gpu.device, &target, crate::tooling::record::DEPTH);
@@ -216,7 +219,7 @@ pub(crate) fn headless_configured<S: 'static>(mut app: crate::app::App<S>, args:
     let mut early_place = None;
     // `Tx::resize_window` moves the viewport on the virtual clock; the canvas keeps its size.
     let mut frame_anim = None;
-    let mut resize_from = rt.viewport;
+    let mut resize_from = rt.window_viewport();
     // As on macOS, a frame change asked for while nothing moves waits a frame to start.
     let mut idle = true;
     if script.iter().find(|e| !matches!(e.kind, Kind::Mark(_))).is_some_and(|e| e.t <= 1e-9) {
@@ -234,6 +237,10 @@ pub(crate) fn headless_configured<S: 'static>(mut app: crate::app::App<S>, args:
             (procwatch::alloc::thread_allocations(), rt.stats.commits, crate::frame::profile::cpu_ms())
         };
         let real_t = k as f64 * dt;
+        if args.realtime {
+            let ahead = real_t - wall.elapsed().as_secs_f64();
+            if ahead > 0.0 { std::thread::sleep(std::time::Duration::from_secs_f64(ahead)); }
+        }
         let frame_start = Instant::now();
         #[cfg(feature = "frame-profile")]
         let events0 = next_ev;
@@ -242,16 +249,23 @@ pub(crate) fn headless_configured<S: 'static>(mut app: crate::app::App<S>, args:
             next_ev += 1;
             if let Some(g) = gate.as_mut() && !matches!(e.kind, Kind::Mark(_)) { g.input("script"); }
             let (x, y) = match &e.pos {
-                Pos::Xy(x, y) => (*x, *y),
+                // A script's points are the window's; the view's are over its zoom.
+                Pos::Xy(x, y) => (*x / rt.zoom(), *y / rt.zoom()),
                 Pos::Key(key) => rt.find(key).unwrap_or_else(|| die(&format!("script: no element with key {key:?}"))),
                 Pos::Rel(_, _) if e.kind.at_pointer() => rt.pointer().unwrap_or((0.0, 0.0)),
                 Pos::Rel(dx, dy) => (last_down.0 + dx, last_down.1 + dy),
             };
             match &e.kind {
+                Kind::Mark(name) if args.realtime => {
+                    use std::io::Write as _;
+                    println!("rune-mark {name} {}", e.t);
+                    let _ = std::io::stdout().flush();
+                }
                 Kind::Mark(_) => {}
                 Kind::Focus(focused) => rt.window_focus(*focused),
                 // The one window always shows here.
                 Kind::Reopen => if let Some(f) = on_reopen { rt.update(|s, tx| { f(s, true, tx); }); },
+                Kind::OpenUrl(url) => if let Some(f) = on_open_url { rt.update(|s, tx| f(s, url, tx)); },
                 Kind::Shortcut(shortcut) => shared.shortcuts.fire(shortcut).unwrap_or_else(|e| die(&format!("script shortcut: {e}"))),
                 Kind::Menu(item) => crate::native_menu::fire(&shared, item).unwrap_or_else(|e| die(&format!("script menu: {e}"))),
                 Kind::PopupMenu(picked) => rt.resolve_popup(picked.as_deref()).unwrap_or_else(|e| die(&format!("script pop-up menu: {e}"))),
@@ -268,8 +282,9 @@ pub(crate) fn headless_configured<S: 'static>(mut app: crate::app::App<S>, args:
                 Kind::Key(k, true) => rt.repeat_key(k.clone()),
                 Kind::Physical(event) => rt.physical_input(*event),
                 Kind::Paste(content) => rt.paste_content(content.clone()),
-                Kind::Wheel(dx, dy) => wheel(&mut rt, (x, y), *dx, *dy),
-                Kind::Fling(vx, vy) => fling(&mut rt, (x, y), *vx, *vy),
+                // A wheel turns as far on screen at any zoom, as Chromium's does.
+                Kind::Wheel(dx, dy) => { let z = rt.zoom(); wheel(&mut rt, (x, y), *dx / z, *dy / z) }
+                Kind::Fling(vx, vy) => { let z = rt.zoom(); fling(&mut rt, (x, y), *vx / z, *vy / z) }
                 Kind::Files(step) => file_input(&mut rt, step, (x, y)),
                 &Kind::Resize(dw, dh) => eased_input::step_resize(&mut rt, &mut resize_from, (dw, dh), scale),
                 kind => {
@@ -289,6 +304,8 @@ pub(crate) fn headless_configured<S: 'static>(mut app: crate::app::App<S>, args:
                 }
             }
         }
+        // Frame 0 has drawn: a window runs `on_ready` after its first frame.
+        if k == 1 && let Some(mut ready) = on_ready.take() { ready(&crate::WindowHandle::new("main")); }
         let requested_place = take_requests(&mut rt);
         take_window_frame(&mut rt, &mut frame_anim, real_t, limits);
         if !idle { step_window_frame(&mut rt, &mut frame_anim, real_t, scale); }
@@ -300,7 +317,7 @@ pub(crate) fn headless_configured<S: 'static>(mut app: crate::app::App<S>, args:
         // As on macOS, a frame change this commit asked for starts with the springs it
         // started, which have shown a step unless they held for the window.
         if rt.window_frame.is_some() {
-            let shown = if rt.fit_held { 0.0 } else { step };
+            let shown = if rt.fit.take_held() { 0.0 } else { step };
             take_window_frame(&mut rt, &mut frame_anim, real_t - shown, limits);
         }
         idle = !animating && frame_anim.is_none();
@@ -480,11 +497,11 @@ pub(crate) fn headless_configured<S: 'static>(mut app: crate::app::App<S>, args:
 fn take_window_frame<S>(rt: &mut Runtime<S>, anim: &mut Option<crate::window::frame::FrameAnim>, start: f64,
     (min, max): ((f32, f32), Option<(f32, f32)>)) {
     use crate::window::frame::{FrameAnim, clamp_size};
-    rt.fit_held = false;
+    rt.fit.take_held();
     let Some(request) = rt.window_frame.take() else { return };
     let Some(size) = request.size else { return };
     let (w, h) = clamp_size(size, min, max);
-    let from = [0.0, 0.0, rt.viewport.0, rt.viewport.1];
+    let from = [0.0, 0.0, rt.window_viewport().0, rt.window_viewport().1];
     *anim = Some(FrameAnim::retarget(anim.as_ref(), request.spring, start, from, [0.0, 0.0, w, h]));
 }
 

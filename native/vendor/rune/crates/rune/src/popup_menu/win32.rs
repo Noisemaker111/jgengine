@@ -20,9 +20,9 @@ use windows_sys::Win32::UI::Shell::{DefSubclassProc, RemoveWindowSubclass, SetWi
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     AppendMenuW, CreatePopupMenu, DestroyMenu, EndMenu, GWL_EXSTYLE, GetClientRect, GetCursorPos, GetForegroundWindow,
     GetWindowLongPtrW, HMENU, IsWindowVisible, KillTimer, MF_CHECKED, MF_GRAYED, MF_POPUP, MF_SEPARATOR, MF_STRING,
-    PostMessageW, RegisterWindowMessageW, SetForegroundWindow, SetTimer, TPM_LEFTALIGN, TPM_NONOTIFY, TPM_RETURNCMD,
-    TPM_RIGHTBUTTON, TPM_TOPALIGN, TPM_VERTICAL, TPMPARAMS, TrackPopupMenuEx, WM_NCDESTROY, WM_NULL, WS_EX_NOACTIVATE,
-    WindowFromPoint,
+    PostMessageW, RegisterWindowMessageW, SetForegroundWindow, SetTimer, TPM_LAYOUTRTL, TPM_LEFTALIGN, TPM_NONOTIFY,
+    TPM_RETURNCMD, TPM_RIGHTALIGN, TPM_RIGHTBUTTON, TPM_TOPALIGN, TPM_VERTICAL, TPMPARAMS, TRACK_POPUP_MENU_FLAGS,
+    TrackPopupMenuEx, WM_NCDESTROY, WM_NULL, WS_EX_NOACTIVATE, WindowFromPoint,
 };
 use winit::window::Window;
 
@@ -33,7 +33,7 @@ pub(super) const SUPPORTED: bool = true;
 
 /// The menu's owner while `TrackPopupMenuEx` runs, so `EndMenu` (which ends whatever menu this
 /// thread tracks) only ends this one.
-pub(super) type Tracking = Option<HWND>;
+pub(super) type Tracking = HWND;
 
 /// The next menu's subclass id. `GetWindowSubclass` would find an earlier one by a fixed id,
 /// but the comctl32 an app without a v6 manifest loads exports it by ordinal only.
@@ -88,9 +88,9 @@ pub(super) fn show(window: &Arc<Window>, show: Show, session: Rc<Session>, wake:
 
 /// Stops the menu tracking on this thread. Its `TrackPopupMenuEx` returns once the handler that
 /// asked returns.
-pub(super) fn stop(session: &Session, tracking: bool) {
+pub(super) fn stop(_: Tracking) {
     // SAFETY: ends this thread's active menu, which is this session's.
-    if tracking && session.tracking.borrow().is_some() { unsafe { EndMenu() }; }
+    unsafe { EndMenu() };
 }
 
 /// Menus from now on are dark or light, whatever the system's appearance.
@@ -118,12 +118,13 @@ unsafe extern "system" fn procedure(hwnd: HWND, message: u32, w: WPARAM, l: LPAR
             Box::from_raw(data as *mut Pending)
         };
         let opens = message != WM_NCDESTROY;
-        let picked = if opens { std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| track(hwnd, &pending))) } else { Ok(None) };
+        let mut pointer = None;
+        let picked = if opens { std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| track(hwnd, &pending, &mut pointer))) } else { Ok(None) };
         let picked = picked.unwrap_or_else(|_| {
             eprintln!("rune: pop-up menu panicked");
             None
         });
-        if pending.session.resolve(picked) && let Some(wake) = &pending.wake { wake(); }
+        if pending.session.resolve(picked, pointer) && let Some(wake) = &pending.wake { wake(); }
         if opens { return 0; }
     }
     // SAFETY: passes every other message on to winit's window procedure.
@@ -151,8 +152,8 @@ impl Drop for Turns {
 }
 
 /// Shows the menu over `hwnd` until it closes. The picked item's id, or `None` when it was
-/// dismissed, cancelled or couldn't open. Leaves where the pointer is in the session.
-fn track(hwnd: HWND, pending: &Pending) -> Option<String> {
+/// dismissed, cancelled or couldn't open. Leaves where the pointer is in `pointer`.
+fn track(hwnd: HWND, pending: &Pending, pointer: &mut Option<(f32, f32)>) -> Option<String> {
     if !pending.session.begin() { return None; }
     // SAFETY: Win32 calls on this thread's live window. The menu is built, tracked and
     // destroyed here.
@@ -167,13 +168,13 @@ fn track(hwnd: HWND, pending: &Pending) -> Option<String> {
         // foreground for its menu, and hands it back after.
         let previous = GetForegroundWindow();
         if previous != hwnd { SetForegroundWindow(hwnd); }
-        let flags = TPM_RETURNCMD | TPM_NONOTIFY | TPM_RIGHTBUTTON | TPM_LEFTALIGN | TPM_TOPALIGN
+        let flags = TPM_RETURNCMD | TPM_NONOTIFY | TPM_RIGHTBUTTON | TPM_TOPALIGN | layout()
             | if params.is_some() { TPM_VERTICAL } else { 0 };
         let params_ptr = params.as_ref().map_or(std::ptr::null(), |p| p as *const TPMPARAMS);
         let turns = turns(hwnd);
-        *pending.session.tracking.borrow_mut() = Some(hwnd);
+        pending.session.tracking(Some(hwnd));
         let command = TrackPopupMenuEx(menu.0, flags, x, y, hwnd, params_ptr);
-        pending.session.tracking.borrow_mut().take();
+        pending.session.tracking(None);
         drop(turns);
         // The menu's loop lets go of the foreground state once the owner gets a message.
         PostMessageW(hwnd, WM_NULL, 0, 0);
@@ -182,7 +183,7 @@ fn track(hwnd: HWND, pending: &Pending) -> Option<String> {
             SetForegroundWindow(previous);
         }
         // winit sends no pointer move until the pointer leaves the pixel it's on.
-        pending.session.pointer.set(client_pointer(hwnd));
+        *pointer = client_pointer(hwnd);
         usize::try_from(command).ok()?.checked_sub(1).and_then(|i| ids.get(i)).cloned()
     }
 }
@@ -201,8 +202,16 @@ fn client_pointer(hwnd: HWND) -> Option<(f32, f32)> {
     }
 }
 
-/// Where the menu opens, in screen pixels: below an element anchor, keeping clear of it when it
-/// has to flip up, or with its top-left corner at a point.
+/// How a menu lays out in the app's language ([`crate::labels::set_direction`]): from its left
+/// edge, or right to left from its right edge, mirrored, as a right-to-left Windows lays out its
+/// menus.
+pub(crate) fn layout() -> TRACK_POPUP_MENU_FLAGS {
+    if crate::labels::rtl() { TPM_LAYOUTRTL | TPM_RIGHTALIGN } else { TPM_LEFTALIGN }
+}
+
+/// Where the menu opens, in screen pixels: below an element anchor (from its left edge, or its
+/// right right to left), keeping clear of it when it has to flip up, or with its top-left corner
+/// (top-right right to left) at a point.
 fn placement(hwnd: HWND, show: &Show) -> (i32, i32, Option<TPMPARAMS>) {
     let scale = scale(hwnd);
     let mut origin = POINT { x: 0, y: 0 };
@@ -212,7 +221,7 @@ fn placement(hwnd: HWND, show: &Show) -> (i32, i32, Option<TPMPARAMS>) {
     let Some([x, y, w, h]) = show.element else { return (px(show.at.0, origin.x), px(show.at.1, origin.y), None) };
     let element = RECT { left: px(x, origin.x), top: px(y, origin.y), right: px(x + w, origin.x), bottom: px(y + h, origin.y) };
     let params = TPMPARAMS { cbSize: size_of::<TPMPARAMS>() as u32, rcExclude: element };
-    (element.left, element.bottom, Some(params))
+    (if crate::labels::rtl() { element.right } else { element.left }, element.bottom, Some(params))
 }
 
 /// Physical pixels per point on `hwnd`'s monitor.

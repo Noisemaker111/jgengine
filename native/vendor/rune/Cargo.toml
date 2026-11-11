@@ -6,6 +6,7 @@ members = [
     "crates/rune-motion",
     "crates/rune-staging",
     "crates/rune-kit",
+    "crates/rune-highlights",
     "crates/rune-fx",
     "crates/rune-light",
     "crates/procwatch",
@@ -22,6 +23,11 @@ exclude = ["tools/rune-dev-guard"]
 [workspace.package]
 edition = "2024"
 license = "MIT"
+
+# Full debug info for the workspace crates made a single `rune` test build use 18-23 GB of RAM;
+# line tables keep backtraces and file:line in panics at a fraction of that.
+[profile.dev]
+debug = "line-tables-only"
 
 [profile.dev.package."*"]
 debug = false

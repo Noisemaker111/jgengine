@@ -22,39 +22,60 @@ pub(super) struct Hit {
     cluster: usize,
 }
 
+/// Whether the runtime's held press belongs to a text field.
+#[derive(Default)]
+enum Capture {
+    #[default]
+    Free,
+    /// An input-selection press holds the pointer. `dragging` is the field whose selection its
+    /// moves extend, until focus leaves that field or it unmounts; the press stays the field's.
+    Held { dragging: Option<String> },
+}
+
 #[derive(Default)]
 pub(super) struct InputClick {
-    /// The last non-Shift press on an input: `(path, time, window_x, window_y, clicks)`.
-    last: Option<(String, f64, f32, f32, u8)>,
+    /// The run of non-Shift presses on inputs.
+    presses: press_run::PressRun,
     /// What the press that started the current selection selects by, and the unit range it
-    /// began on, which a drag keeps whole.
+    /// began on, which a drag keeps whole. They outlive the press: drag steps it queued still
+    /// read them after the release.
     unit: Unit,
     origin: (usize, usize),
-    /// The input path whose held press is currently dragging a selection.
-    dragging: Option<String>,
-    /// Whether `Runtime::capture` is currently owned by an input-selection press.
-    pub(super) captured: bool,
+    capture: Capture,
     /// Queued press/drag steps paired with `Action::Focus` entries in `Runtime::queue`.
     steps: VecDeque<(String, Step)>,
 }
 
 impl InputClick {
     pub(super) fn dragging_path(&self) -> Option<&str> {
-        self.dragging.as_deref()
+        match &self.capture {
+            Capture::Held { dragging } => dragging.as_deref(),
+            Capture::Free => None,
+        }
     }
 
+    /// The runtime's held press is an input-selection press.
+    pub(super) fn captured(&self) -> bool { matches!(self.capture, Capture::Held { .. }) }
+
     pub(super) fn clear(&mut self) {
-        self.last = None;
-        self.captured = false;
-        self.drop_drag();
+        self.presses.clear();
+        self.capture = Capture::Free;
+        self.cancel_drag_steps();
     }
 
     pub(super) fn clear_last(&mut self) {
-        self.last = None;
+        self.presses.clear();
     }
 
+    /// The field stops following the press: queued drag steps do nothing, and the press keeps
+    /// the pointer until it releases.
     pub(super) fn drop_drag(&mut self) {
-        self.dragging = None;
+        if let Capture::Held { dragging } = &mut self.capture { *dragging = None; }
+        self.cancel_drag_steps();
+    }
+
+    /// Queued drag steps stay, paired with their `Action::Focus` entries, but do nothing.
+    fn cancel_drag_steps(&mut self) {
         for (_, step) in &mut self.steps {
             if matches!(step, Step::Drag) {
                 *step = Step::Cancelled;
@@ -62,16 +83,14 @@ impl InputClick {
         }
     }
 
+    /// The press released: whether it was an input-selection press.
     pub(super) fn end_press(&mut self) -> bool {
-        self.dragging = None;
-        std::mem::take(&mut self.captured)
+        matches!(std::mem::take(&mut self.capture), Capture::Held { .. })
     }
 
     pub(super) fn on_focus_change(&mut self, focused: Option<&str>) {
-        if self.last.as_ref().is_some_and(|(p, ..)| Some(p.as_str()) != focused) {
-            self.last = None;
-        }
-        if self.dragging.as_ref().is_some_and(|p| Some(p.as_str()) != focused) {
+        self.presses.keep_on(focused);
+        if self.dragging_path().is_some_and(|p| Some(p) != focused) {
             self.drop_drag();
         }
     }
@@ -126,7 +145,9 @@ fn unit_at(e: &crate::edit::TextEdit, h: Hit, unit: Unit) -> (usize, usize) {
 }
 
 impl<S: 'static> Runtime<S> {
-    pub(super) fn input_down(&mut self, ji: usize, x: f32, y: f32) {
+    /// A press at (x, y) on text field `ji`, down at `down_at`; `second` when it's the second
+    /// of a double press.
+    pub(super) fn input_down(&mut self, ji: usize, x: f32, y: f32, down_at: f64, second: bool) {
         let now = self.now_clock();
         let shift = self.held_mods.shift;
         // Its text drew scaled or rotated with its box: map the press back to the rest layout.
@@ -136,28 +157,14 @@ impl<S: 'static> Runtime<S> {
         let (ix, iy) = (lx - jn.inset[0], ly - jn.inset[1]);
         let r = jn.target;
         let clicks = if shift {
-            self.input_click.last = None;
+            self.input_click.presses.clear();
             1
         } else {
-            let n = match &self.input_click.last {
-                Some((p, t, px, py, n))
-                    if *p == path
-                        && now - t <= self.double_click_interval
-                        && (x - px).abs() <= CLICK_SLOP
-                        && (y - py).abs() <= CLICK_SLOP =>
-                {
-                    (n + 1).min(3)
-                }
-                _ => 1,
-            };
-            self.input_click.last = Some((path.clone(), now, x, y, n));
-            n
+            self.input_click.presses.press(&path, now, (x, y), self.double_click_interval).min(3) as u8
         };
-        self.input_click.dragging = Some(path.clone());
-        self.input_click.captured = true;
+        self.input_click.capture = Capture::Held { dragging: Some(path.clone()) };
         self.input_click.steps.push_back((path.clone(), Step::Down { clicks, shift }));
         self.queue.push(Action::Focus(path.clone(), ix, iy));
-        self.drag_out_armed = false;
         let d = Drag {
             phase: Phase::Down,
             x: lx,
@@ -174,18 +181,16 @@ impl<S: 'static> Runtime<S> {
             window: [x, y],
             screen: self.screen_at(x, y),
         };
-        self.capture = Some((path, d));
-        self.capture_button = crate::PointerButton::Primary;
-        self.capture_inside = true;
+        self.press.hold(capture::Held::new(path, d, crate::PointerButton::Primary, (x, y), down_at, second, None));
     }
 
     pub(super) fn input_drag(&mut self, x: f32, y: f32, drag_move: bool) {
         if !drag_move {
             return;
         }
-        let Some(path) = self.input_click.dragging.clone() else { return };
-        if (x - self.press_at.0).abs() > CLICK_SLOP || (y - self.press_at.1).abs() > CLICK_SLOP {
-            self.input_click.last = None;
+        let Some(path) = self.input_click.dragging_path().map(str::to_owned) else { return };
+        if self.press.held().is_some_and(|h| !press_run::within_slop(h.at, (x, y))) {
+            self.input_click.presses.clear();
         }
         let Some(ji) = self.nodes.iter().enumerate().position(|(i, n)| n.path == path && !self.subtree_exiting(i) && n.input.is_some()) else {
             self.input_click.drop_drag();
@@ -221,7 +226,7 @@ impl<S: 'static> Runtime<S> {
                 let e = access(states!(self));
                 e.set_single_line(single);
                 e.break_history_group();
-                e.clear_pending();
+                e.clear_typing_style();
                 if e.preedit().is_some() {
                     self.input_click.clear();
                     one.instant = true;
@@ -250,7 +255,7 @@ impl<S: 'static> Runtime<S> {
                 true
             }
             Step::Drag => {
-                if self.focused.as_deref() != Some(path.as_str()) {
+                if self.focus.path() != Some(path.as_str()) {
                     self.input_click.drop_drag();
                     return false;
                 }

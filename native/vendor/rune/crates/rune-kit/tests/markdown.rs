@@ -30,7 +30,7 @@ fn parses_each_block_type() {
     let b = parse(DOC);
     assert!(matches!(&b[0], Block::Heading(1, i) if i.text == "Title"));
     let Block::Para(p) = &b[1] else { panic!("{b:?}") };
-    assert_eq!(p.text, "Some \u{202f}\u{202f}code\u{202f}\u{202f}, em, bold and a link.");
+    assert_eq!(p.text, "Some \u{202f}\u{202f}\u{2066}code\u{2069}\u{202f}\u{202f}, em, bold and a link.");
     let styles: Vec<Style> = p.spans.iter().map(|s| s.2).collect();
     assert_eq!(styles, [Style::CodePad, Style::Code, Style::CodePad, Style::Em, Style::Strong, Style::Link]);
     assert_eq!(p.links.len(), 1);
@@ -42,6 +42,21 @@ fn parses_each_block_type() {
     assert!(matches!(&b[5], Block::Quote(q) if matches!(&q[0], Block::Para(i) if i.text == "quoted")));
     assert!(matches!(&b[6], Block::Rule));
     assert!(matches!(&b[7], Block::Code(c) if c == "fn main() {}"));
+}
+
+/// Code that ends a line drops all of its closing padding, its isolate's end too, so the line
+/// is the start of the same line with more after the code (as a stream needs) and copies clean.
+#[test]
+fn code_ending_a_line_leaves_no_isolate_end() {
+    let b = parse("Run `cargo test`\n\n- item `two`\n\n| `c` |\n|---|\n| `d ` |\n");
+    let Block::Para(p) = &b[0] else { panic!("{b:?}") };
+    assert_eq!(p.text, "Run \u{202f}\u{202f}\u{2066}cargo test");
+    assert_eq!(p.spans.iter().map(|s| s.2).collect::<Vec<_>>(), [Style::CodePad, Style::Code]);
+    let Block::List { items, .. } = &b[1] else { panic!("{b:?}") };
+    assert!(matches!(&items[0][0], Block::Para(i) if i.text == "item \u{202f}\u{202f}\u{2066}two"), "{items:?}");
+    let Block::Table(t) = &b[2] else { panic!("{b:?}") };
+    assert_eq!(t.head[0].text, "\u{202f}\u{202f}\u{2066}c");
+    assert_eq!(t.rows[0][0].text, "\u{202f}\u{202f}\u{2066}d", "the code's own trailing space goes too, as before");
 }
 
 #[test]
@@ -122,7 +137,7 @@ fn every_streaming_prefix_parses_like_before() {
             h = h.wrapping_mul(0x100_0000_01b3);
         }
     }
-    assert_eq!(h, 11_559_275_952_329_967_701, "golden hash");
+    assert_eq!(h, 16_905_672_743_507_968_518, "golden hash");
 }
 
 #[test]
@@ -415,9 +430,9 @@ fn table_font_and_padding_set_the_cells_and_the_first_column_sits_flush() {
     assert_eq!(by_key(&rt, "th").rect[3], 20.0 + 2.0 * 4.0, "the table font's line and the cell padding");
     assert_eq!(by_key(&rt, "r0").rect[3], 28.0);
     // Columns hold their text on one line: the first is its text plus the right padding only.
-    let name = rune::text::measure("Name", &[], rune::TextStyle { size: 15.0 * 0.93, line_height: 20.0, weight: 670.0, features: "'tnum' 1", ..Kit::neutral(true).ty.body }, None).0;
-    let alpha = rune::text::measure("alpha", &[], rune::TextStyle { size: 15.0 * 0.93, line_height: 20.0, features: "'tnum' 1", ..Kit::neutral(true).ty.body }, None).0;
-    assert_eq!(cells[0].rect[2], name.max(alpha) + 10.0);
+    let name = rune::text::content_widths("Name", &[], rune::TextStyle { size: 15.0 * 0.93, line_height: 20.0, weight: 670.0, features: "'tnum' 1", ..Kit::neutral(true).ty.body }).1;
+    let alpha = rune::text::content_widths("alpha", &[], rune::TextStyle { size: 15.0 * 0.93, line_height: 20.0, features: "'tnum' 1", ..Kit::neutral(true).ty.body }).1;
+    assert!((cells[0].rect[2] - (name.max(alpha) + 10.0)).abs() < 0.02);
 }
 
 #[test]
@@ -914,4 +929,28 @@ fn link_ring_frames_chosen_links_merges_inner_runs_and_stays_on_hover() {
         .collect();
     assert_eq!(hovered.len(), 1);
     assert_eq!((hovered[0].rect, hovered[0].params[0], hovered[0].border), (ringed[0].rect, 1.0, want_ring));
+}
+
+#[test]
+fn an_image_shows_the_system_zoom_in_cursor() {
+    fn shown(src: &String, _: &mut Cx<String>) -> El {
+        thread_local! {
+            static PICTURE: rune::Image = {
+                let cache = rune::ImageCache::new(std::sync::Arc::new(|| {}));
+                let image = cache.rgba(64, 32, [40u8, 80, 120, 255].repeat(64 * 32));
+                image.wait().unwrap();
+                image
+            };
+        }
+        let picture = PICTURE.with(|p| p.clone());
+        let md = Markdown::new(src.clone()).images(move |_| Some(picture.clone())).image_frame(|e, _| e.on_press(|_: &mut String| {}));
+        col().w_full().child(md.build(&Kit::neutral(true)))
+    }
+    let mut rt = Runtime::new("![A chart](chart.png)\n".to_owned(), shown, (480.0, 400.0), Env::new(true, 1.0));
+    rt.frame(0.0);
+    let image = rt.elements().into_iter().find(|e| e.role == "image").expect("the image");
+    let [x, y, w, h] = image.rect;
+    rt.pointer_move(x + w / 2.0, y + h / 2.0);
+    rt.frame(1.0 / 60.0);
+    assert_eq!(rt.cursor(), rune::Cursor::ZoomIn, "the system's own magnifier, at a system cursor's size");
 }

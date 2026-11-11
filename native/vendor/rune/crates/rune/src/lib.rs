@@ -9,8 +9,6 @@ compile_error!("web does not support Rune's hot or native-file-dialog features; 
 mod a11y;
 mod app;
 mod cold;
-mod cursor;
-mod desktop;
 mod flight;
 mod frame;
 mod gpu;
@@ -19,7 +17,6 @@ mod latest;
 mod native_menu;
 mod open_url;
 mod overlay;
-mod pixels;
 mod platform;
 mod popup_menu;
 mod quit;
@@ -27,7 +24,6 @@ mod recorder;
 mod shortcuts;
 mod states;
 mod system_material;
-mod titlebar;
 mod video;
 mod window;
 
@@ -46,6 +42,7 @@ pub mod image;
 pub mod labels;
 pub mod live;
 pub mod machine;
+pub mod marks;
 pub mod memo;
 pub mod motion_gate;
 pub mod native_surface;
@@ -56,13 +53,19 @@ pub mod rewind;
 pub mod runtime;
 pub mod shape;
 pub mod spell;
+pub mod task;
 pub mod text;
 pub mod theme;
 pub mod time;
 pub mod tok;
 pub mod tooling;
 pub mod tray;
-pub mod windows;
+
+pub(crate) use image::pixels;
+pub(crate) use input::cursor;
+pub(crate) use quit::relaunch;
+pub(crate) use tooling::virtual_desktop as desktop;
+pub(crate) use window::titlebar;
 
 /// AccessKit's types, for [`Runtime::accessibility_tree`] and [`Runtime::accessibility_action`].
 pub use a11y::AccessibilityLink;
@@ -248,6 +251,7 @@ pub use recorder::RecordFormat;
 pub use recorder::Recorder;
 pub use recorder::RecorderState;
 pub use recorder::Recording;
+pub use render::MAX_BACKDROP_BLURS;
 pub use render::gpu_events::GpuEvent;
 pub use render::gpu_events::on_gpu;
 pub use render::prewarm_gpu;
@@ -293,6 +297,7 @@ pub use runtime::Pose;
 pub use runtime::Runtime;
 pub use runtime::SelectedText;
 pub use runtime::SelectionChange;
+pub use runtime::TextMark;
 pub use runtime::TextSelection;
 pub use runtime::TitlebarAction;
 pub use runtime::TouchPhase;
@@ -314,6 +319,7 @@ pub use text::FontSmoothing;
 pub use text::Icon;
 pub use text::Link;
 pub use text::LinkPaint;
+pub use text::SmoothingSupport;
 pub use text::Span;
 pub use text::TextCase;
 pub use text::TextHighlight;
@@ -348,6 +354,7 @@ pub use video::Player;
 pub use video::PlayerState;
 pub use video::Video;
 pub use window::WindowHandle;
+pub use window::spec as windows;
 pub use windows::AnyWindowSpec;
 pub use windows::ConfiguredWindowOptions;
 pub use windows::Display;
@@ -379,8 +386,11 @@ pub fn scene_clock() -> SceneClock {
 
 /// Runs `f` (a scene fn or `init`) with `clock` as the scene clock.
 pub(crate) fn with_scene_clock<T>(clock: SceneClock, f: impl FnOnce() -> T) -> T {
-    let before = SCENE_CLOCK.replace(clock);
-    let out = f();
-    SCENE_CLOCK.set(before);
-    out
+    struct Restore(SceneClock);
+    impl Drop for Restore {
+        fn drop(&mut self) { SCENE_CLOCK.set(self.0); }
+    }
+
+    let _restore = Restore(SCENE_CLOCK.replace(clock));
+    f()
 }
