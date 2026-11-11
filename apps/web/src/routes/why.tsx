@@ -1,5 +1,7 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
-import { useCallback, useMemo, useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { Link } from "../site/link";
+import { definePage } from "../site/routes";
+import { useCallback, useMemo, useState } from "@jgengine/core/ui/jsx";
 
 import { CommandBlock } from "../components/Copy";
 import { Page, PageHero, SectionHeading } from "../components/Layout";
@@ -13,7 +15,7 @@ import { GAME_IDS } from "../lib/games";
 import { seo } from "../lib/seo";
 import { ENTRY_PROMPT } from "../lib/site";
 
-export const Route = createFileRoute("/why")({
+export const Route = definePage({
   head: () =>
     seo({
       title: "Why jgengine — game code by hand vs. on the engine",

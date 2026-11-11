@@ -13,7 +13,7 @@ const packagesDir = fileURLToPath(new URL("../../packages", import.meta.url));
 /** The rendering libraries engine packages take as peers; the game's copy is the one copy. */
 export const ENGINE_PEERS = ["three", "three-stdlib"] as const;
 
-/** `@jgengine/<pkg>` and `@jgengine/<pkg>/<path>` resolved to `packages/<pkg>/src`, so a game runs the engine in this repo with no build. */
+/** Each engine package by its npm name (`@jgengine/react` lives in `packages/ui`) resolved to its `src`, so a game runs the engine in this repo with no build. */
 export function engineSourceAliases(dir = packagesDir): Alias[] {
   return readdirSync(dir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && existsSync(join(dir, entry.name, "src")))
@@ -21,7 +21,7 @@ export function engineSourceAliases(dir = packagesDir): Alias[] {
       const manifest = join(dir, entry.name, "package.json");
       if (!existsSync(manifest)) return [];
       const name = (JSON.parse(readFileSync(manifest, "utf8")) as { name?: string }).name;
-      if (name !== `@jgengine/${entry.name}`) return [];
+      if (name === undefined || !name.startsWith("@jgengine/")) return [];
       const src = join(dir, entry.name, "src").replaceAll("\\", "/");
       const index = join(dir, entry.name, "src", "index.ts");
       return [

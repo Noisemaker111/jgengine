@@ -3,7 +3,9 @@
   "name": "jgengine-web",
   "compatibility_date": "2026-08-29",
   "compatibility_flags": ["nodejs_compat"],
-  "main": "@tanstack/react-start/server-entry",
+  "main": "./src/worker.ts",
+  // Prerendered pages and built files are served first; the Worker answers the rest (src/worker.ts).
+  "assets": { "binding": "ASSETS" },
   "workers_dev": true,
   "observability": {
     "enabled": true

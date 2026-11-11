@@ -1,5 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { definePage } from "../site/routes";
+import { useState } from "@jgengine/core/ui/jsx";
 
 import { GameCard } from "../components/GameCard";
 import { Page } from "../components/Layout";
@@ -9,7 +10,7 @@ import { TracedDemo } from "../live/TracedDemo";
 import { seo } from "../lib/seo";
 import { BASELINE_GPU, SCENE_READY_RANGE_MS, WORST_MENU_CLICK_MS, secondsCeil } from "../lib/siteFacts";
 
-export const Route = createFileRoute("/games/")({
+export const Route = definePage({
   head: () =>
     seo({
       title: "Games built with jgengine — play them in your browser",

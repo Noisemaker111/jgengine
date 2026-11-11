@@ -1,5 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { definePage } from "../site/routes";
+import { useEffect, useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
 
 import { resolveCityObject, type CityLot } from "@jgengine/core/city/cityKind";
 import { extractCircuitRoute, type CircuitRoute } from "@jgengine/core/roads/raceCircuit";
@@ -17,7 +18,7 @@ import { LiveDemos } from "../live/LiveDemos";
 import type { PlaygroundWorldHandle } from "../live/playgroundWorld";
 import { seo } from "../lib/seo";
 
-export const Route = createFileRoute("/playground")({
+export const Route = definePage({
   head: () =>
     seo({
       title: "Playground — try jgengine in your browser",

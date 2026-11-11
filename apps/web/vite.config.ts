@@ -1,109 +1,17 @@
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import tailwindcss from "@tailwindcss/vite";
 import { cloudflare } from "@cloudflare/vite-plugin";
-import { tanstackStart } from "@tanstack/react-start/plugin/vite";
-import viteReact from "@vitejs/plugin-react";
 import { defineConfig, type Connect, type Plugin } from "vite";
 
 import { restoreFromCache, saveToCache } from "../../scripts/games-player-cache";
 import { devServerMarkerPlugin } from "../../scripts/devServerMarker";
 import { devReportPlugin } from "../dev/devReportPlugin";
-import { parseGameReadme, parseGameSeed } from "./src/lib/gameReadme";
-import { DEMO_PARTS } from "./src/live/demoParts";
-import { shouldRouteMdRequestToSsr } from "./src/lib/mdSsrRoute";
+import { gamesIndexPlugin, siteAliases } from "./vite.site";
 
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 const devAppRoot = fileURLToPath(new URL("../dev", import.meta.url));
-const gamesDir = fileURLToPath(new URL("../../games", import.meta.url));
-const githubSrc = fileURLToPath(new URL("../../packages/github/src", import.meta.url));
-const coreSrc = fileURLToPath(new URL("../../packages/core/src", import.meta.url));
-
-const gameThumbsDir = fileURLToPath(new URL("./public/covers", import.meta.url));
-
-const GAMES_INDEX_ID = "virtual:jgengine-games";
-
-/**
- * Parses a game's `export const credit = …` from its game.config.ts source.
- * Mirrors the `GameCredit` shape and the desktop project surface
- * (apps/desktop/src/project/gameMeta.ts) — the game's config is the single
- * source of truth for its attribution, not a hand-maintained web registry.
- */
-const CREDIT_EXPORT_RE =
-  /export\s+const\s+credit\s*=\s*(\{[\s\S]*?\n\}|\{[^}]*\}|["'`][^"'`]+["'`])\s*;?/;
-
-const parseGameCredit = (
-  configSource: string,
-): { text: string; url?: string; handle?: string } | null => {
-  const match = configSource.match(CREDIT_EXPORT_RE);
-  const raw = match?.[1]?.trim();
-  if (raw === undefined) return null;
-  if (/^["'`]/.test(raw)) {
-    const text = raw.slice(1, -1).trim();
-    return text.length > 0 ? { text } : null;
-  }
-  const text = raw.match(/(?:text|label|name)\s*:\s*["'`]([^"'`]+)["'`]/)?.[1]?.trim();
-  if (text === undefined || text.length === 0) return null;
-  const url = raw.match(/url\s*:\s*["'`]([^"'`]+)["'`]/)?.[1];
-  const handle = raw.match(/handle\s*:\s*["'`]([^"'`]+)["'`]/)?.[1];
-  return { text, ...(url !== undefined ? { url } : {}), ...(handle !== undefined ? { handle } : {}) };
-};
-
-/** The site's live demos whose engine part a game's source (or editor scene) uses. */
-const gameDemoParts = (srcDir: string): string[] => {
-  const files = readdirSync(srcDir, { recursive: true, encoding: "utf8" }).filter((file) => /\.(tsx?|json)$/.test(file));
-  const found = new Set<string>();
-  for (const file of files) {
-    const text = readFileSync(join(srcDir, file), "utf8");
-    for (const part of DEMO_PARTS) if (!found.has(part.key) && part.source.test(text)) found.add(part.key);
-    if (found.size === DEMO_PARTS.length) break;
-  }
-  return DEMO_PARTS.filter((part) => found.has(part.key)).map((part) => part.key);
-};
-
-/** Exposes the games/* ids, per-game credit and the demoed engine parts each game uses to routes as `virtual:jgengine-games`, resolved at build time. */
-const gamesIndexPlugin = (): Plugin => ({
-  name: "jgengine-games-index",
-  resolveId(id) {
-    if (id === GAMES_INDEX_ID) return `\0${GAMES_INDEX_ID}`;
-    return null;
-  },
-  load(id) {
-    if (id !== `\0${GAMES_INDEX_ID}`) return;
-    const ids = readdirSync(gamesDir, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory() && existsSync(join(gamesDir, entry.name, "src/index.tsx")))
-      .map((entry) => entry.name)
-      .sort();
-    const credits: Record<string, { text: string; url?: string; handle?: string }> = {};
-    for (const gameId of ids) {
-      const configPath = join(gamesDir, gameId, "src/game.config.ts");
-      if (!existsSync(configPath)) continue;
-      const credit = parseGameCredit(readFileSync(configPath, "utf8"));
-      if (credit !== null) credits[gameId] = credit;
-    }
-    const readmePath = join(gamesDir, "README.md");
-    const meta = existsSync(readmePath) ? parseGameReadme(readFileSync(readmePath, "utf8")) : {};
-    const thumbs = ids.filter((gameId) => existsSync(join(gameThumbsDir, `${gameId}.webp`)));
-    const seeds: Record<string, string> = {};
-    for (const gameId of ids) {
-      const gameReadme = join(gamesDir, gameId, "README.md");
-      const seed = existsSync(gameReadme) ? parseGameSeed(readFileSync(gameReadme, "utf8")) : null;
-      if (seed !== null) seeds[gameId] = seed;
-    }
-    const parts: Record<string, string[]> = {};
-    for (const gameId of ids) parts[gameId] = gameDemoParts(join(gamesDir, gameId, "src"));
-    return `export const GAME_IDS = ${JSON.stringify(ids)};
-export const GAME_PARTS = ${JSON.stringify(parts)};
-export const GAME_CREDITS = ${JSON.stringify(credits)};
-export const GAME_META = ${JSON.stringify(meta)};
-export const GAME_THUMBS = ${JSON.stringify(thumbs)};
-export const GAME_SEEDS = ${JSON.stringify(seeds)};`;
-  },
-});
-
 const registryScript = fileURLToPath(
   new URL("../../scripts/build-registry.ts", import.meta.url),
 );
@@ -250,41 +158,44 @@ const gamesPlayerDevPlugin = (): Plugin => {
   };
 };
 
+/** True for a request the site's page renderer answers: a GET for a path with no file extension. */
+export const isPageRequest = (method: string | undefined, url: string | undefined): boolean => {
+  if (method !== "GET" && method !== "HEAD") return false;
+  const pathname = url?.split(/[?#]/, 1)[0];
+  if (pathname === undefined || pathname === "/play" || pathname.startsWith("/play/")) return false;
+  if (/^\/(?:api|src|node_modules|@[a-z-]+|__[a-z-]+)(?:\/|$)/.test(pathname)) return false;
+  return !/\.[A-Za-z0-9]+$/.test(pathname.slice(pathname.lastIndexOf("/") + 1));
+};
+
 /**
- * Dev-only: let `.md` *server routes* reach SSR, matching `.txt`/`.xml`.
- *
- * Nitro's dev middleware (`nitro/dist/_build/vite.dev.mjs` → `nitroDevMiddlewarePre`)
- * classifies any request whose extension matches its `ASSET_EXT_RE` — which includes
- * `mdx?`, i.e. `.md` — as a static asset unless the request is an obvious document
- * navigation (`Accept: text/html` or `sec-fetch-dest: document`). A `.md` request from
- * curl, `fetch`, or a coding agent has neither, so nitro marks it handled and lets it
- * fall through Vite's pipeline, which 404s because no file exists — the TanStack SSR
- * route never runs. `.txt`/`.xml` are absent from that list, so they reach SSR.
- *
- * The classification exists so real `.md` files (a `/src/*.md` module import, a static
- * markdown file) are served by Vite, not SSR — so this shim must not blanket-route every
- * `.md` request. It only tags a `.md` request as a document navigation when nothing on
- * disk backs it (no file under the project root or public dir): that is exactly the case
- * of a virtual SSR route like `/agents.md`. Real `.md` files keep their existing Vite/
- * nitro handling; an unmatched virtual `.md` path reaches SSR and gets a normal SSR 404,
- * same as `.txt`. Registered ahead of nitro's middleware via the connect stack.
+ * Dev: draw each page on request with the engine's JSX renderer (the same `renderPage` the build
+ * prerenders with), so a page in dev is the HTML production serves plus Vite's client.
  */
-const mdSsrRoutesDevPlugin = (): Plugin => ({
-  name: "jgengine-md-ssr-routes",
+const sitePagesDevPlugin = (): Plugin => ({
+  name: "jgengine-site-pages",
   apply: "serve",
   configureServer(server) {
-    const { root, publicDir } = server.config;
-    const fileExists = (rel: string): boolean =>
-      existsSync(join(root, rel)) ||
-      (typeof publicDir === "string" && publicDir !== "" && existsSync(join(publicDir, rel)));
     server.middlewares.stack.unshift({
       route: "",
-      handle: ((req, _res, next) => {
-        const pathname = req.url?.split(/[?#]/, 1)[0];
-        if (pathname !== undefined && shouldRouteMdRequestToSsr(pathname, fileExists)) {
-          req.headers["sec-fetch-dest"] = "document";
+      handle: (async (req, res, next) => {
+        if (!isPageRequest(req.method, req.url)) return next();
+        try {
+          const url = req.url ?? "/";
+          const { renderPage } = (await server.ssrLoadModule("/src/site/render.tsx")) as typeof import("./src/site/render");
+          const page = await renderPage(url.split(/[?#]/, 1)[0] ?? "/", () => ({
+            stylesheets: ["/src/styles.css"],
+            fonts: [],
+            modulePreloads: [],
+            scripts: ["/src/client.tsx"],
+          }));
+          const html = await server.transformIndexHtml(url, page.html);
+          res.statusCode = page.status;
+          res.setHeader("content-type", "text/html; charset=utf-8");
+          res.end(html);
+        } catch (error) {
+          server.ssrFixStacktrace(error as Error);
+          next(error);
         }
-        next();
       }) as Connect.NextHandleFunction,
     });
   },
@@ -292,38 +203,30 @@ const mdSsrRoutesDevPlugin = (): Plugin => ({
 
 export default defineConfig({
   server: { port: 3000, fs: { allow: [repoRoot] } },
-  resolve: {
-    alias: [
-      { find: /^@jgengine\/github$/, replacement: `${githubSrc}/index.ts` },
-      { find: /^@jgengine\/github\/(.*)$/, replacement: `${githubSrc}/$1` },
-      // CI's web-build job never builds package dist; resolve core from source like github above.
-      { find: /^@jgengine\/core$/, replacement: `${coreSrc}/index.ts` },
-      { find: /^@jgengine\/core\/(.*)$/, replacement: `${coreSrc}/$1` },
-    ],
+  resolve: { alias: siteAliases },
+  environments: {
+    // The browser entry and the stylesheet; `scripts/prerender.ts` reads the manifest to link each page's files.
+    client: {
+      build: {
+        manifest: true,
+        rolldownOptions: { input: { client: "src/client.tsx", styles: "src/styles.css" } },
+      },
+    },
+    // The Worker (src/worker.ts): API proxy, agent text files, not-found fallback.
+    worker: { build: { outDir: "dist/server" } },
   },
   plugins: [
-    cloudflare({ viteEnvironment: { name: "ssr" } }),
+    cloudflare({ viteEnvironment: { name: "worker" } }),
     checkAssetsBeforeUploadPlugin(),
     tailwindcss(),
     // Dev only: publish this server (so `bun run perf live <game>` finds it) and accept the
     // in-page perf report a game pushes from the /play runner it serves.
     devServerMarkerPlugin({ kind: "website" }),
     devReportPlugin(),
-    tanstackStart({
-      prerender: {
-        enabled: true,
-        crawlLinks: true,
-        filter: (page: { path: string }) => {
-          const path = page.path.replace(/[?#].*$/, "");
-          return !path.endsWith(".md") && !path.startsWith("/play");
-        },
-      },
-    } as Parameters<typeof tanstackStart>[0]),
-    viteReact(),
+    sitePagesDevPlugin(),
     registryPlugin(),
     gamesIndexPlugin(),
     gamesPlayerPlugin(),
     gamesPlayerDevPlugin(),
-    mdSsrRoutesDevPlugin(),
   ],
 });

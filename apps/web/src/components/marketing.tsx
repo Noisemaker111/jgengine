@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { watchShown } from "../live/shown";
 import { litLines, type Trace, type TraceLines } from "../live/trace";

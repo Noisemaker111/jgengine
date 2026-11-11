@@ -1,5 +1,7 @@
-import { Link } from "@tanstack/react-router";
-import { useId, useRef, useState, type KeyboardEvent } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { Link } from "../site/link";
+import { useId, useRef, useState } from "@jgengine/core/ui/jsx";
+import type { KeyboardEvent } from "@jgengine/core/ui/jsx/dom.view";
 
 import { BLUEPRINTS } from "../lib/blueprints";
 import { capability, domainLabel } from "../lib/capabilities";

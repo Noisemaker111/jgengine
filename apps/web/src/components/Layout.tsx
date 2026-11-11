@@ -1,5 +1,6 @@
-import { Link } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+/** @jsxImportSource @jgengine/core/ui/jsx */
+import { Link } from "../site/link";
+import { useEffect, useState, type ReactNode } from "@jgengine/core/ui/jsx";
 
 import { ENTRY_PROMPT, REPO_URL } from "../lib/site";
 import { ThemeToggle } from "./ThemeToggle";

@@ -3,10 +3,10 @@
 // `react`, `react-dom` or a subpath of either (type-only ones too), and on any package.json that
 // names `react`, `react-dom`, their type packages or the Vite React plugin.
 //
-// Allowed, by name: the website (`apps/web`) and the two example hosts (`examples/next-host`,
-// `examples/tanstack-host`), which are React apps that show the engine inside one.
-// `packages/convex` and LLMville may name React in manifests for their hook libraries, but their
-// source uses the engine runtime. `@jgengine/react` is the engine's own UI package (`packages/ui`,
+// Allowed, by name: the two example hosts (`examples/next-host`, `examples/tanstack-host`), which are
+// React apps that show the engine inside one. The website (`apps/web`) draws with the engine runtime too.
+// `packages/convex` may name React in its manifest because `convex/react`, which its hooks use, loads
+// it; its source uses the engine runtime. `@jgengine/react` is the engine's own UI package (`packages/ui`,
 // published under its original npm name), not React, so it is allowed everywhere.
 // The root package.json keeps the catalog entries the framework hosts use.
 //
@@ -21,8 +21,8 @@ import { printHelpIfAsked, type Usage } from "./script-help";
 const REACT_SPECIFIER = /^react(?:-dom)?(?:\/|$)/;
 const REACT_PACKAGE = /^(?:react|react-dom|@types\/react|@types\/react-dom|@vitejs\/plugin-react)$/;
 /** Folders that may use React, each for the reason in the header. */
-export const REACT_ALLOWED = ["apps/web/", "examples/next-host/", "examples/tanstack-host/"];
-const REACT_HOOK_MANIFESTS = new Set(["packages/convex/package.json", "games/llmville/package.json"]);
+export const REACT_ALLOWED = ["examples/next-host/", "examples/tanstack-host/"];
+const REACT_HOOK_MANIFESTS = new Set(["packages/convex/package.json"]);
 /** Source roots. `scripts/` is left out: its tests and the port script hold import lines as strings. */
 const SOURCE_ROOTS = ["packages", "games", "apps", "registry", "examples"];
 const SOURCE_FILE = /\.(tsx?|jsx?|mjs|cjs)$/;

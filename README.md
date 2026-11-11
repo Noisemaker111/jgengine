@@ -128,7 +128,7 @@ The game the agent builds is **its own project in its own repo/directory**, on t
 
 ## Website — [jgengine.com](https://jgengine.com)
 
-[`apps/web`](apps/web) is a TanStack Start app: landing for humans (the prompt) and skill/API pages for agents. Skill pages are **rendered from `.claude/skills/jgengine-*`**, with no separate content to maintain.
+[`apps/web`](apps/web) is drawn with the engine's own JSX runtime and prerendered to static pages: landing for humans (the prompt) and skill/API pages for agents. Skill pages are **rendered from `.claude/skills/jgengine-*`**, with no separate content to maintain.
 
 It deploys to Cloudflare Workers through the official Cloudflare Vite plugin. Because the site is built from `.claude/skills/` and `packages/`, **shipping an engine or skill change redeploys the site with it** — the deploy of the engine is the deploy of the website. Setup in [`apps/web/README.md`](apps/web/README.md).
 
