@@ -11,7 +11,9 @@
     "ws"
   ],
   "owns": [
-    "index.html"
+    "index.html",
+    "src/index.css",
+    "src/main.tsx"
   ],
   "capabilities": {
     "probes": {
