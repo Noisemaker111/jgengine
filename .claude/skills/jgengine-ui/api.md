@@ -2162,6 +2162,11 @@
 
 - `VideoFrameSource` (interface): interface VideoFrameSource — The browser video methods used by a frame feed.
 
+## @jgengine/core/ui/runePassThrough
+
+- `RunePassThrough` (interface): interface RunePassThrough — Which surface owns the pointer over a full-viewport UI canvas. The canvas takes events only over its hit regions, while it is modal, or for a press that began on it; a press that began on the world below stays the world's until it is released, so a world click's release is not stolen when the canvas switches on mid-gesture.
+- `createRunePassThrough` (function): function createRunePassThrough(overUi: (x: number, y: number) => boolean): RunePassThrough — ⚠ undocumented
+
 ## @jgengine/core/ui/runeUi.view
 
 - `RuneScrollValues` (type): type RuneScrollValues = readonly [number, number, number, number, number, number] — Scroll offset, viewport and content size in layout pixels.
