@@ -11,9 +11,7 @@ import { entityModels, flockModels, scatterModels } from "./game/models";
 import { isPlayerSelectable } from "./game/session";
 import { systems } from "./game/systems";
 import { GameUI } from "./game/ui/GameUI";
-import { emberKit } from "./game/ui/emberKit";
-import { emberTheme } from "./game/ui/theme";
-import { EmberCommandWorldOverlay } from "./game/ui/WorldOverlay";
+import { EmberCommandWorldOverlay } from "./game/world/WorldOverlay";
 import { onInit, onNewPlayer, onTick } from "./loop";
 import { physics, world } from "./world";
 
@@ -61,9 +59,9 @@ export const game = defineGame({
   systems,
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
-  hudTheme: emberTheme,
-  // The parchment kit with wax red as its accent, so toasts, prompts and menu panes match the war-table CSS.
-  uiKit: emberKit,
+  // The war table draws on one native Rune surface: its own typed theme, no shell HUD theme or DOM kit.
+  hudTheme: false,
+  uiRenderer: "rune",
   controls: {
     // The command board, the formation tabs and the army call already carry every bound action as a
   // pressable token, so the derived touch buttons would only repeat them over the field.
@@ -79,10 +77,6 @@ export const game = defineGame({
   // selected the shell skips `orderCommand`, so the same verb takes the secondary right-click too:
   // armed buildings and rally points still land, and a bare order says to select troops first.
     pointer: { select: true, selectFilter: isPlayerSelectable, orderCommand: "unit.order", secondaryCommand: "unit.order" },
-  },
-  chrome: {
-    // Order reports and refusals: below the stockpile strip, clear of the command console.
-    notices: { placement: "top", ttlMs: 5000 },
   },
   scene: {
     entityModels,
