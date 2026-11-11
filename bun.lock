@@ -413,7 +413,7 @@
     },
     "packages/assets": {
       "name": "@jgengine/assets",
-      "version": "0.56.0",
+      "version": "0.56.1",
       "bin": {
         "assets": "dist/cli/pull.js",
       },
@@ -437,7 +437,7 @@
     },
     "packages/convex": {
       "name": "@jgengine/convex",
-      "version": "0.56.0",
+      "version": "0.56.1",
       "dependencies": {
         "@jgengine/core": "^0.56.0",
       },
@@ -453,7 +453,7 @@
     },
     "packages/core": {
       "name": "@jgengine/core",
-      "version": "0.56.0",
+      "version": "0.56.1",
       "devDependencies": {
         "@types/three": "catalog:",
         "three": "catalog:",
@@ -474,7 +474,7 @@
     },
     "packages/editor": {
       "name": "@jgengine/editor",
-      "version": "0.56.0",
+      "version": "0.56.1",
       "dependencies": {
         "@jgengine/assets": "^0.56.0",
         "@jgengine/core": "^0.56.0",
@@ -493,11 +493,11 @@
     },
     "packages/github": {
       "name": "@jgengine/github",
-      "version": "0.43.0",
+      "version": "0.43.1",
     },
     "packages/jgengine": {
       "name": "jgengine",
-      "version": "0.53.0",
+      "version": "0.53.1",
       "bin": {
         "jgengine": "dist/cli/index.js",
       },
@@ -510,7 +510,7 @@
     },
     "packages/navbake": {
       "name": "@jgengine/navbake",
-      "version": "0.56.0",
+      "version": "0.56.1",
       "dependencies": {
         "@jgengine/core": "^0.56.0",
         "recast-navigation": "^0.34.0",
@@ -518,7 +518,7 @@
     },
     "packages/node": {
       "name": "@jgengine/node",
-      "version": "0.56.0",
+      "version": "0.56.1",
       "dependencies": {
         "@jgengine/core": "^0.56.0",
         "@jgengine/ws": "^0.56.0",
@@ -534,7 +534,7 @@
     },
     "packages/rapier": {
       "name": "@jgengine/rapier",
-      "version": "0.56.0",
+      "version": "0.56.1",
       "dependencies": {
         "@dimforge/rapier3d-compat": "0.19.3",
         "@jgengine/core": "^0.56.0",
@@ -542,7 +542,7 @@
     },
     "packages/shell": {
       "name": "@jgengine/shell",
-      "version": "0.56.0",
+      "version": "0.56.1",
       "dependencies": {
         "@jgengine/core": "^0.56.0",
         "@jgengine/react": "^0.56.0",
@@ -560,7 +560,7 @@
     },
     "packages/sql": {
       "name": "@jgengine/sql",
-      "version": "0.56.0",
+      "version": "0.56.1",
       "dependencies": {
         "@jgengine/core": "^0.56.0",
       },
@@ -570,14 +570,14 @@
     },
     "packages/ui": {
       "name": "@jgengine/react",
-      "version": "0.56.0",
+      "version": "0.56.1",
       "dependencies": {
         "@jgengine/core": "^0.56.0",
       },
     },
     "packages/ws": {
       "name": "@jgengine/ws",
-      "version": "0.56.0",
+      "version": "0.56.1",
       "dependencies": {
         "@jgengine/core": "^0.56.0",
       },
