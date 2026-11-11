@@ -12,8 +12,6 @@ import { hotbarSlotBindings } from "@jgengine/core/input/actionBindings";
 import { objectModels } from "./game/models";
 import { renderEntity } from "./game/render/renderEntity";
 import { GameUI } from "./game/ui/GameUI";
-import { orbitTheme } from "./game/ui/theme";
-import { orbitKit } from "./game/ui/orbitKit";
 import { loop } from "./loop";
 import { editorLayers } from "./editorLayers";
 import { householdStore } from "./game/session/store";
@@ -43,8 +41,8 @@ export const game = defineGame({
     renderEntity,
     ambientLife: { fauna: ambientFauna },
   },
-  hudTheme: orbitTheme,
-  uiKit: orbitKit,
+  hudTheme: false,
+  uiRenderer: "rune",
   chrome: {
     // Household journal lines are full sentences; give them time to read above the habitat tools.
     notices: { placement: "bottom", ttlMs: 8000 },
