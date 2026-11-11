@@ -30,9 +30,6 @@ import {
 } from "@jgengine/shell/gameKit";
 
 import {
-  fernwildKit,
-} from "./art/look";
-import {
   editorLayers,
 } from "./editorLayers";
 import {
@@ -156,10 +153,10 @@ import {
 } from "./game/screens";
 import {
   GameUI,
-} from "./game/ui/GameUI";
+} from "./game/rune/GameUI";
 import {
   BaseWorld,
-} from "./game/ui/BaseWorld";
+} from "./game/world/BaseWorld";
 import {
   onNewPlayer,
   survivorStart,
@@ -207,7 +204,8 @@ export const game = defineGame({
     },
   },
   assets,
-  uiKit: fernwildKit,
+  hudTheme: false,
+  uiRenderer: "rune",
   world,
   time,
   content,
