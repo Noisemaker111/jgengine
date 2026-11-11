@@ -12,17 +12,25 @@ export interface LlmvilleSessionIdentity {
   gameId: Id<"games">;
 }
 
-/** The latest world props the HUD derived, read by the scene inside the shell's canvas. */
+/** World position to screen point through the live camera; `null` when the scene is not drawing. */
+export type WorldProjectionReader = (position: readonly [number, number, number]) => { x: number; y: number; behind: boolean } | null;
+
+/**
+ * The latest world props the HUD derived, read by the scene inside the shell's canvas; and the
+ * other way, the scene's camera projection, read by the HUD's world-anchored prompts.
+ */
 export interface WorldSceneFeed {
   read(): WorldSceneProps | null;
   publish(props: WorldSceneProps | null): void;
   subscribe(listener: () => void): () => void;
+  projection: { current: WorldProjectionReader | null };
 }
 
 export function createWorldSceneFeed(): WorldSceneFeed {
   let current: WorldSceneProps | null = null;
   const listeners = new Set<() => void>();
   return {
+    projection: { current: null },
     read: () => current,
     publish(props) {
       if (props === current) return;
@@ -85,6 +93,13 @@ export function useLlmvilleSession(): LlmvilleSession {
   const session = useContext(LlmvilleSessionContext);
   if (session === null) throw new Error("LLMville: the game UI mounted outside LlmvilleSessionProvider");
   return session;
+}
+
+/** The scene side's feed, to share the camera projection back to the HUD. */
+export function useWorldSceneFeed(): WorldSceneFeed {
+  const scene = useContext(WorldSceneFeedContext);
+  if (scene === null) throw new Error("LLMville: the scene mounted outside LlmvilleSessionProvider");
+  return scene;
 }
 
 export function useWorldSceneProps(): WorldSceneProps | null {

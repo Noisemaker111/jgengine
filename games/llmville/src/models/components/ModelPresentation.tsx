@@ -1,40 +1,19 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import type { ReactNode } from "@jgengine/core/ui/jsx";
-import { Icon } from "../../kit/icons";
-
+import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import { formatTrainingDurationLabel } from "@llmville/game/models/trainingDurationLabel";
 
+import { DISPLAY } from "../../ui/theme";
+import { FULL, Icon, Row, Text } from "../../ui/kit";
+
 type ModelStatColor = "green" | "yellow" | "blue";
+const STAT_COLOR: Record<ModelStatColor, string> = { green: "#4ade80", yellow: "#facc15", blue: "#60a5fa" };
 
 /** Same row as the fine-tune control on `BaseModelCard`: ~duration + clock. */
 export function ModelTrainingDurationEstimate({ estimatedSeconds }: { estimatedSeconds: number }) {
-  return (
-    <span className="inline-flex items-center justify-center gap-1.5 font-game text-[0.8125rem] font-extrabold uppercase tracking-[0.08em] text-white">
-      <span className="tabular-nums">{Number.isFinite(estimatedSeconds) ? "~" : ""}{formatTrainingDurationLabel(estimatedSeconds)}</span>
-      <Icon name="clock" className="size-4 shrink-0 opacity-95" strokeWidth={2.5} />
-    </span>
-  );
-}
-
-const STAT_ROW_ACCENT_CLASS: Record<ModelStatColor, string> = {
-  green: "text-[#4ADE80]",
-  yellow: "text-[#FACC15]",
-  blue: "text-[#60A5FA]",
-};
-
-const STAT_ROW_FILL_CLASS: Record<ModelStatColor, string> = {
-  green: "bg-[#4ADE80]",
-  yellow: "bg-[#FACC15]",
-  blue: "bg-[#60A5FA]",
-};
-
-interface ModelStatRowProps {
-  color: ModelStatColor;
-  value: number;
-  label: ReactNode;
-  fillOpacity?: number;
-  hidden?: boolean;
-  title?: string;
+  return <Row gap={6}>
+    <Text family={DISPLAY} size={13} weight={800} tracking={1}>{`${Number.isFinite(estimatedSeconds) ? "~" : ""}${formatTrainingDurationLabel(estimatedSeconds).toUpperCase()}`}</Text>
+    <Icon name="clock" size={16} strokeWidth={2.5} />
+  </Row>;
 }
 
 export function getDeltaFillOpacity(delta: number, baseline: number): number {
@@ -44,21 +23,15 @@ export function getDeltaFillOpacity(delta: number, baseline: number): number {
   return 0.55;
 }
 
-export function ModelStatRow({ color, value, label, fillOpacity = 1, hidden = false, title }: ModelStatRowProps) {
-  const barWidth = Math.min(100, Math.max(0, value));
-  return (
-    <div className="flex items-center gap-1.5" title={title}>
-      <div className="h-2 min-w-8 max-w-52 flex-1 overflow-hidden rounded-sm border border-[#243430] bg-[#0a1210]">
-        {!hidden && (
-          <div
-            className={`h-full ${STAT_ROW_FILL_CLASS[color]}`}
-            style={{ width: `${barWidth}%`, opacity: fillOpacity }}
-          />
-        )}
-      </div>
-      <span className={`shrink-0 text-[14px] font-black tabular-nums ${STAT_ROW_ACCENT_CLASS[color]}`}>
-        {hidden ? "???" : label}
-      </span>
-    </div>
-  );
+/** A thin stat bar (0..100) with its value beside it; hidden stats read "???". */
+export function ModelStatRow({ color, value, label, fillOpacity = 1, hidden = false, title }: {
+  color: ModelStatColor; value: number; label: string; fillOpacity?: number; hidden?: boolean; title?: string;
+}) {
+  const fraction = Math.min(100, Math.max(0, value)) / 100;
+  return <Row gap={6} width={FULL} {...(title === undefined ? {} : { tooltip: title })}>
+    <RuneView height={8} minWidth={32} maxWidth={208} grow={1} radius={2} fill="#0a1210" border={{ width: 1, color: "#243430" }} clip>
+      {hidden ? null : <RuneView height={8} width={{ fraction }} fill={STAT_COLOR[color]} opacity={fillOpacity} />}
+    </RuneView>
+    <Text size={14} weight={900} color={STAT_COLOR[color]}>{hidden ? "???" : label}</Text>
+  </Row>;
 }

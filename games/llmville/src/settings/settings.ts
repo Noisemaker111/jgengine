@@ -25,9 +25,6 @@ let appSettings: AppSettingsStore | null = null;
 function appSettingsStore(): AppSettingsStore {
   if (appSettings === null) {
     appSettings = createAppSettingsStore(defaultKeyValueStorage());
-    if (typeof document !== "undefined") {
-      document.documentElement.dataset["reducedMotion"] = appSettings.get().reducedMotion ? "true" : "false";
-    }
   }
   return appSettings;
 }

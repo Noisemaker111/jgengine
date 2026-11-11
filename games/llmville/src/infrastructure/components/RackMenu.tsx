@@ -1,8 +1,7 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { useCallback, useEffect, useMemo } from "@jgengine/core/ui/jsx";
+import { useCallback, useMemo, useState } from "@jgengine/core/ui/jsx";
+import { RuneAction, RuneView } from "@jgengine/core/ui/rune/primitives.view";
 import type { RackHardwareMoveSource, RackHardwareMoveTarget } from "../rackHardwareSession";
-import { DragGhost, DraggableCard, DropZone, useDragLayer, type DragLayer } from "@jgengine/core/inventory/dragLayer.view";
 import type { PlacedRack } from "../infrastructure";
 import {
   getRackInstalledHardwareSlots,
@@ -23,7 +22,7 @@ import { useRackHardwareDragVisualOptional } from "../rackHardwareDragVisual";
 import { useTabletNavContext } from "../../tablet/components/tabletNav";
 
 import RackSlot from "./RackSlot";
-import type { ReactNode } from "@jgengine/core/ui/jsx";
+import { Button, C, FULL, Label, Muted, Row, Sheet, Stack, Text, useCompact } from "../../ui/kit";
 
 interface RackMenuProps {
   rack: PlacedRack;
@@ -37,28 +36,15 @@ interface RackMenuProps {
 
 type DragData = { type: "inventory" | "slot"; hardwareModelId: HardwareModelId; slotIndex?: number };
 
-function HardwareCard({
-  id,
-  data,
-  layer,
-  children,
-}: {
-  id: string;
-  data: DragData;
-  layer: DragLayer<DragData>;
-  children: ReactNode;
-}) {
-  return (
-    <DraggableCard
-      id={id}
-      value={data}
-      layer={layer}
-      onRotate={false}
-      className="w-full cursor-grab active:cursor-grabbing transition-opacity duration-100 data-[dragging]:opacity-30"
-    >
-      {children}
-    </DraggableCard>
-  );
+/** Drag payloads travel as strings: `slot:<index>:<id>` or `inventory:<id>`. */
+function encodeDrag(data: DragData): string {
+  return data.type === "slot" ? `slot:${data.slotIndex ?? 0}:${data.hardwareModelId}` : `inventory:${data.hardwareModelId}`;
+}
+function decodeDrag(value: string): DragData | null {
+  const [type, a, b] = value.split(":");
+  if (type === "slot" && a !== undefined && b !== undefined) return { type, slotIndex: Number(a), hardwareModelId: b as HardwareModelId };
+  if (type === "inventory" && a !== undefined) return { type, hardwareModelId: a as HardwareModelId };
+  return null;
 }
 
 export default function RackMenu({
@@ -105,211 +91,74 @@ export default function RackMenu({
 
   const hardwareIdsInInventory = hardwareModelIdsWithPositiveStock(hardwareInventory);
 
-  const drag = useDragLayer<DragData>({
-    onDrop({ payload, target }) {
-      if (target === null) return;
-      const endpoints = rackHardwareDropEndpoints({
-        overId: target,
-        dragType: payload.value.type,
-        hardwareModelId: payload.value.hardwareModelId,
-        sourceSlotIndex: payload.value.slotIndex,
-      });
-      if (endpoints === null) return;
-      onMoveHardware(rack.id, endpoints.from, endpoints.to);
-    },
-  });
-
+  const [installing, setInstalling] = useState<number | null>(null);
+  const compact = useCompact();
+  const drop = (value: string, target: string) => {
+    const data = decodeDrag(value);
+    if (data === null) return;
+    const endpoints = rackHardwareDropEndpoints({ overId: target, dragType: data.type, hardwareModelId: data.hardwareModelId, sourceSlotIndex: data.slotIndex });
+    if (endpoints !== null) onMoveHardware(rack.id, endpoints.from, endpoints.to);
+  };
   // The 3D rack hides the card being carried out of one of its slots, for as long as it is carried.
-  const carried = drag.state.payload?.value ?? null;
-  const setRackHardwareDrag = rackDragVisual?.setRackHardwareDrag;
-  useEffect(() => {
-    if (setRackHardwareDrag === undefined || carried?.type !== "slot" || carried.slotIndex === undefined) return undefined;
-    setRackHardwareDrag({ rackId: rack.id, slotIndex: carried.slotIndex, hardwareModelId: carried.hardwareModelId });
-    return () => setRackHardwareDrag(null);
-  }, [carried, rack.id, setRackHardwareDrag]);
+  const carry = (slotIndex: number, hardwareModelId: HardwareModelId, phase: "down" | "move" | "up") => {
+    const set = rackDragVisual?.setRackHardwareDrag;
+    if (set === undefined) return;
+    if (phase === "down") set({ rackId: rack.id, slotIndex, hardwareModelId });
+    else if (phase === "up") set(null);
+  };
 
-  return (
-    <>
-      <KitPanel
-        as="div"
-        data-shell="terminal"
-        eyebrow="Rack hardware"
-        className="relative flex h-full flex-col overflow-hidden"
-      >
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute top-2 right-2 z-20 flex h-8 w-8 items-center justify-center rounded-sm text-brand-coral hover:bg-brand-coral/15"
-          aria-label="Close"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+  const slots = <Stack grow={1} shrink gap={6} {...(compact ? { width: FULL } : {})}>
+    <Label align="center">RACK SLOTS</Label>
+    {Array.from({ length: slotCapacity }, (_, i) => {
+      const hardwareId = installedIds[i];
+      return <Stack key={i} gap={4} width={FULL}>
+        <Row gap={6} width={FULL}>
+          <RuneAction acceptDrop={(value) => drop(value, `slot-${i}`)} grow={1} label={hardwareId ? `Slot ${i + 1}: ${getHardwareDefinition(hardwareId).name}` : `Empty slot ${i + 1}`}
+            {...(hardwareId ? { dragValue: encodeDrag({ type: "slot", hardwareModelId: hardwareId, slotIndex: i }), onDrag: (gesture: { phase: "down" | "move" | "up" }) => carry(i, hardwareId, gesture.phase) } : {})}>
+            <RackSlot hardwareModelId={hardwareId ?? undefined} temperatureC={hardwareId ? cardTempBySlot.get(i) : undefined} slotNumber={i + 1} />
+          </RuneAction>
+          {hardwareId
+            ? <Button tone="ghost" minHeight={36} label={`Remove GPU from slot ${i + 1}`} onPress={() => onMoveHardware(rack.id, { kind: "slot", slot: i }, { kind: "stock" })}><Text size={12}>Remove</Text></Button>
+            : <Button tone="ghost" minHeight={36} disabled={hardwareIdsInInventory.length === 0} label={`Install GPU in slot ${i + 1}`} onPress={() => setInstalling(installing === i ? null : i)}><Text size={12}>Install…</Text></Button>}
+        </Row>
+        {installing === i && !hardwareId ? <Row gap={4} width={FULL}>{hardwareIdsInInventory.map((id) => <Button key={id} tone="chip" grow={1} label={`Install ${getHardwareDefinition(id).name} in slot ${i + 1}`}
+          onPress={() => { setInstalling(null); onMoveHardware(rack.id, { kind: "stock", hardwareId: id }, { kind: "slot", slot: i }); }}>
+          <Text size={11} weight={800}>{getHardwareDefinition(id).name}</Text>
+        </Button>)}</Row> : null}
+      </Stack>;
+    })}
+  </Stack>;
 
-        <div className="border-b border-white/10 px-4 py-3">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/45">Rack cooler</p>
-              <p className="text-sm font-semibold text-brand-cream">
-                {rack.installedCoolerId
-                  ? getRackCoolingUnitDefinition(rack.installedCoolerId).name
-                  : "None installed"}
-              </p>
-              <p className="text-[11px] text-white/45 tabular-nums">
-                {rackThermal.rackHeatKw.toFixed(1)} kW heat · {rackThermal.rackCapacityKw.toFixed(1)} kW cooling
-              </p>
-            </div>
-            <div className="flex flex-col items-end gap-1">
-              {rack.installedCoolerId ? (
-                <button
-                  type="button"
-                  className="rounded border border-white/15 px-2 py-1 text-[11px] font-semibold text-brand-coral hover:bg-brand-coral/10"
-                  onClick={() => onUninstallCooler(rack.id)}
-                >
-                  Remove cooler
-                </button>
-              ) : ownedCoolers.length > 0 ? (
-                ownedCoolers.map(([coolerId, count]) => (
-                  <button
-                    key={coolerId}
-                    type="button"
-                    className="rounded border border-brand-teal/30 px-2 py-1 text-[11px] font-semibold text-brand-teal hover:bg-brand-teal/10"
-                    onClick={() => onInstallCooler(rack.id, coolerId)}
-                  >
-                    Install {getRackCoolingUnitDefinition(coolerId).name} (×{count})
-                  </button>
-                ))
-              ) : (
-                <span className="text-[11px] text-white/35">Buy a rack cooler in Store</span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex-1 flex gap-6 p-4 min-h-0 overflow-hidden">
-          {/* Rack slots */}
-          <section className="flex-1 min-w-0 flex flex-col">
-            <h2 className="text-sm font-bold text-white uppercase tracking-widest mb-2 text-center">Rack slots</h2>
-            <ul className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden space-y-1.5 list-none">
-              {Array.from({ length: slotCapacity }, (_, i) => {
-                const hardwareId = installedIds[i];
-                return (
-                  <li key={i} className="flex items-center gap-1.5">
-                    <span className="w-5 shrink-0 text-center text-xs font-bold text-white/50 tabular-nums">
-                      {i + 1}
-                    </span>
-                    <DropZone
-                      id={`slot-${i}`}
-                      layer={drag}
-                      className="flex-1 min-w-0 w-full min-h-[96px] transition-colors duration-150"
-                      activeClassName="ring-2 ring-emerald-400/40 ring-inset rounded-sm"
-                    >
-                      {hardwareId ? (
-                        <HardwareCard
-                          id={`slot-${i}-drag`}
-                          data={{ type: "slot", hardwareModelId: hardwareId, slotIndex: i }}
-                          layer={drag}
-                        >
-                          <RackSlot
-                            hardwareModelId={hardwareId}
-                            temperatureC={cardTempBySlot.get(i)}
-                            useExternalDrag
-                          />
-                        </HardwareCard>
-                      ) : (
-                        <RackSlot hardwareModelId={undefined} useExternalDrag />
-                      )}
-                    </DropZone>
-                    {hardwareId ? (
-                      <button type="button" aria-label={`Remove GPU from slot ${i + 1}`} className="shrink-0 rounded-lg border border-white/15 px-2 py-2 text-xs text-brand-cream-dim" onClick={() => onMoveHardware(rack.id, { kind: "slot", slot: i }, { kind: "stock" })}>Remove</button>
-                    ) : (
-                      <select aria-label={`Install GPU in slot ${i + 1}`} value="" disabled={hardwareIdsInInventory.length === 0} className="max-w-[45%] rounded-lg border border-white/15 bg-brand-ink px-2 py-2 text-xs text-brand-cream disabled:opacity-40" onChange={(event) => { if (event.target.value) onMoveHardware(rack.id, { kind: "stock", hardwareId: event.target.value as HardwareModelId }, { kind: "slot", slot: i }); }}>
-                        <option value="">Install GPU…</option>
-                        {hardwareIdsInInventory.map((id) => <option key={id} value={id}>{getHardwareDefinition(id).name}</option>)}
-                      </select>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-
-          {/* Owned hardware — entire section is the uninstall drop zone */}
-          <UninstallSection
-            layer={drag}
-            hardwareIdsInInventory={hardwareIdsInInventory}
-            hardwareInventory={hardwareInventory}
-            onVisitHardwareStore={onVisitHardwareStore}
-          />
-        </div>
-      </KitPanel>
-
-      {/* The carried card follows the pointer above everything; the layout under it never shifts. */}
-      <DragGhost layer={drag} className="w-[260px] opacity-95 shadow-2xl shadow-black/60 scale-105 cursor-grabbing">
-        {(payload) => <RackSlot hardwareModelId={payload.value.hardwareModelId} useExternalDrag />}
-      </DragGhost>
-    </>
-  );
-}
-
-function UninstallSection({
-  layer,
-  hardwareIdsInInventory,
-  hardwareInventory,
-  onVisitHardwareStore,
-}: {
-  layer: DragLayer<DragData>;
-  hardwareIdsInInventory: HardwareModelId[];
-  hardwareInventory: Record<string, number>;
-  onVisitHardwareStore: () => void;
-}) {
-  const isOver = layer.dragging && layer.state.overTarget === "uninstall";
-
-  return (
-    <DropZone
-      id="uninstall"
-      layer={layer}
-      className="flex-1 min-w-0 flex flex-col border-l border-white/10 px-4 rounded-r-xl transition-colors duration-150"
-      activeClassName="bg-red-500/8"
-    >
-      <h2 className={`text-sm font-bold uppercase tracking-widest mb-2 text-center transition-colors duration-150 ${isOver ? "text-red-300" : "text-white"}`}>
-        Owned Hardware
-      </h2>
-      <ul className="flex-1 min-h-0 overflow-auto space-y-1.5 list-none">
-        {hardwareIdsInInventory.map((hardwareId) => (
-          <li key={hardwareId}>
-            <HardwareCard
-              id={`inventory-${hardwareId}`}
-              data={{ type: "inventory", hardwareModelId: hardwareId }}
-              layer={layer}
-            >
-              <RackSlot
-                hardwareModelId={hardwareId}
-                count={hardwareInventory[hardwareId]}
-                useExternalDrag
-              />
-            </HardwareCard>
-          </li>
-        ))}
-        {hardwareIdsInInventory.length === 0 && (
-          <div className="flex-1 flex flex-col items-center justify-center gap-3 py-6">
-            <p className="text-sm font-medium text-white/40 text-center">You have no hardware</p>
-            <button
-              type="button"
-              className="text-sm font-semibold text-brand-teal hover:text-brand-cream underline underline-offset-4 decoration-brand-teal/50 transition-colors duration-150"
-              onClick={onVisitHardwareStore}
-            >
-              Visit the Store
-            </button>
-          </div>
-        )}
-      </ul>
-      <div className="mt-auto pt-5 pb-4 border-t border-white/10">
-        <p className={`text-sm font-medium text-center transition-colors duration-150 ${isOver ? "text-red-400" : "text-white/30"}`}>
-          Click or drag here to uninstall
-        </p>
-      </div>
-    </DropZone>
-  );
+  return <Sheet title="Rack hardware" close={onClose} width={720} height={720}>
+    <Row justify="between" items="start" gap={12} width={FULL}>
+      <RuneView gap={2} grow={1} shrink>
+        <Label>RACK COOLER</Label>
+        <Text size={14} weight={700}>{rack.installedCoolerId ? getRackCoolingUnitDefinition(rack.installedCoolerId).name : "None installed"}</Text>
+        <Muted size={11}>{`${rackThermal.rackHeatKw.toFixed(1)} kW heat · ${rackThermal.rackCapacityKw.toFixed(1)} kW cooling`}</Muted>
+      </RuneView>
+      <RuneView items="end" gap={4}>
+        {rack.installedCoolerId ? <Button tone="danger" minHeight={32} onPress={() => onUninstallCooler(rack.id)}>Remove cooler</Button>
+          : ownedCoolers.length > 0 ? ownedCoolers.map(([coolerId, count]) => <Button key={coolerId} tone="ghost" minHeight={32} label={`Install ${getRackCoolingUnitDefinition(coolerId).name}`} onPress={() => onInstallCooler(rack.id, coolerId)}>
+            <Text size={11} weight={800} color={C.teal}>{`Install ${getRackCoolingUnitDefinition(coolerId).name} (×${count})`}</Text>
+          </Button>) : <Muted size={11}>Buy a rack cooler in Store</Muted>}
+      </RuneView>
+    </Row>
+    <RuneView height={1} fill={C.line} width={FULL} />
+    <RuneView layout={compact ? "stack" : "row"} gap={16} items="start" width={FULL}>
+      {slots}
+      <RuneAction acceptDrop={(value) => drop(value, "uninstall")} label="Owned hardware" grow={1} shrink gap={6} padding={[0, 0, 0, compact ? 0 : 12]} {...(compact ? { width: FULL } : {})}
+        hover="#ef444414">
+        <Label align="center">OWNED HARDWARE</Label>
+        {hardwareIdsInInventory.map((hardwareId) => <RuneAction key={hardwareId} dragValue={encodeDrag({ type: "inventory", hardwareModelId: hardwareId })} width={FULL}
+          label={`Owned ${getHardwareDefinition(hardwareId).name}`} tooltip="Drag onto a slot">
+          <RackSlot hardwareModelId={hardwareId} count={hardwareInventory[hardwareId]} />
+        </RuneAction>)}
+        {hardwareIdsInInventory.length === 0 ? <RuneView items="center" gap={10} padding={24} width={FULL}>
+          <Muted size={13}>You have no hardware</Muted>
+          <Button tone="link" onPress={onVisitHardwareStore}>Visit the Store</Button>
+        </RuneView> : null}
+        <Muted size={12} align="center" padding={[12, 0, 4, 0]}>Drag a card here to uninstall</Muted>
+      </RuneAction>
+    </RuneView>
+  </Sheet>;
 }

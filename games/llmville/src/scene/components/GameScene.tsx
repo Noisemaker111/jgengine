@@ -7,12 +7,11 @@ import {
 import { BuildPlacementPreviewController } from "../../build/buildPlacementPreview";
 import type { BuildDirection, BuildItemId } from "@llmville/game/build/catalog";
 import {
-  INTERACTION_GAUGE,
   type GamePositionedPrompt,
   type InteractionHint,
   type InteractionTarget,
 } from "@llmville/game/simulation/interaction";
-import { useMemo } from "@jgengine/core/ui/jsx";
+import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 
 import type { DatacenterClaim, PlacementCellPolicy } from "@llmville/game/datacenter/claims";
 import type { GameEngine } from "../../runtime/gameEngine";
@@ -20,12 +19,11 @@ import type { PlacedRack } from "../../infrastructure/infrastructure";
 import type { GpuSlotWorkload } from "../../infrastructure/computeUnits";
 
 import BuildProp from "./BuildProp";
-import { ProximityPromptMarker, type GaugeReading } from "./ProximityPromptMarker";
 import { ClaimedCellOverlay, EndlessDatacenter } from "../../world/components/EndlessDatacenter";
 import Rack from "../../infrastructure/components/Rack";
 import { SceneAxesHelper, useShowSceneAxes } from "./SceneAxesHelper";
-import { TutorialRackArrow } from "../../tutorial/components/TutorialUi";
-import { useWorldSceneProps } from "../../runtime/llmvilleSession";
+import { useWorldSceneFeed, useWorldSceneProps } from "../../runtime/llmvilleSession";
+import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames";
 import { useLocalPlayerBridge } from "../../runtime/localPlayerEntity";
 
 /** What the scene draws, published by the HUD each time the world view model changes. */
@@ -62,6 +60,20 @@ export function LlmvilleDatacenter() {
   return props === null ? null : <EndlessDatacenter engine={props.engine} />;
 }
 
+/** Hands the live camera projection to the HUD, whose prompt markers anchor to world points. */
+function ShareWorldProjection() {
+  const feed = useWorldSceneFeed();
+  const project = useWorldProjection();
+  useEffect(() => {
+    feed.projection.current = (position) => {
+      const point = project(position);
+      return point === null ? null : { x: point.x, y: point.y, behind: point.behind === true };
+    };
+    return () => { feed.projection.current = null; };
+  }, [feed, project]);
+  return null;
+}
+
 /** The shell's world overlay: LLMville's datacenter, racks, avatars and build preview inside the shell canvas. */
 export function LlmvilleWorld() {
   const props = useWorldSceneProps();
@@ -69,6 +81,7 @@ export function LlmvilleWorld() {
   if (props === null) return null;
   return (
     <>
+      <ShareWorldProjection />
       <GameWorldContent
         engine={props.engine}
         gameId={props.gameId}
@@ -85,11 +98,6 @@ export function LlmvilleWorld() {
         placementPreview={props.placementPreview}
         tutorialRack={props.tutorialRack}
         showTutorialRackArrow={props.showTutorialRackArrow}
-        powerDrawKw={props.powerDrawKw}
-        powerCapacityKw={props.powerCapacityKw}
-        interactionHint={props.interactionHint}
-        interactionTarget={props.interactionTarget}
-        interactionPrompt={props.interactionPrompt}
       />
       <BuildPlacementPreviewController
         enabled={props.placementDraftItemId !== null}
@@ -120,11 +128,6 @@ function GameWorldContent({
   playerPosition,
   tutorialRack,
   showTutorialRackArrow,
-  powerDrawKw,
-  powerCapacityKw,
-  interactionHint,
-  interactionTarget,
-  interactionPrompt,
 }: {
   engine: GameEngine;
   gameId: string;
@@ -141,11 +144,6 @@ function GameWorldContent({
   playerPosition: { x: number; z: number };
   tutorialRack: PlacedRack | null;
   showTutorialRackArrow: boolean;
-  powerDrawKw: number;
-  powerCapacityKw: number;
-  interactionHint?: InteractionHint | null | undefined;
-  interactionTarget?: InteractionTarget | null | undefined;
-  interactionPrompt?: GamePositionedPrompt | null | undefined;
 }) {
   const placementDraft =
     buildPlacementModeActive && placementDraftItemId !== null
@@ -153,26 +151,11 @@ function GameWorldContent({
       : null;
   const showAxes = useShowSceneAxes();
   const ownRackIds = useMemo(() => new Set(racks.map((rack) => `${rack.id}`)), [racks]);
-  const gaugeValues = useMemo<Record<string, GaugeReading>>(
-    () => ({ [INTERACTION_GAUGE.power]: { value: powerDrawKw, max: powerCapacityKw, unit: "kW" } }),
-    [powerDrawKw, powerCapacityKw],
-  );
 
   return (
     <>
       {showAxes && <SceneAxesHelper position={[0, 0.5, 0]} size={2} />}
-      <TutorialRackArrow rack={tutorialRack} show={showTutorialRackArrow} />
 
-      {(interactionHint || interactionPrompt) && (
-        <ProximityPromptMarker
-          hint={interactionHint ?? null}
-          target={interactionTarget}
-          promptDisplay={interactionPrompt?.prompt.display ?? null}
-          gaugeValues={gaugeValues}
-          racks={racks}
-          placedBuildItems={placedBuildItems}
-        />
-      )}
 
       <ClaimedCellOverlay claims={claims} localGameId={gameId} playerPosition={playerPosition} />
 

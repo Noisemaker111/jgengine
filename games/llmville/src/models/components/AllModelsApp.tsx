@@ -15,6 +15,7 @@ import { usePlayerIdentity } from "../../auth";
 import { BaseModelCard } from "./ModelCard";
 import { ModelDetailView } from "./ModelDetailView";
 import { TrainDataCommitmentModal } from "./TrainDataCommitmentModal";
+import { Button, C, FULL, Icon, Label, Row, Stack, Text } from "../../ui/kit";
 
 function useTrainingCountdownSeconds(isTraining: boolean, trainingEndsAt: number | null): number | null {
   const [now, setNow] = useState(() => Date.now());
@@ -96,106 +97,48 @@ export function AllModelsApp({
     [founderTrainingPowerFp16Multiplier, trainingDurationMultiplier, trainingDurationPreview],
   );
 
-  return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 pb-24">
-      {postTrainError != null && (
-        <div className="mb-4 flex items-start gap-3 rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3">
-          <p className="flex-1 text-xs text-amber-200/90">{postTrainError}</p>
-          <button
-            type="button"
-            onClick={onDismissPostTrainError}
-            className="shrink-0 rounded-lg p-1.5 text-amber-400/80 transition-colors hover:bg-amber-500/20 hover:text-amber-300 focus-visible:ring-2 focus-visible:ring-amber-400/50"
-            aria-label="Dismiss error"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      )}
+  const highlighted = (id: string) => tutorialStarted && !tutorialCompleted
+    && ((tutorialStage === "license_scraper" && id === TUTORIAL_SCRAPE_MODEL_ID) || (tutorialStage === "fine_tune" && id === TUTORIAL_TRAIN_BASE_MODEL_ID));
+  const act = (baseModel: BaseModelLibraryEntry) => {
+    if (baseModel.actionKind === "unlock") { onUnlockBaseModel(baseModel.id, baseModel.licenseCost); return; }
+    if (baseModel.actionKind === MODEL_ACTION_KIND.serve_base) { onLaunchLicensedBaseServe(baseModel.id); return; }
+    if (baseModel.actionKind !== "train") return;
+    if (baseModel.trainingMethod === "fine_tune" && baseModel.sourceType === "open_source") setTrainCommitModel(baseModel);
+    else onStartPostTraining(baseModel.id);
+  };
+  const detailModel = detailBaseModelId === null ? undefined : baseModelLibrary.find((entry) => entry.id === detailBaseModelId);
 
-      <section className="mb-8">
-        <div className="mb-3 flex items-center justify-between">
-          <h4 className="game-section-label">Base models</h4>
-          {isTraining && <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-amber-200/70">Job Running</span>}
-        </div>
-        <div className="space-y-3">
-          {baseModelLibrary.map((baseModel) => (
-            <div
-              key={baseModel.id}
-              className={
-                tutorialStarted &&
-                  !tutorialCompleted &&
-                  ((tutorialStage === "license_scraper" && baseModel.id === TUTORIAL_SCRAPE_MODEL_ID)
-                    || (tutorialStage === "fine_tune" && baseModel.id === TUTORIAL_TRAIN_BASE_MODEL_ID))
-                  ? "rounded-2xl ring-2 ring-brand-teal/80 ring-offset-2 ring-offset-[#1c1a22]"
-                  : ""
-              }
-            >
-              <BaseModelCard
-                model={baseModel}
-                justUnlocked={baseModel.id === lastUnlockedBaseModelId}
-                estimatedTrainingDurationSeconds={
-                  baseModel.actionKind === "train" ? estimateTrainingDurationSeconds(baseModel) : undefined
-                }
-                onPrimaryAction={() => {
-                  if (baseModel.actionKind === "unlock") {
-                    onUnlockBaseModel(baseModel.id, baseModel.licenseCost);
-                    return;
-                  }
-                  if (baseModel.actionKind === MODEL_ACTION_KIND.serve_base) {
-                    onLaunchLicensedBaseServe(baseModel.id);
-                    return;
-                  }
-                  if (baseModel.actionKind === "scrape") {
-                    return;
-                  }
-                  if (baseModel.actionKind === "train") {
-                    const needsDataCommit =
-                      baseModel.trainingMethod === "fine_tune" && baseModel.sourceType === "open_source";
-                    if (needsDataCommit) {
-                      setTrainCommitModel(baseModel);
-                    } else {
-                      onStartPostTraining(baseModel.id);
-                    }
-                  }
-                }}
-                onViewDetail={setDetailBaseModelId}
-                trainingSecondsRemaining={
-                  baseModel.id === trainingBaseModelId ? trainingCountdownSeconds : null
-                }
-              />
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {detailBaseModelId !== null && (
-        <ModelDetailView
-          baseModelId={detailBaseModelId}
-          initialMode="base"
-          estimatedTrainingDurationSeconds={
-            (() => {
-              const model = baseModelLibrary.find((entry) => entry.id === detailBaseModelId);
-              return model?.actionKind === "train" ? estimateTrainingDurationSeconds(model) : undefined;
-            })()
-          }
-          onClose={() => setDetailBaseModelId(null)}
-        />
-      )}
-
-      {trainCommitModel !== null && (
-        <TrainDataCommitmentModal
-          model={trainCommitModel}
-          dataTokens={dataTokens}
-          estimateTrainingDurationSeconds={estimateTrainingDurationSeconds}
-          onCancel={() => setTrainCommitModel(null)}
-          onConfirm={(overtrainBracket) => {
-            onStartPostTraining(trainCommitModel.id, { overtrainBracket });
-            setTrainCommitModel(null);
-          }}
-        />
-      )}
-    </div>
-  );
+  return <Stack width={FULL} gap={12}>
+    {postTrainError == null ? null : <Row gap={10} items="start" padding={[10, 12, 10, 14]} radius={12} fill="#e0a95c1a" border={{ width: 1, color: "#e0a95c40" }} width={FULL}>
+      <Text size={12} color={C.amber} grow={1} shrink>{postTrainError}</Text>
+      <Button tone="ghost" minHeight={28} padding={4} label="Dismiss error" onPress={onDismissPostTrainError}><Icon name="close" size={14} color={C.amber} /></Button>
+    </Row>}
+    <Row justify="between" width={FULL}>
+      <Label>BASE MODELS</Label>
+      {isTraining ? <Label color={C.amber}>JOB RUNNING</Label> : null}
+    </Row>
+    {baseModelLibrary.map((baseModel) => <BaseModelCard
+      key={baseModel.id}
+      model={baseModel}
+      highlight={highlighted(baseModel.id)}
+      justUnlocked={baseModel.id === lastUnlockedBaseModelId}
+      estimatedTrainingDurationSeconds={baseModel.actionKind === "train" ? estimateTrainingDurationSeconds(baseModel) : undefined}
+      onPrimaryAction={() => act(baseModel)}
+      onViewDetail={setDetailBaseModelId}
+      trainingSecondsRemaining={baseModel.id === trainingBaseModelId ? trainingCountdownSeconds : null}
+    />)}
+    {detailBaseModelId === null ? null : <ModelDetailView
+      baseModelId={detailBaseModelId}
+      initialMode="base"
+      estimatedTrainingDurationSeconds={detailModel?.actionKind === "train" ? estimateTrainingDurationSeconds(detailModel) : undefined}
+      onClose={() => setDetailBaseModelId(null)}
+    />}
+    {trainCommitModel === null ? null : <TrainDataCommitmentModal
+      model={trainCommitModel}
+      dataTokens={dataTokens}
+      estimateTrainingDurationSeconds={estimateTrainingDurationSeconds}
+      onCancel={() => setTrainCommitModel(null)}
+      onConfirm={(overtrainBracket) => { onStartPostTraining(trainCommitModel.id, { overtrainBracket }); setTrainCommitModel(null); }}
+    />}
+  </Stack>;
 }

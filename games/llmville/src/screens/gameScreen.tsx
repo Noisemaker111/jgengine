@@ -10,6 +10,7 @@ import { GAME_ROUTE_ACCESS_PHASE, useGameRouteAccess, useWarmGameWorldQueries } 
 
 import { GameRouteErrorBoundary } from "../runtime/components/GameRouteErrorBoundary";
 import { RouteLoadingScreen } from "../components/RouteLoadingScreen";
+import { LlmRoot } from "../ui/kit";
 
 const GameSession = lazy(async () =>
   loadGameSessionModule().then((module) => ({
@@ -45,12 +46,12 @@ export function GameScreen({ params }: ScreenProps) {
         : isConvexAuthLoading
           ? "Checking session…"
           : "Connecting to your lab…";
-    return <RouteLoadingScreen label="Loading world" detail={detail} />;
+    return <LlmRoot><RouteLoadingScreen label="Loading world" detail={detail} /></LlmRoot>;
   }
 
   return (
     <GameRouteErrorBoundary>
-      <Suspense fallback={<RouteLoadingScreen label="Loading world" />}>
+      <Suspense fallback={<LlmRoot><RouteLoadingScreen label="Loading world" /></LlmRoot>}>
         <GameSession user={{ id: playerId, name: playerName }} convexUser={convexUser} gameId={gameId} />
       </Suspense>
     </GameRouteErrorBoundary>

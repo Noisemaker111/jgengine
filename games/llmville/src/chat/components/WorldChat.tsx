@@ -1,13 +1,76 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useCallback, useEffect, useRef, useState } from "@jgengine/core/ui/jsx";
-import { Icon } from "../../kit/icons";
+import { RuneField, RuneView } from "@jgengine/core/ui/rune/primitives.view";
+import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
 import type { ChatMessage } from "@jgengine/core/chat/chat";
 import { suspendPlayControls } from "@jgengine/core/game/controlGate";
-import { WORLD_CHAT_CHANNEL } from "@llmville/game/multiplayer/presencePolicy";
-import { worldChatTransport } from "../worldChatTransport";
 import { useOptionalGameContext } from "@jgengine/ui/provider";
+import { WORLD_CHAT_CHANNEL } from "@llmville/game/multiplayer/presencePolicy";
+
+import { worldChatTransport } from "../worldChatTransport";
 import type { ReadyWorldViewModel } from "../../runtime/worldViewModel";
 import { useTabletNavContext } from "../../tablet/components/tabletNav";
+import { Button, C, ErrorText, FULL, Icon, Muted, Row, Text, useCompact } from "../../ui/kit";
+
+/** Quick replies. No emoji: the native surface has no colour emoji font. */
+const REACTIONS = ["Hello, neighbors!", "Nice lab!"] as const;
+/** The longest message a neighbor can send. */
+export const CHAT_MAX_LENGTH = 500;
+
+/** What the chat panel shows and does; the container wires it to the world chat transport. */
+export interface WorldChatVm {
+  messages: readonly ChatMessage[] | undefined;
+  playerId: string;
+  open: boolean;
+  draft: string;
+  setDraft: (text: string) => void;
+  sending: boolean;
+  error: string | null;
+  send: (body?: string) => void;
+  openChat: () => void;
+  close: () => void;
+}
+
+export function WorldChatView({ vm }: { vm: WorldChatVm }) {
+  const { height } = useRuneViewport();
+  const compact = useCompact();
+  const lift = compact ? 240 : 0;
+  if (!vm.open) return <RuneView anchor="bottom-left" safe inset={16} padding={[0, 0, lift, 0]}>
+    <Button tone="chip" icon="chat" fill="#16201ee6" border={{ width: 1, color: "#5fc2a840" }} label="Open chat" onPress={vm.openChat}>
+      <Text size={14} weight={700}>Chat</Text>{compact ? null : <Text size={12} color={C.creamDim}>Enter</Text>}
+    </Button>
+  </RuneView>;
+  return <RuneView anchor="bottom-left" safe inset={12} padding={[0, 0, lift, 0]}>
+    <RuneView width={352} responsive={{ phone: { width: 340 } }} maxHeight={Math.min(416, height * 0.6)} fill="#16201ef2" radius={16} border={{ width: 1, color: "#5fc2a840" }} label="Neighborhood chat" role="dialog">
+      <Row justify="between" padding={[10, 10, 10, 16]} width={FULL}>
+        <Text size={14} weight={700}>Neighborhood</Text>
+        <Button tone="ghost" label="Close chat" padding={6} minHeight={0} onPress={vm.close}><Icon name="close" size={16} /></Button>
+      </Row>
+      <RuneView height={1} fill={C.line} width={FULL} />
+      <RuneView scroll height={Math.min(416, height * 0.6) - 150} padding={16} gap={10} width={FULL} role="log" label="Chat messages">
+        {vm.messages === undefined ? <Muted size={14}>Connecting to your neighbors…</Muted>
+          : vm.messages.length === 0 ? <Muted size={14}>Say hello, celebrate a launch, or ask a neighbor for help.</Muted>
+            : vm.messages.map((message) => <RuneView key={message.id} gap={2}>
+              <Text size={13} weight={800} color={C.teal}>{message.fromUserId === vm.playerId ? "You" : message.fromLabel ?? "Anonymous"}</Text>
+              <Text size={14}>{message.body}</Text>
+            </RuneView>)}
+      </RuneView>
+      <Row gap={8} padding={[0, 12, 8, 12]}>
+        {REACTIONS.map((reaction) => <Button key={reaction} tone="chip" disabled={vm.sending} onPress={() => vm.send(reaction)}>{reaction}</Button>)}
+      </Row>
+      <RuneView height={1} fill={C.line} width={FULL} />
+      {/* The field mounts focused, so the Enter (or tap) that opened chat leaves it ready to type. */}
+      <RuneView padding={12} gap={8} width={FULL}>
+        {vm.error === null ? null : <ErrorText size={12}>{vm.error}</ErrorText>}
+        <Row gap={8} width={FULL}>
+          <RuneField autoFocus variant="field" family="Nunito" size={14} grow={1} label="Message to neighbors" placeholder="Say something…" maxLength={CHAT_MAX_LENGTH}
+            disabled={vm.sending} value={vm.draft} onChange={vm.setDraft} onSubmit={() => vm.send()} />
+          <Button tone="primary" label="Send message" padding={12} disabled={vm.sending || vm.draft.trim() === ""} onPress={() => vm.send()}><Icon name="send" size={16} color={C.ink} /></Button>
+        </Row>
+      </RuneView>
+    </RuneView>
+  </RuneView>;
+}
 
 export function WorldChat({ world, placing, open, setOpen, fixtureMessages }: { world: ReadyWorldViewModel; placing: boolean; open: boolean; setOpen: (open: boolean) => void; fixtureMessages?: readonly ChatMessage[] | undefined }) {
   const ctx = useOptionalGameContext();
@@ -15,30 +78,20 @@ export function WorldChat({ world, placing, open, setOpen, fixtureMessages }: { 
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const input = useRef<HTMLInputElement>(null);
-  const log = useRef<HTMLDivElement>(null);
   const busy = useRef(false);
   const live = worldChatTransport.useMessages(fixtureMessages ? "skip" : WORLD_CHAT_CHANNEL);
   const messages = fixtureMessages ?? live;
   const chat = worldChatTransport.useActions();
-  const visible = open && !tabletOpen && rackMenuOverlayRackId === null && !placing;
+  const blocked = placing || tabletOpen || rackMenuOverlayRackId !== null;
+  const visible = open && !blocked;
+
   const openChat = useCallback(() => {
-    if (placing || tabletOpen || rackMenuOverlayRackId !== null) return;
+    if (blocked) return;
     document.exitPointerLock?.();
     setOpen(true);
-    input.current?.focus();
-  }, [placing, tabletOpen, rackMenuOverlayRackId, setOpen]);
-
-  useEffect(() => {
-    if (visible) input.current?.focus();
-  }, [visible]);
+  }, [blocked, setOpen]);
 
   useEffect(() => (visible && ctx !== null ? suspendPlayControls(ctx) : undefined), [ctx, visible]);
-
-  useEffect(() => {
-    if (visible && log.current) log.current.scrollTop = log.current.scrollHeight;
-  }, [messages, visible]);
-
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.isComposing || event.repeat) return;
@@ -48,7 +101,8 @@ export function WorldChat({ world, placing, open, setOpen, fixtureMessages }: { 
         setOpen(false);
         return;
       }
-      if (event.key !== "Enter" || placing || tabletOpen || rackMenuOverlayRackId !== null || document.querySelector('[role="dialog"]')) return;
+      // Open, Enter belongs to the field (it sends); closed, it opens the chat unless a page dialog has the keys.
+      if (visible || event.key !== "Enter" || blocked || document.querySelector('[role="dialog"]')) return;
       if (event.target instanceof HTMLElement && event.target.closest('input, textarea, select, button, a, [contenteditable="true"]')) return;
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -56,7 +110,7 @@ export function WorldChat({ world, placing, open, setOpen, fixtureMessages }: { 
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [visible, placing, tabletOpen, rackMenuOverlayRackId, openChat, setOpen]);
+  }, [visible, blocked, openChat, setOpen]);
 
   const send = async (body = draft) => {
     if (!body.trim() || busy.current) return;
@@ -70,7 +124,6 @@ export function WorldChat({ world, placing, open, setOpen, fixtureMessages }: { 
         return;
       }
       setDraft("");
-      input.current?.focus();
     } catch {
       setError("Couldn't send. Your message is saved here; try again.");
     } finally {
@@ -79,32 +132,10 @@ export function WorldChat({ world, placing, open, setOpen, fixtureMessages }: { 
     }
   };
 
-  if (tabletOpen || rackMenuOverlayRackId !== null || placing) return null;
-  return (
-    <section data-chat-panel data-no-pointer-lock="true" aria-label="Neighborhood chat" className="pointer-events-auto absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-3 z-40 max-sm:bottom-[calc(env(safe-area-inset-bottom)+15rem)]">
-      {visible ? (
-        <div className="flex max-h-[min(26rem,60dvh)] w-[min(22rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-brand-teal/25 bg-brand-ink/95 text-brand-cream shadow-xl backdrop-blur-xl">
-          <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
-            <span className="text-sm font-semibold">Neighborhood</span>
-            <button type="button" aria-label="Close chat" onClick={() => setOpen(false)} className="rounded-lg p-2 hover:bg-white/10"><Icon name="close" size={18} /></button>
-          </div>
-          <div ref={log} role="log" aria-live="polite" aria-relevant="additions" className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 text-sm select-text">
-            {messages === undefined ? <p className="text-brand-cream-dim">Connecting to your neighbors…</p> : messages.length === 0 ? <p className="text-brand-cream-dim">Say hello, celebrate a launch, or ask a neighbor for help.</p> : messages.map((message) => (
-              <p key={message.id} className="break-words"><span className="mr-2 font-semibold text-brand-teal">{message.fromUserId === world.playerId ? "You" : message.fromLabel ?? "Anonymous"}</span>{message.body}</p>
-            ))}
-          </div>
-          <div className="flex shrink-0 gap-2 px-3 pb-2">
-            {["Hello, neighbors! 👋", "Nice lab! ✨"].map((reaction) => <button key={reaction} type="button" disabled={sending} onClick={() => void send(reaction)} className="rounded-full bg-white/5 px-3 py-1 text-xs hover:bg-white/10 disabled:opacity-50">{reaction}</button>)}
-          </div>
-          <form className="shrink-0 border-t border-white/10 p-3" onSubmit={(event) => { event.preventDefault(); void send(); }}>
-            {error && <p role="alert" className="mb-2 text-xs text-brand-coral">{error}</p>}
-            <div className="flex gap-2">
-              <input ref={input} aria-label="Message to neighbors" readOnly={sending} maxLength={500} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Say something…" className="min-w-0 flex-1 rounded-xl bg-white/5 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-teal" onKeyDown={(event) => { if (event.nativeEvent.isComposing && event.key === "Enter") event.preventDefault(); }} />
-              <button type="submit" aria-label="Send message" disabled={sending || !draft.trim()} className="rounded-xl bg-brand-teal p-3 text-brand-ink disabled:opacity-40"><Icon name="send" size={16} /></button>
-            </div>
-          </form>
-        </div>
-      ) : <button type="button" onClick={openChat} className="flex items-center gap-2 rounded-full border border-brand-teal/25 bg-brand-ink/90 px-4 py-2 text-sm text-brand-cream shadow-lg"><Icon name="chat" size={16} />Chat <kbd className="hidden text-xs text-brand-cream-dim sm:inline">Enter</kbd></button>}
-    </section>
-  );
+  if (blocked) return null;
+  const vm: WorldChatVm = {
+    messages, playerId: world.playerId, open: visible, draft, setDraft, sending, error,
+    send: (body) => void send(body), openChat, close: () => setOpen(false),
+  };
+  return <WorldChatView vm={vm} />;
 }

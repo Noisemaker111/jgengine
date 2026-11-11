@@ -7,14 +7,11 @@ import { GAME_FONTS } from "./art/fonts/fonts";
 import { AuthProvider } from "./auth";
 import { authClient } from "./auth/authClient";
 import { convexClient, initialConvexToken } from "./auth/convexClient";
-import { applyLlmvilleKit } from "./kit/llmvilleKit";
 import { Screens } from "./screens/screens";
-import "./style.css";
 
 /** The backend and the signed-in account, for everything LLMville mounts: its screens, or a world on its own. */
 export function LlmvilleBackend({ children }: { children: ReactNode }) {
   useInsertionEffect(() => {
-    applyLlmvilleKit(document);
     loadGameFonts(GAME_FONTS);
   }, []);
   return (

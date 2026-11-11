@@ -54,3 +54,16 @@ export function applyPageHead({ title, description, path }: PageHead): void {
   }
   canonical.href = url;
 }
+
+/** Put one JSON-LD document in the head under `id` (replacing an earlier one); returns its removal. */
+export function applyStructuredData(id: string, data: unknown): () => void {
+  let script = document.getElementById(id);
+  if (script === null) {
+    script = document.createElement("script");
+    script.id = id;
+    script.setAttribute("type", "application/ld+json");
+    document.head.append(script);
+  }
+  script.textContent = JSON.stringify(data);
+  return () => script.remove();
+}

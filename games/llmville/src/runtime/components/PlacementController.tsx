@@ -1,55 +1,39 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { TerritoryOverlay } from "@jgengine/core/placement/TerritoryOverlay.view";
-import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import type { TerritoryPreviewCell } from "@jgengine/core/placement/TerritoryOverlay.view";
+import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
 
-interface PlacementControllerProps {
-  onRotate: () => void;
-  onPlace: () => void;
-  canPlace: boolean;
-  facingLabel: string;
-  claimHint: Pick<Parameters<typeof TerritoryOverlay>[0], "cells" | "cost" | "affordable"> | null;
-  isTouch?: boolean;
+import { Button, C, FULL, Icon, Panel, Row, Text } from "../../ui/kit";
+
+export interface PlacementClaimHint {
+  cells: readonly TerritoryPreviewCell[];
+  cost: number;
+  affordable: boolean;
 }
 
-export default function PlacementControls({
-  onRotate,
-  onPlace,
-  canPlace,
-  facingLabel,
-  claimHint,
-  isTouch = false,
-}: PlacementControllerProps) {
-  return (
-    <KitPanel as="div" variant="card" data-shell="sticky-note" data-deco="tape" className="p-3">
-      <div className="mb-3 flex items-center gap-2">
-        <svg className="h-4 w-4 text-[#3c8c76]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-        </svg>
-        <h3 className="text-sm font-bold text-[#2d2416]">Placement</h3>
-      </div>
+const CELL_COLOR: Record<TerritoryPreviewCell["status"], string> = { owned: C.teal, claimable: "#d6a548", blocked: "#d96969" };
 
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-3">
-          <KitButton variant="ghost" size="sm" onClick={onRotate} className="flex-1 text-xs text-[#2d2416]">
-            Rotate {isTouch ? "" : "(R)"}
-          </KitButton>
-          <span className="min-w-[72px] text-right font-mono text-sm text-[#3c8c76]">
-            {facingLabel}
-          </span>
-        </div>
-        {claimHint !== null && (
-          <TerritoryOverlay {...claimHint} className="text-[11px] font-medium text-[#7a6a53]" formatCost={(cost) => `$${cost.toLocaleString()}`} />
-        )}
-        <KitButton
-          variant="primary"
-          onClick={onPlace}
-          disabled={!canPlace}
-          size="sm"
-          className="w-full text-xs disabled:opacity-40"
-        >
-          {isTouch ? "Place" : "Place (E or click)"}
-        </KitButton>
-      </div>
-    </KitPanel>
-  );
+/** The land a placement would claim: one swatch per footprint cell, and the cost or why it cannot. */
+function ClaimHint({ hint }: { hint: PlacementClaimHint }) {
+  const blocked = hint.cells.some((cell) => cell.status === "blocked");
+  return <RuneView gap={4}>
+    <Row gap={3}>{hint.cells.map((cell) => <RuneView key={cell.key} width={8} height={8} radius={2} fill={CELL_COLOR[cell.status]} label={`${cell.x}, ${cell.z}: ${cell.status}`} />)}</Row>
+    <Text size={11} weight={600} color="#7a6a53">{blocked ? "Land unavailable" : `Land: $${hint.cost.toLocaleString()}${hint.affordable ? "" : " — Insufficient funds"}`}</Text>
+  </RuneView>;
+}
+
+/** The pinned placement note: rotate, the facing, the land claim and place. */
+export default function PlacementControls({ onRotate, onPlace, canPlace, facingLabel, claimHint, isTouch = false }: {
+  onRotate: () => void; onPlace: () => void; canPlace: boolean; facingLabel: string; claimHint: PlacementClaimHint | null; isTouch?: boolean;
+}) {
+  return <Panel shell="sticky" width={220} gap={10} padding={12} label="Placement">
+    <Row gap={8}><Icon name="rotate" size={16} color={C.tealDeep} /><Text size={14} weight={800} color={C.paperInk}>Placement</Text></Row>
+    <Row gap={10} width={FULL}>
+      <Button tone="ghost" grow={1} color={C.paperInk} border={{ width: 1, color: "#2d241633" }} onPress={onRotate}>
+        <Text size={12} weight={800} color={C.paperInk}>{isTouch ? "Rotate" : "Rotate (R)"}</Text>
+      </Button>
+      <Text size={14} weight={800} mono color={C.tealDeep} minWidth={72} align="right">{facingLabel}</Text>
+    </Row>
+    {claimHint === null ? null : <ClaimHint hint={claimHint} />}
+    <Button tone="primary" width={FULL} disabled={!canPlace} onPress={onPlace}>{isTouch ? "Place" : "Place (E or click)"}</Button>
+  </Panel>;
 }

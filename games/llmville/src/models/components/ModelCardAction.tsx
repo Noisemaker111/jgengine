@@ -1,8 +1,8 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { cn } from "../../kit/cn";
+import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
 
-const ACTION_BASE =
-  "game-button game-button-compact min-w-[100px] font-game text-sm font-bold italic uppercase tracking-tight";
+import { DISPLAY } from "../../ui/theme";
+import { Button, C, Row, Text } from "../../ui/kit";
 
 export const MODEL_CARD_ACTION_VARIANT = {
   train: "train",
@@ -16,85 +16,40 @@ export const MODEL_CARD_ACTION_VARIANT = {
 
 export type ModelCardActionVariant = (typeof MODEL_CARD_ACTION_VARIANT)[keyof typeof MODEL_CARD_ACTION_VARIANT];
 
-export type ModelCardActionProps =
-  | {
-      variant: typeof MODEL_CARD_ACTION_VARIANT.train;
-      label: string;
-      disabled?: boolean;
-      onClick: () => void;
-    }
+/** `model` names the card the action belongs to, so every action has its own label. */
+export type ModelCardActionProps = { model: string } & (
+  | { variant: typeof MODEL_CARD_ACTION_VARIANT.train; label: string; disabled?: boolean; onClick: () => void }
   | { variant: typeof MODEL_CARD_ACTION_VARIANT.unlock; label: string; disabled?: boolean; onClick: () => void }
   | { variant: typeof MODEL_CARD_ACTION_VARIANT.progress; label: string }
   | { variant: typeof MODEL_CARD_ACTION_VARIANT.locked; label: string }
   | { variant: typeof MODEL_CARD_ACTION_VARIANT.reveal; onReveal: () => void }
   | { variant: typeof MODEL_CARD_ACTION_VARIANT.serve; onServe: () => void; label?: string }
-  | { variant: typeof MODEL_CARD_ACTION_VARIANT.serving };
+  | { variant: typeof MODEL_CARD_ACTION_VARIANT.serving });
+
+const word = (text: string, color: string) => <Text family={DISPLAY} size={14} weight={800} color={color}>{text.toUpperCase()}</Text>;
+
+/** A static state chip (scraping, locked, serving) in the same footprint as the buttons. */
+function Chip({ text, color, dot = false }: { text: string; color: string; dot?: boolean }) {
+  return <Row minWidth={100} minHeight={36} padding={[6, 12, 6, 12]} radius={12} justify="center" gap={6} border={{ width: 1, color: `${color}80` }}>
+    {dot ? <RuneView width={8} height={8} radius={4} fill={color} /> : null}
+    {word(text, color)}
+  </Row>;
+}
 
 export function ModelCardAction(props: ModelCardActionProps) {
-  if (props.variant === MODEL_CARD_ACTION_VARIANT.train) {
-    return (
-      <button
-        type="button"
-        onClick={props.onClick}
-        disabled={props.disabled}
-        className={cn(
-          ACTION_BASE,
-          !props.disabled
-            ? "game-button-secondary border-brand-coral/50 text-brand-coral hover:bg-brand-coral/10"
-            : "cursor-not-allowed opacity-40",
-        )}
-      >
-        {props.label}
-      </button>
-    );
+  const sized = { minWidth: 100, minHeight: 36, padding: [6, 12, 6, 12] as const };
+  switch (props.variant) {
+    case "train":
+    case "unlock": {
+      const color = props.variant === "train" ? C.coral : C.teal;
+      return <Button tone="secondary" {...sized} border={{ width: 1, color: `${color}80` }} disabled={props.disabled === true} label={`${props.label} ${props.model}`} onPress={props.onClick}>
+        {word(props.label, color)}
+      </Button>;
+    }
+    case "progress": return <Chip text={props.label} color={C.amber} />;
+    case "locked": return <RuneView opacity={0.4}><Chip text={props.label} color={C.cream} /></RuneView>;
+    case "reveal": return <Button tone="primary" {...sized} label={`Reveal ${props.model}`} onPress={props.onReveal}>{word("Reveal", C.ink)}</Button>;
+    case "serve": return <Button tone="primary" {...sized} label={`${props.label ?? "Serve"} ${props.model}`} onPress={props.onServe}>{word(props.label ?? "Serve", C.ink)}</Button>;
+    case "serving": return <Chip text="Serving" color={C.teal} dot />;
   }
-  if (props.variant === MODEL_CARD_ACTION_VARIANT.unlock) {
-    return (
-      <button
-        type="button"
-        onClick={props.onClick}
-        disabled={props.disabled}
-        className={cn(
-          ACTION_BASE,
-          !props.disabled
-            ? "game-button-secondary border-brand-teal/50 text-brand-teal hover:bg-brand-teal/10"
-            : "cursor-not-allowed opacity-40",
-        )}
-      >
-        {props.label}
-      </button>
-    );
-  }
-  if (props.variant === MODEL_CARD_ACTION_VARIANT.progress) {
-    return (
-      <div className={cn(ACTION_BASE, "game-button-secondary border-brand-amber/50 text-brand-amber cursor-default")}>
-        {props.label}
-      </div>
-    );
-  }
-  if (props.variant === MODEL_CARD_ACTION_VARIANT.locked) {
-    return (
-      <div className={cn(ACTION_BASE, "game-button-secondary opacity-40 cursor-default")}>{props.label}</div>
-    );
-  }
-  if (props.variant === MODEL_CARD_ACTION_VARIANT.reveal) {
-    return (
-      <button type="button" onClick={props.onReveal} className={cn(ACTION_BASE, "game-button-primary")}>
-        Reveal
-      </button>
-    );
-  }
-  if (props.variant === MODEL_CARD_ACTION_VARIANT.serve) {
-    return (
-      <button type="button" onClick={props.onServe} className={cn(ACTION_BASE, "game-button-primary")}>
-        {props.label ?? "Serve"}
-      </button>
-    );
-  }
-  return (
-    <div className={cn(ACTION_BASE, "game-button-secondary border-brand-teal/50 text-brand-teal cursor-default")}>
-      <span className="h-2 w-2 animate-pulse rounded-full bg-brand-teal" />
-      Serving
-    </div>
-  );
 }

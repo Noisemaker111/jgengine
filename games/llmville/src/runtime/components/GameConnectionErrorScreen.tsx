@@ -1,11 +1,11 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { ScreenLink } from "../../screens/screenRouter";
 import { api } from "@llmville/backend/convex/_generated/api";
 import { useMutation } from "convex/react";
 import { useCallback, useEffect, useMemo, useState } from "@jgengine/core/ui/jsx";
+import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
 
-import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { StandalonePageShell } from "../../branding/components/StandalonePageShell";
+import { navigate } from "../../screens/screenRouter";
+import { Button, C, FULL, Icon, Label, Page, Panel, Text } from "../../ui/kit";
 import {
   buildGameErrorReportInput,
   formatGameErrorAgentPrompt,
@@ -28,48 +28,59 @@ interface GameConnectionErrorScreenProps {
 type CopyState = "idle" | "copied" | "failed";
 type SendState = "idle" | "sending" | "sent" | "failed";
 
-export function GameConnectionErrorScreen({
-  message,
-  homeHref = "/",
-  kind,
-  stack,
-  componentStack,
-  report,
-  onRetry,
-}: GameConnectionErrorScreenProps) {
+/** What the error panel shows and the actions it offers; dev builds copy a prompt instead of sending. */
+export interface GameErrorScreenVm {
+  panelLabel: string;
+  message: string;
+  dev: boolean;
+  copyState: CopyState;
+  sendState: SendState;
+  copy: () => void;
+  send: () => void;
+  retry: () => void;
+  home: () => void;
+}
+
+export function GameErrorScreenView({ vm }: { vm: GameErrorScreenVm }) {
+  const copyLabel = vm.copyState === "copied" ? "Copied for agent" : vm.copyState === "failed" ? "Copy failed" : vm.dev ? "Copy for agent" : "Copy details";
+  const sendLabel = vm.sendState === "sending" ? "Sending report..." : vm.sendState === "sent" ? "Report sent" : vm.sendState === "failed" ? "Send failed — retry" : "Send error report";
+  return <Page maxWidth={448}>
+    <Panel shell="terminal" width={FULL} items="center" gap={18} padding={28} label={vm.panelLabel}>
+      <Label color={C.error} tracking={2}>{vm.panelLabel.toUpperCase()}</Label>
+      <RuneView width={64} height={64} justify="center" items="center" fill="#d9544a1a" border={{ width: 1, color: "#d9544a59" }}><Icon name="warning" size={32} color={C.error} strokeWidth={1.5} /></RuneView>
+      <RuneView width={FULL} padding={16} gap={4} fill="#d9544a14" border={{ width: 1, color: "#d9544a40" }}>
+        <Text size={12} weight={700} color="#f0a097b3">Details</Text>
+        <Text size={14} color={C.cream}>{vm.message}</Text>
+      </RuneView>
+      <RuneView width={FULL} gap={10}>
+        {vm.dev ? null : <Button tone="primary" width={FULL} disabled={vm.sendState === "sending" || vm.sendState === "sent"} onPress={vm.send}>{sendLabel}</Button>}
+        <Button tone="ghost" width={FULL} onPress={vm.copy}>{copyLabel}</Button>
+        <Button tone="danger" width={FULL} onPress={vm.retry}>Retry</Button>
+        <Button tone="ghost" width={FULL} onPress={vm.home}>Back to main menu</Button>
+      </RuneView>
+    </Panel>
+  </Page>;
+}
+
+export function GameConnectionErrorScreen({ message, homeHref = "/", kind, stack, componentStack, report, onRetry }: GameConnectionErrorScreenProps) {
   const [copyState, setCopyState] = useState<CopyState>("idle");
   const [sendState, setSendState] = useState<SendState>("idle");
   const submitErrorReport = useMutation(api.clientErrors.submit);
-
-  const resolvedReport = useMemo(
-    () =>
-      report
-      ?? buildGameErrorReportInput(message, { kind, stack, componentStack }),
-    [componentStack, kind, message, report, stack],
-  );
-
-  const panelLabel = gameErrorPanelLabel(resolvedReport.kind);
-  const agentPrompt = useMemo(
-    () => formatGameErrorAgentPrompt(resolvedReport),
-    [resolvedReport],
-  );
-  const reportPayload = useMemo(
-    () => serializeGameErrorReportPayload(resolvedReport),
-    [resolvedReport],
-  );
+  const resolvedReport = useMemo(() => report ?? buildGameErrorReportInput(message, { kind, stack, componentStack }), [componentStack, kind, message, report, stack]);
+  const agentPrompt = useMemo(() => formatGameErrorAgentPrompt(resolvedReport), [resolvedReport]);
+  const reportPayload = useMemo(() => serializeGameErrorReportPayload(resolvedReport), [resolvedReport]);
 
   useEffect(() => {
     if (import.meta.env.DEV) return;
     console.error("[LLMville client error]", resolvedReport, agentPrompt);
   }, [agentPrompt, resolvedReport]);
-
   useEffect(() => {
     if (copyState === "idle") return;
     const timer = window.setTimeout(() => setCopyState("idle"), 1800);
     return () => window.clearTimeout(timer);
   }, [copyState]);
 
-  const copyPrompt = useCallback(async () => {
+  const copy = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(agentPrompt);
       setCopyState("copied");
@@ -77,8 +88,7 @@ export function GameConnectionErrorScreen({
       setCopyState("failed");
     }
   }, [agentPrompt]);
-
-  const sendReport = useCallback(async () => {
+  const send = useCallback(async () => {
     setSendState("sending");
     try {
       const result = await submitErrorReport(reportPayload);
@@ -88,79 +98,15 @@ export function GameConnectionErrorScreen({
     }
   }, [reportPayload, submitErrorReport]);
 
-  const copyLabel =
-    copyState === "copied"
-      ? "Copied for agent"
-      : copyState === "failed"
-        ? "Copy failed"
-        : import.meta.env.DEV
-          ? "Copy for agent"
-          : "Copy details";
-
-  const sendLabel =
-    sendState === "sending"
-      ? "Sending report..."
-      : sendState === "sent"
-        ? "Report sent"
-        : sendState === "failed"
-          ? "Send failed — retry"
-          : "Send error report";
-
-  return (
-    <StandalonePageShell centered className="z-[100]">
-      <div className="w-full max-w-md animate-in fade-in zoom-in-95 duration-300">
-        <KitPanel data-shell="terminal" eyebrow={panelLabel} className="p-8 text-center">
-          <div className="relative mx-auto mb-6 flex h-16 w-16 items-center justify-center border border-[#d9544a]/35 bg-[#d9544a]/10">
-            <svg className="relative h-8 w-8 text-[#f0a097]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-
-          <div className="mb-6 border border-[#d9544a]/25 bg-[#d9544a]/8 p-4 text-left">
-            <p className="mb-1 text-xs font-semibold text-[#f0a097]/70">Details</p>
-            <p className="text-sm leading-relaxed text-brand-cream/85">{message}</p>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            {import.meta.env.DEV ? (
-              <KitButton
-                type="button"
-                variant="ghost"
-                onClick={() => void copyPrompt()}
-                className="w-full py-3"
-              >
-                {copyLabel}
-              </KitButton>
-            ) : (
-              <>
-                <KitButton
-                  type="button"
-                  variant="primary"
-                  onClick={() => void sendReport()}
-                  disabled={sendState === "sending" || sendState === "sent"}
-                  className="w-full py-3"
-                >
-                  {sendLabel}
-                </KitButton>
-                <KitButton
-                  type="button"
-                  variant="ghost"
-                  onClick={() => void copyPrompt()}
-                  className="w-full py-3"
-                >
-                  {copyLabel}
-                </KitButton>
-              </>
-            )}
-            <KitButton type="button" onClick={onRetry ?? (() => window.location.reload())} className="llm-btn--terminal w-full py-3 text-[#f0a097]">
-              Retry
-            </KitButton>
-            <ScreenLink to={homeHref} className="llm-btn w-full py-3 text-center text-sm" data-variant="ghost">
-              Back to main menu
-            </ScreenLink>
-          </div>
-        </KitPanel>
-      </div>
-    </StandalonePageShell>
-  );
+  return <GameErrorScreenView vm={{
+    panelLabel: gameErrorPanelLabel(resolvedReport.kind),
+    message,
+    dev: import.meta.env.DEV,
+    copyState,
+    sendState,
+    copy: () => void copy(),
+    send: () => void send(),
+    retry: onRetry ?? (() => window.location.reload()),
+    home: () => void navigate({ to: homeHref }),
+  }} />;
 }

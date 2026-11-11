@@ -1,16 +1,15 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { Icon } from "../../kit/icons";
+import { useEffect } from "@jgengine/core/ui/jsx";
+import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
+import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
 
-import {
-  ABOUT_LEDE,
-  ABOUT_PLAY_STEPS,
-  ABOUT_SECTIONS,
-} from "../aboutContent";
-import { BrandLogo } from "./BrandLogo";
-import { MainMenuLayout } from "../../runtime/components/MainMenuLayout";
+import { useMainMenuAccountChipVm, type MainMenuAccountChipVm } from "../../auth";
+import { MainMenuLayoutView } from "../../runtime/components/MainMenuLayout";
 import { PlayEntryAction } from "../../runtime/components/PlayEntryAction";
-import { DEFAULT_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "../../seo/siteSeo";
+import { useMainMenu, type MainMenuState } from "../../runtime/mainMenu";
+import { applyStructuredData, DEFAULT_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "../../seo/siteSeo";
+import { C, FULL, Heading, Label, Logo, Muted, Panel, Text } from "../../ui/kit";
+import { ABOUT_LEDE, ABOUT_PLAY_STEPS, ABOUT_SECTIONS } from "../aboutContent";
 
 const structuredData = {
   "@context": "https://schema.org",
@@ -22,63 +21,34 @@ const structuredData = {
   gamePlatform: "Web browser",
   applicationCategory: "Game",
   operatingSystem: "Any",
-  offers: {
-    "@type": "Offer",
-    price: "0",
-    priceCurrency: "USD",
-  },
+  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
 };
 
+export function AboutScreenView({ account, menu }: { account: MainMenuAccountChipVm; menu: MainMenuState }) {
+  const { width, height } = useRuneViewport();
+  return <MainMenuLayoutView account={account} backTo="/">
+    <Panel shell="terminal" width={Math.min(576, width - 32)} maxHeight={Math.min(height - 260, 640)} scroll gap={20} label="About LLMville">
+      <RuneView gap={10} padding={[0, 0, 16, 0]}>
+        <Logo size="sm" />
+        <Heading size={30}>About LLMville</Heading>
+        <Label size={12} color={C.teal} tracking={2.4}>{SITE_TAGLINE.toUpperCase()}</Label>
+      </RuneView>
+      <Text size={15} color={C.muted}>{ABOUT_LEDE}</Text>
+      {ABOUT_SECTIONS.map((section) => <RuneView key={section.title} gap={6}>
+        <Heading size={18}>{section.title}</Heading>
+        <Text size={14} color={C.muted}>{section.body}</Text>
+      </RuneView>)}
+      <Panel shell="sticky" width={FULL}>
+        <Heading size={18} color={C.paperInk}>How to play</Heading>
+        {ABOUT_PLAY_STEPS.map((step, index) => <Text key={step} size={14} color={C.paperMuted}>{`${index + 1}. ${step}`}</Text>)}
+        <PlayEntryAction menu={menu} label="Play LLMville" />
+      </Panel>
+      <Muted size={12} align="center" color={C.faint}>Play free at llmville.com</Muted>
+    </Panel>
+  </MainMenuLayoutView>;
+}
+
 export function AboutScreen() {
-  return (
-    <MainMenuLayout backTo="/">
-      <KitPanel data-shell="blueprint" as="section" className="max-h-[min(70vh,640px)] overflow-y-auto px-6 py-7 sm:max-w-xl sm:px-8">
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-        />
-
-        <header className="mb-6 border-b border-[var(--kit-line)] pb-6">
-          <BrandLogo variant="inline" size="sm" showTagline={false} />
-          <h1 className="mt-4 font-game text-3xl font-extrabold text-brand-cream">About LLMville</h1>
-          <p className="mt-2 font-game text-sm font-bold tracking-[0.2em] text-brand-teal uppercase">
-            {SITE_TAGLINE}
-          </p>
-        </header>
-
-        <p className="font-sans text-sm leading-relaxed text-brand-cream/75 md:text-base">{ABOUT_LEDE}</p>
-
-        <div className="mt-8 space-y-6">
-          {ABOUT_SECTIONS.map((section) => (
-            <section key={section.title}>
-              <h2 className="font-game text-lg font-bold text-brand-cream">{section.title}</h2>
-              <p className="mt-2 font-sans text-sm leading-relaxed text-brand-cream/70">{section.body}</p>
-            </section>
-          ))}
-        </div>
-
-        <KitPanel as="div" variant="card" data-shell="sticky-note" data-deco="tape" className="mt-8 px-5 py-5">
-          <h2 className="font-game text-lg font-bold text-[#2d2416]">How to play</h2>
-          <ol className="mt-3 list-decimal space-y-2 pl-5 font-sans text-sm text-[#4a3f32]">
-            {ABOUT_PLAY_STEPS.map((step) => (
-              <li key={step}>{step}</li>
-            ))}
-          </ol>
-          <PlayEntryAction className="game-button game-button-primary mt-5 inline-flex w-full justify-center gap-2 py-3 text-sm">
-            <Icon name="play" className="h-4 w-4" />
-            <span>Play LLMville</span>
-          </PlayEntryAction>
-        </KitPanel>
-
-        <footer className="mt-8 border-t border-brand-teal/15 pt-5 text-center text-xs text-brand-cream/40">
-          <p>
-            Play free at{" "}
-            <a href={SITE_URL} className="text-brand-teal hover:text-brand-cream">
-              llmville.com
-            </a>
-          </p>
-        </footer>
-      </KitPanel>
-    </MainMenuLayout>
-  );
+  useEffect(() => applyStructuredData("llmville-about-ld", structuredData), []);
+  return <AboutScreenView account={useMainMenuAccountChipVm()} menu={useMainMenu()} />;
 }

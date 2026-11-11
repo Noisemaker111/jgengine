@@ -1,12 +1,11 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { useCallback, useEffect, useMemo, useRef, useState } from "@jgengine/core/ui/jsx";
-import type { PointerEvent as ReactPointerEvent } from "@jgengine/core/ui/jsx/dom.view";
-import { cva } from "class-variance-authority";
 import { useQuery } from "convex/react";
 import { api } from "@llmville/backend/convex/_generated/api";
+import { RuneAction, RuneGlyph, RuneView } from "@jgengine/core/ui/rune/primitives.view";
+import { useRuneViewport } from "@jgengine/core/ui/rune/elements.view";
 
-import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { cn } from "../../kit/cn";
+import { Button, C, FULL, Label, Muted, Panel, Row, Stack, Text } from "../../ui/kit";
 import type { GameEngine } from "../../runtime/gameEngine";
 import { readPlayerPosition, subscribePlayerPosition } from "../../runtime/playerPosition";
 import { claimCost, type ClaimRejection, type DatacenterClaim } from "@llmville/game/datacenter/claims";
@@ -62,30 +61,6 @@ const COLOR = {
   player: "#f4ecdd",
 } as const;
 
-const mapControlButtonClass = cva(
-  "pointer-events-auto h-8 min-w-8 rounded-md border border-brand-cream/15 bg-brand-ink/80 px-2 text-xs font-bold text-brand-cream/80 backdrop-blur transition-colors hover:border-brand-teal/60 hover:text-brand-cream",
-  {
-    variants: {
-      active: {
-        true: "border-brand-teal/70 bg-brand-teal/20 text-brand-cream",
-        false: "",
-      },
-    },
-    defaultVariants: { active: false },
-  },
-);
-
-const verdictTextClass = cva("text-xs", {
-  variants: {
-    tone: {
-      ok: "text-brand-teal",
-      bad: "text-brand-coral",
-      muted: "text-brand-cream/50",
-    },
-  },
-  defaultVariants: { tone: "muted" },
-});
-
 interface ViewState {
   centerCx: number;
   centerCz: number;
@@ -113,13 +88,25 @@ function edgesPath(edges: readonly CellEdge[], toX: (cx: number) => number, toY:
   return path;
 }
 
-export function MapApp({ money, canEditGame, localGameId, claims, engine, onClaimCell }: MapAppProps) {
+/** A city resident the map can point at. */
+export interface MapResident { presenceId: string; gameId: string; label?: string | null | undefined; position: { x: number; z: number } }
+
+export function MapApp(props: MapAppProps) {
   const residents = useQuery(api.multiplayer.worldPresence.cityResidents, {});
+  return <MapAppView {...props} residents={residents} />;
+}
+
+/**
+ * The datacenter floor: your cells, neighbours' labs, walkways and columns around you. Drag pans (or,
+ * in drag-claim mode, marks a run); a tap claims the cell under it; +/−/Me zoom and recenter.
+ */
+export function MapAppView({ money, canEditGame, localGameId, claims, engine, onClaimCell, residents }: MapAppProps & { residents: readonly MapResident[] | undefined }) {
+  const { width: viewportWidth } = useRuneViewport();
+  const side = Math.max(200, Math.min(520, viewportWidth - 72));
+  const size = { width: side, height: side };
   const [destinationId, setDestinationId] = useState("");
   const destination = residents?.find((resident) => resident.presenceId === destinationId);
   const destinationCell = destination ? worldToCell(destination.position.x, destination.position.z) : null;
-  const surfaceRef = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState({ width: 0, height: 0 });
   const [view, setView] = useState<ViewState>(() => {
     const start = worldToCell(readPlayerPosition(engine).x, readPlayerPosition(engine).z);
     return { centerCx: start.cx + 0.5, centerCz: start.cz + 0.5, cellPx: DEFAULT_CELL_PX };
@@ -133,73 +120,28 @@ export function MapApp({ money, canEditGame, localGameId, claims, engine, onClai
   const [selection, setSelection] = useState<{ from: CellCoord; to: CellCoord } | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [claiming, setClaiming] = useState(false);
-  const dragRef = useRef<{ pointerId: number; startX: number; startY: number; moved: boolean } | null>(null);
+  const dragRef = useRef<{ startX: number; startY: number; lastX: number; lastY: number; moved: boolean } | null>(null);
 
-  useEffect(() => {
-    return subscribePlayerPosition(engine, (position) => {
-      const cell = worldToCell(position.x, position.z);
-      setPlayerCell((previous) => (previous.cx === cell.cx && previous.cz === cell.cz ? previous : cell));
-    });
-  }, [engine]);
-
-  useEffect(() => {
-    const element = surfaceRef.current;
-    if (element === null) return;
-    const observer = new ResizeObserver(([entry]) => {
-      if (entry === undefined) return;
-      setSize({ width: entry.contentRect.width, height: entry.contentRect.height });
-    });
-    observer.observe(element);
-    setSize({ width: element.clientWidth, height: element.clientHeight });
-    return () => observer.disconnect();
-  }, []);
+  useEffect(() => subscribePlayerPosition(engine, (position) => {
+    const cell = worldToCell(position.x, position.z);
+    setPlayerCell((previous) => (previous.cx === cell.cx && previous.cz === cell.cz ? previous : cell));
+  }), [engine]);
 
   const zoomBy = useCallback((factor: number) => {
-    setView((previous) => ({
-      ...previous,
-      cellPx: Math.min(MAX_CELL_PX, Math.max(MIN_CELL_PX, previous.cellPx * factor)),
-    }));
+    setView((previous) => ({ ...previous, cellPx: Math.min(MAX_CELL_PX, Math.max(MIN_CELL_PX, previous.cellPx * factor)) }));
   }, []);
-
-  useEffect(() => {
-    const element = surfaceRef.current;
-    if (element === null) return;
-    const onWheel = (event: WheelEvent) => {
-      event.preventDefault();
-      zoomBy(event.deltaY < 0 ? 1.15 : 1 / 1.15);
-    };
-    element.addEventListener("wheel", onWheel, { passive: false });
-    return () => element.removeEventListener("wheel", onWheel);
-  }, [zoomBy]);
-
   const recenter = useCallback(() => {
     setView((previous) => ({ ...previous, centerCx: playerCell.cx + 0.5, centerCz: playerCell.cz + 0.5 }));
   }, [playerCell.cx, playerCell.cz]);
 
   const index = useMemo(() => buildClaimMapIndex(claims, localGameId), [claims, localGameId]);
   const nextCellCost = claimCost(index.ownedCellCount);
-
-  const toX = useCallback(
-    (cx: number) => (cx - view.centerCx) * view.cellPx + size.width / 2,
-    [view.centerCx, view.cellPx, size.width],
-  );
-  const toY = useCallback(
-    (cz: number) => (cz - view.centerCz) * view.cellPx + size.height / 2,
-    [view.centerCz, view.cellPx, size.height],
-  );
-  const pointToCell = useCallback(
-    (clientX: number, clientY: number): CellCoord | null => {
-      const element = surfaceRef.current;
-      if (element === null) return null;
-      const rect = element.getBoundingClientRect();
-      return {
-        cx: Math.floor(view.centerCx + (clientX - rect.left - rect.width / 2) / view.cellPx),
-        cz: Math.floor(view.centerCz + (clientY - rect.top - rect.height / 2) / view.cellPx),
-      };
-    },
-    [view.centerCx, view.centerCz, view.cellPx],
-  );
-
+  const toX = useCallback((cx: number) => (cx - view.centerCx) * view.cellPx + size.width / 2, [view.centerCx, view.cellPx, size.width]);
+  const toY = useCallback((cz: number) => (cz - view.centerCz) * view.cellPx + size.height / 2, [view.centerCz, view.cellPx, size.height]);
+  const pointToCell = useCallback((x: number, y: number): CellCoord => ({
+    cx: Math.floor(view.centerCx + (x - size.width / 2) / view.cellPx),
+    cz: Math.floor(view.centerCz + (y - size.height / 2) / view.cellPx),
+  }), [view.centerCx, view.centerCz, view.cellPx, size.width, size.height]);
   const bounds = useMemo(() => {
     const halfCellsX = size.width / 2 / view.cellPx + 1;
     const halfCellsZ = size.height / 2 / view.cellPx + 1;
@@ -302,55 +244,43 @@ export function MapApp({ money, canEditGame, localGameId, claims, engine, onClai
     [canEditGame, claiming, localGameId, claims, money, onClaimCell],
   );
 
-  const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (event.button !== 0) return;
-    event.currentTarget.setPointerCapture(event.pointerId);
-    dragRef.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, moved: false };
-    if (mode === "claim") {
-      const cell = pointToCell(event.clientX, event.clientY);
-      if (cell !== null) setSelection({ from: cell, to: cell });
-    }
-  };
-
-  const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
-    const cell = pointToCell(event.clientX, event.clientY);
-    if (cell !== null) setHoveredCell(cell);
-    const drag = dragRef.current;
-    if (drag === null || drag.pointerId !== event.pointerId) return;
-    if (Math.abs(event.clientX - drag.startX) > CLICK_SLOP_PX || Math.abs(event.clientY - drag.startY) > CLICK_SLOP_PX) {
-      drag.moved = true;
-    }
-    if (mode === "pan") {
-      const dx = event.movementX / view.cellPx;
-      const dz = event.movementY / view.cellPx;
-      setView((previous) => ({ ...previous, centerCx: previous.centerCx - dx, centerCz: previous.centerCz - dz }));
+  /** The surface's one gesture: pan or mark a run while dragging; a still tap claims its cell. */
+  const onGesture = (gesture: { phase: "down" | "move" | "up"; x: number; y: number; cancelled: boolean }) => {
+    const cell = pointToCell(gesture.x, gesture.y);
+    if (gesture.phase === "down") {
+      dragRef.current = { startX: gesture.x, startY: gesture.y, lastX: gesture.x, lastY: gesture.y, moved: false };
+      setHoveredCell(cell);
+      if (mode === "claim") setSelection({ from: cell, to: cell });
       return;
     }
-    if (cell !== null) setSelection((previous) => (previous === null ? null : { from: previous.from, to: cell }));
-  };
-
-  const endDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current;
-    dragRef.current = null;
-    if (drag === null || drag.pointerId !== event.pointerId) return;
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
+    if (drag === null) return;
+    if (Math.abs(gesture.x - drag.startX) > CLICK_SLOP_PX || Math.abs(gesture.y - drag.startY) > CLICK_SLOP_PX) drag.moved = true;
+    if (gesture.phase === "move") {
+      setHoveredCell(cell);
+      if (mode === "pan") {
+        const dx = (gesture.x - drag.lastX) / view.cellPx, dz = (gesture.y - drag.lastY) / view.cellPx;
+        setView((previous) => ({ ...previous, centerCx: previous.centerCx - dx, centerCz: previous.centerCz - dz }));
+      } else setSelection((previous) => (previous === null ? null : { from: previous.from, to: cell }));
+      drag.lastX = gesture.x;
+      drag.lastY = gesture.y;
+      return;
     }
+    dragRef.current = null;
+    if (gesture.cancelled) { setSelection(null); return; }
     if (mode === "claim") {
-      const cells = selection === null ? [] : cellsInRect(selection.from, selection.to);
+      const cells = selection === null ? [] : cellsInRect(selection.from, cell);
       setSelection(null);
       void claimCells(cells);
       return;
     }
-    if (drag.moved) return;
-    const cell = pointToCell(event.clientX, event.clientY);
-    if (cell !== null) void claimCells([cell]);
+    if (!drag.moved) void claimCells([cell]);
   };
 
   const cellPx = view.cellPx;
   const showGridLines = cellPx >= GRID_LINE_MIN_CELL_PX;
   const gridLines: { x1: number; y1: number; x2: number; y2: number; seam: boolean }[] = [];
-  if (size.width > 0) {
+  {
     for (let cx = bounds.minCx; cx <= bounds.maxCx; cx++) {
       const seam = ((cx % DATACENTER_FLOOR_TILE_CELLS) + DATACENTER_FLOOR_TILE_CELLS) % DATACENTER_FLOOR_TILE_CELLS === 0;
       if (!seam && !showGridLines) continue;
@@ -386,142 +316,78 @@ export function MapApp({ money, canEditGame, localGameId, claims, engine, onClai
     };
   })();
 
-  return (
-    <div className="flex h-full min-h-0 flex-col gap-2 p-2">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-baseline gap-2">
-          <p className="text-sm font-bold text-brand-cream">Datacenter floor</p>
-          <p className="text-xs text-brand-cream/50">
-            {index.ownedCellCount} cell{index.ownedCellCount === 1 ? "" : "s"} · next ${nextCellCost.toLocaleString()}
-          </p>
-        </div>
-        <div className="flex items-center gap-1">
-          <button type="button" className={cn(mapControlButtonClass({ active: mode === "pan" }))} onClick={() => setMode("pan")}>
-            Pan
-          </button>
-          <button type="button" className={cn(mapControlButtonClass({ active: mode === "claim" }))} onClick={() => setMode("claim")}>
-            Drag-claim
-          </button>
-        </div>
-      </div>
+  const artwork = mapArtwork({ size, cellPx, gridLines, geometry, okCells, badCells, toX, toY, destinationCell, playerX, playerY });
+  const verdictColor = verdict.tone === "ok" ? C.teal : verdict.tone === "bad" ? C.coral : C.faint;
+  const statusChip: readonly [string, string] | null = hoveredStatus === null ? null
+    : hoveredStatus.kind === "own" ? ["Yours", C.teal]
+      : hoveredStatus.kind === "other" ? [hoveredStatus.ownerName, C.amber]
+        : hoveredStatus.kind === "blocked" ? ["Walkway", C.coral] : ["Open", C.teal];
+  const neighbours = residents?.filter((resident) => resident.gameId !== localGameId) ?? [];
 
-      <label className="flex flex-wrap items-center gap-2 text-xs text-brand-cream-dim">
-        Visit a neighbor
-        <select aria-label="Find a neighbor on the map" value={destinationId} className="min-w-0 flex-1 rounded-lg border border-white/15 bg-brand-ink p-2 text-brand-cream" onChange={(event) => {
-          setDestinationId(event.target.value);
-          const resident = residents?.find((entry) => entry.presenceId === event.target.value);
-          if (!resident) return;
+  return <Stack gap={10} width={FULL}>
+    <Row justify="between" width={FULL}>
+      <Row gap={8}><Text size={14} weight={800}>Datacenter floor</Text><Muted size={12}>{`${index.ownedCellCount} cell${index.ownedCellCount === 1 ? "" : "s"} · next $${nextCellCost.toLocaleString()}`}</Muted></Row>
+      <Row gap={4}>
+        <Button tone="chip" fill={mode === "pan" ? "#5fc2a833" : "#ffffff0d"} onPress={() => setMode("pan")}>Pan</Button>
+        <Button tone="chip" fill={mode === "claim" ? "#5fc2a833" : "#ffffff0d"} onPress={() => setMode("claim")}>Drag-claim</Button>
+      </Row>
+    </Row>
+    {neighbours.length === 0 ? null : <Stack gap={6} width={FULL}>
+      <Label>VISIT A NEIGHBOR</Label>
+      <RuneView layout="row" gap={4} width={FULL}>{neighbours.map((resident) => <Button key={resident.presenceId} tone="chip" fill={destinationId === resident.presenceId ? "#e8836b33" : "#ffffff0d"}
+        label={`Find ${resident.label ?? "Neighbor"} on the map`} onPress={() => {
+          setDestinationId(resident.presenceId);
           const cell = worldToCell(resident.position.x, resident.position.z);
           setMode("pan");
           setView((previous) => ({ ...previous, centerCx: cell.cx + 0.5, centerCz: cell.cz + 0.5 }));
-        }}>
-          <option value="">Choose a lab</option>
-          {residents?.filter((resident) => resident.gameId !== localGameId).map((resident) => <option key={resident.presenceId} value={resident.presenceId}>{resident.label ?? "Neighbor"}</option>)}
-        </select>
-      </label>
-      {destinationCell && <p className="text-xs text-brand-teal">{destination?.label ?? "Neighbor"}: last saved cell ({destinationCell.cx}, {destinationCell.cz}). Walk there to visit their lab.</p>}
-      <div
-        ref={surfaceRef}
-        className={cn(
-          "relative min-h-0 flex-1 touch-none overflow-hidden rounded-lg border border-brand-cream/10 bg-brand-ink",
-          mode === "pan" ? "cursor-grab active:cursor-grabbing" : "cursor-crosshair",
-        )}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={endDrag}
-        onPointerCancel={endDrag}
-        onPointerLeave={() => setHoveredCell(null)}
-      >
-        <svg width={size.width} height={size.height} className="absolute inset-0 block">
-          <defs>
-            <pattern id="claim-map-blocked" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-              <rect width="8" height="8" fill={COLOR.blocked} fillOpacity="0.08" />
-              <line x1="0" y1="0" x2="0" y2="8" stroke={COLOR.blocked} strokeOpacity="0.35" strokeWidth="2" />
-            </pattern>
-          </defs>
-          <rect width={size.width} height={size.height} fill={COLOR.floor} />
-          {gridLines.map((line, lineIndex) => (
-            <line
-              key={lineIndex}
-              x1={line.x1}
-              y1={line.y1}
-              x2={line.x2}
-              y2={line.y2}
-              stroke={line.seam ? COLOR.seam : COLOR.grid}
-              strokeWidth={line.seam ? 1.2 : 0.6}
-            />
-          ))}
-          <path d={cellsPath(geometry.blocked, toX, toY, cellPx)} fill="url(#claim-map-blocked)" />
-          <path d={cellsPath(geometry.columns, toX, toY, cellPx)} fill={COLOR.column} fillOpacity="0.9" />
-          <path d={cellsPath(geometry.foreignCells, toX, toY, cellPx)} fill={COLOR.other} fillOpacity="0.22" />
-          <path d={edgesPath(geometry.foreignEdges, toX, toY, cellPx)} stroke={COLOR.other} strokeWidth="1.8" fill="none" />
-          <path d={cellsPath(geometry.own, toX, toY, cellPx)} fill={COLOR.own} fillOpacity="0.3" />
-          <path d={edgesPath(geometry.ownEdges, toX, toY, cellPx)} stroke={COLOR.own} strokeWidth="2.2" fill="none" />
-          <path d={cellsPath(okCells, toX, toY, cellPx)} fill={COLOR.own} fillOpacity="0.35" stroke={COLOR.own} strokeWidth="1.4" />
-          <path d={cellsPath(badCells, toX, toY, cellPx)} fill={COLOR.blocked} fillOpacity="0.3" stroke={COLOR.blocked} strokeWidth="1.4" />
-          {cellPx >= OWNER_LABEL_MIN_CELL_PX
-            && geometry.foreignBlocks.map((block, blockIndex) => (
-              <text
-                key={blockIndex}
-                x={toX(block.centroid.cx + 0.5)}
-                y={toY(block.centroid.cz + 0.5)}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fill={COLOR.other}
-                fontSize={10}
-                opacity={0.9}
-              >
-                {block.name}
-              </text>
-            ))}
-          {destinationCell && <g><circle cx={toX(destinationCell.cx + 0.5)} cy={toY(destinationCell.cz + 0.5)} r={8} fill="none" stroke="#e8836b" strokeWidth={3} /><text x={toX(destinationCell.cx + 0.5)} y={toY(destinationCell.cz + 0.5) - 14} textAnchor="middle" fill="#e8836b" fontSize={11}>Visit here</text></g>}
-          <g>
-            <circle cx={playerX} cy={playerY} r={Math.max(3, cellPx * 0.28)} fill={COLOR.player} />
-            <circle cx={playerX} cy={playerY} r={Math.max(7, cellPx * 0.7)} fill="none" stroke={COLOR.player} strokeOpacity="0.4" />
-          </g>
-        </svg>
+        }}><Text size={11} weight={800}>{resident.label ?? "Neighbor"}</Text></Button>)}</RuneView>
+    </Stack>}
+    {destinationCell === null ? null : <Text size={12} color={C.teal}>{`${destination?.label ?? "Neighbor"}: last saved cell (${destinationCell.cx}, ${destinationCell.cz}). Walk there to visit their lab.`}</Text>}
+    <RuneAction label="Datacenter map" width={side} height={side} radius={10} clip fill={COLOR.floor} border={{ width: 1, color: "#f4ecdd1a" }} onDrag={onGesture} onAdjust={(delta) => zoomBy(delta > 0 ? 1.25 : 1 / 1.25)}>
+      <RuneGlyph artwork={artwork} size={side} />
+      <RuneView anchor="bottom-right" inset={8} gap={4} items="end">
+        <Button tone="ghost" minHeight={32} minWidth={32} padding={4} fill="#16201ecc" label="Zoom in" onPress={() => zoomBy(1.25)}><Text weight={800}>+</Text></Button>
+        <Button tone="ghost" minHeight={32} minWidth={32} padding={4} fill="#16201ecc" label="Zoom out" onPress={() => zoomBy(1 / 1.25)}><Text weight={800}>−</Text></Button>
+        <Button tone="ghost" minHeight={32} padding={[4, 8, 4, 8]} fill="#16201ecc" label="Center on me" onPress={recenter}><Text size={12} weight={800}>Me</Text></Button>
+      </RuneView>
+    </RuneAction>
+    <Panel shell="inset" width={FULL} gap={6}>
+      <Row justify="between" width={FULL}>
+        <Label>{hoveredCell === null ? "FLOOR" : `CELL (${hoveredCell.cx}, ${hoveredCell.cz})`}</Label>
+        {statusChip === null ? null : <Text size={11} weight={800} color={statusChip[1]}>{statusChip[0]}</Text>}
+      </Row>
+      <Text size={12} color={verdictColor}>{verdict.text}</Text>
+      <Muted size={11}>{mode === "pan" ? "Drag to pan, +/− to zoom, tap a cell to claim it." : "Drag a rectangle to claim a run — cells are bought one at a time and each one costs more."}</Muted>
+      {status === null ? null : <Text size={12} color={C.muted}>{status}</Text>}
+      {canEditGame ? null : <Text size={12} color={C.coral}>You can only view this lab.</Text>}
+      {claiming ? <Button tone="secondary" disabled>Claiming…</Button> : null}
+    </Panel>
+  </Stack>;
+}
 
-        <div className="pointer-events-none absolute right-2 bottom-2 flex flex-col items-end gap-1">
-          <button type="button" className={cn(mapControlButtonClass())} onClick={() => zoomBy(1.25)} aria-label="Zoom in">
-            +
-          </button>
-          <button type="button" className={cn(mapControlButtonClass())} onClick={() => zoomBy(1 / 1.25)} aria-label="Zoom out">
-            −
-          </button>
-          <button type="button" className={cn(mapControlButtonClass())} onClick={recenter}>
-            Me
-          </button>
-        </div>
-      </div>
+const escapeSvgText = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;");
 
-      <KitPanel data-shell="inset" className="flex flex-col gap-3"
-        eyebrow={hoveredCell === null ? "Floor" : `Cell (${hoveredCell.cx}, ${hoveredCell.cz})`}
-        aside={
-          hoveredStatus === null ? null : hoveredStatus.kind === "own" ? (
-            <span className="llm-token llm-token--teal">Yours</span>
-          ) : hoveredStatus.kind === "other" ? (
-            <span className="llm-token llm-token--amber">{hoveredStatus.ownerName}</span>
-          ) : hoveredStatus.kind === "blocked" ? (
-            <span className="llm-token llm-token--coral">Walkway</span>
-          ) : (
-            <span className="llm-token llm-token--teal">Open</span>
-          )
-        }
-      >
-        <p className={cn(verdictTextClass({ tone: verdict.tone }))}>{verdict.text}</p>
-        <p className="mt-1 text-[11px] text-brand-cream/45">
-          {mode === "pan"
-            ? "Drag to pan, scroll or +/− to zoom, click a cell to claim it."
-            : "Drag a rectangle to claim a run — cells are bought one at a time and each one costs more."}
-        </p>
-        {status !== null && <p className="mt-1 text-xs text-brand-cream/70">{status}</p>}
-        {!canEditGame && <p className="mt-1 text-xs text-brand-coral">You can only view this lab.</p>}
-        {claiming && (
-          <div className="mt-2">
-            <KitButton disabled>Claiming…</KitButton>
-          </div>
-        )}
-      </KitPanel>
-    </div>
-  );
+/** The floor as SVG artwork in the glyph's 24-unit box: grid, walkways, columns, claims, run, pins. */
+function mapArtwork({ size, cellPx, gridLines, geometry, okCells, badCells, toX, toY, destinationCell, playerX, playerY }: {
+  size: { width: number; height: number }; cellPx: number;
+  gridLines: readonly { x1: number; y1: number; x2: number; y2: number; seam: boolean }[];
+  geometry: { own: CellCoord[]; ownEdges: CellEdge[]; foreignCells: CellCoord[]; foreignEdges: CellEdge[]; foreignBlocks: { name: string; centroid: CellCoord }[]; blocked: CellCoord[]; columns: CellCoord[] };
+  okCells: readonly CellCoord[]; badCells: readonly CellCoord[];
+  toX: (cx: number) => number; toY: (cz: number) => number;
+  destinationCell: CellCoord | null; playerX: number; playerY: number;
+}): string {
+  const lines = gridLines.map((line) => `<line x1="${line.x1.toFixed(1)}" y1="${line.y1.toFixed(1)}" x2="${line.x2.toFixed(1)}" y2="${line.y2.toFixed(1)}" stroke="${line.seam ? COLOR.seam : COLOR.grid}" stroke-width="${line.seam ? 1.2 : 0.6}"/>`).join("");
+  const fill = (cells: readonly CellCoord[], color: string, opacity: number, stroke = "") => cells.length === 0 ? "" : `<path d="${cellsPath(cells, toX, toY, cellPx)}" fill="${color}" fill-opacity="${opacity}"${stroke === "" ? "" : ` stroke="${stroke}" stroke-width="1.4"`}/>`;
+  const edges = (list: readonly CellEdge[], color: string, width: number) => list.length === 0 ? "" : `<path d="${edgesPath(list, toX, toY, cellPx)}" stroke="${color}" stroke-width="${width}" fill="none"/>`;
+  const labels = cellPx < OWNER_LABEL_MIN_CELL_PX ? "" : geometry.foreignBlocks.map((block) => `<text x="${toX(block.centroid.cx + 0.5).toFixed(1)}" y="${toY(block.centroid.cz + 0.5).toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="${COLOR.other}" font-size="10" opacity=".9">${escapeSvgText(block.name)}</text>`).join("");
+  const pin = destinationCell === null ? "" : `<circle cx="${toX(destinationCell.cx + 0.5).toFixed(1)}" cy="${toY(destinationCell.cz + 0.5).toFixed(1)}" r="8" fill="none" stroke="#e8836b" stroke-width="3"/>`;
+  const player = `<circle cx="${playerX.toFixed(1)}" cy="${playerY.toFixed(1)}" r="${Math.max(3, cellPx * 0.28).toFixed(1)}" fill="${COLOR.player}"/><circle cx="${playerX.toFixed(1)}" cy="${playerY.toFixed(1)}" r="${Math.max(7, cellPx * 0.7).toFixed(1)}" fill="none" stroke="${COLOR.player}" stroke-opacity=".4"/>`;
+  const body = lines
+    + fill(geometry.blocked, COLOR.blocked, 0.12)
+    + fill(geometry.columns, COLOR.column, 0.9)
+    + fill(geometry.foreignCells, COLOR.other, 0.22) + edges(geometry.foreignEdges, COLOR.other, 1.8)
+    + fill(geometry.own, COLOR.own, 0.3) + edges(geometry.ownEdges, COLOR.own, 2.2)
+    + fill(okCells, COLOR.own, 0.35, COLOR.own) + fill(badCells, COLOR.blocked, 0.3, COLOR.blocked)
+    + labels + pin + player;
+  return `<g transform="scale(${(24 / size.width).toFixed(5)})">${body}</g>`;
 }

@@ -1,14 +1,10 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { TutorialArrow } from "../../tutorial/components/TutorialUi";
+import { RuneView } from "@jgengine/core/ui/rune/primitives.view";
+
 import { TABLET_STORE_TABS, type TabletStoreTabId } from "../tablet";
-import {
-  TABLET_SEGMENTED_TAB_TRAY_CLASS,
-  TABLET_STORE_TAB_LABEL_ACTIVE_CLASS,
-  TABLET_STORE_TAB_LABEL_CLASS,
-  TABLET_STORE_TABS_SHELL_CLASS,
-  tabletTabButtonClass,
-} from "../tabletTabBar";
 import type { TabletTutorialLock } from "../../tutorial/tutorialRuntime";
+import { FULL } from "../../ui/kit";
+import { Tabs } from "../../ui/shop";
 
 const STORE_TAB_LABELS: Record<TabletStoreTabId, string> = {
   infrastructure: "Infrastructure",
@@ -18,44 +14,15 @@ const STORE_TAB_LABELS: Record<TabletStoreTabId, string> = {
   operator: "Operator",
 };
 
-interface TabletStoreTabsProps {
+/** The store's departments; the tutorial can lock all but one and point at it. */
+export function TabletStoreTabs({ activeStoreTab, tutorialLock, isStoreTabAllowed, onOpenStoreTab }: {
   activeStoreTab: TabletStoreTabId;
   tutorialLock: TabletTutorialLock | null;
   isStoreTabAllowed: (storeTabId: TabletStoreTabId) => boolean;
   onOpenStoreTab: (storeTabId: TabletStoreTabId) => void;
-}
-
-export function TabletStoreTabs({
-  activeStoreTab,
-  tutorialLock,
-  isStoreTabAllowed,
-  onOpenStoreTab,
-}: TabletStoreTabsProps) {
-  return (
-    <div className={TABLET_STORE_TABS_SHELL_CLASS}>
-      <div className={TABLET_SEGMENTED_TAB_TRAY_CLASS}>
-        {TABLET_STORE_TABS.map((id) => {
-          const allowed = isStoreTabAllowed(id);
-          const highlighted = tutorialLock !== null && tutorialLock.highlightedStoreTab === id;
-          const active = activeStoreTab === id;
-
-          return (
-            <button
-              key={id}
-              onClick={() => onOpenStoreTab(id)}
-              disabled={!allowed}
-              className={tabletTabButtonClass(active, allowed, highlighted)}
-            >
-              {highlighted && !active ? <TutorialArrow className="!-top-6 scale-75" /> : null}
-              <span
-                className={`${TABLET_STORE_TAB_LABEL_CLASS} ${active ? TABLET_STORE_TAB_LABEL_ACTIVE_CLASS : ""}`}
-              >
-                {STORE_TAB_LABELS[id]}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
+}) {
+  return <RuneView width={FULL} padding={[10, 12, 10, 12]} fill="#09090be6">
+    <Tabs tabs={TABLET_STORE_TABS} active={activeStoreTab} labels={STORE_TAB_LABELS} allowed={isStoreTabAllowed}
+      highlighted={(id) => tutorialLock !== null && tutorialLock.highlightedStoreTab === id} onSelect={onOpenStoreTab} accent="#10b981" />
+  </RuneView>;
 }

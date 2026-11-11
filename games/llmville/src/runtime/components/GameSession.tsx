@@ -32,6 +32,12 @@ export function GameSession({ user, convexUser, gameId }: LlmvilleSessionIdentit
   const multiplayer = useWorldMultiplayer(identity.user.id);
 
   useEffect(() => {
+    // The shell mounts its canvas straight into the page root; pointer-lock focus finds it there.
+    const root = document.getElementById("app");
+    if (root instanceof HTMLDivElement) containerRef.current = root;
+  }, [containerRef]);
+
+  useEffect(() => {
     const previousTitle = document.title;
     document.title = game.game.name;
     return () => {
@@ -43,9 +49,7 @@ export function GameSession({ user, convexUser, gameId }: LlmvilleSessionIdentit
     <LlmvilleSessionProvider identity={identity} tabletNav={tabletNav} containerRef={containerRef}>
       <RackHardwareDragVisualProvider>
         <TabletNavProvider value={tabletNav}>
-          <div ref={containerRef} className="fixed inset-0 overflow-hidden bg-slate-950">
-            <GameHost playable={game} gameId={LLMVILLE_GAME_ID} multiplayer={multiplayer} />
-          </div>
+          <GameHost playable={game} gameId={LLMVILLE_GAME_ID} multiplayer={multiplayer} />
         </TabletNavProvider>
       </RackHardwareDragVisualProvider>
     </LlmvilleSessionProvider>

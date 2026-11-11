@@ -1,9 +1,8 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
-import { useMemo, useRef, useState, type MutableRefObject } from "@jgengine/core/ui/jsx";
-import { CapsuleGeometry, Group, MathUtils, MeshStandardMaterial, SphereGeometry } from "three";
+import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "@jgengine/core/ui/jsx";
+import { CapsuleGeometry, Group, MathUtils, MeshStandardMaterial, SphereGeometry, Vector3 } from "three";
 
 import { advanceGaitPhase, gaitBobOffset, gaitSwayAngle } from "@jgengine/core/movement/avatarGait";
-import { AnchoredOverlay } from "@jgengine/core/hud/hudOverlay.draw";
 import {
   EngineDrawMount,
   SceneObjectPortal,
@@ -15,6 +14,7 @@ import { PlayerCharacterFigure } from "../../user/components/PlayerCharacterFigu
 import { DEFAULT_CHARACTER_LOOK } from "../../user/playerCharacterFigure";
 import { REMOTE_AVATAR_INTERPOLATION_MS } from "../../world/location";
 import { readLiveRemotePose, sampleRemotePose } from "../../world/remotePresenceRuntime";
+import { worldLabels } from "../../scene/worldLabels";
 
 const AIRBORNE_JUMP_Y = 0.04;
 
@@ -45,30 +45,21 @@ function useAvatarGroup(initial?: { position: readonly [number, number, number];
   return group;
 }
 
-function Nameplate({
-  anchor,
-  localY,
-  displayName,
-  badgeClass,
-  badgeSuffix = "",
-}: {
-  anchor: Group;
-  localY: number;
-  displayName: string;
-  badgeClass: string;
-  badgeSuffix?: string;
-}) {
-  return (
-    <AnchoredOverlay anchor={anchor} localPosition={[0, localY, 0]} distanceFactor={12}>
-      <div
-        className={`rounded-md border bg-[#1f2b28]/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${badgeClass}`}
-      >
-        {displayName}
-        {badgeSuffix}
-      </div>
-    </AnchoredOverlay>
-  );
+/** Registers this avatar's nameplate with the HUD and keeps it over the anchor's head every frame. */
+function Nameplate({ anchor, localY, displayName, online }: { anchor: Group; localY: number; displayName: string; online: boolean }) {
+  const id = useMemo(() => `avatar:${Math.random().toString(36).slice(2)}`, []);
+  useEffect(() => {
+    worldLabels.set({ id, text: `${displayName.toUpperCase()}${online ? "" : " · AFK"}`, color: online ? "#f4ecdd" : "#a1a1aa", border: online ? "#5fc2a866" : "#71717a80", position: [anchor.position.x, anchor.position.y + localY, anchor.position.z] });
+  }, [id, anchor, displayName, online, localY]);
+  useEffect(() => () => worldLabels.remove(id), [id]);
+  useFrameTask(function nameplate() {
+    anchor.getWorldPosition(scratch);
+    worldLabels.move(id, scratch.x, scratch.y + localY, scratch.z);
+  });
+  return null;
 }
+
+const scratch = new Vector3();
 
 function AvatarMesh({
   label,
@@ -84,20 +75,15 @@ function AvatarMesh({
   headLookRef?: MutableRefObject<{ pitch: number } | null> | undefined;
 }) {
   const displayName = label?.trim() || (kind === "human" ? "Player" : "Bot");
-  const badgeClass =
-    kind === "human"
-      ? online
-        ? "border-brand-teal/40 text-brand-cream"
-        : "border-zinc-500/50 text-zinc-400"
-      : "border-brand-teal/40 text-brand-cream";
-  const badgeSuffix = online ? "" : " · AFK";
+  // Bots never show AFK; a human's plate greys out while their lab's owner is away.
+  const shownOnline = kind !== "human" || online;
   const anchor = useAvatarGroup();
 
   if (kind === "human") {
     return (
       <SceneObjectPortal object={anchor}>
         <PlayerCharacterFigure look={DEFAULT_CHARACTER_LOOK} isWalking={isWalking} headLookRef={headLookRef} />
-        <Nameplate anchor={anchor} localY={1.75} displayName={displayName} badgeClass={badgeClass} badgeSuffix={badgeSuffix} />
+        <Nameplate anchor={anchor} localY={1.75} displayName={displayName} online={shownOnline} />
       </SceneObjectPortal>
     );
   }
@@ -132,7 +118,7 @@ function AvatarMesh({
         }
         deps={[]}
       />
-      <Nameplate anchor={anchor} localY={2.2} displayName={displayName} badgeClass={badgeClass} />
+      <Nameplate anchor={anchor} localY={2.2} displayName={displayName} online={shownOnline} />
     </SceneObjectPortal>
   );
 }

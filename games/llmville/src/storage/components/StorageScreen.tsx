@@ -1,5 +1,6 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { StoragePanel } from "./StoragePanel";
+import { C, FULL, Muted, Stack } from "../../ui/kit";
 import type { BuildMenuTabId, BuildPlacementPreview, StorageItem } from "@llmville/game/build/build";
 import { STARTER_RACK_CATALOG_ID } from "@llmville/game/infrastructure/catalog";
 import { TUTORIAL_STAGE, type TutorialStage } from "@llmville/game/tutorial/tutorialStages";
@@ -37,7 +38,7 @@ export function StorageScreen({
   buildInventory,
   selectedBuildItem,
   selectedBuildItemIndex,
-  selectedBuildPriceLabel,
+  selectedBuildPriceLabel: _selectedBuildPriceLabel,
   buildPrimaryActionLabel,
   isBuildPrimaryActionDisabled,
   isBuildTrashActionDisabled,
@@ -46,7 +47,7 @@ export function StorageScreen({
   onConfirmPlacement,
   onCycleBuildTab,
   onSetBuildTab,
-  onCycleBuildItem,
+  onCycleBuildItem: _onCycleBuildItem,
   onSetBuildItemIndex,
   onBuildPrimaryAction,
   onBuildTrashAction,
@@ -56,44 +57,31 @@ export function StorageScreen({
   tutorialStage,
 }: StorageScreenProps) {
 
-  return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 w-full pb-24 duration-500">
-      <p className="mb-3 text-xs leading-relaxed text-brand-cream-dim">Place purchased items to build your plot. To relocate, pick them up and place them in another open space. Picking up a rack returns its GPUs and cooler here for reinstallation.</p>
-      <div className="w-full">
-        <StoragePanel
-          tabs={buildTabs}
-          activeTab={activeBuildTab}
-          activeBuildItems={activeBuildItems}
-          buildInventory={buildInventory}
-          selectedItem={selectedBuildItem}
-          selectedIndex={selectedBuildItemIndex}
-          priceLabel={selectedBuildPriceLabel}
-          primaryActionLabel={buildPrimaryActionLabel}
-          primaryActionDisabled={isBuildPrimaryActionDisabled}
-          trashDisabled={isBuildTrashActionDisabled}
-          placementModeActive={buildPlacementModeActive}
-          canPlaceItem={placementPreview?.isValid ?? false}
-          onConfirmPlacement={onConfirmPlacement}
-          showPlaceItemTutorialArrow={
-            tutorialStarted &&
-            !tutorialCompleted &&
-            tutorialStage === TUTORIAL_STAGE.placeRack &&
-            (buildInventory[STARTER_RACK_CATALOG_ID] ?? 0) > 0 &&
-            selectedBuildItem?.id === STARTER_RACK_CATALOG_ID
-          }
-          onTabChange={onCycleBuildTab}
-          onTabSelect={onSetBuildTab}
-          onItemChange={onCycleBuildItem}
-          onItemSelect={onSetBuildItemIndex}
-          onPrimaryAction={() => {
-            onBuildPrimaryAction();
-            if (buildPrimaryActionLabel === "Place Item" && !isBuildPrimaryActionDisabled) {
-              onToggleTablet(false);
-            }
-          }}
-          onTrashAction={onBuildTrashAction}
-        />
-      </div>
-    </div>
-  );
+  return <Stack gap={12} width={FULL}>
+    <Muted size={12} color={C.creamDim}>Place purchased items to build your plot. To relocate, pick them up and place them in another open space. Picking up a rack returns its GPUs and cooler here for reinstallation.</Muted>
+    <StoragePanel
+      tabs={buildTabs}
+      activeTab={activeBuildTab}
+      activeBuildItems={activeBuildItems}
+      buildInventory={buildInventory}
+      selectedItem={selectedBuildItem}
+      selectedIndex={selectedBuildItemIndex}
+      primaryActionLabel={buildPrimaryActionLabel}
+      primaryActionDisabled={isBuildPrimaryActionDisabled}
+      trashDisabled={isBuildTrashActionDisabled}
+      placementModeActive={buildPlacementModeActive}
+      canPlaceItem={placementPreview?.isValid ?? false}
+      onConfirmPlacement={onConfirmPlacement}
+      showPlaceItemTutorialArrow={tutorialStarted && !tutorialCompleted && tutorialStage === TUTORIAL_STAGE.placeRack
+        && (buildInventory[STARTER_RACK_CATALOG_ID] ?? 0) > 0 && selectedBuildItem?.id === STARTER_RACK_CATALOG_ID}
+      onTabChange={onCycleBuildTab}
+      onTabSelect={onSetBuildTab}
+      onItemSelect={onSetBuildItemIndex}
+      onPrimaryAction={() => {
+        onBuildPrimaryAction();
+        if (buildPrimaryActionLabel === "Place Item" && !isBuildPrimaryActionDisabled) onToggleTablet(false);
+      }}
+      onTrashAction={onBuildTrashAction}
+    />
+  </Stack>;
 }

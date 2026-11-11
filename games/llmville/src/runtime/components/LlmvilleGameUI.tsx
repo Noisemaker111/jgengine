@@ -3,7 +3,7 @@ import { navigate } from "../../screens/screenRouter";
 import { useEffect, useMemo } from "@jgengine/core/ui/jsx";
 
 import { suspendPlayControls } from "@jgengine/core/game/controlGate";
-import { NoticeStack } from "@jgengine/core/notifications/notices.view";
+import type { RuneProjection } from "@jgengine/core/ui/rune/primitives.view";
 import { useDisplayProfile } from "@jgengine/core/ui/display.view";
 import { useGameContext } from "@jgengine/ui/provider";
 import { useBuildSession } from "../../build/buildSession";
@@ -11,9 +11,9 @@ import { BankruptOverlay } from "../../economy/components/BankruptOverlay";
 import { buildRackSlotGpuWorkloadMap } from "../../infrastructure/computeUnits";
 import { useRackHardwareSession } from "../../infrastructure/rackHardwareSession";
 import { RouteLoadingScreen } from "../../components/RouteLoadingScreen";
-import GameOverlay from "./GameOverlay";
+import { LlmRoot } from "../../ui/kit";
+import { GameOverlay } from "./GameOverlay";
 import { GameConnectionErrorScreen } from "./GameConnectionErrorScreen";
-import { actionNotices } from "../actionFeedback";
 import { engineActions } from "../gameEngine";
 import { useGameEngineInput } from "../input";
 import { useInteractionPromptSync } from "../interactionPrompts";
@@ -24,7 +24,6 @@ import { useRackConfigureCommand } from "../promptCommands";
 import { useSceneObjectSync } from "../sceneObjects";
 import { useWorldState } from "../worldState";
 import { isReadyWorldViewModel } from "../worldViewModel";
-import { ReducedMotionSync } from "../../settings/components/LlmvilleSettings";
 import { useAppSettings } from "../../settings/settings";
 import { isTabletUiBlockingGameplay } from "../../tablet/tablet";
 import { useTutorialState } from "../../tutorial/tutorialRuntime";
@@ -118,6 +117,15 @@ export function LlmvilleGameUI() {
     [world.computeAssignments, world.racks, world.isTraining],
   );
 
+  // The HUD's world prompts project through the camera the scene shares back on the session feed.
+  const project = useMemo<RuneProjection>(() => (target) => {
+    const reader = session.scene.projection.current;
+    if (reader === null || target.position === undefined) return { x: 0, y: 0, visible: false };
+    const [dx, dy, dz] = target.offset ?? [0, 0, 0];
+    const point = reader([target.position[0] + dx, target.position[1] + dy, target.position[2] + dz]);
+    return point === null || point.behind ? { x: 0, y: 0, visible: false } : { x: point.x, y: point.y, visible: true };
+  }, [session.scene]);
+
   const ready = isReadyWorldViewModel(world);
   const sceneProps = useMemo(
     () =>
@@ -158,17 +166,14 @@ export function LlmvilleGameUI() {
   useEffect(() => () => session.scene.publish(null), [session.scene]);
 
   if (world.connectionError !== null) {
-    return <GameConnectionErrorScreen message={world.connectionError} kind="connection" />;
+    return <LlmRoot context={ctx}><GameConnectionErrorScreen message={world.connectionError} kind="connection" /></LlmRoot>;
   }
   if (!isReadyWorldViewModel(world)) {
-    return <RouteLoadingScreen label="Loading world" detail={world.worldBootLabel} progress={world.worldBootProgress} />;
+    return <LlmRoot context={ctx}><RouteLoadingScreen label="Loading world" detail={world.worldBootLabel} progress={world.worldBootProgress} /></LlmRoot>;
   }
   return (
     <>
-      <ReducedMotionSync />
-      <GameOverlay world={world} build={build} rackHardware={rackHardware} tutorial={tutorial} isTouch={isTouch} />
-      <BankruptOverlay />
-      <NoticeStack feed={actionNotices} />
+      <GameOverlay world={world} build={build} rackHardware={rackHardware} tutorial={tutorial} isTouch={isTouch} project={project} bankrupt={<BankruptOverlay />} />
     </>
   );
 }

@@ -1,12 +1,8 @@
 /** @jsxImportSource @jgengine/core/ui/jsx */
 import { Suspense, lazy, useEffect, type ComponentType, type ReactNode } from "@jgengine/core/ui/jsx";
-import { NoticeStack } from "@jgengine/core/notifications/notices.view";
-import { UiKitRoot } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 import { RouteLoadingScreen } from "../components/RouteLoadingScreen";
-import { llmvilleKit } from "../kit/llmvilleKit";
-import { UiLayer } from "../kit/uiLayer";
-import { actionNotices } from "../runtime/actionFeedback";
+import { Button, LlmRoot, Muted, Page } from "../ui/kit";
 import { GameRouteErrorBoundary } from "../runtime/components/GameRouteErrorBoundary";
 import { loadGameSessionModule } from "../runtime/gameRoutePreload";
 import {
@@ -40,14 +36,11 @@ interface ScreenEntry {
   head?: PageHead;
   /** The label on the loading screen while the screen's code arrives. */
   loading?: string;
-  /** Wraps the dev workbench around its previews. */
-  workbench?: boolean;
   /** The screen mounts a game shell, which draws its own UI layer. */
   ownsUiLayer?: boolean;
 }
 
 const HOME: ScreenTarget = { to: "/" };
-const devOnly = (entry: ScreenEntry): ScreenEntry => (import.meta.env.DEV ? entry : { path: entry.path, redirect: () => HOME });
 
 /** Every LLMville screen. A fixed path comes before the pattern that would also match it. */
 const SCREENS: readonly ScreenEntry[] = [
@@ -96,12 +89,6 @@ const SCREENS: readonly ScreenEntry[] = [
         default: ({ params }: ScreenProps) => <ProfileScreen username={params["username"] ?? ""} />,
       })),
   },
-  devOnly({ path: "/dev", workbench: true, load: () => import("./devScreens").then((module) => ({ default: module.DevIndexScreen })) }),
-  devOnly({ path: "/dev/hud", workbench: true, load: () => import("../runtime/components/HudDevPreview").then((module) => ({ default: module.HudDevPreview })) }),
-  devOnly({ path: "/dev/racks", workbench: true, load: () => import("./devRackGallery").then((module) => ({ default: module.DevRackGallery })) }),
-  devOnly({ path: "/dev/bills", workbench: true, load: () => import("../economy/components/BillsDevPreview").then((module) => ({ default: module.BillsDevPreview })) }),
-  devOnly({ path: "/dev/character", workbench: true, load: () => import("../user/components/CharacterDevPreview").then((module) => ({ default: module.CharacterDevPreview })) }),
-  devOnly({ path: "/dev/tablet", redirect: () => ({ to: "/dev/hud" }) }),
 ];
 
 const lazyScreens = new Map<ScreenEntry, ComponentType<ScreenProps>>();
@@ -129,23 +116,25 @@ export function preloadScreen(path: string): void {
   void SCREENS.find((entry) => entry.path === path)?.load?.().catch(() => undefined);
 }
 
-const DevWorkbench = lazy(() => import("./devScreens").then((module) => ({ default: module.DevWorkbench })));
-
+/** Where a screen draws. Menu pages draw on LLMville's one native surface; the game route's shell mounts its own. */
 function ScreenFrame({ entry, children }: { entry: ScreenEntry; children: ReactNode }) {
-  const framed = entry.workbench === true ? <DevWorkbench>{children}</DevWorkbench> : children;
-  return entry.ownsUiLayer === true ? framed : <UiLayer>{framed}</UiLayer>;
+  return entry.ownsUiLayer === true ? children : <LlmRoot>{children}</LlmRoot>;
+}
+
+/** The loading screen while a screen's code arrives, on the surface that screen will draw on. */
+function ScreenLoading({ entry }: { entry: ScreenEntry }) {
+  const screen = <RouteLoadingScreen {...(entry.loading === undefined ? {} : { label: entry.loading })} />;
+  return entry.ownsUiLayer === true ? <LlmRoot>{screen}</LlmRoot> : screen;
 }
 
 function MissingScreen() {
   return (
-    <UiLayer>
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#0a100e] px-6 text-center text-brand-cream">
-        <p className="text-sm text-brand-cream/70">That page does not exist.</p>
-        <button type="button" className="llm-btn px-4 py-3 text-sm" data-variant="primary" onClick={() => void navigate(HOME)}>
-          Back to main menu
-        </button>
-      </div>
-    </UiLayer>
+    <LlmRoot>
+      <Page>
+        <Muted size={14} align="center">That page does not exist.</Muted>
+        <Button tone="primary" onPress={() => void navigate(HOME)}>Back to main menu</Button>
+      </Page>
+    </LlmRoot>
   );
 }
 
@@ -171,11 +160,10 @@ export function Screens() {
     screen = null;
   } else {
     const Screen = screenComponent(entry, load);
-    const loading = <RouteLoadingScreen {...(entry.loading === undefined ? {} : { label: entry.loading })} />;
     screen = (
       <GameRouteErrorBoundary key={location.pathname}>
         <ScreenFrame entry={entry}>
-          <Suspense fallback={loading}>
+          <Suspense fallback={<ScreenLoading entry={entry} />}>
             <Screen params={match.params} search={location.search} />
           </Suspense>
         </ScreenFrame>
@@ -183,10 +171,5 @@ export function Screens() {
     );
   }
 
-  return (
-    <UiKitRoot kit={llmvilleKit}>
-      {screen}
-      {entry?.ownsUiLayer === true ? null : <NoticeStack feed={actionNotices} avoidHud={false} />}
-    </UiKitRoot>
-  );
+  return screen;
 }
