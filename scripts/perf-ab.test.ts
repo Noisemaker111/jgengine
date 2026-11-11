@@ -124,7 +124,8 @@ test("the fingerprint changes when a served file is edited, not when the edit is
     git("add", "-A");
     git("commit", "-q", "-m", "one");
     const clean = treeFingerprint(dir);
-    writeFileSync(join(dir, "packages", "a.ts"), "2\n");
+    // A different size: an edit of equal size in the commit's second can look clean to git's stat cache.
+    writeFileSync(join(dir, "packages", "a.ts"), "two\n");
     const edited = treeFingerprint(dir);
     expect(edited).not.toBe(clean);
     git("commit", "-q", "-am", "two");
