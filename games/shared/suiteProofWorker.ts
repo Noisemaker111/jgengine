@@ -19,9 +19,16 @@ export type SuiteProofAnswer = { file: string; result: SuiteProofResult } | { fi
 
 declare const self: Worker;
 
+// A worker does not run bunfig.toml's test preload, so it loads it itself before any proof: the proof
+// then runs in the same module world as the test process, where three is evaluated before anything
+// requires it (scripts/three-preload.ts). Started at once, awaited per job, so no message waits on a
+// handler that is not set yet.
+const preloaded = import("../../scripts/three-preload");
+
 self.onmessage = async (event: MessageEvent<SuiteProofJob>) => {
   const { game, path, file } = event.data;
   try {
+    await preloaded;
     const module: unknown = await import(pathToFileURL(path).href);
     const proof = typeof module === "object" && module !== null && "default" in module ? module.default : undefined;
     if (!isSuiteProof(proof)) throw new Error(`${file} must export default defineProof(game, { proves, setup?, play })`);
