@@ -41,7 +41,9 @@ export async function runSuiteInWorkers(game: string, gameDir: string, content: 
   const results = new Map<string, SuiteProofResult>();
   let next = 0;
   const lane = async (): Promise<void> => {
-    const worker = new Worker(new URL("./suiteProofWorker.ts", import.meta.url), { type: "module" });
+    // A file path, not `new URL(..., import.meta.url)`: the site build reads this file, and Vite would
+    // try to bundle a URL-form worker for the browser (and refuse the preload's top-level await).
+    const worker = new Worker(join(import.meta.dir, "suiteProofWorker.ts"), { type: "module" });
     try {
       for (let job = jobs[next++]; job !== undefined; job = jobs[next++]) {
         const answer = await new Promise<SuiteProofAnswer>((resolve, reject) => {
