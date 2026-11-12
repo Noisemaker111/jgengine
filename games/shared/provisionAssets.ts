@@ -4,7 +4,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { basename, extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { assetStoreRoot, dirHasEntries, provisionJobs, type ProvisionResult, type PullJob } from "../../packages/assets/src/assetStore";
+import { assetStoreRoot, dirHasEntries, dirHasFiles, provisionJobs, type ProvisionResult, type PullJob } from "../../packages/assets/src/assetStore";
 import { compressedVariant, textureVariantDir } from "./textureVariants";
 import { importedPackNames, packExportName } from "../../packages/assets/src/manifest";
 
@@ -24,6 +24,8 @@ export interface AssetCatalogs {
   materials?: readonly { name: string; source?: string | undefined }[];
   /** Curated HDRIs, colour grades and fonts a game's source names by id (`hdriEnvironment("golden-hour")`). */
   lookJobs?: (text: string) => readonly { target: string; dir: string }[];
+  /** The files a model pack's index lists, so a pack that grew after it was pulled is pulled again. */
+  packFiles?: (sourceId: string) => readonly string[] | undefined;
 }
 
 /** A pull for one shared-library key, with the URL the game loads once it is served. */
@@ -59,7 +61,8 @@ export function missingPulls(text: string, publicDir: string, catalogs: AssetCat
     if (!quoted(source.id) && !imported.has(packExportName(source.id)) && !aliased.has(source.id) && !named.has(source.id)) continue;
     const subdir = source.kind === "material" ? "materials" : source.kind === "sprite" ? "sprites" : "models";
     const dir = join(subdir, source.id);
-    if (!dirHasEntries(join(publicDir, dir))) jobs.push({ target: source.id, dir });
+    const files = subdir === "models" ? catalogs.packFiles?.(source.id) : undefined;
+    if (!dirHasFiles(join(publicDir, dir), files)) jobs.push({ target: source.id, dir, ...(files === undefined ? {} : { files }) });
   }
   for (const entry of catalogs.library) {
     if (entry.origin.provider === "generated" || !text.includes(`"${entry.name}"`)) continue;
@@ -111,6 +114,7 @@ export async function loadCatalogs(): Promise<AssetCatalogs> {
     sources: AssetCatalogs["sources"];
     MODEL_LIBRARY?: AssetCatalogs["library"];
     aliases?: AssetCatalogs["aliases"];
+    generatedBySource?: Readonly<Record<string, readonly { file: string }[]>>;
   };
   const materialLibrary: { MATERIAL_LIBRARY: NonNullable<AssetCatalogs["materials"]> } = await import(join(assetsDir, "src/catalogs/materialLibrary.ts"));
   const index: typeof import("../../packages/assets/src/library/libraryIndex") = await import(join(assetsDir, "src/library/libraryIndex.ts"));
@@ -123,7 +127,8 @@ export async function loadCatalogs(): Promise<AssetCatalogs> {
     return { target: entry.pack ?? entry.key, dir: join(...path.dir.split("/")), url: path.url };
   };
   const curated: typeof import("../../packages/assets/src/catalogs/curatedPull") = await import(join(assetsDir, "src/catalogs/curatedPull.ts"));
-  return { sources: module.sources, library: module.MODEL_LIBRARY ?? [], aliases: module.aliases ?? [], materials: materialLibrary.MATERIAL_LIBRARY, libraryPull, lookJobs: curated.curatedJobsIn };
+  const packFiles = (sourceId: string): readonly string[] | undefined => module.generatedBySource?.[sourceId]?.map((entry) => entry.file);
+  return { sources: module.sources, library: module.MODEL_LIBRARY ?? [], aliases: module.aliases ?? [], materials: materialLibrary.MATERIAL_LIBRARY, libraryPull, lookJobs: curated.curatedJobsIn, packFiles };
 }
 
 function runPull(cwd: string, target: string, outRoot: string): Promise<boolean> {
