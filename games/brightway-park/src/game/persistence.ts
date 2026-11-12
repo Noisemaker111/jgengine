@@ -14,6 +14,7 @@ import { spawnAll } from "./parkScene";
 import { restoreRides, rideSnapshot } from "./rides";
 import { GUEST_PHASES, session, type GuestPhase, type GuestState, type StaffState } from "./session";
 import { restoreStaff } from "./staff";
+import { guestFlowState, restoreGuestFlow } from "./sim/guests";
 import { parkProfile } from "./parkProfile";
 
 export const SAVE_KEY = "brightway-park.save.v1";
@@ -210,7 +211,7 @@ export function snapshotPark(ctx: GameContext): ParkSave {
     clock: ctx.time.snapshot(),
     rng: rngStateOf(ctx.rng),
     rides: rideSnapshot(),
-    sim: { guestSeq: session.guestSeq, spawnAcc: session.spawnAcc },
+    sim: guestFlowState(ctx),
     ...(parkProfile.name === null ? {} : { parkName: parkProfile.name }),
     ...(parkProfile.thumbnail === null ? {} : { thumbnail: parkProfile.thumbnail }),
     playtime: Math.round(ctx.time.now()),
@@ -241,13 +242,12 @@ export function applySave(ctx: GameContext, s: ParkSave): void {
   parkProfile.thumbnail = s.thumbnail ?? null;
   park.of(ctx).restore(s.world);
   spawnAll(ctx);
-  session.guestSeq = s.sim.guestSeq;
-  session.spawnAcc = s.sim.spawnAcc;
   session.hasSave = true;
   for (const { state, position } of s.guests) {
     session.guests.set(state.id, state);
     ctx.scene.entity.spawn(state.kind, { id: state.id, position, role: "npc" });
   }
+  restoreGuestFlow(ctx, s.sim);
   restoreStaff(ctx, s.staff);
   restoreRides(ctx, s.rides);
   ctx.time.hydrate({ ...s.clock, paused: true });

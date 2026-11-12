@@ -1,10 +1,11 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { RideTickSink } from "@jgengine/core/sim/rides";
+import { createVisitorPopulation, type VisitorPopulation } from "@jgengine/core/sim/population";
 
 import { guestCap } from "../catalog";
 import type { BuildableDef, StaffRole } from "../objects/catalog";
 import { GUEST_WALK_SPEED, guestKindFor } from "../entities/guests/catalog";
-import { nextGuestId, session, type GuestState } from "../session";
+import { session, type GuestState } from "../session";
 import { fairPrice, marketingBoost, park, parkObject, ridePrice, stallPrice, stockOf, type ParkObject } from "../park";
 import {
   agentOf,
@@ -116,37 +117,100 @@ function makeGuest(ctx: GameContext, id: string, start: readonly [number, number
   return guest;
 }
 
-function spawnGuest(ctx: GameContext): void {
-  const id = nextGuestId();
-  const jitter = (ctx.rng() - 0.5) * 10;
-  makeGuest(ctx, id, [jitter, 0, 56]);
-  // Through the turnstile, then the entry ticket: both are ripples the world declares.
-  park.emit(ctx, { kind: "admit" });
-  park.emit(ctx, { kind: "pay_gate", scale: park.of(ctx).num("park.ticket") });
+/** Most guests one tick lets through the turnstiles, so a long frame cannot flood the park. */
+const ARRIVAL_BUDGET = 4;
+
+/** The crowd behind one park session: its shared population and the appeal the gate reads this tick. */
+interface Crowd {
+  ctx: GameContext;
+  guests: Map<string, GuestState>;
+  population: VisitorPopulation;
+  appeal: number;
+}
+
+let crowd: Crowd | null = null;
+
+/**
+ * The park's visitors, on the shared population: a guest counts on site and through today's gate
+ * only once its body is in the park, and the cap, the arrival rate and the ids are the population's.
+ * A new session (`resetSession`) or another context starts a new crowd.
+ */
+function crowdOf(ctx: GameContext): Crowd {
+  if (crowd !== null && crowd.ctx === ctx && crowd.guests === session.guests) return crowd;
+  const next = { ctx, guests: session.guests, appeal: 0 } as Crowd;
+  next.population = createVisitorPopulation({
+    world: {
+      admit(visitor) {
+        const position: [number, number, number] = [(ctx.rng() - 0.5) * 10, 0, 56];
+        makeGuest(ctx, visitor.id, position);
+        // Through the turnstile, then the entry ticket: both are ripples the world declares.
+        park.emit(ctx, { kind: "admit" });
+        park.emit(ctx, { kind: "pay_gate", scale: park.of(ctx).num("park.ticket") });
+        return position;
+      },
+      release(visitor) {
+        const guest = session.guests.get(visitor.id);
+        if (guest !== undefined) removeGuest(ctx, guest);
+      },
+      has: (id) => session.guests.has(id),
+    },
+    policy: {
+      capacity: () => guestCap(park.of(ctx).num("park.rating")),
+      arrivalRate: () => {
+        const w = park.of(ctx);
+        return demand(next.appeal, w.num("park.ticket"), w.num("park.rating"), w.fact("park.open") === true, marketingBoost(w));
+      },
+    },
+    idPrefix: "guest#",
+    arrivalBudget: ARRIVAL_BUDGET,
+  });
+  crowd = next;
+  return next;
+}
+
+/** The park's visitor population: on-site and daily counts are the guests whose bodies it made. */
+export function guestPopulation(ctx: GameContext): VisitorPopulation {
+  return crowdOf(ctx).population;
 }
 
 export function seedGuests(ctx: GameContext, count: number): void {
+  const population = guestPopulation(ctx);
+  let seeded = 0;
   for (let i = 0; i < count; i += 1) {
-    const id = nextGuestId();
+    const id = population.nextId();
     makeGuest(ctx, id, [(ctx.rng() - 0.5) * 80, 0, (ctx.rng() - 0.5) * 80]);
+    if (population.adopt(id)) seeded += 1;
   }
   // A seeded crowd is already inside: it counts on site, not through today's gate.
-  park.of(ctx).change({ "park.guests": count });
+  park.of(ctx).change({ "park.guests": seeded });
 }
 
+/** Let guests through the gate for `dt` seconds, at the rate the park's appeal, ticket and rating draw. */
 export function spawnGuests(ctx: GameContext, dt: number, totalAppeal: number): void {
-  const w = park.of(ctx);
-  const rating = w.num("park.rating");
-  const cap = guestCap(rating);
-  if (session.guests.size >= cap) return;
-  const rate = demand(totalAppeal, w.num("park.ticket"), rating, w.fact("park.open") === true, marketingBoost(w));
-  session.spawnAcc += rate * dt;
-  let budget = 4;
-  while (session.spawnAcc >= 1 && session.guests.size < cap && budget > 0) {
-    session.spawnAcc -= 1;
-    budget -= 1;
-    spawnGuest(ctx);
-  }
+  const live = crowdOf(ctx);
+  live.appeal = totalAppeal;
+  live.population.tick(dt, ctx.time.now());
+}
+
+/**
+ * Put the saved crowd back on the population once its guests are in the scene: the gate's carried
+ * arrival credit, the next id, and today's arrivals from the world's own count.
+ */
+export function restoreGuestFlow(ctx: GameContext, flow: { guestSeq: number; spawnAcc: number }): void {
+  guestPopulation(ctx).restore({
+    visitors: [...session.guests.keys()].map((id) => ({ id, admittedAt: 0 })),
+    arrivalsToday: park.of(ctx).num("park.guests_today"),
+    departuresToday: 0,
+    peakToday: 0,
+    pending: flow.spawnAcc,
+    sequence: flow.guestSeq + 1,
+  });
+}
+
+/** The gate's carried arrival credit and the last id it issued, as the park save stores them. */
+export function guestFlowState(ctx: GameContext): { guestSeq: number; spawnAcc: number } {
+  const snapshot = guestPopulation(ctx).snapshot();
+  return { guestSeq: snapshot.sequence - 1, spawnAcc: snapshot.pending };
 }
 
 function dropTarget(guest: GuestState): void {
@@ -197,7 +261,12 @@ function moveGuest(ctx: GameContext, guest: GuestState, target: readonly [number
   return distance2(next[0], next[2], target[0], target[2]) <= radius;
 }
 
+/** A guest walking out: the population lets it go, and its release removes the body. */
 function despawnGuest(ctx: GameContext, guest: GuestState): void {
+  guestPopulation(ctx).leave(guest.id);
+}
+
+function removeGuest(ctx: GameContext, guest: GuestState): void {
   if (guest.targetId !== null) leaveRide(guest.targetId, guest.id);
   guest.agent = agentOf(guest, ctx.rng).snapshot();
   forgetAgent(guest.id);

@@ -358,7 +358,7 @@ function stepMember(ctx: GameContext, state: HouseholdState, member: MemberState
   }
 
   const workable = availability.work && !consolesOffline(state, now) && !isIll(member, now);
-  let desire = chooseDesire(member, { ...availability, work: workable, social: availability.social && member.needs.social < 50 }, member.lifestyle === "yield" && shiftIsOpen(member, now) && member.workToday < SHIFT_SECONDS && !member.recovering && workable, findIdleCompanion(ctx, state, member) !== null, false);
+  let desire = chooseDesire(agent, now, { ...availability, work: workable, social: availability.social && member.needs.social < 50 }, member.lifestyle === "yield" && shiftIsOpen(member, now) && member.workToday < SHIFT_SECONDS && !member.recovering && workable, findIdleCompanion(ctx, state, member) !== null);
   if (member.recovering && member.needs.energy > 60 && member.needs.hunger > 50 && availability.fun) desire = { kind: "need", goal: "fun" };
   const basicReady = member.needs.hunger > 45 && member.needs.energy > 45 && member.needs.social > 25 && member.needs.fun > 25;
   const bloomTime = member.lifestyle === "bloom" && shiftIsOpen(member, now) && member.harvestToday === 0 && !member.recovering && !isIll(member, now) && basicReady;

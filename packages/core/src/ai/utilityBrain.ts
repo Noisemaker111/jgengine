@@ -62,6 +62,12 @@ export interface UtilityTerm {
   readonly weight?: number;
   /** Sample `1 - satisfaction` — an option that wants a *full* meter rather than an empty one. */
   readonly invert?: boolean;
+  /**
+   * Count this term only while its need is the set's most urgent one (the lowest fill; declared
+   * order breaks ties, as in `NeedSet.mostUrgent`), and score `0` otherwise. Lets content say "go
+   * for the emptiest need first" without the caller ranking needs itself.
+   */
+  readonly onlyWhenMostUrgent?: boolean;
 }
 
 /** A thing an agent can decide to do, scored against its needs. */
@@ -195,6 +201,7 @@ interface CompiledTerm {
   curve: ResponseCurve;
   weight: number;
   invert: boolean;
+  onlyWhenMostUrgent: boolean;
 }
 
 interface CompiledOption {
@@ -235,7 +242,13 @@ export function createUtilityBrain(config: UtilityBrainConfig): UtilityBrain {
       if (needIndex < 0) {
         throw new Error(`utility option "${option.id}" scores need "${term.need}", which the need set does not declare`);
       }
-      return { needIndex, curve: term.curve, weight: term.weight ?? 1, invert: term.invert === true };
+      return {
+        needIndex,
+        curve: term.curve,
+        weight: term.weight ?? 1,
+        invert: term.invert === true,
+        onlyWhenMostUrgent: term.onlyWhenMostUrgent === true,
+      };
     });
     return { id: option.id, base: option.base ?? 0, terms };
   });
@@ -264,9 +277,30 @@ export function createUtilityBrain(config: UtilityBrainConfig): UtilityBrain {
   const optionScores = new Float64Array(options.length);
   const decision: MutableDecision = { option: null, score: 0, changed: false, reason: null, interrupted: false };
 
-  function scoreOption(compiled: CompiledOption): number {
+  const needCount = needs.ids().length;
+
+  /** Index of the lowest-fill need; the first declared wins a tie, as `NeedSet.mostUrgent` does. */
+  function mostUrgentIndex(): number {
+    let worst = -1;
+    let worstFraction = Infinity;
+    for (let index = 0; index < needCount; index += 1) {
+      const fraction = needs.fractionAt(index);
+      if (fraction < worstFraction) {
+        worst = index;
+        worstFraction = fraction;
+      }
+    }
+    return worst;
+  }
+
+  /** `urgent` is the most urgent need's index when the caller already knows it; `-2` reads it on demand. */
+  function scoreOption(compiled: CompiledOption, urgent = -2): number {
     let score = compiled.base;
     for (const term of compiled.terms) {
+      if (term.onlyWhenMostUrgent) {
+        if (urgent === -2) urgent = mostUrgentIndex();
+        if (term.needIndex !== urgent) continue;
+      }
       const fraction = needs.fractionAt(term.needIndex);
       score += term.weight * sampleResponseCurve(term.curve, term.invert ? 1 - fraction : fraction);
     }
@@ -320,8 +354,9 @@ export function createUtilityBrain(config: UtilityBrainConfig): UtilityBrain {
       rngSource = resolveRng(undefined, "createUtilityBrain");
       rng = rngSource;
     }
+    const urgent = mostUrgentIndex();
     for (let index = 0; index < options.length; index += 1) {
-      let score = scoreOption(options[index]!);
+      let score = scoreOption(options[index]!, urgent);
       if (jitter > 0) score += (rngSource!() * 2 - 1) * jitter;
       optionScores[index] = score;
     }

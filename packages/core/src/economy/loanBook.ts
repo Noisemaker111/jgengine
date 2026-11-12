@@ -15,22 +15,33 @@ export interface LoanTerms {
   principal: number;
   /** Interest per period as a fraction of the balance, e.g. `0.05` for 5%. */
   ratePerPeriod: number;
-  /** Number of scheduled payments; integer `>= 1`. */
-  periods: number;
+  /**
+   * Number of scheduled payments; integer `>= 1`. Required for `"amortized"` and `"flat"`; a
+   * `"revolving"` line has no term and ignores it.
+   */
+  periods?: number;
   /** Seconds between scheduled payments; must be `> 0`. */
   periodSeconds: number;
   /** When the first payment is due, in seconds. */
   startSeconds: number;
   /**
    * `"amortized"` (default) charges interest on the outstanding balance and levels the payment;
-   * `"flat"` charges interest on the original principal and splits principal evenly.
+   * `"flat"` charges interest on the original principal and splits principal evenly;
+   * `"revolving"` is an open credit line: each period charges interest on whatever is outstanding
+   * when it comes due and no principal, more can be drawn up to `limit`, and repaying to zero
+   * leaves the line open.
    */
-  method?: "amortized" | "flat";
+  method?: LoanMethod;
+  /** Most a `"revolving"` line may have outstanding, in minor units; `>= principal`. Ignored otherwise. */
+  limit?: number;
   /** Currency the loan is denominated in; falls back to the book's default. */
   currency?: string;
   /** Account that owes and pays; falls back to the book's default. */
   account?: string;
 }
+
+/** How a loan is repaid; see {@link LoanTerms.method}. */
+export type LoanMethod = "amortized" | "flat" | "revolving";
 
 /** One scheduled repayment, in integer minor units. */
 export interface LoanPayment {
@@ -45,11 +56,15 @@ export interface LoanPayment {
   balanceAfter: number;
 }
 
-/** A full repayment plan: every payment, its interest/principal split and the running balance. */
+/**
+ * A full repayment plan: every payment, its interest/principal split and the running balance. A
+ * `"revolving"` line has no fixed plan: `payments` is empty and each period's interest is worked out
+ * from the balance when it comes due ({@link LoanBook.nextPayment}).
+ */
 export interface LoanSchedule {
   id: string;
   principal: number;
-  method: "amortized" | "flat";
+  method: LoanMethod;
   payments: readonly LoanPayment[];
   /** Sum of every payment's interest. */
   totalInterest: number;
@@ -64,7 +79,10 @@ export interface LoanRecord {
   terms: LoanTerms;
   principal: number;
   ratePerPeriod: number;
+  /** Scheduled payments; `0` for a revolving line, which has no term. */
   periods: number;
+  /** Most a revolving line may have outstanding; `null` for a term loan. */
+  limit: number | null;
   currency: string;
   account: string;
   schedule: LoanSchedule;
@@ -78,7 +96,7 @@ export interface LoanRecord {
   missed: number;
   /** True once `missed` reached the book's limit; a defaulted loan stops being advanced. */
   defaulted: boolean;
-  /** True once the principal is fully repaid, early or on schedule. */
+  /** True once the principal is fully repaid, early or on schedule. A revolving line never settles. */
   settled: boolean;
   /** Remaining principal, in minor units. */
   outstanding: number;
@@ -132,6 +150,14 @@ export interface LoanRepayment {
   settled: boolean;
 }
 
+/** Outcome of a further draw on a revolving line. */
+export interface LoanDraw {
+  ok: boolean;
+  /** Minor units added to the balance. */
+  applied: number;
+  outstanding: number;
+}
+
 /** Options for {@link createLoanBook}. */
 export interface LoanBookOptions {
   /** The books every draw, payment and repayment is posted through. */
@@ -142,6 +168,12 @@ export interface LoanBookOptions {
   account?: string;
   /** Due payments that may go unsettled before a loan is defaulted (default `3`). */
   maxMissed?: number;
+  /**
+   * Post due payments and early repayments even when the account cannot cover them: the borrower
+   * goes into the red instead of into arrears, so no payment is missed and no loan defaults.
+   * Default `false`.
+   */
+  overdraft?: boolean;
   /** Register a devtools probe under this name reporting {@link LoanBookStats}. */
   devtoolsName?: string;
 }
@@ -154,8 +186,13 @@ export interface LoanBook {
   advance(nowSeconds: number): LoanAdvanceResult;
   /** Pay principal early. Interest already scheduled is unaffected. */
   repay(loanId: string, amount: number, atSeconds: number): LoanRepayment | null;
+  /**
+   * Draw more on a revolving line: posts `amount` to the borrower's account. Refused (`ok: false`)
+   * past the line's `limit`; `null` for a term loan, a defaulted line or an unusable amount.
+   */
+  draw(loanId: string, amount: number, atSeconds: number): LoanDraw | null;
   outstanding(loanId: string): number;
-  /** The next payment due, or `null` when the loan is settled or paid off. */
+  /** The next payment due, or `null` when the loan is settled or paid off. A revolving line's is worked out from its balance now. */
   nextPayment(loanId: string): LoanPayment | null;
   scheduleOf(loanId: string): LoanSchedule | null;
   loan(loanId: string): LoanRecord | null;
@@ -177,11 +214,16 @@ function assertTerms(terms: LoanTerms): void {
   check(terms.id.trim() !== "", 'Loan field "id" must not be empty');
   check(Number.isSafeInteger(terms.principal) && terms.principal > 0, `Loan "${terms.id}" principal must be a positive integer in minor units`);
   check(Number.isFinite(terms.ratePerPeriod) && terms.ratePerPeriod >= 0, `Loan "${terms.id}" ratePerPeriod must be a non-negative finite number`);
-  check(Number.isInteger(terms.periods) && terms.periods >= 1, `Loan "${terms.id}" periods must be an integer >= 1`);
   check(Number.isFinite(terms.periodSeconds) && terms.periodSeconds > 0, `Loan "${terms.id}" periodSeconds must be positive`);
   check(Number.isFinite(terms.startSeconds) && terms.startSeconds >= 0, `Loan "${terms.id}" startSeconds must be a non-negative finite number`);
   const method = terms.method ?? "amortized";
-  check(method === "amortized" || method === "flat", `Loan "${terms.id}" method must be "amortized" or "flat"`);
+  check(method === "amortized" || method === "flat" || method === "revolving", `Loan "${terms.id}" method must be "amortized", "flat" or "revolving"`);
+  if (method === "revolving") {
+    const limit = terms.limit;
+    check(limit !== undefined && Number.isSafeInteger(limit) && limit >= terms.principal, `Loan "${terms.id}" limit must be an integer in minor units >= principal`);
+  } else {
+    check(terms.periods !== undefined && Number.isInteger(terms.periods) && terms.periods >= 1, `Loan "${terms.id}" periods must be an integer >= 1`);
+  }
 }
 
 /**
@@ -196,7 +238,8 @@ function assertTerms(terms: LoanTerms): void {
 export function buildLoanSchedule(terms: LoanTerms): LoanSchedule {
   assertTerms(terms);
   const method = terms.method ?? "amortized";
-  const periods = terms.periods;
+  if (method === "revolving") return { id: terms.id, principal: terms.principal, method, payments: [], totalInterest: 0, totalPaid: 0 };
+  const periods = terms.periods!;
   const rate = terms.ratePerPeriod;
   const level = method === "amortized"
     ? rate === 0
@@ -236,8 +279,11 @@ export function buildLoanSchedule(terms: LoanTerms): LoanSchedule {
  * borrower's account, each settled payment posts its interest (`"loan-interest"`) and principal
  * (`"loan-principal"`) as separate reason-tagged entries, and an early repayment posts
  * `"loan-repayment"`. A payment that comes due with no funds is left in arrears and counted once
- * per advance; after `maxMissed` the loan is defaulted and stops being advanced. State is plain
- * data — `snapshot()` stores terms and progress, and the schedule is rebuilt from the terms.
+ * per advance; after `maxMissed` the loan is defaulted and stops being advanced — unless the book
+ * `overdraft`s, when the borrower goes into the red instead. A `"revolving"` line is an open credit
+ * line: `draw` adds to it up to its `limit` (`"loan-draw"`), each period charges interest on the
+ * balance then outstanding, and repaying it to zero leaves it open. State is plain data —
+ * `snapshot()` stores terms and progress, and the schedule is rebuilt from the terms.
  *
  * @capability loans draw, schedule, service and default a loan with interest, posted to a ledger
  */
@@ -246,6 +292,8 @@ export function createLoanBook(options: LoanBookOptions): LoanBook {
   const defaultCurrency = options.currency ?? "credits";
   const defaultAccount = options.account ?? "business";
   const maxMissed = Math.max(1, Math.floor(options.maxMissed ?? 3));
+  const overdraft = options.overdraft === true;
+  const overdraw = overdraft ? { overdraft: true } : {};
 
   const records = new Map<string, LoanRecord>();
 
@@ -273,16 +321,34 @@ export function createLoanBook(options: LoanBookOptions): LoanBook {
     return { loans: records.size, active, defaulted, settled, outstanding, paidAmount, interestPaid, missed };
   }
 
+  /** The payment due next: the schedule's, or for a revolving line this period's interest on its balance. */
+  function pending(loan: LoanRecord): LoanPayment | undefined {
+    if (loan.limit === null) return loan.schedule.payments[loan.paid];
+    const interest = Math.round(loan.outstanding * loan.ratePerPeriod);
+    return {
+      index: loan.paid + 1,
+      dueSeconds: loan.terms.startSeconds + loan.paid * loan.terms.periodSeconds,
+      interest,
+      principal: 0,
+      amount: interest,
+      balanceAfter: loan.outstanding,
+    };
+  }
+
   function settle(loan: LoanRecord, payment: LoanPayment, at: number): boolean {
     const principalPart = Math.min(payment.principal, loan.outstanding);
     const total = payment.interest + principalPart;
-    if (total <= 0) return true;
-    if (ledger.balanceOf(loan.account, loan.currency) < total) return false;
+    if (total <= 0) {
+      // A period with nothing owed (a revolving line at zero) passes without a posting.
+      loan.paid += 1;
+      return true;
+    }
+    if (!overdraft && ledger.balanceOf(loan.account, loan.currency) < total) return false;
     if (payment.interest > 0) {
-      ledger.post({ at, account: loan.account, currency: loan.currency, amount: -payment.interest, reason: "loan-interest", ref: loan.id });
+      ledger.post({ at, account: loan.account, currency: loan.currency, amount: -payment.interest, reason: "loan-interest", ref: loan.id, ...overdraw });
     }
     if (principalPart > 0) {
-      ledger.post({ at, account: loan.account, currency: loan.currency, amount: -principalPart, reason: "loan-principal", ref: loan.id });
+      ledger.post({ at, account: loan.account, currency: loan.currency, amount: -principalPart, reason: "loan-principal", ref: loan.id, ...overdraw });
     }
     loan.outstanding -= principalPart;
     loan.paidAmount += total;
@@ -290,7 +356,7 @@ export function createLoanBook(options: LoanBookOptions): LoanBook {
     loan.paid += 1;
     if (loan.outstanding <= 0) {
       loan.outstanding = 0;
-      loan.settled = true;
+      loan.settled = loan.limit === null;
     }
     return true;
   }
@@ -313,7 +379,8 @@ export function createLoanBook(options: LoanBookOptions): LoanBook {
         terms: { ...terms, currency, account },
         principal: terms.principal,
         ratePerPeriod: terms.ratePerPeriod,
-        periods: terms.periods,
+        periods: schedule.payments.length,
+        limit: schedule.method === "revolving" ? terms.limit! : null,
         currency,
         account,
         schedule,
@@ -336,10 +403,10 @@ export function createLoanBook(options: LoanBookOptions): LoanBook {
         const loan = records.get(id)!;
         if (loan.settled || loan.defaulted) continue;
         for (;;) {
-          const payment = loan.schedule.payments[loan.paid];
+          const payment = pending(loan);
           if (payment === undefined || payment.dueSeconds > nowSeconds) break;
           if (settle(loan, payment, payment.dueSeconds)) {
-            paid.push(payment);
+            if (payment.amount > 0) paid.push(payment);
             if (loan.settled) break;
             continue;
           }
@@ -359,15 +426,26 @@ export function createLoanBook(options: LoanBookOptions): LoanBook {
       if (loan === undefined || loan.settled || loan.defaulted) return null;
       if (!Number.isSafeInteger(amount) || amount <= 0) return null;
       const applied = Math.min(amount, loan.outstanding);
-      const result = ledger.post({ at: atSeconds, account: loan.account, currency: loan.currency, amount: -applied, reason: "loan-repayment", ref: loan.id });
+      if (applied <= 0) return { ok: false, applied: 0, outstanding: loan.outstanding, settled: loan.settled };
+      const result = ledger.post({ at: atSeconds, account: loan.account, currency: loan.currency, amount: -applied, reason: "loan-repayment", ref: loan.id, ...overdraw });
       if (!result.ok) return { ok: false, applied: 0, outstanding: loan.outstanding, settled: loan.settled };
       loan.outstanding -= applied;
       loan.paidAmount += applied;
       if (loan.outstanding <= 0) {
         loan.outstanding = 0;
-        loan.settled = true;
+        loan.settled = loan.limit === null;
       }
       return { ok: true, applied, outstanding: loan.outstanding, settled: loan.settled };
+    },
+    draw(loanId, amount, atSeconds) {
+      const loan = records.get(loanId);
+      if (loan === undefined || loan.limit === null || loan.defaulted) return null;
+      if (!Number.isSafeInteger(amount) || amount <= 0) return null;
+      if (loan.outstanding + amount > loan.limit) return { ok: false, applied: 0, outstanding: loan.outstanding };
+      const result = ledger.post({ at: atSeconds, account: loan.account, currency: loan.currency, amount, reason: "loan-draw", ref: loan.id });
+      if (!result.ok) return { ok: false, applied: 0, outstanding: loan.outstanding };
+      loan.outstanding += amount;
+      return { ok: true, applied: amount, outstanding: loan.outstanding };
     },
     outstanding(loanId) {
       return records.get(loanId)?.outstanding ?? 0;
@@ -375,7 +453,7 @@ export function createLoanBook(options: LoanBookOptions): LoanBook {
     nextPayment(loanId) {
       const loan = records.get(loanId);
       if (loan === undefined || loan.settled) return null;
-      return loan.schedule.payments[loan.paid] ?? null;
+      return pending(loan) ?? null;
     },
     scheduleOf(loanId) {
       return records.get(loanId)?.schedule ?? null;
@@ -417,15 +495,17 @@ export function createLoanBook(options: LoanBookOptions): LoanBook {
         } catch {
           return false;
         }
-        if (state.paid > schedule.payments.length) return false;
-        if (state.outstanding > state.terms.principal) return false;
+        const limit = schedule.method === "revolving" ? state.terms.limit! : null;
+        if (limit === null && state.paid > schedule.payments.length) return false;
+        if (state.outstanding > (limit ?? state.terms.principal)) return false;
         if (restored.has(state.terms.id)) return false;
         restored.set(state.terms.id, {
           id: state.terms.id,
           terms: { ...state.terms },
           principal: state.terms.principal,
           ratePerPeriod: state.terms.ratePerPeriod,
-          periods: state.terms.periods,
+          periods: schedule.payments.length,
+          limit,
           currency: state.terms.currency ?? defaultCurrency,
           account: state.terms.account ?? defaultAccount,
           schedule,

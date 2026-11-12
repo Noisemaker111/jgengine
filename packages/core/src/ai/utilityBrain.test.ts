@@ -114,6 +114,39 @@ describe("createUtilityBrain", () => {
     });
   });
 
+  test("a most-urgent term only counts while its need is the emptiest", () => {
+    const needs = createNeedSet([{ ...HUNGER, start: 40 }, { ...FUN, start: 30 }]);
+    const seek = { kind: "threshold", at: 0.5, value: 10 } as const;
+    const brain = createUtilityBrain({
+      needs,
+      switchMargin: 0,
+      options: [
+        { id: "eat", terms: [{ need: "hunger", curve: seek, onlyWhenMostUrgent: true }] },
+        { id: "play", terms: [{ need: "fun", curve: seek, onlyWhenMostUrgent: true }] },
+        { id: "wander", base: 1 },
+      ],
+    });
+    const all = [{ option: "eat" }, { option: "play" }, { option: "wander" }];
+    // Both are under the threshold, but only fun is the emptiest.
+    expect(brain.scoreOf("eat")).toBe(0);
+    expect(brain.scoreOf("play")).toBe(10);
+    expect(brain.decide(all).option).toBe("play");
+    // When the emptiest need's station is not offered, the other low need does not stand in for it.
+    expect(brain.decide([{ option: "eat" }, { option: "wander" }]).option).toBe("wander");
+    needs.refill("fun", 20);
+    expect(brain.scores()).toEqual([
+      { option: "eat", score: 10 },
+      { option: "play", score: 0 },
+      { option: "wander", score: 1 },
+    ]);
+    expect(brain.decide(all).option).toBe("eat");
+    // A tie goes to the first declared need, as `NeedSet.mostUrgent` reads it.
+    needs.refill("fun", -10);
+    expect(needs.mostUrgent()?.id).toBe("hunger");
+    expect(brain.scoreOf("eat")).toBe(10);
+    expect(brain.scoreOf("play")).toBe(0);
+  });
+
   test("no reachable candidate holds the pick and reports null on a fresh brain", () => {
     const needs = createNeedSet([{ ...HUNGER, start: 10 }, { ...FUN, start: 60 }]);
     const brain = createUtilityBrain(agentConfig(needs));
