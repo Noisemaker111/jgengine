@@ -126,4 +126,56 @@ describe("the shared asset store", () => {
       rmSync(root, { recursive: true, force: true });
     }
   });
+
+  // On 2026-11-12 a boat host's store held 45 of a pack's 73 models: the pack grew after the host
+  // pulled it, and a store with any file counted as having the pack, so it was never pulled again.
+  test("a pack that grew after it was pulled is pulled again, and the game then serves every model", async () => {
+    const root = tree();
+    try {
+      const game = join(root, "games", "mine");
+      mkdirSync(join(game, "public"), { recursive: true });
+      const store = join(root, "store");
+      mkdirSync(join(store, "models", "toon"), { recursive: true });
+      writeFileSync(join(store, "models", "toon", "Old.glb"), "old");
+      const pulls: string[] = [];
+      const job = { target: "toon", dir: join("models", "toon"), files: ["Old.glb", "Sign.glb"] };
+      const options = {
+        env: { JG_ASSET_STORE: store },
+        log: () => {},
+        pull: async (target: string, outRoot: string) => {
+          pulls.push(target);
+          for (const file of ["Old.glb", "Sign.glb"]) writeFileSync(join(outRoot, "models", target, file), "glb");
+          return true;
+        },
+      };
+      expect(await provisionJobs(game, [job], options)).toEqual({ linked: ["toon"], pulled: ["toon"], failed: [], absent: [] });
+      expect(readFileSync(join(game, "public", "models", "toon", "Sign.glb"), "utf8")).toBe("glb");
+      expect(await provisionJobs(game, [job], options)).toEqual({ linked: ["toon"], pulled: [], failed: [], absent: [] });
+      expect(pulls).toEqual(["toon"]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("a pull that still leaves files of the index missing is reported, not taken as done", async () => {
+    const root = tree();
+    try {
+      const game = join(root, "games", "mine");
+      mkdirSync(join(game, "public"), { recursive: true });
+      const store = join(root, "store");
+      const result = await provisionJobs(game, [{ target: "toon", dir: join("models", "toon"), files: ["Old.glb", "Gone.glb"] }], {
+        env: { JG_ASSET_STORE: store },
+        log: () => {},
+        pull: async (target, outRoot) => {
+          mkdirSync(join(outRoot, "models", target), { recursive: true });
+          writeFileSync(join(outRoot, "models", target, "Old.glb"), "glb");
+          return true;
+        },
+      });
+      expect(result.failed).toEqual(["toon"]);
+      expect(result.linked).toEqual(["toon"]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
 });

@@ -44,6 +44,19 @@ export function dirHasEntries(dir: string): boolean {
   }
 }
 
+/**
+ * Whether `dir` holds what a pull put there: every one of `files` when the pack's index lists them,
+ * or anything at all when nothing lists them. A pack whose index grew after a machine pulled it has
+ * entries and still lacks the new models, so "has entries" alone kept it short for ever: on
+ * 2026-11-12 a boat host's store held 45 of quaternius-toon-shooter's 73 models, and every
+ * scrap-signal model test failed there while it passed on the PC.
+ * @internal
+ */
+export function dirHasFiles(dir: string, files?: readonly string[]): boolean {
+  if (files === undefined || files.length === 0) return dirHasEntries(dir);
+  return files.every((file) => existsSync(join(dir, ...file.split("/"))));
+}
+
 function lexists(path: string): boolean {
   try {
     lstatSync(path);
@@ -56,13 +69,14 @@ function lexists(path: string): boolean {
 /**
  * Copy an already-pulled real directory into the store when the store lacks it, so packs a checkout
  * pulled before the store existed are never downloaded again. `candidates` are full paths to the
- * same `<kind>/<id>` folder elsewhere (another game's `public/`, the main checkout's).
+ * same `<kind>/<id>` folder elsewhere (another game's `public/`, the main checkout's). With `files`,
+ * the store and a candidate count only when they hold all of them (`dirHasFiles`).
  * @internal
  */
-export function seedStore(storeDir: string, candidates: readonly string[]): boolean {
-  if (dirHasEntries(storeDir)) return true;
+export function seedStore(storeDir: string, candidates: readonly string[], files?: readonly string[]): boolean {
+  if (dirHasFiles(storeDir, files)) return true;
   for (const candidate of candidates) {
-    if (!dirHasEntries(candidate)) continue;
+    if (!dirHasFiles(candidate, files)) continue;
     if (lstatSync(candidate).isSymbolicLink()) continue;
     mkdirSync(dirname(storeDir), { recursive: true });
     cpSync(candidate, storeDir, { recursive: true });
@@ -151,6 +165,8 @@ export interface PullJob {
   target: string;
   /** Where it lands, relative to the game's `public/` (`models/<pack>`, `models/library/<name>`). */
   dir: string;
+  /** The files a pulled model pack holds, from its index: it is on disk only when all are (`dirHasFiles`). */
+  files?: readonly string[];
 }
 
 /** What {@link provisionJobs} did with each target. */
@@ -187,7 +203,7 @@ export async function provisionJobs(
   const result: ProvisionResult = { linked: [], pulled: [], failed: [], absent: [] };
   for (const job of jobs) {
     const storeDir = join(store, job.dir);
-    if (!seedStore(storeDir, seedCandidates(roots, job.dir))) {
+    if (!seedStore(storeDir, seedCandidates(roots, job.dir), job.files)) {
       if (options.download === false) {
         result.absent.push(job.target);
         continue;
@@ -198,6 +214,11 @@ export async function provisionJobs(
         continue;
       }
       result.pulled.push(job.target);
+      if (!dirHasFiles(storeDir, job.files)) {
+        // The download did not bring what the index lists: say so rather than pull it again on every run.
+        log(`${basename(gameDir)}: ${job.target} was pulled and still lacks files its index lists`);
+        result.failed.push(job.target);
+      }
     }
     if (linkFromStore(storeDir, join(gameDir, "public", job.dir))) result.linked.push(job.target);
     else result.failed.push(job.target);

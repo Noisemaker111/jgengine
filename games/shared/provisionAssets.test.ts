@@ -26,6 +26,21 @@ describe("dev provisions what a game references", () => {
     }
   });
 
+  test("a model pack missing any file its index lists is pulled again, with that list", () => {
+    const publicDir = mkdtempSync(join(import.meta.dir, "../../.scratch/jg-provision-"));
+    try {
+      mkdirSync(join(publicDir, "models", "kaykit-city"), { recursive: true });
+      writeFileSync(join(publicDir, "models", "kaykit-city", "Old.glb"), "glb");
+      const text = `"kaykit-city"`;
+      const indexed = { ...catalogs, packFiles: (id: string) => (id === "kaykit-city" ? ["Old.glb", "New.glb"] : undefined) };
+      expect(missingPulls(text, publicDir, indexed)).toEqual([{ target: "kaykit-city", dir: join("models", "kaykit-city"), files: ["Old.glb", "New.glb"] }]);
+      writeFileSync(join(publicDir, "models", "kaykit-city", "New.glb"), "glb");
+      expect(missingPulls(text, publicDir, indexed)).toEqual([]);
+    } finally {
+      rmSync(publicDir, { recursive: true, force: true });
+    }
+  });
+
   test("pulls quoted shared-library keys once per served folder", () => {
     const publicDir = mkdtempSync(join(import.meta.dir, "../../.scratch/jg-provision-"));
     try {
