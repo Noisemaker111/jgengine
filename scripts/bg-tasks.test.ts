@@ -278,9 +278,9 @@ test("an exit file with no code yet is no code, never a pass", () => {
   expect(readExit(dir)).toBe(3);
 });
 
-// Quarantined (#3118): under a loaded verify:fast run the exit event never reached the waiter and it
-// timed out at 30 s; alone it passes in 1.2 s. Restore it with the fix.
-test.skip("the wait is the exit event: it returns as soon as the task exits, not on the heartbeat", async () => {
+// Under a loaded verify:fast run the exit event once never reached the waiter and it sat out its
+// 30 s bound (#3118): the wait now reads the exit file behind the watch, and still returns on exit.
+test("the wait is the exit event: it returns as soon as the task exits, not on the heartbeat", async () => {
   const dir = checkout();
   // One command both shells read alike; `ping ... >nul` on bash wrote a file named `nul` into the repo (#2860).
   const script = join(dir, "exit-3.ts");
@@ -301,9 +301,73 @@ test.skip("the wait is the exit event: it returns as soon as the task exits, not
   expect(late).toBeLessThan(10_000);
 }, { timeout: 30_000 });
 
+/** A task folder whose runner `alive` reports living, for a wait driven without a real child. */
+function waitingTask(): { dir: string; id: string; task: string } {
+  const dir = checkout();
+  const id = "20261023-204501-abc";
+  const task = taskDir(dir, id);
+  mkdirSync(task, { recursive: true });
+  writeFileSync(join(task, "cmd.txt"), "bun scripts/lane-close.ts\n");
+  writeFileSync(join(task, "out.log"), "");
+  // A pid nothing holds, so cleanup does not wait on it; `alive` says the runner lives.
+  writeFileSync(join(task, "runner"), "999999\n");
+  return { dir, id, task };
+}
+
+// #3118: the watch event for the exit file's rename never arrived under load. A watch that stays
+// silent must cost at most the exit check, never the heartbeat (a minute here) or the test bound.
+test("a lost watch event still ends the wait on the exit, not on the heartbeat", async () => {
+  const { dir, id, task } = waitingTask();
+  const errors: string[] = [];
+  let closed = false;
+  setTimeout(() => writeFileSync(join(task, "exit"), "3\n"), 300);
+  const started = Date.now();
+  const code = await awaitTask({
+    id, checkout: dir, alive: () => true, write: () => {}, err: (line) => errors.push(line), beatMs: 60_000, exitCheckMs: 50,
+    watchFolder: () => ({ close: () => { closed = true; } }),
+  });
+
+  expect(code).toBe(3);
+  expect(Date.now() - started).toBeLessThan(5_000);
+  expect(closed).toBe(true);
+  expect(errors.join("\n")).not.toContain("degraded:");
+});
+
+test("a folder that cannot be watched says degraded and still ends the wait on the exit", async () => {
+  const { dir, id, task } = waitingTask();
+  const errors: string[] = [];
+  setTimeout(() => writeFileSync(join(task, "exit"), "4\n"), 100);
+  const code = await awaitTask({
+    id, checkout: dir, alive: () => true, write: () => {}, err: (line) => errors.push(line), beatMs: 60_000, exitCheckMs: 50,
+    watchFolder: () => { throw new Error("ENOSPC: inotify watch limit reached"); },
+  });
+
+  expect(code).toBe(4);
+  expect(errors.join("\n")).toContain("degraded: background await has no watch on");
+  expect(errors.join("\n")).toContain("ENOSPC");
+});
+
+test("a watch that fails mid-wait says degraded once and the wait carries on", async () => {
+  const { dir, id, task } = waitingTask();
+  const errors: string[] = [];
+  const code = await awaitTask({
+    id, checkout: dir, alive: () => true, write: () => {}, err: (line) => errors.push(line), beatMs: 60_000, exitCheckMs: 50,
+    watchFolder: (_dir, _onChange, onError) => {
+      setTimeout(() => onError(new Error("watcher closed")), 50);
+      setTimeout(() => writeFileSync(join(task, "exit"), "0\n"), 150);
+      return { close: () => {} };
+    },
+  });
+
+  expect(code).toBe(0);
+  expect(errors.filter((line) => line.startsWith("degraded:")).length).toBe(1);
+});
+
 test("the documented commands run a real command in the background and report it", () => {
+  // `&&` runs the two in order in both shells. With `&`, bash put the echo in the background and
+  // `exit 4` could end the task before the echo wrote, so a loaded run read an empty log (#3118).
   const started = Bun.spawnSync({
-    cmd: [process.execPath, "run", "background", "start", "--", "echo bg-cli-one & exit 4"],
+    cmd: [process.execPath, "run", "background", "start", "--", "echo bg-cli-one && exit 4"],
     cwd: root,
     timeout: 60_000,
     stdout: "pipe",
