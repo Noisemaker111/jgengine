@@ -91,7 +91,7 @@ export default defineFlow(game, {
     const leafBack = async () => { if (phone) await act("Contents", "Back to the household"); };
     await act("Handbook", waiting);
     await act("Save to Household I", "Written into Household I");
-    await f.expectPage("localStorage.getItem('odd-orbit.household-save.v1') !== null", "the handbook wrote the household into its slot");
+    await f.expectPage("localStorage.getItem('odd-orbit.households:household') !== null", "the handbook wrote the household into its slot");
     await leafBack();
     await act("Settings", "Master volume");
     await leafBack();

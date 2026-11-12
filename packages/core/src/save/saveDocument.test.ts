@@ -305,6 +305,57 @@ describe("createGameSave — migration", () => {
   });
 });
 
+describe("createGameSave — legacy keys", () => {
+  const legacy = {
+    keys: (slot: string) => [`old-score:${slot}`, "old-profile"],
+    lift: (stored: Readonly<Record<string, string>>, slot: string) => {
+      const raw = stored[`old-score:${slot}`];
+      if (raw === undefined) throw new Error("no score");
+      return { modern: { value: (JSON.parse(raw) as { score: number }).score } };
+    },
+  };
+
+  test("an empty slot lifts its old bytes, and the next save writes them as a document", async () => {
+    const recorder = recordingBackend({ "old-score:default": JSON.stringify({ score: 6 }), "old-profile": "{}" });
+    const counter = counterSystem("modern");
+    const save = createGameSave({ backend: recorder.backend, game: "demo", systems: [counter.system], legacy });
+    expect((await save.peek("default"))?.systems).toEqual({ modern: { value: 6 } });
+    await save.load();
+    expect(counter.read()).toBe(6);
+    await save.save();
+    expect(recorder.cells.has("game-save:demo:default")).toBe(true);
+    expect(recorder.cells.get("old-score:default")).toBe(JSON.stringify({ score: 6 }));
+    counter.bump();
+    await save.save();
+    const fresh = counterSystem("modern");
+    await createGameSave({ backend: recorder.backend, game: "demo", systems: [fresh.system], legacy }).load();
+    expect(fresh.read()).toBe(7);
+  });
+
+  test("unreadable old bytes read as an empty slot and report through onError", async () => {
+    const recorder = recordingBackend({ "old-profile": "{}" });
+    const errors: unknown[] = [];
+    const counter = counterSystem("modern");
+    const save = createGameSave({ backend: recorder.backend, game: "demo", systems: [counter.system], legacy, onError: (error) => errors.push(error) });
+    expect(await save.peek("default")).toBeNull();
+    await save.load();
+    expect(counter.read()).toBe(0);
+    expect(errors).toHaveLength(2);
+  });
+
+  test("deleteSlot removes the old keys too, so the slot stays deleted", async () => {
+    const recorder = recordingBackend({ "old-score:default": JSON.stringify({ score: 4 }) });
+    const counter = counterSystem("modern");
+    const save = createGameSave({ backend: recorder.backend, game: "demo", systems: [counter.system], legacy });
+    await save.load();
+    expect(counter.read()).toBe(4);
+    expect(await save.deleteSlot("default")).toBe(true);
+    expect(recorder.cells.has("old-score:default")).toBe(false);
+    expect(counter.read()).toBe(0);
+    expect(await save.peek("default")).toBeNull();
+  });
+});
+
 describe("upgradeSaveEnvelope", () => {
   test("a bare system bag gains the current envelope and keeps its sections and clock", () => {
     const upgraded = upgradeSaveEnvelope({ systems: { wanted: { peakStars: 2 } }, time: 12, rng: "junk" }, { game: "demo", version: 3 });

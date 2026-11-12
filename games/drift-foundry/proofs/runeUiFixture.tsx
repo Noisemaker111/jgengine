@@ -12,6 +12,7 @@ import { physics, world } from "../src/world";
 import { content } from "../src/game/content";
 import { stageRun } from "../src/game/capture";
 import { createRunSession, runSessionStore } from "../src/game/run/session";
+import { foundrySaveOf } from "../src/game/foundrySave";
 import { driveInputStore } from "../src/game/run/store";
 import { createDriveInput } from "../src/game/vehicle/input";
 import { GameUI } from "../src/game/ui/GameUI";
@@ -42,8 +43,8 @@ function renderFixture(state: NativeFixture, width: number, height: number) {
     player: { userId: "driver", isNew: true },
     content,
   });
-  // The session reads the stubbed localStorage, so each state starts from a blank career.
-  const session = createRunSession(ctx.world.groundHeightAt, localStorage, ctx.game.notices);
+  // The yard save reads the stubbed localStorage, so each state starts from a blank career.
+  const session = createRunSession(ctx.world.groundHeightAt, foundrySaveOf(ctx), ctx.game.notices);
   runSessionStore.write(ctx, session);
   driveInputStore.write(ctx, createDriveInput());
   setGamePhase(ctx, "menu");

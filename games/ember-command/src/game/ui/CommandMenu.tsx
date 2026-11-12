@@ -266,7 +266,7 @@ export function CommandMenu({ ctx, width, height }: { ctx: GameContext; width: n
 
   useEffect(() => {
     setNotice(null);
-    refreshCampaignSlots();
+    void refreshCampaignSlots(ctx);
     setActive(menuFocus.id ?? (phase === "paused" ? null : phase === "won" || phase === "lost" ? "report" : "continue"));
   }, [phase]);
 
@@ -282,7 +282,7 @@ export function CommandMenu({ ctx, width, height }: { ctx: GameContext; width: n
     if (!opened) { setNotice(`${campaignLabel(slot)} is empty.`); return; }
     markStoresRestored(ctx);
     setName(commandProfile.name);
-    refreshCampaignSlots();
+    void refreshCampaignSlots(ctx);
     run("match.start");
   });
   const startNew = (slot: string | null) => {
@@ -352,7 +352,7 @@ export function CommandMenu({ ctx, width, height }: { ctx: GameContext; width: n
   const pick = (id: string) => {
     if (id === "continue") take();
     else if (id === "skirmish") run("match.skirmish");
-    else if (id === "missions") refreshCampaignSlots();
+    else if (id === "missions") void refreshCampaignSlots(ctx);
   };
   const detail = active === "report" ? <ReportSheet width={sheetWidth} />
     : active === "continue" ? <TakeCommandSheet recent={recent} campaign={campaign} onTake={take} width={sheetWidth} />

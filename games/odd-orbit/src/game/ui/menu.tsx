@@ -18,8 +18,8 @@ import { ASSET_SOURCE_IDS } from "../assets";
 import { moodOfNeeds } from "../agents";
 import { orbitSession } from "../session/lifecycle";
 import { householdStore } from "../session/store";
-import { ORBIT_SLOTS, orbitProfile, orbitSlotKey, readOrbitSave } from "../session/save";
-import { newOrbitSlot, openOrbitSlot, orbitSlotLabel, orbitSlots, refreshOrbitSlots, saveOrbitSlot, workingMember } from "../menuSave";
+import { ORBIT_SLOTS, orbitProfile } from "../session/save";
+import { clearOrbitSlot, newOrbitSlot, openOrbitSlot, orbitSlotLabel, orbitSlots, refreshOrbitSlots, saveOrbitSlot, shownOrbitSave, workingMember } from "../menuSave";
 import { CREAM_TEXT, ENAMEL, type EnamelTone, Fine, FULL, Heading, Icon, INK, NIGHT_DIM, Paper, Plate, RIM, Row, Swatch, Tag, Text } from "./kit";
 
 /** Capture-only focus request: a shot declares which page it wants open. */
@@ -214,7 +214,7 @@ function Porch({ preferences, onPreference, whileLoading }: Prefs & { whileLoadi
   const recent = orbitSlots.mostRecent();
   const [active, setActive] = useState<string>(menuFocus.id ?? (recent === null ? "new" : "continue"));
   const [sheet, setSheet] = useState(menuFocus.id !== null && phone);
-  useEffect(() => { setName(orbitProfile.name); refreshOrbitSlots(); }, []);
+  useEffect(() => { setName(orbitProfile.name); void refreshOrbitSlots(ctx); }, []);
   const emptySlot = slots.find((slot) => slot.empty)?.id ?? ORBIT_SLOTS[0];
   const kept = slots.filter((slot) => !slot.empty).length;
   const plates: PlateDef[] = [
@@ -225,13 +225,13 @@ function Porch({ preferences, onPreference, whileLoading }: Prefs & { whileLoadi
     { id: "settings", label: "Settings", icon: "gear", tone: "lilac", hint: "Sound, picture, keys" },
     { id: "credits", label: "Credits", icon: "star", tone: "cream" },
   ];
-  const openCareer = (slot: string) => whileLoading("Opening the front door", async () => { if (!openOrbitSlot(ctx, slot)) setNotice(`${orbitSlotLabel(slot)} is empty.`); else setName(orbitProfile.name); });
-  const startCareer = () => void whileLoading("Moving the household in", async () => { newOrbitSlot(ctx, emptySlot, name); });
-  const choose = (id: string) => { setActive(id); if (id === "careers") refreshOrbitSlots(); if (phone) setSheet(true); };
+  const openCareer = (slot: string) => whileLoading("Opening the front door", async () => { if (!(await openOrbitSlot(ctx, slot))) setNotice(`${orbitSlotLabel(slot)} is empty.`); else setName(orbitProfile.name); });
+  const startCareer = () => void whileLoading("Moving the household in", async () => { await newOrbitSlot(ctx, emptySlot, name); });
+  const choose = (id: string) => { setActive(id); if (id === "careers") void refreshOrbitSlots(ctx); if (phone) setSheet(true); };
 
   const note = (() => {
     if (active === "continue") {
-      const saved = recent === null ? null : readOrbitSave(undefined, recent.id).save;
+      const saved = recent === null ? null : shownOrbitSave(recent.id);
       const member = saved === null ? null : workingMember(saved.household);
       if (recent === null || saved === null) return <RuneView gap={8}><Heading>Nobody lives here yet</Heading><Text>{session.saveStatus === "damaged" ? "The saved household is unreadable. Moving in replaces it." : session.saveStatus === "unavailable" ? "This browser cannot keep a household." : "Move a household in, work a shift, then save from the handbook."}</Text></RuneView>;
       return <RuneView gap={8}>
@@ -252,8 +252,8 @@ function Porch({ preferences, onPreference, whileLoading }: Prefs & { whileLoadi
     if (active === "careers") return <RuneView gap={10}>
       <Heading>Households</Heading>
       <RuneView layout="row" gap={8} responsive={{ phone: { layout: "grid", columns: 2 } }}>
-        {slots.map((slot) => <Polaroid key={slot.id} slot={slot} onOpen={() => void openCareer(slot.id)} onNew={() => newOrbitSlot(ctx, slot.id, name)}
-          onClear={() => void whileLoading("Clearing the household", async () => { window.localStorage.removeItem(orbitSlotKey(slot.id)); refreshOrbitSlots(); setNotice(`${orbitSlotLabel(slot.id)} is clear.`); })} />)}
+        {slots.map((slot) => <Polaroid key={slot.id} slot={slot} onOpen={() => void openCareer(slot.id)} onNew={() => void newOrbitSlot(ctx, slot.id, name)}
+          onClear={() => void whileLoading("Clearing the household", async () => { await clearOrbitSlot(ctx, slot.id); setNotice(`${orbitSlotLabel(slot.id)} is clear.`); })} />)}
       </RuneView>
       <Fine>Hold the cross to clear a household.</Fine>
     </RuneView>;

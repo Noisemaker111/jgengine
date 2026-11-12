@@ -5,7 +5,19 @@ import { steerToward } from "@jgengine/core/movement/steering";
 import { EXIT_Z } from "./constants";
 import { ROUTE_GATES } from "../route/gates";
 import { PICKUPS } from "./pickups";
+import { memorySaveBackend, type SaveBackend } from "@jgengine/core/save/saveStore";
+import { createFoundrySave } from "../foundrySave";
 import { createRunSession, type RunSession } from "./session";
+
+/** Writes land asynchronously; let the ones the session started settle. */
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+/** The yard's save as a reload reads it: a fresh document over the same backend. */
+async function reloadYard(backend: SaveBackend) {
+  const save = createFoundrySave(backend);
+  await save.load();
+  return save;
+}
 import { tuningFrom } from "../parts/build";
 import { surfaceAt } from "../vehicle/surface";
 
@@ -386,16 +398,16 @@ describe("drift-foundry run session", () => {
     expect(session.snapshot().shift).not.toBeNull();
   });
 
-  test("a career reloads with its run count and the shift it already drew", () => {
-    const seed: Record<string, string> = {};
-    const store = { getItem: (key: string) => seed[key] ?? null, setItem: (key: string, value: string) => { seed[key] = value; } };
-    const first = createRunSession(undefined, store);
+  test("a career reloads with its run count and the shift it already drew", async () => {
+    const backend = memorySaveBackend();
+    const first = createRunSession(undefined, await reloadYard(backend));
     first.start();
     driveStraight(first, PAR_SECONDS);
     const played = first.snapshot();
     expect(played.runsPlayed).toBe(1);
+    await settle();
 
-    const second = createRunSession(undefined, store);
+    const second = createRunSession(undefined, await reloadYard(backend));
     const reloaded = second.snapshot();
     expect(reloaded.runsPlayed).toBe(1);
     expect(reloaded.shift?.id).toBe(played.outcome?.nextShift?.id);
@@ -403,19 +415,20 @@ describe("drift-foundry run session", () => {
   });
 });
 
-test("a reload mid-run comes back carrying the salvage and the route", () => {
-  const values = new Map<string, string>();
-  const storage = { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => { values.set(key, value); } };
-  const first = createRunSession(undefined, storage);
+test("a reload mid-run comes back carrying the salvage and the route", async () => {
+  const backend = memorySaveBackend();
+  const first = createRunSession(undefined, await reloadYard(backend));
   first.start();
   driveCollectingPickups(first, 8);
   const before = first.snapshot();
   expect(before.salvageAtRisk).toBeGreaterThan(0);
+  await settle();
 
-  // The process dies here: a second session on the same storage is the reload.
-  const second = createRunSession(undefined, storage);
-  expect(values.get("drift-foundry.run.v1")).not.toBeNull();
-  expect(values.get("drift-foundry.parked-run.v1")).not.toBeNull();
+  // The process dies here: a second session on a fresh read of the same storage is the reload.
+  const yard = await reloadYard(backend);
+  expect(yard.profile.run).not.toBeNull();
+  expect(yard.profile.parked).not.toBeNull();
+  const second = createRunSession(undefined, yard);
   second.start();
   const after = second.snapshot();
   expect(after.salvageAtRisk).toBe(before.salvageAtRisk);

@@ -1,40 +1,35 @@
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createSaveSlots } from "@jgengine/core/save/saveSlots";
 import { formatSavePlaytime } from "@jgengine/core/save/saveSlotIndex";
-import { decodeSave, SAVE_KEY, type ParkSave } from "./persistence";
+import { PARK_SLOT, parkSave, readParkSave, type ParkSave } from "./persistence";
+import { parkProfile } from "./parkProfile";
 
 const num = (save: ParkSave, key: string): number => {
   const value = save.world.facts[key];
   return typeof value === "number" ? value : 0;
 };
-import { parkProfile } from "./parkProfile";
 
 export { captureParkThumb, parkProfile } from "./parkProfile";
 /** Brightway keeps one park; the card is that document. */
 export const parkSlots = createSaveSlots({
   capacity: 1,
-  slots: [{ id: "park", empty: true, meta: {} }],
+  slots: [{ id: PARK_SLOT, empty: true, meta: {} }],
 });
 
 /** Read the saved park back into the card, so Continue and the slot grid show what is on disk. */
-export function refreshParkSlot(): void {
-  if (typeof localStorage === "undefined") return;
-  let raw: string | null = null;
-  try {
-    raw = localStorage.getItem(SAVE_KEY);
-  } catch {
-    raw = null;
-  }
-  const save = raw === null ? null : decodeSave(raw);
-  if (save === null) {
-    parkSlots.clear("park");
+export async function refreshParkSlot(ctx: GameContext): Promise<void> {
+  const document = await parkSave(ctx).peek(PARK_SLOT);
+  const save = document === null ? null : readParkSave(document.systems["park"]);
+  if (document === null || save === null) {
+    parkSlots.clear(PARK_SLOT);
     return;
   }
   parkProfile.name = save.parkName ?? parkProfile.name;
   parkProfile.thumbnail = save.thumbnail ?? parkProfile.thumbnail;
   const playtime = typeof save.playtime === "number" ? save.playtime : 0;
-  parkSlots.write("park", {
+  parkSlots.write(PARK_SLOT, {
     name: save.parkName ?? "Brightway Park",
-    savedAt: Date.now(),
+    savedAt: document.savedAt > 0 ? document.savedAt : Date.now(),
     meta: {
       day: num(save, "park.day"),
       guests: Math.round(num(save, "park.guests_today")),
@@ -44,16 +39,3 @@ export function refreshParkSlot(): void {
     },
   });
 }
-
-
-/** The park card's newest slot, for a Continue pane. */
-export function parkSlot(): ReturnType<typeof parkSlots.mostRecent> {
-  refreshParkSlot();
-  return parkSlots.mostRecent();
-}
-
-
-
-
-
-

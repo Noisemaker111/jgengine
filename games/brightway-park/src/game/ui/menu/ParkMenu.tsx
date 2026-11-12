@@ -11,6 +11,7 @@ import type { SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 import { lookCredits } from "../../../art/look";
 import { captureParkThumb, parkProfile } from "../../parkProfile";
 import { parkSlots, refreshParkSlot } from "../../parkSlot";
+import { savePark } from "../../persistence";
 import { FIRST_SCENARIO, SCENARIOS, scenarioDef, scenarioLock } from "../../scenarios";
 import { session } from "../../session";
 import { park } from "../../park";
@@ -78,10 +79,11 @@ export function ParkMenu(props: ParkMenuProps) {
 
 function TitleBoard(props: ParkMenuProps) {
   const { commands } = useGame();
+  const ctx = useGameContext();
   const day = useGameStore((c) => park.of(c).num("park.day"));
   const slots = useSaveSlots(parkSlots);
   const recent = slots.find((slot) => !slot.empty) ?? null;
-  useEffect(() => { refreshParkSlot(); }, []);
+  useEffect(() => { void refreshParkSlot(ctx); }, []);
   const flow = usePanes("main", parkFocus.id, ["new", "saves", "settings", "credits"]);
   const back = flow.pop;
   const scenario = (id: string) => { commands.run("park.scenario", { id }); commands.run("park.start", {}); };
@@ -170,6 +172,7 @@ function NewParkPane({ hasSave, onFresh, onFreePlay, onScenario }: { hasSave: bo
 
 function PauseBoard(props: ParkMenuProps) {
   const { commands } = useGame();
+  const ctx = useGameContext();
   const day = useGameStore((c) => park.of(c).num("park.day"));
   const [notice, setNotice] = useState<string | null>(null);
   const flow = usePanes("main", parkFocus.id, ["settings", "help"]);
@@ -180,7 +183,7 @@ function PauseBoard(props: ParkMenuProps) {
   return entry.kind === "main"
     ? <Board eyebrow="The midway can wait" tagline="Your visitors and finances are paused." footer={footer} onBack={resume}>
       <Verb label="Resume the park" primary onPress={resume} />
-      <Verb label="Save the park" hint={notice ?? session.saveStatus} onPress={() => void captureParkThumb().then(() => { commands.run("park.save", {}); refreshParkSlot(); setNotice("The park is on the board."); })} />
+      <Verb label="Save the park" hint={notice ?? session.saveStatus} onPress={() => void captureParkThumb().then(() => savePark(ctx)).then(() => refreshParkSlot(ctx)).then(() => setNotice("The park is on the board."))} />
       <Verb label="Park settings" hint="Motion, sound, controls" onPress={() => flow.push("settings")} />
       <Verb label="How to play" onPress={() => flow.push("help")} />
     </Board>

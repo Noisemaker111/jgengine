@@ -1,5 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { LifecycleConfig } from "@jgengine/core/game/defineGame";
+import { perContext } from "@jgengine/core/runtime/perContext";
 
 import { COMPACTOR_ENTITY, FREIGHT_CAR_ENTITY, KART_GHOST_ENTITY, KART_PLAYER_ENTITY } from "./game/entities/catalog";
 import { upgradeBodies } from "./game/art/upgrades";
@@ -7,6 +8,7 @@ import { impactBursts } from "./game/impact";
 import { RIVAL_DEFS } from "./game/race/opponents";
 import { createRunSession, runSessionStore, type RunSession } from "./game/run/session";
 import { autopilotFrame, registerCaptureCommands } from "./game/capture";
+import { foundrySaveOf } from "./game/foundrySave";
 import { createWorldRuntime, driveInputStore, worldRuntimeStore } from "./game/run/store";
 import { ROW_SIX_TRACK, trackById, type Track } from "./game/tracks/catalog";
 import { createDriveInput } from "./game/vehicle/input";
@@ -42,11 +44,33 @@ export const lifecycle: LifecycleConfig<RunSession> = {
   commands: { start: "startRun" },
 };
 
+const foundryBoot = perContext(() => ({ ready: Promise.resolve() }));
+
+/** Settles once the boot read of the yard's document has finished. */
+export function yardReady(ctx: GameContext): Promise<void> {
+  return foundryBoot(ctx).ready;
+}
+
+/**
+ * Read the yard's document, then open a session on it in place of the boot one, unless that one has
+ * already been raced or replaced. The tick swaps the run objects over when the saved event races
+ * another track.
+ */
+async function openYard(ctx: GameContext, booted: RunSession): Promise<void> {
+  const save = foundrySaveOf(ctx);
+  if (!save.persistent) return;
+  await save.load();
+  if (runSessionStore.peek(ctx) !== booted || booted.snapshot().phase !== "start") return;
+  runSessionStore.write(ctx, createRunSession(ctx.world.groundHeightAt, save, ctx.game.notices));
+}
+
 export function onInit(ctx: GameContext): void {
   const propRows = placeZoneDressing(ctx);
   placeTrackScenery(ctx);
-  const session = createRunSession(ctx.world.groundHeightAt, undefined, ctx.game.notices);
+  const save = foundrySaveOf(ctx);
+  const session = createRunSession(ctx.world.groundHeightAt, save, ctx.game.notices);
   const track = trackOf(session);
+  foundryBoot(ctx).ready = openYard(ctx, session);
   placeRunObjects(ctx, track);
   worldRuntimeStore.write(ctx, createWorldRuntime(propRows, track.id));
   runSessionStore.write(ctx, session);

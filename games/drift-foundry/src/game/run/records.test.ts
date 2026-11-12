@@ -1,27 +1,44 @@
 import { expect, test } from "bun:test";
-import { completeRun, EMPTY_RECORDS, readRecords, saveRecords } from "./records";
+import { memorySaveBackend, type SaveBackend } from "@jgengine/core/save/saveStore";
+import { createFoundrySave, FOUNDRY_ENTRY } from "../foundrySave";
+import { completeRun, EMPTY_RECORDS, RECORDS_KEY, readRecords } from "./records";
 import { createRunSession } from "./session";
 
-test("finished run records survive constructing a fresh session without overwriting another save", () => {
-  const data = new Map([["other-game-save", "preserved"]]);
-  const storage = { getItem: (key: string) => data.get(key) ?? null, setItem: (key: string, value: string) => { data.set(key, value); } };
-  const run = createRunSession(() => 0, storage);
+/** The yard's save as a reload reads it: a fresh document over the same backend. */
+async function reload(backend: SaveBackend) {
+  const save = createFoundrySave(backend);
+  await save.load();
+  return save;
+}
+
+test("finished run records survive constructing a fresh session without overwriting another save", async () => {
+  const backend = memorySaveBackend();
+  await backend.write("other-game-save", "preserved");
+  const run = createRunSession(() => 0, await reload(backend));
   run.start();
   for (let i = 0; i < 300; i++) run.tick(.05, { throttle: 0, brake: 0, steer: 0 }, { jumpPressed: false, plowBracing: false });
   expect(run.snapshot().phase).toBe("crushed");
-  expect(createRunSession(() => 0, storage).snapshot().records.attempts).toBe(1);
-  expect(data.get("other-game-save")).toBe("preserved");
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(createRunSession(() => 0, await reload(backend)).snapshot().records.attempts).toBe(1);
+  expect(await backend.read("other-game-save")).toBe("preserved");
 });
 
-test("blocked or corrupt storage remains playable and reports failure honestly", () => {
-  const bad = { getItem: () => "broken json", setItem: () => { throw new Error("quota"); } };
-  expect(readRecords(bad)).toEqual(EMPTY_RECORDS);
-  expect(saveRecords(EMPTY_RECORDS, bad)).toBe(false);
+test("blocked or corrupt storage remains playable and reports failure honestly", async () => {
+  expect(readRecords("broken json")).toEqual(EMPTY_RECORDS);
+  const corrupt = memorySaveBackend();
+  await corrupt.write(RECORDS_KEY, "broken json");
+  expect((await reload(corrupt)).profile.records).toEqual(EMPTY_RECORDS);
+  const blocked = memorySaveBackend();
+  const save = createFoundrySave({ ...blocked, write: () => Promise.reject(new Error("quota")) });
+  expect(await save.write()).toBe(false);
+  expect(await blocked.read(FOUNDRY_ENTRY)).toBeNull();
+  // A memory-only yard plays the same and says honestly that it kept nothing.
+  expect(await createFoundrySave(null).write()).toBe(false);
 });
 
-test("only escapes improve personal time; equal millisecond times tie and retain the previous record after reload", () => {
-  const data = new Map<string, string>();
-  const storage = { getItem: (key: string) => data.get(key) ?? null, setItem: (key: string, value: string) => { data.set(key, value); } };
+test("only escapes improve personal time; equal millisecond times tie and retain the previous record after reload", async () => {
+  const backend = memorySaveBackend();
+  const storage = await reload(backend);
   const first = completeRun(EMPTY_RECORDS, { kind: "won", time: 45.1231, distance: 470 });
   expect(first.personalBest).toBe("first");
   const crushed = completeRun(first.records, { kind: "crushed", time: 12, distance: 150 });
@@ -33,8 +50,9 @@ test("only escapes improve personal time; equal millisecond times tie and retain
   expect(slower.personalBest).toBe("unchanged");
   const faster = completeRun(slower.records, { kind: "won", time: 44, distance: 470 });
   expect(faster.personalBest).toBe("improved");
-  expect(saveRecords(faster.records, storage)).toBe(true);
-  expect(readRecords(storage)).toEqual({ attempts: 5, escapes: 4, bestTime: 44, farthest: 470 });
+  storage.profile.records = faster.records;
+  expect(await storage.write()).toBe(true);
+  expect((await reload(backend)).profile.records).toEqual({ attempts: 5, escapes: 4, bestTime: 44, farthest: 470 });
   expect(completeRun(faster.records, { kind: "won", time: NaN, distance: 470 }).records).toBe(faster.records);
 });
 

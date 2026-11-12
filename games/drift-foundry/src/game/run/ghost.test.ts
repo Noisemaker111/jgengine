@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
-import { createGhostRecorder, readGhosts, replayGhost, saveGhost, GHOST_KEY } from "./ghost";
+import { memorySaveBackend } from "@jgengine/core/save/saveStore";
+
+import { createFoundrySave } from "../foundrySave";
+import { createGhostRecorder, replayGhost, GHOST_KEY, type SavedGhost } from "./ghost";
 import { createRunSession } from "./session";
 import { driveCourse } from "../testing/courseDriver";
 import { ghostKey } from "./session";
@@ -8,9 +11,9 @@ import { eventById } from "../events/catalog";
 
 const DT = 1 / 60;
 
-function memory() {
-  const map = new Map<string, string>();
-  return { map, getItem: (key: string) => map.get(key) ?? null, setItem: (key: string, value: string) => void map.set(key, value) };
+/** A yard save in memory, holding `ghosts`. */
+function memory(ghosts: Record<string, SavedGhost> = {}) {
+  return createFoundrySave(memorySaveBackend(), { ghosts });
 }
 
 /** The event's track driven clean, braking `stall` seconds from 8 s. */
@@ -30,11 +33,17 @@ describe("best-run ghost", () => {
     expect(replay.poseAt(20)).toBeNull();
   });
 
-  test("saved ghosts survive a reload and junk rows are dropped", () => {
-    const storage = memory();
-    saveGhost("time-sheet", { time: 30, frames: [[0, 0, 0, 0, 0], [1, 0, 0, 10, 0]] }, storage);
-    storage.setItem(GHOST_KEY, JSON.stringify({ ...JSON.parse(storage.getItem(GHOST_KEY)!), broken: { time: "x", frames: [] } }));
-    expect(Object.keys(readGhosts(storage))).toEqual(["time-sheet"]);
+  test("saved ghosts survive a reload and junk rows are dropped", async () => {
+    // Ghosts an older build kept at their own key lift into the yard document's ghosts section.
+    const backend = memorySaveBackend();
+    await backend.write(GHOST_KEY, JSON.stringify({ "time-sheet": { time: 30, frames: [[0, 0, 0, 0, 0], [1, 0, 0, 10, 0]] }, broken: { time: "x", frames: [] } }));
+    const save = createFoundrySave(backend);
+    await save.load();
+    expect(Object.keys(save.profile.ghosts)).toEqual(["time-sheet"]);
+    expect(await save.write()).toBe(true);
+    const reloaded = createFoundrySave(backend);
+    await reloaded.load();
+    expect(reloaded.profile.ghosts).toEqual(save.profile.ghosts);
   });
 
   test("the Time Sheet replays your best escape, and only a faster escape replaces it", () => {
@@ -61,8 +70,7 @@ describe("best-run ghost", () => {
   });
 
   test("ghosts are kept per track: the Time Sheet's slag-river ghost is not its old Row Six one", () => {
-    const storage = memory();
-    saveGhost("time-sheet", { time: 20, frames: [[0, 0, -56, 0, 0], [20, 0, 414, 0, 0]] }, storage);
+    const storage = memory({ "time-sheet": { time: 20, frames: [[0, 0, -56, 0, 0], [20, 0, 414, 0, 0]] } });
     const session = createRunSession(() => 0, storage);
     session.selectEvent("time-sheet");
     expect(ghostKey(eventById("time-sheet")!)).toBe("slag-river:time-sheet");

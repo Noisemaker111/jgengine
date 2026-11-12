@@ -1,5 +1,8 @@
-import { createKeyValueStore, defaultKeyValueStorage, type KeyValueStorage } from "@jgengine/core/game/keyValueStore";
+import type { KeyValueStorage } from "@jgengine/core/game/keyValueStore";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { perContext } from "@jgengine/core/runtime/perContext";
+import { createGameSave, type GameSave, type GameSaveSystem } from "@jgengine/core/save/saveDocument";
+import { localSaveBackend, type SaveBackend } from "@jgengine/core/save/saveStore";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { StatValueMap } from "@jgengine/core/scene/entityStats";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
@@ -19,7 +22,10 @@ import { resetAgents, resetBook } from "../agents";
 import { alignLegacyPosts, CAREER_NODE_IDS, STANDING_TRACKS } from "../careers";
 import { pairKey, BLOOM_CROPS, LIFESTYLES, type HouseholdState } from "./types";
 
-export const ORBIT_SAVE_KEY = "odd-orbit.household-save.v1";
+/** The shared save document's namespace: one document per household slot, at `<key>:<slot>`. */
+export const ORBIT_SAVE_KEY = "odd-orbit.households";
+/** Where a household was written before the shared document; read once and rewritten as a document. */
+export const ORBIT_LEGACY_KEY = "odd-orbit.household-save.v1";
 const SAVE_LIMIT = 256 * 1024;
 const MAX_TIME = DAY_LENGTH * 1_000_000;
 /** A wall-clock stamp (ms) is far larger than simulated time; JavaScript dates top out here. */
@@ -32,9 +38,13 @@ export const ORBIT_SLOT_LABEL: Record<string, string> = {
   "household-2": "Household II",
   "household-3": "Household III",
 };
-/** Slot one keeps the original key, so a household saved by an older build still continues. */
+/** The backend key a household slot's document is written to. */
 export function orbitSlotKey(slot: string): string {
-  return slot === ORBIT_SLOTS[0] ? ORBIT_SAVE_KEY : `${ORBIT_SAVE_KEY}:${slot}`;
+  return `${ORBIT_SAVE_KEY}:${slot}`;
+}
+/** The key an older build wrote the slot to: slot one at the bare key, the others beside it. */
+export function orbitLegacyKey(slot: string): string {
+  return slot === ORBIT_SLOTS[0] ? ORBIT_LEGACY_KEY : `${ORBIT_LEGACY_KEY}:${slot}`;
 }
 /** What the screen leaves behind for the save card: the household's name and a captured frame. */
 export const orbitProfile: OrbitSaveProfile = { name: "", thumbnail: null, savedAt: 0 };
@@ -44,6 +54,10 @@ export interface OrbitSaveProfile {
   /** Wall clock (ms) of the write, so Continue resumes the newest household. */
   savedAt: number;
 }
+/**
+ * A household: the `household` section of its slot's save document. The section keeps the shape an
+ * older build wrote at its own key, `version` included, so those bytes lift into a document as-is.
+ */
 export interface OrbitSave {
   version: 1;
   household: HouseholdState;
@@ -258,31 +272,105 @@ export function restoreOrbitSave(ctx: GameContext, save: OrbitSave): void {
   ctx.hydrate({ objects: detached.objects, entities: detached.entities, stats: detached.stats });
   householdStore.write(ctx, detached.household);
 }
-export function readOrbitSave(storage: KeyValueStorage | null = defaultKeyValueStorage(), slot: string = ORBIT_SLOTS[0]): { save: OrbitSave | null; damaged: boolean; unavailable: boolean } {
-  if (storage === null) return { save: null, damaged: false, unavailable: true };
-  let damaged = false;
-  let unavailable = false;
-  const cell = createKeyValueStore<OrbitSave | null>({
-    key: orbitSlotKey(slot), initial: null,
-    storage: { getItem(key) { try { return storage.getItem(key); } catch { unavailable = true; return null; } }, setItem: (key, raw) => storage.setItem(key, raw), removeItem: key => storage.removeItem(key) },
-    deserialize(raw) {
-      if (raw.length > SAVE_LIMIT) { damaged = true; return null; }
-      try { const value: unknown = JSON.parse(raw); if (validOrbitSave(value)) return value; }
-      catch {}
-      damaged = true; return null;
+/** What reading one household slot found: the household, or why there is none to open. */
+export interface OrbitRead {
+  save: OrbitSave | null;
+  /** Bytes are there but are not a household this build can open; they are left in place. */
+  damaged: boolean;
+  /** Browser storage refused the read. */
+  unavailable: boolean;
+}
+
+/** The household slots, each one shared save document whose `household` section is the whole household. */
+export interface OrbitRecords {
+  read(slot: string): Promise<OrbitRead>;
+  /** Write the live household into a slot; false when it could not be written whole. */
+  write(slot: string): Promise<boolean>;
+  /** Restore a slot's household into the world; false when the slot holds none it can open. */
+  open(slot: string): Promise<boolean>;
+  /** Delete a slot's household, including bytes an older build left at its old key. */
+  clear(slot: string): Promise<boolean>;
+  /** The document's state digest for a slot, as the live world would write it. */
+  digest(slot: string): string;
+}
+
+class DamagedHousehold extends Error {}
+
+/** A household an older build wrote at its own key is the household section, unchanged. */
+function liftHousehold(stored: Readonly<Record<string, string>>, slot: string): Record<string, unknown> {
+  const raw = stored[orbitLegacyKey(slot)];
+  if (raw === undefined || raw.length > SAVE_LIMIT) throw new DamagedHousehold(`${slot}: the old household is unreadable`);
+  let value: unknown;
+  try { value = JSON.parse(raw); } catch { throw new DamagedHousehold(`${slot}: the old household is unreadable`); }
+  if (!validOrbitSave(value)) throw new DamagedHousehold(`${slot}: the old household is damaged or from another version`);
+  return { household: value };
+}
+
+/**
+ * Open the household slots over a storage (`localStorage` when omitted). A write the browser cannot
+ * keep, or one larger than the save limit, fails instead of writing part of a household.
+ */
+export function createOrbitRecords(ctx: GameContext, storage?: KeyValueStorage | null): OrbitRecords {
+  const health = { damaged: false, unavailable: false };
+  const local = localSaveBackend(storage, { errorMode: "throw", onError: () => { health.unavailable = true; } });
+  const backend: SaveBackend = {
+    async read(key) {
+      const raw = await local.read(key);
+      if (raw !== null && raw.length > SAVE_LIMIT) throw new DamagedHousehold(`${key} is larger than a household can be`);
+      return raw;
     },
-  });
-  return { save: cell.get(), damaged, unavailable };
+    write: (key, value) => value.length > SAVE_LIMIT ? Promise.reject(new Error("The household is larger than this browser keeps")) : local.write(key, value),
+    remove: key => local.remove(key),
+  };
+  const household: GameSaveSystem<OrbitSave> = {
+    name: "household",
+    snapshot() {
+      const save = captureOrbitSave(ctx);
+      // Never write a household this build could not open again.
+      if (!validOrbitSave(save)) throw new Error("Invalid Odd Orbit save");
+      return save;
+    },
+    restore: next => restoreOrbitSave(ctx, next),
+  };
+  const saves = new Map<string, GameSave>();
+  function slotSave(slot: string): GameSave {
+    let save = saves.get(slot);
+    if (save === undefined) {
+      save = createGameSave({
+        backend, game: "odd-orbit", key: ORBIT_SAVE_KEY, slot, systems: [household],
+        clock: () => ctx.time.now(), playtime: () => ctx.time.now(),
+        legacy: { keys: legacySlot => [orbitLegacyKey(legacySlot)], lift: liftHousehold },
+        onError: () => { if (!health.unavailable) health.damaged = true; },
+      });
+      saves.set(slot, save);
+    }
+    return save;
+  }
+  async function read(slot: string): Promise<OrbitRead> {
+    health.damaged = false;
+    health.unavailable = false;
+    const document = await slotSave(slot).peek(slot);
+    const section = document?.systems["household"];
+    if (document !== null && validOrbitSave(section)) return { save: section, damaged: false, unavailable: false };
+    return { save: null, damaged: !health.unavailable && (health.damaged || document !== null), unavailable: health.unavailable };
+  }
+  return {
+    read,
+    async write(slot) {
+      const save = slotSave(slot);
+      try { await save.save(); } catch { return false; }
+      return save.status() === "saved";
+    },
+    async open(slot) {
+      if ((await read(slot)).save === null) return false;
+      await slotSave(slot).load();
+      return true;
+    },
+    clear: slot => slotSave(slot).deleteSlot(slot),
+    digest: slot => slotSave(slot).digest(),
+  };
 }
-export function writeOrbitSave(ctx: GameContext, storage: KeyValueStorage | null = defaultKeyValueStorage(), slot: string = ORBIT_SLOTS[0]): boolean {
-  if (storage === null) return false;
-  let save: OrbitSave;
-  try { save = captureOrbitSave(ctx); } catch { return false; }
-  if (!validOrbitSave(save)) return false;
-  let written = false;
-  createKeyValueStore<OrbitSave | null>({ key: orbitSlotKey(slot), initial: null,
-    storage: { getItem: () => null, removeItem: key => storage.removeItem(key), setItem(key, raw) { if (raw.length <= SAVE_LIMIT) { storage.setItem(key, raw); written = true; } } },
-  }).set(save);
-  return written;
-}
+
+/** This context's household slots, over the browser's storage. */
+export const orbitRecords = perContext((ctx: GameContext) => createOrbitRecords(ctx));
 

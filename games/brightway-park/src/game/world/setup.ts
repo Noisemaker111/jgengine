@@ -3,29 +3,44 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { registerBuildCommands } from "../build/commands";
 import { restorePark, savePark } from "../persistence";
 import { resetPark } from "../parkReset";
+import { armMidnight } from "../midnight";
 import { session } from "../session";
 import { traceNative, tracePark } from "../evidence";
 import { ContextMap } from "@jgengine/core/runtime/contextIdentity";
+import { perContext } from "@jgengine/core/runtime/perContext";
 
 const cleanups = new ContextMap<() => void>();
 
 export function disposeWorld(ctx: GameContext): void {
-  savePark(ctx);
+  void savePark(ctx);
   cleanups.get(ctx)?.();
   cleanups.delete(ctx);
 }
 
 export { seedPlacements, type SeedPlacement } from "../parkReset";
 
+const boot = perContext(() => ({ ready: Promise.resolve() }));
+
+/** Settles once the boot read of the saved park has finished (or stood down for a started park). */
+export function parkReady(ctx: GameContext): Promise<void> {
+  return boot(ctx).ready;
+}
+
+/**
+ * The saved park replaces the new one behind the title once its document is read; a park started
+ * before then keeps what it made. Midnight is re-armed from wherever the save left the clock.
+ */
+async function openSavedPark(ctx: GameContext): Promise<void> {
+  if (!(await restorePark(ctx))) return;
+  ctx.time.pause();
+  armMidnight(ctx);
+}
+
 export function setupWorld(ctx: GameContext): void {
-  resetPark(ctx, { layout: "blank" });
+  // A new park until the saved one (if any) is read.
+  resetPark(ctx);
   registerBuildCommands(ctx);
-  if (!restorePark(ctx)) {
-    // No save, or one from an older build: a new park, keeping the line that says why.
-    const status = session.saveStatus;
-    resetPark(ctx);
-    session.saveStatus = status;
-  }
+  boot(ctx).ready = openSavedPark(ctx);
   ctx.time.pause();
   if (typeof localStorage !== "undefined") {
     try { ctx.game.store.set("park.reduced-motion",localStorage.getItem("brightway-park.reduced-motion")==="true"); } catch { /* Browser storage may be disabled. */ }

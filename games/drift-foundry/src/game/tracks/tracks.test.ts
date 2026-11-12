@@ -2,7 +2,10 @@ import { describe, expect, test } from "bun:test";
 
 import { MAIN_ROUTE } from "@jgengine/core/roads/routeCourse";
 
-import { CAREER_KEY, newCareer } from "../career";
+import { memorySaveBackend } from "@jgengine/core/save/saveStore";
+
+import { newCareer } from "../career";
+import { createFoundrySave } from "../foundrySave";
 import { YARD_EVENTS } from "../events/catalog";
 import { tuningFrom } from "../parts/build";
 import { PARTS, partById } from "../parts/catalog";
@@ -14,12 +17,11 @@ import { ROW_SIX_TRACK, TRACKS, trackById, type Track } from "./catalog";
 
 const LAID = TRACKS.filter((track) => track !== ROW_SIX_TRACK);
 
+/** A yard save in memory whose career has every tier open. */
 function memory() {
-  const map = new Map<string, string>();
   const career = newCareer();
   career.medals = { best: { "salvage-run": 1, "scrap-sweep": 12, "night-shift": 20, "grudge-hobbs": 9, "time-sheet": 20, "bare-metal": 20 } };
-  map.set(CAREER_KEY, JSON.stringify(career));
-  return { getItem: (key: string) => map.get(key) ?? null, setItem: (key: string, value: string) => void map.set(key, value) };
+  return createFoundrySave(memorySaveBackend(), { career });
 }
 
 function eventOn(track: Track) {

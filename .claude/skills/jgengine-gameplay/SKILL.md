@@ -239,7 +239,12 @@ on with `peek(slot)` and removes one with `deleteSlot(slot)` - never `switchSlot
 `ctx.game.save` (the whole-world `RuntimeSave`) answers both the same way; it refuses to delete the
 active slot, because the next autosave would write it straight back, so `clear()` owns that one. A
 snapshot field that means "never" must serialize as `null` and be mapped back on restore - `Infinity`
-becomes `null` through JSON, which silently changes a restored run.
+becomes `null` through JSON, which silently changes a restored run. A game that kept its own keys
+before adopting the document passes `legacy: { keys(slot), lift(stored, slot) }`: a slot with no
+document reads those keys on `load`/`switchSlot`/`peek`, `lift` turns the bytes into sections, the
+next `save()` writes them as a document, and `deleteSlot` removes the old keys with it. Keep each
+section the shape the old key held, so `lift` hands it over as-is and the section's reader does the
+validating (Odd Orbit's households, Brightway Park's park, Drift Foundry's six-key yard).
 
 For timed away missions, compose the pure transitions in `work/expedition` with
 your existing `defineStore` and clock. The [expedition recipe](recipes/expeditions.md)

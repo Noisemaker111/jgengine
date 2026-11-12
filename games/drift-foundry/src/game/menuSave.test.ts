@@ -1,13 +1,9 @@
 import { expect, test } from "bun:test";
+import { memorySaveBackend } from "@jgengine/core/save/saveStore";
 
-import { foundrySlots, PIT_FRAME_KEY, refreshFoundrySlots } from "./menuSave";
-import { PROGRESS_KEY, saveParkedRun, type ParkedRun } from "./run/progress";
-import type { RunStorage } from "./run/records";
-
-function memory(): { storage: RunStorage; values: Map<string, string> } {
-  const values = new Map<string, string>();
-  return { values, storage: { getItem: (key) => values.get(key) ?? null, setItem: (key, value) => { values.set(key, value); } } };
-}
+import { createFoundrySave, PIT_FRAME_KEY } from "./foundrySave";
+import { foundrySlots, refreshFoundrySlots } from "./menuSave";
+import { PROGRESS_KEY, type ParkedRun } from "./run/progress";
 
 const parked: ParkedRun = {
   version: 1,
@@ -25,16 +21,17 @@ const parked: ParkedRun = {
   announcedSurge: null,
 };
 
-test("the Continue card is the parked run, in the yard's words", () => {
-  const { storage, values } = memory();
-  expect(saveParkedRun(parked, storage)).toBe(true);
-  values.set(PIT_FRAME_KEY, JSON.stringify({ thumbnail: "data:image/jpeg;base64,AAAA", savedAt: 1_700_000_000_000 }));
+const card = { thumbnail: "data:image/jpeg;base64,AAAA", savedAt: 1_700_000_000_000 };
 
-  refreshFoundrySlots(storage);
-  const card = foundrySlots.mostRecent();
-  expect(card?.name).toBe("Parked at 64 m");
-  expect(card?.savedAt).toBe(1_700_000_000_000);
-  expect(card?.meta).toMatchObject({
+test("the Continue card is the parked run, in the yard's words", async () => {
+  const save = createFoundrySave(memorySaveBackend(), { parked, pitFrame: card });
+  expect(await save.write()).toBe(true);
+
+  await refreshFoundrySlots(save);
+  const recent = foundrySlots.mostRecent();
+  expect(recent?.name).toBe("Parked at 64 m");
+  expect(recent?.savedAt).toBe(1_700_000_000_000);
+  expect(recent?.meta).toMatchObject({
     clock: "11.7 s",
     build: "0 of 4 parts",
     gate: "13% of Row Six",
@@ -43,16 +40,24 @@ test("the Continue card is the parked run, in the yard's words", () => {
   });
 });
 
-test("with no parked run the card list is empty, so Continue has nothing to resume", () => {
-  const { storage } = memory();
-  refreshFoundrySlots(storage);
+test("a buggy an older build parked at its own keys is still the Continue card", async () => {
+  const backend = memorySaveBackend();
+  await backend.write(PROGRESS_KEY, JSON.stringify(parked));
+  await backend.write(PIT_FRAME_KEY, JSON.stringify(card));
+  await refreshFoundrySlots(createFoundrySave(backend));
+  expect(foundrySlots.mostRecent()?.name).toBe("Parked at 64 m");
+  expect(foundrySlots.mostRecent()?.savedAt).toBe(1_700_000_000_000);
+});
+
+test("with no parked run the card list is empty, so Continue has nothing to resume", async () => {
+  await refreshFoundrySlots(createFoundrySave(memorySaveBackend()));
   expect(foundrySlots.mostRecent()).toBeNull();
 });
 
-test("a moving or missing buggy never becomes a card", () => {
-  const { storage, values } = memory();
+test("a moving or missing buggy never becomes a card", async () => {
   // A run with no time on the clock is not a checkpoint, however it reached storage.
-  values.set(PROGRESS_KEY, JSON.stringify({ ...parked, runTime: 0 }));
-  refreshFoundrySlots(storage);
+  const backend = memorySaveBackend();
+  await backend.write(PROGRESS_KEY, JSON.stringify({ ...parked, runTime: 0 }));
+  await refreshFoundrySlots(createFoundrySave(backend));
   expect(foundrySlots.mostRecent()).toBeNull();
 });

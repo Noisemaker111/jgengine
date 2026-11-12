@@ -12,6 +12,7 @@ import { parkedRunMetres } from "../run/progress";
 import { PART_SLOTS } from "../parts/catalog";
 import { FOUNDRY_CREDITS } from "../credits";
 import { foundrySlots, refreshFoundrySlots, saveParkedRunHere } from "../menuSave";
+import { foundrySaveOf } from "../foundrySave";
 import type { RunSession, SessionSnapshot } from "../run/session";
 import type { GarageRow } from "../career";
 import { partArtwork } from "./artwork";
@@ -37,7 +38,7 @@ export function PitMenu({ snapshot, session, publish }: { snapshot: SessionSnaps
   const [open, setOpen] = useState<string | null>(phone ? menuFocus.id : null);
   const [busy, setBusy] = useState<string | null>(null), [notice, setNotice] = useState<string | null>(null);
   const first = useRef<RuneElement>(null);
-  useEffect(() => { refreshFoundrySlots(); }, [title, paused]);
+  useEffect(() => { void refreshFoundrySlots(foundrySaveOf(ctx)); }, [title, paused]);
   useEffect(() => { if (open === null) first.current?.focus(); }, [open, title]);
 
   const whileLoading = async (label: string, work: () => Promise<unknown>) => {

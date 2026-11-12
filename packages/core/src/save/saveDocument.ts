@@ -96,10 +96,37 @@ export interface GameSaveConfig {
    * was written at (`0` for a pre-versioned payload) and returns a document at {@link GameSaveConfig.version}.
    */
   readonly migrate?: (document: unknown, fromVersion: number) => GameSaveDocument;
+  /**
+   * Where a slot was kept before the game adopted this document. A slot with no document reads
+   * {@link GameSaveLegacy.keys} from the same backend on `load`, `switchSlot` and `peek`, and the
+   * bytes found become the slot's sections through {@link GameSaveLegacy.lift}; the next `save()`
+   * writes them as a document. The old keys are only removed by `deleteSlot`, so a deleted slot does
+   * not come back from them.
+   */
+  readonly legacy?: GameSaveLegacy;
   /** Notified on any backend read/write failure or a restored document written by another world. */
   readonly onError?: (error: unknown) => void;
   /** Register a devtools probe under this name so the overlay shows the slot, status and system count. */
   readonly devtoolsName?: string;
+}
+
+/**
+ * A save format a game wrote before it adopted {@link createGameSave}: the backend keys one slot's
+ * bytes lived under, and how those bytes become the document's sections.
+ */
+export interface GameSaveLegacy {
+  /**
+   * Backend keys that held this slot's data. A key may be shared by every slot (a profile-wide record
+   * or an index of slots); `deleteSlot` removes it all the same, so a game that deletes one slot of
+   * several names a shared key only once every other slot has been written as a document.
+   */
+  keys(slot: string): readonly string[];
+  /**
+   * Turn the bytes found (key to raw string; keys holding nothing are left out) into the slot's
+   * sections, keyed by system name. Leave out a section the old bytes cannot fill, so that system
+   * resets; throw when nothing is readable, and the slot reads as empty with `onError` told why.
+   */
+  lift(stored: Readonly<Record<string, string>>, slot: string): Record<string, unknown>;
 }
 
 /**
@@ -285,9 +312,10 @@ export function createGameSave(config: GameSaveConfig): GameSave {
     if (document.rng.cursor !== null) restoreRng(config.rng.stream, document.rng.cursor);
   }
 
+  const initial = emptyDocument(config, version);
   const store = createSaveStore<GameSaveDocument>({
     backend: config.backend,
-    initial: emptyDocument(config, version),
+    initial,
     key: config.key ?? `game-save:${config.game}`,
     slot: config.slot,
     version,
@@ -301,6 +329,50 @@ export function createGameSave(config: GameSaveConfig): GameSave {
       return upgradeSaveEnvelope(data, { game: config.game, version });
     },
   });
+
+  /** The slot's pre-adoption bytes as a document, or `null` when the slot has none (or they are unreadable). */
+  async function liftLegacy(slot: string): Promise<GameSaveDocument | null> {
+    const legacy = config.legacy;
+    if (legacy === undefined) return null;
+    try {
+      const stored: Record<string, string> = {};
+      for (const key of legacy.keys(slot)) {
+        const raw = await config.backend.read(key);
+        if (raw !== null) stored[key] = raw;
+      }
+      if (Object.keys(stored).length === 0) return null;
+      return { ...emptyDocument(config, version), savedAt: 0, systems: legacy.lift(stored, slot) };
+    } catch (error) {
+      config.onError?.(error);
+      return null;
+    }
+  }
+
+  /** A slot the store read as empty takes its legacy bytes instead; the next save writes them as a document. */
+  async function orLegacy(document: GameSaveDocument): Promise<GameSaveDocument> {
+    if (document !== initial) return document;
+    const lifted = await liftLegacy(store.slot());
+    if (lifted === null) return document;
+    store.set(lifted);
+    return lifted;
+  }
+
+  /** Remove a slot's legacy keys with its document; true when any held bytes. */
+  async function removeLegacy(slot: string): Promise<boolean> {
+    const legacy = config.legacy;
+    if (legacy === undefined) return false;
+    let removed = false;
+    try {
+      for (const key of legacy.keys(slot)) {
+        if ((await config.backend.read(key)) === null) continue;
+        await config.backend.remove(key);
+        removed = true;
+      }
+    } catch (error) {
+      config.onError?.(error);
+    }
+    return removed;
+  }
 
   const unregister =
     config.devtoolsName === undefined
@@ -321,26 +393,29 @@ export function createGameSave(config: GameSaveConfig): GameSave {
       await store.save();
     },
     async load() {
-      const document = await store.load();
+      const document = await orLegacy(await store.load());
       apply(document);
       return document;
     },
     async switchSlot(slot, options) {
       if (options?.flush !== false) store.set(capture());
-      const document = await store.switchSlot(slot, options);
+      const document = await orLegacy(await store.switchSlot(slot, options));
       apply(document);
       return document;
     },
     async peek(slot) {
       const stored = await store.peek(slot);
-      if (stored === null) return null;
+      if (stored === null) return liftLegacy(slot);
       return stored.value;
     },
     slots: () => store.slots(),
     async deleteSlot(slot) {
       const deleted = await store.deleteSlot(slot);
-      if (deleted && slot === store.slot()) apply(store.value());
-      return deleted;
+      const removedLegacy = await removeLegacy(slot);
+      if (!deleted && !removedLegacy) return false;
+      // A slot that only held legacy bytes was lifted into the live value; reread it as empty.
+      if (slot === store.slot()) apply(removedLegacy ? await store.load() : store.value());
+      return true;
     },
     slot: () => store.slot(),
     status: () => store.status(),

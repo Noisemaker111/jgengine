@@ -207,15 +207,17 @@ export function registerBuildCommands(ctx: GameContext): void {
     else if (ribbonUp(state)) { setGamePhase(state, "paused"); state.time.pause(); }
     else { setGamePhase(state, "playing"); state.time.play(); }
     syncAmbience(state);
-    savePark(state); bump(state);
+    void savePark(state).then(() => bump(state)); bump(state);
   } });
-  ctx.game.commands.define("park.save", { apply(state) { savePark(state); bump(state); } });
+  ctx.game.commands.define("park.save", { apply(state) { void savePark(state).then(() => bump(state)); bump(state); } });
   ctx.game.commands.define("park.new", { apply(state) {
-    try {
-      // Stop pagehide from saving the old live park over the fresh slot.
-      archiveSave(); session.started = false;
-      if (typeof window !== "undefined") window.location.reload();
-    } catch { session.saveStatus = "Could not archive the old save. Free browser storage before starting a new park."; bump(state); }
+    // Stop pagehide (or a save point) writing the old live park over the fresh slot.
+    const started = session.started;
+    session.started = false;
+    void archiveSave(state).then(
+      () => { if (typeof window !== "undefined") window.location.reload(); },
+      () => { session.started = started; session.saveStatus = "Could not archive the old save. Free browser storage before starting a new park."; bump(state); },
+    );
   } });
   ctx.game.commands.define("park.continue", { apply(state) {
     if (!session.started || over(state)) return;

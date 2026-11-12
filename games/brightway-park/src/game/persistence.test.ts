@@ -6,7 +6,8 @@ import { session } from "./session";
 import { BUILDABLES } from "./objects/catalog";
 import { MILESTONES } from "./milestones";
 import { park } from "./park";
-import { archiveSave, decodeSave, SAVE_KEY, snapshotPark, STORE_POLICY } from "./persistence";
+import { archiveSave, decodeSave, LEGACY_SAVE_KEY, PARK_ENTRY, parkSave, readParkSave, SAVE_KEY, snapshotPark, STORE_POLICY } from "./persistence";
+import { parkReady } from "./world/setup";
 import { closeDay } from "./sim/economy";
 import { MONTH_DAYS } from "./books";
 
@@ -25,6 +26,16 @@ afterEach(() => {
   else Reflect.deleteProperty(globalThis, "localStorage");
 });
 const runner = () => createHeadlessRunner({ game, maxStepSeconds: 1 });
+/** Boot as the game does and wait for the boot read of the saved park. */
+async function booted(): Promise<ReturnType<typeof runner>> {
+  const live = runner();
+  await parkReady(live.ctx);
+  return live;
+}
+/** Saves land asynchronously; let the ones a command started settle. */
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+/** The `park` section of the document the park slot holds. */
+const section = (raw: string | undefined): unknown => raw === undefined ? undefined : JSON.parse(raw).value.systems.park;
 
 describe("park saves and real command boundaries", () => {
   test("the world store is the save: every store the park writes has a home", () => {
@@ -34,8 +45,8 @@ describe("park saves and real command boundaries", () => {
     expect(snapshotPark(live.ctx).world).toEqual(park.of(live.ctx).snapshot());
   });
 
-  test("menu blocks shortcuts; build, refund, ticket and occupied cells survive reload", () => {
-    const first = runner();
+  test("menu blocks shortcuts; build, refund, ticket and occupied cells survive reload", async () => {
+    const first = await booted();
     first.ui.invoke("pickCarousel");
     expect(session.selectedTool).toBeNull();
     first.ui.invoke("park.start");
@@ -56,8 +67,9 @@ describe("park saves and real command boundaries", () => {
     first.ui.invoke("pauseToggle");
     const saved = snapshotPark(first.ctx);
     const nextRandom = first.ctx.rng();
+    await settle();
 
-    const second = runner();
+    const second = await booted();
     const v = park.of(second.ctx);
     expect(second.ctx.rng()).toBe(nextRandom);
     expect(session.started).toBe(false);
@@ -74,8 +86,8 @@ describe("park saves and real command boundaries", () => {
     expect(v.canPlace("deco_tree", { cell: built.cell! })?.reason).not.toBe("taken");
   });
 
-  test("midnight closes the day once and the day survives a reload", () => {
-    const first = runner();
+  test("midnight closes the day once and the day survives a reload", async () => {
+    const first = await booted();
     first.ui.invoke("park.start");
     // Set up the last fraction before midnight through the published clock API.
     first.ctx.time.hydrate({ ...first.ctx.time.snapshot(), now: DAY_LENGTH - .01, paused: false });
@@ -85,7 +97,8 @@ describe("park saves and real command boundaries", () => {
     expect(w.num("park.revenue_today")).toBe(0);
     w.set("park.won", true);
     first.ui.invoke("park.save");
-    const second = runner();
+    await settle();
+    const second = await booted();
     expect(park.of(second.ctx).num("park.day")).toBe(2);
     second.ui.invoke("park.start");
     expect(second.ctx.time.isPaused()).toBe(true);
@@ -96,31 +109,58 @@ describe("park saves and real command boundaries", () => {
     expect(park.of(second.ctx).num("park.day")).toBe(3);
   });
 
-  test("overlap is rejected and explicit new park archives the exact prior save", () => {
-    const live = runner();
+  test("overlap is rejected and explicit new park archives the exact prior save", async () => {
+    const live = await booted();
     live.ui.invoke("park.start");
-    const raw = records.get(SAVE_KEY)!;
-    const corrupt = JSON.parse(raw);
-    const [first] = Object.values(corrupt.world.instances) as object[];
+    await settle();
+    const raw = records.get(PARK_ENTRY)!;
+    const corrupt = section(raw) as { world: { instances: Record<string, object> } };
+    const [first] = Object.values(corrupt.world.instances);
     corrupt.world.instances["duplicate-location"] = { ...first };
-    expect(decodeSave(JSON.stringify(corrupt))).toBeNull();
-    archiveSave();
-    expect(records.has(SAVE_KEY)).toBe(false);
-    expect([...records.entries()].find(([key]) => key.startsWith(`${SAVE_KEY}.backup.`))?.[1]).toBe(raw);
+    expect(readParkSave(corrupt)).toBeNull();
+    await archiveSave(live.ctx);
+    expect(records.has(PARK_ENTRY)).toBe(false);
+    expect([...records.entries()].find(([key]) => key.startsWith(`${SAVE_KEY}:backup-`))?.[1]).toBe(raw);
   });
 
-  test("a save from before the world model opens a fresh park instead of crashing", () => {
+  test("a park an older build wrote at its own key opens, then is written as a document", async () => {
+    const first = await booted();
+    first.ui.invoke("park.start");
+    for (let i = 0; i < 2; i += 1) first.ui.invoke("brightway.act", { action: "ticket_up" });
+    first.ui.invoke("pauseToggle"); // a paused park saves; a reopened park is paused too
+    const digest = parkSave(first.ctx).digest();
+    await settle();
+    const old = section(records.get(PARK_ENTRY));
+    records.clear();
+    records.set(LEGACY_SAVE_KEY, JSON.stringify(old));
+
+    const second = await booted();
+    expect(session.hasSave).toBe(true);
+    expect(park.of(second.ctx).num("park.ticket")).toBe(park.of(first.ctx).num("park.ticket"));
+    expect(snapshotPark(second.ctx).world).toEqual((old as { world: unknown }).world);
+    // The document's digest covers the whole park: the reopened park writes the state that was saved.
+    expect(parkSave(second.ctx).digest()).toBe(digest);
+    second.ui.invoke("park.start");
+    await settle();
+    expect(readParkSave(section(records.get(PARK_ENTRY)))).not.toBeNull();
+    // The old bytes stay put; the document is what a later boot reads.
+    expect(records.get(LEGACY_SAVE_KEY)).toBe(JSON.stringify(old));
+  });
+
+  test("a save from before the world model opens a fresh park instead of crashing", async () => {
     const old = { version: 3, stats: { cash: 9999, day: 4, ticketPrice: 20 }, placed: [], guests: [], staff: [], unlocks: [] };
-    records.set(SAVE_KEY, JSON.stringify(old));
-    const live = runner();
+    records.set(LEGACY_SAVE_KEY, JSON.stringify(old));
+    const live = await booted();
     const w = park.of(live.ctx);
     expect(w.num("park.day")).toBe(1);
     expect(w.instances().length).toBeGreaterThan(0);
     expect(session.saveStatus).toContain("older build");
     // The old document is kept until this park is saved, then archived as a backup.
     live.ui.invoke("park.start");
-    expect([...records.keys()].some((key) => key.startsWith(`${SAVE_KEY}.backup.`))).toBe(true);
-    expect(decodeSave(records.get(SAVE_KEY)!)).not.toBeNull();
+    await settle();
+    expect([...records.entries()].find(([key]) => key.startsWith(`${SAVE_KEY}:backup-`))?.[1]).toBe(JSON.stringify(old));
+    expect(records.has(LEGACY_SAVE_KEY)).toBe(false);
+    expect(decodeSave(JSON.stringify(section(records.get(PARK_ENTRY))))).not.toBeNull();
   });
 
   test("a first ride on the empty lot climbs the rating; two red month-ends end play", () => {

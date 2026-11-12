@@ -106,8 +106,8 @@ function sameCourseBests(medals: MedalBoardState, courses: unknown): MedalBoardS
   return { ...medals, best };
 }
 
+/** Where an older build kept the career; the yard document lifts it into its `career` section. */
 export const CAREER_KEY = "drift-foundry.career.v1";
-export interface CareerStorage { getItem(key: string): string | null; setItem(key: string, value: string): void }
 
 export function newCareer(): CareerSave {
   return {
@@ -121,9 +121,9 @@ export function newCareer(): CareerSave {
   };
 }
 
-export function readCareer(storage?: CareerStorage): CareerSave {
+/** The stored `career` section, field by field; a missing or unreadable career is a new one. */
+export function readCareer(data: unknown): CareerSave {
   try {
-    const data: unknown = JSON.parse(storage?.getItem(CAREER_KEY) ?? "null");
     if (!isRecord(data) || data["version"] !== 1) return newCareer();
     const fresh = newCareer();
     const medals = readMedals(data["medals"]);
@@ -141,16 +141,6 @@ export function readCareer(storage?: CareerStorage): CareerSave {
     };
   } catch {
     return newCareer();
-  }
-}
-
-export function saveCareer(career: CareerSave, storage?: CareerStorage): boolean {
-  try {
-    if (storage === undefined) return false;
-    storage.setItem(CAREER_KEY, JSON.stringify(career));
-    return true;
-  } catch {
-    return false;
   }
 }
 

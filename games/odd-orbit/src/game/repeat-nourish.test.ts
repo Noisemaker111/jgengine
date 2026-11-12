@@ -4,7 +4,7 @@ import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { game } from "../game.config";
 import { registerCommands } from "./commands";
 import { content } from "./content";
-import { readOrbitSave, restoreOrbitSave, writeOrbitSave } from "./session/save";
+import { createOrbitRecords, restoreOrbitSave } from "./session/save";
 import { householdStore } from "./session/store";
 const USE_FULL = 98;
 import { setupWorld } from "./sim/setup";
@@ -54,15 +54,15 @@ for (const [name, order] of [["member.direct", direct], ["world.pointer", click]
   });
 }
 
-test("the last paid ration still completes after repeat direction and save/reload", () => {
+test("the last paid ration still completes after repeat direction and save/reload", async () => {
   const ctx = boot();
   householdStore.read(ctx).pantry = 1; // A scarce-food fixture; the actual seek transition pays for the meal.
   beginMeal(ctx);
   expect(householdStore.read(ctx).pantry).toBe(0);
   const records = new Map<string, string>();
   const storage = { getItem: (key: string) => records.get(key) ?? null, setItem: (key: string, raw: string) => { records.set(key, raw); }, removeItem: (key: string) => { records.delete(key); } };
-  expect(writeOrbitSave(ctx, storage)).toBe(true);
-  const saved = readOrbitSave(storage).save;
+  expect(await createOrbitRecords(ctx, storage).write("household")).toBe(true);
+  const saved = (await createOrbitRecords(ctx, storage).read("household")).save;
   expect(saved).not.toBeNull();
   const restored = boot();
   restoreOrbitSave(restored, saved!);

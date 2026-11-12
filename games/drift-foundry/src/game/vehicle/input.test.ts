@@ -40,8 +40,9 @@ test("closing settings refreshes bindings and releases held keys without duplica
 
 test("released keyboard pedals coast the real published vehicle into a savable parked run", async () => {
   const { createRunSession } = await import("../run/session");
-  const saved = new Map<string, string>();
-  const session = createRunSession(undefined, { getItem: key => saved.get(key) ?? null, setItem: (key, value) => { saved.set(key, value); } });
+  const { createFoundrySave } = await import("../foundrySave");
+  const { memorySaveBackend } = await import("@jgengine/core/save/saveStore");
+  const session = createRunSession(undefined, createFoundrySave(memorySaveBackend()));
   const drive = createDriveInput(BINDINGS);
   const host = createInputSnapshot();
   const step = () => session.tick(1 / 30, drive.sample(1 / 30, host, true), { jumpPressed: false, plowBracing: false });

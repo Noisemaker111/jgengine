@@ -2,7 +2,10 @@ import { describe, expect, test } from "bun:test";
 
 import { createMedalBoard } from "@jgengine/core/progression/medalBoard";
 
-import { CAREER_KEY, newCareer, readCareer, type CareerStorage } from "../career";
+import { memorySaveBackend } from "@jgengine/core/save/saveStore";
+
+import { newCareer, readCareer } from "../career";
+import { createFoundrySave, type FoundrySave } from "../foundrySave";
 import { createRunSession, type RunSession } from "../run/session";
 import { trackById } from "../tracks/catalog";
 import { eventById, eventCompactor, MEDAL_BOARD, YARD_EVENTS, YARD_TIERS } from "./catalog";
@@ -11,14 +14,11 @@ import { driveCourse, type CourseDriveOptions } from "../testing/courseDriver";
 
 const DT = 1 / 60;
 
-function memory(seed?: (career: ReturnType<typeof newCareer>) => void): CareerStorage & { map: Map<string, string> } {
-  const map = new Map<string, string>();
-  if (seed !== undefined) {
-    const career = newCareer();
-    seed(career);
-    map.set(CAREER_KEY, JSON.stringify(career));
-  }
-  return { map, getItem: (key) => map.get(key) ?? null, setItem: (key, value) => void map.set(key, value) };
+/** A yard save in memory, its career seeded. */
+function memory(seed?: (career: ReturnType<typeof newCareer>) => void): FoundrySave {
+  const career = newCareer();
+  seed?.(career);
+  return createFoundrySave(memorySaveBackend(), { career });
 }
 
 /** A scripted run on the event's own track: `sweep` takes every drop, `take` the named shortcuts, `stall` brakes from 12 s. */
@@ -89,7 +89,7 @@ describe("yard calendar", () => {
     expect(sweep.outcome?.event.medal).toBe("gold");
   });
 
-  test("first-time medals pay once, bank with the escape and open the next tier", () => {
+  test("first-time medals pay once, bank with the escape and open the next tier", async () => {
     const storage = memory();
     const session = createRunSession(() => 0, storage);
     session.selectEvent("time-sheet");
@@ -111,31 +111,27 @@ describe("yard calendar", () => {
     const opened = session.snapshot();
     expect(opened.outcome?.event.openedTiers).toEqual(["Night Crew"]);
     expect(opened.calendar.tiers[1]!.open).toBe(true);
-    expect(readCareer(storage).medals.best["scrap-sweep"]).toBe(12);
+    await new Promise((resolve) => setTimeout(resolve, 0)); // writes land asynchronously
+    expect((await storage.peek())!.career.medals.best["scrap-sweep"]).toBe(12);
   });
 
   test("a career saved before the calendar loads with no medals on the salvage run", () => {
-    const storage = memory();
     const legacy = newCareer() as Partial<ReturnType<typeof newCareer>>;
     delete legacy.medals;
     delete legacy.event;
-    storage.setItem(CAREER_KEY, JSON.stringify(legacy));
-    const career = readCareer(storage);
+    const career = readCareer(JSON.parse(JSON.stringify(legacy)));
     expect(career.medals).toEqual({ best: {} });
     expect(career.event).toBe("salvage-run");
   });
 
   test("an event moved onto a new track drops the best it set on Row Six; events still there keep theirs", () => {
-    const storage = memory();
     const legacy = newCareer() as Partial<ReturnType<typeof newCareer>>;
     delete legacy.courses;
     legacy.medals = { best: { "salvage-run": 1, "time-sheet": 30, "crusher-rush": 31 } };
-    storage.setItem(CAREER_KEY, JSON.stringify(legacy));
-    expect(readCareer(storage).medals.best).toEqual({ "salvage-run": 1, "crusher-rush": 31 });
+    expect(readCareer(JSON.parse(JSON.stringify(legacy))).medals.best).toEqual({ "salvage-run": 1, "crusher-rush": 31 });
     const current = newCareer();
     current.medals = { best: { "time-sheet": 50 } };
-    storage.setItem(CAREER_KEY, JSON.stringify(current));
-    expect(readCareer(storage).medals.best).toEqual({ "time-sheet": 50 });
+    expect(readCareer(JSON.parse(JSON.stringify(current))).medals.best).toEqual({ "time-sheet": 50 });
   });
 
   test("every event names a real track, and the calendar runs at least five of them", () => {

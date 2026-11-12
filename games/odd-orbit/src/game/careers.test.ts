@@ -12,7 +12,7 @@ import {
 } from "./careers";
 import { householdStore } from "./session/store";
 import { shiftLoop } from "./session/shiftSessions";
-import { captureOrbitSave, ORBIT_SAVE_KEY, readOrbitSave, restoreOrbitSave, validOrbitSave, writeOrbitSave, type OrbitSave } from "./session/save";
+import { captureOrbitSave, createOrbitRecords, restoreOrbitSave, validOrbitSave, type OrbitSave } from "./session/save";
 import { pairKey } from "./session/types";
 import { setupWorld } from "./sim/setup";
 import { simulateHousehold } from "./sim/simulate";
@@ -54,7 +54,7 @@ function workShift(ctx: GameContext, id: string): void {
 }
 
 function memory(raw?: string): { storage: KeyValueStorage; values: Map<string, string> } {
-  const values = new Map<string, string>(raw === undefined ? [] : [[ORBIT_SAVE_KEY, raw]]);
+  const values = new Map<string, string>(raw === undefined ? [] : [["odd-orbit.households:household", raw]]);
   return { values, storage: { getItem: key => values.get(key) ?? null, setItem: (key, value) => { values.set(key, value); }, removeItem: key => { values.delete(key); } } };
 }
 
@@ -153,7 +153,7 @@ test("a post gates the other station until the cross-trained rung pays cover", (
   expect(sent.action.kind === "seek" || sent.action.kind === "use").toBe(true);
 });
 
-test("post rungs and mastery survive a save and reload", () => {
+test("post rungs and mastery survive a save and reload", async () => {
   const ctx = boot();
   const state = householdStore.read(ctx);
   const member = state.members["alien:0"]!;
@@ -163,9 +163,9 @@ test("post rungs and mastery survive a save and reload", () => {
   householdStore.write(ctx, { ...householdStore.read(ctx) });
 
   const { storage } = memory();
-  expect(writeOrbitSave(ctx, storage)).toBe(true);
+  expect(await createOrbitRecords(ctx, storage).write("household")).toBe(true);
   const second = boot();
-  restoreOrbitSave(second, readOrbitSave(storage).save!);
+  restoreOrbitSave(second, (await createOrbitRecords(second, storage).read("household")).save!);
   const loaded = householdStore.read(second);
   expect(rungProgress(loaded, loaded.members[member.id]!).rung).toBe(2);
   expect(yieldShiftValue(loaded, loaded.members[member.id]!)).toBe(yieldShiftValue(householdStore.read(ctx), member));

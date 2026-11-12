@@ -11,7 +11,7 @@ export function onInit(ctx: GameContext): void {
   registerCaptureCommands(ctx);
   setupWorld(ctx);
   registerOrbitLifecycle(ctx);
-  prepareOrbit(ctx);
+  void prepareOrbit(ctx);
 }
 
 export function onNewPlayer(_ctx: GameContext): void {}
@@ -20,7 +20,7 @@ export function onTick(ctx: GameContext, dt: number): void {
   const session = orbitSession.read(ctx);
   if (session.screen !== null) { ctx.time.pause(); return; }
   simulateHousehold(ctx, dt);
-  if (ctx.time.now() - session.lastSavedAt >= 1) checkpointOrbit(ctx);
+  if (ctx.time.now() - session.lastSavedAt >= 1) void checkpointOrbit(ctx);
 }
 
 export const loop = { onInit, onNewPlayer, onTick };

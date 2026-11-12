@@ -6,7 +6,7 @@ Game suite: **14/18 proven · 1 not simulatable · 3 missing** · `jgengine suit
 
 A park-builder tycoon: buy rides and stalls, set the ticket and ride prices, keep guests fed and the
 rating climbing, and keep the crew on the breakdowns. Runs on engine source; start it with
-`bun --cwd=games/brightway-park run dev` from the repository root. Saves to `brightway-park.save.v1`;
+`bun --cwd=games/brightway-park run dev` from the repository root. Saves one shared save document (`@jgengine/core/save/saveDocument`) at `brightway-park.save:park`, whose `park` section is the park; a park an older build wrote at `brightway-park.save.v1` opens through the document's legacy read.
 `docs/PLAYTEST.md` holds the last verified pass.
 
 ## Design checklist

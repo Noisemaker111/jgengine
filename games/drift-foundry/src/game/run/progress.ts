@@ -2,8 +2,8 @@ import { swapPart } from "../parts/build";
 import { partById, type DriftFoundryPartDef } from "../parts/catalog";
 import { ROW_SIX_TRACK, SPAWN_RUN, trackById } from "../tracks/catalog";
 import { CORRIDOR_DRIVE_HALF_WIDTH } from "./constants";
-import type { RunStorage } from "./records";
 
+/** Where an older build kept the parked run; the yard document lifts it into its `parked` section. */
 export const PROGRESS_KEY = "drift-foundry.parked-run.v1";
 export interface ParkedRun {
   version: 1;
@@ -41,9 +41,10 @@ export function checkpointParts(run: ParkedRun): readonly DriftFoundryPartDef[] 
 }
 
 /** Checkpoints represent a grounded, stopped buggy, never a reconstructed moving physics state. */
-export function readParkedRun(storage?: RunStorage): ParkedRun | null {
+export function readParkedRun(value: unknown): ParkedRun | null {
   try {
-    const run = JSON.parse(storage?.getItem(PROGRESS_KEY) ?? "null");
+    // Untyped stored JSON: every field is checked below before the run is trusted.
+    const run = value as any;
     const nonnegative = (value: unknown) => typeof value === "number" && Number.isFinite(value) && value >= 0;
     const ids = (value: unknown, known: ReadonlySet<string>) => Array.isArray(value) && value.every(id => typeof id === "string" && known.has(id)) && new Set(value).size === value.length;
     if (!run || run.version !== 1 || !Array.isArray(run.position) || run.position.length !== 3 || !run.position.every((value: unknown) => typeof value === "number" && Number.isFinite(value)) || !Number.isFinite(run.heading) || !nonnegative(run.runTime) || run.runTime === 0) return null;
@@ -63,10 +64,4 @@ export function readParkedRun(storage?: RunStorage): ParkedRun | null {
     if (checkpointParts(run).length !== run.partIds.length) return null;
     return run;
   } catch { return null; }
-}
-
-export function saveParkedRun(run: ParkedRun | null, storage?: RunStorage): boolean {
-  if (!storage) return false;
-  try { storage.setItem(PROGRESS_KEY, JSON.stringify(run)); return true; }
-  catch { return false; }
 }
