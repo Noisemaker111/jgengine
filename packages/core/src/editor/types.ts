@@ -334,7 +334,7 @@ export interface EditorDocument {
   /** Optional sculpted heightfield overlay; absent until terrain is created in the editor. */
   terrain?: EditorTerrain;
   /** What grows `terrain` on first load when it is absent (`landform/generator/landformStart`). */
-  terrainGenerator?: import("../terrain/terrainGenerator").EditorTerrainGenerator | undefined;
+  terrainGenerator?: import("../landform/generator/landformDocument").EditorTerrainGenerator | undefined;
   /** Reusable object stamps authored with "make prefab", inserted anywhere with "insert prefab". */
   prefabs: EditorPrefab[];
   /** Named selection sets / production groups — restore, add-to, lock, color, visibility. */

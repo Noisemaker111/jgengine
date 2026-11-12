@@ -8,16 +8,27 @@
  * @capability landform-generator grow a terrain heightfield and its material layers from geology, rivers and wind, for the editor and runtime
  */
 
-import { defineGenerator, type GeneratorContext } from "../../generator/generator";
+import { defineGenerator, registerGenerator, type GeneratorContext } from "../../generator/generator";
 import { defineParamSchema, type ParamsOf } from "../../generator/paramSchema";
 import type { WindMode } from "../dunes/duneField";
+import { LANDFORM_GENERATOR_ID } from "./landformDocument";
 import { growLandform, LANDFORM_TERRAIN_MAX_SIDE, type LandformRecipe, type LandformTerrain } from "./landformTerrain";
 
 /** The output family of landform generators. */
 export const LANDFORM_OUTPUT = "landform";
 
-/** The `landform` generator's params. */
+/**
+ * The `landform` generator's params. Its presets are the named starts (`meta.start`), each about a
+ * 960 m map: a range cut by rivers then worked by ice above its snowline, a sand sea under one wind,
+ * and a river-cut range drowned to a coast, simulated at full scale and shrunk to the map.
+ */
 export const LANDFORM_SCHEMA = defineParamSchema({
+  presetKey: "start",
+  presets: [
+    { id: "glacial-valley", label: "Glacial valley", group: "Starts", values: { side: 64, cellSize: 150, years: 1e6, uplift: 1, glacierEla: 600, scale: 0.1 } },
+    { id: "dunes", label: "Dunes", group: "Starts", values: { side: 96, cellSize: 10, years: 1e4, uplift: 0, sand: 6, windToward: 70, windSpread: 0, duneSweeps: 300 } },
+    { id: "coast", label: "Coast", group: "Starts", values: { side: 96, cellSize: 100, years: 1e6, uplift: 1, seaLevel: 150, scale: 0.1 } },
+  ],
   groups: [
     { id: "map", label: "Map" },
     { id: "rock", label: "Rock and rivers" },
@@ -303,7 +314,7 @@ export function createLandformGenerator(cache: LandformCache, options: LandformG
     return growLandform(recipe, seed);
   }
   return defineGenerator({
-    id: "landform",
+    id: LANDFORM_GENERATOR_ID,
     label: "Landform",
     output: LANDFORM_OUTPUT,
     schema: LANDFORM_SCHEMA,
@@ -335,3 +346,8 @@ export const LANDFORM_CACHE = createLandformCache();
 
 /** The built-in landform generator. */
 export const LANDFORM_GENERATOR = createLandformGenerator(LANDFORM_CACHE);
+
+/** Register {@link LANDFORM_GENERATOR} so the editor's variant grid and `list_generators` find it. Loaded on demand (`ON_DEMAND_SCENE_KINDS`). @internal */
+export function registerLandformGenerator(): void {
+  registerGenerator(LANDFORM_GENERATOR);
+}

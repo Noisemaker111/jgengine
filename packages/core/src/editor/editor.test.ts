@@ -928,7 +928,7 @@ describe("convertScatterToObjects command", () => {
           { x: 8, y: 0, z: 8 },
           { x: -8, y: 0, z: 8 },
         ],
-        meta: { density: 0.3, item: "tree" },
+        meta: { density: 0.3, palette: [{ item: "tree", weight: 1 }] },
       },
     });
     const instances = resolveScatter(session.getState().document, flatField());

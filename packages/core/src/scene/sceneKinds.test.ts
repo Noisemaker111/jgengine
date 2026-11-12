@@ -2,7 +2,8 @@ import { describe, expect, test } from "bun:test";
 
 import { definePlaceableMarkerKind, getSceneKind, isSceneKind, listSceneKinds, parseSceneKindParams, registerSceneKind } from "./sceneKinds";
 import { defaultParamMeta, parseParams, type ParamSchema } from "../generator/paramSchema";
-import { registerBuiltinSceneKinds, SCATTER_SCHEMA } from "./builtinSceneKinds";
+import { registerBuiltinSceneKinds } from "./builtinSceneKinds";
+import { SCATTER_SCHEMA } from "../scatter/scatterRegion";
 
 const TEST_SCHEMA: ParamSchema = {
   fields: [

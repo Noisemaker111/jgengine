@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { CITY_KIND } from "../city/cityKind";
 import { getGenerator } from "../generator/generator";
+import { LANDFORM_GENERATOR } from "../landform/generator/landformGenerator";
 import { PLANT_GROWN_GENERATOR } from "../plants/grown/plantGrown";
 import { FOREST_STAND_KIND } from "../plants/stand/forestStand";
 import { registerBuiltinSceneKinds } from "./builtinSceneKinds";
@@ -14,6 +15,7 @@ describe("on-demand scene kinds", () => {
     expect(byId.get("city")?.kinds).toEqual([CITY_KIND]);
     expect(byId.get("plants")?.kinds).toEqual([FOREST_STAND_KIND]);
     expect(byId.get("plants")?.generators).toEqual([PLANT_GROWN_GENERATOR.id]);
+    expect(byId.get("landform")?.generators).toEqual([LANDFORM_GENERATOR.id]);
   });
 
   test("each load registers the kinds and generators it lists", async () => {
